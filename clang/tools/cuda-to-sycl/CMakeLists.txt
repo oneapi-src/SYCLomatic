@@ -1,0 +1,30 @@
+set(LLVM_LINK_COMPONENTS
+  support
+  )
+
+add_clang_tool(cuda-to-sycl
+  Analysis.cpp
+  CudaToSycl.cpp
+  SourceTransformation.cpp
+  Refinement.cpp
+  Translation.cpp
+  )
+
+target_link_libraries(cuda-to-sycl
+  PRIVATE
+  clangAnalysis
+  clangAST
+  clangASTMatchers
+  clangBasic
+  clangDriver
+  clangEdit
+  clangFormat
+  clangFrontend
+  clangLex
+  clangParse
+  clangRewrite
+  clangSema
+  clangSerialization
+  clangTooling
+  clangToolingCore
+  )
