@@ -58,8 +58,9 @@ list(APPEND CLANG_TEST_DEPS
   clang-diff
   diagtool
   hmaptool
+  cuda-to-sycl
   )
-  
+
 if(CLANG_ENABLE_STATIC_ANALYZER)
   list(APPEND CLANG_TEST_DEPS
     clang-check
