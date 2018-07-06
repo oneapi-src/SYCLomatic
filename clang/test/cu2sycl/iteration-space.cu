@@ -1,5 +1,5 @@
 // RUN: cp %s %t
-// RUN: cuda-to-sycl %t -- -x cuda --cuda-host-only
+// RUN: cu2sycl %t -- -x cuda --cuda-host-only
 // RUN: sed -e 's,//.*$,,' %t | FileCheck %s
 
 __global__

@@ -2,7 +2,7 @@ set(LLVM_LINK_COMPONENTS
   support
   )
 
-add_clang_tool(cuda-to-sycl
+add_clang_tool(cu2sycl
   Analysis.cpp
   CudaToSycl.cpp
   SourceTransformation.cpp
@@ -10,7 +10,7 @@ add_clang_tool(cuda-to-sycl
   Translation.cpp
   )
 
-target_link_libraries(cuda-to-sycl
+target_link_libraries(cu2sycl
   PRIVATE
   clangAnalysis
   clangAST
