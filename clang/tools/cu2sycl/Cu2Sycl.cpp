@@ -1,4 +1,4 @@
-//===--- CudaToSycl.cpp ---------------------------------*- C++ -*---===//
+//===--- Cu2Sycl.cpp ---------------------------------*- C++ -*---===//
 //
 // Copyright (C) 2018 Intel Corporation. All rights reserved.
 //
@@ -27,9 +27,9 @@ using namespace clang::tooling;
 
 using ReplTy = std::map<std::string, Replacements>;
 
-class CudaToSycl : public ASTConsumer {
+class Cu2SyclConsumer : public ASTConsumer {
 public:
-  CudaToSycl(ReplTy &R) : Repl(R) {
+  Cu2SyclConsumer(ReplTy &R) : Repl(R) {
     AMan.emplaceAnalysis(new KernelInvocationAnalysis);
     TMan.emplaceCudaMatcher(new ThreadIdxMatcher);
     TMan.emplaceCudaMatcher(new BlockDimMatcher);
@@ -73,14 +73,14 @@ private:
   ReplTy &Repl;
 };
 
-class CudaToSyclAction {
+class Cu2SyclAction {
   ReplTy &Repl;
 
 public:
-  CudaToSyclAction(ReplTy &R) : Repl(R) {}
+  Cu2SyclAction(ReplTy &R) : Repl(R) {}
 
   std::unique_ptr<ASTConsumer> newASTConsumer() {
-    return llvm::make_unique<CudaToSycl>(Repl);
+    return llvm::make_unique<Cu2SyclConsumer>(Repl);
   }
 };
 
@@ -89,6 +89,6 @@ int main(int argc, const char **argv) {
   clang::tooling::CommonOptionsParser OptParser(argc, argv, OptCat);
   RefactoringTool Tool(OptParser.getCompilations(),
                        OptParser.getSourcePathList());
-  CudaToSyclAction Action(Tool.getReplacements());
+  Cu2SyclAction Action(Tool.getReplacements());
   return Tool.runAndSave(newFrontendActionFactory(&Action).get());
 }
