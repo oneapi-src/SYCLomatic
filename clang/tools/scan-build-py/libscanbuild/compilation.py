@@ -44,7 +44,9 @@ IGNORED_FLAGS = {
     '-u': 1,
     '-z': 1,
     '-T': 1,
-    '-Xlinker': 1
+    '-Xlinker': 1,
+    # -gencode option, ignored because it is not related to SYCL compatibility tool
+    '-gencode': 1
 }
 
 # Known C/C++ compiler executable name patterns
@@ -63,7 +65,7 @@ def split_command(command):
 
         files:    list of source files
         flags:    list of compile options
-        compiler: string value of 'c' or 'c++' """
+        compiler: string value of 'c', 'c++' or 'cuda' """
 
     # the result of this method
     result = collections.namedtuple('Compilation',
@@ -92,12 +94,22 @@ def split_command(command):
             result.flags.extend([arg, next(args)])
         # parameter which looks source file is taken...
         elif re.match(r'^[^-].+', arg) and classify_source(arg):
-            result.files.append(arg)
+            # nvcc compiler invocations should not be added into compilation database
+            if result.compiler == 'cuda' and classify_source(arg) != 'cuda':
+                return None
+            else:
+                result.files.append(arg)
         # and consider everything else as compile option.
         else:
             result.flags.append(arg)
     # do extra check on number of source files
-    return result if result.files else None
+    if  result.files:
+        return result
+    # linker command should be added into compilation database
+    elif len(result.files) == 0 and result.compiler == 'cuda' :
+        return result
+    else:
+        return None
 
 
 def classify_source(filename, c_compiler=True):
@@ -119,7 +131,8 @@ def classify_source(filename, c_compiler=True):
         '.cxx': 'c++',
         '.c++': 'c++',
         '.C++': 'c++',
-        '.txx': 'c++'
+        '.txx': 'c++',
+        '.cu' : 'cuda'
     }
 
     __, extension = os.path.splitext(os.path.basename(filename))
@@ -129,7 +142,7 @@ def classify_source(filename, c_compiler=True):
 def compiler_language(command):
     """ A predicate to decide the command is a compiler call or not.
 
-    Returns 'c' or 'c++' when it match. None otherwise. """
+    Returns 'c', 'c++' or 'cuda' when it match. None otherwise. """
 
     cplusplus = re.compile(r'^(.+)(\+\+)(-.+|)$')
 
@@ -137,4 +150,6 @@ def compiler_language(command):
         executable = os.path.basename(command[0])
         if any(pattern.match(executable) for pattern in COMPILER_PATTERNS):
             return 'c++' if cplusplus.match(executable) else 'c'
+        if executable == 'nvcc':
+            return 'cuda'
     return None

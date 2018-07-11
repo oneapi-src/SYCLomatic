@@ -79,9 +79,15 @@ def capture(args):
             previous = iter([])
         # filter out duplicate entries from both
         duplicate = duplicate_check(entry_hash)
-        return (entry
-                for entry in itertools.chain(previous, current)
-                if os.path.exists(entry['file']) and not duplicate(entry))
+        entries = []
+        for entry in itertools.chain(previous, current):
+            # add linker entry information into compilation database
+            if not ('file' in entry):
+                entries.append(entry)
+            elif os.path.exists(entry['file']) and not duplicate(entry):
+                entries.append(entry)
+        return entries
+
 
     with TemporaryDirectory(prefix='intercept-') as tmp_dir:
         # run the build command
@@ -95,7 +101,7 @@ def capture(args):
         entries = post_processing(exec_traces)
         # dump the compilation database
         with open(args.cdb, 'w+') as handle:
-            json.dump(list(entries), handle, sort_keys=True, indent=4)
+            json.dump(entries, handle, sort_keys=True, indent=4)
         return exit_code
 
 
@@ -211,9 +217,23 @@ def format_entry(exec_trace):
 
     logging.debug('format this command: %s', exec_trace['command'])
     compilation = split_command(exec_trace['command'])
+
     if compilation:
+        compiler = {
+            'c' : 'cc',
+            'c++' : 'c++',
+            'cuda' : 'nvcc'
+        }[compilation.compiler]
+
+        if len(compilation.files) == 0:
+            command = [compiler] + compilation.flags
+            logging.debug('linker entry formated as: %s', command)
+            yield {
+                'directory': exec_trace['directory'],
+                'command': encode(command),
+            }
+
         for source in compilation.files:
-            compiler = 'c++' if compilation.compiler == 'c++' else 'cc'
             command = [compiler, '-c'] + compilation.flags + [source]
             logging.debug('formated as: %s', command)
             yield {
