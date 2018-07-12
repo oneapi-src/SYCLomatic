@@ -19,33 +19,65 @@
 namespace clang {
 namespace cu2sycl {
 
-class CudaMatcher : public ast_matchers::MatchFinder::MatchCallback {
-protected:
-  TransformSetTy *TransformSet = nullptr;
-
+/// Base class for all translator-related AST traversals.
+class ASTTraversal : public ast_matchers::MatchFinder::MatchCallback {
 public:
+  /// Specify what nodes need to be matched by this ASTTraversal.
   virtual void registerMatcher(ast_matchers::MatchFinder &MF) = 0;
-  void setTransformSet(TransformSetTy &TS);
+
+  /// Specify what needs to be done for each matched node.
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override = 0;
+
+  virtual bool isTranslationRule() const { return false; }
 };
 
-class ThreadIdxMatcher : public CudaMatcher {
+/// Base class for translation rules.
+///
+/// The purpose of a TranslationRule is to populate TransformSet with
+/// SourceTransformation's.
+class TranslationRule : public ASTTraversal {
+  friend class ASTTraversalManager;
+
+  TransformSetTy *TransformSet = nullptr;
+  void setTransformSet(TransformSetTy &TS) { TransformSet = &TS; }
+
+protected:
+  /// Add \a ST to the set of transformations.
+  ///
+  /// The ownership of the ST is transferred to the TransformSet.
+  void emplaceTransformation(SourceTransformation *ST) {
+    TransformSet->emplace_back(ST);
+  }
+
+public:
+  bool isTranslationRule() const override { return true; }
+  static bool classof(const ASTTraversal *T) { return T->isTranslationRule(); }
+};
+
+class ThreadIdxMatcher : public TranslationRule {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-class BlockDimMatcher : public CudaMatcher {
+class BlockDimMatcher : public TranslationRule {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-class TranslationManager {
-  std::vector<std::unique_ptr<CudaMatcher>> Storage;
+/// Pass manager for ASTTraversal instances.
+class ASTTraversalManager {
+  std::vector<std::unique_ptr<ASTTraversal>> Storage;
   ast_matchers::MatchFinder Matchers;
 
 public:
-  void emplaceCudaMatcher(CudaMatcher *M);
+  /// Add \a TR to the manager.
+  ///
+  /// The ownership of the TR is transferred to the ASTTraversalManager.
+  void emplaceTranslationRule(TranslationRule *TR) { Storage.emplace_back(TR); }
+
+  /// Run all emplaced ASTTraversal's over the given AST and populate \a TS.
   void matchAST(ASTContext &Context, TransformSetTy &TS);
 };
 

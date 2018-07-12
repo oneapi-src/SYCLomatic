@@ -28,8 +28,8 @@ using ReplTy = std::map<std::string, Replacements>;
 class Cu2SyclConsumer : public ASTConsumer {
 public:
   Cu2SyclConsumer(ReplTy &R) : Repl(R) {
-    TMan.emplaceCudaMatcher(new ThreadIdxMatcher);
-    TMan.emplaceCudaMatcher(new BlockDimMatcher);
+    ATM.emplaceTranslationRule(new ThreadIdxMatcher);
+    ATM.emplaceTranslationRule(new BlockDimMatcher);
   }
 
   void HandleTranslationUnit(ASTContext &Context) override {
@@ -38,7 +38,7 @@ public:
     // 2) Generation of actual textual Replacements
     // Such separation makes it possible to post-process the list of identified
     // translation rules before applying them.
-    TMan.matchAST(Context, TransformSet);
+    ATM.matchAST(Context, TransformSet);
 
     const SourceManager &SM = Context.getSourceManager();
     for (const auto &I : TransformSet) {
@@ -53,8 +53,7 @@ public:
   }
 
 private:
-  TranslationManager TMan;
-
+  ASTTraversalManager ATM;
   TransformSetTy TransformSet;
   ReplTy &Repl;
 };

@@ -17,11 +17,6 @@ using namespace clang;
 using namespace clang::ast_matchers;
 using namespace clang::cu2sycl;
 
-void CudaMatcher::setTransformSet(TransformSetTy &TS) {
-  assert(!TransformSet && "Redefinition of pointer to TransformSet");
-  TransformSet = &TS;
-}
-
 void ThreadIdxMatcher::registerMatcher(MatchFinder &MF) {
   // TODO: match type of threadIdx?
   MF.addMatcher(
@@ -49,7 +44,7 @@ void ThreadIdxMatcher::run(const MatchFinder::MatchResult &Result) {
   else
     llvm_unreachable("Unknown member name");
 
-  TransformSet->emplace_back(new CudaThreadIdx(*ME, Dimension));
+  emplaceTransformation(new CudaThreadIdx(*ME, Dimension));
 }
 
 void BlockDimMatcher::registerMatcher(MatchFinder &MF) {
@@ -79,16 +74,14 @@ void BlockDimMatcher::run(const MatchFinder::MatchResult &Result) {
   else
     llvm_unreachable("Unknown member name");
 
-  TransformSet->emplace_back(new CudaBlockDim(*ME, Dimension));
+  emplaceTransformation(new CudaBlockDim(*ME, Dimension));
 }
 
-void TranslationManager::emplaceCudaMatcher(CudaMatcher *M) {
-  Storage.emplace_back(M);
-  M->registerMatcher(Matchers);
-}
-
-void TranslationManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
-  for (auto &I : Storage)
-    I->setTransformSet(TS);
+void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
+  for (auto &I : Storage) {
+    I->registerMatcher(Matchers);
+    if (auto TR = dyn_cast<TranslationRule>(&*I))
+      TR->setTransformSet(TS);
+  }
   Matchers.matchAST(Context);
 }
