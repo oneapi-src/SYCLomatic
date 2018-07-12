@@ -17,68 +17,47 @@ using namespace clang;
 using namespace clang::ast_matchers;
 using namespace clang::cu2sycl;
 
-void ThreadIdxMatcher::registerMatcher(MatchFinder &MF) {
-  // TODO: match type of threadIdx?
+void IterationSpaceBuiltinRule::registerMatcher(MatchFinder &MF) {
+  // TODO: check that threadIdx is not a local variable.
   MF.addMatcher(
       memberExpr(hasObjectExpression(opaqueValueExpr(hasSourceExpression(
-                     declRefExpr(to(varDecl(hasName("threadIdx"))))))))
-          .bind("threadIdx"),
+                     declRefExpr(to(varDecl(hasAnyName("threadIdx", "blockDim"))
+                                        .bind("varDecl")))))))
+          .bind("memberExpr"),
       this);
 }
 
-void ThreadIdxMatcher::run(const MatchFinder::MatchResult &Result) {
-  const MemberExpr *ME = Result.Nodes.getNodeAs<MemberExpr>("threadIdx");
-  assert(ME && "Unknown result");
+void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
+  const MemberExpr *ME = Result.Nodes.getNodeAs<MemberExpr>("memberExpr");
+  const VarDecl *VD = Result.Nodes.getNodeAs<VarDecl>("varDecl");
+  assert(ME && VD && "Unknown result");
 
-  ValueDecl *VD = ME->getMemberDecl();
-  StringRef Member = VD->getName();
+  ValueDecl *Field = ME->getMemberDecl();
+  StringRef FieldName = Field->getName();
   unsigned Dimension;
 
-  // TODO: match { ".x" ".y" ".z" } instead of this magic names
-  if (Member == "__fetch_builtin_x")
+  if (FieldName == "__fetch_builtin_x")
     Dimension = 0;
-  else if (Member == "__fetch_builtin_y")
+  else if (FieldName == "__fetch_builtin_y")
     Dimension = 1;
-  else if (Member == "__fetch_builtin_z")
+  else if (FieldName == "__fetch_builtin_z")
     Dimension = 2;
   else
-    llvm_unreachable("Unknown member name");
+    llvm_unreachable("Unknown field name");
 
   // TODO: do not assume the argument is named "item"
-  std::string Replacement = "item.get_local(" + std::to_string(Dimension) + ")";
-  emplaceTransformation(new ReplaceExpr(ME, std::move(Replacement)));
-}
+  std::string Replacement = "item";
+  StringRef BuiltinName = VD->getName();
 
-void BlockDimMatcher::registerMatcher(MatchFinder &MF) {
-  // TODO: match type of blockIdx?
-  MF.addMatcher(
-      memberExpr(hasObjectExpression(opaqueValueExpr(hasSourceExpression(
-                     declRefExpr(to(varDecl(hasName("blockDim"))))))))
-          .bind("blockDim"),
-      this);
-}
-
-void BlockDimMatcher::run(const MatchFinder::MatchResult &Result) {
-  const MemberExpr *ME = Result.Nodes.getNodeAs<MemberExpr>("blockDim");
-  assert(ME && "Unknown result");
-
-  ValueDecl *VD = ME->getMemberDecl();
-  StringRef Member = VD->getName();
-  unsigned Dimension;
-
-  // TODO: match { ".x" ".y" ".z" } instead of this magic names
-  if (Member == "__fetch_builtin_x")
-    Dimension = 0;
-  else if (Member == "__fetch_builtin_y")
-    Dimension = 1;
-  else if (Member == "__fetch_builtin_z")
-    Dimension = 2;
+  if (BuiltinName == "threadIdx")
+    Replacement += ".get_local(";
+  else if (BuiltinName == "blockDim")
+    Replacement += ".get_local_range().get(";
   else
-    llvm_unreachable("Unknown member name");
+    llvm_unreachable("Unknown builtin variable");
 
-  // TODO: do not assume the argument is named "item"
-  std::string Replacement =
-      "item.get_local_range().get(" + std::to_string(Dimension) + ")";
+  Replacement += std::to_string(Dimension);
+  Replacement += ")";
   emplaceTransformation(new ReplaceExpr(ME, std::move(Replacement)));
 }
 

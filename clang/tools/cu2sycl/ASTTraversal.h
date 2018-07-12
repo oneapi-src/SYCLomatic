@@ -54,13 +54,8 @@ public:
   static bool classof(const ASTTraversal *T) { return T->isTranslationRule(); }
 };
 
-class ThreadIdxMatcher : public TranslationRule {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-};
-
-class BlockDimMatcher : public TranslationRule {
+/// Translation rule for iteration space builtin variables (threadIdx, etc).
+class IterationSpaceBuiltinRule : public TranslationRule {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
