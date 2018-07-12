@@ -37,14 +37,11 @@ public:
   virtual ~SourceTransformation() {}
   virtual tooling::Replacement
   getReplacement(const SourceManager &SM) const = 0;
-  virtual const char *getTransformationID() const = 0;
 };
 
 class CudaBlockDim : public SourceTransformation {
   const MemberExpr &ME;
   unsigned Dimension;
-
-  static const char ID;
 
 public:
   CudaBlockDim(const MemberExpr &ME, char D) : ME(ME), Dimension(D) {}
@@ -52,18 +49,11 @@ public:
   const MemberExpr *getMemberExpr() const { return &ME; }
   unsigned getDimension() const { return Dimension; }
   tooling::Replacement getReplacement(const SourceManager &SM) const override;
-
-  const char *getTransformationID() const override { return &ID; }
-  static bool classof(const SourceTransformation *ST) {
-    return ST->getTransformationID() == &ID;
-  }
 };
 
 class CudaThreadIdx : public SourceTransformation {
   const MemberExpr &ME;
   unsigned Dimension;
-
-  static const char ID;
 
 public:
   CudaThreadIdx(const MemberExpr &ME, char D) : ME(ME), Dimension(D) {}
@@ -71,27 +61,6 @@ public:
   const MemberExpr *getMemberExpr() const { return &ME; }
   unsigned getDimension() const { return Dimension; }
   tooling::Replacement getReplacement(const SourceManager &SM) const override;
-
-  const char *getTransformationID() const override { return &ID; }
-  static bool classof(const SourceTransformation *ST) {
-    return ST->getTransformationID() == &ID;
-  }
-};
-
-class SyclItemLinearID : public SourceTransformation {
-  const SourceLocation Begin;
-  const SourceLocation End;
-
-  static const char ID;
-
-public:
-  SyclItemLinearID(SourceLocation B, SourceLocation E) : Begin(B), End(E) {}
-  tooling::Replacement getReplacement(const SourceManager &SM) const override;
-
-  const char *getTransformationID() const override { return &ID; }
-  static bool classof(const SourceTransformation *ST) {
-    return ST->getTransformationID() == &ID;
-  }
 };
 
 } // namespace cu2sycl

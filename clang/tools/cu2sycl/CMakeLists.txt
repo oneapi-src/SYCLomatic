@@ -3,10 +3,8 @@ set(LLVM_LINK_COMPONENTS
   )
 
 add_clang_tool(cu2sycl
-  Analysis.cpp
   Cu2Sycl.cpp
   SourceTransformation.cpp
-  Refinement.cpp
   Translation.cpp
   )
 

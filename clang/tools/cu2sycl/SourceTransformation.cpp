@@ -15,10 +15,6 @@ using namespace clang;
 using namespace clang::cu2sycl;
 using namespace clang::tooling;
 
-const char CudaBlockDim::ID = 0;
-const char CudaThreadIdx::ID = 0;
-const char SyclItemLinearID::ID = 0;
-
 Replacement CudaBlockDim::getReplacement(const SourceManager &SM) const {
   SourceRange SR = ME.getSourceRange();
   // TODO: do not assume the argument is named "item"
@@ -32,10 +28,4 @@ Replacement CudaThreadIdx::getReplacement(const SourceManager &SM) const {
   // TODO: do not assume the argument is named "item"
   return Replacement(SM, SR.getBegin(), getLength(SR, SM),
                      "item.get_local(" + std::to_string(Dimension) + ")");
-}
-
-Replacement SyclItemLinearID::getReplacement(const SourceManager &SM) const {
-  // TODO: do not assume the argument is named "item"
-  return Replacement(SM, Begin, getLength(Begin, End, SM),
-                     "item.get_linear_id()");
 }

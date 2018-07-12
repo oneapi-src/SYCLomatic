@@ -16,8 +16,6 @@
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Refactoring.h"
 
-#include "Analysis.h"
-#include "Refinement.h"
 #include "Translation.h"
 
 using namespace clang;
@@ -30,27 +28,17 @@ using ReplTy = std::map<std::string, Replacements>;
 class Cu2SyclConsumer : public ASTConsumer {
 public:
   Cu2SyclConsumer(ReplTy &R) : Repl(R) {
-    AMan.emplaceAnalysis(new KernelInvocationAnalysis);
     TMan.emplaceCudaMatcher(new ThreadIdxMatcher);
     TMan.emplaceCudaMatcher(new BlockDimMatcher);
-    RMan.emplaceOptimization(new ItemLinearIDMatcher);
   }
 
   void HandleTranslationUnit(ASTContext &Context) override {
-    // For each translation unit the following steps are performed:
-    // 1) Analysis : gathering information about the AST.
-    // 2) Translation : detection of CUDA constructs in AST and planning
-    //            straightforward replacements for them.
-    // 3) Refinement : recognition of complex CUDA/SYCL patterns that can
-    //            be translated more efficiently when grouped together or when
-    //            context (analysis) is taken into account.
-    // 4) Text replacement : generation of final tooling::Replacement objects
-    //            that will be applied to source code by clang::tooling
-    //            infrastructure.
-
-    AMan.matchAST(Context);
+    // The translation process is separated into two stages:
+    // 1) Analysis of AST and identification of applicable translation rules
+    // 2) Generation of actual textual Replacements
+    // Such separation makes it possible to post-process the list of identified
+    // translation rules before applying them.
     TMan.matchAST(Context, TransformSet);
-    RMan.run(TransformSet, AMan);
 
     const SourceManager &SM = Context.getSourceManager();
     for (const auto &I : TransformSet) {
@@ -65,9 +53,7 @@ public:
   }
 
 private:
-  AnalysisManager AMan;
   TranslationManager TMan;
-  RefinementManager RMan;
 
   TransformSetTy TransformSet;
   ReplTy &Repl;
