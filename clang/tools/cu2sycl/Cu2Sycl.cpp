@@ -16,7 +16,7 @@
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Refactoring.h"
 
-#include "Translation.h"
+#include "ASTTraversal.h"
 
 using namespace clang;
 using namespace clang::ast_matchers;

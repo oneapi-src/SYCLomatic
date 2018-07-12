@@ -1,4 +1,4 @@
-//===--- Translation.cpp --------------------------------*- C++ -*---===//
+//===--- ASTTraversal.cpp -------------------------------*- C++ -*---===//
 //
 // Copyright (C) 2018 Intel Corporation. All rights reserved.
 //
@@ -9,7 +9,7 @@
 //
 //===-----------------------------------------------------------------===//
 
-#include "Translation.h"
+#include "ASTTraversal.h"
 
 #include "clang/ASTMatchers/ASTMatchers.h"
 

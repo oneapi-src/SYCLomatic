@@ -1,4 +1,4 @@
-//===--- Translation.h ----------------------------------*- C++ -*---===//
+//===--- ASTTraversal.h ---------------------------------*- C++ -*---===//
 //
 // Copyright (C) 2018 Intel Corporation. All rights reserved.
 //
