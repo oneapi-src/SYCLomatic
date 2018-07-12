@@ -1,4 +1,4 @@
-//===--- SourceTransformation.h -------------------------*- C++ -*---===//
+//===--- TextModification.h -----------------------------*- C++ -*---===//
 //
 // Copyright (C) 2018 Intel Corporation. All rights reserved.
 //
@@ -18,10 +18,11 @@
 namespace clang {
 namespace cu2sycl {
 
-class SourceTransformation;
-using TransformSetTy = std::vector<std::unique_ptr<SourceTransformation>>;
+class TextModification;
+using TransformSetTy = std::vector<std::unique_ptr<TextModification>>;
 
-class SourceTransformation {
+/// Base class for translator-related source code modifications.
+class TextModification {
 protected:
   static unsigned getLength(const SourceLocation &Begin,
                             const SourceLocation &End,
@@ -34,12 +35,14 @@ protected:
   }
 
 public:
-  virtual ~SourceTransformation() {}
+  virtual ~TextModification() {}
+
+  /// Generate actual Replacement from this TextModification object.
   virtual tooling::Replacement
   getReplacement(const SourceManager &SM) const = 0;
 };
 
-class CudaBlockDim : public SourceTransformation {
+class CudaBlockDim : public TextModification {
   const MemberExpr &ME;
   unsigned Dimension;
 
@@ -51,7 +54,7 @@ public:
   tooling::Replacement getReplacement(const SourceManager &SM) const override;
 };
 
-class CudaThreadIdx : public SourceTransformation {
+class CudaThreadIdx : public TextModification {
   const MemberExpr &ME;
   unsigned Dimension;
 

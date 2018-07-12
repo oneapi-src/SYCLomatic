@@ -5,7 +5,7 @@ set(LLVM_LINK_COMPONENTS
 add_clang_tool(cu2sycl
   ASTTraversal.cpp
   Cu2Sycl.cpp
-  SourceTransformation.cpp
+  TextModification.cpp
   )
 
 target_link_libraries(cu2sycl

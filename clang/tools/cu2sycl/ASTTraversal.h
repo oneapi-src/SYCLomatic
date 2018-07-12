@@ -14,7 +14,7 @@
 
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 
-#include "SourceTransformation.h"
+#include "TextModification.h"
 
 namespace clang {
 namespace cu2sycl {
@@ -42,11 +42,11 @@ class TranslationRule : public ASTTraversal {
   void setTransformSet(TransformSetTy &TS) { TransformSet = &TS; }
 
 protected:
-  /// Add \a ST to the set of transformations.
+  /// Add \a TM to the set of transformations.
   ///
-  /// The ownership of the ST is transferred to the TransformSet.
-  void emplaceTransformation(SourceTransformation *ST) {
-    TransformSet->emplace_back(ST);
+  /// The ownership of the TM is transferred to the TransformSet.
+  void emplaceTransformation(TextModification *TM) {
+    TransformSet->emplace_back(TM);
   }
 
 public:

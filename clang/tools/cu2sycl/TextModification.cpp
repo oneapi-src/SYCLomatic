@@ -1,4 +1,4 @@
-//===--- SourceTransformation.cpp -----------------------*- C++ -*---===//
+//===--- TextModification.cpp ---------------------------*- C++ -*---===//
 //
 // Copyright (C) 2018 Intel Corporation. All rights reserved.
 //
@@ -9,7 +9,7 @@
 //
 //===-----------------------------------------------------------------===//
 
-#include "SourceTransformation.h"
+#include "TextModification.h"
 
 using namespace clang;
 using namespace clang::cu2sycl;
