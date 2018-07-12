@@ -42,27 +42,15 @@ public:
   getReplacement(const SourceManager &SM) const = 0;
 };
 
-class CudaBlockDim : public TextModification {
-  const MemberExpr &ME;
-  unsigned Dimension;
+/// Replace an expression (w/o semicolon) with a specified string.
+class ReplaceExpr : public TextModification {
+  const Expr *TheExpr;
+  std::string ReplacementString;
 
 public:
-  CudaBlockDim(const MemberExpr &ME, char D) : ME(ME), Dimension(D) {}
+  ReplaceExpr(const Expr *E, std::string &&S)
+      : TheExpr(E), ReplacementString(S) {}
 
-  const MemberExpr *getMemberExpr() const { return &ME; }
-  unsigned getDimension() const { return Dimension; }
-  tooling::Replacement getReplacement(const SourceManager &SM) const override;
-};
-
-class CudaThreadIdx : public TextModification {
-  const MemberExpr &ME;
-  unsigned Dimension;
-
-public:
-  CudaThreadIdx(const MemberExpr &ME, char D) : ME(ME), Dimension(D) {}
-
-  const MemberExpr *getMemberExpr() const { return &ME; }
-  unsigned getDimension() const { return Dimension; }
   tooling::Replacement getReplacement(const SourceManager &SM) const override;
 };
 

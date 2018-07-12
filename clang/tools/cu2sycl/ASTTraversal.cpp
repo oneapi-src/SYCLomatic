@@ -44,7 +44,9 @@ void ThreadIdxMatcher::run(const MatchFinder::MatchResult &Result) {
   else
     llvm_unreachable("Unknown member name");
 
-  emplaceTransformation(new CudaThreadIdx(*ME, Dimension));
+  // TODO: do not assume the argument is named "item"
+  std::string Replacement = "item.get_local(" + std::to_string(Dimension) + ")";
+  emplaceTransformation(new ReplaceExpr(ME, std::move(Replacement)));
 }
 
 void BlockDimMatcher::registerMatcher(MatchFinder &MF) {
@@ -74,7 +76,10 @@ void BlockDimMatcher::run(const MatchFinder::MatchResult &Result) {
   else
     llvm_unreachable("Unknown member name");
 
-  emplaceTransformation(new CudaBlockDim(*ME, Dimension));
+  // TODO: do not assume the argument is named "item"
+  std::string Replacement =
+      "item.get_local_range().get(" + std::to_string(Dimension) + ")";
+  emplaceTransformation(new ReplaceExpr(ME, std::move(Replacement)));
 }
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {

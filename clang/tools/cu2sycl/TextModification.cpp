@@ -15,17 +15,7 @@ using namespace clang;
 using namespace clang::cu2sycl;
 using namespace clang::tooling;
 
-Replacement CudaBlockDim::getReplacement(const SourceManager &SM) const {
-  SourceRange SR = ME.getSourceRange();
-  // TODO: do not assume the argument is named "item"
-  return Replacement(SM, SR.getBegin(), getLength(SR, SM),
-                     "item.get_local_range().get(" + std::to_string(Dimension) +
-                         ")");
-}
-
-Replacement CudaThreadIdx::getReplacement(const SourceManager &SM) const {
-  SourceRange SR = ME.getSourceRange();
-  // TODO: do not assume the argument is named "item"
-  return Replacement(SM, SR.getBegin(), getLength(SR, SM),
-                     "item.get_local(" + std::to_string(Dimension) + ")");
+Replacement ReplaceExpr::getReplacement(const SourceManager &SM) const {
+  SourceRange SR = TheExpr->getSourceRange();
+  return Replacement(SM, SR.getBegin(), getLength(SR, SM), ReplacementString);
 }
