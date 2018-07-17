@@ -54,6 +54,15 @@ public:
   tooling::Replacement getReplacement(const SourceManager &SM) const override;
 };
 
+/// Remove an attribute from a declaration.
+class RemoveAttr : public TextModification {
+  const Attr *TheAttr;
+
+public:
+  RemoveAttr(const Attr *A) : TheAttr(A) {}
+  tooling::Replacement getReplacement(const SourceManager &SM) const override;
+};
+
 } // namespace cu2sycl
 } // namespace clang
 

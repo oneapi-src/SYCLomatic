@@ -11,6 +11,8 @@
 
 #include "TextModification.h"
 
+#include "clang/AST/Attr.h"
+
 using namespace clang;
 using namespace clang::cu2sycl;
 using namespace clang::tooling;
@@ -18,4 +20,14 @@ using namespace clang::tooling;
 Replacement ReplaceExpr::getReplacement(const SourceManager &SM) const {
   SourceRange SR = TheExpr->getSourceRange();
   return Replacement(SM, SR.getBegin(), getLength(SR, SM), ReplacementString);
+}
+
+Replacement RemoveAttr::getReplacement(const SourceManager &SM) const {
+  SourceRange AttrRange = TheAttr->getRange();
+  SourceLocation ARB = AttrRange.getBegin();
+  SourceLocation ARE = AttrRange.getEnd();
+  SourceLocation ExpB = SM.getExpansionLoc(ARB);
+  // No need to invoke getExpansionLoc again if the location is the same.
+  SourceLocation ExpE = (ARB == ARE) ? ExpB : SM.getExpansionLoc(ARE);
+  return Replacement(SM, CharSourceRange::getTokenRange(ExpB, ExpE), "");
 }

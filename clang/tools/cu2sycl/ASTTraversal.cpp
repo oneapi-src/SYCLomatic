@@ -61,6 +61,26 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   emplaceTransformation(new ReplaceExpr(ME, std::move(Replacement)));
 }
 
+void FunctionAttrsRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      functionDecl(anyOf(hasAttr(attr::CUDAGlobal), hasAttr(attr::CUDADevice),
+                         hasAttr(attr::CUDAHost)))
+          .bind("functionDecl"),
+      this);
+}
+
+void FunctionAttrsRule::run(const MatchFinder::MatchResult &Result) {
+  const FunctionDecl *FD = Result.Nodes.getNodeAs<FunctionDecl>("functionDecl");
+  const AttrVec &AV = FD->getAttrs();
+
+  for (const Attr *A : AV) {
+    attr::Kind AK = A->getKind();
+    if (AK == attr::CUDAGlobal || AK == attr::CUDADevice ||
+        AK == attr::CUDAHost)
+      emplaceTransformation(new RemoveAttr(A));
+  }
+}
+
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
   for (auto &I : Storage) {
     I->registerMatcher(Matchers);

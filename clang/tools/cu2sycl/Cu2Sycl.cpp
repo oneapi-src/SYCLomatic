@@ -28,6 +28,7 @@ using ReplTy = std::map<std::string, Replacements>;
 class Cu2SyclConsumer : public ASTConsumer {
 public:
   Cu2SyclConsumer(ReplTy &R) : Repl(R) {
+    ATM.emplaceTranslationRule(new FunctionAttrsRule);
     ATM.emplaceTranslationRule(new IterationSpaceBuiltinRule);
   }
 
