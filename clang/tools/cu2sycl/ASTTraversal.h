@@ -77,6 +77,13 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+/// Translation rule for removing of error hanlding if-stmt
+class ErrorHandlingIfStmtRule : public TranslationRule {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 /// Pass manager for ASTTraversal instances.
 class ASTTraversalManager {
   std::vector<std::unique_ptr<ASTTraversal>> Storage;

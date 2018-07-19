@@ -31,6 +31,7 @@ public:
     ATM.emplaceTranslationRule(new FunctionAttrsRule);
     ATM.emplaceTranslationRule(new IterationSpaceBuiltinRule);
     ATM.emplaceTranslationRule(new TypeInVarDeclRule);
+    ATM.emplaceTranslationRule(new ErrorHandlingIfStmtRule);
   }
 
   void HandleTranslationUnit(ASTContext &Context) override {

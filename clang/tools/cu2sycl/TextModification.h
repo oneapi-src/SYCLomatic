@@ -31,14 +31,14 @@ public:
   getReplacement(const SourceManager &SM) const = 0;
 };
 
-/// Replace an expression (w/o semicolon) with a specified string.
-class ReplaceExpr : public TextModification {
-  const Expr *TheExpr;
+/// Replace a statement (w/o semicolon) with a specified string.
+class ReplaceStmt : public TextModification {
+  const Stmt *TheStmt;
   std::string ReplacementString;
 
 public:
-  ReplaceExpr(const Expr *E, std::string &&S)
-      : TheExpr(E), ReplacementString(S) {}
+  ReplaceStmt(const Stmt *E, std::string &&S)
+      : TheStmt(E), ReplacementString(S) {}
 
   tooling::Replacement getReplacement(const SourceManager &SM) const override;
 };

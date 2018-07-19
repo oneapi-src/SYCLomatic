@@ -63,7 +63,88 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
 
   Replacement += std::to_string(Dimension);
   Replacement += ")";
-  emplaceTransformation(new ReplaceExpr(ME, std::move(Replacement)));
+  emplaceTransformation(new ReplaceStmt(ME, std::move(Replacement)));
+}
+
+void ErrorHandlingIfStmtRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      // Match if-statement that has no else and has a condition of either an
+      // operator!= or a variable of type enum.
+      ifStmt(unless(hasElse(anything())),
+             hasCondition(
+                 anyOf(binaryOperator(hasOperatorName("!=")).bind("op!="),
+                       ignoringImpCasts(
+                           declRefExpr(hasType(hasCanonicalType(enumType())))
+                               .bind("var")))))
+          .bind("errIf"),
+      this);
+}
+
+static bool isVarRef(const Expr *E) {
+  if (auto D = dyn_cast<DeclRefExpr>(E))
+    return isa<VarDecl>(D->getDecl());
+  else
+    return false;
+}
+
+static std::string getVarType(const Expr *E) {
+  return E->getType().getCanonicalType().getUnqualifiedType().getAsString();
+}
+
+static bool isCudaFailureCheck(const BinaryOperator *Op) {
+  auto Lhs = Op->getLHS()->IgnoreImplicit();
+  auto Rhs = Op->getRHS()->IgnoreImplicit();
+
+  const Expr *Literal = nullptr;
+  if (isVarRef(Lhs) && getVarType(Lhs) == "enum cudaError")
+    Literal = Rhs;
+  else if (isVarRef(Rhs) && getVarType(Rhs) == "enum cudaError")
+    Literal = Lhs;
+  else
+    return false;
+
+  if (auto IntLit = dyn_cast<IntegerLiteral>(Literal)) {
+    if (IntLit->getValue() != 0)
+      return false;
+  } else if (auto D = dyn_cast<DeclRefExpr>(Literal)) {
+    auto EnumDecl = dyn_cast<EnumConstantDecl>(D->getDecl());
+    if (!EnumDecl)
+      return false;
+    // Check for cudaSuccess or CUDA_SUCCESS.
+    if (EnumDecl->getInitVal() != 0)
+      return false;
+  } else {
+    // The expression is neither an int literal nor an enum value.
+    return false;
+  }
+
+  return true;
+}
+
+static bool isCudaFailureCheck(const DeclRefExpr *E) {
+  return isVarRef(E) && getVarType(E) == "enum cudaError";
+}
+
+static bool isErrorHandling(const Stmt *Block) {
+  // TODO: For now our definition of error handling is an empty Then-clause.
+  return Block->child_begin() == Block->child_end();
+}
+
+void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
+  if (auto Op = Result.Nodes.getNodeAs<BinaryOperator>("op!=")) {
+    if (!isCudaFailureCheck(Op))
+      return;
+  } else {
+    auto CondVar = Result.Nodes.getNodeAs<DeclRefExpr>("var");
+    if (!isCudaFailureCheck(CondVar))
+      return;
+  }
+
+  auto If = Result.Nodes.getNodeAs<IfStmt>("errIf");
+  if (!isErrorHandling(If->getThen()))
+    return;
+
+  emplaceTransformation(new ReplaceStmt(If, ""));
 }
 
 void FunctionAttrsRule::registerMatcher(MatchFinder &MF) {
