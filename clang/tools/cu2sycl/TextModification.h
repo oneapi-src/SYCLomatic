@@ -23,17 +23,6 @@ using TransformSetTy = std::vector<std::unique_ptr<TextModification>>;
 
 /// Base class for translator-related source code modifications.
 class TextModification {
-protected:
-  static unsigned getLength(const SourceLocation &Begin,
-                            const SourceLocation &End,
-                            const SourceManager &SM) {
-    return SM.getCharacterData(End) - SM.getCharacterData(Begin) + 1;
-  }
-
-  static unsigned getLength(const SourceRange &SR, const SourceManager &SM) {
-    return getLength(SR.getBegin(), SR.getEnd(), SM);
-  }
-
 public:
   virtual ~TextModification() {}
 

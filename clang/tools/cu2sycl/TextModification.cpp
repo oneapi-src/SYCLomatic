@@ -18,8 +18,7 @@ using namespace clang::cu2sycl;
 using namespace clang::tooling;
 
 Replacement ReplaceExpr::getReplacement(const SourceManager &SM) const {
-  SourceRange SR = TheExpr->getSourceRange();
-  return Replacement(SM, SR.getBegin(), getLength(SR, SM), ReplacementString);
+  return Replacement(SM, TheExpr, ReplacementString);
 }
 
 Replacement RemoveAttr::getReplacement(const SourceManager &SM) const {
