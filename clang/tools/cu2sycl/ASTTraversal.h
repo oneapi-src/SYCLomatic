@@ -9,8 +9,8 @@
 //
 //===-----------------------------------------------------------------===//
 
-#ifndef CU2SYCL_TRANSLATION_H
-#define CU2SYCL_TRANSLATION_H
+#ifndef CU2SYCL_AST_TRAVERSAL_H
+#define CU2SYCL_AST_TRAVERSAL_H
 
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 
@@ -79,4 +79,4 @@ public:
 } // namespace cu2sycl
 } // namespace clang
 
-#endif // CU2SYCL_TRANSLATION_H
+#endif // CU2SYCL_AST_TRAVERSAL_H

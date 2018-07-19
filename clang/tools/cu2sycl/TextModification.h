@@ -9,8 +9,8 @@
 //
 //===-----------------------------------------------------------------===//
 
-#ifndef CU2SYCL_SOURCETRANSFORMATION_H
-#define CU2SYCL_SOURCETRANSFORMATION_H
+#ifndef CU2SYCL_TEXT_MODIFICATION_H
+#define CU2SYCL_TEXT_MODIFICATION_H
 
 #include "clang/Tooling/Core/Replacement.h"
 #include "clang/Tooling/Tooling.h"
@@ -57,4 +57,4 @@ public:
 } // namespace cu2sycl
 } // namespace clang
 
-#endif // CU2SYCL_SOURCETRANSFORMATION_H
+#endif // CU2SYCL_TEXT_MODIFICATION_H
