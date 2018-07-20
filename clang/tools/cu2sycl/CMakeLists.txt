@@ -7,6 +7,9 @@ add_clang_tool(cu2sycl
   Cu2Sycl.cpp
   TextModification.cpp
   MapNames.cpp
+  ValidateArguments.cpp
+  SaveNewFiles.cpp
+  Utility.cpp
   )
 
 target_link_libraries(cu2sycl

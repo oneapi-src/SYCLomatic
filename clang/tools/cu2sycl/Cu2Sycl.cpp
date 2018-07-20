@@ -17,6 +17,9 @@
 #include "clang/Tooling/Refactoring.h"
 
 #include "ASTTraversal.h"
+#include "SaveNewFiles.h"
+#include "ValidateArguments.h"
+#include <string>
 
 using namespace clang;
 using namespace clang::ast_matchers;
@@ -31,6 +34,22 @@ llvm::cl::opt<std::string> Passes(
     llvm::cl::value_desc("\"FunctionAttrsRule,...\""), llvm::cl::cat(OptCat));
 
 using ReplTy = std::map<std::string, Replacements>;
+
+using namespace llvm::cl;
+
+static OptionCategory Cu2SyclCat("CUDA to SYCL translator");
+static opt<std::string>
+    InRoot("in-root",
+           desc("Path to root of project to be translated"
+                " (header files not under this root will not be translated)"),
+           value_desc("/path/to/input/root/"), cat(Cu2SyclCat),
+           llvm::cl::Optional);
+static opt<std::string>
+    OutRoot("out-root",
+            desc("Path directory where generated files will be placed"
+                 " (directory will be created if it does not exist)"),
+            value_desc("/path/to/output/root/"), cat(Cu2SyclCat),
+            llvm::cl::Optional);
 
 class Cu2SyclConsumer : public ASTConsumer {
 public:
@@ -77,8 +96,7 @@ public:
       // TODO: This check filters out headers, which is wrong.
       // TODO: It'd be better not to generate replacements for system headers
       // instead of filtering them.
-      if (R.getFilePath() ==
-          SM.getFileEntryForID(SM.getMainFileID())->getName())
+      if (isChildPath(InRoot, R.getFilePath()))
         ReplSet.emplace_back(std::move(R));
     }
 
@@ -105,9 +123,21 @@ public:
 };
 
 int main(int argc, const char **argv) {
-  clang::tooling::CommonOptionsParser OptParser(argc, argv, OptCat);
+  CommonOptionsParser OptParser(argc, argv, OptCat);
+
+  if (!makeCanonicalOrSetDefaults(InRoot, OutRoot,
+                                  OptParser.getSourcePathList()))
+    exit(-1);
+
+  if (!validatePaths(InRoot, OptParser.getSourcePathList()))
+    exit(-1);
+
   RefactoringTool Tool(OptParser.getCompilations(),
                        OptParser.getSourcePathList());
   Cu2SyclAction Action(Tool.getReplacements());
-  return Tool.runAndSave(newFrontendActionFactory(&Action).get());
+  if (int RunResult = Tool.run(newFrontendActionFactory(&Action).get())) {
+    return RunResult;
+  }
+  // if run was successful
+  return saveNewFiles(Tool, InRoot, OutRoot);
 }

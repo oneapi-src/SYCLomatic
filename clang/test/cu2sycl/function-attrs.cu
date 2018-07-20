@@ -1,6 +1,5 @@
-// RUN: cp %s %t
-// RUN: cu2sycl %t -passes "IterationSpaceBuiltinRule,FunctionAttrsRule" -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %t
+// RUN: cu2sycl -out-root %T %s -passes "IterationSpaceBuiltinRule,FunctionAttrsRule" -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/function-attrs.sycl.cpp
 
 // CHECK: void test_00();
 __device__ void test_00();

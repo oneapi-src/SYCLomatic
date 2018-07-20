@@ -1,6 +1,5 @@
-// RUN: cp %s %t
-// RUN: cu2sycl %t -passes "IterationSpaceBuiltinRule" -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %t
+// RUN: cu2sycl -out-root %T %s -passes "IterationSpaceBuiltinRule" -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/pass-filter.sycl.cpp
 
 // Test that only IterationSpaceBuiltinRule is being run
 // CHECK:__global__ void test_00() {

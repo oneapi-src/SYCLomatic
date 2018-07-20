@@ -1,9 +1,8 @@
-// RUN: cp %s %t
-// RUN: cu2sycl %t -- -x cuda --cuda-host-only
-// RUN: sed -e 's,//.*$,,' %t | FileCheck %s
+// RUN: cu2sycl -out-root %T %s -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/iteration-space.sycl.cpp --match-full-lines %s
 
 // Test that the replacement happens when it should to.
-// CHECK: test_00
+// CHECK: void test_00() {
 __global__
 void test_00() {
   // CHECK: size_t tix = item.get_local(0);
@@ -38,7 +37,7 @@ void test_00() {
 }
 
 // Test that the replacement doesn't happen in host functions.
-// CHECK: test_01
+// CHECK: void test_01() {
 void test_01() {
   uint3 threadIdx, blockIdx, blockDim, gridDim;
 
@@ -72,9 +71,8 @@ void test_01() {
 }
 
 // Test that the replacement doesn't happen if threadIdx is redefined.
-// CHECK: test_02
-__global__
-void test_02() {
+// CHECK: void test_02() {
+__global__ void test_02() {
   uint3 threadIdx, blockIdx, blockDim, gridDim;
 
   // CHECK: size_t tix = threadIdx.x;

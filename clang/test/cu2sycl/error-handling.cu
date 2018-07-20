@@ -1,6 +1,5 @@
-// RUN: cp %s %t
-// RUN: cu2sycl %t -passes "ErrorHandlingIfStmtRule" -- -x cuda --cuda-host-only
-// RUN: sed -e 's,//.*$,,' %t | FileCheck --match-full-lines %s
+// RUN: cu2sycl -out-root %T %s -passes "ErrorHandlingIfStmtRule" -- -x cuda --cuda-host-only
+// RUN: sed -e 's,//.*$,,' %T/error-handling.sycl.cpp | FileCheck --match-full-lines %s
 
 int printf(const char *s, ...);
 int fprintf(int, const char *s, ...);

@@ -1,6 +1,5 @@
-// RUN: cp %s %t
-// RUN: cu2sycl %t -- -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %t
+// RUN: cu2sycl -out-root %T %s -- -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/device001.sycl.cpp
 
 int main(int argc, char **argv) {
 

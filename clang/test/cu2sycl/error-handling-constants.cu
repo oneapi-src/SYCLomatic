@@ -1,6 +1,5 @@
-// RUN: cp %s %t
-// RUN: cu2sycl %t -passes "ErrorConstantsRule" -- -x cuda --cuda-host-only
-// RUN: sed -e 's,//.*$,,' %t | FileCheck --match-full-lines %s
+// RUN: cu2sycl -out-root %T %s -passes "ErrorConstantsRule" -- -x cuda --cuda-host-only
+// RUN: sed -e 's,//.*$,,' %T/error-handling-constants.sycl.cpp | FileCheck --match-full-lines %s
 
 // CHECK:const char *switch_test(cudaError_t error)
 // CHECK-NEXT:{
