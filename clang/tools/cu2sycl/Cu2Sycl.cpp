@@ -69,7 +69,7 @@ public:
 };
 
 int main(int argc, const char **argv) {
-  llvm::cl::OptionCategory OptCat("CUDA to SYCL translator");
+  llvm::cl::OptionCategory OptCat("SYCL Compatibility Tool");
   clang::tooling::CommonOptionsParser OptParser(argc, argv, OptCat);
   RefactoringTool Tool(OptParser.getCompilations(),
                        OptParser.getSourcePathList());
