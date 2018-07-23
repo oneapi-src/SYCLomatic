@@ -21,7 +21,8 @@ void IterationSpaceBuiltinRule::registerMatcher(MatchFinder &MF) {
   // TODO: check that threadIdx is not a local variable.
   MF.addMatcher(
       memberExpr(hasObjectExpression(opaqueValueExpr(hasSourceExpression(
-                     declRefExpr(to(varDecl(hasAnyName("threadIdx", "blockDim"))
+                     declRefExpr(to(varDecl(hasAnyName("threadIdx", "blockDim",
+                                                       "blockIdx", "gridDim"))
                                         .bind("varDecl")))))))
           .bind("memberExpr"),
       this);
@@ -53,6 +54,10 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
     Replacement += ".get_local(";
   else if (BuiltinName == "blockDim")
     Replacement += ".get_local_range().get(";
+  else if (BuiltinName == "blockIdx")
+    Replacement += ".get_group(";
+  else if (BuiltinName == "gridDim")
+    Replacement += ".get_num_groups(";
   else
     llvm_unreachable("Unknown builtin variable");
 

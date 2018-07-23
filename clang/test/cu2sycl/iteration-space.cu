@@ -13,9 +13,13 @@ void test_00() {
   size_t tiy = threadIdx.y;
   size_t tiz = threadIdx.z;
 
-  // size_t bix = blockIdx.x;
-  // size_t biy = blockIdx.y;
-  // size_t biz = blockIdx.z;
+  // CHECK: size_t bix = item.get_group(0);
+  // CHECK: size_t biy = item.get_group(1);
+  // CHECK: size_t biz = item.get_group(2);
+
+  size_t bix = blockIdx.x;
+  size_t biy = blockIdx.y;
+  size_t biz = blockIdx.z;
 
   // CHECK: size_t bdx = item.get_local_range().get(0);
   // CHECK: size_t bdy = item.get_local_range().get(1);
@@ -24,9 +28,13 @@ void test_00() {
   size_t bdy = blockDim.y;
   size_t bdz = blockDim.z;
 
-  // size_t gdx = gridDim.x;
-  // size_t gdy = gridDim.y;
-  // size_t gdz = gridDim.z;
+  // CHECK: size_t gdx = item.get_num_groups(0);
+  // CHECK: size_t gdy = item.get_num_groups(1);
+  // CHECK: size_t gdz = item.get_num_groups(2);
+
+  size_t gdx = gridDim.x;
+  size_t gdy = gridDim.y;
+  size_t gdz = gridDim.z;
 }
 
 // Test that the replacement doesn't happen in host functions.
