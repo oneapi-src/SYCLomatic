@@ -30,6 +30,7 @@ public:
   Cu2SyclConsumer(ReplTy &R) : Repl(R) {
     ATM.emplaceTranslationRule(new FunctionAttrsRule);
     ATM.emplaceTranslationRule(new IterationSpaceBuiltinRule);
+    ATM.emplaceTranslationRule(new TypeInVarDeclRule);
   }
 
   void HandleTranslationUnit(ASTContext &Context) override {

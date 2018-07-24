@@ -52,6 +52,18 @@ public:
   tooling::Replacement getReplacement(const SourceManager &SM) const override;
 };
 
+// Replace type in var. declaration.
+class ReplaceTypeInVarDecl : public TextModification {
+  const VarDecl *D;
+  std::string T;
+
+public:
+  ReplaceTypeInVarDecl(const VarDecl *D, std::string &&T)
+    : D(D), T(T) {}
+  tooling::Replacement getReplacement(const SourceManager &SM) const override;
+};
+
+
 } // namespace cu2sycl
 } // namespace clang
 

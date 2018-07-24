@@ -30,3 +30,9 @@ Replacement RemoveAttr::getReplacement(const SourceManager &SM) const {
   SourceLocation ExpE = (ARB == ARE) ? ExpB : SM.getExpansionLoc(ARE);
   return Replacement(SM, CharSourceRange::getTokenRange(ExpB, ExpE), "");
 }
+
+Replacement
+ReplaceTypeInVarDecl::getReplacement(const SourceManager &SM) const {
+  TypeLoc TL = D->getTypeSourceInfo()->getTypeLoc();
+  return Replacement(SM, &TL, T);
+}

@@ -86,6 +86,20 @@ void FunctionAttrsRule::run(const MatchFinder::MatchResult &Result) {
   }
 }
 
+// Rule for types replacements in var. declarations.
+void TypeInVarDeclRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      varDecl(hasType(cxxRecordDecl(hasName("cudaDeviceProp"))))
+          .bind("TypeInVarDecl"),
+      this);
+}
+
+void TypeInVarDeclRule::run(const MatchFinder::MatchResult &Result) {
+  const VarDecl *D = Result.Nodes.getNodeAs<VarDecl>("TypeInVarDecl");
+  emplaceTransformation(
+      new ReplaceTypeInVarDecl(D, "cu2sycl::sycl_device_info"));
+}
+
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
   for (auto &I : Storage) {
     I->registerMatcher(Matchers);
