@@ -6,6 +6,7 @@ add_clang_tool(cu2sycl
   ASTTraversal.cpp
   Cu2Sycl.cpp
   TextModification.cpp
+  MapNames.cpp
   )
 
 target_link_libraries(cu2sycl

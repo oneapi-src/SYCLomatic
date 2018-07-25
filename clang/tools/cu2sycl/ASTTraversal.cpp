@@ -169,16 +169,55 @@ void FunctionAttrsRule::run(const MatchFinder::MatchResult &Result) {
 
 // Rule for types replacements in var. declarations.
 void TypeInVarDeclRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(
-      varDecl(hasType(cxxRecordDecl(hasName("cudaDeviceProp"))))
-          .bind("TypeInVarDecl"),
-      this);
+  MF.addMatcher(varDecl(hasType(cxxRecordDecl(hasName("cudaDeviceProp"))))
+                    .bind("TypeInVarDecl"),
+
+                this);
 }
 
 void TypeInVarDeclRule::run(const MatchFinder::MatchResult &Result) {
   const VarDecl *D = Result.Nodes.getNodeAs<VarDecl>("TypeInVarDecl");
   emplaceTransformation(
       new ReplaceTypeInVarDecl(D, "cu2sycl::sycl_device_info"));
+}
+
+// Rule for cudaDeviceProp variables.
+void DevicePropVarRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      memberExpr(
+          hasObjectExpression(hasType(qualType(hasCanonicalType(recordType(
+              hasDeclaration(cxxRecordDecl(hasName("cudaDeviceProp")))))))))
+          .bind("DevicePropVar"),
+      this);
+}
+
+void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
+  const MemberExpr *ME = Result.Nodes.getNodeAs<MemberExpr>("DevicePropVar");
+  auto Search = PropNamesMap.find(ME->getMemberNameInfo().getAsString());
+  if (Search == PropNamesMap.end()) {
+    // TODO report translation error
+    return;
+  }
+  emplaceTransformation(new RenameFieldInMemberExpr(ME, Search->second + "()"));
+}
+
+// Rule for enums constants.
+void EnumConstantRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(
+                                hasType(enumDecl(hasName("cudaComputeMode"))))))
+                    .bind("EnumConstant"),
+                this);
+}
+
+void EnumConstantRule::run(const MatchFinder::MatchResult &Result) {
+  const DeclRefExpr *E = Result.Nodes.getNodeAs<DeclRefExpr>("EnumConstant");
+  assert(E && "Unknown result");
+  auto Search = EnumNamesMap.find(E->getNameInfo().getName().getAsString());
+  if (Search == EnumNamesMap.end()) {
+    // TODO report translation error
+    return;
+  }
+  emplaceTransformation(new ReplaceStmt(E, "cu2sycl::" + Search->second));
 }
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {

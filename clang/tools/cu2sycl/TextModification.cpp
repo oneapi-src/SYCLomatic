@@ -36,3 +36,16 @@ ReplaceTypeInVarDecl::getReplacement(const SourceManager &SM) const {
   TypeLoc TL = D->getTypeSourceInfo()->getTypeLoc();
   return Replacement(SM, &TL, T);
 }
+
+Replacement RenameFieldInMemberExpr::getReplacement(
+    const SourceManager &SM) const {
+  SourceLocation SL = ME->getLocEnd();
+  return Replacement(SM, CharSourceRange(SourceRange(SL, SL), true), T);
+}
+
+Replacement InsertAfterStmt::getReplacement(const SourceManager &SM) const {
+  SourceLocation Loc =  S->getSourceRange().getEnd();
+  clang::LangOptions Opts;
+  unsigned Offs  = Lexer::MeasureTokenLength(Loc, SM, Opts);
+  return Replacement(SM, Loc.getLocWithOffset(Offs), 0, T);
+}

@@ -63,6 +63,28 @@ public:
   tooling::Replacement getReplacement(const SourceManager &SM) const override;
 };
 
+// Rename field in expression.
+class RenameFieldInMemberExpr : public TextModification {
+  const MemberExpr *ME;
+  std::string T;
+
+public:
+  RenameFieldInMemberExpr(const MemberExpr *ME, std::string &&T)
+      : ME(ME), T(T) {}
+
+  tooling::Replacement getReplacement(const SourceManager &SM) const override;
+};
+
+class InsertAfterStmt : public TextModification {
+  const Stmt *S;
+  std::string T;
+
+public:
+  InsertAfterStmt(const Stmt *S, std::string &&T)
+      : S(S), T(T) {}
+
+  tooling::Replacement getReplacement(const SourceManager &SM) const override;
+};
 
 } // namespace cu2sycl
 } // namespace clang

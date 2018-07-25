@@ -32,6 +32,8 @@ public:
     ATM.emplaceTranslationRule(new IterationSpaceBuiltinRule);
     ATM.emplaceTranslationRule(new TypeInVarDeclRule);
     ATM.emplaceTranslationRule(new ErrorHandlingIfStmtRule);
+    ATM.emplaceTranslationRule(new DevicePropVarRule);
+    ATM.emplaceTranslationRule(new EnumConstantRule);
   }
 
   void HandleTranslationUnit(ASTContext &Context) override {
@@ -50,8 +52,8 @@ public:
           SM.getFileEntryForID(SM.getMainFileID())->getName())
         continue;
       if (auto Err = Repl[R.getFilePath()].add(R))
-        llvm_unreachable("Error occured");
-    }
+        llvm_unreachable("Adding the replacement: Error occured ");
+      }
   }
 
 private:
