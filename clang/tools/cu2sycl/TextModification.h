@@ -134,6 +134,28 @@ public:
   iterator end() { return iterator(*this, -1); }
 };
 
+class InsertBeforeStmt : public TextModification {
+  const Stmt *S;
+  std::string T;
+
+public:
+  InsertBeforeStmt(const Stmt *S, std::string &&T)
+      : S(S), T(T) {}
+
+  tooling::Replacement getReplacement(const SourceManager &SM) const override;
+};
+
+class RemoveArg : public TextModification {
+  const CallExpr *CE;
+  const unsigned N;
+
+public:
+  RemoveArg(const CallExpr *CE, const unsigned N)
+      : CE(CE), N(N) {}
+
+  tooling::Replacement getReplacement(const SourceManager &SM) const override;
+};
+
 } // namespace cu2sycl
 } // namespace clang
 

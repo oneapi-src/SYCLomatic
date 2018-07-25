@@ -19,7 +19,7 @@ using namespace clang::cu2sycl;
 // DeviceProp names mapping.
 const std::map<std::string, std::string> DevicePropVarRule::PropNamesMap{
     {"clockRate", "max_clock_frequency"},
-    {"computeMode", "compute_mode"},
+    {"computeMode", "mode"},
     {"major", "major_version"},
     {"minor", "minor_version"},
     {"multiProcessorCount", "max_compute_units"},
@@ -31,10 +31,10 @@ const std::map<std::string, std::string> DevicePropVarRule::PropNamesMap{
 // Enum constants name mapping.
 const std::map<std::string, std::string> EnumConstantRule::EnumNamesMap{
     // enum cudaComputeMode
-    {"cudaComputeModeDefault", "cm_default"},
-    {"cudaComputeModeExclusive", "cm_exclusive"},
-    {"cudaComputeModeProhibited", "cm_prohibited"},
-    {"cudaComputeModeExclusiveProcess", "cm_exclusive_process"},
+    {"cudaComputeModeDefault", "compute_mode::default_"},
+    {"cudaComputeModeExclusive", "compute_mode::exclusive"},
+    {"cudaComputeModeProhibited", "compute_mode::prohibited"},
+    {"cudaComputeModeExclusiveProcess", "compute_mode::exclusive_process"},
     // ...
     // enum cudaDeviceAttr
     // ...

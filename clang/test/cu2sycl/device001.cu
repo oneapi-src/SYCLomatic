@@ -6,7 +6,7 @@ int main(int argc, char **argv) {
   // CHECK: cu2sycl::sycl_device_info deviceProp;
   cudaDeviceProp deviceProp;
 
-  // CHECK: if (deviceProp.compute_mode() == cu2sycl::cm_prohibited) {
+  // CHECK: if (deviceProp.mode() == cu2sycl::compute_mode::prohibited) {
   if (deviceProp.computeMode == cudaComputeModeProhibited) {
     return 0;
   }

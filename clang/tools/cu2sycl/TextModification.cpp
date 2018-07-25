@@ -98,3 +98,21 @@ ReplacementFilter::ReplacementFilter(const std::vector<Replacement> &RS)
   for (auto &FMI : FileMap)
     std::sort(FMI.second.begin(), FMI.second.end());
 }
+
+Replacement InsertBeforeStmt::getReplacement(const SourceManager &SM) const {
+  return Replacement(SM, S->getSourceRange().getBegin(), 0, T);
+}
+
+Replacement RemoveArg::getReplacement(const SourceManager &SM) const {
+  SourceRange SR = CE->getArg(N)->getSourceRange();
+  SourceLocation Begin = SR.getBegin();
+  SourceLocation End;
+  bool IsLast = (N == (CE->getNumArgs() - 1));
+  if (IsLast) {
+      End = SR.getEnd();
+  }
+  else {
+      End =  CE->getArg(N+1)->getSourceRange().getBegin().getLocWithOffset(-1);
+  }
+  return Replacement(SM, CharSourceRange(SourceRange(Begin, End), true), "");
+}

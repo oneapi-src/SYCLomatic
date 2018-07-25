@@ -1,4 +1,4 @@
-//===--- ASTTraversal.cpp -------------------------------*- C++ -*---===//
+//===--- ASTTraversal.cpp --------------------------------*- C++ -*---===//
 //
 // Copyright (C) 2018 Intel Corporation. All rights reserved.
 //
@@ -284,6 +284,74 @@ void ErrorConstantsRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(ErrorConstantsRule)
+
+void FunctionCallRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      callExpr(callee(functionDecl(hasAnyName(
+                   "cudaGetDeviceCount", "cudaGetDeviceProperties",
+                   "cudaDeviceReset", "cudaSetDevice", "cudaDeviceGetAttribute",
+                   "cudaDeviceGetP2PAttribute", "cudaGetDevice",
+                   "cudaGetLastError"))))
+          .bind("FunctionCall"),
+      this);
+}
+
+void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
+  const CallExpr *CE = Result.Nodes.getNodeAs<CallExpr>("FunctionCall");
+  assert(CE && "Unknown result");
+
+  std::string FuncName =
+      CE->getDirectCallee()->getNameInfo().getName().getAsString();
+  if (FuncName == "cudaGetDeviceCount") {
+    std::string ResultVarName = DereferenceArg(CE->getArg(0));
+    emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
+    emplaceTransformation(
+        new ReplaceStmt(CE, "cu2sycl::get_device_manager().device_count()"));
+  } else if (FuncName == "cudaGetDeviceProperties") {
+    std::string ResultVarName = DereferenceArg(CE->getArg(0));
+    emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
+    emplaceTransformation(new ReplaceStmt(
+        CE->getCallee(), "cu2sycl::get_device_manager().get_device"));
+    emplaceTransformation(new RemoveArg(CE, 0));
+    emplaceTransformation(new InsertAfterStmt(CE, ".get_device_info()"));
+  } else if (FuncName == "cudaDeviceReset") {
+    emplaceTransformation(new ReplaceStmt(CE, ""));
+  } else if (FuncName == "cudaSetDevice") {
+    emplaceTransformation(new ReplaceStmt(
+        CE->getCallee(), "cu2sycl::get_device_manager().select_device"));
+  } else if (FuncName == "cudaDeviceGetAttribute") {
+    std::string ResultVarName = DereferenceArg(CE->getArg(0));
+    std::string AttributeName = ((const clang::DeclRefExpr *)CE->getArg(1))
+                            ->getNameInfo()
+                            .getName()
+                            .getAsString();
+    auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
+    if (Search == EnumConstantRule::EnumNamesMap.end()) {
+      // TODO report translation error
+      return;
+    }
+    emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
+    emplaceTransformation(new ReplaceStmt(
+        CE->getCallee(), "cu2sycl::get_device_manager().get_device"));
+    emplaceTransformation(new RemoveArg(CE, 0));
+    emplaceTransformation(new RemoveArg(CE, 1));
+    emplaceTransformation(new InsertAfterStmt(CE, "." + Search->second + "()"));
+  } else if (FuncName == "cudaDeviceGetP2PAttribute") {
+    std::string ResultVarName = DereferenceArg(CE->getArg(0));
+    emplaceTransformation(new ReplaceStmt(CE, ResultVarName + " = 0"));
+  } else if (FuncName == "cudaGetDevice") {
+    std::string ResultVarName = DereferenceArg(CE->getArg(0));
+    emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
+    emplaceTransformation(new ReplaceStmt(
+        CE, "cu2sycl::get_device_manager().current_device_id()"));
+  } else if (FuncName == "cudaGetLastError") {
+    emplaceTransformation(new ReplaceStmt(CE, "0"));
+  } else {
+    llvm_unreachable("Unknown function name");
+  }
+}
+
+REGISTER_RULE(FunctionCallRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
   for (auto &I : Storage) {
