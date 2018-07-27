@@ -67,6 +67,8 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   emplaceTransformation(new ReplaceStmt(ME, std::move(Replacement)));
 }
 
+REGISTER_RULE(IterationSpaceBuiltinRule)
+
 void ErrorHandlingIfStmtRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       // Match if-statement that has no else and has a condition of either an
@@ -178,6 +180,8 @@ void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
   emplaceTransformation(new ReplaceStmt(If, ""));
 }
 
+REGISTER_RULE(ErrorHandlingIfStmtRule)
+
 void FunctionAttrsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       functionDecl(anyOf(hasAttr(attr::CUDAGlobal), hasAttr(attr::CUDADevice),
@@ -198,6 +202,8 @@ void FunctionAttrsRule::run(const MatchFinder::MatchResult &Result) {
   }
 }
 
+REGISTER_RULE(FunctionAttrsRule)
+
 // Rule for types replacements in var. declarations.
 void TypeInVarDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(varDecl(hasType(cxxRecordDecl(hasName("cudaDeviceProp"))))
@@ -210,6 +216,8 @@ void TypeInVarDeclRule::run(const MatchFinder::MatchResult &Result) {
   emplaceTransformation(
       new ReplaceTypeInVarDecl(D, "cu2sycl::sycl_device_info"));
 }
+
+REGISTER_RULE(TypeInVarDeclRule)
 
 // Rule for cudaDeviceProp variables.
 void DevicePropVarRule::registerMatcher(MatchFinder &MF) {
@@ -231,6 +239,8 @@ void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
   emplaceTransformation(new RenameFieldInMemberExpr(ME, Search->second + "()"));
 }
 
+REGISTER_RULE(DevicePropVarRule)
+
 // Rule for enums constants.
 void EnumConstantRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(enumConstantDecl(
@@ -249,6 +259,8 @@ void EnumConstantRule::run(const MatchFinder::MatchResult &Result) {
   }
   emplaceTransformation(new ReplaceStmt(E, "cu2sycl::" + Search->second));
 }
+
+REGISTER_RULE(EnumConstantRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
   for (auto &I : Storage) {

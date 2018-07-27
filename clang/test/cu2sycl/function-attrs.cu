@@ -1,5 +1,5 @@
 // RUN: cp %s %t
-// RUN: cu2sycl %t -- -x cuda --cuda-host-only
+// RUN: cu2sycl %t -passes "IterationSpaceBuiltinRule,FunctionAttrsRule" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %t
 
 // CHECK: void test_00();

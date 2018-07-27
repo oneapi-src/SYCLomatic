@@ -23,17 +23,43 @@ using namespace clang::ast_matchers;
 using namespace clang::cu2sycl;
 using namespace clang::tooling;
 
+llvm::cl::OptionCategory OptCat("SYCL Compatibility Tool");
+llvm::cl::extrahelp
+    CommonHelp(clang::tooling::CommonOptionsParser::HelpMessage);
+llvm::cl::opt<std::string> Passes(
+    "passes", llvm::cl::desc("Comma separated list of transformation passes"),
+    llvm::cl::value_desc("\"FunctionAttrsRule,...\""), llvm::cl::cat(OptCat));
+
 using ReplTy = std::map<std::string, Replacements>;
 
 class Cu2SyclConsumer : public ASTConsumer {
 public:
   Cu2SyclConsumer(ReplTy &R) : Repl(R) {
-    ATM.emplaceTranslationRule(new FunctionAttrsRule);
-    ATM.emplaceTranslationRule(new IterationSpaceBuiltinRule);
-    ATM.emplaceTranslationRule(new TypeInVarDeclRule);
-    ATM.emplaceTranslationRule(new ErrorHandlingIfStmtRule);
-    ATM.emplaceTranslationRule(new DevicePropVarRule);
-    ATM.emplaceTranslationRule(new EnumConstantRule);
+    if (Passes != "") {
+      std::vector<std::string> Names;
+      // Separate string into list by comma
+      {
+        std::size_t Current, Previous = 0;
+        Current = Passes.find(',');
+        while (Current != std::string::npos) {
+          Names.push_back(Passes.substr(Previous, Current - Previous));
+          Previous = Current + 1;
+          Current = Passes.find(',', Previous);
+        }
+        Names.push_back(Passes.substr(Previous, Current - Previous));
+      }
+      for (auto const &Name : Names) {
+        auto *ID = ASTTraversalMetaInfo::getID(Name);
+        if (!ID) {
+          llvm::errs() << "[ERROR] Rule not found: \"" << Name
+                       << "\" - check \"-passes\" option\n";
+          std::exit(1);
+        }
+        ATM.emplaceTranslationRule(ID);
+      }
+    } else {
+      ATM.emplaceAllRules();
+    }
   }
 
   void HandleTranslationUnit(ASTContext &Context) override {
@@ -74,7 +100,6 @@ public:
 };
 
 int main(int argc, const char **argv) {
-  llvm::cl::OptionCategory OptCat("SYCL Compatibility Tool");
   clang::tooling::CommonOptionsParser OptParser(argc, argv, OptCat);
   RefactoringTool Tool(OptParser.getCompilations(),
                        OptParser.getSourcePathList());

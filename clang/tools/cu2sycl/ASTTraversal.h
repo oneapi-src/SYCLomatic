@@ -19,6 +19,42 @@
 namespace clang {
 namespace cu2sycl {
 
+class ASTTraversal;
+using ASTTraversalConstructor = std::function<ASTTraversal *()>;
+
+class ASTTraversalMetaInfo {
+public:
+  static std::unordered_map<const char *, std::string> &getNameTable() {
+    static std::unordered_map<const char *, std::string> Table;
+    return Table;
+  }
+
+  static std::unordered_map<std::string, const char *> &getIDTable() {
+    static std::unordered_map<std::string, const char *> Table;
+    return Table;
+  }
+
+  static const char *getID(const std::string &Name) {
+    auto &IdTable = getIDTable();
+    if (IdTable.find(Name) != IdTable.end()) {
+      return IdTable[Name];
+    }
+    return nullptr;
+  }
+
+  static std::unordered_map<const char *, ASTTraversalConstructor> &getConstructorTable() {
+    static std::unordered_map<const char *, ASTTraversalConstructor> FactoryMap;
+    return FactoryMap;
+  }
+
+  static void registerRule(const char *ID, const std::string &Name,
+                           ASTTraversalConstructor Factory) {
+    getConstructorTable()[ID] = Factory;
+    getIDTable()[Name] = ID;
+    getNameTable()[ID] = Name;
+  }
+};
+
 /// Base class for all translator-related AST traversals.
 class ASTTraversal : public ast_matchers::MatchFinder::MatchCallback {
 public:
@@ -54,8 +90,16 @@ public:
   static bool classof(const ASTTraversal *T) { return T->isTranslationRule(); }
 };
 
+template <typename T> class NamedTranslationRule : public TranslationRule {
+public:
+  static const char ID;
+};
+
+template <typename T> const char NamedTranslationRule<T>::ID(0);
+
 /// Translation rule for iteration space builtin variables (threadIdx, etc).
-class IterationSpaceBuiltinRule : public TranslationRule {
+class IterationSpaceBuiltinRule
+    : public NamedTranslationRule<IterationSpaceBuiltinRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
@@ -64,28 +108,29 @@ public:
 /// Translation rule for CUDA function attributes.
 ///
 /// This rule removes __global__, __device__ and __host__ function attributes.
-class FunctionAttrsRule : public TranslationRule {
+class FunctionAttrsRule : public NamedTranslationRule<FunctionAttrsRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
 /// Translation rule for types replacements in var. declarations.
-class TypeInVarDeclRule : public TranslationRule {
+class TypeInVarDeclRule : public NamedTranslationRule<TypeInVarDeclRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
 /// Translation rule for removing of error hanlding if-stmt
-class ErrorHandlingIfStmtRule : public TranslationRule {
+class ErrorHandlingIfStmtRule
+    : public NamedTranslationRule<ErrorHandlingIfStmtRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
 /// Translation rule for cudaDeviceProp variables.
-class DevicePropVarRule : public TranslationRule {
+class DevicePropVarRule : public NamedTranslationRule<DevicePropVarRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
@@ -95,7 +140,7 @@ private:
 };
 
 // Translation rule for enums constants.
-class EnumConstantRule : public TranslationRule {
+class EnumConstantRule : public NamedTranslationRule<EnumConstantRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
@@ -112,11 +157,32 @@ public:
   /// Add \a TR to the manager.
   ///
   /// The ownership of the TR is transferred to the ASTTraversalManager.
-  void emplaceTranslationRule(TranslationRule *TR) { Storage.emplace_back(TR); }
+  void emplaceTranslationRule(const char *ID) {
+    assert(ASTTraversalMetaInfo::getConstructorTable().find(ID) !=
+           ASTTraversalMetaInfo::getConstructorTable().end());
+    Storage.emplace_back(std::unique_ptr<ASTTraversal>(
+                            ASTTraversalMetaInfo::getConstructorTable()[ID]()));
+  }
+
+  void emplaceAllRules() {
+    for (auto &F : ASTTraversalMetaInfo::getConstructorTable()) {
+      Storage.emplace_back(std::unique_ptr<ASTTraversal>(F.second()));
+    }
+  }
 
   /// Run all emplaced ASTTraversal's over the given AST and populate \a TS.
   void matchAST(ASTContext &Context, TransformSetTy &TS);
 };
+
+template <typename T> class RuleRegister {
+public:
+  RuleRegister(const char *ID, const std::string &Name) {
+    ASTTraversalMetaInfo::registerRule(ID, Name, [] { return new T; });
+  }
+};
+
+#define REGISTER_RULE(TYPE_NAME)                                               \
+  RuleRegister<TYPE_NAME> g_##TYPE_NAME(&TYPE_NAME::ID, #TYPE_NAME);
 
 } // namespace cu2sycl
 } // namespace clang
