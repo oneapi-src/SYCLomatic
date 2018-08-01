@@ -12,6 +12,7 @@
 #include "ASTTraversal.h"
 
 #include "clang/ASTMatchers/ASTMatchers.h"
+#include "llvm/ADT/StringSet.h"
 
 using namespace clang;
 using namespace clang::ast_matchers;
@@ -125,9 +126,39 @@ static bool isCudaFailureCheck(const DeclRefExpr *E) {
   return isVarRef(E) && getVarType(E) == "enum cudaError";
 }
 
+static bool isErrorHandlingSafeToRemove(const Stmt *S) {
+  if (const auto *CE = dyn_cast<CallExpr>(S)) {
+    if (!CE->getDirectCallee())
+      return false;
+    auto Name = CE->getDirectCallee()->getNameAsString();
+    static const llvm::StringSet<> SafeCallList = {
+        "printf", "puts", "exit", "cudaDeviceReset", "fprintf"};
+    if (SafeCallList.find(Name) == SafeCallList.end())
+      return false;
+    for (const auto *S : CE->arguments()) {
+      if (!isErrorHandlingSafeToRemove(S->IgnoreImplicit()))
+        return false;
+    }
+    return true;
+  } else if (isa<DeclRefExpr>(S))
+    return true;
+  else if (isa<IntegerLiteral>(S))
+    return true;
+  else if (isa<StringLiteral>(S))
+    return true;
+
+  return false;
+}
+
 static bool isErrorHandling(const Stmt *Block) {
-  // TODO: For now our definition of error handling is an empty Then-clause.
-  return Block->child_begin() == Block->child_end();
+  if (!isa<CompoundStmt>(Block))
+    return isErrorHandlingSafeToRemove(Block);
+  const CompoundStmt *CS = cast<CompoundStmt>(Block);
+  for (const auto *S : CS->children()) {
+    if (!isErrorHandlingSafeToRemove(S->IgnoreImplicit()))
+      return false;
+  }
+  return true;
 }
 
 void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
@@ -171,7 +202,6 @@ void FunctionAttrsRule::run(const MatchFinder::MatchResult &Result) {
 void TypeInVarDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(varDecl(hasType(cxxRecordDecl(hasName("cudaDeviceProp"))))
                     .bind("TypeInVarDecl"),
-
                 this);
 }
 

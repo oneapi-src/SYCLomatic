@@ -3,6 +3,7 @@
 // RUN: sed -e 's,//.*$,,' %t | FileCheck --match-full-lines %s
 
 int printf(const char *s, ...);
+int fprintf(int, const char *s, ...);
 
 // CHECK:void test_simple_ifs() {
 // CHECK-NEXT:  cudaError_t err;
@@ -73,8 +74,7 @@ void test_typedef() {
 
 // CHECK:void test_no_braces() {
 // CHECK-NEXT:  cudaError_t err;
-// CHECK-NEXT:  if (err != cudaSuccess)
-// CHECK-NEXT:    printf("error!\n");
+// CHECK-NEXT:  {{ +}};
 // CHECK-NEXT:}
 void test_no_braces() {
   cudaError_t err;
@@ -99,9 +99,7 @@ void test_unrelated_then() {
 
 // CHECK:void test_CUDA_SUCCESS() {
 // CHECK-NEXT:  cudaError_t err;
-// CHECK-NEXT:  if (err != CUDA_SUCCESS) {
-// CHECK-NEXT:    printf("error!\n");
-// CHECK-NEXT:  }
+// CHECK-NEXT:  {{ +}}
 // CHECK-NEXT:}
 void test_CUDA_SUCCESS() {
   cudaError_t err;
@@ -169,9 +167,7 @@ void test_12(cudaError_t err, int arg) {
 }
 
 // CHECK:void test_13(cudaError_t err, int arg) {
-// CHECK-NEXT:  if (err) {
-// CHECK-NEXT:    printf("error!\n");
-// CHECK-NEXT:  }
+// CHECK-NEXT:  {{ +}}
 // CHECK-NEXT:}
 void test_13(cudaError_t err, int arg) {
   if (err) {
@@ -282,4 +278,54 @@ void test_compare_to_3(cudaError_t err, int arg) {
 void test_21(const cudaError_t& err, int arg) {
   if (err != 0) {
   }
+}
+
+// CHECK:void test_no_side_effects(cudaError_t err, int arg) {
+// CHECK-NEXT: ;
+// CHECK-NEXT: ;
+// CHECK-NEXT: ;
+// CHECK-NEXT:  {{ +}}
+// CHECK-NEXT:}
+void test_no_side_effects(cudaError_t err, int arg) {
+  if (err)
+    printf("efef");
+  if (err)
+    fprintf(0, "efef");
+  if (err)
+    exit(1);
+  if (err != cudaSuccess) {
+    printf("error!\n");
+    exit(1);
+  }
+}
+
+// CHECK:void test_side_effects(cudaError_t err, int arg, int x, int y, int z) {
+// CHECK-NEXT:  if (err)
+// CHECK-NEXT:    printf("efef %i", malloc(0x100));
+// CHECK-NEXT:  if (err)
+// CHECK-NEXT:    malloc(0x100);
+// CHECK-NEXT:  if (err != cudaSuccess) {
+// CHECK-NEXT:    malloc(0x100);
+// CHECK-NEXT:    printf("error!\n");
+// CHECK-NEXT:    exit(1);
+// CHECK-NEXT:  }
+// CHECK-NEXT:  if (err)
+// CHECK-NEXT:    x = printf("fmt string");
+// CHECK-NEXT:  if (err)
+// CHECK-NEXT:    printf("fmt string %d", y + z);
+// CHECK-NEXT:}
+void test_side_effects(cudaError_t err, int arg, int x, int y, int z) {
+  if (err)
+    printf("efef %i", malloc(0x100));
+  if (err)
+    malloc(0x100);
+  if (err != cudaSuccess) {
+    malloc(0x100);
+    printf("error!\n");
+    exit(1);
+  }
+  if (err)
+    x = printf("fmt string");
+  if (err)
+    printf("fmt string %d", y + z);
 }
