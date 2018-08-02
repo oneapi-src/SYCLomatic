@@ -49,3 +49,52 @@ Replacement InsertAfterStmt::getReplacement(const SourceManager &SM) const {
   unsigned Offs  = Lexer::MeasureTokenLength(Loc, SM, Opts);
   return Replacement(SM, Loc.getLocWithOffset(Offs), 0, T);
 }
+
+bool ReplacementFilter::containsInterval(const IntervalSet &IS,
+                                         const Interval &I) const {
+  size_t Low = 0;
+  size_t High = IS.size();
+
+  while (High != Low) {
+    size_t Mid = Low + (High - Low) / 2;
+
+    if (IS[Mid].Offset <= I.Offset) {
+      if (IS[Mid].Offset + IS[Mid].Length >= I.Offset + I.Length)
+        return true;
+      Low = Mid + 1;
+    } else {
+      High = Mid;
+    }
+  }
+
+  return false;
+}
+
+bool ReplacementFilter::isDeletedReplacement(
+    const tooling::Replacement &R) const {
+  if (R.getReplacementText().empty())
+    return false;
+  auto Found = FileMap.find(R.getFilePath());
+  if (Found == FileMap.end())
+    return false;
+  return containsInterval(Found->second, {R.getOffset(), R.getLength()});
+}
+
+size_t ReplacementFilter::findFirstNotDeletedReplacement(size_t Start) const {
+  size_t Size = ReplSet.size();
+  for (size_t Index = Start; Index < Size; ++Index)
+    if (!isDeletedReplacement(ReplSet[Index]))
+      return Index;
+  return -1;
+}
+
+ReplacementFilter::ReplacementFilter(const std::vector<Replacement> &RS)
+    : ReplSet(RS) {
+  // TODO: Smaller Intervals should be discarded if they are completely
+  // covered by a larger Interval, so that no intervals overlap in the set.
+  for (const Replacement &R : ReplSet)
+    if (R.getReplacementText().empty())
+      FileMap[R.getFilePath()].push_back({R.getOffset(), R.getLength()});
+  for (auto &FMI : FileMap)
+    std::sort(FMI.second.begin(), FMI.second.end());
+}

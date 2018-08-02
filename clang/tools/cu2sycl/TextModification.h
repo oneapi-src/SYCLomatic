@@ -86,6 +86,54 @@ public:
   tooling::Replacement getReplacement(const SourceManager &SM) const override;
 };
 
+/// A class that filters out Replacements that modify text inside a deleted code
+/// block.
+class ReplacementFilter {
+  struct Interval {
+    size_t Offset;
+    size_t Length;
+    bool operator<(const Interval &Other) const {
+      return Offset < Other.Offset;
+    }
+  };
+
+  using IntervalSet = std::vector<Interval>;
+
+  const std::vector<tooling::Replacement> &ReplSet;
+  std::map<std::string, IntervalSet> FileMap;
+
+private:
+  bool containsInterval(const IntervalSet &IS, const Interval &I) const;
+  bool isDeletedReplacement(const tooling::Replacement &R) const;
+  size_t findFirstNotDeletedReplacement(size_t Start) const;
+
+  class iterator {
+    const ReplacementFilter &RF;
+    size_t Idx;
+
+  public:
+    iterator(const ReplacementFilter &RF, size_t Idx) : RF(RF), Idx(Idx) {}
+    const tooling::Replacement &operator*() const { return RF.ReplSet[Idx]; }
+    iterator &operator++() {
+      Idx = RF.findFirstNotDeletedReplacement(Idx + 1);
+      return *this;
+    }
+    bool operator==(const iterator &Other) const {
+      assert(&RF == &Other.RF && "Mismatching iterators");
+      return Idx == Other.Idx;
+    }
+    bool operator!=(const iterator &Other) const { return !operator==(Other); }
+  };
+
+public:
+  ReplacementFilter(const std::vector<tooling::Replacement> &RS);
+
+  iterator begin() {
+    return iterator(*this, findFirstNotDeletedReplacement(0));
+  }
+  iterator end() { return iterator(*this, -1); }
+};
+
 } // namespace cu2sycl
 } // namespace clang
 

@@ -71,15 +71,20 @@ public:
     ATM.matchAST(Context, TransformSet);
 
     const SourceManager &SM = Context.getSourceManager();
+    std::vector<Replacement> ReplSet;
     for (const auto &I : TransformSet) {
       Replacement R = I->getReplacement(SM);
-      // TODO: this check is invalid and in the wrong place.
-      if (R.getFilePath() !=
+      // TODO: This check filters out headers, which is wrong.
+      // TODO: It'd be better not to generate replacements for system headers
+      // instead of filtering them.
+      if (R.getFilePath() ==
           SM.getFileEntryForID(SM.getMainFileID())->getName())
-        continue;
+        ReplSet.emplace_back(std::move(R));
+    }
+
+    for (const Replacement &R : ReplacementFilter(ReplSet))
       if (auto Err = Repl[R.getFilePath()].add(R))
         llvm_unreachable("Adding the replacement: Error occured ");
-      }
   }
 
 private:
