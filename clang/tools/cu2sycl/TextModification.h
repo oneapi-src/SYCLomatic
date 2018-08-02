@@ -58,8 +58,17 @@ class ReplaceTypeInVarDecl : public TextModification {
   std::string T;
 
 public:
-  ReplaceTypeInVarDecl(const VarDecl *D, std::string &&T)
-    : D(D), T(T) {}
+  ReplaceTypeInVarDecl(const VarDecl *D, std::string &&T) : D(D), T(T) {}
+  tooling::Replacement getReplacement(const SourceManager &SM) const override;
+};
+
+// Replace return type in function declaration.
+class ReplaceReturnType : public TextModification {
+  const FunctionDecl *FD;
+  std::string T;
+
+public:
+  ReplaceReturnType(const FunctionDecl *FD, std::string &&T) : FD(FD), T(T) {}
   tooling::Replacement getReplacement(const SourceManager &SM) const override;
 };
 
@@ -80,8 +89,7 @@ class InsertAfterStmt : public TextModification {
   std::string T;
 
 public:
-  InsertAfterStmt(const Stmt *S, std::string &&T)
-      : S(S), T(T) {}
+  InsertAfterStmt(const Stmt *S, std::string &&T) : S(S), T(T) {}
 
   tooling::Replacement getReplacement(const SourceManager &SM) const override;
 };

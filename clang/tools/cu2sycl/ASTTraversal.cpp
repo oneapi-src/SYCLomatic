@@ -213,18 +213,61 @@ REGISTER_RULE(FunctionAttrsRule)
 
 // Rule for types replacements in var. declarations.
 void TypeInVarDeclRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(varDecl(hasType(cxxRecordDecl(hasName("cudaDeviceProp"))))
+  MF.addMatcher(varDecl(anyOf(hasType(cxxRecordDecl(hasName("cudaDeviceProp"))),
+                              hasType(enumDecl(hasName("cudaError"))),
+                              hasType(typedefDecl(hasName("cudaError_t")))))
                     .bind("TypeInVarDecl"),
                 this);
 }
 
 void TypeInVarDeclRule::run(const MatchFinder::MatchResult &Result) {
   const VarDecl *D = Result.Nodes.getNodeAs<VarDecl>("TypeInVarDecl");
-  emplaceTransformation(
-      new ReplaceTypeInVarDecl(D, "cu2sycl::sycl_device_info"));
+  const clang::Type *Type = D->getTypeSourceInfo()->getTypeLoc().getTypePtr();
+
+  if (dyn_cast<SubstTemplateTypeParmType>(Type)) {
+    return;
+  }
+
+  std::string TypeName =
+      Type->getCanonicalTypeInternal().getBaseTypeIdentifier()->getName().str();
+  auto Search = TypeNamesMap.find(TypeName);
+  if (Search == TypeNamesMap.end()) {
+    // TODO report translation error
+    return;
+  }
+  std::string Replacement = Search->second;
+  emplaceTransformation(new ReplaceTypeInVarDecl(D, std::move(Replacement)));
 }
 
 REGISTER_RULE(TypeInVarDeclRule)
+
+// Rule for return types replacements.
+void ReturnTypeRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      functionDecl(
+          returns(hasCanonicalType(
+              anyOf(recordType(hasDeclaration(
+                        cxxRecordDecl(hasName("cudaDeviceProp")))),
+                    enumType(hasDeclaration(enumDecl(hasName("cudaError"))))))))
+          .bind("functionDecl"),
+      this);
+}
+
+void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
+  const FunctionDecl *FD = Result.Nodes.getNodeAs<FunctionDecl>("functionDecl");
+  const clang::Type *Type = FD->getReturnType().getTypePtr();
+  std::string TypeName =
+      Type->getCanonicalTypeInternal().getBaseTypeIdentifier()->getName().str();
+  auto Search = TypeInVarDeclRule::TypeNamesMap.find(TypeName);
+  if (Search == TypeInVarDeclRule::TypeNamesMap.end()) {
+    // TODO report translation error
+    return;
+  }
+  std::string Replacement = Search->second;
+  emplaceTransformation(new ReplaceReturnType(FD, std::move(Replacement)));
+}
+
+REGISTER_RULE(ReturnTypeRule)
 
 // Rule for cudaDeviceProp variables.
 void DevicePropVarRule::registerMatcher(MatchFinder &MF) {

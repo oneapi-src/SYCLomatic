@@ -16,6 +16,14 @@
 using namespace clang;
 using namespace clang::cu2sycl;
 
+// Type names mapping.
+const std::map<std::string, std::string> TypeInVarDeclRule::TypeNamesMap{
+    {"cudaDeviceProp", "cu2sycl::sycl_device_info"},
+    {"cudaError_t", "int"},
+    {"cudaError", "int"},
+    // ...
+};
+
 // DeviceProp names mapping.
 const std::map<std::string, std::string> DevicePropVarRule::PropNamesMap{
     {"clockRate", "max_clock_frequency"},

@@ -134,6 +134,14 @@ class TypeInVarDeclRule : public NamedTranslationRule<TypeInVarDeclRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  static const std::map<std::string, std::string> TypeNamesMap;
+};
+
+/// Translation rule for return types replacements.
+class ReturnTypeRule : public NamedTranslationRule<ReturnTypeRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
 /// Translation rule for removing of error hanlding if-stmt

@@ -12,5 +12,38 @@ volatile cudaDeviceProp deviceProp2;
 
 // CHECK:  void foo(cu2sycl::sycl_device_info p) {
 void foo(cudaDeviceProp p) {
-    return;
+  return;
+}
+
+// CHECK: int e;
+cudaError e;
+
+// CHECK: int ee;
+cudaError_t ee;
+
+// CHECK: int foo_0(int);
+cudaError_t foo_0(cudaError_t);
+
+// CHECK: int foo_1(int);
+cudaError foo_1(cudaError_t);
+
+// CHECK: int apicall(int i) {
+cudaError_t apicall(int i) {
+  return cudaSuccess;
+};
+
+// CHECK: int err = apicall(0);
+cudaError_t err = apicall(0);
+
+template <typename T>
+// CHECK: void check(T result, char const *const func) {
+void check(T result, char const *const func) {
+}
+
+#define checkCudaErrors(val) check((val), #val)
+
+int main(int argc, char **argv) {
+
+  checkCudaErrors(apicall(0));
+  return 0;
 }
