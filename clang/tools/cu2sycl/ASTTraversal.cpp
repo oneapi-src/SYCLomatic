@@ -137,17 +137,24 @@ static bool isErrorHandlingSafeToRemove(const Stmt *S) {
         "printf", "puts", "exit", "cudaDeviceReset", "fprintf"};
     if (SafeCallList.find(Name) == SafeCallList.end())
       return false;
+#if 0
+    //TODO: enable argument check
     for (const auto *S : CE->arguments()) {
       if (!isErrorHandlingSafeToRemove(S->IgnoreImplicit()))
         return false;
     }
+#endif
     return true;
-  } else if (isa<DeclRefExpr>(S))
+  }
+#if 0
+  //TODO: enable argument check
+  else if (isa <DeclRefExpr>(S))
     return true;
   else if (isa<IntegerLiteral>(S))
     return true;
   else if (isa<StringLiteral>(S))
     return true;
+#endif
 
   return false;
 }

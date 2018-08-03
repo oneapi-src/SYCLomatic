@@ -300,8 +300,7 @@ void test_no_side_effects(cudaError_t err, int arg) {
 }
 
 // CHECK:void test_side_effects(cudaError_t err, int arg, int x, int y, int z) {
-// CHECK-NEXT:  if (err)
-// CHECK-NEXT:    printf("efef %i", malloc(0x100));
+// CHECK-NEXT:  ;
 // CHECK-NEXT:  if (err)
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:  if (err != cudaSuccess) {
@@ -311,8 +310,7 @@ void test_no_side_effects(cudaError_t err, int arg) {
 // CHECK-NEXT:  }
 // CHECK-NEXT:  if (err)
 // CHECK-NEXT:    x = printf("fmt string");
-// CHECK-NEXT:  if (err)
-// CHECK-NEXT:    printf("fmt string %d", y + z);
+// CHECK-NEXT:  ;
 // CHECK-NEXT:}
 void test_side_effects(cudaError_t err, int arg, int x, int y, int z) {
   if (err)
