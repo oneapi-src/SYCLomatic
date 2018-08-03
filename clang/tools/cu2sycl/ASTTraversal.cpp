@@ -262,6 +262,22 @@ void EnumConstantRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(EnumConstantRule)
 
+void ErrorConstantsRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasName("cudaError"))))))
+          .bind("EnumConstant"),
+      this);
+}
+
+void ErrorConstantsRule::run(const MatchFinder::MatchResult &Result) {
+  const DeclRefExpr *DE = Result.Nodes.getNodeAs<DeclRefExpr>("EnumConstant");
+  assert(DE && "Unknown result");
+  auto *EC = cast<EnumConstantDecl>(DE->getDecl());
+  emplaceTransformation(new ReplaceStmt(DE, EC->getInitVal().toString(10)));
+}
+
+REGISTER_RULE(ErrorConstantsRule)
+
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
   for (auto &I : Storage) {
     I->registerMatcher(Matchers);

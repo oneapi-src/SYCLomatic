@@ -1,5 +1,5 @@
 // RUN: cp %s %t
-// RUN: cu2sycl %t -- -x cuda --cuda-host-only
+// RUN: cu2sycl %t -passes "ErrorHandlingIfStmtRule" -- -x cuda --cuda-host-only
 // RUN: sed -e 's,//.*$,,' %t | FileCheck --match-full-lines %s
 
 int printf(const char *s, ...);
