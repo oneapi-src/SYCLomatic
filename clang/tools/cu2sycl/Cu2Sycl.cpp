@@ -87,10 +87,9 @@ public:
     // translation rules before applying them.
     ATM.matchAST(Context, TransformSet);
 
-    const SourceManager &SM = Context.getSourceManager();
     std::vector<Replacement> ReplSet;
     for (const auto &I : TransformSet) {
-      Replacement R = I->getReplacement(SM);
+      Replacement R = I->getReplacement(Context);
       // TODO: This check filters out headers, which is wrong.
       // TODO: It'd be better not to generate replacements for system headers
       // instead of filtering them.

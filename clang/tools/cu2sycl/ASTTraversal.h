@@ -185,6 +185,31 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+// Translation rule for memory management routine.
+// Current implementation is intentionally simplistic. The following things need
+// a more detailed design:
+//   - interplay with error handling (possible solution is that we keep function
+//     signature as close to original as possible, so return error codes when
+//     original functions return them);
+//   - SYCL memory buffers are typed. Using a "char" type is definitely a hack.
+//     Using better type information requires some kind of global analysis and
+//     heuristics, as well as a mechnism for user hint (like "treat all buffers
+//     as float-typed")'
+//   - interplay with streams need to be designed. I.e. cudaMemcpyAsync() need
+//     to be defined;
+//   - transformation rules are currently unordered, which create potential
+//     ambiguity, so need to understand how to handle function call arguments,
+//     which are modified by other rules.
+//
+// TODO:
+//   - trigger include of runtime library.
+class MemoryTranslationRule : public NamedTranslationRule<MemoryTranslationRule> {
+  const Expr* stripConverts(const Expr *E) const;
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 /// Pass manager for ASTTraversal instances.
 class ASTTraversalManager {
   std::vector<std::unique_ptr<ASTTraversal>> Storage;

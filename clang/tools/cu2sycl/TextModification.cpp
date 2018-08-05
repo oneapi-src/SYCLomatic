@@ -17,11 +17,30 @@ using namespace clang;
 using namespace clang::cu2sycl;
 using namespace clang::tooling;
 
-Replacement ReplaceStmt::getReplacement(const SourceManager &SM) const {
-  return Replacement(SM, TheStmt, ReplacementString);
+// Get textual representation of the Expr.
+// This helper function is tricky. Ideally, we should use SourceLocation
+// information in the expression to be able to access the actual character
+// used for spelling of this expression in the source code (either before or
+// after preprocessor). But the quality of the this information is bad.
+// This should be addressed in the clang sources in the long run, but we need
+// a working solution right now, so we use another way of getting the spelling.
+// Specific example, when SourceLocation information is broken
+//   - DeclRefExpr has valid information only about beginning of the expression,
+//     pointers to the end of the expression point to the beginning.
+std::string TextModification::getExprSpelling(const Expr *E, const ASTContext &Context) const {
+  std::string StrBuffer;
+  llvm::raw_string_ostream TmpStream(StrBuffer);
+  auto LangOpts = Context.getLangOpts();
+  E->printPretty(TmpStream, nullptr, PrintingPolicy(LangOpts), 0, &Context);
+  return TmpStream.str();
 }
 
-Replacement RemoveAttr::getReplacement(const SourceManager &SM) const {
+Replacement ReplaceStmt::getReplacement(const ASTContext &Context) const {
+  return Replacement(Context.getSourceManager(), TheStmt, ReplacementString);
+}
+
+Replacement RemoveAttr::getReplacement(const ASTContext &Context) const {
+  auto& SM = Context.getSourceManager();
   SourceRange AttrRange = TheAttr->getRange();
   SourceLocation ARB = AttrRange.getBegin();
   SourceLocation ARE = AttrRange.getEnd();
@@ -32,25 +51,26 @@ Replacement RemoveAttr::getReplacement(const SourceManager &SM) const {
 }
 
 Replacement
-ReplaceTypeInVarDecl::getReplacement(const SourceManager &SM) const {
+ReplaceTypeInVarDecl::getReplacement(const ASTContext &Context) const {
   TypeLoc TL = D->getTypeSourceInfo()->getTypeLoc();
-  return Replacement(SM, &TL, T);
+  return Replacement(Context.getSourceManager(), &TL, T);
 }
 
-Replacement ReplaceReturnType::getReplacement(const SourceManager &SM) const {
+Replacement ReplaceReturnType::getReplacement(const ASTContext &Context) const {
   SourceRange SR = FD->getReturnTypeSourceRange();
-  return Replacement(SM, CharSourceRange(SR, true), T);
+  return Replacement(Context.getSourceManager(), CharSourceRange(SR, true), T);
 }
 
 Replacement
-RenameFieldInMemberExpr::getReplacement(const SourceManager &SM) const {
+RenameFieldInMemberExpr::getReplacement(const ASTContext &Context) const {
   SourceLocation SL = ME->getLocEnd();
-  return Replacement(SM, CharSourceRange(SourceRange(SL, SL), true), T);
+  return Replacement(Context.getSourceManager(), CharSourceRange(SourceRange(SL, SL), true), T);
 }
 
-Replacement InsertAfterStmt::getReplacement(const SourceManager &SM) const {
+Replacement InsertAfterStmt::getReplacement(const ASTContext &Context) const {
   SourceLocation Loc = S->getSourceRange().getEnd();
-  clang::LangOptions Opts;
+  auto &SM = Context.getSourceManager();
+  auto &Opts = Context.getLangOpts();
   unsigned Offs = Lexer::MeasureTokenLength(Loc, SM, Opts);
   return Replacement(SM, Loc.getLocWithOffset(Offs), 0, T);
 }
@@ -73,6 +93,18 @@ bool ReplacementFilter::containsInterval(const IntervalSet &IS,
   }
 
   return false;
+}
+
+Replacement ReplaceCallExpr::getReplacement(const ASTContext &Context) const{
+  std::string NewString = Name + "(";
+  for (auto A = Args.cbegin(); A != Args.cend(); A++) {
+    NewString += getExprSpelling(*A, Context);
+    if (A+1 != Args.cend()) {
+      NewString += ", ";
+    }
+  }
+  NewString += ")";
+  return Replacement(Context.getSourceManager(), C, NewString);
 }
 
 bool ReplacementFilter::isDeletedReplacement(
@@ -104,11 +136,11 @@ ReplacementFilter::ReplacementFilter(const std::vector<Replacement> &RS)
     std::sort(FMI.second.begin(), FMI.second.end());
 }
 
-Replacement InsertBeforeStmt::getReplacement(const SourceManager &SM) const {
-  return Replacement(SM, S->getSourceRange().getBegin(), 0, T);
+Replacement InsertBeforeStmt::getReplacement(const ASTContext &Context) const {
+  return Replacement(Context.getSourceManager(), S->getSourceRange().getBegin(), 0, T);
 }
 
-Replacement RemoveArg::getReplacement(const SourceManager &SM) const {
+Replacement RemoveArg::getReplacement(const ASTContext &Context) const {
   SourceRange SR = CE->getArg(N)->getSourceRange();
   SourceLocation Begin = SR.getBegin();
   SourceLocation End;
@@ -119,5 +151,5 @@ Replacement RemoveArg::getReplacement(const SourceManager &SM) const {
   else {
       End =  CE->getArg(N+1)->getSourceRange().getBegin().getLocWithOffset(-1);
   }
-  return Replacement(SM, CharSourceRange(SourceRange(Begin, End), true), "");
+  return Replacement(Context.getSourceManager(), CharSourceRange(SourceRange(Begin, End), true), "");
 }

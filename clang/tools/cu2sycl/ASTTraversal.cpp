@@ -396,6 +396,72 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(FunctionCallRule)
 
+// Memory translation rules live here.
+void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      callExpr(callee(functionDecl(hasAnyName("cudaMalloc", "cudaMemcpy", "cudaFree")))).bind("call"),
+      this);
+}
+
+void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
+  const CallExpr *C = Result.Nodes.getNodeAs<CallExpr>("call");
+  std::string Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
+  if (Name == "cudaMalloc") {
+    // Input:
+    // float *d_A = NULL;
+    // cudaMalloc((void **)&d_A, size);
+    //
+    // Desired output:
+    // float *d_A = NULL;
+    // sycl_malloc<float>((float **)&d_A, numElements);
+    //
+    // Current output:
+    // float *d_A = NULL;
+    // sycl_malloc<char>((void **)&d_A, size);
+    //
+    //
+    // NOTE: "ErroCodeType sycl_malloc<T>(T**, size_t)" signature is used instead of
+    // "T* sycl_malloc<T>(size_t)" to make it easier to hook it up with error handling.
+    // This may change.
+
+    std::string Name = "cu2sycl::sycl_malloc<char>";
+    std::vector<const Expr*> Args {C->getArg(0), C->getArg(1)};
+    emplaceTransformation(new ReplaceCallExpr(C, std::move(Name), std::move(Args)));
+  }
+  else if (Name == "cudaMemcpy") {
+    // Input:
+    // cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
+    // cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
+    // cudaMemcpy(x_A, y_A, size, someDynamicCudaMemcpyKindValue);
+    //
+    // Desired output:
+    // sycl_memcpy<float>(d_A, h_A, numElements);
+    // sycl_memcpy_back<float>(h_A, d_A, numElements);
+    // sycl_memcpy<float>(d_A, h_A, numElements, someDynamicCudaMemcpyKindValue);
+    //
+    // Current output:
+    // sycl_memcpy<char>(d_A, h_A, size, cudaMemcpyHostToDevice);
+    // sycl_memcpy<char>(d_A, h_A, size, cudaMemcpyDeviceToHost);
+    // sycl_memcpy<char>(d_A, h_A, size, someDynamicCudaMemcpyKindValue);
+
+    std::string Name = "cu2sycl::sycl_memcpy<char>";
+    std::vector<const Expr*> Args {C->getArg(0), C->getArg(1), C->getArg(2), C->getArg(3)};
+    emplaceTransformation(new ReplaceCallExpr(C, std::move(Name), std::move(Args)));
+  }
+  else if (Name == "cudaFree") {
+    // Input:
+    // cudaFree(d_A);
+    //
+    // Output:
+    // sycl_free<char>(d_A);
+    std::string Name = "cu2sycl::sycl_free<char>";
+    std::vector<const Expr*> Args {C->getArg(0)};
+    emplaceTransformation(new ReplaceCallExpr(C, std::move(Name), std::move(Args)));
+  }
+}
+
+REGISTER_RULE(MemoryTranslationRule)
+
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
   for (auto &I : Storage) {
     I->registerMatcher(Matchers);

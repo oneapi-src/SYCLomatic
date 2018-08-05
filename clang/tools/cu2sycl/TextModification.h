@@ -26,9 +26,12 @@ class TextModification {
 public:
   virtual ~TextModification() {}
 
+  // Get textual representation of the Expr.
+  std::string getExprSpelling(const Expr *E, const ASTContext &Context) const;
+
   /// Generate actual Replacement from this TextModification object.
   virtual tooling::Replacement
-  getReplacement(const SourceManager &SM) const = 0;
+  getReplacement(const ASTContext &Context) const = 0;
 };
 
 /// Replace a statement (w/o semicolon) with a specified string.
@@ -40,7 +43,7 @@ public:
   ReplaceStmt(const Stmt *E, std::string &&S)
       : TheStmt(E), ReplacementString(S) {}
 
-  tooling::Replacement getReplacement(const SourceManager &SM) const override;
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
 
 /// Remove an attribute from a declaration.
@@ -49,7 +52,7 @@ class RemoveAttr : public TextModification {
 
 public:
   RemoveAttr(const Attr *A) : TheAttr(A) {}
-  tooling::Replacement getReplacement(const SourceManager &SM) const override;
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
 
 // Replace type in var. declaration.
@@ -58,8 +61,9 @@ class ReplaceTypeInVarDecl : public TextModification {
   std::string T;
 
 public:
-  ReplaceTypeInVarDecl(const VarDecl *D, std::string &&T) : D(D), T(T) {}
-  tooling::Replacement getReplacement(const SourceManager &SM) const override;
+  ReplaceTypeInVarDecl(const VarDecl *D, std::string &&T)
+    : D(D), T(T) {}
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
 
 // Replace return type in function declaration.
@@ -69,7 +73,7 @@ class ReplaceReturnType : public TextModification {
 
 public:
   ReplaceReturnType(const FunctionDecl *FD, std::string &&T) : FD(FD), T(T) {}
-  tooling::Replacement getReplacement(const SourceManager &SM) const override;
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
 
 // Rename field in expression.
@@ -81,7 +85,7 @@ public:
   RenameFieldInMemberExpr(const MemberExpr *ME, std::string &&T)
       : ME(ME), T(T) {}
 
-  tooling::Replacement getReplacement(const SourceManager &SM) const override;
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
 
 class InsertAfterStmt : public TextModification {
@@ -91,7 +95,27 @@ class InsertAfterStmt : public TextModification {
 public:
   InsertAfterStmt(const Stmt *S, std::string &&T) : S(S), T(T) {}
 
-  tooling::Replacement getReplacement(const SourceManager &SM) const override;
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+};
+
+/// Replace CallExpr with another call.
+// TODO: return values are not handled.
+// TODO: we probably need more genric class, which would take the list of strings and expressions
+// and compose them to a single srting, also doing look up for already modified expressions and use
+// their new spelling when needed.
+class ReplaceCallExpr : public TextModification {
+  // Call to replace.
+  const CallExpr* C;
+  // New function name.
+  std::string Name;
+  // New function params.
+  std::vector<const Expr*> Args;
+
+public:
+  ReplaceCallExpr(const CallExpr* Call, std::string &&NewName, std::vector<const Expr*> &&NewArgs)
+      : C(Call), Name(NewName), Args(NewArgs) {}
+
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
 
 /// A class that filters out Replacements that modify text inside a deleted code
@@ -150,7 +174,7 @@ public:
   InsertBeforeStmt(const Stmt *S, std::string &&T)
       : S(S), T(T) {}
 
-  tooling::Replacement getReplacement(const SourceManager &SM) const override;
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
 
 class RemoveArg : public TextModification {
@@ -161,7 +185,7 @@ public:
   RemoveArg(const CallExpr *CE, const unsigned N)
       : CE(CE), N(N) {}
 
-  tooling::Replacement getReplacement(const SourceManager &SM) const override;
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
 
 } // namespace cu2sycl
