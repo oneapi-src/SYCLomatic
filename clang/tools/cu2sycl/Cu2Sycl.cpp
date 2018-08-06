@@ -26,18 +26,15 @@ using namespace clang::ast_matchers;
 using namespace clang::cu2sycl;
 using namespace clang::tooling;
 
-llvm::cl::OptionCategory OptCat("SYCL Compatibility Tool");
-llvm::cl::extrahelp
-    CommonHelp(clang::tooling::CommonOptionsParser::HelpMessage);
-llvm::cl::opt<std::string> Passes(
-    "passes", llvm::cl::desc("Comma separated list of transformation passes"),
-    llvm::cl::value_desc("\"FunctionAttrsRule,...\""), llvm::cl::cat(OptCat));
-
 using ReplTy = std::map<std::string, Replacements>;
 
 using namespace llvm::cl;
 
-static OptionCategory Cu2SyclCat("CUDA to SYCL translator");
+static OptionCategory Cu2SyclCat("SYCL Compatibility Tool");
+static extrahelp CommonHelp(clang::tooling::CommonOptionsParser::HelpMessage);
+static opt<std::string>
+    Passes("passes", desc("Comma separated list of transformation passes"),
+           value_desc("\"FunctionAttrsRule,...\""), cat(Cu2SyclCat));
 static opt<std::string>
     InRoot("in-root",
            desc("Path to root of project to be translated"
@@ -123,7 +120,7 @@ public:
 };
 
 int main(int argc, const char **argv) {
-  CommonOptionsParser OptParser(argc, argv, OptCat);
+  CommonOptionsParser OptParser(argc, argv, Cu2SyclCat);
 
   if (!makeCanonicalOrSetDefaults(InRoot, OutRoot,
                                   OptParser.getSourcePathList()))

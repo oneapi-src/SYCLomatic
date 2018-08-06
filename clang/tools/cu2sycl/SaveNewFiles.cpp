@@ -32,7 +32,6 @@
 using namespace llvm;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
-namespace tooling = clang::tooling;
 
 static void rewriteDir(SmallString<256> &FilePath, const StringRef InRoot,
                        const StringRef OutRoot) {
@@ -58,7 +57,7 @@ static void rewriteFileName(SmallString<256> &FilePath) {
 ///
 /// \returns 0 upon success. Non-zero upon failure.
 /// Prerequisite: InRoot and OutRoot are both absolute paths
-int saveNewFiles(tooling::RefactoringTool &Tool, StringRef InRoot,
+int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
                  StringRef OutRoot) {
   assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
   using namespace clang;
