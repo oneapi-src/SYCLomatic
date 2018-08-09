@@ -179,7 +179,7 @@ public:
 };
 
 /// Translation rule for function calls.
-class FunctionCallRule : public NamedTranslationRule<ErrorConstantsRule> {
+class FunctionCallRule : public NamedTranslationRule<FunctionCallRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;

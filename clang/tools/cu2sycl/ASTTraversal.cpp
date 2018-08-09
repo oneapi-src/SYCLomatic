@@ -315,12 +315,12 @@ REGISTER_RULE(EnumConstantRule)
 void ErrorConstantsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasName("cudaError"))))))
-          .bind("EnumConstant"),
+          .bind("ErrorConstants"),
       this);
 }
 
 void ErrorConstantsRule::run(const MatchFinder::MatchResult &Result) {
-  const DeclRefExpr *DE = Result.Nodes.getNodeAs<DeclRefExpr>("EnumConstant");
+  const DeclRefExpr *DE = Result.Nodes.getNodeAs<DeclRefExpr>("ErrorConstants");
   assert(DE && "Unknown result");
   auto *EC = cast<EnumConstantDecl>(DE->getDecl());
   emplaceTransformation(new ReplaceStmt(DE, EC->getInitVal().toString(10)));
