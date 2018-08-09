@@ -17,7 +17,6 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 
-#include <algorithm>
 #include <cassert>
 
 using namespace llvm;
@@ -46,7 +45,7 @@ static bool getDefaultInRoot(std::string &InRootPar,
     return false;
   }
 
-  SmallString<256> InRoot = StringRef{SourceFiles.front()};
+  SmallString<256> InRoot = StringRef(SourceFiles.front());
   // Remove the last component from path.
   path::remove_filename(InRoot);
   if (!makeCanonical(InRoot))
@@ -77,11 +76,6 @@ bool makeCanonicalOrSetDefaults(string &InRoot, string &OutRoot,
   }
 
   return true;
-}
-
-bool isChildPath(const std::string &Root, const std::string &Child) {
-  auto Diff = mismatch(path::begin(Root), path::end(Root), path::begin(Child));
-  return Diff.first == path::end(Root);
 }
 
 // Make sure all files have an extension and are under InRoot.

@@ -18,9 +18,17 @@
 
 #include "ASTTraversal.h"
 #include "SaveNewFiles.h"
+#include "Utility.h"
 #include "ValidateArguments.h"
 #include "Utility.h"
 #include <string>
+
+#include "../../../clang/lib/Driver/ToolChains/Cuda.h"
+#include "clang/Driver/Driver.h"
+#include "clang/Driver/Options.h"
+#include <algorithm>
+#include <cstring>
+#include <vector>
 
 using namespace clang;
 using namespace clang::ast_matchers;
@@ -48,10 +56,12 @@ static opt<std::string>
                  " (directory will be created if it does not exist)"),
             value_desc("/path/to/output/root/"), cat(Cu2SyclCat),
             llvm::cl::Optional);
+std::string CudaPath; // Global value for the CUDA install path.
 
 class Cu2SyclConsumer : public ASTConsumer {
 public:
-  Cu2SyclConsumer(ReplTy &R) : Repl(R) {
+  Cu2SyclConsumer(ReplTy &R, const CompilerInstance &CI)
+      : Repl(R), PP(CI.getPreprocessor()) {
     if (Passes != "") {
       std::vector<std::string> Names;
       // Separate string into list by comma
@@ -104,24 +114,70 @@ public:
         llvm_unreachable("Adding the replacement: Error occured ");
   }
 
+  void Initialize(ASTContext &Context) override {
+    PP.addPPCallbacks(llvm::make_unique<IncludesCallbacks>(
+        TransformSet, Context.getSourceManager()));
+  }
+
 private:
   ASTTraversalManager ATM;
   TransformSetTy TransformSet;
   ReplTy &Repl;
+  Preprocessor &PP;
 };
 
-class Cu2SyclAction {
+class Cu2SyclAction : public ASTFrontendAction {
   ReplTy &Repl;
 
 public:
   Cu2SyclAction(ReplTy &R) : Repl(R) {}
 
-  std::unique_ptr<ASTConsumer> newASTConsumer() {
-    return llvm::make_unique<Cu2SyclConsumer>(Repl);
+  std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
+                                                 StringRef InFile) override {
+    return llvm::make_unique<Cu2SyclConsumer>(Repl, CI);
   }
+
+  bool usesPreprocessorOnly() const override { return false; }
 };
 
+// Object of this class will be handed to RefactoringTool::run and will create
+// the Action.
+class Cu2SyclActionFactory : public FrontendActionFactory {
+  ReplTy &Repl;
+
+public:
+  Cu2SyclActionFactory(ReplTy &R) : Repl(R) {}
+  FrontendAction *create() override { return new Cu2SyclAction{Repl}; }
+};
+
+std::string getCudaInstallPath(int argc, const char **argv) {
+  std::vector<const char *> Argv;
+  Argv.reserve(argc);
+  // do not copy "--" so the driver sees a possible --cuda-path option
+  std::copy_if(argv, argv + argc, back_inserter(Argv),
+               [](const char *s) { return std::strcmp(s, "--"); });
+
+  // Output parameters to indicate errors in parsing. Not checked here,
+  // OptParser will handle errors.
+  unsigned MissingArgIndex, MissingArgCount;
+  std::unique_ptr<llvm::opt::OptTable> Opts = driver::createDriverOptTable();
+  llvm::opt::InputArgList ParsedArgs =
+      Opts->ParseArgs(Argv, MissingArgIndex, MissingArgCount);
+
+  // Create minimalist CudaInstallationDetector and return the InstallPath.
+  DiagnosticsEngine E(nullptr, nullptr, nullptr, false);
+  driver::Driver Driver("", llvm::sys::getDefaultTargetTriple(), E, nullptr);
+  driver::CudaInstallationDetector CudaDetector(
+      Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
+
+  std::string Path = CudaDetector.getInstallPath();
+  makeCanonical(Path);
+  return Path;
+}
+
 int main(int argc, const char **argv) {
+  // CommonOptionsParser will adjust argc to the index of "--"
+  CudaPath = getCudaInstallPath(argc, argv);
   CommonOptionsParser OptParser(argc, argv, Cu2SyclCat);
 
   if (!makeCanonicalOrSetDefaults(InRoot, OutRoot,
@@ -133,8 +189,9 @@ int main(int argc, const char **argv) {
 
   RefactoringTool Tool(OptParser.getCompilations(),
                        OptParser.getSourcePathList());
-  Cu2SyclAction Action(Tool.getReplacements());
-  if (int RunResult = Tool.run(newFrontendActionFactory(&Action).get())) {
+
+  Cu2SyclActionFactory Factory(Tool.getReplacements());
+  if (int RunResult = Tool.run(&Factory)) {
     return RunResult;
   }
   // if run was successful

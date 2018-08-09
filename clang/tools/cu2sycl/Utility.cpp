@@ -32,7 +32,7 @@ bool makeCanonical(SmallVectorImpl<char> &Path) {
 }
 
 bool makeCanonical(string &PathPar) {
-  SmallString<256> Path = StringRef{PathPar};
+  SmallString<256> Path = StringRef(PathPar);
   if (!makeCanonical(Path))
     return false;
   PathPar.assign(begin(Path), end(Path));
@@ -44,3 +44,10 @@ bool isCanonical(const string &Path) {
                           [](StringRef e) { return e != "." && e != ".."; });
   return HasNoDots && path::is_absolute(Path);
 }
+
+bool isChildPath(const std::string &Root, const std::string &Child) {
+  auto Diff = mismatch(path::begin(Root), path::end(Root), path::begin(Child));
+  // Root is not considered prefix of Child if they are equal.
+  return Diff.first == path::end(Root) && Diff.second != path::end(Child);
+}
+

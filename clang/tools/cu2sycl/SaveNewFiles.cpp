@@ -75,7 +75,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   bool AppliedAll = true;
   for (const auto &Entry : groupReplacementsByFile(
            Rewrite.getSourceMgr().getFileManager(), Tool.getReplacements())) {
-    OutPath = StringRef{Entry.first};
+    OutPath = StringRef(Entry.first);
     // This operation won't fail; it already succeeded once during argument
     // validation.
     makeCanonical(OutPath);

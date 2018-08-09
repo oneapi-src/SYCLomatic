@@ -11,12 +11,42 @@
 
 #include "ASTTraversal.h"
 
+#include "Utility.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "llvm/ADT/StringSet.h"
 
 using namespace clang;
 using namespace clang::ast_matchers;
 using namespace clang::cu2sycl;
+
+extern std::string CudaPath;
+
+void IncludesCallbacks::InclusionDirective(
+    SourceLocation HashLoc, const Token &IncludeTok, StringRef FileName,
+    bool IsAngled, CharSourceRange FilenameRange, const FileEntry *File,
+    StringRef SearchPath, StringRef RelativePath, const Module *Imported,
+    SrcMgr::CharacteristicKind FileType) {
+
+  std::string IncludePath = SearchPath;
+  makeCanonical(IncludePath);
+
+  if (!isChildPath(CudaPath, IncludePath))
+    return;
+
+  // Multiple CUDA headers in an including file will be replaced with one
+  // include of the SYCL header.
+  std::string IncludingFile = SM.getFilename(HashLoc);
+  if (SeenFiles.find(IncludingFile) == end(SeenFiles)) {
+    TransformSet.emplace_back(new ReplaceInclude(
+        FilenameRange, "<CL/sycl.hpp>\n#include <cu2sycl_device.hpp>"));
+    SeenFiles.insert(IncludingFile);
+  } else {
+    TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                        /*IsTokenRange=*/false),
+        ""));
+  }
+}
 
 void IterationSpaceBuiltinRule::registerMatcher(MatchFinder &MF) {
   // TODO: check that threadIdx is not a local variable.
@@ -365,9 +395,9 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaDeviceGetAttribute") {
     std::string ResultVarName = DereferenceArg(CE->getArg(0));
     std::string AttributeName = ((const clang::DeclRefExpr *)CE->getArg(1))
-                            ->getNameInfo()
-                            .getName()
-                            .getAsString();
+                                    ->getNameInfo()
+                                    .getName()
+                                    .getAsString();
     auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
     if (Search == EnumConstantRule::EnumNamesMap.end()) {
       // TODO report translation error

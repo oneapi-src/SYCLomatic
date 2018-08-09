@@ -15,9 +15,26 @@
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 
 #include "TextModification.h"
+#include <unordered_set>
 
 namespace clang {
 namespace cu2sycl {
+
+class IncludesCallbacks : public PPCallbacks {
+  TransformSetTy &TransformSet;
+  SourceManager &SM;
+  std::unordered_set<std::string> SeenFiles;
+
+public:
+  IncludesCallbacks(TransformSetTy &TransformSet, SourceManager &SM)
+      : TransformSet(TransformSet), SM(SM) {}
+  void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
+                          StringRef FileName, bool IsAngled,
+                          CharSourceRange FilenameRange, const FileEntry *File,
+                          StringRef SearchPath, StringRef RelativePath,
+                          const Module *Imported,
+                          SrcMgr::CharacteristicKind FileType) override;
+};
 
 class ASTTraversal;
 using ASTTraversalConstructor = std::function<ASTTraversal *()>;
@@ -42,7 +59,8 @@ public:
     return nullptr;
   }
 
-  static std::unordered_map<const char *, ASTTraversalConstructor> &getConstructorTable() {
+  static std::unordered_map<const char *, ASTTraversalConstructor> &
+  getConstructorTable() {
     static std::unordered_map<const char *, ASTTraversalConstructor> FactoryMap;
     return FactoryMap;
   }
@@ -91,8 +109,8 @@ protected:
     if (isa<clang::UnaryOperator>(E)) {
       const clang::UnaryOperator *arg = (const clang::UnaryOperator *)E;
       if (arg->getOpcode() == UO_AddrOf) {
-        clang::DeclRefExpr *decl = ( clang::DeclRefExpr *)arg->getSubExpr();
-        return  decl->getNameInfo().getName().getAsString();
+        clang::DeclRefExpr *decl = (clang::DeclRefExpr *)arg->getSubExpr();
+        return decl->getNameInfo().getName().getAsString();
       }
     }
     /// TODO implement dereference for the general case, not only for foo(&a).
@@ -223,7 +241,7 @@ public:
     assert(ASTTraversalMetaInfo::getConstructorTable().find(ID) !=
            ASTTraversalMetaInfo::getConstructorTable().end());
     Storage.emplace_back(std::unique_ptr<ASTTraversal>(
-                            ASTTraversalMetaInfo::getConstructorTable()[ID]()));
+        ASTTraversalMetaInfo::getConstructorTable()[ID]()));
   }
 
   void emplaceAllRules() {

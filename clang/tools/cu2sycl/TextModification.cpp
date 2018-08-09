@@ -75,6 +75,10 @@ Replacement InsertAfterStmt::getReplacement(const ASTContext &Context) const {
   return Replacement(SM, Loc.getLocWithOffset(Offs), 0, T);
 }
 
+Replacement ReplaceInclude::getReplacement(const SourceManager &SM) const {
+    return Replacement(SM, Range, T);
+}
+
 bool ReplacementFilter::containsInterval(const IntervalSet &IS,
                                          const Interval &I) const {
   size_t Low = 0;
@@ -146,10 +150,9 @@ Replacement RemoveArg::getReplacement(const ASTContext &Context) const {
   SourceLocation End;
   bool IsLast = (N == (CE->getNumArgs() - 1));
   if (IsLast) {
-      End = SR.getEnd();
-  }
-  else {
-      End =  CE->getArg(N+1)->getSourceRange().getBegin().getLocWithOffset(-1);
+    End = SR.getEnd();
+  } else {
+    End = CE->getArg(N + 1)->getSourceRange().getBegin().getLocWithOffset(-1);
   }
   return Replacement(Context.getSourceManager(), CharSourceRange(SourceRange(Begin, End), true), "");
 }

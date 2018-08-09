@@ -118,6 +118,15 @@ public:
   tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
 
+class ReplaceInclude : public TextModification {
+  CharSourceRange Range;
+  std::string T;
+
+public:
+  ReplaceInclude(CharSourceRange Range, std::string &&T) : Range(Range), T(T) {}
+  tooling::Replacement getReplacement(const SourceManager &SM) const override;
+};
+
 /// A class that filters out Replacements that modify text inside a deleted code
 /// block.
 class ReplacementFilter {
@@ -171,8 +180,7 @@ class InsertBeforeStmt : public TextModification {
   std::string T;
 
 public:
-  InsertBeforeStmt(const Stmt *S, std::string &&T)
-      : S(S), T(T) {}
+  InsertBeforeStmt(const Stmt *S, std::string &&T) : S(S), T(T) {}
 
   tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
@@ -182,8 +190,7 @@ class RemoveArg : public TextModification {
   const unsigned N;
 
 public:
-  RemoveArg(const CallExpr *CE, const unsigned N)
-      : CE(CE), N(N) {}
+  RemoveArg(const CallExpr *CE, const unsigned N) : CE(CE), N(N) {}
 
   tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
