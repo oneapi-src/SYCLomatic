@@ -19,6 +19,7 @@
 #include "ASTTraversal.h"
 #include "SaveNewFiles.h"
 #include "ValidateArguments.h"
+#include "Utility.h"
 #include <string>
 
 using namespace clang;
@@ -93,7 +94,9 @@ public:
       // TODO: This check filters out headers, which is wrong.
       // TODO: It'd be better not to generate replacements for system headers
       // instead of filtering them.
-      if (isChildPath(InRoot, R.getFilePath()))
+      std::string RPath = R.getFilePath();
+      makeCanonical(RPath);
+      if (isChildPath(InRoot, RPath))
         ReplSet.emplace_back(std::move(R));
     }
 
