@@ -1,0 +1,30 @@
+set(LLVM_LINK_COMPONENTS
+  Support
+  )
+
+add_clang_library(Cu2Sycl
+  Cu2Sycl.cpp
+  ASTTraversal.cpp
+  MapNames.cpp
+  SaveNewFiles.cpp
+  TextModification.cpp
+  Utility.cpp
+  ValidateArguments.cpp
+
+  LINK_LIBS
+  clangBasic
+  clangLex
+  clangAnalysis
+  clangAST
+  clangASTMatchers
+  clangDriver
+  clangEdit
+  clangFormat
+  clangFrontend
+  clangParse
+  clangRewrite
+  clangSema
+  clangSerialization
+  clangTooling
+  clangToolingCore
+  )

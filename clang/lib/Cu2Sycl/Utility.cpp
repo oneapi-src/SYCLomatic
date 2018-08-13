@@ -39,7 +39,7 @@ bool makeCanonical(string &PathPar) {
   return true;
 }
 
-bool isCanonical(const string &Path) {
+bool isCanonical(StringRef Path) {
   bool HasNoDots = all_of(path::begin(Path), path::end(Path),
                           [](StringRef e) { return e != "." && e != ".."; });
   return HasNoDots && path::is_absolute(Path);

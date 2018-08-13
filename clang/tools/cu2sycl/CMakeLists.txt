@@ -3,30 +3,10 @@ set(LLVM_LINK_COMPONENTS
   )
 
 add_clang_tool(cu2sycl
-  ASTTraversal.cpp
   Cu2Sycl.cpp
-  TextModification.cpp
-  MapNames.cpp
-  ValidateArguments.cpp
-  SaveNewFiles.cpp
-  Utility.cpp
   )
 
 target_link_libraries(cu2sycl
   PRIVATE
-  clangAnalysis
-  clangAST
-  clangASTMatchers
-  clangBasic
-  clangDriver
-  clangEdit
-  clangFormat
-  clangFrontend
-  clangLex
-  clangParse
-  clangRewrite
-  clangSema
-  clangSerialization
-  clangTooling
-  clangToolingCore
+  Cu2Sycl
   )

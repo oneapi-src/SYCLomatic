@@ -16,11 +16,12 @@
 
 namespace llvm {
 template <typename T> class SmallVectorImpl;
-}
+class StringRef;
+} // namespace llvm
 
 bool makeCanonical(llvm::SmallVectorImpl<char> &Path);
 bool makeCanonical(std::string &Path);
-bool isCanonical(const std::string &Path);
+bool isCanonical(llvm::StringRef Path);
 
 // Returns true if Root is a real path-prefix of Child
 // /x/y and /x/y/z -> true

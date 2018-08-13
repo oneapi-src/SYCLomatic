@@ -35,6 +35,8 @@ namespace fs = llvm::sys::fs;
 
 static void rewriteDir(SmallString<256> &FilePath, const StringRef InRoot,
                        const StringRef OutRoot) {
+  assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
+  assert(isCanonical(FilePath) && "FilePath must be a canonical path.");
   auto PathDiff =
       mismatch(path::begin(FilePath), path::end(FilePath), path::begin(InRoot));
   SmallString<256> NewFilePath = OutRoot;
@@ -42,7 +44,6 @@ static void rewriteDir(SmallString<256> &FilePath, const StringRef InRoot,
   FilePath = NewFilePath;
 }
 
-// Prerequisite: InFilePath contains a .xxx extension
 static void rewriteFileName(SmallString<256> &FilePath) {
   auto Extension = path::extension(FilePath);
   if (Extension == ".cu") {

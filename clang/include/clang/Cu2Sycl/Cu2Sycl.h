@@ -1,4 +1,4 @@
-//===--- Cu2Sycl.cpp -------------------------------------*- C++ -*---===//
+//===--- Cu2Sycl.h ---------------------------------------*- C++ -*---===//
 //
 // Copyright (C) 2018 Intel Corporation. All rights reserved.
 //
@@ -9,8 +9,4 @@
 //
 //===-----------------------------------------------------------------===//
 
-#include "clang/Cu2Sycl/Cu2Sycl.h"
-
-int main(int argc, const char **argv) {
-    return run(argc, argv);
-}
+int run(int argc, const char **argv);
