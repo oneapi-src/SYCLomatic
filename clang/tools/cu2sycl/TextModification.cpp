@@ -68,11 +68,16 @@ RenameFieldInMemberExpr::getReplacement(const ASTContext &Context) const {
 }
 
 Replacement InsertAfterStmt::getReplacement(const ASTContext &Context) const {
-  SourceLocation Loc = S->getSourceRange().getEnd();
+  CharSourceRange CSR = CharSourceRange(S->getSourceRange(), false);
+  SourceLocation Loc = CSR.getEnd();
   auto &SM = Context.getSourceManager();
   auto &Opts = Context.getLangOpts();
-  unsigned Offs = Lexer::MeasureTokenLength(Loc, SM, Opts);
-  return Replacement(SM, Loc.getLocWithOffset(Offs), 0, T);
+  SourceLocation SpellLoc = SM.getSpellingLoc(Loc);
+  unsigned Offs = Lexer::MeasureTokenLength(SpellLoc, SM, Opts);
+  SourceLocation LastTokenBegin  = Lexer::GetBeginningOfToken (Loc, SM, Opts);
+  SourceLocation End =  LastTokenBegin.getLocWithOffset(Offs);
+
+  return Replacement(SM, CharSourceRange(SourceRange(End, End), false), T);
 }
 
 Replacement ReplaceInclude::getReplacement(const ASTContext &Context) const {
@@ -141,7 +146,9 @@ ReplacementFilter::ReplacementFilter(const std::vector<Replacement> &RS)
 }
 
 Replacement InsertBeforeStmt::getReplacement(const ASTContext &Context) const {
-  return Replacement(Context.getSourceManager(), S->getSourceRange().getBegin(), 0, T);
+  SourceLocation Begin = S->getSourceRange().getBegin();
+  return  Replacement(Context.getSourceManager(),
+                      CharSourceRange(SourceRange(Begin, Begin), false), T);
 }
 
 Replacement RemoveArg::getReplacement(const ASTContext &Context) const {
