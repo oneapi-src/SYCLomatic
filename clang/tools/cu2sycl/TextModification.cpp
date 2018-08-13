@@ -75,8 +75,8 @@ Replacement InsertAfterStmt::getReplacement(const ASTContext &Context) const {
   return Replacement(SM, Loc.getLocWithOffset(Offs), 0, T);
 }
 
-Replacement ReplaceInclude::getReplacement(const SourceManager &SM) const {
-    return Replacement(SM, Range, T);
+Replacement ReplaceInclude::getReplacement(const ASTContext &Context) const {
+    return Replacement(Context.getSourceManager(), Range, T);
 }
 
 bool ReplacementFilter::containsInterval(const IntervalSet &IS,

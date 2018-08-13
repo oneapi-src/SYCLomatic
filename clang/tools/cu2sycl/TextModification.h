@@ -124,7 +124,7 @@ class ReplaceInclude : public TextModification {
 
 public:
   ReplaceInclude(CharSourceRange Range, std::string &&T) : Range(Range), T(T) {}
-  tooling::Replacement getReplacement(const SourceManager &SM) const override;
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
 
 /// A class that filters out Replacements that modify text inside a deleted code
