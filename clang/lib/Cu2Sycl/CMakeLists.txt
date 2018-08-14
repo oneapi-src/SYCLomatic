@@ -2,6 +2,11 @@ set(LLVM_LINK_COMPONENTS
   Support
   )
 
+include_directories(
+  # For the CUDA-Toolchain and its CudaInstallationDetector
+  ../../../clang/lib/Driver/
+  )
+
 add_clang_library(Cu2Sycl
   Cu2Sycl.cpp
   ASTTraversal.cpp

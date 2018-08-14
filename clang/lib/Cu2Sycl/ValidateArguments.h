@@ -26,7 +26,4 @@ bool makeCanonicalOrSetDefaults(std::string &InRoot, std::string &OutRoot,
 // and have an extension.
 bool validatePaths(const std::string &InRoot,
                    const std::vector<std::string> &SourceFiles);
-
-bool isChildPath(const std::string &Root, const std::string &Child);
-
 #endif // CU2SYCL_VALIDATE_ARGUMENTS_H

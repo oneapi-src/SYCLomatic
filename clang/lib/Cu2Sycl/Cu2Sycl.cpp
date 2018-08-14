@@ -23,7 +23,7 @@
 #include "Utility.h"
 #include <string>
 
-#include "../../../clang/lib/Driver/ToolChains/Cuda.h"
+#include "ToolChains/Cuda.h"
 #include "clang/Driver/Driver.h"
 #include "clang/Driver/Options.h"
 #include <algorithm>

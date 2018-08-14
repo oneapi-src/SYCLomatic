@@ -14,6 +14,8 @@
 #include "Utility.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "llvm/ADT/StringSet.h"
+#include <string>
+#include <utility>
 
 using namespace clang;
 using namespace clang::ast_matchers;
@@ -37,10 +39,14 @@ void IncludesCallbacks::InclusionDirective(
   // include of the SYCL header.
   std::string IncludingFile = SM.getFilename(HashLoc);
   if (SeenFiles.find(IncludingFile) == end(SeenFiles)) {
-    TransformSet.emplace_back(new ReplaceInclude(
-        FilenameRange, "<CL/sycl.hpp>\n#include <cu2sycl_device.hpp>"));
     SeenFiles.insert(IncludingFile);
+    std::string Replacement = std::string("<CL/sycl.hpp>") +
+                              getNL(FilenameRange.getEnd(), SM) +
+                              "#include <cu2sycl_device.hpp>";
+    TransformSet.emplace_back(
+        new ReplaceInclude(FilenameRange, std::move(Replacement)));
   } else {
+    // Replace the complete include directive with an empty string.
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),

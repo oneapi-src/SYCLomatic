@@ -11,12 +11,16 @@
 
 #include "Utility.h"
 
+#include "clang/Basic/SourceLocation.h"
+#include "clang/Basic/SourceManager.h"
 #include "llvm/ADT/SmallString.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include <algorithm>
 
 using namespace llvm;
+using namespace clang;
 using namespace std;
 
 namespace path = llvm::sys::path;
@@ -51,3 +55,14 @@ bool isChildPath(const std::string &Root, const std::string &Child) {
   return Diff.first == path::end(Root) && Diff.second != path::end(Child);
 }
 
+const char *getNL(SourceLocation Loc, const SourceManager &SM) {
+  auto LocInfo = SM.getDecomposedLoc(Loc);
+  auto Buffer = SM.getBufferData(LocInfo.first);
+  Buffer = Buffer.data() + LocInfo.second;
+  // Search for both to avoid searching till end of file.
+  auto pos = Buffer.find_first_of("\r\n");
+  if (pos == StringRef::npos || Buffer[pos] == '\n')
+    return "\n";
+  else
+    return "\r\n";
+}

@@ -19,6 +19,11 @@ template <typename T> class SmallVectorImpl;
 class StringRef;
 } // namespace llvm
 
+namespace clang {
+class SourceManager;
+class SourceLocation;
+} // namespace clang
+
 bool makeCanonical(llvm::SmallVectorImpl<char> &Path);
 bool makeCanonical(std::string &Path);
 bool isCanonical(llvm::StringRef Path);
@@ -28,5 +33,9 @@ bool isCanonical(llvm::StringRef Path);
 // /x/y and /x/y   -> false
 // /x/y and /x/yy/ -> false (not a prefix in terms of a path)
 bool isChildPath(const std::string &Root, const std::string &Child);
+
+// Returns the character sequence ("\n" or "\r\n") used to represent new line
+// in the source line containing Loc.
+const char *getNL(clang::SourceLocation Loc, const clang::SourceManager &SM);
 
 #endif // CU2SYCL_UTILITY_H
