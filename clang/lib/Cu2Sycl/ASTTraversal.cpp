@@ -370,7 +370,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
                    "cudaGetDeviceCount", "cudaGetDeviceProperties",
                    "cudaDeviceReset", "cudaSetDevice", "cudaDeviceGetAttribute",
                    "cudaDeviceGetP2PAttribute", "cudaGetDevice",
-                   "cudaGetLastError"))))
+                   "cudaGetLastError", "cudaDeviceSynchronize"))))
           .bind("FunctionCall"),
       this);
 }
@@ -394,7 +394,8 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new RemoveArg(CE, 0));
     emplaceTransformation(new InsertAfterStmt(CE, ".get_device_info()"));
   } else if (FuncName == "cudaDeviceReset") {
-    emplaceTransformation(new ReplaceStmt(CE, ""));
+    emplaceTransformation(new ReplaceStmt(
+        CE, "cu2sycl::get_device_manager().current_device().reset()"));
   } else if (FuncName == "cudaSetDevice") {
     emplaceTransformation(new ReplaceStmt(
         CE->getCallee(), "cu2sycl::get_device_manager().select_device"));
@@ -423,6 +424,10 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     emplaceTransformation(new ReplaceStmt(
         CE, "cu2sycl::get_device_manager().current_device_id()"));
+  } else if (FuncName == "cudaDeviceSynchronize") {
+    emplaceTransformation(new ReplaceStmt(CE, "cu2sycl::get_device_manager()."
+                                              "current_device().queues_wait_"
+                                              "and_throw()"));
   } else if (FuncName == "cudaGetLastError") {
     emplaceTransformation(new ReplaceStmt(CE, "0"));
   } else {

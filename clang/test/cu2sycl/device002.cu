@@ -30,10 +30,13 @@ cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, device1, dev
 // CHECK: atomicSupported = 0;
 cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtomicSupported, device1, device2);
 
-// CHECK: ;
+// CHECK: cu2sycl::get_device_manager().current_device().reset();
 cudaDeviceReset();
 // CHECK: cu2sycl::get_device_manager().select_device(device2);
 cudaSetDevice(device2);
+
+// CHECK:  cu2sycl::get_device_manager().current_device().queues_wait_and_throw();
+cudaDeviceSynchronize();
 
 // CHECK: int e = 0;
 int e = cudaGetLastError();
