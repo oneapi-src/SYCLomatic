@@ -221,8 +221,10 @@ public:
 //
 // TODO:
 //   - trigger include of runtime library.
-class MemoryTranslationRule : public NamedTranslationRule<MemoryTranslationRule> {
-  const Expr* stripConverts(const Expr *E) const;
+class MemoryTranslationRule
+    : public NamedTranslationRule<MemoryTranslationRule> {
+  const Expr *stripConverts(const Expr *E) const;
+
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;

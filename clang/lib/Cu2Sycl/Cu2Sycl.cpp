@@ -9,18 +9,18 @@
 //
 //===-----------------------------------------------------------------===//
 
+#include "clang/Cu2Sycl/Cu2Sycl.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Refactoring.h"
-#include "clang/Cu2Sycl/Cu2Sycl.h"
 
 #include "ASTTraversal.h"
 #include "SaveNewFiles.h"
-#include "ValidateArguments.h"
 #include "Utility.h"
+#include "ValidateArguments.h"
 #include <string>
 
 #include "ToolChains/Cuda.h"

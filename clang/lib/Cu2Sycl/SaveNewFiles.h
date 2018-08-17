@@ -13,7 +13,7 @@
 #define CU2SYCL_SAVE_NEW_FILES_H
 
 namespace llvm {
-    class StringRef;
+class StringRef;
 }
 
 namespace clang {

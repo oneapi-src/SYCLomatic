@@ -61,8 +61,7 @@ class ReplaceTypeInVarDecl : public TextModification {
   std::string T;
 
 public:
-  ReplaceTypeInVarDecl(const VarDecl *D, std::string &&T)
-    : D(D), T(T) {}
+  ReplaceTypeInVarDecl(const VarDecl *D, std::string &&T) : D(D), T(T) {}
   tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
 
@@ -100,19 +99,20 @@ public:
 
 /// Replace CallExpr with another call.
 // TODO: return values are not handled.
-// TODO: we probably need more genric class, which would take the list of strings and expressions
-// and compose them to a single srting, also doing look up for already modified expressions and use
-// their new spelling when needed.
+// TODO: we probably need more genric class, which would take the list of
+// strings and expressions and compose them to a single srting, also doing look
+// up for already modified expressions and use their new spelling when needed.
 class ReplaceCallExpr : public TextModification {
   // Call to replace.
-  const CallExpr* C;
+  const CallExpr *C;
   // New function name.
   std::string Name;
   // New function params.
-  std::vector<const Expr*> Args;
+  std::vector<const Expr *> Args;
 
 public:
-  ReplaceCallExpr(const CallExpr* Call, std::string &&NewName, std::vector<const Expr*> &&NewArgs)
+  ReplaceCallExpr(const CallExpr *Call, std::string &&NewName,
+                  std::vector<const Expr *> &&NewArgs)
       : C(Call), Name(NewName), Args(NewArgs) {}
 
   tooling::Replacement getReplacement(const ASTContext &Context) const override;
