@@ -7,30 +7,6 @@
 using namespace std;
 using clang::tooling::getAbsolutePath;
 
-TEST(getDefaultOutRoot, empty) {
-  string OutRoot;
-  getDefaultOutRoot(OutRoot);
-  ASSERT_EQ(OutRoot, "/export/users/lgerman/projects/translator_build");
-}
-
-TEST(getDefaultOutRoot, withContent) {
-  string OutRoot = "is not empty";
-  getDefaultOutRoot(OutRoot);
-  ASSERT_EQ(OutRoot, "/export/users/lgerman/projects/translator_build");
-}
-
-TEST(getDefaultInRoot, onlyOneInputAllowed) {
-  string InRoot = "";
-  ASSERT_EQ(false, getDefaultInRoot(
-                       InRoot, {"/a/b/in/file.cpp", "/a/b/in/c/file.cpp"}));
-}
-
-TEST(getDefaultInRoot, noInroot) {
-  string inroot = "";
-  ASSERT_EQ(true, getDefaultInRoot(inroot, {"/a/b/in/file.cpp"}));
-  ASSERT_EQ(inroot, "/a/b/in");
-}
-
 class MakeCanonicalOrSetDefaults : public ::testing::Test {
 protected:
   std::string TestRunPath;
@@ -52,6 +28,30 @@ protected:
 
   void TearDown() override { fs::remove_directories(TempDirAbsolute); }
 };
+
+TEST_F(MakeCanonicalOrSetDefaults, getDefaultOutRootEmpty) {
+  string OutRoot;
+  getDefaultOutRoot(OutRoot);
+  ASSERT_EQ(OutRoot, TestRunPath);
+}
+
+TEST_F(MakeCanonicalOrSetDefaults, getDefaultOutRoot) {
+  string OutRoot = "is not empty";
+  getDefaultOutRoot(OutRoot);
+  ASSERT_EQ(OutRoot, TestRunPath);
+}
+
+TEST(getDefaultInRoot, onlyOneInputAllowed) {
+  string InRoot = "";
+  ASSERT_EQ(false, getDefaultInRoot(
+                       InRoot, {"/a/b/in/file.cpp", "/a/b/in/c/file.cpp"}));
+}
+
+TEST(getDefaultInRoot, noInroot) {
+  string inroot = "";
+  ASSERT_EQ(true, getDefaultInRoot(inroot, {"/a/b/in/file.cpp"}));
+  ASSERT_EQ(inroot, "/a/b/in");
+}
 
 TEST_F(MakeCanonicalOrSetDefaults, empty) {
   string InRoot;
