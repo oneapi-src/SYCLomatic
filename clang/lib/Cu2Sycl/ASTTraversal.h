@@ -12,9 +12,14 @@
 #ifndef CU2SYCL_AST_TRAVERSAL_H
 #define CU2SYCL_AST_TRAVERSAL_H
 
-#include "clang/ASTMatchers/ASTMatchFinder.h"
-
+#include "Diagnostics.h"
 #include "TextModification.h"
+
+#include "clang/ASTMatchers/ASTMatchFinder.h"
+#include "clang/Basic/DiagnosticIDs.h"
+#include "clang/Frontend/CompilerInstance.h"
+
+#include <sstream>
 #include <unordered_set>
 
 namespace clang {
@@ -85,12 +90,15 @@ public:
   virtual bool isTranslationRule() const { return false; }
 };
 
+class ASTTraversalManager;
+
 /// Base class for translation rules.
 ///
 /// The purpose of a TranslationRule is to populate TransformSet with
 /// SourceTransformation's.
 class TranslationRule : public ASTTraversal {
   friend class ASTTraversalManager;
+  ASTTraversalManager *TM;
 
   TransformSetTy *TransformSet = nullptr;
   void setTransformSet(TransformSetTy &TS) { TransformSet = &TS; }
@@ -101,6 +109,17 @@ protected:
   /// The ownership of the TM is transferred to the TransformSet.
   void emplaceTransformation(TextModification *TM) {
     TransformSet->emplace_back(TM);
+  }
+
+  const CompilerInstance &getCompilerInstance();
+
+  // Emits a warning/error/note and/or comment depending on MsgID. For details
+  // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
+  template <typename IDTy, typename... Ts>
+  void report(SourceLocation SL, IDTy MsgID, Ts &&... Vals) {
+    DiagnosticsUtils::report<IDTy, Ts...>(SL, MsgID, getCompilerInstance(),
+                                        TransformSet,
+                             std::forward<Ts>(Vals)...);
   }
 
   /// Dereference.
@@ -247,6 +266,10 @@ class ASTTraversalManager {
   ast_matchers::MatchFinder Matchers;
 
 public:
+  const CompilerInstance &CI;
+  // Set per matchAST invocation
+  ASTContext *Context = nullptr;
+  ASTTraversalManager(const CompilerInstance &CI) : CI(CI) {}
   /// Add \a TR to the manager.
   ///
   /// The ownership of the TR is transferred to the ASTTraversalManager.

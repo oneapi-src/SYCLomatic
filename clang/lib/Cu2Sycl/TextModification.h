@@ -97,6 +97,18 @@ public:
   tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
 
+// Insert '/*  */' C style multi line comment
+class InsertComment : public TextModification {
+  // The comment will be inserted at this position
+  SourceLocation SL;
+  std::string Text;
+
+public:
+  InsertComment(SourceLocation SL, std::string Text) : SL(SL), Text(Text) {}
+
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+};
+
 /// Replace CallExpr with another call.
 // TODO: return values are not handled.
 // TODO: we probably need more genric class, which would take the list of

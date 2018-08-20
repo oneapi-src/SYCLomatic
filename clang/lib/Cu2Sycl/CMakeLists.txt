@@ -15,6 +15,7 @@ add_clang_library(Cu2Sycl
   TextModification.cpp
   Utility.cpp
   ValidateArguments.cpp
+  Diagnostics.cpp
 
   LINK_LIBS
   clangBasic

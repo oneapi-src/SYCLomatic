@@ -61,7 +61,7 @@ std::string CudaPath; // Global value for the CUDA install path.
 class Cu2SyclConsumer : public ASTConsumer {
 public:
   Cu2SyclConsumer(ReplTy &R, const CompilerInstance &CI)
-      : Repl(R), PP(CI.getPreprocessor()) {
+      : ATM(CI), Repl(R), PP(CI.getPreprocessor()) {
     if (Passes != "") {
       std::vector<std::string> Names;
       // Separate string into list by comma

@@ -10,6 +10,7 @@
 //===-----------------------------------------------------------------===//
 
 #include "TextModification.h"
+#include "Utility.h"
 
 #include "clang/AST/Attr.h"
 
@@ -84,6 +85,12 @@ Replacement InsertAfterStmt::getReplacement(const ASTContext &Context) const {
 
 Replacement ReplaceInclude::getReplacement(const ASTContext &Context) const {
   return Replacement(Context.getSourceManager(), Range, T);
+}
+
+Replacement InsertComment::getReplacement(const ASTContext &Context) const {
+  auto NL = getNL(SL, Context.getSourceManager());
+  return Replacement(Context.getSourceManager(), SL, 0,
+                     (llvm::Twine("/*") + NL + Text + NL + "*/" + NL).str());
 }
 
 bool ReplacementFilter::containsInterval(const IntervalSet &IS,

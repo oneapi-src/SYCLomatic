@@ -164,15 +164,33 @@ static bool isCudaFailureCheck(const DeclRefExpr *E) {
   return isVarRef(E) && getVarType(E) == "enum cudaError";
 }
 
-static bool isErrorHandlingSafeToRemove(const Stmt *S) {
-  if (const auto *CE = dyn_cast<CallExpr>(S)) {
-    if (!CE->getDirectCallee())
-      return false;
-    auto Name = CE->getDirectCallee()->getNameAsString();
-    static const llvm::StringSet<> SafeCallList = {
-        "printf", "puts", "exit", "cudaDeviceReset", "fprintf"};
-    if (SafeCallList.find(Name) == SafeCallList.end())
-      return false;
+static std::string getStmtSpelling(const Stmt *S, const ASTContext &Context) {
+  std::string StrBuffer;
+  llvm::raw_string_ostream TmpStream(StrBuffer);
+  auto LangOpts = Context.getLangOpts();
+  S->printPretty(TmpStream, nullptr, PrintingPolicy(LangOpts), 0, &Context);
+  return TmpStream.str();
+}
+
+void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
+  auto If = Result.Nodes.getNodeAs<IfStmt>("errIf");
+  auto EmitNotRemoved = [&](SourceLocation SL, const Stmt *R) {
+    report(SL, Diagnostics::STMT_NOT_REMOVED,
+           getStmtSpelling(R, *Result.Context).c_str());
+  };
+  auto isErrorHandlingSafeToRemove = [&](const Stmt *S) {
+    if (const auto *CE = dyn_cast<CallExpr>(S)) {
+      if (!CE->getDirectCallee()) {
+        EmitNotRemoved(S->getSourceRange().getBegin(), S);
+        return false;
+      }
+      auto Name = CE->getDirectCallee()->getNameAsString();
+      static const llvm::StringSet<> SafeCallList = {
+          "printf", "puts", "exit", "cudaDeviceReset", "fprintf"};
+      if (SafeCallList.find(Name) == SafeCallList.end()) {
+        EmitNotRemoved(S->getSourceRange().getBegin(), S);
+        return false;
+      }
 #if 0
     //TODO: enable argument check
     for (const auto *S : CE->arguments()) {
@@ -180,8 +198,8 @@ static bool isErrorHandlingSafeToRemove(const Stmt *S) {
         return false;
     }
 #endif
-    return true;
-  }
+      return true;
+    }
 #if 0
   //TODO: enable argument check
   else if (isa <DeclRefExpr>(S))
@@ -191,34 +209,43 @@ static bool isErrorHandlingSafeToRemove(const Stmt *S) {
   else if (isa<StringLiteral>(S))
     return true;
 #endif
+    EmitNotRemoved(S->getSourceRange().getBegin(), S);
+    return false;
+  };
 
-  return false;
-}
+  auto isErrorHandling = [&](const Stmt *Block) {
+    if (!isa<CompoundStmt>(Block))
+      return isErrorHandlingSafeToRemove(Block);
+    const CompoundStmt *CS = cast<CompoundStmt>(Block);
+    for (const auto *S : CS->children()) {
+      if (!isErrorHandlingSafeToRemove(S->IgnoreImplicit())) {
+        return false;
+      }
+    }
+    return true;
+  };
 
-static bool isErrorHandling(const Stmt *Block) {
-  if (!isa<CompoundStmt>(Block))
-    return isErrorHandlingSafeToRemove(Block);
-  const CompoundStmt *CS = cast<CompoundStmt>(Block);
-  for (const auto *S : CS->children()) {
-    if (!isErrorHandlingSafeToRemove(S->IgnoreImplicit()))
-      return false;
-  }
-  return true;
-}
+  if (![&] {
+        if (auto Op = Result.Nodes.getNodeAs<BinaryOperator>("op!=")) {
+          if (!isCudaFailureCheck(Op))
+            return false;
+        } else {
+          auto CondVar = Result.Nodes.getNodeAs<DeclRefExpr>("var");
+          if (!isCudaFailureCheck(CondVar))
+            return false;
+        }
+        // We know that it's error checking condition, check the body
+        if (!isErrorHandling(If->getThen())) {
+          report(If->getSourceRange().getBegin(),
+                 Diagnostics::IFSTMT_NOT_REMOVED);
 
-void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
-  if (auto Op = Result.Nodes.getNodeAs<BinaryOperator>("op!=")) {
-    if (!isCudaFailureCheck(Op))
-      return;
-  } else {
-    auto CondVar = Result.Nodes.getNodeAs<DeclRefExpr>("var");
-    if (!isCudaFailureCheck(CondVar))
-      return;
-  }
+          return false;
+        }
+        return true;
+      }()) {
 
-  auto If = Result.Nodes.getNodeAs<IfStmt>("errIf");
-  if (!isErrorHandling(If->getThen()))
     return;
+  }
 
   emplaceTransformation(new ReplaceStmt(If, ""));
 }
@@ -570,10 +597,17 @@ void KernelIterationSpaceRule::run(
 REGISTER_RULE(KernelIterationSpaceRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
+  this->Context = &Context;
   for (auto &I : Storage) {
     I->registerMatcher(Matchers);
-    if (auto TR = dyn_cast<TranslationRule>(&*I))
+    if (auto TR = dyn_cast<TranslationRule>(&*I)) {
+      TR->TM = this;
       TR->setTransformSet(TS);
+    }
   }
   Matchers.matchAST(Context);
+}
+
+const CompilerInstance &TranslationRule::getCompilerInstance() {
+  return TM->CI;
 }
