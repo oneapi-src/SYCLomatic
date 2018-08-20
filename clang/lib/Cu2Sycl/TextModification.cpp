@@ -118,6 +118,21 @@ Replacement ReplaceCallExpr::getReplacement(const ASTContext &Context) const {
   return Replacement(Context.getSourceManager(), C, NewString);
 }
 
+Replacement InsertArgument::getReplacement(const ASTContext &Context) const {
+  auto FNameLoc = FD->getNameInfo().getEndLoc();
+  // TODO: Investigate what happens in macro expansion
+  auto tkn =
+      Lexer::findNextToken(FNameLoc, Context.getSourceManager(), LangOptions())
+          .getValue();
+  // TODO: Investigate if its possible to not have l_paren as next token
+  assert(tkn.is(tok::TokenKind::l_paren));
+  // Emit new argument at the end of l_paren token
+  auto OutStr = ArgName;
+  if (!FD->parameters().empty())
+    OutStr = ArgName + ", ";
+  return Replacement(Context.getSourceManager(), tkn.getEndLoc(), 0, OutStr);
+}
+
 bool ReplacementFilter::isDeletedReplacement(
     const tooling::Replacement &R) const {
   if (R.getReplacementText().empty())

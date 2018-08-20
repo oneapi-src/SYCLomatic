@@ -507,6 +507,7 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(MemoryTranslationRule)
 
+
 // Translation rule for Inserting try-catch around functions.
 class ErrorTryCatchRule : public NamedTranslationRule<ErrorTryCatchRule> {
 public:
@@ -539,6 +540,18 @@ public:
 
 
 REGISTER_RULE(ErrorTryCatchRule)
+
+void KernelIterationSpaceRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(functionDecl(hasAttr(attr::CUDAGlobal)).bind("functionDecl"),
+                this);
+}
+
+void KernelIterationSpaceRule::run(
+    const MatchFinder::MatchResult &Result) {
+  const FunctionDecl *FD = Result.Nodes.getNodeAs<FunctionDecl>("functionDecl");
+  emplaceTransformation(new InsertArgument(FD, "cl::sycl::nd_item<3> item"));
+}
+REGISTER_RULE(KernelIterationSpaceRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
   for (auto &I : Storage) {

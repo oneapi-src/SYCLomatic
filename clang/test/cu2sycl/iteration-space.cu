@@ -2,7 +2,7 @@
 // RUN: FileCheck --input-file %T/iteration-space.sycl.cpp --match-full-lines %s
 
 // Test that the replacement happens when it should to.
-// CHECK: void test_00() {
+// CHECK: void test_00(cl::sycl::nd_item<3> item) {
 __global__
 void test_00() {
   // CHECK: size_t tix = item.get_local(0);
@@ -71,7 +71,7 @@ void test_01() {
 }
 
 // Test that the replacement doesn't happen if threadIdx is redefined.
-// CHECK: void test_02() {
+// CHECK: void test_02(cl::sycl::nd_item<3> item) {
 __global__ void test_02() {
   uint3 threadIdx, blockIdx, blockDim, gridDim;
 

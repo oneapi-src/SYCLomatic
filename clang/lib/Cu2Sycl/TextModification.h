@@ -118,6 +118,18 @@ public:
   tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
 
+class InsertArgument : public TextModification {
+  const FunctionDecl *FD;
+  // Argument string without comma.
+  std::string ArgName;
+
+public:
+  InsertArgument(const FunctionDecl *FD, std::string &&ArgName)
+      : FD(FD), ArgName(ArgName) {}
+
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+};
+
 class ReplaceInclude : public TextModification {
   CharSourceRange Range;
   std::string T;

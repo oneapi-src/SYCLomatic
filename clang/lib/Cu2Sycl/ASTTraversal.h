@@ -230,6 +230,17 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+/// Translation rule for inserting iteration space argument.
+///
+/// This rule inserts cl::sycl::nd_item<3> item as the first argument to
+/// kernels.
+class KernelIterationSpaceRule
+    : public NamedTranslationRule<KernelIterationSpaceRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 /// Pass manager for ASTTraversal instances.
 class ASTTraversalManager {
   std::vector<std::unique_ptr<ASTTraversal>> Storage;
