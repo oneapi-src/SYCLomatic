@@ -37,7 +37,7 @@ void test_00() {
 }
 
 // Test that the replacement doesn't happen in host functions.
-// CHECK: void test_01() {
+// CHECK: void test_01() try {
 void test_01() {
   uint3 threadIdx, blockIdx, blockDim, gridDim;
 

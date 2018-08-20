@@ -10,7 +10,7 @@ const cudaDeviceProp deviceProp1 = {};
 // CHECK: volatile cu2sycl::sycl_device_info deviceProp2;
 volatile cudaDeviceProp deviceProp2;
 
-// CHECK:  void foo(cu2sycl::sycl_device_info p) {
+// CHECK:  void foo(cu2sycl::sycl_device_info p) try {
 void foo(cudaDeviceProp p) {
   return;
 }
@@ -27,7 +27,7 @@ cudaError_t foo_0(cudaError_t);
 // CHECK: int foo_1(int);
 cudaError foo_1(cudaError_t);
 
-// CHECK: int apicall(int i) {
+// CHECK: int apicall(int i) try {
 cudaError_t apicall(int i) {
   return cudaSuccess;
 };
@@ -36,7 +36,7 @@ cudaError_t apicall(int i) {
 cudaError_t err = apicall(0);
 
 template <typename T>
-// CHECK: void check(T result, char const *const func) {
+// CHECK: void check(T result, char const *const func) try {
 void check(T result, char const *const func) {
 }
 

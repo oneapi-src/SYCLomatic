@@ -502,6 +502,39 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(MemoryTranslationRule)
 
+// Translation rule for Inserting try-catch around functions.
+class ErrorTryCatchRule : public NamedTranslationRule<ErrorTryCatchRule> {
+public:
+  std::unordered_set<unsigned> Insertions;
+  void registerMatcher(ast_matchers::MatchFinder &MF) override {
+    MF.addMatcher(functionDecl(hasBody(compoundStmt())).bind("functionDecl"),
+                  this);
+  }
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override {
+    const FunctionDecl *FD =
+        Result.Nodes.getNodeAs<FunctionDecl>("functionDecl");
+    for (const auto *Attr : FD->attrs()) {
+      attr::Kind AK = Attr->getKind();
+      if (AK == attr::CUDAGlobal || AK == attr::CUDADevice)
+        return;
+    }
+
+    auto BodySLoc = FD->getBody()->getSourceRange().getBegin().getRawEncoding();
+    if (Insertions.find(BodySLoc) != Insertions.end())
+      return;
+    Insertions.insert(BodySLoc);
+    emplaceTransformation(new InsertBeforeStmt(FD->getBody(), "try "));
+    emplaceTransformation(new InsertAfterStmt(
+        FD->getBody(), "\ncatch (cl::sycl::exception const &exc) {\n"
+                       "  std::cerr << exc.what() << \"EOE\" << std::endl;\n"
+                       "  std::exit(1);\n"
+                       "}"));
+  }
+};
+
+
+REGISTER_RULE(ErrorTryCatchRule)
+
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
   for (auto &I : Storage) {
     I->registerMatcher(Matchers);
