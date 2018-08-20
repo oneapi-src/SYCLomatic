@@ -109,11 +109,18 @@ class ReplaceCallExpr : public TextModification {
   std::string Name;
   // New function params.
   std::vector<const Expr *> Args;
+  // New function type.
+  std::vector<std::string> Types;
 
 public:
   ReplaceCallExpr(const CallExpr *Call, std::string &&NewName,
                   std::vector<const Expr *> &&NewArgs)
       : C(Call), Name(NewName), Args(NewArgs) {}
+
+  ReplaceCallExpr(const CallExpr *Call, std::string &&NewName,
+                  std::vector<const Expr *> &&NewArgs,
+                  std::vector<std::string> NewTypes)
+      : C(Call), Name(NewName), Args(NewArgs), Types(NewTypes) {}
 
   tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };

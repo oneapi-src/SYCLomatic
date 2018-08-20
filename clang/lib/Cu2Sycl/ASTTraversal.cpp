@@ -439,10 +439,11 @@ REGISTER_RULE(FunctionCallRule)
 
 // Memory translation rules live here.
 void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(callExpr(callee(functionDecl(hasAnyName(
-                             "cudaMalloc", "cudaMemcpy", "cudaFree"))))
-                    .bind("call"),
-                this);
+  MF.addMatcher(
+      callExpr(callee(functionDecl(hasAnyName("cudaMalloc", "cudaMemcpy",
+                                              "cudaFree", "cudaMemset"))))
+          .bind("call"),
+      this);
 }
 
 void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
@@ -492,6 +493,21 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
                                    C->getArg(3)};
     emplaceTransformation(
         new ReplaceCallExpr(C, std::move(Name), std::move(Args)));
+  } else if (Name == "cudaMemset") {
+    // Input:
+    // cudaMemset(d_A, 0x12, size);
+    //
+    // Desired output:
+    // cu2sycl::sycl_memset((void*)d_A, (unsigned char)0x12,  (unsigned
+    // int)size);
+    std::string Name = "cu2sycl::sycl_memset";
+    std::vector<const Expr *> Args{C->getArg(0), C->getArg(1), C->getArg(2)};
+    std::vector<std::string> NewTypes{"(void*)", "(unsigned char)",
+                                      "(unsigned int)"};
+
+    emplaceTransformation(
+        new ReplaceCallExpr(C, std::move(Name), std::move(Args), NewTypes));
+
   } else if (Name == "cudaFree") {
     // Input:
     // cudaFree(d_A);

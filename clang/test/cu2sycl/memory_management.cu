@@ -9,6 +9,8 @@ void fooo() {
     float *d_A = NULL;
     // CHECK: cu2sycl::sycl_malloc<char>((void **)&d_A, size);
     cudaMalloc((void **)&d_A, size);
+    // CHECK: cu2sycl::sycl_memset((void*)(d_A), (void*)(15), (void*)(size));
+    cudaMemset(d_A, 0xf, size);
     // CHECK: cu2sycl::sycl_memcpy<char>(d_A, h_A, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
     // CHECK: cu2sycl::sycl_memcpy<char>(h_A, d_A, size, cudaMemcpyDeviceToHost);

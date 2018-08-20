@@ -108,10 +108,21 @@ bool ReplacementFilter::containsInterval(const IntervalSet &IS,
 
 Replacement ReplaceCallExpr::getReplacement(const ASTContext &Context) const {
   std::string NewString = Name + "(";
-  for (auto A = Args.cbegin(); A != Args.cend(); A++) {
-    NewString += getExprSpelling(*A, Context);
-    if (A + 1 != Args.cend()) {
-      NewString += ", ";
+  if (Types.empty()) {
+    for (auto A = Args.cbegin(); A != Args.cend(); A++) {
+      NewString += getExprSpelling(*A, Context);
+      if (A + 1 != Args.cend()) {
+        NewString += ", ";
+      }
+    }
+  } else {
+    for (auto A = Args.cbegin(); A != Args.cend(); A++) {
+      auto B = Types.cbegin();
+      NewString += (*B + "(" + getExprSpelling(*A, Context) + ")");
+      if (A + 1 != Args.cend()) {
+        NewString += ", ";
+      }
+      B++;
     }
   }
   NewString += ")";
