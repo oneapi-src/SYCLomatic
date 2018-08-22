@@ -66,3 +66,18 @@ const char *getNL(SourceLocation Loc, const SourceManager &SM) {
   else
     return "\r\n";
 }
+
+StringRef getIndent(SourceLocation Loc, const SourceManager &SM) {
+  auto LocInfo = SM.getDecomposedLoc(Loc);
+  auto Buffer = SM.getBufferData(LocInfo.first);
+  // Find start of indentation.
+  auto begin = Buffer.find_last_of('\n', LocInfo.second);
+  if (begin != StringRef::npos) {
+    ++begin;
+  } else {
+    // We're at the beginning of the file.
+    begin = 0;
+  }
+  auto end = Buffer.find_if([](char c) { return !isspace(c); }, begin);
+  return Buffer.substr(begin, end - begin);
+}

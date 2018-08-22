@@ -12,8 +12,10 @@
 #include "TextModification.h"
 #include "Utility.h"
 
+#include "Utility.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/DeclCXX.h"
+#include "clang/AST/ExprCXX.h"
 
 using namespace clang;
 using namespace clang::cu2sycl;
@@ -29,8 +31,7 @@ using namespace clang::tooling;
 // Specific example, when SourceLocation information is broken
 //   - DeclRefExpr has valid information only about beginning of the expression,
 //     pointers to the end of the expression point to the beginning.
-std::string TextModification::getExprSpelling(const Expr *E,
-                                              const ASTContext &Context) const {
+std::string getExprSpelling(const Expr *E, const ASTContext &Context) {
   std::string StrBuffer;
   llvm::raw_string_ostream TmpStream(StrBuffer);
   auto LangOpts = Context.getLangOpts();
@@ -94,6 +95,80 @@ Replacement InsertComment::getReplacement(const ASTContext &Context) const {
                      (llvm::Twine("/*") + NL + Text + NL + "*/" + NL).str());
 }
 
+template <typename ArgIterT, typename TypeIterT>
+std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
+                         llvm::iterator_range<TypeIterT> Types,
+                         const ASTContext &Context) {
+  std::string List;
+  if (Types.empty()) {
+    for (auto A = Args.cbegin(); A != Args.cend(); A++) {
+      List += getExprSpelling(*A, Context);
+      if (A + 1 != Args.cend()) {
+        List += ", ";
+      }
+    }
+  } else {
+    for (auto A = Args.cbegin(); A != Args.cend(); A++) {
+      auto B = Types.cbegin();
+      List += (*B + "(" + getExprSpelling(*A, Context) + ")");
+      if (A + 1 != Args.cend()) {
+        List += ", ";
+      }
+      B++;
+    }
+  }
+  return List;
+}
+
+template <typename ArgIterT, typename TypeIterT>
+std::string
+buildCall(const std::string &Name, llvm::iterator_range<ArgIterT> Args, ,
+          llvm::iterator_range<TyeIterT> Types, const ASTContext &Context) {
+  return Name + "(" + buildArgList(Args, Types, Context) + ")";
+}
+
+Replacement ReplaceCallExpr::getReplacement(const ASTContext &Context) const {
+  std::string NewString = Name + "(";
+  NewString += ")";
+  return Replacement(Context.getSourceManager(), C, NewString);
+}
+
+Replacement
+ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
+  auto &SM = Context.getSourceManager();
+  auto NL = getNL(KCall->getLocEnd(), SM);
+  auto Indent = getIndent(KCall->getLocStart(), SM);
+  auto KName = KCall->getCalleeDecl()->getAsFunction()->getName();
+  auto NDSize = KCall->getConfig()->getArg(0);
+  auto WGSize = KCall->getConfig()->getArg(1);
+
+  // clang-format off
+  std::string Repl =
+  (Twine("cu2sycl::get_device_manager().current_device().default_queue().submit(") + NL +
+  Indent + "  [=](cl::sycl::handler &cgh) {" + NL +
+  Indent + "    cgh.parallel_for<class " + KName + ">(" + NL +
+  Indent + "      cl::sycl::nd_range<3>(" + getExprSpelling(NDSize, Context) + ", "
+                                          + getExprSpelling(WGSize, Context) + ")," + NL +
+  Indent + "      [=](cl::sycl::nd_item<3> it) {" + NL +
+  Indent + "        " + KName + "(it, " + buildArgList(KCall->arguments(), {}, Context) + ");" + NL +
+  Indent + "      });" + NL +
+  Indent + "  })").str();
+  // clang-format on
+
+  return Replacement(
+      SM,
+      CharSourceRange(SourceRange(KCall->getLocStart(), KCall->getLocEnd()),
+                      /*IsTokenRange=*/true),
+      move(Repl));
+}
+
+Replacement ReplaceCallExpr::getReplacement(const ASTContext &Context) const {
+  return Replacement(
+      Context.getSourceManager(), C,
+      buildCall(Name, llvm::iterator_range<decltype(begin(Args))>(Args),
+                llvm::iterator_range<decltype(begin(Types))>(Types), Context));
+}
+
 bool ReplacementFilter::containsInterval(const IntervalSet &IS,
                                          const Interval &I) const {
   size_t Low = 0;
@@ -112,29 +187,6 @@ bool ReplacementFilter::containsInterval(const IntervalSet &IS,
   }
 
   return false;
-}
-
-Replacement ReplaceCallExpr::getReplacement(const ASTContext &Context) const {
-  std::string NewString = Name + "(";
-  if (Types.empty()) {
-    for (auto A = Args.cbegin(); A != Args.cend(); A++) {
-      NewString += getExprSpelling(*A, Context);
-      if (A + 1 != Args.cend()) {
-        NewString += ", ";
-      }
-    }
-  } else {
-    for (auto A = Args.cbegin(); A != Args.cend(); A++) {
-      auto B = Types.cbegin();
-      NewString += (*B + "(" + getExprSpelling(*A, Context) + ")");
-      if (A + 1 != Args.cend()) {
-        NewString += ", ";
-      }
-      B++;
-    }
-  }
-  NewString += ")";
-  return Replacement(Context.getSourceManager(), C, NewString);
 }
 
 Replacement InsertArgument::getReplacement(const ASTContext &Context) const {

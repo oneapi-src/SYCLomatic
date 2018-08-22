@@ -478,6 +478,17 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(FunctionCallRule)
 
+void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(cudaKernelCallExpr().bind("kernelCall"), this);
+}
+
+void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
+  auto KCall = Result.Nodes.getNodeAs<CUDAKernelCallExpr>("kernelCall");
+  emplaceTransformation(new ReplaceKernelCallExpr(KCall));
+}
+
+REGISTER_RULE(KernelCallRule)
+
 // Memory translation rules live here.
 void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(

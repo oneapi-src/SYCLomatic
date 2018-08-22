@@ -14,6 +14,7 @@
 
 #include "clang/Tooling/Core/Replacement.h"
 #include "clang/Tooling/Tooling.h"
+#include <string>
 
 namespace clang {
 namespace cu2sycl {
@@ -25,10 +26,6 @@ using TransformSetTy = std::vector<std::unique_ptr<TextModification>>;
 class TextModification {
 public:
   virtual ~TextModification() {}
-
-  // Get textual representation of the Expr.
-  std::string getExprSpelling(const Expr *E, const ASTContext &Context) const;
-
   /// Generate actual Replacement from this TextModification object.
   virtual tooling::Replacement
   getReplacement(const ASTContext &Context) const = 0;
@@ -155,6 +152,14 @@ class ReplaceInclude : public TextModification {
 
 public:
   ReplaceInclude(CharSourceRange Range, std::string &&T) : Range(Range), T(T) {}
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+};
+
+class ReplaceKernelCallExpr : public TextModification {
+  const CUDAKernelCallExpr *KCall;
+
+public:
+  ReplaceKernelCallExpr(const CUDAKernelCallExpr *KCall) : KCall(KCall) {}
   tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
 

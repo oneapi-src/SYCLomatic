@@ -222,6 +222,11 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+class KernelCallRule : public NamedTranslationRule<KernelCallRule> {
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 // Translation rule for memory management routine.
 // Current implementation is intentionally simplistic. The following things need
 // a more detailed design:
