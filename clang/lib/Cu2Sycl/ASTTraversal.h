@@ -174,6 +174,16 @@ public:
   static const std::map<std::string, std::string> TypeNamesMap;
 };
 
+class ReplaceDim3CtorRule : public NamedTranslationRule<ReplaceDim3CtorRule> {
+  std::pair<const CXXConstructExpr *, bool>
+  rewriteSyntax(const ast_matchers::MatchFinder::MatchResult &Result);
+  void rewriteArglist(const std::pair<const CXXConstructExpr *, bool> &);
+
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 /// Translation rule for return types replacements.
 class ReturnTypeRule : public NamedTranslationRule<ReturnTypeRule> {
 public:
@@ -228,15 +238,17 @@ class KernelCallRule : public NamedTranslationRule<KernelCallRule> {
 };
 
 // Translation rule for memory management routine.
-// Current implementation is intentionally simplistic. The following things need
-// a more detailed design:
-//   - interplay with error handling (possible solution is that we keep function
+// Current implementation is intentionally simplistic. The following things
+// need a more detailed design:
+//   - interplay with error handling (possible solution is that we keep
+//   function
 //     signature as close to original as possible, so return error codes when
 //     original functions return them);
-//   - SYCL memory buffers are typed. Using a "char" type is definitely a hack.
+//   - SYCL memory buffers are typed. Using a "char" type is definitely a
+//   hack.
 //     Using better type information requires some kind of global analysis and
-//     heuristics, as well as a mechnism for user hint (like "treat all buffers
-//     as float-typed")'
+//     heuristics, as well as a mechnism for user hint (like "treat all
+//     buffers as float-typed")'
 //   - interplay with streams need to be designed. I.e. cudaMemcpyAsync() need
 //     to be defined;
 //   - transformation rules are currently unordered, which create potential

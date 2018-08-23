@@ -38,7 +38,6 @@ std::string getExprSpelling(const Expr *E, const ASTContext &Context) {
   E->printPretty(TmpStream, nullptr, PrintingPolicy(LangOpts), 0, &Context);
   return TmpStream.str();
 }
-
 Replacement ReplaceStmt::getReplacement(const ASTContext &Context) const {
   return Replacement(Context.getSourceManager(), TheStmt, ReplacementString);
 }
@@ -65,6 +64,21 @@ Replacement ReplaceReturnType::getReplacement(const ASTContext &Context) const {
   return Replacement(Context.getSourceManager(), CharSourceRange(SR, true), T);
 }
 
+Replacement ReplaceToken::getReplacement(const ASTContext &Context) const {
+  // Need to deal with the fact, that the type name might be a macro.
+  return Replacement(Context.getSourceManager(),
+                     // false means [Begin, End)
+                     // true means [Begin, End]
+                     CharSourceRange(SourceRange(Begin, Begin), true), T);
+}
+
+Replacement ReplaceCCast::getReplacement(const ASTContext &Context) const {
+  auto Begin = Cast->getLParenLoc();
+  auto End = Cast->getRParenLoc();
+  return Replacement(Context.getSourceManager(),
+                     CharSourceRange(SourceRange(Begin, End), true), TypeName);
+}
+
 Replacement
 RenameFieldInMemberExpr::getReplacement(const ASTContext &Context) const {
   SourceLocation SL = ME->getLocEnd();
@@ -81,7 +95,6 @@ Replacement InsertAfterStmt::getReplacement(const ASTContext &Context) const {
   unsigned Offs = Lexer::MeasureTokenLength(SpellLoc, SM, Opts);
   SourceLocation LastTokenBegin = Lexer::GetBeginningOfToken(Loc, SM, Opts);
   SourceLocation End = LastTokenBegin.getLocWithOffset(Offs);
-
   return Replacement(SM, CharSourceRange(SourceRange(End, End), false), T);
 }
 
@@ -95,42 +108,46 @@ Replacement InsertComment::getReplacement(const ASTContext &Context) const {
                      (llvm::Twine("/*") + NL + Text + NL + "*/" + NL).str());
 }
 
-template <typename ArgIterT, typename TypeIterT>
+template <typename ArgIterT>
 std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
-                         llvm::iterator_range<TypeIterT> Types,
                          const ASTContext &Context) {
   std::string List;
-  if (Types.empty()) {
-    for (auto A = Args.cbegin(); A != Args.cend(); A++) {
-      List += getExprSpelling(*A, Context);
-      if (A + 1 != Args.cend()) {
-        List += ", ";
-      }
-    }
-  } else {
-    for (auto A = Args.cbegin(); A != Args.cend(); A++) {
-      auto B = Types.cbegin();
-      List += (*B + "(" + getExprSpelling(*A, Context) + ")");
-      if (A + 1 != Args.cend()) {
-        List += ", ";
-      }
-      B++;
+  for (auto A = begin(Args); A != end(Args); A++) {
+    List += getExprSpelling(*A, Context);
+    if (A + 1 != end(Args)) {
+      List += ", ";
     }
   }
   return List;
 }
 
 template <typename ArgIterT, typename TypeIterT>
-std::string
-buildCall(const std::string &Name, llvm::iterator_range<ArgIterT> Args, ,
-          llvm::iterator_range<TyeIterT> Types, const ASTContext &Context) {
-  return Name + "(" + buildArgList(Args, Types, Context) + ")";
+std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
+                         llvm::iterator_range<TypeIterT> Types,
+                         const ASTContext &Context) {
+  std::string List;
+  for (auto A = begin(Args); A != end(Args); A++) {
+    auto B = begin(Types);
+    List += (*B + "(" + getExprSpelling(*A, Context) + ")");
+    if (A + 1 != end(Args)) {
+      List += ", ";
+    }
+    B++;
+  }
+  return List;
 }
 
-Replacement ReplaceCallExpr::getReplacement(const ASTContext &Context) const {
-  std::string NewString = Name + "(";
-  NewString += ")";
-  return Replacement(Context.getSourceManager(), C, NewString);
+template <typename ArgIterT, typename TypeIterT>
+std::string
+buildCall(const std::string &Name, llvm::iterator_range<ArgIterT> Args,
+          llvm::iterator_range<TypeIterT> Types, const ASTContext &Context) {
+  std::string List;
+  if (begin(Types) == end(Types)) {
+    List = buildArgList(Args, Context);
+  } else {
+    List = buildArgList(Args, Types, Context);
+  }
+  return Name + "(" + List + ")";
 }
 
 Replacement
@@ -150,7 +167,7 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   Indent + "      cl::sycl::nd_range<3>(" + getExprSpelling(NDSize, Context) + ", "
                                           + getExprSpelling(WGSize, Context) + ")," + NL +
   Indent + "      [=](cl::sycl::nd_item<3> it) {" + NL +
-  Indent + "        " + KName + "(it, " + buildArgList(KCall->arguments(), {}, Context) + ");" + NL +
+  Indent + "        " + KName + "(it, " + buildArgList(KCall->arguments(), Context) + ");" + NL +
   Indent + "      });" + NL +
   Indent + "  })").str();
   // clang-format on

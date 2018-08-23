@@ -31,6 +31,18 @@ public:
   getReplacement(const ASTContext &Context) const = 0;
 };
 
+/// For macros and typedefs source location is unreliable (begin and end of the
+/// source range point to the same character. Replacing by token is a simple
+/// workaround.
+class ReplaceToken : public TextModification {
+  SourceLocation Begin;
+  std::string T;
+
+public:
+  ReplaceToken(SourceLocation Loc, std::string &&S) : Begin(Loc), T(S) {}
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+};
+
 /// Replace a statement (w/o semicolon) with a specified string.
 class ReplaceStmt : public TextModification {
   const Stmt *TheStmt;
@@ -40,6 +52,17 @@ public:
   ReplaceStmt(const Stmt *E, std::string &&S)
       : TheStmt(E), ReplacementString(S) {}
 
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+};
+
+/// Replace C-style cast with constructor call for a given type.
+class ReplaceCCast : public TextModification {
+  const CStyleCastExpr *Cast;
+  std::string TypeName;
+
+public:
+  ReplaceCCast(const CStyleCastExpr *Cast, std::string &&TypeName)
+      : Cast(Cast), TypeName(TypeName) {}
   tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
 

@@ -21,6 +21,7 @@ const std::map<std::string, std::string> TypeInVarDeclRule::TypeNamesMap{
     {"cudaDeviceProp", "cu2sycl::sycl_device_info"},
     {"cudaError_t", "int"},
     {"cudaError", "int"},
+    {"dim3", "cl::sycl::range<3>"},
     // ...
 };
 

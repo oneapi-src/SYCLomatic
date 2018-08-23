@@ -292,7 +292,8 @@ REGISTER_RULE(FunctionAttrsRule)
 void TypeInVarDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(varDecl(anyOf(hasType(cxxRecordDecl(hasName("cudaDeviceProp"))),
                               hasType(enumDecl(hasName("cudaError"))),
-                              hasType(typedefDecl(hasName("cudaError_t")))))
+                              hasType(typedefDecl(hasName("cudaError_t"))),
+                              hasType(typedefDecl(hasName("dim3")))))
                     .bind("TypeInVarDecl"),
                 this);
 }
@@ -317,6 +318,114 @@ void TypeInVarDeclRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(TypeInVarDeclRule)
+
+void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
+  // Find dim3 constructors which are part of different casts (representing
+  // different syntaxes). This includes copy constructors. All constructors
+  // will be visited once.
+  MF.addMatcher(
+      cxxConstructExpr(hasType(typedefDecl(hasName("dim3"))),
+                       hasParent(cxxFunctionalCastExpr().bind("dim3Cast")))
+          .bind("dim3CtorFuncCast"),
+      this);
+  MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(hasName("dim3"))),
+                                 hasParent(cStyleCastExpr().bind("dim3Cast")))
+                    .bind("dim3CtorCCast"),
+                this);
+  MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(hasName("dim3"))),
+                                 hasParent(implicitCastExpr().bind("dim3Cast")))
+                    .bind("dim3CtorImplicitCast"),
+                this);
+
+  // Find all other dim3 constructors with 3 parameters (not copy ctors).
+  MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(hasName("dim3"))),
+                                 unless(hasParent(castExpr())))
+                    .bind("dim3Ctor"),
+                this);
+}
+
+// Determines which case of construction applies and creates replacements for
+// the syntax. Returns the constructor node and a boolean indicating if a
+// closed brace needs to be appended.
+std::pair<const CXXConstructExpr *, bool>
+ReplaceDim3CtorRule::rewriteSyntax(const MatchFinder::MatchResult &Result) {
+  // Most commonly used syntax cases are checked first.
+  if (auto Ctor = Result.Nodes.getNodeAs<CXXConstructExpr>("dim3Ctor")) {
+    // dim3 a(1);
+    // No syntax needs to be rewritten.
+    return {Ctor, false};
+  }
+
+  if (auto ImplCastCtor =
+          Result.Nodes.getNodeAs<CXXConstructExpr>("dim3CtorImplicitCast")) {
+    auto Cast = Result.Nodes.getNodeAs<ImplicitCastExpr>("dim3Cast");
+    if (!isa<CXXTemporaryObjectExpr>(ImplCastCtor)) {
+      // dim3 a = 1;
+      // func(1);
+      emplaceTransformation(new InsertBeforeStmt(Cast, "cl::sycl::range<3>("));
+      return {ImplCastCtor, true};
+    } else {
+      // dim3 a = dim3(1, 2); // temporary object expression
+      // func(dim(1, 2));
+      emplaceTransformation(
+          new ReplaceToken(Cast->getLocStart(), "cl::sycl::range<3>"));
+      return {ImplCastCtor, false};
+    }
+  } else if (auto FuncCastCtor =
+                 Result.Nodes.getNodeAs<CXXConstructExpr>("dim3CtorFuncCast")) {
+    auto Cast = Result.Nodes.getNodeAs<CXXFunctionalCastExpr>("dim3Cast");
+    // dim3 a = dim3(1); // function style cast
+    // dim3 b = dim3(a); // copy constructor
+    // func(dim(1), dim3(a));
+    emplaceTransformation(
+        new ReplaceToken(Cast->getLocStart(), "cl::sycl::range<3>"));
+    return {FuncCastCtor, false};
+  }
+
+  if (auto CCastCtor =
+          Result.Nodes.getNodeAs<CXXConstructExpr>("dim3CtorCCast")) {
+    // dim3 a = (dim3)1;
+    // dim3 b = (dim3)a; // copy constructor
+    // func((dim)1, (dim3)a);
+    auto Cast = Result.Nodes.getNodeAs<CStyleCastExpr>("dim3Cast");
+    emplaceTransformation(new ReplaceCCast(Cast, "cl::sycl::range<3>("));
+    return {CCastCtor, true};
+  }
+
+  assert(false && "This must not happen.");
+}
+
+void ReplaceDim3CtorRule::rewriteArglist(
+    const std::pair<const CXXConstructExpr *, bool> &CtorCase) {
+  auto Ctor = CtorCase.first;
+  auto CloseBrace = CtorCase.second;
+
+  if (CtorCase.first->getNumArgs() == 1) {
+    // Copy Constructor
+    if (CloseBrace) {
+      emplaceTransformation(new InsertAfterStmt(Ctor->getArg(0), ")"));
+    }
+    return;
+  }
+
+  if (isa<CXXDefaultArgExpr>(Ctor->getArg(0))) {
+    // If first is default arg, all three are default arguments -- this is
+    // the default ctor: dim3 a;
+  } else if (isa<CXXDefaultArgExpr>(Ctor->getArg(1))) {
+    if (CloseBrace)
+      emplaceTransformation(new InsertAfterStmt(Ctor->getArg(0), ", 1, 1)"));
+    else
+      emplaceTransformation(new InsertAfterStmt(Ctor->getArg(0), ", 1, 1"));
+  } else if (isa<CXXDefaultArgExpr>(Ctor->getArg(2))) {
+    emplaceTransformation(new InsertAfterStmt(Ctor->getArg(1), ", 1"));
+  }
+}
+
+void ReplaceDim3CtorRule::run(const MatchFinder::MatchResult &Result) {
+  rewriteArglist(rewriteSyntax(Result));
+}
+
+REGISTER_RULE(ReplaceDim3CtorRule)
 
 // Rule for return types replacements.
 void ReturnTypeRule::registerMatcher(MatchFinder &MF) {
@@ -516,8 +625,8 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
     //
     //
     // NOTE: "ErroCodeType sycl_malloc<T>(T**, size_t)" signature is used
-    // instead of "T* sycl_malloc<T>(size_t)" to make it easier to hook it up
-    // with error handling. This may change.
+    // instead of "T* sycl_malloc<T>(size_t)" to make it easier to hook it
+    // up with error handling. This may change.
 
     std::string Name = "cu2sycl::sycl_malloc<char>";
     std::vector<const Expr *> Args{C->getArg(0), C->getArg(1)};
