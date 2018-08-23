@@ -13,6 +13,7 @@
 #include "Utility.h"
 
 #include "clang/AST/Attr.h"
+#include "clang/AST/DeclCXX.h"
 
 using namespace clang;
 using namespace clang::cu2sycl;
@@ -149,6 +150,24 @@ Replacement InsertArgument::getReplacement(const ASTContext &Context) const {
   if (!FD->parameters().empty())
     OutStr = ArgName + ", ";
   return Replacement(Context.getSourceManager(), tkn.getEndLoc(), 0, OutStr);
+}
+
+Replacement
+InsertBeforeCtrInitList::getReplacement(const ASTContext &Context) const {
+  if (CDecl->init_begin() != CDecl->init_end()) {
+    auto SLoc = CDecl->getBody()->getSourceRange().getBegin();
+    auto LocInfo = Context.getSourceManager().getDecomposedLoc(SLoc);
+    auto Buffer = Context.getSourceManager().getBufferData(LocInfo.first);
+    auto begin = Buffer.find_last_of(':', LocInfo.second);
+    if (begin == StringRef::npos) {
+      begin = 0;
+    }
+    SLoc = SLoc.getLocWithOffset((int)begin - (int)LocInfo.second);
+    return Replacement(Context.getSourceManager(), SLoc, 0, T);
+  } else {
+    SourceLocation Begin = CDecl->getBody()->getSourceRange().getBegin();
+    return Replacement(Context.getSourceManager(), Begin, 0, T);
+  }
 }
 
 bool ReplacementFilter::isDeletedReplacement(

@@ -226,6 +226,17 @@ public:
   tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
 
+class InsertBeforeCtrInitList : public TextModification {
+  const CXXConstructorDecl *CDecl;
+  std::string T;
+
+public:
+  InsertBeforeCtrInitList(const CXXConstructorDecl *S, std::string &&T)
+      : CDecl(S), T(T) {}
+
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+};
+
 } // namespace cu2sycl
 } // namespace clang
 

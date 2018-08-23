@@ -550,6 +550,11 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(MemoryTranslationRule)
 
+static const CXXConstructorDecl *getIfConstructorDecl(const Decl *ND) {
+  if (const auto *Tmpl = dyn_cast<FunctionTemplateDecl>(ND))
+    ND = Tmpl->getTemplatedDecl();
+  return dyn_cast<CXXConstructorDecl>(ND);
+}
 
 // Translation rule for Inserting try-catch around functions.
 class ErrorTryCatchRule : public NamedTranslationRule<ErrorTryCatchRule> {
@@ -572,15 +577,21 @@ public:
     if (Insertions.find(BodySLoc) != Insertions.end())
       return;
     Insertions.insert(BodySLoc);
-    emplaceTransformation(new InsertBeforeStmt(FD->getBody(), "try "));
+
+    // First check if this is a constructor decl
+    if (const CXXConstructorDecl *CDecl = getIfConstructorDecl(FD))
+      emplaceTransformation(new InsertBeforeCtrInitList(CDecl, "try "));
+    else
+      emplaceTransformation(new InsertBeforeStmt(FD->getBody(), "try "));
+
     emplaceTransformation(new InsertAfterStmt(
         FD->getBody(), "\ncatch (cl::sycl::exception const &exc) {\n"
-                       "  std::cerr << exc.what() << \"EOE\" << std::endl;\n"
+                       "  std::cerr << exc.what() << \"EOE at line \" << "
+                       "__LINE__ << std::endl;\n"
                        "  std::exit(1);\n"
                        "}"));
   }
 };
-
 
 REGISTER_RULE(ErrorTryCatchRule)
 
@@ -589,8 +600,7 @@ void KernelIterationSpaceRule::registerMatcher(MatchFinder &MF) {
                 this);
 }
 
-void KernelIterationSpaceRule::run(
-    const MatchFinder::MatchResult &Result) {
+void KernelIterationSpaceRule::run(const MatchFinder::MatchResult &Result) {
   const FunctionDecl *FD = Result.Nodes.getNodeAs<FunctionDecl>("functionDecl");
   emplaceTransformation(new InsertArgument(FD, "cl::sycl::nd_item<3> item"));
 }
