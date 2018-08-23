@@ -239,8 +239,8 @@ void FunctionAttrsRule::run(const MatchFinder::MatchResult &Result) {
 
   for (const Attr *A : AV) {
     attr::Kind AK = A->getKind();
-    if (AK == attr::CUDAGlobal || AK == attr::CUDADevice ||
-        AK == attr::CUDAHost)
+    if (!A->isImplicit() && (AK == attr::CUDAGlobal || AK == attr::CUDADevice ||
+                             AK == attr::CUDAHost))
       emplaceTransformation(new RemoveAttr(A));
   }
 }
