@@ -91,7 +91,7 @@ void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
   applyReport<Ts...>(B, Vals...);
 }
 
-static SourceLocation getStartOfLine(SourceLocation Loc,
+static inline SourceLocation getStartOfLine(SourceLocation Loc,
                                                const SourceManager &SM,
                                                const LangOptions &LangOpts) {
   auto LocInfo = SM.getDecomposedLoc(Loc);
