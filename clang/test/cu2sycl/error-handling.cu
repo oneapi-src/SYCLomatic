@@ -352,3 +352,102 @@ void test_side_effects(cudaError_t err, int arg, int x, int y, int z) {
   if (err)
     printf("fmt string %d", y + z);
 }
+
+// CHECK:void specialize_ifs() {
+// CHECK-NEXT:  cudaError_t err;
+// checking for empty lines (with one or more spaces)
+// CHECK-NEXT:{{ +}}
+// CHECK-NEXT:{{ +}}
+// CHECK-NEXT:{{ +}}
+// CHECK-NEXT:{{ +}}
+// CHECK-NEXT:{{ +}}
+// CHECK-NEXT:}
+void specialize_ifs() {
+  cudaError_t err;
+  if (err == cudaErrorAssert) {
+    printf("efef");
+  }
+  if (err == 255) {
+  }
+  if (err == 1) {
+  }
+  if (666 == err) {
+  }
+  if (cudaErrorAssert == err) {
+  }
+}
+
+// CHECK:void specialize_ifs_negative() {
+// CHECK:  cudaError_t err;
+// CHECK:  if (err == cudaSuccess) {
+// CHECK:    printf("efef");
+// CHECK:  }
+// CHECK:/*
+// CHECK:SYCLCT1000: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK:*/
+// CHECK:  if (err == cudaErrorAssert) {
+// CHECK:    printf("efef");
+// CHECK:/*
+// CHECK:SYCLCT1001: 'malloc(256)' couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK:*/
+// CHECK:    malloc(0x100);
+// CHECK:  }
+// CHECK:/*
+// CHECK:SYCLCT1000: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK:*/
+// CHECK:  if (err == 255) {
+// CHECK:/*
+// CHECK:SYCLCT1001: 'malloc(256)' couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK:*/
+// CHECK:    malloc(0x100);
+// CHECK:  }
+// CHECK:/*
+// CHECK:SYCLCT1000: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK:*/
+// CHECK:  if (err == 1) {
+// CHECK:/*
+// CHECK:SYCLCT1001: 'malloc(256)' couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK:*/
+// CHECK:    malloc(0x100);
+// CHECK:  }
+// CHECK:/*
+// CHECK:SYCLCT1000: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK:*/
+// CHECK:  if (666 == err) {
+// CHECK:/*
+// CHECK:SYCLCT1001: 'malloc(256)' couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK:*/
+// CHECK:    malloc(0x100);
+// CHECK:  }
+// CHECK:/*
+// CHECK:SYCLCT1000: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK:*/
+// CHECK:  if (cudaErrorAssert == err) {
+// CHECK:/*
+// CHECK:SYCLCT1001: 'malloc(256)' couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK:*/
+// CHECK:    malloc(0x100);
+// CHECK:  }
+// CHECK:}
+void specialize_ifs_negative() {
+  cudaError_t err;
+  if (err == cudaSuccess) {
+    printf("efef");
+  }
+  if (err == cudaErrorAssert) {
+    printf("efef");
+    malloc(0x100);
+  }
+  if (err == 255) {
+    malloc(0x100);
+  }
+  if (err == 1) {
+    malloc(0x100);
+  }
+  if (666 == err) {
+    malloc(0x100);
+  }
+  if (cudaErrorAssert == err) {
+    malloc(0x100);
+  }
+}

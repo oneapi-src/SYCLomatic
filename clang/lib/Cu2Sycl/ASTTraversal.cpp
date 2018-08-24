@@ -117,6 +117,13 @@ void ErrorHandlingIfStmtRule::registerMatcher(MatchFinder &MF) {
                                .bind("var")))))
           .bind("errIf"),
       this);
+  MF.addMatcher(
+      // Match if-statement that has no else and has a condition of
+      // operator==.
+      ifStmt(unless(hasElse(anything())),
+             hasCondition(binaryOperator(hasOperatorName("==")).bind("op==")))
+          .bind("errIfSpecial"),
+      this);
 }
 
 static bool isVarRef(const Expr *E) {
@@ -130,7 +137,7 @@ static std::string getVarType(const Expr *E) {
   return E->getType().getCanonicalType().getUnqualifiedType().getAsString();
 }
 
-static bool isCudaFailureCheck(const BinaryOperator *Op) {
+static bool isCudaFailureCheck(const BinaryOperator *Op, bool IsEq = false) {
   auto Lhs = Op->getLHS()->IgnoreImplicit();
   auto Rhs = Op->getRHS()->IgnoreImplicit();
 
@@ -143,14 +150,14 @@ static bool isCudaFailureCheck(const BinaryOperator *Op) {
     return false;
 
   if (auto IntLit = dyn_cast<IntegerLiteral>(Literal)) {
-    if (IntLit->getValue() != 0)
+    if (IsEq ^ (IntLit->getValue() != 0))
       return false;
   } else if (auto D = dyn_cast<DeclRefExpr>(Literal)) {
     auto EnumDecl = dyn_cast<EnumConstantDecl>(D->getDecl());
     if (!EnumDecl)
       return false;
     // Check for cudaSuccess or CUDA_SUCCESS.
-    if (EnumDecl->getInitVal() != 0)
+    if (IsEq ^ (EnumDecl->getInitVal() != 0))
       return false;
   } else {
     // The expression is neither an int literal nor an enum value.
@@ -174,6 +181,8 @@ static std::string getStmtSpelling(const Stmt *S, const ASTContext &Context) {
 
 void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
   auto If = Result.Nodes.getNodeAs<IfStmt>("errIf");
+  if (!If)
+    If = Result.Nodes.getNodeAs<IfStmt>("errIfSpecial");
   auto EmitNotRemoved = [&](SourceLocation SL, const Stmt *R) {
     report(SL, Diagnostics::STMT_NOT_REMOVED,
            getStmtSpelling(R, *Result.Context).c_str());
@@ -229,6 +238,11 @@ void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
         if (auto Op = Result.Nodes.getNodeAs<BinaryOperator>("op!=")) {
           if (!isCudaFailureCheck(Op))
             return false;
+        } else if (auto Op = Result.Nodes.getNodeAs<BinaryOperator>("op==")) {
+          if (!isCudaFailureCheck(Op, true))
+            return false;
+          report(Op->getLocStart(), Diagnostics::IFSTMT_SPECIAL_CASE,
+                 getStmtSpelling(Op, *Result.Context).c_str());
         } else {
           auto CondVar = Result.Nodes.getNodeAs<DeclRefExpr>("var");
           if (!isCudaFailureCheck(CondVar))

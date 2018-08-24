@@ -17,22 +17,24 @@ namespace cu2sycl {
 std::unordered_map<int, DiagnosticsMessage> DiagnosticIDTable;
 std::unordered_map<int, DiagnosticsMessage> CommentIDTable;
 
-#define DEF_NOTE(NAME, ID, MSG)                                               \
-  DiagnosticsMessage eg_##NAME(DiagnosticIDTable, ID, clang::DiagnosticIDs::Note,       \
+#define DEF_NOTE(NAME, ID, MSG)                                                \
+  DiagnosticsMessage eg_##NAME(DiagnosticIDTable, ID,                          \
+                               clang::DiagnosticIDs::Note,                     \
+                               "SYCLCT" #ID ": " MSG);
 
 #define DEF_ERROR(NAME, ID, MSG)                                               \
   DiagnosticsMessage eg_##NAME(DiagnosticIDTable, ID,                          \
-                               clang::DiagnosticIDs::Error,       \
-                          "SYCLCT" #ID ": " MSG);
+                               clang::DiagnosticIDs::Error,                    \
+                               "SYCLCT" #ID ": " MSG);
 
 #define DEF_WARNING(NAME, ID, MSG)                                             \
   DiagnosticsMessage wg_##NAME(DiagnosticIDTable, ID,                          \
-                               clang::DiagnosticIDs::Warning,     \
-                          "SYCLCT" #ID ": " MSG);
+                               clang::DiagnosticIDs::Warning,                  \
+                               "SYCLCT" #ID ": " MSG);
 
 #define DEF_COMMENT(NAME, ID, MSG)                                             \
-  DiagnosticsMessage cg_##NAME(CommentIDTable, ID, clang::DiagnosticIDs::Note,        \
-                          "SYCLCT" #ID ": " MSG);
+  DiagnosticsMessage cg_##NAME(CommentIDTable, ID, clang::DiagnosticIDs::Note, \
+                               "SYCLCT" #ID ": " MSG);
 
 #include "Diagnostics.inc"
 
