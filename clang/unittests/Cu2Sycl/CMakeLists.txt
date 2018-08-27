@@ -6,7 +6,13 @@ add_clang_unittest(Cu2SyclTests
   SaveNewFilesTest.cpp
   ValidateArgumentsTest.cpp
   )
+
 target_link_libraries(Cu2SyclTests
   PRIVATE
   Cu2Sycl
+  clangBasic
+  clangFrontend
+  clangRewrite
+  clangTooling
+  clangToolingCore
   )
