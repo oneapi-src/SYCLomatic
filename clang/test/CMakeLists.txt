@@ -58,7 +58,7 @@ list(APPEND CLANG_TEST_DEPS
   clang-diff
   diagtool
   hmaptool
-  cu2sycl
+  syclct
   )
 
 if(CLANG_ENABLE_STATIC_ANALYZER)
