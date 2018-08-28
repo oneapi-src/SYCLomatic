@@ -11,6 +11,8 @@
 
 #include "Utility.h"
 
+#include "clang/AST/ASTContext.h"
+#include "clang/AST/ExprCXX.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/SourceManager.h"
 #include "llvm/ADT/SmallString.h"
@@ -80,4 +82,21 @@ StringRef getIndent(SourceLocation Loc, const SourceManager &SM) {
   }
   auto end = Buffer.find_if([](char c) { return !isspace(c); }, begin);
   return Buffer.substr(begin, end - begin);
+}
+
+// Get textual representation of the Stmt.  This helper function is tricky.
+// Ideally, we should use SourceLocation information to be able to access the
+// actual character used for spelling in the source code (either before or
+// after preprocessor). But the quality of the this information is bad.  This
+// should be addressed in the clang sources in the long run, but we need a
+// working solution right now, so we use another way of getting the spelling.
+// Specific example, when SourceLocation information is broken - DeclRefExpr
+// has valid information only about beginning of the expression, pointers to
+// the end of the expression point to the beginning.
+std::string getStmtSpelling(const Stmt *S, const ASTContext &Context) {
+  std::string StrBuffer;
+  llvm::raw_string_ostream TmpStream(StrBuffer);
+  auto LangOpts = Context.getLangOpts();
+  S->printPretty(TmpStream, nullptr, PrintingPolicy(LangOpts), 0, &Context);
+  return TmpStream.str();
 }

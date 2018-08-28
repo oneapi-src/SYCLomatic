@@ -23,23 +23,6 @@ using namespace clang;
 using namespace clang::syclct;
 using namespace clang::tooling;
 
-// Get textual representation of the Expr.
-// This helper function is tricky. Ideally, we should use SourceLocation
-// information in the expression to be able to access the actual character
-// used for spelling of this expression in the source code (either before or
-// after preprocessor). But the quality of the this information is bad.
-// This should be addressed in the clang sources in the long run, but we need
-// a working solution right now, so we use another way of getting the spelling.
-// Specific example, when SourceLocation information is broken
-//   - DeclRefExpr has valid information only about beginning of the expression,
-//     pointers to the end of the expression point to the beginning.
-std::string getExprSpelling(const Expr *E, const ASTContext &Context) {
-  std::string StrBuffer;
-  llvm::raw_string_ostream TmpStream(StrBuffer);
-  auto LangOpts = Context.getLangOpts();
-  E->printPretty(TmpStream, nullptr, PrintingPolicy(LangOpts), 0, &Context);
-  return TmpStream.str();
-}
 Replacement ReplaceStmt::getReplacement(const ASTContext &Context) const {
   return Replacement(Context.getSourceManager(), TheStmt, ReplacementString);
 }
@@ -115,7 +98,7 @@ std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
                          const ASTContext &Context) {
   std::string List;
   for (auto A = begin(Args); A != end(Args); A++) {
-    List += getExprSpelling(*A, Context);
+    List += getStmtSpelling(*A, Context);
     if (A + 1 != end(Args)) {
       List += ", ";
     }
@@ -130,7 +113,7 @@ std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
   std::string List;
   for (auto A = begin(Args); A != end(Args); A++) {
     auto B = begin(Types);
-    List += (*B + "(" + getExprSpelling(*A, Context) + ")");
+    List += (*B + "(" + getStmtSpelling(*A, Context) + ")");
     if (A + 1 != end(Args)) {
       List += ", ";
     }
@@ -198,8 +181,8 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << Indent <<  "  [=](cl::sycl::handler &cgh) {" << NL
   << Header2.str()
   << Indent <<  "    cgh.parallel_for<class " << KName << ">(" << NL
-  << Indent <<  "      cl::sycl::nd_range<3>(" << getExprSpelling(NDSize, Context) << ", "
-                                          << getExprSpelling(WGSize, Context) << ")," << NL
+  << Indent <<  "      cl::sycl::nd_range<3>(" << getStmtSpelling(NDSize, Context) << ", "
+                                               << getStmtSpelling(WGSize, Context) << ")," << NL
   << Indent <<  "      [=](cl::sycl::nd_item<3> it) {" << NL
   << Header3.str()
   << Indent <<  "        "

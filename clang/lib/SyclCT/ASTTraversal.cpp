@@ -171,14 +171,6 @@ static bool isCudaFailureCheck(const DeclRefExpr *E) {
   return isVarRef(E) && getVarType(E) == "enum cudaError";
 }
 
-static std::string getStmtSpelling(const Stmt *S, const ASTContext &Context) {
-  std::string StrBuffer;
-  llvm::raw_string_ostream TmpStream(StrBuffer);
-  auto LangOpts = Context.getLangOpts();
-  S->printPretty(TmpStream, nullptr, PrintingPolicy(LangOpts), 0, &Context);
-  return TmpStream.str();
-}
-
 void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
   auto If = Result.Nodes.getNodeAs<IfStmt>("errIf");
   if (!If)

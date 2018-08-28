@@ -22,6 +22,8 @@ class StringRef;
 namespace clang {
 class SourceManager;
 class SourceLocation;
+class Stmt;
+class ASTContext;
 } // namespace clang
 
 bool makeCanonical(llvm::SmallVectorImpl<char> &Path);
@@ -42,4 +44,6 @@ const char *getNL(clang::SourceLocation Loc, const clang::SourceManager &SM);
 llvm::StringRef getIndent(clang::SourceLocation Loc,
                           const clang::SourceManager &SM);
 
+std::string getStmtSpelling(const clang::Stmt *E,
+                            const clang::ASTContext &Context);
 #endif // SYCLCT_UTILITY_H
