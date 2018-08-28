@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s -passes "MemoryTranslationRule" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/memory_management.sycl.cpp %s
+// RUN: FileCheck --input-file %T/memory_management.sycl.cpp --match-full-lines %s
 
 #include <cuda_runtime.h>
 
