@@ -17,6 +17,8 @@
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/ExprCXX.h"
 
+#include <sstream>
+
 using namespace clang;
 using namespace clang::syclct;
 using namespace clang::tooling;
@@ -154,29 +156,64 @@ Replacement
 ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   auto &SM = Context.getSourceManager();
   auto NL = getNL(KCall->getLocEnd(), SM);
-  auto Indent = getIndent(KCall->getLocStart(), SM);
-  auto KName = KCall->getCalleeDecl()->getAsFunction()->getName();
+  auto OrigIndent = getIndent(KCall->getLocStart(), SM).str();
+  auto KName = KCall->getCalleeDecl()->getAsFunction()->getName().str();
   auto NDSize = KCall->getConfig()->getArg(0);
   auto WGSize = KCall->getConfig()->getArg(1);
-
+  std::stringstream Header;
+  std::stringstream Header2;
+  std::stringstream Header3;
+  Header << "{" << NL;
+  auto Indent = OrigIndent + "  ";
+  for (auto *Arg : KCall->arguments()) {
+    if (Arg->getType()->isAnyPointerType()) {
+      if (auto *DeclRef = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts())) {
+        auto VarName = DeclRef->getNameInfo().getAsString();
+        auto PointeeType = DeclRef->getDecl()->getType()->getPointeeType();
+        // TODO check that no nested pointers in a structure
+        assert(!PointeeType->isAnyPointerType());
+        auto VarType = PointeeType.getCanonicalType().getAsString();
+        Header << Indent << "std::pair<cl::sycl::buffer<char, 1 >*, size_t> "
+               << VarName << "_buf = cu2sycl::get_buffer_and_offset("
+               << VarName + ");" << NL;
+        Header << Indent << "size_t " << VarName
+               << "_offset = " << VarName + "_buf.second;" << NL;
+        Header2 << Indent << "    auto " << VarName << "_acc = " << VarName
+                << "_buf.first->"
+                   "get_access<cl::sycl::access::mode::read_write>("
+                << "cgh);" << NL;
+        Header3 << Indent << "        " << VarType << " *" << VarName << " = ("
+                << VarType << "*)(&" << VarName << "_acc[0] + " << VarName
+                << "_offset);" << NL;
+      } else {
+        assert(false && "unknown argumant expression");
+      }
+    }
+  }
   // clang-format off
-  std::string Repl =
-  (Twine("syclct::get_device_manager().current_device().default_queue().submit(") + NL +
-  Indent + "  [=](cl::sycl::handler &cgh) {" + NL +
-  Indent + "    cgh.parallel_for<class " + KName + ">(" + NL +
-  Indent + "      cl::sycl::nd_range<3>(" + getExprSpelling(NDSize, Context) + ", "
-                                          + getExprSpelling(WGSize, Context) + ")," + NL +
-  Indent + "      [=](cl::sycl::nd_item<3> it) {" + NL +
-  Indent + "        " + KName + "(it, " + buildArgList(KCall->arguments(), Context) + ");" + NL +
-  Indent + "      });" + NL +
-  Indent + "  })").str();
+  std::stringstream Final;
+  Final
+  << Header.str()
+  << Indent << "cu2sycl::get_device_manager().current_device().default_queue().submit(" << NL
+  << Indent <<  "  [=](cl::sycl::handler &cgh) {" << NL
+  << Header2.str()
+  << Indent <<  "    cgh.parallel_for<class " << KName << ">(" << NL
+  << Indent <<  "      cl::sycl::nd_range<3>(" << getExprSpelling(NDSize, Context) << ", "
+                                          << getExprSpelling(WGSize, Context) << ")," << NL
+  << Indent <<  "      [=](cl::sycl::nd_item<3> it) {" << NL
+  << Header3.str()
+  << Indent <<  "        "
+  << KName <<  "(it, " << buildArgList(KCall->arguments(), Context) << ");" <<  NL
+  << Indent <<  "      });" <<  NL
+  << Indent <<  "  })" <<  NL
+  << OrigIndent << "}";
   // clang-format on
 
   return Replacement(
       SM,
       CharSourceRange(SourceRange(KCall->getLocStart(), KCall->getLocEnd()),
                       /*IsTokenRange=*/true),
-      move(Repl));
+      move(Final.str()));
 }
 
 Replacement ReplaceCallExpr::getReplacement(const ASTContext &Context) const {
