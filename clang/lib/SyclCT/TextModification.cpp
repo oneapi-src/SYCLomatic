@@ -174,7 +174,7 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
         assert(!PointeeType->isAnyPointerType());
         auto VarType = PointeeType.getCanonicalType().getAsString();
         Header << Indent << "std::pair<cl::sycl::buffer<char, 1 >*, size_t> "
-               << VarName << "_buf = cu2sycl::get_buffer_and_offset("
+               << VarName << "_buf = syclct::get_buffer_and_offset("
                << VarName + ");" << NL;
         Header << Indent << "size_t " << VarName
                << "_offset = " << VarName + "_buf.second;" << NL;
@@ -194,7 +194,7 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   std::stringstream Final;
   Final
   << Header.str()
-  << Indent << "cu2sycl::get_device_manager().current_device().default_queue().submit(" << NL
+  << Indent << "syclct::get_device_manager().current_device().default_queue().submit(" << NL
   << Indent <<  "  [=](cl::sycl::handler &cgh) {" << NL
   << Header2.str()
   << Indent <<  "    cgh.parallel_for<class " << KName << ">(" << NL
