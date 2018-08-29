@@ -35,7 +35,10 @@ cudaDeviceReset();
 // CHECK: syclct::get_device_manager().select_device(device2);
 cudaSetDevice(device2);
 
-// CHECK:  syclct::get_device_manager().current_device().queues_wait_and_throw();
+// CHECK:/*
+// CHECK-NEXT:SYCLCT1003: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:*/
+// CHECK-NEXT:(syclct::get_device_manager().current_device().queues_wait_and_throw(), 0);
 cudaDeviceSynchronize();
 
 // CHECK: int e = 0;
