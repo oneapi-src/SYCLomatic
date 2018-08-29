@@ -12,6 +12,8 @@
 #ifndef SYCLCT_UTILITY_H
 #define SYCLCT_UTILITY_H
 
+#include <ios>
+#include <sstream>
 #include <string>
 
 namespace llvm {
@@ -46,4 +48,10 @@ llvm::StringRef getIndent(clang::SourceLocation Loc,
 
 std::string getStmtSpelling(const clang::Stmt *E,
                             const clang::ASTContext &Context);
+
+template <typename T> std::string getHashAsString(const T &Val) {
+  std::stringstream Stream;
+  Stream << std::hex << std::hash<T>()(Val);
+  return Stream.str();
+}
 #endif // SYCLCT_UTILITY_H

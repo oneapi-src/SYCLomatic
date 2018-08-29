@@ -96,30 +96,30 @@ Replacement InsertComment::getReplacement(const ASTContext &Context) const {
 template <typename ArgIterT>
 std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
                          const ASTContext &Context) {
-  std::string List;
+  std::stringstream List;
   for (auto A = begin(Args); A != end(Args); A++) {
-    List += getStmtSpelling(*A, Context);
+    List << getStmtSpelling(*A, Context);
     if (A + 1 != end(Args)) {
-      List += ", ";
+      List << ", ";
     }
   }
-  return List;
+  return List.str();
 }
 
 template <typename ArgIterT, typename TypeIterT>
 std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
                          llvm::iterator_range<TypeIterT> Types,
                          const ASTContext &Context) {
-  std::string List;
+  std::stringstream List;
   for (auto A = begin(Args); A != end(Args); A++) {
     auto B = begin(Types);
-    List += (*B + "(" + getStmtSpelling(*A, Context) + ")");
+    List << *B << "(" << getStmtSpelling(*A, Context) << ")";
     if (A + 1 != end(Args)) {
-      List += ", ";
+      List << ", ";
     }
     B++;
   }
-  return List;
+  return List.str();
 }
 
 template <typename ArgIterT, typename TypeIterT>
@@ -135,14 +135,62 @@ buildCall(const std::string &Name, llvm::iterator_range<ArgIterT> Args,
   return Name + "(" + List + ")";
 }
 
+std::pair<const Expr *, const Expr *>
+ReplaceKernelCallExpr::getExecutionConfig() const {
+  auto NDSizeTopCtor =
+      dyn_cast<CXXConstructExpr>(KCall->getConfig()->getArg(0));
+  auto WGSizeTopCtor =
+      dyn_cast<CXXConstructExpr>(KCall->getConfig()->getArg(1));
+
+  auto NDTemp = dyn_cast<MaterializeTemporaryExpr>(NDSizeTopCtor->getArg(0));
+  auto WGTemp = dyn_cast<MaterializeTemporaryExpr>(WGSizeTopCtor->getArg(0));
+
+  // Return nested constructor or reference to a variable.
+  return {NDTemp ? NDTemp->GetTemporaryExpr()->IgnoreCasts()
+                 : NDSizeTopCtor->getArg(0)->IgnoreCasts(),
+          WGTemp ? WGTemp->GetTemporaryExpr()->IgnoreCasts()
+                 : WGSizeTopCtor->getArg(0)->IgnoreCasts()};
+}
+
+// Translates some explicit and implicit constructions of dim3 objects when
+// expressions are passed as kernel execution configuration. Returns the
+// translation of that expression to cl::sycl::range<3>.
+//
+// If E is a variable reference, returns the name of the variable.
+// Else assumes E is an implicit or explicit construction of dim3 and returns
+// an explicit cl::sycl::range<3>-constructor call.
+std::string ReplaceKernelCallExpr::getDim3Translation(const Expr *E,
+                                                  const ASTContext &Context) {
+  if (auto Var = dyn_cast<DeclRefExpr>(E)) {
+    // kernel<<<griddim, threaddim>>>()
+    return Var->getNameInfo().getAsString();
+  } else {
+    // kernel<<<dim3(1, 2), dim3(1, 2, 3)>>>() -- temporary objects
+    // kernel<<<1, dim3(1)>>>() -- constructor expressions
+    std::stringstream Stream;
+    Stream << "cl::sycl::range<3>(";
+    auto Ctor = dyn_cast<CXXConstructExpr>(E);
+    assert(Ctor && "Only dim3 constructors (explicit or implicit from literal "
+                   "int, variables (int and dim3)) supported.");
+    Stream << getStmtSpelling(Ctor->getArg(0), Context);
+    if (isa<CXXDefaultArgExpr>(Ctor->getArg(1))) {
+      Stream << ", 1, 1)";
+    } else if (isa<CXXDefaultArgExpr>(Ctor->getArg(2))) {
+      Stream << ", " << getStmtSpelling(Ctor->getArg(1), Context);
+      Stream << ", 1)";
+    } else {
+      Stream << ", " << getStmtSpelling(Ctor->getArg(1), Context);
+      Stream << ", " << getStmtSpelling(Ctor->getArg(2), Context) << ")";
+    }
+    return Stream.str();
+  }
+}
+
 Replacement
 ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   auto &SM = Context.getSourceManager();
   auto NL = getNL(KCall->getLocEnd(), SM);
   auto OrigIndent = getIndent(KCall->getLocStart(), SM).str();
-  auto KName = KCall->getCalleeDecl()->getAsFunction()->getName().str();
-  auto NDSize = KCall->getConfig()->getArg(0);
-  auto WGSize = KCall->getConfig()->getArg(1);
   std::stringstream Header;
   std::stringstream Header2;
   std::stringstream Header3;
@@ -169,10 +217,17 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
                 << VarType << "*)(&" << VarName << "_acc[0] + " << VarName
                 << "_offset);" << NL;
       } else {
-        assert(false && "unknown argumant expression");
+        assert(false && "unknown argument expression");
       }
     }
   }
+
+  const Expr *NDSize;
+  const Expr *WGSize;
+  std::tie(NDSize, WGSize) = getExecutionConfig();
+  auto KName = KCall->getCalleeDecl()->getAsFunction()->getName().str();
+  auto LocHash =
+      getHashAsString(KCall->getLocStart().printToString(SM)).substr(0, 6);
   // clang-format off
   std::stringstream Final;
   Final
@@ -180,23 +235,19 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << Indent << "syclct::get_device_manager().current_device().default_queue().submit(" << NL
   << Indent <<  "  [&](cl::sycl::handler &cgh) {" << NL
   << Header2.str()
-  << Indent <<  "    cgh.parallel_for<class " << KName << ">(" << NL
-  << Indent <<  "      cl::sycl::nd_range<3>(" << getStmtSpelling(NDSize, Context) << ", "
-                                               << getStmtSpelling(WGSize, Context) << ")," << NL
+  << Indent <<  "    cgh.parallel_for<class " << KName << "_" << LocHash << ">(" << NL
+  << Indent <<  "      cl::sycl::nd_range<3>(" << getDim3Translation(NDSize, Context) << ", "
+                                               << getDim3Translation(WGSize, Context) << ")," << NL
   << Indent <<  "      [=](cl::sycl::nd_item<3> it) {" << NL
   << Header3.str()
-  << Indent <<  "        "
-  << KName <<  "(it, " << buildArgList(KCall->arguments(), Context) << ");" <<  NL
+  << Indent <<  "        " << KName << "(it, " << buildArgList(KCall->arguments(), Context)
+                                    << ");" <<  NL
   << Indent <<  "      });" <<  NL
   << Indent <<  "  });" <<  NL
   << OrigIndent << "}";
   // clang-format on
 
-  return Replacement(
-      SM,
-      CharSourceRange(SourceRange(KCall->getLocStart(), KCall->getLocEnd()),
-                      /*IsTokenRange=*/true),
-      move(Final.str()));
+  return Replacement(SM, KCall->getLocStart(), 0, Final.str());
 }
 
 Replacement ReplaceCallExpr::getReplacement(const ASTContext &Context) const {
@@ -214,6 +265,9 @@ bool ReplacementFilter::containsInterval(const IntervalSet &IS,
   while (High != Low) {
     size_t Mid = Low + (High - Low) / 2;
 
+    if (IS[Mid].Offset == I.Offset && I.Length == 0)
+      // I is designed to replace the deletion at IS[Mid].
+      return false;
     if (IS[Mid].Offset <= I.Offset) {
       if (IS[Mid].Offset + IS[Mid].Length >= I.Offset + I.Length)
         return true;

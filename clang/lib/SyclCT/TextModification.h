@@ -181,6 +181,9 @@ public:
 class ReplaceKernelCallExpr : public TextModification {
   const CUDAKernelCallExpr *KCall;
 
+  std::pair<const Expr *, const Expr *> getExecutionConfig() const;
+  static std::string getDim3Translation(const Expr *, const ASTContext &);
+
 public:
   ReplaceKernelCallExpr(const CUDAKernelCallExpr *KCall) : KCall(KCall) {}
   tooling::Replacement getReplacement(const ASTContext &Context) const override;

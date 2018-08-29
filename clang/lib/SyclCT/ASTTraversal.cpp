@@ -613,6 +613,7 @@ void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
 void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
   auto KCall = Result.Nodes.getNodeAs<CUDAKernelCallExpr>("kernelCall");
+  emplaceTransformation(new ReplaceStmt(KCall, ""));
   emplaceTransformation(new ReplaceKernelCallExpr(KCall));
 }
 
