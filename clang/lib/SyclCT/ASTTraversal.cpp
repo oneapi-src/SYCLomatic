@@ -512,17 +512,34 @@ REGISTER_RULE(ErrorConstantsRule)
 
 void FunctionCallRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
-      callExpr(callee(functionDecl(hasAnyName(
-                   "cudaGetDeviceCount", "cudaGetDeviceProperties",
-                   "cudaDeviceReset", "cudaSetDevice", "cudaDeviceGetAttribute",
-                   "cudaDeviceGetP2PAttribute", "cudaGetDevice",
-                   "cudaGetLastError", "cudaDeviceSynchronize"))))
+      callExpr(allOf(callee(functionDecl(hasAnyName(
+                         "cudaGetDeviceCount", "cudaGetDeviceProperties",
+                         "cudaDeviceReset", "cudaSetDevice",
+                         "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
+                         "cudaGetDevice", "cudaGetLastError",
+                         "cudaDeviceSynchronize"))),
+                     hasParent(compoundStmt())))
           .bind("FunctionCall"),
+      this);
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(hasAnyName(
+                         "cudaGetDeviceCount", "cudaGetDeviceProperties",
+                         "cudaDeviceReset", "cudaSetDevice",
+                         "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
+                         "cudaGetDevice", "cudaGetLastError",
+                         "cudaDeviceSynchronize"))),
+                     unless(hasParent(compoundStmt()))))
+          .bind("FunctionCallUsed"),
       this);
 }
 
 void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   const CallExpr *CE = Result.Nodes.getNodeAs<CallExpr>("FunctionCall");
+  bool IsAssigned = false;
+  if (!CE) {
+    IsAssigned = true;
+    CE = Result.Nodes.getNodeAs<CallExpr>("FunctionCallUsed");
+  }
   assert(CE && "Unknown result");
 
   std::string FuncName =
@@ -572,10 +589,15 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceStmt(
         CE, "syclct::get_device_manager().current_device_id()"));
   } else if (FuncName == "cudaDeviceSynchronize") {
-    emplaceTransformation(new ReplaceStmt(CE, "(syclct::get_device_manager()."
-                                              "current_device().queues_wait_"
-                                              "and_throw(), 0)"));
-    report(CE->getLocStart(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    std::string ReplStr = "syclct::get_device_manager()."
+                          "current_device().queues_wait_"
+                          "and_throw()";
+    if (IsAssigned) {
+      ReplStr = "(" + ReplStr + ", 0)";
+      report(CE->getLocStart(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
+    emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+
   } else if (FuncName == "cudaGetLastError") {
     emplaceTransformation(new ReplaceStmt(CE, "0"));
   } else {
@@ -599,17 +621,31 @@ REGISTER_RULE(KernelCallRule)
 // Memory translation rules live here.
 void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
-      callExpr(callee(functionDecl(hasAnyName("cudaMalloc", "cudaMemcpy",
-                                              "cudaFree", "cudaMemset"))))
+      callExpr(allOf(callee(functionDecl(hasAnyName("cudaMalloc", "cudaMemcpy",
+                                                    "cudaFree", "cudaMemset"))),
+                     hasParent(compoundStmt())))
           .bind("call"),
+      this);
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(hasAnyName("cudaMalloc", "cudaMemcpy",
+                                                    "cudaFree", "cudaMemset"))),
+                     unless(hasParent(compoundStmt()))))
+          .bind("callUsed"),
       this);
 }
 
 void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
   const CallExpr *C = Result.Nodes.getNodeAs<CallExpr>("call");
+  bool IsAssigned = false;
+  if (!C) {
+    IsAssigned = true;
+    C = Result.Nodes.getNodeAs<CallExpr>("callUsed");
+  }
   std::string Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
-  report(C->getLocStart(), Diagnostics::NOERROR_RETURN_COMMA_OP);
-  emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
+  if (IsAssigned) {
+    report(C->getLocStart(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
+  }
   if (Name == "cudaMalloc") {
     // Input:
     // float *d_A = NULL;
@@ -628,7 +664,10 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
     // instead of "T* sycl_malloc<T>(size_t)" to make it easier to hook it
     // up with error handling. This may change.
 
-    std::string Name = "(syclct::sycl_malloc<char>";
+    std::string Name = "syclct::sycl_malloc<char>";
+    if (IsAssigned) {
+      Name = "(" + Name;
+    }
     std::vector<const Expr *> Args{C->getArg(0), C->getArg(1)};
     emplaceTransformation(
         new ReplaceCallExpr(C, std::move(Name), std::move(Args)));
@@ -649,7 +688,10 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
     // sycl_memcpy<char>(d_A, h_A, size, cudaMemcpyDeviceToHost);
     // sycl_memcpy<char>(d_A, h_A, size, someDynamicCudaMemcpyKindValue);
 
-    std::string Name = "(syclct::sycl_memcpy<char>";
+    std::string Name = "syclct::sycl_memcpy<char>";
+    if (IsAssigned) {
+      Name = "(" + Name;
+    }
     std::vector<const Expr *> Args{C->getArg(0), C->getArg(1), C->getArg(2),
                                    C->getArg(3)};
     emplaceTransformation(
@@ -661,7 +703,10 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
     // Desired output:
     // syclct::sycl_memset((void*)d_A, (unsigned char)0x12,  (unsigned
     // int)size);
-    std::string Name = "(syclct::sycl_memset";
+    std::string Name = "syclct::sycl_memset";
+    if (IsAssigned) {
+      Name = "(" + Name;
+    }
     std::vector<const Expr *> Args{C->getArg(0), C->getArg(1), C->getArg(2)};
     std::vector<std::string> NewTypes{"(void*)", "(unsigned char)",
                                       "(unsigned int)"};
@@ -675,7 +720,10 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
     //
     // Output:
     // sycl_free<char>(d_A);
-    std::string Name = "(syclct::sycl_free<char>";
+    std::string Name = "syclct::sycl_free<char>";
+    if (IsAssigned) {
+      Name = "(" + Name;
+    }
     std::vector<const Expr *> Args{C->getArg(0)};
     emplaceTransformation(
         new ReplaceCallExpr(C, std::move(Name), std::move(Args)));

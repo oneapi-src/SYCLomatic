@@ -1,6 +1,10 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/device002.sycl.cpp
 
+void checkError(cudaError_t err) {
+
+}
+
 int main(int argc, char **argv)
 {
 int deviceCount = 0;
@@ -47,12 +51,23 @@ cudaDeviceReset();
 // CHECK: syclct::get_device_manager().select_device(device2);
 cudaSetDevice(device2);
 
-// CHECK:/*
+// CHECK:syclct::get_device_manager().current_device().queues_wait_and_throw();
+// CHECK-NEXT:/*
 // CHECK-NEXT:SYCLCT1003: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
 // CHECK-NEXT:*/
-// CHECK-NEXT:(syclct::get_device_manager().current_device().queues_wait_and_throw(), 0);
+// CHECK-NEXT:int err = (syclct::get_device_manager().current_device().queues_wait_and_throw(), 0);
+// CHECK-NEXT:/*
+// CHECK-NEXT:SYCLCT1003: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:*/
+// CHECK-NEXT:checkError((syclct::get_device_manager().current_device().queues_wait_and_throw(), 0));
+// CHECK-NEXT:/*
+// CHECK-NEXT:SYCLCT1003: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:*/
+// CHECK-NEXT:return (syclct::get_device_manager().current_device().queues_wait_and_throw(), 0);
 cudaDeviceSynchronize();
-
+cudaError_t err = cudaDeviceSynchronize();
+checkError(cudaDeviceSynchronize());
+return cudaDeviceSynchronize();
 // CHECK: int e = 0;
 int e = cudaGetLastError();
 
