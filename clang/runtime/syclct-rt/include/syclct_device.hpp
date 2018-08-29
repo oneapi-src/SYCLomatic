@@ -19,6 +19,18 @@ namespace syclct {
 
 enum class compute_mode { default_, exclusive, prohibited, exclusive_process };
 
+auto exception_handler = [](cl::sycl::exception_list exceptions) {
+  for (std::exception_ptr const& e : exceptions) {
+    try {
+      std::rethrow_exception(e);
+    }
+    catch (cl::sycl::exception const& e) {
+      std::cerr << "Caught asynchronous SYCL exception:\n" << e.what()
+        << std::endl;
+    }
+  }
+};
+
 class sycl_device_info {
 public:
   char *name() { return _name; }
@@ -46,7 +58,7 @@ class syclct_device : public cl::sycl::device {
 public:
   syclct_device() : cl::sycl::device() {}
   syclct_device(const cl::sycl::device &base) : cl::sycl::device(base) {
-    _default_queue = cl::sycl::queue(base);
+    _default_queue = cl::sycl::queue(base, exception_handler);
   }
 
   int is_native_atomic_supported() { return 0; }
@@ -82,8 +94,8 @@ public:
     // release ALL (TODO) resources and reset to initial state
     for (auto q : _queues) {
       // The destructor waits for all commands executing on the queue to complete.
-      // It isn't possible to destroy a queue imediatly.
-      // This is a synchronization point in SYCL (difference from Cuda).
+      // It isn't possible to destroy a queue immediately.
+      // This is a synchronization point in SYCL.
       q.~queue();
     }
     _queues.clear();

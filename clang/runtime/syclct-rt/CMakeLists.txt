@@ -1,4 +1,5 @@
 set(syclct_rt_files
+  include/syclct.hpp
   include/syclct_device.hpp
   include/syclct_memory.hpp
 )

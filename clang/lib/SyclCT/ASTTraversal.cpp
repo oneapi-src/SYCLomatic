@@ -42,7 +42,7 @@ void IncludesCallbacks::InclusionDirective(
     SeenFiles.insert(IncludingFile);
     std::string Replacement = std::string("<CL/sycl.hpp>") +
                               getNL(FilenameRange.getEnd(), SM) +
-                              "#include <syclct_device.hpp>";
+                              "#include <syclct.hpp>";
     TransformSet.emplace_back(
         new ReplaceInclude(FilenameRange, std::move(Replacement)));
   } else {
