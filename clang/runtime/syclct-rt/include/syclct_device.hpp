@@ -1,4 +1,4 @@
-//===--- cu2sycl_device.hpp ------------------------------*- C++ -*---===//
+//===--- syclct_device.hpp ------------------------------*- C++ -*---===//
 //
 // Copyright (C) 2018 Intel Corporation. All rights reserved.
 //
@@ -9,13 +9,13 @@
 //
 //===-----------------------------------------------------------------===//
 
-#ifndef CU2SYCL_DEVICE_H
-#define CU2SYCL_DEVICE_H
+#ifndef SYCLCT_DEVICE_H
+#define SYCLCT_DEVICE_H
 
 #include <CL/sycl.hpp>
 #include <set>
 
-namespace cu2sycl {
+namespace syclct {
 
 enum class compute_mode { default_, exclusive, prohibited, exclusive_process };
 
@@ -42,10 +42,10 @@ private:
   compute_mode _compute_mode = compute_mode::default_;
 };
 
-class cu2sycl_device : public cl::sycl::device {
+class syclct_device : public cl::sycl::device {
 public:
-  cu2sycl_device() : cl::sycl::device() {}
-  cu2sycl_device(const cl::sycl::device &base) : cl::sycl::device(base) {
+  syclct_device() : cl::sycl::device() {}
+  syclct_device(const cl::sycl::device &base) : cl::sycl::device(base) {
     _default_queue = cl::sycl::queue(base);
   }
 
@@ -110,19 +110,19 @@ public:
     std::vector<cl::sycl::device> sycl_devs =
         cl::sycl::device::get_devices(cl::sycl::info::device_type::gpu);
     for (auto& dev : sycl_devs) {
-      _devs.push_back(cu2sycl_device(dev));
+      _devs.push_back(syclct_device(dev));
     }
   }
-  cu2sycl_device current_device() const {
+  syclct_device current_device() const {
     check_id(_current_device);
     return _devs[_current_device];
   }
-  cu2sycl_device get_device(unsigned int id) const {
+  syclct_device get_device(unsigned int id) const {
     check_id(id);
     return _devs[id];
   }
   unsigned int current_device_id() const { return _current_device; }
-  cu2sycl_device select_device(unsigned int id) {
+  syclct_device select_device(unsigned int id) {
     check_id(id);
     _current_device = id;
     return _devs[_current_device];
@@ -135,7 +135,7 @@ private:
       throw std::string("invalid device id");
     }
   }
-  std::vector<cu2sycl_device> _devs;
+  std::vector<syclct_device> _devs;
   unsigned int _current_device = 0;
 };
 
@@ -144,6 +144,6 @@ static device_manager &get_device_manager() {
   return d_m;
 }
 
-} // namespace cu2sycl
+} // namespace syclct
 
-#endif // CU2SYCL_DEVICE_H
+#endif // SYCLCT_DEVICE_H

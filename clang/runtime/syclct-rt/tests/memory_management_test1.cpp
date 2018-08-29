@@ -1,4 +1,4 @@
-//===--- cu2sycl_device.hpp ------------------------------*- C++ -*---===//
+//===--- syclct_device.hpp ------------------------------*- C++ -*---===//
 //
 // Copyright (C) 2018 Intel Corporation. All rights reserved.
 //
@@ -21,7 +21,7 @@
 // ./$NAME
 //
 #include <CL/sycl.hpp>
-#include "../include/cu2sycl_memory.hpp"
+#include "../include/syclct_memory.hpp"
 
 int main() {
 
@@ -37,11 +37,11 @@ int main() {
   }
 
   float *d_A;
-  cu2sycl::sycl_malloc<float>((void **)&d_A, Num);
-  cu2sycl::sycl_memcpy<float>((void*) h_A, (void*) d_A, N1, cu2sycl::memcpy_direction::to_device);
-  cu2sycl::sycl_memcpy<float>((void*) h_B, (void*) (d_A + N1), Num-N1, cu2sycl::memcpy_direction::to_device);
-  cu2sycl::sycl_memcpy<float>((void*) d_A, (void*) h_C, Num, cu2sycl::memcpy_direction::to_host);
-  cu2sycl::sycl_free<float>((void*)d_A);
+  syclct::sycl_malloc<float>((void **)&d_A, Num);
+  syclct::sycl_memcpy<float>((void*) h_A, (void*) d_A, N1, syclct::memcpy_direction::to_device);
+  syclct::sycl_memcpy<float>((void*) h_B, (void*) (d_A + N1), Num-N1, syclct::memcpy_direction::to_device);
+  syclct::sycl_memcpy<float>((void*) d_A, (void*) h_C, Num, syclct::memcpy_direction::to_host);
+  syclct::sycl_free<float>((void*)d_A);
 
   // verify
   for(int i = 0; i < N1; i++){

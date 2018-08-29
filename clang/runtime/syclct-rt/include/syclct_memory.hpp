@@ -1,4 +1,4 @@
-//===--- cu2sycl_memory.hpp ------------------------------*- C++ -*---===//
+//===--- syclct_memory.hpp ------------------------------*- C++ -*---===//
 //
 // Copyright (C) 2018 Intel Corporation. All rights reserved.
 //
@@ -9,13 +9,13 @@
 //
 //===-----------------------------------------------------------------===//
 
-#ifndef CU2SYCL_MEMORY_H
-#define CU2SYCL_MEMORY_H
+#ifndef SYCLCT_MEMORY_H
+#define SYCLCT_MEMORY_H
 
 #include <cstdint>
 #include <unordered_map>
 #include <CL/sycl.hpp>
-#include "cu2sycl_device.hpp"
+#include "syclct_device.hpp"
 
 // DESIGN CONSIDERATIONS
 // All known helper memory management classes do the following:
@@ -38,7 +38,7 @@
 // known to be less efficient (require either or both of memory and compute
 // overhead).
 
-namespace cu2sycl {
+namespace syclct {
 
 // TODO: This doesn't really belong here, this needs to be part of stream management.
 static cl::sycl::queue default_queue;
@@ -174,7 +174,7 @@ template <typename T> void sycl_malloc(void **ptr, size_t size, cl::sycl::queue 
 }
 
 template <typename T> void sycl_malloc(void **ptr, size_t size) {
-  cl::sycl::queue q = cu2sycl::get_device_manager().current_device().default_queue();
+  cl::sycl::queue q = syclct::get_device_manager().current_device().default_queue();
   sycl_malloc<T>(ptr, size, q);
 }
 
@@ -205,9 +205,9 @@ template <typename T> void sycl_memcpy(void *from_ptr, void *to_ptr, size_t size
 }
 
 template <typename T> void sycl_memcpy(void *from_ptr, void *to_ptr, size_t size, memcpy_direction direction) {
-  sycl_memcpy<T>(from_ptr, to_ptr, size, direction, cu2sycl::get_device_manager().current_device().default_queue());
+  sycl_memcpy<T>(from_ptr, to_ptr, size, direction, syclct::get_device_manager().current_device().default_queue());
 }
 
-} // namespace cu2sycl
+} // namespace syclct
 
-#endif // CU2SYCL_MEMORY_H
+#endif // SYCLCT_MEMORY_H
