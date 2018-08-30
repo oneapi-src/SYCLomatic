@@ -102,9 +102,9 @@ void test2() {
   {
     syclct::get_device_manager().current_device().default_queue().submit(
       [=](cl::sycl::handler &cgh) {
-      syclct::bufferT buffer_A = syclct::get_buffer(d_A);
-      syclct::bufferT buffer_B = syclct::get_buffer(d_B);
-      syclct::bufferT buffer_C = syclct::get_buffer(d_C);
+      syclct::buffer_t buffer_A = syclct::get_buffer(d_A);
+      syclct::buffer_t buffer_B = syclct::get_buffer(d_B);
+      syclct::buffer_t buffer_C = syclct::get_buffer(d_C);
 
       auto d_A_acc = buffer_A.template get_access<cl::sycl::access::mode::read_write>(cgh);
       auto d_B_acc = buffer_B.template get_access<cl::sycl::access::mode::read_write>(cgh);

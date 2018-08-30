@@ -48,7 +48,7 @@ enum memcpy_direction{
 };
 
 // Buffer type to be used in Memory Management runtime.
-typedef cl::sycl::buffer<uint8_t> bufferT;
+typedef cl::sycl::buffer<uint8_t> buffer_t;
 
 // TODO:
 // - thread safety.
@@ -98,7 +98,7 @@ public:
   };
 
   struct allocation {
-    bufferT buffer;
+    buffer_t buffer;
     cl_mem memobj;
     size_t size;
   };
@@ -134,7 +134,7 @@ public:
 
     // TODO: since SYCL 1.2.1 buffer construction requires context instead of
     // queue. Need to clean up the interface to require context as well.
-    allocation A {bufferT(mem, queue.get_context()), mem, size};
+    allocation A {buffer_t(mem, queue.get_context()), mem, size};
 
     return add_pointer(std::move(A));
   }
@@ -217,12 +217,12 @@ void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size, memcpy_direction dir
   sycl_memcpy(to_ptr, from_ptr, size, direction, syclct::get_device_manager().current_device().default_queue());
 }
 
-// In following functions bufferT is return instead of bufferT*, because of
+// In following functions buffer_t is return instead of buffer_t*, because of
 // SYCL 1.2.1 #4.3.2 Common reference semantics, which explains why it's
 // ok to take a copy of buffer. On the othe side, returning a pointer to
 // buffer would cause obligations for not moving referenced buffer.
 
-bufferT get_buffer(void *ptr) {
+buffer_t get_buffer(void *ptr) {
   memory_manager::allocation& alloc = memory_manager::get_instance().translate_ptr(ptr);
   size_t offset = memory_manager::get_instance().get_ptr_offset(ptr);
   if (offset == 0) {
@@ -233,12 +233,12 @@ bufferT get_buffer(void *ptr) {
     assert(offset < alloc.size);
     const cl::sycl::id<1> id(offset);
     const cl::sycl::range<1> range(alloc.size-offset);
-    bufferT sub_buffer = bufferT(alloc.buffer, id, range);
+    buffer_t sub_buffer = buffer_t(alloc.buffer, id, range);
     return sub_buffer;
   }
 }
 
-std::pair<bufferT, size_t> get_buffer_and_offset(void *ptr) {
+std::pair<buffer_t, size_t> get_buffer_and_offset(void *ptr) {
   memory_manager::allocation& alloc = memory_manager::get_instance().translate_ptr(ptr);
   size_t offset = memory_manager::get_instance().get_ptr_offset(ptr);
   return std::make_pair(alloc.buffer, offset);
