@@ -178,7 +178,7 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   Final
   << Header.str()
   << Indent << "syclct::get_device_manager().current_device().default_queue().submit(" << NL
-  << Indent <<  "  [=](cl::sycl::handler &cgh) {" << NL
+  << Indent <<  "  [&](cl::sycl::handler &cgh) {" << NL
   << Header2.str()
   << Indent <<  "    cgh.parallel_for<class " << KName << ">(" << NL
   << Indent <<  "      cl::sycl::nd_range<3>(" << getStmtSpelling(NDSize, Context) << ", "
@@ -188,7 +188,7 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << Indent <<  "        "
   << KName <<  "(it, " << buildArgList(KCall->arguments(), Context) << ");" <<  NL
   << Indent <<  "      });" <<  NL
-  << Indent <<  "  })" <<  NL
+  << Indent <<  "  });" <<  NL
   << OrigIndent << "}";
   // clang-format on
 

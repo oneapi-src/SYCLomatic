@@ -16,7 +16,7 @@ int main() {
 // CHECK-NEXT:    std::pair<cl::sycl::buffer<char, 1 >*, size_t> karg2_buf = syclct::get_buffer_and_offset(karg2);
 // CHECK-NEXT:    size_t karg2_offset = karg2_buf.second;
 // CHECK-NEXT:    syclct::get_device_manager().current_device().default_queue().submit(
-// CHECK-NEXT:      [=](cl::sycl::handler &cgh) {
+// CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
 // CHECK-NEXT:        auto karg1_acc = karg1_buf.first->get_access<cl::sycl::access::mode::read_write>(cgh);
 // CHECK-NEXT:        auto karg2_acc = karg2_buf.first->get_access<cl::sycl::access::mode::read_write>(cgh);
 // CHECK-NEXT:        cgh.parallel_for<class testKernel>(
@@ -26,7 +26,7 @@ int main() {
 // CHECK-NEXT:            const int *karg2 = (const int*)(&karg2_acc[0] + karg2_offset);
 // CHECK-NEXT:            testKernel(it, (const int *)karg1, karg2, karg3);
 // CHECK-NEXT:          });
-// CHECK-NEXT:      })
+// CHECK-NEXT:      });
 // CHECK-NEXT:  };
   testKernel<<<griddim, threaddim>>>((const int *)karg1, karg2, karg3);
 }
