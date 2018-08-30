@@ -12,8 +12,10 @@
 #ifndef SYCLCT_MEMORY_H
 #define SYCLCT_MEMORY_H
 
+#include <cassert>
 #include <cstdint>
 #include <unordered_map>
+#include <utility>
 #include <CL/sycl.hpp>
 #include "syclct_device.hpp"
 
@@ -40,13 +42,13 @@
 
 namespace syclct {
 
-// TODO: This doesn't really belong here, this needs to be part of stream management.
-static cl::sycl::queue default_queue;
-
 enum memcpy_direction{
   to_device,
   to_host
 };
+
+// Buffer type to be used in Memory Management runtime.
+typedef cl::sycl::buffer<uint8_t> bufferT;
 
 // TODO:
 // - thread safety.
@@ -96,7 +98,7 @@ public:
   };
 
   struct allocation {
-    cl::sycl::buffer<uint8_t> buffer;
+    bufferT buffer;
     cl_mem memobj;
     size_t size;
   };
@@ -130,7 +132,9 @@ public:
     cl_mem mem = clCreateBuffer(
         queue.get_context().get(), CL_MEM_READ_WRITE, size, NULL, &error);
 
-    allocation A {cl::sycl::buffer<uint8_t>(mem, queue), mem, size};
+    // TODO: since SYCL 1.2.1 buffer construction requires context instead of
+    // queue. Need to clean up the interface to require context as well.
+    allocation A {bufferT(mem, queue.get_context()), mem, size};
 
     return add_pointer(std::move(A));
   }
@@ -150,8 +154,13 @@ public:
     if (it != m_map.end()) {
       return it->second;
     }
-
     std::abort();
+  }
+
+  // map: fake ptr -> offset in the buffer
+  size_t get_ptr_offset(void *ptr) {
+    fake_device_pointer fdp(ptr);
+    return fdp.get_offset();
   }
 
   // Singleton to return the instance memory_manager.
@@ -169,34 +178,34 @@ private:
 
 // malloc
 // TODO: ret values to adjust for error handling.
-template <typename T> void sycl_malloc(void **ptr, size_t size, cl::sycl::queue q) {
-  *ptr = memory_manager::get_instance().mem_alloc(size * sizeof(T), q);
+void sycl_malloc(void **ptr, size_t size, cl::sycl::queue q) {
+  *ptr = memory_manager::get_instance().mem_alloc(size * sizeof(uint8_t), q);
 }
 
-template <typename T> void sycl_malloc(void **ptr, size_t size) {
+void sycl_malloc(void **ptr, size_t size) {
   cl::sycl::queue q = syclct::get_device_manager().current_device().default_queue();
-  sycl_malloc<T>(ptr, size, q);
+  sycl_malloc(ptr, size, q);
 }
 
 // free
 // TODO: ret values to adjust for error handling.
-template <typename T> void sycl_free(void *ptr) {
+void sycl_free(void *ptr) {
   memory_manager::get_instance().mem_free(ptr);
 }
 
 // memcpy
 // TODO: ret values to adjust for error handling.
-template <typename T> void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size, memcpy_direction direction, cl::sycl::queue q) {
+void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size, memcpy_direction direction, cl::sycl::queue q) {
   cl_int rc;
   if (direction == memcpy_direction::to_device) {
     memory_manager::allocation &a =  memory_manager::get_instance().translate_ptr(to_ptr);
     size_t offset = memory_manager::fake_device_pointer(to_ptr).get_offset();
-    rc = clEnqueueWriteBuffer(q.get(), a.memobj, CL_TRUE, offset, size * sizeof(T), from_ptr, 0, NULL, NULL);
+    rc = clEnqueueWriteBuffer(q.get(), a.memobj, CL_TRUE, offset, size * sizeof(uint8_t), from_ptr, 0, NULL, NULL);
   }
   else if (direction == memcpy_direction::to_host) {
     memory_manager::allocation &a = memory_manager::get_instance().translate_ptr(from_ptr);
     size_t offset = memory_manager::fake_device_pointer(from_ptr).get_offset();
-    rc = clEnqueueReadBuffer(q.get(), a.memobj, CL_TRUE, offset, size * sizeof(T), to_ptr, 0, NULL, NULL);
+    rc = clEnqueueReadBuffer(q.get(), a.memobj, CL_TRUE, offset, size * sizeof(uint8_t), to_ptr, 0, NULL, NULL);
   } else {
     // Oooops!
   }
@@ -204,8 +213,35 @@ template <typename T> void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size
   // TODO: error checking and reporting back.
 }
 
-template <typename T> void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size, memcpy_direction direction) {
-  sycl_memcpy<T>(to_ptr, from_ptr, size, direction, syclct::get_device_manager().current_device().default_queue());
+void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size, memcpy_direction direction) {
+  sycl_memcpy(to_ptr, from_ptr, size, direction, syclct::get_device_manager().current_device().default_queue());
+}
+
+// In following functions bufferT is return instead of bufferT*, because of
+// SYCL 1.2.1 #4.3.2 Common reference semantics, which explains why it's
+// ok to take a copy of buffer. On the othe side, returning a pointer to
+// buffer would cause obligations for not moving referenced buffer.
+
+bufferT get_buffer(void *ptr) {
+  memory_manager::allocation& alloc = memory_manager::get_instance().translate_ptr(ptr);
+  size_t offset = memory_manager::get_instance().get_ptr_offset(ptr);
+  if (offset == 0) {
+    return alloc.buffer;
+  } else {
+    // TODO: taking subbuffers has some requirements for allignment/element count in the new buffer.
+    // This causes incorrect work in case of bad offsets. This needs to be investigated.
+    assert(offset < alloc.size);
+    const cl::sycl::id<1> id(offset);
+    const cl::sycl::range<1> range(alloc.size-offset);
+    bufferT sub_buffer = bufferT(alloc.buffer, id, range);
+    return sub_buffer;
+  }
+}
+
+std::pair<bufferT, size_t> get_buffer_and_offset(void *ptr) {
+  memory_manager::allocation& alloc = memory_manager::get_instance().translate_ptr(ptr);
+  size_t offset = memory_manager::get_instance().get_ptr_offset(ptr);
+  return std::make_pair(alloc.buffer, offset);
 }
 
 } // namespace syclct

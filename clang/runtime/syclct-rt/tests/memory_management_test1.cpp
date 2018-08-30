@@ -23,7 +23,7 @@
 #include <CL/sycl.hpp>
 #include "../include/syclct_memory.hpp"
 
-int main() {
+void test1() {
 
   int Num = 5000;
   int N1 = 1000;
@@ -37,11 +37,14 @@ int main() {
   }
 
   float *d_A;
-  syclct::sycl_malloc<float>((void **)&d_A, Num);
-  syclct::sycl_memcpy<float>((void*) d_A, (void*) h_A, N1, syclct::memcpy_direction::to_device);
-  syclct::sycl_memcpy<float>((void*) (d_A + N1), (void*) h_B, Num-N1, syclct::memcpy_direction::to_device);
-  syclct::sycl_memcpy<float>((void*) h_C, (void*) d_A, Num, syclct::memcpy_direction::to_host);
-  syclct::sycl_free<float>((void*)d_A);
+  // hostA[0..999] -> deviceA[0..999]
+  // hostB[0..3999] -> deviceA[1000..4999]
+  // deviceA[0..4999] -> hostC[0..4999]
+  syclct::sycl_malloc((void **)&d_A, Num * sizeof(float));
+  syclct::sycl_memcpy((void*) d_A, (void*) h_A, N1 * sizeof(float), syclct::memcpy_direction::to_device);
+  syclct::sycl_memcpy((void*) (d_A + N1), (void*) h_B, (Num-N1) * sizeof(float), syclct::memcpy_direction::to_device);
+  syclct::sycl_memcpy((void*) h_C, (void*) d_A, Num * sizeof(float), syclct::memcpy_direction::to_host);
+  syclct::sycl_free((void*)d_A);
 
   // verify
   for(int i = 0; i < N1; i++){
@@ -60,11 +63,166 @@ int main() {
       }
   }
 
-  printf("Test Passed\n");
+  printf("Test1 Passed\n");
 
   free(h_A);
   free(h_B);
   free(h_C);
+}
+
+class vectorAdd2;
+void test2() {
+
+  int Num = 5000;
+  int Offset = 32;
+  float *h_A = (float*)malloc(Num*sizeof(float));
+  float *h_B = (float*)malloc(Num*sizeof(float));
+  float *h_C = (float*)malloc(Num*sizeof(float));
+
+  for (int i = 0; i < Num; i++) {
+    h_A[i] = 1.0f;
+    h_B[i] = 2.0f;
+  }
+
+  float *d_A, *d_B, *d_C;
+  // hostA -> deviceA
+  // hostB -> deviceB
+  // kernel: deviceC = deviceA + deviceB
+  // deviceA -> hostC
+  syclct::sycl_malloc((void **)&d_A, Num * sizeof(float));
+  syclct::sycl_malloc((void **)&d_B, Num * sizeof(float));
+  syclct::sycl_malloc((void **)&d_C, Num * sizeof(float));
+  syclct::sycl_memcpy((void*) d_A, (void*) h_A, Num * sizeof(float), syclct::memcpy_direction::to_device);
+  syclct::sycl_memcpy((void*) d_B, (void*) h_B, Num * sizeof(float), syclct::memcpy_direction::to_device);
+
+  d_A += Offset;
+  d_B += Offset;
+  d_C += Offset;
+
+  {
+    syclct::get_device_manager().current_device().default_queue().submit(
+      [=](cl::sycl::handler &cgh) {
+      syclct::bufferT buffer_A = syclct::get_buffer(d_A);
+      syclct::bufferT buffer_B = syclct::get_buffer(d_B);
+      syclct::bufferT buffer_C = syclct::get_buffer(d_C);
+
+      auto d_A_acc = buffer_A.template get_access<cl::sycl::access::mode::read_write>(cgh);
+      auto d_B_acc = buffer_B.template get_access<cl::sycl::access::mode::read_write>(cgh);
+      auto d_C_acc = buffer_C.template get_access<cl::sycl::access::mode::read_write>(cgh);
+        cgh.parallel_for<class vectorAdd2>(
+          cl::sycl::range<1>(Num-Offset),
+          [=](cl::sycl::id<1> id) {
+            float *A = (float*)&d_A_acc[0];
+            float *B = (float*)&d_B_acc[0];
+            float *C = (float*)&d_C_acc[0];
+            int i = id[0];
+            C[i] = A[i] + B[i];
+          });
+      });
+  }
+
+  syclct::sycl_memcpy((void*) (h_C+Offset), (void*) d_C, (Num-Offset) * sizeof(float), syclct::memcpy_direction::to_host);
+
+  syclct::sycl_free((void*)d_A);
+  syclct::sycl_free((void*)d_B);
+  syclct::sycl_free((void*)d_C);
+
+  // verify
+  for(int i = Offset; i < Num; i++){
+      if (fabs(h_C[i] - h_A[i] - h_B[i]) > 1e-5) {
+          fprintf(stderr,"Check: Elements are A = %f, B = %f, C = %f:\n", h_A[i],  h_B[i],  h_C[i]);
+          fprintf(stderr,"Result verification failed at element %d:\n", i);
+          exit(EXIT_FAILURE);
+      }
+  }
+
+  printf("Test2 Passed\n");
+
+  free(h_A);
+  free(h_B);
+  free(h_C);
+}
+
+class vectorAdd3;
+void test3() {
+
+  int Num = 5000;
+  int Offset = 100;
+  float *h_A = (float*)malloc(Num*sizeof(float));
+  float *h_B = (float*)malloc(Num*sizeof(float));
+  float *h_C = (float*)malloc(Num*sizeof(float));
+
+  for (int i = 0; i < Num; i++) {
+    h_A[i] = 1.0f;
+    h_B[i] = 2.0f;
+  }
+
+  float *d_A, *d_B, *d_C;
+  // hostA -> deviceA
+  // hostB -> deviceB
+  // kernel: deviceC = deviceA + deviceB
+  // deviceA -> hostC
+  syclct::sycl_malloc((void **)&d_A, Num * sizeof(float));
+  syclct::sycl_malloc((void **)&d_B, Num * sizeof(float));
+  syclct::sycl_malloc((void **)&d_C, Num * sizeof(float));
+  syclct::sycl_memcpy((void*) d_A, (void*) h_A, Num * sizeof(float), syclct::memcpy_direction::to_device);
+  syclct::sycl_memcpy((void*) d_B, (void*) h_B, Num * sizeof(float), syclct::memcpy_direction::to_device);
+
+  d_A += Offset;
+  d_B += Offset;
+  d_C += Offset;
+
+  {
+    syclct::get_device_manager().current_device().default_queue().submit(
+      [=](cl::sycl::handler &cgh) {
+      auto buffer_and_offset_A = syclct::get_buffer_and_offset(d_A);
+      size_t offset_A = buffer_and_offset_A.second;
+      auto buffer_and_offset_B = syclct::get_buffer_and_offset(d_B);
+      size_t offset_B = buffer_and_offset_A.second;
+      auto buffer_and_offset_C = syclct::get_buffer_and_offset(d_C);
+      size_t offset_C = buffer_and_offset_A.second;
+
+      auto d_A_acc = buffer_and_offset_A.first.template get_access<cl::sycl::access::mode::read_write>(cgh);
+      auto d_B_acc = buffer_and_offset_B.first.template get_access<cl::sycl::access::mode::read_write>(cgh);
+      auto d_C_acc = buffer_and_offset_C.first.template get_access<cl::sycl::access::mode::read_write>(cgh);
+        cgh.parallel_for<class vectorAdd3>(
+          cl::sycl::range<1>(Num-Offset),
+          [=](cl::sycl::id<1> id) {
+            float *A = (float*)(&d_A_acc[0]+offset_A);
+            float *B = (float*)(&d_B_acc[0]+offset_B);
+            float *C = (float*)(&d_C_acc[0]+offset_C);
+            int i = id[0];
+            C[i] = A[i] + B[i];
+          });
+      });
+  }
+
+  syclct::sycl_memcpy((void*) (h_C+Offset), (void*) d_C, (Num-Offset) * sizeof(float), syclct::memcpy_direction::to_host);
+
+  syclct::sycl_free((void*)d_A);
+  syclct::sycl_free((void*)d_B);
+  syclct::sycl_free((void*)d_C);
+
+  // verify
+  for(int i = Offset; i < Num; i++){
+      if (fabs(h_C[i] - h_A[i] - h_B[i]) > 1e-5) {
+          fprintf(stderr,"Check: Elements are A = %f, B = %f, C = %f:\n", h_A[i],  h_B[i],  h_C[i]);
+          fprintf(stderr,"Result verification failed at element %d:\n", i);
+          exit(EXIT_FAILURE);
+      }
+  }
+
+  printf("Test2 Passed\n");
+
+  free(h_A);
+  free(h_B);
+  free(h_C);
+}
+
+int main() {
+  test1();
+  test2();
+  test3();
 
   return 0;
 }
