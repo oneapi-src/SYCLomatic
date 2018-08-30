@@ -186,7 +186,7 @@ template <typename T> void sycl_free(void *ptr) {
 
 // memcpy
 // TODO: ret values to adjust for error handling.
-template <typename T> void sycl_memcpy(void *from_ptr, void *to_ptr, size_t size, memcpy_direction direction, cl::sycl::queue q) {
+template <typename T> void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size, memcpy_direction direction, cl::sycl::queue q) {
   cl_int rc;
   if (direction == memcpy_direction::to_device) {
     memory_manager::allocation &a =  memory_manager::get_instance().translate_ptr(to_ptr);
@@ -204,8 +204,8 @@ template <typename T> void sycl_memcpy(void *from_ptr, void *to_ptr, size_t size
   // TODO: error checking and reporting back.
 }
 
-template <typename T> void sycl_memcpy(void *from_ptr, void *to_ptr, size_t size, memcpy_direction direction) {
-  sycl_memcpy<T>(from_ptr, to_ptr, size, direction, syclct::get_device_manager().current_device().default_queue());
+template <typename T> void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size, memcpy_direction direction) {
+  sycl_memcpy<T>(to_ptr, from_ptr, size, direction, syclct::get_device_manager().current_device().default_queue());
 }
 
 } // namespace syclct

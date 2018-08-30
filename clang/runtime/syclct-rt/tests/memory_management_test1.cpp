@@ -38,9 +38,9 @@ int main() {
 
   float *d_A;
   syclct::sycl_malloc<float>((void **)&d_A, Num);
-  syclct::sycl_memcpy<float>((void*) h_A, (void*) d_A, N1, syclct::memcpy_direction::to_device);
-  syclct::sycl_memcpy<float>((void*) h_B, (void*) (d_A + N1), Num-N1, syclct::memcpy_direction::to_device);
-  syclct::sycl_memcpy<float>((void*) d_A, (void*) h_C, Num, syclct::memcpy_direction::to_host);
+  syclct::sycl_memcpy<float>((void*) d_A, (void*) h_A, N1, syclct::memcpy_direction::to_device);
+  syclct::sycl_memcpy<float>((void*) (d_A + N1), (void*) h_B, Num-N1, syclct::memcpy_direction::to_device);
+  syclct::sycl_memcpy<float>((void*) h_C, (void*) d_A, Num, syclct::memcpy_direction::to_host);
   syclct::sycl_free<float>((void*)d_A);
 
   // verify
