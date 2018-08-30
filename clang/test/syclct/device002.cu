@@ -23,11 +23,23 @@ int device1 = 0;
 int device2 = 1;
 int perfRank = 0;
 int accessSupported = 0;
-// CHECK: accessSupported = 0;
+
+// CHECK:/*
+// CHECK-NEXT:SYCLCT1004: P2P Access is not supported in Sycl
+// CHECK-NEXT:*/
+// CHECK-NEXT: accessSupported = 0;
 cudaDeviceGetP2PAttribute(&accessSupported, cudaDevP2PAttrAccessSupported, device1, device2);
-// CHECK: perfRank = 0;
+
+// CHECK:/*
+// CHECK-NEXT:SYCLCT1004: P2P Access is not supported in Sycl
+// CHECK-NEXT:*/
+// CHECK-NEXT: perfRank = 0;
 cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, device1, device2);
-// CHECK: atomicSupported = 0;
+
+// CHECK:/*
+// CHECK-NEXT:SYCLCT1004: P2P Access is not supported in Sycl
+// CHECK-NEXT:*/
+// CHECK-NEXT: atomicSupported = 0;
 cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtomicSupported, device1, device2);
 
 // CHECK: syclct::get_device_manager().current_device().reset();

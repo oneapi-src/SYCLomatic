@@ -94,7 +94,7 @@ void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
 static inline SourceLocation getStartOfLine(SourceLocation Loc,
                                                const SourceManager &SM,
                                                const LangOptions &LangOpts) {
-  auto LocInfo = SM.getDecomposedLoc(Loc);
+  auto LocInfo = SM.getDecomposedLoc(SM.getExpansionLoc(Loc));
   auto Buffer = SM.getBufferData(LocInfo.first);
   auto NLPos = Buffer.find_last_of('\n', LocInfo.second);
   if (NLPos == StringRef::npos) {
@@ -102,7 +102,7 @@ static inline SourceLocation getStartOfLine(SourceLocation Loc,
   } else {
     NLPos++;
   }
-  return Loc.getLocWithOffset(NLPos - LocInfo.second);
+  return SM.getExpansionLoc(Loc).getLocWithOffset(NLPos - LocInfo.second);
 }
 
 template <typename... Ts>

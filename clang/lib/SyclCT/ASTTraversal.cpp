@@ -465,6 +465,10 @@ void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
     return;
   }
   emplaceTransformation(new RenameFieldInMemberExpr(ME, Search->second + "()"));
+  if ((Search->second.compare(0, 13, "major_version") == 0) ||
+      (Search->second.compare(0, 13, "minor_version") == 0)) {
+    report(ME->getLocStart(), Comments::VERSION_COMMENT);
+  }
 }
 
 REGISTER_RULE(DevicePropVarRule)
@@ -561,6 +565,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaDeviceGetP2PAttribute") {
     std::string ResultVarName = DereferenceArg(CE->getArg(0));
     emplaceTransformation(new ReplaceStmt(CE, ResultVarName + " = 0"));
+    report(CE->getLocStart(), Comments::NOTSUPPORTED, "P2P Access");
   } else if (FuncName == "cudaGetDevice") {
     std::string ResultVarName = DereferenceArg(CE->getArg(0));
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));

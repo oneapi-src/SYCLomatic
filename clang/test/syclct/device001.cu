@@ -11,16 +11,28 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  // CHECK:     int major = deviceProp.major_version();
+// CHECK:/*
+// CHECK-NEXT:SYCLCT1005: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:*/
+// CHECK-NEXT:int major = deviceProp.major_version();
   int major = deviceProp.major;
 
-  // CHECK: deviceProp.major_version() = 1;
+// CHECK:/*
+// CHECK-NEXT:SYCLCT1005: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:*/
+// CHECK-NEXT:deviceProp.major_version() = 1;
   deviceProp.major = 1;
 
-  // CHECK:     int minor = deviceProp.minor_version();
+// CHECK:/*
+// CHECK-NEXT:SYCLCT1005: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:*/
+// CHECK-NEXT:int minor = deviceProp.minor_version();
   int minor = deviceProp.minor;
 
-  // CHECK: deviceProp.minor_version() = 120;
+// CHECK:/*
+// CHECK-NEXT:SYCLCT1005: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:*/
+// CHECK-NEXT:deviceProp.minor_version() = 120;
   deviceProp.minor = 120;
 
   // CHECK:     char *name = deviceProp.name();
@@ -37,7 +49,13 @@ int main(int argc, char **argv) {
   // CHECK:     int count = deviceProp.max_compute_units();
   int count = deviceProp.multiProcessorCount;
 
-  // CHECK: int n = deviceProp.minor_version() / deviceProp.major_version();
+// CHECK:/*
+// CHECK-NEXT:SYCLCT1005: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:*/
+// CHECK-NEXT:/*
+// CHECK-NEXT:SYCLCT1005: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:*/
+// CHECK-NEXT:int n = deviceProp.minor_version() / deviceProp.major_version();
   int n = deviceProp.minor / deviceProp.major;
   return 0;
 }
