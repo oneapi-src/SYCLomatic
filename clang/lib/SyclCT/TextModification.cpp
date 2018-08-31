@@ -156,13 +156,13 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
         // TODO check that no nested pointers in a structure
         assert(!PointeeType->isAnyPointerType());
         auto VarType = PointeeType.getCanonicalType().getAsString();
-        Header << Indent << "std::pair<cl::sycl::buffer<char, 1 >*, size_t> "
+        Header << Indent << "std::pair<syclct::bufferT, size_t> "
                << VarName << "_buf = syclct::get_buffer_and_offset("
                << VarName + ");" << NL;
         Header << Indent << "size_t " << VarName
                << "_offset = " << VarName + "_buf.second;" << NL;
         Header2 << Indent << "    auto " << VarName << "_acc = " << VarName
-                << "_buf.first->"
+                << "_buf.first."
                    "get_access<cl::sycl::access::mode::read_write>("
                 << "cgh);" << NL;
         Header3 << Indent << "        " << VarType << " *" << VarName << " = ("

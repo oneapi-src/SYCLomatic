@@ -11,14 +11,14 @@ int main() {
   const int *karg2 = 0;
   int karg3 = 80;
 // CHECK:  {
-// CHECK-NEXT:    std::pair<cl::sycl::buffer<char, 1 >*, size_t> karg1_buf = syclct::get_buffer_and_offset(karg1);
+// CHECK-NEXT:    std::pair<syclct::bufferT, size_t> karg1_buf = syclct::get_buffer_and_offset(karg1);
 // CHECK-NEXT:    size_t karg1_offset = karg1_buf.second;
-// CHECK-NEXT:    std::pair<cl::sycl::buffer<char, 1 >*, size_t> karg2_buf = syclct::get_buffer_and_offset(karg2);
+// CHECK-NEXT:    std::pair<syclct::bufferT, size_t> karg2_buf = syclct::get_buffer_and_offset(karg2);
 // CHECK-NEXT:    size_t karg2_offset = karg2_buf.second;
 // CHECK-NEXT:    syclct::get_device_manager().current_device().default_queue().submit(
 // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-// CHECK-NEXT:        auto karg1_acc = karg1_buf.first->get_access<cl::sycl::access::mode::read_write>(cgh);
-// CHECK-NEXT:        auto karg2_acc = karg2_buf.first->get_access<cl::sycl::access::mode::read_write>(cgh);
+// CHECK-NEXT:        auto karg1_acc = karg1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+// CHECK-NEXT:        auto karg2_acc = karg2_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
 // CHECK-NEXT:        cgh.parallel_for<class testKernel>(
 // CHECK-NEXT:          cl::sycl::nd_range<3>(griddim, threaddim),
 // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
