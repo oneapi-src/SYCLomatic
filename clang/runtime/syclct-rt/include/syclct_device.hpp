@@ -15,6 +15,7 @@
 #include <CL/sycl.hpp>
 #include <iostream>
 #include <set>
+#include <sstream>
 
 namespace syclct {
 
@@ -68,17 +69,18 @@ public:
   sycl_device_info get_device_info() {
     sycl_device_info prop;
     std::strcpy(prop.name(), get_info<cl::sycl::info::device::name>().c_str());
-    std::string ver = get_info<cl::sycl::info::device::version>();
-    std::size_t found = ver.find('.');
-    if (found == std::string::npos) {
-      prop.major_version() = 0;
-      prop.minor_version() = 0;
-    } else {
-      // FIXME: Example of ver string that I have: "OpenCL 1.2 (Build 25)"
-      // And it obviousely crashes with code below.
-//      prop.major_version() = std::stoi(ver.substr(0, found - 1));
-//      prop.minor_version() = std::stoi(ver.substr(0, found + 1));
-    }
+
+    // Version string has the following format:
+    // OpenCL<space><major.minor><space><vendor-specific-information>
+    std::stringstream ver;
+    ver << get_info<cl::sycl::info::device::version>();
+    std::string item;
+    std::getline(ver, item, ' '); // OpenCL
+    std::getline(ver, item, '.'); // major
+    prop.major_version() = std::stoi(item);
+    std::getline(ver, item, ' '); // minor
+    prop.minor_version() = std::stoi(item);
+
     prop.max_work_item_sizes() =
         get_info<cl::sycl::info::device::max_work_item_sizes>();
     prop.host_unified_memory() =
