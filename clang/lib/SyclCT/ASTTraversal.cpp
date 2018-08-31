@@ -647,24 +647,7 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
   }
   if (Name == "cudaMalloc") {
-    // Input:
-    // float *d_A = NULL;
-    // cudaMalloc((void **)&d_A, size);
-    //
-    // Desired output:
-    // float *d_A = NULL;
-    // sycl_malloc<float>((float **)&d_A, numElements);
-    //
-    // Current output:
-    // float *d_A = NULL;
-    // sycl_malloc<char>((void **)&d_A, size);
-    //
-    //
-    // NOTE: "ErroCodeType sycl_malloc<T>(T**, size_t)" signature is used
-    // instead of "T* sycl_malloc<T>(size_t)" to make it easier to hook it
-    // up with error handling. This may change.
-
-    std::string Name = "syclct::sycl_malloc<char>";
+    std::string Name = "syclct::sycl_malloc";
     if (IsAssigned) {
       Name = "(" + Name;
     }
@@ -672,23 +655,7 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new ReplaceCallExpr(C, std::move(Name), std::move(Args)));
   } else if (Name == "cudaMemcpy") {
-    // Input:
-    // cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
-    // cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
-    // cudaMemcpy(x_A, y_A, size, someDynamicCudaMemcpyKindValue);
-    //
-    // Desired output:
-    // sycl_memcpy<float>(d_A, h_A, numElements);
-    // sycl_memcpy_back<float>(h_A, d_A, numElements);
-    // sycl_memcpy<float>(d_A, h_A, numElements,
-    // someDynamicCudaMemcpyKindValue);
-    //
-    // Current output:
-    // sycl_memcpy<char>(d_A, h_A, size, cudaMemcpyHostToDevice);
-    // sycl_memcpy<char>(d_A, h_A, size, cudaMemcpyDeviceToHost);
-    // sycl_memcpy<char>(d_A, h_A, size, someDynamicCudaMemcpyKindValue);
-
-    std::string Name = "syclct::sycl_memcpy<char>";
+    std::string Name = "syclct::sycl_memcpy";
     if (IsAssigned) {
       Name = "(" + Name;
     }
@@ -697,12 +664,6 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new ReplaceCallExpr(C, std::move(Name), std::move(Args)));
   } else if (Name == "cudaMemset") {
-    // Input:
-    // cudaMemset(d_A, 0x12, size);
-    //
-    // Desired output:
-    // syclct::sycl_memset((void*)d_A, (unsigned char)0x12,  (unsigned
-    // int)size);
     std::string Name = "syclct::sycl_memset";
     if (IsAssigned) {
       Name = "(" + Name;
@@ -715,12 +676,7 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
         new ReplaceCallExpr(C, std::move(Name), std::move(Args), NewTypes));
 
   } else if (Name == "cudaFree") {
-    // Input:
-    // cudaFree(d_A);
-    //
-    // Output:
-    // sycl_free<char>(d_A);
-    std::string Name = "syclct::sycl_free<char>";
+    std::string Name = "syclct::sycl_free";
     if (IsAssigned) {
       Name = "(" + Name;
     }
