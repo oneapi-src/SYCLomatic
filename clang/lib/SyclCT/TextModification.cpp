@@ -111,9 +111,22 @@ std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
                          llvm::iterator_range<TypeIterT> Types,
                          const ASTContext &Context) {
   std::stringstream List;
+  auto B = begin(Types);
   for (auto A = begin(Args); A != end(Args); A++) {
-    auto B = begin(Types);
-    List << *B << "(" << getStmtSpelling(*A, Context) << ")";
+    if (*A != nullptr && !(*B).empty()) {
+      // General case, both are not empty
+      List << *B << "(" << getStmtSpelling(*A, Context) << ")";
+    } else if (*A != nullptr && (*B).empty()) {
+      // No type, just argument
+      List << getStmtSpelling(*A, Context);
+    } else if (*A == nullptr && !(*B).empty()) {
+      // Just use "type", which is desired textual representation
+      // of argument in this case.
+      List << *B;
+    } else {
+      // Both are empty. Houston, we have a problem!
+      assert(false);
+    }
     if (A + 1 != end(Args)) {
       List << ", ";
     }

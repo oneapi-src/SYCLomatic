@@ -660,18 +660,48 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
     if (IsAssigned) {
       Name = "(" + Name;
     }
+    // Input:
+    // cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
+    // cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
+    // cudaMemcpy(x_A, y_A, size, someDynamicCudaMemcpyKindValue);
+    //
+    // Desired output:
+    // sycl_memcpy<float>(d_A, h_A, numElements);
+    // sycl_memcpy_back<float>(h_A, d_A, numElements);
+    // sycl_memcpy<float>(x_A, y_A, numElements,
+    // someDynamicCudaMemcpyKindValue);
+    //
+    // Current output:
+    // sycl_memcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
+    // sycl_memcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
+    // sycl_memcpy(x_A, y_A, size, someDynamicCudaMemcpyKindValue);
+
+    // Translate C->getArg(3) if this is enum constant.
+    // TODO: this is a hack until we get pass ordering and make
+    // different passes work with each other well together.
+    const Expr *Direction = C->getArg(3);
+    std::string DirectionName;
+    const DeclRefExpr *DD = dyn_cast_or_null<DeclRefExpr>(Direction);
+    if (DD && isa<EnumConstantDecl>(DD->getDecl())) {
+      DirectionName = DD->getNameInfo().getName().getAsString();
+      auto Search = EnumConstantRule::EnumNamesMap.find(DirectionName);
+      assert(Search != EnumConstantRule::EnumNamesMap.end());
+      Direction = nullptr;
+      DirectionName = "syclct::" + Search->second;
+    }
     std::vector<const Expr *> Args{C->getArg(0), C->getArg(1), C->getArg(2),
-                                   C->getArg(3)};
+                                   Direction};
+    std::vector<std::string> StrArgs{"", "", "", DirectionName};
     emplaceTransformation(
-        new ReplaceCallExpr(C, std::move(Name), std::move(Args)));
+        new ReplaceCallExpr(C, std::move(Name), std::move(Args), std::move(StrArgs)));
   } else if (Name == "cudaMemset") {
     std::string Name = "syclct::sycl_memset";
     if (IsAssigned) {
       Name = "(" + Name;
     }
     std::vector<const Expr *> Args{C->getArg(0), C->getArg(1), C->getArg(2)};
-    std::vector<std::string> NewTypes{"(void*)", "(unsigned char)",
-                                      "(unsigned int)"};
+    std::vector<std::string> NewTypes{"(void*)", "(int)",
+                                      "(size_t)"};
 
     emplaceTransformation(
         new ReplaceCallExpr(C, std::move(Name), std::move(Args), NewTypes));
