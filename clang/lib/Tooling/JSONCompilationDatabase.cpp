@@ -350,6 +350,14 @@ bool JSONCompilationDatabase::parse(std::string &ErrorMessage) {
         return false;
       }
     }
+
+#if INTEL_CUSTOMIZATION
+    //ignore linker entry
+    if(!File && Command && Directory) {
+      continue;
+    }
+#endif
+
     if (!File) {
       ErrorMessage = "Missing key: \"file\".";
       return false;

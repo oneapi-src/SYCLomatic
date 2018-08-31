@@ -145,6 +145,7 @@ def create_intercept_parser():
 
     parser = create_default_parser()
     parser_add_cdb(parser)
+    parser_add_linker_entry(parser)
 
     parser_add_prefer_wrapper(parser)
     parser_add_compilers(parser)
@@ -429,6 +430,13 @@ def parser_add_cdb(parser):
         default="compile_commands.json",
         help="""The JSON compilation database.""")
 
+def parser_add_linker_entry(parser):
+    parser.add_argument(
+        '--linker-entry',
+        action='count',
+        default=0,
+        help="""Generate linker entry in compilation database 
+        if '--linker-entry' option is present.""")
 
 def parser_add_prefer_wrapper(parser):
     parser.add_argument(

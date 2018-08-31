@@ -121,7 +121,8 @@ class SplitTest(unittest.TestCase):
         filtered(['-MD', '-MT', 'something'])
         filtered(['-MMD', '-MF', 'something'])
         filtered(['-gencode','something'])
-
+        filtered(['-ccbin','something'])
+        filtered(['-ptx'])
 
 class SourceClassifierTest(unittest.TestCase):
 

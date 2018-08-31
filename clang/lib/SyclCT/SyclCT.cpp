@@ -190,6 +190,19 @@ int run(int argc, const char **argv) {
   RefactoringTool Tool(OptParser.getCompilations(),
                        OptParser.getSourcePathList());
 
+  // Made "-- -x cuda --cuda-host-only" option set by default, .i.e commandline
+  // "syclct -in-root ./ -out-root ./ ./topologyQuery.cu  --  -x  cuda
+  // --cuda-host-only  -I../common/inc" became "syclct -in-root ./ -out-root ./
+  // ./topologyQuery.cu  -- -I../common/inc"
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      "--cuda-host-only", ArgumentInsertPosition::BEGIN));
+
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      "cuda", ArgumentInsertPosition::BEGIN));
+
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      "-x", ArgumentInsertPosition::BEGIN));
+
   SyclCTActionFactory Factory(Tool.getReplacements());
   if (int RunResult = Tool.run(&Factory)) {
     return RunResult;

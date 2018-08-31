@@ -46,7 +46,10 @@ IGNORED_FLAGS = {
     '-T': 1,
     '-Xlinker': 1,
     # -gencode option, ignored because it is not related to SYCL compatibility tool
-    '-gencode': 1
+    '-gencode': 1,
+    # -ccbin g++ and -ptx, because it is not related to SYCL compatibility tool
+    '-ccbin': 1,
+    '-ptx' : 0
 }
 
 # Known C/C++ compiler executable name patterns

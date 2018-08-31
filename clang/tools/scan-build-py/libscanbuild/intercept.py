@@ -82,9 +82,9 @@ def capture(args):
         entries = []
         for entry in itertools.chain(previous, current):
             # add linker entry information into compilation database
-            if not ('file' in entry):
+            if  (not ('file' in entry)) and (args.linker_entry != 0):
                 entries.append(entry)
-            elif os.path.exists(entry['file']) and not duplicate(entry):
+            elif 'file' in entry and os.path.exists(entry['file']) and not duplicate(entry):
                 entries.append(entry)
         return entries
 
