@@ -172,8 +172,9 @@ ReplaceKernelCallExpr::getExecutionConfig() const {
 // If E is a variable reference, returns the name of the variable.
 // Else assumes E is an implicit or explicit construction of dim3 and returns
 // an explicit cl::sycl::range<3>-constructor call.
-std::string ReplaceKernelCallExpr::getDim3Translation(const Expr *E,
-                                                  const ASTContext &Context) {
+std::string
+ReplaceKernelCallExpr::getDim3Translation(const Expr *E,
+                                          const ASTContext &Context) {
   if (auto Var = dyn_cast<DeclRefExpr>(E)) {
     // kernel<<<griddim, threaddim>>>()
     return Var->getNameInfo().getAsString();
@@ -217,9 +218,9 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
         // TODO check that no nested pointers in a structure
         assert(!PointeeType->isAnyPointerType());
         auto VarType = PointeeType.getCanonicalType().getAsString();
-        Header << Indent << "std::pair<syclct::buffer_t, size_t> "
-               << VarName << "_buf = syclct::get_buffer_and_offset("
-               << VarName + ");" << NL;
+        Header << Indent << "std::pair<syclct::buffer_t, size_t> " << VarName
+               << "_buf = syclct::get_buffer_and_offset(" << VarName + ");"
+               << NL;
         Header << Indent << "size_t " << VarName
                << "_offset = " << VarName + "_buf.second;" << NL;
         Header2 << Indent << "    auto " << VarName << "_acc = " << VarName
@@ -249,8 +250,10 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << Indent <<  "  [&](cl::sycl::handler &cgh) {" << NL
   << Header2.str()
   << Indent <<  "    cgh.parallel_for<class " << KName << "_" << LocHash << ">(" << NL
-  << Indent <<  "      cl::sycl::nd_range<3>(" << getDim3Translation(NDSize, Context) << ", "
-                                               << getDim3Translation(WGSize, Context) << ")," << NL
+  << Indent <<  "      cl::sycl::nd_range<3>(PARALLEL_FOR_CONSTRUCT_GLOBAL_EXECUTION_RANGE("
+  << getDim3Translation(NDSize, Context) << ", "
+  << getDim3Translation(WGSize, Context) << "), "
+  << getDim3Translation(WGSize, Context)<<")," << NL
   << Indent <<  "      [=](cl::sycl::nd_item<3> it) {" << NL
   << Header3.str()
   << Indent <<  "        " << KName << "(it, " << buildArgList(KCall->arguments(), Context)

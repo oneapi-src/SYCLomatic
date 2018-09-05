@@ -22,13 +22,12 @@ namespace syclct {
 enum class compute_mode { default_, exclusive, prohibited, exclusive_process };
 
 auto exception_handler = [](cl::sycl::exception_list exceptions) {
-  for (std::exception_ptr const& e : exceptions) {
+  for (std::exception_ptr const &e : exceptions) {
     try {
       std::rethrow_exception(e);
-    }
-    catch (cl::sycl::exception const& e) {
-      std::cerr << "Caught asynchronous SYCL exception:\n" << e.what()
-        << std::endl;
+    } catch (cl::sycl::exception const &e) {
+      std::cerr << "Caught asynchronous SYCL exception:\n"
+                << e.what() << std::endl;
     }
   }
 };
@@ -44,6 +43,7 @@ public:
   int &max_compute_units() { return _compute_units; }
   compute_mode &mode() { return _compute_mode; }
   // ...
+  bool integrated;
 
 private:
   int _major;
@@ -96,9 +96,9 @@ public:
   int reset() {
     // release ALL (TODO) resources and reset to initial state
     for (auto q : _queues) {
-      // The destructor waits for all commands executing on the queue to complete.
-      // It isn't possible to destroy a queue immediately.
-      // This is a synchronization point in SYCL.
+      // The destructor waits for all commands executing on the queue to
+      // complete. It isn't possible to destroy a queue immediately. This is a
+      // synchronization point in SYCL.
       q.~queue();
     }
     _queues.clear();
@@ -122,9 +122,14 @@ private:
 class device_manager {
 public:
   device_manager() {
-    std::vector<cl::sycl::device> sycl_devs =
+    std::vector<cl::sycl::device> sycl_gpu_devs =
         cl::sycl::device::get_devices(cl::sycl::info::device_type::gpu);
-    for (auto& dev : sycl_devs) {
+    for (auto &dev : sycl_gpu_devs) {
+      _devs.push_back(syclct_device(dev));
+    }
+    std::vector<cl::sycl::device> sycl_cpu_devs =
+        cl::sycl::device::get_devices(cl::sycl::info::device_type::cpu);
+    for (auto &dev : sycl_cpu_devs) {
       _devs.push_back(syclct_device(dev));
     }
   }

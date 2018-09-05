@@ -18,4 +18,7 @@
 #include "syclct_device.hpp"
 #include "syclct_memory.hpp"
 
+#define PARALLEL_FOR_CONSTRUCT_GLOBAL_EXECUTION_RANGE(R1, R2) \
+        (cl::sycl::range<3>(R1*R2))
+
 #endif // SYCLCT_H
