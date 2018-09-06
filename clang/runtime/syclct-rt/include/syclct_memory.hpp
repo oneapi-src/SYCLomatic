@@ -244,6 +244,25 @@ std::pair<buffer_t, size_t> get_buffer_and_offset(void *ptr) {
   return std::make_pair(alloc.buffer, offset);
 }
 
+// memset
+// TODO: ret values to adjust for error handling.
+void sycl_memset(void *devPtr, int value, size_t count, cl::sycl::queue q) {
+  cl_int rc;
+
+  memory_manager::allocation &a =  memory_manager::get_instance().translate_ptr(devPtr);
+  size_t offset = memory_manager::fake_device_pointer(devPtr).get_offset();
+
+  rc = clEnqueueFillBuffer (q.get(), a.memobj, &value, sizeof(uint8_t), offset, count, 0, NULL, NULL);
+
+  // TODO: error checking and reporting back.
+}
+
+
+void sycl_memset(void *devPtr, int value, size_t count) {
+  sycl_memset(devPtr, value, count,
+              syclct::get_device_manager().current_device().default_queue());
+}
+
 } // namespace syclct
 
 #endif // SYCLCT_MEMORY_H

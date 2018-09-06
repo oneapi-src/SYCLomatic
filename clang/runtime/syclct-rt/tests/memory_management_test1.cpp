@@ -212,17 +212,65 @@ void test3() {
       }
   }
 
-  printf("Test2 Passed\n");
+  printf("Test3 Passed\n");
 
   free(h_A);
   free(h_B);
   free(h_C);
 }
 
+
+void test4() {
+
+  int Num = 10;
+  int *h_A = (int*)malloc(Num*sizeof(int));
+
+  for (int i = 0; i < Num; i++) {
+    h_A[i] = 4;
+  }
+
+  int *d_A;
+
+  syclct::sycl_malloc((void **)&d_A, Num * sizeof(int));
+  // hostA -> deviceA
+  syclct::sycl_memcpy((void*) d_A, (void*) h_A, Num * sizeof(int), syclct::memcpy_direction::to_device);
+
+  // set d_A[0,..., 6] = 0
+  syclct::sycl_memset((void*) d_A, 0, (Num - 3) * sizeof(int));
+
+  // deviceA -> hostA
+  syclct::sycl_memcpy((void*) h_A, (void*) d_A, Num * sizeof(int), syclct::memcpy_direction::to_host);
+
+  syclct::sycl_free((void*)d_A);
+
+  // check d_A[0,..., 6] = 0
+  for (int i = 0; i < Num - 3; i++) {
+    if (h_A[i] != 0) {
+      fprintf(stderr, "Check: h_A[%d] is %d:\n", i, h_A[i]);
+      fprintf(stderr, "Result verification failed at element [%d]!\n", i);
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  // check d_A[7,..., 9] = 4
+  for (int i = Num - 3; i < Num; i++) {
+    if (h_A[i] != 4) {
+      fprintf(stderr, "Check: h_A[%d] is %d:\n", i, h_A[i]);
+      fprintf(stderr, "Result verification failed at element h_A[%d]!\n", i);
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  printf("Test4 Passed\n");
+
+  free(h_A);
+}
+
 int main() {
   test1();
   test2();
   test3();
+  test4();
 
   return 0;
 }
