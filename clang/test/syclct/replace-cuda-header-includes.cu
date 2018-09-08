@@ -3,7 +3,7 @@
 
 // CHECK: #include "test-header.cuh"
 // CHECK-NEXT: #include <CL/sycl.hpp>
-// CHECK-NEXT: #include <syclct.hpp>
+// CHECK-NEXT: #include <syclct/syclct.hpp>
 // CHECK: // First function
 #include "test-header.cuh"
 #include <cuda.h>

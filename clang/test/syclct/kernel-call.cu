@@ -28,7 +28,7 @@ int main() {
 // CHECK-NEXT:        auto karg1_acc = karg1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
 // CHECK-NEXT:        auto karg2_acc = karg2_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
 // CHECK-NEXT:        cgh.parallel_for<class testKernelPtr_{{[a-f0-9]+}}>(
-// CHECK-NEXT:          cl::sycl::nd_range<3>(griddim, threaddim),
+// CHECK-NEXT:          cl::sycl::nd_range<3>(PARALLEL_FOR_CONSTRUCT_GLOBAL_EXECUTION_RANGE(griddim, threaddim), threaddim),
 // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
 // CHECK-NEXT:            void *karg1 = (void*)(&karg1_acc[0] + karg1_offset);
 // CHECK-NEXT:            const int *karg2 = (const int*)(&karg2_acc[0] + karg2_offset);
@@ -42,7 +42,7 @@ int main() {
   // CHECK-NEXT:    syclct::get_device_manager().current_device().default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        cgh.parallel_for<class testKernel_{{[a-f0-9]+}}>(
-  // CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(10, 1, 1), cl::sycl::range<3>(intvar, 1, 1)),
+  // CHECK-NEXT:          cl::sycl::nd_range<3>(PARALLEL_FOR_CONSTRUCT_GLOBAL_EXECUTION_RANGE(cl::sycl::range<3>(10, 1, 1), cl::sycl::range<3>(intvar, 1, 1)), cl::sycl::range<3>(intvar, 1, 1)),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
   // CHECK-NEXT:            testKernel(it, karg1int, karg2int, karg3int);
   // CHECK-NEXT:          });
@@ -58,7 +58,7 @@ int main() {
   // CHECK-NEXT:    syclct::get_device_manager().current_device().default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        cgh.parallel_for<class testKernel_{{[a-f0-9]+}}>(
-  // CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 2, 1)),
+  // CHECK-NEXT:          cl::sycl::nd_range<3>(PARALLEL_FOR_CONSTRUCT_GLOBAL_EXECUTION_RANGE(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 2, 1)), cl::sycl::range<3>(1, 2, 1)),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
   // CHECK-NEXT:            testKernel(it, karg1int, karg2int, karg3int);
   // CHECK-NEXT:          });
@@ -70,7 +70,7 @@ int main() {
   // CHECK-NEXT:    syclct::get_device_manager().current_device().default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        cgh.parallel_for<class testKernel_{{[a-f0-9]+}}>(
-  // CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 2, 1), cl::sycl::range<3>(1, 2, 3)),
+  // CHECK-NEXT:          cl::sycl::nd_range<3>(PARALLEL_FOR_CONSTRUCT_GLOBAL_EXECUTION_RANGE(cl::sycl::range<3>(1, 2, 1), cl::sycl::range<3>(1, 2, 3)), cl::sycl::range<3>(1, 2, 3)),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
   // CHECK-NEXT:            testKernel(it, karg1int, karg2int, karg3int);
   // CHECK-NEXT:          });
