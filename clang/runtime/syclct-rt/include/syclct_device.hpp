@@ -39,15 +39,16 @@ public:
   bool &host_unified_memory() { return _host_unified_memory; }
   int &major_version() { return _major; }
   int &minor_version() { return _minor; }
+  int &get_integrated() {return _integrated;}
   int &max_clock_frequency() { return _frequency; }
   int &max_compute_units() { return _compute_units; }
   compute_mode &mode() { return _compute_mode; }
   // ...
-  bool integrated;
 
 private:
   int _major;
   int _minor;
+  int _integrated = 0;
   int _frequency;
   int _compute_units;
   char _name[256];
