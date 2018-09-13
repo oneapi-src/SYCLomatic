@@ -29,10 +29,11 @@ class IncludesCallbacks : public PPCallbacks {
   TransformSetTy &TransformSet;
   SourceManager &SM;
   std::unordered_set<std::string> SeenFiles;
+  bool SyclHeaderInserted;
 
 public:
   IncludesCallbacks(TransformSetTy &TransformSet, SourceManager &SM)
-      : TransformSet(TransformSet), SM(SM) {}
+      : TransformSet(TransformSet), SM(SM), SyclHeaderInserted(false) {}
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
                           StringRef FileName, bool IsAngled,
                           CharSourceRange FilenameRange, const FileEntry *File,
@@ -118,8 +119,8 @@ protected:
   template <typename IDTy, typename... Ts>
   void report(SourceLocation SL, IDTy MsgID, Ts &&... Vals) {
     DiagnosticsUtils::report<IDTy, Ts...>(SL, MsgID, getCompilerInstance(),
-                                        TransformSet,
-                             std::forward<Ts>(Vals)...);
+                                          TransformSet,
+                                          std::forward<Ts>(Vals)...);
   }
 
   /// Dereference.

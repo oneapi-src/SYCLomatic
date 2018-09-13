@@ -29,6 +29,23 @@ void IncludesCallbacks::InclusionDirective(
     StringRef SearchPath, StringRef RelativePath, const Module *Imported,
     SrcMgr::CharacteristicKind FileType) {
 
+  if (!SM.isWrittenInMainFile(HashLoc)) {
+    return;
+  }
+
+  // Insert SYCL headers.
+  if (!SyclHeaderInserted) {
+
+    std::string Replacement = std::string("#include <CL/sycl.hpp>") +
+                              getNL(FilenameRange.getEnd(), SM) +
+                              "#include <syclct/syclct.hpp>" +
+                              getNL(FilenameRange.getEnd(), SM);
+    CharSourceRange InsertRange(SourceRange(HashLoc, HashLoc), false);
+    TransformSet.emplace_back(
+        new ReplaceInclude(InsertRange, std::move(Replacement)));
+    SyclHeaderInserted = true;
+  }
+
   std::string IncludePath = SearchPath;
   makeCanonical(IncludePath);
 
@@ -38,13 +55,15 @@ void IncludesCallbacks::InclusionDirective(
   // Multiple CUDA headers in an including file will be replaced with one
   // include of the SYCL header.
   std::string IncludingFile = SM.getFilename(HashLoc);
-  if (SeenFiles.find(IncludingFile) == end(SeenFiles)) {
+  if ((SeenFiles.find(IncludingFile) == end(SeenFiles)) &&
+      (!SyclHeaderInserted)) {
     SeenFiles.insert(IncludingFile);
     std::string Replacement = std::string("<CL/sycl.hpp>") +
                               getNL(FilenameRange.getEnd(), SM) +
                               "#include <syclct/syclct.hpp>";
     TransformSet.emplace_back(
         new ReplaceInclude(FilenameRange, std::move(Replacement)));
+    SyclHeaderInserted = true;
   } else {
     // Replace the complete include directive with an empty string.
     TransformSet.emplace_back(new ReplaceInclude(
@@ -695,16 +714,15 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
     std::vector<const Expr *> Args{C->getArg(0), C->getArg(1), C->getArg(2),
                                    Direction};
     std::vector<std::string> StrArgs{"", "", "", DirectionName};
-    emplaceTransformation(
-        new ReplaceCallExpr(C, std::move(Name), std::move(Args), std::move(StrArgs)));
+    emplaceTransformation(new ReplaceCallExpr(
+        C, std::move(Name), std::move(Args), std::move(StrArgs)));
   } else if (Name == "cudaMemset") {
     std::string Name = "syclct::sycl_memset";
     if (IsAssigned) {
       Name = "(" + Name;
     }
     std::vector<const Expr *> Args{C->getArg(0), C->getArg(1), C->getArg(2)};
-    std::vector<std::string> NewTypes{"(void*)", "(int)",
-                                      "(size_t)"};
+    std::vector<std::string> NewTypes{"(void*)", "(int)", "(size_t)"};
 
     emplaceTransformation(
         new ReplaceCallExpr(C, std::move(Name), std::move(Args), NewTypes));
