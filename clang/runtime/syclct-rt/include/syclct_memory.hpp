@@ -99,7 +99,6 @@ public:
 
   struct allocation {
     buffer_t buffer;
-    cl_mem memobj;
     size_t size;
   };
 
@@ -128,13 +127,10 @@ public:
   // allocate
   // FIXME: Error checking
   void* mem_alloc(size_t size, cl::sycl::queue &queue) {
-    cl_int error;
-    cl_mem mem = clCreateBuffer(
-        queue.get_context().get(), CL_MEM_READ_WRITE, size, NULL, &error);
+    cl::sycl::range<1> r(size);
+    buffer_t buf(r);
 
-    // TODO: since SYCL 1.2.1 buffer construction requires context instead of
-    // queue. Need to clean up the interface to require context as well.
-    allocation A {buffer_t(mem, queue.get_context()), mem, size};
+    allocation A {buf, size};
 
     return add_pointer(std::move(A));
   }
@@ -196,16 +192,27 @@ void sycl_free(void *ptr) {
 // memcpy
 // TODO: ret values to adjust for error handling.
 void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size, memcpy_direction direction, cl::sycl::queue q) {
-  cl_int rc;
   if (direction == memcpy_direction::to_device) {
     memory_manager::allocation &a =  memory_manager::get_instance().translate_ptr(to_ptr);
     size_t offset = memory_manager::fake_device_pointer(to_ptr).get_offset();
-    rc = clEnqueueWriteBuffer(q.get(), a.memobj, CL_TRUE, offset, size * sizeof(uint8_t), from_ptr, 0, NULL, NULL);
+    q.submit([&](cl::sycl::handler &cgh) {
+      auto r = cl::sycl::range<1>(size);
+      auto o = cl::sycl::id<1>(offset);
+      cl::sycl::accessor<uint8_t, 1, cl::sycl::access::mode::write, cl::sycl::access::target::global_buffer>
+        acc(a.buffer, cgh, r, o);
+      cgh.copy(from_ptr, acc);
+    });
   }
   else if (direction == memcpy_direction::to_host) {
     memory_manager::allocation &a = memory_manager::get_instance().translate_ptr(from_ptr);
     size_t offset = memory_manager::fake_device_pointer(from_ptr).get_offset();
-    rc = clEnqueueReadBuffer(q.get(), a.memobj, CL_TRUE, offset, size * sizeof(uint8_t), to_ptr, 0, NULL, NULL);
+    q.submit([&](cl::sycl::handler &cgh) {
+      auto r = cl::sycl::range<1>(size);
+      auto o = cl::sycl::id<1>(offset);
+      cl::sycl::accessor<uint8_t, 1, cl::sycl::access::mode::read, cl::sycl::access::target::global_buffer>
+        acc(a.buffer, cgh, r, o);
+      cgh.copy(acc, to_ptr);
+    });
   } else {
     // Oooops!
   }
@@ -247,12 +254,16 @@ std::pair<buffer_t, size_t> get_buffer_and_offset(void *ptr) {
 // memset
 // TODO: ret values to adjust for error handling.
 void sycl_memset(void *devPtr, int value, size_t count, cl::sycl::queue q) {
-  cl_int rc;
-
   memory_manager::allocation &a =  memory_manager::get_instance().translate_ptr(devPtr);
   size_t offset = memory_manager::fake_device_pointer(devPtr).get_offset();
 
-  rc = clEnqueueFillBuffer (q.get(), a.memobj, &value, sizeof(uint8_t), offset, count, 0, NULL, NULL);
+  q.submit([&](cl::sycl::handler &cgh) {
+    auto r = cl::sycl::range<1>(count);
+    auto o = cl::sycl::id<1>(offset);
+    cl::sycl::accessor<uint8_t, 1, cl::sycl::access::mode::write, cl::sycl::access::target::global_buffer>
+      acc(a.buffer, cgh, r, o);
+      cgh.fill(acc, (uint8_t)value);
+    });
 
   // TODO: error checking and reporting back.
 }
