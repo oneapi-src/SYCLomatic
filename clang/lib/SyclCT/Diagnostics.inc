@@ -15,3 +15,5 @@ DEF_WARNING(NOERROR_RETURN_COMMA_OP, 1003, "Translated api does not return error
 DEF_COMMENT(NOERROR_RETURN_COMMA_OP, 1003, "Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code")
 DEF_COMMENT(NOTSUPPORTED, 1004, "{0} is not supported in Sycl")
 DEF_COMMENT(VERSION_COMMENT, 1005, "The device version is different. You may want to rewrite this code")
+DEF_WARNING(NOT_SUPPORT_API_INTEGRATEDORNOT, 1006, "SYCL doesn't provide standard API to differentiate between integrated/discrete GPU devices. Consider to re-implement the code which depends on this field")
+DEF_COMMENT(NOT_SUPPORT_API_INTEGRATEDORNOT, 1006, "SYCL doesn't provide standard API to differentiate between integrated/discrete GPU devices. Consider to re-implement the code which depends on this field")

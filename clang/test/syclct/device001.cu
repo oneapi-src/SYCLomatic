@@ -16,6 +16,11 @@ int main(int argc, char **argv) {
 // CHECK-NEXT:*/
 // CHECK-NEXT:int major = deviceProp.major_version();
   int major = deviceProp.major;
+// CHECK:/*
+// CHECK-NEXT:SYCLCT1006: SYCL doesn't provide standard API to differentiate between integrated/discrete GPU devices. Consider to re-implement the code which depends on this field
+// CHECK-NEXT:*/
+// CHECK-NEXT:int integrated = deviceProp.get_integrated();
+  int integrated = deviceProp.integrated;
 
 // CHECK:/*
 // CHECK-NEXT:SYCLCT1005: The device version is different. You may want to rewrite this code

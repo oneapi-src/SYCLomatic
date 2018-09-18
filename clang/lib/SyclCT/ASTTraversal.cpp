@@ -466,9 +466,11 @@ void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
   }
   emplaceTransformation(new RenameFieldInMemberExpr(ME, Search->second + "()"));
   if ((Search->second.compare(0, 13, "major_version") == 0) ||
-      (Search->second.compare(0, 13, "minor_version") == 0) ||
-      (Search->second.compare(0, 10, "integrated") == 0)) {
+      (Search->second.compare(0, 13, "minor_version") == 0)) {
     report(ME->getLocStart(), Comments::VERSION_COMMENT);
+  }
+  if (Search->second.compare(0, 14, "get_integrated") == 0) {
+    report(ME->getLocStart(), Comments::NOT_SUPPORT_API_INTEGRATEDORNOT);
   }
 }
 
