@@ -539,7 +539,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
                          "cudaDeviceReset", "cudaSetDevice",
                          "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
                          "cudaGetDevice", "cudaGetLastError",
-                         "cudaDeviceSynchronize"))),
+                         "cudaDeviceSynchronize", "cudaGetErrorString"))),
                      hasParent(compoundStmt())))
           .bind("FunctionCall"),
       this);
@@ -549,7 +549,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
                          "cudaDeviceReset", "cudaSetDevice",
                          "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
                          "cudaGetDevice", "cudaGetLastError",
-                         "cudaDeviceSynchronize"))),
+                         "cudaDeviceSynchronize", "cudaGetErrorString"))),
                      unless(hasParent(compoundStmt()))))
           .bind("FunctionCallUsed"),
       this);
@@ -622,6 +622,10 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
   } else if (FuncName == "cudaGetLastError") {
     emplaceTransformation(new ReplaceStmt(CE, "0"));
+  } else if(FuncName == "cudaGetErrorString") {
+    emplaceTransformation(
+        new InsertBeforeStmt(CE, "\"cudaGetErrorString not supported\"/*"));
+    emplaceTransformation(new InsertAfterStmt(CE, "*/"));
   } else {
     llvm_unreachable("Unknown function name");
   }
