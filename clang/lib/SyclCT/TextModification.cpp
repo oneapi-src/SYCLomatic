@@ -250,8 +250,8 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << Indent <<  "  [&](cl::sycl::handler &cgh) {" << NL
   << Header2.str()
   << Indent <<  "    cgh.parallel_for<class " << KName << "_" << LocHash << ">(" << NL
-  << Indent <<  "      cl::sycl::nd_range<3>(PARALLEL_FOR_CONSTRUCT_GLOBAL_EXECUTION_RANGE("
-  << getDim3Translation(NDSize, Context) << ", "
+  << Indent <<  "      cl::sycl::nd_range<3>(("
+  << getDim3Translation(NDSize, Context) << " * "
   << getDim3Translation(WGSize, Context) << "), "
   << getDim3Translation(WGSize, Context)<<")," << NL
   << Indent <<  "      [=](cl::sycl::nd_item<3> it) {" << NL
