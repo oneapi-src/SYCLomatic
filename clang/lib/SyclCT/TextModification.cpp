@@ -66,7 +66,7 @@ Replacement ReplaceCCast::getReplacement(const ASTContext &Context) const {
 
 Replacement
 RenameFieldInMemberExpr::getReplacement(const ASTContext &Context) const {
-  SourceLocation SL = ME->getLocEnd();
+  SourceLocation SL = ME->getEndLoc();
   return Replacement(Context.getSourceManager(),
                      CharSourceRange(SourceRange(SL, SL), true), T);
 }
@@ -203,8 +203,8 @@ ReplaceKernelCallExpr::getDim3Translation(const Expr *E,
 Replacement
 ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   auto &SM = Context.getSourceManager();
-  auto NL = getNL(KCall->getLocEnd(), SM);
-  auto OrigIndent = getIndent(KCall->getLocStart(), SM).str();
+  auto NL = getNL(KCall->getEndLoc(), SM);
+  auto OrigIndent = getIndent(KCall->getBeginLoc(), SM).str();
   std::stringstream Header;
   std::stringstream Header2;
   std::stringstream Header3;
@@ -241,7 +241,7 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   std::tie(NDSize, WGSize) = getExecutionConfig();
   auto KName = KCall->getCalleeDecl()->getAsFunction()->getName().str();
   auto LocHash =
-      getHashAsString(KCall->getLocStart().printToString(SM)).substr(0, 6);
+      getHashAsString(KCall->getBeginLoc().printToString(SM)).substr(0, 6);
   // clang-format off
   std::stringstream Final;
   Final
@@ -263,7 +263,7 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << OrigIndent << "}";
   // clang-format on
 
-  return Replacement(SM, KCall->getLocStart(), 0, Final.str());
+  return Replacement(SM, KCall->getBeginLoc(), 0, Final.str());
 }
 
 Replacement ReplaceCallExpr::getReplacement(const ASTContext &Context) const {

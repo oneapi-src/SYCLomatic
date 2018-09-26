@@ -252,7 +252,7 @@ void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
         } else if (auto Op = Result.Nodes.getNodeAs<BinaryOperator>("op==")) {
           if (!isCudaFailureCheck(Op, true))
             return false;
-          report(Op->getLocStart(), Diagnostics::IFSTMT_SPECIAL_CASE,
+          report(Op->getBeginLoc(), Diagnostics::IFSTMT_SPECIAL_CASE,
                  getStmtSpelling(Op, *Result.Context).c_str());
         } else {
           auto CondVar = Result.Nodes.getNodeAs<DeclRefExpr>("var");
@@ -379,7 +379,7 @@ ReplaceDim3CtorRule::rewriteSyntax(const MatchFinder::MatchResult &Result) {
       // dim3 a = dim3(1, 2); // temporary object expression
       // func(dim(1, 2));
       emplaceTransformation(
-          new ReplaceToken(Cast->getLocStart(), "cl::sycl::range<3>"));
+          new ReplaceToken(Cast->getBeginLoc(), "cl::sycl::range<3>"));
       return {ImplCastCtor, false};
     }
   } else if (auto FuncCastCtor =
@@ -389,7 +389,7 @@ ReplaceDim3CtorRule::rewriteSyntax(const MatchFinder::MatchResult &Result) {
     // dim3 b = dim3(a); // copy constructor
     // func(dim(1), dim3(a));
     emplaceTransformation(
-        new ReplaceToken(Cast->getLocStart(), "cl::sycl::range<3>"));
+        new ReplaceToken(Cast->getBeginLoc(), "cl::sycl::range<3>"));
     return {FuncCastCtor, false};
   }
 
@@ -486,10 +486,10 @@ void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
   emplaceTransformation(new RenameFieldInMemberExpr(ME, Search->second + "()"));
   if ((Search->second.compare(0, 13, "major_version") == 0) ||
       (Search->second.compare(0, 13, "minor_version") == 0)) {
-    report(ME->getLocStart(), Comments::VERSION_COMMENT);
+    report(ME->getBeginLoc(), Comments::VERSION_COMMENT);
   }
   if (Search->second.compare(0, 14, "get_integrated") == 0) {
-    report(ME->getLocStart(), Comments::NOT_SUPPORT_API_INTEGRATEDORNOT);
+    report(ME->getBeginLoc(), Comments::NOT_SUPPORT_API_INTEGRATEDORNOT);
   }
 }
 
@@ -604,7 +604,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaDeviceGetP2PAttribute") {
     std::string ResultVarName = DereferenceArg(CE->getArg(0));
     emplaceTransformation(new ReplaceStmt(CE, ResultVarName + " = 0"));
-    report(CE->getLocStart(), Comments::NOTSUPPORTED, "P2P Access");
+    report(CE->getBeginLoc(), Comments::NOTSUPPORTED, "P2P Access");
   } else if (FuncName == "cudaGetDevice") {
     std::string ResultVarName = DereferenceArg(CE->getArg(0));
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
@@ -616,7 +616,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                           "and_throw()";
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";
-      report(CE->getLocStart(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
 
@@ -670,7 +670,7 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
   }
   std::string Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   if (IsAssigned) {
-    report(C->getLocStart(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
   }
   if (Name == "cudaMalloc") {
