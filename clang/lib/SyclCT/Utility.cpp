@@ -97,6 +97,6 @@ std::string getStmtSpelling(const Stmt *S, const ASTContext &Context) {
   std::string StrBuffer;
   llvm::raw_string_ostream TmpStream(StrBuffer);
   auto LangOpts = Context.getLangOpts();
-  S->printPretty(TmpStream, nullptr, PrintingPolicy(LangOpts), 0, &Context);
+  S->printPretty(TmpStream, nullptr, PrintingPolicy(LangOpts), 0, "\n", &Context);
   return TmpStream.str();
 }
