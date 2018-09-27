@@ -24,3 +24,9 @@ install(
   COMPONENT syclct-headers
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   DESTINATION include/syclct)
+
+if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
+  add_llvm_install_targets(install-syclct-headers
+                           DEPENDS syclct-headers
+                           COMPONENT syclct-headers)
+endif()

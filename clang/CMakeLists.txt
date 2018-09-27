@@ -851,3 +851,16 @@ add_subdirectory(utils/hmaptool)
 configure_file(
   ${CLANG_SOURCE_DIR}/include/clang/Config/config.h.cmake
   ${CLANG_BINARY_DIR}/include/clang/Config/config.h)
+
+if (NOT CLANG_BUILT_STANDALONE)
+  list(APPEND SYCLCT_RUN
+    install-syclct-intercept-build
+    install-syclct-lib-scan-build-files
+    install-syclct-libear-files
+    install-syclct-headers
+    install-clang-headers
+    install-syclct
+    )
+endif()
+add_custom_target(install-syclct-tool DEPENDS ${SYCLCT_RUN})
+set_target_properties(install-syclct-tool PROPERTIES FOLDER "install syclct tool")
