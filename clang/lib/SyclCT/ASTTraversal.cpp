@@ -49,12 +49,21 @@ void IncludesCallbacks::InclusionDirective(
   std::string IncludePath = SearchPath;
   makeCanonical(IncludePath);
 
+  std::string IncludingFile = SM.getFilename(HashLoc);
+
+  // replace "#include <math.h>" with <cmath>
+  if (IsAngled && FileName.compare(StringRef("math.h")) == 0) {
+    TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                        /*IsTokenRange=*/false),
+        "#include <cmath>"));
+  }
+
   if (!isChildPath(CudaPath, IncludePath))
     return;
 
   // Multiple CUDA headers in an including file will be replaced with one
   // include of the SYCL header.
-  std::string IncludingFile = SM.getFilename(HashLoc);
   if ((SeenFiles.find(IncludingFile) == end(SeenFiles)) &&
       (!SyclHeaderInserted)) {
     SeenFiles.insert(IncludingFile);
@@ -622,7 +631,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
   } else if (FuncName == "cudaGetLastError") {
     emplaceTransformation(new ReplaceStmt(CE, "0"));
-  } else if(FuncName == "cudaGetErrorString") {
+  } else if (FuncName == "cudaGetErrorString") {
     emplaceTransformation(
         new InsertBeforeStmt(CE, "\"cudaGetErrorString not supported\"/*"));
     emplaceTransformation(new InsertAfterStmt(CE, "*/"));
