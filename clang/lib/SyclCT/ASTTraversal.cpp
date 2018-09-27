@@ -59,8 +59,11 @@ void IncludesCallbacks::InclusionDirective(
         "#include <cmath>"));
   }
 
-  if (!isChildPath(CudaPath, IncludePath))
-    return;
+  if (!isChildPath(CudaPath, IncludePath)) {
+    // if <cuda_runtime.h>, no matter where it from, replace with sycl header
+    if (!(IsAngled && FileName.compare(StringRef("cuda_runtime.h")) == 0))
+      return;
+  }
 
   // Multiple CUDA headers in an including file will be replaced with one
   // include of the SYCL header.
