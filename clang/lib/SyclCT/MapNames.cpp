@@ -33,7 +33,6 @@ const std::map<std::string, std::string> DevicePropVarRule::PropNamesMap{
     {"minor", "minor_version"},
     {"integrated", "get_integrated"},
     {"multiProcessorCount", "max_compute_units"},
-    {"multiProcessorCount", "max_compute_units"},
     {"name", "name"}
     // ...
 };
