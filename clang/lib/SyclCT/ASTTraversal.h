@@ -214,6 +214,24 @@ public:
   static const std::map<std::string, std::string> TypeNamesMap;
 };
 
+/// Translation rule for types replacements in var. declarations.
+class SyclStyleVectorRule : public NamedTranslationRule<SyclStyleVectorRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+private:
+  static const std::map<std::string, std::string> MemberNamesMap;
+};
+
+/// rules replace the int2 to cuda sytle.
+class SyclStyleVectorCtorRule
+    : public NamedTranslationRule<SyclStyleVectorCtorRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 class ReplaceDim3CtorRule : public NamedTranslationRule<ReplaceDim3CtorRule> {
   std::pair<const CXXConstructExpr *, bool>
   rewriteSyntax(const ast_matchers::MatchFinder::MatchResult &Result);

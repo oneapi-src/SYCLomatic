@@ -85,6 +85,27 @@ public:
   tooling::Replacement getReplacement(const ASTContext &Context) const override;
 };
 
+// Replace type in var. declaration.
+class InsertNameSpaceInVarDecl : public TextModification {
+  const VarDecl *D;
+  std::string T;
+
+public:
+  InsertNameSpaceInVarDecl(const VarDecl *D, std::string &&T) : D(D), T(T) {}
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+};
+
+// Replace type in var. declaration.
+class InsertNameSpaceInCastExpr : public TextModification {
+  const CStyleCastExpr *D;
+  std::string T;
+
+public:
+  InsertNameSpaceInCastExpr(const CStyleCastExpr *D, std::string &&T)
+      : D(D), T(T) {}
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+};
+
 // Replace return type in function declaration.
 class ReplaceReturnType : public TextModification {
   const FunctionDecl *FD;

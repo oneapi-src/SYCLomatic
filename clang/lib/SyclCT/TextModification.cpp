@@ -57,6 +57,24 @@ Replacement ReplaceToken::getReplacement(const ASTContext &Context) const {
                      CharSourceRange(SourceRange(Begin, Begin), true), T);
 }
 
+Replacement
+InsertNameSpaceInVarDecl::getReplacement(const ASTContext &Context) const {
+  TypeLoc TL = D->getTypeSourceInfo()->getTypeLoc();
+  return Replacement(
+      Context.getSourceManager(),
+      CharSourceRange(SourceRange(TL.getBeginLoc(), TL.getBeginLoc()), false),
+      T);
+}
+Replacement
+InsertNameSpaceInCastExpr::getReplacement(const ASTContext &Context) const {
+  return Replacement(
+      Context.getSourceManager(),
+      CharSourceRange(SourceRange(D->getLParenLoc().getLocWithOffset(1),
+                                  D->getLParenLoc().getLocWithOffset(1)),
+                      false),
+      T);
+}
+
 Replacement ReplaceCCast::getReplacement(const ASTContext &Context) const {
   auto Begin = Cast->getLParenLoc();
   auto End = Cast->getRParenLoc();

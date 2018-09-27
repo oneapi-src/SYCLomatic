@@ -22,6 +22,7 @@ const std::map<std::string, std::string> TypeInVarDeclRule::TypeNamesMap{
     {"cudaError_t", "int"},
     {"cudaError", "int"},
     {"dim3", "cl::sycl::range<3>"},
+    {"int2", "cl::sycl::int2"},
     // ...
 };
 
@@ -34,6 +35,12 @@ const std::map<std::string, std::string> DevicePropVarRule::PropNamesMap{
     {"integrated", "get_integrated"},
     {"multiProcessorCount", "max_compute_units"},
     {"name", "name"}
+    // ...
+};
+
+// DeviceProp names mapping.
+const std::map<std::string, std::string> SyclStyleVectorRule::MemberNamesMap{
+    {"x", "x()"}, {"y", "y()"}, {"z", "z()"},
     // ...
 };
 

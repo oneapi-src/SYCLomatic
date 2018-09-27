@@ -342,6 +342,160 @@ void TypeInVarDeclRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(TypeInVarDeclRule)
 
+// Rule for types replacements in var. declarations.
+void SyclStyleVectorRule::registerMatcher(MatchFinder &MF) {
+  // basic:  eg. int2 xx
+  MF.addMatcher(varDecl(hasType(typedefDecl(hasName("int2")))).bind("BasicVar"),
+                this);
+
+  // pointer: eg. int2 * xx
+  MF.addMatcher(
+      varDecl(hasType(pointsTo(typedefDecl(hasName("int2"))))).bind("PtrVar"),
+      this);
+  // array: eg. int2 array_[xx]
+  MF.addMatcher(varDecl(hasType(arrayType(hasElementType(typedefType(
+                            hasDeclaration(typedefDecl(hasName("int2"))))))))
+                    .bind("ArrayVar"),
+                this);
+
+  // int2.x/y/z => int2.x()/y()/z()
+  MF.addMatcher(
+      memberExpr(
+          hasObjectExpression(hasType(qualType(hasCanonicalType(
+              recordType(hasDeclaration(cxxRecordDecl(hasName("int2")))))))))
+          .bind("VecMemberExpr"),
+      this);
+}
+
+void SyclStyleVectorRule::run(const MatchFinder::MatchResult &Result) {
+  if (const VarDecl *D = Result.Nodes.getNodeAs<VarDecl>("BasicVar")) {
+
+    const clang::Type *Type = D->getTypeSourceInfo()->getTypeLoc().getTypePtr();
+
+    if (dyn_cast<SubstTemplateTypeParmType>(Type)) {
+      return;
+    }
+
+    std::string TypeName = Type->getCanonicalTypeInternal()
+                               .getBaseTypeIdentifier()
+                               ->getName()
+                               .str();
+    auto Search = TypeInVarDeclRule::TypeNamesMap.find(TypeName);
+    if (Search == TypeInVarDeclRule::TypeNamesMap.end()) {
+      // TODO report translation error
+      return;
+    }
+    std::string Replacement = Search->second;
+    emplaceTransformation(new ReplaceTypeInVarDecl(D, std::move(Replacement)));
+  }
+  if (const VarDecl *D = Result.Nodes.getNodeAs<VarDecl>("PtrVar")) {
+    const clang::Type *Type = D->getTypeSourceInfo()->getTypeLoc().getTypePtr();
+
+    std::string TypeName = Type->getCanonicalTypeInternal()
+                               .getBaseTypeIdentifier()
+                               ->getName()
+                               .str();
+    auto Search = TypeInVarDeclRule::TypeNamesMap.find(TypeName);
+    if (Search == TypeInVarDeclRule::TypeNamesMap.end()) {
+      // TODO report translation error
+      return;
+    }
+    std::string Replacement = "cl::sycl::";
+
+    emplaceTransformation(
+        new InsertNameSpaceInVarDecl(D, std::move(Replacement)));
+  }
+  if (const VarDecl *D = Result.Nodes.getNodeAs<VarDecl>("ArrayVar")) {
+    const clang::Type *Type = D->getTypeSourceInfo()->getTypeLoc().getTypePtr();
+
+    std::string TypeName = Type->getCanonicalTypeInternal()
+                               .getBaseTypeIdentifier()
+                               ->getName()
+                               .str();
+    auto Search = TypeInVarDeclRule::TypeNamesMap.find(TypeName);
+    if (Search == TypeInVarDeclRule::TypeNamesMap.end()) {
+      // TODO report translation error
+      return;
+    }
+    std::string Replacement = "cl::sycl::";
+    emplaceTransformation(
+        new InsertNameSpaceInVarDecl(D, std::move(Replacement)));
+  }
+  if (const MemberExpr *ME =
+          Result.Nodes.getNodeAs<MemberExpr>("VecMemberExpr")) {
+    auto Search = MemberNamesMap.find(ME->getMemberNameInfo().getAsString());
+    if (Search == MemberNamesMap.end()) {
+      // TODO report translation error
+      return;
+    }
+    emplaceTransformation(new RenameFieldInMemberExpr(ME, Search->second + ""));
+  }
+}
+
+REGISTER_RULE(SyclStyleVectorRule)
+
+void SyclStyleVectorCtorRule::registerMatcher(MatchFinder &MF) {
+  // Find sycl sytle vector:eg.int2 constructors which are part of different
+  // casts (representing different syntaxes). This includes copy constructors.
+  // All constructors will be visited once.
+  MF.addMatcher(
+      cxxConstructExpr(hasType(typedefDecl(hasName("int2"))),
+                       hasParent(cxxFunctionalCastExpr().bind("int2Cast")))
+          .bind("int2CtorFuncCast"),
+      this);
+  MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(hasName("int2"))),
+                                 hasParent(cStyleCastExpr().bind("int2Cast")))
+                    .bind("int2CtorCCast"),
+                this);
+
+  // translate utility for vector type: eg: make_int2
+  MF.addMatcher(callExpr(callee(functionDecl(hasAnyName("make_int2"))))
+                    .bind("VecUtilFunc"),
+                this);
+  // (int2 *)&xxx;
+  MF.addMatcher(cStyleCastExpr(hasType(pointsTo(typedefDecl(hasName("int2")))))
+                    .bind("int2PtrCast"),
+                this);
+}
+
+// Determines which case of construction applies and creates replacements for
+// the syntax. Returns the constructor node and a boolean indicating if a
+// closed brace needs to be appended.
+void SyclStyleVectorCtorRule::run(const MatchFinder::MatchResult &Result) {
+  // Most commonly used syntax cases are checked first.
+  if (Result.Nodes.getNodeAs<CXXConstructExpr>("int2CtorFuncCast")) {
+    auto Cast = Result.Nodes.getNodeAs<CXXFunctionalCastExpr>("int2Cast");
+    // int2 a = int2(1); // function style cast
+    // int2 b = int2(a); // copy constructor
+    // func(int(1), int2(a));
+    emplaceTransformation(
+        new ReplaceToken(Cast->getBeginLoc(), "cl::sycl::int2"));
+  } else if (Result.Nodes.getNodeAs<CXXConstructExpr>("int2CtorCCast")) {
+    // int2 a = (int2)1;
+    // int2 b = (int2)a; // copy constructor
+    // func((int2)1, (int2)a);
+    auto Cast = Result.Nodes.getNodeAs<CStyleCastExpr>("int2Cast");
+    emplaceTransformation(new ReplaceCCast(Cast, "(cl::sycl::int2)"));
+  } else if (const CallExpr *CE =
+                 Result.Nodes.getNodeAs<CallExpr>("VecUtilFunc")) {
+
+    std::string FuncName =
+        CE->getDirectCallee()->getNameInfo().getName().getAsString();
+    if (FuncName == "make_int2") {
+      emplaceTransformation(new ReplaceStmt(CE->getCallee(), "cl::sycl::int2"));
+    } else {
+      llvm_unreachable("Unknown function name");
+    }
+  } else if (const CStyleCastExpr *CPtrCast =
+                 Result.Nodes.getNodeAs<CStyleCastExpr>("int2PtrCast")) {
+    emplaceTransformation(
+        new InsertNameSpaceInCastExpr(CPtrCast, "cl::sycl::"));
+  }
+  return;
+}
+
+REGISTER_RULE(SyclStyleVectorCtorRule)
+
 void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
   // Find dim3 constructors which are part of different casts (representing
   // different syntaxes). This includes copy constructors. All constructors
