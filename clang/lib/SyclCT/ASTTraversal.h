@@ -217,6 +217,7 @@ public:
 /// Translation rule for types replacements in var. declarations.
 class SyclStyleVectorRule : public NamedTranslationRule<SyclStyleVectorRule> {
 public:
+  SyclStyleVectorRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
@@ -228,6 +229,9 @@ private:
 class SyclStyleVectorCtorRule
     : public NamedTranslationRule<SyclStyleVectorCtorRule> {
 public:
+  SyclStyleVectorCtorRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
