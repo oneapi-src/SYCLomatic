@@ -54,4 +54,21 @@ template <typename T> std::string getHashAsString(const T &Val) {
   Stream << std::hex << std::hash<T>()(Val);
   return Stream.str();
 }
+
+enum SourceProcessType {
+  // flag for *.cu
+  TypeCudaSource = 1,
+
+  // flag for *.cuh
+  TypeCudaHeader = 2,
+
+  // flag for *.cpp, *.cxx, *.cc
+  TypeCppSource = 4,
+
+  // flag for *.hpp, *.hxx *.h
+  TypeCppHeader = 8,
+};
+
+SourceProcessType GetSourceFileType(llvm::StringRef SourcePath);
+
 #endif // SYCLCT_UTILITY_H

@@ -60,8 +60,17 @@ std::string CudaPath; // Global value for the CUDA install path.
 
 class SyclCTConsumer : public ASTConsumer {
 public:
-  SyclCTConsumer(ReplTy &R, const CompilerInstance &CI)
+  SyclCTConsumer(ReplTy &R, const CompilerInstance &CI, StringRef InFile)
       : ATM(CI), Repl(R), PP(CI.getPreprocessor()) {
+    int RequiredRType;
+    SourceProcessType FileType = GetSourceFileType(InFile);
+
+    if (FileType & (TypeCudaSource | TypeCudaHeader)) {
+      RequiredRType = ApplyToCudaFile;
+    } else if (FileType & (TypeCppSource | TypeCppHeader)) {
+      RequiredRType = ApplyToCppFile;
+    }
+
     if (Passes != "") {
       std::vector<std::string> Names;
       // Separate string into list by comma
@@ -77,15 +86,30 @@ public:
       }
       for (auto const &Name : Names) {
         auto *ID = ASTTraversalMetaInfo::getID(Name);
+        auto MapEntry = ASTTraversalMetaInfo::getConstructorTable()[ID];
+        auto RuleObj = (TranslationRule *)MapEntry();
+        CommonRuleProperty RuleProperty = RuleObj->GetRuleProperty();
+        auto RType = RuleProperty.RType;
+        auto RulesDependon = RuleProperty.RulesDependon;
+
+        // Add rules current rule Name depends on
+        for (auto const &RuleName : RulesDependon) {
+          auto *IDInner = ASTTraversalMetaInfo::getID(RuleName);
+          assert(!IDInner);
+          ATM.emplaceTranslationRule(ID);
+        }
         if (!ID) {
           llvm::errs() << "[ERROR] Rule not found: \"" << Name
                        << "\" - check \"-passes\" option\n";
           std::exit(1);
         }
-        ATM.emplaceTranslationRule(ID);
+        // Add rules should be run on the source file
+        if (RType & RequiredRType) {
+          ATM.emplaceTranslationRule(ID);
+        }
       }
     } else {
-      ATM.emplaceAllRules();
+      ATM.emplaceAllRules(RequiredRType);
     }
   }
 
@@ -134,7 +158,7 @@ public:
 
   std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
                                                  StringRef InFile) override {
-    return llvm::make_unique<SyclCTConsumer>(Repl, CI);
+    return llvm::make_unique<SyclCTConsumer>(Repl, CI, InFile);
   }
 
   bool usesPreprocessorOnly() const override { return false; }
@@ -197,11 +221,11 @@ int run(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "--cuda-host-only", ArgumentInsertPosition::BEGIN));
 
-  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
-      "cuda", ArgumentInsertPosition::BEGIN));
+  Tool.appendArgumentsAdjuster(
+      getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
 
-  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
-      "-x", ArgumentInsertPosition::BEGIN));
+  Tool.appendArgumentsAdjuster(
+      getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
 
   SyclCTActionFactory Factory(Tool.getReplacements());
   if (int RunResult = Tool.run(&Factory)) {

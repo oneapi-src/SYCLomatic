@@ -22,6 +22,12 @@ class RefactoringTool;
 }
 } // namespace clang
 
+enum ProcessStatus {
+  TranslationSucceeded = 0,
+  TranslationNotImplemented = 1,
+  TranslationSkipped = 2,
+};
+
 /// Apply all generated replacements, and immediately save the results to
 /// files in output directory.
 ///

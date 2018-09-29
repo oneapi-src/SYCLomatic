@@ -45,10 +45,15 @@ static void rewriteDir(SmallString<256> &FilePath, const StringRef InRoot,
 }
 
 static void rewriteFileName(SmallString<256> &FilePath) {
-  auto Extension = path::extension(FilePath);
-  if (Extension == ".cu") {
+  SourceProcessType FileType = GetSourceFileType(FilePath.str());
+
+  if (FileType & TypeCudaSource) {
     path::replace_extension(FilePath, "sycl.cpp");
-  } else if (Extension == ".cuh") {
+  } else if (FileType & TypeCppSource) {
+    // to avoid conflict in the case that xxx.cu xxx.cpp show up in the same
+    // folder
+    path::replace_extension(FilePath, "cc_sycl.cpp");
+  } else if (FileType & TypeCudaHeader) {
     path::replace_extension(FilePath, "sycl.hpp");
   }
 }
@@ -62,6 +67,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
                  StringRef OutRoot) {
   assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
   using namespace clang;
+  ProcessStatus status = TranslationSucceeded;
   // Set up Rewriter.
   LangOptions DefaultLangOptions;
   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
@@ -73,42 +79,52 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   Rewriter Rewrite(Sources, DefaultLangOptions);
 
   SmallString<256> OutPath;
+
   bool AppliedAll = true;
-  for (const auto &Entry : groupReplacementsByFile(
-           Rewrite.getSourceMgr().getFileManager(), Tool.getReplacements())) {
-    OutPath = StringRef(Entry.first);
-    // This operation won't fail; it already succeeded once during argument
-    // validation.
-    makeCanonical(OutPath);
-    rewriteDir(OutPath, InRoot, OutRoot);
-    rewriteFileName(OutPath);
+  if (Tool.getReplacements().empty()) {
+    // There are no rules applying on the *.cpp files,
+    // cyclct just do nothing with them.
+    status = TranslationNotImplemented;
+  } else {
+    // There are matching rules for *.cpp files and *.cu files,
+    // translate these files into *.sycl.cpp files.
+    for (const auto &Entry : groupReplacementsByFile(
+             Rewrite.getSourceMgr().getFileManager(), Tool.getReplacements())) {
+      OutPath = StringRef(Entry.first);
+      // This operation won't fail; it already succeeded once during argument
+      // validation.
+      makeCanonical(OutPath);
+      rewriteDir(OutPath, InRoot, OutRoot);
+      rewriteFileName(OutPath);
 
-    if (OutPath.back() == 'h' && fs::exists(OutPath)) {
-      // A header file with this name already exists.
-      // For now we do no merging and do not handle this case.
-      // TODO: Implement strategy to handle translated headers that might
-      // differ due to their point of inclusion
-      llvm::errs() << "File '" << OutPath << "' already exists; skipping it.\n";
-      AppliedAll = false;
-      continue;
+      if (OutPath.back() == 'h' && fs::exists(OutPath)) {
+        // A header file with this name already exists.
+        // For now we do no merging and do not handle this case.
+        // TODO: Implement strategy to handle translated headers that might
+        // differ due to their point of inclusion
+        llvm::errs() << "File '" << OutPath
+                     << "' already exists; skipping it.\n";
+        AppliedAll = false;
+        continue;
+      }
+
+      fs::create_directories(path::parent_path(OutPath));
+      std::ofstream File(OutPath.str());
+      llvm::raw_os_ostream Stream(File);
+
+      AppliedAll =
+          tooling::applyAllReplacements(Entry.second, Rewrite) || AppliedAll;
+      Rewrite
+          .getEditBuffer(Sources.getOrCreateFileID(
+              Tool.getFiles().getFile(Entry.first),
+              clang::SrcMgr::C_User /*normal user code*/))
+          .write(Stream);
     }
-
-    fs::create_directories(path::parent_path(OutPath));
-    std::ofstream File(OutPath.str());
-    llvm::raw_os_ostream Stream(File);
-
-    AppliedAll =
-        tooling::applyAllReplacements(Entry.second, Rewrite) || AppliedAll;
-    Rewrite
-        .getEditBuffer(Sources.getOrCreateFileID(
-            Tool.getFiles().getFile(Entry.first),
-            clang::SrcMgr::C_User /*normal user code*/))
-        .write(Stream);
   }
 
   if (!AppliedAll) {
     llvm::errs() << "Skipped some replacements.\n";
-    return 1;
+    status = TranslationSkipped;
   }
-  return 0;
+  return status;
 }

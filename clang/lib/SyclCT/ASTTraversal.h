@@ -25,6 +25,19 @@
 namespace clang {
 namespace syclct {
 
+enum RuleType {
+  // rule applied to cude source
+  ApplyToCudaFile = 1,
+
+  // rule applied to cplusplus source
+  ApplyToCppFile = 2,
+};
+
+typedef struct {
+  int RType;
+  std::vector<std::string> RulesDependon;
+} CommonRuleProperty;
+
 class IncludesCallbacks : public PPCallbacks {
   TransformSetTy &TransformSet;
   SourceManager &SM;
@@ -141,6 +154,29 @@ protected:
 public:
   bool isTranslationRule() const override { return true; }
   static bool classof(const ASTTraversal *T) { return T->isTranslationRule(); }
+
+  // @RulesDependent : rules are sepeerate by ","
+  void SetRuleProperty(int RType, std::string RulesDependent = "") {
+    std::vector<std::string> RulesNames;
+    // Separate rule string into list by comma
+    if (RulesDependent != "") {
+      std::size_t Current, Previous = 0;
+      Current = RulesDependent.find(',');
+      while (Current != std::string::npos) {
+        RulesNames.push_back(
+            RulesDependent.substr(Previous, Current - Previous));
+        Previous = Current + 1;
+        Current = RulesDependent.find(',', Previous);
+      }
+      RulesNames.push_back(RulesDependent.substr(Previous, Current - Previous));
+    }
+    RuleProperty.RType = RType;
+    RuleProperty.RulesDependon = RulesNames;
+  }
+  CommonRuleProperty GetRuleProperty() { return RuleProperty; }
+
+private:
+  CommonRuleProperty RuleProperty;
 };
 
 template <typename T> class NamedTranslationRule : public TranslationRule {
@@ -154,6 +190,7 @@ template <typename T> const char NamedTranslationRule<T>::ID(0);
 class IterationSpaceBuiltinRule
     : public NamedTranslationRule<IterationSpaceBuiltinRule> {
 public:
+  IterationSpaceBuiltinRule() { SetRuleProperty(ApplyToCudaFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -163,6 +200,7 @@ public:
 /// This rule removes __global__, __device__ and __host__ function attributes.
 class FunctionAttrsRule : public NamedTranslationRule<FunctionAttrsRule> {
 public:
+  FunctionAttrsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -170,6 +208,7 @@ public:
 /// Translation rule for types replacements in var. declarations.
 class TypeInVarDeclRule : public NamedTranslationRule<TypeInVarDeclRule> {
 public:
+  TypeInVarDeclRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
   static const std::map<std::string, std::string> TypeNamesMap;
@@ -181,6 +220,7 @@ class ReplaceDim3CtorRule : public NamedTranslationRule<ReplaceDim3CtorRule> {
   void rewriteArglist(const std::pair<const CXXConstructExpr *, bool> &);
 
 public:
+  ReplaceDim3CtorRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -188,6 +228,7 @@ public:
 /// Translation rule for return types replacements.
 class ReturnTypeRule : public NamedTranslationRule<ReturnTypeRule> {
 public:
+  ReturnTypeRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -196,6 +237,9 @@ public:
 class ErrorHandlingIfStmtRule
     : public NamedTranslationRule<ErrorHandlingIfStmtRule> {
 public:
+  ErrorHandlingIfStmtRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -203,6 +247,7 @@ public:
 /// Translation rule for cudaDeviceProp variables.
 class DevicePropVarRule : public NamedTranslationRule<DevicePropVarRule> {
 public:
+  DevicePropVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
@@ -213,6 +258,7 @@ private:
 // Translation rule for enums constants.
 class EnumConstantRule : public NamedTranslationRule<EnumConstantRule> {
 public:
+  EnumConstantRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
@@ -222,6 +268,7 @@ public:
 // Translation rule for cudaError enums constants.
 class ErrorConstantsRule : public NamedTranslationRule<ErrorConstantsRule> {
 public:
+  ErrorConstantsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -229,11 +276,14 @@ public:
 /// Translation rule for function calls.
 class FunctionCallRule : public NamedTranslationRule<FunctionCallRule> {
 public:
+  FunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
 class KernelCallRule : public NamedTranslationRule<KernelCallRule> {
+public:
+  KernelCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -263,6 +313,7 @@ class MemoryTranslationRule
   const Expr *stripConverts(const Expr *E) const;
 
 public:
+  MemoryTranslationRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -274,6 +325,9 @@ public:
 class KernelIterationSpaceRule
     : public NamedTranslationRule<KernelIterationSpaceRule> {
 public:
+  KernelIterationSpaceRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -298,9 +352,28 @@ public:
         ASTTraversalMetaInfo::getConstructorTable()[ID]()));
   }
 
-  void emplaceAllRules() {
+  void emplaceAllRules(int SourceFileFlag) {
     for (auto &F : ASTTraversalMetaInfo::getConstructorTable()) {
-      Storage.emplace_back(std::unique_ptr<ASTTraversal>(F.second()));
+      auto RuleObj = (TranslationRule *)F.second();
+      CommonRuleProperty RuleProperty = RuleObj->GetRuleProperty();
+
+      auto RType = RuleProperty.RType;
+      auto RulesDependon = RuleProperty.RulesDependon;
+      // To do:if RulesDependon is not null here, need order the rule set
+
+      // Add rules current rule Name depends on
+      for (auto const &RuleName : RulesDependon) {
+        auto *ID = ASTTraversalMetaInfo::getID(RuleName);
+        if (!ID) {
+          llvm::errs() << "[ERROR] Rule\"" << RuleName << "\" not found\n";
+          std::exit(1);
+        }
+        emplaceTranslationRule(ID);
+      }
+
+      if (RType & SourceFileFlag) {
+        Storage.emplace_back(std::unique_ptr<ASTTraversal>(F.second()));
+      }
     }
   }
 

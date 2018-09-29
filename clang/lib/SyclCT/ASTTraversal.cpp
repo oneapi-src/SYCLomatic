@@ -755,7 +755,6 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(MemoryTranslationRule)
-
 static const CXXConstructorDecl *getIfConstructorDecl(const Decl *ND) {
   if (const auto *Tmpl = dyn_cast<FunctionTemplateDecl>(ND))
     ND = Tmpl->getTemplatedDecl();
@@ -764,8 +763,10 @@ static const CXXConstructorDecl *getIfConstructorDecl(const Decl *ND) {
 
 // Translation rule for Inserting try-catch around functions.
 class ErrorTryCatchRule : public NamedTranslationRule<ErrorTryCatchRule> {
-public:
   std::unordered_set<unsigned> Insertions;
+
+public:
+  ErrorTryCatchRule() { SetRuleProperty(ApplyToCudaFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override {
     MF.addMatcher(functionDecl(hasBody(compoundStmt())).bind("functionDecl"),
                   this);

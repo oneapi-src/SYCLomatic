@@ -92,8 +92,8 @@ void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
 }
 
 static inline SourceLocation getStartOfLine(SourceLocation Loc,
-                                               const SourceManager &SM,
-                                               const LangOptions &LangOpts) {
+                                            const SourceManager &SM,
+                                            const LangOptions &LangOpts) {
   auto LocInfo = SM.getDecomposedLoc(SM.getExpansionLoc(Loc));
   auto Buffer = SM.getBufferData(LocInfo.first);
   auto NLPos = Buffer.find_last_of('\n', LocInfo.second);
@@ -106,9 +106,9 @@ static inline SourceLocation getStartOfLine(SourceLocation Loc,
 }
 
 template <typename... Ts>
-TextModification *insertCommentPrevLine(SourceLocation SL,
-                                       const DiagnosticsMessage &Msg,
-                           const CompilerInstance &CI, Ts &&... Vals) {
+TextModification *
+insertCommentPrevLine(SourceLocation SL, const DiagnosticsMessage &Msg,
+                      const CompilerInstance &CI, Ts &&... Vals) {
 
   auto StartLoc = getStartOfLine(SL, CI.getSourceManager(), LangOptions());
   auto Formatted = llvm::formatv(Msg.Msg, std::forward<Ts>(Vals)...);
@@ -121,14 +121,13 @@ TextModification *insertCommentPrevLine(SourceLocation SL,
 // Emits a warning/error/note and/or comment depending on MsgID. For details
 template <typename IDTy, typename... Ts>
 void report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
-                         TransformSetTy *TS,
-            Ts &&... Vals) {
+            TransformSetTy *TS, Ts &&... Vals) {
   if (DiagnosticIDTable.find((int)MsgID) != DiagnosticIDTable.end())
     reportWarning(SL, DiagnosticIDTable[(int)MsgID], CI,
                   std::forward<Ts>(Vals)...);
   if (TS && CommentIDTable.find((int)MsgID) != CommentIDTable.end())
     TS->emplace_back(insertCommentPrevLine(SL, CommentIDTable[(int)MsgID], CI,
-                          std::forward<Ts>(Vals)...));
+                                           std::forward<Ts>(Vals)...));
 }
 } // namespace DiagnosticsUtils
 } // namespace syclct

@@ -22,8 +22,8 @@ template <typename T> class SmallVectorImpl;
 bool makeCanonicalOrSetDefaults(std::string &InRoot, std::string &OutRoot,
                                 const std::vector<std::string> SourceFiles);
 
-// Make sure files passed to SYCL Compatibility Tool are under the input root directory
-// and have an extension.
+// Make sure files passed to SYCL Compatibility Tool are under the input root
+// directory and have an extension.
 bool validatePaths(const std::string &InRoot,
                    const std::vector<std::string> &SourceFiles);
 #endif // SYCLCT_VALIDATE_ARGUMENTS_H

@@ -97,6 +97,26 @@ std::string getStmtSpelling(const Stmt *S, const ASTContext &Context) {
   std::string StrBuffer;
   llvm::raw_string_ostream TmpStream(StrBuffer);
   auto LangOpts = Context.getLangOpts();
-  S->printPretty(TmpStream, nullptr, PrintingPolicy(LangOpts), 0, "\n", &Context);
+  S->printPretty(TmpStream, nullptr, PrintingPolicy(LangOpts), 0, "\n",
+                 &Context);
   return TmpStream.str();
+}
+
+SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
+  SmallString<256> FilePath = SourcePath;
+  auto Extension = path::extension(FilePath);
+
+  if (Extension == ".cu") {
+    return TypeCudaSource;
+  } else if (Extension == ".cuh") {
+    return TypeCudaHeader;
+  } else if (Extension == ".cpp" || Extension == ".cxx" || Extension == ".cc" ||
+             Extension == ".c") {
+    return TypeCppSource;
+  } else if (Extension == ".hpp" || Extension == ".hxx" || Extension == ".h") {
+    return TypeCppHeader;
+  } else {
+    llvm::errs() << "[ERROR] Not support\"" << Extension << "\" file type!\n";
+    std::exit(1);
+  }
 }
