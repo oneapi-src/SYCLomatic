@@ -35,7 +35,25 @@ Replacement RemoveAttr::getReplacement(const ASTContext &Context) const {
   SourceLocation ExpB = SM.getExpansionLoc(ARB);
   // No need to invoke getExpansionLoc again if the location is the same.
   SourceLocation ExpE = (ARB == ARE) ? ExpB : SM.getExpansionLoc(ARE);
-  return Replacement(SM, CharSourceRange::getTokenRange(ExpB, ExpE), "");
+
+  SourceLocation SpellingBegin = SM.getSpellingLoc(ExpB);
+  SourceLocation SpellingEnd = SM.getSpellingLoc(ExpE);
+  std::pair<FileID, unsigned> Start = SM.getDecomposedLoc(SpellingBegin);
+  std::pair<FileID, unsigned> End = SM.getDecomposedLoc(SpellingEnd);
+  End.second += Lexer::MeasureTokenLength(SpellingEnd, SM, LangOptions());
+  unsigned Len = End.second - Start.second;
+  // check the char after attribute, if it is empty then del it.
+  //   -eg. will del the space in case  "__global__ "
+  //   -eg. will not del the ";" in  case "__global__;"
+  unsigned int I=0;
+  while (SM.getCharacterData(ExpB.getLocWithOffset(Len), 0)[I] == ' ' ||
+      SM.getCharacterData(ExpB.getLocWithOffset(Len), 0)[I] == '\t') {
+    I++;
+  }
+  Len +=I;
+
+  return Replacement(
+      SM, CharSourceRange::getCharRange(ExpB, ExpB.getLocWithOffset(Len)), "");
 }
 
 Replacement
@@ -190,32 +208,66 @@ ReplaceKernelCallExpr::getExecutionConfig() const {
 // If E is a variable reference, returns the name of the variable.
 // Else assumes E is an implicit or explicit construction of dim3 and returns
 // an explicit cl::sycl::range<3>-constructor call.
-std::string
-ReplaceKernelCallExpr::getDim3Translation(const Expr *E,
-                                          const ASTContext &Context) {
+std::string ReplaceKernelCallExpr::getDim3Translation(const Expr *E,
+                                                      const ASTContext &Context,
+                                                      unsigned int EffectDims) {
   if (auto Var = dyn_cast<DeclRefExpr>(E)) {
     // kernel<<<griddim, threaddim>>>()
     return Var->getNameInfo().getAsString();
   } else {
+    auto Ctor = dyn_cast<CXXConstructExpr>(E);
     // kernel<<<dim3(1, 2), dim3(1, 2, 3)>>>() -- temporary objects
     // kernel<<<1, dim3(1)>>>() -- constructor expressions
+    unsigned DimsN = getDimsNum(E);
     std::stringstream Stream;
-    Stream << "cl::sycl::range<3>(";
-    auto Ctor = dyn_cast<CXXConstructExpr>(E);
-    assert(Ctor && "Only dim3 constructors (explicit or implicit from literal "
-                   "int, variables (int and dim3)) supported.");
-    Stream << getStmtSpelling(Ctor->getArg(0), Context);
-    if (isa<CXXDefaultArgExpr>(Ctor->getArg(1))) {
-      Stream << ", 1, 1)";
-    } else if (isa<CXXDefaultArgExpr>(Ctor->getArg(2))) {
-      Stream << ", " << getStmtSpelling(Ctor->getArg(1), Context);
-      Stream << ", 1)";
-    } else {
-      Stream << ", " << getStmtSpelling(Ctor->getArg(1), Context);
-      Stream << ", " << getStmtSpelling(Ctor->getArg(2), Context) << ")";
+
+    if (EffectDims == 3) {
+      Stream << "cl::sycl::range<3>(";
+      if (DimsN == EffectDims) {
+        Stream << getStmtSpelling(Ctor->getArg(0), Context);
+        Stream << ", " << getStmtSpelling(Ctor->getArg(1), Context);
+        Stream << ", " << getStmtSpelling(Ctor->getArg(2), Context) << ")";
+      } else if (DimsN == 2) {
+        Stream << getStmtSpelling(Ctor->getArg(0), Context);
+        Stream << ", " << getStmtSpelling(Ctor->getArg(1), Context);
+        Stream << ", 1)";
+      } else if (DimsN == 1) {
+        Stream << getStmtSpelling(Ctor->getArg(0), Context);
+        Stream << ", 1";
+        Stream << ", 1)";
+      }
+    } else if (EffectDims == 2) {
+
+      if (DimsN == EffectDims) {
+        Stream << "cl::sycl::range<2>(";
+        Stream << getStmtSpelling(Ctor->getArg(0), Context);
+        Stream << ", " << getStmtSpelling(Ctor->getArg(1), Context) << ")";
+      } else if (DimsN == 1) {
+        Stream << "cl::sycl::range<2>(";
+        Stream << getStmtSpelling(Ctor->getArg(0), Context);
+        Stream << ", 1)";
+      }
+    } else if (EffectDims == 1) {
+      Stream << "cl::sycl::range<1>(";
+      Stream << getStmtSpelling(Ctor->getArg(0), Context);
+      Stream << ")";
     }
+
     return Stream.str();
   }
+}
+unsigned int ReplaceKernelCallExpr::getDimsNum(const Expr *E) {
+  unsigned EffectDims = 3;
+  if (auto Ctor = dyn_cast<CXXConstructExpr>(E)) {
+    assert(Ctor && "Only dim3 constructors (explicit or implicit from literal "
+                   "int, variables (int and dim3)) supported.");
+    if (isa<CXXDefaultArgExpr>(Ctor->getArg(1))) {
+      EffectDims = 1;
+    } else if (isa<CXXDefaultArgExpr>(Ctor->getArg(2))) {
+      EffectDims = 2;
+    }
+  }
+  return EffectDims;
 }
 
 Replacement
@@ -262,17 +314,20 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
       getHashAsString(KCall->getBeginLoc().printToString(SM)).substr(0, 6);
   // clang-format off
   std::stringstream Final;
+  unsigned int DimsN = getDimsNum(NDSize);
+  unsigned int DimsW = getDimsNum(WGSize);
+  unsigned int EffectDims = DimsN>DimsW ? DimsN:DimsW;
   Final
   << Header.str()
-  << Indent << "syclct::get_device_manager().current_device().default_queue().submit(" << NL
+  << Indent << "syclct::get_default_queue().submit(" << NL
   << Indent <<  "  [&](cl::sycl::handler &cgh) {" << NL
   << Header2.str()
   << Indent <<  "    cgh.parallel_for<class " << KName << "_" << LocHash << ">(" << NL
-  << Indent <<  "      cl::sycl::nd_range<3>(("
-  << getDim3Translation(NDSize, Context) << " * "
-  << getDim3Translation(WGSize, Context) << "), "
-  << getDim3Translation(WGSize, Context)<<")," << NL
-  << Indent <<  "      [=](cl::sycl::nd_item<3> it) {" << NL
+  << Indent <<  "      cl::sycl::nd_range<" << EffectDims << ">(("
+  << getDim3Translation(NDSize, Context, EffectDims) << " * "
+  << getDim3Translation(WGSize, Context, EffectDims) << "), "
+  << getDim3Translation(WGSize, Context, EffectDims)<<")," << NL
+  << Indent <<  "      [=](cl::sycl::nd_item<"<< EffectDims << "> it) {" << NL
   << Header3.str()
   << Indent <<  "        " << KName << "(it, " << buildArgList(KCall->arguments(), Context)
                                     << ");" <<  NL

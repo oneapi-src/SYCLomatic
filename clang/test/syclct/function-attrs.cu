@@ -27,3 +27,8 @@ __device__ void test_05() __device__;
 __global__ void test_06();
 __global__ void test_06();
 __global__ void test_06() { }
+// CHECK: void test_07();
+__global__    void test_07();
+// CHECK: void test_08();
+__global__	    void test_08();
+

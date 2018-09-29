@@ -203,7 +203,9 @@ class ReplaceKernelCallExpr : public TextModification {
   const CUDAKernelCallExpr *KCall;
 
   std::pair<const Expr *, const Expr *> getExecutionConfig() const;
-  static std::string getDim3Translation(const Expr *, const ASTContext &);
+  static std::string getDim3Translation(const Expr *E, const ASTContext &Context,
+                                        unsigned int EffectDims);
+  static unsigned int getDimsNum(const Expr *);
 
 public:
   ReplaceKernelCallExpr(const CUDAKernelCallExpr *KCall) : KCall(KCall) {}

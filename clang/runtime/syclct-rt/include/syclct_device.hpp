@@ -39,7 +39,7 @@ public:
   bool &host_unified_memory() { return _host_unified_memory; }
   int &major_version() { return _major; }
   int &minor_version() { return _minor; }
-  int &get_integrated() {return _integrated;}
+  int &get_integrated() { return _integrated; }
   int &max_clock_frequency() { return _frequency; }
   int &max_compute_units() { return _compute_units; }
   compute_mode &mode() { return _compute_mode; }
@@ -163,6 +163,9 @@ private:
 static device_manager &get_device_manager() {
   static device_manager d_m;
   return d_m;
+}
+static inline cl::sycl::queue &get_default_queue() {
+  return syclct::get_device_manager().current_device().default_queue();
 }
 
 } // namespace syclct
