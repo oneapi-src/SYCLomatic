@@ -97,8 +97,10 @@ void IterationSpaceBuiltinRule::registerMatcher(MatchFinder &MF) {
 }
 
 void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
-  const MemberExpr *ME = Result.Nodes.getNodeAs<MemberExpr>("memberExpr");
-  const VarDecl *VD = Result.Nodes.getNodeAs<VarDecl>("varDecl");
+  const MemberExpr *ME = getNodeAsType<MemberExpr>(Result, "memberExpr");
+  if (!ME)
+    return;
+  const VarDecl *VD = getNodeAsType<VarDecl>(Result, "varDecl", false);
   assert(ME && VD && "Unknown result");
 
   ValueDecl *Field = ME->getMemberDecl();
@@ -203,9 +205,11 @@ static bool isCudaFailureCheck(const DeclRefExpr *E) {
 }
 
 void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
-  auto If = Result.Nodes.getNodeAs<IfStmt>("errIf");
+  static std::vector<std::string> NameList = {"errIf", "errIfSpecial"};
+  const IfStmt *If = getNodeAsType<IfStmt>(Result, "errIf");
   if (!If)
-    If = Result.Nodes.getNodeAs<IfStmt>("errIfSpecial");
+    if (!(If = getNodeAsType<IfStmt>(Result, "errIfSpecial")))
+      return;
   auto EmitNotRemoved = [&](SourceLocation SL, const Stmt *R) {
     report(SL, Diagnostics::STMT_NOT_REMOVED,
            getStmtSpelling(R, *Result.Context).c_str());
@@ -258,16 +262,16 @@ void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
   };
 
   if (![&] {
-        if (auto Op = Result.Nodes.getNodeAs<BinaryOperator>("op!=")) {
+        if (auto Op = getNodeAsType<BinaryOperator>(Result, "op!=")) {
           if (!isCudaFailureCheck(Op))
             return false;
-        } else if (auto Op = Result.Nodes.getNodeAs<BinaryOperator>("op==")) {
+        } else if (auto Op = getNodeAsType<BinaryOperator>(Result, "op==")) {
           if (!isCudaFailureCheck(Op, true))
             return false;
           report(Op->getBeginLoc(), Diagnostics::IFSTMT_SPECIAL_CASE,
                  getStmtSpelling(Op, *Result.Context).c_str());
         } else {
-          auto CondVar = Result.Nodes.getNodeAs<DeclRefExpr>("var");
+          auto CondVar = getNodeAsType<DeclRefExpr>(Result, "var");
           if (!isCudaFailureCheck(CondVar))
             return false;
         }
@@ -298,7 +302,9 @@ void FunctionAttrsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void FunctionAttrsRule::run(const MatchFinder::MatchResult &Result) {
-  const FunctionDecl *FD = Result.Nodes.getNodeAs<FunctionDecl>("functionDecl");
+  const FunctionDecl *FD = getNodeAsType<FunctionDecl>(Result, "functionDecl");
+  if (!FD)
+    return;
   const AttrVec &AV = FD->getAttrs();
 
   for (const Attr *A : AV) {
@@ -322,7 +328,9 @@ void TypeInVarDeclRule::registerMatcher(MatchFinder &MF) {
 }
 
 void TypeInVarDeclRule::run(const MatchFinder::MatchResult &Result) {
-  const VarDecl *D = Result.Nodes.getNodeAs<VarDecl>("TypeInVarDecl");
+  const VarDecl *D = getNodeAsType<VarDecl>(Result, "TypeInVarDecl");
+  if (!D)
+    return;
   const clang::Type *Type = D->getTypeSourceInfo()->getTypeLoc().getTypePtr();
 
   if (dyn_cast<SubstTemplateTypeParmType>(Type)) {
@@ -516,7 +524,8 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
 
   // Find all other dim3 constructors with 3 parameters (not copy ctors).
   MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(hasName("dim3"))),
-                                 unless(hasParent(castExpr())))
+                                 unless(hasParent(castExpr())),
+                                 argumentCountIs(3))
                     .bind("dim3Ctor"),
                 this);
 }
@@ -526,58 +535,56 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
 // closed brace needs to be appended.
 std::pair<const CXXConstructExpr *, bool>
 ReplaceDim3CtorRule::rewriteSyntax(const MatchFinder::MatchResult &Result) {
-  // Most commonly used syntax cases are checked first.
-  if (auto Ctor = Result.Nodes.getNodeAs<CXXConstructExpr>("dim3Ctor")) {
+  const CXXConstructExpr *Ctor = nullptr;
+  bool CloseBrace = false;
+  if ((Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3Ctor"))) {
     // dim3 a(1);
     // No syntax needs to be rewritten.
-    return {Ctor, false};
-  }
-
-  if (auto ImplCastCtor =
-          Result.Nodes.getNodeAs<CXXConstructExpr>("dim3CtorImplicitCast")) {
-    auto Cast = Result.Nodes.getNodeAs<ImplicitCastExpr>("dim3Cast");
-    if (!isa<CXXTemporaryObjectExpr>(ImplCastCtor)) {
-      // dim3 a = 1;
-      // func(1);
-      emplaceTransformation(new InsertBeforeStmt(Cast, "cl::sycl::range<3>("));
-      return {ImplCastCtor, true};
-    } else {
-      // dim3 a = dim3(1, 2); // temporary object expression
-      // func(dim(1, 2));
-      emplaceTransformation(
-          new ReplaceToken(Cast->getBeginLoc(), "cl::sycl::range<3>"));
-      return {ImplCastCtor, false};
+  } else if ((Ctor = getNodeAsType<CXXConstructExpr>(Result,
+                                                     "dim3CtorImplicitCast"))) {
+    if (auto Cast = getNodeAsType<ImplicitCastExpr>(Result, "dim3Cast")) {
+      if (!isa<CXXTemporaryObjectExpr>(Ctor)) {
+        // dim3 a = 1;
+        // func(1);
+        emplaceTransformation(
+            new InsertBeforeStmt(Cast, "cl::sycl::range<3>("));
+        CloseBrace = true;
+      } else {
+        // dim3 a = dim3(1, 2); // temporary object expression
+        // func(dim(1, 2));
+        emplaceTransformation(
+            new ReplaceToken(Cast->getBeginLoc(), "cl::sycl::range<3>"));
+      }
     }
-  } else if (auto FuncCastCtor =
-                 Result.Nodes.getNodeAs<CXXConstructExpr>("dim3CtorFuncCast")) {
-    auto Cast = Result.Nodes.getNodeAs<CXXFunctionalCastExpr>("dim3Cast");
+  } else if ((Ctor = getNodeAsType<CXXConstructExpr>(Result,
+                                                     "dim3CtorFuncCast"))) {
     // dim3 a = dim3(1); // function style cast
     // dim3 b = dim3(a); // copy constructor
     // func(dim(1), dim3(a));
-    emplaceTransformation(
-        new ReplaceToken(Cast->getBeginLoc(), "cl::sycl::range<3>"));
-    return {FuncCastCtor, false};
-  }
-
-  if (auto CCastCtor =
-          Result.Nodes.getNodeAs<CXXConstructExpr>("dim3CtorCCast")) {
+    if (auto Cast = getNodeAsType<CXXFunctionalCastExpr>(Result, "dim3Cast")) {
+      emplaceTransformation(
+          new ReplaceToken(Cast->getBeginLoc(), "cl::sycl::range<3>"));
+    }
+  } else if ((Ctor =
+                  getNodeAsType<CXXConstructExpr>(Result, "dim3CtorCCast"))) {
     // dim3 a = (dim3)1;
     // dim3 b = (dim3)a; // copy constructor
     // func((dim)1, (dim3)a);
-    auto Cast = Result.Nodes.getNodeAs<CStyleCastExpr>("dim3Cast");
-    emplaceTransformation(new ReplaceCCast(Cast, "cl::sycl::range<3>("));
-    return {CCastCtor, true};
+    if (auto Cast = getNodeAsType<CStyleCastExpr>(Result, "dim3Cast")) {
+      emplaceTransformation(new ReplaceCCast(Cast, "cl::sycl::range<3>("));
+      CloseBrace = true;
+    }
   }
-
-  assert(false && "This must not happen.");
+  return {Ctor, CloseBrace};
 }
 
 void ReplaceDim3CtorRule::rewriteArglist(
     const std::pair<const CXXConstructExpr *, bool> &CtorCase) {
   auto Ctor = CtorCase.first;
   auto CloseBrace = CtorCase.second;
-
-  if (CtorCase.first->getNumArgs() == 1) {
+  if (!Ctor)
+    return;
+  if (Ctor->getNumArgs() == 1) {
     // Copy Constructor
     if (CloseBrace) {
       emplaceTransformation(new InsertAfterStmt(Ctor->getArg(0), ")"));
@@ -617,7 +624,9 @@ void ReturnTypeRule::registerMatcher(MatchFinder &MF) {
 }
 
 void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
-  const FunctionDecl *FD = Result.Nodes.getNodeAs<FunctionDecl>("functionDecl");
+  const FunctionDecl *FD = getNodeAsType<FunctionDecl>(Result, "functionDecl");
+  if (!FD)
+    return;
   const clang::Type *Type = FD->getReturnType().getTypePtr();
   std::string TypeName =
       Type->getCanonicalTypeInternal().getBaseTypeIdentifier()->getName().str();
@@ -643,7 +652,9 @@ void DevicePropVarRule::registerMatcher(MatchFinder &MF) {
 }
 
 void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
-  const MemberExpr *ME = Result.Nodes.getNodeAs<MemberExpr>("DevicePropVar");
+  const MemberExpr *ME = getNodeAsType<MemberExpr>(Result, "DevicePropVar");
+  if (!ME)
+    return;
   auto Search = PropNamesMap.find(ME->getMemberNameInfo().getAsString());
   if (Search == PropNamesMap.end()) {
     // TODO report translation error
@@ -670,7 +681,9 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
 }
 
 void EnumConstantRule::run(const MatchFinder::MatchResult &Result) {
-  const DeclRefExpr *E = Result.Nodes.getNodeAs<DeclRefExpr>("EnumConstant");
+  const DeclRefExpr *E = getNodeAsType<DeclRefExpr>(Result, "EnumConstant");
+  if (!E)
+    return;
   assert(E && "Unknown result");
   auto Search = EnumNamesMap.find(E->getNameInfo().getName().getAsString());
   if (Search == EnumNamesMap.end()) {
@@ -690,7 +703,9 @@ void ErrorConstantsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void ErrorConstantsRule::run(const MatchFinder::MatchResult &Result) {
-  const DeclRefExpr *DE = Result.Nodes.getNodeAs<DeclRefExpr>("ErrorConstants");
+  const DeclRefExpr *DE = getNodeAsType<DeclRefExpr>(Result, "ErrorConstants");
+  if (!DE)
+    return;
   assert(DE && "Unknown result");
   auto *EC = cast<EnumConstantDecl>(DE->getDecl());
   emplaceTransformation(new ReplaceStmt(DE, EC->getInitVal().toString(10)));
@@ -722,11 +737,12 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
 }
 
 void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
-  const CallExpr *CE = Result.Nodes.getNodeAs<CallExpr>("FunctionCall");
-  bool IsAssigned = false;
+  bool IsAssigned;
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
   if (!CE) {
+    if (!(CE = getNodeAsType<CallExpr>(Result, "FunctionCallUsed")))
+      return;
     IsAssigned = true;
-    CE = Result.Nodes.getNodeAs<CallExpr>("FunctionCallUsed");
   }
   assert(CE && "Unknown result");
 
@@ -804,9 +820,10 @@ void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 }
 
 void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
-  auto KCall = Result.Nodes.getNodeAs<CUDAKernelCallExpr>("kernelCall");
-  emplaceTransformation(new ReplaceStmt(KCall, ""));
-  emplaceTransformation(new ReplaceKernelCallExpr(KCall));
+  if (auto KCall = getNodeAsType<CUDAKernelCallExpr>(Result, "kernelCall")) {
+    emplaceTransformation(new ReplaceStmt(KCall, ""));
+    emplaceTransformation(new ReplaceKernelCallExpr(KCall));
+  }
 }
 
 REGISTER_RULE(KernelCallRule)
@@ -828,11 +845,12 @@ void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
 }
 
 void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
-  const CallExpr *C = Result.Nodes.getNodeAs<CallExpr>("call");
   bool IsAssigned = false;
+  const CallExpr *C = getNodeAsType<CallExpr>(Result, "call");
   if (!C) {
+    if (!(C = getNodeAsType<CallExpr>(Result, "callUsed")))
+      return;
     IsAssigned = true;
-    C = Result.Nodes.getNodeAs<CallExpr>("callUsed");
   }
   std::string Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   if (IsAssigned) {
@@ -927,7 +945,9 @@ public:
   }
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override {
     const FunctionDecl *FD =
-        Result.Nodes.getNodeAs<FunctionDecl>("functionDecl");
+        getNodeAsType<FunctionDecl>(Result, "functionDecl");
+    if (!FD)
+      return;
     for (const auto *Attr : FD->attrs()) {
       attr::Kind AK = Attr->getKind();
       if (AK == attr::CUDAGlobal || AK == attr::CUDADevice)
@@ -962,8 +982,8 @@ void KernelIterationSpaceRule::registerMatcher(MatchFinder &MF) {
 }
 
 void KernelIterationSpaceRule::run(const MatchFinder::MatchResult &Result) {
-  const FunctionDecl *FD = Result.Nodes.getNodeAs<FunctionDecl>("functionDecl");
-  emplaceTransformation(new InsertArgument(FD, "cl::sycl::nd_item<3> item"));
+  if (auto FD = getNodeAsType<FunctionDecl>(Result, "functionDecl"))
+    emplaceTransformation(new InsertArgument(FD, "cl::sycl::nd_item<3> item"));
 }
 REGISTER_RULE(KernelIterationSpaceRule)
 
@@ -977,6 +997,31 @@ void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
     }
   }
   Matchers.matchAST(Context);
+}
+
+void ASTTraversalManager::emplaceAllRules(int SourceFileFlag) {
+  for (auto &F : ASTTraversalMetaInfo::getConstructorTable()) {
+    auto RuleObj = (TranslationRule *)F.second();
+    CommonRuleProperty RuleProperty = RuleObj->GetRuleProperty();
+
+    auto RType = RuleProperty.RType;
+    auto RulesDependon = RuleProperty.RulesDependon;
+    // To do:if RulesDependon is not null here, need order the rule set
+
+    // Add rules current rule Name depends on
+    for (auto const &RuleName : RulesDependon) {
+      auto *ID = ASTTraversalMetaInfo::getID(RuleName);
+      if (!ID) {
+        llvm::errs() << "[ERROR] Rule\"" << RuleName << "\" not found\n";
+        std::exit(1);
+      }
+      emplaceTranslationRule(ID);
+    }
+
+    if (RType & SourceFileFlag) {
+      Storage.emplace_back(std::unique_ptr<ASTTraversal>(F.second()));
+    }
+  }
 }
 
 const CompilerInstance &TranslationRule::getCompilerInstance() {

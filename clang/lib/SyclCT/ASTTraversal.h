@@ -14,6 +14,7 @@
 
 #include "Diagnostics.h"
 #include "TextModification.h"
+#include "Utility.h"
 
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Basic/DiagnosticIDs.h"
@@ -104,7 +105,33 @@ public:
   virtual bool isTranslationRule() const { return false; }
 };
 
-class ASTTraversalManager;
+/// Pass manager for ASTTraversal instances.
+class ASTTraversalManager {
+  std::vector<std::unique_ptr<ASTTraversal>> Storage;
+  ast_matchers::MatchFinder Matchers;
+
+public:
+  const CompilerInstance &CI;
+  const std::string InRoot;
+  // Set per matchAST invocation
+  ASTContext *Context = nullptr;
+  ASTTraversalManager(const CompilerInstance &CI, const std::string &IR)
+      : CI(CI), InRoot(IR) {}
+  /// Add \a TR to the manager.
+  ///
+  /// The ownership of the TR is transferred to the ASTTraversalManager.
+  void emplaceTranslationRule(const char *ID) {
+    assert(ASTTraversalMetaInfo::getConstructorTable().find(ID) !=
+           ASTTraversalMetaInfo::getConstructorTable().end());
+    Storage.emplace_back(std::unique_ptr<ASTTraversal>(
+        ASTTraversalMetaInfo::getConstructorTable()[ID]()));
+  }
+
+  void emplaceAllRules(int SourceFileFlag);
+
+  /// Run all emplaced ASTTraversal's over the given AST and populate \a TS.
+  void matchAST(ASTContext &Context, TransformSetTy &TS);
+};
 
 /// Base class for translation rules.
 ///
@@ -149,6 +176,31 @@ protected:
     /// TODO implement dereference for the general case, not only for foo(&a).
     /// TODO for now, report "can't compile".
     return "";
+  }
+
+  // Get node from match result map. And also check if the node's host file is
+  // in the InRoot path.
+  template <typename NodeType>
+  const NodeType *
+  getNodeAsType(const ast_matchers::MatchFinder::MatchResult &Result,
+                const char *Name, bool CheckInRoot = true) {
+    if (auto Node = Result.Nodes.getNodeAs<NodeType>(Name)) {
+      if (checkNode(Result.SourceManager, Node->getBeginLoc(), CheckInRoot))
+        return Node;
+    }
+    return nullptr;
+  }
+
+private:
+  bool checkNode(SourceManager *SM, const SourceLocation &Begin,
+                 bool CheckInRoot) {
+    return !CheckInRoot || isInRoot(SM, Begin);
+  }
+  // Check if the node's host file is in the InRoot path.
+  bool isInRoot(SourceManager *SM, const SourceLocation LS) {
+    std::string FilePath = SM->getFilename(SM->getExpansionLoc(LS));
+    makeCanonical(FilePath);
+    return isChildPath(TM->InRoot, FilePath);
   }
 
 public:
@@ -352,55 +404,6 @@ public:
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-};
-
-/// Pass manager for ASTTraversal instances.
-class ASTTraversalManager {
-  std::vector<std::unique_ptr<ASTTraversal>> Storage;
-  ast_matchers::MatchFinder Matchers;
-
-public:
-  const CompilerInstance &CI;
-  // Set per matchAST invocation
-  ASTContext *Context = nullptr;
-  ASTTraversalManager(const CompilerInstance &CI) : CI(CI) {}
-  /// Add \a TR to the manager.
-  ///
-  /// The ownership of the TR is transferred to the ASTTraversalManager.
-  void emplaceTranslationRule(const char *ID) {
-    assert(ASTTraversalMetaInfo::getConstructorTable().find(ID) !=
-           ASTTraversalMetaInfo::getConstructorTable().end());
-    Storage.emplace_back(std::unique_ptr<ASTTraversal>(
-        ASTTraversalMetaInfo::getConstructorTable()[ID]()));
-  }
-
-  void emplaceAllRules(int SourceFileFlag) {
-    for (auto &F : ASTTraversalMetaInfo::getConstructorTable()) {
-      auto RuleObj = (TranslationRule *)F.second();
-      CommonRuleProperty RuleProperty = RuleObj->GetRuleProperty();
-
-      auto RType = RuleProperty.RType;
-      auto RulesDependon = RuleProperty.RulesDependon;
-      // To do:if RulesDependon is not null here, need order the rule set
-
-      // Add rules current rule Name depends on
-      for (auto const &RuleName : RulesDependon) {
-        auto *ID = ASTTraversalMetaInfo::getID(RuleName);
-        if (!ID) {
-          llvm::errs() << "[ERROR] Rule\"" << RuleName << "\" not found\n";
-          std::exit(1);
-        }
-        emplaceTranslationRule(ID);
-      }
-
-      if (RType & SourceFileFlag) {
-        Storage.emplace_back(std::unique_ptr<ASTTraversal>(F.second()));
-      }
-    }
-  }
-
-  /// Run all emplaced ASTTraversal's over the given AST and populate \a TS.
-  void matchAST(ASTContext &Context, TransformSetTy &TS);
 };
 
 template <typename T> class RuleRegister {
