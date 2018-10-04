@@ -56,7 +56,10 @@ const std::map<std::string, std::string> EnumConstantRule::EnumNamesMap{
     // ...
     {"cudaDevAttrHostNativeAtomicSupported", "is_native_atomic_supported"},
     // enum cudaMemcpyKind
-    {"cudaMemcpyHostToDevice", "to_device"},
-    {"cudaMemcpyDeviceToHost", "to_host"},
+    {"cudaMemcpyHostToHost", "host_to_host"},
+    {"cudaMemcpyHostToDevice", "host_to_device"},
+    {"cudaMemcpyDeviceToHost", "device_to_host"},
+    {"cudaMemcpyDeviceToDevice", "device_to_device"},
+    {"cudaMemcpyDefault", "automatic"},
     // ...
 };

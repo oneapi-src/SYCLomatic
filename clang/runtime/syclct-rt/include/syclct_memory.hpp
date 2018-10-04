@@ -14,10 +14,14 @@
 
 #include <cassert>
 #include <cstdint>
+#include <cstring>
 #include <unordered_map>
 #include <utility>
 #include <CL/sycl.hpp>
 #include "syclct_device.hpp"
+
+// TODO: Add Windows version.
+#include <sys/mman.h>
 
 // DESIGN CONSIDERATIONS
 // All known helper memory management classes do the following:
@@ -43,120 +47,114 @@
 namespace syclct {
 
 enum memcpy_direction{
-  to_device,
-  to_host
+  host_to_host,
+  host_to_device,
+  device_to_host,
+  device_to_device,
+  automatic
 };
 
+// Byte type to use.
+typedef uint8_t byte_t;
+
 // Buffer type to be used in Memory Management runtime.
-typedef cl::sycl::buffer<uint8_t> buffer_t;
+typedef cl::sycl::buffer<byte_t> buffer_t;
+
 
 // TODO:
 // - thread safety.
 // - integration with error handling - error code to be returned.
 // - integration with stream support - proper queue to be used.
+// - extend mmaped space when the limit is reached.
 
 // There may be a lot of different strategies for allocating and mapping
 // fake device pointers to SYCL/OpenCL buffers. For example:
 // - continuous address allocation
 // - encoding buffer number in higher bits of the address and offset in the lower bits
-// I'm choosing the later one for the reason of ease of implementation and
-// more efficient mapping algorithm.
+//
+// Current algorithm allocates huge (128Gb) continuous address space and uses it for
+// allocation of device pointers. In current version address space is not reused after
+// freeing and not extended when the limit is reached.
+// For mapping pointers to buffers std::map is used, which has log(N) complexity, where
+// N is number of currently live allocations. This looks reasonable, given that number of
+// buffers is typically not big (while quite often buffers may be big themselves).
 class memory_manager {
 public:
 
   using buffer_id_t = int;
 
-  struct fake_device_pointer {
-    // |== MAX_BUFFERS ==|======== MAX_OFFSET ========|
-    // |   Buffer Id     |       Offset in buffer     |
-    // |=================|============================|
-    uintptr_t m_fake_ptr;
-
-    static const unsigned int AddressBits = sizeof(void *) * 8;
-    static const unsigned int BufferIdSize = 16u;
-    static const uintptr_t MaxNumberBuffers = (1ULL << BufferIdSize) - 1;
-    static const uintptr_t MaxOffset = (1ULL << (AddressBits - BufferIdSize)) - 1;
-
-    buffer_id_t get_buffer_id() const {
-      return m_fake_ptr >> (AddressBits - BufferIdSize);
-    }
-
-    size_t get_offset() const {
-      return m_fake_ptr & MaxOffset;
-    }
-
-    // don't need this probably.
-    operator void *() const { return reinterpret_cast<void *>(m_fake_ptr); }
-    operator uintptr_t() const { return m_fake_ptr; }
-
-    fake_device_pointer(buffer_id_t id) {
-      m_fake_ptr = ((uintptr_t)id) << (AddressBits - BufferIdSize);
-    }
-
-    fake_device_pointer(void *ptr) : m_fake_ptr(reinterpret_cast<uintptr_t>(ptr)) {}
-
-  };
-
   struct allocation {
     buffer_t buffer;
+    byte_t *alloc_ptr;
     size_t size;
   };
 
-  memory_manager()
-      : m_map({}){};
+  memory_manager() {
+      // Reserved address space, no real memory allocation happens here.
+      mapped_address_space = (byte_t *) mmap(nullptr, mapped_region_size, PROT_NONE,
+                                  MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+      next_free = mapped_address_space;
+  };
+
+  ~memory_manager() {
+    munmap(mapped_address_space, mapped_region_size);
+  };
 
   memory_manager(const memory_manager &) = delete;
 
-  buffer_id_t generate_id() {
-    static buffer_id_t counter = 0;
-    return ++counter;
-  }
-
-  // Create new fake pointer for buffer.
-  fake_device_pointer add_pointer(allocation &&a) {
-    auto next_number = m_map.size();
-    buffer_id_t b_id = generate_id();
-    m_map.emplace(b_id, a);
-    if (next_number > fake_device_pointer::MaxNumberBuffers) {
-      // TODO: nullptr
-      return fake_device_pointer(0);
-    }
-    return fake_device_pointer(b_id);
-  }
-
-  // allocate
-  // FIXME: Error checking
+  // Allocate
   void* mem_alloc(size_t size, cl::sycl::queue &queue) {
+    if (next_free + size >
+        mapped_address_space + mapped_region_size) {
+      // TODO: proper error reporting.
+      std::abort();
+    }
+    // Allocation
     cl::sycl::range<1> r(size);
     buffer_t buf(r);
+    allocation A{buf, next_free, size};
+    // Map allocation to device pointer
+    void *result = next_free;
+    m_map.emplace(next_free + size, A);
+    // Update pointer to the next free space.
+    next_free += (size + extra_padding + alignment - 1) & ~(alignment - 1);
 
-    allocation A {buf, size};
-
-    return add_pointer(std::move(A));
+    return result;
   }
 
-  // deallocate
+  // Deallocate
   void mem_free(void *ptr) {
-    fake_device_pointer f(ptr);
-    buffer_id_t b_id = f.get_buffer_id();
-    m_map.erase(b_id);
+    auto it = get_map_iterator(ptr);
+    m_map.erase(it);
   }
 
-  // map: fake ptr -> buffer
-  allocation& translate_ptr(void *ptr) {
-    fake_device_pointer fdp(ptr);
-    auto b_id = fdp.get_buffer_id();
-    auto it = m_map.find(b_id);
-    if (it != m_map.end()) {
-      return it->second;
+  std::map<byte_t*, allocation>::iterator get_map_iterator(void *ptr) {
+    auto it = m_map.upper_bound((byte_t*)ptr);
+    if (it == m_map.end()) {
+      // Not a device pointer or out of bound.
+      // TODO: proper error reporting.
+      std::abort();
     }
-    std::abort();
+    const allocation &alloc = it->second;
+    if (ptr < alloc.alloc_ptr) {
+      // Out of bound.
+      // This may happen if there's a gap between allocations due to alignment
+      // or extra padding and pointer points to this gap.
+      // TODO: proper error reporting.
+      std::abort();
+    }
+    return it;
   }
 
-  // map: fake ptr -> offset in the buffer
-  size_t get_ptr_offset(void *ptr) {
-    fake_device_pointer fdp(ptr);
-    return fdp.get_offset();
+  // map: device pointer -> allocation(buffer, alloc_prt, size)
+  allocation& translate_ptr(void *ptr) {
+    auto it = get_map_iterator(ptr);
+    return it->second;
+  }
+
+  // Check if the pointer represents device pointer or not.
+  bool is_device_ptr(void *ptr) const {
+    return (mapped_address_space <= ptr) && (ptr < mapped_address_space + mapped_region_size);
   }
 
   // Singleton to return the instance memory_manager.
@@ -168,70 +166,136 @@ public:
   }
 
 private:
-  std::unordered_map<buffer_id_t, allocation> m_map;
+  std::unordered_map<buffer_id_t, allocation> m_map_old;
+  std::map<byte_t*, allocation> m_map;
+  byte_t *mapped_address_space;
+  byte_t *next_free;
+  const size_t mapped_region_size = 128ull * 1024 * 1024 * 1024;
+  const size_t alignment = 256;
+  // This padding may be defined to some positive value to debug
+  // out of bound accesses.
+  const size_t extra_padding = 0;
 };
 
 
 // malloc
 // TODO: ret values to adjust for error handling.
-void sycl_malloc(void **ptr, size_t size, cl::sycl::queue q) {
-  *ptr = memory_manager::get_instance().mem_alloc(size * sizeof(uint8_t), q);
+static void sycl_malloc(void **ptr, size_t size, cl::sycl::queue q) {
+  *ptr = memory_manager::get_instance().mem_alloc(size * sizeof(byte_t), q);
 }
 
-void sycl_malloc(void **ptr, size_t size) {
+static void sycl_malloc(void **ptr, size_t size) {
   cl::sycl::queue q = syclct::get_device_manager().current_device().default_queue();
   sycl_malloc(ptr, size, q);
 }
 
 // free
 // TODO: ret values to adjust for error handling.
-void sycl_free(void *ptr) {
+static void sycl_free(void *ptr) {
   memory_manager::get_instance().mem_free(ptr);
 }
 
 // memcpy
-// TODO: ret values to adjust for error handling.
-void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size, memcpy_direction direction, cl::sycl::queue q) {
-  if (direction == memcpy_direction::to_device) {
-    memory_manager::allocation &a =  memory_manager::get_instance().translate_ptr(to_ptr);
-    size_t offset = memory_manager::fake_device_pointer(to_ptr).get_offset();
-    q.submit([&](cl::sycl::handler &cgh) {
-      auto r = cl::sycl::range<1>(size);
-      auto o = cl::sycl::id<1>(offset);
-      cl::sycl::accessor<uint8_t, 1, cl::sycl::access::mode::write, cl::sycl::access::target::global_buffer>
-        acc(a.buffer, cgh, r, o);
-      cgh.copy(from_ptr, acc);
-    });
-  }
-  else if (direction == memcpy_direction::to_host) {
-    memory_manager::allocation &a = memory_manager::get_instance().translate_ptr(from_ptr);
-    size_t offset = memory_manager::fake_device_pointer(from_ptr).get_offset();
-    q.submit([&](cl::sycl::handler &cgh) {
-      auto r = cl::sycl::range<1>(size);
-      auto o = cl::sycl::id<1>(offset);
-      cl::sycl::accessor<uint8_t, 1, cl::sycl::access::mode::read, cl::sycl::access::target::global_buffer>
-        acc(a.buffer, cgh, r, o);
-      cgh.copy(acc, to_ptr);
-    });
-  } else {
-    // Oooops!
+static void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size, memcpy_direction direction, cl::sycl::queue q) {
+  auto &mm = memory_manager::get_instance();
+  memcpy_direction real_direction = direction;
+  switch (direction) {
+    case host_to_host:
+      assert(!mm.is_device_ptr(from_ptr) && !mm.is_device_ptr(to_ptr));
+      break;
+    case host_to_device:
+      assert(!mm.is_device_ptr(from_ptr) && mm.is_device_ptr(to_ptr));
+      break;
+    case device_to_host:
+      assert(mm.is_device_ptr(from_ptr) && !mm.is_device_ptr(to_ptr));
+      break;
+    case device_to_device:
+      assert(mm.is_device_ptr(from_ptr) && mm.is_device_ptr(to_ptr));
+      break;
+    case automatic:
+      bool from_device = mm.is_device_ptr(from_ptr);
+      bool to_device = mm.is_device_ptr(to_ptr);
+      if (from_device) {
+        if (to_device) {
+          real_direction = device_to_device;
+        } else {
+          real_direction = device_to_host;
+        }
+      } else {
+        if (to_device) {
+          real_direction = host_to_device;
+        } else {
+          real_direction = host_to_host;
+        }
+      }
+      break;
   }
 
-  // TODO: error checking and reporting back.
+  switch (real_direction) {
+    case host_to_host:
+      memcpy(to_ptr, from_ptr, size);
+      break;
+    case host_to_device: {
+        auto &alloc = mm.translate_ptr(to_ptr);
+        size_t offset = (byte_t*)to_ptr - alloc.alloc_ptr;
+        q.submit([&](cl::sycl::handler &cgh) {
+          auto r = cl::sycl::range<1>(size);
+          auto o = cl::sycl::id<1>(offset);
+          cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write, cl::sycl::access::target::global_buffer>
+            acc(alloc.buffer, cgh, r, o);
+          cgh.copy(from_ptr, acc);
+        });
+      }
+      break;
+    case device_to_host: {
+        auto &alloc = mm.translate_ptr(from_ptr);
+        size_t offset = (byte_t*)from_ptr - alloc.alloc_ptr;
+        q.submit([&](cl::sycl::handler &cgh) {
+          auto r = cl::sycl::range<1>(size);
+          auto o = cl::sycl::id<1>(offset);
+          cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read, cl::sycl::access::target::global_buffer>
+            acc(alloc.buffer, cgh, r, o);
+          cgh.copy(acc, to_ptr);
+        });
+      }
+      break;
+    case device_to_device: {
+        auto &to_alloc =  mm.translate_ptr(to_ptr);
+        auto &from_alloc = mm.translate_ptr(from_ptr);
+        size_t to_offset = (byte_t*)to_ptr - to_alloc.alloc_ptr;
+        size_t from_offset = (byte_t*)from_ptr - from_alloc.alloc_ptr;
+        q.submit([&](cl::sycl::handler &cgh) {
+          auto r = cl::sycl::range<1>(size);
+          auto to_o = cl::sycl::id<1>(to_offset);
+          auto from_o = cl::sycl::id<1>(from_offset);
+          cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write, cl::sycl::access::target::global_buffer>
+            to_acc(to_alloc.buffer, cgh, r, to_o);
+          cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read, cl::sycl::access::target::global_buffer>
+            from_acc(from_alloc.buffer, cgh, r, from_o);
+          cgh.copy(from_acc, to_acc);
+        });
+      }
+      break;
+    default:
+      std::abort();
+  }
 }
 
-void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size, memcpy_direction direction) {
+static void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size, memcpy_direction direction) {
   sycl_memcpy(to_ptr, from_ptr, size, direction, syclct::get_device_manager().current_device().default_queue());
 }
 
-// In following functions buffer_t is return instead of buffer_t*, because of
+// In following functions buffer_t is returned instead of buffer_t*, because of
 // SYCL 1.2.1 #4.3.2 Common reference semantics, which explains why it's
-// ok to take a copy of buffer. On the othe side, returning a pointer to
+// ok to take a copy of buffer. On the other side, returning a pointer to
 // buffer would cause obligations for not moving referenced buffer.
 
-buffer_t get_buffer(void *ptr) {
-  memory_manager::allocation& alloc = memory_manager::get_instance().translate_ptr(ptr);
-  size_t offset = memory_manager::get_instance().get_ptr_offset(ptr);
+// FIXME: this function is not used in translation and causes segfault
+// with latest OpenCL CPU runtime and ComputeCpp 1.0.1.
+static buffer_t get_buffer(void *ptr) {
+  auto &mm = memory_manager::get_instance();
+  auto& alloc = mm.translate_ptr(ptr);
+  size_t offset = (byte_t*)ptr - alloc.alloc_ptr;
   if (offset == 0) {
     return alloc.buffer;
   } else {
@@ -245,31 +309,30 @@ buffer_t get_buffer(void *ptr) {
   }
 }
 
-std::pair<buffer_t, size_t> get_buffer_and_offset(void *ptr) {
-  memory_manager::allocation& alloc = memory_manager::get_instance().translate_ptr(ptr);
-  size_t offset = memory_manager::get_instance().get_ptr_offset(ptr);
+static std::pair<buffer_t, size_t> get_buffer_and_offset(void *ptr) {
+  auto &alloc = memory_manager::get_instance().translate_ptr(ptr);
+  size_t offset = (byte_t*)ptr - alloc.alloc_ptr;
   return std::make_pair(alloc.buffer, offset);
 }
 
 // memset
-// TODO: ret values to adjust for error handling.
-void sycl_memset(void *devPtr, int value, size_t count, cl::sycl::queue q) {
-  memory_manager::allocation &a =  memory_manager::get_instance().translate_ptr(devPtr);
-  size_t offset = memory_manager::fake_device_pointer(devPtr).get_offset();
+static void sycl_memset(void *devPtr, int value, size_t count, cl::sycl::queue q) {
+  auto &mm = memory_manager::get_instance();
+  assert(mm.is_device_ptr(devPtr));
+  auto &alloc = mm.translate_ptr(devPtr);
+  size_t offset = (byte_t*)devPtr - alloc.alloc_ptr;
 
   q.submit([&](cl::sycl::handler &cgh) {
     auto r = cl::sycl::range<1>(count);
     auto o = cl::sycl::id<1>(offset);
-    cl::sycl::accessor<uint8_t, 1, cl::sycl::access::mode::write, cl::sycl::access::target::global_buffer>
-      acc(a.buffer, cgh, r, o);
-      cgh.fill(acc, (uint8_t)value);
+    cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write, cl::sycl::access::target::global_buffer>
+      acc(alloc.buffer, cgh, r, o);
+      cgh.fill(acc, (byte_t)value);
     });
-
-  // TODO: error checking and reporting back.
 }
 
 
-void sycl_memset(void *devPtr, int value, size_t count) {
+static void sycl_memset(void *devPtr, int value, size_t count) {
   sycl_memset(devPtr, value, count,
               syclct::get_device_manager().current_device().default_queue());
 }
