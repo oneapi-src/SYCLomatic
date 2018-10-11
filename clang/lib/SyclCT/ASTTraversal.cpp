@@ -376,7 +376,7 @@ void SyclStyleVectorRule::registerMatcher(MatchFinder &MF) {
 }
 
 void SyclStyleVectorRule::run(const MatchFinder::MatchResult &Result) {
-  if (const VarDecl *D = Result.Nodes.getNodeAs<VarDecl>("BasicVar")) {
+  if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "BasicVar")) {
 
     const clang::Type *Type = D->getTypeSourceInfo()->getTypeLoc().getTypePtr();
 
@@ -396,7 +396,7 @@ void SyclStyleVectorRule::run(const MatchFinder::MatchResult &Result) {
     std::string Replacement = Search->second;
     emplaceTransformation(new ReplaceTypeInVarDecl(D, std::move(Replacement)));
   }
-  if (const VarDecl *D = Result.Nodes.getNodeAs<VarDecl>("PtrVar")) {
+  if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "PtrVar")) {
     const clang::Type *Type = D->getTypeSourceInfo()->getTypeLoc().getTypePtr();
 
     std::string TypeName = Type->getCanonicalTypeInternal()
@@ -413,7 +413,7 @@ void SyclStyleVectorRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new InsertNameSpaceInVarDecl(D, std::move(Replacement)));
   }
-  if (const VarDecl *D = Result.Nodes.getNodeAs<VarDecl>("ArrayVar")) {
+  if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "ArrayVar")) {
     const clang::Type *Type = D->getTypeSourceInfo()->getTypeLoc().getTypePtr();
 
     std::string TypeName = Type->getCanonicalTypeInternal()
@@ -430,7 +430,7 @@ void SyclStyleVectorRule::run(const MatchFinder::MatchResult &Result) {
         new InsertNameSpaceInVarDecl(D, std::move(Replacement)));
   }
   if (const MemberExpr *ME =
-          Result.Nodes.getNodeAs<MemberExpr>("VecMemberExpr")) {
+          getNodeAsType<MemberExpr>(Result, "VecMemberExpr")) {
     auto Search = MemberNamesMap.find(ME->getMemberNameInfo().getAsString());
     if (Search == MemberNamesMap.end()) {
       // TODO report translation error
@@ -471,21 +471,21 @@ void SyclStyleVectorCtorRule::registerMatcher(MatchFinder &MF) {
 // closed brace needs to be appended.
 void SyclStyleVectorCtorRule::run(const MatchFinder::MatchResult &Result) {
   // Most commonly used syntax cases are checked first.
-  if (Result.Nodes.getNodeAs<CXXConstructExpr>("int2CtorFuncCast")) {
-    auto Cast = Result.Nodes.getNodeAs<CXXFunctionalCastExpr>("int2Cast");
+  if (getNodeAsType<CXXConstructExpr>(Result, "int2CtorFuncCast")) {
+    auto Cast = getNodeAsType<CXXFunctionalCastExpr>(Result, "int2Cast");
     // int2 a = int2(1); // function style cast
     // int2 b = int2(a); // copy constructor
     // func(int(1), int2(a));
     emplaceTransformation(
         new ReplaceToken(Cast->getBeginLoc(), "cl::sycl::int2"));
-  } else if (Result.Nodes.getNodeAs<CXXConstructExpr>("int2CtorCCast")) {
+  } else if (getNodeAsType<CXXConstructExpr>(Result, "int2CtorCCast")) {
     // int2 a = (int2)1;
     // int2 b = (int2)a; // copy constructor
     // func((int2)1, (int2)a);
-    auto Cast = Result.Nodes.getNodeAs<CStyleCastExpr>("int2Cast");
+    auto Cast = getNodeAsType<CStyleCastExpr>(Result, "int2Cast");
     emplaceTransformation(new ReplaceCCast(Cast, "(cl::sycl::int2)"));
   } else if (const CallExpr *CE =
-                 Result.Nodes.getNodeAs<CallExpr>("VecUtilFunc")) {
+                 getNodeAsType<CallExpr>(Result, "VecUtilFunc")) {
 
     std::string FuncName =
         CE->getDirectCallee()->getNameInfo().getName().getAsString();
@@ -495,7 +495,7 @@ void SyclStyleVectorCtorRule::run(const MatchFinder::MatchResult &Result) {
       llvm_unreachable("Unknown function name");
     }
   } else if (const CStyleCastExpr *CPtrCast =
-                 Result.Nodes.getNodeAs<CStyleCastExpr>("int2PtrCast")) {
+                 getNodeAsType<CStyleCastExpr>(Result, "int2PtrCast")) {
     emplaceTransformation(
         new InsertNameSpaceInCastExpr(CPtrCast, "cl::sycl::"));
   }
