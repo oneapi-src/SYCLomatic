@@ -23,11 +23,11 @@ using namespace clang;
 using namespace clang::syclct;
 using namespace clang::tooling;
 
-Replacement ReplaceStmt::getReplacement(const ASTContext &Context) const {
-  return Replacement(Context.getSourceManager(), TheStmt, ReplacementString);
+ExtReplacement ReplaceStmt::getReplacement(const ASTContext &Context) const {
+  return ExtReplacement(Context.getSourceManager(), TheStmt, ReplacementString);
 }
 
-Replacement RemoveAttr::getReplacement(const ASTContext &Context) const {
+ExtReplacement RemoveAttr::getReplacement(const ASTContext &Context) const {
   auto &SM = Context.getSourceManager();
   SourceRange AttrRange = TheAttr->getRange();
   SourceLocation ARB = AttrRange.getBegin();
@@ -52,48 +52,52 @@ Replacement RemoveAttr::getReplacement(const ASTContext &Context) const {
   }
   Len += I;
 
-  return Replacement(
+  return ExtReplacement(
       SM, CharSourceRange::getCharRange(ExpB, ExpB.getLocWithOffset(Len)), "");
 }
 
-Replacement
+ExtReplacement
 ReplaceTypeInVarDecl::getReplacement(const ASTContext &Context) const {
   TypeLoc TL = D->getTypeSourceInfo()->getTypeLoc();
-  return Replacement(Context.getSourceManager(), &TL, T);
+  return ExtReplacement(Context.getSourceManager(), &TL, T);
 }
 
-Replacement ReplaceReturnType::getReplacement(const ASTContext &Context) const {
+ExtReplacement
+ReplaceReturnType::getReplacement(const ASTContext &Context) const {
   SourceRange SR = FD->getReturnTypeSourceRange();
-  return Replacement(Context.getSourceManager(), CharSourceRange(SR, true), T);
+  return ExtReplacement(Context.getSourceManager(), CharSourceRange(SR, true),
+                        T);
 }
 
-Replacement ReplaceToken::getReplacement(const ASTContext &Context) const {
+ExtReplacement ReplaceToken::getReplacement(const ASTContext &Context) const {
   // Need to deal with the fact, that the type name might be a macro.
-  return Replacement(Context.getSourceManager(),
-                     // false means [Begin, End)
-                     // true means [Begin, End]
-                     CharSourceRange(SourceRange(Begin, Begin), true), T);
+  return ExtReplacement(Context.getSourceManager(),
+                        // false means [Begin, End)
+                        // true means [Begin, End]
+                        CharSourceRange(SourceRange(Begin, Begin), true), T);
 }
 
-Replacement InsertText::getReplacement(const ASTContext &Context) const {
+ExtReplacement InsertText::getReplacement(const ASTContext &Context) const {
   // Need to deal with the fact, that the type name might be a macro.
-  return Replacement(Context.getSourceManager(),
-                     // false means [Begin, End)
-                     // true means [Begin, End]
-                     CharSourceRange(SourceRange(Begin, Begin), false), T);
+  return ExtReplacement(Context.getSourceManager(),
+                        // false means [Begin, End)
+                        // true means [Begin, End]
+                        CharSourceRange(SourceRange(Begin, Begin), false), T);
 }
 
-Replacement
+ExtReplacement
 InsertNameSpaceInVarDecl::getReplacement(const ASTContext &Context) const {
   TypeLoc TL = D->getTypeSourceInfo()->getTypeLoc();
-  return Replacement(
+  ExtReplacement R(
       Context.getSourceManager(),
       CharSourceRange(SourceRange(TL.getBeginLoc(), TL.getBeginLoc()), false),
       T);
+  R.setInsertPosition(InsertPositionRight);
+  return R;
 }
-Replacement
+ExtReplacement
 InsertNameSpaceInCastExpr::getReplacement(const ASTContext &Context) const {
-  return Replacement(
+  return ExtReplacement(
       Context.getSourceManager(),
       CharSourceRange(SourceRange(D->getLParenLoc().getLocWithOffset(1),
                                   D->getLParenLoc().getLocWithOffset(1)),
@@ -101,21 +105,23 @@ InsertNameSpaceInCastExpr::getReplacement(const ASTContext &Context) const {
       T);
 }
 
-Replacement ReplaceCCast::getReplacement(const ASTContext &Context) const {
+ExtReplacement ReplaceCCast::getReplacement(const ASTContext &Context) const {
   auto Begin = Cast->getLParenLoc();
   auto End = Cast->getRParenLoc();
-  return Replacement(Context.getSourceManager(),
-                     CharSourceRange(SourceRange(Begin, End), true), TypeName);
+  return ExtReplacement(Context.getSourceManager(),
+                        CharSourceRange(SourceRange(Begin, End), true),
+                        TypeName);
 }
 
-Replacement
+ExtReplacement
 RenameFieldInMemberExpr::getReplacement(const ASTContext &Context) const {
   SourceLocation SL = ME->getEndLoc();
-  return Replacement(Context.getSourceManager(),
-                     CharSourceRange(SourceRange(SL, SL), true), T);
+  return ExtReplacement(Context.getSourceManager(),
+                        CharSourceRange(SourceRange(SL, SL), true), T);
 }
 
-Replacement InsertAfterStmt::getReplacement(const ASTContext &Context) const {
+ExtReplacement
+InsertAfterStmt::getReplacement(const ASTContext &Context) const {
   CharSourceRange CSR = CharSourceRange(S->getSourceRange(), false);
   SourceLocation Loc = CSR.getEnd();
   auto &SM = Context.getSourceManager();
@@ -124,17 +130,17 @@ Replacement InsertAfterStmt::getReplacement(const ASTContext &Context) const {
   unsigned Offs = Lexer::MeasureTokenLength(SpellLoc, SM, Opts);
   SourceLocation LastTokenBegin = Lexer::GetBeginningOfToken(Loc, SM, Opts);
   SourceLocation End = LastTokenBegin.getLocWithOffset(Offs);
-  return Replacement(SM, CharSourceRange(SourceRange(End, End), false), T);
+  return ExtReplacement(SM, CharSourceRange(SourceRange(End, End), false), T);
 }
 
-Replacement ReplaceInclude::getReplacement(const ASTContext &Context) const {
-  return Replacement(Context.getSourceManager(), Range, T);
+ExtReplacement ReplaceInclude::getReplacement(const ASTContext &Context) const {
+  return ExtReplacement(Context.getSourceManager(), Range, T);
 }
 
-Replacement InsertComment::getReplacement(const ASTContext &Context) const {
+ExtReplacement InsertComment::getReplacement(const ASTContext &Context) const {
   auto NL = getNL(SL, Context.getSourceManager());
-  return Replacement(Context.getSourceManager(), SL, 0,
-                     (llvm::Twine("/*") + NL + Text + NL + "*/" + NL).str());
+  return ExtReplacement(Context.getSourceManager(), SL, 0,
+                        (llvm::Twine("/*") + NL + Text + NL + "*/" + NL).str());
 }
 
 template <typename ArgIterT>
@@ -278,7 +284,7 @@ unsigned int ReplaceKernelCallExpr::getDimsNum(const Expr *E) {
   return EffectDims;
 }
 
-Replacement
+ExtReplacement
 ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   auto &SM = Context.getSourceManager();
   auto NL = getNL(KCall->getEndLoc(), SM);
@@ -344,11 +350,12 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << OrigIndent << "}";
   // clang-format on
 
-  return Replacement(SM, KCall->getBeginLoc(), 0, Final.str());
+  return ExtReplacement(SM, KCall->getBeginLoc(), 0, Final.str());
 }
 
-Replacement ReplaceCallExpr::getReplacement(const ASTContext &Context) const {
-  return Replacement(
+ExtReplacement
+ReplaceCallExpr::getReplacement(const ASTContext &Context) const {
+  return ExtReplacement(
       Context.getSourceManager(), C,
       buildCall(Name, llvm::iterator_range<decltype(begin(Args))>(Args),
                 llvm::iterator_range<decltype(begin(Types))>(Types), Context));
@@ -377,7 +384,7 @@ bool ReplacementFilter::containsInterval(const IntervalSet &IS,
   return false;
 }
 
-Replacement InsertArgument::getReplacement(const ASTContext &Context) const {
+ExtReplacement InsertArgument::getReplacement(const ASTContext &Context) const {
   auto FNameLoc = FD->getNameInfo().getEndLoc();
   // TODO: Investigate what happens in macro expansion
   auto tkn =
@@ -389,10 +396,10 @@ Replacement InsertArgument::getReplacement(const ASTContext &Context) const {
   auto OutStr = ArgName;
   if (!FD->parameters().empty())
     OutStr = ArgName + ", ";
-  return Replacement(Context.getSourceManager(), tkn.getEndLoc(), 0, OutStr);
+  return ExtReplacement(Context.getSourceManager(), tkn.getEndLoc(), 0, OutStr);
 }
 
-Replacement
+ExtReplacement
 InsertBeforeCtrInitList::getReplacement(const ASTContext &Context) const {
   if (CDecl->init_begin() != CDecl->init_end()) {
     auto SLoc = CDecl->getBody()->getSourceRange().getBegin();
@@ -403,15 +410,14 @@ InsertBeforeCtrInitList::getReplacement(const ASTContext &Context) const {
       begin = 0;
     }
     SLoc = SLoc.getLocWithOffset((int)begin - (int)LocInfo.second);
-    return Replacement(Context.getSourceManager(), SLoc, 0, T);
+    return ExtReplacement(Context.getSourceManager(), SLoc, 0, T);
   } else {
     SourceLocation Begin = CDecl->getBody()->getSourceRange().getBegin();
-    return Replacement(Context.getSourceManager(), Begin, 0, T);
+    return ExtReplacement(Context.getSourceManager(), Begin, 0, T);
   }
 }
 
-bool ReplacementFilter::isDeletedReplacement(
-    const tooling::Replacement &R) const {
+bool ReplacementFilter::isDeletedReplacement(const ExtReplacement &R) const {
   if (R.getReplacementText().empty())
     return false;
   auto Found = FileMap.find(R.getFilePath());
@@ -428,24 +434,25 @@ size_t ReplacementFilter::findFirstNotDeletedReplacement(size_t Start) const {
   return -1;
 }
 
-ReplacementFilter::ReplacementFilter(const std::vector<Replacement> &RS)
+ReplacementFilter::ReplacementFilter(const std::vector<ExtReplacement> &RS)
     : ReplSet(RS) {
   // TODO: Smaller Intervals should be discarded if they are completely
   // covered by a larger Interval, so that no intervals overlap in the set.
-  for (const Replacement &R : ReplSet)
+  for (const ExtReplacement &R : ReplSet)
     if (R.getReplacementText().empty())
       FileMap[R.getFilePath()].push_back({R.getOffset(), R.getLength()});
   for (auto &FMI : FileMap)
     std::sort(FMI.second.begin(), FMI.second.end());
 }
 
-Replacement InsertBeforeStmt::getReplacement(const ASTContext &Context) const {
+ExtReplacement
+InsertBeforeStmt::getReplacement(const ASTContext &Context) const {
   SourceLocation Begin = S->getSourceRange().getBegin();
-  return Replacement(Context.getSourceManager(),
-                     CharSourceRange(SourceRange(Begin, Begin), false), T);
+  return ExtReplacement(Context.getSourceManager(),
+                        CharSourceRange(SourceRange(Begin, Begin), false), T);
 }
 
-Replacement RemoveArg::getReplacement(const ASTContext &Context) const {
+ExtReplacement RemoveArg::getReplacement(const ASTContext &Context) const {
   SourceRange SR = CE->getArg(N)->getSourceRange();
   SourceLocation Begin = SR.getBegin();
   SourceLocation End;
@@ -455,6 +462,6 @@ Replacement RemoveArg::getReplacement(const ASTContext &Context) const {
   } else {
     End = CE->getArg(N + 1)->getSourceRange().getBegin().getLocWithOffset(-1);
   }
-  return Replacement(Context.getSourceManager(),
-                     CharSourceRange(SourceRange(Begin, End), true), "");
+  return ExtReplacement(Context.getSourceManager(),
+                        CharSourceRange(SourceRange(Begin, End), true), "");
 }

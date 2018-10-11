@@ -50,12 +50,10 @@ static opt<std::string>
                 " (header files not under this root will not be translated)"),
            value_desc("/path/to/input/root/"), cat(SyclCTCat),
            llvm::cl::Optional);
-static opt<std::string>
-    OutRoot("out-root",
-            desc("Path directory where generated files will be placed"
-                 " (directory will be created if it does not exist)"),
-            value_desc("/path/to/output/root/"), cat(SyclCTCat),
-            llvm::cl::Optional);
+static opt<std::string> OutRoot(
+    "out-root", desc("Path directory where generated files will be placed"
+                     " (directory will be created if it does not exist)"),
+    value_desc("/path/to/output/root/"), cat(SyclCTCat), llvm::cl::Optional);
 std::string CudaPath; // Global value for the CUDA install path.
 
 class SyclCTConsumer : public ASTConsumer {
@@ -113,6 +111,51 @@ public:
     }
   }
 
+  /// try to merge replacemnt when meet: (modify in samefile, modify in same
+  /// place, is insert(length==0), know the insert order).
+  std::vector<ExtReplacement>
+  MergeReplacementPass(std::vector<ExtReplacement> ReplSet) {
+    std::vector<ExtReplacement> ReplSetMerged;
+    for (ExtReplacement &R1 : ReplSet) {
+      bool Merged = false;
+      if (R1.getMerged()) {
+        continue;
+      }
+      for (ExtReplacement &R2 : ReplSet) {
+        if (!R2.getMerged() && R1.getOffset() == R2.getOffset() &&
+            R1.getLength() == R2.getLength() &&
+            R1.getInsertPosition() != R2.getInsertPosition() &&
+            R1.getFilePath() == R2.getFilePath()) {
+          if (R1.getInsertPosition() == InsertPositionLeft) {
+            ExtReplacement RMerge(R1.getFilePath(), R1.getOffset(),
+                                  R1.getLength(),
+                                  StringRef(R1.getReplacementText().str() +
+                                            R2.getReplacementText().str()));
+            ReplSetMerged.emplace_back(std::move(RMerge));
+            R2.setMerged(true);
+            R1.setMerged(true);
+            Merged = true;
+            break;
+          } else {
+            ExtReplacement RMerge(R1.getFilePath(), R1.getOffset(),
+                                  R1.getLength(),
+                                  StringRef(R2.getReplacementText().str() +
+                                            R1.getReplacementText().str()));
+            ReplSetMerged.emplace_back(std::move(RMerge));
+            R2.setMerged(true);
+            R1.setMerged(true);
+            Merged = true;
+            break;
+          }
+        }
+      }
+      if (!Merged) {
+        ReplSetMerged.emplace_back(std::move(R1));
+      }
+    }
+    return ReplSetMerged;
+  }
+
   void HandleTranslationUnit(ASTContext &Context) override {
     // The translation process is separated into two stages:
     // 1) Analysis of AST and identification of applicable translation rules
@@ -121,9 +164,9 @@ public:
     // translation rules before applying them.
     ATM.matchAST(Context, TransformSet);
 
-    std::vector<Replacement> ReplSet;
+    std::vector<ExtReplacement> ReplSet;
     for (const auto &I : TransformSet) {
-      Replacement R = I->getReplacement(Context);
+      ExtReplacement R = I->getReplacement(Context);
       // TODO: This check filters out headers, which is wrong.
       // TODO: It'd be better not to generate replacements for system headers
       // instead of filtering them.
@@ -133,9 +176,12 @@ public:
         ReplSet.emplace_back(std::move(R));
     }
 
-    for (const Replacement &R : ReplacementFilter(ReplSet))
+    std::vector<ExtReplacement> ReplSetMerged = MergeReplacementPass(ReplSet);
+
+    for (const ExtReplacement &R : ReplacementFilter(ReplSetMerged)) {
       if (auto Err = Repl[R.getFilePath()].add(R))
         llvm_unreachable("Adding the replacement: Error occured ");
+    }
   }
 
   void Initialize(ASTContext &Context) override {

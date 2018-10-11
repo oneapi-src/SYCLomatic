@@ -21,14 +21,64 @@ namespace syclct {
 
 class TextModification;
 using TransformSetTy = std::vector<std::unique_ptr<TextModification>>;
+enum InsertPosition {
+  InsertPositionLeft = 0,
+  InsertPositionRight,
+};
+
+/// Extend Replacemnt to contain more meta info of Replament inserted by
+/// AST Rule. Further Analysis Pass like Merge Pass can happen based
+/// on these meta info of Replament.
+///  eg. Replament happen at same position may be merged to avoid conflict.
+class ExtReplacement : public tooling::Replacement {
+public:
+  /// Creates an invalid (not applicable) replacement.
+  ExtReplacement() : Replacement(){};
+
+  /// Creates a replacement of the range [Offset, Offset+Length) in
+  /// FilePath with ReplacementText.
+  ///
+  /// \param FilePath A source file accessible via a SourceManager.
+  /// \param Offset The byte offset of the start of the range in the file.
+  /// \param Length The length of the range in bytes.
+  ExtReplacement(StringRef FilePath, unsigned Offset, unsigned Length,
+                 StringRef ReplacementText)
+      : Replacement(FilePath, Offset, Length, ReplacementText) {}
+
+  /// Creates a Replacement of the range [Start, Start+Length) with
+  /// ReplacementText.
+  ExtReplacement(const SourceManager &Sources, SourceLocation Start,
+                 unsigned Length, StringRef ReplacementText)
+      : Replacement(Sources, Start, Length, ReplacementText) {}
+
+  /// Creates a Replacement of the given range with ReplacementText.
+  ExtReplacement(const SourceManager &Sources, const CharSourceRange &Range,
+                 StringRef ReplacementText,
+                 const LangOptions &LangOpts = LangOptions())
+      : Replacement(Sources, Range, ReplacementText, LangOpts) {}
+
+  /// Creates a Replacement of the node with ReplacementText.
+  template <typename Node>
+  ExtReplacement(const SourceManager &Sources, const Node &NodeToReplace,
+                 StringRef ReplacementText,
+                 const LangOptions &LangOpts = LangOptions())
+      : Replacement(Sources, NodeToReplace, ReplacementText, LangOpts) {}
+  void setInsertPosition(int IP) { InsertPosition = IP; }
+  unsigned int getInsertPosition() const { return InsertPosition; }
+  bool getMerged() const { return Merged; }
+  void setMerged(bool M) { Merged = M; }
+
+private:
+  unsigned int InsertPosition = InsertPositionLeft;
+  bool Merged = false;
+};
 
 /// Base class for compatibility tool-related source code modifications.
 class TextModification {
 public:
   virtual ~TextModification() {}
   /// Generate actual Replacement from this TextModification object.
-  virtual tooling::Replacement
-  getReplacement(const ASTContext &Context) const = 0;
+  virtual ExtReplacement getReplacement(const ASTContext &Context) const = 0;
 };
 ///  Insert string in given position.
 class InsertText : public TextModification {
@@ -37,7 +87,7 @@ class InsertText : public TextModification {
 
 public:
   InsertText(SourceLocation Loc, std::string &&S) : Begin(Loc), T(S) {}
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 /// For macros and typedefs source location is unreliable (begin and end of the
@@ -49,7 +99,7 @@ class ReplaceToken : public TextModification {
 
 public:
   ReplaceToken(SourceLocation Loc, std::string &&S) : Begin(Loc), T(S) {}
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 /// Replace a statement (w/o semicolon) with a specified string.
@@ -61,7 +111,7 @@ public:
   ReplaceStmt(const Stmt *E, std::string &&S)
       : TheStmt(E), ReplacementString(S) {}
 
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 /// Replace C-style cast with constructor call for a given type.
@@ -72,7 +122,7 @@ class ReplaceCCast : public TextModification {
 public:
   ReplaceCCast(const CStyleCastExpr *Cast, std::string &&TypeName)
       : Cast(Cast), TypeName(TypeName) {}
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 /// Remove an attribute from a declaration.
@@ -81,7 +131,7 @@ class RemoveAttr : public TextModification {
 
 public:
   RemoveAttr(const Attr *A) : TheAttr(A) {}
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 // Replace type in var. declaration.
@@ -91,17 +141,20 @@ class ReplaceTypeInVarDecl : public TextModification {
 
 public:
   ReplaceTypeInVarDecl(const VarDecl *D, std::string &&T) : D(D), T(T) {}
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 // Replace type in var. declaration.
 class InsertNameSpaceInVarDecl : public TextModification {
   const VarDecl *D;
   std::string T;
+  unsigned int InsertPosition;
 
 public:
-  InsertNameSpaceInVarDecl(const VarDecl *D, std::string &&T) : D(D), T(T) {}
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  InsertNameSpaceInVarDecl(const VarDecl *D, std::string &&T,
+                           unsigned int InsertPosition = 0)
+      : D(D), T(T), InsertPosition(InsertPosition) {}
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 // Replace type in var. declaration.
@@ -112,7 +165,7 @@ class InsertNameSpaceInCastExpr : public TextModification {
 public:
   InsertNameSpaceInCastExpr(const CStyleCastExpr *D, std::string &&T)
       : D(D), T(T) {}
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 // Replace return type in function declaration.
@@ -122,7 +175,7 @@ class ReplaceReturnType : public TextModification {
 
 public:
   ReplaceReturnType(const FunctionDecl *FD, std::string &&T) : FD(FD), T(T) {}
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 // Rename field in expression.
@@ -134,7 +187,7 @@ public:
   RenameFieldInMemberExpr(const MemberExpr *ME, std::string &&T)
       : ME(ME), T(T) {}
 
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 class InsertAfterStmt : public TextModification {
@@ -144,7 +197,7 @@ class InsertAfterStmt : public TextModification {
 public:
   InsertAfterStmt(const Stmt *S, std::string &&T) : S(S), T(T) {}
 
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 // Insert '/*  */' C style multi line comment
@@ -156,7 +209,7 @@ class InsertComment : public TextModification {
 public:
   InsertComment(SourceLocation SL, std::string Text) : SL(SL), Text(Text) {}
 
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 /// Replace CallExpr with another call.
@@ -184,7 +237,7 @@ public:
                   std::vector<std::string> NewTypes)
       : C(Call), Name(NewName), Args(NewArgs), Types(NewTypes) {}
 
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 class InsertArgument : public TextModification {
@@ -196,7 +249,7 @@ public:
   InsertArgument(const FunctionDecl *FD, std::string &&ArgName)
       : FD(FD), ArgName(ArgName) {}
 
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 class ReplaceInclude : public TextModification {
@@ -205,7 +258,7 @@ class ReplaceInclude : public TextModification {
 
 public:
   ReplaceInclude(CharSourceRange Range, std::string &&T) : Range(Range), T(T) {}
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 class ReplaceKernelCallExpr : public TextModification {
@@ -219,7 +272,7 @@ class ReplaceKernelCallExpr : public TextModification {
 
 public:
   ReplaceKernelCallExpr(const CUDAKernelCallExpr *KCall) : KCall(KCall) {}
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 /// A class that filters out Replacements that modify text inside a deleted code
@@ -235,12 +288,12 @@ class ReplacementFilter {
 
   using IntervalSet = std::vector<Interval>;
 
-  const std::vector<tooling::Replacement> &ReplSet;
+  const std::vector<ExtReplacement> &ReplSet;
   std::map<std::string, IntervalSet> FileMap;
 
 private:
   bool containsInterval(const IntervalSet &IS, const Interval &I) const;
-  bool isDeletedReplacement(const tooling::Replacement &R) const;
+  bool isDeletedReplacement(const ExtReplacement &R) const;
   size_t findFirstNotDeletedReplacement(size_t Start) const;
 
   class iterator {
@@ -249,7 +302,7 @@ private:
 
   public:
     iterator(const ReplacementFilter &RF, size_t Idx) : RF(RF), Idx(Idx) {}
-    const tooling::Replacement &operator*() const { return RF.ReplSet[Idx]; }
+    const ExtReplacement &operator*() const { return RF.ReplSet[Idx]; }
     iterator &operator++() {
       Idx = RF.findFirstNotDeletedReplacement(Idx + 1);
       return *this;
@@ -262,7 +315,7 @@ private:
   };
 
 public:
-  ReplacementFilter(const std::vector<tooling::Replacement> &RS);
+  ReplacementFilter(const std::vector<ExtReplacement> &RS);
 
   iterator begin() {
     return iterator(*this, findFirstNotDeletedReplacement(0));
@@ -277,7 +330,7 @@ class InsertBeforeStmt : public TextModification {
 public:
   InsertBeforeStmt(const Stmt *S, std::string &&T) : S(S), T(T) {}
 
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 class RemoveArg : public TextModification {
@@ -287,7 +340,7 @@ class RemoveArg : public TextModification {
 public:
   RemoveArg(const CallExpr *CE, const unsigned N) : CE(CE), N(N) {}
 
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 class InsertBeforeCtrInitList : public TextModification {
@@ -298,7 +351,7 @@ public:
   InsertBeforeCtrInitList(const CXXConstructorDecl *S, std::string &&T)
       : CDecl(S), T(T) {}
 
-  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
 } // namespace syclct
