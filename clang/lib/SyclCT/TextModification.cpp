@@ -45,12 +45,12 @@ Replacement RemoveAttr::getReplacement(const ASTContext &Context) const {
   // check the char after attribute, if it is empty then del it.
   //   -eg. will del the space in case  "__global__ "
   //   -eg. will not del the ";" in  case "__global__;"
-  unsigned int I=0;
+  unsigned int I = 0;
   while (SM.getCharacterData(ExpB.getLocWithOffset(Len), 0)[I] == ' ' ||
-      SM.getCharacterData(ExpB.getLocWithOffset(Len), 0)[I] == '\t') {
+         SM.getCharacterData(ExpB.getLocWithOffset(Len), 0)[I] == '\t') {
     I++;
   }
-  Len +=I;
+  Len += I;
 
   return Replacement(
       SM, CharSourceRange::getCharRange(ExpB, ExpB.getLocWithOffset(Len)), "");
@@ -73,6 +73,14 @@ Replacement ReplaceToken::getReplacement(const ASTContext &Context) const {
                      // false means [Begin, End)
                      // true means [Begin, End]
                      CharSourceRange(SourceRange(Begin, Begin), true), T);
+}
+
+Replacement InsertText::getReplacement(const ASTContext &Context) const {
+  // Need to deal with the fact, that the type name might be a macro.
+  return Replacement(Context.getSourceManager(),
+                     // false means [Begin, End)
+                     // true means [Begin, End]
+                     CharSourceRange(SourceRange(Begin, Begin), false), T);
 }
 
 Replacement

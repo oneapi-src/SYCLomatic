@@ -30,6 +30,15 @@ public:
   virtual tooling::Replacement
   getReplacement(const ASTContext &Context) const = 0;
 };
+///  Insert string in given position.
+class InsertText : public TextModification {
+  SourceLocation Begin;
+  std::string T;
+
+public:
+  InsertText(SourceLocation Loc, std::string &&S) : Begin(Loc), T(S) {}
+  tooling::Replacement getReplacement(const ASTContext &Context) const override;
+};
 
 /// For macros and typedefs source location is unreliable (begin and end of the
 /// source range point to the same character. Replacing by token is a simple
@@ -203,7 +212,8 @@ class ReplaceKernelCallExpr : public TextModification {
   const CUDAKernelCallExpr *KCall;
 
   std::pair<const Expr *, const Expr *> getExecutionConfig() const;
-  static std::string getDim3Translation(const Expr *E, const ASTContext &Context,
+  static std::string getDim3Translation(const Expr *E,
+                                        const ASTContext &Context,
                                         unsigned int EffectDims);
   static unsigned int getDimsNum(const Expr *);
 

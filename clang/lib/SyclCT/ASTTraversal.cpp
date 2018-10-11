@@ -464,6 +464,13 @@ void SyclStyleVectorCtorRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(cStyleCastExpr(hasType(pointsTo(typedefDecl(hasName("int2")))))
                     .bind("int2PtrCast"),
                 this);
+  // sizeof(int2)
+  MF.addMatcher(
+      unaryExprOrTypeTraitExpr(
+          allOf(hasArgumentOfType(asString("int2")),
+                has(qualType(hasCanonicalType(type().bind("int2type"))))))
+          .bind("int2Sizeof"),
+      this);
 }
 
 // Determines which case of construction applies and creates replacements for
@@ -498,6 +505,15 @@ void SyclStyleVectorCtorRule::run(const MatchFinder::MatchResult &Result) {
                  getNodeAsType<CStyleCastExpr>(Result, "int2PtrCast")) {
     emplaceTransformation(
         new InsertNameSpaceInCastExpr(CPtrCast, "cl::sycl::"));
+  } else if (const UnaryExprOrTypeTraitExpr *ExprSizeof =
+                 getNodeAsType<UnaryExprOrTypeTraitExpr>(Result, "int2Sizeof")) {
+    if (ExprSizeof->isArgumentType()) {
+      emplaceTransformation(new InsertText(ExprSizeof->getArgumentTypeInfo()
+                                               ->getTypeLoc()
+                                               .getSourceRange()
+                                               .getBegin(),
+                                           "cl::sycl::"));
+    }
   }
   return;
 }
