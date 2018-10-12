@@ -753,7 +753,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
 }
 
 void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
-  bool IsAssigned;
+  bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
   if (!CE) {
     if (!(CE = getNodeAsType<CallExpr>(Result, "FunctionCallUsed")))
