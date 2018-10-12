@@ -12,8 +12,10 @@
 #ifndef SYCLCT_TEXT_MODIFICATION_H
 #define SYCLCT_TEXT_MODIFICATION_H
 
+#include "MapNames.h"
 #include "clang/Tooling/Core/Replacement.h"
 #include "clang/Tooling/Tooling.h"
+
 #include <string>
 
 namespace clang {

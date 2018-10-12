@@ -13,6 +13,7 @@
 #define SYCLCT_AST_TRAVERSAL_H
 
 #include "Diagnostics.h"
+#include "MapNames.h"
 #include "TextModification.h"
 #include "Utility.h"
 
@@ -263,7 +264,6 @@ public:
   TypeInVarDeclRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-  static const std::map<std::string, std::string> TypeNamesMap;
 };
 
 /// Translation rule for types replacements in var. declarations.

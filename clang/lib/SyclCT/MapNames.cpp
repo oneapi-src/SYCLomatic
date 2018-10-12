@@ -9,6 +9,7 @@
 //
 //===-----------------------------------------------------------------===//
 
+#include "MapNames.h"
 #include "ASTTraversal.h"
 
 #include <map>
@@ -17,12 +18,13 @@ using namespace clang;
 using namespace clang::syclct;
 
 // Type names mapping.
-const std::map<std::string, std::string> TypeInVarDeclRule::TypeNamesMap{
+const std::map<std::string, std::string> MapNames::TypeNamesMap{
     {"cudaDeviceProp", "syclct::sycl_device_info"},
     {"cudaError_t", "int"},
     {"cudaError", "int"},
     {"dim3", "cl::sycl::range<3>"},
     {"int2", "cl::sycl::int2"},
+    {"struct int2", "cl::sycl::int2"},
     // ...
 };
 

@@ -311,6 +311,13 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
                 << "_buf.first."
                    "get_access<cl::sycl::access::mode::read_write>("
                 << "cgh);" << NL;
+
+        // adjust the VarType: if it is vector type ("struct int2/int3....)
+        //  changed it to syclsytle.
+        auto Search = MapNames::TypeNamesMap.find(VarType);
+        if (Search != MapNames::TypeNamesMap.end()) {
+          VarType = Search->second;
+        }
         Header3 << Indent << "        " << VarType << " *" << VarName << " = ("
                 << VarType << "*)(&" << VarName << "_acc[0] + " << VarName
                 << "_offset);" << NL;

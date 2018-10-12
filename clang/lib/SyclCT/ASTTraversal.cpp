@@ -339,8 +339,8 @@ void TypeInVarDeclRule::run(const MatchFinder::MatchResult &Result) {
 
   std::string TypeName =
       Type->getCanonicalTypeInternal().getBaseTypeIdentifier()->getName().str();
-  auto Search = TypeNamesMap.find(TypeName);
-  if (Search == TypeNamesMap.end()) {
+  auto Search = MapNames::TypeNamesMap.find(TypeName);
+  if (Search == MapNames::TypeNamesMap.end()) {
     // TODO report translation error
     return;
   }
@@ -388,8 +388,8 @@ void SyclStyleVectorRule::run(const MatchFinder::MatchResult &Result) {
                                .getBaseTypeIdentifier()
                                ->getName()
                                .str();
-    auto Search = TypeInVarDeclRule::TypeNamesMap.find(TypeName);
-    if (Search == TypeInVarDeclRule::TypeNamesMap.end()) {
+    auto Search = MapNames::TypeNamesMap.find(TypeName);
+    if (Search == MapNames::TypeNamesMap.end()) {
       // TODO report translation error
       return;
     }
@@ -403,8 +403,8 @@ void SyclStyleVectorRule::run(const MatchFinder::MatchResult &Result) {
                                .getBaseTypeIdentifier()
                                ->getName()
                                .str();
-    auto Search = TypeInVarDeclRule::TypeNamesMap.find(TypeName);
-    if (Search == TypeInVarDeclRule::TypeNamesMap.end()) {
+    auto Search = MapNames::TypeNamesMap.find(TypeName);
+    if (Search == MapNames::TypeNamesMap.end()) {
       // TODO report translation error
       return;
     }
@@ -420,8 +420,8 @@ void SyclStyleVectorRule::run(const MatchFinder::MatchResult &Result) {
                                .getBaseTypeIdentifier()
                                ->getName()
                                .str();
-    auto Search = TypeInVarDeclRule::TypeNamesMap.find(TypeName);
-    if (Search == TypeInVarDeclRule::TypeNamesMap.end()) {
+    auto Search = MapNames::TypeNamesMap.find(TypeName);
+    if (Search == MapNames::TypeNamesMap.end()) {
       // TODO report translation error
       return;
     }
@@ -506,7 +506,8 @@ void SyclStyleVectorCtorRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new InsertNameSpaceInCastExpr(CPtrCast, "cl::sycl::"));
   } else if (const UnaryExprOrTypeTraitExpr *ExprSizeof =
-                 getNodeAsType<UnaryExprOrTypeTraitExpr>(Result, "int2Sizeof")) {
+                 getNodeAsType<UnaryExprOrTypeTraitExpr>(Result,
+                                                         "int2Sizeof")) {
     if (ExprSizeof->isArgumentType()) {
       emplaceTransformation(new InsertText(ExprSizeof->getArgumentTypeInfo()
                                                ->getTypeLoc()
@@ -646,8 +647,8 @@ void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
   const clang::Type *Type = FD->getReturnType().getTypePtr();
   std::string TypeName =
       Type->getCanonicalTypeInternal().getBaseTypeIdentifier()->getName().str();
-  auto Search = TypeInVarDeclRule::TypeNamesMap.find(TypeName);
-  if (Search == TypeInVarDeclRule::TypeNamesMap.end()) {
+  auto Search = MapNames::TypeNamesMap.find(TypeName);
+  if (Search == MapNames::TypeNamesMap.end()) {
     // TODO report translation error
     return;
   }
