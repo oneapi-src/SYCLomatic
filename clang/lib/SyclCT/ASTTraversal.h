@@ -80,6 +80,15 @@ public:
     return nullptr;
   }
 
+  static const std::string getName(const char *ID) {
+    auto &NameTable = getNameTable();
+    if (NameTable.find(ID) != NameTable.end()) {
+      return NameTable[ID];
+    }
+    std::string NullStr;
+    return NullStr;
+  }
+
   static std::unordered_map<const char *, ASTTraversalConstructor> &
   getConstructorTable() {
     static std::unordered_map<const char *, ASTTraversalConstructor> FactoryMap;

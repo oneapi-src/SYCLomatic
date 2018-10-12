@@ -11,6 +11,7 @@
 
 #include "ASTTraversal.h"
 
+#include "SaveNewFiles.h"
 #include "Utility.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "llvm/ADT/StringSet.h"
@@ -293,7 +294,7 @@ void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(ErrorHandlingIfStmtRule)
 
-void AlignAttrsRule::registerMatcher(MatchFinder &MF){
+void AlignAttrsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(cxxRecordDecl(hasAttr(attr::Aligned)).bind("classDecl"), this);
 }
 
@@ -1039,27 +1040,37 @@ void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
 }
 
 void ASTTraversalManager::emplaceAllRules(int SourceFileFlag) {
+  std::vector<std::vector<std::string>> Rules;
+
   for (auto &F : ASTTraversalMetaInfo::getConstructorTable()) {
+
     auto RuleObj = (TranslationRule *)F.second();
     CommonRuleProperty RuleProperty = RuleObj->GetRuleProperty();
 
     auto RType = RuleProperty.RType;
     auto RulesDependon = RuleProperty.RulesDependon;
-    // To do:if RulesDependon is not null here, need order the rule set
-
-    // Add rules current rule Name depends on
-    for (auto const &RuleName : RulesDependon) {
-      auto *ID = ASTTraversalMetaInfo::getID(RuleName);
-      if (!ID) {
-        llvm::errs() << "[ERROR] Rule\"" << RuleName << "\" not found\n";
-        std::exit(1);
-      }
-      emplaceTranslationRule(ID);
-    }
 
     if (RType & SourceFileFlag) {
-      Storage.emplace_back(std::unique_ptr<ASTTraversal>(F.second()));
+      std::string CurrentRuleName = ASTTraversalMetaInfo::getName(F.first);
+      std::vector<std::string> Vec;
+      Vec.push_back(CurrentRuleName);
+      for (auto const &RuleName : RulesDependon) {
+        Vec.push_back(RuleName);
+      }
+      Rules.push_back(Vec);
     }
+  }
+
+  std::vector<std::string> SortedRules = ruleTopoSort(Rules);
+
+  for (std::vector<std::string>::reverse_iterator it = SortedRules.rbegin();
+       it != SortedRules.rend(); it++) {
+    auto *ID = ASTTraversalMetaInfo::getID(*it);
+    if (!ID) {
+      llvm::errs() << "[ERROR] Rule\"" << *it << "\" not found\n";
+      std::exit(TranslationError);
+    }
+    emplaceTranslationRule(ID);
   }
 }
 

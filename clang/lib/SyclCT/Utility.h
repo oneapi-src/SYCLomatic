@@ -13,9 +13,12 @@
 #define SYCLCT_UTILITY_H
 
 #include <ios>
+#include <iostream>
+#include <list>
 #include <sstream>
+#include <stack>
 #include <string>
-
+#include <vector>
 namespace llvm {
 template <typename T> class SmallVectorImpl;
 class StringRef;
@@ -70,5 +73,15 @@ enum SourceProcessType {
 };
 
 SourceProcessType GetSourceFileType(llvm::StringRef SourcePath);
+
+// For exmaple we have four rules named "A", "B", "C" and "D"
+// "A" depends on "B" and "C"
+// "B" depends on "D"
+// "C" doesn't depend on anyone
+// "D" depends on "C"
+// Using topological sorting, it should output A -> B -> D -> C,
+// and all rule dependencies will be met.
+std::vector<std::string>
+ruleTopoSort(std::vector<std::vector<std::string>> &TableRules);
 
 #endif // SYCLCT_UTILITY_H

@@ -26,6 +26,7 @@ enum ProcessStatus {
   TranslationSucceeded = 0,
   TranslationNotImplemented = 1,
   TranslationSkipped = 2,
+  TranslationError = -1,
 };
 
 /// Apply all generated replacements, and immediately save the results to

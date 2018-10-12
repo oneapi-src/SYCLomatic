@@ -11,6 +11,7 @@
 
 #include "Utility.h"
 
+#include "SaveNewFiles.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/Basic/SourceLocation.h"
@@ -119,4 +120,65 @@ SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
     llvm::errs() << "[ERROR] Not support\"" << Extension << "\" file type!\n";
     std::exit(1);
   }
+}
+
+std::vector<std::string>
+ruleTopoSort(std::vector<std::vector<std::string>> &TableRules) {
+  std::vector<std::string> Vec;
+
+  std::vector<std::list<int>> AdjacencyList;
+  std::vector<int> InDegree;
+  std::stack<int> Stack;
+  std::vector<std::string> RuleNames;
+
+  int n = TableRules.size();
+  AdjacencyList.assign(n, std::list<int>());
+  InDegree.assign(n, 0);
+
+  for (int i = 0; i < n; i++) {
+    RuleNames.push_back(TableRules[i].at(0));
+  }
+
+  for (int i = 0; i < n; i++) {
+    for (std::vector<std::string>::iterator it = TableRules[i].begin() + 1;
+         it != TableRules[i].end(); ++it) {
+
+      // if detect rule depend on itself,  then just ignore
+      if (*it == *TableRules[i].begin()) {
+        continue;
+      }
+
+      std::vector<std::string>::iterator index =
+          find(RuleNames.begin(), RuleNames.end(), *it);
+      if (index != RuleNames.end()) {
+        AdjacencyList[i].push_back(index - RuleNames.begin());
+        InDegree[index - RuleNames.begin()]++;
+      }
+    }
+  }
+
+  for (int i = 0; i < n; i++)
+    if (InDegree[i] == 0)
+      Stack.push(i);
+
+  while (!Stack.empty()) {
+    int v = Stack.top();
+    Stack.pop();
+    InDegree[v] = -1;
+
+    for (std::list<int>::iterator it = AdjacencyList[v].begin();
+         it != AdjacencyList[v].end(); it++) {
+      InDegree[*it]--;
+      if (InDegree[*it] == 0)
+        Stack.push(*it);
+    }
+    AdjacencyList[v].clear();
+    Vec.push_back(RuleNames[v]);
+  }
+  if (Vec.size() != InDegree.size()) {
+    std::cout << "Error: Two rules have dependency on each other！\n";
+    exit(TranslationError);
+  }
+
+  return Vec;
 }

@@ -82,6 +82,8 @@ public:
         }
         Names.push_back(Passes.substr(Previous, Current - Previous));
       }
+      std::vector<std::vector<std::string>> Rules;
+
       for (auto const &Name : Names) {
         auto *ID = ASTTraversalMetaInfo::getID(Name);
         auto MapEntry = ASTTraversalMetaInfo::getConstructorTable()[ID];
@@ -90,22 +92,28 @@ public:
         auto RType = RuleProperty.RType;
         auto RulesDependon = RuleProperty.RulesDependon;
 
-        // Add rules current rule Name depends on
-        for (auto const &RuleName : RulesDependon) {
-          auto *IDInner = ASTTraversalMetaInfo::getID(RuleName);
-          assert(!IDInner);
-          ATM.emplaceTranslationRule(ID);
-        }
-        if (!ID) {
-          llvm::errs() << "[ERROR] Rule not found: \"" << Name
-                       << "\" - check \"-passes\" option\n";
-          std::exit(1);
-        }
         // Add rules should be run on the source file
         if (RType & RequiredRType) {
-          ATM.emplaceTranslationRule(ID);
+          std::vector<std::string> Vec;
+          Vec.push_back(Name);
+          for (auto const &RuleName : RulesDependon) {
+            Vec.push_back(RuleName);
+          }
+          Rules.push_back(Vec);
         }
       }
+
+      std::vector<std::string> SortedRules = ruleTopoSort(Rules);
+      for (std::vector<std::string>::reverse_iterator it = SortedRules.rbegin();
+           it != SortedRules.rend(); it++) {
+        auto *RuleID = ASTTraversalMetaInfo::getID(*it);
+        if (!RuleID) {
+          llvm::errs() << "[ERROR] Rule\"" << *it << "\" not found\n";
+          std::exit(1);
+        }
+        ATM.emplaceTranslationRule(RuleID);
+      }
+
     } else {
       ATM.emplaceAllRules(RequiredRType);
     }
