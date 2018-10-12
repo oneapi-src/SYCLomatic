@@ -248,6 +248,16 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+/// Translation rule for CUDA class attributes.
+///
+/// This rule replace __align__ class attributes to __sycl_align__.
+class AlignAttrsRule : public NamedTranslationRule<AlignAttrsRule> {
+public:
+  AlignAttrsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 /// Translation rule for CUDA function attributes.
 ///
 /// This rule removes __global__, __device__ and __host__ function attributes.

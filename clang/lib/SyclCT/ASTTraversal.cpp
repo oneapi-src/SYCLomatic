@@ -293,6 +293,28 @@ void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(ErrorHandlingIfStmtRule)
 
+void AlignAttrsRule::registerMatcher(MatchFinder &MF){
+  MF.addMatcher(cxxRecordDecl(hasAttr(attr::Aligned)).bind("classDecl"), this);
+}
+
+void AlignAttrsRule::run(const MatchFinder::MatchResult &Result) {
+  auto C = getNodeAsType<CXXRecordDecl>(Result, "classDecl");
+  if (!C)
+    return;
+  auto &AV = C->getAttrs();
+
+  for (auto A : AV) {
+    if (A->getKind() == attr::Aligned) {
+      auto SM = Result.SourceManager;
+      auto ExpB = SM->getExpansionLoc(A->getLocation());
+      if (!strncmp(SM->getCharacterData(ExpB), "__align__(", 10))
+        emplaceTransformation(new ReplaceToken(ExpB, "__sycl_align__"));
+    }
+  }
+}
+
+REGISTER_RULE(AlignAttrsRule)
+
 void FunctionAttrsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       functionDecl(anyOf(hasAttr(attr::CUDAGlobal), hasAttr(attr::CUDADevice),
