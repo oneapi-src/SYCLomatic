@@ -5,9 +5,9 @@
 // CHECK: void test_00(cl::sycl::nd_item<3> item) {
 __global__
 void test_00() {
-  // CHECK: size_t tix = item.get_local(0);
-  // CHECK: size_t tiy = item.get_local(1);
-  // CHECK: size_t tiz = item.get_local(2);
+  // CHECK: size_t tix = item.get_local_id(0);
+  // CHECK: size_t tiy = item.get_local_id(1);
+  // CHECK: size_t tiz = item.get_local_id(2);
   size_t tix = threadIdx.x;
   size_t tiy = threadIdx.y;
   size_t tiz = threadIdx.z;
@@ -27,9 +27,9 @@ void test_00() {
   size_t bdy = blockDim.y;
   size_t bdz = blockDim.z;
 
-  // CHECK: size_t gdx = item.get_num_groups(0);
-  // CHECK: size_t gdy = item.get_num_groups(1);
-  // CHECK: size_t gdz = item.get_num_groups(2);
+  // CHECK: size_t gdx = item.get_group_range(0);
+  // CHECK: size_t gdy = item.get_group_range(1);
+  // CHECK: size_t gdz = item.get_group_range(2);
 
   size_t gdx = gridDim.x;
   size_t gdy = gridDim.y;

@@ -3,13 +3,13 @@
 
 // CHECK: void testKernelPtr(cl::sycl::nd_item<3> item, const int *L, const int *M, int N) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
-  // CHECK: int gtid = item.get_group(0) * item.get_local_range().get(0) + item.get_local(0);
+  // CHECK: int gtid = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
 // CHECK: void testKernel(cl::sycl::nd_item<3> item, int L, int M, int N) {
 __global__ void testKernel(int L, int M, int N) {
-  // CHECK: int gtid = item.get_group(0) * item.get_local_range().get(0) + item.get_local(0);
+  // CHECK: int gtid = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 int main() {

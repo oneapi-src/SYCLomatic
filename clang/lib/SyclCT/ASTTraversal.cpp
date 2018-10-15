@@ -121,13 +121,13 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   StringRef BuiltinName = VD->getName();
 
   if (BuiltinName == "threadIdx")
-    Replacement += ".get_local(";
+    Replacement += ".get_local_id(";
   else if (BuiltinName == "blockDim")
     Replacement += ".get_local_range().get(";
   else if (BuiltinName == "blockIdx")
     Replacement += ".get_group(";
   else if (BuiltinName == "gridDim")
-    Replacement += ".get_num_groups(";
+    Replacement += ".get_group_range(";
   else
     llvm_unreachable("Unknown builtin variable");
 
