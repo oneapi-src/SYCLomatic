@@ -16,6 +16,7 @@
 #include <iostream>
 #include <set>
 #include <sstream>
+#include <cstring>
 
 namespace syclct {
 
