@@ -28,6 +28,12 @@ const std::map<std::string, std::string> MapNames::TypeNamesMap{
     // ...
 };
 
+// CUDA dim3 member funciton names mapping.
+const std::map<std::string, std::string> MapNames::Dim3MemberNamesMap{
+    {"x", "get(0)"}, {"y", "get(1)"}, {"z", "get(2)"},
+    // ...
+};
+
 // DeviceProp names mapping.
 const std::map<std::string, std::string> DevicePropVarRule::PropNamesMap{
     {"clockRate", "max_clock_frequency"},

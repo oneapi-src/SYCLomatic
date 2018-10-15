@@ -568,6 +568,13 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
                                  argumentCountIs(3))
                     .bind("dim3Ctor"),
                 this);
+  // dim3.x/y/z => dim3.get(0)/get(1)/get(2)
+  MF.addMatcher(
+      memberExpr(
+          hasObjectExpression(hasType(qualType(hasCanonicalType(
+              recordType(hasDeclaration(cxxRecordDecl(hasName("dim3")))))))))
+          .bind("Dim3MemberExpr"),
+      this);
 }
 
 // Determines which case of construction applies and creates replacements for
@@ -615,6 +622,7 @@ ReplaceDim3CtorRule::rewriteSyntax(const MatchFinder::MatchResult &Result) {
       CloseBrace = true;
     }
   }
+
   return {Ctor, CloseBrace};
 }
 
@@ -646,6 +654,14 @@ void ReplaceDim3CtorRule::rewriteArglist(
 }
 
 void ReplaceDim3CtorRule::run(const MatchFinder::MatchResult &Result) {
+  if (const MemberExpr *ME =
+          getNodeAsType<MemberExpr>(Result, "Dim3MemberExpr")) {
+    auto Search = MapNames::Dim3MemberNamesMap.find(
+        ME->getMemberNameInfo().getAsString());
+    if (Search != MapNames::Dim3MemberNamesMap.end()) {
+      emplaceTransformation(new RenameFieldInMemberExpr(ME, Search->second));
+    }
+  }
   rewriteArglist(rewriteSyntax(Result));
 }
 

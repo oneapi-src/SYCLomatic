@@ -17,6 +17,7 @@
 class MapNames {
 public:
   static const std::map<std::string, std::string> TypeNamesMap;
+  static const std::map<std::string, std::string> Dim3MemberNamesMap;
 };
 
 #endif

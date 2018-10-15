@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only
+// RUN: syclct -out-root %T %s
 // RUN: FileCheck --input-file %T/replace-dim3.sycl.cpp --match-full-lines %s
 
 // CHECK: void func(cl::sycl::range<3> a, cl::sycl::range<3> b, cl::sycl::range<3> c, cl::sycl::range<3> d) try {
@@ -44,6 +44,13 @@ int main() {
   func((dim3)1, dim3(1), dim3(2, 1), dim3(3, 2, 1));
   // CHECK: func(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(2, 1, 1), cl::sycl::range<3>(3, 1, 1), cl::sycl::range<3>(4, 1, 1));
   func(1, 2, 3, 4);
-  // CHECK: func(deflt, cl::sycl::range<3>(deflt), cl::sycl::range<3>(deflt), cl::sycl::range<3>(2+3*3, 1, 1));
-  func(deflt, dim3(deflt), (dim3)deflt, 2+3*3);
+  // CHECK: func(deflt, cl::sycl::range<3>(deflt), cl::sycl::range<3>(deflt), cl::sycl::range<3>(2 + 3 * 3, 1, 1));
+  func(deflt, dim3(deflt), (dim3)deflt, 2 + 3 * 3);
+
+  int n = 8192;
+  int num_cpu_threads = 2;
+  // CHECK: cl::sycl::range<3> gpu_threads(128, 1, 1); // 128 threads per block
+  dim3 gpu_threads(128); // 128 threads per block
+  // CHECK: cl::sycl::range<3> gpu_blocks(n / (gpu_threads.get(0) * num_cpu_threads), 1, 1);
+  dim3 gpu_blocks(n / (gpu_threads.x * num_cpu_threads));
 }
