@@ -659,7 +659,7 @@ void ReplaceDim3CtorRule::run(const MatchFinder::MatchResult &Result) {
     auto Search = MapNames::Dim3MemberNamesMap.find(
         ME->getMemberNameInfo().getAsString());
     if (Search != MapNames::Dim3MemberNamesMap.end()) {
-      emplaceTransformation(new RenameFieldInMemberExpr(ME, Search->second));
+      emplaceTransformation(new RenameFieldInMemberExpr(ME, Search->second + ""));
     }
   }
   rewriteArglist(rewriteSyntax(Result));
