@@ -565,105 +565,69 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
   // different syntaxes). This includes copy constructors. All constructors
   // will be visited once.
   MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(hasName("dim3"))),
-                                 hasParent(cxxFunctionalCastExpr().bind(
-                                     "dim3CtorFuncCast"))),
-                this);
-  MF.addMatcher(
-      cxxConstructExpr(hasType(typedefDecl(hasName("dim3"))),
-                       hasParent(cStyleCastExpr().bind("dim3CtorCCast"))),
-      this);
-  MF.addMatcher(cxxConstructExpr(
-                    hasType(typedefDecl(hasName("dim3"))),
-                    hasParent(implicitCastExpr().bind("dim3CtorImplicitCast"))),
+                                 argumentCountIs(1),
+                                 unless(hasAncestor(cxxConstructExpr(
+                                     hasType(typedefDecl(hasName("dim3")))))))
+                    .bind("dim3Top"),
                 this);
 
-  // Find all other dim3 constructors with 3 parameters (not copy ctors).
   MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(hasName("dim3"))),
-                                 unless(hasParent(castExpr())),
-                                 argumentCountIs(3))
-                    .bind("dim3Ctor"),
+                                 argumentCountIs(3), hasParent(varDecl()),
+                                 unless(hasAncestor(cxxConstructExpr(
+                                     hasType(typedefDecl(hasName("dim3")))))))
+                    .bind("dim3CtorDecl"),
                 this);
+
+  MF.addMatcher(
+      cxxConstructExpr(
+          hasType(typedefDecl(hasName("dim3"))), argumentCountIs(3),
+          // skip fields in a struct.  The source loc is
+          // messed up (points to the start of the struct)
+          unless(hasAncestor(cxxRecordDecl())), unless(hasParent(varDecl())),
+          unless(hasAncestor(
+              cxxConstructExpr(hasType(typedefDecl(hasName("dim3")))))))
+          .bind("dim3CtorNoDecl"),
+      this);
 }
 
-// Determines which case of construction applies and creates replacements for
-// the syntax. Returns the constructor node and a boolean indicating if a
-// closed brace needs to be appended.
-std::pair<const CXXConstructExpr *, bool>
-ReplaceDim3CtorRule::rewriteSyntax(const MatchFinder::MatchResult &Result) {
-  const CXXConstructExpr *Ctor = nullptr;
-  bool CloseBrace = false;
-  if ((Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3Ctor"))) {
+ReplaceDim3Ctor *ReplaceDim3CtorRule::getReplaceDim3Modification(
+    const MatchFinder::MatchResult &Result) {
+  if (auto Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3CtorDecl")) {
     // dim3 a(1);
-    // No syntax needs to be rewritten.
-  } else if (auto Cast = getNodeAsType<ImplicitCastExpr>(
-                 Result, "dim3CtorImplicitCast")) {
-    if ((Ctor = dyn_cast<CXXConstructExpr>(Cast->getSubExpr()))) {
-      if (!isa<CXXTemporaryObjectExpr>(Ctor)) {
-        // dim3 a = 1;
-        // func(1);
-        emplaceTransformation(
-            new InsertBeforeStmt(Cast, "cl::sycl::range<3>("));
-        CloseBrace = true;
-      } else {
-        // dim3 a = dim3(1, 2); // temporary object expression
-        // func(dim(1, 2));
-        emplaceTransformation(
-            new ReplaceToken(Cast->getBeginLoc(), "cl::sycl::range<3>"));
-      }
+    if (Ctor->getParenOrBraceRange().isInvalid()) {
+      // dim3 a;
+      // No replacements are needed
+      return nullptr;
+    } else {
+      // dim3 a(1);
+      return new ReplaceDim3Ctor(Ctor, SSM, true /*isDecl*/);
     }
-  } else if (auto Cast = getNodeAsType<CXXFunctionalCastExpr>(
-                 Result, "dim3CtorFuncCast")) {
-    // dim3 a = dim3(1); // function style cast
-    // dim3 b = dim3(a); // copy constructor
-    // func(dim(1), dim3(a));
-    if ((Ctor = dyn_cast<CXXConstructExpr>(Cast->getSubExpr()))) {
-      emplaceTransformation(
-          new ReplaceToken(Cast->getBeginLoc(), "cl::sycl::range<3>"));
-    }
-  } else if (auto Cast =
-                 getNodeAsType<CStyleCastExpr>(Result, "dim3CtorCCast")) {
-    // dim3 a = (dim3)1;
-    // dim3 b = (dim3)a; // copy constructor
-    // func((dim)1, (dim3)a);
-    if ((Ctor = dyn_cast<CXXConstructExpr>(Cast->getSubExpr()))) {
-
-      emplaceTransformation(new ReplaceCCast(Cast, "cl::sycl::range<3>("));
-      CloseBrace = true;
+  } else if (auto Ctor =
+                 getNodeAsType<CXXConstructExpr>(Result, "dim3CtorNoDecl")) {
+    return new ReplaceDim3Ctor(Ctor, SSM);
+  } else if (auto Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3Top")) {
+    if (auto A = ReplaceDim3Ctor::getConstructExpr(Ctor->getArg(0))) {
+      // strip the top CXXConstructExpr, if there's a CXXConstructExpr further
+      // down
+      return new ReplaceDim3Ctor(Ctor, SSM, A);
+    } else {
+      // Copy constructor case: dim3 a(copyfrom)
+      // No replacements are needed
+      return nullptr;
     }
   }
-
-  return {Ctor, CloseBrace};
-}
-
-void ReplaceDim3CtorRule::rewriteArglist(
-    const std::pair<const CXXConstructExpr *, bool> &CtorCase) {
-  auto Ctor = CtorCase.first;
-  auto CloseBrace = CtorCase.second;
-  if (!Ctor)
-    return;
-  if (Ctor->getNumArgs() == 1) {
-    // Copy Constructor
-    if (CloseBrace) {
-      emplaceTransformation(new InsertAfterStmt(Ctor->getArg(0), ")"));
-    }
-    return;
-  }
-
-  if (isa<CXXDefaultArgExpr>(Ctor->getArg(0))) {
-    // If first is default arg, all three are default arguments -- this is
-    // the default ctor: dim3 a;
-  } else if (isa<CXXDefaultArgExpr>(Ctor->getArg(1))) {
-    if (CloseBrace)
-      emplaceTransformation(new InsertAfterStmt(Ctor->getArg(0), ", 1, 1)"));
-    else
-      emplaceTransformation(new InsertAfterStmt(Ctor->getArg(0), ", 1, 1"));
-  } else if (isa<CXXDefaultArgExpr>(Ctor->getArg(2))) {
-    emplaceTransformation(new InsertAfterStmt(Ctor->getArg(1), ", 1"));
-  }
+  return nullptr;
 }
 
 void ReplaceDim3CtorRule::run(const MatchFinder::MatchResult &Result) {
-  rewriteArglist(rewriteSyntax(Result));
+  ReplaceDim3Ctor *R = getReplaceDim3Modification(Result);
+  if (R) {
+    // add a transformation that will filter out all nested transformations
+    emplaceTransformation(R->getEmpty());
+    // all the nested transformations will be applied when R->getReplacement()
+    // is called
+    emplaceTransformation(R);
+  }
 }
 
 REGISTER_RULE(ReplaceDim3CtorRule)
@@ -709,7 +673,7 @@ void Dim3MemberFieldsRule::run(const MatchFinder::MatchResult &Result) {
         std::string(SM->getCharacterData(Begin),
                     SM->getCharacterData(End) - SM->getCharacterData(Begin));
 
-    std::size_t PositionOfDot = 0;
+    std::size_t PositionOfDot = std::string::npos;
     std::size_t Current = Ret.find('.');
 
     // Find the last position of dot '.'
@@ -718,11 +682,17 @@ void Dim3MemberFieldsRule::run(const MatchFinder::MatchResult &Result) {
       Current = Ret.find('.', PositionOfDot + 1);
     }
 
-    auto Search = MapNames::Dim3MemberNamesMap.find(
-        ME->getMemberNameInfo().getAsString());
-    if (Search != MapNames::Dim3MemberNamesMap.end()) {
-      emplaceTransformation(
-          new RenameFieldInMemberExpr(ME, Search->second + "", PositionOfDot));
+    if (PositionOfDot != std::string::npos) {
+      auto Search = MapNames::Dim3MemberNamesMap.find(
+          ME->getMemberNameInfo().getAsString());
+      if (Search != MapNames::Dim3MemberNamesMap.end()) {
+        emplaceTransformation(new RenameFieldInMemberExpr(
+            ME, Search->second + "", PositionOfDot));
+        std::string NewMemberStr =
+            Ret.substr(0, PositionOfDot) + Search->second;
+        StmtStringPair SSP = {ME, NewMemberStr};
+        SSM->insert(SSP);
+      }
     }
   }
 }
@@ -940,7 +910,7 @@ void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto KCall = getNodeAsType<CUDAKernelCallExpr>(Result, "kernelCall")) {
     emplaceTransformation(new ReplaceStmt(KCall, ""));
-    emplaceTransformation(new ReplaceKernelCallExpr(KCall));
+    emplaceTransformation(new ReplaceKernelCallExpr(KCall, SSM));
   }
 }
 
@@ -1692,13 +1662,15 @@ void KernelFunctionInfoRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(KernelFunctionInfoRule)
 
-void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
+void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
+                                   StmtStringMap &SSM) {
   this->Context = &Context;
   for (auto &I : Storage) {
     I->registerMatcher(Matchers);
     if (auto TR = dyn_cast<TranslationRule>(&*I)) {
       TR->TM = this;
       TR->setTransformSet(TS);
+      TR->setStmtStringMap(SSM);
     }
   }
   Matchers.matchAST(Context);

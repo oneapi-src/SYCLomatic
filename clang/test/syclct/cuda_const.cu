@@ -77,8 +77,8 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:				auto buffer_const_acc_{{[a-f0-9]+}}_{{[a-f0-9]+}} = buffer_and_offset_const_acc_{{[a-f0-9]+}}_{{[a-f0-9]+}}.first.reinterpret<float>(cl::sycl::range<1>(360));
   // CHECK-NEXT:				auto const_acc_{{[a-f0-9]+}}_{{[a-f0-9]+}}= buffer_const_acc_{{[a-f0-9]+}}_{{[a-f0-9]+}}.get_access<cl::sycl::access::mode::read,  cl::sycl::access::target::constant_buffer>(cgh);
   // CHECK-NEXT:        cgh.parallel_for<SyclKernelName<class simple_kernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:          cl::sycl::nd_range<1>((cl::sycl::range<1>(size / 64) * cl::sycl::range<1>(64)), cl::sycl::range<1>(64)),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<1> it) {
+  // CHECK-NEXT:          cl::sycl::nd_range<3>((cl::sycl::range<3>(size / 64, 1, 1) * cl::sycl::range<3>(64, 1, 1)), cl::sycl::range<3>(64, 1, 1)),
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
   // CHECK-NEXT:            float *d_array = (float*)(&d_array_acc[0] + d_array_offset);
   // CHECK-NEXT:            simple_kernel(it, const_acc_{{[a-f0-9]+}}_{{[a-f0-9]+}}, d_array);
   // CHECK-NEXT:          });
@@ -115,8 +115,8 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:				auto buffer_const_acc_{{[a-f0-9]+}}_{{[a-f0-9]+}} = buffer_and_offset_const_acc_{{[a-f0-9]+}}_{{[a-f0-9]+}}.first.reinterpret<float>(cl::sycl::range<1>(1));
   // CHECK-NEXT:				auto const_acc_{{[a-f0-9]+}}_{{[a-f0-9]+}}= buffer_const_acc_{{[a-f0-9]+}}_{{[a-f0-9]+}}.get_access<cl::sycl::access::mode::read,  cl::sycl::access::target::constant_buffer>(cgh);
   // CHECK-NEXT:        cgh.parallel_for<SyclKernelName<class simple_kernel_one_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:          cl::sycl::nd_range<1>((cl::sycl::range<1>(size / 64) * cl::sycl::range<1>(64)), cl::sycl::range<1>(64)),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<1> it) {
+  // CHECK-NEXT:          cl::sycl::nd_range<3>((cl::sycl::range<3>(size / 64, 1, 1) * cl::sycl::range<3>(64, 1, 1)), cl::sycl::range<3>(64, 1, 1)),
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
   // CHECK-NEXT:            float *d_array = (float*)(&d_array_acc[0] + d_array_offset);
   // CHECK-NEXT:            simple_kernel_one(it, const_acc_{{[a-f0-9]+}}_{{[a-f0-9]+}}, const_acc_{{[a-f0-9]+}}_{{[a-f0-9]+}}, d_array);
   // CHECK-NEXT:          });

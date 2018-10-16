@@ -13,6 +13,7 @@
 #define SYCLCT_TEXT_MODIFICATION_H
 
 #include "MapNames.h"
+#include "Utility.h"
 #include "clang/Tooling/Core/Replacement.h"
 #include "clang/Tooling/Tooling.h"
 
@@ -78,10 +79,30 @@ private:
 /// Base class for compatibility tool-related source code modifications.
 class TextModification {
 public:
+  // getReplacement() method will be called according to the grouping:
+  // Modifications belonging to G1 will have getReplacement() called
+  // before modifications belonging to G2, and G2s before G3s
+  enum Group {
+    Any = 0,
+    G1 =  1,
+    G2 =  2,
+    G3 =  3
+  };
+public:
+  TextModification() : Key(Any) {}
+  TextModification(Group _Key) : Key(_Key) {}
   virtual ~TextModification() {}
   /// Generate actual Replacement from this TextModification object.
   virtual ExtReplacement getReplacement(const ASTContext &Context) const = 0;
+  bool operator<(const TextModification &TM) const { return Key < TM.Key; }
+  static bool Compare(const std::unique_ptr<TextModification> &L,
+                      const std::unique_ptr<TextModification> &R) {
+    return L->Key < R->Key;
+  }
+private:
+  Group Key;
 };
+
 ///  Insert string in given position.
 class InsertText : public TextModification {
   SourceLocation Begin;
@@ -199,7 +220,7 @@ class RenameFieldInMemberExpr : public TextModification {
 public:
   RenameFieldInMemberExpr(const MemberExpr *ME, std::string &&T,
                           unsigned PositionOfDot = 0)
-      : ME(ME), T(T), PositionOfDot(PositionOfDot) {}
+      : TextModification(G1), ME(ME), T(T), PositionOfDot(PositionOfDot) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
@@ -278,14 +299,46 @@ public:
   ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
+class ReplaceDim3Ctor : public TextModification {
+  bool isDecl;
+  const CXXConstructExpr *Ctor;
+  const CXXConstructExpr *FinalCtor;
+  StmtStringMap *SSM;
+  CharSourceRange CSR;
+  std::string ReplacementString;
+
+  void setRange();
+  const Stmt *getReplaceStmt(const Stmt *S) const;
+  std::string getSyclRangeCtor(const CXXConstructExpr *Ctor,
+                               const ASTContext &Context) const;
+  std::string getParamsString(const CXXConstructExpr *Ctor,
+                              const ASTContext &Context) const;
+  std::string getReplaceString(const ASTContext &Context) const;
+
+public:
+  ReplaceDim3Ctor(const CXXConstructExpr *_Ctor, StmtStringMap *_SSM,
+                  bool _isDecl = false)
+      : TextModification(G2), isDecl(_isDecl), Ctor(_Ctor), FinalCtor(nullptr),
+    SSM(_SSM) {
+    setRange();
+  }
+  ReplaceDim3Ctor(const CXXConstructExpr *_Ctor, StmtStringMap *_SSM,
+                  const CXXConstructExpr *_FinalCtor)
+      : TextModification(G2), isDecl(false), Ctor(_Ctor), FinalCtor(_FinalCtor), SSM(_SSM) {
+    setRange();
+  }
+  static const CXXConstructExpr *getConstructExpr(const Expr *E);
+  ReplaceInclude *getEmpty();
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
+};
+
 class ReplaceKernelCallExpr : public TextModification {
   const CUDAKernelCallExpr *KCall;
+  StmtStringMap *SSM;
 
   std::pair<const Expr *, const Expr *> getExecutionConfig() const;
-  static std::string getDim3Translation(const Expr *E,
-                                        const ASTContext &Context,
-                                        unsigned int EffectDims);
-  static unsigned int getDimsNum(const Expr *);
+  static std::string getDim3Translation(const Expr *, const ASTContext &,
+                                        StmtStringMap *SSM);
 
   static std::string
   buildTemplateArgList(const llvm::ArrayRef<TemplateArgument> &Args,
@@ -317,7 +370,8 @@ class ReplaceKernelCallExpr : public TextModification {
   }
 
 public:
-  ReplaceKernelCallExpr(const CUDAKernelCallExpr *KCall) : KCall(KCall) {}
+  ReplaceKernelCallExpr(const CUDAKernelCallExpr *KCall, StmtStringMap *SSM)
+      : TextModification(G3), KCall(KCall), SSM(SSM) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 

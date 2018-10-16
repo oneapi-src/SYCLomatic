@@ -27,8 +27,8 @@ int main(void) {
   // CHECK-NEXT:	  auto d_d_acc = d_d_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:	  cl::sycl::accessor<int, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s(cl::sycl::range<1>(64), cgh);
   // CHECK-NEXT:	  cgh.parallel_for<SyclKernelName<class staticReverse_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:		cl::sycl::nd_range<1>((cl::sycl::range<1>(1) * cl::sycl::range<1>(n)), cl::sycl::range<1>(n)),
-  // CHECK-NEXT:		[=](cl::sycl::nd_item<1> it) {
+  // CHECK-NEXT:		cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1)), cl::sycl::range<3>(n, 1, 1)),
+  // CHECK-NEXT:		[=](cl::sycl::nd_item<3> it) {
   // CHECK-NEXT:		  int *d_d = (int*)(&d_d_acc[0] + d_d_offset);
   // CHECK-NEXT:		  staticReverse(it, (int*)s.get_pointer(), d_d, n);
   // CHECK-NEXT:		});

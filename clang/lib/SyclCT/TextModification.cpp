@@ -25,6 +25,7 @@ using namespace clang;
 using namespace clang::syclct;
 using namespace clang::tooling;
 
+
 ExtReplacement ReplaceStmt::getReplacement(const ASTContext &Context) const {
   return ExtReplacement(Context.getSourceManager(), TheStmt, ReplacementString);
 }
@@ -173,6 +174,103 @@ ExtReplacement ReplaceInclude::getReplacement(const ASTContext &Context) const {
   return ExtReplacement(Context.getSourceManager(), Range, T);
 }
 
+void ReplaceDim3Ctor::setRange() {
+  if (isDecl) {
+    SourceRange SR = Ctor->getParenOrBraceRange();
+    SourceRange SR1 =
+        SourceRange(SR.getBegin().getLocWithOffset(1), SR.getEnd());
+    CSR = CharSourceRange(SR1, false);
+  } else {
+    // adjust the statement to replace if top-level constructor includes the
+    // variable being defined
+    const Stmt *S = getReplaceStmt(Ctor);
+    CSR = CharSourceRange::getTokenRange(S->getSourceRange());
+  }
+}
+
+ReplaceInclude *ReplaceDim3Ctor::getEmpty() {
+  return new ReplaceInclude(CSR, "");
+}
+
+// Strips possible Materialize and Cast operators from CXXConstructor
+const CXXConstructExpr *ReplaceDim3Ctor::getConstructExpr(const Expr *E) {
+  if (auto C = dyn_cast_or_null<CXXConstructExpr>(E)) {
+    return C;
+  } else if (isa<MaterializeTemporaryExpr>(E)) {
+    return getConstructExpr(
+        dyn_cast<MaterializeTemporaryExpr>(E)->GetTemporaryExpr());
+  } else if (isa<CastExpr>(E)) {
+    return getConstructExpr(dyn_cast<CastExpr>(E)->getSubExpr());
+  } else {
+    return nullptr;
+  }
+}
+
+// Returns the full replacement string for the CXXConstructorExpr
+std::string ReplaceDim3Ctor::getSyclRangeCtor(const CXXConstructExpr *Ctor,
+                                              const ASTContext &Context) const {
+  return "cl::sycl::range<3>(" + getParamsString(Ctor, Context) + ")";
+}
+
+// Returns the new parameter list for the replaced constructor, without the
+// parens
+std::string ReplaceDim3Ctor::getParamsString(const CXXConstructExpr *Ctor,
+                                             const ASTContext &Context) const {
+  std::string Params = "";
+
+  if (Ctor->getNumArgs() == 1) {
+    if (auto E = getConstructExpr(Ctor->getArg(0))) {
+      return getSyclRangeCtor(E, Context);
+    } else {
+      return getStmtSpelling(Ctor->getArg(0), Context);
+    }
+  } else {
+    for (const auto *Arg : Ctor->arguments()) {
+      if (!Params.empty()) {
+        Params += ", ";
+      }
+      if (isa<CXXDefaultArgExpr>(Arg)) {
+        Params += "1";
+      } else {
+        Params += getStmtSpellingWithTransforms(Arg, Context, SSM);
+        //        Params += getStmtSpelling(Arg, Context);
+      }
+    }
+    return Params;
+  }
+}
+
+const Stmt *ReplaceDim3Ctor::getReplaceStmt(const Stmt *S) const {
+  if (auto Ctor = dyn_cast_or_null<CXXConstructExpr>(S)) {
+    if (Ctor->getNumArgs() == 1) {
+      return getConstructExpr(Ctor->getArg(0));
+    }
+  }
+  return S;
+}
+
+std::string ReplaceDim3Ctor::getReplaceString(const ASTContext &Context) const {
+  if (isDecl) {
+    return getParamsString(Ctor, Context);
+  } else {
+    std::string S;
+    if (FinalCtor) {
+      S = getSyclRangeCtor(FinalCtor, Context);
+    } else {
+      S = getSyclRangeCtor(Ctor, Context);
+    }
+    StmtStringPair SSP = {Ctor, S};
+    SSM->insert(SSP);
+    return S;
+  }
+}
+
+ExtReplacement
+ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
+  return ExtReplacement(Context.getSourceManager(), CSR.getBegin(), 0,
+                        getReplaceString(Context));
+}
+
 ExtReplacement InsertComment::getReplacement(const ASTContext &Context) const {
   auto NL = getNL(SL, Context.getSourceManager());
   return ExtReplacement(Context.getSourceManager(), SL, 0,
@@ -265,19 +363,7 @@ buildCall(const std::string &Name, llvm::iterator_range<ArgIterT> Args,
 
 std::pair<const Expr *, const Expr *>
 ReplaceKernelCallExpr::getExecutionConfig() const {
-  auto NDSizeTopCtor =
-      dyn_cast<CXXConstructExpr>(KCall->getConfig()->getArg(0));
-  auto WGSizeTopCtor =
-      dyn_cast<CXXConstructExpr>(KCall->getConfig()->getArg(1));
-
-  auto NDTemp = dyn_cast<MaterializeTemporaryExpr>(NDSizeTopCtor->getArg(0));
-  auto WGTemp = dyn_cast<MaterializeTemporaryExpr>(WGSizeTopCtor->getArg(0));
-
-  // Return nested constructor or reference to a variable.
-  return {NDTemp ? NDTemp->GetTemporaryExpr()->IgnoreCasts()
-                 : NDSizeTopCtor->getArg(0)->IgnoreCasts(),
-          WGTemp ? WGTemp->GetTemporaryExpr()->IgnoreCasts()
-                 : WGSizeTopCtor->getArg(0)->IgnoreCasts()};
+  return {KCall->getConfig()->getArg(0), KCall->getConfig()->getArg(1)};
 }
 
 // Translates some explicit and implicit constructions of dim3 objects when
@@ -289,64 +375,20 @@ ReplaceKernelCallExpr::getExecutionConfig() const {
 // an explicit cl::sycl::range<3>-constructor call.
 std::string ReplaceKernelCallExpr::getDim3Translation(const Expr *E,
                                                       const ASTContext &Context,
-                                                      unsigned int EffectDims) {
+                                                      StmtStringMap *SSM) {
   if (auto Var = dyn_cast<DeclRefExpr>(E)) {
     // kernel<<<griddim, threaddim>>>()
     return Var->getNameInfo().getAsString();
   } else {
-    auto Ctor = dyn_cast<CXXConstructExpr>(E);
-    // kernel<<<dim3(1, 2), dim3(1, 2, 3)>>>() -- temporary objects
-    // kernel<<<1, dim3(1)>>>() -- constructor expressions
-    unsigned DimsN = getDimsNum(E);
-    std::stringstream Stream;
-
-    if (EffectDims == 3) {
-      Stream << "cl::sycl::range<3>(";
-      if (DimsN == EffectDims) {
-        Stream << getStmtSpelling(Ctor->getArg(0), Context);
-        Stream << ", " << getStmtSpelling(Ctor->getArg(1), Context);
-        Stream << ", " << getStmtSpelling(Ctor->getArg(2), Context) << ")";
-      } else if (DimsN == 2) {
-        Stream << getStmtSpelling(Ctor->getArg(0), Context);
-        Stream << ", " << getStmtSpelling(Ctor->getArg(1), Context);
-        Stream << ", 1)";
-      } else if (DimsN == 1) {
-        Stream << getStmtSpelling(Ctor->getArg(0), Context);
-        Stream << ", 1";
-        Stream << ", 1)";
-      }
-    } else if (EffectDims == 2) {
-
-      if (DimsN == EffectDims) {
-        Stream << "cl::sycl::range<2>(";
-        Stream << getStmtSpelling(Ctor->getArg(0), Context);
-        Stream << ", " << getStmtSpelling(Ctor->getArg(1), Context) << ")";
-      } else if (DimsN == 1) {
-        Stream << "cl::sycl::range<2>(";
-        Stream << getStmtSpelling(Ctor->getArg(0), Context);
-        Stream << ", 1)";
-      }
-    } else if (EffectDims == 1) {
-      Stream << "cl::sycl::range<1>(";
-      Stream << getStmtSpelling(Ctor->getArg(0), Context);
-      Stream << ")";
-    }
-
-    return Stream.str();
-  }
-}
-unsigned int ReplaceKernelCallExpr::getDimsNum(const Expr *E) {
-  unsigned EffectDims = 3;
-  if (auto Ctor = dyn_cast<CXXConstructExpr>(E)) {
-    assert(Ctor && "Only dim3 constructors (explicit or implicit from literal "
-                   "int, variables (int and dim3)) supported.");
-    if (isa<CXXDefaultArgExpr>(Ctor->getArg(1))) {
-      EffectDims = 1;
-    } else if (isa<CXXDefaultArgExpr>(Ctor->getArg(2))) {
-      EffectDims = 2;
+    // the dim3 translation rule should've inserted the necessary translation in
+    // the StmtStringMap
+    std::string NewStr = SSM->lookup(E);
+    if (NewStr.empty()) {
+      return getStmtSpelling(E, Context);
+    } else {
+      return NewStr;
     }
   }
-  return EffectDims;
 }
 
 ExtReplacement
@@ -471,9 +513,6 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
 
   // clang-format off
   std::stringstream Final;
-  unsigned int DimsN = getDimsNum(NDSize);
-  unsigned int DimsW = getDimsNum(WGSize);
-  unsigned int EffectDims = DimsN>DimsW ? DimsN:DimsW;
   Final
   << Header.str()
   << Indent << "syclct::get_default_queue().submit(" << NL
@@ -483,11 +522,11 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << HeaderConstantVarAccessor.str()
   << HeaderDeviceVarAccessor.str()
   << Indent <<  "    cgh.parallel_for<" << KernelClassName << ">(" << NL
-  << Indent <<  "      cl::sycl::nd_range<" << EffectDims << ">(("
-  << getDim3Translation(NDSize, Context, EffectDims) << " * "
-  << getDim3Translation(WGSize, Context, EffectDims) << "), "
-  << getDim3Translation(WGSize, Context, EffectDims)<<")," << NL
-  << Indent <<  "      [=](cl::sycl::nd_item<"<< EffectDims << "> it) {" << NL
+  << Indent <<  "      cl::sycl::nd_range<3>(("
+  << getDim3Translation(NDSize, Context, SSM) << " * "
+  << getDim3Translation(WGSize, Context, SSM) << "), "
+  << getDim3Translation(WGSize, Context, SSM)<<")," << NL
+  << Indent <<  "      [=](cl::sycl::nd_item<3> it) {" << NL
   << Header3.str()
   << Indent <<  "        " << CallFunc << "(it, "<< HeaderShareVasAsArgs.str()
                                                  << HeaderConstantVasAsArgs.str()
@@ -594,13 +633,24 @@ size_t ReplacementFilter::findFirstNotDeletedReplacement(size_t Start) const {
 
 ReplacementFilter::ReplacementFilter(const std::vector<ExtReplacement> &RS)
     : ReplSet(RS) {
-  // TODO: Smaller Intervals should be discarded if they are completely
-  // covered by a larger Interval, so that no intervals overlap in the set.
   for (const ExtReplacement &R : ReplSet)
     if (R.getReplacementText().empty())
       FileMap[R.getFilePath()].push_back({R.getOffset(), R.getLength()});
-  for (auto &FMI : FileMap)
-    std::sort(FMI.second.begin(), FMI.second.end());
+  for (auto &FMI : FileMap) {
+    IntervalSet &IS = FMI.second;
+    std::sort(IS.begin(), IS.end());
+    // delete smaller intervals if they are overlapped by the preceeding one
+    IntervalSet::iterator It = IS.begin();
+    IntervalSet::iterator Prev = It++;
+    while (It != IS.end()) {
+      if (Prev->Offset + Prev->Length > It->Offset) {
+        It = IS.erase(It);
+      } else {
+        Prev = It;
+        It++;
+      }
+    }
+  }
 }
 
 ExtReplacement

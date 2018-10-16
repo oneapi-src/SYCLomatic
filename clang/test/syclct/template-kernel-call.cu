@@ -174,8 +174,8 @@ int main() {
   // CHECK-NEXT:    syclct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        cgh.parallel_for<SyclKernelName<class testKernel_{{[a-f0-9]+}}, LA>>(
-  // CHECK-NEXT:          cl::sycl::nd_range<1>((cl::sycl::range<1>(10) * cl::sycl::range<1>(intvar)), cl::sycl::range<1>(intvar)),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<1> it) {
+  // CHECK-NEXT:          cl::sycl::nd_range<3>((cl::sycl::range<3>(10, 1, 1) * cl::sycl::range<3>(intvar, 1, 1)), cl::sycl::range<3>(intvar, 1, 1)),
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
   // CHECK-NEXT:            testKernel<LA>(it, karg1LA, karg2LA, ktarg);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });

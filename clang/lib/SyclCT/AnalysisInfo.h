@@ -219,7 +219,7 @@ public:
   bool hasCMVDefined() { return ConstantVarMap.size() > 0; }
   bool hasDMVDefined() { return DeviceVarMap.size() > 0; }
 
-  uint getNumSMVDefined() { return (uint)SharedVarMap.size(); }
+  unsigned getNumSMVDefined() { return (unsigned)SharedVarMap.size(); }
 
   std::string declareLocalAcc(const char *NL, StringRef Indent) {
     std::string Var;

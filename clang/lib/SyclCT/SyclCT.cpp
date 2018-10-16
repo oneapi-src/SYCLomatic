@@ -50,10 +50,12 @@ static opt<std::string>
                 " (header files not under this root will not be translated)"),
            value_desc("/path/to/input/root/"), cat(SyclCTCat),
            llvm::cl::Optional);
-static opt<std::string> OutRoot(
-    "out-root", desc("Path directory where generated files will be placed"
-                     " (directory will be created if it does not exist)"),
-    value_desc("/path/to/output/root/"), cat(SyclCTCat), llvm::cl::Optional);
+static opt<std::string>
+    OutRoot("out-root",
+            desc("Path directory where generated files will be placed"
+                 " (directory will be created if it does not exist)"),
+            value_desc("/path/to/output/root/"), cat(SyclCTCat),
+            llvm::cl::Optional);
 std::string CudaPath; // Global value for the CUDA install path.
 
 class SyclCTConsumer : public ASTConsumer {
@@ -170,7 +172,12 @@ public:
     // 2) Generation of actual textual Replacements
     // Such separation makes it possible to post-process the list of identified
     // translation rules before applying them.
-    ATM.matchAST(Context, TransformSet);
+    ATM.matchAST(Context, TransformSet, SSM);
+
+    // Sort the transformations according to the sort key of the individual
+    // transformations.  Sorted from low->high Key values
+    std::sort(TransformSet.begin(), TransformSet.end(),
+              TextModification::Compare);
 
     std::vector<ExtReplacement> ReplSet;
     for (const auto &I : TransformSet) {
@@ -185,8 +192,9 @@ public:
     }
 
     std::vector<ExtReplacement> ReplSetMerged = MergeReplacementPass(ReplSet);
+    ReplacementFilter FilteredReplacements(ReplSetMerged);
 
-    for (const ExtReplacement &R : ReplacementFilter(ReplSetMerged)) {
+    for (const ExtReplacement &R : FilteredReplacements) {
       if (auto Err = Repl[R.getFilePath()].add(R))
         llvm_unreachable("Adding the replacement: Error occured ");
     }
@@ -200,6 +208,7 @@ public:
 private:
   ASTTraversalManager ATM;
   TransformSetTy TransformSet;
+  StmtStringMap SSM;
   ReplTy &Repl;
   Preprocessor &PP;
 };

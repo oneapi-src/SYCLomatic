@@ -140,7 +140,7 @@ public:
   void emplaceAllRules(int SourceFileFlag);
 
   /// Run all emplaced ASTTraversal's over the given AST and populate \a TS.
-  void matchAST(ASTContext &Context, TransformSetTy &TS);
+  void matchAST(ASTContext &Context, TransformSetTy &TS, StmtStringMap &SSM);
 };
 
 /// Base class for translation rules.
@@ -153,8 +153,11 @@ class TranslationRule : public ASTTraversal {
 
   TransformSetTy *TransformSet = nullptr;
   void setTransformSet(TransformSetTy &TS) { TransformSet = &TS; }
+  void setStmtStringMap(StmtStringMap &_SSM) { SSM = &_SSM; }
 
 protected:
+  StmtStringMap *SSM = nullptr;
+
   /// Add \a TM to the set of transformations.
   ///
   /// The ownership of the TM is transferred to the TransformSet.
@@ -365,12 +368,13 @@ public:
 };
 
 class ReplaceDim3CtorRule : public NamedTranslationRule<ReplaceDim3CtorRule> {
-  std::pair<const CXXConstructExpr *, bool>
-  rewriteSyntax(const ast_matchers::MatchFinder::MatchResult &Result);
-  void rewriteArglist(const std::pair<const CXXConstructExpr *, bool> &);
+  ReplaceDim3Ctor *getReplaceDim3Modification(
+      const ast_matchers::MatchFinder::MatchResult &Result);
 
 public:
-  ReplaceDim3CtorRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  ReplaceDim3CtorRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile, "Dim3MemberFieldsRule");
+  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };

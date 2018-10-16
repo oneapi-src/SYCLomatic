@@ -19,6 +19,8 @@
 #include <stack>
 #include <string>
 #include <vector>
+#include <map>
+
 namespace llvm {
 template <typename T> class SmallVectorImpl;
 class StringRef;
@@ -30,6 +32,31 @@ class SourceLocation;
 class Stmt;
 class ASTContext;
 } // namespace clang
+
+// classes for keeping track of Stmt->String mappings
+struct StmtStringPair {
+  const clang::Stmt *StmtVal;
+  std::string Str;
+};
+
+class StmtStringMap {
+  typedef std::map<const clang::Stmt *, std::string> MapTy;
+
+public:
+  void insert(StmtStringPair &SSP) {
+    Map.insert(std::make_pair(SSP.StmtVal, SSP.Str));
+  }
+  std::string lookup(const clang::Stmt *S) {
+    MapTy::iterator It = Map.find(S);
+    if (It != Map.end()) {
+      return It->second;
+    }
+    return "";
+  }
+
+private:
+  MapTy Map;
+};
 
 bool makeCanonical(llvm::SmallVectorImpl<char> &Path);
 bool makeCanonical(std::string &Path);
@@ -49,8 +76,14 @@ const char *getNL(clang::SourceLocation Loc, const clang::SourceManager &SM);
 llvm::StringRef getIndent(clang::SourceLocation Loc,
                           const clang::SourceManager &SM);
 
+// Get the Stmt spelling
 std::string getStmtSpelling(const clang::Stmt *E,
                             const clang::ASTContext &Context);
+// Get the Stmt spelling with the existing transforms applied
+std::string getStmtSpellingWithTransforms(const clang::Stmt *S,
+  const clang::ASTContext &Context,
+  StmtStringMap *SSM);
+
 
 template <typename T> std::string getHashAsString(const T &Val) {
   std::stringstream Stream;
