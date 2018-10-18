@@ -43,6 +43,7 @@ public:
   int &get_integrated() { return _integrated; }
   int &max_clock_frequency() { return _frequency; }
   int &max_compute_units() { return _compute_units; }
+  size_t &global_mem_size() { return _global_mem_size; }
   compute_mode &mode() { return _compute_mode; }
   // ...
 
@@ -52,6 +53,7 @@ private:
   int _integrated = 0;
   int _frequency;
   int _compute_units;
+  size_t _global_mem_size;
   char _name[256];
   cl::sycl::id<3> _max_work_item_sizes;
   bool _host_unified_memory = false;
@@ -91,6 +93,8 @@ public:
         get_info<cl::sycl::info::device::max_clock_frequency>();
     prop.max_compute_units() =
         get_info<cl::sycl::info::device::max_compute_units>();
+    prop.global_mem_size() =
+        get_info<cl::sycl::info::device::global_mem_size>();
     //...
     return prop;
   }

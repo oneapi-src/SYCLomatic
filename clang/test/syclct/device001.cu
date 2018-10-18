@@ -62,5 +62,9 @@ int main(int argc, char **argv) {
 // CHECK-NEXT:*/
 // CHECK-NEXT:int n = deviceProp.minor_version() / deviceProp.major_version();
   int n = deviceProp.minor / deviceProp.major;
+
+  // CHECK: size_t memsize = deviceProp.global_mem_size();
+  size_t memsize = deviceProp.totalGlobalMem;
+
   return 0;
 }
