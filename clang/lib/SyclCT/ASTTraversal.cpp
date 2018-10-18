@@ -957,9 +957,9 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
     }
     std::vector<const Expr *> Args{C->getArg(0), C->getArg(1), C->getArg(2),
                                    Direction};
-    std::vector<std::string> StrArgs{"", "", "", DirectionName};
+    std::vector<std::string> NewTypes{"(void*)", "(void*)", "", DirectionName};
     emplaceTransformation(new ReplaceCallExpr(
-        C, std::move(Name), std::move(Args), std::move(StrArgs)));
+        C, std::move(Name), std::move(Args), std::move(NewTypes)));
   } else if (Name == "cudaMemset") {
     std::string Name = "syclct::sycl_memset";
     if (IsAssigned) {
