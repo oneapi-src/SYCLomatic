@@ -15,6 +15,7 @@
 #include "Utility.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/DeclCXX.h"
+#include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
 
 #include <sstream>
@@ -309,7 +310,10 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
         auto PointeeType = DeclRef->getDecl()->getType()->getPointeeType();
         // TODO check that no nested pointers in a structure
         assert(!PointeeType->isAnyPointerType());
-        auto VarType = PointeeType.getCanonicalType().getAsString();
+        // auto VarType = PointeeType.getCanonicalType().getAsString();
+        // remove getCanonicalType() for it will cause error while the type
+        // is a template parameter type.
+        auto VarType = PointeeType.getAsString();
         Header << Indent << "std::pair<syclct::buffer_t, size_t> " << VarName
                << "_buf = syclct::get_buffer_and_offset(" << VarName + ");"
                << NL;
@@ -338,9 +342,38 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   const Expr *NDSize;
   const Expr *WGSize;
   std::tie(NDSize, WGSize) = getExecutionConfig();
-  auto KName = KCall->getCalleeDecl()->getAsFunction()->getName().str();
   auto LocHash =
       getHashAsString(KCall->getBeginLoc().printToString(SM)).substr(0, 6);
+
+  std::string KName, TemplateArgs, KernelClassName, CallFunc;
+  if (auto KCallee = dyn_cast<UnresolvedLookupExpr>(KCall->getCallee())) {
+    KName = KCallee->getName().getAsString();
+    /// Template kernel called from template function.
+    /// template <class T> void run() { testKernel<T><<<64, 256>>>(); }
+    // TODO: Implicit template arguments are ignored, it need to be fix in
+    // future.
+    TemplateArgs =
+        getTemplateArgs(KCallee->getLAngleLoc(), KCallee->getRAngleLoc(), SM);
+  } else {
+    auto KCallDecl = KCall->getCalleeDecl()->getAsFunction();
+    KName = KCallDecl->getName();
+    if (KCallDecl->isFunctionTemplateSpecialization()) {
+      /// Template kernel called from function.
+      /// void run() { testKernel<T><<<64, 256>>>(); }
+      auto KCallee = KCall->getCallee()->IgnoreParenImpCasts();
+      TemplateArgs =
+          getTemplateArgs(KCallee->getBeginLoc(), KCallee->getEndLoc(), SM);
+    }
+  }
+
+  KernelClassName = "SyclKernelName<class " + KName + "_" + LocHash;
+  CallFunc = KName;
+  if (!TemplateArgs.empty()) {
+    KernelClassName += ", " + TemplateArgs;
+    CallFunc += "<" + TemplateArgs + ">";
+  }
+  KernelClassName += ">";
+
   // clang-format off
   std::stringstream Final;
   unsigned int DimsN = getDimsNum(NDSize);
@@ -351,14 +384,14 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << Indent << "syclct::get_default_queue().submit(" << NL
   << Indent <<  "  [&](cl::sycl::handler &cgh) {" << NL
   << Header2.str()
-  << Indent <<  "    cgh.parallel_for<class " << KName << "_" << LocHash << ">(" << NL
+  << Indent <<  "    cgh.parallel_for<" << KernelClassName << ">(" << NL
   << Indent <<  "      cl::sycl::nd_range<" << EffectDims << ">(("
   << getDim3Translation(NDSize, Context, EffectDims) << " * "
   << getDim3Translation(WGSize, Context, EffectDims) << "), "
   << getDim3Translation(WGSize, Context, EffectDims)<<")," << NL
   << Indent <<  "      [=](cl::sycl::nd_item<"<< EffectDims << "> it) {" << NL
   << Header3.str()
-  << Indent <<  "        " << KName << "(it, " << buildArgList(KCall->arguments(), Context)
+  << Indent <<  "        " << CallFunc << "(it, " << buildArgList(KCall->arguments(), Context)
                                     << ");" <<  NL
   << Indent <<  "      });" <<  NL
   << Indent <<  "  });" <<  NL
@@ -479,4 +512,24 @@ ExtReplacement RemoveArg::getReplacement(const ASTContext &Context) const {
   }
   return ExtReplacement(Context.getSourceManager(),
                         CharSourceRange(SourceRange(Begin, End), true), "");
+}
+
+ExtReplacement
+InsertClassName::getReplacement(const ASTContext &Context) const {
+  auto &SM = Context.getSourceManager();
+  auto BeginLoc = CD->getBeginLoc();
+  auto DataBegin = SM.getCharacterData(BeginLoc);
+
+  unsigned i = 0;
+  auto Data = DataBegin[i];
+  while ((Data != ':') && (Data != '{'))
+    Data = DataBegin[++i];
+
+  Data = DataBegin[--i];
+  while ((Data == ' ') || (Data == '\t') || (Data == '\n'))
+    Data = DataBegin[--i];
+
+  return ExtReplacement(
+      SM, BeginLoc.getLocWithOffset(i + 1), 0,
+      " SYCL_TYPE_" + getHashAsString(BeginLoc.printToString(SM)).substr(0, 6));
 }

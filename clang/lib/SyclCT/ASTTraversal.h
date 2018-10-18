@@ -193,9 +193,9 @@ protected:
   template <typename NodeType>
   const NodeType *
   getNodeAsType(const ast_matchers::MatchFinder::MatchResult &Result,
-                const char *Name, bool CheckInRoot = true) {
+                const char *Name, bool CheckNode = true) {
     if (auto Node = Result.Nodes.getNodeAs<NodeType>(Name)) {
-      if (checkNode(Result.SourceManager, Node->getBeginLoc(), CheckInRoot))
+      if (checkNode(Result.SourceManager, Node->getBeginLoc(), CheckNode))
         return Node;
     }
     return nullptr;
@@ -203,15 +203,29 @@ protected:
 
 private:
   bool checkNode(SourceManager *SM, const SourceLocation &Begin,
-                 bool CheckInRoot) {
-    return !CheckInRoot || isInRoot(SM, Begin);
+                 bool CheckNode) {
+    if (CheckNode)
+      return isInRoot(SM, Begin) && !isReplaced(Begin.getRawEncoding());
+    return true;
   }
+
   // Check if the node's host file is in the InRoot path.
   bool isInRoot(SourceManager *SM, const SourceLocation LS) {
     std::string FilePath = SM->getFilename(SM->getExpansionLoc(LS));
     makeCanonical(FilePath);
     return isChildPath(TM->InRoot, FilePath);
   }
+
+  // Check if the location has been replaced by the same rule.
+  bool isReplaced(unsigned LocationID) {
+    for (auto ReplacedID : Replaced) {
+      if (LocationID == ReplacedID)
+        return true;
+    }
+    Replaced.push_back(LocationID);
+    return false;
+  }
+  std::vector<unsigned> Replaced;
 
 public:
   bool isTranslationRule() const override { return true; }
@@ -429,6 +443,14 @@ public:
   KernelIterationSpaceRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
+/// Name all unnamed types.
+class UnnamedTypesRule : public NamedTranslationRule<UnnamedTypesRule> {
+public:
+  UnnamedTypesRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };

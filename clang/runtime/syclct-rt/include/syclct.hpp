@@ -24,4 +24,6 @@
 #define __sycl_align__(n) __attribute__((aligned(n)))
 #endif
 
+template <class... Args> class SyclKernelName;
+
 #endif // SYCLCT_H

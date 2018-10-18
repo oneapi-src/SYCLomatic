@@ -274,6 +274,35 @@ class ReplaceKernelCallExpr : public TextModification {
                                         unsigned int EffectDims);
   static unsigned int getDimsNum(const Expr *);
 
+  static std::string
+  buildTemplateArgList(const llvm::ArrayRef<TemplateArgument> &Args,
+                       const ASTContext &Context) {
+    std::string ArgsList;
+    llvm::raw_string_ostream OStream(ArgsList);
+    PrintingPolicy Policy(Context.getLangOpts());
+    bool NotBegin = false;
+    for (auto Arg : Args) {
+      if (NotBegin)
+        OStream << ", ";
+      else
+        NotBegin = true;
+      Arg.print(Policy, OStream);
+    }
+    return OStream.str();
+  }
+
+  static std::string getTemplateArgs(const SourceLocation &L,
+                                     const SourceLocation &R,
+                                     const SourceManager &SM) {
+    auto CharBegin = SM.getCharacterData(L);
+    auto CharEnd = SM.getCharacterData(R);
+    while (*CharBegin++ != '<')
+      ;
+    while (*CharEnd != '>')
+      CharEnd--;
+    return std::string(CharBegin, CharEnd);
+  }
+
 public:
   ReplaceKernelCallExpr(const CUDAKernelCallExpr *KCall) : KCall(KCall) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
@@ -354,6 +383,16 @@ class InsertBeforeCtrInitList : public TextModification {
 public:
   InsertBeforeCtrInitList(const CXXConstructorDecl *S, std::string &&T)
       : CDecl(S), T(T) {}
+
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
+};
+
+class InsertClassName : public TextModification {
+  const CXXRecordDecl *CD;
+  static unsigned Count;
+
+public:
+  InsertClassName(const CXXRecordDecl *C) : CD(C) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
 };

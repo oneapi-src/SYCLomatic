@@ -469,15 +469,14 @@ void SyclStyleVectorCtorRule::registerMatcher(MatchFinder &MF) {
   // Find sycl sytle vector:eg.int2 constructors which are part of different
   // casts (representing different syntaxes). This includes copy constructors.
   // All constructors will be visited once.
+  MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(hasName("int2"))),
+                                 hasParent(cxxFunctionalCastExpr().bind(
+                                     "int2CtorFuncCast"))),
+                this);
   MF.addMatcher(
       cxxConstructExpr(hasType(typedefDecl(hasName("int2"))),
-                       hasParent(cxxFunctionalCastExpr().bind("int2Cast")))
-          .bind("int2CtorFuncCast"),
+                       hasParent(cStyleCastExpr().bind("int2CtorCCast"))),
       this);
-  MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(hasName("int2"))),
-                                 hasParent(cStyleCastExpr().bind("int2Cast")))
-                    .bind("int2CtorCCast"),
-                this);
 
   // translate utility for vector type: eg: make_int2
   MF.addMatcher(callExpr(callee(functionDecl(hasAnyName("make_int2"))))
@@ -489,9 +488,8 @@ void SyclStyleVectorCtorRule::registerMatcher(MatchFinder &MF) {
                 this);
   // sizeof(int2)
   MF.addMatcher(
-      unaryExprOrTypeTraitExpr(
-          allOf(hasArgumentOfType(asString("int2")),
-                has(qualType(hasCanonicalType(type().bind("int2type"))))))
+      unaryExprOrTypeTraitExpr(allOf(hasArgumentOfType(asString("int2")),
+                                     has(qualType(hasCanonicalType(type())))))
           .bind("int2Sizeof"),
       this);
 }
@@ -501,18 +499,18 @@ void SyclStyleVectorCtorRule::registerMatcher(MatchFinder &MF) {
 // closed brace needs to be appended.
 void SyclStyleVectorCtorRule::run(const MatchFinder::MatchResult &Result) {
   // Most commonly used syntax cases are checked first.
-  if (getNodeAsType<CXXConstructExpr>(Result, "int2CtorFuncCast")) {
-    auto Cast = getNodeAsType<CXXFunctionalCastExpr>(Result, "int2Cast");
+  if (auto Cast =
+          getNodeAsType<CXXFunctionalCastExpr>(Result, "int2CtorFuncCast")) {
     // int2 a = int2(1); // function style cast
     // int2 b = int2(a); // copy constructor
     // func(int(1), int2(a));
     emplaceTransformation(
         new ReplaceToken(Cast->getBeginLoc(), "cl::sycl::int2"));
-  } else if (getNodeAsType<CXXConstructExpr>(Result, "int2CtorCCast")) {
+  } else if (auto Cast =
+                 getNodeAsType<CStyleCastExpr>(Result, "int2CtorCCast")) {
     // int2 a = (int2)1;
     // int2 b = (int2)a; // copy constructor
     // func((int2)1, (int2)a);
-    auto Cast = getNodeAsType<CStyleCastExpr>(Result, "int2Cast");
     emplaceTransformation(new ReplaceCCast(Cast, "(cl::sycl::int2)"));
   } else if (const CallExpr *CE =
                  getNodeAsType<CallExpr>(Result, "VecUtilFunc")) {
@@ -548,18 +546,17 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
   // Find dim3 constructors which are part of different casts (representing
   // different syntaxes). This includes copy constructors. All constructors
   // will be visited once.
+  MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(hasName("dim3"))),
+                                 hasParent(cxxFunctionalCastExpr().bind(
+                                     "dim3CtorFuncCast"))),
+                this);
   MF.addMatcher(
       cxxConstructExpr(hasType(typedefDecl(hasName("dim3"))),
-                       hasParent(cxxFunctionalCastExpr().bind("dim3Cast")))
-          .bind("dim3CtorFuncCast"),
+                       hasParent(cStyleCastExpr().bind("dim3CtorCCast"))),
       this);
-  MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(hasName("dim3"))),
-                                 hasParent(cStyleCastExpr().bind("dim3Cast")))
-                    .bind("dim3CtorCCast"),
-                this);
-  MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(hasName("dim3"))),
-                                 hasParent(implicitCastExpr().bind("dim3Cast")))
-                    .bind("dim3CtorImplicitCast"),
+  MF.addMatcher(cxxConstructExpr(
+                    hasType(typedefDecl(hasName("dim3"))),
+                    hasParent(implicitCastExpr().bind("dim3CtorImplicitCast"))),
                 this);
 
   // Find all other dim3 constructors with 3 parameters (not copy ctors).
@@ -580,9 +577,9 @@ ReplaceDim3CtorRule::rewriteSyntax(const MatchFinder::MatchResult &Result) {
   if ((Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3Ctor"))) {
     // dim3 a(1);
     // No syntax needs to be rewritten.
-  } else if ((Ctor = getNodeAsType<CXXConstructExpr>(Result,
-                                                     "dim3CtorImplicitCast"))) {
-    if (auto Cast = getNodeAsType<ImplicitCastExpr>(Result, "dim3Cast")) {
+  } else if (auto Cast = getNodeAsType<ImplicitCastExpr>(
+                 Result, "dim3CtorImplicitCast")) {
+    if ((Ctor = dyn_cast<CXXConstructExpr>(Cast->getSubExpr()))) {
       if (!isa<CXXTemporaryObjectExpr>(Ctor)) {
         // dim3 a = 1;
         // func(1);
@@ -596,21 +593,22 @@ ReplaceDim3CtorRule::rewriteSyntax(const MatchFinder::MatchResult &Result) {
             new ReplaceToken(Cast->getBeginLoc(), "cl::sycl::range<3>"));
       }
     }
-  } else if ((Ctor = getNodeAsType<CXXConstructExpr>(Result,
-                                                     "dim3CtorFuncCast"))) {
+  } else if (auto Cast = getNodeAsType<CXXFunctionalCastExpr>(
+                 Result, "dim3CtorFuncCast")) {
     // dim3 a = dim3(1); // function style cast
     // dim3 b = dim3(a); // copy constructor
     // func(dim(1), dim3(a));
-    if (auto Cast = getNodeAsType<CXXFunctionalCastExpr>(Result, "dim3Cast")) {
+    if ((Ctor = dyn_cast<CXXConstructExpr>(Cast->getSubExpr()))) {
       emplaceTransformation(
           new ReplaceToken(Cast->getBeginLoc(), "cl::sycl::range<3>"));
     }
-  } else if ((Ctor =
-                  getNodeAsType<CXXConstructExpr>(Result, "dim3CtorCCast"))) {
+  } else if (auto Cast =
+                 getNodeAsType<CStyleCastExpr>(Result, "dim3CtorCCast")) {
     // dim3 a = (dim3)1;
     // dim3 b = (dim3)a; // copy constructor
     // func((dim)1, (dim3)a);
-    if (auto Cast = getNodeAsType<CStyleCastExpr>(Result, "dim3Cast")) {
+    if ((Ctor = dyn_cast<CXXConstructExpr>(Cast->getSubExpr()))) {
+
       emplaceTransformation(new ReplaceCCast(Cast, "cl::sycl::range<3>("));
       CloseBrace = true;
     }
@@ -1088,6 +1086,21 @@ void KernelIterationSpaceRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new InsertArgument(FD, "cl::sycl::nd_item<3> item"));
 }
 REGISTER_RULE(KernelIterationSpaceRule)
+
+void UnnamedTypesRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      cxxRecordDecl(unless(has(cxxRecordDecl(isImplicit()))), hasDefinition())
+          .bind("unnamedType"),
+      this);
+}
+
+void UnnamedTypesRule::run(const MatchFinder::MatchResult &Result) {
+  auto D = getNodeAsType<CXXRecordDecl>(Result, "unnamedType");
+  if (D && D->getName().empty())
+    emplaceTransformation(new InsertClassName(D));
+}
+
+REGISTER_RULE(UnnamedTypesRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
   this->Context = &Context;
