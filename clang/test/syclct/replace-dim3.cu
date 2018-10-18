@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s
+// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck --input-file %T/replace-dim3.sycl.cpp --match-full-lines %s
 
 // CHECK: void func(cl::sycl::range<3> a, cl::sycl::range<3> b, cl::sycl::range<3> c, cl::sycl::range<3> d) try {

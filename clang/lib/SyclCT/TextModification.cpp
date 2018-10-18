@@ -10,6 +10,7 @@
 //===-----------------------------------------------------------------===//
 
 #include "TextModification.h"
+#include "AnalysisInfo.h"
 #include "Utility.h"
 
 #include "Utility.h"
@@ -61,6 +62,32 @@ ExtReplacement
 ReplaceTypeInVarDecl::getReplacement(const ASTContext &Context) const {
   TypeLoc TL = D->getTypeSourceInfo()->getTypeLoc();
   return ExtReplacement(Context.getSourceManager(), &TL, T);
+}
+
+ExtReplacement RemoveVarDecl::getReplacement(const ASTContext &Context) const {
+  SourceLocation slStart = D->getSourceRange().getBegin();
+  SourceLocation slEnd = D->getSourceRange().getEnd();
+  if (slStart.isFileID() && slEnd.isFileID()) {
+    return ExtReplacement(Context.getSourceManager(), D, T);
+  } else {
+    auto &SM = Context.getSourceManager();
+    size_t repLength;
+    repLength = SM.getCharacterData(slEnd) -
+                SM.getCharacterData(SM.getExpansionLoc(slStart)) + 1;
+
+    // try to del  "    ;" in var declare
+    auto DataAfter = SM.getCharacterData(slEnd.getLocWithOffset(1));
+    unsigned i = 0;
+    auto Data = DataAfter[i];
+    while ((Data == ' ') || (Data == '\t'))
+      Data = DataAfter[++i];
+    if(Data == ';')
+      Data = DataAfter[++i];
+    repLength +=i;
+
+    return ExtReplacement(Context.getSourceManager(),
+                          SM.getExpansionLoc(slStart), repLength, T);
+  }
 }
 
 ExtReplacement
@@ -301,8 +328,24 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   std::stringstream Header;
   std::stringstream Header2;
   std::stringstream Header3;
+  std::stringstream HeaderShareVarAccessor;
+  std::stringstream HeaderShareVasAsArgs;
+
   Header << "{" << NL;
   auto Indent = OrigIndent + "  ";
+  // check if sharevariable info exist for this kernel.
+  // [todo] template case not support yet.
+  if(KCall && KCall->getCalleeDecl()) {
+      std::string KernelFunName =
+          KCall->getCalleeDecl()->getAsFunction()->getNameAsString();
+      if (KernelTransAssist::hasKernelInfo(KernelFunName)) {
+        KernelInfo KI = KernelTransAssist::getKernelInfo(KernelFunName);
+        if (KI.hasSMVDefined()) {
+          HeaderShareVarAccessor << KI.declareLocalAcc(NL, Indent + "    ");
+          HeaderShareVasAsArgs << KI.passSMVAsArgs() << ", ";
+        }
+      }
+  }
   for (auto *Arg : KCall->arguments()) {
     if (Arg->getType()->isAnyPointerType()) {
       if (auto *DeclRef = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts())) {
@@ -384,6 +427,7 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << Indent << "syclct::get_default_queue().submit(" << NL
   << Indent <<  "  [&](cl::sycl::handler &cgh) {" << NL
   << Header2.str()
+  << HeaderShareVarAccessor.str()
   << Indent <<  "    cgh.parallel_for<" << KernelClassName << ">(" << NL
   << Indent <<  "      cl::sycl::nd_range<" << EffectDims << ">(("
   << getDim3Translation(NDSize, Context, EffectDims) << " * "
@@ -391,7 +435,7 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << getDim3Translation(WGSize, Context, EffectDims)<<")," << NL
   << Indent <<  "      [=](cl::sycl::nd_item<"<< EffectDims << "> it) {" << NL
   << Header3.str()
-  << Indent <<  "        " << CallFunc << "(it, " << buildArgList(KCall->arguments(), Context)
+  << Indent <<  "        " << CallFunc << "(it, "<< HeaderShareVasAsArgs.str() << buildArgList(KCall->arguments(), Context)
                                     << ");" <<  NL
   << Indent <<  "      });" <<  NL
   << Indent <<  "  });" <<  NL
@@ -441,9 +485,18 @@ ExtReplacement InsertArgument::getReplacement(const ASTContext &Context) const {
   // TODO: Investigate if its possible to not have l_paren as next token
   assert(tkn.is(tok::TokenKind::l_paren));
   // Emit new argument at the end of l_paren token
-  auto OutStr = ArgName;
+  std::string Arg = ArgName;
+  if (Lazy) {
+    std::string KernelFunName = FD->getNameAsString();
+    if (KernelTransAssist::hasKernelInfo(KernelFunName)) {
+      KernelInfo &KI = KernelTransAssist::getKernelInfo(KernelFunName);
+      Arg = KI.getKernelArgs();
+    }
+  }
+
+  auto OutStr = Arg;
   if (!FD->parameters().empty())
-    OutStr = ArgName + ", ";
+    OutStr = Arg + ", ";
   return ExtReplacement(Context.getSourceManager(), tkn.getEndLoc(), 0, OutStr);
 }
 

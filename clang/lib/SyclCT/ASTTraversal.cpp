@@ -10,6 +10,7 @@
 //===-----------------------------------------------------------------===//
 
 #include "ASTTraversal.h"
+#include "AnalysisInfo.h"
 
 #include "SaveNewFiles.h"
 #include "Utility.h"
@@ -932,6 +933,88 @@ void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(KernelCallRule)
 
+///  Translation rule for shared memory variables.
+/// __shared__ var translation need 3 rules to work together, as follow:
+//  [SharedMemVarRule] Here try to remove __shared__ variable declare,
+//      also this rule records shared variable info for other rule
+//  [KernelIterationSpaceRule] __shared__ varialbe will be declared as
+//      args of kernel function.
+//  [KernelCallRule]__shared__ variable also will be declared as accessor
+//      with cl::sycl::access::target::local in sycl workgroup,
+//      when call kernel function, the accssor will pass to kernel function
+void SharedMemVarRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(varDecl(isExpansionInMainFile(),
+                        hasAttr(clang::attr::CUDAShared),
+                        hasAncestor(functionDecl().bind("kernelFunction")))
+                    .bind("cudaSharedMemVar"),
+                this);
+}
+
+void SharedMemVarRule::run(const MatchFinder::MatchResult &Result) {
+
+  auto *SharedMemVar = getNodeAsType<VarDecl>(Result, "cudaSharedMemVar");
+  auto *KernelFunction = getNodeAsType<FunctionDecl>(Result, "kernelFunction");
+  if (SharedMemVar == NULL || KernelFunction == NULL) {
+    return;
+  }
+  std::string KelFunName = KernelFunction->getNameAsString();
+  std::string SharedVarName = SharedMemVar->getNameAsString();
+  clang::QualType QType = SharedMemVar->getType();
+  llvm::APInt Size;
+  std::string TypeName;
+  bool IsArray = false;
+
+  Size = 0u;
+  if (QType->isArrayType()) {
+    IsArray = true;
+    if (QType->isConstantArrayType()) {
+      Size = cast<ConstantArrayType>(QType->getAsArrayTypeUnsafe())->getSize();
+    }
+    const clang::ArrayType *AT = QType.getTypePtr()->getAsArrayTypeUnsafe();
+    QType = AT->getElementType();
+    if (QType.getTypePtr()->isBuiltinType()) {
+      QType = QType.getCanonicalType();
+      const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
+      if (BT) {
+        clang::LangOptions LO;
+        LO.CUDA = true;
+        clang::PrintingPolicy policy(LO);
+        TypeName = BT->getName(policy);
+      }
+    } else {
+      TypeName = QType.getAsString();
+    }
+    std::string ReplaceStr = "";
+    emplaceTransformation(
+        new RemoveVarDecl(SharedMemVar, std::move(ReplaceStr)));
+    IsArray = true;
+  } else {
+    const AttrVec &AV = SharedMemVar->getAttrs();
+    Size = 1u;
+    for (const Attr *A : AV) {
+      attr::Kind AK = A->getKind();
+      if (AK == attr::CUDAShared)
+        emplaceTransformation(new RemoveAttr(A));
+    }
+  }
+  // Store the analysis info in kernelinfo for other rule use:
+  //  [KernelIterationSpaceRule] [KernelCallRule]
+  if (KernelTransAssist::hasKernelInfo(KelFunName)) {
+    KernelInfo &KI = KernelTransAssist::getKernelInfo(KelFunName);
+    KI.insertSMVInfo(TypeName, SharedVarName, IsArray,
+                         Size.toString(10, false), false /*IsExtern*/);
+    KI.appendKernelArgs(", " + TypeName + " " + SharedVarName + "[]");
+  } else {
+    KernelInfo KI(KelFunName);
+    KI.insertSMVInfo(TypeName, SharedVarName, IsArray,
+                         Size.toString(10, false), false /*IsExtern*/);
+    KernelTransAssist::insertKernel(KelFunName, KI);
+    KI.appendKernelArgs(", " + TypeName + " " + SharedVarName + "[]");
+  }
+}
+
+REGISTER_RULE(SharedMemVarRule)
+
 // Memory translation rules live here.
 void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
@@ -1086,8 +1169,26 @@ void KernelIterationSpaceRule::registerMatcher(MatchFinder &MF) {
 }
 
 void KernelIterationSpaceRule::run(const MatchFinder::MatchResult &Result) {
-  if (auto FD = getNodeAsType<FunctionDecl>(Result, "functionDecl"))
-    emplaceTransformation(new InsertArgument(FD, "cl::sycl::nd_item<3> item"));
+  if (auto FD = getNodeAsType<FunctionDecl>(Result, "functionDecl")) {
+    std::stringstream InsertArgs;
+    InsertArgs << "cl::sycl::nd_item<3> item";
+    // check if there is shared variable, move them to args.
+    std::string KernelFunName = FD->getNameAsString();
+    if (KernelTransAssist::hasKernelInfo(KernelFunName)) {
+      KernelInfo &KI = KernelTransAssist::getKernelInfo(KernelFunName);
+      if (KI.hasSMVDefined()) {
+        InsertArgs << ", ";
+        InsertArgs << KI.declareSMVAsArgs();
+      }
+      emplaceTransformation(new InsertArgument(FD, InsertArgs.str()));
+    } else {
+      // need lazy here, as it don't know if __shared__ var exists
+      KernelInfo KI(KernelFunName);
+      KI.appendKernelArgs(InsertArgs.str());
+      KernelTransAssist::insertKernel(KernelFunName, KI);
+      emplaceTransformation(new InsertArgument(FD, InsertArgs.str(), true));
+    }
+  }
 }
 REGISTER_RULE(KernelIterationSpaceRule)
 

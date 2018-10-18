@@ -398,7 +398,17 @@ public:
 
 class KernelCallRule : public NamedTranslationRule<KernelCallRule> {
 public:
-  KernelCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  KernelCallRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile, "SharedMemVarRule");
+  }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
+/// Translation rule for shared memory variables.
+class SharedMemVarRule : public NamedTranslationRule<SharedMemVarRule> {
+public:
+  SharedMemVarRule() { SetRuleProperty(ApplyToCudaFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -441,7 +451,7 @@ class KernelIterationSpaceRule
     : public NamedTranslationRule<KernelIterationSpaceRule> {
 public:
   KernelIterationSpaceRule() {
-    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile, "KernelCallRule");
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;

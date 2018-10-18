@@ -17,6 +17,7 @@ add_clang_library(SyclCT
   Utility.cpp
   ValidateArguments.cpp
   Diagnostics.cpp
+  AnalysisInfo.cpp
 
   LINK_LIBS
   clangBasic

@@ -170,6 +170,16 @@ public:
   ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
 
+// Replace type in var. declaration.
+class RemoveVarDecl : public TextModification {
+  const VarDecl *D;
+  std::string T;
+
+public:
+  RemoveVarDecl(const VarDecl *D, std::string &&T) : D(D), T(T) {}
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
+};
+
 // Replace return type in function declaration.
 class ReplaceReturnType : public TextModification {
   const FunctionDecl *FD;
@@ -248,10 +258,13 @@ class InsertArgument : public TextModification {
   const FunctionDecl *FD;
   // Argument string without comma.
   std::string ArgName;
+  bool Lazy = false;
 
 public:
   InsertArgument(const FunctionDecl *FD, std::string &&ArgName)
       : FD(FD), ArgName(ArgName) {}
+  InsertArgument(const FunctionDecl *FD, std::string &&ArgName, bool Lazy)
+      : FD(FD), ArgName(ArgName), Lazy(Lazy) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
 };
