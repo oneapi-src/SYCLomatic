@@ -318,6 +318,14 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+/// Translation rule for dim3 types member fields replacements.
+class Dim3MemberFieldsRule : public NamedTranslationRule<Dim3MemberFieldsRule> {
+public:
+  Dim3MemberFieldsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 /// Translation rule for return types replacements.
 class ReturnTypeRule : public NamedTranslationRule<ReturnTypeRule> {
 public:

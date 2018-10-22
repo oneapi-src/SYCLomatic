@@ -116,8 +116,16 @@ ExtReplacement ReplaceCCast::getReplacement(const ASTContext &Context) const {
 ExtReplacement
 RenameFieldInMemberExpr::getReplacement(const ASTContext &Context) const {
   SourceLocation SL = ME->getEndLoc();
+  SourceLocation Begin = SL;
+  if (PositionOfDot != 0) {
+    // Cover dot position when translate dim3.x/y/z to
+    // cl::sycl::range<3>[0]/[1]/[2].
+    Begin = ME->getBeginLoc();
+    Begin = Begin.getLocWithOffset(PositionOfDot);
+  }
+
   return ExtReplacement(Context.getSourceManager(),
-                        CharSourceRange(SourceRange(SL, SL), true), T);
+                        CharSourceRange(SourceRange(Begin, SL), true), T);
 }
 
 ExtReplacement

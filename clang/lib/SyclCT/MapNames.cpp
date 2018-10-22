@@ -28,9 +28,15 @@ const std::map<std::string, std::string> MapNames::TypeNamesMap{
     // ...
 };
 
-// CUDA dim3 member funciton names mapping.
+// CUDA dim3 dot member funciton names mapping.
 const std::map<std::string, std::string> MapNames::Dim3MemberNamesMap{
-    {"x", "get(0)"}, {"y", "get(1)"}, {"z", "get(2)"},
+    {"x", "[0]"}, {"y", "[1]"}, {"z", "[2]"},
+    // ...
+};
+
+// CUDA dim3 pointer member funciton names mapping.
+const std::map<std::string, std::string> MapNames::Dim3MemberPointerNamesMap{
+    {"x", "operator[](0)"}, {"y", "operator[](1)"}, {"z", "operator[](2)"},
     // ...
 };
 

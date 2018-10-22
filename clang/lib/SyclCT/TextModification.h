@@ -184,10 +184,12 @@ public:
 class RenameFieldInMemberExpr : public TextModification {
   const MemberExpr *ME;
   std::string T;
+  unsigned PositionOfDot;
 
 public:
-  RenameFieldInMemberExpr(const MemberExpr *ME, std::string &&T)
-      : ME(ME), T(T) {}
+  RenameFieldInMemberExpr(const MemberExpr *ME, std::string &&T,
+                          unsigned PositionOfDot = 0)
+      : ME(ME), T(T), PositionOfDot(PositionOfDot) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
 };

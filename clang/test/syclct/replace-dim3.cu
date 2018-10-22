@@ -47,10 +47,25 @@ int main() {
   // CHECK: func(deflt, cl::sycl::range<3>(deflt), cl::sycl::range<3>(deflt), cl::sycl::range<3>(2 + 3 * 3, 1, 1));
   func(deflt, dim3(deflt), (dim3)deflt, 2 + 3 * 3);
 
-  int n = 8192;
-  int num_cpu_threads = 2;
-  // CHECK: cl::sycl::range<3> gpu_threads(128, 1, 1); // 128 threads per block
-  dim3 gpu_threads(128); // 128 threads per block
-  // CHECK: cl::sycl::range<3> gpu_blocks(n / (gpu_threads.get(0) * num_cpu_threads), 1, 1);
-  dim3 gpu_blocks(n / (gpu_threads.x * num_cpu_threads));
+  // CHECK: cl::sycl::range<3> test(1, 2, 3);
+  dim3 test(1, 2, 3);
+
+  // CHECK: int b = test[0] + test[1] + test [2];
+  int b = test.x + test. y + test .z;
+  dim3 *p = &test;
+
+  // CHECK: int a = p->operator[](0) + p->operator[](1) + p->operator[](2);
+  int a = p->x + p->y + p->z;
+
+  struct  container
+  {
+    unsigned int x, y, z;
+    dim3 w;
+  };
+  typedef  struct container container;
+
+  container t;
+
+  // CHECK: int c = t.w[0] + t.w[1] + t.w[2];
+  int c = t.w.x + t.w.y + t.w.z;
 }

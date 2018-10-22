@@ -568,13 +568,6 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
                                  argumentCountIs(3))
                     .bind("dim3Ctor"),
                 this);
-  // dim3.x/y/z => dim3.get(0)/get(1)/get(2)
-  MF.addMatcher(
-      memberExpr(
-          hasObjectExpression(hasType(qualType(hasCanonicalType(
-              recordType(hasDeclaration(cxxRecordDecl(hasName("dim3")))))))))
-          .bind("Dim3MemberExpr"),
-      this);
 }
 
 // Determines which case of construction applies and creates replacements for
@@ -654,18 +647,70 @@ void ReplaceDim3CtorRule::rewriteArglist(
 }
 
 void ReplaceDim3CtorRule::run(const MatchFinder::MatchResult &Result) {
-  if (const MemberExpr *ME =
-          getNodeAsType<MemberExpr>(Result, "Dim3MemberExpr")) {
-    auto Search = MapNames::Dim3MemberNamesMap.find(
-        ME->getMemberNameInfo().getAsString());
-    if (Search != MapNames::Dim3MemberNamesMap.end()) {
-      emplaceTransformation(new RenameFieldInMemberExpr(ME, Search->second + ""));
-    }
-  }
   rewriteArglist(rewriteSyntax(Result));
 }
 
 REGISTER_RULE(ReplaceDim3CtorRule)
+
+// rule for dim3 types member fields replacements.
+void Dim3MemberFieldsRule::registerMatcher(MatchFinder &MF) {
+  // dim3->x/y/z => dim3->operator[](0)/(1)/(2)
+  MF.addMatcher(
+      memberExpr(
+          hasDescendant(declRefExpr(
+              hasType(pointerType()),
+              to(varDecl(hasType(pointsTo(typedefDecl(hasName("dim3")))))))))
+          .bind("Dim3MemberPointerExpr"),
+      this);
+
+  // dim3.x/y/z => dim3[0]/[1]/[2]
+  MF.addMatcher(
+      memberExpr(
+          hasObjectExpression(hasType(qualType(hasCanonicalType(
+              recordType(hasDeclaration(cxxRecordDecl(hasName("dim3")))))))))
+          .bind("Dim3MemberDotExpr"),
+      this);
+}
+
+void Dim3MemberFieldsRule::run(const MatchFinder::MatchResult &Result) {
+  if (const MemberExpr *ME =
+          getNodeAsType<MemberExpr>(Result, "Dim3MemberPointerExpr")) {
+    auto Search = MapNames::Dim3MemberPointerNamesMap.find(
+        ME->getMemberNameInfo().getAsString());
+    if (Search != MapNames::Dim3MemberPointerNamesMap.end()) {
+      emplaceTransformation(
+          new RenameFieldInMemberExpr(ME, Search->second + ""));
+    }
+  }
+
+  if (const MemberExpr *ME =
+          getNodeAsType<MemberExpr>(Result, "Dim3MemberDotExpr")) {
+    auto SM = Result.SourceManager;
+    clang::SourceLocation Begin(ME->getBeginLoc()), Temp(ME->getEndLoc());
+    clang::SourceLocation End(
+        clang::Lexer::getLocForEndOfToken(Temp, 0, *SM, LangOptions()));
+    std::string Ret =
+        std::string(SM->getCharacterData(Begin),
+                    SM->getCharacterData(End) - SM->getCharacterData(Begin));
+
+    std::size_t PosisitonOfDot, Current = Ret.find('.');
+
+    // Find the last position of dot '.'
+    while (Current != std::string::npos) {
+      PosisitonOfDot = Current;
+      Current = Ret.find('.', PosisitonOfDot + 1);
+    }
+
+    auto Search = MapNames::Dim3MemberNamesMap.find(
+        ME->getMemberNameInfo().getAsString());
+    if (Search != MapNames::Dim3MemberNamesMap.end()) {
+      emplaceTransformation(
+          new RenameFieldInMemberExpr(ME, Search->second + "", PosisitonOfDot));
+    }
+  }
+}
+
+REGISTER_RULE(Dim3MemberFieldsRule)
 
 // Rule for return types replacements.
 void ReturnTypeRule::registerMatcher(MatchFinder &MF) {
