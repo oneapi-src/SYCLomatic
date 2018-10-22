@@ -117,6 +117,9 @@ void test1_1() {
   free(h_C);
 }
 
+// TODO: corresponding API is to be removed from SYCLCT. We keep this code for
+// now to be able file bug agains OpenCL CPU runtime.
+/*
 class vectorAdd2;
 void test2() {
 
@@ -189,6 +192,7 @@ void test2() {
   free(h_B);
   free(h_C);
 }
+*/
 
 class vectorAdd3;
 void test3() {

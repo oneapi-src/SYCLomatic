@@ -292,6 +292,10 @@ static void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size, memcpy_direct
 
 // FIXME: this function is not used in translation and causes segfault
 // with latest OpenCL CPU runtime and ComputeCpp 1.0.1.
+// TODO: this is commented out and to be removed in the future.
+// The reason to leave it as a commented out - we need to file a bug against
+// OpenCL CPU runtime, which has a bug triggered by this code.
+/*
 static buffer_t get_buffer(void *ptr) {
   auto &mm = memory_manager::get_instance();
   auto& alloc = mm.translate_ptr(ptr);
@@ -308,6 +312,7 @@ static buffer_t get_buffer(void *ptr) {
     return sub_buffer;
   }
 }
+*/
 
 static std::pair<buffer_t, size_t> get_buffer_and_offset(void *ptr) {
   auto &alloc = memory_manager::get_instance().translate_ptr(ptr);
