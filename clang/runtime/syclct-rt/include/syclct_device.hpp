@@ -13,10 +13,10 @@
 #define SYCLCT_DEVICE_H
 
 #include <CL/sycl.hpp>
+#include <cstring>
 #include <iostream>
 #include <set>
 #include <sstream>
-#include <cstring>
 
 namespace syclct {
 
