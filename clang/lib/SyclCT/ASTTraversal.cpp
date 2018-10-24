@@ -693,7 +693,8 @@ void Dim3MemberFieldsRule::run(const MatchFinder::MatchResult &Result) {
         std::string(SM->getCharacterData(Begin),
                     SM->getCharacterData(End) - SM->getCharacterData(Begin));
 
-    std::size_t PosisitonOfDot, Current = Ret.find('.');
+    std::size_t PosisitonOfDot = 0;
+    std::size_t Current = Ret.find('.');
 
     // Find the last position of dot '.'
     while (Current != std::string::npos) {
