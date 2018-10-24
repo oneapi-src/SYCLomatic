@@ -1194,12 +1194,14 @@ REGISTER_RULE(ConstantMemVarRule)
 void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(hasAnyName("cudaMalloc", "cudaMemcpy",
+                                                    "cudaMemcpyToSymbol",
                                                     "cudaFree", "cudaMemset"))),
                      hasParent(compoundStmt())))
           .bind("call"),
       this);
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(hasAnyName("cudaMalloc", "cudaMemcpy",
+                                                    "cudaMemcpyToSymbol",
                                                     "cudaFree", "cudaMemset"))),
                      unless(hasParent(compoundStmt()))))
           .bind("callUsed"),
@@ -1220,17 +1222,17 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
   }
   if (Name == "cudaMalloc") {
-    std::string Name = "syclct::sycl_malloc";
+    std::string NameSycl = "syclct::sycl_malloc";
     if (IsAssigned) {
-      Name = "(" + Name;
+      NameSycl = "(" + NameSycl;
     }
     std::vector<const Expr *> Args{C->getArg(0), C->getArg(1)};
     emplaceTransformation(
-        new ReplaceCallExpr(C, std::move(Name), std::move(Args)));
+        new ReplaceCallExpr(C, std::move(NameSycl), std::move(Args)));
   } else if (Name == "cudaMemcpy") {
-    std::string Name = "syclct::sycl_memcpy";
+    std::string NameSycl = "syclct::sycl_memcpy";
     if (IsAssigned) {
-      Name = "(" + Name;
+      NameSycl = "(" + NameSycl;
     }
     // Input:
     // cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
@@ -1265,26 +1267,74 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
                                    Direction};
     std::vector<std::string> NewTypes{"(void*)", "(void*)", "", DirectionName};
     emplaceTransformation(new ReplaceCallExpr(
-        C, std::move(Name), std::move(Args), std::move(NewTypes)));
+        C, std::move(NameSycl), std::move(Args), std::move(NewTypes)));
   } else if (Name == "cudaMemset") {
-    std::string Name = "syclct::sycl_memset";
+    std::string NameSycl = "syclct::sycl_memset";
     if (IsAssigned) {
-      Name = "(" + Name;
+      NameSycl = "(" + NameSycl;
     }
     std::vector<const Expr *> Args{C->getArg(0), C->getArg(1), C->getArg(2)};
     std::vector<std::string> NewTypes{"(void*)", "(int)", "(size_t)"};
 
     emplaceTransformation(
-        new ReplaceCallExpr(C, std::move(Name), std::move(Args), NewTypes));
+        new ReplaceCallExpr(C, std::move(NameSycl), std::move(Args), NewTypes));
+
+  } else if (Name == "cudaMemcpyToSymbol") {
+    // Input:
+    // cudaMemcpyToSymbol(ConstMem_A, h_A, size, offset, cudaMemcpyHostToDevice
+    // ); cudaMemcpyToSymbol(ConstMem_B, d_B, size, offset,
+    // cudaMemcpyDeviceToDevice ); cudaMemcpyToSymbol(ConstMem_A, d_B, size,
+    // offset, cudaMemcpyDefault);
+
+    // Desired output:
+    // syclct::sycl_memcpy_to_symbol(ConstMem_A.get_ptr(), (void*)(h_A), size,
+    // offset, syclct::host_to_device); syclct::sycl_memcpy_to_symbol(
+    // ConstMem_B.get_ptr(),d_B, size, offset, syclct::device_to_device);
+    // syclct::sycl_memcpy_to_symbol(
+    // ConstMem_A.get_ptr(), (void*)(d_B), size, offset,
+    // syclct::automatic);
+    std::string NameSycl = "syclct::sycl_memcpy_to_symbol";
+    if (IsAssigned) {
+      NameSycl = "(" + NameSycl;
+    }
+
+    const Expr *Direction = C->getArg(4);
+    std::string DirectionName;
+    const DeclRefExpr *DD = dyn_cast_or_null<DeclRefExpr>(Direction);
+    if (DD && isa<EnumConstantDecl>(DD->getDecl())) {
+      DirectionName = DD->getNameInfo().getName().getAsString();
+      auto Search = EnumConstantRule::EnumNamesMap.find(DirectionName);
+      assert(Search != EnumConstantRule::EnumNamesMap.end());
+      Direction = nullptr;
+      DirectionName = "syclct::" + Search->second;
+    }
+
+    std::vector<const Expr *> Args{NULL, C->getArg(1), C->getArg(2),
+                                   C->getArg(3), Direction};
+
+    std::string ConstantVarName =
+        getStmtSpelling(C->getArg(0), *Result.Context);
+    ConstantVarName.erase(
+        std::remove(ConstantVarName.begin(), ConstantVarName.end(), '&'),
+        ConstantVarName.end());
+    std::size_t pos = ConstantVarName.find("[");
+    ConstantVarName = (pos != std::string::npos)
+                          ? ConstantVarName.substr(0, pos)
+                          : ConstantVarName;
+
+    std::vector<std::string> NewTypes{ConstantVarName + ".get_ptr()", "(void*)",
+                                      "", "", DirectionName};
+    emplaceTransformation(new ReplaceCallExpr(
+        C, std::move(NameSycl), std::move(Args), std::move(NewTypes)));
 
   } else if (Name == "cudaFree") {
-    std::string Name = "syclct::sycl_free";
+    std::string NameSycl = "syclct::sycl_free";
     if (IsAssigned) {
-      Name = "(" + Name;
+      NameSycl = "(" + NameSycl;
     }
     std::vector<const Expr *> Args{C->getArg(0)};
     emplaceTransformation(
-        new ReplaceCallExpr(C, std::move(Name), std::move(Args)));
+        new ReplaceCallExpr(C, std::move(NameSycl), std::move(Args)));
   }
 }
 

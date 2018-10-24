@@ -184,9 +184,15 @@ std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
                          const ASTContext &Context) {
   std::stringstream List;
   for (auto A = begin(Args); A != end(Args); A++) {
-    List << getStmtSpelling(*A, Context);
-    if (A + 1 != end(Args)) {
-      List << ", ";
+    std::string Elem = getStmtSpelling(*A, Context);
+    if (!Elem.empty()) {
+      // Fixed bug in the situation:
+      // funciton declaration is "void fun(int a, int b, int c=0)",
+      // and, "fun(a, b)" translated "fun(a,b,"")"
+      List << Elem;
+      if (A + 1 != end(Args)) {
+        List << ", ";
+      }
     }
   }
   return List.str();
@@ -198,13 +204,30 @@ std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
                          const ASTContext &Context) {
   std::stringstream List;
   auto B = begin(Types);
+  bool IsCommaNeeded = true;
   for (auto A = begin(Args); A != end(Args); A++) {
     if (*A != nullptr && !(*B).empty()) {
       // General case, both are not empty
-      List << *B << "(" << getStmtSpelling(*A, Context) << ")";
+      std::string Elem = getStmtSpelling(*A, Context);
+      if (!Elem.empty()) {
+        // Fixed bug in the situation:
+        // funciton declaration is "void fun(int a, int b, int c=0)",
+        // and, "fun(a, b)" translated "fun(a,b,"")"
+        List << *B << "(" << Elem << ")";
+      } else {
+        IsCommaNeeded = false;
+      }
     } else if (*A != nullptr && (*B).empty()) {
       // No type, just argument
-      List << getStmtSpelling(*A, Context);
+      std::string Elem = getStmtSpelling(*A, Context);
+      if (!Elem.empty()) {
+        // Fixed bug in the situation:
+        // funciton declaration is "void fun(int a, int b, int c=0)",
+        // and, "fun(a, b)" translated "fun(a,b,"")"
+        List << Elem;
+      } else {
+        IsCommaNeeded = false;
+      }
     } else if (*A == nullptr && !(*B).empty()) {
       // Just use "type", which is desired textual representation
       // of argument in this case.
@@ -213,12 +236,18 @@ std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
       // Both are empty. Houston, we have a problem!
       assert(false);
     }
-    if (A + 1 != end(Args)) {
+    if (IsCommaNeeded) {
+      // Separated with comma and space ", "
       List << ", ";
     }
     B++;
   }
-  return List.str();
+
+  std::string ret = List.str();
+  // Remove the last comma and space, related with separator string,eg. ", "
+  ret.pop_back();
+  ret.pop_back();
+  return ret;
 }
 
 template <typename ArgIterT, typename TypeIterT>

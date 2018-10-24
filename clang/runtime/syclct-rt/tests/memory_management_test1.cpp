@@ -317,6 +317,61 @@ void test4() {
   free(h_A);
 }
 
+const unsigned int Num = 5000;
+const unsigned int N1 = 1000;
+syclct::ConstMem d_A(Num * sizeof(float));
+syclct::ConstMem d_B(Num * sizeof(float));
+
+void test5() {
+
+  float h_A[Num];
+  float h_B[Num];
+  float h_C[Num];
+  float h_D[Num];
+
+  for (int i = 0; i < Num; i++) {
+    h_A[i] = 1.0f;
+    h_B[i] = 2.0f;
+  }
+
+  for (int i = 0; i < Num; i++) {
+    h_A[i] = 1.0f;
+    h_B[i] = 2.0f;
+  }
+  // hostA[0..999] -> deviceA[0..999]
+  // hostB[0..3999] -> deviceA[1000..4999]
+  // deviceA[0..4999] -> deviceB[0..4999]
+  // deviceA[0..4999] -> hostC[0..4999]
+  // deviceB[0..4999] -> hostD[0..4999]
+
+  syclct::sycl_memcpy_to_symbol((void *)d_A.get_ptr(), (void *)&h_A[0], N1 * sizeof(float), 0, syclct::memcpy_direction::host_to_device);
+  syclct::sycl_memcpy_to_symbol(d_A.get_ptr(), (void*) h_B, (Num-N1) * sizeof(float), N1 * sizeof(float), syclct::memcpy_direction::automatic);
+  syclct::sycl_memcpy((void *)h_C, (void *)d_A.get_ptr(), Num * sizeof(float),   syclct::memcpy_direction::device_to_host);
+
+  syclct::sycl_memcpy_to_symbol((void *)d_B.get_ptr(), (void *)d_A.get_ptr(), N1 * sizeof(float), 0, syclct::memcpy_direction::device_to_device);
+  syclct::sycl_memcpy_to_symbol((void *)d_B.get_ptr(), (void *)((size_t)d_A.get_ptr() + N1* sizeof(float)), (Num - N1) * sizeof(float), N1 * sizeof(float), syclct::memcpy_direction::automatic);
+  syclct::sycl_memcpy((void *)h_D, (void *)d_B.get_ptr(), Num * sizeof(float),   syclct::memcpy_direction::device_to_host);
+
+  // verify hostD
+  for (int i = 0; i < N1; i++) {
+    if (fabs(h_A[i] - h_D[i]) > 1e-5) {
+      fprintf(stderr, "Check: Elements are A = %f, D = %f:\n", h_A[i], h_D[i]);
+      fprintf(stderr, "Result verification failed at element %d:\n", i);
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  for (int i = N1; i < Num; i++) {
+    if (fabs(h_B[i] - h_D[i]) > 1e-5) {
+      fprintf(stderr, "Check: Elements are B = %f, D = %f:\n",   h_B[i], h_D[i]);
+      fprintf(stderr, "Result verification failed at element %d:\n", i);
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  printf("Test5 Passed\n");
+}
+
 int main() {
   test1();
   test1_1();
@@ -326,6 +381,7 @@ int main() {
 //  test2();
   test3();
   test4();
+  test5();
 
   return 0;
 }

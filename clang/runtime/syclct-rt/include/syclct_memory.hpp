@@ -199,6 +199,18 @@ static void sycl_free(void *ptr) {
   memory_manager::get_instance().mem_free(ptr);
 }
 
+class ConstMem {
+  public:
+  ConstMem(size_t size){
+    sycl_malloc((void **)&const_mem_ptr, size);
+  }
+  void *get_ptr(void) {
+    return const_mem_ptr;
+  }
+  private:
+    void *const_mem_ptr;
+};
+
 // memcpy
 static void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size,
                         memcpy_direction direction, cl::sycl::queue q) {
@@ -291,6 +303,31 @@ static void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size,
                         memcpy_direction direction) {
   sycl_memcpy(to_ptr, from_ptr, size, direction,
               syclct::get_device_manager().current_device().default_queue());
+}
+
+// sycl_memcpy_to_symbol copies size bytes
+// from the memory area pointed to by
+// from_ptr to the memory area pointed to by offset bytes from the start of symbol symbol.
+// where direction specifies the direction of the copy, and must be one of
+// host_to_device, device_to_device, or automatic.
+// Passing automatic is recommended, in which case the type of transfer
+// is inferred from the pointer values.
+
+static void sycl_memcpy_to_symbol(void *symbol, void *from_ptr, size_t size,
+                                  size_t offset = 0,
+                                  memcpy_direction direction = host_to_device) {
+  switch (direction) {
+    case host_to_device:
+      break;
+    case device_to_device:
+      break;
+    case automatic:
+      break;
+    default:
+      std::abort();
+  }
+
+   sycl_memcpy((void *)((size_t)symbol + offset), from_ptr, size,  direction);
 }
 
 // In following functions buffer_t is returned instead of buffer_t*, because of
