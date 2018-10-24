@@ -78,3 +78,7 @@ const std::map<std::string, std::string> EnumConstantRule::EnumNamesMap{
     {"cudaMemcpyDefault", "automatic"},
     // ...
 };
+
+const std::map<std::string, std::string> MathFunctionsRule::FunctionNamesMap{
+    {"max", "cl::sycl::max"},
+};

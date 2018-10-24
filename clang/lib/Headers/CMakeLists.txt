@@ -39,6 +39,7 @@ set(files
   __clang_cuda_libdevice_declares.h
   __clang_cuda_math_forward_declares.h
   __clang_cuda_runtime_wrapper.h
+  __clang_syclct_math.h
   cetintrin.h
   cldemoteintrin.h
   clzerointrin.h
