@@ -321,11 +321,6 @@ static inline __device__ void __brkpt(int __c) { __brkpt(); }
 
 #pragma pop_macro("__host__")
 
-#define __INTEL_CUSTOMIZATION__
-#ifdef __INTEL_CUSTOMIZATION__
-#include "__clang_syclct_math.h"
-#endif
-
 #include "texture_indirect_functions.h"
 
 // Restore state of __CUDA_ARCH__ and __THROW we had on entry.

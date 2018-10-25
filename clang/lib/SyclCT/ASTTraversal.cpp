@@ -1102,33 +1102,6 @@ void UnnamedTypesRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(UnnamedTypesRule)
 
-void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
-  std::vector<std::string> FunctionNames;
-  for (auto Function : FunctionNamesMap)
-    FunctionNames.push_back(Function.first);
-
-  MF.addMatcher(
-      callExpr(callee(functionDecl(
-                   internal::Matcher<NamedDecl>(
-                       new internal::HasNameMatcher(FunctionNames)),
-                   unless(hasDeclContext(namespaceDecl(anything()))))))
-          .bind("math"),
-      this);
-}
-
-void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
-  static auto End = FunctionNamesMap.end();
-  auto C = getNodeAsType<CallExpr>(Result, "math");
-  if (C) {
-    auto Name = FunctionNamesMap.find(C->getDirectCallee()->getName().str());
-    if (Name != End)
-      emplaceTransformation(
-          new ReplaceToken(C->getBeginLoc(), std::string(Name->second)));
-  }
-}
-
-REGISTER_RULE(MathFunctionsRule)
-
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
   this->Context = &Context;
   for (auto &I : Storage) {
