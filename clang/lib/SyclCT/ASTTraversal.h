@@ -455,6 +455,16 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+/// Translation for math functions
+class MathFunctionsRule : public NamedTranslationRule<MathFunctionsRule> {
+public:
+  MathFunctionsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+  static const std::map<std::string, std::string> FunctionNamesMap;
+};
+
 template <typename T> class RuleRegister {
 public:
   RuleRegister(const char *ID, const std::string &Name) {
