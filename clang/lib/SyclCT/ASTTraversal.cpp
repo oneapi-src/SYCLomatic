@@ -1133,6 +1133,23 @@ void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(MathFunctionsRule)
 
+void SyncThreadsRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(callExpr(callee(functionDecl(hasAnyName("__syncthreads"))))
+                    .bind("syncthreads"),
+                this);
+}
+
+void SyncThreadsRule::run(const MatchFinder::MatchResult &Result) {
+  if (auto CE = getNodeAsType<CallExpr>(Result, "syncthreads")) {
+    // TODO: Variable name "item" comes from KernelIterationSpaceRule, need a
+    // mechanism to check/guarantee the consistency.
+    std::string Replacement = "item.barrier()";
+    emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+  }
+}
+
+REGISTER_RULE(SyncThreadsRule)
+
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
   this->Context = &Context;
   for (auto &I : Storage) {

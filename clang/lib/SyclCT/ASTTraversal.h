@@ -465,6 +465,16 @@ public:
   static const std::map<std::string, std::string> FunctionNamesMap;
 };
 
+/// Translation rule for replacing __syncthreads() function call.
+///
+/// This rule replace __syncthreads() with item.barrier()
+class SyncThreadsRule : public NamedTranslationRule<SyncThreadsRule> {
+public:
+  SyncThreadsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 template <typename T> class RuleRegister {
 public:
   RuleRegister(const char *ID, const std::string &Name) {
