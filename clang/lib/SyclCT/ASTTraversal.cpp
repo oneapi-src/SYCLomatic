@@ -17,6 +17,7 @@
 #include "llvm/ADT/StringSet.h"
 #include <string>
 #include <utility>
+#include <iostream>
 
 using namespace clang;
 using namespace clang::ast_matchers;
@@ -59,8 +60,11 @@ void IncludesCallbacks::InclusionDirective(
                         /*IsTokenRange=*/false),
         "#include <cmath>"));
   }
-
-  if (!isChildPath(CudaPath, IncludePath)) {
+  if (!isChildPath(CudaPath, IncludePath) &&
+      IncludePath.compare(0 , 15,
+          "/usr/local/cuda",
+          15) /*CudaPath detection have not consider soft link, here do special
+          for /usr/local/cuda*/) {
     // if <cuda_runtime.h>, no matter where it from, replace with sycl header
     if (!(IsAngled && FileName.compare(StringRef("cuda_runtime.h")) == 0))
       return;

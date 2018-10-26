@@ -79,7 +79,14 @@ CudaInstallationDetector::CudaInstallationDetector(
   SmallVector<Candidate, 4> Candidates;
 
   // In decreasing order so we prefer newer versions to older versions.
+  #define __INTEL_CUSTOMIZATION__
+  #ifdef __INTEL_CUSTOMIZATION__
+  std::initializer_list<const char *> Versions = {"10.0", "9.2", "9.0",
+                                                   "8.0", "7.5", "7.0"};
+  #else
   std::initializer_list<const char *> Versions = {"8.0", "7.5", "7.0"};
+  #endif
+
 
   if (Args.hasArg(clang::driver::options::OPT_cuda_path_EQ)) {
     Candidates.emplace_back(
