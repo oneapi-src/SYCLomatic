@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only
+// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck --input-file %T/iteration-space.sycl.cpp --match-full-lines %s
 
 // Test that the replacement happens when it should to.

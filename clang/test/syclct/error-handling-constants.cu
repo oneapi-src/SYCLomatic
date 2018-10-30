@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -passes "ErrorConstantsRule" -- -x cuda --cuda-host-only
+// RUN: syclct -out-root %T %s -passes "ErrorConstantsRule" -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: sed -e 's,//.*$,,' %T/error-handling-constants.sycl.cpp | FileCheck --match-full-lines %s
 
 // CHECK:const char *switch_test(cudaError_t error)

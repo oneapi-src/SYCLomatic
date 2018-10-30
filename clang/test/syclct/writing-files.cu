@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %S/../.././test/./syclct/writing-files.cu -- -x cuda --cuda-host-only
+// RUN: syclct -out-root %T %S/../.././test/./syclct/writing-files.cu -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck --input-file %T/writing-files.sycl.cpp --match-full-lines %s
 // RUN: FileCheck --input-file %T/test-header.sycl.hpp --match-full-lines %S/test-header.cuh
 

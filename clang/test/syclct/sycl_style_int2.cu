@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only
+// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck --input-file %T/sycl_style_int2.sycl.cpp --match-full-lines %s
 
 // CHECK: void func3(cl::sycl::int2 a, cl::sycl::int2 b, cl::sycl::int2 c) try {

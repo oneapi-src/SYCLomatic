@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -passes "ErrorHandlingIfStmtRule" -- -w -x cuda --cuda-host-only 2>&1 | FileCheck --match-full-lines %s
+// RUN: syclct -out-root %T %s -passes "ErrorHandlingIfStmtRule" -- -w -x cuda --cuda-host-only --cuda-path=%cuda-path 2>&1 | FileCheck --match-full-lines %s
 
 int printf(const char *s, ...);
 int fprintf(int, const char *s, ...);

@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -passes "ErrorHandlingIfStmtRule" -- -x cuda --cuda-host-only
+// RUN: syclct -out-root %T %s -passes "ErrorHandlingIfStmtRule" -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: sed -e 's,//.*$,,' %T/error-handling.sycl.cpp | FileCheck --match-full-lines %s
 
 int printf(const char *s, ...);

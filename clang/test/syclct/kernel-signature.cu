@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -passes "FunctionAttrsRule,KernelIterationSpaceRule" -- -x cuda --cuda-host-only
+// RUN: syclct -out-root %T %s -passes "FunctionAttrsRule,KernelIterationSpaceRule" -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck %s --match-full-lines --input-file %T/kernel-signature.sycl.cpp
 
 // CHECK: void test_01(cl::sycl::nd_item<3> item);

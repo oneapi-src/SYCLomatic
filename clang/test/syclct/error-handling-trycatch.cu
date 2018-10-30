@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -passes "ErrorTryCatchRule" -- -std=c++11 -x cuda --cuda-host-only
+// RUN: syclct -out-root %T %s -passes "ErrorTryCatchRule" -- -std=c++11 -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck %s --match-full-lines --input-file %T/error-handling-trycatch.sycl.cpp
 
 // CHECK:void test_simple() try {

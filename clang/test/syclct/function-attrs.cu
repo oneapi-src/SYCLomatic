@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -passes "IterationSpaceBuiltinRule,FunctionAttrsRule" -- -x cuda --cuda-host-only
+// RUN: syclct -out-root %T %s -passes "IterationSpaceBuiltinRule,FunctionAttrsRule" -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck %s --match-full-lines --input-file %T/function-attrs.sycl.cpp
 
 // CHECK: void test_00();

@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only
+// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck --input-file %T/kernel-call.sycl.cpp --match-full-lines %s
 
 // CHECK: void testKernelPtr(cl::sycl::nd_item<3> item, const int *L, const int *M, int N) {
