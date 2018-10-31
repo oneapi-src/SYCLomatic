@@ -222,7 +222,8 @@ def format_entry(exec_trace):
         compiler = {
             'c' : 'cc',
             'c++' : 'c++',
-            'cuda' : 'nvcc'
+            'cuda' : 'nvcc',
+            'mpich' : 'c++'
         }[compilation.compiler]
 
         if len(compilation.files) == 0:

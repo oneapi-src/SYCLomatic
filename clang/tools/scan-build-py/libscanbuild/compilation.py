@@ -125,6 +125,9 @@ def split_command(command):
             count = IGNORED_FLAGS[arg]
             for _ in range(count):
                 next(args)
+        elif arg in {'-lmpichcxx', '-lmpich', '-lmpi_cxx', '-lmpi'}:
+            result.compiler = 'mpich'
+            result.flags.append(arg)
         elif re.match(r'^-(l|L|Wl,).+', arg):
             pass
         # some parameters could look like filename, take as compile option
@@ -141,10 +144,13 @@ def split_command(command):
         else:
             result.flags.append(arg)
     # do extra check on number of source files
-    if  result.files:
+    if result.files:
         return result
     # linker command should be added into compilation database
-    elif len(result.files) == 0 and result.compiler == 'cuda' :
+    elif len(result.files) == 0 and result.compiler == 'cuda':
+        return result
+    # linker command should be added into compilation database
+    elif len(result.files) == 0 and result.compiler == 'mpich':
         return result
     else:
         return None
