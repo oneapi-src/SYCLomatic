@@ -17,6 +17,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstring>
+#include <mutex>
 #include <unordered_map>
 #include <utility>
 
@@ -61,7 +62,6 @@ typedef uint8_t byte_t;
 typedef cl::sycl::buffer<byte_t> buffer_t;
 
 // TODO:
-// - thread safety.
 // - integration with error handling - error code to be returned.
 // - integration with stream support - proper queue to be used.
 // - extend mmaped space when the limit is reached.
@@ -103,6 +103,7 @@ public:
 
   // Allocate
   void *mem_alloc(size_t size, cl::sycl::queue &queue) {
+    std::lock_guard<std::mutex> lock(m_mutex);
     if (next_free + size > mapped_address_space + mapped_region_size) {
       // TODO: proper error reporting.
       std::abort();
@@ -122,9 +123,44 @@ public:
 
   // Deallocate
   void mem_free(void *ptr) {
+    std::lock_guard<std::mutex> lock(m_mutex);
     auto it = get_map_iterator(ptr);
     m_map.erase(it);
   }
+
+  // map: device pointer -> allocation(buffer, alloc_prt, size)
+  allocation translate_ptr(void *ptr) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    auto it = get_map_iterator(ptr);
+    return it->second;
+  }
+
+  // Check if the pointer represents device pointer or not.
+  bool is_device_ptr(void *ptr) const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return (mapped_address_space <= ptr) &&
+           (ptr < mapped_address_space + mapped_region_size);
+  }
+
+  // Singleton to return the instance memory_manager.
+  // Using singleton enables header-only library, but may be problematic for
+  // thread safety.
+  static memory_manager &get_instance() {
+    static memory_manager m;
+    return m;
+  }
+
+private:
+  std::unordered_map<buffer_id_t, allocation> m_map_old;
+  std::map<byte_t *, allocation> m_map;
+  mutable std::mutex m_mutex;
+  byte_t *mapped_address_space;
+  byte_t *next_free;
+  const size_t mapped_region_size = 128ull * 1024 * 1024 * 1024;
+  const size_t alignment = 256;
+  // This padding may be defined to some positive value to debug
+  // out of bound accesses.
+  const size_t extra_padding = 0;
 
   std::map<byte_t *, allocation>::iterator get_map_iterator(void *ptr) {
     auto it = m_map.upper_bound((byte_t *)ptr);
@@ -143,37 +179,6 @@ public:
     }
     return it;
   }
-
-  // map: device pointer -> allocation(buffer, alloc_prt, size)
-  allocation &translate_ptr(void *ptr) {
-    auto it = get_map_iterator(ptr);
-    return it->second;
-  }
-
-  // Check if the pointer represents device pointer or not.
-  bool is_device_ptr(void *ptr) const {
-    return (mapped_address_space <= ptr) &&
-           (ptr < mapped_address_space + mapped_region_size);
-  }
-
-  // Singleton to return the instance memory_manager.
-  // Using singleton enables header-only library, but may be problematic for
-  // thread safety.
-  static memory_manager &get_instance() {
-    static memory_manager m;
-    return m;
-  }
-
-private:
-  std::unordered_map<buffer_id_t, allocation> m_map_old;
-  std::map<byte_t *, allocation> m_map;
-  byte_t *mapped_address_space;
-  byte_t *next_free;
-  const size_t mapped_region_size = 128ull * 1024 * 1024 * 1024;
-  const size_t alignment = 256;
-  // This padding may be defined to some positive value to debug
-  // out of bound accesses.
-  const size_t extra_padding = 0;
 };
 
 // malloc
@@ -236,7 +241,7 @@ static void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size,
     memcpy(to_ptr, from_ptr, size);
     break;
   case host_to_device: {
-    auto &alloc = mm.translate_ptr(to_ptr);
+    auto alloc = mm.translate_ptr(to_ptr);
     size_t offset = (byte_t *)to_ptr - alloc.alloc_ptr;
     q.submit([&](cl::sycl::handler &cgh) {
       auto r = cl::sycl::range<1>(size);
@@ -248,7 +253,7 @@ static void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size,
     });
   } break;
   case device_to_host: {
-    auto &alloc = mm.translate_ptr(from_ptr);
+    auto alloc = mm.translate_ptr(from_ptr);
     size_t offset = (byte_t *)from_ptr - alloc.alloc_ptr;
     q.submit([&](cl::sycl::handler &cgh) {
       auto r = cl::sycl::range<1>(size);
@@ -260,8 +265,8 @@ static void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size,
     });
   } break;
   case device_to_device: {
-    auto &to_alloc = mm.translate_ptr(to_ptr);
-    auto &from_alloc = mm.translate_ptr(from_ptr);
+    auto to_alloc = mm.translate_ptr(to_ptr);
+    auto from_alloc = mm.translate_ptr(from_ptr);
     size_t to_offset = (byte_t *)to_ptr - to_alloc.alloc_ptr;
     size_t from_offset = (byte_t *)from_ptr - from_alloc.alloc_ptr;
     q.submit([&](cl::sycl::handler &cgh) {
@@ -320,7 +325,7 @@ static buffer_t get_buffer(void *ptr) {
 */
 
 static std::pair<buffer_t, size_t> get_buffer_and_offset(void *ptr) {
-  auto &alloc = memory_manager::get_instance().translate_ptr(ptr);
+  auto alloc = memory_manager::get_instance().translate_ptr(ptr);
   size_t offset = (byte_t *)ptr - alloc.alloc_ptr;
   return std::make_pair(alloc.buffer, offset);
 }
@@ -330,7 +335,7 @@ static void sycl_memset(void *devPtr, int value, size_t count,
                         cl::sycl::queue q) {
   auto &mm = memory_manager::get_instance();
   assert(mm.is_device_ptr(devPtr));
-  auto &alloc = mm.translate_ptr(devPtr);
+  auto alloc = mm.translate_ptr(devPtr);
   size_t offset = (byte_t *)devPtr - alloc.alloc_ptr;
 
   q.submit([&](cl::sycl::handler &cgh) {
