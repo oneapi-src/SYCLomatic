@@ -1265,6 +1265,40 @@ void SyncThreadsRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(SyncThreadsRule)
 
+void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      varDecl(hasType(recordDecl(hasName("cudaFuncAttributes")))).bind("decl"),
+      this);
+  MF.addMatcher(
+      callExpr(callee(functionDecl(hasAnyName("cudaFuncGetAttributes"))))
+          .bind("call"),
+      this);
+  MF.addMatcher(memberExpr(hasObjectExpression(hasType(
+                               recordDecl(hasName("cudaFuncAttributes")))))
+                    .bind("member"),
+                this);
+}
+
+void KernelFunctionInfoRule::run(const MatchFinder::MatchResult &Result) {
+  if (auto V = getNodeAsType<VarDecl>(Result, "decl"))
+    emplaceTransformation(
+        new ReplaceTypeInVarDecl(V, "sycl_kernel_function_info"));
+  else if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
+    emplaceTransformation(
+        new ReplaceToken(C->getBeginLoc(), "getSyclKernelFunctionInfo"));
+    auto FuncArg = C->getArg(1);
+    emplaceTransformation(new InsertBeforeStmt(FuncArg, "(const void *)"));
+  } else if (auto M = getNodeAsType<MemberExpr>(Result, "member")) {
+    auto MemberName = M->getMemberNameInfo();
+    auto NameMap = AttributesNamesMap.find(MemberName.getAsString());
+    if (NameMap != AttributesNamesMap.end())
+      emplaceTransformation(new ReplaceToken(MemberName.getBeginLoc(),
+                                             std::string(NameMap->second)));
+  }
+}
+
+REGISTER_RULE(KernelFunctionInfoRule)
+
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS) {
   this->Context = &Context;
   for (auto &I : Storage) {

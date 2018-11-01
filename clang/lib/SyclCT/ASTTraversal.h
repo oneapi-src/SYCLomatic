@@ -515,6 +515,21 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+/// Translate cudaFunctionAttributes to Sycl kernel info, defined in
+/// runtime headers.
+// TODO: only maxThreadsPerBlock is supported.
+class KernelFunctionInfoRule
+    : public NamedTranslationRule<KernelFunctionInfoRule> {
+public:
+  KernelFunctionInfoRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+  static const std::map<std::string, std::string> AttributesNamesMap;
+};
+
 template <typename T> class RuleRegister {
 public:
   RuleRegister(const char *ID, const std::string &Name) {

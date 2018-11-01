@@ -2,6 +2,7 @@ set(syclct_rt_files
   include/syclct.hpp
   include/syclct_device.hpp
   include/syclct_memory.hpp
+  include/syclct_kernel.hpp
 )
 
 set(output_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include/syclct)

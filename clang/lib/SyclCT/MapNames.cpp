@@ -139,3 +139,9 @@ const std::map<std::string, std::string> MathFunctionsRule::FunctionNamesMap{
     {"tgamma", "cl::sycl::tgamma"},
     {"trunc", "cl::sycl::trunc"},
 };
+
+// cudaFuncAttributes names translation
+const std::map<std::string, std::string>
+    KernelFunctionInfoRule::AttributesNamesMap{
+        {"maxThreadsPerBlock", "max_work_group_size"},
+    };
