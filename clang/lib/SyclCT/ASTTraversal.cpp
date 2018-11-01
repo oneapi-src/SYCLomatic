@@ -136,8 +136,7 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   else
     llvm_unreachable("Unknown field name");
 
-  // TODO: do not assume the argument is named "item"
-  std::string Replacement = "item";
+  std::string Replacement = getItemName();
   StringRef BuiltinName = VD->getName();
 
   if (BuiltinName == "threadIdx")
@@ -1185,7 +1184,7 @@ void KernelIterationSpaceRule::registerMatcher(MatchFinder &MF) {
 void KernelIterationSpaceRule::run(const MatchFinder::MatchResult &Result) {
   if (auto FD = getNodeAsType<FunctionDecl>(Result, "functionDecl")) {
     std::stringstream InsertArgs;
-    InsertArgs << "cl::sycl::nd_item<3> item";
+    InsertArgs << "cl::sycl::nd_item<3> " + getItemName();
     // check if there is shared variable, move them to args.
     std::string KernelFunName = FD->getNameAsString();
     if (KernelTransAssist::hasKernelInfo(KernelFunName)) {
@@ -1256,9 +1255,7 @@ void SyncThreadsRule::registerMatcher(MatchFinder &MF) {
 
 void SyncThreadsRule::run(const MatchFinder::MatchResult &Result) {
   if (auto CE = getNodeAsType<CallExpr>(Result, "syncthreads")) {
-    // TODO: Variable name "item" comes from KernelIterationSpaceRule, need a
-    // mechanism to check/guarantee the consistency.
-    std::string Replacement = "item.barrier()";
+    std::string Replacement = getItemName() + ".barrier()";
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   }
 }

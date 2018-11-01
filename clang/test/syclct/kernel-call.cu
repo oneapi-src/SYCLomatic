@@ -1,15 +1,15 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck --input-file %T/kernel-call.sycl.cpp --match-full-lines %s
 
-// CHECK: void testKernelPtr(cl::sycl::nd_item<3> item, const int *L, const int *M, int N) {
+// CHECK: void testKernelPtr(cl::sycl::nd_item<3> [[ITEMNAME:item_[a-f0-9]+]], const int *L, const int *M, int N) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
-  // CHECK: int gtid = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
+  // CHECK: int gtid = [[ITEMNAME]].get_group(0) * [[ITEMNAME]].get_local_range().get(0) + [[ITEMNAME]].get_local_id(0);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
-// CHECK: void testKernel(cl::sycl::nd_item<3> item, int L, int M, int N) {
+// CHECK: void testKernel(cl::sycl::nd_item<3> [[ITEMNAME:item_[a-f0-9]+]], int L, int M, int N) {
 __global__ void testKernel(int L, int M, int N) {
-  // CHECK: int gtid = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
+  // CHECK: int gtid = [[ITEMNAME]].get_group(0) * [[ITEMNAME]].get_local_range().get(0) + [[ITEMNAME]].get_local_id(0);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 int main() {

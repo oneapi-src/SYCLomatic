@@ -218,6 +218,12 @@ protected:
     return "";
   }
 
+  const std::string &getItemName() {
+    const static std::string ItemName =
+        "item_" + getHashAsString(TM->InRoot).substr(0, 6);
+    return ItemName;
+  }
+
   // Get node from match result map. And also check if the node's host file is
   // in the InRoot path.
   template <typename NodeType>

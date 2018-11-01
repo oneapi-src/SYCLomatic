@@ -4,9 +4,9 @@
 // Test that only IterationSpaceBuiltinRule is being run
 // CHECK:__global__ void test_00() {
 __global__ void test_00() {
-  // CHECK: size_t tix = item.get_local_id(0);
-  // CHECK: size_t tiy = item.get_local_id(1);
-  // CHECK: size_t tiz = item.get_local_id(2);
+  // CHECK: size_t tix = item_{{[a-f0-9]+}}.get_local_id(0);
+  // CHECK: size_t tiy = item_{{[a-f0-9]+}}.get_local_id(1);
+  // CHECK: size_t tiz = item_{{[a-f0-9]+}}.get_local_id(2);
   size_t tix = threadIdx.x;
   size_t tiy = threadIdx.y;
   size_t tiz = threadIdx.z;

@@ -1,4 +1,4 @@
-//===--- syclct_device.hpp ------------------------------*- C++ -*---===//
+//===--- syclct_kernel.hpp ------------------------------*- C++ -*---===//
 //
 // Copyright (C) 2018 Intel Corporation. All rights reserved.
 //

@@ -4,16 +4,16 @@
 void printf(const char *format, unsigned char data);
 
 template <class TName, unsigned N, class TData>
-// CHECK: void testKernelPtr(cl::sycl::nd_item<3> item, const TData *L, const TData *M) {
+// CHECK: void testKernelPtr(cl::sycl::nd_item<3> [[ITEMNAME:item_[a-f0-9]+]], const TData *L, const TData *M) {
 __global__ void testKernelPtr(const TData *L, const TData *M) {
-  // CHECK: int gtid = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
+  // CHECK: int gtid = [[ITEMNAME]].get_group(0) * [[ITEMNAME]].get_local_range().get(0) + [[ITEMNAME]].get_local_id(0);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
 template<class TData>
-// CHECK: void testKernel(cl::sycl::nd_item<3> item, TData L, TData M, int N) {
+// CHECK: void testKernel(cl::sycl::nd_item<3> [[ITEMNAME:item_[a-f0-9]+]], TData L, TData M, int N) {
 __global__ void testKernel(TData L, TData M, int N) {
-  // CHECK: int gtid = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
+  // CHECK: int gtid = [[ITEMNAME]].get_group(0) * [[ITEMNAME]].get_local_range().get(0) + [[ITEMNAME]].get_local_id(0);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
   L = M;
 }

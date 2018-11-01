@@ -5,9 +5,9 @@
 #include "test-header.cuh"
 
 __global__ void foo() {
-  // CHECK: size_t tix = item.get_local_id(0);
-  // CHECK: size_t tiy = item.get_local_id(1);
-  // CHECK: size_t tiz = item.get_local_id(2);
+  // CHECK: size_t tix = item_{{[a-f0-9]+}}.get_local_id(0);
+  // CHECK: size_t tiy = item_{{[a-f0-9]+}}.get_local_id(1);
+  // CHECK: size_t tiz = item_{{[a-f0-9]+}}.get_local_id(2);
 
   size_t tix = threadIdx.x;
   size_t tiy = threadIdx.y;
@@ -17,9 +17,9 @@ __global__ void foo() {
   // size_t biy = blockIdx.y;
   // size_t biz = blockIdx.z;
 
-  // CHECK: size_t bdx = item.get_local_range().get(0);
-  // CHECK: size_t bdy = item.get_local_range().get(1);
-  // CHECK: size_t bdz = item.get_local_range().get(2);
+  // CHECK: size_t bdx = item_{{[a-f0-9]+}}.get_local_range().get(0);
+  // CHECK: size_t bdy = item_{{[a-f0-9]+}}.get_local_range().get(1);
+  // CHECK: size_t bdz = item_{{[a-f0-9]+}}.get_local_range().get(2);
 
   size_t bdx = blockDim.x;
   size_t bdy = blockDim.y;

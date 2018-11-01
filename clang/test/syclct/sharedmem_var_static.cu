@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #define SIZE 100
-// CHECK: void staticReverse(cl::sycl::nd_item<3> item, int s[], int *d, int n) {
+// CHECK: void staticReverse(cl::sycl::nd_item<3> item_{{[a-f0-9]+}}, int s[], int *d, int n) {
 // CHECK-NEXT:  // the size of s is static
 __global__ void staticReverse(int *d, int n) {
   __shared__ int s[64]; // the size of s is static
