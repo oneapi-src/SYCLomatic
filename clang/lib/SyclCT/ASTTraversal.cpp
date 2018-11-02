@@ -16,9 +16,9 @@
 #include "Utility.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "llvm/ADT/StringSet.h"
+#include <iostream>
 #include <string>
 #include <utility>
-#include <iostream>
 
 using namespace clang;
 using namespace clang::ast_matchers;
@@ -38,7 +38,6 @@ void IncludesCallbacks::InclusionDirective(
 
   // Insert SYCL headers.
   if (!SyclHeaderInserted) {
-
     std::string Replacement = std::string("#include <CL/sycl.hpp>") +
                               getNL(FilenameRange.getEnd(), SM) +
                               "#include <syclct/syclct.hpp>" +
@@ -51,7 +50,6 @@ void IncludesCallbacks::InclusionDirective(
 
   std::string IncludePath = SearchPath;
   makeCanonical(IncludePath);
-
   std::string IncludingFile = SM.getFilename(HashLoc);
 
   // replace "#include <math.h>" with <cmath>
@@ -61,11 +59,24 @@ void IncludesCallbacks::InclusionDirective(
                         /*IsTokenRange=*/false),
         "#include <cmath>"));
   }
+
   if (!isChildPath(CudaPath, IncludePath) &&
-      IncludePath.compare(0 , 15,
-          "/usr/local/cuda",
-          15) /*CudaPath detection have not consider soft link, here do special
-          for /usr/local/cuda*/) {
+      // CudaPath detection have not consider soft link, here do special
+      // for /usr/local/cuda
+      IncludePath.compare(0, 15, "/usr/local/cuda", 15)) {
+
+    // Replace "#include "*.cuh"" with "include "*.sycl.hpp""
+    if (!IsAngled && FileName.endswith(StringRef(".cuh"))) {
+      CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                                  /* IsTokenRange */ false);
+      std::string NewFileName = "#include \"" +
+                                FileName.drop_back(strlen(".cuh")).str() +
+                                ".sycl.hpp\"";
+      TransformSet.emplace_back(
+          new ReplaceInclude(InsertRange, std::move(NewFileName)));
+      return;
+    }
+
     // if <cuda_runtime.h>, no matter where it from, replace with sycl header
     if (!(IsAngled && FileName.compare(StringRef("cuda_runtime.h")) == 0))
       return;
@@ -1001,13 +1012,13 @@ void SharedMemVarRule::run(const MatchFinder::MatchResult &Result) {
   //  [KernelIterationSpaceRule] [KernelCallRule]
   if (KernelTransAssist::hasKernelInfo(KelFunName)) {
     KernelInfo &KI = KernelTransAssist::getKernelInfo(KelFunName);
-    KI.insertSMVInfo(TypeName, SharedVarName, IsArray,
-                         Size.toString(10, false), false /*IsExtern*/);
+    KI.insertSMVInfo(TypeName, SharedVarName, IsArray, Size.toString(10, false),
+                     false /*IsExtern*/);
     KI.appendKernelArgs(", " + TypeName + " " + SharedVarName + "[]");
   } else {
     KernelInfo KI(KelFunName);
-    KI.insertSMVInfo(TypeName, SharedVarName, IsArray,
-                         Size.toString(10, false), false /*IsExtern*/);
+    KI.insertSMVInfo(TypeName, SharedVarName, IsArray, Size.toString(10, false),
+                     false /*IsExtern*/);
     KernelTransAssist::insertKernel(KelFunName, KI);
     KI.appendKernelArgs(", " + TypeName + " " + SharedVarName + "[]");
   }
