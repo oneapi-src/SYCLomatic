@@ -164,6 +164,13 @@ protected:
 
   const CompilerInstance &getCompilerInstance();
 
+  // Record of reported comments for each line
+  // Map a source line (file name + line number) to a set of reported comment
+  // ids
+  static std::unordered_map<std::string,
+                            std::unordered_set</* Comment ID */ int>>
+      ReportedComment;
+
   // Emits a warning/error/note and/or comment depending on MsgID. For details
   // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
   template <typename IDTy, typename... Ts>
@@ -171,6 +178,29 @@ protected:
     DiagnosticsUtils::report<IDTy, Ts...>(SL, MsgID, getCompilerInstance(),
                                           TransformSet,
                                           std::forward<Ts>(Vals)...);
+  }
+
+  template <typename... Ts>
+  void report(SourceLocation SL, Comments MsgID, Ts &&... Vals) {
+    auto &SM = getCompilerInstance().getSourceManager();
+
+    // Concatenate source file and line number (eg: xxx.cpp:4)
+    std::string SourceAndLine;
+    llvm::raw_string_ostream RSO(SourceAndLine);
+    RSO << SM.getBufferName(SL) << ":" << SM.getPresumedLineNumber(SL);
+    RSO.flush();
+
+    if (ReportedComment.count(SourceAndLine) == 0) {
+      // No comment has been reported for this line before.
+      ReportedComment[SourceAndLine].insert(static_cast<int>(MsgID));
+    } else if (ReportedComment[SourceAndLine].count(static_cast<int>(MsgID)) !=
+               0) {
+      // Same comment has been inserted for this line.
+      // Avoid inserting duplicated comment for the same line.
+      return;
+    }
+    DiagnosticsUtils::report<Comments>(SL, MsgID, getCompilerInstance(),
+                                       TransformSet, std::forward<Ts>(Vals)...);
   }
 
   /// Dereference.

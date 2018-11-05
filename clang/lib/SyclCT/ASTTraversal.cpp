@@ -26,6 +26,9 @@ using namespace clang::syclct;
 
 extern std::string CudaPath;
 
+std::unordered_map<std::string, std::unordered_set</* Comment ID */ int>>
+    TranslationRule::ReportedComment;
+
 void IncludesCallbacks::InclusionDirective(
     SourceLocation HashLoc, const Token &IncludeTok, StringRef FileName,
     bool IsAngled, CharSourceRange FilenameRange, const FileEntry *File,

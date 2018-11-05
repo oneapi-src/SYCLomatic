@@ -57,9 +57,6 @@ int main(int argc, char **argv) {
 // CHECK:/*
 // CHECK-NEXT:SYCLCT1005: The device version is different. You may want to rewrite this code
 // CHECK-NEXT:*/
-// CHECK-NEXT:/*
-// CHECK-NEXT:SYCLCT1005: The device version is different. You may want to rewrite this code
-// CHECK-NEXT:*/
 // CHECK-NEXT:int n = deviceProp.minor_version() / deviceProp.major_version();
   int n = deviceProp.minor / deviceProp.major;
 
