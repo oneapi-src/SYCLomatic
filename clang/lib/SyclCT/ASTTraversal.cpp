@@ -953,7 +953,7 @@ REGISTER_RULE(KernelCallRule)
 //  [KernelIterationSpaceRule] __shared__ varialbe will be declared as
 //      args of kernel function.
 //  [KernelCallRule]__shared__ variable also will be declared as accessor
-//      with cl::sycl::access::target::local in sycl workgroup,
+//      with cl::sycl::access::target::local in sycl command group,
 //      when call kernel function, the accssor will pass to kernel function
 void SharedMemVarRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(varDecl(isExpansionInMainFile(),
@@ -1027,6 +1027,127 @@ void SharedMemVarRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(SharedMemVarRule)
+
+///  Translation rule for constant memory variables.
+/// __constant__ var translation need 3 rules to work together, as follow:
+//  [ConstantMemVarRule] Here try to remove __constant__ variable declare,
+//      also this rule records constant variable info for other rule
+//  [KernelIterationSpaceRule] __constant__ varialbe will be declared as
+//      args of kernel function.
+//  [KernelCallRule]__constant__ variable also will be declared as accessor
+//      with auto  const_acc =
+//      const_buf.get_access<cl::sycl::access::mode::read,
+//  cl::sycl::access::target::constant_buffer>(cgh) in sycl command group,
+//      when call kernel function, the accssor will pass to kernel function
+void ConstantMemVarRule::registerMatcher(MatchFinder &MF) {
+
+  MF.addMatcher(varDecl(hasAttr(clang::attr::CUDAConstant))
+                    .bind("cudaConstantMemVarDecl"),
+                this);
+
+  MF.addMatcher(
+      functionDecl(hasDescendant(declRefExpr(to(varDecl(hasAttr(
+                                                 clang::attr::CUDAConstant))))
+                                     .bind("cudaConstantMemVarRef")),
+                   hasAttr(attr::CUDAGlobal))
+          .bind("cudaKernelFuction"),
+      this);
+}
+
+void ConstantMemVarRule::run(const MatchFinder::MatchResult &Result) {
+  std::string ConstantVarRefName;
+  std::string KelFunName;
+
+  auto *ConstantMemVar =
+      getNodeAsType<VarDecl>(Result, "cudaConstantMemVarDecl");
+  if (ConstantMemVar != NULL) {
+    std::string ConstantVarName = ConstantMemVar->getNameAsString();
+
+    clang::QualType QType = ConstantMemVar->getType();
+
+    Size = 0u;
+    if (QType->isArrayType()) {
+      IsArray = true;
+      if (QType->isConstantArrayType()) {
+        Size =
+            cast<ConstantArrayType>(QType->getAsArrayTypeUnsafe())->getSize();
+      }
+      const clang::ArrayType *AT = QType.getTypePtr()->getAsArrayTypeUnsafe();
+      QType = AT->getElementType();
+      if (QType.getTypePtr()->isBuiltinType()) {
+        QType = QType.getCanonicalType();
+        const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
+        if (BT) {
+          clang::LangOptions LO;
+          LO.CUDA = true;
+          clang::PrintingPolicy policy(LO);
+          TypeName = BT->getName(policy);
+        }
+      } else {
+        TypeName = QType.getAsString();
+      }
+      IsArray = true;
+    } else {
+      IsArray = false;
+      Size = 1u;
+      const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
+      if (BT) {
+        clang::LangOptions LO;
+        LO.CUDA = true;
+        clang::PrintingPolicy policy(LO);
+        TypeName = BT->getName(policy);
+      }
+    }
+
+    const AttrVec &AV = ConstantMemVar->getAttrs();
+    for (const Attr *A : AV) {
+      attr::Kind AK = A->getKind();
+      if (!A->isImplicit() && (AK == attr::CUDAConstant))
+        emplaceTransformation(new RemoveAttr(A));
+    }
+  }
+
+  auto *KernelFunction =
+      getNodeAsType<FunctionDecl>(Result, "cudaKernelFuction");
+  auto *ConstantMemVarRef =
+      getNodeAsType<DeclRefExpr>(Result, "cudaConstantMemVarRef");
+
+  if (ConstantMemVarRef != NULL && KernelFunction != NULL) {
+    ConstantVarRefName =
+        ConstantMemVarRef->getNameInfo().getName().getAsString();
+    KelFunName = KernelFunction->getNameAsString();
+    std::string ReplaceStr = "const_acc";
+    if (IsArray) {
+      emplaceTransformation(
+          new ReplaceStmt(ConstantMemVarRef, std::move(ReplaceStr)));
+    } else {
+      emplaceTransformation(
+          new ReplaceStmt(ConstantMemVarRef, std::move(ReplaceStr + "[0]")));
+    }
+  }
+
+  if (!TypeName.empty() && !KelFunName.empty()) {
+    // Store the constatn analysis info in kernelinfo for other rule use:
+    //  [KernelIterationSpaceRule] [KernelCallRule]
+    std::string HashID = getHashID();
+    if (KernelTransAssist::hasKernelInfo(KelFunName)) {
+      KernelInfo &KI = KernelTransAssist::getKernelInfo(KelFunName);
+      // Store Constant Mem info
+      KI.insertCMVInfo(TypeName, ConstantVarRefName, IsArray,
+                       Size.toString(10, false), HashID);
+      KI.appendKernelArgs(", " + TypeName + " " + ConstantVarRefName + "[]");
+    } else {
+      KernelInfo KI(KelFunName);
+      // Store Constant Mem info
+      KI.insertCMVInfo(TypeName, ConstantVarRefName, IsArray,
+                       Size.toString(10, false), HashID);
+      KernelTransAssist::insertKernel(KelFunName, KI);
+      KI.appendKernelArgs(", " + TypeName + " " + ConstantVarRefName + "[]");
+    }
+  }
+}
+
+REGISTER_RULE(ConstantMemVarRule)
 
 // Memory translation rules live here.
 void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {

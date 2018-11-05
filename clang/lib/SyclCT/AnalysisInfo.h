@@ -21,60 +21,104 @@ namespace clang {
 namespace syclct {
 
 class KernelInfo;
-class ShareVarInfo;
+class VarInfo;
 // {kernel-name,  kernel-info}
 using KernelInfoMap = std::map<std::string, KernelInfo>;
 // {share-name, share-info}
-using SMVInfoMap = std::map<std::string, ShareVarInfo>;
+using SMVInfoMap = std::map<std::string, VarInfo>;
 
-class ShareVarInfo {
+class VarInfo {
 public:
-  ShareVarInfo() {}
-  ShareVarInfo(std::string SVT, std::string SVN, bool IsArray, std::string Size,
-               bool IsExtern)
-      : SharedVarType(SVT), SharedVarName(SVN), IsArray(IsArray), Size(Size),
-        IsExtern(IsExtern) {}
+  VarInfo() {}
+  // This constructor is used to insert share variable.
+  VarInfo(std::string SVT, std::string SVN, bool IsArray, std::string Size,
+          bool IsExtern)
+      : VarType(SVT), VarName(SVN), IsArray(IsArray), Size(Size),
+        IsExtern(IsExtern), IsShareVar(true) {}
+
+  // This Constructor is used to insert const variable
+  VarInfo(std::string CVT, std::string CVN, bool IsArray, std::string Size,
+          std::string HashIDForConstantMem)
+      : VarType(CVT), VarName(CVN), IsArray(IsArray), Size(Size),
+        IsExtern(false), IsShareVar(false),
+        HashIDForConstantMem(HashIDForConstantMem) {}
 
 public:
-  /// interface used to set sharememsize from "<<<x,x,sharememsize,x>>>"
-  void setKernelSMVSize(std::string Size) { KernelShareMemSize = Size; }
+  /// interface used to set memsize from "<<<x,x,memsize,x>>>"
+  void setKernelSMVSize(std::string Size) { KernelMemSize = Size; }
   ///
-  std::string &getType() { return SharedVarType; }
-  std::string &getName() { return SharedVarName; }
+  std::string &getType() { return VarType; }
+  std::string &getName() { return VarName; }
   std::string &getSize() { return Size; }
   bool isArray() { return IsArray; }
   bool isExtern() { return IsExtern; }
+
   /// declcare __shared__ variable as sycl's accessor.
   std::string getAccessorDeclare() {
     std::string S;
     if (IsExtern) {
-      S = KernelShareMemSize;
+      S = KernelMemSize;
     } else {
       S = Size;
     }
     std::string Temp;
-    Temp = "cl::sycl::accessor<" + SharedVarType +
-           ", 1, cl::sycl::access::mode::read_write, "
-           "cl::sycl::access::target::local> " +
-           SharedVarName + "(cl::sycl::range<1>(" + S + "), cgh);";
+
+    if (IsShareVar) {
+      // declcare __shared__ variable as sycl's accessor.
+      Temp = "cl::sycl::accessor<" + VarType +
+             ", 1, cl::sycl::access::mode::read_write, "
+             "cl::sycl::access::target::local> " +
+             VarName + "(cl::sycl::range<1>(" + S + "), cgh);";
+    } else {
+      // declcare __constant__ variable as sycl's accessor.
+      std::string AccVarName = "const_acc_" + HashIDForConstantMem;
+      if (IsArray) {
+        Temp = "cl::sycl::buffer<cl::sycl::cl_" + VarType + ", 1> const_buf(&" +
+               VarName + "[0], cl::sycl::range<1>(" + S + "));\n";
+      } else {
+        Temp = "cl::sycl::buffer<cl::sycl::cl_" + VarType + ", 1> const_buf(&" +
+               VarName + ", cl::sycl::range<1>(" + S + "));\n";
+      }
+
+      Temp = Temp + "        auto  " + AccVarName +
+             " = const_buf.get_access<cl::sycl::" +
+             "access::mode::read, "
+             "cl::sycl::access::target::constant_buffer>(cgh);";
+    }
+
     return Temp;
   }
   /// pass sycl's accessor for shared memory variable to kernel function.
   std::string getAsFuncArgs() {
-    return "(" + SharedVarType + "*)" + SharedVarName + ".get_pointer()";
+    if (IsShareVar) {
+      return "(" + VarType + "*)" + VarName + ".get_pointer()";
+    } else {
+      std::string AccVarName = "const_acc_" + HashIDForConstantMem;
+      return AccVarName;
+    }
   }
-  /// declare shared memory variable in kernel function.
+  /// declare shared or constant memory variable in kernel function.
   std::string getAsFuncArgDeclare() {
-    return SharedVarType + " " + SharedVarName + "[]";
+    if (IsShareVar) {
+      // declare shared memory variable in kernel function.
+      return VarType + " " + VarName + "[]";
+    } else {
+      // declare constant memory variable in kernel function.
+      return "cl::sycl::accessor<" + VarType +
+             ", 1, cl::sycl::access::mode::read, "
+             "cl::sycl::access::target::constant_buffer>  const_acc";
+    }
   }
 
 private:
-  std::string SharedVarType;
-  std::string SharedVarName;
+  std::string VarType;
+  std::string VarName;
   bool IsArray;
+  bool IsShareVar; // true: Share Mem Var   false: Constant Mem Var
   std::string Size;
   bool IsExtern;
-  std::string KernelShareMemSize;
+  std::string KernelMemSize;
+  std::string HashIDForConstantMem;
 };
 
 /// Record kernel relative info for multi rules co-operate when translate
@@ -87,19 +131,34 @@ public:
   /// SMV: Shared Mem Variable
   bool insertSMVInfo(std::string SVT, std::string SVN, bool IsArray,
                      std::string Size, bool IsExtern) {
-    auto It = ShareVarMap.find(SVT);
-    if (It != ShareVarMap.end()) {
+    auto It = VarMap.find(SVT);
+    if (It != VarMap.end()) {
       return false;
     }
-    ShareVarInfo SVI(SVT, SVN, IsArray, Size, IsExtern);
-    ShareVarMap[SVN] = SVI;
+    VarInfo SVI(SVT, SVN, IsArray, Size, IsExtern);
+    VarMap[SVN] = SVI;
     return true;
   }
-  bool hasSMVDefined() { return ShareVarMap.size() > 0; }
-  uint getNumSMVDefined() { return (uint)ShareVarMap.size(); }
+
+  /// CMV: Constant Mem Variable
+  bool insertCMVInfo(std::string CVT, std::string CVN, bool IsArray,
+                     std::string Size, std::string HashIDForConstantMem) {
+    auto It = VarMap.find(CVT);
+    if (It != VarMap.end()) {
+      return false;
+    }
+    VarInfo CVI(CVT, CVN, IsArray, Size, HashIDForConstantMem);
+    VarMap[CVN] = CVI;
+    return true;
+  }
+
+  bool hasSMVDefined() { return VarMap.size() > 0; }
+
+  uint getNumSMVDefined() { return (uint)VarMap.size(); }
+
   std::string declareLocalAcc(const char *NL, StringRef Indent) {
     std::string Var;
-    for (auto KV : ShareVarMap) {
+    for (auto KV : VarMap) {
       Var += Indent;
       Var += KV.second.getAccessorDeclare();
       Var += NL;
@@ -109,7 +168,7 @@ public:
   std::string declareSMVAsArgs() {
     std::string Var;
     int i = 0;
-    for (auto KV : ShareVarMap) {
+    for (auto KV : VarMap) {
       if (i > 0)
         Var += ", ";
       Var += KV.second.getAsFuncArgDeclare();
@@ -121,7 +180,7 @@ public:
   std::string passSMVAsArgs() {
     std::string Var;
     int i = 0;
-    for (auto KV : ShareVarMap) {
+    for (auto KV : VarMap) {
       if (i > 0)
         Var += ", ";
       Var += KV.second.getAsFuncArgs();
@@ -131,12 +190,11 @@ public:
     return Var;
   }
   void setKernelSMVSize(std::string Size) {
-    if (ShareVarMap.size() == 0) {
+    if (VarMap.size() == 0) {
       assert(0);
     }
-    for (SMVInfoMap::iterator it = ShareVarMap.begin(); it != ShareVarMap.end();
-         ++it) {
-      ShareVarInfo &SVI = it->second;
+    for (SMVInfoMap::iterator it = VarMap.begin(); it != VarMap.end(); ++it) {
+      VarInfo &SVI = it->second;
       if (SVI.isExtern()) {
         /// set the 1st one matched.
         SVI.setKernelSMVSize(Size);
@@ -146,12 +204,12 @@ public:
     assert(0);
     return;
   }
-  SMVInfoMap &getSMVInfoMap() { return ShareVarMap; }
+  SMVInfoMap &getSMVInfoMap() { return VarMap; }
   void appendKernelArgs(std::string NewArgs) { KernelNewArgs += NewArgs; }
   std::string &getKernelArgs() { return KernelNewArgs; }
 
 private:
-  SMVInfoMap ShareVarMap;
+  SMVInfoMap VarMap;
   std::string KernelNewArgs;
   std::string KernelName;
 };
@@ -188,7 +246,7 @@ public:
   }
 };
 
-} // namespace cu2sycl
+} // namespace syclct
 } // namespace clang
 
 #endif // CU2SYCL_ANALYSIS_INFO_H

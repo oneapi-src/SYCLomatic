@@ -224,6 +224,10 @@ protected:
     return ItemName;
   }
 
+  const std::string &getHashID() {
+    const static std::string HashID = getHashAsString(TM->InRoot).substr(0, 6);
+    return HashID;
+  }
   // Get node from match result map. And also check if the node's host file is
   // in the InRoot path.
   template <typename NodeType>
@@ -267,7 +271,7 @@ public:
   bool isTranslationRule() const override { return true; }
   static bool classof(const ASTTraversal *T) { return T->isTranslationRule(); }
 
-  // @RulesDependent : rules are sepeerate by ","
+  // @RulesDependent : rules are separated by ","
   void SetRuleProperty(int RType, std::string RulesDependent = "") {
     std::vector<std::string> RulesNames;
     // Separate rule string into list by comma
@@ -280,6 +284,9 @@ public:
         Previous = Current + 1;
         Current = RulesDependent.find(',', Previous);
       }
+      std::string Rule = RulesDependent.substr(Previous, Current - Previous);
+      Rule.erase(std::remove(Rule.begin(), Rule.end(), ' '),
+                 Rule.end()); // Remove space if exists
       RulesNames.push_back(RulesDependent.substr(Previous, Current - Previous));
     }
     RuleProperty.RType = RType;
@@ -435,7 +442,8 @@ public:
 class KernelCallRule : public NamedTranslationRule<KernelCallRule> {
 public:
   KernelCallRule() {
-    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile, "SharedMemVarRule");
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile,
+                    "SharedMemVarRule, ConstantMemVarRule");
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
@@ -445,6 +453,18 @@ public:
 class SharedMemVarRule : public NamedTranslationRule<SharedMemVarRule> {
 public:
   SharedMemVarRule() { SetRuleProperty(ApplyToCudaFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
+/// Translation rule for constant memory variables.
+class ConstantMemVarRule : public NamedTranslationRule<ConstantMemVarRule> {
+  llvm::APInt Size;
+  std::string TypeName;
+  bool IsArray;
+
+public:
+  ConstantMemVarRule() { SetRuleProperty(ApplyToCudaFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
