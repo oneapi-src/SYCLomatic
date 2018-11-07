@@ -29,51 +29,66 @@ using VarInfoMap = std::map<std::string, VarInfo>;
 
 class VarInfo {
 public:
-  // This constructor is used to insert share variable.
-  VarInfo(std::string SVT, std::string SVN, bool IsArray, std::string Size,
-          bool IsExtern)
-      : VarType(SVT), VarName(SVN), IsArray(IsArray), Size(Size),
-        IsExtern(IsExtern), VarAttr(VarAttrKind::Shared) {}
+  enum class VarAttrKind : unsigned { Shared = 0, Constant, Device };
+
+  VarInfo(std::string SVN, std::string SVT, bool IsArray,
+          std ::vector<std::string> &Size, bool IsExtern, bool IsTemplateType,
+          unsigned TemplateIndex)
+      : VarType(SVT), VarName(SVN), IsArray(IsArray),
+        ArraySize(std::move(Size)), IsExtern(IsExtern),
+        VarAttr(VarAttrKind::Shared), IsTemplateType(IsTemplateType),
+        TemplateIndex(TemplateIndex) {}
 
   // This Constructor is used to insert const variable
-  VarInfo(std::string CVT, std::string CVN, bool IsArray, std::string Size,
+  VarInfo(std::string CVN, std::string CVT, bool IsArray, std::string Size,
           std::string HashIDForConstantMem)
-      : VarType(CVT), VarName(CVN), IsArray(IsArray), Size(Size),
-        IsExtern(false), VarAttr(VarAttrKind::Constant),
-        HashIDForConstantMem(HashIDForConstantMem) {}
+      : VarType(CVT), VarName(CVN), IsArray(IsArray), IsExtern(false),
+        VarAttr(VarAttrKind::Constant),
+        HashIDForConstantMem(HashIDForConstantMem), IsTemplateType(false) {
+    ArraySize.push_back(Size);
+  }
 
   // This Constructor is used to insert device variable
-  VarInfo(std::string CVT, std::string CVN, bool IsArray, std::string Size)
-      : VarType(CVT), VarName(CVN), IsArray(IsArray), Size(Size),
-        IsExtern(false), VarAttr(VarAttrKind::Device) {}
+  VarInfo(std::string CVN, std::string CVT, bool IsArray, std::string Size)
+      : VarType(CVT), VarName(CVN), IsArray(IsArray), IsExtern(false),
+        VarAttr(VarAttrKind::Device) {
+    ArraySize.push_back(Size);
+  }
 
 public:
   /// interface used to set memsize from "<<<x,x,memsize,x>>>"
-  void setKernelMVSize(std::string Size) { KernelMemSize = Size; }
+  void setKernelMVSize(std::string Size) {
+    if (isExtern()) {
+      ArraySize.clear();
+      ArraySize.push_back(Size);
+    }
+  }
+  /// interface used to set sharememtype while it's template type
+  void setKernelSMVType(std::string Type) { VarType = Type; }
   ///
   std::string &getType() { return VarType; }
   std::string &getName() { return VarName; }
-  std::string &getSize() { return Size; }
+  unsigned getTemplateIndex() { return TemplateIndex; }
   bool isArray() { return IsArray; }
   bool isExtern() { return IsExtern; }
-
+  bool isTemplateType() { return IsTemplateType; }
   /// declcare __shared__ variable as sycl's accessor.
   std::string getAccessorDeclare() {
-    std::string S;
-    if (IsExtern) {
-      S = KernelMemSize;
-    } else {
-      S = Size;
-    }
+    std::string Range =
+        "cl::sycl::range<" + std::to_string(ArraySize.size()) + ">(";
+    for (auto &Size : ArraySize)
+      Range += Size + ", ";
+    Range.replace(Range.size() - 2, 2, ")");
     std::string Temp;
 
     switch (VarAttr) {
     case VarAttrKind::Shared: {
       // declcare __shared__ variable as sycl's accessor.
-      Temp = "cl::sycl::accessor<" + VarType +
-             ", 1, cl::sycl::access::mode::read_write, "
+      Temp = "cl::sycl::accessor<" + VarType + ", " +
+             std::to_string(ArraySize.size()) +
+             ", cl::sycl::access::mode::read_write, "
              "cl::sycl::access::target::local> " +
-             VarName + "(cl::sycl::range<1>(" + S + "), cgh);";
+             VarName + "(" + Range + ", cgh);";
       break;
     }
     case VarAttrKind::Constant: {
@@ -85,8 +100,8 @@ public:
       Temp = "auto " + BufferOffsetVar + " = syclct::get_buffer_and_offset(" +
              VarName + ".get_ptr());\n";
       Temp = Temp + "        auto " + BufferVar + " = " + BufferOffsetVar +
-             ".first.reinterpret<" + VarType + ">(cl::sycl::range<1>(" + S +
-             "));\n" + "        auto " + AccVarName + "= " + BufferVar +
+             ".first.reinterpret<" + VarType + ">(" + Range + ");\n" +
+             "        auto " + AccVarName + "= " + BufferVar +
              ".get_access<cl::sycl::access::mode::read,  "
              "cl::sycl::access::target::constant_buffer>(cgh);";
       break;
@@ -99,8 +114,8 @@ public:
       Temp = "auto " + BufferOffsetVar + " = syclct::get_buffer_and_offset(" +
              VarName + ".get_ptr());\n";
       Temp += "        auto " + BufferVar + " = " + BufferOffsetVar +
-              ".first.reinterpret<" + VarType + ">(cl::sycl::range<1>(" + S +
-              "));\n" + "        auto " + AccVarName + "= " + BufferVar +
+              ".first.reinterpret<" + VarType + ">(" + Range + ");\n" +
+              "        auto " + AccVarName + "= " + BufferVar +
               ".get_access<cl::sycl::access::mode::read_write>(cgh);";
       break;
     }
@@ -113,7 +128,7 @@ public:
     std::string Temp;
     switch (VarAttr) {
     case VarAttrKind::Shared: {
-      Temp = "(" + VarType + "*)" + VarName + ".get_pointer()";
+      Temp = VarName;
       break;
     }
     case VarAttrKind::Constant: {
@@ -156,17 +171,16 @@ public:
   }
 
 private:
-  enum class VarAttrKind : unsigned { Shared = 0, Constant, Device };
-
-private:
   std::string VarType;
   std::string VarName;
   bool IsArray;
-  std::string Size;
+  std::vector<std::string> ArraySize;
   bool IsExtern;
   const VarAttrKind VarAttr;
   std::string HashIDForConstantMem;
   std::string KernelMemSize;
+  bool IsTemplateType;
+  unsigned TemplateIndex;
 };
 
 /// Record kernel relative info for multi rules co-operate when translate
@@ -176,42 +190,19 @@ public:
   KernelInfo(std::string KernelName) : KernelName(KernelName) {}
 
 public:
-  /// SMV: Shared Mem Variable
-  bool insertSMVInfo(std::string SVT, std::string SVN, bool IsArray,
-                     std::string Size, bool IsExtern) {
-    auto It = SharedVarMap.find(SVT);
-    if (It != SharedVarMap.end()) {
-      return false;
-    }
-    VarInfo SVI(SVT, SVN, IsArray, Size, IsExtern);
-    SharedVarMap.emplace(std::make_pair(std::move(SVN), std::move(SVI)));
-    return true;
+  template <class... Args>
+  bool insertCMVarInfo(const std::string &VarName, Args... Arguments) {
+    RecordSort.push_back(VarName);
+    return insertVarInfo(getCMVInfoMap(), VarName, Arguments...);
   }
-
-  /// CMV: Constant Mem Variable
-  bool insertCMVInfo(std::string CVT, std::string CVN, bool IsArray,
-                     std::string Size, std::string HashIDForConstantMem) {
-
-    RecordSort.push_back(CVN);
-
-    auto It = ConstantVarMap.find(CVT);
-    if (It != ConstantVarMap.end()) {
+  template <class... Args>
+  bool insertVarInfo(VarInfoMap &VarMap, const std::string &VarName,
+                     Args... Arguments) {
+    auto It = VarMap.find(VarName);
+    if (It != VarMap.end()) {
       return false;
     }
-    VarInfo CVI(CVT, CVN, IsArray, Size, HashIDForConstantMem);
-    ConstantVarMap.emplace(std::make_pair(std::move(CVN), std::move(CVI)));
-    return true;
-  }
-
-  /// DMV: Device Mem Variable
-  bool insertDMVInfo(std::string DVT, std::string DVN, bool IsArray,
-                     std::string Size) {
-    auto It = DeviceVarMap.find(DVT);
-    if (It != DeviceVarMap.end()) {
-      return false;
-    }
-    VarInfo DVI(DVT, DVN, IsArray, Size);
-    DeviceVarMap.emplace(std::make_pair(std::move(DVN), std::move(DVI)));
+    VarMap.insert({VarName, VarInfo(VarName, Arguments...)});
     return true;
   }
 
@@ -223,7 +214,7 @@ public:
 
   std::string declareLocalAcc(const char *NL, StringRef Indent) {
     std::string Var;
-    for (auto KV : SharedVarMap) {
+    for (auto &KV : SharedVarMap) {
       Var += Indent;
       Var += KV.second.getAccessorDeclare();
       Var += NL;
@@ -254,7 +245,7 @@ public:
   std::string declareSMVAsArgs() {
     std::string Var;
     int i = 0;
-    for (auto KV : SharedVarMap) {
+    for (auto &KV : SharedVarMap) {
       if (i > 0)
         Var += ", ";
       Var += KV.second.getAsFuncArgDeclare();
@@ -266,7 +257,7 @@ public:
   std::string declareCMVAsArgs() {
     std::string Var;
     int i = 0;
-    for (auto KV : ConstantVarMap) {
+    for (auto &KV : ConstantVarMap) {
       if (i > 0)
         Var += ", ";
       Var += KV.second.getAsFuncArgDeclare();
@@ -290,7 +281,7 @@ public:
   std::string passSMVAsArgs() {
     std::string Var;
     int i = 0;
-    for (auto KV : SharedVarMap) {
+    for (auto &KV : SharedVarMap) {
       if (i > 0)
         Var += ", ";
       Var += KV.second.getAsFuncArgs();
@@ -361,9 +352,16 @@ public:
 
   VarInfoMap &getSMVInfoMap() { return SharedVarMap; }
   VarInfoMap &getCMVInfoMap() { return ConstantVarMap; }
+  VarInfoMap &getDMVInfoMap() { return DeviceVarMap; }
 
   void appendKernelArgs(std::string NewArgs) { KernelNewArgs += NewArgs; }
   std::string &getKernelArgs() { return KernelNewArgs; }
+  void setTemplateArgs(std::vector<std::string> &Args) {
+    for (auto &KV : SharedVarMap) {
+      if (KV.second.isTemplateType())
+        KV.second.setKernelSMVType(Args[KV.second.getTemplateIndex()]);
+    }
+  }
 
 private:
   VarInfoMap SharedVarMap;

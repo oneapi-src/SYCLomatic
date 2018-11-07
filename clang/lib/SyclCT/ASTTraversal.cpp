@@ -926,8 +926,7 @@ REGISTER_RULE(KernelCallRule)
 //      with cl::sycl::access::target::local in sycl command group,
 //      when call kernel function, the accessor will pass to kernel function
 void SharedMemVarRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(varDecl(isExpansionInMainFile(),
-                        hasAttr(clang::attr::CUDAShared),
+  MF.addMatcher(varDecl(hasAttr(clang::attr::CUDAShared),
                         hasAncestor(functionDecl().bind("kernelFunction")))
                     .bind("cudaSharedMemVar"),
                 this);
@@ -943,18 +942,28 @@ void SharedMemVarRule::run(const MatchFinder::MatchResult &Result) {
   std::string KelFunName = KernelFunction->getNameAsString();
   std::string SharedVarName = SharedMemVar->getNameAsString();
   clang::QualType QType = SharedMemVar->getType();
-  llvm::APInt Size;
+  std::vector<std::string> ArraySize;
   std::string TypeName;
+  unsigned TemplateIndex = 0;
+  bool IsExtern = true;
   bool IsArray = false;
+  bool IsTemplateType = false;
 
-  Size = 0u;
   if (QType->isArrayType()) {
     IsArray = true;
     if (QType->isConstantArrayType()) {
-      Size = cast<ConstantArrayType>(QType->getAsArrayTypeUnsafe())->getSize();
+      IsExtern = false;
+      do {
+        ArraySize.push_back(
+            cast<ConstantArrayType>(QType->getAsArrayTypeUnsafe())
+                ->getSize()
+                .toString(10, false));
+        QType = QType.getTypePtr()->getAsArrayTypeUnsafe()->getElementType();
+      } while (QType->isConstantArrayType());
+    } else {
+      QType = QType.getTypePtr()->getAsArrayTypeUnsafe()->getElementType();
+      ArraySize.push_back("1");
     }
-    const clang::ArrayType *AT = QType.getTypePtr()->getAsArrayTypeUnsafe();
-    QType = AT->getElementType();
     if (QType.getTypePtr()->isBuiltinType()) {
       QType = QType.getCanonicalType();
       const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
@@ -966,14 +975,19 @@ void SharedMemVarRule::run(const MatchFinder::MatchResult &Result) {
       }
     } else {
       TypeName = QType.getAsString();
+      if (auto TemplateType = dyn_cast<TemplateTypeParmType>(
+              QType->getCanonicalTypeInternal())) {
+        IsTemplateType = true;
+        TemplateIndex = TemplateType->getIndex();
+      }
     }
     std::string ReplaceStr = "";
     emplaceTransformation(
         new RemoveVarDecl(SharedMemVar, std::move(ReplaceStr)));
     IsArray = true;
   } else {
+    ArraySize.push_back(std::string("1"));
     const AttrVec &AV = SharedMemVar->getAttrs();
-    Size = 1u;
     for (const Attr *A : AV) {
       attr::Kind AK = A->getKind();
       if (AK == attr::CUDAShared)
@@ -984,15 +998,23 @@ void SharedMemVarRule::run(const MatchFinder::MatchResult &Result) {
   //  [KernelIterationSpaceRule] [KernelCallRule]
   if (KernelTransAssist::hasKernelInfo(KelFunName)) {
     KernelInfo &KI = KernelTransAssist::getKernelInfo(KelFunName);
-    KI.insertSMVInfo(TypeName, SharedVarName, IsArray, Size.toString(10, false),
-                     false /*IsExtern*/);
-    KI.appendKernelArgs(", " + TypeName + " " + SharedVarName + "[]");
+    KI.appendKernelArgs(", cl::sycl::accessor<" + TypeName + ", " +
+                        std::to_string(ArraySize.size()) +
+                        ", cl::sycl::access::mode::read_write, "
+                        "cl::sycl::access::target::local> " +
+                        SharedVarName);
+    KI.insertVarInfo(KI.getSMVInfoMap(), SharedVarName, TypeName, IsArray,
+                     ArraySize, IsExtern, IsTemplateType, TemplateIndex);
   } else {
     KernelInfo KI(KelFunName);
-    KI.insertSMVInfo(TypeName, SharedVarName, IsArray, Size.toString(10, false),
-                     false /*IsExtern*/);
+    KI.appendKernelArgs(", cl::sycl::accessor<" + TypeName + ", " +
+                        std::to_string(ArraySize.size()) +
+                        ", cl::sycl::access::mode::read_write, "
+                        "cl::sycl::access::target::local> " +
+                        SharedVarName);
+    KI.insertVarInfo(KI.getSMVInfoMap(), SharedVarName, TypeName, IsArray,
+                     ArraySize, IsExtern, IsTemplateType, TemplateIndex);
     KernelTransAssist::insertKernel(KelFunName, KI);
-    KI.appendKernelArgs(", " + TypeName + " " + SharedVarName + "[]");
   }
 }
 
@@ -1039,9 +1061,18 @@ void ConstantMemVarRule::run(const MatchFinder::MatchResult &Result) {
       if (QType->isConstantArrayType()) {
         Size =
             cast<ConstantArrayType>(QType->getAsArrayTypeUnsafe())->getSize();
+        QType = QType.getTypePtr()->getAsArrayTypeUnsafe()->getElementType();
+        while (QType->isArrayType()) {
+          if (!QType->isConstantArrayType())
+            assert(false && "N-dimision array must be constant");
+          Size *=
+              cast<ConstantArrayType>(QType->getAsArrayTypeUnsafe())->getSize();
+          QType = QType.getTypePtr()->getAsArrayTypeUnsafe()->getElementType();
+        }
+      } else {
+        const clang::ArrayType *AT = QType.getTypePtr()->getAsArrayTypeUnsafe();
+        QType = AT->getElementType();
       }
-      const clang::ArrayType *AT = QType.getTypePtr()->getAsArrayTypeUnsafe();
-      QType = AT->getElementType();
       if (QType.getTypePtr()->isBuiltinType()) {
         QType = QType.getCanonicalType();
         const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
@@ -1137,9 +1168,9 @@ void ConstantMemVarRule::run(const MatchFinder::MatchResult &Result) {
     if (KernelTransAssist::hasKernelInfo(KelFunName)) {
       KernelInfo &KI = KernelTransAssist::getKernelInfo(KelFunName);
       // Store Constant Mem info
-      KI.insertCMVInfo(TypeName, ConstantVarRefName,
-                       CVarIsArray[ConstantVarRefName],
-                       SizeOfConstMemVar[ConstantVarRefName], AccName);
+      KI.insertCMVarInfo(ConstantVarRefName, TypeName,
+                         CVarIsArray[ConstantVarRefName],
+                         SizeOfConstMemVar[ConstantVarRefName], AccName);
 
       std::string ReplaceStr = "cl::sycl::accessor<" + TypeName +
                                ", 1, cl::sycl::access::mode::read, "
@@ -1149,8 +1180,8 @@ void ConstantMemVarRule::run(const MatchFinder::MatchResult &Result) {
     } else {
       KernelInfo KI(KelFunName);
       // Store Constant Mem info
-      KI.insertCMVInfo(TypeName, ConstantVarRefName, IsArray,
-                       SizeOfConstMemVar[ConstantVarRefName], HashID);
+      KI.insertCMVarInfo(ConstantVarRefName, TypeName, IsArray,
+                         SizeOfConstMemVar[ConstantVarRefName], HashID);
       KernelTransAssist::insertKernel(KelFunName, KI);
       KI.appendKernelArgs(", " + TypeName + " " + ConstantVarRefName + "[]");
     }
@@ -1325,13 +1356,13 @@ void DeviceMemVarRule::run(const MatchFinder::MatchResult &Result) {
   if (KernelTransAssist::hasKernelInfo(KernelFunctionName)) {
     KernelInfo &KI = KernelTransAssist::getKernelInfo(KernelFunctionName);
     // Store Device Mem info
-    KI.insertDMVInfo(TypeName, DeviceVarRefName, IsArray,
+    KI.insertVarInfo(KI.getDMVInfoMap(), DeviceVarRefName, TypeName, IsArray,
                      Size.toString(10, false));
     KI.appendKernelArgs(", " + TypeName + " " + DeviceVarRefName + "[]");
   } else {
     KernelInfo KI(KernelFunctionName);
     // Store Device Mem info
-    KI.insertDMVInfo(TypeName, DeviceVarRefName, IsArray,
+    KI.insertVarInfo(KI.getDMVInfoMap(), DeviceVarRefName, TypeName, IsArray,
                      Size.toString(10, false));
     KernelTransAssist::insertKernel(KernelFunctionName, KI);
     KI.appendKernelArgs(", " + TypeName + " " + DeviceVarRefName + "[]");
