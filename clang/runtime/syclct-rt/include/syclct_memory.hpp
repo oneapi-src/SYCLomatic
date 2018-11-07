@@ -199,16 +199,23 @@ static void sycl_free(void *ptr) {
   memory_manager::get_instance().mem_free(ptr);
 }
 
-class ConstMem {
-  public:
-  ConstMem(size_t size){
-    sycl_malloc((void **)&const_mem_ptr, size);
+class DeviceMem {
+ public:
+  DeviceMem(size_t size) {
+    sycl_malloc((void **)&device_mem_ptr, size);
   }
+
   void *get_ptr(void) {
-    return const_mem_ptr;
+    return device_mem_ptr;
   }
-  private:
-    void *const_mem_ptr;
+
+ protected:
+  void *device_mem_ptr;
+};
+
+class ConstMem : public DeviceMem {
+ public:
+  ConstMem(size_t size) : DeviceMem(size) {}
 };
 
 // memcpy

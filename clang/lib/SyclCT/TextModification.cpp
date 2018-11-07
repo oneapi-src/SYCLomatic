@@ -361,6 +361,8 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   std::stringstream HeaderShareVasAsArgs;
   std::stringstream HeaderConstantVarAccessor;
   std::stringstream HeaderConstantVasAsArgs;
+  std::stringstream HeaderDeviceVarAccessor;
+  std::stringstream HeaderDeviceVarAsArgs;
 
   Header << "{" << NL;
   auto Indent = OrigIndent + "  ";
@@ -378,6 +380,10 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
       if (KI.hasCMVDefined()) {
         HeaderConstantVarAccessor << KI.declareConstantAcc(NL, Indent + "    ");
         HeaderConstantVasAsArgs << KI.passCMVAsArgs() << ", ";
+      }
+      if (KI.hasDMVDefined()) {
+        HeaderDeviceVarAccessor << KI.declareDeviceAcc(NL, Indent + "    ");
+        HeaderDeviceVarAsArgs << KI.passDMVAsArgs() << ", ";
       }
     }
   }
@@ -464,6 +470,7 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << Header2.str()
   << HeaderShareVarAccessor.str()
   << HeaderConstantVarAccessor.str()
+  << HeaderDeviceVarAccessor.str()
   << Indent <<  "    cgh.parallel_for<" << KernelClassName << ">(" << NL
   << Indent <<  "      cl::sycl::nd_range<" << EffectDims << ">(("
   << getDim3Translation(NDSize, Context, EffectDims) << " * "
@@ -473,6 +480,7 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << Header3.str()
   << Indent <<  "        " << CallFunc << "(it, "<< HeaderShareVasAsArgs.str()
                                                  << HeaderConstantVasAsArgs.str()
+                                                 << HeaderDeviceVarAsArgs.str()
                                                  << buildArgList(KCall->arguments(), Context)
                                     << ");" <<  NL
   << Indent <<  "      });" <<  NL

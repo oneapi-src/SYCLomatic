@@ -29,19 +29,23 @@ using VarInfoMap = std::map<std::string, VarInfo>;
 
 class VarInfo {
 public:
-  VarInfo() {}
   // This constructor is used to insert share variable.
   VarInfo(std::string SVT, std::string SVN, bool IsArray, std::string Size,
           bool IsExtern)
       : VarType(SVT), VarName(SVN), IsArray(IsArray), Size(Size),
-        IsExtern(IsExtern), IsShareVar(true) {}
+        IsExtern(IsExtern), VarAttr(VarAttrKind::Shared) {}
 
   // This Constructor is used to insert const variable
   VarInfo(std::string CVT, std::string CVN, bool IsArray, std::string Size,
           std::string HashIDForConstantMem)
       : VarType(CVT), VarName(CVN), IsArray(IsArray), Size(Size),
-        IsExtern(false), IsShareVar(false),
+        IsExtern(false), VarAttr(VarAttrKind::Constant),
         HashIDForConstantMem(HashIDForConstantMem) {}
+
+  // This Constructor is used to insert device variable
+  VarInfo(std::string CVT, std::string CVN, bool IsArray, std::string Size)
+      : VarType(CVT), VarName(CVN), IsArray(IsArray), Size(Size),
+        IsExtern(false), VarAttr(VarAttrKind::Device) {}
 
 public:
   /// interface used to set memsize from "<<<x,x,memsize,x>>>"
@@ -63,13 +67,16 @@ public:
     }
     std::string Temp;
 
-    if (IsShareVar) {
+    switch (VarAttr) {
+    case VarAttrKind::Shared: {
       // declcare __shared__ variable as sycl's accessor.
       Temp = "cl::sycl::accessor<" + VarType +
              ", 1, cl::sycl::access::mode::read_write, "
              "cl::sycl::access::target::local> " +
              VarName + "(cl::sycl::range<1>(" + S + "), cgh);";
-    } else {
+      break;
+    }
+    case VarAttrKind::Constant: {
       // declcare __constant__ variable as sycl's accessor.
       std::string AccVarName = HashIDForConstantMem;
 
@@ -82,31 +89,74 @@ public:
              "));\n" + "        auto " + AccVarName + "= " + BufferVar +
              ".get_access<cl::sycl::access::mode::read,  "
              "cl::sycl::access::target::constant_buffer>(cgh);";
+      break;
+    }
+    case VarAttrKind::Device: {
+      // declcare __device__ variable as sycl's accessor.
+      const std::string AccVarName = "device_acc_" + VarName;
+      const std::string BufferOffsetVar = "device_buffer_and_offset_" + VarName;
+      const std::string BufferVar = "device_buffer_" + VarName;
+      Temp = "auto " + BufferOffsetVar + " = syclct::get_buffer_and_offset(" +
+             VarName + ".get_ptr());\n";
+      Temp += "        auto " + BufferVar + " = " + BufferOffsetVar +
+              ".first.reinterpret<" + VarType + ">(cl::sycl::range<1>(" + S +
+              "));\n" + "        auto " + AccVarName + "= " + BufferVar +
+              ".get_access<cl::sycl::access::mode::read_write>(cgh);";
+      break;
+    }
     }
 
     return Temp;
   }
   /// pass sycl's accessor for shared memory variable to kernel function.
   std::string getAsFuncArgs() {
-    if (IsShareVar) {
-      return "(" + VarType + "*)" + VarName + ".get_pointer()";
-    } else {
-      std::string AccVarName = HashIDForConstantMem;
-      return AccVarName;
+    std::string Temp;
+    switch (VarAttr) {
+    case VarAttrKind::Shared: {
+      Temp = "(" + VarType + "*)" + VarName + ".get_pointer()";
+      break;
     }
+    case VarAttrKind::Constant: {
+      Temp = HashIDForConstantMem;
+      break;
+    }
+    case VarAttrKind::Device: {
+      Temp = "device_acc_" + VarName;
+      break;
+    }
+    }
+    return Temp;
   }
   /// declare shared or constant memory variable in kernel function.
   std::string getAsFuncArgDeclare() {
-    if (IsShareVar) {
+    std::string Temp;
+    switch (VarAttr) {
+    case VarAttrKind::Shared: {
       // declare shared memory variable in kernel function.
-      return VarType + " " + VarName + "[]";
-    } else {
+      Temp = VarType + " " + VarName + "[]";
+      break;
+    }
+    case VarAttrKind::Constant: {
       // declare constant memory variable in kernel function.
-      return "cl::sycl::accessor<" + VarType +
+      Temp = "cl::sycl::accessor<" + VarType +
              ", 1, cl::sycl::access::mode::read, "
              "cl::sycl::access::target::constant_buffer>  const_acc";
+      break;
     }
+    case VarAttrKind::Device: {
+      // declare device memory variable in kernel function.
+      Temp = "cl::sycl::accessor<" + VarType +
+             ", 1, cl::sycl::access::mode::read_write, "
+             "cl::sycl::access::target::global_buffer> " +
+             VarName;
+      break;
+    }
+    }
+    return Temp;
   }
+
+private:
+  enum class VarAttrKind : unsigned { Shared = 0, Constant, Device };
 
 private:
   std::string VarType;
@@ -114,9 +164,9 @@ private:
   bool IsArray;
   std::string Size;
   bool IsExtern;
-  bool IsShareVar; // true: Share Mem Var   false: Constant Mem Var
-  std::string KernelMemSize;
+  const VarAttrKind VarAttr;
   std::string HashIDForConstantMem;
+  std::string KernelMemSize;
 };
 
 /// Record kernel relative info for multi rules co-operate when translate
@@ -134,7 +184,7 @@ public:
       return false;
     }
     VarInfo SVI(SVT, SVN, IsArray, Size, IsExtern);
-    SharedVarMap[SVN] = SVI;
+    SharedVarMap.emplace(std::make_pair(std::move(SVN), std::move(SVI)));
     return true;
   }
 
@@ -149,12 +199,25 @@ public:
       return false;
     }
     VarInfo CVI(CVT, CVN, IsArray, Size, HashIDForConstantMem);
-    ConstantVarMap[CVN] = CVI;
+    ConstantVarMap.emplace(std::make_pair(std::move(CVN), std::move(CVI)));
+    return true;
+  }
+
+  /// DMV: Device Mem Variable
+  bool insertDMVInfo(std::string DVT, std::string DVN, bool IsArray,
+                     std::string Size) {
+    auto It = DeviceVarMap.find(DVT);
+    if (It != DeviceVarMap.end()) {
+      return false;
+    }
+    VarInfo DVI(DVT, DVN, IsArray, Size);
+    DeviceVarMap.emplace(std::make_pair(std::move(DVN), std::move(DVI)));
     return true;
   }
 
   bool hasSMVDefined() { return SharedVarMap.size() > 0; }
   bool hasCMVDefined() { return ConstantVarMap.size() > 0; }
+  bool hasDMVDefined() { return DeviceVarMap.size() > 0; }
 
   uint getNumSMVDefined() { return (uint)SharedVarMap.size(); }
 
@@ -171,6 +234,16 @@ public:
   std::string declareConstantAcc(const char *NL, StringRef Indent) {
     std::string Var;
     for (auto KV : ConstantVarMap) {
+      Var += Indent;
+      Var += KV.second.getAccessorDeclare();
+      Var += NL;
+    }
+    return Var;
+  }
+
+  std::string declareDeviceAcc(const char *NL, StringRef Indent) {
+    std::string Var;
+    for (auto KV : DeviceVarMap) {
       Var += Indent;
       Var += KV.second.getAccessorDeclare();
       Var += NL;
@@ -202,6 +275,18 @@ public:
     return Var;
   }
 
+  std::string declareDMVAsArgs() {
+    std::string Var;
+    int i = 0;
+    for (auto KV : DeviceVarMap) {
+      if (i > 0)
+        Var += ", ";
+      Var += KV.second.getAsFuncArgDeclare();
+      i++;
+    }
+    return Var;
+  }
+
   std::string passSMVAsArgs() {
     std::string Var;
     int i = 0;
@@ -222,7 +307,19 @@ public:
          it < RecordSort.end(); it++) {
       if (i > 0)
         Var += ", ";
-      Var += ConstantVarMap[*it].getAsFuncArgs();
+      Var += ConstantVarMap.at(*it).getAsFuncArgs();
+      i++;
+    }
+    return Var;
+  }
+
+  std::string passDMVAsArgs() {
+    std::string Var;
+    int i = 0;
+    for (auto KV : DeviceVarMap) {
+      if (i > 0)
+        Var += ", ";
+      Var += KV.second.getAsFuncArgs();
       i++;
     }
     return Var;
@@ -271,6 +368,7 @@ public:
 private:
   VarInfoMap SharedVarMap;
   VarInfoMap ConstantVarMap;
+  VarInfoMap DeviceVarMap;
   std::vector<std::string> RecordSort;
   std::string KernelNewArgs;
   std::string KernelName;

@@ -1040,7 +1040,6 @@ REGISTER_RULE(SharedMemVarRule)
 //  cl::sycl::access::target::constant_buffer>(cgh) in sycl command group,
 //      when call kernel function, the accssor will pass to kernel function
 void ConstantMemVarRule::registerMatcher(MatchFinder &MF) {
-
   MF.addMatcher(varDecl(hasAttr(clang::attr::CUDAConstant))
                     .bind("cudaConstantMemVarDecl"),
                 this);
@@ -1189,6 +1188,187 @@ void ConstantMemVarRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(ConstantMemVarRule)
+
+///  Translation rule for device memory variables.
+/// __device__ var translation need 3 rules to work together, as follow:
+//  [DeviceMemVarRule] Here try to remove __device__ variable declare,
+//      also this rule records device variable info for other rule
+//  [KernelIterationSpaceRule] __device__ varialbe will be declared as
+//      args of kernel function.
+//  [KernelCallRule]__device__ variable also will be declared as accessor
+//      with auto device_acc_<var_name> =
+//      device_buffer_<var_name>.get_access<cl::sycl::access::mode::read_write>(cgh)
+//      in sycl command group, when call kernel function, the accssor will pass
+//      to kernel function
+void DeviceMemVarRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      varDecl(hasAttr(clang::attr::CUDADevice)).bind("cudaDeviceMemVarDecl"),
+      this);
+
+  MF.addMatcher(
+      functionDecl(
+          hasDescendant(
+              declRefExpr(
+                  to(varDecl(hasAttr(clang::attr::CUDADevice))),
+                  // These builtin variables have implicit
+                  // clang::attr::CUDADevice attribute, skip them here.
+                  unless(to(varDecl(hasAnyName("threadIdx", "blockDim",
+                                               "blockIdx", "gridDim")))))
+                  .bind("cudaDeviceMemVarRef")),
+
+          hasAttr(attr::CUDAGlobal))
+          .bind("cudaKernelFunction"),
+      this);
+}
+
+void DeviceMemVarRule::run(const MatchFinder::MatchResult &Result) {
+  auto *DeviceMemVarDecl =
+      getNodeAsType<VarDecl>(Result, "cudaDeviceMemVarDecl", false);
+
+  if (DeviceMemVarDecl) {
+    const AttrVec &AV = DeviceMemVarDecl->getAttrs();
+    for (const Attr *A : AV) {
+      attr::Kind AK = A->getKind();
+      if (!A->isImplicit() && (AK == attr::CUDADevice))
+        emplaceTransformation(new RemoveAttr(A));
+    }
+
+    clang::QualType QType = DeviceMemVarDecl->getType();
+    llvm::APInt Size;
+    std::string TypeName;
+    const bool IsArray = QType->isArrayType();
+    if (IsArray) {
+      // TODO: Support multi-dimensional array, eg int arr[100][100][100].
+      //       Should be added in constant memory and shared memory translation,
+      //       too.
+      if (QType->isConstantArrayType()) {
+        Size =
+            cast<ConstantArrayType>(QType->getAsArrayTypeUnsafe())->getSize();
+      } else {
+        // Non constant device memory declaration should be treated as an error
+        // and never reach here.
+        llvm_unreachable("Non constant device memory declaration");
+      }
+
+      const clang::ArrayType *AT = QType.getTypePtr()->getAsArrayTypeUnsafe();
+      QType = AT->getElementType();
+      if (QType.getTypePtr()->isBuiltinType()) {
+        QType = QType.getCanonicalType();
+        const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
+        if (BT) {
+          clang::LangOptions LO;
+          LO.CUDA = true;
+          clang::PrintingPolicy policy(LO);
+          TypeName = BT->getName(policy);
+        }
+      } else {
+        TypeName = QType.getAsString();
+      }
+    } else {
+      Size = 1u;
+      const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
+      if (BT) {
+        clang::LangOptions LO;
+        LO.CUDA = true;
+        clang::PrintingPolicy policy(LO);
+        TypeName = BT->getName(policy);
+      }
+    }
+
+    std::string DeviceMemVarName = DeviceMemVarDecl->getNameAsString();
+
+    std::string Replacement = "syclct::DeviceMem " + DeviceMemVarName + "(" +
+                              Size.toString(10, false) + "* sizeof(" +
+                              TypeName + "))";
+
+    if (IsArray) {
+      emplaceTransformation(
+          new ReplaceTypeInVarDecl(DeviceMemVarDecl, std::move(Replacement)));
+    } else {
+      emplaceTransformation(new ReplaceTypeInVarDecl(
+          DeviceMemVarDecl, std::move(Replacement + ";\n//")));
+    }
+    return;
+  }
+
+  auto *DeviceMemVarRef =
+      getNodeAsType<DeclRefExpr>(Result, "cudaDeviceMemVarRef");
+  auto *KernelFunction =
+      getNodeAsType<FunctionDecl>(Result, "cudaKernelFunction");
+
+  if (!DeviceMemVarRef || !KernelFunction) {
+    return;
+  }
+
+  clang::QualType QType = DeviceMemVarRef->getType();
+  llvm::APInt Size;
+  std::string TypeName;
+  const bool IsArray = QType->isArrayType();
+  if (IsArray) {
+    // TODO: Support multi-dimensional array, eg int arr[100][100][100].
+    //       Should be added in constant memory and shared memory translation,
+    //       too.
+    if (QType->isConstantArrayType()) {
+      Size = cast<ConstantArrayType>(QType->getAsArrayTypeUnsafe())->getSize();
+    } else {
+      // Non constant device memory declaration should be treated as an error
+      // and never reach here.
+      llvm_unreachable("Non constant device memory declaration");
+    }
+
+    const clang::ArrayType *AT = QType.getTypePtr()->getAsArrayTypeUnsafe();
+    QType = AT->getElementType();
+    if (QType.getTypePtr()->isBuiltinType()) {
+      QType = QType.getCanonicalType();
+      const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
+      if (BT) {
+        clang::LangOptions LO;
+        LO.CUDA = true;
+        clang::PrintingPolicy policy(LO);
+        TypeName = BT->getName(policy);
+      }
+    } else {
+      TypeName = QType.getAsString();
+    }
+  } else {
+    Size = 1u;
+    const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
+    if (BT) {
+      clang::LangOptions LO;
+      LO.CUDA = true;
+      clang::PrintingPolicy policy(LO);
+      TypeName = BT->getName(policy);
+    }
+  }
+
+  std::string DeviceVarRefName =
+      DeviceMemVarRef->getNameInfo().getName().getAsString();
+
+  if (!IsArray) {
+    std::string ReplaceStr = DeviceVarRefName;
+    emplaceTransformation(
+        new ReplaceStmt(DeviceMemVarRef, std::move(ReplaceStr + "[0]")));
+  }
+
+  std::string KernelFunctionName = KernelFunction->getNameAsString();
+
+  if (KernelTransAssist::hasKernelInfo(KernelFunctionName)) {
+    KernelInfo &KI = KernelTransAssist::getKernelInfo(KernelFunctionName);
+    // Store Device Mem info
+    KI.insertDMVInfo(TypeName, DeviceVarRefName, IsArray,
+                     Size.toString(10, false));
+    KI.appendKernelArgs(", " + TypeName + " " + DeviceVarRefName + "[]");
+  } else {
+    KernelInfo KI(KernelFunctionName);
+    // Store Device Mem info
+    KI.insertDMVInfo(TypeName, DeviceVarRefName, IsArray,
+                     Size.toString(10, false));
+    KernelTransAssist::insertKernel(KernelFunctionName, KI);
+    KI.appendKernelArgs(", " + TypeName + " " + DeviceVarRefName + "[]");
+  }
+}
+
+REGISTER_RULE(DeviceMemVarRule)
 
 // Memory translation rules live here.
 void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
@@ -1404,6 +1584,10 @@ void KernelIterationSpaceRule::run(const MatchFinder::MatchResult &Result) {
       if (KI.hasSMVDefined()) {
         InsertArgs << ", ";
         InsertArgs << KI.declareSMVAsArgs();
+      }
+      if (KI.hasDMVDefined()) {
+        InsertArgs << ", ";
+        InsertArgs << KI.declareDMVAsArgs();
       }
       emplaceTransformation(new InsertArgument(FD, InsertArgs.str()));
     } else {

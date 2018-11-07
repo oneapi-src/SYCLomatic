@@ -443,7 +443,7 @@ class KernelCallRule : public NamedTranslationRule<KernelCallRule> {
 public:
   KernelCallRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile,
-                    "SharedMemVarRule, ConstantMemVarRule");
+                    "SharedMemVarRule, ConstantMemVarRule, DeviceMemVarRule");
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
@@ -470,6 +470,14 @@ class ConstantMemVarRule : public NamedTranslationRule<ConstantMemVarRule> {
 
 public:
   ConstantMemVarRule() { SetRuleProperty(ApplyToCudaFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
+/// Translation rule for device memory variables.
+class DeviceMemVarRule : public NamedTranslationRule<DeviceMemVarRule> {
+public:
+  DeviceMemVarRule() { SetRuleProperty(ApplyToCudaFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
