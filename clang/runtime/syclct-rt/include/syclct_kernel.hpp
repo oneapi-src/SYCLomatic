@@ -18,7 +18,7 @@ struct sycl_kernel_function_info {
   int max_work_group_size = 0;
 };
 
-void getSyclKernelFunctionInfo(sycl_kernel_function_info *KernelInfo,
+static void getSyclKernelFunctionInfo(sycl_kernel_function_info *KernelInfo,
                                const void *Func) {
   static cl::sycl::device Device;
   KernelInfo->max_work_group_size =
