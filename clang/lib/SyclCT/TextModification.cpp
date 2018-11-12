@@ -397,7 +397,6 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
         // auto VarType = PointeeType.getCanonicalType().getAsString();
         // remove getCanonicalType() for it will cause error while the type
         // is a template parameter type.
-        auto VarType = PointeeType.getAsString();
         Header << Indent << "std::pair<syclct::buffer_t, size_t> " << VarName
                << "_buf = syclct::get_buffer_and_offset(" << VarName + ");"
                << NL;
@@ -408,12 +407,24 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
                    "get_access<cl::sycl::access::mode::read_write>("
                 << "cgh);" << NL;
 
-        // adjust the VarType: if it is vector type ("struct int2/int3....)
-        //  changed it to syclsytle.
-        auto Search = MapNames::TypeNamesMap.find(VarType);
-        if (Search != MapNames::TypeNamesMap.end()) {
-          VarType = Search->second;
+        std::string VarType;
+        if (auto *SubstedType =
+                dyn_cast<SubstTemplateTypeParmType>(PointeeType)) {
+          // Type is substituted by template initialization or specialization.
+          VarType = SubstedType->getReplacedParameter()
+                        ->getIdentifier()
+                        ->getName()
+                        .str();
+        } else {
+          VarType = PointeeType.getAsString();
+          // adjust the VarType: if it is vector type ("struct int2/int3....)
+          // changed it to syclsytle.
+          auto Search = MapNames::TypeNamesMap.find(VarType);
+          if (Search != MapNames::TypeNamesMap.end()) {
+            VarType = Search->second;
+          }
         }
+
         Header3 << Indent << "        " << VarType << " *" << VarName << " = ("
                 << VarType << "*)(&" << VarName << "_acc[0] + " << VarName
                 << "_offset);" << NL;
