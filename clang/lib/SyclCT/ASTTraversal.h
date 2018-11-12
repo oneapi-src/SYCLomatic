@@ -459,9 +459,14 @@ public:
 
 /// Translation rule for constant memory variables.
 class ConstantMemVarRule : public NamedTranslationRule<ConstantMemVarRule> {
+
   llvm::APInt Size;
   std::string TypeName;
+  std::string ConstantVarName;
   bool IsArray;
+  std::map<std::string, unsigned int> CntOfCVarPerKelfun;
+  std::map<std::string, std::string> SizeOfConstMemVar;
+  std::map<std::string, bool> CVarIsArray;
 
 public:
   ConstantMemVarRule() { SetRuleProperty(ApplyToCudaFile); }

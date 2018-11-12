@@ -81,9 +81,9 @@ ExtReplacement RemoveVarDecl::getReplacement(const ASTContext &Context) const {
     auto Data = DataAfter[i];
     while ((Data == ' ') || (Data == '\t'))
       Data = DataAfter[++i];
-    if(Data == ';')
+    if (Data == ';')
       Data = DataAfter[++i];
-    repLength +=i;
+    repLength += i;
 
     return ExtReplacement(Context.getSourceManager(),
                           SM.getExpansionLoc(slStart), repLength, T);
@@ -330,21 +330,27 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   std::stringstream Header3;
   std::stringstream HeaderShareVarAccessor;
   std::stringstream HeaderShareVasAsArgs;
+  std::stringstream HeaderConstantVarAccessor;
+  std::stringstream HeaderConstantVasAsArgs;
 
   Header << "{" << NL;
   auto Indent = OrigIndent + "  ";
   // check if sharevariable info exist for this kernel.
   // [todo] template case not support yet.
-  if(KCall && KCall->getCalleeDecl()) {
-      std::string KernelFunName =
-          KCall->getCalleeDecl()->getAsFunction()->getNameAsString();
-      if (KernelTransAssist::hasKernelInfo(KernelFunName)) {
-        KernelInfo KI = KernelTransAssist::getKernelInfo(KernelFunName);
-        if (KI.hasSMVDefined()) {
-          HeaderShareVarAccessor << KI.declareLocalAcc(NL, Indent + "    ");
-          HeaderShareVasAsArgs << KI.passSMVAsArgs() << ", ";
-        }
+  if (KCall && KCall->getCalleeDecl()) {
+    std::string KernelFunName =
+        KCall->getCalleeDecl()->getAsFunction()->getNameAsString();
+    if (KernelTransAssist::hasKernelInfo(KernelFunName)) {
+      KernelInfo KI = KernelTransAssist::getKernelInfo(KernelFunName);
+      if (KI.hasSMVDefined()) {
+        HeaderShareVarAccessor << KI.declareLocalAcc(NL, Indent + "    ");
+        HeaderShareVasAsArgs << KI.passSMVAsArgs() << ", ";
       }
+      if (KI.hasCMVDefined()) {
+        HeaderConstantVarAccessor << KI.declareConstantAcc(NL, Indent + "    ");
+        HeaderConstantVasAsArgs << KI.passCMVAsArgs() << ", ";
+      }
+    }
   }
   for (auto *Arg : KCall->arguments()) {
     if (Arg->getType()->isAnyPointerType()) {
@@ -428,6 +434,7 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << Indent <<  "  [&](cl::sycl::handler &cgh) {" << NL
   << Header2.str()
   << HeaderShareVarAccessor.str()
+  << HeaderConstantVarAccessor.str()
   << Indent <<  "    cgh.parallel_for<" << KernelClassName << ">(" << NL
   << Indent <<  "      cl::sycl::nd_range<" << EffectDims << ">(("
   << getDim3Translation(NDSize, Context, EffectDims) << " * "
@@ -435,7 +442,9 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << getDim3Translation(WGSize, Context, EffectDims)<<")," << NL
   << Indent <<  "      [=](cl::sycl::nd_item<"<< EffectDims << "> it) {" << NL
   << Header3.str()
-  << Indent <<  "        " << CallFunc << "(it, "<< HeaderShareVasAsArgs.str() << buildArgList(KCall->arguments(), Context)
+  << Indent <<  "        " << CallFunc << "(it, "<< HeaderShareVasAsArgs.str()
+                                                 << HeaderConstantVasAsArgs.str()
+                                                 << buildArgList(KCall->arguments(), Context)
                                     << ");" <<  NL
   << Indent <<  "      });" <<  NL
   << Indent <<  "  });" <<  NL

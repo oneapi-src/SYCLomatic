@@ -24,8 +24,8 @@ class KernelInfo;
 class VarInfo;
 // {kernel-name,  kernel-info}
 using KernelInfoMap = std::map<std::string, KernelInfo>;
-// {share-name, share-info}
-using SMVInfoMap = std::map<std::string, VarInfo>;
+// {var name, var-info}
+using VarInfoMap = std::map<std::string, VarInfo>;
 
 class VarInfo {
 public:
@@ -45,7 +45,7 @@ public:
 
 public:
   /// interface used to set memsize from "<<<x,x,memsize,x>>>"
-  void setKernelSMVSize(std::string Size) { KernelMemSize = Size; }
+  void setKernelMVSize(std::string Size) { KernelMemSize = Size; }
   ///
   std::string &getType() { return VarType; }
   std::string &getName() { return VarName; }
@@ -71,18 +71,16 @@ public:
              VarName + "(cl::sycl::range<1>(" + S + "), cgh);";
     } else {
       // declcare __constant__ variable as sycl's accessor.
-      std::string AccVarName = "const_acc_" + HashIDForConstantMem;
-      if (IsArray) {
-        Temp = "cl::sycl::buffer<cl::sycl::cl_" + VarType + ", 1> const_buf(&" +
-               VarName + "[0], cl::sycl::range<1>(" + S + "));\n";
-      } else {
-        Temp = "cl::sycl::buffer<cl::sycl::cl_" + VarType + ", 1> const_buf(&" +
-               VarName + ", cl::sycl::range<1>(" + S + "));\n";
-      }
+      std::string AccVarName = HashIDForConstantMem;
 
-      Temp = Temp + "        auto  " + AccVarName +
-             " = const_buf.get_access<cl::sycl::" +
-             "access::mode::read, "
+      std::string BufferOffsetVar = "buffer_and_offset_" + AccVarName;
+      std::string BufferVar = "buffer_" + AccVarName;
+      Temp = "auto " + BufferOffsetVar + " = syclct::get_buffer_and_offset(" +
+             VarName + ".get_ptr());\n";
+      Temp = Temp + "        auto " + BufferVar + " = " + BufferOffsetVar +
+             ".first.reinterpret<" + VarType + ">(cl::sycl::range<1>(" + S +
+             "));\n" + "        auto " + AccVarName + "= " + BufferVar +
+             ".get_access<cl::sycl::access::mode::read,  "
              "cl::sycl::access::target::constant_buffer>(cgh);";
     }
 
@@ -93,7 +91,7 @@ public:
     if (IsShareVar) {
       return "(" + VarType + "*)" + VarName + ".get_pointer()";
     } else {
-      std::string AccVarName = "const_acc_" + HashIDForConstantMem;
+      std::string AccVarName = HashIDForConstantMem;
       return AccVarName;
     }
   }
@@ -114,9 +112,9 @@ private:
   std::string VarType;
   std::string VarName;
   bool IsArray;
-  bool IsShareVar; // true: Share Mem Var   false: Constant Mem Var
   std::string Size;
   bool IsExtern;
+  bool IsShareVar; // true: Share Mem Var   false: Constant Mem Var
   std::string KernelMemSize;
   std::string HashIDForConstantMem;
 };
@@ -131,85 +129,149 @@ public:
   /// SMV: Shared Mem Variable
   bool insertSMVInfo(std::string SVT, std::string SVN, bool IsArray,
                      std::string Size, bool IsExtern) {
-    auto It = VarMap.find(SVT);
-    if (It != VarMap.end()) {
+    auto It = SharedVarMap.find(SVT);
+    if (It != SharedVarMap.end()) {
       return false;
     }
     VarInfo SVI(SVT, SVN, IsArray, Size, IsExtern);
-    VarMap[SVN] = SVI;
+    SharedVarMap[SVN] = SVI;
     return true;
   }
 
   /// CMV: Constant Mem Variable
   bool insertCMVInfo(std::string CVT, std::string CVN, bool IsArray,
                      std::string Size, std::string HashIDForConstantMem) {
-    auto It = VarMap.find(CVT);
-    if (It != VarMap.end()) {
+
+    RecordSort.push_back(CVN);
+
+    auto It = ConstantVarMap.find(CVT);
+    if (It != ConstantVarMap.end()) {
       return false;
     }
     VarInfo CVI(CVT, CVN, IsArray, Size, HashIDForConstantMem);
-    VarMap[CVN] = CVI;
+    ConstantVarMap[CVN] = CVI;
     return true;
   }
 
-  bool hasSMVDefined() { return VarMap.size() > 0; }
+  bool hasSMVDefined() { return SharedVarMap.size() > 0; }
+  bool hasCMVDefined() { return ConstantVarMap.size() > 0; }
 
-  uint getNumSMVDefined() { return (uint)VarMap.size(); }
+  uint getNumSMVDefined() { return (uint)SharedVarMap.size(); }
 
   std::string declareLocalAcc(const char *NL, StringRef Indent) {
     std::string Var;
-    for (auto KV : VarMap) {
+    for (auto KV : SharedVarMap) {
       Var += Indent;
       Var += KV.second.getAccessorDeclare();
       Var += NL;
     }
     return Var;
   }
+
+  std::string declareConstantAcc(const char *NL, StringRef Indent) {
+    std::string Var;
+    for (auto KV : ConstantVarMap) {
+      Var += Indent;
+      Var += KV.second.getAccessorDeclare();
+      Var += NL;
+    }
+    return Var;
+  }
+
   std::string declareSMVAsArgs() {
     std::string Var;
     int i = 0;
-    for (auto KV : VarMap) {
+    for (auto KV : SharedVarMap) {
       if (i > 0)
         Var += ", ";
       Var += KV.second.getAsFuncArgDeclare();
       i++;
     }
-
     return Var;
   }
+
+  std::string declareCMVAsArgs() {
+    std::string Var;
+    int i = 0;
+    for (auto KV : ConstantVarMap) {
+      if (i > 0)
+        Var += ", ";
+      Var += KV.second.getAsFuncArgDeclare();
+      i++;
+    }
+    return Var;
+  }
+
   std::string passSMVAsArgs() {
     std::string Var;
     int i = 0;
-    for (auto KV : VarMap) {
+    for (auto KV : SharedVarMap) {
       if (i > 0)
         Var += ", ";
       Var += KV.second.getAsFuncArgs();
       i++;
     }
-
     return Var;
   }
+
+  std::string passCMVAsArgs() {
+    std::string Var;
+    int i = 0;
+
+    for (std::vector<std::string>::iterator it = RecordSort.begin();
+         it < RecordSort.end(); it++) {
+      if (i > 0)
+        Var += ", ";
+      Var += ConstantVarMap[*it].getAsFuncArgs();
+      i++;
+    }
+    return Var;
+  }
+
   void setKernelSMVSize(std::string Size) {
-    if (VarMap.size() == 0) {
+    if (SharedVarMap.size() == 0) {
       assert(0);
     }
-    for (SMVInfoMap::iterator it = VarMap.begin(); it != VarMap.end(); ++it) {
+    for (VarInfoMap::iterator it = SharedVarMap.begin();
+         it != SharedVarMap.end(); ++it) {
       VarInfo &SVI = it->second;
       if (SVI.isExtern()) {
         /// set the 1st one matched.
-        SVI.setKernelSMVSize(Size);
+        SVI.setKernelMVSize(Size);
         return;
       }
     }
     assert(0);
     return;
   }
-  SMVInfoMap &getSMVInfoMap() { return VarMap; }
+
+  void setKernelCMVSize(std::string Size) {
+    if (ConstantVarMap.size() == 0) {
+      assert(0);
+    }
+    for (VarInfoMap::iterator it = ConstantVarMap.begin();
+         it != ConstantVarMap.end(); ++it) {
+      VarInfo &CVI = it->second;
+      if (CVI.isExtern()) {
+        /// set the 1st one matched.
+        CVI.setKernelMVSize(Size);
+        return;
+      }
+    }
+    assert(0);
+    return;
+  }
+
+  VarInfoMap &getSMVInfoMap() { return SharedVarMap; }
+  VarInfoMap &getCMVInfoMap() { return ConstantVarMap; }
+
   void appendKernelArgs(std::string NewArgs) { KernelNewArgs += NewArgs; }
   std::string &getKernelArgs() { return KernelNewArgs; }
 
 private:
-  SMVInfoMap VarMap;
+  VarInfoMap SharedVarMap;
+  VarInfoMap ConstantVarMap;
+  std::vector<std::string> RecordSort;
   std::string KernelNewArgs;
   std::string KernelName;
 };

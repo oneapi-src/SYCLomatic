@@ -709,20 +709,20 @@ void Dim3MemberFieldsRule::run(const MatchFinder::MatchResult &Result) {
         std::string(SM->getCharacterData(Begin),
                     SM->getCharacterData(End) - SM->getCharacterData(Begin));
 
-    std::size_t PosisitonOfDot = 0;
+    std::size_t PositionOfDot = 0;
     std::size_t Current = Ret.find('.');
 
     // Find the last position of dot '.'
     while (Current != std::string::npos) {
-      PosisitonOfDot = Current;
-      Current = Ret.find('.', PosisitonOfDot + 1);
+      PositionOfDot = Current;
+      Current = Ret.find('.', PositionOfDot + 1);
     }
 
     auto Search = MapNames::Dim3MemberNamesMap.find(
         ME->getMemberNameInfo().getAsString());
     if (Search != MapNames::Dim3MemberNamesMap.end()) {
       emplaceTransformation(
-          new RenameFieldInMemberExpr(ME, Search->second + "", PosisitonOfDot));
+          new RenameFieldInMemberExpr(ME, Search->second + "", PositionOfDot));
     }
   }
 }
@@ -1045,23 +1045,22 @@ void ConstantMemVarRule::registerMatcher(MatchFinder &MF) {
                     .bind("cudaConstantMemVarDecl"),
                 this);
 
-  MF.addMatcher(
-      functionDecl(hasDescendant(declRefExpr(to(varDecl(hasAttr(
-                                                 clang::attr::CUDAConstant))))
-                                     .bind("cudaConstantMemVarRef")),
-                   hasAttr(attr::CUDAGlobal))
-          .bind("cudaKernelFuction"),
-      this);
+  MF.addMatcher(declRefExpr(to(varDecl(hasAttr(clang::attr::CUDAConstant))),
+                            hasAncestor(functionDecl(hasAttr(attr::CUDAGlobal))
+                                            .bind("cudaKernelFuction")))
+                    .bind("cudaConstantMemVarRef"),
+                this);
 }
 
 void ConstantMemVarRule::run(const MatchFinder::MatchResult &Result) {
   std::string ConstantVarRefName;
   std::string KelFunName;
+  std::string HashID = getHashID();
 
   auto *ConstantMemVar =
       getNodeAsType<VarDecl>(Result, "cudaConstantMemVarDecl");
   if (ConstantMemVar != NULL) {
-    std::string ConstantVarName = ConstantMemVar->getNameAsString();
+    ConstantVarName = ConstantMemVar->getNameAsString();
 
     clang::QualType QType = ConstantMemVar->getType();
 
@@ -1105,42 +1104,84 @@ void ConstantMemVarRule::run(const MatchFinder::MatchResult &Result) {
       if (!A->isImplicit() && (AK == attr::CUDAConstant))
         emplaceTransformation(new RemoveAttr(A));
     }
+
+    std::string Replacement = "syclct::ConstMem  " + ConstantVarName + "(" +
+                              Size.toString(10, false) + "* sizeof(" +
+                              TypeName + "))";
+
+    if (IsArray)
+      emplaceTransformation(
+          new ReplaceTypeInVarDecl(ConstantMemVar, std::move(Replacement)));
+    else
+      emplaceTransformation(new ReplaceTypeInVarDecl(
+          ConstantMemVar, std::move(Replacement + ";\n//")));
+
+    std::map<std::string, std::string>::iterator Iter =
+        SizeOfConstMemVar.find(ConstantVarName);
+    if (Iter == SizeOfConstMemVar.end()) {
+      SizeOfConstMemVar[ConstantVarName] = Size.toString(10, false);
+    }
+
+    std::map<std::string, bool>::iterator TypeIter =
+        CVarIsArray.find(ConstantVarName);
+    if (TypeIter == CVarIsArray.end()) {
+      CVarIsArray[ConstantVarName] = IsArray;
+    }
   }
 
   auto *KernelFunction =
-      getNodeAsType<FunctionDecl>(Result, "cudaKernelFuction");
+      getNodeAsType<FunctionDecl>(Result, "cudaKernelFuction", false);
   auto *ConstantMemVarRef =
-      getNodeAsType<DeclRefExpr>(Result, "cudaConstantMemVarRef");
+      getNodeAsType<DeclRefExpr>(Result, "cudaConstantMemVarRef", false);
+
+  std::string AccName;
 
   if (ConstantMemVarRef != NULL && KernelFunction != NULL) {
     ConstantVarRefName =
         ConstantMemVarRef->getNameInfo().getName().getAsString();
     KelFunName = KernelFunction->getNameAsString();
-    std::string ReplaceStr = "const_acc";
-    if (IsArray) {
+
+    std::string KeyName = KelFunName;
+    std::map<std::string, unsigned int>::iterator Iter =
+        CntOfCVarPerKelfun.find(KeyName);
+    if (Iter == CntOfCVarPerKelfun.end()) {
+      CntOfCVarPerKelfun[KeyName] = 0;
+    } else {
+      CntOfCVarPerKelfun[KeyName]++;
+    }
+
+    AccName = "const_acc_" + std::to_string(CntOfCVarPerKelfun[KeyName]) + "_" +
+              HashID;
+
+    std::string ReplaceStr = AccName;
+    if (CVarIsArray[ConstantVarRefName]) {
       emplaceTransformation(
           new ReplaceStmt(ConstantMemVarRef, std::move(ReplaceStr)));
     } else {
       emplaceTransformation(
           new ReplaceStmt(ConstantMemVarRef, std::move(ReplaceStr + "[0]")));
     }
-  }
 
-  if (!TypeName.empty() && !KelFunName.empty()) {
     // Store the constatn analysis info in kernelinfo for other rule use:
     //  [KernelIterationSpaceRule] [KernelCallRule]
-    std::string HashID = getHashID();
+
     if (KernelTransAssist::hasKernelInfo(KelFunName)) {
       KernelInfo &KI = KernelTransAssist::getKernelInfo(KelFunName);
       // Store Constant Mem info
-      KI.insertCMVInfo(TypeName, ConstantVarRefName, IsArray,
-                       Size.toString(10, false), HashID);
-      KI.appendKernelArgs(", " + TypeName + " " + ConstantVarRefName + "[]");
+      KI.insertCMVInfo(TypeName, ConstantVarRefName,
+                       CVarIsArray[ConstantVarRefName],
+                       SizeOfConstMemVar[ConstantVarRefName], AccName);
+
+      std::string ReplaceStr = "cl::sycl::accessor<" + TypeName +
+                               ", 1, cl::sycl::access::mode::read, "
+                               "cl::sycl::access::target::constant_buffer>  " +
+                               AccName;
+      KI.appendKernelArgs(",\n " + ReplaceStr);
     } else {
       KernelInfo KI(KelFunName);
       // Store Constant Mem info
       KI.insertCMVInfo(TypeName, ConstantVarRefName, IsArray,
-                       Size.toString(10, false), HashID);
+                       SizeOfConstMemVar[ConstantVarRefName], HashID);
       KernelTransAssist::insertKernel(KelFunName, KI);
       KI.appendKernelArgs(", " + TypeName + " " + ConstantVarRefName + "[]");
     }
