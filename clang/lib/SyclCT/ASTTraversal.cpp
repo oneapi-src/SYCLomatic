@@ -950,11 +950,11 @@ REGISTER_RULE(KernelCallRule)
 /// __shared__ var translation need 3 rules to work together, as follow:
 //  [SharedMemVarRule] Here try to remove __shared__ variable declare,
 //      also this rule records shared variable info for other rule
-//  [KernelIterationSpaceRule] __shared__ varialbe will be declared as
+//  [KernelIterationSpaceRule] __shared__ variable will be declared as
 //      args of kernel function.
 //  [KernelCallRule]__shared__ variable also will be declared as accessor
 //      with cl::sycl::access::target::local in sycl command group,
-//      when call kernel function, the accssor will pass to kernel function
+//      when call kernel function, the accessor will pass to kernel function
 void SharedMemVarRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(varDecl(isExpansionInMainFile(),
                         hasAttr(clang::attr::CUDAShared),
@@ -1032,13 +1032,13 @@ REGISTER_RULE(SharedMemVarRule)
 /// __constant__ var translation need 3 rules to work together, as follow:
 //  [ConstantMemVarRule] Here try to remove __constant__ variable declare,
 //      also this rule records constant variable info for other rule
-//  [KernelIterationSpaceRule] __constant__ varialbe will be declared as
+//  [KernelIterationSpaceRule] __constant__ variable will be declared as
 //      args of kernel function.
 //  [KernelCallRule]__constant__ variable also will be declared as accessor
 //      with auto  const_acc =
 //      const_buf.get_access<cl::sycl::access::mode::read,
 //  cl::sycl::access::target::constant_buffer>(cgh) in sycl command group,
-//      when call kernel function, the accssor will pass to kernel function
+//      when call kernel function, the accessor will pass to kernel function
 void ConstantMemVarRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(varDecl(hasAttr(clang::attr::CUDAConstant))
                     .bind("cudaConstantMemVarDecl"),
@@ -1193,12 +1193,12 @@ REGISTER_RULE(ConstantMemVarRule)
 /// __device__ var translation need 3 rules to work together, as follow:
 //  [DeviceMemVarRule] Here try to remove __device__ variable declare,
 //      also this rule records device variable info for other rule
-//  [KernelIterationSpaceRule] __device__ varialbe will be declared as
+//  [KernelIterationSpaceRule] __device__ variable will be declared as
 //      args of kernel function.
 //  [KernelCallRule]__device__ variable also will be declared as accessor
 //      with auto device_acc_<var_name> =
 //      device_buffer_<var_name>.get_access<cl::sycl::access::mode::read_write>(cgh)
-//      in sycl command group, when call kernel function, the accssor will pass
+//      in sycl command group, when call kernel function, the accessor will pass
 //      to kernel function
 void DeviceMemVarRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
