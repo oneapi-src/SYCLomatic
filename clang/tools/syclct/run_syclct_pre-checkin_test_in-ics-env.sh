@@ -14,10 +14,15 @@ tc_result_folder=tc_$tc_result_folder
 mkdir  $tc_result_folder
 cd  $tc_result_folder
 
-#Test the passed case: make sure all can pass with your code change.
-tc -r none -x gcc_efi2 -t syclct_sdk_samples/vectorAdd,topologyQuery,cudaOpenMP,cppIntegration,simpleAssert,alignedTypes,simpleMPI,simplePrintf
+#old test command
+#tc -r none -x gcc_efi2 -t syclct_sdk_samples/vectorAdd,topologyQuery,cudaOpenMP,cppIntegration,simpleAssert,alignedTypes,simpleMPI,simplePrintf
 
-#If previous commnd failed, run following command as test suite is changing.
-#tc -r none -x gcc_efi2 -t syclct_sdk_8_samples/vectorAdd,topologyQuery,cudaOpenMP,cppIntegration,simpleAssert,alignedTypes,simpleMPI,simplePrintf
+#Run test case from syclct_sdk_8_samples
+tc -r none -x gcc_efi2 -t syclct_sdk_8_samples/vectorAdd,topologyQuery,cudaOpenMP,cppIntegration,simpleAssert,alignedTypes,simpleMPI,simplePrintf
 
+#Run test case from syclct_sdk_92_samples
+#tc -r none -x gcc_efi2 -t syclct_sdk_92_samples/vectorAdd,topologyQuery,cudaOpenMP,cppIntegration,simpleAssert,alignedTypes,simpleMPI,simplePrintf
+
+#Run test case from syclct_sdk_10_samples
+#tc -r none -x gcc_efi2 -t syclct_sdk_10_samples/vectorAdd,topologyQuery,cudaOpenMP,cppIntegration,simpleAssert,alignedTypes,simpleMPI,simplePrintf
 
