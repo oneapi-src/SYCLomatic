@@ -15,7 +15,9 @@
 #include "SaveNewFiles.h"
 #include "Utility.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
+#include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/StringSet.h"
+#include "llvm/Support/Path.h"
 #include <iostream>
 #include <string>
 #include <utility>
@@ -23,6 +25,7 @@
 using namespace clang;
 using namespace clang::ast_matchers;
 using namespace clang::syclct;
+using namespace clang::tooling;
 
 extern std::string CudaPath;
 
@@ -35,7 +38,20 @@ void IncludesCallbacks::InclusionDirective(
     StringRef SearchPath, StringRef RelativePath, const Module *Imported,
     SrcMgr::CharacteristicKind FileType) {
 
-  if (!SM.isWrittenInMainFile(HashLoc)) {
+  std::string IncludePath = SearchPath;
+  makeCanonical(IncludePath);
+  std::string IncludingFile = SM.getFilename(HashLoc);
+
+  IncludingFile = getAbsolutePath(IncludingFile);
+  // eg. '/home/path/util.h' -> '/home/path'
+  StringRef Directory = llvm::sys::path::parent_path(IncludingFile);
+  std::string InRoot = ATM.InRoot;
+
+  bool IsIncludingFileInInRoot = !llvm::sys::fs::is_directory(IncludingFile) &&
+                                 (isChildPath(InRoot, Directory.str()) ||
+                                  isSamePath(InRoot, Directory.str()));
+
+  if (!SM.isWrittenInMainFile(HashLoc) && !IsIncludingFileInInRoot) {
     return;
   }
 
@@ -50,10 +66,6 @@ void IncludesCallbacks::InclusionDirective(
         new ReplaceInclude(InsertRange, std::move(Replacement)));
     SyclHeaderInserted = true;
   }
-
-  std::string IncludePath = SearchPath;
-  makeCanonical(IncludePath);
-  std::string IncludingFile = SM.getFilename(HashLoc);
 
   // replace "#include <math.h>" with <cmath>
   if (IsAngled && FileName.compare(StringRef("math.h")) == 0) {

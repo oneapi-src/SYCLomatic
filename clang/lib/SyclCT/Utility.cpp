@@ -58,6 +58,11 @@ bool isChildPath(const std::string &Root, const std::string &Child) {
   return Diff.first == path::end(Root) && Diff.second != path::end(Child);
 }
 
+bool isSamePath(const std::string &Root, const std::string &Child) {
+  auto Diff = mismatch(path::begin(Root), path::end(Root), path::begin(Child));
+  return Diff.first == path::end(Root) && Diff.second == path::end(Child);
+}
+
 const char *getNL(SourceLocation Loc, const SourceManager &SM) {
   auto LocInfo = SM.getDecomposedLoc(Loc);
   auto Buffer = SM.getBufferData(LocInfo.first);
@@ -115,12 +120,11 @@ typedef std::vector<std::string> SplitsType;
 // Recursively walk the AST from S, looking for statements that already
 // have a string mapping in the StmtStringMap
 static void getTransforms(const Stmt *S, StmtStringMap *SSM,
-  TransformsType &Transforms) {
+                          TransformsType &Transforms) {
   std::string Str = SSM->lookup(S);
   if (!Str.empty()) {
     Transforms.push_back({S, Str});
-  }
-  else {
+  } else {
     for (auto C : S->children()) {
       getTransforms(C, SSM, Transforms);
     }
@@ -130,8 +134,8 @@ static void getTransforms(const Stmt *S, StmtStringMap *SSM,
 // Split the original spelling of S into pieces according to the ranges from the
 // transforms
 static void getOriginalSplits(const Stmt *S, TransformsType &Transforms,
-  SplitsType &Splits,
-  const clang::ASTContext &Context) {
+                              SplitsType &Splits,
+                              const clang::ASTContext &Context) {
   Splits = SplitsType();
   auto &SM = Context.getSourceManager();
   SourceRange SR = S->getSourceRange();
@@ -163,8 +167,9 @@ static void getNewSplits(TransformsType &Transforms, SplitsType &Splits) {
 }
 
 // Returns the spelling of Stmt S, with the translations from StmtStringMap
-std::string getStmtSpellingWithTransforms(
-  const Stmt *S, const clang::ASTContext &Context, StmtStringMap *SSM) {
+std::string getStmtSpellingWithTransforms(const Stmt *S,
+                                          const clang::ASTContext &Context,
+                                          StmtStringMap *SSM) {
   TransformsType Transforms;
   getTransforms(S, SSM, Transforms);
   if (Transforms.empty()) {
@@ -194,7 +199,7 @@ SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
              Extension == ".c") {
     return TypeCppSource;
   } else if (Extension == ".hpp" || Extension == ".hxx" || Extension == ".h" ||
-            Extension == ".hh") {
+             Extension == ".hh") {
     return TypeCppHeader;
   } else {
     llvm::errs() << "[ERROR] Not support\"" << Extension << "\" file type!\n";

@@ -202,7 +202,7 @@ public:
 
   void Initialize(ASTContext &Context) override {
     PP.addPPCallbacks(llvm::make_unique<IncludesCallbacks>(
-        TransformSet, Context.getSourceManager()));
+        TransformSet, Context.getSourceManager(), ATM));
   }
 
 private:

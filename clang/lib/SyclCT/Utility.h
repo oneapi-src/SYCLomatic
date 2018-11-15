@@ -15,11 +15,11 @@
 #include <ios>
 #include <iostream>
 #include <list>
+#include <map>
 #include <sstream>
 #include <stack>
 #include <string>
 #include <vector>
-#include <map>
 
 namespace llvm {
 template <typename T> class SmallVectorImpl;
@@ -68,6 +68,11 @@ bool isCanonical(llvm::StringRef Path);
 // /x/y and /x/yy/ -> false (not a prefix in terms of a path)
 bool isChildPath(const std::string &Root, const std::string &Child);
 
+// Returns true if Root is a real same with Child
+// /x/y and /x/y/z -> false
+// /x/y and /x/y   -> true
+bool isSamePath(const std::string &Root, const std::string &Child);
+
 // Returns the character sequence ("\n" or "\r\n") used to represent new line
 // in the source line containing Loc.
 const char *getNL(clang::SourceLocation Loc, const clang::SourceManager &SM);
@@ -81,9 +86,8 @@ std::string getStmtSpelling(const clang::Stmt *E,
                             const clang::ASTContext &Context);
 // Get the Stmt spelling with the existing transforms applied
 std::string getStmtSpellingWithTransforms(const clang::Stmt *S,
-  const clang::ASTContext &Context,
-  StmtStringMap *SSM);
-
+                                          const clang::ASTContext &Context,
+                                          StmtStringMap *SSM);
 
 template <typename T> std::string getHashAsString(const T &Val) {
   std::stringstream Stream;

@@ -40,15 +40,20 @@ typedef struct {
   std::vector<std::string> RulesDependon;
 } CommonRuleProperty;
 
+class ASTTraversalManager;
 class IncludesCallbacks : public PPCallbacks {
   TransformSetTy &TransformSet;
   SourceManager &SM;
+
   std::unordered_set<std::string> SeenFiles;
   bool SyclHeaderInserted;
+  ASTTraversalManager &ATM;
 
 public:
-  IncludesCallbacks(TransformSetTy &TransformSet, SourceManager &SM)
-      : TransformSet(TransformSet), SM(SM), SyclHeaderInserted(false) {}
+  IncludesCallbacks(TransformSetTy &TransformSet, SourceManager &SM,
+                    ASTTraversalManager &ATM)
+      : TransformSet(TransformSet), SM(SM), SyclHeaderInserted(false),
+        ATM(ATM) {}
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
                           StringRef FileName, bool IsAngled,
                           CharSourceRange FilenameRange, const FileEntry *File,
