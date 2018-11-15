@@ -52,8 +52,8 @@ void run_test() {
   // CHECK:       auto d_in_acc = d_in_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK:       auto d_out_acc = d_out_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK:       cgh.parallel_for<SyclKernelName<class kernel_{{[a-f0-9]+}}, T>>(
-  // CHECK:         cl::sycl::nd_range<1>((cl::sycl::range<1>(1) * cl::sycl::range<1>(num_threads)), cl::sycl::range<1>(num_threads)),
-  // CHECK:         [=](cl::sycl::nd_item<1> it) {
+  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(num_threads, 1, 1)), cl::sycl::range<3>(num_threads, 1, 1)),
+  // CHECK:         [=](cl::sycl::nd_item<3> it) {
   // CHECK:           T *d_in = (T*)(&d_in_acc[0] + d_in_offset);
   // CHECK:           T *d_out = (T*)(&d_out_acc[0] + d_out_offset);
   // CHECK:           kernel<T>(it, d_in, d_out);

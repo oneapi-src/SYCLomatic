@@ -68,4 +68,17 @@ int main() {
 
   // CHECK: int c = t.w[0] + t.w[1] + t.w[2];
   int c = t.w.x + t.w.y + t.w.z;
+
+  // CHECK: cl::sycl::range<3> d3_1(test[0], 1, 1);
+  dim3 d3_1(test.x);
+  // CHECK: cl::sycl::range<3> d3_2(test[0] + 1, 1, 1);
+  dim3 d3_2(test.x + 1);
+  // CHECK: cl::sycl::range<3> d3_3(2 + test[0] + 1, 1, 1);
+  dim3 d3_3(2 + test.x + 1);
+  // CHECK: cl::sycl::range<3> d3_4(test[0], test[1], 1);
+  dim3 d3_4(test.x, test.y);
+  // CHECK: cl::sycl::range<3> d3_5(test[0], test[1], test[2]);
+  dim3 d3_5(test.x, test.y, test.z);
+  // CHECK: cl::sycl::range<3> d3_6 = cl::sycl::range<3>(test[0] + 1, 2 + test[1], 3 + test[2] + 4);
+  dim3 d3_6 = dim3(test.x + 1, 2 + test.y, 3 + test.z + 4);
 }

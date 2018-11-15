@@ -77,4 +77,16 @@ int main() {
   // CHECK-NEXT:      });
   // CHECK-NEXT:  };
   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int, karg2int, karg3int);
+
+  // CHECK:  {
+  // CHECK-NEXT:    syclct::get_default_queue().submit(
+  // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:      cgh.parallel_for<SyclKernelName<class testKernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:        cl::sycl::nd_range<3>((cl::sycl::range<3>(griddim[0], 1, 1) * cl::sycl::range<3>(griddim[1] + 2, 1, 1)), cl::sycl::range<3>(griddim[1] + 2, 1, 1)),
+  // CHECK-NEXT:        [=](cl::sycl::nd_item<3> it) {
+  // CHECK-NEXT:        testKernel(it, karg1int, karg2int, karg3int);
+  // CHECK-NEXT:      });
+  // CHECK-NEXT:    });
+  // CHECK-NEXT:  };
+  testKernel <<<griddim.x, griddim.y + 2 >>>(karg1int, karg2int, karg3int);
 }
