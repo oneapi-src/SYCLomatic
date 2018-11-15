@@ -312,7 +312,7 @@ template <typename T> const char NamedTranslationRule<T>::ID(0);
 class IterationSpaceBuiltinRule
     : public NamedTranslationRule<IterationSpaceBuiltinRule> {
 public:
-  IterationSpaceBuiltinRule() { SetRuleProperty(ApplyToCudaFile); }
+  IterationSpaceBuiltinRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -456,7 +456,7 @@ public:
 /// Translation rule for shared memory variables.
 class SharedMemVarRule : public NamedTranslationRule<SharedMemVarRule> {
 public:
-  SharedMemVarRule() { SetRuleProperty(ApplyToCudaFile); }
+  SharedMemVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -473,7 +473,7 @@ class ConstantMemVarRule : public NamedTranslationRule<ConstantMemVarRule> {
   std::map<std::string, bool> CVarIsArray;
 
 public:
-  ConstantMemVarRule() { SetRuleProperty(ApplyToCudaFile); }
+  ConstantMemVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -481,7 +481,7 @@ public:
 /// Translation rule for device memory variables.
 class DeviceMemVarRule : public NamedTranslationRule<DeviceMemVarRule> {
 public:
-  DeviceMemVarRule() { SetRuleProperty(ApplyToCudaFile); }
+  DeviceMemVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };

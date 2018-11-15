@@ -193,7 +193,8 @@ SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
   } else if (Extension == ".cpp" || Extension == ".cxx" || Extension == ".cc" ||
              Extension == ".c") {
     return TypeCppSource;
-  } else if (Extension == ".hpp" || Extension == ".hxx" || Extension == ".h") {
+  } else if (Extension == ".hpp" || Extension == ".hxx" || Extension == ".h" ||
+            Extension == ".hh") {
     return TypeCppHeader;
   } else {
     llvm::errs() << "[ERROR] Not support\"" << Extension << "\" file type!\n";
