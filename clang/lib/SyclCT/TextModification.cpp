@@ -25,7 +25,6 @@ using namespace clang;
 using namespace clang::syclct;
 using namespace clang::tooling;
 
-
 ExtReplacement ReplaceStmt::getReplacement(const ASTContext &Context) const {
   return ExtReplacement(Context.getSourceManager(), TheStmt, ReplacementString);
 }
@@ -523,6 +522,19 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   }
   KernelClassName += ">";
 
+  const std::string ItemName = "it";
+  std::stringstream KernelArgsISS;
+  KernelArgsISS << ItemName << ", " << HeaderShareVasAsArgs.str()
+                << HeaderConstantVasAsArgs.str() << HeaderDeviceVarAsArgs.str()
+                << buildArgList(KCall->arguments(), Context);
+
+  std::string KernelArgs = KernelArgsISS.str();
+  // Trim redundant end string ", "
+  const size_t LastTwoPosition = KernelArgs.length() - strlen(", ");
+  if (KernelArgs.substr(LastTwoPosition) == ", ") {
+    KernelArgs = KernelArgs.substr(0, LastTwoPosition);
+  }
+
   // clang-format off
   std::stringstream Final;
   Final
@@ -538,13 +550,9 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << getDim3Translation(NDSize, Context, SSM) << " * "
   << getDim3Translation(WGSize, Context, SSM) << "), "
   << getDim3Translation(WGSize, Context, SSM)<<")," << NL
-  << Indent <<  "      [=](cl::sycl::nd_item<3> it) {" << NL
+  << Indent <<  "      [=](cl::sycl::nd_item<3> " + ItemName + ") {" << NL
   << Header3.str()
-  << Indent <<  "        " << CallFunc << "(it, "<< HeaderShareVasAsArgs.str()
-                                                 << HeaderConstantVasAsArgs.str()
-                                                 << HeaderDeviceVarAsArgs.str()
-                                                 << buildArgList(KCall->arguments(), Context)
-                                    << ");" <<  NL
+  << Indent <<  "        " << CallFunc << "(" << KernelArgs << ");" << NL
   << Indent <<  "      });" <<  NL
   << Indent <<  "  });" <<  NL
   << OrigIndent << "}";
