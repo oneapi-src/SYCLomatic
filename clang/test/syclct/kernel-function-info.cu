@@ -19,7 +19,7 @@ void getTemplateFuncAttrs()
   //CHECK: sycl_kernel_function_info attrs;
   cudaFuncAttributes attrs;
 
-  //CHECK: getSyclKernelFunctionInfo(&attrs, (const void *)testTemplateKernel<T>);
+  //CHECK: (get_kernel_function_info(&attrs, (const void *)testTemplateKernel<T>), 0);
   cudaFuncGetAttributes(&attrs, testTemplateKernel<T>);
 
   //CHECK: int threadPerBlock = attrs.max_work_group_size;
@@ -31,7 +31,7 @@ void getFuncAttrs()
   //CHECK: sycl_kernel_function_info attrs;
   cudaFuncAttributes attrs;
 
-  //CHECK: getSyclKernelFunctionInfo(&attrs, (const void *)testKernel);
+  //CHECK: (get_kernel_function_info(&attrs, (const void *)testKernel), 0);
   cudaFuncGetAttributes(&attrs, testKernel);
 
   //CHECK: int threadPerBlock = attrs.max_work_group_size;

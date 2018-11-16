@@ -18,11 +18,11 @@ struct sycl_kernel_function_info {
   int max_work_group_size = 0;
 };
 
-static void getSyclKernelFunctionInfo(sycl_kernel_function_info *KernelInfo,
-                               const void *Func) {
-  static cl::sycl::device Device;
-  KernelInfo->max_work_group_size =
-      Device.get_info<cl::sycl::info::device::max_work_group_size>();
+static void get_kernel_function_info(sycl_kernel_function_info *kernel_info,
+                               const void *function) {
+  static cl::sycl::device device;
+  kernel_info->max_work_group_size =
+      device.get_info<cl::sycl::info::device::max_work_group_size>();
 }
 
 #endif // !SYCLCT_KERNEL_H

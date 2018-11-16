@@ -1679,7 +1679,8 @@ void KernelFunctionInfoRule::run(const MatchFinder::MatchResult &Result) {
         new ReplaceTypeInVarDecl(V, "sycl_kernel_function_info"));
   else if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
     emplaceTransformation(
-        new ReplaceToken(C->getBeginLoc(), "getSyclKernelFunctionInfo"));
+        new ReplaceToken(C->getBeginLoc(), "(get_kernel_function_info"));
+    emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
     auto FuncArg = C->getArg(1);
     emplaceTransformation(new InsertBeforeStmt(FuncArg, "(const void *)"));
   } else if (auto M = getNodeAsType<MemberExpr>(Result, "member")) {
