@@ -115,7 +115,7 @@ public:
              VarName + ".get_ptr());\n";
       Temp += "        auto " + BufferVar + " = " + BufferOffsetVar +
               ".first.reinterpret<" + VarType + ">(" + Range + ");\n" +
-              "        auto " + AccVarName + "= " + BufferVar +
+              "        auto " + AccVarName + " = " + BufferVar +
               ".get_access<cl::sycl::access::mode::read_write>(cgh);";
       break;
     }

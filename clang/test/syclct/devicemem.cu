@@ -61,7 +61,7 @@ int main() {
   // CHECK:       auto d_out_acc = d_out_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK:       auto device_buffer_and_offset_in = syclct::get_buffer_and_offset(in.get_ptr());
   // CHECK:       auto device_buffer_in = device_buffer_and_offset_in.first.reinterpret<float>(cl::sycl::range<1>(16));
-  // CHECK:       auto device_acc_in= device_buffer_in.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK:       auto device_acc_in = device_buffer_in.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK:       cgh.parallel_for<SyclKernelName<class kernel1_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
   // CHECK:         [=](cl::sycl::nd_item<3> it) {
@@ -80,7 +80,7 @@ int main() {
   // CHECK:       auto d_out_acc = d_out_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK:       auto device_buffer_and_offset_a = syclct::get_buffer_and_offset(a.get_ptr());
   // CHECK:       auto device_buffer_a = device_buffer_and_offset_a.first.reinterpret<int>(cl::sycl::range<1>(1));
-  // CHECK:       auto device_acc_a= device_buffer_a.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK:       auto device_acc_a = device_buffer_a.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK:       cgh.parallel_for<SyclKernelName<class kernel2_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
   // CHECK:         [=](cl::sycl::nd_item<3> it) {
