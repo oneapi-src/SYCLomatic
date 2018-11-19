@@ -16,7 +16,7 @@ __global__ void staticReverse(int *d, int n) {
 
 // CHECK: template<typename TData>
 // CHECK-NEXT: void templateReverse(cl::sycl::nd_item<3> item_{{[a-f0-9]+}}, cl::sycl::accessor<TData, 2, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s, TData *d, TData n) {
-template <class TData>
+template<typename TData>
 __global__ void templateReverse(TData *d, TData n) {
   __shared__ TData s[64][128]; // the size of s is static
   int t = threadIdx.x;
@@ -43,8 +43,8 @@ void testTemplate() {
   // CHECK-NEXT:	  auto d_d_acc = d_d_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:	  cl::sycl::accessor<T, 2, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s(cl::sycl::range<2>(64, 128), cgh);
   // CHECK-NEXT:	  cgh.parallel_for<SyclKernelName<class templateReverse_{{[a-f0-9]+}}, T>>(
-  // CHECK-NEXT:		cl::sycl::nd_range<1>((cl::sycl::range<1>(1) * cl::sycl::range<1>(n)), cl::sycl::range<1>(n)),
-  // CHECK-NEXT:		[=](cl::sycl::nd_item<1> it) {
+  // CHECK-NEXT:		cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1)), cl::sycl::range<3>(n, 1, 1)),
+  // CHECK-NEXT:		[=](cl::sycl::nd_item<3> it) {
   // CHECK-NEXT:		  T *d_d = (T*)(&d_d_acc[0] + d_d_offset);
   // CHECK-NEXT:		  templateReverse<T>(it, s, d_d, n);
   // CHECK-NEXT:		});
@@ -85,8 +85,8 @@ int main(void) {
   // CHECK-NEXT:	  auto d_d_acc = d_d_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:	  cl::sycl::accessor<int, 2, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s(cl::sycl::range<2>(64, 128), cgh);
   // CHECK-NEXT:	  cgh.parallel_for<SyclKernelName<class templateReverse_{{[a-f0-9]+}}, int>>(
-  // CHECK-NEXT:		cl::sycl::nd_range<1>((cl::sycl::range<1>(1) * cl::sycl::range<1>(n)), cl::sycl::range<1>(n)),
-  // CHECK-NEXT:		[=](cl::sycl::nd_item<1> it) {
+  // CHECK-NEXT:		cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1)), cl::sycl::range<3>(n, 1, 1)),
+  // CHECK-NEXT:		[=](cl::sycl::nd_item<3> it) {
   // CHECK-NEXT:		  int *d_d = (int*)(&d_d_acc[0] + d_d_offset);
   // CHECK-NEXT:		  templateReverse<int>(it, s, d_d, n);
   // CHECK-NEXT:		});
