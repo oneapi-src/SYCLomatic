@@ -34,7 +34,7 @@ __constant__ float const_one;
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = item_{{[a-f0-9]+}}.get_group(0) * item_{{[a-f0-9]+}}.get_local_range().get(0) + item_{{[a-f0-9]+}}.get_local_id(0);
 // CHECK-NEXT:  if (index < 360) {
-// CHECK-NEXT:    d_array[index] = const_acc_{{[a-f0-9]+}}_{{[a-f0-9]+}}[0] + const_acc_{{[a-f0-9]+}}_{{[a-f0-9]+}}[index];;
+// CHECK-NEXT:    d_array[index] = const_acc_{{[a-f0-9]+}}_{{[a-f0-9]+}}[0] + const_acc_{{[a-f0-9]+}}_{{[a-f0-9]+}}[index] + const_acc_{{[a-f0-9]+}}_{{[a-f0-9]+}}[0] + const_acc_{{[a-f0-9]+}}_{{[a-f0-9]+}}[0];
 // CHECK-NEXT:  }
 // CHECK-NEXT:  return;
 // CHECK-NEXT:}
@@ -42,7 +42,7 @@ __global__ void simple_kernel_one(float *d_array) {
   int index;
   index = blockIdx.x * blockDim.x + threadIdx.x;
   if (index < 360) {
-    d_array[index] = const_one + const_angle[index];;
+    d_array[index] = const_one + const_angle[index] + const_one + const_one;
   }
   return;
 }
@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
   cudaMemcpy(hangle_h, d_array, 360 * sizeof(float), cudaMemcpyDeviceToHost);
 
   for (int i = 1; i < 360; i++) {
-    if (fabs(h_array[i] + 10.0f - hangle_h[i]) > 1e-5) {
+    if (fabs(h_array[i] + 30.0f - hangle_h[i]) > 1e-5) {
       exit(-1);
     }
   }

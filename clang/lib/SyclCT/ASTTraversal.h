@@ -317,7 +317,9 @@ template <typename T> const char NamedTranslationRule<T>::ID(0);
 class IterationSpaceBuiltinRule
     : public NamedTranslationRule<IterationSpaceBuiltinRule> {
 public:
-  IterationSpaceBuiltinRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  IterationSpaceBuiltinRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -468,19 +470,26 @@ public:
 
 /// Translation rule for constant memory variables.
 class ConstantMemVarRule : public NamedTranslationRule<ConstantMemVarRule> {
-
+private:
   llvm::APInt Size;
   std::string TypeName;
   std::string ConstantVarName;
   bool IsArray;
   std::map<std::string, unsigned int> CntOfCVarPerKelfun;
   std::map<std::string, std::string> SizeOfConstMemVar;
+  std::map<std::string, std::string> AccOfConstMemVar;
+  std::unordered_set<std::string> AccSetOfConstMemVar;
   std::map<std::string, bool> CVarIsArray;
 
 public:
   ConstantMemVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+private:
+  void ConstMemVarDeclProcess(const VarDecl *ConstantMemVar);
+  void DeviceKernelFunctionProcess(const FunctionDecl *KernelFunction,
+                                   const DeclRefExpr *ConstantMemVarRef);
 };
 
 /// Translation rule for device memory variables.

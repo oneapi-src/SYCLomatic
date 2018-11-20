@@ -1055,52 +1055,30 @@ void ConstantMemVarRule::registerMatcher(MatchFinder &MF) {
                 this);
 }
 
-void ConstantMemVarRule::run(const MatchFinder::MatchResult &Result) {
-  std::string ConstantVarRefName;
-  std::string KelFunName;
-  std::string HashID = getHashID();
+void ConstantMemVarRule::ConstMemVarDeclProcess(const VarDecl *ConstantMemVar) {
+  ConstantVarName = ConstantMemVar->getNameAsString();
 
-  auto *ConstantMemVar =
-      getNodeAsType<VarDecl>(Result, "cudaConstantMemVarDecl");
-  if (ConstantMemVar != NULL) {
-    ConstantVarName = ConstantMemVar->getNameAsString();
+  clang::QualType QType = ConstantMemVar->getType();
 
-    clang::QualType QType = ConstantMemVar->getType();
-
-    Size = 0u;
-    if (QType->isArrayType()) {
-      IsArray = true;
-      if (QType->isConstantArrayType()) {
-        Size =
+  Size = 0u;
+  if (QType->isArrayType()) {
+    IsArray = true;
+    if (QType->isConstantArrayType()) {
+      Size = cast<ConstantArrayType>(QType->getAsArrayTypeUnsafe())->getSize();
+      QType = QType.getTypePtr()->getAsArrayTypeUnsafe()->getElementType();
+      while (QType->isArrayType()) {
+        if (!QType->isConstantArrayType())
+          assert(false && "N-dimision array must be constant");
+        Size *=
             cast<ConstantArrayType>(QType->getAsArrayTypeUnsafe())->getSize();
         QType = QType.getTypePtr()->getAsArrayTypeUnsafe()->getElementType();
-        while (QType->isArrayType()) {
-          if (!QType->isConstantArrayType())
-            assert(false && "N-dimision array must be constant");
-          Size *=
-              cast<ConstantArrayType>(QType->getAsArrayTypeUnsafe())->getSize();
-          QType = QType.getTypePtr()->getAsArrayTypeUnsafe()->getElementType();
-        }
-      } else {
-        const clang::ArrayType *AT = QType.getTypePtr()->getAsArrayTypeUnsafe();
-        QType = AT->getElementType();
       }
-      if (QType.getTypePtr()->isBuiltinType()) {
-        QType = QType.getCanonicalType();
-        const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
-        if (BT) {
-          clang::LangOptions LO;
-          LO.CUDA = true;
-          clang::PrintingPolicy policy(LO);
-          TypeName = BT->getName(policy);
-        }
-      } else {
-        TypeName = QType.getAsString();
-      }
-      IsArray = true;
     } else {
-      IsArray = false;
-      Size = 1u;
+      const clang::ArrayType *AT = QType.getTypePtr()->getAsArrayTypeUnsafe();
+      QType = AT->getElementType();
+    }
+    if (QType.getTypePtr()->isBuiltinType()) {
+      QType = QType.getCanonicalType();
       const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
       if (BT) {
         clang::LangOptions LO;
@@ -1108,71 +1086,95 @@ void ConstantMemVarRule::run(const MatchFinder::MatchResult &Result) {
         clang::PrintingPolicy policy(LO);
         TypeName = BT->getName(policy);
       }
+    } else {
+      TypeName = QType.getAsString();
     }
-
-    const AttrVec &AV = ConstantMemVar->getAttrs();
-    for (const Attr *A : AV) {
-      attr::Kind AK = A->getKind();
-      if (!A->isImplicit() && (AK == attr::CUDAConstant))
-        emplaceTransformation(new RemoveAttr(A));
-    }
-
-    std::string Replacement = "syclct::ConstMem  " + ConstantVarName + "(" +
-                              Size.toString(10, false) + "* sizeof(" +
-                              TypeName + "))";
-
-    if (IsArray)
-      emplaceTransformation(
-          new ReplaceTypeInVarDecl(ConstantMemVar, std::move(Replacement)));
-    else
-      emplaceTransformation(new ReplaceTypeInVarDecl(
-          ConstantMemVar, std::move(Replacement + ";\n//")));
-
-    std::map<std::string, std::string>::iterator Iter =
-        SizeOfConstMemVar.find(ConstantVarName);
-    if (Iter == SizeOfConstMemVar.end()) {
-      SizeOfConstMemVar[ConstantVarName] = Size.toString(10, false);
-    }
-
-    std::map<std::string, bool>::iterator TypeIter =
-        CVarIsArray.find(ConstantVarName);
-    if (TypeIter == CVarIsArray.end()) {
-      CVarIsArray[ConstantVarName] = IsArray;
+    IsArray = true;
+  } else {
+    IsArray = false;
+    Size = 1u;
+    const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
+    if (BT) {
+      clang::LangOptions LO;
+      LO.CUDA = true;
+      clang::PrintingPolicy policy(LO);
+      TypeName = BT->getName(policy);
     }
   }
 
-  auto *KernelFunction =
-      getNodeAsType<FunctionDecl>(Result, "cudaKernelFuction", false);
-  auto *ConstantMemVarRef =
-      getNodeAsType<DeclRefExpr>(Result, "cudaConstantMemVarRef", false);
+  const AttrVec &AV = ConstantMemVar->getAttrs();
+  for (const Attr *A : AV) {
+    attr::Kind AK = A->getKind();
+    if (!A->isImplicit() && (AK == attr::CUDAConstant))
+      emplaceTransformation(new RemoveAttr(A));
+  }
 
+  std::string Replacement = "syclct::ConstMem  " + ConstantVarName + "(" +
+                            Size.toString(10, false) + "* sizeof(" + TypeName +
+                            "))";
+
+  if (IsArray)
+    emplaceTransformation(
+        new ReplaceTypeInVarDecl(ConstantMemVar, std::move(Replacement)));
+  else
+    emplaceTransformation(new ReplaceTypeInVarDecl(
+        ConstantMemVar, std::move(Replacement + ";\n//")));
+
+  std::map<std::string, std::string>::iterator Iter =
+      SizeOfConstMemVar.find(ConstantVarName);
+  if (Iter == SizeOfConstMemVar.end()) {
+    SizeOfConstMemVar[ConstantVarName] = Size.toString(10, false);
+  }
+
+  std::map<std::string, bool>::iterator TypeIter =
+      CVarIsArray.find(ConstantVarName);
+  if (TypeIter == CVarIsArray.end()) {
+    CVarIsArray[ConstantVarName] = IsArray;
+  }
+}
+
+void ConstantMemVarRule::DeviceKernelFunctionProcess(
+    const FunctionDecl *KernelFunction, const DeclRefExpr *ConstantMemVarRef) {
+  std::string ConstantVarRefName;
+  std::string KelFunName;
+  std::string HashID = getHashID();
   std::string AccName;
 
-  if (ConstantMemVarRef != NULL && KernelFunction != NULL) {
-    ConstantVarRefName =
-        ConstantMemVarRef->getNameInfo().getName().getAsString();
-    KelFunName = KernelFunction->getNameAsString();
+  ConstantVarRefName = ConstantMemVarRef->getNameInfo().getName().getAsString();
+  KelFunName = KernelFunction->getNameAsString();
 
-    std::string KeyName = KelFunName;
-    std::map<std::string, unsigned int>::iterator Iter =
-        CntOfCVarPerKelfun.find(KeyName);
-    if (Iter == CntOfCVarPerKelfun.end()) {
-      CntOfCVarPerKelfun[KeyName] = 0;
-    } else {
-      CntOfCVarPerKelfun[KeyName]++;
-    }
+  std::string KeyCompName = KelFunName + ":" + ConstantVarRefName;
 
-    AccName = "const_acc_" + std::to_string(CntOfCVarPerKelfun[KeyName]) + "_" +
-              HashID;
+  std::string KeyName = KelFunName;
+  std::map<std::string, unsigned int>::iterator Iter =
+      CntOfCVarPerKelfun.find(KeyName);
+  if (Iter == CntOfCVarPerKelfun.end()) {
+    CntOfCVarPerKelfun[KeyName] = 0;
+  } else {
+    CntOfCVarPerKelfun[KeyName]++;
+  }
 
-    std::string ReplaceStr = AccName;
-    if (CVarIsArray[ConstantVarRefName]) {
-      emplaceTransformation(
-          new ReplaceStmt(ConstantMemVarRef, std::move(ReplaceStr)));
-    } else {
-      emplaceTransformation(
-          new ReplaceStmt(ConstantMemVarRef, std::move(ReplaceStr + "[0]")));
-    }
+  AccName =
+      "const_acc_" + std::to_string(CntOfCVarPerKelfun[KeyName]) + "_" + HashID;
+
+  std::map<std::string, std::string>::iterator AccOfConstMemIter =
+      AccOfConstMemVar.find(KeyCompName);
+  if (AccOfConstMemIter == AccOfConstMemVar.end()) {
+    AccOfConstMemVar[KeyCompName] = AccName;
+  }
+
+  std::string ReplaceStr = AccOfConstMemVar[KeyCompName];
+  if (CVarIsArray[ConstantVarRefName]) {
+    emplaceTransformation(
+        new ReplaceStmt(ConstantMemVarRef, std::move(ReplaceStr)));
+  } else {
+    emplaceTransformation(
+        new ReplaceStmt(ConstantMemVarRef, std::move(ReplaceStr + "[0]")));
+  }
+
+  // Only create accessor for new hit constant varialble
+  if (AccSetOfConstMemVar.find(KeyCompName) == end(AccSetOfConstMemVar)) {
+    AccSetOfConstMemVar.insert(KeyCompName);
 
     // Store the constatn analysis info in kernelinfo for other rule use:
     //  [KernelIterationSpaceRule] [KernelCallRule]
@@ -1197,6 +1199,24 @@ void ConstantMemVarRule::run(const MatchFinder::MatchResult &Result) {
       KernelTransAssist::insertKernel(KelFunName, KI);
       KI.appendKernelArgs(", " + TypeName + " " + ConstantVarRefName + "[]");
     }
+  }
+}
+void ConstantMemVarRule::run(const MatchFinder::MatchResult &Result) {
+
+  auto *ConstantMemVar =
+      getNodeAsType<VarDecl>(Result, "cudaConstantMemVarDecl");
+  if (ConstantMemVar != NULL) {
+    ConstMemVarDeclProcess(ConstantMemVar);
+  }
+
+  auto *KernelFunction =
+      getNodeAsType<FunctionDecl>(Result, "cudaKernelFuction", false);
+  auto *ConstantMemVarRef =
+      getNodeAsType<DeclRefExpr>(Result, "cudaConstantMemVarRef", false);
+
+  if (ConstantMemVarRef != NULL && KernelFunction != NULL) {
+
+    DeviceKernelFunctionProcess(KernelFunction, ConstantMemVarRef);
   }
 }
 
