@@ -449,15 +449,15 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
         KI.setKernelSMVSize(getStmtSpelling(SMVSize, Context));
       KI.setTemplateArgs(TemplateArgsArray);
       HeaderShareVarAccessor << KI.declareLocalAcc(NL, Indent + "    ");
-      HeaderShareVasAsArgs << KI.passSMVAsArgs() << ", ";
+      HeaderShareVasAsArgs << KI.passSMVAsArgs();
     }
     if (KI.hasCMVDefined()) {
       HeaderConstantVarAccessor << KI.declareConstantAcc(NL, Indent + "    ");
-      HeaderConstantVasAsArgs << KI.passCMVAsArgs() << ", ";
+      HeaderConstantVasAsArgs << KI.passCMVAsArgs();
     }
     if (KI.hasDMVDefined()) {
       HeaderDeviceVarAccessor << KI.declareDeviceAcc(NL, Indent + "    ");
-      HeaderDeviceVarAsArgs << KI.passDMVAsArgs() << ", ";
+      HeaderDeviceVarAsArgs << KI.passDMVAsArgs();
     }
   }
   for (auto *Arg : KCall->arguments()) {
@@ -523,17 +523,20 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   KernelClassName += ">";
 
   const std::string ItemName = "it";
-  std::stringstream KernelArgsISS;
-  KernelArgsISS << ItemName << ", " << HeaderShareVasAsArgs.str()
-                << HeaderConstantVasAsArgs.str() << HeaderDeviceVarAsArgs.str()
-                << buildArgList(KCall->arguments(), Context);
+  std::stringstream KernelArgs;
+  KernelArgs << ItemName;
 
-  std::string KernelArgs = KernelArgsISS.str();
-  // Trim redundant end string ", "
-  const size_t LastTwoPosition = KernelArgs.length() - strlen(", ");
-  if (KernelArgs.substr(LastTwoPosition) == ", ") {
-    KernelArgs = KernelArgs.substr(0, LastTwoPosition);
-  }
+  auto AppendKernelArgs = [&](const std::string &args) {
+    if (args.empty()) {
+      return;
+    }
+    KernelArgs << ", " << args;
+  };
+
+  AppendKernelArgs(HeaderShareVasAsArgs.str());
+  AppendKernelArgs(HeaderConstantVasAsArgs.str());
+  AppendKernelArgs(HeaderDeviceVarAsArgs.str());
+  AppendKernelArgs(buildArgList(KCall->arguments(), Context));
 
   // clang-format off
   std::stringstream Final;
@@ -552,7 +555,7 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << getDim3Translation(WGSize, Context, SSM)<<")," << NL
   << Indent <<  "      [=](cl::sycl::nd_item<3> " + ItemName + ") {" << NL
   << Header3.str()
-  << Indent <<  "        " << CallFunc << "(" << KernelArgs << ");" << NL
+  << Indent <<  "        " << CallFunc << "(" << KernelArgs.str() << ");" << NL
   << Indent <<  "      });" <<  NL
   << Indent <<  "  });" <<  NL
   << OrigIndent << "}";
