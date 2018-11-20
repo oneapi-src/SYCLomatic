@@ -12,11 +12,11 @@
 #ifndef SYCLCT_AST_DIAGNOSTICS_H
 #define SYCLCT_AST_DIAGNOSTICS_H
 
+#include "TextModification.h"
+
 #include "clang/Basic/DiagnosticIDs.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "llvm/Support/FormatVariadic.h"
-
-#include "TextModification.h"
 
 #include <assert.h>
 #include <unordered_map>

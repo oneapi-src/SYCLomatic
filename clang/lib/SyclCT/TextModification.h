@@ -76,30 +76,39 @@ private:
   bool Merged = false;
 };
 
+enum class TextModificationID : int {
+#define TRANSFORMATION(TYPE) TYPE,
+#include "Transformations.inc"
+#undef TRANSFORMATION
+};
+
+using TMID = TextModificationID;
+
 /// Base class for compatibility tool-related source code modifications.
 class TextModification {
 public:
   // getReplacement() method will be called according to the grouping:
   // Modifications belonging to G1 will have getReplacement() called
   // before modifications belonging to G2, and G2s before G3s
-  enum Group {
-    Any = 0,
-    G1 =  1,
-    G2 =  2,
-    G3 =  3
-  };
+  enum Group { Any = 0, G1 = 1, G2 = 2, G3 = 3 };
+
 public:
-  TextModification() : Key(Any) {}
-  TextModification(Group _Key) : Key(_Key) {}
+  TextModification(TMID _TMID) : ID(_TMID), Key(Any) {}
+  TextModification(TMID _TMID, Group _Key) : ID(_TMID), Key(_Key) {}
   virtual ~TextModification() {}
   /// Generate actual Replacement from this TextModification object.
   virtual ExtReplacement getReplacement(const ASTContext &Context) const = 0;
+  virtual void print(llvm::raw_ostream &OS, ASTContext &Context) const = 0;
   bool operator<(const TextModification &TM) const { return Key < TM.Key; }
   static bool Compare(const std::unique_ptr<TextModification> &L,
                       const std::unique_ptr<TextModification> &R) {
     return L->Key < R->Key;
   }
+
+  TMID getID() const { return ID; }
+
 private:
+  const TMID ID;
   Group Key;
 };
 
@@ -109,8 +118,10 @@ class InsertText : public TextModification {
   std::string T;
 
 public:
-  InsertText(SourceLocation Loc, std::string &&S) : Begin(Loc), T(S) {}
+  InsertText(SourceLocation Loc, std::string &&S)
+      : TextModification(TMID::InsertText), Begin(Loc), T(S) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 /// For macros and typedefs source location is unreliable (begin and end of the
@@ -121,8 +132,10 @@ class ReplaceToken : public TextModification {
   std::string T;
 
 public:
-  ReplaceToken(SourceLocation Loc, std::string &&S) : Begin(Loc), T(S) {}
+  ReplaceToken(SourceLocation Loc, std::string &&S)
+      : TextModification(TMID::ReplaceToken), Begin(Loc), T(S) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 /// Replace a statement (w/o semicolon) with a specified string.
@@ -132,9 +145,10 @@ class ReplaceStmt : public TextModification {
 
 public:
   ReplaceStmt(const Stmt *E, std::string &&S)
-      : TheStmt(E), ReplacementString(S) {}
+      : TextModification(TMID::ReplaceStmt), TheStmt(E), ReplacementString(S) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 /// Replace C-style cast with constructor call for a given type.
@@ -144,8 +158,9 @@ class ReplaceCCast : public TextModification {
 
 public:
   ReplaceCCast(const CStyleCastExpr *Cast, std::string &&TypeName)
-      : Cast(Cast), TypeName(TypeName) {}
+      : TextModification(TMID::ReplaceCCast), Cast(Cast), TypeName(TypeName) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 /// Remove an attribute from a declaration.
@@ -153,8 +168,9 @@ class RemoveAttr : public TextModification {
   const Attr *TheAttr;
 
 public:
-  RemoveAttr(const Attr *A) : TheAttr(A) {}
+  RemoveAttr(const Attr *A) : TextModification(TMID::RemoveAttr), TheAttr(A) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 // Replace type in var. declaration.
@@ -163,8 +179,10 @@ class ReplaceTypeInVarDecl : public TextModification {
   std::string T;
 
 public:
-  ReplaceTypeInVarDecl(const VarDecl *D, std::string &&T) : D(D), T(T) {}
+  ReplaceTypeInVarDecl(const VarDecl *D, std::string &&T)
+      : TextModification(TMID::ReplaceTypeInVarDecl), D(D), T(T) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 // Replace type in var. declaration.
@@ -176,8 +194,10 @@ class InsertNameSpaceInVarDecl : public TextModification {
 public:
   InsertNameSpaceInVarDecl(const VarDecl *D, std::string &&T,
                            unsigned int InsertPosition = 0)
-      : D(D), T(T), InsertPosition(InsertPosition) {}
+      : TextModification(TMID::InsertNameSpaceInVarDecl), D(D), T(T),
+        InsertPosition(InsertPosition) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 // Replace type in var. declaration.
@@ -187,8 +207,9 @@ class InsertNameSpaceInCastExpr : public TextModification {
 
 public:
   InsertNameSpaceInCastExpr(const CStyleCastExpr *D, std::string &&T)
-      : D(D), T(T) {}
+      : TextModification(TMID::InsertNameSpaceInCastExpr), D(D), T(T) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 // Replace type in var. declaration.
@@ -197,8 +218,10 @@ class RemoveVarDecl : public TextModification {
   std::string T;
 
 public:
-  RemoveVarDecl(const VarDecl *D, std::string &&T) : D(D), T(T) {}
+  RemoveVarDecl(const VarDecl *D, std::string &&T)
+      : TextModification(TMID::RemoveVarDecl), D(D), T(T) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 // Replace return type in function declaration.
@@ -207,8 +230,10 @@ class ReplaceReturnType : public TextModification {
   std::string T;
 
 public:
-  ReplaceReturnType(const FunctionDecl *FD, std::string &&T) : FD(FD), T(T) {}
+  ReplaceReturnType(const FunctionDecl *FD, std::string &&T)
+      : TextModification(TMID::ReplaceReturnType), FD(FD), T(T) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 // Rename field in expression.
@@ -220,9 +245,11 @@ class RenameFieldInMemberExpr : public TextModification {
 public:
   RenameFieldInMemberExpr(const MemberExpr *ME, std::string &&T,
                           unsigned PositionOfDot = 0)
-      : TextModification(G1), ME(ME), T(T), PositionOfDot(PositionOfDot) {}
+      : TextModification(TMID::RenameFieldInMemberExpr, G1), ME(ME), T(T),
+        PositionOfDot(PositionOfDot) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 class InsertAfterStmt : public TextModification {
@@ -230,9 +257,11 @@ class InsertAfterStmt : public TextModification {
   std::string T;
 
 public:
-  InsertAfterStmt(const Stmt *S, std::string &&T) : S(S), T(T) {}
+  InsertAfterStmt(const Stmt *S, std::string &&T)
+      : TextModification(TMID::InsertAfterStmt), S(S), T(T) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 // Insert '/*  */' C style multi line comment
@@ -242,9 +271,11 @@ class InsertComment : public TextModification {
   std::string Text;
 
 public:
-  InsertComment(SourceLocation SL, std::string Text) : SL(SL), Text(Text) {}
+  InsertComment(SourceLocation SL, std::string Text)
+      : TextModification(TMID::InsertComment), SL(SL), Text(Text) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 /// Replace CallExpr with another call.
@@ -265,14 +296,17 @@ class ReplaceCallExpr : public TextModification {
 public:
   ReplaceCallExpr(const CallExpr *Call, std::string &&NewName,
                   std::vector<const Expr *> &&NewArgs)
-      : C(Call), Name(NewName), Args(NewArgs) {}
+      : TextModification(TMID::ReplaceCallExpr), C(Call), Name(NewName),
+        Args(NewArgs) {}
 
   ReplaceCallExpr(const CallExpr *Call, std::string &&NewName,
                   std::vector<const Expr *> &&NewArgs,
                   std::vector<std::string> NewTypes)
-      : C(Call), Name(NewName), Args(NewArgs), Types(NewTypes) {}
+      : TextModification(TMID::ReplaceCallExpr), C(Call), Name(NewName),
+        Args(NewArgs), Types(NewTypes) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 class InsertArgument : public TextModification {
@@ -283,11 +317,13 @@ class InsertArgument : public TextModification {
 
 public:
   InsertArgument(const FunctionDecl *FD, std::string &&ArgName)
-      : FD(FD), ArgName(ArgName) {}
+      : TextModification(TMID::InsertArgument), FD(FD), ArgName(ArgName) {}
   InsertArgument(const FunctionDecl *FD, std::string &&ArgName, bool Lazy)
-      : FD(FD), ArgName(ArgName), Lazy(Lazy) {}
+      : TextModification(TMID::InsertArgument), FD(FD), ArgName(ArgName),
+        Lazy(Lazy) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 class ReplaceInclude : public TextModification {
@@ -295,8 +331,11 @@ class ReplaceInclude : public TextModification {
   std::string T;
 
 public:
-  ReplaceInclude(CharSourceRange Range, std::string &&T) : Range(Range), T(T) {}
+  ReplaceInclude(CharSourceRange Range, std::string &&T)
+      : TextModification(TMID::ReplaceInclude), Range(Range), T(T) {}
+
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 class ReplaceDim3Ctor : public TextModification {
@@ -318,18 +357,20 @@ class ReplaceDim3Ctor : public TextModification {
 public:
   ReplaceDim3Ctor(const CXXConstructExpr *_Ctor, StmtStringMap *_SSM,
                   bool _isDecl = false)
-      : TextModification(G2), isDecl(_isDecl), Ctor(_Ctor), FinalCtor(nullptr),
-    SSM(_SSM) {
+      : TextModification(TMID::ReplaceDim3Ctor, G2), isDecl(_isDecl),
+        Ctor(_Ctor), FinalCtor(nullptr), SSM(_SSM) {
     setRange();
   }
   ReplaceDim3Ctor(const CXXConstructExpr *_Ctor, StmtStringMap *_SSM,
                   const CXXConstructExpr *_FinalCtor)
-      : TextModification(G2), isDecl(false), Ctor(_Ctor), FinalCtor(_FinalCtor), SSM(_SSM) {
+      : TextModification(TMID::ReplaceDim3Ctor, G2), isDecl(false), Ctor(_Ctor),
+        FinalCtor(_FinalCtor), SSM(_SSM) {
     setRange();
   }
   static const CXXConstructExpr *getConstructExpr(const Expr *E);
   ReplaceInclude *getEmpty();
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 class ReplaceKernelCallExpr : public TextModification {
@@ -344,17 +385,17 @@ class ReplaceKernelCallExpr : public TextModification {
   buildTemplateArgList(const llvm::ArrayRef<TemplateArgument> &Args,
                        const ASTContext &Context) {
     std::string ArgsList;
-    llvm::raw_string_ostream OStream(ArgsList);
+    llvm::raw_string_ostream OS(ArgsList);
     PrintingPolicy Policy(Context.getLangOpts());
     bool NotBegin = false;
     for (auto Arg : Args) {
       if (NotBegin)
-        OStream << ", ";
+        OS << ", ";
       else
         NotBegin = true;
-      Arg.print(Policy, OStream);
+      Arg.print(Policy, OS);
     }
-    return OStream.str();
+    return OS.str();
   }
 
   static std::string getTemplateArgs(const SourceLocation &L,
@@ -371,8 +412,10 @@ class ReplaceKernelCallExpr : public TextModification {
 
 public:
   ReplaceKernelCallExpr(const CUDAKernelCallExpr *KCall, StmtStringMap *SSM)
-      : TextModification(G3), KCall(KCall), SSM(SSM) {}
+      : TextModification(TMID::ReplaceKernelCallExpr, G3), KCall(KCall),
+        SSM(SSM) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 /// A class that filters out Replacements that modify text inside a deleted code
@@ -428,9 +471,11 @@ class InsertBeforeStmt : public TextModification {
   std::string T;
 
 public:
-  InsertBeforeStmt(const Stmt *S, std::string &&T) : S(S), T(T) {}
+  InsertBeforeStmt(const Stmt *S, std::string &&T)
+      : TextModification(TMID::InsertBeforeStmt), S(S), T(T) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 class RemoveArg : public TextModification {
@@ -438,9 +483,11 @@ class RemoveArg : public TextModification {
   const unsigned N;
 
 public:
-  RemoveArg(const CallExpr *CE, const unsigned N) : CE(CE), N(N) {}
+  RemoveArg(const CallExpr *CE, const unsigned N)
+      : TextModification(TMID::RemoveArg), CE(CE), N(N) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 class InsertBeforeCtrInitList : public TextModification {
@@ -449,9 +496,10 @@ class InsertBeforeCtrInitList : public TextModification {
 
 public:
   InsertBeforeCtrInitList(const CXXConstructorDecl *S, std::string &&T)
-      : CDecl(S), T(T) {}
+      : TextModification(TMID::InsertBeforeCtrInitList), CDecl(S), T(T) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 class InsertClassName : public TextModification {
@@ -459,9 +507,11 @@ class InsertClassName : public TextModification {
   static unsigned Count;
 
 public:
-  InsertClassName(const CXXRecordDecl *C) : CD(C) {}
+  InsertClassName(const CXXRecordDecl *C)
+      : TextModification(TMID::InsertClassName), CD(C) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context) const override;
 };
 
 } // namespace syclct

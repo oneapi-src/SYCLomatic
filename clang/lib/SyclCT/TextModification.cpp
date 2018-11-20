@@ -117,6 +117,7 @@ InsertNameSpaceInVarDecl::getReplacement(const ASTContext &Context) const {
   R.setInsertPosition(InsertPositionRight);
   return R;
 }
+
 ExtReplacement
 InsertNameSpaceInCastExpr::getReplacement(const ASTContext &Context) const {
   return ExtReplacement(
@@ -357,9 +358,9 @@ buildCall(const std::string &Name, llvm::iterator_range<ArgIterT> Args,
 std::string printTemplateArgument(const TemplateArgument &Arg,
                                   const PrintingPolicy &PP) {
   std::string Out;
-  llvm::raw_string_ostream OStream(Out);
-  Arg.print(PP, OStream);
-  return OStream.str();
+  llvm::raw_string_ostream OS(Out);
+  Arg.print(PP, OS);
+  return OS.str();
 }
 
 std::pair<const Expr *, const Expr *>
@@ -718,4 +719,183 @@ InsertClassName::getReplacement(const ASTContext &Context) const {
   return ExtReplacement(
       SM, BeginLoc.getLocWithOffset(i + 1), 0,
       " SYCL_TYPE_" + getHashAsString(BeginLoc.printToString(SM)).substr(0, 6));
+}
+
+constexpr char TransformStr[] = " => ";
+
+static void printHeader(llvm::raw_ostream &OS, const std::string &Header) {
+  OS << "[" << Header << "] ";
+}
+
+static void printLocation(llvm::raw_ostream &OS, const SourceLocation &SL,
+                          ASTContext &Context) {
+  SL.print(OS, Context.getSourceManager());
+  OS << " ";
+}
+
+static void printInsertion(llvm::raw_ostream &OS,
+                           const std::string &Insertion) {
+  OS << TransformStr << Insertion << "\n";
+}
+
+static void printReplacement(llvm::raw_ostream &OS,
+                             const std::string &Replacement) {
+  OS << TransformStr;
+  OS << "\"" << Replacement << "\"\n";
+}
+
+void ReplaceStmt::print(llvm::raw_ostream &OS, ASTContext &Context) const {
+  printHeader(OS, "ReplaceStmt");
+  printLocation(OS, TheStmt->getBeginLoc(), Context);
+  TheStmt->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
+  printReplacement(OS, ReplacementString);
+}
+
+void RemoveAttr::print(llvm::raw_ostream &OS, ASTContext &Context) const {
+  printHeader(OS, "RemoveAttr");
+  printLocation(OS, TheAttr->getLocation(), Context);
+  TheAttr->printPretty(OS, PrintingPolicy(Context.getLangOpts()));
+  printReplacement(OS, "");
+}
+
+void ReplaceTypeInVarDecl::print(llvm::raw_ostream &OS,
+                                 ASTContext &Context) const {
+  printHeader(OS, "ReplaceTypeInVarDecl");
+  printLocation(OS, D->getBeginLoc(), Context);
+  D->print(OS, PrintingPolicy(Context.getLangOpts()));
+  printReplacement(OS, T);
+}
+
+void RemoveVarDecl::print(llvm::raw_ostream &OS, ASTContext &Context) const {
+  printHeader(OS, "RemoveVarDecl");
+  printLocation(OS, D->getBeginLoc(), Context);
+  D->print(OS, PrintingPolicy(Context.getLangOpts()));
+  printReplacement(OS, T);
+}
+
+void ReplaceReturnType::print(llvm::raw_ostream &OS,
+                              ASTContext &Context) const {
+  printHeader(OS, "ReplaceReturnType");
+  printLocation(OS, FD->getBeginLoc(), Context);
+  FD->print(OS, PrintingPolicy(Context.getLangOpts()));
+  printReplacement(OS, T);
+}
+
+void ReplaceToken::print(llvm::raw_ostream &OS, ASTContext &Context) const {
+  printHeader(OS, "ReplaceToken");
+  printLocation(OS, Begin, Context);
+  printReplacement(OS, T);
+}
+
+void InsertText::print(llvm::raw_ostream &OS, ASTContext &Context) const {
+  printHeader(OS, "InsertText");
+  printLocation(OS, Begin, Context);
+  printInsertion(OS, T);
+}
+
+void InsertNameSpaceInVarDecl::print(llvm::raw_ostream &OS,
+                                     ASTContext &Context) const {
+  printHeader(OS, "InsertNameSpace");
+  printLocation(OS, D->getBeginLoc(), Context);
+  printInsertion(OS, T);
+}
+
+void InsertNameSpaceInCastExpr::print(llvm::raw_ostream &OS,
+                                      ASTContext &Context) const {
+  printHeader(OS, "InsertNameSpaceInCastExpr");
+  printLocation(OS, D->getBeginLoc(), Context);
+  printInsertion(OS, T);
+}
+
+void ReplaceCCast::print(llvm::raw_ostream &OS, ASTContext &Context) const {
+  printHeader(OS, "ReplaceCCast");
+  printLocation(OS, Cast->getBeginLoc(), Context);
+  Cast->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
+  printReplacement(OS, TypeName);
+}
+
+void RenameFieldInMemberExpr::print(llvm::raw_ostream &OS,
+                                    ASTContext &Context) const {
+  printHeader(OS, "RenameFieldInMemberExpr");
+  printLocation(OS, ME->getBeginLoc(), Context);
+  ME->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
+  printReplacement(OS, T);
+}
+
+void InsertAfterStmt::print(llvm::raw_ostream &OS, ASTContext &Context) const {
+  printHeader(OS, "InsertAfterStmt");
+  printLocation(OS, S->getEndLoc(), Context);
+  printInsertion(OS, T);
+}
+
+void ReplaceInclude::print(llvm::raw_ostream &OS, ASTContext &Context) const {
+  printHeader(OS, "ReplaceInclude");
+  printLocation(OS, Range.getBegin(), Context);
+  // TODO: 1. Find a way to show replaced include briefly
+  //       2. ReplaceDim3Ctor uses ReplaceInclude, need to clarification
+  printReplacement(OS, T);
+}
+
+void ReplaceDim3Ctor::print(llvm::raw_ostream &OS, ASTContext &Context) const {
+  printHeader(OS, "ReplaceDim3Ctor");
+  printLocation(OS, CSR.getBegin(), Context);
+  Ctor->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
+  printReplacement(OS, ReplacementString);
+}
+
+void InsertComment::print(llvm::raw_ostream &OS, ASTContext &Context) const {
+  printHeader(OS, "InsertComment");
+  printLocation(OS, SL, Context);
+  printInsertion(OS, Text);
+}
+
+void ReplaceKernelCallExpr::print(llvm::raw_ostream &OS,
+                                  ASTContext &Context) const {
+  printHeader(OS, "ReplaceKernelCallExpr");
+  printLocation(OS, KCall->getBeginLoc(), Context);
+  KCall->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
+  // TODO: print simple and meaningful informations
+}
+
+void ReplaceCallExpr::print(llvm::raw_ostream &OS, ASTContext &Context) const {
+  printHeader(OS, "ReplaceCallExpr");
+  printLocation(OS, C->getBeginLoc(), Context);
+  C->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
+  // TODO: print simple and meaningful informations
+}
+
+void InsertArgument::print(llvm::raw_ostream &OS, ASTContext &Context) const {
+  printHeader(OS, "InsertArgument");
+  printLocation(OS, FD->getBeginLoc(), Context);
+  FD->print(OS, PrintingPolicy(Context.getLangOpts()));
+  printInsertion(OS, ArgName);
+}
+
+void InsertBeforeCtrInitList::print(llvm::raw_ostream &OS,
+                                    ASTContext &Context) const {
+  printHeader(OS, "InsertBeforectrInitList");
+  printLocation(OS, CDecl->getBeginLoc(), Context);
+  CDecl->print(OS, PrintingPolicy(Context.getLangOpts()));
+  printInsertion(OS, T);
+}
+
+void InsertBeforeStmt::print(llvm::raw_ostream &OS, ASTContext &Context) const {
+  printHeader(OS, "InsertBeforeStmt");
+  printLocation(OS, S->getBeginLoc(), Context);
+  S->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
+  printReplacement(OS, T);
+}
+
+void RemoveArg::print(llvm::raw_ostream &OS, ASTContext &Context) const {
+  printHeader(OS, "RemoveArg");
+  printLocation(OS, CE->getBeginLoc(), Context);
+  CE->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
+  printReplacement(OS, "");
+}
+
+void InsertClassName::print(llvm::raw_ostream &OS, ASTContext &Context) const {
+  printHeader(OS, "InsertClassName");
+  printLocation(OS, CD->getBeginLoc(), Context);
+  CD->print(OS, PrintingPolicy(Context.getLangOpts()));
+  printInsertion(OS, "");
 }

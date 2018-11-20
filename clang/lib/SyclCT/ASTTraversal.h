@@ -12,6 +12,7 @@
 #ifndef SYCLCT_AST_TRAVERSAL_H
 #define SYCLCT_AST_TRAVERSAL_H
 
+#include "Debug.h"
 #include "Diagnostics.h"
 #include "MapNames.h"
 #include "TextModification.h"
@@ -140,6 +141,9 @@ public:
            ASTTraversalMetaInfo::getConstructorTable().end());
     Storage.emplace_back(std::unique_ptr<ASTTraversal>(
         ASTTraversalMetaInfo::getConstructorTable()[ID]()));
+    SYCLCT_DEBUG(llvm::dbgs()
+                 << "Add translation rule: "
+                 << ASTTraversalMetaInfo::getNameTable().at(ID) << "\n");
   }
 
   void emplaceAllRules(int SourceFileFlag);
@@ -166,9 +170,7 @@ protected:
   /// Add \a TM to the set of transformations.
   ///
   /// The ownership of the TM is transferred to the TransformSet.
-  void emplaceTransformation(TextModification *TM) {
-    TransformSet->emplace_back(TM);
-  }
+  void emplaceTransformation(TextModification *TM);
 
   const CompilerInstance &getCompilerInstance();
 

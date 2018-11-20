@@ -18,6 +18,7 @@
 #include "clang/Tooling/Refactoring.h"
 
 #include "ASTTraversal.h"
+#include "Debug.h"
 #include "SaveNewFiles.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
@@ -125,7 +126,10 @@ public:
   /// place, is insert(length==0), know the insert order).
   std::vector<ExtReplacement>
   MergeReplacementPass(std::vector<ExtReplacement> ReplSet) {
+    SYCLCT_DEBUG(llvm::dbgs() << __FUNCTION__ << "\n");
     std::vector<ExtReplacement> ReplSetMerged;
+    SYCLCT_DEBUG(llvm::dbgs() << "# of Replacements before merging : "
+                              << ReplSet.size() << "\n");
     for (ExtReplacement &R1 : ReplSet) {
       bool Merged = false;
       if (R1.getMerged()) {
@@ -163,10 +167,14 @@ public:
         ReplSetMerged.emplace_back(std::move(R1));
       }
     }
+    SYCLCT_DEBUG(llvm::dbgs() << "# of Replacements after merging : "
+                              << ReplSetMerged.size() << "\n");
     return ReplSetMerged;
   }
 
   void HandleTranslationUnit(ASTContext &Context) override {
+    SYCLCT_DEBUG(llvm::dbgs() << __FUNCTION__ << "\n");
+
     // The translation process is separated into two stages:
     // 1) Analysis of AST and identification of applicable translation rules
     // 2) Generation of actual textual Replacements
@@ -187,16 +195,23 @@ public:
       // instead of filtering them.
       std::string RPath = R.getFilePath();
       makeCanonical(RPath);
-      if (isChildPath(InRoot, RPath))
+      if (isChildPath(InRoot, RPath)) {
+        // TODO: Staticstics
         ReplSet.emplace_back(std::move(R));
+      } else {
+        // TODO: Staticstics
+      }
     }
 
     std::vector<ExtReplacement> ReplSetMerged = MergeReplacementPass(ReplSet);
     ReplacementFilter FilteredReplacements(ReplSetMerged);
 
     for (const ExtReplacement &R : FilteredReplacements) {
-      if (auto Err = Repl[R.getFilePath()].add(R))
+      if (auto Err = Repl[R.getFilePath()].add(R)) {
         llvm_unreachable("Adding the replacement: Error occured ");
+      } else {
+        DEBUG_WITH_TYPE("Replacements", llvm::dbgs() << R.toString() << "\n");
+      }
     }
   }
 
@@ -264,7 +279,6 @@ std::string getCudaInstallPath(int argc, const char **argv) {
 
 int run(int argc, const char **argv) {
   // CommonOptionsParser will adjust argc to the index of "--"
-  CudaPath = getCudaInstallPath(argc, argv);
   CommonOptionsParser OptParser(argc, argv, SyclCTCat);
 
   if (!makeCanonicalOrSetDefaults(InRoot, OutRoot,
@@ -273,6 +287,10 @@ int run(int argc, const char **argv) {
 
   if (!validatePaths(InRoot, OptParser.getSourcePathList()))
     exit(-1);
+
+  CudaPath = getCudaInstallPath(argc, argv);
+  DEBUG_WITH_TYPE("CudaPath", llvm::dbgs()
+                                  << "Cuda Path found: " << CudaPath << "\n");
 
   RefactoringTool Tool(OptParser.getCompilations(),
                        OptParser.getSourcePathList());
@@ -292,6 +310,8 @@ int run(int argc, const char **argv) {
 
   SyclCTActionFactory Factory(Tool.getReplacements());
   if (int RunResult = Tool.run(&Factory)) {
+    SYCLCT_DEBUG(llvm::dbgs()
+                 << "Translation failed with result : " << RunResult << "\n");
     return RunResult;
   }
   // if run was successful

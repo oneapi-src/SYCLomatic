@@ -9,15 +9,15 @@ include_directories(
   )
 
 add_clang_library(SyclCT
-  SyclCT.cpp
   ASTTraversal.cpp
+  AnalysisInfo.cpp
+  Diagnostics.cpp
   MapNames.cpp
   SaveNewFiles.cpp
+  SyclCT.cpp
   TextModification.cpp
   Utility.cpp
   ValidateArguments.cpp
-  Diagnostics.cpp
-  AnalysisInfo.cpp
 
   LINK_LIBS
   clangBasic

@@ -11,7 +11,7 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-
+#include "Debug.h"
 #include "SaveNewFiles.h"
 #include "Utility.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
@@ -115,6 +115,20 @@ void IncludesCallbacks::InclusionDirective(
                         /*IsTokenRange=*/false),
         ""));
   }
+}
+
+void TranslationRule::emplaceTransformation(TextModification *TM) {
+  TransformSet->emplace_back(TM);
+#ifndef NDEBUG
+#define TRANSFORMATION(TYPE)                                                   \
+  if (TMID::TYPE == TM->getID()) {                                             \
+    DEBUG_WITH_TYPE(#TYPE, TM->print(llvm::dbgs(),                             \
+                                     getCompilerInstance().getASTContext()));  \
+    return;                                                                    \
+  }
+#include "Transformations.inc"
+#undef TRANSFORMATION
+#endif
 }
 
 void IterationSpaceBuiltinRule::registerMatcher(MatchFinder &MF) {
