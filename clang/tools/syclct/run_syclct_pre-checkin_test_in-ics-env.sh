@@ -18,7 +18,7 @@ cd  $tc_result_folder
 #tc -r none -x gcc_efi2 -t syclct_sdk_samples/vectorAdd,topologyQuery,cudaOpenMP,cppIntegration,simpleAssert,alignedTypes,simpleMPI,simplePrintf
 
 #Run test case from syclct_sdk_8_samples
-tc -r none -x gcc_efi2 -t syclct_sdk_8_samples/vectorAdd,topologyQuery,cudaOpenMP,cppIntegration,simpleAssert,alignedTypes,simpleMPI,simplePrintf
+tc -r none -x gcc_efi2 -t syclct_sdk_8_samples/vectorAdd,topologyQuery,cudaOpenMP,cppIntegration,simpleAssert,alignedTypes,simpleMPI,simplePrintf,template,convolutionSeparable,FDTD3d
 
 #Run test case from syclct_sdk_92_samples
 #tc -r none -x gcc_efi2 -t syclct_sdk_92_samples/vectorAdd,topologyQuery,cudaOpenMP,cppIntegration,simpleAssert,alignedTypes,simpleMPI,simplePrintf
