@@ -256,8 +256,7 @@ void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
     if (!(If = getNodeAsType<IfStmt>(Result, "errIfSpecial")))
       return;
   auto EmitNotRemoved = [&](SourceLocation SL, const Stmt *R) {
-    report(SL, Diagnostics::STMT_NOT_REMOVED,
-           getStmtSpelling(R, *Result.Context).c_str());
+    report(SL, Diagnostics::STMT_NOT_REMOVED);
   };
   auto isErrorHandlingSafeToRemove = [&](const Stmt *S) {
     if (const auto *CE = dyn_cast<CallExpr>(S)) {
