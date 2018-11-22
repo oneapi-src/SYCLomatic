@@ -15,7 +15,9 @@
 // CHECK: syclct::DeviceMem in(16* sizeof(float));
 __device__ float in[NUM_ELEMENTS];
 
-// CHECK: void kernel1(cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], cl::sycl::accessor<float, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::global_buffer> in, float *out) {
+// CHECK: void kernel1(cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]],
+// CHECK:         cl::sycl::accessor<float, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::global_buffer> in,
+// CHECK:         float *out) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(0)] = in[{{.*}}[[ITEM]].get_local_id(0)];
 // CHECK: }
 __global__ void kernel1(float *out) {
@@ -25,7 +27,9 @@ __global__ void kernel1(float *out) {
 // CHECK: syclct::DeviceMem a(1* sizeof(int));
 __device__ int a;
 
-// CHECK: void kernel2(cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], cl::sycl::accessor<int, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::global_buffer> a, float *out) {
+// CHECK: void kernel2(cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]],
+// CHECK:         cl::sycl::accessor<int, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::global_buffer> a,
+// CHECK:         float *out) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(0)] += a[0];
 // CHECK: }
 __global__ void kernel2(float *out) {

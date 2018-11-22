@@ -488,8 +488,9 @@ public:
 
 private:
   void ConstMemVarDeclProcess(const VarDecl *ConstantMemVar);
-  void DeviceKernelFunctionProcess(const FunctionDecl *KernelFunction,
-                                   const DeclRefExpr *ConstantMemVarRef);
+  void DeviceKernelFunctionProcess(
+      const FunctionDecl *KernelFunction, const DeclRefExpr *ConstantMemVarRef,
+      const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Translation rule for device memory variables.

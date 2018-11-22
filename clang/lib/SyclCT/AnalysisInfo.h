@@ -12,6 +12,7 @@
 #ifndef CU2SYCL_ANALYSIS_INFO_H
 #define CU2SYCL_ANALYSIS_INFO_H
 
+#include "Utility.h"
 #include "clang/Tooling/Core/Replacement.h"
 #include "clang/Tooling/Tooling.h"
 #include <map>
@@ -41,17 +42,19 @@ public:
 
   // This Constructor is used to insert const variable
   VarInfo(std::string CVN, std::string CVT, bool IsArray, std::string Size,
-          std::string HashIDForConstantMem)
+          std::string HashIDForConstantMem, std::string OrigIndent)
       : VarType(CVT), VarName(CVN), IsArray(IsArray), IsExtern(false),
         VarAttr(VarAttrKind::Constant),
-        HashIDForConstantMem(HashIDForConstantMem), IsTemplateType(false) {
+        HashIDForConstantMem(HashIDForConstantMem), IsTemplateType(false),
+        OrigIndent(OrigIndent) {
     ArraySize.push_back(Size);
   }
 
   // This Constructor is used to insert device variable
-  VarInfo(std::string CVN, std::string CVT, bool IsArray, std::string Size)
+  VarInfo(std::string CVN, std::string CVT, bool IsArray, std::string Size,
+          std::string OrigIndent)
       : VarType(CVT), VarName(CVN), IsArray(IsArray), IsExtern(false),
-        VarAttr(VarAttrKind::Device) {
+        VarAttr(VarAttrKind::Device), OrigIndent(OrigIndent) {
     ArraySize.push_back(Size);
   }
 
@@ -98,12 +101,15 @@ public:
       std::string BufferOffsetVar = "buffer_and_offset_" + AccVarName;
       std::string BufferVar = "buffer_" + AccVarName;
       Temp = "auto " + BufferOffsetVar + " = syclct::get_buffer_and_offset(" +
-             VarName + ".get_ptr());\n";
-      Temp = Temp + "        auto " + BufferVar + " = " + BufferOffsetVar +
-             ".first.reinterpret<" + VarType + ">(" + Range + ");\n" +
-             "        auto " + AccVarName + "= " + BufferVar +
-             ".get_access<cl::sycl::access::mode::read,  "
-             "cl::sycl::access::target::constant_buffer>(cgh);";
+             VarName + ".get_ptr())" + getFmtEndStatement();
+
+      Temp += getFmtStatementIndent(OrigIndent) + "auto " + BufferVar + " = " +
+              BufferOffsetVar + ".first.reinterpret<" + VarType + ">(" + Range +
+              ")" + getFmtEndStatement();
+
+      Temp += getFmtStatementIndent(OrigIndent) + "auto " + AccVarName + "= " +
+              BufferVar + ".get_access<cl::sycl::access::mode::read,  " +
+              "cl::sycl::access::target::constant_buffer>(cgh);";
       break;
     }
     case VarAttrKind::Device: {
@@ -112,10 +118,12 @@ public:
       const std::string BufferOffsetVar = "device_buffer_and_offset_" + VarName;
       const std::string BufferVar = "device_buffer_" + VarName;
       Temp = "auto " + BufferOffsetVar + " = syclct::get_buffer_and_offset(" +
-             VarName + ".get_ptr());\n";
-      Temp += "        auto " + BufferVar + " = " + BufferOffsetVar +
-              ".first.reinterpret<" + VarType + ">(" + Range + ");\n" +
-              "        auto " + AccVarName + " = " + BufferVar +
+             VarName + ".get_ptr())" + getFmtEndStatement() +
+             getFmtStatementIndent(OrigIndent);
+      Temp += "auto " + BufferVar + " = " + BufferOffsetVar +
+              ".first.reinterpret<" + VarType + ">(" + Range + ")" +
+              getFmtEndStatement() + getFmtStatementIndent(OrigIndent) +
+              "auto " + AccVarName + " = " + BufferVar +
               ".get_access<cl::sycl::access::mode::read_write>(cgh);";
       break;
     }
@@ -151,13 +159,6 @@ public:
       Temp = VarType + " " + VarName + "[]";
       break;
     }
-    case VarAttrKind::Constant: {
-      // declare constant memory variable in kernel function.
-      Temp = "cl::sycl::accessor<" + VarType +
-             ", 1, cl::sycl::access::mode::read, "
-             "cl::sycl::access::target::constant_buffer>  const_acc";
-      break;
-    }
     case VarAttrKind::Device: {
       // declare device memory variable in kernel function.
       Temp = "cl::sycl::accessor<" + VarType +
@@ -166,6 +167,8 @@ public:
              VarName;
       break;
     }
+    default:
+      break;
     }
     return Temp;
   }
@@ -181,6 +184,7 @@ private:
   std::string KernelMemSize;
   bool IsTemplateType;
   unsigned TemplateIndex;
+  std::string OrigIndent;
 };
 
 /// Record kernel relative info for multi rules co-operate when translate
@@ -254,18 +258,6 @@ public:
     return Var;
   }
 
-  std::string declareCMVAsArgs() {
-    std::string Var;
-    int i = 0;
-    for (auto &KV : ConstantVarMap) {
-      if (i > 0)
-        Var += ", ";
-      Var += KV.second.getAsFuncArgDeclare();
-      i++;
-    }
-    return Var;
-  }
-
   std::string declareDMVAsArgs() {
     std::string Var;
     int i = 0;
@@ -326,23 +318,6 @@ public:
       if (SVI.isExtern()) {
         /// set the 1st one matched.
         SVI.setKernelMVSize(Size);
-        return;
-      }
-    }
-    assert(0);
-    return;
-  }
-
-  void setKernelCMVSize(std::string Size) {
-    if (ConstantVarMap.size() == 0) {
-      assert(0);
-    }
-    for (VarInfoMap::iterator it = ConstantVarMap.begin();
-         it != ConstantVarMap.end(); ++it) {
-      VarInfo &CVI = it->second;
-      if (CVI.isExtern()) {
-        /// set the 1st one matched.
-        CVI.setKernelMVSize(Size);
         return;
       }
     }

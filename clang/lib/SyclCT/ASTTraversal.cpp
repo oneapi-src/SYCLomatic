@@ -951,6 +951,7 @@ void SharedMemVarRule::run(const MatchFinder::MatchResult &Result) {
   if (SharedMemVar == NULL || KernelFunction == NULL) {
     return;
   }
+
   std::string KelFunName = KernelFunction->getNameAsString();
   std::string SharedVarName = SharedMemVar->getNameAsString();
   clang::QualType QType = SharedMemVar->getType();
@@ -1006,11 +1007,15 @@ void SharedMemVarRule::run(const MatchFinder::MatchResult &Result) {
         emplaceTransformation(new RemoveAttr(A));
     }
   }
+
+  auto SM = Result.SourceManager;
+  auto OrigIndent = getIndent(KernelFunction->getBeginLoc(), *SM).str();
   // Store the analysis info in kernelinfo for other rule use:
   //  [KernelIterationSpaceRule] [KernelCallRule]
   if (KernelTransAssist::hasKernelInfo(KelFunName)) {
     KernelInfo &KI = KernelTransAssist::getKernelInfo(KelFunName);
-    KI.appendKernelArgs(", cl::sycl::accessor<" + TypeName + ", " +
+    KI.appendKernelArgs(getFmtEndArg() + getFmtArgIndent(OrigIndent) +
+                        "cl::sycl::accessor<" + TypeName + ", " +
                         std::to_string(ArraySize.size()) +
                         ", cl::sycl::access::mode::read_write, "
                         "cl::sycl::access::target::local> " +
@@ -1019,7 +1024,8 @@ void SharedMemVarRule::run(const MatchFinder::MatchResult &Result) {
                      ArraySize, IsExtern, IsTemplateType, TemplateIndex);
   } else {
     KernelInfo KI(KelFunName);
-    KI.appendKernelArgs(", cl::sycl::accessor<" + TypeName + ", " +
+    KI.appendKernelArgs(getFmtEndArg() + getFmtArgIndent(OrigIndent) +
+                        "cl::sycl::accessor<" + TypeName + ", " +
                         std::to_string(ArraySize.size()) +
                         ", cl::sycl::access::mode::read_write, "
                         "cl::sycl::access::target::local> " +
@@ -1134,7 +1140,8 @@ void ConstantMemVarRule::ConstMemVarDeclProcess(const VarDecl *ConstantMemVar) {
 }
 
 void ConstantMemVarRule::DeviceKernelFunctionProcess(
-    const FunctionDecl *KernelFunction, const DeclRefExpr *ConstantMemVarRef) {
+    const FunctionDecl *KernelFunction, const DeclRefExpr *ConstantMemVarRef,
+    const MatchFinder::MatchResult &Result) {
   std::string ConstantVarRefName;
   std::string KelFunName;
   std::string HashID = getHashID();
@@ -1176,28 +1183,31 @@ void ConstantMemVarRule::DeviceKernelFunctionProcess(
   if (AccSetOfConstMemVar.find(KeyCompName) == end(AccSetOfConstMemVar)) {
     AccSetOfConstMemVar.insert(KeyCompName);
 
+    auto SM = Result.SourceManager;
+    auto OrigIndent = getIndent(KernelFunction->getBeginLoc(), *SM).str();
     // Store the constatn analysis info in kernelinfo for other rule use:
     //  [KernelIterationSpaceRule] [KernelCallRule]
-
+    std::string ReplaceStr = getFmtEndArg() + getFmtArgIndent(OrigIndent) +
+                             "cl::sycl::accessor<" + TypeName +
+                             ", 1, cl::sycl::access::mode::read, "
+                             "cl::sycl::access::target::constant_buffer>  " +
+                             AccName;
     if (KernelTransAssist::hasKernelInfo(KelFunName)) {
       KernelInfo &KI = KernelTransAssist::getKernelInfo(KelFunName);
       // Store Constant Mem info
-      KI.insertCMVarInfo(ConstantVarRefName, TypeName,
-                         CVarIsArray[ConstantVarRefName],
-                         SizeOfConstMemVar[ConstantVarRefName], AccName);
+      KI.insertCMVarInfo(
+          ConstantVarRefName, TypeName, CVarIsArray[ConstantVarRefName],
+          SizeOfConstMemVar[ConstantVarRefName], AccName, OrigIndent);
 
-      std::string ReplaceStr = "cl::sycl::accessor<" + TypeName +
-                               ", 1, cl::sycl::access::mode::read, "
-                               "cl::sycl::access::target::constant_buffer>  " +
-                               AccName;
-      KI.appendKernelArgs(",\n " + ReplaceStr);
+      KI.appendKernelArgs(ReplaceStr);
     } else {
       KernelInfo KI(KelFunName);
       // Store Constant Mem info
       KI.insertCMVarInfo(ConstantVarRefName, TypeName, IsArray,
-                         SizeOfConstMemVar[ConstantVarRefName], HashID);
+                         SizeOfConstMemVar[ConstantVarRefName], HashID,
+                         OrigIndent);
       KernelTransAssist::insertKernel(KelFunName, KI);
-      KI.appendKernelArgs(", " + TypeName + " " + ConstantVarRefName + "[]");
+      KI.appendKernelArgs(ReplaceStr);
     }
   }
 }
@@ -1216,7 +1226,7 @@ void ConstantMemVarRule::run(const MatchFinder::MatchResult &Result) {
 
   if (ConstantMemVarRef != NULL && KernelFunction != NULL) {
 
-    DeviceKernelFunctionProcess(KernelFunction, ConstantMemVarRef);
+    DeviceKernelFunctionProcess(KernelFunction, ConstantMemVarRef, Result);
   }
 }
 
@@ -1384,20 +1394,24 @@ void DeviceMemVarRule::run(const MatchFinder::MatchResult &Result) {
   }
 
   std::string KernelFunctionName = KernelFunction->getNameAsString();
+  auto SM = Result.SourceManager;
+  auto OrigIndent = getIndent(KernelFunction->getBeginLoc(), *SM).str();
 
   if (KernelTransAssist::hasKernelInfo(KernelFunctionName)) {
     KernelInfo &KI = KernelTransAssist::getKernelInfo(KernelFunctionName);
     // Store Device Mem info
     KI.insertVarInfo(KI.getDMVInfoMap(), DeviceVarRefName, TypeName, IsArray,
-                     Size.toString(10, false));
-    KI.appendKernelArgs(", " + TypeName + " " + DeviceVarRefName + "[]");
+                     Size.toString(10, false), OrigIndent);
+    KI.appendKernelArgs(getFmtEndArg() + getFmtArgIndent(OrigIndent) +
+                        TypeName + " " + DeviceVarRefName + "[]");
   } else {
     KernelInfo KI(KernelFunctionName);
     // Store Device Mem info
     KI.insertVarInfo(KI.getDMVInfoMap(), DeviceVarRefName, TypeName, IsArray,
-                     Size.toString(10, false));
+                     Size.toString(10, false), OrigIndent);
     KernelTransAssist::insertKernel(KernelFunctionName, KI);
-    KI.appendKernelArgs(", " + TypeName + " " + DeviceVarRefName + "[]");
+    KI.appendKernelArgs(getFmtEndArg() + getFmtArgIndent(OrigIndent) +
+                        TypeName + " " + DeviceVarRefName + "[]");
   }
 }
 
@@ -1608,6 +1622,9 @@ void KernelIterationSpaceRule::registerMatcher(MatchFinder &MF) {
 
 void KernelIterationSpaceRule::run(const MatchFinder::MatchResult &Result) {
   if (auto FD = getNodeAsType<FunctionDecl>(Result, "functionDecl")) {
+    auto SM = Result.SourceManager;
+    auto OrigIndent = getIndent(FD->getBeginLoc(), *SM).str();
+
     std::stringstream InsertArgs;
     InsertArgs << "cl::sycl::nd_item<3> " + getItemName();
     // check if there is shared variable, move them to args.
@@ -1615,11 +1632,11 @@ void KernelIterationSpaceRule::run(const MatchFinder::MatchResult &Result) {
     if (KernelTransAssist::hasKernelInfo(KernelFunName)) {
       KernelInfo &KI = KernelTransAssist::getKernelInfo(KernelFunName);
       if (KI.hasSMVDefined()) {
-        InsertArgs << ", ";
+        InsertArgs << getFmtEndArg() + getFmtArgIndent(OrigIndent);
         InsertArgs << KI.declareSMVAsArgs();
       }
       if (KI.hasDMVDefined()) {
-        InsertArgs << ", ";
+        InsertArgs << getFmtEndArg() + getFmtArgIndent(OrigIndent);
         InsertArgs << KI.declareDMVAsArgs();
       }
       emplaceTransformation(new InsertArgument(FD, InsertArgs.str()));

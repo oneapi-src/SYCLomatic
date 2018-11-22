@@ -121,4 +121,10 @@ SourceProcessType GetSourceFileType(llvm::StringRef SourcePath);
 std::vector<std::string>
 ruleTopoSort(std::vector<std::vector<std::string>> &TableRules);
 
+const std::string &getFmtEndStatement(void);
+const std::string &getFmtStatementIndent(std::string &BaseIndent);
+
+const std::string &getFmtEndArg(void);
+const std::string &getFmtArgIndent(std::string &BaseIndent);
+
 #endif // SYCLCT_UTILITY_H

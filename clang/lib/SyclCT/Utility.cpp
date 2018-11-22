@@ -267,3 +267,26 @@ ruleTopoSort(std::vector<std::vector<std::string>> &TableRules) {
 
   return Vec;
 }
+
+const std::string SpacesForStatement = "        "; // Eight spaces
+const std::string SpacesForArg = "        ";       // Eight spaces
+
+const std::string &getFmtEndStatement(void) {
+  const static std::string EndStatement = ";\n";
+  return EndStatement;
+}
+
+const std::string &getFmtStatementIndent(std::string &BaseIndent) {
+  const static std::string FmtStatementIndent = BaseIndent + SpacesForStatement;
+  return FmtStatementIndent;
+}
+
+const std::string &getFmtEndArg(void) {
+  const static std::string EndArg = ",\n";
+  return EndArg;
+}
+
+const std::string &getFmtArgIndent(std::string &BaseIndent) {
+  const static std::string FmtArgIndent = BaseIndent + SpacesForArg;
+  return FmtArgIndent;
+}

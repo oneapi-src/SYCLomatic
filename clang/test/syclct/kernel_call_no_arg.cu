@@ -9,7 +9,8 @@
 
 __device__ float out[NUM_ELEMENTS];
 
-// CHECK: void kernel1(cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], cl::sycl::accessor<float, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::global_buffer> out) {
+// CHECK: void kernel1(cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]],
+// CHECK:         cl::sycl::accessor<float, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::global_buffer> out) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(0)] = [[ITEM]].get_local_id(0);
 // CHECK: }
 __global__ void kernel1() {

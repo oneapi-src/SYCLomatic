@@ -596,6 +596,9 @@ bool ReplacementFilter::containsInterval(const IntervalSet &IS,
 }
 
 ExtReplacement InsertArgument::getReplacement(const ASTContext &Context) const {
+  auto &SM = Context.getSourceManager();
+  auto OrigIndent = getIndent(FD->getBeginLoc(), SM).str();
+
   auto FNameLoc = FD->getNameInfo().getEndLoc();
   // TODO: Investigate what happens in macro expansion
   auto tkn =
@@ -615,7 +618,7 @@ ExtReplacement InsertArgument::getReplacement(const ASTContext &Context) const {
 
   auto OutStr = Arg;
   if (!FD->parameters().empty())
-    OutStr = Arg + ", ";
+    OutStr = Arg + getFmtEndArg() + getFmtArgIndent(OrigIndent);
   return ExtReplacement(Context.getSourceManager(), tkn.getEndLoc(), 0, OutStr);
 }
 

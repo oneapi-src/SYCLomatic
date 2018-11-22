@@ -3,7 +3,9 @@
 
 #include <stdio.h>
 #define SIZE 100
-// CHECK: void staticReverse(cl::sycl::nd_item<3> item_{{[a-f0-9]+}}, cl::sycl::accessor<int, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s, int *d, int n) {
+// CHECK: void staticReverse(cl::sycl::nd_item<3> item_{{[a-f0-9]+}},
+// CHECK:         cl::sycl::accessor<int, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s,
+// CHECK:         int *d, int n) {
 // CHECK-NEXT:  // the size of s is dynamic
 __global__ void staticReverse(int *d, int n) {
   extern __shared__ int s[]; // the size of s is dynamic
@@ -15,7 +17,9 @@ __global__ void staticReverse(int *d, int n) {
 }
 
 // CHECK: template<typename TData>
-// CHECK-NEXT: void templateReverse(cl::sycl::nd_item<3> item_{{[a-f0-9]+}}, cl::sycl::accessor<TData, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s, TData *d, TData n) {
+// CHECK-NEXT: void templateReverse(cl::sycl::nd_item<3> item_{{[a-f0-9]+}},
+// CHECK-NEXT:         cl::sycl::accessor<TData, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s,
+// CHECK-NEXT:         TData *d, TData n) {
 template<typename TData>
 __global__ void templateReverse(TData *d, TData n) {
 

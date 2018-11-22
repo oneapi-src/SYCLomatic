@@ -3,8 +3,10 @@
 
 // CHECK: void test_01(cl::sycl::nd_item<3> item_{{[a-f0-9]+}});
 // CHECK: void test_06(cl::sycl::nd_item<3> item_{{[a-f0-9]+}});
-// CHECK: void test_06(cl::sycl::nd_item<3> item_{{[a-f0-9]+}}, int *, int *);
-// CHECK: void test_06(cl::sycl::nd_item<3> item_{{[a-f0-9]+}}, int *pA, int *pB) { }
+// CHECK: void test_06(cl::sycl::nd_item<3> item_{{[a-f0-9]+}},
+// CHECK:         int *, int *);
+// CHECK: void test_06(cl::sycl::nd_item<3> item_{{[a-f0-9]+}},
+// CHECK:         int *pA, int *pB) { }
 __global__ void test_01();
 __global__ void test_06();
 __global__ void test_06(int *, int *);
