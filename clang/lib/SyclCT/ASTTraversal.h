@@ -65,6 +65,9 @@ public:
 
 class ASTTraversal;
 using ASTTraversalConstructor = std::function<ASTTraversal *()>;
+static constexpr size_t NUM_OF_TRANSFORMATIONS = 3;
+using EmittedTransformationsTy =
+    llvm::SmallVector<TextModification *, NUM_OF_TRANSFORMATIONS>;
 
 class ASTTraversalMetaInfo {
 public:
@@ -101,11 +104,19 @@ public:
     return FactoryMap;
   }
 
+  static std::unordered_map<const char *, EmittedTransformationsTy> &
+  getEmittedTransformations() {
+    static std::unordered_map<const char *, EmittedTransformationsTy>
+        EmittedTransformations;
+    return EmittedTransformations;
+  }
+
   static void registerRule(const char *ID, const std::string &Name,
                            ASTTraversalConstructor Factory) {
     getConstructorTable()[ID] = Factory;
     getIDTable()[Name] = ID;
     getNameTable()[ID] = Name;
+    getEmittedTransformations()[ID] = EmittedTransformationsTy();
   }
 };
 
@@ -141,9 +152,6 @@ public:
            ASTTraversalMetaInfo::getConstructorTable().end());
     Storage.emplace_back(std::unique_ptr<ASTTraversal>(
         ASTTraversalMetaInfo::getConstructorTable()[ID]()));
-    SYCLCT_DEBUG(llvm::dbgs()
-                 << "Add translation rule: "
-                 << ASTTraversalMetaInfo::getNameTable().at(ID) << "\n");
   }
 
   void emplaceAllRules(int SourceFileFlag);
@@ -170,7 +178,7 @@ protected:
   /// Add \a TM to the set of transformations.
   ///
   /// The ownership of the TM is transferred to the TransformSet.
-  void emplaceTransformation(TextModification *TM);
+  void emplaceTransformation(const char *RuleID, TextModification *TM);
 
   const CompilerInstance &getCompilerInstance();
 
@@ -281,6 +289,13 @@ public:
   bool isTranslationRule() const override { return true; }
   static bool classof(const ASTTraversal *T) { return T->isTranslationRule(); }
 
+  virtual const std::string getName() const { return ""; }
+  virtual const EmittedTransformationsTy getEmittedTransformations() const {
+    return EmittedTransformationsTy();
+  }
+
+  void print(llvm::raw_ostream &OS);
+
   // @RulesDependent : rules are separated by ","
   void SetRuleProperty(int RType, std::string RulesDependent = "") {
     std::vector<std::string> RulesNames;
@@ -311,6 +326,21 @@ private:
 template <typename T> class NamedTranslationRule : public TranslationRule {
 public:
   static const char ID;
+
+  const std::string getName() const override final {
+    return ASTTraversalMetaInfo::getNameTable()[&ID];
+  }
+
+  const EmittedTransformationsTy
+  getEmittedTransformations() const override final {
+    return ASTTraversalMetaInfo::getEmittedTransformations()[&ID];
+  }
+
+protected:
+  void emplaceTransformation(TextModification *TM) {
+    TM->setParentRuleID(&ID);
+    TranslationRule::emplaceTransformation(&ID, TM);
+  }
 };
 
 template <typename T> const char NamedTranslationRule<T>::ID(0);

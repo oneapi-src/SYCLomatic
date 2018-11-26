@@ -11,6 +11,7 @@ include_directories(
 add_clang_library(SyclCT
   ASTTraversal.cpp
   AnalysisInfo.cpp
+  Debug.cpp
   Diagnostics.cpp
   MapNames.cpp
   SaveNewFiles.cpp

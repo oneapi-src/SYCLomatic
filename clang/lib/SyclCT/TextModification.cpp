@@ -10,6 +10,7 @@
 //===-----------------------------------------------------------------===//
 
 #include "TextModification.h"
+#include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "Utility.h"
 
@@ -26,7 +27,8 @@ using namespace clang::syclct;
 using namespace clang::tooling;
 
 ExtReplacement ReplaceStmt::getReplacement(const ASTContext &Context) const {
-  return ExtReplacement(Context.getSourceManager(), TheStmt, ReplacementString);
+  return ExtReplacement(Context.getSourceManager(), TheStmt, ReplacementString,
+                        this);
 }
 
 ExtReplacement RemoveAttr::getReplacement(const ASTContext &Context) const {
@@ -55,13 +57,14 @@ ExtReplacement RemoveAttr::getReplacement(const ASTContext &Context) const {
   Len += I;
 
   return ExtReplacement(
-      SM, CharSourceRange::getCharRange(ExpB, ExpB.getLocWithOffset(Len)), "");
+      SM, CharSourceRange::getCharRange(ExpB, ExpB.getLocWithOffset(Len)), "",
+      this);
 }
 
 ExtReplacement
 ReplaceTypeInVarDecl::getReplacement(const ASTContext &Context) const {
   TypeLoc TL = D->getTypeSourceInfo()->getTypeLoc();
-  return ExtReplacement(Context.getSourceManager(), &TL, T);
+  return ExtReplacement(Context.getSourceManager(), &TL, T, this);
 }
 
 ExtReplacement RemoveVarDecl::getReplacement(const ASTContext &Context) const {
@@ -81,14 +84,14 @@ ExtReplacement RemoveVarDecl::getReplacement(const ASTContext &Context) const {
   repLength += i;
 
   return ExtReplacement(Context.getSourceManager(), SM.getExpansionLoc(slStart),
-                        repLength, T);
+                        repLength, T, this);
 }
 
 ExtReplacement
 ReplaceReturnType::getReplacement(const ASTContext &Context) const {
   SourceRange SR = FD->getReturnTypeSourceRange();
   return ExtReplacement(Context.getSourceManager(), CharSourceRange(SR, true),
-                        T);
+                        T, this);
 }
 
 ExtReplacement ReplaceToken::getReplacement(const ASTContext &Context) const {
@@ -96,7 +99,8 @@ ExtReplacement ReplaceToken::getReplacement(const ASTContext &Context) const {
   return ExtReplacement(Context.getSourceManager(),
                         // false means [Begin, End)
                         // true means [Begin, End]
-                        CharSourceRange(SourceRange(Begin, Begin), true), T);
+                        CharSourceRange(SourceRange(Begin, Begin), true), T,
+                        this);
 }
 
 ExtReplacement InsertText::getReplacement(const ASTContext &Context) const {
@@ -104,7 +108,8 @@ ExtReplacement InsertText::getReplacement(const ASTContext &Context) const {
   return ExtReplacement(Context.getSourceManager(),
                         // false means [Begin, End)
                         // true means [Begin, End]
-                        CharSourceRange(SourceRange(Begin, Begin), false), T);
+                        CharSourceRange(SourceRange(Begin, Begin), false), T,
+                        this);
 }
 
 ExtReplacement
@@ -113,7 +118,7 @@ InsertNameSpaceInVarDecl::getReplacement(const ASTContext &Context) const {
   ExtReplacement R(
       Context.getSourceManager(),
       CharSourceRange(SourceRange(TL.getBeginLoc(), TL.getBeginLoc()), false),
-      T);
+      T, this);
   R.setInsertPosition(InsertPositionRight);
   return R;
 }
@@ -125,7 +130,7 @@ InsertNameSpaceInCastExpr::getReplacement(const ASTContext &Context) const {
       CharSourceRange(SourceRange(D->getLParenLoc().getLocWithOffset(1),
                                   D->getLParenLoc().getLocWithOffset(1)),
                       false),
-      T);
+      T, this);
 }
 
 ExtReplacement ReplaceCCast::getReplacement(const ASTContext &Context) const {
@@ -133,7 +138,7 @@ ExtReplacement ReplaceCCast::getReplacement(const ASTContext &Context) const {
   auto End = Cast->getRParenLoc();
   return ExtReplacement(Context.getSourceManager(),
                         CharSourceRange(SourceRange(Begin, End), true),
-                        TypeName);
+                        TypeName, this);
 }
 
 ExtReplacement
@@ -148,7 +153,7 @@ RenameFieldInMemberExpr::getReplacement(const ASTContext &Context) const {
   }
 
   return ExtReplacement(Context.getSourceManager(),
-                        CharSourceRange(SourceRange(Begin, SL), true), T);
+                        CharSourceRange(SourceRange(Begin, SL), true), T, this);
 }
 
 ExtReplacement
@@ -161,11 +166,12 @@ InsertAfterStmt::getReplacement(const ASTContext &Context) const {
   unsigned Offs = Lexer::MeasureTokenLength(SpellLoc, SM, Opts);
   SourceLocation LastTokenBegin = Lexer::GetBeginningOfToken(Loc, SM, Opts);
   SourceLocation End = LastTokenBegin.getLocWithOffset(Offs);
-  return ExtReplacement(SM, CharSourceRange(SourceRange(End, End), false), T);
+  return ExtReplacement(SM, CharSourceRange(SourceRange(End, End), false), T,
+                        this);
 }
 
 ExtReplacement ReplaceInclude::getReplacement(const ASTContext &Context) const {
-  return ExtReplacement(Context.getSourceManager(), Range, T);
+  return ExtReplacement(Context.getSourceManager(), Range, T, this);
 }
 
 void ReplaceDim3Ctor::setRange() {
@@ -262,13 +268,14 @@ std::string ReplaceDim3Ctor::getReplaceString(const ASTContext &Context) const {
 ExtReplacement
 ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
   return ExtReplacement(Context.getSourceManager(), CSR.getBegin(), 0,
-                        getReplaceString(Context));
+                        getReplaceString(Context), this);
 }
 
 ExtReplacement InsertComment::getReplacement(const ASTContext &Context) const {
   auto NL = getNL(SL, Context.getSourceManager());
   return ExtReplacement(Context.getSourceManager(), SL, 0,
-                        (llvm::Twine("/*") + NL + Text + NL + "*/" + NL).str());
+                        (llvm::Twine("/*") + NL + Text + NL + "*/" + NL).str(),
+                        this);
 }
 
 template <typename ArgIterT>
@@ -562,7 +569,7 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << OrigIndent << "}";
   // clang-format on
 
-  return ExtReplacement(SM, KCall->getBeginLoc(), 0, Final.str());
+  return ExtReplacement(SM, KCall->getBeginLoc(), 0, Final.str(), this);
 }
 
 ExtReplacement
@@ -570,7 +577,8 @@ ReplaceCallExpr::getReplacement(const ASTContext &Context) const {
   return ExtReplacement(
       Context.getSourceManager(), C,
       buildCall(Name, llvm::iterator_range<decltype(begin(Args))>(Args),
-                llvm::iterator_range<decltype(begin(Types))>(Types), Context));
+                llvm::iterator_range<decltype(begin(Types))>(Types), Context),
+      this);
 }
 
 bool ReplacementFilter::containsInterval(const IntervalSet &IS,
@@ -620,7 +628,8 @@ ExtReplacement InsertArgument::getReplacement(const ASTContext &Context) const {
   auto OutStr = Arg;
   if (!FD->parameters().empty())
     OutStr = Arg + getFmtEndArg() + getFmtArgIndent(OrigIndent);
-  return ExtReplacement(Context.getSourceManager(), tkn.getEndLoc(), 0, OutStr);
+  return ExtReplacement(Context.getSourceManager(), tkn.getEndLoc(), 0, OutStr,
+                        this);
 }
 
 ExtReplacement
@@ -634,10 +643,10 @@ InsertBeforeCtrInitList::getReplacement(const ASTContext &Context) const {
       begin = 0;
     }
     SLoc = SLoc.getLocWithOffset((int)begin - (int)LocInfo.second);
-    return ExtReplacement(Context.getSourceManager(), SLoc, 0, T);
+    return ExtReplacement(Context.getSourceManager(), SLoc, 0, T, this);
   } else {
     SourceLocation Begin = CDecl->getBody()->getSourceRange().getBegin();
-    return ExtReplacement(Context.getSourceManager(), Begin, 0, T);
+    return ExtReplacement(Context.getSourceManager(), Begin, 0, T, this);
   }
 }
 
@@ -684,7 +693,8 @@ ExtReplacement
 InsertBeforeStmt::getReplacement(const ASTContext &Context) const {
   SourceLocation Begin = S->getSourceRange().getBegin();
   return ExtReplacement(Context.getSourceManager(),
-                        CharSourceRange(SourceRange(Begin, Begin), false), T);
+                        CharSourceRange(SourceRange(Begin, Begin), false), T,
+                        this);
 }
 
 ExtReplacement RemoveArg::getReplacement(const ASTContext &Context) const {
@@ -698,7 +708,8 @@ ExtReplacement RemoveArg::getReplacement(const ASTContext &Context) const {
     End = CE->getArg(N + 1)->getSourceRange().getBegin().getLocWithOffset(-1);
   }
   return ExtReplacement(Context.getSourceManager(),
-                        CharSourceRange(SourceRange(Begin, End), true), "");
+                        CharSourceRange(SourceRange(Begin, End), true), "",
+                        this);
 }
 
 ExtReplacement
@@ -718,13 +729,29 @@ InsertClassName::getReplacement(const ASTContext &Context) const {
 
   return ExtReplacement(
       SM, BeginLoc.getLocWithOffset(i + 1), 0,
-      " SYCL_TYPE_" + getHashAsString(BeginLoc.printToString(SM)).substr(0, 6));
+      " SYCL_TYPE_" + getHashAsString(BeginLoc.printToString(SM)).substr(0, 6),
+      this);
+}
+
+static const std::unordered_map<int, std::string> TMNameMap = {
+#define TRANSFORMATION(TYPE) {static_cast<int>(TMID::TYPE), #TYPE},
+#include "Transformations.inc"
+#undef TRANSFORMATION
+};
+
+const std::string TextModification::getName() const {
+  return TMNameMap.at(static_cast<int>(getID()));
 }
 
 constexpr char TransformStr[] = " => ";
-
-static void printHeader(llvm::raw_ostream &OS, const std::string &Header) {
-  OS << "[" << Header << "] ";
+static void printHeader(llvm::raw_ostream &OS, const TMID &ID,
+                        const char *ParentRuleID) {
+  OS << "[";
+  if (ParentRuleID) {
+    OS << ASTTraversalMetaInfo::getNameTable()[ParentRuleID] << ":";
+  }
+  OS << TMNameMap.at(static_cast<int>(ID));
+  OS << "] ";
 }
 
 static void printLocation(llvm::raw_ostream &OS, const SourceLocation &SL,
@@ -744,157 +771,173 @@ static void printReplacement(llvm::raw_ostream &OS,
   OS << "\"" << Replacement << "\"\n";
 }
 
-void ReplaceStmt::print(llvm::raw_ostream &OS, ASTContext &Context) const {
-  printHeader(OS, "ReplaceStmt");
+void ReplaceStmt::print(llvm::raw_ostream &OS, ASTContext &Context,
+                        const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, TheStmt->getBeginLoc(), Context);
   TheStmt->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, ReplacementString);
 }
 
-void RemoveAttr::print(llvm::raw_ostream &OS, ASTContext &Context) const {
-  printHeader(OS, "RemoveAttr");
+void RemoveAttr::print(llvm::raw_ostream &OS, ASTContext &Context,
+                       const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, TheAttr->getLocation(), Context);
   TheAttr->printPretty(OS, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, "");
 }
 
-void ReplaceTypeInVarDecl::print(llvm::raw_ostream &OS,
-                                 ASTContext &Context) const {
-  printHeader(OS, "ReplaceTypeInVarDecl");
+void ReplaceTypeInVarDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
+                                 const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, D->getBeginLoc(), Context);
   D->print(OS, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, T);
 }
 
-void RemoveVarDecl::print(llvm::raw_ostream &OS, ASTContext &Context) const {
-  printHeader(OS, "RemoveVarDecl");
+void RemoveVarDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
+                          const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, D->getBeginLoc(), Context);
   D->print(OS, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, T);
 }
 
-void ReplaceReturnType::print(llvm::raw_ostream &OS,
-                              ASTContext &Context) const {
-  printHeader(OS, "ReplaceReturnType");
+void ReplaceReturnType::print(llvm::raw_ostream &OS, ASTContext &Context,
+                              const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, FD->getBeginLoc(), Context);
   FD->print(OS, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, T);
 }
 
-void ReplaceToken::print(llvm::raw_ostream &OS, ASTContext &Context) const {
-  printHeader(OS, "ReplaceToken");
+void ReplaceToken::print(llvm::raw_ostream &OS, ASTContext &Context,
+                         const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, Begin, Context);
   printReplacement(OS, T);
 }
 
-void InsertText::print(llvm::raw_ostream &OS, ASTContext &Context) const {
-  printHeader(OS, "InsertText");
+void InsertText::print(llvm::raw_ostream &OS, ASTContext &Context,
+                       const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, Begin, Context);
   printInsertion(OS, T);
 }
 
-void InsertNameSpaceInVarDecl::print(llvm::raw_ostream &OS,
-                                     ASTContext &Context) const {
-  printHeader(OS, "InsertNameSpace");
+void InsertNameSpaceInVarDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
+                                     const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, D->getBeginLoc(), Context);
   printInsertion(OS, T);
 }
 
 void InsertNameSpaceInCastExpr::print(llvm::raw_ostream &OS,
-                                      ASTContext &Context) const {
-  printHeader(OS, "InsertNameSpaceInCastExpr");
+                                      ASTContext &Context,
+                                      const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, D->getBeginLoc(), Context);
   printInsertion(OS, T);
 }
 
-void ReplaceCCast::print(llvm::raw_ostream &OS, ASTContext &Context) const {
-  printHeader(OS, "ReplaceCCast");
+void ReplaceCCast::print(llvm::raw_ostream &OS, ASTContext &Context,
+                         const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, Cast->getBeginLoc(), Context);
   Cast->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, TypeName);
 }
 
-void RenameFieldInMemberExpr::print(llvm::raw_ostream &OS,
-                                    ASTContext &Context) const {
-  printHeader(OS, "RenameFieldInMemberExpr");
+void RenameFieldInMemberExpr::print(llvm::raw_ostream &OS, ASTContext &Context,
+                                    const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, ME->getBeginLoc(), Context);
   ME->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, T);
 }
 
-void InsertAfterStmt::print(llvm::raw_ostream &OS, ASTContext &Context) const {
-  printHeader(OS, "InsertAfterStmt");
+void InsertAfterStmt::print(llvm::raw_ostream &OS, ASTContext &Context,
+                            const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, S->getEndLoc(), Context);
   printInsertion(OS, T);
 }
 
-void ReplaceInclude::print(llvm::raw_ostream &OS, ASTContext &Context) const {
-  printHeader(OS, "ReplaceInclude");
+void ReplaceInclude::print(llvm::raw_ostream &OS, ASTContext &Context,
+                           const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, Range.getBegin(), Context);
   // TODO: 1. Find a way to show replaced include briefly
   //       2. ReplaceDim3Ctor uses ReplaceInclude, need to clarification
   printReplacement(OS, T);
 }
 
-void ReplaceDim3Ctor::print(llvm::raw_ostream &OS, ASTContext &Context) const {
-  printHeader(OS, "ReplaceDim3Ctor");
+void ReplaceDim3Ctor::print(llvm::raw_ostream &OS, ASTContext &Context,
+                            const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, CSR.getBegin(), Context);
   Ctor->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, ReplacementString);
 }
 
-void InsertComment::print(llvm::raw_ostream &OS, ASTContext &Context) const {
-  printHeader(OS, "InsertComment");
+void InsertComment::print(llvm::raw_ostream &OS, ASTContext &Context,
+                          const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, SL, Context);
   printInsertion(OS, Text);
 }
 
-void ReplaceKernelCallExpr::print(llvm::raw_ostream &OS,
-                                  ASTContext &Context) const {
-  printHeader(OS, "ReplaceKernelCallExpr");
+void ReplaceKernelCallExpr::print(llvm::raw_ostream &OS, ASTContext &Context,
+                                  const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, KCall->getBeginLoc(), Context);
   KCall->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
   // TODO: print simple and meaningful informations
 }
 
-void ReplaceCallExpr::print(llvm::raw_ostream &OS, ASTContext &Context) const {
-  printHeader(OS, "ReplaceCallExpr");
+void ReplaceCallExpr::print(llvm::raw_ostream &OS, ASTContext &Context,
+                            const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, C->getBeginLoc(), Context);
   C->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
   // TODO: print simple and meaningful informations
 }
 
-void InsertArgument::print(llvm::raw_ostream &OS, ASTContext &Context) const {
-  printHeader(OS, "InsertArgument");
+void InsertArgument::print(llvm::raw_ostream &OS, ASTContext &Context,
+                           const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, FD->getBeginLoc(), Context);
   FD->print(OS, PrintingPolicy(Context.getLangOpts()));
   printInsertion(OS, ArgName);
 }
 
-void InsertBeforeCtrInitList::print(llvm::raw_ostream &OS,
-                                    ASTContext &Context) const {
-  printHeader(OS, "InsertBeforectrInitList");
+void InsertBeforeCtrInitList::print(llvm::raw_ostream &OS, ASTContext &Context,
+                                    const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, CDecl->getBeginLoc(), Context);
   CDecl->print(OS, PrintingPolicy(Context.getLangOpts()));
   printInsertion(OS, T);
 }
 
-void InsertBeforeStmt::print(llvm::raw_ostream &OS, ASTContext &Context) const {
-  printHeader(OS, "InsertBeforeStmt");
+void InsertBeforeStmt::print(llvm::raw_ostream &OS, ASTContext &Context,
+                             const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, S->getBeginLoc(), Context);
   S->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, T);
 }
 
-void RemoveArg::print(llvm::raw_ostream &OS, ASTContext &Context) const {
-  printHeader(OS, "RemoveArg");
+void RemoveArg::print(llvm::raw_ostream &OS, ASTContext &Context,
+                      const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, CE->getBeginLoc(), Context);
   CE->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, "");
 }
 
-void InsertClassName::print(llvm::raw_ostream &OS, ASTContext &Context) const {
-  printHeader(OS, "InsertClassName");
+void InsertClassName::print(llvm::raw_ostream &OS, ASTContext &Context,
+                            const bool PrintParent) const {
+  printHeader(OS, getID(), PrintParent ? getParentRuleID() : nullptr);
   printLocation(OS, CD->getBeginLoc(), Context);
   CD->print(OS, PrintingPolicy(Context.getLangOpts()));
   printInsertion(OS, "");

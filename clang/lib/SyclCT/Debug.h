@@ -12,9 +12,23 @@
 #ifndef SYCLCT_DEBUG_H
 #define SYCLCT_DEBUG_H
 
+#include "TextModification.h"
+
+#include <map>
+#include <memory>
+#include <vector>
+
+#include "clang/AST/ASTContext.h"
+#include "llvm/Support/Debug.h"
+
+namespace clang {
+namespace syclct {
+
+class ASTTraversal;
+
 #ifndef NDEBUG // Debug build
 
-#include "llvm/Support/Debug.h"
+constexpr bool IsDebugBuild = true;
 
 // General debug information with TYPE = "syclct"
 #define SYCLCT_DEBUG(X) DEBUG_WITH_TYPE("syclct", X)
@@ -23,10 +37,25 @@
 
 #else // Release build
 
+constexpr bool IsDebugBuild = false;
+
 #define SYCLCT_DEBUG(X)                                                        \
   do {                                                                         \
   } while (false)
 
 #endif // End of Release build
+
+class DebugInfo {
+public:
+  static void
+  printTranslationRules(const std::vector<std::unique_ptr<ASTTraversal>> &TRs);
+  static void printMatchedRules(
+      const std::vector<std::unique_ptr<ASTTraversal>> &MatchedRules);
+  static void printReplacements(ReplacementFilter &ReplFilter,
+                                clang::ASTContext &Context);
+};
+
+} // namespace syclct
+} // namespace clang
 
 #endif // SYCLCT_DEBUG_H

@@ -117,18 +117,20 @@ void IncludesCallbacks::InclusionDirective(
   }
 }
 
-void TranslationRule::emplaceTransformation(TextModification *TM) {
-  TransformSet->emplace_back(TM);
-#ifndef NDEBUG
-#define TRANSFORMATION(TYPE)                                                   \
-  if (TMID::TYPE == TM->getID()) {                                             \
-    DEBUG_WITH_TYPE(#TYPE, TM->print(llvm::dbgs(),                             \
-                                     getCompilerInstance().getASTContext()));  \
-    return;                                                                    \
+void TranslationRule::print(llvm::raw_ostream &OS) {
+  OS << "[" << getName() << "]\n";
+  constexpr char Indent[] = "  ";
+  for (const TextModification *TM : getEmittedTransformations()) {
+    OS << Indent;
+    TM->print(OS, getCompilerInstance().getASTContext(),
+              /* Print parent */ false);
   }
-#include "Transformations.inc"
-#undef TRANSFORMATION
-#endif
+}
+
+void TranslationRule::emplaceTransformation(const char *RuleID,
+                                            TextModification *TM) {
+  ASTTraversalMetaInfo::getEmittedTransformations()[RuleID].emplace_back(TM);
+  TransformSet->emplace_back(TM);
 }
 
 void IterationSpaceBuiltinRule::registerMatcher(MatchFinder &MF) {
@@ -1767,7 +1769,12 @@ void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
       TR->setStmtStringMap(SSM);
     }
   }
+
+  DebugInfo::printTranslationRules(Storage);
+
   Matchers.matchAST(Context);
+
+  DebugInfo::printMatchedRules(Storage);
 }
 
 void ASTTraversalManager::emplaceAllRules(int SourceFileFlag) {

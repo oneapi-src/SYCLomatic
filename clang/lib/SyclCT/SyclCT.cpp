@@ -144,7 +144,9 @@ public:
             ExtReplacement RMerge(R1.getFilePath(), R1.getOffset(),
                                   R1.getLength(),
                                   StringRef(R1.getReplacementText().str() +
-                                            R2.getReplacementText().str()));
+                                            R2.getReplacementText().str()),
+                                  // TODO: class for merged transformations
+                                  nullptr);
             ReplSetMerged.emplace_back(std::move(RMerge));
             R2.setMerged(true);
             R1.setMerged(true);
@@ -154,7 +156,9 @@ public:
             ExtReplacement RMerge(R1.getFilePath(), R1.getOffset(),
                                   R1.getLength(),
                                   StringRef(R2.getReplacementText().str() +
-                                            R1.getReplacementText().str()));
+                                            R1.getReplacementText().str()),
+                                  // TODO: class for merged transformations
+                                  nullptr);
             ReplSetMerged.emplace_back(std::move(RMerge));
             R2.setMerged(true);
             R1.setMerged(true);
@@ -208,11 +212,11 @@ public:
 
     for (const ExtReplacement &R : FilteredReplacements) {
       if (auto Err = Repl[R.getFilePath()].add(R)) {
+        llvm::dbgs() << Err << "\n";
         llvm_unreachable("Adding the replacement: Error occured ");
-      } else {
-        DEBUG_WITH_TYPE("Replacements", llvm::dbgs() << R.toString() << "\n");
       }
     }
+    DebugInfo::printReplacements(FilteredReplacements, Context);
   }
 
   void Initialize(ASTContext &Context) override {
