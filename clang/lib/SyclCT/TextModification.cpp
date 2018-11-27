@@ -72,7 +72,7 @@ ReplaceTypeInDecl::getReplacement(const ASTContext &Context) const {
   return ExtReplacement(Context.getSourceManager(), &TL, T, this);
 }
 
-ExtReplacement RemoveVarDecl::getReplacement(const ASTContext &Context) const {
+ExtReplacement ReplaceVarDecl::getReplacement(const ASTContext &Context) const {
   auto &SM = Context.getSourceManager();
   SourceLocation slStart = SM.getExpansionLoc(D->getSourceRange().getBegin());
   SourceLocation slEnd = SM.getExpansionLoc(D->getSourceRange().getEnd());
@@ -375,6 +375,11 @@ std::string printTemplateArgument(const TemplateArgument &Arg,
   return OS.str();
 }
 
+ReplaceKernelCallExpr::ReplaceKernelCallExpr(
+    std::shared_ptr<KernelCallExpr> Kernel, StmtStringMap *SSM)
+    : TextModification(TMID::ReplaceKernelCallExpr, G3),
+      KCall(Kernel->getCallExpr()), Kernel(Kernel), SSM(SSM) {}
+
 std::pair<const Expr *, const Expr *>
 ReplaceKernelCallExpr::getExecutionConfig() const {
   return {KCall->getConfig()->getArg(0), KCall->getConfig()->getArg(1)};
@@ -408,8 +413,8 @@ std::string ReplaceKernelCallExpr::getDim3Translation(const Expr *E,
 ExtReplacement
 ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   auto &SM = Context.getSourceManager();
-  auto NL = getNL(KCall->getEndLoc(), SM);
-  auto OrigIndent = getIndent(KCall->getBeginLoc(), SM).str();
+  auto NL = getNL(Kernel->getCallExpr()->getEndLoc(), SM);
+  auto OrigIndent = getIndent(Kernel->getCallExpr()->getBeginLoc(), SM).str();
   std::stringstream Header;
   std::stringstream Header2;
   std::stringstream Header3;
@@ -420,60 +425,13 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   std::stringstream HeaderDeviceVarAccessor;
   std::stringstream HeaderDeviceVarAsArgs;
 
-  std::string KName, TemplateArgs;
   std::vector<std::string> TemplateArgsArray;
   PrintingPolicy PP(Context.getLangOpts());
-  if (auto KCallee = dyn_cast<UnresolvedLookupExpr>(KCall->getCallee())) {
-    KName = KCallee->getName().getAsString();
-    /// Template kernel called from template function.
-    /// template <class T> void run() { testKernel<T><<<64, 256>>>(); }
-    // TODO: Implicit template arguments are ignored, it need to be fix in
-    // future.
-    TemplateArgs =
-        getTemplateArgs(KCallee->getLAngleLoc(), KCallee->getRAngleLoc(), SM);
-    for (auto TemplateArg : KCallee->template_arguments())
-      TemplateArgsArray.push_back(
-          printTemplateArgument(TemplateArg.getArgument(), PP));
-
-  } else {
-    auto KCallDecl = KCall->getCalleeDecl()->getAsFunction();
-    KName = KCallDecl->getName();
-    if (KCallDecl->isFunctionTemplateSpecialization()) {
-      /// Template kernel called from function.
-      /// void run() { testKernel<T><<<64, 256>>>(); }
-      auto KCallee = KCall->getCallee()->IgnoreParenImpCasts();
-      TemplateArgs =
-          getTemplateArgs(KCallee->getBeginLoc(), KCallee->getEndLoc(), SM);
-      for (auto TemplateArg :
-           KCallDecl->getTemplateSpecializationArgs()->asArray())
-        TemplateArgsArray.push_back(printTemplateArgument(TemplateArg, PP));
-    }
-  }
 
   Header << "{" << NL;
   auto Indent = OrigIndent + "  ";
-  // check if sharevariable info exist for this kernel.
-  // [todo] template case not support yet.
-  if (KernelTransAssist::hasKernelInfo(KName)) {
-    KernelInfo KI = KernelTransAssist::getKernelInfo(KName);
-    if (KI.hasSMVDefined()) {
-      auto SMVSize = KCall->getConfig()->getArg(2);
-      if (!SMVSize->isDefaultArgument())
-        KI.setKernelSMVSize(getStmtSpelling(SMVSize, Context));
-      KI.setTemplateArgs(TemplateArgsArray);
-      HeaderShareVarAccessor << KI.declareLocalAcc(NL, Indent + "    ");
-      HeaderShareVasAsArgs << KI.passSMVAsArgs();
-    }
-    if (KI.hasCMVDefined()) {
-      HeaderConstantVarAccessor << KI.declareConstantAcc(NL, Indent + "    ");
-      HeaderConstantVasAsArgs << KI.passCMVAsArgs();
-    }
-    if (KI.hasDMVDefined()) {
-      HeaderDeviceVarAccessor << KI.declareDeviceAcc(NL, Indent + "    ");
-      HeaderDeviceVarAsArgs << KI.passDMVAsArgs();
-    }
-  }
-  for (auto *Arg : KCall->arguments()) {
+  Header2 << Kernel->getAccessorDecl(Indent + "    ", NL);
+  for (auto *Arg : Kernel->getCallExpr()->arguments()) {
     if (Arg->getType()->isAnyPointerType()) {
       if (auto *DeclRef = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts())) {
         auto VarName = DeclRef->getNameInfo().getAsString();
@@ -526,30 +484,23 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   auto LocHash =
       getHashAsString(KCall->getBeginLoc().printToString(SM)).substr(0, 6);
 
+  auto &KName = Kernel->getName();
+  auto TemplateArgs = Kernel->getTemplateArguments();
   std::string KernelClassName, CallFunc;
-  KernelClassName = "SyclKernelName<class " + KName + "_" + LocHash;
+  KernelClassName = "syclct_kernel_name<class " + KName + "_" + LocHash;
   CallFunc = KName;
-  if (!TemplateArgs.empty()) {
-    KernelClassName += ", " + TemplateArgs;
-    CallFunc += "<" + TemplateArgs + ">";
+  if (TemplateArgs.empty())
+    KernelClassName += ">";
+  else {
+    CallFunc += TemplateArgs;
+    KernelClassName += ", " + TemplateArgs.substr(1);
   }
-  KernelClassName += ">";
 
-  const std::string ItemName = "it";
+  const std::string &ItemName = SyclctGlobalInfo::getItemName();
   std::stringstream KernelArgs;
-  KernelArgs << ItemName;
 
-  auto AppendKernelArgs = [&](const std::string &args) {
-    if (args.empty()) {
-      return;
-    }
-    KernelArgs << ", " << args;
-  };
-
-  AppendKernelArgs(HeaderShareVasAsArgs.str());
-  AppendKernelArgs(HeaderConstantVasAsArgs.str());
-  AppendKernelArgs(HeaderDeviceVarAsArgs.str());
-  AppendKernelArgs(buildArgList(KCall->arguments(), Context));
+  KernelArgs << buildArgList(KCall->arguments(), Context)
+             << Kernel->getArguments();
 
   // clang-format off
   std::stringstream Final;
@@ -622,13 +573,13 @@ ExtReplacement InsertArgument::getReplacement(const ASTContext &Context) const {
   assert(tkn.is(tok::TokenKind::l_paren));
   // Emit new argument at the end of l_paren token
   std::string Arg = ArgName;
-  if (Lazy) {
-    std::string KernelFunName = FD->getNameAsString();
-    if (KernelTransAssist::hasKernelInfo(KernelFunName)) {
-      KernelInfo &KI = KernelTransAssist::getKernelInfo(KernelFunName);
-      Arg = KI.getKernelArgs();
-    }
-  }
+  // if (Lazy) {
+  //  std::string KernelFunName = FD->getNameAsString();
+  //  if (KernelTransAssist::hasKernelInfo(KernelFunName)) {
+  //    KernelInfo &KI = KernelTransAssist::getKernelInfo(KernelFunName);
+  //    Arg = KI.getKernelArgs();
+  //  }
+  //}
 
   auto OutStr = Arg;
   if (!FD->parameters().empty())
@@ -794,7 +745,8 @@ InsertClassName::getReplacement(const ASTContext &Context) const {
 
   return ExtReplacement(
       SM, BeginLoc.getLocWithOffset(i + 1), 0,
-      " SYCL_TYPE_" + getHashAsString(BeginLoc.printToString(SM)).substr(0, 6),
+      " syclct_type_" +
+          getHashAsString(BeginLoc.printToString(SM)).substr(0, 6),
       this);
 }
 
@@ -880,8 +832,8 @@ void ReplaceTypeInDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
   printReplacement(OS, T);
 }
 
-void RemoveVarDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
-                          const bool PrintDetail) const {
+void ReplaceVarDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
+                           const bool PrintDetail) const {
   printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
   printLocation(OS, D->getBeginLoc(), Context, PrintDetail);
   D->print(OS, PrintingPolicy(Context.getLangOpts()));

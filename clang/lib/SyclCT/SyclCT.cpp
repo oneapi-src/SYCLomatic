@@ -18,6 +18,7 @@
 #include "clang/Tooling/Refactoring.h"
 
 #include "ASTTraversal.h"
+#include "AnalysisInfo.h"
 #include "Debug.h"
 #include "SaveNewFiles.h"
 #include "Utility.h"
@@ -333,12 +334,18 @@ public:
   }
 
   void HandleTranslationUnit(ASTContext &Context) override {
+    // Set Context for build information
+    SyclctGlobalInfo::setContext(Context);
+    SyclctGlobalInfo::setInRoot(InRoot);
     // The translation process is separated into two stages:
     // 1) Analysis of AST and identification of applicable translation rules
     // 2) Generation of actual textual Replacements
     // Such separation makes it possible to post-process the list of identified
     // translation rules before applying them.
     ATM.matchAST(Context, TransformSet, SSM);
+
+    SyclctGlobalInfo::getInstance().emplaceKernelAndDeviceReplacement(
+        TransformSet, SSM);
 
     // Sort the transformations according to the sort key of the individual
     // transformations.  Sorted from low->high Key values

@@ -10,10 +10,9 @@
 //===-----------------------------------------------------------------===//
 #ifndef __SYCLCT_THRUST_HPP__
 #define __SYCLCT_THRUST_HPP__
-//todo: including thrust mapping header here.
+// todo: including thrust mapping header here.
 
-#include <tbb/iterators.h>
 #include "thrust_memory.hpp"
-
+#include <tbb/iterators.h>
 
 #endif

@@ -12,6 +12,7 @@
 #ifndef SYCLCT_AST_TRAVERSAL_H
 #define SYCLCT_AST_TRAVERSAL_H
 
+#include "AnalysisInfo.h"
 #include "Debug.h"
 #include "Diagnostics.h"
 #include "MapNames.h"
@@ -237,35 +238,40 @@ protected:
     return "";
   }
 
-  const std::string &getItemName() {
-    const static std::string ItemName =
-        "item_" + getHashAsString(TM->InRoot).substr(0, 6);
-    return ItemName;
-  }
+  const std::string &getItemName() { return SyclctGlobalInfo::getItemName(); }
 
-  const std::string &getHashID() {
-    const static std::string HashID = getHashAsString(TM->InRoot).substr(0, 6);
-    return HashID;
-  }
   // Get node from match result map. And also check if the node's host file is
-  // in the InRoot path.
+  // in the InRoot path and if the node has been processed by the same rule.
   template <typename NodeType>
   const NodeType *
   getNodeAsType(const ast_matchers::MatchFinder::MatchResult &Result,
                 const char *Name, bool CheckNode = true) {
-    if (auto Node = Result.Nodes.getNodeAs<NodeType>(Name)) {
-
-      if (checkNode(Result.SourceManager, Node->getBeginLoc(), CheckNode))
-        return Node;
-    }
-    return nullptr;
+    return getNode<NodeType>(Result, Name, CheckNode, CheckNode);
+  }
+  template <typename NodeType>
+  const NodeType *
+  getAssistNodeAsType(const ast_matchers::MatchFinder::MatchResult &Result,
+                      const char *Name, bool CheckInRoot = true) {
+    return getNode<NodeType>(Result, Name, false, CheckInRoot);
   }
 
 private:
+  template <typename NodeType>
+  const NodeType *getNode(const ast_matchers::MatchFinder::MatchResult &Result,
+                          const char *Name, bool CheckReplaced,
+                          bool CheckInRoot) {
+    if (auto Node = Result.Nodes.getNodeAs<NodeType>(Name))
+      if (checkNode(Result.SourceManager, Node->getBeginLoc(), CheckReplaced,
+                    CheckInRoot))
+        return Node;
+    return nullptr;
+  }
   bool checkNode(SourceManager *SM, const SourceLocation &Begin,
-                 bool CheckNode) {
-    if (CheckNode)
-      return isInRoot(SM, Begin) && !isReplaced(Begin.getRawEncoding());
+                 bool CheckReplaced, bool CheckInRoot) {
+    if (CheckInRoot && !isInRoot(SM, Begin))
+      return false;
+    if (CheckReplaced && isReplaced(Begin.getRawEncoding()))
+      return false;
     return true;
   }
 
@@ -377,20 +383,6 @@ public:
   FunctionAttrsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-};
-
-/// Translation rule for insert cl::sycl::nd_item<3> argument for device
-/// functions.
-class DeviceFunctionItemArgRule
-    : public NamedTranslationRule<DeviceFunctionItemArgRule> {
-public:
-  DeviceFunctionItemArgRule() {
-    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
-  }
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-
-  static const std::unordered_set<std::string> BuiltInFunctions;
 };
 
 /// Translation rule for types replacements in var. declarations.
@@ -509,43 +501,20 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Translation rule for shared memory variables.
-class SharedMemVarRule : public NamedTranslationRule<SharedMemVarRule> {
+class DeviceFunctionCallRule
+    : public NamedTranslationRule<DeviceFunctionCallRule> {
 public:
-  SharedMemVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  DeviceFunctionCallRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Translation rule for constant memory variables.
-class ConstantMemVarRule : public NamedTranslationRule<ConstantMemVarRule> {
-private:
-  llvm::APInt Size;
-  std::string TypeName;
-  std::string ConstantVarName;
-  bool IsArray;
-  std::map<std::string, unsigned int> CntOfCVarPerKelfun;
-  std::map<std::string, std::string> SizeOfConstMemVar;
-  std::map<std::string, std::string> AccOfConstMemVar;
-  std::unordered_set<std::string> AccSetOfConstMemVar;
-  std::map<std::string, bool> CVarIsArray;
-
+/// Translation rule for __constant__/__shared__/__device__ memory variables.
+class MemVarRule : public NamedTranslationRule<MemVarRule> {
 public:
-  ConstantMemVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-
-private:
-  void ConstMemVarDeclProcess(const VarDecl *ConstantMemVar);
-  void DeviceKernelFunctionProcess(
-      const FunctionDecl *KernelFunction, const DeclRefExpr *ConstantMemVarRef,
-      const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-/// Translation rule for device memory variables.
-class DeviceMemVarRule : public NamedTranslationRule<DeviceMemVarRule> {
-public:
-  DeviceMemVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  MemVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };

@@ -228,7 +228,7 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   const MemberExpr *ME = getNodeAsType<MemberExpr>(Result, "memberExpr");
   if (!ME)
     return;
-  const VarDecl *VD = getNodeAsType<VarDecl>(Result, "varDecl", false);
+  const VarDecl *VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
   assert(ME && VD && "Unknown result");
 
   ValueDecl *Field = ME->getMemberDecl();
@@ -464,50 +464,6 @@ void FunctionAttrsRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(FunctionAttrsRule)
-
-void DeviceFunctionItemArgRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(
-      callExpr(
-          allOf(callee(functionDecl(hasAttr(attr::CUDADevice),
-                                    unless(hasAttr(attr::CUDAHost)))
-                           .bind("DeviceFunctionDecl")),
-                hasParent(compoundStmt()),
-                hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
-                                               hasAttr(attr::CUDAGlobal))))))
-          .bind("DeviceFunctionCall"),
-      this);
-}
-
-void DeviceFunctionItemArgRule::run(const MatchFinder::MatchResult &Result) {
-  if (const CallExpr *CE =
-          getNodeAsType<CallExpr>(Result, "DeviceFunctionCall")) {
-    if (const FunctionDecl *FD = CE->getDirectCallee()) {
-      const std::string CalleeFuncName = FD->getName().str();
-      auto IsBuiltInFunction = [&](const std::string &CalleeFuncName) {
-        if (BuiltInFunctions.count(CalleeFuncName) != 0)
-          return true;
-
-        if (MathFunctionsRule::FunctionNamesMap.count(CalleeFuncName) != 0)
-          return true;
-
-        return false;
-      };
-
-      if (!IsBuiltInFunction(CalleeFuncName)) {
-        std::string InsertArg = getItemName();
-        emplaceTransformation(new InsertCallArgument(CE, std::move(InsertArg)));
-      }
-    }
-  }
-
-  if (const FunctionDecl *FD =
-          getNodeAsType<FunctionDecl>(Result, "DeviceFunctionDecl")) {
-    emplaceTransformation(
-        new InsertArgument(FD, "cl::sycl::nd_item<3> " + getItemName()));
-  }
-}
-
-REGISTER_RULE(DeviceFunctionItemArgRule)
 
 // Rule for types replacements in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
@@ -1081,507 +1037,83 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(FunctionCallRule)
 
+// kernel call information collection
 void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(cudaKernelCallExpr().bind("kernelCall"), this);
+  MF.addMatcher(
+      cudaKernelCallExpr(hasAncestor(functionDecl().bind("callContext")))
+          .bind("kernelCall"),
+      this);
 }
 
 void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (auto KCall = getNodeAsType<CUDAKernelCallExpr>(Result, "kernelCall")) {
+  auto FD = getAssistNodeAsType<FunctionDecl>(Result, "callContext");
+  if (auto KCall =
+          getAssistNodeAsType<CUDAKernelCallExpr>(Result, "kernelCall")) {
     emplaceTransformation(new ReplaceStmt(KCall, ""));
-    emplaceTransformation(new ReplaceKernelCallExpr(KCall, SSM));
+    if (!FD->isImplicitlyInstantiable())
+      SyclctGlobalInfo::getInstance().registerKernelCallExpr(KCall);
   }
 }
 
 REGISTER_RULE(KernelCallRule)
 
-///  Translation rule for shared memory variables.
-/// __shared__ var translation need 3 rules to work together, as follow:
-//  [SharedMemVarRule] Here try to remove __shared__ variable declare,
-//      also this rule records shared variable info for other rule
-//  [KernelIterationSpaceRule] __shared__ variable will be declared as
-//      args of kernel function.
-//  [KernelCallRule]__shared__ variable also will be declared as accessor
-//      with cl::sycl::access::target::local in sycl command group,
-//      when call kernel function, the accessor will pass to kernel function
-void SharedMemVarRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(varDecl(hasAttr(clang::attr::CUDAShared),
-                        hasAncestor(functionDecl().bind("kernelFunction")))
-                    .bind("cudaSharedMemVar"),
-                this);
-}
-
-void SharedMemVarRule::run(const MatchFinder::MatchResult &Result) {
-
-  auto *SharedMemVar = getNodeAsType<VarDecl>(Result, "cudaSharedMemVar");
-  auto *KernelFunction = getNodeAsType<FunctionDecl>(Result, "kernelFunction");
-  if (SharedMemVar == NULL || KernelFunction == NULL) {
-    return;
-  }
-
-  std::string KelFunName = KernelFunction->getNameAsString();
-  std::string SharedVarName = SharedMemVar->getNameAsString();
-  clang::QualType QType = SharedMemVar->getType();
-  std::vector<std::string> ArraySize;
-  std::string TypeName;
-  unsigned TemplateIndex = 0;
-  bool IsExtern = true;
-  bool IsArray = false;
-  bool IsTemplateType = false;
-
-  if (QType->isArrayType()) {
-    IsArray = true;
-    if (QType->isConstantArrayType()) {
-      IsExtern = false;
-      do {
-        ArraySize.push_back(
-            cast<ConstantArrayType>(QType->getAsArrayTypeUnsafe())
-                ->getSize()
-                .toString(10, false));
-        QType = QType.getTypePtr()->getAsArrayTypeUnsafe()->getElementType();
-      } while (QType->isConstantArrayType());
-    } else {
-      QType = QType.getTypePtr()->getAsArrayTypeUnsafe()->getElementType();
-      ArraySize.push_back("1");
-    }
-    if (QType.getTypePtr()->isBuiltinType()) {
-      QType = QType.getCanonicalType();
-      const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
-      if (BT) {
-        clang::LangOptions LO;
-        LO.CUDA = true;
-        clang::PrintingPolicy policy(LO);
-        TypeName = BT->getName(policy);
-      }
-    } else {
-      TypeName = QType.getAsString();
-      if (auto TemplateType = dyn_cast<TemplateTypeParmType>(
-              QType->getCanonicalTypeInternal())) {
-        IsTemplateType = true;
-        TemplateIndex = TemplateType->getIndex();
-      }
-    }
-    std::string ReplaceStr = "";
-    emplaceTransformation(
-        new RemoveVarDecl(SharedMemVar, std::move(ReplaceStr)));
-    IsArray = true;
-  } else {
-    ArraySize.push_back(std::string("1"));
-    const AttrVec &AV = SharedMemVar->getAttrs();
-    for (const Attr *A : AV) {
-      attr::Kind AK = A->getKind();
-      if (AK == attr::CUDAShared)
-        emplaceTransformation(new RemoveAttr(A));
-    }
-  }
-
-  auto SM = Result.SourceManager;
-  auto OrigIndent = getIndent(KernelFunction->getBeginLoc(), *SM).str();
-  // Store the analysis info in kernelinfo for other rule use:
-  //  [KernelIterationSpaceRule] [KernelCallRule]
-  if (KernelTransAssist::hasKernelInfo(KelFunName)) {
-    KernelInfo &KI = KernelTransAssist::getKernelInfo(KelFunName);
-    KI.appendKernelArgs(getFmtEndArg() + getFmtArgIndent(OrigIndent) +
-                        "cl::sycl::accessor<" + TypeName + ", " +
-                        std::to_string(ArraySize.size()) +
-                        ", cl::sycl::access::mode::read_write, "
-                        "cl::sycl::access::target::local> " +
-                        SharedVarName);
-    KI.insertVarInfo(KI.getSMVInfoMap(), SharedVarName, TypeName, IsArray,
-                     ArraySize, IsExtern, IsTemplateType, TemplateIndex);
-  } else {
-    KernelInfo KI(KelFunName);
-    KI.appendKernelArgs(getFmtEndArg() + getFmtArgIndent(OrigIndent) +
-                        "cl::sycl::accessor<" + TypeName + ", " +
-                        std::to_string(ArraySize.size()) +
-                        ", cl::sycl::access::mode::read_write, "
-                        "cl::sycl::access::target::local> " +
-                        SharedVarName);
-    KI.insertVarInfo(KI.getSMVInfoMap(), SharedVarName, TypeName, IsArray,
-                     ArraySize, IsExtern, IsTemplateType, TemplateIndex);
-    KernelTransAssist::insertKernel(KelFunName, KI);
-  }
-}
-
-REGISTER_RULE(SharedMemVarRule)
-
-///  Translation rule for constant memory variables.
-/// __constant__ var translation need 3 rules to work together, as follow:
-//  [ConstantMemVarRule] Here try to remove __constant__ variable declare,
-//      also this rule records constant variable info for other rule
-//  [KernelIterationSpaceRule] __constant__ variable will be declared as
-//      args of kernel function.
-//  [KernelCallRule]__constant__ variable also will be declared as accessor
-//      with auto  const_acc =
-//      const_buf.get_access<cl::sycl::access::mode::read,
-//  cl::sycl::access::target::constant_buffer>(cgh) in sycl command group,
-//      when call kernel function, the accessor will pass to kernel function
-void ConstantMemVarRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(varDecl(hasAttr(clang::attr::CUDAConstant))
-                    .bind("cudaConstantMemVarDecl"),
-                this);
-
-  MF.addMatcher(declRefExpr(to(varDecl(hasAttr(clang::attr::CUDAConstant))),
-                            hasAncestor(functionDecl(hasAttr(attr::CUDAGlobal))
-                                            .bind("cudaKernelFuction")))
-                    .bind("cudaConstantMemVarRef"),
-                this);
-}
-
-void ConstantMemVarRule::ConstMemVarDeclProcess(const VarDecl *ConstantMemVar) {
-  ConstantVarName = ConstantMemVar->getNameAsString();
-
-  clang::QualType QType = ConstantMemVar->getType();
-
-  Size = 0u;
-  if (QType->isArrayType()) {
-    IsArray = true;
-    if (QType->isConstantArrayType()) {
-      Size = cast<ConstantArrayType>(QType->getAsArrayTypeUnsafe())->getSize();
-      QType = QType.getTypePtr()->getAsArrayTypeUnsafe()->getElementType();
-      while (QType->isArrayType()) {
-        if (!QType->isConstantArrayType())
-          assert(false && "N-dimision array must be constant");
-        Size *=
-            cast<ConstantArrayType>(QType->getAsArrayTypeUnsafe())->getSize();
-        QType = QType.getTypePtr()->getAsArrayTypeUnsafe()->getElementType();
-      }
-    } else {
-      const clang::ArrayType *AT = QType.getTypePtr()->getAsArrayTypeUnsafe();
-      QType = AT->getElementType();
-    }
-    if (QType.getTypePtr()->isBuiltinType()) {
-      QType = QType.getCanonicalType();
-      const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
-      if (BT) {
-        clang::LangOptions LO;
-        LO.CUDA = true;
-        clang::PrintingPolicy policy(LO);
-        TypeName = BT->getName(policy);
-      }
-    } else {
-      TypeName = QType.getAsString();
-    }
-    IsArray = true;
-  } else {
-    IsArray = false;
-    Size = 1u;
-    const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
-    if (BT) {
-      clang::LangOptions LO;
-      LO.CUDA = true;
-      clang::PrintingPolicy policy(LO);
-      TypeName = BT->getName(policy);
-    }
-  }
-
-  const AttrVec &AV = ConstantMemVar->getAttrs();
-  for (const Attr *A : AV) {
-    attr::Kind AK = A->getKind();
-    if (!A->isImplicit() && (AK == attr::CUDAConstant))
-      emplaceTransformation(new RemoveAttr(A));
-  }
-
-  std::string Replacement = "syclct::ConstMem  " + ConstantVarName + "(" +
-                            Size.toString(10, false) + "* sizeof(" + TypeName +
-                            "))";
-
-  if (IsArray)
-    emplaceTransformation(
-        new ReplaceTypeInDecl(ConstantMemVar, std::move(Replacement)));
-  else
-    emplaceTransformation(new ReplaceTypeInDecl(
-        ConstantMemVar, std::move(Replacement + ";\n//")));
-
-  std::map<std::string, std::string>::iterator Iter =
-      SizeOfConstMemVar.find(ConstantVarName);
-  if (Iter == SizeOfConstMemVar.end()) {
-    SizeOfConstMemVar[ConstantVarName] = Size.toString(10, false);
-  }
-
-  std::map<std::string, bool>::iterator TypeIter =
-      CVarIsArray.find(ConstantVarName);
-  if (TypeIter == CVarIsArray.end()) {
-    CVarIsArray[ConstantVarName] = IsArray;
-  }
-}
-
-void ConstantMemVarRule::DeviceKernelFunctionProcess(
-    const FunctionDecl *KernelFunction, const DeclRefExpr *ConstantMemVarRef,
-    const MatchFinder::MatchResult &Result) {
-  std::string ConstantVarRefName;
-  std::string KelFunName;
-  std::string HashID = getHashID();
-  std::string AccName;
-
-  ConstantVarRefName = ConstantMemVarRef->getNameInfo().getName().getAsString();
-  KelFunName = KernelFunction->getNameAsString();
-
-  std::string KeyCompName = KelFunName + ":" + ConstantVarRefName;
-
-  std::string KeyName = KelFunName;
-  std::map<std::string, unsigned int>::iterator Iter =
-      CntOfCVarPerKelfun.find(KeyName);
-  if (Iter == CntOfCVarPerKelfun.end()) {
-    CntOfCVarPerKelfun[KeyName] = 0;
-  } else {
-    CntOfCVarPerKelfun[KeyName]++;
-  }
-
-  AccName =
-      "const_acc_" + std::to_string(CntOfCVarPerKelfun[KeyName]) + "_" + HashID;
-
-  std::map<std::string, std::string>::iterator AccOfConstMemIter =
-      AccOfConstMemVar.find(KeyCompName);
-  if (AccOfConstMemIter == AccOfConstMemVar.end()) {
-    AccOfConstMemVar[KeyCompName] = AccName;
-  }
-
-  std::string ReplaceStr = AccOfConstMemVar[KeyCompName];
-  if (CVarIsArray[ConstantVarRefName]) {
-    emplaceTransformation(
-        new ReplaceStmt(ConstantMemVarRef, std::move(ReplaceStr)));
-  } else {
-    emplaceTransformation(
-        new ReplaceStmt(ConstantMemVarRef, std::move(ReplaceStr + "[0]")));
-  }
-
-  // Only create accessor for new hit constant varialble
-  if (AccSetOfConstMemVar.find(KeyCompName) == end(AccSetOfConstMemVar)) {
-    AccSetOfConstMemVar.insert(KeyCompName);
-
-    auto SM = Result.SourceManager;
-    auto OrigIndent = getIndent(KernelFunction->getBeginLoc(), *SM).str();
-    // Store the constatn analysis info in kernelinfo for other rule use:
-    //  [KernelIterationSpaceRule] [KernelCallRule]
-    std::string ReplaceStr = getFmtEndArg() + getFmtArgIndent(OrigIndent) +
-                             "cl::sycl::accessor<" + TypeName +
-                             ", 1, cl::sycl::access::mode::read, "
-                             "cl::sycl::access::target::constant_buffer>  " +
-                             AccName;
-    if (KernelTransAssist::hasKernelInfo(KelFunName)) {
-      KernelInfo &KI = KernelTransAssist::getKernelInfo(KelFunName);
-      // Store Constant Mem info
-      KI.insertCMVarInfo(
-          ConstantVarRefName, TypeName, CVarIsArray[ConstantVarRefName],
-          SizeOfConstMemVar[ConstantVarRefName], AccName, OrigIndent);
-
-      KI.appendKernelArgs(ReplaceStr);
-    } else {
-      KernelInfo KI(KelFunName);
-      // Store Constant Mem info
-      KI.insertCMVarInfo(ConstantVarRefName, TypeName, IsArray,
-                         SizeOfConstMemVar[ConstantVarRefName], HashID,
-                         OrigIndent);
-      KernelTransAssist::insertKernel(KelFunName, KI);
-      KI.appendKernelArgs(ReplaceStr);
-    }
-  }
-}
-void ConstantMemVarRule::run(const MatchFinder::MatchResult &Result) {
-
-  auto *ConstantMemVar =
-      getNodeAsType<VarDecl>(Result, "cudaConstantMemVarDecl");
-  if (ConstantMemVar != NULL) {
-    ConstMemVarDeclProcess(ConstantMemVar);
-  }
-
-  auto *KernelFunction =
-      getNodeAsType<FunctionDecl>(Result, "cudaKernelFuction", false);
-  auto *ConstantMemVarRef =
-      getNodeAsType<DeclRefExpr>(Result, "cudaConstantMemVarRef", false);
-
-  if (ConstantMemVarRef != NULL && KernelFunction != NULL) {
-
-    DeviceKernelFunctionProcess(KernelFunction, ConstantMemVarRef, Result);
-  }
-}
-
-REGISTER_RULE(ConstantMemVarRule)
-
-///  Translation rule for device memory variables.
-/// __device__ var translation need 3 rules to work together, as follow:
-//  [DeviceMemVarRule] Here try to remove __device__ variable declare,
-//      also this rule records device variable info for other rule
-//  [KernelIterationSpaceRule] __device__ variable will be declared as
-//      args of kernel function.
-//  [KernelCallRule]__device__ variable also will be declared as accessor
-//      with auto device_acc_<var_name> =
-//      device_buffer_<var_name>.get_access<cl::sycl::access::mode::read_write>(cgh)
-//      in sycl command group, when call kernel function, the accessor will pass
-//      to kernel function
-void DeviceMemVarRule::registerMatcher(MatchFinder &MF) {
+// __device__ function call information collection
+void DeviceFunctionCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
-      varDecl(hasAttr(clang::attr::CUDADevice)).bind("cudaDeviceMemVarDecl"),
-      this);
-
-  MF.addMatcher(
-      functionDecl(
-          hasDescendant(
-              declRefExpr(
-                  to(varDecl(hasAttr(clang::attr::CUDADevice))),
-                  // These builtin variables have implicit
-                  // clang::attr::CUDADevice attribute, skip them here.
-                  unless(to(varDecl(hasAnyName("threadIdx", "blockDim",
-                                               "blockIdx", "gridDim")))))
-                  .bind("cudaDeviceMemVarRef")),
-
-          hasAttr(attr::CUDAGlobal))
-          .bind("cudaKernelFunction"),
+      callExpr(hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
+                                              hasAttr(attr::CUDAGlobal)),
+                                        unless(hasAttr(attr::CUDAHost)))
+                               .bind("funcDecl")))
+          .bind("callExpr"),
       this);
 }
 
-void DeviceMemVarRule::run(const MatchFinder::MatchResult &Result) {
-  auto *DeviceMemVarDecl =
-      getNodeAsType<VarDecl>(Result, "cudaDeviceMemVarDecl", false);
-
-  if (DeviceMemVarDecl) {
-    const AttrVec &AV = DeviceMemVarDecl->getAttrs();
-    for (const Attr *A : AV) {
-      attr::Kind AK = A->getKind();
-      if (!A->isImplicit() && (AK == attr::CUDADevice))
-        emplaceTransformation(new RemoveAttr(A));
-    }
-
-    clang::QualType QType = DeviceMemVarDecl->getType();
-    llvm::APInt Size;
-    std::string TypeName;
-    const bool IsArray = QType->isArrayType();
-    if (IsArray) {
-      // TODO: Support multi-dimensional array, eg int arr[100][100][100].
-      //       Should be added in constant memory and shared memory translation,
-      //       too.
-      if (QType->isConstantArrayType()) {
-        Size =
-            cast<ConstantArrayType>(QType->getAsArrayTypeUnsafe())->getSize();
-      } else {
-        // Non constant device memory declaration should be treated as an error
-        // and never reach here.
-        syclct_unreachable("Non constant device memory declaration");
-      }
-
-      const clang::ArrayType *AT = QType.getTypePtr()->getAsArrayTypeUnsafe();
-      QType = AT->getElementType();
-      if (QType.getTypePtr()->isBuiltinType()) {
-        QType = QType.getCanonicalType();
-        const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
-        if (BT) {
-          clang::LangOptions LO;
-          LO.CUDA = true;
-          clang::PrintingPolicy policy(LO);
-          TypeName = BT->getName(policy);
-        }
-      } else {
-        TypeName = QType.getAsString();
-      }
-    } else {
-      Size = 1u;
-      const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
-      if (BT) {
-        clang::LangOptions LO;
-        LO.CUDA = true;
-        clang::PrintingPolicy policy(LO);
-        TypeName = BT->getName(policy);
-      }
-    }
-
-    std::string DeviceMemVarName = DeviceMemVarDecl->getNameAsString();
-
-    std::string Replacement = "syclct::DeviceMem " + DeviceMemVarName + "(" +
-                              Size.toString(10, false) + "* sizeof(" +
-                              TypeName + "))";
-
-    if (IsArray) {
-      emplaceTransformation(
-          new ReplaceTypeInDecl(DeviceMemVarDecl, std::move(Replacement)));
-    } else {
-      emplaceTransformation(new ReplaceTypeInDecl(
-          DeviceMemVarDecl, std::move(Replacement + ";\n//")));
-    }
-    return;
-  }
-
-  auto *DeviceMemVarRef =
-      getNodeAsType<DeclRefExpr>(Result, "cudaDeviceMemVarRef");
-  auto *KernelFunction =
-      getNodeAsType<FunctionDecl>(Result, "cudaKernelFunction");
-
-  if (!DeviceMemVarRef || !KernelFunction) {
-    return;
-  }
-
-  clang::QualType QType = DeviceMemVarRef->getType();
-  llvm::APInt Size;
-  std::string TypeName;
-  const bool IsArray = QType->isArrayType();
-  if (IsArray) {
-    // TODO: Support multi-dimensional array, eg int arr[100][100][100].
-    //       Should be added in constant memory and shared memory translation,
-    //       too.
-    if (QType->isConstantArrayType()) {
-      Size = cast<ConstantArrayType>(QType->getAsArrayTypeUnsafe())->getSize();
-    } else {
-      // Non constant device memory declaration should be treated as an error
-      // and never reach here.
-      syclct_unreachable("Non constant device memory declaration");
-    }
-
-    const clang::ArrayType *AT = QType.getTypePtr()->getAsArrayTypeUnsafe();
-    QType = AT->getElementType();
-    if (QType.getTypePtr()->isBuiltinType()) {
-      QType = QType.getCanonicalType();
-      const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
-      if (BT) {
-        clang::LangOptions LO;
-        LO.CUDA = true;
-        clang::PrintingPolicy policy(LO);
-        TypeName = BT->getName(policy);
-      }
-    } else {
-      TypeName = QType.getAsString();
-    }
-  } else {
-    Size = 1u;
-    const auto *BT = clang::dyn_cast<clang::BuiltinType>(QType);
-    if (BT) {
-      clang::LangOptions LO;
-      LO.CUDA = true;
-      clang::PrintingPolicy policy(LO);
-      TypeName = BT->getName(policy);
-    }
-  }
-
-  std::string DeviceVarRefName =
-      DeviceMemVarRef->getNameInfo().getName().getAsString();
-
-  if (!IsArray) {
-    std::string ReplaceStr = DeviceVarRefName;
-    emplaceTransformation(
-        new ReplaceStmt(DeviceMemVarRef, std::move(ReplaceStr + "[0]")));
-  }
-
-  std::string KernelFunctionName = KernelFunction->getNameAsString();
-  auto SM = Result.SourceManager;
-  auto OrigIndent = getIndent(KernelFunction->getBeginLoc(), *SM).str();
-
-  if (KernelTransAssist::hasKernelInfo(KernelFunctionName)) {
-    KernelInfo &KI = KernelTransAssist::getKernelInfo(KernelFunctionName);
-    // Store Device Mem info
-    KI.insertVarInfo(KI.getDMVInfoMap(), DeviceVarRefName, TypeName, IsArray,
-                     Size.toString(10, false), OrigIndent);
-    KI.appendKernelArgs(getFmtEndArg() + getFmtArgIndent(OrigIndent) +
-                        TypeName + " " + DeviceVarRefName + "[]");
-  } else {
-    KernelInfo KI(KernelFunctionName);
-    // Store Device Mem info
-    KI.insertVarInfo(KI.getDMVInfoMap(), DeviceVarRefName, TypeName, IsArray,
-                     Size.toString(10, false), OrigIndent);
-    KernelTransAssist::insertKernel(KernelFunctionName, KI);
-    KI.appendKernelArgs(getFmtEndArg() + getFmtArgIndent(OrigIndent) +
-                        TypeName + " " + DeviceVarRefName + "[]");
+void DeviceFunctionCallRule::run(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr");
+  auto FD = getAssistNodeAsType<FunctionDecl>(Result, "funcDecl");
+  if (CE && FD) {
+    if (!FD->isImplicitlyInstantiable())
+      SyclctGlobalInfo::getInstance().registerDeviceFunctionInfo(FD)->addCallee(
+          CE);
   }
 }
 
-REGISTER_RULE(DeviceMemVarRule)
+REGISTER_RULE(DeviceFunctionCallRule)
+
+/// __constant__/__shared__/__device__ var information collection
+void MemVarRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      declRefExpr(to(varDecl(anyOf(hasAttr(attr::CUDAConstant),
+                                   hasAttr(attr::CUDADevice),
+                                   hasAttr(attr::CUDAShared)),
+                             unless(hasAnyName("threadIdx", "blockDim",
+                                               "blockIdx", "gridDim")))
+                         .bind("var")),
+                  hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
+                                                 hasAttr(attr::CUDAGlobal)),
+                                           unless(hasAttr(attr::CUDAHost)))
+                                  .bind("func")))
+          .bind("used"),
+      this);
+}
+
+void MemVarRule::run(const MatchFinder::MatchResult &Result) {
+  if (auto MemVar = getNodeAsType<VarDecl>(Result, "var"))
+    emplaceTransformation(new ReplaceVarDecl(
+        MemVar,
+        MemVarInfo::buildMemVarInfo(MemVar)->getDeclarationReplacement()));
+  auto MemVarRef = getNodeAsType<DeclRefExpr>(Result, "used");
+  auto Func = getAssistNodeAsType<FunctionDecl>(Result, "func");
+  SyclctGlobalInfo &Global = SyclctGlobalInfo::getInstance();
+  if (MemVarRef && Func) {
+    if (auto Var =
+            Global.findMemVarInfo(dyn_cast<VarDecl>(MemVarRef->getDecl())))
+      Global.registerDeviceFunctionInfo(Func)->addVar(Var);
+  }
+}
+
+REGISTER_RULE(MemVarRule)
 
 void MemoryTranslationRule::MallocTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C) {
@@ -1858,24 +1390,24 @@ void KernelIterationSpaceRule::run(const MatchFinder::MatchResult &Result) {
     InsertArgs << "cl::sycl::nd_item<3> " + getItemName();
     // check if there is shared variable, move them to args.
     std::string KernelFunName = FD->getNameAsString();
-    if (KernelTransAssist::hasKernelInfo(KernelFunName)) {
-      KernelInfo &KI = KernelTransAssist::getKernelInfo(KernelFunName);
-      if (KI.hasSMVDefined()) {
-        InsertArgs << getFmtEndArg() + getFmtArgIndent(OrigIndent);
-        InsertArgs << KI.declareSMVAsArgs();
-      }
-      if (KI.hasDMVDefined()) {
-        InsertArgs << getFmtEndArg() + getFmtArgIndent(OrigIndent);
-        InsertArgs << KI.declareDMVAsArgs();
-      }
-      emplaceTransformation(new InsertArgument(FD, InsertArgs.str()));
-    } else {
-      // need lazy here, as it don't know if __shared__ var exists
-      KernelInfo KI(KernelFunName);
-      KI.appendKernelArgs(InsertArgs.str());
-      KernelTransAssist::insertKernel(KernelFunName, KI);
-      emplaceTransformation(new InsertArgument(FD, InsertArgs.str(), true));
-    }
+    // if (KernelTransAssist::hasKernelInfo(KernelFunName)) {
+    //  KernelInfo &KI = KernelTransAssist::getKernelInfo(KernelFunName);
+    //  if (KI.hasSMVDefined()) {
+    //    InsertArgs << getFmtEndArg() + getFmtArgIndent(OrigIndent);
+    //    InsertArgs << KI.declareSMVAsArgs();
+    //  }
+    //  if (KI.hasDMVDefined()) {
+    //    InsertArgs << getFmtEndArg() + getFmtArgIndent(OrigIndent);
+    //    InsertArgs << KI.declareDMVAsArgs();
+    //  }
+    //  emplaceTransformation(new InsertArgument(FD, InsertArgs.str()));
+    //} else {
+    //  // need lazy here, as it don't know if __shared__ var exists
+    //  KernelInfo KI(KernelFunName);
+    //  KI.appendKernelArgs(InsertArgs.str());
+    //  KernelTransAssist::insertKernel(KernelFunName, KI);
+    //  emplaceTransformation(new InsertArgument(FD, InsertArgs.str(), true));
+    //}
   }
 }
 REGISTER_RULE(KernelIterationSpaceRule)

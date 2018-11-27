@@ -54,6 +54,11 @@ enum memcpy_direction {
   device_to_device,
   automatic
 };
+enum memory_attribute {
+  device = 0,
+  constant,
+  shared,
+};
 
 // Byte type to use.
 typedef uint8_t byte_t;
@@ -199,20 +204,192 @@ static void sycl_free(void *ptr) {
   memory_manager::get_instance().mem_free(ptr);
 }
 
-class DeviceMem {
+// syclct_range used to store range infomation
+// syclct_range has specialization when Dimesion = 1, 2, 3
+template <size_t Dimesion> class syclct_range;
+template <> class syclct_range<0> {
 public:
-  DeviceMem(size_t size) { sycl_malloc((void **)&device_mem_ptr, size); }
+  syclct_range(){};
+  size_t size() const { return 1; }
+};
+template <> class syclct_range<1> {
+public:
+  syclct_range(size_t dim1) : range{dim1} {}
+  syclct_range(cl::sycl::range<1> range) : range{range[0]} {}
+  operator cl::sycl::range<1>() { return cl::sycl::range<1>(range[0]); }
+  size_t size() const { return range[0]; }
+  syclct_range<0> low() const { return syclct_range<0>(); }
 
-  void *get_ptr(void) { return device_mem_ptr; }
+private:
+  size_t range[1];
+};
+template <> class syclct_range<2> {
+public:
+  syclct_range(size_t dim1, size_t dim2) : range{dim1, dim2} {}
+  syclct_range(cl::sycl::range<2> range) : range{range[0], range[1]} {}
+  operator cl::sycl::range<2>() {
+    return cl::sycl::range<2>(range[0], range[1]);
+  }
+  size_t size() const { return range[0] * range[1]; }
+  syclct_range<1> low() const { return syclct_range<1>(range[1]); }
 
-protected:
-  void *device_mem_ptr;
+private:
+  size_t range[2];
+};
+template <> class syclct_range<3> {
+public:
+  syclct_range(size_t dim1, size_t dim2, size_t dim3)
+      : range{dim1, dim2, dim3} {}
+  syclct_range(cl::sycl::range<3> range)
+      : range{range[0], range[1], range[2]} {}
+  operator cl::sycl::range<3>() {
+    return cl::sycl::range<3>(range[0], range[1], range[2]);
+  }
+  size_t size() const { return range[0] * range[1] * range[2]; }
+  syclct_range<2> low() const { return syclct_range<2>(range[1], range[2]); }
+
+private:
+  size_t range[3];
 };
 
-class ConstMem : public DeviceMem {
+// sycl memory traits
+template <memory_attribute Memory, class T = byte_t> class memory_traits {
 public:
-  ConstMem(size_t size) : DeviceMem(size) {}
+  static constexpr cl::sycl::access::address_space asp =
+      (Memory == device)
+          ? cl::sycl::access::address_space::global_space
+          : ((Memory == constant)
+                 ? cl::sycl::access::address_space::constant_space
+                 : cl::sycl::access::address_space::local_space);
+  static constexpr cl::sycl::access::target target =
+      (Memory == device)
+          ? cl::sycl::access::target::global_buffer
+          : ((Memory == constant) ? cl::sycl::access::target::constant_buffer
+                                  : cl::sycl::access::target::local);
+  static constexpr cl::sycl::access::mode mode =
+      (Memory == constant) ? cl::sycl::access::mode::read
+                           : cl::sycl::access::mode::read_write;
+  static constexpr size_t type_size = sizeof(T);
+  template <size_t Dimension = 1>
+  using accessor_t = cl::sycl::accessor<T, Dimension, mode, target>;
+  using pointer_t = cl::sycl::multi_ptr<T, asp>;
+  using element_t =
+      typename std::conditional<Memory == constant, const T, T>::type;
 };
+
+// syclct accessor used as kernel function and device function parameter
+template <class T, memory_attribute Memory, size_t Dimension>
+class syclct_accessor {
+public:
+  using memory_t = memory_traits<Memory, T>;
+  using element_t = typename memory_t::element_t;
+  using pointer_t = typename memory_t::pointer_t;
+  using accessor_t = typename memory_t::template accessor_t<Dimension>;
+  syclct_accessor(pointer_t data, const syclct_range<Dimension> &range)
+      : data(data), range(range){};
+  syclct_accessor(const accessor_t &acc)
+      : syclct_accessor((pointer_t)acc.get_pointer(),
+                        syclct_range<Dimension>(acc.get_range())) {}
+  syclct_accessor<T, Memory, Dimension - 1> operator[](size_t index) const {
+    auto low = range.low();
+    return syclct_accessor<T, Memory, Dimension - 1>(data + index * low.size(),
+                                                     low);
+  }
+
+private:
+  pointer_t data;
+  syclct_range<Dimension> range;
+};
+
+// syclct_accessor specialization while Dimension = 1
+template <class T, memory_attribute Memory>
+class syclct_accessor<T, Memory, 1> {
+public:
+  using memory_t = memory_traits<Memory, T>;
+  using element_t = typename memory_t::element_t;
+  using pointer_t = typename memory_t::pointer_t;
+  using accessor_t = typename memory_t::template accessor_t<1>;
+  syclct_accessor(pointer_t data, const syclct_range<1> &range)
+      : data(data), range(range){};
+  syclct_accessor(const accessor_t &acc)
+      : syclct_accessor((pointer_t)acc.get_pointer(),
+                        syclct_range<1>(acc.get_range())) {}
+  element_t &operator[](size_t index) const { return *(data + index); }
+  operator pointer_t() { return data; }
+  operator T *() { return data; }
+  template <class ReinterpretT>
+  syclct_accessor<ReinterpretT, Memory, 1> reinterpret() {
+    return syclct_accessor<ReinterpretT, Memory, 1>(
+        (typename memory_traits<Memory, ReinterpretT>::element_t *)data.get(),
+        syclct_range<1>(range.size() * sizeof(T) / sizeof(ReinterpretT)));
+  }
+
+private:
+  pointer_t data;
+  syclct_range<1> range;
+};
+
+// syclct_accessor specialization while Dimension = 0
+template <class T, memory_attribute Memory>
+class syclct_accessor<T, Memory, 0> {
+public:
+  using memory_t = memory_traits<Memory, T>;
+  using element_t = typename memory_t::element_t;
+  using pointer_t = typename memory_t::pointer_t;
+  using accessor_t = typename memory_t::template accessor_t<0>;
+  syclct_accessor(pointer_t data) : data(data) {}
+  syclct_accessor(const accessor_t &acc)
+      : syclct_accessor((pointer_t)acc.get_pointer(), syclct_range<0>()) {}
+  operator element_t &() const { return *data; }
+
+private:
+  pointer_t data;
+};
+
+//__shared__ uses local memory
+template <class T, size_t Dimension> class shared_memory {
+public:
+  using accessor_t =
+      typename memory_traits<shared, T>::template accessor_t<Dimension>;
+  shared_memory(cl::sycl::range<Dimension> range, cl::sycl::handler &cgh)
+      : acc(range, cgh) {}
+  accessor_t get_access(cl::sycl::handler &cgh) { return acc; }
+
+private:
+  accessor_t acc;
+};
+using extern_shared_memory = shared_memory<byte_t, 1>;
+
+//__constant__ and __device__ both use global memory
+template <class T, memory_attribute Memory, size_t Dimension>
+class global_memory {
+public:
+  using accessor_t =
+      typename memory_traits<Memory, T>::template accessor_t<Dimension>;
+
+  global_memory(cl::sycl::range<Dimension> range) : range(range) {
+    static_assert((Memory == device) || (Memory == constant),
+                  "Global memory attribute should be constant or device");
+    sycl_malloc((void **)&memory_ptr, range.size() * sizeof(T));
+  }
+  virtual ~global_memory() { sycl_free(memory_ptr); }
+  void *get_ptr() { return memory_ptr; }
+  accessor_t get_access(cl::sycl::handler &cgh) {
+    return memory_manager::get_instance()
+        .translate_ptr(memory_ptr)
+        .buffer.template reinterpret<T, Dimension>(range)
+        .template get_access<memory_traits<Memory, T>::mode,
+                             memory_traits<Memory, T>::target>(cgh);
+  }
+
+private:
+  cl::sycl::range<Dimension> range;
+  void *memory_ptr;
+};
+template <class T, size_t Dimension>
+using constant_memory = global_memory<T, constant, Dimension>;
+template <class T, size_t Dimension>
+using device_memory = global_memory<T, device, Dimension>;
 
 // memcpy
 static void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size,

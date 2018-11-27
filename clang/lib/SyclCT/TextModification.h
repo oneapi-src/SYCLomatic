@@ -22,6 +22,7 @@
 namespace clang {
 namespace syclct {
 
+class KernelCallExpr;
 class TextModification;
 using TransformSetTy = std::vector<std::unique_ptr<TextModification>>;
 enum InsertPosition {
@@ -266,13 +267,13 @@ public:
 };
 
 // Replace type in var. declaration.
-class RemoveVarDecl : public TextModification {
+class ReplaceVarDecl : public TextModification {
   const VarDecl *D;
   std::string T;
 
 public:
-  RemoveVarDecl(const VarDecl *D, std::string &&T)
-      : TextModification(TMID::RemoveVarDecl), D(D), T(T) {}
+  ReplaceVarDecl(const VarDecl *D, std::string &&T)
+      : TextModification(TMID::ReplaceVarDecl), D(D), T(std::move(T)) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
@@ -329,7 +330,7 @@ class InsertComment : public TextModification {
 
 public:
   InsertComment(SourceLocation SL, std::string Text)
-      : TextModification(TMID::InsertComment), SL(SL), Text(Text){}
+      : TextModification(TMID::InsertComment), SL(SL), Text(Text) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
@@ -450,6 +451,7 @@ public:
 
 class ReplaceKernelCallExpr : public TextModification {
   const CUDAKernelCallExpr *KCall;
+  std::shared_ptr<KernelCallExpr> Kernel;
   StmtStringMap *SSM;
 
   std::pair<const Expr *, const Expr *> getExecutionConfig() const;
@@ -486,9 +488,8 @@ class ReplaceKernelCallExpr : public TextModification {
   }
 
 public:
-  ReplaceKernelCallExpr(const CUDAKernelCallExpr *KCall, StmtStringMap *SSM)
-      : TextModification(TMID::ReplaceKernelCallExpr, G3), KCall(KCall),
-        SSM(SSM) {}
+  ReplaceKernelCallExpr(std::shared_ptr<KernelCallExpr> Kernel,
+                        StmtStringMap *SSM);
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;

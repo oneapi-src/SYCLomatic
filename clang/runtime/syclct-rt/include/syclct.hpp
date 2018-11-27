@@ -16,8 +16,8 @@
 #include <iostream>
 
 #include "syclct_device.hpp"
-#include "syclct_memory.hpp"
 #include "syclct_kernel.hpp"
+#include "syclct_memory.hpp"
 
 #if defined(_MSC_VER) // MSVC
 #define __sycl_align__(n) __declspec(align(n))
@@ -25,6 +25,6 @@
 #define __sycl_align__(n) __attribute__((aligned(n)))
 #endif
 
-template <class... Args> class SyclKernelName;
+template <class... Args> class syclct_kernel_name;
 
 #endif // SYCLCT_H
