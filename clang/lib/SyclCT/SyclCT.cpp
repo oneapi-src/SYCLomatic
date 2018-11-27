@@ -57,6 +57,7 @@ static opt<std::string>
                  " (directory will be created if it does not exist)"),
             value_desc("/path/to/output/root/"), cat(SyclCTCat),
             llvm::cl::Optional);
+
 std::string CudaPath; // Global value for the CUDA install path.
 
 class SyclCTConsumer : public ASTConsumer {
@@ -293,8 +294,8 @@ int run(int argc, const char **argv) {
     exit(-1);
 
   CudaPath = getCudaInstallPath(argc, argv);
-  DEBUG_WITH_TYPE("CudaPath", llvm::dbgs()
-                                  << "Cuda Path found: " << CudaPath << "\n");
+  SYCLCT_DEBUG_WITH_TYPE(
+      "CudaPath", llvm::dbgs() << "Cuda Path found: " << CudaPath << "\n");
 
   RefactoringTool Tool(OptParser.getCompilations(),
                        OptParser.getSourcePathList());
@@ -314,10 +315,12 @@ int run(int argc, const char **argv) {
 
   SyclCTActionFactory Factory(Tool.getReplacements());
   if (int RunResult = Tool.run(&Factory)) {
-    SYCLCT_DEBUG(llvm::dbgs()
-                 << "Translation failed with result : " << RunResult << "\n");
+    DebugInfo::ShowStatistics(RunResult);
     return RunResult;
   }
+
   // if run was successful
-  return saveNewFiles(Tool, InRoot, OutRoot);
+  int status = saveNewFiles(Tool, InRoot, OutRoot);
+  DebugInfo::ShowStatistics(status);
+  return status;
 }

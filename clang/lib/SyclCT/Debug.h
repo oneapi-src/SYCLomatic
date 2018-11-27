@@ -28,16 +28,26 @@ class ASTTraversal;
 
 #ifndef NDEBUG // Debug build
 
-constexpr bool IsDebugBuild = true;
+static constexpr bool IsReleaseBuild = false;
+static constexpr bool IsDebugBuild = true;
+
+#define SYCLCT_DEBUG_WITH_TYPE(TYPE, X)                                        \
+  DebugTypeRegister(TYPE);                                                     \
+  DEBUG_WITH_TYPE(TYPE, X)
 
 // General debug information with TYPE = "syclct"
-#define SYCLCT_DEBUG(X) DEBUG_WITH_TYPE("syclct", X)
+#define SYCLCT_DEBUG(X) SYCLCT_DEBUG_WITH_TYPE("syclct", X)
 
 // End of Debug Build
 
 #else // Release build
 
-constexpr bool IsDebugBuild = false;
+static constexpr bool IsReleaseBuild = true;
+static constexpr bool IsDebugBuild = false;
+
+#define SYCLCT_DEBUG_WITH_TYPE(TYPE, X)                                        \
+  do {                                                                         \
+  } while (false)
 
 #define SYCLCT_DEBUG(X)                                                        \
   do {                                                                         \
@@ -45,8 +55,14 @@ constexpr bool IsDebugBuild = false;
 
 #endif // End of Release build
 
+class DebugTypeRegister {
+public:
+  DebugTypeRegister(const std::string &type);
+};
+
 class DebugInfo {
 public:
+  static void ShowStatistics(int status = 0);
   static void
   printTranslationRules(const std::vector<std::unique_ptr<ASTTraversal>> &TRs);
   static void printMatchedRules(

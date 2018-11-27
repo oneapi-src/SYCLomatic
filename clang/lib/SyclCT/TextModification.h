@@ -105,7 +105,7 @@ public:
   /// Generate actual Replacement from this TextModification object.
   virtual ExtReplacement getReplacement(const ASTContext &Context) const = 0;
   virtual void print(llvm::raw_ostream &OS, ASTContext &Context,
-                     const bool PrintParent = true) const = 0;
+                     const bool PrintDetail = true) const = 0;
   bool operator<(const TextModification &TM) const { return Key < TM.Key; }
   static bool Compare(const std::unique_ptr<TextModification> &L,
                       const std::unique_ptr<TextModification> &R) {
@@ -134,7 +134,7 @@ public:
       : TextModification(TMID::InsertText), Begin(Loc), T(S) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 /// For macros and typedefs source location is unreliable (begin and end of the
@@ -149,7 +149,7 @@ public:
       : TextModification(TMID::ReplaceToken), Begin(Loc), T(S) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 /// Replace a statement (w/o semicolon) with a specified string.
@@ -163,7 +163,7 @@ public:
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 /// Replace C-style cast with constructor call for a given type.
@@ -176,7 +176,7 @@ public:
       : TextModification(TMID::ReplaceCCast), Cast(Cast), TypeName(TypeName) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 /// Remove an attribute from a declaration.
@@ -187,7 +187,7 @@ public:
   RemoveAttr(const Attr *A) : TextModification(TMID::RemoveAttr), TheAttr(A) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 // Replace type in var. declaration.
@@ -200,7 +200,7 @@ public:
       : TextModification(TMID::ReplaceTypeInVarDecl), D(D), T(T) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 // Replace type in var. declaration.
@@ -216,7 +216,7 @@ public:
         InsertPosition(InsertPosition) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 // Replace type in var. declaration.
@@ -229,7 +229,7 @@ public:
       : TextModification(TMID::InsertNameSpaceInCastExpr), D(D), T(T) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 // Replace type in var. declaration.
@@ -242,7 +242,7 @@ public:
       : TextModification(TMID::RemoveVarDecl), D(D), T(T) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 // Replace return type in function declaration.
@@ -255,7 +255,7 @@ public:
       : TextModification(TMID::ReplaceReturnType), FD(FD), T(T) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 // Rename field in expression.
@@ -272,7 +272,7 @@ public:
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 class InsertAfterStmt : public TextModification {
@@ -285,7 +285,7 @@ public:
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 // Insert '/*  */' C style multi line comment
@@ -300,7 +300,7 @@ public:
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 /// Replace CallExpr with another call.
@@ -332,7 +332,7 @@ public:
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 class InsertArgument : public TextModification {
@@ -350,7 +350,7 @@ public:
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 class ReplaceInclude : public TextModification {
@@ -363,7 +363,7 @@ public:
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 class ReplaceDim3Ctor : public TextModification {
@@ -399,7 +399,7 @@ public:
   ReplaceInclude *getEmpty();
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 class ReplaceKernelCallExpr : public TextModification {
@@ -445,7 +445,7 @@ public:
         SSM(SSM) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 /// A class that filters out Replacements that modify text inside a deleted code
@@ -506,7 +506,7 @@ public:
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 class RemoveArg : public TextModification {
@@ -519,7 +519,7 @@ public:
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 class InsertBeforeCtrInitList : public TextModification {
@@ -532,7 +532,7 @@ public:
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 class InsertClassName : public TextModification {
@@ -545,7 +545,7 @@ public:
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintParent = true) const override;
+             const bool PrintDetail = true) const override;
 };
 
 } // namespace syclct
