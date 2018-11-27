@@ -89,7 +89,7 @@ void test_no_braces() {
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err != cudaSuccess) {
 // CHECK-NEXT:/*
-// CHECK-NEXT:SYCLCT1001: '++i' couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:SYCLCT1001: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
 // CHECK-NEXT:*/
 // CHECK-NEXT:    ++i;
 // CHECK-NEXT:  }
@@ -312,7 +312,7 @@ void test_no_side_effects(cudaError_t err, int arg) {
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err)
 // CHECK-NEXT:/*
-// CHECK-NEXT:SYCLCT1001: 'malloc(256)' couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:SYCLCT1001: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
 // CHECK-NEXT:*/
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:/*
@@ -320,7 +320,7 @@ void test_no_side_effects(cudaError_t err, int arg) {
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err != cudaSuccess) {
 // CHECK-NEXT:/*
-// CHECK-NEXT:SYCLCT1001: 'malloc(256)' couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:SYCLCT1001: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
 // CHECK-NEXT:*/
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:    printf("error!\n");
@@ -331,7 +331,7 @@ void test_no_side_effects(cudaError_t err, int arg) {
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err)
 // CHECK-NEXT:/*
-// CHECK-NEXT:SYCLCT1001: 'x = printf("fmt string")' couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:SYCLCT1001: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
 // CHECK-NEXT:*/
 // CHECK-NEXT:    x = printf("fmt string");
 // CHECK-NEXT:  ;
@@ -388,7 +388,7 @@ void specialize_ifs() {
 // CHECK:  if (err == cudaErrorAssert) {
 // CHECK:    printf("efef");
 // CHECK:/*
-// CHECK:SYCLCT1001: 'malloc(256)' couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK:SYCLCT1001: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
 // CHECK:*/
 // CHECK:    malloc(0x100);
 // CHECK:  }
@@ -397,7 +397,7 @@ void specialize_ifs() {
 // CHECK:*/
 // CHECK:  if (err == 255) {
 // CHECK:/*
-// CHECK:SYCLCT1001: 'malloc(256)' couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK:SYCLCT1001: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
 // CHECK:*/
 // CHECK:    malloc(0x100);
 // CHECK:  }
@@ -406,7 +406,7 @@ void specialize_ifs() {
 // CHECK:*/
 // CHECK:  if (err == 1) {
 // CHECK:/*
-// CHECK:SYCLCT1001: 'malloc(256)' couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK:SYCLCT1001: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
 // CHECK:*/
 // CHECK:    malloc(0x100);
 // CHECK:  }
@@ -415,7 +415,7 @@ void specialize_ifs() {
 // CHECK:*/
 // CHECK:  if (666 == err) {
 // CHECK:/*
-// CHECK:SYCLCT1001: 'malloc(256)' couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK:SYCLCT1001: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
 // CHECK:*/
 // CHECK:    malloc(0x100);
 // CHECK:  }
@@ -424,7 +424,7 @@ void specialize_ifs() {
 // CHECK:*/
 // CHECK:  if (cudaErrorAssert == err) {
 // CHECK:/*
-// CHECK:SYCLCT1001: 'malloc(256)' couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK:SYCLCT1001: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
 // CHECK:*/
 // CHECK:    malloc(0x100);
 // CHECK:  }
