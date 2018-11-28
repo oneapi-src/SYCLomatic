@@ -26,10 +26,15 @@ namespace syclct {
 
 class ASTTraversal;
 
-#ifndef NDEBUG // Debug build
+#ifdef NDEBUG
+#undef SYCLCT_DEBUG_BUILD
+#else
+#undef SYCLCT_DEBUG_BUILD
+#define SYCLCT_DEBUG_BUILD true
+#endif
 
-static constexpr bool IsReleaseBuild = false;
-static constexpr bool IsDebugBuild = true;
+#ifdef SYCLCT_DEBUG_BUILD
+// Stat of debug build
 
 #define SYCLCT_DEBUG_WITH_TYPE(TYPE, X)                                        \
   DebugTypeRegister(TYPE);                                                     \
@@ -38,12 +43,14 @@ static constexpr bool IsDebugBuild = true;
 // General debug information with TYPE = "syclct"
 #define SYCLCT_DEBUG(X) SYCLCT_DEBUG_WITH_TYPE("syclct", X)
 
-// End of Debug Build
+class DebugTypeRegister {
+public:
+  DebugTypeRegister(const std::string &type);
+};
 
-#else // Release build
-
-static constexpr bool IsReleaseBuild = true;
-static constexpr bool IsDebugBuild = false;
+// End of debug Build
+#else
+// Start of release build
 
 #define SYCLCT_DEBUG_WITH_TYPE(TYPE, X)                                        \
   do {                                                                         \
@@ -53,16 +60,12 @@ static constexpr bool IsDebugBuild = false;
   do {                                                                         \
   } while (false)
 
-#endif // End of Release build
-
-class DebugTypeRegister {
-public:
-  DebugTypeRegister(const std::string &type);
-};
+// End of release build
+#endif
 
 class DebugInfo {
 public:
-  static void ShowStatistics(int status = 0);
+  static void ShowStatus(int status = 0);
   static void
   printTranslationRules(const std::vector<std::unique_ptr<ASTTraversal>> &TRs);
   static void printMatchedRules(
@@ -71,6 +74,22 @@ public:
                                 clang::ASTContext &Context);
 };
 
+llvm::raw_ostream &SyclctDbgs();
+extern bool IsVerbose;
+
+#ifdef SYCLCT_DEBUG_BUILD // Debug build
+#define syclct_unreachable(message)                                            \
+  do {                                                                         \
+    DebugInfo::ShowStatus();                                                   \
+    llvm::dbgs() << message << "\n";                                           \
+    llvm::dbgs() << "Abortion at " << __FILE__ << ":" << __LINE__ << "\n";     \
+    abort();                                                                   \
+  } while (false);
+#else // Release build
+#define syclct_unreachable(message)                                            \
+  do {                                                                         \
+  } while (false);
+#endif // Release build
 } // namespace syclct
 } // namespace clang
 

@@ -58,6 +58,9 @@ static opt<std::string>
             value_desc("/path/to/output/root/"), cat(SyclCTCat),
             llvm::cl::Optional);
 
+static opt<bool, true> Verbose("v", desc("Show verbose compiling message"),
+                               cat(SyclCTCat), location(IsVerbose));
+
 std::string CudaPath; // Global value for the CUDA install path.
 
 class SyclCTConsumer : public ASTConsumer {
@@ -207,7 +210,7 @@ public:
     for (const ExtReplacement &R : FilteredReplacements) {
       if (auto Err = Repl[R.getFilePath()].add(R)) {
         llvm::dbgs() << Err << "\n";
-        llvm_unreachable("Adding the replacement: Error occured ");
+        syclct_unreachable("Adding the replacement: Error occured ");
       }
     }
     DebugInfo::printReplacements(FilteredReplacements, Context);
@@ -288,7 +291,7 @@ int run(int argc, const char **argv) {
 
   CudaPath = getCudaInstallPath(argc, argv);
   SYCLCT_DEBUG_WITH_TYPE(
-      "CudaPath", llvm::dbgs() << "Cuda Path found: " << CudaPath << "\n");
+      "CudaPath", SyclctDbgs() << "Cuda Path found: " << CudaPath << "\n");
 
   RefactoringTool Tool(OptParser.getCompilations(),
                        OptParser.getSourcePathList());
@@ -308,12 +311,12 @@ int run(int argc, const char **argv) {
 
   SyclCTActionFactory Factory(Tool.getReplacements());
   if (int RunResult = Tool.run(&Factory)) {
-    DebugInfo::ShowStatistics(RunResult);
+    DebugInfo::ShowStatus(RunResult);
     return RunResult;
   }
 
   // if run was successful
   int status = saveNewFiles(Tool, InRoot, OutRoot);
-  DebugInfo::ShowStatistics(status);
+  DebugInfo::ShowStatus(status);
   return status;
 }

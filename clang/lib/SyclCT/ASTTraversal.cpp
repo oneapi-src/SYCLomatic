@@ -193,7 +193,7 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   else if (FieldName == "__fetch_builtin_z")
     Dimension = 2;
   else
-    llvm_unreachable("Unknown field name");
+    syclct_unreachable("Unknown field name");
 
   std::string Replacement = getItemName();
   StringRef BuiltinName = VD->getName();
@@ -207,7 +207,7 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   else if (BuiltinName == "gridDim")
     Replacement += ".get_group_range(";
   else
-    llvm_unreachable("Unknown builtin variable");
+    syclct_unreachable("Unknown builtin variable");
 
   Replacement += std::to_string(Dimension);
   Replacement += ")";
@@ -596,7 +596,7 @@ void SyclStyleVectorCtorRule::run(const MatchFinder::MatchResult &Result) {
     if (FuncName == "make_int2") {
       emplaceTransformation(new ReplaceStmt(CE->getCallee(), "cl::sycl::int2"));
     } else {
-      llvm_unreachable("Unknown function name");
+      syclct_unreachable("Unknown function name");
     }
   } else if (const CStyleCastExpr *CPtrCast =
                  getNodeAsType<CStyleCastExpr>(Result, "int2PtrCast")) {
@@ -955,7 +955,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         new InsertBeforeStmt(CE, "\"cudaGetErrorString not supported\"/*"));
     emplaceTransformation(new InsertAfterStmt(CE, "*/"));
   } else {
-    llvm_unreachable("Unknown function name");
+    syclct_unreachable("Unknown function name");
   }
 }
 
@@ -1336,7 +1336,7 @@ void DeviceMemVarRule::run(const MatchFinder::MatchResult &Result) {
       } else {
         // Non constant device memory declaration should be treated as an error
         // and never reach here.
-        llvm_unreachable("Non constant device memory declaration");
+        syclct_unreachable("Non constant device memory declaration");
       }
 
       const clang::ArrayType *AT = QType.getTypePtr()->getAsArrayTypeUnsafe();
@@ -1402,7 +1402,7 @@ void DeviceMemVarRule::run(const MatchFinder::MatchResult &Result) {
     } else {
       // Non constant device memory declaration should be treated as an error
       // and never reach here.
-      llvm_unreachable("Non constant device memory declaration");
+      syclct_unreachable("Non constant device memory declaration");
     }
 
     const clang::ArrayType *AT = QType.getTypePtr()->getAsArrayTypeUnsafe();

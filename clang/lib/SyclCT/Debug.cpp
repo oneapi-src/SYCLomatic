@@ -1,11 +1,17 @@
 #include "Debug.h"
 #include "ASTTraversal.h"
 
+#include <numeric>
 #include <unordered_set>
+
+#include "llvm/Support/raw_ostream.h"
 
 namespace clang {
 namespace syclct {
 
+bool IsVerbose = false;
+
+#ifdef SYCLCT_DEBUG_BUILD // Debug build
 bool ShowDebugLevelFlag = false;
 
 static llvm::cl::opt<bool, true>
@@ -68,10 +74,6 @@ static std::vector<std::pair<std::string, std::unordered_set<std::string>>>
          }}};
 
 DebugTypeRegister::DebugTypeRegister(const std::string &type) {
-  if (IsReleaseBuild) {
-    return;
-  }
-
   std::unordered_set<std::string> &Level1Set = Levels[0].second;
   Level1Set.emplace(type);
 }
@@ -81,61 +83,53 @@ static void ShowDebugLevels() {
   for (size_t i = 0; i < Levels.size(); ++i) {
     const std::string &Description = Levels[i].first;
     const std::unordered_set<std::string> &Set = Levels[i].second;
-    llvm::dbgs() << "Level " << i + 1 << " - " << Description << "\n";
+    SyclctDbgs() << "Level " << i + 1 << " - " << Description << "\n";
     for (const std::string &Str : Set) {
-      llvm::dbgs() << Indent << Str << "\n";
+      SyclctDbgs() << Indent << Str << "\n";
     }
   }
 }
-
-void DebugInfo::ShowStatistics(int status) {
-  if (IsDebugBuild && ShowDebugLevelFlag) {
-    ShowDebugLevels();
-  }
-
-  if (status != 0) {
-    llvm::dbgs() << "Syclct failed with code: " << status << "\n";
-  }
-  return;
-}
+#endif // Debug build
 
 void DebugInfo::printTranslationRules(
     const std::vector<std::unique_ptr<ASTTraversal>> &TRs) {
-  if (IsReleaseBuild) {
-    return;
-  }
-
   auto print = [&]() {
-    llvm::dbgs() << "Translation Rules:\n";
+    SyclctDbgs() << "Translation Rules:\n";
 
     constexpr char Indent[] = "  ";
     if (TRs.empty()) {
-      llvm::dbgs() << Indent << "None\n";
+      SyclctDbgs() << Indent << "None\n";
       return;
     }
 
     size_t NumRules = 0;
     for (auto &TR : TRs) {
       if (auto I = dyn_cast<TranslationRule>(&*TR)) {
-        llvm::dbgs() << Indent << I->getName() << "\n";
+        SyclctDbgs() << Indent << I->getName() << "\n";
         ++NumRules;
       }
     }
-    llvm::dbgs() << "# of TranslationRules: " << NumRules << "\n";
+    SyclctDbgs() << "# of TranslationRules: " << NumRules << "\n";
   };
+
+  if (IsVerbose) {
+    print();
+  }
 
   SYCLCT_DEBUG_WITH_TYPE("TranslationRules", print());
 }
 
-static void printMatchedRulesReleaseImpl(
-    const std::vector<std::unique_ptr<ASTTraversal>> &MatchedRules) {
-  // TODO
-}
-
+#ifdef SYCLCT_DEBUG_BUILD
+// Start of debug build
 static void printMatchedRulesDebugImpl(
     const std::vector<std::unique_ptr<ASTTraversal>> &MatchedRules) {
+  if (IsVerbose) {
+    llvm::DebugFlag = true;
+    DbgLevel = DebugLevel::High;
+  }
+
   // Debug level lower than "Median" doesn't show translation rules' information
-  if (IsDebugBuild && DbgLevel < DebugLevel::Median) {
+  if (DbgLevel < DebugLevel::Median) {
     return;
   }
 
@@ -143,7 +137,7 @@ static void printMatchedRulesDebugImpl(
     if (auto TR = dyn_cast<TranslationRule>(&*MR)) {
 #define RULE(TYPE)                                                             \
   if (TR->getName() == #TYPE) {                                                \
-    DEBUG_WITH_TYPE(#TYPE, TR->print(llvm::dbgs()));                           \
+    DEBUG_WITH_TYPE(#TYPE, TR->print(SyclctDbgs()));                           \
     continue;                                                                  \
   }
 #include "TranslationRules.inc"
@@ -155,7 +149,7 @@ static void printMatchedRulesDebugImpl(
     if (auto TR = dyn_cast<TranslationRule>(&*MR)) {
 #define RULE(TYPE)                                                             \
   if (TR->getName() == #TYPE) {                                                \
-    DEBUG_WITH_TYPE(#TYPE, TR->printStatistics(llvm::dbgs()));                 \
+    DEBUG_WITH_TYPE(#TYPE, TR->printStatistics(SyclctDbgs()));                 \
     continue;                                                                  \
   }
 #include "TranslationRules.inc"
@@ -164,22 +158,13 @@ static void printMatchedRulesDebugImpl(
   }
 }
 
-void DebugInfo::printMatchedRules(
-    const std::vector<std::unique_ptr<ASTTraversal>> &MatchedRules) {
-  if (IsReleaseBuild) {
-    printMatchedRulesReleaseImpl(MatchedRules);
-  } else {
-    printMatchedRulesDebugImpl(MatchedRules);
-  }
-}
-
-static void printReplacementsReleaseImpl(ReplacementFilter &ReplFilter,
-                                         clang::ASTContext &Context) {
-  // TODO
-}
-
 static void printReplacementsDebugImpl(ReplacementFilter &ReplFilter,
                                        clang::ASTContext &Context) {
+  if (IsVerbose) {
+    llvm::DebugFlag = true;
+    DbgLevel = DebugLevel::High;
+  }
+
   // Debug level lower than "High" doesn't show detailed replacements'
   // information
   if (DbgLevel < DebugLevel::High) {
@@ -191,11 +176,83 @@ static void printReplacementsDebugImpl(ReplacementFilter &ReplFilter,
 #define TRANSFORMATION(TYPE)                                                   \
   TM = Repl.getParentTM();                                                     \
   if (TM && TMID::TYPE == TM->getID()) {                                       \
-    DEBUG_WITH_TYPE(#TYPE, TM->print(llvm::dbgs(), Context));                  \
+    DEBUG_WITH_TYPE(#TYPE, TM->print(SyclctDbgs(), Context));                  \
     continue;                                                                  \
   }
 #include "Transformations.inc"
 #undef TRANSFORMATION
+  }
+
+  std::unordered_map<std::string, size_t> NameCountMap;
+  std::unordered_map<std::string, std::unordered_set<std::string>>
+      TranslatedFiles;
+  for (const ExtReplacement &Repl : ReplFilter) {
+    const TextModification *TM = nullptr;
+#define TRANSFORMATION(TYPE)                                                   \
+  TM = Repl.getParentTM();                                                     \
+  if (TM && TMID::TYPE == TM->getID()) {                                       \
+    if (NameCountMap.count(#TYPE) == 0) {                                      \
+      NameCountMap.emplace(std::make_pair(#TYPE, 1));                          \
+    } else {                                                                   \
+      ++NameCountMap[#TYPE];                                                   \
+    }                                                                          \
+    TranslatedFiles[Repl.getFilePath()].emplace(#TYPE);                        \
+    continue;                                                                  \
+  }
+#include "Transformations.inc"
+#undef TRANSFORMATION
+  }
+
+  if (NameCountMap.empty()) {
+    return;
+  }
+
+  const size_t NumRepls = std::accumulate(
+      NameCountMap.begin(), NameCountMap.end(), 0,
+      [](const size_t &a, const std::pair<std::string, size_t> &obj) {
+        return a + obj.second;
+      });
+  for (const auto &Pair : NameCountMap) {
+    const std::string &Name = Pair.first;
+    const size_t &Numbers = Pair.second;
+#define TRANSFORMATION(TYPE)                                                   \
+  if (Name == #TYPE) {                                                         \
+    DEBUG_WITH_TYPE(#TYPE, SyclctDbgs() << "# of replacement <" << #TYPE       \
+                                        << ">: " << Numbers << " (" << Numbers \
+                                        << "/" << NumRepls << ")\n");          \
+    continue;                                                                  \
+  }
+#include "Transformations.inc"
+#undef TRANSFORMATION
+  }
+}
+
+// End of debug build
+#else
+// Start of release build
+static void printMatchedRulesReleaseImpl(
+    const std::vector<std::unique_ptr<ASTTraversal>> &MatchedRules) {
+  if (!IsVerbose) {
+    return;
+  }
+
+  for (auto &MR : MatchedRules) {
+    if (auto TR = dyn_cast<TranslationRule>(&*MR)) {
+      TR->print(SyclctDbgs());
+    }
+  }
+
+  for (auto &MR : MatchedRules) {
+    if (auto TR = dyn_cast<TranslationRule>(&*MR)) {
+      TR->printStatistics(SyclctDbgs());
+    }
+  }
+}
+
+static void printReplacementsReleaseImpl(ReplacementFilter &ReplFilter,
+                                         clang::ASTContext &Context) {
+  if (!IsVerbose) {
+    return;
   }
 
   std::unordered_map<std::string, size_t> NameCountMap;
@@ -215,6 +272,10 @@ static void printReplacementsDebugImpl(ReplacementFilter &ReplFilter,
 #undef TRANSFORMATION
   }
 
+  if (NameCountMap.empty()) {
+    return;
+  }
+
   const size_t NumRepls =
       std::accumulate(NameCountMap.begin(), NameCountMap.end(), 0,
                       [](size_t a, const std::pair<std::string, size_t> obj) {
@@ -223,25 +284,51 @@ static void printReplacementsDebugImpl(ReplacementFilter &ReplFilter,
   for (const auto &Pair : NameCountMap) {
     const std::string &Name = Pair.first;
     const size_t &Numbers = Pair.second;
-#define TRANSFORMATION(TYPE)                                                   \
-  if (Name == #TYPE) {                                                         \
-    DEBUG_WITH_TYPE(#TYPE, llvm::dbgs() << "# of replacement <" << #TYPE       \
-                                        << ">: " << Numbers << " (" << Numbers \
-                                        << "/" << NumRepls << ")\n");          \
-    continue;                                                                  \
+    SyclctDbgs() << "# of replacement <" << Name << ">: " << Numbers << " ("
+                 << Numbers << "/" << NumRepls << ")\n";
   }
-#include "Transformations.inc"
-#undef TRANSFORMATION
-  }
+}
+// End of release Build
+#endif
+
+void DebugInfo::printMatchedRules(
+    const std::vector<std::unique_ptr<ASTTraversal>> &MatchedRules) {
+#ifdef SYCLCT_DEBUG_BUILD // Debug build
+  printMatchedRulesDebugImpl(MatchedRules);
+#else // Release build
+  printMatchedRulesReleaseImpl(MatchedRules);
+#endif
 }
 
 void DebugInfo::printReplacements(ReplacementFilter &ReplFilter,
                                   clang::ASTContext &Context) {
-  if (IsReleaseBuild) {
-    printReplacementsReleaseImpl(ReplFilter, Context);
-  } else {
-    printReplacementsDebugImpl(ReplFilter, Context);
+#ifdef SYCLCT_DEBUG_BUILD // Delease build
+  printReplacementsDebugImpl(ReplFilter, Context);
+#else // Release build
+  printReplacementsReleaseImpl(ReplFilter, Context);
+#endif
+}
+
+// Log buffer, default size 4096, when running out of memory, dynamic memory
+// allocation is handled by SmallVector internally.
+static llvm::SmallVector<char, /* default buffer size */ 4096> SyclctLogBuffer;
+static llvm::raw_svector_ostream SyclctLogStream(SyclctLogBuffer);
+
+llvm::raw_ostream &SyclctDbgs() { return SyclctLogStream; }
+
+void DebugInfo::ShowStatus(int status) {
+#ifdef SYCLCT_DEBUG_BUILD // Debug build
+  if (ShowDebugLevelFlag) {
+    ShowDebugLevels();
   }
+#endif // Debug build
+
+  if (status != 0) {
+    SyclctDbgs() << "Syclct failed with code: " << status << "\n";
+  }
+
+  llvm::dbgs() << SyclctLogStream.str() << "\n";
+  return;
 }
 
 } // namespace syclct
