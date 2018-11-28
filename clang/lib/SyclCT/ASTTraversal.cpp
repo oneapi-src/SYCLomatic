@@ -118,12 +118,43 @@ void IncludesCallbacks::InclusionDirective(
 }
 
 void TranslationRule::print(llvm::raw_ostream &OS) {
+  const auto &EmittedTransformations = getEmittedTransformations();
+  if (EmittedTransformations.empty()) {
+    return;
+  }
+
   OS << "[" << getName() << "]\n";
   constexpr char Indent[] = "  ";
-  for (const TextModification *TM : getEmittedTransformations()) {
+  for (const TextModification *TM : EmittedTransformations) {
     OS << Indent;
     TM->print(OS, getCompilerInstance().getASTContext(),
               /* Print parent */ false);
+  }
+}
+
+void TranslationRule::printStatistics(llvm::raw_ostream &OS) {
+  const auto &EmittedTransformations = getEmittedTransformations();
+  if (EmittedTransformations.empty()) {
+    return;
+  }
+
+  OS << "<Statistics of " << getName() << ">\n";
+  std::unordered_map<std::string, size_t> TMNameCountMap;
+  for (const TextModification *TM : EmittedTransformations) {
+    const std::string Name = TM->getName();
+    if (TMNameCountMap.count(Name) == 0) {
+      TMNameCountMap.emplace(std::make_pair(Name, 1));
+    } else {
+      ++TMNameCountMap[Name];
+    }
+  }
+
+  constexpr char Indent[] = "  ";
+  for (const auto &Pair : TMNameCountMap) {
+    const std::string &Name = Pair.first;
+    const size_t &Numbers = Pair.second;
+    OS << Indent << "Emitted # of replacement <" << Name << ">: " << Numbers
+       << "\n";
   }
 }
 

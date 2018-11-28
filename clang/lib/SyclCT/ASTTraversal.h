@@ -295,6 +295,7 @@ public:
   }
 
   void print(llvm::raw_ostream &OS);
+  void printStatistics(llvm::raw_ostream &OS);
 
   // @RulesDependent : rules are separated by ","
   void SetRuleProperty(int RType, std::string RulesDependent = "") {
