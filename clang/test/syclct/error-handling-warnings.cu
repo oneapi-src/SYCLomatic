@@ -3,16 +3,16 @@
 int printf(const char *s, ...);
 int fprintf(int, const char *s, ...);
 
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1001: Statement couldn't be removed. See details in the resulting file comments
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1001:{{[0-9]+}}: Statement couldn't be removed. See details in the resulting file comments
 // CHECK:    malloc(0x100);
 // CHECK:    ^
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1000: Error handling if-stmt was detected but couldn't be rewritten, see details in the resulting file comments
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten, see details in the resulting file comments
 // CHECK:  if (err != cudaSuccess) {
 // CHECK:  ^
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1001: Statement couldn't be removed. See details in the resulting file comments
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1001:{{[0-9]+}}: Statement couldn't be removed. See details in the resulting file comments
 // CHECK:    x = printf("fmt string");
 // CHECK:    ^
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1000: Error handling if-stmt was detected but couldn't be rewritten, see details in the resulting file comments
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten, see details in the resulting file comments
 // CHECK:  if (err)
 // CHECK:  ^
 void test_side_effects(cudaError_t err, int arg, int x, int y, int z) {
@@ -26,46 +26,46 @@ void test_side_effects(cudaError_t err, int arg, int x, int y, int z) {
 }
 
 
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1001: Statement couldn't be removed. See details in the resulting file comments
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1001:{{[0-9]+}}: Statement couldn't be removed. See details in the resulting file comments
 // CHECK:    malloc(0x100);
 // CHECK:    ^
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1000: Error handling if-stmt was detected but couldn't be rewritten, see details in the resulting file comments
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten, see details in the resulting file comments
 // CHECK:  if (err == cudaErrorAssert) {
 // CHECK:  ^
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: note: SYCLCT1002: Special case error handling if-stmt was detected:'err == 255'. You may need to rewrite this code
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: note: SYCLCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected:'err == 255'. You may need to rewrite this code
 // CHECK:  if (err == 255) {
 // CHECK:      ^
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1001: Statement couldn't be removed. See details in the resulting file comments
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1001:{{[0-9]+}}: Statement couldn't be removed. See details in the resulting file comments
 // CHECK:    malloc(0x100);
 // CHECK:    ^
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1000: Error handling if-stmt was detected but couldn't be rewritten, see details in the resulting file comments
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten, see details in the resulting file comments
 // CHECK:  if (err == 255) {
 // CHECK:  ^
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: note: SYCLCT1002: Special case error handling if-stmt was detected:'err == 1'. You may need to rewrite this code
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: note: SYCLCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected:'err == 1'. You may need to rewrite this code
 // CHECK:  if (err == 1) {
 // CHECK:      ^
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1001: Statement couldn't be removed. See details in the resulting file comments
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1001:{{[0-9]+}}: Statement couldn't be removed. See details in the resulting file comments
 // CHECK:    malloc(0x100);
 // CHECK:    ^
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1000: Error handling if-stmt was detected but couldn't be rewritten, see details in the resulting file comments
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten, see details in the resulting file comments
 // CHECK:  if (err == 1) {
 // CHECK:  ^
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: note: SYCLCT1002: Special case error handling if-stmt was detected:'666 == err'. You may need to rewrite this code
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: note: SYCLCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected:'666 == err'. You may need to rewrite this code
 // CHECK:  if (666 == err) {
 // CHECK:      ^
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1001: Statement couldn't be removed. See details in the resulting file comments
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1001:{{[0-9]+}}: Statement couldn't be removed. See details in the resulting file comments
 // CHECK:    malloc(0x100);
 // CHECK:    ^
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1000: Error handling if-stmt was detected but couldn't be rewritten, see details in the resulting file comments
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten, see details in the resulting file comments
 // CHECK:  if (666 == err) {
 // CHECK:  ^
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: note: SYCLCT1002: Special case error handling if-stmt was detected:'cudaErrorAssert == err'. You may need to rewrite this code
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: note: SYCLCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected:'cudaErrorAssert == err'. You may need to rewrite this code
 // CHECK:  if (cudaErrorAssert == err) {
 // CHECK:      ^
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1001: Statement couldn't be removed. See details in the resulting file comments
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1001:{{[0-9]+}}: Statement couldn't be removed. See details in the resulting file comments
 // CHECK:    malloc(0x100);
 // CHECK:    ^
-// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1000: Error handling if-stmt was detected but couldn't be rewritten, see details in the resulting file comments
+// CHECK:{{[^:]+:[0-9]+:[0-9]+}}: warning: SYCLCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten, see details in the resulting file comments
 // CHECK:  if (cudaErrorAssert == err) {
 // CHECK:  ^
 void specialize_ifs_negative() {

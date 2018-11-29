@@ -72,6 +72,8 @@ enum class Comments {
 
 namespace DiagnosticsUtils {
 
+extern unsigned int UniqueID;
+
 template <typename... Ts> static void applyReport(DiagnosticBuilder &B) {}
 
 template <typename FTy, typename... Ts>
@@ -81,12 +83,16 @@ static void applyReport(DiagnosticBuilder &B, const FTy &F,
   applyReport<Ts...>(B, Rest...);
 }
 
+static inline std::string getMessagePrefix(int ID) {
+  return "SYCLCT" + std::to_string(ID) + ":" + std::to_string(UniqueID) + ": ";
+}
+
 template <typename... Ts>
 void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
                    const CompilerInstance &CI, Ts &&... Vals) {
   DiagnosticsEngine &DiagEngine = CI.getDiagnostics();
   unsigned ID = DiagEngine.getDiagnosticIDs()->getCustomDiagID(
-      (DiagnosticIDs::Level)Msg.Category, Msg.Msg);
+      (DiagnosticIDs::Level)Msg.Category, getMessagePrefix(Msg.ID) + Msg.Msg);
   auto B = DiagEngine.Report(SL, ID);
   applyReport<Ts...>(B, Vals...);
 }
@@ -114,6 +120,7 @@ insertCommentPrevLine(SourceLocation SL, const DiagnosticsMessage &Msg,
   auto Formatted = llvm::formatv(Msg.Msg, std::forward<Ts>(Vals)...);
   std::string Str;
   llvm::raw_string_ostream OS(Str);
+  OS << getMessagePrefix(Msg.ID);
   OS << Formatted;
   return new InsertComment(StartLoc, OS.str());
 }
@@ -128,6 +135,7 @@ void report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
   if (TS && CommentIDTable.find((int)MsgID) != CommentIDTable.end())
     TS->emplace_back(insertCommentPrevLine(SL, CommentIDTable[(int)MsgID], CI,
                                            std::forward<Ts>(Vals)...));
+  UniqueID++;
 }
 } // namespace DiagnosticsUtils
 } // namespace syclct

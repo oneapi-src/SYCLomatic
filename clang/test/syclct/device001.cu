@@ -12,30 +12,30 @@ int main(int argc, char **argv) {
   }
 
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1005: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:SYCLCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:int major = deviceProp.major_version();
   int major = deviceProp.major;
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1006: SYCL doesn't provide standard API to differentiate between integrated/discrete GPU devices. Consider to re-implement the code which depends on this field
+// CHECK-NEXT:SYCLCT1006:{{[0-9]+}}: SYCL doesn't provide standard API to differentiate between integrated/discrete GPU devices. Consider to re-implement the code which depends on this field
 // CHECK-NEXT:*/
 // CHECK-NEXT:int integrated = deviceProp.get_integrated();
   int integrated = deviceProp.integrated;
 
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1005: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:SYCLCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:deviceProp.major_version() = 1;
   deviceProp.major = 1;
 
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1005: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:SYCLCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:int minor = deviceProp.minor_version();
   int minor = deviceProp.minor;
 
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1005: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:SYCLCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:deviceProp.minor_version() = 120;
   deviceProp.minor = 120;
@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
   int count = deviceProp.multiProcessorCount;
 
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1005: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:SYCLCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:int n = deviceProp.minor_version() / deviceProp.major_version();
   int n = deviceProp.minor / deviceProp.major;

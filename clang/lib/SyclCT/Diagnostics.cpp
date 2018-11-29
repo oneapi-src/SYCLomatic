@@ -14,27 +14,31 @@
 namespace clang {
 namespace syclct {
 
+namespace DiagnosticsUtils {
+  unsigned int UniqueID = 0;
+}
+
 std::unordered_map<int, DiagnosticsMessage> DiagnosticIDTable;
 std::unordered_map<int, DiagnosticsMessage> CommentIDTable;
 
 #define DEF_NOTE(NAME, ID, MSG)                                                \
   DiagnosticsMessage eg_##NAME(DiagnosticIDTable, ID,                          \
                                clang::DiagnosticIDs::Note,                     \
-                               "SYCLCT" #ID ": " MSG);
+                               MSG);
 
 #define DEF_ERROR(NAME, ID, MSG)                                               \
   DiagnosticsMessage eg_##NAME(DiagnosticIDTable, ID,                          \
                                clang::DiagnosticIDs::Error,                    \
-                               "SYCLCT" #ID ": " MSG);
+                               MSG);
 
 #define DEF_WARNING(NAME, ID, MSG)                                             \
   DiagnosticsMessage wg_##NAME(DiagnosticIDTable, ID,                          \
                                clang::DiagnosticIDs::Warning,                  \
-                               "SYCLCT" #ID ": " MSG);
+                               MSG);
 
 #define DEF_COMMENT(NAME, ID, MSG)                                             \
   DiagnosticsMessage cg_##NAME(CommentIDTable, ID, clang::DiagnosticIDs::Note, \
-                               "SYCLCT" #ID ": " MSG);
+                               MSG);
 
 #include "Diagnostics.inc"
 

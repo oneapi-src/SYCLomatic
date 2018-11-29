@@ -29,19 +29,19 @@ int perfRank = 0;
 int accessSupported = 0;
 
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1004: P2P Access is not supported in Sycl
+// CHECK-NEXT:SYCLCT1004:{{[0-9]+}}: P2P Access is not supported in Sycl
 // CHECK-NEXT:*/
 // CHECK-NEXT: accessSupported = 0;
 cudaDeviceGetP2PAttribute(&accessSupported, cudaDevP2PAttrAccessSupported, device1, device2);
 
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1004: P2P Access is not supported in Sycl
+// CHECK-NEXT:SYCLCT1004:{{[0-9]+}}: P2P Access is not supported in Sycl
 // CHECK-NEXT:*/
 // CHECK-NEXT: perfRank = 0;
 cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, device1, device2);
 
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1004: P2P Access is not supported in Sycl
+// CHECK-NEXT:SYCLCT1004:{{[0-9]+}}: P2P Access is not supported in Sycl
 // CHECK-NEXT:*/
 // CHECK-NEXT: atomicSupported = 0;
 cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtomicSupported, device1, device2);
@@ -53,15 +53,15 @@ cudaSetDevice(device2);
 
 // CHECK:syclct::get_device_manager().current_device().queues_wait_and_throw();
 // CHECK-NEXT:/*
-// CHECK-NEXT:SYCLCT1003: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:int err = (syclct::get_device_manager().current_device().queues_wait_and_throw(), 0);
 // CHECK-NEXT:/*
-// CHECK-NEXT:SYCLCT1003: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:checkError((syclct::get_device_manager().current_device().queues_wait_and_throw(), 0));
 // CHECK-NEXT:/*
-// CHECK-NEXT:SYCLCT1003: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:return (syclct::get_device_manager().current_device().queues_wait_and_throw(), 0);
 cudaDeviceSynchronize();
