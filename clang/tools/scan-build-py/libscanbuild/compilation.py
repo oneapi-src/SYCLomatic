@@ -135,8 +135,19 @@ def split_command(command):
             result.flags.extend([arg, next(args)])
         # parameter which looks source file is taken...
         elif re.match(r'^[^-].+', arg) and classify_source(arg):
-            # nvcc compiler invocations should not be added into compilation database
-            if result.compiler == 'cuda' and classify_source(arg) != 'cuda':
+            # nvcc compiler compiles source files with suffix cuda(.cu) and
+            # cpp(.cc,.c++,.cpp) should be added into compilation database.
+            #
+            # while other compiler takes all type of sources.
+            #
+            # ====================================================
+            # | Compiler |          Accept Source Type           |
+            # ====================================================
+            # |  nvcc    |  cuda(.cu), c++(.cc, .cpp, .c++, ...) |
+            # ----------------------------------------------------
+            # |  Others  |  All                                  |
+            # ----------------------------------------------------
+            if result.compiler == 'cuda' and classify_source(arg) not in ['cuda', 'c++']:
                 return None
             else:
                 result.files.append(arg)
