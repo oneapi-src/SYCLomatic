@@ -58,8 +58,8 @@ static opt<std::string>
             value_desc("/path/to/output/root/"), cat(SyclCTCat),
             llvm::cl::Optional);
 
-static opt<bool, true> Verbose("v", desc("Show verbose compiling message"),
-                               cat(SyclCTCat), location(IsVerbose));
+// static opt<bool, true> Verbose("v", desc("Show verbose compiling message"),
+//                                cat(SyclCTCat), location(IsVerbose));
 
 std::string CudaPath; // Global value for the CUDA install path.
 
