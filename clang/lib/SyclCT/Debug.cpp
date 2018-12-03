@@ -324,7 +324,7 @@ void DebugInfo::ShowStatus(int status) {
 #endif // Debug build
 
   if (status != 0) {
-    SyclctDbgs() << "Syclct failed with code: " << status << "\n";
+    SyclctDbgs() << "Syclct exited with code: " << status << "\n";
   }
 
   llvm::dbgs() << SyclctLogStream.str() << "\n";
