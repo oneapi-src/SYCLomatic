@@ -86,16 +86,9 @@ const std::map<std::string, std::string> MathFunctionsRule::FunctionNamesMap{
 
     // <SYCL/sycl_math_builtins_common.h>
     {"max", "cl::sycl::max"},
-    {"clamp", "cl::sycl::clamp"},
-    {"degrees", "cl::sycl::degrees"},
     {"abs", "cl::sycl::abs"},
     {"max", "cl::sycl::max"},
     {"min", "cl::sycl::min"},
-    {"mix", "cl::sycl::mix"},
-    {"radians", "cl::sycl::radians"},
-    {"step", "cl::sycl::step"},
-    {"smoothstep", "cl::sycl::smoothstep"},
-    {"sign", "cl::sycl::sign"},
 
     // <SYCL/sycl_math_builtins_floating_point.h>
     {"acos", "cl::sycl::acos"},
@@ -103,10 +96,8 @@ const std::map<std::string, std::string> MathFunctionsRule::FunctionNamesMap{
     {"acospi", "cl::sycl::acospi"},
     {"asin", "cl::sycl::asin"},
     {"asinh", "cl::sycl::asinh"},
-    {"asinpi", "cl::sycl::asinpi"},
     {"atan", "cl::sycl::atan"},
     {"atanh", "cl::sycl::atanh"},
-    {"atanpi", "cl::sycl::atanpi"},
     {"cbrt", "cl::sycl::cbrt"},
     {"ceil", "cl::sycl::ceil"},
     {"cos", "cl::sycl::cos"},
@@ -138,6 +129,17 @@ const std::map<std::string, std::string> MathFunctionsRule::FunctionNamesMap{
     {"tanpi", "cl::sycl::tanpi"},
     {"tgamma", "cl::sycl::tgamma"},
     {"trunc", "cl::sycl::trunc"},
+
+    // Not in CUDA API but in SYCL API
+    // {"asinpi", "cl::sycl::asinpi"},
+    // {"atanpi", "cl::sycl::atanpi"},
+    // {"clamp", "cl::sycl::clamp"},
+    // {"degrees", "cl::sycl::degrees"},
+    // {"mix", "cl::sycl::mix"},
+    // {"radians", "cl::sycl::radians"},
+    // {"sign", "cl::sycl::sign"},
+    // {"smoothstep", "cl::sycl::smoothstep"},
+    // {"step", "cl::sycl::step"},
 };
 
 // cudaFuncAttributes names translation

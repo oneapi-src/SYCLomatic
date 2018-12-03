@@ -31,6 +31,12 @@ ExtReplacement ReplaceStmt::getReplacement(const ASTContext &Context) const {
                         this);
 }
 
+ExtReplacement
+ReplaceCalleeName::getReplacement(const ASTContext &Context) const {
+  return ExtReplacement(Context.getSourceManager(), C->getBeginLoc(),
+                        getCalleeName(Context).size(), ReplStr, this);
+}
+
 ExtReplacement RemoveAttr::getReplacement(const ASTContext &Context) const {
   auto &SM = Context.getSourceManager();
   SourceRange AttrRange = TheAttr->getRange();
@@ -784,6 +790,14 @@ void ReplaceStmt::print(llvm::raw_ostream &OS, ASTContext &Context,
   printLocation(OS, TheStmt->getBeginLoc(), Context, PrintDetail);
   TheStmt->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, ReplacementString);
+}
+
+void ReplaceCalleeName::print(llvm::raw_ostream &OS, ASTContext &Context,
+                              const bool PrintDetail) const {
+  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printLocation(OS, C->getBeginLoc(), Context, PrintDetail);
+  OS << getCalleeName(Context);
+  printReplacement(OS, ReplStr);
 }
 
 void RemoveAttr::print(llvm::raw_ostream &OS, ASTContext &Context,

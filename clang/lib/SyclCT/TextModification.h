@@ -166,6 +166,31 @@ public:
              const bool PrintDetail = true) const override;
 };
 
+class ReplaceCalleeName : public TextModification {
+  const CallExpr *C;
+  std::string ReplStr;
+
+public:
+  ReplaceCalleeName(const CallExpr *C, std::string &&S)
+      : TextModification(TMID::ReplaceCalleeName), C(C), ReplStr(S) {}
+
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context,
+             const bool PrintDetail = true) const override;
+
+private:
+  llvm::StringRef getCalleeName(const ASTContext &Context) const {
+    const auto &SM = Context.getSourceManager();
+    const char *Start = SM.getCharacterData(C->getBeginLoc());
+    const char *End = SM.getCharacterData(C->getEndLoc());
+    // Eg. xx::sqrt(double a)
+    llvm::StringRef SourceCode(Start, End - Start + 1);
+    size_t NameEnd = SourceCode.find('(');
+    assert(NameEnd != llvm::StringRef::npos);
+    return SourceCode.substr(0, NameEnd);
+  }
+};
+
 /// Replace C-style cast with constructor call for a given type.
 class ReplaceCCast : public TextModification {
   const CStyleCastExpr *Cast;

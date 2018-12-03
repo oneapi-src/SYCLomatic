@@ -15,6 +15,7 @@
 #include "SaveNewFiles.h"
 #include "Utility.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
+#include "clang/Analysis/AnalysisDeclContext.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/Support/Path.h"
@@ -1748,13 +1749,15 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
-  static auto End = FunctionNamesMap.end();
   auto C = getNodeAsType<CallExpr>(Result, "math");
-  if (C) {
-    auto Name = FunctionNamesMap.find(C->getDirectCallee()->getName().str());
-    if (Name != End)
-      emplaceTransformation(
-          new ReplaceToken(C->getBeginLoc(), std::string(Name->second)));
+  if (!C) {
+    return;
+  }
+
+  const std::string FuncName = C->getDirectCallee()->getNameAsString();
+  if (FunctionNamesMap.count(FuncName) != 0) {
+    std::string NewFuncName = FunctionNamesMap.at(FuncName);
+    emplaceTransformation(new ReplaceCalleeName(C, std::move(NewFuncName)));
   }
 }
 
