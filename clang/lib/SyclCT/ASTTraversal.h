@@ -48,13 +48,14 @@ class IncludesCallbacks : public PPCallbacks {
 
   std::unordered_set<std::string> SeenFiles;
   bool SyclHeaderInserted;
+  bool ThrustHeaderInserted;
   ASTTraversalManager &ATM;
 
 public:
   IncludesCallbacks(TransformSetTy &TransformSet, SourceManager &SM,
                     ASTTraversalManager &ATM)
       : TransformSet(TransformSet), SM(SM), SyclHeaderInserted(false),
-        ATM(ATM) {}
+        ThrustHeaderInserted(false), ATM(ATM) {}
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
                           StringRef FileName, bool IsAngled,
                           CharSourceRange FilenameRange, const FileEntry *File,

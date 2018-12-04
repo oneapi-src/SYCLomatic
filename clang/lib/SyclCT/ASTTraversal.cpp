@@ -97,6 +97,27 @@ void IncludesCallbacks::InclusionDirective(
       return;
   }
 
+  // Extra process thrust headers, map to PSTL mapping headers in runtime.
+  // For multi thrust header files, only insert once for PSTL mapping header.
+  if (IsAngled && (FileName.find("thrust/") != std::string::npos)) {
+    if (!ThrustHeaderInserted) {
+      std::string Replacement;
+      if (!SyclHeaderInserted) {
+        Replacement =
+            std::string("<CL/sycl.hpp>") + getNL(FilenameRange.getEnd(), SM) +
+            "#include <syclct/syclct.hpp>" + getNL(FilenameRange.getEnd(), SM) +
+            "#include <syclct/syclct_thrust.hpp>";
+        SyclHeaderInserted = true;
+      } else {
+        Replacement = std::string("<syclct/syclct_thrust.hpp>");
+      }
+      ThrustHeaderInserted = true;
+      TransformSet.emplace_back(
+          new ReplaceInclude(FilenameRange, std::move(Replacement)));
+      return;
+    }
+  }
+
   // Multiple CUDA headers in an including file will be replaced with one
   // include of the SYCL header.
   if ((SeenFiles.find(IncludingFile) == end(SeenFiles)) &&
