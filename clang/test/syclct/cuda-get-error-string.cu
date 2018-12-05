@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -- -std=c++11
+// RUN: syclct -out-root %T %s -- -std=c++11 -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck %s --match-full-lines --input-file %T/cuda-get-error-string.sycl.cpp
 
 int printf(const char* format, ...);
