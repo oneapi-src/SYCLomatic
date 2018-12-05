@@ -1,4 +1,4 @@
-//===--- mapping_thurst.hpp ------------------------------*- C++ -*---===//
+//===--- syclct_thurst.hpp ------------------------------*- C++ -*---===//
 //
 // Copyright (C) 2018 Intel Corporation. All rights reserved.
 //
@@ -8,9 +8,12 @@
 // from the company.
 //
 //===-----------------------------------------------------------------===//
-#ifndef __MAPPING_THRUST__HPP__
-#define __MAPPING_THRUST__HPP__
+#ifndef __SYCLCT_THRUST_HPP__
+#define __SYCLCT_THRUST_HPP__
 //todo: including thrust mapping header here.
+
+#include <tbb/iterators.h>
+#include "thrust_memory.hpp"
 
 
 #endif
