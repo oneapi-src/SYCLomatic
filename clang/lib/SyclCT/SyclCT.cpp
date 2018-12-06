@@ -280,6 +280,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
 
 int run(int argc, const char **argv) {
   // CommonOptionsParser will adjust argc to the index of "--"
+  int old_argc = argc;
   CommonOptionsParser OptParser(argc, argv, SyclCTCat);
 
   if (!makeCanonicalOrSetDefaults(InRoot, OutRoot,
@@ -289,7 +290,7 @@ int run(int argc, const char **argv) {
   if (!validatePaths(InRoot, OptParser.getSourcePathList()))
     exit(-1);
 
-  CudaPath = getCudaInstallPath(argc, argv);
+  CudaPath = getCudaInstallPath(old_argc, argv);
   SYCLCT_DEBUG_WITH_TYPE(
       "CudaPath", SyclctDbgs() << "Cuda Path found: " << CudaPath << "\n");
 
