@@ -52,10 +52,15 @@ int main() {
 
   // CHECK: int b = test[0] + test[1] + test [2];
   int b = test.x + test. y + test .z;
+  // CHECK: cl::sycl::range<3> *p = &test;
   dim3 *p = &test;
+  // CHECK: cl::sycl::range<3> **pp = &p;
+  dim3 **pp = &p;
 
   // CHECK: int a = p->operator[](0) + p->operator[](1) + p->operator[](2);
   int a = p->x + p->y + p->z;
+  // CHECK: int aa = (*pp)->operator[](0) + (*pp)->operator[](1) + (*pp)->operator[](2);
+  int aa = (*pp)->x + (*pp)->y + (*pp)->z;
 
   struct  container
   {

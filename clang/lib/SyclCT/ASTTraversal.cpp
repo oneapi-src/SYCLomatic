@@ -446,12 +446,27 @@ void TypeInVarDeclRule::registerMatcher(MatchFinder &MF) {
                               hasType(typedefDecl(hasName("dim3")))))
                     .bind("TypeInVarDecl"),
                 this);
+  MF.addMatcher(
+      varDecl(hasType(pointsTo(typedefDecl(hasName("dim3"))))).bind("Dim3Ptr"),
+      this);
+  MF.addMatcher(
+      varDecl(hasType(pointsTo(pointsTo(typedefDecl(hasName("dim3"))))))
+          .bind("Dim3PtrPtr"),
+      this);
 }
 
 void TypeInVarDeclRule::run(const MatchFinder::MatchResult &Result) {
-  const VarDecl *D = getNodeAsType<VarDecl>(Result, "TypeInVarDecl");
-  if (!D)
+  const VarDecl *D;
+  std::string Stars;
+  if ((D = getNodeAsType<VarDecl>(Result, "TypeInVarDecl"))) {
+    Stars = "";
+  } else if ((D = getNodeAsType<VarDecl>(Result, "Dim3Ptr"))) {
+    Stars = " *";
+  } else if ((D = getNodeAsType<VarDecl>(Result, "Dim3PtrPtr"))) {
+    Stars = " **";
+  } else {
     return;
+  }
   const clang::Type *Type = D->getTypeSourceInfo()->getTypeLoc().getTypePtr();
 
   if (dyn_cast<SubstTemplateTypeParmType>(Type)) {
@@ -465,7 +480,7 @@ void TypeInVarDeclRule::run(const MatchFinder::MatchResult &Result) {
     // TODO report translation error
     return;
   }
-  std::string Replacement = Search->second;
+  std::string Replacement = Search->second + Stars;
   emplaceTransformation(new ReplaceTypeInVarDecl(D, std::move(Replacement)));
 }
 
@@ -719,7 +734,9 @@ void Dim3MemberFieldsRule::registerMatcher(MatchFinder &MF) {
       memberExpr(
           hasDescendant(declRefExpr(
               hasType(pointerType()),
-              to(varDecl(hasType(pointsTo(typedefDecl(hasName("dim3")))))))))
+              to(anyOf(varDecl(hasType(pointsTo(typedefDecl(hasName("dim3"))))),
+                       varDecl(hasType(pointsTo(
+                           pointsTo(typedefDecl(hasName("dim3")))))))))))
           .bind("Dim3MemberPointerExpr"),
       this);
 
