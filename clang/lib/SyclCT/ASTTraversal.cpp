@@ -1651,52 +1651,54 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(MemoryTranslationRule)
+
 static const CXXConstructorDecl *getIfConstructorDecl(const Decl *ND) {
   if (const auto *Tmpl = dyn_cast<FunctionTemplateDecl>(ND))
     ND = Tmpl->getTemplatedDecl();
   return dyn_cast<CXXConstructorDecl>(ND);
 }
 
-// Translation rule for Inserting try-catch around functions.
-class ErrorTryCatchRule : public NamedTranslationRule<ErrorTryCatchRule> {
-  std::unordered_set<unsigned> Insertions;
+void ErrorTryCatchRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(functionDecl(hasBody(compoundStmt()),
+                             unless(anyOf(hasAttr(attr::CUDAGlobal),
+                                          hasAttr(attr::CUDADevice))))
+                    .bind("functionDecl"),
+                this);
+}
 
-public:
-  ErrorTryCatchRule() { SetRuleProperty(ApplyToCudaFile); }
-  void registerMatcher(ast_matchers::MatchFinder &MF) override {
-    MF.addMatcher(functionDecl(hasBody(compoundStmt())).bind("functionDecl"),
-                  this);
-  }
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override {
-    const FunctionDecl *FD =
-        getNodeAsType<FunctionDecl>(Result, "functionDecl");
-    if (!FD)
+void ErrorTryCatchRule::run(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  const FunctionDecl *FD = getNodeAsType<FunctionDecl>(Result, "functionDecl");
+  if (!FD)
+    return;
+
+  // Filter out compiler generated methods
+  if (const CXXMethodDecl *CXXMDecl = dyn_cast<CXXMethodDecl>(FD)) {
+    if (!CXXMDecl->isUserProvided()) {
       return;
-    for (const auto *Attr : FD->attrs()) {
-      attr::Kind AK = Attr->getKind();
-      if (AK == attr::CUDAGlobal || AK == attr::CUDADevice)
-        return;
     }
-
-    auto BodySLoc = FD->getBody()->getSourceRange().getBegin().getRawEncoding();
-    if (Insertions.find(BodySLoc) != Insertions.end())
-      return;
-    Insertions.insert(BodySLoc);
-
-    // First check if this is a constructor decl
-    if (const CXXConstructorDecl *CDecl = getIfConstructorDecl(FD))
-      emplaceTransformation(new InsertBeforeCtrInitList(CDecl, "try "));
-    else
-      emplaceTransformation(new InsertBeforeStmt(FD->getBody(), "try "));
-
-    emplaceTransformation(new InsertAfterStmt(
-        FD->getBody(), "\ncatch (cl::sycl::exception const &exc) {\n"
-                       "  std::cerr << exc.what() << \"EOE at line \" << "
-                       "__LINE__ << std::endl;\n"
-                       "  std::exit(1);\n"
-                       "}"));
   }
-};
+
+  auto BodySLoc = FD->getBody()->getSourceRange().getBegin().getRawEncoding();
+  if (Insertions.find(BodySLoc) != Insertions.end())
+    return;
+
+  Insertions.insert(BodySLoc);
+
+  // First check if this is a constructor decl
+  if (const CXXConstructorDecl *CDecl = getIfConstructorDecl(FD)) {
+    emplaceTransformation(new InsertBeforeCtrInitList(CDecl, "try "));
+  } else {
+    emplaceTransformation(new InsertBeforeStmt(FD->getBody(), "try "));
+  }
+
+  emplaceTransformation(new InsertAfterStmt(
+      FD->getBody(), "\ncatch (cl::sycl::exception const &exc) {\n"
+                     "  std::cerr << exc.what() << \"EOE at line \" << "
+                     "__LINE__ << std::endl;\n"
+                     "  std::exit(1);\n"
+                     "}"));
+}
 
 REGISTER_RULE(ErrorTryCatchRule)
 
