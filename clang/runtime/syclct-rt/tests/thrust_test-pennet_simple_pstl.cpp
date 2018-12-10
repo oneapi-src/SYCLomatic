@@ -43,22 +43,10 @@ int main() {
   syclct::sycl_malloc((void **)&mapspkeyD, numsH * sizeof(int));
   syclct::sycl_malloc((void **)&mapspvalD, numsH * sizeof(int));
 
-  //  thrust::device_ptr<int> mapsp1T(mapsp1D);
-  //  thrust::device_ptr<int> mapspkeyT(mapspkeyD);
-  //  thrust::device_ptr<int> mapspvalT(mapspvalD);
+  thrust::device_ptr<int> mapsp1T(mapsp1D);
+  thrust::device_ptr<int> mapspkeyT(mapspkeyD);
+  thrust::device_ptr<int> mapspvalT(mapspvalD);
 
-  thrust::device_ptr<int> mapsp1T(
-      syclct::memory_manager::get_instance()
-          .translate_ptr(mapsp1D)
-          .buffer.reinterpret<int>(cl::sycl::range<1>(numsH)));
-  thrust::device_ptr<int> mapspkeyT(
-      syclct::memory_manager::get_instance()
-          .translate_ptr(mapspkeyD)
-          .buffer.reinterpret<int>(cl::sycl::range<1>(numsH)));
-  thrust::device_ptr<int> mapspvalT(
-      syclct::memory_manager::get_instance()
-          .translate_ptr(mapspvalD)
-          .buffer.reinterpret<int>(cl::sycl::range<1>(numsH)));
   mapspkeyT[0] = 100;
   mapspkeyT[1] = 101;
   mapspkeyT[2] = 102;

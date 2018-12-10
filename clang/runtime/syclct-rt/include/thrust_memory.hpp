@@ -11,6 +11,12 @@
 #ifndef __THRUST_MEMORY_HPP_
 #define __THRUST_MEMORY_HPP_
 
+// file from runtime team, use SYCLCT_CUSTOM tag changed made by SYCLCT.
+#define SYCLCT_CUSTOM
+
+#ifdef SYCLCT_CUSTOM
+#include "syclct_memory.hpp"
+#endif
 namespace thrust {
     namespace sycl = cl::sycl;
 
@@ -98,6 +104,21 @@ namespace thrust {
         device_ptr(const device_iterator<OtherT>& in): Base(in) { }
         template<typename OtherT>
         device_ptr(sycl::buffer<OtherT, 1> in) : Base(in, std::size_t{}) { }
+
+        #ifdef SYCLCT_CUSTOM
+        /*
+        template<typename OtherT>
+        device_ptr(OtherT ptr) {
+           syclct::memory_manager::allocation alloc=syclct::memory_manager::get_instance().translate_ptr((void*) ptr);
+           int size=alloc.size;
+           new (this)device_ptr(alloc.buffer.reinterpret<T>(cl::sycl::range<1>(size/sizeof(T))));
+        }
+        */
+        template<typename OtherT>
+        device_ptr(OtherT ptr): Base(syclct::memory_manager::get_instance().translate_ptr((void*) ptr).buffer.reinterpret<T>(cl::sycl::range<1>(syclct::memory_manager::get_instance().translate_ptr((void*) ptr).size/sizeof(T))), std::size_t{}){
+        }
+        #endif
+
         // needed for device_malloc
         device_ptr(const std::size_t n): Base(sycl::buffer<T, 1>(sycl::range<1>(n)), std::size_t { }) { }
 
@@ -290,6 +311,7 @@ void sequence(ForwardIterator first, ForwardIterator last) {
   copy(tbb::counting_iterator<DiffType>(DiffType(0)),
        tbb::counting_iterator<DiffType>(last - first), first);
 }
+#ifdef SYCLCT_CUSTOM
 template <typename RandomAccessIterator1, typename RandomAccessIterator2>
 void stable_sort_by_key(RandomAccessIterator1 keys_first,
                         RandomAccessIterator1 keys_last,
@@ -297,6 +319,7 @@ void stable_sort_by_key(RandomAccessIterator1 keys_first,
   //todo
   return;
 }
+#endif
 
 } // namespace thrust
 #endif // THRUST_MEMORY_H
