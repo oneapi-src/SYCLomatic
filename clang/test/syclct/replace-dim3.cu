@@ -1,8 +1,24 @@
-// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: syclct -out-root %T %s -- -std=c++11 -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck --input-file %T/replace-dim3.sycl.cpp --match-full-lines %s
 
 // CHECK: void func(cl::sycl::range<3> a, cl::sycl::range<3> b, cl::sycl::range<3> c, cl::sycl::range<3> d) try {
 void func(dim3 a, dim3 b, dim3 c, dim3 d) {
+}
+
+// CHECK: void test(const cl::sycl::range<3> & a, const cl::sycl::range<3> & b) try {
+void test(const dim3& a, const dim3& b) {
+}
+
+// CHECK: void test(cl::sycl::range<3> && a, cl::sycl::range<3> && b) try {
+void test(dim3&& a, dim3&& b) {
+}
+
+// CHECK: void test(const cl::sycl::range<3> * a, const cl::sycl::range<3> * b) try {
+void test(const dim3* a, const dim3* b) {
+}
+
+// CHECK: void test(const cl::sycl::range<3> ** a, const cl::sycl::range<3> ** b) try {
+void test(const dim3** a, const dim3** b) {
 }
 
 int main() {

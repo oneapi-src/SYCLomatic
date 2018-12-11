@@ -440,47 +440,45 @@ REGISTER_RULE(FunctionAttrsRule)
 
 // Rule for types replacements in var. declarations.
 void TypeInVarDeclRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(varDecl(anyOf(hasType(cxxRecordDecl(hasName("cudaDeviceProp"))),
-                              hasType(enumDecl(hasName("cudaError"))),
-                              hasType(typedefDecl(hasName("cudaError_t"))),
-                              hasType(typedefDecl(hasName("dim3")))))
-                    .bind("TypeInVarDecl"),
-                this);
   MF.addMatcher(
-      varDecl(hasType(pointsTo(typedefDecl(hasName("dim3"))))).bind("Dim3Ptr"),
-      this);
-  MF.addMatcher(
-      varDecl(hasType(pointsTo(pointsTo(typedefDecl(hasName("dim3"))))))
-          .bind("Dim3PtrPtr"),
+      varDecl(anyOf(hasType(cxxRecordDecl(hasName("cudaDeviceProp"))),
+                    hasType(enumDecl(hasName("cudaError"))),
+                    hasType(typedefDecl(hasName("cudaError_t"))),
+                    hasType(typedefDecl(hasName("dim3"))),
+                    hasType(pointsTo(typedefDecl(hasName("dim3")))),
+                    hasType(pointsTo(pointsTo(typedefDecl(hasName("dim3"))))),
+                    hasType(references(typedefDecl(hasName("dim3"))))),
+              unless(hasType(substTemplateTypeParmType())))
+          .bind("TypeInVarDecl"),
       this);
 }
 
 void TypeInVarDeclRule::run(const MatchFinder::MatchResult &Result) {
-  const VarDecl *D;
-  std::string Stars;
-  if ((D = getNodeAsType<VarDecl>(Result, "TypeInVarDecl"))) {
-    Stars = "";
-  } else if ((D = getNodeAsType<VarDecl>(Result, "Dim3Ptr"))) {
-    Stars = " *";
-  } else if ((D = getNodeAsType<VarDecl>(Result, "Dim3PtrPtr"))) {
-    Stars = " **";
-  } else {
-    return;
-  }
-  const clang::Type *Type = D->getTypeSourceInfo()->getTypeLoc().getTypePtr();
-
-  if (dyn_cast<SubstTemplateTypeParmType>(Type)) {
+  const VarDecl *D = getNodeAsType<VarDecl>(Result, "TypeInVarDecl");
+  if (!D) {
     return;
   }
 
-  std::string TypeName =
-      Type->getCanonicalTypeInternal().getBaseTypeIdentifier()->getName().str();
+  std::istringstream ISS(D->getType().getAsString());
+  std::vector<std::string> Strs(std::istream_iterator<std::string>{ISS},
+                                std::istream_iterator<std::string>());
+  auto it = std::remove_if(Strs.begin(), Strs.end(), [](llvm::StringRef Str) {
+    return (Str.contains("&") || Str.contains("*"));
+  });
+  if (it != Strs.end())
+    Strs.erase(it);
+
+  const std::string &TypeName = Strs.back();
   auto Search = MapNames::TypeNamesMap.find(TypeName);
   if (Search == MapNames::TypeNamesMap.end()) {
     // TODO report translation error
     return;
   }
-  std::string Replacement = Search->second + Stars;
+
+  std::string Replacement = D->getType().getAsString();
+  assert(Replacement.find(TypeName) != std::string::npos);
+  Replacement = Replacement.substr(Replacement.find(TypeName));
+  Replacement.replace(0, TypeName.length(), Search->second);
   emplaceTransformation(new ReplaceTypeInVarDecl(D, std::move(Replacement)));
 }
 
