@@ -329,7 +329,7 @@ class InsertComment : public TextModification {
 
 public:
   InsertComment(SourceLocation SL, std::string Text)
-      : TextModification(TMID::InsertComment), SL(SL), Text(Text) {}
+      : TextModification(TMID::InsertComment), SL(SL), Text(Text){}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,

@@ -13,12 +13,23 @@
 #define SYCLCT_MAPNAMES_H
 
 #include <map>
+#include <vector>
 
 class MapNames {
 public:
   static const std::map<std::string, std::string> TypeNamesMap;
   static const std::map<std::string, std::string> Dim3MemberNamesMap;
   static const std::map<std::string, std::string> Dim3MemberPointerNamesMap;
+};
+
+class TranslationStatistics {
+private:
+  static std::map<std::string /*API Name*/, bool /*Is translated*/>
+      TranslationTable;
+
+public:
+  static bool IsTranslated(const std::string &APIName);
+  static std::vector<std::string> GetAllAPINames(void);
 };
 
 #endif

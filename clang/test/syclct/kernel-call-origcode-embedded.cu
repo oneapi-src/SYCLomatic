@@ -149,7 +149,7 @@ int main() {
 
   // CHECK: /*  CUDA_CHECK(cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float)));*/
   // CHECK-NEXT: /*
-  // CHECK-NEXT: SYCLCT1003:0: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   CUDA_CHECK(cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float)));
 
@@ -158,7 +158,7 @@ int main() {
   float *d_odata = NULL;
   // CHECK: /*  checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));*/
   // CHECK-NEXT:/*
-  // CHECK-NEXT:SYCLCT1003:1: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
   checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));
 }

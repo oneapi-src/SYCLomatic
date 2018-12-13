@@ -990,6 +990,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
+
   if (FuncName == "cudaGetDeviceCount") {
     std::string ResultVarName = DereferenceArg(CE->getArg(0));
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
@@ -1590,6 +1591,7 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
     report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
   }
+
   if (Name == "cudaMalloc") {
     std::string NameSycl = "syclct::sycl_malloc";
     if (IsAssigned) {
@@ -1831,6 +1833,7 @@ void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
   }
 
   const std::string FuncName = C->getDirectCallee()->getNameAsString();
+
   if (FunctionNamesMap.count(FuncName) != 0) {
     std::string NewFuncName = FunctionNamesMap.at(FuncName);
     emplaceTransformation(new ReplaceCalleeName(C, std::move(NewFuncName)));
@@ -1888,6 +1891,31 @@ void KernelFunctionInfoRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(KernelFunctionInfoRule)
+
+void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
+  std::vector<std::string> AllAPINames =
+      TranslationStatistics::GetAllAPINames();
+
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(internal::Matcher<NamedDecl>(
+                                   new internal::HasNameMatcher(AllAPINames)))),
+                               unless(hasAncestor(cudaKernelCallExpr()))))
+                    .bind("APINamesUsed"),
+                this);
+}
+
+void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
+  const CallExpr *C = getNodeAsType<CallExpr>(Result, "APINamesUsed");
+  if (!C) {
+    return;
+  }
+
+  std::string APIName = C->getCalleeDecl()->getAsFunction()->getNameAsString();
+  if (!TranslationStatistics::IsTranslated(APIName)) {
+    report(C->getBeginLoc(), Comments::API_NOT_TRANSLATED, APIName.c_str());
+  }
+}
+
+REGISTER_RULE(RecognizeAPINameRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {

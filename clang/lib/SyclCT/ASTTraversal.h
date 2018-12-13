@@ -646,6 +646,14 @@ public:
   static const std::map<std::string, std::string> AttributesNamesMap;
 };
 
+/// RecognizeAPINameRule to give comments for the api not in the record table
+class RecognizeAPINameRule : public NamedTranslationRule<RecognizeAPINameRule> {
+public:
+  RecognizeAPINameRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 template <typename T> class RuleRegister {
 public:
   RuleRegister(const char *ID, const std::string &Name) {

@@ -298,6 +298,7 @@ public:
 
       auto BeginPos = Code.find_last_of('\n', I->getOffset());
       auto EndPos = Code.find('\n', I->getOffset() + I->getLength());
+      BeginPos = (BeginPos != StringRef::npos ? BeginPos : I->getOffset());
       EndPos = (EndPos != StringRef::npos ? EndPos : Code.size());
       BeginPos += 1;
       StringRef Line = Code.substr(BeginPos, EndPos - BeginPos);

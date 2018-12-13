@@ -11,6 +11,7 @@
 
 #include "MapNames.h"
 #include "ASTTraversal.h"
+#include "SaveNewFiles.h"
 
 #include <map>
 
@@ -86,7 +87,6 @@ const std::map<std::string, std::string> MathFunctionsRule::FunctionNamesMap{
     // See "4.13.4 Integer functions" and "4.13.5 Common functions"
 
     // <SYCL/sycl_math_builtins_common.h>
-    {"max", "cl::sycl::max"},
     {"abs", "cl::sycl::abs"},
     {"max", "cl::sycl::max"},
     {"min", "cl::sycl::min"},
@@ -148,3 +148,29 @@ const std::map<std::string, std::string>
     KernelFunctionInfoRule::AttributesNamesMap{
         {"maxThreadsPerBlock", "max_work_group_size"},
     };
+
+std::map<std::string, bool> TranslationStatistics::TranslationTable{
+#define ENTRY(APINAME, VALUE) {#APINAME, VALUE},
+#include "APINames.inc"
+#undef ENTRY
+};
+
+bool TranslationStatistics::IsTranslated(const std::string &APIName) {
+  auto Search = TranslationTable.find(APIName);
+  if (Search != TranslationTable.end()) {
+    return Search->second;
+  } else {
+    llvm::errs() << "[NOTE] Find new API\"" << APIName
+                 << "\" , please update translated API database.\n";
+    std::exit(TranslationError);
+  }
+}
+
+std::vector<std::string> TranslationStatistics::GetAllAPINames(void) {
+  std::vector<std::string> AllAPINames;
+  for (const auto &APIName : TranslationTable) {
+    AllAPINames.push_back(APIName.first);
+  }
+
+  return AllAPINames;
+}

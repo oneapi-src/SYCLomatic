@@ -132,9 +132,10 @@ void report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
   if (DiagnosticIDTable.find((int)MsgID) != DiagnosticIDTable.end())
     reportWarning(SL, DiagnosticIDTable[(int)MsgID], CI,
                   std::forward<Ts>(Vals)...);
-  if (TS && CommentIDTable.find((int)MsgID) != CommentIDTable.end())
+  if (TS && CommentIDTable.find((int)MsgID) != CommentIDTable.end()) {
     TS->emplace_back(insertCommentPrevLine(SL, CommentIDTable[(int)MsgID], CI,
                                            std::forward<Ts>(Vals)...));
+  }
   UniqueID++;
 }
 } // namespace DiagnosticsUtils
