@@ -438,6 +438,50 @@ void FunctionAttrsRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(FunctionAttrsRule)
 
+void DeviceFunctionItemArgRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      callExpr(
+          allOf(callee(functionDecl(hasAttr(attr::CUDADevice),
+                                    unless(hasAttr(attr::CUDAHost)))
+                           .bind("DeviceFunctionDecl")),
+                hasParent(compoundStmt()),
+                hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
+                                               hasAttr(attr::CUDAGlobal))))))
+          .bind("DeviceFunctionCall"),
+      this);
+}
+
+void DeviceFunctionItemArgRule::run(const MatchFinder::MatchResult &Result) {
+  if (const CallExpr *CE =
+          getNodeAsType<CallExpr>(Result, "DeviceFunctionCall")) {
+    if (const FunctionDecl *FD = CE->getDirectCallee()) {
+      const std::string CalleeFuncName = FD->getName().str();
+      auto IsBuiltInFunction = [&](const std::string &CalleeFuncName) {
+        if (BuiltInFunctions.count(CalleeFuncName) != 0)
+          return true;
+
+        if (MathFunctionsRule::FunctionNamesMap.count(CalleeFuncName) != 0)
+          return true;
+
+        return false;
+      };
+
+      if (!IsBuiltInFunction(CalleeFuncName)) {
+        std::string InsertArg = getItemName();
+        emplaceTransformation(new InsertCallArgument(CE, std::move(InsertArg)));
+      }
+    }
+  }
+
+  if (const FunctionDecl *FD =
+          getNodeAsType<FunctionDecl>(Result, "DeviceFunctionDecl")) {
+    emplaceTransformation(
+        new InsertArgument(FD, "cl::sycl::nd_item<3> " + getItemName()));
+  }
+}
+
+REGISTER_RULE(DeviceFunctionItemArgRule)
+
 // Rule for types replacements in var. declarations.
 void TypeInVarDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(

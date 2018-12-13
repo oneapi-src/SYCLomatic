@@ -378,6 +378,20 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+/// Translation rule for insert cl::sycl::nd_item<3> argument for device
+/// functions.
+class DeviceFunctionItemArgRule
+    : public NamedTranslationRule<DeviceFunctionItemArgRule> {
+public:
+  DeviceFunctionItemArgRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+  static const std::unordered_set<std::string> BuiltInFunctions;
+};
+
 /// Translation rule for types replacements in var. declarations.
 class TypeInVarDeclRule : public NamedTranslationRule<TypeInVarDeclRule> {
 public:

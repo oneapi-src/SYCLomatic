@@ -378,6 +378,19 @@ public:
              const bool PrintDetail = true) const override;
 };
 
+class InsertCallArgument : public TextModification {
+  const CallExpr *CE;
+  // Argument string without comma;
+  std::string Arg;
+
+public:
+  InsertCallArgument(const CallExpr *CE, std::string &&Arg)
+      : TextModification(TMID::InsertCallArgument), CE(CE), Arg(Arg) {}
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context,
+             const bool PrintDetail = true) const override;
+};
+
 class ReplaceInclude : public TextModification {
   CharSourceRange Range;
   std::string T;

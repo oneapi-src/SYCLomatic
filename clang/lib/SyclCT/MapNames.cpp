@@ -79,6 +79,9 @@ const std::map<std::string, std::string> EnumConstantRule::EnumNamesMap{
     // ...
 };
 
+const std::unordered_set<std::string>
+    DeviceFunctionItemArgRule::BuiltInFunctions{"printf", "__syncthreads"};
+
 // Math function names translation.
 const std::map<std::string, std::string> MathFunctionsRule::FunctionNamesMap{
     // Cuda's max to sycl's max. all have integer types and double types.

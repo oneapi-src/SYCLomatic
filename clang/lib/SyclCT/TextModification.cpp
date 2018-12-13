@@ -639,6 +639,22 @@ ExtReplacement InsertArgument::getReplacement(const ASTContext &Context) const {
 }
 
 ExtReplacement
+InsertCallArgument::getReplacement(const ASTContext &Context) const {
+  const SourceLocation &SLocBegin = CE->getBeginLoc();
+  const SourceLocation &SLocEnd = CE->getEndLoc();
+  const SourceManager &SM = Context.getSourceManager();
+  const char *Start = SM.getCharacterData(SLocBegin);
+  const char *End = SM.getCharacterData(SLocEnd);
+  assert(End > Start);
+  llvm::StringRef CallStr(Start, End - Start + 1);
+  assert(CallStr.find_first_of("(") != llvm::StringRef::npos);
+  size_t Offset = CallStr.find_first_of("(") + 1;
+  const std::string InsertStr = (CE->getNumArgs() == 0) ? Arg : Arg + ", ";
+  return ExtReplacement(Context.getSourceManager(),
+                        SLocBegin.getLocWithOffset(Offset), 0, InsertStr, this);
+}
+
+ExtReplacement
 InsertBeforeCtrInitList::getReplacement(const ASTContext &Context) const {
   const SourceManager &SM = Context.getSourceManager();
   if (CDecl->init_begin() != CDecl->init_end()) {
@@ -976,6 +992,14 @@ void InsertArgument::print(llvm::raw_ostream &OS, ASTContext &Context,
   printLocation(OS, FD->getBeginLoc(), Context, PrintDetail);
   FD->print(OS, PrintingPolicy(Context.getLangOpts()));
   printInsertion(OS, ArgName);
+}
+
+void InsertCallArgument::print(llvm::raw_ostream &OS, ASTContext &Context,
+                               const bool PrintDetail) const {
+  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printLocation(OS, CE->getBeginLoc(), Context, PrintDetail);
+  CE->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
+  printInsertion(OS, Arg);
 }
 
 void InsertBeforeCtrInitList::print(llvm::raw_ostream &OS, ASTContext &Context,
