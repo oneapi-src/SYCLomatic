@@ -68,8 +68,7 @@ ExtReplacement RemoveAttr::getReplacement(const ASTContext &Context) const {
 }
 
 ExtReplacement
-ReplaceTypeInVarDecl::getReplacement(const ASTContext &Context) const {
-  TypeLoc TL = D->getTypeSourceInfo()->getTypeLoc();
+ReplaceTypeInDecl::getReplacement(const ASTContext &Context) const {
   return ExtReplacement(Context.getSourceManager(), &TL, T, this);
 }
 
@@ -868,11 +867,16 @@ void RemoveAttr::print(llvm::raw_ostream &OS, ASTContext &Context,
   printReplacement(OS, "");
 }
 
-void ReplaceTypeInVarDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
+void ReplaceTypeInDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
                                  const bool PrintDetail) const {
   printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
-  printLocation(OS, D->getBeginLoc(), Context, PrintDetail);
-  D->print(OS, PrintingPolicy(Context.getLangOpts()));
+  if (D) {
+    printLocation(OS, D->getBeginLoc(), Context, PrintDetail);
+    D->print(OS, PrintingPolicy(Context.getLangOpts()));
+  } else {
+    printLocation(OS, FD->getBeginLoc(), Context, PrintDetail);
+    FD->print(OS, PrintingPolicy(Context.getLangOpts()));
+  }
   printReplacement(OS, T);
 }
 

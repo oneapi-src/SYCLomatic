@@ -393,9 +393,9 @@ public:
 };
 
 /// Translation rule for types replacements in var. declarations.
-class TypeInVarDeclRule : public NamedTranslationRule<TypeInVarDeclRule> {
+class TypeInDeclRule : public NamedTranslationRule<TypeInDeclRule> {
 public:
-  TypeInVarDeclRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  TypeInDeclRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };

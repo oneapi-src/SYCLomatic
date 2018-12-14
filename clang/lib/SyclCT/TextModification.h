@@ -216,13 +216,21 @@ public:
 };
 
 // Replace type in var. declaration.
-class ReplaceTypeInVarDecl : public TextModification {
+class ReplaceTypeInDecl : public TextModification {
+  TypeLoc TL;
   const VarDecl *D;
+  const FieldDecl *FD;
   std::string T;
 
 public:
-  ReplaceTypeInVarDecl(const VarDecl *D, std::string &&T)
-      : TextModification(TMID::ReplaceTypeInVarDecl), D(D), T(T) {}
+  ReplaceTypeInDecl(const VarDecl *D, std::string &&T)
+      : TextModification(TMID::ReplaceTypeInDecl), D(D), FD(nullptr), T(T) {
+    TL = D->getTypeSourceInfo()->getTypeLoc();
+  }
+  ReplaceTypeInDecl(const FieldDecl *FD, std::string &&T)
+      : TextModification(TMID::ReplaceTypeInDecl), D(nullptr), FD(FD), T(T) {
+    TL = FD->getTypeSourceInfo()->getTypeLoc();
+  }
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;

@@ -482,28 +482,59 @@ void DeviceFunctionItemArgRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(DeviceFunctionItemArgRule)
 
-// Rule for types replacements in var. declarations.
-void TypeInVarDeclRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(
-      varDecl(anyOf(hasType(cxxRecordDecl(hasName("cudaDeviceProp"))),
-                    hasType(enumDecl(hasName("cudaError"))),
-                    hasType(typedefDecl(hasName("cudaError_t"))),
-                    hasType(typedefDecl(hasName("dim3"))),
-                    hasType(pointsTo(typedefDecl(hasName("dim3")))),
-                    hasType(pointsTo(pointsTo(typedefDecl(hasName("dim3"))))),
-                    hasType(references(typedefDecl(hasName("dim3"))))),
-              unless(hasType(substTemplateTypeParmType())))
-          .bind("TypeInVarDecl"),
-      this);
+// Rule for types replacements in var declarations and field declarations
+void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
+  auto HasCudaType = []() {
+    return anyOf(hasType(typedefDecl(hasName("dim3"))),
+                 hasType(typedefDecl(hasName("cudaError_t"))),
+                 hasType(enumDecl(hasName("cudaError"))),
+                 hasType(cxxRecordDecl(hasName("cudaDeviceProp"))));
+  };
+  auto HasCudaTypePtr = []() {
+    return anyOf(hasType(pointsTo(typedefDecl(hasName("dim3")))),
+                 hasType(pointsTo(typedefDecl(hasName("cudaError_t")))),
+                 hasType(pointsTo(enumDecl(hasName("cudaError")))),
+                 hasType(pointsTo(cxxRecordDecl(hasName("cudaDeviceProp")))));
+  };
+  auto HasCudaTypePtrPtr = []() {
+    return anyOf(
+        hasType(pointsTo(pointsTo(typedefDecl(hasName("dim3"))))),
+        hasType(pointsTo(pointsTo(typedefDecl(hasName("cudaError_t"))))),
+        hasType(pointsTo(pointsTo(enumDecl(hasName("cudaError"))))),
+        hasType(pointsTo(pointsTo(cxxRecordDecl(hasName("cudaDeviceProp"))))));
+  };
+  auto HasCudaTypeRef = []() {
+    return anyOf(hasType(references(typedefDecl(hasName("dim3")))),
+                 hasType(references(typedefDecl(hasName("cudaError_t")))),
+                 hasType(references(enumDecl(hasName("cudaError")))),
+                 hasType(references(cxxRecordDecl(hasName("cudaDeviceProp")))));
+  };
+
+  MF.addMatcher(varDecl(anyOf(HasCudaType(), HasCudaTypePtr(),
+                              HasCudaTypePtrPtr(), HasCudaTypeRef()),
+                        unless(hasType(substTemplateTypeParmType())))
+                    .bind("TypeInVarDecl"),
+                this);
+  MF.addMatcher(fieldDecl(anyOf(HasCudaType(), HasCudaTypePtr(),
+                                HasCudaTypePtrPtr(), HasCudaTypeRef()),
+                          unless(hasType(substTemplateTypeParmType())))
+                    .bind("TypeInFieldDecl"),
+                this);
 }
 
-void TypeInVarDeclRule::run(const MatchFinder::MatchResult &Result) {
+void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   const VarDecl *D = getNodeAsType<VarDecl>(Result, "TypeInVarDecl");
-  if (!D) {
+  const FieldDecl *FD = getNodeAsType<FieldDecl>(Result, "TypeInFieldDecl");
+  QualType QT;
+  if (D) {
+    QT = D->getType();
+  } else if (FD) {
+    QT = FD->getType();
+  } else {
     return;
   }
 
-  std::istringstream ISS(D->getType().getAsString());
+  std::istringstream ISS(QT.getAsString());
   std::vector<std::string> Strs(std::istream_iterator<std::string>{ISS},
                                 std::istream_iterator<std::string>());
   auto it = std::remove_if(Strs.begin(), Strs.end(), [](llvm::StringRef Str) {
@@ -519,14 +550,18 @@ void TypeInVarDeclRule::run(const MatchFinder::MatchResult &Result) {
     return;
   }
 
-  std::string Replacement = D->getType().getAsString();
+  std::string Replacement = QT.getAsString();
   assert(Replacement.find(TypeName) != std::string::npos);
   Replacement = Replacement.substr(Replacement.find(TypeName));
   Replacement.replace(0, TypeName.length(), Search->second);
-  emplaceTransformation(new ReplaceTypeInVarDecl(D, std::move(Replacement)));
+  if (D) {
+    emplaceTransformation(new ReplaceTypeInDecl(D, std::move(Replacement)));
+  } else {
+    emplaceTransformation(new ReplaceTypeInDecl(FD, std::move(Replacement)));
+  }
 }
 
-REGISTER_RULE(TypeInVarDeclRule)
+REGISTER_RULE(TypeInDeclRule)
 
 // Rule for types replacements in var. declarations.
 void SyclStyleVectorRule::registerMatcher(MatchFinder &MF) {
@@ -572,7 +607,7 @@ void SyclStyleVectorRule::run(const MatchFinder::MatchResult &Result) {
       return;
     }
     std::string Replacement = Search->second;
-    emplaceTransformation(new ReplaceTypeInVarDecl(D, std::move(Replacement)));
+    emplaceTransformation(new ReplaceTypeInDecl(D, std::move(Replacement)));
   }
   if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "PtrVar")) {
     const clang::Type *Type = D->getTypeSourceInfo()->getTypeLoc().getTypePtr();
@@ -1248,9 +1283,9 @@ void ConstantMemVarRule::ConstMemVarDeclProcess(const VarDecl *ConstantMemVar) {
 
   if (IsArray)
     emplaceTransformation(
-        new ReplaceTypeInVarDecl(ConstantMemVar, std::move(Replacement)));
+        new ReplaceTypeInDecl(ConstantMemVar, std::move(Replacement)));
   else
-    emplaceTransformation(new ReplaceTypeInVarDecl(
+    emplaceTransformation(new ReplaceTypeInDecl(
         ConstantMemVar, std::move(Replacement + ";\n//")));
 
   std::map<std::string, std::string>::iterator Iter =
@@ -1453,9 +1488,9 @@ void DeviceMemVarRule::run(const MatchFinder::MatchResult &Result) {
 
     if (IsArray) {
       emplaceTransformation(
-          new ReplaceTypeInVarDecl(DeviceMemVarDecl, std::move(Replacement)));
+          new ReplaceTypeInDecl(DeviceMemVarDecl, std::move(Replacement)));
     } else {
-      emplaceTransformation(new ReplaceTypeInVarDecl(
+      emplaceTransformation(new ReplaceTypeInDecl(
           DeviceMemVarDecl, std::move(Replacement + ";\n//")));
     }
     return;
@@ -1856,7 +1891,7 @@ void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
 void KernelFunctionInfoRule::run(const MatchFinder::MatchResult &Result) {
   if (auto V = getNodeAsType<VarDecl>(Result, "decl"))
     emplaceTransformation(
-        new ReplaceTypeInVarDecl(V, "sycl_kernel_function_info"));
+        new ReplaceTypeInDecl(V, "sycl_kernel_function_info"));
   else if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
     emplaceTransformation(
         new ReplaceToken(C->getBeginLoc(), "(get_kernel_function_info"));
