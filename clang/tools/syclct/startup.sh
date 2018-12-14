@@ -1,3 +1,4 @@
+#!/bin/bash
 ################################### SYCL CT ####################################
 # SYCL CT bundle root
 export SYCLCT_BUNDLE_ROOT=$(realpath $(dirname "${BASH_SOURCE[0]}"))
