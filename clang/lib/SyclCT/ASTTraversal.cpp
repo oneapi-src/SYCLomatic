@@ -565,122 +565,92 @@ REGISTER_RULE(TypeInDeclRule)
 
 // Rule for types replacements in var. declarations.
 void SyclStyleVectorRule::registerMatcher(MatchFinder &MF) {
-  // basic:  eg. int2 xx
-  MF.addMatcher(varDecl(hasType(typedefDecl(hasName("int2")))).bind("BasicVar"),
-                this);
+  // Vector types matched
+  auto vectorType = [&]() { return hasAnyName("int2", "double2"); };
+
+  // basic: eg. int2 xx
+  auto basicType = [&]() {
+    return allOf(hasType(typedefDecl(vectorType())),
+                 unless(hasType(substTemplateTypeParmType())));
+  };
 
   // pointer: eg. int2 * xx
-  MF.addMatcher(
-      varDecl(hasType(pointsTo(typedefDecl(hasName("int2"))))).bind("PtrVar"),
-      this);
+  auto ptrType = [&]() { return hasType(pointsTo(typedefDecl(vectorType()))); };
+
   // array: eg. int2 array_[xx]
-  MF.addMatcher(varDecl(hasType(arrayType(hasElementType(typedefType(
-                            hasDeclaration(typedefDecl(hasName("int2"))))))))
-                    .bind("ArrayVar"),
-                this);
+  auto arrType = [&]() {
+    return hasType(arrayType(hasElementType(
+        typedefType(hasDeclaration(typedefDecl(vectorType()))))));
+  };
+
+  MF.addMatcher(
+      varDecl(anyOf(basicType(), ptrType(), arrType())).bind("VecVarDecl"),
+      this);
 
   // int2.x/y/z => int2.x()/y()/z()
   MF.addMatcher(
       memberExpr(
           hasObjectExpression(hasType(qualType(hasCanonicalType(
-              recordType(hasDeclaration(cxxRecordDecl(hasName("int2")))))))))
+              recordType(hasDeclaration(cxxRecordDecl(vectorType()))))))))
           .bind("VecMemberExpr"),
       this);
 }
 
 void SyclStyleVectorRule::run(const MatchFinder::MatchResult &Result) {
-  if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "BasicVar")) {
-
-    const clang::Type *Type = D->getTypeSourceInfo()->getTypeLoc().getTypePtr();
-
-    if (dyn_cast<SubstTemplateTypeParmType>(Type)) {
-      return;
-    }
-
-    std::string TypeName = Type->getCanonicalTypeInternal()
-                               .getBaseTypeIdentifier()
-                               ->getName()
-                               .str();
-    auto Search = MapNames::TypeNamesMap.find(TypeName);
-    if (Search == MapNames::TypeNamesMap.end()) {
-      // TODO report translation error
-      return;
-    }
-    std::string Replacement = Search->second;
-    emplaceTransformation(new ReplaceTypeInDecl(D, std::move(Replacement)));
+  // int2 => cl::sycl::int2
+  if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "VecVarDecl")) {
+    emplaceTransformation(new InsertNameSpaceInVarDecl(D, "cl::sycl::"));
   }
-  if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "PtrVar")) {
-    const clang::Type *Type = D->getTypeSourceInfo()->getTypeLoc().getTypePtr();
 
-    std::string TypeName = Type->getCanonicalTypeInternal()
-                               .getBaseTypeIdentifier()
-                               ->getName()
-                               .str();
-    auto Search = MapNames::TypeNamesMap.find(TypeName);
-    if (Search == MapNames::TypeNamesMap.end()) {
-      // TODO report translation error
-      return;
-    }
-    std::string Replacement = "cl::sycl::";
-
-    emplaceTransformation(
-        new InsertNameSpaceInVarDecl(D, std::move(Replacement)));
-  }
-  if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "ArrayVar")) {
-    const clang::Type *Type = D->getTypeSourceInfo()->getTypeLoc().getTypePtr();
-
-    std::string TypeName = Type->getCanonicalTypeInternal()
-                               .getBaseTypeIdentifier()
-                               ->getName()
-                               .str();
-    auto Search = MapNames::TypeNamesMap.find(TypeName);
-    if (Search == MapNames::TypeNamesMap.end()) {
-      // TODO report translation error
-      return;
-    }
-    std::string Replacement = "cl::sycl::";
-    emplaceTransformation(
-        new InsertNameSpaceInVarDecl(D, std::move(Replacement)));
-  }
+  // int2.x/y/z => int2.x()/y()/z()
   if (const MemberExpr *ME =
           getNodeAsType<MemberExpr>(Result, "VecMemberExpr")) {
-    auto Search = MemberNamesMap.find(ME->getMemberNameInfo().getAsString());
-    if (Search == MemberNamesMap.end()) {
-      // TODO report translation error
-      return;
-    }
-    emplaceTransformation(new RenameFieldInMemberExpr(ME, Search->second + ""));
+    std::string MemberAccess = ME->getMemberNameInfo().getAsString() + "()";
+    emplaceTransformation(
+        new RenameFieldInMemberExpr(ME, std::move(MemberAccess)));
   }
 }
 
 REGISTER_RULE(SyclStyleVectorRule)
 
 void SyclStyleVectorCtorRule::registerMatcher(MatchFinder &MF) {
+  auto vectorType = [&]() { return hasAnyName("int2", "double2"); };
+
   // Find sycl sytle vector:eg.int2 constructors which are part of different
   // casts (representing different syntaxes). This includes copy constructors.
   // All constructors will be visited once.
-  MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(hasName("int2"))),
-                                 hasParent(cxxFunctionalCastExpr().bind(
-                                     "int2CtorFuncCast"))),
-                this);
   MF.addMatcher(
-      cxxConstructExpr(hasType(typedefDecl(hasName("int2"))),
-                       hasParent(cStyleCastExpr().bind("int2CtorCCast"))),
+      cxxConstructExpr(hasType(typedefDecl(vectorType())),
+                       hasParent(cxxFunctionalCastExpr().bind("CtorFuncCast"))),
       this);
 
-  // translate utility for vector type: eg: make_int2
-  MF.addMatcher(callExpr(callee(functionDecl(hasAnyName("make_int2"))))
-                    .bind("VecUtilFunc"),
+  MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(vectorType())),
+                                 hasParent(cStyleCastExpr().bind("CtorCCast"))),
                 this);
+
   // (int2 *)&xxx;
-  MF.addMatcher(cStyleCastExpr(hasType(pointsTo(typedefDecl(hasName("int2")))))
-                    .bind("int2PtrCast"),
+  MF.addMatcher(cStyleCastExpr(hasType(pointsTo(typedefDecl(vectorType()))))
+                    .bind("PtrCast"),
                 this);
+
+  auto makeVectorFunc = [&]() {
+    return hasAnyName("make_int2", "make_double2");
+  };
+
+  // translate utility for vector type: eg: make_int2
+  MF.addMatcher(
+      callExpr(callee(functionDecl(makeVectorFunc()))).bind("VecUtilFunc"),
+      this);
+
+  auto vectorArgName = [&]() {
+    return anyOf(asString("int2"), asString("double2"));
+  };
+
   // sizeof(int2)
   MF.addMatcher(
-      unaryExprOrTypeTraitExpr(allOf(hasArgumentOfType(asString("int2")),
+      unaryExprOrTypeTraitExpr(allOf(hasArgumentOfType(vectorArgName()),
                                      has(qualType(hasCanonicalType(type())))))
-          .bind("int2Sizeof"),
+          .bind("Sizeof"),
       this);
 }
 
@@ -690,35 +660,45 @@ void SyclStyleVectorCtorRule::registerMatcher(MatchFinder &MF) {
 void SyclStyleVectorCtorRule::run(const MatchFinder::MatchResult &Result) {
   // Most commonly used syntax cases are checked first.
   if (auto Cast =
-          getNodeAsType<CXXFunctionalCastExpr>(Result, "int2CtorFuncCast")) {
+          getNodeAsType<CXXFunctionalCastExpr>(Result, "CtorFuncCast")) {
     // int2 a = int2(1); // function style cast
     // int2 b = int2(a); // copy constructor
     // func(int(1), int2(a));
+    std::string Replacement = "cl::sycl::" + Cast->getType().getAsString();
     emplaceTransformation(
-        new ReplaceToken(Cast->getBeginLoc(), "cl::sycl::int2"));
-  } else if (auto Cast =
-                 getNodeAsType<CStyleCastExpr>(Result, "int2CtorCCast")) {
+        new ReplaceToken(Cast->getBeginLoc(), std::move(Replacement)));
+    return;
+  }
+
+  if (auto Cast = getNodeAsType<CStyleCastExpr>(Result, "CtorCCast")) {
     // int2 a = (int2)1;
     // int2 b = (int2)a; // copy constructor
     // func((int2)1, (int2)a);
-    emplaceTransformation(new ReplaceCCast(Cast, "(cl::sycl::int2)"));
-  } else if (const CallExpr *CE =
-                 getNodeAsType<CallExpr>(Result, "VecUtilFunc")) {
+    std::string Replacement =
+        "(cl::sycl::" + Cast->getType().getAsString() + ")";
+    emplaceTransformation(new ReplaceCCast(Cast, std::move(Replacement)));
+    return;
+  }
 
-    std::string FuncName =
-        CE->getDirectCallee()->getNameInfo().getName().getAsString();
-    if (FuncName == "make_int2") {
-      emplaceTransformation(new ReplaceStmt(CE->getCallee(), "cl::sycl::int2"));
-    } else {
-      syclct_unreachable("Unknown function name");
-    }
-  } else if (const CStyleCastExpr *CPtrCast =
-                 getNodeAsType<CStyleCastExpr>(Result, "int2PtrCast")) {
+  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "VecUtilFunc")) {
+    const llvm::StringRef FuncName = CE->getDirectCallee()->getName();
+    assert(FuncName.startswith("make_") &&
+           "Found non make_<vector type> function");
+    llvm::StringRef TypeName = FuncName.substr(strlen("make_"));
+    emplaceTransformation(
+        new ReplaceStmt(CE->getCallee(), "cl::sycl::" + TypeName.str()));
+    return;
+  }
+
+  if (const CStyleCastExpr *CPtrCast =
+          getNodeAsType<CStyleCastExpr>(Result, "PtrCast")) {
     emplaceTransformation(
         new InsertNameSpaceInCastExpr(CPtrCast, "cl::sycl::"));
-  } else if (const UnaryExprOrTypeTraitExpr *ExprSizeof =
-                 getNodeAsType<UnaryExprOrTypeTraitExpr>(Result,
-                                                         "int2Sizeof")) {
+    return;
+  }
+
+  if (const UnaryExprOrTypeTraitExpr *ExprSizeof =
+          getNodeAsType<UnaryExprOrTypeTraitExpr>(Result, "Sizeof")) {
     if (ExprSizeof->isArgumentType()) {
       emplaceTransformation(new InsertText(ExprSizeof->getArgumentTypeInfo()
                                                ->getTypeLoc()
@@ -726,8 +706,8 @@ void SyclStyleVectorCtorRule::run(const MatchFinder::MatchResult &Result) {
                                                .getBegin(),
                                            "cl::sycl::"));
     }
+    return;
   }
-  return;
 }
 
 REGISTER_RULE(SyclStyleVectorCtorRule)
