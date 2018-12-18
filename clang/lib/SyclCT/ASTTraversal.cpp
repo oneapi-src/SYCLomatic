@@ -82,12 +82,24 @@ void IncludesCallbacks::InclusionDirective(
       IncludePath.compare(0, 15, "/usr/local/cuda", 15)) {
 
     // Replace "#include "*.cuh"" with "include "*.sycl.hpp""
-    if (!IsAngled && FileName.endswith(StringRef(".cuh"))) {
+    if (!IsAngled && FileName.endswith(".cuh")) {
       CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                                   /* IsTokenRange */ false);
       std::string NewFileName = "#include \"" +
                                 FileName.drop_back(strlen(".cuh")).str() +
                                 ".sycl.hpp\"";
+      TransformSet.emplace_back(
+          new ReplaceInclude(InsertRange, std::move(NewFileName)));
+      return;
+    }
+
+    // Replace "#include "*.cu"" with "include "*.sycl.cpp""
+    if (!IsAngled && FileName.endswith(".cu")) {
+      CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                                  /* IsTokenRange */ false);
+      std::string NewFileName = "#include \"" +
+                                FileName.drop_back(strlen(".cu")).str() +
+                                ".sycl.cpp\"";
       TransformSet.emplace_back(
           new ReplaceInclude(InsertRange, std::move(NewFileName)));
       return;
