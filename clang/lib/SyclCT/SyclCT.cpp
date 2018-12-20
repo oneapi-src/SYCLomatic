@@ -73,7 +73,7 @@ std::string CudaPath; // Global value for the CUDA install path.
 class SyclCTConsumer : public ASTConsumer {
 public:
   SyclCTConsumer(ReplTy &R, const CompilerInstance &CI, StringRef InFile)
-      : ATM(CI, InRoot), Repl(R), PP(CI.getPreprocessor()) {
+      : ATM(CI, InRoot, InFile.str()), Repl(R), PP(CI.getPreprocessor()) {
     int RequiredRType;
     SourceProcessType FileType = GetSourceFileType(InFile);
 

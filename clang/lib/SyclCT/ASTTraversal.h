@@ -141,10 +141,12 @@ class ASTTraversalManager {
 public:
   const CompilerInstance &CI;
   const std::string InRoot;
+  const std::string InFile;
   // Set per matchAST invocation
   ASTContext *Context = nullptr;
-  ASTTraversalManager(const CompilerInstance &CI, const std::string &IR)
-      : CI(CI), InRoot(IR) {}
+  ASTTraversalManager(const CompilerInstance &CI, const std::string &IR,
+                      const std::string &InFile)
+      : CI(CI), InRoot(IR), InFile(InFile) {}
   /// Add \a TR to the manager.
   ///
   /// The ownership of the TR is transferred to the ASTTraversalManager.
@@ -154,6 +156,8 @@ public:
     Storage.emplace_back(std::unique_ptr<ASTTraversal>(
         ASTTraversalMetaInfo::getConstructorTable()[ID]()));
   }
+
+  std::string getInFile() const { return InFile; }
 
   void emplaceAllRules(int SourceFileFlag);
 
@@ -254,7 +258,9 @@ protected:
   getNodeAsType(const ast_matchers::MatchFinder::MatchResult &Result,
                 const char *Name, bool CheckNode = true) {
     if (auto Node = Result.Nodes.getNodeAs<NodeType>(Name)) {
-      if (checkNode(Result.SourceManager, Node->getBeginLoc(), CheckNode))
+
+      if (checkNode(Result.SourceManager, Node->getBeginLoc(), CheckNode) &&
+          !inCuFileIncluded(Result.SourceManager, Node->getBeginLoc()))
         return Node;
     }
     return nullptr;
@@ -273,6 +279,22 @@ private:
     std::string FilePath = SM->getFilename(SM->getExpansionLoc(LS));
     makeCanonical(FilePath);
     return isChildPath(TM->InRoot, FilePath);
+  }
+
+  // Check if the node's host file is the *.cu file included.
+  bool inCuFileIncluded(SourceManager *SM, const SourceLocation LS) {
+    std::string FileNameIncludePath = SM->getFilename(SM->getExpansionLoc(LS));
+    makeCanonical(FileNameIncludePath);
+    std::string InFileIncludePath = TM->getInFile();
+    makeCanonical(InFileIncludePath);
+
+    if (isChildPath(TM->InRoot, FileNameIncludePath) &&
+        StringRef(FileNameIncludePath).endswith(".cu") &&
+        !isSamePath(FileNameIncludePath, InFileIncludePath)) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   // Check if the location has been replaced by the same rule.
