@@ -33,7 +33,7 @@ ENTRY(cudaThreadGetCacheConfig, false)
 ENTRY(cudaThreadGetLimit, false)
 ENTRY(cudaThreadSetCacheConfig, false)
 ENTRY(cudaThreadSetLimit, false)
-ENTRY(cudaThreadSynchronize, false)
+ENTRY(cudaThreadSynchronize, true)
 
 // error handling functions of runtime API
 ENTRY(cudaGetErrorName, false)
@@ -1000,4 +1000,3 @@ ENTRY(min, true)
 ENTRY(abs, true)
 ENTRY(acospi, true)
 ENTRY(tanpi, true)
-

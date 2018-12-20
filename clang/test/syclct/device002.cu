@@ -70,6 +70,7 @@ checkError(cudaDeviceSynchronize());
 return cudaDeviceSynchronize();
 // CHECK: int e = 0;
 int e = cudaGetLastError();
-
+// CHECK:syclct::get_device_manager().current_device().queues_wait_and_throw();
+cudaThreadSynchronize();
 return 0;
 }

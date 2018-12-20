@@ -968,26 +968,21 @@ void ErrorConstantsRule::run(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(ErrorConstantsRule)
 
 void FunctionCallRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(hasAnyName(
-                         "cudaGetDeviceCount", "cudaGetDeviceProperties",
-                         "cudaDeviceReset", "cudaSetDevice",
-                         "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
-                         "cudaGetDevice", "cudaGetLastError",
-                         "cudaDeviceSynchronize", "cudaGetErrorString"))),
-                     hasParent(compoundStmt())))
-          .bind("FunctionCall"),
-      this);
-  MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(hasAnyName(
-                         "cudaGetDeviceCount", "cudaGetDeviceProperties",
-                         "cudaDeviceReset", "cudaSetDevice",
-                         "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
-                         "cudaGetDevice", "cudaGetLastError",
-                         "cudaDeviceSynchronize", "cudaGetErrorString"))),
-                     unless(hasParent(compoundStmt()))))
-          .bind("FunctionCallUsed"),
-      this);
+  auto functionName = [&]() {
+    return hasAnyName(
+        "cudaGetDeviceCount", "cudaGetDeviceProperties", "cudaDeviceReset",
+        "cudaSetDevice", "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
+        "cudaGetDevice", "cudaGetLastError", "cudaDeviceSynchronize",
+        "cudaThreadSynchronize", "cudaGetErrorString");
+  };
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
+                               hasParent(compoundStmt())))
+                    .bind("FunctionCall"),
+                this);
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
+                               unless(hasParent(compoundStmt()))))
+                    .bind("FunctionCallUsed"),
+                this);
 }
 
 void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
@@ -1047,7 +1042,8 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     emplaceTransformation(new ReplaceStmt(
         CE, "syclct::get_device_manager().current_device_id()"));
-  } else if (FuncName == "cudaDeviceSynchronize") {
+  } else if (FuncName == "cudaDeviceSynchronize" ||
+             FuncName == "cudaThreadSynchronize") {
     std::string ReplStr = "syclct::get_device_manager()."
                           "current_device().queues_wait_"
                           "and_throw()";
