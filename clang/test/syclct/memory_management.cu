@@ -3,7 +3,6 @@
 
 #include <cuda_runtime.h>
 
-
 void fooo() {
   size_t size = 1234567 * sizeof(float);
   float *h_A = (float *)malloc(size);
@@ -187,6 +186,48 @@ void testCommas() {
   // CHECK-NEXT:*/
   // CHECK-NEXT:   checkError((syclct::sycl_memcpy_to_symbol(h_A.get_ptr(), (void*)(d_B), size), 0));
   checkError(cudaMemcpyToSymbol(h_A, d_B, size));
+
+  ///////// Device to host
+  // CHECK:  syclct::sycl_memcpy_from_symbol((void*)(d_A), h_A.get_ptr(), size, 0, syclct::device_to_host);
+  cudaMemcpyFromSymbol(d_A, h_A, size, 0, cudaMemcpyDeviceToHost);
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:  err = (syclct::sycl_memcpy_from_symbol((void*)(d_A), h_A.get_ptr(), size, 0, syclct::device_to_host), 0);
+  err = cudaMemcpyFromSymbol(d_A, h_A, size, 0, cudaMemcpyDeviceToHost);
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:  checkError((syclct::sycl_memcpy_from_symbol((void*)(d_A), h_A.get_ptr(), size, 0, syclct::device_to_host), 0));
+  checkError(cudaMemcpyFromSymbol(d_A, h_A, size, 0, cudaMemcpyDeviceToHost));
+
+  ///////// Device to device
+  // CHECK:  syclct::sycl_memcpy_from_symbol((void*)(d_B), d_B.get_ptr(), size, 0, syclct::device_to_device);
+  cudaMemcpyFromSymbol(d_B, d_B, size, 0, cudaMemcpyDeviceToDevice);
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:  err = (syclct::sycl_memcpy_from_symbol((void*)(d_B), d_B.get_ptr(), size, 0, syclct::device_to_device), 0);
+  err = cudaMemcpyFromSymbol(d_B, d_B, size, 0, cudaMemcpyDeviceToDevice);
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:   checkError((syclct::sycl_memcpy_from_symbol((void*)(d_B), d_B.get_ptr(), size, 0, syclct::device_to_device), 0));
+  checkError(cudaMemcpyFromSymbol(d_B, d_B, size, 0, cudaMemcpyDeviceToDevice));
+
+  ///////// Default parameter overload
+  // CHECK:  syclct::sycl_memcpy_from_symbol((void*)(h_A), d_B.get_ptr(), size);
+  cudaMemcpyFromSymbol(h_A, d_B, size);
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:   err = (syclct::sycl_memcpy_from_symbol((void*)(h_A), d_B.get_ptr(), size), 0);
+  err = cudaMemcpyFromSymbol(h_A, d_B, size);
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:   checkError((syclct::sycl_memcpy_from_symbol((void*)(h_A), d_B.get_ptr(), size), 0));
+  checkError(cudaMemcpyFromSymbol(h_A, d_B, size));
 
   // CHECK:  syclct::sycl_free(d_A);
   cudaFree(d_A);

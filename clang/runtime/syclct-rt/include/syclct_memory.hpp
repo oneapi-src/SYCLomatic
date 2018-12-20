@@ -200,21 +200,17 @@ static void sycl_free(void *ptr) {
 }
 
 class DeviceMem {
- public:
-  DeviceMem(size_t size) {
-    sycl_malloc((void **)&device_mem_ptr, size);
-  }
+public:
+  DeviceMem(size_t size) { sycl_malloc((void **)&device_mem_ptr, size); }
 
-  void *get_ptr(void) {
-    return device_mem_ptr;
-  }
+  void *get_ptr(void) { return device_mem_ptr; }
 
- protected:
+protected:
   void *device_mem_ptr;
 };
 
 class ConstMem : public DeviceMem {
- public:
+public:
   ConstMem(size_t size) : DeviceMem(size) {}
 };
 
@@ -312,29 +308,43 @@ static void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size,
               syclct::get_device_manager().current_device().default_queue());
 }
 
-// sycl_memcpy_to_symbol copies size bytes
-// from the memory area pointed to by
-// from_ptr to the memory area pointed to by offset bytes from the start of symbol symbol.
-// where direction specifies the direction of the copy, and must be one of
-// host_to_device, device_to_device, or automatic.
-// Passing automatic is recommended, in which case the type of transfer
-// is inferred from the pointer values.
-
+// sycl_memcpy_to_symbol copies size bytes from the memory area pointed to by
+// from_ptr to the memory area pointed to by offset bytes from the start of
+// symbol symbol. where direction specifies the direction of the copy, and must
+// be one of host_to_device, device_to_device, or automatic. Passing automatic
+// is recommended, in which case the type of transfer is inferred from the
+// pointer values.
 static void sycl_memcpy_to_symbol(void *symbol, void *from_ptr, size_t size,
                                   size_t offset = 0,
                                   memcpy_direction direction = host_to_device) {
   switch (direction) {
-    case host_to_device:
-      break;
-    case device_to_device:
-      break;
-    case automatic:
-      break;
-    default:
-      std::abort();
+  case host_to_device:
+  case device_to_device:
+  case automatic:
+    break;
+  default:
+    std::abort();
   }
 
-   sycl_memcpy((void *)((size_t)symbol + offset), from_ptr, size,  direction);
+  sycl_memcpy((void *)((size_t)symbol + offset), from_ptr, size, direction);
+}
+
+// sycl_memcpy_from_symbol copies size bytes from the symbol address
+// (from_symbol) plus offest to destination memory area (dst).
+// Direction could be either device_to_host or device_to_device.
+static void
+sycl_memcpy_from_symbol(void *dst, void *from_symbol, size_t size,
+                        size_t offset = 0,
+                        memcpy_direction direction = device_to_host) {
+  switch (direction) {
+  case device_to_host:
+  case device_to_device:
+    break;
+  default:
+    std::abort();
+  }
+
+  sycl_memcpy(dst, (void *)(((char *)from_symbol) + offset), size, direction);
 }
 
 // In following functions buffer_t is returned instead of buffer_t*, because of

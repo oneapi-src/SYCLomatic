@@ -577,6 +577,20 @@ public:
   MemoryTranslationRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+private:
+  void MallocTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
+                         const CallExpr *C);
+  void MemcpyTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
+                         const CallExpr *C);
+  void MemcpyToSymbolTranslation(
+      const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C);
+  void MemcpyFromSymbolTranslation(
+      const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C);
+  void FreeTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
+                       const CallExpr *C);
+  void MemsetTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
+                         const CallExpr *C);
 };
 
 // Translation rule for Inserting try-catch around functions.
