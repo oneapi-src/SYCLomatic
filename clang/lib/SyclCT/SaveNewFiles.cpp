@@ -33,6 +33,9 @@ using namespace llvm;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
+// TODO: it's global variable,  refine in future.
+std::map<std::string, bool> IncludeFileMap;
+
 static void rewriteDir(SmallString<256> &FilePath, const StringRef InRoot,
                        const StringRef OutRoot) {
   assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
@@ -86,15 +89,22 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     // cyclct just do nothing with them.
     status = TranslationNotImplemented;
   } else {
-    // There are matching rules for *.cpp files and *.cu files,
-    // translate these files into *.sycl.cpp files.
+    // There are matching rules for *.cpp files ,*.cu files, also header files
+    // included, translate these files into *.sycl.cpp files.
     for (const auto &Entry : groupReplacementsByFile(
              Rewrite.getSourceMgr().getFileManager(), Tool.getReplacements())) {
       OutPath = StringRef(Entry.first);
+
+      auto Find = IncludeFileMap.find(OutPath.c_str());
+      if (Find != IncludeFileMap.end()) {
+        IncludeFileMap[OutPath.c_str()] = true;
+      }
+
       // This operation won't fail; it already succeeded once during argument
       // validation.
       makeCanonical(OutPath);
       rewriteDir(OutPath, InRoot, OutRoot);
+
       rewriteFileName(OutPath);
 
       if (OutPath.back() == 'h' && fs::exists(OutPath)) {
@@ -114,6 +124,33 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
       AppliedAll =
           tooling::applyAllReplacements(Entry.second, Rewrite) || AppliedAll;
+      Rewrite
+          .getEditBuffer(Sources.getOrCreateFileID(
+              Tool.getFiles().getFile(Entry.first),
+              clang::SrcMgr::C_User /*normal user code*/))
+          .write(Stream);
+    }
+  }
+
+  // The necessary header files which have no no replacements will be copied to
+  // "-out-root" directory
+  for (const auto &Entry : IncludeFileMap) {
+    SmallString<256> FilePath = StringRef(Entry.first);
+    if (!Entry.second) {
+      makeCanonical(FilePath);
+      rewriteDir(FilePath, InRoot, OutRoot);
+      if (fs::exists(FilePath)) {
+        // A header file with this name already exists.
+        llvm::errs() << "File '" << FilePath
+                     << "' already exists; skipping it.\n";
+        AppliedAll = false;
+        continue;
+      }
+
+      fs::create_directories(path::parent_path(FilePath));
+      std::ofstream File(FilePath.str());
+      llvm::raw_os_ostream Stream(File);
+
       Rewrite
           .getEditBuffer(Sources.getOrCreateFileID(
               Tool.getFiles().getFile(Entry.first),

@@ -12,6 +12,8 @@
 #ifndef SYCLCT_SAVE_NEW_FILES_H
 #define SYCLCT_SAVE_NEW_FILES_H
 
+#include <map>
+
 namespace llvm {
 class StringRef;
 }
@@ -36,4 +38,9 @@ enum ProcessStatus {
 /// Prerequisite: InRoot and OutRoot are both absolute paths
 int saveNewFiles(clang::tooling::RefactoringTool &Tool, llvm::StringRef InRoot,
                  llvm::StringRef OutRoot);
+
+// std::string:  source file name including path.
+// bool: false: the source file has no replacement.
+//       true:  the source file has replacement.
+extern std::map<std::string, bool> IncludeFileMap;
 #endif // SYCLCT_SAVE_NEW_FILES_H

@@ -54,6 +54,19 @@ void IncludesCallbacks::InclusionDirective(
                                  (isChildPath(InRoot, Directory.str()) ||
                                   isSamePath(InRoot, Directory.str()));
 
+  std::string FilePath = File->getName();
+  makeCanonical(FilePath);
+  std::string DirPath = llvm::sys::path::parent_path(FilePath);
+  bool IsFileInInRoot =
+      isChildPath(InRoot, DirPath) || isSamePath(InRoot, DirPath);
+
+  if (IsFileInInRoot && !StringRef(FilePath).endswith(".cu")) {
+    auto Find = IncludeFileMap.find(FilePath);
+    if (Find == IncludeFileMap.end()) {
+      IncludeFileMap[FilePath] = false;
+    }
+  }
+
   if (!SM.isWrittenInMainFile(HashLoc) && !IsIncludingFileInInRoot) {
     return;
   }
