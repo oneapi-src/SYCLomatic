@@ -24,6 +24,10 @@ const std::map<std::string, std::string> MapNames::TypeNamesMap{
     {"cudaError_t", "int"},
     {"cudaError", "int"},
     {"dim3", "cl::sycl::range<3>"},
+    {"int2", "cl::sycl::int2"},
+    {"struct int2", "cl::sycl::int2"},
+    {"double2", "cl::sycl::double2"},
+    {"struct double2", "cl::sycl::double2"},
     // ...
 };
 

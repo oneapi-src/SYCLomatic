@@ -7,6 +7,10 @@ void func3(double2 a, double2 b, double2 c) {
 // CHECK: void fun(cl::sycl::double2 a) try {}
 void fun(double2 a) {}
 
+// CHECK: void kernel(cl::sycl::nd_item<3> item_cf28aa,
+// CHECK:         cl::sycl::double2* data) {}
+__global__ void kernel(double2* data) {}
+
 int main() {
   // range default constructor does the right thing.
   // CHECK: cl::sycl::double2 deflt;
@@ -54,4 +58,22 @@ int main() {
   i7 = (double2)i6;
   // CHECK: i7 = cl::sycl::double2(i6);
   i7 = double2(i6);
+
+  // CHECK: cl::sycl::double2* data;
+  // CHECK: {
+  // CHECK:   std::pair<syclct::buffer_t, size_t> data_buf = syclct::get_buffer_and_offset(data);
+  // CHECK:   size_t data_offset = data_buf.second;
+  // CHECK:   syclct::get_default_queue().submit(
+  // CHECK:     [&](cl::sycl::handler &cgh) {
+  // CHECK:       auto data_acc = data_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK:       cgh.parallel_for<SyclKernelName<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK:         [=](cl::sycl::nd_item<3> it) {
+  // CHECK:           cl::sycl::double2 *data = (cl::sycl::double2*)(&data_acc[0] + data_offset);
+  // CHECK:           kernel(it, data);
+  // CHECK:         });
+  // CHECK:     });
+  // CHECK: };
+  double2* data;
+  kernel<<<1, 1>>>(data);
 }
