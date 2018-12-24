@@ -7,7 +7,7 @@ void func3(double2 a, double2 b, double2 c) {
 // CHECK: void fun(cl::sycl::double2 a) try {}
 void fun(double2 a) {}
 
-// CHECK: void kernel(cl::sycl::nd_item<3> item_cf28aa,
+// CHECK: void kernel(cl::sycl::nd_item<3> item_{{[a-f0-9]+}},
 // CHECK:         cl::sycl::double2* data) {}
 __global__ void kernel(double2* data) {}
 
