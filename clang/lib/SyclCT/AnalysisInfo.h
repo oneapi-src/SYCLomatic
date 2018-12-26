@@ -303,7 +303,7 @@ private:
   std::string getSyclctAccessorType(bool UsingTemplateName) {
     if (isExtern()) {
       static std::string ExternType =
-          "syclct::syclct_accessor<syclct::byte_t, syclct::shared, 1> ";
+          "syclct::syclct_accessor<syclct::byte_t, syclct::shared, 1>";
       return ExternType;
     } else {
       auto Type = getType();
