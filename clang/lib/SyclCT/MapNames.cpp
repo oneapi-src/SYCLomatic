@@ -31,6 +31,20 @@ const std::map<std::string, std::string> MapNames::TypeNamesMap{
     // ...
 };
 
+// Atomic function names mapping
+const std::unordered_map<std::string, std::string>
+    AtomicFunctionRule::AtomicFuncNamesMap{
+        {"atomicAdd", "syclct::atomic_fetch_add"},
+        {"atomicSub", "syclct::atomic_fetch_sub"},
+        {"atomicAnd", "syclct::atomic_fetch_and"},
+        {"atomicOr", "syclct::atomic_fetch_or"},
+        {"atomicXor", "syclct::atomic_fetch_xor"},
+        {"atomicMin", "syclct::atomic_fetch_min"},
+        {"atomicMax", "syclct::atomic_fetch_max"},
+        {"atomicExch", "syclct::atomic_exchange"},
+        {"atomicCAS", "syclct::atomic_compare_exchange_strong"},
+    };
+
 // CUDA dim3 dot member funciton names mapping.
 const std::map<std::string, std::string> MapNames::Dim3MemberNamesMap{
     {"x", "[0]"}, {"y", "[1]"}, {"z", "[2]"},

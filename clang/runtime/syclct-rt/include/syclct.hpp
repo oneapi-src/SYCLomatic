@@ -15,6 +15,7 @@
 #include <CL/sycl.hpp>
 #include <iostream>
 
+#include "syclct_atomic.hpp"
 #include "syclct_device.hpp"
 #include "syclct_kernel.hpp"
 #include "syclct_memory.hpp"

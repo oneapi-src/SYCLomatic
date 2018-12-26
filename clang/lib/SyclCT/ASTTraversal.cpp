@@ -470,6 +470,86 @@ void FunctionAttrsRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(FunctionAttrsRule)
 
+void AtomicFunctionRule::registerMatcher(MatchFinder &MF) {
+  std::vector<std::string> AtomicFuncNames(AtomicFuncNamesMap.size());
+  std::transform(
+      AtomicFuncNamesMap.begin(), AtomicFuncNamesMap.end(),
+      AtomicFuncNames.begin(),
+      [](const std::pair<std::string, std::string> &p) { return p.first; });
+
+  auto hasAnyAtomicFuncName = [&]() {
+    return internal::Matcher<NamedDecl>(
+        new internal::HasNameMatcher(AtomicFuncNames));
+  };
+
+  // Support all integer type, float and double
+  // Type half and half2 are not supported
+  auto supportedTypes = [&]() {
+    // TODO: investigate usage of __half and __half2 types and support it
+    return anyOf(hasType(pointsTo(isInteger())),
+                 hasType(pointsTo(asString("float"))),
+                 hasType(pointsTo(asString("double"))));
+  };
+
+  auto supportedAtomicFunctions = [&]() {
+    return allOf(hasAnyAtomicFuncName(), hasParameter(0, supportedTypes()));
+  };
+
+  auto unsupportedAtomicFunctions = [&]() {
+    return allOf(hasAnyAtomicFuncName(),
+                 unless(hasParameter(0, supportedTypes())));
+  };
+
+  MF.addMatcher(callExpr(callee(functionDecl(supportedAtomicFunctions())))
+                    .bind("supportedAtomicFuncCall"),
+                this);
+
+  MF.addMatcher(callExpr(callee(functionDecl(unsupportedAtomicFunctions())))
+                    .bind("unsupportedAtomicFuncCall"),
+                this);
+}
+
+void AtomicFunctionRule::ReportUnsupportedAtomicFunc(const CallExpr *CE) {
+  if (!CE)
+    return;
+
+  std::ostringstream OSS;
+  // Atomic functions with __half and half2 are not supported.
+  OSS << "half version of " << CE->getDirectCallee()->getName().str();
+  report(CE->getBeginLoc(), Comments::API_NOT_TRANSLATED, OSS.str());
+}
+
+void AtomicFunctionRule::TranslateAtomicFunc(const CallExpr *CE) {
+  if (!CE)
+    return;
+
+  Expr **ArgsStart = const_cast<Expr **>(CE->getArgs());
+  const unsigned NumArgs = CE->getNumArgs();
+  std::vector<const Expr *> Args(ArgsStart, ArgsStart + NumArgs);
+
+  // TODO: 1. Investigate are there usages of atomic functions on local address
+  //          space
+  //       2. If item 1. shows atomic functions on local address space is
+  //          significant, detect whether this atomic operation operates in
+  //          global space or local space (currently, all in global space,
+  //          see syclct_atomic.hpp for more details)
+  const std::string AtomicFuncName = CE->getDirectCallee()->getName().str();
+  assert(AtomicFuncNamesMap.find(AtomicFuncName) != AtomicFuncNamesMap.end());
+  std::string ReplacedAtomicFuncName = AtomicFuncNamesMap.at(AtomicFuncName);
+  emplaceTransformation(new ReplaceCallExpr(
+      CE, std::move(ReplacedAtomicFuncName), std::move(Args)));
+}
+
+void AtomicFunctionRule::run(const MatchFinder::MatchResult &Result) {
+  ReportUnsupportedAtomicFunc(
+      getNodeAsType<CallExpr>(Result, "unsupportedAtomicFuncCall"));
+
+  TranslateAtomicFunc(
+      getNodeAsType<CallExpr>(Result, "supportedAtomicFuncCall"));
+}
+
+REGISTER_RULE(AtomicFunctionRule)
+
 // Rule for types replacements in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   auto HasCudaType = []() {

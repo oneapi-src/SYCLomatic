@@ -385,6 +385,20 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+/// Translation rule for atomic functions.
+class AtomicFunctionRule : public NamedTranslationRule<AtomicFunctionRule> {
+public:
+  AtomicFunctionRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+  static const std::unordered_map<std::string, std::string> AtomicFuncNamesMap;
+
+private:
+  void ReportUnsupportedAtomicFunc(const CallExpr *CE);
+  void TranslateAtomicFunc(const CallExpr *CE);
+};
+
 /// Translation rule for types replacements in var. declarations.
 class TypeInDeclRule : public NamedTranslationRule<TypeInDeclRule> {
 public:

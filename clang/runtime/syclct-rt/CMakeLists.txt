@@ -1,5 +1,6 @@
 set(syclct_rt_files
   include/syclct.hpp
+  include/syclct_atomic.hpp
   include/syclct_device.hpp
   include/syclct_memory.hpp
   include/syclct_kernel.hpp
