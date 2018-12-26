@@ -1,5 +1,6 @@
-// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path  -I ./
-// RUN: FileCheck %s --match-full-lines --input-file %T/simple_kernel.sycl.cpp
+// CHECK:#include <CL/sycl.hpp>
+// CHECK-NEXT:#include <syclct/syclct.hpp>
+#include <stdio.h>
 
 // CHECK:void simple_kernel(cl::sycl::nd_item<3> item_{{[a-f0-9]+}},
 // CHECK-NEXT: float *d_array) {

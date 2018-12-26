@@ -46,6 +46,8 @@ void IncludesCallbacks::InclusionDirective(
   std::string IncludingFile = SM.getFilename(HashLoc);
 
   IncludingFile = getAbsolutePath(IncludingFile);
+  makeCanonical(IncludingFile);
+
   // eg. '/home/path/util.h' -> '/home/path'
   StringRef Directory = llvm::sys::path::parent_path(IncludingFile);
   std::string InRoot = ATM.InRoot;
@@ -71,8 +73,11 @@ void IncludesCallbacks::InclusionDirective(
     return;
   }
 
-  // Insert SYCL headers.
-  if (!SyclHeaderInserted) {
+  // Insert SYCL headers for file inputted or file included.
+  // E.g. A.cu included B.cu, both A.cu and B.cu are inserted "#include
+  // <CL/sycl.hpp>\n#include <syclct/syclct.hpp>"
+  if (!SyclHeaderInserted || SeenFiles.find(IncludingFile) == end(SeenFiles)) {
+    SeenFiles.insert(IncludingFile);
     std::string Replacement = std::string("#include <CL/sycl.hpp>") +
                               getNL(FilenameRange.getEnd(), SM) +
                               "#include <syclct/syclct.hpp>" +

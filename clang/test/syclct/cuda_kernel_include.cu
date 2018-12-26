@@ -5,8 +5,8 @@
 // CHECK-NEXT:#include <syclct/syclct.hpp>
 #include <stdio.h>
 
-// CHECK:#include "simple_kernel.sycl.cpp"
-#include "simple_kernel.cu"
+// CHECK:#include "simple_kernel.sycl.hpp"
+#include "simple_kernel.cuh"
 
 int main(int argc, char **argv) {
   int size = 360;
