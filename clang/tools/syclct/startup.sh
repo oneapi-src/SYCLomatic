@@ -1,6 +1,14 @@
 #!/bin/bash
-################################### SYCL CT ####################################
-# SYCL CT bundle root
+################################################################################
+#
+# Copyright (C) 2018 Intel Corporation. All rights reserved.
+#
+# The information and source code contained herein is the exclusive property of
+# Intel Corporation and may not be disclosed, examined or reproduced in whole or
+# in part without explicit written authorization from the company.
+#
+################################################################################
+
 export SYCLCT_BUNDLE_ROOT=$(realpath $(dirname "${BASH_SOURCE[0]}"))
 
 # Binary check for SYCL CT
@@ -9,59 +17,60 @@ if [[ ! -e $SYCLCT_BUNDLE_ROOT/bin/syclct || \
     printf "[\033[0;31mERROR\033[0m] Cannot find neccessary syclct binary\n"
     return 1
 fi
-################################################################################
 
-################################ SYCL Compiler #################################
-# User can set the root directory of SYCL compiler
-# Currently we use ComputeCpp by default, installed in $HOME
-[ -z "$SYCL_COMPILER_ROOT" ] && SYCL_COMPILER_ROOT=$HOME/computecpp
-
-# Binary chech for SYCL compiler
-if [[ ! -e $SYCL_COMPILER_ROOT/bin/compute++ && \
-      ! -e $SYCL_COMPILER_ROOT/bin/clang++ ]]; then
-    unset SYCL_COMPILER_ROOT
-    printf "[\033[0;33mWARNING\033[0m] Cannot find SYCL compiler\n"
-fi
-################################################################################
-
-################################## OpenCL ICD ##################################
-[[ -z "$OPENCL_ICD_ROOT" ]] && OPENCL_ICD_ROOT=$HOME/opencl_icd
-
-if [[ ! -e $OPENCL_ICD_ROOT/include || ! -e $OPENCL_ICD_ROOT/lib ]]; then
-    unset OPENCL_ICD_ROOT
-    printf "[\033[0;33mWARNING\033[0m] Cannot find OpenCL ICD loader\n"
-fi
-################################################################################
-
-############################ Environment Variables #############################
 # SYCL CT bundle
 export PATH=$SYCLCT_BUNDLE_ROOT/bin:$PATH
-export CPLUS_INCLUDE_PATH=$SYCLCT_BUNDLE_ROOT/include:$CPLUS_INCLUDE_PATH
+export CPATH=$SYCLCT_BUNDLE_ROOT/include:$CPATH
 
-# SYCL compiler
-if [ -n "$SYCL_COMPILER_ROOT" ]; then
-    export PATH=$SYCL_COMPILER_ROOT/bin:$PATH
-    export CPLUS_INCLUDE_PATH=$SYCL_COMPILER_ROOT/include:$CPLUS_INCLUDE_PATH
-    export LD_LIBRARY_PATH=$SYCL_COMPILER_ROOT/lib:$LD_LIBRARY_PATH
+# SYCL compiler - ComputeCpp
+if [[ -n "$COMPUTECPP_ROOT" ]]; then
+    if [ ! -f "$COMPUTECPP_ROOT/bin/compute++" ]; then
+        printf "[\033[0;31mERROR\033[0m] Cannot find compute++\n"
+        return 1
+    fi
+    if [ ! -d "$COMPUTECPP_ROOT/include" ]; then
+        printf "[\033[0;31mERROR\033[0m] Cannot find ComputeCpp include directory\n"
+        return 1
+    fi
+    if [ ! -d "$COMPUTECPP_ROOT/lib" ]; then
+        printf "[\033[0;31mERROR\033[0m] Cannot find ComputeCpp lib directory\n"
+        return 1
+    fi
+    printf "[\033[0;32mINFO\033[0m] SYCL compiler: $COMPUTECPP_ROOT/bin/"
+    printf "compute++\n"
+    export PATH=$COMPUTECPP_ROOT/bin:$PATH
+    export CPATH=$COMPUTECPP_ROOT/include:$CPATH
+    export LD_LIBRARY_PATH=$COMPUTECPP_ROOT/lib:$LD_LIBRARY_PATH
+
+    # OpenCL headers if needed
+    if [ -n "$OPENCL_INCLUDE_DIRECTORY" ]; then
+        export CPATH=$OPENCL_INCLUDE_DIRECTORY:$CPATH
+    else
+        printf "[\033[0;33mWARNING\033[0m] OPENCL_INCLUDE_DIRECTORY is not set."
+        printf " Please make sure OpenCL include directory is in CPATH or set "
+        printf "OPENCL_INCLUDE_DIRECTORY and re-source this script, otherwise "
+        printf "ComputeCpp will not work well.\n"
+    fi
+
+    # OpenCL libraries if needed
+    if [ -n "$OPENCL_LIBRARY_DIRECTORY" ]; then
+        export LD_LIBRARY_PATH=$OPENCL_LIBRARY_DIRECTORY:$LD_LIBRARY_PATH
+        # If the directory 'oclcpu' exists, then it should be appended
+        [ -d "$OPENCL_LIBRARY_DIRECTORY/oclcpu" ] && \
+        export LD_LIBRARY_PATH=$OPENCL_LIBRARY_DIRECTORY/oclcpu:$LD_LIBRARY_PATH
+        # If the directory 'oclgpu' exists, then it should be appended
+        [ -d "$OPENCL_LIBRARY_DIRECTORY/oclgpu" ] && \
+        export LD_LIBRARY_PATH=$OPENCL_LIBRARY_DIRECTORY/oclgpu:$LD_LIBRARY_PATH
+    else
+        printf "[\033[0;33mWARNING\033[0m] OPENCL_LIBRARY_DIRECTORY is not set."
+        printf " Please make sure OpenCL library directory is in LD_LIBRARY_PATH"
+        printf " or set OPENCL_LIBRARY_DIRECTORY and re-source this script, "
+        printf "otherwise ComputeCpp will not work well.\n"
+    fi
 fi
 
-# OpenCL ICD
-if [ -n "$OPENCL_ICD_ROOT" ]; then
-    export CPLUS_INCLUDE_PATH=$OPENCL_ICD_ROOT/include:$CPLUS_INCLUDE_PATH
-    export LD_LIBRARY_PATH=$OPENCL_ICD_ROOT/lib:$LD_LIBRARY_PATH
-fi
-
-export C_INCLUDE_PATH=$CPLUS_INCLUDE_PATH
 export LIBRARY_PATH=$LD_LIBRARY_PATH
-################################################################################
 
-################################### CUDA SDK ###################################
 # Default CUDA SDK found by syclct
-printf "[\033[0;32mINFO\033[0m] Default CUDA SDK selected by syclct location: \
+printf "[\033[0;32mINFO\033[0m] CUDA SDK selected by syclct: \
 $(syclct -- -v 2>&1 | grep -oP '(?<=Found CUDA installation: ).*(?=,)') \n"
-################################################################################
-
-printf "[\033[0;32mINFO\033[0m] SYCL CT toolchain location: \
-$SYCLCT_BUNDLE_ROOT/bin \n"
-printf "[\033[0;32mINFO\033[0m] SYCL compiler location: $SYCL_COMPILER_ROOT\n"
-printf "[\033[0;32mINFO\033[0m] OpenCL ICD location: $OPENCL_ICD_ROOT\n"
