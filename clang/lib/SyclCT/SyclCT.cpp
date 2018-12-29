@@ -16,6 +16,7 @@
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Refactoring.h"
+#include "llvm/Support/Path.h"
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
@@ -32,13 +33,16 @@
 #include <cstring>
 #include <vector>
 
+#include "clang/Basic/DiagnosticOptions.h"
+#include "clang/Basic/LangOptions.h"
+#include "clang/Frontend/TextDiagnosticPrinter.h"
+#include "clang/Rewrite/Core/Rewriter.h"
 using namespace clang;
 using namespace clang::ast_matchers;
 using namespace clang::syclct;
 using namespace clang::tooling;
 
 using ReplTy = std::map<std::string, Replacements>;
-
 using namespace llvm::cl;
 
 static OptionCategory SyclCTCat("SYCL Compatibility Tool");
@@ -458,6 +462,45 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   return Path;
 }
 
+// E.g. Path is "/usr/local/cuda/samples" and "cuda" is a symlink of cuda-8.0
+// GetRealPath will return /usr/local/cuda-8.0/samples
+std::string GetRealPath(clang::tooling::RefactoringTool &Tool, StringRef Path) {
+  // Set up Rewriter and to get source manager.
+  LangOptions DefaultLangOptions;
+  IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
+  TextDiagnosticPrinter DiagnosticPrinter(llvm::errs(), &*DiagOpts);
+  DiagnosticsEngine Diagnostics(
+      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
+      &DiagnosticPrinter, false);
+  SourceManager Sources(Diagnostics, Tool.getFiles());
+  Rewriter Rewrite(Sources, DefaultLangOptions);
+  const SourceManager &SM = Rewrite.getSourceMgr();
+
+  llvm::SmallString<512> AbsolutePath(Path);
+  // Try to get the real file path of the symlink.
+  const DirectoryEntry *Dir = SM.getFileManager().getDirectory(
+      llvm::sys::path::parent_path(AbsolutePath.str()));
+  StringRef DirName = SM.getFileManager().getCanonicalName(Dir);
+  SmallVector<char, 512> AbsoluteFilename;
+  llvm::sys::path::append(AbsoluteFilename, DirName,
+                          llvm::sys::path::filename(AbsolutePath.str()));
+  return llvm::StringRef(AbsoluteFilename.data(), AbsoluteFilename.size())
+      .str();
+}
+
+// To validate the root path of the project to be translated.
+void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
+                            std::string &InRoot) {
+  InRoot = GetRealPath(Tool, InRoot);
+
+  if (isChildPath(CudaPath, InRoot)) {
+    llvm::errs() << "[ERROR] Input root specified by \"-in-root\" option \""
+                 << InRoot << "\" is in CUDA_PATH folder \"" << CudaPath
+                 << "\"\n";
+    exit(-1);
+  }
+}
+
 int run(int argc, const char **argv) {
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;
@@ -476,7 +519,7 @@ int run(int argc, const char **argv) {
 
   RefactoringTool Tool(OptParser.getCompilations(),
                        OptParser.getSourcePathList());
-
+  ValidateInputDirectory(Tool, InRoot);
   // Made "-- -x cuda --cuda-host-only" option set by default, .i.e commandline
   // "syclct -in-root ./ -out-root ./ ./topologyQuery.cu  --  -x  cuda
   // --cuda-host-only  -I../common/inc" became "syclct -in-root ./ -out-root ./
@@ -495,6 +538,7 @@ int run(int argc, const char **argv) {
     DebugInfo::ShowStatus(RunResult);
     return RunResult;
   }
+
   // if run was successful
   int status = saveNewFiles(Tool, InRoot, OutRoot);
   DebugInfo::ShowStatus(status);
