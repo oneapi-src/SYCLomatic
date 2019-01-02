@@ -159,12 +159,12 @@ int kernel_test() {
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        auto karg1_acc = karg1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:        auto karg2_acc = karg2_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<SyclKernelName<class testKernelPtr_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK-NEXT:            void *karg1 = (void*)(&karg1_acc[0] + karg1_offset);
   // CHECK-NEXT:            const int *karg2 = (const int*)(&karg2_acc[0] + karg2_offset);
-  // CHECK-NEXT:            testKernelPtr(it, (const int *)karg1, karg2, karg3);
+  // CHECK-NEXT:            testKernelPtr((const int *)karg1, karg2, karg3, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  };
@@ -173,10 +173,10 @@ int kernel_test() {
   // CHECK:  {
   // CHECK-NEXT:    syclct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        cgh.parallel_for<SyclKernelName<class testKernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((cl::sycl::range<3>(10, 1, 1) * cl::sycl::range<3>(intvar, 1, 1)), cl::sycl::range<3>(intvar, 1, 1)),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
-  // CHECK-NEXT:            testKernel(it, karg1int, karg2int, karg3int);
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK-NEXT:            testKernel(karg1int, karg2int, karg3int, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  };
@@ -189,10 +189,10 @@ int kernel_test() {
   // CHECK:  {
   // CHECK-NEXT:    syclct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        cgh.parallel_for<SyclKernelName<class testKernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 2, 1)), cl::sycl::range<3>(1, 2, 1)),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
-  // CHECK-NEXT:            testKernel(it, karg1int, karg2int, karg3int);
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK-NEXT:            testKernel(karg1int, karg2int, karg3int, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  };
@@ -201,10 +201,10 @@ int kernel_test() {
   // CHECK:  {
   // CHECK-NEXT:    syclct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        cgh.parallel_for<SyclKernelName<class testKernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 2, 1) * cl::sycl::range<3>(1, 2, 3)), cl::sycl::range<3>(1, 2, 3)),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
-  // CHECK-NEXT:            testKernel(it, karg1int, karg2int, karg3int);
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK-NEXT:            testKernel(karg1int, karg2int, karg3int, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  };

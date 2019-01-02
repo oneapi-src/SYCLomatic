@@ -4,16 +4,14 @@
 void printf(const char *format, unsigned char data);
 
 template <class TName, unsigned N, class TData>
-// CHECK: void testKernelPtr(cl::sycl::nd_item<3> [[ITEMNAME:item_[a-f0-9]+]],
-// CHECK:         const TData *L, const TData *M) {
+// CHECK: void testKernelPtr(const TData *L, const TData *M, cl::sycl::nd_item<3> [[ITEMNAME:item_[a-f0-9]+]]) {
 __global__ void testKernelPtr(const TData *L, const TData *M) {
   // CHECK: int gtid = [[ITEMNAME]].get_group(0) * [[ITEMNAME]].get_local_range().get(0) + [[ITEMNAME]].get_local_id(0);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
 template<class TData>
-// CHECK: void testKernel(cl::sycl::nd_item<3> [[ITEMNAME:item_[a-f0-9]+]],
-// CHECK:         TData L, TData M, int N) {
+// CHECK: void testKernel(TData L, TData M, int N, cl::sycl::nd_item<3> [[ITEMNAME:item_[a-f0-9]+]]) {
 __global__ void testKernel(TData L, TData M, int N) {
   // CHECK: int gtid = [[ITEMNAME]].get_group(0) * [[ITEMNAME]].get_local_range().get(0) + [[ITEMNAME]].get_local_id(0);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -53,12 +51,12 @@ void runTest() {
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        auto karg1_acc = karg1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:        auto karg2_acc = karg2_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<SyclKernelName<class testKernelPtr_{{[a-f0-9]+}}, class TestName, ktarg, T>>(
+  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, ktarg, T>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK-NEXT:            const void *karg1 = (const void*)(&karg1_acc[0] + karg1_offset);
   // CHECK-NEXT:            const T *karg2 = (const T*)(&karg2_acc[0] + karg2_offset);
-  // CHECK-NEXT:            testKernelPtr<class TestName, ktarg, T>(it, (const T *)karg1, karg2);
+  // CHECK-NEXT:            testKernelPtr<class TestName, ktarg, T>((const T *)karg1, karg2, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  };
@@ -74,12 +72,12 @@ void runTest() {
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        auto karg1_acc = karg1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:        auto karg3_acc = karg3_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<SyclKernelName<class testKernelPtr_{{[a-f0-9]+}}, class TestTemplate<T>, ktarg, T>>(
+  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestTemplate<T>, ktarg, T>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK-NEXT:            const void *karg1 = (const void*)(&karg1_acc[0] + karg1_offset);
   // CHECK-NEXT:            T *karg3 = (T*)(&karg3_acc[0] + karg3_offset);
-  // CHECK-NEXT:            testKernelPtr<class TestTemplate<T>, ktarg, T>(it, karg1, karg3);
+  // CHECK-NEXT:            testKernelPtr<class TestTemplate<T>, ktarg, T>(karg1, karg3, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  };
@@ -95,12 +93,12 @@ void runTest() {
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        auto karg4_acc = karg4_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:        auto karg5_acc = karg5_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<SyclKernelName<class testKernelPtr_{{[a-f0-9]+}}, T, ktarg, TestTemplate<T> >>(
+  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, T, ktarg, TestTemplate<T>>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK-NEXT:            const TestTemplate<T> *karg4 = (const TestTemplate<T>*)(&karg4_acc[0] + karg4_offset);
   // CHECK-NEXT:            TT *karg5 = (TT*)(&karg5_acc[0] + karg5_offset);
-  // CHECK-NEXT:            testKernelPtr<T, ktarg, TestTemplate<T> >(it, karg4, karg5);
+  // CHECK-NEXT:            testKernelPtr<T, ktarg, TestTemplate<T>>(karg4, karg5, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  };
@@ -110,10 +108,10 @@ void runTest() {
   // CHECK:  {
   // CHECK-NEXT:    syclct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        cgh.parallel_for<SyclKernelName<class testKernel_{{[a-f0-9]+}}, T>>(
+  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernel_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
-  // CHECK-NEXT:            testKernel<T>(it, karg1T, karg2T, ktarg);
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK-NEXT:            testKernel<T>(karg1T, karg2T, ktarg, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  };
@@ -125,10 +123,10 @@ void runTest() {
   // CHECK:  {
   // CHECK-NEXT:    syclct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        cgh.parallel_for<SyclKernelName<class testKernel_{{[a-f0-9]+}}, TestTemplate<T> >>(
+  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernel_{{[a-f0-9]+}}, TestTemplate<T>>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
-  // CHECK-NEXT:            testKernel<TestTemplate<T> >(it, karg3TT, karg4TT, ktarg);
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK-NEXT:            testKernel<TestTemplate<T>>(karg3TT, karg4TT, ktarg, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  };
@@ -137,10 +135,10 @@ void runTest() {
   // CHECK:  {
   // CHECK-NEXT:    syclct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        cgh.parallel_for<SyclKernelName<class testKernel_{{[a-f0-9]+}}, TT>>(
+  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernel_{{[a-f0-9]+}}, TT>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
-  // CHECK-NEXT:            testKernel<TT>(it, karg3TT, karg4TT, ktarg);
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK-NEXT:            testKernel<TT>(karg3TT, karg4TT, ktarg, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  };
@@ -159,12 +157,12 @@ int main() {
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        auto karg1_acc = karg1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:        auto karg2_acc = karg2_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<SyclKernelName<class testKernelPtr_{{[a-f0-9]+}}, class TestName, ktarg, LA>>(
+  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, 80, LA>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK-NEXT:            void *karg1 = (void*)(&karg1_acc[0] + karg1_offset);
   // CHECK-NEXT:            struct LA *karg2 = (struct LA*)(&karg2_acc[0] + karg2_offset);
-  // CHECK-NEXT:            testKernelPtr<class TestName, ktarg, LA>(it, (const LA *)karg1, karg2);
+  // CHECK-NEXT:            testKernelPtr<class TestName, 80, LA>((const LA *)karg1, karg2, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  };
@@ -175,10 +173,10 @@ int main() {
   // CHECK:  {
   // CHECK-NEXT:    syclct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        cgh.parallel_for<SyclKernelName<class testKernel_{{[a-f0-9]+}}, LA>>(
+  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernel_{{[a-f0-9]+}}, LA>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((cl::sycl::range<3>(10, 1, 1) * cl::sycl::range<3>(intvar, 1, 1)), cl::sycl::range<3>(intvar, 1, 1)),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> it) {
-  // CHECK-NEXT:            testKernel<LA>(it, karg1LA, karg2LA, ktarg);
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK-NEXT:            testKernel<LA>(karg1LA, karg2LA, ktarg, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  };

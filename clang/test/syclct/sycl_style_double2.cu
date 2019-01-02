@@ -7,8 +7,7 @@ void func3(double2 a, double2 b, double2 c) {
 // CHECK: void fun(cl::sycl::double2 a) try {}
 void fun(double2 a) {}
 
-// CHECK: void kernel(cl::sycl::nd_item<3> item_{{[a-f0-9]+}},
-// CHECK:         cl::sycl::double2* data) {}
+// CHECK: void kernel(cl::sycl::double2* data, cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {}
 __global__ void kernel(double2* data) {}
 
 int main() {
@@ -66,11 +65,11 @@ int main() {
   // CHECK:   syclct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
   // CHECK:       auto data_acc = data_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<SyclKernelName<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> it) {
+  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK:           cl::sycl::double2 *data = (cl::sycl::double2*)(&data_acc[0] + data_offset);
-  // CHECK:           kernel(it, data);
+  // CHECK:           kernel(data, [[ITEM]]);
   // CHECK:         });
   // CHECK:     });
   // CHECK: };

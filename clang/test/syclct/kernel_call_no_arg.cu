@@ -9,8 +9,7 @@
 
 __device__ float out[NUM_ELEMENTS];
 
-// CHECK: void kernel1(cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]],
-// CHECK:         cl::sycl::accessor<float, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::global_buffer> out) {
+// CHECK: void kernel1(cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<float, syclct::device, 1> out) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(0)] = [[ITEM]].get_local_id(0);
 // CHECK: }
 __global__ void kernel1() {
@@ -35,13 +34,11 @@ int main() {
   // CHECK: {
   // CHECK:   syclct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto device_buffer_and_offset_out = syclct::get_buffer_and_offset(out.get_ptr());
-  // CHECK:       auto device_buffer_out = device_buffer_and_offset_out.first.reinterpret<float>(cl::sycl::range<1>(16));
-  // CHECK:       auto device_acc_out = device_buffer_out.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<SyclKernelName<class kernel1_{{[a-f0-9]+}}>>(
+  // CHECK:       auto out_acc = out.get_access(cgh);
+  // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> it) {
-  // CHECK:           kernel1(it, device_acc_out);
+  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK:           kernel1([[ITEM]], syclct::syclct_accessor<float, syclct::device, 1>(out_acc));
   // CHECK:         });
   // CHECK:     });
   // CHECK: };
@@ -50,10 +47,10 @@ int main() {
   // CHECK: {
   // CHECK:   syclct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       cgh.parallel_for<SyclKernelName<class kernel2_{{[a-f0-9]+}}>>(
+  // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> it) {
-  // CHECK:           kernel2(it);
+  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK:           kernel2([[ITEM]]);
   // CHECK:         });
   // CHECK:     });
   // CHECK: };

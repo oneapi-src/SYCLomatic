@@ -12,28 +12,24 @@
 //   2. Initialized value for device variable
 //   3. Muti-dimensional array
 
-// CHECK: syclct::DeviceMem in(16* sizeof(float));
+// CHECK: syclct::device_memory<float, 1> in(syclct::syclct_range<1>(16));
 __device__ float in[NUM_ELEMENTS];
 
-// CHECK: void kernel1(cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]],
-// CHECK:         cl::sycl::accessor<float, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::global_buffer> in,
-// CHECK:         float *out) {
+// CHECK: void kernel1(float *out, cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<float, syclct::device, 1> in) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(0)] = in[{{.*}}[[ITEM]].get_local_id(0)];
 // CHECK: }
 __global__ void kernel1(float *out) {
   out[threadIdx.x] = in[threadIdx.x];
 }
 
-// CHECK: syclct::DeviceMem a(1* sizeof(int));
-__device__ int a;
+// CHECK: syclct::device_memory<int, 0> al(syclct::syclct_range<0>());
+__device__ int al;
 
-// CHECK: void kernel2(cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]],
-// CHECK:         cl::sycl::accessor<int, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::global_buffer> a,
-// CHECK:         float *out) {
-// CHECK:   out[{{.*}}[[ITEM]].get_local_id(0)] += a[0];
+// CHECK: void kernel2(float *out, cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<int, syclct::device, 0> al) {
+// CHECK:   out[{{.*}}[[ITEM]].get_local_id(0)] += al;
 // CHECK: }
 __global__ void kernel2(float *out) {
-  out[threadIdx.x] += a;
+  out[threadIdx.x] += al;
 }
 
 int main() {
@@ -51,7 +47,7 @@ int main() {
 
   const int h_a = 3;
   // CTST-50
-  cudaMemcpyToSymbol(a, &h_a, sizeof(int));
+  cudaMemcpyToSymbol(al, &h_a, sizeof(int));
 
   float *d_out = NULL;
   cudaMalloc((void **)&d_out, array_size);
@@ -62,15 +58,13 @@ int main() {
   // CHECK:   size_t d_out_offset = d_out_buf.second;
   // CHECK:   syclct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
+  // CHECK:       auto in_acc = in.get_access(cgh);
   // CHECK:       auto d_out_acc = d_out_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto device_buffer_and_offset_in = syclct::get_buffer_and_offset(in.get_ptr());
-  // CHECK:       auto device_buffer_in = device_buffer_and_offset_in.first.reinterpret<float>(cl::sycl::range<1>(16));
-  // CHECK:       auto device_acc_in = device_buffer_in.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<SyclKernelName<class kernel1_{{[a-f0-9]+}}>>(
+  // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> it) {
+  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK:           float *d_out = (float*)(&d_out_acc[0] + d_out_offset);
-  // CHECK:           kernel1(it, device_acc_in, d_out);
+  // CHECK:           kernel1(d_out, [[ITEM]], syclct::syclct_accessor<float, syclct::device, 1>(in_acc));
   // CHECK:         });
   // CHECK:     });
   // CHECK: };
@@ -81,15 +75,13 @@ int main() {
   // CHECK:   size_t d_out_offset = d_out_buf.second;
   // CHECK:   syclct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
+  // CHECK:       auto al_acc = al.get_access(cgh);
   // CHECK:       auto d_out_acc = d_out_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto device_buffer_and_offset_a = syclct::get_buffer_and_offset(a.get_ptr());
-  // CHECK:       auto device_buffer_a = device_buffer_and_offset_a.first.reinterpret<int>(cl::sycl::range<1>(1));
-  // CHECK:       auto device_acc_a = device_buffer_a.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<SyclKernelName<class kernel2_{{[a-f0-9]+}}>>(
+  // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> it) {
+  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK:           float *d_out = (float*)(&d_out_acc[0] + d_out_offset);
-  // CHECK:           kernel2(it, device_acc_a, d_out);
+  // CHECK:           kernel2(d_out, [[ITEM]], syclct::syclct_accessor<int, syclct::device, 0>(al_acc));
   // CHECK:         });
   // CHECK:     });
   // CHECK: };

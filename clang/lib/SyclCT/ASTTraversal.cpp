@@ -1381,42 +1381,6 @@ void ErrorTryCatchRule::run(
 
 REGISTER_RULE(ErrorTryCatchRule)
 
-void KernelIterationSpaceRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(functionDecl(hasAttr(attr::CUDAGlobal)).bind("functionDecl"),
-                this);
-}
-
-void KernelIterationSpaceRule::run(const MatchFinder::MatchResult &Result) {
-  if (auto FD = getNodeAsType<FunctionDecl>(Result, "functionDecl")) {
-    auto SM = Result.SourceManager;
-    auto OrigIndent = getIndent(FD->getBeginLoc(), *SM).str();
-
-    std::stringstream InsertArgs;
-    InsertArgs << "cl::sycl::nd_item<3> " + getItemName();
-    // check if there is shared variable, move them to args.
-    std::string KernelFunName = FD->getNameAsString();
-    // if (KernelTransAssist::hasKernelInfo(KernelFunName)) {
-    //  KernelInfo &KI = KernelTransAssist::getKernelInfo(KernelFunName);
-    //  if (KI.hasSMVDefined()) {
-    //    InsertArgs << getFmtEndArg() + getFmtArgIndent(OrigIndent);
-    //    InsertArgs << KI.declareSMVAsArgs();
-    //  }
-    //  if (KI.hasDMVDefined()) {
-    //    InsertArgs << getFmtEndArg() + getFmtArgIndent(OrigIndent);
-    //    InsertArgs << KI.declareDMVAsArgs();
-    //  }
-    //  emplaceTransformation(new InsertArgument(FD, InsertArgs.str()));
-    //} else {
-    //  // need lazy here, as it don't know if __shared__ var exists
-    //  KernelInfo KI(KernelFunName);
-    //  KI.appendKernelArgs(InsertArgs.str());
-    //  KernelTransAssist::insertKernel(KernelFunName, KI);
-    //  emplaceTransformation(new InsertArgument(FD, InsertArgs.str(), true));
-    //}
-  }
-}
-REGISTER_RULE(KernelIterationSpaceRule)
-
 void UnnamedTypesRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       cxxRecordDecl(unless(has(cxxRecordDecl(isImplicit()))), hasDefinition())

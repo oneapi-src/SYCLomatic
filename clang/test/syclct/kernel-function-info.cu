@@ -2,15 +2,13 @@
 // RUN: FileCheck --input-file %T/kernel-function-info.sycl.cpp --match-full-lines %s
 
 //CHECK: template<class T>
-//CHECK-NEXT: void testTemplateKernel(cl::sycl::nd_item<3> item_{{[a-f0-9]+}},
-//CHECK-NEXT:         T *data)
+//CHECK-NEXT: void testTemplateKernel(T *data)
 template<class T>
 __global__ void testTemplateKernel(T *data)
 {
 }
 
-//CHECK: void testKernel(cl::sycl::nd_item<3> item_{{[a-f0-9]+}},
-//CHECK:         void* data)
+//CHECK: void testKernel(void* data)
 __global__ void testKernel(void* data)
 {
 }

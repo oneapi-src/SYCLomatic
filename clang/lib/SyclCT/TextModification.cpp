@@ -78,8 +78,10 @@ ExtReplacement ReplaceVarDecl::getReplacement(const ASTContext &Context) const {
   SourceLocation slEnd = SM.getExpansionLoc(D->getSourceRange().getEnd());
   size_t repLength;
   repLength = SM.getCharacterData(slEnd) - SM.getCharacterData(slStart) + 1;
+  if (!D->getType()->isArrayType())
+    repLength += D->getName().size();
   // try to del  "    ;" in var declare
-  auto DataAfter = SM.getCharacterData(slEnd.getLocWithOffset(1));
+  auto DataAfter = SM.getCharacterData(slStart.getLocWithOffset(repLength));
   unsigned i = 0;
   auto Data = DataAfter[i];
   while ((Data == ' ') || (Data == '\t'))

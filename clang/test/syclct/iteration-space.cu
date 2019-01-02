@@ -71,7 +71,7 @@ void test_01() {
 }
 
 // Test that the replacement doesn't happen if threadIdx is redefined.
-// CHECK: void test_02(cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
+// CHECK: void test_02() {
 __global__ void test_02() {
   uint3 threadIdx, blockIdx, blockDim, gridDim;
 

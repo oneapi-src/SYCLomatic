@@ -106,29 +106,30 @@ void CallFunctionExpr::addTemplateDecl(const TemplateDecl *TD) {
     addTemplateClassDecl(CTD);
 }
 
-std::shared_ptr<TypeInfo>
-CallFunctionExpr::buildTemplateType(const TemplateArgument &TA) {
+void CallFunctionExpr::addTemplateType(const TemplateArgument &TA) {
   switch (TA.getKind()) {
   case TemplateArgument::Type:
-    return std::make_shared<TypeInfo>(TA.getAsType());
-  case TemplateArgument::Declaration:
-    return std::make_shared<TypeInfo>(TA.getAsDecl()->getType());
+    return TemplateArgs.push_back(TA.getAsType());
+  case TemplateArgument::Expression:
+    return TemplateArgs.push_back(TA.getAsExpr());
+  case TemplateArgument::Integral:
+    return TemplateArgs.push_back(TA.getAsIntegral());
   default:
-    return std::shared_ptr<TypeInfo>();
+    llvm_unreachable("unexpected template type");
   }
 }
 
 void CallFunctionExpr::getTemplateSpecializationInfo(const FunctionDecl *FD) {
   if (auto Args = FD->getTemplateSpecializationArgs()) {
     for (auto TemplateArg : Args->asArray())
-      TemplateArgs.push_back(buildTemplateType(TemplateArg));
+      addTemplateType(TemplateArg);
   }
 }
 
 void CallFunctionExpr::getTemplateArguments(
     const ArrayRef<TemplateArgumentLoc> &TemplateArray) {
   for (auto Arg : TemplateArray)
-    TemplateArgs.push_back(buildTemplateType(Arg.getArgument()));
+    addTemplateType(Arg.getArgument());
 }
 
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
@@ -170,11 +171,14 @@ void CallFunctionExpr::buildInfo(TransformSetTy &TS) {
 }
 
 void DeviceFunctionInfo::buildInfo(TransformSetTy &TS) {
-  static std::vector<std::shared_ptr<TypeInfo>> NullTemplate;
+  static std::vector<TemplateArgumentInfo> NullTemplate;
+  if (hasBuilt())
+    return;
   for (auto &Call : CallExprMap) {
     Call.second->buildInfo(TS);
     VarMap->merge(Call.second->getVarMap(), NullTemplate);
   }
+  setBuilt();
 }
 
 SourceLocation DeviceFunctionInfo::getRParenLoc(const FunctionDecl *FD) {
@@ -262,6 +266,12 @@ std::string MemVarInfo::getDeclarationReplacement() {
   default:
     llvm_unreachable("unknow variable scope");
   }
+}
+
+void TypeInfo::setTemplateType(const std::vector<TemplateArgumentInfo> &TA) {
+  assert(TemplateIndex < TA.size());
+  if (isTemplate())
+    TemplateType = TA[TemplateIndex].getAsType();
 }
 } // namespace syclct
 } // namespace clang

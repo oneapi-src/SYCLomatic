@@ -143,6 +143,7 @@ template <> inline GlobalMap<KernelCallExpr> &SyclctGlobalInfo::getMap() {
 
 // TypeInfo is basic class with info of element type, range, template info all
 // get from type.
+class TemplateArgumentInfo;
 class TypeInfo {
 public:
   TypeInfo(const QualType &Type)
@@ -172,11 +173,7 @@ public:
   }
 
   bool isTemplate() { return Template; }
-  void setTemplateType(std::vector<std::shared_ptr<TypeInfo>> TA) {
-    assert(TemplateIndex < TA.size());
-    if (isTemplate())
-      TemplateType = TA[TemplateIndex];
-  }
+  void setTemplateType(const std::vector<TemplateArgumentInfo> &TA);
 
 private:
   void setArrayInfo() {
@@ -213,7 +210,8 @@ private:
         Arg += MemSize + ", ";
       else
         llvm_unreachable("array size should not be zero");
-    return Arg.replace(Arg.size() - 2, 2, ")");
+    return (Arg.size() == 1) ? (Arg + ")")
+                             : Arg.replace(Arg.size() - 2, 2, ")");
   }
 
 private:
@@ -256,9 +254,9 @@ public:
 
   MemVarInfo(const VarDecl *Var)
       : VarInfo(Var), Attr(getAttr(Var->getAttrs())),
-        Scope((Var->getParentFunctionOrMethod() == nullptr)
+        Scope((Var->isDefinedOutsideFunctionOrMethod())
                   ? ((Attr == Shared) ? Extern : Global)
-                  : Local) {}
+                  : (Var->isExternallyDeclarable() ? Extern : Local)) {}
 
   VarAttrKind getAttr() { return Attr; }
   VarScope getScope() { return Scope; }
@@ -328,6 +326,53 @@ private:
   static const std::string ExternVariableName;
 };
 
+class TemplateArgumentInfo {
+public:
+  enum TemplateKind {
+    Type = 0,
+    String,
+  };
+
+  TemplateArgumentInfo(const QualType &T) : Kind(Type) {
+    TT.LocalDecl = !T->isElaboratedTypeSpecifier() &&
+                   T->hasUnnamedOrLocalType() &&
+                   T->getAsTagDecl()->getDeclContext()->isFunctionOrMethod();
+    TT.TI = std::make_shared<TypeInfo>(T);
+  }
+  TemplateArgumentInfo(const Expr *Expr)
+      : Kind(String), S(getStmtSpelling(Expr, SyclctGlobalInfo::getContext())) {
+  }
+  TemplateArgumentInfo(const llvm::APSInt &I)
+      : Kind(String), S(I.toString(10)) {}
+
+  std::shared_ptr<TypeInfo> getAsType() const {
+    assert(Kind == Type);
+    return TT.TI;
+  }
+  const std::string &getAsExprString() const {
+    assert(Kind == String);
+    return S;
+  }
+  std::string getAsCallArgument() const {
+    switch (Kind) {
+    case clang::syclct::TemplateArgumentInfo::Type:
+      return (TT.LocalDecl ? "class " : "") + TT.TI->getName();
+    case clang::syclct::TemplateArgumentInfo::String:
+      return S;
+    default:
+      llvm_unreachable("unknow template type");
+    }
+  }
+
+private:
+  TemplateKind Kind;
+  struct TemplateType {
+    bool LocalDecl;
+    std::shared_ptr<TypeInfo> TI;
+  } TT;
+  std::string S;
+};
+
 // memory variable map includes memory variable used in __global__/__device__
 // function and call expression.
 class MemVarMap {
@@ -340,7 +385,7 @@ public:
         .insert(MemVarInfoMap::value_type(Var->getLoc(), Var));
   }
   void merge(std::shared_ptr<MemVarMap> VarMap,
-             const std::vector<std::shared_ptr<TypeInfo>> &TemplateArgs) {
+             const std::vector<TemplateArgumentInfo> &TemplateArgs) {
     if (VarMap) {
       merge(LocalVarMap, VarMap->LocalVarMap, TemplateArgs);
       merge(GlobalVarMap, VarMap->GlobalVarMap, TemplateArgs);
@@ -371,9 +416,8 @@ public:
   }
 
 private:
-  static void
-  merge(MemVarInfoMap &Master, const MemVarInfoMap &Branch,
-        const std::vector<std::shared_ptr<TypeInfo>> &TemplateArgs) {
+  static void merge(MemVarInfoMap &Master, const MemVarInfoMap &Branch,
+                    const std::vector<TemplateArgumentInfo> &TemplateArgs) {
     if (TemplateArgs.empty())
       return merge(Master, Branch);
     for (auto &VarInfoPair : Branch)
@@ -470,7 +514,7 @@ public:
   std::string getTemplateArguments() {
     std::string Result = "<";
     for (auto &TA : TemplateArgs)
-      Result += TA->getName() + ", ";
+      Result += TA.getAsCallArgument() + ", ";
     return (Result.size() == 1) ? ""
                                 : Result.replace(Result.size() - 2, 2, ">");
   }
@@ -480,7 +524,7 @@ public:
 private:
   void buildCallExprInfo(const CallExpr *CE);
   static std::string getName(const NamedDecl *D);
-  std::shared_ptr<TypeInfo> buildTemplateType(const TemplateArgument &TA);
+  void addTemplateType(const TemplateArgument &TA);
   void getTemplateArguments(const ArrayRef<TemplateArgumentLoc> &TemplateArgs);
   void getTemplateSpecializationInfo(const FunctionDecl *FD);
   void addTemplateFunctionDecl(const FunctionTemplateDecl *FTD);
@@ -495,7 +539,7 @@ private:
   SourceLocation RParenLoc;
   size_t ArgsNum;
   std::string Name;
-  std::vector<std::shared_ptr<TypeInfo>> TemplateArgs;
+  std::vector<TemplateArgumentInfo> TemplateArgs;
   GlobalMap<DeviceFunctionInfo> FuncDeclMap;
   std::shared_ptr<MemVarMap> VarMap;
 };
@@ -505,10 +549,11 @@ private:
 class DeviceFunctionInfo {
 public:
   DeviceFunctionInfo(const FunctionDecl *Func)
-      : Loc(Func->getBeginLoc().getRawEncoding()),
+      : Built(false), Loc(Func->getBeginLoc().getRawEncoding()),
         RParenLoc(getRParenLoc(Func)), Name(Func->getName().str()),
         ParamsNum(Func->getNumParams()), VarMap(std::make_shared<MemVarMap>()) {
   }
+  const std::string &getName() { return Name; }
   unsigned getLoc() { return Loc; }
   void addCallee(const CallExpr *CE) { registerNode(CE, CallExprMap); }
   void addVar(std::shared_ptr<MemVarInfo> Var) {
@@ -525,10 +570,15 @@ public:
   TextModification *getTextModification() {
     return new InsertText(RParenLoc, getParameters());
   }
+  bool hasBuilt() { return Built; }
+  void setBuilt() { Built = true; }
 
 private:
   static SourceLocation getRParenLoc(const FunctionDecl *FD);
   std::string getParameters() { return VarMap->getDeclParam(hasParams()); }
+
+  // make sure buildInfo(TransformSetTy &TS) only run once
+  bool Built;
 
   unsigned Loc;
   SourceLocation RParenLoc;
