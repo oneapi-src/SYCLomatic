@@ -71,10 +71,11 @@ const std::map<std::string, std::string> DevicePropVarRule::PropNamesMap{
 };
 
 // DeviceProp names mapping.
-const std::map<std::string, std::string> SyclStyleVectorRule::MemberNamesMap{
-    {"x", "x()"}, {"y", "y()"}, {"z", "z()"},
-    // ...
-};
+const std::map<std::string, std::string>
+    VectorTypeMemberAccessRule::MemberNamesMap{
+        {"x", "x()"}, {"y", "y()"}, {"z", "z()"}, {"w", "w()"},
+        // ...
+    };
 
 // Enum constants name mapping.
 const std::map<std::string, std::string> EnumConstantRule::EnumNamesMap{

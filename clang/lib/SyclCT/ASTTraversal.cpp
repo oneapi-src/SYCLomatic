@@ -653,84 +653,382 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(TypeInDeclRule)
 
+// Supported vector types
+const std::unordered_set<std::string> SupportedVectorTypes{"int2", "double2",
+                                                           "uint4"};
+
+static internal::Matcher<NamedDecl> vectorTypeName() {
+  std::vector<std::string> TypeNames(SupportedVectorTypes.begin(),
+                                     SupportedVectorTypes.end());
+  return internal::Matcher<NamedDecl>(new internal::HasNameMatcher(TypeNames));
+}
+
+namespace clang {
+namespace ast_matchers {
+
+AST_MATCHER(QualType, vectorType) {
+  return (SupportedVectorTypes.find(Node.getAsString()) !=
+          SupportedVectorTypes.end());
+}
+
+AST_MATCHER(TypedefDecl, typedefVecDecl) {
+  if (!Node.getUnderlyingType().getBaseTypeIdentifier())
+    return false;
+
+  const std::string BaseTypeName =
+      Node.getUnderlyingType().getBaseTypeIdentifier()->getName().str();
+  return (SupportedVectorTypes.find(BaseTypeName) !=
+          SupportedVectorTypes.end());
+}
+
+} // namespace ast_matchers
+} // namespace clang
+
 // Rule for types replacements in var. declarations.
-void SyclStyleVectorRule::registerMatcher(MatchFinder &MF) {
-  // Vector types matched
-  auto vectorType = [&]() { return hasAnyName("int2", "double2"); };
+void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
   auto unlessMemory =
       unless(anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice),
                    hasAttr(attr::CUDAShared)));
 
   // basic: eg. int2 xx
   auto basicType = [&]() {
-    return allOf(hasType(typedefDecl(vectorType())),
+    return allOf(hasType(typedefDecl(vectorTypeName())),
                  unless(hasType(substTemplateTypeParmType())), unlessMemory);
   };
 
   // pointer: eg. int2 * xx
   auto ptrType = [&]() {
-    return allOf(hasType(pointsTo(typedefDecl(vectorType()))), unlessMemory);
+    return allOf(hasType(pointsTo(typedefDecl(vectorTypeName()))),
+                 unlessMemory);
   };
 
   // array: eg. int2 array_[xx]
   auto arrType = [&]() {
-    return allOf(hasType(arrayType(hasElementType(
-                     typedefType(hasDeclaration(typedefDecl(vectorType())))))),
+    return allOf(hasType(arrayType(hasElementType(typedefType(
+                     hasDeclaration(typedefDecl(vectorTypeName())))))),
+                 unlessMemory);
+  };
+
+  // reference: eg int2 & xx
+  auto referenceType = [&]() {
+    return allOf(hasType(references(typedefDecl(vectorTypeName()))),
                  unlessMemory);
   };
 
   MF.addMatcher(
-      varDecl(anyOf(basicType(), ptrType(), arrType())).bind("VecVarDecl"),
+      varDecl(anyOf(basicType(), ptrType(), arrType(), referenceType()))
+          .bind("vecVarDecl"),
       this);
 
-  // int2.x/y/z => int2.x()/y()/z()
+  // typedef int2 xxx
+  MF.addMatcher(typedefDecl(typedefVecDecl()).bind("typeDefDecl"), this);
+
+  auto vectorTypeAccess = [&]() {
+    return anyOf(vectorType(), references(vectorType()),
+                 pointsTo(vectorType()));
+  };
+
+  // int2 func() => cl::sycl::int2 func()
   MF.addMatcher(
-      memberExpr(
-          hasObjectExpression(hasType(qualType(hasCanonicalType(
-              recordType(hasDeclaration(cxxRecordDecl(vectorType()))))))))
-          .bind("VecMemberExpr"),
+      functionDecl(returns(vectorTypeAccess())).bind("funcReturnsVectorType"),
       this);
 }
 
-void SyclStyleVectorRule::run(const MatchFinder::MatchResult &Result) {
+void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
   // int2 => cl::sycl::int2
-  if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "VecVarDecl")) {
+  if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "vecVarDecl")) {
     emplaceTransformation(new InsertNameSpaceInVarDecl(D, "cl::sycl::"));
   }
 
-  // int2.x/y/z => int2.x()/y()/z()
-  if (const MemberExpr *ME =
-          getNodeAsType<MemberExpr>(Result, "VecMemberExpr")) {
-    std::string MemberAccess = ME->getMemberNameInfo().getAsString() + "()";
-    emplaceTransformation(
-        new RenameFieldInMemberExpr(ME, std::move(MemberAccess)));
+  // typedef int2 xxx => typedef cl::sycl::int2 xxx
+  if (const TypedefDecl *TD =
+          getNodeAsType<TypedefDecl>(Result, "typeDefDecl")) {
+    const SourceLocation UnderlyingTypeSL =
+        TD->getTypeSourceInfo()->getTypeLoc().getBeginLoc();
+    emplaceTransformation(new InsertText(UnderlyingTypeSL, "cl::sycl::"));
+  }
+
+  // int2 func() => cl::sycl::int2 func()
+  if (const FunctionDecl *FD =
+          getNodeAsType<FunctionDecl>(Result, "funcReturnsVectorType")) {
+    emplaceTransformation(new InsertText(
+        FD->getReturnTypeSourceRange().getBegin(), "cl::sycl::"));
   }
 }
 
-REGISTER_RULE(SyclStyleVectorRule)
+REGISTER_RULE(VectorTypeNamespaceRule)
 
-void SyclStyleVectorCtorRule::registerMatcher(MatchFinder &MF) {
-  auto vectorType = [&]() { return hasAnyName("int2", "double2"); };
+void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
+  auto memberAccess = [&]() {
+    return hasObjectExpression(hasType(qualType(hasCanonicalType(
+        recordType(hasDeclaration(cxxRecordDecl(vectorTypeName())))))));
+  };
 
+  // int2.x => static_cast<int>(int2.x())
+  MF.addMatcher(
+      memberExpr(allOf(memberAccess(), unless(hasParent(binaryOperator(allOf(
+                                           hasLHS(memberExpr(memberAccess())),
+                                           isAssignmentOperator()))))))
+          .bind("VecMemberExpr"),
+      this);
+
+  // int2.x += xxx => int2.x() += static_cast<int>(xxx)
+  MF.addMatcher(
+      binaryOperator(allOf(hasLHS(memberExpr(memberAccess())
+                                      .bind("VecMemberExprAssignmentLHS")),
+                           isAssignmentOperator()))
+          .bind("VecMemberExprAssignment"),
+      this);
+}
+
+void VectorTypeMemberAccessRule::run(const MatchFinder::MatchResult &Result) {
+  auto GetMemberAccessName = [&](const MemberExpr *ME) {
+    const std::string MemberAccessName = ME->getMemberNameInfo().getAsString();
+    assert(MemberNamesMap.find(MemberAccessName) != MemberNamesMap.end());
+    return MemberAccessName;
+  };
+
+  // xxx = int2.x => xxx = static_cast<int>(int2.x())
+  if (const MemberExpr *ME =
+          getNodeAsType<MemberExpr>(Result, "VecMemberExpr")) {
+    std::string ReplacedMemberAccessName =
+        MemberNamesMap.at(GetMemberAccessName(ME));
+
+    std::ostringstream CastPrefix;
+    CastPrefix << "static_cast<" << ME->getType().getAsString() << ">(";
+    emplaceTransformation(new InsertBeforeStmt(ME, CastPrefix.str()));
+    emplaceTransformation(
+        new RenameFieldInMemberExpr(ME, std::move(ReplacedMemberAccessName)));
+    emplaceTransformation(new InsertAfterStmt(ME, ")"));
+  }
+
+  // int2.x += xxx => int2.x() += xxx
+  const BinaryOperator *BO =
+      getAssistNodeAsType<BinaryOperator>(Result, "VecMemberExprAssignment");
+  if (!BO)
+    return;
+
+  const MemberExpr *ME =
+      getAssistNodeAsType<MemberExpr>(Result, "VecMemberExprAssignmentLHS");
+  assert(ME != nullptr);
+  std::string ReplacedMemberAccessName =
+      MemberNamesMap.at(GetMemberAccessName(ME));
+  emplaceTransformation(
+      new RenameFieldInMemberExpr(ME, std::move(ReplacedMemberAccessName)));
+}
+
+REGISTER_RULE(VectorTypeMemberAccessRule)
+
+namespace clang {
+namespace ast_matchers {
+
+AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
+  switch (Node.getOverloadedOperator()) {
+  default: {
+    return false;
+  }
+#define OVERLOADED_OPERATOR_MULTI(...)
+#define OVERLOADED_OPERATOR(Name, ...)                                         \
+  case OO_##Name: {                                                            \
+    break;                                                                     \
+  }
+#include "clang/Basic/OperatorKinds.def"
+#undef OVERLOADED_OPERATOR
+#undef OVERLOADED_OPERATOR_MULTI
+  }
+
+  // Filter out in class overloaded operators
+  // Eg.
+  //   class double2 {
+  //     double2& operator+=(const double2&)
+  //   };
+  //
+  // Take care only out of class overloaded operators
+  // Eg.
+  //   double2& operator+=(const double2&, const double2&)
+  if (Node.getNumParams() != 2)
+    return false;
+
+  // Check parameter is vector type
+  auto SupportedParamType = [&](const ParmVarDecl *PD) {
+    assert(PD != nullptr);
+    const IdentifierInfo *IDInfo =
+        PD->getOriginalType().getBaseTypeIdentifier();
+    if (!IDInfo)
+      return false;
+
+    const std::string TypeName = IDInfo->getName().str();
+    return (SupportedVectorTypes.find(TypeName) != SupportedVectorTypes.end());
+  };
+
+  // As long as one parameter is vector type
+  return (SupportedParamType(Node.getParamDecl(0)) ||
+          SupportedParamType(Node.getParamDecl(1)));
+}
+
+} // namespace ast_matchers
+} // namespace clang
+
+void VectorTypeOperatorRule::registerMatcher(MatchFinder &MF) {
+  auto vectorTypeOverLoadedOperator = [&]() {
+    return functionDecl(overloadedVectorOperator());
+  };
+
+  // Matches user overloaded operator declaration
+  MF.addMatcher(vectorTypeOverLoadedOperator().bind("overloadedOperatorDecl"),
+                this);
+
+  // Matches call of user overloaded operator
+  MF.addMatcher(cxxOperatorCallExpr(callee(vectorTypeOverLoadedOperator()))
+                    .bind("callOverloadedOperator"),
+                this);
+}
+
+const char VectorTypeOperatorRule::NamespaceName[] =
+    "syclct_operator_overloading";
+
+void VectorTypeOperatorRule::TranslateOverloadedOperatorDecl(
+    const MatchFinder::MatchResult &Result, const FunctionDecl *FD) {
+  if (!FD)
+    return;
+
+  // Helper function to get the scope of function declartion
+  // Eg:
+  //
+  //    void test();
+  //   ^            ^
+  //   |            |
+  // Begin         End
+  //
+  //    void test() {}
+  //   ^              ^
+  //   |              |
+  // Begin           End
+  auto GetFunctionSourceRange = [&](const SourceManager &SM,
+                                    const SourceLocation &StartLoc,
+                                    const SourceLocation &EndLoc) {
+    const std::pair<FileID, unsigned> StartLocInfo =
+        SM.getDecomposedExpansionLoc(StartLoc);
+    llvm::StringRef Buffer(SM.getCharacterData(EndLoc));
+    size_t Offset = Buffer.find_first_of(";\r\n");
+    assert(Offset != llvm::StringRef::npos);
+    const std::pair<FileID, unsigned> EndLocInfo =
+        SM.getDecomposedExpansionLoc(EndLoc.getLocWithOffset(Offset + 1));
+    assert(StartLocInfo.first == EndLocInfo.first);
+
+    return SourceRange(
+        SM.getComposedLoc(StartLocInfo.first, StartLocInfo.second),
+        SM.getComposedLoc(EndLocInfo.first, EndLocInfo.second));
+  };
+
+  // Add namespace to user overloaded operator declaration
+  // double2& operator+=(double2& lhs, const double2& rhs)
+  // =>
+  // namespace syclct_user_overloaded_operator {
+  //
+  // double2& operator+=(double2& lhs, const double2& rhs)
+  //
+  // }
+  const auto &SM = *Result.SourceManager;
+  const std::string NL = getNL(FD->getBeginLoc(), SM);
+
+  std::ostringstream Prologue;
+  // clang-format off
+  Prologue << NL
+           << "namespace " << NamespaceName << " {" << NL
+           << NL;
+  // clang-format on
+
+  std::ostringstream Epilogue;
+  // clang-format off
+  Epilogue << NL
+           << "}  // namespace " << NamespaceName << NL
+           << NL;
+  // clang-format on
+
+  const SourceRange SR =
+      GetFunctionSourceRange(SM, FD->getBeginLoc(), FD->getEndLoc());
+  emplaceTransformation(new InsertText(SR.getBegin(), Prologue.str()));
+  emplaceTransformation(new InsertText(SR.getEnd(), Epilogue.str()));
+}
+
+void VectorTypeOperatorRule::TranslateOverloadedOperatorCall(
+    const MatchFinder::MatchResult &Result, const CXXOperatorCallExpr *CE) {
+  if (!CE)
+    return;
+
+  // Explicitly call user overloaded operator
+  //
+  // For non-assignment operator:
+  // a == b
+  // =>
+  // syclct_user_overloaded_operator::operator==(a, b)
+  //
+  // For assignment operator:
+  // a += b
+  // =>
+  // a = syclct_user_overloaded_operator::operator+=(a, b)
+
+  const std::string OperatorName = BinaryOperator::getOpcodeStr(
+      BinaryOperator::getOverloadedOpcode(CE->getOperator()));
+
+  std::ostringstream FuncCall;
+
+  if (CE->isAssignmentOp()) {
+    const auto &SM = *Result.SourceManager;
+    const char *Start = SM.getCharacterData(CE->getBeginLoc());
+    const char *End = SM.getCharacterData(CE->getOperatorLoc());
+    const std::string LHSText(Start, End - Start);
+    FuncCall << LHSText << " = ";
+  }
+
+  FuncCall << NamespaceName << "::operator" << OperatorName;
+
+  emplaceTransformation(new ReplaceToken(CE->getOperatorLoc(), ","));
+  emplaceTransformation(new InsertBeforeStmt(CE, FuncCall.str() + "("));
+  emplaceTransformation(new InsertAfterStmt(CE, ")"));
+}
+
+void VectorTypeOperatorRule::run(const MatchFinder::MatchResult &Result) {
+  // Add namespace to user overloaded operator declaration
+  TranslateOverloadedOperatorDecl(
+      Result, getNodeAsType<FunctionDecl>(Result, "overloadedOperatorDecl"));
+
+  // Explicitly call user overloaded operator
+  TranslateOverloadedOperatorCall(
+      Result,
+      getNodeAsType<CXXOperatorCallExpr>(Result, "callOverloadedOperator"));
+}
+
+REGISTER_RULE(VectorTypeOperatorRule)
+
+void VectorTypeCtorRule::registerMatcher(MatchFinder &MF) {
   // Find sycl sytle vector:eg.int2 constructors which are part of different
   // casts (representing different syntaxes). This includes copy constructors.
   // All constructors will be visited once.
   MF.addMatcher(
-      cxxConstructExpr(hasType(typedefDecl(vectorType())),
+      cxxConstructExpr(hasType(typedefDecl(vectorTypeName())),
                        hasParent(cxxFunctionalCastExpr().bind("CtorFuncCast"))),
       this);
 
-  MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(vectorType())),
+  MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(vectorTypeName())),
                                  hasParent(cStyleCastExpr().bind("CtorCCast"))),
                 this);
 
   // (int2 *)&xxx;
-  MF.addMatcher(cStyleCastExpr(hasType(pointsTo(typedefDecl(vectorType()))))
+  MF.addMatcher(cStyleCastExpr(hasType(pointsTo(typedefDecl(vectorTypeName()))))
                     .bind("PtrCast"),
                 this);
 
+  // make_int2
   auto makeVectorFunc = [&]() {
-    return hasAnyName("make_int2", "make_double2");
+    std::vector<std::string> MakeVectorFuncNames;
+    for (const std::string &TypeName : SupportedVectorTypes) {
+      MakeVectorFuncNames.emplace_back("make_" + TypeName);
+    }
+
+    return internal::Matcher<NamedDecl>(
+        new internal::HasNameMatcher(MakeVectorFuncNames));
   };
 
   // translate utility for vector type: eg: make_int2
@@ -738,13 +1036,9 @@ void SyclStyleVectorCtorRule::registerMatcher(MatchFinder &MF) {
       callExpr(callee(functionDecl(makeVectorFunc()))).bind("VecUtilFunc"),
       this);
 
-  auto vectorArgName = [&]() {
-    return anyOf(asString("int2"), asString("double2"));
-  };
-
   // sizeof(int2)
   MF.addMatcher(
-      unaryExprOrTypeTraitExpr(allOf(hasArgumentOfType(vectorArgName()),
+      unaryExprOrTypeTraitExpr(allOf(hasArgumentOfType(vectorType()),
                                      has(qualType(hasCanonicalType(type())))))
           .bind("Sizeof"),
       this);
@@ -753,7 +1047,7 @@ void SyclStyleVectorCtorRule::registerMatcher(MatchFinder &MF) {
 // Determines which case of construction applies and creates replacements for
 // the syntax. Returns the constructor node and a boolean indicating if a
 // closed brace needs to be appended.
-void SyclStyleVectorCtorRule::run(const MatchFinder::MatchResult &Result) {
+void VectorTypeCtorRule::run(const MatchFinder::MatchResult &Result) {
   // Most commonly used syntax cases are checked first.
   if (auto Cast =
           getNodeAsType<CXXFunctionalCastExpr>(Result, "CtorFuncCast")) {
@@ -806,7 +1100,7 @@ void SyclStyleVectorCtorRule::run(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(SyclStyleVectorCtorRule)
+REGISTER_RULE(VectorTypeCtorRule)
 
 void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
   // Find dim3 constructors which are part of different casts (representing

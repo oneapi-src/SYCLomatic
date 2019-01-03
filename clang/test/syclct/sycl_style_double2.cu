@@ -35,18 +35,18 @@ int main() {
   double2 i6;
   // CHECK: cl::sycl::double2 i7;
   double2 i7;
-  // CHECK: int i = i6.x();
-  int i = i6.x;
-  // CHECK: i6.x() = i7.x();
+  // CHECK: double i = static_cast<double>(i6.x());
+  double i = i6.x;
+  // CHECK: i6.x() = static_cast<double>(i7.x());
   i6.x = i7.x;
-  // CHECK: if (i6.x() == i7.x()) {
+  // CHECK: if (static_cast<double>(i6.x()) == static_cast<double>(i7.x())) {
   if (i6.x == i7.x) {
   }
   // CHECK: cl::sycl::double2 i2_array[10];
   double2 i2_array[10];
   // CHECK: cl::sycl::double2 i2_array2[10];
   double2 i2_array2[10];
-  // CHECK: if (i2_array[1].x() == i2_array2[1].x()) {
+  // CHECK: if (static_cast<double>(i2_array[1].x()) == static_cast<double>(i2_array2[1].x())) {
   if (i2_array[1].x == i2_array2[1].x) {
   }
   // CHECK: cl::sycl::double2 x = cl::sycl::double2(1, 2);

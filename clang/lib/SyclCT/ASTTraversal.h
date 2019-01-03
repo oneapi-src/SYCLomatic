@@ -405,24 +405,57 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Translation rule for types replacements in var. declarations.
-class SyclStyleVectorRule : public NamedTranslationRule<SyclStyleVectorRule> {
+/// Translation rule for inserting namespace for vector types
+class VectorTypeNamespaceRule
+    : public NamedTranslationRule<VectorTypeNamespaceRule> {
 public:
-  SyclStyleVectorRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  VectorTypeNamespaceRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
+/// Translation rule for vector type member access
+class VectorTypeMemberAccessRule
+    : public NamedTranslationRule<VectorTypeMemberAccessRule> {
+public:
+  VectorTypeMemberAccessRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+public:
+  static const std::map<std::string, std::string> MemberNamesMap;
+};
+
+/// Translation rule for vector type operator
+class VectorTypeOperatorRule
+    : public NamedTranslationRule<VectorTypeOperatorRule> {
+public:
+  VectorTypeOperatorRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
 private:
-  static const std::map<std::string, std::string> MemberNamesMap;
+  void TranslateOverloadedOperatorDecl(
+      const ast_matchers::MatchFinder::MatchResult &Result,
+      const FunctionDecl *FD);
+  void TranslateOverloadedOperatorCall(
+      const ast_matchers::MatchFinder::MatchResult &Result,
+      const CXXOperatorCallExpr *CE);
+
+private:
+  static const char NamespaceName[];
 };
 
-/// rules replace the int2 to cuda sytle.
-class SyclStyleVectorCtorRule
-    : public NamedTranslationRule<SyclStyleVectorCtorRule> {
+/// Translation rule for vector type constructor and make_<vector type>()
+class VectorTypeCtorRule : public NamedTranslationRule<VectorTypeCtorRule> {
 public:
-  SyclStyleVectorCtorRule() {
-    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
-  }
+  VectorTypeCtorRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
