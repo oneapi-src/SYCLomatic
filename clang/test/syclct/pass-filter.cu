@@ -2,7 +2,7 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/pass-filter.sycl.cpp
 
 // Test that only IterationSpaceBuiltinRule is being run
-// CHECK:__global__ void test_00() {
+// CHECK:__global__ void test_00(cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
 __global__ void test_00() {
   // CHECK: size_t tix = item_{{[a-f0-9]+}}.get_local_id(0);
   // CHECK: size_t tiy = item_{{[a-f0-9]+}}.get_local_id(1);

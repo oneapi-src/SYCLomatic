@@ -16,7 +16,7 @@ __global__ void kernel1() {
   out[threadIdx.x] = threadIdx.x;
 }
 
-// CHECK: void kernel2(cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
+// CHECK: void kernel2() {
 // CHECK:   printf("Hello World!\n");
 // CHECK: }
 __global__ void kernel2() {
@@ -50,7 +50,7 @@ int main() {
   // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
-  // CHECK:           kernel2([[ITEM]]);
+  // CHECK:           kernel2();
   // CHECK:         });
   // CHECK:     });
   // CHECK: };

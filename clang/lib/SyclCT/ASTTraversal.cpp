@@ -224,7 +224,8 @@ void IterationSpaceBuiltinRule::registerMatcher(MatchFinder &MF) {
       memberExpr(hasObjectExpression(opaqueValueExpr(hasSourceExpression(
                      declRefExpr(to(varDecl(hasAnyName("threadIdx", "blockDim",
                                                        "blockIdx", "gridDim"))
-                                        .bind("varDecl")))))))
+                                        .bind("varDecl")))))),
+                 hasAncestor(functionDecl().bind("func")))
           .bind("memberExpr"),
       this);
 }
@@ -233,6 +234,8 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   const MemberExpr *ME = getNodeAsType<MemberExpr>(Result, "memberExpr");
   if (!ME)
     return;
+  if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "func"))
+    SyclctGlobalInfo::getInstance().registerDeviceFunctionInfo(FD)->setItem();
   const VarDecl *VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
   assert(ME && VD && "Unknown result");
 
@@ -1507,13 +1510,16 @@ void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(MathFunctionsRule)
 
 void SyncThreadsRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(callExpr(callee(functionDecl(hasAnyName("__syncthreads"))))
+  MF.addMatcher(callExpr(callee(functionDecl(hasAnyName("__syncthreads"))),
+                         hasAncestor(functionDecl().bind("func")))
                     .bind("syncthreads"),
                 this);
 }
 
 void SyncThreadsRule::run(const MatchFinder::MatchResult &Result) {
   if (auto CE = getNodeAsType<CallExpr>(Result, "syncthreads")) {
+    if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "func"))
+      SyclctGlobalInfo::getInstance().registerDeviceFunctionInfo(FD)->setItem();
     std::string Replacement = getItemName() + ".barrier()";
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   }

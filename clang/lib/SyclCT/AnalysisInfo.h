@@ -377,9 +377,11 @@ private:
 // function and call expression.
 class MemVarMap {
 public:
-  MemVarMap() = default;
+  MemVarMap() : Item(false) {}
 
+  bool hasItem() { return Item; }
   bool hasExternShared() { return !ExternVarMap.empty(); }
+  void setItem(bool hasItem = true) { Item = hasItem; }
   void addVar(std::shared_ptr<MemVarInfo> Var) {
     getMap(Var->getScope())
         .insert(MemVarInfoMap::value_type(Var->getLoc(), Var));
@@ -387,6 +389,7 @@ public:
   void merge(std::shared_ptr<MemVarMap> VarMap,
              const std::vector<TemplateArgumentInfo> &TemplateArgs) {
     if (VarMap) {
+      setItem(hasItem() || VarMap->hasItem());
       merge(LocalVarMap, VarMap->LocalVarMap, TemplateArgs);
       merge(GlobalVarMap, VarMap->GlobalVarMap, TemplateArgs);
       merge(ExternVarMap, VarMap->ExternVarMap, TemplateArgs);
@@ -444,13 +447,14 @@ private:
     std::string Result;
     if (HasData)
       Result = ", ";
-    Result += getItemName<COD>() + ", ";
+    if (hasItem())
+      Result += getItemName<COD>() + ", ";
     if (!ExternVarMap.empty())
       Result +=
           getArgumentOrParameter<COD>(ExternVarMap.begin()->second) + ", ";
     Result += getArgumentsOrParametersFromMap<COD>(GlobalVarMap);
     Result += getArgumentsOrParametersFromMap<COD>(LocalVarMap);
-    return Result.erase(Result.size() - 2, 2);
+    return Result.empty() ? Result : Result.erase(Result.size() - 2, 2);
   }
 
   template <CallOrDecl COD>
@@ -467,6 +471,7 @@ private:
     llvm_unreachable("not call or decl");
   }
 
+  bool Item;
   MemVarInfoMap LocalVarMap;
   MemVarInfoMap GlobalVarMap;
   MemVarInfoMap ExternVarMap;
@@ -561,6 +566,7 @@ public:
       VarMap = std::make_shared<MemVarMap>();
     return VarMap->addVar(Var);
   }
+  void setItem(){ getVarMap()->setItem(); }
   std::shared_ptr<MemVarMap> getVarMap() { return VarMap; }
   void setVarMap(std::shared_ptr<MemVarMap> MVM) { VarMap = MVM; }
 
