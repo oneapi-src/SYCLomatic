@@ -220,18 +220,21 @@ MemVarInfo::VarAttrKind MemVarInfo::getAttr(const AttrVec &Attrs) {
 
 std::string MemVarInfo::getMemoryType() {
   switch (Attr) {
-  case clang::syclct::MemVarInfo::Device:
+  case clang::syclct::MemVarInfo::Device: {
     static std::string DeviceMemory = "syclct::device_memory";
     return DeviceMemory + getType()->getAsTemplateArguments();
-  case clang::syclct::MemVarInfo::Constant:
+  }
+  case clang::syclct::MemVarInfo::Constant: {
     static std::string ConstantMemory = "syclct::constant_memory";
     return ConstantMemory + getType()->getAsTemplateArguments();
-  case clang::syclct::MemVarInfo::Shared:
+  }
+  case clang::syclct::MemVarInfo::Shared: {
     static std::string SharedMemory = "syclct::shared_memory";
     static std::string ExternSharedMemory = "syclct::extern_shared_memory";
     if (isExtern())
       return ExternSharedMemory;
     return SharedMemory + getType()->getAsTemplateArguments();
+  }
   default:
     llvm_unreachable("unknow variable attribute");
   }
@@ -239,15 +242,18 @@ std::string MemVarInfo::getMemoryType() {
 
 const std::string &MemVarInfo::getMemoryAttr() {
   switch (Attr) {
-  case clang::syclct::MemVarInfo::Device:
+  case clang::syclct::MemVarInfo::Device: {
     static std::string DeviceMemory = "syclct::device";
     return DeviceMemory;
-  case clang::syclct::MemVarInfo::Constant:
+  }
+  case clang::syclct::MemVarInfo::Constant: {
     static std::string ConstantMemory = "syclct::constant";
     return ConstantMemory;
-  case clang::syclct::MemVarInfo::Shared:
+  }
+  case clang::syclct::MemVarInfo::Shared: {
     static std::string SharedMemory = "syclct::shared";
     return SharedMemory;
+  }
   default:
     llvm_unreachable("unknow variable attribute");
   }
@@ -260,9 +266,10 @@ std::string MemVarInfo::getDeclarationReplacement() {
   case clang::syclct::MemVarInfo::Extern:
     return "auto " + getName() + " = " + ExternVariableName + ".reinterpret<" +
            getType()->getName() + ">();";
-  case clang::syclct::MemVarInfo::Global:
+  case clang::syclct::MemVarInfo::Global: {
     const static std::string NullString;
     return getMemoryDecl(NullString);
+  }
   default:
     llvm_unreachable("unknow variable scope");
   }
