@@ -82,7 +82,7 @@ CudaInstallationDetector::CudaInstallationDetector(
   #define __INTEL_CUSTOMIZATION__
   #ifdef __INTEL_CUSTOMIZATION__
   std::initializer_list<const char *> Versions = {"10.0", "9.2", "9.0",
-                                                   "8.0", "7.5", "7.0"};
+                                                   "8.0"};
   #else
   std::initializer_list<const char *> Versions = {"8.0", "7.5", "7.0"};
   #endif
