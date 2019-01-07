@@ -491,11 +491,11 @@ std::string GetRealPath(clang::tooling::RefactoringTool &Tool, StringRef Path) {
 // To validate the root path of the project to be translated.
 void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
                             std::string &InRoot) {
-  InRoot = GetRealPath(Tool, InRoot);
+  std::string Path = GetRealPath(Tool, InRoot);
 
-  if (isChildPath(CudaPath, InRoot)) {
+  if (isChildPath(CudaPath, Path)) {
     llvm::errs() << "[ERROR] Input root specified by \"-in-root\" option \""
-                 << InRoot << "\" is in CUDA_PATH folder \"" << CudaPath
+                 << Path << "\" is in CUDA_PATH folder \"" << CudaPath
                  << "\"\n";
     exit(-1);
   }
