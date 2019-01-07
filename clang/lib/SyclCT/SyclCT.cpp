@@ -65,10 +65,10 @@ static opt<std::string>
 
 bool KeepOriginalCodeFlag = false;
 
-static llvm::cl::opt<bool, true>
+static opt<bool, true>
     ShowOrigCode("keep-original-code",
                  llvm::cl::desc("Keep original code in comments of SYCL file"),
-                 llvm::cl::Hidden, llvm::cl::location(KeepOriginalCodeFlag));
+                 cat(SyclCTCat), llvm::cl::location(KeepOriginalCodeFlag));
 
 static opt<bool, true> Verbose("v", desc("Show verbose compiling message"),
                                cat(SyclCTCat), location(IsVerbose));
