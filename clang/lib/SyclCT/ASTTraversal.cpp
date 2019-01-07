@@ -1052,7 +1052,8 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaGetDeviceCount", "cudaGetDeviceProperties", "cudaDeviceReset",
         "cudaSetDevice", "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
         "cudaGetDevice", "cudaGetLastError", "cudaDeviceSynchronize",
-        "cudaThreadSynchronize", "cudaGetErrorString");
+        "cudaThreadSynchronize", "cudaGetErrorString",
+        "cudaDeviceSetCacheConfig", "cudaDeviceGetCacheConfig");
   };
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
                                hasParent(compoundStmt())))
@@ -1138,6 +1139,13 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new InsertBeforeStmt(CE, "\"cudaGetErrorString not supported\"/*"));
     emplaceTransformation(new InsertAfterStmt(CE, "*/"));
+  } else if (FuncName == "cudaDeviceSetCacheConfig" ||
+             FuncName == "cudaDeviceGetCacheConfig") {
+    // SYCL has no corresponding implementation for
+    // "cudaDeviceSetCacheConfig/cudaDeviceGetCacheConfig", so simply translate
+    // "cudaDeviceSetCacheConfig/cudaDeviceGetCacheConfig" into expression "0;".
+    std::string Replacement = "0";
+    emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   } else {
     syclct_unreachable("Unknown function name");
   }
