@@ -530,6 +530,25 @@ void AtomicFunctionRule::TranslateAtomicFunc(const CallExpr *CE) {
   const unsigned NumArgs = CE->getNumArgs();
   std::vector<const Expr *> Args(ArgsStart, ArgsStart + NumArgs);
 
+  const Type *Arg0Type = Args[0]->getType().getTypePtrOrNull();
+  // Atomic operation's first argument is always pointer type
+  assert(Arg0Type && Arg0Type->isPointerType());
+  const QualType PointeeType = Arg0Type->getPointeeType();
+
+  std::string TypeName;
+  if (auto *SubstedType = dyn_cast<SubstTemplateTypeParmType>(PointeeType)) {
+    // Type is substituted in template initialization, use the template
+    // parameter name
+    TypeName =
+        SubstedType->getReplacedParameter()->getIdentifier()->getName().str();
+  } else {
+    TypeName = PointeeType.getAsString();
+  }
+
+  // Cast all arguments' types except the first argument
+  std::vector<std::string> Types(NumArgs, "(" + TypeName + ")");
+  Types[0] = "";
+
   // TODO: 1. Investigate are there usages of atomic functions on local address
   //          space
   //       2. If item 1. shows atomic functions on local address space is
@@ -539,8 +558,9 @@ void AtomicFunctionRule::TranslateAtomicFunc(const CallExpr *CE) {
   const std::string AtomicFuncName = CE->getDirectCallee()->getName().str();
   assert(AtomicFuncNamesMap.find(AtomicFuncName) != AtomicFuncNamesMap.end());
   std::string ReplacedAtomicFuncName = AtomicFuncNamesMap.at(AtomicFuncName);
-  emplaceTransformation(new ReplaceCallExpr(
-      CE, std::move(ReplacedAtomicFuncName), std::move(Args)));
+  emplaceTransformation(new ReplaceCallExpr(CE,
+                                            std::move(ReplacedAtomicFuncName),
+                                            std::move(Args), std::move(Types)));
 }
 
 void AtomicFunctionRule::run(const MatchFinder::MatchResult &Result) {
