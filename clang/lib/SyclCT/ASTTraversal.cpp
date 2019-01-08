@@ -1233,9 +1233,8 @@ REGISTER_RULE(MemVarRule)
 
 void MemoryTranslationRule::MallocTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C) {
-  std::vector<const Expr *> Args{C->getArg(0), C->getArg(1)};
-  emplaceTransformation(
-      new ReplaceCallExpr(C, "syclct::sycl_malloc", std::move(Args)));
+  // to avoid conflict, add replament covers code range as small as possible
+  emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_malloc"));
 }
 
 void MemoryTranslationRule::MemcpyTranslation(
@@ -1270,11 +1269,20 @@ void MemoryTranslationRule::MemcpyTranslation(
     DirectionName = "syclct::" + Search->second;
   }
 
+  // to avoid conflict, add replament covers code range as small as possible
+  emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_memcpy"));
+  emplaceTransformation(new InsertBeforeStmt(C->getArg(0), "(void*)"));
+  emplaceTransformation(new InsertBeforeStmt(C->getArg(1), "(void*)"));
+  emplaceTransformation(
+      new ReplaceStmt(C->getArg(3), std::move(DirectionName)));
+
+  /* the whole range way: which may cause conflict.
   std::vector<const Expr *> Args{C->getArg(0), C->getArg(1), C->getArg(2),
                                  Direction};
-  std::vector<std::string> NewTypes{"(void*)", "(void*)", "", DirectionName};
+   std::vector<std::string> NewTypes{"(void*)", "(void*)", "", DirectionName};
+
   emplaceTransformation(new ReplaceCallExpr(
-      C, "syclct::sycl_memcpy", std::move(Args), std::move(NewTypes)));
+       C, "syclct::sycl_memcpy", std::move(Args), std::move(NewTypes)));*/
 }
 
 void MemoryTranslationRule::MemcpyToSymbolTranslation(
@@ -1424,7 +1432,7 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
             MEMTRANS_DECLFIND(MemcpyFromSymbol)
             MEMTRANS_DECLFIND(Free)
             MEMTRANS_DECLFIND(Memset)
-    // clang-format on
+// clang-format on
 #undef MEMTRANS_DECLFIND
         };
 
