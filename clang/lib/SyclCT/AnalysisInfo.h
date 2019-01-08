@@ -555,10 +555,8 @@ class DeviceFunctionInfo {
 public:
   DeviceFunctionInfo(const FunctionDecl *Func)
       : Built(false), Loc(Func->getBeginLoc().getRawEncoding()),
-        RParenLoc(getRParenLoc(Func)), Name(Func->getName().str()),
-        ParamsNum(Func->getNumParams()), VarMap(std::make_shared<MemVarMap>()) {
-  }
-  const std::string &getName() { return Name; }
+        RParenLoc(getRParenLoc(Func)), ParamsNum(Func->getNumParams()),
+        VarMap(std::make_shared<MemVarMap>()) {}
   unsigned getLoc() { return Loc; }
   void addCallee(const CallExpr *CE) { registerNode(CE, CallExprMap); }
   void addVar(std::shared_ptr<MemVarInfo> Var) {

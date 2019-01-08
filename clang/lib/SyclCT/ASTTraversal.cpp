@@ -657,25 +657,31 @@ REGISTER_RULE(TypeInDeclRule)
 void SyclStyleVectorRule::registerMatcher(MatchFinder &MF) {
   // Vector types matched
   auto vectorType = [&]() { return hasAnyName("int2", "double2"); };
+  auto unlessMemory =
+      unless(anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice),
+                   hasAttr(attr::CUDAShared)));
 
   // basic: eg. int2 xx
   auto basicType = [&]() {
     return allOf(hasType(typedefDecl(vectorType())),
-                 unless(hasType(substTemplateTypeParmType())));
+                 unless(hasType(substTemplateTypeParmType())), unlessMemory);
   };
 
   // pointer: eg. int2 * xx
-  auto ptrType = [&]() { return hasType(pointsTo(typedefDecl(vectorType()))); };
+  auto ptrType = [&]() {
+    return allOf(hasType(pointsTo(typedefDecl(vectorType()))), unlessMemory);
+  };
 
   // array: eg. int2 array_[xx]
   auto arrType = [&]() {
-    return hasType(arrayType(hasElementType(
-        typedefType(hasDeclaration(typedefDecl(vectorType()))))));
+    return allOf(hasType(arrayType(hasElementType(
+                     typedefType(hasDeclaration(typedefDecl(vectorType())))))),
+                 unlessMemory);
   };
 
-  MF.addMatcher(
-      varDecl(anyOf(basicType(), ptrType(), arrType())).bind("VecVarDecl"),
-      this);
+  MF.addMatcher(varDecl(anyOf(basicType(), ptrType(), arrType()))
+                    .bind("VecVarDecl"),
+                this);
 
   // int2.x/y/z => int2.x()/y()/z()
   MF.addMatcher(
