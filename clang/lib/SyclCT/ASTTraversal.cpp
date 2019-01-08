@@ -526,11 +526,20 @@ void AtomicFunctionRule::TranslateAtomicFunc(const CallExpr *CE) {
   if (!CE)
     return;
 
-  Expr **ArgsStart = const_cast<Expr **>(CE->getArgs());
-  const unsigned NumArgs = CE->getNumArgs();
-  std::vector<const Expr *> Args(ArgsStart, ArgsStart + NumArgs);
+  // TODO: 1. Investigate are there usages of atomic functions on local address
+  //          space
+  //       2. If item 1. shows atomic functions on local address space is
+  //          significant, detect whether this atomic operation operates in
+  //          global space or local space (currently, all in global space,
+  //          see syclct_atomic.hpp for more details)
+  const std::string AtomicFuncName = CE->getDirectCallee()->getName().str();
+  assert(AtomicFuncNamesMap.find(AtomicFuncName) != AtomicFuncNamesMap.end());
+  std::string ReplacedAtomicFuncName = AtomicFuncNamesMap.at(AtomicFuncName);
+  emplaceTransformation(
+      new ReplaceCalleeName(CE, std::move(ReplacedAtomicFuncName)));
 
-  const Type *Arg0Type = Args[0]->getType().getTypePtrOrNull();
+  // Explicitly cast all arguments except first argument
+  const Type *Arg0Type = CE->getArg(0)->getType().getTypePtrOrNull();
   // Atomic operation's first argument is always pointer type
   assert(Arg0Type && Arg0Type->isPointerType());
   const QualType PointeeType = Arg0Type->getPointeeType();
@@ -545,22 +554,12 @@ void AtomicFunctionRule::TranslateAtomicFunc(const CallExpr *CE) {
     TypeName = PointeeType.getAsString();
   }
 
-  // Cast all arguments' types except the first argument
-  std::vector<std::string> Types(NumArgs, "(" + TypeName + ")");
-  Types[0] = "";
-
-  // TODO: 1. Investigate are there usages of atomic functions on local address
-  //          space
-  //       2. If item 1. shows atomic functions on local address space is
-  //          significant, detect whether this atomic operation operates in
-  //          global space or local space (currently, all in global space,
-  //          see syclct_atomic.hpp for more details)
-  const std::string AtomicFuncName = CE->getDirectCallee()->getName().str();
-  assert(AtomicFuncNamesMap.find(AtomicFuncName) != AtomicFuncNamesMap.end());
-  std::string ReplacedAtomicFuncName = AtomicFuncNamesMap.at(AtomicFuncName);
-  emplaceTransformation(new ReplaceCallExpr(CE,
-                                            std::move(ReplacedAtomicFuncName),
-                                            std::move(Args), std::move(Types)));
+  const unsigned NumArgs = CE->getNumArgs();
+  for (unsigned i = 1; i < NumArgs; ++i) {
+    const Expr *Arg = CE->getArg(i);
+    emplaceTransformation(new InsertBeforeStmt(Arg, "(" + TypeName + ")("));
+    emplaceTransformation(new InsertAfterStmt(Arg, ")"));
+  }
 }
 
 void AtomicFunctionRule::run(const MatchFinder::MatchResult &Result) {
