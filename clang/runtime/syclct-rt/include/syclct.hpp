@@ -19,6 +19,7 @@
 #include "syclct_device.hpp"
 #include "syclct_kernel.hpp"
 #include "syclct_memory.hpp"
+#include "syclct_util.hpp"
 
 #if defined(_MSC_VER) // MSVC
 #define __sycl_align__(n) __declspec(align(n))

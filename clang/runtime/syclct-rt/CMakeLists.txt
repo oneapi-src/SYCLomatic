@@ -5,6 +5,7 @@ set(syclct_rt_files
   include/syclct_memory.hpp
   include/syclct_kernel.hpp
   include/syclct_thrust.hpp
+  include/syclct_util.hpp
   include/thrust_memory.hpp
 )
 

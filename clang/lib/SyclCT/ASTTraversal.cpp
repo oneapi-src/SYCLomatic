@@ -1058,7 +1058,8 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaSetDevice", "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
         "cudaGetDevice", "cudaGetLastError", "cudaDeviceSynchronize",
         "cudaThreadSynchronize", "cudaGetErrorString",
-        "cudaDeviceSetCacheConfig", "cudaDeviceGetCacheConfig");
+        "cudaDeviceSetCacheConfig", "cudaDeviceGetCacheConfig",
+        "__longlong_as_double", "__double_as_longlong");
   };
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
                                hasParent(compoundStmt())))
@@ -1151,6 +1152,10 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     // "cudaDeviceSetCacheConfig/cudaDeviceGetCacheConfig" into expression "0;".
     std::string Replacement = "0";
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+  } else if (FuncName == "__double_as_longlong") {
+    emplaceTransformation(new ReplaceCalleeName(CE, "syclct::d2ll"));
+  } else if (FuncName == "__longlong_as_double") {
+    emplaceTransformation(new ReplaceCalleeName(CE, "syclct::ll2d"));
   } else {
     syclct_unreachable("Unknown function name");
   }
