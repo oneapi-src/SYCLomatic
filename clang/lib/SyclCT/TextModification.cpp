@@ -33,7 +33,9 @@ ExtReplacement ReplaceStmt::getReplacement(const ASTContext &Context) const {
 
 ExtReplacement
 ReplaceCalleeName::getReplacement(const ASTContext &Context) const {
-  return ExtReplacement(Context.getSourceManager(), C->getBeginLoc(),
+  const SourceManager &SM = Context.getSourceManager();
+  return ExtReplacement(Context.getSourceManager(),
+                        SM.getSpellingLoc(C->getBeginLoc()),
                         getCalleeName(Context).size(), ReplStr, this);
 }
 
@@ -106,7 +108,7 @@ ExtReplacement ReplaceToken::getReplacement(const ASTContext &Context) const {
   return ExtReplacement(Context.getSourceManager(),
                         // false means [Begin, End)
                         // true means [Begin, End]
-                        CharSourceRange(SourceRange(Begin, Begin), true), T,
+                        CharSourceRange(SourceRange(Begin, End), true), T,
                         this);
 }
 

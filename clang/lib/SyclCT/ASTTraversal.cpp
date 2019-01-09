@@ -679,9 +679,9 @@ void SyclStyleVectorRule::registerMatcher(MatchFinder &MF) {
                  unlessMemory);
   };
 
-  MF.addMatcher(varDecl(anyOf(basicType(), ptrType(), arrType()))
-                    .bind("VecVarDecl"),
-                this);
+  MF.addMatcher(
+      varDecl(anyOf(basicType(), ptrType(), arrType())).bind("VecVarDecl"),
+      this);
 
   // int2.x/y/z => int2.x()/y()/z()
   MF.addMatcher(
@@ -1243,9 +1243,7 @@ REGISTER_RULE(MemVarRule)
 
 void MemoryTranslationRule::MallocTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C) {
-  std::vector<const Expr *> Args{C->getArg(0), C->getArg(1)};
-  emplaceTransformation(
-      new ReplaceCallExpr(C, "syclct::sycl_malloc", std::move(Args)));
+  emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_malloc"));
 }
 
 void MemoryTranslationRule::MemcpyTranslation(
@@ -1280,11 +1278,13 @@ void MemoryTranslationRule::MemcpyTranslation(
     DirectionName = "syclct::" + Search->second;
   }
 
-  std::vector<const Expr *> Args{C->getArg(0), C->getArg(1), C->getArg(2),
-                                 Direction};
-  std::vector<std::string> NewTypes{"(void*)", "(void*)", "", DirectionName};
-  emplaceTransformation(new ReplaceCallExpr(
-      C, "syclct::sycl_memcpy", std::move(Args), std::move(NewTypes)));
+  emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_memcpy"));
+  emplaceTransformation(new InsertBeforeStmt(C->getArg(0), "(void*)("));
+  emplaceTransformation(new InsertAfterStmt(C->getArg(0), ")"));
+  emplaceTransformation(new InsertBeforeStmt(C->getArg(1), "(void*)("));
+  emplaceTransformation(new InsertAfterStmt(C->getArg(1), ")"));
+  emplaceTransformation(
+      new ReplaceStmt(C->getArg(3), std::move(DirectionName)));
 }
 
 void MemoryTranslationRule::MemcpyToSymbolTranslation(
@@ -1314,23 +1314,24 @@ void MemoryTranslationRule::MemcpyToSymbolTranslation(
     DirectionName = "syclct::" + Search->second;
   }
 
-  std::vector<const Expr *> Args{nullptr, C->getArg(1), C->getArg(2),
-                                 C->getArg(3), Direction};
-
   std::string VarName = getStmtSpelling(C->getArg(0), *Result.Context);
-
+  // Translate variable name such as "&const_angle[0]", "&const_one"
+  // into "const_angle.get_ptr()", "const_one.get_ptr()".
   VarName.erase(std::remove(VarName.begin(), VarName.end(), '&'),
                 VarName.end());
-
   std::size_t pos = VarName.find("[");
   VarName = (pos != std::string::npos) ? VarName.substr(0, pos) : VarName;
+  VarName += ".get_ptr()";
 
-  std::vector<std::string> NewTypes{VarName + ".get_ptr()", "(void*)", "", "",
-                                    DirectionName};
-
-  emplaceTransformation(new ReplaceCallExpr(C, "syclct::sycl_memcpy_to_symbol",
-                                            std::move(Args),
-                                            std::move(NewTypes)));
+  emplaceTransformation(
+      new ReplaceCalleeName(C, "syclct::sycl_memcpy_to_symbol"));
+  emplaceTransformation(new ReplaceToken(C->getArg(0)->getBeginLoc(),
+                                         C->getArg(0)->getEndLoc(),
+                                         std::move(VarName)));
+  emplaceTransformation(new InsertBeforeStmt(C->getArg(1), "(void*)("));
+  emplaceTransformation(new InsertAfterStmt(C->getArg(1), ")"));
+  emplaceTransformation(
+      new ReplaceStmt(C->getArg(4), std::move(DirectionName)));
 }
 
 void MemoryTranslationRule::MemcpyFromSymbolTranslation(
@@ -1356,39 +1357,40 @@ void MemoryTranslationRule::MemcpyFromSymbolTranslation(
     DirectionName = "syclct::" + Search->second;
   }
 
-  std::vector<const Expr *> Args{C->getArg(0), nullptr, C->getArg(2),
-                                 C->getArg(3), Direction};
-
   std::string VarName = getStmtSpelling(C->getArg(1), *Result.Context);
-
+  // Translate variable name such as "&const_angle[0]", "&const_one"
+  // into "const_angle.get_ptr()", "const_one.get_ptr()".
   VarName.erase(std::remove(VarName.begin(), VarName.end(), '&'),
                 VarName.end());
-
   std::size_t pos = VarName.find("[");
   VarName = (pos != std::string::npos) ? VarName.substr(0, pos) : VarName;
+  VarName += ".get_ptr()";
 
-  std::vector<std::string> NewTypes{"(void*)", VarName + ".get_ptr()", "", "",
-                                    DirectionName};
-
+  emplaceTransformation(new InsertBeforeStmt(C->getArg(0), "(void*)("));
+  emplaceTransformation(new InsertAfterStmt(C->getArg(0), ")"));
   emplaceTransformation(
-      new ReplaceCallExpr(C, "syclct::sycl_memcpy_from_symbol", std::move(Args),
-                          std::move(NewTypes)));
+      new ReplaceCalleeName(C, "syclct::sycl_memcpy_from_symbol"));
+  emplaceTransformation(new ReplaceToken(C->getArg(1)->getBeginLoc(),
+                                         C->getArg(1)->getEndLoc(),
+                                         std::move(VarName)));
+  emplaceTransformation(
+      new ReplaceStmt(C->getArg(4), std::move(DirectionName)));
 }
 
 void MemoryTranslationRule::FreeTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C) {
-  std::vector<const Expr *> Args{C->getArg(0)};
-  emplaceTransformation(
-      new ReplaceCallExpr(C, "syclct::sycl_free", std::move(Args)));
+  emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_free"));
 }
 
 void MemoryTranslationRule::MemsetTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C) {
-  std::vector<const Expr *> Args{C->getArg(0), C->getArg(1), C->getArg(2)};
-  std::vector<std::string> NewTypes{"(void*)", "(int)", "(size_t)"};
-
-  emplaceTransformation(
-      new ReplaceCallExpr(C, "syclct::sycl_memset", std::move(Args), NewTypes));
+  emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_memset"));
+  emplaceTransformation(new InsertBeforeStmt(C->getArg(0), "(void*)("));
+  emplaceTransformation(new InsertAfterStmt(C->getArg(0), ")"));
+  emplaceTransformation(new InsertBeforeStmt(C->getArg(1), "(int)("));
+  emplaceTransformation(new InsertAfterStmt(C->getArg(1), ")"));
+  emplaceTransformation(new InsertBeforeStmt(C->getArg(2), "(size_t)("));
+  emplaceTransformation(new InsertAfterStmt(C->getArg(2), ")"));
 }
 
 // Memory translation rules live here.

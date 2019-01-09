@@ -143,11 +143,14 @@ public:
 /// workaround.
 class ReplaceToken : public TextModification {
   SourceLocation Begin;
+  SourceLocation End;
   std::string T;
 
 public:
   ReplaceToken(SourceLocation Loc, std::string &&S)
-      : TextModification(TMID::ReplaceToken), Begin(Loc), T(S) {}
+      : TextModification(TMID::ReplaceToken), Begin(Loc), End(Loc), T(S) {}
+  ReplaceToken(SourceLocation BLoc, SourceLocation ELoc, std::string &&S)
+      : TextModification(TMID::ReplaceToken), Begin(BLoc), End(ELoc), T(S) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;

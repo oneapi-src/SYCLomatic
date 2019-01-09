@@ -9,7 +9,7 @@ void fooo() {
   float *d_A = NULL;
   // CHECK: syclct::sycl_malloc((void **)&d_A, size);
   cudaMalloc((void **)&d_A, size);
-  // CHECK: syclct::sycl_memset((void*)(d_A), (int)(15), (size_t)(size));
+  // CHECK: syclct::sycl_memset((void*)(d_A), (int)(0xf), (size_t)(size));
   cudaMemset(d_A, 0xf, size);
   // CHECK: syclct::sycl_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device);
   cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
@@ -48,17 +48,17 @@ void testCommas() {
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((syclct::sycl_malloc((void **)&d_A, size), 0));
   checkError(cudaMalloc((void **)&d_A, size));
-  // CHECK:  syclct::sycl_memset((void*)(d_A), (int)(15), (size_t)(size));
+  // CHECK:  syclct::sycl_memset((void*)(d_A), (int)(0xf), (size_t)(size));
   cudaMemset(d_A, 0xf, size);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memset((void*)(d_A), (int)(15), (size_t)(size)), 0);
+  // CHECK-NEXT:  err = (syclct::sycl_memset((void*)(d_A), (int)(0xf), (size_t)(size)), 0);
   err = cudaMemset(d_A, 0xf, size);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memset((void*)(d_A), (int)(15), (size_t)(size)), 0));
+  // CHECK-NEXT:  checkError((syclct::sycl_memset((void*)(d_A), (int)(0xf), (size_t)(size)), 0));
   checkError(cudaMemset(d_A, 0xf, size));
 
   ///////// Host to host
