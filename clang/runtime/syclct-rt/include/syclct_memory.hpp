@@ -198,6 +198,11 @@ static void sycl_malloc(void **ptr, size_t size) {
   sycl_malloc(ptr, size, q);
 }
 
+template <typename T1, typename T2>
+static inline void sycl_malloc(T1 **ptr, T2 size) {
+  return sycl_malloc(reinterpret_cast<void **>(ptr), static_cast<size_t>(size));
+}
+
 // free
 // TODO: ret values to adjust for error handling.
 static void sycl_free(void *ptr) {
