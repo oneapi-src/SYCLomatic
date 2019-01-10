@@ -25,11 +25,17 @@ __global__ void kernel1(float *out) {
 // CHECK: syclct::device_memory<int, 0> al(syclct::syclct_range<0>());
 __device__ int al;
 
-// CHECK: void kernel2(float *out, cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<int, syclct::device, 0> al) {
+// CHECK: syclct::device_memory<float, 1> fx(syclct::syclct_range<1>(2));
+// CHECK: syclct::device_memory<float, 2> fy(syclct::syclct_range<2>(3, 4));
+__device__ float fx[2], fy[3][4];
+
+// CHECK: void kernel2(float *out, cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<int, syclct::device, 0> al, syclct::syclct_accessor<float, syclct::device, 1> fx, syclct::syclct_accessor<float, syclct::device, 2> fy) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(0)] += al;
+// CHECK:   fx[{{.*}}[[ITEM]].get_local_id(0)] = fy[{{.*}}[[ITEM]].get_local_id(0)][{{.*}}[[ITEM]].get_local_id(0)];
 // CHECK: }
 __global__ void kernel2(float *out) {
   out[threadIdx.x] += al;
+  fx[threadIdx.x] = fy[threadIdx.x][threadIdx.x];
 }
 
 int main() {
@@ -76,12 +82,14 @@ int main() {
   // CHECK:   syclct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
   // CHECK:       auto al_acc = al.get_access(cgh);
+  // CHECK:       auto fx_acc = fx.get_access(cgh);
+  // CHECK:       auto fy_acc = fy.get_access(cgh);
   // CHECK:       auto d_out_acc = d_out_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
   // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK:           float *d_out = (float*)(&d_out_acc[0] + d_out_offset);
-  // CHECK:           kernel2(d_out, [[ITEM]], syclct::syclct_accessor<int, syclct::device, 0>(al_acc));
+  // CHECK:           kernel2(d_out, [[ITEM]], syclct::syclct_accessor<int, syclct::device, 0>(al_acc), syclct::syclct_accessor<float, syclct::device, 1>(fx_acc), syclct::syclct_accessor<float, syclct::device, 2>(fy_acc));
   // CHECK:         });
   // CHECK:     });
   // CHECK: };

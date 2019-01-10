@@ -4,7 +4,8 @@
 #include <stdio.h>
 
 // CHECK: syclct::constant_memory<float, 1> const_angle(syclct::syclct_range<1>(360));
-__constant__ float const_angle[360];
+// CHECK: syclct::constant_memory<float, 2> const_float(syclct::syclct_range<2>(33, 33));
+__constant__ float const_angle[360], const_float[33][33];
 
 // CHECK:void simple_kernel(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<float, syclct::constant, 1> const_angle) {
 // CHECK-NEXT:  int index;
@@ -26,19 +27,19 @@ __global__ void simple_kernel(float *d_array) {
 // CHECK: syclct::constant_memory<float, 0> const_one(syclct::syclct_range<0>());
 __constant__ float const_one;
 
-// CHECK:void simple_kernel_one(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<float, syclct::constant, 1> const_angle, syclct::syclct_accessor<float, syclct::constant, 0> const_one) {
+// CHECK:void simple_kernel_one(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<float, syclct::constant, 2> const_float, syclct::syclct_accessor<float, syclct::constant, 0> const_one) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(0) * [[ITEM]].get_local_range().get(0) + [[ITEM]].get_local_id(0);
-// CHECK-NEXT:  if (index < 360) {
-// CHECK-NEXT:    d_array[index] = const_one + const_angle[index] + const_one + const_one;
+// CHECK-NEXT:  if (index < 33) {
+// CHECK-NEXT:    d_array[index] = const_one + const_float[index][index];
 // CHECK-NEXT:  }
 // CHECK-NEXT:  return;
 // CHECK-NEXT:}
 __global__ void simple_kernel_one(float *d_array) {
   int index;
   index = blockIdx.x * blockDim.x + threadIdx.x;
-  if (index < 360) {
-    d_array[index] = const_one + const_angle[index] + const_one + const_one;
+  if (index < 33) {
+    d_array[index] = const_one + const_float[index][index];
   }
   return;
 }
@@ -101,14 +102,14 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:    size_t d_array_offset = d_array_buf.second;
   // CHECK-NEXT:    syclct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        auto const_angle_acc = const_angle.get_access(cgh);
+  // CHECK-NEXT:        auto const_float_acc = const_float.get_access(cgh);
   // CHECK-NEXT:        auto const_one_acc = const_one.get_access(cgh);
   // CHECK-NEXT:        auto d_array_acc = d_array_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class simple_kernel_one_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((cl::sycl::range<3>(size / 64, 1, 1) * cl::sycl::range<3>(64, 1, 1)), cl::sycl::range<3>(64, 1, 1)),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK-NEXT:            float *d_array = (float*)(&d_array_acc[0] + d_array_offset);
-  // CHECK-NEXT:            simple_kernel_one(d_array, [[ITEM]], syclct::syclct_accessor<float, syclct::constant, 1>(const_angle_acc), syclct::syclct_accessor<float, syclct::constant, 0>(const_one_acc));
+  // CHECK-NEXT:            simple_kernel_one(d_array, [[ITEM]], syclct::syclct_accessor<float, syclct::constant, 2>(const_float_acc), syclct::syclct_accessor<float, syclct::constant, 0>(const_one_acc));
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  };

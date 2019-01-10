@@ -1221,10 +1221,11 @@ void MemVarRule::registerMatcher(MatchFinder &MF) {
 }
 
 void MemVarRule::run(const MatchFinder::MatchResult &Result) {
-  if (auto MemVar = getNodeAsType<VarDecl>(Result, "var"))
-    emplaceTransformation(new ReplaceVarDecl(
+  if (auto MemVar = getNodeAsType<VarDecl>(Result, "var")) {
+    emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
         MemVar,
         MemVarInfo::buildMemVarInfo(MemVar)->getDeclarationReplacement()));
+  }
   auto MemVarRef = getNodeAsType<DeclRefExpr>(Result, "used");
   auto Func = getAssistNodeAsType<FunctionDecl>(Result, "func");
   SyclctGlobalInfo &Global = SyclctGlobalInfo::getInstance();

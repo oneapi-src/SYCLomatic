@@ -31,9 +31,16 @@ class VarInfo;
 template <class T> using GlobalMap = std::map<unsigned, std::shared_ptr<T>>;
 using MemVarInfoMap = GlobalMap<MemVarInfo>;
 
+template <class Node> inline unsigned getLocationId(const Node *N) {
+  return N->getBeginLoc().getRawEncoding();
+}
+template <> inline unsigned getLocationId<VarDecl>(const VarDecl *N) {
+  return N->getLocation().getRawEncoding();
+}
+
 template <class Obj, class Node>
 std::shared_ptr<Obj> findNode(const Node *N, GlobalMap<Obj> &Map) {
-  auto Itr = Map.find(N->getBeginLoc().getRawEncoding());
+  auto Itr = Map.find(getLocationId(N));
   if (Itr == Map.end())
     return std::shared_ptr<Obj>();
   return Itr->second;
@@ -43,8 +50,8 @@ std::shared_ptr<Obj> registerNode(const Node *N, GlobalMap<Obj> &Map) {
   if (auto Result = findNode(N, Map))
     return Result;
   return Map
-      .insert(typename GlobalMap<Obj>::value_type(
-          N->getBeginLoc().getRawEncoding(), std::make_shared<Obj>(N)))
+      .insert(typename GlobalMap<Obj>::value_type(getLocationId(N),
+                                                  std::make_shared<Obj>(N)))
       .first->second;
 }
 
@@ -68,19 +75,19 @@ public:
     const static std::string Hash = getHashAsString(getInRoot()).substr(0, 6);
     return Hash;
   }
-  static void setContext(const ASTContext &C) {
+  static void setContext(ASTContext &C) {
     Context = &C;
     SM = &(Context->getSourceManager());
   }
-  static const ASTContext &getContext() {
+  static ASTContext &getContext() {
     assert(Context);
     return *Context;
   }
-  static const SourceManager &getSourceManager() {
+  static SourceManager &getSourceManager() {
     assert(SM);
     return *SM;
   }
-  static bool isInRoot(SourceLocation SL) {
+  static bool isInRoot(const SourceLocation &SL) {
     std::string FilePath =
         getSourceManager().getFilename(getSourceManager().getExpansionLoc(SL));
     makeCanonical(FilePath);
@@ -103,6 +110,7 @@ public:
   template <class T> GlobalMap<T> &getMap() {
     llvm_unreachable("unexpected type of map");
   }
+
   void emplaceKernelAndDeviceReplacement(TransformSetTy &TS,
                                          StmtStringMap &SSM);
 
@@ -124,8 +132,8 @@ private:
   }
 
   static std::string InRoot;
-  static const ASTContext *Context;
-  static const SourceManager *SM;
+  static ASTContext *Context;
+  static SourceManager *SM;
 
   GlobalMap<MemVarInfo> MemVarMap;
   GlobalMap<DeviceFunctionInfo> FuncMap;
@@ -241,7 +249,7 @@ private:
 class VarInfo {
 public:
   VarInfo(const VarDecl *Var)
-      : Loc(Var->getBeginLoc().getRawEncoding()), Name(Var->getName().str()),
+      : Loc(getLocationId(Var)), Name(Var->getName().str()),
         Type(std::make_shared<TypeInfo>(Var->getType())) {}
 
   unsigned getLoc() { return Loc; }
@@ -268,9 +276,9 @@ public:
 
   MemVarInfo(const VarDecl *Var)
       : VarInfo(Var), Attr(getAttr(Var->getAttrs())),
-        Scope((Var->isDefinedOutsideFunctionOrMethod())
-                  ? ((Attr == Shared) ? Extern : Global)
-                  : (Var->isExternallyDeclarable() ? Extern : Local)) {}
+        Scope((Var->isLexicallyWithinFunctionOrMethod())
+                  ? (Var->isExternallyDeclarable() ? Extern : Local)
+                  : Global) {}
 
   VarAttrKind getAttr() { return Attr; }
   VarScope getScope() { return Scope; }
@@ -519,7 +527,7 @@ inline const std::string &MemVarMap::getItemName<MemVarMap::DeclParameter>() {
 class CallFunctionExpr {
 public:
   CallFunctionExpr(const CallExpr *CE)
-      : Loc(CE->getBeginLoc().getRawEncoding()), RParenLoc(CE->getRParenLoc()),
+      : Loc(getLocationId(CE)), RParenLoc(CE->getRParenLoc()),
         ArgsNum(CE->getNumArgs()), VarMap(std::make_shared<MemVarMap>()) {
     buildCallExprInfo(CE);
   }
@@ -568,18 +576,20 @@ private:
 class DeviceFunctionInfo {
 public:
   DeviceFunctionInfo(const FunctionDecl *Func)
-      : Built(false), Loc(Func->getBeginLoc().getRawEncoding()),
+      : Built(false), Loc(getLocationId(Func)),
         RParenLoc(getRParenLoc(Func)), ParamsNum(Func->getNumParams()),
         VarMap(std::make_shared<MemVarMap>()) {}
   unsigned getLoc() { return Loc; }
   void addCallee(const CallExpr *CE) { registerNode(CE, CallExprMap); }
   void addVar(std::shared_ptr<MemVarInfo> Var) {
+    return getVarMap()->addVar(Var);
+  }
+  void setItem() { getVarMap()->setItem(); }
+  std::shared_ptr<MemVarMap> getVarMap() {
     if (!VarMap)
       VarMap = std::make_shared<MemVarMap>();
-    return VarMap->addVar(Var);
+    return VarMap;
   }
-  void setItem(){ getVarMap()->setItem(); }
-  std::shared_ptr<MemVarMap> getVarMap() { return VarMap; }
   void setVarMap(std::shared_ptr<MemVarMap> MVM) { VarMap = MVM; }
 
   void buildInfo(TransformSetTy &TS);

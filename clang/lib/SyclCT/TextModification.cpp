@@ -69,31 +69,54 @@ ExtReplacement RemoveAttr::getReplacement(const ASTContext &Context) const {
       this);
 }
 
+std::map<unsigned, ReplaceVarDecl *> ReplaceVarDecl::ReplaceMap;
+
 ExtReplacement
 ReplaceTypeInDecl::getReplacement(const ASTContext &Context) const {
   return ExtReplacement(Context.getSourceManager(), &TL, T, this);
 }
 
+ReplaceVarDecl *ReplaceVarDecl::getVarDeclReplacement(const VarDecl *VD,
+                                                      std::string &&Text) {
+  auto LocID = VD->getBeginLoc().getRawEncoding();
+  auto Itr = ReplaceMap.find(LocID);
+  if (Itr == ReplaceMap.end())
+    return ReplaceMap
+        .insert(std::map<unsigned, ReplaceVarDecl *>::value_type(
+            LocID, new ReplaceVarDecl(VD, std::move(Text))))
+        .first->second;
+  Itr->second->addVarDecl(VD, std::move(Text));
+  return nullptr;
+}
+
+ReplaceVarDecl::ReplaceVarDecl(const VarDecl *D, std::string &&Text)
+    : TextModification(TMID::ReplaceVarDecl), D(D),
+      SR(SyclctGlobalInfo::getSourceManager().getExpansionRange(
+          D->getSourceRange())),
+      T(std::move(Text)),
+      Indent(getIndent(SR.getBegin(), SyclctGlobalInfo::getSourceManager())),
+      NL(getNL(SR.getBegin(), SyclctGlobalInfo::getSourceManager())) {}
+
+void ReplaceVarDecl::addVarDecl(const VarDecl *VD, std::string &&Text) {
+  SourceManager &SM = SyclctGlobalInfo::getSourceManager();
+  CharSourceRange Range = SM.getExpansionRange(VD->getSourceRange());
+  if (SM.getCharacterData(Range.getEnd()) > SM.getCharacterData(SR.getEnd()))
+    SR = Range;
+  T += NL + Indent + Text;
+}
+
 ExtReplacement ReplaceVarDecl::getReplacement(const ASTContext &Context) const {
   auto &SM = Context.getSourceManager();
-  SourceLocation slStart = SM.getExpansionLoc(D->getSourceRange().getBegin());
-  SourceLocation slEnd = SM.getExpansionLoc(D->getSourceRange().getEnd());
   size_t repLength;
-  repLength = SM.getCharacterData(slEnd) - SM.getCharacterData(slStart) + 1;
-  if (!D->getType()->isArrayType())
-    repLength += D->getName().size();
+  repLength = SM.getCharacterData(SR.getEnd()) - SM.getCharacterData(SR.getBegin()) + 1;
   // try to del  "    ;" in var declare
-  auto DataAfter = SM.getCharacterData(slStart.getLocWithOffset(repLength));
-  unsigned i = 0;
-  auto Data = DataAfter[i];
-  while ((Data == ' ') || (Data == '\t'))
-    Data = DataAfter[++i];
-  if (Data == ';')
-    Data = DataAfter[++i];
-  repLength += i;
+  auto DataAfter = SM.getCharacterData(SR.getBegin());
+  auto Data = DataAfter[repLength];
+  while (Data != ';')
+    Data = DataAfter[++repLength];
 
-  return ExtReplacement(Context.getSourceManager(), SM.getExpansionLoc(slStart),
-                        repLength, T, this);
+  return ExtReplacement(Context.getSourceManager(), SR.getBegin(), ++repLength,
+                        T, this);
 }
 
 ExtReplacement
@@ -839,7 +862,7 @@ void ReplaceTypeInDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
 void ReplaceVarDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
                            const bool PrintDetail) const {
   printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
-  printLocation(OS, D->getBeginLoc(), Context, PrintDetail);
+  printLocation(OS, SR.getBegin(), Context, PrintDetail);
   D->print(OS, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, T);
 }

@@ -21,8 +21,8 @@
 namespace clang {
 namespace syclct {
 std::string SyclctGlobalInfo::InRoot = std::string();
-const ASTContext *SyclctGlobalInfo::Context = nullptr;
-const SourceManager *SyclctGlobalInfo::SM = nullptr;
+ASTContext *SyclctGlobalInfo::Context = nullptr;
+SourceManager *SyclctGlobalInfo::SM = nullptr;
 const std::string MemVarInfo::ExternVariableName = "syclct_extern_memory";
 const std::string MemVarInfo::AccessorSuffix = "_acc";
 

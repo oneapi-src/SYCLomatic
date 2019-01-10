@@ -243,13 +243,13 @@ protected:
   // Get node from match result map. And also check if the node's host file is
   // in the InRoot path and if the node has been processed by the same rule.
   template <typename NodeType>
-  const NodeType *
+  inline const NodeType *
   getNodeAsType(const ast_matchers::MatchFinder::MatchResult &Result,
                 const char *Name, bool CheckNode = true) {
     return getNode<NodeType>(Result, Name, CheckNode, CheckNode);
   }
   template <typename NodeType>
-  const NodeType *
+  inline const NodeType *
   getAssistNodeAsType(const ast_matchers::MatchFinder::MatchResult &Result,
                       const char *Name, bool CheckInRoot = true) {
     return getNode<NodeType>(Result, Name, false, CheckInRoot);
@@ -261,37 +261,33 @@ private:
                           const char *Name, bool CheckReplaced,
                           bool CheckInRoot) {
     if (auto Node = Result.Nodes.getNodeAs<NodeType>(Name))
-      if (checkNode(Result.SourceManager, Node->getBeginLoc(), CheckReplaced,
-                    CheckInRoot))
+      if (checkNode(Node->getSourceRange(), CheckReplaced, CheckInRoot))
         return Node;
     return nullptr;
   }
-  bool checkNode(SourceManager *SM, const SourceLocation &Begin,
-                 bool CheckReplaced, bool CheckInRoot) {
-    if (CheckInRoot && !isInRoot(SM, Begin))
+  bool checkNode(SourceRange &&SR, bool CheckReplaced, bool CheckInRoot) {
+    if (CheckInRoot && !isInRoot(SR.getBegin()))
       return false;
-    if (CheckReplaced && isReplaced(Begin.getRawEncoding()))
+    if (CheckReplaced && isReplaced(SR))
       return false;
     return true;
   }
 
   // Check if the node's host file is in the InRoot path.
-  bool isInRoot(SourceManager *SM, const SourceLocation LS) {
-    std::string FilePath = SM->getFilename(SM->getExpansionLoc(LS));
-    makeCanonical(FilePath);
-    return isChildPath(TM->InRoot, FilePath);
+  inline bool isInRoot(SourceLocation &&SL) {
+    return SyclctGlobalInfo::isInRoot(SL);
   }
 
   // Check if the location has been replaced by the same rule.
-  bool isReplaced(unsigned LocationID) {
-    for (auto ReplacedID : Replaced) {
-      if (LocationID == ReplacedID)
+  bool isReplaced(SourceRange &SR) {
+    for (auto RR : Replaced) {
+      if (SR == RR)
         return true;
     }
-    Replaced.push_back(LocationID);
+    Replaced.push_back(SR);
     return false;
   }
-  std::vector<unsigned> Replaced;
+  std::vector<SourceRange> Replaced;
 
 public:
   bool isTranslationRule() const override { return true; }
@@ -347,8 +343,10 @@ public:
 
 protected:
   void emplaceTransformation(TextModification *TM) {
-    TM->setParentRuleID(&ID);
-    TranslationRule::emplaceTransformation(&ID, TM);
+    if (TM) {
+      TM->setParentRuleID(&ID);
+      TranslationRule::emplaceTransformation(&ID, TM);
+    }
   }
 };
 
@@ -531,6 +529,9 @@ public:
   MemVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+private:
+  std::unique_ptr<TextModification> &registerModification();
 };
 
 // Translation rule for memory management routine.

@@ -272,14 +272,23 @@ public:
 // Replace type in var. declaration.
 class ReplaceVarDecl : public TextModification {
   const VarDecl *D;
+  CharSourceRange SR;
   std::string T;
+  std::string Indent;
+  std::string NL;
 
 public:
-  ReplaceVarDecl(const VarDecl *D, std::string &&T)
-      : TextModification(TMID::ReplaceVarDecl), D(D), T(std::move(T)) {}
+  static ReplaceVarDecl *getVarDeclReplacement(const VarDecl *VD,
+                                               std::string &&Text);
+
+  ReplaceVarDecl(const VarDecl *D, std::string &&T);
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
+
+private:
+  void addVarDecl(const VarDecl *D, std::string &&Text);
+  static std::map<unsigned, ReplaceVarDecl *> ReplaceMap;
 };
 
 // Replace return type in function declaration.
