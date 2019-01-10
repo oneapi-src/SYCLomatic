@@ -30,8 +30,10 @@ syclct_sdk_8_samples=(
   FDTD3d
   simpleTemplates
 )
-IFS=, eval 'syclct_sdk_8_samples_list="syclct_sdk_8_samples/${syclct_sdk_8_samples[*]}"'
 
+syclct_sdk_8_samples_list=$(IFS=, ; echo "syclct_sdk_8_samples/${syclct_sdk_8_samples[*]}")
+
+set -x
 #Run test case from syclct_sdk_8_samples
 tc -r none -x gcc_efi2 -t $syclct_sdk_8_samples_list
 
