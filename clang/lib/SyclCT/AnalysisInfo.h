@@ -141,14 +141,16 @@ template <> inline GlobalMap<KernelCallExpr> &SyclctGlobalInfo::getMap() {
   return KernelMap;
 }
 
+class TemplateArgumentInfo;
+
 // TypeInfo is basic class with info of element type, range, template info all
 // get from type.
-class TemplateArgumentInfo;
 class TypeInfo {
 public:
   TypeInfo(const QualType &Type)
-      : Type(Type), Template(false), TemplateIndex(0) {
+      : Type(Type), Pointers(0), Template(false), TemplateIndex(0) {
     setArrayInfo();
+    setPointerInfo();
     setTemplateInfo();
     setName();
   }
@@ -192,6 +194,12 @@ private:
       TemplateIndex = TemplateType->getIndex();
     }
   }
+  void setPointerInfo() {
+    while (Type->isPointerType()) {
+      ++Pointers;
+      Type = Type->getPointeeType();
+    }
+  }
   void setName() {
     Name = Type.getAsString(
         SyclctGlobalInfo::getInstance().getContext().getPrintingPolicy());
@@ -199,6 +207,11 @@ private:
       auto Itr = MapNames::TypeNamesMap.find(Name);
       if (Itr != MapNames::TypeNamesMap.end())
         Name = Itr->second;
+    }
+    if (Pointers) {
+      Name += ' ';
+      for (unsigned i = 0; i < Pointers; i++)
+        Name += '*';
     }
   }
   std::string getRangeArgument(const std::string &MemSize) {
@@ -218,6 +231,7 @@ private:
   QualType Type;
   std::string Name;
   std::vector<size_t> Range;
+  unsigned Pointers;
   bool Template;
   unsigned TemplateIndex;
   std::shared_ptr<TypeInfo> TemplateType;
