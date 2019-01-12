@@ -346,6 +346,7 @@ public:
   syclct_accessor(const accessor_t &acc)
       : syclct_accessor((pointer_t)acc.get_pointer(), syclct_range<0>()) {}
   operator element_t &() const { return *data; }
+  T *operator&() { return static_cast<T *>(data); }
 
 private:
   pointer_t data;
