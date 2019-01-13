@@ -1229,12 +1229,15 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
   auto MemVarRef = getNodeAsType<DeclRefExpr>(Result, "used");
   auto Func = getAssistNodeAsType<FunctionDecl>(Result, "func");
   SyclctGlobalInfo &Global = SyclctGlobalInfo::getInstance();
-  if (MemVarRef && Func)
-    if ((Func->hasAttr<CUDAGlobalAttr>() ||
-         (Func->hasAttr<CUDADeviceAttr>()) && !Func->hasAttr<CUDAHostAttr>()))
+  if (MemVarRef && Func) {
+    if (Func->hasAttr<CUDAGlobalAttr>() ||
+        (Func->hasAttr<CUDADeviceAttr>() && !Func->hasAttr<CUDAHostAttr>())) {
       if (auto Var =
-              Global.findMemVarInfo(dyn_cast<VarDecl>(MemVarRef->getDecl())))
+              Global.findMemVarInfo(dyn_cast<VarDecl>(MemVarRef->getDecl()))) {
         Global.registerDeviceFunctionInfo(Func)->addVar(Var);
+      }
+    }
+  }
 }
 
 REGISTER_RULE(MemVarRule)
