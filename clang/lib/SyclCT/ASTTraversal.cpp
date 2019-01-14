@@ -915,13 +915,12 @@ void Dim3MemberFieldsRule::run(const MatchFinder::MatchResult &Result) {
 
   if (const MemberExpr *ME =
           getNodeAsType<MemberExpr>(Result, "Dim3MemberDotExpr")) {
+
     auto SM = Result.SourceManager;
-    clang::SourceLocation Begin(ME->getBeginLoc()), Temp(ME->getEndLoc());
-    clang::SourceLocation End(
-        clang::Lexer::getLocForEndOfToken(Temp, 0, *SM, LangOptions()));
+    SourceLocation Begin = SM->getSpellingLoc(ME->getBeginLoc());
+    SourceLocation End = SM->getSpellingLoc(ME->getEndLoc());
     std::string Ret =
-        std::string(SM->getCharacterData(Begin),
-                    SM->getCharacterData(End) - SM->getCharacterData(Begin));
+        std::string(SM->getCharacterData(Begin), SM->getCharacterData(End));
 
     std::size_t PositionOfDot = std::string::npos;
     std::size_t Current = Ret.find('.');
