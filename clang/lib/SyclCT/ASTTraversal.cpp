@@ -924,7 +924,7 @@ void VectorTypeOperatorRule::TranslateOverloadedOperatorDecl(
   // Add namespace to user overloaded operator declaration
   // double2& operator+=(double2& lhs, const double2& rhs)
   // =>
-  // namespace syclct_user_overloaded_operator {
+  // namespace syclct_operator_overloading {
   //
   // double2& operator+=(double2& lhs, const double2& rhs)
   //
@@ -962,12 +962,12 @@ void VectorTypeOperatorRule::TranslateOverloadedOperatorCall(
   // For non-assignment operator:
   // a == b
   // =>
-  // syclct_user_overloaded_operator::operator==(a, b)
+  // syclct_operator_overloading::operator==(a, b)
   //
   // For assignment operator:
   // a += b
   // =>
-  // a = syclct_user_overloaded_operator::operator+=(a, b)
+  // a = syclct_operator_overloading::operator+=(a, b)
 
   const std::string OperatorName = BinaryOperator::getOpcodeStr(
       BinaryOperator::getOverloadedOpcode(CE->getOperator()));
