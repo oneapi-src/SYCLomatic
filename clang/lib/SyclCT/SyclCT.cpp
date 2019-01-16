@@ -363,8 +363,14 @@ public:
       // TODO: It'd be better not to generate replacements for system headers
       // instead of filtering them.
       std::string RPath = R.getFilePath();
+      if (RPath.empty()) {
+        llvm::errs() << "[NOTE] rule \"" << R.getParentTM()->getName()
+                     << "\" created null code replacement.\n";
+        continue;
+      }
+
       makeCanonical(RPath);
-      if (isChildPath(InRoot, RPath)) {
+      if (isChildPath(InRoot, RPath) || isSamePath(InRoot, RPath)) {
         // TODO: Staticstics
         ReplSet.emplace_back(std::move(R));
       } else {
