@@ -1,12 +1,30 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck %s --match-full-lines --input-file %T/device002.sycl.cpp
 
+#include <stdio.h>
+
 void checkError(cudaError_t err) {
 
 }
 
 int main(int argc, char **argv)
 {
+int devID = atoi(argv[1]);
+cudaDeviceProp cdp;
+cudaError_t error_code = cudaGetDeviceProperties(&cdp, devID);
+
+if (error_code == cudaSuccess) {
+// CHECK: /*
+// CHECK-NEXT:  SYCLCT1005:3: The device version is different. You may want to rewrite this code
+// CHECK-NEXT: */
+// CHECK-NEXT: /*
+// CHECK-NEXT:  SYCLCT1006:4: SYCL doesn't provide standard API to differentiate between integrated/discrete GPU devices. Consider to re-implement the code which depends on this field
+// CHECK-NEXT: */
+    if (cdp.major < 3 && cdp.integrated != 1) {
+            printf("do_complex_compute requires compute capability 3.0 or later and not integrated\n");
+    }
+}
+
 int deviceCount = 0;
 // CHECK: deviceCount = syclct::get_device_manager().device_count();
 cudaGetDeviceCount(&deviceCount);

@@ -150,28 +150,29 @@ public:
       }
       for (ExtReplacement &R2 : ReplSet) {
         if (!R2.getMerged() && R1.getOffset() == R2.getOffset() &&
-            R1.getLength() == R2.getLength() &&
-            R1.getInsertPosition() != R2.getInsertPosition() &&
+            R1.getLength() == R2.getLength() && &R1 != &R2 &&
             R1.getFilePath() == R2.getFilePath()) {
+          std::string ReplTextR1 = R1.getReplacementText().str();
+          std::string ReplTextR2 = R2.getReplacementText().str();
           if (R1.getInsertPosition() == InsertPositionLeft) {
-            ExtReplacement RMerge(R1.getFilePath(), R1.getOffset(),
-                                  R1.getLength(),
-                                  StringRef(R1.getReplacementText().str() +
-                                            R2.getReplacementText().str()),
-                                  // TODO: class for merged transformations
-                                  nullptr);
+            ExtReplacement RMerge(
+                R1.getFilePath(), R1.getOffset(), R1.getLength(),
+                StringRef(ReplTextR1 == ReplTextR2 ? ReplTextR1
+                                                   : ReplTextR1 + ReplTextR2),
+                // TODO: class for merged transformations
+                nullptr);
             ReplSetMerged.emplace_back(std::move(RMerge));
             R2.setMerged(true);
             R1.setMerged(true);
             Merged = true;
             break;
           } else {
-            ExtReplacement RMerge(R1.getFilePath(), R1.getOffset(),
-                                  R1.getLength(),
-                                  StringRef(R2.getReplacementText().str() +
-                                            R1.getReplacementText().str()),
-                                  // TODO: class for merged transformations
-                                  nullptr);
+            ExtReplacement RMerge(
+                R1.getFilePath(), R1.getOffset(), R1.getLength(),
+                StringRef(ReplTextR1 == ReplTextR2 ? ReplTextR1
+                                                   : ReplTextR2 + ReplTextR1),
+                // TODO: class for merged transformations
+                nullptr);
             ReplSetMerged.emplace_back(std::move(RMerge));
             R2.setMerged(true);
             R1.setMerged(true);
