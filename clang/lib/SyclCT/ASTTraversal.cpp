@@ -1177,15 +1177,10 @@ REGISTER_RULE(ReplaceDim3CtorRule)
 // rule for dim3 types member fields replacements.
 void Dim3MemberFieldsRule::registerMatcher(MatchFinder &MF) {
   // dim3->x/y/z => dim3->operator[](0)/(1)/(2)
-  MF.addMatcher(
-      memberExpr(
-          hasDescendant(declRefExpr(
-              hasType(pointerType()),
-              to(anyOf(varDecl(hasType(pointsTo(typedefDecl(hasName("dim3"))))),
-                       varDecl(hasType(pointsTo(
-                           pointsTo(typedefDecl(hasName("dim3")))))))))))
-          .bind("Dim3MemberPointerExpr"),
-      this);
+  MF.addMatcher(memberExpr(has(implicitCastExpr(hasType(
+                               pointsTo(typedefDecl(hasName("dim3")))))))
+                    .bind("Dim3MemberPointerExpr"),
+                this);
 
   // dim3.x/y/z => dim3[0]/[1]/[2]
   MF.addMatcher(

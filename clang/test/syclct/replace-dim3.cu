@@ -96,10 +96,9 @@ int main() {
 
   // CHECK: int c = t.w[0] + t.w[1] + t.w[2];
   int c = t.w.x + t.w.y + t.w.z;
-  // Note: The checks below should work.  Fix is needed (CTST-301 filed)
-  // NO-CHECK: int c2 = t.pw->operator[](0) + t.pw->operator[](1) + t.pw->operator[](2);
+  // CHECK: int c2 = t.pw->operator[](0) + t.pw->operator[](1) + t.pw->operator[](2);
   int c2 = t.pw->x + t.pw->y + t.pw->z;
-  // NO-CHECK: int c3 = (*t.ppw)->operator[](0) + (*t.ppw)->operator[](1) + (*t.ppw)->operator[](2);
+  // CHECK: int c3 = (*t.ppw)->operator[](0) + (*t.ppw)->operator[](1) + (*t.ppw)->operator[](2);
   int c3 = (*t.ppw)->x + (*t.ppw)->y + (*t.ppw)->z;
 
   // CHECK: cl::sycl::range<3> d3_1(test[0], 1, 1);
