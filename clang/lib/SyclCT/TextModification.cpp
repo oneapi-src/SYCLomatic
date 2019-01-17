@@ -108,7 +108,8 @@ void ReplaceVarDecl::addVarDecl(const VarDecl *VD, std::string &&Text) {
 ExtReplacement ReplaceVarDecl::getReplacement(const ASTContext &Context) const {
   auto &SM = Context.getSourceManager();
   size_t repLength;
-  repLength = SM.getCharacterData(SR.getEnd()) - SM.getCharacterData(SR.getBegin()) + 1;
+  repLength =
+      SM.getCharacterData(SR.getEnd()) - SM.getCharacterData(SR.getBegin()) + 1;
   // try to del  "    ;" in var declare
   auto DataAfter = SM.getCharacterData(SR.getBegin());
   auto Data = DataAfter[repLength];
@@ -310,12 +311,37 @@ ExtReplacement InsertComment::getReplacement(const ASTContext &Context) const {
                         this);
 }
 
+// TODO: Remove this workaround
+//
+//       Current kernel call's argument are generated separately (buildArgList)
+//       from AST replacement rules, that is AST replacement rules are not
+//       applied here, this workaround does the replacement again here
+//
+//       Kernel call replacement (ReplaceKernelCallExpr) should be implemented
+//       with fine-grained replacement to work with other replacement rules
+//       instead of generating the replacement at once.
+static inline std::string ReplacedArgText(const Expr *A,
+                                          const ASTContext &Context) {
+  std::string Elem = getStmtSpelling(A, Context);
+  if (const MemberExpr *ME = dyn_cast<MemberExpr>(A->IgnoreImpCasts())) {
+    const std::string MemberName = ME->getMemberNameInfo().getAsString();
+    auto Search = MapNames::Dim3MemberNamesMap.find(MemberName);
+    if (Search != MapNames::Dim3MemberNamesMap.end()) {
+      static constexpr char Dot[] = ".";
+      assert(Elem.find_last_of(Dot) != std::string::npos);
+      Elem.replace(Elem.find_last_of(Dot), MemberName.length() + strlen(Dot),
+                   Search->second);
+    }
+  }
+  return Elem;
+}
+
 template <typename ArgIterT>
 std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
                          const ASTContext &Context) {
   std::stringstream List;
   for (auto A = begin(Args); A != end(Args); A++) {
-    std::string Elem = getStmtSpelling(*A, Context);
+    std::string Elem = ReplacedArgText(*A, Context);
     if (!Elem.empty()) {
       // Fixed bug in the situation:
       // funciton declaration is "void fun(int a, int b, int c=0)",
@@ -339,7 +365,7 @@ std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
   for (auto A = begin(Args); A != end(Args); A++) {
     if (*A != nullptr && !(*B).empty()) {
       // General case, both are not empty
-      std::string Elem = getStmtSpelling(*A, Context);
+      std::string Elem = ReplacedArgText(*A, Context);
       if (!Elem.empty()) {
         // Fixed bug in the situation:
         // funciton declaration is "void fun(int a, int b, int c=0)",
@@ -350,7 +376,7 @@ std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
       }
     } else if (*A != nullptr && (*B).empty()) {
       // No type, just argument
-      std::string Elem = getStmtSpelling(*A, Context);
+      std::string Elem = ReplacedArgText(*A, Context);
       if (!Elem.empty()) {
         // Fixed bug in the situation:
         // funciton declaration is "void fun(int a, int b, int c=0)",

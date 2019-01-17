@@ -21,6 +21,8 @@ void test(const dim3* a, const dim3* b) {
 void test(const dim3** a, const dim3** b) {
 }
 
+__global__ void kernel(int dim) {}
+
 int main() {
   // range default constructor does the right thing.
   // CHECK: cl::sycl::range<3> deflt;
@@ -112,4 +114,16 @@ int main() {
   dim3 d3_5(test.x, test.y, test.z);
   // CHECK: cl::sycl::range<3> d3_6 = cl::sycl::range<3>(test[0] + 1, 2 + test[1], 3 + test[2] + 4);
   dim3 d3_6 = dim3(test.x + 1, 2 + test.y, 3 + test.z + 4);
+
+  // CHECK: {
+  // CHECK:   syclct::get_default_queue().submit(
+  // CHECK:     [&](cl::sycl::handler &cgh) {
+  // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK:         [=](cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
+  // CHECK:           kernel(d3_6[0]);
+  // CHECK:         });
+  // CHECK:     });
+  // CHECK: };
+  kernel<<<1, 1>>>(d3_6.x);
 }
