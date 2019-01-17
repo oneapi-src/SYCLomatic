@@ -40,7 +40,7 @@ void testTemplate() {
   // CHECK-NEXT:  size_t d_d_offset = d_d_buf.second;
   // CHECK-NEXT:  syclct::get_default_queue().submit(
   // CHECK-NEXT:	[&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:          syclct::shared_memory<int, 2> s(syclct::syclct_range<2>(64, 128), cgh);
+  // CHECK-NEXT:          syclct::shared_memory<int, 2> s(syclct::syclct_range<2>(64, 128));
   // CHECK-NEXT:          auto s_acc = s.get_access(cgh);
   // CHECK-NEXT:	  auto d_d_acc = d_d_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:	  cgh.parallel_for<syclct_kernel_name<class templateReverse_{{[a-f0-9]+}}, T>>(
@@ -65,7 +65,7 @@ int main(void) {
   // CHECK-NEXT:  size_t d_d_offset = d_d_buf.second;
   // CHECK-NEXT:  syclct::get_default_queue().submit(
   // CHECK-NEXT:	[&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:          syclct::shared_memory<int, 1> s(syclct::syclct_range<1>(64), cgh);
+  // CHECK-NEXT:          syclct::shared_memory<int, 1> s(syclct::syclct_range<1>(64));
   // CHECK-NEXT:          auto s_acc = s.get_access(cgh);
   // CHECK-NEXT:	  auto d_d_acc = d_d_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:	  cgh.parallel_for<syclct_kernel_name<class staticReverse_{{[a-f0-9]+}}>>(
@@ -84,7 +84,7 @@ int main(void) {
   // CHECK-NEXT:  size_t d_d_offset = d_d_buf.second;
   // CHECK-NEXT:  syclct::get_default_queue().submit(
   // CHECK-NEXT:	[&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:          syclct::shared_memory<int, 2> s(syclct::syclct_range<2>(64, 128), cgh);
+  // CHECK-NEXT:          syclct::shared_memory<int, 2> s(syclct::syclct_range<2>(64, 128));
   // CHECK-NEXT:          auto s_acc = s.get_access(cgh);
   // CHECK-NEXT:	  auto d_d_acc = d_d_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:	  cgh.parallel_for<syclct_kernel_name<class templateReverse_{{[a-f0-9]+}}, int>>(

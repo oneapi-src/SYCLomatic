@@ -177,9 +177,20 @@ public:
     return getName();
   }
 
-  std::string getSyclctRange(const std::string &MemSize) {
-    return "syclct::syclct_range<" + std::to_string(getDimension()) + ">" +
-           getRangeArgument(MemSize);
+  // when there is no arguments, parameter MustArguments determine whether
+  // parens will exist. Null string will be returned when MustArguments is
+  // false, otherwise "()" will be returned.
+  std::string getRangeArgument(const std::string &MemSize, bool MustArguments) {
+    std::string Arg = "(";
+    for (auto R : Range)
+      if (R)
+        Arg += std::to_string(R) + ", ";
+      else if (!MemSize.empty())
+        Arg += MemSize + ", ";
+      else
+        llvm_unreachable("array size should not be zero");
+    return (Arg.size() == 1) ? (MustArguments ? (Arg + ")") : "")
+                             : Arg.replace(Arg.size() - 2, 2, ")");
   }
 
   bool isTemplate() { return Template; }
@@ -221,18 +232,6 @@ private:
       for (unsigned i = 0; i < Pointers; i++)
         Name += '*';
     }
-  }
-  std::string getRangeArgument(const std::string &MemSize) {
-    std::string Arg = "(";
-    for (auto R : Range)
-      if (R)
-        Arg += std::to_string(R) + ", ";
-      else if (!MemSize.empty())
-        Arg += MemSize + ", ";
-      else
-        llvm_unreachable("array size should not be zero");
-    return (Arg.size() == 1) ? (Arg + ")")
-                             : Arg.replace(Arg.size() - 2, 2, ")");
   }
 
 private:
@@ -289,15 +288,20 @@ public:
 
   std::string getDeclarationReplacement();
   std::string getMemoryDecl(const std::string &MemSize) {
-    return getMemoryType() + " " + getArgName() + "(" +
-           getInitArguments(MemSize) + ");";
+    return getMemoryType() + " " + getArgName() + getInitArguments(MemSize) +
+           ";";
   }
   std::string getMemoryDecl() {
     const static std::string NullString;
     return getMemoryDecl(NullString);
   }
-  std::string getAccessorDecl() {
-    return "auto " + getAccessorName() + " = " + getArgName() +
+  std::string getAccessorDecl(const std::string &MemSize) {
+    std::string MemoryVar;
+    if (isExtern())
+      MemoryVar = getMemoryType() + getInitArguments(MemSize, true);
+    else
+      MemoryVar = getArgName();
+    return "auto " + getAccessorName() + " = " + MemoryVar +
            ".get_access(cgh);";
   }
   std::string getFuncDecl() {
@@ -312,11 +316,9 @@ private:
   static VarAttrKind getAttr(const AttrVec &Attrs);
 
   std::string getMemoryType();
-  std::string getInitArguments(const std::string &MemSize) {
-    std::string ExtraString;
-    if (isShared())
-      ExtraString = ", cgh";
-    return getType()->getSyclctRange(MemSize) + ExtraString;
+  std::string getInitArguments(const std::string &MemSize,
+                               bool MustArguments = false) {
+    return getType()->getRangeArgument(MemSize, MustArguments);
   }
   const std::string &getMemoryAttr();
 
@@ -638,12 +640,13 @@ private:
                               const std::string &Indent,
                               const std::string &NL) {
     assert(Scope != MemVarInfo::Extern);
+    static const std::string NullString;
     std::string Result;
     for (auto VI : getVarMap()->getMap(Scope)) {
       if (Scope == MemVarInfo::Local) {
         Result += Indent + VI.second->getMemoryDecl() + NL;
       }
-      Result += Indent + VI.second->getAccessorDecl() + NL;
+      Result += Indent + VI.second->getAccessorDecl(NullString) + NL;
     }
     return Result;
   }

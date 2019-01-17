@@ -211,7 +211,7 @@ static void sycl_free(void *ptr) {
 
 // syclct_range used to store range infomation
 // syclct_range has specialization when Dimesion = 1, 2, 3
-template <size_t Dimesion> class syclct_range;
+template <int Dimesion> class syclct_range;
 template <> class syclct_range<0> {
 public:
   syclct_range(){};
@@ -221,7 +221,7 @@ template <> class syclct_range<1> {
 public:
   syclct_range(size_t dim1) : range{dim1} {}
   syclct_range(cl::sycl::range<1> range) : range{range[0]} {}
-  operator cl::sycl::range<1>() { return cl::sycl::range<1>(range[0]); }
+  operator cl::sycl::range<1>() const { return cl::sycl::range<1>(range[0]); }
   size_t size() const { return range[0]; }
   syclct_range<0> low() const { return syclct_range<0>(); }
 
@@ -232,7 +232,7 @@ template <> class syclct_range<2> {
 public:
   syclct_range(size_t dim1, size_t dim2) : range{dim1, dim2} {}
   syclct_range(cl::sycl::range<2> range) : range{range[0], range[1]} {}
-  operator cl::sycl::range<2>() {
+  operator cl::sycl::range<2>() const {
     return cl::sycl::range<2>(range[0], range[1]);
   }
   size_t size() const { return range[0] * range[1]; }
@@ -247,7 +247,7 @@ public:
       : range{dim1, dim2, dim3} {}
   syclct_range(cl::sycl::range<3> range)
       : range{range[0], range[1], range[2]} {}
-  operator cl::sycl::range<3>() {
+  operator cl::sycl::range<3>() const {
     return cl::sycl::range<3>(range[0], range[1], range[2]);
   }
   size_t size() const { return range[0] * range[1] * range[2]; }
@@ -341,55 +341,131 @@ public:
   using memory_t = memory_traits<Memory, T>;
   using element_t = typename memory_t::element_t;
   using pointer_t = typename memory_t::pointer_t;
-  using accessor_t = typename memory_t::template accessor_t<0>;
+  using accessor_t = typename memory_t::template accessor_t<1>;
   syclct_accessor(pointer_t data) : data(data) {}
   syclct_accessor(const accessor_t &acc)
       : syclct_accessor((pointer_t)acc.get_pointer(), syclct_range<0>()) {}
-  operator element_t &() const { return *data; }
+  operator element_t &() { return *data; }
+  syclct_accessor &operator=(const element_t &val) { *data = val; }
   T *operator&() { return static_cast<T *>(data); }
 
 private:
   pointer_t data;
 };
 
-//__shared__ uses local memory
-template <class T, size_t Dimension> class shared_memory {
-public:
-  using accessor_t =
-      typename memory_traits<shared, T>::template accessor_t<Dimension>;
-  shared_memory(cl::sycl::range<Dimension> range, cl::sycl::handler &cgh)
-      : acc(range, cgh) {}
-  accessor_t get_access(cl::sycl::handler &cgh) { return acc; }
-
-private:
-  accessor_t acc;
-};
-using extern_shared_memory = shared_memory<byte_t, 1>;
-
-//__constant__ and __device__ both use global memory
 template <class T, memory_attribute Memory, size_t Dimension>
-class global_memory {
+class syclct_accessor_acquirer {
 public:
   using accessor_t =
       typename memory_traits<Memory, T>::template accessor_t<Dimension>;
 
-  global_memory(cl::sycl::range<Dimension> range) : range(range) {
-    static_assert((Memory == device) || (Memory == constant),
-                  "Global memory attribute should be constant or device");
-    sycl_malloc((void **)&memory_ptr, range.size() * sizeof(T));
-  }
-  virtual ~global_memory() { sycl_free(memory_ptr); }
-  void *get_ptr() { return memory_ptr; }
-  accessor_t get_access(cl::sycl::handler &cgh) {
-    return memory_manager::get_instance()
-        .translate_ptr(memory_ptr)
-        .buffer.template reinterpret<T, Dimension>(range)
+  syclct_accessor_acquirer(const syclct_range<Dimension> &range)
+      : range(range) {}
+  accessor_t get_access(const buffer_t &buffer, cl::sycl::handler &cgh) {
+    return buffer.reinterpret<T, Dimension>(range)
         .template get_access<memory_traits<Memory, T>::mode,
                              memory_traits<Memory, T>::target>(cgh);
   }
 
 private:
-  cl::sycl::range<Dimension> range;
+  const syclct_range<Dimension> &range;
+};
+
+template <class T, memory_attribute Memory>
+class syclct_accessor_acquirer<T, Memory, 0> {
+public:
+  using accessor_t = typename memory_traits<Memory, T>::template accessor_t<0>;
+
+  syclct_accessor_acquirer(const syclct_range<0> &range) : range(range) {}
+  accessor_t get_access(const buffer_t &buffer, cl::sycl::handler &cgh) {
+    auto buffer_r = buffer.reinterpret<T, 1>(cl::sycl::range<1>(1));
+    return accessor_t(buffer_r, cgh);
+  }
+
+private:
+  const syclct_range<0> &range;
+};
+
+template <class T, size_t Dimension>
+class syclct_accessor_acquirer<T, shared, Dimension> {
+public:
+  using accessor_t =
+      typename memory_traits<shared, T>::template accessor_t<Dimension>;
+
+  syclct_accessor_acquirer(const syclct_range<Dimension> &range)
+      : range(range) {}
+  accessor_t get_access(cl::sycl::handler &cgh) {
+    return accessor_t(range, cgh);
+  }
+
+private:
+  const syclct_range<Dimension> &range;
+};
+template <class T> class syclct_accessor_acquirer<T, shared, 0> {
+public:
+  using accessor_t =
+      typename memory_traits<shared, T>::template accessor_t<0>;
+
+  syclct_accessor_acquirer(const syclct_range<0> &range) {}
+  accessor_t get_access(cl::sycl::handler &cgh) { return accessor_t(cgh); }
+};
+
+// base type of device memory
+template <class T, memory_attribute Memory, size_t Dimension>
+class base_memory {
+public:
+  using accessor_t =
+      typename memory_traits<Memory, T>::template accessor_t<Dimension>;
+  using accessor_acquirer = syclct_accessor_acquirer<T, Memory, Dimension>;
+  base_memory(const syclct_range<Dimension> &in_range)
+      : size(in_range.size() * sizeof(T)), range(in_range), acquire(range) {}
+  virtual accessor_t get_access(cl::sycl::handler &cgh) = 0;
+
+protected:
+  size_t size;
+  syclct_range<Dimension> range;
+  accessor_acquirer acquire;
+};
+
+//__shared__ uses local memory
+template <class T, size_t Dimension>
+class shared_memory : public base_memory<T, shared, Dimension> {
+public:
+  using base_t = base_memory<T, shared, Dimension>;
+  using accessor_t = typename base_t::accessor_t;
+  template <class... Args>
+  shared_memory(Args... Arguments)
+      : shared_memory(syclct_range<Dimension>(Arguments...)) {}
+  shared_memory(const syclct_range<Dimension> &range) : base_t(range) {}
+  accessor_t get_access(cl::sycl::handler &cgh) override {
+    return base_t::acquire.get_access(cgh);
+  }
+};
+using extern_shared_memory = shared_memory<byte_t, 1>;
+
+//__constant__ and __device__ both use global memory
+template <class T, memory_attribute Memory, size_t Dimension>
+class global_memory : public base_memory<T, Memory, Dimension> {
+public:
+  using base_t = base_memory<T, Memory, Dimension>;
+  using accessor_t = typename base_t::accessor_t;
+
+  template <class... Args>
+  global_memory(Args... Arguments)
+      : global_memory(syclct_range<Dimension>(Arguments...)) {}
+  global_memory(const syclct_range<Dimension> &range) : base_t(range) {
+    static_assert((Memory == device) || (Memory == constant),
+                  "Global memory attribute should be constant or device");
+    sycl_malloc((void **)&memory_ptr, base_t::size);
+  }
+  virtual ~global_memory() { sycl_free(memory_ptr); }
+  void *get_ptr() { return memory_ptr; }
+  accessor_t get_access(cl::sycl::handler &cgh) override {
+    return base_t::acquire.get_access(
+        memory_manager::get_instance().translate_ptr(memory_ptr).buffer, cgh);
+  }
+
+private:
   void *memory_ptr;
 };
 template <class T, size_t Dimension>

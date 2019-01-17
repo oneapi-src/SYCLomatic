@@ -50,8 +50,7 @@ std::string KernelCallExpr::getAccessorDecl(const std::string &Indent,
   auto VM = getVarMap();
   if (VM->hasExternShared()) {
     auto ExternVariable = VM->getMap(MemVarInfo::Extern).begin()->second;
-    Result = Indent + ExternVariable->getMemoryDecl(ExternMemSize) + NL;
-    Result += Indent + ExternVariable->getAccessorDecl() + NL;
+    Result += Indent + ExternVariable->getAccessorDecl(ExternMemSize) + NL;
   }
 
   Result += getAccessorDecl(MemVarInfo::Local, Indent, NL);
