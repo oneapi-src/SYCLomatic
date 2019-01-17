@@ -222,7 +222,8 @@ __host__ __device__ inline double2 project(double2 &v, const double2 &u) {
 }
 
 // CHECK: void test() try {
-// CHECK:   cl::sycl::double2 a, b;
+// CHECK:   cl::sycl::double2 a;
+// CHECK:   cl::sycl::double2 b;
 // CHECK:   a  = syclct_operator_overloading::operator+=(a , b);
 // CHECK: }
 // CHECK: catch (cl::sycl::exception const &exc) {
@@ -230,6 +231,7 @@ __host__ __device__ inline double2 project(double2 &v, const double2 &u) {
 // CHECK:   std::exit(1);
 // CHECK: }
 void test() {
-  double2 a, b;
+  double2 a;
+  double2 b;
   a += b;
 }
