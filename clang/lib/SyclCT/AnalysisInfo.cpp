@@ -166,7 +166,11 @@ void CallFunctionExpr::buildInfo(TransformSetTy &TS) {
     VarMap->merge(DeviceFunc.second->getVarMap(), TemplateArgs);
     DeviceFunc.second->setVarMap(VarMap);
   }
-  TS.emplace_back(new InsertText(RParenLoc, getArguments()));
+  TS.emplace_back(new InsertText(RParenLoc, getExtraArguments()));
+  for (auto &Arg : Args) {
+    if (auto TM = Arg.getTextModification())
+      TS.emplace_back(TM);
+  }
 }
 
 void DeviceFunctionInfo::buildInfo(TransformSetTy &TS) {
@@ -278,6 +282,22 @@ void TypeInfo::setTemplateType(const std::vector<TemplateArgumentInfo> &TA) {
   assert(TemplateIndex < TA.size());
   if (isTemplate())
     TemplateType = TA[TemplateIndex].getAsType();
+}
+
+void ArgumentInfo::getReplacement() {
+  if (auto ME = dyn_cast<MemberExpr>(Arg->IgnoreParenImpCasts())) {
+    if (auto B = dyn_cast<DeclRefExpr>(ME->getBase())) {
+      if (B->getDecl()->getType().getAsString(SyclctGlobalInfo::getInstance()
+                                                  .getContext()
+                                                  .getPrintingPolicy()) ==
+          "dim3") {
+        Replacement = B->getDecl()->getName().str() +
+                      MapNames::Dim3MemberNamesMap
+                          .find(ME->getMemberDecl()->getName().str())
+                          ->second;
+      }
+    }
+  }
 }
 } // namespace syclct
 } // namespace clang

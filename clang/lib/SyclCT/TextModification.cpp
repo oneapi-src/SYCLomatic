@@ -550,10 +550,6 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   }
 
   const std::string &ItemName = SyclctGlobalInfo::getItemName();
-  std::stringstream KernelArgs;
-
-  KernelArgs << buildArgList(KCall->arguments(), Context)
-             << Kernel->getArguments();
 
   // clang-format off
   std::stringstream Final;
@@ -572,7 +568,7 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << getDim3Translation(WGSize, Context, SSM)<<")," << NL
   << Indent <<  "      [=](cl::sycl::nd_item<3> " + ItemName + ") {" << NL
   << Header3.str()
-  << Indent <<  "        " << CallFunc << "(" << KernelArgs.str() << ");" << NL
+  << Indent <<  "        " << CallFunc << "(" << Kernel->getArguments() << ");" << NL
   << Indent <<  "      });" <<  NL
   << Indent <<  "  });" <<  NL
   << OrigIndent << "}";

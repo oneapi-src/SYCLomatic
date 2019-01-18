@@ -523,6 +523,30 @@ inline const std::string &MemVarMap::getItemName<MemVarMap::DeclParameter>() {
   return ItemName;
 }
 
+class ArgumentInfo {
+public:
+  ArgumentInfo(const Expr *E) : Arg(E) { getReplacement(); }
+
+  std::string getAsString() {
+    if (Replacement.empty())
+      return getStmtSpelling(Arg, SyclctGlobalInfo::getInstance().getContext());
+    else
+      return Replacement;
+  }
+  TextModification *getTextModification() {
+    if (Replacement.empty())
+      return nullptr;
+    else
+      return new ReplaceStmt(Arg, std::move(Replacement));
+  }
+
+private:
+  void getReplacement();
+
+  const Expr *Arg;
+  std::string Replacement;
+};
+
 // call function expression includes location, name, arguments num, template
 // arguments and all function decls related to this call, also merges memory
 // variable info of all related function decls.
@@ -530,14 +554,15 @@ class CallFunctionExpr {
 public:
   CallFunctionExpr(const CallExpr *CE)
       : Loc(getLocationId(CE)), RParenLoc(CE->getRParenLoc()),
-        ArgsNum(CE->getNumArgs()), VarMap(std::make_shared<MemVarMap>()) {
+        VarMap(std::make_shared<MemVarMap>()) {
     buildCallExprInfo(CE);
+    buildArguments(CE);
   }
 
   std::shared_ptr<MemVarMap> getVarMap() { return VarMap; }
 
   void buildInfo(TransformSetTy &TS);
-  bool hasArgs() { return ArgsNum != 0; }
+  bool hasArgs() { return !Args.empty(); }
   const std::string &getName() { return Name; }
 
   std::string getTemplateArguments() {
@@ -548,11 +573,26 @@ public:
                                 : Result.replace(Result.size() - 2, 2, ">");
   }
 
-  std::string getArguments() { return VarMap->getCallArguments(hasArgs()); }
+  virtual std::string getExtraArguments() {
+    return VarMap->getCallArguments(hasArgs());
+  }
+  std::string getOriginArguments() {
+    std::string Result;
+    for (auto &Arg : Args)
+      Result += Arg.getAsString() + ", ";
+    return Result.empty() ? Result : Result.erase(Result.size() - 2, 2);
+  }
+  std::string getArguments() {
+    return getOriginArguments() + getExtraArguments();
+  }
 
 private:
-  void buildCallExprInfo(const CallExpr *CE);
   static std::string getName(const NamedDecl *D);
+  void buildCallExprInfo(const CallExpr *CE);
+  void buildArguments(const CallExpr *CE) {
+    for (auto Arg : CE->arguments())
+      Args.push_back(Arg);
+  }
   void addTemplateType(const TemplateArgument &TA);
   void getTemplateArguments(const ArrayRef<TemplateArgumentLoc> &TemplateArgs);
   void getTemplateSpecializationInfo(const FunctionDecl *FD);
@@ -566,8 +606,8 @@ private:
 
   unsigned Loc;
   SourceLocation RParenLoc;
-  size_t ArgsNum;
   std::string Name;
+  std::vector<ArgumentInfo> Args;
   std::vector<TemplateArgumentInfo> TemplateArgs;
   GlobalMap<DeviceFunctionInfo> FuncDeclMap;
   std::shared_ptr<MemVarMap> VarMap;
@@ -578,9 +618,9 @@ private:
 class DeviceFunctionInfo {
 public:
   DeviceFunctionInfo(const FunctionDecl *Func)
-      : Built(false), Loc(getLocationId(Func)),
-        RParenLoc(getRParenLoc(Func)), ParamsNum(Func->getNumParams()),
-        VarMap(std::make_shared<MemVarMap>()) {}
+      : Built(false), Loc(getLocationId(Func)), RParenLoc(getRParenLoc(Func)),
+        ParamsNum(Func->getNumParams()), VarMap(std::make_shared<MemVarMap>()) {
+  }
   unsigned getLoc() { return Loc; }
   void addCallee(const CallExpr *CE) { registerNode(CE, CallExprMap); }
   void addVar(std::shared_ptr<MemVarInfo> Var) {
@@ -627,7 +667,7 @@ public:
         ExternMemSize(getExternMemSize(KernelCall)) {}
 
   std::string getAccessorDecl(const std::string &Indent, const std::string &NL);
-  std::string getArguments() {
+  std::string getExtraArguments() override {
     return getVarMap()->getKernelArguments(hasArgs());
   }
 
