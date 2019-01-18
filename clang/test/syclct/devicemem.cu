@@ -12,7 +12,7 @@
 //   2. Initialized value for device variable
 //   3. Muti-dimensional array
 
-// CHECK: syclct::device_memory<float, 1> in(syclct::syclct_range<1>(16));
+// CHECK: syclct::device_memory<float, 1> in(16);
 __device__ float in[NUM_ELEMENTS];
 
 // CHECK: void kernel1(float *out, cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<float, syclct::device, 1> in) {
@@ -22,11 +22,11 @@ __global__ void kernel1(float *out) {
   out[threadIdx.x] = in[threadIdx.x];
 }
 
-// CHECK: syclct::device_memory<int, 0> al(syclct::syclct_range<0>());
+// CHECK: syclct::device_memory<int, 0> al;
 __device__ int al;
 
-// CHECK: syclct::device_memory<float, 1> fx(syclct::syclct_range<1>(2));
-// CHECK: syclct::device_memory<float, 2> fy(syclct::syclct_range<2>(3, 4));
+// CHECK: syclct::device_memory<float, 1> fx(2);
+// CHECK: syclct::device_memory<float, 2> fy(3, 4);
 __device__ float fx[2], fy[3][4];
 
 // CHECK: void kernel2(float *out, cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<int, syclct::device, 0> al, syclct::syclct_accessor<float, syclct::device, 1> fx, syclct::syclct_accessor<float, syclct::device, 2> fy) {

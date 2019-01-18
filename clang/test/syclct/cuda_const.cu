@@ -3,8 +3,8 @@
 
 #include <stdio.h>
 
-// CHECK: syclct::constant_memory<float, 1> const_angle(syclct::syclct_range<1>(360));
-// CHECK: syclct::constant_memory<float, 2> const_float(syclct::syclct_range<2>(33, 33));
+// CHECK: syclct::constant_memory<float, 1> const_angle(360);
+// CHECK: syclct::constant_memory<float, 2> const_float(33, 33);
 __constant__ float const_angle[360], const_float[33][33];
 
 // CHECK:void simple_kernel(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<float, syclct::constant, 1> const_angle) {
@@ -24,7 +24,7 @@ __global__ void simple_kernel(float *d_array) {
   return;
 }
 
-// CHECK: syclct::constant_memory<float, 0> const_one(syclct::syclct_range<0>());
+// CHECK: syclct::constant_memory<float, 0> const_one;
 __constant__ float const_one;
 
 // CHECK:void simple_kernel_one(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<float, syclct::constant, 2> const_float, syclct::syclct_accessor<float, syclct::constant, 0> const_one) {
