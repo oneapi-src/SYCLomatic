@@ -103,7 +103,7 @@ const std::map<std::string, std::string> MathFunctionsRule::FunctionNamesMap{
     // See "4.13.4 Integer functions" and "4.13.5 Common functions"
 
     // <SYCL/sycl_math_builtins_common.h>
-    {"abs", "cl::sycl::abs"},
+    {"abs", "cl::sycl::abs"},/* for Int type => abs, float, double => fabs*/
     {"max", "cl::sycl::max"},
     {"min", "cl::sycl::min"},
 

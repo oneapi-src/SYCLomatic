@@ -1832,6 +1832,12 @@ void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
 
   if (FunctionNamesMap.count(FuncName) != 0) {
     std::string NewFuncName = FunctionNamesMap.at(FuncName);
+    if (FuncName == "abs") {
+      // further check the type of the args.
+      if (!C->getArg(0)->getType()->isIntegerType()) {
+        NewFuncName = "cl::sycl::fabs";
+      }
+    }
     emplaceTransformation(new ReplaceCalleeName(C, std::move(NewFuncName)));
   }
 }
