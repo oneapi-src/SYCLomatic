@@ -157,8 +157,8 @@ public:
           if (R1.getInsertPosition() == InsertPositionLeft) {
             ExtReplacement RMerge(
                 R1.getFilePath(), R1.getOffset(), R1.getLength(),
-                StringRef(ReplTextR1 == ReplTextR2 ? ReplTextR1
-                                                   : ReplTextR1 + ReplTextR2),
+                StringRef(R1.isEqualExtRepl(R2) ? ReplTextR1
+                                                : ReplTextR1 + ReplTextR2),
                 // TODO: class for merged transformations
                 nullptr);
             ReplSetMerged.emplace_back(std::move(RMerge));
@@ -169,8 +169,8 @@ public:
           } else {
             ExtReplacement RMerge(
                 R1.getFilePath(), R1.getOffset(), R1.getLength(),
-                StringRef(ReplTextR1 == ReplTextR2 ? ReplTextR1
-                                                   : ReplTextR2 + ReplTextR1),
+                StringRef(R1.isEqualExtRepl(R2) ? ReplTextR1
+                                                : ReplTextR2 + ReplTextR1),
                 // TODO: class for merged transformations
                 nullptr);
             ReplSetMerged.emplace_back(std::move(RMerge));

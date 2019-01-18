@@ -72,6 +72,19 @@ public:
   void setInsertPosition(int IP) { InsertPosition = IP; }
   unsigned int getInsertPosition() const { return InsertPosition; }
   bool getMerged() const { return Merged; }
+
+  /// return true if two code repl has same length(not zero) and same
+  /// replacement text. else return false.
+  /// NOTE: length == 0  code relacement is an insert operation.
+  ///       length != 0  code relacement is a real code replace operation.
+  bool isEqualExtRepl(ExtReplacement &R) const {
+    if (R.getLength() == this->getLength() && this->getLength() != 0 &&
+        R.getReplacementText().str() == this->getReplacementText().str()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
   void setMerged(bool M) { Merged = M; }
 
   const TextModification *getParentTM() const { return TM; }
