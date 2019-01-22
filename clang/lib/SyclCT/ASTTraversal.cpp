@@ -824,9 +824,7 @@ namespace ast_matchers {
 
 AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
   switch (Node.getOverloadedOperator()) {
-  default: {
-    return false;
-  }
+  default: { return false; }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -1726,7 +1724,7 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
             MEMTRANS_DECLFIND(MemcpyFromSymbol)
             MEMTRANS_DECLFIND(Free)
             MEMTRANS_DECLFIND(Memset)
-    // clang-format on
+// clang-format on
 #undef MEMTRANS_DECLFIND
         };
 
@@ -1753,7 +1751,8 @@ static const CXXConstructorDecl *getIfConstructorDecl(const Decl *ND) {
 void ErrorTryCatchRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(functionDecl(hasBody(compoundStmt()),
                              unless(anyOf(hasAttr(attr::CUDAGlobal),
-                                          hasAttr(attr::CUDADevice))))
+                                          hasAttr(attr::CUDADevice),
+                                          hasAncestor(lambdaExpr(anything())))))
                     .bind("functionDecl"),
                 this);
 }
