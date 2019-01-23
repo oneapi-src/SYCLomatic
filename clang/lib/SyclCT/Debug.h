@@ -75,7 +75,15 @@ public:
 };
 
 llvm::raw_ostream &SyclctDbgs();
-extern bool IsVerbose;
+extern int VerboseLevel;
+
+extern std::map<std::string, std::array<unsigned int, 3>> LOCStaticsMap;
+
+enum VerboseLevel {
+  NonVerbose = 0,
+  VerboseLow = 1,
+  VerboseHigh = 2,
+};
 
 #ifdef SYCLCT_DEBUG_BUILD // Debug build
 #define syclct_unreachable(message)                                            \

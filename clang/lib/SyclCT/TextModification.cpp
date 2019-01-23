@@ -26,7 +26,41 @@ using namespace clang;
 using namespace clang::syclct;
 using namespace clang::tooling;
 
+static std::unordered_set<std::string> DuplicateFilter;
+
+void recordTranslationInfo(const ASTContext &Context, const SourceLocation &SL,
+                           bool IsCompatibilityAPI = false) {
+  const SourceManager &SM = Context.getSourceManager();
+  if (SL.isValid()) {
+    const SourceLocation FileLoc = SM.getFileLoc(SL);
+    std::string SLStr = FileLoc.printToString(SM);
+
+    std::size_t Pos = SLStr.find(':');
+    std::string FileName = SLStr.substr(0, Pos);
+    std::size_t PosNext = SLStr.find(':', Pos + 1);
+    std::string LineNo = SLStr.substr(Pos + 1, PosNext - Pos - 1);
+
+    std::string Key = FileName + ":" + LineNo;
+
+    if (DuplicateFilter.find(Key) == end(DuplicateFilter) ||
+        IsCompatibilityAPI == true) {
+      if (IsCompatibilityAPI) {
+        if (DuplicateFilter.find(Key) != end(DuplicateFilter)) {
+          // when syclct api replacement and non-api SYCL replacement happen in
+          // the same line, only count line number to syclct api accumulation.
+          LOCStaticsMap[FileName][1]--;
+        }
+        LOCStaticsMap[FileName][0]++;
+      } else {
+        LOCStaticsMap[FileName][1]++;
+      }
+      DuplicateFilter.insert(Key);
+    }
+  }
+}
+
 ExtReplacement ReplaceStmt::getReplacement(const ASTContext &Context) const {
+  recordTranslationInfo(Context, TheStmt->getBeginLoc());
   return ExtReplacement(Context.getSourceManager(), TheStmt, ReplacementString,
                         this);
 }
@@ -34,6 +68,7 @@ ExtReplacement ReplaceStmt::getReplacement(const ASTContext &Context) const {
 ExtReplacement
 ReplaceCalleeName::getReplacement(const ASTContext &Context) const {
   const SourceManager &SM = Context.getSourceManager();
+  recordTranslationInfo(Context, C->getBeginLoc(), true);
   return ExtReplacement(Context.getSourceManager(),
                         SM.getSpellingLoc(C->getBeginLoc()),
                         getCalleeName(Context).size(), ReplStr, this);
@@ -64,6 +99,8 @@ ExtReplacement RemoveAttr::getReplacement(const ASTContext &Context) const {
   }
   Len += I;
 
+  recordTranslationInfo(Context, TheAttr->getLocation());
+
   return ExtReplacement(
       SM, CharSourceRange::getCharRange(ExpB, ExpB.getLocWithOffset(Len)), "",
       this);
@@ -73,6 +110,11 @@ std::map<unsigned, ReplaceVarDecl *> ReplaceVarDecl::ReplaceMap;
 
 ExtReplacement
 ReplaceTypeInDecl::getReplacement(const ASTContext &Context) const {
+  if (D) {
+    recordTranslationInfo(Context, D->getBeginLoc());
+  } else {
+    recordTranslationInfo(Context, FD->getBeginLoc());
+  }
   return ExtReplacement(Context.getSourceManager(), &TL, T, this);
 }
 
@@ -115,7 +157,7 @@ ExtReplacement ReplaceVarDecl::getReplacement(const ASTContext &Context) const {
   auto Data = DataAfter[repLength];
   while (Data != ';')
     Data = DataAfter[++repLength];
-
+  recordTranslationInfo(Context, SR.getBegin());
   return ExtReplacement(Context.getSourceManager(), SR.getBegin(), ++repLength,
                         T, this);
 }
@@ -123,11 +165,13 @@ ExtReplacement ReplaceVarDecl::getReplacement(const ASTContext &Context) const {
 ExtReplacement
 ReplaceReturnType::getReplacement(const ASTContext &Context) const {
   SourceRange SR = FD->getReturnTypeSourceRange();
+  recordTranslationInfo(Context, FD->getBeginLoc());
   return ExtReplacement(Context.getSourceManager(), CharSourceRange(SR, true),
                         T, this);
 }
 
 ExtReplacement ReplaceToken::getReplacement(const ASTContext &Context) const {
+  recordTranslationInfo(Context, Begin);
   // Need to deal with the fact, that the type name might be a macro.
   return ExtReplacement(Context.getSourceManager(),
                         // false means [Begin, End)
@@ -137,6 +181,7 @@ ExtReplacement ReplaceToken::getReplacement(const ASTContext &Context) const {
 }
 
 ExtReplacement InsertText::getReplacement(const ASTContext &Context) const {
+  recordTranslationInfo(Context, Begin);
   // Need to deal with the fact, that the type name might be a macro.
   return ExtReplacement(Context.getSourceManager(),
                         // false means [Begin, End)
@@ -153,11 +198,13 @@ InsertNameSpaceInVarDecl::getReplacement(const ASTContext &Context) const {
       CharSourceRange(SourceRange(TL.getBeginLoc(), TL.getBeginLoc()), false),
       T, this);
   R.setInsertPosition(InsertPositionRight);
+  recordTranslationInfo(Context, D->getBeginLoc());
   return R;
 }
 
 ExtReplacement
 InsertNameSpaceInCastExpr::getReplacement(const ASTContext &Context) const {
+  recordTranslationInfo(Context, D->getBeginLoc());
   return ExtReplacement(
       Context.getSourceManager(),
       CharSourceRange(SourceRange(D->getLParenLoc().getLocWithOffset(1),
@@ -169,6 +216,7 @@ InsertNameSpaceInCastExpr::getReplacement(const ASTContext &Context) const {
 ExtReplacement ReplaceCCast::getReplacement(const ASTContext &Context) const {
   auto Begin = Cast->getLParenLoc();
   auto End = Cast->getRParenLoc();
+  recordTranslationInfo(Context, Cast->getBeginLoc());
   return ExtReplacement(Context.getSourceManager(),
                         CharSourceRange(SourceRange(Begin, End), true),
                         TypeName, this);
@@ -184,7 +232,7 @@ RenameFieldInMemberExpr::getReplacement(const ASTContext &Context) const {
     Begin = ME->getBeginLoc();
     Begin = Begin.getLocWithOffset(PositionOfDot);
   }
-
+  recordTranslationInfo(Context, ME->getBeginLoc());
   return ExtReplacement(Context.getSourceManager(),
                         CharSourceRange(SourceRange(Begin, SL), true), T, this);
 }
@@ -199,11 +247,13 @@ InsertAfterStmt::getReplacement(const ASTContext &Context) const {
   unsigned Offs = Lexer::MeasureTokenLength(SpellLoc, SM, Opts);
   SourceLocation LastTokenBegin = Lexer::GetBeginningOfToken(Loc, SM, Opts);
   SourceLocation End = LastTokenBegin.getLocWithOffset(Offs);
+  recordTranslationInfo(Context, S->getEndLoc());
   return ExtReplacement(SM, CharSourceRange(SourceRange(End, End), false), T,
                         this);
 }
 
 ExtReplacement ReplaceInclude::getReplacement(const ASTContext &Context) const {
+  recordTranslationInfo(Context, Range.getBegin());
   return ExtReplacement(Context.getSourceManager(), Range, T, this);
 }
 
@@ -300,12 +350,14 @@ std::string ReplaceDim3Ctor::getReplaceString(const ASTContext &Context) const {
 
 ExtReplacement
 ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
+  recordTranslationInfo(Context, CSR.getBegin());
   return ExtReplacement(Context.getSourceManager(), CSR.getBegin(), 0,
                         getReplaceString(Context), this);
 }
 
 ExtReplacement InsertComment::getReplacement(const ASTContext &Context) const {
   auto NL = getNL(SL, Context.getSourceManager());
+  recordTranslationInfo(Context, SL);
   return ExtReplacement(Context.getSourceManager(), SL, 0,
                         (llvm::Twine("/*") + NL + Text + NL + "*/" + NL).str(),
                         this);
@@ -574,11 +626,13 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << OrigIndent << "}";
   // clang-format on
 
+  recordTranslationInfo(Context, KCall->getBeginLoc());
   return ExtReplacement(SM, KCall->getBeginLoc(), 0, Final.str(), this);
 }
 
 ExtReplacement
 ReplaceCallExpr::getReplacement(const ASTContext &Context) const {
+  recordTranslationInfo(Context, C->getBeginLoc());
   return ExtReplacement(
       Context.getSourceManager(), C,
       buildCall(Name, llvm::iterator_range<decltype(begin(Args))>(Args),
@@ -633,6 +687,8 @@ ExtReplacement InsertArgument::getReplacement(const ASTContext &Context) const {
   auto OutStr = Arg;
   if (!FD->parameters().empty())
     OutStr = Arg + getFmtEndArg() + getFmtArgIndent(OrigIndent);
+
+  recordTranslationInfo(Context, FD->getBeginLoc());
   return ExtReplacement(Context.getSourceManager(), tkn.getEndLoc(), 0, OutStr,
                         this);
 }
@@ -649,6 +705,8 @@ InsertCallArgument::getReplacement(const ASTContext &Context) const {
   assert(CallStr.find_first_of("(") != llvm::StringRef::npos);
   size_t Offset = CallStr.find_first_of("(") + 1;
   const std::string InsertStr = (CE->getNumArgs() == 0) ? Arg : Arg + ", ";
+
+  recordTranslationInfo(Context, CE->getBeginLoc());
   return ExtReplacement(Context.getSourceManager(),
                         SLocBegin.getLocWithOffset(Offset), 0, InsertStr, this);
 }
@@ -656,6 +714,7 @@ InsertCallArgument::getReplacement(const ASTContext &Context) const {
 ExtReplacement
 InsertBeforeCtrInitList::getReplacement(const ASTContext &Context) const {
   const SourceManager &SM = Context.getSourceManager();
+  recordTranslationInfo(Context, CDecl->getBeginLoc());
   if (CDecl->init_begin() != CDecl->init_end()) {
     // Initialization list exists, insert before ":"
     // Eg: A(int b, int c) : b(b), c(c) {}
@@ -757,6 +816,7 @@ ReplacementFilter::ReplacementFilter(const std::vector<ExtReplacement> &RS)
 ExtReplacement
 InsertBeforeStmt::getReplacement(const ASTContext &Context) const {
   SourceLocation Begin = S->getSourceRange().getBegin();
+  recordTranslationInfo(Context, S->getBeginLoc());
   return ExtReplacement(Context.getSourceManager(),
                         CharSourceRange(SourceRange(Begin, Begin), false), T,
                         this);
@@ -772,6 +832,7 @@ ExtReplacement RemoveArg::getReplacement(const ASTContext &Context) const {
   } else {
     End = CE->getArg(N + 1)->getSourceRange().getBegin().getLocWithOffset(-1);
   }
+  recordTranslationInfo(Context, CE->getBeginLoc());
   return ExtReplacement(Context.getSourceManager(),
                         CharSourceRange(SourceRange(Begin, End), true), "",
                         this);
@@ -792,6 +853,7 @@ InsertClassName::getReplacement(const ASTContext &Context) const {
   while ((Data == ' ') || (Data == '\t') || (Data == '\n'))
     Data = DataBegin[--i];
 
+  recordTranslationInfo(Context, CD->getBeginLoc());
   return ExtReplacement(
       SM, BeginLoc.getLocWithOffset(i + 1), 0,
       " syclct_type_" +

@@ -35,6 +35,7 @@
 
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Basic/LangOptions.h"
+#include "clang/Basic/SourceManager.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 using namespace clang;
@@ -70,8 +71,14 @@ static opt<bool, true>
                  llvm::cl::desc("Keep original code in comments of SYCL file"),
                  cat(SyclCTCat), llvm::cl::location(KeepOriginalCodeFlag));
 
-static opt<bool, true> Verbose("v", desc("Show verbose compiling message"),
-                               cat(SyclCTCat), location(IsVerbose));
+static opt<int, true, llvm::cl::parser<int>>
+    Verbose("v",
+            desc("Specify migration report verbosity level:\n"
+                 "v=1 CSV format: file name, Lines Of Code (LOC) migrated to "
+                 "SYCL,\nLOC migrated to Compatibility API, LOC not needed to "
+                 "migrate, LOC not able to migrate.\n"
+                 "v=2 Detailed information of all replacements.\n"),
+            cat(SyclCTCat), location(VerboseLevel));
 
 std::string CudaPath; // Global value for the CUDA install path.
 
@@ -508,11 +515,62 @@ void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
   }
 }
 
+unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
+                           StringRef Path) {
+  // Set up Rewriter and to get source manager.
+  LangOptions DefaultLangOptions;
+  IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
+  TextDiagnosticPrinter DiagnosticPrinter(llvm::errs(), &*DiagOpts);
+  DiagnosticsEngine Diagnostics(
+      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
+      &DiagnosticPrinter, false);
+  SourceManager Sources(Diagnostics, Tool.getFiles());
+  Rewriter Rewrite(Sources, DefaultLangOptions);
+  SourceManager &SM = Rewrite.getSourceMgr();
+
+  const FileEntry *Entry = SM.getFileManager().getFile(Path);
+  if (!Entry) {
+    llvm::errs() << "FilePath Invalide..."
+                 << "\n";
+    assert(false);
+  }
+
+  FileID FID = SM.getOrCreateFileID(Entry, SrcMgr::C_User);
+
+  SourceLocation EndOfFile = SM.getLocForEndOfFile(FID);
+  unsigned int LineNumber = SM.getSpellingLineNumber(EndOfFile, nullptr);
+  return LineNumber;
+}
+
+static void printMetrics(
+    clang::tooling::RefactoringTool &Tool,
+    std::map<std::string, std::array<unsigned int, 3>> &LOCStaticsMap) {
+
+  for (const auto &Elem : LOCStaticsMap) {
+    unsigned TotalLines = GetLinesNumber(Tool, Elem.first);
+    unsigned TransToAPI = Elem.second[0];
+    unsigned TransToSYCL = Elem.second[1];
+    unsigned NotTrans = TotalLines - TransToSYCL - TransToAPI;
+    unsigned NotSupport = Elem.second[2];
+
+    SyclctDbgs() << "\n";
+    SyclctDbgs()
+        << "File name, LOC migrated to SYCL, LOC migrated to Compatibility "
+           "API, LOC not needed to migrate, LOC not able to migrate";
+    SyclctDbgs() << "\n";
+    SyclctDbgs() << Elem.first + ", " + std::to_string(TransToSYCL) + ", " +
+                        std::to_string(TransToAPI) + ", " +
+                        std::to_string(NotTrans) + ", " +
+                        std::to_string(NotSupport);
+    SyclctDbgs() << "\n";
+  }
+}
+
 int run(int argc, const char **argv) {
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;
   CommonOptionsParser OptParser(argc, argv, SyclCTCat);
-
+  clock_t StartTime = clock();
   if (!makeCanonicalOrSetDefaults(InRoot, OutRoot,
                                   OptParser.getSourcePathList()))
     exit(-1);
@@ -548,6 +606,15 @@ int run(int argc, const char **argv) {
 
   // if run was successful
   int status = saveNewFiles(Tool, InRoot, OutRoot);
+
+  if (VerboseLevel == VerboseLow || VerboseLevel == VerboseHigh) {
+    printMetrics(Tool, LOCStaticsMap);
+    clock_t EndTime = clock();
+    double Duration = (double)(EndTime - StartTime) / (CLOCKS_PER_SEC / 1000);
+    SyclctDbgs() << "\nTotal migration time: " + std::to_string(Duration) +
+                        " ms\n";
+  }
+
   DebugInfo::ShowStatus(status);
   return status;
 }

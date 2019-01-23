@@ -827,7 +827,9 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: { return false; }
+  default: {
+    return false;
+  }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -1941,6 +1943,14 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
 
   std::string APIName = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   if (!TranslationStatistics::IsTranslated(APIName)) {
+
+    const SourceManager &SM = (*Result.Context).getSourceManager();
+    const SourceLocation FileLoc = SM.getFileLoc(C->getBeginLoc());
+    std::string SLStr = FileLoc.printToString(SM);
+    std::size_t Pos = SLStr.find(':');
+    std::string FileName = SLStr.substr(0, Pos);
+    LOCStaticsMap[FileName][2]++;
+
     report(C->getBeginLoc(), Comments::API_NOT_TRANSLATED, APIName.c_str());
   }
 }

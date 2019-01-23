@@ -9,7 +9,14 @@
 namespace clang {
 namespace syclct {
 
-bool IsVerbose = false;
+// std::string -> file name
+// std::array<unsigned int, 3> =>
+// array[0]: count LOC(Lines Of Code) to API
+// array[1]: count LOC(Lines Of Code) to SYCL
+// array[2]: count API not support
+std::map<std::string, std::array<unsigned int, 3>> LOCStaticsMap;
+
+int VerboseLevel = NonVerbose;
 
 #ifdef SYCLCT_DEBUG_BUILD // Debug build
 bool ShowDebugLevelFlag = false;
@@ -21,7 +28,7 @@ static llvm::cl::opt<bool, true>
 
 enum class DebugLevel : int { Low = 1, Median, High };
 
-static DebugLevel DbgLevel = DebugLevel::High;
+static DebugLevel DbgLevel = DebugLevel::Low;
 
 struct DebugLevelOpt {
   void operator=(const int &Val) {
@@ -112,7 +119,7 @@ void DebugInfo::printTranslationRules(
     SyclctDbgs() << "# of TranslationRules: " << NumRules << "\n";
   };
 
-  if (IsVerbose) {
+  if (VerboseLevel == VerboseHigh) {
     print();
   }
 
@@ -123,8 +130,12 @@ void DebugInfo::printTranslationRules(
 // Start of debug build
 static void printMatchedRulesDebugImpl(
     const std::vector<std::unique_ptr<ASTTraversal>> &MatchedRules) {
-  if (IsVerbose) {
-    llvm::DebugFlag = true;
+  llvm::DebugFlag = true;
+
+  llvm::DebugFlag = true;
+  if (VerboseLevel == VerboseLow) {
+    DbgLevel = DebugLevel::Low;
+  } else if (VerboseLevel == VerboseHigh) {
     DbgLevel = DebugLevel::High;
   }
 
@@ -160,8 +171,11 @@ static void printMatchedRulesDebugImpl(
 
 static void printReplacementsDebugImpl(ReplacementFilter &ReplFilter,
                                        clang::ASTContext &Context) {
-  if (IsVerbose) {
-    llvm::DebugFlag = true;
+
+  llvm::DebugFlag = true;
+  if (VerboseLevel == VerboseLow) {
+    DbgLevel = DebugLevel::Low;
+  } else if (VerboseLevel == VerboseHigh) {
     DbgLevel = DebugLevel::High;
   }
 
@@ -232,7 +246,7 @@ static void printReplacementsDebugImpl(ReplacementFilter &ReplFilter,
 // Start of release build
 static void printMatchedRulesReleaseImpl(
     const std::vector<std::unique_ptr<ASTTraversal>> &MatchedRules) {
-  if (!IsVerbose) {
+  if (VerboseLevel < VerboseLow) {
     return;
   }
 
@@ -251,7 +265,7 @@ static void printMatchedRulesReleaseImpl(
 
 static void printReplacementsReleaseImpl(ReplacementFilter &ReplFilter,
                                          clang::ASTContext &Context) {
-  if (!IsVerbose) {
+  if (VerboseLevel < VerboseLow) {
     return;
   }
 
