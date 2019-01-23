@@ -823,8 +823,13 @@ namespace clang {
 namespace ast_matchers {
 
 AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
+  if (!SyclctGlobalInfo::isInRoot(Node.getBeginLoc()))
+    return false;
+
   switch (Node.getOverloadedOperator()) {
-  default: { return false; }
+  default: {
+    return false;
+  }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -834,18 +839,6 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
 #undef OVERLOADED_OPERATOR
 #undef OVERLOADED_OPERATOR_MULTI
   }
-
-  // Filter out in class overloaded operators
-  // Eg.
-  //   class double2 {
-  //     double2& operator+=(const double2&)
-  //   };
-  //
-  // Take care only out of class overloaded operators
-  // Eg.
-  //   double2& operator+=(const double2&, const double2&)
-  if (Node.getNumParams() != 2)
-    return false;
 
   // Check parameter is vector type
   auto SupportedParamType = [&](const ParmVarDecl *PD) {
@@ -859,9 +852,15 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return (SupportedVectorTypes.find(TypeName) != SupportedVectorTypes.end());
   };
 
+  assert(Node.getNumParams() < 3);
   // As long as one parameter is vector type
-  return (SupportedParamType(Node.getParamDecl(0)) ||
-          SupportedParamType(Node.getParamDecl(1)));
+  for (unsigned i = 0, End = Node.getNumParams(); i != End; ++i) {
+    if (SupportedParamType(Node.getParamDecl(i))) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 } // namespace ast_matchers
@@ -982,7 +981,11 @@ void VectorTypeOperatorRule::TranslateOverloadedOperatorCall(
 
   FuncCall << NamespaceName << "::operator" << OperatorName;
 
-  emplaceTransformation(new ReplaceToken(CE->getOperatorLoc(), ","));
+  std::string OperatorReplacement = (CE->getNumArgs() == 1)
+                                        ? /* Unary operator */ ""
+                                        : /* Binary operator */ ",";
+  emplaceTransformation(
+      new ReplaceToken(CE->getOperatorLoc(), std::move(OperatorReplacement)));
   emplaceTransformation(new InsertBeforeStmt(CE, FuncCall.str() + "("));
   emplaceTransformation(new InsertAfterStmt(CE, ")"));
 }
