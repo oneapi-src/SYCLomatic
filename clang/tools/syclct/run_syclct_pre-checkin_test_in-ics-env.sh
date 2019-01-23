@@ -29,6 +29,7 @@ syclct_sdk_8_samples=(
   convolutionSeparable
   FDTD3d
   simpleTemplates
+  simpleAtomicIntrinsics
 )
 
 syclct_sdk_8_samples_list=$(IFS=, ; echo "syclct_sdk_8_samples/${syclct_sdk_8_samples[*]}")
