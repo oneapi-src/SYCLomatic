@@ -354,8 +354,8 @@ public:
 
     // Sort the transformations according to the sort key of the individual
     // transformations.  Sorted from low->high Key values
-    std::sort(TransformSet.begin(), TransformSet.end(),
-              TextModification::Compare);
+    std::stable_sort(TransformSet.begin(), TransformSet.end(),
+                     TextModification::Compare);
 
     std::vector<ExtReplacement> ReplSet;
     for (const auto &I : TransformSet) {
