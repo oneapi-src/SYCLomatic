@@ -31,7 +31,7 @@ __constant__ float const_one;
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(0) * [[ITEM]].get_local_range().get(0) + [[ITEM]].get_local_id(0);
 // CHECK-NEXT:  if (index < 33) {
-// CHECK-NEXT:    d_array[index] = const_one + const_float[index][index];
+// CHECK-NEXT:    d_array[index] = (float)const_one + const_float[index][index];
 // CHECK-NEXT:  }
 // CHECK-NEXT:  return;
 // CHECK-NEXT:}

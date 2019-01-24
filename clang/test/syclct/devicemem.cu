@@ -30,7 +30,7 @@ __device__ int al;
 __device__ float fx[2], fy[3][4];
 
 // CHECK: void kernel2(float *out, cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<int, syclct::device, 0> al, syclct::syclct_accessor<float, syclct::device, 1> fx, syclct::syclct_accessor<float, syclct::device, 2> fy) {
-// CHECK:   out[{{.*}}[[ITEM]].get_local_id(0)] += al;
+// CHECK:   out[{{.*}}[[ITEM]].get_local_id(0)] += (int)al;
 // CHECK:   fx[{{.*}}[[ITEM]].get_local_id(0)] = fy[{{.*}}[[ITEM]].get_local_id(0)][{{.*}}[[ITEM]].get_local_id(0)];
 // CHECK: }
 __global__ void kernel2(float *out) {

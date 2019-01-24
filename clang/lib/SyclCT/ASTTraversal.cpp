@@ -1499,7 +1499,11 @@ REGISTER_RULE(DeviceFunctionCallRule)
 /// __constant__/__shared__/__device__ var information collection
 void MemVarRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
-      declRefExpr(to(varDecl(anyOf(hasAttr(attr::CUDAConstant),
+      declRefExpr(anyOf(hasParent(implicitCastExpr(
+                                      unless(hasParent(arraySubscriptExpr())))
+                                      .bind("impl")),
+                        anything()),
+                  to(varDecl(anyOf(hasAttr(attr::CUDAConstant),
                                    hasAttr(attr::CUDADevice),
                                    hasAttr(attr::CUDAShared)),
                              unless(hasAnyName("threadIdx", "blockDim",
@@ -1508,6 +1512,19 @@ void MemVarRule::registerMatcher(MatchFinder &MF) {
                   hasAncestor(functionDecl().bind("func")))
           .bind("used"),
       this);
+}
+
+void MemVarRule::insertExplicitCast(const ImplicitCastExpr *Impl,
+                                    const QualType &Type) {
+  if (Impl->getCastKind() == CastKind::CK_LValueToRValue) {
+    if (!Type->isArrayType()) {
+      auto TypeName = Type.getAsString();
+      auto Itr = MapNames::TypeNamesMap.find(TypeName);
+      if (Itr != MapNames::TypeNamesMap.end())
+        TypeName = Itr->second;
+      emplaceTransformation(new InsertBeforeStmt(Impl, "(" + TypeName + ")"));
+    }
+  }
 }
 
 void MemVarRule::run(const MatchFinder::MatchResult &Result) {
@@ -1522,10 +1539,11 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
   if (MemVarRef && Func) {
     if (Func->hasAttr<CUDAGlobalAttr>() ||
         (Func->hasAttr<CUDADeviceAttr>() && !Func->hasAttr<CUDAHostAttr>())) {
-      if (auto Var =
-              Global.findMemVarInfo(dyn_cast<VarDecl>(MemVarRef->getDecl()))) {
+      auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());
+      if (auto Var = Global.findMemVarInfo(VD))
         Global.registerDeviceFunctionInfo(Func)->addVar(Var);
-      }
+      if (auto Impl = getAssistNodeAsType<ImplicitCastExpr>(Result, "impl"))
+        insertExplicitCast(Impl, VD->getType());
     }
   }
 }

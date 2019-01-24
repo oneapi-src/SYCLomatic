@@ -564,7 +564,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
 private:
-  std::unique_ptr<TextModification> &registerModification();
+  void insertExplicitCast(const ImplicitCastExpr *Impl, const QualType &Type);
 };
 
 // Translation rule for memory management routine.
