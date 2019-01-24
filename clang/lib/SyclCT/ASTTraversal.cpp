@@ -827,9 +827,7 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: {
-    return false;
-  }
+  default: { return false; }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -1519,9 +1517,15 @@ void MemVarRule::insertExplicitCast(const ImplicitCastExpr *Impl,
   if (Impl->getCastKind() == CastKind::CK_LValueToRValue) {
     if (!Type->isArrayType()) {
       auto TypeName = Type.getAsString();
+      if (Type->isPointerType()) {
+        TypeName = Type->getPointeeType().getAsString();
+      }
       auto Itr = MapNames::TypeNamesMap.find(TypeName);
       if (Itr != MapNames::TypeNamesMap.end())
         TypeName = Itr->second;
+      if (Type->isPointerType()) {
+        TypeName += "*";
+      }
       emplaceTransformation(new InsertBeforeStmt(Impl, "(" + TypeName + ")"));
     }
   }
