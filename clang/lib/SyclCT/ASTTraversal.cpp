@@ -535,8 +535,6 @@ void AtomicFunctionRule::TranslateAtomicFunc(const CallExpr *CE) {
   const std::string AtomicFuncName = CE->getDirectCallee()->getName().str();
   assert(AtomicFuncNamesMap.find(AtomicFuncName) != AtomicFuncNamesMap.end());
   std::string ReplacedAtomicFuncName = AtomicFuncNamesMap.at(AtomicFuncName);
-  emplaceTransformation(
-      new ReplaceCalleeName(CE, std::move(ReplacedAtomicFuncName)));
 
   // Explicitly cast all arguments except first argument
   const Type *Arg0Type = CE->getArg(0)->getType().getTypePtrOrNull();
@@ -553,6 +551,18 @@ void AtomicFunctionRule::TranslateAtomicFunc(const CallExpr *CE) {
   } else {
     TypeName = PointeeType.getAsString();
   }
+  // add exceptions for atomic tranlastion:
+  // eg. source code: atomicMin(double), don't translate it, its user code.
+  //     also: atomic_fetch_min<double> is not available in compute++.
+  if ((TypeName == "double" && AtomicFuncName != "atomicAdd") ||
+      (TypeName == "float" &&
+       !(AtomicFuncName == "atomicAdd" || AtomicFuncName == "atomicExch"))) {
+
+    return;
+  }
+
+  emplaceTransformation(
+      new ReplaceCalleeName(CE, std::move(ReplacedAtomicFuncName)));
 
   const unsigned NumArgs = CE->getNumArgs();
   for (unsigned i = 1; i < NumArgs; ++i) {
