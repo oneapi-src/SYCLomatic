@@ -414,6 +414,10 @@ public:
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  bool isNamespaceInserted(SourceLocation SL);
+
+private:
+  std::unordered_set<unsigned int> DupFilter;
 };
 
 /// Translation rule for vector type member access

@@ -2,6 +2,8 @@
 // RUN: FileCheck --input-file %T/sizeof_int2_insert_namespace.sycl.cpp --match-full-lines %s
 
 void fun() {
+  // CHECK:  cl::sycl::int2 a, b, c, d[2], *e[2];
+  int2 a, b, c, d[2], *e[2];
   // CHECK:  int i = sizeof(cl::sycl::int2);
   int i = sizeof(int2);
   // CHECK:  int j = sizeof(int);

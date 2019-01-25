@@ -744,10 +744,23 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 
+bool VectorTypeNamespaceRule::isNamespaceInserted(SourceLocation SL) {
+  unsigned int Key = SL.getRawEncoding();
+  if (DupFilter.find(Key) == end(DupFilter)) {
+    DupFilter.insert(Key);
+    return false;
+  } else {
+    return true;
+  }
+}
+
 void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
   // int2 => cl::sycl::int2
   if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "vecVarDecl")) {
-    emplaceTransformation(new InsertNameSpaceInVarDecl(D, "cl::sycl::"));
+    if (!isNamespaceInserted(
+            D->getTypeSourceInfo()->getTypeLoc().getBeginLoc())) {
+      emplaceTransformation(new InsertNameSpaceInVarDecl(D, "cl::sycl::"));
+    }
   }
 
   // typedef int2 xxx => typedef cl::sycl::int2 xxx
@@ -755,14 +768,20 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
           getNodeAsType<TypedefDecl>(Result, "typeDefDecl")) {
     const SourceLocation UnderlyingTypeSL =
         TD->getTypeSourceInfo()->getTypeLoc().getBeginLoc();
-    emplaceTransformation(new InsertText(UnderlyingTypeSL, "cl::sycl::"));
+
+    if (!isNamespaceInserted(UnderlyingTypeSL)) {
+      emplaceTransformation(new InsertText(UnderlyingTypeSL, "cl::sycl::"));
+    }
   }
 
   // int2 func() => cl::sycl::int2 func()
   if (const FunctionDecl *FD =
           getNodeAsType<FunctionDecl>(Result, "funcReturnsVectorType")) {
-    emplaceTransformation(new InsertText(
-        FD->getReturnTypeSourceRange().getBegin(), "cl::sycl::"));
+
+    if (!isNamespaceInserted(FD->getReturnTypeSourceRange().getBegin())) {
+      emplaceTransformation(new InsertText(
+          FD->getReturnTypeSourceRange().getBegin(), "cl::sycl::"));
+    }
   }
 }
 
