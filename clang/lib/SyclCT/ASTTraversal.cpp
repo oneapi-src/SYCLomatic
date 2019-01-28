@@ -856,9 +856,7 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: {
-    return false;
-  }
+  default: { return false; }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -1895,6 +1893,21 @@ void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
     emplaceTransformation(new ReplaceCalleeName(C, std::move(NewFuncName)));
+
+    if (FuncName == "min") {
+      const LangOptions &LO = Result.Context->getLangOpts();
+      std::string FT = C->getType().getAsString(PrintingPolicy(LO));
+      for (unsigned i = 0; i < C->getNumArgs(); i++) {
+        std::string ArgT =
+            C->getArg(i)->getType().getAsString(PrintingPolicy(LO));
+        std::string ArgExpr = C->getArg(i)->getStmtClassName();
+        if (ArgT != FT || ArgExpr == "BinaryOperator") {
+          emplaceTransformation(
+              new InsertBeforeStmt(C->getArg(i), "(" + FT + ")("));
+          emplaceTransformation(new InsertAfterStmt(C->getArg(i), ")"));
+        }
+      }
+    }
   }
 }
 
