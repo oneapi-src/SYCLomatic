@@ -94,7 +94,7 @@ int main() {
   // CHECK:         auto ctemp2_acc = ctemp2.get_access(cgh);
   // CHECK:         cgh.parallel_for<syclct_kernel_name<class gpuMain_{{[a-f0-9]+}}>>(
   // CHECK:           cl::sycl::nd_range<3>((cl::sycl::range<3>(64, 1, 1) * cl::sycl::range<3>(64, 1, 1)), cl::sycl::range<3>(64, 1, 1)),
-  // CHECK:           [=](cl::sycl::nd_item<3> item_2f2f34) {
+  // CHECK:           [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK:             gpuMain(syclct::syclct_accessor<cl::sycl::double2, syclct::shared, 1>(ctemp2_acc));
   // CHECK:           });
   // CHECK:       });
