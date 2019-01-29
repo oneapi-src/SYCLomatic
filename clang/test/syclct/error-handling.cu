@@ -1,11 +1,12 @@
-// RUN: syclct -out-root %T %s -passes "ErrorHandlingIfStmtRule" -- -x cuda --cuda-host-only --cuda-path=%cuda-path
-// RUN: sed -e 's,//.*$,,' %T/error-handling.sycl.cpp | FileCheck --match-full-lines %s
+// RUN: syclct -out-root %T %s  -- -w -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: FileCheck %s --match-full-lines --input-file %T/error-handling.sycl.cpp
+
 
 int printf(const char *s, ...);
 int fprintf(int, const char *s, ...);
 
-// CHECK:void test_simple_ifs() {
-// CHECK-NEXT:  cudaError_t err;
+// CHECK:void test_simple_ifs() try {
+// CHECK-NEXT:  int err;
 // checking for empty lines (with one or more spaces)
 // CHECK-NEXT:{{ +}}
 // CHECK-NEXT:{{ +}}
@@ -30,8 +31,8 @@ void test_simple_ifs() {
   }
 }
 
-// CHECK:void test_simple_ifs_const() {
-// CHECK-NEXT:  const cudaError_t err = cudaSuccess;
+// CHECK:void test_simple_ifs_const() try {
+// CHECK-NEXT:  const int err = 0;
 // Checking for empty lines (with one or more spaces).
 // CHECK-NEXT:{{ +}}
 // CHECK-NEXT:{{ +}}
@@ -56,13 +57,13 @@ void test_simple_ifs_const() {
   }
 }
 
-// CHECK:void test_typedef() {
+// CHECK:void test_typedef() try {
 // CHECK-NEXT:  typedef cudaError_t someError_t;
 // CHECK-NEXT:  someError_t err;
 // CHECK-NEXT:{{ +}}
 // CHECK-NEXT:{{ +}}
 // CHECK-NEXT:}
-void test_typedef() {
+void test_typedef()  {
   typedef cudaError_t someError_t;
   someError_t err;
   if (err != cudaSuccess) {
@@ -71,8 +72,8 @@ void test_typedef() {
   }
 }
 
-// CHECK:void test_no_braces() {
-// CHECK-NEXT:  cudaError_t err;
+// CHECK:void test_no_braces() try {
+// CHECK-NEXT:  int err;
 // CHECK-NEXT:  {{ +}};
 // CHECK-NEXT:}
 void test_no_braces() {
@@ -81,13 +82,13 @@ void test_no_braces() {
     printf("error!\n");
 }
 
-// CHECK:void test_unrelated_then() {
-// CHECK-NEXT:  cudaError_t err;
+// CHECK:void test_unrelated_then() try {
+// CHECK-NEXT:  int err;
 // CHECK-NEXT:  int i = 0;
 // CHECK-NEXT:/*
 // CHECK-NEXT:SYCLCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
 // CHECK-NEXT:*/
-// CHECK-NEXT:  if (err != cudaSuccess) {
+// CHECK-NEXT:   if (err != 0) {
 // CHECK-NEXT:/*
 // CHECK-NEXT:SYCLCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
 // CHECK-NEXT:*/
@@ -103,8 +104,8 @@ void test_unrelated_then() {
   }
 }
 
-// CHECK:void test_CUDA_SUCCESS() {
-// CHECK-NEXT:  cudaError_t err;
+// CHECK:void test_CUDA_SUCCESS() try {
+// CHECK-NEXT:  int err;
 // CHECK-NEXT:  {{ +}}
 // CHECK-NEXT:}
 void test_CUDA_SUCCESS() {
@@ -114,8 +115,8 @@ void test_CUDA_SUCCESS() {
   }
 }
 
-// CHECK:void test_CUDA_SUCCESS_empty() {
-// CHECK-NEXT:  cudaError_t err;
+// CHECK:void test_CUDA_SUCCESS_empty() try {
+// CHECK-NEXT:  int err;
 // CHECK-NEXT:{{ +}}
 // CHECK-NEXT:}
 void test_CUDA_SUCCESS_empty() {
@@ -124,9 +125,9 @@ void test_CUDA_SUCCESS_empty() {
   }
 }
 
-// CHECK:void test_other_enum() {
-// CHECK-NEXT:  cudaError_t err;
-// CHECK-NEXT:  if (err != cudaErrorLaunchFailure) {
+// CHECK:void test_other_enum() try {
+// CHECK-NEXT:  int err;
+// CHECK-NEXT:  if (err != 4) {
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
@@ -137,9 +138,12 @@ void test_other_enum() {
   }
 }
 
-// CHECK:void test_assignment() {
-// CHECK-NEXT:  cudaError_t err;
-// CHECK-NEXT:  if (err = cudaMalloc(0, 0)) {
+// CHECK:void test_assignment() try {
+// CHECK-NEXT:  int err;
+// CHECK-NEXT:/*
+// CHECK-NEXT:SYCLCT1003:2: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:*/
+// CHECK-NEXT:  if (err = (syclct::sycl_malloc(0, 0), 0)) {
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
@@ -150,8 +154,8 @@ void test_assignment() {
   }
 }
 
-// CHECK:void test_1(cudaError_t err, int arg) {
-// CHECK-NEXT:  if (err == cudaSuccess && arg) {
+// CHECK:void test_1(int err, int arg) try {
+// CHECK-NEXT:  if (err == 0 && arg) {
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
 void test_1(cudaError_t err, int arg) {
@@ -159,7 +163,7 @@ void test_1(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_12(cudaError_t err, int arg) {
+// CHECK:void test_12(int err, int arg) try {
 // CHECK-NEXT:  if (err) {
 // CHECK-NEXT:  } else {
 // CHECK-NEXT:{{ +}}
@@ -172,7 +176,7 @@ void test_12(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_13(cudaError_t err, int arg) {
+// CHECK:void test_13(int err, int arg) try {
 // CHECK-NEXT:  {{ +}}
 // CHECK-NEXT:}
 void test_13(cudaError_t err, int arg) {
@@ -181,7 +185,7 @@ void test_13(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_14(cudaError_t err, int arg) {
+// CHECK:void test_14(int err, int arg) try {
 // CHECK-NEXT:  if (arg == 1) {
 // CHECK-NEXT:    return;
 // CHECK-NEXT:  }
@@ -204,8 +208,11 @@ void test_14(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_15(cudaError_t err, int arg) {
-// CHECK-NEXT:  if (cudaMalloc(0, 0)) {
+// CHECK:void test_15(int err, int arg) try {
+// CHECK-NEXT:/*
+// CHECK-NEXT:SYCLCT1003:3: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:*/
+// CHECK-NEXT:  if ((syclct::sycl_malloc(0, 0), 0)) {
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
 void test_15(cudaError_t err, int arg) {
@@ -213,7 +220,7 @@ void test_15(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_16(cudaError_t err, int arg) {
+// CHECK:void test_16(int err, int arg) try {
 // CHECK-NEXT:  if (err) {
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:    exit(1);
@@ -230,8 +237,11 @@ void test_16(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_17(cudaError_t err, int arg) {
-// CHECK-NEXT:  if (!cudaMalloc(0, 0)) {
+// CHECK:void test_17(int err, int arg) try {
+// CHECK-NEXT:/*
+// CHECK-NEXT:SYCLCT1003:4: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:*/
+// CHECK-NEXT:  if (!(syclct::sycl_malloc(0, 0), 0)) {
 // CHECK-NEXT:  } else {
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:    exit(1);
@@ -245,7 +255,7 @@ void test_17(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_18(cudaError_t err, int arg) {
+// CHECK:void test_18(int err, int arg) try {
 // CHECK-NEXT:  if (err)
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:  else
@@ -258,7 +268,7 @@ void test_18(cudaError_t err, int arg) {
     printf("success!\n");
 }
 
-// CHECK:void test_19(cudaError_t err, int arg) {
+// CHECK:void test_19(int err, int arg) try {
 // CHECK-NEXT:  if (err && arg) {
 // CHECK-NEXT:  } else {
 // CHECK-NEXT:  }
@@ -269,7 +279,7 @@ void test_19(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_compare_to_3(cudaError_t err, int arg) {
+// CHECK:void test_compare_to_3(int err, int arg) try {
 // CHECK-NEXT:  if (err != 3) {
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
@@ -278,7 +288,7 @@ void test_compare_to_3(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_21(const cudaError_t& err, int arg) {
+// CHECK:void test_21(const int & err, int arg) try {
 // CHECK-NEXT:{{ +}}
 // CHECK-NEXT:}
 void test_21(const cudaError_t& err, int arg) {
@@ -286,7 +296,7 @@ void test_21(const cudaError_t& err, int arg) {
   }
 }
 
-// CHECK:void test_no_side_effects(cudaError_t err, int arg) {
+// CHECK:void test_no_side_effects(int err, int arg) try {
 // CHECK-NEXT: ;
 // CHECK-NEXT: ;
 // CHECK-NEXT: ;
@@ -305,7 +315,7 @@ void test_no_side_effects(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_side_effects(cudaError_t err, int arg, int x, int y, int z) {
+// CHECK:void test_side_effects(int err, int arg, int x, int y, int z) try {
 // CHECK-NEXT:  ;
 // CHECK-NEXT:/*
 // CHECK-NEXT:SYCLCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
@@ -318,7 +328,7 @@ void test_no_side_effects(cudaError_t err, int arg) {
 // CHECK-NEXT:/*
 // CHECK-NEXT:SYCLCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
 // CHECK-NEXT:*/
-// CHECK-NEXT:  if (err != cudaSuccess) {
+// CHECK-NEXT:  if (err != 0) {
 // CHECK-NEXT:/*
 // CHECK-NEXT:SYCLCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
 // CHECK-NEXT:*/
@@ -353,8 +363,8 @@ void test_side_effects(cudaError_t err, int arg, int x, int y, int z) {
     printf("fmt string %d", y + z);
 }
 
-// CHECK:void specialize_ifs() {
-// CHECK-NEXT:  cudaError_t err;
+// CHECK:void specialize_ifs() try {
+// CHECK-NEXT:  int err;
 // checking for empty lines (with one or more spaces)
 // CHECK-NEXT:{{ +}}
 // CHECK-NEXT:{{ +}}
@@ -377,58 +387,58 @@ void specialize_ifs() {
   }
 }
 
-// CHECK:void specialize_ifs_negative() {
-// CHECK:  cudaError_t err;
-// CHECK:  if (err == cudaSuccess) {
-// CHECK:    printf("efef");
-// CHECK:  }
-// CHECK:/*
-// CHECK:SYCLCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
-// CHECK:*/
-// CHECK:  if (err == cudaErrorAssert) {
-// CHECK:    printf("efef");
-// CHECK:/*
-// CHECK:SYCLCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
-// CHECK:*/
-// CHECK:    malloc(0x100);
-// CHECK:  }
-// CHECK:/*
-// CHECK:SYCLCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
-// CHECK:*/
-// CHECK:  if (err == 255) {
-// CHECK:/*
-// CHECK:SYCLCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
-// CHECK:*/
-// CHECK:    malloc(0x100);
-// CHECK:  }
-// CHECK:/*
-// CHECK:SYCLCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
-// CHECK:*/
-// CHECK:  if (err == 1) {
-// CHECK:/*
-// CHECK:SYCLCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
-// CHECK:*/
-// CHECK:    malloc(0x100);
-// CHECK:  }
-// CHECK:/*
-// CHECK:SYCLCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
-// CHECK:*/
-// CHECK:  if (666 == err) {
-// CHECK:/*
-// CHECK:SYCLCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
-// CHECK:*/
-// CHECK:    malloc(0x100);
-// CHECK:  }
-// CHECK:/*
-// CHECK:SYCLCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
-// CHECK:*/
-// CHECK:  if (cudaErrorAssert == err) {
-// CHECK:/*
-// CHECK:SYCLCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
-// CHECK:*/
-// CHECK:    malloc(0x100);
-// CHECK:  }
-// CHECK:}
+// CHECK:void specialize_ifs_negative() try {
+// CHECK-NEXT:  int err;
+// CHECK-NEXT:  if (err == 0) {
+// CHECK-NEXT:    printf("efef");
+// CHECK-NEXT:  }
+// CHECK-NEXT:/*
+// CHECK-NEXT:SYCLCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. It couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:*/
+// CHECK-NEXT:  if (err == 59) {
+// CHECK-NEXT:    printf("efef");
+// CHECK-NEXT:/*
+// CHECK-NEXT:SYCLCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:*/
+// CHECK-NEXT:    malloc(0x100);
+// CHECK-NEXT:  }
+// CHECK-NEXT:/*
+// CHECK-NEXT:SYCLCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. It couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:*/
+// CHECK-NEXT:  if (err == 255) {
+// CHECK-NEXT:/*
+// CHECK-NEXT:SYCLCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:*/
+// CHECK-NEXT:    malloc(0x100);
+// CHECK-NEXT:  }
+// CHECK-NEXT:/*
+// CHECK-NEXT:SYCLCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. It couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:*/
+// CHECK-NEXT:  if (err == 1) {
+// CHECK-NEXT:/*
+// CHECK-NEXT:SYCLCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:*/
+// CHECK-NEXT:    malloc(0x100);
+// CHECK-NEXT:  }
+// CHECK-NEXT:/*
+// CHECK-NEXT:SYCLCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. It couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:*/
+// CHECK-NEXT:  if (666 == err) {
+// CHECK-NEXT:/*
+// CHECK-NEXT:SYCLCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:*/
+// CHECK-NEXT:    malloc(0x100);
+// CHECK-NEXT:  }
+// CHECK-NEXT:/*
+// CHECK-NEXT:SYCLCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. It couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:*/
+// CHECK-NEXT:  if (59 == err) {
+// CHECK-NEXT:/*
+// CHECK-NEXT:SYCLCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:*/
+// CHECK-NEXT:    malloc(0x100);
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
 void specialize_ifs_negative() {
   cudaError_t err;
   if (err == cudaSuccess) {

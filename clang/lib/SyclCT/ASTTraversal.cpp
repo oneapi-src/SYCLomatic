@@ -398,14 +398,17 @@ void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
   };
 
   if (![&] {
+        bool IsIfstmtSpecialCase = false;
+        SourceLocation Ip;
         if (auto Op = getNodeAsType<BinaryOperator>(Result, "op!=")) {
           if (!isCudaFailureCheck(Op))
             return false;
         } else if (auto Op = getNodeAsType<BinaryOperator>(Result, "op==")) {
           if (!isCudaFailureCheck(Op, true))
             return false;
-          report(Op->getBeginLoc(), Diagnostics::IFSTMT_SPECIAL_CASE,
-                 getStmtSpelling(Op, *Result.Context).c_str());
+          IsIfstmtSpecialCase = true;
+          Ip = Op->getBeginLoc();
+
         } else {
           auto CondVar = getNodeAsType<DeclRefExpr>(Result, "var");
           if (!isCudaFailureCheck(CondVar))
@@ -413,9 +416,13 @@ void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
         }
         // We know that it's error checking condition, check the body
         if (!isErrorHandling(If->getThen())) {
-          report(If->getSourceRange().getBegin(),
-                 Diagnostics::IFSTMT_NOT_REMOVED);
-
+          if (IsIfstmtSpecialCase) {
+            report(Ip, Diagnostics::IFSTMT_SPECIAL_CASE);
+          }
+          else{
+            report(If->getSourceRange().getBegin(),
+                   Diagnostics::IFSTMT_NOT_REMOVED);
+          }
           return false;
         }
         return true;
@@ -858,9 +865,7 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: {
-    return false;
-  }
+  default: { return false; }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
