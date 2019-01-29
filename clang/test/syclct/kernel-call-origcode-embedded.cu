@@ -159,4 +159,15 @@ int main() {
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
   checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));
+
+  // CHECK: /*
+  // CHECK-NEXT:SYCLCT1007:{{[0-9]+}}: cudaEventCreate: not support API, need manual porting.
+  // CHECK-NEXT:*/
+  cudaEventCreate(NULL);
+
+  // CHECK: /*  cudaEventCreate(NULL);cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float));*/
+  // CHECK-NEXT: /*
+  // CHECK-NEXT:  SYCLCT1007:{{[0-9]+}}: cudaEventCreate: not support API, need manual porting.
+  // CHECK-NEXT: */
+  cudaEventCreate(NULL);cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float));
 }

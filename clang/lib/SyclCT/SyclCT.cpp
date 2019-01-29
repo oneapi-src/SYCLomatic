@@ -286,10 +286,11 @@ public:
   std::vector<ExtReplacement>
   keepOriginalCode(SourceManager &SM, std::vector<ExtReplacement> &ReplSet) {
 
-    std::vector<ExtReplacement> NewRelInsetSet;
+    std::vector<ExtReplacement> CommentsReplSet;
     std::unordered_set<unsigned int> DuplicateFilter;
     std::map<StringRef /*FilePath*/, StringRef /*Code*/> CodeCache;
-
+    std::map<unsigned int /*line position*/, bool /*line needs comments*/>
+        CommentsMap;
     // Generate comment-replacement for code line which SYCLCT has modified.
     for (auto I = ReplSet.begin(), E = ReplSet.end(); I != E; ++I) {
 
@@ -316,18 +317,20 @@ public:
       BeginPos += 1;
       StringRef Line = Code.substr(BeginPos, EndPos - BeginPos);
 
+      if (I->isComments()) {
+        continue;
+      }
+
       // Insert comments in each line
       if (DuplicateFilter.find(BeginPos) == end(DuplicateFilter)) {
         DuplicateFilter.insert(BeginPos);
-
         std::string NewReplacementText;
         if (Line.endswith("\\")) {
           // To handle the situation that '\\' appeared in end of row in a macro
           // statement, lines like:
           // #define ERROR_CHECK(call) \
-            //    if((call) != 0) { \
-            //        int err = 0; \
-            //       cerr << "Error calling \""#call"\", code is " << err << endl;
+          //    if((call) != 0) {      \
+          //        int err = 0;       \
           //        \ my_abort(err); }
           NewReplacementText = "/*" + removeComments(Line.str()) + "*/ \\\n";
         } else {
@@ -336,13 +339,10 @@ public:
 
         ExtReplacement NewR(FilePath, BeginPos, 0, NewReplacementText,
                             I->getParentTM() ? I->getParentTM() : nullptr);
-        NewRelInsetSet.emplace_back(std::move(NewR));
+        CommentsReplSet.emplace_back(std::move(NewR));
       }
     }
-
-    std::vector<ExtReplacement> RelpSetTotal =
-        MergeCommmetsPass(NewRelInsetSet, ReplSet);
-    return RelpSetTotal;
+    return CommentsReplSet;
   }
 
   void HandleTranslationUnit(ASTContext &Context) override {
@@ -399,8 +399,9 @@ public:
     // 3. May trigger: MergeCommmetsPass
     if (KeepOriginalCodeFlag) { // To keep original code in comments of SYCL
                                 // files
-      ReplSetFiltered =
+      std::vector<ExtReplacement> CommentsReplSet =
           keepOriginalCode(Context.getSourceManager(), ReplSetFiltered);
+      ReplSetFiltered = MergeCommmetsPass(CommentsReplSet, ReplSetFiltered);
     }
 
     // Finally Replacement set
@@ -516,7 +517,7 @@ void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
 }
 
 unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
-                           StringRef Path) {
+                            StringRef Path) {
   // Set up Rewriter and to get source manager.
   LangOptions DefaultLangOptions;
   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();

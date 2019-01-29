@@ -360,7 +360,7 @@ ExtReplacement InsertComment::getReplacement(const ASTContext &Context) const {
   recordTranslationInfo(Context, SL);
   return ExtReplacement(Context.getSourceManager(), SL, 0,
                         (llvm::Twine("/*") + NL + Text + NL + "*/" + NL).str(),
-                        this);
+                        this, true /*true means comments replacement*/);
 }
 
 // TODO: Remove this workaround

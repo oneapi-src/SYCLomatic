@@ -53,8 +53,9 @@ public:
   /// ReplacementText.
   ExtReplacement(const SourceManager &Sources, SourceLocation Start,
                  unsigned Length, StringRef ReplacementText,
-                 const TextModification *_TM)
-      : Replacement(Sources, Start, Length, ReplacementText), TM(_TM) {}
+                 const TextModification *_TM, bool IsComments = false)
+      : Replacement(Sources, Start, Length, ReplacementText), TM(_TM),
+        IsComments(IsComments) {}
 
   /// Creates a Replacement of the given range with ReplacementText.
   ExtReplacement(const SourceManager &Sources, const CharSourceRange &Range,
@@ -72,6 +73,7 @@ public:
   void setInsertPosition(int IP) { InsertPosition = IP; }
   unsigned int getInsertPosition() const { return InsertPosition; }
   bool getMerged() const { return Merged; }
+  bool isComments() const { return IsComments; }
 
   /// return true if two code repl has same length(not zero) and same
   /// replacement text. else return false.
@@ -86,13 +88,13 @@ public:
     }
   }
   void setMerged(bool M) { Merged = M; }
-
   const TextModification *getParentTM() const { return TM; }
 
 private:
   unsigned int InsertPosition = InsertPositionLeft;
   bool Merged = false;
   const TextModification *TM;
+  bool IsComments = false;
 };
 
 enum class TextModificationID : int {
