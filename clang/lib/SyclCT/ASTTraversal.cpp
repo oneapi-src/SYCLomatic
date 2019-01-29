@@ -1547,18 +1547,17 @@ REGISTER_RULE(DeviceFunctionCallRule)
 
 /// __constant__/__shared__/__device__ var information collection
 void MemVarRule::registerMatcher(MatchFinder &MF) {
+  auto DeclMatcher = varDecl(
+      anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice),
+            hasAttr(attr::CUDAShared)),
+      unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim")));
+  MF.addMatcher(DeclMatcher.bind("var"), this);
   MF.addMatcher(
       declRefExpr(anyOf(hasParent(implicitCastExpr(
                                       unless(hasParent(arraySubscriptExpr())))
                                       .bind("impl")),
                         anything()),
-                  to(varDecl(anyOf(hasAttr(attr::CUDAConstant),
-                                   hasAttr(attr::CUDADevice),
-                                   hasAttr(attr::CUDAShared)),
-                             unless(hasAnyName("threadIdx", "blockDim",
-                                               "blockIdx", "gridDim")))
-                         .bind("var")),
-                  hasAncestor(functionDecl().bind("func")))
+                  to(DeclMatcher), hasAncestor(functionDecl().bind("func")))
           .bind("used"),
       this);
 }
@@ -1607,6 +1606,7 @@ REGISTER_RULE(MemVarRule)
 
 void MemoryTranslationRule::MallocTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C) {
+  SyclctGlobalInfo::getInstance().registerCudaMalloc(C);
   emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_malloc"));
 }
 
@@ -1676,6 +1676,18 @@ void MemoryTranslationRule::MemcpyToSymbolTranslation(
     assert(Search != EnumConstantRule::EnumNamesMap.end());
     Direction = nullptr;
     DirectionName = "syclct::" + Search->second;
+  }
+
+  SyclctGlobalInfo &Global = SyclctGlobalInfo::getInstance();
+  auto MallocInfo = Global.findCudaMalloc(C->getArg(1));
+  auto VD = CudaMallocInfo::getDecl(C->getArg(0));
+  if (MallocInfo && VD) {
+    if (auto Var = Global.findMemVarInfo(VD)) {
+      emplaceTransformation(new ReplaceStmt(
+          C, Var->getName() + ".assign(" +
+                 MallocInfo->getAssignArgs(Var->getType()->getName()) + ")"));
+      return;
+    }
   }
 
   std::string VarName = getStmtSpelling(C->getArg(0), *Result.Context);

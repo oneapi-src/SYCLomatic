@@ -22,6 +22,7 @@
 namespace clang {
 namespace syclct {
 
+class CudaMallocInfo;
 class KernelCallExpr;
 class CallFunctionExpr;
 class DeviceFunctionInfo;
@@ -106,6 +107,7 @@ public:
   GLOBAL_TYPE(MemVarInfo, VarDecl)
   GLOBAL_TYPE(DeviceFunctionInfo, FunctionDecl)
   GLOBAL_TYPE(KernelCallExpr, CUDAKernelCallExpr)
+  GLOBAL_TYPE(CudaMallocInfo, VarDecl)
 #undef GLOBAL_TYPE
 
   template <class T> GlobalMap<T> &getMap() {
@@ -114,6 +116,9 @@ public:
 
   void emplaceKernelAndDeviceReplacement(TransformSetTy &TS,
                                          StmtStringMap &SSM);
+
+  void registerCudaMalloc(const CallExpr *CE);
+  std::shared_ptr<CudaMallocInfo> findCudaMalloc(const Expr *CE);
 
 private:
   SyclctGlobalInfo() = default;
@@ -135,6 +140,7 @@ private:
     MemVarMap.clear();
     FuncMap.clear();
     KernelMap.clear();
+    CudaMallocMap.clear();
   }
 
   static std::string InRoot;
@@ -144,6 +150,7 @@ private:
   GlobalMap<MemVarInfo> MemVarMap;
   GlobalMap<DeviceFunctionInfo> FuncMap;
   GlobalMap<KernelCallExpr> KernelMap;
+  GlobalMap<CudaMallocInfo> CudaMallocMap;
 };
 template <> inline GlobalMap<MemVarInfo> &SyclctGlobalInfo::getMap() {
   return MemVarMap;
@@ -154,6 +161,9 @@ template <> inline GlobalMap<DeviceFunctionInfo> &SyclctGlobalInfo::getMap() {
 template <> inline GlobalMap<KernelCallExpr> &SyclctGlobalInfo::getMap() {
   return KernelMap;
 }
+template <> inline GlobalMap<CudaMallocInfo> &SyclctGlobalInfo::getMap() {
+  return CudaMallocMap;
+}
 
 class TemplateArgumentInfo;
 
@@ -162,7 +172,7 @@ class TemplateArgumentInfo;
 class TypeInfo {
 public:
   TypeInfo(const QualType &Type)
-      : Type(Type), Pointers(0), Template(false), TemplateIndex(0) {
+      : Type(Type), Pointer(false), Template(false), TemplateIndex(0) {
     setArrayInfo();
     setPointerInfo();
     setTemplateInfo();
@@ -200,6 +210,7 @@ public:
   }
 
   bool isTemplate() { return Template; }
+  bool isPointer() { return Pointer; }
   void setTemplateType(const std::vector<TemplateArgumentInfo> &TA);
 
 private:
@@ -221,11 +232,14 @@ private:
   }
   void setPointerInfo() {
     while (Type->isPointerType()) {
-      ++Pointers;
+      Pointer = true;
+      Range.push_back(0);
       Type = Type->getPointeeType();
     }
   }
   void setName() {
+    if (isPointer())
+      Type.removeLocalConst();
     Name = Type.getAsString(
         SyclctGlobalInfo::getInstance().getContext().getPrintingPolicy());
     if (!isTemplate()) {
@@ -233,18 +247,13 @@ private:
       if (Itr != MapNames::TypeNamesMap.end())
         Name = Itr->second;
     }
-    if (Pointers) {
-      Name += ' ';
-      for (unsigned i = 0; i < Pointers; i++)
-        Name += '*';
-    }
   }
 
 private:
   QualType Type;
   std::string Name;
   std::vector<size_t> Range;
-  unsigned Pointers;
+  bool Pointer;
   bool Template;
   unsigned TemplateIndex;
   std::shared_ptr<TypeInfo> TemplateType;
@@ -283,7 +292,10 @@ public:
       : VarInfo(Var), Attr(getAttr(Var->getAttrs())),
         Scope((Var->isLexicallyWithinFunctionOrMethod())
                   ? (Var->isExternallyDeclarable() ? Extern : Local)
-                  : Global) {}
+                  : Global) {
+    if (getType()->isPointer())
+      Attr = Device;
+  }
 
   VarAttrKind getAttr() { return Attr; }
   VarScope getScope() { return Scope; }
@@ -294,8 +306,8 @@ public:
 
   std::string getDeclarationReplacement();
   std::string getMemoryDecl(const std::string &MemSize) {
-    return getMemoryType() + " " + getArgName() + getInitArguments(MemSize) +
-           ";";
+    return getMemoryType() + " " + getArgName() +
+           (getType()->isPointer() ? "" : getInitArguments(MemSize)) + ";";
   }
   std::string getMemoryDecl() {
     const static std::string NullString;
@@ -704,6 +716,51 @@ private:
 
   const CUDAKernelCallExpr *KernelCall;
   const std::string ExternMemSize;
+};
+
+class CudaMallocInfo {
+public:
+  CudaMallocInfo(const VarDecl *VD) : Name(VD->getName().str()) {}
+
+  static const VarDecl *getMallocVar(const Expr *Arg) {
+    if (auto UO = dyn_cast<UnaryOperator>(Arg->IgnoreImpCasts())) {
+      if (UO->getOpcode() == UO_AddrOf) {
+        return getDecl(UO->getSubExpr());
+      }
+    }
+    return nullptr;
+  }
+  static const VarDecl *getDecl(const Expr *E) {
+    if (auto DeclRef = dyn_cast<DeclRefExpr>(E->IgnoreImpCasts()))
+      return dyn_cast<VarDecl>(DeclRef->getDecl());
+    return nullptr;
+  }
+
+  void setSizeExpr(const Expr *SizeExpression) {
+    SizeExpr = SizeExpression;
+    getSizeString();
+    replaceType(SizeExpr);
+  }
+
+  std::string getAssignArgs(const std::string &TypeName) {
+    return Name + ", " + Size;
+  }
+
+private:
+  void getSizeString() {
+    auto SizeBegin = SizeExpr->getBeginLoc();
+    Size = std::string(
+        SyclctGlobalInfo::getSourceManager().getCharacterData(SizeBegin),
+        SizeExpr->getEndLoc().getRawEncoding() - SizeBegin.getRawEncoding() +
+            1);
+  }
+  void replaceType(const Expr *SizeExpr);
+  void replaceSizeString(const SourceLocation &Begin, const SourceLocation &End,
+                         const std::string &NewTypeName);
+
+  const Expr *SizeExpr;
+  std::string Size;
+  std::string Name;
 };
 
 } // namespace syclct

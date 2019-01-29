@@ -99,6 +99,8 @@ template <typename T> std::string getHashAsString(const T &Val) {
   return Stream.str();
 }
 
+template <typename T> const T *getDecl(const clang::Stmt *E);
+
 enum SourceProcessType {
   // flag for *.cu
   TypeCudaSource = 1,

@@ -36,6 +36,18 @@ void SyclctGlobalInfo::emplaceKernelAndDeviceReplacement(TransformSetTy &TS,
     TS.emplace_back(DF.second->getTextModification());
 }
 
+void SyclctGlobalInfo::registerCudaMalloc(const CallExpr *CE) {
+  if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(0)))
+    registerCudaMallocInfo(MallocVar)->setSizeExpr(CE->getArg(1));
+}
+
+std::shared_ptr<CudaMallocInfo>
+SyclctGlobalInfo::findCudaMalloc(const Expr *E) {
+  if (auto Src = CudaMallocInfo::getMallocVar(E))
+    return findCudaMallocInfo(Src);
+  return std::shared_ptr<CudaMallocInfo>();
+}
+
 std::string
 KernelCallExpr::getExternMemSize(const CUDAKernelCallExpr *KernelCall) {
   if (auto Arg = KernelCall->getConfig()->getArg(2))
@@ -298,6 +310,38 @@ void ArgumentInfo::getReplacement() {
       }
     }
   }
+}
+
+void CudaMallocInfo::replaceType(const Expr *SizeExpr) {
+  SizeExpr = SizeExpr->IgnoreImpCasts();
+  if (auto BinaryOpt = dyn_cast<BinaryOperator>(SizeExpr)) {
+    replaceType(BinaryOpt->getRHS());
+    replaceType(BinaryOpt->getLHS());
+  } else if (auto UnaryOrTraits =
+                 dyn_cast<UnaryExprOrTypeTraitExpr>(SizeExpr)) {
+    if (UnaryOrTraits->getKind() == UnaryExprOrTypeTrait::UETT_SizeOf) {
+      auto TypeArgument = UnaryOrTraits->getArgumentTypeInfo();
+      auto Itr = MapNames::TypeNamesMap.find(
+          TypeArgument->getType().getAsString(SyclctGlobalInfo::getInstance()
+                                                  .getContext()
+                                                  .getPrintingPolicy()));
+      if (Itr != MapNames::TypeNamesMap.end()) {
+        replaceSizeString(TypeArgument->getTypeLoc().getBeginLoc(),
+                          UnaryOrTraits->getRParenLoc().getLocWithOffset(-1),
+                          Itr->second);
+      }
+    }
+  }
+}
+
+void CudaMallocInfo::replaceSizeString(const SourceLocation &Begin,
+                                       const SourceLocation &End,
+                                       const std::string &NewTypeName) {
+  int BeginOffset =
+      Begin.getRawEncoding() - SizeExpr->getBeginLoc().getRawEncoding();
+  if ((BeginOffset >= 0) && (BeginOffset < (int)Size.size()))
+    Size.replace(BeginOffset, End.getRawEncoding() - Begin.getRawEncoding() + 1,
+                 NewTypeName);
 }
 } // namespace syclct
 } // namespace clang

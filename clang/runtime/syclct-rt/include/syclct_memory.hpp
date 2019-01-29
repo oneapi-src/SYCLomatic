@@ -219,6 +219,7 @@ public:
 };
 template <> class syclct_range<1> {
 public:
+  syclct_range() : syclct_range(0) {}
   syclct_range(size_t dim1) : range{dim1} {}
   syclct_range(cl::sycl::range<1> range) : range{range[0]} {}
   operator cl::sycl::range<1>() const { return cl::sycl::range<1>(range[0]); }
@@ -230,6 +231,7 @@ private:
 };
 template <> class syclct_range<2> {
 public:
+  syclct_range() : syclct_range(0, 0) {}
   syclct_range(size_t dim1, size_t dim2) : range{dim1, dim2} {}
   syclct_range(cl::sycl::range<2> range) : range{range[0], range[1]} {}
   operator cl::sycl::range<2>() const {
@@ -243,6 +245,7 @@ private:
 };
 template <> class syclct_range<3> {
 public:
+  syclct_range() : syclct_range(0, 0, 0) {}
   syclct_range(size_t dim1, size_t dim2, size_t dim3)
       : range{dim1, dim2, dim3} {}
   syclct_range(cl::sycl::range<3> range)
@@ -403,8 +406,7 @@ private:
 };
 template <class T> class syclct_accessor_acquirer<T, shared, 0> {
 public:
-  using accessor_t =
-      typename memory_traits<shared, T>::template accessor_t<0>;
+  using accessor_t = typename memory_traits<shared, T>::template accessor_t<0>;
 
   syclct_accessor_acquirer(const syclct_range<0> &range) {}
   accessor_t get_access(cl::sycl::handler &cgh) { return accessor_t(cgh); }
@@ -419,6 +421,7 @@ public:
   using accessor_acquirer = syclct_accessor_acquirer<T, Memory, Dimension>;
   base_memory(const syclct_range<Dimension> &in_range)
       : size(in_range.size() * sizeof(T)), range(in_range), acquire(range) {}
+
   virtual accessor_t get_access(cl::sycl::handler &cgh) = 0;
 
 protected:
@@ -450,15 +453,31 @@ public:
   using base_t = base_memory<T, Memory, Dimension>;
   using accessor_t = typename base_t::accessor_t;
 
+  global_memory() : global_memory(syclct_range<Dimension>()) {}
   template <class... Args>
   global_memory(Args... Arguments)
       : global_memory(syclct_range<Dimension>(Arguments...)) {}
-  global_memory(const syclct_range<Dimension> &range) : base_t(range) {
+
+  global_memory(const syclct_range<Dimension> &range)
+      : base_t(range), reference(false), memory_ptr(nullptr) {
     static_assert((Memory == device) || (Memory == constant),
                   "Global memory attribute should be constant or device");
-    sycl_malloc((void **)&memory_ptr, base_t::size);
+    if (base_t::size)
+      sycl_malloc((void **)&memory_ptr, base_t::size);
   }
-  virtual ~global_memory() { sycl_free(memory_ptr); }
+
+  global_memory(void *memory_ptr, size_t size)
+      : base_t(syclct_range<1>(size / sizeof(T))), reference(true),
+        memory_ptr(memory_ptr) {}
+  virtual ~global_memory() {
+    if (memory_ptr && !reference)
+      sycl_free(memory_ptr);
+  }
+
+  void assign(void *src, size_t size) {
+    this->~global_memory();
+    new (this) global_memory(src, size);
+  }
   void *get_ptr() { return memory_ptr; }
   accessor_t get_access(cl::sycl::handler &cgh) override {
     return base_t::acquire.get_access(
@@ -466,6 +485,7 @@ public:
   }
 
 private:
+  bool reference;
   void *memory_ptr;
 };
 template <class T, size_t Dimension>
