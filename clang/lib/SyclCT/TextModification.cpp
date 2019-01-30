@@ -537,10 +537,17 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   Header << "{" << NL;
   auto Indent = OrigIndent + "  ";
   Header2 << Kernel->getAccessorDecl(Indent + "    ", NL);
+  std::unordered_set<std::string> DuplicateFilter;
   for (auto *Arg : Kernel->getCallExpr()->arguments()) {
     if (Arg->getType()->isAnyPointerType()) {
       if (auto *DeclRef = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts())) {
         auto VarName = DeclRef->getNameInfo().getAsString();
+        // for same VarName, only generate one (access, offset,buf)
+        if (DuplicateFilter.find(VarName) == end(DuplicateFilter)) {
+          DuplicateFilter.insert(VarName);
+        } else {
+          continue;
+        }
         auto PointeeType = DeclRef->getDecl()->getType()->getPointeeType();
         // TODO check that no nested pointers in a structure
         assert(!PointeeType->isAnyPointerType());
