@@ -13,7 +13,7 @@ DEF_COMMENT(STMT_NOT_REMOVED, 1001, "Below statement couldn't be removed from er
 DEF_NOTE(IFSTMT_SPECIAL_CASE, 1002, "Special case error handling if-stmt was detected:'%0'. You may need to rewrite this code")
 DEF_WARNING(NOERROR_RETURN_COMMA_OP, 1003, "Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code")
 DEF_COMMENT(NOERROR_RETURN_COMMA_OP, 1003, "Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code")
-DEF_WARNING(NOTSUPPORTED, 1004, "{0} is not supported in Sycl")
+DEF_WARNING(NOTSUPPORTED, 1004, "%0 is not supported in Sycl")
 DEF_COMMENT(NOTSUPPORTED, 1004, "{0} is not supported in Sycl")
 DEF_WARNING(VERSION_COMMENT, 1005, "The device version is different. You may want to rewrite this code")
 DEF_COMMENT(VERSION_COMMENT, 1005, "The device version is different. You may want to rewrite this code")
