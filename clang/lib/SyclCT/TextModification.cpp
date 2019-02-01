@@ -351,8 +351,9 @@ std::string ReplaceDim3Ctor::getReplaceString(const ASTContext &Context) const {
 ExtReplacement
 ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
   recordTranslationInfo(Context, CSR.getBegin());
+  ReplacementString = getReplaceString(Context);
   return ExtReplacement(Context.getSourceManager(), CSR.getBegin(), 0,
-                        getReplaceString(Context), this);
+                        ReplacementString, this);
 }
 
 ExtReplacement InsertComment::getReplacement(const ASTContext &Context) const {

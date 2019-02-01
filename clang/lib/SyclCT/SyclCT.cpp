@@ -422,6 +422,11 @@ public:
         TransformSet, Context.getSourceManager(), ATM));
   }
 
+  ~SyclCTConsumer() {
+    // Clean EmittedTransformations for input file translated.
+    ASTTraversalMetaInfo::getEmittedTransformations().clear();
+  }
+
 private:
   ASTTraversalManager ATM;
   TransformSetTy TransformSet;

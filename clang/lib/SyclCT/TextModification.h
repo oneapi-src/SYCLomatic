@@ -446,7 +446,7 @@ class ReplaceDim3Ctor : public TextModification {
   const CXXConstructExpr *FinalCtor;
   StmtStringMap *SSM;
   CharSourceRange CSR;
-  std::string ReplacementString;
+  mutable std::string ReplacementString;
 
   void setRange();
   const Stmt *getReplaceStmt(const Stmt *S) const;

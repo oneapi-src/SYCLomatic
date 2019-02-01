@@ -130,12 +130,10 @@ void DebugInfo::printTranslationRules(
 // Start of debug build
 static void printMatchedRulesDebugImpl(
     const std::vector<std::unique_ptr<ASTTraversal>> &MatchedRules) {
-  llvm::DebugFlag = true;
-
-  llvm::DebugFlag = true;
   if (VerboseLevel == VerboseLow) {
     DbgLevel = DebugLevel::Low;
   } else if (VerboseLevel == VerboseHigh) {
+    llvm::DebugFlag = true;
     DbgLevel = DebugLevel::High;
   }
 
@@ -171,11 +169,10 @@ static void printMatchedRulesDebugImpl(
 
 static void printReplacementsDebugImpl(ReplacementFilter &ReplFilter,
                                        clang::ASTContext &Context) {
-
-  llvm::DebugFlag = true;
   if (VerboseLevel == VerboseLow) {
     DbgLevel = DebugLevel::Low;
   } else if (VerboseLevel == VerboseHigh) {
+    llvm::DebugFlag = true;
     DbgLevel = DebugLevel::High;
   }
 
@@ -246,7 +243,7 @@ static void printReplacementsDebugImpl(ReplacementFilter &ReplFilter,
 // Start of release build
 static void printMatchedRulesReleaseImpl(
     const std::vector<std::unique_ptr<ASTTraversal>> &MatchedRules) {
-  if (VerboseLevel < VerboseLow) {
+  if (VerboseLevel < VerboseHigh) {
     return;
   }
 
@@ -265,7 +262,7 @@ static void printMatchedRulesReleaseImpl(
 
 static void printReplacementsReleaseImpl(ReplacementFilter &ReplFilter,
                                          clang::ASTContext &Context) {
-  if (VerboseLevel < VerboseLow) {
+  if (VerboseLevel < VerboseHigh) {
     return;
   }
 
