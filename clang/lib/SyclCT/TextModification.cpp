@@ -252,7 +252,42 @@ InsertAfterStmt::getReplacement(const ASTContext &Context) const {
                         this);
 }
 
+static int getExpansionRangeSize(const SourceManager &Sources,
+                        const CharSourceRange &Range,
+                        const LangOptions &LangOpts) {
+  SourceLocation ExpansionBegin = Sources.getExpansionLoc(Range.getBegin());
+  SourceLocation ExpansionEnd = Sources.getExpansionLoc(Range.getEnd());
+  std::pair<FileID, unsigned> Start = Sources.getDecomposedLoc(ExpansionBegin);
+  std::pair<FileID, unsigned> End = Sources.getDecomposedLoc(ExpansionEnd);
+  if (Start.first != End.first) return -1;
+  if (Range.isTokenRange())
+    End.second += Lexer::MeasureTokenLength(ExpansionEnd, Sources, LangOpts);
+  return End.second - Start.second;
+}
+
+static std::tuple<StringRef, unsigned, unsigned>
+getReplacementInfo(const ASTContext &Context, const CharSourceRange& Range) {
+  const auto& SM = Context.getSourceManager();
+  const auto& ExpansionBegin = SM.getExpansionLoc(Range.getBegin());
+  const std::pair<FileID, unsigned> DecomposedLocation =
+      SM.getDecomposedLoc(ExpansionBegin);
+  const FileEntry *Entry = SM.getFileEntryForID(DecomposedLocation.first);
+  StringRef FilePath = Entry ? Entry->getName() : "";
+  unsigned Offset = DecomposedLocation.second;
+  unsigned Length = getExpansionRangeSize(SM, Range, LangOptions());
+  return std::make_tuple(FilePath, Offset, Length);
+}
+
 ExtReplacement ReplaceInclude::getReplacement(const ASTContext &Context) const {
+  // Make replacements for macros happen in expansion locations, rather than
+  // spelling locations
+  if (Range.getBegin().isMacroID() || Range.getEnd().isMacroID()) {
+    StringRef FilePath;
+    unsigned Offset, Length;
+    std::tie(FilePath, Offset, Length) = getReplacementInfo(Context, Range);
+    return ExtReplacement(FilePath, Offset, Length, T, this);
+  }
+
   recordTranslationInfo(Context, Range.getBegin());
   return ExtReplacement(Context.getSourceManager(), Range, T, this);
 }
@@ -315,7 +350,10 @@ std::string ReplaceDim3Ctor::getParamsString(const CXXConstructExpr *Ctor,
       if (isa<CXXDefaultArgExpr>(Arg)) {
         Params += "1";
       } else {
-        Params += getStmtSpellingWithTransforms(Arg, Context, SSM);
+        if (Arg->getBeginLoc().isMacroID() || Arg->getEndLoc().isMacroID())
+          Params += getStmtExpansion(Arg, Context);
+        else
+          Params += getStmtSpellingWithTransforms(Arg, Context, SSM);
         //        Params += getStmtSpelling(Arg, Context);
       }
     }
@@ -350,6 +388,15 @@ std::string ReplaceDim3Ctor::getReplaceString(const ASTContext &Context) const {
 
 ExtReplacement
 ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
+  // Make replacements for macros happen in expansion locations, rather than
+  // spelling locations
+  if (CSR.getBegin().isMacroID() || CSR.getEnd().isMacroID()) {
+    StringRef FilePath;
+    unsigned Offset, Length;
+    std::tie(FilePath, Offset, Length) = getReplacementInfo(Context, CSR);
+    return ExtReplacement(FilePath, Offset, Length, getReplaceString(Context), this);
+  }
+
   recordTranslationInfo(Context, CSR.getBegin());
   ReplacementString = getReplaceString(Context);
   return ExtReplacement(Context.getSourceManager(), CSR.getBegin(), 0,

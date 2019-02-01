@@ -14,6 +14,7 @@
 #include "SaveNewFiles.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/Lex/Lexer.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/SourceManager.h"
 #include "llvm/ADT/SmallString.h"
@@ -165,6 +166,20 @@ static void getNewSplits(TransformsType &Transforms, SplitsType &Splits) {
     Splits.push_back(T.Str);
   }
 }
+
+std::string getStmtExpansion(const Stmt *S, const ASTContext &Context) {
+  const SourceManager &SM = Context.getSourceManager();
+  LangOptions LangOpts;
+  SourceLocation Begin(S->getBeginLoc()), _End(S->getEndLoc());
+  SourceLocation End(Lexer::getLocForEndOfToken(_End, 0, SM, LangOpts));
+  if (Begin.isMacroID())
+    Begin = SM.getExpansionLoc(Begin);
+  if (End.isMacroID())
+    End = SM.getExpansionLoc(End);
+  return std::string(SM.getCharacterData(Begin),
+                     SM.getCharacterData(End)-SM.getCharacterData(Begin));
+}
+
 
 // Returns the spelling of Stmt S, with the translations from StmtStringMap
 std::string getStmtSpellingWithTransforms(const Stmt *S,
