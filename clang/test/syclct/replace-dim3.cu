@@ -75,9 +75,9 @@ int main() {
   // CHECK: cl::sycl::range<3> **pp = &p;
   dim3 **pp = &p;
 
-  // CHECK: int a = p->operator[](0) + p->operator[](1) + p->operator[](2);
+  // CHECK: int a = (*p)[0] + (*p)[1] + (*p)[2];
   int a = p->x + p->y + p->z;
-  // CHECK: int aa = (*pp)->operator[](0) + (*pp)->operator[](1) + (*pp)->operator[](2);
+  // CHECK: int aa = (*(*pp))[0] + (*(*pp))[1] + (*(*pp))[2];
   int aa = (*pp)->x + (*pp)->y + (*pp)->z;
 
   struct  container
@@ -96,9 +96,9 @@ int main() {
 
   // CHECK: int c = t.w[0] + t.w[1] + t.w[2];
   int c = t.w.x + t.w.y + t.w.z;
-  // CHECK: int c2 = t.pw->operator[](0) + t.pw->operator[](1) + t.pw->operator[](2);
+  // CHECK: int c2 = (*t.pw)[0] + (*t.pw)[1] + (*t.pw)[2];
   int c2 = t.pw->x + t.pw->y + t.pw->z;
-  // CHECK: int c3 = (*t.ppw)->operator[](0) + (*t.ppw)->operator[](1) + (*t.ppw)->operator[](2);
+  // CHECK: int c3 = (*(*t.ppw))[0] + (*(*t.ppw))[1] + (*(*t.ppw))[2];
   int c3 = (*t.ppw)->x + (*t.ppw)->y + (*t.ppw)->z;
 
   // CHECK: cl::sycl::range<3> d3_1(test[0], 1, 1);

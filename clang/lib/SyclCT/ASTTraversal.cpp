@@ -1206,13 +1206,45 @@ void ReplaceDim3CtorRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(ReplaceDim3CtorRule)
 
+void Dim3MemberFieldsRule::FieldsRename(const MatchFinder::MatchResult &Result,
+                                        std::string Str, const MemberExpr *ME) {
+  auto SM = Result.SourceManager;
+  SourceLocation Begin = SM->getSpellingLoc(ME->getBeginLoc());
+  SourceLocation End = SM->getSpellingLoc(ME->getEndLoc());
+  std::string Ret =
+      std::string(SM->getCharacterData(Begin), SM->getCharacterData(End));
+
+  std::size_t Position = std::string::npos;
+  std::size_t Current = Ret.find(Str);
+
+  // Find the last position of dot '.'
+  while (Current != std::string::npos) {
+    Position = Current;
+    Current = Ret.find(Str, Position + 1);
+  }
+
+  if (Position != std::string::npos) {
+    auto Search = MapNames::Dim3MemberNamesMap.find(
+        ME->getMemberNameInfo().getAsString());
+    if (Search != MapNames::Dim3MemberNamesMap.end()) {
+      emplaceTransformation(
+          new RenameFieldInMemberExpr(ME, Search->second + "", Position));
+      std::string NewMemberStr = Ret.substr(0, Position) + Search->second;
+      StmtStringPair SSP = {ME, NewMemberStr};
+      SSM->insert(SSP);
+    }
+  }
+}
+
 // rule for dim3 types member fields replacements.
 void Dim3MemberFieldsRule::registerMatcher(MatchFinder &MF) {
   // dim3->x/y/z => dim3->operator[](0)/(1)/(2)
-  MF.addMatcher(memberExpr(has(implicitCastExpr(hasType(
-                               pointsTo(typedefDecl(hasName("dim3")))))))
-                    .bind("Dim3MemberPointerExpr"),
-                this);
+  MF.addMatcher(
+      memberExpr(
+          has(implicitCastExpr(hasType(pointsTo(typedefDecl(hasName("dim3")))))
+                  .bind("ImplCast")))
+          .bind("Dim3MemberPointerExpr"),
+      this);
 
   // dim3.x/y/z => dim3[0]/[1]/[2]
   MF.addMatcher(
@@ -1226,44 +1258,22 @@ void Dim3MemberFieldsRule::registerMatcher(MatchFinder &MF) {
 void Dim3MemberFieldsRule::run(const MatchFinder::MatchResult &Result) {
   if (const MemberExpr *ME =
           getNodeAsType<MemberExpr>(Result, "Dim3MemberPointerExpr")) {
-    auto Search = MapNames::Dim3MemberPointerNamesMap.find(
-        ME->getMemberNameInfo().getAsString());
-    if (Search != MapNames::Dim3MemberPointerNamesMap.end()) {
-      emplaceTransformation(
-          new RenameFieldInMemberExpr(ME, Search->second + ""));
-    }
+    // E.g.
+    // dim3 *pd3;
+    // pd3->x;
+    // will translate to:
+    // cl::sycl::range<3> *pd3;
+    // (*pd3)[0];
+    auto Impl = getAssistNodeAsType<ImplicitCastExpr>(Result, "ImplCast");
+    emplaceTransformation(new InsertBeforeStmt(Impl, "(*"));
+    emplaceTransformation(new InsertAfterStmt(Impl, ")"));
+
+    FieldsRename(Result, "->", ME);
   }
 
   if (const MemberExpr *ME =
           getNodeAsType<MemberExpr>(Result, "Dim3MemberDotExpr")) {
-
-    auto SM = Result.SourceManager;
-    SourceLocation Begin = SM->getSpellingLoc(ME->getBeginLoc());
-    SourceLocation End = SM->getSpellingLoc(ME->getEndLoc());
-    std::string Ret =
-        std::string(SM->getCharacterData(Begin), SM->getCharacterData(End));
-
-    std::size_t PositionOfDot = std::string::npos;
-    std::size_t Current = Ret.find('.');
-
-    // Find the last position of dot '.'
-    while (Current != std::string::npos) {
-      PositionOfDot = Current;
-      Current = Ret.find('.', PositionOfDot + 1);
-    }
-
-    if (PositionOfDot != std::string::npos) {
-      auto Search = MapNames::Dim3MemberNamesMap.find(
-          ME->getMemberNameInfo().getAsString());
-      if (Search != MapNames::Dim3MemberNamesMap.end()) {
-        emplaceTransformation(new RenameFieldInMemberExpr(
-            ME, Search->second + "", PositionOfDot));
-        std::string NewMemberStr =
-            Ret.substr(0, PositionOfDot) + Search->second;
-        StmtStringPair SSP = {ME, NewMemberStr};
-        SSM->insert(SSP);
-      }
-    }
+    FieldsRename(Result, ".", ME);
   }
 }
 

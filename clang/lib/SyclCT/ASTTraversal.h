@@ -482,6 +482,10 @@ public:
   Dim3MemberFieldsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+private:
+  void FieldsRename(const ast_matchers::MatchFinder::MatchResult &Result,
+                    std::string Str, const MemberExpr *ME);
 };
 
 /// Translation rule for return types replacements.
