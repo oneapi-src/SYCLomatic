@@ -76,6 +76,7 @@ public:
     return Hash;
   }
   static void setContext(ASTContext &C) {
+    getInstance().clear();
     Context = &C;
     SM = &(Context->getSourceManager());
   }
@@ -129,6 +130,11 @@ private:
   template <class Obj, class Node>
   std::shared_ptr<Obj> registerObject(const Node *N) {
     return registerNode(N, getMap<Obj>());
+  }
+  void clear() {
+    MemVarMap.clear();
+    FuncMap.clear();
+    KernelMap.clear();
   }
 
   static std::string InRoot;
