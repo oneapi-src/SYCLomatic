@@ -31,6 +31,7 @@ using namespace clang::syclct;
 using namespace clang::tooling;
 
 extern std::string CudaPath;
+extern std::string SyclctInstallPath; // Installation directory for this tool
 
 std::unordered_map<std::string, std::unordered_set</* Comment ID */ int>>
     TranslationRule::ReportedComment;
@@ -60,7 +61,8 @@ void IncludesCallbacks::InclusionDirective(
   makeCanonical(FilePath);
   std::string DirPath = llvm::sys::path::parent_path(FilePath);
   bool IsFileInInRoot =
-      isChildPath(InRoot, DirPath) || isSamePath(InRoot, DirPath);
+      !isChildPath(SyclctInstallPath, DirPath) &&
+      (isChildPath(InRoot, DirPath) || isSamePath(InRoot, DirPath));
 
   if (IsFileInInRoot && !StringRef(FilePath).endswith(".cu")) {
     auto Find = IncludeFileMap.find(FilePath);
@@ -1971,10 +1973,10 @@ REGISTER_RULE(KernelFunctionInfoRule)
 void TypeCastRule::registerMatcher(MatchFinder &MF) {
 
   MF.addMatcher(
-      declRefExpr(
-          hasParent(implicitCastExpr(
-              hasParent(cStyleCastExpr(unless(hasType(pointsTo(typedefDecl(hasName("double2"))))))),
-              hasType(pointsTo(typedefDecl(hasName("double2")))))))
+      declRefExpr(hasParent(implicitCastExpr(
+                      hasParent(cStyleCastExpr(unless(
+                          hasType(pointsTo(typedefDecl(hasName("double2"))))))),
+                      hasType(pointsTo(typedefDecl(hasName("double2")))))))
 
           .bind("Double2CastExpr"),
       this);

@@ -80,7 +80,8 @@ static opt<int, true, llvm::cl::parser<int>>
                  "v=2 Detailed information of all replacements.\n"),
             cat(SyclCTCat), location(VerboseLevel));
 
-std::string CudaPath; // Global value for the CUDA install path.
+std::string CudaPath;          // Global value for the CUDA install path.
+std::string SyclctInstallPath; // Installation directory for this tool
 
 class SyclCTConsumer : public ASTConsumer {
 public:
@@ -378,7 +379,8 @@ public:
       }
 
       makeCanonical(RPath);
-      if (isChildPath(InRoot, RPath) || isSamePath(InRoot, RPath)) {
+      if (!isChildPath(SyclctInstallPath, RPath) &&
+          (isChildPath(InRoot, RPath) || isSamePath(InRoot, RPath))) {
         // TODO: Staticstics
         ReplSet.emplace_back(std::move(R));
       } else {
@@ -475,6 +477,19 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   std::string Path = CudaDetector.getInstallPath();
   makeCanonical(Path);
   return Path;
+}
+
+std::string getInstallPath(clang::tooling::ClangTool &Tool,
+                           const char *invokeCommand) {
+  FileManager &FM = Tool.getFiles();
+  std::string invokeCommandString(invokeCommand);
+  makeCanonical(invokeCommandString);
+  StringRef CommandPath = llvm::sys::path::parent_path(invokeCommandString);
+  const DirectoryEntry *Dir = FM.getDirectory(CommandPath);
+  // move up to parent directory of bin directory
+  StringRef InstallPath =
+      llvm::sys::path::parent_path(FM.getCanonicalName(Dir));
+  return InstallPath.str();
 }
 
 // E.g. Path is "/usr/local/cuda/samples" and "cuda" is a symlink of cuda-8.0
@@ -585,6 +600,8 @@ int run(int argc, const char **argv) {
 
   RefactoringTool Tool(OptParser.getCompilations(),
                        OptParser.getSourcePathList());
+  SyclctInstallPath = getInstallPath(Tool, argv[0]);
+
   ValidateInputDirectory(Tool, InRoot);
   // Made "-- -x cuda --cuda-host-only" option set by default, .i.e commandline
   // "syclct -in-root ./ -out-root ./ ./topologyQuery.cu  --  -x  cuda
