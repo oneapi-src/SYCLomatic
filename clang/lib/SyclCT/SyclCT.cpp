@@ -486,14 +486,20 @@ std::string getCudaInstallPath(int argc, const char **argv) {
 
 std::string getInstallPath(clang::tooling::ClangTool &Tool,
                            const char *invokeCommand) {
-  FileManager &FM = Tool.getFiles();
-  std::string invokeCommandString(invokeCommand);
-  makeCanonical(invokeCommandString);
-  StringRef CommandPath = llvm::sys::path::parent_path(invokeCommandString);
-  const DirectoryEntry *Dir = FM.getDirectory(CommandPath);
-  // move up to parent directory of bin directory
-  StringRef InstallPath =
-      llvm::sys::path::parent_path(FM.getCanonicalName(Dir));
+  SmallString<512> InstalledPath(invokeCommand);
+
+  // Do a PATH lookup, if there are no directory components.
+  if (llvm::sys::path::filename(InstalledPath) == InstalledPath) {
+    if (llvm::ErrorOr<std::string> Tmp = llvm::sys::findProgramByName(
+            llvm::sys::path::filename(InstalledPath.str()))) {
+      InstalledPath = *Tmp;
+    }
+  }
+
+  makeCanonical(InstalledPath);
+  StringRef InstalledPathParent(llvm::sys::path::parent_path(InstalledPath));
+  // Move up to parent directory of bin directory
+  StringRef InstallPath = llvm::sys::path::parent_path(InstalledPathParent);
   return InstallPath.str();
 }
 
