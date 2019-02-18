@@ -351,7 +351,7 @@ std::string ReplaceDim3Ctor::getParamsString(const CXXConstructExpr *Ctor,
         Params += "1";
       } else {
         if (Arg->getBeginLoc().isMacroID() || Arg->getEndLoc().isMacroID())
-          Params += getStmtExpansion(Arg, Context);
+          Params += getStmtSpellingWithTransforms(Arg, Context, SSM, true);
         else
           Params += getStmtSpellingWithTransforms(Arg, Context, SSM);
         //        Params += getStmtSpelling(Arg, Context);

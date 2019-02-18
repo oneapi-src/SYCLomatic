@@ -131,20 +131,26 @@ int main() {
   dim3 d3_1(test.x);
   // CHECK: cl::sycl::range<3> d3_2(test[0] + 1, 1, 1);
   dim3 d3_2(test.x + 1);
-  // TODO(CTST-469):CHCK: cl::sycl::range<3> d3_2_1(test[0] + NUM, 1, 1);
-  // TODO(CTST-469):dim3 d3_2_1(test.x + NUM);
+  // CHECK: cl::sycl::range<3> d3_2_1(test[0] + 32, 1, 1);
+  dim3 d3_2_1(test.x + 32);
+  // CHECK: cl::sycl::range<3> d3_2_2(test[0] + NUM, 1, 1);
+  dim3 d3_2_2(test.x + NUM);
   // CHECK: cl::sycl::range<3> d3_3(2 + test[0] + 1, 1, 1);
   dim3 d3_3(2 + test.x + 1);
-  // TODO(CTST-469):CHCK: cl::sycl::range<3> d3_3_1(NUM + test[0] + NUM, 1, 1);
-  // TODO(CTST-469):dim3 d3_3_1(NUM + test.x + NUM);
+  // CHECK: cl::sycl::range<3> d3_3_1(32 + test[0] + 64, 1, 1);
+  dim3 d3_3_1(32 + test.x + 64);
+  // CHECK: cl::sycl::range<3> d3_3_2(NUM + test[0] + NUM, 1, 1);
+  dim3 d3_3_2(NUM + test.x + NUM);
   // CHECK: cl::sycl::range<3> d3_4(test[0], test[1], 1);
   dim3 d3_4(test.x, test.y);
   // CHECK: cl::sycl::range<3> d3_5(test[0], test[1], test[2]);
   dim3 d3_5(test.x, test.y, test.z);
   // CHECK: cl::sycl::range<3> d3_6 = cl::sycl::range<3>(test[0] + 1, 2 + test[1], 3 + test[2] + 4);
   dim3 d3_6 = dim3(test.x + 1, 2 + test.y, 3 + test.z + 4);
-  // TODO(CTST-469):CHCK: cl::sycl::range<3> d3_6_1 = cl::sycl::range<3>(test[0] + NUM, NUM + test[1], NUM + test[2] + NUM);
-  // TODO(CTST-469):dim3 d3_6_1 = dim3(test.x + NUM, NUM + test.y, NUM + test.z + NUM);
+  // CHECK: cl::sycl::range<3> d3_6_1 = cl::sycl::range<3>(test[0] + 111, 112 + test[1], 113 + test[2] + 114);
+  dim3 d3_6_1 = dim3(test.x + 111, 112 + test.y, 113 + test.z + 114);
+  // CHECK: cl::sycl::range<3> d3_6_2 = cl::sycl::range<3>(test[0] + NUM, NUM + test[1], NUM + test[2] + NUM);
+  dim3 d3_6_2 = dim3(test.x + NUM, NUM + test.y, NUM + test.z + NUM);
 
   // CHECK: {
   // CHECK:   syclct::get_default_queue().submit(

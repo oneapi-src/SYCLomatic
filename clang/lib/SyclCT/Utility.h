@@ -81,17 +81,14 @@ const char *getNL(clang::SourceLocation Loc, const clang::SourceManager &SM);
 llvm::StringRef getIndent(clang::SourceLocation Loc,
                           const clang::SourceManager &SM);
 
-// Get the macro textual representation if S is expanded from a macro
-std::string getStmtExpansion(const clang::Stmt *S,
-                             const clang::ASTContext &Context);
-
 // Get the Stmt spelling
 std::string getStmtSpelling(const clang::Stmt *E,
                             const clang::ASTContext &Context);
 // Get the Stmt spelling with the existing transforms applied
 std::string getStmtSpellingWithTransforms(const clang::Stmt *S,
                                           const clang::ASTContext &Context,
-                                          StmtStringMap *SSM);
+                                          StmtStringMap *SSM,
+                                          bool doExpansion = false);
 
 template <typename T> std::string getHashAsString(const T &Val) {
   std::stringstream Stream;
