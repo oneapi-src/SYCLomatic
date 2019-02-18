@@ -21,3 +21,5 @@ DEF_COMMENT(VERSION_COMMENT, 1005, "The device version is different. You may wan
 DEF_WARNING(NOT_SUPPORT_API_INTEGRATEDORNOT, 1006, "SYCL doesn't provide standard API to differentiate between integrated/discrete GPU devices. Consider to re-implement the code which depends on this field")
 DEF_COMMENT(NOT_SUPPORT_API_INTEGRATEDORNOT, 1006, "SYCL doesn't provide standard API to differentiate between integrated/discrete GPU devices. Consider to re-implement the code which depends on this field")
 DEF_COMMENT(API_NOT_TRANSLATED, 1007, "{0}: not support API, need manual porting. ")
+DEF_WARNING(API_NOT_TRANSLATED_SYCL_UNDEF, 1008, "Function clock is not defined in the SYCL specification. This is a hardware-specific feature. Consider consulting with hardware vendor to find a replacement.")
+DEF_COMMENT(API_NOT_TRANSLATED_SYCL_UNDEF, 1008, "Function clock is not defined in the SYCL specification. This is a hardware-specific feature. Consider consulting with hardware vendor to find a replacement.")

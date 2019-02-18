@@ -1394,7 +1394,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaGetDevice", "cudaGetLastError", "cudaDeviceSynchronize",
         "cudaThreadSynchronize", "cudaGetErrorString",
         "cudaDeviceSetCacheConfig", "cudaDeviceGetCacheConfig",
-        "__longlong_as_double", "__double_as_longlong");
+        "__longlong_as_double", "__double_as_longlong", "clock");
   };
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
                                hasParent(compoundStmt())))
@@ -1491,6 +1491,8 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceCalleeName(CE, "syclct::d2ll"));
   } else if (FuncName == "__longlong_as_double") {
     emplaceTransformation(new ReplaceCalleeName(CE, "syclct::ll2d"));
+  } else if (FuncName == "clock") {
+    report(CE->getBeginLoc(), Diagnostics::API_NOT_TRANSLATED_SYCL_UNDEF);
   } else {
     syclct_unreachable("Unknown function name");
   }
