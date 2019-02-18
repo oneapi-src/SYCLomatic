@@ -38,9 +38,9 @@ set -x
 #Run test case from syclct_sdk_8_samples
 tc -r none -x gcc_efi2 -t $syclct_sdk_8_samples_list
 
-#Run test case from syclct_sdk_92_samples
-#tc -r none -x gcc_efi2 -t syclct_sdk_92_samples/vectorAdd,topologyQuery,cudaOpenMP,cppIntegration,simpleAssert,alignedTypes,simpleMPI,simplePrintf
+#Run custom test set: syclct_internal_samples
+tc -r none -x gcc_efi2 -s syclct_internal_samples
 
-#Run test case from syclct_sdk_10_samples
-#tc -r none -x gcc_efi2 -t syclct_sdk_10_samples/vectorAdd,topologyQuery,cudaOpenMP,cppIntegration,simpleAssert,alignedTypes,simpleMPI,simplePrintf
+#Run custom behavior test set: syclct_behavior_tests
+tc -r none -x gcc_efi2 -s syclct_behavior_tests
 
