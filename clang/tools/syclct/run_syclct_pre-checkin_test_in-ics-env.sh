@@ -30,6 +30,8 @@ syclct_sdk_8_samples=(
   FDTD3d
   simpleTemplates
   simpleAtomicIntrinsics
+  fastWalshTransform
+  dwtHaar1D
 )
 
 syclct_sdk_8_samples_list=$(IFS=, ; echo "syclct_sdk_8_samples/${syclct_sdk_8_samples[*]}")
