@@ -15,6 +15,9 @@
 #include <CL/sycl.hpp>
 #include <iostream>
 
+#define SYCLCT_API_CALL_SUCCESS (0)
+#define SYCLCT_API_CALL_FAIL (1)
+
 #include "syclct_atomic.hpp"
 #include "syclct_device.hpp"
 #include "syclct_kernel.hpp"

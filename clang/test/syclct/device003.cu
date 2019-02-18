@@ -17,7 +17,7 @@ int dev_id;
 checkErrors(cudaGetDevice(&dev_id));
 
 cudaDeviceProp deviceProp;
-// CHECK: checkErrors(deviceProp = syclct::get_device_manager().get_device( 0).get_device_info());
+// CHECK: checkErrors(syclct::get_device_manager().get_device( 0).get_device_info(deviceProp));
 checkErrors(cudaGetDeviceProperties(&deviceProp, 0));
 
 int atomicSupported;

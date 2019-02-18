@@ -418,8 +418,7 @@ void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
         if (!isErrorHandling(If->getThen())) {
           if (IsIfstmtSpecialCase) {
             report(Ip, Diagnostics::IFSTMT_SPECIAL_CASE);
-          }
-          else{
+          } else {
             report(If->getSourceRange().getBegin(),
                    Diagnostics::IFSTMT_NOT_REMOVED);
           }
@@ -1426,11 +1425,11 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         new ReplaceStmt(CE, "syclct::get_device_manager().device_count()"));
   } else if (FuncName == "cudaGetDeviceProperties") {
     std::string ResultVarName = DereferenceArg(CE->getArg(0));
-    emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     emplaceTransformation(new ReplaceStmt(
         CE->getCallee(), "syclct::get_device_manager().get_device"));
     emplaceTransformation(new RemoveArg(CE, 0));
-    emplaceTransformation(new InsertAfterStmt(CE, ".get_device_info()"));
+    emplaceTransformation(
+        new InsertAfterStmt(CE, ".get_device_info(" + ResultVarName + ")"));
   } else if (FuncName == "cudaDeviceReset") {
     emplaceTransformation(new ReplaceStmt(
         CE, "syclct::get_device_manager().current_device().reset()"));

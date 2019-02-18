@@ -70,7 +70,7 @@ public:
   int is_native_atomic_supported() { return 0; }
   //....
 
-  sycl_device_info get_device_info() {
+  int get_device_info(sycl_device_info &out) {
     sycl_device_info prop;
     std::strcpy(prop.name(), get_info<cl::sycl::info::device::name>().c_str());
 
@@ -96,7 +96,8 @@ public:
     prop.global_mem_size() =
         get_info<cl::sycl::info::device::global_mem_size>();
     //...
-    return prop;
+    out = prop;
+    return SYCLCT_API_CALL_SUCCESS;
   }
 
   int reset() {
@@ -108,7 +109,7 @@ public:
       q.~queue();
     }
     _queues.clear();
-    return 0;
+    return SYCLCT_API_CALL_SUCCESS;
   }
 
   cl::sycl::queue &default_queue() { return _default_queue; }
@@ -148,10 +149,10 @@ public:
     return _devs[id];
   }
   unsigned int current_device_id() const { return _current_device; }
-  syclct_device select_device(unsigned int id) {
+  int select_device(unsigned int id) {
     check_id(id);
     _current_device = id;
-    return _devs[_current_device];
+    return SYCLCT_API_CALL_SUCCESS;
   }
   unsigned int device_count() { return _devs.size(); }
 
