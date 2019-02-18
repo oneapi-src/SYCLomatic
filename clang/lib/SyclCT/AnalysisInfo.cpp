@@ -10,6 +10,7 @@
 //===-----------------------------------------------------------------===//
 
 #include "AnalysisInfo.h"
+#include "ExprAnalysis.h"
 #include "Utility.h"
 
 #include "clang/AST/DeclTemplate.h"
@@ -314,10 +315,40 @@ std::string MemVarInfo::getDeclarationReplacement() {
   }
 }
 
+TypeInfo::TypeInfo(const QualType &Type)
+    : Type(Type), Pointer(false), Template(false), TemplateIndex(0) {
+  setArrayInfo();
+  setPointerInfo();
+  setTemplateInfo();
+  setName();
+}
+
+std::string TypeInfo::getRangeArgument(const std::string&MemSize,bool MustArguments) {
+  std::string Arg = "(";
+  for (auto R : Range) {
+    if (auto CAT = dyn_cast<ConstantArrayType>(R))
+      Arg += CAT->getSize().toString(10, false) + ", ";
+    else if (auto VAT = dyn_cast<VariableArrayType>(R))
+      Arg +=
+          getStmtSpelling(VAT->getSizeExpr(), SyclctGlobalInfo::getContext()) +
+          ", ";
+    else if (auto DAT = dyn_cast<DependentSizedArrayType>(R)) {
+      SizeAnalysis.analysis(DAT->getSizeExpr());
+      Arg += SizeAnalysis.getReplacedString() + ", ";
+    } else if (MemSize.empty())
+      llvm_unreachable("array size should not be zero");
+    else
+      Arg += MemSize + ", ";
+  }
+  return (Arg.size() == 1) ? (MustArguments ? (Arg + ")") : "")
+                           : Arg.replace(Arg.size() - 2, 2, ")");
+}
+
 void TypeInfo::setTemplateType(const std::vector<TemplateArgumentInfo> &TA) {
   assert(TemplateIndex < TA.size());
   if (isTemplate())
     TemplateType = TA[TemplateIndex].getAsType();
+  SizeAnalysis.setTemplateArgsList(TA);
 }
 
 void ArgumentInfo::getReplacement() {

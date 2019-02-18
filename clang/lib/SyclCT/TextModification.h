@@ -177,8 +177,10 @@ class ReplaceStmt : public TextModification {
   std::string ReplacementString;
 
 public:
-  ReplaceStmt(const Stmt *E, std::string &&S)
-      : TextModification(TMID::ReplaceStmt), TheStmt(E), ReplacementString(S) {}
+  template <class... Args>
+  ReplaceStmt(const Stmt *E, Args &&... S)
+      : TextModification(TMID::ReplaceStmt), TheStmt(E),
+        ReplacementString(std::forward<Args>(S)...) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,

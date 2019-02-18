@@ -12,8 +12,10 @@
 #ifndef SYCLCT_ANALYSIS_INFO_H
 #define SYCLCT_ANALYSIS_INFO_H
 
+#include "ExprAnalysis.h"
 #include "TextModification.h"
 #include "Utility.h"
+#include "clang/AST/ExprCXX.h"
 #include "clang/Tooling/Core/Replacement.h"
 #include "clang/Tooling/Tooling.h"
 #include <map>
@@ -171,16 +173,10 @@ class TemplateArgumentInfo;
 // get from type.
 class TypeInfo {
 public:
-  TypeInfo(const QualType &Type)
-      : Type(Type), Pointer(false), Template(false), TemplateIndex(0) {
-    setArrayInfo();
-    setPointerInfo();
-    setTemplateInfo();
-    setName();
-  }
+  TypeInfo(const QualType &Type);
+
   const std::string &getName() { return Name; }
   size_t getDimension() { return Range.size(); }
-  const std::vector<size_t> &getRange() { return Range; }
 
   std::string getAsTemplateArguments() {
     return "<" + getActualTypeName() + ", " + std::to_string(Range.size()) +
@@ -196,18 +192,7 @@ public:
   // when there is no arguments, parameter MustArguments determine whether
   // parens will exist. Null string will be returned when MustArguments is
   // false, otherwise "()" will be returned.
-  std::string getRangeArgument(const std::string &MemSize, bool MustArguments) {
-    std::string Arg = "(";
-    for (auto R : Range)
-      if (R)
-        Arg += std::to_string(R) + ", ";
-      else if (!MemSize.empty())
-        Arg += MemSize + ", ";
-      else
-        llvm_unreachable("array size should not be zero");
-    return (Arg.size() == 1) ? (MustArguments ? (Arg + ")") : "")
-                             : Arg.replace(Arg.size() - 2, 2, ")");
-  }
+  std::string getRangeArgument(const std::string &MemSize, bool MustArguments);
 
   bool isTemplate() { return Template; }
   bool isPointer() { return Pointer; }
@@ -216,10 +201,7 @@ public:
 private:
   void setArrayInfo() {
     while (Type->isArrayType()) {
-      if (auto ArrayType = dyn_cast<ConstantArrayType>(Type))
-        Range.push_back((ArrayType)->getSize().getZExtValue());
-      else
-        Range.push_back(0);
+      Range.push_back(dyn_cast<ArrayType>(Type));
       Type = Type->getAsArrayTypeUnsafe()->getElementType();
     }
   }
@@ -252,7 +234,8 @@ private:
 private:
   QualType Type;
   std::string Name;
-  std::vector<size_t> Range;
+  std::vector<const ArrayType *> Range;
+  ArraySizeExprAnalysis SizeAnalysis;
   bool Pointer;
   bool Template;
   unsigned TemplateIndex;
@@ -555,7 +538,7 @@ public:
     if (Replacement.empty())
       return nullptr;
     else
-      return new ReplaceStmt(Arg, std::move(Replacement));
+      return new ReplaceStmt(Arg, Replacement);
   }
 
 private:
@@ -609,7 +592,7 @@ private:
   void buildCallExprInfo(const CallExpr *CE);
   void buildArguments(const CallExpr *CE) {
     for (auto Arg : CE->arguments())
-      Args.push_back(Arg);
+      Args.emplace_back(Arg);
   }
   void addTemplateType(const TemplateArgument &TA);
   void getTemplateArguments(const ArrayRef<TemplateArgumentLoc> &TemplateArgs);

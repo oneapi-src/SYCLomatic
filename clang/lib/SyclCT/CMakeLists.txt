@@ -13,6 +13,7 @@ add_clang_library(SyclCT
   AnalysisInfo.cpp
   Debug.cpp
   Diagnostics.cpp
+  ExprAnalysis.cpp
   MapNames.cpp
   SaveNewFiles.cpp
   SyclCT.cpp
