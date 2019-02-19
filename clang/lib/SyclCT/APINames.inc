@@ -39,7 +39,7 @@ ENTRY(cudaThreadSynchronize, true)
 ENTRY(cudaGetErrorName, true)
 ENTRY(cudaGetErrorString, true)
 ENTRY(cudaGetLastError, true)
-ENTRY(cudaPeekAtLastError, false)
+ENTRY(cudaPeekAtLastError, true)
 
 // stream management functions of API
 ENTRY(cudaStreamAddCallback, false)

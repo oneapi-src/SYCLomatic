@@ -1390,10 +1390,11 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
     return hasAnyName(
         "cudaGetDeviceCount", "cudaGetDeviceProperties", "cudaDeviceReset",
         "cudaSetDevice", "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
-        "cudaGetDevice", "cudaGetLastError", "cudaDeviceSynchronize",
-        "cudaThreadSynchronize", "cudaGetErrorString", "cudaGetErrorName",
-        "cudaDeviceSetCacheConfig", "cudaDeviceGetCacheConfig",
-        "__longlong_as_double", "__double_as_longlong", "clock");
+        "cudaGetDevice", "cudaGetLastError", "cudaPeekAtLastError",
+        "cudaDeviceSynchronize", "cudaThreadSynchronize", "cudaGetErrorString",
+        "cudaGetErrorName", "cudaDeviceSetCacheConfig",
+        "cudaDeviceGetCacheConfig", "__longlong_as_double",
+        "__double_as_longlong", "clock");
   };
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
                                hasParent(compoundStmt())))
@@ -1473,7 +1474,8 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
 
-  } else if (FuncName == "cudaGetLastError") {
+  } else if (FuncName == "cudaGetLastError" ||
+             FuncName == "cudaPeekAtLastError") {
     emplaceTransformation(new ReplaceStmt(CE, "0"));
   } else if (FuncName == "cudaGetErrorString" ||
              FuncName == "cudaGetErrorName") {
