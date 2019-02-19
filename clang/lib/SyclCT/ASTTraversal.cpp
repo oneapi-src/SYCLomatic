@@ -1391,7 +1391,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaGetDeviceCount", "cudaGetDeviceProperties", "cudaDeviceReset",
         "cudaSetDevice", "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
         "cudaGetDevice", "cudaGetLastError", "cudaDeviceSynchronize",
-        "cudaThreadSynchronize", "cudaGetErrorString",
+        "cudaThreadSynchronize", "cudaGetErrorString", "cudaGetErrorName",
         "cudaDeviceSetCacheConfig", "cudaDeviceGetCacheConfig",
         "__longlong_as_double", "__double_as_longlong", "clock");
   };
@@ -1475,9 +1475,11 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
   } else if (FuncName == "cudaGetLastError") {
     emplaceTransformation(new ReplaceStmt(CE, "0"));
-  } else if (FuncName == "cudaGetErrorString") {
+  } else if (FuncName == "cudaGetErrorString" ||
+             FuncName == "cudaGetErrorName") {
+    report(CE->getBeginLoc(), Comments::NOTSUPPORTED, FuncName);
     emplaceTransformation(
-        new InsertBeforeStmt(CE, "\"cudaGetErrorString not supported\"/*"));
+        new InsertBeforeStmt(CE, "\"" + FuncName + " not supported\"/*"));
     emplaceTransformation(new InsertAfterStmt(CE, "*/"));
   } else if (FuncName == "cudaDeviceSetCacheConfig" ||
              FuncName == "cudaDeviceGetCacheConfig") {

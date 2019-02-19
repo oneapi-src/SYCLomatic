@@ -36,7 +36,7 @@ ENTRY(cudaThreadSetLimit, false)
 ENTRY(cudaThreadSynchronize, true)
 
 // error handling functions of runtime API
-ENTRY(cudaGetErrorName, false)
+ENTRY(cudaGetErrorName, true)
 ENTRY(cudaGetErrorString, true)
 ENTRY(cudaGetLastError, true)
 ENTRY(cudaPeekAtLastError, false)
