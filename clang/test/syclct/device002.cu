@@ -11,7 +11,7 @@ int main(int argc, char **argv)
 {
 int devID = atoi(argv[1]);
 cudaDeviceProp cdp;
-//CHECK: int error_code = syclct::get_device_manager().get_device( devID).get_device_info(cdp);
+//CHECK: int error_code = syclct::get_device_manager().get_device(devID).get_device_info(cdp);
 cudaError_t error_code = cudaGetDeviceProperties(&cdp, devID);
 
 if (error_code == cudaSuccess) {
@@ -35,11 +35,11 @@ int dev_id;
 cudaGetDevice(&dev_id);
 
 cudaDeviceProp deviceProp;
-// CHECK: syclct::get_device_manager().get_device( 0).get_device_info(deviceProp);
+// CHECK: syclct::get_device_manager().get_device(0).get_device_info(deviceProp);
 cudaGetDeviceProperties(&deviceProp, 0);
 
 int atomicSupported;
-// CHECK: atomicSupported = syclct::get_device_manager().get_device(  dev_id).is_native_atomic_supported();
+// CHECK: atomicSupported = syclct::get_device_manager().get_device(dev_id).is_native_atomic_supported();
 cudaDeviceGetAttribute(&atomicSupported, cudaDevAttrHostNativeAtomicSupported, dev_id);
 
 int device1 = 0;

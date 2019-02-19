@@ -885,11 +885,11 @@ ExtReplacement RemoveArg::getReplacement(const ASTContext &Context) const {
   if (IsLast) {
     End = SR.getEnd();
   } else {
-    End = CE->getArg(N + 1)->getSourceRange().getBegin().getLocWithOffset(-1);
+    End = CE->getArg(N + 1)->getSourceRange().getBegin().getLocWithOffset(0);
   }
   recordTranslationInfo(Context, CE->getBeginLoc());
   return ExtReplacement(Context.getSourceManager(),
-                        CharSourceRange(SourceRange(Begin, End), true), "",
+                        CharSourceRange(SourceRange(Begin, End), false), "",
                         this);
 }
 

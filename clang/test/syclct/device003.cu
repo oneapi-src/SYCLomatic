@@ -17,11 +17,11 @@ int dev_id;
 checkErrors(cudaGetDevice(&dev_id));
 
 cudaDeviceProp deviceProp;
-// CHECK: checkErrors(syclct::get_device_manager().get_device( 0).get_device_info(deviceProp));
+// CHECK: checkErrors(syclct::get_device_manager().get_device(0).get_device_info(deviceProp));
 checkErrors(cudaGetDeviceProperties(&deviceProp, 0));
 
 int atomicSupported;
-// CHECK: checkErrors(atomicSupported = syclct::get_device_manager().get_device(  dev_id).is_native_atomic_supported());
+// CHECK: checkErrors(atomicSupported = syclct::get_device_manager().get_device(dev_id).is_native_atomic_supported());
 checkErrors(cudaDeviceGetAttribute(&atomicSupported, cudaDevAttrHostNativeAtomicSupported, dev_id));
 
 int device1 = 0;
