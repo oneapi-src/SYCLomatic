@@ -21,6 +21,9 @@
 #include <assert.h>
 #include <unordered_map>
 
+extern llvm::cl::opt<std::string> SuppressWarnings;
+extern bool SuppressWarningsAllFlag;
+
 namespace clang {
 namespace syclct {
 
@@ -62,6 +65,20 @@ enum class Diagnostics {
 #define DEF_WARNING(NAME, ID, MSG)
 #define DEF_COMMENT(NAME, ID, MSG) NAME = ID,
 enum class Comments {
+#include "Diagnostics.inc"
+#undef DEF_NOTE
+#undef DEF_ERROR
+#undef DEF_WARNING
+#undef DEF_COMMENT
+  END
+};
+
+#define DEF_NOTE(NAME, ID, MSG)
+#define DEF_ERROR(NAME, ID, MSG)
+#define DEF_WARNING(NAME, ID, MSG) NAME = ID,
+#define DEF_COMMENT(NAME, ID, MSG)
+enum class Warnings {
+  BEGIN = 1000,
 #include "Diagnostics.inc"
 #undef DEF_NOTE
 #undef DEF_ERROR
@@ -129,9 +146,40 @@ insertCommentPrevLine(SourceLocation SL, const DiagnosticsMessage &Msg,
 template <typename IDTy, typename... Ts>
 void report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
             TransformSetTy *TS, Ts &&... Vals) {
-  if (DiagnosticIDTable.find((int)MsgID) != DiagnosticIDTable.end())
-    reportWarning(SL, DiagnosticIDTable[(int)MsgID], CI,
-                  std::forward<Ts>(Vals)...);
+  if (!SuppressWarningsAllFlag) {
+    static bool WarningInitialized = false;
+    static std::set<int> WarningIDs;
+    if (!WarningInitialized) {
+      // Separate string into list by comma
+      if (SuppressWarnings != "") {
+        auto WarningStrs = split(SuppressWarnings, ',');
+        for (const auto& Str : WarningStrs) {
+          auto Range = split(Str, '-');
+          if (Range.size() == 1) {
+            WarningIDs.insert(std::stoi(Str));
+          } else if (Range.size() == 2) {
+            size_t RangeBegin = std::stoi(Range[0]);
+            size_t RangeEnd = std::stoi(Range[1]);
+            if (RangeBegin < (size_t)Warnings::BEGIN)
+              RangeBegin = (size_t)Warnings::BEGIN;
+            if (RangeEnd >= (size_t)Warnings::END)
+              RangeEnd = (size_t)Warnings::END - 1;
+            if (RangeBegin > RangeEnd)
+              continue;
+            for (auto I = RangeBegin; I <= RangeEnd; ++I)
+              WarningIDs.insert(I);
+          }
+        }
+      }
+      WarningInitialized = true;
+    }
+
+    // Only report warnings that are not suppressed
+    if (WarningIDs.find((int)MsgID) == WarningIDs.end() &&
+        DiagnosticIDTable.find((int)MsgID) != DiagnosticIDTable.end())
+      reportWarning(SL, DiagnosticIDTable[(int)MsgID], CI,
+                    std::forward<Ts>(Vals)...);
+  }
   if (TS && CommentIDTable.find((int)MsgID) != CommentIDTable.end()) {
     TS->emplace_back(insertCommentPrevLine(SL, CommentIDTable[(int)MsgID], CI,
                                            std::forward<Ts>(Vals)...));

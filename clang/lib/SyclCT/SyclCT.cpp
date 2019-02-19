@@ -80,6 +80,19 @@ static opt<int, true, llvm::cl::parser<int>>
                  "v=2 Detailed information of all replacements.\n"),
             cat(SyclCTCat), location(VerboseLevel));
 
+static std::string WarningDesc("Comma separated list of warnings to be"
+    "suppressed, valid warning ids range from "
+    + std::to_string((size_t)Warnings::BEGIN) + " to "
+    + std::to_string((size_t)Warnings::END - 1));
+opt<std::string> SuppressWarnings("suppress-warnings", desc(WarningDesc),
+                                  value_desc("WarningID,..."), cat(SyclCTCat));
+
+bool SuppressWarningsAllFlag = false;
+static std::string WarningAllDesc("Suppress all warnings of the translation");
+opt<bool, true> SuppressWarningsAll("suppress-warnings-all",
+                                    desc(WarningAllDesc), cat(SyclCTCat),
+                                    location(SuppressWarningsAllFlag));
+
 std::string CudaPath;          // Global value for the CUDA install path.
 std::string SyclctInstallPath; // Installation directory for this tool
 
@@ -97,18 +110,9 @@ public:
     }
 
     if (Passes != "") {
-      std::vector<std::string> Names;
       // Separate string into list by comma
-      {
-        std::size_t Current, Previous = 0;
-        Current = Passes.find(',');
-        while (Current != std::string::npos) {
-          Names.push_back(Passes.substr(Previous, Current - Previous));
-          Previous = Current + 1;
-          Current = Passes.find(',', Previous);
-        }
-        Names.push_back(Passes.substr(Previous, Current - Previous));
-      }
+      auto Names = split(Passes, ',');
+
       std::vector<std::vector<std::string>> Rules;
 
       for (auto const &Name : Names) {

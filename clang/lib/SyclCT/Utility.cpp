@@ -313,3 +313,13 @@ const std::string &getFmtArgIndent(std::string &BaseIndent) {
   const static std::string FmtArgIndent = BaseIndent + SpacesForArg;
   return FmtArgIndent;
 }
+
+std::vector<std::string> split(const std::string& str, char delim) {
+  std::vector<std::string> vs;
+  std::stringstream ss(str);
+  std::string token;
+  while (std::getline(ss, token, delim))
+    vs.push_back(token);
+
+  return vs;
+}

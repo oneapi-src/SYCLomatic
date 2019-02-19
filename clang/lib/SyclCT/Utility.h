@@ -130,4 +130,5 @@ const std::string &getFmtStatementIndent(std::string &BaseIndent);
 const std::string &getFmtEndArg(void);
 const std::string &getFmtArgIndent(std::string &BaseIndent);
 
+std::vector<std::string> split(const std::string& str, char delim);
 #endif // SYCLCT_UTILITY_H
