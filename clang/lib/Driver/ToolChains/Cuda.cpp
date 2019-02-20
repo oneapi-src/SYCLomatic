@@ -79,8 +79,8 @@ CudaInstallationDetector::CudaInstallationDetector(
   SmallVector<Candidate, 4> Candidates;
 
   // In decreasing order so we prefer newer versions to older versions.
-  #define __INTEL_CUSTOMIZATION__
-  #ifdef __INTEL_CUSTOMIZATION__
+  #define INTEL_CUSTOMIZATION
+  #ifdef INTEL_CUSTOMIZATION
   std::initializer_list<const char *> Versions = {"10.0", "9.2", "9.0",
                                                    "8.0"};
   #else

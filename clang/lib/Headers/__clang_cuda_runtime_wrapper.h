@@ -321,8 +321,8 @@ static inline __device__ void __brkpt(int __c) { __brkpt(); }
 
 #pragma pop_macro("__host__")
 
-#define __INTEL_CUSTOMIZATION__
-#ifdef __INTEL_CUSTOMIZATION__
+#define INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
 #include "__clang_syclct_math.h"
 #endif
 
