@@ -105,7 +105,7 @@ public:
         get_info<cl::sycl::info::device::global_mem_size>();
     //...
     out = prop;
-    return SYCLCT_API_CALL_SUCCESS;
+    return 0;
   }
 
   int reset() {
@@ -117,7 +117,7 @@ public:
       q.~queue();
     }
     _queues.clear();
-    return SYCLCT_API_CALL_SUCCESS;
+    return 0;
   }
 
   cl::sycl::queue &default_queue() { return _default_queue; }
@@ -160,7 +160,7 @@ public:
   int select_device(unsigned int id) {
     check_id(id);
     _current_device = id;
-    return SYCLCT_API_CALL_SUCCESS;
+    return 0;
   }
   unsigned int device_count() { return _devs.size(); }
 

@@ -1419,24 +1419,41 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
+  std::string Prefix = "";
+  std::string Poststr = "";
+  if (IsAssigned) {
+    Prefix = "(";
+    Poststr = ", 0)";
+  }
+
   if (FuncName == "cudaGetDeviceCount") {
     std::string ResultVarName = DereferenceArg(CE->getArg(0));
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     emplaceTransformation(
         new ReplaceStmt(CE, "syclct::get_device_manager().device_count()"));
   } else if (FuncName == "cudaGetDeviceProperties") {
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
     std::string ResultVarName = DereferenceArg(CE->getArg(0));
     emplaceTransformation(new ReplaceStmt(
-        CE->getCallee(), "syclct::get_device_manager().get_device"));
+        CE->getCallee(), Prefix + "syclct::get_device_manager().get_device"));
     emplaceTransformation(new RemoveArg(CE, 0));
-    emplaceTransformation(
-        new InsertAfterStmt(CE, ".get_device_info(" + ResultVarName + ")"));
+    emplaceTransformation(new InsertAfterStmt(
+        CE, ".get_device_info(" + ResultVarName + ")" + Poststr));
   } else if (FuncName == "cudaDeviceReset") {
     emplaceTransformation(new ReplaceStmt(
         CE, "syclct::get_device_manager().current_device().reset()"));
   } else if (FuncName == "cudaSetDevice") {
-    emplaceTransformation(new ReplaceStmt(
-        CE->getCallee(), "syclct::get_device_manager().select_device"));
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
+    emplaceTransformation(
+        new ReplaceStmt(CE->getCallee(),
+                        Prefix + "syclct::get_device_manager().select_device"));
+    if (IsAssigned)
+      emplaceTransformation(new InsertAfterStmt(CE, ", 0)"));
+
   } else if (FuncName == "cudaDeviceGetAttribute") {
     std::string ResultVarName = DereferenceArg(CE->getArg(0));
     std::string AttributeName = ((const clang::DeclRefExpr *)CE->getArg(1))
