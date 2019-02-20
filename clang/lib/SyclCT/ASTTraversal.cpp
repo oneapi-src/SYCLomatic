@@ -1476,10 +1476,13 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
   } else if (FuncName == "cudaGetLastError" ||
              FuncName == "cudaPeekAtLastError") {
+    report(CE->getBeginLoc(),
+           Comments::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, FuncName);
     emplaceTransformation(new ReplaceStmt(CE, "0"));
   } else if (FuncName == "cudaGetErrorString" ||
              FuncName == "cudaGetErrorName") {
-    report(CE->getBeginLoc(), Comments::NOTSUPPORTED, FuncName);
+    report(CE->getBeginLoc(),
+           Comments::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED, FuncName);
     emplaceTransformation(
         new InsertBeforeStmt(CE, "\"" + FuncName + " not supported\"/*"));
     emplaceTransformation(new InsertAfterStmt(CE, "*/"));

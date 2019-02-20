@@ -6,27 +6,30 @@ int printf(const char *format, ...);
 const char *test_function() {
 
 //CHECK:/*
-//CHECK-NEXT:SYCLCT1004:{{[0-9]+}}: cudaGetErrorString is not supported in Sycl
+//CHECK-NEXT:SYCLCT1009:{{[0-9]+}}: SYCL API uses exceptions to report errors and doesn't use the error codes. Hence, cudaGetErrorString is commented out and a warning string is inserted. You may need to rewrite this code.
+//CHECK-NEXT:*/
+//CHECK-NEXT:/*
+//CHECK-NEXT:SYCLCT1010:{{[0-9]+}}: SYCL API uses exceptions to report errors and doesn't use the error codes. Hence, cudaGetLastError was replaced with 0. You may need to rewrite this code.
 //CHECK-NEXT:*/
 //CHECK-NEXT:  printf("%s\n", "cudaGetErrorString not supported"/*cudaGetErrorString(0)*/);
   printf("%s\n", cudaGetErrorString(cudaGetLastError()));
 
 
 //CHECK:/*
-//CHECK-NEXT:SYCLCT1004:{{[0-9]+}}: cudaGetErrorString is not supported in Sycl
+//CHECK-NEXT:SYCLCT1009:{{[0-9]+}}: SYCL API uses exceptions to report errors and doesn't use the error codes. Hence, cudaGetErrorString is commented out and a warning string is inserted. You may need to rewrite this code.
 //CHECK-NEXT:*/
 //CHECK-NEXT:  printf("%s\n", "cudaGetErrorString not supported"/*cudaGetErrorString(0)*/);
   printf("%s\n", cudaGetErrorString(cudaSuccess));
 
 //CHECK:/*
-//CHECK-NEXT:SYCLCT1004:{{[0-9]+}}: cudaGetErrorString is not supported in Sycl
+//CHECK-NEXT:SYCLCT1009:{{[0-9]+}}: SYCL API uses exceptions to report errors and doesn't use the error codes. Hence, cudaGetErrorName is commented out and a warning string is inserted. You may need to rewrite this code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:  printf("%s\n", "cudaGetErrorString not supported"/*cudaGetErrorString(0)*/);
-  printf("%s\n", cudaGetErrorString(cudaSuccess));
+//CHECK-NEXT:printf("%s\n", "cudaGetErrorName not supported"/*cudaGetErrorName(0)*/);
+  printf("%s\n", cudaGetErrorName(cudaSuccess));
 
 //CHECK:/*
-//CHECK-NEXT:SYCLCT1004:{{[0-9]+}}: cudaGetErrorString is not supported in Sycl
+//CHECK-NEXT:SYCLCT1009:{{[0-9]+}}: SYCL API uses exceptions to report errors and doesn't use the error codes. Hence, cudaGetErrorName is commented out and a warning string is inserted. You may need to rewrite this code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:  return "cudaGetErrorString not supported"/*cudaGetErrorString(0)*/;
-  return cudaGetErrorString(cudaSuccess);
+//CHECK-NEXT:  return "cudaGetErrorName not supported"/*cudaGetErrorName(0)*/;
+  return cudaGetErrorName(cudaSuccess);
 }

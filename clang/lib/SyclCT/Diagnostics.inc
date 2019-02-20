@@ -23,3 +23,7 @@ DEF_COMMENT(NOT_SUPPORT_API_INTEGRATEDORNOT, 1006, "SYCL doesn't provide standar
 DEF_COMMENT(API_NOT_TRANSLATED, 1007, "{0}: not support API, need manual porting. ")
 DEF_WARNING(API_NOT_TRANSLATED_SYCL_UNDEF, 1008, "Function clock is not defined in the SYCL specification. This is a hardware-specific feature. Consider consulting with hardware vendor to find a replacement.")
 DEF_COMMENT(API_NOT_TRANSLATED_SYCL_UNDEF, 1008, "Function clock is not defined in the SYCL specification. This is a hardware-specific feature. Consider consulting with hardware vendor to find a replacement.")
+DEF_WARNING(TRNA_WARNING_ERROR_HANDLING_API_COMMENTED, 1009, "SYCL API uses exceptions to report errors and doesn't use the error codes. Hence, {0} is commented out and a warning string is inserted. You may need to rewrite this code.")
+DEF_COMMENT(TRNA_WARNING_ERROR_HANDLING_API_COMMENTED, 1009, "SYCL API uses exceptions to report errors and doesn't use the error codes. Hence, {0} is commented out and a warning string is inserted. You may need to rewrite this code.")
+DEF_WARNING(TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, 1010, "SYCL API uses exceptions to report errors and doesn't use the error codes. Hence, {0} was replaced with 0. You may need to rewrite this code.")
+DEF_COMMENT(TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, 1010, "SYCL API uses exceptions to report errors and doesn't use the error codes. Hence, {0} was replaced with 0. You may need to rewrite this code.")

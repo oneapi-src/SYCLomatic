@@ -16,10 +16,10 @@ cudaError_t error_code = cudaGetDeviceProperties(&cdp, devID);
 
 if (error_code == cudaSuccess) {
 // CHECK: /*
-// CHECK-NEXT:  SYCLCT1005:3: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:  SYCLCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
 // CHECK-NEXT: */
 // CHECK-NEXT: /*
-// CHECK-NEXT:  SYCLCT1006:4: SYCL doesn't provide standard API to differentiate between integrated/discrete GPU devices. Consider to re-implement the code which depends on this field
+// CHECK-NEXT:  SYCLCT1006:{{[0-9]+}}: SYCL doesn't provide standard API to differentiate between integrated/discrete GPU devices. Consider to re-implement the code which depends on this field
 // CHECK-NEXT: */
     if (cdp.major < 3 && cdp.integrated != 1) {
             printf("do_complex_compute requires compute capability 3.0 or later and not integrated\n");
@@ -87,10 +87,19 @@ cudaDeviceSynchronize();
 cudaError_t err = cudaDeviceSynchronize();
 checkError(cudaDeviceSynchronize());
 return cudaDeviceSynchronize();
-// CHECK: int e = 0;
+// CHECK:/*
+// CHECK-NEXT:SYCLCT1010:{{[0-9]+}}: SYCL API uses exceptions to report errors and doesn't use the error codes. Hence, cudaGetLastError was replaced with 0. You may need to rewrite this code.
+// CHECK-NEXT:*/
+// CHECK-NEXT: int e = 0;
 int e = cudaGetLastError();
-//CHECK: int e1 = 0;
-//CHECK-NEXT: 0;
+// CHECK:/*
+// CHECK-NEXT:SYCLCT1010:{{[0-9]+}}: SYCL API uses exceptions to report errors and doesn't use the error codes. Hence, cudaPeekAtLastError was replaced with 0. You may need to rewrite this code.
+// CHECK-NEXT:*/
+// CHECK-NEXT: int e1 = 0;
+// CHECK-NEXT:/*
+// CHECK-NEXT:SYCLCT1010:{{[0-9]+}}: SYCL API uses exceptions to report errors and doesn't use the error codes. Hence, cudaPeekAtLastError was replaced with 0. You may need to rewrite this code.
+// CHECK-NEXT:*/
+// CHECK-NEXT: 0;
 int e1 = cudaPeekAtLastError();
 cudaPeekAtLastError();
 // CHECK:syclct::get_device_manager().current_device().queues_wait_and_throw();
