@@ -3,31 +3,31 @@
 
 #include <iostream>
 // includes CUDA
-// CHECK:  /*#include <cuda_runtime.h>*/
+// CHECK:  /* SYCLCT_ORIG #include <cuda_runtime.h>*/
 #include <cuda_runtime.h>
 
-// CHECK:   /*__global__ void testKernelPtr(const int *L, const int *M, int N) {*/
+// CHECK:   /* SYCLCT_ORIG __global__ void testKernelPtr(const int *L, const int *M, int N) {*/
 // CHECK-NEXT: void testKernelPtr(const int *L, const int *M, int N, cl::sycl::nd_item<3> [[ITEMNAME:item_[a-f0-9]+]]) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
 
-  // CHECK: /*  int gtid = blockIdx.x  * blockDim.x */
+  // CHECK: /* SYCLCT_ORIG   int gtid = blockIdx.x  * blockDim.x */
   // CHECK-NEXT:   int gtid = item_{{[a-f0-9]+}}.get_group(0) /*comments*/ * item_{{[a-f0-9]+}}.get_local_range().get(0) /*comments
   // CHECK-NEXT:  comments*/
-  // CHECK-NEXT: /*  + threadIdx.x;*/
+  // CHECK-NEXT: /* SYCLCT_ORIG   + threadIdx.x;*/
   // CHECK-NEXT:  + item_{{[a-f0-9]+}}.get_local_id(0);
   int gtid = blockIdx.x /*comments*/ * blockDim.x /*comments
   comments*/
   + threadIdx.x;
 }
 
-// CHECK:     /*__global__ void testKernel(int L, int M, int N) {*/
+// CHECK:     /* SYCLCT_ORIG __global__ void testKernel(int L, int M, int N) {*/
 // CHECK-NEXT: void testKernel(int L, int M, int N, cl::sycl::nd_item<3> [[ITEMNAME:item_[a-f0-9]+]]) {
 __global__ void testKernel(int L, int M, int N) {
-  // CHECK:      /*  int gtid = blockIdx.x*/
+  // CHECK:      /* SYCLCT_ORIG   int gtid = blockIdx.x*/
   // CHECK-NEXT:  int gtid = item_{{[a-f0-9]+}}.get_group(0)
-  // CHECK-NEXT: /*             * blockDim.x*/
+  // CHECK-NEXT: /* SYCLCT_ORIG              * blockDim.x*/
   // CHECK-NEXT:                * item_{{[a-f0-9]+}}.get_local_range().get(0)
-  // CHECK-NEXT: /*             + threadIdx.x;*/
+  // CHECK-NEXT: /* SYCLCT_ORIG              + threadIdx.x;*/
   // CHECK-NEXT:                + item_{{[a-f0-9]+}}.get_local_id(0);
   int gtid = blockIdx.x
              * blockDim.x
@@ -37,9 +37,9 @@ __global__ void testKernel(int L, int M, int N) {
 // Error handling macro
 
 // CHECK: #define CUDA_CHECK(call) \
-// CHECK-NEXT:  /*    if((call) != cudaSuccess) { \*/ \
+// CHECK-NEXT:  /* SYCLCT_ORIG     if((call) != cudaSuccess) { \*/ \
 // CHECK-NEXT:      if((call) != 0) { \
-// CHECK-NEXT:  /*        cudaError_t err = cudaGetLastError(); \*/ \
+// CHECK-NEXT:  /* SYCLCT_ORIG         cudaError_t err = cudaGetLastError(); \*/ \
 // CHECK-NEXT:          int err = 0; \
 // CHECK-NEXT:          std::cout << "CUDA error calling \""#call"\", code is " << err << std::endl; \
 // CHECK-NEXT:          exit(err); }
@@ -55,18 +55,18 @@ void check(T result, char const *const func, const char *const file, int const l
 {}
 
 int main() {
-  // CHECK:  /*  dim3 griddim = 2;*/
+  // CHECK:  /* SYCLCT_ORIG   dim3 griddim = 2;*/
   // CHECK-NEXT:  cl::sycl::range<3> griddim = cl::sycl::range<3>(2, 1, 1);
   dim3 griddim = 2;
 
-  // CHECK:  /*  dim3 threaddim = 32;*/
+  // CHECK:  /* SYCLCT_ORIG   dim3 threaddim = 32;*/
   // CHECK-NEXT:   cl::sycl::range<3> threaddim = cl::sycl::range<3>(32, 1, 1);
   dim3 threaddim = 32;
 
   void *karg1 = 0;
   const int *karg2 = 0;
   int karg3 = 80;
-  // CHECK:  /*  testKernelPtr<<<griddim, threaddim>>>((const int *)karg1, karg2, karg3);*/
+  // CHECK:  /* SYCLCT_ORIG   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1, karg2, karg3);*/
   // CHECK-NEXT:  {
   // CHECK-NEXT:    std::pair<syclct::buffer_t, size_t> karg1_buf = syclct::get_buffer_and_offset(karg1);
   // CHECK-NEXT:    size_t karg1_offset = karg1_buf.second;
@@ -87,7 +87,7 @@ int main() {
   // CHECK-NEXT:  };
   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1, karg2, karg3);
 
-  // CHECK: /*  testKernel<<<10, intvar>>>(karg1int, karg2int, karg3int);*/
+  // CHECK: /* SYCLCT_ORIG   testKernel<<<10, intvar>>>(karg1int, karg2int, karg3int);*/
   // CHECK-NEXT:  {
   // CHECK-NEXT:    syclct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
@@ -104,7 +104,7 @@ int main() {
   int intvar = 20;
   testKernel<<<10, intvar>>>(karg1int, karg2int, karg3int);
 
-  // CHECK: /*  testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int, karg2int, karg3int);*/
+  // CHECK: /* SYCLCT_ORIG   testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int, karg2int, karg3int);*/
   // CHECK-NEXT:  {
   // CHECK-NEXT:    syclct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
@@ -117,7 +117,7 @@ int main() {
   // CHECK-NEXT:  };
   testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int, karg2int, karg3int);
 
-  // CHECK: /*  testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int, karg2int, karg3int);*/
+  // CHECK: /* SYCLCT_ORIG   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int, karg2int, karg3int);*/
   // CHECK-NEXT:  {
   // CHECK-NEXT:    syclct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
@@ -130,7 +130,7 @@ int main() {
   // CHECK-NEXT:  };
   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int, karg2int, karg3int);
 
-  // CHECK: /*  testKernel<<<griddim.x, griddim.y + 2>>>(karg1int, karg2int, karg3int);*/
+  // CHECK: /* SYCLCT_ORIG   testKernel<<<griddim.x, griddim.y + 2>>>(karg1int, karg2int, karg3int);*/
   // CHECK-NEXT:  {
   // CHECK-NEXT:    syclct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
@@ -145,7 +145,7 @@ int main() {
 
   float *deviceOutputData = NULL;
 
-  // CHECK: /*  CUDA_CHECK(cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float)));*/
+  // CHECK: /* SYCLCT_ORIG   CUDA_CHECK(cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float)));*/
   // CHECK-NEXT: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
@@ -154,7 +154,7 @@ int main() {
   // copy result from device to host
   float *h_odata = NULL;
   float *d_odata = NULL;
-  // CHECK: /*  checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));*/
+  // CHECK: /* SYCLCT_ORIG   checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));*/
   // CHECK-NEXT:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
@@ -165,7 +165,7 @@ int main() {
   // CHECK-NEXT:*/
   cudaEventCreate(NULL);
 
-  // CHECK: /*  cudaEventCreate(NULL);cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float));*/
+  // CHECK: /* SYCLCT_ORIG   cudaEventCreate(NULL);cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float));*/
   // CHECK-NEXT: /*
   // CHECK-NEXT:  SYCLCT1007:{{[0-9]+}}: cudaEventCreate: not support API, need manual porting.
   // CHECK-NEXT: */
