@@ -196,16 +196,40 @@ void DeviceFunctionInfo::buildInfo(TransformSetTy &TS) {
   setBuilt();
 }
 
-SourceLocation DeviceFunctionInfo::getRParenLoc(const FunctionDecl *FD) {
-  auto Params = FD->parameters();
-  if (Params.empty()) {
-    auto FuncName = FD->getNameInfo();
-    return FuncName.getLoc().getLocWithOffset(FuncName.getAsString().size() +
-                                              1);
+void DeviceFunctionInfo::computeParenLoc() {
+  auto &SM = SyclctGlobalInfo::getSourceManager();
+
+  // Compute location of the left parenthesis
+  auto FuncNameLoc = FuncDecl->getNameInfo().getLoc();
+  LParenLoc =
+      Lexer::findNextToken(FuncNameLoc, SM, LangOptions())->getLocation();
+
+  // Compute location of the right parenthesis
+  if (!hasParams()) {
+    auto &SM = SyclctGlobalInfo::getSourceManager();
+    auto Token = Lexer::findNextToken(LParenLoc, SM, LangOptions());
+    while (Token->isNot(tok::r_paren)) {
+      Token = Lexer::findNextToken(Token->getLocation(), SM, LangOptions());
+    }
+    RParenLoc = Token->getLocation();
   } else {
-    auto EndParam = *(Params.end() - 1);
-    return EndParam->getEndLoc().getLocWithOffset(EndParam->getName().size());
+    auto EndParam = *(FuncDecl->parameters().end() - 1);
+    RParenLoc =
+        EndParam->getEndLoc().getLocWithOffset(EndParam->getName().size());
   }
+}
+
+TextModification *DeviceFunctionInfo::getTextModification() {
+  if (!hasParams()) {
+    auto &SM = SyclctGlobalInfo::getSourceManager();
+    auto Token = Lexer::findNextToken(LParenLoc, SM, LangOptions());
+    // Remove the parameter "void" in the function declaration
+    if (Token->is(tok::raw_identifier) &&
+        Token->getRawIdentifier().equals("void"))
+      return new ReplaceToken(Token->getLocation(), getParameters());
+  }
+
+  return new InsertText(RParenLoc, getParameters());
 }
 
 std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {

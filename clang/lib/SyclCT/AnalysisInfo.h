@@ -636,8 +636,9 @@ private:
 class DeviceFunctionInfo {
 public:
   DeviceFunctionInfo(const FunctionDecl *Func)
-      : Built(false), Loc(getLocationId(Func)), RParenLoc(getRParenLoc(Func)),
+      : Built(false), FuncDecl(Func), Loc(getLocationId(Func)),
         ParamsNum(Func->getNumParams()), VarMap(std::make_shared<MemVarMap>()) {
+    computeParenLoc();
   }
   unsigned getLoc() { return Loc; }
   void addCallee(const CallExpr *CE) { registerNode(CE, CallExprMap); }
@@ -655,25 +656,26 @@ public:
   void buildInfo(TransformSetTy &TS);
   bool hasParams() { return ParamsNum != 0; }
 
-  TextModification *getTextModification() {
-    return new InsertText(RParenLoc, getParameters());
-  }
+  TextModification *getTextModification();
+
   bool hasBuilt() { return Built; }
   void setBuilt() { Built = true; }
 
 private:
-  static SourceLocation getRParenLoc(const FunctionDecl *FD);
+  void computeParenLoc();
   std::string getParameters() { return VarMap->getDeclParam(hasParams()); }
 
   // make sure buildInfo(TransformSetTy &TS) only run once
   bool Built;
 
+  const FunctionDecl *FuncDecl;
   unsigned Loc;
-  SourceLocation RParenLoc;
   std::string Name;
   size_t ParamsNum;
   GlobalMap<CallFunctionExpr> CallExprMap;
   std::shared_ptr<MemVarMap> VarMap;
+  SourceLocation LParenLoc;
+  SourceLocation RParenLoc;
 };
 
 // kernel call info is specific CallFunctionExpr, which include info of kernel
