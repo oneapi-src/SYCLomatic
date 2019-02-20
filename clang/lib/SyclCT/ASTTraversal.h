@@ -63,6 +63,16 @@ public:
                           StringRef SearchPath, StringRef RelativePath,
                           const Module *Imported,
                           SrcMgr::CharacteristicKind FileType) override;
+  /// Hook called whenever a macro definition is seen.
+  void MacroDefined(const Token &MacroNameTok,
+                    const MacroDirective *MD) override;
+  void Ifdef(SourceLocation Loc, const Token &MacroNameTok,
+             const MacroDefinition &MD) override;
+  void Ifndef(SourceLocation Loc, const Token &MacroNameTok,
+             const MacroDefinition &MD) override;
+  void ReplaceCuMacro(const Token &MacroNameTok);
+  void Defined(const Token &MacroNameTok, const MacroDefinition &MD,
+               SourceRange Range) override;
 };
 
 class ASTTraversal;

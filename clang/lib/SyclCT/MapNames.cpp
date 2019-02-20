@@ -52,6 +52,13 @@ const std::map<std::string, std::string> MapNames::Dim3MemberNamesMap{
     // ...
 };
 
+const std::map<std::string, std::string> MapNames::MacrosMap{
+     {"__CUDA_ARCH__", "SYCL_ARCH_TEMPLY_USED_MACRO"}, /**/
+     {"__NVCC__", "SYCL_ARCH_TEMPLY_USED_MACRO"}, /**/
+     {"__CUDACC__", "SYCL_ARCH_TEMPLY_USED_MACRO"},
+    //...
+};
+
 // DeviceProp names mapping.
 const std::map<std::string, std::string> DevicePropVarRule::PropNamesMap{
     {"clockRate", "max_clock_frequency"},

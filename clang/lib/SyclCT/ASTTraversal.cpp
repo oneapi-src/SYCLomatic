@@ -36,6 +36,41 @@ extern std::string SyclctInstallPath; // Installation directory for this tool
 std::unordered_map<std::string, std::unordered_set</* Comment ID */ int>>
     TranslationRule::ReportedComment;
 
+void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
+  std::string InRoot = ATM.InRoot;
+  std::string InFile = SM.getFilename(MacroNameTok.getLocation());
+  bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
+                  (isChildPath(InRoot, InFile) || isSamePath(InRoot, InFile));
+
+  if (!IsInRoot) {
+    return;
+  }
+  std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
+  if (MapNames::MacrosMap.find(MacroName) != MapNames::MacrosMap.end()) {
+    std::string ReplacedMacroName = MapNames::MacrosMap.at(MacroName);
+    TransformSet.emplace_back(new ReplaceToken(MacroNameTok.getLocation(),
+                                               std::move(ReplacedMacroName)));
+  }
+}
+
+void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
+                                     const MacroDirective *MD) {
+  return;
+}
+void IncludesCallbacks::Ifdef(SourceLocation Loc, const Token &MacroNameTok,
+                              const MacroDefinition &MD) {
+  ReplaceCuMacro(MacroNameTok);
+}
+void IncludesCallbacks::Ifndef(SourceLocation Loc, const Token &MacroNameTok,
+                               const MacroDefinition &MD) {
+  ReplaceCuMacro(MacroNameTok);
+}
+
+void IncludesCallbacks::Defined(const Token &MacroNameTok,
+                                const MacroDefinition &MD, SourceRange Range) {
+  ReplaceCuMacro(MacroNameTok);
+}
+
 void IncludesCallbacks::InclusionDirective(
     SourceLocation HashLoc, const Token &IncludeTok, StringRef FileName,
     bool IsAngled, CharSourceRange FilenameRange, const FileEntry *File,
