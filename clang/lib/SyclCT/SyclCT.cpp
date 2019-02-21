@@ -333,9 +333,11 @@ public:
           //    if((call) != 0) {      \
           //        int err = 0;       \
           //        \ my_abort(err); }
-          NewReplacementText = "/* SYCLCT_ORIG " + removeComments(Line.str()) + "*/ \\\n";
+          NewReplacementText =
+              "/* SYCLCT_ORIG " + removeComments(Line.str()) + "*/ \\\n";
         } else {
-          NewReplacementText = "/* SYCLCT_ORIG " + removeComments(Line.str()) + "*/\n";
+          NewReplacementText =
+              "/* SYCLCT_ORIG " + removeComments(Line.str()) + "*/\n";
         }
 
         ExtReplacement NewR(FilePath, BeginPos, 0, NewReplacementText,

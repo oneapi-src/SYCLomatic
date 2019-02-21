@@ -600,7 +600,7 @@ class MemoryTranslationRule
   const Expr *stripConverts(const Expr *E) const;
 
 public:
-  MemoryTranslationRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  MemoryTranslationRule();
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
@@ -617,6 +617,12 @@ private:
                        const CallExpr *C);
   void MemsetTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C);
+
+  std::unordered_map<
+      std::string,
+      std::function<void(const ast_matchers::MatchFinder::MatchResult &Result,
+                         const CallExpr *C)>>
+      TranslationDispatcher;
 };
 
 // Translation rule for Inserting try-catch around functions.

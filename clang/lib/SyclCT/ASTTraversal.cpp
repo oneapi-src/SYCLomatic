@@ -864,7 +864,9 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: { return false; }
+  default: {
+    return false;
+  }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -1824,24 +1826,6 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
     }
 
-    static const std::unordered_map<
-        std::string, std::function<void(const MatchFinder::MatchResult &Result,
-                                        const CallExpr *C)>>
-        TranslationDispatcher = {
-#define MEMTRANS_DECLFIND(Name)                                                \
-  {"cuda" #Name, std::bind(&MemoryTranslationRule::Name##Translation, this,    \
-                           std::placeholders::_1, std::placeholders::_2)},
-            // clang-format off
-            MEMTRANS_DECLFIND(Malloc)
-            MEMTRANS_DECLFIND(Memcpy)
-            MEMTRANS_DECLFIND(MemcpyToSymbol)
-            MEMTRANS_DECLFIND(MemcpyFromSymbol)
-            MEMTRANS_DECLFIND(Free)
-            MEMTRANS_DECLFIND(Memset)
-// clang-format on
-#undef MEMTRANS_DECLFIND
-        };
-
     const std::string Name =
         C->getCalleeDecl()->getAsFunction()->getNameAsString();
     assert(TranslationDispatcher.find(Name) != TranslationDispatcher.end());
@@ -1852,6 +1836,28 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
                     /* IsAssigned */ false);
   TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callUsed"),
                     /* IsAssigned */ true);
+}
+
+MemoryTranslationRule::MemoryTranslationRule() {
+  SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  TranslationDispatcher["cudaMalloc"] =
+      std::bind(&MemoryTranslationRule::MallocTranslation, this,
+                std::placeholders::_1, std::placeholders::_2);
+  TranslationDispatcher["cudaMemcpy"] =
+      std::bind(&MemoryTranslationRule::MemcpyTranslation, this,
+                std::placeholders::_1, std::placeholders::_2);
+  TranslationDispatcher["cudaMemcpyToSymbol"] =
+      std::bind(&MemoryTranslationRule::MemcpyToSymbolTranslation, this,
+                std::placeholders::_1, std::placeholders::_2);
+  TranslationDispatcher["cudaMemcpyFromSymbol"] =
+      std::bind(&MemoryTranslationRule::MemcpyFromSymbolTranslation, this,
+                std::placeholders::_1, std::placeholders::_2);
+  TranslationDispatcher["cudaFree"] =
+      std::bind(&MemoryTranslationRule::FreeTranslation, this,
+                std::placeholders::_1, std::placeholders::_2);
+  TranslationDispatcher["cudaMemset"] =
+      std::bind(&MemoryTranslationRule::MemsetTranslation, this,
+                std::placeholders::_1, std::placeholders::_2);
 }
 
 REGISTER_RULE(MemoryTranslationRule)
