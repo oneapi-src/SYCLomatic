@@ -129,16 +129,17 @@ public:
   (this)device_ptr(alloc.buffer.reinterpret<T>(cl::sycl::range<1>(size/sizeof(T))));
   }
   */
+
+  // TODO: Compiled with ComputeCpp, cl::sycl::buffer inited by another buffer
+  // or a raw pointer manager unaffected memory. But in CUDA, device_ptr manager
+  // the same memory when it inited by a raw pointer.
   template <typename OtherT>
   device_ptr(OtherT ptr)
-      : Base(syclct::memory_manager::get_instance()
-                 .translate_ptr((void *)ptr)
-                 .buffer.reinterpret<T>(
-                     cl::sycl::range<1>(syclct::memory_manager::get_instance()
-                                            .translate_ptr((void *)ptr)
-                                            .size /
-                                        sizeof(T))),
-             std::size_t{}) {}
+      : Base(
+            cl::sycl::buffer<T, 1>(cl::sycl::range<1>(
+                syclct::memory_manager::get_instance().translate_ptr(ptr).size /
+                sizeof(T))),
+            std::size_t{}) {}
 #endif
 
   // needed for device_malloc
