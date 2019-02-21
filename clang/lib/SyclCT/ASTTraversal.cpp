@@ -1442,8 +1442,12 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new InsertAfterStmt(
         CE, ".get_device_info(" + ResultVarName + ")" + Poststr));
   } else if (FuncName == "cudaDeviceReset") {
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
     emplaceTransformation(new ReplaceStmt(
-        CE, "syclct::get_device_manager().current_device().reset()"));
+        CE, Prefix + "syclct::get_device_manager().current_device().reset()" +
+                Poststr));
   } else if (FuncName == "cudaSetDevice") {
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);

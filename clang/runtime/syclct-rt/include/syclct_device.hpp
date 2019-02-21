@@ -78,7 +78,7 @@ public:
   int is_native_atomic_supported() { return 0; }
   //....
 
-  int get_device_info(sycl_device_info &out) {
+  void get_device_info(sycl_device_info &out) {
     sycl_device_info prop;
     std::strcpy(prop.name(), get_info<cl::sycl::info::device::name>().c_str());
 
@@ -105,10 +105,9 @@ public:
         get_info<cl::sycl::info::device::global_mem_size>();
     //...
     out = prop;
-    return 0;
   }
 
-  int reset() {
+  void reset() {
     // release ALL (TODO) resources and reset to initial state
     for (auto q : _queues) {
       // The destructor waits for all commands executing on the queue to
@@ -117,7 +116,6 @@ public:
       q.~queue();
     }
     _queues.clear();
-    return 0;
   }
 
   cl::sycl::queue &default_queue() { return _default_queue; }
@@ -157,10 +155,9 @@ public:
     return _devs[id];
   }
   unsigned int current_device_id() const { return _current_device; }
-  int select_device(unsigned int id) {
+  void select_device(unsigned int id) {
     check_id(id);
     _current_device = id;
-    return 0;
   }
   unsigned int device_count() { return _devs.size(); }
 
