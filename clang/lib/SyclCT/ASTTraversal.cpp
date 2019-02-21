@@ -966,8 +966,7 @@ void VectorTypeOperatorRule::TranslateOverloadedOperatorDecl(
 
   std::ostringstream Prologue;
   // clang-format off
-  Prologue << NL
-           << "namespace " << NamespaceName << " {" << NL
+  Prologue << "namespace " << NamespaceName << " {" << NL
            << NL;
   // clang-format on
 
@@ -980,6 +979,7 @@ void VectorTypeOperatorRule::TranslateOverloadedOperatorDecl(
 
   const SourceRange SR =
       GetFunctionSourceRange(SM, FD->getBeginLoc(), FD->getEndLoc());
+  report(SR.getBegin(), Diagnostics::TRNA_WARNING_OVERLOADED_API_FOUND);
   emplaceTransformation(new InsertText(SR.getBegin(), Prologue.str()));
   emplaceTransformation(new InsertText(SR.getEnd(), Epilogue.str()));
 }
