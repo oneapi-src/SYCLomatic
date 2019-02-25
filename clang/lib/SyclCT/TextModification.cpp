@@ -253,22 +253,23 @@ InsertAfterStmt::getReplacement(const ASTContext &Context) const {
 }
 
 static int getExpansionRangeSize(const SourceManager &Sources,
-                        const CharSourceRange &Range,
-                        const LangOptions &LangOpts) {
+                                 const CharSourceRange &Range,
+                                 const LangOptions &LangOpts) {
   SourceLocation ExpansionBegin = Sources.getExpansionLoc(Range.getBegin());
   SourceLocation ExpansionEnd = Sources.getExpansionLoc(Range.getEnd());
   std::pair<FileID, unsigned> Start = Sources.getDecomposedLoc(ExpansionBegin);
   std::pair<FileID, unsigned> End = Sources.getDecomposedLoc(ExpansionEnd);
-  if (Start.first != End.first) return -1;
+  if (Start.first != End.first)
+    return -1;
   if (Range.isTokenRange())
     End.second += Lexer::MeasureTokenLength(ExpansionEnd, Sources, LangOpts);
   return End.second - Start.second;
 }
 
 static std::tuple<StringRef, unsigned, unsigned>
-getReplacementInfo(const ASTContext &Context, const CharSourceRange& Range) {
-  const auto& SM = Context.getSourceManager();
-  const auto& ExpansionBegin = SM.getExpansionLoc(Range.getBegin());
+getReplacementInfo(const ASTContext &Context, const CharSourceRange &Range) {
+  const auto &SM = Context.getSourceManager();
+  const auto &ExpansionBegin = SM.getExpansionLoc(Range.getBegin());
   const std::pair<FileID, unsigned> DecomposedLocation =
       SM.getDecomposedLoc(ExpansionBegin);
   const FileEntry *Entry = SM.getFileEntryForID(DecomposedLocation.first);
@@ -394,7 +395,8 @@ ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
     StringRef FilePath;
     unsigned Offset, Length;
     std::tie(FilePath, Offset, Length) = getReplacementInfo(Context, CSR);
-    return ExtReplacement(FilePath, Offset, Length, getReplaceString(Context), this);
+    return ExtReplacement(FilePath, Offset, Length, getReplaceString(Context),
+                          this);
   }
 
   recordTranslationInfo(Context, CSR.getBegin());
@@ -405,9 +407,12 @@ ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
 
 ExtReplacement InsertComment::getReplacement(const ASTContext &Context) const {
   auto NL = getNL(SL, Context.getSourceManager());
+  auto OrigIndent = getIndent(SL, Context.getSourceManager()).str();
   recordTranslationInfo(Context, SL);
   return ExtReplacement(Context.getSourceManager(), SL, 0,
-                        (llvm::Twine("/*") + NL + Text + NL + "*/" + NL).str(),
+                        (OrigIndent + llvm::Twine("/*") + NL + OrigIndent +
+                         Text + NL + OrigIndent + "*/" + NL)
+                            .str(),
                         this, true /*true means comments replacement*/);
 }
 
