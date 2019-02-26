@@ -527,7 +527,7 @@ void AtomicFunctionRule::ReportUnsupportedAtomicFunc(const CallExpr *CE) {
   std::ostringstream OSS;
   // Atomic functions with __half and half2 are not supported.
   OSS << "half version of " << CE->getDirectCallee()->getName().str();
-  report(CE->getBeginLoc(), Comments::API_NOT_TRANSLATED, OSS.str());
+  report(CE->getBeginLoc(), Comments::API_NOT_MIGRATED, OSS.str());
 }
 
 void AtomicFunctionRule::TranslateAtomicFunc(const CallExpr *CE) {
@@ -560,7 +560,7 @@ void AtomicFunctionRule::TranslateAtomicFunc(const CallExpr *CE) {
     TypeName = PointeeType.getAsString();
   }
   // add exceptions for atomic tranlastion:
-  // eg. source code: atomicMin(double), don't translate it, its user code.
+  // eg. source code: atomicMin(double), don't migrate it, its user code.
   //     also: atomic_fetch_min<double> is not available in compute++.
   if ((TypeName == "double" && AtomicFuncName != "atomicAdd") ||
       (TypeName == "float" &&
@@ -654,7 +654,7 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   const std::string &TypeName = Strs.back();
   auto Search = MapNames::TypeNamesMap.find(TypeName);
   if (Search == MapNames::TypeNamesMap.end()) {
-    // TODO report translation error
+    // TODO report migration error
     return;
   }
 
@@ -1069,7 +1069,7 @@ void VectorTypeCtorRule::registerMatcher(MatchFinder &MF) {
         new internal::HasNameMatcher(MakeVectorFuncNames));
   };
 
-  // translate utility for vector type: eg: make_int2
+  // migrate utility for vector type: eg: make_int2
   MF.addMatcher(
       callExpr(callee(functionDecl(makeVectorFunc()))).bind("VecUtilFunc"),
       this);
@@ -1267,7 +1267,7 @@ void Dim3MemberFieldsRule::run(const MatchFinder::MatchResult &Result) {
     // E.g.
     // dim3 *pd3;
     // pd3->x;
-    // will translate to:
+    // will migrate to:
     // cl::sycl::range<3> *pd3;
     // (*pd3)[0];
     auto Impl = getAssistNodeAsType<ImplicitCastExpr>(Result, "ImplCast");
@@ -1306,7 +1306,7 @@ void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
       Type->getCanonicalTypeInternal().getBaseTypeIdentifier()->getName().str();
   auto Search = MapNames::TypeNamesMap.find(TypeName);
   if (Search == MapNames::TypeNamesMap.end()) {
-    // TODO report translation error
+    // TODO report migration error
     return;
   }
   std::string Replacement = Search->second;
@@ -1331,7 +1331,7 @@ void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
     return;
   auto Search = PropNamesMap.find(ME->getMemberNameInfo().getAsString());
   if (Search == PropNamesMap.end()) {
-    // TODO report translation error
+    // TODO report migration error
     return;
   }
   emplaceTransformation(new RenameFieldInMemberExpr(ME, Search->second + "()"));
@@ -1361,7 +1361,7 @@ void EnumConstantRule::run(const MatchFinder::MatchResult &Result) {
   assert(E && "Unknown result");
   auto Search = EnumNamesMap.find(E->getNameInfo().getName().getAsString());
   if (Search == EnumNamesMap.end()) {
-    // TODO report translation error
+    // TODO report migration error
     return;
   }
   emplaceTransformation(new ReplaceStmt(E, "syclct::" + Search->second));
@@ -1468,7 +1468,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                                     .getAsString();
     auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
     if (Search == EnumConstantRule::EnumNamesMap.end()) {
-      // TODO report translation error
+      // TODO report migration error
       return;
     }
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
@@ -1512,7 +1512,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaDeviceSetCacheConfig" ||
              FuncName == "cudaDeviceGetCacheConfig") {
     // SYCL has no corresponding implementation for
-    // "cudaDeviceSetCacheConfig/cudaDeviceGetCacheConfig", so simply translate
+    // "cudaDeviceSetCacheConfig/cudaDeviceGetCacheConfig", so simply migrate
     // "cudaDeviceSetCacheConfig/cudaDeviceGetCacheConfig" into expression "0;".
     std::string Replacement = "0";
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
@@ -1521,7 +1521,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "__longlong_as_double") {
     emplaceTransformation(new ReplaceCalleeName(CE, "syclct::ll2d"));
   } else if (FuncName == "clock") {
-    report(CE->getBeginLoc(), Diagnostics::API_NOT_TRANSLATED_SYCL_UNDEF);
+    report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF);
   } else {
     syclct_unreachable("Unknown function name");
   }
@@ -1656,7 +1656,7 @@ void MemoryTranslationRule::MemcpyTranslation(
   //   sycl_memcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
   //   sycl_memcpy(x_A, y_A, size, someDynamicCudaMemcpyKindValue);
 
-  // Translate C->getArg(3) if this is enum constant.
+  // Migrate C->getArg(3) if this is enum constant.
   // TODO: this is a hack until we get pass ordering and make
   // different passes work with each other well together.
   const Expr *Direction = C->getArg(3);
@@ -1719,7 +1719,7 @@ void MemoryTranslationRule::MemcpyToSymbolTranslation(
   }
 
   std::string VarName = getStmtSpelling(C->getArg(0), *Result.Context);
-  // Translate variable name such as "&const_angle[0]", "&const_one"
+  // Migrate variable name such as "&const_angle[0]", "&const_one"
   // into "const_angle.get_ptr()", "const_one.get_ptr()".
   VarName.erase(std::remove(VarName.begin(), VarName.end(), '&'),
                 VarName.end());
@@ -1762,7 +1762,7 @@ void MemoryTranslationRule::MemcpyFromSymbolTranslation(
   }
 
   std::string VarName = getStmtSpelling(C->getArg(1), *Result.Context);
-  // Translate variable name such as "&const_angle[0]", "&const_one"
+  // Migrate variable name such as "&const_angle[0]", "&const_one"
   // into "const_angle.get_ptr()", "const_one.get_ptr()".
   VarName.erase(std::remove(VarName.begin(), VarName.end(), '&'),
                 VarName.end());
@@ -1797,7 +1797,7 @@ void MemoryTranslationRule::MemsetTranslation(
   emplaceTransformation(new InsertAfterStmt(C->getArg(2), ")"));
 }
 
-// Memory translation rules live here.
+// Memory migration rules live here.
 void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
   auto memoryAPI = [&]() {
     return hasAnyName("cudaMalloc", "cudaMemcpy", "cudaMemcpyToSymbol",
@@ -2084,7 +2084,7 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
     std::string FileName = SLStr.substr(0, Pos);
     LOCStaticsMap[FileName][2]++;
 
-    report(C->getBeginLoc(), Comments::API_NOT_TRANSLATED, APIName.c_str());
+    report(C->getBeginLoc(), Comments::API_NOT_MIGRATED, APIName.c_str());
   }
 }
 
@@ -2138,7 +2138,7 @@ void ASTTraversalManager::emplaceAllRules(int SourceFileFlag) {
     auto *ID = ASTTraversalMetaInfo::getID(*it);
     if (!ID) {
       llvm::errs() << "[ERROR] Rule\"" << *it << "\" not found\n";
-      std::exit(TranslationError);
+      std::exit(MigrationError);
     }
     emplaceTranslationRule(ID);
   }

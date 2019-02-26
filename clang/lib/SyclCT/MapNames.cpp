@@ -91,7 +91,7 @@ const std::map<std::string, std::string> EnumConstantRule::EnumNamesMap{
     // ...
 };
 
-// Math function names translation.
+// Math function names migration.
 const std::map<std::string, std::string> MathFunctionsRule::FunctionNamesMap{
     // Cuda's max to sycl's max. all have integer types and double types.
     // See "4.13.4 Integer functions" and "4.13.5 Common functions"
@@ -153,7 +153,7 @@ const std::map<std::string, std::string> MathFunctionsRule::FunctionNamesMap{
     // {"step", "cl::sycl::step"},
 };
 
-// cudaFuncAttributes names translation
+// cudaFuncAttributes names migration
 const std::map<std::string, std::string>
     KernelFunctionInfoRule::AttributesNamesMap{
         {"maxThreadsPerBlock", "max_work_group_size"},
@@ -171,8 +171,8 @@ bool TranslationStatistics::IsTranslated(const std::string &APIName) {
     return Search->second;
   } else {
     llvm::errs() << "[NOTE] Find new API\"" << APIName
-                 << "\" , please update translated API database.\n";
-    std::exit(TranslationError);
+                 << "\" , please update migrated API database.\n";
+    std::exit(MigrationError);
   }
 }
 

@@ -49,12 +49,12 @@ using namespace llvm::cl;
 static OptionCategory SyclCTCat("SYCL Compatibility Tool");
 static extrahelp CommonHelp(clang::tooling::CommonOptionsParser::HelpMessage);
 static opt<std::string>
-    Passes("passes", desc("Comma separated list of transformation passes"),
+    Passes("passes", desc("Comma separated list of migration passes"),
            value_desc("\"FunctionAttrsRule,...\""), cat(SyclCTCat));
 static opt<std::string>
     InRoot("in-root",
-           desc("Path to root of project to be translated"
-                " (header files not under this root will not be translated)"),
+           desc("Path to root of project to be migrated"
+                " (header files not under this root will not be migrated)"),
            value_desc("/path/to/input/root/"), cat(SyclCTCat),
            llvm::cl::Optional);
 static opt<std::string>
@@ -88,7 +88,7 @@ opt<std::string> SuppressWarnings("suppress-warnings", desc(WarningDesc),
                                   value_desc("WarningID,..."), cat(SyclCTCat));
 
 bool SuppressWarningsAllFlag = false;
-static std::string WarningAllDesc("Suppress all warnings of the translation");
+static std::string WarningAllDesc("Suppress all warnings of the migration");
 opt<bool, true> SuppressWarningsAll("suppress-warnings-all",
                                     desc(WarningAllDesc), cat(SyclCTCat),
                                     location(SuppressWarningsAllFlag));
@@ -356,11 +356,11 @@ public:
     // Set Context for build information
     SyclctGlobalInfo::setContext(Context);
     SyclctGlobalInfo::setInRoot(InRoot);
-    // The translation process is separated into two stages:
-    // 1) Analysis of AST and identification of applicable translation rules
+    // The migration process is separated into two stages:
+    // 1) Analysis of AST and identification of applicable migration rules
     // 2) Generation of actual textual Replacements
     // Such separation makes it possible to post-process the list of identified
-    // translation rules before applying them.
+    // migration rules before applying them.
     ATM.matchAST(Context, TransformSet, SSM);
 
     SyclctGlobalInfo::getInstance().emplaceKernelAndDeviceReplacement(
@@ -429,7 +429,7 @@ public:
   }
 
   ~SyclCTConsumer() {
-    // Clean EmittedTransformations for input file translated.
+    // Clean EmittedTransformations for input file migrated.
     ASTTraversalMetaInfo::getEmittedTransformations().clear();
   }
 
@@ -535,7 +535,7 @@ std::string GetRealPath(clang::tooling::RefactoringTool &Tool, StringRef Path) {
       .str();
 }
 
-// To validate the root path of the project to be translated.
+// To validate the root path of the project to be migrated.
 void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
                             std::string &InRoot) {
   std::string Path = GetRealPath(Tool, InRoot);

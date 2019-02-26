@@ -162,9 +162,9 @@ public:
   void matchAST(ASTContext &Context, TransformSetTy &TS, StmtStringMap &SSM);
 };
 
-/// Base class for translation rules.
+/// Base class for migration rules.
 ///
-/// The purpose of a TranslationRule is to populate TransformSet with
+/// The purpose of a MigrationRule is to populate TransformSet with
 /// SourceTransformation's.
 class TranslationRule : public ASTTraversal {
   friend class ASTTraversalManager;
@@ -352,7 +352,7 @@ protected:
 
 template <typename T> const char NamedTranslationRule<T>::ID(0);
 
-/// Translation rule for iteration space builtin variables (threadIdx, etc).
+/// Migration rule for iteration space builtin variables (threadIdx, etc).
 class IterationSpaceBuiltinRule
     : public NamedTranslationRule<IterationSpaceBuiltinRule> {
 public:
@@ -363,7 +363,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Translation rule for CUDA class attributes.
+/// Migration rule for CUDA class attributes.
 ///
 /// This rule replace __align__ class attributes to __sycl_align__.
 class AlignAttrsRule : public NamedTranslationRule<AlignAttrsRule> {
@@ -373,7 +373,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Translation rule for CUDA function attributes.
+/// Migration rule for CUDA function attributes.
 ///
 /// This rule removes __global__, __device__ and __host__ function attributes.
 class FunctionAttrsRule : public NamedTranslationRule<FunctionAttrsRule> {
@@ -383,7 +383,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Translation rule for atomic functions.
+/// Migration rule for atomic functions.
 class AtomicFunctionRule : public NamedTranslationRule<AtomicFunctionRule> {
 public:
   AtomicFunctionRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -397,7 +397,7 @@ private:
   void TranslateAtomicFunc(const CallExpr *CE);
 };
 
-/// Translation rule for types replacements in var. declarations.
+/// Migration rule for types replacements in var. declarations.
 class TypeInDeclRule : public NamedTranslationRule<TypeInDeclRule> {
 public:
   TypeInDeclRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -405,7 +405,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Translation rule for inserting namespace for vector types
+/// Migration rule for inserting namespace for vector types
 class VectorTypeNamespaceRule
     : public NamedTranslationRule<VectorTypeNamespaceRule> {
 public:
@@ -420,7 +420,7 @@ private:
   std::unordered_set<unsigned int> DupFilter;
 };
 
-/// Translation rule for vector type member access
+/// Migration rule for vector type member access
 class VectorTypeMemberAccessRule
     : public NamedTranslationRule<VectorTypeMemberAccessRule> {
 public:
@@ -434,7 +434,7 @@ public:
   static const std::map<std::string, std::string> MemberNamesMap;
 };
 
-/// Translation rule for vector type operator
+/// Migration rule for vector type operator
 class VectorTypeOperatorRule
     : public NamedTranslationRule<VectorTypeOperatorRule> {
 public:
@@ -456,7 +456,7 @@ private:
   static const char NamespaceName[];
 };
 
-/// Translation rule for vector type constructor and make_<vector type>()
+/// Migration rule for vector type constructor and make_<vector type>()
 class VectorTypeCtorRule : public NamedTranslationRule<VectorTypeCtorRule> {
 public:
   VectorTypeCtorRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -476,7 +476,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Translation rule for dim3 types member fields replacements.
+/// Migration rule for dim3 types member fields replacements.
 class Dim3MemberFieldsRule : public NamedTranslationRule<Dim3MemberFieldsRule> {
 public:
   Dim3MemberFieldsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -488,7 +488,7 @@ private:
                     std::string Str, const MemberExpr *ME);
 };
 
-/// Translation rule for return types replacements.
+/// Migration rule for return types replacements.
 class ReturnTypeRule : public NamedTranslationRule<ReturnTypeRule> {
 public:
   ReturnTypeRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -496,7 +496,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Translation rule for removing of error hanlding if-stmt
+/// Migration rule for removing of error hanlding if-stmt
 class ErrorHandlingIfStmtRule
     : public NamedTranslationRule<ErrorHandlingIfStmtRule> {
 public:
@@ -507,7 +507,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Translation rule for cudaDeviceProp variables.
+/// Migration rule for cudaDeviceProp variables.
 class DevicePropVarRule : public NamedTranslationRule<DevicePropVarRule> {
 public:
   DevicePropVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -518,7 +518,7 @@ private:
   static const std::map<std::string, std::string> PropNamesMap;
 };
 
-// Translation rule for enums constants.
+// Migration rule for enums constants.
 class EnumConstantRule : public NamedTranslationRule<EnumConstantRule> {
 public:
   EnumConstantRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -528,7 +528,7 @@ public:
   static const std::map<std::string, std::string> EnumNamesMap;
 };
 
-// Translation rule for cudaError enums constants.
+// Migration rule for cudaError enums constants.
 class ErrorConstantsRule : public NamedTranslationRule<ErrorConstantsRule> {
 public:
   ErrorConstantsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -536,7 +536,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Translation rule for function calls.
+/// Migration rule for function calls.
 class FunctionCallRule : public NamedTranslationRule<FunctionCallRule> {
 public:
   FunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -564,7 +564,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Translation rule for __constant__/__shared__/__device__ memory variables.
+/// Migration rule for __constant__/__shared__/__device__ memory variables.
 class MemVarRule : public NamedTranslationRule<MemVarRule> {
 public:
   MemVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -575,7 +575,7 @@ private:
   void insertExplicitCast(const ImplicitCastExpr *Impl, const QualType &Type);
 };
 
-// Translation rule for memory management routine.
+// Migration rule for memory management routine.
 // Current implementation is intentionally simplistic. The following things
 // need a more detailed design:
 //   - interplay with error handling (possible solution is that we keep
@@ -625,7 +625,7 @@ private:
       TranslationDispatcher;
 };
 
-// Translation rule for Inserting try-catch around functions.
+// Migration rule for Inserting try-catch around functions.
 class ErrorTryCatchRule : public NamedTranslationRule<ErrorTryCatchRule> {
   std::unordered_set<unsigned> Insertions;
 
@@ -643,7 +643,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Translation for math functions
+/// Migration for math functions
 class MathFunctionsRule : public NamedTranslationRule<MathFunctionsRule> {
 public:
   MathFunctionsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -653,7 +653,7 @@ public:
   static const std::map<std::string, std::string> FunctionNamesMap;
 };
 
-/// Translation rule for replacing __syncthreads() function call.
+/// Migration rule for replacing __syncthreads() function call.
 ///
 /// This rule replace __syncthreads() with item.barrier()
 class SyncThreadsRule : public NamedTranslationRule<SyncThreadsRule> {
@@ -663,7 +663,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Translate cudaFunctionAttributes to Sycl kernel info, defined in
+/// Migrate cudaFunctionAttributes to Sycl kernel info, defined in
 /// runtime headers.
 // TODO: only maxThreadsPerBlock is supported.
 class KernelFunctionInfoRule
@@ -678,7 +678,7 @@ public:
   static const std::map<std::string, std::string> AttributesNamesMap;
 };
 
-/// Translation rule for type cast issue
+/// Migration rule for type cast issue
 class TypeCastRule : public NamedTranslationRule<TypeCastRule> {
 public:
   TypeCastRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }

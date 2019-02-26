@@ -7,7 +7,7 @@
 #include <cuda_runtime.h>
 
 // CHECK:   /* SYCLCT_ORIG __global__ void testKernelPtr(const int *L, const int *M, int N) {*/
-// CHECK-NEXT: void testKernelPtr(const int *L, const int *M, int N, cl::sycl::nd_item<3> [[ITEMNAME:item_[a-f0-9]+]]) {
+// CHECK-NEXT:void testKernelPtr(const int *L, const int *M, int N, cl::sycl::nd_item<3> [[ITEMNAME:item_[a-f0-9]+]]) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
 
   // CHECK: /* SYCLCT_ORIG   int gtid = blockIdx.x  * blockDim.x */
@@ -147,7 +147,7 @@ int main() {
 
   // CHECK: /* SYCLCT_ORIG   CUDA_CHECK(cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float)));*/
   // CHECK-NEXT: /*
-  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   CUDA_CHECK(cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float)));
 
@@ -156,7 +156,7 @@ int main() {
   float *d_odata = NULL;
   // CHECK: /* SYCLCT_ORIG   checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));*/
   // CHECK-NEXT:/*
-  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
   checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));
 

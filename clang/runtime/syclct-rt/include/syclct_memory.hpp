@@ -639,7 +639,7 @@ sycl_memcpy_from_symbol(void *dst, void *from_symbol, size_t size,
 // ok to take a copy of buffer. On the other side, returning a pointer to
 // buffer would cause obligations for not moving referenced buffer.
 
-// FIXME: this function is not used in translation and causes segfault
+// FIXME: this function is not used in migration and causes segfault
 // with latest OpenCL CPU runtime and ComputeCpp 1.0.1.
 // TODO: this is commented out and to be removed in the future.
 // The reason to leave it as a commented out - we need to file a bug against

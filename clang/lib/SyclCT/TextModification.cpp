@@ -227,7 +227,7 @@ RenameFieldInMemberExpr::getReplacement(const ASTContext &Context) const {
   SourceLocation SL = ME->getEndLoc();
   SourceLocation Begin = SL;
   if (PositionOfDot != 0) {
-    // Cover dot position when translate dim3.x/y/z to
+    // Cover dot position when migrate dim3.x/y/z to
     // cl::sycl::range<3>[0]/[1]/[2].
     Begin = ME->getBeginLoc();
     Begin = Begin.getLocWithOffset(PositionOfDot);
@@ -450,7 +450,7 @@ std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
     if (!Elem.empty()) {
       // Fixed bug in the situation:
       // funciton declaration is "void fun(int a, int b, int c=0)",
-      // and, "fun(a, b)" translated "fun(a,b,"")"
+      // and, "fun(a, b)" migrated "fun(a,b,"")"
       List << Elem;
       if (A + 1 != end(Args)) {
         List << ", ";
@@ -474,7 +474,7 @@ std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
       if (!Elem.empty()) {
         // Fixed bug in the situation:
         // funciton declaration is "void fun(int a, int b, int c=0)",
-        // and, "fun(a, b)" translated "fun(a,b,"")"
+        // and, "fun(a, b)" migrated "fun(a,b,"")"
         List << *B << "(" << Elem << ")";
       } else {
         IsCommaNeeded = false;
@@ -485,7 +485,7 @@ std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
       if (!Elem.empty()) {
         // Fixed bug in the situation:
         // funciton declaration is "void fun(int a, int b, int c=0)",
-        // and, "fun(a, b)" translated "fun(a,b,"")"
+        // and, "fun(a, b)" migrated "fun(a,b,"")"
         List << Elem;
       } else {
         IsCommaNeeded = false;
@@ -543,9 +543,9 @@ ReplaceKernelCallExpr::getExecutionConfig() const {
   return {KCall->getConfig()->getArg(0), KCall->getConfig()->getArg(1)};
 }
 
-// Translates some explicit and implicit constructions of dim3 objects when
+// Migrate some explicit and implicit constructions of dim3 objects when
 // expressions are passed as kernel execution configuration. Returns the
-// translation of that expression to cl::sycl::range<3>.
+// migration of that expression to cl::sycl::range<3>.
 //
 // If E is a variable reference, returns the name of the variable.
 // Else assumes E is an implicit or explicit construction of dim3 and returns
@@ -557,7 +557,7 @@ std::string ReplaceKernelCallExpr::getDim3Translation(const Expr *E,
     // kernel<<<griddim, threaddim>>>()
     return Var->getNameInfo().getAsString();
   } else {
-    // the dim3 translation rule should've inserted the necessary translation in
+    // the dim3 migration rule should've inserted the necessary migration in
     // the StmtStringMap
     std::string NewStr = SSM->lookup(E);
     if (NewStr.empty()) {

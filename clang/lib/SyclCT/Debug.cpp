@@ -63,8 +63,8 @@ static std::vector<std::pair<std::string, std::unordered_set<std::string>>>
              // Elements here are registed dynamically, see DebugTypeRegister
              // and SYCLCT_DEBUG_WTIH_TYPE
          }},
-        // Translation rules regards as level 2
-        {"Matched translation rules and corresponding information",
+        // Migration rules regards as level 2
+        {"Matched migration rules and corresponding information",
          {
 // Statically registed elements, no dynamic registation demanding so far
 #define RULE(TYPE) #TYPE,
@@ -101,7 +101,7 @@ static void ShowDebugLevels() {
 void DebugInfo::printTranslationRules(
     const std::vector<std::unique_ptr<ASTTraversal>> &TRs) {
   auto print = [&]() {
-    SyclctDbgs() << "Translation Rules:\n";
+    SyclctDbgs() << "Migration Rules:\n";
 
     constexpr char Indent[] = "  ";
     if (TRs.empty()) {
@@ -116,14 +116,14 @@ void DebugInfo::printTranslationRules(
         ++NumRules;
       }
     }
-    SyclctDbgs() << "# of TranslationRules: " << NumRules << "\n";
+    SyclctDbgs() << "# of MigrationRules: " << NumRules << "\n";
   };
 
   if (VerboseLevel == VerboseHigh) {
     print();
   }
 
-  SYCLCT_DEBUG_WITH_TYPE("TranslationRules", print());
+  SYCLCT_DEBUG_WITH_TYPE("MigrationRules", print());
 }
 
 #ifdef SYCLCT_DEBUG_BUILD
@@ -137,7 +137,7 @@ static void printMatchedRulesDebugImpl(
     DbgLevel = DebugLevel::High;
   }
 
-  // Debug level lower than "Median" doesn't show translation rules' information
+  // Debug level lower than "Median" doesn't show migration rules' information
   if (DbgLevel < DebugLevel::Median) {
     return;
   }

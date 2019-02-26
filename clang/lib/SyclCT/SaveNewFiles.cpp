@@ -70,7 +70,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
                  StringRef OutRoot) {
   assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
   using namespace clang;
-  ProcessStatus status = TranslationSucceeded;
+  ProcessStatus status = MigrationSucceeded;
   // Set up Rewriter.
   LangOptions DefaultLangOptions;
   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
@@ -87,10 +87,10 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   if (Tool.getReplacements().empty()) {
     // There are no rules applying on the *.cpp files,
     // cyclct just do nothing with them.
-    status = TranslationNotImplemented;
+    status = MigrationNotImplemented;
   } else {
     // There are matching rules for *.cpp files ,*.cu files, also header files
-    // included, translate these files into *.sycl.cpp files.
+    // included, migrate these files into *.sycl.cpp files.
     for (const auto &Entry : groupReplacementsByFile(
              Rewrite.getSourceMgr().getFileManager(), Tool.getReplacements())) {
 
@@ -111,7 +111,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       if (OutPath.back() == 'h' && fs::exists(OutPath)) {
         // A header file with this name already exists.
         // For now we do no merging and do not handle this case.
-        // TODO: Implement strategy to handle translated headers that might
+        // TODO: Implement strategy to handle migrated headers that might
         // differ due to their point of inclusion
         llvm::errs() << "File '" << OutPath
                      << "' already exists; skipping it.\n";
@@ -162,7 +162,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
   if (!AppliedAll) {
     llvm::errs() << "Skipped some replacements.\n";
-    status = TranslationSkipped;
+    status = MigrationSkipped;
   }
   return status;
 }

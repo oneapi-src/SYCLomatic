@@ -141,7 +141,7 @@ void test_other_enum() {
 // CHECK:void test_assignment() try {
 // CHECK-NEXT:  int err;
 // CHECK-NEXT:/*
-// CHECK-NEXT:SYCLCT1003:2: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:SYCLCT1003:2: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err = (syclct::sycl_malloc(0, 0), 0)) {
 // CHECK-NEXT:    printf("error!\n");
@@ -210,7 +210,7 @@ void test_14(cudaError_t err, int arg) {
 
 // CHECK:void test_15(int err, int arg) try {
 // CHECK-NEXT:/*
-// CHECK-NEXT:SYCLCT1003:3: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:SYCLCT1003:3: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if ((syclct::sycl_malloc(0, 0), 0)) {
 // CHECK-NEXT:  }
@@ -239,7 +239,7 @@ void test_16(cudaError_t err, int arg) {
 
 // CHECK:void test_17(int err, int arg) try {
 // CHECK-NEXT:/*
-// CHECK-NEXT:SYCLCT1003:4: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:SYCLCT1003:4: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (!(syclct::sycl_malloc(0, 0), 0)) {
 // CHECK-NEXT:  } else {

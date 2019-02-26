@@ -12,7 +12,7 @@ int main(int argc, char **argv)
 int devID = atoi(argv[1]);
 cudaDeviceProp cdp;
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT: int error_code = (syclct::get_device_manager().get_device(devID).get_device_info(cdp), 0);
 cudaError_t error_code = cudaGetDeviceProperties(&cdp, devID);
@@ -72,13 +72,13 @@ cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtomicSupported,
 cudaDeviceReset();
 
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:error_code = (syclct::get_device_manager().current_device().reset(), 0);
 error_code = cudaDeviceReset();
 
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:error_code = (syclct::get_device_manager().select_device(device2), 0);
 error_code = cudaSetDevice(device2);
@@ -87,15 +87,15 @@ cudaSetDevice(device2);
 
 // CHECK:syclct::get_device_manager().current_device().queues_wait_and_throw();
 // CHECK-NEXT:/*
-// CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:int err = (syclct::get_device_manager().current_device().queues_wait_and_throw(), 0);
 // CHECK-NEXT:/*
-// CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:checkError((syclct::get_device_manager().current_device().queues_wait_and_throw(), 0));
 // CHECK-NEXT:/*
-// CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:return (syclct::get_device_manager().current_device().queues_wait_and_throw(), 0);
 cudaDeviceSynchronize();

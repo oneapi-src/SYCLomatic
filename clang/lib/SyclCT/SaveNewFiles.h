@@ -25,10 +25,10 @@ class RefactoringTool;
 } // namespace clang
 
 enum ProcessStatus {
-  TranslationSucceeded = 0,
-  TranslationNotImplemented = 1,
-  TranslationSkipped = 2,
-  TranslationError = -1,
+  MigrationSucceeded = 0,
+  MigrationNotImplemented = 1,
+  MigrationSkipped = 2,
+  MigrationError = -1,
 };
 
 /// Apply all generated replacements, and immediately save the results to

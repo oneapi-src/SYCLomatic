@@ -23,7 +23,7 @@ public:
 
 class TranslationStatistics {
 private:
-  static std::map<std::string /*API Name*/, bool /*Is translated*/>
+  static std::map<std::string /*API Name*/, bool /*Is Migrated*/>
       TranslationTable;
 
 public:

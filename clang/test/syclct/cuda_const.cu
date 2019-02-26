@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
     h_array[loop] = acos(-1.0f) * loop / 180.0f;
 
   // CHECK:/*
-  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
   // CHECK-NEXT:   (syclct::sycl_memcpy_to_symbol(const_angle.get_ptr(), (void*)(&h_array[0]), sizeof(float) * 360), 0);
   cudaMemcpyToSymbol(&const_angle[0], &h_array[0], sizeof(float) * 360);
@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
 
   h_array[0] = 10.0f; // Just to test
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Translated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT:  (syclct::sycl_memcpy_to_symbol(const_one.get_ptr(), (void*)(&h_array[0]), sizeof(float) * 1), 0);
   cudaMemcpyToSymbol(&const_one, &h_array[0], sizeof(float) * 1);

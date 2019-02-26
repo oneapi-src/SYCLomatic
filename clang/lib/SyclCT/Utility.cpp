@@ -186,7 +186,7 @@ static void getNewSplits(TransformsType &Transforms, SplitsType &Splits) {
   }
 }
 
-// Returns the spelling of Stmt S, with the translations from StmtStringMap
+// Returns the spelling of Stmt S, with the migrations from StmtStringMap
 std::string getStmtSpellingWithTransforms(const Stmt *S,
                                           const clang::ASTContext &Context,
                                           StmtStringMap *SSM,
@@ -285,7 +285,7 @@ ruleTopoSort(std::vector<std::vector<std::string>> &TableRules) {
   }
   if (Vec.size() != InDegree.size()) {
     std::cout << "Error: Two rules have dependency on each other！\n";
-    exit(TranslationError);
+    exit(MigrationError);
   }
 
   return Vec;
