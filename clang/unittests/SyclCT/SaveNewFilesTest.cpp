@@ -31,8 +31,32 @@ TEST(rewriteFileName, dontRenameH) {
   EXPECT_EQ(AbsPath, "/a/b/in/file.h");
 }
 
-TEST(rewriteFileName, dontRenameCPP) {
+TEST(rewriteFileName, renameCppfile) {
   SmallString<256> AbsPath = StringRef("/a/b/in/file.cpp");
   rewriteFileName(AbsPath);
-  EXPECT_EQ(AbsPath, "/a/b/in/file.cpp");
+  EXPECT_EQ(AbsPath, "/a/b/in/file.cc_sycl.cpp");
+}
+
+TEST(rewriteFileName, renameCxxfile) {
+  SmallString<256> AbsPath = StringRef("/a/b/in/file.cxx");
+  rewriteFileName(AbsPath);
+  EXPECT_EQ(AbsPath, "/a/b/in/file.cc_sycl.cpp");
+}
+
+TEST(rewriteFileName, renameCCfile) {
+  SmallString<256> AbsPath = StringRef("/a/b/in/file.cc");
+  rewriteFileName(AbsPath);
+  EXPECT_EQ(AbsPath, "/a/b/in/file.cc_sycl.cpp");
+}
+
+TEST(rewriteFileName, dontRenameHpp) {
+  SmallString<256> AbsPath = StringRef("/a/b/in/file.hpp");
+  rewriteFileName(AbsPath);
+  EXPECT_EQ(AbsPath, "/a/b/in/file.hpp");
+}
+
+TEST(rewriteFileName, dontRenameHxx) {
+  SmallString<256> AbsPath = StringRef("/a/b/in/file.hxx");
+  rewriteFileName(AbsPath);
+  EXPECT_EQ(AbsPath, "/a/b/in/file.hxx");
 }

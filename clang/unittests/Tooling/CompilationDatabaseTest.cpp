@@ -38,10 +38,15 @@ TEST(JSONCompilationDatabase, ErrsOnInvalidFormat) {
   expectFailure("[{\"a\":\"b\"}]", "Unknown key");
   expectFailure("[{[]:\"\"}]", "Incorrectly typed entry");
   expectFailure("[{}]", "Empty entry");
+#define INTEL_CUSTOMIZATION
+#ifndef INTEL_CUSTOMIZATION
   expectFailure("[{\"directory\":\"\",\"command\":\"\"}]", "Missing file");
+#endif
   expectFailure("[{\"directory\":\"\",\"file\":\"\"}]", "Missing command or arguments");
   expectFailure("[{\"command\":\"\",\"file\":\"\"}]", "Missing directory");
+#ifndef INTEL_CUSTOMIZATION
   expectFailure("[{\"directory\":\"\",\"arguments\":[]}]", "Missing file");
+#endif
   expectFailure("[{\"arguments\":\"\",\"file\":\"\"}]", "Missing directory");
   expectFailure("[{\"directory\":\"\",\"arguments\":\"\",\"file\":\"\"}]", "Arguments not array");
   expectFailure("[{\"directory\":\"\",\"command\":[],\"file\":\"\"}]", "Command not string");
