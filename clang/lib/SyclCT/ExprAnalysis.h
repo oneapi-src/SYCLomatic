@@ -103,7 +103,7 @@ private:
   std::pair<size_t, size_t> getOffsetAndLength(const Expr *TE) {
     auto Begin = TE->getBeginLoc().getRawEncoding();
     return std::pair<size_t, size_t>(Begin - E->getBeginLoc().getRawEncoding(),
-                                     TE->getEndLoc().getRawEncoding() - Begin);
+                                     getEndLoc(TE).getRawEncoding() - Begin);
   }
 
   void replaceString() {
@@ -112,6 +112,8 @@ private:
       RItr++->second->replaceString();
     Replacements.clear();
   }
+
+  SourceLocation getEndLoc(const Expr *Expression);
 
   void setExpr(const Expr *Expression);
 

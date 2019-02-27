@@ -22,7 +22,16 @@ void ExprAnalysis::setExpr(const Expr *Expression) {
   ExprString = std::string(
       clang::syclct::SyclctGlobalInfo::getSourceManager().getCharacterData(
           Begin),
-      E->getEndLoc().getRawEncoding() - Begin.getRawEncoding());
+      getEndLoc(E).getRawEncoding() - Begin.getRawEncoding());
+}
+
+SourceLocation ExprAnalysis::getEndLoc(const Expr *Expression) {
+  Token Tok;
+  auto EndLoc = Expression->getEndLoc();
+  if (Lexer::getRawToken(EndLoc, Tok, SyclctGlobalInfo::getSourceManager(),
+                         SyclctGlobalInfo::getContext().getLangOpts()))
+    return EndLoc;
+  return Tok.getEndLoc();
 }
 
 void ArraySizeExprAnalysis::analysisDeclRefExpr(const DeclRefExpr *DRE) {
