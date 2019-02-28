@@ -48,9 +48,10 @@ using namespace llvm::cl;
 
 static OptionCategory SyclCTCat("SYCL Compatibility Tool");
 static extrahelp CommonHelp(clang::tooling::CommonOptionsParser::HelpMessage);
-static opt<std::string>
-    Passes("passes", desc("Comma separated list of migration passes"),
-           value_desc("\"FunctionAttrsRule,...\""), cat(SyclCTCat));
+static opt<std::string> Passes("passes",
+                               desc("Comma separated list of migration passes"),
+                               value_desc("\"FunctionAttrsRule,...\""),
+                               cat(SyclCTCat));
 static opt<std::string>
     InRoot("in-root",
            desc("Path to root of project to be migrated"
@@ -81,9 +82,10 @@ static opt<int, true, llvm::cl::parser<int>>
             cat(SyclCTCat), location(VerboseLevel));
 
 static std::string WarningDesc("Comma separated list of warnings to be"
-    "suppressed, valid warning ids range from "
-    + std::to_string((size_t)Warnings::BEGIN) + " to "
-    + std::to_string((size_t)Warnings::END - 1));
+                               "suppressed, valid warning ids range from " +
+                               std::to_string((size_t)Warnings::BEGIN) +
+                               " to " +
+                               std::to_string((size_t)Warnings::END - 1));
 opt<std::string> SuppressWarnings("suppress-warnings", desc(WarningDesc),
                                   value_desc("WarningID,..."), cat(SyclCTCat));
 
@@ -317,12 +319,13 @@ public:
 
       auto BeginPos = Code.find_last_of('\n', I->getOffset());
       auto EndPos = Code.find('\n', I->getOffset() + I->getLength());
-      BeginPos = (BeginPos != StringRef::npos ? BeginPos : I->getOffset());
+      BeginPos = (BeginPos != StringRef::npos ? BeginPos + 1 : I->getOffset());
       EndPos = (EndPos != StringRef::npos ? EndPos : Code.size());
-      BeginPos += 1;
       StringRef Line = Code.substr(BeginPos, EndPos - BeginPos);
 
-      if (I->isComments()) {
+      if (I->isComments() || I->getLength() == 0) {
+        // Comments Repalcement and Insert Replacement do not need generate
+        // original code replacement.
         continue;
       }
 
