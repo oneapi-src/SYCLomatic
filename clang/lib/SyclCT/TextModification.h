@@ -602,6 +602,8 @@ class InsertBeforeCtrInitList : public TextModification {
   const CXXConstructorDecl *CDecl;
   std::string T;
 
+  SourceLocation getInsertLoc() const;
+
 public:
   InsertBeforeCtrInitList(const CXXConstructorDecl *S, std::string &&T)
       : TextModification(TMID::InsertBeforeCtrInitList), CDecl(S), T(T) {}

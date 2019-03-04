@@ -771,67 +771,28 @@ InsertCallArgument::getReplacement(const ASTContext &Context) const {
                         SLocBegin.getLocWithOffset(Offset), 0, InsertStr, this);
 }
 
+SourceLocation InsertBeforeCtrInitList::getInsertLoc() const {
+  auto Init = CDecl->init_begin();
+  while (Init != CDecl->init_end()) {
+    auto InitLoc = (*Init)->getSourceLocation();
+    if (InitLoc.isValid()) {
+      // Try to insert before ":"
+      int i = 0;
+      auto Data =
+          SyclctGlobalInfo::getSourceManager().getCharacterData(InitLoc);
+      while (Data[i] != ':')
+        --i;
+      return InitLoc.getLocWithOffset(i);
+    }
+    ++Init;
+  }
+  return CDecl->getBody()->getBeginLoc();
+}
+
 ExtReplacement
 InsertBeforeCtrInitList::getReplacement(const ASTContext &Context) const {
-  const SourceManager &SM = Context.getSourceManager();
   recordTranslationInfo(Context, CDecl->getBeginLoc());
-  if (CDecl->init_begin() != CDecl->init_end()) {
-    // Initialization list exists, insert before ":"
-    // Eg: A(int b, int c) : b(b), c(c) {}
-    //                    ^
-    //                Insert here
-
-    // Compiler generated initializer has no valid poisition in source code,
-    // we care only about the initializer in the source code
-    //
-    // Eg: class B : public A {};
-    //     B(int c, int d) : c(c), d(d) {}
-    //                      ^
-    //       Compiler genereated a initalizer for base class A here, filter it
-    //       out
-    auto SLoc = CDecl->getBeginLoc();
-    auto InitValidIt = CDecl->init_begin();
-    while (!(*InitValidIt)->getSourceLocation().isValid()) {
-      ++InitValidIt;
-    }
-
-    assert(InitValidIt != CDecl->init_end() &&
-           (*InitValidIt)->getSourceLocation().isValid());
-
-    // The location of first valid initializer in source code
-    auto SLocEnd = (*InitValidIt)->getSourceLocation();
-
-    SourceLocation SLocInsert;
-    if (SLoc == SLocEnd) {
-      // No initialization list in source code, but compiler generated
-      // initializers for base classes
-      // Eg: class C : public B, public A {};
-      //     C() {}
-      //        ^
-      //     Compiler generate B(), A() here
-      SLocInsert = CDecl->getBody()->getBeginLoc();
-    } else {
-      // Initialization list in source code
-      // Eg: A(int b, int c) : b(b), c(c) {}
-      //     ^                ^
-      //   Start             End
-      const char *Start = SM.getCharacterData(SLoc);
-      const char *End = SM.getCharacterData(SLocEnd);
-      assert(End > Start);
-      // Try to insert before ":"
-      llvm::StringRef Data(Start, End - Start + 1);
-      size_t Offset = Data.find_last_of(":");
-      if (Offset == llvm::StringRef::npos) {
-        Offset = 0;
-      }
-      SLocInsert = SLoc.getLocWithOffset(Offset);
-    }
-    return ExtReplacement(Context.getSourceManager(), SLocInsert, 0, T, this);
-  } else {
-    // No initialization list, just insert before function body
-    SourceLocation Begin = CDecl->getBody()->getSourceRange().getBegin();
-    return ExtReplacement(SM, Begin, 0, T, this);
-  }
+  return ExtReplacement(Context.getSourceManager(), getInsertLoc(), 0, T, this);
 }
 
 bool ReplacementFilter::isDeletedReplacement(const ExtReplacement &R) const {

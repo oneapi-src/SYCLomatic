@@ -87,3 +87,20 @@ struct B {
   B() {}
   ~B() throw() {}
 };
+
+// CHECK:struct C : public Base {
+// CHECK-NEXT:  C() try {}
+// CHECK-NEXT:catch (cl::sycl::exception const &exc) {
+// CHECK-NEXT:  std::cerr << exc.what() << "EOE at line " << __LINE__ << std::endl;
+// CHECK-NEXT:  std::exit(1);
+// CHECK-NEXT:}
+// CHECK-NEXT:  ~C() throw() try {}
+// CHECK-NEXT:catch (cl::sycl::exception const &exc) {
+// CHECK-NEXT:  std::cerr << exc.what() << "EOE at line " << __LINE__ << std::endl;
+// CHECK-NEXT:  std::exit(1);
+// CHECK-NEXT:}
+// CHECK-NEXT:};
+struct C : public Base {
+  C() {}
+  ~C() throw() {}
+};
