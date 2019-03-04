@@ -667,9 +667,19 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   Replacement = Replacement.substr(Replacement.find(TypeName));
   Replacement.replace(0, TypeName.length(), Search->second);
   if (D) {
-    emplaceTransformation(new ReplaceTypeInDecl(D, std::move(Replacement)));
+    auto Loc = D->getTypeSourceInfo()->getTypeLoc().getBeginLoc()
+        .getRawEncoding();
+    if (DupFilter.find(Loc) == DupFilter.end()) {
+      DupFilter.insert(Loc);
+      emplaceTransformation(new ReplaceTypeInDecl(D, std::move(Replacement)));
+    }
   } else {
-    emplaceTransformation(new ReplaceTypeInDecl(FD, std::move(Replacement)));
+    auto Loc = FD->getTypeSourceInfo()->getTypeLoc().getBeginLoc()
+        .getRawEncoding();
+    if (DupFilter.find(Loc) == DupFilter.end()) {
+      DupFilter.insert(Loc);
+      emplaceTransformation(new ReplaceTypeInDecl(FD, std::move(Replacement)));
+    }
   }
 }
 
