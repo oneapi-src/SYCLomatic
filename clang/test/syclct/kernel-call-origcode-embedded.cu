@@ -161,13 +161,13 @@ int main() {
   checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));
 
   // CHECK: /*
-  // CHECK-NEXT:SYCLCT1007:{{[0-9]+}}: cudaEventCreate: not support API, need manual porting.
+  // CHECK-NEXT:SYCLCT1007:{{[0-9]+}}: cudaThreadGetCacheConfig: not support API, need manual porting.
   // CHECK-NEXT:*/
-  cudaEventCreate(NULL);
+  cudaThreadGetCacheConfig(NULL);
 
-  // CHECK: /* SYCLCT_ORIG   cudaEventCreate(NULL);cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float));*/
+  // CHECK: /* SYCLCT_ORIG   cudaThreadGetCacheConfig(NULL);cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float));*/
   // CHECK-NEXT: /*
-  // CHECK-NEXT:  SYCLCT1007:{{[0-9]+}}: cudaEventCreate: not support API, need manual porting.
+  // CHECK-NEXT:  SYCLCT1007:{{[0-9]+}}: cudaThreadGetCacheConfig: not support API, need manual porting.
   // CHECK-NEXT: */
-  cudaEventCreate(NULL);cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float));
+  cudaThreadGetCacheConfig(NULL);cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float));
 }

@@ -28,6 +28,7 @@ const std::map<std::string, std::string> MapNames::TypeNamesMap{
     {"struct int2", "cl::sycl::int2"},
     {"double2", "cl::sycl::double2"},
     {"struct double2", "cl::sycl::double2"},
+    {"cudaEvent_t", "cl::sycl::event"},
     // ...
 };
 

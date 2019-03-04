@@ -680,7 +680,7 @@ class KernelCallExpr : public CallFunctionExpr {
 public:
   KernelCallExpr(const CUDAKernelCallExpr *KernelCall)
       : CallFunctionExpr((const CallExpr *)KernelCall), KernelCall(KernelCall),
-        ExternMemSize(getExternMemSize(KernelCall)) {}
+        ExternMemSize(getExternMemSize(KernelCall)), IsSync(false) {}
 
   std::string getAccessorDecl(const std::string &Indent, const std::string &NL);
   std::string getExtraArguments() override {
@@ -688,6 +688,9 @@ public:
   }
 
   const CUDAKernelCallExpr *getCallExpr() { return KernelCall; }
+
+  void setSync(bool Sync = true) { IsSync = Sync; }
+  bool isSync() { return IsSync; }
 
 private:
   static std::string getExternMemSize(const CUDAKernelCallExpr *KernelCall);
@@ -714,6 +717,7 @@ private:
 
   const CUDAKernelCallExpr *KernelCall;
   const std::string ExternMemSize;
+  bool IsSync;
 };
 
 class CudaMallocInfo {

@@ -190,11 +190,11 @@ void DeviceFunctionInfo::buildInfo(TransformSetTy &TS) {
   static std::vector<TemplateArgumentInfo> NullTemplate;
   if (hasBuilt())
     return;
+  setBuilt();
   for (auto &Call : CallExprMap) {
     Call.second->buildInfo(TS);
     VarMap->merge(Call.second->getVarMap(), NullTemplate);
   }
-  setBuilt();
 }
 
 void DeviceFunctionInfo::computeParenLoc() {

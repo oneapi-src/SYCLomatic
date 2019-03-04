@@ -629,6 +629,19 @@ public:
              const bool PrintDetail = true) const override;
 };
 
+class ReplaceText : public TextModification {
+  SourceLocation BeginLoc;
+  unsigned Len;
+  StringRef T;
+public:
+  ReplaceText(const SourceLocation& Begin, unsigned Len, std::string &&S)
+      : TextModification(TMID::ReplaceText),
+        BeginLoc(Begin), Len(Len), T(S) {}
+  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context,
+             const bool PrintDetail = true) const override;
+};
+
 } // namespace syclct
 } // namespace clang
 

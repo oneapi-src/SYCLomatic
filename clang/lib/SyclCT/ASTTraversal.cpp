@@ -595,12 +595,14 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   auto HasCudaType = []() {
     return anyOf(hasType(typedefDecl(hasName("dim3"))),
                  hasType(typedefDecl(hasName("cudaError_t"))),
+                 hasType(typedefDecl(hasName("cudaEvent_t"))),
                  hasType(enumDecl(hasName("cudaError"))),
                  hasType(cxxRecordDecl(hasName("cudaDeviceProp"))));
   };
   auto HasCudaTypePtr = []() {
     return anyOf(hasType(pointsTo(typedefDecl(hasName("dim3")))),
                  hasType(pointsTo(typedefDecl(hasName("cudaError_t")))),
+                 hasType(pointsTo(typedefDecl(hasName("cudaEvent_t")))),
                  hasType(pointsTo(enumDecl(hasName("cudaError")))),
                  hasType(pointsTo(cxxRecordDecl(hasName("cudaDeviceProp")))));
   };
@@ -608,12 +610,14 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
     return anyOf(
         hasType(pointsTo(pointsTo(typedefDecl(hasName("dim3"))))),
         hasType(pointsTo(pointsTo(typedefDecl(hasName("cudaError_t"))))),
+        hasType(pointsTo(pointsTo(typedefDecl(hasName("cudaEvent_t"))))),
         hasType(pointsTo(pointsTo(enumDecl(hasName("cudaError"))))),
         hasType(pointsTo(pointsTo(cxxRecordDecl(hasName("cudaDeviceProp"))))));
   };
   auto HasCudaTypeRef = []() {
     return anyOf(hasType(references(typedefDecl(hasName("dim3")))),
                  hasType(references(typedefDecl(hasName("cudaError_t")))),
+                 hasType(references(typedefDecl(hasName("cudaEvent_t")))),
                  hasType(references(enumDecl(hasName("cudaError")))),
                  hasType(references(cxxRecordDecl(hasName("cudaDeviceProp")))));
   };
@@ -1396,7 +1400,9 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaDeviceSynchronize", "cudaThreadSynchronize", "cudaGetErrorString",
         "cudaGetErrorName", "cudaDeviceSetCacheConfig",
         "cudaDeviceGetCacheConfig", "__longlong_as_double",
-        "__double_as_longlong", "clock");
+        "__double_as_longlong", "clock", "cudaEventCreate",
+        "cudaEventCreateWithFlags", "cudaEventDestroy", "cudaEventRecord",
+        "cudaEventElapsedTime", "cudaEventSynchronize");
   };
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
                                hasParent(compoundStmt())))
@@ -1406,6 +1412,27 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
                                unless(hasParent(compoundStmt()))))
                     .bind("FunctionCallUsed"),
                 this);
+}
+
+static const clang::Stmt *findEnclosingStmt(const clang::Stmt *S,
+                                            const clang::Stmt::StmtClass C) {
+  if (!S)
+    return nullptr;
+
+  auto &Context = syclct::SyclctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*S);
+  while (Parents.size() == 1) {
+    auto *Parent = Parents[0].get<Stmt>();
+    if (Parent) {
+      if (Parent->getStmtClass() == C)
+        return Parent;
+      Parents = Context.getParents(*Parent);
+    } else {
+      Parents = Context.getParents(Parents[0]);
+    }
+  }
+
+  return nullptr;
 }
 
 void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
@@ -1522,8 +1549,175 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceCalleeName(CE, "syclct::ll2d", FuncName));
   } else if (FuncName == "clock") {
     report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF);
+  } else if (FuncName == "cudaEventCreate" ||
+             FuncName == "cudaEventCreateWithFlags" ||
+             FuncName == "cudaEventDestroy") {
+    std::string ReplStr;
+    if (IsAssigned) {
+      ReplStr = "(" + ReplStr + ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+      emplaceTransformation(new ReplaceStmt(CE, ReplStr));
+    } else {
+      emplaceTransformation(new ReplaceStmt(CE, ReplStr));
+      cleanCurrentLine(CE, Result);
+    }
+  } else if (FuncName == "cudaEventRecord") {
+    handleCudaEventRecord(CE, Result, IsAssigned);
+  } else if (FuncName == "cudaEventElapsedTime") {
+    handleCudaEventElapsedTime(CE, Result, IsAssigned);
+  } else if (FuncName == "cudaEventSynchronize") {
+    std::string ReplStr{getStmtSpelling(CE->getArg(0), *Result.Context)};
+    ReplStr += ".wait_and_throw()";
+    if (IsAssigned) {
+      ReplStr = "(" + ReplStr + ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
+    emplaceTransformation(new ReplaceStmt(CE, ReplStr));
   } else {
     syclct_unreachable("Unknown function name");
+  }
+}
+
+void FunctionCallRule::handleCudaEventRecord(
+    const CallExpr *CE, const MatchFinder::MatchResult &Result,
+    bool IsAssigned) {
+  report(CE->getBeginLoc(), Diagnostics::TIME_MEASUREMENT_FOUND);
+  std::string ReplStr;
+
+  // Define the helper variable if it is used in the block for first time,
+  // otherwise, just use it.
+  static std::set<std::pair<const CompoundStmt *, const std::string>> DupFilter;
+  const auto *CS = static_cast<const CompoundStmt *>(
+      findEnclosingStmt(CE, Stmt::StmtClass::CompoundStmtClass));
+  auto StmtStr = getStmtSpelling(CE->getArg(0), *Result.Context);
+  auto Pair = std::make_pair(CS, StmtStr);
+
+  if (DupFilter.find(Pair) == DupFilter.end()) {
+    DupFilter.insert(Pair);
+    ReplStr += "auto ";
+  }
+
+  ReplStr += "syclct_";
+  ReplStr += StmtStr;
+  ReplStr += "_";
+  ReplStr += getHashAsString(StmtStr).substr(0, 6);
+  ReplStr += " = clock()";
+  if (IsAssigned) {
+    ReplStr = "(" + ReplStr + ", 0)";
+    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+  }
+  emplaceTransformation(new ReplaceStmt(CE, ReplStr));
+}
+
+void FunctionCallRule::handleCudaEventElapsedTime(
+    const CallExpr *CE, const MatchFinder::MatchResult &Result,
+    bool IsAssigned) {
+  auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+  auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
+  auto StmtStrArg2 = getStmtSpelling(CE->getArg(2), *Result.Context);
+  std::string ReplStr{"*("};
+  ReplStr += StmtStrArg0;
+  ReplStr += ") = (float)(syclct_";
+  ReplStr += StmtStrArg2;
+  ReplStr += "_";
+  ReplStr += getHashAsString(StmtStrArg2).substr(0, 6);
+  ReplStr += " - syclct_";
+  ReplStr += StmtStrArg1;
+  ReplStr += "_";
+  ReplStr += getHashAsString(StmtStrArg1).substr(0, 6);
+  ReplStr += ") / CLOCKS_PER_SEC * 1000";
+  if (IsAssigned) {
+    ReplStr = "(" + ReplStr + ", 0)";
+    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+  }
+  emplaceTransformation(new ReplaceStmt(CE, ReplStr));
+  handleTimeMeasurement(CE, Result);
+}
+
+void FunctionCallRule::cleanCurrentLine(
+    const CallExpr *CE, const MatchFinder::MatchResult &Result) {
+  const auto &SM = (*Result.Context).getSourceManager();
+  // Remove whilespaces between previous '\n' (excluded) and CE (excluded)
+  auto LocBeforeCE = CE->getBeginLoc().getLocWithOffset(-1);
+  auto PosBeforeCE = SM.getCharacterData(LocBeforeCE);
+  const char *PosLastLF = PosBeforeCE;
+  while (isspace(*PosLastLF) && *PosLastLF != '\n')
+    --PosLastLF;
+
+  if (*PosLastLF == '\n') {
+    unsigned Len = PosBeforeCE - PosLastLF;
+    auto LocAfterLastLF = CE->getBeginLoc().getLocWithOffset(-Len);
+    emplaceTransformation(new ReplaceText(LocAfterLastLF, Len, ""));
+  }
+
+  // Find the semicolon
+  auto CELoc = CE->getEndLoc();
+  auto LocAfterCE = CELoc.getLocWithOffset(1);
+  auto Tok = Lexer::findNextToken(CELoc, SM, LangOptions()).getValue();
+  assert(Tok.is(tok::TokenKind::semi));
+
+  // Remove whitespaces between CE and semicolon (included)
+  // Remove whitespaces between semicolon and the first '\n' (included)
+  // after the semicolon
+  // Can deal with "\r\n"
+  auto LocAfterSemi = Tok.getLocation().getLocWithOffset(1);
+  auto PosAfterSemi = SM.getCharacterData(LocAfterSemi);
+  const char *EndPos = PosAfterSemi;
+  while (isspace(*EndPos) && *EndPos != '\n')
+    ++EndPos;
+
+  auto ReplaceBeginPos = SM.getCharacterData(LocAfterCE);
+  if (*EndPos == '\n') {
+    unsigned Len = EndPos - ReplaceBeginPos + 1;
+    emplaceTransformation(new ReplaceText(LocAfterCE, Len, ""));
+  }
+}
+
+void FunctionCallRule::handleTimeMeasurement(
+    const CallExpr *CE, const MatchFinder::MatchResult &Result) {
+  auto CELoc = CE->getBeginLoc().getRawEncoding();
+  auto Parents = Result.Context->getParents(*CE);
+  assert(Parents.size() == 1);
+  auto *Parent = Parents[0].get<Stmt>();
+  const CallExpr *RecordBegin = nullptr, *RecordEnd = nullptr;
+  // Find the last cudaEventRecord call on start and stop
+  for (auto Iter = Parent->child_begin(); Iter != Parent->child_end(); ++Iter) {
+    if (Iter->getBeginLoc().getRawEncoding() > CELoc)
+      continue;
+
+    if (const CallExpr *RecordCall = dyn_cast<CallExpr>(*Iter)) {
+      std::string RecordFuncName =
+          RecordCall->getDirectCallee()->getNameInfo().getName().getAsString();
+      // Find the last call of cudaEventRecord on start and stop before
+      // call to cudaElpasedTime
+      if (RecordFuncName == "cudaEventRecord") {
+        auto Arg0 = getStmtSpelling(RecordCall->getArg(0), *Result.Context);
+        if (Arg0 == getStmtSpelling(CE->getArg(1), *Result.Context))
+          RecordBegin = RecordCall;
+        else if (Arg0 == getStmtSpelling(CE->getArg(2), *Result.Context))
+          RecordEnd = RecordCall;
+      }
+    }
+  }
+  if (!RecordBegin || !RecordEnd)
+    return;
+
+  // Find the kernel calls between start and stop
+  auto RecordBeginLoc = RecordBegin->getBeginLoc().getRawEncoding();
+  auto RecordEndLoc = RecordEnd->getBeginLoc().getRawEncoding();
+  for (auto Iter = Parent->child_begin(); Iter != Parent->child_end(); ++Iter) {
+    if (auto *Expr = dyn_cast<ExprWithCleanups>(*Iter)) {
+      auto *SubExpr = Expr->getSubExpr();
+      if (auto *KCall = dyn_cast<CUDAKernelCallExpr>(SubExpr)) {
+        auto KCallLoc = KCall->getBeginLoc().getRawEncoding();
+        // Only the kernel calls between begin and end are set to be synced
+        if (KCallLoc > RecordBeginLoc && KCallLoc < RecordEndLoc) {
+          SyclctGlobalInfo::getInstance()
+              .registerKernelCallExpr(KCall)
+              ->setSync();
+        }
+      }
+    }
   }
 }
 

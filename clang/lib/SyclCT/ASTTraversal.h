@@ -542,6 +542,18 @@ public:
   FunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void
+  handleCudaEventRecord(const CallExpr *CE,
+                        const ast_matchers::MatchFinder::MatchResult &Result,
+                        bool IsAssigned);
+  void handleCudaEventElapsedTime(
+      const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
+      bool IsAssigned);
+  void cleanCurrentLine(const CallExpr *CE,
+                        const ast_matchers::MatchFinder::MatchResult &Result);
+  void
+  handleTimeMeasurement(const CallExpr *CE,
+                        const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class KernelCallRule : public NamedTranslationRule<KernelCallRule> {

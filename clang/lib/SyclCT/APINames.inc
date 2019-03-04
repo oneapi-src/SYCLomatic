@@ -58,13 +58,13 @@ ENTRY(cudaStreamSynchronize, false)
 ENTRY(cudaStreamWaitEvent, false)
 
 // event management functions of runtime API
-ENTRY(cudaEventCreate, false)
-ENTRY(cudaEventCreateWithFlags, false)
-ENTRY(cudaEventDestroy, false)
-ENTRY(cudaEventElapsedTime, false)
+ENTRY(cudaEventCreate, true)
+ENTRY(cudaEventCreateWithFlags, true)
+ENTRY(cudaEventDestroy, true)
+ENTRY(cudaEventElapsedTime, true)
 ENTRY(cudaEventQuery, false)
-ENTRY(cudaEventRecord, false)
-ENTRY(cudaEventSynchronize, false)
+ENTRY(cudaEventRecord, true)
+ENTRY(cudaEventSynchronize, true)
 
 // external resource interoperability functions of runtime API
 ENTRY(cudaDestroyExternalMemory, false)

@@ -688,7 +688,7 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
   << Header3.str()
   << Indent <<  "        " << CallFunc << "(" << Kernel->getArguments() << ");" << NL
   << Indent <<  "      });" <<  NL
-  << Indent <<  "  });" <<  NL
+  << Indent <<  "  })" << (Kernel->isSync() ? ".wait()" : "") << ";" <<  NL
   << OrigIndent << "}";
   // clang-format on
 
@@ -886,6 +886,11 @@ InsertClassName::getReplacement(const ASTContext &Context) const {
       " syclct_type_" +
           getHashAsString(BeginLoc.printToString(SM)).substr(0, 6),
       this);
+}
+
+ExtReplacement ReplaceText::getReplacement(const ASTContext &Context) const {
+  auto &SM = Context.getSourceManager();
+  return ExtReplacement(SM, BeginLoc, Len, T, this);
 }
 
 static const std::unordered_map<int, std::string> TMNameMap = {
@@ -1126,4 +1131,11 @@ void InsertClassName::print(llvm::raw_ostream &OS, ASTContext &Context,
   printLocation(OS, CD->getBeginLoc(), Context, PrintDetail);
   CD->print(OS, PrintingPolicy(Context.getLangOpts()));
   printInsertion(OS, "");
+}
+
+void ReplaceText::print(llvm::raw_ostream &OS, ASTContext &Context,
+                            const bool PrintDetail) const {
+  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printLocation(OS, BeginLoc, Context, PrintDetail);
+  printInsertion(OS, T);
 }
