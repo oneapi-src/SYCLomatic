@@ -26,10 +26,11 @@ class RefactoringTool;
 
 enum ProcessStatus {
   MigrationSucceeded = 0,
-  MigrationNotImplemented = 1,
+  MigrationNoCodeChangeHappen = 1,
   MigrationSkipped = 2,
   MigrationError = -1,
 };
+
 
 /// Apply all generated replacements, and immediately save the results to
 /// files in output directory.

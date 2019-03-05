@@ -643,7 +643,7 @@ int run(int argc, const char **argv) {
   }
 
   // if run was successful
-  int status = saveNewFiles(Tool, InRoot, OutRoot);
+  int Status = saveNewFiles(Tool, InRoot, OutRoot);
 
   if (VerboseLevel == VerboseLow || VerboseLevel == VerboseHigh) {
     printMetrics(Tool, LOCStaticsMap);
@@ -653,6 +653,6 @@ int run(int argc, const char **argv) {
                         " ms\n";
   }
 
-  DebugInfo::ShowStatus(status);
-  return status;
+  DebugInfo::ShowStatus(Status);
+  return Status;
 }

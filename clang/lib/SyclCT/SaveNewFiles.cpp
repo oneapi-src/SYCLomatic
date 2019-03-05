@@ -87,7 +87,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   if (Tool.getReplacements().empty()) {
     // There are no rules applying on the *.cpp files,
     // cyclct just do nothing with them.
-    status = MigrationNotImplemented;
+    status = MigrationNoCodeChangeHappen;
   } else {
     // There are matching rules for *.cpp files ,*.cu files, also header files
     // included, migrate these files into *.sycl.cpp files.

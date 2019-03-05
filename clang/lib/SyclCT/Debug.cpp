@@ -1,5 +1,6 @@
 #include "Debug.h"
 #include "ASTTraversal.h"
+#include "SaveNewFiles.h"
 
 #include <numeric>
 #include <unordered_set>
@@ -327,15 +328,34 @@ static llvm::raw_svector_ostream SyclctLogStream(SyclctLogBuffer);
 
 llvm::raw_ostream &SyclctDbgs() { return SyclctLogStream; }
 
-void DebugInfo::ShowStatus(int status) {
+void DebugInfo::ShowStatus(int Status) {
 #ifdef SYCLCT_DEBUG_BUILD // Debug build
   if (ShowDebugLevelFlag) {
     ShowDebugLevels();
   }
 #endif // Debug build
 
-  if (status != 0) {
-    SyclctDbgs() << "Syclct exited with code: " << status << "\n";
+  std::string StatusString;
+  switch (Status) {
+  case MigrationSucceeded:
+    StatusString = "Migration succeed";
+    break;
+  case MigrationNoCodeChangeHappen:
+    StatusString = "Migration keep input file unchanged";
+    break;
+  case MigrationSkipped:
+    StatusString = "Migration skip for input file";
+    break;
+  case MigrationError:
+    StatusString = "Migration error happen";
+    break;
+  default:
+    syclct_unreachable("no valid stats");
+  }
+
+  if (Status != 0) {
+    SyclctDbgs() << "Syclct exited with code: " << Status << " ("
+                 << StatusString << ")\n";
   }
 
   llvm::dbgs() << SyclctLogStream.str() << "\n";
