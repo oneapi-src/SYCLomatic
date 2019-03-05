@@ -16,6 +16,7 @@
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Refactoring.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 
 #include "ASTTraversal.h"
@@ -31,6 +32,7 @@
 #include "clang/Driver/Options.h"
 #include <algorithm>
 #include <cstring>
+#include <fstream>
 #include <vector>
 
 #include "clang/Basic/DiagnosticOptions.h"
@@ -64,6 +66,15 @@ static opt<std::string>
                  " (directory will be created if it does not exist)"),
             value_desc("/path/to/output/root/"), cat(SyclCTCat),
             llvm::cl::Optional);
+
+static opt<std::string> ReportType("report-type", desc("Report Type: [apis]"),
+                                   value_desc("apis"), cat(SyclCTCat),
+                                   llvm::cl::Optional);
+
+static opt<std::string> ReportFile("report-file",
+                                   desc("log file to store migration info"),
+                                   value_desc("log file name [with path]"),
+                                   cat(SyclCTCat), llvm::cl::Optional);
 
 bool KeepOriginalCodeFlag = false;
 
@@ -610,6 +621,20 @@ static void printMetrics(
   }
 }
 
+static void saveReport(void) {
+
+  ReportFile = ReportFile + ".csv";
+  llvm::sys::fs::create_directories(llvm::sys::path::parent_path(ReportFile));
+  std::ofstream File(ReportFile);
+
+  File << "API name, Migrated, Frequency" << std::endl;
+  for (const auto &Elem : APIStaticsMap) {
+    std::string Key = Elem.first;
+    unsigned int Count = Elem.second;
+    File << Key << "," << std::to_string(Count) << std::endl;
+  }
+}
+
 int run(int argc, const char **argv) {
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;
@@ -661,6 +686,9 @@ int run(int argc, const char **argv) {
                         " ms\n";
   }
 
+  if (!ReportType.empty() && !ReportFile.empty()) {
+    saveReport();
+  }
   DebugInfo::ShowStatus(Status);
   return Status;
 }

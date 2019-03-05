@@ -190,10 +190,13 @@ public:
 class ReplaceCalleeName : public TextModification {
   const CallExpr *C;
   std::string ReplStr;
+  std::string OrigAPIName;
 
 public:
-  ReplaceCalleeName(const CallExpr *C, std::string &&S)
-      : TextModification(TMID::ReplaceCalleeName), C(C), ReplStr(S) {}
+  ReplaceCalleeName(const CallExpr *C, std::string &&S,
+                    const std::string &OrigAPIName)
+      : TextModification(TMID::ReplaceCalleeName), C(C), ReplStr(S),
+        OrigAPIName(OrigAPIName) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,

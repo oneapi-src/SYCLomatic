@@ -569,8 +569,8 @@ void AtomicFunctionRule::TranslateAtomicFunc(const CallExpr *CE) {
     return;
   }
 
-  emplaceTransformation(
-      new ReplaceCalleeName(CE, std::move(ReplacedAtomicFuncName)));
+  emplaceTransformation(new ReplaceCalleeName(
+      CE, std::move(ReplacedAtomicFuncName), AtomicFuncName));
 
   const unsigned NumArgs = CE->getNumArgs();
   for (unsigned i = 1; i < NumArgs; ++i) {
@@ -1517,9 +1517,9 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     std::string Replacement = "0";
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   } else if (FuncName == "__double_as_longlong") {
-    emplaceTransformation(new ReplaceCalleeName(CE, "syclct::d2ll"));
+    emplaceTransformation(new ReplaceCalleeName(CE, "syclct::d2ll", FuncName));
   } else if (FuncName == "__longlong_as_double") {
-    emplaceTransformation(new ReplaceCalleeName(CE, "syclct::ll2d"));
+    emplaceTransformation(new ReplaceCalleeName(CE, "syclct::ll2d", FuncName));
   } else if (FuncName == "clock") {
     report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF);
   } else {
@@ -1634,8 +1634,10 @@ REGISTER_RULE(MemVarRule)
 
 void MemoryTranslationRule::MallocTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C) {
+  const std::string Name =
+      C->getCalleeDecl()->getAsFunction()->getNameAsString();
   SyclctGlobalInfo::getInstance().registerCudaMalloc(C);
-  emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_malloc"));
+  emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_malloc", Name));
 }
 
 void MemoryTranslationRule::MemcpyTranslation(
@@ -1669,8 +1671,9 @@ void MemoryTranslationRule::MemcpyTranslation(
     Direction = nullptr;
     DirectionName = "syclct::" + Search->second;
   }
-
-  emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_memcpy"));
+  const std::string Name =
+      C->getCalleeDecl()->getAsFunction()->getNameAsString();
+  emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_memcpy", Name));
   emplaceTransformation(new InsertBeforeStmt(C->getArg(0), "(void*)("));
   emplaceTransformation(new InsertAfterStmt(C->getArg(0), ")"));
   emplaceTransformation(new InsertBeforeStmt(C->getArg(1), "(void*)("));
@@ -1727,8 +1730,10 @@ void MemoryTranslationRule::MemcpyToSymbolTranslation(
   VarName = (pos != std::string::npos) ? VarName.substr(0, pos) : VarName;
   VarName += ".get_ptr()";
 
+  const std::string Name =
+      C->getCalleeDecl()->getAsFunction()->getNameAsString();
   emplaceTransformation(
-      new ReplaceCalleeName(C, "syclct::sycl_memcpy_to_symbol"));
+      new ReplaceCalleeName(C, "syclct::sycl_memcpy_to_symbol", Name));
   emplaceTransformation(new ReplaceToken(C->getArg(0)->getBeginLoc(),
                                          C->getArg(0)->getEndLoc(),
                                          std::move(VarName)));
@@ -1772,8 +1777,11 @@ void MemoryTranslationRule::MemcpyFromSymbolTranslation(
 
   emplaceTransformation(new InsertBeforeStmt(C->getArg(0), "(void*)("));
   emplaceTransformation(new InsertAfterStmt(C->getArg(0), ")"));
+
+  const std::string Name =
+      C->getCalleeDecl()->getAsFunction()->getNameAsString();
   emplaceTransformation(
-      new ReplaceCalleeName(C, "syclct::sycl_memcpy_from_symbol"));
+      new ReplaceCalleeName(C, "syclct::sycl_memcpy_from_symbol", Name));
   emplaceTransformation(new ReplaceToken(C->getArg(1)->getBeginLoc(),
                                          C->getArg(1)->getEndLoc(),
                                          std::move(VarName)));
@@ -1783,12 +1791,16 @@ void MemoryTranslationRule::MemcpyFromSymbolTranslation(
 
 void MemoryTranslationRule::FreeTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C) {
-  emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_free"));
+  const std::string Name =
+      C->getCalleeDecl()->getAsFunction()->getNameAsString();
+  emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_free", Name));
 }
 
 void MemoryTranslationRule::MemsetTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C) {
-  emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_memset"));
+  const std::string Name =
+      C->getCalleeDecl()->getAsFunction()->getNameAsString();
+  emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_memset", Name));
   emplaceTransformation(new InsertBeforeStmt(C->getArg(0), "(void*)("));
   emplaceTransformation(new InsertAfterStmt(C->getArg(0), ")"));
   emplaceTransformation(new InsertBeforeStmt(C->getArg(1), "(int)("));
@@ -1958,7 +1970,8 @@ void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
         NewFuncName = "cl::sycl::fabs";
       }
     }
-    emplaceTransformation(new ReplaceCalleeName(C, std::move(NewFuncName)));
+    emplaceTransformation(
+        new ReplaceCalleeName(C, std::move(NewFuncName), FuncName));
 
     if (FuncName == "min") {
       const LangOptions &LO = Result.Context->getLangOpts();
@@ -2079,10 +2092,15 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
 
     const SourceManager &SM = (*Result.Context).getSourceManager();
     const SourceLocation FileLoc = SM.getFileLoc(C->getBeginLoc());
+
     std::string SLStr = FileLoc.printToString(SM);
+
     std::size_t Pos = SLStr.find(':');
     std::string FileName = SLStr.substr(0, Pos);
     LOCStaticsMap[FileName][2]++;
+
+    std::string Key = APIName + "," + "false";
+    APIStaticsMap[Key]++;
 
     report(C->getBeginLoc(), Comments::API_NOT_MIGRATED, APIName.c_str());
   }

@@ -78,6 +78,7 @@ llvm::raw_ostream &SyclctDbgs();
 extern int VerboseLevel;
 
 extern std::map<std::string, std::array<unsigned int, 3>> LOCStaticsMap;
+extern std::map<std::string, unsigned int> APIStaticsMap;
 
 enum VerboseLevel {
   NonVerbose = 0,

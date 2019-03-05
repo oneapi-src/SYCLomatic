@@ -29,7 +29,8 @@ using namespace clang::tooling;
 static std::unordered_set<std::string> DuplicateFilter;
 
 void recordTranslationInfo(const ASTContext &Context, const SourceLocation &SL,
-                           bool IsCompatibilityAPI = false) {
+                           bool IsCompatibilityAPI = false,
+                           std::string APIName = "") {
   const SourceManager &SM = Context.getSourceManager();
   if (SL.isValid()) {
     const SourceLocation FileLoc = SM.getFileLoc(SL);
@@ -51,6 +52,12 @@ void recordTranslationInfo(const ASTContext &Context, const SourceLocation &SL,
           LOCStaticsMap[FileName][1]--;
         }
         LOCStaticsMap[FileName][0]++;
+
+        if (!APIName.empty()) {
+          std::string LocKey = APIName + "," + "true";
+          APIStaticsMap[LocKey]++;
+        }
+
       } else {
         LOCStaticsMap[FileName][1]++;
       }
@@ -68,7 +75,7 @@ ExtReplacement ReplaceStmt::getReplacement(const ASTContext &Context) const {
 ExtReplacement
 ReplaceCalleeName::getReplacement(const ASTContext &Context) const {
   const SourceManager &SM = Context.getSourceManager();
-  recordTranslationInfo(Context, C->getBeginLoc(), true);
+  recordTranslationInfo(Context, C->getBeginLoc(), true, OrigAPIName);
   return ExtReplacement(Context.getSourceManager(),
                         SM.getSpellingLoc(C->getBeginLoc()),
                         getCalleeName(Context).size(), ReplStr, this);
@@ -408,7 +415,6 @@ ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
 ExtReplacement InsertComment::getReplacement(const ASTContext &Context) const {
   auto NL = getNL(SL, Context.getSourceManager());
   auto OrigIndent = getIndent(SL, Context.getSourceManager()).str();
-  recordTranslationInfo(Context, SL);
   return ExtReplacement(Context.getSourceManager(), SL, 0,
                         (OrigIndent + llvm::Twine("/*") + NL + OrigIndent +
                          Text + NL + OrigIndent + "*/" + NL)

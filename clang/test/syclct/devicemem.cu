@@ -26,7 +26,7 @@ __global__ void kernel1(float *out) {
 
 // CHECK: syclct::device_memory<int, 0> al;
 __device__ int al;
-// CHECK: syclct::device_memory<int, 0> ainit(syclct::syclct_range<0>(), (16));
+// CHECK: syclct::device_memory<int, 0> ainit(syclct::syclct_range<0>(), NUM_ELEMENTS);
 __device__ int ainit = NUM_ELEMENTS;
 
 // CHECK: syclct::device_memory<float, 1> fx(2);

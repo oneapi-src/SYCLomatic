@@ -319,7 +319,9 @@ private:
   static VarAttrKind getAttr(const AttrVec &Attrs);
 
   void setInitList(const Expr *E) {
-    InitList = getStmtSpelling(E, SyclctGlobalInfo::getContext());
+    auto InitExpr = dyn_cast<InitListExpr>(E);
+    if (InitExpr || !getType()->getDimension())
+      InitList = getStmtSpelling(E, SyclctGlobalInfo::getContext());
   }
 
   std::string getMemoryType();

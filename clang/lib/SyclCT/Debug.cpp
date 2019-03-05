@@ -17,6 +17,10 @@ namespace syclct {
 // array[2]: count API not support
 std::map<std::string, std::array<unsigned int, 3>> LOCStaticsMap;
 
+// std::string -> APIName ,Status(true or false)
+// unsigned int -> Times met
+std::map<std::string, unsigned int> APIStaticsMap;
+
 int VerboseLevel = NonVerbose;
 
 #ifdef SYCLCT_DEBUG_BUILD // Debug build
