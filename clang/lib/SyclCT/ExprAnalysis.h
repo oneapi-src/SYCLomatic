@@ -100,11 +100,7 @@ private:
     }
   }
 
-  std::pair<size_t, size_t> getOffsetAndLength(const Expr *TE) {
-    auto Begin = TE->getBeginLoc().getRawEncoding();
-    return std::pair<size_t, size_t>(Begin - E->getBeginLoc().getRawEncoding(),
-                                     getEndLoc(TE).getRawEncoding() - Begin);
-  }
+  std::pair<size_t, size_t> getOffsetAndLength(const Expr *TE);
 
   void replaceString() {
     auto RItr = Replacements.rbegin();
@@ -113,13 +109,12 @@ private:
     Replacements.clear();
   }
 
-  SourceLocation getEndLoc(const Expr *Expression);
-
   void setExpr(const Expr *Expression);
 
   // E is analysis target expression, while ExprString is the source text of E.
   // Replacements contains all the replacements happened in E.
   const Expr *E;
+  unsigned ExprBeginOffset;
   std::string ExprString;
   std::map<size_t, std::shared_ptr<StringReplacement>> Replacements;
 };

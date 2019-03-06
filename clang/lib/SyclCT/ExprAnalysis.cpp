@@ -18,20 +18,21 @@ namespace syclct {
 
 void ExprAnalysis::setExpr(const Expr *Expression) {
   E = Expression;
-  auto Begin = E->getBeginLoc();
-  ExprString = std::string(
-      clang::syclct::SyclctGlobalInfo::getSourceManager().getCharacterData(
-          Begin),
-      getEndLoc(E).getRawEncoding() - Begin.getRawEncoding());
+  ExprBeginOffset = SyclctGlobalInfo::getSourceManager()
+                        .getDecomposedExpansionLoc(E->getBeginLoc())
+                        .second;
+  ExprString = getStmtSpelling(Expression, SyclctGlobalInfo::getContext());
 }
 
-SourceLocation ExprAnalysis::getEndLoc(const Expr *Expression) {
-  Token Tok;
-  auto EndLoc = Expression->getEndLoc();
-  if (Lexer::getRawToken(EndLoc, Tok, SyclctGlobalInfo::getSourceManager(),
-                         SyclctGlobalInfo::getContext().getLangOpts()))
-    return EndLoc;
-  return Tok.getEndLoc();
+std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *TE) {
+  auto &SM = SyclctGlobalInfo::getSourceManager();
+  auto Begin = SM.getDecomposedExpansionLoc(TE->getBeginLoc()).second;
+  auto EndLoc = SM.getExpansionLoc(TE->getEndLoc());
+  return std::pair<size_t, size_t>(
+      Begin - ExprBeginOffset,
+      SM.getDecomposedLoc(EndLoc).second - Begin +
+          Lexer::MeasureTokenLength(
+              EndLoc, SM, SyclctGlobalInfo::getContext().getLangOpts()));
 }
 
 void ArraySizeExprAnalysis::analysisDeclRefExpr(const DeclRefExpr *DRE) {

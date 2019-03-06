@@ -56,7 +56,7 @@ void runTest() {
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK-NEXT:            const void *karg1 = (const void*)(&karg1_acc[0] + karg1_offset);
   // CHECK-NEXT:            const T *karg2 = (const T*)(&karg2_acc[0] + karg2_offset);
-  // CHECK-NEXT:            testKernelPtr<class TestName, ktarg, T>((const T *)karg1, karg2, [[ITEM]]);
+  // CHECK-NEXT:            testKernelPtr<class TestName, ktarg, T>((const T*)karg1, karg2, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  };

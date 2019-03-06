@@ -17,6 +17,7 @@
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Lex/Lexer.h"
+#include "clang/Tooling/Core/Replacement.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
@@ -91,22 +92,21 @@ StringRef getIndent(SourceLocation Loc, const SourceManager &SM) {
   return Buffer.substr(begin, end - begin);
 }
 
-// Get textual representation of the Stmt.  This helper function is tricky.
-// Ideally, we should use SourceLocation information to be able to access the
-// actual character used for spelling in the source code (either before or
-// after preprocessor). But the quality of the this information is bad.  This
-// should be addressed in the clang sources in the long run, but we need a
-// working solution right now, so we use another way of getting the spelling.
-// Specific example, when SourceLocation information is broken - DeclRefExpr
-// has valid information only about beginning of the expression, pointers to
-// the end of the expression point to the beginning.
+// Get textual representation of the Stmt.
 std::string getStmtSpelling(const Stmt *S, const ASTContext &Context) {
-  std::string StrBuffer;
-  llvm::raw_string_ostream TmpStream(StrBuffer);
-  auto LangOpts = Context.getLangOpts();
-  S->printPretty(TmpStream, nullptr, PrintingPolicy(LangOpts), 0, "\n",
-                 &Context);
-  return TmpStream.str();
+  auto &SM = Context.getSourceManager();
+  SourceLocation BeginLoc, EndLoc;
+  if (SM.isMacroArgExpansion(S->getBeginLoc())) {
+    BeginLoc = SM.getSpellingLoc(S->getBeginLoc());
+    EndLoc = SM.getSpellingLoc(S->getEndLoc());
+  } else {
+    BeginLoc = SM.getExpansionLoc(S->getBeginLoc());
+    EndLoc = SM.getExpansionLoc(S->getEndLoc());
+  }
+  auto Length = SM.getDecomposedLoc(EndLoc).second -
+                SM.getDecomposedLoc(BeginLoc).second +
+                Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
+  return std::string(SM.getCharacterData(BeginLoc), Length);
 }
 
 std::string getStmtExpansion(const Stmt *S, const ASTContext &Context) {
@@ -118,7 +118,7 @@ std::string getStmtExpansion(const Stmt *S, const ASTContext &Context) {
   if (End.isMacroID())
     End = SM.getExpansionLoc(End);
   return std::string(SM.getCharacterData(Begin),
-                     SM.getCharacterData(End)-SM.getCharacterData(Begin));
+                     SM.getCharacterData(End) - SM.getCharacterData(Begin));
 }
 
 //
@@ -314,7 +314,7 @@ const std::string &getFmtArgIndent(std::string &BaseIndent) {
   return FmtArgIndent;
 }
 
-std::vector<std::string> split(const std::string& str, char delim) {
+std::vector<std::string> split(const std::string &str, char delim) {
   std::vector<std::string> vs;
   std::stringstream ss(str);
   std::string token;
