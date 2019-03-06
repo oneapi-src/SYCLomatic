@@ -14,6 +14,8 @@
 
 // CHECK: syclct::device_memory<float, 1> in(16);
 __device__ float in[NUM_ELEMENTS];
+// CHECK: syclct::device_memory<int, 1> init(syclct::syclct_range<1>(4), {1, 2, 3, 4});
+__device__ int init[4] = {1, 2, 3, 4};
 
 // CHECK: void kernel1(float *out, cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<float, syclct::device, 1> in) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(0)] = in[{{.*}}[[ITEM]].get_local_id(0)];
@@ -24,6 +26,8 @@ __global__ void kernel1(float *out) {
 
 // CHECK: syclct::device_memory<int, 0> al;
 __device__ int al;
+// CHECK: syclct::device_memory<int, 0> ainit(syclct::syclct_range<0>(), (16));
+__device__ int ainit = NUM_ELEMENTS;
 
 // CHECK: syclct::device_memory<float, 1> fx(2);
 // CHECK: syclct::device_memory<float, 2> fy(3, 4);

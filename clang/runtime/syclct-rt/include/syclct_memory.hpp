@@ -462,9 +462,39 @@ public:
   using accessor_t = typename base_t::accessor_t;
 
   global_memory() : global_memory(syclct_range<Dimension>()) {}
-  template <class... Args>
-  global_memory(Args... Arguments)
-      : global_memory(syclct_range<Dimension>(Arguments...)) {}
+
+  global_memory(const syclct_range<Dimension> &range, const T &val)
+      : global_memory(range) {
+    static_assert(Dimension == 0,
+                  "only non-array type can be inited with single value");
+    memcpy(memory_manager::get_instance()
+               .translate_ptr(memory_ptr)
+               .buffer.template get_access<cl::sycl::access::mode::write>()
+               .get_pointer(),
+           &val, sizeof(T));
+  }
+
+  global_memory(const syclct_range<Dimension> &range,
+                std::initializer_list<T> &&init_list)
+      : global_memory(range) {
+    // TODO: Now only 1-D array initialization list can be passed into construct
+    // function as argument. Multi-Dimension array initialization list should be
+    // done in future.
+    static_assert(Dimension == 1,
+                  "only 1-D array can be inited with intialization list");
+    assert(init_list.size() <= range.size());
+    memcpy(memory_manager::get_instance()
+               .translate_ptr(memory_ptr)
+               .buffer.template get_access<cl::sycl::access::mode::write>()
+               .get_pointer(),
+           init_list.begin(), init_list.size() * sizeof(T));
+  }
+
+  global_memory(void *memory_ptr, size_t size)
+      : base_t(syclct_range<1>(size / sizeof(T))), reference(true),
+        memory_ptr(memory_ptr) {
+    assert(memory_manager::get_instance().is_device_ptr(memory_ptr));
+  }
 
   global_memory(const syclct_range<Dimension> &range)
       : base_t(range), reference(false), memory_ptr(nullptr) {
@@ -474,9 +504,10 @@ public:
       sycl_malloc((void **)&memory_ptr, base_t::size);
   }
 
-  global_memory(void *memory_ptr, size_t size)
-      : base_t(syclct_range<1>(size / sizeof(T))), reference(true),
-        memory_ptr(memory_ptr) {}
+  template <class... Args>
+  global_memory(Args... Arguments)
+      : global_memory(syclct_range<Dimension>(Arguments...)) {}
+
   virtual ~global_memory() {
     if (memory_ptr && !reference)
       sycl_free(memory_ptr);

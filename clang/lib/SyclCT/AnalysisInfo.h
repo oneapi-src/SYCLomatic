@@ -278,6 +278,8 @@ public:
                   : Global) {
     if (getType()->isPointer())
       Attr = Device;
+    if (Var->hasInit())
+      setInitList(Var->getInit());
   }
 
   VarAttrKind getAttr() { return Attr; }
@@ -316,10 +318,18 @@ public:
 private:
   static VarAttrKind getAttr(const AttrVec &Attrs);
 
+  void setInitList(const Expr *E) {
+    InitList = getStmtSpelling(E, SyclctGlobalInfo::getContext());
+  }
+
   std::string getMemoryType();
   std::string getInitArguments(const std::string &MemSize,
                                bool MustArguments = false) {
-    return getType()->getRangeArgument(MemSize, MustArguments);
+    if (InitList.empty())
+      return getType()->getRangeArgument(MemSize, MustArguments);
+    return "(syclct::syclct_range<" +
+           std::to_string(getType()->getDimension()) + ">" +
+           getType()->getRangeArgument(MemSize, true) + ", " + InitList + ")";
   }
   const std::string &getMemoryAttr();
 
@@ -346,6 +356,7 @@ private:
 private:
   VarAttrKind Attr;
   VarScope Scope;
+  std::string InitList;
 
   static const std::string AccessorSuffix;
   static const std::string ExternVariableName;
