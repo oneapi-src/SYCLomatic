@@ -388,8 +388,7 @@ public:
       }
 
       makeCanonical(RPath);
-      if (!isChildPath(SyclctInstallPath, RPath) &&
-          (isChildPath(InRoot, RPath) || isSamePath(InRoot, RPath))) {
+      if (isChildPath(InRoot, RPath) || isSamePath(InRoot, RPath)) {
         // TODO: Staticstics
         ReplSet.emplace_back(std::move(R));
       } else {
@@ -547,6 +546,15 @@ void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
     llvm::errs() << "[ERROR] Input root specified by \"-in-root\" option \""
                  << Path << "\" is in CUDA_PATH folder \"" << CudaPath
                  << "\"\n";
+    exit(-1);
+  }
+
+  if (isChildPath(Path, SyclctInstallPath) ||
+      isSamePath(Path, SyclctInstallPath)) {
+    llvm::errs() << "[ERROR] Input folder \"" << Path
+                 << "\" is the parent or the same as the folder where DPC++ "
+                    "Compatibility Tool is installed \""
+                 << SyclctInstallPath << "\"\n";
     exit(-1);
   }
 }
