@@ -145,6 +145,12 @@ inline __host__ double __signbitd(double x) {
 // builtins in CUDA-9 and have been removed from the CUDA headers. Clang now
 // provides its own implementation of the wrappers.
 #if CUDA_VERSION >= 9000
+#define INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
+#ifdef _WIN64 || _WIN32
+__device__ float roundf(float __a);
+#endif
+#endif
 #include <__clang_cuda_device_functions.h>
 #endif
 
@@ -310,6 +316,11 @@ static inline __device__ void __brkpt(int __c) { __brkpt(); }
 #endif
 
 #if CUDA_VERSION >= 9000
+#ifdef _WIN64 || _WIN32
+extern __device__  int __finitel(long double) __THROW;
+extern __device__ __device_builtin__ int  __isinfl(long double) __THROW;
+extern __device__ __device_builtin__ int  __isnanl(long double) __THROW;
+#endif
 #include "crt/math_functions.hpp"
 #else
 #include "math_functions.hpp"
