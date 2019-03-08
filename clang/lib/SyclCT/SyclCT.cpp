@@ -50,7 +50,6 @@ using namespace clang::ast_matchers;
 using namespace clang::syclct;
 using namespace clang::tooling;
 
-using ReplTy = std::map<std::string, Replacements>;
 using namespace llvm::cl;
 
 const char *const CtHelpMessage =
@@ -223,72 +222,6 @@ public:
     }
   }
 
-  std::tuple<std::string /*FilePath*/, unsigned int /*Offset*/,
-             unsigned int /*Length*/>
-  getPathAndRange(std::string Str) {
-
-    std::size_t PosNext = Str.rfind(':');
-    std::size_t Pos = Str.rfind(':', PosNext - 1);
-    std::string FilePath = Str.substr(0, Pos);
-
-    unsigned int Offset = std::stoul(Str.substr(Pos + 1, PosNext - Pos - 1));
-    unsigned int Length =
-        std::stoul(Str.substr(PosNext + 1, Str.length() - PosNext - 1));
-
-    return std::make_tuple(FilePath, Offset, Length);
-  }
-
-  /// try to merge replacemnt when meet: (modify in samefile, modify in same
-  /// place, is insert(length==0), know the insert order).
-  std::vector<ExtReplacement>
-  MergeReplacementPass(std::vector<ExtReplacement> ReplSet) {
-    std::vector<ExtReplacement> ReplSetMerged;
-
-    std::unordered_map<std::string, std::string> FileMap;
-    for (ExtReplacement &R : ReplSet) {
-      std::string Key = R.getFilePath().str() + ":" +
-                        std::to_string(R.getOffset()) + ":" +
-                        std::to_string(R.getLength());
-
-      std::unordered_map<std::string, std::string>::iterator Iter =
-          FileMap.find(Key);
-
-      if (Iter != FileMap.end()) {
-        auto Data = getPathAndRange(Iter->first);
-        std::string FilePath = std::get<0>(Data);
-        unsigned int Length = std::get<2>(Data);
-
-        std::string ReplTextR = R.getReplacementText().str();
-
-        if (R.getInsertPosition() == InsertPositionLeft) {
-          Iter->second = R.isEqualExtRepl(Length, ReplTextR)
-                             ? ReplTextR
-                             : Iter->second + ReplTextR;
-        } else {
-          Iter->second = R.isEqualExtRepl(Length, ReplTextR)
-                             ? ReplTextR
-                             : ReplTextR + Iter->second;
-        }
-      } else {
-        FileMap[Key] = R.getReplacementText().str();
-      }
-    }
-
-    for (auto const &Elem : FileMap) {
-
-      auto Data = getPathAndRange(Elem.first);
-      std::string FilePath = std::get<0>(Data);
-      unsigned int Offset = std::get<1>(Data);
-      unsigned int Length = std::get<2>(Data);
-
-      ReplSetMerged.emplace_back(FilePath, Offset, Length, Elem.second,
-                                 // TODO: class for merged transformations
-                                 nullptr);
-    }
-
-    return ReplSetMerged;
-  }
-
   /// Filter out some style comment to avoid compiler complain on nested
   /// comments. \returns string proccessed.
   std::string removeComments(const std::string &Line) {
@@ -453,63 +386,16 @@ public:
     // migration rules before applying them.
     ATM.matchAST(Context, TransformSet, SSM);
 
-    SyclctGlobalInfo::getInstance().emplaceKernelAndDeviceReplacement(
-        TransformSet);
-
-    // Sort the transformations according to the sort key of the individual
-    // transformations.  Sorted from low->high Key values
-    std::stable_sort(TransformSet.begin(), TransformSet.end(),
-                     TextModification::Compare);
-
-    std::vector<ExtReplacement> ReplSet;
+    auto &Global = SyclctGlobalInfo::getInstance();
     for (const auto &I : TransformSet) {
-      ExtReplacement R = I->getReplacement(Context);
-      // TODO: This check filters out headers, which is wrong.
-      // TODO: It'd be better not to generate replacements for system headers
-      // instead of filtering them.
-      std::string RPath = R.getFilePath();
-      if (RPath.empty()) {
-        llvm::errs() << "[NOTE] rule \"" << R.getParentTM()->getName()
-                     << "\" created null code replacement.\n";
-        continue;
-      }
+      auto Repl = I->getReplacement(Context);
+      Global.addReplacement(Repl);
 
-      makeCanonical(RPath);
-      if (isChildPath(InRoot, RPath) || isSamePath(InRoot, RPath)) {
-        // TODO: Staticstics
-        ReplSet.emplace_back(std::move(R));
-      } else {
-        // TODO: Staticstics
-      }
+      // TODO: Need to print debug info here
     }
 
-    // 1. Merge Pass
-    std::vector<ExtReplacement> ReplSetMerged = MergeReplacementPass(ReplSet);
-
-    // 2. Filter pass
-    ReplacementFilter FilteredReplacements(ReplSetMerged);
-    std::vector<ExtReplacement> ReplSetFiltered;
-    for (const ExtReplacement &R : FilteredReplacements) {
-      ReplSetFiltered.emplace_back(R);
-    }
-
-    // 3. May trigger: MergeCommmetsPass
-    if (KeepOriginalCodeFlag) { // To keep original code in comments of SYCL
-                                // files
-      std::vector<ExtReplacement> CommentsReplSet =
-          keepOriginalCode(Context.getSourceManager(), ReplSetFiltered);
-      ReplSetFiltered = MergeCommmetsPass(CommentsReplSet, ReplSetFiltered);
-    }
-
-    // Finally Replacement set
-    for (ExtReplacement &R : ReplSetFiltered) {
-      if (auto Err = Repl[R.getFilePath()].add(R)) {
-        llvm::dbgs() << Err << "\n";
-        syclct_unreachable("Adding the replacement: Error occured ");
-      }
-    }
-
-    DebugInfo::printReplacements(FilteredReplacements, Context);
+    Global.buildReplacements();
+    Global.emplaceReplacements(Repl);
   }
 
   void Initialize(ASTContext &Context) override {

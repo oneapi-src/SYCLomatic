@@ -1,6 +1,9 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck --input-file %T/kernel-call.sycl.cpp --match-full-lines %s
 
+// CHECK: void testKernel(int L, int M, int N, cl::sycl::nd_item<3> [[ITEMNAME:item_[a-f0-9]+]]);
+__global__ void testKernel(int L, int M, int N);
+
 // CHECK: void testKernelPtr(const int *L, const int *M, int N, cl::sycl::nd_item<3> [[ITEMNAME:item_[a-f0-9]+]]) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
   // CHECK: int gtid = [[ITEMNAME]].get_group(0) * [[ITEMNAME]].get_local_range().get(0) + [[ITEMNAME]].get_local_id(0);

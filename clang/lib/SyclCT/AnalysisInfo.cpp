@@ -25,18 +25,23 @@ SourceManager *SyclctGlobalInfo::SM = nullptr;
 const std::string MemVarInfo::ExternVariableName = "syclct_extern_memory";
 const std::string MemVarInfo::AccessorSuffix = "_acc";
 
-void SyclctGlobalInfo::emplaceKernelAndDeviceReplacement(TransformSetTy &TS) {
-  for (auto &Kernel : KernelMap) {
-    Kernel.second->buildInfo(TS);
-    TS.emplace_back(new ReplaceKernelCallExpr(Kernel.second));
-  }
-  for (auto &DF : FuncMap)
-    TS.emplace_back(DF.second->getTextModification());
+void SyclctFileInfo::buildReplacements() {
+  makeCanonical(FilePath);
+  if (!isChildPath(SyclctGlobalInfo::getInRoot(), FilePath))
+    return;
+  for (auto &Kernel : KernelMap)
+    Kernel.second->buildInfo();
 }
 
-void SyclctGlobalInfo::registerCudaMalloc(const CallExpr *CE) {
+void SyclctFileInfo::emplaceReplacements(tooling::Replacements &ReplSet) {
+  for (auto &D : FuncMap)
+    D.second->emplaceReplacement();
+  Repls.emplaceIntoReplSet(ReplSet);
+}
+
+void SyclctGlobalInfo::insertCudaMalloc(const CallExpr *CE) {
   if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(0)))
-    registerCudaMallocInfo(MallocVar)->setSizeExpr(CE->getArg(1));
+    insertCudaMallocInfo(MallocVar)->setSizeExpr(CE->getArg(1));
 }
 
 std::shared_ptr<CudaMallocInfo>
@@ -62,18 +67,17 @@ void KernelCallExpr::buildExecutionConfig(
 
 void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
   auto &SM = SyclctGlobalInfo::getSourceManager();
-  LocInfo.BeginLoc = KernelCall->getBeginLoc();
+  SourceLocation Begin = KernelCall->getBeginLoc();
   LocInfo.NL = getNL(KernelCall->getEndLoc(), SM);
-  LocInfo.Indent = getIndent(LocInfo.BeginLoc, SM).str();
-  LocInfo.LocHash =
-      getHashAsString(LocInfo.BeginLoc.printToString(SM)).substr(0, 6);
+  LocInfo.Indent = getIndent(Begin, SM).str();
+  LocInfo.LocHash = getHashAsString(Begin.printToString(SM)).substr(0, 6);
   buildExecutionConfig(KernelCall);
 }
 
 void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block) {
-  auto VM = getVarMap();
-  if (VM->hasExternShared()) {
-    auto ExternVariable = VM->getMap(MemVarInfo::Extern).begin()->second;
+  auto &VM = getVarMap();
+  if (VM.hasExternShared()) {
+    auto ExternVariable = VM.getMap(MemVarInfo::Extern).begin()->second;
     Block.pushStmt(
         ExternVariable->getAccessorDecl(ExecutionConfig.ExternMemSize));
   }
@@ -85,7 +89,7 @@ void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block,
                                      MemVarInfo::VarScope Scope) {
   assert(Scope != MemVarInfo::Extern);
   static const std::string NullString;
-  for (auto VI : getVarMap()->getMap(Scope)) {
+  for (auto VI : getVarMap().getMap(Scope)) {
     if (Scope == MemVarInfo::Local)
       Block.pushStmt(VI.second->getMemoryDecl());
     Block.pushStmt(VI.second->getAccessorDecl(NullString));
@@ -186,51 +190,13 @@ std::string KernelCallExpr::getReplacement() {
   return Result;
 }
 
-void CallFunctionExpr::addFunctionDecl(
-    std::shared_ptr<DeviceFunctionInfo> FuncDecl) {
-  FuncDeclMap.insert(typename GlobalMap<DeviceFunctionInfo>::value_type(
-      FuncDecl->getLoc(), FuncDecl));
-}
+void KernelCallExpr::buildInfo() {
+  CallFunctionExpr::buildInfo();
 
-void CallFunctionExpr::addFunctionDecl(const FunctionDecl *FD) {
-  if (SyclctGlobalInfo::isInRoot(FD->getBeginLoc()))
-    addFunctionDecl(
-        SyclctGlobalInfo::getInstance().registerDeviceFunctionInfo(FD));
-}
-
-void CallFunctionExpr::addNamedDecl(const NamedDecl *ND) {
-  if (auto FD = dyn_cast<FunctionDecl>(ND))
-    addFunctionDecl(FD);
-  else if (auto CD = dyn_cast<CXXRecordDecl>(ND))
-    addRecordDecl(CD);
-  else if (auto TD = dyn_cast<TemplateDecl>(ND))
-    addTemplateDecl(TD);
-}
-
-void CallFunctionExpr::addTemplateFunctionDecl(
-    const FunctionTemplateDecl *FTD) {
-  addFunctionDecl(FTD->getAsFunction());
-  for (auto FD : FTD->specializations())
-    addFunctionDecl(FD);
-}
-
-void CallFunctionExpr::addRecordDecl(const CXXRecordDecl *D) {
-  for (auto Method : D->methods())
-    if (getName(Method) == Name)
-      addFunctionDecl(Method);
-}
-
-void CallFunctionExpr::addTemplateClassDecl(const ClassTemplateDecl *CTD) {
-  addRecordDecl(CTD->getTemplatedDecl());
-  for (auto D : CTD->specializations())
-    addRecordDecl(D);
-}
-
-void CallFunctionExpr::addTemplateDecl(const TemplateDecl *TD) {
-  if (auto FTD = dyn_cast<FunctionTemplateDecl>(TD))
-    addTemplateFunctionDecl(FTD);
-  else if (auto CTD = dyn_cast<ClassTemplateDecl>(TD))
-    addTemplateClassDecl(CTD);
+  // TODO: Output debug info.
+  SyclctGlobalInfo::getInstance().addReplacement(
+      std::make_shared<ExtReplacement>(getFilePath(), getBegin(), 0,
+                                       getReplacement(), nullptr));
 }
 
 void CallFunctionExpr::addTemplateType(const TemplateArgumentLoc &TAL) {
@@ -249,21 +215,17 @@ void CallFunctionExpr::addTemplateType(const TemplateArgumentLoc &TAL) {
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   if (auto CallDecl = CE->getDirectCallee()) {
     Name = getName(CallDecl);
-    addFunctionDecl(CallDecl);
+    FuncInfo = DeviceFunctionDecl::LinkRedecls(CallDecl);
     if (auto DRE = dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImpCasts()))
       buildTemplateArguments(DRE->template_arguments());
   } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(
                  CE->getCallee()->IgnoreImpCasts())) {
     Name = Unresolved->getName().getAsString();
+    FuncInfo = DeviceFunctionDecl::LinkUnresolved(Unresolved);
     buildTemplateArguments(Unresolved->template_arguments());
-    for (auto D : Unresolved->decls())
-      addNamedDecl(D);
   } else if (auto DependentScope = dyn_cast<CXXDependentScopeMemberExpr>(
                  CE->getCallee()->IgnoreImpCasts())) {
     Name = DependentScope->getMember().getAsString();
-    if (auto TST =
-            DependentScope->getBaseType()->getAs<TemplateSpecializationType>())
-      addTemplateDecl(TST->getTemplateName().getAsTemplateDecl());
     buildTemplateArguments(DependentScope->template_arguments());
   }
 }
@@ -274,16 +236,32 @@ std::string CallFunctionExpr::getName(const NamedDecl *D) {
   return "";
 }
 
-void CallFunctionExpr::buildInfo(TransformSetTy &TS) {
-  if (FuncDeclMap.empty())
+void CallFunctionExpr::buildInfo() {
+  if (!FuncInfo)
     return;
-  for (auto &DeviceFunc : FuncDeclMap) {
-    DeviceFunc.second->buildInfo(TS);
-    VarMap->merge(DeviceFunc.second->getVarMap(), TemplateArgs);
-    DeviceFunc.second->setVarMap(VarMap);
+  FuncInfo->buildInfo();
+  VarMap.merge(FuncInfo->getVarMap(), TemplateArgs);
+}
+
+void CallFunctionExpr::emplaceReplacement() {
+  buildInfo();
+  Args.emplaceReplacements();
+  SyclctGlobalInfo::getInstance().addReplacement(
+      std::make_shared<ExtReplacement>(FilePath, RParenLoc, 0,
+                                       getExtraArguments(), nullptr));
+}
+
+std::string CallFunctionExpr::getTemplateArguments(bool WithScalarWrapped) {
+  const static std::string ScalarWrapperPrefix = "syclct_kernel_scalar<",
+                           ScalarWrapperSuffix = ">, ";
+  std::string Result;
+  for (auto &TA : TemplateArgs) {
+    if (WithScalarWrapped && !TA.isType())
+      Result += ScalarWrapperPrefix + TA.getAsString() + ScalarWrapperSuffix;
+    else
+      Result += TA.getAsString() + ", ";
   }
-  TS.emplace_back(new InsertText(RParenLoc, getExtraArguments()));
-  Args.emplaceReplacements(TS);
+  return (Result.empty()) ? Result : Result.erase(Result.size() - 2);
 }
 
 ArgumentsInfo::ArgumentsInfo(const CallExpr *C) {
@@ -301,63 +279,115 @@ ArgumentsInfo::ArgumentsInfo(const CallExpr *C) {
   }
 }
 
-void DeviceFunctionInfo::buildInfo(TransformSetTy &TS) {
-  static std::vector<TemplateArgumentInfo> NullTemplate;
-  if (hasBuilt())
+void DeviceFunctionInfo::merge(std::shared_ptr<DeviceFunctionInfo> Other) {
+  if (this == Other.get())
+    return;
+  VarMap.merge(Other->getVarMap());
+  mergeCallMap(Other->CallExprMap);
+}
+
+void DeviceFunctionInfo::mergeCallMap(
+    const GlobalMap<CallFunctionExpr> &Other) {
+  for (const auto &Call : Other)
+    CallExprMap.insert(Call);
+}
+
+void DeviceFunctionInfo::buildInfo() {
+  if (isBuilt())
     return;
   setBuilt();
   for (auto &Call : CallExprMap) {
-    Call.second->buildInfo(TS);
-    VarMap->merge(Call.second->getVarMap(), NullTemplate);
+    Call.second->emplaceReplacement();
+    VarMap.merge(Call.second->getVarMap());
   }
+  Params = VarMap.getDeclParam(hasParams());
 }
 
-void DeviceFunctionInfo::computeParenLoc() {
+inline void DeviceFunctionDecl::emplaceReplacement() {
+  // TODO: Output debug info.
+  SyclctGlobalInfo::getInstance().addReplacement(
+      std::make_shared<ExtReplacement>(FilePath, ReplaceOffset, ReplaceLength,
+                                       FuncInfo->getParameters(), nullptr));
+}
+
+void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionDecl *FD) {
   auto &SM = SyclctGlobalInfo::getSourceManager();
+  auto &LO = SyclctGlobalInfo::getContext().getLangOpts();
 
-  // Compute location of the left parenthesis
-  auto FuncNameLoc = FuncDecl->getNameInfo().getLoc();
-  LParenLoc =
-      Lexer::findNextToken(FuncNameLoc, SM, LangOptions())->getLocation();
-
-  // Compute location of the right parenthesis
-  if (!hasParams()) {
-    auto &SM = SyclctGlobalInfo::getSourceManager();
-    auto Token = Lexer::findNextToken(LParenLoc, SM, LangOptions());
-    while (Token->isNot(tok::r_paren)) {
-      Token = Lexer::findNextToken(Token->getLocation(), SM, LangOptions());
+  SourceLocation NextToken;
+  if (FD->param_empty())
+    NextToken = FD->getNameInfo().getEndLoc();
+  else {
+    auto EndParam = *(FD->param_end() - 1);
+    NextToken = EndParam->getLocation();
+  }
+  auto Tok = Lexer::findNextToken(NextToken, SM, LO);
+  while (Tok.hasValue()) {
+    static const llvm::StringRef VoidId = "void";
+    switch (Tok->getKind()) {
+    case tok::r_paren:
+      ReplaceOffset = SM.getFileOffset(Tok->getLocation());
+      return;
+    case tok::raw_identifier:
+      if (Tok->getRawIdentifier() == VoidId) {
+        ReplaceOffset = SM.getFileOffset(Tok->getLocation());
+        ReplaceLength = Tok->getLength();
+        return;
+      }
+    default:
+      Tok = Lexer::findNextToken(Tok->getLocation(), SM, LO);
     }
-    RParenLoc = Token->getLocation();
-  } else {
-    auto EndParam = *(FuncDecl->parameters().end() - 1);
-    RParenLoc =
-        EndParam->getEndLoc().getLocWithOffset(EndParam->getName().size());
   }
 }
 
-TextModification *DeviceFunctionInfo::getTextModification() {
-  if (!hasParams()) {
-    auto &SM = SyclctGlobalInfo::getSourceManager();
-    auto Token = Lexer::findNextToken(LParenLoc, SM, LangOptions());
-    // Remove the parameter "void" in the function declaration
-    if (Token->is(tok::raw_identifier) &&
-        Token->getRawIdentifier().equals("void"))
-      return new ReplaceToken(Token->getLocation(), getParameters());
-  }
+void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
+                                  std::shared_ptr<DeviceFunctionInfo> &Info) {
+  if (!SyclctGlobalInfo::isInRoot(FD->getBeginLoc()))
+    return;
+  auto D = SyclctGlobalInfo::getInstance().insertDeviceFunctionDecl(FD);
+  if (Info) {
+    if (auto FuncInfo = D->getFuncInfo())
+      Info->merge(FuncInfo);
+    D->setFuncInfo(Info);
+  } else if (auto FuncInfo = D->getFuncInfo())
+    Info = FuncInfo;
+  else
+    List.push_back(D);
+}
 
-  return new InsertText(RParenLoc, getParameters());
+void DeviceFunctionDecl::LinkRedecls(
+    const FunctionDecl *FD, DeclList &List,
+    std::shared_ptr<DeviceFunctionInfo> &Info) {
+  LinkDeclRange(FD->redecls(), List, Info);
+}
+
+void DeviceFunctionDecl::LinkDecl(const FunctionTemplateDecl *FTD,
+                                  DeclList &List,
+                                  std::shared_ptr<DeviceFunctionInfo> &Info) {
+  LinkDeclRange(FTD->specializations(), List, Info);
+}
+
+void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
+                                  std::shared_ptr<DeviceFunctionInfo> &Info) {
+  switch (ND->getKind()) {
+  case Decl::Function:
+    return LinkRedecls(static_cast<const FunctionDecl *>(ND), List, Info);
+  case Decl::FunctionTemplate:
+    return LinkDecl(static_cast<const FunctionTemplateDecl *>(ND), List, Info);
+  default:
+    syclct_unreachable("unexpected name decl type");
+  }
 }
 
 std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
   if (auto Func = Var->getParentFunctionOrMethod()) {
-    auto VI = std::make_shared<MemVarInfo>(Var);
-    SyclctGlobalInfo::getInstance()
-        .registerDeviceFunctionInfo(dyn_cast<FunctionDecl>(Func))
-        ->addVar(VI);
+    auto LocInfo = SyclctGlobalInfo::getLocInfo(Var);
+    auto VI = std::make_shared<MemVarInfo>(LocInfo.second, LocInfo.first, Var);
+    DeviceFunctionDecl::LinkRedecls(dyn_cast<FunctionDecl>(Func))->addVar(VI);
     return VI;
   }
 
-  return SyclctGlobalInfo::getInstance().registerMemVarInfo(Var);
+  return SyclctGlobalInfo::getInstance().insertMemVarInfo(Var);
 }
 
 MemVarInfo::VarAttrKind MemVarInfo::getAttr(const AttrVec &Attrs) {

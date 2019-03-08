@@ -119,7 +119,8 @@ public:
       : ID(_TMID), Key(_Key), ParentRuleID(0) {}
   virtual ~TextModification() {}
   /// Generate actual Replacement from this TextModification object.
-  virtual ExtReplacement getReplacement(const ASTContext &Context) const = 0;
+  virtual std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const = 0;
   virtual void print(llvm::raw_ostream &OS, ASTContext &Context,
                      const bool PrintDetail = true) const = 0;
   bool operator<(const TextModification &TM) const { return Key < TM.Key; }
@@ -148,7 +149,8 @@ class InsertText : public TextModification {
 public:
   InsertText(SourceLocation Loc, std::string &&S)
       : TextModification(TMID::InsertText), Begin(Loc), T(S) {}
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -166,7 +168,8 @@ public:
       : TextModification(TMID::ReplaceToken), Begin(Loc), End(Loc), T(S) {}
   ReplaceToken(SourceLocation BLoc, SourceLocation ELoc, std::string &&S)
       : TextModification(TMID::ReplaceToken), Begin(BLoc), End(ELoc), T(S) {}
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -193,7 +196,8 @@ public:
         IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI),
         OrigAPIName(OrigAPIName), ReplacementString(std::forward<Args>(S)...) {}
 
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -209,7 +213,8 @@ public:
       : TextModification(TMID::ReplaceCalleeName), C(C), ReplStr(S),
         OrigAPIName(OrigAPIName) {}
 
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 
@@ -234,7 +239,8 @@ class ReplaceCCast : public TextModification {
 public:
   ReplaceCCast(const CStyleCastExpr *Cast, std::string &&TypeName)
       : TextModification(TMID::ReplaceCCast), Cast(Cast), TypeName(TypeName) {}
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -245,7 +251,8 @@ class RemoveAttr : public TextModification {
 
 public:
   RemoveAttr(const Attr *A) : TextModification(TMID::RemoveAttr), TheAttr(A) {}
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -278,7 +285,8 @@ public:
     else
       TL = FD->getTypeSourceInfo()->getTypeLoc();
   }
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -294,7 +302,8 @@ public:
                            unsigned int InsertPosition = 0)
       : TextModification(TMID::InsertNameSpaceInVarDecl), D(D), T(T),
         InsertPosition(InsertPosition) {}
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -307,7 +316,8 @@ class InsertNameSpaceInCastExpr : public TextModification {
 public:
   InsertNameSpaceInCastExpr(const CStyleCastExpr *D, std::string &&T)
       : TextModification(TMID::InsertNameSpaceInCastExpr), D(D), T(T) {}
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -325,7 +335,8 @@ public:
                                                std::string &&Text);
 
   ReplaceVarDecl(const VarDecl *D, std::string &&T);
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 
@@ -342,7 +353,8 @@ class ReplaceReturnType : public TextModification {
 public:
   ReplaceReturnType(const FunctionDecl *FD, std::string &&T)
       : TextModification(TMID::ReplaceReturnType), FD(FD), T(T) {}
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -359,7 +371,8 @@ public:
       : TextModification(TMID::RenameFieldInMemberExpr, G1), ME(ME), T(T),
         PositionOfDot(PositionOfDot) {}
 
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -372,7 +385,8 @@ public:
   InsertAfterStmt(const Stmt *S, std::string &&T)
       : TextModification(TMID::InsertAfterStmt), S(S), T(T) {}
 
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -387,7 +401,8 @@ public:
   InsertComment(SourceLocation SL, std::string Text)
       : TextModification(TMID::InsertComment), SL(SL), Text(Text) {}
 
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -419,7 +434,8 @@ public:
       : TextModification(TMID::ReplaceCallExpr), C(Call), Name(NewName),
         Args(NewArgs), Types(NewTypes) {}
 
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -437,7 +453,8 @@ public:
       : TextModification(TMID::InsertArgument), FD(FD), ArgName(ArgName),
         Lazy(Lazy) {}
 
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -450,7 +467,8 @@ class InsertCallArgument : public TextModification {
 public:
   InsertCallArgument(const CallExpr *CE, std::string &&Arg)
       : TextModification(TMID::InsertCallArgument), CE(CE), Arg(Arg) {}
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -463,7 +481,8 @@ public:
   ReplaceInclude(CharSourceRange Range, std::string &&T)
       : TextModification(TMID::ReplaceInclude), Range(Range), T(T) {}
 
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -499,18 +518,8 @@ public:
   }
   static const CXXConstructExpr *getConstructExpr(const Expr *E);
   ReplaceInclude *getEmpty();
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
-  void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintDetail = true) const override;
-};
-
-class ReplaceKernelCallExpr : public TextModification {
-  std::shared_ptr<KernelCallExpr> Kernel;
-  StmtStringMap *SSM;
-
-public:
-  ReplaceKernelCallExpr(std::shared_ptr<KernelCallExpr> Kernel);
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -571,7 +580,8 @@ public:
   InsertBeforeStmt(const Stmt *S, std::string &&T)
       : TextModification(TMID::InsertBeforeStmt), S(S), T(T) {}
 
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -584,7 +594,8 @@ public:
   RemoveArg(const CallExpr *CE, const unsigned N)
       : TextModification(TMID::RemoveArg), CE(CE), N(N) {}
 
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -599,7 +610,8 @@ public:
   InsertBeforeCtrInitList(const CXXConstructorDecl *S, std::string &&T)
       : TextModification(TMID::InsertBeforeCtrInitList), CDecl(S), T(T) {}
 
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -612,7 +624,8 @@ public:
   InsertClassName(const CXXRecordDecl *C)
       : TextModification(TMID::InsertClassName), CD(C) {}
 
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
@@ -625,7 +638,8 @@ class ReplaceText : public TextModification {
 public:
   ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len), T(S) {}
-  ExtReplacement getReplacement(const ASTContext &Context) const override;
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };

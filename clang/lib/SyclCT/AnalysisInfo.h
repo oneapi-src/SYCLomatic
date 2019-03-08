@@ -12,14 +12,12 @@
 #ifndef SYCLCT_ANALYSIS_INFO_H
 #define SYCLCT_ANALYSIS_INFO_H
 
+#include "Debug.h"
 #include "ExprAnalysis.h"
-#include "TextModification.h"
-#include "Utility.h"
+#include "ExtReplacements.h"
+
+#include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
-#include "clang/Tooling/Core/Replacement.h"
-#include "clang/Tooling/Tooling.h"
-#include <map>
-#include <string>
 
 namespace clang {
 namespace syclct {
@@ -27,35 +25,111 @@ namespace syclct {
 class CudaMallocInfo;
 class KernelCallExpr;
 class CallFunctionExpr;
-class DeviceFunctionInfo;
+class DeviceFunctionDecl;
 class MemVarInfo;
 class VarInfo;
 
 template <class T> using GlobalMap = std::map<unsigned, std::shared_ptr<T>>;
 using MemVarInfoMap = GlobalMap<MemVarInfo>;
 
-template <class Node> inline unsigned getLocationId(const Node *N) {
-  return N->getBeginLoc().getRawEncoding();
-}
-template <> inline unsigned getLocationId<VarDecl>(const VarDecl *N) {
-  return N->getLocation().getRawEncoding();
-}
+using ReplTy = std::map<std::string, tooling::Replacements>;
 
-template <class Obj, class Node>
-std::shared_ptr<Obj> findNode(const Node *N, GlobalMap<Obj> &Map) {
-  auto Itr = Map.find(getLocationId(N));
+template <class MapType>
+inline typename MapType::mapped_type
+findObject(const MapType &Map, const typename MapType::key_type &Key) {
+  auto Itr = Map.find(Key);
   if (Itr == Map.end())
-    return std::shared_ptr<Obj>();
+    return typename MapType::mapped_type();
   return Itr->second;
 }
-template <class Obj, class Node>
-std::shared_ptr<Obj> registerNode(const Node *N, GlobalMap<Obj> &Map) {
-  if (auto Result = findNode(N, Map))
-    return Result;
-  return Map
-      .insert(typename GlobalMap<Obj>::value_type(getLocationId(N),
-                                                  std::make_shared<Obj>(N)))
-      .first->second;
+
+template <class MapType, class... Args>
+inline typename MapType::mapped_type
+insertObject(MapType &Map, const typename MapType::key_type &Key,
+             Args... InitArgs) {
+  auto &Obj = Map[Key];
+  if (!Obj)
+    Obj = std::make_shared<typename MapType::mapped_type::element_type>(
+        Key, InitArgs...);
+  return Obj;
+}
+
+//                             SyclctGlobalInfo
+//                                         |
+//              --------------------------------------
+//              |                          |                           |
+//    SyclctFileInfo       SyclctFileInfo     ...
+//              |
+//           ----------------------------------------------------------
+//           |                           |                         | |
+//  MemVarInfo  DeviceFunctionDecl  KernelCallExpr  CudaMallocInfo
+// Global Variable)                |   (inheriance from CallFunctionExpr)
+//                           DeviceFunctionInfo
+//                                          |
+//                        --------------------------
+//                        |                                     |
+//            CallFunctionExpr              MemVarInfo
+//       (Call Expr in Function)   (Defined in Function)
+//                        |
+//          DeviceFunctionInfo
+//               (Callee Info)
+
+// Store analysis info (eg. memory variable info, kernel function info,
+// replacements and so on) of each file
+class SyclctFileInfo {
+public:
+  SyclctFileInfo(const std::string &FilePathIn)
+      : Repls(FilePath), FilePath(FilePathIn) {}
+  template <class Obj> std::shared_ptr<Obj> findNode(unsigned Offset) {
+    return findObject(getMap<Obj>(), Offset);
+  }
+  template <class Obj, class Node>
+  std::shared_ptr<Obj> insertNode(unsigned Offset, const Node *N) {
+    return insertObject(getMap<Obj>(), Offset, FilePath, N);
+  }
+  inline const std::string &getFilePath() { return FilePath; }
+
+  // Build kernel and device function declaration replacements and store them.
+  void buildReplacements();
+
+  // Emplace stored replacements into replacement set.
+  void emplaceReplacements(tooling::Replacements &ReplSet /*out*/);
+
+  inline void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
+    Repls.addReplacement(Repl);
+  }
+
+private:
+  template <class Obj> GlobalMap<Obj> &getMap() {
+    syclct_unreachable("unknow map type");
+  }
+  void clear() {
+    MemVarMap.clear();
+    FuncMap.clear();
+    KernelMap.clear();
+    CudaMallocMap.clear();
+  }
+
+  GlobalMap<MemVarInfo> MemVarMap;
+  GlobalMap<DeviceFunctionDecl> FuncMap;
+  GlobalMap<KernelCallExpr> KernelMap;
+  GlobalMap<CudaMallocInfo> CudaMallocMap;
+
+  ExtReplacements Repls;
+
+  std::string FilePath;
+};
+template <> inline GlobalMap<MemVarInfo> &SyclctFileInfo::getMap() {
+  return MemVarMap;
+}
+template <> inline GlobalMap<DeviceFunctionDecl> &SyclctFileInfo::getMap() {
+  return FuncMap;
+}
+template <> inline GlobalMap<KernelCallExpr> &SyclctFileInfo::getMap() {
+  return KernelMap;
+}
+template <> inline GlobalMap<CudaMallocInfo> &SyclctFileInfo::getMap() {
+  return CudaMallocMap;
 }
 
 class SyclctGlobalInfo {
@@ -65,6 +139,14 @@ public:
     return Info;
   }
 
+  inline static bool isInRoot(SourceLocation SL) {
+    return isInRoot(
+        getSourceManager().getFilename(getSourceManager().getExpansionLoc(SL)));
+  }
+  static bool isInRoot(std::string &&FilePath) {
+    makeCanonical(FilePath);
+    return isChildPath(InRoot, FilePath);
+  }
   static void setInRoot(const std::string &InRootPath) { InRoot = InRootPath; }
   static const std::string &getInRoot() {
     assert(!InRoot.empty());
@@ -79,7 +161,6 @@ public:
     return Hash;
   }
   static void setContext(ASTContext &C) {
-    getInstance().clear();
     Context = &C;
     SM = &(Context->getSourceManager());
   }
@@ -91,80 +172,97 @@ public:
     assert(SM);
     return *SM;
   }
-  static bool isInRoot(const SourceLocation &SL) {
-    std::string FilePath =
-        getSourceManager().getFilename(getSourceManager().getExpansionLoc(SL));
-    makeCanonical(FilePath);
-    return isChildPath(InRoot, FilePath);
+
+  template <class T>
+  static inline std::pair<llvm::StringRef, unsigned> getLocInfo(const T *N) {
+    auto Loc = getLocation(N);
+    if (SM->isMacroArgExpansion(Loc))
+      return getFilePathInfo(SM->getSpellingLoc(Loc));
+    return getFilePathInfo(SM->getExpansionLoc(Loc));
   }
 
 #define GLOBAL_TYPE(TYPE, NODE_TYPE)                                           \
   std::shared_ptr<TYPE> find##TYPE(const NODE_TYPE *Node) {                    \
-    return findObject<TYPE>(Node);                                             \
+    return findNode<TYPE>(Node);                                               \
   }                                                                            \
-  std::shared_ptr<TYPE> register##TYPE(const NODE_TYPE *Node) {                \
-    return registerObject<TYPE>(Node);                                         \
+  std::shared_ptr<TYPE> insert##TYPE(const NODE_TYPE *Node) {                  \
+    return insertNode<TYPE>(Node);                                             \
   }
 
   GLOBAL_TYPE(MemVarInfo, VarDecl)
-  GLOBAL_TYPE(DeviceFunctionInfo, FunctionDecl)
+  GLOBAL_TYPE(DeviceFunctionDecl, FunctionDecl)
   GLOBAL_TYPE(KernelCallExpr, CUDAKernelCallExpr)
   GLOBAL_TYPE(CudaMallocInfo, VarDecl)
 #undef GLOBAL_TYPE
 
-  template <class T> GlobalMap<T> &getMap() {
-    llvm_unreachable("unexpected type of map");
+  // Build kernel and device function declaration replacements and store them.
+  void buildReplacements() {
+    for (auto &File : FileMap)
+      File.second->buildReplacements();
   }
 
-  void emplaceKernelAndDeviceReplacement(TransformSetTy &TS);
+  // Emplace stored replacements into replacement set.
+  void emplaceReplacements(ReplTy &ReplSets /*out*/) {
+    for (auto &File : FileMap)
+      File.second->emplaceReplacements(ReplSets[File.first]);
+  }
 
-  void registerCudaMalloc(const CallExpr *CE);
+  void insertCudaMalloc(const CallExpr *CE);
   std::shared_ptr<CudaMallocInfo> findCudaMalloc(const Expr *CE);
+  void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
+    insertFile(Repl->getFilePath())->addReplacement(Repl);
+  }
 
 private:
   SyclctGlobalInfo() = default;
 
-  SyclctGlobalInfo(const SyclctGlobalInfo &rhs) = delete;
-  SyclctGlobalInfo(SyclctGlobalInfo &&rhs) = delete;
-  SyclctGlobalInfo &operator=(const SyclctGlobalInfo &rhs) = delete;
-  SyclctGlobalInfo &operator=(SyclctGlobalInfo &&rhs) = delete;
+  SyclctGlobalInfo(const SyclctGlobalInfo &) = delete;
+  SyclctGlobalInfo(SyclctGlobalInfo &&) = delete;
+  SyclctGlobalInfo &operator=(const SyclctGlobalInfo &) = delete;
+  SyclctGlobalInfo &operator=(SyclctGlobalInfo &&) = delete;
 
-  template <class Obj, class Node>
-  std::shared_ptr<Obj> findObject(const Node *N) {
-    return findNode(N, getMap<Obj>());
+  // Find stored info by its corresponding AST node.
+  // VarDecl=>MemVarInfo
+  // FunctionDecl=>DeviceFunctionDecl
+  // CUDAKernelCallExpr=>KernelCallExpr
+  // VarDecl=>CudaMallocInfo
+  template <class Info, class Node>
+  inline std::shared_ptr<Info> findNode(const Node *N) {
+    auto LocInfo = getLocInfo(N);
+    if (isInRoot(LocInfo.first))
+      return insertFile(LocInfo.first)->findNode<Info>(LocInfo.second);
+    return false;
   }
-  template <class Obj, class Node>
-  std::shared_ptr<Obj> registerObject(const Node *N) {
-    return registerNode(N, getMap<Obj>());
+  // Insert info if it doesn't exist.
+  template <class Info, class Node>
+  inline std::shared_ptr<Info> insertNode(const Node *N) {
+    auto LocInfo = getLocInfo(N);
+    return insertFile(LocInfo.first)->insertNode<Info>(LocInfo.second, N);
   }
-  void clear() {
-    MemVarMap.clear();
-    FuncMap.clear();
-    KernelMap.clear();
-    CudaMallocMap.clear();
+
+  inline std::shared_ptr<SyclctFileInfo>
+  insertFile(const std::string &FilePath) {
+    return insertObject(FileMap, FilePath);
   }
+  static std::pair<llvm::StringRef, unsigned> inline getFilePathInfo(
+      const SourceLocation &SL) {
+    auto LocInfo = SM->getDecomposedLoc(SL);
+    return std::pair<llvm::StringRef, unsigned>(
+        SM->getFileEntryForID(LocInfo.first)->getName(), LocInfo.second);
+  }
+  template <class T> static inline SourceLocation getLocation(const T *N) {
+    return N->getBeginLoc();
+  }
+  static inline SourceLocation getLocation(const VarDecl *VD) {
+    return VD->getLocation();
+  }
+
+  std::unordered_map<std::string, std::shared_ptr<SyclctFileInfo>> FileMap;
 
   static std::string InRoot;
   static ASTContext *Context;
   static SourceManager *SM;
-
-  GlobalMap<MemVarInfo> MemVarMap;
-  GlobalMap<DeviceFunctionInfo> FuncMap;
-  GlobalMap<KernelCallExpr> KernelMap;
-  GlobalMap<CudaMallocInfo> CudaMallocMap;
 };
-template <> inline GlobalMap<MemVarInfo> &SyclctGlobalInfo::getMap() {
-  return MemVarMap;
-}
-template <> inline GlobalMap<DeviceFunctionInfo> &SyclctGlobalInfo::getMap() {
-  return FuncMap;
-}
-template <> inline GlobalMap<KernelCallExpr> &SyclctGlobalInfo::getMap() {
-  return KernelMap;
-}
-template <> inline GlobalMap<CudaMallocInfo> &SyclctGlobalInfo::getMap() {
-  return CudaMallocMap;
-}
 
 class TemplateArgumentInfo;
 
@@ -175,6 +273,7 @@ public:
   TypeInfo(QualType Type);
 
   inline const std::string &getBaseName() { return BaseName; }
+
   inline size_t getDimension() { return Range.size(); }
 
   const std::string &getTemplateSpecializationName() {
@@ -225,16 +324,18 @@ private:
 // variable info includes name, type and location.
 class VarInfo {
 public:
-  VarInfo(const VarDecl *Var)
-      : Loc(getLocationId(Var)), Name(Var->getName().str()),
+  VarInfo(unsigned Offset, const std::string &FilePathIn, const VarDecl *Var)
+      : FilePath(FilePathIn), Offset(Offset), Name(Var->getName().str()),
         Type(std::make_shared<TypeInfo>(Var->getType())) {}
 
-  inline unsigned getLoc() { return Loc; }
+  inline const std::string &getFilePath() { return FilePath; }
+  inline unsigned getOffset() { return Offset; }
   inline const std::string &getName() { return Name; }
   inline std::shared_ptr<TypeInfo> &getType() { return Type; }
 
 private:
-  unsigned Loc;
+  const std::string FilePath;
+  unsigned Offset;
   std::string Name;
   std::shared_ptr<TypeInfo> Type;
 };
@@ -251,8 +352,8 @@ public:
 
   static std::shared_ptr<MemVarInfo> buildMemVarInfo(const VarDecl *Var);
 
-  MemVarInfo(const VarDecl *Var)
-      : VarInfo(Var), Attr(getAttr(Var->getAttrs())),
+  MemVarInfo(unsigned Offset, const std::string &FilePath, const VarDecl *Var)
+      : VarInfo(Offset, FilePath, Var), Attr(getAttr(Var->getAttrs())),
         Scope((Var->isLexicallyWithinFunctionOrMethod())
                   ? (Var->isExternallyDeclarable() ? Extern : Local)
                   : Global),
@@ -397,30 +498,36 @@ class MemVarMap {
 public:
   MemVarMap() : Item(false) {}
 
-  bool hasItem() { return Item; }
-  bool hasExternShared() { return !ExternVarMap.empty(); }
+  bool hasItem() const { return Item; }
+  bool hasExternShared() const { return !ExternVarMap.empty(); }
   void setItem(bool hasItem = true) { Item = hasItem; }
   void addVar(std::shared_ptr<MemVarInfo> Var) {
     getMap(Var->getScope())
-        .insert(MemVarInfoMap::value_type(Var->getLoc(), Var));
+        .insert(MemVarInfoMap::value_type(Var->getOffset(), Var));
   }
-  void merge(std::shared_ptr<MemVarMap> VarMap,
+  inline void merge(const MemVarMap &OtherMap) {
+    static std::vector<TemplateArgumentInfo> NullTemplates;
+    return merge(OtherMap, NullTemplates);
+  }
+  void merge(const MemVarMap &VarMap,
              const std::vector<TemplateArgumentInfo> &TemplateArgs) {
-    if (VarMap) {
-      setItem(hasItem() || VarMap->hasItem());
-      merge(LocalVarMap, VarMap->LocalVarMap, TemplateArgs);
-      merge(GlobalVarMap, VarMap->GlobalVarMap, TemplateArgs);
-      merge(ExternVarMap, VarMap->ExternVarMap, TemplateArgs);
-    }
+    setItem(hasItem() || VarMap.hasItem());
+    merge(LocalVarMap, VarMap.LocalVarMap, TemplateArgs);
+    merge(GlobalVarMap, VarMap.GlobalVarMap, TemplateArgs);
+    merge(ExternVarMap, VarMap.ExternVarMap, TemplateArgs);
   }
-  std::string getCallArguments(bool HasArgs) {
+  std::string getCallArguments(bool HasArgs) const {
     return getArgumentsOrParameters<CallArgument>(HasArgs);
   }
-  std::string getDeclParam(bool HasParams) {
+  std::string getDeclParam(bool HasParams) const {
     return getArgumentsOrParameters<DeclParameter>(HasParams);
   }
-  std::string getKernelArguments(bool HasArgs) {
+  std::string getKernelArguments(bool HasArgs) const {
     return getArgumentsOrParameters<KernelArgument>(HasArgs);
+  }
+
+  const MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) const {
+    return const_cast<MemVarMap *>(this)->getMap(Scope);
   }
 
   MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) {
@@ -457,11 +564,12 @@ private:
     DeclParameter,
   };
 
-  template <CallOrDecl COD> inline const std::string &getItemName() {
+  template <CallOrDecl COD> inline const std::string &getItemName() const {
     return SyclctGlobalInfo::getItemName();
   }
 
-  template <CallOrDecl COD> std::string getArgumentsOrParameters(bool HasData) {
+  template <CallOrDecl COD>
+  std::string getArgumentsOrParameters(bool HasData) const {
     std::string Result;
     if (HasData)
       Result = ", ";
@@ -511,7 +619,8 @@ inline std::string MemVarMap::getArgumentOrParameter<MemVarMap::KernelArgument>(
 }
 
 template <>
-inline const std::string &MemVarMap::getItemName<MemVarMap::DeclParameter>() {
+inline const std::string &
+MemVarMap::getItemName<MemVarMap::DeclParameter>() const {
   static std::string ItemName =
       "cl::sycl::nd_item<3> " + SyclctGlobalInfo::getItemName();
   return ItemName;
@@ -528,70 +637,72 @@ public:
   std::string getArguments() {
     std::string Result;
     for (auto &Arg : Arguments)
-      Result += Arg.Arg + ", ";
+      Result += (Arg.getArgString() + ", ").str();
     return Result.empty() ? Result : Result.erase(Result.size() - 2, 2);
   }
-  void emplaceReplacements(TransformSetTy &TS) {
+  void emplaceReplacements() {
+    auto &Global = SyclctGlobalInfo::getInstance();
     for (auto &Arg : Arguments)
       if (Arg.Repl)
-        TS.emplace_back(Arg.Repl);
+        // TODO: Output debug info.
+        Global.addReplacement(Arg.Repl);
   }
 
 private:
   void buildArgsInfo(const CallExpr::const_arg_range &Args,
-                     ExprAnalysis &Analysis) {
+                     ArgumentAnalysis &Analysis) {
     for (auto Arg : Args) {
       Analysis.analysis(Arg);
-      auto TM = Analysis.getReplacement();
-      Arguments.emplace_back(Analysis.getReplacedString(), TM);
+      Arguments.emplace_back(Analysis);
     }
   }
 
   struct ArgInfo {
-    ArgInfo(const std::string &Arg, TextModification *TM)
-        : Arg(Arg), Repl(TM) {}
-    ArgInfo(const std::string &Arg) : ArgInfo(Arg, nullptr) {}
+    ArgInfo(ArgumentAnalysis &Analysis) {
+      auto TM = Analysis.getReplacement();
+      if (TM)
+        Repl = TM->getReplacement(SyclctGlobalInfo::getContext());
+      else
+        Arg = Analysis.getReplacedString();
+    }
+    const StringRef getArgString() {
+      if (Repl)
+        return Repl->getReplacementText();
+      return Arg;
+    }
     std::string Arg;
-    TextModification *Repl;
+    std::shared_ptr<ExtReplacement> Repl;
   };
 
   std::vector<ArgInfo> Arguments;
   std::vector<std::shared_ptr<VarInfo>> KernelArgs;
 };
 
+class DeviceFunctionInfo;
 // call function expression includes location, name, arguments num, template
 // arguments and all function decls related to this call, also merges memory
 // variable info of all related function decls.
 class CallFunctionExpr {
 public:
-  CallFunctionExpr(const CallExpr *CE)
-      : Loc(getLocationId(CE)), RParenLoc(CE->getRParenLoc()), Args(CE),
-        VarMap(std::make_shared<MemVarMap>()) {
-    buildCallExprInfo(CE);
-  }
+  CallFunctionExpr(unsigned Offset, const std::string &FilePathIn,
+                   const CallExpr *CE)
+      : FilePath(FilePathIn), BeginLoc(Offset),
+        RParenLoc(SyclctGlobalInfo::getSourceManager().getFileOffset(
+            CE->getRParenLoc())),
+        Args(CE) {}
 
-  std::shared_ptr<MemVarMap> getVarMap() { return VarMap; }
+  void buildCallExprInfo(const CallExpr *CE);
+  inline const MemVarMap &getVarMap() { return VarMap; }
 
-  void buildInfo(TransformSetTy &TS);
+  void emplaceReplacement();
   inline bool hasArgs() { return !Args.empty(); }
   inline bool hasTemplateArgs() { return !TemplateArgs.empty(); }
   inline const std::string &getName() { return Name; }
 
-  std::string getTemplateArguments(bool WithScalarWrapped = false) {
-    const static std::string ScalarWrapperPrefix = "syclct_kernel_scalar<",
-                             ScalarWrapperSuffix = ">, ";
-    std::string Result;
-    for (auto &TA : TemplateArgs) {
-      if (WithScalarWrapped && !TA.isType())
-        Result += ScalarWrapperPrefix + TA.getAsString() + ScalarWrapperSuffix;
-      else
-        Result += TA.getAsString() + ", ";
-    }
-    return (Result.empty()) ? Result : Result.erase(Result.size() - 2);
-  }
+  std::string getTemplateArguments(bool WithScalarWrapped = false);
 
-  virtual std::string getExtraArguments() {
-    return VarMap->getCallArguments(hasArgs());
+  inline virtual std::string getExtraArguments() {
+    return getVarMap().getCallArguments(hasArgs());
   }
   inline std::string getOriginArguments() { return Args.getArguments(); }
   inline std::string getArguments() {
@@ -603,78 +714,150 @@ protected:
   getKernelPointerVarList() {
     return Args.getKernelPointerArgs();
   }
+  inline unsigned getBegin() { return BeginLoc; }
+  inline const std::string &getFilePath() { return FilePath; }
+  void buildInfo();
 
 private:
   static std::string getName(const NamedDecl *D);
-  void buildCallExprInfo(const CallExpr *CE);
   void
   buildTemplateArguments(const llvm::ArrayRef<TemplateArgumentLoc> &ArgsList) {
     for (auto &Arg : ArgsList)
       addTemplateType(Arg);
   }
   void addTemplateType(const TemplateArgumentLoc &TA);
-  void addTemplateFunctionDecl(const FunctionTemplateDecl *FTD);
-  void addTemplateClassDecl(const ClassTemplateDecl *CTD);
-  void addTemplateDecl(const TemplateDecl *TD);
-  void addRecordDecl(const CXXRecordDecl *D);
-  void addNamedDecl(const NamedDecl *ND);
-  void addFunctionDecl(const FunctionDecl *FD);
-  void addFunctionDecl(std::shared_ptr<DeviceFunctionInfo> FuncDecl);
 
-  unsigned Loc;
-  SourceLocation RParenLoc;
+private:
+  const std::string FilePath;
+  unsigned BeginLoc;
+  unsigned RParenLoc;
   std::string Name;
   ArgumentsInfo Args;
   std::vector<TemplateArgumentInfo> TemplateArgs;
-  GlobalMap<DeviceFunctionInfo> FuncDeclMap;
-  std::shared_ptr<MemVarMap> VarMap;
+  std::shared_ptr<DeviceFunctionInfo> FuncInfo;
+  MemVarMap VarMap;
 };
 
-// device function info includes location,name,parameters num, memory variable
-// and call expression in the function.
-class DeviceFunctionInfo {
+// device function declaration info includes location, name, and related
+// DeviceFunctionInfo
+class DeviceFunctionDecl {
 public:
-  DeviceFunctionInfo(const FunctionDecl *Func)
-      : Built(false), FuncDecl(Func), Loc(getLocationId(Func)),
-        ParamsNum(Func->getNumParams()), VarMap(std::make_shared<MemVarMap>()) {
-    computeParenLoc();
+  DeviceFunctionDecl(unsigned Offset, const std::string &FilePathIn,
+                     const FunctionDecl *FD)
+      : Offset(Offset), FilePath(FilePathIn), ParamsNum(FD->param_size()),
+        ReplaceOffset(0), ReplaceLength(0) {
+    buildReplaceLocInfo(FD);
   }
-  unsigned getLoc() { return Loc; }
-  void addCallee(const CallExpr *CE) { registerNode(CE, CallExprMap); }
-  void addVar(std::shared_ptr<MemVarInfo> Var) {
-    return getVarMap()->addVar(Var);
+
+  inline static std::shared_ptr<DeviceFunctionInfo>
+  LinkUnresolved(const UnresolvedLookupExpr *ULE) {
+    return LinkDeclRange(ULE->decls());
   }
-  void setItem() { getVarMap()->setItem(); }
-  std::shared_ptr<MemVarMap> getVarMap() {
-    if (!VarMap)
-      VarMap = std::make_shared<MemVarMap>();
-    return VarMap;
+  inline static std::shared_ptr<DeviceFunctionInfo>
+  LinkRedecls(const FunctionDecl *FD) {
+    if (auto D = SyclctGlobalInfo::getInstance().findDeviceFunctionDecl(FD))
+      return D->getFuncInfo();
+    return LinkDeclRange(FD->redecls());
   }
-  void setVarMap(std::shared_ptr<MemVarMap> MVM) { VarMap = MVM; }
+  inline static std::shared_ptr<DeviceFunctionInfo>
+  LinkTemplateDecl(const FunctionTemplateDecl *FTD) {
+    return LinkDeclRange(FTD->specializations());
+  }
 
-  void buildInfo(TransformSetTy &TS);
-  bool hasParams() { return ParamsNum != 0; }
-
-  TextModification *getTextModification();
-
-  bool hasBuilt() { return Built; }
-  void setBuilt() { Built = true; }
+  inline std::shared_ptr<DeviceFunctionInfo> getFuncInfo() const {
+    return FuncInfo;
+  }
+  void emplaceReplacement();
 
 private:
-  void computeParenLoc();
-  std::string getParameters() { return VarMap->getDeclParam(hasParams()); }
+  using DeclList = std::vector<std::shared_ptr<DeviceFunctionDecl>>;
 
-  // make sure buildInfo(TransformSetTy &TS) only run once
-  bool Built;
+  static void LinkDecl(const FunctionDecl *FD, DeclList &List,
+                       std::shared_ptr<DeviceFunctionInfo> &Info);
+  static void LinkDecl(const NamedDecl *ND, DeclList &List,
+                       std::shared_ptr<DeviceFunctionInfo> &Info);
+  static void LinkDecl(const FunctionTemplateDecl *FTD, DeclList &List,
+                       std::shared_ptr<DeviceFunctionInfo> &Info);
+  static void LinkRedecls(const FunctionDecl *ND, DeclList &List,
+                          std::shared_ptr<DeviceFunctionInfo> &Info);
 
-  const FunctionDecl *FuncDecl;
-  unsigned Loc;
-  std::string Name;
+  template <class IteratorRange>
+  static std::shared_ptr<DeviceFunctionInfo>
+  LinkDeclRange(IteratorRange &&Range) {
+    std::shared_ptr<DeviceFunctionInfo> Info;
+    DeclList List;
+    LinkDeclRange(std::move(Range), List, Info);
+    if (List.empty())
+      return Info;
+    if (!Info)
+      Info = std::make_shared<DeviceFunctionInfo>(List[0]->ParamsNum);
+    for (auto &D : List)
+      D->setFuncInfo(Info);
+    return Info;
+  }
+
+  template <class IteratorRange>
+  static void LinkDeclRange(IteratorRange &&Range, DeclList &List,
+                            std::shared_ptr<DeviceFunctionInfo> &Info) {
+    for (auto D : Range)
+      LinkDecl(D, List, Info);
+  }
+
+  inline void setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
+    FuncInfo = Info;
+  }
+
+  void buildReplaceLocInfo(const FunctionDecl *FD);
+
+private:
+  unsigned Offset;
+  const std::string FilePath;
+  unsigned ParamsNum;
+  unsigned ReplaceOffset;
+  unsigned ReplaceLength;
+  std::shared_ptr<DeviceFunctionInfo> FuncInfo;
+};
+
+// device function info includes parameters num, memory variable and call
+// expression in the function.
+class DeviceFunctionInfo {
+public:
+  DeviceFunctionInfo(size_t ParamsNum) : IsBuilt(false), ParamsNum(ParamsNum) {}
+  DeviceFunctionInfo(const FunctionDecl *Func)
+      : DeviceFunctionInfo(Func->param_size()) {}
+
+  inline void addCallee(const CallExpr *CE) {
+    auto CallLocInfo = SyclctGlobalInfo::getLocInfo(CE);
+    insertObject(CallExprMap, CallLocInfo.second, CallLocInfo.first, CE)
+        ->buildCallExprInfo(CE);
+  }
+  inline void addVar(std::shared_ptr<MemVarInfo> Var) { VarMap.addVar(Var); }
+  inline void setItem() { VarMap.setItem(); }
+  inline const MemVarMap &getVarMap() { return VarMap; }
+
+  void buildInfo();
+  inline bool hasParams() { return ParamsNum != 0; }
+
+  inline bool isBuilt() { return IsBuilt; }
+  inline void setBuilt() { IsBuilt = true; }
+
+  inline const std::string &getParameters() {
+    if (!isBuilt())
+      buildInfo();
+    return Params;
+  }
+
+  void merge(std::shared_ptr<DeviceFunctionInfo> Other);
+
+private:
+  void mergeCallMap(const GlobalMap<CallFunctionExpr> &Other);
+
+  bool IsBuilt;
   size_t ParamsNum;
+  std::string Params;
+
   GlobalMap<CallFunctionExpr> CallExprMap;
-  std::shared_ptr<MemVarMap> VarMap;
-  SourceLocation LParenLoc;
-  SourceLocation RParenLoc;
+  MemVarMap VarMap;
 };
 
 // kernel call info is specific CallFunctionExpr, which include info of kernel
@@ -699,18 +882,20 @@ class KernelCallExpr : public CallFunctionExpr {
   };
 
 public:
-  KernelCallExpr(const CUDAKernelCallExpr *KernelCall)
-      : CallFunctionExpr((const CallExpr *)KernelCall), IsSync(false) {
+  KernelCallExpr(unsigned Offset, const std::string &FilePath,
+                 const CUDAKernelCallExpr *KernelCall)
+      : CallFunctionExpr(Offset, FilePath, KernelCall), IsSync(false) {
+    buildCallExprInfo(KernelCall);
     buildKernelInfo(KernelCall);
   }
 
   void getAccessorDecl(FormatStmtBlock &Block);
+  void buildInfo();
   inline std::string getExtraArguments() override {
-    return getVarMap()->getKernelArguments(hasArgs());
+    return getVarMap().getKernelArguments(hasArgs());
   }
 
   std::string getReplacement();
-  inline SourceLocation getBeginLoc() { return LocInfo.BeginLoc; }
 
   inline void setSync(bool Sync = true) { IsSync = Sync; }
   inline bool isSync() { return IsSync; }
@@ -734,7 +919,6 @@ private:
                                        StmtList &Redecls);
 
   struct {
-    SourceLocation BeginLoc;
     std::string LocHash;
     std::string NL;
     std::string Indent;
@@ -750,7 +934,9 @@ private:
 
 class CudaMallocInfo {
 public:
-  CudaMallocInfo(const VarDecl *VD) : Name(VD->getName().str()) {}
+  CudaMallocInfo(unsigned Offset, const std::string &FilePath,
+                 const VarDecl *VD)
+      : Name(VD->getName().str()) {}
 
   static const VarDecl *getMallocVar(const Expr *Arg) {
     if (auto UO = dyn_cast<UnaryOperator>(Arg->IgnoreImpCasts())) {

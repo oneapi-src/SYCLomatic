@@ -155,8 +155,10 @@ void KernelArgumentAnalysis::analysisExpression(const Stmt *Expression) {
 void KernelArgumentAnalysis::analysisExpr(const DeclRefExpr *DRE) {
   if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
     auto &VI = DeclMap[VD];
-    if (!VI)
-      VI = std::make_shared<VarInfo>(VD);
+    if (!VI) {
+      auto LocInfo = SyclctGlobalInfo::getLocInfo(VD);
+      VI = std::make_shared<VarInfo>(LocInfo.second, LocInfo.first, VD);
+    }
   }
 }
 } // namespace syclct

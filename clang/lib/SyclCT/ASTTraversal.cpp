@@ -405,7 +405,7 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   if (!ME)
     return;
   if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "func"))
-    SyclctGlobalInfo::getInstance().registerDeviceFunctionInfo(FD)->setItem();
+    DeviceFunctionDecl::LinkRedecls(FD)->setItem();
   const VarDecl *VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
   assert(ME && VD && "Unknown result");
 
@@ -2012,7 +2012,7 @@ void EventAPICallRule::handleTimeMeasurement(
         // Only the kernel calls between begin and end are set to be synced
         if (KCallLoc > RecordBeginLoc && KCallLoc < RecordEndLoc) {
           SyclctGlobalInfo::getInstance()
-              .registerKernelCallExpr(KCall)
+              .insertKernelCallExpr(KCall)
               ->setSync();
         }
       }
@@ -2147,7 +2147,7 @@ void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
           getAssistNodeAsType<CUDAKernelCallExpr>(Result, "kernelCall")) {
     emplaceTransformation(new ReplaceStmt(KCall, ""));
     if (!FD->isImplicitlyInstantiable())
-      SyclctGlobalInfo::getInstance().registerKernelCallExpr(KCall);
+      SyclctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
 
     removeTrailingSemicolon(KCall, Result);
   }
@@ -2182,9 +2182,7 @@ void DeviceFunctionCallRule::run(
   auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr");
   auto FD = getAssistNodeAsType<FunctionDecl>(Result, "funcDecl");
   if (CE && FD) {
-    if (!FD->isImplicitlyInstantiable())
-      SyclctGlobalInfo::getInstance().registerDeviceFunctionInfo(FD)->addCallee(
-          CE);
+    DeviceFunctionDecl::LinkRedecls(FD)->addCallee(CE);
   }
 }
 
@@ -2202,7 +2200,7 @@ void MemVarRule::registerMatcher(MatchFinder &MF) {
                                       unless(hasParent(arraySubscriptExpr())))
                                       .bind("impl")),
                         anything()),
-                  to(DeclMatcher), hasAncestor(functionDecl().bind("func")))
+                  to(DeclMatcher.bind("var")), hasAncestor(functionDecl().bind("func")))
           .bind("used"),
       this);
 }
@@ -2240,7 +2238,7 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
         (Func->hasAttr<CUDADeviceAttr>() && !Func->hasAttr<CUDAHostAttr>())) {
       auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());
       if (auto Var = Global.findMemVarInfo(VD))
-        Global.registerDeviceFunctionInfo(Func)->addVar(Var);
+        DeviceFunctionDecl::LinkRedecls(Func)->addVar(Var);
       if (auto Impl = getAssistNodeAsType<ImplicitCastExpr>(Result, "impl"))
         insertExplicitCast(Impl, VD->getType());
     }
@@ -2253,7 +2251,7 @@ void MemoryTranslationRule::MallocTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C) {
   const std::string Name =
       C->getCalleeDecl()->getAsFunction()->getNameAsString();
-  SyclctGlobalInfo::getInstance().registerCudaMalloc(C);
+  SyclctGlobalInfo::getInstance().insertCudaMalloc(C);
   emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_malloc", Name));
 }
 
@@ -2737,7 +2735,7 @@ void SyncThreadsRule::registerMatcher(MatchFinder &MF) {
 void SyncThreadsRule::run(const MatchFinder::MatchResult &Result) {
   if (auto CE = getNodeAsType<CallExpr>(Result, "syncthreads")) {
     if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "func"))
-      SyclctGlobalInfo::getInstance().registerDeviceFunctionInfo(FD)->setItem();
+      DeviceFunctionDecl::LinkRedecls(FD)->setItem();
     std::string Replacement = getItemName() + ".barrier()";
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   }
