@@ -675,6 +675,11 @@ int run(int argc, const char **argv) {
     return RunResult;
   }
 
+  if (!ReportType.empty() && !ReportFile.empty()) {
+    saveReport();
+    return MigrationSucceeded;
+  }
+
   // if run was successful
   int Status = saveNewFiles(Tool, InRoot, OutRoot);
 
@@ -686,9 +691,6 @@ int run(int argc, const char **argv) {
                         " ms\n";
   }
 
-  if (!ReportType.empty() && !ReportFile.empty()) {
-    saveReport();
-  }
   DebugInfo::ShowStatus(Status);
   return Status;
 }
