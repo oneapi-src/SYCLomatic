@@ -13,10 +13,28 @@
 #define __CLANG_SYCLCT_MATH_H__
 
 #define __SYCLCT__
-
 #ifdef __SYCLCT__
 
 float max(float a, float b);
+
+
+/// ---Fix for Window CUDA10.1--------------------------------
+#if CUDA_VERSION >= 10000 && (defined(_WIN64) || defined(_WIN32))
+extern __host__ __device__ unsigned cudaConfigureCall(dim3 gridDim, dim3 blockDim,
+  size_t sharedMem = 0, void *stream = 0);
+#endif
+
+
+/// ---Fix for Windows CUDA >=9---------------------------------
+#if (CUDA_VERSION >= 9000) && (defined(_WIN64) || defined(_WIN32))
+__device__ float roundf(float __a);
+extern __device__  int __finitel(long double) ;
+extern __device__ __device_builtin__ int  __isinfl(long double) ;
+extern __device__ __device_builtin__ int  __isnanl(long double) ;
+#endif
+
+
+
 
 #endif
 #endif

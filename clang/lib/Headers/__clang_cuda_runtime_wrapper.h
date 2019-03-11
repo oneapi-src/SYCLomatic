@@ -46,10 +46,19 @@
 // CUDA-7.x headers and are not expected to work with any other
 // version of CUDA headers.
 #include "cuda.h"
+#define INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
+#if !defined(CUDA_VERSION)
+#error "cuda.h did not define CUDA_VERSION"
+#elif CUDA_VERSION < 7000
+#error "Unsupported CUDA version!"
+#endif
+#else
 #if !defined(CUDA_VERSION)
 #error "cuda.h did not define CUDA_VERSION"
 #elif CUDA_VERSION < 7000 || CUDA_VERSION > 10010
 #error "Unsupported CUDA version!"
+#endif
 #endif
 
 #pragma push_macro("__CUDA_INCLUDE_COMPILER_INTERNAL_HEADERS__")
@@ -141,16 +150,16 @@ inline __host__ double __signbitd(double x) {
 // to provide our own.
 #include <__clang_cuda_libdevice_declares.h>
 
+#define INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
+#include "__clang_syclct_math.h"
+#endif
+
+
 // Wrappers for many device-side standard library functions became compiler
 // builtins in CUDA-9 and have been removed from the CUDA headers. Clang now
 // provides its own implementation of the wrappers.
 #if CUDA_VERSION >= 9000
-#define INTEL_CUSTOMIZATION
-#ifdef INTEL_CUSTOMIZATION
-#ifdef _WIN64 || _WIN32
-__device__ float roundf(float __a);
-#endif
-#endif
 #include <__clang_cuda_device_functions.h>
 #endif
 
@@ -316,11 +325,6 @@ static inline __device__ void __brkpt(int __c) { __brkpt(); }
 #endif
 
 #if CUDA_VERSION >= 9000
-#ifdef _WIN64 || _WIN32
-extern __device__  int __finitel(long double) __THROW;
-extern __device__ __device_builtin__ int  __isinfl(long double) __THROW;
-extern __device__ __device_builtin__ int  __isnanl(long double) __THROW;
-#endif
 #include "crt/math_functions.hpp"
 #else
 #include "math_functions.hpp"
@@ -332,10 +336,6 @@ extern __device__ __device_builtin__ int  __isnanl(long double) __THROW;
 
 #pragma pop_macro("__host__")
 
-#define INTEL_CUSTOMIZATION
-#ifdef INTEL_CUSTOMIZATION
-#include "__clang_syclct_math.h"
-#endif
 
 #include "texture_indirect_functions.h"
 
