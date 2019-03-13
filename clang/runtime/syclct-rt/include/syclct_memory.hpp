@@ -214,7 +214,8 @@ static inline void sycl_malloc(T1 **ptr, T2 size) {
 // free
 // TODO: ret values to adjust for error handling.
 static void sycl_free(void *ptr) {
-  memory_manager::get_instance().mem_free(ptr);
+  if (ptr)
+    memory_manager::get_instance().mem_free(ptr);
 }
 
 // syclct_range used to store range infomation

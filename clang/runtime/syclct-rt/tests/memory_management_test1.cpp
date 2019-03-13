@@ -93,6 +93,10 @@ void test1_1() {
   syclct::sycl_memcpy((void*) h_C, (void*) d_A, Num * sizeof(float), syclct::memcpy_direction::automatic);
   syclct::sycl_free((void*)d_A);
 
+  syclct::sycl_free(0);
+  syclct::sycl_free(NULL);
+  syclct::sycl_free(nullptr);
+
   // verify
   for(int i = 0; i < N1; i++){
       if (fabs(h_A[i] - h_C[i]) > 1e-5) {
@@ -319,8 +323,8 @@ void test4() {
 
 const unsigned int Num = 5000;
 const unsigned int N1 = 1000;
-syclct::ConstMem d_A(Num * sizeof(float));
-syclct::ConstMem d_B(Num * sizeof(float));
+syclct::constant_memory<float, 1> d_A(Num * sizeof(float));
+syclct::constant_memory<float, 1> d_B(Num * sizeof(float));
 
 void test5() {
 

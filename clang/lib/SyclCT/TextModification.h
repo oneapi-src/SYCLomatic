@@ -174,12 +174,22 @@ public:
 /// Replace a statement (w/o semicolon) with a specified string.
 class ReplaceStmt : public TextModification {
   const Stmt *TheStmt;
+  // If ReplaceStmt replaces calls to compatibility APIs
+  bool IsReplaceCompatibilityAPI;
+  std::string OrigAPIName;
   std::string ReplacementString;
 
 public:
   template <class... Args>
   ReplaceStmt(const Stmt *E, Args &&... S)
+      : TextModification(TMID::ReplaceStmt), TheStmt(E), IsReplaceCompatibilityAPI(false),
+        ReplacementString(std::forward<Args>(S)...) {}
+
+  template <class... Args>
+  ReplaceStmt(const Stmt *E, bool IsReplaceCompatibilityAPI, std::string OrigAPIName,
+              Args &&... S)
       : TextModification(TMID::ReplaceStmt), TheStmt(E),
+        IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI), OrigAPIName(OrigAPIName),
         ReplacementString(std::forward<Args>(S)...) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
@@ -633,10 +643,10 @@ class ReplaceText : public TextModification {
   SourceLocation BeginLoc;
   unsigned Len;
   StringRef T;
+
 public:
-  ReplaceText(const SourceLocation& Begin, unsigned Len, std::string &&S)
-      : TextModification(TMID::ReplaceText),
-        BeginLoc(Begin), Len(Len), T(S) {}
+  ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S)
+      : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len), T(S) {}
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;

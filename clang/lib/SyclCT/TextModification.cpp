@@ -67,7 +67,12 @@ void recordTranslationInfo(const ASTContext &Context, const SourceLocation &SL,
 }
 
 ExtReplacement ReplaceStmt::getReplacement(const ASTContext &Context) const {
-  recordTranslationInfo(Context, TheStmt->getBeginLoc());
+  // If ReplaceStmt replaces calls to compatibility APIs, record the OrigAPIName
+  if (IsReplaceCompatibilityAPI) {
+    recordTranslationInfo(Context, TheStmt->getBeginLoc(), true, OrigAPIName);
+  } else {
+    recordTranslationInfo(Context, TheStmt->getBeginLoc());
+  }
   return ExtReplacement(Context.getSourceManager(), TheStmt, ReplacementString,
                         this);
 }
@@ -287,6 +292,7 @@ getReplacementInfo(const ASTContext &Context, const CharSourceRange &Range) {
 }
 
 ExtReplacement ReplaceInclude::getReplacement(const ASTContext &Context) const {
+  recordTranslationInfo(Context, Range.getBegin());
   // Make replacements for macros happen in expansion locations, rather than
   // spelling locations
   if (Range.getBegin().isMacroID() || Range.getEnd().isMacroID()) {
@@ -296,7 +302,6 @@ ExtReplacement ReplaceInclude::getReplacement(const ASTContext &Context) const {
     return ExtReplacement(FilePath, Offset, Length, T, this);
   }
 
-  recordTranslationInfo(Context, Range.getBegin());
   return ExtReplacement(Context.getSourceManager(), Range, T, this);
 }
 
@@ -396,6 +401,7 @@ std::string ReplaceDim3Ctor::getReplaceString(const ASTContext &Context) const {
 
 ExtReplacement
 ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
+  recordTranslationInfo(Context, CSR.getBegin());
   // Make replacements for macros happen in expansion locations, rather than
   // spelling locations
   if (CSR.getBegin().isMacroID() || CSR.getEnd().isMacroID()) {
@@ -406,7 +412,6 @@ ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
                           this);
   }
 
-  recordTranslationInfo(Context, CSR.getBegin());
   ReplacementString = getReplaceString(Context);
   return ExtReplacement(Context.getSourceManager(), CSR.getBegin(), 0,
                         ReplacementString, this);
@@ -890,6 +895,7 @@ InsertClassName::getReplacement(const ASTContext &Context) const {
 
 ExtReplacement ReplaceText::getReplacement(const ASTContext &Context) const {
   auto &SM = Context.getSourceManager();
+  recordTranslationInfo(Context, BeginLoc);
   return ExtReplacement(SM, BeginLoc, Len, T, this);
 }
 
@@ -1134,7 +1140,7 @@ void InsertClassName::print(llvm::raw_ostream &OS, ASTContext &Context,
 }
 
 void ReplaceText::print(llvm::raw_ostream &OS, ASTContext &Context,
-                            const bool PrintDetail) const {
+                        const bool PrintDetail) const {
   printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
   printLocation(OS, BeginLoc, Context, PrintDetail);
   printInsertion(OS, T);

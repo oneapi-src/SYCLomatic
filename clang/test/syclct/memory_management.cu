@@ -229,7 +229,7 @@ void testCommas() {
   // CHECK-NEXT:   checkError((syclct::sycl_memcpy_from_symbol((void*)(h_A), d_B.get_ptr(), size), 0));
   checkError(cudaMemcpyFromSymbol(h_A, d_B, size));
 
-  // CHECK:  syclct::sycl_free(d_A);
+  // CHECK: syclct::sycl_free(d_A);
   cudaFree(d_A);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code

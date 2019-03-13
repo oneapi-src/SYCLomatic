@@ -1601,9 +1601,9 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
-      emplaceTransformation(new ReplaceStmt(CE, ReplStr));
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
     } else {
-      emplaceTransformation(new ReplaceStmt(CE, ReplStr));
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
       cleanCurrentLine(CE, Result);
     }
   } else if (FuncName == "cudaEventRecord") {
@@ -1617,7 +1617,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       ReplStr = "(" + ReplStr + ", 0)";
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
-    emplaceTransformation(new ReplaceStmt(CE, ReplStr));
+    emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
   } else {
     syclct_unreachable("Unknown function name");
   }
@@ -1651,7 +1651,9 @@ void FunctionCallRule::handleCudaEventRecord(
     ReplStr = "(" + ReplStr + ", 0)";
     report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
   }
-  emplaceTransformation(new ReplaceStmt(CE, ReplStr));
+  const std::string Name =
+      CE->getCalleeDecl()->getAsFunction()->getNameAsString();
+  emplaceTransformation(new ReplaceStmt(CE, true, Name, ReplStr));
 }
 
 void FunctionCallRule::handleCudaEventElapsedTime(
@@ -1675,7 +1677,9 @@ void FunctionCallRule::handleCudaEventElapsedTime(
     ReplStr = "(" + ReplStr + ", 0)";
     report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
   }
-  emplaceTransformation(new ReplaceStmt(CE, ReplStr));
+  const std::string Name =
+      CE->getCalleeDecl()->getAsFunction()->getNameAsString();
+  emplaceTransformation(new ReplaceStmt(CE, true, Name, ReplStr));
   handleTimeMeasurement(CE, Result);
 }
 
