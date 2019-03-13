@@ -79,9 +79,9 @@ public:
   /// replacement text. else return false.
   /// NOTE: length == 0  code relacement is an insert operation.
   ///       length != 0  code relacement is a real code replace operation.
-  bool isEqualExtRepl(ExtReplacement &R) const {
-    if (R.getLength() == this->getLength() && this->getLength() != 0 &&
-        R.getReplacementText().str() == this->getReplacementText().str()) {
+  bool isEqualExtRepl(unsigned int Length, std::string &ReplacementText) const {
+    if (Length == this->getLength() && this->getLength() != 0 &&
+        ReplacementText == this->getReplacementText().str()) {
       return true;
     } else {
       return false;

@@ -170,4 +170,14 @@ int main() {
   // CHECK-NEXT:  SYCLCT1007:{{[0-9]+}}: cudaThreadGetCacheConfig: not support API, need manual porting.
   // CHECK-NEXT: */
   cudaThreadGetCacheConfig(NULL);cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float));
+
+  // CHECK: /* SYCLCT_ORIG   cudaEventCreate(NULL);checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));*/
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:  */
+  cudaEventCreate(NULL);checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));
 }
+

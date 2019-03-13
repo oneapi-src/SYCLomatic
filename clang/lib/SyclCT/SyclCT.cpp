@@ -163,53 +163,69 @@ public:
     }
   }
 
+  std::tuple<std::string /*FilePath*/, unsigned int /*Offset*/,
+             unsigned int /*Length*/>
+  getPathAndRang(std::string Str) {
+
+    std::size_t Pos = Str.find(':');
+    std::string FilePath = Str.substr(0, Pos);
+    std::size_t PosNext = Str.find(':', Pos + 1);
+
+    unsigned int Offset = std::stoul(Str.substr(Pos + 1, PosNext - Pos - 1));
+    unsigned int Length =
+        std::stoul(Str.substr(PosNext + 1, Str.length() - PosNext - 1));
+
+    return std::make_tuple(FilePath, Offset, Length);
+  }
+
   /// try to merge replacemnt when meet: (modify in samefile, modify in same
   /// place, is insert(length==0), know the insert order).
   std::vector<ExtReplacement>
   MergeReplacementPass(std::vector<ExtReplacement> ReplSet) {
     std::vector<ExtReplacement> ReplSetMerged;
-    for (ExtReplacement &R1 : ReplSet) {
-      bool Merged = false;
-      if (R1.getMerged()) {
-        continue;
-      }
-      for (ExtReplacement &R2 : ReplSet) {
-        if (!R2.getMerged() && R1.getOffset() == R2.getOffset() &&
-            R1.getLength() == R2.getLength() && &R1 != &R2 &&
-            R1.getFilePath() == R2.getFilePath()) {
-          std::string ReplTextR1 = R1.getReplacementText().str();
-          std::string ReplTextR2 = R2.getReplacementText().str();
-          if (R1.getInsertPosition() == InsertPositionLeft) {
-            ExtReplacement RMerge(
-                R1.getFilePath(), R1.getOffset(), R1.getLength(),
-                StringRef(R1.isEqualExtRepl(R2) ? ReplTextR1
-                                                : ReplTextR1 + ReplTextR2),
-                // TODO: class for merged transformations
-                nullptr);
-            ReplSetMerged.emplace_back(std::move(RMerge));
-            R2.setMerged(true);
-            R1.setMerged(true);
-            Merged = true;
-            break;
-          } else {
-            ExtReplacement RMerge(
-                R1.getFilePath(), R1.getOffset(), R1.getLength(),
-                StringRef(R1.isEqualExtRepl(R2) ? ReplTextR1
-                                                : ReplTextR2 + ReplTextR1),
-                // TODO: class for merged transformations
-                nullptr);
-            ReplSetMerged.emplace_back(std::move(RMerge));
-            R2.setMerged(true);
-            R1.setMerged(true);
-            Merged = true;
-            break;
-          }
+
+    std::unordered_map<std::string, std::string> FileMap;
+    for (ExtReplacement &R : ReplSet) {
+      std::string Key = R.getFilePath().str() + ":" +
+                        std::to_string(R.getOffset()) + ":" +
+                        std::to_string(R.getLength());
+
+      std::unordered_map<std::string, std::string>::iterator Iter =
+          FileMap.find(Key);
+
+      if (Iter != FileMap.end()) {
+        auto Data = getPathAndRang(Iter->first);
+        std::string FilePath = std::get<0>(Data);
+        unsigned int Length = std::get<2>(Data);
+
+        std::string ReplTextR = R.getReplacementText().str();
+
+        if (R.getInsertPosition() == InsertPositionLeft) {
+          Iter->second = R.isEqualExtRepl(Length, ReplTextR)
+                             ? ReplTextR
+                             : Iter->second + ReplTextR;
+        } else {
+          Iter->second = R.isEqualExtRepl(Length, ReplTextR)
+                             ? ReplTextR
+                             : ReplTextR + Iter->second;
         }
-      }
-      if (!Merged) {
-        ReplSetMerged.emplace_back(std::move(R1));
+      } else {
+        FileMap[Key] = R.getReplacementText().str();
       }
     }
+
+    for (auto const &Elem : FileMap) {
+
+      auto Data = getPathAndRang(Elem.first);
+      std::string FilePath = std::get<0>(Data);
+      unsigned int Offset = std::get<1>(Data);
+      unsigned int Length = std::get<2>(Data);
+
+      ReplSetMerged.emplace_back(FilePath, Offset, Length, Elem.second,
+                                 // TODO: class for merged transformations
+                                 nullptr);
+    }
+
     return ReplSetMerged;
   }
 
