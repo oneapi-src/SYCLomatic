@@ -142,14 +142,14 @@ public:
   }
 
   // map: device pointer -> allocation(buffer, alloc_prt, size)
-  allocation translate_ptr(void *ptr) {
+  allocation translate_ptr(const void *ptr) {
     std::lock_guard<std::mutex> lock(m_mutex);
     auto it = get_map_iterator(ptr);
     return it->second;
   }
 
   // Check if the pointer represents device pointer or not.
-  bool is_device_ptr(void *ptr) const {
+  bool is_device_ptr(const void *ptr) const {
     std::lock_guard<std::mutex> lock(m_mutex);
     return (mapped_address_space <= ptr) &&
            (ptr < mapped_address_space + mapped_region_size);
@@ -175,7 +175,7 @@ private:
   // out of bound accesses.
   const size_t extra_padding = 0;
 
-  std::map<byte_t *, allocation>::iterator get_map_iterator(void *ptr) {
+  std::map<byte_t *, allocation>::iterator get_map_iterator(const void *ptr) {
     auto it = m_map.upper_bound((byte_t *)ptr);
     if (it == m_map.end()) {
       // Not a device pointer or out of bound.
@@ -696,7 +696,7 @@ static buffer_t get_buffer(void *ptr) {
 }
 */
 
-static std::pair<buffer_t, size_t> get_buffer_and_offset(void *ptr) {
+static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
   auto alloc = memory_manager::get_instance().translate_ptr(ptr);
   size_t offset = (byte_t *)ptr - alloc.alloc_ptr;
   return std::make_pair(alloc.buffer, offset);
