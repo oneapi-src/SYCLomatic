@@ -669,7 +669,7 @@ ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
     KernelClassName += ">";
   else {
     CallFunc += TemplateArgs;
-    KernelClassName += ", " + TemplateArgs.substr(1);
+    KernelClassName += ", " + Kernel->getTemplateArguments(true).substr(1);
   }
 
   const std::string &ItemName = SyclctGlobalInfo::getItemName();

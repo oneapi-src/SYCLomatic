@@ -38,8 +38,8 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *TE) {
 void ArraySizeExprAnalysis::analysisDeclRefExpr(const DeclRefExpr *DRE) {
   if (DRE)
     if (auto TemplateDecl = dyn_cast<NonTypeTemplateParmDecl>(DRE->getDecl()))
-      addReplacement(
-          DRE, (*TemplateList)[TemplateDecl->getIndex()].getAsCallArgument());
+      addReplacement(DRE,
+                     (*TemplateList)[TemplateDecl->getIndex()].getAsString());
 }
 } // namespace syclct
 } // namespace clang

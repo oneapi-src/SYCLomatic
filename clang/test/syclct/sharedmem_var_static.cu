@@ -116,7 +116,7 @@ int main(void) {
   // CHECK-NEXT:    syclct::shared_memory<int, 1> s(2*32*32);
   // CHECK-NEXT:    auto s_acc = s.get_access(cgh);
   // CHECK-NEXT:	    auto d_d_acc = d_d_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:	    cgh.parallel_for<syclct_kernel_name<class nonTypeTemplateReverse_{{[a-f0-9]+}}, 32>>(
+  // CHECK-NEXT:	    cgh.parallel_for<syclct_kernel_name<class nonTypeTemplateReverse_{{[a-f0-9]+}}, syclct_kernel_scalar<32>>>(
   // CHECK-NEXT:	      cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1)), cl::sycl::range<3>(n, 1, 1)),
   // CHECK-NEXT:	      [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK-NEXT:	        int *d_d = (int*)(&d_d_acc[0] + d_d_offset);

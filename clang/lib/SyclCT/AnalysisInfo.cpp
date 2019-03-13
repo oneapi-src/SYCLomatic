@@ -118,41 +118,29 @@ void CallFunctionExpr::addTemplateDecl(const TemplateDecl *TD) {
     addTemplateClassDecl(CTD);
 }
 
-void CallFunctionExpr::addTemplateType(const TemplateArgument &TA) {
-  switch (TA.getKind()) {
+void CallFunctionExpr::addTemplateType(const TemplateArgumentLoc &TAL) {
+  switch (TAL.getArgument().getKind()) {
   case TemplateArgument::Type:
-    return TemplateArgs.push_back(TA.getAsType());
+    return TemplateArgs.push_back(TAL.getTypeSourceInfo()->getType());
   case TemplateArgument::Expression:
-    return TemplateArgs.push_back(TA.getAsExpr());
+    return TemplateArgs.push_back(TAL.getSourceExpression());
   case TemplateArgument::Integral:
-    return TemplateArgs.push_back(TA.getAsIntegral());
+    return TemplateArgs.push_back(TAL.getSourceIntegralExpression());
   default:
     llvm_unreachable("unexpected template type");
   }
-}
-
-void CallFunctionExpr::getTemplateSpecializationInfo(const FunctionDecl *FD) {
-  if (auto Args = FD->getTemplateSpecializationArgs()) {
-    for (auto TemplateArg : Args->asArray())
-      addTemplateType(TemplateArg);
-  }
-}
-
-void CallFunctionExpr::getTemplateArguments(
-    const ArrayRef<TemplateArgumentLoc> &TemplateArray) {
-  for (auto Arg : TemplateArray)
-    addTemplateType(Arg.getArgument());
 }
 
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   if (auto CallDecl = CE->getDirectCallee()) {
     Name = getName(CallDecl);
     addFunctionDecl(CallDecl);
-    getTemplateSpecializationInfo(CallDecl);
+    if (auto DRE = dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImpCasts()))
+      buildTemplateArguments(DRE->template_arguments());
   } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(
                  CE->getCallee()->IgnoreImpCasts())) {
     Name = Unresolved->getName().getAsString();
-    getTemplateArguments(Unresolved->template_arguments());
+    buildTemplateArguments(Unresolved->template_arguments());
     for (auto D : Unresolved->decls())
       addNamedDecl(D);
   } else if (auto DependentScope = dyn_cast<CXXDependentScopeMemberExpr>(
@@ -161,7 +149,7 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
     if (auto TST =
             DependentScope->getBaseType()->getAs<TemplateSpecializationType>())
       addTemplateDecl(TST->getTemplateName().getAsTemplateDecl());
-    getTemplateArguments(DependentScope->template_arguments());
+    buildTemplateArguments(DependentScope->template_arguments());
   }
 }
 

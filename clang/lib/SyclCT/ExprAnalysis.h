@@ -66,12 +66,14 @@ public:
   }
 
 protected:
-  inline void addReplacement(const Expr *Expression, std::string &&Text) {
+  template <class... Args>
+  inline void addReplacement(const Expr *Expression, Args... Text...) {
     auto OffAndLen = getOffsetAndLength(Expression);
     // At the same offset, only one replacement exist.
     Replacements.insert(std::pair<size_t, std::shared_ptr<StringReplacement>>(
-        OffAndLen.first, std::make_shared<StringReplacement>(
-                             ExprString, OffAndLen, std::move(Text))));
+        OffAndLen.first,
+        std::make_shared<StringReplacement>(ExprString, OffAndLen,
+                                            std::forward<Args>(Text)...)));
   }
 
   virtual void analysisExpr(const Expr *Expression) {

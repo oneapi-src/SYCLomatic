@@ -39,5 +39,6 @@
 #endif
 
 template <class... Args> class syclct_kernel_name;
+template <int Arg> class syclct_kernel_scalar;
 
 #endif // SYCLCT_H

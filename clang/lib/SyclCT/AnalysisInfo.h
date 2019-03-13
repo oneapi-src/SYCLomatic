@@ -371,44 +371,31 @@ public:
     String,
   };
 
-  TemplateArgumentInfo(const QualType &T) : Kind(Type) {
-    TT.LocalDecl = !T->isElaboratedTypeSpecifier() &&
-                   T->hasUnnamedOrLocalType() &&
-                   T->getAsTagDecl()->getDeclContext()->isFunctionOrMethod();
-    TT.TI = std::make_shared<TypeInfo>(T);
+  TemplateArgumentInfo(const QualType &QT) : Kind(Type) {
+    Ty.LocalDecl = !QT->isElaboratedTypeSpecifier() &&
+                   QT->hasUnnamedOrLocalType() &&
+                   QT->getAsTagDecl()->getDeclContext()->isFunctionOrMethod();
+    Ty.T = std::make_shared<TypeInfo>(QT);
+    Str = (Ty.LocalDecl ? "class " : "") + Ty.T->getName();
   }
   TemplateArgumentInfo(const Expr *Expr)
-      : Kind(String), S(getStmtSpelling(Expr, SyclctGlobalInfo::getContext())) {
-  }
-  TemplateArgumentInfo(const llvm::APSInt &I)
-      : Kind(String), S(I.toString(10)) {}
+      : Kind(String),
+        Str(getStmtSpelling(Expr, SyclctGlobalInfo::getContext())) {}
 
+  bool isType() { return Kind == Type; }
   std::shared_ptr<TypeInfo> getAsType() const {
     assert(Kind == Type);
-    return TT.TI;
+    return Ty.T;
   }
-  const std::string &getAsExprString() const {
-    assert(Kind == String);
-    return S;
-  }
-  std::string getAsCallArgument() const {
-    switch (Kind) {
-    case clang::syclct::TemplateArgumentInfo::Type:
-      return (TT.LocalDecl ? "class " : "") + TT.TI->getName();
-    case clang::syclct::TemplateArgumentInfo::String:
-      return S;
-    default:
-      llvm_unreachable("unknow template type");
-    }
-  }
+  const std::string &getAsString() const { return Str; }
 
 private:
   TemplateKind Kind;
-  struct TemplateType {
+  struct {
     bool LocalDecl;
-    std::shared_ptr<TypeInfo> TI;
-  } TT;
-  std::string S;
+    std::shared_ptr<TypeInfo> T;
+  } Ty;
+  std::string Str;
 };
 
 // memory variable map includes memory variable used in __global__/__device__
@@ -579,10 +566,16 @@ public:
   bool hasArgs() { return !Args.empty(); }
   const std::string &getName() { return Name; }
 
-  std::string getTemplateArguments() {
+  std::string getTemplateArguments(bool WithScalarWrapped = false) {
+    const static std::string ScalarWrapperPrefix = "syclct_kernel_scalar<",
+                             ScalarWrapperSuffix = ">, ";
     std::string Result = "<";
-    for (auto &TA : TemplateArgs)
-      Result += TA.getAsCallArgument() + ", ";
+    for (auto &TA : TemplateArgs) {
+      if (WithScalarWrapped && !TA.isType())
+        Result += ScalarWrapperPrefix + TA.getAsString() + ScalarWrapperSuffix;
+      else
+        Result += TA.getAsString() + ", ";
+    }
     return (Result.size() == 1) ? ""
                                 : Result.replace(Result.size() - 2, 2, ">");
   }
@@ -607,9 +600,12 @@ private:
     for (auto Arg : CE->arguments())
       Args.emplace_back(Arg);
   }
-  void addTemplateType(const TemplateArgument &TA);
-  void getTemplateArguments(const ArrayRef<TemplateArgumentLoc> &TemplateArgs);
-  void getTemplateSpecializationInfo(const FunctionDecl *FD);
+  void
+  buildTemplateArguments(const llvm::ArrayRef<TemplateArgumentLoc> &ArgsList) {
+    for (auto &Arg : ArgsList)
+      addTemplateType(Arg);
+  }
+  void addTemplateType(const TemplateArgumentLoc &TA);
   void addTemplateFunctionDecl(const FunctionTemplateDecl *FTD);
   void addTemplateClassDecl(const ClassTemplateDecl *CTD);
   void addTemplateDecl(const TemplateDecl *TD);

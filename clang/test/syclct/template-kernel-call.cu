@@ -51,18 +51,17 @@ void runTest() {
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        auto karg1_acc = karg1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:        auto karg2_acc = karg2_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, ktarg, T>>(
+  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, syclct_kernel_scalar<ktarg>, T>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK-NEXT:            const void *karg1 = (const void*)(&karg1_acc[0] + karg1_offset);
   // CHECK-NEXT:            const T *karg2 = (const T*)(&karg2_acc[0] + karg2_offset);
-  // CHECK-NEXT:            testKernelPtr<class TestName, ktarg, T>((const T*)karg1, karg2, [[ITEM]]);
+  // CHECK-NEXT:            testKernelPtr<class TestName, ktarg, T>((const T *)karg1, karg2, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  }
-  testKernelPtr<class TestName, ktarg, T><<<griddim, threaddim>>>((const T*)karg1, karg2);
+  testKernelPtr<class TestName, ktarg, T><<<griddim, threaddim>>>((const T *)karg1, karg2);
 
-  
   // CHECK:  {
   // CHECK-NEXT:    std::pair<syclct::buffer_t, size_t> karg1_buf = syclct::get_buffer_and_offset(karg1);
   // CHECK-NEXT:    size_t karg1_offset = karg1_buf.second;
@@ -72,7 +71,7 @@ void runTest() {
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        auto karg1_acc = karg1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:        auto karg3_acc = karg3_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestTemplate<T>, ktarg, T>>(
+  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestTemplate<T>, syclct_kernel_scalar<ktarg>, T>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK-NEXT:            const void *karg1 = (const void*)(&karg1_acc[0] + karg1_offset);
@@ -83,7 +82,6 @@ void runTest() {
   // CHECK-NEXT:  }
   testKernelPtr<class TestTemplate<T>, ktarg, T><<<griddim, threaddim>>>(karg1, karg3);
 
-  
   // CHECK:  {
   // CHECK-NEXT:    std::pair<syclct::buffer_t, size_t> karg4_buf = syclct::get_buffer_and_offset(karg4);
   // CHECK-NEXT:    size_t karg4_offset = karg4_buf.second;
@@ -93,7 +91,7 @@ void runTest() {
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        auto karg4_acc = karg4_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:        auto karg5_acc = karg5_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, T, ktarg, TestTemplate<T>>>(
+  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, T, syclct_kernel_scalar<ktarg>, TestTemplate<T>>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK-NEXT:            const TestTemplate<T> *karg4 = (const TestTemplate<T>*)(&karg4_acc[0] + karg4_offset);
@@ -157,12 +155,12 @@ int main() {
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        auto karg1_acc = karg1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:        auto karg2_acc = karg2_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, 80, LA>>(
+  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, syclct_kernel_scalar<ktarg>, LA>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK-NEXT:            void *karg1 = (void*)(&karg1_acc[0] + karg1_offset);
   // CHECK-NEXT:            struct LA *karg2 = (struct LA*)(&karg2_acc[0] + karg2_offset);
-  // CHECK-NEXT:            testKernelPtr<class TestName, 80, LA>((const LA *)karg1, karg2, [[ITEM]]);
+  // CHECK-NEXT:            testKernelPtr<class TestName, ktarg, LA>((const LA *)karg1, karg2, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  }
