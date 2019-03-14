@@ -59,7 +59,7 @@ void runTest() {
   // CHECK-NEXT:            testKernelPtr<class TestName, ktarg, T>((const T*)karg1, karg2, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   testKernelPtr<class TestName, ktarg, T><<<griddim, threaddim>>>((const T*)karg1, karg2);
 
   
@@ -80,7 +80,7 @@ void runTest() {
   // CHECK-NEXT:            testKernelPtr<class TestTemplate<T>, ktarg, T>(karg1, karg3, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   testKernelPtr<class TestTemplate<T>, ktarg, T><<<griddim, threaddim>>>(karg1, karg3);
 
   
@@ -101,7 +101,7 @@ void runTest() {
   // CHECK-NEXT:            testKernelPtr<T, ktarg, TestTemplate<T>>(karg4, karg5, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   testKernelPtr<T, ktarg, TestTemplate<T> ><<<griddim, threaddim>>>(karg4, karg5);
 
   T karg1T, karg2T;
@@ -114,7 +114,7 @@ void runTest() {
   // CHECK-NEXT:            testKernel<T>(karg1T, karg2T, ktarg, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   testKernel<T><<<griddim, threaddim>>>(karg1T, karg2T, ktarg);
 
   TestTemplate<T> karg3TT;
@@ -129,7 +129,7 @@ void runTest() {
   // CHECK-NEXT:            testKernel<TestTemplate<T>>(karg3TT, karg4TT, ktarg, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   testKernel<TestTemplate<T> ><<<griddim, threaddim>>>(karg3TT, karg4TT, ktarg);
 
   // CHECK:  {
@@ -141,7 +141,7 @@ void runTest() {
   // CHECK-NEXT:            testKernel<TT>(karg3TT, karg4TT, ktarg, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   testKernel<TT><<<griddim, threaddim>>>(karg3TT, karg4TT, ktarg);
 }
 
@@ -165,7 +165,7 @@ int main() {
   // CHECK-NEXT:            testKernelPtr<class TestName, 80, LA>((const LA *)karg1, karg2, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   testKernelPtr<class TestName, ktarg, LA><<<griddim, threaddim>>>((const LA *)karg1, karg2);
 
   LA karg1LA, karg2LA;
@@ -179,6 +179,6 @@ int main() {
   // CHECK-NEXT:            testKernel<LA>(karg1LA, karg2LA, ktarg, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   testKernel<LA><<<10, intvar>>>(karg1LA, karg2LA, ktarg);
 }

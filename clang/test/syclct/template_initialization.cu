@@ -59,7 +59,7 @@ void run_test() {
   // CHECK:           kernel<T>(d_in, d_out, [[ITEM]]);
   // CHECK:         });
   // CHECK:     });
-  // CHECK: };
+  // CHECK: }
   kernel<T><<<1, num_threads>>>(d_in, d_out);
 
   cudaMemcpy(h_out, d_out, mem_size, cudaMemcpyDeviceToHost);

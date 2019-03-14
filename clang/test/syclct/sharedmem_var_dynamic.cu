@@ -51,7 +51,7 @@ void testTemplate(){
   // CHECK-NEXT:		  templateReverse<T>(d_d, n, [[ITEM]], syclct::syclct_accessor<syclct::byte_t, syclct::shared, 1>(syclct_extern_memory_acc));
   // CHECK-NEXT:		});
   // CHECK-NEXT:	});
-  // CHECK-NEXT:};
+  // CHECK-NEXT:}
   templateReverse<T><<<1, n, mem_size>>>(d_d, n);
 }
 
@@ -76,7 +76,7 @@ int main(void) {
   // CHECK-NEXT:		  staticReverse(d_d, n, [[ITEM]], syclct::syclct_accessor<syclct::byte_t, syclct::shared, 1>(syclct_extern_memory_acc));
   // CHECK-NEXT:		});
   // CHECK-NEXT:	});
-  // CHECK-NEXT:};
+  // CHECK-NEXT:}
   staticReverse<<<1, n, mem_size>>>(d_d, n);
   cudaMemcpy(d, d_d, mem_size, cudaMemcpyDeviceToHost);
 
@@ -94,7 +94,7 @@ int main(void) {
   // CHECK-NEXT:                  staticReverse(d_d, n, [[ITEM]], syclct::syclct_accessor<syclct::byte_t, syclct::shared, 1>(syclct_extern_memory_acc));
   // CHECK-NEXT:                });
   // CHECK-NEXT:        });
-  // CHECK-NEXT:};
+  // CHECK-NEXT:}
   staticReverse<<<1, n, sizeof(int)>>>(d_d, n);
 
   // CHECK: {
@@ -111,7 +111,7 @@ int main(void) {
   // CHECK-NEXT:                  templateReverse<int>(d_d, n, [[ITEM]], syclct::syclct_accessor<syclct::byte_t, syclct::shared, 1>(syclct_extern_memory_acc));
   // CHECK-NEXT:                });
   // CHECK-NEXT:        });
-  // CHECK-NEXT:};
+  // CHECK-NEXT:}
   templateReverse<int><<<1, n, 4>>>(d_d, n);
 }
 

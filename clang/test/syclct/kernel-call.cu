@@ -71,7 +71,7 @@ int main() {
   // CHECK-NEXT:            testKernelPtr((const int *)karg1, karg2, karg3, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1, karg2, karg3);
 
   // CHECK:  {
@@ -83,7 +83,7 @@ int main() {
   // CHECK-NEXT:            testKernel(karg1int, karg2int, karg3int, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   int karg1int = 1;
   int karg2int = 2;
   int karg3int = 3;
@@ -99,7 +99,7 @@ int main() {
   // CHECK-NEXT:            testKernel(karg1int, karg2int, karg3int, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int, karg2int, karg3int);
 
   // CHECK:  {
@@ -111,7 +111,7 @@ int main() {
   // CHECK-NEXT:            testKernel(karg1int, karg2int, karg3int, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int, karg2int, karg3int);
 
   // CHECK:  {
@@ -123,7 +123,7 @@ int main() {
   // CHECK-NEXT:        testKernel(karg1int, karg2int, karg3int, [[ITEM]]);
   // CHECK-NEXT:      });
   // CHECK-NEXT:    });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   testKernel <<<griddim.x, griddim.y + 2 >>>(karg1int, karg2int, karg3int);
 
   // CHECK: {
@@ -135,7 +135,7 @@ int main() {
   // CHECK-NEXT:         helloFromGPU(23, item_{{[a-f0-9]+}});
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
-  // CHECK-NEXT: };
+  // CHECK-NEXT: }
   helloFromGPU <<<2, 4>>>(23);
 
   // CHECK: {
@@ -147,7 +147,7 @@ int main() {
   // CHECK-NEXT:          helloFromGPU(item_{{[a-f0-9]+}});
   // CHECK-NEXT:        });
   // CHECK-NEXT:    });
-  // CHECK-NEXT: };
+  // CHECK-NEXT: }
   helloFromGPU <<<2, 4>>>();
 
   // CHECK: {
@@ -159,6 +159,6 @@ int main() {
   // CHECK-NEXT:          helloFromGPU2(item_{{[a-f0-9]+}});
   // CHECK-NEXT:        });
   // CHECK-NEXT:    });
-  // CHECK-NEXT: };
+  // CHECK-NEXT: }
   helloFromGPU2 <<<2, 3>>>();
 }

@@ -84,7 +84,7 @@ int main() {
   // CHECK:           kernel(data);
   // CHECK:         });
   // CHECK:     });
-  // CHECK: };
+  // CHECK: }
   double2* data;
   kernel<<<1, 1>>>(data);
 
@@ -98,6 +98,6 @@ int main() {
   // CHECK:             gpuMain(syclct::syclct_accessor<cl::sycl::double2, syclct::shared, 1>(ctemp2_acc));
   // CHECK:           });
   // CHECK:       });
-  // CHECK:   };
+  // CHECK:   }
   gpuMain<<<64, 64>>>();
 }

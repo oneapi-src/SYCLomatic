@@ -161,7 +161,7 @@ int main() {
   // CHECK:           kernel(d3_6[0]);
   // CHECK:         });
   // CHECK:     });
-  // CHECK: };
+  // CHECK: }
   kernel<<<1, 1>>>(d3_6.x);
   // CHECK: {
   // CHECK:   syclct::get_default_queue().submit(
@@ -172,6 +172,6 @@ int main() {
   // CHECK:           kernel(d3_6[0]);
   // CHECK:         });
   // CHECK:     });
-  // CHECK: };
+  // CHECK: }
   kernel<<<NUM, NUM>>>(d3_6.x);
 }

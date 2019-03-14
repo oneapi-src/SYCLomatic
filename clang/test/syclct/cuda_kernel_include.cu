@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:            simple_kernel(d_array, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   simple_kernel<<<size / 64, 64>>>(d_array);
 
   // CHECK:  syclct::sycl_memcpy((void*)(h_array), (void*)(d_array), 360 * sizeof(float), syclct::device_to_host);

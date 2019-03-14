@@ -26,7 +26,7 @@ int main() {
   // CHECK-NEXT:            testKernelPtr((const int *)karg2, karg2, karg3, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   testKernelPtr<<<griddim, threaddim>>>((const int *)karg2, karg2, karg3);
 
 }

@@ -413,6 +413,7 @@ public:
   TypeInDeclRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
 private:
   std::unordered_set<unsigned> DupFilter;
 };
@@ -576,6 +577,9 @@ public:
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void
+  removeTrailingSemicolon(const CUDAKernelCallExpr *KCall,
+                          const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class DeviceFunctionCallRule

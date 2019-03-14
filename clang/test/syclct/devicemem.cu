@@ -77,7 +77,7 @@ int main() {
   // CHECK:           kernel1(d_out, [[ITEM]], syclct::syclct_accessor<float, syclct::device, 1>(in_acc));
   // CHECK:         });
   // CHECK:     });
-  // CHECK: };
+  // CHECK: }
   kernel1<<<1, threads_per_block>>>(d_out);
 
   // CHECK: {
@@ -96,7 +96,7 @@ int main() {
   // CHECK:           kernel2(d_out, [[ITEM]], syclct::syclct_accessor<int, syclct::device, 0>(al_acc), syclct::syclct_accessor<float, syclct::device, 1>(fx_acc), syclct::syclct_accessor<float, syclct::device, 2>(fy_acc));
   // CHECK:         });
   // CHECK:     });
-  // CHECK: };
+  // CHECK: }
   kernel2<<<1, threads_per_block>>>(d_out);
 
   cudaMemcpy(h_out, d_out, array_size, cudaMemcpyDeviceToHost);

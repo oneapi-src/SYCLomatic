@@ -109,7 +109,7 @@ void InvokeKernel() {
   // CHECK:           test<T>(dev_ptr, [[ITEM]]);
   // CHECK:         });
   // CHECK:     });
-  // CHECK: };
+  // CHECK: }
   test<T><<<1, k_threads_per_block>>>(dev_ptr);
 }
 

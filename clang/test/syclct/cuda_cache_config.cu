@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:            simple_kernel(d_array);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   simple_kernel<<<size / 64, 64>>>(d_array);
 
   cudaFuncCache pCacheConfig;

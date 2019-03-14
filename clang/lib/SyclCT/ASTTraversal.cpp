@@ -702,15 +702,15 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   Replacement = Replacement.substr(Replacement.find(TypeName));
   Replacement.replace(0, TypeName.length(), Search->second);
   if (D) {
-    auto Loc = D->getTypeSourceInfo()->getTypeLoc().getBeginLoc()
-        .getRawEncoding();
+    auto Loc =
+        D->getTypeSourceInfo()->getTypeLoc().getBeginLoc().getRawEncoding();
     if (DupFilter.find(Loc) == DupFilter.end()) {
       DupFilter.insert(Loc);
       emplaceTransformation(new ReplaceTypeInDecl(D, std::move(Replacement)));
     }
   } else {
-    auto Loc = FD->getTypeSourceInfo()->getTypeLoc().getBeginLoc()
-        .getRawEncoding();
+    auto Loc =
+        FD->getTypeSourceInfo()->getTypeLoc().getBeginLoc().getRawEncoding();
     if (DupFilter.find(Loc) == DupFilter.end()) {
       DupFilter.insert(Loc);
       emplaceTransformation(new ReplaceTypeInDecl(FD, std::move(Replacement)));
@@ -1787,7 +1787,20 @@ void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceStmt(KCall, ""));
     if (!FD->isImplicitlyInstantiable())
       SyclctGlobalInfo::getInstance().registerKernelCallExpr(KCall);
+
+    removeTrailingSemicolon(KCall, Result);
   }
+}
+
+// Find and remove the semicolon after the kernel call
+void KernelCallRule::removeTrailingSemicolon(
+    const CUDAKernelCallExpr *KCall,
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  const auto &SM = (*Result.Context).getSourceManager();
+  auto KELoc = KCall->getEndLoc();
+  auto Tok = Lexer::findNextToken(KELoc, SM, LangOptions()).getValue();
+  assert(Tok.is(tok::TokenKind::semi));
+  emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
 }
 
 REGISTER_RULE(KernelCallRule)

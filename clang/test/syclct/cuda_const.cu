@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:            simple_kernel(d_array, [[ITEM]], syclct::syclct_accessor<float, syclct::constant, 1>(const_angle_acc));
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   simple_kernel<<<size / 64, 64>>>(d_array);
 
   float hangle_h[360];
@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:            simple_kernel_one(d_array, [[ITEM]], syclct::syclct_accessor<float, syclct::constant, 2>(const_float_acc), syclct::syclct_accessor<float, syclct::constant, 0>(const_one_acc));
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   simple_kernel_one<<<size / 64, 64>>>(d_array);
 
   hangle_h[360];

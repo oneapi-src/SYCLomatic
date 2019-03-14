@@ -72,7 +72,7 @@ int main() {
   // CHECK:           kernel(data);
   // CHECK:         });
   // CHECK:     });
-  // CHECK: };
+  // CHECK: }
   int2* data;
   kernel<<<1, 1>>>(data);
 }

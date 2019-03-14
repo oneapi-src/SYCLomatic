@@ -62,7 +62,7 @@ void testTemplate() {
   // CHECK-NEXT:                  templateReverse<T>(d_d, n, [[ITEM]], syclct::syclct_accessor<int, syclct::shared, 2>(s_acc));
   // CHECK-NEXT:		});
   // CHECK-NEXT:	});
-  // CHECK-NEXT:};
+  // CHECK-NEXT:}
   templateReverse<T><<<1, n>>>(d_d, n);
 }
 
@@ -87,7 +87,7 @@ int main(void) {
   // CHECK-NEXT:		  staticReverse(d_d, n, [[ITEM]], syclct::syclct_accessor<int, syclct::shared, 1>(s_acc));
   // CHECK-NEXT:		});
   // CHECK-NEXT:	});
-  // CHECK-NEXT:};
+  // CHECK-NEXT:}
   staticReverse<<<1, n>>>(d_d, n);
   cudaMemcpy(d, d_d, n * sizeof(int), cudaMemcpyDeviceToHost);
 
@@ -106,7 +106,7 @@ int main(void) {
   // CHECK-NEXT:		  templateReverse<int>(d_d, n, [[ITEM]], syclct::syclct_accessor<int, syclct::shared, 2>(s_acc));
   // CHECK-NEXT:		});
   // CHECK-NEXT:	});
-  // CHECK-NEXT:};
+  // CHECK-NEXT:}
   templateReverse<int><<<1, n>>>(d_d, n);
   // CHECK: {
   // CHECK-NEXT:  std::pair<syclct::buffer_t, size_t> d_d_buf = syclct::get_buffer_and_offset(d_d);
@@ -123,6 +123,6 @@ int main(void) {
   // CHECK-NEXT:	        nonTypeTemplateReverse<32>(d_d, n, [[ITEM]], syclct::syclct_accessor<int, syclct::shared, 1>(s_acc));
   // CHECK-NEXT:	      });
   // CHECK-NEXT:	    });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   nonTypeTemplateReverse<32><<<1, n>>>(d_d, n);
 }

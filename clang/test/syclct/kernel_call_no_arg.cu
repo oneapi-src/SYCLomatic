@@ -41,7 +41,7 @@ int main() {
   // CHECK:           kernel1([[ITEM]], syclct::syclct_accessor<float, syclct::device, 1>(out_acc));
   // CHECK:         });
   // CHECK:     });
-  // CHECK: };
+  // CHECK: }
   kernel1<<<1, threads_per_block>>>();
 
   // CHECK: {
@@ -53,7 +53,7 @@ int main() {
   // CHECK:           kernel2();
   // CHECK:         });
   // CHECK:     });
-  // CHECK: };
+  // CHECK: }
   kernel2<<<1, 1>>>();
 
   return 0;

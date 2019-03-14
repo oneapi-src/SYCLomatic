@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: };
+  // CHECK-NEXT: }
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: };
+  // CHECK-NEXT: }
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     }).wait();
-  // CHECK-NEXT: };
+  // CHECK-NEXT: }
   kernelFunc<<<blocks,threads>>>();
   // CHECK: {
   // CHECK-NEXT:   syclct::get_default_queue().submit(
@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     }).wait();
-  // CHECK-NEXT: };
+  // CHECK-NEXT: }
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     }).wait();
-  // CHECK-NEXT: };
+  // CHECK-NEXT: }
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
@@ -128,7 +128,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: };
+  // CHECK-NEXT: }
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: *(&elapsed_time) = (float)(syclct_stop_{{[a-f0-9]+}} - syclct_start_{{[a-f0-9]+}}) / CLOCKS_PER_SEC * 1000;
@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: };
+  // CHECK-NEXT: }
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: syclct::get_device_manager().current_device().queues_wait_and_throw();

@@ -167,7 +167,7 @@ int kernel_test() {
   // CHECK-NEXT:            testKernelPtr((const int *)karg1, karg2, karg3, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1, karg2, karg3);
 
   // CHECK:  {
@@ -179,7 +179,7 @@ int kernel_test() {
   // CHECK-NEXT:            testKernel(karg1int, karg2int, karg3int, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   int karg1int = 1;
   int karg2int = 2;
   int karg3int = 3;
@@ -195,7 +195,7 @@ int kernel_test() {
   // CHECK-NEXT:            testKernel(karg1int, karg2int, karg3int, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int, karg2int, karg3int);
 
   // CHECK:  {
@@ -207,6 +207,6 @@ int kernel_test() {
   // CHECK-NEXT:            testKernel(karg1int, karg2int, karg3int, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  };
+  // CHECK-NEXT:  }
   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int, karg2int, karg3int);
 }
