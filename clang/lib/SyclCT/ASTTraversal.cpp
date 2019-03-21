@@ -774,6 +774,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
     return anyOf(hasType(typedefDecl(hasName("dim3"))),
                  hasType(typedefDecl(hasName("cudaError_t"))),
                  hasType(typedefDecl(hasName("cudaEvent_t"))),
+                 hasType(typedefDecl(hasName("cudaStream_t"))),
                  hasType(enumDecl(hasName("cudaError"))),
                  hasType(cxxRecordDecl(hasName("cudaDeviceProp"))));
   };
@@ -781,6 +782,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
     return anyOf(hasType(pointsTo(typedefDecl(hasName("dim3")))),
                  hasType(pointsTo(typedefDecl(hasName("cudaError_t")))),
                  hasType(pointsTo(typedefDecl(hasName("cudaEvent_t")))),
+                 hasType(pointsTo(typedefDecl(hasName("cudaStream_t")))),
                  hasType(pointsTo(enumDecl(hasName("cudaError")))),
                  hasType(pointsTo(cxxRecordDecl(hasName("cudaDeviceProp")))));
   };
@@ -789,6 +791,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
         hasType(pointsTo(pointsTo(typedefDecl(hasName("dim3"))))),
         hasType(pointsTo(pointsTo(typedefDecl(hasName("cudaError_t"))))),
         hasType(pointsTo(pointsTo(typedefDecl(hasName("cudaEvent_t"))))),
+        hasType(pointsTo(pointsTo(typedefDecl(hasName("cudaStream_t"))))),
         hasType(pointsTo(pointsTo(enumDecl(hasName("cudaError"))))),
         hasType(pointsTo(pointsTo(cxxRecordDecl(hasName("cudaDeviceProp"))))));
   };
@@ -796,6 +799,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
     return anyOf(hasType(references(typedefDecl(hasName("dim3")))),
                  hasType(references(typedefDecl(hasName("cudaError_t")))),
                  hasType(references(typedefDecl(hasName("cudaEvent_t")))),
+                 hasType(references(typedefDecl(hasName("cudaStream_t")))),
                  hasType(references(enumDecl(hasName("cudaError")))),
                  hasType(references(cxxRecordDecl(hasName("cudaDeviceProp")))));
   };
@@ -1056,7 +1060,9 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: { return false; }
+  default: {
+    return false;
+  }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -1581,12 +1587,10 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
     return hasAnyName(
         "cudaGetDeviceCount", "cudaGetDeviceProperties", "cudaDeviceReset",
         "cudaSetDevice", "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
-        "cudaGetDevice", "cudaGetLastError", "cudaPeekAtLastError",
-        "cudaDeviceSynchronize", "cudaThreadSynchronize", "cudaGetErrorString",
-        "cudaGetErrorName", "cudaDeviceSetCacheConfig",
-        "cudaDeviceGetCacheConfig", "clock", "cudaEventCreate",
-        "cudaEventCreateWithFlags", "cudaEventDestroy", "cudaEventRecord",
-        "cudaEventElapsedTime", "cudaEventSynchronize");
+        "cudaGetDevice", "cudaDeviceSetLimit", "cudaGetLastError",
+        "cudaPeekAtLastError", "cudaDeviceSynchronize", "cudaThreadSynchronize",
+        "cudaGetErrorString", "cudaGetErrorName", "cudaDeviceSetCacheConfig",
+        "cudaDeviceGetCacheConfig", "clock", "cudaThreadSetLimit");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
@@ -1741,9 +1745,50 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           IncludeLoc,
           "\n#include <time.h> // For clock_t, clock and CLOCKS_PER_SEC\n"));
     }
-  } else if (FuncName == "cudaEventCreate" ||
-             FuncName == "cudaEventCreateWithFlags" ||
-             FuncName == "cudaEventDestroy") {
+  } else if (FuncName == "cudaDeviceSetLimit" ||
+             FuncName == "cudaThreadSetLimit") {
+    report(CE->getBeginLoc(),
+           Diagnostics::NOTSUPPORTED);
+    emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ""));
+  } else {
+    syclct_unreachable("Unknown function name");
+  }
+}
+
+REGISTER_RULE(FunctionCallRule)
+
+void EventAPICallRule::registerMatcher(MatchFinder &MF) {
+  auto eventAPIName = [&]() {
+    return hasAnyName("cudaEventCreate", "cudaEventCreateWithFlags",
+                      "cudaEventDestroy", "cudaEventRecord",
+                      "cudaEventElapsedTime", "cudaEventSynchronize");
+  };
+
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(eventAPIName())),
+                               hasParent(compoundStmt())))
+                    .bind("eventAPICall"),
+                this);
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(eventAPIName())),
+                               unless(hasParent(compoundStmt()))))
+                    .bind("eventAPICallUsed"),
+                this);
+}
+
+void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
+  bool IsAssigned = false;
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "eventAPICall");
+  if (!CE) {
+    if (!(CE = getNodeAsType<CallExpr>(Result, "eventAPICallUsed")))
+      return;
+    IsAssigned = true;
+  }
+  assert(CE && "Unknown result");
+
+  std::string FuncName =
+      CE->getDirectCallee()->getNameInfo().getName().getAsString();
+
+  if (FuncName == "cudaEventCreate" || FuncName == "cudaEventCreateWithFlags" ||
+      FuncName == "cudaEventDestroy") {
     std::string ReplStr;
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";
@@ -1754,9 +1799,9 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       cleanCurrentLine(CE, Result);
     }
   } else if (FuncName == "cudaEventRecord") {
-    handleCudaEventRecord(CE, Result, IsAssigned);
+    handleEventRecord(CE, Result, IsAssigned);
   } else if (FuncName == "cudaEventElapsedTime") {
-    handleCudaEventElapsedTime(CE, Result, IsAssigned);
+    handleEventElapsedTime(CE, Result, IsAssigned);
   } else if (FuncName == "cudaEventSynchronize") {
     std::string ReplStr{getStmtSpelling(CE->getArg(0), *Result.Context)};
     ReplStr += ".wait_and_throw()";
@@ -1770,67 +1815,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   }
 }
 
-void FunctionCallRule::handleCudaEventRecord(
-    const CallExpr *CE, const MatchFinder::MatchResult &Result,
-    bool IsAssigned) {
-  report(CE->getBeginLoc(), Diagnostics::TIME_MEASUREMENT_FOUND);
-  std::string ReplStr;
-
-  // Define the helper variable if it is used in the block for first time,
-  // otherwise, just use it.
-  static std::set<std::pair<const CompoundStmt *, const std::string>> DupFilter;
-  const auto *CS = static_cast<const CompoundStmt *>(
-      findEnclosingStmt(CE, Stmt::StmtClass::CompoundStmtClass));
-  auto StmtStr = getStmtSpelling(CE->getArg(0), *Result.Context);
-  auto Pair = std::make_pair(CS, StmtStr);
-
-  if (DupFilter.find(Pair) == DupFilter.end()) {
-    DupFilter.insert(Pair);
-    ReplStr += "auto ";
-  }
-
-  ReplStr += "syclct_";
-  ReplStr += StmtStr;
-  ReplStr += "_";
-  ReplStr += getHashAsString(StmtStr).substr(0, 6);
-  ReplStr += " = clock()";
-  if (IsAssigned) {
-    ReplStr = "(" + ReplStr + ", 0)";
-    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
-  }
-  const std::string Name =
-      CE->getCalleeDecl()->getAsFunction()->getNameAsString();
-  emplaceTransformation(new ReplaceStmt(CE, true, Name, ReplStr));
-}
-
-void FunctionCallRule::handleCudaEventElapsedTime(
-    const CallExpr *CE, const MatchFinder::MatchResult &Result,
-    bool IsAssigned) {
-  auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-  auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
-  auto StmtStrArg2 = getStmtSpelling(CE->getArg(2), *Result.Context);
-  std::string ReplStr{"*("};
-  ReplStr += StmtStrArg0;
-  ReplStr += ") = (float)(syclct_";
-  ReplStr += StmtStrArg2;
-  ReplStr += "_";
-  ReplStr += getHashAsString(StmtStrArg2).substr(0, 6);
-  ReplStr += " - syclct_";
-  ReplStr += StmtStrArg1;
-  ReplStr += "_";
-  ReplStr += getHashAsString(StmtStrArg1).substr(0, 6);
-  ReplStr += ") / CLOCKS_PER_SEC * 1000";
-  if (IsAssigned) {
-    ReplStr = "(" + ReplStr + ", 0)";
-    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
-  }
-  const std::string Name =
-      CE->getCalleeDecl()->getAsFunction()->getNameAsString();
-  emplaceTransformation(new ReplaceStmt(CE, true, Name, ReplStr));
-  handleTimeMeasurement(CE, Result);
-}
-
-void FunctionCallRule::cleanCurrentLine(
+void EventAPICallRule::cleanCurrentLine(
     const CallExpr *CE, const MatchFinder::MatchResult &Result) {
   const auto &SM = (*Result.Context).getSourceManager();
   // Remove whilespaces between previous '\n' (excluded) and CE (excluded)
@@ -1869,7 +1854,67 @@ void FunctionCallRule::cleanCurrentLine(
   }
 }
 
-void FunctionCallRule::handleTimeMeasurement(
+void EventAPICallRule::handleEventRecord(const CallExpr *CE,
+                                         const MatchFinder::MatchResult &Result,
+                                         bool IsAssigned) {
+  report(CE->getBeginLoc(), Diagnostics::TIME_MEASUREMENT_FOUND);
+  std::string ReplStr;
+
+  // Define the helper variable if it is used in the block for first time,
+  // otherwise, just use it.
+  static std::set<std::pair<const CompoundStmt *, const std::string>> DupFilter;
+  const auto *CS = static_cast<const CompoundStmt *>(
+      findEnclosingStmt(CE, Stmt::StmtClass::CompoundStmtClass));
+  auto StmtStr = getStmtSpelling(CE->getArg(0), *Result.Context);
+  auto Pair = std::make_pair(CS, StmtStr);
+
+  if (DupFilter.find(Pair) == DupFilter.end()) {
+    DupFilter.insert(Pair);
+    ReplStr += "auto ";
+  }
+
+  ReplStr += "syclct_";
+  ReplStr += StmtStr;
+  ReplStr += "_";
+  ReplStr += getHashAsString(StmtStr).substr(0, 6);
+  ReplStr += " = clock()";
+  if (IsAssigned) {
+    ReplStr = "(" + ReplStr + ", 0)";
+    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+  }
+  const std::string Name =
+      CE->getCalleeDecl()->getAsFunction()->getNameAsString();
+  emplaceTransformation(new ReplaceStmt(CE, true, Name, ReplStr));
+}
+
+void EventAPICallRule::handleEventElapsedTime(
+    const CallExpr *CE, const MatchFinder::MatchResult &Result,
+    bool IsAssigned) {
+  auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+  auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
+  auto StmtStrArg2 = getStmtSpelling(CE->getArg(2), *Result.Context);
+  std::string ReplStr{"*("};
+  ReplStr += StmtStrArg0;
+  ReplStr += ") = (float)(syclct_";
+  ReplStr += StmtStrArg2;
+  ReplStr += "_";
+  ReplStr += getHashAsString(StmtStrArg2).substr(0, 6);
+  ReplStr += " - syclct_";
+  ReplStr += StmtStrArg1;
+  ReplStr += "_";
+  ReplStr += getHashAsString(StmtStrArg1).substr(0, 6);
+  ReplStr += ") / CLOCKS_PER_SEC * 1000";
+  if (IsAssigned) {
+    ReplStr = "(" + ReplStr + ", 0)";
+    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+  }
+  const std::string Name =
+      CE->getCalleeDecl()->getAsFunction()->getNameAsString();
+  emplaceTransformation(new ReplaceStmt(CE, true, Name, ReplStr));
+  handleTimeMeasurement(CE, Result);
+}
+
+void EventAPICallRule::handleTimeMeasurement(
     const CallExpr *CE, const MatchFinder::MatchResult &Result) {
   auto CELoc = CE->getBeginLoc().getRawEncoding();
   auto Parents = Result.Context->getParents(*CE);
@@ -1917,7 +1962,119 @@ void FunctionCallRule::handleTimeMeasurement(
   }
 }
 
-REGISTER_RULE(FunctionCallRule)
+REGISTER_RULE(EventAPICallRule)
+
+void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
+  auto streamFunctionName = [&]() {
+    return hasAnyName("cudaStreamCreate", "cudaStreamCreateWithFlags",
+                      "cudaStreamCreateWithPriority", "cudaStreamDestroy",
+                      "cudaStreamSynchronize", "cudaStreamGetPriority",
+                      "cudaDeviceGetStreamPriorityRange",
+                      "cudaStreamBeginCapture", "cudaStreamEndCapture",
+                      "cudaStreamIsCapturing", "cudaStreamQuery",
+                      "cudaStreamWaitEvent");
+  };
+
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(streamFunctionName())),
+                               hasParent(compoundStmt())))
+                    .bind("streamAPICall"),
+                this);
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(streamFunctionName())),
+                               unless(hasParent(compoundStmt()))))
+                    .bind("streamAPICallUsed"),
+                this);
+}
+
+void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
+  bool IsAssigned = false;
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "streamAPICall");
+  if (!CE) {
+    if (!(CE = getNodeAsType<CallExpr>(Result, "streamAPICallUsed")))
+      return;
+    IsAssigned = true;
+  }
+  assert(CE && "Unknown result");
+
+  std::string FuncName =
+      CE->getDirectCallee()->getNameInfo().getName().getAsString();
+
+  if (FuncName == "cudaStreamCreate") {
+    auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+    std::string ReplStr{"*("};
+    ReplStr += StmtStr0;
+    ReplStr += ") = cl::sycl::queue{}";
+    if (IsAssigned) {
+      ReplStr = "(" + ReplStr + ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
+    emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+  } else if (FuncName == "cudaStreamCreateWithFlags" ||
+             FuncName == "cudaStreamCreateWithPriority") {
+    report(CE->getBeginLoc(), Diagnostics::STREAM_FLAG_PRIORITY_NOT_SUPPORTED);
+    auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+    std::string ReplStr{"*("};
+    ReplStr += StmtStr0;
+    ReplStr += ") = cl::sycl::queue{}";
+    if (IsAssigned) {
+      ReplStr = "(" + ReplStr + ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
+    emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+  } else if (FuncName == "cudaStreamDestroy") {
+    auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+    std::string ReplStr{StmtStr0};
+    ReplStr += " = cl::sycl::queue{}";
+    if (IsAssigned) {
+      ReplStr = "(" + ReplStr + ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
+    emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+  } else if (FuncName == "cudaStreamSynchronize") {
+    auto StmtStr = getStmtSpelling(CE->getArg(0), *Result.Context);
+    std::string ReplStr{StmtStr};
+    ReplStr += ".wait()";
+    const std::string Name =
+        CE->getCalleeDecl()->getAsFunction()->getNameAsString();
+    if (IsAssigned) {
+      ReplStr = "(" + ReplStr + ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
+    emplaceTransformation(new ReplaceStmt(CE, true, Name, ReplStr));
+  } else if (FuncName == "cudaStreamGetPriority") {
+    report(CE->getBeginLoc(), Diagnostics::STREAM_FLAG_PRIORITY_NOT_SUPPORTED);
+    auto StmtStr1 = getStmtSpelling(CE->getArg(1), *Result.Context);
+    std::string ReplStr{"*("};
+    ReplStr += StmtStr1;
+    ReplStr += ") = 0";
+    const std::string Name =
+        CE->getCalleeDecl()->getAsFunction()->getNameAsString();
+    emplaceTransformation(new ReplaceStmt(CE, true, Name, ReplStr));
+  } else if (FuncName == "cudaDeviceGetStreamPriorityRange") {
+    report(CE->getBeginLoc(), Diagnostics::STREAM_FLAG_PRIORITY_NOT_SUPPORTED);
+    auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+    auto StmtStr1 = getStmtSpelling(CE->getArg(1), *Result.Context);
+    std::string ReplStr{"*("};
+    ReplStr += StmtStr0;
+    ReplStr += ") = 0, *(";
+    ReplStr += StmtStr1;
+    ReplStr += ") = 0";
+    const std::string Name =
+        CE->getCalleeDecl()->getAsFunction()->getNameAsString();
+    emplaceTransformation(new ReplaceStmt(CE, true, Name, ReplStr));
+  } else if (FuncName == "cudaStreamBeginCapture" ||
+             FuncName == "cudaStreamEndCapture" ||
+             FuncName == "cudaStreamIsCapturing" ||
+             FuncName == "cudaStreamQuery" ||
+             FuncName == "cudaStreamWaitEvent") {
+    report(CE->getBeginLoc(),
+           Diagnostics::NOTSUPPORTED);
+    emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ""));
+  } else {
+    syclct_unreachable("Unknown function name");
+  }
+}
+
+REGISTER_RULE(StreamAPICallRule)
 
 // kernel call information collection
 void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {

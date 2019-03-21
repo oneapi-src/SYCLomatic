@@ -29,6 +29,7 @@ const MapNames::MapTy MapNames::TypeNamesMap{
     {"double2", "cl::sycl::double2"},
     {"struct double2", "cl::sycl::double2"},
     {"cudaEvent_t", "cl::sycl::event"},
+    {"cudaStream_t", "cl::sycl::queue"},
     // ...
 };
 

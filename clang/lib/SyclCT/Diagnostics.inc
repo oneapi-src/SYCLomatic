@@ -33,3 +33,5 @@ DEF_WARNING(TIME_MEASUREMENT_FOUND, 1012, "The tool detected kernel execution ti
 DEF_COMMENT(TIME_MEASUREMENT_FOUND, 1012, "The tool detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. Depending on your goals you may want to change the way the time is measured.")
 DEF_WARNING(ROUNDING_MODE_UNSUPPORTED, 1013, "The rounding mode of %0 is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.")
 DEF_COMMENT(ROUNDING_MODE_UNSUPPORTED, 1013, "The rounding mode of {0} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.")
+DEF_WARNING(STREAM_FLAG_PRIORITY_NOT_SUPPORTED, 1014, "Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.")
+DEF_COMMENT(STREAM_FLAG_PRIORITY_NOT_SUPPORTED, 1014, "Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.")

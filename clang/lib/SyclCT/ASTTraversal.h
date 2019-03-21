@@ -563,18 +563,34 @@ public:
   FunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-  void
-  handleCudaEventRecord(const CallExpr *CE,
-                        const ast_matchers::MatchFinder::MatchResult &Result,
-                        bool IsAssigned);
-  void handleCudaEventElapsedTime(
-      const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
-      bool IsAssigned);
+};
+
+/// Migration rule for event API calls
+class EventAPICallRule : public NamedTranslationRule<EventAPICallRule> {
+public:
+  EventAPICallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
   void cleanCurrentLine(const CallExpr *CE,
                         const ast_matchers::MatchFinder::MatchResult &Result);
+  void handleEventRecord(const CallExpr *CE,
+                         const ast_matchers::MatchFinder::MatchResult &Result,
+                         bool IsAssigned);
+  void
+  handleEventElapsedTime(const CallExpr *CE,
+                         const ast_matchers::MatchFinder::MatchResult &Result,
+                         bool IsAssigned);
   void
   handleTimeMeasurement(const CallExpr *CE,
                         const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+/// Migration rule for stream API calls
+class StreamAPICallRule : public NamedTranslationRule<StreamAPICallRule> {
+public:
+  StreamAPICallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
 class KernelCallRule : public NamedTranslationRule<KernelCallRule> {
