@@ -83,11 +83,18 @@ std::vector<CompileCommand> ArgumentsAdjustingCompilations::adjustCommands(
 llvm::Error CommonOptionsParser::init(
     int &argc, const char **argv, cl::OptionCategory &Category,
     llvm::cl::NumOccurrencesFlag OccurrencesFlag, const char *Overview) {
-
-  static cl::opt<std::string> BuildPath("p", cl::desc("Build path"),
+#if INTEL_CUSTOMIZATION
+	static cl::opt<std::string> BuildPath(
+	     "p",
+		 cl::desc(
+		      "Path where to read compilation database: compile_commands.json"),
+         cl::Optional, cl::cat(Category), cl::value_desc("path"),
+	     cl::sub(*cl::AllSubCommands));
+#else
+   static cl::opt<std::string> BuildPath("p", cl::desc("Build path"),
                                         cl::Optional, cl::cat(Category),
                                         cl::sub(*cl::AllSubCommands));
-
+#endif
   static cl::list<std::string> SourcePaths(
       cl::Positional, cl::desc("<source0> [... <sourceN>]"), OccurrencesFlag,
       cl::cat(Category), cl::sub(*cl::AllSubCommands));
