@@ -26,4 +26,7 @@ bool makeCanonicalOrSetDefaults(std::string &InRoot, std::string &OutRoot,
 // directory and have an extension.
 bool validatePaths(const std::string &InRoot,
                    const std::vector<std::string> &SourceFiles);
+bool checkReportArgs(std::string &RType, std::string &RFormat,
+        std::string &RFile, bool& ROnly, bool &GenReport, std::string &DVerbose);
+
 #endif // SYCLCT_VALIDATE_ARGUMENTS_H

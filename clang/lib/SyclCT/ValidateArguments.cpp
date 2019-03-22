@@ -10,6 +10,7 @@
 //===---------------------------------------------------------------===//
 
 #include "ValidateArguments.h"
+#include "Debug.h"
 #include "Utility.h"
 
 #include "llvm/ADT/SmallString.h"
@@ -107,4 +108,55 @@ bool validatePaths(const std::string &InRoot,
   }
 
   return Ok;
+}
+bool checkReportArgs(std::string &RType, std::string &RFormat,
+                     std::string &RFile, bool &ROnly, bool &GenReport,
+                     std::string &DVerbose) {
+  bool Success = true;
+  if (ROnly || !RType.empty() || !RFormat.empty() || !RFile.empty() ||
+      !DVerbose.empty()) {
+    GenReport = true;
+    // check user provided value and give default value if required.
+    if (RType.empty()) {
+      RType = "stats";
+    } else if (!(RType == "all" || RType == "diags" || RType == "apis" ||
+                 RType == "stats")) {
+      // further check if Rtype is commam seperated list
+      auto SubTypes = split(RType, ',');
+      for (auto const &ST : SubTypes) {
+        if (!(ST == "all" || ST == "diags" || ST == "apis" || ST == "stats")) {
+          Success = false;
+          llvm::errs() << "error value provided in option: -report-type, use "
+                          "[all|apis|stats|apis,...].\n\n";
+        }
+      }
+    }
+    // check the report format value
+    if (RFormat.empty()) {
+      RFormat = "csv";
+    } else if (!(RFormat == "csv" || RFormat == "formatted")) {
+      llvm::errs() << "error value provided in option: -report-format, use "
+                      "[csv|formatted].\n\n";
+      Success = false;
+    }
+    // check the report file value.
+    if (RFile.empty()) {
+      RFile = "stdout";
+    }
+    // check the report diags content value.
+    if (DVerbose.empty()) {
+      clang::syclct::VerboseLevel = clang::syclct::VerboseLow;
+    } else if (DVerbose == "pass") {
+      clang::syclct::VerboseLevel = clang::syclct::VerboseLow;
+    } else if (DVerbose == "transformation") {
+      clang::syclct::VerboseLevel = clang::syclct::VerboseHigh;
+    } else {
+      Success = false;
+      llvm::errs()
+          << "error value provided in option: -report-diags-content, use "
+             "[pass|transformation].\n\n";
+    }
+  }
+
+  return Success;
 }

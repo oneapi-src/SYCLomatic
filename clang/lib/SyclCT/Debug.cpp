@@ -95,9 +95,9 @@ static void ShowDebugLevels() {
   for (size_t i = 0; i < Levels.size(); ++i) {
     const std::string &Description = Levels[i].first;
     const std::unordered_set<std::string> &Set = Levels[i].second;
-    SyclctDbgs() << "Level " << i + 1 << " - " << Description << "\n";
+    SyclctDiags() << "Level " << i + 1 << " - " << Description << "\n";
     for (const std::string &Str : Set) {
-      SyclctDbgs() << Indent << Str << "\n";
+      SyclctDiags() << Indent << Str << "\n";
     }
   }
 }
@@ -106,25 +106,25 @@ static void ShowDebugLevels() {
 void DebugInfo::printTranslationRules(
     const std::vector<std::unique_ptr<ASTTraversal>> &TRs) {
   auto print = [&]() {
-    SyclctDbgs() << "Migration Rules:\n";
+    SyclctDiags() << "Migration Rules:\n";
 
     constexpr char Indent[] = "  ";
     if (TRs.empty()) {
-      SyclctDbgs() << Indent << "None\n";
+      SyclctDiags() << Indent << "None\n";
       return;
     }
 
     size_t NumRules = 0;
     for (auto &TR : TRs) {
       if (auto I = dyn_cast<TranslationRule>(&*TR)) {
-        SyclctDbgs() << Indent << I->getName() << "\n";
+        SyclctDiags() << Indent << I->getName() << "\n";
         ++NumRules;
       }
     }
-    SyclctDbgs() << "# of MigrationRules: " << NumRules << "\n";
+    SyclctDiags() << "# of MigrationRules: " << NumRules << "\n";
   };
 
-  if (VerboseLevel == VerboseHigh) {
+  if (VerboseLevel > NonVerbose) {
     print();
   }
 
@@ -151,7 +151,7 @@ static void printMatchedRulesDebugImpl(
     if (auto TR = dyn_cast<TranslationRule>(&*MR)) {
 #define RULE(TYPE)                                                             \
   if (TR->getName() == #TYPE) {                                                \
-    DEBUG_WITH_TYPE(#TYPE, TR->print(SyclctDbgs()));                           \
+    DEBUG_WITH_TYPE(#TYPE, TR->print(SyclctDiags()));                          \
     continue;                                                                  \
   }
 #include "TranslationRules.inc"
@@ -163,7 +163,7 @@ static void printMatchedRulesDebugImpl(
     if (auto TR = dyn_cast<TranslationRule>(&*MR)) {
 #define RULE(TYPE)                                                             \
   if (TR->getName() == #TYPE) {                                                \
-    DEBUG_WITH_TYPE(#TYPE, TR->printStatistics(SyclctDbgs()));                 \
+    DEBUG_WITH_TYPE(#TYPE, TR->printStatistics(SyclctDiags()));                \
     continue;                                                                  \
   }
 #include "TranslationRules.inc"
@@ -192,7 +192,7 @@ static void printReplacementsDebugImpl(ReplacementFilter &ReplFilter,
 #define TRANSFORMATION(TYPE)                                                   \
   TM = Repl.getParentTM();                                                     \
   if (TM && TMID::TYPE == TM->getID()) {                                       \
-    DEBUG_WITH_TYPE(#TYPE, TM->print(SyclctDbgs(), Context));                  \
+    DEBUG_WITH_TYPE(#TYPE, TM->print(SyclctDiags(), Context));                 \
     continue;                                                                  \
   }
 #include "Transformations.inc"
@@ -233,9 +233,10 @@ static void printReplacementsDebugImpl(ReplacementFilter &ReplFilter,
     const size_t &Numbers = Pair.second;
 #define TRANSFORMATION(TYPE)                                                   \
   if (Name == #TYPE) {                                                         \
-    DEBUG_WITH_TYPE(#TYPE, SyclctDbgs() << "# of replacement <" << #TYPE       \
-                                        << ">: " << Numbers << " (" << Numbers \
-                                        << "/" << NumRepls << ")\n");          \
+    DEBUG_WITH_TYPE(#TYPE, SyclctDiags() << "# of replacement <" << #TYPE      \
+                                         << ">: " << Numbers << " ("           \
+                                         << Numbers << "/" << NumRepls         \
+                                         << ")\n");                            \
     continue;                                                                  \
   }
 #include "Transformations.inc"
@@ -254,13 +255,13 @@ static void printMatchedRulesReleaseImpl(
 
   for (auto &MR : MatchedRules) {
     if (auto TR = dyn_cast<TranslationRule>(&*MR)) {
-      TR->print(SyclctDbgs());
+      TR->print(SyclctDiags());
     }
   }
 
   for (auto &MR : MatchedRules) {
     if (auto TR = dyn_cast<TranslationRule>(&*MR)) {
-      TR->printStatistics(SyclctDbgs());
+      TR->printStatistics(SyclctDiags());
     }
   }
 }
@@ -300,8 +301,8 @@ static void printReplacementsReleaseImpl(ReplacementFilter &ReplFilter,
   for (const auto &Pair : NameCountMap) {
     const std::string &Name = Pair.first;
     const size_t &Numbers = Pair.second;
-    SyclctDbgs() << "# of replacement <" << Name << ">: " << Numbers << " ("
-                 << Numbers << "/" << NumRepls << ")\n";
+    SyclctDiags() << "# of replacement <" << Name << ">: " << Numbers << " ("
+                  << Numbers << "/" << NumRepls << ")\n";
   }
 }
 // End of release Build
@@ -329,8 +330,18 @@ void DebugInfo::printReplacements(ReplacementFilter &ReplFilter,
 // allocation is handled by SmallVector internally.
 static llvm::SmallVector<char, /* default buffer size */ 4096> SyclctLogBuffer;
 static llvm::raw_svector_ostream SyclctLogStream(SyclctLogBuffer);
+static llvm::SmallVector<char, /* default buffer size */ 4096>
+    SyclctStatsBuffer;
+static llvm::raw_svector_ostream SyclctStatsStream(SyclctStatsBuffer);
+static llvm::SmallVector<char, /* default buffer size */ 4096>
+    SyclctDiagsBuffer;
+static llvm::raw_svector_ostream SyclctDiagsStream(SyclctDiagsBuffer);
 
-llvm::raw_ostream &SyclctDbgs() { return SyclctLogStream; }
+llvm::raw_ostream &SyclctLog() { return SyclctLogStream; }
+llvm::raw_ostream &SyclctStats() { return SyclctStatsStream; }
+llvm::raw_ostream &SyclctDiags() { return SyclctDiagsStream; }
+std::string getSyclctStatsStr() { return SyclctStatsStream.str(); }
+std::string getSyclctDiagsStr() { return SyclctDiagsStream.str(); }
 
 void DebugInfo::ShowStatus(int Status) {
 #ifdef SYCLCT_DEBUG_BUILD // Debug build
@@ -358,8 +369,8 @@ void DebugInfo::ShowStatus(int Status) {
   }
 
   if (Status != 0) {
-    SyclctDbgs() << "Syclct exited with code: " << Status << " ("
-                 << StatusString << ")\n";
+    SyclctLog() << "Syclct exited with code: " << Status << " (" << StatusString
+                << ")\n";
   }
 
   llvm::dbgs() << SyclctLogStream.str() << "\n";

@@ -74,7 +74,13 @@ public:
                                 clang::ASTContext &Context);
 };
 
-llvm::raw_ostream &SyclctDbgs();
+llvm::raw_ostream &SyclctLog();
+llvm::raw_ostream &SyclctStats();
+llvm::raw_ostream &SyclctDiags();
+std::string getSyclctStatsStr();
+std::string getSyclctDiagsStr();
+
+
 extern int VerboseLevel;
 
 extern std::map<std::string, std::array<unsigned int, 3>> LOCStaticsMap;

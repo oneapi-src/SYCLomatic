@@ -21,6 +21,7 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
+#include "Config.h"
 #include "Debug.h"
 #include "SaveNewFiles.h"
 #include "Utility.h"
@@ -38,6 +39,7 @@
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/SourceManager.h"
+#include "clang/Basic/Version.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 using namespace clang;
@@ -48,52 +50,94 @@ using namespace clang::tooling;
 using ReplTy = std::map<std::string, Replacements>;
 using namespace llvm::cl;
 
+const char *const CtHelpMessage =
+    "\n"
+    "<source0> ... specify the paths of source files. These paths are\n"
+    "\tlooked up in the compile command database. If the path of a file is\n"
+    "\tabsolute, it needs to point into CMake's source tree. If the path is\n"
+    "\trelative, the current working directory needs to be in the CMake\n"
+    "\tsource tree and the file must be in a subdirectory of the current\n"
+    "\tworking directory. \"./\" prefixes in the relative files will be\n"
+    "\tautomatically removed, but the rest of a relative path must be a\n"
+    "\tsuffix of a path in the compile command database.\n"
+    "\n";
+
 static OptionCategory SyclCTCat("SYCL Compatibility Tool");
-static extrahelp CommonHelp(clang::tooling::CommonOptionsParser::HelpMessage);
-static opt<std::string> Passes("passes",
-                               desc("Comma separated list of migration passes"),
-                               value_desc("\"FunctionAttrsRule,...\""),
-                               cat(SyclCTCat));
+static extrahelp CommonHelp(CtHelpMessage);
 static opt<std::string>
-    InRoot("in-root",
-           desc("Path to root of project to be migrated"
-                " (header files not under this root will not be migrated)"),
-           value_desc("/path/to/input/root/"), cat(SyclCTCat),
-           llvm::cl::Optional);
-static opt<std::string>
-    OutRoot("out-root",
-            desc("Path directory where generated files will be placed"
-                 " (directory will be created if it does not exist)"),
-            value_desc("/path/to/output/root/"), cat(SyclCTCat),
-            llvm::cl::Optional);
+    Passes("passes", desc("Comma separated list of migration passes that "
+                          "customed to migrate the input file, only specified "
+                          "mirgration pass will be applied during migration."),
+           value_desc("FunctionAttrsRule,..."), cat(SyclCTCat));
+static opt<std::string> InRoot(
+    "in-root", desc("Path to root of project to be migrated"
+                    " (header files not under this root will not be migrated)"),
+    value_desc("/path/to/input/root/"), cat(SyclCTCat), llvm::cl::Optional);
+static opt<std::string> OutRoot(
+    "out-root", desc("Path directory where generated files will be placed"
+                     " (directory will be created if it does not exist)"),
+    value_desc("/path/to/output/root/"), cat(SyclCTCat), llvm::cl::Optional);
 
-static opt<std::string> ReportType("report-type", desc("Report Type: [apis]"),
-                                   value_desc("apis"), cat(SyclCTCat),
-                                   llvm::cl::Optional);
+static opt<std::string> ReportType(
+    "report-type",
+    desc("Specifies migration report type. You can specify one or more reports "
+         "to be generated: \"apis\" migration report provides information "
+         "about API names which were or were not migrated and how many times. "
+         "Migration report file will have \"apis\" suffix added, if "
+         "report-file-prefix option is passed. "
+         "\"stats\" provides high level migration statistics: how much Lines "
+         "Of Code (LOC) migrated to DPC++, LOC migrated to Compatibility API, "
+         "LOC not needed to migrate, LOC the tool was not able to migrate. "
+         "Migration report file will have \"stats\" suffix added, if "
+         "report-file-prefix option is passed. "
+         "\"all\" generates all types of report, each type will go to a "
+         "separate file with corresponding suffix added, if report-file-prefix "
+         "option is passed. "
+         "Default is \"stats\"."),
+    value_desc("[all|apis|stats|apis,stats,...]"), cat(SyclCTCat),
+    llvm::cl::Optional);
 
-static opt<std::string> ReportFile("report-file",
-                                   desc("log file to store migration info"),
-                                   value_desc("log file name [with path]"),
-                                   cat(SyclCTCat), llvm::cl::Optional);
+static opt<std::string> ReportFormat(
+    "report-format",
+    desc("Specifies CSV or human-readable format of the report. If "
+         "report-file-prefix option is passed: for CSV format \"csv\" "
+         "extension will be used in file name, for \"formatted\" report "
+         "\"log\" extension will be used. Default is CSV. "),
+    value_desc("[csv|formatted]"), cat(SyclCTCat), llvm::cl::Optional);
+
+static opt<std::string> ReportFilePrefix(
+    "report-file-prefix",
+    desc("Specifies the prefix for the file name, where the migration report "
+         "will be written.  If this option is not passed, the report will go "
+         "to stdout. Depending on the report type and format, additional file "
+         "extensions will be added, like: prefix.apis.<log|csv>, "
+         "prefix.stats.<log|csv>. The report file will be created in the "
+         "folder, specified by -out-root. Default is stdout."),
+    value_desc("prefix"), cat(SyclCTCat), llvm::cl::Optional);
+bool ReportOnlyFlag = false;
+static opt<bool, true>
+    ReportOnly("report-only",
+               llvm::cl::desc("Instructs the tool to produce only report and "
+                              "not produce the DPC++ code. By default both the "
+                              "DPC++ code and the report will be generated."),
+               cat(SyclCTCat), llvm::cl::location(ReportOnlyFlag));
 
 bool KeepOriginalCodeFlag = false;
 
-static opt<bool, true>
-    ShowOrigCode("keep-original-code",
-                 llvm::cl::desc("Keep original code in comments of SYCL file"),
-                 cat(SyclCTCat), llvm::cl::location(KeepOriginalCodeFlag));
+static opt<bool, true> ShowOrigCode(
+    "keep-original-code",
+    llvm::cl::desc("Keep original code in comments of SYCL file, default: off"),
+    cat(SyclCTCat), llvm::cl::location(KeepOriginalCodeFlag));
 
-static opt<int, true, llvm::cl::parser<int>>
-    Verbose("v",
-            desc("Specify migration report verbosity level:\n"
-                 "v=1 CSV format: file name, Lines Of Code (LOC) migrated to "
-                 "SYCL,\nLOC migrated to Compatibility API, LOC not needed to "
-                 "migrate, LOC not able to migrate.\n"
-                 "v=2 Detailed information of all replacements.\n"),
-            cat(SyclCTCat), location(VerboseLevel));
+static opt<std::string> DiagsContent(
+    "report-diags-content",
+    desc("Specify diags report verbose level: simple migration pass level info "
+         "or detail transformation info happen in migration pass."),
+    value_desc("[pass|transformation]"), cat(SyclCTCat), llvm::cl::Optional,
+    llvm::cl::Hidden);
 
 static std::string WarningDesc("Comma separated list of warnings to be"
-                               "suppressed, valid warning ids range from " +
+                               " suppressed, valid warning ids range from " +
                                std::to_string((size_t)Warnings::BEGIN) +
                                " to " +
                                std::to_string((size_t)Warnings::END - 1));
@@ -624,36 +668,111 @@ static void printMetrics(
     unsigned NotTrans = TotalLines - TransToSYCL - TransToAPI;
     unsigned NotSupport = Elem.second[2];
 
-    SyclctDbgs() << "\n";
-    SyclctDbgs()
+    SyclctStats() << "\n";
+    SyclctStats()
         << "File name, LOC migrated to SYCL, LOC migrated to Compatibility "
            "API, LOC not needed to migrate, LOC not able to migrate";
-    SyclctDbgs() << "\n";
-    SyclctDbgs() << Elem.first + ", " + std::to_string(TransToSYCL) + ", " +
-                        std::to_string(TransToAPI) + ", " +
-                        std::to_string(NotTrans) + ", " +
-                        std::to_string(NotSupport);
-    SyclctDbgs() << "\n";
+    SyclctStats() << "\n";
+    SyclctStats() << Elem.first + ", " + std::to_string(TransToSYCL) + ", " +
+                         std::to_string(TransToAPI) + ", " +
+                         std::to_string(NotTrans) + ", " +
+                         std::to_string(NotSupport);
+    SyclctStats() << "\n";
   }
 }
 
-static void saveReport(void) {
+static void saveApisReport(void) {
 
-  ReportFile = ReportFile + ".csv";
-  llvm::sys::fs::create_directories(llvm::sys::path::parent_path(ReportFile));
-  std::ofstream File(ReportFile);
+  if (ReportFilePrefix == "stdout") {
+    llvm::outs() << "----------APIS report----------------\n";
+    llvm::outs() << "API name, Migrated, Frequency";
+    llvm::outs() << "\n";
+    for (const auto &Elem : APIStaticsMap) {
+      std::string Key = Elem.first;
+      unsigned int Count = Elem.second;
+      llvm::outs() << Key << "," << std::to_string(Count) << "\n";
+    }
+    llvm::outs() << "-------------------------------------\n";
+  } else {
+    std::string RFile = OutRoot + "/" + ReportFilePrefix +
+                        (ReportFormat == "csv" ? ".apis.csv" : ".apis.log");
+    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
+    std::ofstream File(RFile);
 
-  File << "API name, Migrated, Frequency" << std::endl;
-  for (const auto &Elem : APIStaticsMap) {
-    std::string Key = Elem.first;
-    unsigned int Count = Elem.second;
-    File << Key << "," << std::to_string(Count) << std::endl;
+    File << "API name, Migrated, Frequency" << std::endl;
+    for (const auto &Elem : APIStaticsMap) {
+      std::string Key = Elem.first;
+      unsigned int Count = Elem.second;
+      File << Key << "," << std::to_string(Count) << std::endl;
+    }
   }
+}
+static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
+                            double Duration) {
+
+  printMetrics(Tool, LOCStaticsMap);
+  SyclctStats() << "\nTotal migration time: " + std::to_string(Duration) +
+                       " ms\n";
+  if (ReportFilePrefix == "stdout") {
+
+    llvm::outs() << "----------Stats report---------------\n";
+    llvm::outs() << getSyclctStatsStr() << "\n";
+    llvm::outs() << "-------------------------------------\n";
+  } else {
+    std::string RFile = OutRoot + "/" + ReportFilePrefix +
+                        (ReportFormat == "csv" ? ".stats.csv" : ".stats.log");
+    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
+    std::ofstream File(RFile);
+    File << getSyclctStatsStr() << "\n";
+  }
+}
+
+static void saveDiagsReport() {
+
+  // SyclctDiags() << "\n";
+  if (ReportFilePrefix == "stdout") {
+    llvm::outs() << "--------Diags message----------------\n";
+    llvm::outs() << getSyclctDiagsStr() << "\n";
+    llvm::outs() << "-------------------------------------\n";
+  } else {
+    std::string RFile = OutRoot + "/" + ReportFilePrefix + ".diags.log";
+    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
+    std::ofstream File(RFile);
+    File << getSyclctDiagsStr() << "\n";
+  }
+}
+
+std::string printCTVersion() {
+
+  std::string buf;
+  llvm::raw_string_ostream OS(buf);
+
+  OS << "\nCompatibility Tool Version: " << SYCLCT_VERSION_MAJOR << "."
+     << SYCLCT_VERSION_MINOR << "." << SYCLCT_VERSION_PATCH << " codebase:";
+
+  std::string Path = getClangRepositoryPath();
+  std::string Revision = getClangRevision();
+  if (!Path.empty() || !Revision.empty()) {
+    OS << '(';
+    if (!Path.empty())
+      OS << Path;
+    if (!Revision.empty()) {
+      if (!Path.empty())
+        OS << ' ';
+      OS << Revision;
+    }
+    OS << ')';
+  }
+
+  OS << "\n";
+  return OS.str();
 }
 
 int run(int argc, const char **argv) {
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;
+  llvm::cl::SetVersionPrinter(
+      [](llvm::raw_ostream &OS) { OS << printCTVersion() << "\n"; });
   CommonOptionsParser OptParser(argc, argv, SyclCTCat);
   clock_t StartTime = clock();
   if (!makeCanonicalOrSetDefaults(InRoot, OutRoot,
@@ -663,9 +782,20 @@ int run(int argc, const char **argv) {
   if (!validatePaths(InRoot, OptParser.getSourcePathList()))
     exit(-1);
 
+  bool GenReport = false;
+  if (checkReportArgs(ReportType, ReportFormat, ReportFilePrefix,
+                      ReportOnlyFlag, GenReport, DiagsContent) == false)
+    exit(-1);
+
+  if (GenReport)
+    llvm::outs() << "Generate report: "
+                 << "report-type:" << ReportType
+                 << ", report-format:" << ReportFormat
+                 << ", report-file-prefix:" << ReportFilePrefix << "\n";
+
   CudaPath = getCudaInstallPath(OriginalArgc, argv);
   SYCLCT_DEBUG_WITH_TYPE(
-      "CudaPath", SyclctDbgs() << "Cuda Path found: " << CudaPath << "\n");
+      "CudaPath", SyclctLog() << "Cuda Path found: " << CudaPath << "\n");
 
   RefactoringTool Tool(OptParser.getCompilations(),
                        OptParser.getSourcePathList());
@@ -691,21 +821,28 @@ int run(int argc, const char **argv) {
     return RunResult;
   }
 
-  if (!ReportType.empty() && !ReportFile.empty()) {
-    saveReport();
-    return MigrationSucceeded;
+  if (GenReport) {
+    // report: apis, stats, diags
+    if (ReportType.find("all") != std::string::npos ||
+        ReportType.find("apis") != std::string::npos)
+      saveApisReport();
+
+    if (ReportType.find("all") != std::string::npos ||
+        ReportType.find("stats") != std::string::npos) {
+      clock_t EndTime = clock();
+      double Duration = (double)(EndTime - StartTime) / (CLOCKS_PER_SEC / 1000);
+      saveStatsReport(Tool, Duration);
+    }
+    // all doesn't include diags.
+    if (ReportType.find("diags") != std::string::npos) {
+      saveDiagsReport();
+    }
+    if (ReportOnlyFlag)
+      return MigrationSucceeded;
   }
 
   // if run was successful
   int Status = saveNewFiles(Tool, InRoot, OutRoot);
-
-  if (VerboseLevel == VerboseLow || VerboseLevel == VerboseHigh) {
-    printMetrics(Tool, LOCStaticsMap);
-    clock_t EndTime = clock();
-    double Duration = (double)(EndTime - StartTime) / (CLOCKS_PER_SEC / 1000);
-    SyclctDbgs() << "\nTotal migration time: " + std::to_string(Duration) +
-                        " ms\n";
-  }
 
   DebugInfo::ShowStatus(Status);
   return Status;
