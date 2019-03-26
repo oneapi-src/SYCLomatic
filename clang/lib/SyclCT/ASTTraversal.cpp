@@ -1561,7 +1561,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   }
 
   if (FuncName == "cudaGetDeviceCount") {
-    std::string ResultVarName = DereferenceArg(CE->getArg(0));
+    std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     emplaceTransformation(
         new ReplaceStmt(CE, "syclct::get_device_manager().device_count()"));
@@ -1569,7 +1569,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
-    std::string ResultVarName = DereferenceArg(CE->getArg(0));
+    std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
     emplaceTransformation(new ReplaceStmt(
         CE->getCallee(), Prefix + "syclct::get_device_manager().get_device"));
     emplaceTransformation(new RemoveArg(CE, 0));
@@ -1593,7 +1593,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(new InsertAfterStmt(CE, ", 0)"));
 
   } else if (FuncName == "cudaDeviceGetAttribute") {
-    std::string ResultVarName = DereferenceArg(CE->getArg(0));
+    std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
     std::string AttributeName = ((const clang::DeclRefExpr *)CE->getArg(1))
                                     ->getNameInfo()
                                     .getName()
@@ -1610,11 +1610,11 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new RemoveArg(CE, 1));
     emplaceTransformation(new InsertAfterStmt(CE, "." + Search->second + "()"));
   } else if (FuncName == "cudaDeviceGetP2PAttribute") {
-    std::string ResultVarName = DereferenceArg(CE->getArg(0));
+    std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
     emplaceTransformation(new ReplaceStmt(CE, ResultVarName + " = 0"));
     report(CE->getBeginLoc(), Comments::NOTSUPPORTED, "P2P Access");
   } else if (FuncName == "cudaGetDevice") {
-    std::string ResultVarName = DereferenceArg(CE->getArg(0));
+    std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     emplaceTransformation(new ReplaceStmt(
         CE, "syclct::get_device_manager().current_device_id()"));

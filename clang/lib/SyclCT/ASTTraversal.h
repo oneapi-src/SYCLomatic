@@ -238,12 +238,10 @@ protected:
 
   /// Dereference.
   /// returns "deviceProp" for exression `&deviceProp`
-  std::string DereferenceArg(const clang::Expr *E) {
-    if (isa<clang::UnaryOperator>(E)) {
-      const clang::UnaryOperator *arg = (const clang::UnaryOperator *)E;
+  std::string DereferenceArg(const clang::Expr *E, const ASTContext &Context) {
+    if (auto arg = dyn_cast<clang::UnaryOperator>(E)) {
       if (arg->getOpcode() == UO_AddrOf) {
-        clang::DeclRefExpr *decl = (clang::DeclRefExpr *)arg->getSubExpr();
-        return decl->getNameInfo().getName().getAsString();
+        return getStmtSpelling(arg->getSubExpr(), Context);
       }
     }
     /// TODO implement dereference for the general case, not only for foo(&a).

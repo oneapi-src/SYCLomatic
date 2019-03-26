@@ -209,11 +209,11 @@ public:
 
   std::tuple<std::string /*FilePath*/, unsigned int /*Offset*/,
              unsigned int /*Length*/>
-  getPathAndRang(std::string Str) {
+  getPathAndRange(std::string Str) {
 
-    std::size_t Pos = Str.find(':');
+    std::size_t PosNext = Str.rfind(':');
+    std::size_t Pos = Str.rfind(':', PosNext - 1);
     std::string FilePath = Str.substr(0, Pos);
-    std::size_t PosNext = Str.find(':', Pos + 1);
 
     unsigned int Offset = std::stoul(Str.substr(Pos + 1, PosNext - Pos - 1));
     unsigned int Length =
@@ -238,7 +238,7 @@ public:
           FileMap.find(Key);
 
       if (Iter != FileMap.end()) {
-        auto Data = getPathAndRang(Iter->first);
+        auto Data = getPathAndRange(Iter->first);
         std::string FilePath = std::get<0>(Data);
         unsigned int Length = std::get<2>(Data);
 
@@ -260,7 +260,7 @@ public:
 
     for (auto const &Elem : FileMap) {
 
-      auto Data = getPathAndRang(Elem.first);
+      auto Data = getPathAndRange(Elem.first);
       std::string FilePath = std::get<0>(Data);
       unsigned int Offset = std::get<1>(Data);
       unsigned int Length = std::get<2>(Data);
