@@ -36,6 +36,8 @@ extern std::string SyclctInstallPath; // Installation directory for this tool
 std::unordered_map<std::string, std::unordered_set</* Comment ID */ int>>
     TranslationRule::ReportedComment;
 
+static std::set<SourceLocation> AttrExpansionFilter;
+
 void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
   std::string InRoot = ATM.InRoot;
   std::string InFile = SM.getFilename(MacroNameTok.getLocation());
@@ -55,8 +57,56 @@ void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
 
 void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
                                      const MacroDirective *MD) {
-  return;
+  std::string InRoot = ATM.InRoot;
+  std::string InFile = SM.getFilename(MacroNameTok.getLocation());
+  bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
+                  (isChildPath(InRoot, InFile) || isSamePath(InRoot, InFile));
+
+  if (!IsInRoot) {
+    return;
+  }
+
+  // Remove __global__, __host__ and __device__ if they act as replacement
+  // tokens other macros.
+  auto MI = MD->getMacroInfo();
+  for (auto Iter = MI->tokens_begin(); Iter != MI->tokens_end(); ++Iter) {
+    auto II = Iter->getIdentifierInfo();
+    if (!II)
+      continue;
+    if (II->hasMacroDefinition() && (II->getName().str() == "__host__" ||
+                                     II->getName().str() == "__device__" ||
+                                     II->getName().str() == "__global__")) {
+      TransformSet.emplace_back(new ReplaceToken(Iter->getLocation(), ""));
+    }
+  }
 }
+void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
+                                     const MacroDefinition &MD,
+                                     SourceRange Range, const MacroArgs *Args) {
+  std::string InRoot = ATM.InRoot;
+  std::string InFile = SM.getFilename(MacroNameTok.getLocation());
+  bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
+                  (isChildPath(InRoot, InFile) || isSamePath(InRoot, InFile));
+
+  if (!IsInRoot) {
+    return;
+  }
+
+  // Record the expansion locations of the macros containing CUDA attributes.
+  // FunctionAttrsRule should/will NOT work on these locations.
+  auto MI = MD.getMacroInfo();
+  for (auto Iter = MI->tokens_begin(); Iter != MI->tokens_end(); ++Iter) {
+    auto II = Iter->getIdentifierInfo();
+    if (!II)
+      continue;
+    if (II->hasMacroDefinition() && (II->getName().str() == "__host__" ||
+                                     II->getName().str() == "__device__" ||
+                                     II->getName().str() == "__global__")) {
+      AttrExpansionFilter.insert(Range.getBegin());
+    }
+  }
+}
+
 void IncludesCallbacks::Ifdef(SourceLocation Loc, const Token &MacroNameTok,
                               const MacroDefinition &MD) {
   ReplaceCuMacro(MacroNameTok);
@@ -511,8 +561,16 @@ void FunctionAttrsRule::run(const MatchFinder::MatchResult &Result) {
   for (const Attr *A : AV) {
     attr::Kind AK = A->getKind();
     if (!A->isImplicit() && (AK == attr::CUDAGlobal || AK == attr::CUDADevice ||
-                             AK == attr::CUDAHost))
-      emplaceTransformation(new RemoveAttr(A));
+                             AK == attr::CUDAHost)) {
+      // If __global__, __host__ and __device__ are defined in other macros,
+      // the replacements should happen at spelling locations of these macros
+      // instead of expansion locations. In these cases, no work is needed here.
+      auto Loc = A->getLocation();
+      Loc = Result.SourceManager->getExpansionLoc(Loc);
+      if (AttrExpansionFilter.find(Loc) == AttrExpansionFilter.end()) {
+        emplaceTransformation(new RemoveAttr(A));
+      }
+    }
   }
 }
 

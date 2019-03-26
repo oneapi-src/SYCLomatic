@@ -66,6 +66,9 @@ public:
   /// Hook called whenever a macro definition is seen.
   void MacroDefined(const Token &MacroNameTok,
                     const MacroDirective *MD) override;
+  void MacroExpands(const Token &MacroNameTok,
+                    const MacroDefinition &MD, SourceRange Range,
+                    const MacroArgs *Args) override;
   void Ifdef(SourceLocation Loc, const Token &MacroNameTok,
              const MacroDefinition &MD) override;
   void Ifndef(SourceLocation Loc, const Token &MacroNameTok,
