@@ -23,8 +23,8 @@
 #include <CL/sycl.hpp>
 #include <iostream>
 
-// Todo: update this temply macro with the one available in sycl compiler.
-#define SYCL_ARCH_TEMPLY_USED_MACRO
+// Todo: update this temporary macro with the one available in DPC++ compiler.
+#define DPCPP_COMPATIBILITY_TEMP
 
 #include "syclct_atomic.hpp"
 #include "syclct_device.hpp"

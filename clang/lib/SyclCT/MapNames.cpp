@@ -53,9 +53,9 @@ const std::map<std::string, std::string> MapNames::Dim3MemberNamesMap{
 };
 
 const std::map<std::string, std::string> MapNames::MacrosMap{
-     {"__CUDA_ARCH__", "SYCL_ARCH_TEMPLY_USED_MACRO"}, /**/
-     {"__NVCC__", "SYCL_ARCH_TEMPLY_USED_MACRO"}, /**/
-     {"__CUDACC__", "SYCL_ARCH_TEMPLY_USED_MACRO"},
+     {"__CUDA_ARCH__", "DPCPP_COMPATIBILITY_TEMP"}, /**/
+     {"__NVCC__", "DPCPP_COMPATIBILITY_TEMP"}, /**/
+     {"__CUDACC__", "DPCPP_COMPATIBILITY_TEMP"},
     //...
 };
 
