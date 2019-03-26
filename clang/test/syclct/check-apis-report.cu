@@ -1,4 +1,4 @@
-// RUN: syclct -report-type=apis -report-file=%T/check-apis-report -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: syclct -report-type=apis -report-file-prefix=check-apis-report -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: API name, Migrated, Frequency" >%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaFree,true,1" >>%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaFreeHost,false,1" >>%T/check-apis-report_check.txt
@@ -8,7 +8,7 @@
 // RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaMemcpy,true,2" >>%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaMemset,true,1" >>%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: make_cudaExtent,false,1" >>%T/check-apis-report_check.txt
-// RUN: cat %T/check-apis-report.csv >>%T/check-apis-report_check.txt
+// RUN: cat %T/check-apis-report.apis.csv >>%T/check-apis-report_check.txt
 // RUN: FileCheck --match-full-lines --input-file %T/check-apis-report_check.txt %T/check-apis-report_check.txt
 
 #include <cuda_runtime.h>
