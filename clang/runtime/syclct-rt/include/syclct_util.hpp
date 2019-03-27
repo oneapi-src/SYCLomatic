@@ -24,28 +24,6 @@
 
 namespace syclct {
 
-inline double ll2d(long long int x) {
-  static_assert(sizeof(double) == sizeof(unsigned long long int),
-                "Mismatched type size");
-  union {
-    long long int input;
-    double output;
-  } data;
-  data.input = x;
-  return data.output;
-}
-
-inline long long int d2ll(double x) {
-  static_assert(sizeof(double) == sizeof(unsigned long long int),
-                "Mismatched type size");
-  union {
-    double input;
-    long long int output;
-  } data;
-  data.input = x;
-  return data.output;
-}
-
 } // namespace syclct
 
 #endif // SYCLCT_UTIL_H

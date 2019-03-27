@@ -53,9 +53,9 @@ const std::map<std::string, std::string> MapNames::Dim3MemberNamesMap{
 };
 
 const std::map<std::string, std::string> MapNames::MacrosMap{
-     {"__CUDA_ARCH__", "DPCPP_COMPATIBILITY_TEMP"}, /**/
-     {"__NVCC__", "DPCPP_COMPATIBILITY_TEMP"}, /**/
-     {"__CUDACC__", "DPCPP_COMPATIBILITY_TEMP"},
+    {"__CUDA_ARCH__", "DPCPP_COMPATIBILITY_TEMP"}, /**/
+    {"__NVCC__", "DPCPP_COMPATIBILITY_TEMP"},      /**/
+    {"__CUDACC__", "DPCPP_COMPATIBILITY_TEMP"},
     //...
 };
 
@@ -148,6 +148,100 @@ const std::map<std::string, std::string> MathFunctionsRule::FunctionNamesMap{
     {"tanpi", "cl::sycl::tanpi"},
     {"tgamma", "cl::sycl::tgamma"},
     {"trunc", "cl::sycl::trunc"},
+
+    // Double precision intrinisics
+    {"__dadd_rd", ""},
+    {"__dadd_rn", ""},
+    {"__dadd_ru", ""},
+    {"__dadd_rz", ""},
+    {"__dsub_rd", ""},
+    {"__dsub_rn", ""},
+    {"__dsub_ru", ""},
+    {"__dsub_rz", ""},
+    {"__dmul_rd", ""},
+    {"__dmul_rn", ""},
+    {"__dmul_ru", ""},
+    {"__dmul_rz", ""},
+    {"__ddiv_rd", ""},
+    {"__ddiv_rn", ""},
+    {"__ddiv_ru", ""},
+    {"__ddiv_rz", ""},
+    {"__drcp_rd", "cl::sycl::recip"},
+    {"__drcp_rn", "cl::sycl::recip"},
+    {"__drcp_ru", "cl::sycl::recip"},
+    {"__drcp_rz", "cl::sycl::recip"},
+    {"__dsqrt_rd", "cl::sycl::sqrt"},
+    {"__dsqrt_rn", "cl::sycl::sqrt"},
+    {"__dsqrt_ru", "cl::sycl::sqrt"},
+    {"__dsqrt_rz", "cl::sycl::sqrt"},
+    {"__fma_rd", "cl::sycl::fma"},
+    {"__fma_rn", "cl::sycl::fma"},
+    {"__fma_ru", "cl::sycl::fma"},
+    {"__fma_rz", "cl::sycl::fma"},
+
+    // Single precision intrinisics
+    {"__fadd_rd", ""},
+    {"__fadd_rn", ""},
+    {"__fadd_ru", ""},
+    {"__fadd_rz", ""},
+    {"__fsub_rd", ""},
+    {"__fsub_rn", ""},
+    {"__fsub_ru", ""},
+    {"__fsub_rz", ""},
+    {"__fmul_rd", ""},
+    {"__fmul_rn", ""},
+    {"__fmul_ru", ""},
+    {"__fmul_rz", ""},
+    {"__fdiv_rd", ""},
+    {"__fdiv_rn", ""},
+    {"__fdiv_ru", ""},
+    {"__fdiv_rz", ""},
+    {"__frcp_rd", "cl::sycl::recip"},
+    {"__frcp_rn", "cl::sycl::recip"},
+    {"__frcp_rn", "cl::sycl::recip"},
+    {"__frcp_rz", "cl::sycl::recip"},
+    {"__fsqrt_rd", "cl::sycl::sqrt"},
+    {"__fsqrt_rn", "cl::sycl::sqrt"},
+    {"__fsqrt_ru", "cl::sycl::sqrt"},
+    {"__fsqrt_rz", "cl::sycl::sqrt"},
+    {"__fmaf_rd", "cl::sycl::fma"},
+    {"__fmaf_rn", "cl::sycl::fma"},
+    {"__fmaf_ru", "cl::sycl::fma"},
+    {"__fmaf_rz", "cl::sycl::fma"},
+    {"__cosf", "cl::sycl::cos"},
+    {"__exp10f", "cl::sycl::exp10"},
+    {"__expf", "cl::sycl::exp"},
+    {"__fdividef", "cl::sycl::divide"},
+    {"__frsqrt_rn", "cl::sycl::rsqrt"},
+    {"__log10f", "cl::sycl::log10"},
+    {"__log2f", "cl::sycl::log2"},
+    {"__logf", "cl::sycl::log"},
+    {"__powf", "cl::sycl::pow"},
+    {"__sincosf", ""},
+    {"__sinf", "cl::sycl::sin"},
+    {"__tanf", "cl::sycl::tan"},
+
+    {"fmax", "cl::sycl::fmax"},
+    {"fmin", "cl::sycl::fmin"},
+    {"ceil", "cl::sycl::ceil"},
+    {"floor", "cl::sycl::floor"},
+    {"nan", "cl::sycl::nan"},
+    {"fma", "cl::sycl::fma"},
+
+    {"fmaxf", "cl::sycl::fmax"},
+    {"fminf", "cl::sycl::fmin"},
+    {"ceilf", "cl::sycl::ceil"},
+    {"floorf", "cl::sycl::floor"},
+    {"nanf", "cl::sycl::nan"},
+    {"fmaf", "cl::sycl::fma"},
+
+    // Type casting intrinsics
+    {"__int_as_float", ""},
+    {"__float_as_int", ""},
+    {"__uint_as_float", ""},
+    {"__float_as_uint", ""},
+    {"__longlong_as_double", ""},
+    {"__double_as_longlong", ""},
 
     // Not in CUDA API but in SYCL API
     // {"asinpi", "cl::sycl::asinpi"},
