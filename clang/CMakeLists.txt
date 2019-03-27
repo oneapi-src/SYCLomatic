@@ -858,7 +858,7 @@ if (NOT CLANG_BUILT_STANDALONE)
     install-syclct-lib-scan-build-files
     install-syclct-libear-files
     install-syclct-headers
-    install-clang-headers
+    install-clang-resource-headers
     install-syclct
     install-syclct-startup
     )

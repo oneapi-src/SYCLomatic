@@ -425,8 +425,10 @@ void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
       return isErrorHandlingSafeToRemove(Block);
     const CompoundStmt *CS = cast<CompoundStmt>(Block);
     for (const auto *S : CS->children()) {
-      if (!isErrorHandlingSafeToRemove(S->IgnoreImplicit())) {
-        return false;
+      if(auto *E = dyn_cast_or_null<Expr>(S)){
+          if (!isErrorHandlingSafeToRemove(E->IgnoreImplicit())) {
+            return false;
+          }
       }
     }
     return true;
