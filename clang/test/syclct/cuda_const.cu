@@ -6,6 +6,8 @@
 // CHECK: syclct::constant_memory<float, 1> const_angle(360);
 // CHECK: syclct::constant_memory<float, 2> const_float(33, 33);
 __constant__ float const_angle[360], const_float[33][33];
+// CHECK: syclct::constant_memory<cl::sycl::double2, 0> vec_d;
+__constant__ double2 vec_d;
 
 // CHECK:void simple_kernel(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<float, syclct::constant, 1> const_angle) {
 // CHECK-NEXT:  int index;
