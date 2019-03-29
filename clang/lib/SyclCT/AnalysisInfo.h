@@ -746,7 +746,8 @@ public:
 
 private:
   void getSizeString() {
-    auto SizeBegin = SizeExpr->getBeginLoc();
+    auto SizeBegin = SyclctGlobalInfo::getSourceManager().getSpellingLoc(
+        SizeExpr->getBeginLoc());
     Size = std::string(
         SyclctGlobalInfo::getSourceManager().getCharacterData(SizeBegin),
         SizeExpr->getEndLoc().getRawEncoding() - SizeBegin.getRawEncoding() +

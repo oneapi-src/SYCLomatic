@@ -244,3 +244,17 @@ void testCommas() {
   // CHECK:  free(h_A);
   free(h_A);
 }
+
+#define N 1024
+void test_segmentation_fault() {
+  float *buffer;
+  /*
+  * Original code in getSizeString():
+  * "SizeExpr->getBeginLoc()" cannot get the real SourceLocation of "N*sizeof(float)",
+  * and results in boundary violation in "SyclctGlobalInfo::getSourceManager().getCharacterData(SizeBegin)"
+  * and fails with segmentation fault.
+  * https://jira.devtools.intel.com/browse/CTST-527
+  * https://jira.devtools.intel.com/browse/CTST-528
+  */
+  cudaMalloc(&buffer, N*sizeof(float));
+}
