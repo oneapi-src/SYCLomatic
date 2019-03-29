@@ -142,6 +142,11 @@ void IncludesCallbacks::InclusionDirective(
                                  (isChildPath(InRoot, Directory.str()) ||
                                   isSamePath(InRoot, Directory.str()));
 
+  // If the header file included can not be found, just return.
+  if (!File) {
+    return;
+  }
+
   std::string FilePath = File->getName();
   makeCanonical(FilePath);
   std::string DirPath = llvm::sys::path::parent_path(FilePath);
@@ -475,10 +480,10 @@ void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
       return isErrorHandlingSafeToRemove(Block);
     const CompoundStmt *CS = cast<CompoundStmt>(Block);
     for (const auto *S : CS->children()) {
-      if(auto *E = dyn_cast_or_null<Expr>(S)){
-          if (!isErrorHandlingSafeToRemove(E->IgnoreImplicit())) {
-            return false;
-          }
+      if (auto *E = dyn_cast_or_null<Expr>(S)) {
+        if (!isErrorHandlingSafeToRemove(E->IgnoreImplicit())) {
+          return false;
+        }
       }
     }
     return true;
