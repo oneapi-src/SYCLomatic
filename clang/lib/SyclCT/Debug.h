@@ -99,11 +99,11 @@ enum VerboseLevel {
     llvm::dbgs() << message << "\n";                                           \
     llvm::dbgs() << "Abortion at " << __FILE__ << ":" << __LINE__ << "\n";     \
     abort();                                                                   \
-  } while (false);
+  } while (false)
 #else // Release build
 #define syclct_unreachable(message)                                            \
   do {                                                                         \
-  } while (false);
+  } while (false)
 #endif // Release build
 } // namespace syclct
 } // namespace clang

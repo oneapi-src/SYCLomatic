@@ -12,6 +12,7 @@
 #ifndef SYCLCT_UTILITY_H
 #define SYCLCT_UTILITY_H
 
+#include <functional>
 #include <ios>
 #include <iostream>
 #include <list>

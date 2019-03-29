@@ -15,24 +15,18 @@
 #include "TextModification.h"
 #include "Utility.h"
 
+#include "clang/AST/ExprCXX.h"
+
 namespace clang {
 namespace syclct {
 
+// Store replacement info applied on a string
 class StringReplacement {
 public:
-  template <class... Args>
-  StringReplacement(std::string &Src, size_t Off, size_t Len, Args &&... Txt...)
-      : SourceStr(Src), Offset(Off), Length(Len),
-        Text(std::forward<Args>(Txt)...) {}
-  template <class... Args>
-  StringReplacement(std::string &Src,
-                    const std::pair<size_t, size_t> &OffAndLen, Args &&... Txt)
-      : StringReplacement(Src, OffAndLen.first, OffAndLen.second,
-                          std::forward<Args>(Txt)...) {}
+  StringReplacement(std::string &Src, size_t Off, size_t Len, std::string &&Txt)
+      : SourceStr(Src), Offset(Off), Length(Len), Text(std::move(Txt)) {}
 
-  inline std::string &replaceString() {
-    return SourceStr.replace(Offset, Length, Text);
-  }
+  inline void replaceString() { SourceStr.replace(Offset, Length, Text); }
 
   inline const std::string &getReplacedText() { return Text; }
 
@@ -44,108 +38,213 @@ private:
   std::string &SourceStr;
   size_t Offset;
   size_t Length;
-  const std::string Text;
+  std::string Text;
 };
 
-class ExprAnalysis {
+// Store a expr source string which may need replaced and its replacements
+class StringReplacements {
 public:
-  ExprAnalysis() : E(nullptr) {}
-
-  inline void analysis(const Expr *Expression) {
-    setExpr(Expression);
-    analysisExpr(E);
+  StringReplacements(const ASTContext &Context)
+      : Context(Context), SourceBegin(0), ShiftLength(0) {}
+  StringReplacements(const Expr *E, const ASTContext &Context)
+      : StringReplacements(Context) {
+    init(E);
   }
 
-  inline bool hasReplacement() { return !Replacements.empty(); }
+  void init(const Expr *E);
+  inline void init() { return init(nullptr); }
+
+  inline bool hasReplacements() { return !ReplMap.empty(); }
   inline const std::string &getReplacedString() {
     replaceString();
-    return ExprString;
+    return SourceStr;
   }
-  inline TextModification *getRepalcement() {
+
+  //Replace a sub expr
+  inline void addReplacement(const Expr *E, std::string &&Text) {
+    return addReplacement(E->getBeginLoc(), E->getEndLoc(), std::move(Text));
+  }
+  // Replace a token with its begin location
+  inline void addReplacement(SourceLocation SL, std::string &&Text) {
+    auto LocInfo = getOffsetAndLength(SL);
+    return addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
+  }
+  // Replace string between begin location and end location
+  inline void addReplacement(SourceLocation Begin, SourceLocation End,
+                             std::string &&Text) {
+    auto LocInfo = getOffsetAndLength(Begin, End);
+    return addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
+  }
+  // Replace string with relative offset to the stored string and length
+  inline void addReplacement(size_t Offset, size_t Length, std::string &&Text) {
+    auto Result = ReplMap.insert(std::make_pair(
+        Offset, std::make_shared<StringReplacement>(SourceStr, Offset, Length,
+                                                    std::move(Text))));
+    if (Result.second)
+      ShiftLength += Result.first->second->getReplacedText().length() - Length;
+  }
+  // Replace total string
+  inline void addReplacement(std::string &&Text) {
+    return addReplacement(SourceLocation(), std::move(Text));
+  }
+
+private:
+  StringReplacements(const StringReplacements &) = delete;
+  StringReplacements(StringReplacements &&) = delete;
+  StringReplacements &operator=(StringReplacements) = delete;
+
+  std::pair<size_t, size_t> getOffsetAndLength(SourceLocation Begin,
+                                               SourceLocation End);
+  std::pair<size_t, size_t> getOffsetAndLength(SourceLocation SL);
+
+  void replaceString();
+
+  const ASTContext &Context;
+  unsigned SourceBegin;
+  unsigned ShiftLength;
+  std::string SourceStr;
+  std::map<size_t, std::shared_ptr<StringReplacement>> ReplMap;
+};
+
+//Analysis expression and generate its migrated string
+class ExprAnalysis {
+public:
+  ExprAnalysis() : ExprAnalysis(nullptr) {}
+  explicit ExprAnalysis(const Expr *Expression);
+
+  //Start ananlysis the expression passed in when inited.
+  inline void analysis() {
+    if (E)
+      analysisExpression(E);
+  }
+  //Start analysis the argument expression
+  inline void analysis(const Expr *Expression) {
+    initExpression(Expression);
+    analysis();
+  }
+
+  inline bool hasReplacement() { return ReplSet.hasReplacements(); }
+  inline const std::string &getReplacedString() {
+    return ReplSet.getReplacedString();
+  }
+  inline TextModification *getReplacement() {
     return hasReplacement() ? new ReplaceStmt(E, getReplacedString()) : nullptr;
   }
 
 protected:
-  template <class... Args>
-  inline void addReplacement(const Expr *Expression, Args... Text...) {
-    auto OffAndLen = getOffsetAndLength(Expression);
-    // At the same offset, only one replacement exist.
-    Replacements.insert(std::pair<size_t, std::shared_ptr<StringReplacement>>(
-        OffAndLen.first,
-        std::make_shared<StringReplacement>(ExprString, OffAndLen,
-                                            std::forward<Args>(Text)...)));
+	//Prepare for analysis.
+  inline void initExpression(const Expr *Expression) {
+    E = Expression;
+    ReplSet.init(Expression);
   }
 
-  virtual void analysisExpr(const Expr *Expression) {
-    switch (Expression->getStmtClass()) {
-#define ANALYSIS_EXPR(EXPR)                                                    \
-  case Stmt::EXPR##Class:                                                      \
-    return analysis##EXPR(dyn_cast<EXPR>(Expression));
-      ANALYSIS_EXPR(ImplicitCastExpr)
-      ANALYSIS_EXPR(BinaryOperator)
-#undef ANALYSIS_EXPR
-    default:
-      return;
-    }
+  template <class... Args> inline void addReplacement(Args... Arguments...) {
+    ReplSet.addReplacement(std::forward<Args>(Arguments)...);
   }
+
+  // Analysis the expression, jump to corresponding anlysis function according
+  // to its class
+  virtual void analysisExpression(const Stmt *Expression);
+
+  inline void analysisExpr(const CastExpr *ICE) {
+    return analysisExpression(ICE->getSubExpr());
+  }
+
+  inline void analysisExpr(const MaterializeTemporaryExpr *MTE) {
+    return analysisExpression(MTE->getTemporary());
+  }
+
+  inline void analysisExpr(const BinaryOperator *BO) {
+    analysisExpression(BO->getLHS());
+    analysisExpression(BO->getRHS());
+  }
+
+  void analysisExpr(const CXXConstructExpr *Ctor);
+  void analysisExpr(const MemberExpr *ME);
+  void analysisExpr(const UnaryExprOrTypeTraitExpr *UETT);
+
+  // Doing nothing when it doesn't need analysis
+  inline void analysisExpr(const Stmt *S) {}
+
+  const ASTContext &Context;
 
 private:
-  inline void analysisImplicitCastExpr(const ImplicitCastExpr *ICE) {
-    if (ICE)
-      return analysisExpr(ICE->getSubExpr());
-  }
-
-  inline void analysisBinaryOperator(const BinaryOperator *BO) {
-    if (BO) {
-      analysisExpr(BO->getLHS());
-      analysisExpr(BO->getRHS());
-    }
-  }
-
-  std::pair<size_t, size_t> getOffsetAndLength(const Expr *TE);
-
-  void replaceString() {
-    auto RItr = Replacements.rbegin();
-    while (RItr != Replacements.rend())
-      RItr++->second->replaceString();
-    Replacements.clear();
-  }
-
-  void setExpr(const Expr *Expression);
-
   // E is analysis target expression, while ExprString is the source text of E.
   // Replacements contains all the replacements happened in E.
   const Expr *E;
-  unsigned ExprBeginOffset;
-  std::string ExprString;
-  std::map<size_t, std::shared_ptr<StringReplacement>> Replacements;
+  StringReplacements ReplSet;
 };
 
 class TemplateArgumentInfo;
 
+//Analysis expressions which represent size of an array.
 class ArraySizeExprAnalysis : public ExprAnalysis {
 public:
   using Base = ExprAnalysis;
-  ArraySizeExprAnalysis() : TemplateList(nullptr) {}
-
-  void setTemplateArgsList(
-      const std::vector<TemplateArgumentInfo> &TemplateArgsList) {
-    TemplateList = &TemplateArgsList;
-  }
+  ArraySizeExprAnalysis(const Expr *Expression,
+                        const std::vector<TemplateArgumentInfo> *TemplateList)
+      : Base(Expression),
+        TemplateList(TemplateList ? *TemplateList : NullList) {}
 
 protected:
-  virtual void analysisExpr(const Expr *Expression) override {
-    switch (Expression->getStmtClass()) {
-    case Stmt::DeclRefExprClass:
-      return analysisDeclRefExpr(dyn_cast<DeclRefExpr>(Expression));
-    default:
-      return Base::analysisExpr(Expression);
-    }
+  virtual void analysisExpression(const Stmt *Expression) override;
+
+private:
+	//Generate replacements when template dependent variable is used.
+  void analysisExpr(const DeclRefExpr *Expression);
+  const std::vector<TemplateArgumentInfo> &TemplateList;
+
+  const static std::vector<TemplateArgumentInfo> NullList;
+};
+
+//Analysis expression used as argument.
+class ArgumentAnalysis : public ExprAnalysis {
+public:
+  using Base = ExprAnalysis;
+  ArgumentAnalysis() {}
+  //Special init is needed for argument expression.
+  ArgumentAnalysis(const Expr *Arg) : Base(nullptr) { initArgumentExpr(Arg); }
+
+  inline void analysis() { Base::analysis(); }
+  // Special init is needed for argument expression.
+  void analysis(const Expr *Expression) {
+    initArgumentExpr(Expression);
+    analysis();
   }
 
 private:
-  void analysisDeclRefExpr(const DeclRefExpr *Expression);
-  const std::vector<TemplateArgumentInfo> *TemplateList;
+  static const std::string &getDefaultArgument(const Expr *E);
+
+  // Ignore the constructor when it's argument expression, it is copy/move
+  // constructor and no migration for it.Start analysis its argument.
+  // Replace total string when it is default argument expression.
+  void initArgumentExpr(const Expr *Expression) {
+    if (!Expression)
+      initExpression(Expression);
+    if (auto Ctor = dyn_cast<CXXConstructExpr>(Expression))
+      Expression = Ctor->getArg(0);
+    initExpression(Expression);
+    if (auto DAE = dyn_cast<CXXDefaultArgExpr>(Expression))
+      addReplacement(getDefaultArgument(DAE->getExpr()));
+  }
+
+  using DefaultArgMapTy = std::map<const Expr *, std::string>;
+  static DefaultArgMapTy DefaultArgMap;
+};
+
+class VarInfo;
+// Analysis CUDA kernel call arguments, get out the passed in pointer variables.
+class KernelArgumentAnalysis : public ArgumentAnalysis {
+public:
+  using MapTy = std::map<const VarDecl *, std::shared_ptr<VarInfo>>;
+  KernelArgumentAnalysis(MapTy &DeclMap) : DeclMap(DeclMap) {}
+
+protected:
+  void analysisExpression(const Stmt *Arg) override;
+
+private:
+  inline void analysisExpr(const DeclRefExpr *Arg);
+  MapTy &DeclMap;
 };
 } // namespace syclct
 } // namespace clang

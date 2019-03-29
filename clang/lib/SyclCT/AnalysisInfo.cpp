@@ -10,14 +10,12 @@
 //===-----------------------------------------------------------------===//
 
 #include "AnalysisInfo.h"
+#include "Debug.h"
 #include "ExprAnalysis.h"
 #include "Utility.h"
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
-
-///
-// KernelInfoMap KernelTransAssist::KernelNameInfoMap;
 
 namespace clang {
 namespace syclct {
@@ -27,11 +25,10 @@ SourceManager *SyclctGlobalInfo::SM = nullptr;
 const std::string MemVarInfo::ExternVariableName = "syclct_extern_memory";
 const std::string MemVarInfo::AccessorSuffix = "_acc";
 
-void SyclctGlobalInfo::emplaceKernelAndDeviceReplacement(TransformSetTy &TS,
-                                                         StmtStringMap &SSM) {
+void SyclctGlobalInfo::emplaceKernelAndDeviceReplacement(TransformSetTy &TS) {
   for (auto &Kernel : KernelMap) {
     Kernel.second->buildInfo(TS);
-    TS.emplace_back(new ReplaceKernelCallExpr(Kernel.second, &SSM));
+    TS.emplace_back(new ReplaceKernelCallExpr(Kernel.second));
   }
   for (auto &DF : FuncMap)
     TS.emplace_back(DF.second->getTextModification());
@@ -49,25 +46,143 @@ SyclctGlobalInfo::findCudaMalloc(const Expr *E) {
   return std::shared_ptr<CudaMallocInfo>();
 }
 
-std::string
-KernelCallExpr::getExternMemSize(const CUDAKernelCallExpr *KernelCall) {
-  if (auto Arg = KernelCall->getConfig()->getArg(2))
-    if (!Arg->isDefaultArgument())
-      return getStmtSpelling(Arg, SyclctGlobalInfo::getContext());
-  return "";
+std::string KernelCallExpr::analysisExcutionConfig(const Expr *Config) {
+  ArgumentAnalysis Analysis(Config);
+  Analysis.analysis();
+  return Analysis.getReplacedString();
 }
 
-std::string KernelCallExpr::getAccessorDecl(const std::string &Indent,
-                                            const std::string &NL) {
-  std::string Result;
+void KernelCallExpr::buildExecutionConfig(
+    const CUDAKernelCallExpr *KernelCall) {
+  auto Config = KernelCall->getConfig();
+  ExecutionConfig.NDSize = analysisExcutionConfig(Config->getArg(0));
+  ExecutionConfig.WGSize = analysisExcutionConfig(Config->getArg(1));
+  ExecutionConfig.ExternMemSize = analysisExcutionConfig(Config->getArg(2));
+}
+
+void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
+  auto &SM = SyclctGlobalInfo::getSourceManager();
+  LocInfo.BeginLoc = KernelCall->getBeginLoc();
+  LocInfo.NL = getNL(KernelCall->getEndLoc(), SM);
+  LocInfo.Indent = getIndent(LocInfo.BeginLoc, SM).str();
+  LocInfo.LocHash =
+      getHashAsString(LocInfo.BeginLoc.printToString(SM)).substr(0, 6);
+  buildExecutionConfig(KernelCall);
+}
+
+void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block) {
   auto VM = getVarMap();
   if (VM->hasExternShared()) {
     auto ExternVariable = VM->getMap(MemVarInfo::Extern).begin()->second;
-    Result += Indent + ExternVariable->getAccessorDecl(ExternMemSize) + NL;
+    Block.pushStmt(
+        ExternVariable->getAccessorDecl(ExecutionConfig.ExternMemSize));
   }
+  getAccessorDecl(Block, MemVarInfo::Local);
+  getAccessorDecl(Block, MemVarInfo::Global);
+}
 
-  Result += getAccessorDecl(MemVarInfo::Local, Indent, NL);
-  Result += getAccessorDecl(MemVarInfo::Global, Indent, NL);
+void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block,
+                                            MemVarInfo::VarScope Scope) {
+  assert(Scope != MemVarInfo::Extern);
+  static const std::string NullString;
+  for (auto VI : getVarMap()->getMap(Scope)) {
+    if (Scope == MemVarInfo::Local)
+      Block.pushStmt(VI.second->getMemoryDecl());
+    Block.pushStmt(VI.second->getAccessorDecl(NullString));
+  }
+}
+
+inline void KernelCallExpr::buildKernelPointerArgBufferAndOffsetStmt(
+    const std::string &ArgName, StmtList &Buffers) {
+  Buffers.emplace_back("std::pair<syclct::buffer_t, size_t> " + ArgName +
+                       "_buf = syclct::get_buffer_and_offset(" + ArgName +
+                       ");");
+  Buffers.emplace_back("size_t " + ArgName + "_offset = " + ArgName +
+                       "_buf.second;");
+}
+
+inline void
+KernelCallExpr::buildKernelPointerArgAccessorStmt(const std::string &ArgName,
+                                                  StmtList &Accessors) {
+  Accessors.emplace_back(
+      "auto " + ArgName + "_acc = " + ArgName +
+      "_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);");
+}
+
+inline void
+KernelCallExpr::buildKernelPointerArgRedeclStmt(const std::string &ArgName,
+                                                const std::string &TypeName,
+                                                StmtList &Redecls) {
+  Redecls.emplace_back(TypeName + " *" + ArgName + " = (" + TypeName + "*)(&" +
+                       ArgName + "_acc[0] + " + ArgName + "_offset);");
+}
+
+void KernelCallExpr::buildKernelPointerArgsStmt(StmtList &Buffers,
+                                                StmtList &Accessors,
+                                                StmtList &Redecls) {
+  for (auto &Arg : getKernelPointerVarList()) {
+    auto &ArgName = Arg->getName();
+    buildKernelPointerArgBufferAndOffsetStmt(ArgName, Buffers);
+    buildKernelPointerArgAccessorStmt(ArgName, Accessors);
+    buildKernelPointerArgRedeclStmt(
+        ArgName, Arg->getType()->getTemplateSpecializationName(), Redecls);
+  }
+}
+
+std::string KernelCallExpr::getReplacement() {
+  std::string Result;
+
+  StmtList Buffers, Accessors, Redecls;
+  buildKernelPointerArgsStmt(Buffers, Accessors, Redecls);
+
+#define FMT_STMT_BLOCK                                                            \
+  FormatStmtBlock &BlockPrev = Block;                                               \
+  FormatStmtBlock Block(BlockPrev);
+
+  Result += "{" + LocInfo.NL;
+  {
+    FormatStmtBlock Block(LocInfo.NL, LocInfo.Indent, Result);
+    for (auto &BufferStmt : Buffers)
+      Block.pushStmt(BufferStmt);
+    Block.pushStmt("syclct::get_default_queue().submit(");
+    {
+      FMT_STMT_BLOCK
+      Block.pushStmt("[&](cl::sycl::handler &cgh) {");
+      {
+        FMT_STMT_BLOCK
+        getAccessorDecl(Block);
+        for (auto &AccStmt : Accessors)
+          Block.pushStmt(AccStmt);
+        Block.pushStmt(
+            "cgh.parallel_for<syclct_kernel_name<class " + getName() + "_" +
+            LocInfo.LocHash +
+            (hasTemplateArgs() ? (", " + getTemplateArguments(true)) : "") +
+            ">>(");
+        {
+          FMT_STMT_BLOCK
+          Block.pushStmt("cl::sycl::nd_range<3>((" + ExecutionConfig.NDSize +
+                         " * " + ExecutionConfig.WGSize + "), " +
+                         ExecutionConfig.WGSize + "),");
+          Block.pushStmt("[=](cl::sycl::nd_item<3> " +
+                         SyclctGlobalInfo::getItemName() + ") {");
+          {
+            FMT_STMT_BLOCK
+            for (auto &Redecl : Redecls)
+              Block.pushStmt(Redecl);
+            Block.pushStmt(getName() +
+                           (hasTemplateArgs()
+                                ? ("<" + getTemplateArguments() + ">")
+                                : "") +
+                           "(" + getArguments() + ");");
+          }
+          Block.pushStmt("});");
+        }
+      }
+      Block.pushStmt(isSync() ? "}).wait();" : "});");
+    }
+  }
+  Result += LocInfo.Indent + "}" + LocInfo.NL;
+
   return Result;
 }
 
@@ -168,9 +283,21 @@ void CallFunctionExpr::buildInfo(TransformSetTy &TS) {
     DeviceFunc.second->setVarMap(VarMap);
   }
   TS.emplace_back(new InsertText(RParenLoc, getExtraArguments()));
-  for (auto &Arg : Args) {
-    if (auto TM = Arg.getTextModification())
-      TS.emplace_back(TM);
+  Args.emplaceReplacements(TS);
+}
+
+ArgumentsInfo::ArgumentsInfo(const CallExpr *C) {
+  if (C->getStmtClass() == Stmt::CUDAKernelCallExprClass) {
+    KernelArgumentAnalysis::MapTy Map;
+    KernelArgumentAnalysis A(Map);
+    buildArgsInfo(C->arguments(), A);
+    for (auto &V : Map) {
+      if (V.second->getType()->isPointer())
+        KernelArgs.emplace_back(V.second);
+    }
+  } else {
+    ArgumentAnalysis A;
+    buildArgsInfo(C->arguments(), A);
   }
 }
 
@@ -250,18 +377,18 @@ std::string MemVarInfo::getMemoryType() {
   switch (Attr) {
   case clang::syclct::MemVarInfo::Device: {
     static std::string DeviceMemory = "syclct::device_memory";
-    return DeviceMemory + getType()->getAsTemplateArguments();
+    return getMemoryType(DeviceMemory, getType());
   }
   case clang::syclct::MemVarInfo::Constant: {
     static std::string ConstantMemory = "syclct::constant_memory";
-    return ConstantMemory + getType()->getAsTemplateArguments();
+    return getMemoryType(ConstantMemory, getType());
   }
   case clang::syclct::MemVarInfo::Shared: {
     static std::string SharedMemory = "syclct::shared_memory";
     static std::string ExternSharedMemory = "syclct::extern_shared_memory";
     if (isExtern())
       return ExternSharedMemory;
-    return SharedMemory + getType()->getAsTemplateArguments();
+    return getMemoryType(SharedMemory, getType());
   }
   default:
     llvm_unreachable("unknow variable attribute");
@@ -293,40 +420,43 @@ std::string MemVarInfo::getDeclarationReplacement() {
     return "";
   case clang::syclct::MemVarInfo::Extern:
     return "auto " + getName() + " = " + ExternVariableName + ".reinterpret<" +
-           getType()->getName() + ">();";
+           getType()->getBaseName() + ">();";
   case clang::syclct::MemVarInfo::Global: {
     const static std::string NullString;
     return getMemoryDecl(NullString);
   }
   default:
-    llvm_unreachable("unknow variable scope");
+    syclct_unreachable("unknow variable scope");
   }
 }
 
-TypeInfo::TypeInfo(const QualType &Type)
-    : Type(Type), Pointer(false), Template(false), TemplateIndex(0) {
-  setArrayInfo();
-  setPointerInfo();
-  setTemplateInfo();
-  setName();
+TypeInfo::TypeInfo(QualType Type)
+    : IsPointer(false), IsTemplate(false), TemplateIndex(0), TemplateList(nullptr) {
+  setArrayInfo(Type);
+  setPointerInfo(Type);
+  setTemplateInfo(Type);
+  setName(Type);
 }
 
-std::string TypeInfo::getRangeArgument(const std::string&MemSize,bool MustArguments) {
+std::string TypeInfo::getRangeArgument(const std::string &MemSize,
+                                       bool MustArguments) {
   std::string Arg = "(";
   for (auto R : Range) {
     if (auto CAT = dyn_cast<ConstantArrayType>(R))
-      Arg += CAT->getSize().toString(10, false) + ", ";
+      Arg += CAT->getSize().toString(10, false);
     else if (auto VAT = dyn_cast<VariableArrayType>(R))
       Arg +=
-          getStmtSpelling(VAT->getSizeExpr(), SyclctGlobalInfo::getContext()) +
-          ", ";
+          getStmtSpelling(VAT->getSizeExpr(), SyclctGlobalInfo::getContext());
     else if (auto DAT = dyn_cast<DependentSizedArrayType>(R)) {
-      SizeAnalysis.analysis(DAT->getSizeExpr());
-      Arg += SizeAnalysis.getReplacedString() + ", ";
+      ArraySizeExprAnalysis SizeAnalysis(DAT->getSizeExpr(), TemplateList);
+      SizeAnalysis.analysis();
+      Arg += SizeAnalysis.getReplacedString();
     } else if (MemSize.empty())
-      llvm_unreachable("array size should not be zero");
+      syclct_unreachable(
+          "array size should not be incomplete while non mem size");
     else
-      Arg += MemSize + ", ";
+      Arg += MemSize;
+    Arg += ", ";
   }
   return (Arg.size() == 1) ? (MustArguments ? (Arg + ")") : "")
                            : Arg.replace(Arg.size() - 2, 2, ")");
@@ -336,55 +466,40 @@ void TypeInfo::setTemplateType(const std::vector<TemplateArgumentInfo> &TA) {
   assert(TemplateIndex < TA.size());
   if (isTemplate())
     TemplateType = TA[TemplateIndex].getAsType();
-  SizeAnalysis.setTemplateArgsList(TA);
+  TemplateList = &TA;
 }
 
-void ArgumentInfo::getReplacement() {
-  if (auto ME = dyn_cast<MemberExpr>(Arg->IgnoreParenImpCasts())) {
-    if (auto B = dyn_cast<DeclRefExpr>(ME->getBase())) {
-      if (B->getDecl()->getType().getAsString(SyclctGlobalInfo::getInstance()
-                                                  .getContext()
-                                                  .getPrintingPolicy()) ==
-          "dim3") {
-        Replacement = B->getDecl()->getName().str() +
-                      MapNames::Dim3MemberNamesMap
-                          .find(ME->getMemberDecl()->getName().str())
-                          ->second;
-      }
-    }
+void TypeInfo::setArrayInfo(QualType &Type) {
+  while (Type->isArrayType()) {
+    Range.push_back(dyn_cast<ArrayType>(Type));
+    Type = Type->getAsArrayTypeUnsafe()->getElementType();
   }
 }
 
-void CudaMallocInfo::replaceType(const Expr *SizeExpr) {
-  SizeExpr = SizeExpr->IgnoreImpCasts();
-  if (auto BinaryOpt = dyn_cast<BinaryOperator>(SizeExpr)) {
-    replaceType(BinaryOpt->getRHS());
-    replaceType(BinaryOpt->getLHS());
-  } else if (auto UnaryOrTraits =
-                 dyn_cast<UnaryExprOrTypeTraitExpr>(SizeExpr)) {
-    if (UnaryOrTraits->getKind() == UnaryExprOrTypeTrait::UETT_SizeOf) {
-      auto TypeArgument = UnaryOrTraits->getArgumentTypeInfo();
-      auto Itr = MapNames::TypeNamesMap.find(
-          TypeArgument->getType().getAsString(SyclctGlobalInfo::getInstance()
-                                                  .getContext()
-                                                  .getPrintingPolicy()));
-      if (Itr != MapNames::TypeNamesMap.end()) {
-        replaceSizeString(TypeArgument->getTypeLoc().getBeginLoc(),
-                          UnaryOrTraits->getRParenLoc().getLocWithOffset(-1),
-                          Itr->second);
-      }
-    }
+void TypeInfo::setPointerInfo(QualType &Type) {
+  while (Type->isPointerType()) {
+    IsPointer = true;
+    Type = Type->getPointeeType();
   }
 }
-
-void CudaMallocInfo::replaceSizeString(const SourceLocation &Begin,
-                                       const SourceLocation &End,
-                                       const std::string &NewTypeName) {
-  int BeginOffset =
-      Begin.getRawEncoding() - SizeExpr->getBeginLoc().getRawEncoding();
-  if ((BeginOffset >= 0) && (BeginOffset < (int)Size.size()))
-    Size.replace(BeginOffset, End.getRawEncoding() - Begin.getRawEncoding() + 1,
-                 NewTypeName);
+void TypeInfo::setTemplateInfo(QualType &Type) {
+  if (auto TemplateType =
+          dyn_cast<TemplateTypeParmType>(Type->getCanonicalTypeInternal())) {
+    IsTemplate = true;
+    TemplateIndex = TemplateType->getIndex();
+  }
+}
+void TypeInfo::setName(QualType &Type) {
+  auto &PP = SyclctGlobalInfo::getContext().getPrintingPolicy();
+  BaseNameWithoutQualifiers = Type.getUnqualifiedType().getAsString(PP);
+  if (!isTemplate())
+    MapNames::replaceName(MapNames::TypeNamesMap, BaseNameWithoutQualifiers);
+  auto Q = Type.getLocalQualifiers();
+  if (Q.isEmptyWhenPrinted(PP))
+    BaseName = BaseNameWithoutQualifiers;
+  else
+    BaseName = Type.getLocalQualifiers().getAsString(PP) + " " +
+               BaseNameWithoutQualifiers;
 }
 } // namespace syclct
 } // namespace clang

@@ -2119,7 +2119,7 @@ void MemoryTranslationRule::MemcpyToSymbolTranslation(
     if (auto Var = Global.findMemVarInfo(VD)) {
       emplaceTransformation(new ReplaceStmt(
           C, Var->getName() + ".assign(" +
-                 MallocInfo->getAssignArgs(Var->getType()->getName()) + ")"));
+                 MallocInfo->getAssignArgs(Var->getType()->getBaseName()) + ")"));
       return;
     }
   }

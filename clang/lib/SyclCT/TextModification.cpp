@@ -543,160 +543,15 @@ std::string printTemplateArgument(const TemplateArgument &Arg,
 }
 
 ReplaceKernelCallExpr::ReplaceKernelCallExpr(
-    std::shared_ptr<KernelCallExpr> Kernel, StmtStringMap *SSM)
-    : TextModification(TMID::ReplaceKernelCallExpr, G3),
-      KCall(Kernel->getCallExpr()), Kernel(Kernel), SSM(SSM) {}
-
-std::pair<const Expr *, const Expr *>
-ReplaceKernelCallExpr::getExecutionConfig() const {
-  return {KCall->getConfig()->getArg(0), KCall->getConfig()->getArg(1)};
-}
-
-// Migrate some explicit and implicit constructions of dim3 objects when
-// expressions are passed as kernel execution configuration. Returns the
-// migration of that expression to cl::sycl::range<3>.
-//
-// If E is a variable reference, returns the name of the variable.
-// Else assumes E is an implicit or explicit construction of dim3 and returns
-// an explicit cl::sycl::range<3>-constructor call.
-std::string ReplaceKernelCallExpr::getDim3Translation(const Expr *E,
-                                                      const ASTContext &Context,
-                                                      StmtStringMap *SSM) {
-  if (auto Var = dyn_cast<DeclRefExpr>(E)) {
-    // kernel<<<griddim, threaddim>>>()
-    return Var->getNameInfo().getAsString();
-  } else {
-    // the dim3 migration rule should've inserted the necessary migration in
-    // the StmtStringMap
-    std::string NewStr = SSM->lookup(E);
-    if (NewStr.empty()) {
-      return getStmtSpelling(E, Context);
-    } else {
-      return NewStr;
-    }
-  }
-}
+    std::shared_ptr<KernelCallExpr> Kernel)
+    : TextModification(TMID::ReplaceKernelCallExpr, G3), Kernel(Kernel) {}
 
 ExtReplacement
 ReplaceKernelCallExpr::getReplacement(const ASTContext &Context) const {
-  auto &SM = Context.getSourceManager();
-  auto NL = getNL(Kernel->getCallExpr()->getEndLoc(), SM);
-  auto OrigIndent = getIndent(Kernel->getCallExpr()->getBeginLoc(), SM).str();
-  std::stringstream Header;
-  std::stringstream Header2;
-  std::stringstream Header3;
-  std::stringstream HeaderShareVarAccessor;
-  std::stringstream HeaderShareVasAsArgs;
-  std::stringstream HeaderConstantVarAccessor;
-  std::stringstream HeaderConstantVasAsArgs;
-  std::stringstream HeaderDeviceVarAccessor;
-  std::stringstream HeaderDeviceVarAsArgs;
-
-  std::vector<std::string> TemplateArgsArray;
-  PrintingPolicy PP(Context.getLangOpts());
-
-  Header << "{" << NL;
-  auto Indent = OrigIndent + "  ";
-  Header2 << Kernel->getAccessorDecl(Indent + "    ", NL);
-  std::unordered_set<std::string> DuplicateFilter;
-  for (auto *Arg : Kernel->getCallExpr()->arguments()) {
-    if (Arg->getType()->isAnyPointerType()) {
-      if (auto *DeclRef = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts())) {
-        auto VarName = DeclRef->getNameInfo().getAsString();
-        // for same VarName, only generate one (access, offset,buf)
-        if (DuplicateFilter.find(VarName) == end(DuplicateFilter)) {
-          DuplicateFilter.insert(VarName);
-        } else {
-          continue;
-        }
-        auto PointeeType = DeclRef->getDecl()->getType()->getPointeeType();
-        // TODO check that no nested pointers in a structure
-        assert(!PointeeType->isAnyPointerType());
-        // auto VarType = PointeeType.getCanonicalType().getAsString();
-        // remove getCanonicalType() for it will cause error while the type
-        // is a template parameter type.
-        Header << Indent << "std::pair<syclct::buffer_t, size_t> " << VarName
-               << "_buf = syclct::get_buffer_and_offset(" << VarName + ");"
-               << NL;
-        Header << Indent << "size_t " << VarName
-               << "_offset = " << VarName + "_buf.second;" << NL;
-        Header2 << Indent << "    auto " << VarName << "_acc = " << VarName
-                << "_buf.first."
-                   "get_access<cl::sycl::access::mode::read_write>("
-                << "cgh);" << NL;
-
-        std::string VarType;
-        if (auto *SubstedType =
-                dyn_cast<SubstTemplateTypeParmType>(PointeeType)) {
-          // Type is substituted by template initialization or specialization.
-          VarType = SubstedType->getReplacedParameter()
-                        ->getIdentifier()
-                        ->getName()
-                        .str();
-        } else {
-          VarType = PointeeType.getAsString();
-          // adjust the VarType: if it is vector type ("struct int2/int3....)
-          // changed it to syclsytle.
-          auto Search = MapNames::TypeNamesMap.find(VarType);
-          if (Search != MapNames::TypeNamesMap.end()) {
-            VarType = Search->second;
-          }
-        }
-
-        Header3 << Indent << "        " << VarType << " *" << VarName << " = ("
-                << VarType << "*)(&" << VarName << "_acc[0] + " << VarName
-                << "_offset);" << NL;
-      } else {
-        assert(false && "unknown argument expression");
-      }
-    }
-  }
-
-  const Expr *NDSize;
-  const Expr *WGSize;
-  std::tie(NDSize, WGSize) = getExecutionConfig();
-  auto LocHash =
-      getHashAsString(KCall->getBeginLoc().printToString(SM)).substr(0, 6);
-
-  auto &KName = Kernel->getName();
-  auto TemplateArgs = Kernel->getTemplateArguments();
-  std::string KernelClassName, CallFunc;
-  KernelClassName = "syclct_kernel_name<class " + KName + "_" + LocHash;
-  CallFunc = KName;
-  if (TemplateArgs.empty())
-    KernelClassName += ">";
-  else {
-    CallFunc += TemplateArgs;
-    KernelClassName += ", " + Kernel->getTemplateArguments(true).substr(1);
-  }
-
-  const std::string &ItemName = SyclctGlobalInfo::getItemName();
-
-  // clang-format off
-  std::stringstream Final;
-  Final
-  << Header.str()
-  << Indent << "syclct::get_default_queue().submit(" << NL
-  << Indent <<  "  [&](cl::sycl::handler &cgh) {" << NL
-  << Header2.str()
-  << HeaderShareVarAccessor.str()
-  << HeaderConstantVarAccessor.str()
-  << HeaderDeviceVarAccessor.str()
-  << Indent <<  "    cgh.parallel_for<" << KernelClassName << ">(" << NL
-  << Indent <<  "      cl::sycl::nd_range<3>(("
-  << getDim3Translation(NDSize, Context, SSM) << " * "
-  << getDim3Translation(WGSize, Context, SSM) << "), "
-  << getDim3Translation(WGSize, Context, SSM)<<")," << NL
-  << Indent <<  "      [=](cl::sycl::nd_item<3> " + ItemName + ") {" << NL
-  << Header3.str()
-  << Indent <<  "        " << CallFunc << "(" << Kernel->getArguments() << ");" << NL
-  << Indent <<  "      });" <<  NL
-  << Indent <<  "  })" << (Kernel->isSync() ? ".wait()" : "") << ";" <<  NL
-  << OrigIndent << "}";
-  // clang-format on
-
-  recordTranslationInfo(Context, KCall->getBeginLoc());
-  return ExtReplacement(SM, KCall->getBeginLoc(), 0, Final.str(), this);
+  auto BeginLoc = Kernel->getBeginLoc();
+  recordTranslationInfo(Context, BeginLoc);
+  return ExtReplacement(Context.getSourceManager(), BeginLoc, 0,
+                        Kernel->getReplacement(), this);
 }
 
 ExtReplacement
@@ -1074,8 +929,10 @@ void InsertComment::print(llvm::raw_ostream &OS, ASTContext &Context,
 void ReplaceKernelCallExpr::print(llvm::raw_ostream &OS, ASTContext &Context,
                                   const bool PrintDetail) const {
   printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
-  printLocation(OS, KCall->getBeginLoc(), Context, PrintDetail);
-  KCall->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
+  printLocation(OS, Kernel->getBeginLoc(), Context, PrintDetail);
+
+  // TODO: no more CUDAKernelExpr* pointer here.
+  //KCall->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
   // TODO: print simple and meaningful informations
   OS << TransformStr << "[debug message unimplemented]\n";
 }

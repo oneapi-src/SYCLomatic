@@ -52,7 +52,7 @@ void run_test() {
   // CHECK:       auto d_in_acc = d_in_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK:       auto d_out_acc = d_out_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel_{{[a-f0-9]+}}, T>>(
-  // CHECK:         cl::sycl::nd_range<3>((1 * num_threads), num_threads),
+  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(num_threads, 1, 1)), cl::sycl::range<3>(num_threads, 1, 1)),
   // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK:           T *d_in = (T*)(&d_in_acc[0] + d_in_offset);
   // CHECK:           T *d_out = (T*)(&d_out_acc[0] + d_out_offset);

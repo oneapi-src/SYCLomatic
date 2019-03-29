@@ -159,7 +159,7 @@ int main() {
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK-NEXT:            void *karg1 = (void*)(&karg1_acc[0] + karg1_offset);
-  // CHECK-NEXT:            struct LA *karg2 = (struct LA*)(&karg2_acc[0] + karg2_offset);
+  // CHECK-NEXT:            LA *karg2 = (LA*)(&karg2_acc[0] + karg2_offset);
   // CHECK-NEXT:            testKernelPtr<class TestName, ktarg, LA>((const LA *)karg1, karg2, [[ITEM]]);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });

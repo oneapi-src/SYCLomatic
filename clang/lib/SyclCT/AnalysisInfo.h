@@ -116,8 +116,7 @@ public:
     llvm_unreachable("unexpected type of map");
   }
 
-  void emplaceKernelAndDeviceReplacement(TransformSetTy &TS,
-                                         StmtStringMap &SSM);
+  void emplaceKernelAndDeviceReplacement(TransformSetTy &TS);
 
   void registerCudaMalloc(const CallExpr *CE);
   std::shared_ptr<CudaMallocInfo> findCudaMalloc(const Expr *CE);
@@ -173,20 +172,15 @@ class TemplateArgumentInfo;
 // get from type.
 class TypeInfo {
 public:
-  TypeInfo(const QualType &Type);
+  TypeInfo(QualType Type);
 
-  const std::string &getName() { return Name; }
-  size_t getDimension() { return Range.size(); }
+  inline const std::string &getBaseName() { return BaseName; }
+  inline size_t getDimension() { return Range.size(); }
 
-  std::string getAsTemplateArguments() {
-    return "<" + getActualTypeName() + ", " + std::to_string(Range.size()) +
-           ">";
-  }
-
-  std::string getActualTypeName() {
+  const std::string &getTemplateSpecializationName() {
     if (isTemplate() && TemplateType)
-      return TemplateType->getActualTypeName();
-    return getName();
+      return TemplateType->getTemplateSpecializationName();
+    return getBaseName();
   }
 
   // when there is no arguments, parameter MustArguments determine whether
@@ -194,52 +188,36 @@ public:
   // false, otherwise "()" will be returned.
   std::string getRangeArgument(const std::string &MemSize, bool MustArguments);
 
-  bool isTemplate() { return Template; }
-  bool isPointer() { return Pointer; }
+  inline bool isTemplate() { return IsTemplate; }
+  inline bool isPointer() { return IsPointer; }
+  inline void adjustAsMemType() {
+    setPointerAsArray();
+    removeQualifier();
+  }
   void setTemplateType(const std::vector<TemplateArgumentInfo> &TA);
 
 private:
-  void setArrayInfo() {
-    while (Type->isArrayType()) {
-      Range.push_back(dyn_cast<ArrayType>(Type));
-      Type = Type->getAsArrayTypeUnsafe()->getElementType();
-    }
-  }
-  void setTemplateInfo() {
-    if (auto TemplateType =
-            dyn_cast<TemplateTypeParmType>(Type->getCanonicalTypeInternal())) {
-      Template = true;
-      TemplateIndex = TemplateType->getIndex();
-    }
-  }
-  void setPointerInfo() {
-    while (Type->isPointerType()) {
-      Pointer = true;
+  void setArrayInfo(QualType &Type);
+  void setTemplateInfo(QualType &Type);
+  void setPointerInfo(QualType &Type);
+  void setName(QualType &Type);
+  void setPointerAsArray() {
+    if (isPointer()) {
+      IsPointer = false;
       Range.push_back(0);
-      Type = Type->getPointeeType();
     }
   }
-  void setName() {
-    if (isPointer())
-      Type.removeLocalConst();
-    Name = Type.getAsString(
-        SyclctGlobalInfo::getInstance().getContext().getPrintingPolicy());
-    if (!isTemplate()) {
-      auto Itr = MapNames::TypeNamesMap.find(Name);
-      if (Itr != MapNames::TypeNamesMap.end())
-        Name = Itr->second;
-    }
-  }
+  inline void removeQualifier() { BaseName = BaseNameWithoutQualifiers; }
 
 private:
-  QualType Type;
-  std::string Name;
+  std::string BaseName;
+  std::string BaseNameWithoutQualifiers;
   std::vector<const ArrayType *> Range;
-  ArraySizeExprAnalysis SizeAnalysis;
-  bool Pointer;
-  bool Template;
+  bool IsPointer;
+  bool IsTemplate;
   unsigned TemplateIndex;
   std::shared_ptr<TypeInfo> TemplateType;
+  const std::vector<TemplateArgumentInfo> *TemplateList;
 };
 
 // variable info includes name, type and location.
@@ -249,9 +227,9 @@ public:
       : Loc(getLocationId(Var)), Name(Var->getName().str()),
         Type(std::make_shared<TypeInfo>(Var->getType())) {}
 
-  unsigned getLoc() { return Loc; }
-  const std::string &getName() { return Name; }
-  std::shared_ptr<TypeInfo> &getType() { return Type; }
+  inline unsigned getLoc() { return Loc; }
+  inline const std::string &getName() { return Name; }
+  inline std::shared_ptr<TypeInfo> &getType() { return Type; }
 
 private:
   unsigned Loc;
@@ -275,9 +253,13 @@ public:
       : VarInfo(Var), Attr(getAttr(Var->getAttrs())),
         Scope((Var->isLexicallyWithinFunctionOrMethod())
                   ? (Var->isExternallyDeclarable() ? Extern : Local)
-                  : Global) {
-    if (getType()->isPointer())
+                  : Global),
+        PointerAsArray(false) {
+    if (getType()->isPointer()) {
       Attr = Device;
+      getType()->adjustAsMemType();
+      PointerAsArray = true;
+    }
     if (Var->hasInit())
       setInitList(Var->getInit());
   }
@@ -292,7 +274,7 @@ public:
   std::string getDeclarationReplacement();
   std::string getMemoryDecl(const std::string &MemSize) {
     return getMemoryType() + " " + getArgName() +
-           (getType()->isPointer() ? "" : getInitArguments(MemSize)) + ";";
+           (PointerAsArray ? "" : getInitArguments(MemSize)) + ";";
   }
   std::string getMemoryDecl() {
     const static std::string NullString;
@@ -327,6 +309,11 @@ private:
   }
 
   std::string getMemoryType();
+  inline std::string getMemoryType(const std::string &MemoryType,
+                                   std::shared_ptr<TypeInfo> VarType) {
+    return MemoryType + "<" + VarType->getTemplateSpecializationName() + ", " +
+           std::to_string(VarType->getDimension()) + ">";
+  }
   std::string getInitArguments(const std::string &MemSize,
                                bool MustArguments = false) {
     if (InitList.empty())
@@ -345,7 +332,8 @@ private:
     } else {
       auto Type = getType();
       return "syclct::syclct_accessor<" +
-             (UsingTemplateName ? Type->getActualTypeName() : Type->getName()) +
+             (UsingTemplateName ? Type->getTemplateSpecializationName()
+                                : Type->getBaseName()) +
              ", " + getMemoryAttr() + ", " +
              std::to_string(Type->getDimension()) + ">";
     }
@@ -360,6 +348,7 @@ private:
 private:
   VarAttrKind Attr;
   VarScope Scope;
+  bool PointerAsArray;
   std::string InitList;
 
   static const std::string AccessorSuffix;
@@ -378,7 +367,7 @@ public:
                    QT->hasUnnamedOrLocalType() &&
                    QT->getAsTagDecl()->getDeclContext()->isFunctionOrMethod();
     Ty.T = std::make_shared<TypeInfo>(QT);
-    Str = (Ty.LocalDecl ? "class " : "") + Ty.T->getName();
+    Str = Ty.T->getBaseName();
   }
   TemplateArgumentInfo(const Expr *Expr)
       : Kind(String),
@@ -526,28 +515,46 @@ inline const std::string &MemVarMap::getItemName<MemVarMap::DeclParameter>() {
   return ItemName;
 }
 
-class ArgumentInfo {
+class ArgumentsInfo {
 public:
-  ArgumentInfo(const Expr *E) : Arg(E) { getReplacement(); }
+  ArgumentsInfo(const CallExpr *C);
 
-  std::string getAsString() {
-    if (Replacement.empty())
-      return getStmtSpelling(Arg, SyclctGlobalInfo::getInstance().getContext());
-    else
-      return Replacement;
+  inline bool empty() { return Arguments.empty(); }
+  inline const std::vector<std::shared_ptr<VarInfo>> &getKernelPointerArgs() {
+    return KernelArgs;
   }
-  TextModification *getTextModification() {
-    if (Replacement.empty())
-      return nullptr;
-    else
-      return new ReplaceStmt(Arg, Replacement);
+  std::string getArguments() {
+    std::string Result;
+    for (auto &Arg : Arguments)
+      Result += Arg.Arg + ", ";
+    return Result.empty() ? Result : Result.erase(Result.size() - 2, 2);
+  }
+  void emplaceReplacements(TransformSetTy &TS) {
+    for (auto &Arg : Arguments)
+      if (Arg.Repl)
+        TS.emplace_back(Arg.Repl);
   }
 
 private:
-  void getReplacement();
+  void buildArgsInfo(const CallExpr::const_arg_range &Args,
+                     ExprAnalysis &Analysis) {
+    for (auto Arg : Args) {
+      Analysis.analysis(Arg);
+      auto TM = Analysis.getReplacement();
+      Arguments.emplace_back(Analysis.getReplacedString(), TM);
+    }
+  }
 
-  const Expr *Arg;
-  std::string Replacement;
+  struct ArgInfo {
+    ArgInfo(const std::string &Arg, TextModification *TM)
+        : Arg(Arg), Repl(TM) {}
+    ArgInfo(const std::string &Arg) : ArgInfo(Arg, nullptr) {}
+    std::string Arg;
+    TextModification *Repl;
+  };
+
+  std::vector<ArgInfo> Arguments;
+  std::vector<std::shared_ptr<VarInfo>> KernelArgs;
 };
 
 // call function expression includes location, name, arguments num, template
@@ -556,52 +563,48 @@ private:
 class CallFunctionExpr {
 public:
   CallFunctionExpr(const CallExpr *CE)
-      : Loc(getLocationId(CE)), RParenLoc(CE->getRParenLoc()),
+      : Loc(getLocationId(CE)), RParenLoc(CE->getRParenLoc()), Args(CE),
         VarMap(std::make_shared<MemVarMap>()) {
     buildCallExprInfo(CE);
-    buildArguments(CE);
   }
 
   std::shared_ptr<MemVarMap> getVarMap() { return VarMap; }
 
   void buildInfo(TransformSetTy &TS);
-  bool hasArgs() { return !Args.empty(); }
-  const std::string &getName() { return Name; }
+  inline bool hasArgs() { return !Args.empty(); }
+  inline bool hasTemplateArgs() { return !TemplateArgs.empty(); }
+  inline const std::string &getName() { return Name; }
 
   std::string getTemplateArguments(bool WithScalarWrapped = false) {
     const static std::string ScalarWrapperPrefix = "syclct_kernel_scalar<",
                              ScalarWrapperSuffix = ">, ";
-    std::string Result = "<";
+    std::string Result;
     for (auto &TA : TemplateArgs) {
       if (WithScalarWrapped && !TA.isType())
         Result += ScalarWrapperPrefix + TA.getAsString() + ScalarWrapperSuffix;
       else
         Result += TA.getAsString() + ", ";
     }
-    return (Result.size() == 1) ? ""
-                                : Result.replace(Result.size() - 2, 2, ">");
+    return (Result.empty()) ? Result : Result.erase(Result.size() - 2);
   }
 
   virtual std::string getExtraArguments() {
     return VarMap->getCallArguments(hasArgs());
   }
-  std::string getOriginArguments() {
-    std::string Result;
-    for (auto &Arg : Args)
-      Result += Arg.getAsString() + ", ";
-    return Result.empty() ? Result : Result.erase(Result.size() - 2, 2);
-  }
-  std::string getArguments() {
+  inline std::string getOriginArguments() { return Args.getArguments(); }
+  inline std::string getArguments() {
     return getOriginArguments() + getExtraArguments();
+  }
+
+protected:
+  inline const std::vector<std::shared_ptr<VarInfo>> &
+  getKernelPointerVarList() {
+    return Args.getKernelPointerArgs();
   }
 
 private:
   static std::string getName(const NamedDecl *D);
   void buildCallExprInfo(const CallExpr *CE);
-  void buildArguments(const CallExpr *CE) {
-    for (auto Arg : CE->arguments())
-      Args.emplace_back(Arg);
-  }
   void
   buildTemplateArguments(const llvm::ArrayRef<TemplateArgumentLoc> &ArgsList) {
     for (auto &Arg : ArgsList)
@@ -619,7 +622,7 @@ private:
   unsigned Loc;
   SourceLocation RParenLoc;
   std::string Name;
-  std::vector<ArgumentInfo> Args;
+  ArgumentsInfo Args;
   std::vector<TemplateArgumentInfo> TemplateArgs;
   GlobalMap<DeviceFunctionInfo> FuncDeclMap;
   std::shared_ptr<MemVarMap> VarMap;
@@ -675,46 +678,71 @@ private:
 // kernel call info is specific CallFunctionExpr, which include info of kernel
 // call.
 class KernelCallExpr : public CallFunctionExpr {
+
+  class FormatStmtBlock {
+    const std::string &NL;
+    std::string &Indent;
+    std::string &Stmts;
+
+  public:
+    FormatStmtBlock(const std::string &NL, std::string &Indent,
+                    std::string &Stmts)
+        : NL(NL), Indent(Indent), Stmts(Stmts) {
+      Indent += "  ";
+    }
+    FormatStmtBlock(const FormatStmtBlock &Parent)
+        : FormatStmtBlock(Parent.NL, Parent.Indent, Parent.Stmts) {}
+    ~FormatStmtBlock() { Indent.erase(Indent.size() - 2); }
+    inline void pushStmt(const std::string &S) { Stmts += Indent + S + NL; }
+  };
+
 public:
   KernelCallExpr(const CUDAKernelCallExpr *KernelCall)
-      : CallFunctionExpr((const CallExpr *)KernelCall), KernelCall(KernelCall),
-        ExternMemSize(getExternMemSize(KernelCall)), IsSync(false) {}
+      : CallFunctionExpr((const CallExpr *)KernelCall), IsSync(false) {
+    buildKernelInfo(KernelCall);
+  }
 
-  std::string getAccessorDecl(const std::string &Indent, const std::string &NL);
-  std::string getExtraArguments() override {
+  void getAccessorDecl(FormatStmtBlock &Block);
+  inline std::string getExtraArguments() override {
     return getVarMap()->getKernelArguments(hasArgs());
   }
 
-  const CUDAKernelCallExpr *getCallExpr() { return KernelCall; }
+  std::string getReplacement();
+  inline SourceLocation getBeginLoc() { return LocInfo.BeginLoc; }
 
-  void setSync(bool Sync = true) { IsSync = Sync; }
-  bool isSync() { return IsSync; }
+  inline void setSync(bool Sync = true) { IsSync = Sync; }
+  inline bool isSync() { return IsSync; }
 
 private:
-  static std::string getExternMemSize(const CUDAKernelCallExpr *KernelCall);
+  void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
+  void buildExecutionConfig(const CUDAKernelCallExpr *KernelCall);
+  std::string analysisExcutionConfig(const Expr *Config);
 
-  std::string getAccessorDecl(MemVarInfo::VarScope Scope,
-                              const std::string &Indent,
-                              const std::string &NL) {
-    assert(Scope != MemVarInfo::Extern);
-    static const std::string NullString;
-    std::string Result;
-    for (auto VI : getVarMap()->getMap(Scope)) {
-      if (Scope == MemVarInfo::Local) {
-        Result += Indent + VI.second->getMemoryDecl() + NL;
-      }
-      Result += Indent + VI.second->getAccessorDecl(NullString) + NL;
-    }
-    return Result;
-  }
+  void getAccessorDecl(FormatStmtBlock &Block, MemVarInfo::VarScope Scope);
 
-  std::string getExternDecl(std::shared_ptr<MemVarInfo> VI) {
-    assert(!ExternMemSize.empty());
-    return VI->getMemoryDecl(ExternMemSize);
-  }
+  using StmtList = std::vector<std::string>;
+  void buildKernelPointerArgsStmt(StmtList &BufferAndOffsets,
+                                  StmtList &Accessors, StmtList &Redecls);
+  void buildKernelPointerArgBufferAndOffsetStmt(const std::string &ArgName,
+                                                StmtList &Buffers);
+  void buildKernelPointerArgAccessorStmt(const std::string &ArgName,
+                                         StmtList &Accessors);
+  void buildKernelPointerArgRedeclStmt(const std::string &ArgName,
+                                       const std::string &TypeName,
+                                       StmtList &Redecls);
 
-  const CUDAKernelCallExpr *KernelCall;
-  const std::string ExternMemSize;
+  struct {
+    SourceLocation BeginLoc;
+    std::string LocHash;
+    std::string NL;
+    std::string Indent;
+  } LocInfo;
+  struct {
+    std::string NDSize;
+    std::string WGSize;
+    std::string ExternMemSize;
+  } ExecutionConfig;
+
   bool IsSync;
 };
 
@@ -737,9 +765,9 @@ public:
   }
 
   void setSizeExpr(const Expr *SizeExpression) {
-    SizeExpr = SizeExpression;
-    getSizeString();
-    replaceType(SizeExpr);
+    ArgumentAnalysis A(SizeExpression);
+    A.analysis();
+    Size = A.getReplacedString();
   }
 
   std::string getAssignArgs(const std::string &TypeName) {
@@ -747,19 +775,6 @@ public:
   }
 
 private:
-  void getSizeString() {
-    auto SizeBegin = SyclctGlobalInfo::getSourceManager().getSpellingLoc(
-        SizeExpr->getBeginLoc());
-    Size = std::string(
-        SyclctGlobalInfo::getSourceManager().getCharacterData(SizeBegin),
-        SizeExpr->getEndLoc().getRawEncoding() - SizeBegin.getRawEncoding() +
-            1);
-  }
-  void replaceType(const Expr *SizeExpr);
-  void replaceSizeString(const SourceLocation &Begin, const SourceLocation &End,
-                         const std::string &NewTypeName);
-
-  const Expr *SizeExpr;
   std::string Size;
   std::string Name;
 };

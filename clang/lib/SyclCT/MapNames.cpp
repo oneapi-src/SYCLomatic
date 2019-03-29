@@ -19,7 +19,7 @@ using namespace clang;
 using namespace clang::syclct;
 
 // Type names mapping.
-const std::map<std::string, std::string> MapNames::TypeNamesMap{
+const MapNames::MapTy MapNames::TypeNamesMap{
     {"cudaDeviceProp", "syclct::sycl_device_info"},
     {"cudaError_t", "int"},
     {"cudaError", "int"},
@@ -47,12 +47,12 @@ const std::unordered_map<std::string, std::string>
     };
 
 // CUDA dim3 dot member funciton names mapping.
-const std::map<std::string, std::string> MapNames::Dim3MemberNamesMap{
+const MapNames::MapTy MapNames::Dim3MemberNamesMap{
     {"x", "[0]"}, {"y", "[1]"}, {"z", "[2]"},
     // ...
 };
 
-const std::map<std::string, std::string> MapNames::MacrosMap{
+const MapNames::MapTy MapNames::MacrosMap{
     {"__CUDA_ARCH__", "DPCPP_COMPATIBILITY_TEMP"}, /**/
     {"__NVCC__", "DPCPP_COMPATIBILITY_TEMP"},      /**/
     {"__CUDACC__", "DPCPP_COMPATIBILITY_TEMP"},
@@ -60,7 +60,7 @@ const std::map<std::string, std::string> MapNames::MacrosMap{
 };
 
 // DeviceProp names mapping.
-const std::map<std::string, std::string> DevicePropVarRule::PropNamesMap{
+const MapNames::MapTy DevicePropVarRule::PropNamesMap{
     {"clockRate", "max_clock_frequency"},
     {"computeMode", "mode"},
     {"major", "major_version"},
@@ -73,14 +73,14 @@ const std::map<std::string, std::string> DevicePropVarRule::PropNamesMap{
 };
 
 // DeviceProp names mapping.
-const std::map<std::string, std::string>
+const MapNames::MapTy
     VectorTypeMemberAccessRule::MemberNamesMap{
         {"x", "x()"}, {"y", "y()"}, {"z", "z()"}, {"w", "w()"},
         // ...
     };
 
 // Enum constants name mapping.
-const std::map<std::string, std::string> EnumConstantRule::EnumNamesMap{
+const MapNames::MapTy EnumConstantRule::EnumNamesMap{
     // enum cudaComputeMode
     {"cudaComputeModeDefault", "compute_mode::default_"},
     {"cudaComputeModeExclusive", "compute_mode::exclusive"},
@@ -100,7 +100,7 @@ const std::map<std::string, std::string> EnumConstantRule::EnumNamesMap{
 };
 
 // Math function names migration.
-const std::map<std::string, std::string> MathFunctionsRule::FunctionNamesMap{
+const MapNames::MapTy MathFunctionsRule::FunctionNamesMap{
     // Cuda's max to sycl's max. all have integer types and double types.
     // See "4.13.4 Integer functions" and "4.13.5 Common functions"
 
@@ -256,10 +256,9 @@ const std::map<std::string, std::string> MathFunctionsRule::FunctionNamesMap{
 };
 
 // cudaFuncAttributes names migration
-const std::map<std::string, std::string>
-    KernelFunctionInfoRule::AttributesNamesMap{
-        {"maxThreadsPerBlock", "max_work_group_size"},
-    };
+const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
+    {"maxThreadsPerBlock", "max_work_group_size"},
+};
 
 std::map<std::string, bool> TranslationStatistics::TranslationTable{
 #define ENTRY(APINAME, VALUE, TARGET, COMMENT) {#APINAME, VALUE},

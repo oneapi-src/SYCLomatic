@@ -492,46 +492,11 @@ public:
 };
 
 class ReplaceKernelCallExpr : public TextModification {
-  const CUDAKernelCallExpr *KCall;
   std::shared_ptr<KernelCallExpr> Kernel;
   StmtStringMap *SSM;
 
-  std::pair<const Expr *, const Expr *> getExecutionConfig() const;
-  static std::string getDim3Translation(const Expr *, const ASTContext &,
-                                        StmtStringMap *SSM);
-
-  static std::string
-  buildTemplateArgList(const llvm::ArrayRef<TemplateArgument> &Args,
-                       const ASTContext &Context) {
-    std::string ArgsList;
-    llvm::raw_string_ostream OS(ArgsList);
-    PrintingPolicy Policy(Context.getLangOpts());
-    bool NotBegin = false;
-    for (auto Arg : Args) {
-      if (NotBegin)
-        OS << ", ";
-      else
-        NotBegin = true;
-      Arg.print(Policy, OS);
-    }
-    return OS.str();
-  }
-
-  static std::string getTemplateArgs(const SourceLocation &L,
-                                     const SourceLocation &R,
-                                     const SourceManager &SM) {
-    auto CharBegin = SM.getCharacterData(L);
-    auto CharEnd = SM.getCharacterData(R);
-    while (*CharBegin++ != '<')
-      ;
-    while (*CharEnd != '>')
-      CharEnd--;
-    return std::string(CharBegin, CharEnd);
-  }
-
 public:
-  ReplaceKernelCallExpr(std::shared_ptr<KernelCallExpr> Kernel,
-                        StmtStringMap *SSM);
+  ReplaceKernelCallExpr(std::shared_ptr<KernelCallExpr> Kernel);
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;

@@ -12,14 +12,31 @@
 #ifndef SYCLCT_MAPNAMES_H
 #define SYCLCT_MAPNAMES_H
 
+#include "Utility.h"
 #include <map>
-#include <vector>
 
 class MapNames {
 public:
-  static const std::map<std::string, std::string> TypeNamesMap;
-  static const std::map<std::string, std::string> Dim3MemberNamesMap;
-  static const std::map<std::string, std::string> MacrosMap;
+  using MapTy = std::map<std::string, std::string>;
+  static const MapTy TypeNamesMap;
+  static const MapTy Dim3MemberNamesMap;
+  static const MapTy MacrosMap;
+
+  inline static const std::string &findReplacedName(const MapTy &Map,
+                                                    const std::string &Name) {
+    static std::string NullString;
+    auto Itr = Map.find(Name);
+    if (Itr == Map.end())
+      return NullString;
+    return Itr->second;
+  }
+  static bool replaceName(const MapTy &Map, std::string &Name) {
+    auto &Result = findReplacedName(Map, Name);
+    if (Result.empty())
+      return false;
+    Name = Result;
+    return true;
+  }
 };
 
 class TranslationStatistics {

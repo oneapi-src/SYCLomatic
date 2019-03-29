@@ -438,7 +438,7 @@ public:
     ATM.matchAST(Context, TransformSet, SSM);
 
     SyclctGlobalInfo::getInstance().emplaceKernelAndDeviceReplacement(
-        TransformSet, SSM);
+        TransformSet);
 
     // Sort the transformations according to the sort key of the individual
     // transformations.  Sorted from low->high Key values
