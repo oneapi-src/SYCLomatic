@@ -24,6 +24,25 @@ void hello4() { printf("hello2"); }
 #elif defined(__CUDA_ARCH__)
 void hello5() { printf("hello2"); }
 #endif
+
+__global__ void test(){
+//CHECK:#if (DPCPP_COMPATIBILITY_TEMP >= 400) &&  (DPCPP_COMPATIBILITY_TEMP >= 400)
+//CHECK-NEXT:printf(">400, \n");
+//CHECK-NEXT:#elif (DPCPP_COMPATIBILITY_TEMP >200)
+//CHECK-NEXT:printf(">200, \n");
+//CHECK-NEXT:#else
+//CHECK-NEXT:printf("<200 \n");
+//CHECK-NEXT:#endif
+#if (__CUDA_ARCH__ >= 400) &&  (__CUDA_ARCH__ >= 400)
+printf(">400, \n");
+#elif (__CUDA_ARCH__ >200)
+printf(">200, \n");
+#else
+printf("<200 \n");
+#endif
+}
+
+
 int main() {
 //CHECK: #if defined(DPCPP_COMPATIBILITY_TEMP)
 //CHECK-NEXT:   {

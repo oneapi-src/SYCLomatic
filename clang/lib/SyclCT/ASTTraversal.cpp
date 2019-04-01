@@ -124,6 +124,67 @@ void IncludesCallbacks::Defined(const Token &MacroNameTok,
   ReplaceCuMacro(MacroNameTok);
 }
 
+void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange) {
+  // __CUDA_ARCH__ is not defined in clang, and need check if it is use
+  // in #if and #elif
+  const char *BP = SM.getCharacterData(ConditionRange.getBegin());
+  const char *EP = SM.getCharacterData(ConditionRange.getEnd());
+  unsigned int Size = EP - BP + 1;
+  std::string E(BP, Size);
+  size_t Pos = 0;
+  const std::string MacroName = "__CUDA_ARCH__";
+  std::string ReplacedMacroName;
+  if (MapNames::MacrosMap.find(MacroName) != MapNames::MacrosMap.end()) {
+    ReplacedMacroName = MapNames::MacrosMap.at(MacroName);
+  } else {
+    return;
+  }
+
+  std::size_t Found = E.find(MacroName, Pos);
+  while (Found != std::string::npos) {
+    // found one, insert replace for it
+    if (MapNames::MacrosMap.find(MacroName) != MapNames::MacrosMap.end()) {
+      SourceLocation IB = ConditionRange.getBegin().getLocWithOffset(Found);
+      SourceLocation IE = IB.getLocWithOffset(MacroName.length());
+      CharSourceRange InsertRange(SourceRange(IB, IE), false);
+      TransformSet.emplace_back(
+          new ReplaceInclude(InsertRange, std::move(ReplacedMacroName)));
+    }
+    // check next
+    Pos = Found + MacroName.length();
+    if ((Pos + MacroName.length()) > Size) {
+      break;
+    }
+    Found = E.find(MacroName, Pos);
+  }
+}
+void IncludesCallbacks::If(SourceLocation Loc, SourceRange ConditionRange,
+                           ConditionValueKind ConditionValue) {
+  std::string InRoot = ATM.InRoot;
+  std::string InFile = SM.getFilename(Loc);
+  bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
+                  (isChildPath(InRoot, InFile) || isSamePath(InRoot, InFile));
+
+  if (!IsInRoot) {
+    return;
+  }
+  ReplaceCuMacro(ConditionRange);
+}
+void IncludesCallbacks::Elif(SourceLocation Loc, SourceRange ConditionRange,
+                             ConditionValueKind ConditionValue,
+                             SourceLocation IfLoc) {
+  std::string InRoot = ATM.InRoot;
+  std::string InFile = SM.getFilename(Loc);
+  bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
+                  (isChildPath(InRoot, InFile) || isSamePath(InRoot, InFile));
+
+  if (!IsInRoot) {
+    return;
+  }
+
+  ReplaceCuMacro(ConditionRange);
+}
+
 void IncludesCallbacks::InclusionDirective(
     SourceLocation HashLoc, const Token &IncludeTok, StringRef FileName,
     bool IsAngled, CharSourceRange FilenameRange, const FileEntry *File,
@@ -995,9 +1056,7 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: {
-    return false;
-  }
+  default: { return false; }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \

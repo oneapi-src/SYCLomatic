@@ -73,11 +73,16 @@ public:
   void Ifndef(SourceLocation Loc, const Token &MacroNameTok,
               const MacroDefinition &MD) override;
   void ReplaceCuMacro(const Token &MacroNameTok);
+  void ReplaceCuMacro(SourceRange ConditionRange);
   void Defined(const Token &MacroNameTok, const MacroDefinition &MD,
                SourceRange Range) override;
   void FileChanged(SourceLocation Loc, FileChangeReason Reason,
                    SrcMgr::CharacteristicKind FileType,
                    FileID PrevFID = FileID()) override;
+  void If(SourceLocation Loc, SourceRange ConditionRange,
+                  ConditionValueKind ConditionValue) override;
+  void Elif(SourceLocation Loc, SourceRange ConditionRange,
+                    ConditionValueKind ConditionValue, SourceLocation IfLoc) override;
 };
 
 class ASTTraversal;

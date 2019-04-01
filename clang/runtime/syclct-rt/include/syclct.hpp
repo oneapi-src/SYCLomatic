@@ -24,7 +24,7 @@
 #include <iostream>
 
 // Todo: update this temporary macro with the one available in DPC++ compiler.
-#define DPCPP_COMPATIBILITY_TEMP
+#define DPCPP_COMPATIBILITY_TEMP   (200)
 
 #include "syclct_atomic.hpp"
 #include "syclct_device.hpp"
