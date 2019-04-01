@@ -168,7 +168,7 @@ const std::map<std::string, std::string>
     };
 
 std::map<std::string, bool> TranslationStatistics::TranslationTable{
-#define ENTRY(APINAME, VALUE) {#APINAME, VALUE},
+#define ENTRY(APINAME, VALUE, TARGET, COMMENT) {#APINAME, VALUE},
 #include "APINames.inc"
 #undef ENTRY
 };
