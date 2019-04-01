@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+// CHECK: #include <time.h> // For clock_t, clock and CLOCKS_PER_SEC
+
 __global__ static void timedReduction(const float *input, float *output, clock_t *timer)
 {
     // CHECK: /*

@@ -367,7 +367,6 @@ std::string ReplaceDim3Ctor::getParamsString(const CXXConstructExpr *Ctor,
           Params += getStmtSpellingWithTransforms(Arg, Context, SSM, true);
         else
           Params += getStmtSpellingWithTransforms(Arg, Context, SSM);
-        //        Params += getStmtSpelling(Arg, Context);
       }
     }
     return Params;
@@ -393,8 +392,7 @@ std::string ReplaceDim3Ctor::getReplaceString(const ASTContext &Context) const {
     } else {
       S = getSyclRangeCtor(Ctor, Context);
     }
-    StmtStringPair SSP = {Ctor, S};
-    SSM->insert(SSP);
+    SSM->insert({Ctor, S});
     return S;
   }
 }

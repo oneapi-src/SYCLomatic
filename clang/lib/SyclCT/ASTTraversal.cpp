@@ -38,6 +38,9 @@ std::unordered_map<std::string, std::unordered_set</* Comment ID */ int>>
 
 static std::set<SourceLocation> AttrExpansionFilter;
 
+// Remember the location of the last inclusion directive for each file
+static std::map<FileID, SourceLocation> IncludeLocations;
+
 void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
   std::string InRoot = ATM.InRoot;
   std::string InFile = SM.getFilename(MacroNameTok.getLocation());
@@ -126,6 +129,10 @@ void IncludesCallbacks::InclusionDirective(
     bool IsAngled, CharSourceRange FilenameRange, const FileEntry *File,
     StringRef SearchPath, StringRef RelativePath, const Module *Imported,
     SrcMgr::CharacteristicKind FileType) {
+  // Record the locations of inclusion directives
+  // The last inclusion diretive of a file will be remembered
+  auto DecomposedLoc = SM.getDecomposedExpansionLoc(FilenameRange.getEnd());
+  IncludeLocations[DecomposedLoc.first] = FilenameRange.getEnd();
 
   std::string IncludePath = SearchPath;
   makeCanonical(IncludePath);
@@ -260,6 +267,16 @@ void IncludesCallbacks::InclusionDirective(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
         ""));
+  }
+}
+
+void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
+                                    SrcMgr::CharacteristicKind FileType,
+                                    FileID PrevFID) {
+  // Record the location when a file is entered
+  if (Reason == clang::PPCallbacks::EnterFile) {
+    auto DecomposedLoc = SM.getDecomposedExpansionLoc(Loc);
+    IncludeLocations[DecomposedLoc.first] = Loc;
   }
 }
 
@@ -1350,8 +1367,7 @@ void Dim3MemberFieldsRule::FieldsRename(const MatchFinder::MatchResult &Result,
       emplaceTransformation(
           new RenameFieldInMemberExpr(ME, Search->second + "", Position));
       std::string NewMemberStr = Ret.substr(0, Position) + Search->second;
-      StmtStringPair SSP = {ME, NewMemberStr};
-      SSM->insert(SSP);
+      SSM->insert({ME, NewMemberStr});
     }
   }
 }
@@ -1659,6 +1675,17 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceCalleeName(CE, "syclct::ll2d", FuncName));
   } else if (FuncName == "clock") {
     report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF);
+    // Add '#include <time.h>' directive to the file only once
+    static std::set<FileID> TimeHeaderFilter;
+    auto Loc = CE->getBeginLoc();
+    auto FID = Result.SourceManager->getDecomposedExpansionLoc(Loc).first;
+    auto IncludeLoc = IncludeLocations[FID];
+    if (TimeHeaderFilter.find(FID) == TimeHeaderFilter.end()) {
+      TimeHeaderFilter.insert(FID);
+      emplaceTransformation(new InsertText(
+          IncludeLoc,
+          "\n#include <time.h> // For clock_t, clock and CLOCKS_PER_SEC\n"));
+    }
   } else if (FuncName == "cudaEventCreate" ||
              FuncName == "cudaEventCreateWithFlags" ||
              FuncName == "cudaEventDestroy") {

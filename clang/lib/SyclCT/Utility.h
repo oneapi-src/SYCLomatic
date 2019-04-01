@@ -34,20 +34,15 @@ class ASTContext;
 } // namespace clang
 
 // classes for keeping track of Stmt->String mappings
-struct StmtStringPair {
-  const clang::Stmt *StmtVal;
-  std::string Str;
-};
+using StmtStringPair = std::pair<const clang::Stmt *, std::string>;
 
 class StmtStringMap {
   typedef std::map<const clang::Stmt *, std::string> MapTy;
 
 public:
-  void insert(StmtStringPair &SSP) {
-    Map.insert(std::make_pair(SSP.StmtVal, SSP.Str));
-  }
-  std::string lookup(const clang::Stmt *S) {
-    MapTy::iterator It = Map.find(S);
+  void insert(const StmtStringPair &SSP) { Map.insert(SSP); }
+  std::string lookup(const clang::Stmt *S) const {
+    auto It = Map.find(S);
     if (It != Map.end()) {
       return It->second;
     }
@@ -87,7 +82,7 @@ std::string getStmtSpelling(const clang::Stmt *E,
 // Get the Stmt spelling with the existing transforms applied
 std::string getStmtSpellingWithTransforms(const clang::Stmt *S,
                                           const clang::ASTContext &Context,
-                                          StmtStringMap *SSM,
+                                          const StmtStringMap *SSM,
                                           bool doExpansion = false);
 
 template <typename T> std::string getHashAsString(const T &Val) {
@@ -130,5 +125,5 @@ const std::string &getFmtStatementIndent(std::string &BaseIndent);
 const std::string &getFmtEndArg(void);
 const std::string &getFmtArgIndent(std::string &BaseIndent);
 
-std::vector<std::string> split(const std::string& str, char delim);
+std::vector<std::string> split(const std::string &str, char delim);
 #endif // SYCLCT_UTILITY_H

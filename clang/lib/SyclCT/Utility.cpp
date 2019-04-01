@@ -132,25 +132,27 @@ typedef std::vector<std::string> SplitsType;
 
 // Recursively walk the AST from S, looking for statements that already
 // have a string mapping in the StmtStringMap
-static void getTransforms(const Stmt *S, StmtStringMap *SSM,
-                          TransformsType &Transforms) {
+static TransformsType getTransforms(const Stmt *S, const StmtStringMap *SSM) {
+  TransformsType Transforms;
   std::string Str = SSM->lookup(S);
   if (!Str.empty()) {
     Transforms.push_back({S, Str});
   } else {
-    for (auto C : S->children()) {
-      getTransforms(C, SSM, Transforms);
+    for (const auto C : S->children()) {
+      auto Trans = getTransforms(C, SSM);
+      Transforms.insert(Transforms.end(), Trans.begin(), Trans.end());
     }
   }
+  return Transforms;
 }
 
 // Split the original spelling of S into pieces according to the ranges from the
 // transforms
-static void getOriginalSplits(const Stmt *S, TransformsType &Transforms,
-                              SplitsType &Splits,
-                              const clang::ASTContext &Context,
-                              bool doExpansion) {
-  Splits = SplitsType();
+static SplitsType getOriginalSplits(const Stmt *S,
+                                    const TransformsType &Transforms,
+                                    const clang::ASTContext &Context,
+                                    bool doExpansion) {
+  SplitsType Splits;
   auto &SM = Context.getSourceManager();
   SourceLocation Begin(S->getBeginLoc()), _End(S->getEndLoc());
   SourceLocation End(Lexer::getLocForEndOfToken(_End, 0, SM, LangOptions()));
@@ -162,12 +164,10 @@ static void getOriginalSplits(const Stmt *S, TransformsType &Transforms,
   }
   const char *CBegin = SM.getCharacterData(Begin);
   const char *CEnd = SM.getCharacterData(End);
-  const char *TBegin;
-  const char *TEnd;
-  for (auto T : Transforms) {
-    SourceRange TSR = T.StmtVal->getSourceRange();
-    TBegin = SM.getCharacterData(TSR.getBegin());
-    TEnd = SM.getCharacterData(TSR.getEnd());
+  for (const auto &T : Transforms) {
+    SourceRange TSR = T.first->getSourceRange();
+    const char *TBegin = SM.getCharacterData(TSR.getBegin());
+    const char *TEnd = SM.getCharacterData(TSR.getEnd());
     size_t SplitLen = TBegin - CBegin;
     std::string Split(CBegin, SplitLen);
     Splits.push_back(Split);
@@ -176,32 +176,31 @@ static void getOriginalSplits(const Stmt *S, TransformsType &Transforms,
   }
   std::string Split(CBegin, CEnd - CBegin);
   Splits.push_back(Split);
+  return Splits;
 }
 
 // Get the new split strings to splice into the resulting string
-static void getNewSplits(TransformsType &Transforms, SplitsType &Splits) {
-  Splits = SplitsType();
-  for (auto T : Transforms) {
-    Splits.push_back(T.Str);
+static SplitsType getNewSplits(const TransformsType &Transforms) {
+  SplitsType Splits;
+  for (const auto &T : Transforms) {
+    Splits.push_back(T.second);
   }
+  return Splits;
 }
 
 // Returns the spelling of Stmt S, with the migrations from StmtStringMap
 std::string getStmtSpellingWithTransforms(const Stmt *S,
                                           const clang::ASTContext &Context,
-                                          StmtStringMap *SSM,
+                                          const StmtStringMap *SSM,
                                           bool doExpansion) {
-  TransformsType Transforms;
-  getTransforms(S, SSM, Transforms);
+  auto Transforms = getTransforms(S, SSM);
   if (Transforms.empty()) {
     if (doExpansion)
       return getStmtExpansion(S, Context);
     return getStmtSpelling(S, Context);
   }
-  SplitsType OriginalSplits;
-  SplitsType NewSplits;
-  getOriginalSplits(S, Transforms, OriginalSplits, Context, doExpansion);
-  getNewSplits(Transforms, NewSplits);
+  auto OriginalSplits = getOriginalSplits(S, Transforms, Context, doExpansion);
+  auto NewSplits = getNewSplits(Transforms);
   assert(OriginalSplits.size() == NewSplits.size() + 1);
   std::string NewSpelling = OriginalSplits[0];
   for (size_t I = 0; I < NewSplits.size(); ++I) {
