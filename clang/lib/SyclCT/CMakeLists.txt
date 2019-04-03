@@ -21,6 +21,7 @@ add_clang_library(SyclCT
   Utility.cpp
   ValidateArguments.cpp
   ExternalReplacement.cpp
+  SignalProcess.cpp
 
   LINK_LIBS
   clangBasic

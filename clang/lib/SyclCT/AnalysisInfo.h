@@ -183,6 +183,7 @@ public:
     return getBaseName();
   }
 
+  inline const std::string &getOrginalBaseType() { return OrginalBaseType; }
   // when there is no arguments, parameter MustArguments determine whether
   // parens will exist. Null string will be returned when MustArguments is
   // false, otherwise "()" will be returned.
@@ -212,6 +213,7 @@ private:
 private:
   std::string BaseName;
   std::string BaseNameWithoutQualifiers;
+  std::string OrginalBaseType;
   std::vector<const ArrayType *> Range;
   bool IsPointer;
   bool IsTemplate;

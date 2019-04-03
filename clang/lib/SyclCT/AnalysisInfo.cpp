@@ -82,7 +82,7 @@ void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block) {
 }
 
 void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block,
-                                            MemVarInfo::VarScope Scope) {
+                                     MemVarInfo::VarScope Scope) {
   assert(Scope != MemVarInfo::Extern);
   static const std::string NullString;
   for (auto VI : getVarMap()->getMap(Scope)) {
@@ -135,8 +135,8 @@ std::string KernelCallExpr::getReplacement() {
   StmtList Buffers, Accessors, Redecls;
   buildKernelPointerArgsStmt(Buffers, Accessors, Redecls);
 
-#define FMT_STMT_BLOCK                                                            \
-  FormatStmtBlock &BlockPrev = Block;                                               \
+#define FMT_STMT_BLOCK                                                         \
+  FormatStmtBlock &BlockPrev = Block;                                          \
   FormatStmtBlock Block(BlockPrev);
 
   Result += "{" + LocInfo.NL;
@@ -431,7 +431,8 @@ std::string MemVarInfo::getDeclarationReplacement() {
 }
 
 TypeInfo::TypeInfo(QualType Type)
-    : IsPointer(false), IsTemplate(false), TemplateIndex(0), TemplateList(nullptr) {
+    : IsPointer(false), IsTemplate(false), TemplateIndex(0),
+      TemplateList(nullptr) {
   setArrayInfo(Type);
   setPointerInfo(Type);
   setTemplateInfo(Type);
@@ -492,6 +493,8 @@ void TypeInfo::setTemplateInfo(QualType &Type) {
 void TypeInfo::setName(QualType &Type) {
   auto &PP = SyclctGlobalInfo::getContext().getPrintingPolicy();
   BaseNameWithoutQualifiers = Type.getUnqualifiedType().getAsString(PP);
+
+  OrginalBaseType = BaseNameWithoutQualifiers;
   if (!isTemplate())
     MapNames::replaceName(MapNames::TypeNamesMap, BaseNameWithoutQualifiers);
   auto Q = Type.getLocalQualifiers();

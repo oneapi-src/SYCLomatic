@@ -17,7 +17,7 @@ namespace syclct {
 // array[2]: count API not support
 std::unordered_map<std::string, std::array<unsigned int, 3>> LOCStaticsMap;
 
-// std::string -> APIName ,Status(true or false)
+// std::string -> APIName ,types information
 // unsigned int -> Times met
 std::unordered_map<std::string, unsigned int> SrcAPIStaticsMap;
 

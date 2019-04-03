@@ -264,6 +264,13 @@ const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
 std::map<std::string, bool> TranslationStatistics::TranslationTable{
 #define ENTRY(APINAME, VALUE, TARGET, COMMENT) {#APINAME, VALUE},
 #include "APINames.inc"
+#include "APINames_thrust.inc"
+#include "APINames_cuBLAS.inc"
+#include "APINames_nvJPEG.inc"
+#include "APINames_cuFFT.inc"
+#include "APINames_cuGRAPH.inc"
+#include "APINames_cuRAND.inc"
+#include "APINames_cuPARSE.inc"
 #undef ENTRY
 };
 

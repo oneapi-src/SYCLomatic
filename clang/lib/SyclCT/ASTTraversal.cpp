@@ -877,6 +877,8 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
     Strs.erase(it);
 
   const std::string &TypeName = Strs.back();
+  SrcAPIStaticsMap[TypeName]++;
+
   auto Search = MapNames::TypeNamesMap.find(TypeName);
   if (Search == MapNames::TypeNamesMap.end()) {
     // TODO report migration error
@@ -907,8 +909,17 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(TypeInDeclRule)
 
 // Supported vector types
-const std::unordered_set<std::string> SupportedVectorTypes{"int2", "double2",
-                                                           "uint4"};
+const std::unordered_set<std::string> SupportedVectorTypes{
+    "char1",     "uchar1",     "char2",      "uchar2",     "char3",
+    "uchar3",    "char4",      "uchar4",     "short1",     "ushort1",
+    "short2",    "ushort2",    "short3",     "ushort3",    "short4",
+    "ushort4",   "int1",       "uint1",      "int2",       "uint2",
+    "int3",      "uint3",      "int4",       "uint4",      "long1",
+    "ulong1",    "long2",      "ulong2",     "long3",      "ulong3",
+    "long4",     "ulong4",     "float1",     "float2",     "float3",
+    "float4",    "longlong1",  "ulonglong1", "longlong2",  "ulonglong2",
+    "longlong3", "ulonglong3", "longlong4",  "ulonglong4", "double1",
+    "double2",   "double3",    "double4"};
 
 static internal::Matcher<NamedDecl> vectorTypeName() {
   std::vector<std::string> TypeNames(SupportedVectorTypes.begin(),
@@ -1002,6 +1013,12 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
   if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "vecVarDecl")) {
     if (!isNamespaceInserted(
             D->getTypeSourceInfo()->getTypeLoc().getBeginLoc())) {
+
+      const QualType QT = D->getType();
+      TypeInfo Type(QT);
+      const std::string &TypeName = Type.getOrginalBaseType();
+      SrcAPIStaticsMap[TypeName]++;
+
       emplaceTransformation(new InsertNameSpaceInVarDecl(D, "cl::sycl::"));
     }
   }
@@ -1538,6 +1555,9 @@ void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
   const clang::Type *Type = FD->getReturnType().getTypePtr();
   std::string TypeName =
       Type->getCanonicalTypeInternal().getBaseTypeIdentifier()->getName().str();
+
+  SrcAPIStaticsMap[TypeName]++;
+
   auto Search = MapNames::TypeNamesMap.find(TypeName);
   if (Search == MapNames::TypeNamesMap.end()) {
     // TODO report migration error
@@ -2788,12 +2808,13 @@ REGISTER_RULE(TypeCastRule)
 void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
   std::vector<std::string> AllAPINames =
       TranslationStatistics::GetAllAPINames();
-
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(internal::Matcher<NamedDecl>(
-                                   new internal::HasNameMatcher(AllAPINames)))),
-                               unless(hasAncestor(cudaKernelCallExpr()))))
-                    .bind("APINamesUsed"),
-                this);
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(internal::Matcher<NamedDecl>(
+                         new internal::HasNameMatcher(AllAPINames)))),
+                     unless(hasAncestor(cudaKernelCallExpr())),
+                     unless(callee(hasDeclContext(namedDecl(hasName("std")))))))
+          .bind("APINamesUsed"),
+      this);
 }
 
 void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
@@ -2802,8 +2823,23 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
     return;
   }
 
+  std::string Namespace;
+  const NamedDecl *ND = dyn_cast<NamedDecl>(C->getCalleeDecl());
+  if (ND) {
+    const auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
+    if (NSD && !NSD->isInlineNamespace()) {
+      Namespace = NSD->getName().str();
+    }
+  }
+
   std::string APIName = C->getCalleeDecl()->getAsFunction()->getNameAsString();
+
+  if (!Namespace.empty()) {
+    APIName = Namespace + "::" + APIName;
+  }
+
   SrcAPIStaticsMap[APIName]++;
+
   if (!TranslationStatistics::IsTranslated(APIName)) {
 
     const SourceManager &SM = (*Result.Context).getSourceManager();

@@ -42,6 +42,9 @@
 #include "clang/Basic/Version.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "clang/Rewrite/Core/Rewriter.h"
+
+#include "SignalProcess.h"
+
 using namespace clang;
 using namespace clang::ast_matchers;
 using namespace clang::syclct;
@@ -154,6 +157,14 @@ static std::string WarningAllDesc("Suppress all warnings of the migration");
 opt<bool, true> SuppressWarningsAll("suppress-warnings-all",
                                     desc(WarningAllDesc), cat(SyclCTCat),
                                     location(SuppressWarningsAllFlag));
+
+bool NoStopOnErrFlag = false;
+
+static opt<bool, true>
+    NoStopOnErr("no-stop-on-err",
+                llvm::cl::desc("Keep running when meet parse error and "
+                               "generate the report, default: off"),
+                cat(SyclCTCat), llvm::cl::location(NoStopOnErrFlag));
 
 std::string CudaPath;          // Global value for the CUDA install path.
 std::string SyclctInstallPath; // Installation directory for this tool
@@ -784,7 +795,35 @@ std::string printCTVersion() {
   return OS.str();
 }
 
+void PrintReportOnFault(std::string &FaultMsg) {
+  llvm::outs() << FaultMsg;
+  saveApisReport();
+  saveDiagsReport();
+
+  std::string FileApis = OutRoot + "/" + ReportFilePrefix +
+                         (ReportFormat == "csv" ? ".apis.csv" : ".apis.log");
+  std::string FileDiags = OutRoot + "/" + ReportFilePrefix + ".diags.log";
+
+  std::ofstream File;
+  File.open(FileApis, std::ios::app);
+  if (File) {
+    File << FaultMsg;
+    File.close();
+  }
+
+  File.open(FileDiags, std::ios::app);
+  if (File) {
+    File << FaultMsg;
+    File.close();
+  }
+}
+
 int run(int argc, const char **argv) {
+
+#if defined(__linux__) || defined(_WIN64)
+  InstallSignalHandle();
+#endif
+
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;
   llvm::cl::SetVersionPrinter(
@@ -818,9 +857,11 @@ int run(int argc, const char **argv) {
   SyclctInstallPath = getInstallPath(Tool, argv[0]);
 
   ValidateInputDirectory(Tool, InRoot);
-  // Made "-- -x cuda --cuda-host-only" option set by default, .i.e commandline
-  // "syclct -in-root ./ -out-root ./ ./topologyQuery.cu  --  -x  cuda
-  // --cuda-host-only  -I../common/inc" became "syclct -in-root ./ -out-root ./
+  // Made "-- -x cuda --cuda-host-only" option set by default, .i.e
+  // commandline "syclct -in-root ./ -out-root ./ ./topologyQuery.cu  --  -x
+  // cuda
+  // --cuda-host-only  -I../common/inc" became "syclct -in-root ./ -out-root
+  // ./
   // ./topologyQuery.cu  -- -I../common/inc"
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "--cuda-host-only", ArgumentInsertPosition::BEGIN));
@@ -832,7 +873,7 @@ int run(int argc, const char **argv) {
       getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
 
   SyclCTActionFactory Factory(Tool.getReplacements());
-  if (int RunResult = Tool.run(&Factory)) {
+  if (int RunResult = Tool.run(&Factory) && !NoStopOnErrFlag) {
     DebugInfo::ShowStatus(RunResult);
     return RunResult;
   }
@@ -856,10 +897,8 @@ int run(int argc, const char **argv) {
     if (ReportOnlyFlag)
       return MigrationSucceeded;
   }
-
   // if run was successful
   int Status = saveNewFiles(Tool, InRoot, OutRoot);
-
   DebugInfo::ShowStatus(Status);
   return Status;
 }
