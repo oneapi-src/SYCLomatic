@@ -770,50 +770,84 @@ REGISTER_RULE(AtomicFunctionRule)
 
 // Rule for types replacements in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
-  auto HasCudaType = []() {
-    return anyOf(hasType(typedefDecl(hasName("dim3"))),
-                 hasType(typedefDecl(hasName("cudaError_t"))),
-                 hasType(typedefDecl(hasName("cudaEvent_t"))),
-                 hasType(typedefDecl(hasName("cudaStream_t"))),
-                 hasType(enumDecl(hasName("cudaError"))),
-                 hasType(cxxRecordDecl(hasName("cudaDeviceProp"))));
-  };
-  auto HasCudaTypePtr = []() {
-    return anyOf(hasType(pointsTo(typedefDecl(hasName("dim3")))),
-                 hasType(pointsTo(typedefDecl(hasName("cudaError_t")))),
-                 hasType(pointsTo(typedefDecl(hasName("cudaEvent_t")))),
-                 hasType(pointsTo(typedefDecl(hasName("cudaStream_t")))),
-                 hasType(pointsTo(enumDecl(hasName("cudaError")))),
-                 hasType(pointsTo(cxxRecordDecl(hasName("cudaDeviceProp")))));
-  };
-  auto HasCudaTypePtrPtr = []() {
-    return anyOf(
-        hasType(pointsTo(pointsTo(typedefDecl(hasName("dim3"))))),
-        hasType(pointsTo(pointsTo(typedefDecl(hasName("cudaError_t"))))),
-        hasType(pointsTo(pointsTo(typedefDecl(hasName("cudaEvent_t"))))),
-        hasType(pointsTo(pointsTo(typedefDecl(hasName("cudaStream_t"))))),
-        hasType(pointsTo(pointsTo(enumDecl(hasName("cudaError"))))),
-        hasType(pointsTo(pointsTo(cxxRecordDecl(hasName("cudaDeviceProp"))))));
-  };
-  auto HasCudaTypeRef = []() {
-    return anyOf(hasType(references(typedefDecl(hasName("dim3")))),
-                 hasType(references(typedefDecl(hasName("cudaError_t")))),
-                 hasType(references(typedefDecl(hasName("cudaEvent_t")))),
-                 hasType(references(typedefDecl(hasName("cudaStream_t")))),
-                 hasType(references(enumDecl(hasName("cudaError")))),
-                 hasType(references(cxxRecordDecl(hasName("cudaDeviceProp")))));
+  auto TypedefNames = [&]() {
+    return hasAnyName("dim3", "cudaError_t", "cudaEvent_t", "cudaStream_t");
   };
 
-  MF.addMatcher(varDecl(anyOf(HasCudaType(), HasCudaTypePtr(),
-                              HasCudaTypePtrPtr(), HasCudaTypeRef()),
-                        unless(hasType(substTemplateTypeParmType())))
-                    .bind("TypeInVarDecl"),
-                this);
-  MF.addMatcher(fieldDecl(anyOf(HasCudaType(), HasCudaTypePtr(),
-                                HasCudaTypePtrPtr(), HasCudaTypeRef()),
-                          unless(hasType(substTemplateTypeParmType())))
-                    .bind("TypeInFieldDecl"),
-                this);
+  auto EnumTypeNames = [&]() {
+    return hasAnyName("cudaError");
+  };
+
+  auto RecordTypeNames = [&]() {
+    return hasAnyName("cudaDeviceProp");
+  };
+
+  auto HasCudaType = [&]() {
+    return anyOf(hasType(typedefDecl(TypedefNames())),
+                 hasType(enumDecl(EnumTypeNames())),
+                 hasType(cxxRecordDecl(RecordTypeNames())));
+  };
+  auto HasCudaTypePtr = [&]() {
+    return anyOf(hasType(pointsTo(typedefDecl(TypedefNames()))),
+                 hasType(pointsTo(enumDecl(EnumTypeNames()))),
+                 hasType(pointsTo(cxxRecordDecl(RecordTypeNames()))));
+  };
+  auto HasCudaTypePtrPtr = [&]() {
+    return anyOf(hasType(pointsTo(pointsTo(typedefDecl(TypedefNames())))),
+                 hasType(pointsTo(pointsTo(enumDecl(EnumTypeNames())))),
+                 hasType(pointsTo(pointsTo(cxxRecordDecl(RecordTypeNames())))));
+  };
+  auto HasCudaTypeRef = [&]() {
+    return anyOf(hasType(references(typedefDecl(TypedefNames()))),
+                 hasType(references(enumDecl(EnumTypeNames()))),
+                 hasType(references(cxxRecordDecl(RecordTypeNames()))));
+  };
+
+  auto Typedefs = [&]() {
+    return typedefType(hasDeclaration(typedefDecl(TypedefNames())));
+  };
+
+  auto EnumTypes = [&]() {
+    return enumType(hasDeclaration(enumDecl(EnumTypeNames())));
+  };
+
+  auto RecordTypes = [&]() {
+    return recordType(hasDeclaration(cxxRecordDecl(RecordTypeNames())));
+  };
+
+  auto HasCudaArrayType = [&]() {
+    return anyOf(hasType(arrayType(hasElementType(Typedefs()))),
+                 hasType(arrayType(hasElementType(EnumTypes()))),
+                 hasType(arrayType(hasElementType(RecordTypes()))));
+  };
+
+  auto HasCudaPtrArrayType = [&]() {
+    return anyOf(hasType(arrayType(hasElementType(pointsTo(Typedefs())))),
+                 hasType(arrayType(hasElementType(pointsTo(EnumTypes())))),
+                 hasType(arrayType(hasElementType(pointsTo(RecordTypes())))));
+  };
+
+  auto HasCudaPtrPtrArrayType = [&]() {
+    return anyOf(
+        hasType(arrayType(hasElementType(pointsTo(pointsTo(Typedefs()))))),
+        hasType(arrayType(hasElementType(pointsTo(pointsTo(EnumTypes()))))),
+        hasType(arrayType(hasElementType(pointsTo(pointsTo(RecordTypes()))))));
+  };
+
+  MF.addMatcher(
+      varDecl(anyOf(HasCudaType(), HasCudaTypePtr(), HasCudaTypePtrPtr(),
+                    HasCudaTypeRef(), HasCudaArrayType(), HasCudaPtrArrayType(),
+                    HasCudaPtrPtrArrayType()),
+              unless(hasType(substTemplateTypeParmType())))
+          .bind("TypeInVarDecl"),
+      this);
+  MF.addMatcher(
+      fieldDecl(anyOf(HasCudaType(), HasCudaTypePtr(), HasCudaTypePtrPtr(),
+                      HasCudaTypeRef(), HasCudaArrayType(),
+                      HasCudaPtrArrayType(), HasCudaPtrPtrArrayType()),
+                unless(hasType(substTemplateTypeParmType())))
+          .bind("TypeInFieldDecl"),
+      this);
 }
 
 void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
@@ -828,7 +862,16 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
     return;
   }
 
-  std::istringstream ISS(QT.getAsString());
+  std::string TypeStr;
+  if (QT->isArrayType()) {
+    auto ArrType = Result.Context->getAsArrayType(QT);
+    auto EleType = ArrType->getElementType();
+    TypeStr = EleType.getAsString();
+  } else {
+    TypeStr = QT.getAsString();
+  }
+
+  std::istringstream ISS(TypeStr);
   std::vector<std::string> Strs(std::istream_iterator<std::string>{ISS},
                                 std::istream_iterator<std::string>());
   auto it = std::remove_if(Strs.begin(), Strs.end(), [](llvm::StringRef Str) {
@@ -844,7 +887,7 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
     return;
   }
 
-  std::string Replacement = QT.getAsString();
+  std::string Replacement = TypeStr;
   assert(Replacement.find(TypeName) != std::string::npos);
   Replacement = Replacement.substr(Replacement.find(TypeName));
   Replacement.replace(0, TypeName.length(), Search->second);

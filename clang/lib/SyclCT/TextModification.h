@@ -182,15 +182,16 @@ class ReplaceStmt : public TextModification {
 public:
   template <class... Args>
   ReplaceStmt(const Stmt *E, Args &&... S)
-      : TextModification(TMID::ReplaceStmt), TheStmt(E), IsReplaceCompatibilityAPI(false),
+      : TextModification(TMID::ReplaceStmt), TheStmt(E),
+        IsReplaceCompatibilityAPI(false),
         ReplacementString(std::forward<Args>(S)...) {}
 
   template <class... Args>
-  ReplaceStmt(const Stmt *E, bool IsReplaceCompatibilityAPI, std::string OrigAPIName,
-              Args &&... S)
+  ReplaceStmt(const Stmt *E, bool IsReplaceCompatibilityAPI,
+              std::string OrigAPIName, Args &&... S)
       : TextModification(TMID::ReplaceStmt), TheStmt(E),
-        IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI), OrigAPIName(OrigAPIName),
-        ReplacementString(std::forward<Args>(S)...) {}
+        IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI),
+        OrigAPIName(OrigAPIName), ReplacementString(std::forward<Args>(S)...) {}
 
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
@@ -259,11 +260,23 @@ class ReplaceTypeInDecl : public TextModification {
 public:
   ReplaceTypeInDecl(const VarDecl *D, std::string &&T)
       : TextModification(TMID::ReplaceTypeInDecl), D(D), FD(nullptr), T(T) {
-    TL = D->getTypeSourceInfo()->getTypeLoc();
+    if (D->getType()->isArrayType())
+      TL = D->getTypeSourceInfo()
+               ->getTypeLoc()
+               .getAs<ArrayTypeLoc>()
+               .getElementLoc();
+    else
+      TL = D->getTypeSourceInfo()->getTypeLoc();
   }
   ReplaceTypeInDecl(const FieldDecl *FD, std::string &&T)
       : TextModification(TMID::ReplaceTypeInDecl), D(nullptr), FD(FD), T(T) {
-    TL = FD->getTypeSourceInfo()->getTypeLoc();
+    if (FD->getType()->isArrayType())
+      TL = FD->getTypeSourceInfo()
+               ->getTypeLoc()
+               .getAs<ArrayTypeLoc>()
+               .getElementLoc();
+    else
+      TL = FD->getTypeSourceInfo()->getTypeLoc();
   }
   ExtReplacement getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
