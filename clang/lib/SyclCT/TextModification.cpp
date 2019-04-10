@@ -52,12 +52,6 @@ void recordTranslationInfo(const ASTContext &Context, const SourceLocation &SL,
           LOCStaticsMap[FileName][1]--;
         }
         LOCStaticsMap[FileName][0]++;
-
-        if (!APIName.empty()) {
-          std::string LocKey = APIName + "," + "true";
-          APIStaticsMap[LocKey]++;
-        }
-
       } else {
         LOCStaticsMap[FileName][1]++;
       }
@@ -932,7 +926,7 @@ void ReplaceKernelCallExpr::print(llvm::raw_ostream &OS, ASTContext &Context,
   printLocation(OS, Kernel->getBeginLoc(), Context, PrintDetail);
 
   // TODO: no more CUDAKernelExpr* pointer here.
-  //KCall->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
+  // KCall->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
   // TODO: print simple and meaningful informations
   OS << TransformStr << "[debug message unimplemented]\n";
 }

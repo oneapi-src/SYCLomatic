@@ -65,18 +65,23 @@ const char *const CtHelpMessage =
 static OptionCategory SyclCTCat("SYCL Compatibility Tool");
 static extrahelp CommonHelp(CtHelpMessage);
 static opt<std::string>
-    Passes("passes", desc("Comma separated list of migration passes that "
-                          "customed to migrate the input file, only specified "
-                          "mirgration pass will be applied during migration."),
+    Passes("passes",
+           desc("Comma separated list of migration passes that "
+                "customed to migrate the input file, only specified "
+                "mirgration pass will be applied during migration."),
            value_desc("FunctionAttrsRule,..."), cat(SyclCTCat));
-static opt<std::string> InRoot(
-    "in-root", desc("Path to root of project to be migrated"
-                    " (header files not under this root will not be migrated)"),
-    value_desc("/path/to/input/root/"), cat(SyclCTCat), llvm::cl::Optional);
-static opt<std::string> OutRoot(
-    "out-root", desc("Path directory where generated files will be placed"
-                     " (directory will be created if it does not exist)"),
-    value_desc("/path/to/output/root/"), cat(SyclCTCat), llvm::cl::Optional);
+static opt<std::string>
+    InRoot("in-root",
+           desc("Path to root of project to be migrated"
+                " (header files not under this root will not be migrated)"),
+           value_desc("/path/to/input/root/"), cat(SyclCTCat),
+           llvm::cl::Optional);
+static opt<std::string>
+    OutRoot("out-root",
+            desc("Path directory where generated files will be placed"
+                 " (directory will be created if it does not exist)"),
+            value_desc("/path/to/output/root/"), cat(SyclCTCat),
+            llvm::cl::Optional);
 
 static opt<std::string> ReportType(
     "report-type",
@@ -657,9 +662,7 @@ unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
   return LineNumber;
 }
 
-static void printMetrics(
-    clang::tooling::RefactoringTool &Tool,
-    std::map<std::string, std::array<unsigned int, 3>> &LOCStaticsMap) {
+static void printMetrics(clang::tooling::RefactoringTool &Tool) {
 
   for (const auto &Elem : LOCStaticsMap) {
     unsigned TotalLines = GetLinesNumber(Tool, Elem.first);
@@ -682,35 +685,48 @@ static void printMetrics(
 }
 
 static void saveApisReport(void) {
-
   if (ReportFilePrefix == "stdout") {
-    llvm::outs() << "----------APIS report----------------\n";
-    llvm::outs() << "API name, Migrated, Frequency";
+    llvm::outs() << "------------------APIS report--------------------\n";
+    llvm::outs() << "API name\t\t\t\tFrequency";
     llvm::outs() << "\n";
-    for (const auto &Elem : APIStaticsMap) {
-      std::string Key = Elem.first;
+
+    for (const auto &Elem : SrcAPIStaticsMap) {
+      std::string APIName = Elem.first;
       unsigned int Count = Elem.second;
-      llvm::outs() << Key << "," << std::to_string(Count) << "\n";
+      llvm::outs() << llvm::format("%-30s%16u\n", APIName.c_str(), Count);
     }
-    llvm::outs() << "-------------------------------------\n";
+    llvm::outs() << "-------------------------------------------------\n";
   } else {
     std::string RFile = OutRoot + "/" + ReportFilePrefix +
                         (ReportFormat == "csv" ? ".apis.csv" : ".apis.log");
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
     std::ofstream File(RFile);
 
-    File << "API name, Migrated, Frequency" << std::endl;
-    for (const auto &Elem : APIStaticsMap) {
-      std::string Key = Elem.first;
+    std::string Str;
+    llvm::raw_string_ostream Title(Str);
+    Title << (ReportFormat == "csv" ? "API name, Frequency"
+                                    : "API name\t\t\t\tFrequency");
+
+    File << Title.str() << std::endl;
+    for (const auto &Elem : SrcAPIStaticsMap) {
+      std::string APIName = Elem.first;
       unsigned int Count = Elem.second;
-      File << Key << "," << std::to_string(Count) << std::endl;
+      if (ReportFormat == "csv") {
+        File << APIName << "," << std::to_string(Count) << std::endl;
+      } else {
+        std::string Str;
+        llvm::raw_string_ostream OS(Str);
+        OS << llvm::format("%-30s%16u\n", APIName.c_str(), Count);
+        File << OS.str();
+      }
     }
   }
 }
+
 static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
                             double Duration) {
 
-  printMetrics(Tool, LOCStaticsMap);
+  printMetrics(Tool);
   SyclctStats() << "\nTotal migration time: " + std::to_string(Duration) +
                        " ms\n";
   if (ReportFilePrefix == "stdout") {

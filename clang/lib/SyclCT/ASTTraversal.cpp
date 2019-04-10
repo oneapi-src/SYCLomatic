@@ -774,13 +774,9 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
     return hasAnyName("dim3", "cudaError_t", "cudaEvent_t", "cudaStream_t");
   };
 
-  auto EnumTypeNames = [&]() {
-    return hasAnyName("cudaError");
-  };
+  auto EnumTypeNames = [&]() { return hasAnyName("cudaError"); };
 
-  auto RecordTypeNames = [&]() {
-    return hasAnyName("cudaDeviceProp");
-  };
+  auto RecordTypeNames = [&]() { return hasAnyName("cudaDeviceProp"); };
 
   auto HasCudaType = [&]() {
     return anyOf(hasType(typedefDecl(TypedefNames())),
@@ -1790,8 +1786,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
   } else if (FuncName == "cudaDeviceSetLimit" ||
              FuncName == "cudaThreadSetLimit") {
-    report(CE->getBeginLoc(),
-           Diagnostics::NOTSUPPORTED);
+    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED);
     emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ""));
   } else {
     syclct_unreachable("Unknown function name");
@@ -2109,8 +2104,7 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaStreamIsCapturing" ||
              FuncName == "cudaStreamQuery" ||
              FuncName == "cudaStreamWaitEvent") {
-    report(CE->getBeginLoc(),
-           Diagnostics::NOTSUPPORTED);
+    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED);
     emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ""));
   } else {
     syclct_unreachable("Unknown function name");
@@ -2319,7 +2313,8 @@ void MemoryTranslationRule::MemcpyToSymbolTranslation(
     if (auto Var = Global.findMemVarInfo(VD)) {
       emplaceTransformation(new ReplaceStmt(
           C, Var->getName() + ".assign(" +
-                 MallocInfo->getAssignArgs(Var->getType()->getBaseName()) + ")"));
+                 MallocInfo->getAssignArgs(Var->getType()->getBaseName()) +
+                 ")"));
       return;
     }
   }
@@ -2808,6 +2803,7 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
   }
 
   std::string APIName = C->getCalleeDecl()->getAsFunction()->getNameAsString();
+  SrcAPIStaticsMap[APIName]++;
   if (!TranslationStatistics::IsTranslated(APIName)) {
 
     const SourceManager &SM = (*Result.Context).getSourceManager();
@@ -2818,10 +2814,6 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
     std::size_t Pos = SLStr.find(':');
     std::string FileName = SLStr.substr(0, Pos);
     LOCStaticsMap[FileName][2]++;
-
-    std::string Key = APIName + "," + "false";
-    APIStaticsMap[Key]++;
-
     report(C->getBeginLoc(), Comments::API_NOT_MIGRATED, APIName.c_str());
   }
 }

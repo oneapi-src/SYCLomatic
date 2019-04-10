@@ -1,17 +1,35 @@
 // RUN: syclct -report-type=apis -report-file-prefix=check-apis-report -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: API name, Migrated, Frequency" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaFree,true,1" >>%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaFreeHost,false,1" >>%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaMalloc,true,1" >>%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaMalloc3D,false,1" >>%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaMallocHost,false,1" >>%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaMemcpy,true,2" >>%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaMemset,true,1" >>%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: make_cudaExtent,false,1" >>%T/check-apis-report_check.txt
-// RUN: cat %T/check-apis-report.apis.csv >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: API name, Frequency" >%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaDeviceSynchronize,4" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaFree,1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaMemset,1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaMemcpy,2" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaMalloc,1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaFreeHost,1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaMallocHost,1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaMalloc3D,1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: make_cudaExtent,1" >>%T/check-apis-report_csv_check.txt
+// RUN: cat %T/check-apis-report.apis.csv >>%T/check-apis-report_csv_check.txt
+// RUN: FileCheck --match-full-lines --input-file %T/check-apis-report_csv_check.txt %T/check-apis-report_csv_check.txt
+
+// RUN: syclct -report-file-prefix=report -report-type=apis  -report-format=formatted -report-only  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: API name                                Frequency" >%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaDeviceSynchronize                        4" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaFree                                     1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaMemset                                   1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaMemcpy                                   2" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaMalloc                                   1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaFreeHost                                 1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaMallocHost                               1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: cudaMalloc3D                                 1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: make_cudaExtent                              1" >>%T/check-apis-report_check.txt
+// RUN: cat %T/report.apis.log >>%T/check-apis-report_check.txt
 // RUN: FileCheck --match-full-lines --input-file %T/check-apis-report_check.txt %T/check-apis-report_check.txt
 
 #include <cuda_runtime.h>
+
+void checkError(cudaError_t err) {
+}
 
 void fooo() {
   size_t size = 10 * sizeof(float);
@@ -33,7 +51,7 @@ void fooo() {
   cudaMalloc3D(&srcGPU, extent);
 }
 
-void cool() {
+int cool() {
   size_t size = 1234567 * sizeof(float);
   float *h_A = (float *)malloc(size);
   float *d_A = NULL;
@@ -43,4 +61,8 @@ void cool() {
   cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
   cudaFree(d_A);
   free(h_A);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaDeviceSynchronize();
+  checkError(cudaDeviceSynchronize());
+  return cudaDeviceSynchronize();
 }

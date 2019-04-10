@@ -80,11 +80,11 @@ llvm::raw_ostream &SyclctDiags();
 std::string getSyclctStatsStr();
 std::string getSyclctDiagsStr();
 
-
 extern int VerboseLevel;
 
-extern std::map<std::string, std::array<unsigned int, 3>> LOCStaticsMap;
-extern std::map<std::string, unsigned int> APIStaticsMap;
+extern std::unordered_map<std::string, std::array<unsigned int, 3>>
+    LOCStaticsMap;
+extern std::unordered_map<std::string, unsigned int> SrcAPIStaticsMap;
 
 enum VerboseLevel {
   NonVerbose = 0,

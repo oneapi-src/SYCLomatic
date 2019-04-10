@@ -15,11 +15,11 @@ namespace syclct {
 // array[0]: count LOC(Lines Of Code) to API
 // array[1]: count LOC(Lines Of Code) to SYCL
 // array[2]: count API not support
-std::map<std::string, std::array<unsigned int, 3>> LOCStaticsMap;
+std::unordered_map<std::string, std::array<unsigned int, 3>> LOCStaticsMap;
 
 // std::string -> APIName ,Status(true or false)
 // unsigned int -> Times met
-std::map<std::string, unsigned int> APIStaticsMap;
+std::unordered_map<std::string, unsigned int> SrcAPIStaticsMap;
 
 int VerboseLevel = NonVerbose;
 
@@ -233,10 +233,10 @@ static void printReplacementsDebugImpl(ReplacementFilter &ReplFilter,
     const size_t &Numbers = Pair.second;
 #define TRANSFORMATION(TYPE)                                                   \
   if (Name == #TYPE) {                                                         \
-    DEBUG_WITH_TYPE(#TYPE, SyclctDiags() << "# of replacement <" << #TYPE      \
-                                         << ">: " << Numbers << " ("           \
-                                         << Numbers << "/" << NumRepls         \
-                                         << ")\n");                            \
+    DEBUG_WITH_TYPE(#TYPE, SyclctDiags()                                       \
+                               << "# of replacement <" << #TYPE                \
+                               << ">: " << Numbers << " (" << Numbers << "/"   \
+                               << NumRepls << ")\n");                          \
     continue;                                                                  \
   }
 #include "Transformations.inc"
