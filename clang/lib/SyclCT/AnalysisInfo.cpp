@@ -63,6 +63,7 @@ void KernelCallExpr::buildExecutionConfig(
   ExecutionConfig.NDSize = analysisExcutionConfig(Config->getArg(0));
   ExecutionConfig.WGSize = analysisExcutionConfig(Config->getArg(1));
   ExecutionConfig.ExternMemSize = analysisExcutionConfig(Config->getArg(2));
+  ExecutionConfig.Stream = analysisExcutionConfig(Config->getArg(3));
 }
 
 void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
@@ -148,7 +149,17 @@ std::string KernelCallExpr::getReplacement() {
     FormatStmtBlock Block(LocInfo.NL, LocInfo.Indent, Result);
     for (auto &BufferStmt : Buffers)
       Block.pushStmt(BufferStmt);
-    Block.pushStmt("syclct::get_default_queue().submit(");
+
+    // For default stream
+    if (ExecutionConfig.Stream == "0") {
+      Block.pushStmt("syclct::get_default_queue().submit(");
+    } else { // For non-default stream
+      if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&')
+        Block.pushStmt("(" + ExecutionConfig.Stream + ").submit(");
+      else
+        Block.pushStmt(ExecutionConfig.Stream + ".submit(");
+    }
+
     {
       FMT_STMT_BLOCK
       Block.pushStmt("[&](cl::sycl::handler &cgh) {");

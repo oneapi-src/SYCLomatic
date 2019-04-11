@@ -182,6 +182,10 @@ class ReplaceStmt : public TextModification {
   std::string OrigAPIName;
   std::string ReplacementString;
 
+  // When replacing the Stmt with empty string, an option to clean up
+  // redundant trailing semicolons and spaces in the same line
+  bool IsCleanup = true;
+
 public:
   template <class... Args>
   ReplaceStmt(const Stmt *E, Args &&... S)
@@ -196,10 +200,20 @@ public:
         IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI),
         OrigAPIName(OrigAPIName), ReplacementString(std::forward<Args>(S)...) {}
 
+  template <class... Args>
+  ReplaceStmt(const CUDAKernelCallExpr *E, Args &&... S)
+      : ReplaceStmt((const Stmt *)E, std::forward<Args>(S)...) {
+    // Don't clean up for CUDAKernelCallExpr to avoid overlapping problems
+    IsCleanup = false;
+  }
+
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
+
+  std::shared_ptr<ExtReplacement>
+  removeStmtWithCleanups(const SourceManager &SM) const;
 };
 
 class ReplaceCalleeName : public TextModification {

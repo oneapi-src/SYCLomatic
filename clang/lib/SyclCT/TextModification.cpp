@@ -68,8 +68,78 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
   } else {
     recordTranslationInfo(Context, TheStmt->getBeginLoc());
   }
+  // When replacing a CallExpr with an empty string, also remove semicolons
+  // and redundant spaces
+  if (IsCleanup && TheStmt->getStmtClass() == Stmt::StmtClass::CallExprClass &&
+      ReplacementString.empty())
+    return removeStmtWithCleanups(Context.getSourceManager());
+
   return std::make_shared<ExtReplacement>(Context.getSourceManager(), TheStmt,
                                           ReplacementString, this);
+}
+
+// Remove TheStmt together with the trailing semicolon and redundant spaces
+// in the same line.
+std::shared_ptr<ExtReplacement>
+ReplaceStmt::removeStmtWithCleanups(const SourceManager &SM) const {
+  if (!IsCleanup || !ReplacementString.empty())
+    return std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString,
+                                            this);
+
+  unsigned TotalLen = 0;
+  auto StmtLoc = TheStmt->getBeginLoc();
+  if (StmtLoc.isInvalid())
+    return std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString,
+                                            this);
+
+  auto LocBeforeStmt = TheStmt->getBeginLoc().getLocWithOffset(-1);
+  auto PosBeforeStmt = SM.getCharacterData(LocBeforeStmt);
+  const char *LastLFPos = PosBeforeStmt;
+  while (isspace(*LastLFPos) && *LastLFPos != '\n')
+    --LastLFPos;
+
+  SourceLocation PostLastLFLoc = TheStmt->getBeginLoc();
+  // Get the length of spaces before the TheStmt
+  if (*LastLFPos == '\n') {
+    unsigned Len = PosBeforeStmt - LastLFPos;
+    PostLastLFLoc = TheStmt->getBeginLoc().getLocWithOffset(-Len);
+    TotalLen += Len;
+  }
+
+  auto StmtBeginLoc = TheStmt->getBeginLoc();
+  auto StmtEndLoc = TheStmt->getEndLoc();
+
+  auto StmtBeginPos = SM.getCharacterData(StmtBeginLoc);
+  auto StmtEndPos = SM.getCharacterData(StmtEndLoc);
+
+  // Get the length of TheStmt
+  TotalLen += StmtEndPos - StmtBeginPos;
+
+  // Get the length of spaces and the semicolon after the TheStmt
+  auto PostStmtLoc = StmtEndLoc.getLocWithOffset(1);
+  auto TokSharedPtr = Lexer::findNextToken(StmtEndLoc, SM, LangOptions());
+  if (TokSharedPtr.hasValue()) {
+    auto Tok = TokSharedPtr.getValue();
+    // If TheStmt has a trailing semicolon
+    if (Tok.is(tok::TokenKind::semi)) {
+      auto PostSemiLoc = Tok.getLocation().getLocWithOffset(1);
+      auto PostSemiPos = SM.getCharacterData(PostSemiLoc);
+      const char *EndPos = PostSemiPos;
+      while (isspace(*EndPos) && *EndPos != '\n')
+        ++EndPos;
+
+      auto ReplaceBeginPos = SM.getCharacterData(PostStmtLoc);
+      if (*EndPos == '\n') {
+        unsigned Len = EndPos - ReplaceBeginPos + 1;
+        TotalLen += Len;
+      }
+      return std::make_shared<ExtReplacement>(SM, PostLastLFLoc, TotalLen + 1,
+                                              "", this);
+    }
+  }
+
+  // If semicolon is not found, just remove TheStmt
+  return std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString, this);
 }
 
 std::shared_ptr<ExtReplacement>

@@ -571,8 +571,6 @@ public:
   EventAPICallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-  void cleanCurrentLine(const CallExpr *CE,
-                        const ast_matchers::MatchFinder::MatchResult &Result);
   void handleEventRecord(const CallExpr *CE,
                          const ast_matchers::MatchFinder::MatchResult &Result,
                          bool IsAssigned);

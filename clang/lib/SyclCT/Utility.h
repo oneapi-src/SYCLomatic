@@ -31,7 +31,11 @@ namespace clang {
 class SourceManager;
 class SourceLocation;
 class Stmt;
+class CompoundStmt;
 class ASTContext;
+class ValueDecl;
+class DeclRefExpr;
+class Expr;
 } // namespace clang
 
 // classes for keeping track of Stmt->String mappings
@@ -127,4 +131,8 @@ const std::string &getFmtEndArg(void);
 const std::string &getFmtArgIndent(std::string &BaseIndent);
 
 std::vector<std::string> split(const std::string &str, char delim);
+const clang::CompoundStmt *findImmediateBlock(const clang::Stmt *S);
+const clang::CompoundStmt *findImmediateBlock(const clang::ValueDecl *D);
+bool isInSameScope(const clang::Stmt *S, const clang::ValueDecl *D);
+const clang::DeclRefExpr *getInnerValueDecl(const clang::Expr *Arg);
 #endif // SYCLCT_UTILITY_H

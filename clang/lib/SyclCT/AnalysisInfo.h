@@ -927,6 +927,7 @@ private:
     std::string NDSize;
     std::string WGSize;
     std::string ExternMemSize;
+    std::string Stream;
   } ExecutionConfig;
 
   bool IsSync;

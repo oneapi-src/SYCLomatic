@@ -42,7 +42,7 @@ ENTRY(cudaGetLastError, true, P0, "comment")
 ENTRY(cudaPeekAtLastError, true, P0, "comment")
 
 // stream management functions of API
-ENTRY(cudaStreamAddCallback, false, P0, "comment")
+ENTRY(cudaStreamAddCallback, true, P0, "comment")
 ENTRY(cudaStreamAttachMemAsync, false, P0, "comment")
 ENTRY(cudaStreamBeginCapture, true, P4, "comment")
 ENTRY(cudaStreamCreate, true, P0, "comment")

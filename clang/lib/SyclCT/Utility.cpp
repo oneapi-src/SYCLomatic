@@ -11,6 +11,7 @@
 
 #include "Utility.h"
 
+#include "AnalysisInfo.h"
 #include "SaveNewFiles.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ExprCXX.h"
@@ -321,4 +322,97 @@ std::vector<std::string> split(const std::string &str, char delim) {
     vs.push_back(token);
 
   return vs;
+}
+
+// Find the innermost (closest) block where S is located
+const clang::CompoundStmt *findImmediateBlock(const clang::Stmt *S) {
+  if (!S)
+    return nullptr;
+
+  auto &Context = syclct::SyclctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*S);
+  while (Parents.size() == 1) {
+    auto *Parent = Parents[0].get<Stmt>();
+    if (Parent) {
+      if (Parent->getStmtClass() == Stmt::StmtClass::CompoundStmtClass)
+        return dyn_cast<CompoundStmt>(Parent);
+      Parents = Context.getParents(*Parent);
+    } else {
+      Parents = Context.getParents(Parents[0]);
+    }
+  }
+
+  return nullptr;
+}
+
+// A worklist-based BFS algorithm to find the innermost (closest) block
+// where D is located
+const clang::CompoundStmt *findImmediateBlock(const ValueDecl *D) {
+  if (!D)
+    return nullptr;
+
+  // CS points to the CompoundStmt that is the body of the belonging function
+  const CompoundStmt *CS = nullptr;
+  if (D->getDeclContext()->getDeclKind() == Decl::Kind::Block) {
+    auto BD = static_cast<const BlockDecl *>(D->getDeclContext());
+    CS = BD->getCompoundBody();
+  } else if (D->getLexicalDeclContext()->getDeclKind() ==
+             Decl::Kind::Function) {
+    auto BD = static_cast<const FunctionDecl *>(D->getDeclContext());
+    CS = dyn_cast<CompoundStmt>(BD->getBody());
+  }
+
+  // Worklist
+  std::deque<const CompoundStmt *> WL;
+  WL.push_back(CS);
+
+  while (!WL.empty()) {
+    const CompoundStmt *CS = WL.front();
+    WL.pop_front();
+    for (auto Iter = CS->body_begin(); Iter != CS->body_end(); ++Iter) {
+      // For a DeclStmt, check if TypeName and ArgName match
+      if ((*Iter)->getStmtClass() == Stmt::StmtClass::DeclStmtClass) {
+        DeclStmt *DS = dyn_cast<DeclStmt>(*Iter);
+        for (auto It = DS->decl_begin(); It != DS->decl_end(); ++It) {
+          VarDecl *VD = dyn_cast<VarDecl>(*It);
+          if (VD == D)
+            return CS;
+        }
+      }
+      // Add nested CompoundStmt to the worklist for later search, BFS
+      else if ((*Iter)->getStmtClass() == Stmt::StmtClass::CompoundStmtClass) {
+        const CompoundStmt *CS = dyn_cast<CompoundStmt>(*Iter);
+        WL.push_back(CS);
+      }
+    }
+  }
+
+  return nullptr;
+}
+
+// Determine if a Stmt and a ValueDecl are in the same scope
+bool isInSameScope(const Stmt *S, const ValueDecl *D) {
+  if (!S || !D)
+    return false;
+
+  // Find the innermost block of D and S
+  const auto *CS1 = findImmediateBlock(D);
+  const auto *CS2 = findImmediateBlock(S);
+
+  if (!CS1 || !CS2)
+    return false;
+
+  return CS1 == CS2;
+}
+
+// Iteratively get the inner ValueDecl of a potetionally nested expression
+// with implicit casts
+const DeclRefExpr *getInnerValueDecl(const Expr *Arg) {
+  auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts());
+  while (!DRE) {
+    if (auto UO = dyn_cast<UnaryOperator>(Arg->IgnoreImpCasts()))
+      Arg = UO->getSubExpr();
+    DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts());
+  }
+  return DRE;
 }

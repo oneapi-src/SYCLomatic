@@ -11,6 +11,14 @@ void check(T result, char const *const func) {
 __global__ void kernelFunc() {
 }
 
+void process(cudaStream_t st, char *data, cudaError_t status) {}
+
+template<typename T>
+void callback(cudaStream_t st, cudaError_t status, void *vp) {
+  T *data = static_cast<T *>( vp);
+  process(st, data, status);
+}
+
 template<typename FloatN, typename Float>
 static void func()
 {
@@ -18,42 +26,151 @@ static void func()
   // CHECK-NEXT: cl::sycl::queue s2, *s3 = &s2;
   // CHECK-NEXT: cl::sycl::queue s4, s5;
   // CHECK-EMPTY:
+  // CHECK-NEXT: {
+  // CHECK-NEXT:   syclct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK-NEXT:           kernelFunc();
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   cudaStream_t s0, &s1 = s0;
   cudaStream_t s2, *s3 = &s2;
   cudaStream_t s4, s5;
 
-  // CHECK: *(&s0) = cl::sycl::queue{};
   cudaStreamCreate(&s0);
-  // CHECK: checkCudaErrors((*(&s1) = cl::sycl::queue{}, 0));
+  kernelFunc<<<16, 32, 0>>>();
+
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1003:1: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkCudaErrors((0, 0));
   checkCudaErrors(cudaStreamCreate(&s1));
 
-  // CHECK: /*
-  // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: *(&s2) = cl::sycl::queue{};
-  cudaStreamCreateWithFlags(&s2, cudaStreamDefault);
-  // CHECK: /*
-  // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
-  // CHECK-NEXT: */
-  // CHECK-NEXT: checkCudaErrors((*(s3) = cl::sycl::queue{}, 0));
-  checkCudaErrors(cudaStreamCreateWithFlags(s3, cudaStreamNonBlocking));
+  // CHECK: {
+  // CHECK-NEXT:   s0.submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK-NEXT:           kernelFunc();
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
+  kernelFunc<<<16, 32, 0, s0>>>();
 
-  // CHECK: /*
-  // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: *(&s4) = cl::sycl::queue{};
-  cudaStreamCreateWithPriority(&s4, cudaStreamDefault, 2);
-  // CHECK: /*
-  // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
-  // CHECK-NEXT: */
-  // CHECK-NEXT: checkCudaErrors((*(&s5) = cl::sycl::queue{}, 0));
-  checkCudaErrors(cudaStreamCreateWithPriority(&s5, cudaStreamNonBlocking, 3));
+  // CHECK: {
+  // CHECK-NEXT:   s1.submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK-NEXT:           kernelFunc();
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
+  kernelFunc<<<16, 32, 0, s1>>>();
+
+  {
+    // CHECK: /*
+    // CHECK-NEXT: SYCLCT1014:2: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: s2 = cl::sycl::queue{};
+    cudaStreamCreateWithFlags(&s2, cudaStreamDefault);
+
+    // CHECK: /*
+    // CHECK-NEXT: SYCLCT1003:3: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: */
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: SYCLCT1014:4: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: checkCudaErrors((*(s3) = cl::sycl::queue{}, 0));
+    checkCudaErrors(cudaStreamCreateWithFlags(s3, cudaStreamNonBlocking));
+
+    // CHECK: {
+    // CHECK-NEXT:   s2.submit(
+    // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+    // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+    // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
+    // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+    // CHECK-NEXT:           kernelFunc();
+    // CHECK-NEXT:         });
+    // CHECK-NEXT:     });
+    // CHECK-NEXT: }
+    kernelFunc<<<16, 32, 0, s2>>>();
+
+    // CHECK: {
+    // CHECK-NEXT:   (*s3).submit(
+    // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+    // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+    // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
+    // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+    // CHECK-NEXT:           kernelFunc();
+    // CHECK-NEXT:         });
+    // CHECK-NEXT:     });
+    // CHECK-NEXT: }
+    kernelFunc<<<16, 32, 0, *s3>>>();
+
+    // CHECK: s2 = cl::sycl::queue{};
+    cudaStreamDestroy(s2);
+    // CHECK: /*
+    // CHECK-NEXT: SYCLCT1003:5: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: */
+    // CHECK-NEXT: checkCudaErrors((*s3 = cl::sycl::queue{}, 0));
+    checkCudaErrors(cudaStreamDestroy(*s3));
+  }
+
+  {
+    {
+      // CHECK: /*
+      // CHECK-NEXT: SYCLCT1014:6: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+      // CHECK-NEXT: */
+      // CHECK-NEXT: s4 = cl::sycl::queue{};
+      cudaStreamCreateWithPriority(&s4, cudaStreamDefault, 2);
+
+      // CHECK: /*
+      // CHECK-NEXT: SYCLCT1003:7: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+      // CHECK-NEXT: */
+      // CHECK-NEXT: /*
+      // CHECK-NEXT: SYCLCT1014:8: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+      // CHECK-NEXT: */
+      // CHECK-NEXT: checkCudaErrors((s5 = cl::sycl::queue{}, 0));
+      checkCudaErrors(cudaStreamCreateWithPriority(&s5, cudaStreamNonBlocking, 3));
+
+      // CHECK: {
+      // CHECK-NEXT:   s4.submit(
+      // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+      // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+      // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
+      // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+      // CHECK-NEXT:           kernelFunc();
+      // CHECK-NEXT:         });
+      // CHECK-NEXT:     });
+      // CHECK-NEXT: }
+      kernelFunc<<<16, 32, 0, s4>>>();
+      // CHECK: {
+      // CHECK-NEXT:   s5.submit(
+      // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+      // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+      // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
+      // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+      // CHECK-NEXT:           kernelFunc();
+      // CHECK-NEXT:         });
+      // CHECK-NEXT:     });
+      // CHECK-NEXT: }
+      kernelFunc<<<16, 32, 0, s5>>>();
+
+      // CHECK: s4 = cl::sycl::queue{};
+      cudaStreamDestroy(s4);
+      // CHECK: /*
+      // CHECK-NEXT: SYCLCT1003:9: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+      // CHECK-NEXT: */
+      // CHECK-NEXT: checkCudaErrors((s5 = cl::sycl::queue{}, 0));
+      checkCudaErrors(cudaStreamDestroy(s5));
+    }
+  }
 
   int priority_low;
   int priority_hi;
@@ -70,26 +187,27 @@ static void func()
   // CHECK-NEXT: checkCudaErrors(*(&priority) = 0);
   checkCudaErrors(cudaStreamGetPriority(s0, &priority));
 
-  kernelFunc<<<16, 32, 0, s0>>>();
-  kernelFunc<<<16, 32, 0, s1>>>();
-  kernelFunc<<<16, 32, 0, s2>>>();
-  kernelFunc<<<16, 32, 0, *s3>>>();
+  char str[256];
+
+  unsigned int flags = 0;
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1003:11: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: */
+  // CHECK-NEXT: int status = (s0.wait(), callback<char *>(s0, 0, str), 0);
+  // CHECK-NEXT: s1.wait(), callback<char*>(s1, 0, str);
+  cudaError_t status = cudaStreamAddCallback(s0, callback<char *>, str, flags);
+  cudaStreamAddCallback(s1, callback<char*>, str, flags);
 
   // CHECK: s0.wait();
   cudaStreamSynchronize(s0);
   // CHECK: checkCudaErrors((s1.wait(), 0));
+  // CHECK-EMPTY:
   checkCudaErrors(cudaStreamSynchronize(s1));
-  // CHECK: s2.wait();
-  cudaStreamSynchronize(s2);
-  // CHECK: checkCudaErrors((*s3.wait(), 0));
-  checkCudaErrors(cudaStreamSynchronize(*s3));
 
-  // CHECK: s0 = cl::sycl::queue{};
   cudaStreamDestroy(s0);
-  // CHECK: checkCudaErrors((s1 = cl::sycl::queue{}, 0));
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1003:13: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkCudaErrors((0, 0));
   checkCudaErrors(cudaStreamDestroy(s1));
-  // CHECK: s2 = cl::sycl::queue{};
-  cudaStreamDestroy(s2);
-  // CHECK: checkCudaErrors((*s3 = cl::sycl::queue{}, 0));
-  checkCudaErrors(cudaStreamDestroy(*s3));
 }
