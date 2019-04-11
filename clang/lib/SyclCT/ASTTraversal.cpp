@@ -286,10 +286,6 @@ void IncludesCallbacks::InclusionDirective(
           new ReplaceInclude(InsertRange, std::move(NewFileName)));
       return;
     }
-
-    // if <cuda_runtime.h>, no matter where it from, replace with sycl header
-    if (!(IsAngled && FileName.compare(StringRef("cuda_runtime.h")) == 0))
-      return;
   }
 
   // Extra process thrust headers, map to PSTL mapping headers in runtime.
@@ -309,8 +305,18 @@ void IncludesCallbacks::InclusionDirective(
       ThrustHeaderInserted = true;
       TransformSet.emplace_back(
           new ReplaceInclude(FilenameRange, std::move(Replacement)));
-      return;
+    } else {
+      // Replace the complete include directive with an empty string.
+      TransformSet.emplace_back(new ReplaceInclude(
+          CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                          /*IsTokenRange=*/false), ""));
     }
+    return;
+  }
+
+  // if <cuda_runtime.h>, no matter where it from, replace with sycl header
+  if (!(IsAngled && FileName.compare(StringRef("cuda_runtime.h")) == 0)) {
+    return;
   }
 
   // Multiple CUDA headers in an including file will be replaced with one
