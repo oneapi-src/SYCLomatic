@@ -20,6 +20,7 @@ add_clang_library(SyclCT
   TextModification.cpp
   Utility.cpp
   ValidateArguments.cpp
+  ExternalReplacement.cpp
 
   LINK_LIBS
   clangBasic

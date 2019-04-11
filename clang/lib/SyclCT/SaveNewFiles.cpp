@@ -10,6 +10,7 @@
 //===-----------------------------------------------------------------===//
 
 #include "SaveNewFiles.h"
+#include "ExternalReplacement.h"
 
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
@@ -91,7 +92,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   } else {
     // There are matching rules for *.cpp files ,*.cu files, also header files
     // included, migrate these files into *.sycl.cpp files.
-    for (const auto &Entry : groupReplacementsByFile(
+    for (auto &Entry : groupReplacementsByFile(
              Rewrite.getSourceMgr().getFileManager(), Tool.getReplacements())) {
 
       OutPath = StringRef(Entry.first);
@@ -108,15 +109,11 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
       rewriteFileName(OutPath);
 
-      if (OutPath.back() == 'h' && fs::exists(OutPath)) {
-        // A header file with this name already exists.
-        // For now we do no merging and do not handle this case.
-        // TODO: Implement strategy to handle migrated headers that might
-        // differ due to their point of inclusion
-        llvm::errs() << "File '" << OutPath
-                     << "' already exists; skipping it.\n";
-        AppliedAll = false;
-        continue;
+      // for headfile, as it can be included from differnt file, it need
+      // merge the migration triggered by each including.
+      if (OutPath.back() == 'h') {
+        // note the replacement of Entry.second are updated by this call.
+        mergeExternalReps(std::string(OutPath.str()), Entry.second);
       }
 
       fs::create_directories(path::parent_path(OutPath));
