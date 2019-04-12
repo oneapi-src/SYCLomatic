@@ -34,6 +34,9 @@ extern __device__ __device_builtin__ int  __isnanl(long double) ;
 #endif
 
 
+/// Fix issue:va_printf is not defined in _CubLog.
+/// solution: for migration, just define _CubLog to empty.
+#define _CubLog(format, ...)
 
 
 #endif
