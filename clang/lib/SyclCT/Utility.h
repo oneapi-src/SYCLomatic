@@ -135,4 +135,5 @@ const clang::CompoundStmt *findImmediateBlock(const clang::Stmt *S);
 const clang::CompoundStmt *findImmediateBlock(const clang::ValueDecl *D);
 bool isInSameScope(const clang::Stmt *S, const clang::ValueDecl *D);
 const clang::DeclRefExpr *getInnerValueDecl(const clang::Expr *Arg);
+bool startsWith(std::string str, std::string s);
 #endif // SYCLCT_UTILITY_H

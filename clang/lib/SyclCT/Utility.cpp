@@ -418,3 +418,7 @@ const DeclRefExpr *getInnerValueDecl(const Expr *Arg) {
   }
   return DRE;
 }
+
+bool startsWith(std::string str, std::string s) {
+  return str.rfind(s, 0) == 0;
+}

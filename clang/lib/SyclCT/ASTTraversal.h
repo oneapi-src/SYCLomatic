@@ -699,7 +699,18 @@ public:
   MathFunctionsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  void
+  handleHalfFunctions(const CallExpr *CE,
+                      const ast_matchers::MatchFinder::MatchResult &Result);
+  void handleSingleDoubleFunctions(
+      const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result);
+  void
+  handleTypecastFunctions(const CallExpr *CE,
+                          const ast_matchers::MatchFinder::MatchResult &Result);
 
+  static const std::map<std::string, std::string> HalfFunctionNamesMap;
+  static const std::map<std::string, std::string> SingleDoubleFunctionNamesMap;
+  static const std::map<std::string, std::string> TypecastFunctionNamesMap;
   static const std::map<std::string, std::string> FunctionNamesMap;
 };
 
