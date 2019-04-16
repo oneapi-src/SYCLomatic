@@ -456,6 +456,9 @@ int ClangTool::run(ToolAction *Action) {
   }
 
   for (llvm::StringRef File : AbsolutePaths) {
+#if INTEL_CUSTOMIZATION
+    llvm::outs() << "Starting to parse: " << File << ".\n";
+#endif
     // Currently implementations of CompilationDatabase::getCompileCommands can
     // change the state of the file system (e.g.  prepare generated headers), so
     // this method needs to run right before we invoke the tool, as the next
@@ -520,6 +523,10 @@ int ClangTool::run(ToolAction *Action) {
         llvm::errs() << "Error while processing " << File << ".\n";
         ProcessingFailed = true;
       }
+#if INTEL_CUSTOMIZATION
+      if (!ProcessingFailed)
+        llvm::outs() << "Ending to parse: " << File << ".\n";
+#endif
     }
   }
 

@@ -141,9 +141,7 @@
 // ends up not being there because of the games we play here.  Just define it
 // ourselves; it's simple enough.
 #ifdef __APPLE__
-inline __host__ double __signbitd(double x) {
-  return std::signbit(x);
-}
+inline __host__ double __signbitd(double x) { return std::signbit(x); }
 #endif
 
 // CUDA 9.1 no longer provides declarations for libdevice functions, so we need
@@ -154,7 +152,6 @@ inline __host__ double __signbitd(double x) {
 #ifdef INTEL_CUSTOMIZATION
 #include "__clang_syclct_math.h"
 #endif
-
 
 // Wrappers for many device-side standard library functions became compiler
 // builtins in CUDA-9 and have been removed from the CUDA headers. Clang now
@@ -272,8 +269,8 @@ static inline __device__ void __brkpt(int __c) { __brkpt(); }
 #undef __DEVICE_FUNCTIONS_HPP__
 #include "device_atomic_functions.hpp"
 #if CUDA_VERSION >= 9000
-#include "crt/device_functions.hpp"
 #include "crt/device_double_functions.hpp"
+#include "crt/device_functions.hpp"
 #else
 #include "device_functions.hpp"
 #define __CUDABE__
@@ -335,7 +332,6 @@ static inline __device__ void __brkpt(int __c) { __brkpt(); }
 #pragma pop_macro("signbit")
 
 #pragma pop_macro("__host__")
-
 
 #include "texture_indirect_functions.h"
 
@@ -409,8 +405,8 @@ __device__ inline __cuda_builtin_gridDim_t::operator dim3() const {
 }
 
 #include <__clang_cuda_cmath.h>
-#include <__clang_cuda_intrinsics.h>
 #include <__clang_cuda_complex_builtins.h>
+#include <__clang_cuda_intrinsics.h>
 
 // curand_mtgp32_kernel helpfully redeclares blockDim and threadIdx in host
 // mode, giving them their "proper" types of dim3 and uint3.  This is
@@ -436,6 +432,11 @@ __device__ inline __cuda_builtin_gridDim_t::operator dim3() const {
 extern "C" unsigned __cudaPushCallConfiguration(dim3 gridDim, dim3 blockDim,
                                                 size_t sharedMem = 0,
                                                 void *stream = 0);
+#endif
+
+#define INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
+#include <texture_fetch_functions.h>
 #endif
 
 #endif // __CUDA__

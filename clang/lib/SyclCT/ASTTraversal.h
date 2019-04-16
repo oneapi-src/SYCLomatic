@@ -80,9 +80,9 @@ public:
                    SrcMgr::CharacteristicKind FileType,
                    FileID PrevFID = FileID()) override;
   void If(SourceLocation Loc, SourceRange ConditionRange,
-                  ConditionValueKind ConditionValue) override;
+          ConditionValueKind ConditionValue) override;
   void Elif(SourceLocation Loc, SourceRange ConditionRange,
-                    ConditionValueKind ConditionValue, SourceLocation IfLoc) override;
+            ConditionValueKind ConditionValue, SourceLocation IfLoc) override;
 };
 
 class ASTTraversal;
@@ -740,6 +740,7 @@ public:
 class RecognizeAPINameRule : public NamedTranslationRule<RecognizeAPINameRule> {
 public:
   RecognizeAPINameRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  const std::string GetFunctionSignature(const FunctionDecl *Func);
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };

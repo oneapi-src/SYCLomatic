@@ -133,6 +133,7 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange) {
   const char *EP = SM.getCharacterData(End);
   unsigned int Size = EP - BP + 1;
   std::string E(BP, Size);
+
   size_t Pos = 0;
   const std::string MacroName = "__CUDA_ARCH__";
   std::string ReplacedMacroName;
@@ -2780,6 +2781,26 @@ void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 
+const std::string
+RecognizeAPINameRule::GetFunctionSignature(const FunctionDecl *Func) {
+
+  std::string Buf;
+  llvm::raw_string_ostream OS(Buf);
+  OS << Func->getReturnType().getAsString() << " "
+     << Func->getQualifiedNameAsString() << "(";
+
+  for (unsigned int Index = 0; Index < Func->getNumParams(); Index++) {
+    if (Index > 0) {
+      OS << ",";
+    }
+    OS << QualType::getAsString(Func->parameters()[Index]->getType().split(),
+                                PrintingPolicy{{}})
+       << " " << Func->parameters()[Index]->getQualifiedNameAsString();
+  }
+  OS << ")";
+  return OS.str();
+}
+
 void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
   const CallExpr *C = getNodeAsType<CallExpr>(Result, "APINamesUsed");
   if (!C) {
@@ -2801,7 +2822,7 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
     APIName = Namespace + "::" + APIName;
   }
 
-  SrcAPIStaticsMap[APIName]++;
+  SrcAPIStaticsMap[GetFunctionSignature(C->getCalleeDecl()->getAsFunction())]++;
 
   if (!TranslationStatistics::IsTranslated(APIName)) {
 
