@@ -127,8 +127,10 @@ void IncludesCallbacks::Defined(const Token &MacroNameTok,
 void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange) {
   // __CUDA_ARCH__ is not defined in clang, and need check if it is use
   // in #if and #elif
-  const char *BP = SM.getCharacterData(ConditionRange.getBegin());
-  const char *EP = SM.getCharacterData(ConditionRange.getEnd());
+  auto Begin = SM.getExpansionLoc(ConditionRange.getBegin());
+  auto End = SM.getExpansionLoc(ConditionRange.getEnd());
+  const char *BP = SM.getCharacterData(Begin);
+  const char *EP = SM.getCharacterData(End);
   unsigned int Size = EP - BP + 1;
   std::string E(BP, Size);
   size_t Pos = 0;
@@ -144,7 +146,7 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange) {
   while (Found != std::string::npos) {
     // found one, insert replace for it
     if (MapNames::MacrosMap.find(MacroName) != MapNames::MacrosMap.end()) {
-      SourceLocation IB = ConditionRange.getBegin().getLocWithOffset(Found);
+      SourceLocation IB = Begin.getLocWithOffset(Found);
       SourceLocation IE = IB.getLocWithOffset(MacroName.length());
       CharSourceRange InsertRange(SourceRange(IB, IE), false);
       TransformSet.emplace_back(
@@ -1118,9 +1120,7 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: {
-    return false;
-  }
+  default: { return false; }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -1787,7 +1787,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
   } else if (FuncName == "cudaDeviceSetLimit" ||
              FuncName == "cudaThreadSetLimit") {
-    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED);
+    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
     emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ""));
   } else {
     syclct_unreachable("Unknown function name");
@@ -2069,7 +2069,7 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaStreamIsCapturing" ||
              FuncName == "cudaStreamQuery" ||
              FuncName == "cudaStreamWaitEvent") {
-    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED);
+    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
     emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ""));
   } else if (FuncName == "cudaStreamAddCallback") {
     auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
