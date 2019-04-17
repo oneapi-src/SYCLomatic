@@ -154,6 +154,10 @@ def split_command(command):
         # and consider everything else as compile option.
         else:
             result.flags.append(arg)
+    #Append buildin cuda options for migration tool to identy right code path
+    if result.compiler == 'cuda':
+        result.flags.append("-D__CUDA_ARCH__=400")
+        result.flags.append("-D__CUDACC__=1")
     # do extra check on number of source files
     if result.files:
         return result
