@@ -230,14 +230,14 @@ private:
   inline std::shared_ptr<Info> findNode(const Node *N) {
     auto LocInfo = getLocInfo(N);
     if (isInRoot(LocInfo.first))
-      return insertFile(LocInfo.first)->findNode<Info>(LocInfo.second);
-    return false;
+      return insertFile(LocInfo.first)->template findNode<Info>(LocInfo.second);
+    return std::shared_ptr<Info>();
   }
   // Insert info if it doesn't exist.
   template <class Info, class Node>
   inline std::shared_ptr<Info> insertNode(const Node *N) {
     auto LocInfo = getLocInfo(N);
-    return insertFile(LocInfo.first)->insertNode<Info>(LocInfo.second, N);
+    return insertFile(LocInfo.first)->template insertNode<Info>(LocInfo.second, N);
   }
 
   inline std::shared_ptr<SyclctFileInfo>
