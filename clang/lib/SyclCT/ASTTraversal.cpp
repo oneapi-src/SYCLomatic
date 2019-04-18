@@ -1024,41 +1024,40 @@ bool VectorTypeNamespaceRule::isNamespaceInserted(SourceLocation SL) {
   }
 }
 
+void VectorTypeNamespaceRule::replaceTypeName(const QualType &QT,
+                                              SourceLocation BeginLoc,
+                                              bool isDeclType) {
+  if (isNamespaceInserted(BeginLoc))
+    return;
+
+  TypeInfo Ty(QT);
+  auto &TypeName = Ty.getOrginalBaseType();
+
+  if (isDeclType)
+    ++SrcAPIStaticsMap[TypeName];
+
+  emplaceTransformation(
+      new ReplaceToken(BeginLoc, std::string(MapNames::findReplacedName(
+                                     MapNames::TypeNamesMap, TypeName))));
+}
+
 void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
   // int2 => cl::sycl::int2
-  if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "vecVarDecl")) {
-    if (!isNamespaceInserted(
-            D->getTypeSourceInfo()->getTypeLoc().getBeginLoc())) {
-
-      const QualType QT = D->getType();
-      TypeInfo Type(QT);
-      const std::string &TypeName = Type.getOrginalBaseType();
-      SrcAPIStaticsMap[TypeName]++;
-
-      emplaceTransformation(new InsertNameSpaceInVarDecl(D, "cl::sycl::"));
-    }
-  }
+  if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "vecVarDecl"))
+    replaceTypeName(D->getType(),
+                    D->getTypeSourceInfo()->getTypeLoc().getBeginLoc(),
+                    true);
 
   // typedef int2 xxx => typedef cl::sycl::int2 xxx
-  if (const TypedefDecl *TD =
-          getNodeAsType<TypedefDecl>(Result, "typeDefDecl")) {
-    const SourceLocation UnderlyingTypeSL =
-        TD->getTypeSourceInfo()->getTypeLoc().getBeginLoc();
-
-    if (!isNamespaceInserted(UnderlyingTypeSL)) {
-      emplaceTransformation(new InsertText(UnderlyingTypeSL, "cl::sycl::"));
-    }
-  }
+  if (const TypedefDecl *TD = getNodeAsType<TypedefDecl>(Result, "typeDefDecl"))
+    replaceTypeName(TD->getUnderlyingType(),
+                    TD->getTypeSourceInfo()->getTypeLoc().getBeginLoc());
 
   // int2 func() => cl::sycl::int2 func()
   if (const FunctionDecl *FD =
-          getNodeAsType<FunctionDecl>(Result, "funcReturnsVectorType")) {
-
-    if (!isNamespaceInserted(FD->getReturnTypeSourceRange().getBegin())) {
-      emplaceTransformation(new InsertText(
-          FD->getReturnTypeSourceRange().getBegin(), "cl::sycl::"));
-    }
-  }
+          getNodeAsType<FunctionDecl>(Result, "funcReturnsVectorType"))
+    replaceTypeName(FD->getReturnType(),
+                    FD->getReturnTypeSourceRange().getBegin());
 }
 
 REGISTER_RULE(VectorTypeNamespaceRule)
@@ -1086,40 +1085,37 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 
-void VectorTypeMemberAccessRule::run(const MatchFinder::MatchResult &Result) {
-  auto GetMemberAccessName = [&](const MemberExpr *ME) {
-    const std::string MemberAccessName = ME->getMemberNameInfo().getAsString();
-    assert(MemberNamesMap.find(MemberAccessName) != MemberNamesMap.end());
-    return MemberAccessName;
-  };
+void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
+  auto BaseTy = ME->getBase()->getType().getAsString();
+  auto &SM = SyclctGlobalInfo::getSourceManager();
+  if (*(BaseTy.end() - 1) == '1') {
+    auto Begin = ME->getOperatorLoc();
+    auto End = Lexer::getLocForEndOfToken(
+        ME->getMemberLoc(), 0, SM,
+        SyclctGlobalInfo::getContext().getLangOpts());
+    auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
+    return emplaceTransformation(new ReplaceText(Begin, Length, ""));
+  }
+  std::string MemberName = ME->getMemberNameInfo().getAsString();
+  if (MapNames::replaceName(MemberNamesMap, MemberName))
+    emplaceTransformation(
+        new RenameFieldInMemberExpr(ME, std::move(MemberName)));
+}
 
+void VectorTypeMemberAccessRule::run(const MatchFinder::MatchResult &Result) {
   // xxx = int2.x => xxx = static_cast<int>(int2.x())
   if (const MemberExpr *ME =
           getNodeAsType<MemberExpr>(Result, "VecMemberExpr")) {
-    std::string ReplacedMemberAccessName =
-        MemberNamesMap.at(GetMemberAccessName(ME));
 
     std::ostringstream CastPrefix;
     CastPrefix << "static_cast<" << ME->getType().getAsString() << ">(";
     emplaceTransformation(new InsertBeforeStmt(ME, CastPrefix.str()));
-    emplaceTransformation(
-        new RenameFieldInMemberExpr(ME, std::move(ReplacedMemberAccessName)));
+    renameMemberField(ME);
     emplaceTransformation(new InsertAfterStmt(ME, ")"));
   }
 
-  // int2.x += xxx => int2.x() += xxx
-  const BinaryOperator *BO =
-      getAssistNodeAsType<BinaryOperator>(Result, "VecMemberExprAssignment");
-  if (!BO)
-    return;
-
-  const MemberExpr *ME =
-      getAssistNodeAsType<MemberExpr>(Result, "VecMemberExprAssignmentLHS");
-  assert(ME != nullptr);
-  std::string ReplacedMemberAccessName =
-      MemberNamesMap.at(GetMemberAccessName(ME));
-  emplaceTransformation(
-      new RenameFieldInMemberExpr(ME, std::move(ReplacedMemberAccessName)));
+  if (auto ME = getNodeAsType<MemberExpr>(Result, "VecMemberExprAssignmentLHS"))
+    renameMemberField(ME);
 }
 
 REGISTER_RULE(VectorTypeMemberAccessRule)
@@ -1348,6 +1344,12 @@ void VectorTypeCtorRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 
+std::string
+VectorTypeCtorRule::getReplaceTypeName(const std::string &TypeName) {
+  return std::string(
+      MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName));
+}
+
 // Determines which case of construction applies and creates replacements for
 // the syntax. Returns the constructor node and a boolean indicating if a
 // closed brace needs to be appended.
@@ -1358,19 +1360,17 @@ void VectorTypeCtorRule::run(const MatchFinder::MatchResult &Result) {
     // int2 a = int2(1); // function style cast
     // int2 b = int2(a); // copy constructor
     // func(int(1), int2(a));
-    std::string Replacement = "cl::sycl::" + Cast->getType().getAsString();
     emplaceTransformation(
-        new ReplaceToken(Cast->getBeginLoc(), std::move(Replacement)));
-    return;
+        new ReplaceToken(Cast->getBeginLoc(),
+                         getReplaceTypeName(Cast->getType().getAsString())));
   }
 
   if (auto Cast = getNodeAsType<CStyleCastExpr>(Result, "CtorCCast")) {
     // int2 a = (int2)1;
     // int2 b = (int2)a; // copy constructor
     // func((int2)1, (int2)a);
-    std::string Replacement =
-        "(cl::sycl::" + Cast->getType().getAsString() + ")";
-    emplaceTransformation(new ReplaceCCast(Cast, std::move(Replacement)));
+    emplaceTransformation(new ReplaceCCast(
+        Cast, "(" + getReplaceTypeName(Cast->getType().getAsString()) + ")"));
     return;
   }
 
@@ -1378,27 +1378,26 @@ void VectorTypeCtorRule::run(const MatchFinder::MatchResult &Result) {
     const llvm::StringRef FuncName = CE->getDirectCallee()->getName();
     assert(FuncName.startswith("make_") &&
            "Found non make_<vector type> function");
-    llvm::StringRef TypeName = FuncName.substr(strlen("make_"));
-    emplaceTransformation(
-        new ReplaceStmt(CE->getCallee(), "cl::sycl::" + TypeName.str()));
+    emplaceTransformation(new ReplaceStmt(
+        CE->getCallee(), getReplaceTypeName(CE->getType().getAsString())));
     return;
   }
 
   if (const CStyleCastExpr *CPtrCast =
           getNodeAsType<CStyleCastExpr>(Result, "PtrCast")) {
-    emplaceTransformation(
-        new InsertNameSpaceInCastExpr(CPtrCast, "cl::sycl::"));
+    emplaceTransformation(new ReplaceToken(
+        CPtrCast->getLParenLoc().getLocWithOffset(1),
+        getReplaceTypeName(
+            CPtrCast->getType()->getPointeeType().getAsString())));
     return;
   }
 
   if (const UnaryExprOrTypeTraitExpr *ExprSizeof =
           getNodeAsType<UnaryExprOrTypeTraitExpr>(Result, "Sizeof")) {
     if (ExprSizeof->isArgumentType()) {
-      emplaceTransformation(new InsertText(ExprSizeof->getArgumentTypeInfo()
-                                               ->getTypeLoc()
-                                               .getSourceRange()
-                                               .getBegin(),
-                                           "cl::sycl::"));
+      emplaceTransformation(new ReplaceToken(
+          ExprSizeof->getArgumentTypeInfo()->getTypeLoc().getBeginLoc(),
+          getReplaceTypeName(ExprSizeof->getArgumentType().getAsString())));
     }
     return;
   }

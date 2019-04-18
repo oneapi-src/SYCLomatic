@@ -438,6 +438,8 @@ public:
   bool isNamespaceInserted(SourceLocation SL);
 
 private:
+  void replaceTypeName(const QualType &QT, SourceLocation BeginLoc,
+                       bool isDeclType = false);
   std::unordered_set<unsigned int> DupFilter;
 };
 
@@ -452,6 +454,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
 public:
+  void renameMemberField(const MemberExpr *ME);
   static const std::map<std::string, std::string> MemberNamesMap;
 };
 
@@ -483,6 +486,9 @@ public:
   VectorTypeCtorRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+private:
+  std::string getReplaceTypeName(const std::string &TypeName);
 };
 
 class ReplaceDim3CtorRule : public NamedTranslationRule<ReplaceDim3CtorRule> {

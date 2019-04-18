@@ -476,6 +476,7 @@ TypeInfo::TypeInfo(QualType Type)
       TemplateList(nullptr) {
   setArrayInfo(Type);
   setPointerInfo(Type);
+  setReferenceInfo(Type);
   setTemplateInfo(Type);
   setName(Type);
 }
@@ -524,6 +525,14 @@ void TypeInfo::setPointerInfo(QualType &Type) {
     Type = Type->getPointeeType();
   }
 }
+
+void TypeInfo::setReferenceInfo(QualType &Type) {
+  while (Type->isReferenceType()) {
+    IsReference = true;
+    Type = Type->getPointeeType();
+  }
+}
+
 void TypeInfo::setTemplateInfo(QualType &Type) {
   if (auto TemplateType =
           dyn_cast<TemplateTypeParmType>(Type->getCanonicalTypeInternal())) {

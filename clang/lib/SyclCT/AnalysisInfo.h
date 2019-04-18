@@ -60,10 +60,10 @@ insertObject(MapType &Map, const typename MapType::key_type &Key,
 //              |                          |                           |
 //    SyclctFileInfo       SyclctFileInfo     ...
 //              |
-//           ----------------------------------------------------------
-//           |                           |                         | |
+//           -----------------------------------------------------
+//           |                           |                         |                      |
 //  MemVarInfo  DeviceFunctionDecl  KernelCallExpr  CudaMallocInfo
-// Global Variable)                |   (inheriance from CallFunctionExpr)
+// Global Variable)                |   (inherite from CallFunctionExpr)
 //                           DeviceFunctionInfo
 //                                          |
 //                        --------------------------
@@ -175,10 +175,13 @@ public:
 
   template <class T>
   static inline std::pair<llvm::StringRef, unsigned> getLocInfo(const T *N) {
-    auto Loc = getLocation(N);
-    if (SM->isMacroArgExpansion(Loc))
-      return getFilePathInfo(SM->getSpellingLoc(Loc));
-    return getFilePathInfo(SM->getExpansionLoc(Loc));
+    return getLocInfo(getLocation(N));
+  }
+
+  static std::pair<llvm::StringRef, unsigned> getLocInfo(SourceLocation Loc) {
+    if (getSourceManager().isMacroArgExpansion(Loc))
+      return getFilePathInfo(getSourceManager().getSpellingLoc(Loc));
+    return getFilePathInfo(getSourceManager().getExpansionLoc(Loc));
   }
 
 #define GLOBAL_TYPE(TYPE, NODE_TYPE)                                           \
@@ -205,6 +208,10 @@ public:
   void emplaceReplacements(ReplTy &ReplSets /*out*/) {
     for (auto &File : FileMap)
       File.second->emplaceReplacements(ReplSets[File.first]);
+    for (auto Itr = ReplSets.begin(); Itr != ReplSets.end(); ++Itr) {
+      if (Itr->second.empty())
+        ReplSets.erase(Itr);
+    }
   }
 
   void insertCudaMalloc(const CallExpr *CE);
@@ -256,6 +263,9 @@ private:
   static inline SourceLocation getLocation(const VarDecl *VD) {
     return VD->getLocation();
   }
+  static inline SourceLocation getLocation(const FunctionDecl *FD) {
+    return FD->getLocation();
+  }
 
   std::unordered_map<std::string, std::shared_ptr<SyclctFileInfo>> FileMap;
 
@@ -300,6 +310,7 @@ private:
   void setArrayInfo(QualType &Type);
   void setTemplateInfo(QualType &Type);
   void setPointerInfo(QualType &Type);
+  void setReferenceInfo(QualType &Type);
   void setName(QualType &Type);
   void setPointerAsArray() {
     if (isPointer()) {
@@ -315,6 +326,7 @@ private:
   std::string OrginalBaseType;
   std::vector<const ArrayType *> Range;
   bool IsPointer;
+  bool IsReference;
   bool IsTemplate;
   unsigned TemplateIndex;
   std::shared_ptr<TypeInfo> TemplateType;
