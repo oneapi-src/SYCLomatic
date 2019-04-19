@@ -1,6 +1,9 @@
 // RUN: syclct -out-root %T %s -- -std=c++11 -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck --input-file %T/cuda_vardecl.sycl.cpp --match-full-lines %s
 
+#include <vector>
+#include <list>
+
 // CHECK: cl::sycl::event gv;
 cudaEvent_t gv;
 // CHECK: cl::sycl::event *gp = &gv;
@@ -23,9 +26,18 @@ cudaEvent_t *gp5, &gr5 = gr4;
 // CHECK: cl::sycl::event gv6, *gp6, &gr6 = gr5;
 cudaEvent_t gv6, *gp6, &gr6 = gr5;
 
+// CHECK: cl::sycl::event eventArray[23];
+cudaEvent_t eventArray[23];
+// CHECK: std::vector<cl::sycl::event> eventVector;
+std::vector<cudaEvent_t> eventVector;
+
 // CHECK: void foo(cl::sycl::event paramV, cl::sycl::event *paramP, cl::sycl::event &paramR) try {
 void foo(cudaEvent_t paramV, cudaEvent_t *paramP, cudaEvent_t &paramR) {
 }
+
+template <typename T1, typename T2>
+class C {
+};
 
 struct S {
   // CHECK: cl::sycl::event sv;
@@ -49,6 +61,28 @@ struct S {
   cudaEvent_t *sp5, &sr5 = sr4;
   // CHECK: cl::sycl::event sv6, *sp6, &sr6 = sr5;
   cudaEvent_t sv6, *sp6, &sr6 = sr5;
+
+  // CHECK: cl::sycl::event eventArray[23];
+  cudaEvent_t eventArray[23];
+  // CHECK: std::vector<cl::sycl::event> eventVector;
+  std::vector<cudaEvent_t> eventVector;
+
+  // CHECK: cl::sycl::queue stream, stream0;
+  // CHECK-NEXT: cl::sycl::queue streams[23], streams0[45];
+  // CHECK-NEXT: cl::sycl::event event, events[23];
+  // CHECK-NEXT: C<cl::sycl::queue, cl::sycl::event> se, se2;
+  // CHECK-NEXT: std::list<cl::sycl::queue> streamlist;
+  // CHECK-NEXT: std::list<cl::sycl::event> eventlist;
+  // CHECK-NEXT: std::list<int> errors;
+  // CHECK-NEXT: std::list<syclct::sycl_device_info> props;
+  cudaStream_t stream, stream0;
+  cudaStream_t streams[23], streams0[45];
+  cudaEvent_t event, events[23];
+  C<cudaStream_t, cudaEvent_t> se, se2;
+  std::list<cudaStream_t> streamlist;
+  std::list<cudaEvent_t> eventlist;
+  std::list<cudaError> errors;
+  std::list<cudaDeviceProp> props;
 };
 
 int main(int argc, char* argv[]) {
@@ -94,4 +128,21 @@ int main(int argc, char* argv[]) {
   cudaEvent_t *ppp5, vvv5, &rrr5 = vvv;
   // CHECK: cl::sycl::event &rrr6 = vvv, vvv6, *ppp6;
   cudaEvent_t &rrr6 = vvv, vvv6, *ppp6;
+
+  // CHECK: cl::sycl::queue stream, stream0;
+  // CHECK-NEXT: cl::sycl::queue streams[23], streams0[45];
+  // CHECK-NEXT: cl::sycl::event event, events[23];
+  // CHECK-NEXT: C<cl::sycl::queue, cl::sycl::event> se, se2;
+  // CHECK-NEXT: std::list<cl::sycl::queue> streamlist;
+  // CHECK-NEXT: std::list<cl::sycl::event> eventlist;
+  // CHECK-NEXT: std::list<int> errors;
+  // CHECK-NEXT: std::list<syclct::sycl_device_info> props;
+  cudaStream_t stream, stream0;
+  cudaStream_t streams[23], streams0[45];
+  cudaEvent_t event, events[23];
+  C<cudaStream_t, cudaEvent_t> se, se2;
+  std::list<cudaStream_t> streamlist;
+  std::list<cudaEvent_t> eventlist;
+  std::list<cudaError> errors;
+  std::list<cudaDeviceProp> props;
 }

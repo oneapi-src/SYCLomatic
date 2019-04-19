@@ -797,106 +797,71 @@ void AtomicFunctionRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(AtomicFunctionRule)
 
+auto TypedefNames = hasAnyName("dim3", "cudaError_t", "cudaEvent_t",
+                               "cudaStream_t", "__half", "__half2");
+auto EnumTypeNames = hasAnyName("cudaError");
+// CUstream_st and CUevent_st are the actual types of cudaStream_t and
+// cudaEvent_st respectively
+auto RecordTypeNames =
+    hasAnyName("cudaDeviceProp", "CUstream_st", "CUevent_st");
+
 // Rule for types replacements in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
-  auto TypedefNames = [&]() {
-    return hasAnyName("dim3", "cudaError_t", "cudaEvent_t", "cudaStream_t",
-                      "__half", "__half2");
-  };
+  auto HasCudaType = anyOf(hasType(typedefDecl(TypedefNames)),
+                           hasType(enumDecl(EnumTypeNames)),
+                           hasType(cxxRecordDecl(RecordTypeNames)));
 
-  auto EnumTypeNames = [&]() { return hasAnyName("cudaError"); };
+  auto HasCudaTypePtr =
+      anyOf(hasType(pointsTo(typedefDecl(TypedefNames))),
+            hasType(pointsTo(enumDecl(EnumTypeNames))),
+            hasType(pointsTo(cxxRecordDecl(RecordTypeNames))));
 
-  auto RecordTypeNames = [&]() { return hasAnyName("cudaDeviceProp"); };
+  auto HasCudaTypePtrPtr =
+      anyOf(hasType(pointsTo(pointsTo(typedefDecl(TypedefNames)))),
+            hasType(pointsTo(pointsTo(enumDecl(EnumTypeNames)))),
+            hasType(pointsTo(pointsTo(cxxRecordDecl(RecordTypeNames)))));
 
-  auto HasCudaType = [&]() {
-    return anyOf(hasType(typedefDecl(TypedefNames())),
-                 hasType(enumDecl(EnumTypeNames())),
-                 hasType(cxxRecordDecl(RecordTypeNames())));
-  };
-  auto HasCudaTypePtr = [&]() {
-    return anyOf(hasType(pointsTo(typedefDecl(TypedefNames()))),
-                 hasType(pointsTo(enumDecl(EnumTypeNames()))),
-                 hasType(pointsTo(cxxRecordDecl(RecordTypeNames()))));
-  };
-  auto HasCudaTypePtrPtr = [&]() {
-    return anyOf(hasType(pointsTo(pointsTo(typedefDecl(TypedefNames())))),
-                 hasType(pointsTo(pointsTo(enumDecl(EnumTypeNames())))),
-                 hasType(pointsTo(pointsTo(cxxRecordDecl(RecordTypeNames())))));
-  };
-  auto HasCudaTypeRef = [&]() {
-    return anyOf(hasType(references(typedefDecl(TypedefNames()))),
-                 hasType(references(enumDecl(EnumTypeNames()))),
-                 hasType(references(cxxRecordDecl(RecordTypeNames()))));
-  };
+  auto HasCudaTypeRef =
+      anyOf(hasType(references(typedefDecl(TypedefNames))),
+            hasType(references(enumDecl(EnumTypeNames))),
+            hasType(references(cxxRecordDecl(RecordTypeNames))));
 
-  auto Typedefs = [&]() {
-    return typedefType(hasDeclaration(typedefDecl(TypedefNames())));
-  };
+  auto Typedefs = typedefType(hasDeclaration(typedefDecl(TypedefNames)));
 
-  auto EnumTypes = [&]() {
-    return enumType(hasDeclaration(enumDecl(EnumTypeNames())));
-  };
+  auto EnumTypes = enumType(hasDeclaration(enumDecl(EnumTypeNames)));
 
-  auto RecordTypes = [&]() {
-    return recordType(hasDeclaration(cxxRecordDecl(RecordTypeNames())));
-  };
+  auto RecordTypes = recordType(hasDeclaration(cxxRecordDecl(RecordTypeNames)));
 
-  auto HasCudaArrayType = [&]() {
-    return anyOf(hasType(arrayType(hasElementType(Typedefs()))),
-                 hasType(arrayType(hasElementType(EnumTypes()))),
-                 hasType(arrayType(hasElementType(RecordTypes()))));
-  };
+  auto HasCudaArrayType =
+      anyOf(hasType(arrayType(hasElementType(Typedefs))),
+            hasType(arrayType(hasElementType(EnumTypes))),
+            hasType(arrayType(hasElementType(RecordTypes))));
 
-  auto HasCudaPtrArrayType = [&]() {
-    return anyOf(hasType(arrayType(hasElementType(pointsTo(Typedefs())))),
-                 hasType(arrayType(hasElementType(pointsTo(EnumTypes())))),
-                 hasType(arrayType(hasElementType(pointsTo(RecordTypes())))));
-  };
+  auto HasCudaPtrArrayType =
+      anyOf(hasType(arrayType(hasElementType(pointsTo(Typedefs)))),
+            hasType(arrayType(hasElementType(pointsTo(EnumTypes)))),
+            hasType(arrayType(hasElementType(pointsTo(RecordTypes)))));
 
-  auto HasCudaPtrPtrArrayType = [&]() {
-    return anyOf(
-        hasType(arrayType(hasElementType(pointsTo(pointsTo(Typedefs()))))),
-        hasType(arrayType(hasElementType(pointsTo(pointsTo(EnumTypes()))))),
-        hasType(arrayType(hasElementType(pointsTo(pointsTo(RecordTypes()))))));
-  };
+  auto HasCudaPtrPtrArrayType = anyOf(
+      hasType(arrayType(hasElementType(pointsTo(pointsTo(Typedefs))))),
+      hasType(arrayType(hasElementType(pointsTo(pointsTo(EnumTypes))))),
+      hasType(arrayType(hasElementType(pointsTo(pointsTo(RecordTypes))))));
 
-  MF.addMatcher(
-      varDecl(anyOf(HasCudaType(), HasCudaTypePtr(), HasCudaTypePtrPtr(),
-                    HasCudaTypeRef(), HasCudaArrayType(), HasCudaPtrArrayType(),
-                    HasCudaPtrPtrArrayType()),
-              unless(hasType(substTemplateTypeParmType())))
-          .bind("TypeInVarDecl"),
-      this);
-  MF.addMatcher(
-      fieldDecl(anyOf(HasCudaType(), HasCudaTypePtr(), HasCudaTypePtrPtr(),
-                      HasCudaTypeRef(), HasCudaArrayType(),
-                      HasCudaPtrArrayType(), HasCudaPtrPtrArrayType()),
-                unless(hasType(substTemplateTypeParmType())))
-          .bind("TypeInFieldDecl"),
-      this);
+  MF.addMatcher(varDecl(anyOf(HasCudaType, HasCudaTypePtr, HasCudaTypePtrPtr,
+                              HasCudaTypeRef, HasCudaArrayType,
+                              HasCudaPtrArrayType, HasCudaPtrPtrArrayType),
+                        unless(hasType(substTemplateTypeParmType())))
+                    .bind("TypeInVarDecl"),
+                this);
+  MF.addMatcher(fieldDecl(anyOf(HasCudaType, HasCudaTypePtr, HasCudaTypePtrPtr,
+                                HasCudaTypeRef, HasCudaArrayType,
+                                HasCudaPtrArrayType, HasCudaPtrPtrArrayType),
+                          unless(hasType(substTemplateTypeParmType())))
+                    .bind("TypeInFieldDecl"),
+                this);
 }
 
-void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
-  const VarDecl *D = getNodeAsType<VarDecl>(Result, "TypeInVarDecl");
-  const FieldDecl *FD = getNodeAsType<FieldDecl>(Result, "TypeInFieldDecl");
-  QualType QT;
-  if (D) {
-    QT = D->getType();
-  } else if (FD) {
-    QT = FD->getType();
-  } else {
-    return;
-  }
-
-  std::string TypeStr;
-  if (QT->isArrayType()) {
-    auto ArrType = Result.Context->getAsArrayType(QT);
-    auto EleType = ArrType->getElementType();
-    TypeStr = EleType.getAsString();
-  } else {
-    TypeStr = QT.getAsString();
-  }
-
+std::string getReplacementForType(std::string TypeStr) {
   std::istringstream ISS(TypeStr);
   std::vector<std::string> Strs(std::istream_iterator<std::string>{ISS},
                                 std::istream_iterator<std::string>());
@@ -910,35 +875,131 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   SrcAPIStaticsMap[TypeName]++;
 
   auto Search = MapNames::TypeNamesMap.find(TypeName);
-  if (Search == MapNames::TypeNamesMap.end()) {
-    // TODO report migration error
-    return;
-  }
+  if (Search == MapNames::TypeNamesMap.end())
+    return "";
 
   std::string Replacement = TypeStr;
   assert(Replacement.find(TypeName) != std::string::npos);
   Replacement = Replacement.substr(Replacement.find(TypeName));
   Replacement.replace(0, TypeName.length(), Search->second);
-  if (D) {
-    // if (D->isLocalVarDeclOrParm() && !D->isLocalVarDecl())
-    //  Replacement += "&";
-    auto Loc =
-        D->getTypeSourceInfo()->getTypeLoc().getBeginLoc().getRawEncoding();
-    if (DupFilter.find(Loc) == DupFilter.end()) {
-      DupFilter.insert(Loc);
-      emplaceTransformation(new ReplaceTypeInDecl(D, std::move(Replacement)));
-    }
+
+  return Replacement;
+}
+
+void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
+  // DD points to a VarDecl or a FieldDecl
+  const DeclaratorDecl *DD = getNodeAsType<VarDecl>(Result, "TypeInVarDecl");
+  QualType QT;
+  if (DD)
+    QT = DD->getType();
+  else if ((DD = getNodeAsType<FieldDecl>(Result, "TypeInFieldDecl")))
+    QT = DD->getType();
+  else
+    return;
+
+  auto Loc =
+      DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc().getRawEncoding();
+  if (DupFilter.find(Loc) != DupFilter.end())
+    return;
+
+  std::string TypeStr;
+  if (QT->isArrayType()) {
+    auto ArrType = Result.Context->getAsArrayType(QT);
+    auto EleType = ArrType->getElementType();
+    TypeStr = EleType.getAsString();
   } else {
-    auto Loc =
-        FD->getTypeSourceInfo()->getTypeLoc().getBeginLoc().getRawEncoding();
-    if (DupFilter.find(Loc) == DupFilter.end()) {
+    TypeStr = QT.getAsString();
+  }
+
+  auto Replacement = getReplacementForType(TypeStr);
+  if (Replacement.empty())
+    // TODO report migration error
+    return;
+
+  emplaceTransformation(new ReplaceTypeInDecl(DD, std::move(Replacement)));
+  DupFilter.insert(Loc);
+}
+
+REGISTER_RULE(TypeInDeclRule)
+
+// Rule for types replacements in template var declarations and field
+// declarations
+void TemplateTypeInDeclRule::registerMatcher(MatchFinder &MF) {
+  auto Typedefs = typedefType(hasDeclaration(typedefDecl(TypedefNames)));
+
+  auto EnumTypes = enumType(hasDeclaration(enumDecl(EnumTypeNames)));
+
+  auto RecordTypes = recordType(hasDeclaration(cxxRecordDecl(RecordTypeNames)));
+
+  auto HasCudaTemplateType =
+      hasType(classTemplateSpecializationDecl(hasAnyTemplateArgument(
+          refersToType(anyOf(Typedefs, EnumTypes, RecordTypes,
+                             pointsTo(cxxRecordDecl(RecordTypeNames)))))));
+
+  MF.addMatcher(
+      varDecl(HasCudaTemplateType, unless(hasType(substTemplateTypeParmType())))
+          .bind("TemplateTypeInVarDecl"),
+      this);
+
+  MF.addMatcher(fieldDecl(HasCudaTemplateType,
+                          unless(hasType(substTemplateTypeParmType())))
+                    .bind("TemplateTypeInFieldDecl"),
+                this);
+}
+
+void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
+  // DD points to a VarDecl or a FieldDecl
+  const DeclaratorDecl *DD =
+      getNodeAsType<VarDecl>(Result, "TemplateTypeInVarDecl");
+  QualType QT;
+  if (DD)
+    QT = DD->getType();
+  else if ((DD = getNodeAsType<FieldDecl>(Result, "TemplateTypeInFieldDecl")))
+    QT = DD->getType();
+  else
+    return;
+
+  auto Loc =
+      DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc().getRawEncoding();
+  if (DupFilter.find(Loc) != DupFilter.end())
+    return;
+
+  // std::vector<cudaStream_t> is elaborated to
+  // std::vector<CUstream_st *, std::allocator<CUstream_st *>>
+  bool isElaboratedType = false;
+  if (auto ET = dyn_cast<ElaboratedType>(QT.getTypePtr())) {
+    QT = ET->desugar();
+    isElaboratedType = true;
+  }
+  if (auto TST = dyn_cast<TemplateSpecializationType>(QT.getTypePtr())) {
+    for (unsigned i = 0; i < TST->getNumArgs(); ++i) {
+      auto Args = TST->template_arguments();
+      auto Arg = Args[i];
+      QT = Arg.getAsType();
+      auto TypeStr = QT.getAsString();
+      auto Replacement = getReplacementForType(TypeStr);
+      if (Replacement.empty())
+        // TODO report migration error
+        continue;
+
+      auto DTL = DD->getTypeSourceInfo()->getTypeLoc();
+      TemplateSpecializationTypeLoc TTTL;
+      if (isElaboratedType) {
+        auto ETL = DTL.getAs<ElaboratedTypeLoc>();
+        TTTL = ETL.getNamedTypeLoc().getAs<TemplateSpecializationTypeLoc>();
+      } else {
+        TTTL = DTL.getAs<TemplateSpecializationTypeLoc>();
+      }
+      // Replace each type in the template arguments one by one
+      auto TAL = TTTL.getArgLoc(i);
+      emplaceTransformation(
+          new ReplaceTypeInDecl(DD, TAL, std::move(Replacement)));
       DupFilter.insert(Loc);
-      emplaceTransformation(new ReplaceTypeInDecl(FD, std::move(Replacement)));
     }
   }
 }
 
-REGISTER_RULE(TypeInDeclRule)
+REGISTER_RULE(TemplateTypeInDeclRule)
 
 // Supported vector types
 const std::unordered_set<std::string> SupportedVectorTypes{

@@ -274,30 +274,26 @@ public:
 // Replace type in var. declaration.
 class ReplaceTypeInDecl : public TextModification {
   TypeLoc TL;
-  const VarDecl *D;
-  const FieldDecl *FD;
+  const DeclaratorDecl *DD; // DD points to a VarDecl or a FieldDecl
   std::string T;
 
 public:
-  ReplaceTypeInDecl(const VarDecl *D, std::string &&T)
-      : TextModification(TMID::ReplaceTypeInDecl), D(D), FD(nullptr), T(T) {
-    if (D->getType()->isArrayType())
-      TL = D->getTypeSourceInfo()
+  ReplaceTypeInDecl(const DeclaratorDecl *DD, std::string &&T)
+      : TextModification(TMID::ReplaceTypeInDecl), DD(DD), T(T) {
+    assert(dyn_cast<VarDecl>(DD) || dyn_cast<FieldDecl>(DD));
+    if (DD->getType()->isArrayType())
+      TL = DD->getTypeSourceInfo()
                ->getTypeLoc()
                .getAs<ArrayTypeLoc>()
                .getElementLoc();
     else
-      TL = D->getTypeSourceInfo()->getTypeLoc();
+      TL = DD->getTypeSourceInfo()->getTypeLoc();
   }
-  ReplaceTypeInDecl(const FieldDecl *FD, std::string &&T)
-      : TextModification(TMID::ReplaceTypeInDecl), D(nullptr), FD(FD), T(T) {
-    if (FD->getType()->isArrayType())
-      TL = FD->getTypeSourceInfo()
-               ->getTypeLoc()
-               .getAs<ArrayTypeLoc>()
-               .getElementLoc();
-    else
-      TL = FD->getTypeSourceInfo()->getTypeLoc();
+  ReplaceTypeInDecl(const DeclaratorDecl *DD, const TemplateArgumentLoc &TAL,
+                    std::string &&T)
+      : TextModification(TMID::ReplaceTypeInDecl), DD(DD), T(T) {
+    assert(dyn_cast<VarDecl>(DD) || dyn_cast<FieldDecl>(DD));
+    TL = TAL.getTypeSourceInfo()->getTypeLoc();
   }
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;

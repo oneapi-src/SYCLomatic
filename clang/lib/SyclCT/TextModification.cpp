@@ -188,11 +188,7 @@ std::map<unsigned, ReplaceVarDecl *> ReplaceVarDecl::ReplaceMap;
 
 std::shared_ptr<ExtReplacement>
 ReplaceTypeInDecl::getReplacement(const ASTContext &Context) const {
-  if (D) {
-    recordTranslationInfo(Context, D->getBeginLoc());
-  } else {
-    recordTranslationInfo(Context, FD->getBeginLoc());
-  }
+  recordTranslationInfo(Context, DD->getBeginLoc());
   return std::make_shared<ExtReplacement>(Context.getSourceManager(), &TL, T,
                                           this);
 }
@@ -680,13 +676,8 @@ void RemoveAttr::print(llvm::raw_ostream &OS, ASTContext &Context,
 void ReplaceTypeInDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
                               const bool PrintDetail) const {
   printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
-  if (D) {
-    printLocation(OS, D->getBeginLoc(), Context, PrintDetail);
-    D->print(OS, PrintingPolicy(Context.getLangOpts()));
-  } else {
-    printLocation(OS, FD->getBeginLoc(), Context, PrintDetail);
-    FD->print(OS, PrintingPolicy(Context.getLangOpts()));
-  }
+  printLocation(OS, DD->getBeginLoc(), Context, PrintDetail);
+  DD->print(OS, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, T);
 }
 

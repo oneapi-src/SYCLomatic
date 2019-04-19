@@ -422,6 +422,26 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
 private:
+  // A duplicate filter that filters out redundant replacements when
+  // serveral variable are declared in one statement
+  std::unordered_set<unsigned> DupFilter;
+};
+
+/// Migration rule for types replacements in template var. declarations,
+/// e.g. "std::vector<cudaStream_t> streams;" is migrated to
+/// "std::vector<cl::sycl::queue> stream;"
+class TemplateTypeInDeclRule
+    : public NamedTranslationRule<TemplateTypeInDeclRule> {
+public:
+  TemplateTypeInDeclRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+private:
+  // A duplicate filter that filters out redundant replacements when
+  // serveral variable are declared in one statement
   std::unordered_set<unsigned> DupFilter;
 };
 

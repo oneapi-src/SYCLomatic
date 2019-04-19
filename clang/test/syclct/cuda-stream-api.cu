@@ -24,8 +24,11 @@ void callback(cudaStream_t st, cudaError_t status, void *vp) {
 template<typename FloatN, typename Float>
 static void func()
 {
-  // TODO: 1CHECK: std::list<cl::sycl::queue> streams;
+  // CHECK: std::list<cl::sycl::queue> streams;
   std::list<cudaStream_t> streams;
+  for (auto Iter = streams.begin(); Iter != streams.end(); ++Iter)
+    // CHECK: (*Iter = cl::sycl::queue{}, 0);
+    cudaStreamCreate(&*Iter);
   for (auto Iter = streams.begin(); Iter != streams.end(); ++Iter)
     // CHECK: (*Iter = cl::sycl::queue{}, 0);
     cudaStreamDestroy(*Iter);
