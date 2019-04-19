@@ -1,6 +1,8 @@
 // RUN: syclct -out-root %T %s -- -std=c++11 -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck --input-file %T/cuda-stream-api.sycl.cpp --match-full-lines %s
 
+#include <list>
+
 template <typename T>
 // CHECK: void check(T result, char const *const func) try {
 void check(T result, char const *const func) {
@@ -22,6 +24,12 @@ void callback(cudaStream_t st, cudaError_t status, void *vp) {
 template<typename FloatN, typename Float>
 static void func()
 {
+  // TODO: 1CHECK: std::list<cl::sycl::queue> streams;
+  std::list<cudaStream_t> streams;
+  for (auto Iter = streams.begin(); Iter != streams.end(); ++Iter)
+    // CHECK: (*Iter = cl::sycl::queue{}, 0);
+    cudaStreamDestroy(*Iter);
+
   // CHECK: cl::sycl::queue s0, &s1 = s0;
   // CHECK-NEXT: cl::sycl::queue s2, *s3 = &s2;
   // CHECK-NEXT: cl::sycl::queue s4, s5;
@@ -44,7 +52,7 @@ static void func()
   kernelFunc<<<16, 32, 0>>>();
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1003:1: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: checkCudaErrors((0, 0));
   checkCudaErrors(cudaStreamCreate(&s1));
@@ -75,16 +83,16 @@ static void func()
 
   {
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1014:2: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+    // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: s2 = cl::sycl::queue{};
     cudaStreamCreateWithFlags(&s2, cudaStreamDefault);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:3: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1014:4: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+    // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: checkCudaErrors((*(s3) = cl::sycl::queue{}, 0));
     checkCudaErrors(cudaStreamCreateWithFlags(s3, cudaStreamNonBlocking));
@@ -116,7 +124,7 @@ static void func()
     // CHECK: s2 = cl::sycl::queue{};
     cudaStreamDestroy(s2);
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:5: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: checkCudaErrors((*s3 = cl::sycl::queue{}, 0));
     checkCudaErrors(cudaStreamDestroy(*s3));
@@ -125,16 +133,16 @@ static void func()
   {
     {
       // CHECK: /*
-      // CHECK-NEXT: SYCLCT1014:6: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+      // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
       // CHECK-NEXT: */
       // CHECK-NEXT: s4 = cl::sycl::queue{};
       cudaStreamCreateWithPriority(&s4, cudaStreamDefault, 2);
 
       // CHECK: /*
-      // CHECK-NEXT: SYCLCT1003:7: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+      // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
       // CHECK-NEXT: */
       // CHECK-NEXT: /*
-      // CHECK-NEXT: SYCLCT1014:8: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+      // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
       // CHECK-NEXT: */
       // CHECK-NEXT: checkCudaErrors((s5 = cl::sycl::queue{}, 0));
       checkCudaErrors(cudaStreamCreateWithPriority(&s5, cudaStreamNonBlocking, 3));
@@ -165,7 +173,7 @@ static void func()
       // CHECK: s4 = cl::sycl::queue{};
       cudaStreamDestroy(s4);
       // CHECK: /*
-      // CHECK-NEXT: SYCLCT1003:9: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+      // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
       // CHECK-NEXT: */
       // CHECK-NEXT: checkCudaErrors((s5 = cl::sycl::queue{}, 0));
       checkCudaErrors(cudaStreamDestroy(s5));
@@ -191,7 +199,7 @@ static void func()
 
   unsigned int flags = 0;
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1003:11: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: int status = (s0.wait(), callback<char *>(s0, 0, str), 0);
   // CHECK-NEXT: s1.wait(), callback<char*>(s1, 0, str);
@@ -206,7 +214,7 @@ static void func()
 
   cudaStreamDestroy(s0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1003:13: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: checkCudaErrors((0, 0));
   checkCudaErrors(cudaStreamDestroy(s1));

@@ -412,6 +412,8 @@ const DeclRefExpr *getInnerValueDecl(const Expr *Arg) {
   while (!DRE) {
     if (auto UO = dyn_cast<UnaryOperator>(Arg->IgnoreImpCasts()))
       Arg = UO->getSubExpr();
+    else
+      return nullptr;
     DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts());
   }
   return DRE;

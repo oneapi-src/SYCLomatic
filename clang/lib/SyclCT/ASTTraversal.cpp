@@ -2003,7 +2003,14 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
     auto Arg0 = CE->getArg(0);
     auto DRE = getInnerValueDecl(Arg0);
     std::string ReplStr;
-    if (!isInSameScope(CE, DRE->getDecl())) {
+    // If DRE is nullptr which means the stream is a complex expression
+    // (e.g. iterator getters), skip the scope analysis
+    if (DRE && isInSameScope(CE, DRE->getDecl())) {
+      if (IsAssigned) {
+        ReplStr = "(0, 0)";
+        report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+      }
+    } else {
       auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
       // TODO: simplify expression
       if (FuncName == "cudaStreamDestroy") {
@@ -2018,11 +2025,6 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
       ReplStr += " = cl::sycl::queue{}";
       if (IsAssigned) {
         ReplStr = "(" + ReplStr + ", 0)";
-        report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
-      }
-    } else {
-      if (IsAssigned) {
-        ReplStr = "(0, 0)";
         report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
       }
     }
