@@ -54,97 +54,100 @@ using namespace llvm::cl;
 
 const char *const CtHelpMessage =
     "\n"
-    "<source0> ... specify the paths of source files. These paths are\n"
-    "\tlooked up in the compile command database. If the path of a file is\n"
-    "\tabsolute, it needs to point into CMake's source tree. If the path is\n"
-    "\trelative, the current working directory needs to be in the CMake\n"
-    "\tsource tree and the file must be in a subdirectory of the current\n"
-    "\tworking directory. \"./\" prefixes in the relative files will be\n"
-    "\tautomatically removed, but the rest of a relative path must be a\n"
-    "\tsuffix of a path in the compile command database.\n"
+    "<source0> ... Paths of input source files. These paths are\n"
+    "\tlooked up in the compilation database. If the path of a source file is\n"
+    "\tabsolute, it must exist in the CMake source tree. If the path is\n"
+    "\trelative, the current working directory must exist in the CMake\n"
+    "\tsource tree and the path must be a subdirectory of the current\n"
+    "\tworking directory. \"./\" prefixes in a relative path will be\n"
+    "\tautomatically removed.  The remainder of a relative path must be a\n"
+    "\tsuffix of a path in the compilation database.\n"
     "\n";
 
-static OptionCategory SyclCTCat("SYCL Compatibility Tool");
+static OptionCategory SyclCTCat("DPC++ Compatibility Tool");
 static extrahelp CommonHelp(CtHelpMessage);
-static opt<std::string>
-    Passes("passes",
-           desc("Comma separated list of migration passes that "
-                "customed to migrate the input file, only specified "
-                "mirgration pass will be applied during migration."),
-           value_desc("FunctionAttrsRule,..."), cat(SyclCTCat));
+static opt<std::string> Passes(
+    "passes",
+    desc("Comma separated list of migration passes, which will be applied. "
+         "Only the specified passes are applied."),
+    value_desc("FunctionAttrsRule,..."), cat(SyclCTCat));
 static opt<std::string>
     InRoot("in-root",
-           desc("Path to root of project to be migrated"
-                " (header files not under this root will not be migrated)"),
+           desc("Directory path for root of source tree to be migrated. "
+                "Only files under under this root will be migrated."),
            value_desc("/path/to/input/root/"), cat(SyclCTCat),
            llvm::cl::Optional);
 static opt<std::string>
     OutRoot("out-root",
-            desc("Path directory where generated files will be placed"
-                 " (directory will be created if it does not exist)"),
+            desc("Directory path for root of generated files. "
+                 "Directory will be created if it doesn't exist."),
             value_desc("/path/to/output/root/"), cat(SyclCTCat),
             llvm::cl::Optional);
 
 static opt<std::string> ReportType(
     "report-type",
-    desc("Specifies migration report type. You can specify one or more reports "
-         "to be generated: \"apis\" migration report provides information "
-         "about API names which were or were not migrated and how many times. "
-         "Migration report file will have \"apis\" suffix added, if "
-         "report-file-prefix option is passed. "
-         "\"stats\" provides high level migration statistics: how much Lines "
+    desc("Comma separated list of report types. "
+         "\"apis\": Information "
+         "about API signatures that need migration "
+         "and the number of times they were encountered. "
+         "The report file name will have \".apis\" suffix added. "
+         "\"stats\": High level migration statistics;  Lines "
          "Of Code (LOC) migrated to DPC++, LOC migrated to Compatibility API, "
-         "LOC not needed to migrate, LOC the tool was not able to migrate. "
-         "Migration report file will have \"stats\" suffix added, if "
-         "report-file-prefix option is passed. "
-         "\"all\" generates all types of report, each type will go to a "
-         "separate file with corresponding suffix added, if report-file-prefix "
-         "option is passed. "
+         "LOC not needing migration, LOC needing migration, but not migrated. "
+         "The report file name will have \".stats\" suffix added. "
+         "\"all\": Generates all of the above reports. "
          "Default is \"stats\"."),
-    value_desc("[all|apis|stats|apis,stats,...]"), cat(SyclCTCat),
-    llvm::cl::Optional);
+    value_desc("[all|apis|stats]"), cat(SyclCTCat), llvm::cl::Optional);
 
-static opt<std::string> ReportFormat(
-    "report-format",
-    desc("Specifies CSV or human-readable format of the report. If "
-         "report-file-prefix option is passed: for CSV format \"csv\" "
-         "extension will be used in file name, for \"formatted\" report "
-         "\"log\" extension will be used. Default is CSV. "),
-    value_desc("[csv|formatted]"), cat(SyclCTCat), llvm::cl::Optional);
+static opt<std::string>
+    ReportFormat("report-format",
+                 desc("Format of reports. \"csv\": Output is lines of comma "
+                      "separated values. "
+                      "Report file name extension will be \".csv\". "
+                      "\"formatted\": Output is formatted to be easier to read "
+                      "by human eyes. "
+                      "Report file name extension will be \".log\". "
+                      "Default is \"csv\"."),
+                 value_desc("[csv|formatted]"), cat(SyclCTCat),
+                 llvm::cl::Optional);
 
 static opt<std::string> ReportFilePrefix(
     "report-file-prefix",
-    desc("Specifies the prefix for the file name, where the migration report "
-         "will be written.  If this option is not passed, the report will go "
-         "to stdout. Depending on the report type and format, additional file "
-         "extensions will be added, like: prefix.apis.<log|csv>, "
-         "prefix.stats.<log|csv>. The report file will be created in the "
-         "folder, specified by -out-root. Default is stdout."),
+    desc("Prefix for the report file names. The full file name will have a "
+         "suffix "
+         "derived from the report-type and an extension derived from the "
+         "report-format. "
+         "For example: <prefix>.apis.csv or <prefix>.stats.log. "
+         "If this option is not specified, the report will go "
+         "to stdout. The report files are created in the "
+         "directory, specified by -out-root.  Default is stdout."),
     value_desc("prefix"), cat(SyclCTCat), llvm::cl::Optional);
 bool ReportOnlyFlag = false;
-static opt<bool, true>
-    ReportOnly("report-only",
-               llvm::cl::desc("Instructs the tool to produce only report and "
-                              "not produce the DPC++ code. By default both the "
-                              "DPC++ code and the report will be generated."),
-               cat(SyclCTCat), llvm::cl::location(ReportOnlyFlag));
+static opt<bool, true> ReportOnly(
+    "report-only",
+    llvm::cl::desc("Only reports are generated.  No DPC++ code is generated. "
+                   "Default is to generate both reports and DPC++ code."),
+    cat(SyclCTCat), llvm::cl::location(ReportOnlyFlag));
 
 bool KeepOriginalCodeFlag = false;
 
-static opt<bool, true> ShowOrigCode(
-    "keep-original-code",
-    llvm::cl::desc("Keep original code in comments of SYCL file, default: off"),
-    cat(SyclCTCat), llvm::cl::location(KeepOriginalCodeFlag));
+static opt<bool, true>
+    ShowOrigCode("keep-original-code",
+                 llvm::cl::desc("Keep original code in comments of generated "
+                                "DPC++ files. Default: off"),
+                 cat(SyclCTCat), llvm::cl::location(KeepOriginalCodeFlag));
 
-static opt<std::string> DiagsContent(
-    "report-diags-content",
-    desc("Specify diags report verbose level: simple migration pass level info "
-         "or detail transformation info happen in migration pass."),
-    value_desc("[pass|transformation]"), cat(SyclCTCat), llvm::cl::Optional,
-    llvm::cl::Hidden);
+static opt<std::string>
+    DiagsContent("report-diags-content",
+                 desc("Diagnostics verbosity level. \"pass\": Basic migration "
+                      "pass information. "
+                      "\"transformation\": Detailed migration pass "
+                      "transformation information."),
+                 value_desc("[pass|transformation]"), cat(SyclCTCat),
+                 llvm::cl::Optional, llvm::cl::Hidden);
 
-static std::string WarningDesc("Comma separated list of warnings to be"
-                               " suppressed, valid warning ids range from " +
+static std::string WarningDesc("Comma separated list of warnings to "
+                               " suppress.  Valid warning ids range from " +
                                std::to_string((size_t)Warnings::BEGIN) +
                                " to " +
                                std::to_string((size_t)Warnings::END - 1));
@@ -152,7 +155,7 @@ opt<std::string> SuppressWarnings("suppress-warnings", desc(WarningDesc),
                                   value_desc("WarningID,..."), cat(SyclCTCat));
 
 bool SuppressWarningsAllFlag = false;
-static std::string WarningAllDesc("Suppress all warnings of the migration");
+static std::string WarningAllDesc("Suppress all warnings");
 opt<bool, true> SuppressWarningsAll("suppress-warnings-all",
                                     desc(WarningAllDesc), cat(SyclCTCat),
                                     location(SuppressWarningsAllFlag));
@@ -161,8 +164,8 @@ bool NoStopOnErrFlag = false;
 
 static opt<bool, true>
     NoStopOnErr("no-stop-on-err",
-                llvm::cl::desc("Keep running when meet parse error and "
-                               "generate the report, default: off"),
+                llvm::cl::desc("Continue migration and report generation after "
+                               "possible errors. Default: off"),
                 cat(SyclCTCat), llvm::cl::location(NoStopOnErrFlag));
 
 std::string CudaPath;          // Global value for the CUDA install path.
