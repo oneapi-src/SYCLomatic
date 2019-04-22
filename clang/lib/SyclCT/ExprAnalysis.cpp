@@ -27,42 +27,69 @@ namespace syclct {
   case Stmt::EXPR##Class:                                                      \
     return analysisExpr(static_cast<const EXPR *>(Expression));
 
-const std::vector<TemplateArgumentInfo> ArraySizeExprAnalysis::NullList;
 std::map<const Expr *, std::string> ArgumentAnalysis::DefaultArgMap;
 
-std::pair<size_t, size_t>
-StringReplacements::getOffsetAndLength(SourceLocation SL) {
-  if (SL.isInvalid())
-    return std::pair<size_t, size_t>(0, SourceStr.length());
-  auto &SM = Context.getSourceManager();
-  auto Loc = SM.getExpansionLoc(SL);
+void TemplateDependentReplacement::replace(
+    const std::vector<TemplateArgumentInfo> &TemplateList) {
+  SourceStr.replace(Offset, Length, TemplateList[TemplateIndex].getAsString());
+}
+
+TemplateDependentStringInfo::TemplateDependentStringInfo(
+    const std::string &SrcStr,
+    const std::map<size_t, std::shared_ptr<TemplateDependentReplacement>>
+        &InTDRs)
+    : SourceStr(SrcStr) {
+  for (auto TDR : InTDRs)
+    TDRs.emplace_back(TDR.second->alterSource(SourceStr));
+}
+
+std::string TemplateDependentStringInfo::getReplacedString(
+    const std::vector<TemplateArgumentInfo> &TemplateList) {
+  std::string SrcStr(SourceStr);
+  for (auto Itr = TDRs.rbegin(); Itr != TDRs.rend(); ++Itr)
+    (*Itr)->replace(TemplateList);
+  std::swap(SrcStr, SourceStr);
+  return SrcStr;
+}
+
+SourceLocation ExprAnalysis::getExprLocation(SourceLocation Loc) {
+  if (SM.isMacroArgExpansion(Loc))
+    return SM.getSpellingLoc(Loc);
+  else
+    return SM.getExpansionLoc(Loc);
+}
+
+std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(SourceLocation Loc) {
+  if (Loc.isInvalid())
+    return std::pair<size_t, size_t>(0, SrcLength);
+  Loc = getExprLocation(Loc);
   return std::pair<size_t, size_t>(
-      SM.getDecomposedLoc(Loc).second - SourceBegin,
+      getOffset(Loc),
       Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts()));
 }
 
 std::pair<size_t, size_t>
-StringReplacements::getOffsetAndLength(SourceLocation BeginLoc,
-                                       SourceLocation EndLoc) {
-  auto &SM = Context.getSourceManager();
+ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
+                                 SourceLocation EndLoc) {
   if (EndLoc.isValid()) {
-    auto Begin = SM.getFileOffset(SM.getExpansionLoc(BeginLoc)) - SourceBegin;
+    auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
     return std::pair<size_t, size_t>(Begin, End.first - Begin + End.second);
   }
   return getOffsetAndLength(BeginLoc);
 }
 
-void StringReplacements::init(const Expr *E) {
-  ReplMap.clear();
+void ExprAnalysis::initExpression(const Expr *Expression) {
+  E = Expression;
+  SrcBegin = 0;
   if (E && E->getBeginLoc().isValid()) {
-    SourceBegin = Context.getSourceManager()
-                      .getDecomposedExpansionLoc(E->getBeginLoc())
-                      .second;
-    SourceStr = getStmtSpelling(E, Context);
+    std::tie(SrcBegin, SrcLength) =
+        getOffsetAndLength(E->getBeginLoc(), E->getEndLoc());
+    ReplSet.init(std::string(
+        SM.getCharacterData(getExprLocation(E->getBeginLoc())), SrcLength));
   } else {
-    SourceBegin = 0;
-    SourceStr.clear();
+    SrcLength = 0;
+    ReplSet.init("");
   }
 }
 
@@ -77,7 +104,8 @@ void StringReplacements::replaceString() {
 }
 
 ExprAnalysis::ExprAnalysis(const Expr *Expression)
-    : Context(SyclctGlobalInfo::getContext()), ReplSet(Context) {
+    : Context(SyclctGlobalInfo::getContext()),
+      SM(SyclctGlobalInfo::getSourceManager()) {
   initExpression(Expression);
 }
 
@@ -124,7 +152,6 @@ void ExprAnalysis::analysisExpr(const UnaryExprOrTypeTraitExpr *UETT) {
                    UETT->getRParenLoc().getLocWithOffset(-1), Ty.getBaseName());
   }
 }
-
 void ExprAnalysis::analysisExpr(const CallExpr *CE) {
   auto Func = CE->getDirectCallee();
   const std::string FuncName = CE->getDirectCallee()->getNameAsString();
@@ -141,20 +168,6 @@ void ExprAnalysis::analysisExpr(const CallExpr *CE) {
     addReplacement(CE, NewFuncName + ArgsString);
   }
 }
-
-void ArraySizeExprAnalysis::analysisExpression(const Stmt *Expression) {
-  switch (Expression->getStmtClass()) {
-    ANALYSIS_EXPR(DeclRefExpr)
-  default:
-    return Base::analysisExpression(Expression);
-  }
-}
-
-void ArraySizeExprAnalysis::analysisExpr(const DeclRefExpr *DRE) {
-  if (auto TemplateDecl = dyn_cast<NonTypeTemplateParmDecl>(DRE->getDecl()))
-    addReplacement(DRE, TemplateList[TemplateDecl->getIndex()].getAsString());
-}
-
 const std::string &ArgumentAnalysis::getDefaultArgument(const Expr *E) {
   auto &Str = DefaultArgMap[E];
   if (Str.empty())
@@ -178,6 +191,7 @@ void KernelArgumentAnalysis::analysisExpr(const DeclRefExpr *DRE) {
       VI = std::make_shared<VarInfo>(LocInfo.second, LocInfo.first, VD);
     }
   }
+  Base::analysisExpr(DRE);
 }
 } // namespace syclct
 } // namespace clang

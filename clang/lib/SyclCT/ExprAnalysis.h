@@ -13,8 +13,8 @@
 #define SYCLCT_EXPR_ANALYSIS_H
 
 #include "TextModification.h"
-#include "Utility.h"
 
+#include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
 
 namespace clang {
@@ -23,7 +23,7 @@ namespace syclct {
 // Store replacement info applied on a string
 class StringReplacement {
 public:
-  StringReplacement(std::string &Src, size_t Off, size_t Len, std::string &&Txt)
+  StringReplacement(std::string &Src, size_t Off, size_t Len, std::string Txt)
       : SourceStr(Src), Offset(Off), Length(Len), Text(std::move(Txt)) {}
 
   inline void replaceString() { SourceStr.replace(Offset, Length, Text); }
@@ -41,50 +41,83 @@ private:
   std::string Text;
 };
 
+class TemplateArgumentInfo;
+
+// Store replacement dependent on template args
+class TemplateDependentReplacement {
+  std::string &SourceStr;
+  size_t Offset;
+  size_t Length;
+  unsigned TemplateIndex;
+
+public:
+  TemplateDependentReplacement(std::string &SrcStr, size_t Offset,
+                               size_t Length, unsigned TemplateIndex)
+      : SourceStr(SrcStr), Offset(Offset), Length(Length),
+        TemplateIndex(TemplateIndex) {}
+
+  inline std::shared_ptr<TemplateDependentReplacement>
+  alterSource(std::string &SrcStr) {
+    return std::make_shared<TemplateDependentReplacement>(
+        SrcStr, Offset, Length, TemplateIndex);
+  }
+  void replace(const std::vector<TemplateArgumentInfo> &TemplateList);
+};
+
+// Store a string which actual text dependent on template args
+class TemplateDependentStringInfo {
+  std::string SourceStr;
+  std::vector<std::shared_ptr<TemplateDependentReplacement>> TDRs;
+
+public:
+  TemplateDependentStringInfo() = default;
+  TemplateDependentStringInfo(std::string &&SrcStr)
+      : SourceStr(std::move(SrcStr)) {}
+  TemplateDependentStringInfo(
+      const std::string &SourceStr,
+      const std::map<size_t, std::shared_ptr<TemplateDependentReplacement>>
+          &InTDRs);
+
+  std::string
+  getReplacedString(const std::vector<TemplateArgumentInfo> &TemplateList);
+};
+
 // Store a expr source string which may need replaced and its replacements
 class StringReplacements {
 public:
-  StringReplacements(const ASTContext &Context)
-      : Context(Context), SourceBegin(0), ShiftLength(0) {}
-  StringReplacements(const Expr *E, const ASTContext &Context)
-      : StringReplacements(Context) {
-    init(E);
+  StringReplacements() : ShiftLength(0) {}
+  inline void init(std::string &&SrcStr) {
+    SourceStr = std::move(SrcStr);
+    ReplMap.clear();
   }
 
-  void init(const Expr *E);
-  inline void init() { return init(nullptr); }
+  // Add a template dependent replacement
+  inline void addTemplateDependentReplacement(size_t Offset, size_t Length,
+                                              unsigned TemplateIndex) {
+    Offset += ShiftLength;
+    TDRs.insert(
+        std::make_pair(Offset, std::make_shared<TemplateDependentReplacement>(
+                                   SourceStr, Offset, Length, TemplateIndex)));
+  }
+  // Add a string replacement
+  void addStringReplacement(size_t Offset, size_t Length, std::string Text) {
+    auto Result = ReplMap.insert(std::make_pair(
+        Offset,
+        std::make_shared<StringReplacement>(SourceStr, Offset, Length, Text)));
+    if (Result.second)
+      ShiftLength += Result.first->second->getReplacedText().length() - Length;
+  }
 
+  // Generate replacement text info which dependent on template args.
+  std::shared_ptr<TemplateDependentStringInfo>
+  getTemplateDependentStringInfo() {
+    replaceString();
+    return std::make_shared<TemplateDependentStringInfo>(SourceStr, TDRs);
+  }
   inline bool hasReplacements() { return !ReplMap.empty(); }
   inline const std::string &getReplacedString() {
     replaceString();
     return SourceStr;
-  }
-  // Replace a sub expr
-  inline void addReplacement(const Expr *E, std::string &&Text) {
-    return addReplacement(E->getBeginLoc(), E->getEndLoc(), std::move(Text));
-  }
-  // Replace a token with its begin location
-  inline void addReplacement(SourceLocation SL, std::string &&Text) {
-    auto LocInfo = getOffsetAndLength(SL);
-    return addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
-  }
-  // Replace string between begin location and end location
-  inline void addReplacement(SourceLocation Begin, SourceLocation End,
-                             std::string &&Text) {
-    auto LocInfo = getOffsetAndLength(Begin, End);
-    return addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
-  }
-  // Replace string with relative offset to the stored string and length
-  inline void addReplacement(size_t Offset, size_t Length, std::string &&Text) {
-    auto Result = ReplMap.insert(std::make_pair(
-        Offset, std::make_shared<StringReplacement>(SourceStr, Offset, Length,
-                                                    std::move(Text))));
-    if (Result.second)
-      ShiftLength += Result.first->second->getReplacedText().length() - Length;
-  }
-  // Replace total string
-  inline void addReplacement(std::string &&Text) {
-    return addReplacement(SourceLocation(), std::move(Text));
   }
 
 private:
@@ -92,17 +125,12 @@ private:
   StringReplacements(StringReplacements &&) = delete;
   StringReplacements &operator=(StringReplacements) = delete;
 
-  std::pair<size_t, size_t> getOffsetAndLength(SourceLocation Begin,
-                                               SourceLocation End);
-  std::pair<size_t, size_t> getOffsetAndLength(SourceLocation SL);
-
   void replaceString();
 
-  const ASTContext &Context;
-  unsigned SourceBegin;
   unsigned ShiftLength;
   std::string SourceStr;
   std::map<size_t, std::shared_ptr<StringReplacement>> ReplMap;
+  std::map<size_t, std::shared_ptr<TemplateDependentReplacement>> TDRs;
 };
 
 // Analysis expression and generate its migrated string
@@ -126,19 +154,58 @@ public:
   inline const std::string &getReplacedString() {
     return ReplSet.getReplacedString();
   }
+  inline std::shared_ptr<TemplateDependentStringInfo>
+  getTemplateDependentStringInfo() {
+    return ReplSet.getTemplateDependentStringInfo();
+  }
   inline TextModification *getReplacement() {
     return hasReplacement() ? new ReplaceStmt(E, getReplacedString()) : nullptr;
   }
 
-protected:
-  // Prepare for analysis.
-  inline void initExpression(const Expr *Expression) {
-    E = Expression;
-    ReplSet.init(Expression);
+private:
+  SourceLocation getExprLocation(SourceLocation Loc);
+  size_t getOffset(SourceLocation Loc) {
+    return SM.getFileOffset(Loc) - SrcBegin;
   }
 
-  template <class... Args> inline void addReplacement(Args... Arguments...) {
-    ReplSet.addReplacement(std::forward<Args>(Arguments)...);
+protected:
+  // Prepare for analysis.
+  void initExpression(const Expr *Expression);
+
+  std::pair<size_t, size_t> getOffsetAndLength(SourceLocation Begin,
+                                               SourceLocation End);
+  std::pair<size_t, size_t> getOffsetAndLength(SourceLocation SL);
+
+  // Replace a sub expr
+  template <class TextData>
+  inline void addReplacement(const Expr *E, TextData Text) {
+    addReplacement(E->getBeginLoc(), E->getEndLoc(), std::move(Text));
+  }
+  // Replace a token with its begin location
+  template <class TextData>
+  inline void addReplacement(SourceLocation SL, TextData Text) {
+    auto LocInfo = getOffsetAndLength(SL);
+    addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
+  }
+  // Replace string between begin location and end location
+  template <class TextData>
+  inline void addReplacement(SourceLocation Begin, SourceLocation End,
+                             TextData Text) {
+    auto LocInfo = getOffsetAndLength(Begin, End);
+    addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
+  }
+  // Replace total string
+  template <class TextData> inline void addReplacement(TextData Text) {
+    addReplacement(SourceLocation(), std::move(Text));
+  }
+  // Replace string with relative offset to the stored string and length
+  inline void addReplacement(size_t Offset, size_t Length, std::string Text) {
+    ReplSet.addStringReplacement(Offset, Length, std::move(Text));
+  }
+
+  inline void addReplacement(size_t Offset, size_t Length,
+                             unsigned TemplateIndex) {
+    ReplSet.addTemplateDependentReplacement(Offset, Length, TemplateIndex);
   }
 
   // Analysis the expression, jump to corresponding anlysis function according
@@ -157,6 +224,10 @@ protected:
     analysisExpression(BO->getLHS());
     analysisExpression(BO->getRHS());
   }
+  inline void analysisExpr(const DeclRefExpr *DRE) {
+    if (auto TemplateDecl = dyn_cast<NonTypeTemplateParmDecl>(DRE->getDecl()))
+      addReplacement(DRE, TemplateDecl->getIndex());
+  }
 
   inline void analysisExpr(const ParenExpr *PE) {
     analysisExpression(PE->getSubExpr());
@@ -171,34 +242,15 @@ protected:
   inline void analysisExpr(const Stmt *S) {}
 
   const ASTContext &Context;
+  const SourceManager &SM;
 
 private:
   // E is analysis target expression, while ExprString is the source text of E.
   // Replacements contains all the replacements happened in E.
   const Expr *E;
+  size_t SrcBegin;
+  size_t SrcLength;
   StringReplacements ReplSet;
-};
-
-class TemplateArgumentInfo;
-
-// Analysis expressions which represent size of an array.
-class ArraySizeExprAnalysis : public ExprAnalysis {
-public:
-  using Base = ExprAnalysis;
-  ArraySizeExprAnalysis(const Expr *Expression,
-                        const std::vector<TemplateArgumentInfo> *TemplateList)
-      : Base(Expression),
-        TemplateList(TemplateList ? *TemplateList : NullList) {}
-
-protected:
-  virtual void analysisExpression(const Stmt *Expression) override;
-
-private:
-  // Generate replacements when template dependent variable is used.
-  void analysisExpr(const DeclRefExpr *Expression);
-  const std::vector<TemplateArgumentInfo> &TemplateList;
-
-  const static std::vector<TemplateArgumentInfo> NullList;
 };
 
 // Analysis expression used as argument.
@@ -229,7 +281,7 @@ private:
       Expression = Ctor->getArg(0);
     initExpression(Expression);
     if (auto DAE = dyn_cast<CXXDefaultArgExpr>(Expression))
-      addReplacement(getDefaultArgument(DAE->getExpr()));
+      addReplacement(std::string(getDefaultArgument(DAE->getExpr())));
   }
 
   using DefaultArgMapTy = std::map<const Expr *, std::string>;

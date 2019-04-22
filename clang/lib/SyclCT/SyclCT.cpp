@@ -397,8 +397,6 @@ public:
       // TODO: Need to print debug info here
     }
 
-    Global.buildReplacements();
-    Global.emplaceReplacements(Repl);
   }
 
   void Initialize(ASTContext &Context) override {
@@ -766,6 +764,10 @@ int run(int argc, const char **argv) {
     DebugInfo::ShowStatus(RunResult);
     return RunResult;
   }
+
+  auto &Global = SyclctGlobalInfo::getInstance();
+  Global.buildReplacements();
+  Global.emplaceReplacements(Tool.getReplacements());
 
   if (GenReport) {
     // report: apis, stats, diags

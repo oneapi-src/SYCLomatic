@@ -61,7 +61,7 @@ insertObject(MapType &Map, const typename MapType::key_type &Key,
 //    SyclctFileInfo       SyclctFileInfo     ...
 //              |
 //           -----------------------------------------------------
-//           |                           |                         |                      |
+//           |                           |                         | |
 //  MemVarInfo  DeviceFunctionDecl  KernelCallExpr  CudaMallocInfo
 // Global Variable)                |   (inherite from CallFunctionExpr)
 //                           DeviceFunctionInfo
@@ -143,7 +143,10 @@ public:
     return isInRoot(
         getSourceManager().getFilename(getSourceManager().getExpansionLoc(SL)));
   }
-  static bool isInRoot(std::string &&FilePath) {
+  inline static bool isInRoot(std::string &&FilePath) {
+    return isInRoot(FilePath);
+  }
+  static bool isInRoot(std::string &FilePath) {
     makeCanonical(FilePath);
     return isChildPath(InRoot, FilePath);
   }
@@ -244,7 +247,8 @@ private:
   template <class Info, class Node>
   inline std::shared_ptr<Info> insertNode(const Node *N) {
     auto LocInfo = getLocInfo(N);
-    return insertFile(LocInfo.first)->template insertNode<Info>(LocInfo.second, N);
+    return insertFile(LocInfo.first)
+        ->template insertNode<Info>(LocInfo.second, N);
   }
 
   inline std::shared_ptr<SyclctFileInfo>
@@ -276,6 +280,23 @@ private:
 
 class TemplateArgumentInfo;
 
+// Store array size string. Like below:
+// a[10]: Store "10" as size;
+// a[]: Store "" as empty size;
+// a[SIZE]: Store as a TemplateDependentStringInfo while "SIZE" is a template
+// parameter;
+class SizeInfo {
+  std::string Size;
+  std::shared_ptr<TemplateDependentStringInfo> TDSI;
+
+public:
+  SizeInfo() = default;
+  SizeInfo(std::string &&Size) : Size(Size) {}
+  SizeInfo(std::shared_ptr<TemplateDependentStringInfo> TDSI) : TDSI(TDSI) {}
+  const std::string &getSize() { return Size; }
+  // Get actual size string according to template arguments list;
+  void setTemplateList(const std::vector<TemplateArgumentInfo> &TemplateList);
+};
 // TypeInfo is basic class with info of element type, range, template info all
 // get from type.
 class TypeInfo {
@@ -315,7 +336,7 @@ private:
   void setPointerAsArray() {
     if (isPointer()) {
       IsPointer = false;
-      Range.push_back(0);
+      Range.emplace_back();
     }
   }
   inline void removeQualifier() { BaseName = BaseNameWithoutQualifiers; }
@@ -324,7 +345,7 @@ private:
   std::string BaseName;
   std::string BaseNameWithoutQualifiers;
   std::string OrginalBaseType;
-  std::vector<const ArrayType *> Range;
+  std::vector<SizeInfo> Range;
   bool IsPointer;
   bool IsReference;
   bool IsTemplate;

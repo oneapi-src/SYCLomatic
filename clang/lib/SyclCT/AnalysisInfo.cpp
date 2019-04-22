@@ -26,8 +26,7 @@ const std::string MemVarInfo::ExternVariableName = "syclct_extern_memory";
 const std::string MemVarInfo::AccessorSuffix = "_acc";
 
 void SyclctFileInfo::buildReplacements() {
-  makeCanonical(FilePath);
-  if (!isChildPath(SyclctGlobalInfo::getInRoot(), FilePath))
+  if (!SyclctGlobalInfo::isInRoot(FilePath))
     return;
   for (auto &Kernel : KernelMap)
     Kernel.second->buildInfo();
@@ -484,21 +483,15 @@ TypeInfo::TypeInfo(QualType Type)
 std::string TypeInfo::getRangeArgument(const std::string &MemSize,
                                        bool MustArguments) {
   std::string Arg = "(";
-  for (auto R : Range) {
-    if (auto CAT = dyn_cast<ConstantArrayType>(R))
-      Arg += CAT->getSize().toString(10, false);
-    else if (auto VAT = dyn_cast<VariableArrayType>(R))
-      Arg +=
-          getStmtSpelling(VAT->getSizeExpr(), SyclctGlobalInfo::getContext());
-    else if (auto DAT = dyn_cast<DependentSizedArrayType>(R)) {
-      ArraySizeExprAnalysis SizeAnalysis(DAT->getSizeExpr(), TemplateList);
-      SizeAnalysis.analysis();
-      Arg += SizeAnalysis.getReplacedString();
-    } else if (MemSize.empty())
-      syclct_unreachable(
-          "array size should not be incomplete while non mem size");
-    else
+  for (auto &R : Range) {
+    auto Size = R.getSize();
+    if (Size.empty()) {
+      if (MemSize.empty())
+        syclct_unreachable(
+            "array size should not be empty when external mem size is not set");
       Arg += MemSize;
+    } else
+      Arg += Size;
     Arg += ", ";
   }
   return (Arg.size() == 1) ? (MustArguments ? (Arg + ")") : "")
@@ -510,11 +503,20 @@ void TypeInfo::setTemplateType(const std::vector<TemplateArgumentInfo> &TA) {
   if (isTemplate())
     TemplateType = TA[TemplateIndex].getAsType();
   TemplateList = &TA;
+  for (auto &R : Range)
+    R.setTemplateList(TA);
 }
 
 void TypeInfo::setArrayInfo(QualType &Type) {
+  ExprAnalysis A;
   while (Type->isArrayType()) {
-    Range.push_back(dyn_cast<ArrayType>(Type));
+    if (auto CAT = dyn_cast<ConstantArrayType>(Type))
+      Range.emplace_back(CAT->getSize().toString(10, false));
+    else if (auto DSAT = dyn_cast<DependentSizedArrayType>(Type)) {
+      A.analysis(DSAT->getSizeExpr());
+      Range.emplace_back(A.getTemplateDependentStringInfo());
+    } else if (dyn_cast<IncompleteArrayType>(Type))
+      Range.emplace_back();
     Type = Type->getAsArrayTypeUnsafe()->getElementType();
   }
 }
@@ -553,6 +555,12 @@ void TypeInfo::setName(QualType &Type) {
   else
     BaseName = Type.getLocalQualifiers().getAsString(PP) + " " +
                BaseNameWithoutQualifiers;
+}
+
+void SizeInfo::setTemplateList(
+    const std::vector<TemplateArgumentInfo> &TemplateList) {
+  if (TDSI)
+    Size = TDSI->getReplacedString(TemplateList);
 }
 } // namespace syclct
 } // namespace clang
