@@ -412,7 +412,7 @@ public:
 
 private:
   void ReportUnsupportedAtomicFunc(const CallExpr *CE);
-  void TranslateAtomicFunc(const CallExpr *CE);
+  void TranslateAtomicFunc(const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for types replacements in var. declarations.

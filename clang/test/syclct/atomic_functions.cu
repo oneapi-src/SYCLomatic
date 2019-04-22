@@ -13,19 +13,19 @@ __global__ void test(T *data) {
   // CHECK: T tid = item_{{[a-f0-9]+}}.get_local_id(0);
   T tid = threadIdx.x;
 
-  // CHECK: syclct::atomic_fetch_add(&data[0], (T)(tid));
+  // CHECK: syclct::atomic_fetch_add(&data[0], tid);
   atomicAdd(&data[0], tid);
 
-  // CHECK: syclct::atomic_fetch_sub(&data[1], (T)(tid));
+  // CHECK: syclct::atomic_fetch_sub(&data[1], tid);
   atomicSub(&data[1], tid);
 
-  // CHECK: syclct::atomic_exchange(&data[2], (T)(tid));
+  // CHECK: syclct::atomic_exchange(&data[2], tid);
   atomicExch(&data[2], tid);
 
-  // CHECK: syclct::atomic_fetch_max(&data[3], (T)(tid));
+  // CHECK: syclct::atomic_fetch_max(&data[3], tid);
   atomicMax(&data[3], tid);
 
-  // CHECK: syclct::atomic_fetch_min(&data[4], (T)(tid));
+  // CHECK: syclct::atomic_fetch_min(&data[4], tid);
   atomicMin(&data[4], tid);
 
   // CHECK: /*
@@ -38,16 +38,16 @@ __global__ void test(T *data) {
   // CHECK: */
   atomicDec((unsigned int *)&data[6], (unsigned int)tid);
 
-  // CHECK: syclct::atomic_compare_exchange_strong(&data[7], (T)(tid - 1), (T)(tid));
+  // CHECK: syclct::atomic_compare_exchange_strong(&data[7], tid - 1, tid);
   atomicCAS(&data[7], tid - 1, tid);
 
-  // CHECK: syclct::atomic_fetch_and(&data[8], (T)(tid));
+  // CHECK: syclct::atomic_fetch_and(&data[8], tid);
   atomicAnd(&data[8], tid);
 
-  // CHECK: syclct::atomic_fetch_or(&data[9], (T)(tid));
+  // CHECK: syclct::atomic_fetch_or(&data[9], tid);
   atomicOr(&data[9], tid);
 
-  // CHECK: syclct::atomic_fetch_xor(&data[10], (T)(tid));
+  // CHECK: syclct::atomic_fetch_xor(&data[10], tid);
   atomicXor(&data[10], tid);
 }
 
@@ -55,13 +55,13 @@ template <>
 __global__ void test(unsigned long long int* data) {
   unsigned long long int tid = threadIdx.x;
 
-  // CHECK: syclct::atomic_fetch_add(&data[0], (unsigned long long)(tid));
+  // CHECK: syclct::atomic_fetch_add(&data[0], tid);
   atomicAdd(&data[0], tid);
 
-  // CHECK: syclct::atomic_exchange(&data[2], (unsigned long long)(tid));
+  // CHECK: syclct::atomic_exchange(&data[2], tid);
   atomicExch(&data[2], tid);
 
-  // CHECK: syclct::atomic_compare_exchange_strong(&data[7], (unsigned long long)(tid - 1), (unsigned long long)(tid));
+  // CHECK: syclct::atomic_compare_exchange_strong(&data[7], tid - 1, tid);
   atomicCAS(&data[7], tid - 1, tid);
 }
 
@@ -69,10 +69,10 @@ template <>
 __global__ void test(float* data) {
   float tid = threadIdx.x;
 
-  // CHECK: syclct::atomic_fetch_add(&data[0], (float)(tid));
+  // CHECK: syclct::atomic_fetch_add(&data[0], tid);
   atomicAdd(&data[0], tid);
 
-  // CHECK: syclct::atomic_exchange(&data[2], (float)(tid));
+  // CHECK: syclct::atomic_exchange(&data[2], tid);
   atomicExch(&data[2], tid);
 }
 
@@ -80,7 +80,7 @@ template <>
 __global__ void test(double* data) {
   double tid = threadIdx.x;
 
-  // CHECK: syclct::atomic_fetch_add(&data[0], (double)(tid));
+  // CHECK: syclct::atomic_fetch_add(&data[0], tid);
   atomicAdd(&data[0], tid);
 }
 

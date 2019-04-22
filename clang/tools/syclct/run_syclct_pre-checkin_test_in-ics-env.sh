@@ -17,6 +17,7 @@ cd $tc_result_folder
 #tc -r none -x gcc_efi2 -t syclct_sdk_samples/vectorAdd,topologyQuery,cudaOpenMP,cppIntegration,simpleAssert,alignedTypes,simpleMPI,simplePrintf
 
 syclct_sdk_8_samples=(
+  clock
   vectorAdd
   topologyQuery
   cudaOpenMP

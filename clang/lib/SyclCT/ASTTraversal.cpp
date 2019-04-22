@@ -133,7 +133,6 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange) {
   const char *EP = SM.getCharacterData(End);
   unsigned int Size = EP - BP + 1;
   std::string E(BP, Size);
-
   size_t Pos = 0;
   const std::string MacroName = "__CUDA_ARCH__";
   std::string ReplacedMacroName;
@@ -711,7 +710,8 @@ void AtomicFunctionRule::ReportUnsupportedAtomicFunc(const CallExpr *CE) {
   report(CE->getBeginLoc(), Comments::API_NOT_MIGRATED, OSS.str());
 }
 
-void AtomicFunctionRule::TranslateAtomicFunc(const CallExpr *CE) {
+void AtomicFunctionRule::TranslateAtomicFunc(
+    const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result) {
   if (!CE)
     return;
 
@@ -756,8 +756,12 @@ void AtomicFunctionRule::TranslateAtomicFunc(const CallExpr *CE) {
   const unsigned NumArgs = CE->getNumArgs();
   for (unsigned i = 1; i < NumArgs; ++i) {
     const Expr *Arg = CE->getArg(i);
-    emplaceTransformation(new InsertBeforeStmt(Arg, "(" + TypeName + ")("));
-    emplaceTransformation(new InsertAfterStmt(Arg, ")"));
+    if (auto *ImpCast = dyn_cast<ImplicitCastExpr>(Arg)) {
+      if (ImpCast->getCastKind() != clang::CK_LValueToRValue) {
+        emplaceTransformation(new InsertBeforeStmt(Arg, "(" + TypeName + ")("));
+        emplaceTransformation(new InsertAfterStmt(Arg, ")"));
+      }
+    }
   }
 }
 
@@ -766,7 +770,7 @@ void AtomicFunctionRule::run(const MatchFinder::MatchResult &Result) {
       getNodeAsType<CallExpr>(Result, "unsupportedAtomicFuncCall"));
 
   TranslateAtomicFunc(
-      getNodeAsType<CallExpr>(Result, "supportedAtomicFuncCall"));
+      getNodeAsType<CallExpr>(Result, "supportedAtomicFuncCall"), Result);
 }
 
 REGISTER_RULE(AtomicFunctionRule)
@@ -1122,9 +1126,7 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: {
-    return false;
-  }
+  default: { return false; }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
