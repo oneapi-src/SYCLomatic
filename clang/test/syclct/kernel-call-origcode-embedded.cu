@@ -1,5 +1,8 @@
 // RUN: syclct -keep-original-code -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck --input-file %T/kernel-call-origcode-embedded.sycl.cpp --match-full-lines %s
+// UNSUPPORTED: cuda-8.0
+// UNSUPPORTED: cuda-9.2
+// UNSUPPORTED: cuda-10.0
 
 #include <iostream>
 // includes CUDA
