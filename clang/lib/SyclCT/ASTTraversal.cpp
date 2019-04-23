@@ -318,7 +318,8 @@ void IncludesCallbacks::InclusionDirective(
   // if it's not an include from the Cuda SDK, leave it,
   // unless it's <cuda_runtime.h>, in which case it will be replaced.
   // In other words, <cuda_runtime.h> will be replaced regardless of where it's coming from
-  if (!isChildPath(CudaPath, IncludePath)) {
+  if (!isChildPath(CudaPath, IncludePath) &&
+      IncludePath.compare(0, 15, "/usr/local/cuda", 15)) {
     if (!(IsAngled && FileName.compare(StringRef("cuda_runtime.h")) == 0)) {
       return;
     }
