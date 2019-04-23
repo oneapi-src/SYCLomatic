@@ -192,11 +192,8 @@ class TranslationRule : public ASTTraversal {
 
   TransformSetTy *TransformSet = nullptr;
   void setTransformSet(TransformSetTy &TS) { TransformSet = &TS; }
-  void setStmtStringMap(StmtStringMap &_SSM) { SSM = &_SSM; }
 
 protected:
-  StmtStringMap *SSM = nullptr;
-
   /// Add \a TM to the set of transformations.
   ///
   /// The ownership of the TM is transferred to the TransformSet.
@@ -412,7 +409,9 @@ public:
 
 private:
   void ReportUnsupportedAtomicFunc(const CallExpr *CE);
-  void TranslateAtomicFunc(const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result);
+  void
+  TranslateAtomicFunc(const CallExpr *CE,
+                      const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for types replacements in var. declarations.

@@ -505,29 +505,24 @@ class ReplaceDim3Ctor : public TextModification {
   bool isDecl;
   const CXXConstructExpr *Ctor;
   const CXXConstructExpr *FinalCtor;
-  StmtStringMap *SSM;
   CharSourceRange CSR;
   mutable std::string ReplacementString;
 
   void setRange();
   const Stmt *getReplaceStmt(const Stmt *S) const;
-  std::string getSyclRangeCtor(const CXXConstructExpr *Ctor,
-                               const ASTContext &Context) const;
-  std::string getParamsString(const CXXConstructExpr *Ctor,
-                              const ASTContext &Context) const;
-  std::string getReplaceString(const ASTContext &Context) const;
+  std::string getSyclRangeCtor(const CXXConstructExpr *Ctor) const;
+  std::string getReplaceString() const;
 
 public:
-  ReplaceDim3Ctor(const CXXConstructExpr *_Ctor, StmtStringMap *_SSM,
-                  bool _isDecl = false)
+  ReplaceDim3Ctor(const CXXConstructExpr *_Ctor, bool _isDecl = false)
       : TextModification(TMID::ReplaceDim3Ctor, G2), isDecl(_isDecl),
-        Ctor(_Ctor), FinalCtor(nullptr), SSM(_SSM) {
+        Ctor(_Ctor), FinalCtor(nullptr) {
     setRange();
   }
-  ReplaceDim3Ctor(const CXXConstructExpr *_Ctor, StmtStringMap *_SSM,
+  ReplaceDim3Ctor(const CXXConstructExpr *_Ctor,
                   const CXXConstructExpr *_FinalCtor)
       : TextModification(TMID::ReplaceDim3Ctor, G2), isDecl(false), Ctor(_Ctor),
-        FinalCtor(_FinalCtor), SSM(_SSM) {
+        FinalCtor(_FinalCtor) {
     setRange();
   }
   static const CXXConstructExpr *getConstructExpr(const Expr *E);

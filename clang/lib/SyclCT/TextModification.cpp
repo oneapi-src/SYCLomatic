@@ -412,39 +412,11 @@ const CXXConstructExpr *ReplaceDim3Ctor::getConstructExpr(const Expr *E) {
 }
 
 // Returns the full replacement string for the CXXConstructorExpr
-std::string ReplaceDim3Ctor::getSyclRangeCtor(const CXXConstructExpr *Ctor,
-                                              const ASTContext &Context) const {
-  return "cl::sycl::range<3>(" + getParamsString(Ctor, Context) + ")";
-}
-
-// Returns the new parameter list for the replaced constructor, without the
-// parens
-std::string ReplaceDim3Ctor::getParamsString(const CXXConstructExpr *Ctor,
-                                             const ASTContext &Context) const {
-  std::string Params = "";
-
-  if (Ctor->getNumArgs() == 1) {
-    if (auto E = getConstructExpr(Ctor->getArg(0))) {
-      return getSyclRangeCtor(E, Context);
-    } else {
-      return getStmtSpelling(Ctor->getArg(0), Context);
-    }
-  } else {
-    for (const auto *Arg : Ctor->arguments()) {
-      if (!Params.empty()) {
-        Params += ", ";
-      }
-      if (isa<CXXDefaultArgExpr>(Arg)) {
-        Params += "1";
-      } else {
-        if (Arg->getBeginLoc().isMacroID() || Arg->getEndLoc().isMacroID())
-          Params += getStmtSpellingWithTransforms(Arg, Context, SSM, true);
-        else
-          Params += getStmtSpellingWithTransforms(Arg, Context, SSM);
-      }
-    }
-    return Params;
-  }
+std::string
+ReplaceDim3Ctor::getSyclRangeCtor(const CXXConstructExpr *Ctor) const {
+  ExprAnalysis Analysis(Ctor);
+  Analysis.analysis();
+  return Analysis.getReplacedString();
 }
 
 const Stmt *ReplaceDim3Ctor::getReplaceStmt(const Stmt *S) const {
@@ -456,17 +428,21 @@ const Stmt *ReplaceDim3Ctor::getReplaceStmt(const Stmt *S) const {
   return S;
 }
 
-std::string ReplaceDim3Ctor::getReplaceString(const ASTContext &Context) const {
+std::string ReplaceDim3Ctor::getReplaceString() const {
   if (isDecl) {
-    return getParamsString(Ctor, Context);
+    // Get the new parameter list for the replaced constructor, without the
+    // parens
+    std::string ReplacedString = getSyclRangeCtor(Ctor);
+    ReplacedString.replace(0, strlen("cl::sycl::range<3>("), "");
+    ReplacedString.replace(ReplacedString.length() - 1, 1, "");
+    return ReplacedString;
   } else {
     std::string S;
     if (FinalCtor) {
-      S = getSyclRangeCtor(FinalCtor, Context);
+      S = getSyclRangeCtor(FinalCtor);
     } else {
-      S = getSyclRangeCtor(Ctor, Context);
+      S = getSyclRangeCtor(Ctor);
     }
-    SSM->insert({Ctor, S});
     return S;
   }
 }
@@ -481,10 +457,10 @@ ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
     unsigned Offset, Length;
     std::tie(FilePath, Offset, Length) = getReplacementInfo(Context, CSR);
     return std::make_shared<ExtReplacement>(FilePath, Offset, Length,
-                                            getReplaceString(Context), this);
+                                            getReplaceString(), this);
   }
 
-  ReplacementString = getReplaceString(Context);
+  ReplacementString = getReplaceString();
   return std::make_shared<ExtReplacement>(
       Context.getSourceManager(), CSR.getBegin(), 0, ReplacementString, this);
 }
@@ -496,8 +472,8 @@ InsertComment::getReplacement(const ASTContext &Context) const {
   return std::make_shared<ExtReplacement>(
       Context.getSourceManager(), SL, 0,
       (OrigIndent + llvm::Twine("/*") + NL + OrigIndent + Text + NL +
-       OrigIndent + "*/" + NL)
-          .str(),
+       OrigIndent + "*/" +
+       NL).str(),
       this, true /*true means comments replacement*/);
 }
 

@@ -39,6 +39,12 @@ private:
     return ShorterIsFirst ? mergeComparedAtSameOffset(First, Second)
                           : mergeComparedAtSameOffset(Second, First);
   }
+
+  /// Do merge for Short replacement and Longer replacement.
+  ///
+  /// Return the merged replacemtent.
+  /// Prerequisite: Shorter replacement's length should be not more than Longer
+  /// replacement's.
   std::shared_ptr<ExtReplacement>
   mergeComparedAtSameOffset(std::shared_ptr<ExtReplacement> Shorter,
                             std::shared_ptr<ExtReplacement> Longer);

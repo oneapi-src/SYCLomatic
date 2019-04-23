@@ -23,21 +23,36 @@ bool ExtReplacements::isInvalid(std::shared_ptr<ExtReplacement> Repl) {
   return false;
 }
 
+/// Do merge for Short replacement and Longer replacement.
+///
+/// Return the merged replacemtent.
+/// Prerequisite: Shorter replacement's length should be not more than Longer
+/// replacement's.
 std::shared_ptr<ExtReplacement> ExtReplacements::mergeComparedAtSameOffset(
     std::shared_ptr<ExtReplacement> Shorter,
     std::shared_ptr<ExtReplacement> Longer) {
   if (Shorter->getLength() == Longer->getLength()) {
     if (Longer->getReplacementText().equals(Shorter->getReplacementText()) &&
-        Longer->getLength())
+        Longer->getLength()) {
+      // Fully equal replacements, just reserve one.
       return Longer;
-    return (Longer->getInsertPosition() == InsertPositionLeft)
-               ? mergeReplacement(Longer, Shorter)
-               : mergeReplacement(Shorter, Longer);
-  } else if (!Shorter->getLength())
+    } else {
+      // Both Shorter and Longer are insert replacements, do merge.
+      // Or same length but different code replacement text, do merge.
+      // inset replacement could be "namespace::", "(type cast)",  ")"  "(".
+      return (Longer->getInsertPosition() == InsertPositionLeft)
+                 ? mergeReplacement(Longer, Shorter)
+                 : mergeReplacement(Shorter, Longer);
+    }
+  } else if (!Shorter->getLength()) {
+    // Shorter is insert replacement, Longer is code replacement, do merge.
     return mergeReplacement(Shorter, Longer);
-  else if (Longer->getReplacementText().empty())
+  } else {
+    // Shorter is a sub replacement of Longer, just reserve Longer.
+    // TODO: Currently not make sure "keep the longer, remove shorter" is
+    // correct, need to do in the future.
     return Longer;
-  syclct_unreachable("replacements at the same offset");
+  }
 }
 
 std::shared_ptr<ExtReplacement> ExtReplacements::filterOverlappedReplacement(
@@ -68,7 +83,7 @@ void ExtReplacements::emplaceIntoReplSet(tooling::Replacements &ReplSet) {
   // TODO: Original code should be output when required
   unsigned PrevEnd = 0;
   for (auto &R : ReplMap) {
-    if (auto Repl = filterOverlappedReplacement(R.second,PrevEnd)) {
+    if (auto Repl = filterOverlappedReplacement(R.second, PrevEnd)) {
       if (auto Err = ReplSet.add(*Repl)) {
         llvm::dbgs() << Err << "\n";
         syclct_unreachable("Adding the replacement: Error occured ");

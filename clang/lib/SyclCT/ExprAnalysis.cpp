@@ -10,6 +10,7 @@
 //===-----------------------------------------------------------------===//
 
 #include "ExprAnalysis.h"
+#include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprObjC.h"
@@ -121,6 +122,23 @@ void ExprAnalysis::analysisExpr(const UnaryExprOrTypeTraitExpr *UETT) {
     TypeInfo Ty(TyInfo->getType());
     addReplacement(TyInfo->getTypeLoc().getBeginLoc(),
                    UETT->getRParenLoc().getLocWithOffset(-1), Ty.getBaseName());
+  }
+}
+
+void ExprAnalysis::analysisExpr(const CallExpr *CE) {
+  auto Func = CE->getDirectCallee();
+  const std::string FuncName = CE->getDirectCallee()->getNameAsString();
+  if (MathFunctionsRule::SingleDoubleFunctionNamesMap.count(FuncName) != 0) {
+    std::string NewFuncName =
+        MathFunctionsRule::SingleDoubleFunctionNamesMap.at(FuncName);
+    std::string ArgsString = "(";
+    ArgumentAnalysis A;
+    for (auto Arg : CE->arguments()) {
+      A.analysis(Arg);
+      ArgsString += A.getReplacedString() + ", ";
+    }
+    ArgsString.replace(ArgsString.length() - 2, 2, ")");
+    addReplacement(CE, NewFuncName + ArgsString);
   }
 }
 

@@ -59,8 +59,7 @@ public:
     replaceString();
     return SourceStr;
   }
-
-  //Replace a sub expr
+  // Replace a sub expr
   inline void addReplacement(const Expr *E, std::string &&Text) {
     return addReplacement(E->getBeginLoc(), E->getEndLoc(), std::move(Text));
   }
@@ -106,18 +105,18 @@ private:
   std::map<size_t, std::shared_ptr<StringReplacement>> ReplMap;
 };
 
-//Analysis expression and generate its migrated string
+// Analysis expression and generate its migrated string
 class ExprAnalysis {
 public:
   ExprAnalysis() : ExprAnalysis(nullptr) {}
   explicit ExprAnalysis(const Expr *Expression);
 
-  //Start ananlysis the expression passed in when inited.
+  // Start ananlysis the expression passed in when inited.
   inline void analysis() {
     if (E)
       analysisExpression(E);
   }
-  //Start analysis the argument expression
+  // Start analysis the argument expression
   inline void analysis(const Expr *Expression) {
     initExpression(Expression);
     analysis();
@@ -132,7 +131,7 @@ public:
   }
 
 protected:
-	//Prepare for analysis.
+  // Prepare for analysis.
   inline void initExpression(const Expr *Expression) {
     E = Expression;
     ReplSet.init(Expression);
@@ -159,9 +158,14 @@ protected:
     analysisExpression(BO->getRHS());
   }
 
+  inline void analysisExpr(const ParenExpr *PE) {
+    analysisExpression(PE->getSubExpr());
+  }
+
   void analysisExpr(const CXXConstructExpr *Ctor);
   void analysisExpr(const MemberExpr *ME);
   void analysisExpr(const UnaryExprOrTypeTraitExpr *UETT);
+  void analysisExpr(const CallExpr *CE);
 
   // Doing nothing when it doesn't need analysis
   inline void analysisExpr(const Stmt *S) {}
@@ -177,7 +181,7 @@ private:
 
 class TemplateArgumentInfo;
 
-//Analysis expressions which represent size of an array.
+// Analysis expressions which represent size of an array.
 class ArraySizeExprAnalysis : public ExprAnalysis {
 public:
   using Base = ExprAnalysis;
@@ -190,19 +194,19 @@ protected:
   virtual void analysisExpression(const Stmt *Expression) override;
 
 private:
-	//Generate replacements when template dependent variable is used.
+  // Generate replacements when template dependent variable is used.
   void analysisExpr(const DeclRefExpr *Expression);
   const std::vector<TemplateArgumentInfo> &TemplateList;
 
   const static std::vector<TemplateArgumentInfo> NullList;
 };
 
-//Analysis expression used as argument.
+// Analysis expression used as argument.
 class ArgumentAnalysis : public ExprAnalysis {
 public:
   using Base = ExprAnalysis;
   ArgumentAnalysis() {}
-  //Special init is needed for argument expression.
+  // Special init is needed for argument expression.
   ArgumentAnalysis(const Expr *Arg) : Base(nullptr) { initArgumentExpr(Arg); }
 
   inline void analysis() { Base::analysis(); }

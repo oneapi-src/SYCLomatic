@@ -151,7 +151,10 @@ int main() {
   dim3 d3_6_1 = dim3(test.x + 111, 112 + test.y, 113 + test.z + 114);
   // CHECK: cl::sycl::range<3> d3_6_2 = cl::sycl::range<3>(test[0] + NUM, NUM + test[1], NUM + test[2] + NUM);
   dim3 d3_6_2 = dim3(test.x + NUM, NUM + test.y, NUM + test.z + NUM);
-
+  // CHECK: cl::sycl::range<3> d3_6_3 = cl::sycl::range<3>(cl::sycl::ceil(test[0] + NUM), NUM + test[1], NUM + test[2] + NUM);
+  dim3 d3_6_3 = dim3(ceil(test.x + NUM), NUM + test.y, NUM + test.z + NUM);
+  // CHECK: cl::sycl::range<3> gpu_blocks(1 / (d3_6_3[0] * 200), 1, 1);
+  dim3 gpu_blocks(1 / (d3_6_3.x * 200));
   // CHECK: {
   // CHECK:   syclct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {

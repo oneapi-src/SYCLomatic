@@ -1450,16 +1450,16 @@ ReplaceDim3Ctor *ReplaceDim3CtorRule::getReplaceDim3Modification(
       return nullptr;
     } else {
       // dim3 a(1);
-      return new ReplaceDim3Ctor(Ctor, SSM, true /*isDecl*/);
+      return new ReplaceDim3Ctor(Ctor, true /*isDecl*/);
     }
   } else if (auto Ctor =
                  getNodeAsType<CXXConstructExpr>(Result, "dim3CtorNoDecl")) {
-    return new ReplaceDim3Ctor(Ctor, SSM);
+    return new ReplaceDim3Ctor(Ctor);
   } else if (auto Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3Top")) {
     if (auto A = ReplaceDim3Ctor::getConstructExpr(Ctor->getArg(0))) {
       // strip the top CXXConstructExpr, if there's a CXXConstructExpr further
       // down
-      return new ReplaceDim3Ctor(Ctor, SSM, A);
+      return new ReplaceDim3Ctor(Ctor, A);
     } else {
       // Copy constructor case: dim3 a(copyfrom)
       // No replacements are needed
@@ -1506,7 +1506,6 @@ void Dim3MemberFieldsRule::FieldsRename(const MatchFinder::MatchResult &Result,
       emplaceTransformation(
           new RenameFieldInMemberExpr(ME, Search->second + "", Position));
       std::string NewMemberStr = Ret.substr(0, Position) + Search->second;
-      SSM->insert({ME, NewMemberStr});
     }
   }
 }
@@ -3062,7 +3061,6 @@ void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
     if (auto TR = dyn_cast<TranslationRule>(&*I)) {
       TR->TM = this;
       TR->setTransformSet(TS);
-      TR->setStmtStringMap(SSM);
     }
   }
 

@@ -122,94 +122,6 @@ std::string getStmtExpansion(const Stmt *S, const ASTContext &Context) {
                      SM.getCharacterData(End) - SM.getCharacterData(Begin));
 }
 
-//
-// Utilities to compose the spelling of a Stmt node with the
-// transformations from the StmtStringMap applied
-// TODO: Move this functionality into the utility module
-//
-
-typedef std::vector<StmtStringPair> TransformsType;
-typedef std::vector<std::string> SplitsType;
-
-// Recursively walk the AST from S, looking for statements that already
-// have a string mapping in the StmtStringMap
-static TransformsType getTransforms(const Stmt *S, const StmtStringMap *SSM) {
-  TransformsType Transforms;
-  std::string Str = SSM->lookup(S);
-  if (!Str.empty()) {
-    Transforms.push_back({S, Str});
-  } else {
-    for (const auto C : S->children()) {
-      auto Trans = getTransforms(C, SSM);
-      Transforms.insert(Transforms.end(), Trans.begin(), Trans.end());
-    }
-  }
-  return Transforms;
-}
-
-// Split the original spelling of S into pieces according to the ranges from the
-// transforms
-static SplitsType getOriginalSplits(const Stmt *S,
-                                    const TransformsType &Transforms,
-                                    const clang::ASTContext &Context,
-                                    bool doExpansion) {
-  SplitsType Splits;
-  auto &SM = Context.getSourceManager();
-  SourceLocation Begin(S->getBeginLoc()), _End(S->getEndLoc());
-  SourceLocation End(Lexer::getLocForEndOfToken(_End, 0, SM, LangOptions()));
-  if (doExpansion) {
-    if (Begin.isMacroID())
-      Begin = SM.getExpansionLoc(Begin);
-    if (End.isMacroID())
-      End = SM.getExpansionLoc(End);
-  }
-  const char *CBegin = SM.getCharacterData(Begin);
-  const char *CEnd = SM.getCharacterData(End);
-  for (const auto &T : Transforms) {
-    SourceRange TSR = T.first->getSourceRange();
-    const char *TBegin = SM.getCharacterData(TSR.getBegin());
-    const char *TEnd = SM.getCharacterData(TSR.getEnd());
-    size_t SplitLen = TBegin - CBegin;
-    std::string Split(CBegin, SplitLen);
-    Splits.push_back(Split);
-    Begin = Begin.getLocWithOffset(SplitLen + (TEnd - TBegin) + 1);
-    CBegin = SM.getCharacterData(Begin);
-  }
-  std::string Split(CBegin, CEnd - CBegin);
-  Splits.push_back(Split);
-  return Splits;
-}
-
-// Get the new split strings to splice into the resulting string
-static SplitsType getNewSplits(const TransformsType &Transforms) {
-  SplitsType Splits;
-  for (const auto &T : Transforms) {
-    Splits.push_back(T.second);
-  }
-  return Splits;
-}
-
-// Returns the spelling of Stmt S, with the migrations from StmtStringMap
-std::string getStmtSpellingWithTransforms(const Stmt *S,
-                                          const clang::ASTContext &Context,
-                                          const StmtStringMap *SSM,
-                                          bool doExpansion) {
-  auto Transforms = getTransforms(S, SSM);
-  if (Transforms.empty()) {
-    if (doExpansion)
-      return getStmtExpansion(S, Context);
-    return getStmtSpelling(S, Context);
-  }
-  auto OriginalSplits = getOriginalSplits(S, Transforms, Context, doExpansion);
-  auto NewSplits = getNewSplits(Transforms);
-  assert(OriginalSplits.size() == NewSplits.size() + 1);
-  std::string NewSpelling = OriginalSplits[0];
-  for (size_t I = 0; I < NewSplits.size(); ++I) {
-    NewSpelling += NewSplits[I] + OriginalSplits[I + 1];
-  }
-  return NewSpelling;
-}
-
 SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
   SmallString<256> FilePath = SourcePath;
   auto Extension = path::extension(FilePath);
@@ -419,6 +331,4 @@ const DeclRefExpr *getInnerValueDecl(const Expr *Arg) {
   return DRE;
 }
 
-bool startsWith(std::string str, std::string s) {
-  return str.rfind(s, 0) == 0;
-}
+bool startsWith(std::string str, std::string s) { return str.rfind(s, 0) == 0; }
