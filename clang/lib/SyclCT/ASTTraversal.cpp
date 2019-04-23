@@ -309,14 +309,19 @@ void IncludesCallbacks::InclusionDirective(
       // Replace the complete include directive with an empty string.
       TransformSet.emplace_back(new ReplaceInclude(
           CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                          /*IsTokenRange=*/false), ""));
+                          /*IsTokenRange=*/false),
+          ""));
     }
     return;
   }
 
-  // if <cuda_runtime.h>, no matter where it from, replace with sycl header
-  if (!(IsAngled && FileName.compare(StringRef("cuda_runtime.h")) == 0)) {
-    return;
+  // if it's not an include from the Cuda SDK, leave it,
+  // unless it's <cuda_runtime.h>, in which case it will be replaced.
+  // In other words, <cuda_runtime.h> will be replaced regardless of where it's coming from
+  if (!isChildPath(CudaPath, IncludePath)) {
+    if (!(IsAngled && FileName.compare(StringRef("cuda_runtime.h")) == 0)) {
+      return;
+    }
   }
 
   // Multiple CUDA headers in an including file will be replaced with one
@@ -1045,8 +1050,7 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
   // int2 => cl::sycl::int2
   if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "vecVarDecl"))
     replaceTypeName(D->getType(),
-                    D->getTypeSourceInfo()->getTypeLoc().getBeginLoc(),
-                    true);
+                    D->getTypeSourceInfo()->getTypeLoc().getBeginLoc(), true);
 
   // typedef int2 xxx => typedef cl::sycl::int2 xxx
   if (const TypedefDecl *TD = getNodeAsType<TypedefDecl>(Result, "typeDefDecl"))
