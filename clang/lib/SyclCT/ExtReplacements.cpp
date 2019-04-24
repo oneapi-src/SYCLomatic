@@ -36,6 +36,15 @@ std::shared_ptr<ExtReplacement> ExtReplacements::mergeComparedAtSameOffset(
         Longer->getLength()) {
       // Fully equal replacements, just reserve one.
       return Longer;
+    } else if (Longer->getReplacementText().equals(
+                   Shorter->getReplacementText()) &&
+               Shorter->getReplacementText().find(StringRef("("))== StringRef::npos  &&
+               Shorter->getReplacementText().find(StringRef(")"))== StringRef::npos  &&
+               Longer->getLength() == 0) {
+      // Fully equal insert,  just reserve one. if not "( )".
+      // Todo:  need further figout the rule.
+      return Longer;
+
     } else {
       // Both Shorter and Longer are insert replacements, do merge.
       // Or same length but different code replacement text, do merge.
