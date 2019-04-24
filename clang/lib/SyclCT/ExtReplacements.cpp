@@ -16,8 +16,6 @@ namespace clang {
 namespace syclct {
 
 bool ExtReplacements::isInvalid(std::shared_ptr<ExtReplacement> Repl) {
-  if (!Repl->getOffset())
-    return true;
   if (Repl->getFilePath().empty())
     return true;
   if (Repl->getLength() == 0 && Repl->getReplacementText().empty())
