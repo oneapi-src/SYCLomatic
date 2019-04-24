@@ -113,6 +113,16 @@ void InvokeKernel() {
   test<T><<<1, k_threads_per_block>>>(dev_ptr);
 }
 
+__device__ void fun(){
+  double *a;
+  float b;
+// CHECK: syclct::atomic_fetch_add(a, (double)(1));
+  atomicAdd(a, 1);
+// CHECK: syclct::atomic_fetch_add(a, (double)(b));
+  atomicAdd(a, b);
+}
+
+
 int main() {
   InvokeKernel<int>();
   InvokeKernel<unsigned int>();

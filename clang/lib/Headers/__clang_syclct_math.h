@@ -17,6 +17,14 @@
 
 float max(float a, float b);
 
+__host__ double atomicAdd(double* address, double val);
+__host__ unsigned long long atomicAdd(unsigned long long* address, unsigned long long val);
+__host__ long atomicAdd(long* address, long val);
+__host__ unsigned long atomicAdd(unsigned long* address, unsigned long val);
+__host__ int atomicAdd(int* address, int val);
+__host__ unsigned int atomicAdd(unsigned int* address, unsigned int val);
+
+
 
 /// ---Fix for Window CUDA10.1--------------------------------
 #if CUDA_VERSION >= 10000 && (defined(_WIN64) || defined(_WIN32))
