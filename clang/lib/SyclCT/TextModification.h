@@ -306,37 +306,6 @@ public:
 };
 
 // Replace type in var. declaration.
-class InsertNameSpaceInVarDecl : public TextModification {
-  const VarDecl *D;
-  std::string T;
-  unsigned int InsertPosition;
-
-public:
-  InsertNameSpaceInVarDecl(const VarDecl *D, std::string &&T,
-                           unsigned int InsertPosition = 0)
-      : TextModification(TMID::InsertNameSpaceInVarDecl), D(D), T(T),
-        InsertPosition(InsertPosition) {}
-  std::shared_ptr<ExtReplacement>
-  getReplacement(const ASTContext &Context) const override;
-  void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintDetail = true) const override;
-};
-
-// Replace type in var. declaration.
-class InsertNameSpaceInCastExpr : public TextModification {
-  const CStyleCastExpr *D;
-  std::string T;
-
-public:
-  InsertNameSpaceInCastExpr(const CStyleCastExpr *D, std::string &&T)
-      : TextModification(TMID::InsertNameSpaceInCastExpr), D(D), T(T) {}
-  std::shared_ptr<ExtReplacement>
-  getReplacement(const ASTContext &Context) const override;
-  void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintDetail = true) const override;
-};
-
-// Replace type in var. declaration.
 class ReplaceVarDecl : public TextModification {
   const VarDecl *D;
   CharSourceRange SR;
@@ -415,72 +384,6 @@ public:
   InsertComment(SourceLocation SL, std::string Text)
       : TextModification(TMID::InsertComment), SL(SL), Text(Text) {}
 
-  std::shared_ptr<ExtReplacement>
-  getReplacement(const ASTContext &Context) const override;
-  void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintDetail = true) const override;
-};
-
-/// Replace CallExpr with another call.
-// TODO: return values are not handled.
-// TODO: we probably need more genric class, which would take the list of
-// strings and expressions and compose them to a single srting, also doing look
-// up for already modified expressions and use their new spelling when needed.
-class ReplaceCallExpr : public TextModification {
-  // Call to replace.
-  const CallExpr *C;
-  // New function name.
-  std::string Name;
-  // New function params.
-  std::vector<const Expr *> Args;
-  // New function type.
-  std::vector<std::string> Types;
-
-public:
-  ReplaceCallExpr(const CallExpr *Call, std::string &&NewName,
-                  std::vector<const Expr *> &&NewArgs)
-      : TextModification(TMID::ReplaceCallExpr), C(Call), Name(NewName),
-        Args(NewArgs) {}
-
-  ReplaceCallExpr(const CallExpr *Call, std::string &&NewName,
-                  std::vector<const Expr *> &&NewArgs,
-                  std::vector<std::string> NewTypes)
-      : TextModification(TMID::ReplaceCallExpr), C(Call), Name(NewName),
-        Args(NewArgs), Types(NewTypes) {}
-
-  std::shared_ptr<ExtReplacement>
-  getReplacement(const ASTContext &Context) const override;
-  void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintDetail = true) const override;
-};
-
-class InsertArgument : public TextModification {
-  const FunctionDecl *FD;
-  // Argument string without comma.
-  std::string ArgName;
-  bool Lazy = false;
-
-public:
-  InsertArgument(const FunctionDecl *FD, std::string &&ArgName)
-      : TextModification(TMID::InsertArgument), FD(FD), ArgName(ArgName) {}
-  InsertArgument(const FunctionDecl *FD, std::string &&ArgName, bool Lazy)
-      : TextModification(TMID::InsertArgument), FD(FD), ArgName(ArgName),
-        Lazy(Lazy) {}
-
-  std::shared_ptr<ExtReplacement>
-  getReplacement(const ASTContext &Context) const override;
-  void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintDetail = true) const override;
-};
-
-class InsertCallArgument : public TextModification {
-  const CallExpr *CE;
-  // Argument string without comma;
-  std::string Arg;
-
-public:
-  InsertCallArgument(const CallExpr *CE, std::string &&Arg)
-      : TextModification(TMID::InsertCallArgument), CE(CE), Arg(Arg) {}
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
@@ -642,11 +545,12 @@ public:
 class ReplaceText : public TextModification {
   SourceLocation BeginLoc;
   unsigned Len;
-  StringRef T;
+  std::string T;
 
 public:
   ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S)
-      : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len), T(S) {}
+      : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
+        T(std::move(S)) {}
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,

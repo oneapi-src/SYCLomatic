@@ -273,29 +273,6 @@ InsertText::getReplacement(const ASTContext &Context) const {
 }
 
 std::shared_ptr<ExtReplacement>
-InsertNameSpaceInVarDecl::getReplacement(const ASTContext &Context) const {
-  TypeLoc TL = D->getTypeSourceInfo()->getTypeLoc();
-  auto R = std::make_shared<ExtReplacement>(
-      Context.getSourceManager(),
-      CharSourceRange(SourceRange(TL.getBeginLoc(), TL.getBeginLoc()), false),
-      T, this);
-  R->setInsertPosition(InsertPositionRight);
-  recordTranslationInfo(Context, D->getBeginLoc());
-  return R;
-}
-
-std::shared_ptr<ExtReplacement>
-InsertNameSpaceInCastExpr::getReplacement(const ASTContext &Context) const {
-  recordTranslationInfo(Context, D->getBeginLoc());
-  return std::make_shared<ExtReplacement>(
-      Context.getSourceManager(),
-      CharSourceRange(SourceRange(D->getLParenLoc().getLocWithOffset(1),
-                                  D->getLParenLoc().getLocWithOffset(1)),
-                      false),
-      T, this);
-}
-
-std::shared_ptr<ExtReplacement>
 ReplaceCCast::getReplacement(const ASTContext &Context) const {
   auto Begin = Cast->getLParenLoc();
   auto End = Cast->getRParenLoc();
@@ -477,131 +454,12 @@ InsertComment::getReplacement(const ASTContext &Context) const {
       this, true /*true means comments replacement*/);
 }
 
-// TODO: Remove this workaround
-//
-//       Current kernel call's argument are generated separately (buildArgList)
-//       from AST replacement rules, that is AST replacement rules are not
-//       applied here, this workaround does the replacement again here
-//
-//       Kernel call replacement (ReplaceKernelCallExpr) should be implemented
-//       with fine-grained replacement to work with other replacement rules
-//       instead of generating the replacement at once.
-static inline std::string ReplacedArgText(const Expr *A,
-                                          const ASTContext &Context) {
-  std::string Elem = getStmtSpelling(A, Context);
-  if (const MemberExpr *ME = dyn_cast<MemberExpr>(A->IgnoreImpCasts())) {
-    const std::string MemberName = ME->getMemberNameInfo().getAsString();
-    auto Search = MapNames::Dim3MemberNamesMap.find(MemberName);
-    if (Search != MapNames::Dim3MemberNamesMap.end()) {
-      static constexpr char Dot[] = ".";
-      assert(Elem.find_last_of(Dot) != std::string::npos);
-      Elem.replace(Elem.find_last_of(Dot), MemberName.length() + strlen(Dot),
-                   Search->second);
-    }
-  }
-  return Elem;
-}
-
-template <typename ArgIterT>
-std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
-                         const ASTContext &Context) {
-  std::stringstream List;
-  for (auto A = begin(Args); A != end(Args); A++) {
-    std::string Elem = ReplacedArgText(*A, Context);
-    if (!Elem.empty()) {
-      // Fixed bug in the situation:
-      // funciton declaration is "void fun(int a, int b, int c=0)",
-      // and, "fun(a, b)" migrated "fun(a,b,"")"
-      List << Elem;
-      if (A + 1 != end(Args)) {
-        List << ", ";
-      }
-    }
-  }
-  return List.str();
-}
-
-template <typename ArgIterT, typename TypeIterT>
-std::string buildArgList(llvm::iterator_range<ArgIterT> Args,
-                         llvm::iterator_range<TypeIterT> Types,
-                         const ASTContext &Context) {
-  std::stringstream List;
-  auto B = begin(Types);
-  bool IsCommaNeeded = true;
-  for (auto A = begin(Args); A != end(Args); A++) {
-    if (*A != nullptr && !(*B).empty()) {
-      // General case, both are not empty
-      std::string Elem = ReplacedArgText(*A, Context);
-      if (!Elem.empty()) {
-        // Fixed bug in the situation:
-        // funciton declaration is "void fun(int a, int b, int c=0)",
-        // and, "fun(a, b)" migrated "fun(a,b,"")"
-        List << *B << "(" << Elem << ")";
-      } else {
-        IsCommaNeeded = false;
-      }
-    } else if (*A != nullptr && (*B).empty()) {
-      // No type, just argument
-      std::string Elem = ReplacedArgText(*A, Context);
-      if (!Elem.empty()) {
-        // Fixed bug in the situation:
-        // funciton declaration is "void fun(int a, int b, int c=0)",
-        // and, "fun(a, b)" migrated "fun(a,b,"")"
-        List << Elem;
-      } else {
-        IsCommaNeeded = false;
-      }
-    } else if (*A == nullptr && !(*B).empty()) {
-      // Just use "type", which is desired textual representation
-      // of argument in this case.
-      List << *B;
-    } else {
-      // Both are empty. Houston, we have a problem!
-      assert(false);
-    }
-    if (IsCommaNeeded) {
-      // Separated with comma and space ", "
-      List << ", ";
-    }
-    B++;
-  }
-
-  std::string ret = List.str();
-  // Remove the last comma and space, related with separator string,eg. ", "
-  ret.pop_back();
-  ret.pop_back();
-  return ret;
-}
-
-template <typename ArgIterT, typename TypeIterT>
-std::string
-buildCall(const std::string &Name, llvm::iterator_range<ArgIterT> Args,
-          llvm::iterator_range<TypeIterT> Types, const ASTContext &Context) {
-  std::string List;
-  if (begin(Types) == end(Types)) {
-    List = buildArgList(Args, Context);
-  } else {
-    List = buildArgList(Args, Types, Context);
-  }
-  return Name + "(" + List + ")";
-}
-
 std::string printTemplateArgument(const TemplateArgument &Arg,
                                   const PrintingPolicy &PP) {
   std::string Out;
   llvm::raw_string_ostream OS(Out);
   Arg.print(PP, OS);
   return OS.str();
-}
-
-std::shared_ptr<ExtReplacement>
-ReplaceCallExpr::getReplacement(const ASTContext &Context) const {
-  recordTranslationInfo(Context, C->getBeginLoc());
-  return std::make_shared<ExtReplacement>(
-      Context.getSourceManager(), C,
-      buildCall(Name, llvm::iterator_range<decltype(begin(Args))>(Args),
-                llvm::iterator_range<decltype(begin(Types))>(Types), Context),
-      this);
 }
 
 bool ReplacementFilter::containsInterval(const IntervalSet &IS,
@@ -625,56 +483,6 @@ bool ReplacementFilter::containsInterval(const IntervalSet &IS,
   }
 
   return false;
-}
-
-std::shared_ptr<ExtReplacement>
-InsertArgument::getReplacement(const ASTContext &Context) const {
-  auto &SM = Context.getSourceManager();
-  auto OrigIndent = getIndent(FD->getBeginLoc(), SM).str();
-
-  auto FNameLoc = FD->getNameInfo().getEndLoc();
-  // TODO: Investigate what happens in macro expansion
-  auto tkn =
-      Lexer::findNextToken(FNameLoc, Context.getSourceManager(), LangOptions())
-          .getValue();
-  // TODO: Investigate if its possible to not have l_paren as next token
-  assert(tkn.is(tok::TokenKind::l_paren));
-  // Emit new argument at the end of l_paren token
-  std::string Arg = ArgName;
-  // if (Lazy) {
-  //  std::string KernelFunName = FD->getNameAsString();
-  //  if (KernelTransAssist::hasKernelInfo(KernelFunName)) {
-  //    KernelInfo &KI = KernelTransAssist::getKernelInfo(KernelFunName);
-  //    Arg = KI.getKernelArgs();
-  //  }
-  //}
-
-  auto OutStr = Arg;
-  if (!FD->parameters().empty())
-    OutStr = Arg + getFmtEndArg() + getFmtArgIndent(OrigIndent);
-
-  recordTranslationInfo(Context, FD->getBeginLoc());
-  return std::make_shared<ExtReplacement>(Context.getSourceManager(),
-                                          tkn.getEndLoc(), 0, OutStr, this);
-}
-
-std::shared_ptr<ExtReplacement>
-InsertCallArgument::getReplacement(const ASTContext &Context) const {
-  const SourceLocation &SLocBegin = CE->getBeginLoc();
-  const SourceLocation &SLocEnd = CE->getEndLoc();
-  const SourceManager &SM = Context.getSourceManager();
-  const char *Start = SM.getCharacterData(SLocBegin);
-  const char *End = SM.getCharacterData(SLocEnd);
-  assert(End > Start);
-  llvm::StringRef CallStr(Start, End - Start + 1);
-  assert(CallStr.find_first_of("(") != llvm::StringRef::npos);
-  size_t Offset = CallStr.find_first_of("(") + 1;
-  const std::string InsertStr = (CE->getNumArgs() == 0) ? Arg : Arg + ", ";
-
-  recordTranslationInfo(Context, CE->getBeginLoc());
-  return std::make_shared<ExtReplacement>(Context.getSourceManager(),
-                                          SLocBegin.getLocWithOffset(Offset), 0,
-                                          InsertStr, this);
 }
 
 SourceLocation InsertBeforeCtrInitList::getInsertLoc() const {
@@ -909,21 +717,6 @@ void InsertText::print(llvm::raw_ostream &OS, ASTContext &Context,
   printInsertion(OS, T);
 }
 
-void InsertNameSpaceInVarDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
-                                     const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
-  printLocation(OS, D->getBeginLoc(), Context, PrintDetail);
-  printInsertion(OS, T);
-}
-
-void InsertNameSpaceInCastExpr::print(llvm::raw_ostream &OS,
-                                      ASTContext &Context,
-                                      const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
-  printLocation(OS, D->getBeginLoc(), Context, PrintDetail);
-  printInsertion(OS, T);
-}
-
 void ReplaceCCast::print(llvm::raw_ostream &OS, ASTContext &Context,
                          const bool PrintDetail) const {
   printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
@@ -969,31 +762,6 @@ void InsertComment::print(llvm::raw_ostream &OS, ASTContext &Context,
   printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
   printLocation(OS, SL, Context, PrintDetail);
   printInsertion(OS, Text);
-}
-
-void ReplaceCallExpr::print(llvm::raw_ostream &OS, ASTContext &Context,
-                            const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
-  printLocation(OS, C->getBeginLoc(), Context, PrintDetail);
-  C->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
-  // TODO: print simple and meaningful informations
-  OS << TransformStr << "[debug message unimplemented]\n";
-}
-
-void InsertArgument::print(llvm::raw_ostream &OS, ASTContext &Context,
-                           const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
-  printLocation(OS, FD->getBeginLoc(), Context, PrintDetail);
-  FD->print(OS, PrintingPolicy(Context.getLangOpts()));
-  printInsertion(OS, ArgName);
-}
-
-void InsertCallArgument::print(llvm::raw_ostream &OS, ASTContext &Context,
-                               const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
-  printLocation(OS, CE->getBeginLoc(), Context, PrintDetail);
-  CE->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
-  printInsertion(OS, Arg);
 }
 
 void InsertBeforeCtrInitList::print(llvm::raw_ostream &OS, ASTContext &Context,
