@@ -1204,7 +1204,9 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: { return false; }
+  default: {
+    return false;
+  }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -2056,10 +2058,11 @@ void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
     return hasAnyName("cudaStreamCreate", "cudaStreamCreateWithFlags",
                       "cudaStreamCreateWithPriority", "cudaStreamDestroy",
                       "cudaStreamSynchronize", "cudaStreamGetPriority",
-                      "cudaDeviceGetStreamPriorityRange",
-                      "cudaStreamBeginCapture", "cudaStreamEndCapture",
-                      "cudaStreamIsCapturing", "cudaStreamQuery",
-                      "cudaStreamWaitEvent", "cudaStreamAddCallback");
+                      "cudaStreamGetFlags", "cudaDeviceGetStreamPriorityRange",
+                      "cudaStreamAttachMemAsync", "cudaStreamBeginCapture",
+                      "cudaStreamEndCapture", "cudaStreamIsCapturing",
+                      "cudaStreamQuery", "cudaStreamWaitEvent",
+                      "cudaStreamAddCallback");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(streamFunctionName())),
@@ -2134,12 +2137,17 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
     emplaceTransformation(new ReplaceStmt(CE, true, Name, ReplStr));
-  } else if (FuncName == "cudaStreamGetPriority") {
+  } else if (FuncName == "cudaStreamGetFlags" ||
+             FuncName == "cudaStreamGetPriority") {
     report(CE->getBeginLoc(), Diagnostics::STREAM_FLAG_PRIORITY_NOT_SUPPORTED);
     auto StmtStr1 = getStmtSpelling(CE->getArg(1), *Result.Context);
     std::string ReplStr{"*("};
     ReplStr += StmtStr1;
     ReplStr += ") = 0";
+    if (IsAssigned) {
+      ReplStr = "(" + ReplStr + ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
     const std::string Name =
         CE->getCalleeDecl()->getAsFunction()->getNameAsString();
     emplaceTransformation(new ReplaceStmt(CE, true, Name, ReplStr));
@@ -2152,10 +2160,15 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
     ReplStr += ") = 0, *(";
     ReplStr += StmtStr1;
     ReplStr += ") = 0";
+    if (IsAssigned) {
+      ReplStr = "(" + ReplStr + ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
     const std::string Name =
         CE->getCalleeDecl()->getAsFunction()->getNameAsString();
     emplaceTransformation(new ReplaceStmt(CE, true, Name, ReplStr));
-  } else if (FuncName == "cudaStreamBeginCapture" ||
+  } else if (FuncName == "cudaStreamAttachMemAsync" ||
+             FuncName == "cudaStreamBeginCapture" ||
              FuncName == "cudaStreamEndCapture" ||
              FuncName == "cudaStreamIsCapturing" ||
              FuncName == "cudaStreamQuery" ||
@@ -2178,6 +2191,7 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
       ReplStr = "(" + ReplStr + ", 0)";
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
+    report(CE->getBeginLoc(), Diagnostics::CALLBACK_FOR_QUEUE_NOT_SUPPORTED);
     emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
   } else {
     syclct_unreachable("Unknown function name");

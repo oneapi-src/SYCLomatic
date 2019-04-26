@@ -190,12 +190,23 @@ static void func()
   // CHECK-NEXT: */
   // CHECK-NEXT: *(&priority_low) = 0, *(&priority_hi) = 0;
   cudaDeviceGetStreamPriorityRange(&priority_low, &priority_hi);
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkCudaErrors((*(&priority_low) = 0, *(&priority_hi) = 0, 0));
+  checkCudaErrors(cudaDeviceGetStreamPriorityRange(&priority_low, &priority_hi));
 
   int priority;
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: checkCudaErrors(*(&priority) = 0);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkCudaErrors((*(&priority) = 0, 0));
   checkCudaErrors(cudaStreamGetPriority(s0, &priority));
 
   char str[256];
@@ -204,10 +215,30 @@ static void func()
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: SYCLCT1015:{{[0-9]+}}: DPC++ doesn't have callback mechanism for queues. cudaStreamAddCallback was replaced with a blocking wait and host function call. Consider changing the algorithm to avoid waiting and calling of the function on the host.
+  // CHECK-NEXT: */
   // CHECK-NEXT: int status = (s0.wait(), callback<char *>(s0, 0, str), 0);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: SYCLCT1015:{{[0-9]+}}: DPC++ doesn't have callback mechanism for queues. cudaStreamAddCallback was replaced with a blocking wait and host function call. Consider changing the algorithm to avoid waiting and calling of the function on the host.
+  // CHECK-NEXT: */
   // CHECK-NEXT: s1.wait(), callback<char*>(s1, 0, str);
   cudaError_t status = cudaStreamAddCallback(s0, callback<char *>, str, flags);
   cudaStreamAddCallback(s1, callback<char*>, str, flags);
+
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkCudaErrors((*(&flags) = 0, 0));
+  checkCudaErrors(cudaStreamGetFlags(s0, &flags));
+
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: cudaStreamAttachMemAsync is not supported in Sycl
+  // CHECK-NEXT: */
+  cudaStreamAttachMemAsync(s0, nullptr);
 
   // CHECK: s0.wait();
   cudaStreamSynchronize(s0);
