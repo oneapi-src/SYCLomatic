@@ -12,6 +12,8 @@
 #ifndef SYCLCT_AST_DIAGNOSTICS_H
 #define SYCLCT_AST_DIAGNOSTICS_H
 
+#include "Debug.h"
+#include "SaveNewFiles.h"
 #include "TextModification.h"
 
 #include "clang/Basic/DiagnosticIDs.h"
@@ -22,7 +24,10 @@
 #include <unordered_map>
 
 extern llvm::cl::opt<std::string> SuppressWarnings;
+extern llvm::cl::opt<std::string> OutputFile;
+extern llvm::cl::opt<OutputVerbosityLev> OutputVerbosity;
 extern bool SuppressWarningsAllFlag;
+extern void PrintMsg(const std::string &Msg, bool IsPrintOnNormal);
 
 namespace clang {
 namespace syclct {
@@ -107,11 +112,38 @@ static inline std::string getMessagePrefix(int ID) {
 template <typename... Ts>
 void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
                    const CompilerInstance &CI, Ts &&... Vals) {
+
   DiagnosticsEngine &DiagEngine = CI.getDiagnostics();
-  unsigned ID = DiagEngine.getDiagnosticIDs()->getCustomDiagID(
-      (DiagnosticIDs::Level)Msg.Category, getMessagePrefix(Msg.ID) + Msg.Msg);
-  auto B = DiagEngine.Report(SL, ID);
-  applyReport<Ts...>(B, Vals...);
+
+  std::string Message = getMessagePrefix(Msg.ID) + Msg.Msg;
+
+  if (!OutputFile.empty()) {
+    //  Redirects warning message to output file if the option "-output-file" is
+    //  set
+    const SourceManager &SM = CI.getSourceManager();
+    int LineNum = SM.getSpellingLineNumber(SL);
+    const std::pair<FileID, unsigned> DecomposedLocation =
+        SM.getDecomposedLoc(SL);
+
+    FileID FID = DecomposedLocation.first;
+    unsigned *LineCache =
+        SM.getSLocEntry(FID).getFile().getContentCache()->SourceLineCache;
+    const char *Buffer = SM.getBuffer(FID)->getBufferStart();
+    std::string LineOriCode(Buffer + LineCache[LineNum - 1],
+                            Buffer + LineCache[LineNum]);
+
+    const SourceLocation FileLoc = SM.getFileLoc(SL);
+    std::string File = FileLoc.printToString(SM);
+    Message = File + " warning: " + Message + "\n" + LineOriCode;
+    SyclctTerm() << Message;
+  }
+
+  if (OutputVerbosity != silent) {
+    unsigned ID = DiagEngine.getDiagnosticIDs()->getCustomDiagID(
+        (DiagnosticIDs::Level)Msg.Category, Message);
+    auto B = DiagEngine.Report(SL, ID);
+    applyReport<Ts...>(B, Vals...);
+  }
 }
 
 static inline SourceLocation getStartOfLine(SourceLocation Loc,
@@ -153,7 +185,7 @@ void report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
       // Separate string into list by comma
       if (SuppressWarnings != "") {
         auto WarningStrs = split(SuppressWarnings, ',');
-        for (const auto& Str : WarningStrs) {
+        for (const auto &Str : WarningStrs) {
           auto Range = split(Str, '-');
           if (Range.size() == 1) {
             WarningIDs.insert(std::stoi(Str));

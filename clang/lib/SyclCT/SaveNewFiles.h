@@ -31,6 +31,7 @@ enum ProcessStatus {
   MigrationError = -1,
 };
 
+enum OutputVerbosityLev { silent, normal, detailed, diagnostics };
 
 /// Apply all generated replacements, and immediately save the results to
 /// files in output directory.

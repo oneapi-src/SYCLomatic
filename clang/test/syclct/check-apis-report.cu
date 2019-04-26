@@ -1,49 +1,79 @@
 // RUN: syclct -report-type=apis -report-file-prefix=check-apis-report -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: typename __nv_tex_rmet_ret<float>::type tex3D(texture<float, 3, cudaReadModeElementType> t,float x,float y,float z),1" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMemcpy(void * dst,const void * src,size_t count,enum cudaMemcpyKind kind),2" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMemset(void * devPtr,int value,size_t count),1" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: struct cudaPitchedPtr make_cudaPitchedPtr(void * d,size_t p,size_t xsz,size_t ysz),1" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMalloc(void ** devPtr,size_t size),2" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: longlong4,1" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMalloc3D(struct cudaPitchedPtr * pitchedDevPtr,struct cudaExtent extent),1" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMallocHost(float ** ptr,size_t size,unsigned int flags),1" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: struct cudaExtent make_cudaExtent(size_t w,size_t h,size_t d),2" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaFuncGetAttributes(struct cudaFuncAttributes * attr,void (*)(float *, const float *, const float *) entry),1" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaStream_t,1" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: uint4,1" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaFreeHost(void * ptr),1" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: struct cudaChannelFormatDesc cudaCreateChannelDesc(),1" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: dim3,1" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t,3" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: int2,3" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaDeviceProp,1" >%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: API name, Frequency" >%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaDeviceSynchronize(),4" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaFree(void * devPtr),1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: typename __nv_tex_rmet_ret<float>::type tex3D(texture<float, 3, cudaReadModeElementType> t,float x,float y,float z),1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMemcpy(void * dst,const void * src,size_t count,enum cudaMemcpyKind kind),2" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMemset(void * devPtr,int value,size_t count),1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: struct cudaPitchedPtr make_cudaPitchedPtr(void * d,size_t p,size_t xsz,size_t ysz),1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMalloc(void ** devPtr,size_t size),2" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: longlong4,1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMalloc3D(struct cudaPitchedPtr * pitchedDevPtr,struct cudaExtent extent),1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMallocHost(float ** ptr,size_t size,unsigned int flags),1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: struct cudaExtent make_cudaExtent(size_t w,size_t h,size_t d),2" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaFuncGetAttributes(struct cudaFuncAttributes * attr,void (*)(float *, const float *, const float *) entry),1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaStream_t,1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: uint4,1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaFreeHost(void * ptr),1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: struct cudaChannelFormatDesc cudaCreateChannelDesc(),1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: dim3,1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t,3" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: int2,3" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaDeviceProp,1" >>%T/check-apis-report_csv_check.txt
 // RUN: cat %T/check-apis-report.apis.csv >>%T/check-apis-report_csv_check.txt
 // RUN: FileCheck --match-full-lines --input-file %T/check-apis-report_csv_check.txt %T/check-apis-report_csv_check.txt
 
 // RUN: syclct -report-file-prefix=report -report-type=apis  -report-format=formatted -report-only  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: API name				Frequency" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaDeviceSynchronize()               4" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaFree(void * devPtr)               1" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: typename __nv_tex_rmet_ret<float>::type tex3D(texture<float, 3, cudaReadModeElementType> t,float x,float y,float z)               1" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMemcpy(void * dst,const void * src,size_t count,enum cudaMemcpyKind kind)               2" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMemset(void * devPtr,int value,size_t count)               1" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: struct cudaPitchedPtr make_cudaPitchedPtr(void * d,size_t p,size_t xsz,size_t ysz)               1" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMalloc(void ** devPtr,size_t size)               2" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: longlong4                                    1" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMalloc3D(struct cudaPitchedPtr * pitchedDevPtr,struct cudaExtent extent)               1" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMallocHost(float ** ptr,size_t size,unsigned int flags)               1" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: struct cudaExtent make_cudaExtent(size_t w,size_t h,size_t d)               2" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaFuncGetAttributes(struct cudaFuncAttributes * attr,void (*)(float *, const float *, const float *) entry)               1" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaStream_t                                 1" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: uint4                                        1" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaFreeHost(void * ptr)               1" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: struct cudaChannelFormatDesc cudaCreateChannelDesc()               1" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: dim3                                         1" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t                                  3" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: int2                                         3" >%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaDeviceProp                               1" >%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaDeviceSynchronize()               4" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaFree(void * devPtr)               1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: typename __nv_tex_rmet_ret<float>::type tex3D(texture<float, 3, cudaReadModeElementType> t,float x,float y,float z)               1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMemcpy(void * dst,const void * src,size_t count,enum cudaMemcpyKind kind)               2" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMemset(void * devPtr,int value,size_t count)               1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: struct cudaPitchedPtr make_cudaPitchedPtr(void * d,size_t p,size_t xsz,size_t ysz)               1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMalloc(void ** devPtr,size_t size)               2" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: longlong4                                    1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMalloc3D(struct cudaPitchedPtr * pitchedDevPtr,struct cudaExtent extent)               1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMallocHost(float ** ptr,size_t size,unsigned int flags)               1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: struct cudaExtent make_cudaExtent(size_t w,size_t h,size_t d)               2" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaFuncGetAttributes(struct cudaFuncAttributes * attr,void (*)(float *, const float *, const float *) entry)               1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaStream_t                                 1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: uint4                                        1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaFreeHost(void * ptr)               1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: struct cudaChannelFormatDesc cudaCreateChannelDesc()               1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: dim3                                         1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t                                  3" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: int2                                         3" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaDeviceProp                               1" >>%T/check-apis-report_check.txt
 // RUN: cat %T/report.apis.log >>%T/check-apis-report_check.txt
 // RUN: FileCheck --match-full-lines --input-file %T/check-apis-report_check.txt %T/check-apis-report_check.txt
+
+// RUN: syclct -output-file=output-file.txt -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: Starting to parse: {{(.+)/([^/]+)}}" >%T/check_output-file.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: {{(.+)/([^/]+)}}:{{[0-9]+}}:{{[0-9]+}} warning: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code" >>%T/check_output-file.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`:   cudaError_t err = cudaDeviceSynchronize();" >>%T/check_output-file.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: {{(.+)/([^/]+)}}:{{[0-9]+}}:{{[0-9]+}} warning: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code" >>%T/check_output-file.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`:   checkError(cudaDeviceSynchronize());" >>%T/check_output-file.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: {{(.+)/([^/]+)}}:{{[0-9]+}}:{{[0-9]+}} warning: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code" >>%T/check_output-file.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`:   return cudaDeviceSynchronize();" >>%T/check_output-file.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: Ending to parse: {{(.+)/([^/]+)}}" >>%T/check_output-file.txt
+// RUN: cat %T/output-file.txt >>%T/check_output-file.txt
+// RUN: FileCheck --match-full-lines --input-file %T/check_output-file.txt %T/check_output-file.txt
+
+// NOMATCH-CHECK-NOT: '{{.}}'
+
+// RUN: syclct -output-verbosity=silent  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path  2>&1  \
+// RUN: | FileCheck -check-prefix=NOMATCH-CHECK -allow-empty %s
+
+
+// FAKE-FILE-CHECK-NOT:Starting to parse: {{(.+)/([^/]+)}}
+// FAKE-FILE-STDERR: Ending to parse: {{(.+)/([^/]+)}}
+
+// RUN: syclct -output-verbosity=normal  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path  2>&1  \
+// RUN: | FileCheck -check-prefix=FAKE-FILE-CHECK -allow-empty %s
+
+// RUN: syclct -output-verbosity=detailed  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path  2>&1  \
+// RUN: | FileCheck -check-prefix=FAKE-FILE-STDERR -allow-empty %s
 
 #include <cuda_runtime.h>
 

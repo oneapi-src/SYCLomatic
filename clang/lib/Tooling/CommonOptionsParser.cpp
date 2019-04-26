@@ -147,18 +147,27 @@ llvm::Error CommonOptionsParser::init(
         SmallString<256> Name = StringRef(SourcePaths[0]);
         StringRef File, Path;
         if (fs::make_absolute(Name) != std::error_code()) {
-          llvm::errs() << "Could not get absolute path from '" << Name << "'\n";
+          std::string buf;
+          llvm::raw_string_ostream OS(buf);
+          OS << "Could not get absolute path from '" << Name << "'\n";
+          DoPrintHandler(OS.str(), true);
         } else {
           File = path::filename(Name);
           Path = path::parent_path(Name);
         }
-        llvm::errs() << "NOTE: Could not auto-detect compilation database for"
+        std::string buf;
+        llvm::raw_string_ostream OS(buf);
+        OS << "NOTE: Could not auto-detect compilation database for"
                      << " file '" << File << "' in '" << Path
                      << "' or any parent directory.\n"
                      << "Running without flags.\n";
+        DoPrintHandler(OS.str(), true);
       } else {
-        llvm::errs() << "Error while trying to load a compilation database:\n"
+        std::string buf;
+        llvm::raw_string_ostream OS(buf);
+        OS << "Error while trying to load a compilation database:\n"
                      << ErrorMessage << "Running without flags.\n";
+        DoPrintHandler(OS.str(), true);
       }
 #else
       llvm::errs() << "Error while trying to load a compilation database:\n"

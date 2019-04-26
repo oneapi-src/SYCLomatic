@@ -77,9 +77,10 @@ public:
 llvm::raw_ostream &SyclctLog();
 llvm::raw_ostream &SyclctStats();
 llvm::raw_ostream &SyclctDiags();
+llvm::raw_ostream &SyclctTerm();
 std::string getSyclctStatsStr();
 std::string getSyclctDiagsStr();
-
+std::string getSyclctTermStr();
 extern int VerboseLevel;
 
 extern std::unordered_map<std::string, std::array<unsigned int, 3>>

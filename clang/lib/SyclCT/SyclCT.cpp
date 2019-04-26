@@ -16,6 +16,7 @@
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Refactoring.h"
+#include "clang/Tooling/Tooling.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 
@@ -71,16 +72,13 @@ static opt<std::string> Passes(
     desc("Comma separated list of migration passes, which will be applied. "
          "Only the specified passes are applied."),
     value_desc("FunctionAttrsRule,..."), cat(SyclCTCat));
+static opt<std::string> InRoot(
+    "in-root", desc("Directory path for root of source tree to be migrated. "
+                    "Only files under this root will be migrated."),
+    value_desc("/path/to/input/root/"), cat(SyclCTCat), llvm::cl::Optional);
 static opt<std::string>
-    InRoot("in-root",
-           desc("Directory path for root of source tree to be migrated. "
-                "Only files under under this root will be migrated."),
-           value_desc("/path/to/input/root/"), cat(SyclCTCat),
-           llvm::cl::Optional);
-static opt<std::string>
-    OutRoot("out-root",
-            desc("Directory path for root of generated files. "
-                 "Directory will be created if it doesn't exist."),
+    OutRoot("out-root", desc("Directory path for root of generated files. "
+                             "Directory will be created if it doesn't exist."),
             value_desc("/path/to/output/root/"), cat(SyclCTCat),
             llvm::cl::Optional);
 
@@ -168,6 +166,49 @@ static opt<bool, true>
                                "possible errors. Default: off"),
                 cat(SyclCTCat), llvm::cl::location(NoStopOnErrFlag));
 
+opt<OutputVerbosityLev> OutputVerbosity(
+    "output-verbosity", llvm::cl::desc("Set the output verbosity level:"),
+    llvm::cl::values(
+        clEnumVal(silent, "Only messages from clang"),
+        clEnumVal(normal,
+                  "Only warnings, errors, notes from both clang and syclct"),
+        clEnumVal(detailed,
+                  "Normal + messages about start and end of file parsing"),
+        clEnumVal(diagnostics, "Everything, as now - which includes "
+                               "information about conflicts, seg faults, "
+                               "etc.... This one is default.")),
+    llvm::cl::init(diagnostics), cat(SyclCTCat), llvm::cl::Optional);
+
+opt<std::string> OutputFile(
+    "output-file", desc("redirects stdout/stderr output to <file> in the "
+                        "output diretory specified by '-out-root' option."),
+    value_desc("output file name"), cat(SyclCTCat), llvm::cl::Optional);
+
+// Currently, set IsPrintOnNormal false only at the place where messages about
+// start and end of file parsing are produced,
+//.i.e in the place "lib/Tooling:int ClangTool::run(ToolAction *Action)".
+void PrintMsg(const std::string &Msg, bool IsPrintOnNormal = true) {
+  if (!OutputFile.empty()) {
+    //  Redirects stdout/stderr output to <file>
+    SyclctTerm() << Msg;
+  }
+
+  switch (OutputVerbosity) {
+  case detailed:
+  case diagnostics:
+    llvm::outs() << Msg;
+    break;
+  case normal:
+    if (IsPrintOnNormal) {
+      llvm::outs() << Msg;
+    }
+    break;
+  case silent:
+  default:
+    break;
+  }
+}
+
 std::string CudaPath;          // Global value for the CUDA install path.
 std::string SyclctInstallPath; // Installation directory for this tool
 
@@ -214,8 +255,9 @@ public:
            it != SortedRules.rend(); it++) {
         auto *RuleID = ASTTraversalMetaInfo::getID(*it);
         if (!RuleID) {
-          llvm::errs() << "[ERROR] Rule\"" << *it << "\" not found\n";
-          std::exit(1);
+          const std::string ErrMsg = "[ERROR] Rule\"" + *it + "\" not found\n";
+          PrintMsg(ErrMsg);
+          llvm_unreachable(ErrMsg.c_str());
         }
         ATM.emplaceTranslationRule(RuleID);
       }
@@ -396,7 +438,6 @@ public:
 
       // TODO: Need to print debug info here
     }
-
   }
 
   void Initialize(ASTContext &Context) override {
@@ -517,19 +558,21 @@ void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
   std::string Path = GetRealPath(Tool, InRoot);
 
   if (isChildPath(CudaPath, Path)) {
-    llvm::errs() << "[ERROR] Input root specified by \"-in-root\" option \""
-                 << Path << "\" is in CUDA_PATH folder \"" << CudaPath
-                 << "\"\n";
-    exit(-1);
+    std::string ErrMsg =
+        "[ERROR] Input root specified by \"-in-root\" option \"" + Path +
+        "\" is in CUDA_PATH folder \"" + CudaPath + "\"\n";
+    PrintMsg(ErrMsg);
+    llvm_unreachable(ErrMsg.c_str());
   }
 
   if (isChildPath(Path, SyclctInstallPath) ||
       isSamePath(Path, SyclctInstallPath)) {
-    llvm::errs() << "[ERROR] Input folder \"" << Path
-                 << "\" is the parent or the same as the folder where DPC++ "
-                    "Compatibility Tool is installed \""
-                 << SyclctInstallPath << "\"\n";
-    exit(-1);
+    std::string ErrMsg = "[ERROR] Input folder \"" + Path +
+                         "\" is the parent or the same as the folder where "
+                         "DPC++ Compatibility Tool is installed \"" +
+                         SyclctInstallPath + "\"\n";
+    PrintMsg(ErrMsg);
+    llvm_unreachable(ErrMsg.c_str());
   }
 }
 
@@ -548,9 +591,9 @@ unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
 
   const FileEntry *Entry = SM.getFileManager().getFile(Path);
   if (!Entry) {
-    llvm::errs() << "FilePath Invalide..."
-                 << "\n";
-    assert(false);
+    std::string ErrMsg = "FilePath Invalide...\n";
+    PrintMsg(ErrMsg);
+    llvm_unreachable(ErrMsg.c_str());
   }
 
   FileID FID = SM.getOrCreateFileID(Entry, SrcMgr::C_User);
@@ -584,16 +627,19 @@ static void printMetrics(clang::tooling::RefactoringTool &Tool) {
 
 static void saveApisReport(void) {
   if (ReportFilePrefix == "stdout") {
-    llvm::outs() << "------------------APIS report--------------------\n";
-    llvm::outs() << "API name\t\t\t\tFrequency";
-    llvm::outs() << "\n";
+    std::string buf;
+    llvm::raw_string_ostream OS(buf);
+    OS << "------------------APIS report--------------------\n";
+    OS << "API name\t\t\t\tFrequency";
+    OS << "\n";
 
     for (const auto &Elem : SrcAPIStaticsMap) {
       std::string APIName = Elem.first;
       unsigned int Count = Elem.second;
-      llvm::outs() << llvm::format("%-30s%16u\n", APIName.c_str(), Count);
+      OS << llvm::format("%-30s%16u\n", APIName.c_str(), Count);
     }
-    llvm::outs() << "-------------------------------------------------\n";
+    OS << "-------------------------------------------------\n";
+    PrintMsg(OS.str());
   } else {
     std::string RFile = OutRoot + "/" + ReportFilePrefix +
                         (ReportFormat == "csv" ? ".apis.csv" : ".apis.log");
@@ -628,10 +674,12 @@ static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
   SyclctStats() << "\nTotal migration time: " + std::to_string(Duration) +
                        " ms\n";
   if (ReportFilePrefix == "stdout") {
-
-    llvm::outs() << "----------Stats report---------------\n";
-    llvm::outs() << getSyclctStatsStr() << "\n";
-    llvm::outs() << "-------------------------------------\n";
+    std::string buf;
+    llvm::raw_string_ostream OS(buf);
+    OS << "----------Stats report---------------\n";
+    OS << getSyclctStatsStr() << "\n";
+    OS << "-------------------------------------\n";
+    PrintMsg(OS.str());
   } else {
     std::string RFile = OutRoot + "/" + ReportFilePrefix +
                         (ReportFormat == "csv" ? ".stats.csv" : ".stats.log");
@@ -645,9 +693,12 @@ static void saveDiagsReport() {
 
   // SyclctDiags() << "\n";
   if (ReportFilePrefix == "stdout") {
-    llvm::outs() << "--------Diags message----------------\n";
-    llvm::outs() << getSyclctDiagsStr() << "\n";
-    llvm::outs() << "-------------------------------------\n";
+    std::string buf;
+    llvm::raw_string_ostream OS(buf);
+    OS << "--------Diags message----------------\n";
+    OS << getSyclctDiagsStr() << "\n";
+    OS << "-------------------------------------\n";
+    PrintMsg(OS.str());
   } else {
     std::string RFile = OutRoot + "/" + ReportFilePrefix + ".diags.log";
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
@@ -682,8 +733,18 @@ std::string printCTVersion() {
   return OS.str();
 }
 
+static void DumpOutputFile(void) {
+  // Redirect stdout/stderr output to <file> if option "-output-file" is set
+  if (!OutputFile.empty()) {
+    std::string FilePath = OutRoot + "/" + OutputFile;
+    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(FilePath));
+    std::ofstream File(FilePath);
+    File << getSyclctTermStr() << "\n";
+  }
+}
+
 void PrintReportOnFault(std::string &FaultMsg) {
-  llvm::outs() << FaultMsg;
+  PrintMsg(FaultMsg);
   saveApisReport();
   saveDiagsReport();
 
@@ -703,6 +764,8 @@ void PrintReportOnFault(std::string &FaultMsg) {
     File << FaultMsg;
     File.close();
   }
+
+  DumpOutputFile();
 }
 
 int run(int argc, const char **argv) {
@@ -710,6 +773,8 @@ int run(int argc, const char **argv) {
 #if defined(__linux__) || defined(_WIN64)
   InstallSignalHandle();
 #endif
+  // Set hangle for libclangTooling to proccess message for syclct
+  clang::tooling::SetPrintHandler(PrintMsg);
 
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;
@@ -729,11 +794,15 @@ int run(int argc, const char **argv) {
                       ReportOnlyFlag, GenReport, DiagsContent) == false)
     exit(-1);
 
-  if (GenReport)
-    llvm::outs() << "Generate report: "
-                 << "report-type:" << ReportType
-                 << ", report-format:" << ReportFormat
-                 << ", report-file-prefix:" << ReportFilePrefix << "\n";
+  if (GenReport) {
+    std::string buf;
+    llvm::raw_string_ostream OS(buf);
+    OS << "Generate report: "
+       << "report-type:" << ReportType << ", report-format:" << ReportFormat
+       << ", report-file-prefix:" << ReportFilePrefix << "\n";
+
+    PrintMsg(OS.str());
+  }
 
   CudaPath = getCudaInstallPath(OriginalArgc, argv);
   SYCLCT_DEBUG_WITH_TYPE(
@@ -762,6 +831,7 @@ int run(int argc, const char **argv) {
   SyclCTActionFactory Factory(Tool.getReplacements());
   if (int RunResult = Tool.run(&Factory) && !NoStopOnErrFlag) {
     DebugInfo::ShowStatus(RunResult);
+    DumpOutputFile();
     return RunResult;
   }
 
@@ -785,11 +855,15 @@ int run(int argc, const char **argv) {
     if (ReportType.find("diags") != std::string::npos) {
       saveDiagsReport();
     }
-    if (ReportOnlyFlag)
+    if (ReportOnlyFlag) {
+      DumpOutputFile();
       return MigrationSucceeded;
+    }
   }
   // if run was successful
   int Status = saveNewFiles(Tool, InRoot, OutRoot);
   DebugInfo::ShowStatus(Status);
+
+  DumpOutputFile();
   return Status;
 }

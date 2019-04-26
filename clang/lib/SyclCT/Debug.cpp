@@ -233,10 +233,10 @@ static void printReplacementsDebugImpl(ReplacementFilter &ReplFilter,
     const size_t &Numbers = Pair.second;
 #define TRANSFORMATION(TYPE)                                                   \
   if (Name == #TYPE) {                                                         \
-    DEBUG_WITH_TYPE(#TYPE, SyclctDiags()                                       \
-                               << "# of replacement <" << #TYPE                \
-                               << ">: " << Numbers << " (" << Numbers << "/"   \
-                               << NumRepls << ")\n");                          \
+    DEBUG_WITH_TYPE(#TYPE, SyclctDiags() << "# of replacement <" << #TYPE      \
+                                         << ">: " << Numbers << " ("           \
+                                         << Numbers << "/" << NumRepls         \
+                                         << ")\n");                            \
     continue;                                                                  \
   }
 #include "Transformations.inc"
@@ -337,11 +337,16 @@ static llvm::SmallVector<char, /* default buffer size */ 4096>
     SyclctDiagsBuffer;
 static llvm::raw_svector_ostream SyclctDiagsStream(SyclctDiagsBuffer);
 
+static llvm::SmallVector<char, /* default buffer size */ 4096> SyclctTermBuffer;
+static llvm::raw_svector_ostream SyclctTermStream(SyclctTermBuffer);
+
 llvm::raw_ostream &SyclctLog() { return SyclctLogStream; }
 llvm::raw_ostream &SyclctStats() { return SyclctStatsStream; }
 llvm::raw_ostream &SyclctDiags() { return SyclctDiagsStream; }
+llvm::raw_ostream &SyclctTerm() { return SyclctTermStream; }
 std::string getSyclctStatsStr() { return SyclctStatsStream.str(); }
 std::string getSyclctDiagsStr() { return SyclctDiagsStream.str(); }
+std::string getSyclctTermStr() { return SyclctTermStream.str(); }
 
 void DebugInfo::ShowStatus(int Status) {
 #ifdef SYCLCT_DEBUG_BUILD // Debug build

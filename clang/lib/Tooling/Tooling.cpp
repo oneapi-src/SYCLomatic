@@ -64,6 +64,24 @@
 using namespace clang;
 using namespace tooling;
 
+#if INTEL_CUSTOMIZATION
+namespace clang {
+namespace tooling {
+static void (* MsgPrintHandler) (const std::string &, bool) = nullptr;
+
+void SetPrintHandler(void (*Handler)(const std::string &Msg, bool IsPrintOnNormal)){
+  MsgPrintHandler = Handler;
+}
+
+void DoPrintHandler(const std::string &Msg, bool IsPrintOnNormal) {
+  if (MsgPrintHandler != nullptr){
+    (*MsgPrintHandler)(Msg, IsPrintOnNormal);
+  }
+}
+} // namespace tooling
+} // namespace clang
+#endif
+
 ToolAction::~ToolAction() = default;
 
 FrontendActionFactory::~FrontendActionFactory() = default;
@@ -457,7 +475,8 @@ int ClangTool::run(ToolAction *Action) {
 
   for (llvm::StringRef File : AbsolutePaths) {
 #if INTEL_CUSTOMIZATION
-    llvm::outs() << "Starting to parse: " << File << ".\n";
+    const std::string Msg = "Starting to parse: " + File.str()  +  ".\n";
+    DoPrintHandler(Msg, false);
 #endif
     // Currently implementations of CompilationDatabase::getCompileCommands can
     // change the state of the file system (e.g.  prepare generated headers), so
@@ -524,8 +543,10 @@ int ClangTool::run(ToolAction *Action) {
         ProcessingFailed = true;
       }
 #if INTEL_CUSTOMIZATION
-      if (!ProcessingFailed)
-        llvm::outs() << "Ending to parse: " << File << ".\n";
+      if (!ProcessingFailed) {
+        const std::string Msg = "Ending to parse: " + File.str()  +  ".\n";
+        DoPrintHandler(Msg, false);
+      }
 #endif
     }
   }

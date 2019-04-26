@@ -48,6 +48,16 @@
 #include <utility>
 #include <vector>
 
+#define INTEL_CUSTOMIZATION 1
+#if INTEL_CUSTOMIZATION
+namespace clang {
+namespace tooling {
+void SetPrintHandler(void (*Handler)(const std::string &Msg, bool IsPrintOnNormal));
+void DoPrintHandler(const std::string &Msg, bool IsPrintOnNormal);
+} // namespace tooling
+} // namespace clang
+#endif
+
 namespace clang {
 
 class CompilerInstance;
@@ -63,6 +73,8 @@ class Compilation;
 } // namespace driver
 
 namespace tooling {
+
+
 
 class CompilationDatabase;
 
