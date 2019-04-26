@@ -124,7 +124,7 @@ KernelCallExpr::buildKernelPointerArgRedeclStmt(const std::string &ArgName,
 void KernelCallExpr::buildKernelPointerArgsStmt(StmtList &Buffers,
                                                 StmtList &Accessors,
                                                 StmtList &Redecls) {
-  for (auto &Arg : getKernelPointerVarList()) {
+  for (auto &Arg : PointerArgsList) {
     auto &ArgName = Arg->getName();
     buildKernelPointerArgBufferAndOffsetStmt(ArgName, Buffers);
     buildKernelPointerArgAccessorStmt(ArgName, Accessors);
@@ -222,7 +222,9 @@ void CallFunctionExpr::addTemplateType(const TemplateArgumentLoc &TAL) {
   }
 }
 
-void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
+void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE,
+                                         ArgumentAnalysis &A) {
+  Args.buildArgsInfo(CE, A);
   if (auto CallDecl = CE->getDirectCallee()) {
     Name = getName(CallDecl);
     FuncInfo = DeviceFunctionDecl::LinkRedecls(CallDecl);
@@ -272,21 +274,6 @@ std::string CallFunctionExpr::getTemplateArguments(bool WithScalarWrapped) {
       Result += TA.getAsString() + ", ";
   }
   return (Result.empty()) ? Result : Result.erase(Result.size() - 2);
-}
-
-ArgumentsInfo::ArgumentsInfo(const CallExpr *C) {
-  if (C->getStmtClass() == Stmt::CUDAKernelCallExprClass) {
-    KernelArgumentAnalysis::MapTy Map;
-    KernelArgumentAnalysis A(Map);
-    buildArgsInfo(C->arguments(), A);
-    for (auto &V : Map) {
-      if (V.second->getType()->isPointer())
-        KernelArgs.emplace_back(V.second);
-    }
-  } else {
-    ArgumentAnalysis A;
-    buildArgsInfo(C->arguments(), A);
-  }
 }
 
 void DeviceFunctionInfo::merge(std::shared_ptr<DeviceFunctionInfo> Other) {

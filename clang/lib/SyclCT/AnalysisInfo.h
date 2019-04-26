@@ -661,12 +661,9 @@ MemVarMap::getItemName<MemVarMap::DeclParameter>() const {
 
 class ArgumentsInfo {
 public:
-  ArgumentsInfo(const CallExpr *C);
+  ArgumentsInfo() = default;
 
   inline bool empty() { return Arguments.empty(); }
-  inline const std::vector<std::shared_ptr<VarInfo>> &getKernelPointerArgs() {
-    return KernelArgs;
-  }
   std::string getArguments() {
     std::string Result;
     for (auto &Arg : Arguments)
@@ -681,15 +678,14 @@ public:
         Global.addReplacement(Arg.Repl);
   }
 
-private:
-  void buildArgsInfo(const CallExpr::const_arg_range &Args,
-                     ArgumentAnalysis &Analysis) {
-    for (auto Arg : Args) {
+  void buildArgsInfo(const CallExpr *CE, ArgumentAnalysis &Analysis) {
+    for (auto Arg : CE->arguments()) {
       Analysis.analysis(Arg);
       Arguments.emplace_back(Analysis);
     }
   }
 
+private:
   struct ArgInfo {
     ArgInfo(ArgumentAnalysis &Analysis) {
       auto TM = Analysis.getReplacement();
@@ -708,7 +704,6 @@ private:
   };
 
   std::vector<ArgInfo> Arguments;
-  std::vector<std::shared_ptr<VarInfo>> KernelArgs;
 };
 
 class DeviceFunctionInfo;
@@ -721,10 +716,11 @@ public:
                    const CallExpr *CE)
       : FilePath(FilePathIn), BeginLoc(Offset),
         RParenLoc(SyclctGlobalInfo::getSourceManager().getFileOffset(
-            CE->getRParenLoc())),
-        Args(CE) {}
+            CE->getRParenLoc())) {}
 
-  void buildCallExprInfo(const CallExpr *CE);
+  inline void buildCallExprInfo(const CallExpr *CE) {
+    buildCallExprInfo(CE, ArgumentAnalysis());
+  }
   inline const MemVarMap &getVarMap() { return VarMap; }
 
   void emplaceReplacement();
@@ -743,9 +739,9 @@ public:
   }
 
 protected:
-  inline const std::vector<std::shared_ptr<VarInfo>> &
-  getKernelPointerVarList() {
-    return Args.getKernelPointerArgs();
+  void buildCallExprInfo(const CallExpr *CE, ArgumentAnalysis &A);
+  inline void buildCallExprInfo(const CallExpr *CE, ArgumentAnalysis &&A) {
+    buildCallExprInfo(CE, A);
   }
   inline unsigned getBegin() { return BeginLoc; }
   inline const std::string &getFilePath() { return FilePath; }
@@ -918,7 +914,7 @@ public:
   KernelCallExpr(unsigned Offset, const std::string &FilePath,
                  const CUDAKernelCallExpr *KernelCall)
       : CallFunctionExpr(Offset, FilePath, KernelCall), IsSync(false) {
-    buildCallExprInfo(KernelCall);
+    buildCallExprInfo(KernelCall, KernelArgumentAnalysis(PointerArgsList));
     buildKernelInfo(KernelCall);
   }
 
@@ -964,6 +960,7 @@ private:
   } ExecutionConfig;
 
   bool IsSync;
+  std::vector<std::shared_ptr<VarInfo>> PointerArgsList;
 };
 
 class CudaMallocInfo {

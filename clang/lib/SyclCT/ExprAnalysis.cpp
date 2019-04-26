@@ -145,13 +145,16 @@ void ExprAnalysis::analysisExpr(const MemberExpr *ME) {
 }
 
 void ExprAnalysis::analysisExpr(const UnaryExprOrTypeTraitExpr *UETT) {
-  if (UETT->getKind() == UnaryExprOrTypeTrait::UETT_SizeOf) {
-    auto TyInfo = UETT->getArgumentTypeInfo();
-    TypeInfo Ty(TyInfo->getType());
-    addReplacement(TyInfo->getTypeLoc().getBeginLoc(),
-                   UETT->getRParenLoc().getLocWithOffset(-1), Ty.getBaseName());
-  }
+  if (UETT->getKind() == UnaryExprOrTypeTrait::UETT_SizeOf)
+    analysisType(UETT->getArgumentTypeInfo());
 }
+
+void ExprAnalysis::analysisExpr(const CStyleCastExpr *Cast) {
+  if (Cast->getCastKind() == CastKind::CK_BitCast)
+    analysisType(Cast->getTypeInfoAsWritten());
+  analysisExpression(Cast->getSubExpr());
+}
+
 void ExprAnalysis::analysisExpr(const CallExpr *CE) {
   auto Func = CE->getDirectCallee();
   const std::string FuncName = CE->getDirectCallee()->getNameAsString();
@@ -168,6 +171,27 @@ void ExprAnalysis::analysisExpr(const CallExpr *CE) {
     addReplacement(CE, NewFuncName + ArgsString);
   }
 }
+
+void ExprAnalysis::analysisType(const TypeLoc &TL) {
+  std::string TyName;
+  switch (TL.getTypeLocClass()) {
+  case TypeLoc::Pointer:
+    return analysisType(
+        static_cast<const PointerTypeLoc &>(TL).getPointeeLoc());
+  case TypeLoc::Typedef:
+    TyName =
+        static_cast<const TypedefTypeLoc &>(TL).getTypedefNameDecl()->getName();
+  case TypeLoc::Builtin:
+  case TypeLoc::Record:
+    TyName = TL.getType().getAsString();
+    break;
+  default:
+    return;
+  }
+  if (MapNames::replaceName(MapNames::TypeNamesMap, TyName))
+    addReplacement(TL.getBeginLoc(), TL.getEndLoc(), TyName);
+}
+
 const std::string &ArgumentAnalysis::getDefaultArgument(const Expr *E) {
   auto &Str = DefaultArgMap[E];
   if (Str.empty())
@@ -185,13 +209,19 @@ void KernelArgumentAnalysis::analysisExpression(const Stmt *Expression) {
 
 void KernelArgumentAnalysis::analysisExpr(const DeclRefExpr *DRE) {
   if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
-    auto &VI = DeclMap[VD];
-    if (!VI) {
-      auto LocInfo = SyclctGlobalInfo::getLocInfo(VD);
+    auto LocInfo = SyclctGlobalInfo::getLocInfo(VD);
+    auto &VI = VarMap[LocInfo.second];
+    if (!VI)
       VI = std::make_shared<VarInfo>(LocInfo.second, LocInfo.first, VD);
-    }
   }
   Base::analysisExpr(DRE);
+}
+
+KernelArgumentAnalysis::~KernelArgumentAnalysis() {
+  for (auto &V : VarMap) {
+    if (V.second->getType()->isPointer())
+      VarList.emplace_back(V.second);
+  }
 }
 } // namespace syclct
 } // namespace clang

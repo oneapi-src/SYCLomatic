@@ -236,7 +236,13 @@ protected:
   void analysisExpr(const CXXConstructExpr *Ctor);
   void analysisExpr(const MemberExpr *ME);
   void analysisExpr(const UnaryExprOrTypeTraitExpr *UETT);
+  void analysisExpr(const CStyleCastExpr *Cast);
   void analysisExpr(const CallExpr *CE);
+
+  inline void analysisType(const TypeSourceInfo *TSI) {
+    analysisType(TSI->getTypeLoc());
+  }
+  void analysisType(const TypeLoc &TL);
 
   // Doing nothing when it doesn't need analysis
   inline void analysisExpr(const Stmt *S) {}
@@ -292,15 +298,18 @@ class VarInfo;
 // Analysis CUDA kernel call arguments, get out the passed in pointer variables.
 class KernelArgumentAnalysis : public ArgumentAnalysis {
 public:
-  using MapTy = std::map<const VarDecl *, std::shared_ptr<VarInfo>>;
-  KernelArgumentAnalysis(MapTy &DeclMap) : DeclMap(DeclMap) {}
+  using VarMapTy = std::map<unsigned, std::shared_ptr<VarInfo>>;
+  using VarSetTy = std::vector<std::shared_ptr<VarInfo>>;
+  KernelArgumentAnalysis(VarSetTy &VarList) : VarList(VarList) {}
+  ~KernelArgumentAnalysis();
 
 protected:
   void analysisExpression(const Stmt *Arg) override;
 
 private:
   inline void analysisExpr(const DeclRefExpr *Arg);
-  MapTy &DeclMap;
+  VarSetTy &VarList;
+  VarMapTy VarMap;
 };
 } // namespace syclct
 } // namespace clang
