@@ -180,6 +180,9 @@ class ReplaceStmt : public TextModification {
   // If ReplaceStmt replaces calls to compatibility APIs
   bool IsReplaceCompatibilityAPI;
   std::string OrigAPIName;
+  // If the callexpr need to migrate is a macro, IsProcessMacro should
+  // be true and the migration will be done correctly.
+  bool IsProcessMacro;
   std::string ReplacementString;
 
   // When replacing the Stmt with empty string, an option to clean up
@@ -190,7 +193,7 @@ public:
   template <class... Args>
   ReplaceStmt(const Stmt *E, Args &&... S)
       : TextModification(TMID::ReplaceStmt), TheStmt(E),
-        IsReplaceCompatibilityAPI(false),
+        IsReplaceCompatibilityAPI(false), IsProcessMacro(false),
         ReplacementString(std::forward<Args>(S)...) {}
 
   template <class... Args>
@@ -198,13 +201,23 @@ public:
               std::string OrigAPIName, Args &&... S)
       : TextModification(TMID::ReplaceStmt), TheStmt(E),
         IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI),
-        OrigAPIName(OrigAPIName), ReplacementString(std::forward<Args>(S)...) {}
+        OrigAPIName(OrigAPIName), IsProcessMacro(false),
+        ReplacementString(std::forward<Args>(S)...) {}
+
+  template <class... Args>
+  ReplaceStmt(const Stmt *E, bool IsReplaceCompatibilityAPI,
+              std::string OrigAPIName, bool IsNeedProcessMacro, Args &&... S)
+      : TextModification(TMID::ReplaceStmt), TheStmt(E),
+        IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI),
+        OrigAPIName(OrigAPIName), IsProcessMacro(IsNeedProcessMacro),
+        ReplacementString(std::forward<Args>(S)...) {}
 
   template <class... Args>
   ReplaceStmt(const CUDAKernelCallExpr *E, Args &&... S)
       : ReplaceStmt((const Stmt *)E, std::forward<Args>(S)...) {
     // Don't clean up for CUDAKernelCallExpr to avoid overlapping problems
     IsCleanup = false;
+    IsProcessMacro = false;
   }
 
   std::shared_ptr<ExtReplacement>
@@ -547,6 +560,7 @@ public:
   ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
         T(std::move(S)) {}
+
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,

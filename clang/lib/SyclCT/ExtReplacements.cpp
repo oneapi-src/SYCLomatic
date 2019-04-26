@@ -38,8 +38,10 @@ std::shared_ptr<ExtReplacement> ExtReplacements::mergeComparedAtSameOffset(
       return Longer;
     } else if (Longer->getReplacementText().equals(
                    Shorter->getReplacementText()) &&
-               Shorter->getReplacementText().find(StringRef("("))== StringRef::npos  &&
-               Shorter->getReplacementText().find(StringRef(")"))== StringRef::npos  &&
+               Shorter->getReplacementText().find(StringRef("(")) ==
+                   StringRef::npos &&
+               Shorter->getReplacementText().find(StringRef(")")) ==
+                   StringRef::npos &&
                Longer->getLength() == 0) {
       // Fully equal insert,  just reserve one. if not "( )".
       // Todo:  need further figout the rule.
@@ -82,6 +84,7 @@ void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
   if (isInvalid(Repl))
     return;
   auto &R = ReplMap[Repl->getOffset()];
+
   if (R)
     R = mergeAtSameOffset(R, Repl);
   else

@@ -582,6 +582,14 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+// Migration rule for CublasStatus enums constants.
+class CublasStatusRule : public NamedTranslationRule<CublasStatusRule> {
+public:
+  CublasStatusRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 /// Migration rule for function calls.
 class FunctionCallRule : public NamedTranslationRule<FunctionCallRule> {
 public:

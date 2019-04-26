@@ -62,64 +62,132 @@ void recordTranslationInfo(const ASTContext &Context, const SourceLocation &SL,
 
 std::shared_ptr<ExtReplacement>
 ReplaceStmt::getReplacement(const ASTContext &Context) const {
-  // If ReplaceStmt replaces calls to compatibility APIs, record the OrigAPIName
-  if (IsReplaceCompatibilityAPI) {
-    recordTranslationInfo(Context, TheStmt->getBeginLoc(), true, OrigAPIName);
-  } else {
-    recordTranslationInfo(Context, TheStmt->getBeginLoc());
-  }
-  // When replacing a CallExpr with an empty string, also remove semicolons
-  // and redundant spaces
-  if (IsCleanup && TheStmt->getStmtClass() == Stmt::StmtClass::CallExprClass &&
-      ReplacementString.empty())
-    return removeStmtWithCleanups(Context.getSourceManager());
+  const SourceManager &SM = Context.getSourceManager();
+  SourceLocation Begin(TheStmt->getBeginLoc()), End(TheStmt->getEndLoc());
 
-  return std::make_shared<ExtReplacement>(Context.getSourceManager(), TheStmt,
-                                          ReplacementString, this);
+  // If ReplaceStmt replaces calls to compatibility APIs, record the
+  // OrigAPIName (not macro case)
+  if (!IsProcessMacro) {
+    if (IsReplaceCompatibilityAPI) {
+      recordTranslationInfo(Context, TheStmt->getBeginLoc(), true, OrigAPIName);
+    } else {
+      recordTranslationInfo(Context, TheStmt->getBeginLoc());
+    }
+  }
+
+  if (IsProcessMacro) {
+    if (Begin.isMacroID()) {
+      if (SM.isMacroArgExpansion(Begin))
+        Begin = SM.getSpellingLoc(Begin);
+      else
+        Begin = SM.getExpansionLoc(Begin);
+    }
+    // If ReplaceStmt replaces calls to compatibility APIs, record the
+    // OrigAPIName (macro case)
+    if (IsReplaceCompatibilityAPI) {
+      recordTranslationInfo(Context, Begin, true, OrigAPIName);
+    } else {
+      recordTranslationInfo(Context, Begin);
+    }
+
+    if (End.isMacroID()) {
+      if (SM.isMacroArgExpansion(End))
+        End = SM.getSpellingLoc(End);
+      else
+        End = SM.getExpansionLoc(End);
+    }
+    if (Begin == End) {
+      End = Lexer::getLocForEndOfToken(End, 0, SM, LangOptions());
+      End = End.getLocWithOffset(-1);
+    }
+    auto CallExprLength =
+        SM.getCharacterData(End) - SM.getCharacterData(Begin) + 1;
+    if (IsCleanup && ReplacementString.empty())
+      return removeStmtWithCleanups(SM);
+    return std::make_shared<ExtReplacement>(SM, Begin, CallExprLength,
+                                            ReplacementString, this);
+  } else {
+    // When replacing a CallExpr with an empty string, also remove semicolons
+    // and redundant spaces
+    if (IsCleanup &&
+        TheStmt->getStmtClass() == Stmt::StmtClass::CallExprClass &&
+        ReplacementString.empty()) {
+      return removeStmtWithCleanups(SM);
+    }
+    return std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString,
+                                            this);
+  }
 }
 
 // Remove TheStmt together with the trailing semicolon and redundant spaces
 // in the same line.
 std::shared_ptr<ExtReplacement>
 ReplaceStmt::removeStmtWithCleanups(const SourceManager &SM) const {
-  if (!IsCleanup || !ReplacementString.empty())
-    return std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString,
-                                            this);
-
   unsigned TotalLen = 0;
   auto StmtLoc = TheStmt->getBeginLoc();
-  if (StmtLoc.isInvalid())
+  if (StmtLoc.isInvalid() && !StmtLoc.isMacroID())
     return std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString,
                                             this);
 
-  auto LocBeforeStmt = TheStmt->getBeginLoc().getLocWithOffset(-1);
-  auto PosBeforeStmt = SM.getCharacterData(LocBeforeStmt);
-  const char *LastLFPos = PosBeforeStmt;
+  SourceLocation Begin(TheStmt->getBeginLoc()), Endt(TheStmt->getEndLoc());
+  SourceLocation End(Lexer::getLocForEndOfToken(Endt, 0, SM, LangOptions()));
+  SourceLocation LocBeforeStmt;
+  const char *PosBeforeStmt;
+  const char *LastLFPos;
+  if (IsProcessMacro) {
+    Begin = SM.getExpansionLoc(Begin);
+    End = SM.getExpansionLoc(End);
+    LocBeforeStmt = Begin.getLocWithOffset(-1);
+    PosBeforeStmt = SM.getCharacterData(LocBeforeStmt);
+    LastLFPos = PosBeforeStmt;
+  } else {
+    LocBeforeStmt = TheStmt->getBeginLoc().getLocWithOffset(-1);
+    PosBeforeStmt = SM.getCharacterData(LocBeforeStmt);
+    LastLFPos = PosBeforeStmt;
+  }
+
   while (isspace(*LastLFPos) && *LastLFPos != '\n')
     --LastLFPos;
 
-  SourceLocation PostLastLFLoc = TheStmt->getBeginLoc();
+  SourceLocation PostLastLFLoc = Begin;
   // Get the length of spaces before the TheStmt
   if (*LastLFPos == '\n') {
-    unsigned Len = PosBeforeStmt - LastLFPos;
-    PostLastLFLoc = TheStmt->getBeginLoc().getLocWithOffset(-Len);
-    TotalLen += Len;
+    unsigned Lent = PosBeforeStmt - LastLFPos;
+    PostLastLFLoc = Begin.getLocWithOffset(-Lent);
+    TotalLen += Lent;
   }
 
-  auto StmtBeginLoc = TheStmt->getBeginLoc();
-  auto StmtEndLoc = TheStmt->getEndLoc();
-
-  auto StmtBeginPos = SM.getCharacterData(StmtBeginLoc);
-  auto StmtEndPos = SM.getCharacterData(StmtEndLoc);
+  SourceLocation StmtBeginLoc = Begin;
+  SourceLocation StmtEndLoc;
+  const char *StmtBeginPos;
+  const char *StmtEndPos;
+  if (IsProcessMacro) {
+    StmtEndLoc = End;
+    StmtBeginPos = SM.getCharacterData(StmtBeginLoc);
+    StmtEndPos = SM.getCharacterData(StmtEndLoc);
+  } else {
+    StmtEndLoc = TheStmt->getEndLoc();
+    StmtBeginPos = SM.getCharacterData(StmtBeginLoc);
+    StmtEndPos = SM.getCharacterData(StmtEndLoc);
+  }
 
   // Get the length of TheStmt
   TotalLen += StmtEndPos - StmtBeginPos;
 
   // Get the length of spaces and the semicolon after the TheStmt
-  auto PostStmtLoc = StmtEndLoc.getLocWithOffset(1);
-  auto TokSharedPtr = Lexer::findNextToken(StmtEndLoc, SM, LangOptions());
+  SourceLocation PostStmtLoc;
+  Optional<Token> TokSharedPtr;
+  if (IsProcessMacro) {
+    PostStmtLoc = End;
+    TokSharedPtr =
+        Lexer::findNextToken(End.getLocWithOffset(-1), SM, LangOptions());
+  } else {
+    PostStmtLoc = StmtEndLoc.getLocWithOffset(1);
+    TokSharedPtr = Lexer::findNextToken(StmtEndLoc, SM, LangOptions());
+  }
+
   if (TokSharedPtr.hasValue()) {
-    auto Tok = TokSharedPtr.getValue();
+    Token Tok = TokSharedPtr.getValue();
     // If TheStmt has a trailing semicolon
     if (Tok.is(tok::TokenKind::semi)) {
       auto PostSemiLoc = Tok.getLocation().getLocWithOffset(1);
@@ -130,16 +198,32 @@ ReplaceStmt::removeStmtWithCleanups(const SourceManager &SM) const {
 
       auto ReplaceBeginPos = SM.getCharacterData(PostStmtLoc);
       if (*EndPos == '\n') {
-        unsigned Len = EndPos - ReplaceBeginPos + 1;
-        TotalLen += Len;
+        unsigned Lent = EndPos - ReplaceBeginPos + 1;
+        TotalLen += Lent;
       }
-      return std::make_shared<ExtReplacement>(SM, PostLastLFLoc, TotalLen + 1,
-                                              "", this);
+      if (*EndPos == '}') {
+        unsigned Lent = EndPos - ReplaceBeginPos;
+        TotalLen += Lent;
+      }
+
+      if (IsProcessMacro) {
+        return std::make_shared<ExtReplacement>(SM, PostLastLFLoc, TotalLen, "",
+                                                this);
+      } else {
+        return std::make_shared<ExtReplacement>(SM, PostLastLFLoc, TotalLen + 1,
+                                                "", this);
+      }
     }
   }
 
   // If semicolon is not found, just remove TheStmt
-  return std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString, this);
+  if (IsProcessMacro) {
+    return std::make_shared<ExtReplacement>(SM, Begin, TotalLen,
+                                            ReplacementString, this);
+  } else {
+    return std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString,
+                                            this);
+  }
 }
 
 std::shared_ptr<ExtReplacement>
@@ -448,8 +532,8 @@ InsertComment::getReplacement(const ASTContext &Context) const {
   return std::make_shared<ExtReplacement>(
       Context.getSourceManager(), SL, 0,
       (OrigIndent + llvm::Twine("/*") + NL + OrigIndent + Text + NL +
-       OrigIndent + "*/" +
-       NL).str(),
+       OrigIndent + "*/" + NL)
+          .str(),
       this, true /*true means comments replacement*/);
 }
 

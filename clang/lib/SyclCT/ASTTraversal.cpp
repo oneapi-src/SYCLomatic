@@ -259,6 +259,14 @@ void IncludesCallbacks::InclusionDirective(
         "#include <cmath>"));
   }
 
+  // replace "#include <cublas_v2.h>" with <DPCPP_blas_TEMP.h>
+  if (IsAngled && FileName.compare(StringRef("cublas_v2.h")) == 0) {
+    TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                        /*IsTokenRange=*/false),
+        "#include <DPCPP_blas_TEMP.h>"));
+  }
+
   if (!isChildPath(CudaPath, IncludePath) &&
       // CudaPath detection have not consider soft link, here do special
       // for /usr/local/cuda
@@ -797,8 +805,9 @@ void AtomicFunctionRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(AtomicFunctionRule)
 
-auto TypedefNames = hasAnyName("dim3", "cudaError_t", "cudaEvent_t",
-                               "cudaStream_t", "__half", "__half2");
+auto TypedefNames =
+    hasAnyName("dim3", "cudaError_t", "cudaEvent_t", "cudaStream_t", "__half",
+               "__half2", "cublasStatus_t", "cublasHandle_t");
 auto EnumTypeNames = hasAnyName("cudaError");
 // CUstream_st and CUevent_st are the actual types of cudaStream_t and
 // cudaEvent_st respectively
@@ -1732,6 +1741,28 @@ void ErrorConstantsRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(ErrorConstantsRule)
 
+// Rule for cublas status enum constants.
+// All cublas status enum constants have the prefix CUBLAS_STATUS
+// Example: migrate CUBLAS_STATUS_SUCCESS to 0
+void CublasStatusRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      declRefExpr(to(enumConstantDecl(matchesName("CUBLAS_STATUS.*"))))
+          .bind("cublasStatusConstants"),
+      this);
+}
+
+void CublasStatusRule::run(const MatchFinder::MatchResult &Result) {
+  const DeclRefExpr *DE =
+      getNodeAsType<DeclRefExpr>(Result, "cublasStatusConstants");
+  if (!DE)
+    return;
+  assert(DE && "Unknown result");
+  auto *EC = cast<EnumConstantDecl>(DE->getDecl());
+  emplaceTransformation(new ReplaceStmt(DE, EC->getInitVal().toString(10)));
+}
+
+REGISTER_RULE(CublasStatusRule)
+
 void FunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName(
@@ -1740,7 +1771,9 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaGetDevice", "cudaDeviceSetLimit", "cudaGetLastError",
         "cudaPeekAtLastError", "cudaDeviceSynchronize", "cudaThreadSynchronize",
         "cudaGetErrorString", "cudaGetErrorName", "cudaDeviceSetCacheConfig",
-        "cudaDeviceGetCacheConfig", "clock", "cudaThreadSetLimit");
+        "cudaDeviceGetCacheConfig", "clock", "cudaThreadSetLimit",
+        "cublasSgemm_v2", "cublasDgemm_v2", "cublasCgemm_v2", "cublasZgemm_v2",
+        "cublasCreate_v2", "cublasDestroy_v2");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
@@ -1881,6 +1914,55 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaThreadSetLimit") {
     report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
     emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ""));
+  } else if (FuncName == "cublasSgemm_v2" || FuncName == "cublasDgemm_v2" ||
+             FuncName == "cublasCgemm_v2" || FuncName == "cublasZgemm_v2") {
+    // There are some macroes like "#define cublasSgemm cublasSgemm_v2"
+    // in "cublas_v2.h", so the function names we match should with the
+    // suffix "_v2".
+    const SourceManager *SM = Result.SourceManager;
+    SourceLocation FuncNameBegin(CE->getBeginLoc());
+    SourceLocation FuncCallEnd(CE->getEndLoc());
+    if (FuncNameBegin.isMacroID())
+      FuncNameBegin = SM->getExpansionLoc(FuncNameBegin);
+    if (FuncCallEnd.isMacroID())
+      FuncCallEnd = SM->getExpansionLoc(FuncCallEnd);
+    Token tok;
+    Lexer::getRawToken(FuncNameBegin, tok, *SM, LangOptions());
+    SourceLocation FuncNameEnd = tok.getEndLoc();
+    auto FuncNameLength =
+        SM->getCharacterData(FuncNameEnd) - SM->getCharacterData(FuncNameBegin);
+    auto Search = MapNames::TypeNamesMap.find(FuncName);
+    if (Search == MapNames::TypeNamesMap.end()) {
+      // TODO report migration error
+      return;
+    }
+    std::string Replacement = Search->second;
+    if (IsAssigned) {
+      auto FuncCallLength = SM->getCharacterData(FuncCallEnd) -
+                            SM->getCharacterData(FuncNameBegin) + 1;
+      Replacement =
+          std::string(SM->getCharacterData(FuncNameBegin), FuncCallLength);
+      Replacement = "(" + Replacement + ", 0)";
+      emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
+                                            std::move(Replacement)));
+    } else {
+      emplaceTransformation(new ReplaceText(FuncNameBegin, FuncNameLength,
+                                            std::move(Replacement)));
+    }
+  } else if (FuncName == "cublasCreate_v2" || FuncName == "cublasDestroy_v2") {
+    // Remove these two function calls.
+    // There are some macroes like "#define cublasCreate cublasCreate_v2"
+    // in "cublas_v2.h", so the function names we match should with the
+    // suffix "_v2".
+    if (IsAssigned) {
+      emplaceTransformation(
+          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ true, FuncName,
+                          /*IsProcessMacro*/ true, "0"));
+    } else {
+      emplaceTransformation(
+          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ true, FuncName,
+                          /*IsProcessMacro*/ true, ""));
+    }
   } else {
     syclct_unreachable("Unknown function name");
   }
@@ -2444,10 +2526,12 @@ void MemoryTranslationRule::MemcpyFromSymbolTranslation(
   //   cudaMemcpyToSymbol(d_B, d_A, size, offset, cudaMemcpyDeviceToDevice);
 
   // Desired output:
-  //   syclct::sycl_memcpy_to_symbol((void*)(h_A), d_A.get_ptr(), size, offset,
+  //   syclct::sycl_memcpy_to_symbol((void*)(h_A), d_A.get_ptr(), size,
+  //   offset,
   //                                 syclct::device_to_host);
   //
-  //   syclct::sycl_memcpy_to_symbol((void*)(d_B), d_A.get_ptr(), size, offset,
+  //   syclct::sycl_memcpy_to_symbol((void*)(d_B), d_A.get_ptr(), size,
+  //   offset,
   //                                 syclct::device_to_device);
   const Expr *Direction = C->getArg(4);
   std::string DirectionName;

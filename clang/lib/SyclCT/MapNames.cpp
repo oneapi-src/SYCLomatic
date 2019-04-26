@@ -80,6 +80,12 @@ const MapNames::MapTy MapNames::TypeNamesMap{
     {"ushort2", "cl::sycl::ushort2"},
     {"ushort3", "cl::sycl::ushort3"},
     {"ushort4", "cl::sycl::ushort4"},
+    {"cublasHandle_t", "cl::sycl::queue"},
+    {"cublasStatus_t", "int"},
+    {"cublasSgemm_v2", "mkl::Sgemm"},
+    {"cublasDgemm_v2", "mkl::Dgemm"},
+    {"cublasCgemm_v2", "mkl::Cgemm"},
+    {"cublasZgemm_v2", "mkl::Zgemm"},
     // ...
 };
 
