@@ -2700,8 +2700,12 @@ void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
 
   const std::string FuncName = CE->getDirectCallee()->getNameAsString();
 
-  if (FunctionNamesMap.count(FuncName) != 0) {
+  if (FunctionNamesMap.find(FuncName) != FunctionNamesMap.end()) {
     std::string NewFuncName = FunctionNamesMap.at(FuncName);
+    if (NewFuncName == "UNSUPPORTED") {
+      report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
+      return;
+    }
     if (FuncName == "__sincosf") {
       return;
     } else if (FuncName == "abs") {
@@ -2735,8 +2739,12 @@ void MathFunctionsRule::handleHalfFunctions(
     const CallExpr *CE, const MatchFinder::MatchResult &Result) {
   const std::string FuncName = CE->getDirectCallee()->getNameAsString();
 
-  if (HalfFunctionNamesMap.count(FuncName) != 0) {
+  if (HalfFunctionNamesMap.find(FuncName) != HalfFunctionNamesMap.end()) {
     std::string NewFuncName = HalfFunctionNamesMap.at(FuncName);
+    if (NewFuncName == "UNSUPPORTED") {
+      report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
+      return;
+    }
     if (FuncName == "__h2div" || FuncName == "__hdiv" || FuncName == "__hmul" ||
         FuncName == "__hsub" || FuncName == "__hmul2" ||
         FuncName == "__hsub2" || FuncName == "__heq" || FuncName == "__hge" ||
@@ -2776,8 +2784,13 @@ void MathFunctionsRule::handleSingleDoubleFunctions(
     const CallExpr *CE, const MatchFinder::MatchResult &Result) {
   const std::string FuncName = CE->getDirectCallee()->getNameAsString();
 
-  if (SingleDoubleFunctionNamesMap.count(FuncName) != 0) {
+  if (SingleDoubleFunctionNamesMap.find(FuncName) !=
+      SingleDoubleFunctionNamesMap.end()) {
     std::string NewFuncName = SingleDoubleFunctionNamesMap.at(FuncName);
+    if (NewFuncName == "UNSUPPORTED") {
+      report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
+      return;
+    }
     if (FuncName == "__dadd_rd" || FuncName == "__fadd_rd" ||
         FuncName == "__dadd_rn" || FuncName == "__fadd_rn" ||
         FuncName == "__dadd_ru" || FuncName == "__fadd_ru" ||
@@ -2839,153 +2852,17 @@ void MathFunctionsRule::handleSingleDoubleFunctions(
 
 void MathFunctionsRule::handleTypecastFunctions(
     const CallExpr *CE, const MatchFinder::MatchResult &Result) {
-  static std::map<std::string, std::string> RoundingModeMap{
-      {"rd", "rtn"}, {"rn", "rte"}, {"ru", "rtp"}, {"rz", "rtz"}};
   const std::string FuncName = CE->getDirectCallee()->getNameAsString();
-
-  if (TypecastFunctionNamesMap.count(FuncName) != 0) {
-    if (FuncName == "__float22half2_rn") {
-      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-      std::string ReplStr{StmtStrArg0};
-      ReplStr += ".convert<half, rounding_mode::rte>()";
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    } else if (FuncName == "__float2half2_rn") {
-      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-      std::string ReplStr{"float2{"};
-      ReplStr += StmtStrArg0;
-      ReplStr += ",";
-      ReplStr += StmtStrArg0;
-      ReplStr += "}.convert<half, rounding_mode::rte>()";
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    } else if (FuncName == "__floats2half2_rn") {
-      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-      auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
-      std::string ReplStr{"float2{"};
-      ReplStr += StmtStrArg0;
-      ReplStr += ",";
-      ReplStr += StmtStrArg1;
-      ReplStr += "}.convert<half, rounding_mode::rte>()";
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    } else if (FuncName == "__half22float2") {
-      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-      std::string ReplStr{StmtStrArg0};
-      ReplStr += ".convert<float, rounding_mode::automatic>()";
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    } else if (FuncName == "__half2half2") {
-      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-      std::string ReplStr{"half2{"};
-      ReplStr += StmtStrArg0;
-      ReplStr += ",";
-      ReplStr += StmtStrArg0;
-      ReplStr += "}";
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    } else if (FuncName == "__halves2half2") {
-      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-      auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
-      std::string ReplStr{"half2{"};
-      ReplStr += StmtStrArg0;
-      ReplStr += ",";
-      ReplStr += StmtStrArg1;
-      ReplStr += "}";
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    } else if (FuncName == "__high2float") {
-      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-      std::string ReplStr{StmtStrArg0};
-      ReplStr += ".get_value(0)";
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    } else if (FuncName == "__high2half") {
-      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-      std::string ReplStr{StmtStrArg0};
-      ReplStr += ".get_value(0)";
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    } else if (FuncName == "__high2half2") {
-      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-      std::string ReplStr{"half2{"};
-      ReplStr += StmtStrArg0;
-      ReplStr += ".get_value(0), ";
-      ReplStr += StmtStrArg0;
-      ReplStr += ".get_value(0)}";
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    } else if (FuncName == "__highs2half2") {
-      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-      auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
-      std::string ReplStr{"half2{"};
-      ReplStr += StmtStrArg0;
-      ReplStr += ".get_value(0), ";
-      ReplStr += StmtStrArg1;
-      ReplStr += ".get_value(0)}";
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    } else if (FuncName == "__low2float") {
-      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-      std::string ReplStr{StmtStrArg0};
-      ReplStr += ".get_value(1)";
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    } else if (FuncName == "__low2half") {
-      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-      std::string ReplStr{StmtStrArg0};
-      ReplStr += ".get_value(1)";
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    } else if (FuncName == "__low2half2") {
-      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-      std::string ReplStr{"half2{"};
-      ReplStr += StmtStrArg0;
-      ReplStr += ".get_value(1), ";
-      ReplStr += StmtStrArg0;
-      ReplStr += ".get_value(1)}";
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    } else if (FuncName == "__lowhigh2highlow") {
-      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-      std::string ReplStr{"half2{"};
-      ReplStr += StmtStrArg0;
-      ReplStr += ".get_value(1), ";
-      ReplStr += StmtStrArg0;
-      ReplStr += ".get_value(0)}";
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    } else if (FuncName == "__lows2half2") {
-      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-      auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
-      std::string ReplStr{"half2{"};
-      ReplStr += StmtStrArg0;
-      ReplStr += ".get_value(1), ";
-      ReplStr += StmtStrArg1;
-      ReplStr += ".get_value(1)}";
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    } else if (FuncName.find("_as_") != std::string::npos) {
-      std::string NewTypeName = TypecastFunctionNamesMap.at(FuncName);
-      std::string ReplStr{"*reinterpret_cast<"};
-      ReplStr += NewTypeName;
-      ReplStr += "*>(&(";
-      ExprAnalysis EA{CE->getArg(0)};
-      EA.analysis();
-      ReplStr += EA.getReplacedString();
-      ReplStr += "))";
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    } else {
-      //__half2short_rd
-      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-      std::string RoundingMode = FuncName.substr(FuncName.size() - 2);
-      auto FN = FuncName.substr(2, FuncName.find('_', 2) - 2);
-      auto Types = split(FN, '2');
-      assert(Types.size() == 2);
-      std::string ReplStr;
-      if (Types[0] == "ll")
-        Types[0] = "long long";
-      if (Types[0] == "ull")
-        Types[0] = "unsigned long long";
-      if (Types[1] == "ll")
-        Types[1] = "long long";
-      if (Types[1] == "ull")
-        Types[1] = "unsigned long long";
-      ReplStr += "cl::sycl::vec<";
-      ReplStr += Types[0];
-      ReplStr += ", 1>{";
-      ReplStr += StmtStrArg0;
-      ReplStr += "}.convert<";
-      ReplStr += Types[1];
-      ReplStr += ", rounding_mode::";
-      ReplStr += RoundingModeMap[RoundingMode];
-      ReplStr += ">().get_value(0)";
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+  if (TypecastFunctionNamesMap.find(FuncName) !=
+      TypecastFunctionNamesMap.end()) {
+    std::string NewFuncName = TypecastFunctionNamesMap.at(FuncName);
+    if (NewFuncName == "UNSUPPORTED") {
+      report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
+      return;
+    }
+    if (startsWith(NewFuncName, "syclct::")) {
+      emplaceTransformation(
+          new ReplaceCalleeName(CE, std::move(NewFuncName), FuncName));
     }
   }
 }

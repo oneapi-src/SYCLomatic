@@ -8,22 +8,22 @@
 __device__ void foo() {
   long long a = 100000;
   double b = 2.5;
-  // CHECK: double c = *reinterpret_cast<double*>(&(a));
+  // CHECK: double c = syclct::longlong_as_double(a);
   double c = __longlong_as_double(a);
-  // CHECK: long long d = *reinterpret_cast<long long*>(&(b));
+  // CHECK: long long d = syclct::double_as_longlong(b);
   long long d = __double_as_longlong(b);
 
   int e = 23;
   float f = 45.0;
-  // CHECK: float g = *reinterpret_cast<float*>(&(e));
+  // CHECK: float g = syclct::int_as_float(e);
   float g = __int_as_float(e);
-  // CHECK: int h = *reinterpret_cast<int*>(&(f));
+  // CHECK: int h = syclct::float_as_int(f);
   int h = __float_as_int(f);
 
   unsigned i = 23;
   float j = 45.0;
-  // CHECK: float k = *reinterpret_cast<float*>(&(i));
+  // CHECK: float k = syclct::uint_as_float(i);
   float k = __uint_as_float(i);
-  // CHECK: unsigned l = *reinterpret_cast<unsigned*>(&(j));
+  // CHECK: unsigned l = syclct::float_as_uint(j);
   unsigned l = __float_as_uint(j);
 }
