@@ -50,6 +50,9 @@ void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
   if (!IsInRoot) {
     return;
   }
+  if (!MacroNameTok.getIdentifierInfo()) {
+    return;
+  }
   std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
   if (MapNames::MacrosMap.find(MacroName) != MapNames::MacrosMap.end()) {
     std::string ReplacedMacroName = MapNames::MacrosMap.at(MacroName);
@@ -317,7 +320,8 @@ void IncludesCallbacks::InclusionDirective(
 
   // if it's not an include from the Cuda SDK, leave it,
   // unless it's <cuda_runtime.h>, in which case it will be replaced.
-  // In other words, <cuda_runtime.h> will be replaced regardless of where it's coming from
+  // In other words, <cuda_runtime.h> will be replaced regardless of where it's
+  // coming from
   if (!isChildPath(CudaPath, IncludePath) &&
       IncludePath.compare(0, 15, "/usr/local/cuda", 15)) {
     if (!(IsAngled && FileName.compare(StringRef("cuda_runtime.h")) == 0)) {
@@ -741,12 +745,18 @@ void AtomicFunctionRule::TranslateAtomicFunc(
   const Type *Arg0Type = CE->getArg(0)->getType().getTypePtrOrNull();
   // Atomic operation's first argument is always pointer type
   assert(Arg0Type && Arg0Type->isPointerType());
+  if (!Arg0Type || !Arg0Type->isPointerType()) {
+    return;
+  }
   const QualType PointeeType = Arg0Type->getPointeeType();
 
   std::string TypeName;
   if (auto *SubstedType = dyn_cast<SubstTemplateTypeParmType>(PointeeType)) {
     // Type is substituted in template initialization, use the template
     // parameter name
+    if (!SubstedType->getReplacedParameter()->getIdentifier()) {
+      return;
+    }
     TypeName =
         SubstedType->getReplacedParameter()->getIdentifier()->getName().str();
   } else {
@@ -1933,6 +1943,9 @@ void EventAPICallRule::handleTimeMeasurement(
   auto Parents = Result.Context->getParents(*CE);
   assert(Parents.size() == 1);
   auto *Parent = Parents[0].get<Stmt>();
+  if (!Parent) {
+    return;
+  }
   const CallExpr *RecordBegin = nullptr, *RecordEnd = nullptr;
   // Find the last cudaEventRecord call on start and stop
   for (auto Iter = Parent->child_begin(); Iter != Parent->child_end(); ++Iter) {

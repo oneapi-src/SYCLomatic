@@ -366,6 +366,9 @@ void ReplaceDim3Ctor::setRange() {
     // adjust the statement to replace if top-level constructor includes the
     // variable being defined
     const Stmt *S = getReplaceStmt(Ctor);
+    if (!S) {
+      return;
+    }
     CSR = CharSourceRange::getTokenRange(S->getSourceRange());
   }
 }

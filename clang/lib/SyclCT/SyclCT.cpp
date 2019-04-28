@@ -175,7 +175,7 @@ class SyclCTConsumer : public ASTConsumer {
 public:
   SyclCTConsumer(ReplTy &R, const CompilerInstance &CI, StringRef InFile)
       : ATM(CI, InRoot), Repl(R), PP(CI.getPreprocessor()) {
-    int RequiredRType;
+    int RequiredRType = 0;
     SourceProcessType FileType = GetSourceFileType(InFile);
 
     if (FileType & (TypeCudaSource | TypeCudaHeader)) {
