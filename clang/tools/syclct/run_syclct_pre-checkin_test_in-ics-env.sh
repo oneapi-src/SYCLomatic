@@ -33,6 +33,7 @@ syclct_sdk_8_samples=(
   simpleAtomicIntrinsics
   fastWalshTransform
   dwtHaar1D
+  scalarProd
 )
 
 syclct_sdk_8_samples_list=$(IFS=, ; echo "syclct_sdk_8_samples/${syclct_sdk_8_samples[*]}")
