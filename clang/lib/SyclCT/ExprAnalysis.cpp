@@ -156,7 +156,6 @@ void ExprAnalysis::analysisExpr(const CStyleCastExpr *Cast) {
 }
 
 void ExprAnalysis::analysisExpr(const CallExpr *CE) {
-  auto Func = CE->getDirectCallee();
   if (!CE->getDirectCallee())
     return;
   const std::string FuncName = CE->getDirectCallee()->getNameAsString();

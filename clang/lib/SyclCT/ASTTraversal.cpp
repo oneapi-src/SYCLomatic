@@ -805,9 +805,10 @@ void AtomicFunctionRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(AtomicFunctionRule)
 
-auto TypedefNames = hasAnyName(
-    "dim3", "cudaError_t", "cudaEvent_t", "cudaStream_t", "__half", "__half2",
-    "cublasStatus_t", "cublasHandle_t", "cuComplex", "cuDoubleComplex");
+auto TypedefNames =
+    hasAnyName("dim3", "cudaError_t", "cudaEvent_t", "cudaStream_t", "__half",
+               "__half2", "half", "half2", "cublasStatus_t", "cublasHandle_t",
+               "cuComplex", "cuDoubleComplex");
 auto EnumTypeNames = hasAnyName("cudaError");
 // CUstream_st and CUevent_st are the actual types of cudaStream_t and
 // cudaEvent_st respectively
@@ -2889,6 +2890,10 @@ void UnnamedTypesRule::run(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(UnnamedTypesRule)
 
 void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
+  std::vector<std::string> ExceptionalFunctionNames;
+  for (auto Function : ExceptionalFunctionNamesMap)
+    ExceptionalFunctionNames.push_back(Function.first);
+
   std::vector<std::string> HalfFunctionNames;
   for (auto Function : HalfFunctionNamesMap)
     HalfFunctionNames.push_back(Function.first);
@@ -2897,14 +2902,21 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
   for (auto Function : SingleDoubleFunctionNamesMap)
     SingleDoubleFunctionNames.push_back(Function.first);
 
+  std::vector<std::string> IntegerFunctionNames;
+  for (auto Function : IntegerFunctionNamesMap)
+    IntegerFunctionNames.push_back(Function.first);
+
   std::vector<std::string> TypecastFunctionNames;
   for (auto Function : TypecastFunctionNamesMap)
     TypecastFunctionNames.push_back(Function.first);
 
-  std::vector<std::string> FunctionNames;
-  for (auto Function : FunctionNamesMap)
-    FunctionNames.push_back(Function.first);
-
+  MF.addMatcher(
+      callExpr(callee(functionDecl(
+                   internal::Matcher<NamedDecl>(
+                       new internal::HasNameMatcher(ExceptionalFunctionNames)),
+                   unless(hasDeclContext(namespaceDecl(anything()))))))
+          .bind("mathExceptional"),
+      this);
   MF.addMatcher(
       callExpr(callee(functionDecl(
                    internal::Matcher<NamedDecl>(
@@ -2922,16 +2934,16 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       callExpr(callee(functionDecl(
                    internal::Matcher<NamedDecl>(
-                       new internal::HasNameMatcher(TypecastFunctionNames)),
+                       new internal::HasNameMatcher(IntegerFunctionNames)),
                    unless(hasDeclContext(namespaceDecl(anything()))))))
-          .bind("mathTypecast"),
+          .bind("mathInteger"),
       this);
   MF.addMatcher(
       callExpr(callee(functionDecl(
                    internal::Matcher<NamedDecl>(
-                       new internal::HasNameMatcher(FunctionNames)),
+                       new internal::HasNameMatcher(TypecastFunctionNames)),
                    unless(hasDeclContext(namespaceDecl(anything()))))))
-          .bind("math"),
+          .bind("mathTypecast"),
       this);
 }
 
@@ -2942,39 +2954,52 @@ bool endsWith(std::string const &Str, std::string const &Ending) {
 }
 
 void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
-  auto CE = getNodeAsType<CallExpr>(Result, "mathHalf");
-  if (CE) {
-    handleHalfFunctions(CE, Result);
+  const CallExpr *CE = nullptr;
+  if ((CE = getNodeAsType<CallExpr>(Result, "mathExceptional")))
+    return handleExceptionalFunctions(CE, Result);
+
+  if ((CE = getNodeAsType<CallExpr>(Result, "mathHalf")))
+    return handleHalfFunctions(CE, Result);
+
+  if ((CE = getNodeAsType<CallExpr>(Result, "mathSingleDouble")))
+    return handleSingleDoubleFunctions(CE, Result);
+
+  if ((CE = getNodeAsType<CallExpr>(Result, "mathInteger")))
+    return handleIntegerFunctions(CE, Result);
+
+  if ((CE = getNodeAsType<CallExpr>(Result, "mathTypecast")))
+    return handleTypecastFunctions(CE, Result);
+}
+
+void MathFunctionsRule::handleExceptionalFunctions(
+    const CallExpr *CE, const MatchFinder::MatchResult &Result) {
+  auto FD = CE->getDirectCallee();
+  if (!FD)
     return;
-  }
-  CE = getNodeAsType<CallExpr>(Result, "mathSingleDouble");
-  if (CE) {
-    handleSingleDoubleFunctions(CE, Result);
-    return;
-  }
-  CE = getNodeAsType<CallExpr>(Result, "mathTypecast");
-  if (CE) {
-    handleTypecastFunctions(CE, Result);
-    return;
-  }
-  CE = getNodeAsType<CallExpr>(Result, "math");
-  if (!CE) {
-    return;
+
+  const std::string FuncName = FD->getNameAsString();
+  std::string NamespaceStr;
+  auto Qualifier =
+      dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImpCasts())->getQualifier();
+  if (Qualifier) {
+    auto Namespace = Qualifier->getAsNamespace();
+    if (Namespace)
+      NamespaceStr = Namespace->getName();
   }
 
-  if (!CE->getDirectCallee())
+  if (NamespaceStr == "std")
     return;
-  const std::string FuncName = CE->getDirectCallee()->getNameAsString();
 
-  if (FunctionNamesMap.find(FuncName) != FunctionNamesMap.end()) {
-    std::string NewFuncName = FunctionNamesMap.at(FuncName);
-    if (NewFuncName == "UNSUPPORTED") {
-      report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
-      return;
-    }
-    if (FuncName == "__sincosf") {
-      return;
-    } else if (FuncName == "abs") {
+  // The calls to some functions do not need to be migrated because they
+  // are functions in C standard library. However, in UB18.04 these functions
+  // are not recognized by ComputeCpp. As a result, these calls are temporarily
+  // migrated to sycl alternatives.
+  // TODO: Find a better way to deal with it or investigate why
+  // ComputeCpp behaves differently in UB16.04 and UB18.04.
+  if (ExceptionalFunctionNamesMap.find(FuncName) !=
+      ExceptionalFunctionNamesMap.end()) {
+    std::string NewFuncName = ExceptionalFunctionNamesMap.at(FuncName);
+    if (FuncName == "abs") {
       // further check the type of the args.
       if (!CE->getArg(0)->getType()->isIntegerType()) {
         NewFuncName = "cl::sycl::fabs";
@@ -3003,9 +3028,11 @@ void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
 
 void MathFunctionsRule::handleHalfFunctions(
     const CallExpr *CE, const MatchFinder::MatchResult &Result) {
-  if (!CE->getDirectCallee())
+  auto FD = CE->getDirectCallee();
+  if (!FD || !FD->hasAttr<CUDADeviceAttr>())
     return;
-  const std::string FuncName = CE->getDirectCallee()->getNameAsString();
+
+  const std::string FuncName = FD->getNameAsString();
 
   if (HalfFunctionNamesMap.find(FuncName) != HalfFunctionNamesMap.end()) {
     std::string NewFuncName = HalfFunctionNamesMap.at(FuncName);
@@ -3050,33 +3077,33 @@ void MathFunctionsRule::handleHalfFunctions(
 
 void MathFunctionsRule::handleSingleDoubleFunctions(
     const CallExpr *CE, const MatchFinder::MatchResult &Result) {
-  if (!CE->getDirectCallee())
+  auto FD = CE->getDirectCallee();
+  if (!FD || !FD->hasAttr<CUDADeviceAttr>())
     return;
-  const std::string FuncName = CE->getDirectCallee()->getNameAsString();
+
+  const std::string FuncName = FD->getNameAsString();
 
   if (SingleDoubleFunctionNamesMap.find(FuncName) !=
       SingleDoubleFunctionNamesMap.end()) {
     std::string NewFuncName = SingleDoubleFunctionNamesMap.at(FuncName);
     if (NewFuncName == "UNSUPPORTED") {
       report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
-      return;
-    }
-    if (FuncName == "__dadd_rd" || FuncName == "__fadd_rd" ||
-        FuncName == "__dadd_rn" || FuncName == "__fadd_rn" ||
-        FuncName == "__dadd_ru" || FuncName == "__fadd_ru" ||
-        FuncName == "__dadd_rz" || FuncName == "__fadd_rz" ||
-        FuncName == "__dsub_rd" || FuncName == "__fsub_rd" ||
-        FuncName == "__dsub_rn" || FuncName == "__fsub_rn" ||
-        FuncName == "__dsub_ru" || FuncName == "__fsub_ru" ||
-        FuncName == "__dsub_rz" || FuncName == "__fsub_rz" ||
-        FuncName == "__dmul_rd" || FuncName == "__fmul_rd" ||
-        FuncName == "__dmul_rn" || FuncName == "__fmul_rn" ||
-        FuncName == "__dmul_ru" || FuncName == "__fmul_ru" ||
-        FuncName == "__dmul_rz" || FuncName == "__fmul_rz" ||
-        FuncName == "__ddiv_rd" || FuncName == "__fdiv_rd" ||
-        FuncName == "__ddiv_rn" || FuncName == "__fdiv_rn" ||
-        FuncName == "__ddiv_ru" || FuncName == "__fdiv_ru" ||
-        FuncName == "__ddiv_rz" || FuncName == "__fdiv_rz") {
+    } else if (FuncName == "__dadd_rd" || FuncName == "__fadd_rd" ||
+               FuncName == "__dadd_rn" || FuncName == "__fadd_rn" ||
+               FuncName == "__dadd_ru" || FuncName == "__fadd_ru" ||
+               FuncName == "__dadd_rz" || FuncName == "__fadd_rz" ||
+               FuncName == "__dsub_rd" || FuncName == "__fsub_rd" ||
+               FuncName == "__dsub_rn" || FuncName == "__fsub_rn" ||
+               FuncName == "__dsub_ru" || FuncName == "__fsub_ru" ||
+               FuncName == "__dsub_rz" || FuncName == "__fsub_rz" ||
+               FuncName == "__dmul_rd" || FuncName == "__fmul_rd" ||
+               FuncName == "__dmul_rn" || FuncName == "__fmul_rn" ||
+               FuncName == "__dmul_ru" || FuncName == "__fmul_ru" ||
+               FuncName == "__dmul_rz" || FuncName == "__fmul_rz" ||
+               FuncName == "__ddiv_rd" || FuncName == "__fdiv_rd" ||
+               FuncName == "__ddiv_rn" || FuncName == "__fdiv_rn" ||
+               FuncName == "__ddiv_ru" || FuncName == "__fdiv_ru" ||
+               FuncName == "__ddiv_rz" || FuncName == "__fdiv_rz") {
       std::string Operator = SingleDoubleFunctionNamesMap.at(FuncName);
       auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
       auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
@@ -3088,31 +3115,139 @@ void MathFunctionsRule::handleSingleDoubleFunctions(
       report(CE->getBeginLoc(), Diagnostics::ROUNDING_MODE_UNSUPPORTED,
              "operator+");
       emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-      return;
+    } else if (FuncName == "frexp" || FuncName == "frexpf") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
+      std::string ReplStr{"cl::sycl::frexp("};
+      ReplStr += StmtStrArg0;
+      ReplStr += ", cl::sycl::make_ptr<int, "
+                 "cl::sycl::access::address_space::local_space>(";
+      ReplStr += StmtStrArg1;
+      ReplStr += "))";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "modf" || FuncName == "modff") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
+      std::string ReplStr{"cl::sycl::modf("};
+      ReplStr += StmtStrArg0;
+      if (FuncName == "modf")
+        ReplStr += ", cl::sycl::make_ptr<double, "
+                   "cl::sycl::access::address_space::local_space>(";
+      else
+        ReplStr += ", cl::sycl::make_ptr<float, "
+                   "cl::sycl::access::address_space::local_space>(";
+      ReplStr += StmtStrArg1;
+      ReplStr += "))";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
     } else if (FuncName == "nan" || FuncName == "nanf") {
       emplaceTransformation(
-          new ReplaceStmt(CE, true, FuncName, "cl::sycl::nan(0)"));
-      return;
+          new ReplaceStmt(CE, true, FuncName, "cl::sycl::nan(0u)"));
     } else if (FuncName == "sincos" || FuncName == "sincosf" ||
                FuncName == "__sincosf") {
       auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
       auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
       auto StmtStrArg2 = getStmtSpelling(CE->getArg(2), *Result.Context);
-      std::string ReplStr{"*("};
-      ReplStr += StmtStrArg1;
-      ReplStr += ") = cl::sycl::sincos(";
+      std::string ReplStr;
+      if (StmtStrArg1[0] == '&')
+        ReplStr = StmtStrArg1.substr(1);
+      else
+        ReplStr = "*(" + StmtStrArg1 + ")";
+      ReplStr += " = cl::sycl::sincos(";
+      ReplStr += StmtStrArg0;
+      if (FuncName == "sincos")
+        ReplStr += ", cl::sycl::make_ptr<double, "
+                   "cl::sycl::access::address_space::local_space>(";
+      else
+        ReplStr += ", cl::sycl::make_ptr<float, "
+                   "cl::sycl::access::address_space::local_space>(";
+      ReplStr += StmtStrArg2;
+      ReplStr += "))";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "sincospi" || FuncName == "sincospif") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
+      auto StmtStrArg2 = getStmtSpelling(CE->getArg(2), *Result.Context);
+      std::string ReplStr;
+      if (StmtStrArg1[0] == '&')
+        ReplStr = StmtStrArg1.substr(1);
+      else
+        ReplStr = "*(" + StmtStrArg1 + ")";
+      ReplStr += " = cl::sycl::sincos(";
+      ReplStr += StmtStrArg0;
+      if (FuncName == "sincospi")
+        ReplStr += " * SYCLCT_PI";
+      else
+        ReplStr += " * SYCLCT_PI_F";
+
+      if (FuncName == "sincospi")
+        ReplStr += ", cl::sycl::make_ptr<double, "
+                   "cl::sycl::access::address_space::local_space>(";
+      else
+        ReplStr += ", cl::sycl::make_ptr<float, "
+                   "cl::sycl::access::address_space::local_space>(";
+      ReplStr += StmtStrArg2;
+      ReplStr += "))";
+      report(CE->getBeginLoc(), Diagnostics::MATH_SIMULATION, FuncName,
+             "cl::sycl::sincos");
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "remquo" || FuncName == "remquof") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
+      auto StmtStrArg2 = getStmtSpelling(CE->getArg(2), *Result.Context);
+      std::string ReplStr{"cl::sycl::remquo("};
       ReplStr += StmtStrArg0;
       ReplStr += ", ";
+      ReplStr += StmtStrArg1;
+      ReplStr += ", cl::sycl::make_ptr<int, "
+                 "cl::sycl::access::address_space::local_space>(";
       ReplStr += StmtStrArg2;
-      ReplStr += ")";
+      ReplStr += "))";
       emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-      return;
+    } else if (FuncName == "nearbyint" || FuncName == "nearbyintf") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      std::string ReplStr{"cl::sycl::floor("};
+      ReplStr += StmtStrArg0;
+      ReplStr += " + 0.5)";
+      report(CE->getBeginLoc(), Diagnostics::MATH_SIMULATION, FuncName,
+             "cl::sycl::floor");
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "rhypot" || FuncName == "rhypotf") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
+      std::string ReplStr{"1 / cl::sycl::hypot("};
+      ReplStr += StmtStrArg0;
+      ReplStr += ", ";
+      ReplStr += StmtStrArg1;
+      ReplStr += ")";
+      report(CE->getBeginLoc(), Diagnostics::MATH_SIMULATION, FuncName,
+             "cl::sycl::hypot");
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else {
+      // For the rest math functions, replace callee names with DPC++ ones
+      if (endsWith(FuncName, "_rd") || endsWith(FuncName, "_rn") ||
+          endsWith(FuncName, "_ru") || endsWith(FuncName, "_rz")) {
+        report(CE->getBeginLoc(), Diagnostics::ROUNDING_MODE_UNSUPPORTED,
+               NewFuncName);
+      }
+      emplaceTransformation(
+          new ReplaceCalleeName(CE, std::move(NewFuncName), FuncName));
     }
+  }
+}
 
-    if (endsWith(FuncName, "_rd") || endsWith(FuncName, "_rn") ||
-        endsWith(FuncName, "_ru") || endsWith(FuncName, "_rz")) {
-      report(CE->getBeginLoc(), Diagnostics::ROUNDING_MODE_UNSUPPORTED,
-             NewFuncName);
+void MathFunctionsRule::handleIntegerFunctions(
+    const CallExpr *CE, const MatchFinder::MatchResult &Result) {
+  auto FD = CE->getDirectCallee();
+  if (!FD || !FD->hasAttr<CUDADeviceAttr>())
+    return;
+
+  const std::string FuncName = FD->getNameAsString();
+
+  if (IntegerFunctionNamesMap.find(FuncName) != IntegerFunctionNamesMap.end()) {
+    std::string NewFuncName = IntegerFunctionNamesMap.at(FuncName);
+    if (NewFuncName == "UNSUPPORTED") {
+      report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
+      return;
     }
 
     emplaceTransformation(
@@ -3122,8 +3257,16 @@ void MathFunctionsRule::handleSingleDoubleFunctions(
 
 void MathFunctionsRule::handleTypecastFunctions(
     const CallExpr *CE, const MatchFinder::MatchResult &Result) {
-  if (!CE->getDirectCallee())
+  auto FD = CE->getDirectCallee();
+  if (!FD || !FD->hasAttr<CUDADeviceAttr>())
     return;
+
+  using SSMap = std::map<std::string, std::string>;
+  static SSMap RoundingModeMap{{"", "automatic"},
+                               {"rd", "rtn"},
+                               {"rn", "rte"},
+                               {"ru", "rtp"},
+                               {"rz", "rtz"}};
   const std::string FuncName = CE->getDirectCallee()->getNameAsString();
   if (TypecastFunctionNamesMap.find(FuncName) !=
       TypecastFunctionNamesMap.end()) {
@@ -3131,10 +3274,150 @@ void MathFunctionsRule::handleTypecastFunctions(
     if (NewFuncName == "UNSUPPORTED") {
       report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
       return;
-    }
-    if (startsWith(NewFuncName, "syclct::")) {
+    } else if (startsWith(NewFuncName, "syclct::")) {
       emplaceTransformation(
           new ReplaceCalleeName(CE, std::move(NewFuncName), FuncName));
+      return;
+    }
+    assert(NewFuncName.empty());
+
+    if (FuncName == "__float22half2_rn") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      std::string ReplStr{StmtStrArg0};
+      ReplStr += ".convert<cl::sycl::half, cl::sycl::rounding_mode::rte>()";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "__float2half2_rn") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      std::string ReplStr{"cl::sycl::float2{"};
+      ReplStr += StmtStrArg0;
+      ReplStr += ",";
+      ReplStr += StmtStrArg0;
+      ReplStr += "}.convert<cl::sycl::half, cl::sycl::rounding_mode::rte>()";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "__floats2half2_rn") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
+      std::string ReplStr{"cl::sycl::float2{"};
+      ReplStr += StmtStrArg0;
+      ReplStr += ",";
+      ReplStr += StmtStrArg1;
+      ReplStr += "}.convert<cl::sycl::half, cl::sycl::rounding_mode::rte>()";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "__half22float2") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      std::string ReplStr{StmtStrArg0};
+      ReplStr += ".convert<float, cl::sycl::rounding_mode::automatic>()";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "__half2half2") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      std::string ReplStr{"cl::sycl::half2{"};
+      ReplStr += StmtStrArg0;
+      ReplStr += ",";
+      ReplStr += StmtStrArg0;
+      ReplStr += "}";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "__halves2half2") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
+      std::string ReplStr{"cl::sycl::half2{"};
+      ReplStr += StmtStrArg0;
+      ReplStr += ",";
+      ReplStr += StmtStrArg1;
+      ReplStr += "}";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "__high2float") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      std::string ReplStr{StmtStrArg0};
+      ReplStr += ".get_value(0)";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "__high2half") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      std::string ReplStr{StmtStrArg0};
+      ReplStr += ".get_value(0)";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "__high2half2") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      std::string ReplStr{"cl::sycl::half2{"};
+      ReplStr += StmtStrArg0;
+      ReplStr += ".get_value(0), ";
+      ReplStr += StmtStrArg0;
+      ReplStr += ".get_value(0)}";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "__highs2half2") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
+      std::string ReplStr{"cl::sycl::half2{"};
+      ReplStr += StmtStrArg0;
+      ReplStr += ".get_value(0), ";
+      ReplStr += StmtStrArg1;
+      ReplStr += ".get_value(0)}";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "__low2float") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      std::string ReplStr{StmtStrArg0};
+      ReplStr += ".get_value(1)";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "__low2half") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      std::string ReplStr{StmtStrArg0};
+      ReplStr += ".get_value(1)";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "__low2half2") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      std::string ReplStr{"cl::sycl::half2{"};
+      ReplStr += StmtStrArg0;
+      ReplStr += ".get_value(1), ";
+      ReplStr += StmtStrArg0;
+      ReplStr += ".get_value(1)}";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "__lowhigh2highlow") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      std::string ReplStr{"cl::sycl::half2{"};
+      ReplStr += StmtStrArg0;
+      ReplStr += ".get_value(1), ";
+      ReplStr += StmtStrArg0;
+      ReplStr += ".get_value(0)}";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else if (FuncName == "__lows2half2") {
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
+      std::string ReplStr{"cl::sycl::half2{"};
+      ReplStr += StmtStrArg0;
+      ReplStr += ".get_value(1), ";
+      ReplStr += StmtStrArg1;
+      ReplStr += ".get_value(1)}";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    } else {
+      //__half2short_rd and __half2float
+      static SSMap TypeMap{{"ll", "long long"},
+                           {"ull", "unsigned long long"},
+                           {"ushort", "unsigned short"},
+                           {"uint", "unsigned int"},
+                           {"half", "cl::sycl::half"}};
+      auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+      std::string RoundingMode;
+      if (FuncName[FuncName.size() - 3] == '_')
+        RoundingMode = FuncName.substr(FuncName.size() - 2);
+      auto FN = FuncName.substr(2, FuncName.find('_', 2) - 2);
+      auto Types = split(FN, '2');
+      assert(Types.size() == 2);
+      std::string ReplStr;
+      auto T0 = TypeMap[Types[0]];
+      auto T1 = TypeMap[Types[1]];
+      if (!T0.empty())
+        Types[0] = T0;
+      if (!T1.empty())
+        Types[1] = T1;
+      ReplStr += "cl::sycl::vec<";
+      ReplStr += Types[0];
+      ReplStr += ", 1>{";
+      ReplStr += StmtStrArg0;
+      ReplStr += "}.convert<";
+      ReplStr += Types[1];
+      ReplStr += ", cl::sycl::rounding_mode::";
+      ReplStr += RoundingModeMap[RoundingMode];
+      ReplStr += ">().get_value(0)";
+      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
     }
   }
 }

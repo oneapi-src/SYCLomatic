@@ -61,9 +61,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::acos(f_a);
+    // CHECK: f_a = acos(f_a);
     f_a = acos(f_a);
-    // CHECK: d_a = cl::sycl::acos(d_a);
+    // CHECK: d_a = acos(d_a);
     d_a = acos(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -74,9 +74,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::acosh(f_a);
+    // CHECK: f_a = acosh(f_a);
     f_a = acosh(f_a);
-    // CHECK: d_a = cl::sycl::acosh(d_a);
+    // CHECK: d_a = acosh(d_a);
     d_a = acosh(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -87,9 +87,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::asin(f_a);
+    // CHECK: f_a = asin(f_a);
     f_a = asin(f_a);
-    // CHECK: d_a = cl::sycl::asin(d_a);
+    // CHECK: d_a = asin(d_a);
     d_a = asin(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -100,9 +100,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::asinh(f_a);
+    // CHECK: f_a = asinh(f_a);
     f_a = asinh(f_a);
-    // CHECK: d_a = cl::sycl::asinh(d_a);
+    // CHECK: d_a = asinh(d_a);
     d_a = asinh(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -113,9 +113,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::atan(f_a);
+    // CHECK: f_a = atan(f_a);
     f_a = atan(f_a);
-    // CHECK: d_a = cl::sycl::atan(d_a);
+    // CHECK: d_a = atan(d_a);
     d_a = atan(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -126,9 +126,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::atanh(f_a);
+    // CHECK: f_a = atanh(f_a);
     f_a = atanh(f_a);
-    // CHECK: d_a = cl::sycl::atanh(d_a);
+    // CHECK: d_a = atanh(d_a);
     d_a = atanh(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -139,9 +139,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::cbrt(f_a);
+    // CHECK: f_a = cbrt(f_a);
     f_a = cbrt(f_a);
-    // CHECK: d_a = cl::sycl::cbrt(d_a);
+    // CHECK: d_a = cbrt(d_a);
     d_a = cbrt(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -152,9 +152,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::ceil(f_a);
+    // CHECK: f_a = ceil(f_a);
     f_a = ceil(f_a);
-    // CHECK: d_a = cl::sycl::ceil(d_a);
+    // CHECK: d_a = ceil(d_a);
     d_a = ceil(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -165,9 +165,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::cos(f_a);
+    // CHECK: f_a = cos(f_a);
     f_a = cos(f_a);
-    // CHECK: d_a = cl::sycl::cos(d_a);
+    // CHECK: d_a = cos(d_a);
     d_a = cos(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -178,9 +178,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::cosh(f_a);
+    // CHECK: f_a = cosh(f_a);
     f_a = cosh(f_a);
-    // CHECK: d_a = cl::sycl::cosh(d_a);
+    // CHECK: d_a = cosh(d_a);
     d_a = cosh(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -191,9 +191,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::erfc(f_a);
+    // CHECK: f_a = erfc(f_a);
     f_a = erfc(f_a);
-    // CHECK: d_a = cl::sycl::erfc(d_a);
+    // CHECK: d_a = erfc(d_a);
     d_a = erfc(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -204,9 +204,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::erf(f_a);
+    // CHECK: f_a = erf(f_a);
     f_a = erf(f_a);
-    // CHECK: d_a = cl::sycl::erf(d_a);
+    // CHECK: d_a = erf(d_a);
     d_a = erf(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -230,9 +230,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::exp2(f_a);
+    // CHECK: f_a = exp2(f_a);
     f_a = exp2(f_a);
-    // CHECK: d_a = cl::sycl::exp2(d_a);
+    // CHECK: d_a = exp2(d_a);
     d_a = exp2(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -243,9 +243,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::exp10(f_a);
+    // CHECK: f_a = exp10(f_a);
     f_a = exp10(f_a);
-    // CHECK: d_a = cl::sycl::exp10(d_a);
+    // CHECK: d_a = exp10(d_a);
     d_a = exp10(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -256,9 +256,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::expm1(f_a);
+    // CHECK: f_a = expm1(f_a);
     f_a = expm1(f_a);
-    // CHECK: d_a = cl::sycl::expm1(d_a);
+    // CHECK: d_a = expm1(d_a);
     d_a = expm1(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -282,9 +282,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::floor(f_a);
+    // CHECK: f_a = floor(f_a);
     f_a = floor(f_a);
-    // CHECK: d_a = cl::sycl::floor(d_a);
+    // CHECK: d_a = floor(d_a);
     d_a = floor(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -295,9 +295,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::lgamma(f_a);
+    // CHECK: f_a = lgamma(f_a);
     f_a = lgamma(f_a);
-    // CHECK: d_a = cl::sycl::lgamma(d_a);
+    // CHECK: d_a = lgamma(d_a);
     d_a = lgamma(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -308,9 +308,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::log(f_a);
+    // CHECK: f_a = log(f_a);
     f_a = log(f_a);
-    // CHECK: d_a = cl::sycl::log(d_a);
+    // CHECK: d_a = log(d_a);
     d_a = log(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -321,9 +321,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::log2(f_a);
+    // CHECK: f_a = log2(f_a);
     f_a = log2(f_a);
-    // CHECK: d_a = cl::sycl::log2(d_a);
+    // CHECK: d_a = log2(d_a);
     d_a = log2(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -334,9 +334,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::log10(f_a);
+    // CHECK: f_a = log10(f_a);
     f_a = log10(f_a);
-    // CHECK: d_a = cl::sycl::log10(d_a);
+    // CHECK: d_a = log10(d_a);
     d_a = log10(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -347,9 +347,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::log1p(f_a);
+    // CHECK: f_a = log1p(f_a);
     f_a = log1p(f_a);
-    // CHECK: d_a = cl::sycl::log1p(d_a);
+    // CHECK: d_a = log1p(d_a);
     d_a = log1p(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -360,9 +360,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::logb(f_a);
+    // CHECK: f_a = logb(f_a);
     f_a = logb(f_a);
-    // CHECK: d_a = cl::sycl::logb(d_a);
+    // CHECK: d_a = logb(d_a);
     d_a = logb(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -373,9 +373,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::rint(f_a);
+    // CHECK: f_a = rint(f_a);
     f_a = rint(f_a);
-    // CHECK: d_a = cl::sycl::rint(d_a);
+    // CHECK: d_a = rint(d_a);
     d_a = rint(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -386,9 +386,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::round(f_a);
+    // CHECK: f_a = round(f_a);
     f_a = round(f_a);
-    // CHECK: d_a = cl::sycl::round(d_a);
+    // CHECK: d_a = round(d_a);
     d_a = round(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -399,9 +399,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::rsqrt(f_a);
+    // CHECK: f_a = rsqrt(f_a);
     f_a = rsqrt(f_a);
-    // CHECK: d_a = cl::sycl::rsqrt(d_a);
+    // CHECK: d_a = rsqrt(d_a);
     d_a = rsqrt(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -412,9 +412,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::sin(f_a);
+    // CHECK: f_a = sin(f_a);
     f_a = sin(f_a);
-    // CHECK: d_a = cl::sycl::sin(d_a);
+    // CHECK: d_a = sin(d_a);
     d_a = sin(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -425,9 +425,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::sinh(f_a);
+    // CHECK: f_a = sinh(f_a);
     f_a = sinh(f_a);
-    // CHECK: d_a = cl::sycl::sinh(d_a);
+    // CHECK: d_a = sinh(d_a);
     d_a = sinh(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -451,9 +451,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::tan(f_a);
+    // CHECK: f_a = tan(f_a);
     f_a = tan(f_a);
-    // CHECK: d_a = cl::sycl::tan(d_a);
+    // CHECK: d_a = tan(d_a);
     d_a = tan(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -464,9 +464,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::tanh(f_a);
+    // CHECK: f_a = tanh(f_a);
     f_a = tanh(f_a);
-    // CHECK: d_a = cl::sycl::tanh(d_a);
+    // CHECK: d_a = tanh(d_a);
     d_a = tanh(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -477,9 +477,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::tgamma(f_a);
+    // CHECK: f_a = tgamma(f_a);
     f_a = tgamma(f_a);
-    // CHECK: d_a = cl::sycl::tgamma(d_a);
+    // CHECK: d_a = tgamma(d_a);
     d_a = tgamma(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -490,9 +490,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::trunc(f_a);
+    // CHECK: f_a = trunc(f_a);
     f_a = trunc(f_a);
-    // CHECK: d_a = cl::sycl::trunc(d_a);
+    // CHECK: d_a = trunc(d_a);
     d_a = trunc(d_a);
 
     // TODO: Check more primitive type and vector types

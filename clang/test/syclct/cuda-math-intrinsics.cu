@@ -64,19 +64,33 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
 
   // Half2 Comparison Functions
 
-  // CHECK: h2_2 = h2 == h2_1;
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: */
   h2_2 = __heq2(h2, h2_1);
-  // CHECK: h2_2 = h2 >= h2_1;
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: */
   h2_2 = __hge2(h2, h2_1);
-  // CHECK: h2_2 = h2 > h2_1;
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: */
   h2_2 = __hgt2(h2, h2_1);
-  // CHECK: h2_2 = cl::sycl::isnan(h2);
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: */
   h2_2 = __hisnan2(h2);
-  // CHECK: h2_2 = h2 <= h2_1;
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: */
   h2_2 = __hle2(h2, h2_1);
-  // CHECK: h2_2 = h2 < h2_1;
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: */
   h2_2 = __hlt2(h2, h2_1);
-  // CHECK: h2_2 = h2 != h2_1;
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: */
   h2_2 = __hne2(h2, h2_1);
 
   // Half Math Functions
@@ -99,7 +113,9 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   h_2 = hlog10(h);
   // CHECK: h_2 = cl::sycl::log2(h);
   h_2 = hlog2(h);
-  // CHECK: h_2 = cl::sycl::recip(h);
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: */
   h_2 = hrcp(h);
   // CHECK: h_2 = cl::sycl::rint(h);
   h_2 = hrint(h);
@@ -132,7 +148,9 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   h2_2 = h2log10(h2);
   // CHECK: h2_2 = cl::sycl::log2(h2);
   h2_2 = h2log2(h2);
-  // CHECK: h2_2 = cl::sycl::recip(h2);
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: */
   h2_2 = h2rcp(h2);
   // CHECK: h2_2 = cl::sycl::rint(h2);
   h2_2 = h2rint(h2);
@@ -148,6 +166,122 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
 
 __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   double &d0 = *deviceArrayDouble, &d1 = *(deviceArrayDouble + 1), &d2 = *(deviceArrayDouble + 2);
+  int i;
+
+  // Double Precision Mathematical Functions
+  // CHECK: d2 = cl::sycl::acos(d0);
+  d2 = acos(d0);
+  // CHECK: d2 = cl::sycl::acosh(d0);
+  d2 = acosh(d0);
+  // CHECK: d2 = cl::sycl::asin(d0);
+  d2 = asin(d0);
+  // CHECK: d2 = cl::sycl::asinh(d0);
+  d2 = asinh(d0);
+  // CHECK: d2 = cl::sycl::atan2(d0, d1);
+  d2 = atan2(d0, d1);
+  // CHECK: d2 = cl::sycl::atan(d0);
+  d2 = atan(d0);
+  // CHECK: d2 = cl::sycl::atanh(d0);
+  d2 = atanh(d0);
+  // CHECK: d2 = cl::sycl::cbrt(d0);
+  d2 = cbrt(d0);
+  // CHECK: d2 = cl::sycl::ceil(d0);
+  d2 = ceil(d0);
+  // CHECK: d2 = cl::sycl::copysign(d0, d1);
+  d2 = copysign(d0, d1);
+  // CHECK: d2 = cl::sycl::cos(d0);
+  d2 = cos(d0);
+  // CHECK: d2 = cl::sycl::cosh(d0);
+  d2 = cosh(d0);
+  // CHECK: d2 = cl::sycl::cospi(d0);
+  d2 = cospi(d0);
+  // CHECK: d2 = cl::sycl::erfc(d0);
+  d2 = erfc(d0);
+  // CHECK: d2 = cl::sycl::erf(d0);
+  d2 = erf(d0);
+  // CHECK: d2 = cl::sycl::exp10(d0);
+  d2 = exp10(d0);
+  // CHECK: d2 = cl::sycl::exp2(d0);
+  d2 = exp2(d0);
+  // CHECK: d2 = cl::sycl::exp(d0);
+  d2 = exp(d0);
+  // CHECK: d2 = cl::sycl::expm1(d0);
+  d2 = expm1(d0);
+  // CHECK: d2 = cl::sycl::fabs(d0);
+  d2 = fabs(d0);
+  // CHECK: d2 = cl::sycl::fdim(d0, d1);
+  d2 = fdim(d0, d1);
+  // CHECK: d2 = cl::sycl::floor(d0);
+  d2 = floor(d0);
+  // CHECK: d2 = cl::sycl::fma(d0, d1, d2);
+  d2 = fma(d0, d1, d2);
+  // CHECK: d2 = cl::sycl::fmax(d0, d1);
+  d2 = fmax(d0, d1);
+  // CHECK: d2 = cl::sycl::fmin(d0, d1);
+  d2 = fmin(d0, d1);
+  // CHECK: d2 = cl::sycl::fmod(d0, d1);
+  d2 = fmod(d0, d1);
+  // CHECK: d2 = cl::sycl::frexp(d0, cl::sycl::make_ptr<int, cl::sycl::access::address_space::local_space>(&i));
+  d2 = frexp(d0, &i);
+  // CHECK: d2 = cl::sycl::hypot(d0, d1);
+  d2 = hypot(d0, d1);
+  // CHECK: d2 = cl::sycl::ilogb(d0);
+  d2 = ilogb(d0);
+  // CHECK: d2 = cl::sycl::ldexp(d0, i);
+  d2 = ldexp(d0, i);
+  // CHECK: d2 = cl::sycl::lgamma(d0);
+  d2 = lgamma(d0);
+  // CHECK: d2 = cl::sycl::rint(d0);
+  d2 = llrint(d0);
+  // CHECK: d2 = cl::sycl::round(d0);
+  d2 = llround(d0);
+  // CHECK: d2 = cl::sycl::log10(d0);
+  d2 = log10(d0);
+  // CHECK: d2 = cl::sycl::log1p(d0);
+  d2 = log1p(d0);
+  // CHECK: d2 = cl::sycl::log2(d0);
+  d2 = log2(d0);
+  // CHECK: d2 = cl::sycl::logb(d0);
+  d2 = logb(d0);
+  // CHECK: d2 = cl::sycl::rint(d0);
+  d2 = lrint(d0);
+  // CHECK: d2 = cl::sycl::round(d0);
+  d2 = lround(d0);
+  // CHECK: d2 = cl::sycl::modf(d0, cl::sycl::make_ptr<double, cl::sycl::access::address_space::local_space>(&d1));
+  d2 = modf(d0, &d1);
+  // CHECK: d2 = cl::sycl::nan(0u);
+  d2 = nan("");
+  // CHECK: d2 = cl::sycl::pow(d0, d1);
+  d2 = pow(d0, d1);
+  // CHECK: d2 = cl::sycl::remainder(d0, d1);
+  d2 = remainder(d0, d1);
+  // CHECK: d2 = cl::sycl::remquo(d0, d1, cl::sycl::make_ptr<int, cl::sycl::access::address_space::local_space>(&i));
+  d2 = remquo(d0, d1, &i);
+  // CHECK: d2 = cl::sycl::rint(d0);
+  d2 = rint(d0);
+  // CHECK: d2 = cl::sycl::round(d0);
+  d2 = round(d0);
+  // CHECK: d2 = cl::sycl::rsqrt(d0);
+  d2 = rsqrt(d0);
+  // CHECK: d1 = cl::sycl::sincos(d0, cl::sycl::make_ptr<double, cl::sycl::access::address_space::local_space>(&d2));
+  sincos(d0, &d1, &d2);
+  // CHECK: d2 = cl::sycl::sin(d0);
+  d2 = sin(d0);
+  // CHECK: d2 = cl::sycl::sinh(d0);
+  d2 = sinh(d0);
+  // CHECK: d2 = cl::sycl::sinpi(d0);
+  d2 = sinpi(d0);
+  // CHECK: d2 = cl::sycl::sqrt(d0);
+  d2 = sqrt(d0);
+  // CHECK: d2 = cl::sycl::tan(d0);
+  d2 = tan(d0);
+  // CHECK: d2 = cl::sycl::tanh(d0);
+  d2 = tanh(d0);
+  // CHECK: d2 = cl::sycl::tgamma(d0);
+  d2 = tgamma(d0);
+  // CHECK: d2 = cl::sycl::trunc(d0);
+  d2 = trunc(d0);
+
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
   // CHECK-NEXT: */
@@ -212,24 +346,20 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d2 = __dmul_rz(d0, d1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
   // CHECK-NEXT: */
-  // CHECK-NEXT: d1 = cl::sycl::recip(d0);
-  d1 = __frcp_rd(d0);
+  d1 = __drcp_rd(d0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
   // CHECK-NEXT: */
-  // CHECK-NEXT: d1 = cl::sycl::recip(d0);
-  d1 = __frcp_rn(d0);
+  d1 = __drcp_rn(d0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
   // CHECK-NEXT: */
-  // CHECK-NEXT: d1 = cl::sycl::recip(d0);
   d1 = __drcp_ru(d0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
   // CHECK-NEXT: */
-  // CHECK-NEXT: d1 = cl::sycl::recip(d0);
   d1 = __drcp_rz(d0);
 
   // CHECK: /*
@@ -307,8 +437,11 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
 
   // CHECK: d2 = cl::sycl::fma(d0, d1, d2);
   d2 = fma(d0, d1, d2);
-  // CHECK: d2 = cl::sycl::nan(0);
+  // CHECK: d2 = cl::sycl::nan(0u);
   d2 = nan("NaN");
+
+  // CHECK: d0 = cl::sycl::nextafter(d0, d0);
+  d0 = nextafterf(d0, d0);
 }
 
 __global__ void kernelFuncFloat(float *deviceArrayFloat) {
@@ -316,8 +449,6 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   int i;
 
   // Single Precision Mathematical Functions
-  // CHECK: f2 = cl::sycl::log(f0);
-  f2 = log(f0);
   // CHECK: f2 = cl::sycl::log(f0);
   f2 = logf(f0);
   // CHECK: f2 = cl::sycl::acos(f0);
@@ -374,18 +505,18 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = fminf(f0, f1);
   // CHECK: f2 = cl::sycl::fmod(f0, f1);
   f2 = fmodf(f0, f1);
-  // CHECK: f2 = cl::sycl::frexp(f0, &i);
+  // CHECK: f2 = cl::sycl::frexp(f0, cl::sycl::make_ptr<int, cl::sycl::access::address_space::local_space>(&i));
   f2 = frexpf(f0, &i);
   // CHECK: f2 = cl::sycl::hypot(f0, f1);
   f2 = hypotf(f0, f1);
   // CHECK: f2 = cl::sycl::ilogb(f0);
   f2 = ilogbf(f0);
-  // CHECK: f2 = cl::sycl::isfinite(f0);
-  f2 = isfinite(f0);
-  // CHECK: f2 = cl::sycl::isinf(f0);
-  f2 = isinf(f0);
-  // CHECK: f2 = cl::sycl::isnan(f0);
-  f2 = isnan(f0);
+  // CHECK: i = cl::sycl::isfinite(f0);
+  i = isfinite(f0);
+  // CHECK: i = cl::sycl::isinf(f0);
+  i = isinf(f0);
+  // CHECK: i = cl::sycl::isnan(f0);
+  i = isnan(f0);
   // CHECK: f2 = cl::sycl::ldexp(f0, i);
   f2 = ldexpf(f0, i);
   // CHECK: f2 = cl::sycl::lgamma(f0);
@@ -406,15 +537,15 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = lrintf(f0);
   // CHECK: f2 = cl::sycl::round(f0);
   f2 = lroundf(f0);
-  // CHECK: f2 = cl::sycl::modf(f0, &f1);
+  // CHECK: f2 = cl::sycl::modf(f0, cl::sycl::make_ptr<float, cl::sycl::access::address_space::local_space>(&f1));
   f2 = modff(f0, &f1);
-  // CHECK: f2 = cl::sycl::nan(0);
+  // CHECK: f2 = cl::sycl::nan(0u);
   f2 = nan("");
   // CHECK: f2 = cl::sycl::pow(f0, f1);
   f2 = powf(f0, f1);
   // CHECK: f2 = cl::sycl::remainder(f0, f1);
   f2 = remainderf(f0, f1);
-  // CHECK: f2 = cl::sycl::remquo(f0, f1, &i);
+  // CHECK: f2 = cl::sycl::remquo(f0, f1, cl::sycl::make_ptr<int, cl::sycl::access::address_space::local_space>(&i));
   f2 = remquof(f0, f1, &i);
   // CHECK: f2 = cl::sycl::rint(f0);
   f2 = rintf(f0);
@@ -424,7 +555,7 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = rsqrtf(f0);
   // CHECK: f2 = cl::sycl::signbit(f0);
   f2 = signbit(f0);
-  // CHECK: *(&f1) = cl::sycl::sincos(f0, &f2);
+  // CHECK: f1 = cl::sycl::sincos(f0, cl::sycl::make_ptr<float, cl::sycl::access::address_space::local_space>(&f2));
   sincosf(f0, &f1, &f2);
   // CHECK: f2 = cl::sycl::sin(f0);
   f2 = sinf(f0);
@@ -442,120 +573,6 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = tgammaf(f0);
   // CHECK: f2 = cl::sycl::trunc(f0);
   f2 = truncf(f0);
-
-  // Double Precision Mathematical Functions
-  // CHECK: f2 = cl::sycl::acos(f0);
-  f2 = acos(f0);
-  // CHECK: f2 = cl::sycl::acosh(f0);
-  f2 = acosh(f0);
-  // CHECK: f2 = cl::sycl::asin(f0);
-  f2 = asin(f0);
-  // CHECK: f2 = cl::sycl::asinh(f0);
-  f2 = asinh(f0);
-  // CHECK: f2 = cl::sycl::atan2(f0, f1);
-  f2 = atan2(f0, f1);
-  // CHECK: f2 = cl::sycl::atan(f0);
-  f2 = atan(f0);
-  // CHECK: f2 = cl::sycl::atanh(f0);
-  f2 = atanh(f0);
-  // CHECK: f2 = cl::sycl::cbrt(f0);
-  f2 = cbrt(f0);
-  // CHECK: f2 = cl::sycl::ceil(f0);
-  f2 = ceil(f0);
-  // CHECK: f2 = cl::sycl::copysign(f0, f1);
-  f2 = copysign(f0, f1);
-  // CHECK: f2 = cl::sycl::cos(f0);
-  f2 = cos(f0);
-  // CHECK: f2 = cl::sycl::cosh(f0);
-  f2 = cosh(f0);
-  // CHECK: f2 = cl::sycl::cospi(f0);
-  f2 = cospi(f0);
-  // CHECK: f2 = cl::sycl::erfc(f0);
-  f2 = erfc(f0);
-  // CHECK: f2 = cl::sycl::erf(f0);
-  f2 = erf(f0);
-  // CHECK: f2 = cl::sycl::exp10(f0);
-  f2 = exp10(f0);
-  // CHECK: f2 = cl::sycl::exp2(f0);
-  f2 = exp2(f0);
-  // CHECK: f2 = cl::sycl::exp(f0);
-  f2 = exp(f0);
-  // CHECK: f2 = cl::sycl::expm1(f0);
-  f2 = expm1(f0);
-  // CHECK: f2 = cl::sycl::fabs(f0);
-  f2 = fabs(f0);
-  // CHECK: f2 = cl::sycl::fdim(f0, f1);
-  f2 = fdim(f0, f1);
-  // CHECK: f2 = cl::sycl::floor(f0);
-  f2 = floor(f0);
-  // CHECK: f2 = cl::sycl::fma(f0, f1, f2);
-  f2 = fma(f0, f1, f2);
-  // CHECK: f2 = cl::sycl::fmax(f0, f1);
-  f2 = fmax(f0, f1);
-  // CHECK: f2 = cl::sycl::fmin(f0, f1);
-  f2 = fmin(f0, f1);
-  // CHECK: f2 = cl::sycl::fmod(f0, f1);
-  f2 = fmod(f0, f1);
-  // CHECK: f2 = cl::sycl::frexp(f0, &i);
-  f2 = frexp(f0, &i);
-  // CHECK: f2 = cl::sycl::hypot(f0, f1);
-  f2 = hypot(f0, f1);
-  // CHECK: f2 = cl::sycl::ilogb(f0);
-  f2 = ilogb(f0);
-  // CHECK: f2 = cl::sycl::ldexp(f0, i);
-  f2 = ldexp(f0, i);
-  // CHECK: f2 = cl::sycl::lgamma(f0);
-  f2 = lgamma(f0);
-  // CHECK: f2 = cl::sycl::rint(f0);
-  f2 = llrint(f0);
-  // CHECK: f2 = cl::sycl::round(f0);
-  f2 = llround(f0);
-  // CHECK: f2 = cl::sycl::log10(f0);
-  f2 = log10(f0);
-  // CHECK: f2 = cl::sycl::log1p(f0);
-  f2 = log1p(f0);
-  // CHECK: f2 = cl::sycl::log2(f0);
-  f2 = log2(f0);
-  // CHECK: f2 = cl::sycl::logb(f0);
-  f2 = logb(f0);
-  // CHECK: f2 = cl::sycl::rint(f0);
-  f2 = lrint(f0);
-  // CHECK: f2 = cl::sycl::round(f0);
-  f2 = lround(f0);
-  // CHECK: f2 = cl::sycl::modf(f0, &f1);
-  f2 = modf(f0, &f1);
-  // CHECK: f2 = cl::sycl::nan(0);
-  f2 = nan("");
-  // CHECK: f2 = cl::sycl::pow(f0, f1);
-  f2 = pow(f0, f1);
-  // CHECK: f2 = cl::sycl::remainder(f0, f1);
-  f2 = remainder(f0, f1);
-  // CHECK: f2 = cl::sycl::remquo(f0, f1, &i);
-  f2 = remquo(f0, f1, &i);
-  // CHECK: f2 = cl::sycl::rint(f0);
-  f2 = rint(f0);
-  // CHECK: f2 = cl::sycl::round(f0);
-  f2 = round(f0);
-  // CHECK: f2 = cl::sycl::rsqrt(f0);
-  f2 = rsqrt(f0);
-  // CHECK: *(&f1) = cl::sycl::sincos(f0, &f2);
-  sincosf(f0, &f1, &f2);
-  // CHECK: f2 = cl::sycl::sin(f0);
-  f2 = sin(f0);
-  // CHECK: f2 = cl::sycl::sinh(f0);
-  f2 = sinh(f0);
-  // CHECK: f2 = cl::sycl::sinpi(f0);
-  f2 = sinpi(f0);
-  // CHECK: f2 = cl::sycl::sqrt(f0);
-  f2 = sqrt(f0);
-  // CHECK: f2 = cl::sycl::tan(f0);
-  f2 = tan(f0);
-  // CHECK: f2 = cl::sycl::tanh(f0);
-  f2 = tanh(f0);
-  // CHECK: f2 = cl::sycl::tgamma(f0);
-  f2 = tgamma(f0);
-  // CHECK: f2 = cl::sycl::trunc(f0);
-  f2 = trunc(f0);
 
   // CHECK: f0 = cl::sycl::cos(f0);
   f0 = __cosf(f0);
@@ -654,23 +671,23 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: f1 = cl::sycl::recip(f0);
+  // CHECK-NEXT: f1 = cl::sycl::native::recip(f0);
   f1 = __frcp_rd(f0);
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: f1 = cl::sycl::recip(f0);
+  // CHECK-NEXT: f1 = cl::sycl::native::recip(f0);
   f1 = __frcp_rn(f0);
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: f1 = cl::sycl::recip(f0);
-  f1 = __drcp_ru(f0);
+  // CHECK-NEXT: f1 = cl::sycl::native::recip(f0);
+  f1 = __frcp_ru(f0);
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: f1 = cl::sycl::recip(f0);
-  f1 = __drcp_rz(f0);
+  // CHECK-NEXT: f1 = cl::sycl::native::recip(f0);
+  f1 = __frcp_rz(f0);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-z :]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
@@ -722,7 +739,7 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f1 = __logf(f1);
   // CHECK: f2 = cl::sycl::pow(f0, f1);
   f2 = __powf(f0, f1);
-  // CHECK: *(&f1) = cl::sycl::sincos(f0, &f2);
+  // CHECK: f1 = cl::sycl::sincos(f0, cl::sycl::make_ptr<float, cl::sycl::access::address_space::local_space>(&f2));
   __sincosf(f0, &f1, &f2);
   // CHECK: f1 = cl::sycl::sin(f1);
   f1 = __sinf(f1);
@@ -739,7 +756,7 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = ceilf(f2);
   // CHECK: f2 = cl::sycl::fma(f0, f1, f2);
   f2 = fmaf(f0, f1, f2);
-  // CHECK: f2 = cl::sycl::nan(0);
+  // CHECK: f2 = cl::sycl::nan(0u);
   f2 = nanf("NaN");
 
   // CHECK: /*
@@ -747,6 +764,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = cl::sycl::rsqrt(f2);
   f2 = __frsqrt_rn(f2);
+
+  // CHECK: f0 = cl::sycl::nextafter(f0, f0);
+  f0 = nextafterf(f0, f0);
 }
 
 __global__ void kernelFuncTypecasts() {
@@ -766,427 +786,427 @@ __global__ void kernelFuncTypecasts() {
   double d;
   double2 d2;
 
-  // CHECK: h2 = syclct::float22half2_rn(f2);
+  // CHECK: h2 = f2.convert<cl::sycl::half, cl::sycl::rounding_mode::rte>();
   h2 = __float22half2_rn(f2);
 
-  // CHECK: h = syclct::float2half(f);
+  // CHECK: h = cl::sycl::vec<float, 1>{f}.convert<cl::sycl::half, cl::sycl::rounding_mode::automatic>().get_value(0);
   h = __float2half(f);
 
-  // CHECK: h2 = syclct::float2half2_rn(f);
+  // CHECK: h2 = cl::sycl::float2{f,f}.convert<cl::sycl::half, cl::sycl::rounding_mode::rte>();
   h2 = __float2half2_rn(f);
 
-  // CHECK: h = syclct::float2half_rd(f);
+  // CHECK: h = cl::sycl::vec<float, 1>{f}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtn>().get_value(0);
   h = __float2half_rd(f);
 
-  // CHECK: syclct::float2half_rn(f);
+  // cl::sycl::vec<float, 1>{f}.convert<cl::sycl::half, cl::sycl::rounding_mode::rte>().get_value(0);
   __float2half_rn(f);
 
-  // CHECK: h = syclct::float2half_ru(f);
+  // CHECK: h = cl::sycl::vec<float, 1>{f}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtp>().get_value(0);
   h = __float2half_ru(f);
 
-  // CHECK: h = syclct::float2half_rz(f);
+  // CHECK: h = cl::sycl::vec<float, 1>{f}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtz>().get_value(0);
   h = __float2half_rz(f);
 
-  // CHECK: h2 = syclct::floats2half2_rn(f, f);
+  // CHECK: h2 = cl::sycl::float2{f,f}.convert<cl::sycl::half, cl::sycl::rounding_mode::rte>();
   h2 = __floats2half2_rn(f, f);
 
-  // CHECK; f2 = syclct::half22float2(h2);
+  // CHECK: f2 = h2.convert<float, cl::sycl::rounding_mode::automatic>();
   f2 = __half22float2(h2);
 
-  // CHECK: f = syclct::half2float(h);
+  // CHECK: f = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<float, cl::sycl::rounding_mode::automatic>().get_value(0);
   f = __half2float(h);
 
-  // CHECK: h2 = syclct::half2half2(h);
+  // CHECK: h2 = cl::sycl::half2{h,h};
   h2 = __half2half2(h);
 
-  // CHECK: i = syclct::half2int_rd(h);
+  // CHECK: i = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<int, cl::sycl::rounding_mode::rtn>().get_value(0);
   i = __half2int_rd(h);
 
-  // CHECK: i = syclct::half2int_rn(h);
+  // CHECK: i = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<int, cl::sycl::rounding_mode::rte>().get_value(0);
   i = __half2int_rn(h);
 
-  // CHECK: i = syclct::half2int_ru(h);
+  // CHECK: i = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<int, cl::sycl::rounding_mode::rtp>().get_value(0);
   i = __half2int_ru(h);
 
-  // CHECK: i = syclct::half2int_rz(h);
+  // CHECK: i = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<int, cl::sycl::rounding_mode::rtz>().get_value(0);
   i = __half2int_rz(h);
 
-  // CHECK: ll = syclct::half2ll_rd(h);
+  // CHECK: ll = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<long long, cl::sycl::rounding_mode::rtn>().get_value(0);
   ll = __half2ll_rd(h);
 
-  // CHECK: ll = syclct::half2ll_rn(h);
+  // CHECK: ll = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<long long, cl::sycl::rounding_mode::rte>().get_value(0);
   ll = __half2ll_rn(h);
 
-  // CHECK: ll = syclct::half2ll_ru(h);
+  // CHECK: ll = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<long long, cl::sycl::rounding_mode::rtp>().get_value(0);
   ll = __half2ll_ru(h);
 
-  // CHECK: ll = syclct::half2ll_rz(h);
+  // CHECK: ll = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<long long, cl::sycl::rounding_mode::rtz>().get_value(0);
   ll = __half2ll_rz(h);
 
-  // CHECK: s = syclct::half2short_rd(h);
+  // CHECK: s = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<short, cl::sycl::rounding_mode::rtn>().get_value(0);
   s = __half2short_rd(h);
 
-  // CHECK: s = syclct::half2short_rn(h);
+  // CHECK: s = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<short, cl::sycl::rounding_mode::rte>().get_value(0);
   s = __half2short_rn(h);
 
-  // CHECK: s = syclct::half2short_ru(h);
+  // CHECK: s = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<short, cl::sycl::rounding_mode::rtp>().get_value(0);
   s = __half2short_ru(h);
 
-  // CHECK: s = syclct::half2short_rz(h);
+  // CHECK: s = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<short, cl::sycl::rounding_mode::rtz>().get_value(0);
   s = __half2short_rz(h);
 
-  // CHECK: ui = syclct::half2uint_rd(h);
+  // CHECK: ui = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<unsigned int, cl::sycl::rounding_mode::rtn>().get_value(0);
   ui = __half2uint_rd(h);
 
-  // CHECK: ui = syclct::half2uint_rn(h);
+  // CHECK: ui = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<unsigned int, cl::sycl::rounding_mode::rte>().get_value(0);
   ui = __half2uint_rn(h);
 
-  // CHECK: ui = syclct::half2uint_ru(h);
+  // CHECK:ui = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<unsigned int, cl::sycl::rounding_mode::rtp>().get_value(0);
   ui = __half2uint_ru(h);
 
-  // CHECK: ui = syclct::half2uint_rz(h);
+  // CHECK: ui = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<unsigned int, cl::sycl::rounding_mode::rtz>().get_value(0);
   ui = __half2uint_rz(h);
 
-  // CHECK: ull = syclct::half2ull_rd(h);
+  // CHECK: ull = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<unsigned long long, cl::sycl::rounding_mode::rtn>().get_value(0);
   ull = __half2ull_rd(h);
 
-  // CHECK: ull = syclct::half2ull_rn(h);
+  // CHECK: ull = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<unsigned long long, cl::sycl::rounding_mode::rte>().get_value(0);
   ull = __half2ull_rn(h);
 
-  // CHECK: ull = syclct::half2ull_ru(h);
+  // CHECK: ull = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<unsigned long long, cl::sycl::rounding_mode::rtp>().get_value(0);
   ull = __half2ull_ru(h);
 
-  // CHECK: ull = syclct::half2ull_rz(h);
+  // CHECK: ull = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<unsigned long long, cl::sycl::rounding_mode::rtz>().get_value(0);
   ull = __half2ull_rz(h);
 
-  // CHECK: us = syclct::half2ushort_rd(h);
+  // CHECK: us = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<unsigned short, cl::sycl::rounding_mode::rtn>().get_value(0);
   us = __half2ushort_rd(h);
 
-  // CHECK: us = syclct::half2ushort_rn(h);
+  // CHECK: us = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<unsigned short, cl::sycl::rounding_mode::rte>().get_value(0);
   us = __half2ushort_rn(h);
 
-  // CHECK: us = syclct::half2ushort_ru(h);
+  // CHECK: us = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<unsigned short, cl::sycl::rounding_mode::rtp>().get_value(0);
   us = __half2ushort_ru(h);
 
-  // CHECK: us = syclct::half2ushort_rz(h);
+  // CHECK: us = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<unsigned short, cl::sycl::rounding_mode::rtz>().get_value(0);
   us = __half2ushort_rz(h);
 
-  // CHECK: s = syclct::half_as_short(h);
+  // CHECK: s = syclct::bit_cast<cl::sycl::half, short>(h);
   s = __half_as_short(h);
 
-  // CHECK: us = syclct::half_as_ushort(h);
+  // CHECK: us = syclct::bit_cast<cl::sycl::half, unsigned short>(h);
   us = __half_as_ushort(h);
 
-  // CHECK: h2 = syclct::halves2half2(h, h);
+  // CHECK: h2 = cl::sycl::half2{h,h};
   h2 = __halves2half2(h, h);
 
-  // CHECK: f = syclct::high2float(h2);
+  // CHECK: f = h2.get_value(0);
   f = __high2float(h2);
 
-  // CHECK: h = syclct::high2half(h2);
+  // CHECK: h = h2.get_value(0);
   h = __high2half(h2);
 
-  // CHECK: h2 = syclct::high2half2(h2);
+  // CHECK: h2 = cl::sycl::half2{h2.get_value(0), h2.get_value(0)};
   h2 = __high2half2(h2);
 
-  // CHECK: h2 = syclct::highs2half2(h2, h2);
+  // CHECK: h2 = cl::sycl::half2{h2.get_value(0), h2.get_value(0)};
   h2 = __highs2half2(h2, h2);
 
-  // CHECK: h = syclct::int2half_rd(i);
+  // CHECK: h = cl::sycl::vec<int, 1>{i}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtn>().get_value(0);
   h = __int2half_rd(i);
 
-  // CHECK: h = syclct::int2half_rn(i);
+  // CHECK: h = cl::sycl::vec<int, 1>{i}.convert<cl::sycl::half, cl::sycl::rounding_mode::rte>().get_value(0);
   h = __int2half_rn(i);
 
-  // CHECK: h = syclct::int2half_ru(i);
+  // CHECK: h = cl::sycl::vec<int, 1>{i}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtp>().get_value(0);
   h = __int2half_ru(i);
 
-  // CHECK: h = syclct::int2half_rz(i);
+  // CHECK: h = cl::sycl::vec<int, 1>{i}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtz>().get_value(0);
   h = __int2half_rz(i);
 
-  // CHECK: h = syclct::ll2half_rd(ll);
+  // CHECK: h = cl::sycl::vec<long long, 1>{ll}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtn>().get_value(0);
   h = __ll2half_rd(ll);
 
-  // CHECK: h = syclct::ll2half_rn(ll);
+  // CHECK: h = cl::sycl::vec<long long, 1>{ll}.convert<cl::sycl::half, cl::sycl::rounding_mode::rte>().get_value(0);
   h = __ll2half_rn(ll);
 
-  // CHECK: h = syclct::ll2half_ru(ll);
+  // CHECK: h = cl::sycl::vec<long long, 1>{ll}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtp>().get_value(0);
   h = __ll2half_ru(ll);
 
-  // CHECK: h = syclct::ll2half_rz(ll);
+  // CHECK: h = cl::sycl::vec<long long, 1>{ll}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtz>().get_value(0);
   h = __ll2half_rz(ll);
 
-  // CHECK: f = syclct::low2float(h2);
+  // CHECK: f = h2.get_value(1);
   f = __low2float(h2);
 
-  // CHECK: h = syclct::low2half(h2);
+  // CHECK: h = h2.get_value(1);
   h = __low2half(h2);
 
-  // CHECK: h2 = syclct::low2half2(h2);
+  // CHECK: h2 = cl::sycl::half2{h2.get_value(1), h2.get_value(1)};
   h2 = __low2half2(h2);
 
-  // CHECK: h2 = syclct::lowhigh2highlow(h2);
+  // CHECK: h2 = cl::sycl::half2{h2.get_value(1), h2.get_value(0)};
   h2 = __lowhigh2highlow(h2);
 
-  // CHECK: h2 = syclct::lows2half2(h2, h2);
+  // CHECK: h2 = cl::sycl::half2{h2.get_value(1), h2.get_value(1)};
   h2 = __lows2half2(h2, h2);
 
-  // CHECK: h = syclct::short2half_rd(s);
+  // CHECK: h = cl::sycl::vec<short, 1>{s}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtn>().get_value(0);
   h = __short2half_rd(s);
 
-  // CHECK: h = syclct::short2half_rn(s);
+  // CHECK: h = cl::sycl::vec<short, 1>{s}.convert<cl::sycl::half, cl::sycl::rounding_mode::rte>().get_value(0);
   h = __short2half_rn(s);
 
-  // CHECK: h = syclct::short2half_ru(s);
+  // CHECK: h = cl::sycl::vec<short, 1>{s}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtp>().get_value(0);
   h = __short2half_ru(s);
 
-  // CHECK: h = syclct::short2half_rz(s);
+  // CHECK: h = cl::sycl::vec<short, 1>{s}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtz>().get_value(0);
   h = __short2half_rz(s);
 
-  // CHECK: h = syclct::short_as_half(s);
+  // CHECK: h = syclct::bit_cast<short, cl::sycl::half>(s);
   h = __short_as_half(s);
 
-  // CHECK: h = syclct::uint2half_rd(ui);
+  // CHECK: h = cl::sycl::vec<unsigned int, 1>{ui}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtn>().get_value(0);
   h = __uint2half_rd(ui);
 
-  // CHECK: h = syclct::uint2half_rn(ui);
+  // CHECK: h = cl::sycl::vec<unsigned int, 1>{ui}.convert<cl::sycl::half, cl::sycl::rounding_mode::rte>().get_value(0);
   h = __uint2half_rn(ui);
 
-  // CHECK: h = syclct::uint2half_ru(ui);
+  // CHECK: h = cl::sycl::vec<unsigned int, 1>{ui}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtp>().get_value(0);
   h = __uint2half_ru(ui);
 
-  // CHECK: h = syclct::uint2half_rz(ui);
+  // CHECK: h = cl::sycl::vec<unsigned int, 1>{ui}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtz>().get_value(0);
   h = __uint2half_rz(ui);
 
-  // CHECK: h = syclct::ull2half_rd(ull);
+  // CHECK: h = cl::sycl::vec<unsigned long long, 1>{ull}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtn>().get_value(0);
   h = __ull2half_rd(ull);
 
-  // CHECK: h = syclct::ull2half_rn(ull);
+  // CHECK: h = cl::sycl::vec<unsigned long long, 1>{ull}.convert<cl::sycl::half, cl::sycl::rounding_mode::rte>().get_value(0);
   h = __ull2half_rn(ull);
 
-  // CHECK: h = syclct::ull2half_ru(ull);
+  // CHECK: h = cl::sycl::vec<unsigned long long, 1>{ull}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtp>().get_value(0);
   h = __ull2half_ru(ull);
 
-  // CHECK: h = syclct::ull2half_rz(ull);
+  // CHECK: h = cl::sycl::vec<unsigned long long, 1>{ull}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtz>().get_value(0);
   h = __ull2half_rz(ull);
 
-  // CHECK: h = syclct::ushort2half_rd(us);
+  // CHECK: h = cl::sycl::vec<unsigned short, 1>{us}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtn>().get_value(0);
   h = __ushort2half_rd(us);
 
-  // CHECK: h = syclct::ushort2half_rn(us);
+  // CHECK: h = cl::sycl::vec<unsigned short, 1>{us}.convert<cl::sycl::half, cl::sycl::rounding_mode::rte>().get_value(0);
   h = __ushort2half_rn(us);
 
-  // CHECK: h = syclct::ushort2half_ru(us);
+  // CHECK: h = cl::sycl::vec<unsigned short, 1>{us}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtp>().get_value(0);
   h = __ushort2half_ru(us);
 
-  // CHECK: h = syclct::ushort2half_rz(us);
+  // CHECK: h = cl::sycl::vec<unsigned short, 1>{us}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtz>().get_value(0);
   h = __ushort2half_rz(us);
 
-  // CHECK: h = syclct::ushort_as_half(us);
+  // CHECK: h = syclct::bit_cast<unsigned short, cl::sycl::half>(us);
   h = __ushort_as_half(us);
 
-  // CHECK: f = syclct::double2float_rd(d);
+  // CHECK: f = cl::sycl::vec<double, 1>{d}.convert<float, cl::sycl::rounding_mode::rtn>().get_value(0);
   f = __double2float_rd(d);
 
-  // CHECK: f = syclct::double2float_rn(d);
+  // CHECK: f = cl::sycl::vec<double, 1>{d}.convert<float, cl::sycl::rounding_mode::rte>().get_value(0);
   f = __double2float_rn(d);
 
-  // CHECK: f = syclct::double2float_ru(d);
+  // CHECK: f = cl::sycl::vec<double, 1>{d}.convert<float, cl::sycl::rounding_mode::rtp>().get_value(0);
   f = __double2float_ru(d);
 
-  // CHECK: f = syclct::double2float_rz(d);
+  // CHECK: f = cl::sycl::vec<double, 1>{d}.convert<float, cl::sycl::rounding_mode::rtz>().get_value(0);
   f = __double2float_rz(d);
 
-  // CHECK: i = syclct::double2int_rd(d);
+  // CHECK: i = cl::sycl::vec<double, 1>{d}.convert<int, cl::sycl::rounding_mode::rtn>().get_value(0);
   i = __double2int_rd(d);
 
-  // CHECK: i = syclct::double2int_rn(d);
+  // CHECK: i = cl::sycl::vec<double, 1>{d}.convert<int, cl::sycl::rounding_mode::rte>().get_value(0);
   i = __double2int_rn(d);
 
-  // CHECK: i = syclct::double2int_ru(d);
+  // CHECK: i = cl::sycl::vec<double, 1>{d}.convert<int, cl::sycl::rounding_mode::rtp>().get_value(0);
   i = __double2int_ru(d);
 
-  // CHECK: i = syclct::double2int_rz(d);
+  // CHECK: i = cl::sycl::vec<double, 1>{d}.convert<int, cl::sycl::rounding_mode::rtz>().get_value(0);
   i = __double2int_rz(d);
 
-  // CHECK: ll = syclct::double2ll_rd(d);
+  // CHECK: ll = cl::sycl::vec<double, 1>{d}.convert<long long, cl::sycl::rounding_mode::rtn>().get_value(0);
   ll = __double2ll_rd(d);
 
-  // CHECK: ll = syclct::double2ll_rn(d);
+  // CHECK: ll = cl::sycl::vec<double, 1>{d}.convert<long long, cl::sycl::rounding_mode::rte>().get_value(0);
   ll = __double2ll_rn(d);
 
-  // CHECK: ll = syclct::double2ll_ru(d);
+  // CHECK: ll = cl::sycl::vec<double, 1>{d}.convert<long long, cl::sycl::rounding_mode::rtp>().get_value(0);
   ll = __double2ll_ru(d);
 
-  // CHECK: ll = syclct::double2ll_rz(d);
+  // CHECK: ll = cl::sycl::vec<double, 1>{d}.convert<long long, cl::sycl::rounding_mode::rtz>().get_value(0);
   ll = __double2ll_rz(d);
 
-  // CHECK: ui = syclct::double2uint_rd(d);
+  // CHECK: ui = cl::sycl::vec<double, 1>{d}.convert<unsigned int, cl::sycl::rounding_mode::rtn>().get_value(0);
   ui = __double2uint_rd(d);
 
-  // CHECK: ui = syclct::double2uint_rn(d);
+  // CHECK:ui = cl::sycl::vec<double, 1>{d}.convert<unsigned int, cl::sycl::rounding_mode::rte>().get_value(0);
   ui = __double2uint_rn(d);
 
-  // CHECK: ui = syclct::double2uint_ru(d);
+  // CHECK: ui = cl::sycl::vec<double, 1>{d}.convert<unsigned int, cl::sycl::rounding_mode::rtp>().get_value(0);
   ui = __double2uint_ru(d);
 
-  // CHECK: ui = syclct::double2uint_rz(d);
+  // CHECK: ui = cl::sycl::vec<double, 1>{d}.convert<unsigned int, cl::sycl::rounding_mode::rtz>().get_value(0);
   ui = __double2uint_rz(d);
 
-  // CHECK: ull = syclct::double2ull_rd(d);
+  // CHECK: ull = cl::sycl::vec<double, 1>{d}.convert<unsigned long long, cl::sycl::rounding_mode::rtn>().get_value(0);
   ull = __double2ull_rd(d);
 
-  // CHECK: ull = syclct::double2ull_rn(d);
+  // CHECK: ull = cl::sycl::vec<double, 1>{d}.convert<unsigned long long, cl::sycl::rounding_mode::rte>().get_value(0);
   ull = __double2ull_rn(d);
 
-  // CHECK: ull = syclct::double2ull_ru(d);
+  // CHECK: ull = cl::sycl::vec<double, 1>{d}.convert<unsigned long long, cl::sycl::rounding_mode::rtp>().get_value(0);
   ull = __double2ull_ru(d);
 
-  // CHECK: ull = syclct::double2ull_rz(d);
+  // CHECK: ull = cl::sycl::vec<double, 1>{d}.convert<unsigned long long, cl::sycl::rounding_mode::rtz>().get_value(0);
   ull = __double2ull_rz(d);
 
-  // CHECK: ll = syclct::double_as_longlong(d);
+  // CHECK: ll = syclct::bit_cast<double, long long>(d);
   ll = __double_as_longlong(d);
 
-  // CHECK: i = syclct::float2int_rd(f);
+  // CHECK: i = cl::sycl::vec<float, 1>{f}.convert<int, cl::sycl::rounding_mode::rtn>().get_value(0);
   i = __float2int_rd(f);
 
-  // CHECK: i = syclct::float2int_rn(f);
+  // CHECK: i = cl::sycl::vec<float, 1>{f}.convert<int, cl::sycl::rounding_mode::rte>().get_value(0);
   i = __float2int_rn(f);
 
-  // CHECK: i = syclct::float2int_ru(f);
+  // CHECK: i = cl::sycl::vec<float, 1>{f}.convert<int, cl::sycl::rounding_mode::rtp>().get_value(0);
   i = __float2int_ru(f);
 
-  // CHECK: i = syclct::float2int_rz(f);
+  // CHECK: i = cl::sycl::vec<float, 1>{f}.convert<int, cl::sycl::rounding_mode::rtz>().get_value(0);
   i = __float2int_rz(f);
 
-  // CHECK: ll = syclct::float2ll_rd(f);
+  // CHECK: ll = cl::sycl::vec<float, 1>{f}.convert<long long, cl::sycl::rounding_mode::rtn>().get_value(0);
   ll = __float2ll_rd(f);
 
-  // CHECK: ll = syclct::float2ll_rn(f);
+  // CHECK: ll = cl::sycl::vec<float, 1>{f}.convert<long long, cl::sycl::rounding_mode::rte>().get_value(0);
   ll = __float2ll_rn(f);
 
-  // CHECK: ll = syclct::float2ll_ru(f);
+  // CHECK: ll = cl::sycl::vec<float, 1>{f}.convert<long long, cl::sycl::rounding_mode::rtp>().get_value(0);
   ll = __float2ll_ru(f);
 
-  // CHECK: ll = syclct::float2ll_rz(f);
+  // CHECK: ll = cl::sycl::vec<float, 1>{f}.convert<long long, cl::sycl::rounding_mode::rtz>().get_value(0);
   ll = __float2ll_rz(f);
 
-  // CHECK: ui = syclct::float2uint_rd(f);
+  // CHECK: ui = cl::sycl::vec<float, 1>{f}.convert<unsigned int, cl::sycl::rounding_mode::rtn>().get_value(0);
   ui = __float2uint_rd(f);
 
-  // CHECK: ui = syclct::float2uint_rn(f);
+  // CHECK: ui = cl::sycl::vec<float, 1>{f}.convert<unsigned int, cl::sycl::rounding_mode::rte>().get_value(0);
   ui = __float2uint_rn(f);
 
-  // CHECK: ui = syclct::float2uint_ru(f);
+  // CHECK: ui = cl::sycl::vec<float, 1>{f}.convert<unsigned int, cl::sycl::rounding_mode::rtp>().get_value(0);
   ui = __float2uint_ru(f);
 
-  // CHECK: ui = syclct::float2uint_rz(f);
+  // CHECK: ui = cl::sycl::vec<float, 1>{f}.convert<unsigned int, cl::sycl::rounding_mode::rtz>().get_value(0);
   ui = __float2uint_rz(f);
 
-  // CHECK: ull = syclct::float2ull_rd(f);
+  // CHECK: ull = cl::sycl::vec<float, 1>{f}.convert<unsigned long long, cl::sycl::rounding_mode::rtn>().get_value(0);
   ull = __float2ull_rd(f);
 
-  // CHECK: ull = syclct::float2ull_rn(f);
+  // CHECK: ull = cl::sycl::vec<float, 1>{f}.convert<unsigned long long, cl::sycl::rounding_mode::rte>().get_value(0);
   ull = __float2ull_rn(f);
 
-  // CHECK: ull = syclct::float2ull_ru(f);
+  // CHECK: ull = cl::sycl::vec<float, 1>{f}.convert<unsigned long long, cl::sycl::rounding_mode::rtp>().get_value(0);
   ull = __float2ull_ru(f);
 
-  // CHECK: ull = syclct::float2ull_rz(f);
+  // CHECK: ull = cl::sycl::vec<float, 1>{f}.convert<unsigned long long, cl::sycl::rounding_mode::rtz>().get_value(0);
   ull = __float2ull_rz(f);
 
-  // CHECK: i = syclct::float_as_int(f);
+  // CHECK: i = syclct::bit_cast<float, int>(f);
   i = __float_as_int(f);
 
-  // CHECK: ui = syclct::float_as_uint(f);
+  // CHECK: ui = syclct::bit_cast<float, unsigned int>(f);
   ui = __float_as_uint(f);
 
-  // CHECK: d = syclct::int2double_rn(i);
+  // CHECK: d = cl::sycl::vec<int, 1>{i}.convert<double, cl::sycl::rounding_mode::rte>().get_value(0);
   d = __int2double_rn(i);
 
-  // CHECK: d = syclct::int2float_rd(i);
+  // CHECK: d = cl::sycl::vec<int, 1>{i}.convert<float, cl::sycl::rounding_mode::rtn>().get_value(0);
   d = __int2float_rd(i);
 
-  // CHECK: d = syclct::int2float_rn(i);
+  // CHECK: d = cl::sycl::vec<int, 1>{i}.convert<float, cl::sycl::rounding_mode::rte>().get_value(0);
   d = __int2float_rn(i);
 
-  // CHECK: d = syclct::int2float_ru(i);
+  // CHECK: d = cl::sycl::vec<int, 1>{i}.convert<float, cl::sycl::rounding_mode::rtp>().get_value(0);
   d = __int2float_ru(i);
 
-  // CHECK: d = syclct::int2float_rz(i);
+  // CHECK: d = cl::sycl::vec<int, 1>{i}.convert<float, cl::sycl::rounding_mode::rtz>().get_value(0);
   d = __int2float_rz(i);
 
-  // CHECK: f = syclct::int_as_float(i);
+  // CHECK: f = syclct::bit_cast<int, float>(i);
   f = __int_as_float(i);
 
-  // CHECK: d = syclct::ll2double_rd(ll);
+  // CHECK: d = cl::sycl::vec<long long, 1>{ll}.convert<double, cl::sycl::rounding_mode::rtn>().get_value(0);
   d = __ll2double_rd(ll);
 
-  // CHECK: d = syclct::ll2double_rn(ll);
+  // CHECK: d = cl::sycl::vec<long long, 1>{ll}.convert<double, cl::sycl::rounding_mode::rte>().get_value(0);
   d = __ll2double_rn(ll);
 
-  // CHECK: d = syclct::ll2double_ru(ll);
+  // CHECK: d = cl::sycl::vec<long long, 1>{ll}.convert<double, cl::sycl::rounding_mode::rtp>().get_value(0);
   d = __ll2double_ru(ll);
 
-  // CHECK: d = syclct::ll2double_rz(ll);
+  // CHECK: d = cl::sycl::vec<long long, 1>{ll}.convert<double, cl::sycl::rounding_mode::rtz>().get_value(0);
   d = __ll2double_rz(ll);
 
-  // CHECK: f = syclct::ll2float_rd(ll);
+  // CHECK: f = cl::sycl::vec<long long, 1>{ll}.convert<float, cl::sycl::rounding_mode::rtn>().get_value(0);
   f = __ll2float_rd(ll);
 
-  // CHECK: f = syclct::ll2float_rn(ll);
+  // CHECK: f = cl::sycl::vec<long long, 1>{ll}.convert<float, cl::sycl::rounding_mode::rte>().get_value(0);
   f = __ll2float_rn(ll);
 
-  // CHECK: f = syclct::ll2float_ru(ll);
+  // CHECK: f = cl::sycl::vec<long long, 1>{ll}.convert<float, cl::sycl::rounding_mode::rtp>().get_value(0);
   f = __ll2float_ru(ll);
 
-  // CHECK: f = syclct::ll2float_rz(ll);
+  // CHECK: f = cl::sycl::vec<long long, 1>{ll}.convert<float, cl::sycl::rounding_mode::rtz>().get_value(0);
   f = __ll2float_rz(ll);
 
-  // CHECK: d = syclct::longlong_as_double(ll);
+  // CHECK: d = syclct::bit_cast<long long, double>(ll);
   d = __longlong_as_double(ll);
 
-  // CHECK: d = syclct::uint2double_rn(ui);
+  // CHECK: d = cl::sycl::vec<unsigned int, 1>{ui}.convert<double, cl::sycl::rounding_mode::rte>().get_value(0);
   d = __uint2double_rn(ui);
 
-  // CHECK: f = syclct::uint2float_rd(ui);
+  // CHECK: f = cl::sycl::vec<unsigned int, 1>{ui}.convert<float, cl::sycl::rounding_mode::rtn>().get_value(0);
   f = __uint2float_rd(ui);
 
-  // CHECK: f = syclct::uint2float_rn(ui);
+  // CHECK: f = cl::sycl::vec<unsigned int, 1>{ui}.convert<float, cl::sycl::rounding_mode::rte>().get_value(0);
   f = __uint2float_rn(ui);
 
-  // CHECK: f = syclct::uint2float_ru(ui);
+  // CHECK: f = cl::sycl::vec<unsigned int, 1>{ui}.convert<float, cl::sycl::rounding_mode::rtp>().get_value(0);
   f = __uint2float_ru(ui);
 
-  // CHECK: f = syclct::uint2float_rz(ui);
+  // CHECK: f = cl::sycl::vec<unsigned int, 1>{ui}.convert<float, cl::sycl::rounding_mode::rtz>().get_value(0);
   f = __uint2float_rz(ui);
 
-  // CHECK: f = syclct::uint_as_float(ui);
+  // CHECK: f = syclct::bit_cast<unsigned int, float>(ui);
   f = __uint_as_float(ui);
 
-  // CHECK: d = syclct::ull2double_rd(ull);
+  // CHECK: d = cl::sycl::vec<unsigned long long, 1>{ull}.convert<double, cl::sycl::rounding_mode::rtn>().get_value(0);
   d = __ull2double_rd(ull);
 
-  // CHECK: d = syclct::ull2double_rn(ull);
+  // CHECK: d = cl::sycl::vec<unsigned long long, 1>{ull}.convert<double, cl::sycl::rounding_mode::rte>().get_value(0);
   d = __ull2double_rn(ull);
 
-  // CHECK: d = syclct::ull2double_ru(ull);
+  // CHECK: d = cl::sycl::vec<unsigned long long, 1>{ull}.convert<double, cl::sycl::rounding_mode::rtp>().get_value(0);
   d = __ull2double_ru(ull);
 
-  // CHECK: d = syclct::ull2double_rz(ull);
+  // CHECK: d = cl::sycl::vec<unsigned long long, 1>{ull}.convert<double, cl::sycl::rounding_mode::rtz>().get_value(0);
   d = __ull2double_rz(ull);
 
-  // CHECK: f = syclct::ull2float_rd(ull);
+  // CHECK: f = cl::sycl::vec<unsigned long long, 1>{ull}.convert<float, cl::sycl::rounding_mode::rtn>().get_value(0);
   f = __ull2float_rd(ull);
 
-  // CHECK: f = syclct::ull2float_rn(ull);
+  // CHECK: f = cl::sycl::vec<unsigned long long, 1>{ull}.convert<float, cl::sycl::rounding_mode::rte>().get_value(0);
   f = __ull2float_rn(ull);
 
-  // CHECK: f = syclct::ull2float_ru(ull);
+  // CHECK: f = cl::sycl::vec<unsigned long long, 1>{ull}.convert<float, cl::sycl::rounding_mode::rtp>().get_value(0);
   f = __ull2float_ru(ull);
 
-  // CHECK: f = syclct::ull2float_rz(ull);
+  // CHECK: f = cl::sycl::vec<unsigned long long, 1>{ull}.convert<float, cl::sycl::rounding_mode::rtz>().get_value(0);
   f = __ull2float_rz(ull);
 }
 
@@ -1421,14 +1441,6 @@ __global__ void testUnsupported() {
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
   // CHECK-NEXT: */
-  f = nearbyintf(f);
-  // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
-  // CHECK-NEXT: */
-  f = nextafterf(f, f);
-  // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
-  // CHECK-NEXT: */
   f = norm3df(f, f, f);
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
@@ -1453,10 +1465,6 @@ __global__ void testUnsupported() {
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
   // CHECK-NEXT: */
-  f = rhypotf(f, f);
-  // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
-  // CHECK-NEXT: */
   f = rnorm3df(f, f, f);
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
@@ -1474,10 +1482,6 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
   // CHECK-NEXT: */
   f = scalbnf(f, i);
-  // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
-  // CHECK-NEXT: */
-  sincospif(f, &f, &f);
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
   // CHECK-NEXT: */
@@ -1526,14 +1530,6 @@ __global__ void testUnsupported() {
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
   // CHECK-NEXT: */
-  d = nearbyint(d);
-  // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
-  // CHECK-NEXT: */
-  d = nextafter(d, d);
-  // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
-  // CHECK-NEXT: */
   d = norm(i, &d);
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
@@ -1575,10 +1571,6 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
   // CHECK-NEXT: */
   d = scalbn(d, i);
-  // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
-  // CHECK-NEXT: */
-  sincospi(d, &d, &d);
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
   // CHECK-NEXT: */
@@ -1688,6 +1680,41 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
   // CHECK-NEXT: */
   u = __usad(u, u, u);
+}
+
+__global__ void testSimulation() {
+  float f;
+  double d;
+
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: nearbyintf is simulated by cl::sycl::floor in DPC++. Please check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f = cl::sycl::floor(f + 0.5);
+  f = nearbyintf(f);
+
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: nearbyint is simulated by cl::sycl::floor in DPC++. Please check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: d = cl::sycl::floor(d + 0.5);
+  d = nearbyint(d);
+
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: rhypotf is simulated by cl::sycl::hypot in DPC++. Please check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f = 1 / cl::sycl::hypot(f, f);
+  f = rhypotf(f, f);
+
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: sincospif is simulated by cl::sycl::sincos in DPC++. Please check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f = cl::sycl::sincos(f * SYCLCT_PI_F, cl::sycl::make_ptr<float, cl::sycl::access::address_space::local_space>(&f));
+  sincospif(f, &f, &f);
+
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: sincospi is simulated by cl::sycl::sincos in DPC++. Please check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: d = cl::sycl::sincos(d * SYCLCT_PI, cl::sycl::make_ptr<double, cl::sycl::access::address_space::local_space>(&d));
+  sincospi(d, &d, &d);
 }
 
 __global__ void testIntegerFunctions() {

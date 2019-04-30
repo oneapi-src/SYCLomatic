@@ -217,7 +217,7 @@ __host__ __device__ inline double cross(const double2 &v1, const double2 &v2) {
 }
 
 // CHECK: inline double length(const cl::sycl::double2 &v) {
-// CHECK:   return (cl::sycl::sqrt(static_cast<const double>(v.x()) * static_cast<const double>(v.x()) + static_cast<const double>(v.y()) * static_cast<const double>(v.y())));
+// CHECK:   return (std::sqrt(static_cast<const double>(v.x()) * static_cast<const double>(v.x()) + static_cast<const double>(v.y()) * static_cast<const double>(v.y())));
 // CHECK: }
 __host__ __device__ inline double length(const double2 &v) {
   return (std::sqrt(v.x * v.x + v.y * v.y));

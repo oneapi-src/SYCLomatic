@@ -39,3 +39,5 @@ DEF_WARNING(CALLBACK_FOR_QUEUE_NOT_SUPPORTED, 1015, "DPC++ doesn't have callback
 DEF_COMMENT(CALLBACK_FOR_QUEUE_NOT_SUPPORTED, 1015, "DPC++ doesn't have callback mechanism for queues. cudaStreamAddCallback was replaced with a blocking wait and host function call. Consider changing the algorithm to avoid waiting and calling of the function on the host.")
 DEF_WARNING(NOTSUPPORTEDCASE, 1016, "parameter(s) value of %1 in %0 is not supported in Sycl. You may need to migrate this code manually.")
 DEF_COMMENT(NOTSUPPORTEDCASE, 1016, "parameter(s) value of {1} in {0} is not supported in Sycl. You may need to migrate this code manually.")
+DEF_WARNING(MATH_SIMULATION, 1017, "%0 is simulated by %1 in DPC++. Please check the potential precision and/or performance issues of generated code.")
+DEF_COMMENT(MATH_SIMULATION, 1017, "{0} is simulated by {1} in DPC++. Please check the potential precision and/or performance issues of generated code.")
