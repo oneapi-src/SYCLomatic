@@ -42,9 +42,16 @@ set -x
 #Run test case from syclct_sdk_8_samples
 tc -r none -x gcc_efi2 -t $syclct_sdk_8_samples_list
 
+echo "---------------------------------------------------"
 #Run custom test set: syclct_internal_samples
 tc -r none -x efi2_linux64_syclct -s syclct_internal_samples
 
+echo "---------------------------------------------------"
 #Run custom behavior test set: syclct_behavior_tests
 tc -r none -x efi2_linux64_syclct -s syclct_behavior_tests
 
+echo "---------------------------------------------------"
+#Run syclct benchamrks.
+tc -r none -x efi2_linux64_syclct -s syclct_benchmarks
+
+echo "---------------------------------------------------"
