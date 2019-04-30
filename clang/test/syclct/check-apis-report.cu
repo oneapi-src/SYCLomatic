@@ -2,7 +2,6 @@
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: API name, Frequency" >%T/check-apis-report_csv_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaDeviceSynchronize(),4" >>%T/check-apis-report_csv_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaFree(void * devPtr),1" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: typename __nv_tex_rmet_ret<float>::type tex3D(texture<float, 3, cudaReadModeElementType> t,float x,float y,float z),1" >>%T/check-apis-report_csv_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMemcpy(void * dst,const void * src,size_t count,enum cudaMemcpyKind kind),2" >>%T/check-apis-report_csv_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMemset(void * devPtr,int value,size_t count),1" >>%T/check-apis-report_csv_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: struct cudaPitchedPtr make_cudaPitchedPtr(void * d,size_t p,size_t xsz,size_t ysz),1" >>%T/check-apis-report_csv_check.txt
@@ -27,7 +26,6 @@
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: API name				Frequency" >%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaDeviceSynchronize()               4" >>%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaFree(void * devPtr)               1" >>%T/check-apis-report_check.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: typename __nv_tex_rmet_ret<float>::type tex3D(texture<float, 3, cudaReadModeElementType> t,float x,float y,float z)               1" >>%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMemcpy(void * dst,const void * src,size_t count,enum cudaMemcpyKind kind)               2" >>%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMemset(void * devPtr,int value,size_t count)               1" >>%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: struct cudaPitchedPtr make_cudaPitchedPtr(void * d,size_t p,size_t xsz,size_t ysz)               1" >>%T/check-apis-report_check.txt
