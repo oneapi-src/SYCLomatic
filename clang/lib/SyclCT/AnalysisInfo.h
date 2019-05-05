@@ -143,11 +143,9 @@ public:
     return isInRoot(
         getSourceManager().getFilename(getSourceManager().getExpansionLoc(SL)));
   }
-  inline static bool isInRoot(std::string &&FilePath) {
-    return isInRoot(FilePath);
-  }
-  static bool isInRoot(std::string &FilePath) {
-    makeCanonical(FilePath);
+  static bool isInRoot(const std::string &FilePath) {
+    std::string Path = FilePath;
+    makeCanonical(Path);
     return isChildPath(InRoot, FilePath);
   }
   static void setInRoot(const std::string &InRootPath) { InRoot = InRootPath; }
