@@ -79,7 +79,9 @@ insertObject(MapType &Map, const typename MapType::key_type &Key,
 class SyclctFileInfo {
 public:
   SyclctFileInfo(const std::string &FilePathIn)
-      : Repls(FilePath), FilePath(FilePathIn) {}
+      : Repls(this), FilePath(FilePathIn) {
+    buildLinesInfo();
+  }
   template <class Obj> std::shared_ptr<Obj> findNode(unsigned Offset) {
     return findObject(getMap<Obj>(), Offset);
   }
@@ -100,6 +102,53 @@ public:
     Repls.addReplacement(Repl);
   }
 
+  // Record line info in file.
+  struct SourceLineInfo {
+    SourceLineInfo(unsigned LineNumber, unsigned Offset, unsigned End,
+                   const char *Buffer)
+        : Number(LineNumber), Offset(Offset), Length(End - Offset),
+          Line(Buffer ? std::string(Buffer + Offset, Length) : "") {}
+    SourceLineInfo(unsigned LineNumber, unsigned *LineCache, const char *Buffer)
+        : SourceLineInfo(LineNumber, LineCache[LineNumber - 1],
+                         LineCache[LineNumber], Buffer) {}
+
+    // Line number.
+    const unsigned Number;
+    // Offset at the begin of line.
+    const unsigned Offset;
+    // Length of the line.
+    const unsigned Length;
+    // String of the line, only available when -keep-original-code is on.
+    const std::string Line;
+  };
+
+  inline const SourceLineInfo &getLineInfo(unsigned LineNumber) {
+    if (!LineNumber || LineNumber > Lines.size())
+      syclct_unreachable("illegal line number " + std::to_string(LineNumber));
+    return Lines[--LineNumber];
+  }
+  inline const std::string &getLineString(unsigned LineNumber) {
+    return getLineInfo(LineNumber).Line;
+  }
+
+  //Get line number by offset
+  inline unsigned getLineNumber(unsigned Offset) {
+    return getLineInfoFromOffset(Offset).Number;
+  }
+  // Set line range info of replacement
+  void setLineRange(ExtReplacements::SourceLineRange &LineRange,
+                    std::shared_ptr<ExtReplacement> Repl) {
+    unsigned Begin = Repl->getOffset(), End = Begin + Repl->getLength();
+    auto &BeginLine = getLineInfoFromOffset(Begin);
+    auto &EndLine = getLineInfoFromOffset(End);
+    LineRange.SrcBeginLine = BeginLine.Number;
+    LineRange.SrcBeginOffset = BeginLine.Offset;
+    if (EndLine.Offset == End)
+      LineRange.SrcEndLine = EndLine.Number - 1;
+    else
+      LineRange.SrcEndLine = EndLine.Number;
+  }
+
 private:
   template <class Obj> GlobalMap<Obj> &getMap() {
     syclct_unreachable("unknow map type");
@@ -107,11 +156,13 @@ private:
 
   bool isInRoot();
 
-  void clear() {
-    MemVarMap.clear();
-    FuncMap.clear();
-    KernelMap.clear();
-    CudaMallocMap.clear();
+  void buildLinesInfo();
+  inline const SourceLineInfo &getLineInfoFromOffset(unsigned Offset) {
+    return *(std::upper_bound(Lines.begin(), Lines.end(), Offset,
+                              [](unsigned Offset, const SourceLineInfo &Line) {
+                                return Line.Offset > Offset;
+                              }) -
+             1);
   }
 
   GlobalMap<MemVarInfo> MemVarMap;
@@ -120,6 +171,7 @@ private:
   GlobalMap<CudaMallocInfo> CudaMallocMap;
 
   ExtReplacements Repls;
+  std::vector<SourceLineInfo> Lines;
 
   std::string FilePath;
 };
@@ -177,16 +229,27 @@ public:
     assert(SM);
     return *SM;
   }
+  inline static bool isKeepOriginCode() { return KeepOriginCode; }
+  inline static void setKeepOriginCode(bool KOC = true) {
+    KeepOriginCode = KOC;
+  }
 
   template <class T>
   static inline std::pair<llvm::StringRef, unsigned> getLocInfo(const T *N) {
     return getLocInfo(getLocation(N));
   }
 
-  static std::pair<llvm::StringRef, unsigned> getLocInfo(SourceLocation Loc) {
-    if (getSourceManager().isMacroArgExpansion(Loc))
-      return getFilePathInfo(getSourceManager().getSpellingLoc(Loc));
-    return getFilePathInfo(getSourceManager().getExpansionLoc(Loc));
+  static inline SourceLocation getSpellingLocation(SourceLocation Loc) {
+    auto &SM = getSourceManager();
+    if (SM.isMacroArgExpansion(Loc))
+      return SM.getSpellingLoc(Loc);
+    return SM.getExpansionLoc(Loc);
+  }
+
+  static inline std::pair<llvm::StringRef, unsigned> getLocInfo(SourceLocation Loc) {
+    auto LocInfo = SM->getDecomposedLoc(getSpellingLocation(Loc));
+    return std::pair<llvm::StringRef, unsigned>(
+        SM->getFileEntryForID(LocInfo.first)->getName(), LocInfo.second);
   }
 
 #define GLOBAL_TYPE(TYPE, NODE_TYPE)                                           \
@@ -217,6 +280,7 @@ public:
   }
 
   void insertCudaMalloc(const CallExpr *CE);
+
   std::shared_ptr<CudaMallocInfo> findCudaMalloc(const Expr *CE);
   void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     insertFile(Repl->getFilePath())->addReplacement(Repl);
@@ -254,12 +318,6 @@ private:
   insertFile(const std::string &FilePath) {
     return insertObject(FileMap, FilePath);
   }
-  static std::pair<llvm::StringRef, unsigned> inline getFilePathInfo(
-      const SourceLocation &SL) {
-    auto LocInfo = SM->getDecomposedLoc(SL);
-    return std::pair<llvm::StringRef, unsigned>(
-        SM->getFileEntryForID(LocInfo.first)->getName(), LocInfo.second);
-  }
   template <class T> static inline SourceLocation getLocation(const T *N) {
     return N->getBeginLoc();
   }
@@ -275,6 +333,7 @@ private:
   static std::string InRoot;
   static ASTContext *Context;
   static SourceManager *SM;
+  static bool KeepOriginCode;
 };
 
 class TemplateArgumentInfo;

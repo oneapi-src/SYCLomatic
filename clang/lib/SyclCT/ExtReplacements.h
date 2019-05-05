@@ -21,15 +21,20 @@
 
 namespace clang {
 namespace syclct {
+class SyclctFileInfo;
 
 class ExtReplacements {
 public:
-  ExtReplacements(const std::string &FilePath) : FilePath(FilePath) {}
+  ExtReplacements(SyclctFileInfo *FileInfo);
 
   void addReplacement(std::shared_ptr<ExtReplacement> Repl);
   void emplaceIntoReplSet(tooling::Replacements &ReplSet);
 
   inline bool empty() { return ReplMap.empty(); }
+
+  struct SourceLineRange {
+    unsigned SrcBeginLine = 0, SrcEndLine = 0, SrcBeginOffset = 0;
+  };
 
 private:
   bool isInvalid(std::shared_ptr<ExtReplacement> Repl);
@@ -64,6 +69,19 @@ private:
   filterOverlappedReplacement(std::shared_ptr<ExtReplacement> Repl,
                               unsigned &PrevEnd);
 
+  void buildOriginCodeReplacements();
+
+  // Remove comments in the source code.
+  void removeCommentsInSrcCode(const std::string &SrcCode, std::string &Result,
+                               bool &BlockComment);
+
+  std::shared_ptr<ExtReplacement>
+  buildOriginCodeReplacement(const SourceLineRange &LineRange);
+
+  bool isEndWithSlash(unsigned LineNumber);
+  size_t findCR(const std::string &Line);
+
+  SyclctFileInfo *FileInfo;
   const std::string &FilePath;
   std::map<unsigned, std::shared_ptr<ExtReplacement>> ReplMap;
 

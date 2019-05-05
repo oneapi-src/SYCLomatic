@@ -1,8 +1,5 @@
 // RUN: syclct -keep-original-code -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck --input-file %T/kernel-call-origcode-embedded.sycl.cpp --match-full-lines %s
-// UNSUPPORTED: cuda-8.0
-// UNSUPPORTED: cuda-9.2
-// UNSUPPORTED: cuda-10.0
 
 #include <iostream>
 // includes CUDA
@@ -20,7 +17,7 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
   // CHECK-NEXT:  + item_{{[a-f0-9]+}}.get_local_id(0);
   int gtid = blockIdx.x /*comments*/ * blockDim.x /*comments
   comments*/
-  + threadIdx.x;
+             + threadIdx.x;
 }
 
 // CHECK:     /* SYCLCT_ORIG __global__ void testKernel(int L, int M, int N) {*/
@@ -40,22 +37,23 @@ __global__ void testKernel(int L, int M, int N) {
 // Error handling macro
 
 // CHECK: #define CUDA_CHECK(call) \
-// CHECK-NEXT:  /* SYCLCT_ORIG     if((call) != cudaSuccess) { \*/ \
-// CHECK-NEXT:      if((call) != 0) { \
+// CHECK-NEXT:  /* SYCLCT_ORIG     if ((call) != cudaSuccess) { \*/ \
+// CHECK-NEXT:      if ((call) != 0) { \
 // CHECK-NEXT:  /* SYCLCT_ORIG         cudaError_t err = cudaGetLastError(); \*/ \
 // CHECK-NEXT:          int err = 0; \
-// CHECK-NEXT:          std::cout << "CUDA error calling \""#call"\", code is " << err << std::endl; \
-// CHECK-NEXT:          exit(err); }
-#define CUDA_CHECK(call) \
-    if((call) != cudaSuccess) { \
+// CHECK-NEXT:          std::cout << "CUDA error calling \"" #call "\", code is " << err << std::endl; \
+// CHECK-NEXT:          exit(err); \
+// CHECK-NEXT:       }
+#define CUDA_CHECK(call)                                                           \
+    if ((call) != cudaSuccess) { \
         cudaError_t err = cudaGetLastError(); \
-        std::cout << "CUDA error calling \""#call"\", code is " << err << std::endl; \
-        exit(err); }
+        std::cout << "CUDA error calling \"" #call "\", code is " << err << std::endl; \
+        exit(err); \
+    }
 
-#define checkCudaErrors(val)           check ( (val), #val, __FILE__, __LINE__ )
-template< typename T >
-void check(T result, char const *const func, const char *const file, int const line)
-{}
+#define checkCudaErrors(val) check((val), #val, __FILE__, __LINE__)
+template <typename T>
+void check(T result, char const *const func, const char *const file, int const line) {}
 
 int main() {
   // CHECK:  /* SYCLCT_ORIG   dim3 griddim = 2;*/
@@ -69,7 +67,8 @@ int main() {
   void *karg1 = 0;
   const int *karg2 = 0;
   int karg3 = 80;
-  // CHECK:  /* SYCLCT_ORIG   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1, karg2, karg3);*/
+  // CHECK:  /* SYCLCT_ORIG   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1,
+  // CHECK-NEXT:	  karg2, karg3);*/
   // CHECK-NEXT:  {
   // CHECK-NEXT:    std::pair<syclct::buffer_t, size_t> karg1_buf = syclct::get_buffer_and_offset(karg1);
   // CHECK-NEXT:    size_t karg1_offset = karg1_buf.second;
@@ -88,9 +87,11 @@ int main() {
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  }
-  testKernelPtr<<<griddim, threaddim>>>((const int *)karg1, karg2, karg3);
+  testKernelPtr<<<griddim, threaddim>>>((const int *)karg1,
+                                        karg2, karg3);
 
-  // CHECK: /* SYCLCT_ORIG   testKernel<<<10, intvar>>>(karg1int, karg2int, karg3int);*/
+  // CHECK: /* SYCLCT_ORIG   testKernel<<<10, intvar>>>(karg1int, karg2int,
+  // CHECK:  karg3int);*/
   // CHECK-NEXT:  {
   // CHECK-NEXT:    syclct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
@@ -105,9 +106,13 @@ int main() {
   int karg2int = 2;
   int karg3int = 3;
   int intvar = 20;
-  testKernel<<<10, intvar>>>(karg1int, karg2int, karg3int);
+  testKernel<<<10, intvar>>>(karg1int, karg2int, // comments
+                             // comments.
+                             karg3int);
 
-  // CHECK: /* SYCLCT_ORIG   testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int, karg2int, karg3int);*/
+  // CHECK: /* SYCLCT_ORIG   testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int,
+  // CHECK:  karg2int,
+  // CHECK:  karg3int);*/
   // CHECK-NEXT:  {
   // CHECK-NEXT:    syclct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
@@ -118,9 +123,16 @@ int main() {
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  }
-  testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int, karg2int, karg3int);
+  testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int,
+                                      /* comments */
+                                      karg2int, // comments
+                                      /*
+                                      comments
+                                      */
+                                      karg3int);
 
-  // CHECK: /* SYCLCT_ORIG   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int, karg2int, karg3int);*/
+  // CHECK: /* SYCLCT_ORIG   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int,
+  // CHECK-NEXT:  karg2int, karg3int); */
   // CHECK-NEXT:  {
   // CHECK-NEXT:    syclct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
@@ -131,7 +143,8 @@ int main() {
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  }
-  testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int, karg2int, karg3int);
+  testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int,
+	  karg2int, /* comments */karg3int/* comments */); // comments
 
   // CHECK: /* SYCLCT_ORIG   testKernel<<<griddim.x, griddim.y + 2>>>(karg1int, karg2int, karg3int);*/
   // CHECK-NEXT:  {
@@ -183,4 +196,3 @@ int main() {
   // CHECK-NEXT:  */
   cudaEventCreate(NULL);checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));
 }
-

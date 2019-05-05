@@ -26,7 +26,8 @@ class KernelCallExpr;
 class TextModification;
 using TransformSetTy = std::vector<std::unique_ptr<TextModification>>;
 enum InsertPosition {
-  InsertPositionLeft = 0,
+  InsertPositionAlwaysLeft = 0,
+  InsertPositionLeft,
   InsertPositionRight,
 };
 
@@ -70,28 +71,17 @@ public:
                  const LangOptions &LangOpts = LangOptions())
       : Replacement(Sources, NodeToReplace, ReplacementText, LangOpts),
         TM(_TM) {}
-  void setInsertPosition(int IP) { InsertPosition = IP; }
-  unsigned int getInsertPosition() const { return InsertPosition; }
+  void setInsertPosition(InsertPosition IP) { InsertPos = IP; }
+  unsigned int getInsertPosition() const { return InsertPos; }
   bool getMerged() const { return Merged; }
   bool isComments() const { return IsComments; }
 
-  /// return true if two code repl has same length(not zero) and same
-  /// replacement text. else return false.
-  /// NOTE: length == 0  code relacement is an insert operation.
-  ///       length != 0  code relacement is a real code replace operation.
-  bool isEqualExtRepl(unsigned int Length, std::string &ReplacementText) const {
-    if (Length == this->getLength() && this->getLength() != 0 &&
-        ReplacementText == this->getReplacementText().str()) {
-      return true;
-    } else {
-      return false;
-    }
-  }
   void setMerged(bool M) { Merged = M; }
   const TextModification *getParentTM() const { return TM; }
 
 private:
-  unsigned int InsertPosition = InsertPositionLeft;
+  InsertPosition InsertPos = InsertPositionLeft;
+  unsigned BeginLine = 0, EndLine = 0;
   bool Merged = false;
   const TextModification *TM;
   bool IsComments = false;

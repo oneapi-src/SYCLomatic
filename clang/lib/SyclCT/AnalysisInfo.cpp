@@ -22,10 +22,31 @@ namespace syclct {
 std::string SyclctGlobalInfo::InRoot = std::string();
 ASTContext *SyclctGlobalInfo::Context = nullptr;
 SourceManager *SyclctGlobalInfo::SM = nullptr;
+bool SyclctGlobalInfo::KeepOriginCode = false;
 const std::string MemVarInfo::ExternVariableName = "syclct_extern_memory";
 const std::string MemVarInfo::AccessorSuffix = "_acc";
 
 bool SyclctFileInfo::isInRoot() { return SyclctGlobalInfo::isInRoot(FilePath); }
+
+void SyclctFileInfo::buildLinesInfo() {
+  if (FilePath.empty())
+    return;
+  auto &SM = SyclctGlobalInfo::getSourceManager();
+  auto FID = SM.getOrCreateFileID(SM.getFileManager().getFile(FilePath),
+                                  SrcMgr::C_User);
+  auto Content = SM.getSLocEntry(FID).getFile().getContentCache();
+  if (!Content->SourceLineCache)
+    SM.getLineNumber(FID, 0);
+  auto LineCache = Content->SourceLineCache;
+  auto NumLines = Content->NumLines;
+  const char *Buffer = nullptr;
+  if (SyclctGlobalInfo::isKeepOriginCode())
+    Buffer = Content->getBuffer(SM.getDiagnostics(), SM)->getBufferStart();
+  for (unsigned L = 1; L < Content->NumLines; ++L)
+    Lines.emplace_back(L, LineCache, Buffer);
+  Lines.emplace_back(NumLines, LineCache[NumLines - 1],
+                     Content->getSize(), Buffer);
+}
 
 void SyclctFileInfo::buildReplacements() {
   if (!isInRoot())
