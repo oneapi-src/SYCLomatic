@@ -151,6 +151,9 @@ def split_command(command):
                 return None
             else:
                 result.files.append(arg)
+        # ignore -code=xx option.
+        elif re.match(r'^-code=',arg):
+            pass
         # and consider everything else as compile option.
         else:
             result.flags.append(arg)
