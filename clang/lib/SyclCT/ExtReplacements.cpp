@@ -84,7 +84,6 @@ void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
   if (isInvalid(Repl))
     return;
   auto &R = ReplMap[Repl->getOffset()];
-
   if (R)
     R = mergeAtSameOffset(R, Repl);
   else

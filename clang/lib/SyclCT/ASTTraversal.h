@@ -590,6 +590,14 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+// Migration rule for CublasOperation enums constants.
+class CublasOperationRule : public NamedTranslationRule<CublasOperationRule> {
+public:
+  CublasOperationRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 /// Migration rule for function calls.
 class FunctionCallRule : public NamedTranslationRule<FunctionCallRule> {
 public:
@@ -705,6 +713,24 @@ private:
       std::string,
       std::function<void(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C)>>
+      TranslationDispatcher;
+};
+
+// Migration rule for cublasGetVector, cublasSetVector,
+// cublasGetMatrix, cublasSetMatrix, etc.
+class CublasGetSetRule : public NamedTranslationRule<CublasGetSetRule> {
+public:
+  CublasGetSetRule();
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+private:
+  void GetSetVectorTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
+                          const CallExpr *C, const bool IsAssigned);
+  std::unordered_map<
+      std::string,
+      std::function<void(const ast_matchers::MatchFinder::MatchResult &Result,
+                         const CallExpr *C, const bool IsAssigned)>>
       TranslationDispatcher;
 };
 

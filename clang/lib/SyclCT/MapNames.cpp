@@ -82,6 +82,13 @@ const MapNames::MapTy MapNames::TypeNamesMap{
     {"ushort4", "cl::sycl::ushort4"},
     {"cublasHandle_t", "cl::sycl::queue"},
     {"cublasStatus_t", "int"},
+    {"cuComplex", "std::complex<float>"},
+    {"cuDoubleComplex", "std::complex<double>"},
+    // ...
+};
+
+// Cublas function names mapping
+const MapNames::MapTy MapNames::CublasFunctionNamesMap{
     {"cublasSgemm_v2", "mkl::Sgemm"},
     {"cublasDgemm_v2", "mkl::Dgemm"},
     {"cublasCgemm_v2", "mkl::Cgemm"},
@@ -130,11 +137,10 @@ const MapNames::MapTy DevicePropVarRule::PropNamesMap{
 };
 
 // DeviceProp names mapping.
-const MapNames::MapTy
-    VectorTypeMemberAccessRule::MemberNamesMap{
-        {"x", "x()"}, {"y", "y()"}, {"z", "z()"}, {"w", "w()"},
-        // ...
-    };
+const MapNames::MapTy VectorTypeMemberAccessRule::MemberNamesMap{
+    {"x", "x()"}, {"y", "y()"}, {"z", "z()"}, {"w", "w()"},
+    // ...
+};
 
 // Enum constants name mapping.
 const MapNames::MapTy EnumConstantRule::EnumNamesMap{
@@ -155,7 +161,6 @@ const MapNames::MapTy EnumConstantRule::EnumNamesMap{
     {"cudaMemcpyDefault", "automatic"},
     // ...
 };
-
 
 const MapNames::MapTy MathFunctionsRule::HalfFunctionNamesMap{
     // Half Arithmetic Functions
@@ -318,7 +323,7 @@ const MapNames::MapTy MathFunctionsRule::SingleDoubleFunctionNamesMap{
     {"nearbyintf", "UNSUPPORTED"},
     {"nextafterf", "UNSUPPORTED"},
     {"norm3df", "UNSUPPORTED"},
-    {"norm4df",  "UNSUPPORTED"},
+    {"norm4df", "UNSUPPORTED"},
     {"normcdff", "UNSUPPORTED"},
     {"normcdfinvf", "UNSUPPORTED"},
     {"normf", "UNSUPPORTED"},
@@ -404,7 +409,7 @@ const MapNames::MapTy MathFunctionsRule::SingleDoubleFunctionNamesMap{
     {"nextafter", "UNSUPPORTED"},
     {"norm", "UNSUPPORTED"},
     {"norm3d", "UNSUPPORTED"},
-    {"norm4d",  "UNSUPPORTED"},
+    {"norm4d", "UNSUPPORTED"},
     {"normcdf", "UNSUPPORTED"},
     {"normcdfinv", "UNSUPPORTED"},
     {"pow", "cl::sycl::pow"},
@@ -593,7 +598,7 @@ const MapNames::MapTy MathFunctionsRule::TypecastFunctionNamesMap{
     {"__double2float_rn", "syclct::double2float_rn"},
     {"__double2float_ru", "syclct::double2float_ru"},
     {"__double2float_rz", "syclct::double2float_rz"},
-    {"__double2hiint", "UNSUPPORTED"},  // TODO
+    {"__double2hiint", "UNSUPPORTED"}, // TODO
     {"__double2int_rd", "syclct::double2int_rd"},
     {"__double2int_rn", "syclct::double2int_rn"},
     {"__double2int_ru", "syclct::double2int_ru"},
@@ -698,7 +703,6 @@ const MapNames::MapTy MathFunctionsRule::FunctionNamesMap{
     {"__umulhi", "UNSUPPORTED"},
     {"__urhadd", "UNSUPPORTED"},
     {"__usad", "UNSUPPORTED"},
-
 
     // Not in CUDA API but in SYCL API
     // {"acospi", "cl::sycl::acospi"},

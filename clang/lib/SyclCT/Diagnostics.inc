@@ -37,3 +37,5 @@ DEF_WARNING(STREAM_FLAG_PRIORITY_NOT_SUPPORTED, 1014, "Flag and priority options
 DEF_COMMENT(STREAM_FLAG_PRIORITY_NOT_SUPPORTED, 1014, "Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.")
 DEF_WARNING(CALLBACK_FOR_QUEUE_NOT_SUPPORTED, 1015, "DPC++ doesn't have callback mechanism for queues. cudaStreamAddCallback was replaced with a blocking wait and host function call. Consider changing the algorithm to avoid waiting and calling of the function on the host.")
 DEF_COMMENT(CALLBACK_FOR_QUEUE_NOT_SUPPORTED, 1015, "DPC++ doesn't have callback mechanism for queues. cudaStreamAddCallback was replaced with a blocking wait and host function call. Consider changing the algorithm to avoid waiting and calling of the function on the host.")
+DEF_WARNING(NOTSUPPORTEDCASE, 1016, "parameter(s) value of %1 in %0 is not supported in Sycl. You may need to migrate this code manually.")
+DEF_COMMENT(NOTSUPPORTEDCASE, 1016, "parameter(s) value of {1} in {0} is not supported in Sycl. You may need to migrate this code manually.")
