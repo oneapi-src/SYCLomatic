@@ -68,7 +68,7 @@ void KernelCallExpr::buildExecutionConfig(
 void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
   auto &SM = SyclctGlobalInfo::getSourceManager();
   SourceLocation Begin = KernelCall->getBeginLoc();
-  LocInfo.NL = getNL(KernelCall->getEndLoc(), SM);
+  LocInfo.NL = getNL();
   LocInfo.Indent = getIndent(Begin, SM).str();
   LocInfo.LocHash = getHashAsString(Begin.printToString(SM)).substr(0, 6);
   buildExecutionConfig(KernelCall);

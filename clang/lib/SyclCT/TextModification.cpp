@@ -212,7 +212,7 @@ ReplaceVarDecl::ReplaceVarDecl(const VarDecl *D, std::string &&Text)
           D->getSourceRange())),
       T(std::move(Text)),
       Indent(getIndent(SR.getBegin(), SyclctGlobalInfo::getSourceManager())),
-      NL(getNL(SR.getBegin(), SyclctGlobalInfo::getSourceManager())) {}
+      NL(getNL()) {}
 
 void ReplaceVarDecl::addVarDecl(const VarDecl *VD, std::string &&Text) {
   SourceManager &SM = SyclctGlobalInfo::getSourceManager();
@@ -443,7 +443,7 @@ ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
 
 std::shared_ptr<ExtReplacement>
 InsertComment::getReplacement(const ASTContext &Context) const {
-  auto NL = getNL(SL, Context.getSourceManager());
+  auto NL = getNL();
   auto OrigIndent = getIndent(SL, Context.getSourceManager()).str();
   return std::make_shared<ExtReplacement>(
       Context.getSourceManager(), SL, 0,

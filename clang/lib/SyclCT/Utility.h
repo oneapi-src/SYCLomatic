@@ -73,9 +73,8 @@ bool isChildPath(const std::string &Root, const std::string &Child);
 // /x/y and /x/y   -> true
 bool isSamePath(const std::string &Root, const std::string &Child);
 
-// Returns the character sequence ("\n" or "\r\n") used to represent new line
-// in the source line containing Loc.
-const char *getNL(clang::SourceLocation Loc, const clang::SourceManager &SM);
+// Returns character sequence ("\n") on Linux, return  ("\r\n") on Windows.
+const char *getNL(void);
 
 // Returns the character sequence indenting the source line containing Loc.
 llvm::StringRef getIndent(clang::SourceLocation Loc,

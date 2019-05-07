@@ -66,16 +66,14 @@ bool isSamePath(const std::string &Root, const std::string &Child) {
   return Diff.first == path::end(Root) && Diff.second == path::end(Child);
 }
 
-const char *getNL(SourceLocation Loc, const SourceManager &SM) {
-  auto LocInfo = SM.getDecomposedLoc(Loc);
-  auto Buffer = SM.getBufferData(LocInfo.first);
-  Buffer = Buffer.data() + LocInfo.second;
-  // Search for both to avoid searching till end of file.
-  auto pos = Buffer.find_first_of("\r\n");
-  if (pos == StringRef::npos || Buffer[pos] == '\n')
-    return "\n";
-  else
-    return "\r\n";
+const char *getNL(void) {
+#if defined(__linux__)
+  return "\n";
+#elif defined(_WIN64)
+  return "\r\n";
+#else
+#error Only support windows and Linux.
+#endif
 }
 
 StringRef getIndent(SourceLocation Loc, const SourceManager &SM) {

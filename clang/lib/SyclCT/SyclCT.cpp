@@ -644,7 +644,9 @@ static void saveApisReport(void) {
     std::string RFile = OutRoot + "/" + ReportFilePrefix +
                         (ReportFormat == "csv" ? ".apis.csv" : ".apis.log");
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
-    std::ofstream File(RFile);
+    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
+    // on windows.
+    std::ofstream File(RFile, std::ios::binary);
 
     std::string Str;
     llvm::raw_string_ostream Title(Str);
@@ -684,7 +686,9 @@ static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
     std::string RFile = OutRoot + "/" + ReportFilePrefix +
                         (ReportFormat == "csv" ? ".stats.csv" : ".stats.log");
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
-    std::ofstream File(RFile);
+    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
+    // on windows.
+    std::ofstream File(RFile, std::ios::binary);
     File << getSyclctStatsStr() << "\n";
   }
 }
@@ -702,7 +706,9 @@ static void saveDiagsReport() {
   } else {
     std::string RFile = OutRoot + "/" + ReportFilePrefix + ".diags.log";
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
-    std::ofstream File(RFile);
+    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
+    // on windows.
+    std::ofstream File(RFile, std::ios::binary);
     File << getSyclctDiagsStr() << "\n";
   }
 }
@@ -738,7 +744,9 @@ static void DumpOutputFile(void) {
   if (!OutputFile.empty()) {
     std::string FilePath = OutRoot + "/" + OutputFile;
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(FilePath));
-    std::ofstream File(FilePath);
+    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
+    // on windows.
+    std::ofstream File(FilePath, std::ios::binary);
     File << getSyclctTermStr() << "\n";
   }
 }

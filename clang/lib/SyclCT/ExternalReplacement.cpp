@@ -49,8 +49,9 @@ int save2Yaml(StringRef YamlFile, StringRef SrcFileName,
                           Replaces.end());
   YAMLOut << TUR;
   YamlContentStream.flush();
-
-  std::ofstream File(YamlFile);
+  // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
+  // on windows.
+  std::ofstream File(YamlFile, std::ios::binary);
   llvm::raw_os_ostream Stream(File);
   Stream << YamlContent;
 

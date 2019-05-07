@@ -117,7 +117,10 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       }
 
       fs::create_directories(path::parent_path(OutPath));
-      std::ofstream File(OutPath.str());
+
+      // std::ios::binary prevents ofstream::operator<< from converting \n to
+      // \r\n on windows.
+      std::ofstream File(OutPath.str(), std::ios::binary);
       llvm::raw_os_ostream Stream(File);
 
       AppliedAll =
@@ -146,7 +149,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       }
 
       fs::create_directories(path::parent_path(FilePath));
-      std::ofstream File(FilePath.str());
+      // std::ios::binary prevents ofstream::operator<< from converting \n to
+      // \r\n on windows.
+      std::ofstream File(FilePath.str(), std::ios::binary);
       llvm::raw_os_ostream Stream(File);
 
       Rewrite

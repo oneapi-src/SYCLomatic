@@ -243,10 +243,8 @@ void IncludesCallbacks::InclusionDirective(
   // <CL/sycl.hpp>\n#include <syclct/syclct.hpp>"
   if (!SyclHeaderInserted || SeenFiles.find(IncludingFile) == end(SeenFiles)) {
     SeenFiles.insert(IncludingFile);
-    std::string Replacement = std::string("#include <CL/sycl.hpp>") +
-                              getNL(FilenameRange.getEnd(), SM) +
-                              "#include <syclct/syclct.hpp>" +
-                              getNL(FilenameRange.getEnd(), SM);
+    std::string Replacement = std::string("#include <CL/sycl.hpp>") + getNL() +
+                              "#include <syclct/syclct.hpp>" + getNL();
     CharSourceRange InsertRange(SourceRange(HashLoc, HashLoc), false);
     TransformSet.emplace_back(
         new ReplaceInclude(InsertRange, std::move(Replacement)));
@@ -297,10 +295,9 @@ void IncludesCallbacks::InclusionDirective(
     if (!ThrustHeaderInserted) {
       std::string Replacement;
       if (!SyclHeaderInserted) {
-        Replacement =
-            std::string("<CL/sycl.hpp>") + getNL(FilenameRange.getEnd(), SM) +
-            "#include <syclct/syclct.hpp>" + getNL(FilenameRange.getEnd(), SM) +
-            "#include <syclct/syclct_thrust.hpp>";
+        Replacement = std::string("<CL/sycl.hpp>") + getNL() +
+                      "#include <syclct/syclct.hpp>" + getNL() +
+                      "#include <syclct/syclct_thrust.hpp>";
         SyclHeaderInserted = true;
       } else {
         Replacement = std::string("<syclct/syclct_thrust.hpp>");
@@ -334,9 +331,8 @@ void IncludesCallbacks::InclusionDirective(
   if ((SeenFiles.find(IncludingFile) == end(SeenFiles)) &&
       (!SyclHeaderInserted)) {
     SeenFiles.insert(IncludingFile);
-    std::string Replacement = std::string("<CL/sycl.hpp>") +
-                              getNL(FilenameRange.getEnd(), SM) +
-                              "#include <syclct/syclct.hpp>";
+    std::string Replacement =
+        std::string("<CL/sycl.hpp>") + getNL() + "#include <syclct/syclct.hpp>";
     TransformSet.emplace_back(
         new ReplaceInclude(FilenameRange, std::move(Replacement)));
     SyclHeaderInserted = true;
@@ -365,7 +361,7 @@ void TranslationRule::print(llvm::raw_ostream &OS) {
     return;
   }
 
-  OS << "[" << getName() << "]\n";
+  OS << "[" << getName() << "]" << getNL();
   constexpr char Indent[] = "  ";
   for (const TextModification *TM : EmittedTransformations) {
     OS << Indent;
@@ -380,7 +376,7 @@ void TranslationRule::printStatistics(llvm::raw_ostream &OS) {
     return;
   }
 
-  OS << "<Statistics of " << getName() << ">\n";
+  OS << "<Statistics of " << getName() << ">" << getNL();
   std::unordered_map<std::string, size_t> TMNameCountMap;
   for (const TextModification *TM : EmittedTransformations) {
     const std::string Name = TM->getName();
@@ -396,7 +392,7 @@ void TranslationRule::printStatistics(llvm::raw_ostream &OS) {
     const std::string &Name = Pair.first;
     const size_t &Numbers = Pair.second;
     OS << Indent << "Emitted # of replacement <" << Name << ">: " << Numbers
-       << "\n";
+       << getNL();
   }
 }
 
@@ -1204,9 +1200,7 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: {
-    return false;
-  }
+  default: { return false; }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -1284,7 +1278,8 @@ void VectorTypeOperatorRule::TranslateOverloadedOperatorDecl(
     const std::pair<FileID, unsigned> StartLocInfo =
         SM.getDecomposedExpansionLoc(StartLoc);
     llvm::StringRef Buffer(SM.getCharacterData(EndLoc));
-    size_t Offset = Buffer.find_first_of(";\r\n");
+    const std::string Str = std::string(";") + getNL();
+    size_t Offset = Buffer.find_first_of(Str);
     assert(Offset != llvm::StringRef::npos);
     const std::pair<FileID, unsigned> EndLocInfo =
         SM.getDecomposedExpansionLoc(EndLoc.getLocWithOffset(Offset + 1));
@@ -1304,7 +1299,7 @@ void VectorTypeOperatorRule::TranslateOverloadedOperatorDecl(
   //
   // }
   const auto &SM = *Result.SourceManager;
-  const std::string NL = getNL(FD->getBeginLoc(), SM);
+  const std::string NL = getNL();
 
   std::ostringstream Prologue;
   // clang-format off
@@ -1870,8 +1865,9 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (TimeHeaderFilter.find(FID) == TimeHeaderFilter.end()) {
       TimeHeaderFilter.insert(FID);
       emplaceTransformation(new InsertText(
-          IncludeLoc,
-          "\n#include <time.h> // For clock_t, clock and CLOCKS_PER_SEC\n"));
+          IncludeLoc, getNL() + std::string("#include <time.h> // For clock_t, "
+                                            "clock and CLOCKS_PER_SEC") +
+                          getNL()));
     }
   } else if (FuncName == "cudaDeviceSetLimit" ||
              FuncName == "cudaThreadSetLimit") {
@@ -2599,12 +2595,15 @@ void ErrorTryCatchRule::run(
     emplaceTransformation(new InsertBeforeStmt(FD->getBody(), "try "));
   }
 
-  emplaceTransformation(new InsertAfterStmt(
-      FD->getBody(), "\ncatch (cl::sycl::exception const &exc) {\n"
-                     "  std::cerr << exc.what() << \"EOE at line \" << "
-                     "__LINE__ << std::endl;\n"
-                     "  std::exit(1);\n"
-                     "}"));
+  std::string ReplaceStr =
+      getNL() + std::string("catch (cl::sycl::exception const &exc) {") +
+      getNL() +
+      std::string("  std::cerr << exc.what() << \"EOE at line \" << ") +
+      std::string("__LINE__ << std::endl;") + getNL() +
+      std::string("  std::exit(1);") + getNL() + "}";
+
+  emplaceTransformation(
+      new InsertAfterStmt(FD->getBody(), std::move(ReplaceStr)));
 }
 
 REGISTER_RULE(ErrorTryCatchRule)
