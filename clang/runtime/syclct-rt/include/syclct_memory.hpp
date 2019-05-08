@@ -29,8 +29,13 @@
 #include <unordered_map>
 #include <utility>
 
-// TODO: Add Windows version.
+#if defined(__linux__)
 #include <sys/mman.h>
+#elif defined(_WIN64)
+#include <windows.h>
+#else
+#warning "Only support Windows and Linux."
+#endif
 
 // DESIGN CONSIDERATIONS
 // All known helper memory management classes do the following:
@@ -103,14 +108,32 @@ public:
   };
 
   memory_manager() {
-    // Reserved address space, no real memory allocation happens here.
+// Reserved address space, no real memory allocation happens here.
+#if defined(__linux__)
     mapped_address_space =
         (byte_t *)mmap(nullptr, mapped_region_size, PROT_NONE,
                        MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+#elif defined(_WIN64)
+    mapped_address_space = (byte_t *)VirtualAlloc(
+        NULL,               // NULL specified as the base address parameter
+        mapped_region_size, // Size of allocation
+        MEM_RESERVE,        // Allocate reserved pages
+        PAGE_NOACCESS);     // Protection = no access
+#else
+#warning "Only support Windows and Linux."
+#endif
     next_free = mapped_address_space;
   };
 
-  ~memory_manager() { munmap(mapped_address_space, mapped_region_size); };
+  ~memory_manager() {
+#if defined(__linux__)
+    munmap(mapped_address_space, mapped_region_size);
+#elif defined(_WIN64)
+    VirtualFree(mapped_address_space, 0, MEM_RELEASE);
+#else
+#warning "Only support Windows and Linux."
+#endif
+  };
 
   memory_manager(const memory_manager &) = delete;
 
