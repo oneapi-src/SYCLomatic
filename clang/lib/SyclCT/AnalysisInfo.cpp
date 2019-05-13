@@ -25,8 +25,10 @@ SourceManager *SyclctGlobalInfo::SM = nullptr;
 const std::string MemVarInfo::ExternVariableName = "syclct_extern_memory";
 const std::string MemVarInfo::AccessorSuffix = "_acc";
 
+bool SyclctFileInfo::isInRoot() { return SyclctGlobalInfo::isInRoot(FilePath); }
+
 void SyclctFileInfo::buildReplacements() {
-  if (!SyclctGlobalInfo::isInRoot(FilePath))
+  if (!isInRoot())
     return;
   for (auto &Kernel : KernelMap)
     Kernel.second->buildInfo();
@@ -308,6 +310,9 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
 }
 
 void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionDecl *FD) {
+  if (FD->isImplicit())
+    return;
+
   auto &SM = SyclctGlobalInfo::getSourceManager();
   auto &LO = SyclctGlobalInfo::getContext().getLangOpts();
 
@@ -316,23 +321,24 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionDecl *FD) {
     NextToken = FD->getNameInfo().getEndLoc();
   else {
     auto EndParam = *(FD->param_end() - 1);
-    NextToken = EndParam->getLocation();
+    NextToken = EndParam->getEndLoc();
   }
-  auto Tok = Lexer::findNextToken(NextToken, SM, LO);
-  while (Tok.hasValue()) {
+  Token Tok;
+  auto Result = Lexer::getRawToken(NextToken, Tok, SM, LO, true);
+  while (!Result) {
     static const llvm::StringRef VoidId = "void";
-    switch (Tok->getKind()) {
+    switch (Tok.getKind()) {
     case tok::r_paren:
-      ReplaceOffset = SM.getFileOffset(Tok->getLocation());
+      ReplaceOffset = SM.getFileOffset(Tok.getLocation());
       return;
     case tok::raw_identifier:
-      if (Tok->getRawIdentifier() == VoidId) {
-        ReplaceOffset = SM.getFileOffset(Tok->getLocation());
-        ReplaceLength = Tok->getLength();
+      if (Tok.getRawIdentifier() == VoidId) {
+        ReplaceOffset = SM.getFileOffset(Tok.getLocation());
+        ReplaceLength = Tok.getLength();
         return;
       }
     default:
-      Tok = Lexer::findNextToken(Tok->getLocation(), SM, LO);
+      Result = Lexer::getRawToken(Tok.getEndLoc(), Tok, SM, LO, true);
     }
   }
 }

@@ -29,6 +29,8 @@ public:
   void addReplacement(std::shared_ptr<ExtReplacement> Repl);
   void emplaceIntoReplSet(tooling::Replacements &ReplSet);
 
+  inline bool empty() { return ReplMap.empty(); }
+
 private:
   bool isInvalid(std::shared_ptr<ExtReplacement> Repl);
 

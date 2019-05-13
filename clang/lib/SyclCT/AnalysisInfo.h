@@ -88,6 +88,7 @@ public:
     return insertObject(getMap<Obj>(), Offset, FilePath, N);
   }
   inline const std::string &getFilePath() { return FilePath; }
+  inline bool hasReplacements() { return isInRoot() && !Repls.empty(); }
 
   // Build kernel and device function declaration replacements and store them.
   void buildReplacements();
@@ -103,6 +104,9 @@ private:
   template <class Obj> GlobalMap<Obj> &getMap() {
     syclct_unreachable("unknow map type");
   }
+
+  bool isInRoot();
+
   void clear() {
     MemVarMap.clear();
     FuncMap.clear();
@@ -208,11 +212,8 @@ public:
   // Emplace stored replacements into replacement set.
   void emplaceReplacements(ReplTy &ReplSets /*out*/) {
     for (auto &File : FileMap)
-      File.second->emplaceReplacements(ReplSets[File.first]);
-    for (auto Itr = ReplSets.begin(); Itr != ReplSets.end(); ++Itr) {
-      if (Itr->second.empty())
-        ReplSets.erase(Itr);
-    }
+      if (File.second->hasReplacements())
+        File.second->emplaceReplacements(ReplSets[File.first]);
   }
 
   void insertCudaMalloc(const CallExpr *CE);
