@@ -16,6 +16,7 @@
 #ifdef __SYCLCT__
 
 float max(float a, float b);
+int  min(int, int);
 
 __host__ double atomicAdd(double* address, double val);
 __host__ unsigned long long atomicAdd(unsigned long long* address, unsigned long long val);

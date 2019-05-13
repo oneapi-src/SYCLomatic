@@ -718,6 +718,8 @@ void AtomicFunctionRule::ReportUnsupportedAtomicFunc(const CallExpr *CE) {
 
   std::ostringstream OSS;
   // Atomic functions with __half and half2 are not supported.
+  if (!CE->getDirectCallee())
+    return;
   OSS << "half version of " << CE->getDirectCallee()->getName().str();
   report(CE->getBeginLoc(), Comments::API_NOT_MIGRATED, OSS.str());
 }
@@ -733,6 +735,8 @@ void AtomicFunctionRule::TranslateAtomicFunc(
   //          significant, detect whether this atomic operation operates in
   //          global space or local space (currently, all in global space,
   //          see syclct_atomic.hpp for more details)
+  if (!CE->getDirectCallee())
+    return;
   const std::string AtomicFuncName = CE->getDirectCallee()->getName().str();
   assert(AtomicFuncNamesMap.find(AtomicFuncName) != AtomicFuncNamesMap.end());
   std::string ReplacedAtomicFuncName = AtomicFuncNamesMap.at(AtomicFuncName);
@@ -1448,6 +1452,8 @@ void VectorTypeCtorRule::run(const MatchFinder::MatchResult &Result) {
   }
 
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "VecUtilFunc")) {
+    if (!CE->getDirectCallee())
+      return;
     const llvm::StringRef FuncName = CE->getDirectCallee()->getName();
     assert(FuncName.startswith("make_") &&
            "Found non make_<vector type> function");
@@ -1757,6 +1763,8 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   }
   assert(CE && "Unknown result");
 
+  if (!CE->getDirectCallee())
+    return;
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
@@ -1907,6 +1915,8 @@ void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
   }
   assert(CE && "Unknown result");
 
+  if (!CE->getDirectCallee())
+    return;
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
@@ -2012,6 +2022,8 @@ void EventAPICallRule::handleTimeMeasurement(
       continue;
 
     if (const CallExpr *RecordCall = dyn_cast<CallExpr>(*Iter)) {
+      if (!RecordCall->getDirectCallee())
+        return;
       std::string RecordFuncName =
           RecordCall->getDirectCallee()->getNameInfo().getName().getAsString();
       // Find the last call of cudaEventRecord on start and stop before
@@ -2081,6 +2093,8 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
   }
   assert(CE && "Unknown result");
 
+  if (!CE->getDirectCallee())
+    return;
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
@@ -2697,6 +2711,8 @@ void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
     return;
   }
 
+  if (!CE->getDirectCallee())
+    return;
   const std::string FuncName = CE->getDirectCallee()->getNameAsString();
 
   if (FunctionNamesMap.find(FuncName) != FunctionNamesMap.end()) {
@@ -2736,6 +2752,8 @@ void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
 
 void MathFunctionsRule::handleHalfFunctions(
     const CallExpr *CE, const MatchFinder::MatchResult &Result) {
+  if (!CE->getDirectCallee())
+    return;
   const std::string FuncName = CE->getDirectCallee()->getNameAsString();
 
   if (HalfFunctionNamesMap.find(FuncName) != HalfFunctionNamesMap.end()) {
@@ -2781,6 +2799,8 @@ void MathFunctionsRule::handleHalfFunctions(
 
 void MathFunctionsRule::handleSingleDoubleFunctions(
     const CallExpr *CE, const MatchFinder::MatchResult &Result) {
+  if (!CE->getDirectCallee())
+    return;
   const std::string FuncName = CE->getDirectCallee()->getNameAsString();
 
   if (SingleDoubleFunctionNamesMap.find(FuncName) !=
@@ -2851,6 +2871,8 @@ void MathFunctionsRule::handleSingleDoubleFunctions(
 
 void MathFunctionsRule::handleTypecastFunctions(
     const CallExpr *CE, const MatchFinder::MatchResult &Result) {
+  if (!CE->getDirectCallee())
+    return;
   const std::string FuncName = CE->getDirectCallee()->getNameAsString();
   if (TypecastFunctionNamesMap.find(FuncName) !=
       TypecastFunctionNamesMap.end()) {
