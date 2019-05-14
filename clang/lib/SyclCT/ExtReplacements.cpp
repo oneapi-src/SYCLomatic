@@ -17,7 +17,7 @@
 namespace clang {
 namespace syclct {
 ExtReplacements::ExtReplacements(SyclctFileInfo *FileInfo)
-    : FileInfo(FileInfo), FilePath(FileInfo->getFilePath()) {}
+    : FilePath(FileInfo->getFilePath()), FileInfo(FileInfo) {}
 
 bool ExtReplacements::isInvalid(std::shared_ptr<ExtReplacement> Repl) {
   if (!Repl)
@@ -38,29 +38,14 @@ std::shared_ptr<ExtReplacement> ExtReplacements::mergeComparedAtSameOffset(
     std::shared_ptr<ExtReplacement> Shorter,
     std::shared_ptr<ExtReplacement> Longer) {
   if (Shorter->getLength() == Longer->getLength()) {
-    if (Longer->getReplacementText().equals(Shorter->getReplacementText()) &&
-        Longer->getLength()) {
-      // Fully equal replacements, just reserve one.
+    if (Shorter->getLength() && Shorter->equal(Longer))
+      // Fully equal replacements which are not insert, just reserve one.
       return Longer;
-    } else if (Longer->getReplacementText().equals(
-                   Shorter->getReplacementText()) &&
-               Shorter->getReplacementText().find(StringRef("(")) ==
-                   StringRef::npos &&
-               Shorter->getReplacementText().find(StringRef(")")) ==
-                   StringRef::npos &&
-               Longer->getLength() == 0) {
-      // Fully equal insert,  just reserve one. if not "( )".
-      // Todo:  need further figout the rule.
-      return Longer;
-
-    } else {
-      // Both Shorter and Longer are insert replacements, do merge.
-      // Or same length but different code replacement text, do merge.
-      // inset replacement could be "namespace::", "(type cast)",  ")"  "(".
-      return (Longer->getInsertPosition() <= Shorter->getInsertPosition())
-                 ? mergeReplacement(Longer, Shorter)
-                 : mergeReplacement(Shorter, Longer);
-    }
+    // Both Shorter and Longer are insert, do merge.
+    // inset replacement could be "namespace::", "(type cast)",  ")"  "(".
+    return (Longer->getInsertPosition() <= Shorter->getInsertPosition())
+               ? mergeReplacement(Longer, Shorter)
+               : mergeReplacement(Shorter, Longer);
   } else if (!Shorter->getLength()) {
     // Shorter is insert replacement, Longer is code replacement, do merge.
     return mergeReplacement(Shorter, Longer);
@@ -176,6 +161,31 @@ void ExtReplacements::buildOriginCodeReplacements() {
     addReplacement(buildOriginCodeReplacement(LineRange));
 }
 
+std::vector<std::shared_ptr<ExtReplacement>>
+ExtReplacements::mergeReplsAtSameOffset() {
+  std::vector<std::shared_ptr<ExtReplacement>> ReplsList;
+  std::shared_ptr<ExtReplacement> Insert, Replace;
+  unsigned Offset = ReplMap.begin()->first;
+  for (auto &R : ReplMap) {
+    if (R.first != Offset) {
+      Offset = R.first;
+      ReplsList.emplace_back(mergeAtSameOffset(Insert, Replace));
+      Insert.reset();
+      Replace.reset();
+    }
+    auto &Repl = R.second;
+    if (Repl->getLength()) {
+      Replace = mergeAtSameOffset(Replace, Repl);
+    } else {
+      Insert = mergeAtSameOffset(Insert, Repl);
+    }
+  }
+  if (Insert || Replace) {
+    ReplsList.emplace_back(mergeAtSameOffset(Insert, Replace));
+  }
+  return ReplsList;
+}
+
 std::shared_ptr<ExtReplacement> ExtReplacements::filterOverlappedReplacement(
     std::shared_ptr<ExtReplacement> Repl, unsigned &PrevEnd) {
   auto ReplEnd = Repl->getOffset() + Repl->getLength();
@@ -190,23 +200,52 @@ std::shared_ptr<ExtReplacement> ExtReplacements::filterOverlappedReplacement(
   return Repl;
 }
 
+void ExtReplacements::markAsAlive(std::shared_ptr<ExtReplacement> Repl) {
+  ReplMap.insert(std::make_pair(Repl->getOffset(), Repl));
+  if (auto PairID = Repl->getPairID()) {
+    if (auto &R = PairReplsMap[PairID]) {
+      if (R->Status == PairReplsStatus::Dead) {
+        R->Status = PairReplsStatus::Alive;
+        ReplMap.insert(std::make_pair(R->Repl->getOffset(), R->Repl));
+      }
+    } else
+      R = std::make_shared<PairReplsStatus>(Repl, PairReplsStatus::Alive);
+  }
+}
+
+bool ExtReplacements::isDuplicated(std::shared_ptr<ExtReplacement> Repl,
+                               ReplIterator Begin, ReplIterator End) {
+  while (Begin != End) {
+    if (*(Begin->second) == *Repl)
+      return true;
+    ++Begin;
+  }
+  return false;
+}
+
 void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
   if (isInvalid(Repl))
     return;
-  auto &R = ReplMap[Repl->getOffset()];
-  if (R)
-    R = mergeAtSameOffset(R, Repl);
+  if (Repl->getLength())
+    // If Repl is not insert replacement, insert it.
+    ReplMap.insert(std::make_pair(Repl->getOffset(), Repl));
+  // If Repl is insert replacement, check whether it is alive or dead.
+  else if (checkLiveness(Repl))
+    markAsAlive(Repl);
   else
-    R = Repl;
+    markAsDead(Repl);
 }
 
 void ExtReplacements::emplaceIntoReplSet(tooling::Replacements &ReplSet) {
+
   if (SyclctGlobalInfo::isKeepOriginCode())
     buildOriginCodeReplacements();
 
+  std::vector<std::shared_ptr<ExtReplacement>> ReplsList =
+      mergeReplsAtSameOffset();
   unsigned PrevEnd = 0;
-  for (auto &R : ReplMap) {
-    if (auto Repl = filterOverlappedReplacement(R.second, PrevEnd)) {
+  for (auto &R : ReplsList) {
+    if (auto Repl = filterOverlappedReplacement(R, PrevEnd)) {
       if (auto Err = ReplSet.add(*Repl)) {
         llvm::dbgs() << Err << "\n";
         syclct_unreachable("Adding the replacement: Error occured ");

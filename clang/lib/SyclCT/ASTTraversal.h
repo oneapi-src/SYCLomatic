@@ -193,11 +193,15 @@ class TranslationRule : public ASTTraversal {
   TransformSetTy *TransformSet = nullptr;
   void setTransformSet(TransformSetTy &TS) { TransformSet = &TS; }
 
+  static unsigned PairID;
+
 protected:
   /// Add \a TM to the set of transformations.
   ///
   /// The ownership of the TM is transferred to the TransformSet.
   void emplaceTransformation(const char *RuleID, TextModification *TM);
+
+  inline static unsigned incPairID() { return ++PairID; }
 
   const CompilerInstance &getCompilerInstance();
 
@@ -362,6 +366,13 @@ protected:
       TM->setParentRuleID(&ID);
       TranslationRule::emplaceTransformation(&ID, TM);
     }
+  }
+
+  void insertAroundStmt(const Stmt *S, std::string &&Prefix,
+                        std::string &&Suffix) {
+    auto P = incPairID();
+    emplaceTransformation(new InsertBeforeStmt(S, std::move(Prefix), P));
+    emplaceTransformation(new InsertAfterStmt(S, std::move(Suffix), P));
   }
 };
 

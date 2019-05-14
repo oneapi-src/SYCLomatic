@@ -54,9 +54,8 @@ public:
   /// ReplacementText.
   ExtReplacement(const SourceManager &Sources, SourceLocation Start,
                  unsigned Length, StringRef ReplacementText,
-                 const TextModification *_TM, bool IsComments = false)
-      : Replacement(Sources, Start, Length, ReplacementText), TM(_TM),
-        IsComments(IsComments) {}
+                 const TextModification *_TM)
+      : Replacement(Sources, Start, Length, ReplacementText), TM(_TM) {}
 
   /// Creates a Replacement of the given range with ReplacementText.
   ExtReplacement(const SourceManager &Sources, const CharSourceRange &Range,
@@ -73,18 +72,22 @@ public:
         TM(_TM) {}
   void setInsertPosition(InsertPosition IP) { InsertPos = IP; }
   unsigned int getInsertPosition() const { return InsertPos; }
-  bool getMerged() const { return Merged; }
-  bool isComments() const { return IsComments; }
 
-  void setMerged(bool M) { Merged = M; }
   const TextModification *getParentTM() const { return TM; }
+
+  inline void setPairID(unsigned Pair) { PairID = Pair; }
+  inline unsigned getPairID() { return PairID; }
+
+  bool equal(std::shared_ptr<ExtReplacement> RHS) {
+    return getLength() == RHS->getLength() &&
+           getReplacementText().equals(RHS->getReplacementText());
+  }
 
 private:
   InsertPosition InsertPos = InsertPositionLeft;
   unsigned BeginLine = 0, EndLine = 0;
-  bool Merged = false;
   const TextModification *TM;
-  bool IsComments = false;
+  unsigned PairID = 0;
 };
 
 enum class TextModificationID : int {
@@ -124,11 +127,13 @@ public:
 
   void setParentRuleID(const char *RuleID) { ParentRuleID = RuleID; }
   const char *getParentRuleID() const { return ParentRuleID; }
+  inline void setPairID(unsigned Pair) { PairID = Pair; }
 
 private:
   const TMID ID;
   Group Key;
   const char *ParentRuleID;
+  unsigned PairID = 0;
 };
 
 ///  Insert string in given position.
@@ -362,10 +367,11 @@ public:
 class InsertAfterStmt : public TextModification {
   const Stmt *S;
   std::string T;
+  unsigned PairID;
 
 public:
-  InsertAfterStmt(const Stmt *S, std::string &&T)
-      : TextModification(TMID::InsertAfterStmt), S(S), T(T) {}
+  InsertAfterStmt(const Stmt *S, std::string &&T, unsigned PairID = 0)
+      : TextModification(TMID::InsertAfterStmt), S(S), T(T), PairID(PairID) {}
 
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
@@ -486,10 +492,11 @@ public:
 class InsertBeforeStmt : public TextModification {
   const Stmt *S;
   std::string T;
+  unsigned PairID;
 
 public:
-  InsertBeforeStmt(const Stmt *S, std::string &&T)
-      : TextModification(TMID::InsertBeforeStmt), S(S), T(T) {}
+  InsertBeforeStmt(const Stmt *S, std::string &&T, unsigned PairID = 0)
+      : TextModification(TMID::InsertBeforeStmt), S(S), T(T), PairID(PairID) {}
 
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;

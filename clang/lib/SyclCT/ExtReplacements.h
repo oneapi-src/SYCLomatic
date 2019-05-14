@@ -24,6 +24,22 @@ namespace syclct {
 class SyclctFileInfo;
 
 class ExtReplacements {
+
+  // Save pair replacements status and the first encountered replacement in the
+  // pair. The pair is dead only when all the replacements are dead.
+  struct PairReplsStatus {
+    // Dead: the replacements are dead.
+    // Alive: the replacements are alive or merged.
+    enum StatusKind { Dead, Alive };
+    // Pair status is initialized with the first encountered replacement status.
+    PairReplsStatus(std::shared_ptr<ExtReplacement> Repl, StatusKind Status)
+        : Repl(Repl), Status(Status) {}
+    // The first encountered replacement
+    std::shared_ptr<ExtReplacement> Repl;
+    // Pair status.
+    StatusKind Status;
+  };
+
 public:
   ExtReplacements(SyclctFileInfo *FileInfo);
 
@@ -37,11 +53,31 @@ public:
   };
 
 private:
+  using ReplIterator =
+      std::multimap<unsigned, std::shared_ptr<ExtReplacement>>::iterator;
+
+private:
   bool isInvalid(std::shared_ptr<ExtReplacement> Repl);
+
+  inline bool checkLiveness(std::shared_ptr<ExtReplacement> Repl) {
+    if (isAlive(Repl))
+      // If a replacement in the same pair is alive, merge it anyway.
+      return true;
+    // Check if it is duplicate replacement.
+    return !isDuplicated(Repl, ReplMap.lower_bound(Repl->getOffset()),
+                     ReplMap.upper_bound(Repl->getOffset()));
+  }
+
+  bool isDuplicated(std::shared_ptr<ExtReplacement> Repl, ReplIterator Begin,
+                ReplIterator End);
 
   std::shared_ptr<ExtReplacement> inline mergeAtSameOffset(
       std::shared_ptr<ExtReplacement> First,
       std::shared_ptr<ExtReplacement> Second) {
+    if (!First)
+      return Second;
+    if (!Second)
+      return First;
     bool ShorterIsFirst = First->getLength() < Second->getLength();
     return ShorterIsFirst ? mergeComparedAtSameOffset(First, Second)
                           : mergeComparedAtSameOffset(Second, First);
@@ -69,6 +105,8 @@ private:
   filterOverlappedReplacement(std::shared_ptr<ExtReplacement> Repl,
                               unsigned &PrevEnd);
 
+  std::vector<std::shared_ptr<ExtReplacement>> mergeReplsAtSameOffset();
+
   void buildOriginCodeReplacements();
 
   // Remove comments in the source code.
@@ -81,9 +119,33 @@ private:
   bool isEndWithSlash(unsigned LineNumber);
   size_t findCR(const std::string &Line);
 
-  SyclctFileInfo *FileInfo;
+  // Mark a replacement as dead.
+  void markAsDead(std::shared_ptr<ExtReplacement> Repl) {
+    if (auto PairID = Repl->getPairID())
+      PairReplsMap[PairID] =
+          std::make_shared<PairReplsStatus>(Repl, PairReplsStatus::Dead);
+  }
+
+  // Mark a replacement as alive and insert into ReplMap
+  // If it is not the first encountered replacement and the first one is
+  // dead, insert the first one into ReplMap, too.
+  void markAsAlive(std::shared_ptr<ExtReplacement> Repl);
+
+  // Check if its pair has a replacement inserted.
+  bool isAlive(std::shared_ptr<ExtReplacement> Repl) {
+    if (auto PairID = Repl->getPairID()) {
+      if (auto &R = PairReplsMap[PairID])
+        return R->Status == PairReplsStatus::Alive;
+    }
+    return false;
+  }
+
   const std::string &FilePath;
-  std::map<unsigned, std::shared_ptr<ExtReplacement>> ReplMap;
+  SyclctFileInfo *FileInfo;
+  ///<Offset, ExtReplacement>
+  std::multimap<unsigned, std::shared_ptr<ExtReplacement>> ReplMap;
+  ///<PairID, PairStatus>
+  std::map<unsigned, std::shared_ptr<PairReplsStatus>> PairReplsMap;
 
   const static StringRef NullStr;
 };

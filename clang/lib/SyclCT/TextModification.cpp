@@ -380,17 +380,14 @@ RenameFieldInMemberExpr::getReplacement(const ASTContext &Context) const {
 
 std::shared_ptr<ExtReplacement>
 InsertAfterStmt::getReplacement(const ASTContext &Context) const {
-  CharSourceRange CSR = CharSourceRange(S->getSourceRange(), false);
-  SourceLocation Loc = CSR.getEnd();
   auto &SM = Context.getSourceManager();
-  auto &Opts = Context.getLangOpts();
-  SourceLocation SpellLoc = SM.getSpellingLoc(Loc);
-  unsigned Offs = Lexer::MeasureTokenLength(SpellLoc, SM, Opts);
-  SourceLocation LastTokenBegin = Lexer::GetBeginningOfToken(Loc, SM, Opts);
-  SourceLocation End = LastTokenBegin.getLocWithOffset(Offs);
-  recordTranslationInfo(Context, S->getEndLoc());
-  return std::make_shared<ExtReplacement>(
-      SM, CharSourceRange(SourceRange(End, End), false), T, this);
+  auto Loc = SM.getSpellingLoc(S->getEndLoc());
+  Loc = Loc.getLocWithOffset(
+      Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts()));
+  recordTranslationInfo(Context, Loc);
+  auto R = std::make_shared<ExtReplacement>(SM, Loc, 0, T, this);
+  R->setPairID(PairID);
+  return R;
 }
 
 static int getExpansionRangeSize(const SourceManager &Sources,
@@ -529,12 +526,12 @@ std::shared_ptr<ExtReplacement>
 InsertComment::getReplacement(const ASTContext &Context) const {
   auto NL = getNL();
   auto OrigIndent = getIndent(SL, Context.getSourceManager()).str();
-  return std::make_shared<ExtReplacement>(
-      Context.getSourceManager(), SL, 0,
-      (OrigIndent + llvm::Twine("/*") + NL + OrigIndent + Text + NL +
-       OrigIndent + "*/" + NL)
-          .str(),
-      this, true /*true means comments replacement*/);
+  return std::make_shared<ExtReplacement>(Context.getSourceManager(), SL, 0,
+                                          (OrigIndent + llvm::Twine("/*") + NL +
+                                           OrigIndent + Text + NL + OrigIndent +
+                                           "*/" + NL)
+                                              .str(),
+                                          this);
 }
 
 std::string printTemplateArgument(const TemplateArgument &Arg,
@@ -636,9 +633,11 @@ std::shared_ptr<ExtReplacement>
 InsertBeforeStmt::getReplacement(const ASTContext &Context) const {
   SourceLocation Begin = S->getSourceRange().getBegin();
   recordTranslationInfo(Context, S->getBeginLoc());
-  return std::make_shared<ExtReplacement>(
+  auto R = std::make_shared<ExtReplacement>(
       Context.getSourceManager(),
       CharSourceRange(SourceRange(Begin, Begin), false), T, this);
+  R->setPairID(PairID);
+  return R;
 }
 
 std::shared_ptr<ExtReplacement>

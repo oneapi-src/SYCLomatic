@@ -41,6 +41,8 @@ static std::set<SourceLocation> AttrExpansionFilter;
 // Remember the location of the last inclusion directive for each file
 static std::map<FileID, SourceLocation> IncludeLocations;
 
+unsigned TranslationRule::PairID = 0;
+
 void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
   std::string InRoot = ATM.InRoot;
   std::string InFile = SM.getFilename(MacroNameTok.getLocation());
@@ -788,8 +790,7 @@ void AtomicFunctionRule::TranslateAtomicFunc(
     const Expr *Arg = CE->getArg(i);
     if (auto *ImpCast = dyn_cast<ImplicitCastExpr>(Arg)) {
       if (ImpCast->getCastKind() != clang::CK_LValueToRValue) {
-        emplaceTransformation(new InsertBeforeStmt(Arg, "(" + TypeName + ")("));
-        emplaceTransformation(new InsertAfterStmt(Arg, ")"));
+        insertAroundStmt(Arg, "(" + TypeName + ")(", ")");
       }
     }
   }
@@ -1208,9 +1209,8 @@ void VectorTypeMemberAccessRule::run(const MatchFinder::MatchResult &Result) {
 
     std::ostringstream CastPrefix;
     CastPrefix << "static_cast<" << ME->getType().getAsString() << ">(";
-    emplaceTransformation(new InsertBeforeStmt(ME, CastPrefix.str()));
+    insertAroundStmt(ME, CastPrefix.str(), ")");
     renameMemberField(ME);
-    emplaceTransformation(new InsertAfterStmt(ME, ")"));
   }
 
   if (auto ME = getNodeAsType<MemberExpr>(Result, "VecMemberExprAssignmentLHS"))
@@ -1387,8 +1387,7 @@ void VectorTypeOperatorRule::TranslateOverloadedOperatorCall(
                                         : /* Binary operator */ ",";
   emplaceTransformation(
       new ReplaceToken(CE->getOperatorLoc(), std::move(OperatorReplacement)));
-  emplaceTransformation(new InsertBeforeStmt(CE, FuncCall.str() + "("));
-  emplaceTransformation(new InsertAfterStmt(CE, ")"));
+  insertAroundStmt(CE, FuncCall.str() + "(", ")");
 }
 
 void VectorTypeOperatorRule::run(const MatchFinder::MatchResult &Result) {
@@ -1638,9 +1637,7 @@ void Dim3MemberFieldsRule::run(const MatchFinder::MatchResult &Result) {
     // cl::sycl::range<3> *pd3;
     // (*pd3)[0];
     auto Impl = getAssistNodeAsType<ImplicitCastExpr>(Result, "ImplCast");
-    emplaceTransformation(new InsertBeforeStmt(Impl, "(*"));
-    emplaceTransformation(new InsertAfterStmt(Impl, ")"));
-
+    insertAroundStmt(Impl, "(*", ")");
     FieldsRename(Result, "->", ME);
   }
 
@@ -2569,8 +2566,7 @@ void BLASGetSetRule::GetSetVectorTranslation(
 
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
-      emplaceTransformation(new InsertBeforeStmt(CE, "("));
-      emplaceTransformation(new InsertAfterStmt(CE, ", 0)"));
+      insertAroundStmt(CE, "(", ", 0)");
     }
 
   } else {
@@ -2645,8 +2641,7 @@ void BLASGetSetRule::GetSetMatrixTranslation(
     }
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
-      emplaceTransformation(new InsertBeforeStmt(CE, "("));
-      emplaceTransformation(new InsertAfterStmt(CE, ", 0)"));
+      insertAroundStmt(CE, "(", ", 0)");
     }
   } else {
     syclct_unreachable("Unknown function name");
@@ -2705,10 +2700,8 @@ void MemoryTranslationRule::MemcpyTranslation(
   const std::string Name =
       C->getCalleeDecl()->getAsFunction()->getNameAsString();
   emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_memcpy", Name));
-  emplaceTransformation(new InsertBeforeStmt(C->getArg(0), "(void*)("));
-  emplaceTransformation(new InsertAfterStmt(C->getArg(0), ")"));
-  emplaceTransformation(new InsertBeforeStmt(C->getArg(1), "(void*)("));
-  emplaceTransformation(new InsertAfterStmt(C->getArg(1), ")"));
+  insertAroundStmt(C->getArg(0), "(void*)(", ")");
+  insertAroundStmt(C->getArg(1), "(void*)(", ")");
   emplaceTransformation(
       new ReplaceStmt(C->getArg(3), std::move(DirectionName)));
 }
@@ -2769,8 +2762,7 @@ void MemoryTranslationRule::MemcpyToSymbolTranslation(
   emplaceTransformation(new ReplaceToken(C->getArg(0)->getBeginLoc(),
                                          C->getArg(0)->getEndLoc(),
                                          std::move(VarName)));
-  emplaceTransformation(new InsertBeforeStmt(C->getArg(1), "(void*)("));
-  emplaceTransformation(new InsertAfterStmt(C->getArg(1), ")"));
+  insertAroundStmt(C->getArg(1), "(void*)(", ")");
   emplaceTransformation(
       new ReplaceStmt(C->getArg(4), std::move(DirectionName)));
 }
@@ -2809,8 +2801,7 @@ void MemoryTranslationRule::MemcpyFromSymbolTranslation(
   VarName = (pos != std::string::npos) ? VarName.substr(0, pos) : VarName;
   VarName += ".get_ptr()";
 
-  emplaceTransformation(new InsertBeforeStmt(C->getArg(0), "(void*)("));
-  emplaceTransformation(new InsertAfterStmt(C->getArg(0), ")"));
+  insertAroundStmt(C->getArg(0), "(void*)(", ")");
 
   const std::string Name =
       C->getCalleeDecl()->getAsFunction()->getNameAsString();
@@ -2835,12 +2826,9 @@ void MemoryTranslationRule::MemsetTranslation(
   const std::string Name =
       C->getCalleeDecl()->getAsFunction()->getNameAsString();
   emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_memset", Name));
-  emplaceTransformation(new InsertBeforeStmt(C->getArg(0), "(void*)("));
-  emplaceTransformation(new InsertAfterStmt(C->getArg(0), ")"));
-  emplaceTransformation(new InsertBeforeStmt(C->getArg(1), "(int)("));
-  emplaceTransformation(new InsertAfterStmt(C->getArg(1), ")"));
-  emplaceTransformation(new InsertBeforeStmt(C->getArg(2), "(size_t)("));
-  emplaceTransformation(new InsertAfterStmt(C->getArg(2), ")"));
+  insertAroundStmt(C->getArg(0), "(void*)(", ")");
+  insertAroundStmt(C->getArg(1), "(int)(", ")");
+  insertAroundStmt(C->getArg(2), "(size_t)(", ")");
 }
 
 // Memory migration rules live here.
@@ -2868,8 +2856,7 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
 
     if (IsAssigned) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
-      emplaceTransformation(new InsertBeforeStmt(C, "("));
-      emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
+      insertAroundStmt(C, "(", ", 0)");
     }
 
     const std::string Name =
@@ -3105,9 +3092,7 @@ void MathFunctionsRule::handleExceptionalFunctions(
             CE->getArg(i)->getType().getAsString(PrintingPolicy(LO));
         std::string ArgExpr = CE->getArg(i)->getStmtClassName();
         if (ArgT != FT || ArgExpr == "BinaryOperator") {
-          emplaceTransformation(
-              new InsertBeforeStmt(CE->getArg(i), "(" + FT + ")("));
-          emplaceTransformation(new InsertAfterStmt(CE->getArg(i), ")"));
+          insertAroundStmt(CE->getArg(i), "(" + FT + ")(", ")");
         }
       }
     }
@@ -3583,8 +3568,7 @@ void TypeCastRule::run(const MatchFinder::MatchResult &Result) {
           getNodeAsType<DeclRefExpr>(Result, "Double2CastExpr")) {
     std::string Name = E->getNameInfo().getName().getAsString();
 
-    emplaceTransformation(new InsertBeforeStmt(E, "(&"));
-    emplaceTransformation(new InsertAfterStmt(E, "[0])"));
+    insertAroundStmt(E, "(&", "[0])");
   }
 }
 
