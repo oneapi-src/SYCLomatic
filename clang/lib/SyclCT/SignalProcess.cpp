@@ -72,7 +72,7 @@ static void SetHandler(void (*handler)(int, siginfo_t *, void *)) {
   struct sigaction action;
   action.sa_flags = SA_SIGINFO;
   action.sa_sigaction = handler;
-  // Only care SIGSEGVt and SIGABRT signals
+
   if (sigaction(SIGSEGV, &action, NULL) == -1) {
     llvm::errs() << "SIGSEGV: sigaction installation failure\n";
     exit(-1);
@@ -84,21 +84,21 @@ static void SetHandler(void (*handler)(int, siginfo_t *, void *)) {
   }
 
   if (sigaction(SIGTERM, &action, NULL) == -1) {
-    llvm::errs() << "SIGABRT: sigaction installation failure\n";
+    llvm::errs() << "SIGTERM: sigaction installation failure\n";
     exit(-1);
   }
 
   if (sigaction(SIGFPE, &action, NULL) == -1) {
-    llvm::errs() << "SIGABRT: sigaction installation failure\n";
+    llvm::errs() << "SIGFPE: sigaction installation failure\n";
     exit(-1);
   }
 
   if (sigaction(SIGSTKFLT, &action, NULL) == -1) {
-    llvm::errs() << "SIGABRT: sigaction installation failure\n";
+    llvm::errs() << "SIGSTKFLT: sigaction installation failure\n";
     exit(-1);
   }
   if (sigaction(SIGPIPE, &action, NULL) == -1) {
-    llvm::errs() << "SIGABRT: sigaction installation failure\n";
+    llvm::errs() << "SIGPIPE: sigaction installation failure\n";
     exit(-1);
   }
 }

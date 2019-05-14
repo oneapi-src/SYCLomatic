@@ -202,7 +202,7 @@ public:
   static bool isInRoot(const std::string &FilePath) {
     std::string Path = FilePath;
     makeCanonical(Path);
-    return isChildPath(InRoot, FilePath);
+    return isChildPath(InRoot, Path);
   }
   static void setInRoot(const std::string &InRootPath) { InRoot = InRootPath; }
   static const std::string &getInRoot() {
