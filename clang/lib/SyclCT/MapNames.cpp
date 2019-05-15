@@ -89,8 +89,8 @@ const MapNames::MapTy MapNames::TypeNamesMap{
     // ...
 };
 
-// Cublas function names mapping
-const MapNames::MapTy MapNames::CublasFunctionNamesMap{
+// BLAS function names mapping
+const MapNames::MapTy MapNames::BLASFunctionNamesMap{
     {"cublasSgemm_v2", "mkl::Sgemm"},
     {"cublasDgemm_v2", "mkl::Dgemm"},
     {"cublasCgemm_v2", "mkl::Cgemm"},

@@ -582,18 +582,18 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-// Migration rule for CublasStatus enums constants.
-class CublasStatusRule : public NamedTranslationRule<CublasStatusRule> {
+// Migration rule for BLASStatus enums constants.
+class BLASStatusRule : public NamedTranslationRule<BLASStatusRule> {
 public:
-  CublasStatusRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  BLASStatusRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-// Migration rule for CublasOperation enums constants.
-class CublasOperationRule : public NamedTranslationRule<CublasOperationRule> {
+// Migration rule for BLASOperation enums constants.
+class BLASOperationRule : public NamedTranslationRule<BLASOperationRule> {
 public:
-  CublasOperationRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  BLASOperationRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -716,17 +716,21 @@ private:
       TranslationDispatcher;
 };
 
-// Migration rule for cublasGetVector, cublasSetVector,
-// cublasGetMatrix, cublasSetMatrix, etc.
-class CublasGetSetRule : public NamedTranslationRule<CublasGetSetRule> {
+// Migration rule for GetVector, SetVector, GetMatrix, SetMatrix, etc.
+class BLASGetSetRule : public NamedTranslationRule<BLASGetSetRule> {
 public:
-  CublasGetSetRule();
+  BLASGetSetRule();
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
 private:
+  std::vector<std::string> GetParamsAsStrs(const CallExpr *CE,
+                                           const ASTContext &Context);
   void
   GetSetVectorTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
+                          const CallExpr *C, const bool IsAssigned);
+  void
+  GetSetMatrixTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
                           const CallExpr *C, const bool IsAssigned);
   std::unordered_map<
       std::string,

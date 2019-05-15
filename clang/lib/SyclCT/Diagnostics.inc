@@ -4,6 +4,14 @@
 // A comment and diagnostics with the same ID have the same index space for format arguments:
 // warning may use %0 and comment may use {1} and in that way they are using different parts of parameter pack
 
+#define NOT_SUPPORTED_PARAMETERS_VALUE_CASE_0 "parameter incx does not equal to incy"
+#define NOT_SUPPORTED_PARAMETERS_VALUE_CASE_1 "parameter incx or incy cannot be evaluated"
+#define NOT_SUPPORTED_PARAMETERS_VALUE_CASE_2 "parameter lda does not equal to ldb"
+#define NOT_SUPPORTED_PARAMETERS_VALUE_CASE_3 "parameter lda or ldb cannot be evaluated"
+
+#define POTENTIAL_PERFORMACE_ISSUE_CASE_0 "parameters incx and incy do not equal to 1"
+#define POTENTIAL_PERFORMACE_ISSUE_CASE_1 "parameter rows is smaller than lda"
+#define POTENTIAL_PERFORMACE_ISSUE_CASE_2 "parameter rows cannot be evaluated (rows may be smaller than lda)"
 
 // FORMAT: {NAME, ID, MESSAGE}
 DEF_WARNING(IFSTMT_NOT_REMOVED, 1000, "Error handling if-stmt was detected but couldn't be rewritten, see details in the resulting file comments")
@@ -37,7 +45,9 @@ DEF_WARNING(STREAM_FLAG_PRIORITY_NOT_SUPPORTED, 1014, "Flag and priority options
 DEF_COMMENT(STREAM_FLAG_PRIORITY_NOT_SUPPORTED, 1014, "Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.")
 DEF_WARNING(CALLBACK_FOR_QUEUE_NOT_SUPPORTED, 1015, "DPC++ doesn't have callback mechanism for queues. cudaStreamAddCallback was replaced with a blocking wait and host function call. Consider changing the algorithm to avoid waiting and calling of the function on the host.")
 DEF_COMMENT(CALLBACK_FOR_QUEUE_NOT_SUPPORTED, 1015, "DPC++ doesn't have callback mechanism for queues. cudaStreamAddCallback was replaced with a blocking wait and host function call. Consider changing the algorithm to avoid waiting and calling of the function on the host.")
-DEF_WARNING(NOTSUPPORTEDCASE, 1016, "parameter(s) value of %1 in %0 is not supported in Sycl. You may need to migrate this code manually.")
-DEF_COMMENT(NOTSUPPORTEDCASE, 1016, "parameter(s) value of {1} in {0} is not supported in Sycl. You may need to migrate this code manually.")
+DEF_WARNING(NOT_SUPPORTED_PARAMETERS_VALUE, 1016, "Migration of %0 with these parameters is not supported currently, because %1. You may need to migrate this code manually.")
+DEF_COMMENT(NOT_SUPPORTED_PARAMETERS_VALUE, 1016, "Migration of {0} with these parameters is not supported currently, because {1}. You may need to migrate this code manually.")
 DEF_WARNING(MATH_SIMULATION, 1017, "%0 is simulated by %1 in DPC++. Please check the potential precision and/or performance issues of generated code.")
 DEF_COMMENT(MATH_SIMULATION, 1017, "{0} is simulated by {1} in DPC++. Please check the potential precision and/or performance issues of generated code.")
+DEF_WARNING(POTENTIAL_PERFORMACE_ISSUE, 1018, "Migration of %0 with these parameters could lead performance issue by auto-migration, because %1. You may need to migrate this code manually.")
+DEF_COMMENT(POTENTIAL_PERFORMACE_ISSUE, 1018, "Migration of {0} with these parameters could lead performance issue by auto-migration, because {1}. You may need to migrate this code manually.")

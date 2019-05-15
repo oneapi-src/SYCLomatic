@@ -23,7 +23,7 @@ public:
   static const MapTy TypeNamesMap;
   static const MapTy Dim3MemberNamesMap;
   static const MapTy MacrosMap;
-  static const MapTy CublasFunctionNamesMap;
+  static const MapTy BLASFunctionNamesMap;
 
   inline static const std::string &findReplacedName(const MapTy &Map,
                                                     const std::string &Name) {
