@@ -322,7 +322,8 @@ const MapNames::MapTy MathFunctionsRule::SingleDoubleFunctionNamesMap{
     {"lroundf", "cl::sycl::round"},
     {"modff", "cl::sycl::modf"},
     {"nanf", "cl::sycl::nan"},
-    {"nearbyintf", "cl::sycl::floor"}, // nearbyintf(x) => cl::sycl::floor(x + 0.5)
+    {"nearbyintf",
+     "cl::sycl::floor"}, // nearbyintf(x) => cl::sycl::floor(x + 0.5)
     {"nextafterf", "cl::sycl::nextafter"},
     {"norm3df", StringLiteralUnsupported},
     {"norm4df", StringLiteralUnsupported},
@@ -333,7 +334,8 @@ const MapNames::MapTy MathFunctionsRule::SingleDoubleFunctionNamesMap{
     {"rcbrtf", StringLiteralUnsupported},
     {"remainderf", "cl::sycl::remainder"},
     {"remquof", "cl::sycl::remquo"},
-    {"rhypotf", "cl::sycl::hypot"},    // rhypotf(x, y) => 1 / cl::sycl::hypot(x, y)
+    {"rhypotf",
+     "cl::sycl::hypot"}, // rhypotf(x, y) => 1 / cl::sycl::hypot(x, y)
     {"rintf", "cl::sycl::rint"},
     {"rnorm3df", StringLiteralUnsupported},
     {"rnorm4df", StringLiteralUnsupported},
@@ -343,8 +345,10 @@ const MapNames::MapTy MathFunctionsRule::SingleDoubleFunctionNamesMap{
     {"scalblnf", StringLiteralUnsupported},
     {"scalbnf", StringLiteralUnsupported},
     {"signbit", "cl::sycl::signbit"},
-    {"sincosf", "cl::sycl::sincos"},   // sincospif(x, &y, &z) => y = cl::sycl::sincos(x, &z)
-    {"sincospif", "cl::sycl::sincos"}, // sincospif(x, &y, &z) => y = cl::sycl::sincos(x * SYCLCT_PI_F, &z)
+    {"sincosf",
+     "cl::sycl::sincos"}, // sincospif(x, &y, &z) => y = cl::sycl::sincos(x, &z)
+    {"sincospif", "cl::sycl::sincos"}, // sincospif(x, &y, &z) => y =
+                                       // cl::sycl::sincos(x * SYCLCT_PI_F, &z)
     {"sinf", "cl::sycl::sin"},
     {"sinhf", "cl::sycl::sinh"},
     {"sinpif", "cl::sycl::sinpi"},
@@ -407,7 +411,8 @@ const MapNames::MapTy MathFunctionsRule::SingleDoubleFunctionNamesMap{
     {"lround", "cl::sycl::round"},
     {"modf", "cl::sycl::modf"},
     {"nan", "cl::sycl::nan"},
-    {"nearbyint", "cl::sycl::floor"}, // nearbyint(x) => cl::sycl::floor(x + 0.5)
+    {"nearbyint",
+     "cl::sycl::floor"}, // nearbyint(x) => cl::sycl::floor(x + 0.5)
     {"nextafter", "cl::sycl::nextafter"},
     {"norm", StringLiteralUnsupported},
     {"norm3d", StringLiteralUnsupported},
@@ -670,9 +675,23 @@ const MapNames::MapTy MathFunctionsRule::TypecastFunctionNamesMap{
 };
 
 // Math function names migration.
-const MapNames::MapTy MathFunctionsRule::IntegerFunctionNamesMap{
+const MapNames::MapTy MathFunctionsRule::MiscFunctionNamesMap{
     // Cuda's max to sycl's max. all have integer types and double types.
     // See "4.13.4 Integer functions" and "4.13.5 Common functions"
+
+    // <SYCL/sycl_math_builtins_common.h>
+
+    // Device: int => cl::sycl::abs, (float, double) => cl::sycl::fabs
+    // Host:   int => abs, float => fabsf, double => fabs, long double => fabsl
+    {"abs", "cl::sycl::abs"},
+
+    // Device: cl::sycl::max
+    // Host:   int => max, float => fmaxf, double => fmax, long double => fmaxl
+    {"max", "cl::sycl::max"},
+
+    // Device: cl::sycl::min
+    // Host:   int => min, float => fminf, double => fmin, long double => fminl
+    {"min", "cl::sycl::min"},
 
     // Integer Intrinsics
     {"__brev", StringLiteralUnsupported},
@@ -713,19 +732,6 @@ const MapNames::MapTy MathFunctionsRule::IntegerFunctionNamesMap{
     // {"smoothstep", "cl::sycl::smoothstep"},
     // {"step", "cl::sycl::step"},
 };
-
-// Do migration even if they are not part of CUDA math API
-const MapNames::MapTy MathFunctionsRule::ExceptionalFunctionNamesMap{
-    // <SYCL/sycl_math_builtins_common.h>
-    {"abs", "cl::sycl::abs"},
-    {"max", "cl::sycl::max"},
-    {"min", "cl::sycl::min"},
-
-    {"exp", "cl::sycl::exp"},
-    {"fabs", "cl::sycl::fabs"},
-    {"sqrt", "cl::sycl::sqrt"},
-};
-
 
 // cudaFuncAttributes names migration
 const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{

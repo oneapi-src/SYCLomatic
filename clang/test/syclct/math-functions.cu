@@ -13,6 +13,7 @@
 #define DECLARE2U DECLARE2(unsigned, u)
 #define DECLARE2L DECLARE2(long, l)
 #define DECLARE2I DECLARE2(int, i)
+#define DECLARE2LD DECLARE2(long double, ld)
 
 #define DECLARE(type, prefix) \
   type prefix##_a = 0;
@@ -21,6 +22,7 @@
 #define DECLAREU DECLARE(unsigned, u)
 #define DECLAREL DECLARE(long, l)
 #define DECLAREI DECLARE(int, i)
+#define DECLARELD DECLARE(long double, ld)
 
 int main() {
   // max
@@ -30,18 +32,49 @@ int main() {
     DECLARE2U
     DECLARE2L
     DECLARE2I
+    DECLARE2LD
 
-    // CHECK: f_b = cl::sycl::max(f_a, f_b);
+    // CHECK: f_b = fmaxf(f_a, f_b);
     f_b = max(f_a, f_b);
 
-    // CHECK: d_b = cl::sycl::max(d_a, d_b);
+    // CHECK: d_b = fmax(d_a, d_b);
     d_b = max(d_a, d_b);
 
-    // CHECK: u_b = cl::sycl::max(u_a, u_b);
+    // CHECK: u_b = max(u_a, u_b);
     u_b = max(u_a, u_b);
 
-    // CHECK: i_b = cl::sycl::max(i_a, i_b);
+    // CHECK: i_b = max(i_a, i_b);
     i_b = max(i_a, i_b);
+
+    // CHECK: ld_b = fmaxl(ld_a, ld_b);
+    ld_b = max(ld_a, ld_b);
+
+    // TODO: Check more primitive type and vector types
+  }
+
+  // min
+  {
+    DECLARE2F
+    DECLARE2D
+    DECLARE2U
+    DECLARE2L
+    DECLARE2I
+    DECLARE2LD
+
+    // CHECK: f_b = fminf(f_a, f_b);
+    f_b = min(f_a, f_b);
+
+    // CHECK: d_b = fmin(d_a, d_b);
+    d_b = min(d_a, d_b);
+
+    // CHECK: u_b = min(u_a, u_b);
+    u_b = min(u_a, u_b);
+
+    // CHECK: i_b = min(i_a, i_b);
+    i_b = min(i_a, i_b);
+
+    // CHECK: ld_b = fminl(ld_a, ld_b);
+    ld_b = min(ld_a, ld_b);
 
     // TODO: Check more primitive type and vector types
   }
@@ -50,7 +83,7 @@ int main() {
   {
     DECLAREI
 
-    // CHECK: i_a = cl::sycl::abs(i_a);
+    // CHECK: i_a = abs(i_a);
     i_a = abs(i_a);
 
     // TODO: Check more primitive type and vector types
@@ -217,9 +250,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::exp(f_a);
+    // CHECK: f_a = exp(f_a);
     f_a = exp(f_a);
-    // CHECK: d_a = cl::sycl::exp(d_a);
+    // CHECK: d_a = exp(d_a);
     d_a = exp(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -269,9 +302,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::fabs(f_a);
+    // CHECK: f_a = fabs(f_a);
     f_a = fabs(f_a);
-    // CHECK: d_a = cl::sycl::fabs(d_a);
+    // CHECK: d_a = fabs(d_a);
     d_a = fabs(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -438,9 +471,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = cl::sycl::sqrt(f_a);
+    // CHECK: f_a = sqrt(f_a);
     f_a = sqrt(f_a);
-    // CHECK: d_a = cl::sycl::sqrt(d_a);
+    // CHECK: d_a = sqrt(d_a);
     d_a = sqrt(d_a);
 
     // TODO: Check more primitive type and vector types

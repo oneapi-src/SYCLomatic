@@ -43,6 +43,23 @@ static std::set<SourceLocation> AttrExpansionFilter;
 
 // Remember the location of the last inclusion directive for each file
 static std::map<FileID, SourceLocation> IncludeLocations;
+// Remember if a file has already included the cmath header or not
+static std::map<FileID, bool> AlreadyIncludeMathHeader;
+
+// Add '#include <cmath>' directive to the file where CE is located
+InsertText *getCmathHeaderInsertTextForCallExpr(const CallExpr *CE,
+                                                const SourceManager *SM) {
+  auto Loc = CE->getBeginLoc();
+  auto FID = SM->getDecomposedExpansionLoc(Loc).first;
+  // No need to insert or already inserted
+  if (AlreadyIncludeMathHeader[FID])
+    return nullptr;
+
+  auto IncludeLoc = IncludeLocations[FID];
+  AlreadyIncludeMathHeader[FID] = true;
+  return new InsertText(IncludeLoc,
+                        getNL() + std::string("#include <cmath>") + getNL());
+}
 
 unsigned TranslationRule::PairID = 0;
 
@@ -256,12 +273,21 @@ void IncludesCallbacks::InclusionDirective(
     SyclHeaderInserted = true;
   }
 
-  // replace "#include <math.h>" with <cmath>
+  // Replace "#include <math.h>" with <cmath>
+  // Record that math header is included in this file
   if (IsAngled && FileName.compare(StringRef("math.h")) == 0) {
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
         "#include <cmath>"));
+    auto DecomposedLoc = SM.getDecomposedExpansionLoc(HashLoc);
+    AlreadyIncludeMathHeader[DecomposedLoc.first] = true;
+  }
+
+  // Record that math header is included in this file
+  if (IsAngled && FileName.compare(StringRef("cmath")) == 0) {
+    auto DecomposedLoc = SM.getDecomposedExpansionLoc(HashLoc);
+    AlreadyIncludeMathHeader[DecomposedLoc.first] = true;
   }
 
   // replace "#include <cublas_v2.h>" with <DPCPP_blas_TEMP.h>
@@ -3033,10 +3059,6 @@ void UnnamedTypesRule::run(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(UnnamedTypesRule)
 
 void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
-  std::vector<std::string> ExceptionalFunctionNames;
-  for (auto Function : ExceptionalFunctionNamesMap)
-    ExceptionalFunctionNames.push_back(Function.first);
-
   std::vector<std::string> HalfFunctionNames;
   for (auto Function : HalfFunctionNamesMap)
     HalfFunctionNames.push_back(Function.first);
@@ -3045,21 +3067,14 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
   for (auto Function : SingleDoubleFunctionNamesMap)
     SingleDoubleFunctionNames.push_back(Function.first);
 
-  std::vector<std::string> IntegerFunctionNames;
-  for (auto Function : IntegerFunctionNamesMap)
-    IntegerFunctionNames.push_back(Function.first);
+  std::vector<std::string> MiscFunctionNames;
+  for (auto Function : MiscFunctionNamesMap)
+    MiscFunctionNames.push_back(Function.first);
 
   std::vector<std::string> TypecastFunctionNames;
   for (auto Function : TypecastFunctionNamesMap)
     TypecastFunctionNames.push_back(Function.first);
 
-  MF.addMatcher(
-      callExpr(callee(functionDecl(
-                   internal::Matcher<NamedDecl>(
-                       new internal::HasNameMatcher(ExceptionalFunctionNames)),
-                   unless(hasDeclContext(namespaceDecl(anything()))))))
-          .bind("mathExceptional"),
-      this);
   MF.addMatcher(
       callExpr(callee(functionDecl(
                    internal::Matcher<NamedDecl>(
@@ -3077,16 +3092,16 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       callExpr(callee(functionDecl(
                    internal::Matcher<NamedDecl>(
-                       new internal::HasNameMatcher(IntegerFunctionNames)),
+                       new internal::HasNameMatcher(TypecastFunctionNames)),
                    unless(hasDeclContext(namespaceDecl(anything()))))))
-          .bind("mathInteger"),
+          .bind("mathTypecast"),
       this);
   MF.addMatcher(
       callExpr(callee(functionDecl(
                    internal::Matcher<NamedDecl>(
-                       new internal::HasNameMatcher(TypecastFunctionNames)),
+                       new internal::HasNameMatcher(MiscFunctionNames)),
                    unless(hasDeclContext(namespaceDecl(anything()))))))
-          .bind("mathTypecast"),
+          .bind("mathMisc"),
       this);
 }
 
@@ -3098,73 +3113,21 @@ bool endsWith(std::string const &Str, std::string const &Ending) {
 
 void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
   const CallExpr *CE = nullptr;
-  if ((CE = getNodeAsType<CallExpr>(Result, "mathExceptional")))
-    return handleExceptionalFunctions(CE, Result);
 
   if ((CE = getNodeAsType<CallExpr>(Result, "mathHalf")))
-    return handleHalfFunctions(CE, Result);
-
-  if ((CE = getNodeAsType<CallExpr>(Result, "mathSingleDouble")))
-    return handleSingleDoubleFunctions(CE, Result);
-
-  if ((CE = getNodeAsType<CallExpr>(Result, "mathInteger")))
-    return handleIntegerFunctions(CE, Result);
-
-  if ((CE = getNodeAsType<CallExpr>(Result, "mathTypecast")))
-    return handleTypecastFunctions(CE, Result);
-}
-
-void MathFunctionsRule::handleExceptionalFunctions(
-    const CallExpr *CE, const MatchFinder::MatchResult &Result) {
-  auto FD = CE->getDirectCallee();
-  if (!FD)
+    handleHalfFunctions(CE, Result);
+  else if ((CE = getNodeAsType<CallExpr>(Result, "mathSingleDouble")))
+    handleSingleDoubleFunctions(CE, Result);
+  else if ((CE = getNodeAsType<CallExpr>(Result, "mathTypecast")))
+    handleTypecastFunctions(CE, Result);
+  else if ((CE = getNodeAsType<CallExpr>(Result, "mathMisc")))
+    handleMiscFunctions(CE, Result);
+  else
     return;
 
-  const std::string FuncName = FD->getNameAsString();
-  std::string NamespaceStr;
-  auto Qualifier =
-      dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImpCasts())->getQualifier();
-  if (Qualifier) {
-    auto Namespace = Qualifier->getAsNamespace();
-    if (Namespace)
-      NamespaceStr = Namespace->getName();
-  }
-
-  if (NamespaceStr == "std")
-    return;
-
-  // The calls to some functions do not need to be migrated because they
-  // are functions in C standard library. However, in UB18.04 these functions
-  // are not recognized by ComputeCpp. As a result, these calls are temporarily
-  // migrated to sycl alternatives.
-  // TODO: Find a better way to deal with it or investigate why
-  // ComputeCpp behaves differently in UB16.04 and UB18.04.
-  if (ExceptionalFunctionNamesMap.find(FuncName) !=
-      ExceptionalFunctionNamesMap.end()) {
-    std::string NewFuncName = ExceptionalFunctionNamesMap.at(FuncName);
-    if (FuncName == "abs") {
-      // further check the type of the args.
-      if (!CE->getArg(0)->getType()->isIntegerType()) {
-        NewFuncName = "cl::sycl::fabs";
-      }
-    }
-
-    emplaceTransformation(
-        new ReplaceCalleeName(CE, std::move(NewFuncName), FuncName));
-
-    if (FuncName == "min") {
-      const LangOptions &LO = Result.Context->getLangOpts();
-      std::string FT = CE->getType().getAsString(PrintingPolicy(LO));
-      for (unsigned i = 0; i < CE->getNumArgs(); i++) {
-        std::string ArgT =
-            CE->getArg(i)->getType().getAsString(PrintingPolicy(LO));
-        std::string ArgExpr = CE->getArg(i)->getStmtClassName();
-        if (ArgT != FT || ArgExpr == "BinaryOperator") {
-          insertAroundStmt(CE->getArg(i), "(" + FT + ")(", ")");
-        }
-      }
-    }
-  }
+  auto *TM = getCmathHeaderInsertTextForCallExpr(CE, Result.SourceManager);
+  if (TM)
+    emplaceTransformation(TM);
 }
 
 void MathFunctionsRule::handleHalfFunctions(
@@ -3175,8 +3138,9 @@ void MathFunctionsRule::handleHalfFunctions(
 
   const std::string FuncName = FD->getNameAsString();
 
-  if (HalfFunctionNamesMap.find(FuncName) != HalfFunctionNamesMap.end()) {
-    std::string NewFuncName = HalfFunctionNamesMap.at(FuncName);
+  auto Iter = HalfFunctionNamesMap.find(FuncName);
+  if (Iter != HalfFunctionNamesMap.end()) {
+    std::string NewFuncName = Iter->second;
     if (NewFuncName == StringLiteralUnsupported) {
       report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
       return;
@@ -3224,9 +3188,9 @@ void MathFunctionsRule::handleSingleDoubleFunctions(
 
   const std::string FuncName = FD->getNameAsString();
 
-  if (SingleDoubleFunctionNamesMap.find(FuncName) !=
-      SingleDoubleFunctionNamesMap.end()) {
-    std::string NewFuncName = SingleDoubleFunctionNamesMap.at(FuncName);
+  auto Iter = SingleDoubleFunctionNamesMap.find(FuncName);
+  if (Iter != SingleDoubleFunctionNamesMap.end()) {
+    std::string NewFuncName = Iter->second;
     if (NewFuncName == StringLiteralUnsupported) {
       report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
     } else if (FuncName == "__dadd_rd" || FuncName == "__fadd_rd" ||
@@ -3376,23 +3340,70 @@ void MathFunctionsRule::handleSingleDoubleFunctions(
   }
 }
 
-void MathFunctionsRule::handleIntegerFunctions(
+void MathFunctionsRule::handleMiscFunctions(
     const CallExpr *CE, const MatchFinder::MatchResult &Result) {
   auto FD = CE->getDirectCallee();
-  if (!FD || !FD->hasAttr<CUDADeviceAttr>())
+  if (!FD)
     return;
 
   const std::string FuncName = FD->getNameAsString();
-
-  if (IntegerFunctionNamesMap.find(FuncName) != IntegerFunctionNamesMap.end()) {
-    std::string NewFuncName = IntegerFunctionNamesMap.at(FuncName);
-    if (NewFuncName == StringLiteralUnsupported) {
-      report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
-      return;
+  auto Iter = MiscFunctionNamesMap.find(FuncName);
+  if (Iter == MiscFunctionNamesMap.end())
+    return;
+  std::string NewFuncName = Iter->second;
+  if (NewFuncName == StringLiteralUnsupported) {
+    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
+    return;
+  }
+  // For device functions
+  if (FD->hasAttr<CUDADeviceAttr>()) {
+    if (FuncName == "abs") {
+      // further check the type of the args.
+      if (!CE->getArg(0)->getType()->isIntegerType()) {
+        NewFuncName = "cl::sycl::fabs";
+      }
     }
 
     emplaceTransformation(
         new ReplaceCalleeName(CE, std::move(NewFuncName), FuncName));
+
+    if (FuncName == "min") {
+      const LangOptions &LO = Result.Context->getLangOpts();
+      std::string FT = CE->getType().getAsString(PrintingPolicy(LO));
+      for (unsigned i = 0; i < CE->getNumArgs(); i++) {
+        std::string ArgT =
+            CE->getArg(i)->getType().getAsString(PrintingPolicy(LO));
+        std::string ArgExpr = CE->getArg(i)->getStmtClassName();
+        if (ArgT != FT || ArgExpr == "BinaryOperator") {
+          emplaceTransformation(
+              new InsertBeforeStmt(CE->getArg(i), "(" + FT + ")("));
+          emplaceTransformation(new InsertAfterStmt(CE->getArg(i), ")"));
+        }
+      }
+    }
+  }
+  // For host functions
+  else {
+    NewFuncName = "";
+    if (FuncName == "abs" || FuncName == "max" || FuncName == "min") {
+      NewFuncName = FuncName;
+      auto *BT = dyn_cast<BuiltinType>(CE->getArg(0)->IgnoreImpCasts()->getType());
+      if (BT) {
+        auto K = BT->getKind();
+        if (K == BuiltinType::Float) {
+          NewFuncName = "f" + FuncName;
+          NewFuncName += "f";
+        } else if (K == BuiltinType::Double) {
+          NewFuncName = "f" + FuncName;
+        } else if (K == BuiltinType::LongDouble) {
+          NewFuncName = "f" + FuncName;
+          NewFuncName += "l";
+        }
+      }
+    }
+    if (!NewFuncName.empty())
+      emplaceTransformation(
+          new ReplaceCalleeName(CE, std::move(NewFuncName), FuncName));
   }
 }
 
@@ -3409,9 +3420,9 @@ void MathFunctionsRule::handleTypecastFunctions(
                                {"ru", "rtp"},
                                {"rz", "rtz"}};
   const std::string FuncName = CE->getDirectCallee()->getNameAsString();
-  if (TypecastFunctionNamesMap.find(FuncName) !=
-      TypecastFunctionNamesMap.end()) {
-    std::string NewFuncName = TypecastFunctionNamesMap.at(FuncName);
+  auto Iter = TypecastFunctionNamesMap.find(FuncName);
+  if (Iter != TypecastFunctionNamesMap.end()) {
+    std::string NewFuncName = Iter->second;
     if (NewFuncName == StringLiteralUnsupported) {
       report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
       return;
