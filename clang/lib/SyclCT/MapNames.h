@@ -19,11 +19,19 @@ const std::string StringLiteralUnsupported{"UNSUPPORTED"};
 
 class MapNames {
 public:
+  struct BLASFuncReplInfo {
+    std::vector<int> BufferIndexInfo;
+    std::vector<int> PointerIndexInfo;
+    std::vector<std::string> BufferTypeInfo;
+    std::string ReplName;
+  };
   using MapTy = std::map<std::string, std::string>;
   static const MapTy TypeNamesMap;
   static const MapTy Dim3MemberNamesMap;
   static const MapTy MacrosMap;
-  static const MapTy BLASFunctionNamesMap;
+  static const MapTy BLASEnumsMap;
+  static const std::map<std::string, MapNames::BLASFuncReplInfo>
+      BLASFuncReplInfoMap;
 
   inline static const std::string &findReplacedName(const MapTy &Map,
                                                     const std::string &Name) {

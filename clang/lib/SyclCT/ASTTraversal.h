@@ -360,6 +360,9 @@ public:
     return ASTTraversalMetaInfo::getEmittedTransformations()[&ID];
   }
 
+  void insertIncludeFile(SourceLocation SL, std::set<FileID> &HeaderFilter,
+                         std::string &&InsertText);
+
 protected:
   void emplaceTransformation(TextModification *TM) {
     if (TM) {
@@ -593,18 +596,10 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-// Migration rule for BLASStatus enums constants.
-class BLASStatusRule : public NamedTranslationRule<BLASStatusRule> {
+// Migration rule for BLAS enums.
+class BLASEnumsRule : public NamedTranslationRule<BLASEnumsRule> {
 public:
-  BLASStatusRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-};
-
-// Migration rule for BLASOperation enums constants.
-class BLASOperationRule : public NamedTranslationRule<BLASOperationRule> {
-public:
-  BLASOperationRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  BLASEnumsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -615,6 +610,12 @@ public:
   FunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  std::string GetBufferDeclStrAndReplPtr(const Expr *Arg, const ASTContext &AC,
+                                         const std::string &TypeAsStr,
+                                         SourceLocation SL);
+  std::string GetPrefixInsertAndReplPtrs(const std::vector<int> PointerArgsIndex,
+                              const CallExpr &CE, const ASTContext &AC,
+                              const std::vector<std::string> &TypeStrsVec, SourceLocation SL);
 };
 
 /// Migration rule for event API calls
