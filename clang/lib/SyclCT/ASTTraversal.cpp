@@ -2361,19 +2361,20 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
     auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
     auto StmtStr1 = getStmtSpelling(CE->getArg(1), *Result.Context);
     auto StmtStr2 = getStmtSpelling(CE->getArg(2), *Result.Context);
-    std::string ReplStr{StmtStr0};
-    ReplStr += ".wait(), ";
+    std::string ReplStr{"std::async([&]() { "};
+    ReplStr += StmtStr0;
+    ReplStr += ".wait(); ";
     ReplStr += StmtStr1;
     ReplStr += "(";
     ReplStr += StmtStr0;
     ReplStr += ", 0, ";
     ReplStr += StmtStr2;
-    ReplStr += ")";
+    ReplStr += "); ";
+    ReplStr += "})";
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
-    report(CE->getBeginLoc(), Diagnostics::CALLBACK_FOR_QUEUE_NOT_SUPPORTED);
     emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
   } else {
     syclct_unreachable("Unknown function name");

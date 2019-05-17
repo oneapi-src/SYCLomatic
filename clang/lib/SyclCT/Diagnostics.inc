@@ -43,8 +43,6 @@ DEF_WARNING(ROUNDING_MODE_UNSUPPORTED, 1013, "The rounding mode of %0 is not def
 DEF_COMMENT(ROUNDING_MODE_UNSUPPORTED, 1013, "The rounding mode of {0} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.")
 DEF_WARNING(STREAM_FLAG_PRIORITY_NOT_SUPPORTED, 1014, "Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.")
 DEF_COMMENT(STREAM_FLAG_PRIORITY_NOT_SUPPORTED, 1014, "Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.")
-DEF_WARNING(CALLBACK_FOR_QUEUE_NOT_SUPPORTED, 1015, "DPC++ doesn't have callback mechanism for queues. cudaStreamAddCallback was replaced with a blocking wait and host function call. Consider changing the algorithm to avoid waiting and calling of the function on the host.")
-DEF_COMMENT(CALLBACK_FOR_QUEUE_NOT_SUPPORTED, 1015, "DPC++ doesn't have callback mechanism for queues. cudaStreamAddCallback was replaced with a blocking wait and host function call. Consider changing the algorithm to avoid waiting and calling of the function on the host.")
 DEF_WARNING(NOT_SUPPORTED_PARAMETERS_VALUE, 1016, "Migration of %0 with these parameters is not supported currently, because %1. You may need to migrate this code manually.")
 DEF_COMMENT(NOT_SUPPORTED_PARAMETERS_VALUE, 1016, "Migration of {0} with these parameters is not supported currently, because {1}. You may need to migrate this code manually.")
 DEF_WARNING(MATH_SIMULATION, 1017, "%0 is simulated by %1 in DPC++. Please check the potential precision and/or performance issues of generated code.")

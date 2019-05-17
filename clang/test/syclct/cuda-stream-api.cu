@@ -215,14 +215,8 @@ static void func()
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: SYCLCT1015:{{[0-9]+}}: DPC++ doesn't have callback mechanism for queues. cudaStreamAddCallback was replaced with a blocking wait and host function call. Consider changing the algorithm to avoid waiting and calling of the function on the host.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: int status = (s0.wait(), callback<char *>(s0, 0, str), 0);
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: SYCLCT1015:{{[0-9]+}}: DPC++ doesn't have callback mechanism for queues. cudaStreamAddCallback was replaced with a blocking wait and host function call. Consider changing the algorithm to avoid waiting and calling of the function on the host.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: s1.wait(), callback<char*>(s1, 0, str);
+  // CHECK-NEXT: int status = (std::async([&]() { s0.wait(); callback<char *>(s0, 0, str); }), 0);
+  // CHECK-NEXT: std::async([&]() { s1.wait(); callback<char*>(s1, 0, str); });
   cudaError_t status = cudaStreamAddCallback(s0, callback<char *>, str, flags);
   cudaStreamAddCallback(s1, callback<char*>, str, flags);
 
