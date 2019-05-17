@@ -1,14 +1,35 @@
+/****************************************************************************
+*
+* ENTRY(APINAME,  ProcessedOrNot, Priority, MigrationDesc)
+*  APIName: name of CUDA API
+*
+*  ProcessedOrNot:  false|true
+*    false: this API has not been processed.
+*    true:  this API has been processed, need check MigrationDesc field to
+            see if it has be migrated successfully.
+*
+*  Priority: migration priority, eg. P0 - P4
+*    P0:  should support in Beta release.
+*    P4:  should support in Gold.
+*
+*  MigrationDesc: Successful[: Comment] | Unsupported: Comment
+*    Successful:   this API has been migrated.
+*    Unsupported:  this API can not be migrated currently.
+*                  Must add Comment to explain why this API is Unsupported.
+*    Comment:      extra comment on the migration.
+*
+****************************************************************************/
 // cuBLAS call api
-ENTRY(cublasCreate, true, P4, "comment")
-ENTRY(cublasDestroy, true, P4, "comment")
+ENTRY(cublasCreate, true, P4, "Success")
+ENTRY(cublasDestroy, true, P4, "Success")
 ENTRY(cublasGetVersion, false, P4, "comment")
 ENTRY(cublasGetProperty, false, P4, "comment")
 ENTRY(cublasSetStream, false, P4, "comment")
 ENTRY(cublasGetStream, false, P4, "comment")
 ENTRY(cublasGetPointerMode, false, P4, "comment")
 ENTRY(cublasSetPointerMode, false, P4, "comment")
-ENTRY(cublasSetVector, true, P4, "comment")
-ENTRY(cublasGetVector, true, P4, "comment")
+ENTRY(cublasSetVector, true, P4, "Success: SYCLCT1016")
+ENTRY(cublasGetVector, true, P4, "Success: SYCLCT1016")
 ENTRY(cublasSetMatrix, false, P4, "comment")
 ENTRY(cublasGetMatrix, false, P4, "comment")
 ENTRY(cublasSetVectorAsync, false, P4, "comment")
@@ -148,10 +169,10 @@ ENTRY(cublasChpr, false, P4, "comment")
 ENTRY(cublasZhpr, false, P4, "comment")
 ENTRY(cublasChpr2, false, P4, "comment")
 ENTRY(cublasZhpr2, false, P4, "comment")
-ENTRY(cublasSgemm, true, P4, "comment")
-ENTRY(cublasDgemm, true, P4, "comment")
-ENTRY(cublasCgemm, true, P4, "comment")
-ENTRY(cublasZgemm, true, P4, "comment")
+ENTRY(cublasSgemm, true, P4, "Success")
+ENTRY(cublasDgemm, true, P4, "Success")
+ENTRY(cublasCgemm, true, P4, "Success")
+ENTRY(cublasZgemm, true, P4, "Success")
 ENTRY(cublasHgemm, false, P4, "comment")
 ENTRY(cublasCgemm3m, false, P4, "comment")
 ENTRY(cublasZgemm3m, false, P4, "comment")

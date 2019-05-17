@@ -1,3 +1,24 @@
+/****************************************************************************
+*
+* ENTRY(APINAME,  ProcessedOrNot, Priority, MigrationDesc)
+*  APIName: name of CUDA API
+*
+*  ProcessedOrNot:  false|true
+*    false: this API has not been processed.
+*    true:  this API has been processed, need check MigrationDesc field to
+            see if it has be migrated successfully.
+*
+*  Priority: migration priority, eg. P0 - P4
+*    P0:  should support in Beta release.
+*    P4:  should support in Gold.
+*
+*  MigrationDesc: Successful[: Comment] | Unsupported: Comment
+*    Successful:   this API has been migrated.
+*    Unsupported:  this API can not be migrated currently.
+*                  Must add Comment to explain why this API is Unsupported.
+*    Comment:      extra comment on the migration.
+*
+****************************************************************************/
 // thrust api
 ENTRY(thrust::abs, false, P4, "comment")
 ENTRY(thrust::acos, false, P4, "comment")
