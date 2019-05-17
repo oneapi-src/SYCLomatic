@@ -97,6 +97,14 @@
 // Disables definitions of device-side runtime support stubs in
 // cuda_device_runtime_api.h
 #include "driver_types.h"
+#ifdef INTEL_CUSTOMIZATION
+// Including "host_config.h”, but left macro __CUDACC__ not defined.
+// But the contents of "host_config.h" is protected by __CUDACC__,
+// if __CUDACC__ not defined, the contents of "host_config.h"
+// would not be included.
+// So here, it needs to define macro __CUDACC__ firstly.
+#define __CUDACC__
+#endif
 #include "host_config.h"
 #include "host_defines.h"
 
@@ -107,7 +115,9 @@
 #define nv_weak weak
 #undef __CUDABE__
 #undef __CUDA_LIBDEVICE__
+#if !defined(INTEL_CUSTOMIZATION)
 #define __CUDACC__
+#endif
 #include "cuda_runtime.h"
 
 #pragma pop_macro("nv_weak")
