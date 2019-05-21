@@ -15,6 +15,8 @@
 #include "Utility.h"
 #include <map>
 
+const std::string StringLiteralUnsupported{"UNSUPPORTED"};
+
 class MapNames {
 public:
   using MapTy = std::map<std::string, std::string>;

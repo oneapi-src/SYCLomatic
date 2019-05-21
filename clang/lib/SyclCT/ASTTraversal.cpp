@@ -3036,7 +3036,7 @@ void MathFunctionsRule::handleHalfFunctions(
 
   if (HalfFunctionNamesMap.find(FuncName) != HalfFunctionNamesMap.end()) {
     std::string NewFuncName = HalfFunctionNamesMap.at(FuncName);
-    if (NewFuncName == "UNSUPPORTED") {
+    if (NewFuncName == StringLiteralUnsupported) {
       report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
       return;
     }
@@ -3086,7 +3086,7 @@ void MathFunctionsRule::handleSingleDoubleFunctions(
   if (SingleDoubleFunctionNamesMap.find(FuncName) !=
       SingleDoubleFunctionNamesMap.end()) {
     std::string NewFuncName = SingleDoubleFunctionNamesMap.at(FuncName);
-    if (NewFuncName == "UNSUPPORTED") {
+    if (NewFuncName == StringLiteralUnsupported) {
       report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
     } else if (FuncName == "__dadd_rd" || FuncName == "__fadd_rd" ||
                FuncName == "__dadd_rn" || FuncName == "__fadd_rn" ||
@@ -3245,7 +3245,7 @@ void MathFunctionsRule::handleIntegerFunctions(
 
   if (IntegerFunctionNamesMap.find(FuncName) != IntegerFunctionNamesMap.end()) {
     std::string NewFuncName = IntegerFunctionNamesMap.at(FuncName);
-    if (NewFuncName == "UNSUPPORTED") {
+    if (NewFuncName == StringLiteralUnsupported) {
       report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
       return;
     }
@@ -3271,7 +3271,7 @@ void MathFunctionsRule::handleTypecastFunctions(
   if (TypecastFunctionNamesMap.find(FuncName) !=
       TypecastFunctionNamesMap.end()) {
     std::string NewFuncName = TypecastFunctionNamesMap.at(FuncName);
-    if (NewFuncName == "UNSUPPORTED") {
+    if (NewFuncName == StringLiteralUnsupported) {
       report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
       return;
     } else if (startsWith(NewFuncName, "syclct::")) {
