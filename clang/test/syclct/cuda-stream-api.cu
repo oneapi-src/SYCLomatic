@@ -236,7 +236,7 @@ static void func()
   checkCudaErrors(cudaStreamGetFlags(s0, &flags));
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: cudaStreamAttachMemAsync is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: cudaStreamAttachMemAsync is not supported in DPC++
   // CHECK-NEXT: */
   cudaStreamAttachMemAsync(s0, nullptr);
 

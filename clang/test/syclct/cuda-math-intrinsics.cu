@@ -65,31 +65,31 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   // Half2 Comparison Functions
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2_2 = __heq2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2_2 = __hge2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2_2 = __hgt2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2_2 = __hisnan2(h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2_2 = __hle2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2_2 = __hlt2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2_2 = __hne2(h2, h2_1);
 
@@ -114,7 +114,7 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   // CHECK: h_2 = cl::sycl::log2(h);
   h_2 = hlog2(h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h_2 = hrcp(h);
   // CHECK: h_2 = cl::sycl::rint(h);
@@ -149,7 +149,7 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   // CHECK: h2_2 = cl::sycl::log2(h2);
   h2_2 = h2log2(h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2_2 = h2rcp(h2);
   // CHECK: h2_2 = cl::sycl::rint(h2);
@@ -346,19 +346,19 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d2 = __dmul_rz(d0, d1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d1 = __drcp_rd(d0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d1 = __drcp_rn(d0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d1 = __drcp_ru(d0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d1 = __drcp_rz(d0);
 
@@ -1273,319 +1273,319 @@ __global__ void testUnsupported() {
   bool b;
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h = __hadd_sat(h, h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h = __hfma_sat(h, h, h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h = __hmul_sat(h, h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h = __hsub_sat(h, h);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2 = __hadd2_sat(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2 = __hfma2_sat(h2, h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2 = __hmul2_sat(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2 = __hsub2_sat(h2, h2);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hequ(h, h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hgeu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hgtu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hleu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hltu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hneu(h, h);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbeq2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbequ2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbge2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbgeu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbgt2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbgtu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hble2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbleu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hblt2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbltu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbne2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbneu2(h2, h2);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2 = __hequ2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2 = __hgeu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2 = __hgtu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2 = __hleu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2 = __hltu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2 = __hneu2(h2, h2);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = cyl_bessel_i0f(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = cyl_bessel_i1f(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = erfcinvf(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = erfcxf(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = erfinvf(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = j0f(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = j1f(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = jnf(i, f);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = norm3df(f, f, f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = norm4df(f, f, f, f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = normcdff(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = normcdfinvf(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = normf(i, &f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = rcbrtf(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = rnorm3df(f, f, f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = rnorm4df(f, f, f, f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = rnormf(i, &f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = scalblnf(f, l);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = scalbnf(f, i);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = y0f(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = y1f(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = ynf(i, f);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = cyl_bessel_i0(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = cyl_bessel_i1(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = erfcinv(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = erfcx(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = erfinv(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = j0(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = j1(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = jn(i, d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = norm(i, &d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = norm3d(d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = norm4d(d, d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = normcdf(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = normcdfinv(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = rcbrt(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = rnorm3d(d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = rnorm4d(d, d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = rnorm(i, &d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = scalbln(d, l);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = scalbn(d, i);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = y0(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = y1(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = yn(i, d);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = __saturatef(f);
 
@@ -1595,89 +1595,89 @@ __global__ void testUnsupported() {
   // i = __shfl_xor_sync(u, h, u, i);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   i = __double2hiint(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   i = __double2loint(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = __hiloint2double(i, i);
 
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __brev(u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   ull = __brevll(ull);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __byte_perm(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   i = __ffs(i);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   i = __ffsll(ll);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __funnelshift_l(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __funnelshift_lc(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __funnelshift_r(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __funnelshift_rc(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   ll = __mul64hi(ll, ll);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   i = __rhadd(i, i);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __sad(i, i, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __uhadd(u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __umul24(u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   ull = __umul64hi(ull, ull);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __umulhi(u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __urhadd(u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in Sycl
+  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __usad(u, u, u);
 }
