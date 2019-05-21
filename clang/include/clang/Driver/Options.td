@@ -2487,7 +2487,9 @@ def no_pedantic : Flag<["-", "--"], "no-pedantic">, Group<pedantic_Group>;
 def no__dead__strip__inits__and__terms : Flag<["-"], "no_dead_strip_inits_and_terms">;
 def nobuiltininc : Flag<["-"], "nobuiltininc">, Flags<[CC1Option, CoreOption]>,
   HelpText<"Disable builtin #include directories">;
-def nocudainc : Flag<["-"], "nocudainc">;
+//INTEL_CUSTOMIZATION begin
+def nocudainc : Flag<["-"], "nocudainc">, HelpText<"ingore CUDA header file">;
+//INTEL_CUSTOMIZATION end
 def nocudalib : Flag<["-"], "nocudalib">;
 def nodefaultlibs : Flag<["-"], "nodefaultlibs">;
 def nofixprebinding : Flag<["-"], "nofixprebinding">;
