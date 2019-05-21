@@ -15,7 +15,7 @@ int main()
 {
   // CHECK: syclct::sycl_device_info deviceProp;
   cudaDeviceProp deviceProp;
-  // CHECK: if (deviceProp.mode() == syclct::compute_mode::prohibited) {
+  // CHECK: if (deviceProp.get_mode() == syclct::compute_mode::prohibited) {
   if (deviceProp.computeMode == cudaComputeModeProhibited) {
     return 0;
   }

@@ -24,6 +24,7 @@ if (error_code == cudaSuccess) {
 // CHECK-NEXT: /*
 // CHECK-NEXT:  SYCLCT1006:{{[0-9]+}}: SYCL doesn't provide standard API to differentiate between integrated/discrete GPU devices. Consider to re-implement the code which depends on this field
 // CHECK-NEXT: */
+// CHECK-NEXT:if (cdp.get_major_version() < 3 && cdp.get_integrated() != 1) {
     if (cdp.major < 3 && cdp.integrated != 1) {
             printf("do_complex_compute requires compute capability 3.0 or later and not integrated\n");
     }

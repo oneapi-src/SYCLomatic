@@ -131,7 +131,7 @@ const MapNames::MapTy DevicePropVarRule::PropNamesMap{
     {"computeMode", "mode"},
     {"major", "major_version"},
     {"minor", "minor_version"},
-    {"integrated", "get_integrated"},
+    {"integrated", "integrated"},
     {"multiProcessorCount", "max_compute_units"},
     {"name", "name"},
     {"totalGlobalMem", "global_mem_size"},

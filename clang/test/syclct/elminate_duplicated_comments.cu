@@ -9,34 +9,34 @@ int main() {
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:int hash = deviceProp.major_version() ^ deviceProp.minor_version();
+  // CHECK-NEXT:int hash = deviceProp.get_major_version() ^ deviceProp.get_minor_version();
   int hash = deviceProp.major ^ deviceProp.minor;
 
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:hash = deviceProp.major_version() ^ deviceProp.minor_version() ^ deviceProp.major_version() ^ deviceProp.minor_version();
+  // CHECK-NEXT:hash = deviceProp.get_major_version() ^ deviceProp.get_minor_version() ^ deviceProp.get_major_version() ^ deviceProp.get_minor_version();
   hash = deviceProp.major ^ deviceProp.minor ^ deviceProp.major ^ deviceProp.minor;
 
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:hash = deviceProp.major_version() ^
+  // CHECK-NEXT:hash = deviceProp.get_major_version() ^
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:deviceProp.minor_version();
+  // CHECK-NEXT:deviceProp.get_minor_version();
   hash = deviceProp.major ^
          deviceProp.minor;
 
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:hash = deviceProp.major_version() ^ deviceProp.major_version() ^
+  // CHECK-NEXT:hash = deviceProp.get_major_version() ^ deviceProp.get_major_version() ^
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:deviceProp.minor_version() ^ deviceProp.minor_version();
+  // CHECK-NEXT:deviceProp.get_minor_version() ^ deviceProp.get_minor_version();
   hash = deviceProp.major ^ deviceProp.major ^
          deviceProp.minor ^ deviceProp.minor;
 

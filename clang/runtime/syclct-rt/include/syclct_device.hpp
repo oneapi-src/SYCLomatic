@@ -43,28 +43,39 @@ auto exception_handler = [](cl::sycl::exception_list exceptions) {
 
 class sycl_device_info {
 public:
-  char *name() { return _name; }
-  cl::sycl::id<3> &max_work_item_sizes() { return _max_work_item_sizes; }
-  bool &host_unified_memory() { return _host_unified_memory; }
-  int &major_version() { return _major; }
-  int &minor_version() { return _minor; }
-  int &get_integrated() { return _integrated; }
-  int &max_clock_frequency() { return _frequency; }
-  int &max_compute_units() { return _compute_units; }
-  size_t &global_mem_size() { return _global_mem_size; }
-  compute_mode &mode() { return _compute_mode; }
-  // ...
+  //get interface
+  char *get_name() { return _name; }
+  cl::sycl::id<3> get_max_work_item_sizes() { return _max_work_item_sizes; }
+  bool get_host_unified_memory() { return _host_unified_memory; }
+  int get_major_version() { return _major; }
+  int get_minor_version() { return _minor; }
+  int get_integrated() { return _integrated; }
+  int get_max_clock_frequency() { return _frequency; }
+  int get_max_compute_units() { return _compute_units; }
+  size_t get_global_mem_size() { return _global_mem_size; }
+  compute_mode get_mode() { return _compute_mode; }
+  // set interface
+  void set_name(const char* name) {std::strncpy(_name, name,256);}
+  void set_max_work_item_sizes(const cl::sycl::id<3> max_work_item_sizes) {_max_work_item_sizes=max_work_item_sizes;}
+  void set_host_unified_memory(bool host_unified_memory) {_host_unified_memory=host_unified_memory;}
+  void set_major_version(int major) {_major=major;}
+  void set_minor_version(int minor) {_minor=minor;}
+  void set_integrated(int integrated) {_integrated=integrated;}
+  void set_max_clock_frequency(int frequency) {_frequency=frequency;}
+  void set_max_compute_units(int compute_units) {_compute_units=compute_units;}
+  void set_global_mem_size(size_t global_mem_size) {_global_mem_size=global_mem_size;}
+  void set_mode(compute_mode compute_mode){_compute_mode=compute_mode;}
 
 private:
+  char _name[256];
+  cl::sycl::id<3> _max_work_item_sizes;
+  bool _host_unified_memory = false;
   int _major;
   int _minor;
   int _integrated = 0;
   int _frequency;
   int _compute_units;
   size_t _global_mem_size;
-  char _name[256];
-  cl::sycl::id<3> _max_work_item_sizes;
-  bool _host_unified_memory = false;
   compute_mode _compute_mode = compute_mode::default_;
 };
 
@@ -80,7 +91,7 @@ public:
 
   void get_device_info(sycl_device_info &out) {
     sycl_device_info prop;
-    std::strcpy(prop.name(), get_info<cl::sycl::info::device::name>().c_str());
+    prop.set_name(get_info<cl::sycl::info::device::name>().c_str());
 
     // Version string has the following format:
     // OpenCL<space><major.minor><space><vendor-specific-information>
@@ -89,20 +100,15 @@ public:
     std::string item;
     std::getline(ver, item, ' '); // OpenCL
     std::getline(ver, item, '.'); // major
-    prop.major_version() = std::stoi(item);
+    prop.set_major_version(std::stoi(item));
     std::getline(ver, item, ' '); // minor
-    prop.minor_version() = std::stoi(item);
+    prop.set_minor_version(std::stoi(item));
 
-    prop.max_work_item_sizes() =
-        get_info<cl::sycl::info::device::max_work_item_sizes>();
-    prop.host_unified_memory() =
-        get_info<cl::sycl::info::device::host_unified_memory>();
-    prop.max_clock_frequency() =
-        get_info<cl::sycl::info::device::max_clock_frequency>();
-    prop.max_compute_units() =
-        get_info<cl::sycl::info::device::max_compute_units>();
-    prop.global_mem_size() =
-        get_info<cl::sycl::info::device::global_mem_size>();
+    prop.set_max_work_item_sizes(get_info<cl::sycl::info::device::max_work_item_sizes>());
+    prop.set_host_unified_memory(get_info<cl::sycl::info::device::host_unified_memory>());
+    prop.set_max_clock_frequency(get_info<cl::sycl::info::device::max_clock_frequency>());
+    prop.set_max_compute_units(get_info<cl::sycl::info::device::max_compute_units>());
+    prop.set_global_mem_size(get_info<cl::sycl::info::device::global_mem_size>());
     //...
     out = prop;
   }

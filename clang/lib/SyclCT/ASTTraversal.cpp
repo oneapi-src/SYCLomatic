@@ -1696,17 +1696,32 @@ void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
   const MemberExpr *ME = getNodeAsType<MemberExpr>(Result, "DevicePropVar");
   if (!ME)
     return;
+  auto Parents = Result.Context->getParents(*ME);
+  assert(Parents.size() == 1);
+  if(Parents.size() != 1) {
+      return;
+  }
   auto Search = PropNamesMap.find(ME->getMemberNameInfo().getAsString());
   if (Search == PropNamesMap.end()) {
     // TODO report migration error
     return;
   }
-  emplaceTransformation(new RenameFieldInMemberExpr(ME, Search->second + "()"));
+  if(Parents[0].get<clang::ImplicitCastExpr>()) {
+    // migrate to get_XXX() eg. "b=a.minor" to "b=a.get_minor_version()"
+    emplaceTransformation(new RenameFieldInMemberExpr(ME, "get_" + Search->second + "()"));
+  } else if (auto *BO = Parents[0].get<clang::BinaryOperator>()) {
+    // migrate to set_XXX() eg. "a.minor = 1" to "a.set_minor_version(1)"
+    if(BO->getOpcode()== clang::BO_Assign) {
+        emplaceTransformation(new RenameFieldInMemberExpr(ME, "set_" + Search->second ));
+        emplaceTransformation(new ReplaceText(BO->getOperatorLoc(), 1, "("));
+        emplaceTransformation(new InsertAfterStmt(BO, ")"));
+    }
+  }
   if ((Search->second.compare(0, 13, "major_version") == 0) ||
       (Search->second.compare(0, 13, "minor_version") == 0)) {
     report(ME->getBeginLoc(), Comments::VERSION_COMMENT);
   }
-  if (Search->second.compare(0, 14, "get_integrated") == 0) {
+  if (Search->second.compare(0, 10, "integrated") == 0) {
     report(ME->getBeginLoc(), Comments::NOT_SUPPORT_API_INTEGRATEDORNOT);
   }
 }
