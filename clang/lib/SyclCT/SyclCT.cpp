@@ -18,6 +18,7 @@
 #include "clang/Tooling/Refactoring.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/Path.h"
 
 #include "ASTTraversal.h"
@@ -628,6 +629,12 @@ int run(int argc, const char **argv) {
 #if defined(__linux__) || defined(_WIN64)
   InstallSignalHandle();
 #endif
+
+#if defined(_WIN64)
+  // To support wildcard "*" in source file name in windows.
+  llvm::InitLLVM X(argc, argv);
+#endif
+
   // Set hangle for libclangTooling to proccess message for syclct
   clang::tooling::SetPrintHandler(PrintMsg);
 
