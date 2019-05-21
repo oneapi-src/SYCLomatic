@@ -41,10 +41,23 @@ static void rewriteDir(SmallString<256> &FilePath, const StringRef InRoot,
                        const StringRef OutRoot) {
   assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
   assert(isCanonical(FilePath) && "FilePath must be a canonical path.");
-  auto PathDiff =
-      mismatch(path::begin(FilePath), path::end(FilePath), path::begin(InRoot));
-  SmallString<256> NewFilePath = OutRoot;
-  path::append(NewFilePath, PathDiff.first, path::end(FilePath));
+
+#if defined(_WIN64)
+  std::string LocalFilePath = StringRef(FilePath).lower();
+  std::string LocalInRoot = InRoot.lower();
+  std::string LocalOutRoot = OutRoot.lower();
+#elif defined(__linux__)
+  std::string LocalFilePath = StringRef(FilePath);
+  std::string LocalInRoot = InRoot;
+  std::string LocalOutRoot = OutRoot;
+#else
+#error Only support windows and Linux.
+#endif
+
+  auto PathDiff = mismatch(path::begin(LocalFilePath), path::end(LocalFilePath),
+                           path::begin(LocalInRoot));
+  SmallString<512> NewFilePath = StringRef(LocalOutRoot);
+  path::append(NewFilePath, PathDiff.first, path::end(LocalFilePath));
   FilePath = NewFilePath;
 }
 

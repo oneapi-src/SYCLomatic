@@ -56,14 +56,37 @@ bool isCanonical(StringRef Path) {
 }
 
 bool isChildPath(const std::string &Root, const std::string &Child) {
-  auto Diff = mismatch(path::begin(Root), path::end(Root), path::begin(Child));
-  // Root is not considered prefix of Child if they are equal.
-  return Diff.first == path::end(Root) && Diff.second != path::end(Child);
+#if defined(_WIN64)
+  std::string LocalRoot = StringRef(Root).lower();
+  std::string LocalChild = StringRef(Child).lower();
+#elif defined(__linux__)
+  std::string LocalRoot = Root;
+  std::string LocalChild = Child;
+#else
+#error Only support windows and Linux.
+#endif
+
+  auto Diff = mismatch(path::begin(LocalRoot), path::end(LocalRoot),
+                       path::begin(LocalChild));
+  // LocalRoot is not considered prefix of LocalChild if they are equal.
+  return Diff.first == path::end(LocalRoot) &&
+         Diff.second != path::end(LocalChild);
 }
 
 bool isSamePath(const std::string &Root, const std::string &Child) {
-  auto Diff = mismatch(path::begin(Root), path::end(Root), path::begin(Child));
-  return Diff.first == path::end(Root) && Diff.second == path::end(Child);
+#if defined(_WIN64)
+  std::string LocalRoot = StringRef(Root).lower();
+  std::string LocalChild = StringRef(Child).lower();
+#elif defined(__linux__)
+  std::string LocalRoot = Root;
+  std::string LocalChild = Child;
+#else
+#error Only support windows and Linux.
+#endif
+  auto Diff = mismatch(path::begin(LocalRoot), path::end(LocalRoot),
+                       path::begin(LocalChild));
+  return Diff.first == path::end(LocalRoot) &&
+         Diff.second == path::end(LocalChild);
 }
 
 const char *getNL(void) {
