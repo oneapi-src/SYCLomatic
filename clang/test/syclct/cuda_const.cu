@@ -3,9 +3,11 @@
 
 #include <stdio.h>
 
+#define NUM_ELEMENTS 16
+const unsigned num_elements = 16;
 // CHECK: syclct::constant_memory<float, 1> const_angle(360);
-// CHECK: syclct::constant_memory<float, 2> const_float(33, 33);
-__constant__ float const_angle[360], const_float[33][33];
+// CHECK: syclct::constant_memory<float, 2> const_float(NUM_ELEMENTS, num_elements * 2);
+__constant__ float const_angle[360], const_float[NUM_ELEMENTS][num_elements * 2];
 // CHECK: syclct::constant_memory<cl::sycl::double2, 0> vec_d;
 __constant__ double2 vec_d;
 

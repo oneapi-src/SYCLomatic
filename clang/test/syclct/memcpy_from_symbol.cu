@@ -21,7 +21,7 @@ static const size_t k_num_elements = 16;
 __device__ int a;
 __global__ void kernel1() { a = 10; }
 
-// CHECK: syclct::device_memory<int, 1> b(16);
+// CHECK: syclct::device_memory<int, 1> b(k_num_elements);
 __device__ int b[k_num_elements];
 __global__ void kernel2() { b[threadIdx.x] = threadIdx.x; }
 

@@ -1130,7 +1130,7 @@ void VectorTypeNamespaceRule::replaceTypeName(const QualType &QT,
   if (isNamespaceInserted(BeginLoc))
     return;
 
-  TypeInfo Ty(QT);
+  CtTypeInfo Ty(QT);
   auto &TypeName = Ty.getOrginalBaseType();
 
   if (isDeclType)

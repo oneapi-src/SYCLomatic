@@ -42,7 +42,7 @@ void testTemplate(){
   // CHECK-NEXT:  size_t d_d_offset = d_d_buf.second;
   // CHECK-NEXT:  syclct::get_default_queue().submit(
   // CHECK-NEXT:	[&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:          auto syclct_extern_memory_acc = syclct::extern_shared_memory(mem_size).get_access(cgh);
+  // CHECK-NEXT:      auto syclct_extern_memory_acc = syclct::extern_shared_memory(mem_size).get_access(cgh);
   // CHECK-NEXT:	  auto d_d_acc = d_d_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:	  cgh.parallel_for<syclct_kernel_name<class templateReverse_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:		cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1)), cl::sycl::range<3>(n, 1, 1)),

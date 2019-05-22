@@ -5,14 +5,9 @@
 
 #include <cassert>
 
-#define NUM_ELEMENTS (/* Threads per block */16)
+#define NUM_ELEMENTS (/* Threads per block */ 16)
 
-// TODO:
-//   1. Multiple device variables used in a kernel function (usage analysis)
-//   2. Initialized value for device variable
-//   3. Muti-dimensional array
-
-// CHECK: syclct::device_memory<float, 1> in(16);
+// CHECK: syclct::device_memory<float, 1> in(NUM_ELEMENTS);
 __device__ float in[NUM_ELEMENTS];
 // CHECK: syclct::device_memory<int, 1> init(syclct::syclct_range<1>(4), {1, 2, 3, 4});
 __device__ int init[4] = {1, 2, 3, 4};
@@ -29,22 +24,25 @@ __device__ int al;
 // CHECK: syclct::device_memory<int, 0> ainit(syclct::syclct_range<0>(), NUM_ELEMENTS);
 __device__ int ainit = NUM_ELEMENTS;
 
+const int num_elements = 16;
 // CHECK: syclct::device_memory<float, 1> fx(2);
-// CHECK: syclct::device_memory<float, 2> fy(3, 4);
-__device__ float fx[2], fy[3][4];
+// CHECK: syclct::device_memory<float, 2> fy(num_elements, 4 * num_elements);
+__device__ float fx[2], fy[num_elements][4 * num_elements];
 
-// CHECK: void kernel2(float *out, cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<int, syclct::device, 0> al, syclct::syclct_accessor<float, syclct::device, 1> fx, syclct::syclct_accessor<float, syclct::device, 2> fy) {
+// CHECK: void kernel2(float *out, cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<int, syclct::device, 0> al, syclct::syclct_accessor<float, syclct::device, 1> fx, syclct::syclct_accessor<float, syclct::device, 2> fy, syclct::syclct_accessor<float, syclct::device, 1> tmp) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(0)] += (int)al;
 // CHECK:   fx[{{.*}}[[ITEM]].get_local_id(0)] = fy[{{.*}}[[ITEM]].get_local_id(0)][{{.*}}[[ITEM]].get_local_id(0)];
 // CHECK: }
 __global__ void kernel2(float *out) {
+  const int size = 64;
+  __device__ float tmp[size];
   out[threadIdx.x] += al;
   fx[threadIdx.x] = fy[threadIdx.x][threadIdx.x];
 }
 
 int main() {
-  float h_in[NUM_ELEMENTS] = { 0 };
-  float h_out[NUM_ELEMENTS] = { 0 };
+  float h_in[NUM_ELEMENTS] = {0};
+  float h_out[NUM_ELEMENTS] = {0};
 
   for (int i = 0; i < NUM_ELEMENTS; ++i) {
     h_in[i] = i;
@@ -85,6 +83,8 @@ int main() {
   // CHECK:   size_t d_out_offset = d_out_buf.second;
   // CHECK:   syclct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
+  // CHECK:       syclct::device_memory<float, 1> tmp(64/*size*/);
+  // CHECK:       auto tmp_acc = tmp.get_access(cgh);
   // CHECK:       auto al_acc = al.get_access(cgh);
   // CHECK:       auto fx_acc = fx.get_access(cgh);
   // CHECK:       auto fy_acc = fy.get_access(cgh);
@@ -93,7 +93,7 @@ int main() {
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
   // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK:           float *d_out = (float*)(&d_out_acc[0] + d_out_offset);
-  // CHECK:           kernel2(d_out, [[ITEM]], syclct::syclct_accessor<int, syclct::device, 0>(al_acc), syclct::syclct_accessor<float, syclct::device, 1>(fx_acc), syclct::syclct_accessor<float, syclct::device, 2>(fy_acc));
+  // CHECK:           kernel2(d_out, [[ITEM]], syclct::syclct_accessor<int, syclct::device, 0>(al_acc), syclct::syclct_accessor<float, syclct::device, 1>(fx_acc), syclct::syclct_accessor<float, syclct::device, 2>(fy_acc), syclct::syclct_accessor<float, syclct::device, 1>(tmp_acc));
   // CHECK:         });
   // CHECK:     });
   // CHECK: }

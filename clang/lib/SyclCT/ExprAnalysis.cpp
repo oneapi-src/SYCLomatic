@@ -136,7 +136,7 @@ void ExprAnalysis::analysisExpr(const CXXConstructExpr *Ctor) {
 }
 
 void ExprAnalysis::analysisExpr(const MemberExpr *ME) {
-  TypeInfo Ty(ME->getBase()->getType());
+  CtTypeInfo Ty(ME->getBase()->getType());
   if (Ty.getBaseName() == "cl::sycl::range<3>")
     addReplacement(
         ME->getOperatorLoc(), ME->getMemberLoc(),

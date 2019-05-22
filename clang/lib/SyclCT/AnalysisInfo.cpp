@@ -44,8 +44,8 @@ void SyclctFileInfo::buildLinesInfo() {
     Buffer = Content->getBuffer(SM.getDiagnostics(), SM)->getBufferStart();
   for (unsigned L = 1; L < Content->NumLines; ++L)
     Lines.emplace_back(L, LineCache, Buffer);
-  Lines.emplace_back(NumLines, LineCache[NumLines - 1],
-                     Content->getSize(), Buffer);
+  Lines.emplace_back(NumLines, LineCache[NumLines - 1], Content->getSize(),
+                     Buffer);
 }
 
 void SyclctFileInfo::buildReplacements() {
@@ -484,25 +484,21 @@ std::string MemVarInfo::getDeclarationReplacement() {
   }
 }
 
-TypeInfo::TypeInfo(QualType Type)
-    : IsPointer(false), IsTemplate(false), TemplateIndex(0),
-      TemplateList(nullptr) {
-  setArrayInfo(Type);
-  setPointerInfo(Type);
-  setReferenceInfo(Type);
-  setTemplateInfo(Type);
-  setName(Type);
+CtTypeInfo::CtTypeInfo(const QualType &Ty) : CtTypeInfo() { setTypeInfo(Ty); }
+
+CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold) : CtTypeInfo() {
+  setTypeInfo(TL, NeedSizeFold);
 }
 
-std::string TypeInfo::getRangeArgument(const std::string &MemSize,
-                                       bool MustArguments) {
+std::string CtTypeInfo::getRangeArgument(const std::string &MemSize,
+                                         bool MustArguments) {
   std::string Arg = "(";
   for (auto &R : Range) {
     auto Size = R.getSize();
     if (Size.empty()) {
       if (MemSize.empty())
-        syclct_unreachable(
-            "array size should not be empty when external mem size is not set");
+        syclct_unreachable("array size should not be empty "
+                           "when external mem size is not set");
       Arg += MemSize;
     } else
       Arg += Size;
@@ -512,7 +508,7 @@ std::string TypeInfo::getRangeArgument(const std::string &MemSize,
                            : Arg.replace(Arg.size() - 2, 2, ")");
 }
 
-void TypeInfo::setTemplateType(const std::vector<TemplateArgumentInfo> &TA) {
+void CtTypeInfo::setTemplateType(const std::vector<TemplateArgumentInfo> &TA) {
   assert(TemplateIndex < TA.size());
   if (isTemplate())
     TemplateType = TA[TemplateIndex].getAsType();
@@ -521,53 +517,78 @@ void TypeInfo::setTemplateType(const std::vector<TemplateArgumentInfo> &TA) {
     R.setTemplateList(TA);
 }
 
-void TypeInfo::setArrayInfo(QualType &Type) {
+void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
+  if (auto CATL = TL.getAs<ConstantArrayTypeLoc>()) {
+    if (NeedSizeFold) {
+      Range.emplace_back(getFoldedArraySize(CATL));
+    } else {
+      Range.emplace_back(getUnfoldedArraySize(CATL));
+    }
+    setTypeInfo(CATL.getElementLoc(), NeedSizeFold);
+  } else
+    setTypeInfo(TL.getType());
+}
+
+void CtTypeInfo::setTypeInfo(QualType Ty) {
+  setArrayInfo(Ty);
+  setPointerInfo(Ty);
+  setReferenceInfo(Ty);
+  setTemplateInfo(Ty);
+  setName(Ty);
+}
+
+std::string CtTypeInfo::getUnfoldedArraySize(const ConstantArrayTypeLoc &TL) {
   ExprAnalysis A;
-  while (Type->isArrayType()) {
-    if (auto CAT = dyn_cast<ConstantArrayType>(Type))
-      Range.emplace_back(CAT->getSize().toString(10, false));
-    else if (auto DSAT = dyn_cast<DependentSizedArrayType>(Type)) {
+  A.analysis(TL.getSizeExpr());
+  return A.getReplacedString();
+}
+
+void CtTypeInfo::setArrayInfo(QualType &Ty) {
+  ExprAnalysis A;
+  while (Ty->isArrayType()) {
+    if (auto CAT = dyn_cast<ConstantArrayType>(Ty))
+      Range.emplace_back(getFoldedArraySize(CAT));
+    else if (auto DSAT = dyn_cast<DependentSizedArrayType>(Ty)) {
       A.analysis(DSAT->getSizeExpr());
       Range.emplace_back(A.getTemplateDependentStringInfo());
-    } else if (dyn_cast<IncompleteArrayType>(Type))
+    } else if (dyn_cast<IncompleteArrayType>(Ty))
       Range.emplace_back();
-    Type = Type->getAsArrayTypeUnsafe()->getElementType();
+    Ty = Ty->getAsArrayTypeUnsafe()->getElementType();
   }
 }
-
-void TypeInfo::setPointerInfo(QualType &Type) {
-  while (Type->isPointerType()) {
+void CtTypeInfo::setPointerInfo(QualType &Ty) {
+  while (Ty->isPointerType()) {
     IsPointer = true;
-    Type = Type->getPointeeType();
+    Ty = Ty->getPointeeType();
   }
 }
-
-void TypeInfo::setReferenceInfo(QualType &Type) {
-  while (Type->isReferenceType()) {
+void CtTypeInfo::setReferenceInfo(QualType &Ty) {
+  while (Ty->isReferenceType()) {
     IsReference = true;
-    Type = Type->getPointeeType();
+    Ty = Ty->getPointeeType();
   }
 }
 
-void TypeInfo::setTemplateInfo(QualType &Type) {
+void CtTypeInfo::setTemplateInfo(QualType &Ty) {
   if (auto TemplateType =
-          dyn_cast<TemplateTypeParmType>(Type->getCanonicalTypeInternal())) {
+          dyn_cast<TemplateTypeParmType>(Ty->getCanonicalTypeInternal())) {
     IsTemplate = true;
     TemplateIndex = TemplateType->getIndex();
   }
 }
-void TypeInfo::setName(QualType &Type) {
+
+void CtTypeInfo::setName(QualType &Ty) {
   auto &PP = SyclctGlobalInfo::getContext().getPrintingPolicy();
-  BaseNameWithoutQualifiers = Type.getUnqualifiedType().getAsString(PP);
+  BaseNameWithoutQualifiers = Ty.getUnqualifiedType().getAsString(PP);
 
   OrginalBaseType = BaseNameWithoutQualifiers;
   if (!isTemplate())
     MapNames::replaceName(MapNames::TypeNamesMap, BaseNameWithoutQualifiers);
-  auto Q = Type.getLocalQualifiers();
+  auto Q = Ty.getLocalQualifiers();
   if (Q.isEmptyWhenPrinted(PP))
     BaseName = BaseNameWithoutQualifiers;
   else
-    BaseName = Type.getLocalQualifiers().getAsString(PP) + " " +
+    BaseName = Ty.getLocalQualifiers().getAsString(PP) + " " +
                BaseNameWithoutQualifiers;
 }
 

@@ -131,7 +131,7 @@ public:
     return getLineInfo(LineNumber).Line;
   }
 
-  //Get line number by offset
+  // Get line number by offset
   inline unsigned getLineNumber(unsigned Offset) {
     return getLineInfoFromOffset(Offset).Number;
   }
@@ -246,7 +246,8 @@ public:
     return SM.getExpansionLoc(Loc);
   }
 
-  static inline std::pair<llvm::StringRef, unsigned> getLocInfo(SourceLocation Loc) {
+  static inline std::pair<llvm::StringRef, unsigned>
+  getLocInfo(SourceLocation Loc) {
     auto LocInfo = SM->getDecomposedLoc(getSpellingLocation(Loc));
     return std::pair<llvm::StringRef, unsigned>(
         SM->getFileEntryForID(LocInfo.first)->getName(), LocInfo.second);
@@ -349,17 +350,22 @@ class SizeInfo {
 
 public:
   SizeInfo() = default;
-  SizeInfo(std::string &&Size) : Size(Size) {}
+  SizeInfo(std::string Size) : Size(std::move(Size)) {}
   SizeInfo(std::shared_ptr<TemplateDependentStringInfo> TDSI) : TDSI(TDSI) {}
   const std::string &getSize() { return Size; }
   // Get actual size string according to template arguments list;
   void setTemplateList(const std::vector<TemplateArgumentInfo> &TemplateList);
 };
-// TypeInfo is basic class with info of element type, range, template info all
+// CtTypeInfo is basic class with info of element type, range, template info all
 // get from type.
-class TypeInfo {
+class CtTypeInfo {
 public:
-  TypeInfo(QualType Type);
+  // Array size will be folded, if exist.
+  CtTypeInfo(const QualType &Ty);
+  // If NeedSizeFold is true, array size will be folded, but orginal expression
+  // will follow as comments. If NeedSizeFold is false, original size expression
+  // will be the size string.
+  CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
 
   inline const std::string &getBaseName() { return BaseName; }
 
@@ -386,11 +392,36 @@ public:
   void setTemplateType(const std::vector<TemplateArgumentInfo> &TA);
 
 private:
+  CtTypeInfo()
+      : IsPointer(false), IsTemplate(false), TemplateIndex(0),
+        TemplateList(nullptr) {}
+  void setTypeInfo(const TypeLoc &TL, bool NeedSizeFold);
+  void setTypeInfo(QualType Ty);
+
+  // Get folded array size with original size expression following as comments.
+  // For e.g.,
+  // #define SIZE 24
+  // syclct::shared_memory<int, 1>(24 /* SIZE */);
+  inline std::string getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
+    return getFoldedArraySize(TL.getTypePtr()) + "/*" +
+           getStmtSpelling(TL.getSizeExpr(), SyclctGlobalInfo::getContext()) +
+           "*/";
+  }
+
+  // Get folded array size only.
+  inline std::string getFoldedArraySize(const ConstantArrayType *Ty) {
+    return Ty->getSize().toString(10, false);
+  }
+
+  // Get original array size expression.
+  std::string getUnfoldedArraySize(const ConstantArrayTypeLoc &TL);
+
   void setArrayInfo(QualType &Type);
   void setTemplateInfo(QualType &Type);
   void setPointerInfo(QualType &Type);
   void setReferenceInfo(QualType &Type);
   void setName(QualType &Type);
+
   void setPointerAsArray() {
     if (isPointer()) {
       IsPointer = false;
@@ -408,7 +439,7 @@ private:
   bool IsReference;
   bool IsTemplate;
   unsigned TemplateIndex;
-  std::shared_ptr<TypeInfo> TemplateType;
+  std::shared_ptr<CtTypeInfo> TemplateType;
   const std::vector<TemplateArgumentInfo> *TemplateList;
 };
 
@@ -417,18 +448,22 @@ class VarInfo {
 public:
   VarInfo(unsigned Offset, const std::string &FilePathIn, const VarDecl *Var)
       : FilePath(FilePathIn), Offset(Offset), Name(Var->getName().str()),
-        Type(std::make_shared<TypeInfo>(Var->getType())) {}
+        Ty(std::make_shared<CtTypeInfo>(
+            Var->getTypeSourceInfo()->getTypeLoc())) {}
 
   inline const std::string &getFilePath() { return FilePath; }
   inline unsigned getOffset() { return Offset; }
   inline const std::string &getName() { return Name; }
-  inline std::shared_ptr<TypeInfo> &getType() { return Type; }
+  inline std::shared_ptr<CtTypeInfo> &getType() { return Ty; }
+
+protected:
+  inline void setType(std::shared_ptr<CtTypeInfo> T) { Ty = T; }
 
 private:
   const std::string FilePath;
   unsigned Offset;
   std::string Name;
-  std::shared_ptr<TypeInfo> Type;
+  std::shared_ptr<CtTypeInfo> Ty;
 };
 
 // memory variable info includs basic variable info and memory attributes.
@@ -449,6 +484,8 @@ public:
                   ? (Var->isExternallyDeclarable() ? Extern : Local)
                   : Global),
         PointerAsArray(false) {
+    setType(std::make_shared<CtTypeInfo>(Var->getTypeSourceInfo()->getTypeLoc(),
+                                         isLocal()));
     if (getType()->isPointer()) {
       Attr = Device;
       getType()->adjustAsMemType();
@@ -504,7 +541,7 @@ private:
 
   std::string getMemoryType();
   inline std::string getMemoryType(const std::string &MemoryType,
-                                   std::shared_ptr<TypeInfo> VarType) {
+                                   std::shared_ptr<CtTypeInfo> VarType) {
     return MemoryType + "<" + VarType->getTemplateSpecializationName() + ", " +
            std::to_string(VarType->getDimension()) + ">";
   }
@@ -560,7 +597,7 @@ public:
     Ty.LocalDecl = !QT->isElaboratedTypeSpecifier() &&
                    QT->hasUnnamedOrLocalType() &&
                    QT->getAsTagDecl()->getDeclContext()->isFunctionOrMethod();
-    Ty.T = std::make_shared<TypeInfo>(QT);
+    Ty.T = std::make_shared<CtTypeInfo>(QT);
     Str = Ty.T->getBaseName();
   }
   TemplateArgumentInfo(const Expr *Expr)
@@ -568,7 +605,7 @@ public:
         Str(getStmtSpelling(Expr, SyclctGlobalInfo::getContext())) {}
 
   bool isType() { return Kind == Type; }
-  std::shared_ptr<TypeInfo> getAsType() const {
+  std::shared_ptr<CtTypeInfo> getAsType() const {
     assert(Kind == Type);
     return Ty.T;
   }
@@ -578,7 +615,7 @@ private:
   TemplateKind Kind;
   struct {
     bool LocalDecl;
-    std::shared_ptr<TypeInfo> T;
+    std::shared_ptr<CtTypeInfo> T;
   } Ty;
   std::string Str;
 };
