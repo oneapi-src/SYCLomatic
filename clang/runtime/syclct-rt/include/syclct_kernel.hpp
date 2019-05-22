@@ -29,9 +29,10 @@ struct sycl_kernel_function_info {
 
 static void get_kernel_function_info(sycl_kernel_function_info *kernel_info,
                                      const void *function) {
-  static cl::sycl::device device;
   kernel_info->max_work_group_size =
-      device.get_info<cl::sycl::info::device::max_work_group_size>();
+      syclct::device_manager()
+          .current_device()
+          .get_info<cl::sycl::info::device::max_work_group_size>();
 }
 
 #endif // !SYCLCT_KERNEL_H
