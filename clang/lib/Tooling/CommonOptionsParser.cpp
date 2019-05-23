@@ -83,14 +83,14 @@ llvm::Error CommonOptionsParser::init(
     int &argc, const char **argv, cl::OptionCategory &Category,
     llvm::cl::NumOccurrencesFlag OccurrencesFlag, const char *Overview) {
 #if INTEL_CUSTOMIZATION
-	static cl::opt<std::string> BuildPath(
-	     "p",
-		 cl::desc(
-		      "Path where to read compilation database: compile_commands.json"),
-         cl::Optional, cl::cat(Category), cl::value_desc("path"),
-	     cl::sub(*cl::AllSubCommands));
+  static cl::opt<std::string> BuildPath(
+      "p",
+      cl::desc(
+          "Path where to read compilation database: compile_commands.json."),
+      cl::Optional, cl::cat(Category), cl::value_desc("path"),
+      cl::sub(*cl::AllSubCommands));
 #else
-   static cl::opt<std::string> BuildPath("p", cl::desc("Build path"),
+  static cl::opt<std::string> BuildPath("p", cl::desc("Build path"),
                                         cl::Optional, cl::cat(Category),
                                         cl::sub(*cl::AllSubCommands));
 #endif
@@ -98,6 +98,23 @@ llvm::Error CommonOptionsParser::init(
       cl::Positional, cl::desc("<source0> [... <sourceN>]"), OccurrencesFlag,
       cl::cat(Category), cl::sub(*cl::AllSubCommands));
 
+#if INTEL_CUSTOMIZATION
+  static cl::list<std::string> ArgsAfter(
+      "extra-arg",
+      cl::desc("Additional argument to append to the compiler command line.\n"
+               "e.g. -nocudainc : Ignore CUDA header file.\n"
+               "     --cuda-path=<value> : CUDA installation path.\n"
+               "     --cuda-host-only : Compile CUDA code for host only.\n"
+               "     -I <dir> : Add directory to include search path.\n"
+               "     See more options by syclct -- --help.\n"),
+      cl::cat(Category), cl::sub(*cl::AllSubCommands));
+
+  static cl::list<std::string> ArgsBefore(
+      "extra-arg-before",
+      cl::desc("Additional argument to prepend to the compiler command line.\n"
+               "Refer to extra-arg option.\n"),
+      cl::cat(Category), cl::sub(*cl::AllSubCommands));
+#else
   static cl::list<std::string> ArgsAfter(
       "extra-arg",
       cl::desc("Additional argument to append to the compiler command line"),
@@ -107,7 +124,7 @@ llvm::Error CommonOptionsParser::init(
       "extra-arg-before",
       cl::desc("Additional argument to prepend to the compiler command line"),
       cl::cat(Category), cl::sub(*cl::AllSubCommands));
-
+#endif
   cl::ResetAllOptionOccurrences();
 
   cl::HideUnrelatedOptions(Category);
@@ -158,15 +175,15 @@ llvm::Error CommonOptionsParser::init(
         std::string buf;
         llvm::raw_string_ostream OS(buf);
         OS << "NOTE: Could not auto-detect compilation database for"
-                     << " file '" << File << "' in '" << Path
-                     << "' or any parent directory.\n"
-                     << "Running without flags.\n";
+           << " file '" << File << "' in '" << Path
+           << "' or any parent directory.\n"
+           << "Running without flags.\n";
         DoPrintHandler(OS.str(), true);
       } else {
         std::string buf;
         llvm::raw_string_ostream OS(buf);
         OS << "Error while trying to load a compilation database:\n"
-                     << ErrorMessage << "Running without flags.\n";
+           << ErrorMessage << "Running without flags.\n";
         DoPrintHandler(OS.str(), true);
       }
 #else
