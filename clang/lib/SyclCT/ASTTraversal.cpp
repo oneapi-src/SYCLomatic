@@ -2728,6 +2728,10 @@ void MemoryTranslationRule::MemcpyTranslation(
   insertAroundStmt(C->getArg(1), "(void*)(", ")");
   emplaceTransformation(
       new ReplaceStmt(C->getArg(3), std::move(DirectionName)));
+
+  // cudaMemcpyAsync
+  if (C->getNumArgs() == 5)
+    handleAsync(C, 4, Result);
 }
 
 void MemoryTranslationRule::MemcpyToSymbolTranslation(
@@ -2789,6 +2793,10 @@ void MemoryTranslationRule::MemcpyToSymbolTranslation(
   insertAroundStmt(C->getArg(1), "(void*)(", ")");
   emplaceTransformation(
       new ReplaceStmt(C->getArg(4), std::move(DirectionName)));
+
+  // cudaMemcpyToSymbolAsync
+  if (C->getNumArgs() == 6)
+    handleAsync(C, 5, Result);
 }
 
 void MemoryTranslationRule::MemcpyFromSymbolTranslation(
@@ -2836,6 +2844,10 @@ void MemoryTranslationRule::MemcpyFromSymbolTranslation(
                                          std::move(VarName)));
   emplaceTransformation(
       new ReplaceStmt(C->getArg(4), std::move(DirectionName)));
+
+  // cudaMemcpyFromSymbolAsync
+  if (C->getNumArgs() == 6)
+    handleAsync(C, 5, Result);
 }
 
 void MemoryTranslationRule::FreeTranslation(
@@ -2858,8 +2870,10 @@ void MemoryTranslationRule::MemsetTranslation(
 // Memory migration rules live here.
 void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
   auto memoryAPI = [&]() {
-    return hasAnyName("cudaMalloc", "cudaMemcpy", "cudaMemcpyToSymbol",
-                      "cudaMemcpyFromSymbol", "cudaFree", "cudaMemset");
+    return hasAnyName("cudaMalloc", "cudaMemcpy", "cudaMemcpyAsync",
+                      "cudaMemcpyToSymbol", "cudaMemcpyToSymbolAsync",
+                      "cudaMemcpyFromSymbol", "cudaMemcpyFromSymbolAsync",
+                      "cudaFree", "cudaMemset");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt))
@@ -2902,10 +2916,19 @@ MemoryTranslationRule::MemoryTranslationRule() {
   TranslationDispatcher["cudaMemcpy"] =
       std::bind(&MemoryTranslationRule::MemcpyTranslation, this,
                 std::placeholders::_1, std::placeholders::_2);
+  TranslationDispatcher["cudaMemcpyAsync"] =
+      std::bind(&MemoryTranslationRule::MemcpyTranslation, this,
+                std::placeholders::_1, std::placeholders::_2);
   TranslationDispatcher["cudaMemcpyToSymbol"] =
       std::bind(&MemoryTranslationRule::MemcpyToSymbolTranslation, this,
                 std::placeholders::_1, std::placeholders::_2);
+  TranslationDispatcher["cudaMemcpyToSymbolAsync"] =
+      std::bind(&MemoryTranslationRule::MemcpyToSymbolTranslation, this,
+                std::placeholders::_1, std::placeholders::_2);
   TranslationDispatcher["cudaMemcpyFromSymbol"] =
+      std::bind(&MemoryTranslationRule::MemcpyFromSymbolTranslation, this,
+                std::placeholders::_1, std::placeholders::_2);
+  TranslationDispatcher["cudaMemcpyFromSymbolAsync"] =
       std::bind(&MemoryTranslationRule::MemcpyFromSymbolTranslation, this,
                 std::placeholders::_1, std::placeholders::_2);
   TranslationDispatcher["cudaFree"] =
@@ -2914,6 +2937,28 @@ MemoryTranslationRule::MemoryTranslationRule() {
   TranslationDispatcher["cudaMemset"] =
       std::bind(&MemoryTranslationRule::MemsetTranslation, this,
                 std::placeholders::_1, std::placeholders::_2);
+}
+
+void MemoryTranslationRule::handleAsync(
+    const CallExpr *C, unsigned i, const MatchFinder::MatchResult &Result) {
+  const Expr *Stream = C->getArg(i);
+  if (Stream) {
+    auto StreamStr = getStmtSpelling(Stream, *Result.Context);
+    // Remove the default stream argument "0"
+    if (StreamStr == "0") {
+      // Remove preceding semicolon and spaces
+      if (i) {
+        const auto &SM = *Result.SourceManager;
+        const Expr *ArgBefore = C->getArg(i - 1);
+        auto Begin = ArgBefore->getEndLoc();
+        Begin = Lexer::getLocForEndOfToken(Begin, 0, SM, LangOptions());
+        auto End = Stream->getBeginLoc();
+        auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
+        emplaceTransformation(new ReplaceText(Begin, Length, ""));
+      }
+      emplaceTransformation(new ReplaceStmt(Stream, ""));
+    }
+  }
 }
 
 REGISTER_RULE(MemoryTranslationRule)

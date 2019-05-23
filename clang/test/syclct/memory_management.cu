@@ -7,6 +7,7 @@ void fooo() {
   size_t size = 1234567 * sizeof(float);
   float *h_A = (float *)malloc(size);
   float *d_A = NULL;
+  cudaStream_t stream;
   // CHECK: syclct::sycl_malloc((void **)&d_A, size);
   cudaMalloc((void **)&d_A, size);
   // CHECK: syclct::sycl_memset((void*)(d_A), (int)(0xf), (size_t)(size));
@@ -15,6 +16,35 @@ void fooo() {
   cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
   // CHECK: syclct::sycl_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host);
   cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
+
+  // CHECK: syclct::sycl_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device);
+  cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice);
+  // CHECK: syclct::sycl_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device);
+  cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, 0);
+  // CHECK: syclct::sycl_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device, stream);
+  cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, stream);
+
+  // CHECK: syclct::sycl_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host);
+  cudaMemcpyAsync(h_A, d_A, size, cudaMemcpyDeviceToHost);
+  // CHECK: syclct::sycl_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host);
+  cudaMemcpyAsync(h_A, d_A, size, cudaMemcpyDeviceToHost, 0);
+  // CHECK: syclct::sycl_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host, stream);
+  cudaMemcpyAsync(h_A, d_A, size, cudaMemcpyDeviceToHost, stream);
+
+  // CHECK: syclct::sycl_memcpy_to_symbol(d_A.get_ptr(), (void*)(h_A), size, 0, syclct::host_to_device);
+  cudaMemcpyToSymbolAsync(d_A, h_A, size, 0, cudaMemcpyHostToDevice);
+  // CHECK: syclct::sycl_memcpy_to_symbol(d_A.get_ptr(), (void*)(h_A), size, 0, syclct::host_to_device);
+  cudaMemcpyToSymbolAsync(d_A, h_A, size, 0, cudaMemcpyHostToDevice, 0);
+  // CHECK: syclct::sycl_memcpy_to_symbol(d_A.get_ptr(), (void*)(h_A), size, 0, syclct::host_to_device, stream);
+  cudaMemcpyToSymbolAsync(d_A, h_A, size, 0, cudaMemcpyHostToDevice, stream);
+
+  // CHECK: syclct::sycl_memcpy_from_symbol((void*)(d_A), h_A.get_ptr(), size, 0, syclct::device_to_host);
+  cudaMemcpyFromSymbolAsync(d_A, h_A, size, 0, cudaMemcpyDeviceToHost);
+  // CHECK: syclct::sycl_memcpy_from_symbol((void*)(d_A), h_A.get_ptr(), size, 0, syclct::device_to_host);
+  cudaMemcpyFromSymbolAsync(d_A, h_A, size, 0, cudaMemcpyDeviceToHost, 0);
+  // CHECK: syclct::sycl_memcpy_from_symbol((void*)(d_A), h_A.get_ptr(), size, 0, syclct::device_to_host, stream);
+  cudaMemcpyFromSymbolAsync(d_A, h_A, size, 0, cudaMemcpyDeviceToHost, stream);
+
   // CHECK: syclct::sycl_free(d_A);
   cudaFree(d_A);
   free(h_A);

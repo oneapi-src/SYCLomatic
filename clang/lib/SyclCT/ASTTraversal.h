@@ -719,6 +719,8 @@ private:
                        const CallExpr *C);
   void MemsetTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C);
+  void handleAsync(const CallExpr *C, unsigned i,
+                      const ast_matchers::MatchFinder::MatchResult &Result);
 
   std::unordered_map<
       std::string,
