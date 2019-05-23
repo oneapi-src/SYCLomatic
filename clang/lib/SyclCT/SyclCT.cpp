@@ -66,65 +66,70 @@ const char *const CtHelpMessage =
     "\tsuffix of a path in the compilation database.\n"
     "\n";
 
+const char *const CtHelpHint =
+    "  Warning: Please specify file(s) to be migrated.\n"
+    "  Get help on DPC++ Compatibility Tool, run: syclct --help\n"
+    "\n";
+
 static OptionCategory SyclCTCat("DPC++ Compatibility Tool");
 static extrahelp CommonHelp(CtHelpMessage);
 static opt<std::string> Passes(
     "passes",
-    desc("Comma separated list of migration passes, which will be applied. "
+    desc("Comma separated list of migration passes, which will be applied.\n"
          "Only the specified passes are applied."),
     value_desc("FunctionAttrsRule,..."), cat(SyclCTCat));
 static opt<std::string> InRoot(
-    "in-root", desc("Directory path for root of source tree to be migrated. "
+    "in-root", desc("Directory path for root of source tree to be migrated.\n"
                     "Only files under this root will be migrated."),
     value_desc("/path/to/input/root/"), cat(SyclCTCat), llvm::cl::Optional);
 static opt<std::string>
-    OutRoot("out-root", desc("Directory path for root of generated files. "
+    OutRoot("out-root", desc("Directory path for root of generated files.\n"
                              "Directory will be created if it doesn't exist."),
             value_desc("/path/to/output/root/"), cat(SyclCTCat),
             llvm::cl::Optional);
 
 static opt<std::string> ReportType(
     "report-type",
-    desc("Comma separated list of report types. "
-         "\"apis\": Information "
-         "about API signatures that need migration "
-         "and the number of times they were encountered. "
-         "The report file name will have \".apis\" suffix added. "
+    desc("Comma separated list of report types.\n"
+         "\"apis\": Information about API signatures that need migration and\n"
+         "  the number of times they were encountered.\n"
+         "  The report file name will have \".apis\" suffix added.\n"
          "\"stats\": High level migration statistics;  Lines "
-         "Of Code (LOC) migrated to DPC++, LOC migrated to Compatibility API, "
-         "LOC not needing migration, LOC needing migration, but not migrated. "
-         "The report file name will have \".stats\" suffix added. "
-         "\"all\": Generates all of the above reports. "
+         " Of Code (LOC) \n  migrated to DPC++, LOC migrated to Compatibility "
+         "API,\n  LOC not needing migration,  LOC needing migration, but not "
+         "migrated.\n"
+         "  The report file name will have \".stats\" suffix added.\n"
+         "\"all\": Generates all of the above reports.\n"
          "Default is \"stats\"."),
     value_desc("[all|apis|stats]"), cat(SyclCTCat), llvm::cl::Optional);
 
 static opt<std::string>
     ReportFormat("report-format",
-                 desc("Format of reports. \"csv\": Output is lines of comma "
-                      "separated values. "
-                      "Report file name extension will be \".csv\". "
+                 desc("Format of reports:\n\"csv\": Output is lines of comma "
+                      "separated values.\n"
+                      "  Report file name extension will be \".csv\".\n"
                       "\"formatted\": Output is formatted to be easier to read "
-                      "by human eyes. "
-                      "Report file name extension will be \".log\". "
-                      "Default is \"csv\"."),
+                      "by human eyes.\n"
+                      "  Report file name extension will be \".log\".\n"
+                      "Default is \"csv\".\n"),
                  value_desc("[csv|formatted]"), cat(SyclCTCat),
                  llvm::cl::Optional);
 
 static opt<std::string> ReportFilePrefix(
     "report-file-prefix",
-    desc("Prefix for the report file names. The full file name will have a "
+    desc("Prefix for the report file names.\nThe full file name will have a "
          "suffix "
-         "derived from the report-type and an extension derived from the "
-         "report-format. "
-         "For example: <prefix>.apis.csv or <prefix>.stats.log. "
+         "derived from the report-type\nand an extension derived from the "
+         "report-format.\n"
+         "For example: <prefix>.apis.csv or <prefix>.stats.log.\n"
          "If this option is not specified, the report will go "
-         "to stdout. The report files are created in the "
-         "directory, specified by -out-root.  Default is stdout."),
+         "to stdout.\nThe report files are created in the "
+         "directory, specified by -out-root.\nDefault is stdout."),
     value_desc("prefix"), cat(SyclCTCat), llvm::cl::Optional);
 bool ReportOnlyFlag = false;
 static opt<bool, true> ReportOnly(
     "report-only",
-    llvm::cl::desc("Only reports are generated.  No DPC++ code is generated. "
+    llvm::cl::desc("Only reports are generated.  No DPC++ code is generated.\n"
                    "Default is to generate both reports and DPC++ code."),
     cat(SyclCTCat), llvm::cl::location(ReportOnlyFlag));
 
@@ -133,7 +138,7 @@ bool KeepOriginalCodeFlag = false;
 static opt<bool, true>
     ShowOrigCode("keep-original-code",
                  llvm::cl::desc("Keep original code in comments of generated "
-                                "DPC++ files. Default: off"),
+                                "DPC++ files.\nDefault: off"),
                  cat(SyclCTCat), llvm::cl::location(KeepOriginalCodeFlag));
 
 static opt<std::string>
@@ -146,7 +151,7 @@ static opt<std::string>
                  llvm::cl::Optional, llvm::cl::Hidden);
 
 static std::string WarningDesc("Comma separated list of warnings to "
-                               " suppress.  Valid warning ids range from " +
+                               " suppress.\nValid warning ids range from " +
                                std::to_string((size_t)Warnings::BEGIN) +
                                " to " +
                                std::to_string((size_t)Warnings::END - 1));
@@ -164,7 +169,7 @@ bool NoStopOnErrFlag = false;
 static opt<bool, true>
     NoStopOnErr("no-stop-on-err",
                 llvm::cl::desc("Continue migration and report generation after "
-                               "possible errors. Default: off"),
+                               "possible errors.\nDefault: off"),
                 cat(SyclCTCat), llvm::cl::location(NoStopOnErrFlag));
 
 opt<OutputVerbosityLev> OutputVerbosity(
@@ -175,13 +180,14 @@ opt<OutputVerbosityLev> OutputVerbosity(
                   "Only warnings, errors, notes from both clang and syclct"),
         clEnumVal(detailed,
                   "Normal + messages about start and end of file parsing"),
-        clEnumVal(diagnostics, "Everything, as now - which includes "
-                               "information about conflicts, seg faults, "
-                               "etc.... This one is default.")),
+        clEnumVal(diagnostics,
+                  "Everything, as now - which includes "
+                  "information about conflicts,\n\t\t\t\t\tseg faults, "
+                  "etc.... This one is default.")),
     llvm::cl::init(diagnostics), cat(SyclCTCat), llvm::cl::Optional);
 
 opt<std::string> OutputFile(
-    "output-file", desc("redirects stdout/stderr output to <file> in the "
+    "output-file", desc("redirects stdout/stderr output to <file> in the\n"
                         "output diretory specified by '-out-root' option."),
     value_desc("output file name"), cat(SyclCTCat), llvm::cl::Optional);
 
@@ -625,6 +631,10 @@ void PrintReportOnFault(std::string &FaultMsg) {
 }
 
 int run(int argc, const char **argv) {
+  if (argc < 2) {
+    std::cout << CtHelpHint;
+    return MigrationNoCodeChangeHappen;
+  }
 
 #if defined(__linux__) || defined(_WIN64)
   InstallSignalHandle();
