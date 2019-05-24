@@ -1946,8 +1946,10 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceStmt(CE, "0"));
   } else if (FuncName == "cudaGetErrorString" ||
              FuncName == "cudaGetErrorName") {
-    report(CE->getBeginLoc(),
-           Comments::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED, FuncName);
+    // Insert warning messages into the spelling locations in case
+    // that these functions are contained in macro definitions
+    auto Loc = Result.SourceManager->getSpellingLoc(CE->getBeginLoc());
+    report(Loc, Comments::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED, FuncName);
     emplaceTransformation(
         new InsertBeforeStmt(CE, "\"" + FuncName + " not supported\"/*"));
     emplaceTransformation(new InsertAfterStmt(CE, "*/"));
