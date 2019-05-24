@@ -33,6 +33,9 @@ using namespace clang::tooling;
 extern std::string CudaPath;
 extern std::string SyclctInstallPath; // Installation directory for this tool
 
+auto parentStmt = anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
+                        hasParent(whileStmt()), hasParent(ifStmt()));
+
 std::unordered_map<std::string, std::unordered_set</* Comment ID */ int>>
     TranslationRule::ReportedComment;
 
@@ -1833,14 +1836,14 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasCreate_v2", "cublasDestroy_v2");
   };
 
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
-                               hasParent(compoundStmt())))
-                    .bind("FunctionCall"),
-                this);
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
-                               unless(hasParent(compoundStmt()))))
-                    .bind("FunctionCallUsed"),
-                this);
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(functionName())), parentStmt))
+          .bind("FunctionCall"),
+      this);
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(functionName())), unless(parentStmt)))
+          .bind("FunctionCallUsed"),
+      this);
 }
 
 void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
@@ -2034,14 +2037,14 @@ void EventAPICallRule::registerMatcher(MatchFinder &MF) {
                       "cudaEventElapsedTime", "cudaEventSynchronize");
   };
 
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(eventAPIName())),
-                               hasParent(compoundStmt())))
-                    .bind("eventAPICall"),
-                this);
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(eventAPIName())),
-                               unless(hasParent(compoundStmt()))))
-                    .bind("eventAPICallUsed"),
-                this);
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(eventAPIName())), parentStmt))
+          .bind("eventAPICall"),
+      this);
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(eventAPIName())), unless(parentStmt)))
+          .bind("eventAPICallUsed"),
+      this);
 }
 
 void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
@@ -2212,12 +2215,12 @@ void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
                       "cudaStreamAddCallback");
   };
 
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(streamFunctionName())), parentStmt))
+          .bind("streamAPICall"),
+      this);
   MF.addMatcher(callExpr(allOf(callee(functionDecl(streamFunctionName())),
-                               hasParent(compoundStmt())))
-                    .bind("streamAPICall"),
-                this);
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(streamFunctionName())),
-                               unless(hasParent(compoundStmt()))))
+                               unless(parentStmt)))
                     .bind("streamAPICallUsed"),
                 this);
 }
@@ -2470,15 +2473,14 @@ void BLASGetSetRule::registerMatcher(MatchFinder &MF) {
     return hasAnyName("cublasSetVector", "cublasGetVector", "cublasSetMatrix",
                       "cublasGetMatrix");
   };
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())),
-                               hasParent(compoundStmt())))
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt))
                     .bind("call"),
                 this);
 
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())),
-                               unless(hasParent(compoundStmt()))))
-                    .bind("callUsed"),
-                this);
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(memoryAPI())), unless(parentStmt)))
+          .bind("callUsed"),
+      this);
 }
 
 void BLASGetSetRule::run(const MatchFinder::MatchResult &Result) {
@@ -2856,15 +2858,14 @@ void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
                       "cudaMemcpyFromSymbol", "cudaFree", "cudaMemset");
   };
 
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())),
-                               hasParent(compoundStmt())))
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt))
                     .bind("call"),
                 this);
 
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())),
-                               unless(hasParent(compoundStmt()))))
-                    .bind("callUsed"),
-                this);
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(memoryAPI())), unless(parentStmt)))
+          .bind("callUsed"),
+      this);
 }
 
 void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {

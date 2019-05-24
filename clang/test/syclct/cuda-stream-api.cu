@@ -27,10 +27,10 @@ static void func()
   // CHECK: std::list<cl::sycl::queue> streams;
   std::list<cudaStream_t> streams;
   for (auto Iter = streams.begin(); Iter != streams.end(); ++Iter)
-    // CHECK: (*Iter = cl::sycl::queue{}, 0);
+    // CHECK: *Iter = cl::sycl::queue{};
     cudaStreamCreate(&*Iter);
   for (auto Iter = streams.begin(); Iter != streams.end(); ++Iter)
-    // CHECK: (*Iter = cl::sycl::queue{}, 0);
+    // CHECK: *Iter = cl::sycl::queue{};
     cudaStreamDestroy(*Iter);
 
   // CHECK: cl::sycl::queue s0, &s1 = s0;
