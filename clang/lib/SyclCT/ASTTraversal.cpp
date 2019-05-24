@@ -1833,7 +1833,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaGetErrorString", "cudaGetErrorName", "cudaDeviceSetCacheConfig",
         "cudaDeviceGetCacheConfig", "clock", "cudaThreadSetLimit",
         "cublasSgemm_v2", "cublasDgemm_v2", "cublasCgemm_v2", "cublasZgemm_v2",
-        "cublasCreate_v2", "cublasDestroy_v2");
+        "cublasCreate_v2", "cublasDestroy_v2", "cudaFuncSetCacheConfig");
   };
 
   MF.addMatcher(
@@ -2025,6 +2025,8 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ true, FuncName,
                           /*IsProcessMacro*/ true, ""));
     }
+  } else if (FuncName == "cudaFuncSetCacheConfig") {
+    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
   } else {
     syclct_unreachable("Unknown function name");
   }
