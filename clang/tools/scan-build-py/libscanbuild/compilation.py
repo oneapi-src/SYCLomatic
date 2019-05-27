@@ -85,6 +85,8 @@ IGNORED_FLAGS = {
     '-res-usage': 0,
     '-V': 0,
     '-optf': 0,
+    '--resource-usage': 0,
+    '-res-usage': 0,
 }
 
 # Known C/C++ compiler executable name patterns
