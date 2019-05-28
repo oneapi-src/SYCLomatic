@@ -40,6 +40,9 @@ void SyclctFileInfo::buildLinesInfo() {
   auto LineCache = Content->SourceLineCache;
   auto NumLines = Content->NumLines;
   const char *Buffer = nullptr;
+  if (!LineCache) {
+    return;
+  }
   if (SyclctGlobalInfo::isKeepOriginCode())
     Buffer = Content->getBuffer(SM.getDiagnostics(), SM)->getBufferStart();
   for (unsigned L = 1; L < Content->NumLines; ++L)
