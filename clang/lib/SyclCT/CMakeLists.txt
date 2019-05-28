@@ -24,6 +24,9 @@ add_clang_library(SyclCT
   ExternalReplacement.cpp
   SignalProcess.cpp
 
+  DEPENDS
+  ClangDriverOptions
+
   LINK_LIBS
   clangBasic
   clangLex
