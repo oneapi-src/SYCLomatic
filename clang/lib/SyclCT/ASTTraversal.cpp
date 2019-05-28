@@ -1809,6 +1809,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
     return hasAnyName(
         "cudaGetDeviceCount", "cudaGetDeviceProperties", "cudaDeviceReset",
         "cudaSetDevice", "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
+        "cudaDeviceGetPCIBusId",
         "cudaGetDevice", "cudaDeviceSetLimit", "cudaGetLastError",
         "cudaPeekAtLastError", "cudaDeviceSynchronize", "cudaThreadSynchronize",
         "cudaGetErrorString", "cudaGetErrorName", "cudaDeviceSetCacheConfig",
@@ -1902,7 +1903,9 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
     emplaceTransformation(new ReplaceStmt(CE, ResultVarName + " = 0"));
     report(CE->getBeginLoc(), Comments::NOTSUPPORTED, "P2P Access");
-  } else if (FuncName == "cudaGetDevice") {
+  } else if(FuncName == "cudaDeviceGetPCIBusId") {
+      report(CE->getBeginLoc(), Comments::NOTSUPPORTED, "Get PCI BusId");
+  }else if (FuncName == "cudaGetDevice") {
     std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     emplaceTransformation(new ReplaceStmt(

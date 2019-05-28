@@ -68,6 +68,14 @@ cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, device1, dev
 // CHECK-NEXT: atomicSupported = 0;
 cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtomicSupported, device1, device2);
 
+
+char pciBusId[80];
+// CHECK:/*
+// CHECK-NEXT:SYCLCT1004:{{[0-9]+}}: Get PCI BusId is not supported in DPC++
+// CHECK-NEXT:*/
+cudaDeviceGetPCIBusId(pciBusId, 80, 0);
+
+
 // CHECK: syclct::get_device_manager().current_device().reset();
 cudaDeviceReset();
 
