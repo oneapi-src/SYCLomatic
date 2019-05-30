@@ -19,7 +19,7 @@ std::unordered_map<std::string, std::array<unsigned int, 3>> LOCStaticsMap;
 
 // std::string -> APIName ,types information
 // unsigned int -> Times met
-std::unordered_map<std::string, unsigned int> SrcAPIStaticsMap;
+std::map<std::string, unsigned int> SrcAPIStaticsMap;
 
 int VerboseLevel = NonVerbose;
 
