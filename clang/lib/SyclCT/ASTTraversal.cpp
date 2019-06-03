@@ -1727,23 +1727,25 @@ void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
     return;
   auto Parents = Result.Context->getParents(*ME);
   assert(Parents.size() == 1);
-  if(Parents.size() != 1) {
-      return;
+  if (Parents.size() != 1) {
+    return;
   }
   auto Search = PropNamesMap.find(ME->getMemberNameInfo().getAsString());
   if (Search == PropNamesMap.end()) {
     // TODO report migration error
     return;
   }
-  if(Parents[0].get<clang::ImplicitCastExpr>()) {
+  if (Parents[0].get<clang::ImplicitCastExpr>()) {
     // migrate to get_XXX() eg. "b=a.minor" to "b=a.get_minor_version()"
-    emplaceTransformation(new RenameFieldInMemberExpr(ME, "get_" + Search->second + "()"));
+    emplaceTransformation(
+        new RenameFieldInMemberExpr(ME, "get_" + Search->second + "()"));
   } else if (auto *BO = Parents[0].get<clang::BinaryOperator>()) {
     // migrate to set_XXX() eg. "a.minor = 1" to "a.set_minor_version(1)"
-    if(BO->getOpcode()== clang::BO_Assign) {
-        emplaceTransformation(new RenameFieldInMemberExpr(ME, "set_" + Search->second ));
-        emplaceTransformation(new ReplaceText(BO->getOperatorLoc(), 1, "("));
-        emplaceTransformation(new InsertAfterStmt(BO, ")"));
+    if (BO->getOpcode() == clang::BO_Assign) {
+      emplaceTransformation(
+          new RenameFieldInMemberExpr(ME, "set_" + Search->second));
+      emplaceTransformation(new ReplaceText(BO->getOperatorLoc(), 1, "("));
+      emplaceTransformation(new InsertAfterStmt(BO, ")"));
     }
   }
   if ((Search->second.compare(0, 13, "major_version") == 0) ||
@@ -1853,13 +1855,13 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
     return hasAnyName(
         "cudaGetDeviceCount", "cudaGetDeviceProperties", "cudaDeviceReset",
         "cudaSetDevice", "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
-        "cudaDeviceGetPCIBusId",
-        "cudaGetDevice", "cudaDeviceSetLimit", "cudaGetLastError",
-        "cudaPeekAtLastError", "cudaDeviceSynchronize", "cudaThreadSynchronize",
-        "cudaGetErrorString", "cudaGetErrorName", "cudaDeviceSetCacheConfig",
-        "cudaDeviceGetCacheConfig", "clock", "cudaThreadSetLimit",
-        "cublasSgemm_v2", "cublasDgemm_v2", "cublasCgemm_v2", "cublasZgemm_v2",
-        "cublasCreate_v2", "cublasDestroy_v2", "cudaFuncSetCacheConfig");
+        "cudaDeviceGetPCIBusId", "cudaGetDevice", "cudaDeviceSetLimit",
+        "cudaGetLastError", "cudaPeekAtLastError", "cudaDeviceSynchronize",
+        "cudaThreadSynchronize", "cudaGetErrorString", "cudaGetErrorName",
+        "cudaDeviceSetCacheConfig", "cudaDeviceGetCacheConfig", "clock",
+        "cudaThreadSetLimit", "cublasSgemm_v2", "cublasDgemm_v2",
+        "cublasCgemm_v2", "cublasZgemm_v2", "cublasCreate_v2",
+        "cublasDestroy_v2", "cudaFuncSetCacheConfig");
   };
 
   MF.addMatcher(
@@ -1947,9 +1949,9 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
     emplaceTransformation(new ReplaceStmt(CE, ResultVarName + " = 0"));
     report(CE->getBeginLoc(), Comments::NOTSUPPORTED, "P2P Access");
-  } else if(FuncName == "cudaDeviceGetPCIBusId") {
-      report(CE->getBeginLoc(), Comments::NOTSUPPORTED, "Get PCI BusId");
-  }else if (FuncName == "cudaGetDevice") {
+  } else if (FuncName == "cudaDeviceGetPCIBusId") {
+    report(CE->getBeginLoc(), Comments::NOTSUPPORTED, "Get PCI BusId");
+  } else if (FuncName == "cudaGetDevice") {
     std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     emplaceTransformation(new ReplaceStmt(
@@ -3101,7 +3103,8 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
       callExpr(callee(functionDecl(
                    internal::Matcher<NamedDecl>(
                        new internal::HasNameMatcher(MiscFunctionNames)),
-                   unless(hasDeclContext(namespaceDecl(anything()))))))
+                   anyOf(unless(hasDeclContext(namespaceDecl(anything()))),
+                         hasDeclContext(namespaceDecl(hasName("std")))))))
           .bind("mathMisc"),
       this);
 }
@@ -3387,8 +3390,8 @@ void MathFunctionsRule::handleMiscFunctions(
   else {
     NewFuncName = "";
     if (FuncName == "abs" || FuncName == "max" || FuncName == "min") {
-      NewFuncName = FuncName;
-      auto *BT = dyn_cast<BuiltinType>(CE->getArg(0)->IgnoreImpCasts()->getType());
+      auto *BT =
+          dyn_cast<BuiltinType>(CE->getArg(0)->IgnoreImpCasts()->getType());
       if (BT) {
         auto K = BT->getKind();
         if (K == BuiltinType::Float) {

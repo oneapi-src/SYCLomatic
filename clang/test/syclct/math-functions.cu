@@ -81,10 +81,24 @@ int main() {
 
   // abs
   {
+    DECLAREF
+    DECLARED
+    DECLAREU
+    DECLAREL
     DECLAREI
+    DECLARELD
+
+    // CHECK: f_a = fabsf(f_a);
+    f_a = abs(f_a);
+
+    // CHECK: d_a = fabs(d_a);
+    d_a = abs(d_a);
 
     // CHECK: i_a = abs(i_a);
     i_a = abs(i_a);
+
+    // CHECK: ld_a = fabsl(ld_a);
+    ld_a = abs(ld_a);
 
     // TODO: Check more primitive type and vector types
   }
