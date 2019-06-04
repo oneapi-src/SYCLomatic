@@ -47,9 +47,8 @@ IGNORED_FLAGS = {
     '-Xlinker': 1,
     # All of the following options are ignored, as they are not related to syclct tool
     '-gencode': 1,
-    '-ccbin': 1,
     '-ptx': 0,
-    '-Xcompiler': 0,
+    '-Xcompiler': 1,
     '-cuda': 0,
     '-cubin': 0,
     '-fatbin': 0,
@@ -69,6 +68,7 @@ IGNORED_FLAGS = {
     '-keep-dir': 0,
     '-clean': 0,
     '-code': 1,
+    '-ccbin': 1,
     '-rdc': 1,
     '-e': 1,
     '-maxrregcount': 1,
@@ -87,6 +87,12 @@ IGNORED_FLAGS = {
     '-optf': 0,
     '--resource-usage': 0,
     '-res-usage': 0,
+    '-x': 1,
+    '-O0': 0,
+    '-O1': 0,
+    '-O2': 0,
+    '-O3': 0,
+    '-g': 0,
 }
 
 # Known C/C++ compiler executable name patterns
@@ -97,6 +103,98 @@ COMPILER_PATTERNS = frozenset([
     re.compile(r'^llvm-g(cc|\+\+)$'),
 ])
 
+def parse_args(args):
+    flags = []
+    compiler = ''
+    files = []
+    for arg in args:
+        # quit when compilation pass is not involved
+        if arg in {'-E', '-S', '-cc1', '-M', '-MM', '-###'}:
+            return None
+        # ignore some flags
+        elif arg in IGNORED_FLAGS:
+            count = IGNORED_FLAGS[arg]
+            for _ in range(count):
+                if(arg == '-Xcompiler'):
+                    # for '-Xcompiler', it may be with arg like "'-Xcompiler' ' -DXXX -O3 -w -march=native '"
+                    index = arg_list.index(arg)
+                    if(index < len(arg_list) - 1):
+                        arg_next = arg_list[index + 1]
+                        arg_next = arg_next.strip()
+                        pattern = re.compile("\s+")
+                        arg_split = [x for x in pattern.split(arg_next) if x]
+
+                        # In the case of len(arg_split) == 1, it is difficult to tell whether arg_split[0] is
+                        # the value of option '-Xcompiler' or an independent argument, so just treat it as an independent argument,
+                        # it will be processed in the next outer loop.
+                        if len(arg_split) > 1:
+                            xcompiler_flags = parse_args(iter(arg_split))
+                            flags.extend(xcompiler_flags[0])
+                            next(args)
+                else:
+                    next(args)
+        elif arg in {'-lmpichcxx', '-lmpich', '-lmpi_cxx', '-lmpi'}:
+            compiler = 'mpich'
+            flags.append(arg)
+        elif re.match(r'^-(l|L|Wl,).+', arg):
+            pass
+        # some parameters could look like filename, take as compile option
+        elif arg in {'-D', '-I'}:
+            flags.extend([arg, next(args)])
+        # parameter which looks source file is taken...
+        elif re.match(r'^[^-].+', arg) and classify_source(arg):
+            # nvcc compiler compiles source files with suffix cuda(.cu) and
+            # cpp(.cc,.c++,.cpp) should be added into compilation database.
+            #
+            # while other compiler takes all type of sources.
+            #
+            # ====================================================
+            # | Compiler |          Accept Source Type           |
+            # ====================================================
+            # |  nvcc    |  cuda(.cu), c++(.cc, .cpp, .c++, ...) |
+            # ----------------------------------------------------
+            # |  Others  |  All                                  |
+            # ----------------------------------------------------
+            if compiler == 'cuda' and classify_source(arg) not in ['cuda', 'c++']:
+                return None
+            else:
+                files.append(arg)
+        # ignore -fmad=xx option.
+        elif re.match(r'^-fmad=', arg):
+            pass
+        # ignore -x=xx option.
+        elif re.match(r'^-x=', arg):
+            pass
+        # ignore -Xcompiler=xx option.
+        elif re.match(r'^-Xcompiler=', arg):
+            arg_value = [x for x in arg.split('-Xcompiler=') if x]
+            pattern = re.compile("\s+")
+            arg_split = [x for x in pattern.split(arg_value[0]) if x]
+            xcompiler_flags = parse_args(iter(arg_split))
+            flags.extend(xcompiler_flags[0])
+            pass
+        # ignore -code=xx option.
+        elif re.match(r'^-code=', arg):
+            pass
+        # ignore -ccbin=xx option, .e.g -ccbin=/usr/bin/c++
+        elif re.match(r'^-ccbin=', arg):
+            pass
+        # ignore -ftz=xx option, .e.g -ftz=true
+        elif re.match(r'^-ftz=', arg):
+            pass
+        # ignore -prec-div=xx option, .e.g -prec-div=false
+        elif re.match(r'^-prec-div=', arg):
+            pass
+        # ignore -prec-sqrt=xx option, .e.g -prec-sqrt=false
+        elif re.match(r'^-prec-sqrt=', arg):
+            pass
+        # ignore -march=xx option, .e.g -march=native
+        elif re.match(r'^-march=', arg):
+            pass
+        # and consider everything else as compile option.
+        else:
+            flags.append(arg)
+    return [flags, compiler, files]
 
 def split_command(command):
     """ Returns a value when the command is a compilation, None otherwise.
@@ -118,47 +216,17 @@ def split_command(command):
         return None
     # iterate on the compile options
     args = iter(command[1:])
-    for arg in args:
-        # quit when compilation pass is not involved
-        if arg in {'-E', '-S', '-cc1', '-M', '-MM', '-###'}:
-            return None
-        # ignore some flags
-        elif arg in IGNORED_FLAGS:
-            count = IGNORED_FLAGS[arg]
-            for _ in range(count):
-                next(args)
-        elif arg in {'-lmpichcxx', '-lmpich', '-lmpi_cxx', '-lmpi'}:
-            result.compiler = 'mpich'
-            result.flags.append(arg)
-        elif re.match(r'^-(l|L|Wl,).+', arg):
-            pass
-        # some parameters could look like filename, take as compile option
-        elif arg in {'-D', '-I'}:
-            result.flags.extend([arg, next(args)])
-        # parameter which looks source file is taken...
-        elif re.match(r'^[^-].+', arg) and classify_source(arg):
-            # nvcc compiler compiles source files with suffix cuda(.cu) and
-            # cpp(.cc,.c++,.cpp) should be added into compilation database.
-            #
-            # while other compiler takes all type of sources.
-            #
-            # ====================================================
-            # | Compiler |          Accept Source Type           |
-            # ====================================================
-            # |  nvcc    |  cuda(.cu), c++(.cc, .cpp, .c++, ...) |
-            # ----------------------------------------------------
-            # |  Others  |  All                                  |
-            # ----------------------------------------------------
-            if result.compiler == 'cuda' and classify_source(arg) not in ['cuda', 'c++']:
-                return None
-            else:
-                result.files.append(arg)
-        # ignore -code=xx option.
-        elif re.match(r'^-code=',arg):
-            pass
-        # and consider everything else as compile option.
-        else:
-            result.flags.append(arg)
+    global arg_list
+    arg_list = command[1:]
+
+    ret = parse_args(args)
+    if ret == None:
+        return None
+    else:
+        result.flags = ret[0]
+        if ret[1] != '':
+            result.compiler = ret[1]
+        result.files = ret[2]
     #Append buildin cuda options for migration tool to identy right code path
     if result.compiler == 'cuda':
         result.flags.append("-D__CUDA_ARCH__=400")
