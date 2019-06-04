@@ -18,6 +18,24 @@
 float max(float a, float b);
 int  min(int, int);
 
+#if !defined(_GLIBCXX_RELEASE) || defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE < 7
+int signbit(float x);
+int signbit(double x);
+int signbit(long double x);
+int isfinite(float x);
+int isfinite(double x);
+int isfinite(long double x);
+float modf(float a, float *b);
+#endif
+
+float powif(float a, int b);
+double powi(double a, int b);
+float norm3d(float a, float b, float c);
+float norm4d(float a, float b, float c, float d);
+void sincos(float a, float *sptr, float *cptr);
+float cyl_bessel_i0(float a);
+float cyl_bessel_i1(float a);
+
 __host__ double atomicAdd(double* address, double val);
 __host__ unsigned long long atomicAdd(unsigned long long* address, unsigned long long val);
 __host__ long atomicAdd(long* address, long val);

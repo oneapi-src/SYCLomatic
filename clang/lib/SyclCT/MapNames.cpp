@@ -720,6 +720,9 @@ const MapNames::MapTy MathFunctionsRule::MiscFunctionNamesMap{
     {"__urhadd", StringLiteralUnsupported},
     {"__usad", StringLiteralUnsupported},
 
+    // Used to add header file "<cmath>" into the file that calls "fabs".
+    {"fabs", ""},
+
     // Not in CUDA API but in SYCL API
     // {"acospi", "cl::sycl::acospi"},
     // {"asinpi", "cl::sycl::asinpi"},

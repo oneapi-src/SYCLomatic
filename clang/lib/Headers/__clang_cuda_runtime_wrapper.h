@@ -46,8 +46,8 @@
 // CUDA-7.x headers and are not expected to work with any other
 // version of CUDA headers.
 #include "cuda.h"
-#define INTEL_CUSTOMIZATION
-#ifdef INTEL_CUSTOMIZATION
+#define INTEL_CUSTOMIZATION 1
+#if INTEL_CUSTOMIZATION
 #if !defined(CUDA_VERSION)
 #error "cuda.h did not define CUDA_VERSION"
 #elif CUDA_VERSION < 7000
@@ -97,7 +97,7 @@
 // Disables definitions of device-side runtime support stubs in
 // cuda_device_runtime_api.h
 #include "driver_types.h"
-#ifdef INTEL_CUSTOMIZATION
+#if INTEL_CUSTOMIZATION
 // Including "host_config.h”, but left macro __CUDACC__ not defined.
 // But the contents of "host_config.h" is protected by __CUDACC__,
 // if __CUDACC__ not defined, the contents of "host_config.h"
@@ -115,7 +115,7 @@
 #define nv_weak weak
 #undef __CUDABE__
 #undef __CUDA_LIBDEVICE__
-#if !defined(INTEL_CUSTOMIZATION)
+#if !(INTEL_CUSTOMIZATION)
 #define __CUDACC__
 #endif
 #include "cuda_runtime.h"
@@ -159,12 +159,6 @@ inline __host__ double __signbitd(double x) {
 // CUDA 9.1 no longer provides declarations for libdevice functions, so we need
 // to provide our own.
 #include <__clang_cuda_libdevice_declares.h>
-
-#define INTEL_CUSTOMIZATION
-#ifdef INTEL_CUSTOMIZATION
-#include "__clang_syclct_math.h"
-#endif
-
 
 // Wrappers for many device-side standard library functions became compiler
 // builtins in CUDA-9 and have been removed from the CUDA headers. Clang now
@@ -422,6 +416,10 @@ __device__ inline __cuda_builtin_gridDim_t::operator dim3() const {
 #include <__clang_cuda_intrinsics.h>
 #include <__clang_cuda_complex_builtins.h>
 
+#if INTEL_CUSTOMIZATION
+#include "__clang_syclct_math.h"
+#include <math.h>
+#endif
 // curand_mtgp32_kernel helpfully redeclares blockDim and threadIdx in host
 // mode, giving them their "proper" types of dim3 and uint3.  This is
 // incompatible with the types we give in __clang_cuda_builtin_vars.h.  As as
