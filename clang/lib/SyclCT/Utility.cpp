@@ -353,3 +353,30 @@ const DeclRefExpr *getInnerValueDecl(const Expr *Arg) {
 }
 
 bool startsWith(std::string str, std::string s) { return str.rfind(s, 0) == 0; }
+
+const clang::Stmt *getParentStmt(const clang::Stmt *S) {
+  if (!S)
+    return nullptr;
+
+  auto &Context = syclct::SyclctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*S);
+  assert(Parents.size() == 1);
+  if (Parents.size() == 1)
+    return Parents[0].get<Stmt>();
+
+  return nullptr;
+}
+
+// Determine if S is a single line statement inside
+// a if/while/do while/for statement
+bool IsSingleLineStatement(const clang::Stmt *S) {
+  auto ParentStmt = getParentStmt(S);
+  if (!ParentStmt)
+    return false;
+
+  auto ParentStmtClass = ParentStmt->getStmtClass();
+  return ParentStmtClass == Stmt::StmtClass::IfStmtClass ||
+         ParentStmtClass == Stmt::StmtClass::WhileStmtClass ||
+         ParentStmtClass == Stmt::StmtClass::DoStmtClass ||
+         ParentStmtClass == Stmt::StmtClass::ForStmtClass;
+}

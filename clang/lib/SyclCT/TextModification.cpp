@@ -111,7 +111,7 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
     // and redundant spaces
     if (IsCleanup &&
         TheStmt->getStmtClass() == Stmt::StmtClass::CallExprClass &&
-        ReplacementString.empty()) {
+        ReplacementString.empty() && !IsSingleLineStatement(TheStmt)) {
       return removeStmtWithCleanups(SM);
     }
     return std::make_shared<ExtReplacement>(SM, TheStmt, ReplacementString,

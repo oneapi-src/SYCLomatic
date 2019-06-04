@@ -34,7 +34,8 @@ extern std::string CudaPath;
 extern std::string SyclctInstallPath; // Installation directory for this tool
 
 auto parentStmt = anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
-                        hasParent(whileStmt()), hasParent(ifStmt()));
+                        hasParent(whileStmt()), hasParent(doStmt()),
+                        hasParent(ifStmt()));
 
 std::unordered_map<std::string, std::unordered_set</* Comment ID */ int>>
     TranslationRule::ReportedComment;

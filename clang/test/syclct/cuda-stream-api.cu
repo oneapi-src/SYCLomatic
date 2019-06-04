@@ -37,7 +37,33 @@ static void func()
   // CHECK-NEXT: cl::sycl::queue s2, *s3 = &s2;
   // CHECK-NEXT: cl::sycl::queue s4, s5;
   // CHECK-EMPTY:
-  // CHECK-NEXT: {
+  cudaStream_t s0, &s1 = s0;
+  cudaStream_t s2, *s3 = &s2;
+  cudaStream_t s4, s5;
+
+  // CHECK: if (1)
+  // CHECK-NEXT: ;
+  if (1)
+    cudaStreamCreate(&s0);
+
+  // CHECK: while (0)
+  // CHECK-NEXT: ;
+  while (0)
+    cudaStreamCreate(&s0);
+
+  // CHECK: do
+  // CHECK-NEXT: ;
+  // CHECK: while (0);
+  do
+    cudaStreamCreate(&s0);
+  while (0);
+
+  // CHECK: for (; 0; )
+  // CHECK-NEXT: ;
+  for (; 0; )
+    cudaStreamCreate(&s0);
+
+  // CHECK: {
   // CHECK-NEXT:   syclct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
@@ -47,11 +73,6 @@ static void func()
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
-  cudaStream_t s0, &s1 = s0;
-  cudaStream_t s2, *s3 = &s2;
-  cudaStream_t s4, s5;
-
-  cudaStreamCreate(&s0);
   kernelFunc<<<16, 32, 0>>>();
 
   // CHECK: /*
