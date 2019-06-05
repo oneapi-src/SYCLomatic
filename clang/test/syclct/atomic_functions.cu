@@ -29,12 +29,12 @@ __global__ void test(T *data) {
   atomicMin(&data[4], tid);
 
   // CHECK: /*
-  // CHECK: SYCLCT1007:0: atomicInc: not support API, need manual porting.
+  // CHECK: SYCLCT1007:0: atomicInc: Migration of this API is not supported.
   // CHECK: */
   atomicInc((unsigned int *)&data[5], (unsigned int)tid);
 
   // CHECK: /*
-  // CHECK: SYCLCT1007:1: atomicDec: not support API, need manual porting.
+  // CHECK: SYCLCT1007:1: atomicDec: Migration of this API is not supported.
   // CHECK: */
   atomicDec((unsigned int *)&data[6], (unsigned int)tid);
 

@@ -768,7 +768,7 @@ void AtomicFunctionRule::ReportUnsupportedAtomicFunc(const CallExpr *CE) {
   if (!CE->getDirectCallee())
     return;
   OSS << "half version of " << CE->getDirectCallee()->getName().str();
-  report(CE->getBeginLoc(), Comments::API_NOT_MIGRATED, OSS.str());
+  report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, OSS.str());
 }
 
 void AtomicFunctionRule::TranslateAtomicFunc(
@@ -3967,7 +3967,7 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
     std::size_t Pos = SLStr.find(':');
     std::string FileName = SLStr.substr(0, Pos);
     LOCStaticsMap[FileName][2]++;
-    report(C->getBeginLoc(), Comments::API_NOT_MIGRATED, APIName.c_str());
+    report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, APIName.c_str());
   }
 }
 
