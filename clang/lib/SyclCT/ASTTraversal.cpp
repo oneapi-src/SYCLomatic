@@ -1928,7 +1928,10 @@ void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
   if (Parents.size() != 1) {
     return;
   }
-  auto Search = PropNamesMap.find(ME->getMemberNameInfo().getAsString());
+  auto MemberName = ME->getMemberNameInfo().getAsString();
+  if (MemberName == "sharedMemPerBlock")
+    report(ME->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE);
+  auto Search = PropNamesMap.find(MemberName);
   if (Search == PropNamesMap.end()) {
     // TODO report migration error
     return;
@@ -2049,6 +2052,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaGetLastError", "cudaPeekAtLastError", "cudaDeviceSynchronize",
         "cudaThreadSynchronize", "cudaGetErrorString", "cudaGetErrorName",
         "cudaDeviceSetCacheConfig", "cudaDeviceGetCacheConfig", "clock",
+        "cudaOccupancyMaxPotentialBlockSize",
         "cudaThreadSetLimit", "cudaFuncSetCacheConfig", "make_cuComplex",
         "make_cuDoubleComplex", "cudaThreadExit",
         /*BLAS level 1 */
@@ -2358,6 +2362,8 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     else
       emplaceTransformation(
           new ReplaceCalleeName(CE, "std::complex<float>", FuncName));
+  } else if (FuncName == "cudaOccupancyMaxPotentialBlockSize") {
+    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
   } else {
     syclct_unreachable("Unknown function name");
   }

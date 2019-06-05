@@ -44,3 +44,5 @@ DEF_WARNING(POTENTIAL_PERFORMACE_ISSUE, 1018, "The %0 was migrated, but due to %
 DEF_COMMENT(POTENTIAL_PERFORMACE_ISSUE, 1018, "The {0} was migrated, but due to {1}, the generated code performance may be sub-optimal.")
 DEF_WARNING(PRINTF_FUNC_MIGRATION_WARNING, 1015, "Please adjust the code manually.")
 DEF_COMMENT(PRINTF_FUNC_MIGRATION_WARNING, 1015, "Please adjust the code manually.")
+DEF_WARNING(LOCAL_MEM_SIZE, 1019, "The sharedMemPerBlock is not necessarily the same as local_mem_size in DPC++")
+DEF_COMMENT(LOCAL_MEM_SIZE, 1019, "The sharedMemPerBlock is not necessarily the same as local_mem_size in DPC++")

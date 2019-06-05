@@ -332,7 +332,7 @@ ENTRY(cudaGraphNodeGetType, false, P4, "comment")
 ENTRY(cudaGraphRemoveDependencies, false, P4, "comment")
 
 // C++ high level API functions of runtime API
-ENTRY(cudaOccupancyMaxPotentialBlockSize, false, P0, "comment")
+ENTRY(cudaOccupancyMaxPotentialBlockSize, true, P0, "Unsupported: No such API in DPC++")
 ENTRY(cudaOccupancyMaxPotentialBlockSizeVariableSMem, false, P0, "comment")
 ENTRY(cudaOccupancyMaxPotentialBlockSizeVariableSMemWithFlags, false, P4, "comment")
 ENTRY(cudaOccupancyMaxPotentialBlockSizeWithFlags, false, P4, "comment")

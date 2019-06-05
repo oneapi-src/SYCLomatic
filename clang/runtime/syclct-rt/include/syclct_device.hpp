@@ -53,6 +53,7 @@ public:
   int get_max_clock_frequency() { return _frequency; }
   int get_max_compute_units() { return _compute_units; }
   size_t get_global_mem_size() { return _global_mem_size; }
+  size_t get_local_mem_size() { return _local_mem_size; }
   compute_mode get_mode() { return _compute_mode; }
   // set interface
   void set_name(const char* name) {std::strncpy(_name, name,256);}
@@ -64,6 +65,7 @@ public:
   void set_max_clock_frequency(int frequency) {_frequency=frequency;}
   void set_max_compute_units(int compute_units) {_compute_units=compute_units;}
   void set_global_mem_size(size_t global_mem_size) {_global_mem_size=global_mem_size;}
+  void set_local_mem_size(size_t local_mem_size) {_local_mem_size=local_mem_size;}
   void set_mode(compute_mode compute_mode){_compute_mode=compute_mode;}
 
 private:
@@ -76,6 +78,7 @@ private:
   int _frequency;
   int _compute_units;
   size_t _global_mem_size;
+  size_t _local_mem_size;
   compute_mode _compute_mode = compute_mode::default_;
 };
 
@@ -109,6 +112,7 @@ public:
     prop.set_max_clock_frequency(get_info<cl::sycl::info::device::max_clock_frequency>());
     prop.set_max_compute_units(get_info<cl::sycl::info::device::max_compute_units>());
     prop.set_global_mem_size(get_info<cl::sycl::info::device::global_mem_size>());
+    prop.set_local_mem_size(get_info<cl::sycl::info::device::local_mem_size>());
     //...
     out = prop;
   }

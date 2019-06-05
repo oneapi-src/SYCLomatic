@@ -418,6 +418,7 @@ const MapNames::MapTy DevicePropVarRule::PropNamesMap{
     {"multiProcessorCount", "max_compute_units"},
     {"name", "name"},
     {"totalGlobalMem", "global_mem_size"},
+    {"sharedMemPerBlock", "local_mem_size"},
     // ...
 };
 
