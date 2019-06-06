@@ -3706,7 +3706,7 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
 
   std::string APIName = C->getCalleeDecl()->getAsFunction()->getNameAsString();
 
-  if (!Namespace.empty()) {
+  if (!Namespace.empty() && Namespace =="thrust") {
     APIName = Namespace + "::" + APIName;
   }
 

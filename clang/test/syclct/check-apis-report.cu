@@ -1,5 +1,6 @@
 // RUN: syclct -report-type=apis -report-file-prefix=check-apis-report -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: API name, Frequency" >%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: CUresult cuMemGetInfo_v2(size_t * free,size_t * total),1" >>%T/check-apis-report_csv_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaDeviceProp,1" >>%T/check-apis-report_csv_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t,3" >>%T/check-apis-report_csv_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaDeviceSynchronize(),4" >>%T/check-apis-report_csv_check.txt
@@ -13,6 +14,7 @@
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMemset(void * devPtr,int value,size_t count),1" >>%T/check-apis-report_csv_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaStream_t,1" >>%T/check-apis-report_csv_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: dim3,1" >>%T/check-apis-report_csv_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: float max(float a,float b),1" >>%T/check-apis-report_csv_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: int2,3" >>%T/check-apis-report_csv_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: longlong4,1" >>%T/check-apis-report_csv_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: struct cudaChannelFormatDesc cudaCreateChannelDesc(),1" >>%T/check-apis-report_csv_check.txt
@@ -24,6 +26,7 @@
 
 // RUN: syclct -report-file-prefix=report -report-type=apis  -report-format=formatted -report-only  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: API name				Frequency" >%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: CUresult cuMemGetInfo_v2(size_t * free,size_t * total)               1" >>%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaDeviceProp                               1" >>%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t                                  3" >>%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaDeviceSynchronize()               4" >>%T/check-apis-report_check.txt
@@ -37,6 +40,7 @@
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaError_t cudaMemset(void * devPtr,int value,size_t count)               1" >>%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaStream_t                                 1" >>%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: dim3                                         1" >>%T/check-apis-report_check.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: float max(float a,float b)                   1" >>%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: int2                                         3" >>%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: longlong4                                    1" >>%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: struct cudaChannelFormatDesc cudaCreateChannelDesc()               1" >>%T/check-apis-report_check.txt
@@ -160,4 +164,14 @@ void bar(){
   cudaFuncAttributes attrib;
   cudaError_t err;
   err = cudaFuncGetAttributes(&attrib, addKernel<float>);
+}
+
+namespace libsvm {
+extern "C"
+void SVMTrain(void){
+    float* d_value_inter;
+    size_t free_mem, total;
+    cuMemGetInfo_v2(&free_mem, &total);
+    int a = max(1, 3);
+}
 }
