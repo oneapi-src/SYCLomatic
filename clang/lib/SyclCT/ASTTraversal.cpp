@@ -216,6 +216,15 @@ void IncludesCallbacks::Elif(SourceLocation Loc, SourceRange ConditionRange,
   ReplaceCuMacro(ConditionRange);
 }
 
+bool IncludesCallbacks::ShouldEnter(StringRef FileName, bool IsAngled) {
+#ifdef _WIN32
+  std::string Name = FileName.str();
+  return !IsAngled || !MapNames::isInSet(MapNames::ThrustFileExcludeSet, Name);
+#else
+  return true;
+#endif
+}
+
 void IncludesCallbacks::InclusionDirective(
     SourceLocation HashLoc, const Token &IncludeTok, StringRef FileName,
     bool IsAngled, CharSourceRange FilenameRange, const FileEntry *File,

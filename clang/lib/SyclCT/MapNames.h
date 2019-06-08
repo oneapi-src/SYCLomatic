@@ -14,6 +14,7 @@
 
 #include "Utility.h"
 #include <map>
+#include <set>
 
 const std::string StringLiteralUnsupported{"UNSUPPORTED"};
 
@@ -26,12 +27,15 @@ public:
     std::string ReplName;
   };
   using MapTy = std::map<std::string, std::string>;
+  using SetTy = std::set<std::string>;
+
   static const MapTy TypeNamesMap;
   static const MapTy Dim3MemberNamesMap;
   static const MapTy MacrosMap;
   static const MapTy BLASEnumsMap;
   static const std::map<std::string, MapNames::BLASFuncReplInfo>
       BLASFuncReplInfoMap;
+  static const SetTy ThrustFileExcludeSet;
 
   inline static const std::string &findReplacedName(const MapTy &Map,
                                                     const std::string &Name) {
@@ -47,6 +51,9 @@ public:
       return false;
     Name = Result;
     return true;
+  }
+  static bool isInSet(const SetTy &Set, std::string &Name) {
+    return Set.find(Name) != Set.end();
   }
 };
 

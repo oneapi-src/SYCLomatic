@@ -83,6 +83,7 @@ public:
           ConditionValueKind ConditionValue) override;
   void Elif(SourceLocation Loc, SourceRange ConditionRange,
             ConditionValueKind ConditionValue, SourceLocation IfLoc) override;
+  bool ShouldEnter(StringRef FileName, bool IsAngled) override;
 };
 
 class ASTTraversal;

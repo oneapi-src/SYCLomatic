@@ -1987,6 +1987,14 @@ Preprocessor::ImportAction Preprocessor::HandleHeaderIncludeOrImport(
     Action = (SuggestedModule && !getLangOpts().CompilingPCH) ? Import : Skip;
   }
 
+#if INTEL_CUSTOMIZATION
+  if (Callbacks && Action != Skip &&
+    !Callbacks->ShouldEnter(
+      LangOpts.MSVCCompat ? NormalizedPath.c_str() : Filename, isAngled)) {
+    Action = Skip;
+  }
+#endif
+
   if (Callbacks && !IsImportDecl) {
     // Notify the callback object that we've seen an inclusion directive.
     // FIXME: Use a different callback for a pp-import?

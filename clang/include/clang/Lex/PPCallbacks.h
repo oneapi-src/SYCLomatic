@@ -349,6 +349,15 @@ public:
   /// \param IfLoc the source location of the \#if/\#ifdef/\#ifndef directive.
   virtual void Endif(SourceLocation Loc, SourceLocation IfLoc) {
   }
+
+#if INTEL_CUSTOMIZATION
+  /// Hook called before entering a #include <file>.
+  /// \param FileName the filename referenced in the #include directive
+  /// \param IsAngled
+  virtual bool ShouldEnter(StringRef FileName, bool IsAngled) {
+    return true;
+  }
+#endif
 };
 
 /// Simple wrapper class for chaining callbacks.
@@ -574,6 +583,14 @@ public:
     First->Endif(Loc, IfLoc);
     Second->Endif(Loc, IfLoc);
   }
+
+#if INTEL_CUSTOMIZATION
+  /// Hook called before entering a #include <file>.
+  bool ShouldEnter(StringRef FileName, bool IsAngled) override {
+    return First->ShouldEnter(FileName, IsAngled) &&
+      Second->ShouldEnter(FileName, IsAngled);
+  }
+#endif
 };
 
 }  // end namespace clang

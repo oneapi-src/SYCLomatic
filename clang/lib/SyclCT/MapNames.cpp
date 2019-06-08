@@ -372,6 +372,27 @@ const MapNames::MapTy MapNames::MacrosMap{
     //...
 };
 
+// Files to not preprocess, i.e. ignore #include <file>
+const MapNames::SetTy MapNames::ThrustFileExcludeSet{
+    "thrust/detail/adjacent_difference.inl",
+    "thrust/detail/binary_search.inl",
+    "thrust/detail/complex/complex.inl",
+    "thrust/detail/copy.h",
+    "thrust/detail/copy_if.h",
+    "thrust/detail/count.inl",
+    "thrust/detail/device_ptr.inl",
+    "thrust/detail/equal.inl",
+    "thrust/detail/malloc_and_free.h",
+    "thrust/detail/pair.inl",
+    "thrust/detail/pointer.inl",
+    "thrust/detail/raw_pointer_cast.h",
+    "thrust/detail/reference.h",
+    "thrust/detail/sequence.inl",
+    "thrust/detail/sort.inl",
+    "thrust/detail/temporary_buffer.h",
+    "thrust/detail/vector_base.inl"
+};
+
 // DeviceProp names mapping.
 const MapNames::MapTy DevicePropVarRule::PropNamesMap{
     {"clockRate", "max_clock_frequency"},
@@ -993,13 +1014,13 @@ const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
 std::map<std::string, bool> TranslationStatistics::TranslationTable{
 #define ENTRY(APINAME, VALUE, TARGET, COMMENT) {#APINAME, VALUE},
 #include "APINames.inc"
-#include "APINames_thrust.inc"
 #include "APINames_cuBLAS.inc"
-#include "APINames_nvJPEG.inc"
 #include "APINames_cuFFT.inc"
 #include "APINames_cuGRAPH.inc"
-#include "APINames_cuRAND.inc"
 #include "APINames_cuPARSE.inc"
+#include "APINames_cuRAND.inc"
+#include "APINames_nvJPEG.inc"
+#include "APINames_thrust.inc"
 #undef ENTRY
 };
 

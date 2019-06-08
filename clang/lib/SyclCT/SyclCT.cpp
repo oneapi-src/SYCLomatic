@@ -700,8 +700,17 @@ int run(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
 
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      "-DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_CPP",
+      ArgumentInsertPosition::BEGIN));
+#ifdef _WIN32
+  Tool.appendArgumentsAdjuster(
+      getInsertArgumentAdjuster("-fms-compatibility-version=19.00.24215.1",
+                                ArgumentInsertPosition::BEGIN));
+#endif
   SyclctGlobalInfo::setInRoot(InRoot);
   SyclctGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);
+
   SyclCTActionFactory Factory(Tool.getReplacements());
   if (int RunResult = Tool.run(&Factory) && !NoStopOnErrFlag) {
     DebugInfo::ShowStatus(RunResult);
