@@ -1,6 +1,9 @@
 // RUN: syclct -out-root %T %s -- -std=c++11 -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck --input-file %T/replace-dim3.sycl.cpp --match-full-lines %s
 
+#include <cstdio>
+#include <algorithm>
+
 #define NUM 23
 
 // CHECK: void func(cl::sycl::range<3> a, cl::sycl::range<3> b, cl::sycl::range<3> c, cl::sycl::range<3> d) try {
@@ -178,3 +181,25 @@ int main() {
   // CHECK: }
   kernel<<<NUM, NUM>>>(d3_6.x);
 }
+
+template<typename T>
+__host__ __device__ T getgriddim(T totallen, T blockdim)
+{
+    return (totallen + blockdim - (T)1) / blockdim;
+}
+
+template<typename T>
+static void memsetCuda(T * d_mem, T v, int n)
+{
+  // CHECK: cl::sycl::range<3> dimBlock(256, 1, 1);
+  // CHECK: cl::sycl::range<3> dimGrid_2(max(2048, 3), 1, 1);
+  // CHECK: cl::sycl::range<3> dimGrid_1(std::max(2048, 3), 1, 1);
+  // CHECK: cl::sycl::min(2048, getgriddim<int>(n, dimBlock[0]));
+  // CHECK: cl::sycl::range<3> dimGrid(std::min(2048, getgriddim<int>(n, dimBlock[0])), 1, 1);
+  dim3 dimBlock(256);
+  dim3 dimGrid_2(max(2048, 3));
+  dim3 dimGrid_1(std::max(2048, 3));
+  std::min(2048, getgriddim<int>(n, dimBlock.x));
+  dim3 dimGrid(std::min(2048, getgriddim<int>(n, dimBlock.x)));
+}
+

@@ -1259,9 +1259,7 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: {
-    return false;
-  }
+  default: { return false; }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -1551,10 +1549,11 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
                     .bind("dim3Top"),
                 this);
 
-  MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(hasName("dim3"))),
-                                 argumentCountIs(3), hasParent(varDecl()),
-                                 unless(hasAncestor(cxxConstructExpr(
-                                     hasType(typedefDecl(hasName("dim3")))))))
+  MF.addMatcher(cxxConstructExpr(
+                    hasType(typedefDecl(hasName("dim3"))), argumentCountIs(3),
+                    anyOf(hasParent(varDecl()), hasParent(exprWithCleanups())),
+                    unless(hasAncestor(cxxConstructExpr(
+                        hasType(typedefDecl(hasName("dim3")))))))
                     .bind("dim3CtorDecl"),
                 this);
 
@@ -1564,6 +1563,7 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
           // skip fields in a struct.  The source loc is
           // messed up (points to the start of the struct)
           unless(hasAncestor(cxxRecordDecl())), unless(hasParent(varDecl())),
+          unless(hasParent(exprWithCleanups())),
           unless(hasAncestor(
               cxxConstructExpr(hasType(typedefDecl(hasName("dim3")))))))
           .bind("dim3CtorNoDecl"),
@@ -1584,8 +1584,10 @@ ReplaceDim3Ctor *ReplaceDim3CtorRule::getReplaceDim3Modification(
     }
   } else if (auto Ctor =
                  getNodeAsType<CXXConstructExpr>(Result, "dim3CtorNoDecl")) {
-    return new ReplaceDim3Ctor(Ctor);
+    // deflt = dim3(3);
+    return new ReplaceDim3Ctor(Ctor, false /*isDecl*/);
   } else if (auto Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3Top")) {
+    // dim3 d3_6_3 = dim3(ceil(test.x + NUM), NUM + test.y, NUM + test.z + NUM);
     if (auto A = ReplaceDim3Ctor::getConstructExpr(Ctor->getArg(0))) {
       // strip the top CXXConstructExpr, if there's a CXXConstructExpr further
       // down
@@ -2065,9 +2067,8 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (TimeHeaderFilter.find(FID) == TimeHeaderFilter.end()) {
       TimeHeaderFilter.insert(FID);
       emplaceTransformation(new InsertText(
-          IncludeLoc, getNL() +
-                          std::string("#include <time.h> // For clock_t, "
-                                      "clock and CLOCKS_PER_SEC") +
+          IncludeLoc, getNL() + std::string("#include <time.h> // For clock_t, "
+                                            "clock and CLOCKS_PER_SEC") +
                           getNL()));
     }
   } else if (FuncName == "cudaDeviceSetLimit" ||

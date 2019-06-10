@@ -169,6 +169,16 @@ private:
   }
 
 protected:
+  void analysisArgument(const Expr *E) {
+    switch (E->getStmtClass()) {
+    case Stmt::CXXConstructExprClass:
+      return analysisExpression(
+          static_cast<const CXXConstructExpr *>(E)->getArg(0));
+    default:
+      analysisExpression(E);
+    }
+  }
+
   // Prepare for analysis.
   void initExpression(const Expr *Expression);
 

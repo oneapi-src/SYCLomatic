@@ -529,8 +529,8 @@ InsertComment::getReplacement(const ASTContext &Context) const {
   return std::make_shared<ExtReplacement>(Context.getSourceManager(), SL, 0,
                                           (OrigIndent + llvm::Twine("/*") + NL +
                                            OrigIndent + Text + NL + OrigIndent +
-                                           "*/" + NL)
-                                              .str(),
+                                           "*/" +
+                                           NL).str(),
                                           this);
 }
 
