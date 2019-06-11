@@ -712,22 +712,22 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
 private:
-  void MallocTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
+  void mallocTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C,
                          const UnresolvedLookupExpr *ULExpr = NULL);
-  void MemcpyTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
+  void memcpyTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C,
                          const UnresolvedLookupExpr *ULExpr = NULL);
-  void MemcpyToSymbolTranslation(
+  void memcpyToSymbolTranslation(
       const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
       const UnresolvedLookupExpr *ULExpr = NULL);
-  void MemcpyFromSymbolTranslation(
+  void memcpyFromSymbolTranslation(
       const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
       const UnresolvedLookupExpr *ULExpr = NULL);
-  void FreeTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
+  void freeTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
                        const CallExpr *C,
                        const UnresolvedLookupExpr *ULExpr = NULL);
-  void MemsetTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
+  void memsetTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C,
                          const UnresolvedLookupExpr *ULExpr = NULL);
   void handleAsync(const CallExpr *C, unsigned i,
@@ -748,13 +748,13 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
 private:
-  std::vector<std::string> GetParamsAsStrs(const CallExpr *CE,
+  std::vector<std::string> getParamsAsStrs(const CallExpr *CE,
                                            const ASTContext &Context);
   void
-  GetSetVectorTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
+  getSetVectorTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
                           const CallExpr *C, const bool IsAssigned);
   void
-  GetSetMatrixTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
+  getSetMatrixTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
                           const CallExpr *C, const bool IsAssigned);
   std::unordered_map<
       std::string,

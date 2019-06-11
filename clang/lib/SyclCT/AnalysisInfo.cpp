@@ -20,12 +20,14 @@
 namespace clang {
 namespace syclct {
 std::string SyclctGlobalInfo::InRoot = std::string();
+std::string SyclctGlobalInfo::CudaPath = std::string();
 ASTContext *SyclctGlobalInfo::Context = nullptr;
 SourceManager *SyclctGlobalInfo::SM = nullptr;
 bool SyclctGlobalInfo::KeepOriginCode = false;
 const std::string MemVarInfo::ExternVariableName = "syclct_extern_memory";
 
 bool SyclctFileInfo::isInRoot() { return SyclctGlobalInfo::isInRoot(FilePath); }
+bool SyclctFileInfo::isInCudaPath() { return SyclctGlobalInfo::isInCudaPath(FilePath); }
 
 void SyclctFileInfo::buildLinesInfo() {
   if (FilePath.empty())
@@ -67,7 +69,10 @@ void SyclctGlobalInfo::insertCudaMalloc(const CallExpr *CE) {
   if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(0)))
     insertCudaMallocInfo(MallocVar)->setSizeExpr(CE->getArg(1));
 }
-
+void SyclctGlobalInfo::insertCublasAlloc(const CallExpr *CE) {
+  if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(2)))
+    insertCudaMallocInfo(MallocVar)->setSizeExpr(CE->getArg(0), CE->getArg(1));
+}
 std::shared_ptr<CudaMallocInfo>
 SyclctGlobalInfo::findCudaMalloc(const Expr *E) {
   if (auto Src = CudaMallocInfo::getMallocVar(E))

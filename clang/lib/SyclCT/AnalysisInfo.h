@@ -171,6 +171,7 @@ private:
   }
 
   bool isInRoot();
+  bool isInCudaPath();
 
   void buildLinesInfo();
   inline const SourceLineInfo &getLineInfoFromOffset(unsigned Offset) {
@@ -220,10 +221,26 @@ public:
     makeCanonical(Path);
     return isChildPath(InRoot, Path);
   }
+  inline static bool isInCudaPath(SourceLocation SL) {
+    return isInCudaPath(
+        getSourceManager().getFilename(getSourceManager().getExpansionLoc(SL)));
+  }
+  static bool isInCudaPath(const std::string &FilePath) {
+    std::string Path = FilePath;
+    makeCanonical(Path);
+    return isChildPath(CudaPath, Path);
+  }
   static void setInRoot(const std::string &InRootPath) { InRoot = InRootPath; }
   static const std::string &getInRoot() {
     assert(!InRoot.empty());
     return InRoot;
+  }
+  static void setCudaPath(const std::string &InputCudaPath) {
+    CudaPath = InputCudaPath;
+  }
+  static const std::string &getCudaPath() {
+    assert(!CudaPath.empty());
+    return CudaPath;
   }
   static const std::string &getItemName() {
     const static std::string ItemName = "item_" + getInRootHash();
@@ -297,7 +314,7 @@ public:
   }
 
   void insertCudaMalloc(const CallExpr *CE);
-
+  void insertCublasAlloc(const CallExpr *CE);
   std::shared_ptr<CudaMallocInfo> findCudaMalloc(const Expr *CE);
   void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     insertFile(Repl->getFilePath())->addReplacement(Repl);
@@ -351,6 +368,7 @@ private:
   std::unordered_map<std::string, std::shared_ptr<SyclctFileInfo>> FileMap;
 
   static std::string InRoot;
+  static std::string CudaPath;
   static ASTContext *Context;
   static SourceManager *SM;
   static bool KeepOriginCode;
@@ -1126,6 +1144,14 @@ public:
     ArgumentAnalysis A(SizeExpression);
     A.analysis();
     Size = A.getReplacedString();
+  }
+  void setSizeExpr(const Expr *N, const Expr *ElemSize) {
+    ArgumentAnalysis AN(N);
+    ArgumentAnalysis AElemSize(ElemSize);
+    AN.analysis();
+    AElemSize.analysis();
+    Size = "(" + AN.getReplacedString() + ")*(" +
+           AElemSize.getReplacedString() + ")";
   }
 
   std::string getAssignArgs(const std::string &TypeName) {

@@ -211,16 +211,16 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK: status = (mkl::srotmg(handle, x_f_BUFFER_{{[0-9,a-z]+}}, y_f_BUFFER_{{[0-9,a-z]+}}, y_f_BUFFER_{{[0-9,a-z]+}}, x_S, y_f_BUFFER_{{[0-9,a-z]+}}), 0);
-  // CHECK: mkl::srotmg(handle, x_f_BUFFER_{{[0-9,a-z]+}}, y_f_BUFFER_{{[0-9,a-z]+}}, y_f_BUFFER_{{[0-9,a-z]+}}, x_S, y_f_BUFFER_{{[0-9,a-z]+}});
+  // CHECK: status = (mkl::srotmg(handle, x_f_BUFFER_{{[0-9,a-z]+}}, y_f_BUFFER_{{[0-9,a-z]+}}, y_f_BUFFER_{{[0-9,a-z]+}}, *(x_S), y_f_BUFFER_{{[0-9,a-z]+}}), 0);
+  // CHECK: mkl::srotmg(handle, x_f_BUFFER_{{[0-9,a-z]+}}, y_f_BUFFER_{{[0-9,a-z]+}}, y_f_BUFFER_{{[0-9,a-z]+}}, *(x_S), y_f_BUFFER_{{[0-9,a-z]+}});
   status = cublasSrotmg(handle, x_f, y_f, y_f, x_S, y_f);
   cublasSrotmg(handle, x_f, y_f, y_f, x_S, y_f);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK: status = (mkl::drotmg(handle, x_d_BUFFER_{{[0-9,a-z]+}}, y_d_BUFFER_{{[0-9,a-z]+}}, y_d_BUFFER_{{[0-9,a-z]+}}, x_D, y_d_BUFFER_{{[0-9,a-z]+}}), 0);
-  // CHECK: mkl::drotmg(handle, x_d_BUFFER_{{[0-9,a-z]+}}, y_d_BUFFER_{{[0-9,a-z]+}}, y_d_BUFFER_{{[0-9,a-z]+}}, x_D, y_d_BUFFER_{{[0-9,a-z]+}});
+  // CHECK: status = (mkl::drotmg(handle, x_d_BUFFER_{{[0-9,a-z]+}}, y_d_BUFFER_{{[0-9,a-z]+}}, y_d_BUFFER_{{[0-9,a-z]+}}, *(x_D), y_d_BUFFER_{{[0-9,a-z]+}}), 0);
+  // CHECK: mkl::drotmg(handle, x_d_BUFFER_{{[0-9,a-z]+}}, y_d_BUFFER_{{[0-9,a-z]+}}, y_d_BUFFER_{{[0-9,a-z]+}}, *(x_D), y_d_BUFFER_{{[0-9,a-z]+}});
   status = cublasDrotmg(handle, x_d, y_d, y_d, x_D, y_d);
   cublasDrotmg(handle, x_d, y_d, y_d, x_D, y_d);
 

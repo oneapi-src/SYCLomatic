@@ -657,6 +657,7 @@ int run(int argc, const char **argv) {
                                 ArgumentInsertPosition::BEGIN));
 #endif
   SyclctGlobalInfo::setInRoot(InRoot);
+  SyclctGlobalInfo::setCudaPath(CudaPath);
   SyclctGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);
 
   SyclCTActionFactory Factory(Tool.getReplacements());

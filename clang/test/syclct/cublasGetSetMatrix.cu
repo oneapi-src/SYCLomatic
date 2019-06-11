@@ -16,6 +16,8 @@ int main() {
   float *A = NULL;
   float *d_A = NULL;
   cublasStatus_t status;
+  // CHECK: cl::sycl::queue stream;
+  cudaStream_t stream;
 
 #define LDA_MARCO 100
   const int ConstLda = 100;
@@ -88,6 +90,22 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: syclct::sycl_memcpy((void*)(d_A),(void*)(A),(foo(ConstExprLda))*(colsA)*(sizeof(A[0])),syclct::device_to_host);
   cublasGetMatrix(100, colsA, sizeof(A[0]), A, foo(ConstExprLda), d_A, ConstExprLdb);
+
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = (syclct::sycl_memcpy((void*)(d_A),(void*)(A),(100)*(colsA)*(sizeof(A[0])),syclct::host_to_device), 0);
+  // CHECK-NEXT: syclct::sycl_memcpy((void*)(d_A),(void*)(A),(100)*(colsA)*(sizeof(A[0])),syclct::host_to_device);
+  status = cublasSetMatrixAsync(100, colsA, sizeof(A[0]), A, 100, d_A, 100, stream);
+  cublasSetMatrixAsync(100, colsA, sizeof(A[0]), A, 100, d_A, 100, stream);
+
+  // CHECK: /*
+  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = (syclct::sycl_memcpy((void*)(d_A),(void*)(A),(100)*(colsA)*(sizeof(A[0])),syclct::device_to_host), 0);
+  // CHECK-NEXT: syclct::sycl_memcpy((void*)(d_A),(void*)(A),(100)*(colsA)*(sizeof(A[0])),syclct::device_to_host);
+  status = cublasGetMatrixAsync(100, colsA, sizeof(A[0]), A, 100, d_A, 100, stream);
+  cublasGetMatrixAsync(100, colsA, sizeof(A[0]), A, 100, d_A, 100, stream);
 
   return 0;
 }

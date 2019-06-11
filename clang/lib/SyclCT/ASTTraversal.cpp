@@ -65,6 +65,10 @@ InsertText *getCmathHeaderInsertTextForCallExpr(const CallExpr *CE,
 
 // Remember whether <complex> is included in one file.
 static std::set<FileID> ComplexHeaderFilter;
+// Remember whether <future> is included in one file.
+static std::set<FileID> FutureHeaderFilter;
+// Remember whether MKL headers are included in one file.
+static std::set<FileID> MKLHeadersFilter;
 
 unsigned TranslationRule::PairID = 0;
 
@@ -294,16 +298,26 @@ void IncludesCallbacks::InclusionDirective(
     AlreadyIncludeMathHeader[DecomposedLoc.first] = true;
   }
 
-  // replace "#include <cublas_v2.h>" with
+  // Replace "#include <cublas_v2.h>" and "#include <cublas.h>" with
   // <mkl_blas_sycl.hpp>, <mkl_lapack_sycl.hpp> and <sycl_types.hpp>
-  if (IsAngled && FileName.compare(StringRef("cublas_v2.h")) == 0) {
-    std::string Replacement = std::string("#include <mkl_blas_sycl.hpp>") +
-                              getNL() + "#include <mkl_lapack_sycl.hpp>" +
-                              getNL() + "#include <sycl_types.hpp>";
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        std::move(Replacement)));
+  if ((IsAngled && FileName.compare(StringRef("cublas_v2.h")) == 0) ||
+      (IsAngled && FileName.compare(StringRef("cublas.h")) == 0)) {
+    auto DecomposedLoc = SM.getDecomposedExpansionLoc(HashLoc);
+    if (MKLHeadersFilter.find(DecomposedLoc.first) == MKLHeadersFilter.end()) {
+      MKLHeadersFilter.insert(DecomposedLoc.first);
+      std::string Replacement = std::string("#include <mkl_blas_sycl.hpp>") +
+                                getNL() + "#include <mkl_lapack_sycl.hpp>" +
+                                getNL() + "#include <sycl_types.hpp>";
+      TransformSet.emplace_back(new ReplaceInclude(
+          CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                          /*IsTokenRange=*/false),
+          std::move(Replacement)));
+    } else {
+      TransformSet.emplace_back(new ReplaceInclude(
+          CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                          /*IsTokenRange=*/false),
+          ""));
+    }
   }
 
   if (!isChildPath(CudaPath, IncludePath) &&
@@ -851,7 +865,7 @@ auto TypedefNames = hasAnyName(
     "dim3", "cudaError_t", "CUresult", "CUcontext", "cudaEvent_t",
     "cudaStream_t", "__half", "__half2", "half", "half2", "cublasStatus_t",
     "cublasHandle_t", "cuComplex", "cuDoubleComplex", "cublasFillMode_t",
-    "cublasDiagType_t", "cublasSideMode_t", "cublasOperation_t");
+    "cublasDiagType_t","cublasSideMode_t", "cublasOperation_t", "cublasStatus");
 auto EnumTypeNames = hasAnyName("cudaError", "cufftResult_t", "cudaError_enum");
 // CUstream_st and CUevent_st are the actual types of cudaStream_t and
 // cudaEvent_st respectively
@@ -912,6 +926,13 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                           unless(hasType(substTemplateTypeParmType())))
                     .bind("TypeInFieldDecl"),
                 this);
+  MF.addMatcher(unaryExprOrTypeTraitExpr(
+                    hasArgumentOfType(anyOf(
+                        asString("cublasStatus_t"), asString("cublasStatus"),
+                        asString("cuComplex"), asString("cuDoubleComplex"),
+                        asString("cublasHandle_t"))))
+                    .bind("TypeInUnaryExprOrTypeTraitExpr"),
+                this);
 }
 
 std::string getReplacementForType(std::string TypeStr) {
@@ -941,32 +962,73 @@ std::string getReplacementForType(std::string TypeStr) {
 void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   // DD points to a VarDecl or a FieldDecl
   const DeclaratorDecl *DD = getNodeAsType<VarDecl>(Result, "TypeInVarDecl");
+  const UnaryExprOrTypeTraitExpr *UETTE;
   QualType QT;
-  if (DD)
+  bool IsUETTE = false;
+  if (DD) {
     QT = DD->getType();
-  else if ((DD = getNodeAsType<FieldDecl>(Result, "TypeInFieldDecl")))
+  } else if ((DD = getNodeAsType<FieldDecl>(Result, "TypeInFieldDecl"))) {
     QT = DD->getType();
-  else
+  } else if ((UETTE = getNodeAsType<UnaryExprOrTypeTraitExpr>(
+                  Result, "TypeInUnaryExprOrTypeTraitExpr"))) {
+    IsUETTE = true;
+  } else {
     return;
+  }
+  SourceManager *SM = Result.SourceManager;
+  unsigned int Loc;
+  std::string TypeStr;
+  SourceLocation BeginLoc;
+  int Len = 0;
+  bool IsMacro = false;
 
-  auto Loc =
-      DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc().getRawEncoding();
+  TypeSourceInfo *ArgTypeInfo = nullptr;
+  if (IsUETTE) {
+    if ((ArgTypeInfo = UETTE->getArgumentTypeInfo())) {
+      BeginLoc = ArgTypeInfo->getTypeLoc().getBeginLoc();
+    } else {
+      return;
+    }
+  } else {
+    if ((ArgTypeInfo = DD->getTypeSourceInfo())) {
+      BeginLoc = ArgTypeInfo->getTypeLoc().getSourceRange().getBegin();
+    } else {
+      return;
+    }
+  }
+
+  if (BeginLoc.isMacroID()) {
+    IsMacro = true;
+    auto SpellingLocation = SM->getSpellingLoc(BeginLoc);
+    if (SyclctGlobalInfo::isInCudaPath(SpellingLocation)) {
+      BeginLoc = SM->getExpansionLoc(BeginLoc);
+    } else {
+      BeginLoc = SpellingLocation;
+    }
+  }
+
+  Loc = BeginLoc.getRawEncoding();
   if (DupFilter.find(Loc) != DupFilter.end())
     return;
 
-  std::string TypeStr;
-  if (QT->isArrayType()) {
-    auto ArrType = Result.Context->getAsArrayType(QT);
-    auto EleType = ArrType->getElementType();
-    TypeStr = EleType.getAsString();
+  auto BeginLocChar = SM->getCharacterData(SM->getExpansionLoc(BeginLoc));
+  Len = Lexer::MeasureTokenLength(BeginLoc, *SM, LangOptions());
+
+  if (IsUETTE) {
+    TypeStr = std::string(BeginLocChar, Len);
   } else {
-    TypeStr = QT.getAsString();
+    if (QT->isArrayType()) {
+      auto ArrType = Result.Context->getAsArrayType(QT);
+      auto EleType = ArrType->getElementType();
+      TypeStr = EleType.getAsString();
+    } else {
+      TypeStr = QT.getAsString();
+    }
   }
 
   // Add '#include <complex>' directive to the file only once
   if (TypeStr == "cuComplex" || TypeStr == "cuDoubleComplex") {
-    SourceLocation SL = DD->getBeginLoc();
-    insertIncludeFile(SL, ComplexHeaderFilter,
+    insertIncludeFile(BeginLoc, ComplexHeaderFilter,
                       getNL() + std::string("#include <complex>") + getNL());
   }
 
@@ -975,7 +1037,18 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
     // TODO report migration error
     return;
 
-  emplaceTransformation(new ReplaceTypeInDecl(DD, std::move(Replacement)));
+  if (IsUETTE) {
+    emplaceTransformation(
+        new ReplaceText(BeginLoc, Len, std::move(Replacement)));
+  } else {
+    if (IsMacro) {
+      emplaceTransformation(
+          new ReplaceText(BeginLoc, Len, std::move(Replacement)));
+    } else {
+      emplaceTransformation(new ReplaceTypeInDecl(DD, std::move(Replacement)));
+    }
+  }
+
   DupFilter.insert(Loc);
 }
 
@@ -1728,6 +1801,8 @@ void ReturnTypeRule::registerMatcher(MatchFinder &MF) {
 void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
   const FunctionDecl *FD = nullptr;
   std::string TypeName;
+  SourceManager *SM = Result.SourceManager;
+
   if ((FD = getNodeAsType<FunctionDecl>(Result, "functionDecl"))) {
     const clang::Type *Type = FD->getReturnType().getTypePtr();
     if (Type == nullptr)
@@ -1739,14 +1814,12 @@ void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
   } else if ((FD = getNodeAsType<FunctionDecl>(Result,
                                                "functionDeclWithTypedef"))) {
     const clang::Type *Type = FD->getReturnType().getTypePtr();
-
     if (Type == nullptr)
       return;
     auto TDT = static_cast<const TypedefType *>(Type);
     if (TDT == nullptr)
       return;
     TypeName = TDT->getDecl()->getName().str();
-
   } else {
     return;
   }
@@ -1765,7 +1838,21 @@ void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
     return;
   }
   std::string Replacement = Search->second;
-  emplaceTransformation(new ReplaceReturnType(FD, std::move(Replacement)));
+
+  auto BeginLoc = FD->getBeginLoc();
+  if (BeginLoc.isMacroID()) {
+    auto SpellingLocation = SM->getSpellingLoc(BeginLoc);
+    if (SyclctGlobalInfo::isInCudaPath(SpellingLocation)) {
+      BeginLoc = SM->getExpansionLoc(BeginLoc);
+    } else {
+      BeginLoc = SpellingLocation;
+    }
+    auto Len = Lexer::MeasureTokenLength(BeginLoc, *SM, LangOptions());
+    emplaceTransformation(
+        new ReplaceText(BeginLoc, Len, std::move(Replacement)));
+  } else {
+    emplaceTransformation(new ReplaceReturnType(FD, std::move(Replacement)));
+  }
 }
 
 REGISTER_RULE(ReturnTypeRule)
@@ -1910,9 +1997,8 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaGetLastError", "cudaPeekAtLastError", "cudaDeviceSynchronize",
         "cudaThreadSynchronize", "cudaGetErrorString", "cudaGetErrorName",
         "cudaDeviceSetCacheConfig", "cudaDeviceGetCacheConfig", "clock",
-        "cudaThreadSetLimit", "cudaFuncSetCacheConfig",
-        "cudaFuncSetCacheConfig", "make_cuComplex", "make_cuDoubleComplex",
-        "cudaThreadExit",
+        "cudaThreadSetLimit", "cudaFuncSetCacheConfig", "make_cuComplex",
+        "make_cuDoubleComplex", "cudaThreadExit",
         /*BLAS level 1 */
         "cublasIsamax_v2", "cublasIdamax_v2", "cublasIsamin_v2",
         "cublasIdamin_v2", "cublasSasum_v2", "cublasDasum_v2", "cublasSaxpy_v2",
@@ -1932,10 +2018,12 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasStrmv_v2", "cublasDtrmv_v2", "cublasStrsv_v2", "cublasDtrsv_v2",
         /*BLAS level 3 */
         "cublasSgemm_v2", "cublasDgemm_v2", "cublasCgemm_v2", "cublasZgemm_v2",
-        "cublasCreate_v2", "cublasDestroy_v2", "cublasCreate_v2",
-        "cublasDestroy_v2", "cublasSsymm_v2", "cublasDsymm_v2",
-        "cublasSsyrk_v2", "cublasDsyrk_v2", "cublasSsyr2k_v2",
-        "cublasDsyr2k_v2", "cublasStrsm_v2", "cublasDtrsm_v2");
+        "cublasSsymm_v2", "cublasDsymm_v2", "cublasSsyrk_v2", "cublasDsyrk_v2",
+        "cublasSsyr2k_v2", "cublasDsyr2k_v2", "cublasStrsm_v2",
+        "cublasDtrsm_v2",
+        /*Legacy API*/
+        "cublasCreate_v2", "cublasDestroy_v2", "cublasInit", "cublasShutdown",
+        "cublasGetError");
   };
 
   MF.addMatcher(
@@ -2081,6 +2169,19 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaThreadSetLimit") {
     report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
     emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ""));
+  } else if (FuncName == "cublasInit" || FuncName == "cublasShutdown" ||
+             FuncName == "cublasGetError") {
+    // Remove these three function calls.
+    // TODO: migrate functions when they are in template
+    if (IsAssigned) {
+      emplaceTransformation(
+          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
+                          /*IsProcessMacro*/ false, "0"));
+    } else {
+      emplaceTransformation(
+          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
+                          /*IsProcessMacro*/ false, ""));
+    }
   } else if (MapNames::BLASFuncReplInfoMap.find(FuncName) !=
              MapNames::BLASFuncReplInfoMap.end()) {
     // There are some macroes like "#define cublasSgemm cublasSgemm_v2"
@@ -2564,6 +2665,8 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
     emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
+    insertIncludeFile(CE->getBeginLoc(), FutureHeaderFilter,
+                      getNL() + std::string("#include <future>") + getNL());
   } else {
     syclct_unreachable("Unknown function name");
   }
@@ -2728,8 +2831,10 @@ REGISTER_RULE(MemVarRule)
 // Migration rule for GetVector, SetVector, GetMatrix, SetMatrix, etc.
 void BLASGetSetRule::registerMatcher(MatchFinder &MF) {
   auto memoryAPI = [&]() {
-    return hasAnyName("cublasSetVector", "cublasGetVector", "cublasSetMatrix",
-                      "cublasGetMatrix");
+    return hasAnyName("cublasSetVector", "cublasGetVector",
+                      "cublasSetVectorAsync", "cublasGetVectorAsync",
+                      "cublasSetMatrix", "cublasGetMatrix",
+                      "cublasSetMatrixAsync", "cublasGetMatrixAsync");
   };
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt))
                     .bind("call"),
@@ -2765,20 +2870,32 @@ void BLASGetSetRule::run(const MatchFinder::MatchResult &Result) {
 BLASGetSetRule::BLASGetSetRule() {
   SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   TranslationDispatcher["cublasGetVector"] = std::bind(
-      &BLASGetSetRule::GetSetVectorTranslation, this, std::placeholders::_1,
+      &BLASGetSetRule::getSetVectorTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cublasGetVectorAsync"] = std::bind(
+      &BLASGetSetRule::getSetVectorTranslation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cublasSetVector"] = std::bind(
-      &BLASGetSetRule::GetSetVectorTranslation, this, std::placeholders::_1,
+      &BLASGetSetRule::getSetVectorTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cublasSetVectorAsync"] = std::bind(
+      &BLASGetSetRule::getSetVectorTranslation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cublasGetMatrix"] = std::bind(
-      &BLASGetSetRule::GetSetMatrixTranslation, this, std::placeholders::_1,
+      &BLASGetSetRule::getSetMatrixTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cublasGetMatrixAsync"] = std::bind(
+      &BLASGetSetRule::getSetMatrixTranslation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cublasSetMatrix"] = std::bind(
-      &BLASGetSetRule::GetSetMatrixTranslation, this, std::placeholders::_1,
+      &BLASGetSetRule::getSetMatrixTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cublasSetMatrixAsync"] = std::bind(
+      &BLASGetSetRule::getSetMatrixTranslation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
 }
 
-void BLASGetSetRule::GetSetVectorTranslation(
+void BLASGetSetRule::getSetVectorTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *CE,
     const bool IsAssigned) {
   assert(CE && "Unknown result");
@@ -2792,11 +2909,11 @@ void BLASGetSetRule::GetSetVectorTranslation(
   // elements are stored consequently).
   // Otherwise, the codes are kept originally.
   std::vector<std::string> ParamsStrsVec =
-      GetParamsAsStrs(CE, *(Result.Context));
-  // CopySize equals to n*(elemSize+incx-1)
-  // incx/incy = 1 means x/y elements are stored continuously
-  std::string CopySize = "(" + ParamsStrsVec[0] + ")*((" + ParamsStrsVec[1] +
-                         ")+(" + ParamsStrsVec[3] + ")-1)";
+      getParamsAsStrs(CE, *(Result.Context));
+  // CopySize equals to n*elemSize*incx
+  // incx(incy) equals to 1 means elements of x(y) are stored continuously
+  std::string CopySize = "(" + ParamsStrsVec[0] + ")*(" + ParamsStrsVec[1] +
+                         ")*(" + ParamsStrsVec[3] + ")";
   std::string XStr = "(void*)(" + ParamsStrsVec[2] + ")";
   std::string YStr = "(void*)(" + ParamsStrsVec[4] + ")";
   const Expr *IncxExpr = CE->getArg(3);
@@ -2831,21 +2948,22 @@ void BLASGetSetRule::GetSetVectorTranslation(
   std::string Replacement =
       "syclct::sycl_memcpy(" + YStr + "," + XStr + "," + CopySize + ",";
 
-  if (FuncName == "cublasGetVector") {
+  if (FuncName == "cublasGetVector" || FuncName == "cublasGetVectorAsync") {
     Replacement = Replacement + "syclct::device_to_host)";
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   }
-  if (FuncName == "cublasSetVector") {
+  if (FuncName == "cublasSetVector" || FuncName == "cublasSetVectorAsync") {
     Replacement = Replacement + "syclct::host_to_device)";
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   }
+
   if (IsAssigned) {
     report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
-    insertAroundStmt(CE, "(", ", 0)");
+    insertAroundStmt(CE,"(",", 0)");
   }
 }
 
-void BLASGetSetRule::GetSetMatrixTranslation(
+void BLASGetSetRule::getSetMatrixTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *CE,
     const bool IsAssigned) {
   assert(CE && "Unknown result");
@@ -2855,7 +2973,7 @@ void BLASGetSetRule::GetSetMatrixTranslation(
   std::string FuncName = FD->getNameInfo().getName().getAsString();
 
   std::vector<std::string> ParamsStrsVec =
-      GetParamsAsStrs(CE, *(Result.Context));
+      getParamsAsStrs(CE, *(Result.Context));
   // CopySize equals to lda*cols*elemSize
   std::string CopySize = "(" + ParamsStrsVec[4] + ")*(" + ParamsStrsVec[1] +
                          ")*(" + ParamsStrsVec[2] + ")";
@@ -2903,11 +3021,11 @@ void BLASGetSetRule::GetSetMatrixTranslation(
   std::string Replacement =
       "syclct::sycl_memcpy(" + BStr + "," + AStr + "," + CopySize + ",";
 
-  if (FuncName == "cublasGetMatrix") {
+  if (FuncName == "cublasGetMatrix" || FuncName == "cublasGetMatrixAsync") {
     Replacement = Replacement + "syclct::device_to_host)";
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   }
-  if (FuncName == "cublasSetMatrix") {
+  if (FuncName == "cublasSetMatrix" || FuncName == "cublasSetMatrixAsync") {
     Replacement = Replacement + "syclct::host_to_device)";
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   }
@@ -2918,7 +3036,7 @@ void BLASGetSetRule::GetSetMatrixTranslation(
 }
 
 std::vector<std::string>
-BLASGetSetRule::GetParamsAsStrs(const CallExpr *CE, const ASTContext &Context) {
+BLASGetSetRule::getParamsAsStrs(const CallExpr *CE, const ASTContext &Context) {
   std::vector<std::string> ParamsStrVec;
   for (auto Arg : CE->arguments())
     ParamsStrVec.emplace_back(getStmtSpelling(Arg, Context));
@@ -2927,22 +3045,36 @@ BLASGetSetRule::GetParamsAsStrs(const CallExpr *CE, const ASTContext &Context) {
 
 REGISTER_RULE(BLASGetSetRule)
 
-void MemoryTranslationRule::MallocTranslation(
+void MemoryTranslationRule::mallocTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr) {
-
   std::string Name;
   if (ULExpr) {
     Name = ULExpr->getName().getAsString();
   } else {
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
-
-  SyclctGlobalInfo::getInstance().insertCudaMalloc(C);
-  emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_malloc", Name));
+  if (Name == "cudaMalloc") {
+    SyclctGlobalInfo::getInstance().insertCudaMalloc(C);
+    emplaceTransformation(
+        new ReplaceCalleeName(C, "syclct::sycl_malloc", Name));
+  } else if (Name == "cublasAlloc") {
+    // TODO: migrate functions when they are in template
+    // TODO: migrate functions when they are in macro body
+    SyclctGlobalInfo::getInstance().insertCublasAlloc(C);
+    auto PtrStr = getStmtSpelling(C->getArg(2), *(Result.Context));
+    auto SizeStr = "(" + getStmtSpelling(C->getArg(0), *(Result.Context)) +
+                   ")*(" + getStmtSpelling(C->getArg(1), *(Result.Context)) +
+                   ")";
+    std::string Replacement =
+        "syclct::sycl_malloc(" + PtrStr + ", " + SizeStr + ")";
+    emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
+  } else {
+    syclct_unreachable("Unknown function name");
+  }
 }
 
-void MemoryTranslationRule::MemcpyTranslation(
+void MemoryTranslationRule::memcpyTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr) {
   // Input:
@@ -2995,7 +3127,7 @@ void MemoryTranslationRule::MemcpyTranslation(
     handleAsync(C, 4, Result);
 }
 
-void MemoryTranslationRule::MemcpyToSymbolTranslation(
+void MemoryTranslationRule::memcpyToSymbolTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr) {
   // Input:
@@ -3069,7 +3201,7 @@ void MemoryTranslationRule::MemcpyToSymbolTranslation(
     handleAsync(C, 5, Result);
 }
 
-void MemoryTranslationRule::MemcpyFromSymbolTranslation(
+void MemoryTranslationRule::memcpyFromSymbolTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr) {
   // Input:
@@ -3129,7 +3261,7 @@ void MemoryTranslationRule::MemcpyFromSymbolTranslation(
     handleAsync(C, 5, Result);
 }
 
-void MemoryTranslationRule::FreeTranslation(
+void MemoryTranslationRule::freeTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr) {
 
@@ -3143,7 +3275,7 @@ void MemoryTranslationRule::FreeTranslation(
   emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_free", Name));
 }
 
-void MemoryTranslationRule::MemsetTranslation(
+void MemoryTranslationRule::memsetTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr) {
 
@@ -3166,7 +3298,7 @@ void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
     return hasAnyName("cudaMalloc", "cudaMemcpy", "cudaMemcpyAsync",
                       "cudaMemcpyToSymbol", "cudaMemcpyToSymbolAsync",
                       "cudaMemcpyFromSymbol", "cudaMemcpyFromSymbolAsync",
-                      "cudaFree", "cudaMemset");
+                      "cudaFree", "cudaMemset", "cublasFree", "cublasAlloc");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt))
@@ -3230,31 +3362,37 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
 MemoryTranslationRule::MemoryTranslationRule() {
   SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   TranslationDispatcher["cudaMalloc"] = std::bind(
-      &MemoryTranslationRule::MallocTranslation, this, std::placeholders::_1,
+      &MemoryTranslationRule::mallocTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cublasAlloc"] = std::bind(
+      &MemoryTranslationRule::mallocTranslation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cudaMemcpy"] = std::bind(
-      &MemoryTranslationRule::MemcpyTranslation, this, std::placeholders::_1,
+      &MemoryTranslationRule::memcpyTranslation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cudaMemcpyAsync"] = std::bind(
-      &MemoryTranslationRule::MemcpyTranslation, this, std::placeholders::_1,
+      &MemoryTranslationRule::memcpyTranslation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cudaMemcpyToSymbol"] = std::bind(
-      &MemoryTranslationRule::MemcpyToSymbolTranslation, this,
+      &MemoryTranslationRule::memcpyToSymbolTranslation, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cudaMemcpyToSymbolAsync"] = std::bind(
-      &MemoryTranslationRule::MemcpyToSymbolTranslation, this,
+      &MemoryTranslationRule::memcpyToSymbolTranslation, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cudaMemcpyFromSymbol"] = std::bind(
-      &MemoryTranslationRule::MemcpyFromSymbolTranslation, this,
+      &MemoryTranslationRule::memcpyFromSymbolTranslation, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cudaMemcpyFromSymbolAsync"] = std::bind(
-      &MemoryTranslationRule::MemcpyFromSymbolTranslation, this,
+      &MemoryTranslationRule::memcpyFromSymbolTranslation, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cudaFree"] = std::bind(
-      &MemoryTranslationRule::FreeTranslation, this, std::placeholders::_1,
+      &MemoryTranslationRule::freeTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cublasFree"] = std::bind(
+      &MemoryTranslationRule::freeTranslation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cudaMemset"] = std::bind(
-      &MemoryTranslationRule::MemsetTranslation, this, std::placeholders::_1,
+      &MemoryTranslationRule::memsetTranslation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
 }
 
