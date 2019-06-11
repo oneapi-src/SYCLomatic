@@ -861,6 +861,7 @@ if (NOT CLANG_BUILT_STANDALONE)
     install-clang-resource-headers
     install-syclct
     install-syclct-startup
+    install-syclct-syscheck
     )
 endif()
 add_custom_target(install-syclct-tool DEPENDS ${SYCLCT_RUN})
