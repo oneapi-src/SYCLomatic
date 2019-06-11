@@ -1,10 +1,10 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck --input-file %T/sycl_style_double2.sycl.cpp --match-full-lines %s
 
-// CHECK: void func3(cl::sycl::double2 a, cl::sycl::double2 b, cl::sycl::double2 c) try {
+// CHECK: void func3(cl::sycl::double2 a, cl::sycl::double2 b, cl::sycl::double2 c) {
 void func3(double2 a, double2 b, double2 c) {
 }
-// CHECK: void fun(cl::sycl::double2 a) try {}
+// CHECK: void fun(cl::sycl::double2 a) {}
 void fun(double2 a) {}
 
 // CHECK: void kernel(cl::sycl::double2* data) {}

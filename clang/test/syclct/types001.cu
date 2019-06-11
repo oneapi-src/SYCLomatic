@@ -68,7 +68,7 @@ struct s {
   const dim3 **ppdims[23];
 };
 
-// CHECK:  void foo(syclct::sycl_device_info p) try {
+// CHECK:  void foo(syclct::sycl_device_info p) {
 void foo(cudaDeviceProp p) {
   return;
 }
@@ -85,7 +85,7 @@ cudaError_t foo_0(cudaError_t);
 // CHECK: int foo_1(int);
 cudaError foo_1(cudaError_t);
 
-// CHECK: int apicall(int i) try {
+// CHECK: int apicall(int i) {
 cudaError_t apicall(int i) {
   return cudaSuccess;
 };
@@ -94,7 +94,7 @@ cudaError_t apicall(int i) {
 cudaError_t err = apicall(0);
 
 template <typename T>
-// CHECK: void check(T result, char const *const func) try {
+// CHECK: void check(T result, char const *const func) {
 void check(T result, char const *const func) {
 }
 

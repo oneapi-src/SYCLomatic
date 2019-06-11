@@ -31,7 +31,7 @@ cudaEvent_t eventArray[23];
 // CHECK: std::vector<cl::sycl::event> eventVector;
 std::vector<cudaEvent_t> eventVector;
 
-// CHECK: void foo(cl::sycl::event paramV, cl::sycl::event *paramP, cl::sycl::event &paramR) try {
+// CHECK: void foo(cl::sycl::event paramV, cl::sycl::event *paramP, cl::sycl::event &paramR) {
 void foo(cudaEvent_t paramV, cudaEvent_t *paramP, cudaEvent_t &paramR) {
 }
 

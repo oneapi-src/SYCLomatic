@@ -7,13 +7,11 @@ enum class AA : int { ONE,
                       THREE };
 }
 
+__global__ void fun() {}
+
 class B {
 public:
-// CHECK: B() try : data_(Test::AA::ONE) {}
-// CHECK: catch (cl::sycl::exception const &exc) {
-// CHECK:   std::cerr << exc.what() << "EOE at line " << __LINE__ << std::endl;
-// CHECK:   std::exit(1);
-// CHECK: }
+// CHECK: B() : data_(Test::AA::ONE) {}
   B() : data_(Test::AA::ONE) {}
 
 private:

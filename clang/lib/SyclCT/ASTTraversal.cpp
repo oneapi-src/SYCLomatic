@@ -2576,6 +2576,12 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(StreamAPICallRule)
 
+static const CXXConstructorDecl *getIfConstructorDecl(const Decl *ND) {
+  if (const auto *Tmpl = dyn_cast<FunctionTemplateDecl>(ND))
+    ND = Tmpl->getTemplatedDecl();
+  return dyn_cast<CXXConstructorDecl>(ND);
+}
+
 // kernel call information collection
 void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
@@ -2593,6 +2599,39 @@ void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
       SyclctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
 
     removeTrailingSemicolon(KCall, Result);
+
+    if (!FD)
+      return;
+
+    // Filter out compiler generated methods
+    if (const CXXMethodDecl *CXXMDecl = dyn_cast<CXXMethodDecl>(FD)) {
+      if (!CXXMDecl->isUserProvided()) {
+        return;
+      }
+    }
+
+    auto BodySLoc = FD->getBody()->getSourceRange().getBegin().getRawEncoding();
+    if (Insertions.find(BodySLoc) != Insertions.end())
+      return;
+
+    Insertions.insert(BodySLoc);
+
+    // First check if this is a constructor decl
+    if (const CXXConstructorDecl *CDecl = getIfConstructorDecl(FD)) {
+      emplaceTransformation(new InsertBeforeCtrInitList(CDecl, "try "));
+    } else {
+      emplaceTransformation(new InsertBeforeStmt(FD->getBody(), "try "));
+    }
+
+    std::string ReplaceStr =
+        getNL() + std::string("catch (cl::sycl::exception const &exc) {") +
+        getNL() +
+        std::string("  std::cerr << exc.what() << \"EOE at line \" << ") +
+        std::string("__LINE__ << std::endl;") + getNL() +
+        std::string("  std::exit(1);") + getNL() + "}";
+
+    emplaceTransformation(
+        new InsertAfterStmt(FD->getBody(), std::move(ReplaceStr)));
   }
 }
 
@@ -3249,60 +3288,6 @@ void MemoryTranslationRule::handleAsync(
 }
 
 REGISTER_RULE(MemoryTranslationRule)
-
-static const CXXConstructorDecl *getIfConstructorDecl(const Decl *ND) {
-  if (const auto *Tmpl = dyn_cast<FunctionTemplateDecl>(ND))
-    ND = Tmpl->getTemplatedDecl();
-  return dyn_cast<CXXConstructorDecl>(ND);
-}
-
-void ErrorTryCatchRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(functionDecl(hasBody(compoundStmt()),
-                             unless(anyOf(hasAttr(attr::CUDAGlobal),
-                                          hasAttr(attr::CUDADevice),
-                                          hasAncestor(lambdaExpr(anything())))))
-                    .bind("functionDecl"),
-                this);
-}
-
-void ErrorTryCatchRule::run(
-    const ast_matchers::MatchFinder::MatchResult &Result) {
-  const FunctionDecl *FD = getNodeAsType<FunctionDecl>(Result, "functionDecl");
-  if (!FD)
-    return;
-
-  // Filter out compiler generated methods
-  if (const CXXMethodDecl *CXXMDecl = dyn_cast<CXXMethodDecl>(FD)) {
-    if (!CXXMDecl->isUserProvided()) {
-      return;
-    }
-  }
-
-  auto BodySLoc = FD->getBody()->getSourceRange().getBegin().getRawEncoding();
-  if (Insertions.find(BodySLoc) != Insertions.end())
-    return;
-
-  Insertions.insert(BodySLoc);
-
-  // First check if this is a constructor decl
-  if (const CXXConstructorDecl *CDecl = getIfConstructorDecl(FD)) {
-    emplaceTransformation(new InsertBeforeCtrInitList(CDecl, "try "));
-  } else {
-    emplaceTransformation(new InsertBeforeStmt(FD->getBody(), "try "));
-  }
-
-  std::string ReplaceStr =
-      getNL() + std::string("catch (cl::sycl::exception const &exc) {") +
-      getNL() +
-      std::string("  std::cerr << exc.what() << \"EOE at line \" << ") +
-      std::string("__LINE__ << std::endl;") + getNL() +
-      std::string("  std::exit(1);") + getNL() + "}";
-
-  emplaceTransformation(
-      new InsertAfterStmt(FD->getBody(), std::move(ReplaceStr)));
-}
-
-REGISTER_RULE(ErrorTryCatchRule)
 
 void UnnamedTypesRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(

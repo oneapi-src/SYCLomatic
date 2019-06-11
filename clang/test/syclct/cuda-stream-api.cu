@@ -4,7 +4,7 @@
 #include <list>
 
 template <typename T>
-// CHECK: void check(T result, char const *const func) try {
+// CHECK: void check(T result, char const *const func) {
 void check(T result, char const *const func) {
 }
 

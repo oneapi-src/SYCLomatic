@@ -1,10 +1,10 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck --input-file %T/vector_type.sycl.cpp --match-full-lines %s
 
-// CHECK: void func3_char1(char a, char b, char c) try {
+// CHECK: void func3_char1(char a, char b, char c) {
 void func3_char1(char1 a, char1 b, char1 c) {
 }
-// CHECK: void func_char1(char a) try {
+// CHECK: void func_char1(char a) {
 void func_char1(char1 a) {
 }
 // CHECK: void kernel_char1(char *a, char *b) {
@@ -76,10 +76,10 @@ int main_char1() {
   return 0;
 }
 
-// CHECK: void func3_char2(cl::sycl::char2 a, cl::sycl::char2 b, cl::sycl::char2 c) try {
+// CHECK: void func3_char2(cl::sycl::char2 a, cl::sycl::char2 b, cl::sycl::char2 c) {
 void func3_char2(char2 a, char2 b, char2 c) {
 }
-// CHECK: void func_char2(cl::sycl::char2 a) try {
+// CHECK: void func_char2(cl::sycl::char2 a) {
 void func_char2(char2 a) {
 }
 // CHECK: void kernel_char2(cl::sycl::char2 *a, cl::sycl::char2 *b) {
@@ -151,10 +151,10 @@ int main_char2() {
   return 0;
 }
 
-// CHECK: void func3_char3(cl::sycl::char3 a, cl::sycl::char3 b, cl::sycl::char3 c) try {
+// CHECK: void func3_char3(cl::sycl::char3 a, cl::sycl::char3 b, cl::sycl::char3 c) {
 void func3_char3(char3 a, char3 b, char3 c) {
 }
-// CHECK: void func_char3(cl::sycl::char3 a) try {
+// CHECK: void func_char3(cl::sycl::char3 a) {
 void func_char3(char3 a) {
 }
 // CHECK: void kernel_char3(cl::sycl::char3 *a, cl::sycl::char3 *b) {
@@ -226,10 +226,10 @@ int main_char3() {
   return 0;
 }
 
-// CHECK: void func3_char4(cl::sycl::char4 a, cl::sycl::char4 b, cl::sycl::char4 c) try {
+// CHECK: void func3_char4(cl::sycl::char4 a, cl::sycl::char4 b, cl::sycl::char4 c) {
 void func3_char4(char4 a, char4 b, char4 c) {
 }
-// CHECK: void func_char4(cl::sycl::char4 a) try {
+// CHECK: void func_char4(cl::sycl::char4 a) {
 void func_char4(char4 a) {
 }
 // CHECK: void kernel_char4(cl::sycl::char4 *a, cl::sycl::char4 *b) {
@@ -301,10 +301,10 @@ int main_char4() {
   return 0;
 }
 
-// CHECK: void func3_double1(double a, double b, double c) try {
+// CHECK: void func3_double1(double a, double b, double c) {
 void func3_double1(double1 a, double1 b, double1 c) {
 }
-// CHECK: void func_double1(double a) try {
+// CHECK: void func_double1(double a) {
 void func_double1(double1 a) {
 }
 // CHECK: void kernel_double1(double *a, double *b) {
@@ -376,10 +376,10 @@ int main_double1() {
   return 0;
 }
 
-// CHECK: void func3_double2(cl::sycl::double2 a, cl::sycl::double2 b, cl::sycl::double2 c) try {
+// CHECK: void func3_double2(cl::sycl::double2 a, cl::sycl::double2 b, cl::sycl::double2 c) {
 void func3_double2(double2 a, double2 b, double2 c) {
 }
-// CHECK: void func_double2(cl::sycl::double2 a) try {
+// CHECK: void func_double2(cl::sycl::double2 a) {
 void func_double2(double2 a) {
 }
 // CHECK: void kernel_double2(cl::sycl::double2 *a, cl::sycl::double2 *b) {
@@ -451,10 +451,10 @@ int main_double2() {
   return 0;
 }
 
-// CHECK: void func3_double3(cl::sycl::double3 a, cl::sycl::double3 b, cl::sycl::double3 c) try {
+// CHECK: void func3_double3(cl::sycl::double3 a, cl::sycl::double3 b, cl::sycl::double3 c) {
 void func3_double3(double3 a, double3 b, double3 c) {
 }
-// CHECK: void func_double3(cl::sycl::double3 a) try {
+// CHECK: void func_double3(cl::sycl::double3 a) {
 void func_double3(double3 a) {
 }
 // CHECK: void kernel_double3(cl::sycl::double3 *a, cl::sycl::double3 *b) {
@@ -526,10 +526,10 @@ int main_double3() {
   return 0;
 }
 
-// CHECK: void func3_double4(cl::sycl::double4 a, cl::sycl::double4 b, cl::sycl::double4 c) try {
+// CHECK: void func3_double4(cl::sycl::double4 a, cl::sycl::double4 b, cl::sycl::double4 c) {
 void func3_double4(double4 a, double4 b, double4 c) {
 }
-// CHECK: void func_double4(cl::sycl::double4 a) try {
+// CHECK: void func_double4(cl::sycl::double4 a) {
 void func_double4(double4 a) {
 }
 // CHECK: void kernel_double4(cl::sycl::double4 *a, cl::sycl::double4 *b) {
@@ -601,10 +601,10 @@ int main_double4() {
   return 0;
 }
 
-// CHECK: void func3_float1(float a, float b, float c) try {
+// CHECK: void func3_float1(float a, float b, float c) {
 void func3_float1(float1 a, float1 b, float1 c) {
 }
-// CHECK: void func_float1(float a) try {
+// CHECK: void func_float1(float a) {
 void func_float1(float1 a) {
 }
 // CHECK: void kernel_float1(float *a, float *b) {
@@ -676,10 +676,10 @@ int main_float1() {
   return 0;
 }
 
-// CHECK: void func3_float2(cl::sycl::float2 a, cl::sycl::float2 b, cl::sycl::float2 c) try {
+// CHECK: void func3_float2(cl::sycl::float2 a, cl::sycl::float2 b, cl::sycl::float2 c) {
 void func3_float2(float2 a, float2 b, float2 c) {
 }
-// CHECK: void func_float2(cl::sycl::float2 a) try {
+// CHECK: void func_float2(cl::sycl::float2 a) {
 void func_float2(float2 a) {
 }
 // CHECK: void kernel_float2(cl::sycl::float2 *a, cl::sycl::float2 *b) {
@@ -751,10 +751,10 @@ int main_float2() {
   return 0;
 }
 
-// CHECK: void func3_float3(cl::sycl::float3 a, cl::sycl::float3 b, cl::sycl::float3 c) try {
+// CHECK: void func3_float3(cl::sycl::float3 a, cl::sycl::float3 b, cl::sycl::float3 c) {
 void func3_float3(float3 a, float3 b, float3 c) {
 }
-// CHECK: void func_float3(cl::sycl::float3 a) try {
+// CHECK: void func_float3(cl::sycl::float3 a) {
 void func_float3(float3 a) {
 }
 // CHECK: void kernel_float3(cl::sycl::float3 *a, cl::sycl::float3 *b) {
@@ -826,10 +826,10 @@ int main_float3() {
   return 0;
 }
 
-// CHECK: void func3_float4(cl::sycl::float4 a, cl::sycl::float4 b, cl::sycl::float4 c) try {
+// CHECK: void func3_float4(cl::sycl::float4 a, cl::sycl::float4 b, cl::sycl::float4 c) {
 void func3_float4(float4 a, float4 b, float4 c) {
 }
-// CHECK: void func_float4(cl::sycl::float4 a) try {
+// CHECK: void func_float4(cl::sycl::float4 a) {
 void func_float4(float4 a) {
 }
 // CHECK: void kernel_float4(cl::sycl::float4 *a, cl::sycl::float4 *b) {
@@ -901,10 +901,10 @@ int main_float4() {
   return 0;
 }
 
-// CHECK: void func3_int1(int a, int b, int c) try {
+// CHECK: void func3_int1(int a, int b, int c) {
 void func3_int1(int1 a, int1 b, int1 c) {
 }
-// CHECK: void func_int1(int a) try {
+// CHECK: void func_int1(int a) {
 void func_int1(int1 a) {
 }
 // CHECK: void kernel_int1(int *a, int *b) {
@@ -976,10 +976,10 @@ int main_int1() {
   return 0;
 }
 
-// CHECK: void func3_int2(cl::sycl::int2 a, cl::sycl::int2 b, cl::sycl::int2 c) try {
+// CHECK: void func3_int2(cl::sycl::int2 a, cl::sycl::int2 b, cl::sycl::int2 c) {
 void func3_int2(int2 a, int2 b, int2 c) {
 }
-// CHECK: void func_int2(cl::sycl::int2 a) try {
+// CHECK: void func_int2(cl::sycl::int2 a) {
 void func_int2(int2 a) {
 }
 // CHECK: void kernel_int2(cl::sycl::int2 *a, cl::sycl::int2 *b) {
@@ -1051,10 +1051,10 @@ int main_int2() {
   return 0;
 }
 
-// CHECK: void func3_int3(cl::sycl::int3 a, cl::sycl::int3 b, cl::sycl::int3 c) try {
+// CHECK: void func3_int3(cl::sycl::int3 a, cl::sycl::int3 b, cl::sycl::int3 c) {
 void func3_int3(int3 a, int3 b, int3 c) {
 }
-// CHECK: void func_int3(cl::sycl::int3 a) try {
+// CHECK: void func_int3(cl::sycl::int3 a) {
 void func_int3(int3 a) {
 }
 // CHECK: void kernel_int3(cl::sycl::int3 *a, cl::sycl::int3 *b) {
@@ -1126,10 +1126,10 @@ int main_int3() {
   return 0;
 }
 
-// CHECK: void func3_int4(cl::sycl::int4 a, cl::sycl::int4 b, cl::sycl::int4 c) try {
+// CHECK: void func3_int4(cl::sycl::int4 a, cl::sycl::int4 b, cl::sycl::int4 c) {
 void func3_int4(int4 a, int4 b, int4 c) {
 }
-// CHECK: void func_int4(cl::sycl::int4 a) try {
+// CHECK: void func_int4(cl::sycl::int4 a) {
 void func_int4(int4 a) {
 }
 // CHECK: void kernel_int4(cl::sycl::int4 *a, cl::sycl::int4 *b) {
@@ -1201,10 +1201,10 @@ int main_int4() {
   return 0;
 }
 
-// CHECK: void func3_long1(long a, long b, long c) try {
+// CHECK: void func3_long1(long a, long b, long c) {
 void func3_long1(long1 a, long1 b, long1 c) {
 }
-// CHECK: void func_long1(long a) try {
+// CHECK: void func_long1(long a) {
 void func_long1(long1 a) {
 }
 // CHECK: void kernel_long1(long *a, long *b) {
@@ -1276,10 +1276,10 @@ int main_long1() {
   return 0;
 }
 
-// CHECK: void func3_long2(cl::sycl::long2 a, cl::sycl::long2 b, cl::sycl::long2 c) try {
+// CHECK: void func3_long2(cl::sycl::long2 a, cl::sycl::long2 b, cl::sycl::long2 c) {
 void func3_long2(long2 a, long2 b, long2 c) {
 }
-// CHECK: void func_long2(cl::sycl::long2 a) try {
+// CHECK: void func_long2(cl::sycl::long2 a) {
 void func_long2(long2 a) {
 }
 // CHECK: void kernel_long2(cl::sycl::long2 *a, cl::sycl::long2 *b) {
@@ -1351,10 +1351,10 @@ int main_long2() {
   return 0;
 }
 
-// CHECK: void func3_long3(cl::sycl::long3 a, cl::sycl::long3 b, cl::sycl::long3 c) try {
+// CHECK: void func3_long3(cl::sycl::long3 a, cl::sycl::long3 b, cl::sycl::long3 c) {
 void func3_long3(long3 a, long3 b, long3 c) {
 }
-// CHECK: void func_long3(cl::sycl::long3 a) try {
+// CHECK: void func_long3(cl::sycl::long3 a) {
 void func_long3(long3 a) {
 }
 // CHECK: void kernel_long3(cl::sycl::long3 *a, cl::sycl::long3 *b) {
@@ -1426,10 +1426,10 @@ int main_long3() {
   return 0;
 }
 
-// CHECK: void func3_long4(cl::sycl::long4 a, cl::sycl::long4 b, cl::sycl::long4 c) try {
+// CHECK: void func3_long4(cl::sycl::long4 a, cl::sycl::long4 b, cl::sycl::long4 c) {
 void func3_long4(long4 a, long4 b, long4 c) {
 }
-// CHECK: void func_long4(cl::sycl::long4 a) try {
+// CHECK: void func_long4(cl::sycl::long4 a) {
 void func_long4(long4 a) {
 }
 // CHECK: void kernel_long4(cl::sycl::long4 *a, cl::sycl::long4 *b) {
@@ -1501,10 +1501,10 @@ int main_long4() {
   return 0;
 }
 
-// CHECK: void func3_longlong1(long long a, long long b, long long c) try {
+// CHECK: void func3_longlong1(long long a, long long b, long long c) {
 void func3_longlong1(longlong1 a, longlong1 b, longlong1 c) {
 }
-// CHECK: void func_longlong1(long long a) try {
+// CHECK: void func_longlong1(long long a) {
 void func_longlong1(longlong1 a) {
 }
 // CHECK: void kernel_longlong1(long long *a, long long *b) {
@@ -1576,10 +1576,10 @@ int main_longlong1() {
   return 0;
 }
 
-// CHECK: void func3_longlong2(cl::sycl::longlong2 a, cl::sycl::longlong2 b, cl::sycl::longlong2 c) try {
+// CHECK: void func3_longlong2(cl::sycl::longlong2 a, cl::sycl::longlong2 b, cl::sycl::longlong2 c) {
 void func3_longlong2(longlong2 a, longlong2 b, longlong2 c) {
 }
-// CHECK: void func_longlong2(cl::sycl::longlong2 a) try {
+// CHECK: void func_longlong2(cl::sycl::longlong2 a) {
 void func_longlong2(longlong2 a) {
 }
 // CHECK: void kernel_longlong2(cl::sycl::longlong2 *a, cl::sycl::longlong2 *b) {
@@ -1651,10 +1651,10 @@ int main_longlong2() {
   return 0;
 }
 
-// CHECK: void func3_longlong3(cl::sycl::longlong3 a, cl::sycl::longlong3 b, cl::sycl::longlong3 c) try {
+// CHECK: void func3_longlong3(cl::sycl::longlong3 a, cl::sycl::longlong3 b, cl::sycl::longlong3 c) {
 void func3_longlong3(longlong3 a, longlong3 b, longlong3 c) {
 }
-// CHECK: void func_longlong3(cl::sycl::longlong3 a) try {
+// CHECK: void func_longlong3(cl::sycl::longlong3 a) {
 void func_longlong3(longlong3 a) {
 }
 // CHECK: void kernel_longlong3(cl::sycl::longlong3 *a, cl::sycl::longlong3 *b) {
@@ -1726,10 +1726,10 @@ int main_longlong3() {
   return 0;
 }
 
-// CHECK: void func3_longlong4(cl::sycl::longlong4 a, cl::sycl::longlong4 b, cl::sycl::longlong4 c) try {
+// CHECK: void func3_longlong4(cl::sycl::longlong4 a, cl::sycl::longlong4 b, cl::sycl::longlong4 c) {
 void func3_longlong4(longlong4 a, longlong4 b, longlong4 c) {
 }
-// CHECK: void func_longlong4(cl::sycl::longlong4 a) try {
+// CHECK: void func_longlong4(cl::sycl::longlong4 a) {
 void func_longlong4(longlong4 a) {
 }
 // CHECK: void kernel_longlong4(cl::sycl::longlong4 *a, cl::sycl::longlong4 *b) {
@@ -1801,10 +1801,10 @@ int main_longlong4() {
   return 0;
 }
 
-// CHECK: void func3_short1(short a, short b, short c) try {
+// CHECK: void func3_short1(short a, short b, short c) {
 void func3_short1(short1 a, short1 b, short1 c) {
 }
-// CHECK: void func_short1(short a) try {
+// CHECK: void func_short1(short a) {
 void func_short1(short1 a) {
 }
 // CHECK: void kernel_short1(short *a, short *b) {
@@ -1876,10 +1876,10 @@ int main_short1() {
   return 0;
 }
 
-// CHECK: void func3_short2(cl::sycl::short2 a, cl::sycl::short2 b, cl::sycl::short2 c) try {
+// CHECK: void func3_short2(cl::sycl::short2 a, cl::sycl::short2 b, cl::sycl::short2 c) {
 void func3_short2(short2 a, short2 b, short2 c) {
 }
-// CHECK: void func_short2(cl::sycl::short2 a) try {
+// CHECK: void func_short2(cl::sycl::short2 a) {
 void func_short2(short2 a) {
 }
 // CHECK: void kernel_short2(cl::sycl::short2 *a, cl::sycl::short2 *b) {
@@ -1951,10 +1951,10 @@ int main_short2() {
   return 0;
 }
 
-// CHECK: void func3_short3(cl::sycl::short3 a, cl::sycl::short3 b, cl::sycl::short3 c) try {
+// CHECK: void func3_short3(cl::sycl::short3 a, cl::sycl::short3 b, cl::sycl::short3 c) {
 void func3_short3(short3 a, short3 b, short3 c) {
 }
-// CHECK: void func_short3(cl::sycl::short3 a) try {
+// CHECK: void func_short3(cl::sycl::short3 a) {
 void func_short3(short3 a) {
 }
 // CHECK: void kernel_short3(cl::sycl::short3 *a, cl::sycl::short3 *b) {
@@ -2026,10 +2026,10 @@ int main_short3() {
   return 0;
 }
 
-// CHECK: void func3_short4(cl::sycl::short4 a, cl::sycl::short4 b, cl::sycl::short4 c) try {
+// CHECK: void func3_short4(cl::sycl::short4 a, cl::sycl::short4 b, cl::sycl::short4 c) {
 void func3_short4(short4 a, short4 b, short4 c) {
 }
-// CHECK: void func_short4(cl::sycl::short4 a) try {
+// CHECK: void func_short4(cl::sycl::short4 a) {
 void func_short4(short4 a) {
 }
 // CHECK: void kernel_short4(cl::sycl::short4 *a, cl::sycl::short4 *b) {
@@ -2101,10 +2101,10 @@ int main_short4() {
   return 0;
 }
 
-// CHECK: void func3_uchar1(unsigned char a, unsigned char b, unsigned char c) try {
+// CHECK: void func3_uchar1(unsigned char a, unsigned char b, unsigned char c) {
 void func3_uchar1(uchar1 a, uchar1 b, uchar1 c) {
 }
-// CHECK: void func_uchar1(unsigned char a) try {
+// CHECK: void func_uchar1(unsigned char a) {
 void func_uchar1(uchar1 a) {
 }
 // CHECK: void kernel_uchar1(unsigned char *a, unsigned char *b) {
@@ -2176,10 +2176,10 @@ int main_uchar1() {
   return 0;
 }
 
-// CHECK: void func3_uchar2(cl::sycl::uchar2 a, cl::sycl::uchar2 b, cl::sycl::uchar2 c) try {
+// CHECK: void func3_uchar2(cl::sycl::uchar2 a, cl::sycl::uchar2 b, cl::sycl::uchar2 c) {
 void func3_uchar2(uchar2 a, uchar2 b, uchar2 c) {
 }
-// CHECK: void func_uchar2(cl::sycl::uchar2 a) try {
+// CHECK: void func_uchar2(cl::sycl::uchar2 a) {
 void func_uchar2(uchar2 a) {
 }
 // CHECK: void kernel_uchar2(cl::sycl::uchar2 *a, cl::sycl::uchar2 *b) {
@@ -2251,10 +2251,10 @@ int main_uchar2() {
   return 0;
 }
 
-// CHECK: void func3_uchar3(cl::sycl::uchar3 a, cl::sycl::uchar3 b, cl::sycl::uchar3 c) try {
+// CHECK: void func3_uchar3(cl::sycl::uchar3 a, cl::sycl::uchar3 b, cl::sycl::uchar3 c) {
 void func3_uchar3(uchar3 a, uchar3 b, uchar3 c) {
 }
-// CHECK: void func_uchar3(cl::sycl::uchar3 a) try {
+// CHECK: void func_uchar3(cl::sycl::uchar3 a) {
 void func_uchar3(uchar3 a) {
 }
 // CHECK: void kernel_uchar3(cl::sycl::uchar3 *a, cl::sycl::uchar3 *b) {
@@ -2326,10 +2326,10 @@ int main_uchar3() {
   return 0;
 }
 
-// CHECK: void func3_uchar4(cl::sycl::uchar4 a, cl::sycl::uchar4 b, cl::sycl::uchar4 c) try {
+// CHECK: void func3_uchar4(cl::sycl::uchar4 a, cl::sycl::uchar4 b, cl::sycl::uchar4 c) {
 void func3_uchar4(uchar4 a, uchar4 b, uchar4 c) {
 }
-// CHECK: void func_uchar4(cl::sycl::uchar4 a) try {
+// CHECK: void func_uchar4(cl::sycl::uchar4 a) {
 void func_uchar4(uchar4 a) {
 }
 // CHECK: void kernel_uchar4(cl::sycl::uchar4 *a, cl::sycl::uchar4 *b) {
@@ -2401,10 +2401,10 @@ int main_uchar4() {
   return 0;
 }
 
-// CHECK: void func3_uint1(unsigned int a, unsigned int b, unsigned int c) try {
+// CHECK: void func3_uint1(unsigned int a, unsigned int b, unsigned int c) {
 void func3_uint1(uint1 a, uint1 b, uint1 c) {
 }
-// CHECK: void func_uint1(unsigned int a) try {
+// CHECK: void func_uint1(unsigned int a) {
 void func_uint1(uint1 a) {
 }
 // CHECK: void kernel_uint1(unsigned int *a, unsigned int *b) {
@@ -2476,10 +2476,10 @@ int main_uint1() {
   return 0;
 }
 
-// CHECK: void func3_uint2(cl::sycl::uint2 a, cl::sycl::uint2 b, cl::sycl::uint2 c) try {
+// CHECK: void func3_uint2(cl::sycl::uint2 a, cl::sycl::uint2 b, cl::sycl::uint2 c) {
 void func3_uint2(uint2 a, uint2 b, uint2 c) {
 }
-// CHECK: void func_uint2(cl::sycl::uint2 a) try {
+// CHECK: void func_uint2(cl::sycl::uint2 a) {
 void func_uint2(uint2 a) {
 }
 // CHECK: void kernel_uint2(cl::sycl::uint2 *a, cl::sycl::uint2 *b) {
@@ -2551,10 +2551,10 @@ int main_uint2() {
   return 0;
 }
 
-// CHECK: void func3_uint3(cl::sycl::uint3 a, cl::sycl::uint3 b, cl::sycl::uint3 c) try {
+// CHECK: void func3_uint3(cl::sycl::uint3 a, cl::sycl::uint3 b, cl::sycl::uint3 c) {
 void func3_uint3(uint3 a, uint3 b, uint3 c) {
 }
-// CHECK: void func_uint3(cl::sycl::uint3 a) try {
+// CHECK: void func_uint3(cl::sycl::uint3 a) {
 void func_uint3(uint3 a) {
 }
 // CHECK: void kernel_uint3(cl::sycl::uint3 *a, cl::sycl::uint3 *b) {
@@ -2626,10 +2626,10 @@ int main_uint3() {
   return 0;
 }
 
-// CHECK: void func3_uint4(cl::sycl::uint4 a, cl::sycl::uint4 b, cl::sycl::uint4 c) try {
+// CHECK: void func3_uint4(cl::sycl::uint4 a, cl::sycl::uint4 b, cl::sycl::uint4 c) {
 void func3_uint4(uint4 a, uint4 b, uint4 c) {
 }
-// CHECK: void func_uint4(cl::sycl::uint4 a) try {
+// CHECK: void func_uint4(cl::sycl::uint4 a) {
 void func_uint4(uint4 a) {
 }
 // CHECK: void kernel_uint4(cl::sycl::uint4 *a, cl::sycl::uint4 *b) {
@@ -2701,10 +2701,10 @@ int main_uint4() {
   return 0;
 }
 
-// CHECK: void func3_ulong1(unsigned long a, unsigned long b, unsigned long c) try {
+// CHECK: void func3_ulong1(unsigned long a, unsigned long b, unsigned long c) {
 void func3_ulong1(ulong1 a, ulong1 b, ulong1 c) {
 }
-// CHECK: void func_ulong1(unsigned long a) try {
+// CHECK: void func_ulong1(unsigned long a) {
 void func_ulong1(ulong1 a) {
 }
 // CHECK: void kernel_ulong1(unsigned long *a, unsigned long *b) {
@@ -2776,10 +2776,10 @@ int main_ulong1() {
   return 0;
 }
 
-// CHECK: void func3_ulong2(cl::sycl::ulong2 a, cl::sycl::ulong2 b, cl::sycl::ulong2 c) try {
+// CHECK: void func3_ulong2(cl::sycl::ulong2 a, cl::sycl::ulong2 b, cl::sycl::ulong2 c) {
 void func3_ulong2(ulong2 a, ulong2 b, ulong2 c) {
 }
-// CHECK: void func_ulong2(cl::sycl::ulong2 a) try {
+// CHECK: void func_ulong2(cl::sycl::ulong2 a) {
 void func_ulong2(ulong2 a) {
 }
 // CHECK: void kernel_ulong2(cl::sycl::ulong2 *a, cl::sycl::ulong2 *b) {
@@ -2851,10 +2851,10 @@ int main_ulong2() {
   return 0;
 }
 
-// CHECK: void func3_ulong3(cl::sycl::ulong3 a, cl::sycl::ulong3 b, cl::sycl::ulong3 c) try {
+// CHECK: void func3_ulong3(cl::sycl::ulong3 a, cl::sycl::ulong3 b, cl::sycl::ulong3 c) {
 void func3_ulong3(ulong3 a, ulong3 b, ulong3 c) {
 }
-// CHECK: void func_ulong3(cl::sycl::ulong3 a) try {
+// CHECK: void func_ulong3(cl::sycl::ulong3 a) {
 void func_ulong3(ulong3 a) {
 }
 // CHECK: void kernel_ulong3(cl::sycl::ulong3 *a, cl::sycl::ulong3 *b) {
@@ -2926,10 +2926,10 @@ int main_ulong3() {
   return 0;
 }
 
-// CHECK: void func3_ulong4(cl::sycl::ulong4 a, cl::sycl::ulong4 b, cl::sycl::ulong4 c) try {
+// CHECK: void func3_ulong4(cl::sycl::ulong4 a, cl::sycl::ulong4 b, cl::sycl::ulong4 c) {
 void func3_ulong4(ulong4 a, ulong4 b, ulong4 c) {
 }
-// CHECK: void func_ulong4(cl::sycl::ulong4 a) try {
+// CHECK: void func_ulong4(cl::sycl::ulong4 a) {
 void func_ulong4(ulong4 a) {
 }
 // CHECK: void kernel_ulong4(cl::sycl::ulong4 *a, cl::sycl::ulong4 *b) {
@@ -3001,10 +3001,10 @@ int main_ulong4() {
   return 0;
 }
 
-// CHECK: void func3_ulonglong1(unsigned long long a, unsigned long long b, unsigned long long c) try {
+// CHECK: void func3_ulonglong1(unsigned long long a, unsigned long long b, unsigned long long c) {
 void func3_ulonglong1(ulonglong1 a, ulonglong1 b, ulonglong1 c) {
 }
-// CHECK: void func_ulonglong1(unsigned long long a) try {
+// CHECK: void func_ulonglong1(unsigned long long a) {
 void func_ulonglong1(ulonglong1 a) {
 }
 // CHECK: void kernel_ulonglong1(unsigned long long *a, unsigned long long *b) {
@@ -3076,10 +3076,10 @@ int main_ulonglong1() {
   return 0;
 }
 
-// CHECK: void func3_ulonglong2(cl::sycl::ulonglong2 a, cl::sycl::ulonglong2 b, cl::sycl::ulonglong2 c) try {
+// CHECK: void func3_ulonglong2(cl::sycl::ulonglong2 a, cl::sycl::ulonglong2 b, cl::sycl::ulonglong2 c) {
 void func3_ulonglong2(ulonglong2 a, ulonglong2 b, ulonglong2 c) {
 }
-// CHECK: void func_ulonglong2(cl::sycl::ulonglong2 a) try {
+// CHECK: void func_ulonglong2(cl::sycl::ulonglong2 a) {
 void func_ulonglong2(ulonglong2 a) {
 }
 // CHECK: void kernel_ulonglong2(cl::sycl::ulonglong2 *a, cl::sycl::ulonglong2 *b) {
@@ -3151,10 +3151,10 @@ int main_ulonglong2() {
   return 0;
 }
 
-// CHECK: void func3_ulonglong3(cl::sycl::ulonglong3 a, cl::sycl::ulonglong3 b, cl::sycl::ulonglong3 c) try {
+// CHECK: void func3_ulonglong3(cl::sycl::ulonglong3 a, cl::sycl::ulonglong3 b, cl::sycl::ulonglong3 c) {
 void func3_ulonglong3(ulonglong3 a, ulonglong3 b, ulonglong3 c) {
 }
-// CHECK: void func_ulonglong3(cl::sycl::ulonglong3 a) try {
+// CHECK: void func_ulonglong3(cl::sycl::ulonglong3 a) {
 void func_ulonglong3(ulonglong3 a) {
 }
 // CHECK: void kernel_ulonglong3(cl::sycl::ulonglong3 *a, cl::sycl::ulonglong3 *b) {
@@ -3226,10 +3226,10 @@ int main_ulonglong3() {
   return 0;
 }
 
-// CHECK: void func3_ulonglong4(cl::sycl::ulonglong4 a, cl::sycl::ulonglong4 b, cl::sycl::ulonglong4 c) try {
+// CHECK: void func3_ulonglong4(cl::sycl::ulonglong4 a, cl::sycl::ulonglong4 b, cl::sycl::ulonglong4 c) {
 void func3_ulonglong4(ulonglong4 a, ulonglong4 b, ulonglong4 c) {
 }
-// CHECK: void func_ulonglong4(cl::sycl::ulonglong4 a) try {
+// CHECK: void func_ulonglong4(cl::sycl::ulonglong4 a) {
 void func_ulonglong4(ulonglong4 a) {
 }
 // CHECK: void kernel_ulonglong4(cl::sycl::ulonglong4 *a, cl::sycl::ulonglong4 *b) {
@@ -3301,10 +3301,10 @@ int main_ulonglong4() {
   return 0;
 }
 
-// CHECK: void func3_ushort1(unsigned short a, unsigned short b, unsigned short c) try {
+// CHECK: void func3_ushort1(unsigned short a, unsigned short b, unsigned short c) {
 void func3_ushort1(ushort1 a, ushort1 b, ushort1 c) {
 }
-// CHECK: void func_ushort1(unsigned short a) try {
+// CHECK: void func_ushort1(unsigned short a) {
 void func_ushort1(ushort1 a) {
 }
 // CHECK: void kernel_ushort1(unsigned short *a, unsigned short *b) {
@@ -3376,10 +3376,10 @@ int main_ushort1() {
   return 0;
 }
 
-// CHECK: void func3_ushort2(cl::sycl::ushort2 a, cl::sycl::ushort2 b, cl::sycl::ushort2 c) try {
+// CHECK: void func3_ushort2(cl::sycl::ushort2 a, cl::sycl::ushort2 b, cl::sycl::ushort2 c) {
 void func3_ushort2(ushort2 a, ushort2 b, ushort2 c) {
 }
-// CHECK: void func_ushort2(cl::sycl::ushort2 a) try {
+// CHECK: void func_ushort2(cl::sycl::ushort2 a) {
 void func_ushort2(ushort2 a) {
 }
 // CHECK: void kernel_ushort2(cl::sycl::ushort2 *a, cl::sycl::ushort2 *b) {
@@ -3451,10 +3451,10 @@ int main_ushort2() {
   return 0;
 }
 
-// CHECK: void func3_ushort3(cl::sycl::ushort3 a, cl::sycl::ushort3 b, cl::sycl::ushort3 c) try {
+// CHECK: void func3_ushort3(cl::sycl::ushort3 a, cl::sycl::ushort3 b, cl::sycl::ushort3 c) {
 void func3_ushort3(ushort3 a, ushort3 b, ushort3 c) {
 }
-// CHECK: void func_ushort3(cl::sycl::ushort3 a) try {
+// CHECK: void func_ushort3(cl::sycl::ushort3 a) {
 void func_ushort3(ushort3 a) {
 }
 // CHECK: void kernel_ushort3(cl::sycl::ushort3 *a, cl::sycl::ushort3 *b) {
@@ -3526,10 +3526,10 @@ int main_ushort3() {
   return 0;
 }
 
-// CHECK: void func3_ushort4(cl::sycl::ushort4 a, cl::sycl::ushort4 b, cl::sycl::ushort4 c) try {
+// CHECK: void func3_ushort4(cl::sycl::ushort4 a, cl::sycl::ushort4 b, cl::sycl::ushort4 c) {
 void func3_ushort4(ushort4 a, ushort4 b, ushort4 c) {
 }
-// CHECK: void func_ushort4(cl::sycl::ushort4 a) try {
+// CHECK: void func_ushort4(cl::sycl::ushort4 a) {
 void func_ushort4(ushort4 a) {
 }
 // CHECK: void kernel_ushort4(cl::sycl::ushort4 *a, cl::sycl::ushort4 *b) {

@@ -648,6 +648,7 @@ public:
 };
 
 class KernelCallRule : public NamedTranslationRule<KernelCallRule> {
+  std::unordered_set<unsigned> Insertions;
 public:
   KernelCallRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile,
@@ -760,16 +761,6 @@ private:
       std::function<void(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C, const bool IsAssigned)>>
       TranslationDispatcher;
-};
-
-// Migration rule for Inserting try-catch around functions.
-class ErrorTryCatchRule : public NamedTranslationRule<ErrorTryCatchRule> {
-  std::unordered_set<unsigned> Insertions;
-
-public:
-  ErrorTryCatchRule() { SetRuleProperty(ApplyToCudaFile); }
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
 /// Name all unnamed types.

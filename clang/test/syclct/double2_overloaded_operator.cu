@@ -251,16 +251,12 @@ __host__ __device__ inline double2 project(double2 &v, const double2 &u) {
   return v - dot(v, u) * u;
 }
 
-// CHECK: void test() try {
+// CHECK: void test() {
 // CHECK:   cl::sycl::double2 a;
 // CHECK:   cl::sycl::double2 b;
 // CHECK:   a  = syclct_operator_overloading::operator+=(a , b);
 // CHECK:   syclct_operator_overloading::operator-(a);
 // CHECK:   b = a;
-// CHECK: }
-// CHECK: catch (cl::sycl::exception const &exc) {
-// CHECK:   std::cerr << exc.what() << "EOE at line " << __LINE__ << std::endl;
-// CHECK:   std::exit(1);
 // CHECK: }
 void test() {
   double2 a;

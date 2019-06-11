@@ -4,7 +4,7 @@
 int printf(const char *s, ...);
 int fprintf(int, const char *s, ...);
 
-// CHECK:void test_side_effects(int err, int arg, int x, int y, int z) try {
+// CHECK:void test_side_effects(int err, int arg, int x, int y, int z) {
 // CHECK-NEXT:/*
 // CHECK-NEXT:SYCLCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
 // CHECK-NEXT:*/
@@ -35,7 +35,7 @@ void test_side_effects(cudaError_t err, int arg, int x, int y, int z) {
   if (err)
     x = printf("fmt string");
 }
-// CHECK:void specialize_ifs_negative() try {
+// CHECK:void specialize_ifs_negative() {
 // CHECK-NEXT:  int err;
 // CHECK-NEXT:  if (err == 0) {
 // CHECK-NEXT:    printf("efef");

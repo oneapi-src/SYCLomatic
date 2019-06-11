@@ -6,23 +6,23 @@
 
 #define NUM 23
 
-// CHECK: void func(cl::sycl::range<3> a, cl::sycl::range<3> b, cl::sycl::range<3> c, cl::sycl::range<3> d) try {
+// CHECK: void func(cl::sycl::range<3> a, cl::sycl::range<3> b, cl::sycl::range<3> c, cl::sycl::range<3> d) {
 void func(dim3 a, dim3 b, dim3 c, dim3 d) {
 }
 
-// CHECK: void test(const cl::sycl::range<3> & a, const cl::sycl::range<3> & b) try {
+// CHECK: void test(const cl::sycl::range<3> & a, const cl::sycl::range<3> & b) {
 void test(const dim3& a, const dim3& b) {
 }
 
-// CHECK: void test(cl::sycl::range<3> && a, cl::sycl::range<3> && b) try {
+// CHECK: void test(cl::sycl::range<3> && a, cl::sycl::range<3> && b) {
 void test(dim3&& a, dim3&& b) {
 }
 
-// CHECK: void test(const cl::sycl::range<3> * a, const cl::sycl::range<3> * b) try {
+// CHECK: void test(const cl::sycl::range<3> * a, const cl::sycl::range<3> * b) {
 void test(const dim3* a, const dim3* b) {
 }
 
-// CHECK: void test(const cl::sycl::range<3> ** a, const cl::sycl::range<3> ** b) try {
+// CHECK: void test(const cl::sycl::range<3> ** a, const cl::sycl::range<3> ** b) {
 void test(const dim3** a, const dim3** b) {
 }
 

@@ -5,7 +5,7 @@
 int printf(const char *s, ...);
 int fprintf(int, const char *s, ...);
 
-// CHECK:void test_simple_ifs() try {
+// CHECK:void test_simple_ifs() {
 // CHECK-NEXT:  int err;
 // checking for empty lines (with one or more spaces)
 // CHECK-NEXT:{{ +}}
@@ -31,7 +31,7 @@ void test_simple_ifs() {
   }
 }
 
-// CHECK:void test_simple_ifs_const() try {
+// CHECK:void test_simple_ifs_const() {
 // CHECK-NEXT:  const int err = 0;
 // Checking for empty lines (with one or more spaces).
 // CHECK-NEXT:{{ +}}
@@ -57,7 +57,7 @@ void test_simple_ifs_const() {
   }
 }
 
-// CHECK:void test_typedef() try {
+// CHECK:void test_typedef() {
 // CHECK-NEXT:  typedef cudaError_t someError_t;
 // CHECK-NEXT:  someError_t err;
 // CHECK-NEXT:{{ +}}
@@ -72,7 +72,7 @@ void test_typedef()  {
   }
 }
 
-// CHECK:void test_no_braces() try {
+// CHECK:void test_no_braces() {
 // CHECK-NEXT:  int err;
 // CHECK-NEXT:  {{ +}};
 // CHECK-NEXT:}
@@ -82,7 +82,7 @@ void test_no_braces() {
     printf("error!\n");
 }
 
-// CHECK:void test_unrelated_then() try {
+// CHECK:void test_unrelated_then() {
 // CHECK-NEXT:  int err;
 // CHECK-NEXT:  int i = 0;
 // CHECK-NEXT:/*
@@ -104,7 +104,7 @@ void test_unrelated_then() {
   }
 }
 
-// CHECK:void test_CUDA_SUCCESS() try {
+// CHECK:void test_CUDA_SUCCESS() {
 // CHECK-NEXT:  int err;
 // CHECK-NEXT:  {{ +}}
 // CHECK-NEXT:}
@@ -115,7 +115,7 @@ void test_CUDA_SUCCESS() {
   }
 }
 
-// CHECK:void test_CUDA_SUCCESS_empty() try {
+// CHECK:void test_CUDA_SUCCESS_empty() {
 // CHECK-NEXT:  int err;
 // CHECK-NEXT:{{ +}}
 // CHECK-NEXT:}
@@ -125,7 +125,7 @@ void test_CUDA_SUCCESS_empty() {
   }
 }
 
-// CHECK:void test_other_enum() try {
+// CHECK:void test_other_enum() {
 // CHECK-NEXT:  int err;
 // CHECK-NEXT:  if (err != 4) {
 // CHECK-NEXT:    printf("error!\n");
@@ -138,7 +138,7 @@ void test_other_enum() {
   }
 }
 
-// CHECK:void test_assignment() try {
+// CHECK:void test_assignment() {
 // CHECK-NEXT:  int err;
 // CHECK-NEXT:/*
 // CHECK-NEXT:SYCLCT1003:2: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
@@ -154,7 +154,7 @@ void test_assignment() {
   }
 }
 
-// CHECK:void test_1(int err, int arg) try {
+// CHECK:void test_1(int err, int arg) {
 // CHECK-NEXT:  if (err == 0 && arg) {
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
@@ -163,7 +163,7 @@ void test_1(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_12(int err, int arg) try {
+// CHECK:void test_12(int err, int arg) {
 // CHECK-NEXT:  if (err) {
 // CHECK-NEXT:  } else {
 // CHECK-NEXT:{{ +}}
@@ -176,7 +176,7 @@ void test_12(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_13(int err, int arg) try {
+// CHECK:void test_13(int err, int arg) {
 // CHECK-NEXT:  {{ +}}
 // CHECK-NEXT:}
 void test_13(cudaError_t err, int arg) {
@@ -185,7 +185,7 @@ void test_13(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_14(int err, int arg) try {
+// CHECK:void test_14(int err, int arg) {
 // CHECK-NEXT:  if (arg == 1) {
 // CHECK-NEXT:    return;
 // CHECK-NEXT:  }
@@ -208,7 +208,7 @@ void test_14(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_15(int err, int arg) try {
+// CHECK:void test_15(int err, int arg) {
 // CHECK-NEXT:/*
 // CHECK-NEXT:SYCLCT1003:3: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
 // CHECK-NEXT:*/
@@ -220,7 +220,7 @@ void test_15(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_16(int err, int arg) try {
+// CHECK:void test_16(int err, int arg) {
 // CHECK-NEXT:  if (err) {
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:    exit(1);
@@ -237,7 +237,7 @@ void test_16(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_17(int err, int arg) try {
+// CHECK:void test_17(int err, int arg)  {
 // CHECK-NEXT:/*
 // CHECK-NEXT:SYCLCT1003:4: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
 // CHECK-NEXT:*/
@@ -255,7 +255,7 @@ void test_17(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_18(int err, int arg) try {
+// CHECK:void test_18(int err, int arg) {
 // CHECK-NEXT:  if (err)
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:  else
@@ -268,7 +268,7 @@ void test_18(cudaError_t err, int arg) {
     printf("success!\n");
 }
 
-// CHECK:void test_19(int err, int arg) try {
+// CHECK:void test_19(int err, int arg) {
 // CHECK-NEXT:  if (err && arg) {
 // CHECK-NEXT:  } else {
 // CHECK-NEXT:  }
@@ -279,7 +279,7 @@ void test_19(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_compare_to_3(int err, int arg) try {
+// CHECK:void test_compare_to_3(int err, int arg) {
 // CHECK-NEXT:  if (err != 3) {
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
@@ -288,7 +288,7 @@ void test_compare_to_3(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_21(const int & err, int arg) try {
+// CHECK:void test_21(const int & err, int arg) {
 // CHECK-NEXT:{{ +}}
 // CHECK-NEXT:}
 void test_21(const cudaError_t& err, int arg) {
@@ -296,7 +296,7 @@ void test_21(const cudaError_t& err, int arg) {
   }
 }
 
-// CHECK:void test_no_side_effects(int err, int arg) try {
+// CHECK:void test_no_side_effects(int err, int arg) {
 // CHECK-NEXT: ;
 // CHECK-NEXT: ;
 // CHECK-NEXT: ;
@@ -315,7 +315,7 @@ void test_no_side_effects(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_side_effects(int err, int arg, int x, int y, int z) try {
+// CHECK:void test_side_effects(int err, int arg, int x, int y, int z) {
 // CHECK-NEXT:  ;
 // CHECK-NEXT:/*
 // CHECK-NEXT:SYCLCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
@@ -363,7 +363,7 @@ void test_side_effects(cudaError_t err, int arg, int x, int y, int z) {
     printf("fmt string %d", y + z);
 }
 
-// CHECK:void specialize_ifs() try {
+// CHECK:void specialize_ifs() {
 // CHECK-NEXT:  int err;
 // checking for empty lines (with one or more spaces)
 // CHECK-NEXT:{{ +}}
@@ -387,7 +387,7 @@ void specialize_ifs() {
   }
 }
 
-// CHECK:void specialize_ifs_negative() try {
+// CHECK:void specialize_ifs_negative() {
 // CHECK-NEXT:  int err;
 // CHECK-NEXT:  if (err == 0) {
 // CHECK-NEXT:    printf("efef");
