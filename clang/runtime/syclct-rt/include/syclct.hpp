@@ -44,4 +44,7 @@ template <int Arg> class syclct_kernel_scalar;
 #define SYCLCT_PI_F 3.14159274101257f
 #define SYCLCT_PI   3.141592653589793115998
 
+
+#include <limits.h>
+
 #endif // SYCLCT_H
