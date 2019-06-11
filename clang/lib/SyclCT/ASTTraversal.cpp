@@ -2077,8 +2077,9 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (TimeHeaderFilter.find(FID) == TimeHeaderFilter.end()) {
       TimeHeaderFilter.insert(FID);
       emplaceTransformation(new InsertText(
-          IncludeLoc, getNL() + std::string("#include <time.h> // For clock_t, "
-                                            "clock and CLOCKS_PER_SEC") +
+          IncludeLoc, getNL() +
+                          std::string("#include <time.h> // For clock_t, "
+                                      "clock and CLOCKS_PER_SEC") +
                           getNL()));
     }
   } else if (FuncName == "cudaDeviceSetLimit" ||
@@ -3184,12 +3185,14 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
   TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callUsed"),
                     /* IsAssigned */ true);
 
-  TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callExprUsed"),
-                    /* IsAssigned */ true, getNodeAsType<UnresolvedLookupExpr>(
-                                               Result, "unresolvedCallUsed"));
-  TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callExpr"),
-                    /* IsAssigned */ false, getNodeAsType<UnresolvedLookupExpr>(
-                                                Result, "unresolvedCall"));
+  TranslateCallExpr(
+      getNodeAsType<CallExpr>(Result, "callExprUsed"),
+      /* IsAssigned */ true,
+      getNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedCallUsed"));
+  TranslateCallExpr(
+      getNodeAsType<CallExpr>(Result, "callExpr"),
+      /* IsAssigned */ false,
+      getNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedCall"));
 }
 
 MemoryTranslationRule::MemoryTranslationRule() {
@@ -3614,8 +3617,18 @@ void MathFunctionsRule::handleMiscFunctions(
     report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
     return;
   }
+  std::string NamespaceStr;
+  auto DRE = dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImpCasts());
+  if (DRE) {
+    auto Qualifier = DRE->getQualifier();
+    if (Qualifier) {
+      auto Namespace = Qualifier->getAsNamespace();
+      if (Namespace)
+        NamespaceStr = Namespace->getName();
+    }
+  }
   // For device functions
-  if (FD->hasAttr<CUDADeviceAttr>()) {
+  if (FD->hasAttr<CUDADeviceAttr>() && NamespaceStr != "std") {
     if (FuncName == "abs") {
       // further check the type of the args.
       if (!CE->getArg(0)->getType()->isIntegerType()) {

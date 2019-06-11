@@ -194,7 +194,7 @@ static void memsetCuda(T * d_mem, T v, int n)
   // CHECK: cl::sycl::range<3> dimBlock(256, 1, 1);
   // CHECK: cl::sycl::range<3> dimGrid_2(max(2048, 3), 1, 1);
   // CHECK: cl::sycl::range<3> dimGrid_1(std::max(2048, 3), 1, 1);
-  // CHECK: cl::sycl::min(2048, getgriddim<int>(n, dimBlock[0]));
+  // CHECK: std::min(2048, getgriddim<int>(n, dimBlock[0]));
   // CHECK: cl::sycl::range<3> dimGrid(std::min(2048, getgriddim<int>(n, dimBlock[0])), 1, 1);
   dim3 dimBlock(256);
   dim3 dimGrid_2(max(2048, 3));
