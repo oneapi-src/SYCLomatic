@@ -326,10 +326,19 @@ public:
   using pointer_t = typename memory_t::pointer_t;
   using accessor_t = typename memory_t::template accessor_t<Dimension>;
   syclct_accessor(pointer_t data, const syclct_range<Dimension> &range)
-      : data(data), range(range){};
-  syclct_accessor(const accessor_t &acc)
-      : syclct_accessor((pointer_t)acc.get_pointer(),
-                        syclct_range<Dimension>(acc.get_range())) {}
+      : data(data), range(range) {}
+  syclct_accessor(
+      const typename syclct_accessor<T, constant, Dimension>::accessor_t &acc)
+      : syclct_accessor(acc, syclct_range<1>(acc.get_range())) {
+    static_assert(Memory == constant);
+  }
+  syclct_accessor(
+      const typename syclct_accessor<T, device, Dimension>::accessor_t &acc)
+      : syclct_accessor(acc, syclct_range<1>(acc.get_range())) {
+    static_assert(Memory == device);
+  }
+  syclct_accessor(const accessor_t &acc, const syclct_range<Dimension> &range)
+      : syclct_accessor((pointer_t)acc.get_pointer(), range) {}
   syclct_accessor<T, Memory, Dimension - 1> operator[](size_t index) const {
     auto low = range.low();
     return syclct_accessor<T, Memory, Dimension - 1>(data + index * low.size(),
@@ -351,9 +360,17 @@ public:
   using accessor_t = typename memory_t::template accessor_t<1>;
   syclct_accessor(pointer_t data, const syclct_range<1> &range)
       : data(data), range(range){};
-  syclct_accessor(const accessor_t &acc)
-      : syclct_accessor((pointer_t)acc.get_pointer(),
-                        syclct_range<1>(acc.get_range())) {}
+  syclct_accessor(
+      const typename syclct_accessor<T, constant, 1>::accessor_t &acc)
+      : syclct_accessor(acc, syclct_range<1>(acc.get_range())) {
+    static_assert(Memory == constant);
+  }
+  syclct_accessor(const typename syclct_accessor<T, device, 1>::accessor_t &acc)
+      : syclct_accessor(acc, syclct_range<1>(acc.get_range())) {
+    static_assert(Memory == device);
+  }
+  syclct_accessor(const accessor_t &acc, const syclct_range<1> &range)
+      : syclct_accessor((pointer_t)acc.get_pointer(), range) {}
   element_t &operator[](size_t index) const { return *(data + index); }
   operator pointer_t() { return data; }
   operator T *() { return data; }
@@ -475,6 +492,7 @@ public:
   accessor_t get_access(cl::sycl::handler &cgh) override {
     return base_t::acquire.get_access(cgh);
   }
+  const syclct_range<Dimension> &get_range() { return base_t::range; }
 };
 using extern_shared_memory = shared_memory<byte_t, 1>;
 

@@ -24,7 +24,6 @@ ASTContext *SyclctGlobalInfo::Context = nullptr;
 SourceManager *SyclctGlobalInfo::SM = nullptr;
 bool SyclctGlobalInfo::KeepOriginCode = false;
 const std::string MemVarInfo::ExternVariableName = "syclct_extern_memory";
-const std::string MemVarInfo::AccessorSuffix = "_acc";
 
 bool SyclctFileInfo::isInRoot() { return SyclctGlobalInfo::isInRoot(FilePath); }
 
@@ -103,9 +102,7 @@ void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
 void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block) {
   auto &VM = getVarMap();
   if (VM.hasExternShared()) {
-    auto ExternVariable = VM.getMap(MemVarInfo::Extern).begin()->second;
-    Block.pushStmt(
-        ExternVariable->getAccessorDecl(ExecutionConfig.ExternMemSize));
+    getAccessorDecl(Block, VM.getMap(MemVarInfo::Extern).begin()->second);
   }
   getAccessorDecl(Block, MemVarInfo::Local);
   getAccessorDecl(Block, MemVarInfo::Global);
@@ -113,38 +110,44 @@ void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block) {
 
 void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block,
                                      MemVarInfo::VarScope Scope) {
-  assert(Scope != MemVarInfo::Extern);
-  static const std::string NullString;
-  for (auto VI : getVarMap().getMap(Scope)) {
-    if (Scope == MemVarInfo::Local)
-      Block.pushStmt(VI.second->getMemoryDecl());
-    Block.pushStmt(VI.second->getAccessorDecl(NullString));
+  for (auto &VI : getVarMap().getMap(Scope)) {
+    getAccessorDecl(Block, VI.second);
   }
+}
+
+void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block,
+                                     std::shared_ptr<MemVarInfo> VI) {
+  if (!VI->isGlobal())
+    Block.pushStmt(VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
+  if (VI->isShared())
+    Block.pushStmt(VI->getRangeDecl());
+  Block.pushStmt(VI->getAccessorDecl());
 }
 
 inline void KernelCallExpr::buildKernelPointerArgBufferAndOffsetStmt(
     const std::string &ArgName, StmtList &Buffers) {
-  Buffers.emplace_back("std::pair<syclct::buffer_t, size_t> " + ArgName +
-                       "_buf = syclct::get_buffer_and_offset(" + ArgName +
-                       ");");
-  Buffers.emplace_back("size_t " + ArgName + "_offset = " + ArgName +
-                       "_buf.second;");
+  Buffers.emplace_back(
+      buildString("std::pair<syclct::buffer_t, size_t> ", ArgName,
+                  "_buf = syclct::get_buffer_and_offset(", ArgName, ");"));
+  Buffers.emplace_back(
+      buildString("size_t ", ArgName, "_offset = ", ArgName, "_buf.second;"));
 }
 
 inline void
 KernelCallExpr::buildKernelPointerArgAccessorStmt(const std::string &ArgName,
                                                   StmtList &Accessors) {
-  Accessors.emplace_back(
-      "auto " + ArgName + "_acc = " + ArgName +
-      "_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);");
+  Accessors.emplace_back(buildString(
+      "auto ", ArgName, "_acc = ", ArgName,
+      "_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);"));
 }
 
 inline void
 KernelCallExpr::buildKernelPointerArgRedeclStmt(const std::string &ArgName,
                                                 const std::string &TypeName,
                                                 StmtList &Redecls) {
-  Redecls.emplace_back(TypeName + " *" + ArgName + " = (" + TypeName + "*)(&" +
-                       ArgName + "_acc[0] + " + ArgName + "_offset);");
+  Redecls.emplace_back(buildString(TypeName, " *", ArgName, " = (", TypeName,
+                                   "*)(&", ArgName, "_acc[0] + ", ArgName,
+                                   "_offset);"));
 }
 
 void KernelCallExpr::buildKernelPointerArgsStmt(StmtList &Buffers,
@@ -169,9 +172,10 @@ std::string KernelCallExpr::getReplacement() {
   FormatStmtBlock &BlockPrev = Block;                                          \
   FormatStmtBlock Block(BlockPrev);
 
-  Result += "{" + LocInfo.NL;
+  llvm::raw_string_ostream OS(Result);
+  appendString(OS, "{", LocInfo.NL);
   {
-    FormatStmtBlock Block(LocInfo.NL, LocInfo.Indent, Result);
+    FormatStmtBlock Block(LocInfo.NL, LocInfo.Indent, OS);
     for (auto &BufferStmt : Buffers)
       Block.pushStmt(BufferStmt);
 
@@ -180,9 +184,9 @@ std::string KernelCallExpr::getReplacement() {
       Block.pushStmt("syclct::get_default_queue().submit(");
     } else { // For non-default stream
       if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&')
-        Block.pushStmt("(" + ExecutionConfig.Stream + ").submit(");
+        Block.pushStmt("(", ExecutionConfig.Stream, ").submit(");
       else
-        Block.pushStmt(ExecutionConfig.Stream + ".submit(");
+        Block.pushStmt(ExecutionConfig.Stream, ".submit(");
     }
 
     {
@@ -194,26 +198,26 @@ std::string KernelCallExpr::getReplacement() {
         for (auto &AccStmt : Accessors)
           Block.pushStmt(AccStmt);
         Block.pushStmt(
-            "cgh.parallel_for<syclct_kernel_name<class " + getName() + "_" +
-            LocInfo.LocHash +
-            (hasTemplateArgs() ? (", " + getTemplateArguments(true)) : "") +
+            "cgh.parallel_for<syclct_kernel_name<class ", getName(), "_",
+            LocInfo.LocHash,
+            (hasTemplateArgs() ? (", " + getTemplateArguments(true)) : ""),
             ">>(");
         {
           FMT_STMT_BLOCK
-          Block.pushStmt("cl::sycl::nd_range<3>((" + ExecutionConfig.NDSize +
-                         " * " + ExecutionConfig.WGSize + "), " +
-                         ExecutionConfig.WGSize + "),");
-          Block.pushStmt("[=](cl::sycl::nd_item<3> " +
-                         SyclctGlobalInfo::getItemName() + ") {");
+          Block.pushStmt("cl::sycl::nd_range<3>((", ExecutionConfig.NDSize,
+                         " * ", ExecutionConfig.WGSize, "), ",
+                         ExecutionConfig.WGSize, "),");
+          Block.pushStmt("[=](cl::sycl::nd_item<3> ",
+                         SyclctGlobalInfo::getItemName(), ") {");
           {
             FMT_STMT_BLOCK
             for (auto &Redecl : Redecls)
               Block.pushStmt(Redecl);
-            Block.pushStmt(getName() +
+            Block.pushStmt(getName(),
                            (hasTemplateArgs()
-                                ? ("<" + getTemplateArguments() + ">")
-                                : "") +
-                           "(" + getArguments() + ");");
+                                ? buildString("<", getTemplateArguments(), ">")
+                                : ""),
+                           "(", getArguments(), ");");
           }
           Block.pushStmt("});");
         }
@@ -221,9 +225,9 @@ std::string KernelCallExpr::getReplacement() {
       Block.pushStmt(isSync() ? "}).wait();" : "});");
     }
   }
-  Result += LocInfo.Indent + "}" + LocInfo.NL;
+  appendString(OS, LocInfo.Indent, "}", LocInfo.NL);
 
-  return Result;
+  return OS.str();
 }
 
 void KernelCallExpr::buildInfo() {
@@ -290,15 +294,15 @@ void CallFunctionExpr::emplaceReplacement() {
 }
 
 std::string CallFunctionExpr::getTemplateArguments(bool WithScalarWrapped) {
-  const static std::string ScalarWrapperPrefix = "syclct_kernel_scalar<",
-                           ScalarWrapperSuffix = ">, ";
   std::string Result;
+  llvm::raw_string_ostream OS(Result);
   for (auto &TA : TemplateArgs) {
     if (WithScalarWrapped && !TA.isType())
-      Result += ScalarWrapperPrefix + TA.getAsString() + ScalarWrapperSuffix;
+      appendString(OS, "syclct_kernel_scalar<", TA.getAsString(), ">, ");
     else
-      Result += TA.getAsString() + ", ";
+      appendString(OS, TA.getAsString(), ", ");
   }
+  OS.flush();
   return (Result.empty()) ? Result : Result.erase(Result.size() - 2);
 }
 
@@ -476,11 +480,10 @@ std::string MemVarInfo::getDeclarationReplacement() {
   case clang::syclct::MemVarInfo::Local:
     return "";
   case clang::syclct::MemVarInfo::Extern:
-    return "auto " + getName() + " = " + ExternVariableName + ".reinterpret<" +
-           getType()->getBaseName() + ">();";
+    return buildString("auto ", getName(), " = ", ExternVariableName,
+                       ".reinterpret<", getType()->getBaseName(), ">();");
   case clang::syclct::MemVarInfo::Global: {
-    const static std::string NullString;
-    return getMemoryDecl(NullString);
+    return getMemoryDecl();
   }
   default:
     syclct_unreachable("unknow variable scope");
@@ -591,8 +594,8 @@ void CtTypeInfo::setName(QualType &Ty) {
   if (Q.isEmptyWhenPrinted(PP))
     BaseName = BaseNameWithoutQualifiers;
   else
-    BaseName = Ty.getLocalQualifiers().getAsString(PP) + " " +
-               BaseNameWithoutQualifiers;
+    BaseName = buildString(Ty.getLocalQualifiers().getAsString(PP), " ",
+                           BaseNameWithoutQualifiers);
 }
 
 void SizeInfo::setTemplateList(

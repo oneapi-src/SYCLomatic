@@ -34,6 +34,22 @@ using MemVarInfoMap = GlobalMap<MemVarInfo>;
 
 using ReplTy = std::map<std::string, tooling::Replacements>;
 
+inline void appendString(llvm::raw_string_ostream &OS) {}
+template <class T, class... Arguments>
+inline void appendString(llvm::raw_string_ostream &OS, const T &S,
+                         Arguments &&... Args) {
+  OS << S;
+  appendString(OS, std::forward<Arguments>(Args)...);
+}
+
+template <class... Arguments>
+inline std::string buildString(Arguments &&... Args) {
+  std::string Result;
+  llvm::raw_string_ostream OS(Result);
+  appendString(OS, std::forward<Arguments>(Args)...);
+  return OS.str();
+}
+
 template <class MapType>
 inline typename MapType::mapped_type
 findObject(const MapType &Map, const typename MapType::key_type &Key) {
@@ -503,29 +519,30 @@ public:
   bool isShared() { return Attr == Shared; }
 
   std::string getDeclarationReplacement();
-  std::string getMemoryDecl(const std::string &MemSize) {
-    return getMemoryType() + " " + getArgName() +
-           (PointerAsArray ? "" : getInitArguments(MemSize)) + ";";
+  inline std::string getMemoryDecl(const std::string &MemSize) {
+    return buildString(getMemoryType(), " ", getArgName(),
+                       PointerAsArray ? "" : getInitArguments(MemSize), ";");
   }
   std::string getMemoryDecl() {
     const static std::string NullString;
     return getMemoryDecl(NullString);
   }
-  std::string getAccessorDecl(const std::string &MemSize) {
-    std::string MemoryVar;
-    if (isExtern())
-      MemoryVar = getMemoryType() + getInitArguments(MemSize, true);
-    else
-      MemoryVar = getArgName();
-    return "auto " + getAccessorName() + " = " + MemoryVar +
-           ".get_access(cgh);";
+  std::string getAccessorDecl() {
+    return buildString("auto ", getAccessorName(), " = ", getArgName(),
+                       ".get_access(cgh);");
+  }
+  std::string getRangeDecl() {
+    return buildString("auto ", getRangeName(), " = ", getArgName(),
+                       ".get_range();");
   }
   std::string getFuncDecl() {
     return getSyclctAccessorType(false) + " " + getArgName();
   }
   std::string getFuncArg() { return getArgName(); }
   std::string getKernelArg() {
-    return getSyclctAccessorType(true) + "(" + getAccessorName() + ")";
+    return buildString(getSyclctAccessorType(true), "(", getAccessorName(),
+                       isShared() ? buildString(", ", getRangeName()) : "",
+                       ")");
   }
 
 private:
@@ -542,34 +559,40 @@ private:
   std::string getMemoryType();
   inline std::string getMemoryType(const std::string &MemoryType,
                                    std::shared_ptr<CtTypeInfo> VarType) {
-    return MemoryType + "<" + VarType->getTemplateSpecializationName() + ", " +
-           std::to_string(VarType->getDimension()) + ">";
+    return buildString(MemoryType, "<",
+                       VarType->getTemplateSpecializationName(), ", ",
+                       VarType->getDimension(), ">");
   }
   std::string getInitArguments(const std::string &MemSize,
                                bool MustArguments = false) {
     if (InitList.empty())
       return getType()->getRangeArgument(MemSize, MustArguments);
-    return "(syclct::syclct_range<" +
-           std::to_string(getType()->getDimension()) + ">" +
-           getType()->getRangeArgument(MemSize, true) + ", " + InitList + ")";
+    return buildString("(syclct::syclct_range<", getType()->getDimension(), ">",
+                       getType()->getRangeArgument(MemSize, true),
+                       ", " + InitList, ")");
   }
   const std::string &getMemoryAttr();
 
   std::string getSyclctAccessorType(bool UsingTemplateName) {
     if (isExtern()) {
-      static std::string ExternType =
-          "syclct::syclct_accessor<syclct::byte_t, syclct::shared, 1>";
-      return ExternType;
+      return "syclct::syclct_accessor<syclct::byte_t, syclct::shared, 1>";
     } else {
       auto Type = getType();
-      return "syclct::syclct_accessor<" +
-             (UsingTemplateName ? Type->getTemplateSpecializationName()
-                                : Type->getBaseName()) +
-             ", " + getMemoryAttr() + ", " +
-             std::to_string(Type->getDimension()) + ">";
+      return buildString(
+          "syclct::syclct_accessor<",
+          (UsingTemplateName ? Type->getTemplateSpecializationName()
+                             : Type->getBaseName()),
+          ", ", getMemoryAttr(), ", ", Type->getDimension(), ">");
     }
   }
-  std::string getAccessorName() { return getArgName() + AccessorSuffix; }
+  std::string getAccessorName() {
+    return buildString(getArgName(), "_acc_",
+                       SyclctGlobalInfo::getInRootHash());
+  }
+  std::string getRangeName() {
+    return buildString(getArgName(), "_range_",
+                       SyclctGlobalInfo::getInRootHash());
+  }
   std::string getArgName() {
     if (isExtern())
       return ExternVariableName;
@@ -582,7 +605,6 @@ private:
   bool PointerAsArray;
   std::string InitList;
 
-  static const std::string AccessorSuffix;
   static const std::string ExternVariableName;
 };
 
@@ -991,18 +1013,20 @@ class KernelCallExpr : public CallFunctionExpr {
   class FormatStmtBlock {
     const std::string &NL;
     std::string &Indent;
-    std::string &Stmts;
+    llvm::raw_string_ostream &StmtStream;
 
   public:
     FormatStmtBlock(const std::string &NL, std::string &Indent,
-                    std::string &Stmts)
-        : NL(NL), Indent(Indent), Stmts(Stmts) {
+                    llvm::raw_string_ostream &Stmts)
+        : NL(NL), Indent(Indent), StmtStream(Stmts) {
       Indent += "  ";
     }
     FormatStmtBlock(const FormatStmtBlock &Parent)
-        : FormatStmtBlock(Parent.NL, Parent.Indent, Parent.Stmts) {}
+        : FormatStmtBlock(Parent.NL, Parent.Indent, Parent.StmtStream) {}
     ~FormatStmtBlock() { Indent.erase(Indent.size() - 2); }
-    inline void pushStmt(const std::string &S) { Stmts += Indent + S + NL; }
+    template <class... Arguments> inline void pushStmt(Arguments &&... Args) {
+      appendString(StmtStream, Indent, std::forward<Arguments>(Args)..., NL);
+    }
   };
 
 public:
@@ -1030,6 +1054,7 @@ private:
   std::string analysisExcutionConfig(const Expr *Config);
 
   void getAccessorDecl(FormatStmtBlock &Block, MemVarInfo::VarScope Scope);
+  void getAccessorDecl(FormatStmtBlock &Block, std::shared_ptr<MemVarInfo> VI);
 
   using StmtList = std::vector<std::string>;
   void buildKernelPointerArgsStmt(StmtList &BufferAndOffsets,

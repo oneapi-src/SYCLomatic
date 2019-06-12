@@ -34,11 +34,11 @@ int main() {
   // CHECK: {
   // CHECK:   syclct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto out_acc = out.get_access(cgh);
+  // CHECK:       auto out_acc_[[HASH:[a-f0-9]+]] = out.get_access(cgh);
   // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
   // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
-  // CHECK:           kernel1([[ITEM]], syclct::syclct_accessor<float, syclct::device, 1>(out_acc));
+  // CHECK:           kernel1([[ITEM]], syclct::syclct_accessor<float, syclct::device, 1>(out_acc_[[HASH]]));
   // CHECK:         });
   // CHECK:     });
   // CHECK: }

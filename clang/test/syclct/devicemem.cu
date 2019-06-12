@@ -66,13 +66,13 @@ int main() {
   // CHECK:   size_t d_out_offset = d_out_buf.second;
   // CHECK:   syclct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto in_acc = in.get_access(cgh);
+  // CHECK:       auto in_acc_[[HASH:[a-f0-9]+]] = in.get_access(cgh);
   // CHECK:       auto d_out_acc = d_out_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
   // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK:           float *d_out = (float*)(&d_out_acc[0] + d_out_offset);
-  // CHECK:           kernel1(d_out, [[ITEM]], syclct::syclct_accessor<float, syclct::device, 1>(in_acc));
+  // CHECK:           kernel1(d_out, [[ITEM]], syclct::syclct_accessor<float, syclct::device, 1>(in_acc_[[HASH]]));
   // CHECK:         });
   // CHECK:     });
   // CHECK: }
@@ -84,16 +84,16 @@ int main() {
   // CHECK:   syclct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
   // CHECK:       syclct::device_memory<float, 1> tmp(64/*size*/);
-  // CHECK:       auto tmp_acc = tmp.get_access(cgh);
-  // CHECK:       auto al_acc = al.get_access(cgh);
-  // CHECK:       auto fx_acc = fx.get_access(cgh);
-  // CHECK:       auto fy_acc = fy.get_access(cgh);
+  // CHECK:       auto tmp_acc_[[HASH]] = tmp.get_access(cgh);
+  // CHECK:       auto al_acc_[[HASH]] = al.get_access(cgh);
+  // CHECK:       auto fx_acc_[[HASH]] = fx.get_access(cgh);
+  // CHECK:       auto fy_acc_[[HASH]] = fy.get_access(cgh);
   // CHECK:       auto d_out_acc = d_out_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
   // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK:           float *d_out = (float*)(&d_out_acc[0] + d_out_offset);
-  // CHECK:           kernel2(d_out, [[ITEM]], syclct::syclct_accessor<int, syclct::device, 0>(al_acc), syclct::syclct_accessor<float, syclct::device, 1>(fx_acc), syclct::syclct_accessor<float, syclct::device, 2>(fy_acc), syclct::syclct_accessor<float, syclct::device, 1>(tmp_acc));
+  // CHECK:           kernel2(d_out, [[ITEM]], syclct::syclct_accessor<int, syclct::device, 0>(al_acc_[[HASH]]), syclct::syclct_accessor<float, syclct::device, 1>(fx_acc_[[HASH]]), syclct::syclct_accessor<float, syclct::device, 2>(fy_acc_[[HASH]]), syclct::syclct_accessor<float, syclct::device, 1>(tmp_acc_[[HASH]]));
   // CHECK:         });
   // CHECK:     });
   // CHECK: }

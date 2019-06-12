@@ -91,11 +91,12 @@ int main() {
   // CHECK:   {
   // CHECK:     syclct::get_default_queue().submit(
   // CHECK:       [&](cl::sycl::handler &cgh) {
-  // CHECK:         auto ctemp2_acc = ctemp2.get_access(cgh);
+  // CHECK:         auto ctemp2_range_[[HASH:[a-f0-9]+]] = ctemp2.get_range();
+  // CHECK:         auto ctemp2_acc_[[HASH]] = ctemp2.get_access(cgh);
   // CHECK:         cgh.parallel_for<syclct_kernel_name<class gpuMain_{{[a-f0-9]+}}>>(
   // CHECK:           cl::sycl::nd_range<3>((cl::sycl::range<3>(64, 1, 1) * cl::sycl::range<3>(64, 1, 1)), cl::sycl::range<3>(64, 1, 1)),
   // CHECK:           [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
-  // CHECK:             gpuMain(syclct::syclct_accessor<cl::sycl::double2, syclct::shared, 1>(ctemp2_acc));
+  // CHECK:             gpuMain(syclct::syclct_accessor<cl::sycl::double2, syclct::shared, 1>(ctemp2_acc_[[HASH]], ctemp2_range_[[HASH]]));
   // CHECK:           });
   // CHECK:       });
   // CHECK:   }
