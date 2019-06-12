@@ -125,10 +125,10 @@ void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block,
 }
 
 inline void KernelCallExpr::buildKernelPointerArgBufferAndOffsetStmt(
-    const std::string &ArgName, StmtList &Buffers) {
+    const std::string &RefName, const std::string &ArgName, StmtList &Buffers) {
   Buffers.emplace_back(
       buildString("std::pair<syclct::buffer_t, size_t> ", ArgName,
-                  "_buf = syclct::get_buffer_and_offset(", ArgName, ");"));
+                  "_buf = syclct::get_buffer_and_offset(", RefName, ");"));
   Buffers.emplace_back(
       buildString("size_t ", ArgName, "_offset = ", ArgName, "_buf.second;"));
 }
@@ -155,7 +155,8 @@ void KernelCallExpr::buildKernelPointerArgsStmt(StmtList &Buffers,
                                                 StmtList &Redecls) {
   for (auto &Arg : PointerArgsList) {
     auto &ArgName = Arg->getName();
-    buildKernelPointerArgBufferAndOffsetStmt(ArgName, Buffers);
+    buildKernelPointerArgBufferAndOffsetStmt(Arg->getRefString(), ArgName,
+                                             Buffers);
     buildKernelPointerArgAccessorStmt(ArgName, Accessors);
     buildKernelPointerArgRedeclStmt(
         ArgName, Arg->getType()->getTemplateSpecializationName(), Redecls);

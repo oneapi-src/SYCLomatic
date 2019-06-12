@@ -318,6 +318,8 @@ protected:
 
 private:
   inline void analysisExpr(const DeclRefExpr *Arg);
+  inline void analysisExpr(const MemberExpr *Arg);
+
   VarSetTy &VarList;
   VarMapTy VarMap;
 };

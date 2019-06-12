@@ -208,25 +208,38 @@ const std::string &ArgumentAnalysis::getDefaultArgument(const Expr *E) {
 void KernelArgumentAnalysis::analysisExpression(const Stmt *Expression) {
   switch (Expression->getStmtClass()) {
     ANALYSIS_EXPR(DeclRefExpr)
+    ANALYSIS_EXPR(MemberExpr)
   default:
     return ExprAnalysis::analysisExpression(Expression);
   }
 }
 
 void KernelArgumentAnalysis::analysisExpr(const DeclRefExpr *DRE) {
-  if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
-    auto LocInfo = SyclctGlobalInfo::getLocInfo(VD);
-    auto &VI = VarMap[LocInfo.second];
-    if (!VI)
-      VI = std::make_shared<VarInfo>(LocInfo.second, LocInfo.first, VD);
+  if (auto D = dyn_cast<VarDecl>(DRE->getDecl())) {
+    auto LocInfo = SyclctGlobalInfo::getLocInfo(D);
+    if (DRE->getType()->isPointerType())
+      insertObject(VarMap, LocInfo.second, LocInfo.first, D);
   }
   Base::analysisExpr(DRE);
 }
 
+void KernelArgumentAnalysis::analysisExpr(const MemberExpr *ME) {
+  if (auto D = dyn_cast<FieldDecl>(ME->getMemberDecl())) {
+    auto LocInfo = SyclctGlobalInfo::getLocInfo(ME);
+    if (ME->getType()->isPointerType()) {
+      auto VI = std::make_shared<VarInfo>(
+          LocInfo.second, LocInfo.first, D,
+          getStmtSpelling(ME, SyclctGlobalInfo::getContext()));
+      VarMap.insert(std::make_pair(LocInfo.second, VI));
+      addReplacement(ME, VI->getName());
+    }
+  }
+  Base::analysisExpr(ME);
+}
+
 KernelArgumentAnalysis::~KernelArgumentAnalysis() {
   for (auto &V : VarMap) {
-    if (V.second->getType()->isPointer())
-      VarList.emplace_back(V.second);
+    VarList.emplace_back(V.second);
   }
 }
 } // namespace syclct

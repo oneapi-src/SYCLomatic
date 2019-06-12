@@ -344,6 +344,9 @@ private:
   static inline SourceLocation getLocation(const FunctionDecl *FD) {
     return FD->getLocation();
   }
+  static inline SourceLocation getLocation(const FieldDecl *FD) {
+    return FD->getLocation();
+  }
 
   std::unordered_map<std::string, std::shared_ptr<SyclctFileInfo>> FileMap;
 
@@ -464,11 +467,18 @@ class VarInfo {
 public:
   VarInfo(unsigned Offset, const std::string &FilePathIn, const VarDecl *Var)
       : FilePath(FilePathIn), Offset(Offset), Name(Var->getName().str()),
+        RefString(Name), Ty(std::make_shared<CtTypeInfo>(
+                             Var->getTypeSourceInfo()->getTypeLoc())) {}
+  VarInfo(unsigned Offset, const std::string &FilePathIn,
+          const FieldDecl *FieldVar, std::string MemberExprString)
+      : FilePath(FilePathIn), Offset(Offset), Name(FieldVar->getName().str()),
+        RefString(std::move(MemberExprString)),
         Ty(std::make_shared<CtTypeInfo>(
-            Var->getTypeSourceInfo()->getTypeLoc())) {}
+            FieldVar->getTypeSourceInfo()->getTypeLoc())) {}
 
   inline const std::string &getFilePath() { return FilePath; }
   inline unsigned getOffset() { return Offset; }
+  inline const std::string &getRefString() { return RefString; }
   inline const std::string &getName() { return Name; }
   inline std::shared_ptr<CtTypeInfo> &getType() { return Ty; }
 
@@ -479,6 +489,7 @@ private:
   const std::string FilePath;
   unsigned Offset;
   std::string Name;
+  std::string RefString;
   std::shared_ptr<CtTypeInfo> Ty;
 };
 
@@ -1059,7 +1070,8 @@ private:
   using StmtList = std::vector<std::string>;
   void buildKernelPointerArgsStmt(StmtList &BufferAndOffsets,
                                   StmtList &Accessors, StmtList &Redecls);
-  void buildKernelPointerArgBufferAndOffsetStmt(const std::string &ArgName,
+  void buildKernelPointerArgBufferAndOffsetStmt(const std::string &RefName,
+                                                const std::string &ArgName,
                                                 StmtList &Buffers);
   void buildKernelPointerArgAccessorStmt(const std::string &ArgName,
                                          StmtList &Accessors);
