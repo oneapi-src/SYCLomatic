@@ -3,9 +3,11 @@
 //CHECK:#include <CL/sycl.hpp>
 //CHECK-NEXT:#include <syclct/syclct.hpp>
 //CHECK://math header
-//CHECKT: #include <cmath>
-//CHECKT: #include "math.h"
+//CHECK: #include <math.h>
+//CHECK-NEXT: #include <cmath>
+//CHECK-NEXT: #include "math.h"
 #include <cuda.h>
 //math header
 #include <math.h>
+#include <cmath>
 #include "math.h"

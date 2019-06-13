@@ -287,19 +287,9 @@ void IncludesCallbacks::InclusionDirective(
     SyclHeaderInserted = true;
   }
 
-  // Replace "#include <math.h>" with <cmath>
   // Record that math header is included in this file
-  if (IsAngled && FileName.compare(StringRef("math.h")) == 0) {
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        "#include <cmath>"));
-    auto DecomposedLoc = SM.getDecomposedExpansionLoc(HashLoc);
-    AlreadyIncludeMathHeader[DecomposedLoc.first] = true;
-  }
-
-  // Record that math header is included in this file
-  if (IsAngled && FileName.compare(StringRef("cmath")) == 0) {
+  if (IsAngled && (FileName.compare(StringRef("math.h")) == 0 ||
+                   FileName.compare(StringRef("cmath")) == 0)) {
     auto DecomposedLoc = SM.getDecomposedExpansionLoc(HashLoc);
     AlreadyIncludeMathHeader[DecomposedLoc.first] = true;
   }
