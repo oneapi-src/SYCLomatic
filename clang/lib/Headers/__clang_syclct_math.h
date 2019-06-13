@@ -18,6 +18,9 @@
 float max(float a, float b);
 int  min(int, int);
 
+#if (defined(_WIN64) || defined(_WIN32))
+
+#else
 #if !defined(_GLIBCXX_RELEASE) || defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE < 7
 int signbit(float x);
 int signbit(double x);
@@ -26,6 +29,7 @@ int isfinite(float x);
 int isfinite(double x);
 int isfinite(long double x);
 float modf(float a, float *b);
+#endif
 #endif
 
 float powif(float a, int b);
