@@ -92,10 +92,18 @@ CudaInstallationDetector::CudaInstallationDetector(
     Candidates.emplace_back(
         Args.getLastArgValue(clang::driver::options::OPT_cuda_path_EQ).str());
   } else if (HostTriple.isOSWindows()) {
+#ifdef INTEL_CUSTOMIZATION
+    // if D.SysRoot empty (no --sysroot) , then default to "c:" in Windows.
+    for (const char *Ver : Versions)
+      Candidates.emplace_back((D.SysRoot.empty() ? "c:" : D.SysRoot) +
+          "/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v" +
+          Ver);
+#else
     for (const char *Ver : Versions)
       Candidates.emplace_back(
           D.SysRoot + "/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v" +
           Ver);
+#endif
   } else {
     if (!Args.hasArg(clang::driver::options::OPT_cuda_path_ignore_env)) {
       // Try to find ptxas binary. If the executable is located in a directory
