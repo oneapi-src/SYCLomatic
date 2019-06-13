@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -passes "MemoryTranslationRule" -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
 // RUN: FileCheck --match-full-lines --input-file %T/memory_management.sycl.cpp %s
 
 #include <cuda_runtime.h>
@@ -71,7 +71,7 @@ void testCommas() {
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  cudaError_t err = (syclct::sycl_malloc((void **)&d_A, size), 0);
+  // CHECK-NEXT:  int err = (syclct::sycl_malloc((void **)&d_A, size), 0);
   cudaError_t err = cudaMalloc((void **)&d_A, size);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
@@ -273,6 +273,61 @@ void testCommas() {
   checkError(cudaFree(d_A));
   // CHECK:  free(h_A);
   free(h_A);
+}
+
+#define CUDA_CHECK(call)                                                           \
+    if ((call) != cudaSuccess) { \
+        exit(-1); \
+    }
+
+#define checkCudaErrors(val) check((val), #val, __FILE__, __LINE__)
+template <typename T>
+void check(T result, char const *const func, const char *const file, int const line) {}
+
+
+template<typename T>
+void uninstantiated_template_call(const T * d_data, size_t width, size_t height) {
+  size_t datasize = width * height;
+  T * data = new T[datasize];
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:  assert_cuda((syclct::sycl_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host), 0));
+  assert_cuda(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
+
+  // CHECK: syclct::sycl_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host);
+  cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
+
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:  checkError((syclct::sycl_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host), 0));
+  checkError(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
+
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT: int err = (syclct::sycl_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host), 0);
+  cudaError_t err = cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
+
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT: CUDA_CHECK((syclct::sycl_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host), 0));
+  CUDA_CHECK(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
+
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT: checkCudaErrors((syclct::sycl_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host), 0));
+  checkCudaErrors(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
+
+  // CHECK: #define CUDAMEMCPY syclct::sycl_memcpy
+  // CHECK-NEXT: CUDAMEMCPY((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host);
+  #define CUDAMEMCPY cudaMemcpy
+  CUDAMEMCPY(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
+
+  delete[] data;
 }
 
 #define N 1024

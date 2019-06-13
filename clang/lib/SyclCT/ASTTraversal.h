@@ -613,9 +613,11 @@ public:
   std::string GetBufferDeclStrAndReplPtr(const Expr *Arg, const ASTContext &AC,
                                          const std::string &TypeAsStr,
                                          SourceLocation SL);
-  std::string GetPrefixInsertAndReplPtrs(const std::vector<int> PointerArgsIndex,
-                              const CallExpr &CE, const ASTContext &AC,
-                              const std::vector<std::string> &TypeStrsVec, SourceLocation SL);
+  std::string
+  GetPrefixInsertAndReplPtrs(const std::vector<int> PointerArgsIndex,
+                             const CallExpr &CE, const ASTContext &AC,
+                             const std::vector<std::string> &TypeStrsVec,
+                             SourceLocation SL);
 };
 
 /// Migration rule for event API calls
@@ -709,24 +711,30 @@ public:
 
 private:
   void MallocTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
-                         const CallExpr *C);
+                         const CallExpr *C,
+                         const UnresolvedLookupExpr *ULExpr = NULL);
   void MemcpyTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
-                         const CallExpr *C);
+                         const CallExpr *C,
+                         const UnresolvedLookupExpr *ULExpr = NULL);
   void MemcpyToSymbolTranslation(
-      const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C);
+      const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
+      const UnresolvedLookupExpr *ULExpr = NULL);
   void MemcpyFromSymbolTranslation(
-      const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C);
+      const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
+      const UnresolvedLookupExpr *ULExpr = NULL);
   void FreeTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
-                       const CallExpr *C);
+                       const CallExpr *C,
+                       const UnresolvedLookupExpr *ULExpr = NULL);
   void MemsetTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
-                         const CallExpr *C);
+                         const CallExpr *C,
+                         const UnresolvedLookupExpr *ULExpr = NULL);
   void handleAsync(const CallExpr *C, unsigned i,
-                      const ast_matchers::MatchFinder::MatchResult &Result);
+                   const ast_matchers::MatchFinder::MatchResult &Result);
 
   std::unordered_map<
-      std::string,
-      std::function<void(const ast_matchers::MatchFinder::MatchResult &Result,
-                         const CallExpr *C)>>
+      std::string, std::function<void(
+                       const ast_matchers::MatchFinder::MatchResult &Result,
+                       const CallExpr *C, const UnresolvedLookupExpr *ULExpr)>>
       TranslationDispatcher;
 };
 

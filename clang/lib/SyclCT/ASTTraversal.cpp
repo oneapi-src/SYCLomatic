@@ -2234,9 +2234,8 @@ std::string FunctionCallRule::GetPrefixInsertAndReplPtrs(
   std::string result;
   const int Size = static_cast<int>(PointerArgsIndex.size());
   for (int i = 0; i < Size; ++i) {
-    result = result  +
-             GetBufferDeclStrAndReplPtr(CE.getArg(PointerArgsIndex[i]), AC,
-                                        TypeStrsVec[i], SL);
+    result = result + GetBufferDeclStrAndReplPtr(CE.getArg(PointerArgsIndex[i]),
+                                                 AC, TypeStrsVec[i], SL);
   }
   return result;
 }
@@ -2884,15 +2883,23 @@ BLASGetSetRule::GetParamsAsStrs(const CallExpr *CE, const ASTContext &Context) {
 REGISTER_RULE(BLASGetSetRule)
 
 void MemoryTranslationRule::MallocTranslation(
-    const MatchFinder::MatchResult &Result, const CallExpr *C) {
-  const std::string Name =
-      C->getCalleeDecl()->getAsFunction()->getNameAsString();
+    const MatchFinder::MatchResult &Result, const CallExpr *C,
+    const UnresolvedLookupExpr *ULExpr) {
+
+  std::string Name;
+  if (ULExpr) {
+    Name = ULExpr->getName().getAsString();
+  } else {
+    Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
+  }
+
   SyclctGlobalInfo::getInstance().insertCudaMalloc(C);
   emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_malloc", Name));
 }
 
 void MemoryTranslationRule::MemcpyTranslation(
-    const MatchFinder::MatchResult &Result, const CallExpr *C) {
+    const MatchFinder::MatchResult &Result, const CallExpr *C,
+    const UnresolvedLookupExpr *ULExpr) {
   // Input:
   //   cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
   //   cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
@@ -2922,9 +2929,17 @@ void MemoryTranslationRule::MemcpyTranslation(
     Direction = nullptr;
     DirectionName = "syclct::" + Search->second;
   }
-  const std::string Name =
-      C->getCalleeDecl()->getAsFunction()->getNameAsString();
-  emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_memcpy", Name));
+  if (ULExpr) {
+    emplaceTransformation(new ReplaceToken(
+        ULExpr->getBeginLoc(), ULExpr->getEndLoc(), "syclct::sycl_memcpy"));
+  } else {
+
+    const std::string Name =
+        C->getCalleeDecl()->getAsFunction()->getNameAsString();
+    emplaceTransformation(
+        new ReplaceCalleeName(C, "syclct::sycl_memcpy", Name));
+  }
+
   insertAroundStmt(C->getArg(0), "(void*)(", ")");
   insertAroundStmt(C->getArg(1), "(void*)(", ")");
   emplaceTransformation(
@@ -2936,7 +2951,8 @@ void MemoryTranslationRule::MemcpyTranslation(
 }
 
 void MemoryTranslationRule::MemcpyToSymbolTranslation(
-    const MatchFinder::MatchResult &Result, const CallExpr *C) {
+    const MatchFinder::MatchResult &Result, const CallExpr *C,
+    const UnresolvedLookupExpr *ULExpr) {
   // Input:
   //   cudaMemcpyToSymbol(d_A, h_A, size, offset, cudaMemcpyHostToDevice);
   //   cudaMemcpyToSymbol(d_B, d_C, size, offset, cudaMemcpyDeviceToDevice);
@@ -2984,10 +3000,18 @@ void MemoryTranslationRule::MemcpyToSymbolTranslation(
   VarName = (pos != std::string::npos) ? VarName.substr(0, pos) : VarName;
   VarName += ".get_ptr()";
 
-  const std::string Name =
-      C->getCalleeDecl()->getAsFunction()->getNameAsString();
-  emplaceTransformation(
-      new ReplaceCalleeName(C, "syclct::sycl_memcpy_to_symbol", Name));
+  if (ULExpr) {
+    emplaceTransformation(new ReplaceToken(ULExpr->getBeginLoc(),
+                                           ULExpr->getEndLoc(),
+                                           "syclct::sycl_memcpy_to_symbol"));
+  } else {
+
+    const std::string Name =
+        C->getCalleeDecl()->getAsFunction()->getNameAsString();
+    emplaceTransformation(
+        new ReplaceCalleeName(C, "syclct::sycl_memcpy_to_symbol", Name));
+  }
+
   emplaceTransformation(new ReplaceToken(C->getArg(0)->getBeginLoc(),
                                          C->getArg(0)->getEndLoc(),
                                          std::move(VarName)));
@@ -3001,7 +3025,8 @@ void MemoryTranslationRule::MemcpyToSymbolTranslation(
 }
 
 void MemoryTranslationRule::MemcpyFromSymbolTranslation(
-    const MatchFinder::MatchResult &Result, const CallExpr *C) {
+    const MatchFinder::MatchResult &Result, const CallExpr *C,
+    const UnresolvedLookupExpr *ULExpr) {
   // Input:
   //   cudaMemcpyToSymbol(h_A, d_A, size, offset, cudaMemcpyDeviceToHost);
   //   cudaMemcpyToSymbol(d_B, d_A, size, offset, cudaMemcpyDeviceToDevice);
@@ -3036,10 +3061,18 @@ void MemoryTranslationRule::MemcpyFromSymbolTranslation(
 
   insertAroundStmt(C->getArg(0), "(void*)(", ")");
 
-  const std::string Name =
-      C->getCalleeDecl()->getAsFunction()->getNameAsString();
-  emplaceTransformation(
-      new ReplaceCalleeName(C, "syclct::sycl_memcpy_from_symbol", Name));
+  if (ULExpr) {
+    emplaceTransformation(new ReplaceToken(ULExpr->getBeginLoc(),
+                                           ULExpr->getEndLoc(),
+                                           "syclct::sycl_memcpy_from_symbol"));
+  } else {
+
+    const std::string Name =
+        C->getCalleeDecl()->getAsFunction()->getNameAsString();
+    emplaceTransformation(
+        new ReplaceCalleeName(C, "syclct::sycl_memcpy_from_symbol", Name));
+  }
+
   emplaceTransformation(new ReplaceToken(C->getArg(1)->getBeginLoc(),
                                          C->getArg(1)->getEndLoc(),
                                          std::move(VarName)));
@@ -3052,16 +3085,30 @@ void MemoryTranslationRule::MemcpyFromSymbolTranslation(
 }
 
 void MemoryTranslationRule::FreeTranslation(
-    const MatchFinder::MatchResult &Result, const CallExpr *C) {
-  const std::string Name =
-      C->getCalleeDecl()->getAsFunction()->getNameAsString();
+    const MatchFinder::MatchResult &Result, const CallExpr *C,
+    const UnresolvedLookupExpr *ULExpr) {
+
+  std::string Name;
+  if (ULExpr) {
+    Name = ULExpr->getName().getAsString();
+  } else {
+    Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
+  }
+
   emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_free", Name));
 }
 
 void MemoryTranslationRule::MemsetTranslation(
-    const MatchFinder::MatchResult &Result, const CallExpr *C) {
-  const std::string Name =
-      C->getCalleeDecl()->getAsFunction()->getNameAsString();
+    const MatchFinder::MatchResult &Result, const CallExpr *C,
+    const UnresolvedLookupExpr *ULExpr) {
+
+  std::string Name;
+  if (ULExpr) {
+    Name = ULExpr->getName().getAsString();
+  } else {
+    Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
+  }
+
   emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_memset", Name));
   insertAroundStmt(C->getArg(0), "(void*)(", ")");
   insertAroundStmt(C->getArg(1), "(int)(", ")");
@@ -3085,10 +3132,24 @@ void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
       callExpr(allOf(callee(functionDecl(memoryAPI())), unless(parentStmt)))
           .bind("callUsed"),
       this);
+
+  MF.addMatcher(
+      unresolvedLookupExpr(
+          hasAnyDeclaration(namedDecl(memoryAPI())),
+          hasParent(callExpr(unless(parentStmt)).bind("callExprUsed")))
+          .bind("unresolvedCallUsed"),
+      this);
+
+  MF.addMatcher(
+      unresolvedLookupExpr(hasAnyDeclaration(namedDecl(memoryAPI())),
+                           hasParent(callExpr(parentStmt).bind("callExpr")))
+          .bind("unresolvedCall"),
+      this);
 }
 
 void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
-  auto TranslateCallExpr = [&](const CallExpr *C, const bool IsAssigned) {
+  auto TranslateCallExpr = [&](const CallExpr *C, const bool IsAssigned,
+                               const UnresolvedLookupExpr *ULExpr = NULL) {
     if (!C)
       return;
 
@@ -3097,47 +3158,59 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
       insertAroundStmt(C, "(", ", 0)");
     }
 
-    const std::string Name =
-        C->getCalleeDecl()->getAsFunction()->getNameAsString();
+    std::string Name;
+    if (ULExpr && C) {
+      Name = ULExpr->getName().getAsString();
+    } else {
+      Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
+    }
+
     assert(TranslationDispatcher.find(Name) != TranslationDispatcher.end());
-    TranslationDispatcher.at(Name)(Result, C);
+    TranslationDispatcher.at(Name)(Result, C, ULExpr);
   };
 
   TranslateCallExpr(getNodeAsType<CallExpr>(Result, "call"),
                     /* IsAssigned */ false);
   TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callUsed"),
                     /* IsAssigned */ true);
+
+  TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callExprUsed"),
+                    /* IsAssigned */ true, getNodeAsType<UnresolvedLookupExpr>(
+                                               Result, "unresolvedCallUsed"));
+  TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callExpr"),
+                    /* IsAssigned */ false, getNodeAsType<UnresolvedLookupExpr>(
+                                                Result, "unresolvedCall"));
 }
 
 MemoryTranslationRule::MemoryTranslationRule() {
   SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
-  TranslationDispatcher["cudaMalloc"] =
-      std::bind(&MemoryTranslationRule::MallocTranslation, this,
-                std::placeholders::_1, std::placeholders::_2);
-  TranslationDispatcher["cudaMemcpy"] =
-      std::bind(&MemoryTranslationRule::MemcpyTranslation, this,
-                std::placeholders::_1, std::placeholders::_2);
-  TranslationDispatcher["cudaMemcpyAsync"] =
-      std::bind(&MemoryTranslationRule::MemcpyTranslation, this,
-                std::placeholders::_1, std::placeholders::_2);
-  TranslationDispatcher["cudaMemcpyToSymbol"] =
-      std::bind(&MemoryTranslationRule::MemcpyToSymbolTranslation, this,
-                std::placeholders::_1, std::placeholders::_2);
-  TranslationDispatcher["cudaMemcpyToSymbolAsync"] =
-      std::bind(&MemoryTranslationRule::MemcpyToSymbolTranslation, this,
-                std::placeholders::_1, std::placeholders::_2);
-  TranslationDispatcher["cudaMemcpyFromSymbol"] =
-      std::bind(&MemoryTranslationRule::MemcpyFromSymbolTranslation, this,
-                std::placeholders::_1, std::placeholders::_2);
-  TranslationDispatcher["cudaMemcpyFromSymbolAsync"] =
-      std::bind(&MemoryTranslationRule::MemcpyFromSymbolTranslation, this,
-                std::placeholders::_1, std::placeholders::_2);
-  TranslationDispatcher["cudaFree"] =
-      std::bind(&MemoryTranslationRule::FreeTranslation, this,
-                std::placeholders::_1, std::placeholders::_2);
-  TranslationDispatcher["cudaMemset"] =
-      std::bind(&MemoryTranslationRule::MemsetTranslation, this,
-                std::placeholders::_1, std::placeholders::_2);
+  TranslationDispatcher["cudaMalloc"] = std::bind(
+      &MemoryTranslationRule::MallocTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cudaMemcpy"] = std::bind(
+      &MemoryTranslationRule::MemcpyTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cudaMemcpyAsync"] = std::bind(
+      &MemoryTranslationRule::MemcpyTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cudaMemcpyToSymbol"] = std::bind(
+      &MemoryTranslationRule::MemcpyToSymbolTranslation, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cudaMemcpyToSymbolAsync"] = std::bind(
+      &MemoryTranslationRule::MemcpyToSymbolTranslation, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cudaMemcpyFromSymbol"] = std::bind(
+      &MemoryTranslationRule::MemcpyFromSymbolTranslation, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cudaMemcpyFromSymbolAsync"] = std::bind(
+      &MemoryTranslationRule::MemcpyFromSymbolTranslation, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cudaFree"] = std::bind(
+      &MemoryTranslationRule::FreeTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cudaMemset"] = std::bind(
+      &MemoryTranslationRule::MemsetTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
 }
 
 void MemoryTranslationRule::handleAsync(
@@ -3878,7 +3951,7 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
 
   std::string APIName = C->getCalleeDecl()->getAsFunction()->getNameAsString();
 
-  if (!Namespace.empty() && Namespace =="thrust") {
+  if (!Namespace.empty() && Namespace == "thrust") {
     APIName = Namespace + "::" + APIName;
   }
 
