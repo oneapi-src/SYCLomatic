@@ -136,4 +136,6 @@ const clang::DeclRefExpr *getInnerValueDecl(const clang::Expr *Arg);
 bool startsWith(std::string str, std::string s);
 const clang::Stmt *getParentStmt(const clang::Stmt *S);
 bool IsSingleLineStatement(const clang::Stmt *S);
+const std::pair<const clang::Stmt *, bool>
+findOutermostStmtInTheSameBlock(const clang::Stmt *S);
 #endif // SYCLCT_UTILITY_H

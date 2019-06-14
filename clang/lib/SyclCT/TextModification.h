@@ -493,10 +493,13 @@ class InsertBeforeStmt : public TextModification {
   const Stmt *S;
   std::string T;
   unsigned PairID;
+  bool DoMacroExpansion;
 
 public:
-  InsertBeforeStmt(const Stmt *S, std::string &&T, unsigned PairID = 0)
-      : TextModification(TMID::InsertBeforeStmt), S(S), T(T), PairID(PairID) {}
+  InsertBeforeStmt(const Stmt *S, std::string &&T, unsigned PairID = 0,
+                   bool DoMacroExpansion = false)
+      : TextModification(TMID::InsertBeforeStmt), S(S), T(T), PairID(PairID),
+        DoMacroExpansion(DoMacroExpansion) {}
 
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;

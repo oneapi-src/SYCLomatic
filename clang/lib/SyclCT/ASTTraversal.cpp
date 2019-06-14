@@ -2437,13 +2437,9 @@ void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
   if (FuncName == "cudaEventCreate" || FuncName == "cudaEventCreateWithFlags" ||
       FuncName == "cudaEventDestroy") {
     std::string ReplStr;
-    if (IsAssigned) {
-      ReplStr = "(" + ReplStr + ", 0)";
-      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    } else {
-      emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
-    }
+    if (IsAssigned)
+      ReplStr = "0";
+    emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
   } else if (FuncName == "cudaEventRecord") {
     handleEventRecord(CE, Result, IsAssigned);
   } else if (FuncName == "cudaEventElapsedTime") {
@@ -2484,13 +2480,32 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
   ReplStr += "_";
   ReplStr += getHashAsString(StmtStr).substr(0, 6);
   ReplStr += " = clock()";
-  if (IsAssigned) {
-    ReplStr = "(" + ReplStr + ", 0)";
-    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
-  }
   const std::string Name =
       CE->getCalleeDecl()->getAsFunction()->getNameAsString();
-  emplaceTransformation(new ReplaceStmt(CE, true, Name, ReplStr));
+  if (IsAssigned) {
+    emplaceTransformation(new ReplaceStmt(CE, true, Name, "0"));
+    auto Outer = findOutermostStmtInTheSameBlock(CE);
+    auto OuterStmt = Outer.first;
+    // The outer statement is in a CompoundStmt
+    if (Outer.second) {
+      ReplStr += ";";
+      auto &SM = *Result.SourceManager;
+      auto Loc = OuterStmt->getBeginLoc();
+      if (Loc.isMacroID())
+        Loc = SM.getExpansionLoc(Loc);
+      ReplStr += getNL();
+      ReplStr += getIndent(Loc, SM);
+    }
+    // The outer statement is in a IfStmt/WhileStmt/DoStmt/ForStmt
+    else {
+      ReplStr += ", ";
+    }
+    emplaceTransformation(new InsertBeforeStmt(OuterStmt, std::move(ReplStr),
+                                               /*PairID*/ 0,
+                                               /*DoMacroExpansion*/ true));
+  } else {
+    emplaceTransformation(new ReplaceStmt(CE, true, Name, ReplStr));
+  }
 }
 
 void EventAPICallRule::handleEventElapsedTime(
@@ -3030,7 +3045,7 @@ void BLASGetSetRule::getSetVectorTranslation(
 
   if (IsAssigned) {
     report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
-    insertAroundStmt(CE,"(",", 0)");
+    insertAroundStmt(CE, "(", ", 0)");
   }
 }
 

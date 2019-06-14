@@ -188,6 +188,7 @@ void ExprAnalysis::analysisType(const TypeLoc &TL) {
   case TypeLoc::Typedef:
     TyName =
         static_cast<const TypedefTypeLoc &>(TL).getTypedefNameDecl()->getName();
+    break;
   case TypeLoc::Builtin:
   case TypeLoc::Record:
     TyName = TL.getType().getAsString();

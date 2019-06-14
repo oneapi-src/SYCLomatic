@@ -631,7 +631,12 @@ ReplacementFilter::ReplacementFilter(const std::vector<ExtReplacement> &RS)
 std::shared_ptr<ExtReplacement>
 InsertBeforeStmt::getReplacement(const ASTContext &Context) const {
   SourceLocation Begin = S->getSourceRange().getBegin();
-  recordTranslationInfo(Context, S->getBeginLoc());
+  if (DoMacroExpansion) {
+    auto &SM = Context.getSourceManager();
+    if (Begin.isMacroID())
+      Begin = SM.getExpansionLoc(Begin);
+  }
+  recordTranslationInfo(Context, Begin);
   auto R = std::make_shared<ExtReplacement>(
       Context.getSourceManager(),
       CharSourceRange(SourceRange(Begin, Begin), false), T, this);
@@ -851,7 +856,13 @@ void InsertBeforeCtrInitList::print(llvm::raw_ostream &OS, ASTContext &Context,
 void InsertBeforeStmt::print(llvm::raw_ostream &OS, ASTContext &Context,
                              const bool PrintDetail) const {
   printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
-  printLocation(OS, S->getBeginLoc(), Context, PrintDetail);
+  SourceLocation Begin = S->getSourceRange().getBegin();
+  if (DoMacroExpansion) {
+    auto &SM = Context.getSourceManager();
+    if (Begin.isMacroID())
+      Begin = SM.getExpansionLoc(Begin);
+  }
+  printLocation(OS, Begin, Context, PrintDetail);
   S->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, T);
 }
