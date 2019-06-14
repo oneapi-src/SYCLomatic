@@ -1918,6 +1918,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaDeviceSetCacheConfig", "cudaDeviceGetCacheConfig", "clock",
         "cudaThreadSetLimit", "cudaFuncSetCacheConfig",
         "cudaFuncSetCacheConfig", "make_cuComplex", "make_cuDoubleComplex",
+        "cudaThreadExit",
         /*BLAS level 1 */
         "cublasIsamax_v2", "cublasIdamax_v2", "cublasIsamin_v2",
         "cublasIdamin_v2", "cublasSasum_v2", "cublasDasum_v2", "cublasSaxpy_v2",
@@ -1990,7 +1991,8 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new RemoveArg(CE, 0));
     emplaceTransformation(new InsertAfterStmt(
         CE, ".get_device_info(" + ResultVarName + ")" + Poststr));
-  } else if (FuncName == "cudaDeviceReset") {
+  } else if (FuncName == "cudaDeviceReset" || FuncName == "cudaThreadExit") {
+    // The functionality of cudaThreadExit() is identical to cudaDeviceReset().
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }

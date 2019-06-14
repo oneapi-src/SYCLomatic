@@ -50,7 +50,7 @@ ENTRY(cudaSetDeviceFlags, false, P0, "comment")
 ENTRY(cudaSetValidDevices, false, P4, "comment")
 
 // thread management functions of API
-ENTRY(cudaThreadExit, false, P0, "comment")
+ENTRY(cudaThreadExit, true, P0, "comment")
 ENTRY(cudaThreadGetCacheConfig, false, P4, "comment")
 ENTRY(cudaThreadGetLimit, false, P4, "comment")
 ENTRY(cudaThreadSetCacheConfig, false, P0, "comment")

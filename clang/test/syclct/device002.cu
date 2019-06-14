@@ -86,6 +86,15 @@ cudaDeviceReset();
 // CHECK-NEXT:error_code = (syclct::get_device_manager().current_device().reset(), 0);
 error_code = cudaDeviceReset();
 
+// CHECK: syclct::get_device_manager().current_device().reset();
+cudaThreadExit();
+
+// CHECK:/*
+// CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:*/
+// CHECK-NEXT:error_code = (syclct::get_device_manager().current_device().reset(), 0);
+error_code = cudaThreadExit();
+
 // CHECK:/*
 // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
 // CHECK-NEXT:*/
