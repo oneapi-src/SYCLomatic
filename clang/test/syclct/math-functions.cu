@@ -24,6 +24,14 @@
 #define DECLAREI DECLARE(int, i)
 #define DECLARELD DECLARE(long double, ld)
 
+__device__ float4 fun() {
+  float4 a, b, c;
+  // CHECK: cl::sycl::fma(static_cast<float>(a.x()), static_cast<float>(b.x()), static_cast<float>(c.x()));
+  __fmaf_rn(a.x, b.x, c.x);
+  // CHECK: return cl::sycl::float4(cl::sycl::fma(static_cast<float>(a.x()), static_cast<float>(b.x()), static_cast<float>(c.x())), cl::sycl::fma(static_cast<float>(a.y()), static_cast<float>(b.y()), static_cast<float>(c.y())), cl::sycl::fma(static_cast<float>(a.z()), static_cast<float>(b.z()), static_cast<float>(c.z())), cl::sycl::fma(static_cast<float>(a.w()), static_cast<float>(b.w()), static_cast<float>(c.w())));
+  return make_float4(__fmaf_rd(a.x, b.x, c.x), __fmaf_rz(a.y, b.y, c.y), __fmaf_rn(a.z, b.z, c.z), __fmaf_rn(a.w, b.w, c.w));
+}
+
 int main() {
   // max
   {

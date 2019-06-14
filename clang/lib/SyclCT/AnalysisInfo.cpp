@@ -288,7 +288,6 @@ void CallFunctionExpr::buildInfo() {
 
 void CallFunctionExpr::emplaceReplacement() {
   buildInfo();
-  Args.emplaceReplacements();
   SyclctGlobalInfo::getInstance().addReplacement(
       std::make_shared<ExtReplacement>(FilePath, RParenLoc, 0,
                                        getExtraArguments(), nullptr));
