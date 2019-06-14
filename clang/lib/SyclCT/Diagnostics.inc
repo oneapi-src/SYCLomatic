@@ -46,3 +46,7 @@ DEF_WARNING(PRINTF_FUNC_MIGRATION_WARNING, 1015, "Please adjust the code manuall
 DEF_COMMENT(PRINTF_FUNC_MIGRATION_WARNING, 1015, "Please adjust the code manually.")
 DEF_WARNING(LOCAL_MEM_SIZE, 1019, "The sharedMemPerBlock is not necessarily the same as local_mem_size in DPC++")
 DEF_COMMENT(LOCAL_MEM_SIZE, 1019, "The sharedMemPerBlock is not necessarily the same as local_mem_size in DPC++")
+DEF_WARNING(FUNCTION_CALL_IN_DEVICE, 1020, "Migration of %0 if called from __global__ or __device__ function is not supported. You may need to redesign the code to use host-side %1 instead, which will submit this call to DPC++ queue automatically.")
+DEF_COMMENT(FUNCTION_CALL_IN_DEVICE, 1020, "Migration of {0} if called from __global__ or __device__ function is not supported. You may need to redesign the code to use host-side {1} instead, which will submit this call to DPC++ queue automatically.")
+DEF_WARNING(HANDLE_IN_DEVICE, 1021, "Migration of %0 in __global__ or __device__ function is not supported. You may need to redesign the code.")
+DEF_COMMENT(HANDLE_IN_DEVICE, 1021, "Migration of {0} in __global__ or __device__ function is not supported. You may need to redesign the code.")

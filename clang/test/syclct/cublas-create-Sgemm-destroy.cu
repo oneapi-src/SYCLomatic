@@ -38,8 +38,8 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK: status = (mkl::sgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), d_A_S_BUFFER_{{[0-9,a-z]+}}, N, d_B_S_BUFFER_{{[0-9,a-z]+}}, N, *(&beta_S), d_C_S_BUFFER_{{[0-9,a-z]+}}, N), 0);
-  // CHECK: mkl::sgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), d_A_S_BUFFER_{{[0-9,a-z]+}}, N, d_B_S_BUFFER_{{[0-9,a-z]+}}, N, *(&beta_S), d_C_S_BUFFER_{{[0-9,a-z]+}}, N);
+  // CHECK: status = (mkl::sgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), d_A_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, d_B_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, *(&beta_S), d_C_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N), 0);
+  // CHECK: mkl::sgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), d_A_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, d_B_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, *(&beta_S), d_C_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N);
   status = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
   cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
   double *d_A_D = 0;
@@ -50,8 +50,8 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK: status = (mkl::dgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_D), d_A_D_BUFFER_{{[0-9,a-z]+}}, N, d_B_D_BUFFER_{{[0-9,a-z]+}}, N, *(&beta_D), d_C_D_BUFFER_{{[0-9,a-z]+}}, N), 0);
-  // CHECK: mkl::dgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_D), d_A_D_BUFFER_{{[0-9,a-z]+}}, N, d_B_D_BUFFER_{{[0-9,a-z]+}}, N, *(&beta_D), d_C_D_BUFFER_{{[0-9,a-z]+}}, N);
+  // CHECK: status = (mkl::dgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_D), d_A_D_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, d_B_D_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, *(&beta_D), d_C_D_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N), 0);
+  // CHECK: mkl::dgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_D), d_A_D_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, d_B_D_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, *(&beta_D), d_C_D_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N);
   status = cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
   cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
 
@@ -62,13 +62,13 @@ int main() {
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto d_A_S_ALLOCATION_{{[0-9,a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_A_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> d_A_S_BUFFER_{{[0-9,a-z]+}} = d_A_S_ALLOCATION_{{[0-9,a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_A_S_ALLOCATION_{{[0-9,a-z]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto d_B_S_ALLOCATION_{{[0-9,a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_B_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> d_B_S_BUFFER_{{[0-9,a-z]+}} = d_B_S_ALLOCATION_{{[0-9,a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_B_S_ALLOCATION_{{[0-9,a-z]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto d_C_S_ALLOCATION_{{[0-9,a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_C_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> d_C_S_BUFFER_{{[0-9,a-z]+}} = d_C_S_ALLOCATION_{{[0-9,a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_C_S_ALLOCATION_{{[0-9,a-z]+}}.size/sizeof(float)));
-  // CHECK-NEXT: status = (mkl::sgemm(handle, mkl::transpose::trans, mkl::transpose::trans, N, N, N, *(&alpha_S), d_A_S_BUFFER_{{[0-9,a-z]+}}, N, d_B_S_BUFFER_{{[0-9,a-z]+}}, N, *(&beta_S), d_C_S_BUFFER_{{[0-9,a-z]+}}, N), 0);
+  // CHECK-NEXT: auto d_A_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_A_S);
+  // CHECK-NEXT: cl::sycl::buffer<float,1> d_A_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = d_A_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_A_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(float)));
+  // CHECK-NEXT: auto d_B_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_B_S);
+  // CHECK-NEXT: cl::sycl::buffer<float,1> d_B_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = d_B_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_B_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(float)));
+  // CHECK-NEXT: auto d_C_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_C_S);
+  // CHECK-NEXT: cl::sycl::buffer<float,1> d_C_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = d_C_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_C_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(float)));
+  // CHECK-NEXT: status = (mkl::sgemm(handle, mkl::transpose::trans, mkl::transpose::trans, N, N, N, *(&alpha_S), d_A_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, d_B_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, *(&beta_S), d_C_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: beta_S = beta_S + 1;
   // CHECK-NEXT: }
@@ -81,13 +81,13 @@ int main() {
 
   // CHECK: for (;;) {
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto d_A_S_ALLOCATION_{{[0-9,a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_A_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> d_A_S_BUFFER_{{[0-9,a-z]+}} = d_A_S_ALLOCATION_{{[0-9,a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_A_S_ALLOCATION_{{[0-9,a-z]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto d_B_S_ALLOCATION_{{[0-9,a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_B_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> d_B_S_BUFFER_{{[0-9,a-z]+}} = d_B_S_ALLOCATION_{{[0-9,a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_B_S_ALLOCATION_{{[0-9,a-z]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto d_C_S_ALLOCATION_{{[0-9,a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_C_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> d_C_S_BUFFER_{{[0-9,a-z]+}} = d_C_S_ALLOCATION_{{[0-9,a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_C_S_ALLOCATION_{{[0-9,a-z]+}}.size/sizeof(float)));
-  // CHECK-NEXT: mkl::sgemm(handle, mkl::transpose::trans, mkl::transpose::trans, N, N, N, *(&alpha_S), d_A_S_BUFFER_{{[0-9,a-z]+}}, N, d_B_S_BUFFER_{{[0-9,a-z]+}}, N, *(&beta_S), d_C_S_BUFFER_{{[0-9,a-z]+}}, N);
+  // CHECK-NEXT: auto d_A_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_A_S);
+  // CHECK-NEXT: cl::sycl::buffer<float,1> d_A_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = d_A_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_A_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(float)));
+  // CHECK-NEXT: auto d_B_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_B_S);
+  // CHECK-NEXT: cl::sycl::buffer<float,1> d_B_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = d_B_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_B_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(float)));
+  // CHECK-NEXT: auto d_C_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_C_S);
+  // CHECK-NEXT: cl::sycl::buffer<float,1> d_C_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = d_C_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_C_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(float)));
+  // CHECK-NEXT: mkl::sgemm(handle, mkl::transpose::trans, mkl::transpose::trans, N, N, N, *(&alpha_S), d_A_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, d_B_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, *(&beta_S), d_C_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: beta_S = beta_S + 1;
   // CHECK-NEXT: }
@@ -103,13 +103,13 @@ int main() {
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto d_A_S_ALLOCATION_{{[0-9,a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_A_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> d_A_S_BUFFER_{{[0-9,a-z]+}} = d_A_S_ALLOCATION_{{[0-9,a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_A_S_ALLOCATION_{{[0-9,a-z]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto d_B_S_ALLOCATION_{{[0-9,a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_B_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> d_B_S_BUFFER_{{[0-9,a-z]+}} = d_B_S_ALLOCATION_{{[0-9,a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_B_S_ALLOCATION_{{[0-9,a-z]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto d_C_S_ALLOCATION_{{[0-9,a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_C_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> d_C_S_BUFFER_{{[0-9,a-z]+}} = d_C_S_ALLOCATION_{{[0-9,a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_C_S_ALLOCATION_{{[0-9,a-z]+}}.size/sizeof(float)));
-  // CHECK-NEXT: foo(bar((mkl::sgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), d_A_S_BUFFER_{{[0-9,a-z]+}}, N, d_B_S_BUFFER_{{[0-9,a-z]+}}, N, *(&beta_S), d_C_S_BUFFER_{{[0-9,a-z]+}}, N), 0)));
+  // CHECK-NEXT: auto d_A_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_A_S);
+  // CHECK-NEXT: cl::sycl::buffer<float,1> d_A_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = d_A_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_A_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(float)));
+  // CHECK-NEXT: auto d_B_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_B_S);
+  // CHECK-NEXT: cl::sycl::buffer<float,1> d_B_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = d_B_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_B_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(float)));
+  // CHECK-NEXT: auto d_C_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(d_C_S);
+  // CHECK-NEXT: cl::sycl::buffer<float,1> d_C_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = d_C_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(d_C_S_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(float)));
+  // CHECK-NEXT: foo(bar((mkl::sgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), d_A_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, d_B_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, *(&beta_S), d_C_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N), 0)));
   foo(bar(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)));
 
   // CHECK: status = 0;

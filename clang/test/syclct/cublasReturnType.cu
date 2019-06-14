@@ -15,15 +15,15 @@ cublasHandle_t foo1(int m) {
   return 0;
 }
 
-// CHECK: std::complex<float> foo2(std::complex<float> m) {
+// CHECK: cl::sycl::float2 foo2(cl::sycl::float2 m) {
 cuComplex foo2(cuComplex m) {
-  // CHECK: return std::complex<float>(1, 0);
+  // CHECK: return cl::sycl::float2(1, 0);
   return make_cuComplex(1, 0);
 }
 
-// CHECK: std::complex<double> foo3(std::complex<double> m) {
+// CHECK: cl::sycl::double2 foo3(cl::sycl::double2 m) {
 cuDoubleComplex foo3(cuDoubleComplex m) {
-  // CHECK: return std::complex<double>(1, 0);
+  // CHECK: return cl::sycl::double2(1, 0);
   return make_cuDoubleComplex(1, 0);
 }
 

@@ -54,8 +54,8 @@ int main() {
   // CHECK: int a = sizeof(int);
   // CHECK-NEXT: a = sizeof(int);
   // CHECK-NEXT: a = sizeof(cl::sycl::queue);
-  // CHECK-NEXT: a = sizeof(std::complex<float>);
-  // CHECK-NEXT: a = sizeof(std::complex<double>);
+  // CHECK-NEXT: a = sizeof(cl::sycl::float2);
+  // CHECK-NEXT: a = sizeof(cl::sycl::double2);
   int a = sizeof(cublasStatus);
   a = sizeof(cublasStatus_t);
   a = sizeof(cublasHandle_t);

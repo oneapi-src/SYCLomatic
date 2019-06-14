@@ -619,20 +619,35 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+class BLASFunctionCallRule : public NamedTranslationRule<BLASFunctionCallRule> {
+public:
+  BLASFunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+  void getScopeInsertLocation(
+      const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
+      const SourceLocation &FuncNameBegin, const SourceLocation &FuncCallEnd,
+      SourceLocation &StmtBegin, SourceLocation &StmtEndAfterSemi);
+
+  std::string getBufferNameAndDeclStr(const Expr *Arg, const ASTContext &AC,
+                                      const std::string &TypeAsStr,
+                                      SourceLocation SL,
+                                      std::string &BufferDecl,
+                                      int DistinctionID);
+
+  bool isReplIndex(int i, std::vector<int> &IndexInfo, int &IndexTemp);
+
+  std::vector<std::string> getParamsAsStrs(const CallExpr *CE,
+                                        const ASTContext &Context);
+};
+
 /// Migration rule for function calls.
 class FunctionCallRule : public NamedTranslationRule<FunctionCallRule> {
 public:
   FunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-  std::string GetBufferDeclStrAndReplPtr(const Expr *Arg, const ASTContext &AC,
-                                         const std::string &TypeAsStr,
-                                         SourceLocation SL);
-  std::string
-  GetPrefixInsertAndReplPtrs(const std::vector<int> PointerArgsIndex,
-                             const CallExpr &CE, const ASTContext &AC,
-                             const std::vector<std::string> &TypeStrsVec,
-                             SourceLocation SL);
 };
 
 /// Migration rule for event API calls
@@ -751,29 +766,6 @@ private:
       std::string, std::function<void(
                        const ast_matchers::MatchFinder::MatchResult &Result,
                        const CallExpr *C, const UnresolvedLookupExpr *ULExpr)>>
-      TranslationDispatcher;
-};
-
-// Migration rule for GetVector, SetVector, GetMatrix, SetMatrix, etc.
-class BLASGetSetRule : public NamedTranslationRule<BLASGetSetRule> {
-public:
-  BLASGetSetRule();
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-
-private:
-  std::vector<std::string> getParamsAsStrs(const CallExpr *CE,
-                                           const ASTContext &Context);
-  void
-  getSetVectorTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
-                          const CallExpr *C, const bool IsAssigned);
-  void
-  getSetMatrixTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
-                          const CallExpr *C, const bool IsAssigned);
-  std::unordered_map<
-      std::string,
-      std::function<void(const ast_matchers::MatchFinder::MatchResult &Result,
-                         const CallExpr *C, const bool IsAssigned)>>
       TranslationDispatcher;
 };
 

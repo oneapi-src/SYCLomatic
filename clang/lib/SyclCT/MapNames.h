@@ -26,10 +26,31 @@ public:
     std::vector<std::string> BufferTypeInfo;
     std::string ReplName;
   };
+
+  struct BLASFuncComplexReplInfo {
+    std::vector<int> BufferIndexInfo;
+    std::vector<std::string> BufferTypeInfo;
+    std::vector<int> PointerIndexInfo;
+    std::vector<std::string> PointerTypeInfo;
+    std::string ReplName;
+  };
+
   struct ThrustFuncReplInfo {
     std::string ReplName;
     std::string ExtraParam;
   };
+
+  struct LegacyBLASFuncReplInfo {
+    std::vector<int> BufferIndexInfo;
+    std::vector<int> PointerIndexInfo;
+    std::vector<std::string> BufferTypeInfo;
+    std::vector<int> OperationIndexInfo;
+    int FillModeIndexInfo;
+    int SideModeIndexInfo;
+    int DiagTypeIndexInfo;
+    std::string ReplName;
+  };
+
   using MapTy = std::map<std::string, std::string>;
   using SetTy = std::set<std::string>;
   using ThrustMapTy = std::map<std::string, ThrustFuncReplInfo>;
@@ -40,8 +61,13 @@ public:
   static const MapTy BLASEnumsMap;
   static const std::map<std::string, MapNames::BLASFuncReplInfo>
       BLASFuncReplInfoMap;
+  static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
+      BLASFuncComplexReplInfoMap;
   static const SetTy ThrustFileExcludeSet;
   static const ThrustMapTy ThrustFuncNamesMap;
+
+  static const std::map<std::string, MapNames::LegacyBLASFuncReplInfo>
+      LegacyBLASFuncReplInfoMap;
 
   inline static const std::string &findReplacedName(const MapTy &Map,
                                                     const std::string &Name) {

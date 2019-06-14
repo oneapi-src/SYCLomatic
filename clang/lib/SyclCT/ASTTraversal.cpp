@@ -903,17 +903,17 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(ThrustFunctionRule)
 
-auto TypedefNames =
-    hasAnyName("dim3", "cudaError_t", "CUresult", "CUcontext", "cudaEvent_t",
-               "cudaStream_t", "__half", "__half2", "half", "half2",
-               "cublasStatus_t", "cublasHandle_t", "cuComplex",
-               "cuDoubleComplex", "cublasFillMode_t", "cublasDiagType_t",
-               "cublasSideMode_t", "cublasOperation_t", "cublasStatus");
+auto TypedefNames = hasAnyName(
+    "dim3", "cudaError_t", "CUresult", "CUcontext", "cudaEvent_t",
+    "cudaStream_t", "__half", "__half2", "half", "half2", "cublasStatus_t",
+    "cuComplex", "cuDoubleComplex", "cublasFillMode_t", "cublasDiagType_t",
+    "cublasSideMode_t", "cublasOperation_t", "cublasStatus");
 auto EnumTypeNames = hasAnyName("cudaError", "cufftResult_t", "cudaError_enum");
 // CUstream_st and CUevent_st are the actual types of cudaStream_t and
 // cudaEvent_st respectively
 auto RecordTypeNames =
     hasAnyName("cudaDeviceProp", "CUstream_st", "CUevent_st");
+auto HandleTypeNames = hasAnyName("cublasHandle_t");
 
 auto TemplateRecordTypeNames =
     hasAnyName("device_vector", "device_ptr", "host_vector");
@@ -941,6 +941,9 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
             hasType(references(cxxRecordDecl(RecordTypeNames))));
 
   auto Typedefs = typedefType(hasDeclaration(typedefDecl(TypedefNames)));
+
+  auto HandleTypedefs =
+      typedefType(hasDeclaration(typedefDecl(HandleTypeNames)));
 
   auto EnumTypes = enumType(hasDeclaration(enumDecl(EnumTypeNames)));
 
@@ -973,6 +976,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                           unless(hasType(substTemplateTypeParmType())))
                     .bind("TypeInFieldDecl"),
                 this);
+
   MF.addMatcher(unaryExprOrTypeTraitExpr(
                     hasArgumentOfType(anyOf(
                         asString("cublasStatus_t"), asString("cublasStatus"),
@@ -980,6 +984,76 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                         asString("cublasHandle_t"))))
                     .bind("TypeInUnaryExprOrTypeTraitExpr"),
                 this);
+
+  // TODO: HandleType in template, in macro body, assigined, as function param
+  // and as macro argument
+  MF.addMatcher(
+      varDecl(
+          allOf(anyOf(hasType(typedefDecl(HandleTypeNames)),
+                      hasType(pointsTo(typedefDecl(HandleTypeNames))),
+                      hasType(pointsTo(pointsTo(typedefDecl(HandleTypeNames)))),
+                      hasType(references(typedefDecl(HandleTypeNames))),
+                      hasType(arrayType(hasElementType(HandleTypedefs))),
+                      hasType(
+                          arrayType(hasElementType(pointsTo(HandleTypedefs)))),
+                      hasType(arrayType(
+                          hasElementType(pointsTo(pointsTo(HandleTypedefs)))))),
+                unless(hasType(substTemplateTypeParmType()))),
+          hasAncestor(functionDecl(
+              anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))))
+          .bind("TypeInVarDeclDevice"),
+      this);
+
+  MF.addMatcher(
+      varDecl(
+          allOf(anyOf(hasType(typedefDecl(HandleTypeNames)),
+                      hasType(pointsTo(typedefDecl(HandleTypeNames))),
+                      hasType(pointsTo(pointsTo(typedefDecl(HandleTypeNames)))),
+                      hasType(references(typedefDecl(HandleTypeNames))),
+                      hasType(arrayType(hasElementType(HandleTypedefs))),
+                      hasType(
+                          arrayType(hasElementType(pointsTo(HandleTypedefs)))),
+                      hasType(arrayType(
+                          hasElementType(pointsTo(pointsTo(HandleTypedefs)))))),
+                unless(hasType(substTemplateTypeParmType()))),
+          hasAncestor(functionDecl(unless(
+              allOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal))))))
+          .bind("TypeInVarDecl"),
+      this);
+
+  MF.addMatcher(
+      fieldDecl(
+          allOf(anyOf(hasType(typedefDecl(HandleTypeNames)),
+                      hasType(pointsTo(typedefDecl(HandleTypeNames))),
+                      hasType(pointsTo(pointsTo(typedefDecl(HandleTypeNames)))),
+                      hasType(references(typedefDecl(HandleTypeNames))),
+                      hasType(arrayType(hasElementType(HandleTypedefs))),
+                      hasType(
+                          arrayType(hasElementType(pointsTo(HandleTypedefs)))),
+                      hasType(arrayType(
+                          hasElementType(pointsTo(pointsTo(HandleTypedefs)))))),
+                unless(hasType(substTemplateTypeParmType()))),
+          hasAncestor(functionDecl(
+              anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))))
+          .bind("TypeInFieldDeclDevice"),
+      this);
+
+  MF.addMatcher(
+      fieldDecl(
+          allOf(anyOf(hasType(typedefDecl(HandleTypeNames)),
+                      hasType(pointsTo(typedefDecl(HandleTypeNames))),
+                      hasType(pointsTo(pointsTo(typedefDecl(HandleTypeNames)))),
+                      hasType(references(typedefDecl(HandleTypeNames))),
+                      hasType(arrayType(hasElementType(HandleTypedefs))),
+                      hasType(
+                          arrayType(hasElementType(pointsTo(HandleTypedefs)))),
+                      hasType(arrayType(
+                          hasElementType(pointsTo(pointsTo(HandleTypedefs)))))),
+                unless(hasType(substTemplateTypeParmType()))),
+          hasAncestor(functionDecl(unless(
+              allOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal))))))
+          .bind("TypeInFieldDecl"),
+      this);
 }
 
 std::string getReplacementForType(std::string TypeStr) {
@@ -1015,11 +1089,17 @@ std::string getReplacementForType(std::string TypeStr) {
 
 void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   // DD points to a VarDecl or a FieldDecl
-  const DeclaratorDecl *DD = getNodeAsType<VarDecl>(Result, "TypeInVarDecl");
+  const DeclaratorDecl *DD =
+      getNodeAsType<VarDecl>(Result, "TypeInVarDeclDevice");
   const UnaryExprOrTypeTraitExpr *UETTE;
   QualType QT;
+  bool HasDeviceAttr = false;
   bool IsUETTE = false;
-  if (DD) {
+  if ((DD) ||
+      ((DD = getNodeAsType<VarDecl>(Result, "TypeInFieldDeclDevice")))) {
+    QT = DD->getType();
+    HasDeviceAttr = true;
+  } else if ((DD = getNodeAsType<VarDecl>(Result, "TypeInVarDecl"))) {
     QT = DD->getType();
   } else if ((DD = getNodeAsType<FieldDecl>(Result, "TypeInFieldDecl"))) {
     QT = DD->getType();
@@ -1091,6 +1171,14 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
     // TODO report migration error
     return;
 
+  if (HasDeviceAttr) {
+    auto SL = DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc();
+    if (SL.isMacroID())
+      SL = (Result.SourceManager)->getExpansionLoc(SL);
+    report(SL, Diagnostics::HANDLE_IN_DEVICE, TypeStr);
+    return;
+  }
+
   if (IsUETTE) {
     emplaceTransformation(
         new ReplaceText(BeginLoc, Len, std::move(Replacement)));
@@ -1102,7 +1190,6 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(new ReplaceTypeInDecl(DD, std::move(Replacement)));
     }
   }
-
   DupFilter.insert(Loc);
 }
 
@@ -1530,7 +1617,9 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: { return false; }
+  default: {
+    return false;
+  }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -2186,6 +2275,717 @@ void BLASEnumsRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(BLASEnumsRule)
 
+void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
+  auto functionName = [&]() {
+    return hasAnyName(
+        "make_cuComplex", "make_cuDoubleComplex",
+        /*Regular BLAS API*/
+        /*Regular helper*/
+        "cublasCreate_v2", "cublasDestroy_v2", "cublasSetVector",
+        "cublasGetVector", "cublasSetVectorAsync", "cublasGetVectorAsync",
+        "cublasSetMatrix", "cublasGetMatrix", "cublasSetMatrixAsync",
+        "cublasGetMatrixAsync",
+        /*Regular level 1*/
+        "cublasIsamax_v2", "cublasIdamax_v2", "cublasIcamax_v2",
+        "cublasIzamax_v2", "cublasIsamin_v2", "cublasIdamin_v2",
+        "cublasIcamin_v2", "cublasIzamin_v2", "cublasSasum_v2",
+        "cublasDasum_v2", "cublasScasum_v2", "cublasDzasum_v2",
+        "cublasSaxpy_v2", "cublasDaxpy_v2", "cublasCaxpy_v2", "cublasZaxpy_v2",
+        "cublasScopy_v2", "cublasDcopy_v2", "cublasCcopy_v2", "cublasZcopy_v2",
+        "cublasSdot_v2", "cublasDdot_v2", "cublasCdotu_v2", "cublasCdotc_v2",
+        "cublasZdotu_v2", "cublasZdotc_v2", "cublasSnrm2_v2", "cublasDnrm2_v2",
+        "cublasScnrm2_v2", "cublasDznrm2_v2", "cublasSrot_v2", "cublasDrot_v2",
+        "cublasCsrot_v2", "cublasZdrot_v2", "cublasSrotg_v2", "cublasDrotg_v2",
+        "cublasCrotg_v2", "cublasZrotg_v2", "cublasSrotm_v2", "cublasDrotm_v2",
+        "cublasSrotmg_v2", "cublasDrotmg_v2", "cublasSscal_v2",
+        "cublasDscal_v2", "cublasCscal_v2", "cublasCsscal_v2", "cublasZscal_v2",
+        "cublasZdscal_v2", "cublasSswap_v2", "cublasDswap_v2", "cublasCswap_v2",
+        "cublasZswap_v2",
+        /*Regular level 2*/
+        "cublasSgbmv_v2", "cublasDgbmv_v2", "cublasCgbmv_v2", "cublasZgbmv_v2",
+        "cublasSgemv_v2", "cublasDgemv_v2", "cublasCgemv_v2", "cublasZgemv_v2",
+        "cublasSger_v2", "cublasDger_v2", "cublasCgeru_v2", "cublasCgerc_v2",
+        "cublasZgeru_v2", "cublasZgerc_v2", "cublasSsbmv_v2", "cublasDsbmv_v2",
+        "cublasSspmv_v2", "cublasDspmv_v2", "cublasSspr_v2", "cublasDspr_v2",
+        "cublasSspr2_v2", "cublasDspr2_v2", "cublasSsymv_v2", "cublasDsymv_v2",
+        "cublasSsyr_v2", "cublasDsyr_v2", "cublasSsyr2_v2", "cublasDsyr2_v2",
+        "cublasStbmv_v2", "cublasDtbmv_v2", "cublasCtbmv_v2", "cublasZtbmv_v2",
+        "cublasStbsv_v2", "cublasDtbsv_v2", "cublasCtbsv_v2", "cublasZtbsv_v2",
+        "cublasStpmv_v2", "cublasDtpmv_v2", "cublasCtpmv_v2", "cublasZtpmv_v2",
+        "cublasStpsv_v2", "cublasDtpsv_v2", "cublasCtpsv_v2", "cublasZtpsv_v2",
+        "cublasStrmv_v2", "cublasDtrmv_v2", "cublasCtrmv_v2", "cublasZtrmv_v2",
+        "cublasStrsv_v2", "cublasDtrsv_v2", "cublasCtrsv_v2", "cublasZtrsv_v2",
+        "cublasChemv_v2", "cublasZhemv_v2", "cublasChbmv_v2", "cublasZhbmv_v2",
+        "cublasChpmv_v2", "cublasZhpmv_v2", "cublasCher_v2", "cublasZher_v2",
+        "cublasCher2_v2", "cublasZher2_v2", "cublasChpr_v2", "cublasZhpr_v2",
+        "cublasChpr2_v2", "cublasZhpr2_v2",
+        /*Regular level 3*/
+        "cublasSgemm_v2", "cublasDgemm_v2", "cublasCgemm_v2", "cublasZgemm_v2",
+        "cublasSsymm_v2", "cublasDsymm_v2", "cublasSsyrk_v2", "cublasDsyrk_v2",
+        "cublasSsyr2k_v2", "cublasDsyr2k_v2", "cublasStrsm_v2",
+        "cublasDtrsm_v2",
+        /*Legacy API*/
+        "cublasInit", "cublasShutdown", "cublasGetError",
+        /*level 1*/
+        "cublasSnrm2", "cublasDnrm2", "cublasSdot", "cublasDdot", "cublasSscal",
+        "cublasDscal", "cublasSaxpy", "cublasDaxpy", "cublasScopy",
+        "cublasDcopy", "cublasSswap", "cublasDswap", "cublasIsamax",
+        "cublasIdamax", "cublasIsamin", "cublasIdamin", "cublasSasum",
+        "cublasDasum", "cublasSrot", "cublasDrot", "cublasSrotg", "cublasDrotg",
+        "cublasSrotm", "cublasDrotm", "cublasSrotmg", "cublasDrotmg",
+        /*level 2*/
+        "cublasSgemv", "cublasDgemv", "cublasSgbmv", "cublasDgbmv",
+        "cublasStrmv", "cublasDtrmv", "cublasStbmv", "cublasDtbmv",
+        "cublasStpmv", "cublasDtpmv", "cublasStrsv", "cublasDtrsv",
+        "cublasStpsv", "cublasDtpsv", "cublasStbsv", "cublasDtbsv",
+        "cublasSsymv", "cublasDsymv", "cublasSsbmv", "cublasDsbmv",
+        "cublasSspmv", "cublasDspmv", "cublasSger", "cublasDger", "cublasSsyr",
+        "cublasDsyr", "cublasSspr", "cublasDspr", "cublasSsyr2", "cublasDsyr2",
+        "cublasSspr2", "cublasDspr2",
+        /*level 3*/
+        "cublasSgemm", "cublasDgemm", "cublasSsyrk", "cublasDsyrk",
+        "cublasSsyr2k", "cublasDsyr2k", "cublasSsymm", "cublasDsymm",
+        "cublasStrsm", "cublasDtrsm");
+  };
+
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
+                               hasAncestor(functionDecl(
+                                   anyOf(hasAttr(attr::CUDADevice),
+                                         hasAttr(attr::CUDAGlobal))))))
+                    .bind("kernelCall"),
+                this);
+
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())), parentStmt,
+                               hasAncestor(functionDecl(
+                                   unless(allOf(hasAttr(attr::CUDADevice),
+                                                hasAttr(attr::CUDAGlobal)))))))
+                    .bind("FunctionCall"),
+                this);
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
+                               unless(parentStmt), unless(hasParent(varDecl())),
+                               hasAncestor(functionDecl(
+                                   unless(allOf(hasAttr(attr::CUDADevice),
+                                                hasAttr(attr::CUDAGlobal)))))))
+                    .bind("FunctionCallUsedNotInitializeVarDecl"),
+                this);
+
+  MF.addMatcher(
+      callExpr(
+          allOf(callee(functionDecl(functionName())), hasParent(varDecl()),
+                hasAncestor(functionDecl(unless(allOf(
+                    hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))))))
+          .bind("FunctionCallUsedInitializeVarDecl"),
+      this);
+}
+
+void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
+  bool IsAssigned = false;
+  bool IsInitializeVarDecl = false;
+  bool HasDeviceAttr = false;
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "kernelCall");
+  if (CE) {
+    HasDeviceAttr = true;
+  } else if (!(CE = getNodeAsType<CallExpr>(Result, "FunctionCall"))) {
+    if ((CE = getNodeAsType<CallExpr>(
+             Result, "FunctionCallUsedNotInitializeVarDecl"))) {
+      IsAssigned = true;
+    } else if ((CE = getNodeAsType<CallExpr>(
+                    Result, "FunctionCallUsedInitializeVarDecl"))) {
+      IsAssigned = true;
+      IsInitializeVarDecl = true;
+    } else {
+      return;
+    }
+  }
+
+  assert(CE && "Unknown result");
+
+  if (!CE->getDirectCallee())
+    return;
+  std::string FuncName =
+      CE->getDirectCallee()->getNameInfo().getName().getAsString();
+  std::string Prefix = "";
+  std::string Poststr = "";
+  if (IsAssigned) {
+    Prefix = "(";
+    Poststr = ", 0)";
+  }
+
+  if (MapNames::BLASFuncReplInfoMap.find(FuncName) !=
+      MapNames::BLASFuncReplInfoMap.end()) {
+    // There are some macroes like "#define cublasSgemm cublasSgemm_v2"
+    // in "cublas_v2.h", so the function names we match should have the
+    // suffix "_v2".
+    SourceLocation FuncNameBegin(CE->getBeginLoc());
+    SourceLocation FuncCallEnd(CE->getEndLoc());
+    const SourceManager *SM = Result.SourceManager;
+    if (FuncNameBegin.isMacroID())
+      FuncNameBegin = SM->getExpansionLoc(FuncNameBegin);
+    if (FuncCallEnd.isMacroID())
+      FuncCallEnd = SM->getExpansionLoc(FuncCallEnd);
+    Token Tok;
+    Lexer::getRawToken(FuncNameBegin, Tok, *SM, LangOptions());
+    SourceLocation FuncNameEnd = Tok.getEndLoc();
+    auto FuncNameLength =
+        SM->getCharacterData(FuncNameEnd) - SM->getCharacterData(FuncNameBegin);
+
+    auto ReplInfoPair = MapNames::BLASFuncReplInfoMap.find(FuncName);
+    MapNames::BLASFuncReplInfo ReplInfo = ReplInfoPair->second;
+    std::string Replacement = ReplInfo.ReplName;
+
+    if (HasDeviceAttr) {
+      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, FuncName,
+             Replacement);
+      return;
+    }
+
+    SourceLocation StmtBegin, StmtEndAfterSemi;
+    getScopeInsertLocation(CE, Result, FuncNameBegin, FuncCallEnd, StmtBegin,
+                           StmtEndAfterSemi);
+
+    // TODO: int cannot reinterpret to int64_t, need create a new buffer for
+    // cublasIsamax, cublasIdamax, cublasIsamin, cublasIdamin like legacy APIs.
+    std::string PrefixInsertStr;
+    int ArgNum = CE->getNumArgs();
+    // TODO: If the memory is not allocated by cudaMalloc(), the migrated
+    // program will abort at
+    // syclct::memory_manager::get_instance().translate_ptr();
+    for (int i = 0; i < ArgNum; ++i) {
+      int IndexTemp = -1;
+      if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
+        std::string BufferDecl;
+        std::string BufferName = getBufferNameAndDeclStr(
+            CE->getArg(i), *(Result.Context),
+            ReplInfo.BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, i);
+        PrefixInsertStr = PrefixInsertStr + BufferDecl;
+        emplaceTransformation(
+            new ReplaceStmt(CE->getArg(i), std::move(BufferName)));
+      }
+      if (isReplIndex(i, ReplInfo.PointerIndexInfo, IndexTemp)) {
+        emplaceTransformation(new ReplaceStmt(
+            CE->getArg(i),
+            "*(" + getStmtSpelling(CE->getArg(i), *(Result.Context)) + ")"));
+      }
+    }
+
+    if (IsAssigned) {
+      emplaceTransformation(new InsertText(FuncNameBegin, "("));
+      emplaceTransformation(
+          new InsertText(FuncCallEnd.getLocWithOffset(1), ", 0)"));
+      report(FuncNameBegin, Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
+    emplaceTransformation(
+        new ReplaceText(FuncNameBegin, FuncNameLength, std::move(Replacement)));
+    emplaceTransformation(new InsertText(
+        StmtBegin,
+        std::string("{") + getNL() + PrefixInsertStr +
+            getIndent(StmtBegin, (Result.Context)->getSourceManager()).str()));
+    emplaceTransformation(new InsertText(
+        StmtEndAfterSemi,
+        getNL() +
+            getIndent(StmtBegin, (Result.Context)->getSourceManager()).str() +
+            std::string("}")));
+  } else if (MapNames::BLASFuncComplexReplInfoMap.find(FuncName) !=
+             MapNames::BLASFuncComplexReplInfoMap.end()) {
+
+    SourceLocation FuncNameBegin(CE->getBeginLoc());
+    SourceLocation FuncCallEnd(CE->getEndLoc());
+    const SourceManager *SM = Result.SourceManager;
+    if (FuncNameBegin.isMacroID())
+      FuncNameBegin = SM->getExpansionLoc(FuncNameBegin);
+    if (FuncCallEnd.isMacroID())
+      FuncCallEnd = SM->getExpansionLoc(FuncCallEnd);
+    Token Tok;
+    Lexer::getRawToken(FuncNameBegin, Tok, *SM, LangOptions());
+    SourceLocation FuncNameEnd = Tok.getEndLoc();
+    auto FuncNameLength =
+        SM->getCharacterData(FuncNameEnd) - SM->getCharacterData(FuncNameBegin);
+
+    auto ReplInfoPair = MapNames::BLASFuncComplexReplInfoMap.find(FuncName);
+    MapNames::BLASFuncComplexReplInfo ReplInfo = ReplInfoPair->second;
+    std::string Replacement = ReplInfo.ReplName;
+
+    if (HasDeviceAttr) {
+      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, FuncName,
+             Replacement);
+      return;
+    }
+
+    SourceLocation StmtBegin, StmtEndAfterSemi;
+    getScopeInsertLocation(CE, Result, FuncNameBegin, FuncCallEnd, StmtBegin,
+                           StmtEndAfterSemi);
+
+    std::string PrefixInsertStr;
+    std::string SuffixInsertStr;
+    std::string IndentStr =
+        getIndent(StmtBegin, (Result.Context)->getSourceManager()).str();
+    int ArgNum = CE->getNumArgs();
+    // TODO: If the memory is not allocated by cudaMalloc(), the migrated
+    // program will abort at
+    // syclct::memory_manager::get_instance().translate_ptr();
+
+    for (int i = 0; i < ArgNum; ++i) {
+      int IndexTemp = -1;
+      if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
+        std::string BufferDecl;
+        std::string BufferName = getBufferNameAndDeclStr(
+            CE->getArg(i), *(Result.Context),
+            ReplInfo.BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, i);
+        PrefixInsertStr = PrefixInsertStr + BufferDecl;
+
+        if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
+          PrefixInsertStr = PrefixInsertStr + IndentStr +
+                            "cl::sycl::buffer<int64_t,1> "
+                            "result_temp_buffer(cl::sycl::range<1>(1));" +
+                            getNL();
+          SuffixInsertStr = SuffixInsertStr + IndentStr + BufferName +
+                            ".get_access<cl::sycl::access::"
+                            "mode::write>()[0] = "
+                            "(int)result_temp_buffer.get_access<cl::sycl::"
+                            "access::mode::read>()[0];" +
+                            getNL();
+          emplaceTransformation(
+              new ReplaceStmt(CE->getArg(i), "result_temp_buffer"));
+          continue;
+        }
+        emplaceTransformation(
+            new ReplaceStmt(CE->getArg(i), std::move(BufferName)));
+      }
+      IndexTemp = -1;
+      if (isReplIndex(i, ReplInfo.PointerIndexInfo, IndexTemp)) {
+        if (ReplInfo.PointerTypeInfo[IndexTemp] == "float" ||
+            ReplInfo.PointerTypeInfo[IndexTemp] == "double") {
+          emplaceTransformation(new ReplaceStmt(
+              CE->getArg(i),
+              "*(" + getStmtSpelling(CE->getArg(i), *(Result.Context)) + ")"));
+        } else {
+          emplaceTransformation(new ReplaceStmt(
+              CE->getArg(i),
+              ReplInfo.PointerTypeInfo[IndexTemp] + "((" +
+                  getStmtSpelling(CE->getArg(i), *(Result.Context)) +
+                  ")->x(),(" +
+                  getStmtSpelling(CE->getArg(i), *(Result.Context)) +
+                  ")->y())"));
+        }
+      }
+    }
+
+    if (IsAssigned) {
+      emplaceTransformation(new InsertText(FuncNameBegin, "("));
+      emplaceTransformation(
+          new InsertText(FuncCallEnd.getLocWithOffset(1), ", 0)"));
+      report(FuncNameBegin, Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
+    emplaceTransformation(
+        new ReplaceText(FuncNameBegin, FuncNameLength, std::move(Replacement)));
+    emplaceTransformation(new InsertText(
+        StmtBegin, std::string("{") + getNL() + PrefixInsertStr + IndentStr));
+    emplaceTransformation(
+        new InsertText(StmtEndAfterSemi, getNL() + SuffixInsertStr + IndentStr +
+                                             std::string("}")));
+  } else if (MapNames::LegacyBLASFuncReplInfoMap.find(FuncName) !=
+             MapNames::LegacyBLASFuncReplInfoMap.end()) {
+    SourceLocation FuncNameBegin(CE->getBeginLoc());
+    SourceLocation FuncCallEnd(CE->getEndLoc());
+
+    auto ReplInfoPair = MapNames::LegacyBLASFuncReplInfoMap.find(FuncName);
+    MapNames::LegacyBLASFuncReplInfo ReplInfo = ReplInfoPair->second;
+
+    SourceLocation StmtBegin, StmtEndAfterSemi;
+    getScopeInsertLocation(CE, Result, FuncNameBegin, FuncCallEnd, StmtBegin,
+                           StmtEndAfterSemi);
+
+    std::string CallExprReplStr = "";
+    std::string PrefixInsertStr = std::string("{") + getNL();
+    CallExprReplStr =
+        CallExprReplStr + ReplInfo.ReplName + "(syclct::get_default_queue()";
+    std::string IndentStr =
+        getIndent(StmtBegin, (Result.Context)->getSourceManager()).str();
+
+    std::string VarType;
+    std::string VarName;
+    if (IsInitializeVarDecl) {
+      auto ParentNode = (Result.Context)->getParents(*CE);
+      const VarDecl *VD = 0;
+      if ((VD = ParentNode[0].get<VarDecl>())) {
+        VarType = VD->getType().getAsString();
+        VarName = VD->getNameAsString();
+      } else {
+        syclct_unreachable("Fail to get VarDecl information");
+      }
+      PrefixInsertStr =
+          VarType + " " + VarName + ";" + getNL() + IndentStr + PrefixInsertStr;
+    }
+    std::vector<std::string> ParamsStrsVec =
+        getParamsAsStrs(CE, *(Result.Context));
+    int ArgNum = CE->getNumArgs();
+    for (int i = 0; i < ArgNum; ++i) {
+      int IndexTemp = -1;
+      if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
+        std::string BufferDecl;
+        std::string BufferName = getBufferNameAndDeclStr(
+            CE->getArg(i), *(Result.Context),
+            ReplInfo.BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, i);
+        CallExprReplStr = CallExprReplStr + ", " + BufferName;
+        PrefixInsertStr = PrefixInsertStr + BufferDecl;
+      } else if (isReplIndex(i, ReplInfo.PointerIndexInfo, IndexTemp)) {
+        CallExprReplStr = CallExprReplStr + ", *(" + ParamsStrsVec[i] + ")";
+      } else if (isReplIndex(i, ReplInfo.OperationIndexInfo, IndexTemp)) {
+        CallExprReplStr = CallExprReplStr + ", " + "(((" + ParamsStrsVec[i] +
+                          ")=='N'||(" + ParamsStrsVec[i] +
+                          ")=='n')?(mkl::transpose::"
+                          "nontrans):(((" +
+                          ParamsStrsVec[i] + ")=='T'||(" + ParamsStrsVec[i] +
+                          ")=='t')?(mkl::transpose:"
+                          ":nontrans):(mkl::transpose::conjtrans)))";
+      } else if (ReplInfo.FillModeIndexInfo == i) {
+        CallExprReplStr = CallExprReplStr + ", " + "(((" + ParamsStrsVec[i] +
+                          ")=='L'||(" + ParamsStrsVec[i] +
+                          ")=='l')?(mkl::uplo::lower):(mkl::uplo::upper))";
+      } else if (ReplInfo.SideModeIndexInfo == i) {
+        CallExprReplStr = CallExprReplStr + ", " + "(((" + ParamsStrsVec[i] +
+                          ")=='L'||(" + ParamsStrsVec[i] +
+                          ")=='l')?(mkl::side::left):(mkl::side::right))";
+      } else if (ReplInfo.DiagTypeIndexInfo == i) {
+        CallExprReplStr = CallExprReplStr + ", " + "(((" + ParamsStrsVec[i] +
+                          ")=='N'||(" + ParamsStrsVec[i] +
+                          ")=='n')?(mkl::diag::nonunit):(mkl::diag::unit))";
+      } else {
+        CallExprReplStr = CallExprReplStr + ", " +
+                          getStmtSpelling(CE->getArg(i), *(Result.Context));
+      }
+    }
+
+    // TODO: If the memory is not allocated by cudaMalloc(), the migrated
+    // program will abort at
+    // syclct::memory_manager::get_instance().translate_ptr();
+    if (FuncName == "cublasSnrm2" || FuncName == "cublasDnrm2" ||
+        FuncName == "cublasSdot" || FuncName == "cublasDdot" ||
+        FuncName == "cublasIsamax" || FuncName == "cublasIdamax" ||
+        FuncName == "cublasIsamin" || FuncName == "cublasIdamin" ||
+        FuncName == "cublasSasum" || FuncName == "cublasDasum") {
+      // APIs which have return value
+      std::string ResultType =
+          ReplInfo.BufferTypeInfo[ReplInfo.BufferTypeInfo.size() - 1];
+      PrefixInsertStr =
+          PrefixInsertStr + IndentStr + "cl::sycl::buffer<" + ResultType +
+          ",1> result_temp_buffer(cl::sycl::range<1>(1));" + getNL() +
+          IndentStr + CallExprReplStr + ", result_temp_buffer);" + getNL();
+      emplaceTransformation(
+          new InsertText(StmtBegin, PrefixInsertStr + IndentStr));
+      std::string SuffixInsertStr = getNL() + IndentStr + "}" + getNL();
+      emplaceTransformation(
+          new InsertText(StmtEndAfterSemi, std::move(SuffixInsertStr)));
+      if (IsInitializeVarDecl) {
+        auto ParentNode1 = (Result.Context)->getParents(*CE);
+        auto ParentNode2 = (Result.Context)->getParents(ParentNode1[0]);
+        const DeclStmt *DS = 0;
+        if ((DS = ParentNode2[0].get<DeclStmt>())) {
+          emplaceTransformation(new ReplaceStmt(
+              DS, VarName + " = result_temp_buffer.get_access<cl::sycl::"
+                            "access::mode::read>()[0];"));
+        } else {
+          syclct_unreachable("Fail to get Var Decl Stmt");
+        }
+      } else {
+        emplaceTransformation(
+            new ReplaceStmt(CE, "result_temp_buffer.get_access<cl::sycl::"
+                                "access::mode::read>()[0]"));
+      }
+
+    } else {
+      // APIs which haven't return value
+      PrefixInsertStr = getNL() + IndentStr + PrefixInsertStr;
+      emplaceTransformation(
+          new InsertText(StmtBegin, PrefixInsertStr + IndentStr));
+      CallExprReplStr = CallExprReplStr + ")";
+      emplaceTransformation(new ReplaceStmt(CE, std::move(CallExprReplStr)));
+      emplaceTransformation(new InsertText(
+          StmtEndAfterSemi, getNL() + IndentStr + std::string("}")));
+    }
+  } else if (FuncName == "cublasCreate_v2" || FuncName == "cublasDestroy_v2") {
+    // Remove these two function calls.
+    // There are some macros like "#define cublasCreate cublasCreate_v2"
+    // in "cublas_v2.h", so the function names we match should with the
+    // suffix "_v2".
+    if (IsAssigned) {
+      emplaceTransformation(
+          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
+                          /*IsProcessMacro*/ true, "0"));
+    } else {
+      emplaceTransformation(
+          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
+                          /*IsProcessMacro*/ true, ""));
+    }
+  } else if (FuncName == "cublasInit" || FuncName == "cublasShutdown" ||
+             FuncName == "cublasGetError") {
+    // Remove these three function calls.
+    // TODO: migrate functions when they are in template
+    if (IsAssigned) {
+      emplaceTransformation(
+          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
+                          /*IsProcessMacro*/ false, "0"));
+    } else {
+      emplaceTransformation(
+          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
+                          /*IsProcessMacro*/ false, ""));
+    }
+  } else if (FuncName == "cublasSetVector" || FuncName == "cublasGetVector" ||
+             FuncName == "cublasSetVectorAsync" ||
+             FuncName == "cublasGetVectorAsync") {
+    if (HasDeviceAttr) {
+      report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, FuncName,
+             "syclct::sycl_memcpy");
+      return;
+    }
+    // The 4th and 6th param (incx and incy) of cublasSetVector/cublasGetVector
+    // specify the space between two consequent elements when stored.
+    // We migrate the original code when incx and incy both equal to 1 (all
+    // elements are stored consequently).
+    // Otherwise, the codes are kept originally.
+    std::vector<std::string> ParamsStrsVec =
+        getParamsAsStrs(CE, *(Result.Context));
+    // CopySize equals to n*elemSize*incx
+    // incx(incy) equals to 1 means elements of x(y) are stored continuously
+    std::string CopySize = "(" + ParamsStrsVec[0] + ")*(" + ParamsStrsVec[1] +
+                           ")*(" + ParamsStrsVec[3] + ")";
+    std::string XStr = "(void*)(" + ParamsStrsVec[2] + ")";
+    std::string YStr = "(void*)(" + ParamsStrsVec[4] + ")";
+    const Expr *IncxExpr = CE->getArg(3);
+    const Expr *IncyExpr = CE->getArg(5);
+    Expr::EvalResult IncxExprResult, IncyExprResult;
+
+    if (IncxExpr->EvaluateAsInt(IncxExprResult, *Result.Context) &&
+        IncyExpr->EvaluateAsInt(IncyExprResult, *Result.Context)) {
+      std::string IncxStr =
+          IncxExprResult.Val.getAsString(*Result.Context, IncxExpr->getType());
+      std::string IncyStr =
+          IncyExprResult.Val.getAsString(*Result.Context, IncyExpr->getType());
+      if (IncxStr != IncyStr) {
+        // Keep original code, give a comment to let user migrate code manually
+        report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
+               FuncName,
+               "parameter " + ParamsStrsVec[3] +
+                   " does not equal to parameter " + ParamsStrsVec[5]);
+        return;
+      }
+      if ((IncxStr == IncyStr) && (IncxStr != "1")) {
+        // incx equals to incy, but does not equal to 1. Performance issue may
+        // occur.
+        report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
+               FuncName,
+               "parameter " + ParamsStrsVec[3] + " equals to parameter " +
+                   ParamsStrsVec[5] + " but greater than 1");
+      }
+    } else {
+      // Keep original code, give a comment to let user migrate code manually
+      report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
+             FuncName,
+             "parameter(s) " + ParamsStrsVec[3] + " and/or " +
+                 ParamsStrsVec[5] + " could not be evaluated");
+      return;
+    }
+
+    std::string Replacement =
+        "syclct::sycl_memcpy(" + YStr + "," + XStr + "," + CopySize + ",";
+
+    if (FuncName == "cublasGetVector" || FuncName == "cublasGetVectorAsync") {
+      Replacement = Replacement + "syclct::device_to_host)";
+      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    }
+    if (FuncName == "cublasSetVector" || FuncName == "cublasSetVectorAsync") {
+      Replacement = Replacement + "syclct::host_to_device)";
+      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    }
+
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+      insertAroundStmt(CE, "(", ", 0)");
+    }
+  } else if (FuncName == "cublasSetMatrix" || FuncName == "cublasGetMatrix" ||
+             FuncName == "cublasSetMatrixAsync" ||
+             FuncName == "cublasGetMatrixAsync") {
+    if (HasDeviceAttr) {
+      report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, FuncName,
+             "syclct::sycl_memcpy");
+      return;
+    }
+    std::vector<std::string> ParamsStrsVec =
+        getParamsAsStrs(CE, *(Result.Context));
+    // CopySize equals to lda*cols*elemSize
+    std::string CopySize = "(" + ParamsStrsVec[4] + ")*(" + ParamsStrsVec[1] +
+                           ")*(" + ParamsStrsVec[2] + ")";
+    std::string AStr = "(void*)(" + ParamsStrsVec[3] + ")";
+    std::string BStr = "(void*)(" + ParamsStrsVec[5] + ")";
+
+    const Expr *LdaExpr = CE->getArg(4);
+    const Expr *LdbExpr = CE->getArg(6);
+    Expr::EvalResult LdaExprResult, LdbExprResult;
+    if (LdaExpr->EvaluateAsInt(LdaExprResult, *Result.Context) &&
+        LdbExpr->EvaluateAsInt(LdbExprResult, *Result.Context)) {
+      std::string LdaStr =
+          LdaExprResult.Val.getAsString(*Result.Context, LdaExpr->getType());
+      std::string LdbStr =
+          LdbExprResult.Val.getAsString(*Result.Context, LdbExpr->getType());
+      if (LdaStr != LdbStr) {
+        // Keep original code, give a comment to let user migrate code manually
+        report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
+               FuncName,
+               "parameter " + ParamsStrsVec[4] +
+                   " does not equal to parameter " + ParamsStrsVec[6]);
+        return;
+      }
+
+      const Expr *RowsExpr = CE->getArg(0);
+      Expr::EvalResult RowsExprResult;
+      if (RowsExpr->EvaluateAsInt(RowsExprResult, *Result.Context)) {
+        std::string RowsStr = RowsExprResult.Val.getAsString(
+            *Result.Context, RowsExpr->getType());
+        if (std::stoi(LdaStr) > std::stoi(RowsStr)) {
+          // lda > rows. Performance issue may occur.
+          report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
+                 FuncName,
+                 "parameter " + ParamsStrsVec[0] +
+                     " is smaller than parameter " + ParamsStrsVec[4]);
+        }
+      } else {
+        // rows cannot be evaluated. Performance issue may occur.
+        report(
+            CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
+            FuncName,
+            "parameter " + ParamsStrsVec[0] +
+                " could not be evaluated and may be smaller than parameter " +
+                ParamsStrsVec[4]);
+      }
+    } else {
+      // Keep original code, give a comment to let user migrate code manually
+      report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
+             FuncName,
+             "parameter(s) " + ParamsStrsVec[4] + " and/or " +
+                 ParamsStrsVec[6] + " could not be evaluated");
+      return;
+    }
+
+    std::string Replacement =
+        "syclct::sycl_memcpy(" + BStr + "," + AStr + "," + CopySize + ",";
+
+    if (FuncName == "cublasGetMatrix" || FuncName == "cublasGetMatrixAsync") {
+      Replacement = Replacement + "syclct::device_to_host)";
+      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    }
+    if (FuncName == "cublasSetMatrix" || FuncName == "cublasSetMatrixAsync") {
+      Replacement = Replacement + "syclct::host_to_device)";
+      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    }
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+      insertAroundStmt(CE, "(", ", 0)");
+    }
+  } else if (FuncName == "make_cuComplex" ||
+             FuncName == "make_cuDoubleComplex") {
+    if (FuncName == "make_cuDoubleComplex")
+      emplaceTransformation(
+          new ReplaceCalleeName(CE, "cl::sycl::double2", FuncName));
+    else
+      emplaceTransformation(
+          new ReplaceCalleeName(CE, "cl::sycl::float2", FuncName));
+  } else {
+    assert(0 && "Unknown function name");
+  }
+}
+
+bool BLASFunctionCallRule::isReplIndex(int Input, std::vector<int> &IndexInfo,
+                                       int &IndexTemp) {
+  for (int i = 0; i < static_cast<int>(IndexInfo.size()); ++i) {
+    if (IndexInfo[i] == Input) {
+      IndexTemp = i;
+      return true;
+    }
+  }
+  return false;
+}
+
+// TODO: merge this function into findOutermostStmtInTheSameBlock in Utility.cpp
+// TODO: 1. stmt in the condition of if/while/for 2.stmt in the macro
+void BLASFunctionCallRule::getScopeInsertLocation(
+    const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
+    const SourceLocation &FuncNameBegin, const SourceLocation &FuncCallEnd,
+    SourceLocation &StmtBegin, SourceLocation &StmtEndAfterSemi) {
+  auto ParentNode = (Result.Context)->getParents(*CE);
+  ast_type_traits::DynTypedNode LastNode;
+  SourceLocation StmtEnd;
+  if (ParentNode.empty()) {
+    StmtBegin = FuncNameBegin;
+    StmtEnd = FuncCallEnd;
+  } else if (ParentNode[0].get<Expr>() == nullptr &&
+             ParentNode[0].get<Decl>() == nullptr) {
+    StmtBegin = FuncNameBegin;
+    StmtEnd = FuncCallEnd;
+  } else {
+    LastNode = ParentNode[0];
+    ParentNode = (Result.Context)->getParents(LastNode);
+    while (!ParentNode.empty()) {
+      ParentNode = (Result.Context)->getParents(LastNode);
+      const Expr *EX = ParentNode[0].get<Expr>();
+      const Decl *DE = ParentNode[0].get<Decl>();
+      if (EX == nullptr && DE == nullptr) {
+        break;
+      }
+      LastNode = ParentNode[0];
+    }
+    StmtBegin = LastNode.getSourceRange().getBegin();
+    StmtEnd = LastNode.getSourceRange().getEnd();
+    if (StmtBegin.isMacroID())
+      StmtBegin = (Result.SourceManager)->getExpansionLoc(StmtBegin);
+    if (StmtEnd.isMacroID())
+      StmtEnd = (Result.SourceManager)->getExpansionLoc(StmtEnd);
+  }
+
+  Optional<Token> TokSharedPtr;
+  TokSharedPtr =
+      Lexer::findNextToken(StmtEnd, *(Result.SourceManager), LangOptions());
+  Token TokSemi = TokSharedPtr.getValue();
+  StmtEndAfterSemi = TokSemi.getEndLoc();
+}
+
+std::string BLASFunctionCallRule::getBufferNameAndDeclStr(
+    const Expr *Arg, const ASTContext &AC, const std::string &TypeAsStr,
+    SourceLocation SL, std::string &BufferDecl, int DistinctionID) {
+  std::string PointerName = getStmtSpelling(Arg, AC);
+  std::string PointerNameHashStr = getHashAsString(PointerName);
+  PointerNameHashStr = (PointerNameHashStr.size() < 4)
+                           ? PointerNameHashStr
+                           : PointerNameHashStr.substr(0, 3);
+  std::string BufferTempName = PointerName + "_" +
+                               std::to_string(DistinctionID) + "_buffer_" +
+                               PointerNameHashStr;
+  std::string AllocationTempName = PointerName + "_" +
+                                   std::to_string(DistinctionID) +
+                                   "_allocation_" + PointerNameHashStr;
+  // TODO: reinterpret will copy more data
+  BufferDecl = getIndent(SL, AC.getSourceManager()).str() + "auto " +
+               AllocationTempName +
+               " = syclct::memory_manager::get_instance().translate_ptr(" +
+               PointerName + ");" + getNL() +
+               getIndent(SL, AC.getSourceManager()).str() +
+               "cl::sycl::buffer<" + TypeAsStr + ",1> " + BufferTempName +
+               " = " + AllocationTempName + ".buffer.reinterpret<" + TypeAsStr +
+               ", 1>(cl::sycl::range<1>(" + AllocationTempName +
+               ".size/sizeof(" + TypeAsStr + ")));" + getNL();
+  return BufferTempName;
+}
+
+std::vector<std::string>
+BLASFunctionCallRule::getParamsAsStrs(const CallExpr *CE,
+                                      const ASTContext &Context) {
+  std::vector<std::string> ParamsStrVec;
+  for (auto Arg : CE->arguments())
+    ParamsStrVec.emplace_back(getStmtSpelling(Arg, Context));
+  return ParamsStrVec;
+}
+
+REGISTER_RULE(BLASFunctionCallRule)
+
 void FunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName(
@@ -2196,33 +2996,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaThreadSynchronize", "cudaGetErrorString", "cudaGetErrorName",
         "cudaDeviceSetCacheConfig", "cudaDeviceGetCacheConfig", "clock",
         "cudaOccupancyMaxPotentialBlockSize", "cudaThreadSetLimit",
-        "cudaFuncSetCacheConfig", "make_cuComplex", "make_cuDoubleComplex",
-        "cudaThreadExit",
-        /*BLAS level 1 */
-        "cublasIsamax_v2", "cublasIdamax_v2", "cublasIsamin_v2",
-        "cublasIdamin_v2", "cublasSasum_v2", "cublasDasum_v2", "cublasSaxpy_v2",
-        "cublasDaxpy_v2", "cublasScopy_v2", "cublasDcopy_v2", "cublasSdot_v2",
-        "cublasDdot_v2", "cublasSnrm2_v2", "cublasDnrm2_v2", "cublasSrot_v2",
-        "cublasDrot_v2", "cublasSrotg_v2", "cublasDrotg_v2", "cublasSrotm_v2",
-        "cublasDrotm_v2", "cublasSrotmg_v2", "cublasDrotmg_v2",
-        "cublasSscal_v2", "cublasDscal_v2", "cublasSswap_v2", "cublasDswap_v2",
-        /*BLAS level 2 */
-        "cublasSgbmv_v2", "cublasDgbmv_v2", "cublasSgemv_v2", "cublasDgemv_v2",
-        "cublasSger_v2", "cublasDger_v2", "cublasSsbmv_v2", "cublasDsbmv_v2",
-        "cublasSspmv_v2", "cublasDspmv_v2", "cublasSspr_v2", "cublasDspr_v2",
-        "cublasSspr2_v2", "cublasDspr2_v2", "cublasSsymv_v2", "cublasDsymv_v2",
-        "cublasSsyr_v2", "cublasDsyr_v2", "cublasSsyr2_v2", "cublasDsyr2_v2",
-        "cublasStbmv_v2", "cublasDtbmv_v2", "cublasStbsv_v2", "cublasDtbsv_v2",
-        "cublasStpmv_v2", "cublasDtpmv_v2", "cublasStpsv_v2", "cublasDtpsv_v2",
-        "cublasStrmv_v2", "cublasDtrmv_v2", "cublasStrsv_v2", "cublasDtrsv_v2",
-        /*BLAS level 3 */
-        "cublasSgemm_v2", "cublasDgemm_v2", "cublasCgemm_v2", "cublasZgemm_v2",
-        "cublasSsymm_v2", "cublasDsymm_v2", "cublasSsyrk_v2", "cublasDsyrk_v2",
-        "cublasSsyr2k_v2", "cublasDsyr2k_v2", "cublasStrsm_v2",
-        "cublasDtrsm_v2",
-        /*Legacy API*/
-        "cublasCreate_v2", "cublasDestroy_v2", "cublasInit", "cublasShutdown",
-        "cublasGetError");
+        "cudaFuncSetCacheConfig", "cudaThreadExit");
   };
 
   MF.addMatcher(
@@ -2249,7 +3023,6 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     return;
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
-
   std::string Prefix = "";
   std::string Poststr = "";
   if (IsAssigned) {
@@ -2369,184 +3142,13 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaThreadSetLimit") {
     report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
     emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ""));
-  } else if (FuncName == "cublasInit" || FuncName == "cublasShutdown" ||
-             FuncName == "cublasGetError") {
-    // Remove these three function calls.
-    // TODO: migrate functions when they are in template
-    if (IsAssigned) {
-      emplaceTransformation(
-          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
-                          /*IsProcessMacro*/ false, "0"));
-    } else {
-      emplaceTransformation(
-          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
-                          /*IsProcessMacro*/ false, ""));
-    }
-  } else if (MapNames::BLASFuncReplInfoMap.find(FuncName) !=
-             MapNames::BLASFuncReplInfoMap.end()) {
-    // There are some macroes like "#define cublasSgemm cublasSgemm_v2"
-    // in "cublas_v2.h", so the function names we match should have the
-    // suffix "_v2".
-    const SourceManager *SM = Result.SourceManager;
-    SourceLocation FuncNameBegin(CE->getBeginLoc());
-    SourceLocation FuncCallEnd(CE->getEndLoc());
-    if (FuncNameBegin.isMacroID())
-      FuncNameBegin = SM->getExpansionLoc(FuncNameBegin);
-    if (FuncCallEnd.isMacroID())
-      FuncCallEnd = SM->getExpansionLoc(FuncCallEnd);
-    Token Tok;
-    Lexer::getRawToken(FuncNameBegin, Tok, *SM, LangOptions());
-    SourceLocation FuncNameEnd = Tok.getEndLoc();
-    auto FuncNameLength =
-        SM->getCharacterData(FuncNameEnd) - SM->getCharacterData(FuncNameBegin);
-    auto Search = MapNames::BLASFuncReplInfoMap.find(FuncName);
-    if (Search == MapNames::BLASFuncReplInfoMap.end()) {
-      syclct_unreachable("Unknown function name");
-      return;
-    }
-    std::string Replacement = Search->second.ReplName;
-    if (IsAssigned) {
-      emplaceTransformation(new InsertText(FuncNameBegin, "("));
-      emplaceTransformation(
-          new InsertText(FuncCallEnd.getLocWithOffset(1), ", 0)"));
-      report(FuncNameBegin, Diagnostics::NOERROR_RETURN_COMMA_OP);
-    }
-    emplaceTransformation(
-        new ReplaceText(FuncNameBegin, FuncNameLength, std::move(Replacement)));
-
-    SourceLocation StmtBegin, StmtEndAfterSemi, StmtEnd;
-
-    auto ParentNode = (Result.Context)->getParents(*CE);
-    ast_type_traits::DynTypedNode LastNode;
-
-    if (ParentNode.empty()) {
-      StmtBegin = FuncNameBegin;
-      StmtEnd = FuncCallEnd;
-    } else if (ParentNode[0].get<Expr>() == nullptr &&
-               ParentNode[0].get<Decl>() == nullptr) {
-      StmtBegin = FuncNameBegin;
-      StmtEnd = FuncCallEnd;
-    } else {
-      LastNode = ParentNode[0];
-      ParentNode = (Result.Context)->getParents(LastNode);
-      while (!ParentNode.empty()) {
-        ParentNode = (Result.Context)->getParents(LastNode);
-        const Expr *EX = ParentNode[0].get<Expr>();
-        const Decl *DE = ParentNode[0].get<Decl>();
-        if (EX == nullptr && DE == nullptr) {
-          break;
-        }
-        LastNode = ParentNode[0];
-      }
-      StmtBegin = LastNode.getSourceRange().getBegin();
-      StmtEnd = LastNode.getSourceRange().getEnd();
-      if (StmtBegin.isMacroID())
-        StmtBegin = SM->getExpansionLoc(StmtBegin);
-      if (StmtEnd.isMacroID())
-        StmtEnd = SM->getExpansionLoc(StmtEnd);
-    }
-
-    Optional<Token> TokSharedPtr;
-    TokSharedPtr = Lexer::findNextToken(StmtEnd, *SM, LangOptions());
-    Token TokSemi = TokSharedPtr.getValue();
-    StmtEndAfterSemi = TokSemi.getEndLoc();
-
-    std::string PrefixInsertStr;
-    auto ReplInfoPair = MapNames::BLASFuncReplInfoMap.find(FuncName);
-    if (ReplInfoPair == MapNames::BLASFuncReplInfoMap.end()) {
-      syclct_unreachable("Unknown function name");
-      return;
-    }
-    MapNames::BLASFuncReplInfo ReplInfo = ReplInfoPair->second;
-    for (auto PointerIndex : ReplInfo.PointerIndexInfo) {
-      auto Expr = CE->getArg(PointerIndex);
-      auto Str = getStmtSpelling(Expr, *(Result.Context));
-      emplaceTransformation(new ReplaceStmt(Expr, "*(" + Str + ")"));
-    }
-
-    // TODO: If the memory is not allocated by cudaMalloc(), the migrated
-    // program will abort at
-    // syclct::memory_manager::get_instance().translate_ptr();
-    PrefixInsertStr = GetPrefixInsertAndReplPtrs(
-        ReplInfo.BufferIndexInfo, *CE, *(Result.Context),
-        ReplInfo.BufferTypeInfo, StmtBegin);
-
-    emplaceTransformation(new InsertText(
-        StmtBegin,
-        std::string("{") + getNL() + PrefixInsertStr +
-            getIndent(StmtBegin, (Result.Context)->getSourceManager()).str()));
-    emplaceTransformation(new InsertText(
-        StmtEndAfterSemi,
-        getNL() +
-            getIndent(StmtBegin, (Result.Context)->getSourceManager()).str() +
-            std::string("}")));
-
-  } else if (FuncName == "cublasCreate_v2" || FuncName == "cublasDestroy_v2") {
-    // Remove these two function calls.
-    // There are some macros like "#define cublasCreate cublasCreate_v2"
-    // in "cublas_v2.h", so the function names we match should with the
-    // suffix "_v2".
-    if (IsAssigned) {
-      emplaceTransformation(
-          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ true, FuncName,
-                          /*IsProcessMacro*/ true, "0"));
-    } else {
-      emplaceTransformation(
-          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ true, FuncName,
-                          /*IsProcessMacro*/ true, ""));
-    }
   } else if (FuncName == "cudaFuncSetCacheConfig") {
     report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
-  } else if (FuncName == "make_cuComplex" ||
-             FuncName == "make_cuDoubleComplex") {
-    if (FuncName == "make_cuDoubleComplex")
-      emplaceTransformation(
-          new ReplaceCalleeName(CE, "std::complex<double>", FuncName));
-    else
-      emplaceTransformation(
-          new ReplaceCalleeName(CE, "std::complex<float>", FuncName));
   } else if (FuncName == "cudaOccupancyMaxPotentialBlockSize") {
     report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
   } else {
     syclct_unreachable("Unknown function name");
   }
-}
-
-std::string FunctionCallRule::GetBufferDeclStrAndReplPtr(
-    const Expr *Arg, const ASTContext &AC, const std::string &TypeAsStr,
-    SourceLocation SL) {
-  std::string PointerName = getStmtSpelling(Arg, AC);
-  std::string PointerNameHashStr = getHashAsString(PointerName);
-  PointerNameHashStr = (PointerNameHashStr.size() < 4)
-                           ? PointerNameHashStr
-                           : PointerNameHashStr.substr(0, 3);
-  std::string BufferTempName = PointerName + "_BUFFER_" + PointerNameHashStr;
-  std::string AllocationTempName =
-      PointerName + "_ALLOCATION_" + PointerNameHashStr;
-  emplaceTransformation(new ReplaceStmt(Arg, BufferTempName));
-  std::string result =
-      getIndent(SL, AC.getSourceManager()).str() + "auto " +
-      AllocationTempName +
-      " = syclct::memory_manager::get_instance().translate_ptr(" + PointerName +
-      ");" + getNL() + getIndent(SL, AC.getSourceManager()).str() +
-      "cl::sycl::buffer<" + TypeAsStr + ",1> " + BufferTempName + " = " +
-      AllocationTempName + ".buffer.reinterpret<" + TypeAsStr +
-      ", 1>(cl::sycl::range<1>(" + AllocationTempName + ".size/sizeof(" +
-      TypeAsStr + ")));" + getNL();
-  return result;
-}
-
-std::string FunctionCallRule::GetPrefixInsertAndReplPtrs(
-    const std::vector<int> PointerArgsIndex, const CallExpr &CE,
-    const ASTContext &AC, const std::vector<std::string> &TypeStrsVec,
-    SourceLocation SL) {
-  std::string result;
-  const int Size = static_cast<int>(PointerArgsIndex.size());
-  for (int i = 0; i < Size; ++i) {
-    result = result + GetBufferDeclStrAndReplPtr(CE.getArg(PointerArgsIndex[i]),
-                                                 AC, TypeStrsVec[i], SL);
-  }
-  return result;
 }
 
 REGISTER_RULE(FunctionCallRule)
@@ -3055,238 +3657,6 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(MemVarRule)
-
-// Migration rule for GetVector, SetVector, GetMatrix, SetMatrix, etc.
-void BLASGetSetRule::registerMatcher(MatchFinder &MF) {
-  auto memoryAPI = [&]() {
-    return hasAnyName("cublasSetVector", "cublasGetVector",
-                      "cublasSetVectorAsync", "cublasGetVectorAsync",
-                      "cublasSetMatrix", "cublasGetMatrix",
-                      "cublasSetMatrixAsync", "cublasGetMatrixAsync");
-  };
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt))
-                    .bind("call"),
-                this);
-
-  MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(memoryAPI())), unless(parentStmt)))
-          .bind("callUsed"),
-      this);
-}
-
-void BLASGetSetRule::run(const MatchFinder::MatchResult &Result) {
-  auto TranslateCallExpr = [&](const CallExpr *C, const bool IsAssigned) {
-    if (!C)
-      return;
-    if (C->getCalleeDecl() == nullptr)
-      return;
-    if (C->getCalleeDecl()->getAsFunction() == nullptr)
-      return;
-    const std::string Name =
-        C->getCalleeDecl()->getAsFunction()->getNameAsString();
-    assert(TranslationDispatcher.find(Name) != TranslationDispatcher.end());
-
-    TranslationDispatcher.at(Name)(Result, C, IsAssigned);
-  };
-
-  TranslateCallExpr(getNodeAsType<CallExpr>(Result, "call"),
-                    /* IsAssigned */ false);
-  TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callUsed"),
-                    /* IsAssigned */ true);
-}
-
-BLASGetSetRule::BLASGetSetRule() {
-  SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
-  TranslationDispatcher["cublasGetVector"] = std::bind(
-      &BLASGetSetRule::getSetVectorTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cublasGetVectorAsync"] = std::bind(
-      &BLASGetSetRule::getSetVectorTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cublasSetVector"] = std::bind(
-      &BLASGetSetRule::getSetVectorTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cublasSetVectorAsync"] = std::bind(
-      &BLASGetSetRule::getSetVectorTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cublasGetMatrix"] = std::bind(
-      &BLASGetSetRule::getSetMatrixTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cublasGetMatrixAsync"] = std::bind(
-      &BLASGetSetRule::getSetMatrixTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cublasSetMatrix"] = std::bind(
-      &BLASGetSetRule::getSetMatrixTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cublasSetMatrixAsync"] = std::bind(
-      &BLASGetSetRule::getSetMatrixTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-}
-
-void BLASGetSetRule::getSetVectorTranslation(
-    const MatchFinder::MatchResult &Result, const CallExpr *CE,
-    const bool IsAssigned) {
-  assert(CE && "Unknown result");
-  const FunctionDecl *FD = CE->getDirectCallee();
-  if (FD == nullptr)
-    return;
-  std::string FuncName = FD->getNameInfo().getName().getAsString();
-  // The 4th and 6th param (incx and incy) of cublasSetVector/cublasGetVector
-  // specify the space between two consequent elements when stored.
-  // We migrate the original code when incx and incy both equal to 1 (all
-  // elements are stored consequently).
-  // Otherwise, the codes are kept originally.
-  std::vector<std::string> ParamsStrsVec =
-      getParamsAsStrs(CE, *(Result.Context));
-  // CopySize equals to n*elemSize*incx
-  // incx(incy) equals to 1 means elements of x(y) are stored continuously
-  std::string CopySize = "(" + ParamsStrsVec[0] + ")*(" + ParamsStrsVec[1] +
-                         ")*(" + ParamsStrsVec[3] + ")";
-  std::string XStr = "(void*)(" + ParamsStrsVec[2] + ")";
-  std::string YStr = "(void*)(" + ParamsStrsVec[4] + ")";
-  const Expr *IncxExpr = CE->getArg(3);
-  const Expr *IncyExpr = CE->getArg(5);
-  Expr::EvalResult IncxExprResult, IncyExprResult;
-
-  if (IncxExpr->EvaluateAsInt(IncxExprResult, *Result.Context) &&
-      IncyExpr->EvaluateAsInt(IncyExprResult, *Result.Context)) {
-    std::string IncxStr =
-        IncxExprResult.Val.getAsString(*Result.Context, IncxExpr->getType());
-    std::string IncyStr =
-        IncyExprResult.Val.getAsString(*Result.Context, IncyExpr->getType());
-    if (IncxStr != IncyStr) {
-      // Keep original code, give a comment to let user migrate code manually
-      report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-             FuncName,
-             "parameter " + ParamsStrsVec[3] + " does not equal to parameter " +
-                 ParamsStrsVec[5]);
-      return;
-    }
-    if ((IncxStr == IncyStr) && (IncxStr != "1")) {
-      // incx equals to incy, but does not equal to 1. Performance issue may
-      // occur.
-      report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
-             FuncName,
-             "parameter " + ParamsStrsVec[3] + " equals to parameter " +
-                 ParamsStrsVec[5] + " but greater than 1");
-    }
-  } else {
-    // Keep original code, give a comment to let user migrate code manually
-    report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-           FuncName,
-           "parameter(s) " + ParamsStrsVec[3] + " and/or " + ParamsStrsVec[5] +
-               " could not be evaluated");
-    return;
-  }
-
-  std::string Replacement =
-      "syclct::sycl_memcpy(" + YStr + "," + XStr + "," + CopySize + ",";
-
-  if (FuncName == "cublasGetVector" || FuncName == "cublasGetVectorAsync") {
-    Replacement = Replacement + "syclct::device_to_host)";
-    emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-  }
-  if (FuncName == "cublasSetVector" || FuncName == "cublasSetVectorAsync") {
-    Replacement = Replacement + "syclct::host_to_device)";
-    emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-  }
-
-  if (IsAssigned) {
-    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
-    insertAroundStmt(CE, "(", ", 0)");
-  }
-}
-
-void BLASGetSetRule::getSetMatrixTranslation(
-    const MatchFinder::MatchResult &Result, const CallExpr *CE,
-    const bool IsAssigned) {
-  assert(CE && "Unknown result");
-  const FunctionDecl *FD = CE->getDirectCallee();
-  if (FD == nullptr)
-    return;
-  std::string FuncName = FD->getNameInfo().getName().getAsString();
-
-  std::vector<std::string> ParamsStrsVec =
-      getParamsAsStrs(CE, *(Result.Context));
-  // CopySize equals to lda*cols*elemSize
-  std::string CopySize = "(" + ParamsStrsVec[4] + ")*(" + ParamsStrsVec[1] +
-                         ")*(" + ParamsStrsVec[2] + ")";
-  std::string AStr = "(void*)(" + ParamsStrsVec[3] + ")";
-  std::string BStr = "(void*)(" + ParamsStrsVec[5] + ")";
-
-  const Expr *LdaExpr = CE->getArg(4);
-  const Expr *LdbExpr = CE->getArg(6);
-  Expr::EvalResult LdaExprResult, LdbExprResult;
-  if (LdaExpr->EvaluateAsInt(LdaExprResult, *Result.Context) &&
-      LdbExpr->EvaluateAsInt(LdbExprResult, *Result.Context)) {
-    std::string LdaStr =
-        LdaExprResult.Val.getAsString(*Result.Context, LdaExpr->getType());
-    std::string LdbStr =
-        LdbExprResult.Val.getAsString(*Result.Context, LdbExpr->getType());
-    if (LdaStr != LdbStr) {
-      // Keep original code, give a comment to let user migrate code manually
-      report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-             FuncName,
-             "parameter " + ParamsStrsVec[4] + " does not equal to parameter " +
-                 ParamsStrsVec[6]);
-      return;
-    }
-
-    const Expr *RowsExpr = CE->getArg(0);
-    Expr::EvalResult RowsExprResult;
-    if (RowsExpr->EvaluateAsInt(RowsExprResult, *Result.Context)) {
-      std::string RowsStr =
-          RowsExprResult.Val.getAsString(*Result.Context, RowsExpr->getType());
-      if (std::stoi(LdaStr) > std::stoi(RowsStr)) {
-        // lda > rows. Performance issue may occur.
-        report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
-               FuncName,
-               "parameter " + ParamsStrsVec[0] + " is smaller than parameter " +
-                   ParamsStrsVec[4]);
-      }
-    } else {
-      // rows cannot be evaluated. Performance issue may occur.
-      report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
-             FuncName,
-             "parameter " + ParamsStrsVec[0] +
-                 " could not be evaluated and may be smaller than parameter " +
-                 ParamsStrsVec[4]);
-    }
-  } else {
-    // Keep original code, give a comment to let user migrate code manually
-    report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-           FuncName,
-           "parameter(s) " + ParamsStrsVec[4] + " and/or " + ParamsStrsVec[6] +
-               " could not be evaluated");
-    return;
-  }
-
-  std::string Replacement =
-      "syclct::sycl_memcpy(" + BStr + "," + AStr + "," + CopySize + ",";
-
-  if (FuncName == "cublasGetMatrix" || FuncName == "cublasGetMatrixAsync") {
-    Replacement = Replacement + "syclct::device_to_host)";
-    emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-  }
-  if (FuncName == "cublasSetMatrix" || FuncName == "cublasSetMatrixAsync") {
-    Replacement = Replacement + "syclct::host_to_device)";
-    emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-  }
-  if (IsAssigned) {
-    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
-    insertAroundStmt(CE, "(", ", 0)");
-  }
-}
-
-std::vector<std::string>
-BLASGetSetRule::getParamsAsStrs(const CallExpr *CE, const ASTContext &Context) {
-  std::vector<std::string> ParamsStrVec;
-  for (auto Arg : CE->arguments())
-    ParamsStrVec.emplace_back(getStmtSpelling(Arg, Context));
-  return ParamsStrVec;
-}
-
-REGISTER_RULE(BLASGetSetRule)
 
 void MemoryTranslationRule::mallocTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
