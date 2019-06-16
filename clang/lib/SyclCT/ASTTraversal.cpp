@@ -354,14 +354,16 @@ void IncludesCallbacks::InclusionDirective(
   // For multi thrust header files, only insert once for PSTL mapping header.
   if (IsAngled && (FileName.find("thrust/") != std::string::npos)) {
     if (!ThrustHeaderInserted) {
-      std::string Replacement;
+      std::string Replacement =
+        std::string("<dpstd/containers>") + getNL() +
+        "#include <dpstd/algorithm>" + getNL() +
+        "#include <dpstd/execution>";
       if (!SyclHeaderInserted) {
-        Replacement = std::string("<CL/sycl.hpp>") + getNL() +
-                      "#include <syclct/syclct.hpp>" + getNL() +
-                      "#include <syclct/syclct_thrust.hpp>";
+        Replacement =
+          std::string("<CL/sycl.hpp>") + getNL() +
+          "#include <syclct/syclct.hpp>" + getNL() +
+          "#include " + Replacement;
         SyclHeaderInserted = true;
-      } else {
-        Replacement = std::string("<syclct/syclct_thrust.hpp>");
       }
       ThrustHeaderInserted = true;
       TransformSet.emplace_back(
@@ -861,6 +863,45 @@ void AtomicFunctionRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(AtomicFunctionRule)
 
+void ThrustFunctionRule::registerMatcher(MatchFinder &MF) {
+  std::vector<std::string> ThrustFuncNames(MapNames::ThrustFuncNamesMap.size());
+  std::transform(
+      MapNames::ThrustFuncNamesMap.begin(), MapNames::ThrustFuncNamesMap.end(),
+      ThrustFuncNames.begin(),
+      [](const std::pair<std::string, MapNames::ThrustFuncReplInfo> &p) { return p.first; });
+
+  auto hasAnyThrustFuncName = [&]() {
+    return internal::Matcher<NamedDecl>(
+        new internal::HasNameMatcher(ThrustFuncNames));
+  };
+
+  MF.addMatcher(callExpr(callee(functionDecl(hasAnyThrustFuncName())))
+                    .bind("thrustFuncCall"),
+                this);
+}
+
+void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall");
+  if (!CE) {
+    return;
+  }
+  const std::string ThrustFuncName = CE->getDirectCallee()->getName().str();
+  auto ReplInfo = MapNames::ThrustFuncNamesMap.find(ThrustFuncName);
+  assert(ReplInfo != MapNames::ThrustFuncNamesMap.end());
+  auto NewName = ReplInfo->second.ReplName;
+  emplaceTransformation(
+      new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
+  assert(CE->getNumArgs() > 0);
+  auto ExtraParam = ReplInfo->second.ExtraParam;
+  if (!ExtraParam.empty()) {
+    emplaceTransformation(
+      new InsertBeforeStmt(CE->getArg(0), ExtraParam + ", ")
+    );
+  }
+}
+
+REGISTER_RULE(ThrustFunctionRule)
+
 auto TypedefNames = hasAnyName(
     "dim3", "cudaError_t", "CUresult", "CUcontext", "cudaEvent_t",
     "cudaStream_t", "__half", "__half2", "half", "half2", "cublasStatus_t",
@@ -872,11 +913,14 @@ auto EnumTypeNames = hasAnyName("cudaError", "cufftResult_t", "cudaError_enum");
 auto RecordTypeNames =
     hasAnyName("cudaDeviceProp", "CUstream_st", "CUevent_st");
 
+auto TemplateRecordTypeNames = hasAnyName("device_vector", "device_ptr", "host_vector");
+
 // Rule for types replacements in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
-  auto HasCudaType = anyOf(hasType(typedefDecl(TypedefNames)),
-                           hasType(enumDecl(EnumTypeNames)),
-                           hasType(cxxRecordDecl(RecordTypeNames)));
+  auto HasCudaType = anyOf(
+      hasType(typedefDecl(TypedefNames)), hasType(enumDecl(EnumTypeNames)),
+      hasType(cxxRecordDecl(RecordTypeNames)),
+      hasType(classTemplateSpecializationDecl(TemplateRecordTypeNames)));
 
   auto HasCudaTypePtr =
       anyOf(hasType(pointsTo(typedefDecl(TypedefNames))),
@@ -914,6 +958,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
       hasType(arrayType(hasElementType(pointsTo(pointsTo(EnumTypes))))),
       hasType(arrayType(hasElementType(pointsTo(pointsTo(RecordTypes))))));
 
+
   MF.addMatcher(varDecl(anyOf(HasCudaType, HasCudaTypePtr, HasCudaTypePtrPtr,
                               HasCudaTypeRef, HasCudaArrayType,
                               HasCudaPtrArrayType, HasCudaPtrPtrArrayType),
@@ -945,7 +990,14 @@ std::string getReplacementForType(std::string TypeStr) {
   if (it != Strs.end())
     Strs.erase(it);
 
-  const std::string &TypeName = Strs.back();
+  std::string TypeName = Strs.back();
+
+  // remove possible template parameters from TypeName
+  size_t bracketBeginPos = TypeName.find('<');
+  if (bracketBeginPos != std::string::npos) {
+    size_t bracketEndPos = TypeName.rfind('>');
+    TypeName.erase(bracketBeginPos, bracketEndPos - bracketBeginPos + 1);
+  }
   SrcAPIStaticsMap[TypeName]++;
   auto Search = MapNames::TypeNamesMap.find(TypeName);
   if (Search == MapNames::TypeNamesMap.end())

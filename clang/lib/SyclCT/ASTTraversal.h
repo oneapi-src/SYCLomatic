@@ -429,6 +429,16 @@ private:
                       const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+/// Migration rule for thrust functions
+class ThrustFunctionRule : public NamedTranslationRule<ThrustFunctionRule> {
+public:
+  ThrustFunctionRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+private:
+};
+
 /// Migration rule for types replacements in var. declarations.
 class TypeInDeclRule : public NamedTranslationRule<TypeInDeclRule> {
 public:

@@ -94,6 +94,9 @@ const MapNames::MapTy MapNames::TypeNamesMap{
     {"cublasDiagType_t", "mkl::diag"},
     {"cublasSideMode_t", "mkl::side"},
     {"cublasOperation_t", "mkl::transpose"},
+    {"thrust::device_vector", "dpstd::device_vector"},
+    {"thrust::device_ptr", "dpstd::device_ptr"},
+    {"thrust::host_vector", "dpstd::host_vector"},
     // ...
 };
 
@@ -363,6 +366,14 @@ const std::unordered_map<std::string, std::string>
         {"atomicExch", "syclct::atomic_exchange"},
         {"atomicCAS", "syclct::atomic_compare_exchange_strong"},
     };
+
+// Thrust function name mapping
+const MapNames::ThrustMapTy MapNames::ThrustFuncNamesMap{
+    {"copy", {"std::copy", "dpstd::execution::sycl"}},
+    {"copy_n", {"std::copy_n", "dpstd::execution::sycl"}},
+    {"sequence", {"std::sequence", "dpstd::execution::sycl"}},
+    {"stable_sort_by_key", {"std::stable_sort_by_key", "dpstd::execution::sycl"}},
+};
 
 // CUDA dim3 dot member funciton names mapping.
 const MapNames::MapTy MapNames::Dim3MemberNamesMap{

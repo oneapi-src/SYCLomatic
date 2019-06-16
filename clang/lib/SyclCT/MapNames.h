@@ -26,8 +26,13 @@ public:
     std::vector<std::string> BufferTypeInfo;
     std::string ReplName;
   };
+  struct ThrustFuncReplInfo {
+    std::string ReplName;
+    std::string ExtraParam;
+  };
   using MapTy = std::map<std::string, std::string>;
   using SetTy = std::set<std::string>;
+  using ThrustMapTy = std::map<std::string, ThrustFuncReplInfo>;
 
   static const MapTy TypeNamesMap;
   static const MapTy Dim3MemberNamesMap;
@@ -36,13 +41,15 @@ public:
   static const std::map<std::string, MapNames::BLASFuncReplInfo>
       BLASFuncReplInfoMap;
   static const SetTy ThrustFileExcludeSet;
+  static const ThrustMapTy ThrustFuncNamesMap;
 
   inline static const std::string &findReplacedName(const MapTy &Map,
                                                     const std::string &Name) {
-    static std::string NullString;
+    static const std::string EmptyString;
+
     auto Itr = Map.find(Name);
     if (Itr == Map.end())
-      return NullString;
+      return EmptyString;
     return Itr->second;
   }
   static bool replaceName(const MapTy &Map, std::string &Name) {

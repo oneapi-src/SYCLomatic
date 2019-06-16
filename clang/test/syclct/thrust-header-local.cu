@@ -3,7 +3,9 @@
 // RUN: FileCheck --input-file %T/thrust-header-local.sycl.cpp --match-full-lines %s
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <syclct/syclct.hpp>
-// CHECK-NEXT: #include <syclct/syclct_thrust.hpp>
+// CHECK-NEXT: #include <dpstd/containers>
+// CHECK-NEXT: #include <dpstd/algorithm>
+// CHECK-NEXT: #include <dpstd/execution>
 #include <thrust/copy.h>
 int main() {
 }
