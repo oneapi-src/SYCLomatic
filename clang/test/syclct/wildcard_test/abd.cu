@@ -1,4 +1,4 @@
-// RUN: syclct -out-root=%T/abd -in-root=%S %S/ab*.cu -- -std=c++11 -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: syclct -out-root=%T/abd -in-root=%S %S/ab*.cu -- -std=c++14 -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --input-file %T/abd/abd.sycl.cpp --match-full-lines %S/abd.cu
 // RUN: FileCheck --input-file %T/abd/abc.sycl.cpp --match-full-lines %S/abc.cu
 

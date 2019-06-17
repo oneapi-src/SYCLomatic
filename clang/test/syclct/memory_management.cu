@@ -1,4 +1,6 @@
-// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// FIXME
+// UNSUPPORTED: -windows-
+// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --match-full-lines --input-file %T/memory_management.sycl.cpp %s
 
 #include <cuda_runtime.h>

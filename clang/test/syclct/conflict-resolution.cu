@@ -1,5 +1,5 @@
-// RUN: syclct -out-root %T %s -passes "ErrorHandlingIfStmtRule,ErrorConstantsRule" -- -x cuda --cuda-host-only --cuda-path=%cuda-path
-// RUN: sed -e 's,//.*$,,' %T/conflict-resolution.sycl.cpp | FileCheck --match-full-lines %s
+// RUN: syclct -out-root %T %s -passes "ErrorHandlingIfStmtRule,ErrorConstantsRule" -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: FileCheck %s --match-full-lines --input-file %T/conflict-resolution.sycl.cpp
 
 int printf(const char *format, ...);
 

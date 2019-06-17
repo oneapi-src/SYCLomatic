@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck %s --match-full-lines --input-file %T/max_min_windows.sycl.cpp
 
 #if defined(_WIN32) || defined(WIN32)

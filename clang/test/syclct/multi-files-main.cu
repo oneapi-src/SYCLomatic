@@ -1,4 +1,4 @@
-// RUN: syclct -in-root %S -out-root %T %s %S/multi-files-device.cuh -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: syclct -in-root %S -out-root %T %s %S/multi-files-device.cuh -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck %s --match-full-lines --input-file %T/multi-files-main.sycl.cpp
 // RUN: FileCheck %S/multi-files-device.cuh --match-full-lines --input-file %T/multi-files-device.sycl.hpp
 // RUN: FileCheck %S/multi-files-kernel.cuh --match-full-lines --input-file %T/multi-files-kernel.sycl.hpp

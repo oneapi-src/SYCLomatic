@@ -1,4 +1,4 @@
-// RUN: syclct -extra-arg-before=-std=c++11 -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: syclct -extra-arg-before=-std=c++14 -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --input-file %T/cublasGetSetMatrix.sycl.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas_v2.h>

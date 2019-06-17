@@ -1,4 +1,5 @@
-// RUN: syclct -report-type=apis -report-file-prefix=check-apis-report -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// UNSUPPORTED: -windows-
+// RUN: syclct -report-type=apis -report-file-prefix=check-apis-report -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: API name, Frequency" >%T/check-apis-report_csv_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: CUresult cuMemGetInfo_v2(size_t * free,size_t * total),1" >>%T/check-apis-report_csv_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaDeviceProp,1" >>%T/check-apis-report_csv_check.txt
@@ -24,7 +25,7 @@
 // RUN: cat %T/check-apis-report.apis.csv >>%T/check-apis-report_csv_check.txt
 // RUN: FileCheck --match-full-lines --input-file %T/check-apis-report_csv_check.txt %T/check-apis-report_csv_check.txt
 
-// RUN: syclct -report-file-prefix=report -report-type=apis  -report-format=formatted -report-only  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: syclct -report-file-prefix=report -report-type=apis  -report-format=formatted -report-only  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: API name				Frequency" >%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: CUresult cuMemGetInfo_v2(size_t * free,size_t * total)               1" >>%T/check-apis-report_check.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: cudaDeviceProp                               1" >>%T/check-apis-report_check.txt
@@ -50,7 +51,7 @@
 // RUN: cat %T/report.apis.log >>%T/check-apis-report_check.txt
 // RUN: FileCheck --match-full-lines --input-file %T/check-apis-report_check.txt %T/check-apis-report_check.txt
 
-// RUN: syclct -output-file=output-file.txt -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: syclct -output-file=output-file.txt -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: Starting to parse: {{(.+)/([^/]+)}}" >%T/check_output-file.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: {{(.+)/([^/]+)}}:{{[0-9]+}}:{{[0-9]+}} warning: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code" >>%T/check_output-file.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`:   cudaError_t err = cudaDeviceSynchronize();" >>%T/check_output-file.txt
@@ -64,17 +65,17 @@
 
 // NOMATCH-CHECK-NOT: '{{.}}'
 
-// RUN: syclct -output-verbosity=silent  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path  2>&1  \
+// RUN: syclct -output-verbosity=silent  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"  2>&1  \
 // RUN: | FileCheck -check-prefix=NOMATCH-CHECK -allow-empty %s
 
 
 // FAKE-FILE-CHECK-NOT:Starting to parse: {{(.+)/([^/]+)}}
 // FAKE-FILE-STDERR: Ending to parse: {{(.+)/([^/]+)}}
 
-// RUN: syclct -output-verbosity=normal  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path  2>&1  \
+// RUN: syclct -output-verbosity=normal  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"  2>&1  \
 // RUN: | FileCheck -check-prefix=FAKE-FILE-CHECK -allow-empty %s
 
-// RUN: syclct -output-verbosity=detailed  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path  2>&1  \
+// RUN: syclct -output-verbosity=detailed  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"  2>&1  \
 // RUN: | FileCheck -check-prefix=FAKE-FILE-STDERR -allow-empty %s
 
 #include <cuda_runtime.h>

@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -- -std=c++11  -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: syclct -out-root %T %s -- -std=c++14  -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck %s --match-full-lines --input-file %T/replace-align.sycl.cpp
 
 // CHECK:typedef struct __sycl_align__(4) syclct_type_{{[a-f0-9]+}}

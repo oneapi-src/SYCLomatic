@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --input-file %T/vector_type.sycl.cpp --match-full-lines %s
 
 // CHECK: void func3_char1(char a, char b, char c) {

@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: syclct -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --input-file %T/cublas-create-Sgemm-destroy.sycl.cpp --match-full-lines %s
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <syclct/syclct.hpp>

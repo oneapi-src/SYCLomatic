@@ -1,6 +1,5 @@
 // UNSUPPORTED: -linux-
-// RUN: input_dir=%S; input_dir=`echo "$input_dir" | awk '{print toupper($input_dir)}'`
-// RUN: syclct -out-root=%T -in-root=$input_dir %S/test_PATH_in_Windows.cu  -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: syclct -out-root=%T -in-root=%S %S/test_PATH_in_Windows.cu  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --input-file %T/test_path_in_windows.sycl.cpp --match-full-lines %S/test_path_in_windows.cu
 
 

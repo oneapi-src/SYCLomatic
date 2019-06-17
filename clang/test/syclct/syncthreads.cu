@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck %s --match-full-lines --input-file %T/syncthreads.sycl.cpp
 
 // CHECK: void test_syncthreads(int *arr, cl::sycl::nd_item<3> [[ITEMNAME:item_[a-f0-9]+]]) {

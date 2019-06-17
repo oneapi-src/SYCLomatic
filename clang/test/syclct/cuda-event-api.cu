@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -- -std=c++11 -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: syclct -out-root %T %s -- -std=c++14 -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --input-file %T/cuda-event-api.sycl.cpp --match-full-lines %s
 
 #include <stdio.h>

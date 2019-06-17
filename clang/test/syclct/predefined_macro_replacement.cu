@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path -D__NVCC__  -D __CUDA_ARCH__ -D__CUDACC__
+// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path" -D__NVCC__  -D __CUDA_ARCH__ -D__CUDACC__
 // RUN: FileCheck --input-file %T/predefined_macro_replacement.sycl.cpp --match-full-lines %s
 #include <stdio.h>
 //CHECK: #ifdef DPCPP_COMPATIBILITY_TEMP

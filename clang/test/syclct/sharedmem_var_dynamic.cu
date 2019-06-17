@@ -1,4 +1,6 @@
-// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// FIXME
+// UNSUPPORTED: -windows-
+// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck %s --match-full-lines --input-file %T/sharedmem_var_dynamic.sycl.cpp
 
 #include <stdio.h>

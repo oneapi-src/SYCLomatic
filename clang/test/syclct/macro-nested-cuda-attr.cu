@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -- -std=c++11 -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: syclct -out-root %T %s -- -std=c++14 -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --input-file %T/macro-nested-cuda-attr.sycl.cpp --match-full-lines %s
 
 #define HAVE_CUDA
@@ -182,7 +182,7 @@ HOST_DEVICE_END
 // CHECK: HOST_DEVICE
 HOST_DEVICE
 void MCT_Generate_Coordinate_3D_G(
-    uint64_t *random_number_seed,
+    unsigned long *random_number_seed,
     int domain_num,
     int cell,
     MC_Vector &coordinate,

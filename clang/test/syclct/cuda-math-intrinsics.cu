@@ -1,4 +1,4 @@
-// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path=%cuda-path
+// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --input-file %T/cuda-math-intrinsics.sycl.cpp --match-full-lines %s
 
 #include <cmath>
@@ -771,9 +771,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
 
 __global__ void kernelFuncTypecasts() {
   short s, s_1;
-  ushort us;
+  unsigned short us;
   int i, i_1;
-  uint ui, ui_1;
+  unsigned int ui, ui_1;
   long l;
   unsigned long ul;
   long long ll;
