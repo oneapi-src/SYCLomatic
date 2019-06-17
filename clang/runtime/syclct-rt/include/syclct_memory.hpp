@@ -315,6 +315,7 @@ public:
   using pointer_t = cl::sycl::multi_ptr<T, asp>;
   using element_t =
       typename std::conditional<Memory == constant, const T, T>::type;
+  using value_t = typename std::remove_cv<T>::type;
 };
 
 // syclct accessor used as kernel function and device function parameter
@@ -330,12 +331,16 @@ public:
   syclct_accessor(
       const typename syclct_accessor<T, constant, Dimension>::accessor_t &acc)
       : syclct_accessor(acc, syclct_range<1>(acc.get_range())) {
-    static_assert(Memory == constant);
+    static_assert(Memory == constant,
+                  "only constant syclct_accessor can be initialized from "
+                  "constant cl::sycl::accessor");
   }
   syclct_accessor(
       const typename syclct_accessor<T, device, Dimension>::accessor_t &acc)
       : syclct_accessor(acc, syclct_range<1>(acc.get_range())) {
-    static_assert(Memory == device);
+    static_assert(Memory == device,
+                  "only device syclct_accessor can be initialized from "
+                  "device cl::sycl::accessor");
   }
   syclct_accessor(const accessor_t &acc, const syclct_range<Dimension> &range)
       : syclct_accessor((pointer_t)acc.get_pointer(), range) {}
@@ -363,17 +368,20 @@ public:
   syclct_accessor(
       const typename syclct_accessor<T, constant, 1>::accessor_t &acc)
       : syclct_accessor(acc, syclct_range<1>(acc.get_range())) {
-    static_assert(Memory == constant);
+    static_assert(Memory == constant,
+                  "only constant syclct_accessor can be initialized from "
+                  "constant cl::sycl::accessor");
   }
   syclct_accessor(const typename syclct_accessor<T, device, 1>::accessor_t &acc)
       : syclct_accessor(acc, syclct_range<1>(acc.get_range())) {
-    static_assert(Memory == device);
+    static_assert(Memory == device,
+                  "only device syclct_accessor can be initialized from "
+                  "device cl::sycl::accessor");
   }
   syclct_accessor(const accessor_t &acc, const syclct_range<1> &range)
       : syclct_accessor((pointer_t)acc.get_pointer(), range) {}
   element_t &operator[](size_t index) const { return *(data + index); }
-  operator pointer_t() { return data; }
-  operator T *() { return data; }
+  template <class Ty> operator Ty *() { return (Ty *)(&(*data)); }
   template <class ReinterpretT>
   syclct_accessor<ReinterpretT, Memory, 1> reinterpret() {
     return syclct_accessor<ReinterpretT, Memory, 1>(
@@ -392,13 +400,17 @@ class syclct_accessor<T, Memory, 0> {
 public:
   using memory_t = memory_traits<Memory, T>;
   using element_t = typename memory_t::element_t;
+  using value_t = typename memory_t::value_t;
   using pointer_t = typename memory_t::pointer_t;
   using accessor_t = typename memory_t::template accessor_t<1>;
   syclct_accessor(pointer_t data) : data(data) {}
   syclct_accessor(const accessor_t &acc)
       : syclct_accessor((pointer_t)acc.get_pointer(), syclct_range<0>()) {}
-  operator element_t &() { return *data; }
-  syclct_accessor &operator=(const element_t &val) { *data = val; }
+  template <class Ty> operator Ty() { return static_cast<Ty>(*data); }
+  syclct_accessor &operator=(const value_t &val) {
+    *data = val;
+    return *this;
+  }
   T *operator&() { return static_cast<T *>(data); }
 
 private:
@@ -467,6 +479,7 @@ class base_memory {
 public:
   using accessor_t =
       typename memory_traits<Memory, T>::template accessor_t<Dimension>;
+  using value_t = typename memory_traits<Memory, T>::value_t;
   using accessor_acquirer = syclct_accessor_acquirer<T, Memory, Dimension>;
   base_memory(const syclct_range<Dimension> &in_range)
       : size(in_range.size() * sizeof(T)), range(in_range), acquire(range) {}
@@ -502,10 +515,11 @@ class global_memory : public base_memory<T, Memory, Dimension> {
 public:
   using base_t = base_memory<T, Memory, Dimension>;
   using accessor_t = typename base_t::accessor_t;
+  using value_t = typename base_t::value_t;
 
   global_memory() : global_memory(syclct_range<Dimension>()) {}
 
-  global_memory(const syclct_range<Dimension> &range, const T &val)
+  global_memory(const syclct_range<Dimension> &range, const value_t &val)
       : global_memory(range) {
     static_assert(Dimension == 0,
                   "only non-array type can be inited with single value");
@@ -517,7 +531,7 @@ public:
   }
 
   global_memory(const syclct_range<Dimension> &range,
-                std::initializer_list<T> &&init_list)
+                std::initializer_list<value_t> &&init_list)
       : global_memory(range) {
     // TODO: Now only 1-D array initialization list can be passed into construct
     // function as argument. Multi-Dimension array initialization list should be
