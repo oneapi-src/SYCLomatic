@@ -1,6 +1,7 @@
 // RUN: syclct -out-root %T %s  -- -w -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck %s --match-full-lines --input-file %T/error-handling.sycl.cpp
 
+#include <stdexcept>
 
 int printf(const char *s, ...);
 int fprintf(int, const char *s, ...);
@@ -121,6 +122,27 @@ void test_CUDA_SUCCESS() {
 // CHECK-NEXT:}
 void test_CUDA_SUCCESS_empty() {
   cudaError_t err;
+  if (err != CUDA_SUCCESS) {
+  }
+}
+
+// CHECK:void test_CUDA_SUCCESS_CUresult() {
+// CHECK-NEXT:  int err;
+// CHECK-NEXT:  {{ +}}
+// CHECK-NEXT:}
+void test_CUDA_SUCCESS_CUresult() {
+  CUresult err;
+  if (err != CUDA_SUCCESS) {
+    printf("error!\n");
+  }
+}
+
+// CHECK:void test_CUDA_SUCCESS_empty_CUresult() {
+// CHECK-NEXT:  int err;
+// CHECK-NEXT:{{ +}}
+// CHECK-NEXT:}
+void test_CUDA_SUCCESS_empty_CUresult() {
+  CUresult err;
   if (err != CUDA_SUCCESS) {
   }
 }

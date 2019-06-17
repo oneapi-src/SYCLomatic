@@ -23,6 +23,9 @@ const MapNames::MapTy MapNames::TypeNamesMap{
     {"cudaDeviceProp", "syclct::sycl_device_info"},
     {"cudaError_t", "int"},
     {"cudaError", "int"},
+    {"CUresult", "int"},
+    {"cufftResult_t", "int"},
+    {"CUcontext", "void*"},
     {"dim3", "cl::sycl::range<3>"},
     {"int2", "cl::sycl::int2"},
     {"struct int2", "cl::sycl::int2"},
@@ -206,7 +209,8 @@ const std::map<std::string, MapNames::BLASFuncReplInfo>
           std::vector<std::string>{"float", "float", "float"}, "mkl::sgemv"}},
         {"cublasDgemv_v2",
          {std::vector<int>{5, 7, 10}, std::vector<int>{4, 9},
-          std::vector<std::string>{"double", "double", "double"}, "mkl::dgemv"}},
+          std::vector<std::string>{"double", "double", "double"},
+          "mkl::dgemv"}},
         {"cublasSger_v2",
          {std::vector<int>{4, 6, 8}, std::vector<int>{3},
           std::vector<std::string>{"float", "float", "float"}, "mkl::sger"}},
@@ -390,8 +394,7 @@ const MapNames::SetTy MapNames::ThrustFileExcludeSet{
     "thrust/detail/sequence.inl",
     "thrust/detail/sort.inl",
     "thrust/detail/temporary_buffer.h",
-    "thrust/detail/vector_base.inl"
-};
+    "thrust/detail/vector_base.inl"};
 
 // DeviceProp names mapping.
 const MapNames::MapTy DevicePropVarRule::PropNamesMap{
