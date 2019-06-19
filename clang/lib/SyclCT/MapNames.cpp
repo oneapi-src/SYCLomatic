@@ -373,7 +373,7 @@ const MapNames::MapTy MapNames::Dim3MemberNamesMap{
 const MapNames::MapTy MapNames::MacrosMap{
     {"__CUDA_ARCH__", "DPCPP_COMPATIBILITY_TEMP"}, /**/
     {"__NVCC__", "DPCPP_COMPATIBILITY_TEMP"},      /**/
-    {"__CUDACC__", "DPCPP_COMPATIBILITY_TEMP"},
+    {"__CUDACC__", "CL_SYCL_LANGUAGE_VERSION"},
     //...
 };
 

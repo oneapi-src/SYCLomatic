@@ -13,7 +13,7 @@ void hello() { printf("other"); }
 #ifndef __NVCC__
 void hello2() { printf("hello2"); }
 #endif
-//CHECK: #if defined(DPCPP_COMPATIBILITY_TEMP)
+//CHECK: #if defined(CL_SYCL_LANGUAGE_VERSION)
 #if defined(__CUDACC__)
 void hello3() { printf("hello2"); }
 #endif
