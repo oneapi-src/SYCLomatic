@@ -27,7 +27,6 @@ extern llvm::cl::opt<std::string> SuppressWarnings;
 extern llvm::cl::opt<std::string> OutputFile;
 extern llvm::cl::opt<OutputVerbosityLev> OutputVerbosity;
 extern bool SuppressWarningsAllFlag;
-extern void PrintMsg(const std::string &Msg, bool IsPrintOnNormal);
 
 namespace clang {
 namespace syclct {

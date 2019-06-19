@@ -29,8 +29,10 @@ enum ProcessStatus {
   MigrationNoCodeChangeHappen = 1,
   MigrationSkipped = 2,
   MigrationError = -1,
+  MigrationSaveOutFail = -2, /*eg. have no write permission*/
   MigrationErrorRunFromSDKFolder = -3,
   MigrationErrorInRootContainCTTool = -4,
+
 };
 
 enum OutputVerbosityLev { silent, normal, detailed, diagnostics };

@@ -106,7 +106,8 @@ enum VerboseLevel {
   do {                                                                         \
   } while (false)
 #endif // Release build
+
+void PrintMsg(const std::string &Msg, bool IsPrintOnNormal = true);
 } // namespace syclct
 } // namespace clang
-
 #endif // SYCLCT_DEBUG_H

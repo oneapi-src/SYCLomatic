@@ -191,31 +191,6 @@ opt<std::string> OutputFile(
                         "output diretory specified by '-out-root' option."),
     value_desc("output file name"), cat(SyclCTCat), llvm::cl::Optional);
 
-// Currently, set IsPrintOnNormal false only at the place where messages about
-// start and end of file parsing are produced,
-//.i.e in the place "lib/Tooling:int ClangTool::run(ToolAction *Action)".
-void PrintMsg(const std::string &Msg, bool IsPrintOnNormal = true) {
-  if (!OutputFile.empty()) {
-    //  Redirects stdout/stderr output to <file>
-    SyclctTerm() << Msg;
-  }
-
-  switch (OutputVerbosity) {
-  case detailed:
-  case diagnostics:
-    llvm::outs() << Msg;
-    break;
-  case normal:
-    if (IsPrintOnNormal) {
-      llvm::outs() << Msg;
-    }
-    break;
-  case silent:
-  default:
-    break;
-  }
-}
-
 std::string CudaPath;          // Global value for the CUDA install path.
 std::string SyclctInstallPath; // Installation directory for this tool
 

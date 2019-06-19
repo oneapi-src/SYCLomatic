@@ -10,6 +10,7 @@
 //===-----------------------------------------------------------------===//
 
 #include "SaveNewFiles.h"
+#include "Debug.h"
 #include "ExternalReplacement.h"
 
 #include "llvm/ADT/SmallString.h"
@@ -29,7 +30,7 @@
 #include "llvm/Support/raw_os_ostream.h"
 #include <cassert>
 #include <fstream>
-
+using namespace clang::syclct;
 using namespace llvm;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
@@ -42,14 +43,30 @@ static void rewriteDir(SmallString<256> &FilePath, const StringRef InRoot,
   assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
   assert(isCanonical(FilePath) && "FilePath must be a canonical path.");
 
+  SmallString<256> InRootAbs;
+  SmallString<256> OutRootAbs;
+  std::error_code EC;
+  bool InRootAbsValid = true;
+  EC = llvm::sys::fs::real_path(InRoot, InRootAbs);
+  if ((bool)EC) {
+    InRootAbsValid = false;
+  }
+  bool OutRootAbsValid = true;
+  EC = llvm::sys::fs::real_path(OutRoot, OutRootAbs);
+  if ((bool)EC) {
+    OutRootAbsValid = false;
+  }
+
 #if defined(_WIN64)
   std::string LocalFilePath = StringRef(FilePath).lower();
-  std::string LocalInRoot = InRoot.lower();
-  std::string LocalOutRoot = OutRoot.lower();
+  std::string LocalInRoot =
+      InRootAbsValid ? InRootAbs.str().lower() : InRoot.lower();
+  std::string LocalOutRoot =
+      OutRootAbsValid ? OutRootAbs.str().lower() : OutRoot.lower();
 #elif defined(__linux__)
   std::string LocalFilePath = StringRef(FilePath);
-  std::string LocalInRoot = InRoot;
-  std::string LocalOutRoot = OutRoot;
+  std::string LocalInRoot = InRootAbsValid ? InRootAbs.c_str() : InRoot;
+  std::string LocalOutRoot = OutRootAbsValid ? OutRootAbs.c_str() : OutRoot;
 #else
 #error Only support windows and Linux.
 #endif
@@ -128,13 +145,27 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         // note the replacement of Entry.second are updated by this call.
         mergeExternalReps(std::string(OutPath.str()), Entry.second);
       }
-
-      fs::create_directories(path::parent_path(OutPath));
-
+      std::error_code EC;
+      EC = fs::create_directories(path::parent_path(OutPath));
+      if ((bool)EC) {
+        std::string ErrMsg = "[ERROR] Create file : " +
+                             std::string(OutPath.str()) + " fail: " +
+                             EC.message() + "\n";
+        status = MigrationSaveOutFail;
+        PrintMsg(ErrMsg);
+        return status;
+      }
       // std::ios::binary prevents ofstream::operator<< from converting \n to
       // \r\n on windows.
       std::ofstream File(OutPath.str(), std::ios::binary);
       llvm::raw_os_ostream Stream(File);
+      if (!File) {
+        std::string ErrMsg =
+            "[ERROR] Create file: " + std::string(OutPath.str()) + " fail.\n";
+        PrintMsg(ErrMsg);
+        status = MigrationSaveOutFail;
+        return status;
+      }
 
       AppliedAll =
           tooling::applyAllReplacements(Entry.second, Rewrite) || AppliedAll;
@@ -161,10 +192,28 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         continue;
       }
 
-      fs::create_directories(path::parent_path(FilePath));
+      std::error_code EC;
+      EC = fs::create_directories(path::parent_path(FilePath));
+      if ((bool)EC) {
+        std::string ErrMsg = "[ERROR] Create file: " +
+                             std::string(FilePath.str()) + " fail: " +
+                             EC.message() + "\n";
+        status = MigrationSaveOutFail;
+        PrintMsg(ErrMsg);
+        return status;
+      }
       // std::ios::binary prevents ofstream::operator<< from converting \n to
       // \r\n on windows.
       std::ofstream File(FilePath.str(), std::ios::binary);
+
+      if (!File) {
+        std::string ErrMsg = "[ERROR] Create file: " +
+                             std::string(FilePath.str()) + " failed.\n";
+        status = MigrationSaveOutFail;
+        PrintMsg(ErrMsg);
+        return status;
+      }
+
       llvm::raw_os_ostream Stream(File);
 
       Rewrite

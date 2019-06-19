@@ -369,6 +369,9 @@ void DebugInfo::ShowStatus(int Status) {
   case MigrationError:
     StatusString = "Migration error happen";
     break;
+  case MigrationSaveOutFail:
+    StatusString = "Migration error: saving migrated file(s) failed";
+    break;
   default:
     syclct_unreachable("no valid stats");
   }
@@ -380,6 +383,30 @@ void DebugInfo::ShowStatus(int Status) {
 
   llvm::dbgs() << SyclctLogStream.str() << "\n";
   return;
+}
+// Currently, set IsPrintOnNormal false only at the place where messages about
+// start and end of file parsing are produced,
+//.i.e in the place "lib/Tooling:int ClangTool::run(ToolAction *Action)".
+void PrintMsg(const std::string &Msg, bool IsPrintOnNormal) {
+  if (!OutputFile.empty()) {
+    //  Redirects stdout/stderr output to <file>
+    SyclctTerm() << Msg;
+  }
+
+  switch (OutputVerbosity) {
+  case detailed:
+  case diagnostics:
+    llvm::outs() << Msg;
+    break;
+  case normal:
+    if (IsPrintOnNormal) {
+      llvm::outs() << Msg;
+    }
+    break;
+  case silent:
+  default:
+    break;
+  }
 }
 
 } // namespace syclct
