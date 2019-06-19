@@ -56,12 +56,18 @@ bool isCanonical(StringRef Path) {
 }
 
 bool isChildPath(const std::string &Root, const std::string &Child) {
+// 1st make Root and Child as absolute path, then do compare.
+  SmallString<256> RootAbs;
+  SmallString<256> ChildAbs;
+  llvm::sys::fs::real_path(Root, RootAbs);
+  llvm::sys::fs::real_path(Child, ChildAbs);
+
 #if defined(_WIN64)
-  std::string LocalRoot = StringRef(Root).lower();
-  std::string LocalChild = StringRef(Child).lower();
+  std::string LocalRoot = RootAbs.str().lower();
+  std::string LocalChild = ChildAbs.str().lower();
 #elif defined(__linux__)
-  std::string LocalRoot = Root;
-  std::string LocalChild = Child;
+  std::string LocalRoot = RootAbs.c_str();
+  std::string LocalChild = ChildAbs.c_str();
 #else
 #error Only support windows and Linux.
 #endif
@@ -74,12 +80,18 @@ bool isChildPath(const std::string &Root, const std::string &Child) {
 }
 
 bool isSamePath(const std::string &Root, const std::string &Child) {
+  // 1st make Root and Child as absolute path, then do compare.
+  SmallString<256> RootAbs;
+  SmallString<256> ChildAbs;
+  llvm::sys::fs::real_path(Root, RootAbs);
+  llvm::sys::fs::real_path(Child, ChildAbs);
+
 #if defined(_WIN64)
-  std::string LocalRoot = StringRef(Root).lower();
-  std::string LocalChild = StringRef(Child).lower();
+  std::string LocalRoot = RootAbs.str().lower();
+  std::string LocalChild = ChildAbs.str().lower();
 #elif defined(__linux__)
-  std::string LocalRoot = Root;
-  std::string LocalChild = Child;
+  std::string LocalRoot = RootAbs.c_str();
+  std::string LocalChild = ChildAbs.c_str();
 #else
 #error Only support windows and Linux.
 #endif

@@ -380,53 +380,26 @@ std::string getInstallPath(clang::tooling::ClangTool &Tool,
   return InstallPath.str();
 }
 
-// E.g. Path is "/usr/local/cuda/samples" and "cuda" is a symlink of cuda-8.0
-// GetRealPath will return /usr/local/cuda-8.0/samples
-std::string GetRealPath(clang::tooling::RefactoringTool &Tool, StringRef Path) {
-  // Set up Rewriter and to get source manager.
-  LangOptions DefaultLangOptions;
-  IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
-  TextDiagnosticPrinter DiagnosticPrinter(llvm::errs(), &*DiagOpts);
-  DiagnosticsEngine Diagnostics(
-      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
-      &DiagnosticPrinter, false);
-  SourceManager Sources(Diagnostics, Tool.getFiles());
-  Rewriter Rewrite(Sources, DefaultLangOptions);
-  const SourceManager &SM = Rewrite.getSourceMgr();
-
-  llvm::SmallString<512> AbsolutePath(Path);
-  // Try to get the real file path of the symlink.
-  const DirectoryEntry *Dir = SM.getFileManager().getDirectory(
-      llvm::sys::path::parent_path(AbsolutePath.str()));
-  StringRef DirName = SM.getFileManager().getCanonicalName(Dir);
-  SmallVector<char, 512> AbsoluteFilename;
-  llvm::sys::path::append(AbsoluteFilename, DirName,
-                          llvm::sys::path::filename(AbsolutePath.str()));
-  return llvm::StringRef(AbsoluteFilename.data(), AbsoluteFilename.size())
-      .str();
-}
-
 // To validate the root path of the project to be migrated.
 void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
                             std::string &InRoot) {
-  std::string Path = GetRealPath(Tool, InRoot);
 
-  if (isChildPath(CudaPath, Path)) {
+  if (isChildPath(CudaPath, InRoot)) {
     std::string ErrMsg =
-        "[ERROR] Input root specified by \"-in-root\" option \"" + Path +
+        "[ERROR] Input root specified by \"-in-root\" option \"" + InRoot +
         "\" is in CUDA_PATH folder \"" + CudaPath + "\"\n";
     PrintMsg(ErrMsg);
-    llvm_unreachable(ErrMsg.c_str());
+    exit(MigrationErrorRunFromSDKFolder);
   }
 
-  if (isChildPath(Path, SyclctInstallPath) ||
-      isSamePath(Path, SyclctInstallPath)) {
-    std::string ErrMsg = "[ERROR] Input folder \"" + Path +
+  if (isChildPath(InRoot, SyclctInstallPath) ||
+      isSamePath(InRoot, SyclctInstallPath)) {
+    std::string ErrMsg = "[ERROR] Input folder \"" + InRoot +
                          "\" is the parent or the same as the folder where "
                          "DPC++ Compatibility Tool is installed \"" +
                          SyclctInstallPath + "\"\n";
     PrintMsg(ErrMsg);
-    llvm_unreachable(ErrMsg.c_str());
+    exit(MigrationErrorInRootContainCTTool);
   }
 }
 
