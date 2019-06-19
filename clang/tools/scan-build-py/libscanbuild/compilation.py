@@ -93,6 +93,10 @@ IGNORED_FLAGS = {
     '-O2': 0,
     '-O3': 0,
     '-g': 0,
+    '--use-local-env' : 0,
+    '--keep-dir' : 0,
+    '--machine' : 0,
+    '-cudart' : 0,
 }
 
 # Known C/C++ compiler executable name patterns
@@ -121,8 +125,16 @@ def parse_args(args):
                     if(index < len(arg_list) - 1):
                         arg_next = arg_list[index + 1]
                         arg_next = arg_next.strip()
-                        pattern = re.compile("\s+")
-                        arg_split = [x for x in pattern.split(arg_next) if x]
+                        arg_split = []
+                        pattern_space = re.compile("\s+")
+                        pattern_comma = re.compile(",")
+
+                        # To handle combined optons like ' -DXXX -O3 -w -march=native '"
+                        if re.search(r'\s+', arg_next):
+                            arg_split = [x for x in pattern_space.split(arg_next) if x]
+                        # To handle combined optons like ',"-Wall","-O2","-Wextra","-g"'
+                        elif re.search(r',', arg_next):
+                            arg_split = [x.strip('"') for x in pattern_comma.split(arg_next) if x]
 
                         # In the case of len(arg_split) == 1, it is difficult to tell whether arg_split[0] is
                         # the value of option '-Xcompiler' or an independent argument, so just treat it as an independent argument,
