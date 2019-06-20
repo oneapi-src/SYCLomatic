@@ -49,7 +49,22 @@ __global__ void helloFromGPU2 () {
     blockDim.x, threadIdx.x);
 }
 
-
+void testReference(const int &i) {
+  dim3 griddim = 2;
+  dim3 threaddim = 32;
+  // CHECK:  {
+  // CHECK-NEXT:  syclct::get_default_queue().submit(
+  // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:        auto [[DEREF:i_deref_[a-f0-9]+]] = i;
+  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK-NEXT:            helloFromGPU([[DEREF]], [[ITEM]]);
+  // CHECK-NEXT:          });
+  // CHECK-NEXT:      });
+  // CHECK-NEXT:  }
+  helloFromGPU<<<griddim, threaddim>>>(i);
+}
 
 int main() {
   dim3 griddim = 2;

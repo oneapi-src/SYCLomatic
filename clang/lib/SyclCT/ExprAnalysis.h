@@ -309,8 +309,9 @@ class VarInfo;
 class KernelArgumentAnalysis : public ArgumentAnalysis {
 public:
   using VarMapTy = std::map<unsigned, std::shared_ptr<VarInfo>>;
-  using VarSetTy = std::vector<std::shared_ptr<VarInfo>>;
-  KernelArgumentAnalysis(VarSetTy &VarList) : VarList(VarList) {}
+  using VarListTy = std::vector<std::shared_ptr<VarInfo>>;
+  KernelArgumentAnalysis(VarListTy &PointerVarList, VarListTy &RefVarList)
+      : PointerVarList(PointerVarList), RefVarList(RefVarList) {}
   ~KernelArgumentAnalysis();
 
 protected:
@@ -320,8 +321,13 @@ private:
   inline void analysisExpr(const DeclRefExpr *Arg);
   inline void analysisExpr(const MemberExpr *Arg);
 
-  VarSetTy &VarList;
-  VarMapTy VarMap;
+  void mapToList(VarMapTy &Map, VarListTy &List) {
+    for (auto &V : Map)
+      List.emplace_back(V.second);
+  }
+
+  VarListTy &PointerVarList, &RefVarList;
+  VarMapTy PointerVarMap, RefVarMap;
 };
 } // namespace syclct
 } // namespace clang

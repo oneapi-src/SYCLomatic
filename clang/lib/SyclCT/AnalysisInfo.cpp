@@ -198,6 +198,9 @@ std::string KernelCallExpr::getReplacement() {
         getAccessorDecl(Block);
         for (auto &AccStmt : Accessors)
           Block.pushStmt(AccStmt);
+        for (auto &Ref : RefArgsList)
+          Block.pushStmt("auto ", Ref->getDerefName(), " = ", Ref->getName(),
+                         ";");
         Block.pushStmt(
             "cgh.parallel_for<syclct_kernel_name<class ", getName(), "_",
             LocInfo.LocHash,

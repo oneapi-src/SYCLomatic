@@ -217,8 +217,13 @@ void KernelArgumentAnalysis::analysisExpression(const Stmt *Expression) {
 void KernelArgumentAnalysis::analysisExpr(const DeclRefExpr *DRE) {
   if (auto D = dyn_cast<VarDecl>(DRE->getDecl())) {
     auto LocInfo = SyclctGlobalInfo::getLocInfo(D);
-    if (DRE->getType()->isPointerType())
-      insertObject(VarMap, LocInfo.second, LocInfo.first, D);
+    if (DRE->getType()->isPointerType()) {
+      insertObject(PointerVarMap, LocInfo.second, LocInfo.first, D);
+    } else if (D->getType()->isReferenceType()) {
+      addReplacement(DRE,
+                     insertObject(RefVarMap, LocInfo.second, LocInfo.first, D)
+                         ->getDerefName());
+    }
   }
   Base::analysisExpr(DRE);
 }
@@ -226,21 +231,23 @@ void KernelArgumentAnalysis::analysisExpr(const DeclRefExpr *DRE) {
 void KernelArgumentAnalysis::analysisExpr(const MemberExpr *ME) {
   if (auto D = dyn_cast<FieldDecl>(ME->getMemberDecl())) {
     auto LocInfo = SyclctGlobalInfo::getLocInfo(ME);
+    auto MEStr = getStmtSpelling(ME, SyclctGlobalInfo::getContext());
     if (ME->getType()->isPointerType()) {
-      auto VI = std::make_shared<VarInfo>(
-          LocInfo.second, LocInfo.first, D,
-          getStmtSpelling(ME, SyclctGlobalInfo::getContext()));
-      VarMap.insert(std::make_pair(LocInfo.second, VI));
-      addReplacement(ME, VI->getName());
+      addReplacement(ME, insertObject(PointerVarMap, LocInfo.second,
+                                      LocInfo.first, D, MEStr)
+                             ->getName());
+    } else if (D->getType()->isReferenceType()) {
+      addReplacement(
+          ME, insertObject(RefVarMap, LocInfo.second, LocInfo.first, D, MEStr)
+                  ->getDerefName());
     }
   }
   Base::analysisExpr(ME);
 }
 
 KernelArgumentAnalysis::~KernelArgumentAnalysis() {
-  for (auto &V : VarMap) {
-    VarList.emplace_back(V.second);
-  }
+  mapToList(PointerVarMap, PointerVarList);
+  mapToList(RefVarMap, RefVarList);
 }
 } // namespace syclct
 } // namespace clang

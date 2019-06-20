@@ -404,6 +404,7 @@ public:
 
   inline bool isTemplate() { return IsTemplate; }
   inline bool isPointer() { return IsPointer; }
+  inline bool isReference() { return IsReference; }
   inline void adjustAsMemType() {
     setPointerAsArray();
     removeQualifier();
@@ -466,15 +467,10 @@ private:
 class VarInfo {
 public:
   VarInfo(unsigned Offset, const std::string &FilePathIn, const VarDecl *Var)
-      : FilePath(FilePathIn), Offset(Offset), Name(Var->getName().str()),
-        RefString(Name), Ty(std::make_shared<CtTypeInfo>(
-                             Var->getTypeSourceInfo()->getTypeLoc())) {}
+      : VarInfo(FilePathIn, Offset, Var) {}
   VarInfo(unsigned Offset, const std::string &FilePathIn,
           const FieldDecl *FieldVar, std::string MemberExprString)
-      : FilePath(FilePathIn), Offset(Offset), Name(FieldVar->getName().str()),
-        RefString(std::move(MemberExprString)),
-        Ty(std::make_shared<CtTypeInfo>(
-            FieldVar->getTypeSourceInfo()->getTypeLoc())) {}
+      : VarInfo(FilePathIn, Offset, FieldVar, MemberExprString) {}
 
   inline const std::string &getFilePath() { return FilePath; }
   inline unsigned getOffset() { return Offset; }
@@ -482,7 +478,17 @@ public:
   inline const std::string &getName() { return Name; }
   inline std::shared_ptr<CtTypeInfo> &getType() { return Ty; }
 
+  inline std::string getDerefName() {
+    return buildString(getName(), "_deref_", SyclctGlobalInfo::getInRootHash());
+  }
+
 protected:
+  VarInfo(const std::string &FilePath, unsigned Offset,
+          const DeclaratorDecl *DD, const std::string &RefStringIn = "")
+      : FilePath(FilePath), Offset(Offset), Name(DD->getName()),
+        RefString(RefStringIn.empty() ? Name : RefStringIn),
+        Ty(std::make_shared<CtTypeInfo>(
+            DD->getTypeSourceInfo()->getTypeLoc())) {}
   inline void setType(std::shared_ptr<CtTypeInfo> T) { Ty = T; }
 
 private:
@@ -1044,7 +1050,8 @@ public:
   KernelCallExpr(unsigned Offset, const std::string &FilePath,
                  const CUDAKernelCallExpr *KernelCall)
       : CallFunctionExpr(Offset, FilePath, KernelCall), IsSync(false) {
-    buildCallExprInfo(KernelCall, KernelArgumentAnalysis(PointerArgsList));
+    buildCallExprInfo(KernelCall,
+                      KernelArgumentAnalysis(PointerArgsList, RefArgsList));
     buildKernelInfo(KernelCall);
   }
 
@@ -1092,7 +1099,7 @@ private:
   } ExecutionConfig;
 
   bool IsSync;
-  std::vector<std::shared_ptr<VarInfo>> PointerArgsList;
+  std::vector<std::shared_ptr<VarInfo>> PointerArgsList, RefArgsList;
 };
 
 class CudaMallocInfo {
