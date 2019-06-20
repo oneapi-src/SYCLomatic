@@ -145,12 +145,17 @@ void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
   }
 }
 
+// Get the starting location of a line, going through lines ending with
+// backslashes
 static inline SourceLocation getStartOfLine(SourceLocation Loc,
                                             const SourceManager &SM,
                                             const LangOptions &LangOpts) {
   auto LocInfo = SM.getDecomposedLoc(SM.getExpansionLoc(Loc));
   auto Buffer = SM.getBufferData(LocInfo.first);
   auto NLPos = Buffer.find_last_of('\n', LocInfo.second);
+  while (NLPos != StringRef::npos && Buffer[NLPos - 1] == '\\') {
+    NLPos = Buffer.find_last_of('\n', NLPos - 1);
+  }
   if (NLPos == StringRef::npos) {
     NLPos = 0;
   } else {
