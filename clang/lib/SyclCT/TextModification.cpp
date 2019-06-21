@@ -668,7 +668,7 @@ InsertClassName::getReplacement(const ASTContext &Context) const {
     Data = DataBegin[++i];
 
   Data = DataBegin[--i];
-  while ((Data == ' ') || (Data == '\t') || (Data == '\n'))
+  while ((Data == ' ') || (Data == '\t') || (Data == '\n') || (Data == '\r'))
     Data = DataBegin[--i];
 
   recordTranslationInfo(Context, CD->getBeginLoc());

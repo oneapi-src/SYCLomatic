@@ -1361,7 +1361,7 @@ void VectorTypeOperatorRule::TranslateOverloadedOperatorDecl(
   //
   // }
   const auto &SM = *Result.SourceManager;
-  const std::string NL = getNL();
+  const std::string NL = getNL(FD->getBeginLoc(), SM);
 
   std::ostringstream Prologue;
   // clang-format off

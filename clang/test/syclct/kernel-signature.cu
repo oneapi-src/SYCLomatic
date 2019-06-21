@@ -16,8 +16,8 @@ __host__ void test_02();
 // CHECK: void test_03();
 __host__ __device__ void test_03();
 
-// CHECK: void test_04() ;
-void test_04() __device__;
+// CHECK: void test_04();
+void test_04();
 
-// CHECK: void test_05() ;
-__device__ void test_05() __device__;
+// CHECK: void test_05();
+__device__ void test_05();
