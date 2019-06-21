@@ -152,7 +152,7 @@ public:
       _devs.push_back(syclct_device(dev));
     }
   }
-  syclct_device current_device() const {
+  syclct_device &current_device() {
     check_id(_current_device);
     return _devs[_current_device];
   }
