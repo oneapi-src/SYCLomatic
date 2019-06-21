@@ -38,13 +38,14 @@ namespace fs = llvm::sys::fs;
 // TODO: it's global variable,  refine in future.
 std::map<std::string, bool> IncludeFileMap;
 
-static void rewriteDir(SmallString<256> &FilePath, const StringRef InRoot,
+static void rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
                        const StringRef OutRoot) {
   assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
   assert(isCanonical(FilePath) && "FilePath must be a canonical path.");
 
-  SmallString<256> InRootAbs;
-  SmallString<256> OutRootAbs;
+  SmallString<512> InRootAbs;
+  SmallString<512> OutRootAbs;
+  SmallString<512> FilePathAbs;
   std::error_code EC;
   bool InRootAbsValid = true;
   EC = llvm::sys::fs::real_path(InRoot, InRootAbs);
@@ -56,6 +57,11 @@ static void rewriteDir(SmallString<256> &FilePath, const StringRef InRoot,
   if ((bool)EC) {
     OutRootAbsValid = false;
   }
+  bool FilePathAbsValid = true;
+  EC = llvm::sys::fs::real_path(FilePath, FilePathAbs);
+  if ((bool)EC) {
+    FilePathAbsValid = false;
+  }
 
 #if defined(_WIN64)
   std::string LocalFilePath = StringRef(FilePath).lower();
@@ -64,7 +70,8 @@ static void rewriteDir(SmallString<256> &FilePath, const StringRef InRoot,
   std::string LocalOutRoot =
       OutRootAbsValid ? OutRootAbs.str().lower() : OutRoot.lower();
 #elif defined(__linux__)
-  std::string LocalFilePath = StringRef(FilePath);
+  std::string LocalFilePath =
+      FilePathAbsValid ? FilePathAbs.c_str() : StringRef(FilePath);
   std::string LocalInRoot = InRootAbsValid ? InRootAbs.c_str() : InRoot;
   std::string LocalOutRoot = OutRootAbsValid ? OutRootAbs.c_str() : OutRoot;
 #else
@@ -78,7 +85,7 @@ static void rewriteDir(SmallString<256> &FilePath, const StringRef InRoot,
   FilePath = NewFilePath;
 }
 
-static void rewriteFileName(SmallString<256> &FilePath) {
+static void rewriteFileName(SmallString<512> &FilePath) {
   SourceProcessType FileType = GetSourceFileType(FilePath.str());
 
   if (FileType & TypeCudaSource) {
@@ -112,7 +119,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   SourceManager Sources(Diagnostics, Tool.getFiles());
   Rewriter Rewrite(Sources, DefaultLangOptions);
 
-  SmallString<256> OutPath;
+  SmallString<512> OutPath;
 
   bool AppliedAll = true;
   if (Tool.getReplacements().empty()) {
@@ -148,9 +155,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       std::error_code EC;
       EC = fs::create_directories(path::parent_path(OutPath));
       if ((bool)EC) {
-        std::string ErrMsg = "[ERROR] Create file : " +
-                             std::string(OutPath.str()) + " fail: " +
-                             EC.message() + "\n";
+        std::string ErrMsg =
+            "[ERROR] Create file : " + std::string(OutPath.str()) +
+            " fail: " + EC.message() + "\n";
         status = MigrationSaveOutFail;
         PrintMsg(ErrMsg);
         return status;
@@ -180,7 +187,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   // The necessary header files which have no no replacements will be copied to
   // "-out-root" directory
   for (const auto &Entry : IncludeFileMap) {
-    SmallString<256> FilePath = StringRef(Entry.first);
+    SmallString<512> FilePath = StringRef(Entry.first);
     if (!Entry.second) {
       makeCanonical(FilePath);
       rewriteDir(FilePath, InRoot, OutRoot);
@@ -195,9 +202,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       std::error_code EC;
       EC = fs::create_directories(path::parent_path(FilePath));
       if ((bool)EC) {
-        std::string ErrMsg = "[ERROR] Create file: " +
-                             std::string(FilePath.str()) + " fail: " +
-                             EC.message() + "\n";
+        std::string ErrMsg =
+            "[ERROR] Create file: " + std::string(FilePath.str()) +
+            " fail: " + EC.message() + "\n";
         status = MigrationSaveOutFail;
         PrintMsg(ErrMsg);
         return status;
@@ -207,8 +214,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       std::ofstream File(FilePath.str(), std::ios::binary);
 
       if (!File) {
-        std::string ErrMsg = "[ERROR] Create file: " +
-                             std::string(FilePath.str()) + " failed.\n";
+        std::string ErrMsg =
+            "[ERROR] Create file: " + std::string(FilePath.str()) +
+            " failed.\n";
         status = MigrationSaveOutFail;
         PrintMsg(ErrMsg);
         return status;
