@@ -277,16 +277,10 @@ public:
     return getLocInfo(getLocation(N));
   }
 
-  static inline SourceLocation getSpellingLocation(SourceLocation Loc) {
-    auto &SM = getSourceManager();
-    if (SM.isMacroArgExpansion(Loc))
-      return SM.getSpellingLoc(Loc);
-    return SM.getExpansionLoc(Loc);
-  }
-
   static inline std::pair<llvm::StringRef, unsigned>
   getLocInfo(SourceLocation Loc) {
-    auto LocInfo = SM->getDecomposedLoc(getSpellingLocation(Loc));
+    auto LocInfo =
+        SM->getDecomposedLoc(getSourceManager().getExpansionLoc(Loc));
     return std::pair<llvm::StringRef, unsigned>(
         SM->getFileEntryForID(LocInfo.first)->getName(), LocInfo.second);
   }
