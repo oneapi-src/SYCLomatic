@@ -13,7 +13,7 @@
 #define SYCLCT_CONFIG_H
 
 #define SYCLCT_VERSION_MAJOR (0)
-#define SYCLCT_VERSION_MINOR (0)
-#define SYCLCT_VERSION_PATCH (1)
+#define SYCLCT_VERSION_MINOR (19)   //year
+#define SYCLCT_VERSION_PATCH (7)    //Month
 
 #endif

@@ -2,10 +2,11 @@ set(LLVM_LINK_COMPONENTS
   Option
   Support
   )
-
 include_directories(
   # For the CUDA-Toolchain and its CudaInstallationDetector
   ../../../clang/lib/Driver/
+  GaHelper/
+  LibcurlLinux/include/
   )
 
 add_clang_library(SyclCT
@@ -23,6 +24,15 @@ add_clang_library(SyclCT
   ValidateArguments.cpp
   ExternalReplacement.cpp
   SignalProcess.cpp
+  GaHelper/active_user_detector.cpp
+  GaHelper/filelock.cpp
+  GaHelper/filesystem_util.cpp
+  GaHelper/gahelper_impl.cpp
+  GaHelper/http_connector.cpp
+  GaHelper/network_util.cpp
+  GaHelper/os_specific.cpp
+  GaHelper/uuid.cpp
+  GAnalytics.cpp
 
   DEPENDS
   ClangDriverOptions

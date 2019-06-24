@@ -28,6 +28,7 @@
 #include "SaveNewFiles.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
+#include "GAnalytics.h"
 #include <string>
 
 #include "ToolChains/Cuda.h"
@@ -579,11 +580,15 @@ void PrintReportOnFault(std::string &FaultMsg) {
 }
 
 int run(int argc, const char **argv) {
+
   if (argc < 2) {
     std::cout << CtHelpHint;
     return MigrationNoCodeChangeHappen;
   }
-
+//TODO:  remove the macro to enable windows support.
+#if defined(__linux__)  
+  GAnalytics();
+#endif
 #if defined(__linux__) || defined(_WIN64)
   InstallSignalHandle();
 #endif

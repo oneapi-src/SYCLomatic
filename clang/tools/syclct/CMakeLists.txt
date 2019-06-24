@@ -1,3 +1,4 @@
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ")
 set(LLVM_LINK_COMPONENTS
   support
   )
@@ -5,17 +6,21 @@ set(LLVM_LINK_COMPONENTS
 add_clang_tool(syclct
   SyclCT.cpp
   )
-
 include_directories(
   # For the CUDA-Toolchain and its CudaInstallationDetector
   ../../../clang/lib/Driver/
   )
+if(UNIX)
+  set(LIBCURL ${CMAKE_SOURCE_DIR}/../clang/lib/SyclCT/LibcurlLinux/lib/libcurl.a)
+else()
+  set(LIBCURL "")
+endif()
 
 target_link_libraries(syclct
   PRIVATE
   SyclCT
+  ${LIBCURL}
   )
-
 #
 
 set(syclct_startup_script
