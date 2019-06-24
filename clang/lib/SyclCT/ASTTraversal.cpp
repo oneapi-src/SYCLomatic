@@ -3965,8 +3965,9 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
 
     std::string SLStr = FileLoc.printToString(SM);
 
-    std::size_t Pos = SLStr.find(':');
-    std::string FileName = SLStr.substr(0, Pos);
+    std::size_t PosCol = SLStr.rfind(':');
+    std::size_t PosRow = SLStr.rfind(':', PosCol-1);
+    std::string FileName = SLStr.substr(0, PosRow);
     LOCStaticsMap[FileName][2]++;
     report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, APIName.c_str());
   }

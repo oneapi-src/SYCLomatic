@@ -35,11 +35,10 @@ void recordTranslationInfo(const ASTContext &Context, const SourceLocation &SL,
   if (SL.isValid()) {
     const SourceLocation FileLoc = SM.getFileLoc(SL);
     std::string SLStr = FileLoc.printToString(SM);
-
-    std::size_t Pos = SLStr.find(':');
-    std::string FileName = SLStr.substr(0, Pos);
-    std::size_t PosNext = SLStr.find(':', Pos + 1);
-    std::string LineNo = SLStr.substr(Pos + 1, PosNext - Pos - 1);
+    std::size_t PosCol = SLStr.rfind(':');
+    std::size_t PosRow = SLStr.rfind(':', PosCol-1);
+    std::string FileName = SLStr.substr(0, PosRow);
+    std::string LineNo = SLStr.substr(PosRow + 1, PosCol - PosRow - 1);
 
     std::string Key = FileName + ":" + LineNo;
 
