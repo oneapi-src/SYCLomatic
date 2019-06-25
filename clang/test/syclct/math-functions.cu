@@ -32,6 +32,25 @@ __device__ float4 fun() {
   return make_float4(__fmaf_rd(a.x, b.x, c.x), __fmaf_rz(a.y, b.y, c.y), __fmaf_rn(a.z, b.z, c.z), __fmaf_rn(a.w, b.w, c.w));
 }
 
+
+__global__ void kernel() {
+
+}
+
+void foo() {
+  // CHECK: {
+  // CHECK-NEXT:   syclct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernel_{{[0-9a-z]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(ceil(2.3), 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_{{[0-9a-z]+}}) {
+  // CHECK-NEXT:           kernel();
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
+  kernel<<< ceil(2.3), 1 >>>();
+}
+
 int main() {
   // max
   {

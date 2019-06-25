@@ -156,10 +156,11 @@ void ExprAnalysis::analysisExpr(const CStyleCastExpr *Cast) {
 }
 
 void ExprAnalysis::analysisExpr(const CallExpr *CE) {
-  if (!CE->getDirectCallee())
+  auto FD = CE->getDirectCallee();
+  if (!FD || !FD->hasAttr<CUDADeviceAttr>())
     return;
 
-  const std::string FuncName = CE->getDirectCallee()->getNameAsString();
+  const std::string FuncName = FD->getNameAsString();
   if (MathFunctionsRule::SingleDoubleFunctionNamesMap.count(FuncName) != 0) {
     std::string NewFuncName =
         MathFunctionsRule::SingleDoubleFunctionNamesMap.at(FuncName);

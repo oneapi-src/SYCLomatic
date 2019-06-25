@@ -2161,8 +2161,9 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (TimeHeaderFilter.find(FID) == TimeHeaderFilter.end()) {
       TimeHeaderFilter.insert(FID);
       emplaceTransformation(new InsertText(
-          IncludeLoc, getNL() + std::string("#include <time.h> // For clock_t, "
-                                            "clock and CLOCKS_PER_SEC") +
+          IncludeLoc, getNL() +
+                          std::string("#include <time.h> // For clock_t, "
+                                      "clock and CLOCKS_PER_SEC") +
                           getNL()));
     }
   } else if (FuncName == "cudaDeviceSetLimit" ||
@@ -3351,12 +3352,14 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
   TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callUsed"),
                     /* IsAssigned */ true);
 
-  TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callExprUsed"),
-                    /* IsAssigned */ true, getNodeAsType<UnresolvedLookupExpr>(
-                                               Result, "unresolvedCallUsed"));
-  TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callExpr"),
-                    /* IsAssigned */ false, getNodeAsType<UnresolvedLookupExpr>(
-                                                Result, "unresolvedCall"));
+  TranslateCallExpr(
+      getNodeAsType<CallExpr>(Result, "callExprUsed"),
+      /* IsAssigned */ true,
+      getNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedCallUsed"));
+  TranslateCallExpr(
+      getNodeAsType<CallExpr>(Result, "callExpr"),
+      /* IsAssigned */ false,
+      getNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedCall"));
 }
 
 MemoryTranslationRule::MemoryTranslationRule() {
@@ -3436,21 +3439,31 @@ void UnnamedTypesRule::run(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(UnnamedTypesRule)
 
 void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
+  auto GetFirst = [](const std::pair<std::string, std::string> &P) {
+    return P.first;
+  };
+
   std::vector<std::string> HalfFunctionNames;
-  for (auto Function : HalfFunctionNamesMap)
-    HalfFunctionNames.push_back(Function.first);
+  HalfFunctionNames.reserve(HalfFunctionNamesMap.size());
+  std::transform(HalfFunctionNamesMap.begin(), HalfFunctionNamesMap.end(),
+                 std::back_inserter(HalfFunctionNames), GetFirst);
 
   std::vector<std::string> SingleDoubleFunctionNames;
-  for (auto Function : SingleDoubleFunctionNamesMap)
-    SingleDoubleFunctionNames.push_back(Function.first);
+  SingleDoubleFunctionNames.reserve(SingleDoubleFunctionNamesMap.size());
+  std::transform(SingleDoubleFunctionNamesMap.begin(),
+                 SingleDoubleFunctionNamesMap.end(),
+                 std::back_inserter(SingleDoubleFunctionNames), GetFirst);
 
   std::vector<std::string> MiscFunctionNames;
-  for (auto Function : MiscFunctionNamesMap)
-    MiscFunctionNames.push_back(Function.first);
+  MiscFunctionNames.reserve(MiscFunctionNamesMap.size());
+  std::transform(MiscFunctionNamesMap.begin(), MiscFunctionNamesMap.end(),
+                 std::back_inserter(MiscFunctionNames), GetFirst);
 
   std::vector<std::string> TypecastFunctionNames;
-  for (auto Function : TypecastFunctionNamesMap)
-    TypecastFunctionNames.push_back(Function.first);
+  TypecastFunctionNames.reserve(TypecastFunctionNamesMap.size());
+  std::transform(TypecastFunctionNamesMap.begin(),
+                 TypecastFunctionNamesMap.end(),
+                 std::back_inserter(TypecastFunctionNames), GetFirst);
 
   MF.addMatcher(
       callExpr(callee(functionDecl(
@@ -4104,7 +4117,7 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
     std::string SLStr = FileLoc.printToString(SM);
 
     std::size_t PosCol = SLStr.rfind(':');
-    std::size_t PosRow = SLStr.rfind(':', PosCol-1);
+    std::size_t PosRow = SLStr.rfind(':', PosCol - 1);
     std::string FileName = SLStr.substr(0, PosRow);
     LOCStaticsMap[FileName][2]++;
     report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, APIName.c_str());
