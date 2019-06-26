@@ -153,13 +153,22 @@ static inline SourceLocation getStartOfLine(SourceLocation Loc,
   auto LocInfo = SM.getDecomposedLoc(SM.getExpansionLoc(Loc));
   auto Buffer = SM.getBufferData(LocInfo.first);
   auto NLPos = Buffer.find_last_of('\n', LocInfo.second);
-  while (NLPos != StringRef::npos && Buffer[NLPos - 1] == '\\') {
-    NLPos = Buffer.find_last_of('\n', NLPos - 1);
+  auto Skip = 1;
+  while (NLPos != StringRef::npos) {
+    if (Buffer[NLPos - 1] == '\r') {
+      --NLPos;
+      Skip = 2;
+    }
+
+    if (Buffer[NLPos - 1] == '\\')
+      NLPos = Buffer.find_last_of('\n', NLPos - 1);
+    else
+      break;
   }
   if (NLPos == StringRef::npos) {
     NLPos = 0;
   } else {
-    NLPos++;
+    NLPos += Skip;
   }
   return SM.getExpansionLoc(Loc).getLocWithOffset(NLPos - LocInfo.second);
 }
