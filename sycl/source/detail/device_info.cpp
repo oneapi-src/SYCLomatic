@@ -284,7 +284,7 @@ get_device_info_host<info::device::double_fp_config>() {
 template <>
 info::global_mem_cache_type
 get_device_info_host<info::device::global_mem_cache_type>() {
-  return info::global_mem_cache_type::write_only;
+  return info::global_mem_cache_type::read_write;
 }
 
 template <>
@@ -462,6 +462,12 @@ template <> cl_uint get_device_info_host<info::device::reference_count>() {
 }
 
 template <> cl_uint get_device_info_host<info::device::max_num_sub_groups>() {
+  // TODO update once subgroups are enabled
+  throw runtime_error("Sub-group feature is not supported on HOST device.");
+}
+
+template <> vector_class<size_t>
+get_device_info_host<info::device::sub_group_sizes>() {
   // TODO update once subgroups are enabled
   throw runtime_error("Sub-group feature is not supported on HOST device.");
 }

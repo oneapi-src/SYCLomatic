@@ -118,6 +118,7 @@ enum class device : cl_device_info {
   max_num_sub_groups = CL_DEVICE_MAX_NUM_SUB_GROUPS,
   sub_group_independent_forward_progress =
       CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS,
+  sub_group_sizes = CL_DEVICE_SUB_GROUP_SIZES_INTEL,
   partition_type_property
 };
 
@@ -161,7 +162,7 @@ enum class fp_config : cl_device_fp_config {
   soft_float
 };
 
-enum class global_mem_cache_type : int { none, read_only, write_only };
+enum class global_mem_cache_type : int { none, read_only, read_write };
 
 enum class execution_capability : unsigned int {
   exec_kernel,
@@ -323,6 +324,7 @@ PARAM_TRAITS_SPEC(device, partition_type_affinity_domain,
 PARAM_TRAITS_SPEC(device, reference_count, cl_uint)
 PARAM_TRAITS_SPEC(device, max_num_sub_groups, cl_uint)
 PARAM_TRAITS_SPEC(device, sub_group_independent_forward_progress, bool)
+PARAM_TRAITS_SPEC(device, sub_group_sizes, vector_class<size_t>)
 
 PARAM_TRAITS_SPEC(context, reference_count, cl_uint)
 PARAM_TRAITS_SPEC(context, platform, cl::sycl::platform)

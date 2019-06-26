@@ -167,16 +167,16 @@ const llvm::MemoryBuffer *ContentCache::getBuffer(DiagnosticsEngine &Diag,
   // http://en.wikipedia.org/wiki/Byte_order_mark for more information.
   StringRef BufStr = Buffer.getPointer()->getBuffer();
   const char *InvalidBOM = llvm::StringSwitch<const char *>(BufStr)
-    .StartsWith("\xFE\xFF", "UTF-16 (BE)")
-    .StartsWith("\xFF\xFE", "UTF-16 (LE)")
     .StartsWith(llvm::StringLiteral::withInnerNUL("\x00\x00\xFE\xFF"),
                                                   "UTF-32 (BE)")
     .StartsWith(llvm::StringLiteral::withInnerNUL("\xFF\xFE\x00\x00"),
                                                   "UTF-32 (LE)")
+    .StartsWith("\xFE\xFF", "UTF-16 (BE)")
+    .StartsWith("\xFF\xFE", "UTF-16 (LE)")
     .StartsWith("\x2B\x2F\x76", "UTF-7")
     .StartsWith("\xF7\x64\x4C", "UTF-1")
     .StartsWith("\xDD\x73\x66\x73", "UTF-EBCDIC")
-    .StartsWith("\x0E\xFE\xFF", "SDSU")
+    .StartsWith("\x0E\xFE\xFF", "SCSU")
     .StartsWith("\xFB\xEE\x28", "BOCU-1")
     .StartsWith("\x84\x31\x95\x33", "GB-18030")
     .Default(nullptr);
@@ -1430,6 +1430,7 @@ PresumedLoc SourceManager::getPresumedLoc(SourceLocation Loc,
   // To get the source name, first consult the FileEntry (if one exists)
   // before the MemBuffer as this will avoid unnecessarily paging in the
   // MemBuffer.
+  FileID FID = LocInfo.first;
   StringRef Filename;
   if (C->OrigEntry)
     Filename = C->OrigEntry->getName();
@@ -1453,8 +1454,12 @@ PresumedLoc SourceManager::getPresumedLoc(SourceLocation Loc,
     if (const LineEntry *Entry =
           LineTable->FindNearestLineEntry(LocInfo.first, LocInfo.second)) {
       // If the LineEntry indicates a filename, use it.
-      if (Entry->FilenameID != -1)
+      if (Entry->FilenameID != -1) {
         Filename = LineTable->getFilename(Entry->FilenameID);
+        // The contents of files referenced by #line are not in the
+        // SourceManager
+        FID = FileID::get(0);
+      }
 
       // Use the line number specified by the LineEntry.  This line number may
       // be multiple lines down from the line entry.  Add the difference in
@@ -1473,7 +1478,7 @@ PresumedLoc SourceManager::getPresumedLoc(SourceLocation Loc,
     }
   }
 
-  return PresumedLoc(Filename.data(), LineNo, ColNo, IncludeLoc);
+  return PresumedLoc(Filename.data(), FID, LineNo, ColNo, IncludeLoc);
 }
 
 /// Returns whether the PresumedLoc for a given SourceLocation is
@@ -1582,7 +1587,7 @@ FileID SourceManager::translateFile(const FileEntry *SourceFile) const {
     if (MainSLoc.isFile()) {
       const ContentCache *MainContentCache
         = MainSLoc.getFile().getContentCache();
-      if (!MainContentCache) {
+      if (!MainContentCache || !MainContentCache->OrigEntry) {
         // Can't do anything
       } else if (MainContentCache->OrigEntry == SourceFile) {
         FirstFID = MainFileID;

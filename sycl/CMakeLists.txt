@@ -9,6 +9,9 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 if(MSVC)
   set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+  # Skip asynchronous C++ exceptions catching and assume "extern C" functions
+  # never throw C++ exceptions.
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 endif()
 
 # Get clang's version
@@ -60,15 +63,16 @@ endif()
 if( NOT OpenCL_LIBRARIES )
   message("OpenCL_LIBRARIES is missed. Try to build from GitHub sources.")
   set(OpenCL_LIBRARIES "${LLVM_LIBRARY_OUTPUT_INTDIR}/libOpenCL.so")
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/icd_build)
   ExternalProject_Add(ocl-icd
     GIT_REPOSITORY    https://github.com/KhronosGroup/OpenCL-ICD-Loader.git
     GIT_TAG           origin/master
     SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/OpenCL/icd"
-    CONFIGURE_COMMAND ""
-    BUILD_IN_SOURCE   TRUE
+    BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/icd_build"
+    CONFIGURE_COMMAND ${CMAKE_COMMAND} "${CMAKE_CURRENT_BINARY_DIR}/OpenCL/icd" -DCMAKE_INSTALL_PREFIX=${LLVM_BINARY_DIR}
     BUILD_COMMAND     make C_INCLUDE_PATH=${CMAKE_CURRENT_BINARY_DIR}/OpenCL/inc
-    INSTALL_COMMAND   ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_BINARY_DIR}/OpenCL/icd/build ${LLVM_LIBRARY_OUTPUT_INTDIR}
-    STEP_TARGETS      build,install
+    INSTALL_COMMAND   make install 
+    STEP_TARGETS      configure,build,install
     DEPENDS           ocl-headers
   )
 else()
@@ -78,7 +82,7 @@ else()
   add_custom_target(ocl-icd DEPENDS ${OpenCL_LIBRARIES} COMMENT "Copying OpenCL ICD Loader ...")
 endif()
 
-set(SYCL_INCLUDE "${CMAKE_CURRENT_BINARY_DIR}/include/")
+set(SYCL_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 set(OPENCL_INCLUDE "${OpenCL_INCLUDE_DIRS}")
 
 # Configure SYCL version macro
@@ -126,6 +130,7 @@ add_library("${SYCLLibrary}" SHARED
   "${sourceRootPath}/detail/event_impl.cpp"
   "${sourceRootPath}/detail/force_device.cpp"
   "${sourceRootPath}/detail/helpers.cpp"
+  "${sourceRootPath}/detail/image_impl.cpp"
   "${sourceRootPath}/detail/kernel_impl.cpp"
   "${sourceRootPath}/detail/kernel_info.cpp"
   "${sourceRootPath}/detail/memory_manager.cpp"
@@ -138,13 +143,11 @@ add_library("${SYCLLibrary}" SHARED
   "${sourceRootPath}/detail/os_util.cpp"
   "${sourceRootPath}/detail/platform_util.cpp"
   "${sourceRootPath}/detail/sampler_impl.cpp"
+  "${sourceRootPath}/detail/stream_impl.cpp"
   "${sourceRootPath}/detail/scheduler/commands.cpp"
-  "${sourceRootPath}/detail/scheduler/commands2.cpp"
-  "${sourceRootPath}/detail/scheduler/printers.cpp"
   "${sourceRootPath}/detail/scheduler/scheduler.cpp"
   "${sourceRootPath}/detail/scheduler/graph_processor.cpp"
   "${sourceRootPath}/detail/scheduler/graph_builder.cpp"
-  "${sourceRootPath}/detail/scheduler/scheduler2.cpp"
   "${sourceRootPath}/detail/util.cpp"
   "${sourceRootPath}/context.cpp"
   "${sourceRootPath}/device.cpp"
@@ -156,6 +159,7 @@ add_library("${SYCLLibrary}" SHARED
   "${sourceRootPath}/platform.cpp"
   "${sourceRootPath}/queue.cpp"
   "${sourceRootPath}/sampler.cpp"
+  "${sourceRootPath}/stream.cpp"
   "${sourceRootPath}/spirv_ops.cpp"
 )
 
@@ -181,11 +185,10 @@ add_custom_target( sycl-toolchain
 
 set_target_properties("${SYCLLibrary}" PROPERTIES LINKER_LANGUAGE CXX)
 
-# Workaround for bug in GCC version 5.
+# Workaround for bug in GCC version 5 and higher.
 # More information https://bugs.launchpad.net/ubuntu/+source/gcc-5/+bug/1568899
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND
-    CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.0 AND
-    CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6.0)
+    CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.0)
   target_link_libraries("${SYCLLibrary}" gcc_s gcc)
 endif()
 

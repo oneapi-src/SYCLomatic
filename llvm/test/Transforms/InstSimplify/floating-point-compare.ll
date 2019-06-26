@@ -179,7 +179,9 @@ declare float @llvm.sqrt.f32(float)
 declare double @llvm.powi.f64(double,i32)
 declare float @llvm.exp.f32(float)
 declare float @llvm.minnum.f32(float, float)
+declare <2 x float> @llvm.minnum.v2f32(<2 x float>, <2 x float>)
 declare float @llvm.maxnum.f32(float, float)
+declare <2 x float> @llvm.maxnum.v2f32(<2 x float>, <2 x float>)
 declare float @llvm.maximum.f32(float, float)
 declare double @llvm.exp2.f64(double)
 declare float @llvm.fma.f32(float,float,float)
@@ -483,6 +485,370 @@ define i1 @orderedLessZeroMaximum(float, float) {
   %b = call float @llvm.maximum.f32(float %a, float %1)
   %uge = fcmp uge float %b, 0.000000e+00
   ret i1 %uge
+}
+
+define i1 @minnum_non_nan(float %x) {
+; CHECK-LABEL: @minnum_non_nan(
+; CHECK-NEXT:    ret i1 true
+;
+  %min = call float @llvm.minnum.f32(float 0.5, float %x)
+  %cmp = fcmp ord float %min, 1.0
+  ret i1 %cmp
+}
+
+define i1 @maxnum_non_nan(float %x) {
+; CHECK-LABEL: @maxnum_non_nan(
+; CHECK-NEXT:    ret i1 false
+;
+  %min = call float @llvm.maxnum.f32(float %x, float 42.0)
+  %cmp = fcmp uno float %min, 12.0
+  ret i1 %cmp
+}
+
+; min(x, 0.5) == 1.0 --> false
+
+define i1 @minnum_oeq_small_min_constant(float %x) {
+; CHECK-LABEL: @minnum_oeq_small_min_constant(
+; CHECK-NEXT:    ret i1 false
+;
+  %min = call float @llvm.minnum.f32(float %x, float 0.5)
+  %cmp = fcmp oeq float %min, 1.0
+  ret i1 %cmp
+}
+
+; min(x, 0.5) > 1.0 --> false
+
+define i1 @minnum_ogt_small_min_constant(float %x) {
+; CHECK-LABEL: @minnum_ogt_small_min_constant(
+; CHECK-NEXT:    ret i1 false
+;
+  %min = call float @llvm.minnum.f32(float %x, float 0.5)
+  %cmp = fcmp ogt float %min, 1.0
+  ret i1 %cmp
+}
+
+; min(x, 0.5) >= 1.0 --> false
+
+define i1 @minnum_oge_small_min_constant(float %x) {
+; CHECK-LABEL: @minnum_oge_small_min_constant(
+; CHECK-NEXT:    ret i1 false
+;
+  %min = call float @llvm.minnum.f32(float %x, float 0.5)
+  %cmp = fcmp oge float %min, 1.0
+  ret i1 %cmp
+}
+
+; min(x, 0.5) == 1.0 --> false
+
+define i1 @minnum_ueq_small_min_constant(float %x) {
+; CHECK-LABEL: @minnum_ueq_small_min_constant(
+; CHECK-NEXT:    ret i1 false
+;
+  %min = call float @llvm.minnum.f32(float %x, float 0.5)
+  %cmp = fcmp ueq float %min, 1.0
+  ret i1 %cmp
+}
+
+; min(x, 0.5) > 1.0 --> false
+
+define i1 @minnum_ugt_small_min_constant(float %x) {
+; CHECK-LABEL: @minnum_ugt_small_min_constant(
+; CHECK-NEXT:    ret i1 false
+;
+  %min = call float @llvm.minnum.f32(float %x, float 0.5)
+  %cmp = fcmp ugt float %min, 1.0
+  ret i1 %cmp
+}
+
+; min(x, 0.5) >= 1.0 --> false
+
+define <2 x i1> @minnum_uge_small_min_constant(<2 x float> %x) {
+; CHECK-LABEL: @minnum_uge_small_min_constant(
+; CHECK-NEXT:    ret <2 x i1> zeroinitializer
+;
+  %min = call <2 x float> @llvm.minnum.v2f32(<2 x float> %x, <2 x float> <float 0.5, float 0.5>)
+  %cmp = fcmp uge <2 x float> %min, <float 1.0, float 1.0>
+  ret <2 x i1> %cmp
+}
+
+; min(x, 0.5) < 1.0 --> true
+
+define <2 x i1> @minnum_olt_small_min_constant(<2 x float> %x) {
+; CHECK-LABEL: @minnum_olt_small_min_constant(
+; CHECK-NEXT:    ret <2 x i1> <i1 true, i1 true>
+;
+  %min = call <2 x float> @llvm.minnum.v2f32(<2 x float> %x, <2 x float> <float 0.5, float 0.5>)
+  %cmp = fcmp olt <2 x float> %min, <float 1.0, float 1.0>
+  ret <2 x i1> %cmp
+}
+
+; min(x, 0.5) <= 1.0 --> true
+
+define i1 @minnum_ole_small_min_constant(float %x) {
+; CHECK-LABEL: @minnum_ole_small_min_constant(
+; CHECK-NEXT:    ret i1 true
+;
+  %min = call float @llvm.minnum.f32(float %x, float 0.5)
+  %cmp = fcmp ole float %min, 1.0
+  ret i1 %cmp
+}
+
+; min(x, 0.5) != 1.0 --> true
+
+define i1 @minnum_one_small_min_constant(float %x) {
+; CHECK-LABEL: @minnum_one_small_min_constant(
+; CHECK-NEXT:    ret i1 true
+;
+  %min = call float @llvm.minnum.f32(float %x, float 0.5)
+  %cmp = fcmp one float %min, 1.0
+  ret i1 %cmp
+}
+
+; min(x, 0.5) < 1.0 --> true
+
+define i1 @minnum_ult_small_min_constant(float %x) {
+; CHECK-LABEL: @minnum_ult_small_min_constant(
+; CHECK-NEXT:    ret i1 true
+;
+  %min = call float @llvm.minnum.f32(float %x, float 0.5)
+  %cmp = fcmp ult float %min, 1.0
+  ret i1 %cmp
+}
+
+; min(x, 0.5) <= 1.0 --> true
+
+define i1 @minnum_ule_small_min_constant(float %x) {
+; CHECK-LABEL: @minnum_ule_small_min_constant(
+; CHECK-NEXT:    ret i1 true
+;
+  %min = call float @llvm.minnum.f32(float %x, float 0.5)
+  %cmp = fcmp ule float %min, 1.0
+  ret i1 %cmp
+}
+
+; min(x, 0.5) != 1.0 --> true
+
+define i1 @minnum_une_small_min_constant(float %x) {
+; CHECK-LABEL: @minnum_une_small_min_constant(
+; CHECK-NEXT:    ret i1 true
+;
+  %min = call float @llvm.minnum.f32(float %x, float 0.5)
+  %cmp = fcmp une float %min, 1.0
+  ret i1 %cmp
+}
+
+; Negative test:
+; min(x, 1.0) != 1.0 --> ?
+
+define i1 @minnum_une_equal_min_constant(float %x) {
+; CHECK-LABEL: @minnum_une_equal_min_constant(
+; CHECK-NEXT:    [[MIN:%.*]] = call float @llvm.minnum.f32(float [[X:%.*]], float 1.000000e+00)
+; CHECK-NEXT:    [[CMP:%.*]] = fcmp une float [[MIN]], 1.000000e+00
+; CHECK-NEXT:    ret i1 [[CMP]]
+;
+  %min = call float @llvm.minnum.f32(float %x, float 1.0)
+  %cmp = fcmp une float %min, 1.0
+  ret i1 %cmp
+}
+
+; Negative test:
+; min(x, 2.0) != 1.0 --> ?
+
+define i1 @minnum_une_large_min_constant(float %x) {
+; CHECK-LABEL: @minnum_une_large_min_constant(
+; CHECK-NEXT:    [[MIN:%.*]] = call float @llvm.minnum.f32(float [[X:%.*]], float 2.000000e+00)
+; CHECK-NEXT:    [[CMP:%.*]] = fcmp une float [[MIN]], 1.000000e+00
+; CHECK-NEXT:    ret i1 [[CMP]]
+;
+  %min = call float @llvm.minnum.f32(float %x, float 2.0)
+  %cmp = fcmp une float %min, 1.0
+  ret i1 %cmp
+}
+
+; Partial negative test (the minnum simplifies):
+; min(x, NaN) != 1.0 --> x != 1.0
+
+define i1 @minnum_une_nan_min_constant(float %x) {
+; CHECK-LABEL: @minnum_une_nan_min_constant(
+; CHECK-NEXT:    [[CMP:%.*]] = fcmp une float [[X:%.*]], 1.000000e+00
+; CHECK-NEXT:    ret i1 [[CMP]]
+;
+  %min = call float @llvm.minnum.f32(float %x, float 0x7FF8000000000000)
+  %cmp = fcmp une float %min, 1.0
+  ret i1 %cmp
+}
+
+; max(x, 1.5) == 1.0 --> false
+
+define i1 @maxnum_oeq_large_max_constant(float %x) {
+; CHECK-LABEL: @maxnum_oeq_large_max_constant(
+; CHECK-NEXT:    ret i1 false
+;
+  %max = call float @llvm.maxnum.f32(float %x, float 1.5)
+  %cmp = fcmp oeq float %max, 1.0
+  ret i1 %cmp
+}
+
+; max(x, 1.5) < 1.0 --> false
+
+define i1 @maxnum_olt_large_max_constant(float %x) {
+; CHECK-LABEL: @maxnum_olt_large_max_constant(
+; CHECK-NEXT:    ret i1 false
+;
+  %max = call float @llvm.maxnum.f32(float %x, float 1.5)
+  %cmp = fcmp olt float %max, 1.0
+  ret i1 %cmp
+}
+
+; max(x, 1.5) <= 1.0 --> false
+
+define i1 @maxnum_ole_large_max_constant(float %x) {
+; CHECK-LABEL: @maxnum_ole_large_max_constant(
+; CHECK-NEXT:    ret i1 false
+;
+  %max = call float @llvm.maxnum.f32(float %x, float 1.5)
+  %cmp = fcmp ole float %max, 1.0
+  ret i1 %cmp
+}
+
+; max(x, 1.5) == 1.0 --> false
+
+define i1 @maxnum_ueq_large_max_constant(float %x) {
+; CHECK-LABEL: @maxnum_ueq_large_max_constant(
+; CHECK-NEXT:    ret i1 false
+;
+  %max = call float @llvm.maxnum.f32(float %x, float 1.5)
+  %cmp = fcmp ueq float %max, 1.0
+  ret i1 %cmp
+}
+
+; max(x, 1.5) < 1.0 --> false
+
+define i1 @maxnum_ult_large_max_constant(float %x) {
+; CHECK-LABEL: @maxnum_ult_large_max_constant(
+; CHECK-NEXT:    ret i1 false
+;
+  %max = call float @llvm.maxnum.f32(float %x, float 1.5)
+  %cmp = fcmp ult float %max, 1.0
+  ret i1 %cmp
+}
+
+; max(x, 1.5) <= 1.0 --> false
+
+define <2 x i1> @maxnum_ule_large_max_constant(<2 x float> %x) {
+; CHECK-LABEL: @maxnum_ule_large_max_constant(
+; CHECK-NEXT:    ret <2 x i1> zeroinitializer
+;
+  %max = call <2 x float> @llvm.maxnum.v2f32(<2 x float> %x, <2 x float> <float 1.5, float 1.5>)
+  %cmp = fcmp ule <2 x float> %max, <float 1.0, float 1.0>
+  ret <2 x i1> %cmp
+}
+
+; max(x, 1.5) > 1.0 --> true
+
+define <2 x i1> @maxnum_ogt_large_max_constant(<2 x float> %x) {
+; CHECK-LABEL: @maxnum_ogt_large_max_constant(
+; CHECK-NEXT:    ret <2 x i1> <i1 true, i1 true>
+;
+  %max = call <2 x float> @llvm.maxnum.v2f32(<2 x float> %x, <2 x float> <float 1.5, float 1.5>)
+  %cmp = fcmp ogt <2 x float> %max, <float 1.0, float 1.0>
+  ret <2 x i1> %cmp
+}
+
+; max(x, 1.5) >= 1.0 --> true
+
+define i1 @maxnum_oge_large_max_constant(float %x) {
+; CHECK-LABEL: @maxnum_oge_large_max_constant(
+; CHECK-NEXT:    ret i1 true
+;
+  %max = call float @llvm.maxnum.f32(float %x, float 1.5)
+  %cmp = fcmp oge float %max, 1.0
+  ret i1 %cmp
+}
+
+; max(x, 1.5) != 1.0 --> true
+
+define i1 @maxnum_one_large_max_constant(float %x) {
+; CHECK-LABEL: @maxnum_one_large_max_constant(
+; CHECK-NEXT:    ret i1 true
+;
+  %max = call float @llvm.maxnum.f32(float %x, float 1.5)
+  %cmp = fcmp one float %max, 1.0
+  ret i1 %cmp
+}
+
+; max(x, 1.5) > 1.0 --> true
+
+define i1 @maxnum_ugt_large_max_constant(float %x) {
+; CHECK-LABEL: @maxnum_ugt_large_max_constant(
+; CHECK-NEXT:    ret i1 true
+;
+  %max = call float @llvm.maxnum.f32(float %x, float 1.5)
+  %cmp = fcmp ugt float %max, 1.0
+  ret i1 %cmp
+}
+
+; max(x, 1.5) >= 1.0 --> true
+
+define i1 @maxnum_uge_large_max_constant(float %x) {
+; CHECK-LABEL: @maxnum_uge_large_max_constant(
+; CHECK-NEXT:    ret i1 true
+;
+  %max = call float @llvm.maxnum.f32(float %x, float 1.5)
+  %cmp = fcmp uge float %max, 1.0
+  ret i1 %cmp
+}
+
+; max(x, 1.5) != 1.0 --> true
+
+define i1 @maxnum_une_large_max_constant(float %x) {
+; CHECK-LABEL: @maxnum_une_large_max_constant(
+; CHECK-NEXT:    ret i1 true
+;
+  %max = call float @llvm.maxnum.f32(float %x, float 1.5)
+  %cmp = fcmp une float %max, 1.0
+  ret i1 %cmp
+}
+
+; Negative test:
+; max(x, 1.0) != 1.0 --> ?
+
+define i1 @maxnum_une_equal_max_constant(float %x) {
+; CHECK-LABEL: @maxnum_une_equal_max_constant(
+; CHECK-NEXT:    [[MAX:%.*]] = call float @llvm.maxnum.f32(float [[X:%.*]], float 1.000000e+00)
+; CHECK-NEXT:    [[CMP:%.*]] = fcmp une float [[MAX]], 1.000000e+00
+; CHECK-NEXT:    ret i1 [[CMP]]
+;
+  %max = call float @llvm.maxnum.f32(float %x, float 1.0)
+  %cmp = fcmp une float %max, 1.0
+  ret i1 %cmp
+}
+
+; Negative test:
+; max(x, 0.5) != 1.0 --> ?
+
+define i1 @maxnum_une_small_max_constant(float %x) {
+; CHECK-LABEL: @maxnum_une_small_max_constant(
+; CHECK-NEXT:    [[MAX:%.*]] = call float @llvm.maxnum.f32(float [[X:%.*]], float 5.000000e-01)
+; CHECK-NEXT:    [[CMP:%.*]] = fcmp une float [[MAX]], 1.000000e+00
+; CHECK-NEXT:    ret i1 [[CMP]]
+;
+  %max = call float @llvm.maxnum.f32(float %x, float 0.5)
+  %cmp = fcmp une float %max, 1.0
+  ret i1 %cmp
+}
+
+; Partial negative test (the maxnum simplifies):
+; max(x, NaN) != 1.0 --> x != 1.0
+
+define i1 @maxnum_une_nan_max_constant(float %x) {
+; CHECK-LABEL: @maxnum_une_nan_max_constant(
+; CHECK-NEXT:    [[CMP:%.*]] = fcmp une float [[X:%.*]], 1.000000e+00
+; CHECK-NEXT:    ret i1 [[CMP]]
+;
+  %max = call float @llvm.maxnum.f32(float %x, float 0x7FF8000000000000)
+  %cmp = fcmp une float %max, 1.0
+  ret i1 %cmp
 }
 
 define i1 @known_positive_olt_with_negative_constant(double %a) {

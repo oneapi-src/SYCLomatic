@@ -82,7 +82,7 @@ namespace detail {
 // Note! This function relies on the fact that all SYCL interface classes
 // contain "impl" field that points to implementation object. "impl" field
 // should be accessible from this function.
-template <class T> decltype(T::impl) getSyclObjImpl(const T &SyclObject) {
+template <class Obj> decltype(Obj::impl) getSyclObjImpl(const Obj &SyclObject) {
   return SyclObject.impl;
 }
 
@@ -103,15 +103,8 @@ template <class T> T createSyclObjFromImpl(decltype(T::impl) ImplObj) {
   return T(ImplObj);
 }
 
-#ifdef __SYCL_DEVICE_ONLY__
-// The flag type for passing flag arguments to barrier(), mem_fence(),
-// read_mem_fence(), and write_mem_fence() functions.
-typedef uint cl_mem_fence_flags;
-
-const cl_mem_fence_flags CLK_LOCAL_MEM_FENCE   = 0x01;
-const cl_mem_fence_flags CLK_GLOBAL_MEM_FENCE  = 0x02;
-const cl_mem_fence_flags CLK_CHANNEL_MEM_FENCE = 0x04;
-#endif // __SYCL_DEVICE_ONLY__
+// Returns the smallest power of two not less than Var
+size_t getNextPowerOfTwo(size_t Var);
 
 } // namespace detail
 } // namespace sycl

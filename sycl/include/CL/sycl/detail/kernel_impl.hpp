@@ -30,8 +30,19 @@ public:
   kernel_impl(cl_kernel ClKernel, const context &SyclContext);
 
   kernel_impl(cl_kernel ClKernel, const context &SyclContext,
-              std::shared_ptr<program_impl> ProgramImpl)
-      : ClKernel(ClKernel), Context(SyclContext), ProgramImpl(ProgramImpl) {}
+              std::shared_ptr<program_impl> ProgramImpl,
+              bool IsCreatedFromSource)
+      : ClKernel(ClKernel), Context(SyclContext), ProgramImpl(ProgramImpl),
+        IsCreatedFromSource(IsCreatedFromSource) {
+    cl_context Context = nullptr;
+    CHECK_OCL_CODE(clGetKernelInfo(ClKernel, CL_KERNEL_CONTEXT, sizeof(Context),
+                                   &Context, nullptr));
+    auto ContextImpl = detail::getSyclObjImpl(SyclContext);
+    if (ContextImpl->getHandleRef() != Context)
+      throw cl::sycl::invalid_parameter_error(
+          "Input context must be the same as the context of cl_kernel");
+    CHECK_OCL_CODE(clRetainKernel(ClKernel));
+  }
 
   // Host kernel constructor
   kernel_impl(const context &SyclContext,
@@ -114,10 +125,13 @@ public:
 
   cl_kernel &getHandleRef() { return ClKernel; }
 
+  bool isCreatedFromSource() const;
+
 private:
   cl_kernel ClKernel;
   context Context;
   std::shared_ptr<program_impl> ProgramImpl;
+  bool IsCreatedFromSource = true;
 };
 
 template <> context kernel_impl::get_info<info::kernel::context>() const;

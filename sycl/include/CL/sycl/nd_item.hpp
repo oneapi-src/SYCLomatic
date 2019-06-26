@@ -8,14 +8,16 @@
 
 #pragma once
 
+#include <CL/__spirv/spirv_ops.hpp>
 #include <CL/sycl/access/access.hpp>
+#include <CL/sycl/detail/helpers.hpp>
 #include <CL/sycl/group.hpp>
 #include <CL/sycl/id.hpp>
 #include <CL/sycl/intel/sub_group.hpp>
 #include <CL/sycl/item.hpp>
 #include <CL/sycl/nd_range.hpp>
 #include <CL/sycl/range.hpp>
-#include <CL/__spirv/spirv_ops.hpp>
+
 #include <stdexcept>
 #include <type_traits>
 
@@ -50,7 +52,7 @@ template <int dimensions = 1> struct nd_item {
 
   size_t get_group(int dimension) const { return Group[dimension]; }
 
-  size_t get_group_linear_id() const { return Group.get_linear(); }
+  size_t get_group_linear_id() const { return Group.get_linear_id(); }
 
   range<dimensions> get_group_range() const {
     return Group.get_global_range() / Group.get_local_range();
@@ -81,22 +83,9 @@ template <int dimensions = 1> struct nd_item {
 
   void barrier(access::fence_space accessSpace =
                    access::fence_space::global_and_local) const {
-    uint32_t flags = ::cl::__spirv::MemorySemantics::SequentiallyConsistent;
-    switch (accessSpace) {
-    case access::fence_space::global_space:
-      flags |= cl::__spirv::MemorySemantics::CrossWorkgroupMemory;
-      break;
-    case access::fence_space::local_space:
-      flags |= cl::__spirv::MemorySemantics::WorkgroupMemory;
-      break;
-    case access::fence_space::global_and_local:
-    default:
-      flags |= cl::__spirv::MemorySemantics::CrossWorkgroupMemory |
-               cl::__spirv::MemorySemantics::WorkgroupMemory;
-      break;
-    }
-    cl::__spirv::OpControlBarrier(::cl::__spirv::Scope::Workgroup,
-                                  ::cl::__spirv::Scope::Workgroup, flags);
+    uint32_t flags = detail::getSPIRVMemorySemanticsMask(accessSpace);
+    __spirv_ControlBarrier(__spv::Scope::Workgroup, __spv::Scope::Workgroup,
+                           flags);
   }
 
   /// Executes a work-group mem-fence with memory ordering on the local address
@@ -165,7 +154,7 @@ template <int dimensions = 1> struct nd_item {
   }
 
 protected:
-  friend class detail::Builder;
+  friend struct detail::Builder;
   nd_item(const item<dimensions, true> &GL, const item<dimensions, false> &L,
           const group<dimensions> &GR)
       : globalItem(GL), localItem(L), Group(GR) {}

@@ -12,6 +12,7 @@
 //===----------------------------------------------------------------------===//
 
 #include <CL/sycl.hpp>
+
 #include <iostream>
 #include <numeric>
 #include <string>
@@ -40,14 +41,20 @@ int main() {
         auto acc = buf.get_access<cl::sycl::access::mode::read_write>(cgh);
         cgh.single_task<class SingleTask>(krn, [=]() { acc[0] = acc[0] + 1; });
       });
+      if (!q.is_host()) {
+        const std::string integrationHeaderKernelName =
+            cl::sycl::detail::KernelInfo<SingleTask>::getName();
+        const std::string clKerneName =
+            krn.get_info<cl::sycl::info::kernel::function_name>();
+        assert(integrationHeaderKernelName == clKerneName);
+      }
     }
     assert(data == 1);
 
     // OpenCL interoperability kernel invocation
-    // TODO add set_args(cl::sycl::sampler) use case once it's supported
     if (!q.is_host()) {
-      cl_int err;
-      if (0) {
+      {
+        cl_int err;
         cl::sycl::context ctx = q.get_context();
         cl_context clCtx = ctx.get();
         cl_command_queue clQ = q.get();
@@ -55,7 +62,6 @@ int main() {
             clCreateBuffer(clCtx, CL_MEM_WRITE_ONLY, sizeof(int), NULL, NULL);
         err = clEnqueueWriteBuffer(clQ, clBuffer, CL_TRUE, 0, sizeof(int),
                                    &data, 0, NULL, NULL);
-        // Kernel interoperability constructor
         assert(err == CL_SUCCESS);
         cl::sycl::program prog(ctx);
         prog.build_with_source(
@@ -93,6 +99,28 @@ int main() {
         assert(a == b + c);
       }
     }
+    {
+      cl::sycl::queue Queue;
+      if (!Queue.is_host()) {
+        cl::sycl::sampler first(
+            cl::sycl::coordinate_normalization_mode::normalized,
+            cl::sycl::addressing_mode::clamp, cl::sycl::filtering_mode::linear);
+        cl::sycl::sampler second(
+            cl::sycl::coordinate_normalization_mode::unnormalized,
+            cl::sycl::addressing_mode::clamp_to_edge,
+            cl::sycl::filtering_mode::nearest);
+        cl::sycl::program prog(Queue.get_context());
+        prog.build_with_source(
+            "kernel void sampler_args(int a, sampler_t first, "
+            "int b, sampler_t second, int c) {}\n");
+        cl::sycl::kernel krn = prog.get_kernel("sampler_args");
+
+        Queue.submit([&](cl::sycl::handler &cgh) {
+          cgh.set_args(0, first, 2, second, 3);
+          cgh.single_task(krn);
+        });
+      }
+    }
   }
   // Parallel for with range
   {
@@ -121,7 +149,7 @@ int main() {
         q.submit([&](cl::sycl::handler &cgh) {
           auto acc = buf.get_access<cl::sycl::access::mode::read_write>(cgh);
           cgh.parallel_for<class ParallelFor>(
-              numOfItems, krn,
+              krn, numOfItems,
               [=](cl::sycl::id<1> wiID) { acc[wiID] = acc[wiID] + 1; });
         });
       }
@@ -146,11 +174,18 @@ int main() {
         assert(err == CL_SUCCESS);
 
         cl::sycl::program prog(ctx);
-        prog.build_with_source("kernel void ParallelFor(global int* a) "
-                               "{a[get_global_id(0)]+=1; }\n");
+        prog.build_with_source(
+            "kernel void ParallelFor(__global int* a, int v, __local int *l) "
+            "{ size_t index = get_global_id(0); l[index] = a[index];"
+            " l[index] += v; a[index] = l[index]; }\n");
 
         q.submit([&](cl::sycl::handler &cgh) {
-          cgh.set_args(clBuffer);
+          const int value = 1;
+          auto local_acc =
+              cl::sycl::accessor<int, 1, cl::sycl::access::mode::read_write,
+                                 cl::sycl::access::target::local>(
+                  cl::sycl::range<1>(10), cgh);
+          cgh.set_args(clBuffer, value, local_acc);
           cgh.parallel_for(cl::sycl::range<1>(10),
                            prog.get_kernel("ParallelFor"));
         });
@@ -198,7 +233,7 @@ int main() {
               localAcc(localRange, cgh);
 
           cgh.parallel_for<class ParallelForND>(
-              cl::sycl::nd_range<1>(numOfItems, localRange), krn,
+              krn, cl::sycl::nd_range<1>(numOfItems, localRange),
               [=](cl::sycl::nd_item<1> item) {
                 size_t idx = item.get_global_linear_id();
                 int pos = idx & 1;

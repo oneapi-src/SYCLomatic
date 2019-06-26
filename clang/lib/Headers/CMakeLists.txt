@@ -6,6 +6,7 @@ set(files
   armintr.h
   arm64intr.h
   avx2intrin.h
+  avx512bf16intrin.h
   avx512bwintrin.h
   avx512bitalgintrin.h
   avx512vlbitalgintrin.h
@@ -21,6 +22,7 @@ set(files
   avx512vbmivlintrin.h
   avx512vbmi2intrin.h
   avx512vlvbmi2intrin.h
+  avx512vlbf16intrin.h
   avx512vlbwintrin.h
   avx512vlcdintrin.h
   avx512vldqintrin.h
@@ -127,10 +129,11 @@ set(ppc_wrapper_files
   ppc_wrappers/mmintrin.h
 )
 
-set(sycl_wrapper_files
-  sycl_wrappers/algorithm
-  sycl_wrappers/random
-  sycl_wrappers/__config
+set(openmp_wrapper_files
+  openmp_wrappers/math.h
+  openmp_wrappers/cmath
+  openmp_wrappers/__clang_openmp_math.h
+  openmp_wrappers/__clang_openmp_math_declares.h
 )
 
 set(output_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include)
@@ -161,7 +164,7 @@ endfunction(clang_generate_header)
 
 
 # Copy header files from the source directory to the build directory
-foreach( f ${files} ${cuda_wrapper_files} ${ppc_wrapper_files} )
+foreach( f ${files} ${cuda_wrapper_files} ${ppc_wrapper_files} ${openmp_wrapper_files})
   copy_header_to_output_dir(${CMAKE_CURRENT_SOURCE_DIR} ${f})
 endforeach( f )
 
@@ -194,10 +197,9 @@ install(
   COMPONENT clang-resource-headers)
 
 install(
-  FILES ${sycl_wrapper_files}
-  COMPONENT clang-resource-headers
-  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-  DESTINATION lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION}/include/sycl_wrappers)
+  FILES ${openmp_wrapper_files}
+  DESTINATION ${header_install_dir}/openmp_wrappers
+  COMPONENT clang-resource-headers)
 
 if (NOT LLVM_ENABLE_IDE)
   add_llvm_install_targets(install-clang-resource-headers

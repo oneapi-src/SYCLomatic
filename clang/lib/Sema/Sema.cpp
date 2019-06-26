@@ -264,6 +264,10 @@ void Sema::Initialize() {
 
     addImplicitTypedef("size_t", Context.getSizeType());
   }
+  if (getLangOpts().SYCLIsDevice) {
+    addImplicitTypedef("__ocl_event_t", Context.OCLEventTy);
+    addImplicitTypedef("__ocl_sampler_t", Context.OCLSamplerTy);
+  }
 
   // Initialize predefined OpenCL types and supported extensions and (optional)
   // core features.
@@ -966,7 +970,6 @@ void Sema::ActOnEndOfTranslationUnit() {
   // incompatible declarations.
   assert(DelayedOverridingExceptionSpecChecks.empty());
   assert(DelayedEquivalentExceptionSpecChecks.empty());
-  assert(DelayedDefaultedMemberExceptionSpecs.empty());
 
   // All dllexport classes should have been processed already.
   assert(DelayedDllExportClasses.empty());
@@ -1801,7 +1804,7 @@ LambdaScopeInfo *Sema::getCurLambda(bool IgnoreNonLambdaCapturingScope) {
 // an associated template parameter list.
 LambdaScopeInfo *Sema::getCurGenericLambda() {
   if (LambdaScopeInfo *LSI =  getCurLambda()) {
-    return (LSI->AutoTemplateParams.size() ||
+    return (LSI->TemplateParams.size() ||
                     LSI->GLTemplateParameterList) ? LSI : nullptr;
   }
   return nullptr;
@@ -2069,7 +2072,7 @@ bool Sema::tryToRecoverWithCall(ExprResult &E, const PartialDiagnostic &PD,
 
     // FIXME: Try this before emitting the fixit, and suppress diagnostics
     // while doing so.
-    E = ActOnCallExpr(nullptr, E.get(), Range.getEnd(), None,
+    E = BuildCallExpr(nullptr, E.get(), Range.getEnd(), None,
                       Range.getEnd().getLocWithOffset(1));
     return true;
   }

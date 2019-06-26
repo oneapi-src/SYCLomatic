@@ -11,60 +11,16 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "clang/AST/ASTDumper.h"
 #include "clang/AST/ASTContext.h"
-#include "clang/AST/ASTNodeTraverser.h"
 #include "clang/AST/DeclLookups.h"
-#include "clang/AST/TextNodeDumper.h"
+#include "clang/AST/JSONNodeDumper.h"
 #include "clang/Basic/Builtins.h"
 #include "clang/Basic/Module.h"
 #include "clang/Basic/SourceManager.h"
 #include "llvm/Support/raw_ostream.h"
 using namespace clang;
 using namespace clang::comments;
-
-//===----------------------------------------------------------------------===//
-// ASTDumper Visitor
-//===----------------------------------------------------------------------===//
-
-namespace  {
-
-class ASTDumper : public ASTNodeTraverser<ASTDumper, TextNodeDumper> {
-
-  TextNodeDumper NodeDumper;
-
-  raw_ostream &OS;
-
-  const bool ShowColors;
-
-public:
-  ASTDumper(raw_ostream &OS, const CommandTraits *Traits,
-            const SourceManager *SM)
-      : ASTDumper(OS, Traits, SM, SM && SM->getDiagnostics().getShowColors()) {}
-
-  ASTDumper(raw_ostream &OS, const CommandTraits *Traits,
-            const SourceManager *SM, bool ShowColors)
-      : ASTDumper(OS, Traits, SM, ShowColors, LangOptions()) {}
-  ASTDumper(raw_ostream &OS, const CommandTraits *Traits,
-            const SourceManager *SM, bool ShowColors,
-            const PrintingPolicy &PrintPolicy)
-      : NodeDumper(OS, ShowColors, SM, PrintPolicy, Traits), OS(OS),
-        ShowColors(ShowColors) {}
-
-  TextNodeDumper &doGetNodeDelegate() { return NodeDumper; }
-
-  void dumpLookups(const DeclContext *DC, bool DumpDecls);
-
-  template <typename SpecializationDecl>
-  void dumpTemplateDeclSpecialization(const SpecializationDecl *D,
-                                      bool DumpExplicitInst, bool DumpRefOnly);
-  template <typename TemplateDecl>
-  void dumpTemplateDecl(const TemplateDecl *D, bool DumpExplicitInst);
-
-  void VisitFunctionTemplateDecl(const FunctionTemplateDecl *D);
-  void VisitClassTemplateDecl(const ClassTemplateDecl *D);
-  void VisitVarTemplateDecl(const VarTemplateDecl *D);
-};
-} // namespace
 
 void ASTDumper::dumpLookups(const DeclContext *DC, bool DumpDecls) {
   NodeDumper.AddChild([=] {
@@ -222,13 +178,22 @@ LLVM_DUMP_METHOD void Type::dump(llvm::raw_ostream &OS) const {
 
 LLVM_DUMP_METHOD void Decl::dump() const { dump(llvm::errs()); }
 
-LLVM_DUMP_METHOD void Decl::dump(raw_ostream &OS, bool Deserialize) const {
+LLVM_DUMP_METHOD void Decl::dump(raw_ostream &OS, bool Deserialize,
+                                 ASTDumpOutputFormat Format) const {
   const ASTContext &Ctx = getASTContext();
   const SourceManager &SM = Ctx.getSourceManager();
-  ASTDumper P(OS, &Ctx.getCommentCommandTraits(), &SM,
-              SM.getDiagnostics().getShowColors(), Ctx.getPrintingPolicy());
-  P.setDeserialize(Deserialize);
-  P.Visit(this);
+
+  if (ADOF_JSON == Format) {
+    JSONDumper P(OS, SM, Ctx.getPrintingPolicy(),
+                 &Ctx.getCommentCommandTraits());
+    (void)Deserialize; // FIXME?
+    P.Visit(this);
+  } else {
+    ASTDumper P(OS, &Ctx.getCommentCommandTraits(), &SM,
+                SM.getDiagnostics().getShowColors(), Ctx.getPrintingPolicy());
+    P.setDeserialize(Deserialize);
+    P.Visit(this);
+  }
 }
 
 LLVM_DUMP_METHOD void Decl::dumpColor() const {

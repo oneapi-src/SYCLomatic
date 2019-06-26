@@ -44,6 +44,9 @@ const uint32_t PermMask = 0xFE000000;
 // Mask for section types (code, data, bss).
 const uint32_t TypeMask = 0x000000E0;
 
+// The log base 2 of the largest section alignment, which is log2(8192), or 13.
+enum : unsigned { Log2MaxSectionAlignment = 13 };
+
 // A Chunk represents a chunk of data that will occupy space in the
 // output (if the resolver chose that). It may or may not be backed by
 // a section of an input file. It could be linker-created data, or
@@ -57,6 +60,18 @@ public:
   // Returns the size of this chunk (even if this is a common or BSS.)
   virtual size_t getSize() const = 0;
 
+  // Returns chunk alignment in power of two form. Value values are powers of
+  // two from 1 to 8192.
+  uint32_t getAlignment() const { return 1U << P2Align; }
+  void setAlignment(uint32_t Align) {
+    // Treat zero byte alignment as 1 byte alignment.
+    Align = Align ? Align : 1;
+    assert(llvm::isPowerOf2_32(Align) && "alignment is not a power of 2");
+    P2Align = llvm::Log2_32(Align);
+    assert(P2Align <= Log2MaxSectionAlignment &&
+           "impossible requested alignment");
+  }
+
   // Write this chunk to a mmap'ed file, assuming Buf is pointing to
   // beginning of the file. Because this function may use RVA values
   // of other chunks for relocations, you need to set them properly
@@ -67,9 +82,14 @@ public:
   // getSize().
   virtual void finalizeContents() {}
 
-  // The writer sets and uses the addresses.
-  uint64_t getRVA() const { return RVA; }
-  void setRVA(uint64_t V) { RVA = V; }
+  // The writer sets and uses the addresses. In practice, PE images cannot be
+  // larger than 2GB. Chunks are always laid as part of the image, so Chunk RVAs
+  // can be stored with 32 bits.
+  uint32_t getRVA() const { return RVA; }
+  void setRVA(uint64_t V) {
+    RVA = (uint32_t)V;
+    assert(RVA == V && "RVA truncated");
+  }
 
   // Returns true if this has non-zero data. BSS chunks return
   // false. If false is returned, the space occupied by this chunk
@@ -98,9 +118,6 @@ public:
   // bytes, so this is used only for logging or debugging.
   virtual StringRef getDebugName() { return ""; }
 
-  // The alignment of this chunk. The writer uses the value.
-  uint32_t Alignment = 1;
-
   virtual bool isHotPatchable() const { return false; }
 
 protected:
@@ -113,15 +130,16 @@ public:
   bool KeepUnique = false;
 
 protected:
-  // The RVA of this chunk in the output. The writer sets a value.
-  uint64_t RVA = 0;
+  // The alignment of this chunk, stored in log2 form. The writer uses the
+  // value.
+  uint8_t P2Align = 0;
 
+  // The RVA of this chunk in the output. The writer sets a value.
+  uint32_t RVA = 0;
+
+protected:
   // The output section for this chunk.
   OutputSection *Out = nullptr;
-
-public:
-  // The offset from beginning of the output section. The writer sets a value.
-  uint64_t OutputSectionOff = 0;
 };
 
 // A chunk corresponding a section of an input file.
@@ -153,7 +171,9 @@ public:
   void writeTo(uint8_t *Buf) const override;
   bool hasData() const override;
   uint32_t getOutputCharacteristics() const override;
-  StringRef getSectionName() const override { return SectionName; }
+  StringRef getSectionName() const override {
+    return StringRef(SectionNameData, SectionNameSize);
+  }
   void getBaserels(std::vector<Baserel> *Res) override;
   bool isCOMDAT() const;
   void applyRelX64(uint8_t *Off, uint16_t Type, OutputSection *OS, uint64_t S,
@@ -180,18 +200,29 @@ public:
   // True if this is a codeview debug info chunk. These will not be laid out in
   // the image. Instead they will end up in the PDB, if one is requested.
   bool isCodeView() const {
-    return SectionName == ".debug" || SectionName.startswith(".debug$");
+    return getSectionName() == ".debug" || getSectionName().startswith(".debug$");
   }
 
   // True if this is a DWARF debug info or exception handling chunk.
   bool isDWARF() const {
-    return SectionName.startswith(".debug_") || SectionName == ".eh_frame";
+    return getSectionName().startswith(".debug_") || getSectionName() == ".eh_frame";
   }
 
   // Allow iteration over the bodies of this chunk's relocated symbols.
   llvm::iterator_range<symbol_iterator> symbols() const {
-    return llvm::make_range(symbol_iterator(File, Relocs.begin()),
-                            symbol_iterator(File, Relocs.end()));
+    return llvm::make_range(symbol_iterator(File, RelocsData),
+                            symbol_iterator(File, RelocsData + RelocsSize));
+  }
+
+  ArrayRef<coff_relocation> getRelocs() const {
+    return llvm::makeArrayRef(RelocsData, RelocsSize);
+  }
+
+  // Reloc setter used by ARM range extension thunk insertion.
+  void setRelocs(ArrayRef<coff_relocation> NewRelocs) {
+    RelocsData = NewRelocs.data();
+    RelocsSize = NewRelocs.size();
+    assert(RelocsSize == NewRelocs.size() && "reloc size truncation");
   }
 
   // Single linked list iterator for associated comdat children.
@@ -245,9 +276,6 @@ public:
   // The COMDAT leader symbol if this is a COMDAT chunk.
   DefinedRegular *Sym = nullptr;
 
-  // Relocations for this section.
-  ArrayRef<coff_relocation> Relocs;
-
   // The CRC of the contents as described in the COFF spec 4.5.5.
   // Auxiliary Format 5: Section Definitions. Used for ICF.
   uint32_t Checksum = 0;
@@ -265,12 +293,20 @@ public:
   SectionChunk *Repl;
 
 private:
-  StringRef SectionName;
   SectionChunk *AssocChildren = nullptr;
 
   // Used for ICF (Identical COMDAT Folding)
   void replace(SectionChunk *Other);
   uint32_t Class[2] = {0, 0};
+
+  // Relocations for this section. Size is stored below.
+  const coff_relocation *RelocsData;
+
+  // Section name string. Size is stored below.
+  const char *SectionNameData;
+
+  uint32_t RelocsSize = 0;
+  uint32_t SectionNameSize = 0;
 };
 
 // This class is used to implement an lld-specific feature (not implemented in
@@ -293,7 +329,7 @@ public:
   size_t getSize() const override;
   void writeTo(uint8_t *Buf) const override;
 
-  static std::map<uint32_t, MergeChunk *> Instances;
+  static MergeChunk *Instances[Log2MaxSectionAlignment + 1];
   std::vector<SectionChunk *> Sections;
 
 private:
@@ -417,7 +453,7 @@ public:
 class LocalImportChunk : public Chunk {
 public:
   explicit LocalImportChunk(Defined *S) : Sym(S) {
-    Alignment = Config->Wordsize;
+    setAlignment(Config->Wordsize);
   }
   size_t getSize() const override;
   void getBaserels(std::vector<Baserel> *Res) override;
@@ -508,7 +544,7 @@ class PseudoRelocTableChunk : public Chunk {
 public:
   PseudoRelocTableChunk(std::vector<RuntimePseudoReloc> &Relocs)
       : Relocs(std::move(Relocs)) {
-    Alignment = 4;
+    setAlignment(4);
   }
   size_t getSize() const override;
   void writeTo(uint8_t *Buf) const override;
@@ -538,7 +574,7 @@ public:
 class AbsolutePointerChunk : public Chunk {
 public:
   AbsolutePointerChunk(uint64_t Value) : Value(Value) {
-    Alignment = getSize();
+    setAlignment(getSize());
   }
   size_t getSize() const override;
   void writeTo(uint8_t *Buf) const override;

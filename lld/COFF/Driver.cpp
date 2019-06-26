@@ -863,7 +863,8 @@ static void findKeepUniqueSections() {
     ArrayRef<Symbol *> Syms = Obj->getSymbols();
     if (Obj->AddrsigSec) {
       ArrayRef<uint8_t> Contents;
-      Obj->getCOFFObj()->getSectionContents(Obj->AddrsigSec, Contents);
+      cantFail(
+          Obj->getCOFFObj()->getSectionContents(Obj->AddrsigSec, Contents));
       const uint8_t *Cur = Contents.begin();
       while (Cur != Contents.end()) {
         unsigned Size;
@@ -975,6 +976,13 @@ void LinkerDriver::maybeExportMinGWSymbols(const opt::InputArgList &Args) {
 }
 
 void LinkerDriver::link(ArrayRef<const char *> ArgsArr) {
+  // Needed for LTO.
+  InitializeAllTargetInfos();
+  InitializeAllTargets();
+  InitializeAllTargetMCs();
+  InitializeAllAsmParsers();
+  InitializeAllAsmPrinters();
+
   // If the first command line argument is "/lib", link.exe acts like lib.exe.
   // We call our own implementation of lib.exe that understands bitcode files.
   if (ArgsArr.size() > 1 && StringRef(ArgsArr[1]).equals_lower("/lib")) {
@@ -982,13 +990,6 @@ void LinkerDriver::link(ArrayRef<const char *> ArgsArr) {
       fatal("lib failed");
     return;
   }
-
-  // Needed for LTO.
-  InitializeAllTargetInfos();
-  InitializeAllTargets();
-  InitializeAllTargetMCs();
-  InitializeAllAsmParsers();
-  InitializeAllAsmPrinters();
 
   // Parse command line options.
   ArgParser Parser;
@@ -1095,6 +1096,10 @@ void LinkerDriver::link(ArrayRef<const char *> ArgsArr) {
   // Handle /force or /force:multiple
   if (Args.hasArg(OPT_force, OPT_force_multiple))
     Config->ForceMultiple = true;
+
+  // Handle /force or /force:multipleres
+  if (Args.hasArg(OPT_force, OPT_force_multipleres))
+    Config->ForceMultipleRes = true;
 
   // Handle /debug
   DebugKind Debug = parseDebugKind(Args);
@@ -1738,7 +1743,7 @@ void LinkerDriver::link(ArrayRef<const char *> ArgsArr) {
       continue;
 
     CommonChunk *C = DC->getChunk();
-    C->Alignment = std::max(C->Alignment, Alignment);
+    C->setAlignment(std::max(C->getAlignment(), Alignment));
   }
 
   // Windows specific -- Create a side-by-side manifest file.

@@ -85,7 +85,6 @@ complit12.C
 va-arg-pack-1.C
 va-arg-pack-len-1.C
 builtin-line1.C
-builtin-location.C
 devirt-6.C  # bad main signature
 devirt-13.C  # bad main signature
 devirt-14.C  # bad main signature
@@ -109,7 +108,6 @@ thread_local5g.C
 spec5.C
 addr1.C
 ef_test.C
-friend18.C
 member2.C
 new39.C
 new40.C

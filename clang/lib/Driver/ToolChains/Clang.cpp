@@ -738,8 +738,9 @@ static void appendUserToPath(SmallVectorImpl<char> &Result) {
   Result.append(UID.begin(), UID.end());
 }
 
-static void addPGOAndCoverageFlags(Compilation &C, const Driver &D,
-                                   const InputInfo &Output, const ArgList &Args,
+static void addPGOAndCoverageFlags(const ToolChain &TC, Compilation &C,
+                                   const Driver &D, const InputInfo &Output,
+                                   const ArgList &Args,
                                    ArgStringList &CmdArgs) {
 
   auto *PGOGenerateArg = Args.getLastArg(options::OPT_fprofile_generate,
@@ -790,6 +791,11 @@ static void addPGOAndCoverageFlags(Compilation &C, const Driver &D,
                                            ProfileGenerateArg->getValue()));
     // The default is to use Clang Instrumentation.
     CmdArgs.push_back("-fprofile-instrument=clang");
+    if (TC.getTriple().isWindowsMSVCEnvironment()) {
+      // Add dependent lib for clang_rt.profile
+      CmdArgs.push_back(Args.MakeArgString("--dependent-lib=" +
+                                           TC.getCompilerRT(Args, "profile")));
+    }
   }
 
   Arg *PGOGenArg = nullptr;
@@ -804,6 +810,10 @@ static void addPGOAndCoverageFlags(Compilation &C, const Driver &D,
     CmdArgs.push_back("-fprofile-instrument=csllvm");
   }
   if (PGOGenArg) {
+    if (TC.getTriple().isWindowsMSVCEnvironment()) {
+      CmdArgs.push_back(Args.MakeArgString("--dependent-lib=" +
+                                           TC.getCompilerRT(Args, "profile")));
+    }
     if (PGOGenArg->getOption().matches(
             PGOGenerateArg ? options::OPT_fprofile_generate_EQ
                            : options::OPT_fcs_profile_generate_EQ)) {
@@ -1014,7 +1024,7 @@ static void RenderDebugInfoCompressionArgs(const ArgList &Args,
   if (checkDebugInfoOption(A, Args, D, TC)) {
     if (A->getOption().getID() == options::OPT_gz) {
       if (llvm::zlib::isAvailable())
-        CmdArgs.push_back("-compress-debug-sections");
+        CmdArgs.push_back("--compress-debug-sections");
       else
         D.Diag(diag::warn_debug_compression_unavailable);
       return;
@@ -1022,11 +1032,11 @@ static void RenderDebugInfoCompressionArgs(const ArgList &Args,
 
     StringRef Value = A->getValue();
     if (Value == "none") {
-      CmdArgs.push_back("-compress-debug-sections=none");
+      CmdArgs.push_back("--compress-debug-sections=none");
     } else if (Value == "zlib" || Value == "zlib-gnu") {
       if (llvm::zlib::isAvailable()) {
         CmdArgs.push_back(
-            Args.MakeArgString("-compress-debug-sections=" + Twine(Value)));
+            Args.MakeArgString("--compress-debug-sections=" + Twine(Value)));
       } else {
         D.Diag(diag::warn_debug_compression_unavailable);
       }
@@ -1158,14 +1168,22 @@ void Clang::AddPreprocessingOptions(Compilation &C, const JobAction &JA,
   if (JA.isOffloading(Action::OFK_Cuda))
     getToolChain().AddCudaIncludeArgs(Args, CmdArgs);
 
-  // Add include directories for SYCL
-  if (!Args.hasArg(options::OPT_nobuiltininc) &&
-      getToolChain().getTriple().isSYCLDeviceEnvironment()) {
-    SmallString<128> P(D.ResourceDir);
-    llvm::sys::path::append(P, "include");
-    llvm::sys::path::append(P, "sycl_wrappers");
-    CmdArgs.push_back("-internal-isystem");
-    CmdArgs.push_back(Args.MakeArgString(P));
+  // If we are offloading to a target via OpenMP we need to include the
+  // openmp_wrappers folder which contains alternative system headers.
+  if (JA.isDeviceOffloading(Action::OFK_OpenMP) &&
+      getToolChain().getTriple().isNVPTX()){
+    if (!Args.hasArg(options::OPT_nobuiltininc)) {
+      // Add openmp_wrappers/* to our system include path.  This lets us wrap
+      // standard library headers.
+      SmallString<128> P(D.ResourceDir);
+      llvm::sys::path::append(P, "include");
+      llvm::sys::path::append(P, "openmp_wrappers");
+      CmdArgs.push_back("-internal-isystem");
+      CmdArgs.push_back(Args.MakeArgString(P));
+    }
+
+    CmdArgs.push_back("-include");
+    CmdArgs.push_back("__clang_openmp_math_declares.h");
   }
 
   // Add -i* options, and automatically translate to
@@ -1416,6 +1434,9 @@ void Clang::AddARMTargetArgs(const llvm::Triple &Triple, const ArgList &Args,
   if (!Args.hasFlag(options::OPT_mimplicit_float,
                     options::OPT_mno_implicit_float, true))
     CmdArgs.push_back("-no-implicit-float");
+
+  if (Args.getLastArg(options::OPT_mcmse))
+    CmdArgs.push_back("-mcmse");
 }
 
 void Clang::RenderTargetOptions(const llvm::Triple &EffectiveTriple,
@@ -3420,17 +3441,18 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
   assert(Inputs.size() >= 1 && "Must have at least one input.");
   // CUDA/HIP compilation may have multiple inputs (source file + results of
   // device-side compilations). OpenMP and SYCL device jobs also take the host
-  // IR as a second input. All other jobs are expected to have exactly one
-  // include as part of the module. All other jobs are expected to have exactly
-  // one input.
+  // IR as a second input. Module precompilation accepts a list of header files
+  // to include as part of the module. All other jobs are expected to have
+  // exactly one input.
   bool IsCuda = JA.isOffloading(Action::OFK_Cuda);
   bool IsHIP = JA.isOffloading(Action::OFK_HIP);
   bool IsOpenMPDevice = JA.isDeviceOffloading(Action::OFK_OpenMP);
   bool IsSYCLOffloadDevice = JA.isDeviceOffloading(Action::OFK_SYCL);
   bool IsSYCL = JA.isOffloading(Action::OFK_SYCL);
   bool IsHeaderModulePrecompile = isa<HeaderModulePrecompileJobAction>(JA);
-  assert((IsCuda || IsHIP || (IsOpenMPDevice && Inputs.size() == 2) ||
-         IsSYCL || Inputs.size() == 1) && "Unable to handle multiple inputs.");
+  assert((IsCuda || IsHIP || (IsOpenMPDevice && Inputs.size() == 2) || IsSYCL ||
+          IsHeaderModulePrecompile || Inputs.size() == 1) &&
+         "Unable to handle multiple inputs.");
 
   // A header module compilation doesn't have a main input file, so invent a
   // fake one as a placeholder.
@@ -3476,6 +3498,13 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
   bool IsWindowsMSVC = RawTriple.isWindowsMSVCEnvironment();
   bool IsIAMCU = RawTriple.isOSIAMCU();
   bool IsSYCLDevice = (RawTriple.getEnvironment() == llvm::Triple::SYCLDevice);
+  // Using just the sycldevice environment is not enough to determine usage
+  // of the device triple when considering fat static archives.  The
+  // compilation path requires the host object to be fed into the partial link
+  // step, and being part of the SYCL tool chain causes the incorrect target.
+  // FIXME - Is it possible to retain host environment when on a target
+  // device toolchain.
+  bool UseSYCLTriple = IsSYCLDevice && (!IsSYCL || IsSYCLOffloadDevice);
 
   // Adjust IsWindowsXYZ for CUDA/HIP compilations.  Even when compiling in
   // device mode (i.e., getToolchain().getTriple() is NVPTX/AMDGCN, not
@@ -3497,7 +3526,16 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
 
   // Add the "effective" target triple.
   CmdArgs.push_back("-triple");
-  CmdArgs.push_back(Args.MakeArgString(TripleStr));
+  if (!UseSYCLTriple && IsSYCLDevice) {
+    // Do not use device triple when we know the device is not SYCL
+    // FIXME: We override the toolchain triple in this instance to address a
+    // disconnect with fat static archives.  We should have a cleaner way of
+    // using the Host environment when on a device toolchain.
+    std::string NormalizedTriple =
+        llvm::Triple(llvm::sys::getProcessTriple()).normalize();
+    CmdArgs.push_back(Args.MakeArgString(NormalizedTriple));
+  } else
+    CmdArgs.push_back(Args.MakeArgString(TripleStr));
 
   if (const Arg *MJ = Args.getLastArg(options::OPT_MJ)) {
     DumpCompilationDatabase(C, MJ->getValue(), TripleStr, Output, Input, Args);
@@ -3536,7 +3574,7 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back(Args.MakeArgString(NormalizedTriple));
   }
 
-  if (IsSYCLDevice) {
+  if (UseSYCLTriple) {
     // We want to compile sycl kernels.
     if (types::isCXX(Input.getType()))
       CmdArgs.push_back("-std=c++11");
@@ -4204,7 +4242,7 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
   // sampling, overhead of call arc collection is way too high and there's no
   // way to collect the output.
   if (!Triple.isNVPTX())
-    addPGOAndCoverageFlags(C, D, Output, Args, CmdArgs);
+    addPGOAndCoverageFlags(TC, C, D, Output, Args, CmdArgs);
 
   if (auto *ABICompatArg = Args.getLastArg(options::OPT_fclang_abi_compat_EQ))
     ABICompatArg->render(Args, CmdArgs);
@@ -6333,8 +6371,6 @@ void OffloadBundler::ConstructJobMultipleOutputs(
   //   -unbundle
 
   ArgStringList CmdArgs;
-
-  assert(Inputs.size() == 1 && "Expecting to unbundle a single file!");
   InputInfo Input = Inputs.front();
   const char *TypeArg = types::getTypeTempSuffix(Input.getType());
   const char *InputFileName = Input.getFilename();
@@ -6354,9 +6390,10 @@ void OffloadBundler::ConstructJobMultipleOutputs(
           llvm::sys::path::stem(Input.getFilename()).str() + "-prelink", "o");
     InputFileName = C.addTempFile(C.getArgs().MakeArgString(TmpName));
     LinkArgs.push_back(InputFileName);
-    // Input files consist of fat libraries and the object to be unbundled.
-    LinkArgs.push_back(Input.getFilename());
-    for (const auto& A :
+    // Input files consist of fat libraries and the object(s) to be unbundled.
+    for (const auto &I : Inputs)
+      LinkArgs.push_back(I.getFilename());
+    for (const auto &A :
             TCArgs.getAllArgValues(options::OPT_foffload_static_lib_EQ))
       LinkArgs.push_back(TCArgs.MakeArgString(A));
     const char *Exec = TCArgs.MakeArgString(getToolChain().GetLinkerPath());

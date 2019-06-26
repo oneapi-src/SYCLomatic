@@ -554,6 +554,23 @@ find_program(GOLD_EXECUTABLE NAMES ${LLVM_DEFAULT_TARGET_TRIPLE}-ld.gold ld.gold
 set(LLVM_BINUTILS_INCDIR "" CACHE PATH
 	"PATH to binutils/include containing plugin-api.h for gold plugin.")
 
+if(CMAKE_GENERATOR STREQUAL "Ninja")
+  include(CMakeNinjaFindMake OPTIONAL)
+  if(CMAKE_MAKE_PROGRAM)
+    execute_process(COMMAND ${CMAKE_MAKE_PROGRAM} --version
+      OUTPUT_VARIABLE NINJA_VERSION
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set(NINJA_VERSION ${NINJA_VERSION} CACHE STRING "Ninja version number" FORCE)
+    message(STATUS "Ninja version: ${NINJA_VERSION}")
+  endif()
+endif()
+
+if(CMAKE_GENERATOR STREQUAL "Ninja" AND
+    NOT "${NINJA_VERSION}" VERSION_LESS "1.9.0" AND
+    CMAKE_HOST_APPLE AND CMAKE_HOST_SYSTEM_VERSION VERSION_GREATER "15.6.0")
+  set(LLVM_TOUCH_STATIC_LIBRARIES ON)
+endif()
+
 if(CMAKE_HOST_APPLE AND APPLE)
   if(NOT CMAKE_XCRUN)
     find_program(CMAKE_XCRUN NAMES xcrun)
@@ -606,16 +623,19 @@ function(find_python_module module)
   string(REPLACE "." "_" module_name ${module})
   string(TOUPPER ${module_name} module_upper)
   set(FOUND_VAR PY_${module_upper}_FOUND)
+  if (DEFINED ${FOUND_VAR})
+    return()
+  endif()
 
   execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" "import ${module}"
     RESULT_VARIABLE status
     ERROR_QUIET)
 
   if(status)
-    set(${FOUND_VAR} 0 PARENT_SCOPE)
+    set(${FOUND_VAR} OFF CACHE BOOL "Failed to find python module '${module}'")
     message(STATUS "Could NOT find Python module ${module}")
   else()
-    set(${FOUND_VAR} 1 PARENT_SCOPE)
+  set(${FOUND_VAR} ON CACHE BOOL "Found python module '${module}'")
     message(STATUS "Found Python module ${module}")
   endif()
 endfunction()

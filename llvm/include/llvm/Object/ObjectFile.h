@@ -13,6 +13,7 @@
 #ifndef LLVM_OBJECT_OBJECTFILE_H
 #define LLVM_OBJECT_OBJECTFILE_H
 
+#include "llvm/ADT/DenseMapInfo.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Triple.h"
 #include "llvm/ADT/iterator_range.h"
@@ -97,7 +98,7 @@ public:
   uint64_t getAddress() const;
   uint64_t getIndex() const;
   uint64_t getSize() const;
-  std::error_code getContents(StringRef &Result) const;
+  Expected<StringRef> getContents() const;
 
   /// Get the alignment of this section as the actual value (not log 2).
   uint64_t getAlignment() const;
@@ -243,7 +244,7 @@ protected:
   friend class SymbolRef;
 
   virtual Expected<StringRef> getSymbolName(DataRefImpl Symb) const = 0;
-  std::error_code printSymbolName(raw_ostream &OS,
+  Error printSymbolName(raw_ostream &OS,
                                   DataRefImpl Symb) const override;
   virtual Expected<uint64_t> getSymbolAddress(DataRefImpl Symb) const = 0;
   virtual uint64_t getSymbolValueImpl(DataRefImpl Symb) const = 0;
@@ -261,8 +262,8 @@ protected:
   virtual uint64_t getSectionAddress(DataRefImpl Sec) const = 0;
   virtual uint64_t getSectionIndex(DataRefImpl Sec) const = 0;
   virtual uint64_t getSectionSize(DataRefImpl Sec) const = 0;
-  virtual std::error_code getSectionContents(DataRefImpl Sec,
-                                             StringRef &Res) const = 0;
+  virtual Expected<ArrayRef<uint8_t>>
+  getSectionContents(DataRefImpl Sec) const = 0;
   virtual uint64_t getSectionAlignment(DataRefImpl Sec) const = 0;
   virtual bool isSectionCompressed(DataRefImpl Sec) const = 0;
   virtual bool isSectionText(DataRefImpl Sec) const = 0;
@@ -329,11 +330,6 @@ public:
 
   /// Create a triple from the data in this object file.
   Triple makeTriple() const;
-
-  virtual std::error_code
-    getBuildAttributes(ARMAttributeParser &Attributes) const {
-      return std::error_code();
-    }
 
   /// Maps a debug section name to a standard DWARF section name.
   virtual StringRef mapDebugSectionName(StringRef Name) const { return Name; }
@@ -421,14 +417,16 @@ inline SectionRef::SectionRef(DataRefImpl SectionP,
   , OwningObject(Owner) {}
 
 inline bool SectionRef::operator==(const SectionRef &Other) const {
-  return SectionPimpl == Other.SectionPimpl;
+  return OwningObject == Other.OwningObject &&
+         SectionPimpl == Other.SectionPimpl;
 }
 
 inline bool SectionRef::operator!=(const SectionRef &Other) const {
-  return SectionPimpl != Other.SectionPimpl;
+  return !(*this == Other);
 }
 
 inline bool SectionRef::operator<(const SectionRef &Other) const {
+  assert(OwningObject == Other.OwningObject);
   return SectionPimpl < Other.SectionPimpl;
 }
 
@@ -456,8 +454,12 @@ inline uint64_t SectionRef::getSize() const {
   return OwningObject->getSectionSize(SectionPimpl);
 }
 
-inline std::error_code SectionRef::getContents(StringRef &Result) const {
-  return OwningObject->getSectionContents(SectionPimpl, Result);
+inline Expected<StringRef> SectionRef::getContents() const {
+  Expected<ArrayRef<uint8_t>> Res =
+      OwningObject->getSectionContents(SectionPimpl);
+  if (!Res)
+    return Res.takeError();
+  return StringRef(reinterpret_cast<const char *>(Res->data()), Res->size());
 }
 
 inline uint64_t SectionRef::getAlignment() const {
@@ -559,6 +561,25 @@ inline const ObjectFile *RelocationRef::getObject() const {
 }
 
 } // end namespace object
+
+template <> struct DenseMapInfo<object::SectionRef> {
+  static bool isEqual(const object::SectionRef &A,
+                      const object::SectionRef &B) {
+    return A == B;
+  }
+  static object::SectionRef getEmptyKey() {
+    return object::SectionRef({}, nullptr);
+  }
+  static object::SectionRef getTombstoneKey() {
+    object::DataRefImpl TS;
+    TS.p = (uintptr_t)-1;
+    return object::SectionRef(TS, nullptr);
+  }
+  static unsigned getHashValue(const object::SectionRef &Sec) {
+    object::DataRefImpl Raw = Sec.getRawDataRefImpl();
+    return hash_combine(Raw.p, Raw.d.a, Raw.d.b);
+  }
+};
 
 } // end namespace llvm
 

@@ -41,6 +41,8 @@ public:
     return AArch64::NumTargetFixupKinds;
   }
 
+  Optional<MCFixupKind> getFixupKind(StringRef Name) const override;
+
   const MCFixupKindInfo &getFixupKindInfo(MCFixupKind Kind) const override {
     const static MCFixupKindInfo Infos[AArch64::NumTargetFixupKinds] = {
         // This table *must* be in the order that the fixup_* kinds are defined
@@ -103,6 +105,7 @@ static unsigned getFixupKindNumBytes(unsigned Kind) {
   default:
     llvm_unreachable("Unknown fixup kind!");
 
+  case FK_NONE:
   case AArch64::fixup_aarch64_tlsdesc_call:
     return 0;
 
@@ -304,6 +307,7 @@ static uint64_t adjustFixupValue(const MCFixup &Fixup, const MCValue &Target,
     if (Value & 0x3)
       Ctx.reportError(Fixup.getLoc(), "fixup not sufficiently aligned");
     return (Value >> 2) & 0x3ffffff;
+  case FK_NONE:
   case FK_Data_1:
   case FK_Data_2:
   case FK_Data_4:
@@ -312,6 +316,12 @@ static uint64_t adjustFixupValue(const MCFixup &Fixup, const MCValue &Target,
   case FK_SecRel_4:
     return Value;
   }
+}
+
+Optional<MCFixupKind> AArch64AsmBackend::getFixupKind(StringRef Name) const {
+  if (TheTriple.isOSBinFormatELF() && Name == "R_AARCH64_NONE")
+    return FK_NONE;
+  return MCAsmBackend::getFixupKind(Name);
 }
 
 /// getFixupKindContainereSizeInBytes - The number of bytes of the
@@ -445,6 +455,10 @@ bool AArch64AsmBackend::writeNopData(raw_ostream &OS, uint64_t Count) const {
 bool AArch64AsmBackend::shouldForceRelocation(const MCAssembler &Asm,
                                               const MCFixup &Fixup,
                                               const MCValue &Target) {
+  unsigned Kind = Fixup.getKind();
+  if (Kind == FK_NONE)
+    return true;
+
   // The ADRP instruction adds some multiple of 0x1000 to the current PC &
   // ~0xfff. This means that the required offset to reach a symbol can vary by
   // up to one step depending on where the ADRP is in memory. For example:
@@ -457,14 +471,14 @@ bool AArch64AsmBackend::shouldForceRelocation(const MCAssembler &Asm,
   // same page as the ADRP and the instruction should encode 0x0. Assuming the
   // section isn't 0x1000-aligned, we therefore need to delegate this decision
   // to the linker -- a relocation!
-  if ((uint32_t)Fixup.getKind() == AArch64::fixup_aarch64_pcrel_adrp_imm21)
+  if (Kind == AArch64::fixup_aarch64_pcrel_adrp_imm21)
     return true;
 
   AArch64MCExpr::VariantKind RefKind =
       static_cast<AArch64MCExpr::VariantKind>(Target.getRefKind());
   AArch64MCExpr::VariantKind SymLoc = AArch64MCExpr::getSymbolLoc(RefKind);
   // LDR GOT relocations need a relocation
-  if ((uint32_t)Fixup.getKind() == AArch64::fixup_aarch64_ldr_pcrel_imm19 &&
+  if (Kind == AArch64::fixup_aarch64_ldr_pcrel_imm19 &&
       SymLoc == AArch64MCExpr::VK_GOT)
     return true;
   return false;
@@ -512,6 +526,7 @@ enum CompactUnwindEncodings {
 // FIXME: This should be in a separate file.
 class DarwinAArch64AsmBackend : public AArch64AsmBackend {
   const MCRegisterInfo &MRI;
+  bool IsILP32;
 
   /// Encode compact unwind stack adjustment for frameless functions.
   /// See UNWIND_ARM64_FRAMELESS_STACK_SIZE_MASK in compact_unwind_encoding.h.
@@ -522,13 +537,18 @@ class DarwinAArch64AsmBackend : public AArch64AsmBackend {
 
 public:
   DarwinAArch64AsmBackend(const Target &T, const Triple &TT,
-                          const MCRegisterInfo &MRI)
-      : AArch64AsmBackend(T, TT, /*IsLittleEndian*/ true), MRI(MRI) {}
+                          const MCRegisterInfo &MRI, bool IsILP32)
+      : AArch64AsmBackend(T, TT, /*IsLittleEndian*/ true), MRI(MRI),
+        IsILP32(IsILP32) {}
 
   std::unique_ptr<MCObjectTargetWriter>
   createObjectTargetWriter() const override {
-    return createAArch64MachObjectWriter(MachO::CPU_TYPE_ARM64,
-                                         MachO::CPU_SUBTYPE_ARM64_ALL);
+    if (IsILP32)
+      return createAArch64MachObjectWriter(
+          MachO::CPU_TYPE_ARM64_32, MachO::CPU_SUBTYPE_ARM64_32_V8, true);
+    else
+      return createAArch64MachObjectWriter(MachO::CPU_TYPE_ARM64,
+                                           MachO::CPU_SUBTYPE_ARM64_ALL, false);
   }
 
   /// Generate the compact unwind encoding from the CFI directives.
@@ -710,8 +730,10 @@ MCAsmBackend *llvm::createAArch64leAsmBackend(const Target &T,
                                               const MCRegisterInfo &MRI,
                                               const MCTargetOptions &Options) {
   const Triple &TheTriple = STI.getTargetTriple();
-  if (TheTriple.isOSBinFormatMachO())
-    return new DarwinAArch64AsmBackend(T, TheTriple, MRI);
+  if (TheTriple.isOSBinFormatMachO()) {
+    const bool IsILP32 = TheTriple.isArch32Bit();
+    return new DarwinAArch64AsmBackend(T, TheTriple, MRI, IsILP32);
+  }
 
   if (TheTriple.isOSBinFormatCOFF())
     return new COFFAArch64AsmBackend(T, TheTriple);

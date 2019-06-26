@@ -101,6 +101,20 @@ Improvements to clang-tidy
   Finds and fixes ``absl::Time`` subtraction expressions to do subtraction
   in the Time domain instead of the numeric domain.
 
+- New :doc:`bugprone-unhandled-self-assignment
+  <clang-tidy/checks/bugprone-unhandled-self-assignment>` check.
+
+  Finds user-defined copy assignment operators which do not protect the code
+  against self-assignment either by checking self-assignment explicitly or
+  using the copy-and-swap or the copy-and-move method.
+
+- New :doc:`bugprone-branch-clone
+  <clang-tidy/checks/bugprone-branch-clone>` check.
+
+  Checks for repeated branches in ``if/else if/else`` chains, consecutive
+  repeated branches in ``switch`` statements and indentical true and false
+  branches in conditional operators.
+
 - New :doc:`google-readability-avoid-underscore-in-googletest-name
   <clang-tidy/checks/google-readability-avoid-underscore-in-googletest-name>`
   check.
@@ -150,6 +164,19 @@ Improvements to clang-tidy
   ``dyn_cast<>`` where the return value is not captured. Additionally,
   finds and replaces cases that match the pattern ``var &&
   isa<X>(var)``, where ``var`` is evaluated twice.
+
+- New :doc:`modernize-use-trailing-return-type
+  <clang-tidy/checks/modernize-use-trailing-return-type>` check.
+
+  Rewrites function signatures to use a trailing return type.
+
+- The :doc:`misc-throw-by-value-catch-by-reference
+  <clang-tidy/misc-throw-by-value-catch-by-reference.rst>` now supports
+  `WarnOnLargeObject` and `MaxSize` options to warn on any large trivial
+  object caught by value.
+
+Improvements to include-fixer
+-----------------------------
 
 - New :doc:`openmp-exception-escape
   <clang-tidy/checks/openmp-exception-escape>` check.

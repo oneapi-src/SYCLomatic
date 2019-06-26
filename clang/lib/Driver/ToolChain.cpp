@@ -75,6 +75,13 @@ ToolChain::ToolChain(const Driver &D, const llvm::Triple &T,
       CachedRTTIMode(CalculateRTTIMode(Args, Triple, CachedRTTIArg)) {
   SmallString<128> P;
 
+  if (D.CCCIsCXX()) {
+    P.assign(D.Dir);
+    llvm::sys::path::append(P, "..", "lib", D.getTargetTriple(), "c++");
+    if (getVFS().exists(P))
+      getLibraryPaths().push_back(P.str());
+  }
+
   P.assign(D.ResourceDir);
   llvm::sys::path::append(P, D.getTargetTriple(), "lib");
   if (getVFS().exists(P))
@@ -443,7 +450,7 @@ bool ToolChain::needsProfileRT(const ArgList &Args) {
       Args.hasArg(options::OPT_fprofile_instr_generate) ||
       Args.hasArg(options::OPT_fprofile_instr_generate_EQ) ||
       Args.hasArg(options::OPT_fcreate_profile) ||
-      Args.hasArg(options::OPT_forder_file_instrumentation)) 
+      Args.hasArg(options::OPT_forder_file_instrumentation))
     return true;
 
   return false;

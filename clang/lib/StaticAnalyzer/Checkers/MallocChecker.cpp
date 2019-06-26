@@ -984,7 +984,7 @@ ProgramStateRef MallocChecker::ProcessZeroAllocation(
   }
   else if (const CXXNewExpr *NE = dyn_cast<CXXNewExpr>(E)) {
     if (NE->isArray())
-      Arg = NE->getArraySize();
+      Arg = *NE->getArraySize();
     else
       return State;
   }
@@ -1116,7 +1116,7 @@ ProgramStateRef MallocChecker::addExtentSize(CheckerContext &C,
   SVal ElementCount;
   const SubRegion *Region;
   if (NE->isArray()) {
-    const Expr *SizeExpr = NE->getArraySize();
+    const Expr *SizeExpr = *NE->getArraySize();
     ElementCount = C.getSVal(SizeExpr);
     // Store the extent size for the (symbolic)region
     // containing the elements.
@@ -3098,7 +3098,7 @@ void ento::registerInnerPointerCheckerAux(CheckerManager &mgr) {
 void ento::registerDynamicMemoryModeling(CheckerManager &mgr) {
   auto *checker = mgr.registerChecker<MallocChecker>();
   checker->IsOptimistic = mgr.getAnalyzerOptions().getCheckerBooleanOption(
-                                                  checker, "Optimistic", false);
+                                                         checker, "Optimistic");
 }
 
 bool ento::shouldRegisterDynamicMemoryModeling(const LangOptions &LO) {

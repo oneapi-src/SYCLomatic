@@ -644,7 +644,7 @@ static void remapSectionsAndSymbols(const llvm::Triple &TargetTriple,
       // reason (e.g. zero byte COFF sections). Don't include those sections in
       // the allocation map.
       if (LoadAddr != 0)
-        AlreadyAllocated[LoadAddr] = (*Tmp)->MB.size();
+        AlreadyAllocated[LoadAddr] = (*Tmp)->MB.allocatedSize();
       Worklist.erase(Tmp);
     }
   }
@@ -668,13 +668,14 @@ static void remapSectionsAndSymbols(const llvm::Triple &TargetTriple,
     uint64_t NextSectionAddr = TargetAddrStart;
 
     for (const auto &Alloc : AlreadyAllocated)
-      if (NextSectionAddr + CurEntry->MB.size() + TargetSectionSep <= Alloc.first)
+      if (NextSectionAddr + CurEntry->MB.allocatedSize() + TargetSectionSep <=
+          Alloc.first)
         break;
       else
         NextSectionAddr = Alloc.first + Alloc.second + TargetSectionSep;
 
     Dyld.mapSectionAddress(CurEntry->MB.base(), NextSectionAddr);
-    AlreadyAllocated[NextSectionAddr] = CurEntry->MB.size();
+    AlreadyAllocated[NextSectionAddr] = CurEntry->MB.allocatedSize();
   }
 
   // Add dummy symbols to the memory manager.
@@ -774,7 +775,7 @@ static int linkAndVerify() {
 
     // First get the target address.
     if (auto InternalSymbol = Dyld.getSymbol(Symbol))
-      SymInfo.TargetAddress = InternalSymbol.getAddress();
+      SymInfo.setTargetAddress(InternalSymbol.getAddress());
     else {
       // Symbol not found in RuntimeDyld. Fall back to external lookup.
 #ifdef _MSC_VER
@@ -799,7 +800,7 @@ static int linkAndVerify() {
       auto I = Result->find(Symbol);
       assert(I != Result->end() &&
              "Expected symbol address if no error occurred");
-      SymInfo.TargetAddress = I->second.getAddress();
+      SymInfo.setTargetAddress(I->second.getAddress());
     }
 
     // Now find the symbol content if possible (otherwise leave content as a
@@ -810,7 +811,7 @@ static int linkAndVerify() {
         char *CSymAddr = static_cast<char *>(SymAddr);
         StringRef SecContent = Dyld.getSectionContent(SectionID);
         uint64_t SymSize = SecContent.size() - (CSymAddr - SecContent.data());
-        SymInfo.Content = StringRef(CSymAddr, SymSize);
+        SymInfo.setContent(StringRef(CSymAddr, SymSize));
       }
     }
     return SymInfo;
@@ -824,7 +825,7 @@ static int linkAndVerify() {
       logAllUnhandledErrors(SymInfo.takeError(), errs(), "RTDyldChecker: ");
       return false;
     }
-    return SymInfo->TargetAddress != 0;
+    return SymInfo->getTargetAddress() != 0;
   };
 
   FileToSectionIDMap FileToSecIDMap;
@@ -836,8 +837,8 @@ static int linkAndVerify() {
     if (!SectionID)
       return SectionID.takeError();
     RuntimeDyldChecker::MemoryRegionInfo SecInfo;
-    SecInfo.TargetAddress = Dyld.getSectionLoadAddress(*SectionID);
-    SecInfo.Content = Dyld.getSectionContent(*SectionID);
+    SecInfo.setTargetAddress(Dyld.getSectionLoadAddress(*SectionID));
+    SecInfo.setContent(Dyld.getSectionContent(*SectionID));
     return SecInfo;
   };
 
@@ -854,10 +855,10 @@ static int linkAndVerify() {
                                      inconvertibleErrorCode());
     auto &SI = StubMap[StubContainer][SymbolName];
     RuntimeDyldChecker::MemoryRegionInfo StubMemInfo;
-    StubMemInfo.TargetAddress =
-        Dyld.getSectionLoadAddress(SI.SectionID) + SI.Offset;
-    StubMemInfo.Content =
-        Dyld.getSectionContent(SI.SectionID).substr(SI.Offset);
+    StubMemInfo.setTargetAddress(Dyld.getSectionLoadAddress(SI.SectionID) +
+                                 SI.Offset);
+    StubMemInfo.setContent(
+        Dyld.getSectionContent(SI.SectionID).substr(SI.Offset));
     return StubMemInfo;
   };
 

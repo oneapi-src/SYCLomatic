@@ -84,7 +84,8 @@ public:
 
   // Constructors and Destructors
 
-  SymbolFileDWARF(lldb_private::ObjectFile *ofile);
+  SymbolFileDWARF(lldb_private::ObjectFile *ofile,
+                  lldb_private::SectionList *dwo_section_list);
 
   ~SymbolFileDWARF() override;
 
@@ -133,11 +134,6 @@ public:
   lldb_private::Type *ResolveType(const DWARFDIE &die,
                                   bool assert_not_being_parsed = true,
                                   bool resolve_function_context = false);
-
-  SymbolFileDWARF *GetDWARFForUID(lldb::user_id_t uid);
-
-  DWARFDIE
-  GetDIEFromUID(lldb::user_id_t uid);
 
   lldb_private::CompilerDecl GetDeclForUID(lldb::user_id_t uid) override;
 
@@ -216,25 +212,10 @@ public:
 
   uint32_t GetPluginVersion() override;
 
-  virtual const lldb_private::DWARFDataExtractor &get_debug_abbrev_data();
-  virtual const lldb_private::DWARFDataExtractor &get_debug_addr_data();
-  const lldb_private::DWARFDataExtractor &get_debug_frame_data();
-  virtual const lldb_private::DWARFDataExtractor &get_debug_info_data();
-  const lldb_private::DWARFDataExtractor &get_debug_line_data();
-  const lldb_private::DWARFDataExtractor &get_debug_line_str_data();
-  const lldb_private::DWARFDataExtractor &get_debug_macro_data();
   const lldb_private::DWARFDataExtractor &get_debug_loc_data();
   const lldb_private::DWARFDataExtractor &get_debug_loclists_data();
   const lldb_private::DWARFDataExtractor &get_debug_ranges_data();
   const lldb_private::DWARFDataExtractor &get_debug_rnglists_data();
-  virtual const lldb_private::DWARFDataExtractor &get_debug_str_data();
-  virtual const lldb_private::DWARFDataExtractor &get_debug_str_offsets_data();
-  const lldb_private::DWARFDataExtractor &get_debug_types_data();
-  const lldb_private::DWARFDataExtractor &get_apple_names_data();
-  const lldb_private::DWARFDataExtractor &get_apple_types_data();
-  const lldb_private::DWARFDataExtractor &get_apple_namespaces_data();
-  const lldb_private::DWARFDataExtractor &get_apple_objc_data();
-  const lldb_private::DWARFDataExtractor &get_gnu_debugaltlink();
 
   DWARFDebugAbbrev *DebugAbbrev();
 
@@ -289,6 +270,17 @@ public:
 
   virtual DWARFDIE GetDIE(const DIERef &die_ref);
 
+  DWARFDIE GetDIE(lldb::user_id_t uid);
+
+  lldb::user_id_t GetUID(const DWARFBaseDIE &die) {
+    return GetUID(die.GetDIERef());
+  }
+
+  lldb::user_id_t GetUID(const DIERef &ref) {
+    return GetID() | ref.die_offset |
+           (lldb::user_id_t(ref.section == DIERef::Section::DebugTypes) << 63);
+  }
+
   virtual std::unique_ptr<SymbolFileDWARFDwo>
   GetDwoSymbolFileForCompileUnit(DWARFUnit &dwarf_cu,
                                  const DWARFDebugInfoEntry &cu_die);
@@ -308,6 +300,8 @@ public:
   void Dump(lldb_private::Stream &s) override;
 
   void DumpClangAST(lldb_private::Stream &s) override;
+
+  lldb_private::DWARFContext &GetDWARFContext() { return m_context; }
 
 protected:
   typedef llvm::DenseMap<const DWARFDebugInfoEntry *, lldb_private::Type *>
@@ -440,6 +434,12 @@ protected:
     return m_forward_decl_clang_type_to_die;
   }
 
+  struct DecodedUID {
+    SymbolFileDWARF *dwarf;
+    DIERef ref;
+  };
+  DecodedUID DecodeUID(lldb::user_id_t uid);
+
   SymbolFileDWARFDwp *GetDwpSymbolFile();
 
   lldb::ModuleWP m_debug_map_module_wp;
@@ -450,25 +450,10 @@ protected:
 
   lldb_private::DWARFContext m_context;
 
-  DWARFDataSegment m_data_debug_abbrev;
-  DWARFDataSegment m_data_debug_addr;
-  DWARFDataSegment m_data_debug_frame;
-  DWARFDataSegment m_data_debug_info;
-  DWARFDataSegment m_data_debug_line;
-  DWARFDataSegment m_data_debug_line_str;
-  DWARFDataSegment m_data_debug_macro;
   DWARFDataSegment m_data_debug_loc;
   DWARFDataSegment m_data_debug_loclists;
   DWARFDataSegment m_data_debug_ranges;
   DWARFDataSegment m_data_debug_rnglists;
-  DWARFDataSegment m_data_debug_str;
-  DWARFDataSegment m_data_debug_str_offsets;
-  DWARFDataSegment m_data_debug_types;
-  DWARFDataSegment m_data_apple_names;
-  DWARFDataSegment m_data_apple_types;
-  DWARFDataSegment m_data_apple_namespaces;
-  DWARFDataSegment m_data_apple_objc;
-  DWARFDataSegment m_data_gnu_debugaltlink;
 
   // The unique pointer items below are generated on demand if and when someone
   // accesses

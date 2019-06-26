@@ -8,7 +8,8 @@
 
 #include <CL/sycl/context.hpp>
 #include <CL/sycl/detail/event_impl.hpp>
-#include <CL/sycl/detail/scheduler/scheduler.h>
+#include <CL/sycl/detail/queue_impl.hpp>
+#include <CL/sycl/detail/scheduler/scheduler.hpp>
 
 namespace cl {
 namespace sycl {
@@ -84,13 +85,18 @@ void event_impl::wait(
     // go via the slow path event waiting in the scheduler
     waitInternal();
   else
-    simple_scheduler::Scheduler::getInstance().waitForEvent(Self);
+    detail::Scheduler::getInstance().waitForEvent(std::move(Self));
 }
 
 void event_impl::wait_and_throw(
     std::shared_ptr<cl::sycl::detail::event_impl> Self) {
   wait(Self);
-  cl::sycl::simple_scheduler::Scheduler::getInstance().throwForEvent(Self);
+  for (auto &EventImpl :
+       detail::Scheduler::getInstance().getWaitList(std::move(Self))) {
+    Command *Cmd = (Command *)EventImpl->getCommand();
+    if (Cmd)
+      Cmd->getQueue()->throw_asynchronous();
+  }
 }
 
 template <>

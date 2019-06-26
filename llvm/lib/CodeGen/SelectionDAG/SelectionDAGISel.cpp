@@ -742,8 +742,6 @@ void SelectionDAGISel::CodeGenAndEmitDAG() {
   StringRef GroupName = "sdag";
   StringRef GroupDescription = "Instruction Selection and Scheduling";
   std::string BlockName;
-  int BlockNumber = -1;
-  (void)BlockNumber;
   bool MatchFilterBB = false; (void)MatchFilterBB;
 #ifndef NDEBUG
   TargetTransformInfo &TTI =
@@ -764,7 +762,6 @@ void SelectionDAGISel::CodeGenAndEmitDAG() {
       ViewSUnitDAGs)
 #endif
   {
-    BlockNumber = FuncInfo->MBB->getNumber();
     BlockName =
         (MF->getName() + ":" + FuncInfo->MBB->getBasicBlock()->getName()).str();
   }
@@ -1366,7 +1363,7 @@ static void processDbgDeclares(FunctionLoweringInfo *FuncInfo) {
 
       DIExpression *Expr = DI->getExpression();
       if (Offset.getBoolValue())
-        Expr = DIExpression::prepend(Expr, DIExpression::NoDeref,
+        Expr = DIExpression::prepend(Expr, DIExpression::ApplyOffset,
                                      Offset.getZExtValue());
       MF->setVariableDbgInfo(DI->getVariable(), Expr, FI, DI->getDebugLoc());
     }

@@ -547,30 +547,119 @@ void SPIRVToLLVM::setName(llvm::Value *V, SPIRVValue *BV) {
     V->setName(Name);
 }
 
+inline llvm::Metadata *SPIRVToLLVM::getMetadataFromName(std::string Name) {
+  return llvm::MDNode::get(*Context, llvm::MDString::get(*Context, Name));
+}
+
+inline std::vector<llvm::Metadata *>
+SPIRVToLLVM::getMetadataFromNameAndParameter(std::string Name,
+                                             SPIRVWord Parameter) {
+  return {MDString::get(*Context, Name),
+          ConstantAsMetadata::get(
+              ConstantInt::get(Type::getInt32Ty(*Context), Parameter))};
+}
+
 void SPIRVToLLVM::setLLVMLoopMetadata(SPIRVLoopMerge *LM, BranchInst *BI) {
   if (!LM)
     return;
-  llvm::MDString *Name = nullptr;
   auto Temp = MDNode::getTemporary(*Context, None);
   auto Self = MDNode::get(*Context, Temp.get());
   Self->replaceOperandWith(0, Self);
-
-  if (LM->getLoopControl() == LoopControlMaskNone) {
+  SPIRVWord LC = LM->getLoopControl();
+  if (LC == LoopControlMaskNone) {
     BI->setMetadata("llvm.loop", Self);
     return;
-  } else if (LM->getLoopControl() == LoopControlUnrollMask)
-    Name = llvm::MDString::get(*Context, "llvm.loop.unroll.full");
-  else if (LM->getLoopControl() == LoopControlDontUnrollMask)
-    Name = llvm::MDString::get(*Context, "llvm.loop.unroll.disable");
-  else
-    return;
+  }
 
-  std::vector<llvm::Metadata *> OpValues(1, Name);
-  SmallVector<llvm::Metadata *, 2> Metadata;
+  unsigned NumParam = 0;
+  std::vector<llvm::Metadata *> Metadata;
+  std::vector<SPIRVWord> LoopControlParameters = LM->getLoopControlParameters();
   Metadata.push_back(llvm::MDNode::get(*Context, Self));
-  Metadata.push_back(llvm::MDNode::get(*Context, OpValues));
 
+  // To correctly decode loop control parameters, order of checks for loop
+  // control masks must match with the order given in the spec (see 3.23),
+  // i.e. check smaller-numbered bits first.
+  // Unroll and UnrollCount loop controls can't be applied simultaneously with
+  // DontUnroll loop control.
+  if (LC & LoopControlUnrollMask)
+    Metadata.push_back(getMetadataFromName("llvm.loop.unroll.enable"));
+  else if (LC & LoopControlDontUnrollMask)
+    Metadata.push_back(getMetadataFromName("llvm.loop.unroll.disable"));
+  if (LC & LoopControlDependencyInfiniteMask)
+    Metadata.push_back(getMetadataFromName("llvm.loop.ivdep.enable"));
+  if (LC & LoopControlDependencyLengthMask) {
+    if (!LoopControlParameters.empty()) {
+      Metadata.push_back(llvm::MDNode::get(
+          *Context,
+          getMetadataFromNameAndParameter("llvm.loop.ivdep.safelen",
+                                          LoopControlParameters[NumParam])));
+      ++NumParam;
+      assert(NumParam <= LoopControlParameters.size() &&
+             "Missing loop control parameter!");
+    }
+  }
+  // Placeholder for LoopControls added in SPIR-V 1.4 spec (see 3.23)
+  if (LC & LoopControlMinIterationsMask) {
+    ++NumParam;
+    assert(NumParam <= LoopControlParameters.size() &&
+           "Missing loop control parameter!");
+  }
+  if (LC & LoopControlMaxIterationsMask) {
+    ++NumParam;
+    assert(NumParam <= LoopControlParameters.size() &&
+           "Missing loop control parameter!");
+  }
+  if (LC & LoopControlIterationMultipleMask) {
+    ++NumParam;
+    assert(NumParam <= LoopControlParameters.size() &&
+           "Missing loop control parameter!");
+  }
+  if (LC & LoopControlPeelCountMask) {
+    ++NumParam;
+    assert(NumParam <= LoopControlParameters.size() &&
+           "Missing loop control parameter!");
+  }
+  if (LC & LoopControlPartialCountMask && !(LC & LoopControlDontUnrollMask)) {
+    // If unroll factor is set as '1' - disable loop unrolling
+    if (1 == LoopControlParameters[NumParam])
+      Metadata.push_back(getMetadataFromName("llvm.loop.unroll.disable"));
+    else
+      Metadata.push_back(llvm::MDNode::get(
+          *Context,
+          getMetadataFromNameAndParameter("llvm.loop.unroll.count",
+                                          LoopControlParameters[NumParam])));
+    ++NumParam;
+    assert(NumParam <= LoopControlParameters.size() &&
+           "Missing loop control parameter!");
+  }
+  if (LC & LoopControlExtendedControlsMask) {
+    while (NumParam < LoopControlParameters.size()) {
+      switch (LoopControlParameters[NumParam]) {
+      case InitiationIntervalINTEL: {
+        // To generate a correct integer part of metadata we skip a parameter
+        // that encodes name of the metadata and take the next one
+        Metadata.push_back(llvm::MDNode::get(
+            *Context,
+            getMetadataFromNameAndParameter(
+                "llvm.loop.ii.count", LoopControlParameters[++NumParam])));
+        break;
+      }
+      case MaxConcurrencyINTEL: {
+        Metadata.push_back(llvm::MDNode::get(
+            *Context, getMetadataFromNameAndParameter(
+                          "llvm.loop.max_concurrency.count",
+                          LoopControlParameters[++NumParam])));
+        break;
+      }
+      default:
+        break;
+      }
+      ++NumParam;
+    }
+  }
   llvm::MDNode *Node = llvm::MDNode::get(*Context, Metadata);
+
+  // Set the first operand to refer itself
   Node->replaceOperandWith(0, Node);
   BI->setMetadata("llvm.loop", Node);
 }
@@ -1840,7 +1929,8 @@ Instruction *SPIRVToLLVM::transEnqueueKernelBI(SPIRVInstruction *BI,
   Function *F = M->getFunction(FName);
   if (!F) {
     Type *EventTy = PointerType::get(
-        getOrCreateOpaquePtrType(M, SPIR_TYPE_NAME_CLK_EVENT_T, SPIRAS_Private),
+        getOrCreateOpaquePtrType(M, SPIR_TYPE_NAME_CLK_EVENT_T,
+                                 getOCLOpaqueTypeAddrSpace(OpTypeDeviceEvent)),
         SPIRAS_Generic);
 
     SmallVector<Type *, 8> Tys = {
@@ -2206,6 +2296,8 @@ void generateIntelFPGAAnnotation(const SPIRVEntry *E,
     Out << "{pump:1}";
   if (E->hasDecorate(DecorationDoublepumpINTEL))
     Out << "{pump:2}";
+  if (E->hasDecorate(DecorationUserSemantic))
+    Out << E->getDecorationStringLiteral(DecorationUserSemantic);
 }
 
 void generateIntelFPGAAnnotationForStructMember(
@@ -2232,6 +2324,9 @@ void generateIntelFPGAAnnotationForStructMember(
     Out << "{pump:1}";
   if (E->hasMemberDecorate(DecorationDoublepumpINTEL, 0, MemberNumber))
     Out << "{pump:2}";
+  if (E->hasMemberDecorate(DecorationUserSemantic, 0, MemberNumber))
+    Out << E->getMemberDecorationStringLiteral(DecorationUserSemantic,
+                                               MemberNumber);
 }
 
 void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
@@ -2904,36 +2999,52 @@ Instruction *SPIRVToLLVM::transOCLRelational(SPIRVInstruction *I,
              &Attrs)));
 }
 
-} // namespace SPIRV
-
-bool llvm::readSpirv(LLVMContext &C, std::istream &IS, Module *&M,
-                     std::string &ErrMsg) {
+std::unique_ptr<SPIRVModule> readSpirvModule(std::istream &IS,
+                                             std::string &ErrMsg) {
   std::unique_ptr<SPIRVModule> BM(SPIRVModule::createSPIRVModule());
 
   IS >> *BM;
   if (!BM->isModuleValid()) {
     BM->getError(ErrMsg);
-    M = nullptr;
-    return false;
+    return nullptr;
+  }
+  return BM;
+}
+
+} // namespace SPIRV
+
+std::unique_ptr<Module>
+llvm::convertSpirvToLLVM(LLVMContext &C, SPIRVModule &BM, std::string &ErrMsg) {
+  std::unique_ptr<Module> M(new Module("", C));
+  SPIRVToLLVM BTL(M.get(), &BM);
+
+  if (!BTL.translate()) {
+    BM.getError(ErrMsg);
+    return nullptr;
   }
 
-  M = new Module("", C);
-  SPIRVToLLVM BTL(M, BM.get());
-  bool Succeed = true;
-  if (!BTL.translate()) {
-    BM->getError(ErrMsg);
-    Succeed = false;
-  }
   llvm::legacy::PassManager PassMgr;
   PassMgr.add(createSPIRVToOCL20());
   PassMgr.add(createOCL20To12());
   PassMgr.run(*M);
 
+  return M;
+}
+
+bool llvm::readSpirv(LLVMContext &C, std::istream &IS, Module *&M,
+                     std::string &ErrMsg) {
+  std::unique_ptr<SPIRVModule> BM(readSpirvModule(IS, ErrMsg));
+
+  if (!BM)
+    return false;
+
+  M = convertSpirvToLLVM(C, *BM, ErrMsg).release();
+
+  if (!M)
+    return false;
+
   if (DbgSaveTmpLLVM)
     dumpLLVM(M, DbgTmpLLVMFileName);
-  if (!Succeed) {
-    delete M;
-    M = nullptr;
-  }
-  return Succeed;
+
+  return true;
 }

@@ -386,7 +386,8 @@ Error addEHFrame(AtomGraph &G, Section &EHFrameSection,
 
 // Determine whether we can register EH tables.
 #if (defined(__GNUC__) && !defined(__ARM_EABI__) && !defined(__ia64__) &&      \
-     !defined(__SEH__) && !defined(__USING_SJLJ_EXCEPTIONS__))
+     !(defined(_AIX) && defined(__ibmxl__)) && !defined(__SEH__) &&            \
+     !defined(__USING_SJLJ_EXCEPTIONS__))
 #define HAVE_EHTABLE_SUPPORT 1
 #else
 #define HAVE_EHTABLE_SUPPORT 0
@@ -521,15 +522,8 @@ createEHFrameRecorderPass(const Triple &TT,
     // Search for a non-empty eh-frame and record the address of the first atom
     // in it.
     JITTargetAddress Addr = 0;
-    for (auto &S : G.sections())
-      if (S.getName() == EHFrameSectionName && !S.atoms_empty()) {
-        Addr = (*S.atoms().begin())->getAddress();
-        for (auto *DA : S.atoms())
-          if (DA->getAddress() < Addr)
-            Addr = DA->getAddress();
-        break;
-      }
-
+    if (auto *S = G.findSectionByName(EHFrameSectionName))
+      Addr = S->getRange().getStart();
     StoreFrameAddress(Addr);
     return Error::success();
   };

@@ -42,10 +42,9 @@ void IRObjectFile::moveSymbolNext(DataRefImpl &Symb) const {
   Symb.p += sizeof(ModuleSymbolTable::Symbol);
 }
 
-std::error_code IRObjectFile::printSymbolName(raw_ostream &OS,
-                                              DataRefImpl Symb) const {
+Error IRObjectFile::printSymbolName(raw_ostream &OS, DataRefImpl Symb) const {
   SymTab.printSymbolName(OS, getSym(Symb));
-  return std::error_code();
+  return Error::success();
 }
 
 uint32_t IRObjectFile::getSymbolFlags(DataRefImpl Symb) const {
@@ -75,12 +74,12 @@ Expected<MemoryBufferRef>
 IRObjectFile::findBitcodeInObject(const ObjectFile &Obj) {
   for (const SectionRef &Sec : Obj.sections()) {
     if (Sec.isBitcode()) {
-      StringRef SecContents;
-      if (std::error_code EC = Sec.getContents(SecContents))
-        return errorCodeToError(EC);
-      if (SecContents.size() <= 1)
+      Expected<StringRef> Contents = Sec.getContents();
+      if (!Contents)
+        return Contents.takeError();
+      if (Contents->size() <= 1)
         return errorCodeToError(object_error::bitcode_section_not_found);
-      return MemoryBufferRef(SecContents, Obj.getFileName());
+      return MemoryBufferRef(*Contents, Obj.getFileName());
     }
   }
 

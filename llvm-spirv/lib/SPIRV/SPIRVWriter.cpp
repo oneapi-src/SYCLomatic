@@ -1142,8 +1142,12 @@ parseAnnotations(StringRef AnnotatedCode) {
                 .Case("memory", DecorationMemoryINTEL)
                 .Case("numbanks", DecorationNumbanksINTEL)
                 .Case("bankwidth", DecorationBankwidthINTEL)
-                .Case("max_concurrency", DecorationMaxconcurrencyINTEL);
-      Value = S;
+                .Case("max_concurrency", DecorationMaxconcurrencyINTEL)
+                .Default(DecorationUserSemantic);
+      if (Dec == DecorationUserSemantic)
+        Value = AnnotatedCode.substr(From, To + 1);
+      else
+        Value = S;
     }
 
     Decorates.push_back({Dec, Value});
@@ -1159,6 +1163,9 @@ void addIntelFPGADecorations(
     switch (I.first) {
     case DecorationMemoryINTEL:
       E->addDecorate(new SPIRVDecorateMemoryINTELAttr(E, I.second));
+      break;
+    case DecorationUserSemantic:
+      E->addDecorate(new SPIRVDecorateUserSemanticAttr(E, I.second));
       break;
     case DecorationRegisterINTEL:
     case DecorationSinglepumpINTEL:
@@ -1187,6 +1194,10 @@ void addIntelFPGADecorationsForStructMember(
     case DecorationMemoryINTEL:
       E->addMemberDecorate(
           new SPIRVMemberDecorateMemoryINTELAttr(E, MemberNumber, I.second));
+      break;
+    case DecorationUserSemantic:
+      E->addMemberDecorate(
+          new SPIRVMemberDecorateUserSemanticAttr(E, MemberNumber, I.second));
       break;
     case DecorationRegisterINTEL:
     case DecorationSinglepumpINTEL:
@@ -1313,8 +1324,12 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
 
     std::vector<std::pair<Decoration, std::string>> Decorations =
         parseAnnotations(AnnotationString);
-
-    addIntelFPGADecorations(SV, Decorations);
+    if (Decorations.empty()) {
+      SV->addDecorate(new SPIRVDecorateUserSemanticAttr(
+          SV, AnnotationString.substr(0, AnnotationString.size() - 1)));
+    } else {
+      addIntelFPGADecorations(SV, Decorations);
+    }
     return SV;
   }
   case Intrinsic::ptr_annotation: {
@@ -1337,7 +1352,13 @@ SPIRVValue *LLVMToSPIRV::transIntrinsicInst(IntrinsicInst *II,
     std::vector<std::pair<Decoration, std::string>> Decorations =
         parseAnnotations(AnnotationString);
 
-    addIntelFPGADecorationsForStructMember(Ty, MemberNumber, Decorations);
+    if (Decorations.empty()) {
+      Ty->addMemberDecorate(new SPIRVMemberDecorateUserSemanticAttr(
+          Ty, MemberNumber,
+          AnnotationString.substr(0, AnnotationString.size() - 1)));
+    } else {
+      addIntelFPGADecorationsForStructMember(Ty, MemberNumber, Decorations);
+    }
 
     II->replaceAllUsesWith(II->getOperand(0));
     return 0;
@@ -1386,12 +1407,11 @@ SPIRVValue *LLVMToSPIRV::transCallInst(CallInst *CI, SPIRVBasicBlock *BB) {
 
 bool LLVMToSPIRV::transAddressingMode() {
   Triple TargetTriple(M->getTargetTriple());
-  Triple::ArchType Arch = TargetTriple.getArch();
 
-  SPIRVCKRT(Arch == Triple::spir || Arch == Triple::spir64, InvalidTargetTriple,
+  SPIRVCKRT(isSupportedTriple(TargetTriple), InvalidTargetTriple,
             "Actual target triple is " + M->getTargetTriple());
 
-  if (Arch == Triple::spir)
+  if (TargetTriple.isArch32Bit())
     BM->setAddressingModel(AddressingModelPhysical32);
   else
     BM->setAddressingModel(AddressingModelPhysical64);
@@ -1890,7 +1910,7 @@ ModulePass *llvm::createLLVMToSPIRV(SPIRVModule *SMod) {
 void addPassesForSPIRV(legacy::PassManager &PassMgr) {
   if (SPIRVMemToReg)
     PassMgr.add(createPromoteMemoryToRegisterPass());
-  PassMgr.add(createTransOCLMD());
+  PassMgr.add(createPreprocessMetadata());
   PassMgr.add(createOCL21ToSPIRV());
   PassMgr.add(createSPIRVLowerSPIRBlocks());
   PassMgr.add(createOCLTypeToSPIRV());

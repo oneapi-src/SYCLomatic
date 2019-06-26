@@ -540,6 +540,8 @@ static void InitializeCPlusPlusFeatureTestMacros(const LangOptions &LangOpts,
     Builder.defineMacro("__cpp_template_template_args", "201611L");
 
   // C++20 features.
+  if (LangOpts.CPlusPlus2a)
+    Builder.defineMacro("__cpp_conditional_explicit", "201806L");
   if (LangOpts.Char8)
     Builder.defineMacro("__cpp_char8_t", "201811L");
   Builder.defineMacro("__cpp_impl_destroying_delete", "201806L");
@@ -1061,6 +1063,8 @@ static void InitializePredefinedMacros(const TargetInfo &TI,
   // SYCL device compiler which doesn't produce host binary.
   if (LangOpts.SYCLIsDevice) {
     Builder.defineMacro("__SYCL_DEVICE_ONLY__", "1");
+    if (!getenv("DISABLE_INFER_AS"))
+      Builder.defineMacro("__SYCL_ENABLE_INFER_AS__", "1");
   }
 
   // OpenCL definitions.
@@ -1070,8 +1074,7 @@ static void InitializePredefinedMacros(const TargetInfo &TI,
     Builder.defineMacro(#Ext);
 #include "clang/Basic/OpenCLExtensions.def"
 
-    auto Arch = TI.getTriple().getArch();
-    if (Arch == llvm::Triple::spir || Arch == llvm::Triple::spir64)
+    if (TI.getTriple().isSPIR())
       Builder.defineMacro("__IMAGE_SUPPORT__");
   }
 

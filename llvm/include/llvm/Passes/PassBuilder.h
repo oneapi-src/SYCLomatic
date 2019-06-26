@@ -54,7 +54,7 @@ struct PGOOptions {
     // a profile.
     assert(this->CSAction != CSIRUse || this->Action == IRUse);
 
-    // If neither CSAction nor CSAction, SamplePGOSupport needs to be true.
+    // If neither Action nor CSAction, SamplePGOSupport needs to be true.
     assert(this->Action != NoAction || this->CSAction != NoCSAction ||
            this->SamplePGOSupport);
   }
@@ -80,6 +80,10 @@ public:
   /// Tuning option to enable/disable loop vectorization. Its default value is
   /// that of the flag: `-vectorize-loops`.
   bool LoopVectorization;
+
+  /// Tuning option to enable/disable slp loop vectorization. Its default value
+  /// is that of the flag: `vectorize-slp`.
+  bool SLPVectorization;
 
   /// Tuning option to cap the number of calls to retrive clobbering accesses in
   /// MemorySSA, in LICM.

@@ -1395,6 +1395,10 @@ public:
     NonParmVarDeclBits.IsInitCapture = IC;
   }
 
+  /// Determine whether this variable is actually a function parameter pack or
+  /// init-capture pack.
+  bool isParameterPack() const;
+
   /// Whether this local extern variable declaration's previous declaration
   /// was declared in the same block scope. Only correct in C++.
   bool isPreviousDeclInSameBlockScope() const {
@@ -1433,6 +1437,12 @@ public:
   /// static data member of a class template, determine what kind of
   /// template specialization or instantiation this is.
   TemplateSpecializationKind getTemplateSpecializationKind() const;
+
+  /// Get the template specialization kind of this variable for the purposes of
+  /// template instantiation. This differs from getTemplateSpecializationKind()
+  /// for an instantiation of a class-scope explicit specialization.
+  TemplateSpecializationKind
+  getTemplateSpecializationKindForInstantiation() const;
 
   /// If this variable is an instantiation of a variable template or a
   /// static data member of a class template, determine its point of
@@ -1681,10 +1691,6 @@ public:
   }
 
   QualType getOriginalType() const;
-
-  /// Determine whether this parameter is actually a function
-  /// parameter pack.
-  bool isParameterPack() const;
 
   /// Sets the function declaration that owns this
   /// ParmVarDecl. Since ParmVarDecls are often created before the
@@ -2362,16 +2368,6 @@ public:
   /// either marked "inline" or "constexpr" or is a member function of a class
   /// that was defined in the class body.
   bool isInlined() const { return FunctionDeclBits.IsInline; }
-
-  /// Whether this function is marked as explicit explicitly.
-  bool isExplicitSpecified() const {
-    return FunctionDeclBits.IsExplicitSpecified;
-  }
-
-  /// State that this function is marked as explicit explicitly.
-  void setExplicitSpecified(bool ExpSpec = true) {
-    FunctionDeclBits.IsExplicitSpecified = ExpSpec;
-  }
 
   bool isInlineDefinitionExternallyVisible() const;
 
