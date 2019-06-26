@@ -26,8 +26,6 @@
 
 using namespace clang;
 
-typedef llvm::DenseMap<DeclaratorDecl *, DeclaratorDecl *> DeclMap;
-
 using KernelParamKind = SYCLIntegrationHeader::kernel_param_kind_t;
 
 enum target {
@@ -59,16 +57,13 @@ class Util {
 public:
   using DeclContextDesc = std::pair<clang::Decl::Kind, StringRef>;
 
-  /// Checks whether given clang type is a full specialization of the sycl
+  /// Checks whether given clang type is a full specialization of the SYCL
   /// accessor class.
   static bool isSyclAccessorType(const QualType &Ty);
 
-  /// Checks whether given clang type is a full specialization of the sycl
+  /// Checks whether given clang type is a full specialization of the SYCL
   /// sampler class.
   static bool isSyclSamplerType(const QualType &Ty);
-
-  /// Checks whether given clang type is the sycl stream class.
-  static bool isSyclStreamType(const QualType &Ty);
 
   /// Checks whether given clang type is declared in the given hierarchy of
   /// declaration contexts.
@@ -299,6 +294,41 @@ public:
     }
   }
 
+  // Traverses over CallGraph to collect list of attributes applied to
+  // functions called by SYCLKernel (either directly and indirectly) which needs
+  // to be propagated down to callers and applied to SYCL kernels.
+  // For example, reqd_work_group_size, vec_len_hint, reqd_sub_group_size
+  // Attributes applied to SYCLKernel are also included
+  void CollectPossibleKernelAttributes(FunctionDecl *SYCLKernel,
+                                       llvm::SmallPtrSet<Attr *, 4> &Attrs) {
+    llvm::SmallPtrSet<FunctionDecl *, 16> Visited;
+    llvm::SmallVector<FunctionDecl *, 16> WorkList;
+    WorkList.push_back(SYCLKernel);
+
+    while (!WorkList.empty()) {
+      FunctionDecl *FD = WorkList.back();
+      WorkList.pop_back();
+      if (!Visited.insert(FD).second)
+        continue; // We've already seen this Decl
+
+      if (auto *A = FD->getAttr<IntelReqdSubGroupSizeAttr>())
+        Attrs.insert(A);
+      // TODO: reqd_work_group_size, vec_len_hint should be handled here
+
+      CallGraphNode *N = SYCLCG.getNode(FD);
+      if (!N)
+        continue;
+
+      for (const CallGraphNode *CI : *N) {
+        if (auto *Callee = dyn_cast<FunctionDecl>(CI->getDecl())) {
+          Callee = Callee->getCanonicalDecl();
+          if (!Visited.count(Callee))
+            WorkList.push_back(Callee);
+        }
+      }
+    }
+  }
+
 private:
   bool CheckSYCLType(QualType Ty, SourceRange Loc) {
     if (Ty->isVariableArrayType()) {
@@ -310,12 +340,6 @@ private:
       Ty = QualType{Ty->getPointeeOrArrayElementType(), 0};
 
     if (const auto *CRD = Ty->getAsCXXRecordDecl()) {
-      // FIXME: this seems like a temporary fix for SYCL programs
-      // that pre-declare, use, but not define OclCXX classes,
-      // which are later translated into SPIRV types.
-      if (!CRD->hasDefinition())
-        return true;
-
       if (CRD->isPolymorphic()) {
         SemaRef.Diag(CRD->getLocation(), diag::err_sycl_virtual_types);
         SemaRef.Diag(Loc.getBegin(), diag::note_sycl_used_here);
@@ -350,148 +374,151 @@ private:
 
 class KernelBodyTransform : public TreeTransform<KernelBodyTransform> {
 public:
-  KernelBodyTransform(llvm::DenseMap<DeclaratorDecl *, DeclaratorDecl *> &Map,
+  KernelBodyTransform(std::pair<DeclaratorDecl *, DeclaratorDecl *> &MPair,
                       Sema &S)
-      : TreeTransform<KernelBodyTransform>(S), DMap(Map), SemaRef(S) {}
+      : TreeTransform<KernelBodyTransform>(S), MappingPair(MPair), SemaRef(S) {}
   bool AlwaysRebuild() { return true; }
 
   ExprResult TransformDeclRefExpr(DeclRefExpr *DRE) {
     auto Ref = dyn_cast<DeclaratorDecl>(DRE->getDecl());
-    if (Ref) {
-      auto NewDecl = DMap[Ref];
-      if (NewDecl) {
-        return DeclRefExpr::Create(
-            SemaRef.getASTContext(), DRE->getQualifierLoc(),
-            DRE->getTemplateKeywordLoc(), NewDecl, false, DRE->getNameInfo(),
-            NewDecl->getType(), DRE->getValueKind());
-      }
+    if (Ref && Ref == MappingPair.first) {
+      auto NewDecl = MappingPair.second;
+      return DeclRefExpr::Create(
+          SemaRef.getASTContext(), DRE->getQualifierLoc(),
+          DRE->getTemplateKeywordLoc(), NewDecl, false, DRE->getNameInfo(),
+          NewDecl->getType(), DRE->getValueKind());
     }
     return DRE;
   }
 
 private:
-  DeclMap DMap;
+  std::pair<DeclaratorDecl *, DeclaratorDecl *> MappingPair;
   Sema &SemaRef;
 };
 
-static FunctionDecl *CreateSYCLKernelFunction(ASTContext &Context,
-                                              StringRef Name,
-                                              ArrayRef<ParamDesc> ParamDescs) {
+static FunctionDecl *
+CreateOpenCLKernelDeclaration(ASTContext &Context, StringRef Name,
+                              ArrayRef<ParamDesc> ParamDescs) {
 
   DeclContext *DC = Context.getTranslationUnitDecl();
-  FunctionProtoType::ExtProtoInfo Info(CC_OpenCLKernel);
   QualType RetTy = Context.VoidTy;
   SmallVector<QualType, 8> ArgTys;
-  // extract argument types from the descriptor array:
+
+  // Extract argument types from the descriptor array:
   std::transform(
       ParamDescs.begin(), ParamDescs.end(), std::back_inserter(ArgTys),
       [](const ParamDesc &PD) -> QualType { return std::get<0>(PD); });
+  FunctionProtoType::ExtProtoInfo Info(CC_OpenCLKernel);
   QualType FuncTy = Context.getFunctionType(RetTy, ArgTys, Info);
   DeclarationName DN = DeclarationName(&Context.Idents.get(Name));
-  FunctionDecl *SYCLKernel = FunctionDecl::Create(
+
+  FunctionDecl *OpenCLKernel = FunctionDecl::Create(
       Context, DC, SourceLocation(), SourceLocation(), DN, FuncTy,
       Context.getTrivialTypeSourceInfo(RetTy), SC_None);
+
   llvm::SmallVector<ParmVarDecl *, 16> Params;
   int i = 0;
   for (const auto &PD : ParamDescs) {
-    auto P = ParmVarDecl::Create(Context, SYCLKernel, SourceLocation(),
+    auto P = ParmVarDecl::Create(Context, OpenCLKernel, SourceLocation(),
                                  SourceLocation(), std::get<1>(PD),
                                  std::get<0>(PD), std::get<2>(PD), SC_None, 0);
     P->setScopeInfo(0, i++);
     P->setIsUsed();
     Params.push_back(P);
   }
-  SYCLKernel->setParams(Params);
+  OpenCLKernel->setParams(Params);
 
-  SYCLKernel->addAttr(SYCLDeviceAttr::CreateImplicit(Context));
-  SYCLKernel->addAttr(OpenCLKernelAttr::CreateImplicit(Context));
-  SYCLKernel->addAttr(AsmLabelAttr::CreateImplicit(Context, Name));
-  SYCLKernel->addAttr(ArtificialAttr::CreateImplicit(Context));
+  OpenCLKernel->addAttr(SYCLDeviceAttr::CreateImplicit(Context));
+  OpenCLKernel->addAttr(OpenCLKernelAttr::CreateImplicit(Context));
+  OpenCLKernel->addAttr(AsmLabelAttr::CreateImplicit(Context, Name));
+  OpenCLKernel->addAttr(ArtificialAttr::CreateImplicit(Context));
 
-  // To see kernel in AST-dump.
-  DC->addDecl(SYCLKernel);
-  return SYCLKernel;
+  // Add kernel to translation unit to see it in AST-dump
+  DC->addDecl(OpenCLKernel);
+  return OpenCLKernel;
+}
+/// Return __init method
+static CXXMethodDecl *getInitMethod(const CXXRecordDecl *CRD) {
+  CXXMethodDecl *InitMethod;
+  auto It = std::find_if(CRD->methods().begin(), CRD->methods().end(),
+                         [](const CXXMethodDecl *Method) {
+                           return Method->getNameAsString() == "__init";
+                         });
+  InitMethod = (It != CRD->methods().end()) ? *It : nullptr;
+  return InitMethod;
 }
 
-static CompoundStmt *
-CreateSYCLKernelBody(Sema &S, FunctionDecl *KernelCallerFunc, DeclContext *DC) {
+// Creates body for new OpenCL kernel. This body contains initialization of SYCL
+// kernel object fields with kernel parameters and a little bit transformed body
+// of the kernel caller function.
+static CompoundStmt *CreateOpenCLKernelBody(Sema &S,
+                                            FunctionDecl *KernelCallerFunc,
+                                            DeclContext *KernelDecl) {
   llvm::SmallVector<Stmt *, 16> BodyStmts;
   CXXRecordDecl *LC = getKernelObjectType(KernelCallerFunc);
   assert(LC && "Kernel object must be available");
   TypeSourceInfo *TSInfo = LC->isLambda() ? LC->getLambdaTypeInfo() : nullptr;
+
   // Create a local kernel object (lambda or functor) assembled from the
   // incoming formal parameters
   auto KernelObjClone = VarDecl::Create(
-      S.Context, DC, SourceLocation(), SourceLocation(), LC->getIdentifier(),
-      QualType(LC->getTypeForDecl(), 0), TSInfo, SC_None);
+      S.Context, KernelDecl, SourceLocation(), SourceLocation(),
+      LC->getIdentifier(), QualType(LC->getTypeForDecl(), 0), TSInfo, SC_None);
   Stmt *DS = new (S.Context) DeclStmt(DeclGroupRef(KernelObjClone),
                                       SourceLocation(), SourceLocation());
   BodyStmts.push_back(DS);
-  auto CloneRef =
+  auto KernelObjCloneRef =
       DeclRefExpr::Create(S.Context, NestedNameSpecifierLoc(), SourceLocation(),
                           KernelObjClone, false, DeclarationNameInfo(),
                           QualType(LC->getTypeForDecl(), 0), VK_LValue);
-  auto TargetFunc = dyn_cast<FunctionDecl>(DC);
-  assert(TargetFunc && "Not FunctionDecl");
-  auto TargetFuncParam =
-      TargetFunc->param_begin(); // Iterator to ParamVarDecl (VarDecl)
-  if (TargetFuncParam) {
+
+  auto KernelFuncDecl = cast<FunctionDecl>(KernelDecl);
+  auto KernelFuncParam =
+      KernelFuncDecl->param_begin(); // Iterator to ParamVarDecl (VarDecl)
+  if (KernelFuncParam) {
     for (auto Field : LC->fields()) {
-      auto getExprForPointer = [](Sema &S, const QualType &paramTy,
-                                  DeclRefExpr *DRE) {
-        // C++ address space attribute != OpenCL address space attribute
-        Expr *qualifiersCast = ImplicitCastExpr::Create(
-            S.Context, paramTy, CK_NoOp, DRE, nullptr, VK_LValue);
-        Expr *Res =
-            ImplicitCastExpr::Create(S.Context, paramTy, CK_LValueToRValue,
-                                     qualifiersCast, nullptr, VK_RValue);
-        return Res;
-      };
-      auto getExprForRangeOrOffset = [](Sema &S, const QualType &paramTy,
-                                        DeclRefExpr *DRE) {
-        Expr *Res = ImplicitCastExpr::Create(S.Context, paramTy, CK_NoOp, DRE,
-                                             nullptr, VK_RValue);
+      auto getExprForKernelParameter = [](Sema &S, const QualType &paramTy,
+                                          DeclRefExpr *DRE) {
+        Expr *Res = ImplicitCastExpr::Create(
+            S.Context, paramTy, CK_LValueToRValue, DRE, nullptr, VK_RValue);
         return Res;
       };
 
-      auto getExprForAccessorInit = [&](const QualType &paramTy,
-                                        FieldDecl *Field,
-                                        const CXXRecordDecl *CRD, Expr *Base) {
-        // Since this is an accessor next 4 TargetFuncParams including current
-        // should be set in __init method: _ValueType*, range<int>, range<int>,
-        // id<int>
-        const size_t NumParams = 4;
-        llvm::SmallVector<DeclRefExpr *, NumParams> ParamDREs(NumParams);
-        auto TFP = TargetFuncParam;
-        for (size_t I = 0; I < NumParams; ++TFP, ++I) {
-          QualType ParamType = (*TFP)->getOriginalType();
+      // Creates Expression for special SYCL object: accessor or sampler.
+      // All special SYCL objects must have __init method, here we use it to
+      // initialize them. We create call of __init method and pass built kernel
+      // arguments as parameters to the __init method.
+      auto getExprForSpecialSYCLObj = [&](const QualType &paramTy,
+                                          FieldDecl *Field,
+                                          const CXXRecordDecl *CRD,
+                                          Expr *Base) {
+        // All special SYCL objects must have __init method
+        CXXMethodDecl *InitMethod = getInitMethod(CRD);
+        assert(InitMethod &&
+               "The accessor/sampler must have the __init method");
+        unsigned NumParams = InitMethod->getNumParams();
+        llvm::SmallVector<DeclRefExpr *, 4> ParamDREs(NumParams);
+        auto KFP = KernelFuncParam;
+        for (size_t I = 0; I < NumParams; ++KFP, ++I) {
+          QualType ParamType = (*KFP)->getOriginalType();
           ParamDREs[I] = DeclRefExpr::Create(
-              S.Context, NestedNameSpecifierLoc(), SourceLocation(), *TFP,
+              S.Context, NestedNameSpecifierLoc(), SourceLocation(), *KFP,
               false, DeclarationNameInfo(), ParamType, VK_LValue);
         }
-        std::advance(TargetFuncParam, NumParams - 1);
+        std::advance(KernelFuncParam, NumParams - 1);
 
         DeclAccessPair FieldDAP = DeclAccessPair::make(Field, AS_none);
-        // [kenrel_obj or wrapper object].accessor
-        auto AccessorME = MemberExpr::Create(
-            S.Context, Base, false, SourceLocation(),
-            NestedNameSpecifierLoc(), SourceLocation(), Field, FieldDAP,
+        // [kernel_obj or wrapper object].special_obj
+        auto SpecialObjME = MemberExpr::Create(
+            S.Context, Base, false, SourceLocation(), NestedNameSpecifierLoc(),
+            SourceLocation(), Field, FieldDAP,
             DeclarationNameInfo(Field->getDeclName(), SourceLocation()),
             nullptr, Field->getType(), VK_LValue, OK_Ordinary);
 
-        CXXMethodDecl *InitMethod = nullptr;
-        for (auto Method : CRD->methods()) {
-          if (Method->getNameInfo().getName().getAsString() == "__init") {
-            InitMethod = Method;
-            break;
-          }
-        }
-        assert(InitMethod && "The accessor must have the __init method");
-
-        // [kenrel_obj or wrapper object].accessor.__init
+        // [kernel_obj or wrapper object].special_obj.__init
         DeclAccessPair MethodDAP = DeclAccessPair::make(InitMethod, AS_none);
         auto ME = MemberExpr::Create(
-            S.Context, AccessorME, false, SourceLocation(),
+            S.Context, SpecialObjME, false, SourceLocation(),
             NestedNameSpecifierLoc(), SourceLocation(), InitMethod, MethodDAP,
             InitMethod->getNameInfo(), nullptr, InitMethod->getType(),
             VK_LValue, OK_Ordinary);
@@ -505,17 +532,14 @@ CreateSYCLKernelBody(Sema &S, FunctionDecl *KernelCallerFunc, DeclContext *DC) {
 
         // __init needs four parameter
         auto ParamItr = InitMethod->param_begin();
+
         // kernel_parameters
-        llvm::SmallVector<Expr *, NumParams> ParamStmts;
-        ParamStmts.push_back(getExprForPointer(
-            S, (*(ParamItr++))->getOriginalType(), ParamDREs[0]));
-        ParamStmts.push_back(getExprForRangeOrOffset(
-            S, ((*ParamItr++))->getOriginalType(), ParamDREs[1]));
-        ParamStmts.push_back(getExprForRangeOrOffset(
-            S, ((*ParamItr++))->getOriginalType(), ParamDREs[2]));
-        ParamStmts.push_back(getExprForRangeOrOffset(
-            S, ((*ParamItr++))->getOriginalType(), ParamDREs[3]));
-        // [kenrel_obj or wrapper object].accessor.__init(_ValueType*,
+        llvm::SmallVector<Expr *, 4> ParamStmts;
+        for (size_t I = 0; I < NumParams; ++I) {
+          ParamStmts.push_back(getExprForKernelParameter(
+              S, (*(ParamItr++))->getOriginalType(), ParamDREs[I]));
+        }
+        // [kernel_obj or wrapper object].accessor.__init(_ValueType*,
         // range<int>, range<int>, id<int>)
         CXXMemberCallExpr *Call = CXXMemberCallExpr::Create(
             S.Context, ME, ParamStmts, ResultTy, VK, SourceLocation());
@@ -536,9 +560,9 @@ CreateSYCLKernelBody(Sema &S, FunctionDecl *KernelCallerFunc, DeclContext *DC) {
                   // accessor object. Need to start from the next target
                   // function parameter, since current one is the wrapper object
                   // or parameter of the previous processed accessor object.
-                  TargetFuncParam++;
-                  getExprForAccessorInit(FldType, WrapperFld, WrapperFldCRD,
-                                         Base);
+                  KernelFuncParam++;
+                  getExprForSpecialSYCLObj(FldType, WrapperFld, WrapperFldCRD,
+                                           Base);
                 } else {
                   // Field is a structure or class so change the wrapper object
                   // and recursively search for accessor field.
@@ -557,76 +581,34 @@ CreateSYCLKernelBody(Sema &S, FunctionDecl *KernelCallerFunc, DeclContext *DC) {
             }
           };
 
+      // Run through kernel object fields and add initialization for them using
+      // built kernel parameters. There are a several possible cases:
+      //   - Kernel object field is a SYCL special object (SYCL accessor or SYCL
+      //     sampler). These objects has a special initialization scheme - using
+      //     __init method.
+      //   - Kernel object field has a scalar type. In this case we should add
+      //     simple initialization using binary '=' operator.
+      //   - Kernel object field has a structure or class type. Same handling as
+      //     a scalar but we should check if this structure/class contains
+      //     accessors and add initialization for them properly.
       QualType FieldType = Field->getType();
       CXXRecordDecl *CRD = FieldType->getAsCXXRecordDecl();
-      if (Util::isSyclAccessorType(FieldType)) {
-        getExprForAccessorInit(FieldType, Field, CRD, CloneRef);
-      } else if (CRD && Util::isSyclSamplerType(FieldType)) {
-
-        // Sampler has only one TargetFuncParam, which should be set in
-        // __init method: _ValueType
-        const size_t NumParams = 1;
-        llvm::SmallVector<DeclRefExpr *, NumParams> ParamDREs(NumParams);
-        auto TFP = TargetFuncParam;
-        QualType ParamType = (*TFP)->getOriginalType();
-        ParamDREs[0] = DeclRefExpr::Create(
-            S.Context, NestedNameSpecifierLoc(), SourceLocation(), *TFP,
-            false, DeclarationNameInfo(), ParamType, VK_LValue);
-        DeclAccessPair FieldDAP = DeclAccessPair::make(Field, AS_none);
-
-        // kernel_obj.sampler
-        auto SamplerME = MemberExpr::Create(
-            S.Context, CloneRef, false, SourceLocation(),
-            NestedNameSpecifierLoc(), SourceLocation(), Field, FieldDAP,
-            DeclarationNameInfo(Field->getDeclName(), SourceLocation()),
-            nullptr, Field->getType(), VK_LValue, OK_Ordinary);
-
-        CXXMethodDecl *InitMethod = nullptr;
-        for (auto Method : CRD->methods()) {
-          if (Method->getNameInfo().getName().getAsString() == "__init") {
-            InitMethod = Method;
-            break;
-          }
-        }
-        assert(InitMethod && "The sampler must have the __init method");
-
-        // kernel_obj.sampler.__init
-        DeclAccessPair MethodDAP = DeclAccessPair::make(InitMethod, AS_none);
-        auto ME = MemberExpr::Create(
-            S.Context, SamplerME, false, SourceLocation(),
-            NestedNameSpecifierLoc(), SourceLocation(), InitMethod, MethodDAP,
-            InitMethod->getNameInfo(), nullptr, InitMethod->getType(),
-            VK_LValue, OK_Ordinary);
-
-        // Not referenced -> not emitted
-        S.MarkFunctionReferenced(SourceLocation(), InitMethod, true);
-
-        QualType ResultTy = InitMethod->getReturnType();
-        ExprValueKind VK = Expr::getValueKindForType(ResultTy);
-        ResultTy = ResultTy.getNonLValueExprType(S.Context);
-
-        // __init needs one parameter
-        auto ParamItr = InitMethod->param_begin();
-        // kernel_parameters
-        llvm::SmallVector<Expr *, NumParams> ParamStmts;
-        ParamStmts.push_back(getExprForPointer(
-            S, (*ParamItr)->getOriginalType(), ParamDREs[0]));
-        CXXMemberCallExpr *Call = CXXMemberCallExpr::Create(
-            S.Context, ME, ParamStmts, ResultTy, VK, SourceLocation());
-        BodyStmts.push_back(Call);
+      if (Util::isSyclAccessorType(FieldType) ||
+          Util::isSyclSamplerType(FieldType)) {
+        getExprForSpecialSYCLObj(FieldType, Field, CRD, KernelObjCloneRef);
       } else if (CRD || FieldType->isScalarType()) {
-        // If field have built-in or a structure/class type just initialize
+        // If field has built-in or a structure/class type just initialize
         // this field with corresponding kernel argument using '=' binary
         // operator. The structure/class type must be copy assignable - this
         // holds because SYCL kernel lambdas capture arguments by copy.
-        QualType ParamType = (*TargetFuncParam)->getOriginalType();
+        QualType ParamType = (*KernelFuncParam)->getOriginalType();
         auto DRE =
             DeclRefExpr::Create(S.Context, NestedNameSpecifierLoc(),
-                                SourceLocation(), *TargetFuncParam, false,
+                                SourceLocation(), *KernelFuncParam, false,
                                 DeclarationNameInfo(), ParamType, VK_LValue);
         DeclAccessPair FieldDAP = DeclAccessPair::make(Field, AS_none);
         auto Lhs = MemberExpr::Create(
-            S.Context, CloneRef, false, SourceLocation(),
+            S.Context, KernelObjCloneRef, false, SourceLocation(),
             NestedNameSpecifierLoc(), SourceLocation(), Field, FieldDAP,
             DeclarationNameInfo(Field->getDeclName(), SourceLocation()),
             nullptr, Field->getType(), VK_LValue, OK_Ordinary);
@@ -644,26 +626,28 @@ CreateSYCLKernelBody(Sema &S, FunctionDecl *KernelCallerFunc, DeclContext *DC) {
         if (CRD)
           getExprForWrappedAccessorInit(CRD, Lhs);
       } else {
-        llvm_unreachable("unsupported field type");
+        llvm_unreachable("Unsupported field type");
       }
-      TargetFuncParam++;
+      KernelFuncParam++;
     }
   }
-  // In function from headers lambda is function parameter, we need
-  // to replace all refs to this lambda with our vardecl.
-  // I used TreeTransform here, but I'm not sure that it is good solution
-  // Also I used map and I'm not sure about it too.
-  // TODO SYCL review the above design concerns
+
+  // In the kernel caller function kernel object is a function parameter, so we
+  // need to replace all refs to this kernel oject with refs to our clone
+  // declared inside kernel body.
   Stmt *FunctionBody = KernelCallerFunc->getBody();
-  DeclMap DMap;
   ParmVarDecl *KernelObjParam = *(KernelCallerFunc->param_begin());
+
   // DeclRefExpr with valid source location but with decl which is not marked
   // as used is invalid.
   KernelObjClone->setIsUsed();
-  DMap[KernelObjParam] = KernelObjClone;
-  // Without PushFunctionScope I had segfault. Maybe we also need to do pop.
+  std::pair<DeclaratorDecl *, DeclaratorDecl *> MappingPair;
+  MappingPair.first = KernelObjParam;
+  MappingPair.second = KernelObjClone;
+
+  // Function scope might be empty, so we do push
   S.PushFunctionScope();
-  KernelBodyTransform KBT(DMap, S);
+  KernelBodyTransform KBT(MappingPair, S);
   Stmt *NewBody = KBT.TransformStmt(FunctionBody).get();
   BodyStmts.push_back(NewBody);
   return CompoundStmt::Create(S.Context, BodyStmts, SourceLocation(),
@@ -687,90 +671,42 @@ static target getAccessTarget(const ClassTemplateSpecializationDecl *AccTy) {
       AccTy->getTemplateArgs()[3].getAsIntegral().getExtValue());
 }
 
-///
-static FieldDecl *getFieldDeclByName(const CXXRecordDecl *RD,
-                                     const ArrayRef<StringRef> FldExpr,
-                                     uint64_t *Offset = nullptr) {
-
-  FieldDecl *Res = nullptr;
-
-  for (const auto FldName : FldExpr) {
-    Res = nullptr;
-    assert(RD && "field lookup in non-struct type");
-
-    for (FieldDecl *Fld : RD->fields()) {
-      if (Fld->getNameAsString() == FldName) {
-        if (Offset) {
-          const ASTRecordLayout &LO =
-              RD->getASTContext().getASTRecordLayout(RD);
-          *Offset += LO.getFieldOffset(Fld->getFieldIndex()) / 8;
-        }
-        RD = Fld->getType()->getAsCXXRecordDecl();
-        Res = Fld;
-        break;
-      }
-    }
-    assert(Res && "field declaration must have been found");
-  }
-  return Res;
-}
-
+// Creates list of kernel parameters descriptors using KernelObj (kernel object)
+// Fields of kernel object must be initialized with SYCL kernel arguments so
+// in the following function we extract types of kernel object fields and add it
+// to the array with kernel parameters descriptors.
 static void buildArgTys(ASTContext &Context, CXXRecordDecl *KernelObj,
                         SmallVectorImpl<ParamDesc> &ParamDescs) {
   const LambdaCapture *Cpt = KernelObj->captures_begin();
   auto CreateAndAddPrmDsc = [&](const FieldDecl *Fld, const QualType &ArgType) {
-    // create a parameter descriptor and append it to the result
+    // Create a parameter descriptor and append it to the result
     ParamDescs.push_back(makeParamDesc(Fld, ArgType));
   };
 
-  auto createAccessorParamDesc = [&](const FieldDecl *Fld,
-                                     const QualType &ArgTy) {
-    // the parameter is a SYCL accessor object
+  // Creates a parameter descriptor for SYCL special object - SYCL accessor or
+  // sampler.
+  // All special SYCL objects must have __init method. We extract types for
+  // kernel parameters from __init method parameters. We will use __init method
+  // and kernel parameters which we build here to initialize special objects in
+  // the kernel body.
+  auto createSpecialSYCLObjParamDesc = [&](const FieldDecl *Fld,
+                                           const QualType &ArgTy) {
     const auto *RecordDecl = ArgTy->getAsCXXRecordDecl();
-    assert(RecordDecl && "accessor must be of a record type");
-    const auto *TemplateDecl =
-        cast<ClassTemplateSpecializationDecl>(RecordDecl);
-    // First accessor template parameter - data type
-    QualType PointeeType = TemplateDecl->getTemplateArgs()[0].getAsType();
-    // Fourth parameter - access target
-    target AccessTarget = getAccessTarget(TemplateDecl);
-    Qualifiers Quals = PointeeType.getQualifiers();
-    // TODO: Support all access targets
-    switch (AccessTarget) {
-    case target::global_buffer:
-      Quals.setAddressSpace(LangAS::opencl_global);
-      break;
-    case target::constant_buffer:
-      Quals.setAddressSpace(LangAS::opencl_constant);
-      break;
-    case target::local:
-      Quals.setAddressSpace(LangAS::opencl_local);
-      break;
-    default:
-      llvm_unreachable("Unsupported access target");
+    assert(RecordDecl && "Special SYCL object must be of a record type");
+
+    CXXMethodDecl *InitMethod = getInitMethod(RecordDecl);
+    assert(InitMethod && "The accessor/sampler must have the __init method");
+    unsigned NumParams = InitMethod->getNumParams();
+    for (size_t I = 0; I < NumParams; ++I) {
+      ParmVarDecl *PD = InitMethod->getParamDecl(I);
+      CreateAndAddPrmDsc(Fld, PD->getType().getCanonicalType());
     }
-    PointeeType =
-        Context.getQualifiedType(PointeeType.getUnqualifiedType(), Quals);
-    QualType PointerType = Context.getPointerType(PointeeType);
-
-    CreateAndAddPrmDsc(Fld, PointerType);
-
-    FieldDecl *AccessRangeFld =
-        getFieldDeclByName(RecordDecl, {"impl", "AccessRange"});
-    assert(AccessRangeFld &&
-           "The accessor.impl must contain the AccessRange field");
-    CreateAndAddPrmDsc(AccessRangeFld, AccessRangeFld->getType());
-
-    FieldDecl *MemRangeFld =
-        getFieldDeclByName(RecordDecl, {"impl", "MemRange"});
-    assert(MemRangeFld && "The accessor.impl must contain the MemRange field");
-    CreateAndAddPrmDsc(MemRangeFld, MemRangeFld->getType());
-
-    FieldDecl *OffsetFld = getFieldDeclByName(RecordDecl, {"impl", "Offset"});
-    assert(OffsetFld && "The accessor.impl must contain the Offset field");
-    CreateAndAddPrmDsc(OffsetFld, OffsetFld->getType());
   };
 
+  // Create parameter descriptor for accessor in case when it's wrapped with
+  // some class.
+  // TODO: Do we need support case when sampler is wrapped with some class or
+  // struct?
   std::function<void(const FieldDecl *, const QualType &ArgTy)>
       createParamDescForWrappedAccessors =
           [&](const FieldDecl *Fld, const QualType &ArgTy) {
@@ -780,7 +716,7 @@ static void buildArgTys(ASTContext &Context, CXXRecordDecl *KernelObj,
               if (FldType->isStructureOrClassType()) {
                 if (Util::isSyclAccessorType(FldType)) {
                   // accessor field is found - create descriptor
-                  createAccessorParamDesc(WrapperFld, FldType);
+                  createSpecialSYCLObjParamDesc(WrapperFld, FldType);
                 } else {
                   // field is some class or struct - recursively check for
                   // accessor fields
@@ -790,23 +726,24 @@ static void buildArgTys(ASTContext &Context, CXXRecordDecl *KernelObj,
             }
           };
 
+  // Run through kernel object fields and create corresponding kernel
+  // parameters descriptors. There are a several possible cases:
+  //   - Kernel object field is a SYCL special object (SYCL accessor or SYCL
+  //     sampler). These objects has a special initialization scheme - using
+  //     __init method.
+  //   - Kernel object field has a scalar type. In this case we should add
+  //     kernel parameter with the same type.
+  //   - Kernel object field has a structure or class type. Same handling as a
+  //     scalar but we should check if this structure/class contains accessors
+  //     and add parameter decriptor for them properly.
   for (const auto *Fld : KernelObj->fields()) {
     QualType ArgTy = Fld->getType();
-    if (Util::isSyclAccessorType(ArgTy)) {
-      createAccessorParamDesc(Fld, ArgTy);
-    } else if (Util::isSyclSamplerType(ArgTy)) {
-      // the parameter is a SYCL sampler object
-      const auto *RecordDecl = ArgTy->getAsCXXRecordDecl();
-      assert(RecordDecl && "sampler must be of a record type");
-
-      FieldDecl *ImplFld =
-          getFieldDeclByName(RecordDecl, {"impl", "m_Sampler"});
-      assert(ImplFld && "The sampler must contain impl field");
-      CreateAndAddPrmDsc(ImplFld, ImplFld->getType());
-    } else if (Util::isSyclStreamType(ArgTy)) {
-      // the parameter is a SYCL stream object
-      llvm_unreachable("streams not supported yet");
+    if (Util::isSyclAccessorType(ArgTy) || Util::isSyclSamplerType(ArgTy)) {
+      createSpecialSYCLObjParamDesc(Fld, ArgTy);
     } else if (ArgTy->isStructureOrClassType()) {
+      // SYCL v1.2.1 s4.8.10 p5:
+      // C++ non-standard layout values must not be passed as arguments to a
+      // kernel that is compiled for a device.
       if (!ArgTy->isStandardLayoutType()) {
         const DeclaratorDecl *V =
             Cpt ? cast<DeclaratorDecl>(Cpt->getCapturedVar())
@@ -814,15 +751,14 @@ static void buildArgTys(ASTContext &Context, CXXRecordDecl *KernelObj,
         KernelObj->getASTContext().getDiagnostics().Report(
             V->getLocation(), diag::err_sycl_non_std_layout_type);
       }
-      // structure or class typed parameter - the same handling as a scalar
       CreateAndAddPrmDsc(Fld, ArgTy);
-      // create descriptors for each accessor field in the class or struct
+
+      // Create descriptors for each accessor field in the class or struct
       createParamDescForWrappedAccessors(Fld, ArgTy);
     } else if (ArgTy->isScalarType()) {
-      // scalar typed parameter
       CreateAndAddPrmDsc(Fld, ArgTy);
     } else {
-      llvm_unreachable("unsupported kernel parameter type");
+      llvm_unreachable("Unsupported kernel parameter type");
     }
   }
 }
@@ -842,18 +778,18 @@ static void populateIntHeader(SYCLIntegrationHeader &H, const StringRef Name,
   H.startKernel(Name, NameType);
 
   auto populateHeaderForAccessor = [&](const QualType &ArgTy, uint64_t Offset) {
-      // The parameter is a SYCL accessor object.
-      // The Info field of the parameter descriptor for accessor contains
-      // two template parameters packed into thid integer field:
-      //   - target (e.g. global_buffer, constant_buffer, local);
-      //   - dimension of the accessor.
-      const auto *AccTy = ArgTy->getAsCXXRecordDecl();
-      assert(AccTy && "accessor must be of a record type");
-      const auto *AccTmplTy = cast<ClassTemplateSpecializationDecl>(AccTy);
-      int Dims = static_cast<int>(
-          AccTmplTy->getTemplateArgs()[1].getAsIntegral().getExtValue());
-      int Info = getAccessTarget(AccTmplTy) | (Dims << 11);
-      H.addParamDesc(SYCLIntegrationHeader::kind_accessor, Info, Offset);
+    // The parameter is a SYCL accessor object.
+    // The Info field of the parameter descriptor for accessor contains
+    // two template parameters packed into an integer field:
+    //   - target (e.g. global_buffer, constant_buffer, local);
+    //   - dimension of the accessor.
+    const auto *AccTy = ArgTy->getAsCXXRecordDecl();
+    assert(AccTy && "accessor must be of a record type");
+    const auto *AccTmplTy = cast<ClassTemplateSpecializationDecl>(AccTy);
+    int Dims = static_cast<int>(
+        AccTmplTy->getTemplateArgs()[1].getAsIntegral().getExtValue());
+    int Info = getAccessTarget(AccTmplTy) | (Dims << 11);
+    H.addParamDesc(SYCLIntegrationHeader::kind_accessor, Info, Offset);
   };
 
   std::function<void(const QualType &, uint64_t Offset)>
@@ -893,18 +829,19 @@ static void populateIntHeader(SYCLIntegrationHeader &H, const StringRef Name,
       populateHeaderForAccessor(ArgTy, Offset);
     } else if (Util::isSyclSamplerType(ArgTy)) {
       // The parameter is a SYCL sampler object
-      // It has only one descriptor, "m_Sampler"
       const auto *SamplerTy = ArgTy->getAsCXXRecordDecl();
       assert(SamplerTy && "sampler must be of a record type");
-      FieldDecl *ImplFld =
-          getFieldDeclByName(SamplerTy, {"impl", "m_Sampler"}, &Offset);
-      uint64_t Sz =
-          Ctx.getTypeSizeInChars(ImplFld->getType()).getQuantity();
+
+      CXXMethodDecl *InitMethod = getInitMethod(SamplerTy);
+      assert(InitMethod && "sampler must have __init method");
+
+      // sampler __init method has only one argument
+      auto *FuncDecl = cast<FunctionDecl>(InitMethod);
+      ParmVarDecl *SamplerArg = FuncDecl->getParamDecl(0);
+      assert(SamplerArg && "sampler __init method must have sampler parameter");
+      uint64_t Sz = Ctx.getTypeSizeInChars(SamplerArg->getType()).getQuantity();
       H.addParamDesc(SYCLIntegrationHeader::kind_sampler,
                      static_cast<unsigned>(Sz), static_cast<unsigned>(Offset));
-    } else if (Util::isSyclStreamType(ArgTy)) {
-      // the parameter is a SYCL stream object
-      llvm_unreachable("streams not supported yet");
     } else if (ArgTy->isStructureOrClassType() || ArgTy->isScalarType()) {
       // the parameter is an object of standard layout type or scalar;
       // the check for standard layout is done elsewhere
@@ -945,28 +882,57 @@ static std::string constructKernelName(QualType KernelNameType,
   return Out.str();
 }
 
-void Sema::ConstructSYCLKernel(FunctionDecl *KernelCallerFunc) {
-  // TODO: Case when kernel is functor
+// Generates the OpenCL kernel using KernelCallerFunc (kernel caller
+// function) defined is SYCL headers.
+// Generated OpenCL kernel contains the body of the kernel caller function,
+// receives OpenCL like parameters and additionally does some manipulation to
+// initialize captured lambda/functor fields with these parameters.
+// SYCL runtime marks kernel caller function with sycl_kernel attribute.
+// To be able to generate OpenCL kernel from KernelCallerFunc we put
+// the following requirements to the function which SYCL runtime can mark with
+// sycl_kernel attribute:
+//   - Must be template function with at least two template parameters.
+//     First parameter must represent "unique kernel name"
+//     Second parameter must be the function object type
+//   - Must have only one function parameter - function object.
+//
+// Example of kernel caller function:
+//   template <typename KernelName, typename KernelType/*, ...*/>
+//   __attribute__((sycl_kernel)) void kernel_caller_function(KernelType
+//                                                            KernelFuncObj) {
+//     KernelFuncObj();
+//   }
+//
+//
+void Sema::ConstructOpenCLKernel(FunctionDecl *KernelCallerFunc) {
   CXXRecordDecl *LE = getKernelObjectType(KernelCallerFunc);
   assert(LE && "invalid kernel caller");
+
+  // Build list of kernel arguments
   llvm::SmallVector<ParamDesc, 16> ParamDescs;
   buildArgTys(getASTContext(), LE, ParamDescs);
-  // Get Name for our kernel.
+
+  // Extract name from kernel caller parameters and mangle it.
   const TemplateArgumentList *TemplateArgs =
       KernelCallerFunc->getTemplateSpecializationArgs();
   assert(TemplateArgs && "No template argument info");
-  // The first template argument always describes the kernel name - whether
-  // it is lambda or functor.
   QualType KernelNameType = TypeName::getFullyQualifiedType(
       TemplateArgs->get(0).getAsType(), getASTContext(), true);
   std::string Name = constructKernelName(KernelNameType, getASTContext());
+
+  // TODO Maybe don't emit integration header inside the Sema?
   populateIntHeader(getSyclIntegrationHeader(), Name, KernelNameType, LE);
-  FunctionDecl *SYCLKernel =
-      CreateSYCLKernelFunction(getASTContext(), Name, ParamDescs);
-  CompoundStmt *SYCLKernelBody =
-      CreateSYCLKernelBody(*this, KernelCallerFunc, SYCLKernel);
-  SYCLKernel->setBody(SYCLKernelBody);
-  AddSyclKernel(SYCLKernel);
+
+  FunctionDecl *OpenCLKernel =
+      CreateOpenCLKernelDeclaration(getASTContext(), Name, ParamDescs);
+
+  // Let's copy source location of a functor/lambda to emit nicer diagnostics
+  OpenCLKernel->setLocation(LE->getLocation());
+
+  CompoundStmt *OpenCLKernelBody =
+      CreateOpenCLKernelBody(*this, KernelCallerFunc, OpenCLKernel);
+  OpenCLKernel->setBody(OpenCLKernelBody);
+  AddSyclKernel(OpenCLKernel);
 }
 
 void Sema::MarkDevice(void) {
@@ -980,6 +946,39 @@ void Sema::MarkDevice(void) {
     if (auto SYCLKernel = dyn_cast<FunctionDecl>(D)) {
       llvm::SmallPtrSet<FunctionDecl *, 10> VisitedSet;
       Marker.CollectKernelSet(SYCLKernel, SYCLKernel, VisitedSet);
+
+      // Let's propagate attributes from device functions to a SYCL kernels
+      llvm::SmallPtrSet<Attr *, 4> Attrs;
+      // This function collects all kernel attributes which might be applied to
+      // a device functions, but need to be propageted down to callers, i.e.
+      // SYCL kernels
+      Marker.CollectPossibleKernelAttributes(SYCLKernel, Attrs);
+      for (auto *A : Attrs) {
+        switch (A->getKind()) {
+          case attr::Kind::IntelReqdSubGroupSize: {
+            auto *Attr = cast<IntelReqdSubGroupSizeAttr>(A);
+            if (auto *Existing =
+                    SYCLKernel->getAttr<IntelReqdSubGroupSizeAttr>()) {
+              if (Existing->getSubGroupSize() != Attr->getSubGroupSize()) {
+                Diag(SYCLKernel->getLocation(),
+                     diag::err_conflicting_sycl_kernel_attributes);
+                Diag(Existing->getLocation(), diag::note_conflicting_attribute);
+                Diag(Attr->getLocation(), diag::note_conflicting_attribute);
+                SYCLKernel->setInvalidDecl();
+              }
+            } else {
+              SYCLKernel->addAttr(A);
+            }
+            break;
+          }
+          // TODO: reqd_work_group_size, vec_len_hint should be handled here
+          default:
+            // Seeing this means that CollectPossibleKernelAttributes was
+            // updated while this switch wasn't...or something went wrong
+            llvm_unreachable("Unexpected attribute was collected by "
+                             "CollectPossibleKernelAttributes");
+        }
+      }
     }
   }
   for (const auto &elt : Marker.KernelSet) {
@@ -1314,14 +1313,6 @@ bool Util::isSyclSamplerType(const QualType &Ty) {
       Util::DeclContextDesc{clang::Decl::Kind::Namespace, "cl"},
       Util::DeclContextDesc{clang::Decl::Kind::Namespace, "sycl"},
       Util::DeclContextDesc{clang::Decl::Kind::CXXRecord, "sampler"}};
-  return matchQualifiedTypeName(Ty, Scopes);
-}
-
-bool Util::isSyclStreamType(const QualType &Ty) {
-  static std::array<DeclContextDesc, 3> Scopes = {
-      Util::DeclContextDesc{clang::Decl::Kind::Namespace, "cl"},
-      Util::DeclContextDesc{clang::Decl::Kind::Namespace, "sycl"},
-      Util::DeclContextDesc{clang::Decl::Kind::CXXRecord, "stream"}};
   return matchQualifiedTypeName(Ty, Scopes);
 }
 

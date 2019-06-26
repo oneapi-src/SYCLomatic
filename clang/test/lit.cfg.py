@@ -85,13 +85,7 @@ config.substitutions.append(
                              os.path.join(config.clang_tools_dir, 'hmaptool'))))
 
 # Plugins (loadable modules)
-# TODO: This should be supplied by Makefile or autoconf.
-if sys.platform in ['win32', 'cygwin']:
-    has_plugins = config.enable_shared
-else:
-    has_plugins = True
-
-if has_plugins and config.llvm_plugin_ext:
+if config.has_plugins and config.llvm_plugin_ext:
     config.available_features.add('plugins')
 
 # Set available features we allow tests to conditionalize on.
@@ -140,13 +134,9 @@ if is_filesystem_case_insensitive():
 if os.path.exists('/dev/fd/0') and sys.platform not in ['cygwin']:
     config.available_features.add('dev-fd-fs')
 
-# Not set on native MS environment.
-if not re.match(r'.*-(windows-msvc)$', config.target_triple):
-    config.available_features.add('non-ms-sdk')
-
-# Not set on native PS4 environment.
-if not re.match(r'.*-scei-ps4', config.target_triple):
-    config.available_features.add('non-ps4-sdk')
+# Set on native MS environment.
+if re.match(r'.*-(windows-msvc)$', config.target_triple):
+    config.available_features.add('ms-sdk')
 
 # [PR8833] LLP64-incompatible tests
 if not re.match(r'^x86_64.*-(windows-msvc|windows-gnu)$', config.target_triple):

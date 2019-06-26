@@ -8,18 +8,18 @@
 
 // Dummy runtime classes to model SYCL API.
 namespace cl {
-namespace __spirv {
-class OpTypeSampler;
-}
-
 namespace sycl {
 struct sampler_impl {
-  __spirv::OpTypeSampler* m_Sampler;
+#ifdef __SYCL_DEVICE_ONLY__
+  __ocl_sampler_t m_Sampler;
+#endif
 };
 
 class sampler {
   struct sampler_impl impl;
-  void __init(__spirv::OpTypeSampler* Sampler) { impl.m_Sampler = Sampler; }
+#ifdef __SYCL_DEVICE_ONLY__
+  void __init(__ocl_sampler_t Sampler) { impl.m_Sampler = Sampler; }
+#endif
 
 public:
   void use(void) const {}
@@ -96,12 +96,20 @@ template <int dim>
 struct id {
   template <typename... T>
   id(T... args) {} // fake constructor
+private:
+  // Some fake field added to see using of id arguments in the
+  // kernel wrapper
+  int Data;
 };
 
 template <int dim>
 struct range {
   template <typename... T>
   range(T... args) {} // fake constructor
+private:
+  // Some fake field added to see using of range arguments in the
+  // kernel wrapper
+  int Data;
 };
 
 template <int dim>

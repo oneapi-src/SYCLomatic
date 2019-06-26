@@ -919,7 +919,7 @@ bool Parser::ParseGreaterThanInTemplateList(SourceLocation &RAngleLoc,
     PrevTokLocation = RAngleLoc;
   } else {
     PrevTokLocation = TokBeforeGreaterLoc;
-    PP.EnterToken(Tok);
+    PP.EnterToken(Tok, /*IsReinject=*/true);
     Tok = Greater;
   }
 
@@ -1031,6 +1031,8 @@ bool Parser::AnnotateTemplateIdToken(TemplateTy Template, TemplateNameKind TNK,
     // If we failed to parse the template ID but skipped ahead to a >, we're not
     // going to be able to form a token annotation.  Eat the '>' if present.
     TryConsumeToken(tok::greater);
+    // FIXME: Annotate the token stream so we don't produce the same errors
+    // again if we're doing this annotation as part of a tentative parse.
     return true;
   }
 
@@ -1039,13 +1041,15 @@ bool Parser::AnnotateTemplateIdToken(TemplateTy Template, TemplateNameKind TNK,
   // Build the annotation token.
   if (TNK == TNK_Type_template && AllowTypeAnnotation) {
     TypeResult Type = Actions.ActOnTemplateIdType(
-        SS, TemplateKWLoc, Template, TemplateName.Identifier,
+        getCurScope(), SS, TemplateKWLoc, Template, TemplateName.Identifier,
         TemplateNameLoc, LAngleLoc, TemplateArgsPtr, RAngleLoc);
     if (Type.isInvalid()) {
       // If we failed to parse the template ID but skipped ahead to a >, we're
       // not going to be able to form a token annotation.  Eat the '>' if
       // present.
       TryConsumeToken(tok::greater);
+      // FIXME: Annotate the token stream so we don't produce the same errors
+      // again if we're doing this annotation as part of a tentative parse.
       return true;
     }
 
@@ -1108,14 +1112,16 @@ void Parser::AnnotateTemplateIdTokenAsType(bool IsClassName) {
 
   TemplateIdAnnotation *TemplateId = takeTemplateIdAnnotation(Tok);
   assert((TemplateId->Kind == TNK_Type_template ||
-          TemplateId->Kind == TNK_Dependent_template_name) &&
+          TemplateId->Kind == TNK_Dependent_template_name ||
+          TemplateId->Kind == TNK_Undeclared_template) &&
          "Only works for type and dependent templates");
 
   ASTTemplateArgsPtr TemplateArgsPtr(TemplateId->getTemplateArgs(),
                                      TemplateId->NumArgs);
 
   TypeResult Type
-    = Actions.ActOnTemplateIdType(TemplateId->SS,
+    = Actions.ActOnTemplateIdType(getCurScope(),
+                                  TemplateId->SS,
                                   TemplateId->TemplateKWLoc,
                                   TemplateId->Template,
                                   TemplateId->Name,
@@ -1272,36 +1278,6 @@ ParsedTemplateArgument Parser::ParseTemplateArgument() {
                                 ExprArg.get(), Loc);
 }
 
-/// Determine whether the current tokens can only be parsed as a
-/// template argument list (starting with the '<') and never as a '<'
-/// expression.
-bool Parser::IsTemplateArgumentList(unsigned Skip) {
-  struct AlwaysRevertAction : TentativeParsingAction {
-    AlwaysRevertAction(Parser &P) : TentativeParsingAction(P) { }
-    ~AlwaysRevertAction() { Revert(); }
-  } Tentative(*this);
-
-  while (Skip) {
-    ConsumeAnyToken();
-    --Skip;
-  }
-
-  // '<'
-  if (!TryConsumeToken(tok::less))
-    return false;
-
-  // An empty template argument list.
-  if (Tok.is(tok::greater))
-    return true;
-
-  // See whether we have declaration specifiers, which indicate a type.
-  while (isCXXDeclarationSpecifier() == TPResult::True)
-    ConsumeAnyToken();
-
-  // If we have a '>' or a ',' then this is a template argument list.
-  return Tok.isOneOf(tok::greater, tok::comma);
-}
-
 /// ParseTemplateArgumentList - Parse a C++ template-argument-list
 /// (C++ [temp.names]). Returns true if there was an error.
 ///
@@ -1426,7 +1402,7 @@ void Parser::ParseLateTemplatedFuncDef(LateParsedTemplate &LPT) {
   // Append the current token at the end of the new token stream so that it
   // doesn't get lost.
   LPT.Toks.push_back(Tok);
-  PP.EnterTokenStream(LPT.Toks, true);
+  PP.EnterTokenStream(LPT.Toks, true, /*IsReinject*/true);
 
   // Consume the previously pushed token.
   ConsumeAnyToken(/*ConsumeCodeCompletionTok=*/true);

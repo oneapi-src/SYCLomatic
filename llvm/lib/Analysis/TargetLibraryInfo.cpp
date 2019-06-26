@@ -87,8 +87,8 @@ static void initialize(TargetLibraryInfoImpl &TLI, const Triple &T,
        ShouldSignExtI32Param = false;
   // PowerPC64, Sparc64, SystemZ need signext/zeroext on i32 parameters and
   // returns corresponding to C-level ints and unsigned ints.
-  if (T.getArch() == Triple::ppc64 || T.getArch() == Triple::ppc64le ||
-      T.getArch() == Triple::sparcv9 || T.getArch() == Triple::systemz) {
+  if (T.isPPC64() || T.getArch() == Triple::sparcv9 ||
+      T.getArch() == Triple::systemz) {
     ShouldExtI32Param = true;
     ShouldExtI32Return = true;
   }
@@ -1434,6 +1434,11 @@ bool TargetLibraryInfoImpl::isValidProtoForLibFunc(const FunctionType &FTy,
 
 bool TargetLibraryInfoImpl::getLibFunc(const Function &FDecl,
                                        LibFunc &F) const {
+  // Intrinsics don't overlap w/libcalls; if our module has a large number of
+  // intrinsics, this ends up being an interesting compile time win since we
+  // avoid string normalization and comparison. 
+  if (FDecl.isIntrinsic()) return false;
+  
   const DataLayout *DL =
       FDecl.getParent() ? &FDecl.getParent()->getDataLayout() : nullptr;
   return getLibFunc(FDecl.getName(), F) &&

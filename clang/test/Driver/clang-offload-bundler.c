@@ -5,7 +5,7 @@
 // Generate all the types of files we can bundle.
 //
 // generate the emulated fat object:
-// RUN: %clangxx -O0 -target powerpc64le-ibm-linux-gnu -DEMULATE_FAT_OBJ %s -c -o %s.o
+// RUN: %clangxx -O0 -target powerpc64le-ibm-linux-gnu -DEMULATE_FAT_OBJ %s -c -o %t.2.o
 //
 // RUN: %clang -O0 -target powerpc64le-ibm-linux-gnu %s -E -o %t.i
 // RUN: %clangxx -O0 -target powerpc64le-ibm-linux-gnu -x c++ %s -E -o %t.ii
@@ -77,10 +77,10 @@
 // CK-ERR6: error: invalid file type specified.
 
 // RUN: not clang-offload-bundler 2>&1 | FileCheck %s --check-prefix CK-ERR7
-// CK-ERR7-DAG: clang-offload-bundler: for the -type option: must be specified at least once!
-// CK-ERR7-DAG: clang-offload-bundler: for the -inputs option: must be specified at least once!
-// CK-ERR7-DAG: clang-offload-bundler: for the -outputs option: must be specified at least once!
-// CK-ERR7-DAG: clang-offload-bundler: for the -targets option: must be specified at least once!
+// CK-ERR7-DAG: clang-offload-bundler: for the --type option: must be specified at least once!
+// CK-ERR7-DAG: clang-offload-bundler: for the --inputs option: must be specified at least once!
+// CK-ERR7-DAG: clang-offload-bundler: for the --outputs option: must be specified at least once!
+// CK-ERR7-DAG: clang-offload-bundler: for the --targets option: must be specified at least once!
 
 // RUN: not clang-offload-bundler -type=i -targets=hxst-powerpcxxle-ibm-linux-gnu,openxp-pxxerpc64le-ibm-linux-gnu,xpenmp-x86_xx-pc-linux-gnu -inputs=%t.i,%t.tgt1,%t.tgt2 -outputs=%t.bundle.i 2>&1 | FileCheck %s --check-prefix CK-ERR8
 // CK-ERR8: error: invalid target 'hxst-powerpcxxle-ibm-linux-gnu', unknown offloading kind 'hxst', unknown target triple 'powerpcxxle-ibm-linux-gnu'.
@@ -237,12 +237,12 @@
 // CK-OBJ-CMD: private constant [{{[0-9]+}} x i8] c"Content of device file 2{{.+}}", section "__CLANG_OFFLOAD_BUNDLE__openmp-x86_64-pc-linux-gnu"
 // CK-OBJ-CMD: clang{{(.exe)?}}" "-r" "-target" "powerpc64le-ibm-linux-gnu" "-o" "{{.+}}.o" "{{.+}}.o" "{{.+}}.bc" "-nostdlib"
 
-// RUN: clang-offload-bundler -type=o -targets=host-powerpc64le-ibm-linux-gnu,openmp-powerpc64le-ibm-linux-gnu,openmp-x86_64-pc-linux-gnu -outputs=%t.res.o,%t.res.tgt1,%t.res.tgt2 -inputs=%s.o -unbundle
-// RUN: diff %s.o %t.res.o
+// RUN: clang-offload-bundler -type=o -targets=host-powerpc64le-ibm-linux-gnu,openmp-powerpc64le-ibm-linux-gnu,openmp-x86_64-pc-linux-gnu -outputs=%t.res.o,%t.res.tgt1,%t.res.tgt2 -inputs=%t.2.o -unbundle
+// RUN: diff %t.2.o %t.res.o
 // RUN: diff %t.tgt1 %t.res.tgt1
 // RUN: diff %t.tgt2 %t.res.tgt2
-// RUN: clang-offload-bundler -type=o -targets=openmp-powerpc64le-ibm-linux-gnu,host-powerpc64le-ibm-linux-gnu,openmp-x86_64-pc-linux-gnu -outputs=%t.res.tgt1,%t.res.o,%t.res.tgt2 -inputs=%s.o -unbundle
-// RUN: diff %s.o %t.res.o
+// RUN: clang-offload-bundler -type=o -targets=openmp-powerpc64le-ibm-linux-gnu,host-powerpc64le-ibm-linux-gnu,openmp-x86_64-pc-linux-gnu -outputs=%t.res.tgt1,%t.res.o,%t.res.tgt2 -inputs=%t.2.o -unbundle
+// RUN: diff %t.2.o %t.res.o
 // RUN: diff %t.tgt1 %t.res.tgt1
 // RUN: diff %t.tgt2 %t.res.tgt2
 

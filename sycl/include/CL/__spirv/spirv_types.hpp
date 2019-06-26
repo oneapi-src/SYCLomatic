@@ -10,12 +10,16 @@
 
 #include <cstdint>
 
-namespace cl {
-namespace __spirv {
-
 // TODO: include the header file with SPIR-V declarations from SPIRV-Headers
 // project.
-enum Scope {
+
+// Declarations of enums below is aligned with corresponding declarations in
+// SPIRV-Headers repo with a few exceptions:
+// - base types changed from uint to uint32_t
+// - spv namespace renamed to __spv
+namespace __spv {
+
+enum class Scope : uint32_t {
   CrossDevice = 0,
   Device = 1,
   Workgroup = 2,
@@ -23,7 +27,8 @@ enum Scope {
   Invocation = 4,
 };
 
-enum MemorySemantics {
+
+enum class MemorySemanticsMask : uint32_t {
   None = 0x0,
   Acquire = 0x2,
   Release = 0x4,
@@ -37,15 +42,19 @@ enum MemorySemantics {
   ImageMemory = 0x800,
 };
 
+enum class GroupOperation : uint32_t {
+  Reduce = 0,
+  InclusiveScan = 1,
+  ExclusiveScan = 2
+};
+
+} // namespace __spv
+
 // This class does not have definition, it is only predeclared here.
 // The pointers to this class objects can be passed to or returned from
 // SPIRV built-in functions.
-// Only in such cases the class is recognized as SPIRV type OpTypeEvent.
-class OpTypeEvent;
-
-// SPIRV type for sampler class
-class OpTypeSampler;
-
-enum GroupOperation { Reduce = 0, InclusiveScan = 1, ExclusiveScan = 2 };
-} // namespace __spirv
-} // namespace cl
+// Only in such cases the class is recognized as SPIRV type __ocl_event_t.
+#ifndef __SYCL_DEVICE_ONLY__
+typedef void* __ocl_event_t;
+typedef void* __ocl_sampler_t;
+#endif

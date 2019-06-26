@@ -373,6 +373,11 @@ LLVM_ATTRIBUTE_NORETURN void reportError(Twine Msg) {
   exit(1);
 }
 
+void reportWarning(Twine Msg) {
+  errs() << "\n";
+  WithColor::warning(errs()) << Msg << "\n";
+}
+
 void error(Error EC) {
   if (!EC)
     return;
@@ -440,6 +445,8 @@ static std::error_code createDumper(const ObjectFile *Obj,
     return createMachODumper(Obj, Writer, Result);
   if (Obj->isWasm())
     return createWasmDumper(Obj, Writer, Result);
+  if (Obj->isXCOFF())
+    return createXCOFFDumper(Obj, Writer, Result);
 
   return readobj_error::unsupported_obj_file_format;
 }

@@ -49,6 +49,7 @@ public:
     armeb,          // ARM (big endian): armeb
     aarch64,        // AArch64 (little endian): aarch64
     aarch64_be,     // AArch64 (big endian): aarch64_be
+    aarch64_32,     // AArch64 (little endian) ILP32: aarch64_32
     arc,            // ARC: Synopsys ARC
     avr,            // AVR: Atmel AVR microcontroller
     bpfel,          // eBPF or extended BPF or 64-bit BPF (little endian)
@@ -201,6 +202,8 @@ public:
     CODE16,
     EABI,
     EABIHF,
+    ELFv1,
+    ELFv2,
     Android,
     Musl,
     MuslEABI,
@@ -676,6 +679,11 @@ public:
            getEnvironment() == Triple::MuslEABIHF;
   }
 
+  /// Tests whether the target is SPIR (32- or 64-bit).
+  bool isSPIR() const {
+    return getArch() == Triple::spir || getArch() == Triple::spir64;
+  }
+
   /// Tests whether the target is NVPTX (32- or 64-bit).
   bool isNVPTX() const {
     return getArch() == Triple::nvptx || getArch() == Triple::nvptx64;
@@ -709,6 +717,11 @@ public:
   /// Tests whether the target is MIPS (little and big endian, 32- or 64-bit).
   bool isMIPS() const {
     return isMIPS32() || isMIPS64();
+  }
+
+  /// Tests whether the target is 64-bit PowerPC (little and big endian).
+  bool isPPC64() const {
+    return getArch() == Triple::ppc64 || getArch() == Triple::ppc64le;
   }
 
   /// Tests whether the target supports comdat

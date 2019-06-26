@@ -75,7 +75,7 @@ TEST_F(MinidumpParserTest, InvalidMinidump) {
   llvm::raw_string_ostream os(duplicate_streams);
   ASSERT_THAT_ERROR(llvm::MinidumpYAML::writeAsBinary(R"(
 --- !minidump
-Streams:         
+Streams:
   - Type:            LinuxAuxv
     Content:         DEADBEEFBAADF00D
   - Type:            LinuxAuxv
@@ -90,77 +90,43 @@ Streams:
 }
 
 TEST_F(MinidumpParserTest, GetThreadsAndGetThreadContext) {
-  SetUpData("linux-x86_64.dmp");
-  llvm::ArrayRef<MinidumpThread> thread_list;
+  ASSERT_THAT_ERROR(SetUpFromYaml(R"(
+--- !minidump
+Streams:
+  - Type:            ThreadList
+    Threads:
+      - Thread Id:       0x00003E81
+        Stack:
+          Start of Memory Range: 0x00007FFCEB34A000
+          Content:         C84D04BCE97F00
+        Context:         00000000000000
+...
+)"),
+                    llvm::Succeeded());
+  llvm::ArrayRef<minidump::Thread> thread_list;
 
   thread_list = parser->GetThreads();
   ASSERT_EQ(1UL, thread_list.size());
 
-  const MinidumpThread thread = thread_list[0];
+  const minidump::Thread &thread = thread_list[0];
 
-  EXPECT_EQ(16001UL, thread.thread_id);
+  EXPECT_EQ(0x3e81u, thread.ThreadId);
 
   llvm::ArrayRef<uint8_t> context = parser->GetThreadContext(thread);
-  EXPECT_EQ(1232UL, context.size());
-}
-
-TEST_F(MinidumpParserTest, GetThreadListNotPadded) {
-  // Verify that we can load a thread list that doesn't have 4 bytes of padding
-  // after the thread count.
-  SetUpData("thread-list-not-padded.dmp");
-  llvm::ArrayRef<MinidumpThread> thread_list;
-
-  thread_list = parser->GetThreads();
-  ASSERT_EQ(2UL, thread_list.size());
-  EXPECT_EQ(0x11223344UL, thread_list[0].thread_id);
-  EXPECT_EQ(0x55667788UL, thread_list[1].thread_id);
-}
-
-TEST_F(MinidumpParserTest, GetThreadListPadded) {
-  // Verify that we can load a thread list that has 4 bytes of padding
-  // after the thread count as found in breakpad minidump files.
-  SetUpData("thread-list-padded.dmp");
-  auto thread_list = parser->GetThreads();
-  ASSERT_EQ(2UL, thread_list.size());
-  EXPECT_EQ(0x11223344UL, thread_list[0].thread_id);
-  EXPECT_EQ(0x55667788UL, thread_list[1].thread_id);
-}
-
-TEST_F(MinidumpParserTest, GetMemoryListNotPadded) {
-  // Verify that we can load a memory list that doesn't have 4 bytes of padding
-  // after the memory range count.
-  SetUpData("memory-list-not-padded.dmp");
-  auto mem = parser->FindMemoryRange(0x8000);
-  ASSERT_TRUE(mem.hasValue());
-  EXPECT_EQ((lldb::addr_t)0x8000, mem->start);
-  mem = parser->FindMemoryRange(0x8010);
-  ASSERT_TRUE(mem.hasValue());
-  EXPECT_EQ((lldb::addr_t)0x8010, mem->start);
-}
-
-TEST_F(MinidumpParserTest, GetMemoryListPadded) {
-  // Verify that we can load a memory list that has 4 bytes of padding
-  // after the memory range count as found in breakpad minidump files.
-  SetUpData("memory-list-padded.dmp");
-  auto mem = parser->FindMemoryRange(0x8000);
-  ASSERT_TRUE(mem.hasValue());
-  EXPECT_EQ((lldb::addr_t)0x8000, mem->start);
-  mem = parser->FindMemoryRange(0x8010);
-  ASSERT_TRUE(mem.hasValue());
-  EXPECT_EQ((lldb::addr_t)0x8010, mem->start);
+  EXPECT_EQ(7u, context.size());
 }
 
 TEST_F(MinidumpParserTest, GetArchitecture) {
   ASSERT_THAT_ERROR(SetUpFromYaml(R"(
 --- !minidump
-Streams:         
+Streams:
   - Type:            SystemInfo
     Processor Arch:  AMD64
     Processor Level: 6
     Processor Revision: 16130
     Number of Processors: 1
     Platform ID:     Linux
-    CPU:             
+    CPU:
       Vendor ID:       GenuineIntel
       Version Info:    0x00000000
       Feature Info:    0x00000000
@@ -173,14 +139,47 @@ Streams:
             parser->GetArchitecture().GetTriple().getOS());
 }
 
-TEST_F(MinidumpParserTest, GetMiscInfo) {
-  SetUpData("linux-x86_64.dmp");
-  const MinidumpMiscInfo *misc_info = parser->GetMiscInfo();
-  ASSERT_EQ(nullptr, misc_info);
+TEST_F(MinidumpParserTest, GetMiscInfo_no_stream) {
+  // Test that GetMiscInfo returns nullptr when the minidump does not contain
+  // this stream.
+  ASSERT_THAT_ERROR(SetUpFromYaml(R"(
+--- !minidump
+Streams:
+...
+)"),
+                    llvm::Succeeded());
+  EXPECT_EQ(nullptr, parser->GetMiscInfo());
 }
 
 TEST_F(MinidumpParserTest, GetLinuxProcStatus) {
-  SetUpData("linux-x86_64.dmp");
+  ASSERT_THAT_ERROR(SetUpFromYaml(R"(
+--- !minidump
+Streams:
+  - Type:            SystemInfo
+    Processor Arch:  AMD64
+    Processor Level: 6
+    Processor Revision: 16130
+    Number of Processors: 1
+    Platform ID:     Linux
+    CSD Version:     'Linux 3.13.0-91-generic'
+    CPU:
+      Vendor ID:       GenuineIntel
+      Version Info:    0x00000000
+      Feature Info:    0x00000000
+  - Type:            LinuxProcStatus
+    Text:             |
+      Name:	a.out
+      State:	t (tracing stop)
+      Tgid:	16001
+      Ngid:	0
+      Pid:	16001
+      PPid:	13243
+      TracerPid:	16002
+      Uid:	404696	404696	404696	404696
+      Gid:	5762	5762	5762	5762
+...
+)"),
+                    llvm::Succeeded());
   llvm::Optional<LinuxProcStatus> proc_status = parser->GetLinuxProcStatus();
   ASSERT_TRUE(proc_status.hasValue());
   lldb::pid_t pid = proc_status->GetPid();
@@ -188,7 +187,34 @@ TEST_F(MinidumpParserTest, GetLinuxProcStatus) {
 }
 
 TEST_F(MinidumpParserTest, GetPid) {
-  SetUpData("linux-x86_64.dmp");
+  ASSERT_THAT_ERROR(SetUpFromYaml(R"(
+--- !minidump
+Streams:
+  - Type:            SystemInfo
+    Processor Arch:  AMD64
+    Processor Level: 6
+    Processor Revision: 16130
+    Number of Processors: 1
+    Platform ID:     Linux
+    CSD Version:     'Linux 3.13.0-91-generic'
+    CPU:
+      Vendor ID:       GenuineIntel
+      Version Info:    0x00000000
+      Feature Info:    0x00000000
+  - Type:            LinuxProcStatus
+    Text:             |
+      Name:	a.out
+      State:	t (tracing stop)
+      Tgid:	16001
+      Ngid:	0
+      Pid:	16001
+      PPid:	13243
+      TracerPid:	16002
+      Uid:	404696	404696	404696	404696
+      Gid:	5762	5762	5762	5762
+...
+)"),
+                    llvm::Succeeded());
   llvm::Optional<lldb::pid_t> pid = parser->GetPid();
   ASSERT_TRUE(pid.hasValue());
   ASSERT_EQ(16001UL, pid.getValue());
@@ -197,9 +223,9 @@ TEST_F(MinidumpParserTest, GetPid) {
 TEST_F(MinidumpParserTest, GetFilteredModuleList) {
   ASSERT_THAT_ERROR(SetUpFromYaml(R"(
 --- !minidump
-Streams:         
+Streams:
   - Type:            ModuleList
-    Modules:         
+    Modules:
       - Base of Image:   0x0000000000400000
         Size of Image:   0x00001000
         Module Name:     '/tmp/test/linux-x86_64_not_crashed'
@@ -238,30 +264,55 @@ void check_mem_range_exists(MinidumpParser &parser, const uint64_t range_start,
 }
 
 TEST_F(MinidumpParserTest, FindMemoryRange) {
-  SetUpData("linux-x86_64.dmp");
-  // There are two memory ranges in the file (size is in bytes, decimal):
-  // 1) 0x401d46 256
-  // 2) 0x7ffceb34a000 12288
-  EXPECT_FALSE(parser->FindMemoryRange(0x00).hasValue());
-  EXPECT_FALSE(parser->FindMemoryRange(0x2a).hasValue());
+  ASSERT_THAT_ERROR(SetUpFromYaml(R"(
+--- !minidump
+Streams:
+  - Type:            MemoryList
+    Memory Ranges:
+      - Start of Memory Range: 0x00007FFCEB34A000
+        Content:         C84D04BCE9
+      - Start of Memory Range: 0x0000000000401D46
+        Content:         5421
+...
+)"),
+                    llvm::Succeeded());
+  EXPECT_EQ(llvm::None, parser->FindMemoryRange(0x00));
+  EXPECT_EQ(llvm::None, parser->FindMemoryRange(0x2a));
+  EXPECT_EQ((minidump::Range{0x401d46, llvm::ArrayRef<uint8_t>{0x54, 0x21}}),
+            parser->FindMemoryRange(0x401d46));
+  EXPECT_EQ(llvm::None, parser->FindMemoryRange(0x401d46 + 2));
 
-  check_mem_range_exists(*parser, 0x401d46, 256);
-  EXPECT_FALSE(parser->FindMemoryRange(0x401d46 + 256).hasValue());
-
-  check_mem_range_exists(*parser, 0x7ffceb34a000, 12288);
-  EXPECT_FALSE(parser->FindMemoryRange(0x7ffceb34a000 + 12288).hasValue());
+  EXPECT_EQ(
+      (minidump::Range{0x7ffceb34a000,
+                       llvm::ArrayRef<uint8_t>{0xc8, 0x4d, 0x04, 0xbc, 0xe9}}),
+      parser->FindMemoryRange(0x7ffceb34a000 + 2));
+  EXPECT_EQ(llvm::None, parser->FindMemoryRange(0x7ffceb34a000 + 5));
 }
 
 TEST_F(MinidumpParserTest, GetMemory) {
-  SetUpData("linux-x86_64.dmp");
+  ASSERT_THAT_ERROR(SetUpFromYaml(R"(
+--- !minidump
+Streams:
+  - Type:            MemoryList
+    Memory Ranges:
+      - Start of Memory Range: 0x00007FFCEB34A000
+        Content:         C84D04BCE9
+      - Start of Memory Range: 0x0000000000401D46
+        Content:         5421
+...
+)"),
+                    llvm::Succeeded());
 
-  EXPECT_EQ(128UL, parser->GetMemory(0x401d46, 128).size());
-  EXPECT_EQ(256UL, parser->GetMemory(0x401d46, 512).size());
+  EXPECT_EQ((llvm::ArrayRef<uint8_t>{0x54}), parser->GetMemory(0x401d46, 1));
+  EXPECT_EQ((llvm::ArrayRef<uint8_t>{0x54, 0x21}),
+            parser->GetMemory(0x401d46, 4));
 
-  EXPECT_EQ(12288UL, parser->GetMemory(0x7ffceb34a000, 12288).size());
-  EXPECT_EQ(1024UL, parser->GetMemory(0x7ffceb34a000, 1024).size());
+  EXPECT_EQ((llvm::ArrayRef<uint8_t>{0xc8, 0x4d, 0x04, 0xbc, 0xe9}),
+            parser->GetMemory(0x7ffceb34a000, 5));
+  EXPECT_EQ((llvm::ArrayRef<uint8_t>{0xc8, 0x4d, 0x04}),
+            parser->GetMemory(0x7ffceb34a000, 3));
 
-  EXPECT_TRUE(parser->GetMemory(0x500000, 512).empty());
+  EXPECT_EQ(llvm::ArrayRef<uint8_t>(), parser->GetMemory(0x500000, 512));
 }
 
 TEST_F(MinidumpParserTest, FindMemoryRangeWithFullMemoryMinidump) {
@@ -330,7 +381,18 @@ TEST_F(MinidumpParserTest, GetMemoryRegionInfo) {
 }
 
 TEST_F(MinidumpParserTest, GetMemoryRegionInfoFromMemoryList) {
-  SetUpData("regions-memlist.dmp");
+  ASSERT_THAT_ERROR(SetUpFromYaml(R"(
+--- !minidump
+Streams:
+  - Type:            MemoryList
+    Memory Ranges:
+      - Start of Memory Range: 0x0000000000001000
+        Content:         '31313131313131313131313131313131'
+      - Start of Memory Range: 0x0000000000002000
+        Content:         '3333333333333333333333333333333333333333333333333333333333333333'
+...
+)"),
+                    llvm::Succeeded());
   // Test we can get memory regions from the MINIDUMP_MEMORY_LIST stream when
   // we don't have a MemoryInfoListStream.
 
@@ -358,7 +420,34 @@ TEST_F(MinidumpParserTest, GetMemoryRegionInfoFromMemory64List) {
 }
 
 TEST_F(MinidumpParserTest, GetMemoryRegionInfoLinuxMaps) {
-  SetUpData("regions-linux-map.dmp");
+  ASSERT_THAT_ERROR(SetUpFromYaml(R"(
+--- !minidump
+Streams:
+  - Type:            LinuxMaps
+    Text:             |
+      400d9000-400db000 r-xp 00000000 b3:04 227        /system/bin/app_process
+      400db000-400dc000 r--p 00001000 b3:04 227        /system/bin/app_process
+      400dc000-400dd000 rw-p 00000000 00:00 0
+      400dd000-400ec000 r-xp 00000000 b3:04 300        /system/bin/linker
+      400ec000-400ed000 r--p 00000000 00:00 0
+      400ed000-400ee000 r--p 0000f000 b3:04 300        /system/bin/linker
+      400ee000-400ef000 rw-p 00010000 b3:04 300        /system/bin/linker
+      400ef000-400fb000 rw-p 00000000 00:00 0
+      400fb000-400fc000 r-xp 00000000 b3:04 1096       /system/lib/liblog.so
+      400fc000-400fd000 rwxp 00001000 b3:04 1096       /system/lib/liblog.so
+      400fd000-400ff000 r-xp 00002000 b3:04 1096       /system/lib/liblog.so
+      400ff000-40100000 r--p 00003000 b3:04 1096       /system/lib/liblog.so
+      40100000-40101000 rw-p 00004000 b3:04 1096       /system/lib/liblog.so
+      40101000-40122000 r-xp 00000000 b3:04 955        /system/lib/libc.so
+      40122000-40123000 rwxp 00021000 b3:04 955        /system/lib/libc.so
+      40123000-40167000 r-xp 00022000 b3:04 955        /system/lib/libc.so
+      40167000-40169000 r--p 00065000 b3:04 955        /system/lib/libc.so
+      40169000-4016b000 rw-p 00067000 b3:04 955        /system/lib/libc.so
+      4016b000-40176000 rw-p 00000000 00:00 0
+
+...
+)"),
+                    llvm::Succeeded());
   // Test we can get memory regions from the linux /proc/<pid>/maps stream when
   // we don't have a MemoryInfoListStream.
 
@@ -396,7 +485,7 @@ TEST_F(MinidumpParserTest, GetMemoryRegionInfoLinuxMaps) {
 TEST_F(MinidumpParserTest, GetArchitectureWindows) {
   ASSERT_THAT_ERROR(SetUpFromYaml(R"(
 --- !minidump
-Streams:         
+Streams:
   - Type:            SystemInfo
     Processor Arch:  X86
     Processor Level: 6
@@ -409,7 +498,7 @@ Streams:
     Platform ID:     Win32NT
     CSD Version:     Service Pack 1
     Suite Mask:      0x0100
-    CPU:             
+    CPU:
       Vendor ID:       GenuineIntel
       Version Info:    0x000306E4
       Feature Info:    0xBFEBFBFF
@@ -423,11 +512,16 @@ Streams:
             parser->GetArchitecture().GetTriple().getOS());
 }
 
-// fizzbuzz_no_heap.dmp is copied from the WinMiniDump tests
-TEST_F(MinidumpParserTest, GetLinuxProcStatusWindows) {
-  SetUpData("fizzbuzz_no_heap.dmp");
-  llvm::Optional<LinuxProcStatus> proc_status = parser->GetLinuxProcStatus();
-  ASSERT_FALSE(proc_status.hasValue());
+TEST_F(MinidumpParserTest, GetLinuxProcStatus_no_stream) {
+  // Test that GetLinuxProcStatus returns nullptr when the minidump does not
+  // contain this stream.
+  ASSERT_THAT_ERROR(SetUpFromYaml(R"(
+--- !minidump
+Streams:
+...
+)"),
+                    llvm::Succeeded());
+  EXPECT_EQ(llvm::None, parser->GetLinuxProcStatus());
 }
 
 TEST_F(MinidumpParserTest, GetMiscInfoWindows) {
@@ -459,9 +553,21 @@ TEST_F(MinidumpParserTest, GetPidWow64) {
 #define REG_VAL64(x) *(reinterpret_cast<uint64_t *>(x))
 
 TEST_F(MinidumpParserTest, GetThreadContext_x86_32) {
-  SetUpData("linux-i386.dmp");
-  llvm::ArrayRef<MinidumpThread> thread_list = parser->GetThreads();
-  const MinidumpThread thread = thread_list[0];
+  ASSERT_THAT_ERROR(SetUpFromYaml(R"(
+--- !minidump
+Streams:
+  - Type:            ThreadList
+    Threads:
+      - Thread Id:       0x00026804
+        Stack:
+          Start of Memory Range: 0x00000000FF9DD000
+          Content:         68D39DFF
+        Context:         0F0001000000000000000000000000000000000000000000000000007F03FFFF0000FFFFFFFFFFFF09DC62F72300000088E36CF72B00FFFF00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000063000000000000002B0000002B000000A88204085CD59DFF008077F7A3D49DFF01000000000000003CD59DFFA082040823000000820201002CD59DFF2B0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+)"),
+                    llvm::Succeeded());
+
+  llvm::ArrayRef<minidump::Thread> thread_list = parser->GetThreads();
+  const minidump::Thread &thread = thread_list[0];
   llvm::ArrayRef<uint8_t> registers(parser->GetThreadContext(thread));
   const MinidumpContext_x86_32 *context;
   EXPECT_TRUE(consumeObject(registers, context).Success());
@@ -490,9 +596,21 @@ TEST_F(MinidumpParserTest, GetThreadContext_x86_32) {
 }
 
 TEST_F(MinidumpParserTest, GetThreadContext_x86_64) {
-  SetUpData("linux-x86_64.dmp");
-  llvm::ArrayRef<MinidumpThread> thread_list = parser->GetThreads();
-  const MinidumpThread thread = thread_list[0];
+  ASSERT_THAT_ERROR(SetUpFromYaml(R"(
+--- !minidump
+Streams:
+  - Type:            ThreadList
+    Threads:
+      - Thread Id:       0x00003E81
+        Stack:
+          Start of Memory Range: 0x00007FFCEB34A000
+          Content:         C84D04BCE97F00
+        Context:         0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000B0010000000000033000000000000000000000006020100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000010A234EBFC7F000010A234EBFC7F00000000000000000000F09C34EBFC7F0000C0A91ABCE97F00000000000000000000A0163FBCE97F00004602000000000000921C40000000000030A434EBFC7F000000000000000000000000000000000000C61D4000000000007F0300000000000000000000000000000000000000000000801F0000FFFF0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000FFFF00FFFFFFFFFFFFFF00FFFFFFFF25252525252525252525252525252525000000000000000000000000000000000000000000000000000000000000000000FFFF00FFFFFFFFFFFFFF00FFFFFFFF0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000FF00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+...
+)"),
+                    llvm::Succeeded());
+  llvm::ArrayRef<minidump::Thread> thread_list = parser->GetThreads();
+  const minidump::Thread &thread = thread_list[0];
   llvm::ArrayRef<uint8_t> registers(parser->GetThreadContext(thread));
   const MinidumpContext_x86_64 *context;
   EXPECT_TRUE(consumeObject(registers, context).Success());
@@ -526,8 +644,8 @@ TEST_F(MinidumpParserTest, GetThreadContext_x86_64) {
 
 TEST_F(MinidumpParserTest, GetThreadContext_x86_32_wow64) {
   SetUpData("fizzbuzz_wow64.dmp");
-  llvm::ArrayRef<MinidumpThread> thread_list = parser->GetThreads();
-  const MinidumpThread thread = thread_list[0];
+  llvm::ArrayRef<minidump::Thread> thread_list = parser->GetThreads();
+  const minidump::Thread &thread = thread_list[0];
   llvm::ArrayRef<uint8_t> registers(parser->GetThreadContextWow64(thread));
   const MinidumpContext_x86_32 *context;
   EXPECT_TRUE(consumeObject(registers, context).Success());
@@ -559,9 +677,9 @@ TEST_F(MinidumpParserTest, GetThreadContext_x86_32_wow64) {
 TEST_F(MinidumpParserTest, MinidumpDuplicateModuleMinAddress) {
   ASSERT_THAT_ERROR(SetUpFromYaml(R"(
 --- !minidump
-Streams:         
+Streams:
   - Type:            ModuleList
-    Modules:         
+    Modules:
       - Base of Image:   0x0000000000002000
         Size of Image:   0x00001000
         Module Name:     '/tmp/a'
@@ -584,9 +702,9 @@ Streams:
 TEST_F(MinidumpParserTest, MinidumpModuleOrder) {
   ASSERT_THAT_ERROR(SetUpFromYaml(R"(
 --- !minidump
-Streams:         
+Streams:
   - Type:            ModuleList
-    Modules:         
+    Modules:
       - Base of Image:   0x0000000000002000
         Size of Image:   0x00001000
         Module Name:     '/tmp/a'

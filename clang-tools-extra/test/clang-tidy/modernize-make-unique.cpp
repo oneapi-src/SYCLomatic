@@ -1,5 +1,5 @@
-// RUN: %check_clang_tidy %s modernize-make-unique %t -- -- -std=c++14 \
-// RUN:   -I%S/Inputs/modernize-smart-ptr
+// RUN: %check_clang_tidy -std=c++14 %s modernize-make-unique %t -- -- -I %S/Inputs/modernize-smart-ptr
+// FIXME: Fix the checker to work in C++17 mode.
 
 #include "unique_ptr.h"
 #include "initializer_list.h"
@@ -272,6 +272,14 @@ void initialization(int T, Base b) {
   PAggr.reset(new APair{T, 1});
   // CHECK-MESSAGES: :[[@LINE-1]]:9: warning: use std::make_unique instead
   // CHECK-FIXES: std::make_unique<APair>(APair{T, 1});
+
+  // Check aggregate init with intermediate temporaries.
+  std::unique_ptr<APair> PAggrTemp = std::unique_ptr<APair>(new APair({T, 1}));
+  // CHECK-MESSAGES: :[[@LINE-1]]:38: warning: use std::make_unique instead
+  // CHECK-FIXES: std::unique_ptr<APair> PAggrTemp = std::unique_ptr<APair>(new APair({T, 1}));
+  PAggrTemp.reset(new APair({T, 1}));
+  // CHECK-MESSAGES: :[[@LINE-1]]:13: warning: use std::make_unique instead
+  // CHECK-FIXES: PAggrTemp.reset(new APair({T, 1}));
 
   // Test different kinds of initialization of the pointee, when the unique_ptr
   // is initialized with braces.

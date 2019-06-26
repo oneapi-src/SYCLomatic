@@ -157,7 +157,8 @@ public:
   /// FIXME: This API is intended for use with embedded libraries only, and is
   /// misleadingly named.
   virtual void AddLinkRuntimeLibArgs(const llvm::opt::ArgList &Args,
-                                     llvm::opt::ArgStringList &CmdArgs) const;
+                                     llvm::opt::ArgStringList &CmdArgs,
+                                     bool ForceLinkBuiltinRT = false) const;
 
   virtual void addStartObjectFileArgs(const llvm::opt::ArgList &Args,
                                       llvm::opt::ArgStringList &CmdArgs) const {
@@ -495,11 +496,15 @@ public:
   RuntimeLibType GetRuntimeLibType(const llvm::opt::ArgList &Args) const override;
 
   void AddLinkRuntimeLibArgs(const llvm::opt::ArgList &Args,
-                             llvm::opt::ArgStringList &CmdArgs) const override;
+                             llvm::opt::ArgStringList &CmdArgs,
+                             bool ForceLinkBuiltinRT = false) const override;
 
   void AddClangCXXStdlibIncludeArgs(
       const llvm::opt::ArgList &DriverArgs,
       llvm::opt::ArgStringList &CC1Args) const override;
+
+  void AddClangSystemIncludeArgs(const llvm::opt::ArgList &DriverArgs,
+                                 llvm::opt::ArgStringList &CC1Args) const override;
 
   void AddCXXStdlibLibArgs(const llvm::opt::ArgList &Args,
                            llvm::opt::ArgStringList &CmdArgs) const override;
@@ -527,6 +532,15 @@ private:
                                llvm::opt::ArgStringList &CmdArgs,
                                StringRef Sanitizer,
                                bool shared = true) const;
+
+  bool AddGnuCPlusPlusIncludePaths(const llvm::opt::ArgList &DriverArgs,
+                                   llvm::opt::ArgStringList &CC1Args,
+                                   llvm::SmallString<128> Base,
+                                   llvm::StringRef Version,
+                                   llvm::StringRef ArchDir,
+                                   llvm::StringRef BitDir) const;
+
+  llvm::StringRef GetHeaderSysroot(const llvm::opt::ArgList &DriverArgs) const;
 };
 
 } // end namespace toolchains

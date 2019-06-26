@@ -50,7 +50,8 @@ void thinLTOResolvePrevailingInIndex(
     function_ref<bool(GlobalValue::GUID, const GlobalValueSummary *)>
         isPrevailing,
     function_ref<void(StringRef, GlobalValue::GUID, GlobalValue::LinkageTypes)>
-        recordNewLinkage);
+        recordNewLinkage,
+    const DenseSet<GlobalValue::GUID> &GUIDPreservedSymbols);
 
 /// Update the linkages in the given \p Index to mark exported values
 /// as external and non-exported values as internal. The ThinLTO backends
@@ -114,6 +115,7 @@ private:
   std::vector<std::pair<size_t, size_t>> ModuleSymIndices;
 
   StringRef TargetTriple, SourceFileName, COFFLinkerOpts;
+  std::vector<StringRef> DependentLibraries;
   std::vector<StringRef> ComdatTable;
 
 public:
@@ -153,6 +155,9 @@ public:
 
   /// Returns linker options specified in the input file.
   StringRef getCOFFLinkerOpts() const { return COFFLinkerOpts; }
+
+  /// Returns dependent library specifiers from the input file.
+  ArrayRef<StringRef> getDependentLibraries() const { return DependentLibraries; }
 
   /// Returns the path to the InputFile.
   StringRef getName() const;
@@ -405,7 +410,8 @@ private:
                    const SymbolResolution *&ResI, const SymbolResolution *ResE);
 
   Error runRegularLTO(AddStreamFn AddStream);
-  Error runThinLTO(AddStreamFn AddStream, NativeObjectCache Cache);
+  Error runThinLTO(AddStreamFn AddStream, NativeObjectCache Cache,
+                   const DenseSet<GlobalValue::GUID> &GUIDPreservedSymbols);
 
   Error checkPartiallySplit();
 

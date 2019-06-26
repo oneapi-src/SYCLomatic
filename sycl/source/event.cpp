@@ -10,7 +10,7 @@
 #include <CL/sycl/detail/common.hpp>
 #include <CL/sycl/detail/event_impl.hpp>
 #include <CL/sycl/event.hpp>
-#include <CL/sycl/detail/scheduler/scheduler.h>
+#include <CL/sycl/detail/scheduler/scheduler.hpp>
 
 #include <CL/sycl/stl.hpp>
 
@@ -50,8 +50,12 @@ void event::wait_and_throw(const vector_class<event> &EventList) {
 }
 
 vector_class<event> event::get_wait_list() {
-  return cl::sycl::simple_scheduler::Scheduler::getInstance().
-      getDepEvents(impl);
+  vector_class<event> Result;
+
+  for (auto &EventImpl : detail::Scheduler::getInstance().getWaitList(impl))
+    Result.push_back(detail::createSyclObjFromImpl<event>(EventImpl));
+
+  return Result;
 }
 
 event::event(std::shared_ptr<detail::event_impl> event_impl)
@@ -70,16 +74,19 @@ event::get_info<info::event::command_execution_status>() const {
 template <>
 cl_ulong
 event::get_profiling_info<info::event_profiling::command_submit>() const {
+  impl->wait(impl);
   return impl->get_profiling_info<info::event_profiling::command_submit>();
 }
 template <>
 cl_ulong
 event::get_profiling_info<info::event_profiling::command_start>() const {
+  impl->wait(impl);
   return impl->get_profiling_info<info::event_profiling::command_start>();
 }
 
 template <>
 cl_ulong event::get_profiling_info<info::event_profiling::command_end>() const {
+  impl->wait(impl);
   return impl->get_profiling_info<info::event_profiling::command_end>();
 }
 

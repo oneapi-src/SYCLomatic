@@ -20,6 +20,61 @@
 #include "llvm/Support/raw_ostream.h"
 using namespace clang;
 
+/// The identity of a type_info object depends on the canonical unqualified
+/// type only.
+TypeInfoLValue::TypeInfoLValue(const Type *T)
+    : T(T->getCanonicalTypeUnqualified().getTypePtr()) {}
+
+void TypeInfoLValue::print(llvm::raw_ostream &Out,
+                           const PrintingPolicy &Policy) const {
+  Out << "typeid(";
+  QualType(getType(), 0).print(Out, Policy);
+  Out << ")";
+}
+
+static_assert(
+    1 << llvm::PointerLikeTypeTraits<TypeInfoLValue>::NumLowBitsAvailable <=
+        alignof(Type),
+    "Type is insufficiently aligned");
+
+APValue::LValueBase::LValueBase(const ValueDecl *P, unsigned I, unsigned V)
+    : Ptr(P), Local{I, V} {}
+APValue::LValueBase::LValueBase(const Expr *P, unsigned I, unsigned V)
+    : Ptr(P), Local{I, V} {}
+
+APValue::LValueBase APValue::LValueBase::getTypeInfo(TypeInfoLValue LV,
+                                                     QualType TypeInfo) {
+  LValueBase Base;
+  Base.Ptr = LV;
+  Base.TypeInfoType = TypeInfo.getAsOpaquePtr();
+  return Base;
+}
+
+unsigned APValue::LValueBase::getCallIndex() const {
+  return is<TypeInfoLValue>() ? 0 : Local.CallIndex;
+}
+
+unsigned APValue::LValueBase::getVersion() const {
+  return is<TypeInfoLValue>() ? 0 : Local.Version;
+}
+
+QualType APValue::LValueBase::getTypeInfoType() const {
+  assert(is<TypeInfoLValue>() && "not a type_info lvalue");
+  return QualType::getFromOpaquePtr(TypeInfoType);
+}
+
+namespace clang {
+bool operator==(const APValue::LValueBase &LHS,
+                const APValue::LValueBase &RHS) {
+  if (LHS.Ptr != RHS.Ptr)
+    return false;
+  if (LHS.is<TypeInfoLValue>())
+    return true;
+  return LHS.Local.CallIndex == RHS.Local.CallIndex &&
+         LHS.Local.Version == RHS.Local.Version;
+}
+}
+
 namespace {
   struct LVBase {
     APValue::LValueBase Base;
@@ -45,26 +100,27 @@ APValue::LValueBase::operator bool () const {
 clang::APValue::LValueBase
 llvm::DenseMapInfo<clang::APValue::LValueBase>::getEmptyKey() {
   return clang::APValue::LValueBase(
-      DenseMapInfo<clang::APValue::LValueBase::PtrTy>::getEmptyKey(),
-      DenseMapInfo<unsigned>::getEmptyKey(),
-      DenseMapInfo<unsigned>::getEmptyKey());
+      DenseMapInfo<const ValueDecl*>::getEmptyKey());
 }
 
 clang::APValue::LValueBase
 llvm::DenseMapInfo<clang::APValue::LValueBase>::getTombstoneKey() {
   return clang::APValue::LValueBase(
-      DenseMapInfo<clang::APValue::LValueBase::PtrTy>::getTombstoneKey(),
-      DenseMapInfo<unsigned>::getTombstoneKey(),
-      DenseMapInfo<unsigned>::getTombstoneKey());
+      DenseMapInfo<const ValueDecl*>::getTombstoneKey());
+}
+
+namespace clang {
+llvm::hash_code hash_value(const APValue::LValueBase &Base) {
+  if (Base.is<TypeInfoLValue>())
+    return llvm::hash_value(Base.getOpaqueValue());
+  return llvm::hash_combine(Base.getOpaqueValue(), Base.getCallIndex(),
+                            Base.getVersion());
+}
 }
 
 unsigned llvm::DenseMapInfo<clang::APValue::LValueBase>::getHashValue(
     const clang::APValue::LValueBase &Base) {
-  llvm::FoldingSetNodeID ID;
-  ID.AddPointer(Base.getOpaqueValue());
-  ID.AddInteger(Base.getCallIndex());
-  ID.AddInteger(Base.getVersion());
-  return ID.ComputeHash();
+  return hash_value(Base);
 }
 
 bool llvm::DenseMapInfo<clang::APValue::LValueBase>::isEqual(
@@ -163,9 +219,11 @@ APValue::UnionData::~UnionData () {
   delete Value;
 }
 
-APValue::APValue(const APValue &RHS) : Kind(Uninitialized) {
+APValue::APValue(const APValue &RHS) : Kind(None) {
   switch (RHS.getKind()) {
-  case Uninitialized:
+  case None:
+  case Indeterminate:
+    Kind = RHS.getKind();
     break;
   case Int:
     MakeInt();
@@ -257,12 +315,13 @@ void APValue::DestroyDataAndMakeUninit() {
     ((MemberPointerData*)(char*)Data.buffer)->~MemberPointerData();
   else if (Kind == AddrLabelDiff)
     ((AddrLabelDiffData*)(char*)Data.buffer)->~AddrLabelDiffData();
-  Kind = Uninitialized;
+  Kind = None;
 }
 
 bool APValue::needsCleanup() const {
   switch (getKind()) {
-  case Uninitialized:
+  case None:
+  case Indeterminate:
   case AddrLabelDiff:
     return false;
   case Struct:
@@ -320,8 +379,11 @@ static double GetApproxValue(const llvm::APFloat &F) {
 
 void APValue::dump(raw_ostream &OS) const {
   switch (getKind()) {
-  case Uninitialized:
-    OS << "Uninitialized";
+  case None:
+    OS << "None";
+    return;
+  case Indeterminate:
+    OS << "Indeterminate";
     return;
   case Int:
     OS << "Int: " << getInt();
@@ -396,7 +458,10 @@ void APValue::dump(raw_ostream &OS) const {
 
 void APValue::printPretty(raw_ostream &Out, ASTContext &Ctx, QualType Ty) const{
   switch (getKind()) {
-  case APValue::Uninitialized:
+  case APValue::None:
+    Out << "<out of lifetime>";
+    return;
+  case APValue::Indeterminate:
     Out << "<uninitialized>";
     return;
   case APValue::Int:
@@ -467,7 +532,9 @@ void APValue::printPretty(raw_ostream &Out, ASTContext &Ctx, QualType Ty) const{
 
       if (const ValueDecl *VD = Base.dyn_cast<const ValueDecl*>())
         Out << *VD;
-      else {
+      else if (TypeInfoLValue TI = Base.dyn_cast<TypeInfoLValue>()) {
+        TI.print(Out, Ctx.getPrintingPolicy());
+      } else {
         assert(Base.get<const Expr *>() != nullptr &&
                "Expecting non-null Expr");
         Base.get<const Expr*>()->printPretty(Out, nullptr,
@@ -492,6 +559,9 @@ void APValue::printPretty(raw_ostream &Out, ASTContext &Ctx, QualType Ty) const{
     if (const ValueDecl *VD = Base.dyn_cast<const ValueDecl*>()) {
       Out << *VD;
       ElemTy = VD->getType();
+    } else if (TypeInfoLValue TI = Base.dyn_cast<TypeInfoLValue>()) {
+      TI.print(Out, Ctx.getPrintingPolicy());
+      ElemTy = Base.getTypeInfoType();
     } else {
       const Expr *E = Base.get<const Expr*>();
       assert(E != nullptr && "Expecting non-null Expr");
@@ -505,8 +575,7 @@ void APValue::printPretty(raw_ostream &Out, ASTContext &Ctx, QualType Ty) const{
       if (ElemTy->getAs<RecordType>()) {
         // The lvalue refers to a class type, so the next path entry is a base
         // or member.
-        const Decl *BaseOrMember =
-        BaseOrMemberType::getFromOpaqueValue(Path[I].BaseOrMember).getPointer();
+        const Decl *BaseOrMember = Path[I].getAsBaseOrMember().getPointer();
         if (const CXXRecordDecl *RD = dyn_cast<CXXRecordDecl>(BaseOrMember)) {
           CastToBase = RD;
           ElemTy = Ctx.getRecordType(RD);
@@ -520,7 +589,7 @@ void APValue::printPretty(raw_ostream &Out, ASTContext &Ctx, QualType Ty) const{
         }
       } else {
         // The lvalue must refer to an array.
-        Out << '[' << Path[I].ArrayIndex << ']';
+        Out << '[' << Path[I].getAsArrayIndex() << ']';
         ElemTy = Ctx.getAsArrayType(ElemTy)->getElementType();
       }
     }
@@ -721,21 +790,21 @@ ArrayRef<const CXXRecordDecl*> APValue::getMemberPointerPath() const {
 }
 
 void APValue::MakeLValue() {
-  assert(isUninit() && "Bad state change");
+  assert(isAbsent() && "Bad state change");
   static_assert(sizeof(LV) <= DataSize, "LV too big");
   new ((void*)(char*)Data.buffer) LV();
   Kind = LValue;
 }
 
 void APValue::MakeArray(unsigned InitElts, unsigned Size) {
-  assert(isUninit() && "Bad state change");
+  assert(isAbsent() && "Bad state change");
   new ((void*)(char*)Data.buffer) Arr(InitElts, Size);
   Kind = Array;
 }
 
 void APValue::MakeMemberPointer(const ValueDecl *Member, bool IsDerivedMember,
                                 ArrayRef<const CXXRecordDecl*> Path) {
-  assert(isUninit() && "Bad state change");
+  assert(isAbsent() && "Bad state change");
   MemberPointerData *MPD = new ((void*)(char*)Data.buffer) MemberPointerData;
   Kind = MemberPointer;
   MPD->MemberAndIsDerivedMember.setPointer(Member);

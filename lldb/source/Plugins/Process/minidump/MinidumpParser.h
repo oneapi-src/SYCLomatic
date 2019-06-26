@@ -41,6 +41,10 @@ struct Range {
 
   Range(lldb::addr_t start, llvm::ArrayRef<uint8_t> range_ref)
       : start(start), range_ref(range_ref) {}
+
+  friend bool operator==(const Range &lhs, const Range &rhs) {
+    return lhs.start == rhs.start && lhs.range_ref == rhs.range_ref;
+  }
 };
 
 class MinidumpParser {
@@ -54,13 +58,13 @@ public:
 
   UUID GetModuleUUID(const minidump::Module *module);
 
-  llvm::ArrayRef<MinidumpThread> GetThreads();
+  llvm::ArrayRef<minidump::Thread> GetThreads();
 
   llvm::ArrayRef<uint8_t> GetThreadContext(const LocationDescriptor &location);
 
-  llvm::ArrayRef<uint8_t> GetThreadContext(const MinidumpThread &td);
+  llvm::ArrayRef<uint8_t> GetThreadContext(const minidump::Thread &td);
 
-  llvm::ArrayRef<uint8_t> GetThreadContextWow64(const MinidumpThread &td);
+  llvm::ArrayRef<uint8_t> GetThreadContextWow64(const minidump::Thread &td);
 
   ArchSpec GetArchitecture();
 

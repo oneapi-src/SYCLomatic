@@ -20,6 +20,7 @@
 #include "clang/Sema/ScopeInfo.h"
 #include "clang/Sema/SemaInternal.h"
 #include "clang/Sema/SemaLambda.h"
+#include "llvm/ADT/STLExtras.h"
 using namespace clang;
 using namespace sema;
 
@@ -225,19 +226,14 @@ Optional<unsigned> clang::getStackIndexOfNearestEnclosingCaptureCapableLambda(
 
 static inline TemplateParameterList *
 getGenericLambdaTemplateParameterList(LambdaScopeInfo *LSI, Sema &SemaRef) {
-  if (LSI->GLTemplateParameterList)
-    return LSI->GLTemplateParameterList;
-
-  if (!LSI->AutoTemplateParams.empty()) {
-    SourceRange IntroRange = LSI->IntroducerRange;
-    SourceLocation LAngleLoc = IntroRange.getBegin();
-    SourceLocation RAngleLoc = IntroRange.getEnd();
+  if (!LSI->GLTemplateParameterList && !LSI->TemplateParams.empty()) {
     LSI->GLTemplateParameterList = TemplateParameterList::Create(
         SemaRef.Context,
-        /*Template kw loc*/ SourceLocation(), LAngleLoc,
-        llvm::makeArrayRef((NamedDecl *const *)LSI->AutoTemplateParams.data(),
-                           LSI->AutoTemplateParams.size()),
-        RAngleLoc, nullptr);
+        /*Template kw loc*/ SourceLocation(),
+        /*L angle loc*/ LSI->ExplicitTemplateParamsRange.getBegin(),
+        LSI->TemplateParams,
+        /*R angle loc*/LSI->ExplicitTemplateParamsRange.getEnd(),
+        nullptr);
   }
   return LSI->GLTemplateParameterList;
 }
@@ -492,6 +488,23 @@ void Sema::finishLambdaExplicitCaptures(LambdaScopeInfo *LSI) {
   LSI->finishedExplicitCaptures();
 }
 
+void Sema::ActOnLambdaExplicitTemplateParameterList(SourceLocation LAngleLoc,
+                                                    ArrayRef<NamedDecl *> TParams,
+                                                    SourceLocation RAngleLoc) {
+  LambdaScopeInfo *LSI = getCurLambda();
+  assert(LSI && "Expected a lambda scope");
+  assert(LSI->NumExplicitTemplateParams == 0 &&
+         "Already acted on explicit template parameters");
+  assert(LSI->TemplateParams.empty() &&
+         "Explicit template parameters should come "
+         "before invented (auto) ones");
+  assert(!TParams.empty() &&
+         "No template parameters to act on");
+  LSI->TemplateParams.append(TParams.begin(), TParams.end());
+  LSI->NumExplicitTemplateParams = TParams.size();
+  LSI->ExplicitTemplateParamsRange = {LAngleLoc, RAngleLoc};
+}
+
 void Sema::addLambdaParameters(
     ArrayRef<LambdaIntroducer::LambdaCapture> Captures,
     CXXMethodDecl *CallOperator, Scope *CurScope) {
@@ -740,11 +753,10 @@ void Sema::deduceClosureReturnType(CapturingScopeInfo &CSI) {
   }
 }
 
-QualType Sema::buildLambdaInitCaptureInitialization(SourceLocation Loc,
-                                                    bool ByRef,
-                                                    IdentifierInfo *Id,
-                                                    bool IsDirectInit,
-                                                    Expr *&Init) {
+QualType Sema::buildLambdaInitCaptureInitialization(
+    SourceLocation Loc, bool ByRef, SourceLocation EllipsisLoc,
+    Optional<unsigned> NumExpansions, IdentifierInfo *Id, bool IsDirectInit,
+    Expr *&Init) {
   // Create an 'auto' or 'auto&' TypeSourceInfo that we can use to
   // deduce against.
   QualType DeductType = Context.getAutoDeductType();
@@ -754,6 +766,18 @@ QualType Sema::buildLambdaInitCaptureInitialization(SourceLocation Loc,
     DeductType = BuildReferenceType(DeductType, true, Loc, Id);
     assert(!DeductType.isNull() && "can't build reference to auto");
     TLB.push<ReferenceTypeLoc>(DeductType).setSigilLoc(Loc);
+  }
+  if (EllipsisLoc.isValid()) {
+    if (Init->containsUnexpandedParameterPack()) {
+      Diag(EllipsisLoc, getLangOpts().CPlusPlus2a
+                            ? diag::warn_cxx17_compat_init_capture_pack
+                            : diag::ext_init_capture_pack);
+      DeductType = Context.getPackExpansionType(DeductType, NumExpansions);
+      TLB.push<PackExpansionTypeLoc>(DeductType).setEllipsisLoc(EllipsisLoc);
+    } else {
+      // Just ignore the ellipsis for now and form a non-pack variable. We'll
+      // diagnose this later when we try to capture it.
+    }
   }
   TypeSourceInfo *TSI = TLB.getTypeSourceInfo(Context, DeductType);
 
@@ -795,10 +819,15 @@ QualType Sema::buildLambdaInitCaptureInitialization(SourceLocation Loc,
 
 VarDecl *Sema::createLambdaInitCaptureVarDecl(SourceLocation Loc,
                                               QualType InitCaptureType,
+                                              SourceLocation EllipsisLoc,
                                               IdentifierInfo *Id,
                                               unsigned InitStyle, Expr *Init) {
-  TypeSourceInfo *TSI = Context.getTrivialTypeSourceInfo(InitCaptureType,
-      Loc);
+  // FIXME: Retain the TypeSourceInfo from buildLambdaInitCaptureInitialization
+  // rather than reconstructing it here.
+  TypeSourceInfo *TSI = Context.getTrivialTypeSourceInfo(InitCaptureType, Loc);
+  if (auto PETL = TSI->getTypeLoc().getAs<PackExpansionTypeLoc>())
+    PETL.setEllipsisLoc(EllipsisLoc);
+
   // Create a dummy variable representing the init-capture. This is not actually
   // used as a variable, and only exists as a way to name and refer to the
   // init-capture.
@@ -832,17 +861,23 @@ FieldDecl *Sema::buildInitCaptureField(LambdaScopeInfo *LSI, VarDecl *Var) {
 void Sema::ActOnStartOfLambdaDefinition(LambdaIntroducer &Intro,
                                         Declarator &ParamInfo,
                                         Scope *CurScope) {
-  // Determine if we're within a context where we know that the lambda will
-  // be dependent, because there are template parameters in scope.
-  bool KnownDependent = false;
   LambdaScopeInfo *const LSI = getCurLambda();
   assert(LSI && "LambdaScopeInfo should be on stack!");
 
-  // The lambda-expression's closure type might be dependent even if its
-  // semantic context isn't, if it appears within a default argument of a
-  // function template.
-  if (CurScope->getTemplateParamParent())
-    KnownDependent = true;
+  // Determine if we're within a context where we know that the lambda will
+  // be dependent, because there are template parameters in scope.
+  bool KnownDependent;
+  if (LSI->NumExplicitTemplateParams > 0) {
+    auto *TemplateParamScope = CurScope->getTemplateParamParent();
+    assert(TemplateParamScope &&
+           "Lambda with explicit template param list should establish a "
+           "template param scope");
+    assert(TemplateParamScope->getParent());
+    KnownDependent = TemplateParamScope->getParent()
+                                       ->getTemplateParamParent() != nullptr;
+  } else {
+    KnownDependent = CurScope->getTemplateParamParent() != nullptr;
+  }
 
   // Determine the signature of the call operator.
   TypeSourceInfo *MethodTyInfo;
@@ -1017,8 +1052,6 @@ void Sema::ActOnStartOfLambdaDefinition(LambdaIntroducer &Intro,
                        ? diag::warn_cxx11_compat_init_capture
                        : diag::ext_init_capture);
 
-      if (C->Init.get()->containsUnexpandedParameterPack())
-        ContainsUnexpandedParameterPack = true;
       // If the initializer expression is usable, but the InitCaptureType
       // is not, then an error has occurred - so ignore the capture for now.
       // for e.g., [n{0}] { }; <-- if no <initializer_list> is included.
@@ -1026,6 +1059,10 @@ void Sema::ActOnStartOfLambdaDefinition(LambdaIntroducer &Intro,
       // in this case.
       if (C->InitCaptureType.get().isNull())
         continue;
+
+      if (C->Init.get()->containsUnexpandedParameterPack() &&
+          !C->InitCaptureType.get()->getAs<PackExpansionType>())
+        ContainsUnexpandedParameterPack = true;
 
       unsigned InitStyle;
       switch (C->InitKind) {
@@ -1042,7 +1079,8 @@ void Sema::ActOnStartOfLambdaDefinition(LambdaIntroducer &Intro,
         break;
       }
       Var = createLambdaInitCaptureVarDecl(C->Loc, C->InitCaptureType.get(),
-                                           C->Id, InitStyle, C->Init.get());
+                                           C->EllipsisLoc, C->Id, InitStyle,
+                                           C->Init.get());
       // C++1y [expr.prim.lambda]p11:
       //   An init-capture behaves as if it declares and explicitly
       //   captures a variable [...] whose declarative region is the
@@ -1134,7 +1172,8 @@ void Sema::ActOnStartOfLambdaDefinition(LambdaIntroducer &Intro,
         EllipsisLoc = C->EllipsisLoc;
       } else {
         Diag(C->EllipsisLoc, diag::err_pack_expansion_without_parameter_packs)
-          << SourceRange(C->Loc);
+            << (C->Init.isUsable() ? C->Init.get()->getSourceRange()
+                                   : SourceRange(C->Loc));
 
         // Just ignore the ellipsis.
       }
@@ -1306,7 +1345,7 @@ static void addFunctionPointerConversion(Sema &S,
   CXXConversionDecl *Conversion = CXXConversionDecl::Create(
       S.Context, Class, Loc,
       DeclarationNameInfo(ConversionName, Loc, ConvNameLoc), ConvTy, ConvTSI,
-      /*isInline=*/true, /*isExplicit=*/false,
+      /*isInline=*/true, ExplicitSpecifier(),
       /*isConstexpr=*/S.getLangOpts().CPlusPlus17,
       CallOperator->getBody()->getEndLoc());
   Conversion->setAccess(AS_public);
@@ -1393,7 +1432,7 @@ static void addBlockPointerConversion(Sema &S,
   CXXConversionDecl *Conversion = CXXConversionDecl::Create(
       S.Context, Class, Loc, DeclarationNameInfo(Name, Loc, NameLoc), ConvTy,
       S.Context.getTrivialTypeSourceInfo(ConvTy, Loc),
-      /*isInline=*/true, /*isExplicit=*/false,
+      /*isInline=*/true, ExplicitSpecifier(),
       /*isConstexpr=*/false, CallOperator->getBody()->getEndLoc());
   Conversion->setAccess(AS_public);
   Conversion->setImplicit(true);

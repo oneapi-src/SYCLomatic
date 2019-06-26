@@ -133,6 +133,37 @@ public:
   /// attribute on declarations that can be dynamically replaced.
   bool hasProtectedVisibility() const override { return false; }
 
+  unsigned getExnObjectAlignment() const override {
+    // Older versions of libc++abi guarantee an alignment of only 8-bytes for
+    // exception objects because of a bug in __cxa_exception that was
+    // eventually fixed in r319123.
+    llvm::VersionTuple MinVersion;
+    const llvm::Triple &T = this->getTriple();
+
+    // Compute the earliest OS versions that have the fix to libc++abi.
+    switch (T.getOS()) {
+    case llvm::Triple::Darwin:
+    case llvm::Triple::MacOSX: // Earliest supporting version is 10.14.
+      MinVersion = llvm::VersionTuple(10U, 14U);
+      break;
+    case llvm::Triple::IOS:
+    case llvm::Triple::TvOS: // Earliest supporting version is 12.0.0.
+      MinVersion = llvm::VersionTuple(12U);
+      break;
+    case llvm::Triple::WatchOS: // Earliest supporting version is 5.0.0.
+      MinVersion = llvm::VersionTuple(5U);
+      break;
+    default:
+      llvm_unreachable("Unexpected OS");
+    }
+
+    unsigned Major, Minor, Micro;
+    T.getOSVersion(Major, Minor, Micro);
+    if (llvm::VersionTuple(Major, Minor, Micro) < MinVersion)
+      return 64;
+    return OSTargetInfo<Target>::getExnObjectAlignment();
+  }
+
   TargetInfo::IntType getLeastIntTypeByWidth(unsigned BitWidth,
                                              bool IsSigned) const final {
     // Darwin uses `long long` for `int_least64_t` and `int_fast64_t`.
@@ -623,8 +654,24 @@ protected:
     Builder.defineMacro("_IBMR2");
     Builder.defineMacro("_POWER");
 
-    // FIXME: Define AIX OS-Version Macros.
     Builder.defineMacro("_AIX");
+
+    unsigned Major, Minor, Micro;
+    Triple.getOSVersion(Major, Minor, Micro);
+
+    // Define AIX OS-Version Macros.
+    // Includes logic for legacy versions of AIX; no specific intent to support.
+    std::pair<int, int> OsVersion = {Major, Minor};
+    if (OsVersion >= std::make_pair(3, 2)) Builder.defineMacro("_AIX32");
+    if (OsVersion >= std::make_pair(4, 1)) Builder.defineMacro("_AIX41");
+    if (OsVersion >= std::make_pair(4, 3)) Builder.defineMacro("_AIX43");
+    if (OsVersion >= std::make_pair(5, 0)) Builder.defineMacro("_AIX50");
+    if (OsVersion >= std::make_pair(5, 1)) Builder.defineMacro("_AIX51");
+    if (OsVersion >= std::make_pair(5, 2)) Builder.defineMacro("_AIX52");
+    if (OsVersion >= std::make_pair(5, 3)) Builder.defineMacro("_AIX53");
+    if (OsVersion >= std::make_pair(6, 1)) Builder.defineMacro("_AIX61");
+    if (OsVersion >= std::make_pair(7, 1)) Builder.defineMacro("_AIX71");
+    if (OsVersion >= std::make_pair(7, 2)) Builder.defineMacro("_AIX72");
 
     // FIXME: Do not define _LONG_LONG when -fno-long-long is specified.
     Builder.defineMacro("_LONG_LONG");

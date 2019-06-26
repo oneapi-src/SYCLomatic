@@ -8,9 +8,6 @@
 #endif
 
 namespace cl {
-namespace __spirv {
-class OpTypeSampler;
-}
 namespace sycl {
 namespace access {
 
@@ -59,6 +56,24 @@ struct _ImplT {
     id<dim> Offset;
 };
 
+template <typename dataT, access::target accessTarget>
+struct DeviceValueType;
+
+template <typename dataT>
+struct DeviceValueType<dataT, access::target::global_buffer> {
+  using type = __global dataT;
+};
+
+template <typename dataT>
+struct DeviceValueType<dataT, access::target::constant_buffer> {
+  using type = __constant dataT;
+};
+
+template <typename dataT>
+struct DeviceValueType<dataT, access::target::local> {
+  using type = __local dataT;
+};
+
 template <typename dataT, int dimensions, access::mode accessmode,
           access::target accessTarget = access::target::global_buffer,
           access::placeholder isPlaceholder = access::placeholder::false_t>
@@ -70,17 +85,22 @@ public:
   _ImplT<dimensions> impl;
 
 private:
-  void __init(__global dataT *Ptr, range<dimensions> AccessRange,
+  using PtrType = typename DeviceValueType<dataT, accessTarget>::type *;
+  void __init(PtrType Ptr, range<dimensions> AccessRange,
               range<dimensions> MemRange, id<dimensions> Offset) {}
 };
 
 struct sampler_impl {
-  __spirv::OpTypeSampler *m_Sampler;
+#ifdef __SYCL_DEVICE_ONLY__
+  __ocl_sampler_t m_Sampler;
+#endif
 };
 
 class sampler {
   struct sampler_impl impl;
-  void __init(__spirv::OpTypeSampler *Sampler) { impl.m_Sampler = Sampler; }
+#ifdef __SYCL_DEVICE_ONLY__
+  void __init(__ocl_sampler_t Sampler) { impl.m_Sampler = Sampler; }
+#endif
 
 public:
   void use(void) const {}

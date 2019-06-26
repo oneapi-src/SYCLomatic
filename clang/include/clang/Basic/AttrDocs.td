@@ -1714,7 +1714,7 @@ threads or loop iterations.
   }];
 }
 
-def IntelFPGAIVDepAttrDocs : Documentation {
+def SYCLIntelFPGAIVDepAttrDocs : Documentation {
   let Category = DocCatVariable;
   let Heading = "ivdep";
   let Content = [{
@@ -1725,7 +1725,7 @@ dependences have a dependence distance of at least that length.
   }];
 }
 
-def IntelFPGAIIAttrDocs : Documentation {
+def SYCLIntelFPGAIIAttrDocs : Documentation {
   let Category = DocCatVariable;
   let Heading = "ii";
   let Content = [{
@@ -1735,7 +1735,7 @@ applied multiple times to the same loop.
   }];
 }
 
-def IntelFPGAMaxConcurrencyAttrDocs : Documentation {
+def SYCLIntelFPGAMaxConcurrencyAttrDocs : Documentation {
   let Category = DocCatVariable;
   let Heading = "max_concurrency";
   let Content = [{
@@ -2890,9 +2890,12 @@ s6.11.5 for details.
   }];
 }
 
-def OpenCLIntelReqdSubGroupSizeDocs : Documentation {
+def IntelReqdSubGroupSizeDocs : Documentation {
   let Category = DocCatStmt;
   let Content = [{
+This attribute can be used in both OpenCL and SYCL.
+
+OpenCL documentation:
 The optional attribute intel_reqd_sub_group_size can be used to indicate that
 the kernel must be compiled and executed with the specified subgroup size. When
 this attribute is present, get_max_sub_group_size() is guaranteed to return the
@@ -2901,6 +2904,26 @@ algorithms, and in some cases may be used by the compiler to generate more optim
 code. See `cl_intel_required_subgroup_size
 <https://www.khronos.org/registry/OpenCL/extensions/intel/cl_intel_required_subgroup_size.txt>`
 for details.
+
+SYCL documentation:
+The [[cl::intel_reqd_sub_group_size(n)]] attribute indicates that the kernel
+must be compiled and executed with a sub-group of size n. The value of n must be
+set to a sub-group size supported by the device, or device compilation will fail.
+
+In addition to device functions, the required sub-group size attribute may also
+be specified in the definition of a named functor object, as in the example below:
+
+.. code-block:: c++
+
+  class Functor
+  {
+      void operator()(item<1> item) [[cl::intel_reqd_sub_group_size(16)]]
+      {
+          /* kernel code */
+      }
+  }
+
+See Sub-groups for NDRange Parallelism proposal in sycl/doc/extensions/sub_group_ndrange/sub_group_ndrange.md
   }];
 }
 
@@ -3983,6 +4006,39 @@ The ``no_destroy`` attribute specifies that a variable with static or thread
 storage duration shouldn't have its exit-time destructor run. Annotating every
 static and thread duration variable with this attribute is equivalent to
 invoking clang with -fno-c++-static-destructors.
+
+If a variable is declared with this attribute, clang doesn't access check or
+generate the type's destructor. If you have a type that you only want to be
+annotated with ``no_destroy``, you can therefore declare the destructor private:
+
+.. code-block:: c++
+
+  struct only_no_destroy {
+    only_no_destroy();
+  private:
+    ~only_no_destroy();
+  };
+
+  [[clang::no_destroy]] only_no_destroy global; // fine!
+
+Note that destructors are still required for subobjects of aggregates annotated
+with this attribute. This is because previously constructed subobjects need to
+be destroyed if an exception gets thrown before the initialization of the
+complete object is complete. For instance:
+
+.. code-block::c++
+
+  void f() {
+    try {
+      [[clang::no_destroy]]
+      static only_no_destroy array[10]; // error, only_no_destroy has a private destructor.
+    } catch (...) {
+      // Handle the error
+    }
+  }
+
+Here, if the construction of `array[9]` fails with an exception, `array[0..8]`
+will be destroyed, so the element's destructor needs to be accessible.
   }];
 }
 

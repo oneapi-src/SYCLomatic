@@ -184,7 +184,7 @@ static bool IsSafeComputationToRemove(Value *V, const TargetLibraryInfo *TLI) {
 /// This GV is a pointer root.  Loop over all users of the global and clean up
 /// any that obviously don't assign the global a value that isn't dynamically
 /// allocated.
-static bool CleanupPointerRootUsers(GlobalVariable *GV,
+static bool CleanupPointerRootUsers(Value *V,
                                     const TargetLibraryInfo *TLI) {
   // A brief explanation of leak checkers.  The goal is to find bugs where
   // pointers are forgotten, causing an accumulating growth in memory
@@ -202,7 +202,7 @@ static bool CleanupPointerRootUsers(GlobalVariable *GV,
   SmallVector<std::pair<Instruction *, Instruction *>, 32> Dead;
 
   // Constants can't be pointers to dynamically allocated memory.
-  for (Value::user_iterator UI = GV->user_begin(), E = GV->user_end();
+  for (Value::user_iterator UI = V->user_begin(), E = V->user_end();
        UI != E;) {
     User *U = *UI++;
     if (StoreInst *SI = dyn_cast<StoreInst>(U)) {
@@ -232,6 +232,9 @@ static bool CleanupPointerRootUsers(GlobalVariable *GV,
           Dead.push_back(std::make_pair(I, MTI));
       }
     } else if (ConstantExpr *CE = dyn_cast<ConstantExpr>(U)) {
+      if (CE->getOpcode() == Instruction::GetElementPtr) {
+        Changed |= CleanupPointerRootUsers(CE, TLI);
+      }
       if (CE->use_empty()) {
         CE->destroyConstant();
         Changed = true;
@@ -241,7 +244,7 @@ static bool CleanupPointerRootUsers(GlobalVariable *GV,
         C->destroyConstant();
         // This could have invalidated UI, start over from scratch.
         Dead.clear();
-        CleanupPointerRootUsers(GV, TLI);
+        CleanupPointerRootUsers(V, TLI);
         return true;
       }
     }
@@ -391,6 +394,22 @@ static bool isSafeSROAGEP(User *U) {
                       [](User *UU) { return isSafeSROAElementUse(UU); });
 }
 
+/// Return true if the specified GEP is a safe user of a derived
+/// expression from a global that we want to SROA.
+static bool isSafeSubSROAGEP(User *U) {
+
+  // Check to see if this ConstantExpr GEP is SRA'able.  In particular, we
+  // don't like < 3 operand CE's, and we don't like non-constant integer
+  // indices.  This enforces that all uses are 'gep GV, 0, C, ...' for some
+  // value of C.
+  if (U->getNumOperands() < 3 || !isa<Constant>(U->getOperand(1)) ||
+      !cast<Constant>(U->getOperand(1))->isNullValue())
+    return false;
+
+  return llvm::all_of(U->users(),
+                      [](User *UU) { return isSafeSROAElementUse(UU); });
+}
+
 /// Return true if the specified instruction is a safe user of a derived
 /// expression from a global that we want to SROA.
 static bool isSafeSROAElementUse(Value *V) {
@@ -409,7 +428,7 @@ static bool isSafeSROAElementUse(Value *V) {
     return SI->getOperand(0) != V;
 
   // Otherwise, it must be a GEP. Check it and its users are safe to SRA.
-  return isa<GetElementPtrInst>(I) && isSafeSROAGEP(I);
+  return isa<GetElementPtrInst>(I) && isSafeSubSROAGEP(I);
 }
 
 /// Look at all uses of the global and decide whether it is safe for us to
@@ -1654,6 +1673,9 @@ static bool TryToShrinkGlobalToBoolean(GlobalVariable *GV, Constant *OtherVal) {
       for(auto *GVe : GVs){
         DIGlobalVariable *DGV = GVe->getVariable();
         DIExpression *E = GVe->getExpression();
+        const DataLayout &DL = GV->getParent()->getDataLayout();
+        unsigned SizeInOctets =
+          DL.getTypeAllocSizeInBits(NewGV->getType()->getElementType()) / 8;
 
         // It is expected that the address of global optimized variable is on
         // top of the stack. After optimization, value of that variable will
@@ -1664,10 +1686,12 @@ static bool TryToShrinkGlobalToBoolean(GlobalVariable *GV, Constant *OtherVal) {
         // DW_OP_deref DW_OP_constu <ValMinus>
         // DW_OP_mul DW_OP_constu <ValInit> DW_OP_plus DW_OP_stack_value
         SmallVector<uint64_t, 12> Ops = {
-            dwarf::DW_OP_deref, dwarf::DW_OP_constu, ValMinus,
-            dwarf::DW_OP_mul,   dwarf::DW_OP_constu, ValInit,
+            dwarf::DW_OP_deref_size, SizeInOctets,
+            dwarf::DW_OP_constu, ValMinus,
+            dwarf::DW_OP_mul, dwarf::DW_OP_constu, ValInit,
             dwarf::DW_OP_plus};
-        E = DIExpression::prependOpcodes(E, Ops, DIExpression::WithStackValue);
+        bool WithStackValue = true;
+        E = DIExpression::prependOpcodes(E, Ops, WithStackValue);
         DIGlobalVariableExpression *DGVE =
           DIGlobalVariableExpression::get(NewGV->getContext(), DGV, E);
         NewGV->addDebugInfo(DGVE);
@@ -1976,7 +2000,12 @@ static bool processInternalGlobal(
   }
   if (GS.StoredType <= GlobalStatus::InitializerStored) {
     LLVM_DEBUG(dbgs() << "MARKING CONSTANT: " << *GV << "\n");
-    GV->setConstant(true);
+
+    // Don't actually mark a global constant if it's atomic because atomic loads
+    // are implemented by a trivial cmpxchg in some edge-cases and that usually
+    // requires write access to the variable even if it's not actually changed.
+    if (GS.Ordering == AtomicOrdering::NotAtomic)
+      GV->setConstant(true);
 
     // Clean up any obviously simplifiable users now.
     CleanupConstantGlobalUsers(GV, GV->getInitializer(), DL, TLI);

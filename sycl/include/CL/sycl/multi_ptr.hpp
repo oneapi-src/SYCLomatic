@@ -42,8 +42,7 @@ public:
   multi_ptr(multi_ptr &&) = default;
   multi_ptr(pointer_t pointer) : m_Pointer(pointer) {}
 #ifdef __SYCL_DEVICE_ONLY__
-  multi_ptr(ElementType *pointer)
-      : m_Pointer((pointer_t)(pointer)) {
+  multi_ptr(ElementType *pointer) : m_Pointer((pointer_t)(pointer)) {
     // TODO An implementation should reject an argument if the deduced
     // address space is not compatible with Space.
   }
@@ -62,7 +61,7 @@ public:
   multi_ptr &operator=(ElementType *pointer) {
     // TODO An implementation should reject an argument if the deduced
     // address space is not compatible with Space.
-    m_Pointer = reinterpret_cast<pointer_t>(pointer);
+    m_Pointer = (pointer_t)pointer;
     return *this;
   }
 #endif
@@ -70,17 +69,37 @@ public:
     m_Pointer = nullptr;
     return *this;
   }
-  ElementType &operator*() const {
-    return *(reinterpret_cast<ElementType *>(m_Pointer));
+
+#ifdef __SYCL_ENABLE_INFER_AS__
+  using ReturnPtr =
+      typename std::conditional<Space == access::address_space::constant_space,
+                                pointer_t, ElementType *>::type;
+  using ReturnRef =
+      typename std::conditional<Space == access::address_space::constant_space,
+                                reference_t, ElementType &>::type;
+  using ReturnConstRef =
+      typename std::conditional<Space == access::address_space::constant_space,
+                                const_reference_t, const ElementType &>::type;
+#else
+  using ReturnPtr = ElementType *;
+  using ReturnRef = ElementType &;
+  using ReturnConstRef = const ElementType &;
+#endif
+
+  ReturnRef operator*() const {
+    return *reinterpret_cast<ReturnPtr>(m_Pointer);
   }
-  ElementType *operator->() const {
-    return reinterpret_cast<ElementType *>(m_Pointer);
+
+  ReturnPtr operator->() const {
+    return reinterpret_cast<ReturnPtr>(m_Pointer);
   }
-  ElementType &operator[](difference_type index) {
-    return *(reinterpret_cast<ElementType *>(m_Pointer + index));
+
+  ReturnRef operator[](difference_type index) {
+    return reinterpret_cast<ReturnPtr>(m_Pointer)[index];
   }
-  ElementType operator[](difference_type index) const {
-    return *(reinterpret_cast<ElementType *>(m_Pointer + index));
+
+  ReturnConstRef operator[](difference_type index) const {
+    return reinterpret_cast<ReturnPtr>(m_Pointer)[index];
   }
 
   // Only if Space == global_space
@@ -93,7 +112,7 @@ public:
   multi_ptr(accessor<ElementType, dimensions, Mode,
                      access::target::global_buffer, isPlaceholder>
                 Accessor) {
-    m_Pointer = reinterpret_cast<pointer_t>(Accessor.get_pointer().m_Pointer);
+    m_Pointer = (pointer_t)(Accessor.get_pointer().m_Pointer);
   }
 
   // Only if Space == local_space
@@ -182,9 +201,7 @@ public:
   pointer_t get() const { return m_Pointer; }
 
   // Implicit conversion to the underlying pointer type
-  operator ElementType *() const {
-    return reinterpret_cast<ElementType *>(m_Pointer);
-  }
+  operator ReturnPtr() const { return reinterpret_cast<ReturnPtr>(m_Pointer); }
 
   // Implicit conversion to a multi_ptr<void>
   // Only available when ElementType is not const-qualified
@@ -255,12 +272,8 @@ public:
                 Space == access::address_space::global_space>::type>
   void prefetch(size_t NumElements) const {
     size_t NumBytes = NumElements * sizeof(ElementType);
-#ifdef __SYCL_DEVICE_ONLY__
-    auto PrefetchPtr = reinterpret_cast<const __global char *>(m_Pointer);
-#else
-    auto PrefetchPtr = reinterpret_cast<const char *>(m_Pointer);
-#endif
-    cl::__spirv::prefetch(PrefetchPtr, NumBytes);
+    using ptr_t = typename detail::PtrValueType<char, Space>::type const *;
+    __spirv_ocl_prefetch(reinterpret_cast<ptr_t>(m_Pointer), NumBytes);
   }
 
 private:
@@ -287,7 +300,7 @@ public:
   multi_ptr(multi_ptr &&) = default;
   multi_ptr(pointer_t pointer) : m_Pointer(pointer) {}
 #ifdef __SYCL_DEVICE_ONLY__
-  multi_ptr(void *pointer) : m_Pointer(reinterpret_cast<pointer_t>(pointer)) {
+  multi_ptr(void *pointer) : m_Pointer((pointer_t)pointer) {
     // TODO An implementation should reject an argument if the deduced
     // address space is not compatible with Space.
   }
@@ -313,7 +326,7 @@ public:
   multi_ptr &operator=(void *pointer) {
     // TODO An implementation should reject an argument if the deduced
     // address space is not compatible with Space.
-    m_Pointer = reinterpret_cast<pointer_t>(pointer);
+    m_Pointer = (pointer_t)pointer;
     return *this;
   }
 #endif
@@ -403,8 +416,7 @@ public:
   multi_ptr(multi_ptr &&) = default;
   multi_ptr(pointer_t pointer) : m_Pointer(pointer) {}
 #ifdef __SYCL_DEVICE_ONLY__
-  multi_ptr(const void *pointer)
-      : m_Pointer(reinterpret_cast<pointer_t>(pointer)) {
+  multi_ptr(const void *pointer) : m_Pointer((pointer_t)pointer) {
     // TODO An implementation should reject an argument if the deduced
     // address space is not compatible with Space.
   }
@@ -430,7 +442,7 @@ public:
   multi_ptr &operator=(const void *pointer) {
     // TODO An implementation should reject an argument if the deduced
     // address space is not compatible with Space.
-    m_Pointer = reinterpret_cast<pointer_t>(pointer);
+    m_Pointer = (pointer_t)pointer;
     return *this;
   }
 #endif

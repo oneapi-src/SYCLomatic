@@ -73,6 +73,7 @@ namespace {
     int JT;
     unsigned Align;    // CP alignment.
     unsigned char SymbolFlags;  // X86II::MO_*
+    bool NegateIndex = false;
 
     X86ISelAddressMode()
         : BaseType(RegBase), Base_FrameIndex(0), Scale(1), IndexReg(), Disp(0),
@@ -115,6 +116,8 @@ namespace {
         dbgs() << " Base.FrameIndex " << Base_FrameIndex << '\n';
       dbgs() << " Scale " << Scale << '\n'
              << "IndexReg ";
+      if (NegateIndex)
+        dbgs() << "negate ";
       if (IndexReg.getNode())
         IndexReg.getNode()->dump(DAG);
       else
@@ -169,8 +172,8 @@ namespace {
 
   public:
     explicit X86DAGToDAGISel(X86TargetMachine &tm, CodeGenOpt::Level OptLevel)
-        : SelectionDAGISel(tm, OptLevel), OptForSize(false),
-          OptForMinSize(false) {}
+        : SelectionDAGISel(tm, OptLevel), Subtarget(nullptr), OptForSize(false),
+          OptForMinSize(false), IndirectTlsSegRefs(false) {}
 
     StringRef getPassName() const override {
       return "X86 DAG->DAG Instruction Selection";
@@ -270,6 +273,14 @@ namespace {
         Base = CurDAG->getRegister(0, VT);
 
       Scale = getI8Imm(AM.Scale, DL);
+
+      // Negate the index if needed.
+      if (AM.NegateIndex) {
+        unsigned NegOpc = VT == MVT::i64 ? X86::NEG64r : X86::NEG32r;
+        SDValue Neg = SDValue(CurDAG->getMachineNode(NegOpc, DL, VT, MVT::i32,
+                                                     AM.IndexReg), 0);
+        AM.IndexReg = Neg;
+      }
 
       if (AM.IndexReg.getNode())
         Index = AM.IndexReg;
@@ -1863,14 +1874,11 @@ bool X86DAGToDAGISel::matchAddressRecursively(SDValue N, X86ISelAddressMode &AM,
     }
 
     // Ok, the transformation is legal and appears profitable. Go for it.
-    SDValue Zero = CurDAG->getConstant(0, dl, N.getValueType());
-    SDValue Neg = CurDAG->getNode(ISD::SUB, dl, N.getValueType(), Zero, RHS);
-    AM.IndexReg = Neg;
+    // Negation will be emitted later to avoid creating dangling nodes if this
+    // was an unprofitable LEA.
+    AM.IndexReg = RHS;
+    AM.NegateIndex = true;
     AM.Scale = 1;
-
-    // Insert the new nodes into the topological ordering.
-    insertDAGNode(*CurDAG, N, Zero);
-    insertDAGNode(*CurDAG, N, Neg);
     return false;
   }
 
@@ -3730,7 +3738,7 @@ bool X86DAGToDAGISel::tryVPTESTM(SDNode *Root, SDValue Setcc,
   bool FoldedBCast = false;
   if (!FoldedLoad && CanFoldLoads &&
       (CmpSVT == MVT::i32 || CmpSVT == MVT::i64)) {
-    SDNode *ParentNode;
+    SDNode *ParentNode = nullptr;
     if ((Load = findBroadcastedOp(Src1, CmpSVT, ParentNode))) {
       FoldedBCast = tryFoldLoad(Root, ParentNode, Load, Tmp0,
                                 Tmp1, Tmp2, Tmp3, Tmp4);

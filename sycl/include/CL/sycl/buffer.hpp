@@ -7,11 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #pragma once
-#ifdef SCHEDULER_20
-  #include <CL/sycl/detail/buffer_impl2.hpp>
-#else
-  #include <CL/sycl/detail/buffer_impl.hpp>
-#endif // SCHEDULER_20
+#include <CL/sycl/detail/buffer_impl.hpp>
 #include <CL/sycl/detail/common.hpp>
 #include <CL/sycl/exception.hpp>
 #include <CL/sycl/stl.hpp>
@@ -25,7 +21,7 @@ class queue;
 template <int dimensions> class range;
 
 template <typename T, int dimensions = 1,
-          typename AllocatorT = cl::sycl::buffer_allocator>
+          typename AllocatorT = cl::sycl::detail::aligned_allocator<T>>
 class buffer {
 public:
   using value_type = T;
@@ -124,8 +120,8 @@ public:
 
   buffer(buffer<T, dimensions, AllocatorT> &b, const id<dimensions> &baseIndex,
          const range<dimensions> &subRange)
-      : impl(b.impl), Offset(baseIndex + b.Offset), Range(subRange), MemRange(b.MemRange),
-        IsSubBuffer(true) {}
+      : impl(b.impl), Range(subRange), MemRange(b.MemRange), IsSubBuffer(true),
+        Offset(baseIndex + b.Offset) {}
 
   template <int N = dimensions, typename = EnableIfOneDimension<N>>
   buffer(cl_mem MemObject, const context &SyclContext,
@@ -162,7 +158,7 @@ public:
 
   size_t get_count() const { return Range.size(); }
 
-  size_t get_size() const { return impl->get_size(); }
+  size_t get_size() const { return get_count() * sizeof(T); }
 
   AllocatorT get_allocator() const { return impl->get_allocator(); }
 
@@ -241,11 +237,11 @@ private:
   template <typename DataT, int dims, access::mode mode,
             access::target target, access::placeholder isPlaceholder>
   friend class accessor;
+  range<dimensions> Range;
   // If this buffer is subbuffer - this range represents range of the parent
   // buffer
   range<dimensions> MemRange;
   bool IsSubBuffer = false;
-  range<dimensions> Range;
   // If this buffer is sub-buffer - offset field specifies the origin of the
   // sub-buffer inside the parent buffer
   id<dimensions> Offset;

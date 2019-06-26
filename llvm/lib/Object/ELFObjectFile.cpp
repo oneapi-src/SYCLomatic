@@ -148,8 +148,7 @@ SubtargetFeatures ELFObjectFileBase::getMIPSFeatures() const {
 SubtargetFeatures ELFObjectFileBase::getARMFeatures() const {
   SubtargetFeatures Features;
   ARMAttributeParser Attributes;
-  std::error_code EC = getBuildAttributes(Attributes);
-  if (EC)
+  if (Error E = getBuildAttributes(Attributes))
     return SubtargetFeatures();
 
   // both ARMv7-M and R have to support thumb hardware div
@@ -279,8 +278,7 @@ void ELFObjectFileBase::setARMSubArch(Triple &TheTriple) const {
     return;
 
   ARMAttributeParser Attributes;
-  std::error_code EC = getBuildAttributes(Attributes);
-  if (EC)
+  if (Error E = getBuildAttributes(Attributes))
     return;
 
   std::string Triple;
@@ -379,12 +377,13 @@ ELFObjectFileBase::getPltAddresses() const {
   }
   if (!Plt || !RelaPlt || !GotPlt)
     return {};
-  StringRef PltContents;
-  if (Plt->getContents(PltContents))
+  Expected<StringRef> PltContents = Plt->getContents();
+  if (!PltContents) {
+    consumeError(PltContents.takeError());
     return {};
-  ArrayRef<uint8_t> PltBytes((const uint8_t *)PltContents.data(),
-                             Plt->getSize());
-  auto PltEntries = MIA->findPltEntries(Plt->getAddress(), PltBytes,
+  }
+  auto PltEntries = MIA->findPltEntries(Plt->getAddress(),
+                                        arrayRefFromStringRef(*PltContents),
                                         GotPlt->getAddress(), Triple);
   // Build a map from GOT entry virtual address to PLT entry virtual address.
   DenseMap<uint64_t, uint64_t> GotToPlt;

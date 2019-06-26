@@ -25,8 +25,8 @@ function(check_cxx_section_exists section output)
   set(test_compile_command "${CMAKE_C_COMPILE_OBJECT}")
   foreach(substitution ${substitutions})
     if(substitution STREQUAL "<CMAKE_C_COMPILER>")
-      string(REPLACE "<CMAKE_C_COMPILER>"
-             "${CMAKE_C_COMPILER}" test_compile_command ${test_compile_command})
+      string(REPLACE "<CMAKE_C_COMPILER>" "${CMAKE_C_COMPILER} ${CMAKE_C_COMPILER_ARG1}"
+             test_compile_command ${test_compile_command})
     elseif(substitution STREQUAL "<OBJECT>")
       string(REPLACE "<OBJECT>" "${TARGET_NAME}/CheckSectionExists.o"
              test_compile_command ${test_compile_command})
@@ -71,6 +71,7 @@ endfunction()
 check_cxx_section_exists(".init_array" COMPILER_RT_HAS_INITFINI_ARRAY
   SOURCE "__attribute__((constructor)) void f() {}\nint main() { return 0; }\n")
 
+append_list_if(COMPILER_RT_HAS_STD_C11_FLAG -std=c11 CRT_CFLAGS)
 append_list_if(COMPILER_RT_HAS_INITFINI_ARRAY -DCRT_HAS_INITFINI_ARRAY CRT_CFLAGS)
 append_list_if(COMPILER_RT_HAS_FPIC_FLAG -fPIC CRT_CFLAGS)
 append_list_if(COMPILER_RT_HAS_WNO_PEDANTIC -Wno-pedantic CRT_CFLAGS)

@@ -174,6 +174,7 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::INLINEASM:                  return "inlineasm";
   case ISD::INLINEASM_BR:               return "inlineasm_br";
   case ISD::EH_LABEL:                   return "eh_label";
+  case ISD::ANNOTATION_LABEL:           return "annotation_label";
   case ISD::HANDLENODE:                 return "handlenode";
 
   // Unary operators
@@ -300,7 +301,9 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::UADDSAT:                    return "uaddsat";
   case ISD::SSUBSAT:                    return "ssubsat";
   case ISD::USUBSAT:                    return "usubsat";
+
   case ISD::SMULFIX:                    return "smulfix";
+  case ISD::SMULFIXSAT:                 return "smulfixsat";
   case ISD::UMULFIX:                    return "umulfix";
 
   // Conversion operators.
@@ -313,9 +316,11 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::ZERO_EXTEND_VECTOR_INREG:   return "zero_extend_vector_inreg";
   case ISD::TRUNCATE:                   return "truncate";
   case ISD::FP_ROUND:                   return "fp_round";
+  case ISD::STRICT_FP_ROUND:            return "strict_fp_round";
   case ISD::FLT_ROUNDS_:                return "flt_rounds";
   case ISD::FP_ROUND_INREG:             return "fp_round_inreg";
   case ISD::FP_EXTEND:                  return "fp_extend";
+  case ISD::STRICT_FP_EXTEND:           return "strict_fp_extend";
 
   case ISD::SINT_TO_FP:                 return "sint_to_fp";
   case ISD::UINT_TO_FP:                 return "uint_to_fp";
@@ -325,6 +330,8 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::ADDRSPACECAST:              return "addrspacecast";
   case ISD::FP16_TO_FP:                 return "fp16_to_fp";
   case ISD::FP_TO_FP16:                 return "fp_to_fp16";
+  case ISD::LROUND:                     return "lround";
+  case ISD::LLROUND:                    return "llround";
 
     // Control flow instructions
   case ISD::BR:                         return "br";

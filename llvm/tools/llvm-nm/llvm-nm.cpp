@@ -183,12 +183,7 @@ cl::alias JustSymbolNames("j", cl::desc("Alias for --just-symbol-name"),
 cl::opt<bool> SpecialSyms("special-syms",
                           cl::desc("No-op. Used for GNU compatibility only"));
 
-// FIXME: This option takes exactly two strings and should be allowed anywhere
-// on the command line.  Such that "llvm-nm -s __TEXT __text foo.o" would work.
-// But that does not as the CommandLine Library does not have a way to make
-// this work.  For now the "-s __TEXT __text" has to be last on the command
-// line.
-cl::list<std::string> SegSect("s", cl::Positional, cl::ZeroOrMore,
+cl::list<std::string> SegSect("s", cl::multi_val(2), cl::ZeroOrMore,
                               cl::value_desc("segment section"), cl::Hidden,
                               cl::desc("Dump only symbols from this segment "
                                        "and section name, Mach-O only"),
@@ -903,24 +898,28 @@ static char getSymbolNMTypeChar(ELFObjectFileBase &Obj,
   if (SecI != Obj.section_end()) {
     uint32_t Type = SecI->getType();
     uint64_t Flags = SecI->getFlags();
-    if (Type == ELF::SHT_NOBITS)
-      return 'b';
     if (Flags & ELF::SHF_EXECINSTR)
       return 't';
+    if (Type == ELF::SHT_NOBITS)
+      return 'b';
     if (Flags & ELF::SHF_ALLOC)
       return Flags & ELF::SHF_WRITE ? 'd' : 'r';
+  }
+
+  if (SymI->getELFType() == ELF::STT_SECTION) {
     Expected<StringRef> Name = SymI->getName();
     if (!Name) {
       consumeError(Name.takeError());
       return '?';
     }
-    if (Name->startswith(".debug"))
-      return 'N';
-    if (!(Flags & ELF::SHF_WRITE))
-      return 'n';
+    return StringSwitch<char>(*Name)
+        .StartsWith(".debug", 'N')
+        .StartsWith(".note", 'n')
+        .StartsWith(".comment", 'n')
+        .Default('?');
   }
 
-  return '?';
+  return 'n';
 }
 
 static char getSymbolNMTypeChar(COFFObjectFile &Obj, symbol_iterator I) {
@@ -1215,11 +1214,13 @@ dumpSymbolNamesFromObject(SymbolicFile &Obj, bool printName,
       }
       S.TypeName = getNMTypeName(Obj, Sym);
       S.TypeChar = getNMSectionTagAndName(Obj, Sym, S.SectionName);
-      std::error_code EC = Sym.printName(OS);
-      if (EC && MachO)
-        OS << "bad string index";
-      else
-        error(EC);
+      if (Error E = Sym.printName(OS)) {
+        if (MachO) {
+          OS << "bad string index";
+          consumeError(std::move(E));
+        } else
+          error(std::move(E), Obj.getFileName());
+      }
       OS << '\0';
       S.Sym = Sym;
       SymbolList.push_back(S);
@@ -1460,7 +1461,6 @@ dumpSymbolNamesFromObject(SymbolicFile &Obj, bool printName,
           B.SymFlags = SymbolRef::SF_Global | SymbolRef::SF_Undefined;
           B.NType = MachO::N_EXT | MachO::N_UNDF;
           B.NSect = 0;
-          B.NDesc = 0;
           B.NDesc = 0;
           MachO::SET_LIBRARY_ORDINAL(B.NDesc, Entry.ordinal());
           B.IndirectName = StringRef();
