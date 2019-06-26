@@ -17,10 +17,8 @@ __global__ void kernel1() {
 }
 
 // CHECK: void kernel2() {
-// CHECK:   printf("Hello World!\n");
-// CHECK: }
 __global__ void kernel2() {
-  printf("Hello World!\n");
+  int a = 2;
 }
 
 int main() {

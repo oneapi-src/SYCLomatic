@@ -42,3 +42,5 @@ DEF_WARNING(MATH_SIMULATION, 1017, "The %0 is simulated by %1 in DPC++. You need
 DEF_COMMENT(MATH_SIMULATION, 1017, "The {0} is simulated by {1} in DPC++. You need to check the potential precision and/or performance issues of generated code.")
 DEF_WARNING(POTENTIAL_PERFORMACE_ISSUE, 1018, "The %0 was migrated, but due to %1, the generated code performance may be sub-optimal.")
 DEF_COMMENT(POTENTIAL_PERFORMACE_ISSUE, 1018, "The {0} was migrated, but due to {1}, the generated code performance may be sub-optimal.")
+DEF_WARNING(PRINTF_FUNC_MIGRATION_WARNING, 1015, "Please adjust the code manually.")
+DEF_COMMENT(PRINTF_FUNC_MIGRATION_WARNING, 1015, "Please adjust the code manually.")

@@ -129,6 +129,12 @@ void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block,
   Block.pushStmt(VI->getAccessorDecl());
 }
 
+void KernelCallExpr::getStreamDecl(FormatStmtBlock &Block) {
+  if (getVarMap().hasStream())
+    Block.pushStmt("cl::sycl::stream ", SyclctGlobalInfo::getStreamName(),
+                   "(64 * 1024, 80, cgh);");
+}
+
 inline void KernelCallExpr::buildKernelPointerArgBufferAndOffsetStmt(
     const std::string &RefName, const std::string &ArgName, StmtList &Buffers) {
   Buffers.emplace_back(
@@ -200,6 +206,7 @@ std::string KernelCallExpr::getReplacement() {
       Block.pushStmt("[&](cl::sycl::handler &cgh) {");
       {
         FMT_STMT_BLOCK
+        getStreamDecl(Block);
         getAccessorDecl(Block);
         for (auto &AccStmt : Accessors)
           Block.pushStmt(AccStmt);

@@ -2,7 +2,10 @@
 // RUN: FileCheck --input-file %T/predefined_macro_replacement.sycl.cpp --match-full-lines %s
 #include <stdio.h>
 //CHECK: #ifdef DPCPP_COMPATIBILITY_TEMP
-//CHECK-NEXT: void hello() { printf("intel"); }
+//CHECK-NEXT: /*
+//CHECK-NEXT: SYCLCT1015:0: Please adjust the code manually.
+//CHECK-NEXT: */
+//CHECK-NEXT: void hello(cl::sycl::stream [[STREAM:stream_[a-f0-9]+]]) { [[STREAM]] << "TODO - output needs update" << cl::sycl::endl; }
 #ifdef __CUDA_ARCH__
 __global__ void hello() { printf("intel"); }
 #else
@@ -31,7 +34,10 @@ __global__ void test(){
 //CHECK-NEXT:#elif (DPCPP_COMPATIBILITY_TEMP >200)
 //CHECK-NEXT:printf(">200, \n");
 //CHECK-NEXT:#else
-//CHECK-NEXT:printf("<200 \n");
+//CHECK-NEXT: /*
+//CHECK-NEXT: SYCLCT1015:1: Please adjust the code manually.
+//CHECK-NEXT: */
+//CHECK-NEXT:[[STREAM]] << "TODO - output needs update" << cl::sycl::endl;
 //CHECK-NEXT:#endif
 #if (__CUDA_ARCH__ >= 400) &&  (__CUDA_ARCH__ >= 400)
 printf(">400, \n");

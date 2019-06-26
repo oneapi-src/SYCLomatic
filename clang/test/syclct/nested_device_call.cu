@@ -10,8 +10,6 @@ __device__ void test0_with_item(int a) {
 
 // CHECK: void test0(int a) {
 __device__ void test0(int a) {
-  // CHECK: printf("Hello World %d\n", a);
-  printf("Hello World %d\n", a);
   // CHECK: cl::sycl::sqrt(10.0);
   sqrt(10.0);
 }

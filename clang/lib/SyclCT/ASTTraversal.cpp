@@ -2805,7 +2805,9 @@ void DeviceFunctionCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       callExpr(hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
                                               hasAttr(attr::CUDAGlobal)),
                                         unless(hasAttr(attr::CUDAHost)))
-                               .bind("funcDecl")))
+                               .bind("funcDecl")),
+               anyOf(callee(functionDecl(hasName("printf")).bind("printf")),
+                     anything()))
           .bind("callExpr"),
       this);
 }
@@ -2815,7 +2817,16 @@ void DeviceFunctionCallRule::run(
   auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr");
   auto FD = getAssistNodeAsType<FunctionDecl>(Result, "funcDecl");
   if (CE && FD) {
-    DeviceFunctionDecl::LinkRedecls(FD)->addCallee(CE);
+    auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
+    FuncInfo->addCallee(CE);
+    if (getAssistNodeAsType<FunctionDecl>(Result, "printf", false)) {
+      emplaceTransformation(new ReplaceStmt(
+          CE,
+          buildString(SyclctGlobalInfo::getStreamName(),
+                      " << \"TODO - output needs update\" << cl::sycl::endl")));
+      report(CE->getBeginLoc(), Warnings::PRINTF_FUNC_MIGRATION_WARNING);
+      FuncInfo->setStream();
+    }
   }
 }
 

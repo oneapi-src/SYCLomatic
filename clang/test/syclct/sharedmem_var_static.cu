@@ -14,7 +14,6 @@ __global__ void nonTypeTemplateReverse(int *d, int n) {
   int t = threadIdx.x;
   if (t < 64) {
     s[t] = d[t];
-    printf("s[%d]=%d\n", t, s[t]);
   }
 }
 
@@ -26,7 +25,6 @@ __global__ void staticReverse(int *d, int n) {
   int t = threadIdx.x;
   if (t < 64) {
     s[t] = d[t];
-    printf("s[%d]=%d\n", t, s[t]);
   }
 }
 
@@ -40,7 +38,6 @@ __global__ void templateReverse(TData *d, TData n) {
   int t = threadIdx.x;
   if (t < 64) {
     s[t][0] = d[t];
-    printf("s[%d][0]=%d\n", t, s[t][0]);
   }
 }
 

@@ -13,6 +13,7 @@
 #define SYCLCT_ANALYSIS_INFO_H
 
 #include "Debug.h"
+#include "Diagnostics.h"
 #include "ExprAnalysis.h"
 #include "ExtReplacements.h"
 
@@ -245,6 +246,10 @@ public:
   static const std::string &getItemName() {
     const static std::string ItemName = "item_" + getInRootHash();
     return ItemName;
+  }
+  static const std::string &getStreamName() {
+    const static std::string StreamName = "stream_" + getInRootHash();
+    return StreamName;
   }
   static const std::string &getInRootHash() {
     const static std::string Hash = getHashAsString(getInRoot()).substr(0, 6);
@@ -681,11 +686,13 @@ private:
 // function and call expression.
 class MemVarMap {
 public:
-  MemVarMap() : Item(false) {}
+  MemVarMap() : HasItem(false), HasStream(false) {}
 
-  bool hasItem() const { return Item; }
+  bool hasItem() const { return HasItem; }
+  bool hasStream() const { return HasStream; }
   bool hasExternShared() const { return !ExternVarMap.empty(); }
-  void setItem(bool hasItem = true) { Item = hasItem; }
+  inline void setItem(bool Has = true) { HasItem = Has; }
+  inline void setStream(bool Has = true) { HasStream = Has; }
   void addVar(std::shared_ptr<MemVarInfo> Var) {
     getMap(Var->getScope())
         .insert(MemVarInfoMap::value_type(Var->getOffset(), Var));
@@ -697,6 +704,7 @@ public:
   void merge(const MemVarMap &VarMap,
              const std::vector<TemplateArgumentInfo> &TemplateArgs) {
     setItem(hasItem() || VarMap.hasItem());
+    setStream(hasStream() || VarMap.hasStream());
     merge(LocalVarMap, VarMap.LocalVarMap, TemplateArgs);
     merge(GlobalVarMap, VarMap.GlobalVarMap, TemplateArgs);
     merge(ExternVarMap, VarMap.ExternVarMap, TemplateArgs);
@@ -749,8 +757,12 @@ private:
     DeclParameter,
   };
 
-  template <CallOrDecl COD> inline const std::string &getItemName() const {
+  template <CallOrDecl COD> inline const std::string &getItem() const {
     return SyclctGlobalInfo::getItemName();
+  }
+
+  template <CallOrDecl COD> inline const std::string &getStream() const {
+    return SyclctGlobalInfo::getStreamName();
   }
 
   template <CallOrDecl COD>
@@ -759,7 +771,9 @@ private:
     if (HasData)
       Result = ", ";
     if (hasItem())
-      Result += getItemName<COD>() + ", ";
+      Result += getItem<COD>() + ", ";
+    if (hasStream())
+      Result += getStream<COD>() + ", ";
     if (!ExternVarMap.empty())
       Result +=
           getArgumentOrParameter<COD>(ExternVarMap.begin()->second) + ", ";
@@ -782,7 +796,7 @@ private:
     llvm_unreachable("not call or decl");
   }
 
-  bool Item;
+  bool HasItem, HasStream;
   MemVarInfoMap LocalVarMap;
   MemVarInfoMap GlobalVarMap;
   MemVarInfoMap ExternVarMap;
@@ -805,10 +819,18 @@ inline std::string MemVarMap::getArgumentOrParameter<MemVarMap::KernelArgument>(
 
 template <>
 inline const std::string &
-MemVarMap::getItemName<MemVarMap::DeclParameter>() const {
-  static std::string ItemName =
+MemVarMap::getItem<MemVarMap::DeclParameter>() const {
+  static std::string ItemParamDecl =
       "cl::sycl::nd_item<3> " + SyclctGlobalInfo::getItemName();
-  return ItemName;
+  return ItemParamDecl;
+}
+
+template <>
+inline const std::string &
+MemVarMap::getStream<MemVarMap::DeclParameter>() const {
+  static std::string StreamParamDecl =
+      "cl::sycl::stream " + SyclctGlobalInfo::getStreamName();
+  return StreamParamDecl;
 }
 
 class ArgumentsInfo {
@@ -1014,6 +1036,7 @@ public:
   }
   inline void addVar(std::shared_ptr<MemVarInfo> Var) { VarMap.addVar(Var); }
   inline void setItem() { VarMap.setItem(); }
+  inline void setStream() { VarMap.setStream(); }
   inline const MemVarMap &getVarMap() { return VarMap; }
 
   void buildInfo();
@@ -1091,6 +1114,7 @@ private:
 
   void getAccessorDecl(FormatStmtBlock &Block, MemVarInfo::VarScope Scope);
   void getAccessorDecl(FormatStmtBlock &Block, std::shared_ptr<MemVarInfo> VI);
+  void getStreamDecl(FormatStmtBlock &Block);
 
   using StmtList = std::vector<std::string>;
   void buildKernelPointerArgsStmt(StmtList &BufferAndOffsets,

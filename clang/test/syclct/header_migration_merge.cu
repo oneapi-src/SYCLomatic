@@ -9,5 +9,4 @@
 
 //CHECK: void helloGPU() {
 __global__ void helloGPU() {
-  printf("hello");
 }

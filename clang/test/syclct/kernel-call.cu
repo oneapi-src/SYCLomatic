@@ -16,37 +16,31 @@ __global__ void testKernel(int L, int M, int N) {
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
-// CHECK: void helloFromGPU (int i, cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
-// CHECK-NEXT: printf("Hello World from GPU! -- tid=%u = (blockId.x=%u * blockDim.x=%u)\
-// CHECK-NEXT:     + threadId.x=%u\n", (item_{{[a-f0-9]+}}.get_group(0)*item_{{[a-f0-9]+}}.get_local_range().get(0))+item_{{[a-f0-9]+}}.get_local_id(0), item_{{[a-f0-9]+}}.get_group(0),
-// CHECK-NEXT:     item_{{[a-f0-9]+}}.get_local_range().get(0), item_{{[a-f0-9]+}}.get_local_id(0));
+// CHECK: void helloFromGPU(int i, cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
+// CHECK-NEXT:     int a = item_{{[a-f0-9]+}}.get_group(0) * item_{{[a-f0-9]+}}.get_local_range().get(0) + item_{{[a-f0-9]+}}.get_local_id(0) + item_{{[a-f0-9]+}}.get_group(0) +
+// CHECK-NEXT:     item_{{[a-f0-9]+}}.get_local_range().get(0) + item_{{[a-f0-9]+}}.get_local_id(0);
 // CHECK-NEXT: }
-__global__ void helloFromGPU (int i) {
-  printf("Hello World from GPU! -- tid=%u = (blockId.x=%u * blockDim.x=%u)\
-    + threadId.x=%u\n", (blockIdx.x*blockDim.x)+threadIdx.x, blockIdx.x,
-    blockDim.x, threadIdx.x);
+__global__ void helloFromGPU(int i) {
+  int a = blockIdx.x * blockDim.x + threadIdx.x + blockIdx.x +
+          blockDim.x + threadIdx.x;
 }
 
-// CHECK: void helloFromGPU (cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
-// CHECK-NEXT: printf("Hello World from GPU! -- tid=%u = (blockId.x=%u * blockDim.x=%u)\
-// CHECK-NEXT:     + threadId.x=%u\n", (item_{{[a-f0-9]+}}.get_group(0)*item_{{[a-f0-9]+}}.get_local_range().get(0))+item_{{[a-f0-9]+}}.get_local_id(0), item_{{[a-f0-9]+}}.get_group(0),
-// CHECK-NEXT:     item_{{[a-f0-9]+}}.get_local_range().get(0), item_{{[a-f0-9]+}}.get_local_id(0));
+// CHECK: void helloFromGPU(cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
+// CHECK-NEXT:     int a = item_{{[a-f0-9]+}}.get_group(0) * item_{{[a-f0-9]+}}.get_local_range().get(0) + item_{{[a-f0-9]+}}.get_local_id(0) + item_{{[a-f0-9]+}}.get_group(0) +
+// CHECK-NEXT:     item_{{[a-f0-9]+}}.get_local_range().get(0) + item_{{[a-f0-9]+}}.get_local_id(0);
 // CHECK-NEXT: }
-__global__ void helloFromGPU  (void) {
-  printf("Hello World from GPU! -- tid=%u = (blockId.x=%u * blockDim.x=%u)\
-    + threadId.x=%u\n", (blockIdx.x*blockDim.x)+threadIdx.x, blockIdx.x,
-    blockDim.x, threadIdx.x);
+__global__ void helloFromGPU(void) {
+  int a = blockIdx.x * blockDim.x + threadIdx.x + blockIdx.x +
+          blockDim.x + threadIdx.x;
 }
 
-// CHECK: void helloFromGPU2 (cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
-// CHECK-NEXT: printf("Hello World from GPU! -- tid=%u = (blockId.x=%u * blockDim.x=%u)\
-// CHECK-NEXT:     + threadId.x=%u\n", (item_{{[a-f0-9]+}}.get_group(0)*item_{{[a-f0-9]+}}.get_local_range().get(0))+item_{{[a-f0-9]+}}.get_local_id(0), item_{{[a-f0-9]+}}.get_group(0),
-// CHECK-NEXT:     item_{{[a-f0-9]+}}.get_local_range().get(0), item_{{[a-f0-9]+}}.get_local_id(0));
+// CHECK: void helloFromGPU2(cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
+// CHECK-NEXT:     int a = item_{{[a-f0-9]+}}.get_group(0) * item_{{[a-f0-9]+}}.get_local_range().get(0) + item_{{[a-f0-9]+}}.get_local_id(0) + item_{{[a-f0-9]+}}.get_group(0) +
+// CHECK-NEXT:     item_{{[a-f0-9]+}}.get_local_range().get(0) + item_{{[a-f0-9]+}}.get_local_id(0);
 // CHECK-NEXT: }
-__global__ void helloFromGPU2 () {
-  printf("Hello World from GPU! -- tid=%u = (blockId.x=%u * blockDim.x=%u)\
-    + threadId.x=%u\n", (blockIdx.x*blockDim.x)+threadIdx.x, blockIdx.x,
-    blockDim.x, threadIdx.x);
+__global__ void helloFromGPU2() {
+  int a = blockIdx.x * blockDim.x + threadIdx.x + blockIdx.x +
+          blockDim.x + threadIdx.x;
 }
 
 void testReference(const int &i) {
