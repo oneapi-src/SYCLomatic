@@ -360,7 +360,7 @@ std::string getInstallPath(clang::tooling::ClangTool &Tool,
 void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
                             std::string &InRoot) {
 
-  if (isChildPath(CudaPath, InRoot)) {
+  if (isChildPath(CudaPath, InRoot) || isSamePath(CudaPath, InRoot)) {
     std::string ErrMsg =
         "[ERROR] Input root specified by \"-in-root\" option \"" + InRoot +
         "\" is in CUDA_PATH folder \"" + CudaPath + "\"\n";
