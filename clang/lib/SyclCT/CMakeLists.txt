@@ -8,6 +8,12 @@ include_directories(
   GaHelper/
   LibcurlLinux/include/
   )
+if(UNIX)
+  set(LIBCURL ${CMAKE_SOURCE_DIR}/../clang/lib/SyclCT/LibcurlLinux/lib/libcurl.a)
+else()
+  set(LIBCURL "")
+endif()
+
 
 add_clang_library(SyclCT
   ASTTraversal.cpp
@@ -53,4 +59,5 @@ add_clang_library(SyclCT
   clangSerialization
   clangTooling
   clangToolingCore
+  ${LIBCURL}
   )
