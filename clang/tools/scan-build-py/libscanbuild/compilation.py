@@ -48,7 +48,6 @@ IGNORED_FLAGS = {
     # All of the following options are ignored, as they are not related to syclct tool
     '-gencode': 1,
     '-ptx': 0,
-    '-Xcompiler': 1,
     '-cuda': 0,
     '-cubin': 0,
     '-fatbin': 0,
@@ -64,8 +63,7 @@ IGNORED_FLAGS = {
     '-Xnvlink': 0,
     '-noprof': 0,
     '-dryrun': 0,
-    '-keep': 0,
-    '-keep-dir': 0,
+    '--keep': 0,
     '-clean': 0,
     '-code': 1,
     '-ccbin': 1,
@@ -94,9 +92,12 @@ IGNORED_FLAGS = {
     '-O3': 0,
     '-g': 0,
     '--use-local-env' : 0,
-    '--keep-dir' : 0,
-    '--machine' : 0,
-    '-cudart' : 0,
+    '--keep-dir' : 1,
+    '--machine' : 1,
+    '-cudart' : 1,
+    '--ptxas-options=-v': 0,
+    '--source-in-ptx': 0,
+    '-Xcompiler': 1,
 }
 
 # Known C/C++ compiler executable name patterns
@@ -136,10 +137,10 @@ def parse_args(args):
                         elif re.search(r',', arg_next):
                             arg_split = [x.strip('"') for x in pattern_comma.split(arg_next) if x]
 
-                        # In the case of len(arg_split) == 1, it is difficult to tell whether arg_split[0] is
+                        # In the case of else condition, it is difficult to tell whether arg_split[0] is
                         # the value of option '-Xcompiler' or an independent argument, so just treat it as an independent argument,
                         # it will be processed in the next outer loop.
-                        if len(arg_split) > 1:
+                        if re.search(r'\s+', arg_next) or re.search(r',', arg_next):
                             xcompiler_flags = parse_args(iter(arg_split))
                             flags.extend(xcompiler_flags[0])
                             next(args)
