@@ -23,8 +23,11 @@
 
 # ERRORSTATE: 0 if OK, 1 if not.
 
+#location of this sh file
+LOC=$(realpath $(dirname "${BASH_SOURCE[0]}"))
+
 #load common file
-source common.sh $@
+source $LOC/../../../common.sh $@
 
 #every syscheck script should set up an ERRORSTATE variable and return it on completion.
 ERRORSTATE=0
