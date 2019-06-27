@@ -2982,19 +2982,26 @@ void BLASGetSetRule::getSetVectorTranslation(
     if (IncxStr != IncyStr) {
       // Keep original code, give a comment to let user migrate code manually
       report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-             FuncName, NOT_SUPPORTED_PARAMETERS_VALUE_CASE_0);
+             FuncName,
+             "parameter " + ParamsStrsVec[3] + " does not equal to parameter " +
+                 ParamsStrsVec[5]);
       return;
     }
     if ((IncxStr == IncyStr) && (IncxStr != "1")) {
       // incx equals to incy, but does not equal to 1. Performance issue may
       // occur.
       report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
-             FuncName, POTENTIAL_PERFORMACE_ISSUE_CASE_0);
+             FuncName,
+             "parameter " + ParamsStrsVec[3] + " equals to parameter " +
+                 ParamsStrsVec[5] +
+                 " but greater than 1");
     }
   } else {
     // Keep original code, give a comment to let user migrate code manually
     report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-           FuncName, NOT_SUPPORTED_PARAMETERS_VALUE_CASE_1);
+           FuncName,
+           "parameter(s) " + ParamsStrsVec[3] + " and/or " + ParamsStrsVec[5] +
+               " could not be evaluated");
     return;
   }
 
@@ -3045,7 +3052,9 @@ void BLASGetSetRule::getSetMatrixTranslation(
     if (LdaStr != LdbStr) {
       // Keep original code, give a comment to let user migrate code manually
       report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-             FuncName, NOT_SUPPORTED_PARAMETERS_VALUE_CASE_2);
+             FuncName,
+             "parameter " + ParamsStrsVec[4] + " does not equal to parameter " +
+                 ParamsStrsVec[6]);
       return;
     }
 
@@ -3057,17 +3066,24 @@ void BLASGetSetRule::getSetMatrixTranslation(
       if (std::stoi(LdaStr) > std::stoi(RowsStr)) {
         // lda > rows. Performance issue may occur.
         report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
-               FuncName, POTENTIAL_PERFORMACE_ISSUE_CASE_1);
+               FuncName,
+               "parameter " + ParamsStrsVec[0] + " is smaller than parameter " +
+                   ParamsStrsVec[4]);
       }
     } else {
       // rows cannot be evaluated. Performance issue may occur.
       report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
-             FuncName, POTENTIAL_PERFORMACE_ISSUE_CASE_2);
+             FuncName,
+             "parameter " + ParamsStrsVec[0] +
+                 " could not be evaluated and may be smaller than parameter " +
+                 ParamsStrsVec[4]);
     }
   } else {
     // Keep original code, give a comment to let user migrate code manually
     report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-           FuncName, NOT_SUPPORTED_PARAMETERS_VALUE_CASE_3);
+           FuncName,
+           "parameter(s) " + ParamsStrsVec[4] + " and/or " + ParamsStrsVec[6] +
+               " could not be evaluated");
     return;
   }
 
@@ -3603,8 +3619,7 @@ void MathFunctionsRule::handleHalfFunctions(
       ReplStr += Operator;
       ReplStr += " ";
       ReplStr += StmtStrArg1;
-      report(CE->getBeginLoc(), Diagnostics::ROUNDING_MODE_UNSUPPORTED,
-             "operator" + Operator);
+      report(CE->getBeginLoc(), Diagnostics::ROUNDING_MODE_UNSUPPORTED);
       emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
       return;
     } else if (FuncName == "__hneg" || FuncName == "__hneg2") {
@@ -3612,8 +3627,7 @@ void MathFunctionsRule::handleHalfFunctions(
       auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
       std::string ReplStr{Operator};
       ReplStr += StmtStrArg0;
-      report(CE->getBeginLoc(), Diagnostics::ROUNDING_MODE_UNSUPPORTED,
-             "operator" + Operator);
+      report(CE->getBeginLoc(), Diagnostics::ROUNDING_MODE_UNSUPPORTED);
       emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
       return;
     }
@@ -3660,8 +3674,7 @@ void MathFunctionsRule::handleSingleDoubleFunctions(
       ReplStr += Operator;
       ReplStr += " ";
       ReplStr += StmtStrArg1;
-      report(CE->getBeginLoc(), Diagnostics::ROUNDING_MODE_UNSUPPORTED,
-             "operator+");
+      report(CE->getBeginLoc(), Diagnostics::ROUNDING_MODE_UNSUPPORTED);
       emplaceTransformation(new ReplaceStmt(CE, true, FuncName, ReplStr));
     } else if (FuncName == "frexp" || FuncName == "frexpf") {
       auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
@@ -3774,8 +3787,7 @@ void MathFunctionsRule::handleSingleDoubleFunctions(
       // For the rest math functions, replace callee names with DPC++ ones
       if (endsWith(FuncName, "_rd") || endsWith(FuncName, "_rn") ||
           endsWith(FuncName, "_ru") || endsWith(FuncName, "_rz")) {
-        report(CE->getBeginLoc(), Diagnostics::ROUNDING_MODE_UNSUPPORTED,
-               NewFuncName);
+        report(CE->getBeginLoc(), Diagnostics::ROUNDING_MODE_UNSUPPORTED);
       }
       emplaceTransformation(
           new ReplaceCalleeName(CE, std::move(NewFuncName), FuncName));

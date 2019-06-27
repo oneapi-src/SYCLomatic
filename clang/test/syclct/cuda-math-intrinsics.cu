@@ -283,64 +283,64 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d2 = trunc(d0);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 + d1;
   d2 = __dadd_rd(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 + d1;
   d2 = __dadd_rn(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 + d1;
   d2 = __dadd_ru(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 + d1;
   d2 = __dadd_rz(d0, d1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 / d1;
   d2 = __ddiv_rd(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 / d1;
   d2 = __ddiv_rn(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 / d1;
   d2 = __ddiv_ru(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 / d1;
   d2 = __ddiv_rz(d0, d1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 * d1;
   d2 = __dmul_rd(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 * d1;
   d2 = __dmul_rn(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 * d1;
   d2 = __dmul_ru(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 * d1;
   d2 = __dmul_rz(d0, d1);
@@ -363,64 +363,64 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d1 = __drcp_rz(d0);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d0 = cl::sycl::sqrt(d0);
   d0 = __dsqrt_rd(d0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d1 = cl::sycl::sqrt(d1);
   d1 = __dsqrt_rn(d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d0 = cl::sycl::sqrt(d0);
   d0 = __dsqrt_ru(d0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d1 = cl::sycl::sqrt(d1);
   d1 = __dsqrt_rz(d1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 - d1;
   d2 = __dsub_rd(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 - d1;
   d2 = __dsub_rn(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 - d1;
   d2 = __dsub_ru(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 - d1;
   d2 = __dsub_rz(d0, d1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = cl::sycl::fma(d0, d1, d2);
   d2 = __fma_rd(d0, d1, d2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = cl::sycl::fma(d0, d1, d2);
   d2 = __fma_rn(d0, d1, d2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = cl::sycl::fma(d0, d1, d2);
   d2 = __fma_ru(d0, d1, d2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = cl::sycl::fma(d0, d1, d2);
   d2 = __fma_rz(d0, d1, d2);
@@ -582,43 +582,43 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f0 = __expf(f0);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 + f1;
   f2 = __fadd_rd(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 + f1;
   f2 = __fadd_rn(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 + f1;
   f2 = __fadd_ru(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 + f1;
   f2 = __fadd_rz(f0, f1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 / f1;
   f2 = __fdiv_rd(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 / f1;
   f2 = __fdiv_rn(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 / f1;
   f2 = __fdiv_ru(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 / f1;
   f2 = __fdiv_rz(f0, f1);
@@ -627,106 +627,106 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = __fdividef(f0, f1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = cl::sycl::fma(f0, f1, f2);
   f2 = __fmaf_rd(f0, f1, f2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = cl::sycl::fma(f0, f1, f2);
   f2 = __fmaf_rn(f0, f1, f2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = cl::sycl::fma(f0, f1, f2);
   f2 = __fmaf_ru(f0, f1, f2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = cl::sycl::fma(f0, f1, f2);
   f2 = __fmaf_rz(f0, f1, f2);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK: f2 = f0 * f1;
   f2 = __fmul_rd(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK: f2 = f0 * f1;
   f2 = __fmul_rn(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK: f2 = f0 * f1;
   f2 = __fmul_ru(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK: f2 = f0 * f1;
   f2 = __fmul_rz(f0, f1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = cl::sycl::native::recip(f0);
   f1 = __frcp_rd(f0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = cl::sycl::native::recip(f0);
   f1 = __frcp_rn(f0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = cl::sycl::native::recip(f0);
   f1 = __frcp_ru(f0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = cl::sycl::native::recip(f0);
   f1 = __frcp_rz(f0);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-z :]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f0 = cl::sycl::sqrt(f0);
   f0 = __fsqrt_rd(f0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = cl::sycl::sqrt(f1);
   f1 = __fsqrt_rn(f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f0 = cl::sycl::sqrt(f0);
   f0 = __fsqrt_ru(f0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = cl::sycl::sqrt(f1);
   f1 = __fsqrt_rz(f1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 - f1;
   f2 = __fsub_rd(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 - f1;
   f2 = __fsub_rn(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 - f1;
   f2 = __fsub_ru(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 - f1;
   f2 = __fsub_rz(f0, f1);
@@ -760,7 +760,7 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = nanf("NaN");
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of {{[a-zA-z:\+\-\*\/]+}} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.
+  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = cl::sycl::rsqrt(f2);
   f2 = __frsqrt_rn(f2);
@@ -1687,31 +1687,31 @@ __global__ void testSimulation() {
   double d;
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: nearbyintf is simulated by cl::sycl::floor in DPC++. Please check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The nearbyintf is simulated by cl::sycl::floor in DPC++. You need to check the potential precision and/or performance issues of generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f = cl::sycl::floor(f + 0.5);
   f = nearbyintf(f);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: nearbyint is simulated by cl::sycl::floor in DPC++. Please check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The nearbyint is simulated by cl::sycl::floor in DPC++. You need to check the potential precision and/or performance issues of generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d = cl::sycl::floor(d + 0.5);
   d = nearbyint(d);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: rhypotf is simulated by cl::sycl::hypot in DPC++. Please check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The rhypotf is simulated by cl::sycl::hypot in DPC++. You need to check the potential precision and/or performance issues of generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f = 1 / cl::sycl::hypot(f, f);
   f = rhypotf(f, f);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: sincospif is simulated by cl::sycl::sincos in DPC++. Please check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The sincospif is simulated by cl::sycl::sincos in DPC++. You need to check the potential precision and/or performance issues of generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f = cl::sycl::sincos(f * SYCLCT_PI_F, cl::sycl::make_ptr<float, cl::sycl::access::address_space::local_space>(&f));
   sincospif(f, &f, &f);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: sincospi is simulated by cl::sycl::sincos in DPC++. Please check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The sincospi is simulated by cl::sycl::sincos in DPC++. You need to check the potential precision and/or performance issues of generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d = cl::sycl::sincos(d * SYCLCT_PI, cl::sycl::make_ptr<double, cl::sycl::access::address_space::local_space>(&d));
   sincospi(d, &d, &d);

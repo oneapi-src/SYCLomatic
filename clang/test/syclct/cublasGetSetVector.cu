@@ -41,21 +41,21 @@ int main() {
   cublasSetVector(N, sizeof(h_A[0]), h_A, 1, d_A, 1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1016:{{[0-9]+}}: Migration of cublasGetVector with these parameters is not supported currently, because parameter incx does not equal to incy. You may need to migrate this code manually.
+  // CHECK-NEXT: SYCLCT1016:{{[0-9]+}}: The cublasGetVector was not migrated, because parameter 2 does not equal to parameter 1. Rewrite this code manually.
   // CHECK-NEXT: */
   // CHECK-NEXT: cublasGetVector(N, sizeof(h_C[0]), d_C, 2, h_C, 1);
   cublasGetVector(N, sizeof(h_C[0]), d_C, 2, h_C, 1);
 
 #define INCY_MARCO 2
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1016:{{[0-9]+}}: Migration of cublasSetVector with these parameters is not supported currently, because parameter incx does not equal to incy. You may need to migrate this code manually.
+  // CHECK-NEXT: SYCLCT1016:{{[0-9]+}}: The cublasSetVector was not migrated, because parameter 1 does not equal to parameter INCY_MARCO. Rewrite this code manually.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = cublasSetVector(N, sizeof(h_A[0]), h_A, 1, d_A, INCY_MARCO);
   status = cublasSetVector(N, sizeof(h_A[0]), h_A, 1, d_A, INCY_MARCO);
 
   const int ConstIncx = 2;
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1018:{{[0-9]+}}: Migration of cublasSetVector with these parameters could lead performance issue by auto-migration, because parameters incx and incy do not equal to 1. You may need to migrate this code manually.
+  // CHECK-NEXT: SYCLCT1018:{{[0-9]+}}: The cublasSetVector was migrated, but due to parameter ConstIncx equals to parameter INCY_MARCO but greater than 1, the generated code performance may be sub-optimal.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
@@ -67,7 +67,7 @@ int main() {
   int incy = 1;
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1016:{{[0-9]+}}: Migration of cublasSetVector with these parameters is not supported currently, because parameter incx or incy cannot be evaluated. You may need to migrate this code manually.
+  // CHECK-NEXT: SYCLCT1016:{{[0-9]+}}: The cublasSetVector was not migrated, because parameter(s) incx and/or incy could not be evaluated. Rewrite this code manually.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = cublasSetVector(N, sizeof(h_A[0]), h_A, incx, d_A, incy);
   status = cublasSetVector(N, sizeof(h_A[0]), h_A, incx, d_A, incy);
@@ -75,7 +75,7 @@ int main() {
   const int ConstIncxNE = incx;
   const int ConstIncyNE = incy;
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1016:{{[0-9]+}}: Migration of cublasSetVector with these parameters is not supported currently, because parameter incx or incy cannot be evaluated. You may need to migrate this code manually.
+  // CHECK-NEXT: SYCLCT1016:{{[0-9]+}}: The cublasSetVector was not migrated, because parameter(s) ConstIncxNE and/or ConstIncyNE could not be evaluated. Rewrite this code manually.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = cublasSetVector(N, sizeof(h_A[0]), h_A, ConstIncxNE, d_A, ConstIncyNE);
   status = cublasSetVector(N, sizeof(h_A[0]), h_A, ConstIncxNE, d_A, ConstIncyNE);
@@ -85,7 +85,7 @@ int main() {
   constexpr int ConstExprIncx = 3;
   constexpr int ConstExprIncy = 3;
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1016:{{[0-9]+}}: Migration of cublasSetVector with these parameters is not supported currently, because parameter incx or incy cannot be evaluated. You may need to migrate this code manually.
+  // CHECK-NEXT: SYCLCT1016:{{[0-9]+}}: The cublasSetVector was not migrated, because parameter(s) foo(incx) and/or foo(incy) could not be evaluated. Rewrite this code manually.
   // CHECK-NEXT: */
   // CHECK-NEXT: cublasSetVector(N, sizeof(h_A[0]), h_A, foo(incx), d_A, foo(incy));
   cublasSetVector(N, sizeof(h_A[0]), h_A, foo(incx), d_A, foo(incy));
@@ -94,7 +94,7 @@ int main() {
   cublasSetVector(N, sizeof(h_A[0]), h_A, foo(ConstIncxT), d_A, foo(ConstIncyT));
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1018:{{[0-9]+}}: Migration of cublasGetVector with these parameters could lead performance issue by auto-migration, because parameters incx and incy do not equal to 1. You may need to migrate this code manually.
+  // CHECK-NEXT: SYCLCT1018:{{[0-9]+}}: The cublasGetVector was migrated, but due to parameter foo(ConstExprIncx) equals to parameter ConstExprIncy but greater than 1, the generated code performance may be sub-optimal.
   // CHECK-NEXT: */
   // CHECK-NEXT: syclct::sycl_memcpy((void*)(d_A),(void*)(h_A),(N)*(sizeof(h_A[0]))*(foo(ConstExprIncx)),syclct::device_to_host);
   cublasGetVector(N, sizeof(h_A[0]), h_A, foo(ConstExprIncx), d_A, ConstExprIncy);

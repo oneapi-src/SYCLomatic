@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1012:{{[a-f0-9]+}}: The tool detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. Depending on your goals you may want to change the way the time is measured.
+  // CHECK-NEXT: SYCLCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: auto syclct_start_{{[a-f0-9]+}} = clock();
   cudaEventRecord(start, 0);
@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1012:{{[a-f0-9]+}}: The tool detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. Depending on your goals you may want to change the way the time is measured.
+  // CHECK-NEXT: SYCLCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: syclct_start_{{[a-f0-9]+}} = clock();
   cudaEventRecord(start, 0);
@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1012:{{[a-f0-9]+}}: The tool detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. Depending on your goals you may want to change the way the time is measured.
+  // CHECK-NEXT: SYCLCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: auto syclct_stop_{{[a-f0-9]+}} = clock();
   cudaEventRecord(stop, 0);
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1012:{{[a-f0-9]+}}: The tool detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. Depending on your goals you may want to change the way the time is measured.
+  // CHECK-NEXT: SYCLCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: syclct_stop_{{[a-f0-9]+}} = clock();
   cudaEventRecord(stop, 0);

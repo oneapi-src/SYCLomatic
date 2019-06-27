@@ -109,7 +109,7 @@ static void func()
 
   {
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+    // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: The flag and priority options are not supported in the DPC++ queue.
     // CHECK-NEXT: */
     // CHECK-NEXT: s2 = cl::sycl::queue{};
     cudaStreamCreateWithFlags(&s2, cudaStreamDefault);
@@ -118,7 +118,7 @@ static void func()
     // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+    // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: The flag and priority options are not supported in the DPC++ queue.
     // CHECK-NEXT: */
     // CHECK-NEXT: checkCudaErrors((*(s3) = cl::sycl::queue{}, 0));
     checkCudaErrors(cudaStreamCreateWithFlags(s3, cudaStreamNonBlocking));
@@ -159,7 +159,7 @@ static void func()
   {
     {
       // CHECK: /*
-      // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+      // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: The flag and priority options are not supported in the DPC++ queue.
       // CHECK-NEXT: */
       // CHECK-NEXT: s4 = cl::sycl::queue{};
       cudaStreamCreateWithPriority(&s4, cudaStreamDefault, 2);
@@ -168,7 +168,7 @@ static void func()
       // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
       // CHECK-NEXT: */
       // CHECK-NEXT: /*
-      // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+      // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: The flag and priority options are not supported in the DPC++ queue.
       // CHECK-NEXT: */
       // CHECK-NEXT: checkCudaErrors((s5 = cl::sycl::queue{}, 0));
       checkCudaErrors(cudaStreamCreateWithPriority(&s5, cudaStreamNonBlocking, 3));
@@ -209,12 +209,12 @@ static void func()
   int priority_low;
   int priority_hi;
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+  // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: The flag and priority options are not supported in the DPC++ queue.
   // CHECK-NEXT: */
   // CHECK-NEXT: *(&priority_low) = 0, *(&priority_hi) = 0;
   cudaDeviceGetStreamPriorityRange(&priority_low, &priority_hi);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+  // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: The flag and priority options are not supported in the DPC++ queue.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
@@ -224,7 +224,7 @@ static void func()
 
   int priority;
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+  // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: The flag and priority options are not supported in the DPC++ queue.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
@@ -244,7 +244,7 @@ static void func()
   cudaStreamAddCallback(s1, callback<char*>, str, flags);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.
+  // CHECK-NEXT: SYCLCT1014:{{[0-9]+}}: The flag and priority options are not supported in the DPC++ queue.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code

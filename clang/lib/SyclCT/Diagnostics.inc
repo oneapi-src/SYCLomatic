@@ -4,14 +4,6 @@
 // A comment and diagnostics with the same ID have the same index space for format arguments:
 // warning may use %0 and comment may use {1} and in that way they are using different parts of parameter pack
 
-#define NOT_SUPPORTED_PARAMETERS_VALUE_CASE_0 "parameter incx does not equal to incy"
-#define NOT_SUPPORTED_PARAMETERS_VALUE_CASE_1 "parameter incx or incy cannot be evaluated"
-#define NOT_SUPPORTED_PARAMETERS_VALUE_CASE_2 "parameter lda does not equal to ldb"
-#define NOT_SUPPORTED_PARAMETERS_VALUE_CASE_3 "parameter lda or ldb cannot be evaluated"
-
-#define POTENTIAL_PERFORMACE_ISSUE_CASE_0 "parameters incx and incy do not equal to 1"
-#define POTENTIAL_PERFORMACE_ISSUE_CASE_1 "parameter rows is smaller than lda"
-#define POTENTIAL_PERFORMACE_ISSUE_CASE_2 "parameter rows cannot be evaluated (rows may be smaller than lda)"
 
 // FORMAT: {NAME, ID, MESSAGE}
 DEF_WARNING(IFSTMT_NOT_REMOVED, 1000, "Error handling if-stmt was detected but couldn't be rewritten, see details in the resulting file comments")
@@ -38,15 +30,15 @@ DEF_WARNING(TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, 1010, "SYCL API uses exc
 DEF_COMMENT(TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, 1010, "SYCL API uses exceptions to report errors and doesn't use the error codes. Hence, {0} was replaced with 0. You may need to rewrite this code.")
 DEF_WARNING(TRNA_WARNING_OVERLOADED_API_FOUND, 1011, "The tool detected overloaded operators for built-in vector types, which may conflict with SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted namespace to avoid the conflict. Consider using SYCL 1.2.1 standard operators instead.")
 DEF_COMMENT(TRNA_WARNING_OVERLOADED_API_FOUND, 1011, "The tool detected overloaded operators for built-in vector types, which may conflict with SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted namespace to avoid the conflict. Consider using SYCL 1.2.1 standard operators instead.")
-DEF_WARNING(TIME_MEASUREMENT_FOUND, 1012, "The tool detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. Depending on your goals you may want to change the way the time is measured.")
-DEF_COMMENT(TIME_MEASUREMENT_FOUND, 1012, "The tool detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. Depending on your goals you may want to change the way the time is measured.")
-DEF_WARNING(ROUNDING_MODE_UNSUPPORTED, 1013, "The rounding mode of %0 is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.")
-DEF_COMMENT(ROUNDING_MODE_UNSUPPORTED, 1013, "The rounding mode of {0} is not defined in SYCL 1.2.1 standard. Please, verify the correctness of generated code.")
-DEF_WARNING(STREAM_FLAG_PRIORITY_NOT_SUPPORTED, 1014, "Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.")
-DEF_COMMENT(STREAM_FLAG_PRIORITY_NOT_SUPPORTED, 1014, "Flag and priority options are not supported in SYCL queue. You may want to rewrite this code.")
-DEF_WARNING(NOT_SUPPORTED_PARAMETERS_VALUE, 1016, "Migration of %0 with these parameters is not supported currently, because %1. You may need to migrate this code manually.")
-DEF_COMMENT(NOT_SUPPORTED_PARAMETERS_VALUE, 1016, "Migration of {0} with these parameters is not supported currently, because {1}. You may need to migrate this code manually.")
-DEF_WARNING(MATH_SIMULATION, 1017, "%0 is simulated by %1 in DPC++. Please check the potential precision and/or performance issues of generated code.")
-DEF_COMMENT(MATH_SIMULATION, 1017, "{0} is simulated by {1} in DPC++. Please check the potential precision and/or performance issues of generated code.")
-DEF_WARNING(POTENTIAL_PERFORMACE_ISSUE, 1018, "Migration of %0 with these parameters could lead performance issue by auto-migration, because %1. You may need to migrate this code manually.")
-DEF_COMMENT(POTENTIAL_PERFORMACE_ISSUE, 1018, "Migration of {0} with these parameters could lead performance issue by auto-migration, because {1}. You may need to migrate this code manually.")
+DEF_WARNING(TIME_MEASUREMENT_FOUND, 1012, "Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.")
+DEF_COMMENT(TIME_MEASUREMENT_FOUND, 1012, "Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.")
+DEF_WARNING(ROUNDING_MODE_UNSUPPORTED, 1013, "The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.")
+DEF_COMMENT(ROUNDING_MODE_UNSUPPORTED, 1013, "The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.")
+DEF_WARNING(STREAM_FLAG_PRIORITY_NOT_SUPPORTED, 1014, "The flag and priority options are not supported in the DPC++ queue.")
+DEF_COMMENT(STREAM_FLAG_PRIORITY_NOT_SUPPORTED, 1014, "The flag and priority options are not supported in the DPC++ queue.")
+DEF_WARNING(NOT_SUPPORTED_PARAMETERS_VALUE, 1016, "The %0 was not migrated, because %1. Rewrite this code manually.")
+DEF_COMMENT(NOT_SUPPORTED_PARAMETERS_VALUE, 1016, "The {0} was not migrated, because {1}. Rewrite this code manually.")
+DEF_WARNING(MATH_SIMULATION, 1017, "The %0 is simulated by %1 in DPC++. You need to check the potential precision and/or performance issues of generated code.")
+DEF_COMMENT(MATH_SIMULATION, 1017, "The {0} is simulated by {1} in DPC++. You need to check the potential precision and/or performance issues of generated code.")
+DEF_WARNING(POTENTIAL_PERFORMACE_ISSUE, 1018, "The %0 was migrated, but due to %1, the generated code performance may be sub-optimal.")
+DEF_COMMENT(POTENTIAL_PERFORMACE_ISSUE, 1018, "The {0} was migrated, but due to {1}, the generated code performance may be sub-optimal.")
