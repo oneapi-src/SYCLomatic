@@ -13,10 +13,16 @@
 #include <thrust/device_vector.h>
 #include <thrust/copy.h>
 
+// local version of copy.  Make sure it's not migrated
+template <typename T>
+void copy(T* dst, T* src, int N) {
+}
+
 int main(void) {
   // input data on the host
   const char data[] = "aaabbbbbcddeeeeeeeeeff";
   const size_t N = (sizeof(data) / sizeof(char)) - 1;
+  char dst_data[N];
 
   // copy input data to the device
 // CHECK:   dpstd::device_vector<char> input(data, data + N);
@@ -27,5 +33,8 @@ int main(void) {
   thrust::copy(input.begin(), input.end(), std::ostream_iterator<char>(std::cout, ""));
 // CHECK:  std::copy_n(dpstd::execution::sycl, input.begin(), N, std::ostream_iterator<char>(std::cout, ""));
   thrust::copy_n(input.begin(), N, std::ostream_iterator<char>(std::cout, ""));
+// CHECK:  copy<char>(dst_data, const_cast<char *>(data), N);
+  copy<char>(dst_data, const_cast<char *>(data), N);
+
   std::cout << std::endl << std::endl;
 }

@@ -875,7 +875,9 @@ void ThrustFunctionRule::registerMatcher(MatchFinder &MF) {
         new internal::HasNameMatcher(ThrustFuncNames));
   };
 
-  MF.addMatcher(callExpr(callee(functionDecl(hasAnyThrustFuncName())))
+  MF.addMatcher(callExpr(callee(functionDecl(
+                             hasAnyThrustFuncName(),
+                             hasDeclContext(namespaceDecl(hasName("thrust"))))))
                     .bind("thrustFuncCall"),
                 this);
 }
