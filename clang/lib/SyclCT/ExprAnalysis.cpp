@@ -157,7 +157,7 @@ void ExprAnalysis::analysisExpr(const CStyleCastExpr *Cast) {
 
 void ExprAnalysis::analysisExpr(const CallExpr *CE) {
   auto FD = CE->getDirectCallee();
-  if (!FD)
+  if (!FD || !FD->hasAttr<CUDADeviceAttr>())
     return;
 
   const std::string FuncName = FD->getNameAsString();
