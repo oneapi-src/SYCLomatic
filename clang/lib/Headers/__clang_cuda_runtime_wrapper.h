@@ -25,6 +25,7 @@
 
 #ifndef __CLANG_CUDA_RUNTIME_WRAPPER_H__
 #define __CLANG_CUDA_RUNTIME_WRAPPER_H__
+#define INTEL_CUSTOMIZATION 1
 
 #if defined(__CUDA__) && defined(__clang__)
 
@@ -46,7 +47,6 @@
 // CUDA-7.x headers and are not expected to work with any other
 // version of CUDA headers.
 #include "cuda.h"
-#define INTEL_CUSTOMIZATION 1
 #if INTEL_CUSTOMIZATION
 #if !defined(CUDA_VERSION)
 #error "cuda.h did not define CUDA_VERSION"
@@ -59,6 +59,12 @@
 #elif CUDA_VERSION < 7000 || CUDA_VERSION > 10010
 #error "Unsupported CUDA version!"
 #endif
+#endif
+
+#if defined(INTEL_CUSTOMIZATION) && CUDA_VERSION >= 10000
+#pragma push_macro("__clang_major__")
+#undef  __clang_major__
+#define __clang_major__ (7)
 #endif
 
 #pragma push_macro("__CUDA_INCLUDE_COMPILER_INTERNAL_HEADERS__")
@@ -451,4 +457,9 @@ extern "C" unsigned __cudaPushCallConfiguration(dim3 gridDim, dim3 blockDim,
 #endif
 
 #endif // __CUDA__
+
+#if defined(INTEL_CUSTOMIZATION) && CUDA_VERSION >= 10000
+#pragma pop_macro("__clang_major__")
+#endif
+
 #endif // __CLANG_CUDA_RUNTIME_WRAPPER_H__
