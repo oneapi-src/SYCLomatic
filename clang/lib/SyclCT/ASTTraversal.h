@@ -500,6 +500,10 @@ public:
 public:
   void renameMemberField(const MemberExpr *ME);
   static const std::map<std::string, std::string> MemberNamesMap;
+  void getScopeInsertLocation(
+    const Expr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
+    const SourceLocation &FuncNameBegin, const SourceLocation &FuncCallEnd,
+    SourceLocation &StmtBegin, SourceLocation &StmtEndAfterSemi);
 };
 
 /// Migration rule for vector type operator

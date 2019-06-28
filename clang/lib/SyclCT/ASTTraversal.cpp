@@ -354,15 +354,13 @@ void IncludesCallbacks::InclusionDirective(
   // For multi thrust header files, only insert once for PSTL mapping header.
   if (IsAngled && (FileName.find("thrust/") != std::string::npos)) {
     if (!ThrustHeaderInserted) {
-      std::string Replacement =
-        std::string("<dpstd/containers>") + getNL() +
-        "#include <dpstd/algorithm>" + getNL() +
-        "#include <dpstd/execution>";
+      std::string Replacement = std::string("<dpstd/containers>") + getNL() +
+                                "#include <dpstd/algorithm>" + getNL() +
+                                "#include <dpstd/execution>";
       if (!SyclHeaderInserted) {
-        Replacement =
-          std::string("<CL/sycl.hpp>") + getNL() +
-          "#include <syclct/syclct.hpp>" + getNL() +
-          "#include " + Replacement;
+        Replacement = std::string("<CL/sycl.hpp>") + getNL() +
+                      "#include <syclct/syclct.hpp>" + getNL() + "#include " +
+                      Replacement;
         SyclHeaderInserted = true;
       }
       ThrustHeaderInserted = true;
@@ -868,7 +866,9 @@ void ThrustFunctionRule::registerMatcher(MatchFinder &MF) {
   std::transform(
       MapNames::ThrustFuncNamesMap.begin(), MapNames::ThrustFuncNamesMap.end(),
       ThrustFuncNames.begin(),
-      [](const std::pair<std::string, MapNames::ThrustFuncReplInfo> &p) { return p.first; });
+      [](const std::pair<std::string, MapNames::ThrustFuncReplInfo> &p) {
+        return p.first;
+      });
 
   auto hasAnyThrustFuncName = [&]() {
     return internal::Matcher<NamedDecl>(
@@ -897,25 +897,26 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
   auto ExtraParam = ReplInfo->second.ExtraParam;
   if (!ExtraParam.empty()) {
     emplaceTransformation(
-      new InsertBeforeStmt(CE->getArg(0), ExtraParam + ", ")
-    );
+        new InsertBeforeStmt(CE->getArg(0), ExtraParam + ", "));
   }
 }
 
 REGISTER_RULE(ThrustFunctionRule)
 
-auto TypedefNames = hasAnyName(
-    "dim3", "cudaError_t", "CUresult", "CUcontext", "cudaEvent_t",
-    "cudaStream_t", "__half", "__half2", "half", "half2", "cublasStatus_t",
-    "cublasHandle_t", "cuComplex", "cuDoubleComplex", "cublasFillMode_t",
-    "cublasDiagType_t","cublasSideMode_t", "cublasOperation_t", "cublasStatus");
+auto TypedefNames =
+    hasAnyName("dim3", "cudaError_t", "CUresult", "CUcontext", "cudaEvent_t",
+               "cudaStream_t", "__half", "__half2", "half", "half2",
+               "cublasStatus_t", "cublasHandle_t", "cuComplex",
+               "cuDoubleComplex", "cublasFillMode_t", "cublasDiagType_t",
+               "cublasSideMode_t", "cublasOperation_t", "cublasStatus");
 auto EnumTypeNames = hasAnyName("cudaError", "cufftResult_t", "cudaError_enum");
 // CUstream_st and CUevent_st are the actual types of cudaStream_t and
 // cudaEvent_st respectively
 auto RecordTypeNames =
     hasAnyName("cudaDeviceProp", "CUstream_st", "CUevent_st");
 
-auto TemplateRecordTypeNames = hasAnyName("device_vector", "device_ptr", "host_vector");
+auto TemplateRecordTypeNames =
+    hasAnyName("device_vector", "device_ptr", "host_vector");
 
 // Rule for types replacements in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
@@ -959,7 +960,6 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
       hasType(arrayType(hasElementType(pointsTo(pointsTo(Typedefs))))),
       hasType(arrayType(hasElementType(pointsTo(pointsTo(EnumTypes))))),
       hasType(arrayType(hasElementType(pointsTo(pointsTo(RecordTypes))))));
-
 
   MF.addMatcher(varDecl(anyOf(HasCudaType, HasCudaTypePtr, HasCudaTypePtrPtr,
                               HasCudaTypeRef, HasCudaArrayType,
@@ -1364,15 +1364,120 @@ void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
         new RenameFieldInMemberExpr(ME, std::move(MemberName)));
 }
 
+//  Find the two outermost source locations (i.e FuncNameBegin and FuncCallEnd)
+//  to insert left brace and right brace in the same block.
+//  TODO: its function is similar to findOutermostStmtInTheSameBlock() in
+//  Utiliy.cpp,
+//  So, it needs be merged with findOutermostStmtInTheSameBlock().
+void VectorTypeMemberAccessRule::getScopeInsertLocation(
+    const Expr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
+    const SourceLocation &FuncNameBegin, const SourceLocation &FuncCallEnd,
+    SourceLocation &StmtBegin, SourceLocation &StmtEndAfterSemi) {
+  auto ParentNode = (Result.Context)->getParents(*CE);
+  ast_type_traits::DynTypedNode LastNode;
+  SourceLocation StmtEnd;
+  if (ParentNode.empty()) {
+    StmtBegin = FuncNameBegin;
+    StmtEnd = FuncCallEnd;
+  } else if (ParentNode[0].get<Expr>() == nullptr &&
+             ParentNode[0].get<Decl>() == nullptr) {
+    StmtBegin = FuncNameBegin;
+    StmtEnd = FuncCallEnd;
+  } else {
+    LastNode = ParentNode[0];
+    ParentNode = (Result.Context)->getParents(LastNode);
+    while (!ParentNode.empty()) {
+      ParentNode = (Result.Context)->getParents(LastNode);
+      const Expr *EX = ParentNode[0].get<Expr>();
+      const Decl *DE = ParentNode[0].get<Decl>();
+      if (EX == nullptr && DE == nullptr) {
+        break;
+      }
+      LastNode = ParentNode[0];
+    }
+    StmtBegin = LastNode.getSourceRange().getBegin();
+    StmtEnd = LastNode.getSourceRange().getEnd();
+    if (StmtBegin.isMacroID())
+      StmtBegin = (Result.SourceManager)->getExpansionLoc(StmtBegin);
+    if (StmtEnd.isMacroID())
+      StmtEnd = (Result.SourceManager)->getExpansionLoc(StmtEnd);
+  }
+
+  Optional<Token> TokSharedPtr;
+  TokSharedPtr =
+      Lexer::findNextToken(StmtEnd, *(Result.SourceManager), LangOptions());
+  Token TokSemi = TokSharedPtr.getValue();
+  StmtEndAfterSemi = TokSemi.getEndLoc();
+}
+
 void VectorTypeMemberAccessRule::run(const MatchFinder::MatchResult &Result) {
   // xxx = int2.x => xxx = static_cast<int>(int2.x())
   if (const MemberExpr *ME =
           getNodeAsType<MemberExpr>(Result, "VecMemberExpr")) {
+    auto Parents = Result.Context->getParents(*ME);
+    if (Parents.size() == 0) {
+      return;
+    }
+    auto *BO = Parents[0].get<clang::UnaryOperator>();
+    if (BO && BO->getOpcode() == clang::UO_AddrOf) {
+      // As access to vector fields’ address is not supported in SYCL spec,
+      // Implementation here is by defining a local variable to migrate
+      // vector fields’ address.
+      // e.g:
+      //    uchar4 data;
+      //    *(&data.x) = 'a';
+      // =>
+      //    cl::sycl::uchar4 data;
+      //    {
+      //    unsigned char x_ct = data.x();
+      //    *(&x_ct) = 'a';
+      //    data.x() = x_ct;
+      //    }
+      // TODO: Need to handle the situations below.
+      // 1. if/while condition stmt
+      // 2. macro stmt
+      // 3. vec field address assignment expr, such as int i=&a.x
+      // 4. one dimension vec, such as char1
+      SourceManager *SM = Result.SourceManager;
+      auto EndLoc = ME->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
+          ME->getEndLoc(), *SM, Result.Context->getLangOpts()));
 
-    std::ostringstream CastPrefix;
-    CastPrefix << "static_cast<" << ME->getType().getAsString() << ">(";
-    insertAroundStmt(ME, CastPrefix.str(), ")");
-    renameMemberField(ME);
+      const char *Start = SM->getCharacterData(ME->getBeginLoc());
+      const char *End = SM->getCharacterData(EndLoc);
+      const std::string MExprStr(Start, End - Start);
+
+      std::string VecField = MExprStr + "()";
+      std::string VarType = ME->getType().getAsString();
+      std::string VarName = ME->getMemberNameInfo().getAsString() + "_ct";
+
+      std::string LocalVarDecl =
+          VarType + " " + VarName + " = " + VecField + ";" + getNL();
+      std::string LocalVarDeclRef = VecField + " = " + VarName + ";";
+
+      SourceLocation StmtBegin, StmtEndAfterSemi;
+      getScopeInsertLocation(ME, Result, ME->getBeginLoc(), ME->getEndLoc(),
+                             StmtBegin, StmtEndAfterSemi);
+
+      std::string IndentStr = getIndent(StmtBegin, *SM).str();
+      std::string PrefixInsertStr = std::string("{") + getNL();
+      PrefixInsertStr += IndentStr + LocalVarDecl;
+
+      std::string SuffixInsertStr =
+          getNL() + IndentStr + LocalVarDeclRef + getNL() + IndentStr + "}";
+
+      emplaceTransformation(new ReplaceToken(
+          ME->getBeginLoc(), EndLoc.getLocWithOffset(-1), std::move(VarName)));
+
+      emplaceTransformation(
+          new InsertText(StmtBegin, PrefixInsertStr + IndentStr));
+      emplaceTransformation(
+          new InsertText(StmtEndAfterSemi, std::move(SuffixInsertStr)));
+    } else {
+      std::ostringstream CastPrefix;
+      CastPrefix << "static_cast<" << ME->getType().getAsString() << ">(";
+      insertAroundStmt(ME, CastPrefix.str(), ")");
+      renameMemberField(ME);
+    }
   }
 
   if (auto ME = getNodeAsType<MemberExpr>(Result, "VecMemberExprAssignmentLHS"))
@@ -2054,9 +2159,9 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaGetLastError", "cudaPeekAtLastError", "cudaDeviceSynchronize",
         "cudaThreadSynchronize", "cudaGetErrorString", "cudaGetErrorName",
         "cudaDeviceSetCacheConfig", "cudaDeviceGetCacheConfig", "clock",
-        "cudaOccupancyMaxPotentialBlockSize",
-        "cudaThreadSetLimit", "cudaFuncSetCacheConfig", "make_cuComplex",
-        "make_cuDoubleComplex", "cudaThreadExit",
+        "cudaOccupancyMaxPotentialBlockSize", "cudaThreadSetLimit",
+        "cudaFuncSetCacheConfig", "make_cuComplex", "make_cuDoubleComplex",
+        "cudaThreadExit",
         /*BLAS level 1 */
         "cublasIsamax_v2", "cublasIdamax_v2", "cublasIsamin_v2",
         "cublasIdamin_v2", "cublasSasum_v2", "cublasDasum_v2", "cublasSaxpy_v2",
@@ -2219,9 +2324,8 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (TimeHeaderFilter.find(FID) == TimeHeaderFilter.end()) {
       TimeHeaderFilter.insert(FID);
       emplaceTransformation(new InsertText(
-          IncludeLoc, getNL() +
-                          std::string("#include <time.h> // For clock_t, "
-                                      "clock and CLOCKS_PER_SEC") +
+          IncludeLoc, getNL() + std::string("#include <time.h> // For clock_t, "
+                                            "clock and CLOCKS_PER_SEC") +
                           getNL()));
     }
   } else if (FuncName == "cudaDeviceSetLimit" ||
@@ -3016,9 +3120,8 @@ void BLASGetSetRule::getSetVectorTranslation(
     if (IncxStr != IncyStr) {
       // Keep original code, give a comment to let user migrate code manually
       report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-             FuncName,
-             "parameter " + ParamsStrsVec[3] + " does not equal to parameter " +
-                 ParamsStrsVec[5]);
+             FuncName, "parameter " + ParamsStrsVec[3] +
+                           " does not equal to parameter " + ParamsStrsVec[5]);
       return;
     }
     if ((IncxStr == IncyStr) && (IncxStr != "1")) {
@@ -3027,15 +3130,13 @@ void BLASGetSetRule::getSetVectorTranslation(
       report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
              FuncName,
              "parameter " + ParamsStrsVec[3] + " equals to parameter " +
-                 ParamsStrsVec[5] +
-                 " but greater than 1");
+                 ParamsStrsVec[5] + " but greater than 1");
     }
   } else {
     // Keep original code, give a comment to let user migrate code manually
     report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-           FuncName,
-           "parameter(s) " + ParamsStrsVec[3] + " and/or " + ParamsStrsVec[5] +
-               " could not be evaluated");
+           FuncName, "parameter(s) " + ParamsStrsVec[3] + " and/or " +
+                         ParamsStrsVec[5] + " could not be evaluated");
     return;
   }
 
@@ -3086,9 +3187,8 @@ void BLASGetSetRule::getSetMatrixTranslation(
     if (LdaStr != LdbStr) {
       // Keep original code, give a comment to let user migrate code manually
       report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-             FuncName,
-             "parameter " + ParamsStrsVec[4] + " does not equal to parameter " +
-                 ParamsStrsVec[6]);
+             FuncName, "parameter " + ParamsStrsVec[4] +
+                           " does not equal to parameter " + ParamsStrsVec[6]);
       return;
     }
 
@@ -3100,9 +3200,8 @@ void BLASGetSetRule::getSetMatrixTranslation(
       if (std::stoi(LdaStr) > std::stoi(RowsStr)) {
         // lda > rows. Performance issue may occur.
         report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
-               FuncName,
-               "parameter " + ParamsStrsVec[0] + " is smaller than parameter " +
-                   ParamsStrsVec[4]);
+               FuncName, "parameter " + ParamsStrsVec[0] +
+                             " is smaller than parameter " + ParamsStrsVec[4]);
       }
     } else {
       // rows cannot be evaluated. Performance issue may occur.
@@ -3115,9 +3214,8 @@ void BLASGetSetRule::getSetMatrixTranslation(
   } else {
     // Keep original code, give a comment to let user migrate code manually
     report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-           FuncName,
-           "parameter(s) " + ParamsStrsVec[4] + " and/or " + ParamsStrsVec[6] +
-               " could not be evaluated");
+           FuncName, "parameter(s) " + ParamsStrsVec[4] + " and/or " +
+                         ParamsStrsVec[6] + " could not be evaluated");
     return;
   }
 
@@ -3454,14 +3552,12 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
   TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callUsed"),
                     /* IsAssigned */ true);
 
-  TranslateCallExpr(
-      getNodeAsType<CallExpr>(Result, "callExprUsed"),
-      /* IsAssigned */ true,
-      getNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedCallUsed"));
-  TranslateCallExpr(
-      getNodeAsType<CallExpr>(Result, "callExpr"),
-      /* IsAssigned */ false,
-      getNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedCall"));
+  TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callExprUsed"),
+                    /* IsAssigned */ true, getNodeAsType<UnresolvedLookupExpr>(
+                                               Result, "unresolvedCallUsed"));
+  TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callExpr"),
+                    /* IsAssigned */ false, getNodeAsType<UnresolvedLookupExpr>(
+                                                Result, "unresolvedCall"));
 }
 
 MemoryTranslationRule::MemoryTranslationRule() {

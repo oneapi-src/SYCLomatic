@@ -205,3 +205,50 @@ static void memsetCuda(T * d_mem, T v, int n)
   dim3 dimGrid(std::min(2048, getgriddim<int>(n, dimBlock.x)));
 }
 
+void test() {
+    // TODO: Need to add test cases related to the situations below.
+    // 1. if/while condition stmt
+    // 2. macro stmt
+    // 3. vec field address assignment expr, such as int i=&a.x
+    // 4. one dimension vec, such as char1
+
+    void *d_dst = NULL;
+    FILE* dumpfile = NULL;
+
+    // CHECK: cl::sycl::uchar4* h_dst = (cl::sycl::uchar4*) malloc(3*sizeof(cl::sycl::uchar4));
+    uchar4* h_dst = (uchar4*) malloc(3*sizeof(uchar4));
+
+    for (int32_t i = 0; i < 3; ++i)
+    {
+        // CHECK: {
+        // CHECK: unsigned char x_ct = h_dst[i].x();
+        // CHECK: fwrite(&x_ct, sizeof(char), 1, dumpfile);
+        // CHECK: h_dst[i].x() = x_ct;
+        // CHECK: }
+        fwrite(&h_dst[i].x, sizeof(char), 1, dumpfile);
+
+        // CHECK: {
+        // CHECK: unsigned char y_ct = h_dst[i].y();
+        // CHECK: fwrite(&y_ct, sizeof(char), 1, dumpfile);
+        // CHECK: h_dst[i].y() = y_ct;
+        // CHECK: }
+        fwrite(&h_dst[i].y, sizeof(char), 1, dumpfile);
+
+        // CHECK: {
+        // CHECK: unsigned char z_ct = h_dst[i].z();
+        // CHECK: fwrite(&z_ct, sizeof(char), 1, dumpfile);
+        // CHECK: h_dst[i].z() = z_ct;
+        // CHECK: }
+        fwrite(&h_dst[i].z, sizeof(char), 1, dumpfile);
+    }
+
+    // CHECK: cl::sycl::uchar4 data;
+    uchar4 data;
+
+    // CHECK: {
+    // CHECK: unsigned char x_ct = data.x();
+    // CHECK: *(&x_ct) = 'a';
+    // CHECK: data.x() = x_ct;
+    // CHECK: }
+    *(&data.x) = 'a';
+}
