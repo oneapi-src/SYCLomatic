@@ -242,6 +242,18 @@ void KernelArgumentAnalysis::analysisExpr(const MemberExpr *ME) {
       addReplacement(
           ME, insertObject(RefVarMap, LocInfo.second, LocInfo.first, D, MEStr)
                   ->getDerefName());
+    } else if (ME->getBase()->isImplicitCXXThis()) {
+      // Dereference implicit "this" pointer, for kernel functions can't capture
+      // host pointer.
+      auto LocInfo = SyclctGlobalInfo::getLocInfo(ME->getMemberDecl());
+      addReplacement(
+          ME, insertObject(RefVarMap, LocInfo.second, LocInfo.first, D, MEStr)
+                  ->getDerefName());
+    } else {
+      // While base is still member expression, continue analysis it.
+      // Like a.b.c, will continue analysis "a.b".
+      if (auto Sub = dyn_cast<MemberExpr>(ME->getBase()->IgnoreImpCasts()))
+        analysisExpr(Sub);
     }
   }
   Base::analysisExpr(ME);

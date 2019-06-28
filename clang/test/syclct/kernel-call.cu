@@ -60,6 +60,31 @@ void testReference(const int &i) {
   helloFromGPU<<<griddim, threaddim>>>(i);
 }
 
+struct TestThis {
+  struct TestMember {
+    int arg1, arg2;
+  } args;
+  int arg3;
+  dim3 griddim, threaddim;
+  void test() {
+    /// Kernel function is called in method declaration, and fields are used as arguments.
+    /// Check the miggration of implicit "this" pointer.
+    // CHECK: {
+    // CHECK-NEXT:   syclct::get_default_queue().submit(
+    // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+    // CHECK-NEXT:       auto [[DEREF_1:args_deref_[a-f0-9]+]] = args;
+    // CHECK-NEXT:       auto [[DEREF_2:arg3_deref_[a-f0-9]+]] = arg3;
+    // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
+    // CHECK-NEXT:         cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
+    // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+    // CHECK-NEXT:           testKernel([[DEREF_1]].arg1, [[DEREF_1]].arg2, [[DEREF_2]], [[ITEM]]);
+    // CHECK-NEXT:         });
+    // CHECK-NEXT:     });
+    // CHECK-NEXT: }
+    testKernel<<<griddim, threaddim>>>(args.arg1, args.arg2, arg3);
+  }
+};
+
 int main() {
   dim3 griddim = 2;
   dim3 threaddim = 32;
