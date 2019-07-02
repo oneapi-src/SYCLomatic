@@ -407,6 +407,7 @@ public:
   syclct_accessor(const accessor_t &acc)
       : syclct_accessor((pointer_t)acc.get_pointer(), syclct_range<0>()) {}
   template <class Ty> operator Ty() { return static_cast<Ty>(*data); }
+  operator element_t &() { return *data; }
   syclct_accessor &operator=(const value_t &val) {
     *data = val;
     return *this;

@@ -26,12 +26,18 @@
 syclct::device_memory<volatile int, 0> g_a(syclct::syclct_range<0>(), 0);
 syclct::device_memory<int, 1> d_a(36);
 
+
+void test2(volatile int &a) {
+  a = 3;
+}
+
 void test1(syclct::syclct_accessor<volatile int, syclct::device, 0> acc_a, syclct::syclct_accessor<int, syclct::device, 1> acc_b) {
   unsigned d_a = 1;
   acc_a = 0;
   acc_a = d_a;
   unsigned d_c = (unsigned)acc_a;
   unsigned *d_d = (unsigned *)acc_b;
+  test2(acc_a);
 }
 
 int main() try {
