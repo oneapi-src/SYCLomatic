@@ -58,6 +58,32 @@ int main() {
   // CHECK: i7 = cl::sycl::int2(i6);
   i7 = int2(i6);
 
+  // CHECK: struct benchtype_s {
+  // CHECK:   uint64_t u64;
+  // CHECK:   cl::sycl::uint2 u32;
+  // CHECK:   cl::sycl::uint2 *u32_p ;
+  // CHECK:   cl::sycl::uint2 array[10];
+  // CHECK: };
+  struct benchtype_s {
+    uint64_t u64;
+    uint2 u32;
+    uint2 *u32_p ;
+    uint2 array[10];
+  };
+
+  // CHECK: union benchtype_u {
+  // CHECK:   uint64_t u64;
+  // CHECK:   cl::sycl::uint2 u3{};
+  // CHECK:   cl::sycl::uint2 *u32_p ;
+  // CHECK:   cl::sycl::uint2 array[10];
+  // CHECK: };
+  union benchtype_u {
+    uint64_t u64;
+    uint2 u32;
+    uint2 *u32_p ;
+    uint2 array[10];
+  };
+
   // CHECK: cl::sycl::int2* data;
   // CHECK: {
   // CHECK:   std::pair<syclct::buffer_t, size_t> data_buf = syclct::get_buffer_and_offset(data);

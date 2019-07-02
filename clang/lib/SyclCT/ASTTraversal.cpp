@@ -1263,6 +1263,12 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
           .bind("vecVarDecl"),
       this);
 
+  MF.addMatcher(
+      fieldDecl(anyOf(basicType(), ptrType(), arrType(), referenceType()),
+                hasParent(cxxRecordDecl().bind("cxxRecordDeclParent")))
+          .bind("fieldvecVarDecl"),
+      this);
+
   // typedef int2 xxx
   MF.addMatcher(typedefDecl(typedefVecDecl()).bind("typeDefDecl"), this);
 
@@ -1306,20 +1312,50 @@ void VectorTypeNamespaceRule::replaceTypeName(const QualType &QT,
 
 void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
   // int2 => cl::sycl::int2
-  if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "vecVarDecl"))
+  if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "vecVarDecl")) {
     replaceTypeName(D->getType(),
                     D->getTypeSourceInfo()->getTypeLoc().getBeginLoc(), true);
+  }
+
+  // struct benchtype{
+  // ...;
+  // uint2 u32;
+  // };
+  // =>
+  // struct benchtype {
+  // ...;
+  // cl::sycl::uint2 u32;
+  // };
+  if (const FieldDecl *FD =
+          getNodeAsType<FieldDecl>(Result, "fieldvecVarDecl")) {
+    auto D = getNodeAsType<CXXRecordDecl>(Result, "cxxRecordDeclParent");
+    if (D && D->isUnion()) {
+      // To add a default member initializer list "{}" to the
+      // vector variant member of the union, because a union contains a
+      // non-static data member with a non-trivial default constructor, the
+      // default constructor of the union will be deleted by default.
+      SourceManager *SM = Result.SourceManager;
+      auto Loc = FD->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
+          FD->getEndLoc(), *SM, Result.Context->getLangOpts()));
+      emplaceTransformation(new ReplaceToken(Loc.getLocWithOffset(-1), "{}"));
+    }
+    replaceTypeName(FD->getType(),
+                    FD->getTypeSourceInfo()->getTypeLoc().getBeginLoc(), true);
+  }
 
   // typedef int2 xxx => typedef cl::sycl::int2 xxx
-  if (const TypedefDecl *TD = getNodeAsType<TypedefDecl>(Result, "typeDefDecl"))
+  if (const TypedefDecl *TD =
+          getNodeAsType<TypedefDecl>(Result, "typeDefDecl")) {
     replaceTypeName(TD->getUnderlyingType(),
                     TD->getTypeSourceInfo()->getTypeLoc().getBeginLoc());
+  }
 
   // int2 func() => cl::sycl::int2 func()
   if (const FunctionDecl *FD =
-          getNodeAsType<FunctionDecl>(Result, "funcReturnsVectorType"))
+          getNodeAsType<FunctionDecl>(Result, "funcReturnsVectorType")) {
     replaceTypeName(FD->getReturnType(),
                     FD->getReturnTypeSourceRange().getBegin());
+  }
 }
 
 REGISTER_RULE(VectorTypeNamespaceRule)
@@ -2324,8 +2360,9 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (TimeHeaderFilter.find(FID) == TimeHeaderFilter.end()) {
       TimeHeaderFilter.insert(FID);
       emplaceTransformation(new InsertText(
-          IncludeLoc, getNL() + std::string("#include <time.h> // For clock_t, "
-                                            "clock and CLOCKS_PER_SEC") +
+          IncludeLoc, getNL() +
+                          std::string("#include <time.h> // For clock_t, "
+                                      "clock and CLOCKS_PER_SEC") +
                           getNL()));
     }
   } else if (FuncName == "cudaDeviceSetLimit" ||
@@ -3120,8 +3157,9 @@ void BLASGetSetRule::getSetVectorTranslation(
     if (IncxStr != IncyStr) {
       // Keep original code, give a comment to let user migrate code manually
       report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-             FuncName, "parameter " + ParamsStrsVec[3] +
-                           " does not equal to parameter " + ParamsStrsVec[5]);
+             FuncName,
+             "parameter " + ParamsStrsVec[3] + " does not equal to parameter " +
+                 ParamsStrsVec[5]);
       return;
     }
     if ((IncxStr == IncyStr) && (IncxStr != "1")) {
@@ -3135,8 +3173,9 @@ void BLASGetSetRule::getSetVectorTranslation(
   } else {
     // Keep original code, give a comment to let user migrate code manually
     report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-           FuncName, "parameter(s) " + ParamsStrsVec[3] + " and/or " +
-                         ParamsStrsVec[5] + " could not be evaluated");
+           FuncName,
+           "parameter(s) " + ParamsStrsVec[3] + " and/or " + ParamsStrsVec[5] +
+               " could not be evaluated");
     return;
   }
 
@@ -3187,8 +3226,9 @@ void BLASGetSetRule::getSetMatrixTranslation(
     if (LdaStr != LdbStr) {
       // Keep original code, give a comment to let user migrate code manually
       report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-             FuncName, "parameter " + ParamsStrsVec[4] +
-                           " does not equal to parameter " + ParamsStrsVec[6]);
+             FuncName,
+             "parameter " + ParamsStrsVec[4] + " does not equal to parameter " +
+                 ParamsStrsVec[6]);
       return;
     }
 
@@ -3200,8 +3240,9 @@ void BLASGetSetRule::getSetMatrixTranslation(
       if (std::stoi(LdaStr) > std::stoi(RowsStr)) {
         // lda > rows. Performance issue may occur.
         report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
-               FuncName, "parameter " + ParamsStrsVec[0] +
-                             " is smaller than parameter " + ParamsStrsVec[4]);
+               FuncName,
+               "parameter " + ParamsStrsVec[0] + " is smaller than parameter " +
+                   ParamsStrsVec[4]);
       }
     } else {
       // rows cannot be evaluated. Performance issue may occur.
@@ -3214,8 +3255,9 @@ void BLASGetSetRule::getSetMatrixTranslation(
   } else {
     // Keep original code, give a comment to let user migrate code manually
     report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-           FuncName, "parameter(s) " + ParamsStrsVec[4] + " and/or " +
-                         ParamsStrsVec[6] + " could not be evaluated");
+           FuncName,
+           "parameter(s) " + ParamsStrsVec[4] + " and/or " + ParamsStrsVec[6] +
+               " could not be evaluated");
     return;
   }
 
@@ -3552,12 +3594,14 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
   TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callUsed"),
                     /* IsAssigned */ true);
 
-  TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callExprUsed"),
-                    /* IsAssigned */ true, getNodeAsType<UnresolvedLookupExpr>(
-                                               Result, "unresolvedCallUsed"));
-  TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callExpr"),
-                    /* IsAssigned */ false, getNodeAsType<UnresolvedLookupExpr>(
-                                                Result, "unresolvedCall"));
+  TranslateCallExpr(
+      getNodeAsType<CallExpr>(Result, "callExprUsed"),
+      /* IsAssigned */ true,
+      getNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedCallUsed"));
+  TranslateCallExpr(
+      getNodeAsType<CallExpr>(Result, "callExpr"),
+      /* IsAssigned */ false,
+      getNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedCall"));
 }
 
 MemoryTranslationRule::MemoryTranslationRule() {
