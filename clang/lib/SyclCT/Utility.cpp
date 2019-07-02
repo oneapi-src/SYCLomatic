@@ -59,15 +59,25 @@ bool isChildPath(const std::string &Root, const std::string &Child) {
   // 1st make Root and Child as absolute path, then do compare.
   SmallString<256> RootAbs;
   SmallString<256> ChildAbs;
-  llvm::sys::fs::real_path(Root, RootAbs);
-  llvm::sys::fs::real_path(Child, ChildAbs);
+  std::error_code EC;
+  bool InRootAbsValid = true;
+  bool InChildAbsValid = true;
+  EC=llvm::sys::fs::real_path(Root, RootAbs);
+  if ((bool)EC) {
+    InRootAbsValid = false;
+  }
+
+  EC = llvm::sys::fs::real_path(Child, ChildAbs);
+  if ((bool)EC) {
+    InChildAbsValid = false;
+  }
 
 #if defined(_WIN64)
-  std::string LocalRoot = RootAbs.str().lower();
-  std::string LocalChild = ChildAbs.str().lower();
+  std::string LocalRoot = InRootAbsValid ? RootAbs.str().lower() : Root;
+  std::string LocalChild = InChildAbsValid ? ChildAbs.str().lower() : Child;
 #elif defined(__linux__)
-  std::string LocalRoot = RootAbs.c_str();
-  std::string LocalChild = ChildAbs.c_str();
+  std::string LocalRoot = InRootAbsValid ? RootAbs.c_str() : Root;
+  std::string LocalChild = InChildAbsValid ? ChildAbs.c_str(): Child;
 #else
 #error Only support windows and Linux.
 #endif
@@ -83,15 +93,23 @@ bool isSamePath(const std::string &Root, const std::string &Child) {
   // 1st make Root and Child as absolute path, then do compare.
   SmallString<256> RootAbs;
   SmallString<256> ChildAbs;
-  llvm::sys::fs::real_path(Root, RootAbs);
-  llvm::sys::fs::real_path(Child, ChildAbs);
-
+  std::error_code EC;
+  bool InRootAbsValid = true;
+  bool InChildAbsValid = true;
+  EC = llvm::sys::fs::real_path(Root, RootAbs);
+  if ((bool)EC) {
+    InRootAbsValid = false;
+  }
+  EC = llvm::sys::fs::real_path(Child, ChildAbs);
+  if ((bool)EC) {
+    InChildAbsValid = false;
+  }
 #if defined(_WIN64)
-  std::string LocalRoot = RootAbs.str().lower();
-  std::string LocalChild = ChildAbs.str().lower();
+  std::string LocalRoot = InRootAbsValid ? RootAbs.str().lower() : Root;
+  std::string LocalChild = InChildAbsValid ? ChildAbs.str().lower() : Child;
 #elif defined(__linux__)
-  std::string LocalRoot = RootAbs.c_str();
-  std::string LocalChild = ChildAbs.c_str();
+  std::string LocalRoot = InRootAbsValid ? RootAbs.c_str() : Root;
+  std::string LocalChild = InChildAbsValid ? ChildAbs.c_str() : Child;
 #else
 #error Only support windows and Linux.
 #endif
