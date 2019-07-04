@@ -275,6 +275,14 @@ protected:
     return getNode<NodeType>(Result, Name, false, CheckInRoot);
   }
 
+  const VarDecl *getVarDecl(const Expr *E) {
+    if (!E)
+      return nullptr;
+    if (auto DeclRef = dyn_cast<DeclRefExpr>(E->IgnoreImpCasts()))
+      return dyn_cast<VarDecl>(DeclRef->getDecl());
+    return nullptr;
+  }
+
 private:
   template <typename NodeType>
   const NodeType *getNode(const ast_matchers::MatchFinder::MatchResult &Result,
@@ -508,9 +516,9 @@ public:
   void renameMemberField(const MemberExpr *ME);
   static const std::map<std::string, std::string> MemberNamesMap;
   void getScopeInsertLocation(
-    const Expr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
-    const SourceLocation &FuncNameBegin, const SourceLocation &FuncCallEnd,
-    SourceLocation &StmtBegin, SourceLocation &StmtEndAfterSemi);
+      const Expr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
+      const SourceLocation &FuncNameBegin, const SourceLocation &FuncCallEnd,
+      SourceLocation &StmtBegin, SourceLocation &StmtEndAfterSemi);
 };
 
 /// Migration rule for vector type operator
@@ -646,7 +654,7 @@ public:
   bool isReplIndex(int i, std::vector<int> &IndexInfo, int &IndexTemp);
 
   std::vector<std::string> getParamsAsStrs(const CallExpr *CE,
-                                        const ASTContext &Context);
+                                           const ASTContext &Context);
 };
 
 /// Migration rule for function calls.
@@ -685,6 +693,7 @@ public:
 
 class KernelCallRule : public NamedTranslationRule<KernelCallRule> {
   std::unordered_set<unsigned> Insertions;
+
 public:
   KernelCallRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile,
@@ -768,7 +777,14 @@ private:
                          const UnresolvedLookupExpr *ULExpr = NULL);
   void handleAsync(const CallExpr *C, unsigned i,
                    const ast_matchers::MatchFinder::MatchResult &Result);
+  void replaceMemAPIArg(const Expr *E,
+                        const ast_matchers::MatchFinder::MatchResult &Result);
+  const ArraySubscriptExpr *getArraySubscriptExpr(const Expr *E);
+  const Expr *getUnaryOperatorExpr(const Expr *E);
 
+  void memcpyToAndFromSymbolTranslation(
+      const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
+      const UnresolvedLookupExpr *ULExpr, std::string Str);
   std::unordered_map<
       std::string, std::function<void(
                        const ast_matchers::MatchFinder::MatchResult &Result,

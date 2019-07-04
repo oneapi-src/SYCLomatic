@@ -1618,9 +1618,7 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: {
-    return false;
-  }
+  default: { return false; }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -3683,6 +3681,89 @@ void MemoryTranslationRule::mallocTranslation(
   }
 }
 
+const ArraySubscriptExpr *
+MemoryTranslationRule::getArraySubscriptExpr(const Expr *E) {
+  if (const auto MTE = dyn_cast<MaterializeTemporaryExpr>(E)) {
+    if (auto TE = MTE->GetTemporaryExpr()) {
+      if (auto UO = dyn_cast<UnaryOperator>(TE)) {
+        if (auto Arg = dyn_cast<ArraySubscriptExpr>(UO->getSubExpr())) {
+          return Arg;
+        }
+      }
+    }
+  }
+  return nullptr;
+}
+
+const Expr *MemoryTranslationRule::getUnaryOperatorExpr(const Expr *E) {
+  if (const auto MTE = dyn_cast<MaterializeTemporaryExpr>(E)) {
+    if (auto TE = MTE->GetTemporaryExpr()) {
+      if (auto UO = dyn_cast<UnaryOperator>(TE)) {
+        return UO->getSubExpr();
+      }
+    }
+  }
+  return nullptr;
+}
+
+void MemoryTranslationRule::replaceMemAPIArg(
+    const Expr *E, const ast_matchers::MatchFinder::MatchResult &Result) {
+
+  auto ASE = getArraySubscriptExpr(E);
+  const clang::Expr *BASE = nullptr;
+  if (ASE) {
+    BASE = ASE->getBase();
+  }
+
+  auto UO = getUnaryOperatorExpr(E);
+  std::shared_ptr<clang::syclct::MemVarInfo> VI = nullptr;
+  if (BASE &&
+      (VI = SyclctGlobalInfo::getInstance().findMemVarInfo(getVarDecl(BASE)))) {
+    // Migrate the expr such as "&const_angle[3]" to
+    // const_angle.get_ptr() + sizeof(TYPE) * (3)",
+    // and "&const_angle[3]" to "const_angle.get_ptr()".
+    std::string VarName = VI->getName();
+    VarName += ".get_ptr()";
+
+    bool IsOffsetNeeded = true;
+    Expr::EvalResult ER;
+
+    if (ASE->getIdx()->EvaluateAsInt(ER, *Result.Context)) {
+      auto ExprValue = ER.Val.getAsString(*Result.Context, ASE->getType());
+      if (ExprValue == "0") {
+        IsOffsetNeeded = false;
+      }
+    }
+
+    if (IsOffsetNeeded) {
+      std::string Type = ASE->getType().getAsString();
+      auto StmtStrArg = getStmtSpelling(ASE->getIdx(), *Result.Context);
+      std::string Offset = " + sizeof(" + Type + ") * (" + StmtStrArg + ")";
+      VarName += Offset;
+    }
+
+    emplaceTransformation(
+        new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
+  } else if (UO && (VI = SyclctGlobalInfo::getInstance().findMemVarInfo(
+                        getVarDecl(UO)))) {
+    // Migrate the expr such as "&const_one" to "const_one.get_ptr()".
+    std::string VarName = VI->getName();
+    VarName += ".get_ptr()";
+    emplaceTransformation(
+        new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
+  } else if (VI = SyclctGlobalInfo::getInstance().findMemVarInfo(
+                 getVarDecl(E))) {
+    // Migrate the expr such as "const_one" to "const_one.get_ptr()".
+    std::string VarName = VI->getName();
+    VarName += ".get_ptr()";
+    emplaceTransformation(
+        new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
+  } else {
+    // Normal situation.
+    insertAroundStmt(E, "(void*)(", ")");
+  }
+}
+
 void MemoryTranslationRule::memcpyTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr) {
@@ -3726,8 +3807,9 @@ void MemoryTranslationRule::memcpyTranslation(
         new ReplaceCalleeName(C, "syclct::sycl_memcpy", Name));
   }
 
-  insertAroundStmt(C->getArg(0), "(void*)(", ")");
-  insertAroundStmt(C->getArg(1), "(void*)(", ")");
+  replaceMemAPIArg(C->getArg(0), Result);
+  replaceMemAPIArg(C->getArg(1), Result);
+
   emplaceTransformation(
       new ReplaceStmt(C->getArg(3), std::move(DirectionName)));
 
@@ -3736,23 +3818,10 @@ void MemoryTranslationRule::memcpyTranslation(
     handleAsync(C, 4, Result);
 }
 
-void MemoryTranslationRule::memcpyToSymbolTranslation(
+void MemoryTranslationRule::memcpyToAndFromSymbolTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
-    const UnresolvedLookupExpr *ULExpr) {
-  // Input:
-  //   cudaMemcpyToSymbol(d_A, h_A, size, offset, cudaMemcpyHostToDevice);
-  //   cudaMemcpyToSymbol(d_B, d_C, size, offset, cudaMemcpyDeviceToDevice);
-  //   cudaMemcpyToSymbol(h_A, d_B, size, offset, cudaMemcpyDefault);
+    const UnresolvedLookupExpr *ULExpr, std::string Str) {
 
-  // Desired output:
-  //   syclct::sycl_memcpy_to_symbol(d_A.get_ptr(), (void*)(h_A), size,
-  //                                 offset, syclct::host_to_device);
-  //
-  //   syclct::sycl_memcpy_to_symbol(d_B.get_ptr(), d_C, size, offset,
-  //                                 syclct::device_to_device);
-  //
-  //   syclct::sycl_memcpy_to_symbol(h_A.get_ptr(), (void*)(d_B), size,
-  //                                 offset, syclct::automatic);
   const Expr *Direction = C->getArg(4);
   std::string DirectionName;
   const DeclRefExpr *DD = dyn_cast_or_null<DeclRefExpr>(Direction);
@@ -3777,37 +3846,43 @@ void MemoryTranslationRule::memcpyToSymbolTranslation(
     }
   }
 
-  std::string VarName = getStmtSpelling(C->getArg(0), *Result.Context);
-  // Migrate variable name such as "&const_angle[0]", "&const_one"
-  // into "const_angle.get_ptr()", "const_one.get_ptr()".
-  VarName.erase(std::remove(VarName.begin(), VarName.end(), '&'),
-                VarName.end());
-  std::size_t pos = VarName.find("[");
-  VarName = (pos != std::string::npos) ? VarName.substr(0, pos) : VarName;
-  VarName += ".get_ptr()";
-
   if (ULExpr) {
-    emplaceTransformation(new ReplaceToken(ULExpr->getBeginLoc(),
-                                           ULExpr->getEndLoc(),
-                                           "syclct::sycl_memcpy_to_symbol"));
+    emplaceTransformation(new ReplaceToken(
+        ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(Str)));
   } else {
 
     const std::string Name =
         C->getCalleeDecl()->getAsFunction()->getNameAsString();
-    emplaceTransformation(
-        new ReplaceCalleeName(C, "syclct::sycl_memcpy_to_symbol", Name));
+    emplaceTransformation(new ReplaceCalleeName(C, std::move(Str), Name));
   }
 
-  emplaceTransformation(new ReplaceToken(C->getArg(0)->getBeginLoc(),
-                                         C->getArg(0)->getEndLoc(),
-                                         std::move(VarName)));
-  insertAroundStmt(C->getArg(1), "(void*)(", ")");
+  replaceMemAPIArg(C->getArg(0), Result);
+  replaceMemAPIArg(C->getArg(1), Result);
+
   emplaceTransformation(
       new ReplaceStmt(C->getArg(4), std::move(DirectionName)));
 
   // cudaMemcpyToSymbolAsync
   if (C->getNumArgs() == 6)
     handleAsync(C, 5, Result);
+}
+
+void MemoryTranslationRule::memcpyToSymbolTranslation(
+    const MatchFinder::MatchResult &Result, const CallExpr *C,
+    const UnresolvedLookupExpr *ULExpr) {
+  // Input:
+  //   cudaMemcpyToSymbol(d_A, h_A, size, offset, cudaMemcpyHostToDevice);
+  //   cudaMemcpyToSymbol(d_B, d_C, size, offset, cudaMemcpyDeviceToDevice);
+
+  // Desired output:
+  //   syclct::sycl_memcpy_to_symbol(d_A.get_ptr(), (void*)(h_A), size,
+  //                                 offset, syclct::host_to_device);
+  //
+  //   syclct::sycl_memcpy_to_symbol(d_B.get_ptr(), d_C, size, offset,
+  //                                 syclct::device_to_device);
+
+  memcpyToAndFromSymbolTranslation(Result, C, ULExpr,
+                                   "syclct::sycl_memcpy_to_symbol");
 }
 
 void MemoryTranslationRule::memcpyFromSymbolTranslation(
@@ -3825,49 +3900,8 @@ void MemoryTranslationRule::memcpyFromSymbolTranslation(
   //   syclct::sycl_memcpy_to_symbol((void*)(d_B), d_A.get_ptr(), size,
   //   offset,
   //                                 syclct::device_to_device);
-  const Expr *Direction = C->getArg(4);
-  std::string DirectionName;
-  const DeclRefExpr *DD = dyn_cast_or_null<DeclRefExpr>(Direction);
-  if (DD && isa<EnumConstantDecl>(DD->getDecl())) {
-    DirectionName = DD->getNameInfo().getName().getAsString();
-    auto Search = EnumConstantRule::EnumNamesMap.find(DirectionName);
-    assert(Search != EnumConstantRule::EnumNamesMap.end());
-    Direction = nullptr;
-    DirectionName = "syclct::" + Search->second;
-  }
-
-  std::string VarName = getStmtSpelling(C->getArg(1), *Result.Context);
-  // Migrate variable name such as "&const_angle[0]", "&const_one"
-  // into "const_angle.get_ptr()", "const_one.get_ptr()".
-  VarName.erase(std::remove(VarName.begin(), VarName.end(), '&'),
-                VarName.end());
-  std::size_t pos = VarName.find("[");
-  VarName = (pos != std::string::npos) ? VarName.substr(0, pos) : VarName;
-  VarName += ".get_ptr()";
-
-  insertAroundStmt(C->getArg(0), "(void*)(", ")");
-
-  if (ULExpr) {
-    emplaceTransformation(new ReplaceToken(ULExpr->getBeginLoc(),
-                                           ULExpr->getEndLoc(),
-                                           "syclct::sycl_memcpy_from_symbol"));
-  } else {
-
-    const std::string Name =
-        C->getCalleeDecl()->getAsFunction()->getNameAsString();
-    emplaceTransformation(
-        new ReplaceCalleeName(C, "syclct::sycl_memcpy_from_symbol", Name));
-  }
-
-  emplaceTransformation(new ReplaceToken(C->getArg(1)->getBeginLoc(),
-                                         C->getArg(1)->getEndLoc(),
-                                         std::move(VarName)));
-  emplaceTransformation(
-      new ReplaceStmt(C->getArg(4), std::move(DirectionName)));
-
-  // cudaMemcpyFromSymbolAsync
-  if (C->getNumArgs() == 6)
-    handleAsync(C, 5, Result);
+  memcpyToAndFromSymbolTranslation(Result, C, ULExpr,
+                                   "syclct::sycl_memcpy_from_symbol");
 }
 
 void MemoryTranslationRule::freeTranslation(
@@ -3896,7 +3930,8 @@ void MemoryTranslationRule::memsetTranslation(
   }
 
   emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_memset", Name));
-  insertAroundStmt(C->getArg(0), "(void*)(", ")");
+
+  replaceMemAPIArg(C->getArg(0), Result);
   insertAroundStmt(C->getArg(1), "(int)(", ")");
   insertAroundStmt(C->getArg(2), "(size_t)(", ")");
 }

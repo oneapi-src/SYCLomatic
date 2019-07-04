@@ -68,6 +68,30 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:   (syclct::sycl_memcpy_to_symbol(const_angle.get_ptr(), (void*)(&h_array[0]), sizeof(float) * 360), 0);
   cudaMemcpyToSymbol(&const_angle[0], &h_array[0], sizeof(float) * 360);
 
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:   (syclct::sycl_memcpy_to_symbol(const_angle.get_ptr() + sizeof(float) * (3), (void*)(&h_array[0]), sizeof(float) * 357), 0);
+  cudaMemcpyToSymbol(&const_angle[3], &h_array[0], sizeof(float) * 357);
+
+  // CHECK:  /*
+  // CHECK-NEXT:  SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  (syclct::sycl_memcpy_from_symbol((void*)(&h_array[0]), const_angle.get_ptr() + sizeof(float) * (3), sizeof(float) * 357), 0);
+  cudaMemcpyFromSymbol(&h_array[0], &const_angle[3], sizeof(float) * 357);
+
+  #define NUM 3
+  // CHECK:/*
+  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: */
+  // CHECK-NEXT: (syclct::sycl_memcpy_to_symbol(const_angle.get_ptr() + sizeof(float) * (3+NUM), (void*)(&h_array[0]), sizeof(float) * 354), 0);
+  cudaMemcpyToSymbol(&const_angle[3+NUM], &h_array[0], sizeof(float) * 354);
+
+  // CHECK:  /*
+  // CHECK-NEXT:  SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  (syclct::sycl_memcpy_from_symbol((void*)(&h_array[0]), const_angle.get_ptr() + sizeof(float) * (3+NUM), sizeof(float) * 354), 0);
+  cudaMemcpyFromSymbol(&h_array[0], &const_angle[3+NUM], sizeof(float) * 354);
   // CHECK:    {
   // CHECK-NEXT:    std::pair<syclct::buffer_t, size_t> d_array_buf = syclct::get_buffer_and_offset(d_array);
   // CHECK-NEXT:    size_t d_array_offset = d_array_buf.second;

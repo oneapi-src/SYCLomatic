@@ -342,6 +342,8 @@ private:
   // VarDecl=>CudaMallocInfo
   template <class Info, class Node>
   inline std::shared_ptr<Info> findNode(const Node *N) {
+    if (!N)
+      return std::shared_ptr<Info>();
     auto LocInfo = getLocInfo(N);
     if (isInRoot(LocInfo.first))
       return insertFile(LocInfo.first)->template findNode<Info>(LocInfo.second);
