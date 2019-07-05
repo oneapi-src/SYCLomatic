@@ -17,9 +17,11 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <stack>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace llvm {

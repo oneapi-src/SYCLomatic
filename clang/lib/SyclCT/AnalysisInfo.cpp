@@ -21,6 +21,7 @@ namespace clang {
 namespace syclct {
 std::string SyclctGlobalInfo::InRoot = std::string();
 std::string SyclctGlobalInfo::CudaPath = std::string();
+CompilerInstance *SyclctGlobalInfo::CI = nullptr;
 ASTContext *SyclctGlobalInfo::Context = nullptr;
 SourceManager *SyclctGlobalInfo::SM = nullptr;
 bool SyclctGlobalInfo::KeepOriginCode = false;
@@ -82,7 +83,7 @@ SyclctGlobalInfo::findCudaMalloc(const Expr *E) {
 
 std::string KernelCallExpr::analysisExcutionConfig(const Expr *Config) {
   ArgumentAnalysis Analysis(Config);
-  Analysis.analysis();
+  Analysis.analyze();
   return Analysis.getReplacedString();
 }
 
@@ -560,7 +561,7 @@ void CtTypeInfo::setTypeInfo(QualType Ty) {
 
 std::string CtTypeInfo::getUnfoldedArraySize(const ConstantArrayTypeLoc &TL) {
   ExprAnalysis A;
-  A.analysis(TL.getSizeExpr());
+  A.analyze(TL.getSizeExpr());
   return A.getReplacedString();
 }
 
@@ -570,7 +571,7 @@ void CtTypeInfo::setArrayInfo(QualType &Ty) {
     if (auto CAT = dyn_cast<ConstantArrayType>(Ty))
       Range.emplace_back(getFoldedArraySize(CAT));
     else if (auto DSAT = dyn_cast<DependentSizedArrayType>(Ty)) {
-      A.analysis(DSAT->getSizeExpr());
+      A.analyze(DSAT->getSizeExpr());
       Range.emplace_back(A.getTemplateDependentStringInfo());
     } else if (dyn_cast<IncompleteArrayType>(Ty))
       Range.emplace_back();

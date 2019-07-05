@@ -1696,7 +1696,8 @@ const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
     {"maxThreadsPerBlock", "max_work_group_size"},
 };
 
-std::map<std::string, bool> TranslationStatistics::TranslationTable{
+std::map<std::string, bool>
+    TranslationStatistics::TranslationTable{
 #define ENTRY(APINAME, VALUE, TARGET, COMMENT) {#APINAME, VALUE},
 #include "APINames.inc"
 #include "APINames_cuBLAS.inc"
@@ -1707,7 +1708,7 @@ std::map<std::string, bool> TranslationStatistics::TranslationTable{
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
 #undef ENTRY
-};
+    };
 
 bool TranslationStatistics::IsTranslated(const std::string &APIName) {
   auto Search = TranslationTable.find(APIName);

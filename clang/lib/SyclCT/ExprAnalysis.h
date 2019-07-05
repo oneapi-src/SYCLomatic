@@ -14,6 +14,8 @@
 
 #include "TextModification.h"
 
+#include "Debug.h"
+
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
 
@@ -133,21 +135,21 @@ private:
   std::map<size_t, std::shared_ptr<TemplateDependentReplacement>> TDRs;
 };
 
-// Analysis expression and generate its migrated string
+// analyze expression and generate its migrated string
 class ExprAnalysis {
 public:
   ExprAnalysis() : ExprAnalysis(nullptr) {}
   explicit ExprAnalysis(const Expr *Expression);
 
   // Start ananlysis the expression passed in when inited.
-  inline void analysis() {
+  inline void analyze() {
     if (E)
-      analysisExpression(E);
+      dispatch(E);
   }
-  // Start analysis the argument expression
-  inline void analysis(const Expr *Expression) {
+  // Start analyze the argument expression
+  inline void analyze(const Expr *Expression) {
     initExpression(Expression);
-    analysis();
+    analyze();
   }
 
   inline bool hasReplacement() { return ReplSet.hasReplacements(); }
@@ -169,17 +171,16 @@ private:
   }
 
 protected:
-  void analysisArgument(const Expr *E) {
+  void analyzeArgument(const Expr *E) {
     switch (E->getStmtClass()) {
     case Stmt::CXXConstructExprClass:
-      return analysisExpression(
-          static_cast<const CXXConstructExpr *>(E)->getArg(0));
+      return dispatch(static_cast<const CXXConstructExpr *>(E)->getArg(0));
     default:
-      analysisExpression(E);
+      dispatch(E);
     }
   }
 
-  // Prepare for analysis.
+  // Prepare for analyze.
   void initExpression(const Expr *Expression);
 
   std::pair<size_t, size_t> getOffsetAndLength(SourceLocation Begin,
@@ -218,50 +219,53 @@ protected:
     ReplSet.addTemplateDependentReplacement(Offset, Length, TemplateIndex);
   }
 
-  // Analysis the expression, jump to corresponding anlysis function according
+  // Analyze the expression, jump to corresponding anlysis function according
   // to its class
-  virtual void analysisExpression(const Stmt *Expression);
+  virtual void dispatch(const Stmt *Expression);
 
-  inline void analysisExpr(const CastExpr *ICE) {
-    return analysisExpression(ICE->getSubExpr());
+  inline void analyzeExpr(const CastExpr *ICE) {
+    return dispatch(ICE->getSubExpr());
   }
 
-  inline void analysisExpr(const MaterializeTemporaryExpr *MTE) {
-    return analysisExpression(MTE->getTemporary());
+  inline void analyzeExpr(const MaterializeTemporaryExpr *MTE) {
+    return dispatch(MTE->getTemporary());
   }
 
-  inline void analysisExpr(const BinaryOperator *BO) {
-    analysisExpression(BO->getLHS());
-    analysisExpression(BO->getRHS());
+  inline void analyzeExpr(const BinaryOperator *BO) {
+    dispatch(BO->getLHS());
+    dispatch(BO->getRHS());
   }
-  inline void analysisExpr(const DeclRefExpr *DRE) {
+  inline void analyzeExpr(const DeclRefExpr *DRE) {
+    RefString = DRE->getNameInfo().getAsString();
     if (auto TemplateDecl = dyn_cast<NonTypeTemplateParmDecl>(DRE->getDecl()))
       addReplacement(DRE, TemplateDecl->getIndex());
   }
 
-  inline void analysisExpr(const ParenExpr *PE) {
-    analysisExpression(PE->getSubExpr());
+  inline void analyzeExpr(const ParenExpr *PE) {
+    dispatch(PE->getSubExpr());
   }
 
-  void analysisExpr(const CXXConstructExpr *Ctor);
-  void analysisExpr(const MemberExpr *ME);
-  void analysisExpr(const UnaryExprOrTypeTraitExpr *UETT);
-  void analysisExpr(const CStyleCastExpr *Cast);
-  void analysisExpr(const CallExpr *CE);
+  void analyzeExpr(const CXXConstructExpr *Ctor);
+  void analyzeExpr(const MemberExpr *ME);
+  void analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT);
+  void analyzeExpr(const CStyleCastExpr *Cast);
+  void analyzeExpr(const CallExpr *CE);
 
-  inline void analysisType(const TypeSourceInfo *TSI) {
-    analysisType(TSI->getTypeLoc());
+  inline void analyzeType(const TypeSourceInfo *TSI) {
+    analyzeType(TSI->getTypeLoc());
   }
-  void analysisType(const TypeLoc &TL);
+  void analyzeType(const TypeLoc &TL);
 
-  // Doing nothing when it doesn't need analysis
-  inline void analysisExpr(const Stmt *S) {}
+  // Doing nothing when it doesn't need analyze
+  inline void analyzeExpr(const Stmt *S) {}
 
   const ASTContext &Context;
   const SourceManager &SM;
 
+  std::string RefString;
+
 private:
-  // E is analysis target expression, while ExprString is the source text of E.
+  // E is analyze target expression, while ExprString is the source text of E.
   // Replacements contains all the replacements happened in E.
   const Expr *E;
   size_t SrcBegin;
@@ -269,7 +273,7 @@ private:
   StringReplacements ReplSet;
 };
 
-// Analysis expression used as argument.
+// analyze expression used as argument.
 class ArgumentAnalysis : public ExprAnalysis {
 public:
   using Base = ExprAnalysis;
@@ -277,18 +281,18 @@ public:
   // Special init is needed for argument expression.
   ArgumentAnalysis(const Expr *Arg) : Base(nullptr) { initArgumentExpr(Arg); }
 
-  inline void analysis() { Base::analysis(); }
+  inline void analyze() { Base::analyze(); }
   // Special init is needed for argument expression.
-  void analysis(const Expr *Expression) {
+  void analyze(const Expr *Expression) {
     initArgumentExpr(Expression);
-    analysis();
+    analyze();
   }
 
 private:
   static const std::string &getDefaultArgument(const Expr *E);
 
   // Ignore the constructor when it's argument expression, it is copy/move
-  // constructor and no migration for it.Start analysis its argument.
+  // constructor and no migration for it.Start analyze its argument.
   // Replace total string when it is default argument expression.
   void initArgumentExpr(const Expr *Expression) {
     if (!Expression)
@@ -305,7 +309,7 @@ private:
 };
 
 class VarInfo;
-// Analysis CUDA kernel call arguments, get out the passed in pointer variables.
+// analyze CUDA kernel call arguments, get out the passed in pointer variables.
 class KernelArgumentAnalysis : public ArgumentAnalysis {
 public:
   using VarMapTy = std::map<unsigned, std::shared_ptr<VarInfo>>;
@@ -315,11 +319,11 @@ public:
   ~KernelArgumentAnalysis();
 
 protected:
-  void analysisExpression(const Stmt *Arg) override;
+  void dispatch(const Stmt *Arg) override;
 
 private:
-  inline void analysisExpr(const DeclRefExpr *Arg);
-  inline void analysisExpr(const MemberExpr *Arg);
+  inline void analyzeExpr(const DeclRefExpr *Arg);
+  inline void analyzeExpr(const MemberExpr *Arg);
 
   void mapToList(VarMapTy &Map, VarListTy &List) {
     for (auto &V : Map)
@@ -332,4 +336,4 @@ private:
 } // namespace syclct
 } // namespace clang
 
-#endif // !SYCLCT_EXPR_ANALYSIS_H
+#endif // !SYCLCT_EXPR_analyze_H

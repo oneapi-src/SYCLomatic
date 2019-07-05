@@ -18,6 +18,7 @@ endif()
 add_clang_library(SyclCT
   ASTTraversal.cpp
   AnalysisInfo.cpp
+  CallExprRewriter.cpp
   Debug.cpp
   Diagnostics.cpp
   ExprAnalysis.cpp

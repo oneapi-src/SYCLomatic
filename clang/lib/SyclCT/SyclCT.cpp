@@ -197,8 +197,8 @@ std::string SyclctInstallPath; // Installation directory for this tool
 
 class SyclCTConsumer : public ASTConsumer {
 public:
-  SyclCTConsumer(ReplTy &R, const CompilerInstance &CI, StringRef InFile)
-      : ATM(CI, InRoot), Repl(R), PP(CI.getPreprocessor()) {
+  SyclCTConsumer(ReplTy &R, CompilerInstance &CI, StringRef InFile)
+      : ATM(CI, InRoot), Repl(R), PP(CI.getPreprocessor()), CI(CI) {
     int RequiredRType = 0;
     SourceProcessType FileType = GetSourceFileType(InFile);
 
@@ -269,7 +269,7 @@ public:
 
   void Initialize(ASTContext &Context) override {
     // Set Context for build information
-    SyclctGlobalInfo::setContext(Context);
+    SyclctGlobalInfo::setCompilerInstance(CI);
 
     PP.addPPCallbacks(llvm::make_unique<IncludesCallbacks>(
         TransformSet, Context.getSourceManager(), ATM));
@@ -286,6 +286,7 @@ private:
   StmtStringMap SSM;
   ReplTy &Repl;
   Preprocessor &PP;
+  CompilerInstance &CI;
 };
 
 class SyclCTAction : public ASTFrontendAction {

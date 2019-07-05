@@ -255,9 +255,17 @@ public:
     const static std::string Hash = getHashAsString(getInRoot()).substr(0, 6);
     return Hash;
   }
+  static void setCompilerInstance(CompilerInstance &C) {
+    CI = &C;
+    setContext(C.getASTContext());
+  }
   static void setContext(ASTContext &C) {
     Context = &C;
     SM = &(Context->getSourceManager());
+  }
+  static CompilerInstance &getCompilerInstance() {
+    assert(CI);
+    return *CI;
   }
   static ASTContext &getContext() {
     assert(Context);
@@ -368,6 +376,7 @@ private:
 
   static std::string InRoot;
   static std::string CudaPath;
+  static CompilerInstance *CI;
   static ASTContext *Context;
   static SourceManager *SM;
   static bool KeepOriginCode;
@@ -812,8 +821,7 @@ inline std::string MemVarMap::getArgumentOrParameter<MemVarMap::KernelArgument>(
 }
 
 template <>
-inline const std::string &
-MemVarMap::getItem<MemVarMap::DeclParameter>() const {
+inline const std::string &MemVarMap::getItem<MemVarMap::DeclParameter>() const {
   static std::string ItemParamDecl =
       "cl::sycl::nd_item<3> " + SyclctGlobalInfo::getItemName();
   return ItemParamDecl;
@@ -848,7 +856,7 @@ public:
 
   void buildArgsInfo(const CallExpr *CE, ArgumentAnalysis &Analysis) {
     for (auto Arg : CE->arguments()) {
-      Analysis.analysis(Arg);
+      Analysis.analyze(Arg);
       Arguments.emplace_back(Analysis);
     }
   }
@@ -1160,14 +1168,14 @@ public:
 
   void setSizeExpr(const Expr *SizeExpression) {
     ArgumentAnalysis A(SizeExpression);
-    A.analysis();
+    A.analyze();
     Size = A.getReplacedString();
   }
   void setSizeExpr(const Expr *N, const Expr *ElemSize) {
     ArgumentAnalysis AN(N);
     ArgumentAnalysis AElemSize(ElemSize);
-    AN.analysis();
-    AElemSize.analysis();
+    AN.analyze();
+    AElemSize.analyze();
     Size = "(" + AN.getReplacedString() + ")*(" +
            AElemSize.getReplacedString() + ")";
   }

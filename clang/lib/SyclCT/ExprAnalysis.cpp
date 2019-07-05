@@ -10,8 +10,10 @@
 //===-----------------------------------------------------------------===//
 
 #include "ExprAnalysis.h"
+
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
+#include "CallExprRewriter.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprObjC.h"
 #include "clang/AST/ExprOpenMP.h"
@@ -23,9 +25,9 @@
 namespace clang {
 namespace syclct {
 
-#define ANALYSIS_EXPR(EXPR)                                                    \
+#define ANALYZE_EXPR(EXPR)                                                    \
   case Stmt::EXPR##Class:                                                      \
-    return analysisExpr(static_cast<const EXPR *>(Expression));
+    return analyzeExpr(static_cast<const EXPR *>(Expression));
 
 std::map<const Expr *, std::string> ArgumentAnalysis::DefaultArgMap;
 
@@ -109,9 +111,9 @@ ExprAnalysis::ExprAnalysis(const Expr *Expression)
   initExpression(Expression);
 }
 
-void ExprAnalysis::analysisExpression(const Stmt *Expression) {
+void ExprAnalysis::dispatch(const Stmt *Expression) {
   switch (Expression->getStmtClass()) {
-#define STMT(CLASS, PARENT) ANALYSIS_EXPR(CLASS)
+#define STMT(CLASS, PARENT) ANALYZE_EXPR(CLASS)
 #define STMT_RANGE(BASE, FIRST, LAST)
 #define LAST_STMT_RANGE(BASE, FIRST, LAST)
 #define ABSTRACT_STMT(STMT)
@@ -121,13 +123,13 @@ void ExprAnalysis::analysisExpression(const Stmt *Expression) {
   }
 }
 
-void ExprAnalysis::analysisExpr(const CXXConstructExpr *Ctor) {
+void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   const std::string Dim3Constructor = "dim3";
   if (Ctor->getConstructor()->getDeclName().getAsString() == Dim3Constructor) {
     std::string ArgsString = "cl::sycl::range<3>(";
     ArgumentAnalysis A;
     for (auto Arg : Ctor->arguments()) {
-      A.analysis(Arg);
+      A.analyze(Arg);
       ArgsString += A.getReplacedString() + ", ";
     }
     ArgsString.replace(ArgsString.length() - 2, 2, ")");
@@ -135,7 +137,7 @@ void ExprAnalysis::analysisExpr(const CXXConstructExpr *Ctor) {
   }
 }
 
-void ExprAnalysis::analysisExpr(const MemberExpr *ME) {
+void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   CtTypeInfo Ty(ME->getBase()->getType());
   if (Ty.getBaseName() == "cl::sycl::range<3>")
     addReplacement(
@@ -144,46 +146,44 @@ void ExprAnalysis::analysisExpr(const MemberExpr *ME) {
                                    ME->getMemberNameInfo().getAsString()));
 }
 
-void ExprAnalysis::analysisExpr(const UnaryExprOrTypeTraitExpr *UETT) {
+void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
   if (UETT->getKind() == UnaryExprOrTypeTrait::UETT_SizeOf)
-    analysisType(UETT->getArgumentTypeInfo());
+    analyzeType(UETT->getArgumentTypeInfo());
 }
 
-void ExprAnalysis::analysisExpr(const CStyleCastExpr *Cast) {
+void ExprAnalysis::analyzeExpr(const CStyleCastExpr *Cast) {
   if (Cast->getCastKind() == CastKind::CK_BitCast)
-    analysisType(Cast->getTypeInfoAsWritten());
-  analysisExpression(Cast->getSubExpr());
+    analyzeType(Cast->getTypeInfoAsWritten());
+  dispatch(Cast->getSubExpr());
 }
 
-void ExprAnalysis::analysisExpr(const CallExpr *CE) {
-  auto FD = CE->getDirectCallee();
-  if (!FD || !FD->hasAttr<CUDADeviceAttr>())
-    return;
-
-  const std::string FuncName = FD->getNameAsString();
-  if (MathFunctionsRule::SingleDoubleFunctionNamesMap.count(FuncName) != 0) {
-    std::string NewFuncName =
-        MathFunctionsRule::SingleDoubleFunctionNamesMap.at(FuncName);
-    std::string ArgsString = "(";
-    ArgumentAnalysis A;
-    for (auto Arg : CE->arguments()) {
-      A.analysis(Arg);
-      ArgsString += A.getReplacedString() + ", ";
-    }
-    ArgsString.replace(ArgsString.length() - 2, 2, ")");
-    addReplacement(CE, NewFuncName + ArgsString);
-  } else {
-    for (const auto &Arg : CE->arguments()) {
-      analysisArgument(Arg);
+void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
+  dispatch(CE->getCallee());
+  auto Itr = CallExprRewriterFactoryBase::CallMap.find(RefString);
+  if (Itr != CallExprRewriterFactoryBase::CallMap.end()) {
+    auto Result = Itr->second->create(CE)->rewrite();
+    if (Result.hasValue())
+      addReplacement(CE, Result.getValue());
+  } else if (auto FD = CE->getDirectCallee()) {
+    if (!FD->hasAttr<CUDADeviceAttr>())
+      return;
+    auto Itr = MathFunctionsRule::SingleDoubleFunctionNamesMap.find(RefString);
+    if (Itr != MathFunctionsRule::SingleDoubleFunctionNamesMap.end())
+      addReplacement(
+          CE,
+          FuncCallExprRewriterFactory(Itr->second).create(CE)->rewrite().getValue());
+    else {
+      for (auto Arg : CE->arguments())
+        analyzeArgument(Arg);
     }
   }
 }
 
-void ExprAnalysis::analysisType(const TypeLoc &TL) {
+void ExprAnalysis::analyzeType(const TypeLoc &TL) {
   std::string TyName;
   switch (TL.getTypeLocClass()) {
   case TypeLoc::Pointer:
-    return analysisType(
+    return analyzeType(
         static_cast<const PointerTypeLoc &>(TL).getPointeeLoc());
   case TypeLoc::Typedef:
     TyName =
@@ -207,16 +207,16 @@ const std::string &ArgumentAnalysis::getDefaultArgument(const Expr *E) {
   return Str;
 }
 
-void KernelArgumentAnalysis::analysisExpression(const Stmt *Expression) {
+void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
   switch (Expression->getStmtClass()) {
-    ANALYSIS_EXPR(DeclRefExpr)
-    ANALYSIS_EXPR(MemberExpr)
+    ANALYZE_EXPR(DeclRefExpr)
+    ANALYZE_EXPR(MemberExpr)
   default:
-    return ExprAnalysis::analysisExpression(Expression);
+    return ExprAnalysis::dispatch(Expression);
   }
 }
 
-void KernelArgumentAnalysis::analysisExpr(const DeclRefExpr *DRE) {
+void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   if (auto D = dyn_cast<VarDecl>(DRE->getDecl())) {
     auto LocInfo = SyclctGlobalInfo::getLocInfo(D);
     if (DRE->getType()->isPointerType()) {
@@ -227,10 +227,10 @@ void KernelArgumentAnalysis::analysisExpr(const DeclRefExpr *DRE) {
                          ->getDerefName());
     }
   }
-  Base::analysisExpr(DRE);
+  Base::analyzeExpr(DRE);
 }
 
-void KernelArgumentAnalysis::analysisExpr(const MemberExpr *ME) {
+void KernelArgumentAnalysis::analyzeExpr(const MemberExpr *ME) {
   if (auto D = dyn_cast<FieldDecl>(ME->getMemberDecl())) {
     auto LocInfo = SyclctGlobalInfo::getLocInfo(ME);
     auto MEStr = getStmtSpelling(ME, SyclctGlobalInfo::getContext());
@@ -250,13 +250,13 @@ void KernelArgumentAnalysis::analysisExpr(const MemberExpr *ME) {
           ME, insertObject(RefVarMap, LocInfo.second, LocInfo.first, D, MEStr)
                   ->getDerefName());
     } else {
-      // While base is still member expression, continue analysis it.
-      // Like a.b.c, will continue analysis "a.b".
+      // While base is still member expression, continue analyze it.
+      // Like a.b.c, will continue analyze "a.b".
       if (auto Sub = dyn_cast<MemberExpr>(ME->getBase()->IgnoreImpCasts()))
-        analysisExpr(Sub);
+        analyzeExpr(Sub);
     }
   }
-  Base::analysisExpr(ME);
+  Base::analyzeExpr(ME);
 }
 
 KernelArgumentAnalysis::~KernelArgumentAnalysis() {
