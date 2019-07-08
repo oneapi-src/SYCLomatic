@@ -369,7 +369,7 @@ public:
     return ASTTraversalMetaInfo::getEmittedTransformations()[&ID];
   }
 
-  void insertIncludeFile(SourceLocation SL, std::set<FileID> &HeaderFilter,
+  void insertIncludeFile(SourceLocation SL, std::set<std::string> &HeaderFilter,
                          std::string &&InsertText);
 
 protected:

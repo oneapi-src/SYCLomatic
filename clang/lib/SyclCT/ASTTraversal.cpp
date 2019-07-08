@@ -45,32 +45,35 @@ std::unordered_map<std::string, std::unordered_set</* Comment ID */ int>>
 static std::set<SourceLocation> AttrExpansionFilter;
 
 // Remember the location of the last inclusion directive for each file
-static std::map<FileID, SourceLocation> IncludeLocations;
+static std::map<std::string, SourceLocation> IncludeLocations;
 
 // Remember if a file has already included the cmath header or not
-static std::map<FileID, bool> AlreadyIncludeMathHeader;
+static std::set<std::string> MathHeaderFilter;
+// Remember whether <complex> is included in one file.
+static std::set<std::string> ComplexHeaderFilter;
+// Remember whether <future> is included in one file.
+static std::set<std::string> FutureHeaderFilter;
+// Remember whether MKL headers are included in one file.
+static std::set<std::string> MKLHeadersFilter;
+// Remember whether <time.h> is included in one file.
+static std::set<std::string> TimeHeaderFilter;
 
 // Add '#include <cmath>' directive to the file where CE is located
 InsertText *getCmathHeaderInsertTextForCallExpr(const CallExpr *CE,
                                                 const SourceManager *SM) {
   auto Loc = CE->getBeginLoc();
-  auto FID = SM->getDecomposedExpansionLoc(Loc).first;
+  std::string Path = SyclctGlobalInfo::getSourceManager().getFilename(
+      SyclctGlobalInfo::getSourceManager().getExpansionLoc(Loc));
+  makeCanonical(Path);
   // No need to insert or already inserted
-  if (AlreadyIncludeMathHeader[FID])
+  if (MathHeaderFilter.find(Path) != MathHeaderFilter.end())
     return nullptr;
 
-  auto IncludeLoc = IncludeLocations[FID];
-  AlreadyIncludeMathHeader[FID] = true;
+  auto IncludeLoc = IncludeLocations[Path];
+  MathHeaderFilter.insert(Path);
   return new InsertText(IncludeLoc,
                         getNL() + std::string("#include <cmath>") + getNL());
 }
-
-// Remember whether <complex> is included in one file.
-static std::set<FileID> ComplexHeaderFilter;
-// Remember whether <future> is included in one file.
-static std::set<FileID> FutureHeaderFilter;
-// Remember whether MKL headers are included in one file.
-static std::set<FileID> MKLHeadersFilter;
 
 unsigned TranslationRule::PairID = 0;
 
@@ -239,8 +242,10 @@ void IncludesCallbacks::InclusionDirective(
     SrcMgr::CharacteristicKind FileType) {
   // Record the locations of inclusion directives
   // The last inclusion diretive of a file will be remembered
-  auto DecomposedLoc = SM.getDecomposedExpansionLoc(FilenameRange.getEnd());
-  IncludeLocations[DecomposedLoc.first] = FilenameRange.getEnd();
+  std::string Path = SyclctGlobalInfo::getSourceManager().getFilename(
+      SyclctGlobalInfo::getSourceManager().getExpansionLoc(HashLoc));
+  makeCanonical(Path);
+  IncludeLocations[Path] = FilenameRange.getEnd();
 
   std::string IncludePath = SearchPath;
   makeCanonical(IncludePath);
@@ -296,17 +301,21 @@ void IncludesCallbacks::InclusionDirective(
   // Record that math header is included in this file
   if (IsAngled && (FileName.compare(StringRef("math.h")) == 0 ||
                    FileName.compare(StringRef("cmath")) == 0)) {
-    auto DecomposedLoc = SM.getDecomposedExpansionLoc(HashLoc);
-    AlreadyIncludeMathHeader[DecomposedLoc.first] = true;
+    std::string Path = SyclctGlobalInfo::getSourceManager().getFilename(
+        SyclctGlobalInfo::getSourceManager().getExpansionLoc(HashLoc));
+    makeCanonical(Path);
+    MathHeaderFilter.insert(Path);
   }
 
   // Replace "#include <cublas_v2.h>" and "#include <cublas.h>" with
   // <mkl_blas_sycl.hpp>, <mkl_lapack_sycl.hpp> and <sycl_types.hpp>
   if ((IsAngled && FileName.compare(StringRef("cublas_v2.h")) == 0) ||
       (IsAngled && FileName.compare(StringRef("cublas.h")) == 0)) {
-    auto DecomposedLoc = SM.getDecomposedExpansionLoc(HashLoc);
-    if (MKLHeadersFilter.find(DecomposedLoc.first) == MKLHeadersFilter.end()) {
-      MKLHeadersFilter.insert(DecomposedLoc.first);
+    std::string Path = SyclctGlobalInfo::getSourceManager().getFilename(
+        SyclctGlobalInfo::getSourceManager().getExpansionLoc(HashLoc));
+    makeCanonical(Path);
+    if (MKLHeadersFilter.find(Path) == MKLHeadersFilter.end()) {
+      MKLHeadersFilter.insert(Path);
       std::string Replacement = std::string("#include <mkl_blas_sycl.hpp>") +
                                 getNL() + "#include <mkl_lapack_sycl.hpp>" +
                                 getNL() + "#include <sycl_types.hpp>";
@@ -413,8 +422,10 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
                                     FileID PrevFID) {
   // Record the location when a file is entered
   if (Reason == clang::PPCallbacks::EnterFile) {
-    auto DecomposedLoc = SM.getDecomposedExpansionLoc(Loc);
-    IncludeLocations[DecomposedLoc.first] = Loc;
+    std::string Path = SyclctGlobalInfo::getSourceManager().getFilename(
+        SyclctGlobalInfo::getSourceManager().getExpansionLoc(Loc));
+    makeCanonical(Path);
+    IncludeLocations[Path] = Loc;
   }
 }
 
@@ -2047,14 +2058,15 @@ void Dim3MemberFieldsRule::run(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(Dim3MemberFieldsRule)
 
 template <class T>
-void NamedTranslationRule<T>::insertIncludeFile(SourceLocation SL,
-                                                std::set<FileID> &HeaderFilter,
-                                                std::string &&InsertFile) {
-  FileID FID =
-      SyclctGlobalInfo::getSourceManager().getDecomposedExpansionLoc(SL).first;
-  SourceLocation IncludeLoc = IncludeLocations[FID];
-  if (HeaderFilter.find(FID) == HeaderFilter.end()) {
-    HeaderFilter.insert(FID);
+void NamedTranslationRule<T>::insertIncludeFile(
+    SourceLocation SL, std::set<std::string> &HeaderFilter,
+    std::string &&InsertFile) {
+  std::string Path = SyclctGlobalInfo::getSourceManager().getFilename(
+      SyclctGlobalInfo::getSourceManager().getExpansionLoc(SL));
+  makeCanonical(Path);
+  SourceLocation IncludeLoc = IncludeLocations[Path];
+  if (HeaderFilter.find(Path) == HeaderFilter.end()) {
+    HeaderFilter.insert(Path);
     emplaceTransformation(new InsertText(IncludeLoc, std::move(InsertFile)));
   }
 }
@@ -3136,12 +3148,13 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "clock") {
     report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF);
     // Add '#include <time.h>' directive to the file only once
-    static std::set<FileID> TimeHeaderFilter;
     auto Loc = CE->getBeginLoc();
-    auto FID = Result.SourceManager->getDecomposedExpansionLoc(Loc).first;
-    auto IncludeLoc = IncludeLocations[FID];
-    if (TimeHeaderFilter.find(FID) == TimeHeaderFilter.end()) {
-      TimeHeaderFilter.insert(FID);
+    std::string Path = SyclctGlobalInfo::getSourceManager().getFilename(
+        SyclctGlobalInfo::getSourceManager().getExpansionLoc(Loc));
+    makeCanonical(Path);
+    auto IncludeLoc = IncludeLocations[Path];
+    if (TimeHeaderFilter.find(Path) == TimeHeaderFilter.end()) {
+      TimeHeaderFilter.insert(Path);
       emplaceTransformation(new InsertText(
           IncludeLoc, getNL() +
                           std::string("#include <time.h> // For clock_t, "
