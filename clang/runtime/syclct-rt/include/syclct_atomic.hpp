@@ -166,13 +166,26 @@ inline T atomic_exchange(
 template <cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space,
           typename T>
-inline cl::sycl::cl_bool atomic_compare_exchange_strong(
+T atomic_compare_exchange_strong(
+    cl::sycl::multi_ptr<T, cl::sycl::access::address_space::global_space> addr,
+    T expected, T desired,
+    cl::sycl::memory_order success = cl::sycl::memory_order::relaxed,
+    cl::sycl::memory_order fail = cl::sycl::memory_order::relaxed) {
+  cl::sycl::atomic<T, addressSpace> obj(addr);
+  obj.compare_exchange_strong(expected, desired, success, fail);
+  return expected;
+}
+
+template <cl::sycl::access::address_space addressSpace =
+              cl::sycl::access::address_space::global_space,
+          typename T>
+T atomic_compare_exchange_strong(
     T *addr, T expected, T desired,
     cl::sycl::memory_order success = cl::sycl::memory_order::relaxed,
     cl::sycl::memory_order fail = cl::sycl::memory_order::relaxed) {
-  cl::sycl::atomic<T, addressSpace> obj(
-      (cl::sycl::multi_ptr<T, addressSpace>(addr)));
-  return obj.compare_exchange_strong(expected, desired, success, fail);
+  return atomic_compare_exchange_strong(
+      cl::sycl::multi_ptr<T, addressSpace>(addr), expected, desired, success,
+      fail);
 }
 
 } // namespace syclct

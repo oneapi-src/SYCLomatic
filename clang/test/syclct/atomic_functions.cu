@@ -41,6 +41,14 @@ __global__ void test(T *data) {
   // CHECK: syclct::atomic_compare_exchange_strong(&data[7], tid - 1, tid);
   atomicCAS(&data[7], tid - 1, tid);
 
+  T old, expected, desired;
+  old = data[7];
+  do {
+    expected = old;
+    // CHECK: old = syclct::atomic_compare_exchange_strong(&data[7], expected, desired);
+    old = atomicCAS(&data[7], expected, desired);
+  } while  (expected != old);
+
   // CHECK: syclct::atomic_fetch_and(&data[8], tid);
   atomicAnd(&data[8], tid);
 
@@ -121,7 +129,6 @@ __device__ void fun(){
 // CHECK: syclct::atomic_fetch_add(a, (double)(b));
   atomicAdd(a, b);
 }
-
 
 int main() {
   InvokeKernel<int>();
