@@ -2412,6 +2412,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     Poststr = ", 0)";
   }
 
+  //TODO: Need to process the situation when scalar pointers (alpha, beta)
+  // are device pointers.
   if (MapNames::BLASFuncReplInfoMap.find(FuncName) !=
       MapNames::BLASFuncReplInfoMap.end()) {
     // There are some macroes like "#define cublasSgemm cublasSgemm_v2"
@@ -2443,10 +2445,9 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     SourceLocation StmtBegin, StmtEndAfterSemi;
     getScopeInsertLocation(CE, Result, FuncNameBegin, FuncCallEnd, StmtBegin,
                            StmtEndAfterSemi);
-
-    // TODO: int cannot reinterpret to int64_t, need create a new buffer for
-    // cublasIsamax, cublasIdamax, cublasIsamin, cublasIdamin like legacy APIs.
-    std::string PrefixInsertStr;
+    std::string PrefixInsertStr, SuffixInsertStr;
+    std::string IndentStr =
+        getIndent(StmtBegin, (Result.Context)->getSourceManager()).str();
     int ArgNum = CE->getNumArgs();
     // TODO: If the memory is not allocated by cudaMalloc(), the migrated
     // program will abort at
@@ -2459,6 +2460,23 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             CE->getArg(i), *(Result.Context),
             ReplInfo.BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, i);
         PrefixInsertStr = PrefixInsertStr + BufferDecl;
+
+        if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
+          PrefixInsertStr = PrefixInsertStr + IndentStr +
+                            "cl::sycl::buffer<int64_t,1> "
+                            "result_temp_buffer(cl::sycl::range<1>(1));" +
+                            getNL();
+          SuffixInsertStr = SuffixInsertStr + BufferName +
+                            ".get_access<cl::sycl::access::"
+                            "mode::write>()[0] = "
+                            "(int)result_temp_buffer.get_access<cl::sycl::"
+                            "access::mode::read>()[0];" +
+                            getNL() + IndentStr;
+          emplaceTransformation(
+              new ReplaceStmt(CE->getArg(i), "result_temp_buffer"));
+          continue;
+        }
+
         emplaceTransformation(
             new ReplaceStmt(CE->getArg(i), std::move(BufferName)));
       }
@@ -2476,17 +2494,12 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
     emplaceTransformation(
         new ReplaceText(FuncNameBegin, FuncNameLength, std::move(Replacement)));
-
     insertAroundRange(
         StmtBegin, StmtEndAfterSemi,
-        std::string("{") + getNL() + PrefixInsertStr +
-            getIndent(StmtBegin, (Result.Context)->getSourceManager()).str(),
-        getNL() +
-            getIndent(StmtBegin, (Result.Context)->getSourceManager()).str() +
-            std::string("}"));
+        std::string("{") + getNL() + PrefixInsertStr + IndentStr,
+                      getNL() + IndentStr + SuffixInsertStr + std::string("}"));
   } else if (MapNames::BLASFuncComplexReplInfoMap.find(FuncName) !=
              MapNames::BLASFuncComplexReplInfoMap.end()) {
-
     SourceLocation FuncNameBegin(CE->getBeginLoc());
     SourceLocation FuncCallEnd(CE->getEndLoc());
     const SourceManager *SM = Result.SourceManager;
