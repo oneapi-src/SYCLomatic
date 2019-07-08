@@ -26,4 +26,6 @@ int main() {
   simple_kernel<<<16, 16>>>(i_array);
 
   cudaFree(i_array);
+
+  sgemm();
 }

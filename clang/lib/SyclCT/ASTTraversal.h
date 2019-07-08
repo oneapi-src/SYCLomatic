@@ -378,6 +378,13 @@ protected:
     emplaceTransformation(new InsertBeforeStmt(S, std::move(Prefix), P));
     emplaceTransformation(new InsertAfterStmt(S, std::move(Suffix), P));
   }
+  void insertAroundRange(const SourceLocation &PrefixSL,
+                        const SourceLocation &SuffixSL, std::string &&Prefix,
+                        std::string &&Suffix) {
+    auto P = incPairID();
+    emplaceTransformation(new InsertText(PrefixSL, std::move(Prefix), P));
+    emplaceTransformation(new InsertText(SuffixSL, std::move(Suffix), P));
+  }
 };
 
 template <typename T> const char NamedTranslationRule<T>::ID(0);

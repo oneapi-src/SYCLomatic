@@ -344,11 +344,13 @@ std::shared_ptr<ExtReplacement>
 InsertText::getReplacement(const ASTContext &Context) const {
   recordTranslationInfo(Context, Begin);
   // Need to deal with the fact, that the type name might be a macro.
-  return std::make_shared<ExtReplacement>(
+  auto R = std::make_shared<ExtReplacement>(
       Context.getSourceManager(),
       // false means [Begin, End)
       // true means [Begin, End]
       CharSourceRange(SourceRange(Begin, Begin), false), T, this);
+  R->setPairID(PairID);
+  return R;
 }
 
 std::shared_ptr<ExtReplacement>

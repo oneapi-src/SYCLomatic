@@ -6,3 +6,7 @@ __device__ int global_id() {
   ATOMIC_UPDATE(x)
   return blockIdx.x * blockDim.x + threadIdx.x;
 }
+
+void foo(){
+  sgemm();
+}
