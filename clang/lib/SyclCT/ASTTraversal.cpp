@@ -33,9 +33,11 @@ using namespace clang::tooling;
 extern std::string CudaPath;
 extern std::string SyclctInstallPath; // Installation directory for this tool
 
-auto parentStmt =
-    anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
-          hasParent(whileStmt()), hasParent(doStmt()), hasParent(ifStmt()));
+auto parentStmt = []() {
+  return anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
+               hasParent(whileStmt()), hasParent(doStmt()),
+               hasParent(ifStmt()));
+};
 
 std::unordered_map<std::string, std::unordered_set</* Comment ID */ int>>
     TranslationRule::ReportedComment;
@@ -2355,19 +2357,21 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
                     .bind("kernelCall"),
                 this);
 
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())), parentStmt,
-                               hasAncestor(functionDecl(
-                                   unless(allOf(hasAttr(attr::CUDADevice),
-                                                hasAttr(attr::CUDAGlobal)))))))
-                    .bind("FunctionCall"),
-                this);
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
-                               unless(parentStmt), unless(hasParent(varDecl())),
-                               hasAncestor(functionDecl(
-                                   unless(allOf(hasAttr(attr::CUDADevice),
-                                                hasAttr(attr::CUDAGlobal)))))))
-                    .bind("FunctionCallUsedNotInitializeVarDecl"),
-                this);
+  MF.addMatcher(
+      callExpr(
+          allOf(callee(functionDecl(functionName())), parentStmt(),
+                hasAncestor(functionDecl(unless(allOf(
+                    hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))))))
+          .bind("FunctionCall"),
+      this);
+  MF.addMatcher(
+      callExpr(
+          allOf(callee(functionDecl(functionName())), unless(parentStmt()),
+                unless(hasParent(varDecl())),
+                hasAncestor(functionDecl(unless(allOf(
+                    hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))))))
+          .bind("FunctionCallUsedNotInitializeVarDecl"),
+      this);
 
   MF.addMatcher(
       callExpr(
@@ -3000,13 +3004,13 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
   };
 
   MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(functionName())), parentStmt))
+      callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
           .bind("FunctionCall"),
       this);
-  MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(functionName())), unless(parentStmt)))
-          .bind("FunctionCallUsed"),
-      this);
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
+                               unless(parentStmt())))
+                    .bind("FunctionCallUsed"),
+                this);
 }
 
 void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
@@ -3161,13 +3165,13 @@ void EventAPICallRule::registerMatcher(MatchFinder &MF) {
   };
 
   MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(eventAPIName())), parentStmt))
+      callExpr(allOf(callee(functionDecl(eventAPIName())), parentStmt()))
           .bind("eventAPICall"),
       this);
-  MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(eventAPIName())), unless(parentStmt)))
-          .bind("eventAPICallUsed"),
-      this);
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(eventAPIName())),
+                               unless(parentStmt())))
+                    .bind("eventAPICallUsed"),
+                this);
 }
 
 void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
@@ -3354,11 +3358,11 @@ void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
   };
 
   MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(streamFunctionName())), parentStmt))
+      callExpr(allOf(callee(functionDecl(streamFunctionName())), parentStmt()))
           .bind("streamAPICall"),
       this);
   MF.addMatcher(callExpr(allOf(callee(functionDecl(streamFunctionName())),
-                               unless(parentStmt)))
+                               unless(parentStmt())))
                     .bind("streamAPICallUsed"),
                 this);
 }
@@ -3914,25 +3918,25 @@ void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
                       "cudaFree", "cudaMemset", "cublasFree", "cublasAlloc");
   };
 
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt))
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
                     .bind("call"),
                 this);
 
   MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(memoryAPI())), unless(parentStmt)))
+      callExpr(allOf(callee(functionDecl(memoryAPI())), unless(parentStmt())))
           .bind("callUsed"),
       this);
 
   MF.addMatcher(
       unresolvedLookupExpr(
           hasAnyDeclaration(namedDecl(memoryAPI())),
-          hasParent(callExpr(unless(parentStmt)).bind("callExprUsed")))
+          hasParent(callExpr(unless(parentStmt())).bind("callExprUsed")))
           .bind("unresolvedCallUsed"),
       this);
 
   MF.addMatcher(
       unresolvedLookupExpr(hasAnyDeclaration(namedDecl(memoryAPI())),
-                           hasParent(callExpr(parentStmt).bind("callExpr")))
+                           hasParent(callExpr(parentStmt()).bind("callExpr")))
           .bind("unresolvedCall"),
       this);
 }
