@@ -2336,31 +2336,54 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasChpr2_v2", "cublasZhpr2_v2",
         /*Regular level 3*/
         "cublasSgemm_v2", "cublasDgemm_v2", "cublasCgemm_v2", "cublasZgemm_v2",
-        "cublasSsymm_v2", "cublasDsymm_v2", "cublasSsyrk_v2", "cublasDsyrk_v2",
-        "cublasSsyr2k_v2", "cublasDsyr2k_v2", "cublasStrsm_v2",
-        "cublasDtrsm_v2",
+        "cublasCgemm3m", "cublasZgemm3m", "cublasSsymm_v2", "cublasDsymm_v2",
+        "cublasCsymm_v2", "cublasZsymm_v2", "cublasSsyrk_v2", "cublasDsyrk_v2",
+        "cublasCsyrk_v2", "cublasZsyrk_v2", "cublasSsyr2k_v2",
+        "cublasDsyr2k_v2", "cublasCsyr2k_v2", "cublasZsyr2k_v2",
+        "cublasStrsm_v2", "cublasDtrsm_v2", "cublasCtrsm_v2", "cublasZtrsm_v2",
+        "cublasChemm_v2", "cublasZhemm_v2", "cublasCherk_v2", "cublasZherk_v2",
+        "cublasCher2k_v2", "cublasZher2k_v2",
         /*Legacy API*/
         "cublasInit", "cublasShutdown", "cublasGetError",
         /*level 1*/
-        "cublasSnrm2", "cublasDnrm2", "cublasSdot", "cublasDdot", "cublasSscal",
-        "cublasDscal", "cublasSaxpy", "cublasDaxpy", "cublasScopy",
-        "cublasDcopy", "cublasSswap", "cublasDswap", "cublasIsamax",
-        "cublasIdamax", "cublasIsamin", "cublasIdamin", "cublasSasum",
-        "cublasDasum", "cublasSrot", "cublasDrot", "cublasSrotg", "cublasDrotg",
-        "cublasSrotm", "cublasDrotm", "cublasSrotmg", "cublasDrotmg",
+        "cublasSnrm2", "cublasDnrm2", "cublasScnrm2", "cublasDznrm2",
+        "cublasSdot", "cublasDdot", "cublasCdotu", "cublasCdotc", "cublasZdotu",
+        "cublasZdotc", "cublasSscal", "cublasDscal", "cublasCscal",
+        "cublasZscal", "cublasCsscal", "cublasZdscal", "cublasSaxpy",
+        "cublasDaxpy", "cublasCaxpy", "cublasZaxpy", "cublasScopy",
+        "cublasDcopy", "cublasCcopy", "cublasZcopy", "cublasSswap",
+        "cublasDswap", "cublasCswap", "cublasZswap", "cublasIsamax",
+        "cublasIdamax", "cublasIcamax", "cublasIzamax", "cublasIsamin",
+        "cublasIdamin", "cublasIcamin", "cublasIzamin", "cublasSasum",
+        "cublasDasum", "cublasScasum", "cublasDzasum", "cublasSrot",
+        "cublasDrot", "cublasCsrot", "cublasZdrot", "cublasSrotg",
+        "cublasDrotg", "cublasSrotm", "cublasDrotm", "cublasSrotmg",
+        "cublasDrotmg",
         /*level 2*/
-        "cublasSgemv", "cublasDgemv", "cublasSgbmv", "cublasDgbmv",
-        "cublasStrmv", "cublasDtrmv", "cublasStbmv", "cublasDtbmv",
-        "cublasStpmv", "cublasDtpmv", "cublasStrsv", "cublasDtrsv",
-        "cublasStpsv", "cublasDtpsv", "cublasStbsv", "cublasDtbsv",
-        "cublasSsymv", "cublasDsymv", "cublasSsbmv", "cublasDsbmv",
-        "cublasSspmv", "cublasDspmv", "cublasSger", "cublasDger", "cublasSsyr",
-        "cublasDsyr", "cublasSspr", "cublasDspr", "cublasSsyr2", "cublasDsyr2",
-        "cublasSspr2", "cublasDspr2",
+        "cublasSgemv", "cublasDgemv", "cublasCgemv", "cublasZgemv",
+        "cublasSgbmv", "cublasDgbmv", "cublasCgbmv", "cublasZgbmv",
+        "cublasStrmv", "cublasDtrmv", "cublasCtrmv", "cublasZtrmv",
+        "cublasStbmv", "cublasDtbmv", "cublasCtbmv", "cublasZtbmv",
+        "cublasStpmv", "cublasDtpmv", "cublasCtpmv", "cublasZtpmv",
+        "cublasStrsv", "cublasDtrsv", "cublasCtrsv", "cublasZtrsv",
+        "cublasStpsv", "cublasDtpsv", "cublasCtpsv", "cublasZtpsv",
+        "cublasStbsv", "cublasDtbsv", "cublasCtbsv", "cublasZtbsv",
+        "cublasSsymv", "cublasDsymv", "cublasChemv", "cublasZhemv",
+        "cublasSsbmv", "cublasDsbmv", "cublasChbmv", "cublasZhbmv",
+        "cublasSspmv", "cublasDspmv", "cublasChpmv", "cublasZhpmv",
+        "cublasSger", "cublasDger", "cublasCgeru", "cublasCgerc", "cublasZgeru",
+        "cublasZgerc", "cublasSsyr", "cublasDsyr", "cublasCher", "cublasZher",
+        "cublasSspr", "cublasDspr", "cublasChpr", "cublasZhpr", "cublasSsyr2",
+        "cublasDsyr2", "cublasCher2", "cublasZher2", "cublasSspr2",
+        "cublasDspr2", "cublasChpr2", "cublasZhpr2",
         /*level 3*/
-        "cublasSgemm", "cublasDgemm", "cublasSsyrk", "cublasDsyrk",
-        "cublasSsyr2k", "cublasDsyr2k", "cublasSsymm", "cublasDsymm",
-        "cublasStrsm", "cublasDtrsm");
+        "cublasSgemm", "cublasDgemm", "cublasCgemm", "cublasZgemm",
+        "cublasSsyrk", "cublasDsyrk", "cublasCsyrk", "cublasZsyrk",
+        "cublasCherk", "cublasZherk", "cublasSsyr2k", "cublasDsyr2k",
+        "cublasCsyr2k", "cublasZsyr2k", "cublasCher2k", "cublasZher2k",
+        "cublasSsymm", "cublasDsymm", "cublasCsymm", "cublasZsymm",
+        "cublasChemm", "cublasZhemm", "cublasStrsm", "cublasDtrsm",
+        "cublasCtrsm", "cublasZtrsm");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
@@ -2380,7 +2403,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       callExpr(
           allOf(callee(functionDecl(functionName())), unless(parentStmt()),
-                unless(hasParent(varDecl())),
+                unless(hasAncestor(varDecl())),
                 hasAncestor(functionDecl(unless(allOf(
                     hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))))))
           .bind("FunctionCallUsedNotInitializeVarDecl"),
@@ -2388,7 +2411,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
 
   MF.addMatcher(
       callExpr(
-          allOf(callee(functionDecl(functionName())), hasParent(varDecl()),
+          allOf(callee(functionDecl(functionName())), hasAncestor(varDecl()),
                 hasAncestor(functionDecl(unless(allOf(
                     hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))))))
           .bind("FunctionCallUsedInitializeVarDecl"),
@@ -2430,6 +2453,9 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
   // TODO: Need to process the situation when scalar pointers (alpha, beta)
   // are device pointers.
+  // TODO: The temp variable identify need use the combination the base
+  // name of the original identify and buffer/allocation.
+  // And the buffer/allocation should be the prefix.
   if (MapNames::BLASFuncReplInfoMap.find(FuncName) !=
       MapNames::BLASFuncReplInfoMap.end()) {
     // There are some macroes like "#define cublasSgemm cublasSgemm_v2"
@@ -2628,14 +2654,21 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
     std::string VarType;
     std::string VarName;
+    const VarDecl *VD = 0;
     if (IsInitializeVarDecl) {
-      auto ParentNode = (Result.Context)->getParents(*CE);
-      const VarDecl *VD = 0;
-      if ((VD = ParentNode[0].get<VarDecl>())) {
+      VD = getAncestralVarDecl(CE);
+      if (VD) {
         VarType = VD->getType().getAsString();
+        if (VarType == "cuComplex") {
+          VarType = "cl::sycl::float2";
+        }
+        if (VarType == "cuDoubleComplex") {
+          VarType = "cl::sycl::double2";
+        }
         VarName = VD->getNameAsString();
       } else {
-        syclct_unreachable("Fail to get VarDecl information");
+        assert(0 && "Fail to get VarDecl information");
+        return;
       }
       PrefixInsertStr =
           VarType + " " + VarName + ";" + getNL() + IndentStr + PrefixInsertStr;
@@ -2653,7 +2686,14 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         CallExprReplStr = CallExprReplStr + ", " + BufferName;
         PrefixInsertStr = PrefixInsertStr + BufferDecl;
       } else if (isReplIndex(i, ReplInfo.PointerIndexInfo, IndexTemp)) {
-        CallExprReplStr = CallExprReplStr + ", *(" + ParamsStrsVec[i] + ")";
+        if (ReplInfo.PointerTypeInfo[IndexTemp] == "float" ||
+            ReplInfo.PointerTypeInfo[IndexTemp] == "double") {
+          CallExprReplStr = CallExprReplStr + ", *(" + ParamsStrsVec[i] + ")";
+        } else {
+          CallExprReplStr =
+              CallExprReplStr + ", " + ReplInfo.PointerTypeInfo[IndexTemp] +
+              "((" + ParamsStrsVec[i] + ").x(),(" + ParamsStrsVec[i] + ").y())";
+        }
       } else if (isReplIndex(i, ReplInfo.OperationIndexInfo, IndexTemp)) {
         CallExprReplStr = CallExprReplStr + ", " + "(((" + ParamsStrsVec[i] +
                           ")=='N'||(" + ParamsStrsVec[i] +
@@ -2675,8 +2715,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                           ")=='N'||(" + ParamsStrsVec[i] +
                           ")=='n')?(mkl::diag::nonunit):(mkl::diag::unit))";
       } else {
-        CallExprReplStr = CallExprReplStr + ", " +
-                          getStmtSpelling(CE->getArg(i), *(Result.Context));
+        CallExprReplStr = CallExprReplStr + ", " + ParamsStrsVec[i];
       }
     }
 
@@ -2684,10 +2723,16 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     // program will abort at
     // syclct::memory_manager::get_instance().translate_ptr();
     if (FuncName == "cublasSnrm2" || FuncName == "cublasDnrm2" ||
+        FuncName == "cublasScnrm2" || FuncName == "cublasDznrm2" ||
         FuncName == "cublasSdot" || FuncName == "cublasDdot" ||
+        FuncName == "cublasCdotu" || FuncName == "cublasCdotc" ||
+        FuncName == "cublasZdotu" || FuncName == "cublasZdotc" ||
         FuncName == "cublasIsamax" || FuncName == "cublasIdamax" ||
+        FuncName == "cublasIcamax" || FuncName == "cublasIzamax" ||
         FuncName == "cublasIsamin" || FuncName == "cublasIdamin" ||
-        FuncName == "cublasSasum" || FuncName == "cublasDasum") {
+        FuncName == "cublasIcamin" || FuncName == "cublasIzamin" ||
+        FuncName == "cublasSasum" || FuncName == "cublasDasum" ||
+        FuncName == "cublasScasum" || FuncName == "cublasDzasum") {
       // APIs which have return value
       std::string ResultType =
           ReplInfo.BufferTypeInfo[ReplInfo.BufferTypeInfo.size() - 1];
@@ -2699,23 +2744,43 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       insertAroundRange(StmtBegin, StmtEndAfterSemi,
                         PrefixInsertStr + IndentStr,
                         std::move(SuffixInsertStr));
+      std::string ReturnValueParamsStr =
+          "(result_temp_buffer.get_access<cl::sycl::"
+          "access::mode::read>()[0].real(), "
+          "result_temp_buffer.get_access<cl::sycl::"
+          "access::mode::read>()[0].imag());";
       if (IsInitializeVarDecl) {
-        auto ParentNode1 = (Result.Context)->getParents(*CE);
-        auto ParentNode2 = (Result.Context)->getParents(ParentNode1[0]);
+        auto ParentNodes = (Result.Context)->getParents(*VD);
         const DeclStmt *DS = 0;
-        if ((DS = ParentNode2[0].get<DeclStmt>())) {
-          emplaceTransformation(new ReplaceStmt(
-              DS, VarName + " = result_temp_buffer.get_access<cl::sycl::"
-                            "access::mode::read>()[0];"));
+        if ((DS = ParentNodes[0].get<DeclStmt>())) {
+          if (FuncName == "cublasCdotu" || FuncName == "cublasCdotc") {
+            emplaceTransformation(new ReplaceStmt(
+                DS, VarName + " = cl::sycl::float2" + ReturnValueParamsStr));
+          } else if (FuncName == "cublasZdotu" || FuncName == "cublasZdotc") {
+            emplaceTransformation(new ReplaceStmt(
+                DS, VarName + " = cl::sycl::double2" + ReturnValueParamsStr));
+          } else {
+            emplaceTransformation(new ReplaceStmt(
+                DS, VarName + " = result_temp_buffer.get_access<cl::sycl::"
+                              "access::mode::read>()[0];"));
+          }
         } else {
-          syclct_unreachable("Fail to get Var Decl Stmt");
+          assert(0 && "Fail to get Var Decl Stmt");
+          return;
         }
       } else {
-        emplaceTransformation(
-            new ReplaceStmt(CE, "result_temp_buffer.get_access<cl::sycl::"
-                                "access::mode::read>()[0]"));
+        if (FuncName == "cublasCdotu" || FuncName == "cublasCdotc") {
+          emplaceTransformation(
+              new ReplaceStmt(CE, "cl::sycl::float2" + ReturnValueParamsStr));
+        } else if (FuncName == "cublasZdotu" || FuncName == "cublasZdotc") {
+          emplaceTransformation(
+              new ReplaceStmt(CE, "cl::sycl::double2" + ReturnValueParamsStr));
+        } else {
+          emplaceTransformation(
+              new ReplaceStmt(CE, "result_temp_buffer.get_access<cl::sycl::"
+                                  "access::mode::read>()[0]"));
+        }
       }
-
     } else {
       // APIs which haven't return value
       PrefixInsertStr = getNL() + IndentStr + PrefixInsertStr;
@@ -3004,6 +3069,45 @@ BLASFunctionCallRule::getParamsAsStrs(const CallExpr *CE,
   for (auto Arg : CE->arguments())
     ParamsStrVec.emplace_back(getStmtSpelling(Arg, Context));
   return ParamsStrVec;
+}
+
+// orignal cuda code looks like:
+//   cuComplex res1 = cublasLegacyAPI(...);
+//   res2 = cublasLegacyAPI(...);
+//
+// migrated code looks like:
+//   cuComplex res1;
+//   {
+//   buffer res_buffer;
+//   mklAPI(res_buffer);
+//   res1 = res_buffer.get_access()[0];
+//   }
+//   {
+//   buffer res_buffer;
+//   mklAPI(res_buffer);
+//   res2 = res_buffer.get_access()[0];
+//   }
+//
+// If the API return value initializes the var declaration, we need to put the
+// var declaration out of the scope and assign it in the scope, otherwise users
+// cannot use this var out of the scope.
+// So we need to find the Decl node of the var, which is the CallExpr node's
+// ancestor.
+// The initial node is the matched CallExpr node. Then visit the parent node of
+// the current node until the current node is a VarDecl node.
+const clang::VarDecl *
+BLASFunctionCallRule::getAncestralVarDecl(const clang::CallExpr *CE) {
+  auto &Context = syclct::SyclctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*CE);
+  while (Parents.size() == 1) {
+    auto *Parent = Parents[0].get<VarDecl>();
+    if (Parent) {
+      return Parent;
+    } else {
+      Parents = Context.getParents(Parents[0]);
+    }
+  }
+  return nullptr;
 }
 
 REGISTER_RULE(BLASFunctionCallRule)

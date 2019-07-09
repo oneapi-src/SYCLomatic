@@ -44,6 +44,7 @@ public:
     std::vector<int> BufferIndexInfo;
     std::vector<int> PointerIndexInfo;
     std::vector<std::string> BufferTypeInfo;
+    std::vector<std::string> PointerTypeInfo;
     std::vector<int> OperationIndexInfo;
     int FillModeIndexInfo;
     int SideModeIndexInfo;

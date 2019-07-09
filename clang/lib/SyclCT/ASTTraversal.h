@@ -654,7 +654,8 @@ public:
   bool isReplIndex(int i, std::vector<int> &IndexInfo, int &IndexTemp);
 
   std::vector<std::string> getParamsAsStrs(const CallExpr *CE,
-                                           const ASTContext &Context);
+                                        const ASTContext &Context);
+  const clang::VarDecl *getAncestralVarDecl(const clang::CallExpr *CE);
 };
 
 /// Migration rule for function calls.
