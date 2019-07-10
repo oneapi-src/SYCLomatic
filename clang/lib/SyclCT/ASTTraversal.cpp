@@ -4434,12 +4434,6 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 
-bool endsWith(std::string const &Str, std::string const &Ending) {
-  if (Ending.size() > Str.size())
-    return false;
-  return std::equal(Ending.rbegin(), Ending.rend(), Str.rbegin());
-}
-
 void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
   if (auto CE = getNodeAsType<CallExpr>(Result, "math")) {
     ExprAnalysis EA(CE);

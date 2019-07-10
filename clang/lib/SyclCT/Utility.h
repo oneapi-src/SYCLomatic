@@ -139,7 +139,8 @@ const clang::CompoundStmt *findImmediateBlock(const clang::Stmt *S);
 const clang::CompoundStmt *findImmediateBlock(const clang::ValueDecl *D);
 bool isInSameScope(const clang::Stmt *S, const clang::ValueDecl *D);
 const clang::DeclRefExpr *getInnerValueDecl(const clang::Expr *Arg);
-bool startsWith(std::string str, std::string s);
+bool startsWith(const std::string &Str, const std::string &Prefix);
+bool endsWith(const std::string &Str, const std::string &Suffix);
 const clang::Stmt *getParentStmt(const clang::Stmt *S);
 bool IsSingleLineStatement(const clang::Stmt *S);
 const std::pair<const clang::Stmt *, bool>

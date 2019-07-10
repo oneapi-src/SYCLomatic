@@ -62,7 +62,7 @@ bool isChildPath(const std::string &Root, const std::string &Child) {
   std::error_code EC;
   bool InRootAbsValid = true;
   bool InChildAbsValid = true;
-  EC=llvm::sys::fs::real_path(Root, RootAbs);
+  EC = llvm::sys::fs::real_path(Root, RootAbs);
   if ((bool)EC) {
     InRootAbsValid = false;
   }
@@ -77,7 +77,7 @@ bool isChildPath(const std::string &Root, const std::string &Child) {
   std::string LocalChild = InChildAbsValid ? ChildAbs.str().lower() : Child;
 #elif defined(__linux__)
   std::string LocalRoot = InRootAbsValid ? RootAbs.c_str() : Root;
-  std::string LocalChild = InChildAbsValid ? ChildAbs.c_str(): Child;
+  std::string LocalChild = InChildAbsValid ? ChildAbs.c_str() : Child;
 #else
 #error Only support windows and Linux.
 #endif
@@ -394,7 +394,17 @@ const DeclRefExpr *getInnerValueDecl(const Expr *Arg) {
   return DRE;
 }
 
-bool startsWith(std::string str, std::string s) { return str.rfind(s, 0) == 0; }
+// Check if a string starts with the prefix
+bool startsWith(const std::string &Str, const std::string &Prefix) {
+  return Prefix.size() <= Str.size() &&
+         std::equal(Prefix.begin(), Prefix.end(), Str.begin());
+}
+
+// Check if a string ends with the prefix
+bool endsWith(const std::string &Str, const std::string &Suffix) {
+  return Suffix.size() <= Str.size() &&
+         std::equal(Suffix.rbegin(), Suffix.rend(), Str.rbegin());
+}
 
 const clang::Stmt *getParentStmt(const clang::Stmt *S) {
   if (!S)
