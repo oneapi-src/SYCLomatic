@@ -121,13 +121,21 @@ void InvokeKernel() {
   test<T><<<1, k_threads_per_block>>>(dev_ptr);
 }
 
+// CHECK: syclct::device_memory<uint32_t, 1> d_error(1);
+static __device__ uint32_t d_error[1];
+
+// CHECK: void fun(syclct::syclct_accessor<uint32_t, syclct::device, 1> d_error){
 __device__ void fun(){
   double *a;
   float b;
-// CHECK: syclct::atomic_fetch_add(a, (double)(1));
+  // CHECK: syclct::atomic_fetch_add(a, (double)(1));
   atomicAdd(a, 1);
-// CHECK: syclct::atomic_fetch_add(a, (double)(b));
+
+  // CHECK: syclct::atomic_fetch_add(a, (double)(b));
   atomicAdd(a, b);
+
+  // CHECK: syclct::atomic_fetch_add((uint32_t*)(d_error), (uint32_t)(1));
+  atomicAdd(d_error, 1);
 }
 
 int main() {

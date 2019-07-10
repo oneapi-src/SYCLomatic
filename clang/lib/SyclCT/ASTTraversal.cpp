@@ -843,11 +843,15 @@ void AtomicFunctionRule::TranslateAtomicFunc(
       CE, std::move(ReplacedAtomicFuncName), AtomicFuncName));
 
   const unsigned NumArgs = CE->getNumArgs();
-  for (unsigned i = 1; i < NumArgs; ++i) {
+  for (unsigned i = 0; i < NumArgs; ++i) {
     const Expr *Arg = CE->getArg(i);
     if (auto *ImpCast = dyn_cast<ImplicitCastExpr>(Arg)) {
       if (ImpCast->getCastKind() != clang::CK_LValueToRValue) {
-        insertAroundStmt(Arg, "(" + TypeName + ")(", ")");
+        if (i == 0) {
+          insertAroundStmt(Arg, "(" + TypeName + "*)(", ")");
+        } else {
+          insertAroundStmt(Arg, "(" + TypeName + ")(", ")");
+        }
       }
     }
   }
@@ -2412,7 +2416,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     Poststr = ", 0)";
   }
 
-  //TODO: Need to process the situation when scalar pointers (alpha, beta)
+  // TODO: Need to process the situation when scalar pointers (alpha, beta)
   // are device pointers.
   if (MapNames::BLASFuncReplInfoMap.find(FuncName) !=
       MapNames::BLASFuncReplInfoMap.end()) {
@@ -2494,9 +2498,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
     emplaceTransformation(
         new ReplaceText(FuncNameBegin, FuncNameLength, std::move(Replacement)));
-    insertAroundRange(
-        StmtBegin, StmtEndAfterSemi,
-        std::string("{") + getNL() + PrefixInsertStr + IndentStr,
+    insertAroundRange(StmtBegin, StmtEndAfterSemi,
+                      std::string("{") + getNL() + PrefixInsertStr + IndentStr,
                       getNL() + IndentStr + SuffixInsertStr + std::string("}"));
   } else if (MapNames::BLASFuncComplexReplInfoMap.find(FuncName) !=
              MapNames::BLASFuncComplexReplInfoMap.end()) {
