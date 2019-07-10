@@ -221,6 +221,7 @@ protected:
 
   // Analyze the expression, jump to corresponding anlysis function according
   // to its class
+  // Precondition: Expression != nullptr
   virtual void dispatch(const Stmt *Expression);
 
   inline void analyzeExpr(const CastExpr *ICE) {
@@ -241,9 +242,7 @@ protected:
       addReplacement(DRE, TemplateDecl->getIndex());
   }
 
-  inline void analyzeExpr(const ParenExpr *PE) {
-    dispatch(PE->getSubExpr());
-  }
+  inline void analyzeExpr(const ParenExpr *PE) { dispatch(PE->getSubExpr()); }
 
   void analyzeExpr(const CXXConstructExpr *Ctor);
   void analyzeExpr(const MemberExpr *ME);

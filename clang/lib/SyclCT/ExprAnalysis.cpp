@@ -25,7 +25,7 @@
 namespace clang {
 namespace syclct {
 
-#define ANALYZE_EXPR(EXPR)                                                    \
+#define ANALYZE_EXPR(EXPR)                                                     \
   case Stmt::EXPR##Class:                                                      \
     return analyzeExpr(static_cast<const EXPR *>(Expression));
 
@@ -157,10 +157,11 @@ void ExprAnalysis::analyzeExpr(const CStyleCastExpr *Cast) {
   dispatch(Cast->getSubExpr());
 }
 
+// Precondition: CE != nullptr
 void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   dispatch(CE->getCallee());
-  auto Itr = CallExprRewriterFactoryBase::CallMap.find(RefString);
-  if (Itr != CallExprRewriterFactoryBase::CallMap.end()) {
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap.find(RefString);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap.end()) {
     auto Result = Itr->second->create(CE)->rewrite();
     if (Result.hasValue())
       addReplacement(CE, Result.getValue());
@@ -169,9 +170,10 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
       return;
     auto Itr = MathFunctionsRule::SingleDoubleFunctionNamesMap.find(RefString);
     if (Itr != MathFunctionsRule::SingleDoubleFunctionNamesMap.end())
-      addReplacement(
-          CE,
-          FuncCallExprRewriterFactory(Itr->second).create(CE)->rewrite().getValue());
+      addReplacement(CE, FuncCallExprRewriterFactory(Itr->first, Itr->second)
+                             .create(CE)
+                             ->rewrite()
+                             .getValue());
     else {
       for (auto Arg : CE->arguments())
         analyzeArgument(Arg);
@@ -183,8 +185,7 @@ void ExprAnalysis::analyzeType(const TypeLoc &TL) {
   std::string TyName;
   switch (TL.getTypeLocClass()) {
   case TypeLoc::Pointer:
-    return analyzeType(
-        static_cast<const PointerTypeLoc &>(TL).getPointeeLoc());
+    return analyzeType(static_cast<const PointerTypeLoc &>(TL).getPointeeLoc());
   case TypeLoc::Typedef:
     TyName =
         static_cast<const TypedefTypeLoc &>(TL).getTypedefNameDecl()->getName();
