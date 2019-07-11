@@ -1728,6 +1728,7 @@ const MapNames::MapTy DevicePropVarRule::PropNamesMap{
     {"minor", "minor_version"},
     {"integrated", "integrated"},
     {"multiProcessorCount", "max_compute_units"},
+    {"maxThreadsPerBlock", "max_work_group_size"},
     {"name", "name"},
     {"totalGlobalMem", "global_mem_size"},
     {"sharedMemPerBlock", "local_mem_size"},

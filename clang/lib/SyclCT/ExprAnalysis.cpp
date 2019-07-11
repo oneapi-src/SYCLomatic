@@ -139,11 +139,18 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
 
 void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   CtTypeInfo Ty(ME->getBase()->getType());
-  if (Ty.getBaseName() == "cl::sycl::range<3>")
+  if (Ty.getBaseName() == "cl::sycl::range<3>") {
     addReplacement(
         ME->getOperatorLoc(), ME->getMemberLoc(),
         MapNames::findReplacedName(MapNames::Dim3MemberNamesMap,
                                    ME->getMemberNameInfo().getAsString()));
+  } else if (Ty.getBaseName() == "syclct::sycl_device_info") {
+    std::string ReplacementStr = MapNames::findReplacedName(
+        DevicePropVarRule::PropNamesMap, ME->getMemberNameInfo().getAsString());
+    if (!ReplacementStr.empty()) {
+      addReplacement(ME->getMemberLoc(), ReplacementStr + "()");
+    }
+  }
 }
 
 void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {

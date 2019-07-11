@@ -46,6 +46,12 @@ int atomicSupported;
 // CHECK: atomicSupported = syclct::get_device_manager().get_device(dev_id).is_native_atomic_supported();
 cudaDeviceGetAttribute(&atomicSupported, cudaDevAttrHostNativeAtomicSupported, dev_id);
 
+int val;
+// CHECK:/*
+// CHECK-NEXT:SYCLCT1022:{{[0-9]+}}: DPC++ doesn't provide standard API to get cudaDevAttrComputeCapabilityMajor on GPU devices. Consider to re-implement the code which depends on this field
+// CHECK-NEXT:*/
+cudaDeviceGetAttribute(&val, cudaDevAttrComputeCapabilityMajor, dev_id);
+
 int device1 = 0;
 int device2 = 1;
 int perfRank = 0;

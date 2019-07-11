@@ -51,7 +51,8 @@ public:
   int get_minor_version() { return _minor; }
   int get_integrated() { return _integrated; }
   int get_max_clock_frequency() { return _frequency; }
-  int get_max_compute_units() { return _compute_units; }
+  int get_max_compute_units() { return _max_compute_units; }
+  int get_max_work_group_size() { return _max_work_group_size; }
   size_t get_global_mem_size() { return _global_mem_size; }
   size_t get_local_mem_size() { return _local_mem_size; }
   compute_mode get_mode() { return _compute_mode; }
@@ -63,11 +64,11 @@ public:
   void set_minor_version(int minor) {_minor=minor;}
   void set_integrated(int integrated) {_integrated=integrated;}
   void set_max_clock_frequency(int frequency) {_frequency=frequency;}
-  void set_max_compute_units(int compute_units) {_compute_units=compute_units;}
+  void set_max_compute_units(int max_compute_units) {_max_compute_units=max_compute_units;}
   void set_global_mem_size(size_t global_mem_size) {_global_mem_size=global_mem_size;}
   void set_local_mem_size(size_t local_mem_size) {_local_mem_size=local_mem_size;}
   void set_mode(compute_mode compute_mode){_compute_mode=compute_mode;}
-
+  void set_max_work_group_size(int max_work_group_size) {_max_work_group_size = max_work_group_size;}
 private:
   char _name[256];
   cl::sycl::id<3> _max_work_item_sizes;
@@ -76,7 +77,8 @@ private:
   int _minor;
   int _integrated = 0;
   int _frequency;
-  int _compute_units;
+  int _max_compute_units;
+  int _max_work_group_size;
   size_t _global_mem_size;
   size_t _local_mem_size;
   compute_mode _compute_mode = compute_mode::default_;
@@ -111,6 +113,7 @@ public:
     prop.set_host_unified_memory(get_info<cl::sycl::info::device::host_unified_memory>());
     prop.set_max_clock_frequency(get_info<cl::sycl::info::device::max_clock_frequency>());
     prop.set_max_compute_units(get_info<cl::sycl::info::device::max_compute_units>());
+    prop.set_max_work_group_size(get_info<cl::sycl::info::device::max_work_group_size>());
     prop.set_global_mem_size(get_info<cl::sycl::info::device::global_mem_size>());
     prop.set_local_mem_size(get_info<cl::sycl::info::device::local_mem_size>());
     //...

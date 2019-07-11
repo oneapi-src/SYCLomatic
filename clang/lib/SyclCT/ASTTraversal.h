@@ -226,11 +226,10 @@ protected:
   void report(SourceLocation SL, Comments MsgID, Ts &&... Vals) {
     auto &SM = getCompilerInstance().getSourceManager();
 
-    // Concatenate source file and line number (eg: xxx.cpp:4)
-    std::string SourceAndLine;
-    llvm::raw_string_ostream RSO(SourceAndLine);
-    RSO << SM.getBufferName(SL) << ":" << SM.getPresumedLineNumber(SL);
-    RSO.flush();
+    // Concatenate source file and line number (eg: xxx.cpp:4) and parameter.
+    std::string SourceAndLine =
+        buildString(SM.getBufferName(SL), ":", SM.getPresumedLineNumber(SL),
+                    ":", std::forward<Ts>(Vals)...);
 
     if (ReportedComment.count(SourceAndLine) == 0) {
       // No comment has been reported for this line before.
@@ -387,8 +386,8 @@ protected:
     emplaceTransformation(new InsertAfterStmt(S, std::move(Suffix), P));
   }
   void insertAroundRange(const SourceLocation &PrefixSL,
-                        const SourceLocation &SuffixSL, std::string &&Prefix,
-                        std::string &&Suffix) {
+                         const SourceLocation &SuffixSL, std::string &&Prefix,
+                         std::string &&Suffix) {
     auto P = incPairID();
     emplaceTransformation(new InsertText(PrefixSL, std::move(Prefix), P));
     emplaceTransformation(new InsertText(SuffixSL, std::move(Suffix), P));
@@ -604,7 +603,7 @@ public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
-private:
+public:
   static const std::map<std::string, std::string> PropNamesMap;
 };
 

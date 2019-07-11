@@ -2176,8 +2176,20 @@ void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
     return;
   }
   auto MemberName = ME->getMemberNameInfo().getAsString();
-  if (MemberName == "sharedMemPerBlock")
+  if (MemberName == "sharedMemPerBlock") {
     report(ME->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE);
+  } else if (MemberName == "warpSize") {
+    report(ME->getBeginLoc(), Comments::NOT_SUPPORT_DEVICE_PROP, "warpSize");
+    return;
+  } else if (MemberName == "maxThreadsPerMultiProcessor") {
+    report(ME->getBeginLoc(), Comments::NOT_SUPPORT_DEVICE_PROP,
+           "maxThreadsPerMultiProcessor");
+    return;
+  } else if (MemberName == "maxGridSize") {
+    report(ME->getBeginLoc(), Comments::NOT_SUPPORT_DEVICE_PROP, "maxGridSize");
+    return;
+  }
+
   auto Search = PropNamesMap.find(MemberName);
   if (Search == PropNamesMap.end()) {
     // TODO report migration error
@@ -3195,11 +3207,19 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                                     ->getNameInfo()
                                     .getName()
                                     .getAsString();
+
+    if (AttributeName == "cudaDevAttrComputeCapabilityMajor") {
+      report(CE->getBeginLoc(), Comments::NOT_SUPPORT_DEVICE_PROP,
+             "cudaDevAttrComputeCapabilityMajor");
+      return;
+    }
+
     auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
     if (Search == EnumConstantRule::EnumNamesMap.end()) {
       // TODO report migration error
       return;
     }
+
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     emplaceTransformation(new ReplaceStmt(
         CE->getCallee(), "syclct::get_device_manager().get_device"));
