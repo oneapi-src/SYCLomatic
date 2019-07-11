@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT: /*
   // CHECK-NEXT: SYCLCT1022:{{[0-9]+}}: DPC++ doesn't provide standard API to get warpSize on GPU devices. Consider to re-implement the code which depends on this field
   // CHECK-NEXT:  */
-  // CHECK-NEXT: cl::sycl::range<3> grid(deviceProp.max_compute_units() * (deviceProp.maxThreadsPerMultiProcessor / deviceProp.warpSize), 1, 1);
+  // CHECK-NEXT: cl::sycl::range<3> grid(deviceProp.get_max_compute_units() * (deviceProp.maxThreadsPerMultiProcessor / deviceProp.warpSize), 1, 1);
   dim3 grid(deviceProp.multiProcessorCount * (deviceProp.maxThreadsPerMultiProcessor / deviceProp.warpSize));
 
 // CHECK:/*
@@ -111,7 +111,7 @@ void test()
   // CHECK-NEXT:syclct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class foo_kernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:          cl::sycl::nd_range<3>((cl::sycl::range<3>(deviceProp.max_compute_units(), 1, 1) * cl::sycl::range<3>(deviceProp.max_work_group_size(), 1, 1)), cl::sycl::range<3>(deviceProp.max_work_group_size(), 1, 1)),
+  // CHECK-NEXT:          cl::sycl::nd_range<3>((cl::sycl::range<3>(deviceProp.get_max_compute_units(), 1, 1) * cl::sycl::range<3>(deviceProp.get_max_work_group_size(), 1, 1)), cl::sycl::range<3>(deviceProp.get_max_work_group_size(), 1, 1)),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
   // CHECK-NEXT:            foo_kernel();
   // CHECK-NEXT:          });

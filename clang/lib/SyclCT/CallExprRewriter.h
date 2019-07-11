@@ -19,9 +19,12 @@ namespace syclct {
 
 class CallExprRewriter;
 class FuncCallExprRewriter;
-class UnsupportedFuncCallExprRewriter;
-class SimulatedFuncCallExprRewriter;
-class BinaryOperatorExprRewriter;
+class MathCallExprRewriter;
+class MathFuncNameRewriter;
+class MathSimulatedRewriter;
+class MathTypeCastRewriter;
+class MathBinaryOperatorRewriter;
+class MathUnsupportedRewriter;
 
 /*
 Factory usage example:
@@ -61,14 +64,16 @@ public:
   }
 };
 
-using FuncCallExprRewriterFactory =
-    CallExprRewriterFactory<FuncCallExprRewriter, std::string>;
-using UnsupportedFuncCallExprRewriterFactory =
-    CallExprRewriterFactory<UnsupportedFuncCallExprRewriter, std::string>;
-using SimulatedFuncCallExprRewriterFactory =
-    CallExprRewriterFactory<SimulatedFuncCallExprRewriter, std::string>;
-using BinaryOperatorExprRewriterFactory =
-    CallExprRewriterFactory<BinaryOperatorExprRewriter, BinaryOperatorKind>;
+using MathFuncNameRewriterFactory =
+    CallExprRewriterFactory<MathFuncNameRewriter, std::string>;
+using MathUnsupportedRewriterFactory =
+    CallExprRewriterFactory<MathUnsupportedRewriter, std::string>;
+using MathSimulatedRewriterFactory =
+    CallExprRewriterFactory<MathSimulatedRewriter, std::string>;
+using MathTypeCastRewriterFactory =
+    CallExprRewriterFactory<MathTypeCastRewriter, std::string>;
+using MathBinaryOperatorRewriterFactory =
+    CallExprRewriterFactory<MathBinaryOperatorRewriter, BinaryOperatorKind>;
 
 class CallExprRewriter {
 protected:
@@ -112,7 +117,7 @@ protected:
 
 class FuncCallExprRewriter : public CallExprRewriter {
 protected:
-  StringRef TargetCalleeName;
+  std::string TargetCalleeName;
   std::vector<std::string> RewriteArgList;
 
 protected:
@@ -134,52 +139,84 @@ protected:
   // Build string which is used to replace original expession.
   Optional<std::string> buildRewriteString();
 
-  // Instances of FuncCallExprRewriter can only be created by
-  // FuncCallExprRewriterFactory
-  friend FuncCallExprRewriterFactory;
+  void setTargetCalleeName(const std::string &Str) {
+    TargetCalleeName = Str;
+  }
 };
 
-class UnsupportedFuncCallExprRewriter : public FuncCallExprRewriter {
+class MathCallExprRewriter : public FuncCallExprRewriter {
+public:
+  virtual Optional<std::string> rewrite() override;
 protected:
-  using Base = FuncCallExprRewriter;
-  UnsupportedFuncCallExprRewriter(const CallExpr *Call,
-                                  StringRef SourceCalleeName,
-                                  StringRef TargetCalleeName)
+  MathCallExprRewriter(const CallExpr *Call, StringRef SourceCalleeName,
+                       StringRef TargetCalleeName)
+    : FuncCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {}
+
+  void reportUnsupportedRoundingMode();
+};
+
+class MathFuncNameRewriter : public MathCallExprRewriter {
+protected:
+  MathFuncNameRewriter(const CallExpr *Call, StringRef SourceCalleeName,
+                       StringRef TargetCalleeName)
+      : MathCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {}
+
+public:
+  virtual Optional<std::string> rewrite() override;
+
+protected:
+  std::string getNewFuncName();
+
+  friend MathFuncNameRewriterFactory;
+};
+
+class MathUnsupportedRewriter : public MathCallExprRewriter {
+protected:
+  using Base = MathCallExprRewriter;
+  MathUnsupportedRewriter(const CallExpr *Call, StringRef SourceCalleeName,
+                          StringRef TargetCalleeName)
       : Base(Call, SourceCalleeName, TargetCalleeName) {}
 
   virtual Optional<std::string> rewrite() override;
 
-  // Instances of UnsupportedFuncCallExprRewriter can only be created by
-  // UnsupportedFuncCallExprRewriterFactory
-  friend UnsupportedFuncCallExprRewriterFactory;
+  friend MathUnsupportedRewriterFactory;
 };
 
-class SimulatedFuncCallExprRewriter : public FuncCallExprRewriter {
+class MathTypeCastRewriter : public MathCallExprRewriter {
 protected:
-  using Base = FuncCallExprRewriter;
-  SimulatedFuncCallExprRewriter(const CallExpr *Call,
-                                StringRef SourceCalleeName,
-                                StringRef TargetCalleeName)
+  using Base = MathCallExprRewriter;
+  MathTypeCastRewriter(const CallExpr *Call, StringRef SourceCalleeName,
+                       StringRef TargetCalleeName)
       : Base(Call, SourceCalleeName, TargetCalleeName) {}
 
   virtual Optional<std::string> rewrite() override;
 
-  // Instances of SimulatedFuncCallExprRewriter can only be created by
-  // SimulatedFuncCallExprRewriterFactory
-  friend SimulatedFuncCallExprRewriterFactory;
+  friend MathTypeCastRewriterFactory;
 };
 
-class BinaryOperatorExprRewriter : public CallExprRewriter {
+class MathSimulatedRewriter : public MathCallExprRewriter {
+protected:
+  using Base = MathCallExprRewriter;
+  MathSimulatedRewriter(const CallExpr *Call, StringRef SourceCalleeName,
+                        StringRef TargetCalleeName)
+      : Base(Call, SourceCalleeName, TargetCalleeName) {}
+
+  virtual Optional<std::string> rewrite() override;
+
+  friend MathSimulatedRewriterFactory;
+};
+
+class MathBinaryOperatorRewriter : public MathCallExprRewriter {
   std::string LHS, RHS;
   BinaryOperatorKind Op;
 
 protected:
-  BinaryOperatorExprRewriter(const CallExpr *Call, StringRef SourceCalleeName,
+  MathBinaryOperatorRewriter(const CallExpr *Call, StringRef SourceCalleeName,
                              BinaryOperatorKind Op)
-      : CallExprRewriter(Call, SourceCalleeName), Op(Op) {}
+      : MathCallExprRewriter(Call, SourceCalleeName, ""), Op(Op) {}
 
 public:
-  virtual ~BinaryOperatorExprRewriter() {}
+  virtual ~MathBinaryOperatorRewriter() {}
 
   virtual Optional<std::string> rewrite() override;
 
@@ -189,12 +226,12 @@ protected:
 
   // Build string which is used to replace original expession.
   inline Optional<std::string> buildRewriteString() {
+    if (LHS == "")
+      return buildString(BinaryOperator::getOpcodeStr(Op), RHS);
     return buildString(LHS, " ", BinaryOperator::getOpcodeStr(Op), " ", RHS);
   }
 
-  // Instances of BinaryOperatorExprRewriter can only be created by
-  // BinaryOperatorExprRewriterFactoryExprRewriterFactory
-  friend BinaryOperatorExprRewriterFactory;
+  friend MathBinaryOperatorRewriterFactory;
 };
 } // namespace syclct
 } // namespace clang

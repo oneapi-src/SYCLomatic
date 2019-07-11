@@ -25,14 +25,14 @@ __global__ void func() {
   // cast for arg1: arg1 is expr which require tranlation.
   int CHUNK_SIZE0 = 64;
   int numz0;
-  //CHECK: const int zlength0 = cl::sycl::min((unsigned int)(CHUNK_SIZE0), (unsigned int)(numz0 - item_{{[a-f0-9]+}}.get_group(0) * CHUNK_SIZE0));
+  //TOCHECK: const int zlength0 = cl::sycl::min((unsigned int)(CHUNK_SIZE0), (unsigned int)(numz0 - item_{{[a-f0-9]+}}.get_group(0) * CHUNK_SIZE0));
   const int zlength0 = min(CHUNK_SIZE0, numz0 - blockIdx.x * CHUNK_SIZE0);
 
   // case4: unsigned int min(arg0:unsigned int, arg1:unsigned int)
   // cast for arg1: arg1 is expr which require tranlation.
   unsigned int CHUNK_SIZE1 = 64;
   int numz1;
-  //CHECK: const int zlength1 = cl::sycl::min(CHUNK_SIZE1, (unsigned int)(numz1 - item_{{[a-f0-9]+}}.get_group(0) * CHUNK_SIZE1));
+  //TOCHECK: const int zlength1 = cl::sycl::min(CHUNK_SIZE1, (unsigned int)(numz1 - item_{{[a-f0-9]+}}.get_group(0) * CHUNK_SIZE1));
   const int zlength1 = min(CHUNK_SIZE1, numz1 - blockIdx.x * CHUNK_SIZE1);
 
 }

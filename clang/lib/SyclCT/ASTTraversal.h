@@ -822,11 +822,6 @@ public:
   void
   handleMiscFunctions(const CallExpr *CE,
                       const ast_matchers::MatchFinder::MatchResult &Result);
-
-  static const std::map<std::string, std::string> HalfFunctionNamesMap;
-  static const std::map<std::string, std::string> SingleDoubleFunctionNamesMap;
-  static const std::map<std::string, std::string> TypecastFunctionNamesMap;
-  static const std::map<std::string, std::string> MiscFunctionNamesMap;
 };
 
 /// Migration rule for replacing __syncthreads() function call.

@@ -148,7 +148,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     std::string ReplacementStr = MapNames::findReplacedName(
         DevicePropVarRule::PropNamesMap, ME->getMemberNameInfo().getAsString());
     if (!ReplacementStr.empty()) {
-      addReplacement(ME->getMemberLoc(), ReplacementStr + "()");
+      addReplacement(ME->getMemberLoc(), "get_" + ReplacementStr + "()");
     }
   }
 }
@@ -172,19 +172,9 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
     auto Result = Itr->second->create(CE)->rewrite();
     if (Result.hasValue())
       addReplacement(CE, Result.getValue());
-  } else if (auto FD = CE->getDirectCallee()) {
-    if (!FD->hasAttr<CUDADeviceAttr>())
-      return;
-    auto Itr = MathFunctionsRule::SingleDoubleFunctionNamesMap.find(RefString);
-    if (Itr != MathFunctionsRule::SingleDoubleFunctionNamesMap.end())
-      addReplacement(CE, FuncCallExprRewriterFactory(Itr->first, Itr->second)
-                             .create(CE)
-                             ->rewrite()
-                             .getValue());
-    else {
-      for (auto Arg : CE->arguments())
+  } else {
+    for (auto Arg : CE->arguments())
         analyzeArgument(Arg);
-    }
   }
 }
 
