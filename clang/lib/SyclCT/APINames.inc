@@ -99,7 +99,7 @@ ENTRY(cudaSignalExternalSemaphoresAsync, false, P4, "comment")
 ENTRY(cudaWaitExternalSemaphoresAsync, false, P4, "comment")
 
 // execution control functions of runtime API
-ENTRY(cudaFuncGetAttributes, false, P0, "comment")
+ENTRY(cudaFuncGetAttributes, true, P0, "comment")
 ENTRY(cudaFuncSetAttribute, false, P0, "comment")
 ENTRY(cudaFuncSetCacheConfig, true, P0, "Successful: SYCLCT1004, no alternatives in DPC++ for cache config")
 ENTRY(cudaFuncSetSharedMemConfig, false, P0, "comment")
