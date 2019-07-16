@@ -470,6 +470,22 @@ void testCommas_in_device_memory() {
   // CHECK-NEXT:   checkError((syclct::sycl_memcpy_from_symbol((void*)(h_A), d_B.get_ptr(), size), 0));
   checkError(cudaMemcpyFromSymbol(h_A, d_B, size));
 
+  void *p_addr;
+  // CHECK:  *(&p_addr) = d_A.get_ptr();
+  cudaGetSymbolAddress(&p_addr, d_A);
+
+  // CHECK:  /*
+  // CHECK-NEXT:  SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  err = (*(&p_addr) = d_A.get_ptr(), 0);
+  err = cudaGetSymbolAddress(&p_addr, d_A);
+
+  // CHECK: /*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:checkError((*(&p_addr) = d_A.get_ptr(), 0));
+  checkError(cudaGetSymbolAddress(&p_addr, d_A));
+
   // CHECK:  free(h_A);
   free(h_A);
 }

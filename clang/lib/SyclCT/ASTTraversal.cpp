@@ -4095,7 +4095,8 @@ void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
     return hasAnyName("cudaMalloc", "cudaMemcpy", "cudaMemcpyAsync",
                       "cudaMemcpyToSymbol", "cudaMemcpyToSymbolAsync",
                       "cudaMemcpyFromSymbol", "cudaMemcpyFromSymbolAsync",
-                      "cudaFree", "cudaMemset", "cublasFree", "cublasAlloc");
+                      "cudaFree", "cudaMemset", "cublasFree", "cublasAlloc",
+                      "cudaGetSymbolAddress");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -4158,6 +4159,19 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
       getNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedCall"));
 }
 
+void MemoryTranslationRule::getSymbolAddressTranslation(
+    const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
+    const UnresolvedLookupExpr *ULExpr) {
+  // Here only handle ordinary variable name reference, for accessing the
+  // address of something residing on the device directly from host side should
+  // not be possible.
+  std::string Replacement;
+  auto StmtStrArg0 = getStmtSpelling(C->getArg(0), *(Result.Context));
+  auto StmtStrArg1 = getStmtSpelling(C->getArg(1), *(Result.Context));
+  Replacement = "*(" + StmtStrArg0 + ")" + " = " + StmtStrArg1 + ".get_ptr()";
+  emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
+}
+
 MemoryTranslationRule::MemoryTranslationRule() {
   SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   TranslationDispatcher["cudaMalloc"] = std::bind(
@@ -4193,6 +4207,9 @@ MemoryTranslationRule::MemoryTranslationRule() {
   TranslationDispatcher["cudaMemset"] = std::bind(
       &MemoryTranslationRule::memsetTranslation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cudaGetSymbolAddress"] = std::bind(
+      &MemoryTranslationRule::getSymbolAddressTranslation, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 }
 
 void MemoryTranslationRule::handleAsync(

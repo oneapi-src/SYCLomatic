@@ -775,6 +775,9 @@ private:
   void memsetTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C,
                          const UnresolvedLookupExpr *ULExpr = NULL);
+  void getSymbolAddressTranslation(
+      const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
+      const UnresolvedLookupExpr *ULExpr = NULL);
   void handleAsync(const CallExpr *C, unsigned i,
                    const ast_matchers::MatchFinder::MatchResult &Result);
   void replaceMemAPIArg(const Expr *E,
