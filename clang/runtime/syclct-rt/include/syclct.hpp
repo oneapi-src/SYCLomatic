@@ -24,13 +24,14 @@
 #include <iostream>
 
 // Todo: update this temporary macro with the one available in DPC++ compiler.
-#define DPCPP_COMPATIBILITY_TEMP   (200)
+#define DPCPP_COMPATIBILITY_TEMP (200)
 #define CL_SYCL_LANGUAGE_VERSION
 
 #include "syclct_atomic.hpp"
 #include "syclct_device.hpp"
 #include "syclct_kernel.hpp"
 #include "syclct_memory.hpp"
+#include "syclct_image.hpp"
 #include "syclct_util.hpp"
 
 #if defined(_MSC_VER) // MSVC
@@ -43,8 +44,7 @@ template <class... Args> class syclct_kernel_name;
 template <int Arg> class syclct_kernel_scalar;
 
 #define SYCLCT_PI_F 3.14159274101257f
-#define SYCLCT_PI   3.141592653589793115998
-
+#define SYCLCT_PI 3.141592653589793115998
 
 #include <limits.h>
 
