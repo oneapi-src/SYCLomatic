@@ -20,6 +20,7 @@ IGNORED_FLAGS = {
     # compiling only flag, ignored because the creator of compilation
     # database will explicitly set it.
     '-c': 0,
+    '--compile': 0,
     # preprocessor macros, ignored because would cause duplicate entries in
     # the output (the only difference would be these flags). this is actual
     # finding from users, who suffered longer execution time caused by the
@@ -29,6 +30,7 @@ IGNORED_FLAGS = {
     '-MG': 0,
     '-MP': 0,
     '-MF': 1,
+    '--dependency-output': 1,
     '-MT': 1,
     '-MQ': 1,
     # linker options, ignored because for compilation database will contain
@@ -44,61 +46,175 @@ IGNORED_FLAGS = {
     '-u': 1,
     '-z': 1,
     '-T': 1,
-    '-Xlinker': 1,
+
     # All of the following options are ignored, as they are not related to syclct tool
-    '-gencode': 1,
-    '-ptx': 0,
+    '-march': 1,
+    '--cuda': 0,
     '-cuda': 0,
+    '--cubin': 0,
     '-cubin': 0,
-    '-fatbin': 0,
-    '-gpu': 0,
+    '--ptx' : 0,
+    '-ptx' : 0,
+    '--device-c': 0,
     '-dc': 0,
+    '--device-w': 0,
     '-dw': 0,
+    '--device-link': 0,
     '-dlink': 0,
+    '--link': 0,
     '-link': 0,
+    '--lib': 0,
     '-lib': 0,
+    '--run': 0,
     '-run': 0,
-    '-Xarchive': 0,
-    '-Xptxas': 0,
-    '-Xnvlink': 0,
-    '-noprof': 0,
-    '-dryrun': 0,
-    '--keep': 0,
-    '-clean': 0,
-    '-code': 1,
+    '--pre-include': 1,
+    '--library': 1,
+    '-l': 1,
+    '--library-path': 1,
+    '-L': 1,
+    '--output-directory': 1,
+    '-odir' : 1,
+    '--compiler-bindir': 1,
     '-ccbin': 1,
-    '-rdc': 1,
-    '-e': 1,
-    '-maxrregcount': 1,
-    '-use_fast_math': 0,
-    '-ftz': 1,
-    '-prec-div': 1,
-    '-prec-sqrt': 1,
-    '-fmad': 1,
-    '-default-stream': 1,
-    '-keep-device-functions': 0,
-    '-src-in-ptx': 0,
-    '-restrict': 0,
-    '-Wno-deprecated-gpu-targets': 0,
-    '-res-usage': 0,
-    '-V': 0,
-    '-optf': 0,
-    '--resource-usage': 0,
-    '-res-usage': 0,
-    '-x': 1,
-    '-O0': 0,
-    '-O1': 0,
-    '-O2': 0,
-    '-O3': 0,
+    '-cudart': 1,
+    '--cudart': 1,
+    '--libdevice-directory': 1,
+    '-ldir': 1,
+    '--use-local-env': 0,
+    '--profile': 0,
+    '-pg': 0,
+    '--debug': 0,
     '-g': 0,
-    '--use-local-env' : 0,
-    '--keep-dir' : 1,
-    '--machine' : 1,
-    '-cudart' : 1,
-    '--ptxas-options=-v': 0,
-    '--source-in-ptx': 0,
+    '--generate-line-info': 0,
+    '-lineinfo': 0,
+    '--shared': 0,
+    '-shared' : 0,
+    '--x': 1,
+    '-x': 1,
+    '--no-host-device-initializer-list': 0,
+    '-nohdinitlist': 0,
+    '--no-host-device-move-forward': 0,
+    '-nohdmoveforward': 0,
+    '--expt-relaxed-constexpr': 0,
+    '-expt-relaxed-constexpr': 0,
+    '--expt-extended-lambda': 0,
+    '-expt-extended-lambda' : 0,
     '-Xcompiler': 1,
+    '--compiler-options': 1,
+    '--compiler-options': 1,
+    '-Xcompiler': 1,
+    '--linker-options': 1,
+    '-Xlinker': 1,
+    '--archive-options': 1,
+    '-Xarchive': 1,
+    '--ptxas-options': 1,
+    '-Xptxas': 1,
+    '--nvlink-options': 1,
+    '-Xnvlink': 1,
+    '-noprof': 0,
+    '--dont-use-profile': 0,
+    '-dryrun': 0,
+    '--dryrun': 0,
+    '--verbose': 0,
+    '-v': 0,
+    '--keep': 0,
+    '-keep': 0,
+    '--keep-dir': 1,
+    '-keep-dir': 1,
+    '--save-temps': 0,
+    '-save-temps': 0,
+    '--clean-targets': 0,
+    '-clean': 0,
+    '--run-args': 1,
+    '-run-args': 1,
+    '--input-drive-prefix': 1,
+    '-idp': 1,
+    '--dependency-drive-prefix': 1,
+    '-ddp':  1,
+    '--drive-prefix': 1,
+    '-dp': 1,
+    '--dependency-target-name': 1,
+    '-MT': 1,
+    '--no-align-double': 0,
+    '--no-device-link': 0,
+    '-nodlink': 0,
+    '--gpu-code': 1,
+    '-code': 1,
+    '-gencode': 1,
+    '--generate-code': 1,
+    '--relocatable-device-code': 1,
+    '-rdc': 1,
+    '--entries': 1,
+    '-e': 1,
+    '--maxrregcount': 1,
+    '-maxrregcount': 1,
+    '--use_fast_math': 0,
+    '-use_fast_math': 0,
+    '--ftz': 1,
+    '-ftz': 1,
+    '--prec-div': 1,
+    '-prec-div': 1,
+    '--prec-sqrt': 1,
+    '-prec-sqrt': 1,
+    '--fmad': 1,
+    '-fmad': 1,
+    '--default-stream' : 1,
+    '-default-stream' : 1,
+    '--keep-device-functions' : 0,
+    '-keep-device-functions' : 0,
+    '--source-in-ptx' : 0,
+    '-src-in-ptx' : 0,
+    '--restrict' : 0,
+    '-restrict' : 0,
+    '--Wreorder' : 0,
+    '-Wreorder' : 0,
+    '--Wno-deprecated-declarations' : 0,
+    '-Wno-deprecated-declarations' : 0,
+    '--Wno-deprecated-gpu-targets' : 0,
+    '-Wno-deprecated-gpu-targets' : 0,
+    '--Werror' : 1,
+    '-Werror' : 1,
+    '--resource-usage' : 0,
+    '-res-usage' : 0,
+    '--extensible-whole-program' : 0,
+    '-ewp' : 0,
+    '--no-compress' : 0,
+    '-no-compress' : 0,
+    '--help' : 0,
+    '-h' : 0,
+    '--version' : 0,
+    '-V' : 0,
+    '--options-file' : 0,
+    '-optf' : 0,
 }
+
+MAP_FLAGS = {
+    '--fatbin': '-Xcuda-fatbinary',
+    '-fatbin': '-Xcuda-fatbinary',
+    '-G': '--cuda-noopt-device-debug',
+    '--device-debug': '--cuda-noopt-device-debug',
+    '--machine' : '-m',
+    '-m' : '-m',
+    '--gpu-architecture' : '--cuda-gpu-arch=',
+    '-arch' : '--cuda-gpu-arch=',
+    '--disable-warnings' : '--no-warnings',
+    '-w' : '--no-warnings',
+}
+
+def sub_arg_split(arg, separator):
+    arg_split = []
+    pattern_space = re.compile("\s+")
+    pattern_comma = re.compile(",")
+
+    arg_value = [x for x in arg.split(separator) if x]
+
+    # To handle combined optons like ' -DXXX -O3 -w -march=native '"
+    if re.search(r'\s+', arg_value[0]):
+        arg_split = [x for x in pattern_space.split(arg_value[0]) if x]
+    # To handle combined optons like ',"-Wall","-O2","-Wextra","-g"'
+    elif re.search(r',', arg_value[0]):
+        arg_split = [x.strip('"') for x in pattern_comma.split(arg_value[0]) if x]
+    return arg_split
 
 # Known C/C++ compiler executable name patterns
 COMPILER_PATTERNS = frozenset([
@@ -116,11 +232,30 @@ def parse_args(args):
         # quit when compilation pass is not involved
         if arg in {'-E', '-S', '-cc1', '-M', '-MM', '-###'}:
             return None
+        # map nvcc flags
+        elif arg in MAP_FLAGS:
+            new_flag = MAP_FLAGS[arg]
+            if arg == '--machine' or arg == '-m':
+                # '-m 32' -> '-m32' or '--machine 32' -> '-m32'
+                index = arg_list.index(arg)
+                arg_next = arg_list[index + 1]
+                new_flag += arg_next
+                next(args)
+            elif arg == '--gpu-architecture' or arg == '-arch':
+                index = arg_list.index(arg)
+                arg_next = arg_list[index + 1]
+                new_flag += arg_next
+                next(args)
+            flags.append(new_flag)
         # ignore some flags
         elif arg in IGNORED_FLAGS:
             count = IGNORED_FLAGS[arg]
             for _ in range(count):
-                if(arg == '-Xcompiler'):
+                if arg == '-Xcompiler' or arg == '--compiler-options'  \
+                   or arg == '-Xarchive' or arg == '--archive-options' \
+                   or arg == '-Xptxas' or arg == '--ptxas-options'     \
+                   or arg == '-Xnvlink' or arg == '--nvlink-options'   \
+                   or arg == '-run-args' or arg == '--run-args':
                     # for '-Xcompiler', it may be with arg like "'-Xcompiler' ' -DXXX -O3 -w -march=native '"
                     index = arg_list.index(arg)
                     if(index < len(arg_list) - 1):
@@ -180,33 +315,174 @@ def parse_args(args):
             pass
         # ignore -Xcompiler=xx option.
         elif re.match(r'^-Xcompiler=', arg):
-            arg_value = [x for x in arg.split('-Xcompiler=') if x]
-            pattern = re.compile("\s+")
-            arg_split = [x for x in pattern.split(arg_value[0]) if x]
+            arg_split = sub_arg_split(arg, '-Xcompiler=')
             xcompiler_flags = parse_args(iter(arg_split))
             flags.extend(xcompiler_flags[0])
             pass
-        # ignore -code=xx option.
-        elif re.match(r'^-code=', arg):
+        elif re.match(r'^--compiler-options=', arg):
+            arg_split = sub_arg_split(arg, '--compiler-options=')
+            xcompiler_flags = parse_args(iter(arg_split))
+            flags.extend(xcompiler_flags[0])
             pass
-        # ignore -ccbin=xx option, .e.g -ccbin=/usr/bin/c++
-        elif re.match(r'^-ccbin=', arg):
+        elif re.match(r'^-Xlinke=', arg):
+            arg_split = sub_arg_split(arg, '-Xlinkes=')
+            xcompiler_flags = parse_args(iter(arg_split))
+            flags.extend(xcompiler_flags[0])
             pass
-        # ignore -ftz=xx option, .e.g -ftz=true
-        elif re.match(r'^-ftz=', arg):
+        elif re.match(r'^--linker-options=', arg):
+            arg_split = sub_arg_split(arg, '--linker-options=')
+            xcompiler_flags = parse_args(iter(arg_split))
+            flags.extend(xcompiler_flags[0])
             pass
-        # ignore -prec-div=xx option, .e.g -prec-div=false
-        elif re.match(r'^-prec-div=', arg):
+        elif re.match(r'^-Xarchive=', arg):
+            arg_split = sub_arg_split(arg, '-Xarchive=')
+            xcompiler_flags = parse_args(iter(arg_split))
+            flags.extend(xcompiler_flags[0])
             pass
-        # ignore -prec-sqrt=xx option, .e.g -prec-sqrt=false
-        elif re.match(r'^-prec-sqrt=', arg):
+        elif re.match(r'^--archive-options=', arg):
+            arg_split = sub_arg_split(arg, '--archive-options=')
+            xcompiler_flags = parse_args(iter(arg_split))
+            flags.extend(xcompiler_flags[0])
+            pass
+        elif re.match(r'^-Xptxa=', arg):
+            arg_split = sub_arg_split(arg, '-Xptxa=')
+            xcompiler_flags = parse_args(iter(arg_split))
+            flags.extend(xcompiler_flags[0])
+            pass
+        elif re.match(r'^--ptxas-options=', arg):
+            arg_split = sub_arg_split(arg, '--ptxas-options=')
+            xcompiler_flags = parse_args(iter(arg_split))
+            flags.extend(xcompiler_flags[0])
+            pass
+        elif re.match(r'^-Xnvlink=', arg):
+            arg_split = sub_arg_split(arg, '-Xnvlink=')
+            xcompiler_flags = parse_args(iter(arg_split))
+            flags.extend(xcompiler_flags[0])
+            pass
+        elif re.match(r'^--nvlink-options=', arg):
+            arg_split = sub_arg_split(arg, '--nvlink-options=')
+            xcompiler_flags = parse_args(iter(arg_split))
+            flags.extend(xcompiler_flags[0])
+            pass
+        elif re.match(r'^-run-args=', arg):
+            arg_split = sub_arg_split(arg, '-run-args=')
+            xcompiler_flags = parse_args(iter(arg_split))
+            flags.extend(xcompiler_flags[0])
+            pass
+        elif re.match(r'^--run-args=', arg):
+            arg_split = sub_arg_split(arg, '--run-args=')
+            xcompiler_flags = parse_args(iter(arg_split))
+            flags.extend(xcompiler_flags[0])
             pass
         # ignore -march=xx option, .e.g -march=native
         elif re.match(r'^-march=', arg):
             pass
+        elif re.match(r'^--gpu-architecture=', arg) or re.match(r'^-arch=', arg):
+            #split by '=' and strip whitespace
+            result = [x.strip() for x in arg.split('=')]
+            new_opt = MAP_FLAGS[result[0]] + result[1]
+            flags.append(new_opt)
+            pass
+        elif re.match(r'^--pre-include=', arg):
+            pass
+        elif re.match(r'^--library=', arg):
+            pass
+        elif re.match(r'^-l=', arg):
+            pass
+        elif re.match(r'^--library-path=', arg):
+            pass
+        elif re.match(r'^-L=', arg):
+            pass
+        elif re.match(r'^--output-directory=', arg):
+            pass
+        elif re.match(r'^-odir=', arg):
+            pass
+        elif re.match(r'^--compiler-bindir=', arg):
+            pass
+        elif re.match(r'^-ccbin=', arg):
+            pass
+        elif re.match(r'^--cudart=', arg):
+            pass
+        elif re.match(r'^-cudart=', arg):
+            pass
+        elif re.match(r'^--libdevice-directory=', arg):
+            pass
+        elif re.match(r'^-ldir=', arg):
+            pass
+        elif re.match(r'^--x=', arg):
+            pass
+        elif re.match(r'^-x=', arg):
+            pass
+        elif re.match(r'^--keep-dir=', arg):
+            pass
+        elif re.match(r'^--input-drive-prefix=', arg):
+            pass
+        elif re.match(r'^-idp=', arg):
+            pass
+        elif re.match(r'^--dependency-drive-prefix=', arg):
+            pass
+        elif re.match(r'^-ddp=', arg):
+            pass
+        elif re.match(r'^--drive-prefix=', arg):
+            pass
+        elif re.match(r'^-dp=', arg):
+            pass
+        elif re.match(r'^--dependency-target-name=', arg):
+            pass
+        elif re.match(r'^-MT=', arg):
+            pass
+        elif re.match(r'^--gpu-code=', arg):
+            pass
+        elif re.match(r'^-code=', arg):
+            pass
+        elif re.match(r'^--generate-code=', arg):
+            pass
+        elif re.match(r'^-gencode=', arg):
+            pass
+        elif re.match(r'^--relocatable-device-code=', arg):
+            pass
+        elif re.match(r'^-rdc=', arg):
+            pass
+        elif re.match(r'^--entries=', arg):
+            pass
+        elif re.match(r'^-e=', arg):
+            pass
+        elif re.match(r'^--maxrregcount=', arg):
+            pass
+        elif re.match(r'^-maxrregcount=', arg):
+            pass
+        elif re.match(r'^--use_fast_math=', arg):
+            pass
+        elif re.match(r'^-use_fast_math=', arg):
+            pass
+        elif re.match(r'^--ftz=', arg):
+            pass
+        elif re.match(r'^-ftz=', arg):
+            pass
+        elif re.match(r'^--prec-div=', arg):
+            pass
+        elif re.match(r'^-prec-div=', arg):
+            pass
+        elif re.match(r'^--prec-sqrt=', arg):
+            pass
+        elif re.match(r'^-prec-sqrt=', arg):
+            pass
+        elif re.match(r'^--fmad=', arg):
+            pass
+        elif re.match(r'^-fmad=', arg):
+            pass
+        elif re.match(r'^--default-stream=', arg):
+            pass
+        elif re.match(r'^-default-stream=', arg):
+            pass
+        elif re.match(r'^--Werror=', arg):
+            pass
+        elif re.match(r'^-Werror=', arg):
+            pass
         # and consider everything else as compile option.
         else:
-            flags.append(arg)
+           flags.append(arg)
+
     return [flags, compiler, files]
 
 def split_command(command):
