@@ -597,17 +597,21 @@ int main(){
   int kl=0;
   int ku=0;
   int lda = 10;
+  int trans0 = 0;
+  int trans1 = 1;
+  int trans2 = 2;
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_1 = trans0;
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(y_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::cgbmv(handle, mkl::transpose::nontrans, m, n, kl, ku, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<float>((beta_c)->x(),(beta_c)->y()), y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
+  // CHECK-NEXT: status = (mkl::cgbmv(handle, (((int)transpose_ct_1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_1)), m, n, kl, ku, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<float>((beta_c)->x(),(beta_c)->y()), y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
@@ -618,20 +622,21 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::cgbmv(handle, mkl::transpose::nontrans, m, n, kl, ku, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<float>((beta_c)->x(),(beta_c)->y()), y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy);
   // CHECK-NEXT: }
-  status = cublasCgbmv(handle, CUBLAS_OP_N, m, n, kl, ku, alpha_c, x_c, lda, x_c, incx, beta_c, y_c, incy);
+  status = cublasCgbmv(handle, (cublasOperation_t)trans0, m, n, kl, ku, alpha_c, x_c, lda, x_c, incx, beta_c, y_c, incy);
   cublasCgbmv(handle, CUBLAS_OP_N, m, n, kl, ku, alpha_c, x_c, lda, x_c, incx, beta_c, y_c, incy);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_1 = trans1;
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(y_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::zgbmv(handle, mkl::transpose::nontrans, m, n, kl, ku, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<double>((beta_z)->x(),(beta_z)->y()), y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
+  // CHECK-NEXT: status = (mkl::zgbmv(handle, (((int)transpose_ct_1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_1)), m, n, kl, ku, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<double>((beta_z)->x(),(beta_z)->y()), y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
@@ -642,20 +647,21 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::zgbmv(handle, mkl::transpose::nontrans, m, n, kl, ku, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<double>((beta_z)->x(),(beta_z)->y()), y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy);
   // CHECK-NEXT: }
-  status = cublasZgbmv(handle, CUBLAS_OP_N, m, n, kl, ku, alpha_z, x_z, lda, x_z, incx, beta_z, y_z, incy);
+  status = cublasZgbmv(handle, (cublasOperation_t)trans1, m, n, kl, ku, alpha_z, x_z, lda, x_z, incx, beta_z, y_z, incy);
   cublasZgbmv(handle, CUBLAS_OP_N, m, n, kl, ku, alpha_z, x_z, lda, x_z, incx, beta_z, y_z, incy);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_1 = trans2;
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(y_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::cgemv(handle, mkl::transpose::nontrans, m, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<float>((beta_c)->x(),(beta_c)->y()), y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
+  // CHECK-NEXT: status = (mkl::cgemv(handle, (((int)transpose_ct_1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_1)), m, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<float>((beta_c)->x(),(beta_c)->y()), y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
@@ -666,20 +672,21 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::cgemv(handle, mkl::transpose::nontrans, m, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<float>((beta_c)->x(),(beta_c)->y()), y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy);
   // CHECK-NEXT: }
-  status = cublasCgemv(handle, CUBLAS_OP_N, m, n, alpha_c, x_c, lda, x_c, incx, beta_c, y_c, incy);
+  status = cublasCgemv(handle, (cublasOperation_t)trans2, m, n, alpha_c, x_c, lda, x_c, incx, beta_c, y_c, incy);
   cublasCgemv(handle, CUBLAS_OP_N, m, n, alpha_c, x_c, lda, x_c, incx, beta_c, y_c, incy);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_1 = 0;
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(y_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::zgemv(handle, mkl::transpose::nontrans, m, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<double>((beta_z)->x(),(beta_z)->y()), y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
+  // CHECK-NEXT: status = (mkl::zgemv(handle, (((int)transpose_ct_1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_1)), m, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<double>((beta_z)->x(),(beta_z)->y()), y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
@@ -690,7 +697,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::zgemv(handle, mkl::transpose::nontrans, m, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<double>((beta_z)->x(),(beta_z)->y()), y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy);
   // CHECK-NEXT: }
-  status = cublasZgemv(handle, CUBLAS_OP_N, m, n, alpha_z, x_z, lda, x_z, incx, beta_z, y_z, incy);
+  status = cublasZgemv(handle, (cublasOperation_t)0, m, n, alpha_z, x_z, lda, x_z, incx, beta_z, y_z, incy);
   cublasZgemv(handle, CUBLAS_OP_N, m, n, alpha_z, x_z, lda, x_z, incx, beta_z, y_z, incy);
 
   // CHECK: /*
@@ -790,15 +797,20 @@ int main(){
   cublasZgerc(handle, m, n, alpha_z, x_z, incx, y_z, incy, result_z, lda);
 
   int k = 1;
+  int fill0 = 0;
+  int fill1 = 1;
+  int diag0 = 0;
+  int diag1 = 1;
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = 1;
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::ctbmv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, k, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
+  // CHECK-NEXT: status = (mkl::ctbmv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), (mkl::diag)diag0, n, k, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
@@ -807,18 +819,19 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::ctbmv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, k, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx);
   // CHECK-NEXT: }
-  status = cublasCtbmv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, k, x_c, lda, result_c, incx);
+  status = cublasCtbmv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)1, (cublasDiagType_t)diag0, n, k, x_c, lda, result_c, incx);
   cublasCtbmv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, k, x_c, lda, result_c, incx);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = 2;
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::ztbmv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, k, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
+  // CHECK-NEXT: status = (mkl::ztbmv(handle, (((int)fill1)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), (mkl::diag)diag1, n, k, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
@@ -827,18 +840,19 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::ztbmv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, k, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx);
   // CHECK-NEXT: }
-  status = cublasZtbmv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, k, x_z, lda, result_z, incx);
+  status = cublasZtbmv(handle, (cublasFillMode_t)fill1, (cublasOperation_t)2, (cublasDiagType_t)diag1, n, k, x_z, lda, result_z, incx);
   cublasZtbmv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, k, x_z, lda, result_z, incx);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::ctbsv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit,  n, k, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
+  // CHECK-NEXT: status = (mkl::ctbsv(handle, (((int)0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), (mkl::diag)0,  n, k, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
@@ -847,18 +861,19 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::ctbsv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit,  n, k, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx);
   // CHECK-NEXT: }
-  status = cublasCtbsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT,  n, k, x_c, lda, result_c, incx);
+  status = cublasCtbsv(handle, (cublasFillMode_t)0, (cublasOperation_t)trans0, (cublasDiagType_t)0,  n, k, x_c, lda, result_c, incx);
   cublasCtbsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT,  n, k, x_c, lda, result_c, incx);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::ztbsv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit,  n, k, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
+  // CHECK-NEXT: status = (mkl::ztbsv(handle, (((int)1)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), (mkl::diag)1,  n, k, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
@@ -867,18 +882,19 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::ztbsv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit,  n, k, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx);
   // CHECK-NEXT: }
-  status = cublasZtbsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT,  n, k, x_z, lda, result_z, incx);
+  status = cublasZtbsv(handle, (cublasFillMode_t)1, (cublasOperation_t)trans0, (cublasDiagType_t)1,  n, k, x_z, lda, result_z, incx);
   cublasZtbsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT,  n, k, x_z, lda, result_z, incx);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::ctpmv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
+  // CHECK-NEXT: status = (mkl::ctpmv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), (mkl::diag)diag0, n, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
@@ -887,18 +903,19 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::ctpmv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx);
   // CHECK-NEXT: }
-  status = cublasCtpmv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, x_c, result_c, incx);
+  status = cublasCtpmv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, n, x_c, result_c, incx);
   cublasCtpmv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, x_c, result_c, incx);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::ztpmv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
+  // CHECK-NEXT: status = (mkl::ztpmv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), (mkl::diag)diag0, n, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
@@ -907,18 +924,19 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::ztpmv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx);
   // CHECK-NEXT: }
-  status = cublasZtpmv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, x_z, result_z, incx);
+  status = cublasZtpmv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, n, x_z, result_z, incx);
   cublasZtpmv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, x_z, result_z, incx);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::ctpsv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
+  // CHECK-NEXT: status = (mkl::ctpsv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), (mkl::diag)diag0, n, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
@@ -927,18 +945,19 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::ctpsv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx);
   // CHECK-NEXT: }
-  status = cublasCtpsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, x_c, result_c, incx);
+  status = cublasCtpsv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, n, x_c, result_c, incx);
   cublasCtpsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, x_c, result_c, incx);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::ztpsv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
+  // CHECK-NEXT: status = (mkl::ztpsv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), (mkl::diag)diag0, n, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
@@ -947,18 +966,19 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::ztpsv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx);
   // CHECK-NEXT: }
-  status = cublasZtpsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, x_z, result_z, incx);
+  status = cublasZtpsv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, n, x_z, result_z, incx);
   cublasZtpsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, x_z, result_z, incx);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::ctrmv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
+  // CHECK-NEXT: status = (mkl::ctrmv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), (mkl::diag)diag0, n, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
@@ -967,18 +987,19 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::ctrmv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx);
   // CHECK-NEXT: }
-  status = cublasCtrmv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, x_c, lda, result_c, incx);
+  status = cublasCtrmv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, n, x_c, lda, result_c, incx);
   cublasCtrmv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, x_c, lda, result_c, incx);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::ztrmv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
+  // CHECK-NEXT: status = (mkl::ztrmv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), (mkl::diag)diag0, n, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
@@ -987,18 +1008,19 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::ztrmv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx);
   // CHECK-NEXT: }
-  status = cublasZtrmv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, x_z, lda, result_z, incx);
+  status = cublasZtrmv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, n, x_z, lda, result_z, incx);
   cublasZtrmv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, x_z, lda, result_z, incx);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::ctrsv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
+  // CHECK-NEXT: status = (mkl::ctrsv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), (mkl::diag)diag0, n, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
@@ -1007,18 +1029,19 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::ctrsv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx);
   // CHECK-NEXT: }
-  status = cublasCtrsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, x_c, lda, result_c, incx);
+  status = cublasCtrsv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, n, x_c, lda, result_c, incx);
   cublasCtrsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, x_c, lda, result_c, incx);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::ztrsv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
+  // CHECK-NEXT: status = (mkl::ztrsv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), (mkl::diag)diag0, n, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
@@ -1027,7 +1050,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::ztrsv(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx);
   // CHECK-NEXT: }
-  status = cublasZtrsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, x_z, lda, result_z, incx);
+  status = cublasZtrsv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, n, x_z, lda, result_z, incx);
   cublasZtrsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, x_z, lda, result_z, incx);
 
   // CHECK: /*
@@ -1040,7 +1063,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(y_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::chemv(handle, mkl::uplo::lower, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<float>((beta_c)->x(),(beta_c)->y()), y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
+  // CHECK-NEXT: status = (mkl::chemv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<float>((beta_c)->x(),(beta_c)->y()), y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
@@ -1051,7 +1074,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::chemv(handle, mkl::uplo::lower, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<float>((beta_c)->x(),(beta_c)->y()), y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy);
   // CHECK-NEXT: }
-  status = cublasChemv(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_c, x_c, lda, x_c, incx, beta_c, y_c, incy);
+  status = cublasChemv(handle, (cublasFillMode_t)fill0, n, alpha_c, x_c, lda, x_c, incx, beta_c, y_c, incy);
   cublasChemv(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_c, x_c, lda, x_c, incx, beta_c, y_c, incy);
 
   // CHECK: /*
@@ -1064,7 +1087,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(y_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::zhemv(handle, mkl::uplo::lower, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<double>((beta_z)->x(),(beta_z)->y()), y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
+  // CHECK-NEXT: status = (mkl::zhemv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<double>((beta_z)->x(),(beta_z)->y()), y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
@@ -1075,7 +1098,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::zhemv(handle, mkl::uplo::lower, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<double>((beta_z)->x(),(beta_z)->y()), y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy);
   // CHECK-NEXT: }
-  status = cublasZhemv(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_z, x_z, lda, x_z, incx, beta_z, y_z, incy);
+  status = cublasZhemv(handle, (cublasFillMode_t)fill0, n, alpha_z, x_z, lda, x_z, incx, beta_z, y_z, incy);
   cublasZhemv(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_z, x_z, lda, x_z, incx, beta_z, y_z, incy);
 
   // CHECK: /*
@@ -1088,7 +1111,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(y_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::chbmv(handle, mkl::uplo::lower, n, k, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<float>((beta_c)->x(),(beta_c)->y()), y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
+  // CHECK-NEXT: status = (mkl::chbmv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, k, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<float>((beta_c)->x(),(beta_c)->y()), y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
@@ -1099,7 +1122,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::chbmv(handle, mkl::uplo::lower, n, k, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<float>((beta_c)->x(),(beta_c)->y()), y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy);
   // CHECK-NEXT: }
-  status = cublasChbmv(handle, CUBLAS_FILL_MODE_LOWER, n, k, alpha_c, x_c, lda, x_c, incx, beta_c, y_c, incy);
+  status = cublasChbmv(handle, (cublasFillMode_t)fill0, n, k, alpha_c, x_c, lda, x_c, incx, beta_c, y_c, incy);
   cublasChbmv(handle, CUBLAS_FILL_MODE_LOWER, n, k, alpha_c, x_c, lda, x_c, incx, beta_c, y_c, incy);
 
   // CHECK: /*
@@ -1112,7 +1135,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(y_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::zhbmv(handle, mkl::uplo::lower, n, k, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<double>((beta_z)->x(),(beta_z)->y()), y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
+  // CHECK-NEXT: status = (mkl::zhbmv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, k, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<double>((beta_z)->x(),(beta_z)->y()), y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
@@ -1123,7 +1146,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::zhbmv(handle, mkl::uplo::lower, n, k, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<double>((beta_z)->x(),(beta_z)->y()), y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy);
   // CHECK-NEXT: }
-  status = cublasZhbmv(handle, CUBLAS_FILL_MODE_LOWER, n, k, alpha_z, x_z, lda, x_z, incx, beta_z, y_z, incy);
+  status = cublasZhbmv(handle, (cublasFillMode_t)fill0, n, k, alpha_z, x_z, lda, x_z, incx, beta_z, y_z, incy);
   cublasZhbmv(handle, CUBLAS_FILL_MODE_LOWER, n, k, alpha_z, x_z, lda, x_z, incx, beta_z, y_z, incy);
 
   // CHECK: /*
@@ -1136,7 +1159,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(y_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::chpmv(handle, mkl::uplo::lower, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<float>((beta_c)->x(),(beta_c)->y()), y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
+  // CHECK-NEXT: status = (mkl::chpmv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<float>((beta_c)->x(),(beta_c)->y()), y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
@@ -1147,7 +1170,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::chpmv(handle, mkl::uplo::lower, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<float>((beta_c)->x(),(beta_c)->y()), y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy);
   // CHECK-NEXT: }
-  status = cublasChpmv(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_c, x_c, x_c, incx, beta_c, y_c, incy);
+  status = cublasChpmv(handle, (cublasFillMode_t)fill0, n, alpha_c, x_c, x_c, incx, beta_c, y_c, incy);
   cublasChpmv(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_c, x_c, x_c, incx, beta_c, y_c, incy);
 
   // CHECK: /*
@@ -1160,7 +1183,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(y_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::zhpmv(handle, mkl::uplo::lower, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<double>((beta_z)->x(),(beta_z)->y()), y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
+  // CHECK-NEXT: status = (mkl::zhpmv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<double>((beta_z)->x(),(beta_z)->y()), y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
@@ -1171,7 +1194,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::zhpmv(handle, mkl::uplo::lower, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, std::complex<double>((beta_z)->x(),(beta_z)->y()), y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy);
   // CHECK-NEXT: }
-  status = cublasZhpmv(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_z, x_z, x_z, incx, beta_z, y_z, incy);
+  status = cublasZhpmv(handle, (cublasFillMode_t)fill0, n, alpha_z, x_z, x_z, incx, beta_z, y_z, incy);
   cublasZhpmv(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_z, x_z, x_z, incx, beta_z, y_z, incy);
 
   // CHECK: /*
@@ -1182,7 +1205,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::cher(handle, mkl::uplo::lower, n, *(alpha_f), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda), 0);
+  // CHECK-NEXT: status = (mkl::cher(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, *(alpha_f), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
@@ -1191,7 +1214,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::cher(handle, mkl::uplo::lower, n, *(alpha_f), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda);
   // CHECK-NEXT: }
-  status = cublasCher(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_f, x_c, incx, result_c, lda);
+  status = cublasCher(handle, (cublasFillMode_t)fill0, n, alpha_f, x_c, incx, result_c, lda);
   cublasCher(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_f, x_c, incx, result_c, lda);
 
   // CHECK: /*
@@ -1202,7 +1225,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::zher(handle, mkl::uplo::lower, n, *(alpha_d), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda), 0);
+  // CHECK-NEXT: status = (mkl::zher(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, *(alpha_d), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
@@ -1211,7 +1234,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::zher(handle, mkl::uplo::lower, n, *(alpha_d), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda);
   // CHECK-NEXT: }
-  status = cublasZher(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_d, x_z, incx, result_z, lda);
+  status = cublasZher(handle, (cublasFillMode_t)fill0, n, alpha_d, x_z, incx, result_z, lda);
   cublasZher(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_d, x_z, incx, result_z, lda);
 
   // CHECK: /*
@@ -1224,7 +1247,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::cher2(handle, mkl::uplo::lower, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda), 0);
+  // CHECK-NEXT: status = (mkl::cher2(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
@@ -1235,7 +1258,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::cher2(handle, mkl::uplo::lower, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda);
   // CHECK-NEXT: }
-  status = cublasCher2(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_c, x_c, incx, y_c, incy, result_c, lda);
+  status = cublasCher2(handle, (cublasFillMode_t)fill0, n, alpha_c, x_c, incx, y_c, incy, result_c, lda);
   cublasCher2(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_c, x_c, incx, y_c, incy, result_c, lda);
 
   // CHECK: /*
@@ -1248,7 +1271,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::zher2(handle, mkl::uplo::lower, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda), 0);
+  // CHECK-NEXT: status = (mkl::zher2(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
@@ -1259,7 +1282,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::zher2(handle, mkl::uplo::lower, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda);
   // CHECK-NEXT: }
-  status = cublasZher2(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_z, x_z, incx, y_z, incy, result_z, lda);
+  status = cublasZher2(handle, (cublasFillMode_t)fill0, n, alpha_z, x_z, incx, y_z, incy, result_z, lda);
   cublasZher2(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_z, x_z, incx, y_z, incy, result_z, lda);
 
   // CHECK: /*
@@ -1270,7 +1293,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::chpr(handle, mkl::uplo::lower, n, *(alpha_f), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}), 0);
+  // CHECK-NEXT: status = (mkl::chpr(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, *(alpha_f), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
@@ -1279,7 +1302,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::chpr(handle, mkl::uplo::lower, n, *(alpha_f), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}});
   // CHECK-NEXT: }
-  status = cublasChpr(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_f, x_c, incx, result_c);
+  status = cublasChpr(handle, (cublasFillMode_t)fill0, n, alpha_f, x_c, incx, result_c);
   cublasChpr(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_f, x_c, incx, result_c);
 
   // CHECK: /*
@@ -1290,7 +1313,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::zhpr(handle, mkl::uplo::lower, n, *(alpha_d), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}), 0);
+  // CHECK-NEXT: status = (mkl::zhpr(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, *(alpha_d), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
@@ -1299,7 +1322,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::zhpr(handle, mkl::uplo::lower, n, *(alpha_d), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}});
   // CHECK-NEXT: }
-  status = cublasZhpr(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_d, x_z, incx, result_z);
+  status = cublasZhpr(handle, (cublasFillMode_t)fill0, n, alpha_d, x_z, incx, result_z);
   cublasZhpr(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_d, x_z, incx, result_z);
 
   // CHECK: /*
@@ -1312,7 +1335,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::chpr2(handle, mkl::uplo::lower, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}), 0);
+  // CHECK-NEXT: status = (mkl::chpr2(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
@@ -1323,7 +1346,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::chpr2(handle, mkl::uplo::lower, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy, result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}});
   // CHECK-NEXT: }
-  status = cublasChpr2(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_c, x_c, incx, y_c, incy, result_c);
+  status = cublasChpr2(handle, (cublasFillMode_t)fill0, n, alpha_c, x_c, incx, y_c, incy, result_c);
   cublasChpr2(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_c, x_c, incx, y_c, incy, result_c);
 
   // CHECK: /*
@@ -1336,7 +1359,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::zhpr2(handle, mkl::uplo::lower, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}), 0);
+  // CHECK-NEXT: status = (mkl::zhpr2(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
@@ -1347,7 +1370,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::zhpr2(handle, mkl::uplo::lower, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incx, y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, incy, result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}});
   // CHECK-NEXT: }
-  status = cublasZhpr2(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_z, x_z, incx, y_z, incy, result_z);
+  status = cublasZhpr2(handle, (cublasFillMode_t)fill0, n, alpha_z, x_z, incx, y_z, incy, result_z);
   cublasZhpr2(handle, CUBLAS_FILL_MODE_LOWER, n, alpha_z, x_z, incx, y_z, incy, result_z);
 
   int N = 100;
@@ -1355,13 +1378,15 @@ int main(){
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_1 = trans0;
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(y_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(y_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::cgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, std::complex<float>((beta_c)->x(),(beta_c)->y()), result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N), 0);
+  // CHECK-NEXT: status = (mkl::cgemm(handle, (((int)transpose_ct_1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_1)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), N, N, N, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, std::complex<float>((beta_c)->x(),(beta_c)->y()), result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_c);
@@ -1372,20 +1397,22 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(result_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::cgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), x_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, y_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, std::complex<float>((beta_c)->x(),(beta_c)->y()), result_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N);
   // CHECK-NEXT: }
-  status = cublasCgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, alpha_c, x_c, N, y_c, N, beta_c, result_c, N);
+  status = cublasCgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans0, N, N, N, alpha_c, x_c, N, y_c, N, beta_c, result_c, N);
   cublasCgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, alpha_c, x_c, N, y_c, N, beta_c, result_c, N);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_1 = trans0;
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(y_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(y_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(result_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::zgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, std::complex<double>((beta_z)->x(),(beta_z)->y()), result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N), 0);
+  // CHECK-NEXT: status = (mkl::zgemm(handle, (((int)transpose_ct_1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_1)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), N, N, N, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, std::complex<double>((beta_z)->x(),(beta_z)->y()), result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(x_z);
@@ -1396,7 +1423,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(result_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::zgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), x_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, y_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, std::complex<double>((beta_z)->x(),(beta_z)->y()), result_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N);
   // CHECK-NEXT: }
-  status = cublasZgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, alpha_z, x_z, N, y_z, N, beta_z, result_z, N);
+  status = cublasZgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans0, N, N, N, alpha_z, x_z, N, y_z, N, beta_z, result_z, N);
   cublasZgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, alpha_z, x_z, N, y_z, N, beta_z, result_z, N);
 
   cuComplex* A_c = 0;
@@ -1419,13 +1446,15 @@ int main(){
   // CHECK-NEXT: SYCLCT1003:62: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_1 = trans0;
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(B_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(C_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::cgemm3m(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, m, n, k, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<float>((beta_c)->x(),(beta_c)->y()), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
+  // CHECK-NEXT: status = (mkl::cgemm3m(handle, (((int)transpose_ct_1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_1)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), m, n, k, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<float>((beta_c)->x(),(beta_c)->y()), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_c);
@@ -1436,20 +1465,22 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::cgemm3m(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, m, n, k, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<float>((beta_c)->x(),(beta_c)->y()), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc);
   // CHECK-NEXT: }
-  status = cublasCgemm3m(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
+  status = cublasCgemm3m(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans0, m, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
   cublasCgemm3m(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:63: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_1 = trans0;
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(B_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(C_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::zgemm3m(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, m, n, k, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<double>((beta_z)->x(),(beta_z)->y()), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
+  // CHECK-NEXT: status = (mkl::zgemm3m(handle, (((int)transpose_ct_1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_1)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), m, n, k, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<double>((beta_z)->x(),(beta_z)->y()), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_z);
@@ -1460,9 +1491,11 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::zgemm3m(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, m, n, k, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<double>((beta_z)->x(),(beta_z)->y()), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc);
   // CHECK-NEXT: }
-  status = cublasZgemm3m(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
+  status = cublasZgemm3m(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans0, m, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
   cublasZgemm3m(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
 
+  int side0 = 0;
+  int side1 = 1;
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:64: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
@@ -1473,7 +1506,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(C_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::csymm(handle, mkl::side::left, mkl::uplo::lower, m, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<float>((beta_c)->x(),(beta_c)->y()), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
+  // CHECK-NEXT: status = (mkl::csymm(handle, (mkl::side)side0, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), m, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<float>((beta_c)->x(),(beta_c)->y()), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_c);
@@ -1484,7 +1517,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::csymm(handle, mkl::side::left, mkl::uplo::lower, m, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<float>((beta_c)->x(),(beta_c)->y()), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc);
   // CHECK-NEXT: }
-  status = cublasCsymm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, m, n, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
+  status = cublasCsymm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, m, n, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
   cublasCsymm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, m, n, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
 
   // CHECK: /*
@@ -1497,7 +1530,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(C_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::zsymm(handle, mkl::side::left, mkl::uplo::lower, m, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<double>((beta_z)->x(),(beta_z)->y()), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
+  // CHECK-NEXT: status = (mkl::zsymm(handle, (mkl::side)side1, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), m, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<double>((beta_z)->x(),(beta_z)->y()), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_z);
@@ -1508,18 +1541,19 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::zsymm(handle, mkl::side::left, mkl::uplo::lower, m, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<double>((beta_z)->x(),(beta_z)->y()), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc);
   // CHECK-NEXT: }
-  status = cublasZsymm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, m, n, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
+  status = cublasZsymm(handle, (cublasSideMode_t)side1, (cublasFillMode_t)fill0, m, n, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
   cublasZsymm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, m, n, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:66: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(C_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::csyrk(handle, mkl::uplo::lower, mkl::transpose::nontrans, n, k, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, std::complex<float>((beta_c)->x(),(beta_c)->y()), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
+  // CHECK-NEXT: status = (mkl::csyrk(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), n, k, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, std::complex<float>((beta_c)->x(),(beta_c)->y()), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_c);
@@ -1528,18 +1562,19 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::csyrk(handle, mkl::uplo::lower, mkl::transpose::nontrans, n, k, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, std::complex<float>((beta_c)->x(),(beta_c)->y()), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc);
   // CHECK-NEXT: }
-  status = cublasCsyrk(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, alpha_c, A_c, lda, beta_c, C_c, ldc);
+  status = cublasCsyrk(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, alpha_c, A_c, lda, beta_c, C_c, ldc);
   cublasCsyrk(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, alpha_c, A_c, lda, beta_c, C_c, ldc);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:67: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(C_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::zsyrk(handle, mkl::uplo::lower, mkl::transpose::nontrans, n, k, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, std::complex<double>((beta_z)->x(),(beta_z)->y()), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
+  // CHECK-NEXT: status = (mkl::zsyrk(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), n, k, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, std::complex<double>((beta_z)->x(),(beta_z)->y()), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_z);
@@ -1548,20 +1583,21 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::zsyrk(handle, mkl::uplo::lower, mkl::transpose::nontrans, n, k, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, std::complex<double>((beta_z)->x(),(beta_z)->y()), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc);
   // CHECK-NEXT: }
-  status = cublasZsyrk(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, alpha_z, A_z, lda, beta_z, C_z, ldc);
+  status = cublasZsyrk(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, alpha_z, A_z, lda, beta_z, C_z, ldc);
   cublasZsyrk(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, alpha_z, A_z, lda, beta_z, C_z, ldc);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:68: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(B_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(C_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::csyr2k(handle, mkl::uplo::lower, mkl::transpose::nontrans, n, k, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<float>((beta_c)->x(),(beta_c)->y()), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
+  // CHECK-NEXT: status = (mkl::csyr2k(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), n, k, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<float>((beta_c)->x(),(beta_c)->y()), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_c);
@@ -1572,20 +1608,21 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::csyr2k(handle, mkl::uplo::lower, mkl::transpose::nontrans, n, k, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<float>((beta_c)->x(),(beta_c)->y()), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc);
   // CHECK-NEXT: }
-  status = cublasCsyr2k(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
+  status = cublasCsyr2k(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
   cublasCsyr2k(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:69: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(B_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(C_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::zsyr2k(handle, mkl::uplo::lower, mkl::transpose::nontrans, n, k, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<double>((beta_z)->x(),(beta_z)->y()), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
+  // CHECK-NEXT: status = (mkl::zsyr2k(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), n, k, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<double>((beta_z)->x(),(beta_z)->y()), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_z);
@@ -1596,18 +1633,19 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::zsyr2k(handle, mkl::uplo::lower, mkl::transpose::nontrans, n, k, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<double>((beta_z)->x(),(beta_z)->y()), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc);
   // CHECK-NEXT: }
-  status = cublasZsyr2k(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
+  status = cublasZsyr2k(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
   cublasZsyr2k(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:70: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_3 = trans0;
   // CHECK-NEXT: auto A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(B_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::ctrsm(handle, mkl::side::left, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, m, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb), 0);
+  // CHECK-NEXT: status = (mkl::ctrsm(handle, (mkl::side)0, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_3)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_3)), (mkl::diag)diag0, m, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_c);
@@ -1616,18 +1654,19 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::ctrsm(handle, mkl::side::left, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, m, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb);
   // CHECK-NEXT: }
-  status = cublasCtrsm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, m, n, alpha_c, A_c, lda, B_c, ldb);
+  status = cublasCtrsm(handle, (cublasSideMode_t)0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, m, n, alpha_c, A_c, lda, B_c, ldb);
   cublasCtrsm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, m, n, alpha_c, A_c, lda, B_c, ldb);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:71: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_3 = trans0;
   // CHECK-NEXT: auto A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(B_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::ztrsm(handle, mkl::side::left, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, m, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb), 0);
+  // CHECK-NEXT: status = (mkl::ztrsm(handle, (mkl::side)1, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_3)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_3)), (mkl::diag)diag0, m, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_z);
@@ -1636,7 +1675,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::ztrsm(handle, mkl::side::left, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, m, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb);
   // CHECK-NEXT: }
-  status = cublasZtrsm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, m, n, alpha_z, A_z, lda, B_z, ldb);
+  status = cublasZtrsm(handle, (cublasSideMode_t)1, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, m, n, alpha_z, A_z, lda, B_z, ldb);
   cublasZtrsm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, m, n, alpha_z, A_z, lda, B_z, ldb);
 
   // CHECK: /*
@@ -1649,7 +1688,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(C_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::chemm(handle, mkl::side::left, mkl::uplo::lower, m, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<float>((beta_c)->x(),(beta_c)->y()), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
+  // CHECK-NEXT: status = (mkl::chemm(handle, (mkl::side)side0, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), m, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<float>((beta_c)->x(),(beta_c)->y()), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_c);
@@ -1660,7 +1699,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::chemm(handle, mkl::side::left, mkl::uplo::lower, m, n, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<float>((beta_c)->x(),(beta_c)->y()), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc);
   // CHECK-NEXT: }
-  status = cublasChemm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, m, n, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
+  status = cublasChemm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, m, n, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
   cublasChemm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, m, n, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
 
   // CHECK: /*
@@ -1673,7 +1712,7 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(C_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::zhemm(handle, mkl::side::left, mkl::uplo::lower, m, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<double>((beta_z)->x(),(beta_z)->y()), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
+  // CHECK-NEXT: status = (mkl::zhemm(handle, (mkl::side)side0, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), m, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<double>((beta_z)->x(),(beta_z)->y()), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_z);
@@ -1684,18 +1723,19 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::zhemm(handle, mkl::side::left, mkl::uplo::lower, m, n, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, std::complex<double>((beta_z)->x(),(beta_z)->y()), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc);
   // CHECK-NEXT: }
-  status = cublasZhemm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, m, n, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
+  status = cublasZhemm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, m, n, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
   cublasZhemm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, m, n, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:74: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(C_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::cherk(handle, mkl::uplo::lower, mkl::transpose::nontrans, n, k, *(&alpha_s), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, *(&beta_s), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
+  // CHECK-NEXT: status = (mkl::cherk(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), n, k, *(&alpha_s), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, *(&beta_s), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_c);
@@ -1704,18 +1744,19 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::cherk(handle, mkl::uplo::lower, mkl::transpose::nontrans, n, k, *(&alpha_s), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, *(&beta_s), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc);
   // CHECK-NEXT: }
-  status = cublasCherk(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, &alpha_s, A_c, lda, &beta_s, C_c, ldc);
+  status = cublasCherk(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, &alpha_s, A_c, lda, &beta_s, C_c, ldc);
   cublasCherk(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, &alpha_s, A_c, lda, &beta_s, C_c, ldc);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:75: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(C_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::zherk(handle, mkl::uplo::lower, mkl::transpose::nontrans, n, k, *(alpha_d), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, *(&beta_d), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
+  // CHECK-NEXT: status = (mkl::zherk(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), n, k, *(alpha_d), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, *(&beta_d), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_z);
@@ -1724,20 +1765,21 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::zherk(handle, mkl::uplo::lower, mkl::transpose::nontrans, n, k, *(alpha_d), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, *(&beta_d), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc);
   // CHECK-NEXT: }
-  status = cublasZherk(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, alpha_d, A_z, lda, &beta_d, C_z, ldc);
+  status = cublasZherk(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, alpha_d, A_z, lda, &beta_d, C_z, ldc);
   cublasZherk(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, alpha_d, A_z, lda, &beta_d, C_z, ldc);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:76: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(B_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(B_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(C_c);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT: status = (mkl::cher2k(handle, mkl::uplo::lower, mkl::transpose::nontrans, n, k, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, *(&beta_s), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
+  // CHECK-NEXT: status = (mkl::cher2k(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), n, k, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, *(&beta_s), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_c);
@@ -1748,20 +1790,21 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(C_c_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: mkl::cher2k(handle, mkl::uplo::lower, mkl::transpose::nontrans, n, k, std::complex<float>((alpha_c)->x(),(alpha_c)->y()), A_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, *(&beta_s), C_c_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc);
   // CHECK-NEXT: }
-  status = cublasCher2k(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, alpha_c, A_c, lda, B_c, ldb, &beta_s, C_c, ldc);
+  status = cublasCher2k(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, alpha_c, A_c, lda, B_c, ldb, &beta_s, C_c, ldc);
   cublasCher2k(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, alpha_c, A_c, lda, B_c, ldb, &beta_s, C_c, ldc);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:77: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct_2 = trans0;
   // CHECK-NEXT: auto A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(B_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(B_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(C_z);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT: status = (mkl::zher2k(handle, mkl::uplo::lower, mkl::transpose::nontrans, n, k, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, *(&beta_d), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
+  // CHECK-NEXT: status = (mkl::zher2k(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), n, k, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, *(&beta_d), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}} = syclct::memory_manager::get_instance().translate_ptr(A_z);
@@ -1772,6 +1815,6 @@ int main(){
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}} = C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(C_z_{{[0-9]+}}_allocation_{{[0-9a-z]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: mkl::zher2k(handle, mkl::uplo::lower, mkl::transpose::nontrans, n, k, std::complex<double>((alpha_z)->x(),(alpha_z)->y()), A_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, lda, B_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldb, *(&beta_d), C_z_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, ldc);
   // CHECK-NEXT: }
-  status = cublasZher2k(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, alpha_z, A_z, lda, B_z, ldb, &beta_d, C_z, ldc);
+  status = cublasZher2k(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, alpha_z, A_z, lda, B_z, ldb, &beta_d, C_z, ldc);
   cublasZher2k(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, alpha_z, A_z, lda, B_z, ldb, &beta_d, C_z, ldc);
 }

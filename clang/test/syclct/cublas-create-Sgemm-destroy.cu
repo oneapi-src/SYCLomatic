@@ -35,13 +35,16 @@ int main() {
   float *d_C_S = 0;
   float alpha_S = 1.0f;
   float beta_S = 0.0f;
+  int trans0 = 0;
+  int trans1 = 1;
+  int trans2 = 2;
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK: status = (mkl::sgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), d_A_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, d_B_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, *(&beta_S), d_C_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N), 0);
-  // CHECK: mkl::sgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), d_A_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, d_B_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, *(&beta_S), d_C_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N);
+  // CHECK: mkl::sgemm(handle, (((int)transpose_ct_1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_1)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), N, N, N, *(&alpha_S), d_A_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, d_B_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, *(&beta_S), d_C_S_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N);
   status = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
-  cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
+  cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
   double *d_A_D = 0;
   double *d_B_D = 0;
   double *d_C_D = 0;
@@ -51,9 +54,9 @@ int main() {
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK: status = (mkl::dgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_D), d_A_D_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, d_B_D_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, *(&beta_D), d_C_D_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N), 0);
-  // CHECK: mkl::dgemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_D), d_A_D_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, d_B_D_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, *(&beta_D), d_C_D_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N);
+  // CHECK: mkl::dgemm(handle, (((int)transpose_ct_1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_1)), (((int)transpose_ct_2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct_2)), N, N, N, *(&alpha_D), d_A_D_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, d_B_D_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N, *(&beta_D), d_C_D_{{[0-9]+}}_buffer_{{[0-9a-z]+}}, N);
   status = cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
-  cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
+  cublasDgemm(handle, (cublasOperation_t)trans2, (cublasOperation_t)2, N, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
 
 
 

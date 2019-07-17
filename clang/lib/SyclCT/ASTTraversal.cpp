@@ -1002,6 +1002,13 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                     .bind("TypeInUnaryExprOrTypeTraitExpr"),
                 this);
 
+  MF.addMatcher(
+      cStyleCastExpr(hasDestinationType(anyOf(asString("cublasFillMode_t"),
+                                              asString("cublasDiagType_t"),
+                                              asString("cublasSideMode_t"),
+                                              asString("cublasOperation_t"))))
+          .bind("cStyleCastExpr"),
+      this);
   // TODO: HandleType in template, in macro body, assigined, as function param
   // and as macro argument
   MF.addMatcher(
@@ -1109,9 +1116,11 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   const DeclaratorDecl *DD =
       getNodeAsType<VarDecl>(Result, "TypeInVarDeclDevice");
   const UnaryExprOrTypeTraitExpr *UETTE;
+  const CStyleCastExpr *CSCE;
   QualType QT;
   bool HasDeviceAttr = false;
   bool IsUETTE = false;
+  bool IsCSCE = false;
   if ((DD) ||
       ((DD = getNodeAsType<VarDecl>(Result, "TypeInFieldDeclDevice")))) {
     QT = DD->getType();
@@ -1123,6 +1132,8 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   } else if ((UETTE = getNodeAsType<UnaryExprOrTypeTraitExpr>(
                   Result, "TypeInUnaryExprOrTypeTraitExpr"))) {
     IsUETTE = true;
+  } else if ((CSCE = getNodeAsType<CStyleCastExpr>(Result, "cStyleCastExpr"))) {
+    IsCSCE = true;
   } else {
     return;
   }
@@ -1140,6 +1151,9 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
     } else {
       return;
     }
+  } else if (IsCSCE) {
+    BeginLoc =
+        CSCE->getTypeInfoAsWritten()->getTypeLoc().getSourceRange().getBegin();
   } else {
     if ((ArgTypeInfo = DD->getTypeSourceInfo())) {
       BeginLoc = ArgTypeInfo->getTypeLoc().getSourceRange().getBegin();
@@ -1167,6 +1181,8 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 
   if (IsUETTE) {
     TypeStr = std::string(BeginLocChar, Len);
+  } else if (IsCSCE) {
+    TypeStr = CSCE->getType().getAsString();
   } else {
     if (QT->isArrayType()) {
       auto ArrType = Result.Context->getAsArrayType(QT);
@@ -1196,7 +1212,7 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
     return;
   }
 
-  if (IsUETTE) {
+  if (IsUETTE || IsCSCE) {
     emplaceTransformation(
         new ReplaceText(BeginLoc, Len, std::move(Replacement)));
   } else {
@@ -2354,7 +2370,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasDsyr2k_v2", "cublasCsyr2k_v2", "cublasZsyr2k_v2",
         "cublasStrsm_v2", "cublasDtrsm_v2", "cublasCtrsm_v2", "cublasZtrsm_v2",
         "cublasChemm_v2", "cublasZhemm_v2", "cublasCherk_v2", "cublasZherk_v2",
-        "cublasCher2k_v2", "cublasZher2k_v2",
+        "cublasCher2k_v2", "cublasZher2k_v2", "cublasSsyrkx", "cublasDsyrkx",
         /*Legacy API*/
         "cublasInit", "cublasShutdown", "cublasGetError",
         /*level 1*/
@@ -2456,13 +2472,28 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     return;
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
-  std::string Prefix = "";
-  std::string Poststr = "";
-  if (IsAssigned) {
-    Prefix = "(";
-    Poststr = ", 0)";
-  }
 
+  const SourceManager *SM = Result.SourceManager;
+  SourceLocation FuncNameBegin(CE->getBeginLoc());
+  SourceLocation FuncCallEnd(CE->getEndLoc());
+  // There are some macroes like "#define cublasSgemm cublasSgemm_v2"
+  // in "cublas_v2.h", so the function names we match should have the
+  // suffix "_v2".
+  if (FuncNameBegin.isMacroID())
+    FuncNameBegin = SM->getExpansionLoc(FuncNameBegin);
+  if (FuncCallEnd.isMacroID())
+    FuncCallEnd = SM->getExpansionLoc(FuncCallEnd);
+  Token Tok;
+  Lexer::getRawToken(FuncNameBegin, Tok, *SM, LangOptions());
+  SourceLocation FuncNameEnd = Tok.getEndLoc();
+  auto FuncNameLength =
+      SM->getCharacterData(FuncNameEnd) - SM->getCharacterData(FuncNameBegin);
+  SourceLocation StmtBegin, StmtEndAfterSemi;
+  getScopeInsertLocation(CE, Result, FuncNameBegin, FuncCallEnd, StmtBegin,
+                         StmtEndAfterSemi);
+  std::string IndentStr = getIndent(StmtBegin, *SM).str();
+  std::string PrefixInsertStr;
+  std::string SuffixInsertStr;
   // TODO: Need to process the situation when scalar pointers (alpha, beta)
   // are device pointers.
   // TODO: The temp variable identify need use the combination the base
@@ -2470,38 +2501,14 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   // And the buffer/allocation should be the prefix.
   if (MapNames::BLASFuncReplInfoMap.find(FuncName) !=
       MapNames::BLASFuncReplInfoMap.end()) {
-    // There are some macroes like "#define cublasSgemm cublasSgemm_v2"
-    // in "cublas_v2.h", so the function names we match should have the
-    // suffix "_v2".
-    SourceLocation FuncNameBegin(CE->getBeginLoc());
-    SourceLocation FuncCallEnd(CE->getEndLoc());
-    const SourceManager *SM = Result.SourceManager;
-    if (FuncNameBegin.isMacroID())
-      FuncNameBegin = SM->getExpansionLoc(FuncNameBegin);
-    if (FuncCallEnd.isMacroID())
-      FuncCallEnd = SM->getExpansionLoc(FuncCallEnd);
-    Token Tok;
-    Lexer::getRawToken(FuncNameBegin, Tok, *SM, LangOptions());
-    SourceLocation FuncNameEnd = Tok.getEndLoc();
-    auto FuncNameLength =
-        SM->getCharacterData(FuncNameEnd) - SM->getCharacterData(FuncNameBegin);
-
     auto ReplInfoPair = MapNames::BLASFuncReplInfoMap.find(FuncName);
     MapNames::BLASFuncReplInfo ReplInfo = ReplInfoPair->second;
     std::string Replacement = ReplInfo.ReplName;
-
     if (HasDeviceAttr) {
       report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, FuncName,
              Replacement);
       return;
     }
-
-    SourceLocation StmtBegin, StmtEndAfterSemi;
-    getScopeInsertLocation(CE, Result, FuncNameBegin, FuncCallEnd, StmtBegin,
-                           StmtEndAfterSemi);
-    std::string PrefixInsertStr, SuffixInsertStr;
-    std::string IndentStr =
-        getIndent(StmtBegin, (Result.Context)->getSourceManager()).str();
     int ArgNum = CE->getNumArgs();
     // TODO: If the memory is not allocated by cudaMalloc(), the migrated
     // program will abort at
@@ -2539,6 +2546,50 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             CE->getArg(i),
             "*(" + getStmtSpelling(CE->getArg(i), *(Result.Context)) + ")"));
       }
+      const CStyleCastExpr *CSCE = nullptr;
+      if ((CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(i)))) {
+        processParamIntCastToBLASEnum(CE->getArg(i), CSCE, *(Result.Context), i,
+                                      IndentStr, ReplInfo.OperationIndexInfo,
+                                      ReplInfo.FillModeIndexInfo,
+                                      PrefixInsertStr);
+      } else if ((FuncName == "cublasSsyrkx" || FuncName == "cublasDsyrkx") &&
+                 isReplIndex(i, ReplInfo.OperationIndexInfo, IndexTemp)) {
+        std::string TransparamName = "transpose_ct_" + std::to_string(i);
+        std::string TransStr =
+            getStmtSpelling(CE->getArg(i), *(Result.Context));
+
+        auto TransPair = MapNames::BLASEnumsMap.find(TransStr);
+        if (TransPair != MapNames::BLASEnumsMap.end()) {
+          TransStr = TransPair->second;
+        }
+        PrefixInsertStr = PrefixInsertStr + IndentStr + "auto " +
+                          TransparamName + " = " + TransStr + ";" + getNL();
+        Optional<Token> TokSharedPtr;
+        TokSharedPtr = Lexer::findNextToken(
+            CE->getArg(i)->getEndLoc(), *(Result.SourceManager), LangOptions());
+        Token CommaTok = TokSharedPtr.getValue();
+        auto CommaEnd = CommaTok.getEndLoc();
+        auto Len = SM->getCharacterData(CommaEnd) -
+                   SM->getCharacterData(CE->getArg(i)->getBeginLoc());
+        emplaceTransformation(new ReplaceText(CE->getArg(i)->getBeginLoc(), Len,
+                                              TransparamName + ","));
+      }
+    }
+
+    if (FuncName == "cublasSsyrkx" || FuncName == "cublasDsyrkx") {
+      SourceLocation InsertSL = CE->getArg(3)->getBeginLoc();
+      if (InsertSL.isMacroID())
+        InsertSL = SM->getExpansionLoc(InsertSL);
+      const CStyleCastExpr *CSCE = nullptr;
+      if ((CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(2)))) {
+        emplaceTransformation(new InsertText(
+            InsertSL, "((((int)transpose_ct_2)==0)?(mkl::transpose::trans):("
+                      "mkl::transpose::nontrans)), "));
+      } else {
+        emplaceTransformation(new InsertText(
+            InsertSL, "((transpose_ct_2)==(mkl::transpose::nontrans))?(mkl::"
+                      "transpose::trans):(mkl::transpose::nontrans), "));
+      }
     }
 
     if (IsAssigned) {
@@ -2553,37 +2604,14 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                       getNL() + IndentStr + SuffixInsertStr + std::string("}"));
   } else if (MapNames::BLASFuncComplexReplInfoMap.find(FuncName) !=
              MapNames::BLASFuncComplexReplInfoMap.end()) {
-    SourceLocation FuncNameBegin(CE->getBeginLoc());
-    SourceLocation FuncCallEnd(CE->getEndLoc());
-    const SourceManager *SM = Result.SourceManager;
-    if (FuncNameBegin.isMacroID())
-      FuncNameBegin = SM->getExpansionLoc(FuncNameBegin);
-    if (FuncCallEnd.isMacroID())
-      FuncCallEnd = SM->getExpansionLoc(FuncCallEnd);
-    Token Tok;
-    Lexer::getRawToken(FuncNameBegin, Tok, *SM, LangOptions());
-    SourceLocation FuncNameEnd = Tok.getEndLoc();
-    auto FuncNameLength =
-        SM->getCharacterData(FuncNameEnd) - SM->getCharacterData(FuncNameBegin);
-
     auto ReplInfoPair = MapNames::BLASFuncComplexReplInfoMap.find(FuncName);
     MapNames::BLASFuncComplexReplInfo ReplInfo = ReplInfoPair->second;
     std::string Replacement = ReplInfo.ReplName;
-
     if (HasDeviceAttr) {
       report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, FuncName,
              Replacement);
       return;
     }
-
-    SourceLocation StmtBegin, StmtEndAfterSemi;
-    getScopeInsertLocation(CE, Result, FuncNameBegin, FuncCallEnd, StmtBegin,
-                           StmtEndAfterSemi);
-
-    std::string PrefixInsertStr;
-    std::string SuffixInsertStr;
-    std::string IndentStr =
-        getIndent(StmtBegin, (Result.Context)->getSourceManager()).str();
     int ArgNum = CE->getNumArgs();
     // TODO: If the memory is not allocated by cudaMalloc(), the migrated
     // program will abort at
@@ -2633,6 +2661,13 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                   ")->y())"));
         }
       }
+      const CStyleCastExpr *CSCE = nullptr;
+      if ((CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(i)))) {
+        processParamIntCastToBLASEnum(CE->getArg(i), CSCE, *(Result.Context), i,
+                                      IndentStr, ReplInfo.OperationIndexInfo,
+                                      ReplInfo.FillModeIndexInfo,
+                                      PrefixInsertStr);
+      }
     }
 
     if (IsAssigned) {
@@ -2647,18 +2682,10 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                       getNL() + SuffixInsertStr + IndentStr + std::string("}"));
   } else if (MapNames::LegacyBLASFuncReplInfoMap.find(FuncName) !=
              MapNames::LegacyBLASFuncReplInfoMap.end()) {
-    SourceLocation FuncNameBegin(CE->getBeginLoc());
-    SourceLocation FuncCallEnd(CE->getEndLoc());
-
     auto ReplInfoPair = MapNames::LegacyBLASFuncReplInfoMap.find(FuncName);
-    MapNames::LegacyBLASFuncReplInfo ReplInfo = ReplInfoPair->second;
-
-    SourceLocation StmtBegin, StmtEndAfterSemi;
-    getScopeInsertLocation(CE, Result, FuncNameBegin, FuncCallEnd, StmtBegin,
-                           StmtEndAfterSemi);
-
+    MapNames::BLASFuncComplexReplInfo ReplInfo = ReplInfoPair->second;
     std::string CallExprReplStr = "";
-    std::string PrefixInsertStr = std::string("{") + getNL();
+    PrefixInsertStr = std::string("{") + getNL();
     CallExprReplStr =
         CallExprReplStr + ReplInfo.ReplName + "(syclct::get_default_queue()";
     std::string IndentStr =
@@ -2707,24 +2734,40 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
               "((" + ParamsStrsVec[i] + ").x(),(" + ParamsStrsVec[i] + ").y())";
         }
       } else if (isReplIndex(i, ReplInfo.OperationIndexInfo, IndexTemp)) {
-        CallExprReplStr = CallExprReplStr + ", " + "(((" + ParamsStrsVec[i] +
-                          ")=='N'||(" + ParamsStrsVec[i] +
+        std::string TransParamName = "transpose_ct_" + std::to_string(i);
+        PrefixInsertStr = PrefixInsertStr + IndentStr + "auto " +
+                          TransParamName + " = " + ParamsStrsVec[i] + ";" +
+                          getNL();
+        CallExprReplStr = CallExprReplStr + ", " + "(((" + TransParamName +
+                          ")=='N'||(" + TransParamName +
                           ")=='n')?(mkl::transpose::"
                           "nontrans):(((" +
-                          ParamsStrsVec[i] + ")=='T'||(" + ParamsStrsVec[i] +
+                          TransParamName + ")=='T'||(" + TransParamName +
                           ")=='t')?(mkl::transpose:"
                           ":nontrans):(mkl::transpose::conjtrans)))";
       } else if (ReplInfo.FillModeIndexInfo == i) {
-        CallExprReplStr = CallExprReplStr + ", " + "(((" + ParamsStrsVec[i] +
-                          ")=='L'||(" + ParamsStrsVec[i] +
+        std::string FillParamName = "fillmode_ct_" + std::to_string(i);
+        PrefixInsertStr = PrefixInsertStr + IndentStr + "auto " +
+                          FillParamName + " = " + ParamsStrsVec[i] + ";" +
+                          getNL();
+        CallExprReplStr = CallExprReplStr + ", " + "(((" + FillParamName +
+                          ")=='L'||(" + FillParamName +
                           ")=='l')?(mkl::uplo::lower):(mkl::uplo::upper))";
       } else if (ReplInfo.SideModeIndexInfo == i) {
-        CallExprReplStr = CallExprReplStr + ", " + "(((" + ParamsStrsVec[i] +
-                          ")=='L'||(" + ParamsStrsVec[i] +
+        std::string SideParamName = "sidemode_ct_" + std::to_string(i);
+        PrefixInsertStr = PrefixInsertStr + IndentStr + "auto " +
+                          SideParamName + " = " + ParamsStrsVec[i] + ";" +
+                          getNL();
+        CallExprReplStr = CallExprReplStr + ", " + "(((" + SideParamName +
+                          ")=='L'||(" + SideParamName +
                           ")=='l')?(mkl::side::left):(mkl::side::right))";
       } else if (ReplInfo.DiagTypeIndexInfo == i) {
-        CallExprReplStr = CallExprReplStr + ", " + "(((" + ParamsStrsVec[i] +
-                          ")=='N'||(" + ParamsStrsVec[i] +
+        std::string DiagParamName = "diagtype_ct_" + std::to_string(i);
+        PrefixInsertStr = PrefixInsertStr + IndentStr + "auto " +
+                          DiagParamName + " = " + ParamsStrsVec[i] + ";" +
+                          getNL();
+        CallExprReplStr = CallExprReplStr + ", " + "(((" + DiagParamName +
+                          ")=='N'||(" + DiagParamName +
                           ")=='n')?(mkl::diag::nonunit):(mkl::diag::unit))";
       } else {
         CallExprReplStr = CallExprReplStr + ", " + ParamsStrsVec[i];
@@ -2752,7 +2795,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           PrefixInsertStr + IndentStr + "cl::sycl::buffer<" + ResultType +
           ",1> result_temp_buffer(cl::sycl::range<1>(1));" + getNL() +
           IndentStr + CallExprReplStr + ", result_temp_buffer);" + getNL();
-      std::string SuffixInsertStr = getNL() + IndentStr + "}" + getNL();
+      SuffixInsertStr = getNL() + IndentStr + "}" + getNL();
       insertAroundRange(StmtBegin, StmtEndAfterSemi,
                         PrefixInsertStr + IndentStr,
                         std::move(SuffixInsertStr));
@@ -2795,7 +2838,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
     } else {
       // APIs which haven't return value
-      PrefixInsertStr = getNL() + IndentStr + PrefixInsertStr;
+      // PrefixInsertStr = getNL() + IndentStr + PrefixInsertStr;
       CallExprReplStr = CallExprReplStr + ")";
       emplaceTransformation(new ReplaceStmt(CE, std::move(CallExprReplStr)));
       insertAroundRange(StmtBegin, StmtEndAfterSemi,
@@ -2803,10 +2846,6 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                         getNL() + IndentStr + std::string("}"));
     }
   } else if (FuncName == "cublasCreate_v2" || FuncName == "cublasDestroy_v2") {
-    // Remove these two function calls.
-    // There are some macros like "#define cublasCreate cublasCreate_v2"
-    // in "cublas_v2.h", so the function names we match should with the
-    // suffix "_v2".
     if (IsAssigned) {
       emplaceTransformation(
           new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
@@ -2993,7 +3032,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   }
 }
 
-bool BLASFunctionCallRule::isReplIndex(int Input, std::vector<int> &IndexInfo,
+bool BLASFunctionCallRule::isReplIndex(int Input,
+                                       const std::vector<int> &IndexInfo,
                                        int &IndexTemp) {
   for (int i = 0; i < static_cast<int>(IndexInfo.size()); ++i) {
     if (IndexInfo[i] == Input) {
@@ -3120,6 +3160,47 @@ BLASFunctionCallRule::getAncestralVarDecl(const clang::CallExpr *CE) {
     }
   }
   return nullptr;
+}
+
+void BLASFunctionCallRule::processParamIntCastToBLASEnum(
+    const Expr *E, const CStyleCastExpr *CSCE, const ASTContext &Context,
+    const int DistinctionID, const std::string IndentStr,
+    const std::vector<int> &OperationIndexInfo, const int FillModeIndexInfo,
+    std::string &PrefixInsertStr) {
+  auto &SM = SyclctGlobalInfo::getSourceManager();
+  const Expr *SubExpr = CSCE->getSubExpr();
+  std::string SubExprStr = getStmtSpelling(SubExpr, Context);
+  SourceLocation BeginLoc = E->getBeginLoc();
+  SourceLocation EndLoc = E->getEndLoc();
+  if (E->getBeginLoc().isMacroID()) {
+    BeginLoc = SM.getExpansionLoc(BeginLoc);
+    EndLoc = SM.getExpansionLoc(EndLoc);
+  }
+  auto Len = SM.getDecomposedLoc(EndLoc).second -
+             SM.getDecomposedLoc(BeginLoc).second +
+             Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
+
+  int IndexTemp = -1;
+  if (isReplIndex(DistinctionID, OperationIndexInfo, IndexTemp)) {
+    std::string TransParamName =
+        "transpose_ct_" + std::to_string(DistinctionID);
+    PrefixInsertStr = PrefixInsertStr + IndentStr + "auto " + TransParamName +
+                      " = " + SubExprStr + ";" + getNL();
+    emplaceTransformation(new ReplaceText(
+        BeginLoc, Len,
+        "(((int)" + TransParamName +
+            ")==2?(mkl::transpose::conjtrans):((mkl::transpose)" +
+            TransParamName + "))"));
+  }
+  if (FillModeIndexInfo == DistinctionID) {
+    emplaceTransformation(
+        new ReplaceText(BeginLoc, Len,
+                        "(((int)" + SubExprStr +
+                            ")==0?(mkl::uplo::lower):(mkl::uplo::upper))"));
+  }
+  // the value of enum in mkl::side/cublasSideMode_t and
+  // mkl::diag/cublasDiagType_t is same, so we don't need to
+  // transfer
 }
 
 REGISTER_RULE(BLASFunctionCallRule)

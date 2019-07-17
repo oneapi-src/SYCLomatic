@@ -650,11 +650,18 @@ public:
                                       std::string &BufferDecl,
                                       int DistinctionID);
 
-  bool isReplIndex(int i, std::vector<int> &IndexInfo, int &IndexTemp);
+  bool isReplIndex(int i, const std::vector<int> &IndexInfo, int &IndexTemp);
 
   std::vector<std::string> getParamsAsStrs(const CallExpr *CE,
                                         const ASTContext &Context);
   const clang::VarDecl *getAncestralVarDecl(const clang::CallExpr *CE);
+  void processParamIntCastToBLASEnum(
+      const Expr *E, const CStyleCastExpr *CSCE, const ASTContext &Context,
+                                     const int DistinctionID,
+                                     const std::string IndentStr,
+                                     const std::vector<int> &OperationIndexInfo,
+                                     const int FillModeIndexInfo,
+                                     std::string &PrefixInsertStr);
 };
 
 /// Migration rule for function calls.
