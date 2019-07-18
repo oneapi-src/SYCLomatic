@@ -221,7 +221,7 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d2 = fmin(d0, d1);
   // CHECK: d2 = cl::sycl::fmod(d0, d1);
   d2 = fmod(d0, d1);
-  // CHECK: d2 = cl::sycl::frexp(d0, cl::sycl::make_ptr<int, cl::sycl::access::address_space::local_space>(&i));
+  // CHECK: d2 = cl::sycl::frexp(d0, cl::sycl::make_ptr<int, cl::sycl::access::address_space::global_space>(&i));
   d2 = frexp(d0, &i);
   // CHECK: d2 = cl::sycl::hypot(d0, d1);
   d2 = hypot(d0, d1);
@@ -247,7 +247,7 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d2 = lrint(d0);
   // CHECK: d2 = cl::sycl::round(d0);
   d2 = lround(d0);
-  // CHECK: d2 = cl::sycl::modf(d0, cl::sycl::make_ptr<double, cl::sycl::access::address_space::local_space>(&d1));
+  // CHECK: d2 = cl::sycl::modf(d0, cl::sycl::make_ptr<double, cl::sycl::access::address_space::global_space>(&d1));
   d2 = modf(d0, &d1);
   // CHECK: d2 = cl::sycl::nan(0u);
   d2 = nan("");
@@ -255,7 +255,7 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d2 = pow(d0, d1);
   // CHECK: d2 = cl::sycl::remainder(d0, d1);
   d2 = remainder(d0, d1);
-  // CHECK: d2 = cl::sycl::remquo(d0, d1, cl::sycl::make_ptr<int, cl::sycl::access::address_space::local_space>(&i));
+  // CHECK: d2 = cl::sycl::remquo(d0, d1, cl::sycl::make_ptr<int, cl::sycl::access::address_space::global_space>(&i));
   d2 = remquo(d0, d1, &i);
   // CHECK: d2 = cl::sycl::rint(d0);
   d2 = rint(d0);
@@ -263,7 +263,7 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d2 = round(d0);
   // CHECK: d2 = cl::sycl::rsqrt(d0);
   d2 = rsqrt(d0);
-  // CHECK: d1 = cl::sycl::sincos(d0, cl::sycl::make_ptr<double, cl::sycl::access::address_space::local_space>(&d2));
+  // CHECK: d1 = cl::sycl::sincos(d0, cl::sycl::make_ptr<double, cl::sycl::access::address_space::global_space>(&d2));
   sincos(d0, &d1, &d2);
   // CHECK: d2 = cl::sycl::sin(d0);
   d2 = sin(d0);
@@ -505,7 +505,7 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = fminf(f0, f1);
   // CHECK: f2 = cl::sycl::fmod(f0, f1);
   f2 = fmodf(f0, f1);
-  // CHECK: f2 = cl::sycl::frexp(f0, cl::sycl::make_ptr<int, cl::sycl::access::address_space::local_space>(&i));
+  // CHECK: f2 = cl::sycl::frexp(f0, cl::sycl::make_ptr<int, cl::sycl::access::address_space::global_space>(&i));
   f2 = frexpf(f0, &i);
   // CHECK: f2 = cl::sycl::hypot(f0, f1);
   f2 = hypotf(f0, f1);
@@ -537,7 +537,7 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = lrintf(f0);
   // CHECK: f2 = cl::sycl::round(f0);
   f2 = lroundf(f0);
-  // CHECK: f2 = cl::sycl::modf(f0, cl::sycl::make_ptr<float, cl::sycl::access::address_space::local_space>(&f1));
+  // CHECK: f2 = cl::sycl::modf(f0, cl::sycl::make_ptr<float, cl::sycl::access::address_space::global_space>(&f1));
   f2 = modff(f0, &f1);
   // CHECK: f2 = cl::sycl::nan(0u);
   f2 = nan("");
@@ -545,7 +545,7 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = powf(f0, f1);
   // CHECK: f2 = cl::sycl::remainder(f0, f1);
   f2 = remainderf(f0, f1);
-  // CHECK: f2 = cl::sycl::remquo(f0, f1, cl::sycl::make_ptr<int, cl::sycl::access::address_space::local_space>(&i));
+  // CHECK: f2 = cl::sycl::remquo(f0, f1, cl::sycl::make_ptr<int, cl::sycl::access::address_space::global_space>(&i));
   f2 = remquof(f0, f1, &i);
   // CHECK: f2 = cl::sycl::rint(f0);
   f2 = rintf(f0);
@@ -555,7 +555,7 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = rsqrtf(f0);
   // CHECK: f2 = cl::sycl::signbit(f0);
   f2 = signbit(f0);
-  // CHECK: f1 = cl::sycl::sincos(f0, cl::sycl::make_ptr<float, cl::sycl::access::address_space::local_space>(&f2));
+  // CHECK: f1 = cl::sycl::sincos(f0, cl::sycl::make_ptr<float, cl::sycl::access::address_space::global_space>(&f2));
   sincosf(f0, &f1, &f2);
   // CHECK: f2 = cl::sycl::sin(f0);
   f2 = sinf(f0);
@@ -739,7 +739,7 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f1 = __logf(f1);
   // CHECK: f2 = cl::sycl::pow(f0, f1);
   f2 = __powf(f0, f1);
-  // CHECK: f1 = cl::sycl::sincos(f0, cl::sycl::make_ptr<float, cl::sycl::access::address_space::local_space>(&f2));
+  // CHECK: f1 = cl::sycl::sincos(f0, cl::sycl::make_ptr<float, cl::sycl::access::address_space::global_space>(&f2));
   __sincosf(f0, &f1, &f2);
   // CHECK: f1 = cl::sycl::sin(f1);
   f1 = __sinf(f1);
@@ -1687,33 +1687,33 @@ __global__ void testSimulation() {
   double d;
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The nearbyintf is simulated by cl::sycl::floor in DPC++. You need to check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The nearbyintf is emulated by cl::sycl::floor in DPC++. You need to check the potential precision and/or performance issues of generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f = cl::sycl::floor(f + 0.5);
   f = nearbyintf(f);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The nearbyint is simulated by cl::sycl::floor in DPC++. You need to check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The nearbyint is emulated by cl::sycl::floor in DPC++. You need to check the potential precision and/or performance issues of generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d = cl::sycl::floor(d + 0.5);
   d = nearbyint(d);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The rhypotf is simulated by cl::sycl::hypot in DPC++. You need to check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The rhypotf is emulated by cl::sycl::hypot in DPC++. You need to check the potential precision and/or performance issues of generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f = 1 / cl::sycl::hypot(f, f);
   f = rhypotf(f, f);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The sincospif is simulated by cl::sycl::sincos in DPC++. You need to check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The sincospif is emulated by cl::sycl::sincos in DPC++. You need to check the potential precision and/or performance issues of generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: f = cl::sycl::sincos(f * SYCLCT_PI_F, cl::sycl::make_ptr<float, cl::sycl::access::address_space::local_space>(&f));
+  // CHECK-NEXT: f = cl::sycl::sincos(f * SYCLCT_PI_F, cl::sycl::make_ptr<float, cl::sycl::access::address_space::global_space>(&f));
   sincospif(f, &f, &f);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The sincospi is simulated by cl::sycl::sincos in DPC++. You need to check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The sincospi is emulated by cl::sycl::sincos in DPC++. You need to check the potential precision and/or performance issues of generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: d = cl::sycl::sincos(d * SYCLCT_PI, cl::sycl::make_ptr<double, cl::sycl::access::address_space::local_space>(&d));
+  // CHECK-NEXT: d = cl::sycl::sincos(d * SYCLCT_PI, cl::sycl::make_ptr<double, cl::sycl::access::address_space::global_space>(&d));
   sincospi(d, &d, &d);
 }
 

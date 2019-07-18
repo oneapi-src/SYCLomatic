@@ -222,7 +222,7 @@ Optional<std::string> MathTypeCastRewriter::rewrite() {
 }
 
 Optional<std::string> MathSimulatedRewriter::rewrite() {
-  report(Diagnostics::MATH_SIMULATION, SourceCalleeName, TargetCalleeName);
+  report(Diagnostics::MATH_EMULATION, SourceCalleeName, TargetCalleeName);
   auto FD = Call->getDirectCallee();
   if (!FD || !FD->hasAttr<CUDADeviceAttr>())
     return Base::rewrite();
@@ -235,17 +235,17 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
   if (FuncName == "frexp" || FuncName == "frexpf") {
     auto MigratedArg1 = getMigratedArg(1);
     OS << "cl::sycl::frexp(" << MigratedArg0 << ", cl::sycl::make_ptr<int, "
-       << "cl::sycl::access::address_space::local_space>(" << MigratedArg1
+       << "cl::sycl::access::address_space::global_space>(" << MigratedArg1
        << "))";
   } else if (FuncName == "modf" || FuncName == "modff") {
     auto MigratedArg1 = getMigratedArg(1);
     OS << "cl::sycl::modf(" << MigratedArg0;
     if (FuncName == "modf")
       OS << ", cl::sycl::make_ptr<double, "
-            "cl::sycl::access::address_space::local_space>(";
+            "cl::sycl::access::address_space::global_space>(";
     else
       OS << ", cl::sycl::make_ptr<float, "
-            "cl::sycl::access::address_space::local_space>(";
+            "cl::sycl::access::address_space::global_space>(";
     OS << MigratedArg1 << "))";
   } else if (FuncName == "nan" || FuncName == "nanf") {
     OS << "cl::sycl::nan(0u)";
@@ -260,10 +260,10 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << " = cl::sycl::sincos(" << MigratedArg0;
     if (FuncName == "sincos")
       OS << ", cl::sycl::make_ptr<double, "
-            "cl::sycl::access::address_space::local_space>(";
+            "cl::sycl::access::address_space::global_space>(";
     else
       OS << ", cl::sycl::make_ptr<float, "
-            "cl::sycl::access::address_space::local_space>(";
+            "cl::sycl::access::address_space::global_space>(";
     OS << MigratedArg2 << "))";
   } else if (FuncName == "sincospi" || FuncName == "sincospif") {
     auto MigratedArg1 = getMigratedArg(1);
@@ -280,17 +280,17 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
 
     if (FuncName == "sincospi")
       OS << ", cl::sycl::make_ptr<double, "
-            "cl::sycl::access::address_space::local_space>(";
+            "cl::sycl::access::address_space::global_space>(";
     else
       OS << ", cl::sycl::make_ptr<float, "
-            "cl::sycl::access::address_space::local_space>(";
+            "cl::sycl::access::address_space::global_space>(";
     OS << MigratedArg2 << "))";
   } else if (FuncName == "remquo" || FuncName == "remquof") {
     auto MigratedArg1 = getMigratedArg(1);
     auto MigratedArg2 = getMigratedArg(2);
     OS << "cl::sycl::remquo(" << MigratedArg0 << ", " << MigratedArg1
        << ", cl::sycl::make_ptr<int, "
-          "cl::sycl::access::address_space::local_space>("
+          "cl::sycl::access::address_space::global_space>("
        << MigratedArg2 << "))";
   } else if (FuncName == "nearbyint" || FuncName == "nearbyintf") {
     OS << "cl::sycl::floor(" << MigratedArg0 << " + 0.5)";
@@ -334,55 +334,19 @@ const std::unordered_map<std::string,
 FUNC_FACTORY_ENTRY("test_func", "test_success"),
 BO_FACTORY_ENTRY("test_add", BO_Add)
 */
-#define ENTRY(SOURCEAPINAME, TARGETAPINAME)                                    \
+#define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   MATH_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
-#include "APINames_MathRenamed.inc"
-#undef ENTRY
-
-#define ENTRY(APINAME) MATH_TYPECAST_FACTORY_ENTRY(APINAME)
-#include "APINames_MathTypecasts.inc"
-#undef ENTRY
-
-#define ENTRY(SOURCEAPINAME, TARGETAPINAME)                                    \
+#define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME)                           \
   MATH_SIMULATED_FUNC_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
-#include "APINames_MathSimulated.inc"
-#undef ENTRY
-
-#define ENTRY_ADD(APINAME)                                                     \
-  MATH_BO_FACTORY_ENTRY(APINAME, BinaryOperatorKind::BO_Add)
-#define ENTRY_SUB(APINAME)                                                     \
-  MATH_BO_FACTORY_ENTRY(APINAME, BinaryOperatorKind::BO_Sub)
-#define ENTRY_MUL(APINAME)                                                     \
-  MATH_BO_FACTORY_ENTRY(APINAME, BinaryOperatorKind::BO_Mul)
-#define ENTRY_DIV(APINAME)                                                     \
-  MATH_BO_FACTORY_ENTRY(APINAME, BinaryOperatorKind::BO_Div)
-#define ENTRY_EQ(APINAME)                                                      \
-  MATH_BO_FACTORY_ENTRY(APINAME, BinaryOperatorKind::BO_EQ)
-#define ENTRY_NE(APINAME)                                                      \
-  MATH_BO_FACTORY_ENTRY(APINAME, BinaryOperatorKind::BO_NE)
-#define ENTRY_GE(APINAME)                                                      \
-  MATH_BO_FACTORY_ENTRY(APINAME, BinaryOperatorKind::BO_GE)
-#define ENTRY_GT(APINAME)                                                      \
-  MATH_BO_FACTORY_ENTRY(APINAME, BinaryOperatorKind::BO_GT)
-#define ENTRY_LE(APINAME)                                                      \
-  MATH_BO_FACTORY_ENTRY(APINAME, BinaryOperatorKind::BO_LE)
-#define ENTRY_LT(APINAME)                                                      \
-  MATH_BO_FACTORY_ENTRY(APINAME, BinaryOperatorKind::BO_LT)
-#include "APINames_MathOperators.inc"
-#undef ENTRY_ADD
-#undef ENTRY_SUB
-#undef ENTRY_MUL
-#undef ENTRY_DIV
-#undef ENTRY_EQ
-#undef ENTRY_NE
-#undef ENTRY_GE
-#undef ENTRY_GT
-#undef ENTRY_LE
-#undef ENTRY_LT
-
-#define ENTRY(APINAME) MATH_UNSUPPORTED_FUNC_FACTORY_ENTRY(APINAME)
-#include "APINames_MathUnsupported.inc"
-#undef ENTRY
+#define ENTRY_OPERATOR(APINAME, OPKIND) MATH_BO_FACTORY_ENTRY(APINAME, OPKIND)
+#define ENTRY_TYPECAST(APINAME) MATH_TYPECAST_FACTORY_ENTRY(APINAME)
+#define ENTRY_UNSUPPORTED(APINAME) MATH_UNSUPPORTED_FUNC_FACTORY_ENTRY(APINAME)
+#include "APINamesMath.inc"
+#undef ENTRY_RENAMED
+#undef ENTRY_EMULATED
+#undef ENTRY_OPERATOR
+#undef ENTRY_TYPECAST
+#undef ENTRY_UNSUPPORTED
 };
 } // namespace syclct
 } // namespace clang

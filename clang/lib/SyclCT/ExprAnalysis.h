@@ -232,6 +232,10 @@ protected:
     return dispatch(MTE->getTemporary());
   }
 
+  inline void analyzeExpr(const PseudoObjectExpr *POE) {
+    dispatch(POE->getResultExpr());
+  }
+
   inline void analyzeExpr(const BinaryOperator *BO) {
     dispatch(BO->getLHS());
     dispatch(BO->getRHS());

@@ -4253,43 +4253,17 @@ REGISTER_RULE(UnnamedTypesRule)
 
 void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
   std::vector<std::string> MathFunctions = {
-#define ENTRY(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
-#include "APINames_MathRenamed.inc"
-#undef ENTRY
-
-#define ENTRY(APINAME) APINAME,
-#include "APINames_MathTypecasts.inc"
-#undef ENTRY
-
-#define ENTRY(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
-#include "APINames_MathSimulated.inc"
-#undef ENTRY
-
-#define ENTRY_ADD(APINAME) APINAME,
-#define ENTRY_SUB(APINAME) APINAME,
-#define ENTRY_MUL(APINAME) APINAME,
-#define ENTRY_DIV(APINAME) APINAME,
-#define ENTRY_EQ(APINAME) APINAME,
-#define ENTRY_NE(APINAME) APINAME,
-#define ENTRY_GE(APINAME) APINAME,
-#define ENTRY_GT(APINAME) APINAME,
-#define ENTRY_LE(APINAME) APINAME,
-#define ENTRY_LT(APINAME) APINAME,
-#include "APINames_MathOperators.inc"
-#undef ENTRY_ADD
-#undef ENTRY_SUB
-#undef ENTRY_MUL
-#undef ENTRY_DIV
-#undef ENTRY_EQ
-#undef ENTRY_NE
-#undef ENTRY_GE
-#undef ENTRY_GT
-#undef ENTRY_LE
-#undef ENTRY_LT
-
-#define ENTRY(APINAME) APINAME,
-#include "APINames_MathUnsupported.inc"
-#undef ENTRY
+#define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
+#define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
+#define ENTRY_OPERATOR(APINAME, OPKIND) APINAME,
+#define ENTRY_TYPECAST(APINAME) APINAME,
+#define ENTRY_UNSUPPORTED(APINAME) APINAME,
+#include "APINamesMath.inc"
+#undef ENTRY_RENAMED
+#undef ENTRY_EMULATED
+#undef ENTRY_OPERATOR
+#undef ENTRY_TYPECAST
+#undef ENTRY_UNSUPPORTED
   };
 
   MF.addMatcher(

@@ -138,6 +138,10 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
 }
 
 void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
+  static const std::map<std::string, std::string> MemberMap{
+      {"__fetch_builtin_x", "0"},
+      {"__fetch_builtin_y", "1"},
+      {"__fetch_builtin_z", "2"}};
   CtTypeInfo Ty(ME->getBase()->getType());
   if (Ty.getBaseName() == "cl::sycl::range<3>") {
     addReplacement(
@@ -149,6 +153,29 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
         DevicePropVarRule::PropNamesMap, ME->getMemberNameInfo().getAsString());
     if (!ReplacementStr.empty()) {
       addReplacement(ME->getMemberLoc(), "get_" + ReplacementStr + "()");
+    }
+  } else if (Ty.getBaseName() == "const __cuda_builtin_blockIdx_t") {
+    ValueDecl *Field = ME->getMemberDecl();
+    std::string FieldName = Field->getName();
+    if (MapNames::replaceName(MemberMap, FieldName)) {
+      std::ostringstream Repl;
+      Repl << SyclctGlobalInfo::getItemName() << ".get_group(" << FieldName
+           << ")";
+      addReplacement(ME, Repl.str());
+    }
+  } else if (Ty.getBaseName() == "cl::sycl::float4" ||
+             Ty.getBaseName() == "const cl::sycl::double2") {
+    ExprAnalysis EA;
+    EA.analyze(ME->getBase());
+    static const std::map<std::string, std::string> MemberNamesMap{
+        {"x", "x()"}, {"y", "y()"}, {"z", "z()"}, {"w", "w()"}};
+    std::string MemberName = ME->getMemberNameInfo().getAsString();
+    if (MapNames::replaceName(MemberNamesMap, MemberName)) {
+      std::ostringstream Repl;
+      Repl << "static_cast<" << ME->getType().getAsString() << ">("
+           << EA.getReplacedString() << (ME->isArrow() ? "->" : ".")
+           << MemberName << ")";
+      addReplacement(ME, Repl.str());
     }
   }
 }
@@ -174,7 +201,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
       addReplacement(CE, Result.getValue());
   } else {
     for (auto Arg : CE->arguments())
-        analyzeArgument(Arg);
+      analyzeArgument(Arg);
   }
 }
 
