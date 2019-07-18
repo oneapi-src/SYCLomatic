@@ -1106,6 +1106,9 @@ public:
 
   std::string getReplacement();
 
+  inline void setEvent(const std::string &E) { Event = E; }
+  inline std::string getEvent() { return Event; }
+
   inline void setSync(bool Sync = true) { IsSync = Sync; }
   inline bool isSync() { return IsSync; }
 
@@ -1142,6 +1145,7 @@ private:
     std::string Stream;
   } ExecutionConfig;
 
+  std::string Event;
   bool IsSync;
   std::vector<std::shared_ptr<VarInfo>> PointerArgsList, RefArgsList;
 };

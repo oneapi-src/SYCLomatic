@@ -194,7 +194,10 @@ std::string KernelCallExpr::getReplacement() {
 
     // For default stream
     if (ExecutionConfig.Stream == "0") {
-      Block.pushStmt("syclct::get_default_queue().submit(");
+      if (!getEvent().empty())
+        Block.pushStmt(getEvent() + " = syclct::get_default_queue().submit(");
+      else
+        Block.pushStmt("syclct::get_default_queue().submit(");
     } else { // For non-default stream
       if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&')
         Block.pushStmt("(", ExecutionConfig.Stream, ").submit(");
@@ -239,11 +242,12 @@ std::string KernelCallExpr::getReplacement() {
           Block.pushStmt("});");
         }
       }
-      Block.pushStmt(isSync() ? "}).wait();" : "});");
+      Block.pushStmt("});");
     }
   }
   appendString(OS, LocInfo.Indent, "}", LocInfo.NL);
-
+  if (!getEvent().empty() && isSync())
+    appendString(OS, LocInfo.Indent, getEvent() + ".wait();", LocInfo.NL);
   return OS.str();
 }
 

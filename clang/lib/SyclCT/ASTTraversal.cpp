@@ -3651,7 +3651,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
                                          const MatchFinder::MatchResult &Result,
                                          bool IsAssigned) {
   report(CE->getBeginLoc(), Diagnostics::TIME_MEASUREMENT_FOUND);
-  std::string ReplStr;
+  std::ostringstream Repl;
 
   // Define the helper variable if it is used in the block for first time,
   // otherwise, just use it.
@@ -3662,12 +3662,10 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
 
   if (DupFilter.find(Pair) == DupFilter.end()) {
     DupFilter.insert(Pair);
-    ReplStr += "auto ";
+    Repl << "auto ";
   }
 
-  ReplStr += StmtStr;
-  ReplStr += getCTFixedSuffix();
-  ReplStr += " = clock()";
+  Repl << StmtStr << getCTFixedSuffix() << " = clock()";
   const std::string Name =
       CE->getCalleeDecl()->getAsFunction()->getNameAsString();
   if (IsAssigned) {
@@ -3676,23 +3674,22 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
     auto OuterStmt = Outer.first;
     // The outer statement is in a CompoundStmt
     if (Outer.second) {
-      ReplStr += ";";
       auto &SM = *Result.SourceManager;
       auto Loc = OuterStmt->getBeginLoc();
       if (Loc.isMacroID())
         Loc = SM.getExpansionLoc(Loc);
-      ReplStr += getNL();
-      ReplStr += getIndent(Loc, SM);
+      Repl << ";" << getNL() << getIndent(Loc, SM).str();
     }
     // The outer statement is in a IfStmt/WhileStmt/DoStmt/ForStmt
     else {
-      ReplStr += ", ";
+      Repl << ", ";
     }
-    emplaceTransformation(new InsertBeforeStmt(OuterStmt, std::move(ReplStr),
+    emplaceTransformation(new InsertBeforeStmt(OuterStmt, std::move(Repl.str()),
                                                /*PairID*/ 0,
                                                /*DoMacroExpansion*/ true));
   } else {
-    emplaceTransformation(new ReplaceStmt(CE, true, Name, ReplStr));
+    emplaceTransformation(
+        new ReplaceStmt(CE, true, Name, std::move(Repl.str())));
   }
 }
 
@@ -3702,22 +3699,19 @@ void EventAPICallRule::handleEventElapsedTime(
   auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
   auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
   auto StmtStrArg2 = getStmtSpelling(CE->getArg(2), *Result.Context);
-  std::string ReplStr{"*("};
-  ReplStr += StmtStrArg0;
-  ReplStr += ") = (float)(";
-  ReplStr += StmtStrArg2;
-  ReplStr += getCTFixedSuffix();
-  ReplStr += " - ";
-  ReplStr += StmtStrArg1;
-  ReplStr += getCTFixedSuffix();
-  ReplStr += ") / CLOCKS_PER_SEC * 1000";
+  std::ostringstream Repl;
+  Repl << "*(" << StmtStrArg0 << ") = (float)(" << StmtStrArg2
+       << getCTFixedSuffix() << " - " << StmtStrArg1 << getCTFixedSuffix()
+       << ") / CLOCKS_PER_SEC * 1000";
   if (IsAssigned) {
-    ReplStr = "(" + ReplStr + ", 0)";
+    std::ostringstream Temp;
+    Temp << "(" << Repl.str() << ", 0)";
+    Repl = std::move(Temp);
     report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
   }
   const std::string Name =
       CE->getCalleeDecl()->getAsFunction()->getNameAsString();
-  emplaceTransformation(new ReplaceStmt(CE, true, Name, ReplStr));
+  emplaceTransformation(new ReplaceStmt(CE, true, Name, std::move(Repl.str())));
   handleTimeMeasurement(CE, Result);
 }
 
@@ -3738,7 +3732,7 @@ void EventAPICallRule::handleTimeMeasurement(
 
     if (const CallExpr *RecordCall = dyn_cast<CallExpr>(*Iter)) {
       if (!RecordCall->getDirectCallee())
-        return;
+        continue;
       std::string RecordFuncName =
           RecordCall->getDirectCallee()->getNameInfo().getName().getAsString();
       // Find the last call of cudaEventRecord on start and stop before
@@ -3759,16 +3753,22 @@ void EventAPICallRule::handleTimeMeasurement(
   auto RecordBeginLoc = RecordBegin->getBeginLoc().getRawEncoding();
   auto RecordEndLoc = RecordEnd->getBeginLoc().getRawEncoding();
   for (auto Iter = Parent->child_begin(); Iter != Parent->child_end(); ++Iter) {
+    const CUDAKernelCallExpr *KCall = nullptr;
     if (auto *Expr = dyn_cast<ExprWithCleanups>(*Iter)) {
       auto *SubExpr = Expr->getSubExpr();
-      if (auto *KCall = dyn_cast<CUDAKernelCallExpr>(SubExpr)) {
-        auto KCallLoc = KCall->getBeginLoc().getRawEncoding();
-        // Only the kernel calls between begin and end are set to be synced
-        if (KCallLoc > RecordBeginLoc && KCallLoc < RecordEndLoc) {
-          SyclctGlobalInfo::getInstance()
-              .insertKernelCallExpr(KCall)
-              ->setSync();
-        }
+      if (auto *Call = dyn_cast<CUDAKernelCallExpr>(SubExpr))
+        KCall = Call;
+    } else if (auto *Call = dyn_cast<CUDAKernelCallExpr>(*Iter)) {
+      KCall = Call;
+    }
+
+    if (KCall) {
+      auto KCallLoc = KCall->getBeginLoc().getRawEncoding();
+      // Only the kernel calls between begin and end are set to be synced
+      if (KCallLoc > RecordBeginLoc && KCallLoc < RecordEndLoc) {
+        auto K = SyclctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
+        K->setEvent(getStmtSpelling(CE->getArg(2), *Result.Context));
+        K->setSync();
       }
     }
   }
