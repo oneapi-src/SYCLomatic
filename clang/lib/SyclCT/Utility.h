@@ -96,6 +96,10 @@ template <typename T> std::string getHashAsString(const T &Val) {
   return Stream.str();
 }
 
+inline std::string getCTFixedSuffix() {
+  return "_ct1";
+}
+
 template <typename T> const T *getDecl(const clang::Stmt *E);
 
 enum SourceProcessType {

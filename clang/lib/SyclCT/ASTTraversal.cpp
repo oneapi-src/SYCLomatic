@@ -3533,10 +3533,8 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
     ReplStr += "auto ";
   }
 
-  ReplStr += "syclct_";
   ReplStr += StmtStr;
-  ReplStr += "_";
-  ReplStr += getHashAsString(StmtStr).substr(0, 6);
+  ReplStr += getCTFixedSuffix();
   ReplStr += " = clock()";
   const std::string Name =
       CE->getCalleeDecl()->getAsFunction()->getNameAsString();
@@ -3574,14 +3572,12 @@ void EventAPICallRule::handleEventElapsedTime(
   auto StmtStrArg2 = getStmtSpelling(CE->getArg(2), *Result.Context);
   std::string ReplStr{"*("};
   ReplStr += StmtStrArg0;
-  ReplStr += ") = (float)(syclct_";
+  ReplStr += ") = (float)(";
   ReplStr += StmtStrArg2;
-  ReplStr += "_";
-  ReplStr += getHashAsString(StmtStrArg2).substr(0, 6);
-  ReplStr += " - syclct_";
+  ReplStr += getCTFixedSuffix();
+  ReplStr += " - ";
   ReplStr += StmtStrArg1;
-  ReplStr += "_";
-  ReplStr += getHashAsString(StmtStrArg1).substr(0, 6);
+  ReplStr += getCTFixedSuffix();
   ReplStr += ") / CLOCKS_PER_SEC * 1000";
   if (IsAssigned) {
     ReplStr = "(" + ReplStr + ", 0)";
