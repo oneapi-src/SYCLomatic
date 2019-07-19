@@ -189,7 +189,7 @@ public:
   }
 };
 
-syclct_channel_desc cread_channel_desc(int x, int y, int z, int w,
+inline syclct_channel_desc create_channel_desc(int x, int y, int z, int w,
                                        int channel_kind) {
   syclct_channel_desc desc;
 
