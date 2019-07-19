@@ -22,14 +22,22 @@ target_link_libraries(syclct
   ${LIBCURL}
   )
 #
-
+if(UNIX)
 set(syclct_startup_script
   startup.sh
   )
-
 set(syclct_syscheck_script
   sys_check.sh
 )
+else()
+set(syclct_startup_script
+  startup.bat
+  )
+
+set(syclct_syscheck_script
+sys_check.bat
+  )
+endif()
 
 install(
   FILES ${syclct_startup_script}
