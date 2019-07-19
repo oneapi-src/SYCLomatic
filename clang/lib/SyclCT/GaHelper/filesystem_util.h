@@ -22,12 +22,8 @@ typedef std::string ustring;
 #endif
 
 GAHELPER_NS_BEGIN
-//TODO:  remove the macro to enable windows support.
-#if defined(__linux__)
-
 
 ustring dirname(const ustring& path);
 bool createDirectories(const ustring& path);
 
 GAHELPER_NS_END
-#endif

@@ -8,8 +8,6 @@
 // from the company.
 //
 //===-----------------------------------------------------------------===//
-//TODO:  remove the macro to enable windows support.
-#if defined(__linux__)
 #include "filelock.h"
 
 #include "filesystem_util.h"
@@ -23,7 +21,7 @@
 #include <sys/stat.h>
 GAHELPER_NS_BEGIN
 
-filelock_t::filelock_t(const std::string& filename)
+filelock_t::filelock_t(const ustring& filename)
 {
 	m_lock_filename = filename;
     //fixme
@@ -78,4 +76,3 @@ bool filelock_t::is_locked()const
 }
 
 GAHELPER_NS_END
-#endif

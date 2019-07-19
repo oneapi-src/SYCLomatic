@@ -10,6 +10,14 @@
 //===-----------------------------------------------------------------===//
 #pragma once
 #include "GaNamespace.h"
+#ifdef _WIN32
+#pragma comment(lib, "wldap32.lib" )
+#pragma comment(lib, "crypt32.lib" )
+#pragma comment(lib, "Ws2_32.lib")
+#pragma comment(lib, "winhttp")
+#pragma comment(lib, "Normaliz")
+#define CURL_STATICLIB
+#endif
 #include <curl/curl.h>
 #include <vector>
 #include <string>
@@ -18,9 +26,6 @@
 #include <mutex>
 #include <condition_variable>
 #include <queue>
-
-//TODO:  remove the macro to enable windows support.
-#if defined(__linux__)
 
 GAHELPER_NS_BEGIN
 const int HTTP_TIMEOUT = 5;
@@ -75,4 +80,3 @@ private:
 };
 
 GAHELPER_NS_END
-#endif

@@ -22,8 +22,6 @@
 #endif
 #include <string>
 
-//TODO:  remove the macro to enable windows support.
-#if defined(__linux__)
 
 GAHELPER_NS_BEGIN
 
@@ -31,23 +29,23 @@ GAHELPER_NS_BEGIN
 class UuidPersistenceProvider : public IUuidPersistenceProvider
 {
 public:
-	UuidPersistenceProvider(const std::string rootDir);
+	UuidPersistenceProvider(const ustring rootDir);
 	virtual bool store(const char* uuid) override;
 	virtual const char* load() override;
 private:
 	std::string m_uuid;
-	std::string m_uuidFilePath;
+	ustring m_uuidFilePath;
 };
 
 class ActiveUserPersistenceProvider : public IActiveUserPersistenceProvider
 {
 public:
-	ActiveUserPersistenceProvider(const std::string rootDir);
+	ActiveUserPersistenceProvider(const ustring rootDir);
 	~ActiveUserPersistenceProvider();
 	virtual bool read(ReaderCallback* callback) override;
 	virtual bool write(WriterCallback* callback) override;
 private:
-	std::string m_activeUserFilePath;
+	ustring m_activeUserFilePath;
 };
 
 class AnalyticsImpl : public IAnalytics
@@ -76,4 +74,3 @@ private:
 
 
 GAHELPER_NS_END
-#endif

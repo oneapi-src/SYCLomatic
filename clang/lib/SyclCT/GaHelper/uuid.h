@@ -12,12 +12,8 @@
 #include "GaNamespace.h"
 #include <string>
 
-//TODO:  remove the macro to enable windows support.
-#if defined(__linux__)
-
 GAHELPER_NS_BEGIN
 
 std::string generate_uuid4();
 
 GAHELPER_NS_END
-#endif

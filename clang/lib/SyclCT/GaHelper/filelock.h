@@ -8,13 +8,10 @@
 // from the company.
 //
 //===-----------------------------------------------------------------===//
-
-//TODO:  remove the macro to enable windows support.
-#if defined(__linux__)
-
 #pragma once
 
 #include "GaNamespace.h"
+#include "filesystem_util.h"
 
 #include <string>
 GAHELPER_NS_BEGIN
@@ -22,7 +19,7 @@ GAHELPER_NS_BEGIN
 class filelock_t
 {
 public:
-	filelock_t(const std::string& filename);
+	filelock_t(const ustring& filename);
 	~filelock_t();
 
 	bool lock();
@@ -32,8 +29,7 @@ public:
 
 private:
 	bool m_locked;
-	std::string m_lock_filename;
+	ustring m_lock_filename;
 };
 
 GAHELPER_NS_END
-#endif

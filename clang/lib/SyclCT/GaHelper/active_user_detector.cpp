@@ -9,8 +9,8 @@
 //
 //===-----------------------------------------------------------------===//
 //todo
-#if defined(__linux__)
 #include "active_user_detector.h"
+//#include "filelock.h"
 
 #ifdef _WIN32
 #    include <windows.h>
@@ -152,4 +152,3 @@ void ActiveUserDetector::dumpStat(){
 
 
 GAHELPER_NS_END
-#endif

@@ -8,8 +8,6 @@
 // from the company.
 //
 //===-----------------------------------------------------------------===//
-//TODO:  remove the macro to enable windows support.
-#if defined(__linux__)
 #include "gahelper_impl.h"
 #include "uuid.h"
 #include "os_specific.h"
@@ -23,7 +21,7 @@ GAHELPER_NS_BEGIN
 #define STR(x) STR_X(x)
 #define STR_X(x) #x
 
-std::string getStatisticDir()
+ustring getStatisticDir()
 {
     /*auto productLocations = cfgmgr2::IProductLocations::get();
     if (productLocations == nullptr)
@@ -32,16 +30,18 @@ std::string getStatisticDir()
     }*/
 
 #ifdef _WIN32
-    cpil2::uchar_t buf[MAX_PATH];
+    WCHAR  buf[MAX_PATH];
     HRESULT hr = SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, buf);
     if FAILED(hr)
     {
         return _U("");
     }
-    auto intelRootPath = gh2::bpath(buf) / _U("Intel Corporation");
+//    auto intelRootPath = gh2::bpath(buf) / _U("Intel Corporation");
+	ustring intelRootPath(ustring(buf)+ ustring(_U("/")) + ustring(_U("Intel Corporation")));
+
 #else
     char* home = getenv("HOME");
-    std::string homePath(home ? home : _U("."));
+    ustring homePath(home ? home : _U("."));
     auto intelRootPath = homePath + "/" + _U("intel");
 #endif
     //TODO: update intelRootPath from env variable just as in cfgmgr in order
@@ -49,7 +49,7 @@ std::string getStatisticDir()
     //to have this directory sandboxed for testing purposes.
     //try
     //{
-        auto statisticDir = intelRootPath + "/" + _U("DPCPPCT") ;
+        auto statisticDir = ustring(intelRootPath) + ustring(_U("/")) + ustring(_U("DPCPPCT")) ;
         createDirectories(statisticDir);
         return statisticDir;
     //}
@@ -61,7 +61,7 @@ std::string getStatisticDir()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-UuidPersistenceProvider::UuidPersistenceProvider(const std::string rootDir)
+UuidPersistenceProvider::UuidPersistenceProvider(const ustring rootDir)
 {
     auto statDir = getStatisticDir();
     if (statDir.empty())
@@ -69,7 +69,7 @@ UuidPersistenceProvider::UuidPersistenceProvider(const std::string rootDir)
         //can not create full path to statistic directory (readonly fs for example)
         return;
     }
-    m_uuidFilePath = (statDir) + "/" + _U("uuid.xml");
+    m_uuidFilePath = (statDir) + _U("/") + _U("uuid.xml");
 }
 
 
@@ -108,14 +108,14 @@ const char * UuidPersistenceProvider::load()
     return m_uuid.c_str();
 }
 
-ActiveUserPersistenceProvider::ActiveUserPersistenceProvider(const std::string rootDir)
+ActiveUserPersistenceProvider::ActiveUserPersistenceProvider(const ustring rootDir)
 {
     auto statDir = getStatisticDir();
     if (statDir.empty())
     {
         return;
     }
-    m_activeUserFilePath = statDir + "/" + _U("last_active_dates.xml");
+    m_activeUserFilePath = statDir + _U("/") + _U("last_active_dates.xml");
 }
 
 ActiveUserPersistenceProvider::~ActiveUserPersistenceProvider()
@@ -228,7 +228,11 @@ AnalyticsImpl::AnalyticsImpl(const AnalyticsCreateParams& params) :
         params.uuidPersistenceProvider->store(m_uuid.c_str());
     }
     m_osVersion = getOsName();
-    m_osType = STR(TARGET_OS);
+    #ifdef _WIN32
+    m_osType = STR(Windows);
+    #else
+    m_osType = STR(Linux);
+    #endif
     std::stringstream ss;
     ss << "v=1&tid=" << params.tid << "&cid=" << m_uuid;
     ss << "&an=" << m_connector.urlencode(params.appName);
@@ -391,7 +395,11 @@ void AnalyticsImpl::dumpStat() {
     std::cout<< "m_osVersion: " << m_osVersion << "\n";
     std::cout<< "m_constantPostFields: " << m_constantPostFields << "\n";
     std::cout<< "m_uuid: " << m_uuid << "\n";
-    std::cout<< "m_isipFilePath: " << m_isipFilePath << "\n";
+#ifdef _WIN32
+    std::wcout<< "m_isipFilePath: " << m_isipFilePath.c_str() << "\n";
+#else
+    std::cout << "m_isipFilePath: " << m_isipFilePath.c_str() << "\n";
+#endif
     std::cout<< "m_flags: " << m_flags << "\n";
     std::cout<< "m_enabled: " << m_enabled << "\n";
     m_activeUserDetector.dumpStat();
@@ -402,7 +410,7 @@ void AnalyticsImpl::dumpStat() {
 
 //#ifdef GAHELPER_EXPORTS
 
-GAHELPER_API IAnalytics* IAnalytics ::create(const AnalyticsCreateParams& params)
+IAnalytics* IAnalytics ::create(const AnalyticsCreateParams& params)
 {
     return new AnalyticsImpl(params);
 }
@@ -415,4 +423,3 @@ void AnalyticsImpl::destroy()
 //#endif
 
 GAHELPER_NS_END
-#endif

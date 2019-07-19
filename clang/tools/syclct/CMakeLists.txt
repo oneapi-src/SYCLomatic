@@ -11,9 +11,9 @@ include_directories(
   ../../../clang/lib/Driver/
   )
 if(UNIX)
-  set(LIBCURL ${CMAKE_SOURCE_DIR}/../clang/lib/SyclCT/LibcurlLinux/lib/libcurl.a)
+  set(LIBCURL ${CMAKE_SOURCE_DIR}/../clang/lib/SyclCT/libcurl/lib/linux/libcurl.a)
 else()
-  set(LIBCURL "")
+  set(LIBCURL ${CMAKE_SOURCE_DIR}/../clang/lib/SyclCT/libcurl/lib/win/libcurl_a.lib)
 endif()
 
 target_link_libraries(syclct

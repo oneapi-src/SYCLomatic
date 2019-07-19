@@ -10,10 +10,8 @@
 //===-----------------------------------------------------------------===//
 #ifndef  __GA_ANALYTICS_H__
 #define __GA_ANALYTICS_H__
-#if defined(__linux__)  
 
 int GAnalytics();
 
-#endif
 #endif
 

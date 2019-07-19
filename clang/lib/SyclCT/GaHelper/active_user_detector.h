@@ -8,9 +8,6 @@
 // from the company.
 //
 //===-----------------------------------------------------------------===//
-//TODO:  remove the macro to enable windows support.
-#if defined(__linux__)
-
 #pragma once
 #include "GaHelper.h"
 #include <vector>
@@ -101,4 +98,3 @@ private:
 
 GAHELPER_NS_END
 
-#endif

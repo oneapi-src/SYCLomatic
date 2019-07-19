@@ -8,8 +8,6 @@
 // from the company.
 //
 //===-----------------------------------------------------------------===//
-//TODO:  remove the macro to enable windows support.
-#if defined(__linux__)
 #include "filesystem_util.h"
 #ifdef _WIN32
 #  include <direct.h>
@@ -73,7 +71,7 @@ bool createDirectories(const ustring& path)
     }
 #else
  // Creating a directory 
-    if (mkdir(path.c_str(), 0777) == -1) 
+    if (mkdir(path.c_str(), 0644) == -1) 
         return false;
     else
         return true;
@@ -83,4 +81,3 @@ bool createDirectories(const ustring& path)
 }
 
 GAHELPER_NS_END
-#endif

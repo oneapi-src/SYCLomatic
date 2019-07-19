@@ -12,10 +12,6 @@
 #include "GaNamespace.h"
 #include <vector>
 #include <string>
-
-//TODO:  remove the macro to enable windows support.
-#if defined(__linux__)
-
 GAHELPER_NS_BEGIN
 
 std::string getOsName();
@@ -25,4 +21,3 @@ std::string getOsName();
 void collectProxyInfo(const char* for_url, std::vector<std::string>* result);
 
 GAHELPER_NS_END
-#endif

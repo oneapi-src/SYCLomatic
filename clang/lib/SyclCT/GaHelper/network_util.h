@@ -10,8 +10,6 @@
 //===-----------------------------------------------------------------===//
 #pragma once
 #include "GaNamespace.h"
-//TODO:  remove the macro to enable windows support.
-#if defined(__linux__)
 
 GAHELPER_NS_BEGIN
 
@@ -25,4 +23,3 @@ enum class network_status_t
 network_status_t getNetworkStatus();
 
 GAHELPER_NS_END
-#endif

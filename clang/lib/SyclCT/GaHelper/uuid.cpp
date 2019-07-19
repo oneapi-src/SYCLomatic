@@ -8,8 +8,6 @@
 // from the company.
 //
 //===-----------------------------------------------------------------===//
-//TODO:  remove the macro to enable windows support.
-#if defined(__linux__)
 #ifdef _WIN32
 #  define _CRT_RAND_S 
 #  include <stdlib.h>
@@ -23,7 +21,6 @@
 #include <iomanip>
 #include "uuid.h"
 const size_t UUID_SIZE = 16;
-
 
 GAHELPER_NS_BEGIN
 
@@ -76,4 +73,3 @@ std::string generate_uuid4()
 }
 
 GAHELPER_NS_END
-#endif

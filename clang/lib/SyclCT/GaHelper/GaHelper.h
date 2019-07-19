@@ -12,6 +12,7 @@
 #include "GaNamespace.h"
 #include <stdint.h>
 
+/*
 #ifdef _WIN32
 #  ifdef GAHELPER_EXPORTS
 #    define GAHELPER_API __declspec(dllexport)
@@ -21,9 +22,7 @@
 #else
 #  define GAHELPER_API
 #endif
-
-//TODO:  remove the macro to enable windows support.
-#if defined(__linux__)
+*/
 
 GAHELPER_NS_BEGIN
 
@@ -37,7 +36,6 @@ public:
     virtual const char* load() = 0; //returned pointer should be valid till next load() call
 };
 
-// need a instrance for these one.
 class IActiveUserPersistenceProvider
 {
 public:
@@ -85,7 +83,7 @@ enum class UserConsent
 class IAnalytics
 {
 public:
-    static GAHELPER_API IAnalytics* create(const AnalyticsCreateParams& params);
+    static IAnalytics* create(const AnalyticsCreateParams& params);
     virtual void destroy() = 0;
     virtual UserConsent getUserConsentValue() const = 0;
     virtual void setStatisticCollectionEnabled(bool value) = 0;
@@ -98,4 +96,3 @@ public:
 };
 
 GAHELPER_NS_END
-#endif

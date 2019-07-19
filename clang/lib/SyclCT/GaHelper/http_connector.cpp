@@ -9,7 +9,6 @@
 //
 //===-----------------------------------------------------------------===//
 //TODO:  remove the macro to enable windows support.
-#if defined(__linux__)
 #include "http_connector.h"
 #include "os_specific.h"
 #include <iostream>
@@ -119,4 +118,3 @@ void HttpConnector::dumpStats(){
 }
 
 GAHELPER_NS_END
-#endif

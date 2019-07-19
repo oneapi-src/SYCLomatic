@@ -8,7 +8,6 @@
 // from the company.
 //
 //===-----------------------------------------------------------------===//
-#if defined(__linux__)
 #include "GaHelper.h"
 #include "gahelper_impl.h"
 #include "Config.h"
@@ -18,8 +17,8 @@
 
 using namespace gahelper1;
 int GAnalytics() {
-  UuidPersistenceProvider uuidProvider("");
-  ActiveUserPersistenceProvider activeUserPersistenceProvider("");
+  UuidPersistenceProvider uuidProvider(_U(""));
+  ActiveUserPersistenceProvider activeUserPersistenceProvider(_U(""));
   AnalyticsCreateParams params = {0};
   params.flags=ALLOW_COLLECTION_FROM_INTEL_NETWORK;
 
@@ -37,7 +36,7 @@ int GAnalytics() {
       analytics->postEvent("client.cli.finish", nullptr, nullptr);
 
   }
-  //analytics->dumpStat();
+//  analytics->dumpStat();
  
   analytics->destroy();
   return 0;
@@ -50,4 +49,3 @@ int main(int argc, const char *argv[]) {
 }
 #endif 
 
-#endif

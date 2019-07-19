@@ -6,12 +6,12 @@ include_directories(
   # For the CUDA-Toolchain and its CudaInstallationDetector
   ../../../clang/lib/Driver/
   GaHelper/
-  LibcurlLinux/include/
+  libcurl/include/
   )
 if(UNIX)
-  set(LIBCURL ${CMAKE_SOURCE_DIR}/../clang/lib/SyclCT/LibcurlLinux/lib/libcurl.a)
+  set(LIBCURL ${CMAKE_SOURCE_DIR}/../clang/lib/SyclCT/libcurl/lib/linux/libcurl.a)
 else()
-  set(LIBCURL "")
+  set(LIBCURL ${CMAKE_SOURCE_DIR}/../clang/lib/SyclCT/libcurl/lib/win/libcurl_a.lib)
 endif()
 
 

@@ -8,8 +8,6 @@
 // from the company.
 //
 //===-----------------------------------------------------------------===//
-//TODO:  remove the macro to enable windows support.
-#if defined(__linux__)
 #include "network_util.h"
 
 #ifdef _WIN32
@@ -28,7 +26,6 @@
 #    define HOST_NO_DATA_ERROR EAI_NONAME //EAI_NODATA is deprecated on FREEBSDs
 #  endif
 #endif
-
 
 GAHELPER_NS_BEGIN
 
@@ -85,4 +82,3 @@ network_status_t getNetworkStatus()
 }
 
 GAHELPER_NS_END
-#endif
