@@ -649,6 +649,10 @@ public:
                                       SourceLocation SL,
                                       std::string &BufferDecl,
                                       int DistinctionID);
+  std::string
+  getBufferNameAndDeclStr(const std::string &PointerName, const ASTContext &AC,
+                          const std::string &TypeAsStr, SourceLocation SL,
+                          std::string &BufferDecl, int DistinctionID);
 
   bool isReplIndex(int i, const std::vector<int> &IndexInfo, int &IndexTemp);
 
@@ -662,6 +666,14 @@ public:
                                      const std::vector<int> &OperationIndexInfo,
                                      const int FillModeIndexInfo,
                                      std::string &PrefixInsertStr);
+  void processTrmmCall(const CallExpr *CE, std::string &PrefixInsertStr,
+                   const std::string IndentStr);
+  void processTrmmParams(const CallExpr *CE, std::string &PrefixInsertStr,
+                         std::string &BufferName, std::string &BufferDecl,
+                         int &IndexTemp, int DistinctionID,
+                         const std::string IndentStr,
+                         const std::vector<std::string> &BufferTypeInfo,
+                         const SourceLocation &StmtBegin);
 };
 
 /// Migration rule for function calls.

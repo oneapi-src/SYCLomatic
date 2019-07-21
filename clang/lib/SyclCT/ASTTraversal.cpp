@@ -2371,6 +2371,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasStrsm_v2", "cublasDtrsm_v2", "cublasCtrsm_v2", "cublasZtrsm_v2",
         "cublasChemm_v2", "cublasZhemm_v2", "cublasCherk_v2", "cublasZherk_v2",
         "cublasCher2k_v2", "cublasZher2k_v2", "cublasSsyrkx", "cublasDsyrkx",
+        "cublasStrmm_v2", "cublasDtrmm_v2", "cublasCtrmm_v2", "cublasZtrmm_v2",
         /*Legacy API*/
         "cublasInit", "cublasShutdown", "cublasGetError",
         /*level 1*/
@@ -2411,7 +2412,8 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasCsyr2k", "cublasZsyr2k", "cublasCher2k", "cublasZher2k",
         "cublasSsymm", "cublasDsymm", "cublasCsymm", "cublasZsymm",
         "cublasChemm", "cublasZhemm", "cublasStrsm", "cublasDtrsm",
-        "cublasCtrsm", "cublasZtrsm");
+        "cublasCtrsm", "cublasZtrsm", "cublasStrmm", "cublasDtrmm",
+        "cublasCtrmm", "cublasZtrmm");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
@@ -2516,10 +2518,18 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     for (int i = 0; i < ArgNum; ++i) {
       int IndexTemp = -1;
       if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
-        std::string BufferDecl;
-        std::string BufferName = getBufferNameAndDeclStr(
-            CE->getArg(i), *(Result.Context),
-            ReplInfo.BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, i);
+        std::string BufferDecl = "";
+        std::string BufferName = "";
+        if (FuncName == "cublasStrmm_v2" || FuncName == "cublasDtrmm_v2") {
+          processTrmmParams(CE, PrefixInsertStr, BufferName, BufferDecl,
+                            IndexTemp, i, IndentStr, ReplInfo.BufferTypeInfo,
+                            StmtBegin);
+        } else {
+          BufferName = getBufferNameAndDeclStr(
+              CE->getArg(i), *(Result.Context),
+              ReplInfo.BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, i);
+        }
+
         PrefixInsertStr = PrefixInsertStr + BufferDecl;
 
         if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
@@ -2591,7 +2601,9 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                       "transpose::trans):(mkl::transpose::nontrans), "));
       }
     }
-
+    if (FuncName == "cublasStrmm_v2" || FuncName == "cublasDtrmm_v2") {
+      processTrmmCall(CE, PrefixInsertStr, IndentStr);
+    }
     if (IsAssigned) {
       insertAroundRange(FuncNameBegin, FuncCallEnd.getLocWithOffset(1), "(",
                         ", 0)");
@@ -2620,10 +2632,17 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     for (int i = 0; i < ArgNum; ++i) {
       int IndexTemp = -1;
       if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
-        std::string BufferDecl;
-        std::string BufferName = getBufferNameAndDeclStr(
-            CE->getArg(i), *(Result.Context),
-            ReplInfo.BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, i);
+        std::string BufferDecl = "";
+        std::string BufferName = "";
+        if (FuncName == "cublasCtrmm_v2" || FuncName == "cublasZtrmm_v2") {
+          processTrmmParams(CE, PrefixInsertStr, BufferName, BufferDecl,
+                            IndexTemp, i, IndentStr, ReplInfo.BufferTypeInfo,
+                            StmtBegin);
+        } else {
+          BufferName = getBufferNameAndDeclStr(
+              CE->getArg(i), *(Result.Context),
+              ReplInfo.BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, i);
+        }
         PrefixInsertStr = PrefixInsertStr + BufferDecl;
 
         if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
@@ -2669,7 +2688,9 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                                       PrefixInsertStr);
       }
     }
-
+    if (FuncName == "cublasCtrmm_v2" || FuncName == "cublasZtrmm_v2") {
+      processTrmmCall(CE, PrefixInsertStr, IndentStr);
+    }
     if (IsAssigned) {
       insertAroundRange(FuncNameBegin, FuncCallEnd.getLocWithOffset(1), "(",
                         ", 0)");
@@ -3091,6 +3112,14 @@ std::string BLASFunctionCallRule::getBufferNameAndDeclStr(
     const Expr *Arg, const ASTContext &AC, const std::string &TypeAsStr,
     SourceLocation SL, std::string &BufferDecl, int DistinctionID) {
   std::string PointerName = getStmtSpelling(Arg, AC);
+  return getBufferNameAndDeclStr(PointerName, AC, TypeAsStr, SL, BufferDecl,
+                                 DistinctionID);
+}
+
+std::string BLASFunctionCallRule::getBufferNameAndDeclStr(
+    const std::string &PointerName, const ASTContext &AC,
+    const std::string &TypeAsStr, SourceLocation SL, std::string &BufferDecl,
+    int DistinctionID) {
   std::string PointerNameHashStr = getHashAsString(PointerName);
   PointerNameHashStr = (PointerNameHashStr.size() < 4)
                            ? PointerNameHashStr
@@ -3201,6 +3230,56 @@ void BLASFunctionCallRule::processParamIntCastToBLASEnum(
   // the value of enum in mkl::side/cublasSideMode_t and
   // mkl::diag/cublasDiagType_t is same, so we don't need to
   // transfer
+}
+
+void BLASFunctionCallRule::processTrmmParams(
+    const CallExpr *CE, std::string &PrefixInsertStr, std::string &BufferName,
+    std::string &BufferDecl, int &IndexTemp, int DistinctionID,
+    const std::string IndentStr, const std::vector<std::string> &BufferTypeInfo,
+    const SourceLocation &StmtBegin) {
+  auto &Context = syclct::SyclctGlobalInfo::getContext();
+  // decl a temp var for ptrB and ptrC
+  PrefixInsertStr = PrefixInsertStr + IndentStr + "auto ptr_ct_" +
+                    std::to_string(DistinctionID) + " = " +
+                    getStmtSpelling(CE->getArg(DistinctionID), Context) + ";" +
+                    getNL();
+  BufferName = getBufferNameAndDeclStr(
+      "ptr_ct_" + std::to_string(DistinctionID), Context,
+      BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, DistinctionID);
+}
+
+void BLASFunctionCallRule::processTrmmCall(const CallExpr *CE,
+                                           std::string &PrefixInsertStr,
+                                           const std::string IndentStr) {
+  auto &SM = syclct::SyclctGlobalInfo::getSourceManager();
+  auto &Context = syclct::SyclctGlobalInfo::getContext();
+  // remove parameters ptrB and ldb
+  Optional<Token> TokSharedPtr;
+  TokSharedPtr =
+      Lexer::findNextToken(CE->getArg(11)->getEndLoc(), SM, LangOptions());
+  Token CommaTok = TokSharedPtr.getValue();
+  auto CommaEnd = CommaTok.getEndLoc();
+  auto Len = SM.getCharacterData(CommaEnd) -
+             SM.getCharacterData(CE->getArg(10)->getBeginLoc());
+  emplaceTransformation(
+      new ReplaceText(CE->getArg(10)->getBeginLoc(), Len, ""));
+  // decl fout temp vars for ldb, ldc, n and m
+  PrefixInsertStr =
+      PrefixInsertStr + IndentStr +
+      "auto ld_ct_13 = " + getStmtSpelling(CE->getArg(13), Context) + ";" +
+      " auto m_ct_5 = " + getStmtSpelling(CE->getArg(5), Context) +
+      "; auto n_ct_6 = " + getStmtSpelling(CE->getArg(6), Context) + ";" +
+      getNL();
+  // insert a stmt copying the data ptrB pointing to where ptrC pointing
+  PrefixInsertStr = PrefixInsertStr + IndentStr +
+                    "syclct::matrix_mem_copy(ptr_ct_12, " +
+                    getStmtSpelling(CE->getArg(10), Context) + ", ld_ct_13, " +
+                    getStmtSpelling(CE->getArg(11), Context) +
+                    ", m_ct_5, n_ct_6, syclct::device_to_device);" + getNL();
+  // replace the args in the function call
+  emplaceTransformation(new ReplaceStmt(CE->getArg(13), "ld_ct_13"));
+  emplaceTransformation(new ReplaceStmt(CE->getArg(5), "m_ct_5"));
+  emplaceTransformation(new ReplaceStmt(CE->getArg(6), "n_ct_6"));
 }
 
 REGISTER_RULE(BLASFunctionCallRule)

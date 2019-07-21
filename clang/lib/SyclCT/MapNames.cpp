@@ -399,6 +399,16 @@ const std::map<std::string, MapNames::BLASFuncReplInfo>
          {std::vector<int>{6, 8, 11}, std::vector<int>{5, 10},
           std::vector<std::string>{"double", "double", "double"},
           std::vector<int>{2}, 1, -1, -1, "mkl::dgemmt"}},
+        // Needn't declare bufferB ,but need copy the data ptrB points to
+        // where ptrC points.
+        {"cublasStrmm_v2",
+         {std::vector<int>{8, 12}, std::vector<int>{7},
+          std::vector<std::string>{"float", "float"}, std::vector<int>{3}, 2,
+          1, 4, "mkl::strmm"}},
+        {"cublasDtrmm_v2",
+         {std::vector<int>{8, 12}, std::vector<int>{7},
+          std::vector<std::string>{"double", "double"}, std::vector<int>{3}, 2,
+          1, 4, "mkl::dtrmm"}},
         // ...
     };
 
@@ -927,6 +937,20 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
 
           std::vector<std::string>{"std::complex<double>", "double"},
           std::vector<int>{2}, 1, -1, -1, "mkl::zher2k"}},
+        // Needn't declare bufferB ,but need copy the data ptrB points to
+        // where ptrC points.
+        {"cublasCtrmm_v2",
+         {std::vector<int>{8, 12}, std::vector<int>{7},
+          std::vector<std::string>{"std::complex<float>",
+                                   "std::complex<float>"},
+          std::vector<std::string>{"std::complex<float>"}, std::vector<int>{3},
+          2, 1, 4, "mkl::ctrmm"}},
+        {"cublasZtrmm_v2",
+         {std::vector<int>{8, 12}, std::vector<int>{7},
+          std::vector<std::string>{"std::complex<double>",
+                                   "std::complex<double>"},
+          std::vector<std::string>{"std::complex<double>"}, std::vector<int>{3},
+          2, 1, 4, "mkl::ztrmm"}},
     };
 
 const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
@@ -1274,6 +1298,16 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
           std::vector<std::string>{"double", "double"},
           std::vector<std::string>{}, std::vector<int>{2}, 1,
           0, 3, "mkl::dtrsm"}},
+        {"cublasStrmm",
+         {std::vector<int>{7, 9}, std::vector<int>{},
+          std::vector<std::string>{"float", "float"},
+          std::vector<std::string>{}, std::vector<int>{2}, 1, 0, 3,
+          "mkl::strmm"}},
+        {"cublasDtrmm",
+         {std::vector<int>{7, 9}, std::vector<int>{},
+          std::vector<std::string>{"double", "double"},
+          std::vector<std::string>{}, std::vector<int>{2}, 1, 0, 3,
+          "mkl::dtrmm"}},
         // cuComplex and cuDoubleComplex
         // level 1
         {"cublasIcamax",
@@ -1722,6 +1756,20 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
           std::vector<std::string>{"std::complex<double>"}, std::vector<int>{2},
           1, 0, 3,
           "mkl::ztrsm"}},
+        {"cublasCtrmm",
+         {std::vector<int>{7, 9}, std::vector<int>{6},
+          std::vector<std::string>{"std::complex<float>",
+                                   "std::complex<float>"},
+          std::vector<std::string>{"std::complex<float>"}, std::vector<int>{2},
+          1, 0, 3,
+          "mkl::ctrmm"}},
+        {"cublasZtrmm",
+         {std::vector<int>{7, 9}, std::vector<int>{6},
+          std::vector<std::string>{"std::complex<double>",
+                                   "std::complex<double>"},
+          std::vector<std::string>{"std::complex<double>"}, std::vector<int>{2},
+          1, 0, 3,
+          "mkl::ztrmm"}},
     };
 
 // Atomic function names mapping
