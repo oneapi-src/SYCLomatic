@@ -163,6 +163,15 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
            << ")";
       addReplacement(ME, Repl.str());
     }
+  } else if (Ty.getBaseName() == "const __cuda_builtin_threadIdx_t") {
+    ValueDecl *Field = ME->getMemberDecl();
+    std::string FieldName = Field->getName();
+    if (MapNames::replaceName(MemberMap, FieldName)) {
+      std::ostringstream Repl;
+      Repl << SyclctGlobalInfo::getItemName() << ".get_local_id(" << FieldName
+           << ")";
+      addReplacement(ME, Repl.str());
+    }
   } else if (Ty.getBaseName() == "cl::sycl::float4" ||
              Ty.getBaseName() == "const cl::sycl::double2") {
     ExprAnalysis EA;

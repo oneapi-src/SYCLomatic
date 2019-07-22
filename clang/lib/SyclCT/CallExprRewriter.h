@@ -25,6 +25,7 @@ class MathSimulatedRewriter;
 class MathTypeCastRewriter;
 class MathBinaryOperatorRewriter;
 class MathUnsupportedRewriter;
+class WarpFunctionRewriter;
 
 /*
 Factory usage example:
@@ -74,6 +75,8 @@ using MathTypeCastRewriterFactory =
     CallExprRewriterFactory<MathTypeCastRewriter, std::string>;
 using MathBinaryOperatorRewriterFactory =
     CallExprRewriterFactory<MathBinaryOperatorRewriter, BinaryOperatorKind>;
+using WarpFunctionRewriterFactory =
+    CallExprRewriterFactory<WarpFunctionRewriter, std::string>;
 
 class CallExprRewriter {
 protected:
@@ -147,6 +150,7 @@ protected:
 class MathCallExprRewriter : public FuncCallExprRewriter {
 public:
   virtual Optional<std::string> rewrite() override;
+
 protected:
   MathCallExprRewriter(const CallExpr *Call, StringRef SourceCalleeName,
                        StringRef TargetCalleeName)
@@ -233,6 +237,28 @@ protected:
 
   friend MathBinaryOperatorRewriterFactory;
 };
+
+class WarpFunctionRewriter : public FuncCallExprRewriter {
+private:
+  static const std::map<std::string, std::string> WarpFunctionsMap;
+  void reportNoMaskWarning() {
+    report(Diagnostics::MASK_UNSUPPORTED, TargetCalleeName);
+  }
+
+protected:
+  WarpFunctionRewriter(const CallExpr *Call, StringRef SourceCalleeName,
+                       StringRef TargetCalleeName)
+      : FuncCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {}
+
+public:
+  virtual Optional<std::string> rewrite() override;
+
+protected:
+  std::string getNewFuncName();
+
+  friend WarpFunctionRewriterFactory;
+};
+
 } // namespace syclct
 } // namespace clang
 

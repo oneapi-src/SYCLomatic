@@ -843,6 +843,14 @@ public:
                       const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+/// Migration for warp functions
+class WarpFunctionsRule : public NamedTranslationRule<WarpFunctionsRule> {
+public:
+  WarpFunctionsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 /// Migration rule for replacing __syncthreads() function call.
 ///
 /// This rule replace __syncthreads() with item.barrier()

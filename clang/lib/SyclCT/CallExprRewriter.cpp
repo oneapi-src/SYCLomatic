@@ -314,6 +314,30 @@ Optional<std::string> MathBinaryOperatorRewriter::rewrite() {
   return buildRewriteString();
 }
 
+Optional<std::string> WarpFunctionRewriter::rewrite() {
+  if (SourceCalleeName == "__activemask" || SourceCalleeName == "__ballot" ||
+      SourceCalleeName == "__ballot_sync") {
+    report(Diagnostics::NOTSUPPORTED, SourceCalleeName);
+    RewriteArgList = getMigratedArgs();
+    setTargetCalleeName(SourceCalleeName);
+  } else {
+    reportNoMaskWarning();
+    if (SourceCalleeName == "__all" || SourceCalleeName == "__any")
+      RewriteArgList.emplace_back(getMigratedArg(0));
+    else if (SourceCalleeName == "__all_sync" ||
+             SourceCalleeName == "__any_sync")
+      RewriteArgList.emplace_back(getMigratedArg(1));
+    else {
+      RewriteArgList.emplace_back(getMigratedArg(1));
+      RewriteArgList.emplace_back(getMigratedArg(2));
+    }
+    setTargetCalleeName(buildString(
+        SyclctGlobalInfo::getItemName(), ".get_sub_group().",
+        MapNames::findReplacedName(WarpFunctionsMap, SourceCalleeName)));
+  }
+  return buildRewriteString();
+}
+
 #define REWRITER_FACTORY_ENTRY(FuncName, RewriterTy, ...)                      \
   {FuncName, std::make_shared<RewriterTy>(FuncName, __VA_ARGS__)},
 #define MATH_FUNCNAME_FACTORY_ENTRY(FuncName, RewriterName)                    \
@@ -326,14 +350,12 @@ Optional<std::string> MathBinaryOperatorRewriter::rewrite() {
   REWRITER_FACTORY_ENTRY(FuncName, MathBinaryOperatorRewriterFactory, OpKind)
 #define MATH_UNSUPPORTED_FUNC_FACTORY_ENTRY(FuncName)                          \
   REWRITER_FACTORY_ENTRY(FuncName, MathUnsupportedRewriterFactory, FuncName)
+#define WARP_FUNC_FACTORY_ENTRY(FuncName, RewriterName)                        \
+  REWRITER_FACTORY_ENTRY(FuncName, WarpFunctionRewriterFactory, RewriterName)
 
 const std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>
     CallExprRewriterFactoryBase::RewriterMap = {
-/* CallMap definition examples with macros:
-FUNC_FACTORY_ENTRY("test_func", "test_success"),
-BO_FACTORY_ENTRY("test_add", BO_Add)
-*/
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   MATH_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME)                           \
@@ -347,6 +369,10 @@ BO_FACTORY_ENTRY("test_add", BO_Add)
 #undef ENTRY_OPERATOR
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
+#define ENTRY_WARP(SOURCEAPINAME, TARGETAPINAME)                               \
+  WARP_FUNC_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
+#include "APINamesWarp.inc"
+#undef ENTRY_WARP
 };
 } // namespace syclct
 } // namespace clang

@@ -4456,6 +4456,32 @@ void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(MathFunctionsRule)
 
+void WarpFunctionsRule::registerMatcher(MatchFinder &MF) {
+  std::vector<std::string> WarpFunctions = {
+#define ENTRY_WARP(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
+#include "APINamesWarp.inc"
+#undef ENTRY_WARP
+  };
+
+  MF.addMatcher(callExpr(callee(functionDecl(internal::Matcher<NamedDecl>(
+                             new internal::HasNameMatcher(WarpFunctions)))),
+                         hasAncestor(functionDecl().bind("ancestor")))
+                    .bind("warp"),
+                this);
+}
+
+void WarpFunctionsRule::run(const MatchFinder::MatchResult &Result) {
+  if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "ancestor"))
+    DeviceFunctionDecl::LinkRedecls(FD)->setItem();
+
+  if (auto CE = getNodeAsType<CallExpr>(Result, "warp")) {
+    ExprAnalysis EA(CE);
+    EA.analyze();
+    emplaceTransformation(EA.getReplacement());
+  }
+}
+REGISTER_RULE(WarpFunctionsRule)
+
 void SyncThreadsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(callExpr(callee(functionDecl(hasAnyName("__syncthreads"))),
                          hasAncestor(functionDecl().bind("func")))

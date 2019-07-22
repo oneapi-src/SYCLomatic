@@ -52,3 +52,5 @@ DEF_WARNING(HANDLE_IN_DEVICE, 1021, "Migration of %0 in __global__ or __device__
 DEF_COMMENT(HANDLE_IN_DEVICE, 1021, "Migration of {0} in __global__ or __device__ function is not supported. You may need to redesign the code.")
 DEF_WARNING(NOT_SUPPORT_DEVICE_PROP, 1022, "DPC++ doesn't provide standard API to get %0 on GPU devices. Consider to re-implement the code which depends on this field")
 DEF_COMMENT(NOT_SUPPORT_DEVICE_PROP, 1022, "DPC++ doesn't provide standard API to get {0} on GPU devices. Consider to re-implement the code which depends on this field")
+DEF_WARNING(MASK_UNSUPPORTED, 1023, "DPC++ sub-group doesn't support mask options for %0")
+DEF_COMMENT(MASK_UNSUPPORTED, 1023, "DPC++ sub-group doesn't support mask options for {0}")

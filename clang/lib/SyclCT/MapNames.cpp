@@ -12,6 +12,7 @@
 #include "MapNames.h"
 #include "ASTTraversal.h"
 #include "SaveNewFiles.h"
+#include "CallExprRewriter.h"
 
 #include <map>
 
@@ -1907,3 +1908,9 @@ std::vector<std::string> TranslationStatistics::GetAllAPINames(void) {
 
   return AllAPINames;
 }
+
+const std::map<std::string, std::string> WarpFunctionRewriter::WarpFunctionsMap{
+#define ENTRY_WARP(SOURCEAPINAME, TARGETAPINAME) {SOURCEAPINAME, TARGETAPINAME},
+#include "APINamesWarp.inc"
+#undef ENTRY_WARP
+};
