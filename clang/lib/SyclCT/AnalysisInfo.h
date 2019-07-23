@@ -24,6 +24,7 @@ namespace clang {
 namespace syclct {
 
 class CudaMallocInfo;
+class TextureInfo;
 class KernelCallExpr;
 class CallFunctionExpr;
 class DeviceFunctionDecl;
@@ -187,6 +188,7 @@ private:
   GlobalMap<DeviceFunctionDecl> FuncMap;
   GlobalMap<KernelCallExpr> KernelMap;
   GlobalMap<CudaMallocInfo> CudaMallocMap;
+  GlobalMap<TextureInfo> TextureMap;
 
   ExtReplacements Repls;
   std::vector<SourceLineInfo> Lines;
@@ -204,6 +206,9 @@ template <> inline GlobalMap<KernelCallExpr> &SyclctFileInfo::getMap() {
 }
 template <> inline GlobalMap<CudaMallocInfo> &SyclctFileInfo::getMap() {
   return CudaMallocMap;
+}
+template <> inline GlobalMap<TextureInfo> &SyclctFileInfo::getMap() {
+  return TextureMap;
 }
 
 class SyclctGlobalInfo {
@@ -305,6 +310,7 @@ public:
   GLOBAL_TYPE(DeviceFunctionDecl, FunctionDecl)
   GLOBAL_TYPE(KernelCallExpr, CUDAKernelCallExpr)
   GLOBAL_TYPE(CudaMallocInfo, VarDecl)
+  GLOBAL_TYPE(TextureInfo, VarDecl)
 #undef GLOBAL_TYPE
 
   // Build kernel and device function declaration replacements and store them.
@@ -585,14 +591,17 @@ public:
     return buildString("auto ", getRangeName(), " = ", getArgName(),
                        ".get_range();");
   }
-  std::string getFuncDecl() {
-    return getSyclctAccessorType(false) + " " + getArgName();
+  llvm::raw_ostream &getFuncDecl(llvm::raw_ostream &OS) {
+    return OS << getSyclctAccessorType(false) << " " << getArgName();
   }
-  std::string getFuncArg() { return getArgName(); }
-  std::string getKernelArg() {
-    return buildString(getSyclctAccessorType(true), "(", getAccessorName(),
-                       isShared() ? buildString(", ", getRangeName()) : "",
-                       ")");
+  llvm::raw_ostream &getFuncArg(llvm::raw_ostream &OS) {
+    return OS << getArgName();
+  }
+  llvm::raw_ostream &getKernelArg(llvm::raw_ostream &OS) {
+    OS << getSyclctAccessorType(true) << "(" << getAccessorName();
+    if (isShared())
+      OS << ", " << getRangeName();
+    return OS << ")";
   }
 
 private:
@@ -656,6 +665,59 @@ private:
   static const std::string ExternVariableName;
 };
 
+class TextureInfo {
+  std::string DataType;
+  int Dimension;
+
+  const std::string FilePath;
+  const unsigned Offset;
+  const std::string Name;
+
+  llvm::raw_ostream &getDecl(llvm::raw_ostream &OS, StringRef TemplateType) {
+    return OS << "syclct::" << TemplateType << "<" << DataType << ", "
+              << Dimension << "> " << Name;
+  }
+
+public:
+  TextureInfo(unsigned Offset, const std::string &FilePath, const VarDecl *VD)
+      : FilePath(FilePath), Offset(Offset), Name(VD->getName()) {
+    if (auto D = dyn_cast<ClassTemplateSpecializationDecl>(
+            VD->getType()->getAsCXXRecordDecl())) {
+      auto &TemplateList = D->getTemplateInstantiationArgs();
+      auto DataTy = TemplateList[0].getAsType();
+      if (auto ET = dyn_cast<ElaboratedType>(DataTy))
+        DataTy = ET->getNamedType();
+      DataType = DataTy.getUnqualifiedType().getAsString(
+          SyclctGlobalInfo::getContext().getLangOpts());
+      MapNames::replaceName(MapNames::TypeNamesMap, DataType);
+      Dimension = TemplateList[1].getAsIntegral().getExtValue();
+    }
+  }
+  inline llvm::raw_ostream &getFuncDecl(llvm::raw_ostream &OS) {
+    return getDecl(OS, "syclct_texture_accessor");
+  }
+  inline llvm::raw_ostream &getFuncArg(llvm::raw_ostream &OS) {
+    return OS << Name;
+  }
+  inline llvm::raw_ostream &getKernelArg(llvm::raw_ostream &OS) {
+    return OS << Name << "_acc";
+  }
+
+  std::string getDeclReplacement() {
+    std::string Result;
+    llvm::raw_string_ostream OS(Result);
+    getDecl(OS, "syclct_texture") << ";";
+    return OS.str();
+  }
+
+  std::string getAccessorDecl() {
+    return buildString("auto ", Name, "_acc = ", Name, ".get_access(cgh);");
+  }
+
+  inline unsigned getOffset() { return Offset; }
+  inline const std::string &getName() { return Name; }
+};
+
 class TemplateArgumentInfo {
 public:
   enum TemplateKind {
@@ -701,6 +763,9 @@ public:
   bool hasExternShared() const { return !ExternVarMap.empty(); }
   inline void setItem(bool Has = true) { HasItem = Has; }
   inline void setStream(bool Has = true) { HasStream = Has; }
+  inline void addTexture(std::shared_ptr<TextureInfo> Tex) {
+    TextureMap.insert(std::make_pair(Tex->getOffset(), Tex));
+  }
   void addVar(std::shared_ptr<MemVarInfo> Var) {
     getMap(Var->getScope())
         .insert(MemVarInfoMap::value_type(Var->getOffset(), Var));
@@ -716,6 +781,7 @@ public:
     merge(LocalVarMap, VarMap.LocalVarMap, TemplateArgs);
     merge(GlobalVarMap, VarMap.GlobalVarMap, TemplateArgs);
     merge(ExternVarMap, VarMap.ExternVarMap, TemplateArgs);
+    merge(TextureMap, VarMap.TextureMap);
   }
   std::string getCallArguments(bool HasArgs) const {
     return getArgumentsOrParameters<CallArgument>(HasArgs);
@@ -730,6 +796,7 @@ public:
   const MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) const {
     return const_cast<MemVarMap *>(this)->getMap(Scope);
   }
+  const GlobalMap<TextureInfo> &getTextureMap() const { return TextureMap; }
 
   MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) {
     switch (Scope) {
@@ -754,7 +821,8 @@ private:
           .first->second->getType()
           ->setTemplateType(TemplateArgs);
   }
-  static void merge(MemVarInfoMap &Master, const MemVarInfoMap &Branch) {
+  template <class T>
+  static void merge(GlobalMap<T> &Master, const GlobalMap<T> &Branch) {
     for (auto &VarInfoPair : Branch)
       Master.insert(VarInfoPair);
   }
@@ -765,79 +833,81 @@ private:
     DeclParameter,
   };
 
-  template <CallOrDecl COD> inline const std::string &getItem() const {
-    return SyclctGlobalInfo::getItemName();
+  template <CallOrDecl COD>
+  inline llvm::raw_ostream &getItem(llvm::raw_ostream &OS) const {
+    return OS << SyclctGlobalInfo::getItemName();
   }
 
-  template <CallOrDecl COD> inline const std::string &getStream() const {
-    return SyclctGlobalInfo::getStreamName();
+  template <CallOrDecl COD>
+  inline llvm::raw_ostream &getStream(llvm::raw_ostream &OS) const {
+    return OS << SyclctGlobalInfo::getStreamName();
   }
 
   template <CallOrDecl COD>
   std::string getArgumentsOrParameters(bool HasData) const {
     std::string Result;
+    llvm::raw_string_ostream OS(Result);
     if (HasData)
-      Result = ", ";
+      OS << ", ";
     if (hasItem())
-      Result += getItem<COD>() + ", ";
+      getItem<COD>(OS) << ", ";
     if (hasStream())
-      Result += getStream<COD>() + ", ";
+      getStream<COD>(OS) << ", ";
     if (!ExternVarMap.empty())
-      Result +=
-          getArgumentOrParameter<COD>(ExternVarMap.begin()->second) + ", ";
-    Result += getArgumentsOrParametersFromMap<COD>(GlobalVarMap);
-    Result += getArgumentsOrParametersFromMap<COD>(LocalVarMap);
+      GetArgOrParam<MemVarInfo, COD>()(OS, ExternVarMap.begin()->second)
+          << ", ";
+    getArgumentsOrParametersFromMap<MemVarInfo, COD>(OS, GlobalVarMap);
+    getArgumentsOrParametersFromMap<MemVarInfo, COD>(OS, LocalVarMap);
+    getArgumentsOrParametersFromMap<TextureInfo, COD>(OS, TextureMap);
+    OS.flush();
     return Result.empty() ? Result : Result.erase(Result.size() - 2, 2);
   }
 
-  template <CallOrDecl COD>
-  static std::string
-  getArgumentsOrParametersFromMap(const MemVarInfoMap &VarMap) {
-    std::string Result;
-    for (auto &VI : VarMap)
-      Result += getArgumentOrParameter<COD>(VI.second) + ", ";
-    return Result;
+  template <class T, CallOrDecl COD>
+  static void getArgumentsOrParametersFromMap(llvm::raw_ostream &OS,
+                                              const GlobalMap<T> &VarMap) {
+    for (auto VI : VarMap)
+      GetArgOrParam<T, COD>()(OS, VI.second) << ", ";
   }
 
-  template <CallOrDecl COD>
-  static std::string getArgumentOrParameter(std::shared_ptr<MemVarInfo> VI) {
-    llvm_unreachable("not call or decl");
-  }
+  template <class T, CallOrDecl COD> struct GetArgOrParam;
+  template <class T> struct GetArgOrParam<T, DeclParameter> {
+    llvm::raw_ostream &operator()(llvm::raw_ostream &OS, std::shared_ptr<T> V) {
+      return V->getFuncDecl(OS);
+    }
+  };
+  template <class T> struct GetArgOrParam<T, CallArgument> {
+    llvm::raw_ostream &operator()(llvm::raw_ostream &OS, std::shared_ptr<T> V) {
+      return V->getFuncArg(OS);
+    }
+  };
+  template <class T> struct GetArgOrParam<T, KernelArgument> {
+    llvm::raw_ostream &operator()(llvm::raw_ostream &OS, std::shared_ptr<T> V) {
+      return V->getKernelArg(OS);
+    }
+  };
 
   bool HasItem, HasStream;
   MemVarInfoMap LocalVarMap;
   MemVarInfoMap GlobalVarMap;
   MemVarInfoMap ExternVarMap;
+  GlobalMap<TextureInfo> TextureMap;
 };
-template <>
-inline std::string MemVarMap::getArgumentOrParameter<MemVarMap::DeclParameter>(
-    std::shared_ptr<MemVarInfo> VI) {
-  return VI->getFuncDecl();
-}
-template <>
-inline std::string MemVarMap::getArgumentOrParameter<MemVarMap::CallArgument>(
-    std::shared_ptr<MemVarInfo> VI) {
-  return VI->getFuncArg();
-}
-template <>
-inline std::string MemVarMap::getArgumentOrParameter<MemVarMap::KernelArgument>(
-    std::shared_ptr<MemVarInfo> VI) {
-  return VI->getKernelArg();
-}
 
 template <>
-inline const std::string &MemVarMap::getItem<MemVarMap::DeclParameter>() const {
+inline llvm::raw_ostream &
+MemVarMap::getItem<MemVarMap::DeclParameter>(llvm::raw_ostream &OS) const {
   static std::string ItemParamDecl =
       "cl::sycl::nd_item<3> " + SyclctGlobalInfo::getItemName();
-  return ItemParamDecl;
+  return OS << ItemParamDecl;
 }
 
 template <>
-inline const std::string &
-MemVarMap::getStream<MemVarMap::DeclParameter>() const {
+inline llvm::raw_ostream &
+MemVarMap::getStream<MemVarMap::DeclParameter>(llvm::raw_ostream &OS) const {
   static std::string StreamParamDecl =
       "cl::sycl::stream " + SyclctGlobalInfo::getStreamName();
-  return StreamParamDecl;
+  return OS << StreamParamDecl;
 }
 
 class ArgumentsInfo {
@@ -1044,6 +1114,9 @@ public:
   inline void addVar(std::shared_ptr<MemVarInfo> Var) { VarMap.addVar(Var); }
   inline void setItem() { VarMap.setItem(); }
   inline void setStream() { VarMap.setStream(); }
+  inline void addTexture(std::shared_ptr<TextureInfo> Tex) {
+    VarMap.addTexture(Tex);
+  }
   inline const MemVarMap &getVarMap() { return VarMap; }
 
   void buildInfo();

@@ -1609,7 +1609,8 @@ void VectorTypeMemberAccessRule::run(const MatchFinder::MatchResult &Result) {
 
       std::string VecField = MExprStr + "()";
       std::string VarType = ME->getType().getAsString();
-      std::string VarName = ME->getMemberNameInfo().getAsString() + getCTFixedSuffix();
+      std::string VarName =
+          ME->getMemberNameInfo().getAsString() + getCTFixedSuffix();
 
       std::string LocalVarDecl =
           VarType + " " + VarName + " = " + VecField + ";" + getNL();
@@ -3443,7 +3444,6 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(SOLVERFunctionCallRule)
 
-
 void FunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName(
@@ -4777,6 +4777,137 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(RecognizeAPINameRule)
+
+const BinaryOperator *TextureRule::getParentAsAssignedBO(const Expr *E,
+                                                         ASTContext &Context) {
+  auto Parents = Context.getParents(*E);
+  if (Parents.size() > 0)
+    return getAssignedBO(Parents[0].get<Expr>(), Context);
+  return nullptr;
+}
+
+// Return the binary operator if E is the lhs of an assign experssion, otherwise
+// nullptr.
+const BinaryOperator *TextureRule::getAssignedBO(const Expr *E,
+                                                 ASTContext &Context) {
+  if (dyn_cast<MemberExpr>(E)) {
+    // Continue finding parents when E is MemberExpr.
+    return getParentAsAssignedBO(E, Context);
+  } else if (auto ICE = dyn_cast<ImplicitCastExpr>(E)) {
+    // Stop finding parents and return nullptr when E is ImplicitCastExpr,
+    // except for ArrayToPointerDecay cast.
+    if (ICE->getCastKind() == CK_ArrayToPointerDecay) {
+      return getParentAsAssignedBO(E, Context);
+    }
+  } else if (auto ASE = dyn_cast<ArraySubscriptExpr>(E)) {
+    // Continue finding parents when E is ArraySubscriptExpr, and remove
+    // subscript operator anyway for texture object's member.
+    emplaceTransformation(new ReplaceToken(
+        Lexer::getLocForEndOfToken(ASE->getLHS()->getEndLoc(), 0,
+                                   Context.getSourceManager(),
+                                   Context.getLangOpts()),
+        ASE->getRBracketLoc(), ""));
+    return getParentAsAssignedBO(E, Context);
+  } else if (auto BO = dyn_cast<BinaryOperator>(E)) {
+    // If E is BinaryOperator, return E only when it is assign expression,
+    // otherwise return nullptr.
+    if (BO->getOpcode() == BO_Assign)
+      return BO;
+  }
+  return nullptr;
+}
+
+void TextureRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      declRefExpr(
+          hasDeclaration(
+              varDecl(
+                  hasType(templateSpecializationType(hasDeclaration(
+                      classTemplateSpecializationDecl(hasName("texture"))))))
+                  .bind("texDecl")),
+          // Match texture object's declaration
+          anyOf(hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
+                                               hasAttr(attr::CUDAGlobal)))
+                                .bind("texFunc")),
+                // Match the __globla__/__device__ functions inside which
+                // texture object is referenced
+                hasAncestor(memberExpr().bind("texMember")),
+                // Match the MemberExpr if member of texture is used
+                anything()) // Make this matcher available whether it has
+                            // ancestors as before
+          )
+          .bind("tex"),
+      this);
+  MF.addMatcher(
+      varDecl(hasType(pointsTo(namedDecl(hasName("cudaArray"))))).bind("array"),
+      this);
+  MF.addMatcher(varDecl(hasType(recordDecl(hasName("cudaChannelFormatDesc"))))
+                    .bind("chnDecl"),
+                this);
+  MF.addMatcher(callExpr(callee(functionDecl(hasAnyName(
+                             "cudaCreateChannelDesc", "cudaUnbindTexture",
+                             "cudaFreeArray", "cudaMallocArray",
+                             "cudaMemcpyToArray", "cudaBindTextureToArray",
+                             "tex1D", "tex2D", "tex3D", "tex1Dfetch"))))
+                    .bind("call"),
+                this);
+}
+
+void TextureRule::run(const MatchFinder::MatchResult &Result) {
+  if (auto VD = getAssistNodeAsType<VarDecl>(Result, "texDecl")) {
+    auto Tex = SyclctGlobalInfo::getInstance().insertTextureInfo(VD);
+    emplaceTransformation(new ReplaceVarDecl(VD, Tex->getDeclReplacement()));
+    if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "texFunc")) {
+      DeviceFunctionDecl::LinkRedecls(FD)->addTexture(Tex);
+    }
+    if (auto ME = getNodeAsType<MemberExpr>(Result, "texMember")) {
+      auto Field = MapNames::findReplacedName(
+          TextureMemberNames, ME->getMemberNameInfo().getAsString());
+      if (auto BO = getAssignedBO(ME, *Result.Context)) {
+        // e.g.: t.filterMode = cudaFilterModeLinear =>
+        // t.set_filter_mode(cl::sycl::filtering_mode::linear)
+        /// Add rename field with "set_" prefix.
+        emplaceTransformation(new RenameFieldInMemberExpr(ME, "set_" + Field));
+        /// Remove operator "=".
+        emplaceTransformation(new ReplaceToken(
+            Lexer::getLocForEndOfToken(BO->getLHS()->getEndLoc(), 0,
+                                       *Result.SourceManager,
+                                       Result.Context->getLangOpts()),
+            BO->getRHS()->getBeginLoc().getLocWithOffset(-1), "("));
+        /// Insert ")" at the end of the expression.
+        emplaceTransformation(new InsertAfterStmt(BO, ")"));
+        if (auto DRE = dyn_cast<DeclRefExpr>(BO->getRHS()->IgnoreImpCasts())) {
+          /// Replace rhs of BinaryOperator if it is a EnumConstantDecl
+          if (auto Enum = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
+            emplaceTransformation(new ReplaceStmt(
+                BO->getRHS(),
+                MapNames::findReplacedName(EnumConstantRule::EnumNamesMap,
+                                           Enum->getName())));
+          }
+        }
+      } else {
+        emplaceTransformation(
+            new RenameFieldInMemberExpr(ME, buildString("get_", Field, "()")));
+      }
+    }
+  } else if (auto VD = getNodeAsType<VarDecl>(Result, "array")) {
+    std::string ReplType = "syclct::syclct_array";
+    if (VD->getType()->getTypeClass() == Type::Pointer)
+      ReplType += " ";
+    emplaceTransformation(new ReplaceTypeInDecl(VD, std::move(ReplType)));
+  } else if (auto VD = getNodeAsType<VarDecl>(Result, "chnDecl")) {
+    const std::string &ReplType = MapNames::findReplacedName(
+        MapNames::TypeNamesMap, VD->getType().getUnqualifiedType().getAsString(
+                                    Result.Context->getLangOpts()));
+    emplaceTransformation(new ReplaceTypeInDecl(VD, std::string(ReplType)));
+  } else if (auto CE = getNodeAsType<CallExpr>(Result, "call")) {
+    ExprAnalysis A;
+    A.analyze(CE);
+    emplaceTransformation(A.getReplacement());
+  }
+}
+
+REGISTER_RULE(TextureRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {

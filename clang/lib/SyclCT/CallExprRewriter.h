@@ -26,6 +26,7 @@ class MathTypeCastRewriter;
 class MathBinaryOperatorRewriter;
 class MathUnsupportedRewriter;
 class WarpFunctionRewriter;
+class ReorderFunctionRewriter;
 
 /*
 Factory usage example:
@@ -54,7 +55,7 @@ private:
   }
 
 public:
-  CallExprRewriterFactory(StringRef SourceCalleeName, Args... Arguments)
+  CallExprRewriterFactory(StringRef SourceCalleeName, Args &&... Arguments)
       : Initializer(SourceCalleeName, std::move(Arguments)...) {}
   // Create a meaningful rewriter only if the CallExpr is not nullptr
   std::shared_ptr<CallExprRewriter> create(const CallExpr *Call) override {
@@ -65,6 +66,8 @@ public:
   }
 };
 
+using FuncCallExprRewriterFactory =
+    CallExprRewriterFactory<FuncCallExprRewriter, std::string>;
 using MathFuncNameRewriterFactory =
     CallExprRewriterFactory<MathFuncNameRewriter, std::string>;
 using MathUnsupportedRewriterFactory =
@@ -77,6 +80,9 @@ using MathBinaryOperatorRewriterFactory =
     CallExprRewriterFactory<MathBinaryOperatorRewriter, BinaryOperatorKind>;
 using WarpFunctionRewriterFactory =
     CallExprRewriterFactory<WarpFunctionRewriter, std::string>;
+using ReorderFunctionRewriterFactory = CallExprRewriterFactory<
+    ReorderFunctionRewriter, std::string,
+    std::vector<unsigned> /*Rewrite arguments index list in-order*/>;
 
 class CallExprRewriter {
 protected:
@@ -134,6 +140,8 @@ public:
 
   virtual Optional<std::string> rewrite() override;
 
+  friend FuncCallExprRewriterFactory;
+
 protected:
   template <class... Args> void appendRewriteArg(Args &&... Arguments) {
     RewriteArgList.emplace_back(std::forward<Args...>(Arguments)...);
@@ -142,9 +150,7 @@ protected:
   // Build string which is used to replace original expession.
   Optional<std::string> buildRewriteString();
 
-  void setTargetCalleeName(const std::string &Str) {
-    TargetCalleeName = Str;
-  }
+  void setTargetCalleeName(const std::string &Str) { TargetCalleeName = Str; }
 };
 
 class MathCallExprRewriter : public FuncCallExprRewriter {
@@ -154,7 +160,7 @@ public:
 protected:
   MathCallExprRewriter(const CallExpr *Call, StringRef SourceCalleeName,
                        StringRef TargetCalleeName)
-    : FuncCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {}
+      : FuncCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {}
 
   void reportUnsupportedRoundingMode();
 };
@@ -257,6 +263,21 @@ protected:
   std::string getNewFuncName();
 
   friend WarpFunctionRewriterFactory;
+};
+
+class ReorderFunctionRewriter : public FuncCallExprRewriter {
+  const std::vector<unsigned> &RewriterArgsIdx;
+
+public:
+  ReorderFunctionRewriter(const CallExpr *Call, StringRef SourceCalleeName,
+                          StringRef TargetCalleeName,
+                          const std::vector<unsigned> &ArgsIdx)
+      : FuncCallExprRewriter(Call, SourceCalleeName, TargetCalleeName),
+        RewriterArgsIdx(ArgsIdx) {}
+
+  virtual Optional<std::string> rewrite() override;
+
+  friend ReorderFunctionRewriterFactory;
 };
 
 } // namespace syclct

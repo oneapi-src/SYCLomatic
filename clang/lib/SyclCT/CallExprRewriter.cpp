@@ -338,8 +338,17 @@ Optional<std::string> WarpFunctionRewriter::rewrite() {
   return buildRewriteString();
 }
 
+Optional<std::string> ReorderFunctionRewriter::rewrite() {
+  for (auto ArgIdx : RewriterArgsIdx) {
+    appendRewriteArg(getMigratedArg(ArgIdx));
+  }
+  return buildRewriteString();
+}
+
 #define REWRITER_FACTORY_ENTRY(FuncName, RewriterTy, ...)                      \
   {FuncName, std::make_shared<RewriterTy>(FuncName, __VA_ARGS__)},
+#define FUNC_NAME_FACTORY_ENTRY(FuncName, RewriterName)                        \
+  REWRITER_FACTORY_ENTRY(FuncName, FuncCallExprRewriterFactory, RewriterName)
 #define MATH_FUNCNAME_FACTORY_ENTRY(FuncName, RewriterName)                    \
   REWRITER_FACTORY_ENTRY(FuncName, MathFuncNameRewriterFactory, RewriterName)
 #define MATH_SIMULATED_FUNC_FACTORY_ENTRY(FuncName, RewriterName)              \
@@ -352,10 +361,39 @@ Optional<std::string> WarpFunctionRewriter::rewrite() {
   REWRITER_FACTORY_ENTRY(FuncName, MathUnsupportedRewriterFactory, FuncName)
 #define WARP_FUNC_FACTORY_ENTRY(FuncName, RewriterName)                        \
   REWRITER_FACTORY_ENTRY(FuncName, WarpFunctionRewriterFactory, RewriterName)
-
+#define REORDER_FUNC_FACTORY_ENTRY(FuncName, RewriterName, ...)                \
+  REWRITER_FACTORY_ENTRY(FuncName, ReorderFunctionRewriterFactory,             \
+                         RewriterName, std::vector<unsigned>{__VA_ARGS__})
 const std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>
     CallExprRewriterFactoryBase::RewriterMap = {
+        FUNC_NAME_FACTORY_ENTRY("cudaCreateChannelDesc",
+                                "syclct::create_channel_desc")
+        FUNC_NAME_FACTORY_ENTRY("cudaUnbindTexture",
+                                    "syclct::syclct_unbind_texture")
+        FUNC_NAME_FACTORY_ENTRY("tex1D",
+                                        "syclct::syclct_read_texture")
+        FUNC_NAME_FACTORY_ENTRY("tex2D",
+                                        "syclct::syclct_read_texture")
+        FUNC_NAME_FACTORY_ENTRY("tex3D",
+                                                "syclct::syclct_read_texture")
+        FUNC_NAME_FACTORY_ENTRY(
+                                "tex1Dfetch", "syclct::syclct_read_texture")
+        FUNC_NAME_FACTORY_ENTRY("cudaFreeArray",
+                                        "syclct::syclct_free_array")
+        REORDER_FUNC_FACTORY_ENTRY("cudaMallocArray",
+                                    "syclct::syclct_malloc_array",
+                                    0 /*pointer to array*/,
+                                    1 /*pointer to channel desc*/,
+                                    2 /*width*/, 3 /*height*/)
+        REORDER_FUNC_FACTORY_ENTRY("cudaMemcpyToArray",
+                                        "syclct::syclct_memcpy_to_array",
+                                        0 /*ref of array*/,
+                                        3 /*src pointer*/)
+        REORDER_FUNC_FACTORY_ENTRY("cudaBindTextureToArray",
+                                            "syclct::syclct_bind_texture",
+                                            0 /*ref of texture object*/,
+                                            1 /*ref of array*/)
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   MATH_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME)                           \

@@ -240,11 +240,7 @@ protected:
     dispatch(BO->getLHS());
     dispatch(BO->getRHS());
   }
-  inline void analyzeExpr(const DeclRefExpr *DRE) {
-    RefString = DRE->getNameInfo().getAsString();
-    if (auto TemplateDecl = dyn_cast<NonTypeTemplateParmDecl>(DRE->getDecl()))
-      addReplacement(DRE, TemplateDecl->getIndex());
-  }
+  inline void analyzeExpr(const DeclRefExpr *DRE);
 
   inline void analyzeExpr(const ParenExpr *PE) { dispatch(PE->getSubExpr()); }
 

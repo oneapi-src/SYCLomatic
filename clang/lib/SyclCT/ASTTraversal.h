@@ -657,7 +657,7 @@ public:
   bool isReplIndex(int i, const std::vector<int> &IndexInfo, int &IndexTemp);
 
   std::vector<std::string> getParamsAsStrs(const CallExpr *CE,
-                                        const ASTContext &Context);
+                                           const ASTContext &Context);
   const clang::VarDecl *getAncestralVarDecl(const clang::CallExpr *CE);
   void processParamIntCastToBLASEnum(
       const Expr *E, const CStyleCastExpr *CSCE, const ASTContext &Context,
@@ -909,6 +909,21 @@ public:
   const std::string GetFunctionSignature(const FunctionDecl *Func);
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
+/// Texture migration rule
+class TextureRule : public NamedTranslationRule<TextureRule> {
+  // Get the binary operator if E is lhs of an assign experssion.
+  const BinaryOperator *getAssignedBO(const Expr *E, ASTContext &Context);
+  const BinaryOperator *getParentAsAssignedBO(const Expr *E,
+                                              ASTContext &Context);
+
+public:
+  TextureRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+  static const MapNames::MapTy TextureMemberNames;
 };
 
 template <typename T> class RuleRegister {

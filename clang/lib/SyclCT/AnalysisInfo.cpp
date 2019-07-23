@@ -112,6 +112,8 @@ void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block) {
   }
   getAccessorDecl(Block, MemVarInfo::Local);
   getAccessorDecl(Block, MemVarInfo::Global);
+  for (auto &Tex : VM.getTextureMap())
+    Block.pushStmt(Tex.second->getAccessorDecl());
 }
 
 void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block,

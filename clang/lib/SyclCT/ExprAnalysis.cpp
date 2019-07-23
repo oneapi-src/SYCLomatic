@@ -123,6 +123,18 @@ void ExprAnalysis::dispatch(const Stmt *Expression) {
   }
 }
 
+void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
+  RefString = DRE->getNameInfo().getAsString();
+  if (auto TemplateDecl = dyn_cast<NonTypeTemplateParmDecl>(DRE->getDecl()))
+    addReplacement(DRE, TemplateDecl->getIndex());
+  else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
+    auto &ReplEnum = MapNames::findReplacedName(EnumConstantRule::EnumNamesMap,
+                                                ECD->getName());
+    if (!ReplEnum.empty())
+      addReplacement(DRE, ReplEnum);
+  }
+}
+
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   const std::string Dim3Constructor = "dim3";
   if (Ctor->getConstructor()->getDeclName().getAsString() == Dim3Constructor) {

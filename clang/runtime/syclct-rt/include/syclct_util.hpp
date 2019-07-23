@@ -29,6 +29,13 @@ template<typename I, typename O> inline O bit_cast(I i) {
   return *reinterpret_cast<O*>(&i);
 }
 
+template <int... Ints> struct integer_sequence {};
+template <int Size, int... Ints>
+struct make_index_sequence
+    : public make_index_sequence<Size - 1, Size - 1, Ints...> {};
+template <int... Ints>
+struct make_index_sequence<0, Ints...> : public integer_sequence<Ints...> {};
+
 template <typename T> struct DataType { using T2 = T; };
 template <typename T> struct DataType<cl::sycl::vec<T, 2>> { using T2 = std::complex<T>;};
 

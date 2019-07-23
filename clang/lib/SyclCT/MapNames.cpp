@@ -11,8 +11,8 @@
 
 #include "MapNames.h"
 #include "ASTTraversal.h"
-#include "SaveNewFiles.h"
 #include "CallExprRewriter.h"
+#include "SaveNewFiles.h"
 
 #include <map>
 
@@ -102,6 +102,7 @@ const MapNames::MapTy MapNames::TypeNamesMap{
     {"cusolverEigType_t", "int64_t"},
     {"cusolverEigMode_t", "mkl::job"},
     {"cusolverStatus_t", "int"},
+    {"cudaChannelFormatDesc", "syclct::syclct_channel_desc"},
     // ...
 };
 
@@ -1847,7 +1848,7 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
           1, 0, 3, "mkl::trmm"}},
     };
 
-    // SOLVER functions names and parameters replacements information mapping
+// SOLVER functions names and parameters replacements information mapping
 const std::map<std::string, MapNames::SOLVERFuncReplInfo>
     MapNames::SOLVERFuncReplInfoMap{};
 
@@ -1907,6 +1908,13 @@ const MapNames::SetTy MapNames::ThrustFileExcludeSet{
     "thrust/detail/temporary_buffer.h",
     "thrust/detail/vector_base.inl"};
 
+// Texture names mapping.
+const MapNames::MapTy TextureRule::TextureMemberNames{
+    {"addressMode", "addr_mode"},
+    {"filterMode", "filter_mode"},
+    {"normalized", "norm_mode"},
+};
+
 // DeviceProp names mapping.
 const MapNames::MapTy DevicePropVarRule::PropNamesMap{
     {"clockRate", "max_clock_frequency"},
@@ -1949,6 +1957,18 @@ const MapNames::MapTy EnumConstantRule::EnumNamesMap{
     {"cudaMemcpyDeviceToHost", "device_to_host"},
     {"cudaMemcpyDeviceToDevice", "device_to_device"},
     {"cudaMemcpyDefault", "automatic"},
+    // enum cudaTextureAddressMode
+    {"cudaAddressModeWrap", "cl::sycl::addressing_mode::repeat"},
+    {"cudaAddressModeClamp", "cl::sycl::addressing_mode::clamp_to_edge"},
+    {"cudaAddressModeMirror", "cl::sycl::addressing_mode::mirrored_repeat"},
+    {"cudaAddressModeBorder", "cl::sycl::addressing_mode::clamp"},
+    // enum cudaTextureFilterMode
+    {"cudaFilterModePoint", "cl::sycl::filtering_mode::nearest"},
+    {"cudaFilterModeLinear", "cl::sycl::filtering_mode::linear"},
+    // enum cudaChannelFormatKind
+    {"cudaChannelFormatKindSigned", "syclct::channel_signed"},
+    {"cudaChannelFormatKindUnsigned", "syclct::channel_unsigned"},
+    {"cudaChannelFormatKindFloat", "syclct::channel_float"},
     // ...
 };
 
@@ -1957,8 +1977,7 @@ const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
     {"maxThreadsPerBlock", "max_work_group_size"},
 };
 
-std::map<std::string, bool>
-    TranslationStatistics::TranslationTable{
+std::map<std::string, bool> TranslationStatistics::TranslationTable{
 #define ENTRY(APINAME, VALUE, TARGET, COMMENT) {#APINAME, VALUE},
 #include "APINames.inc"
 #include "APINames_cuBLAS.inc"
@@ -1969,7 +1988,7 @@ std::map<std::string, bool>
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
 #undef ENTRY
-    };
+};
 
 bool TranslationStatistics::IsTranslated(const std::string &APIName) {
   auto Search = TranslationTable.find(APIName);
