@@ -702,6 +702,24 @@ public:
                         const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+// Migration rule for SOLVER enums.
+class SOLVEREnumsRule : public NamedTranslationRule<SOLVEREnumsRule> {
+public:
+  SOLVEREnumsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
+class SOLVERFunctionCallRule
+    : public NamedTranslationRule<SOLVERFunctionCallRule> {
+public:
+  SOLVERFunctionCallRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 /// Migration rule for stream API calls
 class StreamAPICallRule : public NamedTranslationRule<StreamAPICallRule> {
 public:

@@ -20,6 +20,13 @@ const std::string StringLiteralUnsupported{"UNSUPPORTED"};
 
 class MapNames {
 public:
+  struct SOLVERFuncReplInfo {
+    std::vector<int> BufferIndexInfo;
+    std::vector<int> PointerIndexInfo;
+    std::vector<std::string> BufferTypeInfo;
+    std::string ReplName;
+  };
+
   struct BLASFuncReplInfo {
     std::vector<int> BufferIndexInfo;
     std::vector<int> PointerIndexInfo;
@@ -65,6 +72,10 @@ public:
 
   static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       LegacyBLASFuncReplInfoMap;
+
+  static const MapTy SOLVEREnumsMap;
+  static const std::map<std::string, MapNames::SOLVERFuncReplInfo>
+      SOLVERFuncReplInfoMap;
 
   inline static const std::string &findReplacedName(const MapTy &Map,
                                                     const std::string &Name) {

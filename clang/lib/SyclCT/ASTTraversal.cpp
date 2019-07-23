@@ -920,17 +920,19 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(ThrustFunctionRule)
 
-auto TypedefNames = hasAnyName(
-    "dim3", "cudaError_t", "CUresult", "CUcontext", "cudaEvent_t",
-    "cudaStream_t", "__half", "__half2", "half", "half2", "cublasStatus_t",
-    "cuComplex", "cuDoubleComplex", "cublasFillMode_t", "cublasDiagType_t",
-    "cublasSideMode_t", "cublasOperation_t", "cublasStatus");
+auto TypedefNames =
+    hasAnyName("dim3", "cudaError_t", "CUresult", "CUcontext", "cudaEvent_t",
+               "cudaStream_t", "__half", "__half2", "half", "half2",
+               "cublasStatus_t", "cuComplex", "cuDoubleComplex",
+               "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
+               "cublasOperation_t", "cublasStatus", "cusolverDnHandle_t",
+               "cusolverStatus_t", "cusolverEigType_t", "cusolverEigMode_t");
 auto EnumTypeNames = hasAnyName("cudaError", "cufftResult_t", "cudaError_enum");
 // CUstream_st and CUevent_st are the actual types of cudaStream_t and
 // cudaEvent_st respectively
 auto RecordTypeNames =
     hasAnyName("cudaDeviceProp", "CUstream_st", "CUevent_st");
-auto HandleTypeNames = hasAnyName("cublasHandle_t");
+auto HandleTypeNames = hasAnyName("cublasHandle_t", "cusolverDnHandle_t");
 
 auto TemplateRecordTypeNames =
     hasAnyName("device_vector", "device_ptr", "host_vector");
@@ -997,16 +999,18 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(unaryExprOrTypeTraitExpr(
                     hasArgumentOfType(anyOf(
                         asString("cublasStatus_t"), asString("cublasStatus"),
-                        asString("cuComplex"), asString("cuDoubleComplex"),
-                        asString("cublasHandle_t"))))
+                        asString("cusolverStatus_t"), asString("cuComplex"),
+                        asString("cuDoubleComplex"), asString("cublasHandle_t"),
+                        asString("cusolverDnHandle_t"))))
                     .bind("TypeInUnaryExprOrTypeTraitExpr"),
                 this);
 
   MF.addMatcher(
-      cStyleCastExpr(hasDestinationType(anyOf(asString("cublasFillMode_t"),
-                                              asString("cublasDiagType_t"),
-                                              asString("cublasSideMode_t"),
-                                              asString("cublasOperation_t"))))
+      cStyleCastExpr(
+          hasDestinationType(anyOf(
+              asString("cublasFillMode_t"), asString("cublasDiagType_t"),
+              asString("cublasSideMode_t"), asString("cublasOperation_t"),
+              asString("cusolverEigType_t"), asString("cusolverEigMode_t"))))
           .bind("cStyleCastExpr"),
       this);
   // TODO: HandleType in template, in macro body, assigined, as function param
@@ -2108,7 +2112,9 @@ void ReturnTypeRule::registerMatcher(MatchFinder &MF) {
               asString("cuComplex"), asString("cuDoubleComplex"),
               asString("cublasHandle_t"), asString("cublasStatus_t"),
               asString("cublasFillMode_t"), asString("cublasDiagType_t"),
-              asString("cublasSideMode_t"), asString("cublasOperation_t"))))
+              asString("cublasSideMode_t"), asString("cublasOperation_t"),
+              asString("cusolverDnHandle_t"), asString("cusolverStatus_t"),
+              asString("cusolverEigType_t"), asString("cusolverEigMode_t"))))
           .bind("functionDeclWithTypedef"),
       this);
 }
@@ -3283,6 +3289,139 @@ void BLASFunctionCallRule::processTrmmCall(const CallExpr *CE,
 }
 
 REGISTER_RULE(BLASFunctionCallRule)
+
+// Rule for SOLVER enums.
+// All SOLVER enums have the prefix CUSOLVER_
+// Migrate SOLVER status values to corresponding int values
+// Example: migrate CUSOLVER_STATUS_SUCCESS to 0
+// Other SOLVER named values are migrated to corresponding named values
+// Example: migrate CUSOLVER_OP_N to mkl::transpose::nontrans
+void SOLVEREnumsRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      declRefExpr(to(enumConstantDecl(matchesName("CUSOLVER_STATU.*"))))
+          .bind("SOLVERStatusConstants"),
+      this);
+  MF.addMatcher(
+      declRefExpr(to(enumConstantDecl(matchesName(
+                      "(CUSOLVER_EIG_TYPE.*)|(CUSOLVER_EIG_MODE.*)"))))
+          .bind("SLOVERNamedValueConstants"),
+      this);
+}
+
+void SOLVEREnumsRule::run(const MatchFinder::MatchResult &Result) {
+  if (const DeclRefExpr *DE =
+          getNodeAsType<DeclRefExpr>(Result, "SOLVERStatusConstants")) {
+    auto *EC = cast<EnumConstantDecl>(DE->getDecl());
+    emplaceTransformation(new ReplaceStmt(DE, EC->getInitVal().toString(10)));
+  }
+
+  if (const DeclRefExpr *DE =
+          getNodeAsType<DeclRefExpr>(Result, "SLOVERNamedValueConstants")) {
+    auto *EC = cast<EnumConstantDecl>(DE->getDecl());
+    std::string Name = EC->getNameAsString();
+    auto Search = MapNames::SOLVEREnumsMap.find(Name);
+    if (Search == MapNames::SOLVEREnumsMap.end()) {
+      syclct_unreachable("migration error");
+      return;
+    }
+    std::string Replacement = Search->second;
+    emplaceTransformation(new ReplaceStmt(DE, std::move(Replacement)));
+  }
+}
+
+REGISTER_RULE(SOLVEREnumsRule)
+
+void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
+  auto functionName = [&]() {
+    return hasAnyName("cusolverDnCreate", "cusolverDnDestroy");
+  };
+
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
+                               hasAncestor(functionDecl(
+                                   anyOf(hasAttr(attr::CUDADevice),
+                                         hasAttr(attr::CUDAGlobal))))))
+                    .bind("kernelCall"),
+                this);
+
+  MF.addMatcher(
+      callExpr(
+          allOf(callee(functionDecl(functionName())), parentStmt(),
+                hasAncestor(functionDecl(unless(allOf(
+                    hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))))))
+          .bind("FunctionCall"),
+      this);
+  MF.addMatcher(
+      callExpr(
+          allOf(callee(functionDecl(functionName())), unless(parentStmt()),
+                unless(hasParent(varDecl())),
+                hasAncestor(functionDecl(unless(allOf(
+                    hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))))))
+          .bind("FunctionCallUsedNotInitializeVarDecl"),
+      this);
+
+  MF.addMatcher(
+      callExpr(
+          allOf(callee(functionDecl(functionName())), hasParent(varDecl()),
+                hasAncestor(functionDecl(unless(allOf(
+                    hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))))))
+          .bind("FunctionCallUsedInitializeVarDecl"),
+      this);
+}
+
+void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
+  bool IsAssigned = false;
+  bool IsInitializeVarDecl = false;
+  bool HasDeviceAttr = false;
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "kernelCall");
+  if (CE) {
+    HasDeviceAttr = true;
+  } else if (!(CE = getNodeAsType<CallExpr>(Result, "FunctionCall"))) {
+    if ((CE = getNodeAsType<CallExpr>(
+             Result, "FunctionCallUsedNotInitializeVarDecl"))) {
+      IsAssigned = true;
+    } else if ((CE = getNodeAsType<CallExpr>(
+                    Result, "FunctionCallUsedInitializeVarDecl"))) {
+      IsAssigned = true;
+      IsInitializeVarDecl = true;
+    } else {
+      return;
+    }
+  }
+
+  assert(CE && "Unknown result");
+
+  if (!CE->getDirectCallee())
+    return;
+  std::string FuncName =
+      CE->getDirectCallee()->getNameInfo().getName().getAsString();
+  std::string Prefix = "";
+  std::string Poststr = "";
+  if (IsAssigned) {
+    Prefix = "(";
+    Poststr = ", 0)";
+  }
+
+  if (MapNames::SOLVERFuncReplInfoMap.find(FuncName) !=
+      MapNames::SOLVERFuncReplInfoMap.end()) {
+    // TODO: other Dn functions
+
+  } else if (FuncName == "cusolverDnCreate" ||
+             FuncName == "cusolverDnDestroy") {
+    // Remove these two function calls.
+    if (IsAssigned) {
+      emplaceTransformation(
+          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
+                          /*IsProcessMacro*/ true, "0"));
+    } else {
+      emplaceTransformation(
+          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
+                          /*IsProcessMacro*/ true, ""));
+    }
+  }
+}
+
+REGISTER_RULE(SOLVERFunctionCallRule)
+
 
 void FunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {

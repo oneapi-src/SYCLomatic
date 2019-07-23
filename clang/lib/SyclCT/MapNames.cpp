@@ -98,6 +98,10 @@ const MapNames::MapTy MapNames::TypeNamesMap{
     {"thrust::device_vector", "dpstd::device_vector"},
     {"thrust::device_ptr", "dpstd::device_ptr"},
     {"thrust::host_vector", "dpstd::host_vector"},
+    {"cusolverDnHandle_t", "cl::sycl::queue"},
+    {"cusolverEigType_t", "int64_t"},
+    {"cusolverEigMode_t", "mkl::job"},
+    {"cusolverStatus_t", "int"},
     // ...
 };
 
@@ -112,6 +116,15 @@ const MapNames::MapTy MapNames::BLASEnumsMap{
     {"CUBLAS_FILL_MODE_UPPER", "mkl::uplo::upper"},
     {"CUBLAS_DIAG_NON_UNIT", "mkl::diag::nonunit"},
     {"CUBLAS_DIAG_UNIT", "mkl::diag::unit"},
+};
+
+// SOLVER enums mapping
+const MapNames::MapTy MapNames::SOLVEREnumsMap{
+    {"CUSOLVER_EIG_TYPE_1", "1"},
+    {"CUSOLVER_EIG_TYPE_2", "2"},
+    {"CUSOLVER_EIG_TYPE_3", "3"},
+    {"CUSOLVER_EIG_MODE_NOVECTOR", "mkl::job::novec"},
+    {"CUSOLVER_EIG_MODE_VECTOR", "mkl::job::vec"},
 };
 
 // BLAS functions names and parameters replacements information mapping
@@ -1772,6 +1785,10 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
           1, 0, 3,
           "mkl::ztrmm"}},
     };
+
+    // SOLVER functions names and parameters replacements information mapping
+const std::map<std::string, MapNames::SOLVERFuncReplInfo>
+    MapNames::SOLVERFuncReplInfoMap{};
 
 // Atomic function names mapping
 const std::unordered_map<std::string, std::string>
