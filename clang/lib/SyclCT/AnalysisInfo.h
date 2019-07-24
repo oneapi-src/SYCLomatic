@@ -572,6 +572,11 @@ public:
     const static std::string NullString;
     return getMemoryDecl(NullString);
   }
+
+  std::string getExternGlobalVarDecl() {
+    return buildString("extern ", getMemoryType(), " ", getArgName(), ";");
+  }
+
   std::string getAccessorDecl() {
     return buildString("auto ", getAccessorName(), " = ", getArgName(),
                        ".get_access(cgh);");
