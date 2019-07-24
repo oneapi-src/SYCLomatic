@@ -42,9 +42,9 @@ static const std::string SigDescription(const int &Signo) {
 
 #if defined(_WIN64)
 void FaultHandler(int Signo) {
-  std::string FaultMsg =
-      "\nMeet signal:" + SigDescription(Signo) +
-      "\nCompatibility Tool trys to give analysis reports and terminates...\n";
+  std::string FaultMsg = "\nMeet signal:" + SigDescription(Signo) +
+                         "\noneAPI DPC++ Compatibility Tool trys to give "
+                         "analysis reports and terminates...\n";
   PrintReportOnFault(FaultMsg);
   exit(1);
 }
@@ -61,9 +61,9 @@ static void SetHandler(void (*Handler)(int)) {
 
 #if defined(__linux__)
 static void FaultHandler(int Signo, siginfo_t *Info, void *Extra) {
-  std::string FaultMsg =
-      "\nMeet signal:" + SigDescription(Signo) +
-      "\nCompatibility Tool trys to give analysis reports and terminates...\n";
+  std::string FaultMsg = "\nMeet signal:" + SigDescription(Signo) +
+                         "\noneAPI DPC++ Compatibility Tool trys to give "
+                         "analysis reports and terminates...\n";
   PrintReportOnFault(FaultMsg);
   exit(MigrationError);
 }

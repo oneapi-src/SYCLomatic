@@ -12,8 +12,8 @@
 #ifndef SYCLCT_CONFIG_H
 #define SYCLCT_CONFIG_H
 
-#define SYCLCT_VERSION_MAJOR (0)
-#define SYCLCT_VERSION_MINOR (19)   //year
-#define SYCLCT_VERSION_PATCH (7)    //Month
+#define SYCLCT_VERSION_MAJOR "2020"
+#define SYCLCT_VERSION_MINOR "1"
+#define SYCLCT_VERSION_PATCH "beta1"
 
 #endif

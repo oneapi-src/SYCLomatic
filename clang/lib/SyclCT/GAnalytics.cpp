@@ -22,9 +22,9 @@ int GAnalytics() {
   AnalyticsCreateParams params = {0};
   params.flags=ALLOW_COLLECTION_FROM_INTEL_NETWORK;
 
-  params.appName = "DPC++ Compatibility Tool";
-  std::string AppVersion= std::to_string(SYCLCT_VERSION_MAJOR) + "." +
-     std::to_string(SYCLCT_VERSION_MINOR) + "." + std::to_string(SYCLCT_VERSION_PATCH);
+  params.appName = "oneAPI DPC++ Compatibility Tool";
+  std::string AppVersion= std::string(SYCLCT_VERSION_MAJOR) + "." +
+     std::string(SYCLCT_VERSION_MINOR) + "-" + std::string(SYCLCT_VERSION_PATCH);
   params.appVersion = AppVersion.c_str();
   params.tid = "UA-17808594-22"; // this one is Analyzers GA sandbox
   params.uuidPersistenceProvider = &uuidProvider;

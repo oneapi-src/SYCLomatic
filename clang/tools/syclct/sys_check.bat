@@ -21,13 +21,13 @@ set /A ERRORSTATE=1
 nvcc --version > nul 2>nul
 set ret=%ERRORLEVEL%
 if "%ret%" NEQ "0" (
-    echo  Warning: The oneAPI Compatibility Tool requires the Nvidia CUDA Toolkit to be installed.
+    echo  Warning: The oneAPI DPC++ Compatibility Tool requires the Nvidia CUDA Toolkit to be installed.
     set ERRORSTATE=1
 ) else (
     set ERRORSTATE=0
 )
 if /I "%ERRORSTATE%" NEQ "0" (
-    echo  Warning: The oneAPI Compatibility Tool component unsafe to operate.
+    echo  Warning: The oneAPI DPC++ Compatibility Tool component unsafe to operate.
 )
 
 ::exit with the %ERRORSTATE%

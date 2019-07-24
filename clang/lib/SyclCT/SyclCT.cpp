@@ -69,10 +69,10 @@ const char *const CtHelpMessage =
 
 const char *const CtHelpHint =
     "  Warning: Please specify file(s) to be migrated.\n"
-    "  Get help on DPC++ Compatibility Tool, run: syclct --help\n"
+    "  Get help on oneAPI DPC++ Compatibility Tool, run: syclct --help\n"
     "\n";
 
-static OptionCategory SyclCTCat("DPC++ Compatibility Tool");
+static OptionCategory SyclCTCat("oneAPI DPC++ Compatibility Tool");
 static extrahelp CommonHelp(CtHelpMessage);
 static opt<std::string> Passes(
     "passes",
@@ -373,7 +373,7 @@ void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
       isSamePath(InRoot, SyclctInstallPath)) {
     std::string ErrMsg = "[ERROR] Input folder \"" + InRoot +
                          "\" is the parent or the same as the folder where "
-                         "DPC++ Compatibility Tool is installed \"" +
+                         "oneAPI DPC++ Compatibility Tool is installed \"" +
                          SyclctInstallPath + "\"\n";
     PrintMsg(ErrMsg);
     exit(MigrationErrorInRootContainCTTool);
@@ -522,8 +522,8 @@ std::string printCTVersion() {
   std::string buf;
   llvm::raw_string_ostream OS(buf);
 
-  OS << "\nCompatibility Tool Version: " << SYCLCT_VERSION_MAJOR << "."
-     << SYCLCT_VERSION_MINOR << "." << SYCLCT_VERSION_PATCH << " codebase:";
+  OS << "\noneAPI DPC++ Compatibility Tool Version: " << SYCLCT_VERSION_MAJOR << "."
+     << SYCLCT_VERSION_MINOR << "-" << SYCLCT_VERSION_PATCH << " codebase:";
 
   std::string Path = getClangRepositoryPath();
   std::string Revision = getClangRevision();

@@ -8,7 +8,7 @@
 #
 ################################################################################
 
-# Compatibility Tool System Check
+# oneAPI DPC++ Compatibility Tool System Check
 #
 # a. Detect CUDA toolkit.
 # b. profit
@@ -34,12 +34,12 @@ ERRORSTATE=0
 
 # CUDA TOOLKIT
 if [ -z $(which nvcc) ]; then
-    echo -e "The OneAPI Compatibility Tool requires the Nvidia CUDA Toolkit to be installed."
+    echo -e "The oneAPI DPC++ Compatibility Tool requires the Nvidia CUDA Toolkit to be installed."
     ERRORSTATE=1
 fi
 
 if [ -z $(which python) ]; then
-    echo -e "The OneAPI Compatibility Tool requires the python to be installed."
+    echo -e "The oneAPI DPC++ Compatibility Tool requires the python to be installed."
     ERRORSTATE=1
 fi
 
