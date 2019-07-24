@@ -381,6 +381,7 @@ public:
   syclct_accessor(const accessor_t &acc, const syclct_range<1> &range)
       : syclct_accessor((pointer_t)acc.get_pointer(), range) {}
   element_t &operator[](size_t index) const { return *(data + index); }
+  element_t &operator*() { return *data; }
   template <class Ty> operator Ty *() { return (Ty *)(&(*data)); }
   template <class ReinterpretT>
   syclct_accessor<ReinterpretT, Memory, 1> reinterpret() {
