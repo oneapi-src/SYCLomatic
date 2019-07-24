@@ -27,54 +27,54 @@ int main(){
 
   //Legacy
   // CHECK: {
-  // CHECK-NEXT: auto sidemode_ct_0 = 'L';
-  // CHECK-NEXT: auto fillmode_ct_1 = 'U';
-  // CHECK-NEXT: auto transpose_ct_2 = 'N';
-  // CHECK-NEXT: auto diagtype_ct_3 = 'N';
-  // CHECK-NEXT: auto A_S_7_allocation_89e = syclct::memory_manager::get_instance().translate_ptr(A_S);
-  // CHECK-NEXT:cl::sycl::buffer<float,1> A_S_7_buffer_89e = A_S_7_allocation_89e.buffer.reinterpret<float, 1>(cl::sycl::range<1>(A_S_7_allocation_89e.size/sizeof(float)));
-  // CHECK-NEXT:auto B_S_9_allocation_f58 = syclct::memory_manager::get_instance().translate_ptr(B_S);
-  // CHECK-NEXT:cl::sycl::buffer<float,1> B_S_9_buffer_f58 = B_S_9_allocation_f58.buffer.reinterpret<float, 1>(cl::sycl::range<1>(B_S_9_allocation_f58.size/sizeof(float)));
-  // CHECK-NEXT:mkl::strmm(syclct::get_default_queue(), (((sidemode_ct_0)=='L'||(sidemode_ct_0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct_1)=='L'||(fillmode_ct_1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct_2)=='N'||(transpose_ct_2)=='n')?(mkl::transpose::nontrans):(((transpose_ct_2)=='T'||(transpose_ct_2)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct_3)=='N'||(diagtype_ct_3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), m, n, alpha_S, A_S_7_buffer_89e, lda, B_S_9_buffer_f58, ldb);
+  // CHECK-NEXT: auto sidemode_ct0 = 'L';
+  // CHECK-NEXT: auto fillmode_ct1 = 'U';
+  // CHECK-NEXT: auto transpose_ct2 = 'N';
+  // CHECK-NEXT: auto diagtype_ct3 = 'N';
+  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = syclct::memory_manager::get_instance().translate_ptr(A_S);
+  // CHECK-NEXT:cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
+  // CHECK-NEXT:auto allocation_ct{{[0-9]+}} = syclct::memory_manager::get_instance().translate_ptr(B_S);
+  // CHECK-NEXT:cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
+  // CHECK-NEXT:mkl::trmm(syclct::get_default_queue(), (((sidemode_ct0)=='L'||(sidemode_ct0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct1)=='L'||(fillmode_ct1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct2)=='N'||(transpose_ct2)=='n')?(mkl::transpose::nontrans):(((transpose_ct2)=='T'||(transpose_ct2)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct3)=='N'||(diagtype_ct3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), m, n, alpha_S, buffer_ct{{[0-9]+}}, lda, buffer_ct{{[0-9]+}}, ldb);
   // CHECK-NEXT:}
   cublasStrmm('L', 'U', 'N', 'N', m, n, alpha_S, A_S, lda, B_S, ldb);
 
   // CHECK: {
-  // CHECK-NEXT: auto sidemode_ct_0 = 'L';
-  // CHECK-NEXT: auto fillmode_ct_1 = 'U';
-  // CHECK-NEXT: auto transpose_ct_2 = 'N';
-  // CHECK-NEXT: auto diagtype_ct_3 = 'N';
-  // CHECK-NEXT:auto A_D_7_allocation_382 = syclct::memory_manager::get_instance().translate_ptr(A_D);
-  // CHECK-NEXT:cl::sycl::buffer<double,1> A_D_7_buffer_382 = A_D_7_allocation_382.buffer.reinterpret<double, 1>(cl::sycl::range<1>(A_D_7_allocation_382.size/sizeof(double)));
-  // CHECK-NEXT:auto B_D_9_allocation_24e = syclct::memory_manager::get_instance().translate_ptr(B_D);
-  // CHECK-NEXT:cl::sycl::buffer<double,1> B_D_9_buffer_24e = B_D_9_allocation_24e.buffer.reinterpret<double, 1>(cl::sycl::range<1>(B_D_{{[0-9]+}}_allocation_{{[a-z0-9]+}}.size/sizeof(double)));
-  // CHECK-NEXT:mkl::dtrmm(syclct::get_default_queue(), (((sidemode_ct_0)=='L'||(sidemode_ct_0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct_1)=='L'||(fillmode_ct_1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct_2)=='N'||(transpose_ct_2)=='n')?(mkl::transpose::nontrans):(((transpose_ct_2)=='T'||(transpose_ct_2)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct_3)=='N'||(diagtype_ct_3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), m, n, alpha_D, A_D_{{[0-9]+}}_buffer_{{[a-z0-9]+}}, lda, B_D_{{[0-9]+}}_buffer_{{[a-z0-9]+}}, ldb);
+  // CHECK-NEXT: auto sidemode_ct0 = 'L';
+  // CHECK-NEXT: auto fillmode_ct1 = 'U';
+  // CHECK-NEXT: auto transpose_ct2 = 'N';
+  // CHECK-NEXT: auto diagtype_ct3 = 'N';
+  // CHECK-NEXT:auto allocation_ct{{[0-9]+}} = syclct::memory_manager::get_instance().translate_ptr(A_D);
+  // CHECK-NEXT:cl::sycl::buffer<double,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
+  // CHECK-NEXT:auto allocation_ct{{[0-9]+}} = syclct::memory_manager::get_instance().translate_ptr(B_D);
+  // CHECK-NEXT:cl::sycl::buffer<double,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
+  // CHECK-NEXT:mkl::trmm(syclct::get_default_queue(), (((sidemode_ct0)=='L'||(sidemode_ct0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct1)=='L'||(fillmode_ct1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct2)=='N'||(transpose_ct2)=='n')?(mkl::transpose::nontrans):(((transpose_ct2)=='T'||(transpose_ct2)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct3)=='N'||(diagtype_ct3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), m, n, alpha_D, buffer_ct{{[0-9]+}}, lda, buffer_ct{{[0-9]+}}, ldb);
   // CHECK-NEXT:}
   cublasDtrmm('L', 'U', 'N', 'N', m, n, alpha_D, A_D, lda, B_D, ldb);
 
   // CHECK: {
-  // CHECK-NEXT: auto sidemode_ct_0 = 'L';
-  // CHECK-NEXT: auto fillmode_ct_1 = 'U';
-  // CHECK-NEXT: auto transpose_ct_2 = 'N';
-  // CHECK-NEXT: auto diagtype_ct_3 = 'N';
-  // CHECK-NEXT:auto A_C_{{[0-9]+}}_allocation_{{[a-z0-9]+}} = syclct::memory_manager::get_instance().translate_ptr(A_C);
-  // CHECK-NEXT:cl::sycl::buffer<std::complex<float>,1> A_C_{{[0-9]+}}_buffer_{{[a-z0-9]+}} = A_C_{{[0-9]+}}_allocation_{{[a-z0-9]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(A_C_{{[0-9]+}}_allocation_{{[a-z0-9]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT:auto B_C_{{[0-9]+}}_allocation_{{[a-z0-9]+}} = syclct::memory_manager::get_instance().translate_ptr(B_C);
-  // CHECK-NEXT:cl::sycl::buffer<std::complex<float>,1> B_C_{{[0-9]+}}_buffer_{{[a-z0-9]+}} = B_C_{{[0-9]+}}_allocation_{{[a-z0-9]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(B_C_{{[0-9]+}}_allocation_{{[a-z0-9]+}}.size/sizeof(std::complex<float>)));
-  // CHECK-NEXT:mkl::ctrmm(syclct::get_default_queue(), (((sidemode_ct_0)=='L'||(sidemode_ct_0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct_1)=='L'||(fillmode_ct_1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct_2)=='N'||(transpose_ct_2)=='n')?(mkl::transpose::nontrans):(((transpose_ct_2)=='T'||(transpose_ct_2)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct_3)=='N'||(diagtype_ct_3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_{{[0-9]+}}_buffer_{{[a-z0-9]+}}, lda, B_C_{{[0-9]+}}_buffer_{{[a-z0-9]+}}, ldb);
+  // CHECK-NEXT: auto sidemode_ct0 = 'L';
+  // CHECK-NEXT: auto fillmode_ct1 = 'U';
+  // CHECK-NEXT: auto transpose_ct2 = 'N';
+  // CHECK-NEXT: auto diagtype_ct3 = 'N';
+  // CHECK-NEXT:auto allocation_ct{{[0-9]+}} = syclct::memory_manager::get_instance().translate_ptr(A_C);
+  // CHECK-NEXT:cl::sycl::buffer<std::complex<float>,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(std::complex<float>)));
+  // CHECK-NEXT:auto allocation_ct{{[0-9]+}} = syclct::memory_manager::get_instance().translate_ptr(B_C);
+  // CHECK-NEXT:cl::sycl::buffer<std::complex<float>,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(std::complex<float>)));
+  // CHECK-NEXT:mkl::trmm(syclct::get_default_queue(), (((sidemode_ct0)=='L'||(sidemode_ct0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct1)=='L'||(fillmode_ct1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct2)=='N'||(transpose_ct2)=='n')?(mkl::transpose::nontrans):(((transpose_ct2)=='T'||(transpose_ct2)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct3)=='N'||(diagtype_ct3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), buffer_ct{{[0-9]+}}, lda, buffer_ct{{[0-9]+}}, ldb);
   // CHECK-NEXT:}
   cublasCtrmm('L', 'U', 'N', 'N', m, n, alpha_C, A_C, lda, B_C, ldb);
 
   // CHECK: {
-  // CHECK-NEXT: auto sidemode_ct_0 = 'L';
-  // CHECK-NEXT: auto fillmode_ct_1 = 'U';
-  // CHECK-NEXT: auto transpose_ct_2 = 'N';
-  // CHECK-NEXT: auto diagtype_ct_3 = 'N';
-  // CHECK-NEXT:auto A_Z_{{[0-9]+}}_allocation_{{[a-z0-9]+}} = syclct::memory_manager::get_instance().translate_ptr(A_Z);
-  // CHECK-NEXT:cl::sycl::buffer<std::complex<double>,1> A_Z_{{[0-9]+}}_buffer_{{[a-z0-9]+}} = A_Z_{{[0-9]+}}_allocation_{{[a-z0-9]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(A_Z_{{[0-9]+}}_allocation_{{[a-z0-9]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT:auto B_Z_{{[0-9]+}}_allocation_{{[a-z0-9]+}} = syclct::memory_manager::get_instance().translate_ptr(B_Z);
-  // CHECK-NEXT:cl::sycl::buffer<std::complex<double>,1> B_Z_{{[0-9]+}}_buffer_{{[a-z0-9]+}} = B_Z_{{[0-9]+}}_allocation_{{[a-z0-9]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(B_Z_{{[0-9]+}}_allocation_{{[a-z0-9]+}}.size/sizeof(std::complex<double>)));
-  // CHECK-NEXT:mkl::ztrmm(syclct::get_default_queue(), (((sidemode_ct_0)=='L'||(sidemode_ct_0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct_1)=='L'||(fillmode_ct_1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct_2)=='N'||(transpose_ct_2)=='n')?(mkl::transpose::nontrans):(((transpose_ct_2)=='T'||(transpose_ct_2)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct_3)=='N'||(diagtype_ct_3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_{{[0-9]+}}_buffer_{{[a-z0-9]+}}, lda, B_Z_{{[0-9]+}}_buffer_{{[a-z0-9]+}}, ldb);
+  // CHECK-NEXT: auto sidemode_ct0 = 'L';
+  // CHECK-NEXT: auto fillmode_ct1 = 'U';
+  // CHECK-NEXT: auto transpose_ct2 = 'N';
+  // CHECK-NEXT: auto diagtype_ct3 = 'N';
+  // CHECK-NEXT:auto allocation_ct{{[0-9]+}} = syclct::memory_manager::get_instance().translate_ptr(A_Z);
+  // CHECK-NEXT:cl::sycl::buffer<std::complex<double>,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(std::complex<double>)));
+  // CHECK-NEXT:auto allocation_ct{{[0-9]+}} = syclct::memory_manager::get_instance().translate_ptr(B_Z);
+  // CHECK-NEXT:cl::sycl::buffer<std::complex<double>,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(std::complex<double>)));
+  // CHECK-NEXT:mkl::trmm(syclct::get_default_queue(), (((sidemode_ct0)=='L'||(sidemode_ct0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct1)=='L'||(fillmode_ct1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct2)=='N'||(transpose_ct2)=='n')?(mkl::transpose::nontrans):(((transpose_ct2)=='T'||(transpose_ct2)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct3)=='N'||(diagtype_ct3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), buffer_ct{{[0-9]+}}, lda, buffer_ct{{[0-9]+}}, ldb);
   // CHECK-NEXT:}
   cublasZtrmm('L', 'U', 'N', 'N', m, n, alpha_Z, A_Z, lda, B_Z, ldb);
 }

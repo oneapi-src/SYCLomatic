@@ -2504,9 +2504,6 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   std::string SuffixInsertStr;
   // TODO: Need to process the situation when scalar pointers (alpha, beta)
   // are device pointers.
-  // TODO: The temp variable identify need use the combination the base
-  // name of the original identify and buffer/allocation.
-  // And the buffer/allocation should be the prefix.
   if (MapNames::BLASFuncReplInfoMap.find(FuncName) !=
       MapNames::BLASFuncReplInfoMap.end()) {
     auto ReplInfoPair = MapNames::BLASFuncReplInfoMap.find(FuncName);
@@ -2570,7 +2567,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                                       PrefixInsertStr);
       } else if ((FuncName == "cublasSsyrkx" || FuncName == "cublasDsyrkx") &&
                  isReplIndex(i, ReplInfo.OperationIndexInfo, IndexTemp)) {
-        std::string TransparamName = "transpose_ct_" + std::to_string(i);
+        std::string TransparamName = "transpose_ct" + std::to_string(i);
         std::string TransStr =
             getStmtSpelling(CE->getArg(i), *(Result.Context));
 
@@ -2599,11 +2596,11 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       const CStyleCastExpr *CSCE = nullptr;
       if ((CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(2)))) {
         emplaceTransformation(new InsertText(
-            InsertSL, "((((int)transpose_ct_2)==0)?(mkl::transpose::trans):("
+            InsertSL, "((((int)transpose_ct2)==0)?(mkl::transpose::trans):("
                       "mkl::transpose::nontrans)), "));
       } else {
         emplaceTransformation(new InsertText(
-            InsertSL, "((transpose_ct_2)==(mkl::transpose::nontrans))?(mkl::"
+            InsertSL, "((transpose_ct2)==(mkl::transpose::nontrans))?(mkl::"
                       "transpose::trans):(mkl::transpose::nontrans), "));
       }
     }
@@ -2761,7 +2758,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
               "((" + ParamsStrsVec[i] + ").x(),(" + ParamsStrsVec[i] + ").y())";
         }
       } else if (isReplIndex(i, ReplInfo.OperationIndexInfo, IndexTemp)) {
-        std::string TransParamName = "transpose_ct_" + std::to_string(i);
+        std::string TransParamName = "transpose_ct" + std::to_string(i);
         PrefixInsertStr = PrefixInsertStr + IndentStr + "auto " +
                           TransParamName + " = " + ParamsStrsVec[i] + ";" +
                           getNL();
@@ -2773,7 +2770,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                           ")=='t')?(mkl::transpose:"
                           ":nontrans):(mkl::transpose::conjtrans)))";
       } else if (ReplInfo.FillModeIndexInfo == i) {
-        std::string FillParamName = "fillmode_ct_" + std::to_string(i);
+        std::string FillParamName = "fillmode_ct" + std::to_string(i);
         PrefixInsertStr = PrefixInsertStr + IndentStr + "auto " +
                           FillParamName + " = " + ParamsStrsVec[i] + ";" +
                           getNL();
@@ -2781,7 +2778,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                           ")=='L'||(" + FillParamName +
                           ")=='l')?(mkl::uplo::lower):(mkl::uplo::upper))";
       } else if (ReplInfo.SideModeIndexInfo == i) {
-        std::string SideParamName = "sidemode_ct_" + std::to_string(i);
+        std::string SideParamName = "sidemode_ct" + std::to_string(i);
         PrefixInsertStr = PrefixInsertStr + IndentStr + "auto " +
                           SideParamName + " = " + ParamsStrsVec[i] + ";" +
                           getNL();
@@ -2789,7 +2786,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                           ")=='L'||(" + SideParamName +
                           ")=='l')?(mkl::side::left):(mkl::side::right))";
       } else if (ReplInfo.DiagTypeIndexInfo == i) {
-        std::string DiagParamName = "diagtype_ct_" + std::to_string(i);
+        std::string DiagParamName = "diagtype_ct" + std::to_string(i);
         PrefixInsertStr = PrefixInsertStr + IndentStr + "auto " +
                           DiagParamName + " = " + ParamsStrsVec[i] + ";" +
                           getNL();
@@ -3126,16 +3123,9 @@ std::string BLASFunctionCallRule::getBufferNameAndDeclStr(
     const std::string &PointerName, const ASTContext &AC,
     const std::string &TypeAsStr, SourceLocation SL, std::string &BufferDecl,
     int DistinctionID) {
-  std::string PointerNameHashStr = getHashAsString(PointerName);
-  PointerNameHashStr = (PointerNameHashStr.size() < 4)
-                           ? PointerNameHashStr
-                           : PointerNameHashStr.substr(0, 3);
-  std::string BufferTempName = PointerName + "_" +
-                               std::to_string(DistinctionID) + "_buffer_" +
-                               PointerNameHashStr;
-  std::string AllocationTempName = PointerName + "_" +
-                                   std::to_string(DistinctionID) +
-                                   "_allocation_" + PointerNameHashStr;
+  std::string BufferTempName = "buffer_ct" + std::to_string(DistinctionID);
+  std::string AllocationTempName =
+      "allocation_ct" + std::to_string(DistinctionID);
   // TODO: reinterpret will copy more data
   BufferDecl = getIndent(SL, AC.getSourceManager()).str() + "auto " +
                AllocationTempName +
@@ -3218,7 +3208,7 @@ void BLASFunctionCallRule::processParamIntCastToBLASEnum(
   int IndexTemp = -1;
   if (isReplIndex(DistinctionID, OperationIndexInfo, IndexTemp)) {
     std::string TransParamName =
-        "transpose_ct_" + std::to_string(DistinctionID);
+        "transpose_ct" + std::to_string(DistinctionID);
     PrefixInsertStr = PrefixInsertStr + IndentStr + "auto " + TransParamName +
                       " = " + SubExprStr + ";" + getNL();
     emplaceTransformation(new ReplaceText(
@@ -3245,12 +3235,12 @@ void BLASFunctionCallRule::processTrmmParams(
     const SourceLocation &StmtBegin) {
   auto &Context = syclct::SyclctGlobalInfo::getContext();
   // decl a temp var for ptrB and ptrC
-  PrefixInsertStr = PrefixInsertStr + IndentStr + "auto ptr_ct_" +
+  PrefixInsertStr = PrefixInsertStr + IndentStr + "auto ptr_ct" +
                     std::to_string(DistinctionID) + " = " +
                     getStmtSpelling(CE->getArg(DistinctionID), Context) + ";" +
                     getNL();
   BufferName = getBufferNameAndDeclStr(
-      "ptr_ct_" + std::to_string(DistinctionID), Context,
+      "ptr_ct" + std::to_string(DistinctionID), Context,
       BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, DistinctionID);
 }
 
@@ -3272,20 +3262,20 @@ void BLASFunctionCallRule::processTrmmCall(const CallExpr *CE,
   // decl fout temp vars for ldb, ldc, n and m
   PrefixInsertStr =
       PrefixInsertStr + IndentStr +
-      "auto ld_ct_13 = " + getStmtSpelling(CE->getArg(13), Context) + ";" +
-      " auto m_ct_5 = " + getStmtSpelling(CE->getArg(5), Context) +
-      "; auto n_ct_6 = " + getStmtSpelling(CE->getArg(6), Context) + ";" +
+      "auto ld_ct13 = " + getStmtSpelling(CE->getArg(13), Context) + ";" +
+      " auto m_ct5 = " + getStmtSpelling(CE->getArg(5), Context) +
+      "; auto n_ct6 = " + getStmtSpelling(CE->getArg(6), Context) + ";" +
       getNL();
   // insert a stmt copying the data ptrB pointing to where ptrC pointing
   PrefixInsertStr = PrefixInsertStr + IndentStr +
-                    "syclct::matrix_mem_copy(ptr_ct_12, " +
-                    getStmtSpelling(CE->getArg(10), Context) + ", ld_ct_13, " +
+                    "syclct::matrix_mem_copy(ptr_ct12, " +
+                    getStmtSpelling(CE->getArg(10), Context) + ", ld_ct13, " +
                     getStmtSpelling(CE->getArg(11), Context) +
-                    ", m_ct_5, n_ct_6, syclct::device_to_device);" + getNL();
+                    ", m_ct5, n_ct6, syclct::device_to_device);" + getNL();
   // replace the args in the function call
-  emplaceTransformation(new ReplaceStmt(CE->getArg(13), "ld_ct_13"));
-  emplaceTransformation(new ReplaceStmt(CE->getArg(5), "m_ct_5"));
-  emplaceTransformation(new ReplaceStmt(CE->getArg(6), "n_ct_6"));
+  emplaceTransformation(new ReplaceStmt(CE->getArg(13), "ld_ct13"));
+  emplaceTransformation(new ReplaceStmt(CE->getArg(5), "m_ct5"));
+  emplaceTransformation(new ReplaceStmt(CE->getArg(6), "n_ct6"));
 }
 
 REGISTER_RULE(BLASFunctionCallRule)
