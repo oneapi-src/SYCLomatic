@@ -3321,18 +3321,21 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     return;
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
-  std::string Prefix = "";
-  std::string Poststr = "";
+  std::string Prefix, Suffix;
   if (IsAssigned) {
     Prefix = "(";
-    Poststr = ", 0)";
+    Suffix = ", 0)";
   }
 
   if (FuncName == "cudaGetDeviceCount") {
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
     std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
-    emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     emplaceTransformation(
-        new ReplaceStmt(CE, "syclct::get_device_manager().device_count()"));
+        new InsertBeforeStmt(CE, Prefix + ResultVarName + " = "));
+    emplaceTransformation(new ReplaceStmt(
+        CE, "syclct::get_device_manager().device_count()" + Suffix));
   } else if (FuncName == "cudaGetDeviceProperties") {
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
@@ -3342,7 +3345,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         CE->getCallee(), Prefix + "syclct::get_device_manager().get_device"));
     emplaceTransformation(new RemoveArg(CE, 0));
     emplaceTransformation(new InsertAfterStmt(
-        CE, ".get_device_info(" + ResultVarName + ")" + Poststr));
+        CE, ".get_device_info(" + ResultVarName + ")" + Suffix));
   } else if (FuncName == "cudaDeviceReset" || FuncName == "cudaThreadExit") {
     // The functionality of cudaThreadExit() is identical to cudaDeviceReset().
     if (IsAssigned) {
@@ -3350,7 +3353,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
     emplaceTransformation(new ReplaceStmt(
         CE, Prefix + "syclct::get_device_manager().current_device().reset()" +
-                Poststr));
+                Suffix));
   } else if (FuncName == "cudaSetDevice") {
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);

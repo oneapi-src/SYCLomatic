@@ -9,7 +9,11 @@ void check(T result, char const *const func) {}
 int main(int argc, char **argv)
 {
 int deviceCount = 0;
-// CHECK: checkErrors(deviceCount = syclct::get_device_manager().device_count());
+
+// CHECK:/*
+// CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:*/
+// CHECK-NEXT: checkErrors((deviceCount = syclct::get_device_manager().device_count(), 0));
 checkErrors(cudaGetDeviceCount(&deviceCount));
 
 int dev_id;
