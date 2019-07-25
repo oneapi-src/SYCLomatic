@@ -29,13 +29,15 @@ function(append_info name path)
     file(APPEND "${HEADER_FILE}.tmp"
       "#undef ${name}_REVISION\n")
   endif()
-  if(repository)
-    file(APPEND "${HEADER_FILE}.tmp"
-      "#define ${name}_REPOSITORY \"${repository}\"\n")
-  else()
-    file(APPEND "${HEADER_FILE}.tmp"
-      "#undef ${name}_REPOSITORY\n")
-  endif()
+#INTEL_CUSTOMIZATION
+#Dont't remove the code but comment out is for: easy fix rebase conflict.
+# if(repository)
+#    file(APPEND "${HEADER_FILE}.tmp"
+#      "#define ${name}_REPOSITORY \"${repository}\"\n")
+#  else()
+#    file(APPEND "${HEADER_FILE}.tmp"
+#      "#undef ${name}_REPOSITORY\n")
+#  endif()
 endfunction()
 
 foreach(name IN LISTS NAMES)

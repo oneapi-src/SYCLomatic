@@ -524,8 +524,9 @@ std::string printCTVersion() {
 
   OS << "\noneAPI DPC++ Compatibility Tool Version: " << SYCLCT_VERSION_MAJOR << "."
      << SYCLCT_VERSION_MINOR << "-" << SYCLCT_VERSION_PATCH << " codebase:";
-
-  std::string Path = getClangRepositoryPath();
+  // getClangRepositoryPath() export the machine name of repo in release build.
+  // so skip the repo name.
+  std::string Path = "";
   std::string Revision = getClangRevision();
   if (!Path.empty() || !Revision.empty()) {
     OS << '(';

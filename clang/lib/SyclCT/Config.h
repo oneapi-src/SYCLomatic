@@ -14,6 +14,6 @@
 
 #define SYCLCT_VERSION_MAJOR "2020"
 #define SYCLCT_VERSION_MINOR "1"
-#define SYCLCT_VERSION_PATCH "beta1"
+#define SYCLCT_VERSION_PATCH "beta01"
 
 #endif
