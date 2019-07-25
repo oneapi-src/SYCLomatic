@@ -310,7 +310,8 @@ void IncludesCallbacks::InclusionDirective(
   // Replace "#include <cublas_v2.h>" and "#include <cublas.h>" with
   // <mkl_blas_sycl.hpp>, <mkl_lapack_sycl.hpp> and <sycl_types.hpp>
   if ((IsAngled && FileName.compare(StringRef("cublas_v2.h")) == 0) ||
-      (IsAngled && FileName.compare(StringRef("cublas.h")) == 0)) {
+      (IsAngled && FileName.compare(StringRef("cublas.h")) == 0) ||
+      (IsAngled && FileName.compare(StringRef("cusolverDn.h")) == 0)) {
     std::string Path = SyclctGlobalInfo::getSourceManager().getFilename(
         SyclctGlobalInfo::getSourceManager().getExpansionLoc(HashLoc));
     makeCanonical(Path);
@@ -3238,7 +3239,6 @@ REGISTER_RULE(BLASFunctionCallRule)
 // Migrate SOLVER status values to corresponding int values
 // Example: migrate CUSOLVER_STATUS_SUCCESS to 0
 // Other SOLVER named values are migrated to corresponding named values
-// Example: migrate CUSOLVER_OP_N to mkl::transpose::nontrans
 void SOLVEREnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(matchesName("CUSOLVER_STATU.*"))))
@@ -3276,7 +3276,55 @@ REGISTER_RULE(SOLVEREnumsRule)
 
 void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
-    return hasAnyName("cusolverDnCreate", "cusolverDnDestroy");
+    return hasAnyName(
+        "cusolverDnCreate", "cusolverDnDestroy", "cusolverDnSpotrf_bufferSize",
+        "cusolverDnDpotrf_bufferSize", "cusolverDnCpotrf_bufferSize",
+        "cusolverDnZpotrf_bufferSize", "cusolverDnSpotri_bufferSize",
+        "cusolverDnDpotri_bufferSize", "cusolverDnCpotri_bufferSize",
+        "cusolverDnZpotri_bufferSize", "cusolverDnSgetrf_bufferSize",
+        "cusolverDnDgetrf_bufferSize", "cusolverDnCgetrf_bufferSize",
+        "cusolverDnZgetrf_bufferSize", "cusolverDnSpotrf", "cusolverDnDpotrf",
+        "cusolverDnCpotrf", "cusolverDnZpotrf", "cusolverDnSpotrs",
+        "cusolverDnDpotrs", "cusolverDnCpotrs", "cusolverDnZpotrs",
+        "cusolverDnSpotri", "cusolverDnDpotri", "cusolverDnCpotri",
+        "cusolverDnZpotri", "cusolverDnSgetrf", "cusolverDnDgetrf",
+        "cusolverDnCgetrf", "cusolverDnZgetrf", "cusolverDnSgetrs",
+        "cusolverDnDgetrs", "cusolverDnCgetrs", "cusolverDnZgetrs",
+        "cusolverDnSgeqrf_bufferSize", "cusolverDnDgeqrf_bufferSize",
+        "cusolverDnCgeqrf_bufferSize", "cusolverDnZgeqrf_bufferSize",
+        "cusolverDnSgeqrf", "cusolverDnDgeqrf", "cusolverDnCgeqrf",
+        "cusolverDnZgeqrf", "cusolverDnSormqr_bufferSize",
+        "cusolverDnDormqr_bufferSize", "cusolverDnSormqr", "cusolverDnDormqr",
+        "cusolverDnCunmqr_bufferSize", "cusolverDnZunmqr_bufferSize",
+        "cusolverDnCunmqr", "cusolverDnZunmqr", "cusolverDnSorgqr_bufferSize",
+        "cusolverDnDorgqr_bufferSize", "cusolverDnCungqr_bufferSize",
+        "cusolverDnZungqr_bufferSize", "cusolverDnSorgqr", "cusolverDnDorgqr",
+        "cusolverDnCungqr", "cusolverDnZungqr", "cusolverDnSsytrf_bufferSize",
+        "cusolverDnDsytrf_bufferSize", "cusolverDnCsytrf_bufferSize",
+        "cusolverDnZsytrf_bufferSize", "cusolverDnSsytrf", "cusolverDnDsytrf",
+        "cusolverDnCsytrf", "cusolverDnZsytrf", "cusolverDnSgebrd_bufferSize",
+        "cusolverDnDgebrd_bufferSize", "cusolverDnCgebrd_bufferSize",
+        "cusolverDnZgebrd_bufferSize", "cusolverDnSgebrd", "cusolverDnDgebrd",
+        "cusolverDnCgebrd", "cusolverDnZgebrd", "cusolverDnSorgbr_bufferSize",
+        "cusolverDnDorgbr_bufferSize", "cusolverDnCungbr_bufferSize",
+        "cusolverDnZungbr_bufferSize", "cusolverDnSorgbr", "cusolverDnDorgbr",
+        "cusolverDnCungbr", "cusolverDnZungbr", "cusolverDnSsytrd_bufferSize",
+        "cusolverDnDsytrd_bufferSize", "cusolverDnChetrd_bufferSize",
+        "cusolverDnZhetrd_bufferSize", "cusolverDnSsytrd", "cusolverDnDsytrd",
+        "cusolverDnChetrd", "cusolverDnZhetrd", "cusolverDnSormtr_bufferSize",
+        "cusolverDnDormtr_bufferSize", "cusolverDnCunmtr_bufferSize",
+        "cusolverDnZunmtr_bufferSize", "cusolverDnSormtr", "cusolverDnDormtr",
+        "cusolverDnCunmtr", "cusolverDnZunmtr", "cusolverDnSorgtr_bufferSize",
+        "cusolverDnDorgtr_bufferSize", "cusolverDnCungtr_bufferSize",
+        "cusolverDnZungtr_bufferSize", "cusolverDnSorgtr", "cusolverDnDorgtr",
+        "cusolverDnCungtr", "cusolverDnZungtr", "cusolverDnSgesvd_bufferSize",
+        "cusolverDnDgesvd_bufferSize", "cusolverDnCgesvd_bufferSize",
+        "cusolverDnZgesvd_bufferSize", "cusolverDnSgesvd", "cusolverDnDgesvd",
+        "cusolverDnCgesvd", "cusolverDnZgesvd", "cusolverDnSsyevd_bufferSize",
+        "cusolverDnDsyevd_bufferSize", "cusolverDnSsyevd_bufferSize",
+        "cusolverDnCheevd_bufferSize", "cusolverDnZheevd_bufferSize",
+        "cusolverDnDsyevd", "cusolverDnSsyevd", "cusolverDnCheevd",
+        "cusolverDnZheevd");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
@@ -3333,24 +3381,186 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
   assert(CE && "Unknown result");
 
+  // Collect sourceLocations of the function call
+  SourceLocation FuncNameBegin(CE->getBeginLoc());
+  SourceLocation FuncCallEnd(CE->getEndLoc());
+
+  // Correct sourceLocations for macros
+  const SourceManager *SM = Result.SourceManager;
+  if (FuncNameBegin.isMacroID())
+    FuncNameBegin = SM->getExpansionLoc(FuncNameBegin);
+  if (FuncCallEnd.isMacroID())
+    FuncCallEnd = SM->getExpansionLoc(FuncCallEnd);
+
+  // Collect sourceLocations for creating new scope
+  std::string PrefixBeforeScope, PrefixInsertStr, SuffixInsertStr;
+  auto SR = getScopeInsertRange(CE, FuncNameBegin, FuncCallEnd);
+  SourceLocation StmtBegin = SR.getBegin(), StmtEndAfterSemi = SR.getEnd();
+  std::string IndentStr =
+      getIndent(StmtBegin, (Result.Context)->getSourceManager()).str();
+  Token Tok;
+  Lexer::getRawToken(FuncNameBegin, Tok, *SM, LangOptions());
+  SourceLocation FuncNameEnd = Tok.getEndLoc();
+  auto FuncNameLength =
+      SM->getCharacterData(FuncNameEnd) - SM->getCharacterData(FuncNameBegin);
+
+  // Prepare the prefix and the postfix for assignment
   if (!CE->getDirectCallee())
     return;
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
-  std::string Prefix = "";
-  std::string Poststr = "";
+  std::string AssignPrefix = "";
+  std::string AssignPostfix = "";
+
   if (IsAssigned) {
-    Prefix = "(";
-    Poststr = ", 0)";
+    AssignPrefix = "(";
+    AssignPostfix = ", 0)";
+  }
+
+  if (HasDeviceAttr) {
+    report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, FuncName,
+           "syclct::sycl_memcpy");
+    return;
+  }
+
+  const VarDecl *VD = 0;
+  if (IsInitializeVarDecl) {
+    // Create the prefix for VarDecl before scope and remove the VarDecl inside
+    // the scope
+    VD = getAncestralVarDecl(CE);
+    std::string VarType, VarName;
+    if (VD) {
+      VarType = VD->getType().getAsString();
+      VarName = VD->getNameAsString();
+      auto Itr = MapNames::TypeNamesMap.find(VarType);
+      if (Itr != MapNames::TypeNamesMap.end())
+        VarType = Itr->second;
+      PrefixBeforeScope = VarType + " " + VarName + ";" + getNL() + IndentStr +
+                          PrefixBeforeScope;
+      SourceLocation typeBegin =
+          VD->getTypeSourceInfo()->getTypeLoc().getBeginLoc();
+      SourceLocation nameBegin = VD->getLocation();
+      SourceLocation nameEnd = Lexer::getLocForEndOfToken(
+          nameBegin, 0, *SM, Result.Context->getLangOpts());
+      auto replLen =
+          SM->getCharacterData(nameEnd) - SM->getCharacterData(typeBegin);
+      emplaceTransformation(
+          new ReplaceText(typeBegin, replLen, std::move(VarName)));
+    } else {
+      assert(0 && "Fail to get VarDecl information");
+      return;
+    }
   }
 
   if (MapNames::SOLVERFuncReplInfoMap.find(FuncName) !=
       MapNames::SOLVERFuncReplInfoMap.end()) {
-    // TODO: other Dn functions
+    // Find replacement string
+    auto ReplInfoPair = MapNames::SOLVERFuncReplInfoMap.find(FuncName);
+    MapNames::SOLVERFuncReplInfo ReplInfo = ReplInfoPair->second;
+    std::string Replacement = ReplInfo.ReplName;
 
+    // Migrate arguments one by one
+    int ArgNum = CE->getNumArgs();
+    for (int i = 0; i < ArgNum; ++i) {
+      int IndexTemp = -1;
+      if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
+        std::string BufferDecl;
+        std::string BufferName = getBufferNameAndDeclStr(
+            CE->getArg(i), *(Result.Context),
+            ReplInfo.BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, i);
+        PrefixInsertStr = PrefixInsertStr + BufferDecl;
+        if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
+          PrefixInsertStr = PrefixInsertStr + IndentStr +
+                            "cl::sycl::buffer<int64_t,1> "
+                            "result_temp_buffer" +
+                            std::to_string(i) + "(cl::sycl::range<1>(1));" +
+                            getNL();
+          SuffixInsertStr = SuffixInsertStr + BufferName +
+                            ".get_access<cl::sycl::access::"
+                            "mode::write>()[0] = "
+                            "(int)result_temp_buffer" +
+                            std::to_string(i) +
+                            ".get_access<cl::sycl::"
+                            "access::mode::read>()[0];" +
+                            getNL() + IndentStr;
+          emplaceTransformation(new ReplaceStmt(
+              CE->getArg(i), "result_temp_buffer" + std::to_string(i)));
+          continue;
+        }
+        emplaceTransformation(
+            new ReplaceStmt(CE->getArg(i), std::move(BufferName)));
+      }
+      if (isReplIndex(i, ReplInfo.RedundantIndexInfo, IndexTemp)) {
+        SourceLocation ParameterEndAfterSemi;
+        getParameterEnd(CE->getArg(i)->getEndLoc(), ParameterEndAfterSemi,
+                        Result);
+        auto ParameterLength =
+            SM->getCharacterData(ParameterEndAfterSemi) -
+            SM->getCharacterData(CE->getArg(i)->getBeginLoc());
+        emplaceTransformation(
+            new ReplaceText(CE->getArg(i)->getBeginLoc(), ParameterLength, ""));
+      }
+    }
+
+    if (!ReplInfo.MissedArgumentFinalLocation.empty()) {
+      std::string ReplStr;
+      for (size_t i = 0; i < ReplInfo.MissedArgumentFinalLocation.size(); ++i) {
+        if (ReplInfo.MissedArgumentIsBuffer[i]) {
+          PrefixInsertStr = PrefixInsertStr + IndentStr + "cl::sycl::buffer<" +
+                            ReplInfo.MissedArgumentType[i] + ",1> " +
+                            ReplInfo.MissedArgumentName[i] +
+                            "(cl::sycl::range<1>(1));" + getNL();
+        } else {
+          PrefixInsertStr = PrefixInsertStr + IndentStr +
+                            ReplInfo.MissedArgumentType[i] + " " +
+                            ReplInfo.MissedArgumentName[i] + ";" + getNL();
+        }
+        ReplStr = ReplStr + ReplInfo.MissedArgumentName[i] + ", ";
+        if (i == ReplInfo.MissedArgumentFinalLocation.size() ||
+            ReplInfo.MissedArgumentInsertBefore[i + 1] !=
+                ReplInfo.MissedArgumentInsertBefore[i]) {
+          emplaceTransformation(new InsertBeforeStmt(
+              CE->getArg(ReplInfo.MissedArgumentInsertBefore[i]),
+              std::move(ReplStr)));
+          ReplStr = "";
+        }
+      }
+    }
+
+    if (!ReplInfo.CastIndexInfo.empty()) {
+      for (size_t i = 0; i < ReplInfo.CastIndexInfo.size(); ++i) {
+        std::string CastStr = "(" + ReplInfo.CastTypeInfo[i] + ")";
+        emplaceTransformation(new InsertBeforeStmt(
+            CE->getArg(ReplInfo.CastIndexInfo[i]), std::move(CastStr)));
+      }
+    }
+
+    if (IsAssigned) {
+      insertAroundRange(FuncNameBegin, FuncCallEnd.getLocWithOffset(1),
+                        std::move(AssignPrefix), std::move(AssignPostfix));
+      report(FuncNameBegin, Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
+    emplaceTransformation(
+        new ReplaceText(FuncNameBegin, FuncNameLength, std::move(Replacement)));
+    insertAroundRange(StmtBegin, StmtEndAfterSemi,
+                      PrefixBeforeScope + std::string("{") + getNL() +
+                          PrefixInsertStr + IndentStr,
+                      getNL() + IndentStr + SuffixInsertStr + std::string("}"));
   } else if (FuncName == "cusolverDnCreate" ||
-             FuncName == "cusolverDnDestroy") {
-    // Remove these two function calls.
+             FuncName == "cusolverDnDestroy" ||
+             FuncName == "cusolverDnSpotrf_bufferSize" ||
+             FuncName == "cusolverDnDpotrf_bufferSize" ||
+             FuncName == "cusolverDnCpotrf_bufferSize" ||
+             FuncName == "cusolverDnZpotrf_bufferSize" ||
+             FuncName == "cusolverDnSpotri_bufferSize" ||
+             FuncName == "cusolverDnDpotri_bufferSize" ||
+             FuncName == "cusolverDnCpotri_bufferSize" ||
+             FuncName == "cusolverDnZpotri_bufferSize" ||
+             FuncName == "cusolverDnSgetrf_bufferSize" ||
+             FuncName == "cusolverDnDgetrf_bufferSize" ||
+             FuncName == "cusolverDnCgetrf_bufferSize" ||
+             FuncName == "cusolverDnZgetrf_bufferSize") {
+    // Replace helper function calls to "0" or ""
     if (IsAssigned) {
       emplaceTransformation(
           new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
@@ -3361,6 +3571,72 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                           /*IsProcessMacro*/ true, ""));
     }
   }
+}
+
+void SOLVERFunctionCallRule::getParameterEnd(
+    const SourceLocation &ParameterEnd, SourceLocation &ParameterEndAfterComma,
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  Optional<Token> TokSharedPtr;
+  TokSharedPtr = Lexer::findNextToken(ParameterEnd, *(Result.SourceManager),
+                                      LangOptions());
+  Token TokComma = TokSharedPtr.getValue();
+  ParameterEndAfterComma = TokComma.getEndLoc();
+  // TODO: Check if TokComma is real comma
+}
+
+bool SOLVERFunctionCallRule::isReplIndex(int Input, std::vector<int> &IndexInfo,
+                                       int &IndexTemp) {
+  for (int i = 0; i < static_cast<int>(IndexInfo.size()); ++i) {
+    if (IndexInfo[i] == Input) {
+      IndexTemp = i;
+      return true;
+    }
+  }
+  return false;
+}
+
+// TODO: Refactoring with BLASFunctionCallRule for removing duplication
+std::string SOLVERFunctionCallRule::getBufferNameAndDeclStr(
+    const Expr *Arg, const ASTContext &AC, const std::string &TypeAsStr,
+    SourceLocation SL, std::string &BufferDecl, int DistinctionID) {
+
+  std::string PointerName = getStmtSpelling(Arg, AC);
+  std::string PointerNameHashStr = getHashAsString(PointerName);
+  PointerNameHashStr = (PointerNameHashStr.size() < 4)
+                           ? PointerNameHashStr
+                           : PointerNameHashStr.substr(0, 3);
+
+  std::string BufferTempName = "buffer_ct" + std::to_string(DistinctionID);
+  std::string AllocationTempName =
+      "allocation_ct" + std::to_string(DistinctionID);
+
+  // TODO: reinterpret will copy more data
+  BufferDecl = getIndent(SL, AC.getSourceManager()).str() + "auto " +
+               AllocationTempName +
+               " = syclct::memory_manager::get_instance().translate_ptr(" +
+               PointerName + ");" + getNL() +
+               getIndent(SL, AC.getSourceManager()).str() +
+               "cl::sycl::buffer<" + TypeAsStr + ",1> " + BufferTempName +
+               " = " + AllocationTempName + ".buffer.reinterpret<" + TypeAsStr +
+               ", 1>(cl::sycl::range<1>(" + AllocationTempName +
+               ".size/sizeof(" + TypeAsStr + ")));" + getNL();
+  return BufferTempName;
+}
+
+const clang::VarDecl *
+SOLVERFunctionCallRule::getAncestralVarDecl(const clang::CallExpr *CE) {
+  auto &Context = syclct::SyclctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*CE);
+  while (Parents.size() == 1) {
+    auto *Parent = Parents[0].get<VarDecl>();
+    if (Parent) {
+      return Parent;
+    }
+    else {
+      Parents = Context.getParents(Parents[0]);
+    }
+  }
+  return nullptr;
 }
 
 REGISTER_RULE(SOLVERFunctionCallRule)

@@ -667,6 +667,37 @@ public:
                          const SourceLocation &StmtBegin);
 };
 
+// Migration rule for SOLVER enums.
+class SOLVEREnumsRule : public NamedTranslationRule<SOLVEREnumsRule> {
+public:
+  SOLVEREnumsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
+class SOLVERFunctionCallRule
+    : public NamedTranslationRule<SOLVERFunctionCallRule> {
+public:
+  SOLVERFunctionCallRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+  bool isReplIndex(int i, std::vector<int> &IndexInfo, int &IndexTemp);
+
+  std::string getBufferNameAndDeclStr(const Expr *Arg, const ASTContext &AC,
+    const std::string &TypeAsStr,
+    SourceLocation SL,
+    std::string &BufferDecl,
+    int DistinctionID);
+  void getParameterEnd(
+    const SourceLocation &ParameterEnd,
+    SourceLocation &ParameterEndAfterComma,
+    const ast_matchers::MatchFinder::MatchResult &Result);
+  const clang::VarDecl *getAncestralVarDecl(const clang::CallExpr *CE);
+};
+
 /// Migration rule for function calls.
 class FunctionCallRule : public NamedTranslationRule<FunctionCallRule> {
 public:
@@ -691,24 +722,6 @@ public:
   void
   handleTimeMeasurement(const CallExpr *CE,
                         const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-// Migration rule for SOLVER enums.
-class SOLVEREnumsRule : public NamedTranslationRule<SOLVEREnumsRule> {
-public:
-  SOLVEREnumsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-};
-
-class SOLVERFunctionCallRule
-    : public NamedTranslationRule<SOLVERFunctionCallRule> {
-public:
-  SOLVERFunctionCallRule() {
-    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
-  }
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
 /// Migration rule for stream API calls

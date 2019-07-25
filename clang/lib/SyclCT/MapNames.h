@@ -21,9 +21,103 @@ const std::string StringLiteralUnsupported{"UNSUPPORTED"};
 class MapNames {
 public:
   struct SOLVERFuncReplInfo {
+    static SOLVERFuncReplInfo migrateBuffer(std::vector<int> bi,
+                                            std::vector<std::string> bt,
+                                            std::string s) {
+      MapNames::SOLVERFuncReplInfo repl;
+      repl.BufferIndexInfo = bi;
+      repl.BufferTypeInfo = bt;
+      repl.ReplName = s;
+      return repl;
+    };
+
+    static SOLVERFuncReplInfo
+    migrateBufferAndRedundant(std::vector<int> bi, std::vector<std::string> bt,
+                              std::vector<int> ri, std::string s) {
+      MapNames::SOLVERFuncReplInfo repl;
+      repl.BufferIndexInfo = bi;
+      repl.BufferTypeInfo = bt;
+      repl.RedundantIndexInfo = ri;
+      repl.ReplName = s;
+      return repl;
+    };
+
+    static SOLVERFuncReplInfo
+    migrateBufferAndMissed(std::vector<int> bi, std::vector<std::string> bt,
+                           std::vector<int> mafl, std::vector<int> mai,
+                           std::vector<bool> mab, std::vector<std::string> mat,
+                           std::vector<std::string> man, std::string s) {
+      MapNames::SOLVERFuncReplInfo repl;
+      repl.BufferIndexInfo = bi;
+      repl.BufferTypeInfo = bt;
+      repl.MissedArgumentFinalLocation = mafl;
+      repl.MissedArgumentInsertBefore = mai;
+      repl.MissedArgumentIsBuffer = mab;
+      repl.MissedArgumentType = mat;
+      repl.MissedArgumentName = man;
+      repl.ReplName = s;
+      return repl;
+    };
+
+    static SOLVERFuncReplInfo
+      migrateBufferAndCast(std::vector<int> bi, std::vector<std::string> bt,
+        std::vector<int> ci, std::vector<std::string> ct, std::string s) {
+      MapNames::SOLVERFuncReplInfo repl;
+      repl.BufferIndexInfo = bi;
+      repl.BufferTypeInfo = bt;
+      repl.CastIndexInfo = ci;
+      repl.CastTypeInfo = ct;
+      repl.ReplName = s;
+      return repl;
+    };
+
+    static SOLVERFuncReplInfo migrateBufferRedundantAndCast(
+        std::vector<int> bi, std::vector<std::string> bt, std::vector<int> ri,
+        std::vector<int> ci, std::vector<std::string> ct, std::string s) {
+      MapNames::SOLVERFuncReplInfo repl;
+      repl.BufferIndexInfo = bi;
+      repl.BufferTypeInfo = bt;
+      repl.RedundantIndexInfo = ri;
+      repl.CastIndexInfo = ci;
+      repl.CastTypeInfo = ct;
+      repl.ReplName = s;
+      return repl;
+    };
+
+    static SOLVERFuncReplInfo migrateBufferMissedAndCast(
+        std::vector<int> bi, std::vector<std::string> bt, std::vector<int> mafl,
+        std::vector<int> mai, std::vector<bool> mab,
+        std::vector<std::string> mat, std::vector<std::string> man,
+        std::vector<int> ci, std::vector<std::string> ct, std::string s) {
+      MapNames::SOLVERFuncReplInfo repl;
+      repl.BufferIndexInfo = bi;
+      repl.BufferTypeInfo = bt;
+      repl.MissedArgumentFinalLocation = mafl;
+      repl.MissedArgumentInsertBefore = mai;
+      repl.MissedArgumentIsBuffer = mab;
+      repl.MissedArgumentType = mat;
+      repl.MissedArgumentName = man;
+      repl.CastIndexInfo = ci;
+      repl.CastTypeInfo = ct;
+      repl.ReplName = s;
+      return repl;
+    };
+
     std::vector<int> BufferIndexInfo;
-    std::vector<int> PointerIndexInfo;
     std::vector<std::string> BufferTypeInfo;
+
+    // will be replaced by empty string""
+    std::vector<int> RedundantIndexInfo;
+
+    std::vector<int> CastIndexInfo;
+    std::vector<std::string> CastTypeInfo;
+
+    std::vector<int> MissedArgumentFinalLocation;
+    std::vector<int> MissedArgumentInsertBefore; //index of original argument
+    std::vector<bool> MissedArgumentIsBuffer;
+    std::vector<std::string> MissedArgumentType;
+    std::vector<std::string> MissedArgumentName;
+
     std::string ReplName;
   };
 
