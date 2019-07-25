@@ -70,7 +70,7 @@ static void func()
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -88,7 +88,7 @@ static void func()
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -100,7 +100,7 @@ static void func()
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -128,7 +128,7 @@ static void func()
     // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
     // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
     // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
-    // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+    // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
     // CHECK-NEXT:           kernelFunc();
     // CHECK-NEXT:         });
     // CHECK-NEXT:     });
@@ -140,7 +140,7 @@ static void func()
     // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
     // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
     // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
-    // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+    // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
     // CHECK-NEXT:           kernelFunc();
     // CHECK-NEXT:         });
     // CHECK-NEXT:     });
@@ -178,7 +178,7 @@ static void func()
       // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
       // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
       // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
-      // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+      // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
       // CHECK-NEXT:           kernelFunc();
       // CHECK-NEXT:         });
       // CHECK-NEXT:     });
@@ -189,7 +189,7 @@ static void func()
       // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
       // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
       // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
-      // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+      // CHECK-NEXT:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
       // CHECK-NEXT:           kernelFunc();
       // CHECK-NEXT:         });
       // CHECK-NEXT:     });

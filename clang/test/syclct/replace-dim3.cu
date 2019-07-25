@@ -165,7 +165,7 @@ int main() {
   // CHECK:     [&](cl::sycl::handler &cgh) {
   // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
+  // CHECK:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK:           kernel(d3_6[0]);
   // CHECK:         });
   // CHECK:     });
@@ -176,7 +176,7 @@ int main() {
   // CHECK:     [&](cl::sycl::handler &cgh) {
   // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(NUM, 1, 1) * cl::sycl::range<3>(NUM, 1, 1)), cl::sycl::range<3>(NUM, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
+  // CHECK:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK:           kernel(d3_6[0]);
   // CHECK:         });
   // CHECK:     });
@@ -221,23 +221,23 @@ void test() {
     for (int32_t i = 0; i < 3; ++i)
     {
         // CHECK: {
-        // CHECK: unsigned char x_ct = h_dst[i].x();
-        // CHECK: fwrite(&x_ct, sizeof(char), 1, dumpfile);
-        // CHECK: h_dst[i].x() = x_ct;
+        // CHECK: unsigned char x_ct1 = h_dst[i].x();
+        // CHECK: fwrite(&x_ct1, sizeof(char), 1, dumpfile);
+        // CHECK: h_dst[i].x() = x_ct1;
         // CHECK: }
         fwrite(&h_dst[i].x, sizeof(char), 1, dumpfile);
 
         // CHECK: {
-        // CHECK: unsigned char y_ct = h_dst[i].y();
-        // CHECK: fwrite(&y_ct, sizeof(char), 1, dumpfile);
-        // CHECK: h_dst[i].y() = y_ct;
+        // CHECK: unsigned char y_ct1 = h_dst[i].y();
+        // CHECK: fwrite(&y_ct1, sizeof(char), 1, dumpfile);
+        // CHECK: h_dst[i].y() = y_ct1;
         // CHECK: }
         fwrite(&h_dst[i].y, sizeof(char), 1, dumpfile);
 
         // CHECK: {
-        // CHECK: unsigned char z_ct = h_dst[i].z();
-        // CHECK: fwrite(&z_ct, sizeof(char), 1, dumpfile);
-        // CHECK: h_dst[i].z() = z_ct;
+        // CHECK: unsigned char z_ct1 = h_dst[i].z();
+        // CHECK: fwrite(&z_ct1, sizeof(char), 1, dumpfile);
+        // CHECK: h_dst[i].z() = z_ct1;
         // CHECK: }
         fwrite(&h_dst[i].z, sizeof(char), 1, dumpfile);
     }
@@ -246,9 +246,9 @@ void test() {
     uchar4 data;
 
     // CHECK: {
-    // CHECK: unsigned char x_ct = data.x();
-    // CHECK: *(&x_ct) = 'a';
-    // CHECK: data.x() = x_ct;
+    // CHECK: unsigned char x_ct1 = data.x();
+    // CHECK: *(&x_ct1) = 'a';
+    // CHECK: data.x() = x_ct1;
     // CHECK: }
     *(&data.x) = 'a';
 }

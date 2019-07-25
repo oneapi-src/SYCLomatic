@@ -5,7 +5,7 @@
 //CHECK-NEXT: /*
 //CHECK-NEXT: SYCLCT1015:0: Please adjust the code manually.
 //CHECK-NEXT: */
-//CHECK-NEXT: void hello(cl::sycl::stream [[STREAM:stream_[a-f0-9]+]]) { [[STREAM]] << "TODO - output needs update" << cl::sycl::endl; }
+//CHECK-NEXT: void hello(cl::sycl::stream [[STREAM:stream_ct1]]) { [[STREAM]] << "TODO - output needs update" << cl::sycl::endl; }
 #ifdef __CUDA_ARCH__
 __global__ void hello() { printf("intel"); }
 #else

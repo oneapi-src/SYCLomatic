@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1)), cl::sycl::range<3>(threads, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1)), cl::sycl::range<3>(threads, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1)), cl::sycl::range<3>(threads, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     }).wait();
@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1)), cl::sycl::range<3>(threads, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     }).wait();
@@ -150,7 +150,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1)), cl::sycl::range<3>(threads, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     }).wait();
@@ -193,7 +193,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1)), cl::sycl::range<3>(threads, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -215,7 +215,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1)), cl::sycl::range<3>(threads, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_{{[a-f0-9]+}}) {
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });

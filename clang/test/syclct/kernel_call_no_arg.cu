@@ -9,7 +9,7 @@
 
 __device__ float out[NUM_ELEMENTS];
 
-// CHECK: void kernel1(cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]], syclct::syclct_accessor<float, syclct::device, 1> out) {
+// CHECK: void kernel1(cl::sycl::nd_item<3> [[ITEM:item_ct1]], syclct::syclct_accessor<float, syclct::device, 1> out) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(0)] = [[ITEM]].get_local_id(0);
 // CHECK: }
 __global__ void kernel1() {
@@ -32,11 +32,11 @@ int main() {
   // CHECK: {
   // CHECK:   syclct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto out_acc_[[HASH:[a-f0-9]+]] = out.get_access(cgh);
+  // CHECK:       auto out_acc_ct1 = out.get_access(cgh);
   // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
-  // CHECK:           kernel1([[ITEM]], syclct::syclct_accessor<float, syclct::device, 1>(out_acc_[[HASH]]));
+  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
+  // CHECK:           kernel1([[ITEM]], syclct::syclct_accessor<float, syclct::device, 1>(out_acc_ct1));
   // CHECK:         });
   // CHECK:     });
   // CHECK: }
@@ -47,7 +47,7 @@ int main() {
   // CHECK:     [&](cl::sycl::handler &cgh) {
   // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK:           kernel2();
   // CHECK:         });
   // CHECK:     });

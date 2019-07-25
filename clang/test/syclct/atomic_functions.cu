@@ -10,7 +10,7 @@
 
 template <typename T>
 __global__ void test(T *data) {
-  // CHECK: T tid = item_{{[a-f0-9]+}}.get_local_id(0);
+  // CHECK: T tid = item_ct1.get_local_id(0);
   T tid = threadIdx.x;
 
   // CHECK: syclct::atomic_fetch_add(&data[0], tid);
@@ -112,7 +112,7 @@ void InvokeKernel() {
   // CHECK:       auto dev_ptr_acc = dev_ptr_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK:       cgh.parallel_for<syclct_kernel_name<class test_{{[a-f0-9]+}}, T>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(k_threads_per_block, 1, 1)), cl::sycl::range<3>(k_threads_per_block, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK:           T *dev_ptr = (T*)(&dev_ptr_acc[0] + dev_ptr_offset);
   // CHECK:           test<T>(dev_ptr, [[ITEM]]);
   // CHECK:         });

@@ -17,7 +17,7 @@ int main() {
   // CHECK-NEXT:        auto i_array_acc = i_array_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(16, 1, 1)), cl::sycl::range<3>(16, 1, 1)),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK-NEXT:            unsigned int *i_array = (unsigned int*)(&i_array_acc[0] + i_array_offset);
   // CHECK-NEXT:            simple_kernel(i_array, [[ITEM]]);
   // CHECK-NEXT:          });

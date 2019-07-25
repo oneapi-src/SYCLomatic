@@ -244,11 +244,11 @@ public:
     return CudaPath;
   }
   static const std::string &getItemName() {
-    const static std::string ItemName = "item_" + getInRootHash();
+    const static std::string ItemName = "item" + getCTFixedSuffix();
     return ItemName;
   }
   static const std::string &getStreamName() {
-    const static std::string StreamName = "stream_" + getInRootHash();
+    const static std::string StreamName = "stream" + getCTFixedSuffix();
     return StreamName;
   }
   static const std::string &getInRootHash() {
@@ -631,12 +631,10 @@ private:
     }
   }
   std::string getAccessorName() {
-    return buildString(getArgName(), "_acc_",
-                       SyclctGlobalInfo::getInRootHash());
+    return buildString(getArgName(), "_acc" + getCTFixedSuffix());
   }
   std::string getRangeName() {
-    return buildString(getArgName(), "_range_",
-                       SyclctGlobalInfo::getInRootHash());
+    return buildString(getArgName(), "_range" + getCTFixedSuffix());
   }
   std::string getArgName() {
     if (isExtern())

@@ -1608,7 +1608,7 @@ void VectorTypeMemberAccessRule::run(const MatchFinder::MatchResult &Result) {
 
       std::string VecField = MExprStr + "()";
       std::string VarType = ME->getType().getAsString();
-      std::string VarName = ME->getMemberNameInfo().getAsString() + "_ct";
+      std::string VarName = ME->getMemberNameInfo().getAsString() + getCTFixedSuffix();
 
       std::string LocalVarDecl =
           VarType + " " + VarName + " = " + VecField + ";" + getNL();
