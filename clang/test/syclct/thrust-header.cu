@@ -7,9 +7,9 @@
 // CHECK-NEXT: #include <algorithm>
 #include <cstdio>
 #include <algorithm>
-// CHECK: #include <dpstd/containers>
-// CHECK-NEXT: #include <dpstd/algorithm>
+// CHECK: #include <dpstd/algorithm>
 // CHECK-NEXT: #include <dpstd/execution>
+// CHECK-NEXT: #include <syclct/syclct_dpstd_utils.hpp>
 #include <cuda_runtime.h>
 #include <thrust/copy.h>
 #include <thrust/sequence.h>
@@ -24,17 +24,17 @@ int main() {
   cudaMalloc(&mapspkeyD, numsH*sizeof(int));
   cudaMalloc(&mapspvalD, numsH*sizeof(int));
 
-// CHECK:  dpstd::device_ptr<int> mapsp1T(mapsp1D);
+// CHECK:  syclct::device_ptr<int> mapsp1T(mapsp1D);
   thrust::device_ptr<int> mapsp1T(mapsp1D);
-// CHECK:  dpstd::device_ptr<int> mapspkeyT(mapspkeyD);
+// CHECK:  syclct::device_ptr<int> mapspkeyT(mapspkeyD);
   thrust::device_ptr<int> mapspkeyT(mapspkeyD);
-// CHECK:  dpstd::device_ptr<int> mapspvalT(mapspvalD);
+// CHECK:  syclct::device_ptr<int> mapspvalT(mapspvalD);
   thrust::device_ptr<int> mapspvalT(mapspvalD);
 
-// CHECK:  std::copy(dpstd::execution::sycl, mapsp1T, mapsp1T + numsH, mapspkeyT);
+// CHECK:  std::copy(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(dpstd::execution::sycl), mapsp1T, mapsp1T + numsH, mapspkeyT);
   thrust::copy(mapsp1T, mapsp1T + numsH, mapspkeyT);
-// CHECK:  std::sequence(dpstd::execution::sycl, mapspvalT, mapspvalT + numsH);
+// CHECK:  syclct::sequence(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(dpstd::execution::sycl), mapspvalT, mapspvalT + numsH);
   thrust::sequence(mapspvalT, mapspvalT + numsH);
-// CHECK:  std::stable_sort_by_key(dpstd::execution::sycl, mapspkeyT, mapspkeyT + numsH, mapspvalT);
+// CHECK:  syclct::stable_sort_by_key(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(dpstd::execution::sycl), mapspkeyT, mapspkeyT + numsH, mapspvalT);
   thrust::stable_sort_by_key(mapspkeyT, mapspkeyT + numsH, mapspvalT);
 }

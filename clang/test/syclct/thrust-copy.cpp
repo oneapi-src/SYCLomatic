@@ -5,9 +5,10 @@
 // CHECK-NEXT: #include <syclct/syclct.hpp>
 // CHECK-NEXT: #include <iostream>
 // CHECK-NEXT: #include <iterator>
-// CHECK-NEXT: #include <dpstd/containers>
 // CHECK-NEXT: #include <dpstd/algorithm>
 // CHECK-NEXT: #include <dpstd/execution>
+// CHECK-NEXT: #include <syclct/syclct_dpstd_utils.hpp>
+
 #include <iostream>
 #include <iterator>
 #include <thrust/device_vector.h>
@@ -29,9 +30,9 @@ int main(void) {
   thrust::device_vector<char> input(data, data + N);
 
   std::cout << "input data:" << std::endl;
-// CHECK:  std::copy(dpstd::execution::sycl, input.begin(), input.end(), std::ostream_iterator<char>(std::cout, ""));
+// CHECK:  std::copy(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(dpstd::execution::sycl), input.begin(), input.end(), std::ostream_iterator<char>(std::cout, ""));
   thrust::copy(input.begin(), input.end(), std::ostream_iterator<char>(std::cout, ""));
-// CHECK:  std::copy_n(dpstd::execution::sycl, input.begin(), N, std::ostream_iterator<char>(std::cout, ""));
+// CHECK:  std::copy_n(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(dpstd::execution::sycl), input.begin(), N, std::ostream_iterator<char>(std::cout, ""));
   thrust::copy_n(input.begin(), N, std::ostream_iterator<char>(std::cout, ""));
 // CHECK:  copy<char>(dst_data, const_cast<char *>(data), N);
   copy<char>(dst_data, const_cast<char *>(data), N);

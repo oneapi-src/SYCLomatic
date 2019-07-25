@@ -366,13 +366,13 @@ void IncludesCallbacks::InclusionDirective(
   // For multi thrust header files, only insert once for PSTL mapping header.
   if (IsAngled && (FileName.find("thrust/") != std::string::npos)) {
     if (!ThrustHeaderInserted) {
-      std::string Replacement = std::string("<dpstd/containers>") + getNL() +
-                                "#include <dpstd/algorithm>" + getNL() +
-                                "#include <dpstd/execution>";
+      std::string Replacement = std::string("<dpstd/algorithm>") + getNL() +
+                                "#include <dpstd/execution>" + getNL() +
+                                "#include <syclct/syclct_dpstd_utils.hpp>";
       if (!SyclHeaderInserted) {
         Replacement = std::string("<CL/sycl.hpp>") + getNL() +
-                      "#include <syclct/syclct.hpp>" + getNL() + "#include " +
-                      Replacement;
+                      "#include <syclct/syclct.hpp>" + getNL() +
+                      "#include " + Replacement;
         SyclHeaderInserted = true;
       }
       ThrustHeaderInserted = true;
@@ -900,7 +900,13 @@ void ThrustFunctionRule::registerMatcher(MatchFinder &MF) {
                 this);
 }
 
+
 void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
+  auto UniqueName = [](const Stmt *S) {
+    auto &SM = SyclctGlobalInfo::getSourceManager();
+    SourceLocation Loc = S->getBeginLoc();
+    return getHashAsString(Loc.printToString(SM)).substr(0, 6);
+  };
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall");
   if (!CE) {
     return;
@@ -914,6 +920,14 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
   assert(CE->getNumArgs() > 0);
   auto ExtraParam = ReplInfo->second.ExtraParam;
   if (!ExtraParam.empty()) {
+    // This is a temporary fix until, the DPC++ compiler and the DPC++ library
+    // support creating a SYCL execution policy without creating a unique
+    // one for every use
+    if (ExtraParam == "dpstd::execution::sycl") {
+      std::string Name = UniqueName(CE);
+      ExtraParam = "dpstd::execution::make_sycl_policy<class Policy_" +
+          UniqueName(CE) + ">(dpstd::execution::sycl)";
+    }
     emplaceTransformation(
         new InsertBeforeStmt(CE->getArg(0), ExtraParam + ", "));
   }
