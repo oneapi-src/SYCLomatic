@@ -22,14 +22,10 @@ int main(int argc, char **argv) {
 // CHECK-NEXT:int integrated = deviceProp.get_integrated();
   int integrated = deviceProp.integrated;
 
-  // CHECK:  /*
-  // CHECK-NEXT:  SYCLCT1022:{{[0-9]+}}: DPC++ doesn't provide standard API to get warpSize on GPU devices. Consider to re-implement the code which depends on this field
-  // CHECK-NEXT:  */
+  // CHECK: int warpSize = deviceProp.get_warp_size();
   int warpSize = deviceProp.warpSize;
 
-  // CHECK:  /*
-  // CHECK-NEXT:  SYCLCT1022:{{[0-9]+}}: DPC++ doesn't provide standard API to get maxThreadsPerMultiProcessor on GPU devices. Consider to re-implement the code which depends on this field
-  // CHECK-NEXT:  */
+  // CHECK: int maxThreadsPerMultiProcessor = deviceProp.get_max_work_items_per_compute_unit();
   int maxThreadsPerMultiProcessor = deviceProp.maxThreadsPerMultiProcessor;
 
 // CHECK:/*
@@ -67,9 +63,10 @@ int main(int argc, char **argv) {
   // CHECK: count = deviceProp.get_max_work_group_size();
   count = deviceProp.maxThreadsPerBlock;
 
-  // CHECK: /*
-  // CHECK-NEXT:SYCLCT1022:{{[0-9]+}}: DPC++ doesn't provide standard API to get maxGridSize on GPU devices. Consider to re-implement the code which depends on this field
-  // CHECK-NEXT:*/
+  // CHECK:  /*
+  // CHECK-NEXT:  SYCLCT1022:{{[0-9]+}}: There is no exact match between maxGridSize and sizeof(size_t). Please verify the correctness.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  int *maxGridSize = deviceProp.get_max_grid_size();
   int *maxGridSize = deviceProp.maxGridSize;
 
   // CHECK:/*
@@ -78,13 +75,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:size_t share_mem_size = deviceProp.get_local_mem_size();
   size_t share_mem_size = deviceProp.sharedMemPerBlock;
 
-  // CHECK:/*
-  // CHECK-NEXT: SYCLCT1022:{{[0-9]+}}: DPC++ doesn't provide standard API to get maxThreadsPerMultiProcessor on GPU devices. Consider to re-implement the code which depends on this field
-  // CHECK-NEXT: */
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: SYCLCT1022:{{[0-9]+}}: DPC++ doesn't provide standard API to get warpSize on GPU devices. Consider to re-implement the code which depends on this field
-  // CHECK-NEXT:  */
-  // CHECK-NEXT: cl::sycl::range<3> grid(deviceProp.get_max_compute_units() * (deviceProp.maxThreadsPerMultiProcessor / deviceProp.warpSize), 1, 1);
+  // CHECK: cl::sycl::range<3> grid(deviceProp.get_max_compute_units() * (deviceProp.get_max_work_items_per_compute_unit() / deviceProp.get_warp_size()), 1, 1);
   dim3 grid(deviceProp.multiProcessorCount * (deviceProp.maxThreadsPerMultiProcessor / deviceProp.warpSize));
 
 // CHECK:/*

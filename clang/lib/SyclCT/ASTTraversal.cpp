@@ -2200,16 +2200,8 @@ void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
   auto MemberName = ME->getMemberNameInfo().getAsString();
   if (MemberName == "sharedMemPerBlock") {
     report(ME->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE);
-  } else if (MemberName == "warpSize") {
-    report(ME->getBeginLoc(), Comments::NOT_SUPPORT_DEVICE_PROP, "warpSize");
-    return;
-  } else if (MemberName == "maxThreadsPerMultiProcessor") {
-    report(ME->getBeginLoc(), Comments::NOT_SUPPORT_DEVICE_PROP,
-           "maxThreadsPerMultiProcessor");
-    return;
-  } else if (MemberName == "maxGridSize") {
-    report(ME->getBeginLoc(), Comments::NOT_SUPPORT_DEVICE_PROP, "maxGridSize");
-    return;
+  }else if (MemberName == "maxGridSize") {
+    report(ME->getBeginLoc(), Diagnostics::MAX_GRID_SIZE);
   }
 
   auto Search = PropNamesMap.find(MemberName);
@@ -3499,12 +3491,6 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                                     ->getNameInfo()
                                     .getName()
                                     .getAsString();
-
-    if (AttributeName == "cudaDevAttrComputeCapabilityMajor") {
-      report(CE->getBeginLoc(), Comments::NOT_SUPPORT_DEVICE_PROP,
-             "cudaDevAttrComputeCapabilityMajor");
-      return;
-    }
 
     auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
     if (Search == EnumConstantRule::EnumNamesMap.end()) {
