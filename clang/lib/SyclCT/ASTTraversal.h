@@ -514,10 +514,6 @@ public:
 public:
   void renameMemberField(const MemberExpr *ME);
   static const std::map<std::string, std::string> MemberNamesMap;
-  void getScopeInsertLocation(
-      const Expr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
-      const SourceLocation &FuncNameBegin, const SourceLocation &FuncCallEnd,
-      SourceLocation &StmtBegin, SourceLocation &StmtEndAfterSemi);
 };
 
 /// Migration rule for vector type operator
@@ -639,11 +635,6 @@ public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
-  void getScopeInsertLocation(
-      const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
-      const SourceLocation &FuncNameBegin, const SourceLocation &FuncCallEnd,
-      SourceLocation &StmtBegin, SourceLocation &StmtEndAfterSemi);
-
   std::string getBufferNameAndDeclStr(const Expr *Arg, const ASTContext &AC,
                                       const std::string &TypeAsStr,
                                       SourceLocation SL,
@@ -659,15 +650,15 @@ public:
   std::vector<std::string> getParamsAsStrs(const CallExpr *CE,
                                            const ASTContext &Context);
   const clang::VarDecl *getAncestralVarDecl(const clang::CallExpr *CE);
-  void processParamIntCastToBLASEnum(
-      const Expr *E, const CStyleCastExpr *CSCE, const ASTContext &Context,
+  void processParamIntCastToBLASEnum(const Expr *E, const CStyleCastExpr *CSCE,
+                                     const ASTContext &Context,
                                      const int DistinctionID,
                                      const std::string IndentStr,
                                      const std::vector<int> &OperationIndexInfo,
                                      const int FillModeIndexInfo,
                                      std::string &PrefixInsertStr);
   void processTrmmCall(const CallExpr *CE, std::string &PrefixInsertStr,
-                   const std::string IndentStr);
+                       const std::string IndentStr);
   void processTrmmParams(const CallExpr *CE, std::string &PrefixInsertStr,
                          std::string &BufferName, std::string &BufferDecl,
                          int &IndexTemp, int DistinctionID,

@@ -463,3 +463,50 @@ findOutermostStmtInTheSameBlock(const clang::Stmt *S) {
 
   return std::make_pair(nullptr, true);
 }
+
+SourceRange getScopeInsertRange(const MemberExpr *ME) {
+  return getScopeInsertRange(ME, ME->getBeginLoc(), ME->getEndLoc());
+}
+
+SourceRange getScopeInsertRange(const Expr *E,
+                                const SourceLocation &FuncNameBegin,
+                                const SourceLocation &FuncCallEnd) {
+  SourceLocation StmtBegin, StmtEndAfterSemi;
+  auto &Context = syclct::SyclctGlobalInfo::getContext();
+  auto &SM = syclct::SyclctGlobalInfo::getSourceManager();
+  auto ParentNode = Context.getParents(*E);
+  ast_type_traits::DynTypedNode LastNode;
+  SourceLocation StmtEnd;
+  if (ParentNode.empty()) {
+    StmtBegin = FuncNameBegin;
+    StmtEnd = FuncCallEnd;
+  } else if (ParentNode[0].get<Expr>() == nullptr &&
+             ParentNode[0].get<Decl>() == nullptr) {
+    StmtBegin = FuncNameBegin;
+    StmtEnd = FuncCallEnd;
+  } else {
+    LastNode = ParentNode[0];
+    ParentNode = Context.getParents(LastNode);
+    while (!ParentNode.empty()) {
+      ParentNode = Context.getParents(LastNode);
+      const Expr *EX = ParentNode[0].get<Expr>();
+      const Decl *DE = ParentNode[0].get<Decl>();
+      if (EX == nullptr && DE == nullptr) {
+        break;
+      }
+      LastNode = ParentNode[0];
+    }
+    StmtBegin = LastNode.getSourceRange().getBegin();
+    StmtEnd = LastNode.getSourceRange().getEnd();
+    if (StmtBegin.isMacroID())
+      StmtBegin = SM.getExpansionLoc(StmtBegin);
+    if (StmtEnd.isMacroID())
+      StmtEnd = SM.getExpansionLoc(StmtEnd);
+  }
+
+  Optional<Token> TokSharedPtr;
+  TokSharedPtr = Lexer::findNextToken(StmtEnd, SM, LangOptions());
+  Token TokSemi = TokSharedPtr.getValue();
+  StmtEndAfterSemi = TokSemi.getEndLoc();
+  return {StmtBegin, StmtEndAfterSemi};
+}

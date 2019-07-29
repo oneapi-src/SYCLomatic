@@ -32,12 +32,14 @@ class StringRef;
 namespace clang {
 class SourceManager;
 class SourceLocation;
+class SourceRange;
 class Stmt;
 class CompoundStmt;
 class ASTContext;
 class ValueDecl;
 class DeclRefExpr;
 class Expr;
+class MemberExpr;
 } // namespace clang
 
 // classes for keeping track of Stmt->String mappings
@@ -96,9 +98,7 @@ template <typename T> std::string getHashAsString(const T &Val) {
   return Stream.str();
 }
 
-inline std::string getCTFixedSuffix() {
-  return "_ct1";
-}
+inline std::string getCTFixedSuffix() { return "_ct1"; }
 
 template <typename T> const T *getDecl(const clang::Stmt *E);
 
@@ -145,4 +145,9 @@ const clang::Stmt *getParentStmt(const clang::Stmt *S);
 bool IsSingleLineStatement(const clang::Stmt *S);
 const std::pair<const clang::Stmt *, bool>
 findOutermostStmtInTheSameBlock(const clang::Stmt *S);
+clang::SourceRange getScopeInsertRange(const clang::MemberExpr *ME);
+clang::SourceRange
+getScopeInsertRange(const clang::Expr *CE,
+                    const clang::SourceLocation &FuncNameBegin,
+                    const clang::SourceLocation &FuncCallEnd);
 #endif // SYCLCT_UTILITY_H

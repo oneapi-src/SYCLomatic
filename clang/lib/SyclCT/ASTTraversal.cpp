@@ -1539,52 +1539,6 @@ void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
         new RenameFieldInMemberExpr(ME, std::move(MemberName)));
 }
 
-//  Find the two outermost source locations (i.e FuncNameBegin and FuncCallEnd)
-//  to insert left brace and right brace in the same block.
-//  TODO: its function is similar to findOutermostStmtInTheSameBlock() in
-//  Utiliy.cpp,
-//  So, it needs be merged with findOutermostStmtInTheSameBlock().
-void VectorTypeMemberAccessRule::getScopeInsertLocation(
-    const Expr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
-    const SourceLocation &FuncNameBegin, const SourceLocation &FuncCallEnd,
-    SourceLocation &StmtBegin, SourceLocation &StmtEndAfterSemi) {
-  auto ParentNode = (Result.Context)->getParents(*CE);
-  ast_type_traits::DynTypedNode LastNode;
-  SourceLocation StmtEnd;
-  if (ParentNode.empty()) {
-    StmtBegin = FuncNameBegin;
-    StmtEnd = FuncCallEnd;
-  } else if (ParentNode[0].get<Expr>() == nullptr &&
-             ParentNode[0].get<Decl>() == nullptr) {
-    StmtBegin = FuncNameBegin;
-    StmtEnd = FuncCallEnd;
-  } else {
-    LastNode = ParentNode[0];
-    ParentNode = (Result.Context)->getParents(LastNode);
-    while (!ParentNode.empty()) {
-      ParentNode = (Result.Context)->getParents(LastNode);
-      const Expr *EX = ParentNode[0].get<Expr>();
-      const Decl *DE = ParentNode[0].get<Decl>();
-      if (EX == nullptr && DE == nullptr) {
-        break;
-      }
-      LastNode = ParentNode[0];
-    }
-    StmtBegin = LastNode.getSourceRange().getBegin();
-    StmtEnd = LastNode.getSourceRange().getEnd();
-    if (StmtBegin.isMacroID())
-      StmtBegin = (Result.SourceManager)->getExpansionLoc(StmtBegin);
-    if (StmtEnd.isMacroID())
-      StmtEnd = (Result.SourceManager)->getExpansionLoc(StmtEnd);
-  }
-
-  Optional<Token> TokSharedPtr;
-  TokSharedPtr =
-      Lexer::findNextToken(StmtEnd, *(Result.SourceManager), LangOptions());
-  Token TokSemi = TokSharedPtr.getValue();
-  StmtEndAfterSemi = TokSemi.getEndLoc();
-}
-
 void VectorTypeMemberAccessRule::run(const MatchFinder::MatchResult &Result) {
   // xxx = int2.x => xxx = static_cast<int>(int2.x())
   if (const MemberExpr *ME =
@@ -1593,8 +1547,8 @@ void VectorTypeMemberAccessRule::run(const MatchFinder::MatchResult &Result) {
     if (Parents.size() == 0) {
       return;
     }
-    auto *BO = Parents[0].get<clang::UnaryOperator>();
-    if (BO && BO->getOpcode() == clang::UO_AddrOf) {
+    auto *UO = Parents[0].get<clang::UnaryOperator>();
+    if (UO && UO->getOpcode() == clang::UO_AddrOf) {
       // As access to vector fields’ address is not supported in SYCL spec,
       // Implementation here is by defining a local variable to migrate
       // vector fields’ address.
@@ -1630,9 +1584,8 @@ void VectorTypeMemberAccessRule::run(const MatchFinder::MatchResult &Result) {
           VarType + " " + VarName + " = " + VecField + ";" + getNL();
       std::string LocalVarDeclRef = VecField + " = " + VarName + ";";
 
-      SourceLocation StmtBegin, StmtEndAfterSemi;
-      getScopeInsertLocation(ME, Result, ME->getBeginLoc(), ME->getEndLoc(),
-                             StmtBegin, StmtEndAfterSemi);
+      auto SR = getScopeInsertRange(ME);
+      SourceLocation StmtBegin = SR.getBegin(), StmtEndAfterSemi = SR.getEnd();
 
       std::string IndentStr = getIndent(StmtBegin, *SM).str();
       std::string PrefixInsertStr = std::string("{") + getNL();
@@ -2509,12 +2462,10 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   SourceLocation FuncNameEnd = Tok.getEndLoc();
   auto FuncNameLength =
       SM->getCharacterData(FuncNameEnd) - SM->getCharacterData(FuncNameBegin);
-  SourceLocation StmtBegin, StmtEndAfterSemi;
-  getScopeInsertLocation(CE, Result, FuncNameBegin, FuncCallEnd, StmtBegin,
-                         StmtEndAfterSemi);
+  auto SR = getScopeInsertRange(CE, FuncNameBegin, FuncCallEnd);
+  SourceLocation StmtBegin = SR.getBegin(), StmtEndAfterSemi = SR.getEnd();
   std::string IndentStr = getIndent(StmtBegin, *SM).str();
-  std::string PrefixInsertStr;
-  std::string SuffixInsertStr;
+  std::string PrefixInsertStr, SuffixInsertStr;
   // TODO: Need to process the situation when scalar pointers (alpha, beta)
   // are device pointers.
   if (MapNames::BLASFuncReplInfoMap.find(FuncName) !=
@@ -3114,49 +3065,6 @@ bool BLASFunctionCallRule::isReplIndex(int Input,
   return false;
 }
 
-// TODO: merge this function into findOutermostStmtInTheSameBlock in Utility.cpp
-// TODO: 1. stmt in the condition of if/while/for 2.stmt in the macro
-void BLASFunctionCallRule::getScopeInsertLocation(
-    const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
-    const SourceLocation &FuncNameBegin, const SourceLocation &FuncCallEnd,
-    SourceLocation &StmtBegin, SourceLocation &StmtEndAfterSemi) {
-  auto ParentNode = (Result.Context)->getParents(*CE);
-  ast_type_traits::DynTypedNode LastNode;
-  SourceLocation StmtEnd;
-  if (ParentNode.empty()) {
-    StmtBegin = FuncNameBegin;
-    StmtEnd = FuncCallEnd;
-  } else if (ParentNode[0].get<Expr>() == nullptr &&
-             ParentNode[0].get<Decl>() == nullptr) {
-    StmtBegin = FuncNameBegin;
-    StmtEnd = FuncCallEnd;
-  } else {
-    LastNode = ParentNode[0];
-    ParentNode = (Result.Context)->getParents(LastNode);
-    while (!ParentNode.empty()) {
-      ParentNode = (Result.Context)->getParents(LastNode);
-      const Expr *EX = ParentNode[0].get<Expr>();
-      const Decl *DE = ParentNode[0].get<Decl>();
-      if (EX == nullptr && DE == nullptr) {
-        break;
-      }
-      LastNode = ParentNode[0];
-    }
-    StmtBegin = LastNode.getSourceRange().getBegin();
-    StmtEnd = LastNode.getSourceRange().getEnd();
-    if (StmtBegin.isMacroID())
-      StmtBegin = (Result.SourceManager)->getExpansionLoc(StmtBegin);
-    if (StmtEnd.isMacroID())
-      StmtEnd = (Result.SourceManager)->getExpansionLoc(StmtEnd);
-  }
-
-  Optional<Token> TokSharedPtr;
-  TokSharedPtr =
-      Lexer::findNextToken(StmtEnd, *(Result.SourceManager), LangOptions());
-  Token TokSemi = TokSharedPtr.getValue();
-  StmtEndAfterSemi = TokSemi.getEndLoc();
-}
-
 std::string BLASFunctionCallRule::getBufferNameAndDeclStr(
     const Expr *Arg, const ASTContext &AC, const std::string &TypeAsStr,
     SourceLocation SL, std::string &BufferDecl, int DistinctionID) {
@@ -3253,8 +3161,7 @@ void BLASFunctionCallRule::processParamIntCastToBLASEnum(
 
   int IndexTemp = -1;
   if (isReplIndex(DistinctionID, OperationIndexInfo, IndexTemp)) {
-    std::string TransParamName =
-        "transpose_ct" + std::to_string(DistinctionID);
+    std::string TransParamName = "transpose_ct" + std::to_string(DistinctionID);
     PrefixInsertStr = PrefixInsertStr + IndentStr + "auto " + TransParamName +
                       " = " + SubExprStr + ";" + getNL();
     emplaceTransformation(new ReplaceText(
@@ -3285,9 +3192,9 @@ void BLASFunctionCallRule::processTrmmParams(
                     std::to_string(DistinctionID) + " = " +
                     getStmtSpelling(CE->getArg(DistinctionID), Context) + ";" +
                     getNL();
-  BufferName = getBufferNameAndDeclStr(
-      "ptr_ct" + std::to_string(DistinctionID), Context,
-      BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, DistinctionID);
+  BufferName = getBufferNameAndDeclStr("ptr_ct" + std::to_string(DistinctionID),
+                                       Context, BufferTypeInfo[IndexTemp],
+                                       StmtBegin, BufferDecl, DistinctionID);
 }
 
 void BLASFunctionCallRule::processTrmmCall(const CallExpr *CE,
