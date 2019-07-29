@@ -246,9 +246,6 @@ AnalyticsImpl::AnalyticsImpl(const AnalyticsCreateParams& params) :
 
 UserConsent AnalyticsImpl::getUserConsentValue() const
 {
-    //FIXME : In June, ignore the user Consent config file.
-    return UserConsent::pending;
-
     if (m_isipFilePath.empty())
     {
         // unable to find where consent file is located. For example HOME env var is not set
@@ -368,10 +365,6 @@ bool AnalyticsImpl::isEnabled()
         {
             return false;
         }
-    }
-    if (getenv("INTEL_DPCPPCT_INTERNAL_FEEDBACK_DEBUG"))
-    {
-        return true;
     }
     switch (getNetworkStatus())
     {
