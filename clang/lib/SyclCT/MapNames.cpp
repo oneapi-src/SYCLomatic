@@ -426,6 +426,47 @@ const std::map<std::string, MapNames::BLASFuncReplInfo>
         // ...
     };
 
+	const std::map<std::string, MapNames::BLASFuncReplInfo>
+    MapNames::BLASFuncWrapperReplInfoMap{
+        /*Extensions*/
+        {"cublasSgetrfBatched",
+         {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
+          std::vector<int>{}, -1, -1, -1, "syclct::syclct_getrf_batch"}},
+        {"cublasDgetrfBatched",
+         {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
+          std::vector<int>{}, -1, -1, -1, "syclct::syclct_getrf_batch"}},
+        {"cublasCgetrfBatched",
+         {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
+          std::vector<int>{}, -1, -1, -1, "syclct::syclct_getrf_batch"}},
+        {"cublasZgetrfBatched",
+         {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
+          std::vector<int>{}, -1, -1, -1, "syclct::syclct_getrf_batch"}},
+        {"cublasSgetriBatched",
+         {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
+          std::vector<int>{}, -1, -1, -1, "syclct::syclct_getri_batch"}},
+        {"cublasDgetriBatched",
+         {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
+          std::vector<int>{}, -1, -1, -1, "syclct::syclct_getri_batch"}},
+        {"cublasCgetriBatched",
+         {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
+          std::vector<int>{}, -1, -1, -1, "syclct::syclct_getri_batch"}},
+        {"cublasZgetriBatched",
+         {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
+          std::vector<int>{}, -1, -1, -1, "syclct::syclct_getri_batch"}},
+        {"cublasSgeqrfBatched",
+         {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
+          std::vector<int>{}, -1, -1, -1, "syclct::geqrf_batch_wrapper"}},
+        {"cublasDgeqrfBatched",
+         {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
+          std::vector<int>{}, -1, -1, -1, "syclct::geqrf_batch_wrapper"}},
+        {"cublasCgeqrfBatched",
+         {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
+          std::vector<int>{}, -1, -1, -1, "syclct::geqrf_batch_wrapper"}},
+        {"cublasZgeqrfBatched",
+         {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
+          std::vector<int>{}, -1, -1, -1, "syclct::geqrf_batch_wrapper"}},
+    };
+
 const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
     MapNames::BLASFuncComplexReplInfoMap{
         /*BLAS level 1*/

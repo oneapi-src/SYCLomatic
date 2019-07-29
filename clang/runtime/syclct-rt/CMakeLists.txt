@@ -8,6 +8,7 @@ set(syclct_rt_files
   include/syclct_thrust.hpp
   include/syclct_util.hpp
   include/thrust_memory.hpp
+  include/syclct_blas.hpp
 )
 
 set(output_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include/syclct)

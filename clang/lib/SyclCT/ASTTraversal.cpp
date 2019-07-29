@@ -318,7 +318,8 @@ void IncludesCallbacks::InclusionDirective(
       MKLHeadersFilter.insert(Path);
       std::string Replacement = std::string("#include <mkl_blas_sycl.hpp>") +
                                 getNL() + "#include <mkl_lapack_sycl.hpp>" +
-                                getNL() + "#include <sycl_types.hpp>";
+                                getNL() + "#include <sycl_types.hpp>" +
+                                getNL() + "#include <syclct/syclct_blas.hpp>";
       TransformSet.emplace_back(new ReplaceInclude(
           CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                           /*IsTokenRange=*/false),
@@ -2370,6 +2371,11 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasChemm_v2", "cublasZhemm_v2", "cublasCherk_v2", "cublasZherk_v2",
         "cublasCher2k_v2", "cublasZher2k_v2", "cublasSsyrkx", "cublasDsyrkx",
         "cublasStrmm_v2", "cublasDtrmm_v2", "cublasCtrmm_v2", "cublasZtrmm_v2",
+        /*Extensions*/
+        "cublasSgetrfBatched", "cublasDgetrfBatched", "cublasCgetrfBatched",
+        "cublasZgetrfBatched", "cublasSgetriBatched", "cublasDgetriBatched",
+        "cublasCgetriBatched", "cublasZgetriBatched", "cublasSgeqrfBatched",
+        "cublasDgeqrfBatched", "cublasCgeqrfBatched", "cublasZgeqrfBatched",
         /*Legacy API*/
         "cublasInit", "cublasShutdown", "cublasGetError",
         /*level 1*/
@@ -2860,6 +2866,39 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       insertAroundRange(StmtBegin, StmtEndAfterSemi,
                         PrefixInsertStr + IndentStr,
                         getNL() + IndentStr + std::string("}"));
+    }
+  } else if (MapNames::BLASFuncWrapperReplInfoMap.find(FuncName) !=
+             MapNames::BLASFuncWrapperReplInfoMap.end()) {
+    auto ReplInfoPair = MapNames::BLASFuncWrapperReplInfoMap.find(FuncName);
+    MapNames::BLASFuncReplInfo ReplInfo = ReplInfoPair->second;
+    std::string Replacement = ReplInfo.ReplName;
+    if (HasDeviceAttr) {
+      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, FuncName,
+             Replacement);
+      return;
+    }
+    if (IsAssigned) {
+      insertAroundRange(FuncNameBegin, FuncCallEnd.getLocWithOffset(1), "(",
+                        ", 0)");
+      report(FuncNameBegin, Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
+    int ArgNum = CE->getNumArgs();
+    for (int i = 0; i < ArgNum; ++i) {
+      const CStyleCastExpr *CSCE = nullptr;
+      if ((CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(i)))) {
+        processParamIntCastToBLASEnum(CE->getArg(i), CSCE, *(Result.Context), i,
+                                      IndentStr, ReplInfo.OperationIndexInfo,
+                                      ReplInfo.FillModeIndexInfo,
+                                      PrefixInsertStr);
+      }
+    }
+    emplaceTransformation(
+        new ReplaceText(FuncNameBegin, FuncNameLength, std::move(Replacement)));
+    if (PrefixInsertStr != "") {
+      insertAroundRange(
+          StmtBegin, StmtEndAfterSemi,
+          std::string("{") + getNL() + PrefixInsertStr + IndentStr,
+          getNL() + IndentStr + SuffixInsertStr + std::string("}"));
     }
   } else if (FuncName == "cublasCreate_v2" || FuncName == "cublasDestroy_v2") {
     if (IsAssigned) {

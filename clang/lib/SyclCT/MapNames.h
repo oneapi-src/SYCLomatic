@@ -69,6 +69,8 @@ public:
       BLASFuncComplexReplInfoMap;
   static const SetTy ThrustFileExcludeSet;
   static const ThrustMapTy ThrustFuncNamesMap;
+  static const std::map<std::string, MapNames::BLASFuncReplInfo>
+      BLASFuncWrapperReplInfoMap;
 
   static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       LegacyBLASFuncReplInfoMap;
