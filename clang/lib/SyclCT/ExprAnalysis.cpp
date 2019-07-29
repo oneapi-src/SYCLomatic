@@ -173,6 +173,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       addReplacement(ME, Repl.str());
     }
   } else if (Ty.getBaseName() == "cl::sycl::float4" ||
+             Ty.getBaseName() == "cl::sycl::float3" ||
              Ty.getBaseName() == "const cl::sycl::double2") {
     ExprAnalysis EA;
     EA.analyze(ME->getBase());
