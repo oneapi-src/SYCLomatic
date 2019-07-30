@@ -53,9 +53,9 @@ public:
   int get_max_clock_frequency() { return _frequency; }
   int get_max_compute_units() { return _max_compute_units; }
   int get_max_work_group_size() { return _max_work_group_size; }
-  int get_warp_size() { return _warp_size; }
+  int get_max_sub_group_size() { return _max_sub_group_size; }
   int get_max_work_items_per_compute_unit() { return _max_work_items_per_compute_unit; }
-  size_t *get_max_grid_size() { return _max_grid_size; }
+  size_t *get_max_nd_range_size() { return _max_nd_range_size; }
   size_t get_global_mem_size() { return _global_mem_size; }
   size_t get_local_mem_size() { return _local_mem_size; }
   compute_mode get_mode() { return _compute_mode; }
@@ -72,11 +72,11 @@ public:
   void set_local_mem_size(size_t local_mem_size) {_local_mem_size=local_mem_size;}
   void set_mode(compute_mode compute_mode){_compute_mode=compute_mode;}
   void set_max_work_group_size(int max_work_group_size) {_max_work_group_size = max_work_group_size;}
-  void set_warp_size(int warp_size) { _warp_size = warp_size; }
+  void set_max_sub_group_size(int max_sub_group_size) { _max_sub_group_size = max_sub_group_size; }
   void set_max_work_items_per_compute_unit(int max_work_items_per_compute_unit){_max_work_items_per_compute_unit = max_work_items_per_compute_unit;}
-  void set_max_grid_size(int max_grid_size[]) {
+  void set_max_nd_range_size(int max_nd_range_size[]) {
     for (int i = 0; i < 3; i++)
-      _max_grid_size[i] = max_grid_size[i];
+      _max_nd_range_size[i] = max_nd_range_size[i];
   }
 private:
   char _name[256];
@@ -88,11 +88,11 @@ private:
   int _frequency;
   int _max_compute_units;
   int _max_work_group_size;
-  int _warp_size;
+  int _max_sub_group_size;
   int _max_work_items_per_compute_unit;
   size_t _global_mem_size;
   size_t _local_mem_size;
-  size_t _max_grid_size[3];
+  size_t _max_nd_range_size[3];
   compute_mode _compute_mode = compute_mode::default_;
 };
 
@@ -104,24 +104,21 @@ public:
   }
 
   int is_native_atomic_supported() { return 0; }
-  int compute_capability_major() { return _major; }
+  int get_major_version() {
+    int major, minor;
+    get_version(major, minor);
+    return major;
+  }
   //....
 
   void get_device_info(sycl_device_info &out) {
     sycl_device_info prop;
     prop.set_name(get_info<cl::sycl::info::device::name>().c_str());
 
-    // Version string has the following format:
-    // OpenCL<space><major.minor><space><vendor-specific-information>
-    std::stringstream ver;
-    ver << get_info<cl::sycl::info::device::version>();
-    std::string item;
-    std::getline(ver, item, ' '); // OpenCL
-    std::getline(ver, item, '.'); // major
-    prop.set_major_version(std::stoi(item));
-    _major = std::stoi(item);
-    std::getline(ver, item, ' '); // minor
-    prop.set_minor_version(std::stoi(item));
+    int major, minor;
+    get_version(major, minor);
+    prop.set_major_version(major);
+    prop.set_minor_version(minor);
 
     prop.set_max_work_item_sizes(get_info<cl::sycl::info::device::max_work_item_sizes>());
     prop.set_host_unified_memory(get_info<cl::sycl::info::device::host_unified_memory>());
@@ -137,11 +134,11 @@ public:
     cl::sycl::vector_class<size_t>::const_iterator max_iter = std::max_element(sub_group_sizes.begin(), sub_group_sizes.end());
     max_sub_group_size = *max_iter;
 #endif
-    prop.set_warp_size(max_sub_group_size);
+    prop.set_max_sub_group_size(max_sub_group_size);
 
     prop.set_max_work_items_per_compute_unit(get_info<cl::sycl::info::device::max_work_group_size>());
-    int max_grid_size[] = { 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF };
-    prop.set_max_grid_size(max_grid_size);
+    int max_nd_range_size[] = { 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF };
+    prop.set_max_nd_range_size(max_nd_range_size);
     //...
     out = prop;
   }
@@ -167,9 +164,20 @@ public:
   }
 
 private:
+  void get_version(int &major, int &minor){
+    // Version string has the following format:
+    // OpenCL<space><major.minor><space><vendor-specific-information>
+    std::stringstream ver;
+    ver << get_info<cl::sycl::info::device::version>();
+    std::string item;
+    std::getline(ver, item, ' '); // OpenCL
+    std::getline(ver, item, '.'); // major
+    major = std::stoi(item);
+    std::getline(ver, item, ' '); // minor
+    minor =  std::stoi(item);
+  }
   cl::sycl::queue _default_queue;
   std::set<cl::sycl::queue> _queues;
-  int _major;
 };
 
 class device_manager {

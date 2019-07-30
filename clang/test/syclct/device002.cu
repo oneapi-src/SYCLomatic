@@ -47,7 +47,7 @@ int atomicSupported;
 cudaDeviceGetAttribute(&atomicSupported, cudaDevAttrHostNativeAtomicSupported, dev_id);
 
 int val;
-// CHECK: val = syclct::get_device_manager().get_device(dev_id).compute_capability_major();
+// CHECK: val = syclct::get_device_manager().get_device(dev_id).get_major_version();
 cudaDeviceGetAttribute(&val, cudaDevAttrComputeCapabilityMajor, dev_id);
 
 int device1 = 0;

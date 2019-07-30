@@ -1922,14 +1922,14 @@ const MapNames::MapTy DevicePropVarRule::PropNamesMap{
     {"major", "major_version"},
     {"minor", "minor_version"},
     {"integrated", "integrated"},
-    {"warpSize", "warp_size"},
+    {"warpSize", "max_sub_group_size"},
     {"multiProcessorCount", "max_compute_units"},
     {"maxThreadsPerBlock", "max_work_group_size"},
     {"maxThreadsPerMultiProcessor", "max_work_items_per_compute_unit"},
     {"name", "name"},
     {"totalGlobalMem", "global_mem_size"},
     {"sharedMemPerBlock", "local_mem_size"},
-    {"maxGridSize", "max_grid_size"},
+    {"maxGridSize", "max_nd_range_size"},
     // ...
 };
 
@@ -1950,7 +1950,7 @@ const MapNames::MapTy EnumConstantRule::EnumNamesMap{
     // enum cudaDeviceAttr
     // ...
     {"cudaDevAttrHostNativeAtomicSupported", "is_native_atomic_supported"},
-    {"cudaDevAttrComputeCapabilityMajor", "compute_capability_major"},
+    {"cudaDevAttrComputeCapabilityMajor", "get_major_version"},
     // enum cudaMemcpyKind
     {"cudaMemcpyHostToHost", "host_to_host"},
     {"cudaMemcpyHostToDevice", "host_to_device"},
