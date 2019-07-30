@@ -14,6 +14,7 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 
 
 GAHELPER_NS_BEGIN
@@ -41,6 +42,9 @@ ustring getStatisticDir()
 
 #else
     char* home = getenv("HOME");
+    // Ignore this environment variable if its length is greater than or euqal to INT_MAX
+    if (home && std::find(home, home + INT_MAX, 0) - home >= INT_MAX)
+      home = nullptr;
     ustring homePath(home ? home : _U("."));
     auto intelRootPath = homePath + "/" + _U("intel");
 #endif
