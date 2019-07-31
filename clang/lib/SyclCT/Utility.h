@@ -143,11 +143,10 @@ bool startsWith(const std::string &Str, const std::string &Prefix);
 bool endsWith(const std::string &Str, const std::string &Suffix);
 const clang::Stmt *getParentStmt(const clang::Stmt *S);
 bool IsSingleLineStatement(const clang::Stmt *S);
-const std::pair<const clang::Stmt *, bool>
-findOutermostStmtInTheSameBlock(const clang::Stmt *S);
 clang::SourceRange getScopeInsertRange(const clang::MemberExpr *ME);
 clang::SourceRange
 getScopeInsertRange(const clang::Expr *CE,
                     const clang::SourceLocation &FuncNameBegin,
                     const clang::SourceLocation &FuncCallEnd);
+const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const clang::Expr *E);
 #endif // SYCLCT_UTILITY_H

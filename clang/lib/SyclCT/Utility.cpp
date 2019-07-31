@@ -433,35 +433,21 @@ bool IsSingleLineStatement(const clang::Stmt *S) {
          ParentStmtClass == Stmt::StmtClass::ForStmtClass;
 }
 
-// Find the outermost statement in the same block, returning
-// this statement along with a boolean value indicating if
-// its parent is CompoundStmt
-const std::pair<const clang::Stmt *, bool>
-findOutermostStmtInTheSameBlock(const clang::Stmt *S) {
-  if (!S)
-    return std::make_pair(nullptr, true);
-
+// Find the nearest non-Expr non-Decl ancestor statement of Expr E
+// Assumes: E != nullptr
+const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const clang::Expr *E) {
   auto &Context = syclct::SyclctGlobalInfo::getContext();
-  auto Parents = Context.getParents(*S);
-  while (Parents.size() == 1) {
-    auto *Parent = Parents[0].get<Stmt>();
-    if (Parent) {
-      auto ParentStmtClass = Parent->getStmtClass();
-      if (ParentStmtClass == Stmt::StmtClass::CompoundStmtClass)
-        return std::make_pair(S, true);
-      if (ParentStmtClass == Stmt::StmtClass::IfStmtClass ||
-          ParentStmtClass == Stmt::StmtClass::WhileStmtClass ||
-          ParentStmtClass == Stmt::StmtClass::DoStmtClass ||
-          ParentStmtClass == Stmt::StmtClass::ForStmtClass)
-        return std::make_pair(S, false);
-      S = Parent;
-      Parents = Context.getParents(*Parent);
-    } else {
-      Parents = Context.getParents(Parents[0]);
+  auto ParentNodes = Context.getParents(*E);
+  const Stmt *CurrentStmt = E;
+  while (!ParentNodes.empty()) {
+    auto ParentNode = ParentNodes[0];
+    if (!ParentNode.get<Expr>() && !ParentNode.get<Decl>()) {
+      break;
     }
+    CurrentStmt = ParentNode.get<Stmt>();
+    ParentNodes = Context.getParents(*CurrentStmt);
   }
-
-  return std::make_pair(nullptr, true);
+  return CurrentStmt;
 }
 
 SourceRange getScopeInsertRange(const MemberExpr *ME) {

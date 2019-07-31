@@ -3616,20 +3616,9 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
       CE->getCalleeDecl()->getAsFunction()->getNameAsString();
   if (IsAssigned) {
     emplaceTransformation(new ReplaceStmt(CE, true, Name, "0"));
-    auto Outer = findOutermostStmtInTheSameBlock(CE);
-    auto OuterStmt = Outer.first;
-    // The outer statement is in a CompoundStmt
-    if (Outer.second) {
-      auto &SM = *Result.SourceManager;
-      auto Loc = OuterStmt->getBeginLoc();
-      if (Loc.isMacroID())
-        Loc = SM.getExpansionLoc(Loc);
-      Repl << ";" << getNL() << getIndent(Loc, SM).str();
-    }
-    // The outer statement is in a IfStmt/WhileStmt/DoStmt/ForStmt
-    else {
-      Repl << ", ";
-    }
+    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_ZERO);
+    auto OuterStmt = findNearestNonExprNonDeclAncestorStmt(CE);
+    Repl << ", ";
     emplaceTransformation(new InsertBeforeStmt(OuterStmt, std::move(Repl.str()),
                                                /*PairID*/ 0,
                                                /*DoMacroExpansion*/ true));
