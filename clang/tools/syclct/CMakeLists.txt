@@ -23,15 +23,15 @@ target_link_libraries(syclct
   )
 #
 if(UNIX)
-set(syclct_startup_script
-  startup.sh
+set(syclct_vars_script
+  vars.sh
   )
 set(syclct_syscheck_script
   sys_check.sh
 )
 else()
-set(syclct_startup_script
-  startup.bat
+set(syclct_vars_script
+  vars.bat
   )
 
 set(syclct_syscheck_script
@@ -40,21 +40,21 @@ sys_check.bat
 endif()
 
 install(
-  FILES ${syclct_startup_script}
-  COMPONENT syclct-startup
+  FILES ${syclct_vars_script}
+  COMPONENT syclct-vars
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-  DESTINATION ./)
+  DESTINATION ./env)
 
 
 install(
   FILES ${syclct_syscheck_script}
   COMPONENT syclct-syscheck
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-  DESTINATION ./sys_check/)
+  DESTINATION ./env)
 
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
-  add_llvm_install_targets(install-syclct-startup
-                           COMPONENT syclct-startup)
+  add_llvm_install_targets(install-syclct-vars
+                           COMPONENT syclct-vars)
 endif()
 
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.

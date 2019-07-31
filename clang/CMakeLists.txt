@@ -863,7 +863,7 @@ if (NOT CLANG_BUILT_STANDALONE)
     install-syclct-headers
     install-clang-resource-headers
     install-syclct
-    install-syclct-startup
+    install-syclct-vars
     install-syclct-syscheck
     )
 endif()

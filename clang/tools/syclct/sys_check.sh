@@ -10,9 +10,6 @@
 
 # oneAPI DPC++ Compatibility Tool System Check
 #
-# a. Detect CUDA toolkit.
-# b. profit
-
 # 'echo' should be used for outputting messages in response to errors. 'echo' is always output.
 # 'speak' outputs only if the -v verbose flag it used. Affirmative messages ( "Everything OK!" ) should
 #    use 'speak', as well as advice, informative messages, or possibly longer explanations of an error. (eg "your cmake installation is not the latest" )
@@ -24,7 +21,7 @@
 # ERRORSTATE: 0 if OK, 1 if not.
 
 #location of this sh file
-LOC=$(realpath $(dirname "${BASH_SOURCE[0]}"))
+LOC=$(dirname $(realpath "${BASH_SOURCE[0]}"))
 
 #load common file
 source $LOC/../../../common.sh $@
@@ -32,17 +29,10 @@ source $LOC/../../../common.sh $@
 #every syscheck script should set up an ERRORSTATE variable and return it on completion.
 ERRORSTATE=0
 
-# CUDA TOOLKIT
-if [ -z $(which nvcc) ]; then
-    echo -e "The oneAPI DPC++ Compatibility Tool requires the Nvidia CUDA Toolkit to be installed."
-    ERRORSTATE=1
-fi
-
 if [ -z $(which python) ]; then
     echo -e "The oneAPI DPC++ Compatibility Tool requires the python to be installed."
     ERRORSTATE=1
 fi
-
 
 if [ $ERRORSTATE -eq 0 ]; then
     speak "OK"
