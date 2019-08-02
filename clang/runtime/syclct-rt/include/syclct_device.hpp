@@ -130,9 +130,11 @@ public:
 
     size_t max_sub_group_size = 32;
 #ifdef CL_DEVICE_SUB_GROUP_SIZES_INTEL
-    cl::sycl::vector_class<size_t> sub_group_sizes = _default_queue.get_device().get_info<cl::sycl::info::device::sub_group_sizes>();
-    cl::sycl::vector_class<size_t>::const_iterator max_iter = std::max_element(sub_group_sizes.begin(), sub_group_sizes.end());
-    max_sub_group_size = *max_iter;
+    if (_default_queue.get_device().has_extension("cl_intel_required_subgroup_size")) {
+      cl::sycl::vector_class<size_t> sub_group_sizes = _default_queue.get_device().get_info<cl::sycl::info::device::sub_group_sizes>();
+      cl::sycl::vector_class<size_t>::const_iterator max_iter = std::max_element(sub_group_sizes.begin(), sub_group_sizes.end());
+      max_sub_group_size = *max_iter;
+    }
 #endif
     prop.set_max_sub_group_size(max_sub_group_size);
 
