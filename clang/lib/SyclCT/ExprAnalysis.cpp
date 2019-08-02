@@ -184,20 +184,22 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
            << ")";
       addReplacement(ME, Repl.str());
     }
-  } else if (Ty.getBaseName() == "cl::sycl::float4" ||
-             Ty.getBaseName() == "cl::sycl::float3" ||
-             Ty.getBaseName() == "const cl::sycl::double2") {
-    ExprAnalysis EA;
-    EA.analyze(ME->getBase());
-    static const std::map<std::string, std::string> MemberNamesMap{
-        {"x", "x()"}, {"y", "y()"}, {"z", "z()"}, {"w", "w()"}};
-    std::string MemberName = ME->getMemberNameInfo().getAsString();
-    if (MapNames::replaceName(MemberNamesMap, MemberName)) {
-      std::ostringstream Repl;
-      Repl << "static_cast<" << ME->getType().getAsString() << ">("
-           << EA.getReplacedString() << (ME->isArrow() ? "->" : ".")
-           << MemberName << ")";
-      addReplacement(ME, Repl.str());
+  } else if (MapNames::SupportedVectorTypes.find(Ty.getOrginalBaseType()) !=
+             MapNames::SupportedVectorTypes.end()) {
+    if (*Ty.getBaseName().rbegin() == '1') {
+      addReplacement(ME->getOperatorLoc(), ME->getEndLoc(), "");
+      dispatch(ME->getBase());
+    } else {
+      ExprAnalysis EA;
+      EA.analyze(ME->getBase());
+      std::string MemberName = ME->getMemberNameInfo().getAsString();
+      if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName)) {
+        std::ostringstream Repl;
+        Repl << "static_cast<" << ME->getType().getAsString() << ">("
+             << EA.getReplacedString() << (ME->isArrow() ? "->" : ".")
+             << MemberName << ")";
+        addReplacement(ME, Repl.str());
+      }
     }
   }
 }

@@ -153,6 +153,7 @@ public:
   using SetTy = std::set<std::string>;
   using ThrustMapTy = std::map<std::string, ThrustFuncReplInfo>;
 
+  static const SetTy SupportedVectorTypes;
   static const MapTy TypeNamesMap;
   static const MapTy Dim3MemberNamesMap;
   static const MapTy MacrosMap;
@@ -192,6 +193,8 @@ public:
   static bool isInSet(const SetTy &Set, std::string &Name) {
     return Set.find(Name) != Set.end();
   }
+
+  static const MapNames::MapTy MemberNamesMap;
 };
 
 class TranslationStatistics {

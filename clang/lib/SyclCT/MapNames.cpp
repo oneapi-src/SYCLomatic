@@ -19,6 +19,19 @@
 using namespace clang;
 using namespace clang::syclct;
 
+// Supported vector types
+const MapNames::SetTy MapNames::SupportedVectorTypes{
+    "char1",     "uchar1",     "char2",      "uchar2",     "char3",
+    "uchar3",    "char4",      "uchar4",     "short1",     "ushort1",
+    "short2",    "ushort2",    "short3",     "ushort3",    "short4",
+    "ushort4",   "int1",       "uint1",      "int2",       "uint2",
+    "int3",      "uint3",      "int4",       "uint4",      "long1",
+    "ulong1",    "long2",      "ulong2",     "long3",      "ulong3",
+    "long4",     "ulong4",     "float1",     "float2",     "float3",
+    "float4",    "longlong1",  "ulonglong1", "longlong2",  "ulonglong2",
+    "longlong3", "ulonglong3", "longlong4",  "ulonglong4", "double1",
+    "double2",   "double3",    "double4"};
+
 // Type names mapping.
 const MapNames::MapTy MapNames::TypeNamesMap{
     {"cudaDeviceProp", "syclct::sycl_device_info"},
@@ -2613,7 +2626,7 @@ const MapNames::MapTy DevicePropVarRule::PropNamesMap{
 };
 
 // DeviceProp names mapping.
-const MapNames::MapTy VectorTypeMemberAccessRule::MemberNamesMap{
+const MapNames::MapTy MapNames::MemberNamesMap{
     {"x", "x()"}, {"y", "y()"}, {"z", "z()"}, {"w", "w()"},
     // ...
 };

@@ -1327,22 +1327,9 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(TemplateTypeInDeclRule)
 
-// Supported vector types
-const std::unordered_set<std::string> SupportedVectorTypes{
-    "char1",     "uchar1",     "char2",      "uchar2",     "char3",
-    "uchar3",    "char4",      "uchar4",     "short1",     "ushort1",
-    "short2",    "ushort2",    "short3",     "ushort3",    "short4",
-    "ushort4",   "int1",       "uint1",      "int2",       "uint2",
-    "int3",      "uint3",      "int4",       "uint4",      "long1",
-    "ulong1",    "long2",      "ulong2",     "long3",      "ulong3",
-    "long4",     "ulong4",     "float1",     "float2",     "float3",
-    "float4",    "longlong1",  "ulonglong1", "longlong2",  "ulonglong2",
-    "longlong3", "ulonglong3", "longlong4",  "ulonglong4", "double1",
-    "double2",   "double3",    "double4"};
-
 static internal::Matcher<NamedDecl> vectorTypeName() {
-  std::vector<std::string> TypeNames(SupportedVectorTypes.begin(),
-                                     SupportedVectorTypes.end());
+  std::vector<std::string> TypeNames(MapNames::SupportedVectorTypes.begin(),
+                                     MapNames::SupportedVectorTypes.end());
   return internal::Matcher<NamedDecl>(new internal::HasNameMatcher(TypeNames));
 }
 
@@ -1350,8 +1337,8 @@ namespace clang {
 namespace ast_matchers {
 
 AST_MATCHER(QualType, vectorType) {
-  return (SupportedVectorTypes.find(Node.getAsString()) !=
-          SupportedVectorTypes.end());
+  return (MapNames::SupportedVectorTypes.find(Node.getAsString()) !=
+          MapNames::SupportedVectorTypes.end());
 }
 
 AST_MATCHER(TypedefDecl, typedefVecDecl) {
@@ -1360,8 +1347,8 @@ AST_MATCHER(TypedefDecl, typedefVecDecl) {
 
   const std::string BaseTypeName =
       Node.getUnderlyingType().getBaseTypeIdentifier()->getName().str();
-  return (SupportedVectorTypes.find(BaseTypeName) !=
-          SupportedVectorTypes.end());
+  return (MapNames::SupportedVectorTypes.find(BaseTypeName) !=
+          MapNames::SupportedVectorTypes.end());
 }
 
 } // namespace ast_matchers
@@ -1535,7 +1522,7 @@ void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
     return emplaceTransformation(new ReplaceText(Begin, Length, ""));
   }
   std::string MemberName = ME->getMemberNameInfo().getAsString();
-  if (MapNames::replaceName(MemberNamesMap, MemberName))
+  if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName))
     emplaceTransformation(
         new RenameFieldInMemberExpr(ME, std::move(MemberName)));
 }
@@ -1643,7 +1630,8 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
       return false;
 
     const std::string TypeName = IDInfo->getName().str();
-    return (SupportedVectorTypes.find(TypeName) != SupportedVectorTypes.end());
+    return (MapNames::SupportedVectorTypes.find(TypeName) !=
+            MapNames::SupportedVectorTypes.end());
   };
 
   assert(Node.getNumParams() < 3);
@@ -1818,7 +1806,7 @@ void VectorTypeCtorRule::registerMatcher(MatchFinder &MF) {
   // make_int2
   auto makeVectorFunc = [&]() {
     std::vector<std::string> MakeVectorFuncNames;
-    for (const std::string &TypeName : SupportedVectorTypes) {
+    for (const std::string &TypeName : MapNames::SupportedVectorTypes) {
       MakeVectorFuncNames.emplace_back("make_" + TypeName);
     }
 
