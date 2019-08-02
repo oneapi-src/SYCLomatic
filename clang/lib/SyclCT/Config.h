@@ -1,6 +1,6 @@
 //===--- config.h -------------------------------------*- C++ -*---===//
 //
-// Copyright (C) 2018 Intel Corporation. All rights reserved.
+// Copyright (C) 2018-2019 Intel Corporation. All rights reserved.
 //
 // The information and source code contained herein is the exclusive
 // property of Intel Corporation and may not be disclosed, examined
@@ -12,8 +12,8 @@
 #ifndef SYCLCT_CONFIG_H
 #define SYCLCT_CONFIG_H
 
-#define SYCLCT_VERSION_MAJOR "2020"
+#define SYCLCT_VERSION_MAJOR "2021"
 #define SYCLCT_VERSION_MINOR "1"
-#define SYCLCT_VERSION_PATCH "beta01"
+#define SYCLCT_VERSION_PATCH "alpha01"
 
 #endif
