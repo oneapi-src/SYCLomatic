@@ -9,7 +9,7 @@
 #
 ################################################################################
 
-export SYCLCT_BUNDLE_ROOT=$(dirname $dirname($(realpath "${BASH_SOURCE[0]}")))
+export SYCLCT_BUNDLE_ROOT=$(dirname $(dirname $(realpath "${BASH_SOURCE[0]}")))
 
 # Binary check for SYCL CT
 if [[ ! -e $SYCLCT_BUNDLE_ROOT/bin/syclct || \
