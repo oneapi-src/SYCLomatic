@@ -50,7 +50,7 @@ install(
   FILES ${syclct_syscheck_script}
   COMPONENT syclct-syscheck
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-  DESTINATION ./env)
+  DESTINATION ./sys_check)
 
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
   add_llvm_install_targets(install-syclct-vars
