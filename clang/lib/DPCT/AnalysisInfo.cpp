@@ -130,8 +130,9 @@ void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block,
   if (VI->isShared())
     Block.pushStmt(VI->getRangeDecl());
   if (getFilePath() != VI->getFilePath() && !VI->isShared()) {
-    // Global variable definition and global variable reference are not in the same
-    // file, and are not a share varible, insert extern variable declaration.
+    // Global variable definition and global variable reference are not in the
+    // same file, and are not a share varible, insert extern variable
+    // declaration.
     Block.pushStmt(VI->getExternGlobalVarDecl());
   }
   Block.pushStmt(VI->getAccessorDecl());

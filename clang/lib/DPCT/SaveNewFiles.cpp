@@ -195,7 +195,6 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         // A header file with this name already exists.
         llvm::errs() << "File '" << FilePath
                      << "' already exists; skipping it.\n";
-        AppliedAll = false;
         continue;
       }
 

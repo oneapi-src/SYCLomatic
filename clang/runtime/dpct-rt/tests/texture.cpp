@@ -38,13 +38,13 @@ int main() {
   dpct::dpct_malloc_image(&array2, &chn4, 640, 480);
   dpct::dpct_malloc_image(&array3, &chn2, 640, 480, 24);
 
-  dpct::dpct_memcpy_to_array(array1, host_buffer);
-  dpct::dpct_memcpy_to_array(array2, host_buffer);
-  dpct::dpct_memcpy_to_array(array3, device_buffer);
+  dpct::dpct_memcpy_to_image(array1, 0, 0, host_buffer, 640 * 480 * 24 * sizeof(cl::sycl::float4));
+  dpct::dpct_memcpy_to_image(array1, 0, 0, host_buffer, 640 * 480 * 24 * sizeof(cl::sycl::float4));
+  dpct::dpct_memcpy_to_image(array1, 0, 0, device_buffer, 640 * 480 * 24 * sizeof(cl::sycl::float4));
 
-  dpct::dpct_bind_texture(tex42, array2);
-  dpct::dpct_bind_texture(tex21, array1);
-  dpct::dpct_bind_texture(tex13, array3);
+  dpct::dpct_attach_image(tex42, array2);
+  dpct::dpct_attach_image(tex21, array1);
+  dpct::dpct_attach_image(tex13, array3);
 
   tex42.set_addr_mode(cl::sycl::addressing_mode::clamp);
   tex21.set_addr_mode(cl::sycl::addressing_mode::clamp);
@@ -68,7 +68,7 @@ int main() {
     });
   }
 
-  dpct::dpct_unbind_texture(tex42);
-  dpct::dpct_unbind_texture(tex21);
-  dpct::dpct_unbind_texture(tex13);
+  dpct::dpct_detach_image(tex42);
+  dpct::dpct_detach_image(tex21);
+  dpct::dpct_detach_image(tex13);
 }

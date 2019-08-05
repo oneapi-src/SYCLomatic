@@ -44,37 +44,6 @@ std::unordered_map<std::string, std::unordered_set</* Comment ID */ int>>
 
 static std::set<SourceLocation> AttrExpansionFilter;
 
-// Remember the location of the last inclusion directive for each file
-static std::map<std::string, SourceLocation> IncludeLocations;
-
-// Remember if a file has already included the cmath header or not
-static std::set<std::string> MathHeaderFilter;
-// Remember whether <complex> is included in one file.
-static std::set<std::string> ComplexHeaderFilter;
-// Remember whether <future> is included in one file.
-static std::set<std::string> FutureHeaderFilter;
-// Remember whether MKL headers are included in one file.
-static std::set<std::string> MKLHeadersFilter;
-// Remember whether <time.h> is included in one file.
-static std::set<std::string> TimeHeaderFilter;
-
-// Add '#include <cmath>' directive to the file where CE is located
-InsertText *getCmathHeaderInsertTextForCallExpr(const CallExpr *CE,
-                                                const SourceManager *SM) {
-  auto Loc = CE->getBeginLoc();
-  std::string Path = DpctGlobalInfo::getSourceManager().getFilename(
-      DpctGlobalInfo::getSourceManager().getExpansionLoc(Loc));
-  makeCanonical(Path);
-  // No need to insert or already inserted
-  if (MathHeaderFilter.find(Path) != MathHeaderFilter.end())
-    return nullptr;
-
-  auto IncludeLoc = IncludeLocations[Path];
-  MathHeaderFilter.insert(Path);
-  return new InsertText(IncludeLoc,
-                        getNL() + std::string("#include <cmath>") + getNL());
-}
-
 unsigned TranslationRule::PairID = 0;
 
 void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
@@ -240,12 +209,9 @@ void IncludesCallbacks::InclusionDirective(
     bool IsAngled, CharSourceRange FilenameRange, const FileEntry *File,
     StringRef SearchPath, StringRef RelativePath, const Module *Imported,
     SrcMgr::CharacteristicKind FileType) {
-  // Record the locations of inclusion directives
-  // The last inclusion diretive of a file will be remembered
-  std::string Path = DpctGlobalInfo::getSourceManager().getFilename(
-      DpctGlobalInfo::getSourceManager().getExpansionLoc(HashLoc));
-  makeCanonical(Path);
-  IncludeLocations[Path] = FilenameRange.getEnd();
+  // Record the locations of the first and last inclusion directives in a file
+  DpctGlobalInfo::getInstance().setFirstIncludeLocation(HashLoc);
+  DpctGlobalInfo::getInstance().setLastIncludeLocation(FilenameRange.getEnd());
 
   std::string IncludePath = SearchPath;
   makeCanonical(IncludePath);
@@ -274,7 +240,7 @@ void IncludesCallbacks::InclusionDirective(
       !isChildPath(DpctInstallPath, DirPath) &&
       (isChildPath(InRoot, DirPath) || isSamePath(InRoot, DirPath));
 
-  if (IsFileInInRoot && !StringRef(FilePath).endswith(".cu")) {
+  if (IsFileInInRoot) {
     auto Find = IncludeFileMap.find(FilePath);
     if (Find == IncludeFileMap.end()) {
       IncludeFileMap[FilePath] = false;
@@ -285,26 +251,10 @@ void IncludesCallbacks::InclusionDirective(
     return;
   }
 
-  // Insert SYCL headers for file inputted or file included.
-  // E.g. A.cu included B.cu, both A.cu and B.cu are inserted "#include
-  // <CL/sycl.hpp>\n#include <dpct/dpct.hpp>"
-  if (!SyclHeaderInserted || SeenFiles.find(IncludingFile) == end(SeenFiles)) {
-    SeenFiles.insert(IncludingFile);
-    std::string Replacement = std::string("#include <CL/sycl.hpp>") + getNL() +
-                              "#include <dpct/dpct.hpp>" + getNL();
-    CharSourceRange InsertRange(SourceRange(HashLoc, HashLoc), false);
-    TransformSet.emplace_back(
-        new ReplaceInclude(InsertRange, std::move(Replacement)));
-    SyclHeaderInserted = true;
-  }
-
   // Record that math header is included in this file
   if (IsAngled && (FileName.compare(StringRef("math.h")) == 0 ||
                    FileName.compare(StringRef("cmath")) == 0)) {
-    std::string Path = DpctGlobalInfo::getSourceManager().getFilename(
-        DpctGlobalInfo::getSourceManager().getExpansionLoc(HashLoc));
-    makeCanonical(Path);
-    MathHeaderFilter.insert(Path);
+    DpctGlobalInfo::getInstance().setMathHeaderInserted(HashLoc, true);
   }
 
   // Replace "#include <cublas_v2.h>" and "#include <cublas.h>" with
@@ -312,25 +262,11 @@ void IncludesCallbacks::InclusionDirective(
   if ((IsAngled && FileName.compare(StringRef("cublas_v2.h")) == 0) ||
       (IsAngled && FileName.compare(StringRef("cublas.h")) == 0) ||
       (IsAngled && FileName.compare(StringRef("cusolverDn.h")) == 0)) {
-    std::string Path = DpctGlobalInfo::getSourceManager().getFilename(
-        DpctGlobalInfo::getSourceManager().getExpansionLoc(HashLoc));
-    makeCanonical(Path);
-    if (MKLHeadersFilter.find(Path) == MKLHeadersFilter.end()) {
-      MKLHeadersFilter.insert(Path);
-      std::string Replacement = std::string("#include <mkl_blas_sycl.hpp>") +
-                                getNL() + "#include <mkl_lapack_sycl.hpp>" +
-                                getNL() + "#include <sycl_types.hpp>" +
-                                getNL() + "#include <dpct/blas_utils.hpp>";
-      TransformSet.emplace_back(new ReplaceInclude(
-          CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                          /*IsTokenRange=*/false),
-          std::move(Replacement)));
-    } else {
-      TransformSet.emplace_back(new ReplaceInclude(
-          CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                          /*IsTokenRange=*/false),
-          ""));
-    }
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, MKL);
+    TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                        /*IsTokenRange=*/false),
+        ""));
   }
 
   if (!isChildPath(CudaPath, IncludePath) &&
@@ -354,9 +290,8 @@ void IncludesCallbacks::InclusionDirective(
     if (!IsAngled && FileName.endswith(".cu")) {
       CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                                   /* IsTokenRange */ false);
-      std::string NewFileName = "#include \"" +
-                                FileName.drop_back(strlen(".cu")).str() +
-                                ".dp.cpp\"";
+      std::string NewFileName =
+          "#include \"" + FileName.drop_back(strlen(".cu")).str() + ".dp.cpp\"";
       TransformSet.emplace_back(
           new ReplaceInclude(InsertRange, std::move(NewFileName)));
       return;
@@ -366,17 +301,11 @@ void IncludesCallbacks::InclusionDirective(
   // Extra process thrust headers, map to PSTL mapping headers in runtime.
   // For multi thrust header files, only insert once for PSTL mapping header.
   if (IsAngled && (FileName.find("thrust/") != std::string::npos)) {
-    if (!ThrustHeaderInserted) {
+    if (!DpstdHeaderInserted) {
       std::string Replacement = std::string("<dpstd/algorithm>") + getNL() +
                                 "#include <dpstd/execution>" + getNL() +
                                 "#include <dpct/dpstd_utils.hpp>";
-      if (!SyclHeaderInserted) {
-        Replacement = std::string("<CL/sycl.hpp>") + getNL() +
-                      "#include <dpct/dpct.hpp>" + getNL() + "#include " +
-                      Replacement;
-        SyclHeaderInserted = true;
-      }
-      ThrustHeaderInserted = true;
+      DpstdHeaderInserted = true;
       TransformSet.emplace_back(
           new ReplaceInclude(FilenameRange, std::move(Replacement)));
     } else {
@@ -400,23 +329,11 @@ void IncludesCallbacks::InclusionDirective(
     }
   }
 
-  // Multiple CUDA headers in an including file will be replaced with one
-  // include of the SYCL header.
-  if ((SeenFiles.find(IncludingFile) == end(SeenFiles)) &&
-      (!SyclHeaderInserted)) {
-    SeenFiles.insert(IncludingFile);
-    std::string Replacement =
-        std::string("<CL/sycl.hpp>") + getNL() + "#include <dpct/dpct.hpp>";
-    TransformSet.emplace_back(
-        new ReplaceInclude(FilenameRange, std::move(Replacement)));
-    SyclHeaderInserted = true;
-  } else {
-    // Replace the complete include directive with an empty string.
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-  }
+  // Replace the complete include directive with an empty string.
+  TransformSet.emplace_back(new ReplaceInclude(
+      CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                      /*IsTokenRange=*/false),
+      ""));
 }
 
 void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
@@ -424,10 +341,7 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
                                     FileID PrevFID) {
   // Record the location when a file is entered
   if (Reason == clang::PPCallbacks::EnterFile) {
-    std::string Path = DpctGlobalInfo::getSourceManager().getFilename(
-        DpctGlobalInfo::getSourceManager().getExpansionLoc(Loc));
-    makeCanonical(Path);
-    IncludeLocations[Path] = Loc;
+    DpctGlobalInfo::getInstance().setFileEnterLocation(Loc);
   }
 }
 
@@ -1214,8 +1128,7 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 
   // Add '#include <complex>' directive to the file only once
   if (TypeStr == "cuComplex" || TypeStr == "cuDoubleComplex") {
-    insertIncludeFile(BeginLoc, ComplexHeaderFilter,
-                      getNL() + std::string("#include <complex>") + getNL());
+    DpctGlobalInfo::getInstance().insertHeader(BeginLoc, Complex);
   }
 
   auto Replacement = getReplacementForType(TypeStr);
@@ -1515,8 +1428,7 @@ void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
   if (*(BaseTy.end() - 1) == '1') {
     auto Begin = ME->getOperatorLoc();
     auto End = Lexer::getLocForEndOfToken(
-        ME->getMemberLoc(), 0, SM,
-        DpctGlobalInfo::getContext().getLangOpts());
+        ME->getMemberLoc(), 0, SM, DpctGlobalInfo::getContext().getLangOpts());
     auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
     return emplaceTransformation(new ReplaceText(Begin, Length, ""));
   }
@@ -1609,7 +1521,9 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: { return false; }
+  default: {
+    return false;
+  }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -2027,20 +1941,6 @@ void Dim3MemberFieldsRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(Dim3MemberFieldsRule)
 
-template <class T>
-void NamedTranslationRule<T>::insertIncludeFile(
-    SourceLocation SL, std::set<std::string> &HeaderFilter,
-    std::string &&InsertFile) {
-  std::string Path = DpctGlobalInfo::getSourceManager().getFilename(
-      DpctGlobalInfo::getSourceManager().getExpansionLoc(SL));
-  makeCanonical(Path);
-  SourceLocation IncludeLoc = IncludeLocations[Path];
-  if (HeaderFilter.find(Path) == HeaderFilter.end()) {
-    HeaderFilter.insert(Path);
-    emplaceTransformation(new InsertText(IncludeLoc, std::move(InsertFile)));
-  }
-}
-
 // Rule for return types replacements.
 void ReturnTypeRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
@@ -2098,8 +1998,7 @@ void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
   // Add '#include <complex>' directive to the file only once
   if (TypeName == "cuComplex" || TypeName == "cuDoubleComplex") {
     SourceLocation SL = FD->getBeginLoc();
-    insertIncludeFile(SL, ComplexHeaderFilter,
-                      getNL() + std::string("#include <complex>") + getNL());
+    DpctGlobalInfo::getInstance().insertHeader(SL, Complex);
   }
 
   SrcAPIStaticsMap[TypeName]++;
@@ -3565,7 +3464,7 @@ void SOLVERFunctionCallRule::getParameterEnd(
 }
 
 bool SOLVERFunctionCallRule::isReplIndex(int Input, std::vector<int> &IndexInfo,
-                                       int &IndexTemp) {
+                                         int &IndexTemp) {
   for (int i = 0; i < static_cast<int>(IndexInfo.size()); ++i) {
     if (IndexInfo[i] == Input) {
       IndexTemp = i;
@@ -3611,8 +3510,7 @@ SOLVERFunctionCallRule::getAncestralVarDecl(const clang::CallExpr *CE) {
     auto *Parent = Parents[0].get<VarDecl>();
     if (Parent) {
       return Parent;
-    }
-    else {
+    } else {
       Parents = Context.getParents(Parents[0]);
     }
   }
@@ -3695,9 +3593,8 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
-    emplaceTransformation(
-        new ReplaceStmt(CE->getCallee(),
-                        Prefix + "dpct::get_device_manager().select_device"));
+    emplaceTransformation(new ReplaceStmt(
+        CE->getCallee(), Prefix + "dpct::get_device_manager().select_device"));
     if (IsAssigned)
       emplaceTransformation(new InsertAfterStmt(CE, ", 0)"));
 
@@ -3729,8 +3626,8 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaGetDevice") {
     std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
-    emplaceTransformation(new ReplaceStmt(
-        CE, "dpct::get_device_manager().current_device_id()"));
+    emplaceTransformation(
+        new ReplaceStmt(CE, "dpct::get_device_manager().current_device_id()"));
   } else if (FuncName == "cudaDeviceSynchronize" ||
              FuncName == "cudaThreadSynchronize") {
     std::string ReplStr = "dpct::get_device_manager()."
@@ -3767,18 +3664,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF);
     // Add '#include <time.h>' directive to the file only once
     auto Loc = CE->getBeginLoc();
-    std::string Path = DpctGlobalInfo::getSourceManager().getFilename(
-        DpctGlobalInfo::getSourceManager().getExpansionLoc(Loc));
-    makeCanonical(Path);
-    auto IncludeLoc = IncludeLocations[Path];
-    if (TimeHeaderFilter.find(Path) == TimeHeaderFilter.end()) {
-      TimeHeaderFilter.insert(Path);
-      emplaceTransformation(new InsertText(
-          IncludeLoc, getNL() +
-                          std::string("#include <time.h> // For clock_t, "
-                                      "clock and CLOCKS_PER_SEC") +
-                          getNL()));
-    }
+    DpctGlobalInfo::getInstance().insertHeader(Loc, Time);
   } else if (FuncName == "cudaDeviceSetLimit" ||
              FuncName == "cudaThreadSetLimit") {
     report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
@@ -3902,7 +3788,8 @@ void EventAPICallRule::handleEventElapsedTime(
   }
   const std::string Name =
       CE->getCalleeDecl()->getAsFunction()->getNameAsString();
-  emplaceTransformation(new ReplaceStmt(CE, false, Name, std::move(Repl.str())));
+  emplaceTransformation(
+      new ReplaceStmt(CE, false, Name, std::move(Repl.str())));
   handleTimeMeasurement(CE, Result);
 }
 
@@ -4110,8 +3997,7 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
     emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ReplStr));
-    insertIncludeFile(CE->getBeginLoc(), FutureHeaderFilter,
-                      getNL() + std::string("#include <future>") + getNL());
+    DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), Future);
   } else {
     dpct_unreachable("Unknown function name");
   }
@@ -4295,8 +4181,7 @@ void MemoryTranslationRule::mallocTranslation(
   }
   if (Name == "cudaMalloc") {
     DpctGlobalInfo::getInstance().insertCudaMalloc(C);
-    emplaceTransformation(
-        new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
+    emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
   } else if (Name == "cublasAlloc") {
     // TODO: migrate functions when they are in template
     // TODO: migrate functions when they are in macro body
@@ -4393,8 +4278,7 @@ void MemoryTranslationRule::replaceMemAPIArg(
     }
     emplaceTransformation(
         new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
-  } else if (VI = DpctGlobalInfo::getInstance().findMemVarInfo(
-                 getVarDecl(E))) {
+  } else if (VI = DpctGlobalInfo::getInstance().findMemVarInfo(getVarDecl(E))) {
     // Migrate the expr such as "const_one" to "const_one.get_ptr()".
     std::string VarName = VI->getName();
     VarName += ".get_ptr()";
@@ -4783,8 +4667,7 @@ void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
     ExprAnalysis EA(CE);
     EA.analyze();
     emplaceTransformation(EA.getReplacement());
-    if (auto TM = getCmathHeaderInsertTextForCallExpr(CE, Result.SourceManager))
-      emplaceTransformation(TM);
+    DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), Math);
   }
 }
 

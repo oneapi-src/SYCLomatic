@@ -149,4 +149,5 @@ getScopeInsertRange(const clang::Expr *CE,
                     const clang::SourceLocation &FuncNameBegin,
                     const clang::SourceLocation &FuncCallEnd);
 const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const clang::Expr *E);
+std::string getCanonicalPath(clang::SourceLocation Loc);
 #endif // DPCT_UTILITY_H

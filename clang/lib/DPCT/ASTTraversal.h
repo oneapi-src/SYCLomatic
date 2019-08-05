@@ -48,15 +48,14 @@ class IncludesCallbacks : public PPCallbacks {
   SourceManager &SM;
 
   std::unordered_set<std::string> SeenFiles;
-  bool SyclHeaderInserted;
-  bool ThrustHeaderInserted;
+  bool DpstdHeaderInserted;
   ASTTraversalManager &ATM;
 
 public:
   IncludesCallbacks(TransformSetTy &TransformSet, SourceManager &SM,
                     ASTTraversalManager &ATM)
-      : TransformSet(TransformSet), SM(SM), SyclHeaderInserted(false),
-        ThrustHeaderInserted(false), ATM(ATM) {}
+      : TransformSet(TransformSet), SM(SM), DpstdHeaderInserted(false),
+        ATM(ATM) {}
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
                           StringRef FileName, bool IsAngled,
                           CharSourceRange FilenameRange, const FileEntry *File,
@@ -687,14 +686,13 @@ public:
   bool isReplIndex(int i, std::vector<int> &IndexInfo, int &IndexTemp);
 
   std::string getBufferNameAndDeclStr(const Expr *Arg, const ASTContext &AC,
-    const std::string &TypeAsStr,
-    SourceLocation SL,
-    std::string &BufferDecl,
-    int DistinctionID);
-  void getParameterEnd(
-    const SourceLocation &ParameterEnd,
-    SourceLocation &ParameterEndAfterComma,
-    const ast_matchers::MatchFinder::MatchResult &Result);
+                                      const std::string &TypeAsStr,
+                                      SourceLocation SL,
+                                      std::string &BufferDecl,
+                                      int DistinctionID);
+  void getParameterEnd(const SourceLocation &ParameterEnd,
+                       SourceLocation &ParameterEndAfterComma,
+                       const ast_matchers::MatchFinder::MatchResult &Result);
   const clang::VarDecl *getAncestralVarDecl(const clang::CallExpr *CE);
 };
 

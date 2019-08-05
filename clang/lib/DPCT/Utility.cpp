@@ -492,3 +492,10 @@ SourceRange getScopeInsertRange(const Expr *E,
   StmtEndAfterSemi = TokSemi.getEndLoc();
   return {StmtBegin, StmtEndAfterSemi};
 }
+
+std::string getCanonicalPath(SourceLocation Loc) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  std::string Path = SM.getFilename(SM.getExpansionLoc(Loc));
+  makeCanonical(Path);
+  return Path;
+}

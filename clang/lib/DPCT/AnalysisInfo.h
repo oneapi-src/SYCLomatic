@@ -16,6 +16,7 @@
 #include "Diagnostics.h"
 #include "ExprAnalysis.h"
 #include "ExtReplacements.h"
+#include <bitset>
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
@@ -72,6 +73,15 @@ insertObject(MapType &Map, const typename MapType::key_type &Key,
   return Obj;
 }
 
+enum HeaderType {
+  SYCL = 0,
+  Math,
+  Time,
+  Complex,
+  Future,
+  MKL,
+};
+
 //                             DpctGlobalInfo
 //                                         |
 //              --------------------------------------
@@ -117,7 +127,82 @@ public:
   void emplaceReplacements(tooling::Replacements &ReplSet /*out*/);
 
   inline void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
+    insertHeader(SYCL);
     Repls.addReplacement(Repl);
+  }
+
+  // Header inclusion directive insertion functions
+  void setFileEnterOffset(unsigned Offset) {
+    if (!HasInclusionDirective) {
+      FirstIncludeOffset = Offset;
+      LastIncludeOffset = Offset;
+    }
+  }
+
+  void setFirstIncludeOffset(unsigned Offset) {
+    if (!HasInclusionDirective) {
+      FirstIncludeOffset = Offset;
+      HasInclusionDirective = true;
+    }
+  }
+
+  void setLastIncludeOffset(unsigned Offset) {
+    LastIncludeOffset = Offset;
+  }
+
+  void setMathHeaderInserted(bool B = true) {
+    HeaderInsertedBitMap[HeaderType::Math] = B;
+  }
+
+  // Concat several header inclusion directives to one
+  inline void concatHeader(llvm::raw_string_ostream &OS) {}
+
+  template <class... Args>
+  void concatHeader(llvm::raw_string_ostream &OS, std::string &&FirstHeaderName,
+                    Args... Arguments) {
+    appendString(OS, "#include ", std::move(FirstHeaderName), getNL());
+    concatHeader(OS, std::forward<Args>(Arguments)...);
+  }
+
+  // Insert one or more header inclusion directives at a specified offset
+  void insertHeader(std::string &&Repl, unsigned Offset) {
+    addReplacement(
+        std::make_shared<ExtReplacement>(FilePath, Offset, 0, Repl, nullptr));
+  }
+
+  // Insert one or more header inclusion directives at first or last inclusion
+  // locations
+  template <typename... T>
+  void insertHeader(HeaderType Type, unsigned Offset, T... Args) {
+    if (!HeaderInsertedBitMap[Type]) {
+      HeaderInsertedBitMap[Type] = true;
+      std::string ReplStr;
+      llvm::raw_string_ostream RSO(ReplStr);
+      if (Offset == LastIncludeOffset)
+        RSO << getNL();
+      concatHeader(RSO, std::forward<T>(Args)...);
+      insertHeader(std::move(RSO.str()), Offset);
+    }
+  }
+
+  void insertHeader(HeaderType Type) {
+    switch (Type) {
+    case SYCL:
+      return insertHeader(HeaderType::SYCL, FirstIncludeOffset, "<CL/sycl.hpp>",
+                           "<dpct/dpct.hpp>");
+    case Math:
+      return insertHeader(HeaderType::Math, LastIncludeOffset, "<cmath>");
+    case Complex:
+      return insertHeader(HeaderType::Complex, LastIncludeOffset, "<complex>");
+    case Future:
+      return insertHeader(HeaderType::Future, LastIncludeOffset, "<future>");
+    case Time:
+      return insertHeader(HeaderType::Time, LastIncludeOffset, "<time.h>");
+    case MKL:
+      return insertHeader(HeaderType::MKL, LastIncludeOffset, "<mkl_blas_sycl.hpp>",
+                          "<mkl_lapack_sycl.hpp>", "<sycl_types.hpp>",
+                          "<dpct/blas_utils.hpp>");
+    }
   }
 
   // Record line info in file.
@@ -194,6 +279,12 @@ private:
   std::vector<SourceLineInfo> Lines;
 
   std::string FilePath;
+
+  unsigned FirstIncludeOffset = 0;
+  unsigned LastIncludeOffset = 0;
+  bool HasInclusionDirective = false;
+
+  std::bitset<32> HeaderInsertedBitMap;
 };
 template <> inline GlobalMap<MemVarInfo> &DpctFileInfo::getMap() {
   return MemVarMap;
@@ -286,16 +377,21 @@ public:
   }
 
   template <class T>
-  static inline std::pair<llvm::StringRef, unsigned> getLocInfo(const T *N) {
-    return getLocInfo(getLocation(N));
+  static inline std::pair<llvm::StringRef, unsigned>
+  getLocInfo(const T *N, bool *IsInvalid = nullptr /* out */) {
+    return getLocInfo(getLocation(N), IsInvalid);
   }
 
   static inline std::pair<llvm::StringRef, unsigned>
-  getLocInfo(SourceLocation Loc) {
+  getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {
     auto LocInfo =
         SM->getDecomposedLoc(getSourceManager().getExpansionLoc(Loc));
-    return std::pair<llvm::StringRef, unsigned>(
-        SM->getFileEntryForID(LocInfo.first)->getName(), LocInfo.second);
+    if (auto FileEntry = SM->getFileEntryForID(LocInfo.first)) {
+      return std::make_pair(FileEntry->getName(), LocInfo.second);
+    }
+    if (IsInvalid)
+      *IsInvalid = true;
+    return std::make_pair(StringRef(), 0);
   }
 
 #define GLOBAL_TYPE(TYPE, NODE_TYPE)                                           \
@@ -331,6 +427,31 @@ public:
   std::shared_ptr<CudaMallocInfo> findCudaMalloc(const Expr *CE);
   void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     insertFile(Repl->getFilePath())->addReplacement(Repl);
+  }
+
+  void setFileEnterLocation(SourceLocation Loc) {
+    auto LocInfo = getLocInfo(Loc);
+    insertFile(LocInfo.first)->setFileEnterOffset(LocInfo.second);
+  }
+
+  void setFirstIncludeLocation(SourceLocation Loc) {
+    auto LocInfo = getLocInfo(Loc);
+    insertFile(LocInfo.first)->setFirstIncludeOffset(LocInfo.second);
+  }
+
+  void setLastIncludeLocation(SourceLocation Loc) {
+    auto LocInfo = getLocInfo(Loc);
+    insertFile(LocInfo.first)->setLastIncludeOffset(LocInfo.second);
+  }
+
+  void setMathHeaderInserted(SourceLocation Loc, bool B) {
+    auto LocInfo = getLocInfo(Loc);
+    insertFile(LocInfo.first)->setMathHeaderInserted(B);
+  }
+
+  void insertHeader(SourceLocation Loc, HeaderType Type) {
+    auto LocInfo = getLocInfo(Loc);
+    insertFile(LocInfo.first)->insertHeader(Type);
   }
 
 private:
