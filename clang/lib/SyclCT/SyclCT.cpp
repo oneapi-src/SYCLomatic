@@ -319,6 +319,13 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   // do not copy "--" so the driver sees a possible --cuda-path option
   std::copy_if(argv, argv + argc, back_inserter(Argv),
                [](const char *s) { return std::strcmp(s, "--"); });
+  // Remove the redundant prefix "--extra-arg=" so that
+  // CudaInstallationDetector can find correct path.
+  for (unsigned int i = 0; i < Argv.size(); i++) {
+    if (strncmp(argv[i], "--extra-arg=--cuda-path", 23) == 0) {
+      Argv[i] = argv[i] + 12;
+    }
+  }
 
   // Output parameters to indicate errors in parsing. Not checked here,
   // OptParser will handle errors.
