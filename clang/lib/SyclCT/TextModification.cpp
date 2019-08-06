@@ -26,8 +26,13 @@ using namespace clang;
 using namespace clang::syclct;
 using namespace clang::tooling;
 
-static std::unordered_set<std::string> DuplicateFilter;
+static std::unordered_set<std::string> DuplicateFilterAPI;
+static std::unordered_set<std::string> DuplicateFilterSYCL;
 
+// This function is used to collect the number of LOC (Lines Of Code) to DPC++
+// and the number of LOC migrated to Compatibility API.
+// When a Compatibility API replacement and a non-API replacement happen in
+// the same line, only the LOC of Compatibility API is accumulated.
 void recordTranslationInfo(const ASTContext &Context, const SourceLocation &SL,
                            bool IsCompatibilityAPI = false,
                            std::string APIName = "") {
@@ -36,25 +41,23 @@ void recordTranslationInfo(const ASTContext &Context, const SourceLocation &SL,
     const SourceLocation FileLoc = SM.getFileLoc(SL);
     std::string SLStr = FileLoc.printToString(SM);
     std::size_t PosCol = SLStr.rfind(':');
-    std::size_t PosRow = SLStr.rfind(':', PosCol-1);
+    std::size_t PosRow = SLStr.rfind(':', PosCol - 1);
     std::string FileName = SLStr.substr(0, PosRow);
     std::string LineNo = SLStr.substr(PosRow + 1, PosCol - PosRow - 1);
 
-    std::string Key = FileName + ":" + LineNo;
+    std::string KeySYCL = FileName + ":" + LineNo;
+    std::string KeyAPI = FileName + ":" + LineNo + ":" + APIName;
 
-    if (DuplicateFilter.find(Key) == end(DuplicateFilter) ||
+    if (DuplicateFilterAPI.find(KeyAPI) == end(DuplicateFilterAPI) &&
         IsCompatibilityAPI == true) {
-      if (IsCompatibilityAPI) {
-        if (DuplicateFilter.find(Key) != end(DuplicateFilter)) {
-          // when syclct api replacement and non-api SYCL replacement happen in
-          // the same line, only count line number to syclct api accumulation.
-          LOCStaticsMap[FileName][1]--;
-        }
-        LOCStaticsMap[FileName][0]++;
-      } else {
-        LOCStaticsMap[FileName][1]++;
-      }
-      DuplicateFilter.insert(Key);
+      LOCStaticsMap[FileName][0]++;
+      DuplicateFilterAPI.insert(KeyAPI);
+    }
+
+    if (DuplicateFilterSYCL.find(KeySYCL) == end(DuplicateFilterSYCL) &&
+        IsCompatibilityAPI == false) {
+      LOCStaticsMap[FileName][1]++;
+      DuplicateFilterSYCL.insert(KeySYCL);
     }
   }
 }
@@ -530,8 +533,8 @@ InsertComment::getReplacement(const ASTContext &Context) const {
   return std::make_shared<ExtReplacement>(Context.getSourceManager(), SL, 0,
                                           (OrigIndent + llvm::Twine("/*") + NL +
                                            OrigIndent + Text + NL + OrigIndent +
-                                           "*/" +
-                                           NL).str(),
+                                           "*/" + NL)
+                                              .str(),
                                           this);
 }
 
