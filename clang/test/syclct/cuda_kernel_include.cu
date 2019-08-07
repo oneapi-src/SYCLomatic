@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
   // CHECK: syclct::sycl_malloc((void **)&d_array, sizeof(float) * size);
   cudaMalloc((void **)&d_array, sizeof(float) * size);
 
-  // CHECK: syclct::sycl_memset((void*)(d_array), (int)(0), (size_t)(sizeof(float) * size));
+  // CHECK: syclct::dpct_memset((void*)(d_array), 0, sizeof(float) * size);
   cudaMemset(d_array, 0, sizeof(float) * size);
 
   // CHECK:  {
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:  }
   simple_kernel<<<size / 64, 64>>>(d_array);
 
-  // CHECK:  syclct::sycl_memcpy((void*)(h_array), (void*)(d_array), 360 * sizeof(float), syclct::device_to_host);
+  // CHECK:  syclct::dpct_memcpy((void*)(h_array), (void*)(d_array), 360 * sizeof(float), syclct::device_to_host);
   cudaMemcpy(h_array, d_array, 360 * sizeof(float), cudaMemcpyDeviceToHost);
 
   for (int i = 1; i < 360; i++) {

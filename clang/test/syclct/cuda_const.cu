@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
   // CHECK: syclct::sycl_malloc((void **)&d_array, sizeof(float) * size);
   cudaMalloc((void **)&d_array, sizeof(float) * size);
 
-  // CHECK: syclct::sycl_memset((void*)(d_array), (int)(0), (size_t)(sizeof(float) * size));
+  // CHECK: syclct::dpct_memset((void*)(d_array), 0, sizeof(float) * size);
   cudaMemset(d_array, 0, sizeof(float) * size);
 
   for (int loop = 0; loop < 360; loop++)
@@ -65,32 +65,32 @@ int main(int argc, char **argv) {
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   (syclct::sycl_memcpy_to_symbol(const_angle.get_ptr(), (void*)(&h_array[0]), sizeof(float) * 360), 0);
+  // CHECK-NEXT:   (syclct::dpct_memcpy(const_angle.get_ptr(), (void*)(&h_array[0]), sizeof(float) * 360), 0);
   cudaMemcpyToSymbol(&const_angle[0], &h_array[0], sizeof(float) * 360);
 
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   (syclct::sycl_memcpy_to_symbol(const_angle.get_ptr() + sizeof(float) * (3), (void*)(&h_array[0]), sizeof(float) * 357), 0);
+  // CHECK-NEXT:   (syclct::dpct_memcpy(const_angle.get_ptr() + sizeof(float) * (3), (void*)(&h_array[0]), sizeof(float) * 357), 0);
   cudaMemcpyToSymbol(&const_angle[3], &h_array[0], sizeof(float) * 357);
 
   // CHECK:  /*
   // CHECK-NEXT:  SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  (syclct::sycl_memcpy_from_symbol((void*)(&h_array[0]), const_angle.get_ptr() + sizeof(float) * (3), sizeof(float) * 357), 0);
+  // CHECK-NEXT:  (syclct::dpct_memcpy((void*)(&h_array[0]), const_angle.get_ptr() + sizeof(float) * (3), sizeof(float) * 357), 0);
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3], sizeof(float) * 357);
 
   #define NUM 3
   // CHECK:/*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: (syclct::sycl_memcpy_to_symbol(const_angle.get_ptr() + sizeof(float) * (3+NUM), (void*)(&h_array[0]), sizeof(float) * 354), 0);
+  // CHECK-NEXT: (syclct::dpct_memcpy(const_angle.get_ptr() + sizeof(float) * (3+NUM), (void*)(&h_array[0]), sizeof(float) * 354), 0);
   cudaMemcpyToSymbol(&const_angle[3+NUM], &h_array[0], sizeof(float) * 354);
 
   // CHECK:  /*
   // CHECK-NEXT:  SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  (syclct::sycl_memcpy_from_symbol((void*)(&h_array[0]), const_angle.get_ptr() + sizeof(float) * (3+NUM), sizeof(float) * 354), 0);
+  // CHECK-NEXT:  (syclct::dpct_memcpy((void*)(&h_array[0]), const_angle.get_ptr() + sizeof(float) * (3+NUM), sizeof(float) * 354), 0);
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3+NUM], sizeof(float) * 354);
   // CHECK:    {
   // CHECK-NEXT:    std::pair<syclct::buffer_t, size_t> d_array_buf = syclct::get_buffer_and_offset(d_array);
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
   simple_kernel<<<size / 64, 64>>>(d_array);
 
   float hangle_h[360];
-  // CHECK:  syclct::sycl_memcpy((void*)(hangle_h), (void*)(d_array), 360 * sizeof(float), syclct::device_to_host);
+  // CHECK:  syclct::dpct_memcpy((void*)(hangle_h), (void*)(d_array), 360 * sizeof(float), syclct::device_to_host);
   cudaMemcpy(hangle_h, d_array, 360 * sizeof(float), cudaMemcpyDeviceToHost);
   for (int i = 0; i < 360; i++) {
     if (fabs(h_array[i] - hangle_h[i]) > 1e-5) {
@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT:  (syclct::sycl_memcpy_to_symbol(const_one.get_ptr(), (void*)(&h_array[0]), sizeof(float) * 1), 0);
+  // CHECK-NEXT:  (syclct::dpct_memcpy(const_one.get_ptr(), (void*)(&h_array[0]), sizeof(float) * 1), 0);
   cudaMemcpyToSymbol(&const_one, &h_array[0], sizeof(float) * 1);
 
   // CHECK:  {
@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
   simple_kernel_one<<<size / 64, 64>>>(d_array);
 
   hangle_h[360];
-  // CHECK:  syclct::sycl_memcpy((void*)(hangle_h), (void*)(d_array), 360 * sizeof(float), syclct::device_to_host);
+  // CHECK:  syclct::dpct_memcpy((void*)(hangle_h), (void*)(d_array), 360 * sizeof(float), syclct::device_to_host);
   cudaMemcpy(hangle_h, d_array, 360 * sizeof(float), cudaMemcpyDeviceToHost);
 
   for (int i = 1; i < 360; i++) {

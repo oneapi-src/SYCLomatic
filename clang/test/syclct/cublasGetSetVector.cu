@@ -23,7 +23,7 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (syclct::sycl_memcpy((void*)(h_C),(void*)(d_C),(N)*(sizeof(h_C[0]))*(1),syclct::device_to_host), 0);
+  // CHECK-NEXT: status = (syclct::dpct_memcpy((void*)(h_C),(void*)(d_C),(N)*(sizeof(h_C[0]))*(1),syclct::device_to_host), 0);
   status = cublasGetVector(N, sizeof(h_C[0]), d_C, 1, h_C, 1);
 
 #define INCX_MARCO 1
@@ -31,13 +31,13 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (syclct::sycl_memcpy((void*)(d_A),(void*)(h_A),(N)*(sizeof(h_A[0]))*(INCX_MARCO),syclct::host_to_device), 0);
+  // CHECK-NEXT: status = (syclct::dpct_memcpy((void*)(d_A),(void*)(h_A),(N)*(sizeof(h_A[0]))*(INCX_MARCO),syclct::host_to_device), 0);
   status = cublasSetVector(N, sizeof(h_A[0]), h_A, INCX_MARCO, d_A, ConstIncy);
 
-  // CHECK: syclct::sycl_memcpy((void*)(h_C),(void*)(d_C),(N)*(sizeof(h_C[0]))*(1),syclct::device_to_host);
+  // CHECK: syclct::dpct_memcpy((void*)(h_C),(void*)(d_C),(N)*(sizeof(h_C[0]))*(1),syclct::device_to_host);
   cublasGetVector(N, sizeof(h_C[0]), d_C, 1, h_C, 1);
 
-  // CHECK: syclct::sycl_memcpy((void*)(d_A),(void*)(h_A),(N)*(sizeof(h_A[0]))*(1),syclct::host_to_device);
+  // CHECK: syclct::dpct_memcpy((void*)(d_A),(void*)(h_A),(N)*(sizeof(h_A[0]))*(1),syclct::host_to_device);
   cublasSetVector(N, sizeof(h_A[0]), h_A, 1, d_A, 1);
 
   // CHECK: /*
@@ -60,7 +60,7 @@ int main() {
   // CHECK-NEXT: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (syclct::sycl_memcpy((void*)(d_A),(void*)(h_A),(N)*(sizeof(h_A[0]))*(ConstIncx),syclct::host_to_device), 0);
+  // CHECK-NEXT: status = (syclct::dpct_memcpy((void*)(d_A),(void*)(h_A),(N)*(sizeof(h_A[0]))*(ConstIncx),syclct::host_to_device), 0);
   status = cublasSetVector(N, sizeof(h_A[0]), h_A, ConstIncx, d_A, INCY_MARCO);
 
   int incx = 1;
@@ -90,28 +90,28 @@ int main() {
   // CHECK-NEXT: cublasSetVector(N, sizeof(h_A[0]), h_A, foo(incx), d_A, foo(incy));
   cublasSetVector(N, sizeof(h_A[0]), h_A, foo(incx), d_A, foo(incy));
 
-  // CHECK: syclct::sycl_memcpy((void*)(d_A),(void*)(h_A),(N)*(sizeof(h_A[0]))*(foo(ConstIncxT)),syclct::host_to_device);
+  // CHECK: syclct::dpct_memcpy((void*)(d_A),(void*)(h_A),(N)*(sizeof(h_A[0]))*(foo(ConstIncxT)),syclct::host_to_device);
   cublasSetVector(N, sizeof(h_A[0]), h_A, foo(ConstIncxT), d_A, foo(ConstIncyT));
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1018:{{[0-9]+}}: The cublasGetVector was migrated, but due to parameter foo(ConstExprIncx) equals to parameter ConstExprIncy but greater than 1, the generated code performance may be sub-optimal.
   // CHECK-NEXT: */
-  // CHECK-NEXT: syclct::sycl_memcpy((void*)(d_A),(void*)(h_A),(N)*(sizeof(h_A[0]))*(foo(ConstExprIncx)),syclct::device_to_host);
+  // CHECK-NEXT: syclct::dpct_memcpy((void*)(d_A),(void*)(h_A),(N)*(sizeof(h_A[0]))*(foo(ConstExprIncx)),syclct::device_to_host);
   cublasGetVector(N, sizeof(h_A[0]), h_A, foo(ConstExprIncx), d_A, ConstExprIncy);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (syclct::sycl_memcpy((void*)(h_C),(void*)(d_C),(N)*(sizeof(h_C[0]))*(1),syclct::device_to_host), 0);
-  // CHECK-NEXT: syclct::sycl_memcpy((void*)(h_C),(void*)(d_C),(N)*(sizeof(h_C[0]))*(1),syclct::device_to_host);
+  // CHECK-NEXT: status = (syclct::dpct_memcpy((void*)(h_C),(void*)(d_C),(N)*(sizeof(h_C[0]))*(1),syclct::device_to_host), 0);
+  // CHECK-NEXT: syclct::dpct_memcpy((void*)(h_C),(void*)(d_C),(N)*(sizeof(h_C[0]))*(1),syclct::device_to_host);
   status = cublasGetVectorAsync(N, sizeof(h_C[0]), d_C, 1, h_C, 1, stream);
   cublasGetVectorAsync(N, sizeof(h_C[0]), d_C, 1, h_C, 1, stream);
 
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (syclct::sycl_memcpy((void*)(h_C),(void*)(d_C),(N)*(sizeof(h_C[0]))*(1),syclct::host_to_device), 0);
-  // CHECK-NEXT: syclct::sycl_memcpy((void*)(h_C),(void*)(d_C),(N)*(sizeof(h_C[0]))*(1),syclct::host_to_device);
+  // CHECK-NEXT: status = (syclct::dpct_memcpy((void*)(h_C),(void*)(d_C),(N)*(sizeof(h_C[0]))*(1),syclct::host_to_device), 0);
+  // CHECK-NEXT: syclct::dpct_memcpy((void*)(h_C),(void*)(d_C),(N)*(sizeof(h_C[0]))*(1),syclct::host_to_device);
   status = cublasSetVectorAsync(N, sizeof(h_C[0]), d_C, 1, h_C, 1, stream);
   cublasSetVectorAsync(N, sizeof(h_C[0]), d_C, 1, h_C, 1, stream);
 

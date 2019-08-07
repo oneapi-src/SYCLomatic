@@ -372,8 +372,8 @@ void IncludesCallbacks::InclusionDirective(
                                 "#include <syclct/syclct_dpstd_utils.hpp>";
       if (!SyclHeaderInserted) {
         Replacement = std::string("<CL/sycl.hpp>") + getNL() +
-                      "#include <syclct/syclct.hpp>" + getNL() +
-                      "#include " + Replacement;
+                      "#include <syclct/syclct.hpp>" + getNL() + "#include " +
+                      Replacement;
         SyclHeaderInserted = true;
       }
       ThrustHeaderInserted = true;
@@ -901,7 +901,6 @@ void ThrustFunctionRule::registerMatcher(MatchFinder &MF) {
                 this);
 }
 
-
 void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
   auto UniqueName = [](const Stmt *S) {
     auto &SM = SyclctGlobalInfo::getSourceManager();
@@ -927,7 +926,7 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
     if (ExtraParam == "dpstd::execution::sycl") {
       std::string Name = UniqueName(CE);
       ExtraParam = "dpstd::execution::make_sycl_policy<class Policy_" +
-          UniqueName(CE) + ">(dpstd::execution::sycl)";
+                   UniqueName(CE) + ">(dpstd::execution::sycl)";
     }
     emplaceTransformation(
         new InsertBeforeStmt(CE->getArg(0), ExtraParam + ", "));
@@ -2158,7 +2157,7 @@ void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
   auto MemberName = ME->getMemberNameInfo().getAsString();
   if (MemberName == "sharedMemPerBlock") {
     report(ME->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE);
-  }else if (MemberName == "maxGridSize") {
+  } else if (MemberName == "maxGridSize") {
     report(ME->getBeginLoc(), Diagnostics::MAX_GRID_SIZE);
   }
 
@@ -2883,7 +2882,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cublasGetVectorAsync") {
     if (HasDeviceAttr) {
       report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, FuncName,
-             "syclct::sycl_memcpy");
+             "syclct::dpct_memcpy");
       return;
     }
     // The 4th and 6th param (incx and incy) of cublasSetVector/cublasGetVector
@@ -2935,7 +2934,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
 
     std::string Replacement =
-        "syclct::sycl_memcpy(" + YStr + "," + XStr + "," + CopySize + ",";
+        "syclct::dpct_memcpy(" + YStr + "," + XStr + "," + CopySize + ",";
 
     if (FuncName == "cublasGetVector" || FuncName == "cublasGetVectorAsync") {
       Replacement = Replacement + "syclct::device_to_host)";
@@ -2955,7 +2954,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cublasGetMatrixAsync") {
     if (HasDeviceAttr) {
       report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, FuncName,
-             "syclct::sycl_memcpy");
+             "syclct::dpct_memcpy");
       return;
     }
     std::vector<std::string> ParamsStrsVec =
@@ -3015,7 +3014,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
 
     std::string Replacement =
-        "syclct::sycl_memcpy(" + BStr + "," + AStr + "," + CopySize + ",";
+        "syclct::dpct_memcpy(" + BStr + "," + AStr + "," + CopySize + ",";
 
     if (FuncName == "cublasGetMatrix" || FuncName == "cublasGetMatrixAsync") {
       Replacement = Replacement + "syclct::device_to_host)";
@@ -4347,7 +4346,8 @@ const Expr *MemoryTranslationRule::getUnaryOperatorExpr(const Expr *E) {
 }
 
 void MemoryTranslationRule::replaceMemAPIArg(
-    const Expr *E, const ast_matchers::MatchFinder::MatchResult &Result) {
+    const Expr *E, const ast_matchers::MatchFinder::MatchResult &Result,
+    std::string OffsetFromBaseStr) {
 
   auto ASE = getArraySubscriptExpr(E);
   const clang::Expr *BASE = nullptr;
@@ -4382,6 +4382,10 @@ void MemoryTranslationRule::replaceMemAPIArg(
       VarName += Offset;
     }
 
+    if (!OffsetFromBaseStr.empty()) {
+      VarName =
+          "(void *)((char *)(" + VarName + ") + " + OffsetFromBaseStr + ")";
+    }
     emplaceTransformation(
         new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
   } else if (UO && (VI = SyclctGlobalInfo::getInstance().findMemVarInfo(
@@ -4389,6 +4393,11 @@ void MemoryTranslationRule::replaceMemAPIArg(
     // Migrate the expr such as "&const_one" to "const_one.get_ptr()".
     std::string VarName = VI->getName();
     VarName += ".get_ptr()";
+
+    if (!OffsetFromBaseStr.empty()) {
+      VarName =
+          "(void *)((char *)(" + VarName + ") + " + OffsetFromBaseStr + ")";
+    }
     emplaceTransformation(
         new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
   } else if (VI = SyclctGlobalInfo::getInstance().findMemVarInfo(
@@ -4396,6 +4405,11 @@ void MemoryTranslationRule::replaceMemAPIArg(
     // Migrate the expr such as "const_one" to "const_one.get_ptr()".
     std::string VarName = VI->getName();
     VarName += ".get_ptr()";
+
+    if (!OffsetFromBaseStr.empty()) {
+      VarName =
+          "(void *)((char *)(" + VarName + ") + " + OffsetFromBaseStr + ")";
+    }
     emplaceTransformation(
         new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
   } else {
@@ -4407,25 +4421,6 @@ void MemoryTranslationRule::replaceMemAPIArg(
 void MemoryTranslationRule::memcpyTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr) {
-  // Input:
-  //   cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
-  //   cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
-  //   cudaMemcpy(x_A, y_A, size, someDynamicCudaMemcpyKindValue);
-  //
-  // Desired output:
-  //   sycl_memcpy<float>(d_A, h_A, numElements);
-  //   sycl_memcpy_back<float>(h_A, d_A, numElements);
-  //   sycl_memcpy<float>(x_A, y_A, numElements,
-  //   someDynamicCudaMemcpyKindValue);
-  //
-  // Current output:
-  //   sycl_memcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
-  //   sycl_memcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
-  //   sycl_memcpy(x_A, y_A, size, someDynamicCudaMemcpyKindValue);
-
-  // Migrate C->getArg(3) if this is enum constant.
-  // TODO: this is a hack until we get pass ordering and make
-  // different passes work with each other well together.
   const Expr *Direction = C->getArg(3);
   std::string DirectionName;
   const DeclRefExpr *DD = dyn_cast_or_null<DeclRefExpr>(Direction);
@@ -4436,15 +4431,27 @@ void MemoryTranslationRule::memcpyTranslation(
     Direction = nullptr;
     DirectionName = "syclct::" + Search->second;
   }
+
+  std::string Name;
+  if (ULExpr) {
+    Name = ULExpr->getName().getAsString();
+  } else {
+    Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
+  }
+
+  std::string ReplaceStr;
+  if (Name == "cudaMemcpy") {
+    ReplaceStr = "syclct::dpct_memcpy";
+  } else {
+    ReplaceStr = "syclct::async_dpct_memcpy";
+  }
+
   if (ULExpr) {
     emplaceTransformation(new ReplaceToken(
-        ULExpr->getBeginLoc(), ULExpr->getEndLoc(), "syclct::sycl_memcpy"));
+        ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(ReplaceStr)));
   } else {
-
-    const std::string Name =
-        C->getCalleeDecl()->getAsFunction()->getNameAsString();
     emplaceTransformation(
-        new ReplaceCalleeName(C, "syclct::sycl_memcpy", Name));
+        new ReplaceCalleeName(C, std::move(ReplaceStr), Name));
   }
 
   replaceMemAPIArg(C->getArg(0), Result);
@@ -4460,7 +4467,7 @@ void MemoryTranslationRule::memcpyTranslation(
 
 void MemoryTranslationRule::memcpyToAndFromSymbolTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
-    const UnresolvedLookupExpr *ULExpr, std::string Str) {
+    const UnresolvedLookupExpr *ULExpr) {
 
   const Expr *Direction = C->getArg(4);
   std::string DirectionName;
@@ -4486,18 +4493,56 @@ void MemoryTranslationRule::memcpyToAndFromSymbolTranslation(
     }
   }
 
+  std::string Name;
   if (ULExpr) {
-    emplaceTransformation(new ReplaceToken(
-        ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(Str)));
+    Name = ULExpr->getName().getAsString();
   } else {
-
-    const std::string Name =
-        C->getCalleeDecl()->getAsFunction()->getNameAsString();
-    emplaceTransformation(new ReplaceCalleeName(C, std::move(Str), Name));
+    Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
 
-  replaceMemAPIArg(C->getArg(0), Result);
-  replaceMemAPIArg(C->getArg(1), Result);
+  std::string ReplaceStr;
+  if (Name == "cudaMemcpyToSymbol" || Name == "cudaMemcpyFromSymbol") {
+    ReplaceStr = "syclct::dpct_memcpy";
+  } else {
+    ReplaceStr = "syclct::async_dpct_memcpy";
+  }
+
+  if (ULExpr) {
+    emplaceTransformation(new ReplaceToken(
+        ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(ReplaceStr)));
+  } else {
+    emplaceTransformation(
+        new ReplaceCalleeName(C, std::move(ReplaceStr), Name));
+  }
+
+  std::string OffsetFromBaseStr =
+      getStmtSpelling(C->getArg(3), *Result.Context);
+
+  if ((Name == "cudaMemcpyToSymbol" || Name == "cudaMemcpyToSymbolAsync") &&
+      OffsetFromBaseStr != "0") {
+    replaceMemAPIArg(C->getArg(0), Result, OffsetFromBaseStr);
+  } else {
+    replaceMemAPIArg(C->getArg(0), Result);
+  }
+
+  if ((Name == "cudaMemcpyFromSymbol" || Name == "cudaMemcpyFromSymbolAsync") &&
+      OffsetFromBaseStr != "0") {
+    replaceMemAPIArg(C->getArg(1), Result, OffsetFromBaseStr);
+  } else {
+    replaceMemAPIArg(C->getArg(1), Result);
+  }
+
+  // Remove C->getArg(3)
+  const auto &SM = *Result.SourceManager;
+  const Expr *ArgBefore = C->getArg(2);
+  auto Begin = ArgBefore->getEndLoc();
+  Begin = Lexer::getLocForEndOfToken(Begin, 0, SM, LangOptions());
+  auto End = C->getArg(3)->getEndLoc();
+  End = Lexer::getLocForEndOfToken(End, 0, SM, LangOptions());
+  auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
+  if (Length > 0) {
+    emplaceTransformation(new ReplaceText(Begin, Length, ""));
+  }
 
   emplaceTransformation(
       new ReplaceStmt(C->getArg(4), std::move(DirectionName)));
@@ -4505,43 +4550,6 @@ void MemoryTranslationRule::memcpyToAndFromSymbolTranslation(
   // cudaMemcpyToSymbolAsync
   if (C->getNumArgs() == 6)
     handleAsync(C, 5, Result);
-}
-
-void MemoryTranslationRule::memcpyToSymbolTranslation(
-    const MatchFinder::MatchResult &Result, const CallExpr *C,
-    const UnresolvedLookupExpr *ULExpr) {
-  // Input:
-  //   cudaMemcpyToSymbol(d_A, h_A, size, offset, cudaMemcpyHostToDevice);
-  //   cudaMemcpyToSymbol(d_B, d_C, size, offset, cudaMemcpyDeviceToDevice);
-
-  // Desired output:
-  //   syclct::sycl_memcpy_to_symbol(d_A.get_ptr(), (void*)(h_A), size,
-  //                                 offset, syclct::host_to_device);
-  //
-  //   syclct::sycl_memcpy_to_symbol(d_B.get_ptr(), d_C, size, offset,
-  //                                 syclct::device_to_device);
-
-  memcpyToAndFromSymbolTranslation(Result, C, ULExpr,
-                                   "syclct::sycl_memcpy_to_symbol");
-}
-
-void MemoryTranslationRule::memcpyFromSymbolTranslation(
-    const MatchFinder::MatchResult &Result, const CallExpr *C,
-    const UnresolvedLookupExpr *ULExpr) {
-  // Input:
-  //   cudaMemcpyToSymbol(h_A, d_A, size, offset, cudaMemcpyDeviceToHost);
-  //   cudaMemcpyToSymbol(d_B, d_A, size, offset, cudaMemcpyDeviceToDevice);
-
-  // Desired output:
-  //   syclct::sycl_memcpy_to_symbol((void*)(h_A), d_A.get_ptr(), size,
-  //   offset,
-  //                                 syclct::device_to_host);
-  //
-  //   syclct::sycl_memcpy_to_symbol((void*)(d_B), d_A.get_ptr(), size,
-  //   offset,
-  //                                 syclct::device_to_device);
-  memcpyToAndFromSymbolTranslation(Result, C, ULExpr,
-                                   "syclct::sycl_memcpy_from_symbol");
 }
 
 void MemoryTranslationRule::freeTranslation(
@@ -4569,11 +4577,20 @@ void MemoryTranslationRule::memsetTranslation(
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
 
-  emplaceTransformation(new ReplaceCalleeName(C, "syclct::sycl_memset", Name));
+  std::string ReplaceStr;
+  if (Name == "cudaMemsetAsync") {
+    ReplaceStr = "syclct::async_dpct_memset";
+  } else {
+    ReplaceStr = "syclct::dpct_memset";
+  }
+
+  emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr), Name));
 
   replaceMemAPIArg(C->getArg(0), Result);
-  insertAroundStmt(C->getArg(1), "(int)(", ")");
-  insertAroundStmt(C->getArg(2), "(size_t)(", ")");
+
+  // cudaMemsetAsync
+  if (C->getNumArgs() == 4)
+    handleAsync(C, 3, Result);
 }
 
 // Memory migration rules live here.
@@ -4582,8 +4599,8 @@ void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
     return hasAnyName("cudaMalloc", "cudaMemcpy", "cudaMemcpyAsync",
                       "cudaMemcpyToSymbol", "cudaMemcpyToSymbolAsync",
                       "cudaMemcpyFromSymbol", "cudaMemcpyFromSymbolAsync",
-                      "cudaFree", "cudaMemset", "cublasFree", "cublasAlloc",
-                      "cudaGetSymbolAddress");
+                      "cudaFree", "cudaMemset", "cudaMemsetAsync", "cublasFree",
+                      "cublasAlloc", "cudaGetSymbolAddress");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -4674,16 +4691,16 @@ MemoryTranslationRule::MemoryTranslationRule() {
       &MemoryTranslationRule::memcpyTranslation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cudaMemcpyToSymbol"] = std::bind(
-      &MemoryTranslationRule::memcpyToSymbolTranslation, this,
+      &MemoryTranslationRule::memcpyToAndFromSymbolTranslation, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cudaMemcpyToSymbolAsync"] = std::bind(
-      &MemoryTranslationRule::memcpyToSymbolTranslation, this,
+      &MemoryTranslationRule::memcpyToAndFromSymbolTranslation, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cudaMemcpyFromSymbol"] = std::bind(
-      &MemoryTranslationRule::memcpyFromSymbolTranslation, this,
+      &MemoryTranslationRule::memcpyToAndFromSymbolTranslation, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cudaMemcpyFromSymbolAsync"] = std::bind(
-      &MemoryTranslationRule::memcpyFromSymbolTranslation, this,
+      &MemoryTranslationRule::memcpyToAndFromSymbolTranslation, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cudaFree"] = std::bind(
       &MemoryTranslationRule::freeTranslation, this, std::placeholders::_1,
@@ -4692,6 +4709,9 @@ MemoryTranslationRule::MemoryTranslationRule() {
       &MemoryTranslationRule::freeTranslation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cudaMemset"] = std::bind(
+      &MemoryTranslationRule::memsetTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cudaMemsetAsync"] = std::bind(
       &MemoryTranslationRule::memsetTranslation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cudaGetSymbolAddress"] = std::bind(

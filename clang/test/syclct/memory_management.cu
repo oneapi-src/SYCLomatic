@@ -14,39 +14,61 @@ void fooo() {
   cudaStream_t stream;
   // CHECK: syclct::sycl_malloc((void **)&d_A, size);
   cudaMalloc((void **)&d_A, size);
-  // CHECK: syclct::sycl_memset((void*)(d_A), (int)(0xf), (size_t)(size));
+  // CHECK: syclct::dpct_memset((void*)(d_A), 0xf, size);
   cudaMemset(d_A, 0xf, size);
-  // CHECK: syclct::sycl_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device);
+
+  // CHECK: syclct::async_dpct_memset((void*)(d_A), 0xf, size);
+  cudaMemsetAsync(d_A, 0xf, size);
+  // CHECK: syclct::async_dpct_memset((void*)(d_A), 0xf, size);
+  cudaMemsetAsync(d_A, 0xf, size, 0);
+  // CHECK: syclct::async_dpct_memset((void*)(d_A), 0xf, size, stream);
+  cudaMemsetAsync(d_A, 0xf, size, stream);
+
+  // CHECK: syclct::dpct_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device);
   cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
-  // CHECK: syclct::sycl_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host);
+  // CHECK: syclct::dpct_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host);
   cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
 
-  // CHECK: syclct::sycl_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device);
+  // CHECK: syclct::async_dpct_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device);
   cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice);
-  // CHECK: syclct::sycl_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device);
+  // CHECK: syclct::async_dpct_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device);
   cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, 0);
-  // CHECK: syclct::sycl_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device, stream);
+  // CHECK: syclct::async_dpct_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device, stream);
   cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, stream);
 
-  // CHECK: syclct::sycl_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host);
+  // CHECK: syclct::async_dpct_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host);
   cudaMemcpyAsync(h_A, d_A, size, cudaMemcpyDeviceToHost);
-  // CHECK: syclct::sycl_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host);
+  // CHECK: syclct::async_dpct_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host);
   cudaMemcpyAsync(h_A, d_A, size, cudaMemcpyDeviceToHost, 0);
-  // CHECK: syclct::sycl_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host, stream);
+  // CHECK: syclct::async_dpct_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host, stream);
   cudaMemcpyAsync(h_A, d_A, size, cudaMemcpyDeviceToHost, stream);
 
-  // CHECK: syclct::sycl_memcpy_to_symbol(constData.get_ptr(), (void*)(h_A), size, 0, syclct::host_to_device);
+  // CHECK: syclct::async_dpct_memcpy((void *)((char *)(constData.get_ptr()) + 1), (void*)(h_A), size, syclct::host_to_device);
+  cudaMemcpyToSymbolAsync(constData, h_A, size, 1, cudaMemcpyHostToDevice);
+  // CHECK: syclct::async_dpct_memcpy((void *)((char *)(constData.get_ptr()) + 2), (void*)(h_A), size, syclct::host_to_device);
+  cudaMemcpyToSymbolAsync(constData, h_A, size, 2, cudaMemcpyHostToDevice, 0);
+  // CHECK: syclct::async_dpct_memcpy((void *)((char *)(constData.get_ptr()) + 3), (void*)(h_A), size, syclct::host_to_device, stream);
+  cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream);
+
+  // CHECK: syclct::async_dpct_memcpy(constData.get_ptr(), (void*)(h_A), size, syclct::host_to_device);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 0, cudaMemcpyHostToDevice);
-  // CHECK: syclct::sycl_memcpy_to_symbol(constData.get_ptr(), (void*)(h_A), size, 0, syclct::host_to_device);
+  // syclct::async_dpct_memcpy(constData.get_ptr(), (void*)(h_A), size, syclct::host_to_device);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 0, cudaMemcpyHostToDevice, 0);
-  // CHECK: syclct::sycl_memcpy_to_symbol(constData.get_ptr(), (void*)(h_A), size, 0, syclct::host_to_device, stream);
+  // syclct::async_dpct_memcpy(constData.get_ptr(), (void*)(h_A), size, syclct::host_to_device, stream);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 0, cudaMemcpyHostToDevice, stream);
 
-  // CHECK: syclct::sycl_memcpy_from_symbol((void*)(h_A), constData.get_ptr(), size, 0, syclct::device_to_host);
+  // CHECK: syclct::async_dpct_memcpy((void*)(h_A), (void *)((char *)(constData.get_ptr()) + 1), size, syclct::device_to_host);
+  cudaMemcpyFromSymbolAsync(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
+  // CHECK: syclct::async_dpct_memcpy((void*)(h_A), (void *)((char *)(constData.get_ptr()) + 2), size, syclct::device_to_host);
+  cudaMemcpyFromSymbolAsync(h_A, constData, size, 2, cudaMemcpyDeviceToHost, 0);
+  // CHECK: syclct::async_dpct_memcpy((void*)(h_A), (void *)((char *)(constData.get_ptr()) + 3), size, syclct::device_to_host, stream);
+  cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream);
+
+  // CHECK: syclct::async_dpct_memcpy((void*)(h_A), constData.get_ptr(), size, syclct::device_to_host);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 0, cudaMemcpyDeviceToHost);
-  // CHECK: syclct::sycl_memcpy_from_symbol((void*)(h_A), constData.get_ptr(), size, 0, syclct::device_to_host);
+  // CHECK: syclct::async_dpct_memcpy((void*)(h_A), constData.get_ptr(), size, syclct::device_to_host);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 0, cudaMemcpyDeviceToHost, 0);
-  // CHECK: syclct::sycl_memcpy_from_symbol((void*)(h_A), constData.get_ptr(), size, 0, syclct::device_to_host, stream);
+  // syclct::async_dpct_memcpy((void*)(h_A), constData.get_ptr(), size, syclct::device_to_host, stream);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 0, cudaMemcpyDeviceToHost, stream);
 
   // CHECK: syclct::sycl_free(d_A);
@@ -82,185 +104,251 @@ void testCommas() {
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((syclct::sycl_malloc((void **)&d_A, size), 0));
   checkError(cudaMalloc((void **)&d_A, size));
-  // CHECK:  syclct::sycl_memset((void*)(d_A), (int)(0xf), (size_t)(size));
+  // CHECK:  syclct::dpct_memset((void*)(d_A), 0xf, size);
   cudaMemset(d_A, 0xf, size);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memset((void*)(d_A), (int)(0xf), (size_t)(size)), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memset((void*)(d_A), 0xf, size), 0);
   err = cudaMemset(d_A, 0xf, size);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memset((void*)(d_A), (int)(0xf), (size_t)(size)), 0));
+  // CHECK-NEXT:  checkError((syclct::dpct_memset((void*)(d_A), 0xf, size), 0));
   checkError(cudaMemset(d_A, 0xf, size));
 
   ///////// Host to host
-  // CHECK:  syclct::sycl_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_host);
+  // CHECK:  syclct::dpct_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_host);
   cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToHost);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_host), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_host), 0);
   err = cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToHost);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_host), 0));
+  // CHECK-NEXT:  checkError((syclct::dpct_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_host), 0));
   checkError(cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToHost));
 
   ///////// Host to device
-  // CHECK:  syclct::sycl_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device);
+  // CHECK:  syclct::dpct_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device);
   cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device), 0);
   err = cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device), 0));
+  // CHECK-NEXT:  checkError((syclct::dpct_memcpy((void*)(d_A), (void*)(h_A), size, syclct::host_to_device), 0));
   checkError(cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice));
 
   ///////// Device to host
-  // CHECK:  syclct::sycl_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host);
+  // CHECK:  syclct::dpct_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host);
   cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host), 0);
   err = cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host), 0));
+  // CHECK-NEXT:  checkError((syclct::dpct_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_host), 0));
   checkError(cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost));
 
   ///////// Device to Device
-  // CHECK:  syclct::sycl_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_device);
+  // CHECK:  syclct::dpct_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_device);
   cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_device), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_device), 0);
   err = cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_device), 0));
+  // CHECK-NEXT:  checkError((syclct::dpct_memcpy((void*)(h_A), (void*)(d_A), size, syclct::device_to_device), 0));
   checkError(cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToDevice));
 
   ///////// Default
-  // CHECK:  syclct::sycl_memcpy((void*)(h_A), (void*)(d_A), size, syclct::automatic);
+  // CHECK:  syclct::dpct_memcpy((void*)(h_A), (void*)(d_A), size, syclct::automatic);
   cudaMemcpy(h_A, d_A, size, cudaMemcpyDefault);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy((void*)(h_A), (void*)(d_A), size, syclct::automatic), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy((void*)(h_A), (void*)(d_A), size, syclct::automatic), 0);
   err = cudaMemcpy(h_A, d_A, size, cudaMemcpyDefault);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memcpy((void*)(h_A), (void*)(d_A), size, syclct::automatic), 0));
+  // CHECK-NEXT:  checkError((syclct::dpct_memcpy((void*)(h_A), (void*)(d_A), size, syclct::automatic), 0));
   checkError(cudaMemcpy(h_A, d_A, size, cudaMemcpyDefault));
 
   ///////// Host to device
-  // CHECK:  syclct::sycl_memcpy_to_symbol(constData.get_ptr(), (void*)(h_A), size, 0, syclct::host_to_device);
+  // CHECK:  syclct::dpct_memcpy(constData.get_ptr(), (void*)(h_A), size, syclct::host_to_device);
   cudaMemcpyToSymbol(constData, h_A, size, 0, cudaMemcpyHostToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy_to_symbol(constData.get_ptr(), (void*)(h_A), size, 0, syclct::host_to_device), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy(constData.get_ptr(), (void*)(h_A), size, syclct::host_to_device), 0);
   err = cudaMemcpyToSymbol(constData, h_A, size, 0, cudaMemcpyHostToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memcpy_to_symbol(constData.get_ptr(), (void*)(h_A), size, 0, syclct::host_to_device), 0));
+  // CHECK-NEXT:  checkError((syclct::dpct_memcpy(constData.get_ptr(), (void*)(h_A), size, syclct::host_to_device), 0));
   checkError(cudaMemcpyToSymbol(constData, h_A, size, 0, cudaMemcpyHostToDevice));
 
+  // CHECK:  syclct::dpct_memcpy((void *)((char *)(constData.get_ptr()) + 1), (void*)(h_A), size, syclct::host_to_device);
+  cudaMemcpyToSymbol(constData, h_A, size, 1, cudaMemcpyHostToDevice);
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy((void *)((char *)(constData.get_ptr()) + 1), (void*)(h_A), size, syclct::host_to_device), 0);
+  err = cudaMemcpyToSymbol(constData, h_A, size, 1, cudaMemcpyHostToDevice);
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:  checkError((syclct::dpct_memcpy((void *)((char *)(constData.get_ptr()) + 1), (void*)(h_A), size, syclct::host_to_device), 0));
+  checkError(cudaMemcpyToSymbol(constData, h_A, size, 1, cudaMemcpyHostToDevice));
+
   ///////// Device to device
-  // CHECK:  syclct::sycl_memcpy_to_symbol(constData.get_ptr(), (void*)(d_B), size, 0, syclct::device_to_device);
+  // CHECK:  syclct::dpct_memcpy(constData.get_ptr(), (void*)(d_B), size, syclct::device_to_device);
   cudaMemcpyToSymbol(constData, d_B, size, 0, cudaMemcpyDeviceToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy_to_symbol(constData.get_ptr(), (void*)(d_B), size, 0, syclct::device_to_device), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy(constData.get_ptr(), (void*)(d_B), size, syclct::device_to_device), 0);
   err = cudaMemcpyToSymbol(constData, d_B, size, 0, cudaMemcpyDeviceToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   checkError((syclct::sycl_memcpy_to_symbol(constData.get_ptr(), (void*)(h_A), size, 0, syclct::device_to_device), 0));
+  // CHECK-NEXT:   checkError((syclct::dpct_memcpy(constData.get_ptr(), (void*)(h_A), size, syclct::device_to_device), 0));
   checkError(cudaMemcpyToSymbol(constData, h_A, size, 0, cudaMemcpyDeviceToDevice));
 
+  // CHECK:  syclct::dpct_memcpy((void *)((char *)(constData.get_ptr()) + 1), (void*)(d_B), size, syclct::device_to_device);
+  cudaMemcpyToSymbol(constData, d_B, size, 1, cudaMemcpyDeviceToDevice);
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy((void *)((char *)(constData.get_ptr()) + 1), (void*)(d_B), size, syclct::device_to_device), 0);
+  err = cudaMemcpyToSymbol(constData, d_B, size, 1, cudaMemcpyDeviceToDevice);
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:   checkError((syclct::dpct_memcpy((void *)((char *)(constData.get_ptr()) + 1), (void*)(h_A), size, syclct::device_to_device), 0));
+  checkError(cudaMemcpyToSymbol(constData, h_A, size, 1, cudaMemcpyDeviceToDevice));
+
   ///////// Default
-  // CHECK:  syclct::sycl_memcpy_to_symbol(constData.get_ptr(), (void*)(d_B), size, 0, syclct::automatic);
+  // CHECK:  syclct::dpct_memcpy(constData.get_ptr(), (void*)(d_B), size, syclct::automatic);
   cudaMemcpyToSymbol(constData, d_B, size, 0, cudaMemcpyDefault);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   err = (syclct::sycl_memcpy_to_symbol(constData.get_ptr(), (void*)(d_B), size, 0, syclct::automatic), 0);
+  // CHECK-NEXT:   err = (syclct::dpct_memcpy(constData.get_ptr(), (void*)(d_B), size, syclct::automatic), 0);
   err = cudaMemcpyToSymbol(constData, d_B, size, 0, cudaMemcpyDefault);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   checkError((syclct::sycl_memcpy_to_symbol(constData.get_ptr(), (void*)(d_B), size, 0, syclct::automatic), 0));
+  // CHECK-NEXT:   checkError((syclct::dpct_memcpy(constData.get_ptr(), (void*)(d_B), size, syclct::automatic), 0));
   checkError(cudaMemcpyToSymbol(constData, d_B, size, 0, cudaMemcpyDefault));
 
+  // CHECK:  syclct::dpct_memcpy((void *)((char *)(constData.get_ptr()) + 1), (void*)(d_B), size, syclct::automatic);
+  cudaMemcpyToSymbol(constData, d_B, size, 1, cudaMemcpyDefault);
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:   err = (syclct::dpct_memcpy((void *)((char *)(constData.get_ptr()) + 1), (void*)(d_B), size, syclct::automatic), 0);
+  err = cudaMemcpyToSymbol(constData, d_B, size, 1, cudaMemcpyDefault);
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:   checkError((syclct::dpct_memcpy((void *)((char *)(constData.get_ptr()) + 1), (void*)(d_B), size, syclct::automatic), 0));
+  checkError(cudaMemcpyToSymbol(constData, d_B, size, 1, cudaMemcpyDefault));
+
   ///////// Default parameter overload
-  // CHECK:  syclct::sycl_memcpy_to_symbol(constData.get_ptr(), (void*)(d_B), size);
+  // CHECK:  syclct::dpct_memcpy(constData.get_ptr(), (void*)(d_B), size);
   cudaMemcpyToSymbol(constData, d_B, size);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   err = (syclct::sycl_memcpy_to_symbol(constData.get_ptr(), (void*)(d_B), size), 0);
+  // CHECK-NEXT:   err = (syclct::dpct_memcpy(constData.get_ptr(), (void*)(d_B), size), 0);
   err = cudaMemcpyToSymbol(constData, d_B, size);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   checkError((syclct::sycl_memcpy_to_symbol(constData.get_ptr(), (void*)(d_B), size), 0));
+  // CHECK-NEXT:   checkError((syclct::dpct_memcpy(constData.get_ptr(), (void*)(d_B), size), 0));
   checkError(cudaMemcpyToSymbol(constData, d_B, size));
 
   ///////// Device to host
-  // CHECK:  syclct::sycl_memcpy_from_symbol((void*)(h_A), constData.get_ptr(), size, 0, syclct::device_to_host);
+  // CHECK:  syclct::dpct_memcpy((void*)(h_A), constData.get_ptr(), size, syclct::device_to_host);
   cudaMemcpyFromSymbol(h_A, constData, size, 0, cudaMemcpyDeviceToHost);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy_from_symbol((void*)(h_A), constData.get_ptr(), size, 0, syclct::device_to_host), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy((void*)(h_A), constData.get_ptr(), size, syclct::device_to_host), 0);
   err = cudaMemcpyFromSymbol(h_A, constData, size, 0, cudaMemcpyDeviceToHost);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memcpy_from_symbol((void*)(h_A), constData.get_ptr(), size, 0, syclct::device_to_host), 0));
+  // CHECK-NEXT:  checkError((syclct::dpct_memcpy((void*)(h_A), constData.get_ptr(), size, syclct::device_to_host), 0));
   checkError(cudaMemcpyFromSymbol(h_A, constData, size, 0, cudaMemcpyDeviceToHost));
 
+  // CHECK:  syclct::dpct_memcpy((void*)(h_A), (void *)((char *)(constData.get_ptr()) + 1), size, syclct::device_to_host);
+  cudaMemcpyFromSymbol(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy((void*)(h_A), (void *)((char *)(constData.get_ptr()) + 1), size, syclct::device_to_host), 0);
+  err = cudaMemcpyFromSymbol(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:  checkError((syclct::dpct_memcpy((void*)(h_A), (void *)((char *)(constData.get_ptr()) + 1), size, syclct::device_to_host), 0));
+  checkError(cudaMemcpyFromSymbol(h_A, constData, size, 1, cudaMemcpyDeviceToHost));
+
   ///////// Device to device
-  // CHECK:  syclct::sycl_memcpy_from_symbol((void*)(d_B), constData.get_ptr(), size, 0, syclct::device_to_device);
+  // CHECK:  syclct::dpct_memcpy((void*)(d_B), constData.get_ptr(), size, syclct::device_to_device);
   cudaMemcpyFromSymbol(d_B, constData, size, 0, cudaMemcpyDeviceToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy_from_symbol((void*)(d_B), constData.get_ptr(), size, 0, syclct::device_to_device), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy((void*)(d_B), constData.get_ptr(), size, syclct::device_to_device), 0);
   err = cudaMemcpyFromSymbol(d_B, constData, size, 0, cudaMemcpyDeviceToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   checkError((syclct::sycl_memcpy_from_symbol((void*)(d_B), constData.get_ptr(), size, 0, syclct::device_to_device), 0));
+  // CHECK-NEXT:   checkError((syclct::dpct_memcpy((void*)(d_B), constData.get_ptr(), size, syclct::device_to_device), 0));
   checkError(cudaMemcpyFromSymbol(d_B, constData, size, 0, cudaMemcpyDeviceToDevice));
 
+
+  // CHECK:  syclct::dpct_memcpy((void*)(d_B), (void *)((char *)(constData.get_ptr()) + 1), size, syclct::device_to_device);
+  cudaMemcpyFromSymbol(d_B, constData, size, 1, cudaMemcpyDeviceToDevice);
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy((void*)(d_B), (void *)((char *)(constData.get_ptr()) + 1), size, syclct::device_to_device), 0);
+  err = cudaMemcpyFromSymbol(d_B, constData, size, 1, cudaMemcpyDeviceToDevice);
+  // CHECK:/*
+  // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:   checkError((syclct::dpct_memcpy((void*)(d_B), (void *)((char *)(constData.get_ptr()) + 1), size, syclct::device_to_device), 0));
+  checkError(cudaMemcpyFromSymbol(d_B, constData, size, 1, cudaMemcpyDeviceToDevice));
+
   ///////// Default parameter overload
-  // CHECK:  syclct::sycl_memcpy_from_symbol((void*)(h_A), constData.get_ptr(), size);
+  // CHECK:  syclct::dpct_memcpy((void*)(h_A), constData.get_ptr(), size);
   cudaMemcpyFromSymbol(h_A, constData, size);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   err = (syclct::sycl_memcpy_from_symbol((void*)(h_A), constData.get_ptr(), size), 0);
+  // CHECK-NEXT:   err = (syclct::dpct_memcpy((void*)(h_A), constData.get_ptr(), size), 0);
   err = cudaMemcpyFromSymbol(h_A, constData, size);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   checkError((syclct::sycl_memcpy_from_symbol((void*)(h_A), constData.get_ptr(), size), 0));
+  // CHECK-NEXT:   checkError((syclct::dpct_memcpy((void*)(h_A), constData.get_ptr(), size), 0));
   checkError(cudaMemcpyFromSymbol(h_A, constData, size));
 
   // CHECK: syclct::sycl_free(d_A);
@@ -289,185 +377,185 @@ void testCommas_in_device_memory() {
   cudaError_t err;
   float *h_A = (float *)malloc(size);
 
-  // CHECK:  syclct::sycl_memset(d_A.get_ptr(), (int)(0xf), (size_t)(size));
+  // CHECK:  syclct::dpct_memset(d_A.get_ptr(), 0xf, size);
   cudaMemset(d_A, 0xf, size);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memset(d_A.get_ptr(), (int)(0xf), (size_t)(size)), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memset(d_A.get_ptr(), 0xf, size), 0);
   err = cudaMemset(d_A, 0xf, size);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memset(d_A.get_ptr(), (int)(0xf), (size_t)(size)), 0));
+  // CHECK-NEXT:  checkError((syclct::dpct_memset(d_A.get_ptr(), 0xf, size), 0));
   checkError(cudaMemset(d_A, 0xf, size));
 
   ///////// Host to host
-  // CHECK:  syclct::sycl_memcpy((void*)(h_A), (void*)(h_A), size, syclct::host_to_host);
+  // CHECK:  syclct::dpct_memcpy((void*)(h_A), (void*)(h_A), size, syclct::host_to_host);
   cudaMemcpy(h_A, h_A, size, cudaMemcpyHostToHost);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy((void*)(h_A), (void*)(h_A), size, syclct::host_to_host), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy((void*)(h_A), (void*)(h_A), size, syclct::host_to_host), 0);
   err = cudaMemcpy(h_A, h_A, size, cudaMemcpyHostToHost);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memcpy((void*)(h_A), (void*)(h_A), size, syclct::host_to_host), 0));
+  // CHECK-NEXT:  checkError((syclct::dpct_memcpy((void*)(h_A), (void*)(h_A), size, syclct::host_to_host), 0));
   checkError(cudaMemcpy(h_A, h_A, size, cudaMemcpyHostToHost));
 
   ///////// Host to device
-  // CHECK:  syclct::sycl_memcpy(d_A.get_ptr(), (void*)(h_A), size, syclct::host_to_device);
+  // CHECK:  syclct::dpct_memcpy(d_A.get_ptr(), (void*)(h_A), size, syclct::host_to_device);
   cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy(d_A.get_ptr(), (void*)(h_A), size, syclct::host_to_device), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy(d_A.get_ptr(), (void*)(h_A), size, syclct::host_to_device), 0);
   err = cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memcpy(d_A.get_ptr(), (void*)(h_A), size, syclct::host_to_device), 0));
+  // CHECK-NEXT:  checkError((syclct::dpct_memcpy(d_A.get_ptr(), (void*)(h_A), size, syclct::host_to_device), 0));
   checkError(cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice));
 
   ///////// Device to host
-  // CHECK:  syclct::sycl_memcpy((void*)(h_A), d_A.get_ptr(), size, syclct::device_to_host);
+  // CHECK:  syclct::dpct_memcpy((void*)(h_A), d_A.get_ptr(), size, syclct::device_to_host);
   cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy((void*)(h_A), d_A.get_ptr(), size, syclct::device_to_host), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy((void*)(h_A), d_A.get_ptr(), size, syclct::device_to_host), 0);
   err = cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memcpy((void*)(h_A), d_A.get_ptr(), size, syclct::device_to_host), 0));
+  // CHECK-NEXT:  checkError((syclct::dpct_memcpy((void*)(h_A), d_A.get_ptr(), size, syclct::device_to_host), 0));
   checkError(cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost));
 
   ///////// Device to Device
-  // CHECK:  syclct::sycl_memcpy(d_B.get_ptr(), d_A.get_ptr(), size, syclct::device_to_device);
+  // CHECK:  syclct::dpct_memcpy(d_B.get_ptr(), d_A.get_ptr(), size, syclct::device_to_device);
   cudaMemcpy(d_B, d_A, size, cudaMemcpyDeviceToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy(d_B.get_ptr(), d_A.get_ptr(), size, syclct::device_to_device), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy(d_B.get_ptr(), d_A.get_ptr(), size, syclct::device_to_device), 0);
   err = cudaMemcpy(d_B, d_A, size, cudaMemcpyDeviceToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memcpy(d_B.get_ptr(), d_A.get_ptr(), size, syclct::device_to_device), 0));
+  // CHECK-NEXT:  checkError((syclct::dpct_memcpy(d_B.get_ptr(), d_A.get_ptr(), size, syclct::device_to_device), 0));
   checkError(cudaMemcpy(d_B, d_A, size, cudaMemcpyDeviceToDevice));
 
   ///////// Default
-  // CHECK:  syclct::sycl_memcpy((void*)(h_A), d_A.get_ptr(), size, syclct::automatic);
+  // CHECK:  syclct::dpct_memcpy((void*)(h_A), d_A.get_ptr(), size, syclct::automatic);
   cudaMemcpy(h_A, d_A, size, cudaMemcpyDefault);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy((void*)(h_A), d_A.get_ptr(), size, syclct::automatic), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy((void*)(h_A), d_A.get_ptr(), size, syclct::automatic), 0);
   err = cudaMemcpy(h_A, d_A, size, cudaMemcpyDefault);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memcpy((void*)(h_A), d_A.get_ptr(), size, syclct::automatic), 0));
+  // CHECK-NEXT:  checkError((syclct::dpct_memcpy((void*)(h_A), d_A.get_ptr(), size, syclct::automatic), 0));
   checkError(cudaMemcpy(h_A, d_A, size, cudaMemcpyDefault));
 
   ///////// Host to device
-  // CHECK:  syclct::sycl_memcpy_to_symbol(d_A.get_ptr(), (void*)(h_A), size, 0, syclct::host_to_device);
+  // CHECK:  syclct::dpct_memcpy(d_A.get_ptr(), (void*)(h_A), size, syclct::host_to_device);
   cudaMemcpyToSymbol(d_A, h_A, size, 0, cudaMemcpyHostToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy_to_symbol(d_A.get_ptr(), (void*)(h_A), size, 0, syclct::host_to_device), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy(d_A.get_ptr(), (void*)(h_A), size, syclct::host_to_device), 0);
   err = cudaMemcpyToSymbol(d_A, h_A, size, 0, cudaMemcpyHostToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memcpy_to_symbol(d_A.get_ptr(), (void*)(h_A), size, 0, syclct::host_to_device), 0));
+  // CHECK-NEXT:  checkError((syclct::dpct_memcpy(d_A.get_ptr(), (void*)(h_A), size, syclct::host_to_device), 0));
   checkError(cudaMemcpyToSymbol(d_A, h_A, size, 0, cudaMemcpyHostToDevice));
 
   ///////// Device to device
-  // CHECK:  syclct::sycl_memcpy_to_symbol(d_A.get_ptr(), d_B.get_ptr(), size, 0, syclct::device_to_device);
+  // CHECK:  syclct::dpct_memcpy(d_A.get_ptr(), d_B.get_ptr(), size, syclct::device_to_device);
   cudaMemcpyToSymbol(d_A, d_B, size, 0, cudaMemcpyDeviceToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy_to_symbol(d_A.get_ptr(), d_B.get_ptr(), size, 0, syclct::device_to_device), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy(d_A.get_ptr(), d_B.get_ptr(), size, syclct::device_to_device), 0);
   err = cudaMemcpyToSymbol(d_A, d_B, size, 0, cudaMemcpyDeviceToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   checkError((syclct::sycl_memcpy_to_symbol(d_A.get_ptr(), d_B.get_ptr(), size, 0, syclct::device_to_device), 0));
+  // CHECK-NEXT:   checkError((syclct::dpct_memcpy(d_A.get_ptr(), d_B.get_ptr(), size, syclct::device_to_device), 0));
   checkError(cudaMemcpyToSymbol(d_A, d_B, size, 0, cudaMemcpyDeviceToDevice));
 
   ///////// Default
-  // CHECK:  syclct::sycl_memcpy_to_symbol((void*)(h_A), d_B.get_ptr(), size, 0, syclct::automatic);
+  // CHECK:  syclct::dpct_memcpy((void*)(h_A), d_B.get_ptr(), size, syclct::automatic);
   cudaMemcpyToSymbol(h_A, d_B, size, 0, cudaMemcpyDefault);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   err = (syclct::sycl_memcpy_to_symbol((void*)(h_A), d_B.get_ptr(), size, 0, syclct::automatic), 0);
+  // CHECK-NEXT:   err = (syclct::dpct_memcpy((void*)(h_A), d_B.get_ptr(), size, syclct::automatic), 0);
   err = cudaMemcpyToSymbol(h_A, d_B, size, 0, cudaMemcpyDefault);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   checkError((syclct::sycl_memcpy_to_symbol((void*)(h_A), d_B.get_ptr(), size, 0, syclct::automatic), 0));
+  // CHECK-NEXT:   checkError((syclct::dpct_memcpy((void*)(h_A), d_B.get_ptr(), size, syclct::automatic), 0));
   checkError(cudaMemcpyToSymbol(h_A, d_B, size, 0, cudaMemcpyDefault));
 
   ///////// Default parameter overload
-  // CHECK:  syclct::sycl_memcpy_to_symbol((void*)(h_A), d_B.get_ptr(), size);
+  // CHECK:  syclct::dpct_memcpy((void*)(h_A), d_B.get_ptr(), size);
   cudaMemcpyToSymbol(h_A, d_B, size);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   err = (syclct::sycl_memcpy_to_symbol((void*)(h_A), d_B.get_ptr(), size), 0);
+  // CHECK-NEXT:   err = (syclct::dpct_memcpy((void*)(h_A), d_B.get_ptr(), size), 0);
   err = cudaMemcpyToSymbol(h_A, d_B, size);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   checkError((syclct::sycl_memcpy_to_symbol((void*)(h_A), d_B.get_ptr(), size), 0));
+  // CHECK-NEXT:   checkError((syclct::dpct_memcpy((void*)(h_A), d_B.get_ptr(), size), 0));
   checkError(cudaMemcpyToSymbol(h_A, d_B, size));
 
   ///////// Device to host
-  // CHECK:  syclct::sycl_memcpy_from_symbol((void*)(h_A), d_A.get_ptr(), size, 0, syclct::device_to_host);
+  // CHECK:  syclct::dpct_memcpy((void*)(h_A), d_A.get_ptr(), size, syclct::device_to_host);
   cudaMemcpyFromSymbol(h_A, d_A, size, 0, cudaMemcpyDeviceToHost);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy_from_symbol((void*)(h_A), d_A.get_ptr(), size, 0, syclct::device_to_host), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy((void*)(h_A), d_A.get_ptr(), size, syclct::device_to_host), 0);
   err = cudaMemcpyFromSymbol(h_A, d_A, size, 0, cudaMemcpyDeviceToHost);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memcpy_from_symbol((void*)(h_A), d_A.get_ptr(), size, 0, syclct::device_to_host), 0));
+  // CHECK-NEXT:  checkError((syclct::dpct_memcpy((void*)(h_A), d_A.get_ptr(), size, syclct::device_to_host), 0));
   checkError(cudaMemcpyFromSymbol(h_A, d_A, size, 0, cudaMemcpyDeviceToHost));
 
   ///////// Device to device
-  // CHECK:  syclct::sycl_memcpy_from_symbol(d_A.get_ptr(), d_B.get_ptr(), size, 0, syclct::device_to_device);
+  // CHECK:  syclct::dpct_memcpy(d_A.get_ptr(), d_B.get_ptr(), size, syclct::device_to_device);
   cudaMemcpyFromSymbol(d_A, d_B, size, 0, cudaMemcpyDeviceToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  err = (syclct::sycl_memcpy_from_symbol(d_A.get_ptr(), d_B.get_ptr(), size, 0, syclct::device_to_device), 0);
+  // CHECK-NEXT:  err = (syclct::dpct_memcpy(d_A.get_ptr(), d_B.get_ptr(), size, syclct::device_to_device), 0);
   err = cudaMemcpyFromSymbol(d_A, d_B, size, 0, cudaMemcpyDeviceToDevice);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   checkError((syclct::sycl_memcpy_from_symbol(d_A.get_ptr(), d_B.get_ptr(), size, 0, syclct::device_to_device), 0));
+  // CHECK-NEXT:   checkError((syclct::dpct_memcpy(d_A.get_ptr(), d_B.get_ptr(), size, syclct::device_to_device), 0));
   checkError(cudaMemcpyFromSymbol(d_A, d_B, size, 0, cudaMemcpyDeviceToDevice));
 
   ///////// Default parameter overload
-  // CHECK:  syclct::sycl_memcpy_from_symbol((void*)(h_A), d_B.get_ptr(), size);
+  // CHECK:  syclct::dpct_memcpy((void*)(h_A), d_B.get_ptr(), size);
   cudaMemcpyFromSymbol(h_A, d_B, size);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   err = (syclct::sycl_memcpy_from_symbol((void*)(h_A), d_B.get_ptr(), size), 0);
+  // CHECK-NEXT:   err = (syclct::dpct_memcpy((void*)(h_A), d_B.get_ptr(), size), 0);
   err = cudaMemcpyFromSymbol(h_A, d_B, size);
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   checkError((syclct::sycl_memcpy_from_symbol((void*)(h_A), d_B.get_ptr(), size), 0));
+  // CHECK-NEXT:   checkError((syclct::dpct_memcpy((void*)(h_A), d_B.get_ptr(), size), 0));
   checkError(cudaMemcpyFromSymbol(h_A, d_B, size));
 
   void *p_addr;
@@ -507,37 +595,37 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  assert_cuda((syclct::sycl_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host), 0));
+  // CHECK-NEXT:  assert_cuda((syclct::dpct_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host), 0));
   assert_cuda(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
 
-  // CHECK: syclct::sycl_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host);
+  // CHECK: syclct::dpct_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host);
   cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
 
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  checkError((syclct::sycl_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host), 0));
+  // CHECK-NEXT:  checkError((syclct::dpct_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host), 0));
   checkError(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
 
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT: int err = (syclct::sycl_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host), 0);
+  // CHECK-NEXT: int err = (syclct::dpct_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host), 0);
   cudaError_t err = cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
 
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT: CUDA_CHECK((syclct::sycl_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host), 0));
+  // CHECK-NEXT: CUDA_CHECK((syclct::dpct_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host), 0));
   CUDA_CHECK(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
 
   // CHECK:/*
   // CHECK-NEXT:SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT:*/
-  // CHECK-NEXT: checkCudaErrors((syclct::sycl_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host), 0));
+  // CHECK-NEXT: checkCudaErrors((syclct::dpct_memcpy((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host), 0));
   checkCudaErrors(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
 
-  // CHECK: #define CUDAMEMCPY syclct::sycl_memcpy
+  // CHECK: #define CUDAMEMCPY syclct::dpct_memcpy
   // CHECK-NEXT: CUDAMEMCPY((void*)(data), (void*)(d_data), datasize * sizeof(T), syclct::device_to_host);
   #define CUDAMEMCPY cudaMemcpy
   CUDAMEMCPY(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
@@ -563,6 +651,6 @@ void test_segmentation_fault() {
 static __device__ uint32_t d_error[1];
 
 void test_foo(){
-  // CHECK: syclct::sycl_memset(d_error.get_ptr(), (int)(0), (size_t)(sizeof(uint32_t)));
+  // CHECK: syclct::dpct_memset(d_error.get_ptr(), 0, sizeof(uint32_t));
   cudaMemset(d_error, 0, sizeof(uint32_t));
 }

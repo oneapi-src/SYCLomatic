@@ -48,7 +48,7 @@ inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld, int from_ld
     return;
   }
   if(to_ld == from_ld){
-    sycl_memcpy((void*)to_ptr, (void*)from_ptr, sizeof(Ty)*to_ld*cols, direction);
+    dpct_memcpy((void*)to_ptr, (void*)from_ptr, sizeof(Ty)*to_ld*cols, direction);
   }else {
     auto to_ptr_t = to_ptr;
     auto from_ptr_t = from_ptr;
@@ -57,7 +57,7 @@ inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld, int from_ld
     for(int c = 0; c < cols; ++c) {
       to_ptr_t = to_ptr_t + to_ld;
       from_ptr_t = from_ptr_t + from_ld;
-      sycl_memcpy((void*)(to_ptr_t), (void*)(from_ptr_t), sizeof(Ty)*rows, direction);
+      dpct_memcpy((void*)(to_ptr_t), (void*)(from_ptr_t), sizeof(Ty)*rows, direction);
     }
   }
 }

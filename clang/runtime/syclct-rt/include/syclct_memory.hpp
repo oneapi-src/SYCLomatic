@@ -591,8 +591,9 @@ template <class T, size_t Dimension>
 using device_memory = global_memory<T, device, Dimension>;
 
 // memcpy
-static void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size,
-                        memcpy_direction direction, cl::sycl::queue q) {
+static void dpct_memcpy(void *to_ptr, void *from_ptr, size_t size,
+                        memcpy_direction direction, cl::sycl::queue q,
+                        bool async) {
   auto &mm = memory_manager::get_instance();
   memcpy_direction real_direction = direction;
   switch (direction) {
@@ -629,12 +630,12 @@ static void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size,
 
   switch (real_direction) {
   case host_to_host:
-    memcpy(to_ptr, from_ptr, size);
+    std::memcpy(to_ptr, from_ptr, size);
     break;
   case host_to_device: {
     auto alloc = mm.translate_ptr(to_ptr);
     size_t offset = (byte_t *)to_ptr - alloc.alloc_ptr;
-    q.submit([&](cl::sycl::handler &cgh) {
+    auto ret = q.submit([&](cl::sycl::handler &cgh) {
       auto r = cl::sycl::range<1>(size);
       auto o = cl::sycl::id<1>(offset);
       cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
@@ -642,11 +643,14 @@ static void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size,
           acc(alloc.buffer, cgh, r, o);
       cgh.copy(from_ptr, acc);
     });
+    if (!async) {
+      ret.wait();
+    }
   } break;
   case device_to_host: {
     auto alloc = mm.translate_ptr(from_ptr);
     size_t offset = (byte_t *)from_ptr - alloc.alloc_ptr;
-    q.submit([&](cl::sycl::handler &cgh) {
+    auto ret = q.submit([&](cl::sycl::handler &cgh) {
       auto r = cl::sycl::range<1>(size);
       auto o = cl::sycl::id<1>(offset);
       cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read,
@@ -654,13 +658,16 @@ static void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size,
           acc(alloc.buffer, cgh, r, o);
       cgh.copy(acc, to_ptr);
     });
+    if (!async) {
+      ret.wait();
+    }
   } break;
   case device_to_device: {
     auto to_alloc = mm.translate_ptr(to_ptr);
     auto from_alloc = mm.translate_ptr(from_ptr);
     size_t to_offset = (byte_t *)to_ptr - to_alloc.alloc_ptr;
     size_t from_offset = (byte_t *)from_ptr - from_alloc.alloc_ptr;
-    q.submit([&](cl::sycl::handler &cgh) {
+    auto ret = q.submit([&](cl::sycl::handler &cgh) {
       auto r = cl::sycl::range<1>(size);
       auto to_o = cl::sycl::id<1>(to_offset);
       auto from_o = cl::sycl::id<1>(from_offset);
@@ -672,55 +679,49 @@ static void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size,
           from_acc(from_alloc.buffer, cgh, r, from_o);
       cgh.copy(from_acc, to_acc);
     });
+    if (!async) {
+      ret.wait();
+    }
   } break;
   default:
     std::abort();
   }
 }
 
-static void sycl_memcpy(void *to_ptr, void *from_ptr, size_t size,
-                        memcpy_direction direction) {
-  sycl_memcpy(to_ptr, from_ptr, size, direction,
-              syclct::get_device_manager().current_device().default_queue());
+/// Synchronously copies size bytes from the address specified by from_ptr to
+/// the address specified by to_ptr. The value of direction, which is used to
+/// specify the copy direction, should be one of host_to_host, host_to_device,
+/// device_to_host, device_to_device, or automatic. The function will return
+/// after the copy is completed.
+///
+/// \param to_ptr Pointer to destination memory address.
+/// \param from_ptr Pointer to source memory address.
+/// \param size Number of bytes to be copied.
+/// \param direction Direction of the copy.
+/// \returns no return value.
+static void dpct_memcpy(void *to_ptr, void *from_ptr, size_t size,
+                        memcpy_direction direction = automatic) {
+  dpct_memcpy(to_ptr, from_ptr, size, direction,
+              syclct::get_device_manager().current_device().default_queue(),
+              /*async*/ false);
 }
 
-// sycl_memcpy_to_symbol copies size bytes from the memory area pointed to by
-// from_ptr to the memory area pointed to by offset bytes from the start of
-// symbol symbol. where direction specifies the direction of the copy, and must
-// be one of host_to_device, device_to_device, or automatic. Passing automatic
-// is recommended, in which case the type of transfer is inferred from the
-// pointer values.
-static void sycl_memcpy_to_symbol(void *symbol, void *from_ptr, size_t size,
-                                  size_t offset = 0,
-                                  memcpy_direction direction = host_to_device) {
-  switch (direction) {
-  case host_to_device:
-  case device_to_device:
-  case automatic:
-    break;
-  default:
-    std::abort();
-  }
-
-  sycl_memcpy((void *)((size_t)symbol + offset), from_ptr, size, direction);
-}
-
-// sycl_memcpy_from_symbol copies size bytes from the symbol address
-// (from_symbol) plus offest to destination memory area (dst).
-// Direction could be either device_to_host or device_to_device.
-static void
-sycl_memcpy_from_symbol(void *dst, void *from_symbol, size_t size,
-                        size_t offset = 0,
-                        memcpy_direction direction = device_to_host) {
-  switch (direction) {
-  case device_to_host:
-  case device_to_device:
-    break;
-  default:
-    std::abort();
-  }
-
-  sycl_memcpy(dst, (void *)(((char *)from_symbol) + offset), size, direction);
+/// Asynchronously copies size bytes from the address specified by from_ptr to
+/// the address specified by to_ptr. The value of direction, which is used to
+/// specify the copy direction, should be one of host_to_host,
+/// host_to_device, device_to_host, device_to_device, or automatic. The return of
+/// the function does NOT guarantee the copy is completed
+///
+/// \param to_ptr Pointer to destination memory address.
+/// \param from_ptr Pointer to source memory address.
+/// \param size Number of bytes to be copied.
+/// \param direction Direction of the copy.
+/// \returns no return value.
+static void async_dpct_memcpy(void *to_ptr, void *from_ptr, size_t size,
+                              memcpy_direction direction = automatic) {
+  dpct_memcpy(to_ptr, from_ptr, size, direction,
+              syclct::get_device_manager().current_device().default_queue(),
+              /*async*/ true);
 }
 
 // In following functions buffer_t is returned instead of buffer_t*, because of
@@ -761,14 +762,14 @@ static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
 }
 
 // memset
-static void sycl_memset(void *devPtr, int value, size_t count,
-                        cl::sycl::queue q) {
+static void dpct_memset(void *devPtr, int value, size_t count,
+                        cl::sycl::queue q, bool async) {
   auto &mm = memory_manager::get_instance();
   assert(mm.is_device_ptr(devPtr));
   auto alloc = mm.translate_ptr(devPtr);
   size_t offset = (byte_t *)devPtr - alloc.alloc_ptr;
 
-  q.submit([&](cl::sycl::handler &cgh) {
+  auto ret = q.submit([&](cl::sycl::handler &cgh) {
     auto r = cl::sycl::range<1>(count);
     auto o = cl::sycl::id<1>(offset);
     cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
@@ -776,13 +777,37 @@ static void sycl_memset(void *devPtr, int value, size_t count,
         acc(alloc.buffer, cgh, r, o);
     cgh.fill(acc, (byte_t)value);
   });
+  if (!async) {
+    ret.wait();
+  }
 }
 
-static void sycl_memset(void *devPtr, int value, size_t count) {
-  sycl_memset(devPtr, value, count,
-              syclct::get_device_manager().current_device().default_queue());
+/// Synchronously sets value to the first size bytes starting from dev_ptr. The
+/// function will return after the memset operation is completed.
+///
+/// \param dev_ptr Pointer to the device memory address.
+/// \param value Value to be set.
+/// \param size Number of bytes to be set to the value.
+/// \returns no return value.
+static void dpct_memset(void *dev_ptr, int value, size_t size) {
+  dpct_memset(dev_ptr, value, size,
+              syclct::get_device_manager().current_device().default_queue(),
+              /*async*/ false);
 }
 
+/// Asynchronously sets value to the first size bytes starting from dev_ptr.
+/// The return of the function does NOT guarantee the memset operation is
+/// completed.
+///
+/// \param dev_ptr Pointer to the device memory address.
+/// \param value Value to be set.
+/// \param size Number of bytes to be set to the value.
+/// \returns no return value.
+static void async_dpct_memset(void *dev_ptr, int value, size_t size) {
+  dpct_memset(dev_ptr, value, size,
+              syclct::get_device_manager().current_device().default_queue(),
+              /*async*/ true);
+}
 } // namespace syclct
 
 #endif // SYCLCT_MEMORY_H
