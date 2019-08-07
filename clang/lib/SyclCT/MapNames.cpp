@@ -115,7 +115,7 @@ const MapNames::MapTy MapNames::TypeNamesMap{
     {"cusolverEigType_t", "int64_t"},
     {"cusolverEigMode_t", "mkl::job"},
     {"cusolverStatus_t", "int"},
-    {"cudaChannelFormatDesc", "syclct::syclct_channel_desc"},
+    {"cudaChannelFormatDesc", "syclct::dpct_image_channel"},
     // ...
 };
 

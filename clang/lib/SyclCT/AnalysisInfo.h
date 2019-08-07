@@ -694,7 +694,7 @@ public:
     }
   }
   inline llvm::raw_ostream &getFuncDecl(llvm::raw_ostream &OS) {
-    return getDecl(OS, "syclct_texture_accessor");
+    return getDecl(OS, "dpct_image_accessor");
   }
   inline llvm::raw_ostream &getFuncArg(llvm::raw_ostream &OS) {
     return OS << Name;
@@ -706,7 +706,7 @@ public:
   std::string getDeclReplacement() {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
-    getDecl(OS, "syclct_texture") << ";";
+    getDecl(OS, "dpct_image") << ";";
     return OS.str();
   }
 

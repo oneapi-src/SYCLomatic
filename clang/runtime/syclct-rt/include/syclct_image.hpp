@@ -27,7 +27,7 @@
 
 namespace syclct {
 // Texture object type traits.
-template <class T> struct texture_trait {
+template <class T> struct image_trait {
   using acc_data_t = cl::sycl::vec<T, 4>;
   template <int Dimension>
   using accessor_t =
@@ -39,47 +39,50 @@ template <class T> struct texture_trait {
   }
 };
 template <class T>
-struct texture_trait<cl::sycl::vec<T, 1>> : public texture_trait<T> {};
+struct image_trait<cl::sycl::vec<T, 1>> : public image_trait<T> {};
 template <class T>
-struct texture_trait<cl::sycl::vec<T, 2>> : public texture_trait<T> {
+struct image_trait<cl::sycl::vec<T, 2>> : public image_trait<T> {
   using data_t = cl::sycl::vec<T, 2>;
   static data_t fetch_data(cl::sycl::vec<T, 4> &&original_data) {
     return data_t(original_data.r(), original_data.g());
   }
 };
 template <class T>
-struct texture_trait<cl::sycl::vec<T, 3>>
-    : public texture_trait<cl::sycl::vec<T, 4>> {};
+struct image_trait<cl::sycl::vec<T, 3>>
+    : public image_trait<cl::sycl::vec<T, 4>> {};
 template <class T>
-struct texture_trait<cl::sycl::vec<T, 4>> : public texture_trait<T> {
+struct image_trait<cl::sycl::vec<T, 4>> : public image_trait<T> {
   using data_t = cl::sycl::vec<T, 4>;
   static data_t fetch_data(cl::sycl::vec<T, 4> &&original_data) {
     return original_data;
   }
 };
 
-struct syclct_channel_desc {
+struct dpct_image_channel {
   cl::sycl::image_channel_order _order;
   cl::sycl::image_channel_type _type;
+  unsigned _elem_size;
 };
-// This class is wrapper of cl::sycl::image info.
-class syclct_array {
-  syclct_channel_desc _channel;
+// This class prepare 2D or 3D data for image class.
+class dpct_image_data {
+  dpct_image_channel _channel;
   int _range[3] = {0};
   void *_src = nullptr;
 
-  void set_host_src(void *ptr) { _src = ptr; }
-  void set_device_src(void *ptr) {
-    set_host_src(memory_manager::get_instance()
-                     .translate_ptr(ptr)
-                     .buffer.get_access<cl::sycl::access::mode::read_write>()
-                     .get_pointer());
+  // Set range of each dimension.
+  template <class... Rest>
+  size_t set_range(int dim, int first, Rest &&... rest) {
+    if (!first)
+      return set_range(dim);
+    _range[dim] = first;
+    return first * set_range(++dim, std::forward<Rest>(rest)...);
   }
-  template <class... Rest> void set_range(int idx, int first, Rest &&... rest) {
-    _range[idx] = first;
-    set_range(idx + 1, std::forward<Rest>(rest)...);
+  // If the dims are not used, set its range to 1.
+  inline size_t set_range(int dim) {
+    while (dim < 3)
+      _range[dim++] = 1;
+    return 1;
   }
-  inline void set_range(int idx) {}
 
   template <int... DimIdx>
   cl::sycl::range<sizeof...(DimIdx)> get_range(integer_sequence<DimIdx...>) {
@@ -90,48 +93,72 @@ public:
   template <int Dimension> cl::sycl::image<Dimension> *allocate_image() {
     return new cl::sycl::image<Dimension>(
         _src, _channel._order, _channel._type,
-        get_range(make_index_sequence<Dimension>()));
+        get_range(make_index_sequence<Dimension>()),
+        cl::sycl::property::image::use_host_ptr());
   }
 
   // Initialize channel info and array element size.
   template <class... Args>
-  void init(syclct_channel_desc channel, Args &&... args) {
+  void malloc(dpct_image_channel channel, Args &&... args) {
     _channel = channel;
-    set_range(0, std::forward<Args>(args)...);
+    auto size = set_range(0, std::forward<Args>(args)...);
+    _src = std::malloc(size * _channel._elem_size);
   }
 
-  void free() { _src = nullptr; }
-
-  // Copy data from device or host buffer.
-  void set_src(void *ptr) {
-    if (memory_manager::get_instance().is_device_ptr(ptr))
-      return set_device_src(ptr);
-    return set_host_src(ptr);
+  void free() {
+    if (_src)
+      std::free(_src);
+    _src = nullptr;
   }
+
+  // Copy data from /param ptr.
+  void copy_from(size_t off_x, size_t off_y, size_t off_z, void *ptr,
+                 size_t count) {
+    char *dst = (char *)_src +
+                (off_x * _range[1] * _range[2] + off_y * _range[2] + off_z) *
+                    _channel._elem_size;
+    sycl_memcpy(dst, ptr, count, automatic);
+  }
+
+  ~dpct_image_data() { free(); }
 };
 
 // Texture object.
-template <class T, int Dimension> class syclct_texture_accessor;
-template <class T, int Dimension> class syclct_texture {
+template <class T, int Dimension> class dpct_image_accessor;
+template <class T, int Dimension> class dpct_image {
   cl::sycl::addressing_mode _addr_mode;
   cl::sycl::filtering_mode _filter_mode;
   cl::sycl::coordinate_normalization_mode _norm_mode;
   cl::sycl::image<Dimension> *_image;
 
 public:
-  ~syclct_texture() { unbind(); }
+  ~dpct_image() { detach(); }
 
 public:
-  using acc_data_t = typename texture_trait<T>::acc_data_t;
-  syclct_texture_accessor<T, Dimension> get_access(cl::sycl::handler &cgh) {
-    return syclct_texture_accessor<T, Dimension>(
+  using acc_data_t = typename image_trait<T>::acc_data_t;
+  dpct_image_accessor<T, Dimension> get_access(cl::sycl::handler &cgh) {
+    return dpct_image_accessor<T, Dimension>(
         cl::sycl::sampler(_norm_mode, _addr_mode, _filter_mode),
         _image->template get_access<acc_data_t, cl::sycl::access::mode::read>(
             cgh));
   }
 
-  void bind(syclct_array &data) { _image = data.allocate_image<Dimension>(); }
-  void unbind() {
+  void attach(dpct_image_data &data) {
+    detach();
+    _image = data.allocate_image<Dimension>();
+  }
+  void attach(void *ptr, const dpct_image_channel &chn_desc, size_t count) {
+    detach();
+    if (memory_manager::get_instance().is_device_ptr(ptr))
+      ptr = memory_manager::get_instance()
+                .translate_ptr(ptr)
+                .buffer.get_access<cl::sycl::access::mode::read_write>()
+                .get_pointer();
+    _image = new cl::sycl::image<Dimension>(
+        ptr, chn_desc._order, chn_desc._type,
+        cl::sycl::range<1>(count / chn_desc._elem_size));
+  }
+  void detach() {
     if (_image)
       delete _image;
     _image = nullptr;
@@ -160,19 +187,19 @@ public:
 };
 
 // Wrap sampler and image accessor together.
-template <class T, int Dimension> class syclct_texture_accessor {
+template <class T, int Dimension> class dpct_image_accessor {
 public:
-  using accessor_t = typename texture_trait<T>::template accessor_t<Dimension>;
-  using data_t = typename texture_trait<T>::data_t;
+  using accessor_t = typename image_trait<T>::template accessor_t<Dimension>;
+  using data_t = typename image_trait<T>::data_t;
   cl::sycl::sampler _sampler;
   accessor_t _img_acc;
 
 public:
-  syclct_texture_accessor(cl::sycl::sampler sampler, accessor_t acc)
+  dpct_image_accessor(cl::sycl::sampler sampler, accessor_t acc)
       : _sampler(sampler), _img_acc(acc) {}
 
   template <class Coords> data_t read(const Coords &coords) {
-    return texture_trait<T>::fetch_data(_img_acc.read(coords, _sampler));
+    return image_trait<T>::fetch_data(_img_acc.read(coords, _sampler));
   }
 };
 
@@ -182,77 +209,87 @@ enum syclct_channel_format_kind {
   channel_float,
 };
 
-inline syclct_channel_desc
-create_channel_desc(int x, int y, int z, int w,
+inline dpct_image_channel
+create_image_channel(int x, int y, int z, int w,
                     syclct_channel_format_kind channel_kind) {
-  syclct_channel_desc desc;
-
-#define CHANNEL_WIDTH(kind, type, n)                                           \
-  if (channel_kind == kind)                                                    \
-    desc._type = cl::sycl::image_channel_type::type##n;
-#define SIGNED_CHANNEL_WIDTH(n) CHANNEL_WIDTH(channel_signed, signed_int, n)
-#define UNSIGNED_CHANNEL_WIDTH(n)                                              \
-  CHANNEL_WIDTH(channel_unsigned, unsigned_int, n)
-#define FP_CHANNEL_WIDTH(n) CHANNEL_WIDTH(channel_float, fp, n)
+  dpct_image_channel channel;
 
   if (x == 32) {
-    SIGNED_CHANNEL_WIDTH(32)
-    else UNSIGNED_CHANNEL_WIDTH(32) else FP_CHANNEL_WIDTH(32)
+    channel._elem_size = 4;
+    if (channel_kind == channel_signed)
+      channel._type = cl::sycl::image_channel_type::signed_int32;
+    else if (channel_kind == channel_unsigned)
+      channel._type = cl::sycl::image_channel_type::unsigned_int32;
+    else if (channel_kind == channel_float)
+      channel._type = cl::sycl::image_channel_type::fp32;
   } else if (x == 16) {
-    SIGNED_CHANNEL_WIDTH(16)
-    else UNSIGNED_CHANNEL_WIDTH(16) else FP_CHANNEL_WIDTH(16)
+    channel._elem_size = 2;
+    if (channel_kind == channel_signed)
+      channel._type = cl::sycl::image_channel_type::signed_int16;
+    else if (channel_kind == channel_unsigned)
+      channel._type = cl::sycl::image_channel_type::unsigned_int16;
+    else if (channel_kind == channel_float)
+      channel._type = cl::sycl::image_channel_type::fp16;
   } else if (x == 8) {
-    SIGNED_CHANNEL_WIDTH(8)
-    else UNSIGNED_CHANNEL_WIDTH(8)
+    channel._elem_size = 1;
+    if (channel_kind == channel_signed)
+      channel._type = cl::sycl::image_channel_type::signed_int8;
+    else if (channel_kind == channel_unsigned)
+      channel._type = cl::sycl::image_channel_type::unsigned_int8;
   }
-  if (y == 0)
-    desc._order = cl::sycl::image_channel_order::r;
-  else if (z == 0)
-    desc._order = cl::sycl::image_channel_order::rg;
-  else if (w == 0)
-    desc._order = cl::sycl::image_channel_order::rgb;
-  else
-    desc._order = cl::sycl::image_channel_order::rgba;
+  if (y == 0) {
+    channel._order = cl::sycl::image_channel_order::r;
+  } else if (z == 0) {
+    channel._order = cl::sycl::image_channel_order::rg;
+    channel._elem_size *= 2;
+  } else if (w == 0) {
+    channel._order = cl::sycl::image_channel_order::rgb;
+    channel._elem_size *= 3;
+  } else {
+    channel._order = cl::sycl::image_channel_order::rgba;
+    channel._elem_size *= 4;
+  }
 
-#undef CHANNEL_WIDTH
-#undef SIGNED_CHANNEL_WIDTH
-#undef UNSIGNED_CHANNEL_WIDTH
-#undef FP_CHANNEL_WIDTH
-
-  return desc;
+  return channel;
 }
 
 template <class T, int Dimension>
-inline void syclct_bind_texture(syclct_texture<T, Dimension> &texture,
-                                syclct_array &a) {
-  texture.bind(a);
+inline void dpct_attach_image(dpct_image<T, Dimension> &texture,
+                             dpct_image_data &a) {
+  texture.attach(a);
+}
+template <class T>
+inline void dpct_attach_image(dpct_image<T, 1> &texture, void *ptr,
+                             const dpct_image_channel &desc, size_t size) {
+  texture.attach(ptr, desc, size);
 }
 template <class T, int Dimension>
-inline void syclct_unbind_texture(syclct_texture<T, Dimension> &texture) {
-  texture.unbind();
+inline void dpct_detach_image(dpct_image<T, Dimension> &texture) {
+  texture.detach();
 }
 template <class... Args>
-inline void syclct_malloc_array(syclct_array *a, syclct_channel_desc *desc,
+inline void dpct_malloc_image(dpct_image_data *a, dpct_image_channel *desc,
                                 Args &&... args) {
-  a->init(*desc, std::forward<Args>(args)...);
+  a->malloc(*desc, std::forward<Args>(args)...);
 }
-inline void syclct_memcpy_to_array(syclct_array &a, void *ptr) {
-  a.set_src(ptr);
+inline void dpct_memcpy_to_image(dpct_image_data &a, size_t off_x, size_t off_y,
+                                   void *ptr, size_t count) {
+  a.copy_from(off_x, off_y, 0, ptr, count);
 }
-inline void syclct_free_array(syclct_array &a) { a.free(); }
+inline void dpct_free(dpct_image_data &a) { a.free(); }
 template <class T, class CoordT>
-inline typename texture_trait<T>::data_t
-syclct_read_texture(syclct_texture_accessor<T, 1> &acc, CoordT x) {
+inline typename image_trait<T>::data_t
+dpct_read_image(dpct_image_accessor<T, 1> &acc, CoordT x) {
   return acc.read(x);
 }
-template <class T,class CoordT>
-inline typename texture_trait<T>::data_t
-syclct_read_texture(syclct_texture_accessor<T, 2> &acc, CoordT x, CoordT y) {
+template <class T, class CoordT>
+inline typename image_trait<T>::data_t
+dpct_read_image(dpct_image_accessor<T, 2> &acc, CoordT x, CoordT y) {
   return acc.read(cl::sycl::vec<CoordT, 2>(x, y));
 }
 template <class T, class CoordT>
-inline typename texture_trait<T>::data_t
-syclct_read_texture(syclct_texture_accessor<T, 3> &acc, CoordT x, CoordT y,
+inline typename image_trait<T>::data_t
+dpct_read_image(dpct_image_accessor<T, 3> &acc, CoordT x, CoordT y,
                     float z) {
   return acc.read(cl::sycl::vec<CoordT, 4>(x, y, z, 0));
 }

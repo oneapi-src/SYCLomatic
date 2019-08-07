@@ -373,32 +373,29 @@ const std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>
     CallExprRewriterFactoryBase::RewriterMap = {
         FUNC_NAME_FACTORY_ENTRY("cudaCreateChannelDesc",
-                                "syclct::create_channel_desc")
+                                "syclct::create_image_channel")
         FUNC_NAME_FACTORY_ENTRY("cudaUnbindTexture",
-                                    "syclct::syclct_unbind_texture")
-        FUNC_NAME_FACTORY_ENTRY("tex1D",
-                                        "syclct::syclct_read_texture")
-        FUNC_NAME_FACTORY_ENTRY("tex2D",
-                                        "syclct::syclct_read_texture")
-        FUNC_NAME_FACTORY_ENTRY("tex3D",
-                                                "syclct::syclct_read_texture")
-        FUNC_NAME_FACTORY_ENTRY(
-                                "tex1Dfetch", "syclct::syclct_read_texture")
-        FUNC_NAME_FACTORY_ENTRY("cudaFreeArray",
-                                        "syclct::syclct_free_array")
-        REORDER_FUNC_FACTORY_ENTRY("cudaMallocArray",
-                                    "syclct::syclct_malloc_array",
-                                    0 /*pointer to array*/,
-                                    1 /*pointer to channel desc*/,
-                                    2 /*width*/, 3 /*height*/)
-        REORDER_FUNC_FACTORY_ENTRY("cudaMemcpyToArray",
-                                        "syclct::syclct_memcpy_to_array",
-                                        0 /*ref of array*/,
-                                        3 /*src pointer*/)
-        REORDER_FUNC_FACTORY_ENTRY("cudaBindTextureToArray",
-                                            "syclct::syclct_bind_texture",
-                                            0 /*ref of texture object*/,
-                                            1 /*ref of array*/)
+                                "syclct::dpct_detach_image")
+        FUNC_NAME_FACTORY_ENTRY("tex1D", "syclct::dpct_read_image")
+        FUNC_NAME_FACTORY_ENTRY("tex2D", "syclct::dpct_read_image")
+        FUNC_NAME_FACTORY_ENTRY("tex3D", "syclct::dpct_read_image")
+        FUNC_NAME_FACTORY_ENTRY("tex1Dfetch", "syclct::dpct_read_image")
+        FUNC_NAME_FACTORY_ENTRY("cudaFreeArray", "syclct::dpct_free")
+        REORDER_FUNC_FACTORY_ENTRY(
+            "cudaBindTexture", "syclct::dpct_attach_image",
+            1 /*ref to tex object*/, 2 /*source pointer*/,
+            3 /*ref to channel desc*/, 4 /*size in bytes*/)
+        REORDER_FUNC_FACTORY_ENTRY(
+            "cudaMallocArray", "syclct::dpct_malloc_image",
+            0 /*pointer to array*/, 1 /*pointer to channel desc*/, 2 /*width*/,
+            3 /*height*/)
+        REORDER_FUNC_FACTORY_ENTRY(
+            "cudaMemcpyToArray", "syclct::dpct_memcpy_to_image",
+            0 /*ref of array*/, 1 /*x offset*/, 2 /*y offset*/,
+            3 /*src pointer*/, 4 /*bytes to copy*/)
+        REORDER_FUNC_FACTORY_ENTRY(
+            "cudaBindTextureToArray", "syclct::dpct_attach_image",
+            0 /*ref of texture object*/, 1 /*ref of array*/)
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   MATH_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME)                           \

@@ -268,7 +268,7 @@ ENTRY(cudaGraphicsUnmapResources, false, P0, "comment")
 ENTRY(cudaGraphicsUnregisterResource, false, P0, "comment")
 
 // low level texture reference management functions of runtime API
-ENTRY(cudaBindTexture, false, P0, "comment")
+ENTRY(cudaBindTexture, true, P0, "comment")
 ENTRY(cudaBindTexture2D, false, P0, "comment")
 ENTRY(cudaBindTextureToArray, true, P0, "comment")
 ENTRY(cudaBindTextureToMipmappedArray, false, P4, "comment")

@@ -5038,13 +5038,14 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(varDecl(hasType(recordDecl(hasName("cudaChannelFormatDesc"))))
                     .bind("chnDecl"),
                 this);
-  MF.addMatcher(callExpr(callee(functionDecl(hasAnyName(
-                             "cudaCreateChannelDesc", "cudaUnbindTexture",
-                             "cudaFreeArray", "cudaMallocArray",
-                             "cudaMemcpyToArray", "cudaBindTextureToArray",
-                             "tex1D", "tex2D", "tex3D", "tex1Dfetch"))))
-                    .bind("call"),
-                this);
+  MF.addMatcher(
+      callExpr(
+          callee(functionDecl(hasAnyName(
+              "cudaCreateChannelDesc", "cudaUnbindTexture", "cudaFreeArray",
+              "cudaMallocArray", "cudaMemcpyToArray", "cudaBindTextureToArray",
+              "cudaBindTexture", "tex1D", "tex2D", "tex3D", "tex1Dfetch"))))
+          .bind("call"),
+      this);
 }
 
 void TextureRule::run(const MatchFinder::MatchResult &Result) {
@@ -5085,7 +5086,7 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
   } else if (auto VD = getNodeAsType<VarDecl>(Result, "array")) {
-    std::string ReplType = "syclct::syclct_array";
+    std::string ReplType = "syclct::dpct_image_data";
     if (VD->getType()->getTypeClass() == Type::Pointer)
       ReplType += " ";
     emplaceTransformation(new ReplaceTypeInDecl(VD, std::move(ReplType)));
