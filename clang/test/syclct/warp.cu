@@ -39,11 +39,8 @@ __global__ void foo() {
   // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().any(predicate);
   __any_sync(mask, predicate);
 
-  // CHECK: /*
-  // CHECK-NEXT: SYCLCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for shuffle
-  // CHECK-NEXT: */
-  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle(val, srcLane);
-  __shfl(mask, val, srcLane);
+  // CHECK: item_{{[0-9a-z]+}}.get_sub_group().shuffle(val, srcLane);
+  __shfl(val, srcLane);
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for shuffle
   // CHECK-NEXT: */
@@ -55,11 +52,8 @@ __global__ void foo() {
   // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle(val, srcLane);
   __shfl_sync(mask, val, srcLane, warpSize);
 
-  // CHECK: /*
-  // CHECK-NEXT: SYCLCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for shuffle_up
-  // CHECK-NEXT: */
-  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle_up(val, delta);
-  __shfl_up(mask, val, delta);
+  // CHECK: item_{{[0-9a-z]+}}.get_sub_group().shuffle_up(val, delta);
+  __shfl_up(val, delta);
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for shuffle_up
   // CHECK-NEXT: */
@@ -71,11 +65,8 @@ __global__ void foo() {
   // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle_up(val, delta);
   __shfl_up_sync(mask, val, delta, warpSize);
 
-  // CHECK: /*
-  // CHECK-NEXT: SYCLCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for shuffle_down
-  // CHECK-NEXT: */
-  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle_down(val, delta);
-  __shfl_down(mask, val, delta);
+  // CHECK: item_{{[0-9a-z]+}}.get_sub_group().shuffle_down(val, delta);
+  __shfl_down(val, delta);
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for shuffle_down
   // CHECK-NEXT: */
@@ -87,11 +78,8 @@ __global__ void foo() {
   // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle_down(val, delta);
   __shfl_down_sync(mask, val, delta, warpSize);
 
-  // CHECK: /*
-  // CHECK-NEXT: SYCLCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for shuffle_xor
-  // CHECK-NEXT: */
-  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle_xor(val, laneMask);
-  __shfl_xor(mask, val, laneMask);
+  // CHECK: item_{{[0-9a-z]+}}.get_sub_group().shuffle_xor(val, laneMask);
+  __shfl_xor(val, laneMask);
   // CHECK: /*
   // CHECK-NEXT: SYCLCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for shuffle_xor
   // CHECK-NEXT: */

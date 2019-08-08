@@ -321,15 +321,20 @@ Optional<std::string> WarpFunctionRewriter::rewrite() {
     RewriteArgList = getMigratedArgs();
     setTargetCalleeName(SourceCalleeName);
   } else {
-    reportNoMaskWarning();
-    if (SourceCalleeName == "__all" || SourceCalleeName == "__any")
+    if (SourceCalleeName == "__all" || SourceCalleeName == "__any") {
+      reportNoMaskWarning();
       RewriteArgList.emplace_back(getMigratedArg(0));
-    else if (SourceCalleeName == "__all_sync" ||
-             SourceCalleeName == "__any_sync")
+    } else if (SourceCalleeName == "__all_sync" ||
+             SourceCalleeName == "__any_sync") {
+      reportNoMaskWarning();
       RewriteArgList.emplace_back(getMigratedArg(1));
-    else {
+    } else if (SourceCalleeName.endswith("_sync")) {
+      reportNoMaskWarning();
       RewriteArgList.emplace_back(getMigratedArg(1));
       RewriteArgList.emplace_back(getMigratedArg(2));
+    } else {
+      RewriteArgList.emplace_back(getMigratedArg(0));
+      RewriteArgList.emplace_back(getMigratedArg(1));
     }
     setTargetCalleeName(buildString(
         SyclctGlobalInfo::getItemName(), ".get_sub_group().",
