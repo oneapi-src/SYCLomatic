@@ -38,6 +38,7 @@
 #else
 extern char **environ;
 #endif
+#define INTEL_CUSTOMIZATION 1
 
 #define ENV_OUTPUT "INTERCEPT_BUILD_TARGET_DIR"
 #ifdef APPLE
@@ -69,7 +70,11 @@ static void bear_release_env_t(bear_env_t *env);
 static char const **bear_update_environment(char *const envp[], bear_env_t *env);
 static char const **bear_update_environ(char const **in, char const *key, char const *value);
 static char **bear_get_environment();
+#if INTEL_CUSTOMIZATION
+static int bear_report_call(char const *fun, char const *const argv[]);
+#else
 static void bear_report_call(char const *fun, char const *const argv[]);
+#endif
 static char const **bear_strings_build(char const *arg, va_list *ap);
 static char const **bear_strings_copy(char const **const in);
 static char const **bear_strings_append(char const **in, char const *e);
@@ -153,12 +158,19 @@ static void on_unload(void) {
 }
 
 
-/* These are the methods we are try to hijack.
+/* These are the methods we try to hijack.
  */
 
 #ifdef HAVE_EXECVE
 int execve(const char *path, char *const argv[], char *const envp[]) {
+    #if INTEL_CUSTOMIZATION
+    int ret = bear_report_call(__func__, (char const *const *)argv);
+    if(ret==1) {
+      exit(0);
+    }
+    #else
     bear_report_call(__func__, (char const *const *)argv);
+    #endif
     return call_execve(path, argv, envp);
 }
 #endif
@@ -168,7 +180,14 @@ int execve(const char *path, char *const argv[], char *const envp[]) {
 #error can not implement execv without execve
 #endif
 int execv(const char *path, char *const argv[]) {
+    #if INTEL_CUSTOMIZATION
+    int ret = bear_report_call(__func__, (char const *const *)argv);
+    if(ret==1) {
+      exit(0);
+    }
+    #else
     bear_report_call(__func__, (char const *const *)argv);
+    #endif
     char * const * envp = bear_get_environment();
     return call_execve(path, argv, envp);
 }
@@ -176,28 +195,56 @@ int execv(const char *path, char *const argv[]) {
 
 #ifdef HAVE_EXECVPE
 int execvpe(const char *file, char *const argv[], char *const envp[]) {
+    #if INTEL_CUSTOMIZATION
+    int ret = bear_report_call(__func__, (char const *const *)argv);
+    if(ret==1) {
+      exit(0);
+    }
+    #else
     bear_report_call(__func__, (char const *const *)argv);
+    #endif
     return call_execvpe(file, argv, envp);
 }
 #endif
 
 #ifdef HAVE_EXECVP
 int execvp(const char *file, char *const argv[]) {
+    #if INTEL_CUSTOMIZATION
+    int ret=bear_report_call(__func__, (char const *const *)argv);
+    if(ret==1) {
+      exit(0);
+    }
+    #else
     bear_report_call(__func__, (char const *const *)argv);
+    #endif
     return call_execvp(file, argv);
 }
 #endif
 
 #ifdef HAVE_EXECVP2
 int execvP(const char *file, const char *search_path, char *const argv[]) {
+    #if INTEL_CUSTOMIZATION
+    int ret = bear_report_call(__func__, (char const *const *)argv);
+    if(ret==1) {
+      exit(0);
+    }
+    #else
     bear_report_call(__func__, (char const *const *)argv);
+    #endif
     return call_execvP(file, search_path, argv);
 }
 #endif
 
 #ifdef HAVE_EXECT
 int exect(const char *path, char *const argv[], char *const envp[]) {
+    #if INTEL_CUSTOMIZATION
+    int ret = bear_report_call(__func__, (char const *const *)argv);
+    if(ret==1) {
+      exit(0);
+    }
+    #else
     bear_report_call(__func__, (char const *const *)argv);
+    #endif
     return call_exect(path, argv, envp);
 }
 #endif
@@ -212,7 +259,14 @@ int execl(const char *path, const char *arg, ...) {
     char const **argv = bear_strings_build(arg, &args);
     va_end(args);
 
+#if INTEL_CUSTOMIZATION
+    int ret = bear_report_call(__func__, (char const *const *)argv);
+    if(ret==1) {
+      exit(0);
+    }
+#else
     bear_report_call(__func__, (char const *const *)argv);
+#endif
     char * const * envp = bear_get_environment();
     int const result = call_execve(path, (char *const *)argv, envp);
 
@@ -231,7 +285,14 @@ int execlp(const char *file, const char *arg, ...) {
     char const **argv = bear_strings_build(arg, &args);
     va_end(args);
 
+#if INTEL_CUSTOMIZATION
+    int ret = bear_report_call(__func__, (char const *const *)argv);
+    if(ret==1) {
+      exit(0);
+    }
+#else
     bear_report_call(__func__, (char const *const *)argv);
+#endif
     int const result = call_execvp(file, (char *const *)argv);
 
     bear_strings_release(argv);
@@ -251,7 +312,14 @@ int execle(const char *path, const char *arg, ...) {
     char const **envp = va_arg(args, char const **);
     va_end(args);
 
+#if INTEL_CUSTOMIZATION
+    int ret = bear_report_call(__func__, (char const *const *)argv);
+    if(ret==1) {
+      exit(0);
+    }
+#else
     bear_report_call(__func__, (char const *const *)argv);
+#endif
     int const result =
         call_execve(path, (char *const *)argv, (char *const *)envp);
 
@@ -265,7 +333,14 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path,
                 const posix_spawn_file_actions_t *file_actions,
                 const posix_spawnattr_t *restrict attrp,
                 char *const argv[restrict], char *const envp[restrict]) {
+#if INTEL_CUSTOMIZATION
+    int ret = bear_report_call(__func__, (char const *const *)argv);
+    if(ret==1) {
+      exit(0);
+    }
+#else
     bear_report_call(__func__, (char const *const *)argv);
+#endif
     return call_posix_spawn(pid, path, file_actions, attrp, argv, envp);
 }
 #endif
@@ -275,7 +350,14 @@ int posix_spawnp(pid_t *restrict pid, const char *restrict file,
                  const posix_spawn_file_actions_t *file_actions,
                  const posix_spawnattr_t *restrict attrp,
                  char *const argv[restrict], char *const envp[restrict]) {
+#if INTEL_CUSTOMIZATION
+    int ret = bear_report_call(__func__, (char const *const *)argv);
+    if(ret==1) {
+      exit(0);
+    }
+#else
     bear_report_call(__func__, (char const *const *)argv);
+#endif
     return call_posix_spawnp(pid, file, file_actions, attrp, argv, envp);
 }
 #endif
@@ -402,15 +484,396 @@ static int call_posix_spawnp(pid_t *restrict pid, const char *restrict file,
 }
 #endif
 
-/* this method is to write log about the process creation. */
+#if INTEL_CUSTOMIZATION
+static int generate_file(char * filename){
+    FILE * fd = fopen(filename, "a+");
+    if (0 == fd) {
+        perror("bear: fopen");
+        exit(EXIT_FAILURE);
+    }
+    fprintf(fd, "emtpy-file");
+    if (fclose(fd)) {
+        perror("bear: fclose");
+        exit(EXIT_FAILURE);
+    }
+}
+// find xxx in "-o xxx"
+// return value:
+//  0 : found the project and create it.
+//  1 : have not found the object, indicate next arg is object
+//  -1: have not found the object.
+int find_create_object(char *str) {
+    char *p = strstr(str, "-o");
+    if(p && is_option_end(p + 2)) {
+        p+=2;
+        // skip emtpy
+        while ((*p != '\0') && isblank(*p)) {
+          p++;
+        }
+        if(*p == '\0'){
+          return 1;
+        }
+        // find end of xxx.
+        char *q=p;
+        while( *q != '\0' && *q != ' ' && *q !='\t' ) {
+          q++;
+        }
 
+        char ofilename[512];
+        memcpy(ofilename, p, q-p);
+        ofilename[q-p]='\0';
+        generate_file(ofilename);
+        return 0;
+    }
+    return -1;
+}
+
+// check if 1st field of str contins =
+int is_contain_eq(char *working) {
+    while(*working != '\0') {
+       if(isblank(*working))
+            break;
+       if(*working == '=')
+            return 1;
+       working++;
+    }
+    return 0;
+
+}
+// skip emtpy space.
+char *skip_empty(char *working){
+   if(working==NULL)
+        return NULL;
+   while(isblank(*working)) {
+        working++;
+   }
+   return working;
+}
+
+// skip the option in "<option  value>"
+char *skip_option(char *working) {
+    int len=strlen(working);
+    while(len>0){
+        len--;
+        if(isblank(*working)) {
+            working++;
+            break;
+        } else {
+            working++;
+        }
+    }
+    if(len==0) {
+        return NULL;
+    }
+    return working;
+}
+// skip the value in "<option  value>"
+char *skip_value(char *working){
+    int len=strlen(working);
+    int require_quotation=0;
+    while(len>0){
+        len--;
+        //process "
+        if(require_quotation && *working != '"' ){
+            working++;
+            continue;
+        }else if(require_quotation && *working == '"'){
+            require_quotation=0;
+            working++;
+            continue;
+        }
+        if(*working== '"'){
+            working++;
+            require_quotation=1;
+            continue;
+        }
+        //
+        if(isblank(*working)) {
+            working++;
+            break;
+        } else {
+            working++;
+        }
+
+    }
+    if(len==0) {
+        return NULL;
+    }
+    return working;
+
+}
+// check if string is end
+int is_finished(char *working){
+
+    if(working == NULL || *working == '\0')
+        return 1;
+    else
+        return 0;
+}
+int is_option_end(char* working){
+    return  (isblank(working[0]) || working[0] == '\0');
+}
+int is_kv_option_special(char *working) {
+    if((strncmp(working, "-D", 2) == 0 &&  !is_option_end(working + 2)) ||
+        (strncmp(working, "-I", 2) == 0 &&  !is_option_end(working + 2)) ||
+        (strncmp(working, "-O", 2) == 0 &&  !is_option_end(working + 2)) ||
+        (strncmp(working, "-l", 2) == 0 &&  !is_option_end(working + 2))
+        ) {
+        return 1;
+    }
+    return 0;
+}
+int is_single_option(char *working){
+    if(    strncmp(working, "--version", 9)==0
+        || (strncmp(working, "-V" , 2)==0 && is_option_end(working+2))
+        || strncmp(working, "--help", 6)==0
+        || (strncmp(working, "-h" , 2)==0 && is_option_end(working+2))
+        || strncmp(working, "--no-compress", 13)==0
+        || strncmp(working, "-no-compress" , 12)==0
+        || strncmp(working, "--extensible-whole-program", 26)==0
+        || strncmp(working, "-ewp", 4)==0
+        || strncmp(working, "--resource-usage", 16)==0
+        || strncmp(working, "-res-usage", 10)==0
+        || strncmp(working, "--Werror", 8)==0
+        || strncmp(working, "-Werror", 7)==0
+        || strncmp(working, "--Wno-deprecated-gpu-targets", 28)==0
+        || strncmp(working, "-Wno-deprecated-gpu-targets", 27)==0
+        || strncmp(working, "--Wno-deprecated-declarations", 29)==0
+        || strncmp(working, "-Wno-deprecated-declarations", 28)==0
+        || strncmp(working, "--Wreorder", 10)==0
+        || strncmp(working, "-Wreorder", 9)==0
+        || strncmp(working, "--restrict", 10)==0
+        || strncmp(working, "-restrict", 9)==0
+        || strncmp(working, "--source-in-ptx", 15)==0
+        || strncmp(working, "-src-in-ptx", 11)==0
+        || strncmp(working, "--keep-device-functions", 23)==0
+        || strncmp(working, "-keep-device-functions", 22)==0
+        || strncmp(working, "--disable-warnings", 18)==0
+        || (strncmp(working, "-w", 2)==0 && is_option_end(working+2))
+        || strncmp(working, "--use_fast_math", 15)==0
+        || strncmp(working, "-use_fast_math", 14)==0
+        || strncmp(working, "--no-device-link", 16)==0
+        || strncmp(working, "-nodlink", 8)==0
+        || strncmp(working, "--no-align-double", 17)==0
+        || strncmp(working, "--no-align-double", 17)==0
+        || strncmp(working, "--clean-targets", 15)==0
+        || strncmp(working, "-clean", 6)==0
+        || strncmp(working, "--save-temps", 12)==0
+        || strncmp(working, "-save-temps", 11)==0
+        || strncmp(working, "--keep", 6)==0
+        || strncmp(working, "-keep", 5)==0
+        || strncmp(working, "--verbose", 9)==0
+        || (strncmp(working, "-v", 2)==0 && is_option_end(working+2))
+        || strncmp(working, "--dryrun", 8)==0
+        || strncmp(working, "-dryrun", 7)==0
+        || strncmp(working, "--dont-use-profile", 18)==0
+        || strncmp(working, "-noprof", 7)==0
+        || strncmp(working, "--expt-extended-lambda", 22)==0
+        || strncmp(working, "-expt-extended-lambda", 20)==0
+        || strncmp(working, "--expt-relaxed-constexpr", 24)==0
+        || strncmp(working, "-expt-relaxed-constexpr", 23)==0
+        || strncmp(working, "--no-host-device-move-forward", 29)==0
+        || strncmp(working, "-nohdmoveforward", 16)==0
+        || strncmp(working, "--no-host-device-initializer-list", 33)==0
+        || strncmp(working, "-nohdinitlist", 13)==0
+        || strncmp(working, "--shared", 8)==0
+        || strncmp(working, "-shared", 7)==0
+        || strncmp(working, "--generate-line-info", 20)==0
+        || strncmp(working, "-lineinfo", 9)==0
+        || strncmp(working, "--device-debug", 14)==0
+        || (strncmp(working, "-G", 2)==0 && is_option_end(working+2))
+        || strncmp(working, "--debug", 7)==0
+        || (strncmp(working, "-g", 2)==0 && is_option_end(working+2))
+        || strncmp(working, "--profile", 9)==0
+        || strncmp(working, "-pg", 3)==0
+        || strncmp(working, "--use-local-env", 15)==0
+        || strncmp(working, "--use-local-env", 15)==0
+        || strncmp(working, "--run", 5)==0
+        || strncmp(working, "-run", 4)==0
+        || strncmp(working, "--lib", 5)==0
+        || strncmp(working, "-lib", 4)==0
+        || strncmp(working, "--link", 6)==0
+        || strncmp(working, "-link", 5)==0
+        || strncmp(working, "--device-link", 13)==0
+        || strncmp(working, "-dlink", 6)==0
+        || strncmp(working, "--device-w", 10)==0
+        || strncmp(working, "-dw", 3)==0
+        || strncmp(working, "--device-c", 10)==0
+        || strncmp(working, "-dc", 3)==0
+        || strncmp(working, "--compile", 9)==0
+        || (strncmp(working, "-c", 2)==0 && is_option_end(working+2) )
+        || strncmp(working, "--dependency-output", 19)==0
+        || strncmp(working, "-MF", 3)==0
+        || strncmp(working, "--generate-nonsystem-dependencies", 33)==0
+        || strncmp(working, "-MM", 3)==0
+        || strncmp(working, "--generate-dependencies", 23)==0
+        || (strncmp(working, "-M", 2)==0 && is_option_end(working+2))
+        || strncmp(working, "--preprocess", 12)==0
+        || (strncmp(working, "-E", 2)==0 && is_option_end(working+2))
+        || strncmp(working, "--ptx", 5)==0
+        || strncmp(working, "-ptx", 4)==0
+        || strncmp(working, "--fatbin", 8)==0
+        || strncmp(working, "-fatbin", 7)==0
+        || strncmp(working, "--cubin", 7)==0
+        || strncmp(working, "-cubin", 6)==0
+        || strncmp(working, "--cuda", 6)==0
+        || strncmp(working, "-cuda", 5)==0
+      ){
+        return 1;
+    }
+    return 0;
+  }
+int is_c_option(char *working) {
+    if(strncmp(working, "--compile", 9)==0
+        || (strncmp(working, "-c" , 2)==0 && is_option_end(working+2) )){
+        return 1;
+    }else {
+        return 0;
+    }
+}
+
+// Target to identify the inputfile in the command.
+//   command: the command that be parsed.
+//   c_found: return whether -c option is used.
+//   inputfile: return the inputfile in the command.
+int parse_input_file(char *command, int *c_found, int *inputfile) {
+    // this function try to find the inputfile from command.
+    // 1. must have -c|--compile option available.
+    // 2. option format:
+    //   <[-|--]option>
+    //   <[-|--]option> <value>:  values may contains ", eg. "-O2 "
+    //   <[-|--]option=value>
+    // return: 1 if parse out input file.
+    char *working=command;
+    int ret=0;
+    //skip the exec-name
+    working=skip_empty(working);
+    working=skip_option(working);
+
+    while(1) {
+        working=skip_empty(working);
+        if(is_finished(working)){
+            return ret;
+        }
+        // is option
+        if(*working=='-') {
+            //process options
+            if(is_single_option(working) || is_kv_option_special(working)) { // single option
+                if(is_c_option(working)){
+                    *c_found=1;
+                }
+                working=skip_option(working);
+                working=skip_empty(working);
+                if(is_finished(working)){
+                    return ret;
+                }
+            } else { //option=value
+                if(is_contain_eq(working)) {
+                    working=skip_value(working);
+                    working=skip_empty(working);
+                } else {
+                    //option,value
+                    working=skip_option(working);
+                    working=skip_empty(working);
+                    working=skip_value(working);
+                    working=skip_empty(working);
+                }
+                if(is_finished(working)){
+                    return ret;
+                }
+            }
+            continue;
+        }
+        // is input file.
+        int len=0;
+        char *begin=working;
+        while(*working!=' ' && *working !='\t' && *working !='\0') {
+            working++;
+            len++;
+        }
+        memcpy(inputfile, begin, len);
+        ret=1;
+
+        working=skip_empty(working);
+        if(is_finished(working)){
+            return ret;
+        }
+    }
+    return ret;
+}
+
+// dump the command and options to the trace file which
+// will be parsed by scprits in scan-build-py.
+// '<option>' | 'file' are expected to write out to the fd.
+// while for 'file ' and 'file )' need to remove the space and ).
+void dump_US_field(char *str, FILE *fd, int US, int has_parenthesis){
+   char *working=str;
+   char *begin;
+   working=skip_empty(working);
+
+   char  tmpbuf[512];
+   begin=working;
+   while(*working!='\0'){
+       if(isblank(*working)) {
+           memcpy(tmpbuf, begin, working-begin);
+           tmpbuf[working-begin]='\0';
+           // remove the right ).
+           if(has_parenthesis) {
+               char *p=tmpbuf;
+               while(*p!='\0') {
+                   if(*p==')') {
+                       *p='\0';
+                    }
+                    p++;
+                }
+           }
+           fprintf(fd, "%s%c", tmpbuf, US);
+           //skip the emtpy
+           while(isblank(*working)) {
+               working++;
+           }
+           if(*working=='\0') {
+               return;
+           }
+           begin=working;
+       } else {
+           working++;
+       }
+   }
+   memcpy(tmpbuf, begin, working-begin);
+   tmpbuf[working-begin]='\0';
+   // remove the right ).
+   if(has_parenthesis) {
+       char *p=tmpbuf;
+       while(*p!='\0') {
+           if(*p==')') {
+               *p='\0';
+           }
+           p++;
+       }
+   }
+   fprintf(fd, "%s%c", tmpbuf, US);
+   return;
+}
+
+#endif
+
+/* this method is to write log about the process creation. */
+#if INTEL_CUSTOMIZATION
+static int bear_report_call(char const *fun, char const *const argv[]) {
+#else
 static void bear_report_call(char const *fun, char const *const argv[]) {
+#endif
     static int const GS = 0x1d;
     static int const RS = 0x1e;
     static int const US = 0x1f;
 
     if (!initialized)
+        #if INTEL_CUSTOMIZATION
+        return 0;
+        #else
         return;
+        #endif
 
     pthread_mutex_lock(&mutex);
     const char *cwd = getcwd(NULL, 0);
@@ -435,9 +898,74 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     fprintf(fd, "%s%c", fun, RS);
     fprintf(fd, "%s%c", cwd, RS);
     size_t const argc = bear_strings_length(argv);
+
+    #if INTEL_CUSTOMIZATION
+    int flag_command=0;
+    int flag_object=0;
+    int contflag=0;
+    int ret=0;
+    char *command_cp=NULL;
+    int it_cp=0;
+    // (CPATH=;command  args), need remove () around the command
+    int has_parenthesis=0;
+
+    for (size_t it = 0; it < argc; ++it) {
+        char *tail=argv[it];
+        int len= strlen(tail);
+        char *command=NULL;
+        if(it<=3 /*eg. /bin/bash -c [CPATH=xxx;]command*/ && flag_command==0 &&
+                ((command=strstr(tail, "nvcc"))!=NULL)) {
+          command_cp=command;
+          it_cp=it;
+          flag_command=1;
+          char *tmpp=tail;
+          while(tmpp!=command) {
+            if(*tmpp=='(') {
+                has_parenthesis=1;
+                break;
+            }
+            tmpp++;
+          }
+
+          fprintf(fd, "%s%c", "nvcc", US);
+        } else if((len ==2  &&  tail[0]=='l'  && tail[1] =='d') ||
+                  (len > 2 &&  tail[len-3]=='/'  && tail[len-2] =='l'
+                  && tail[len-1] =='d') ){
+          flag_command=1;
+        }
+        if(contflag==1){
+          char ofilename[512];
+          strcpy(ofilename,argv[it]);
+          generate_file(ofilename);
+          contflag=0;
+          flag_object=1;
+        }
+        if(flag_object==0) {
+          // here we need parse out the object file if -o option is not used.
+          // find xxx in the -o xxx of the command, generate it.
+          int r=find_create_object(tail);
+          if(r==0){
+            flag_object=1;
+          }
+          if(r==1){
+            contflag=1;
+          }
+        }
+
+    }
+    for (size_t it = it_cp; it < argc; ++it) {
+        if(it==it_cp && command_cp!=NULL) {
+           dump_US_field(command_cp + strlen("nvcc"), fd, US, has_parenthesis);
+        } else {
+           dump_US_field(argv[it], fd, US, has_parenthesis);
+        }
+    }
+    #else
     for (size_t it = 0; it < argc; ++it) {
         fprintf(fd, "%s%c", argv[it], US);
     }
+    #endif
+
     fprintf(fd, "%c", GS);
     if (fclose(fd)) {
         perror("bear: fclose");
@@ -445,6 +973,46 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     }
     free((void *)cwd);
     pthread_mutex_unlock(&mutex);
+    #if INTEL_CUSTOMIZATION
+    if(flag_command == 1 && flag_object == 1){
+      ret=1;
+    } else if(flag_command == 1) {
+        // object is not give by -o. Need figure out the default output for cmd "gcc -c xx.c"
+        char *tmp=malloc(4096);
+        memset(tmp, '\0', 4096);
+        int idx = 0;
+        int c_option;
+        char ofilename[512];
+        int parse_ret = 0;
+        for (size_t it = it_cp; it < argc; ++it) {
+           memcpy(tmp+idx, argv[it], strlen(argv[it]));
+           idx+=strlen(argv[it]);
+           tmp[idx]=' ';
+           idx++;
+        }
+        parse_ret=parse_input_file(tmp, &c_option, ofilename);
+        if(parse_ret==1 && c_option==1) {
+            //change the suffix of the ofilename from .c .cpp => .o)
+            char *p=ofilename;
+            int olen=strlen(ofilename);
+            while(olen>=0 && ofilename[olen]!= '.') {
+                olen--;
+            }
+            if(olen==-1) {
+                ofilename[olen] = '.';
+                ofilename[olen+1] = 'o';
+                ofilename[olen+2] = '\0';
+            } else {
+                ofilename[olen+1] = 'o';
+                ofilename[olen+2] = '\0';
+            }
+            generate_file(ofilename);
+            ret=1;
+        }
+        free(tmp);
+    }
+    return ret;
+    #endif
 }
 
 /* update environment assure that chilren processes will copy the desired
@@ -602,3 +1170,4 @@ static void bear_strings_release(char const **in) {
     }
     free((void *)in);
 }
+
