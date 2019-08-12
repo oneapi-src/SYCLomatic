@@ -40,7 +40,7 @@ syclct_sdk_8_samples_list=$(IFS=, ; echo "syclct_sdk_8_samples/${syclct_sdk_8_sa
 
 set -x
 #Run test case from syclct_sdk_8_samples
-tc -r none -x gcc_efi2 -t $syclct_sdk_8_samples_list
+tc -r none -x efi2_linux64_syclct -t $syclct_sdk_8_samples_list
 
 echo "---------------------------------------------------"
 #Run custom test set: syclct_internal_samples
