@@ -1,7 +1,7 @@
 // FIXME
 // UNSUPPORTED: -windows-
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/template-kernel-call.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/template-kernel-call.dp.cpp --match-full-lines %s
 
 void printf(const char *format, unsigned char data);
 
@@ -45,15 +45,15 @@ void runTest() {
   TT *karg5 = 0;
 
   // CHECK:  {
-  // CHECK-NEXT:    std::pair<syclct::buffer_t, size_t> karg1_buf = syclct::get_buffer_and_offset(karg1);
+  // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> karg1_buf = dpct::get_buffer_and_offset(karg1);
   // CHECK-NEXT:    size_t karg1_offset = karg1_buf.second;
-  // CHECK-NEXT:    std::pair<syclct::buffer_t, size_t> karg2_buf = syclct::get_buffer_and_offset(karg2);
+  // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> karg2_buf = dpct::get_buffer_and_offset(karg2);
   // CHECK-NEXT:    size_t karg2_offset = karg2_buf.second;
-  // CHECK-NEXT:    syclct::get_default_queue().submit(
+  // CHECK-NEXT:    dpct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        auto karg1_acc = karg1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:        auto karg2_acc = karg2_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, syclct_kernel_scalar<ktarg>, T>>(
+  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, T>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK-NEXT:            const void *karg1 = (const void*)(&karg1_acc[0] + karg1_offset);
@@ -65,15 +65,15 @@ void runTest() {
   testKernelPtr<class TestName, ktarg, T><<<griddim, threaddim>>>((const T *)karg1, karg2);
 
   // CHECK:  {
-  // CHECK-NEXT:    std::pair<syclct::buffer_t, size_t> karg1_buf = syclct::get_buffer_and_offset(karg1);
+  // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> karg1_buf = dpct::get_buffer_and_offset(karg1);
   // CHECK-NEXT:    size_t karg1_offset = karg1_buf.second;
-  // CHECK-NEXT:    std::pair<syclct::buffer_t, size_t> karg3_buf = syclct::get_buffer_and_offset(karg3);
+  // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> karg3_buf = dpct::get_buffer_and_offset(karg3);
   // CHECK-NEXT:    size_t karg3_offset = karg3_buf.second;
-  // CHECK-NEXT:    syclct::get_default_queue().submit(
+  // CHECK-NEXT:    dpct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        auto karg1_acc = karg1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:        auto karg3_acc = karg3_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestTemplate<T>, syclct_kernel_scalar<ktarg>, T>>(
+  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestTemplate<T>, dpct_kernel_scalar<ktarg>, T>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK-NEXT:            const void *karg1 = (const void*)(&karg1_acc[0] + karg1_offset);
@@ -85,15 +85,15 @@ void runTest() {
   testKernelPtr<class TestTemplate<T>, ktarg, T><<<griddim, threaddim>>>(karg1, karg3);
 
   // CHECK:  {
-  // CHECK-NEXT:    std::pair<syclct::buffer_t, size_t> karg4_buf = syclct::get_buffer_and_offset(karg4);
+  // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> karg4_buf = dpct::get_buffer_and_offset(karg4);
   // CHECK-NEXT:    size_t karg4_offset = karg4_buf.second;
-  // CHECK-NEXT:    std::pair<syclct::buffer_t, size_t> karg5_buf = syclct::get_buffer_and_offset(karg5);
+  // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> karg5_buf = dpct::get_buffer_and_offset(karg5);
   // CHECK-NEXT:    size_t karg5_offset = karg5_buf.second;
-  // CHECK-NEXT:    syclct::get_default_queue().submit(
+  // CHECK-NEXT:    dpct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        auto karg4_acc = karg4_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:        auto karg5_acc = karg5_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, T, syclct_kernel_scalar<ktarg>, TestTemplate<T>>>(
+  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, T, dpct_kernel_scalar<ktarg>, TestTemplate<T>>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK-NEXT:            const TestTemplate<T> *karg4 = (const TestTemplate<T>*)(&karg4_acc[0] + karg4_offset);
@@ -106,9 +106,9 @@ void runTest() {
 
   T karg1T, karg2T;
   // CHECK:  {
-  // CHECK-NEXT:    syclct::get_default_queue().submit(
+  // CHECK-NEXT:    dpct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernel_{{[a-f0-9]+}}, T>>(
+  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK-NEXT:            testKernel<T>(karg1T, karg2T, ktarg, [[ITEM]]);
@@ -121,9 +121,9 @@ void runTest() {
   TT karg4TT;
 
   // CHECK:  {
-  // CHECK-NEXT:    syclct::get_default_queue().submit(
+  // CHECK-NEXT:    dpct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernel_{{[a-f0-9]+}}, TestTemplate<T>>>(
+  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, TestTemplate<T>>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK-NEXT:            testKernel<TestTemplate<T>>(karg3TT, karg4TT, ktarg, [[ITEM]]);
@@ -133,9 +133,9 @@ void runTest() {
   testKernel<TestTemplate<T> ><<<griddim, threaddim>>>(karg3TT, karg4TT, ktarg);
 
   // CHECK:  {
-  // CHECK-NEXT:    syclct::get_default_queue().submit(
+  // CHECK-NEXT:    dpct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernel_{{[a-f0-9]+}}, TT>>(
+  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, TT>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK-NEXT:            testKernel<TT>(karg3TT, karg4TT, ktarg, [[ITEM]]);
@@ -149,15 +149,15 @@ int main() {
   void *karg1 = 0;
   LA *karg2 = 0;
   // CHECK:  {
-  // CHECK-NEXT:    std::pair<syclct::buffer_t, size_t> karg1_buf = syclct::get_buffer_and_offset(karg1);
+  // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> karg1_buf = dpct::get_buffer_and_offset(karg1);
   // CHECK-NEXT:    size_t karg1_offset = karg1_buf.second;
-  // CHECK-NEXT:    std::pair<syclct::buffer_t, size_t> karg2_buf = syclct::get_buffer_and_offset(karg2);
+  // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> karg2_buf = dpct::get_buffer_and_offset(karg2);
   // CHECK-NEXT:    size_t karg2_offset = karg2_buf.second;
-  // CHECK-NEXT:    syclct::get_default_queue().submit(
+  // CHECK-NEXT:    dpct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        auto karg1_acc = karg1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:        auto karg2_acc = karg2_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, syclct_kernel_scalar<ktarg>, LA>>(
+  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, LA>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK-NEXT:            void *karg1 = (void*)(&karg1_acc[0] + karg1_offset);
@@ -171,9 +171,9 @@ int main() {
   LA karg1LA, karg2LA;
   int intvar = 20;
   // CHECK:  {
-  // CHECK-NEXT:    syclct::get_default_queue().submit(
+  // CHECK-NEXT:    dpct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernel_{{[a-f0-9]+}}, LA>>(
+  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, LA>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((cl::sycl::range<3>(10, 1, 1) * cl::sycl::range<3>(intvar, 1, 1)), cl::sycl::range<3>(intvar, 1, 1)),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK-NEXT:            testKernel<LA>(karg1LA, karg2LA, ktarg, [[ITEM]]);

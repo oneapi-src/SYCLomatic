@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/nested_device_call.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/nested_device_call.dp.cpp --match-full-lines %s
 
 #include <cstdio>
 

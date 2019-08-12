@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/cublasReturnType.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/cublasReturnType.dp.cpp --match-full-lines %s
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 #include <stdio.h>

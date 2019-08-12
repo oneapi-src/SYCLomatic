@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/kernel-function-info.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/kernel-function-info.dp.cpp --match-full-lines %s
 
 //CHECK: template<class T>
 //CHECK-NEXT: void testTemplateKernel(T *data)
@@ -16,7 +16,7 @@ __global__ void testKernel(void* data)
 template<class T>
 void getTemplateFuncAttrs()
 {
-  //CHECK: sycl_kernel_function_info attrs;
+  //CHECK: dpct_kernel_function_info attrs;
   cudaFuncAttributes attrs;
 
   //CHECK: (get_kernel_function_info(&attrs, (const void *)testTemplateKernel<T>), 0);
@@ -28,7 +28,7 @@ void getTemplateFuncAttrs()
 
 void getFuncAttrs()
 {
-  //CHECK: sycl_kernel_function_info attrs;
+  //CHECK: dpct_kernel_function_info attrs;
   cudaFuncAttributes attrs;
 
   //CHECK: (get_kernel_function_info(&attrs, (const void *)testKernel), 0);

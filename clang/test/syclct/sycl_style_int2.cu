@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/sycl_style_int2.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/sycl_style_int2.dp.cpp --match-full-lines %s
 
 // CHECK: void func3(cl::sycl::int2 a, cl::sycl::int2 b, cl::sycl::int2 c) {
 void func3(int2 a, int2 b, int2 c) {
@@ -86,12 +86,12 @@ int main() {
 
   // CHECK: cl::sycl::int2* data;
   // CHECK: {
-  // CHECK:   std::pair<syclct::buffer_t, size_t> data_buf = syclct::get_buffer_and_offset(data);
+  // CHECK:   std::pair<dpct::buffer_t, size_t> data_buf = dpct::get_buffer_and_offset(data);
   // CHECK:   size_t data_offset = data_buf.second;
-  // CHECK:   syclct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
   // CHECK:       auto data_acc = data_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK:           cl::sycl::int2 *data = (cl::sycl::int2*)(&data_acc[0] + data_offset);

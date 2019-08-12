@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck %s --match-full-lines --input-file %T/kernel-signature.sycl.cpp
+// RUN: FileCheck %s --match-full-lines --input-file %T/kernel-signature.dp.cpp
 
 // CHECK: void test_01();
 // CHECK: void test_06();

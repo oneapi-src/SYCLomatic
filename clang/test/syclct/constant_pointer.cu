@@ -1,9 +1,9 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck %s --match-full-lines --input-file %T/constant_pointer.sycl.cpp
+// RUN: FileCheck %s --match-full-lines --input-file %T/constant_pointer.dp.cpp
 
-// CHECK: syclct::device_memory<int, 1> schsfirst;
+// CHECK: dpct::device_memory<int, 1> schsfirst;
 static __constant__ const int *schsfirst;
-// CHECK: syclct::device_memory<cl::sycl::double2, 1> zm;
+// CHECK: dpct::device_memory<cl::sycl::double2, 1> zm;
 static __constant__ const double2 *zm;
 
 static int *schsfirstD;

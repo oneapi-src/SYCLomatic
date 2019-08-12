@@ -63,36 +63,36 @@ set_target_properties(scan-build-py PROPERTIES FOLDER "Misc")
 
 install(
   PROGRAMS ${OutPutBinFiles}
-  COMPONENT syclct-intercept-build
+  COMPONENT dpct-intercept-build
   DESTINATION bin)
-add_custom_target(syclct-intercept-build ALL DEPENDS ${OutPutLibScanBuildFiles})
+add_custom_target(dpct-intercept-build ALL DEPENDS ${OutPutLibScanBuildFiles})
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
-  add_llvm_install_targets(install-syclct-intercept-build
-                           DEPENDS syclct-intercept-build
-                           COMPONENT syclct-intercept-build)
+  add_llvm_install_targets(install-dpct-intercept-build
+                           DEPENDS dpct-intercept-build
+                           COMPONENT dpct-intercept-build)
 endif()
 
 
 install(
   PROGRAMS ${OutPutLibScanBuildFiles}
-  COMPONENT syclct-lib-scan-build-files
+  COMPONENT dpct-lib-scan-build-files
   DESTINATION libscanbuild)
 
-add_custom_target(syclct-lib-scan-build-files ALL DEPENDS ${OutPutLibScanBuildFiles})
+add_custom_target(dpct-lib-scan-build-files ALL DEPENDS ${OutPutLibScanBuildFiles})
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
-  add_llvm_install_targets(install-syclct-lib-scan-build-files
-                           DEPENDS syclct-lib-scan-build-files
-                           COMPONENT syclct-lib-scan-build-files)
+  add_llvm_install_targets(install-dpct-lib-scan-build-files
+                           DEPENDS dpct-lib-scan-build-files
+                           COMPONENT dpct-lib-scan-build-files)
 endif()
 
 install(
   PROGRAMS ${OutPutLibearFile}
-  COMPONENT syclct-libear-files
+  COMPONENT dpct-libear-files
   DESTINATION libear)
 
-add_custom_target(syclct-libear-files ALL DEPENDS ${OutPutLibearFile})
+add_custom_target(dpct-libear-files ALL DEPENDS ${OutPutLibearFile})
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
-  add_llvm_install_targets(install-syclct-libear-files
-                           DEPENDS syclct-libear-files
-                           COMPONENT syclct-libear-files)
+  add_llvm_install_targets(install-dpct-libear-files
+                           DEPENDS dpct-libear-files
+                           COMPONENT dpct-libear-files)
 endif()

@@ -856,16 +856,16 @@ configure_file(
   ${CLANG_BINARY_DIR}/include/clang/Config/config.h)
 
 if (NOT CLANG_BUILT_STANDALONE)
-  list(APPEND SYCLCT_RUN
-    install-syclct-intercept-build
-    install-syclct-lib-scan-build-files
-    install-syclct-libear-files
-    install-syclct-headers
+  list(APPEND DPCT_RUN
+    install-dpct-intercept-build
+    install-dpct-lib-scan-build-files
+    install-dpct-libear-files
+    install-dpct-headers
     install-clang-resource-headers
     install-syclct
-    install-syclct-vars
-    install-syclct-syscheck
+    install-dpct-vars
+    install-dpct-syscheck
     )
 endif()
-add_custom_target(install-syclct-tool DEPENDS ${SYCLCT_RUN})
-set_target_properties(install-syclct-tool PROPERTIES FOLDER "install syclct tool")
+add_custom_target(install-syclct-tool DEPENDS ${DPCT_RUN})
+set_target_properties(install-syclct-tool PROPERTIES FOLDER "install dpct tool")

@@ -1,23 +1,23 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck %s --match-full-lines --input-file %T/device001.sycl.cpp
+// RUN: FileCheck %s --match-full-lines --input-file %T/device001.dp.cpp
 
 int main(int argc, char **argv) {
 
-  // CHECK: syclct::sycl_device_info deviceProp;
+  // CHECK: dpct::dpct_device_info deviceProp;
   cudaDeviceProp deviceProp;
 
-  // CHECK: if (deviceProp.get_mode() == syclct::compute_mode::prohibited) {
+  // CHECK: if (deviceProp.get_mode() == dpct::compute_mode::prohibited) {
   if (deviceProp.computeMode == cudaComputeModeProhibited) {
     return 0;
   }
 
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:int major = deviceProp.get_major_version();
   int major = deviceProp.major;
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1006:{{[0-9]+}}: SYCL doesn't provide standard API to differentiate between integrated/discrete GPU devices. Consider to re-implement the code which depends on this field
+// CHECK-NEXT:DPCT1006:{{[0-9]+}}: SYCL doesn't provide standard API to differentiate between integrated/discrete GPU devices. Consider to re-implement the code which depends on this field
 // CHECK-NEXT:*/
 // CHECK-NEXT:int integrated = deviceProp.get_integrated();
   int integrated = deviceProp.integrated;
@@ -29,19 +29,19 @@ int main(int argc, char **argv) {
   int maxThreadsPerMultiProcessor = deviceProp.maxThreadsPerMultiProcessor;
 
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:deviceProp.set_major_version(1);
   deviceProp.major=1;
 
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:int minor = deviceProp.get_minor_version();
   int minor = deviceProp.minor;
 
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:deviceProp.set_minor_version(120);
   deviceProp.minor=120;
@@ -64,13 +64,13 @@ int main(int argc, char **argv) {
   count = deviceProp.maxThreadsPerBlock;
 
   // CHECK:  /*
-  // CHECK-NEXT:  SYCLCT1022:{{[0-9]+}}: There is no exact match between maxGridSize and nd_range size. Please verify the correctness.
+  // CHECK-NEXT:  DPCT1022:{{[0-9]+}}: There is no exact match between maxGridSize and nd_range size. Please verify the correctness.
   // CHECK-NEXT:  */
   // CHECK-NEXT:  int *maxGridSize = deviceProp.get_max_nd_range_size();
   int *maxGridSize = deviceProp.maxGridSize;
 
   // CHECK:/*
-  // CHECK-NEXT:SYCLCT1019:{{[0-9]+}}: The sharedMemPerBlock is not necessarily the same as local_mem_size in DPC++
+  // CHECK-NEXT:DPCT1019:{{[0-9]+}}: The sharedMemPerBlock is not necessarily the same as local_mem_size in DPC++
   // CHECK-NEXT:*/
   // CHECK-NEXT:size_t share_mem_size = deviceProp.get_local_mem_size();
   size_t share_mem_size = deviceProp.sharedMemPerBlock;
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
   dim3 grid(deviceProp.multiProcessorCount * (deviceProp.maxThreadsPerMultiProcessor / deviceProp.warpSize));
 
 // CHECK:/*
-// CHECK-NEXT:SYCLCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
 // CHECK-NEXT:*/
 // CHECK-NEXT:int n = deviceProp.get_minor_version() / deviceProp.get_major_version();
   int n = deviceProp.minor / deviceProp.major;
@@ -96,12 +96,12 @@ __global__ void foo_kernel(void)
 
 void test()
 {
-  // CHECK: syclct::sycl_device_info deviceProp;
+  // CHECK: dpct::dpct_device_info deviceProp;
   cudaDeviceProp deviceProp;
   // CHECK:    {
-  // CHECK-NEXT:syclct::get_default_queue().submit(
+  // CHECK-NEXT:dpct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class foo_kernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((cl::sycl::range<3>(deviceProp.get_max_compute_units(), 1, 1) * cl::sycl::range<3>(deviceProp.get_max_work_group_size(), 1, 1)), cl::sycl::range<3>(deviceProp.get_max_work_group_size(), 1, 1)),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK-NEXT:            foo_kernel();

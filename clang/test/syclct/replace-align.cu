@@ -1,7 +1,7 @@
 // RUN: syclct -out-root %T %s -- -std=c++14  -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck %s --match-full-lines --input-file %T/replace-align.sycl.cpp
+// RUN: FileCheck %s --match-full-lines --input-file %T/replace-align.dp.cpp
 
-// CHECK:typedef struct __sycl_align__(4) syclct_type_{{[a-f0-9]+}}
+// CHECK:typedef struct __sycl_align__(4) dpct_type_{{[a-f0-9]+}}
 typedef struct __align__(4)
 {
     unsigned char r, g, b, a;

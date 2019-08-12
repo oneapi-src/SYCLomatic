@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/nestedqueue.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/nestedqueue.dp.cpp --match-full-lines %s
 
 #include <cstdio>
 #include <cublas_v2.h>
@@ -7,7 +7,7 @@
 
 __host__ __device__ void foo1(){
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1021:{{[0-9]+}}: Migration of cublasHandle_t in __global__ or __device__ function is not supported. You may need to redesign the code.
+  // CHECK-NEXT: DPCT1021:{{[0-9]+}}: Migration of cublasHandle_t in __global__ or __device__ function is not supported. You may need to redesign the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: cublasHandle_t handle;
   cublasHandle_t handle;
@@ -16,7 +16,7 @@ __host__ __device__ void foo1(){
   int incx=1;
   int* result =0;
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1020:{{[0-9]+}}: Migration of cublasIsamax_v2 if called from __global__ or __device__ function is not supported. You may need to redesign the code to use host-side mkl::iamax instead, which will submit this call to DPC++ queue automatically.
+  // CHECK-NEXT: DPCT1020:{{[0-9]+}}: Migration of cublasIsamax_v2 if called from __global__ or __device__ function is not supported. You may need to redesign the code to use host-side mkl::iamax instead, which will submit this call to DPC++ queue automatically.
   // CHECK-NEXT: */
   // CHECK-NEXT: cublasIsamax(handle, n, x_S, incx, result);
   cublasIsamax(handle, n, x_S, incx, result);
@@ -24,7 +24,7 @@ __host__ __device__ void foo1(){
 
 __device__ void foo2(){
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1021:{{[0-9]+}}: Migration of cublasHandle_t in __global__ or __device__ function is not supported. You may need to redesign the code.
+  // CHECK-NEXT: DPCT1021:{{[0-9]+}}: Migration of cublasHandle_t in __global__ or __device__ function is not supported. You may need to redesign the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: cublasHandle_t handle;
   cublasHandle_t handle;
@@ -33,7 +33,7 @@ __device__ void foo2(){
   int incx=1;
   int* result =0;
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1020:{{[0-9]+}}: Migration of cublasIsamax_v2 if called from __global__ or __device__ function is not supported. You may need to redesign the code to use host-side mkl::iamax instead, which will submit this call to DPC++ queue automatically.
+  // CHECK-NEXT: DPCT1020:{{[0-9]+}}: Migration of cublasIsamax_v2 if called from __global__ or __device__ function is not supported. You may need to redesign the code to use host-side mkl::iamax instead, which will submit this call to DPC++ queue automatically.
   // CHECK-NEXT: */
   // CHECK-NEXT: cublasIsamax(handle, n, x_S, incx, result);
   cublasIsamax(handle, n, x_S, incx, result);
@@ -41,7 +41,7 @@ __device__ void foo2(){
 
 __global__ void foo3(){
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1021:{{[0-9]+}}: Migration of cublasHandle_t in __global__ or __device__ function is not supported. You may need to redesign the code.
+  // CHECK-NEXT: DPCT1021:{{[0-9]+}}: Migration of cublasHandle_t in __global__ or __device__ function is not supported. You may need to redesign the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: cublasHandle_t handle;
   cublasHandle_t handle;
@@ -50,7 +50,7 @@ __global__ void foo3(){
   int incx=1;
   int* result =0;
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1020:{{[0-9]+}}: Migration of cublasIsamax_v2 if called from __global__ or __device__ function is not supported. You may need to redesign the code to use host-side mkl::iamax instead, which will submit this call to DPC++ queue automatically.
+  // CHECK-NEXT: DPCT1020:{{[0-9]+}}: Migration of cublasIsamax_v2 if called from __global__ or __device__ function is not supported. You may need to redesign the code to use host-side mkl::iamax instead, which will submit this call to DPC++ queue automatically.
   // CHECK-NEXT: */
   // CHECK-NEXT: cublasIsamax(handle, n, x_S, incx, result);
   cublasIsamax(handle, n, x_S, incx, result);

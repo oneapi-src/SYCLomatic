@@ -1,5 +1,5 @@
 // CHECK:#include <CL/sycl.hpp>
-// CHECK-NEXT:#include <syclct/syclct.hpp>
+// CHECK-NEXT:#include <dpct/dpct.hpp>
 #include <stdio.h>
 
 // CHECK:void simple_kernel(cl::sycl::nd_item<3> item_{{[a-f0-9]+}},

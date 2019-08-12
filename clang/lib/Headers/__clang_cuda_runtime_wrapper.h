@@ -423,7 +423,7 @@ __device__ inline __cuda_builtin_gridDim_t::operator dim3() const {
 #include <__clang_cuda_complex_builtins.h>
 
 #if INTEL_CUSTOMIZATION
-#include "__clang_syclct_math.h"
+#include "__clang_dpct_math.h"
 #include <math.h>
 #endif
 // curand_mtgp32_kernel helpfully redeclares blockDim and threadIdx in host

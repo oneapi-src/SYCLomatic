@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s -passes "IterationSpaceBuiltinRule" -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck %s --match-full-lines --input-file %T/pass-filter.sycl.cpp
+// RUN: FileCheck %s --match-full-lines --input-file %T/pass-filter.dp.cpp
 
 // Test that only IterationSpaceBuiltinRule is being run
 // CHECK:__global__ void test_00(cl::sycl::nd_item<3> item_ct1) {

@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/cuda-math-intrinsics.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/cuda-math-intrinsics.dp.cpp --match-full-lines %s
 
 #include <cmath>
 #include <iomanip>
@@ -65,31 +65,31 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   // Half2 Comparison Functions
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2_2 = __heq2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2_2 = __hge2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2_2 = __hgt2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2_2 = __hisnan2(h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2_2 = __hle2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2_2 = __hlt2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2_2 = __hne2(h2, h2_1);
 
@@ -114,7 +114,7 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   // CHECK: h_2 = cl::sycl::log2(h);
   h_2 = hlog2(h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h_2 = hrcp(h);
   // CHECK: h_2 = cl::sycl::rint(h);
@@ -149,7 +149,7 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   // CHECK: h2_2 = cl::sycl::log2(h2);
   h2_2 = h2log2(h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   h2_2 = h2rcp(h2);
   // CHECK: h2_2 = cl::sycl::rint(h2);
@@ -283,144 +283,144 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d2 = trunc(d0);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 + d1;
   d2 = __dadd_rd(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 + d1;
   d2 = __dadd_rn(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 + d1;
   d2 = __dadd_ru(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 + d1;
   d2 = __dadd_rz(d0, d1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 / d1;
   d2 = __ddiv_rd(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 / d1;
   d2 = __ddiv_rn(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 / d1;
   d2 = __ddiv_ru(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 / d1;
   d2 = __ddiv_rz(d0, d1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 * d1;
   d2 = __dmul_rd(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 * d1;
   d2 = __dmul_rn(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 * d1;
   d2 = __dmul_ru(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 * d1;
   d2 = __dmul_rz(d0, d1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d1 = __drcp_rd(d0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d1 = __drcp_rn(d0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d1 = __drcp_ru(d0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d1 = __drcp_rz(d0);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d0 = cl::sycl::sqrt(d0);
   d0 = __dsqrt_rd(d0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d1 = cl::sycl::sqrt(d1);
   d1 = __dsqrt_rn(d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d0 = cl::sycl::sqrt(d0);
   d0 = __dsqrt_ru(d0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d1 = cl::sycl::sqrt(d1);
   d1 = __dsqrt_rz(d1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 - d1;
   d2 = __dsub_rd(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 - d1;
   d2 = __dsub_rn(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 - d1;
   d2 = __dsub_ru(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 - d1;
   d2 = __dsub_rz(d0, d1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = cl::sycl::fma(d0, d1, d2);
   d2 = __fma_rd(d0, d1, d2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = cl::sycl::fma(d0, d1, d2);
   d2 = __fma_rn(d0, d1, d2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = cl::sycl::fma(d0, d1, d2);
   d2 = __fma_ru(d0, d1, d2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = cl::sycl::fma(d0, d1, d2);
   d2 = __fma_rz(d0, d1, d2);
@@ -582,43 +582,43 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f0 = __expf(f0);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 + f1;
   f2 = __fadd_rd(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 + f1;
   f2 = __fadd_rn(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 + f1;
   f2 = __fadd_ru(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 + f1;
   f2 = __fadd_rz(f0, f1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 / f1;
   f2 = __fdiv_rd(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 / f1;
   f2 = __fdiv_rn(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 / f1;
   f2 = __fdiv_ru(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 / f1;
   f2 = __fdiv_rz(f0, f1);
@@ -627,106 +627,106 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = __fdividef(f0, f1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = cl::sycl::fma(f0, f1, f2);
   f2 = __fmaf_rd(f0, f1, f2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = cl::sycl::fma(f0, f1, f2);
   f2 = __fmaf_rn(f0, f1, f2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = cl::sycl::fma(f0, f1, f2);
   f2 = __fmaf_ru(f0, f1, f2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = cl::sycl::fma(f0, f1, f2);
   f2 = __fmaf_rz(f0, f1, f2);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK: f2 = f0 * f1;
   f2 = __fmul_rd(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK: f2 = f0 * f1;
   f2 = __fmul_rn(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK: f2 = f0 * f1;
   f2 = __fmul_ru(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK: f2 = f0 * f1;
   f2 = __fmul_rz(f0, f1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = cl::sycl::native::recip(f0);
   f1 = __frcp_rd(f0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = cl::sycl::native::recip(f0);
   f1 = __frcp_rn(f0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = cl::sycl::native::recip(f0);
   f1 = __frcp_ru(f0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = cl::sycl::native::recip(f0);
   f1 = __frcp_rz(f0);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f0 = cl::sycl::sqrt(f0);
   f0 = __fsqrt_rd(f0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = cl::sycl::sqrt(f1);
   f1 = __fsqrt_rn(f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f0 = cl::sycl::sqrt(f0);
   f0 = __fsqrt_ru(f0);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = cl::sycl::sqrt(f1);
   f1 = __fsqrt_rz(f1);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 - f1;
   f2 = __fsub_rd(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 - f1;
   f2 = __fsub_rn(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 - f1;
   f2 = __fsub_ru(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 - f1;
   f2 = __fsub_rz(f0, f1);
@@ -760,7 +760,7 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = nanf("NaN");
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode of the math API is not defined in the SYCL 1.2.1 standard. Verify the correctness of your generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = cl::sycl::rsqrt(f2);
   f2 = __frsqrt_rn(f2);
@@ -891,10 +891,10 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: us = cl::sycl::vec<cl::sycl::half, 1>{h}.convert<unsigned short, cl::sycl::rounding_mode::rtz>().get_value(0);
   us = __half2ushort_rz(h);
 
-  // CHECK: s = syclct::bit_cast<cl::sycl::half, short>(h);
+  // CHECK: s = dpct::bit_cast<cl::sycl::half, short>(h);
   s = __half_as_short(h);
 
-  // CHECK: us = syclct::bit_cast<cl::sycl::half, unsigned short>(h);
+  // CHECK: us = dpct::bit_cast<cl::sycl::half, unsigned short>(h);
   us = __half_as_ushort(h);
 
   // CHECK: h2 = cl::sycl::half2{h,h};
@@ -963,7 +963,7 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: h = cl::sycl::vec<short, 1>{s}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtz>().get_value(0);
   h = __short2half_rz(s);
 
-  // CHECK: h = syclct::bit_cast<short, cl::sycl::half>(s);
+  // CHECK: h = dpct::bit_cast<short, cl::sycl::half>(s);
   h = __short_as_half(s);
 
   // CHECK: h = cl::sycl::vec<unsigned int, 1>{ui}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtn>().get_value(0);
@@ -1002,7 +1002,7 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: h = cl::sycl::vec<unsigned short, 1>{us}.convert<cl::sycl::half, cl::sycl::rounding_mode::rtz>().get_value(0);
   h = __ushort2half_rz(us);
 
-  // CHECK: h = syclct::bit_cast<unsigned short, cl::sycl::half>(us);
+  // CHECK: h = dpct::bit_cast<unsigned short, cl::sycl::half>(us);
   h = __ushort_as_half(us);
 
   // CHECK: f = cl::sycl::vec<double, 1>{d}.convert<float, cl::sycl::rounding_mode::rtn>().get_value(0);
@@ -1065,7 +1065,7 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: ull = cl::sycl::vec<double, 1>{d}.convert<unsigned long long, cl::sycl::rounding_mode::rtz>().get_value(0);
   ull = __double2ull_rz(d);
 
-  // CHECK: ll = syclct::bit_cast<double, long long>(d);
+  // CHECK: ll = dpct::bit_cast<double, long long>(d);
   ll = __double_as_longlong(d);
 
   // CHECK: i = cl::sycl::vec<float, 1>{f}.convert<int, cl::sycl::rounding_mode::rtn>().get_value(0);
@@ -1116,10 +1116,10 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: ull = cl::sycl::vec<float, 1>{f}.convert<unsigned long long, cl::sycl::rounding_mode::rtz>().get_value(0);
   ull = __float2ull_rz(f);
 
-  // CHECK: i = syclct::bit_cast<float, int>(f);
+  // CHECK: i = dpct::bit_cast<float, int>(f);
   i = __float_as_int(f);
 
-  // CHECK: ui = syclct::bit_cast<float, unsigned int>(f);
+  // CHECK: ui = dpct::bit_cast<float, unsigned int>(f);
   ui = __float_as_uint(f);
 
   // CHECK: d = cl::sycl::vec<int, 1>{i}.convert<double, cl::sycl::rounding_mode::rte>().get_value(0);
@@ -1137,7 +1137,7 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: d = cl::sycl::vec<int, 1>{i}.convert<float, cl::sycl::rounding_mode::rtz>().get_value(0);
   d = __int2float_rz(i);
 
-  // CHECK: f = syclct::bit_cast<int, float>(i);
+  // CHECK: f = dpct::bit_cast<int, float>(i);
   f = __int_as_float(i);
 
   // CHECK: d = cl::sycl::vec<long long, 1>{ll}.convert<double, cl::sycl::rounding_mode::rtn>().get_value(0);
@@ -1164,7 +1164,7 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: f = cl::sycl::vec<long long, 1>{ll}.convert<float, cl::sycl::rounding_mode::rtz>().get_value(0);
   f = __ll2float_rz(ll);
 
-  // CHECK: d = syclct::bit_cast<long long, double>(ll);
+  // CHECK: d = dpct::bit_cast<long long, double>(ll);
   d = __longlong_as_double(ll);
 
   // CHECK: d = cl::sycl::vec<unsigned int, 1>{ui}.convert<double, cl::sycl::rounding_mode::rte>().get_value(0);
@@ -1182,7 +1182,7 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: f = cl::sycl::vec<unsigned int, 1>{ui}.convert<float, cl::sycl::rounding_mode::rtz>().get_value(0);
   f = __uint2float_rz(ui);
 
-  // CHECK: f = syclct::bit_cast<unsigned int, float>(ui);
+  // CHECK: f = dpct::bit_cast<unsigned int, float>(ui);
   f = __uint_as_float(ui);
 
   // CHECK: d = cl::sycl::vec<unsigned long long, 1>{ull}.convert<double, cl::sycl::rounding_mode::rtn>().get_value(0);
@@ -1273,319 +1273,319 @@ __global__ void testUnsupported() {
   bool b;
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   __hadd_sat(h, h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   __hfma_sat(h, h, h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   __hmul_sat(h, h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   __hsub_sat(h, h);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   __hadd2_sat(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   __hfma2_sat(h2, h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   __hmul2_sat(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   __hsub2_sat(h2, h2);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hequ(h, h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hgeu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hgtu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hleu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hltu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hneu(h, h);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbeq2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbequ2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbge2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbgeu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbgt2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbgtu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hble2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbleu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hblt2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbltu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbne2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   b = __hbneu2(h2, h2);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   __hequ2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   __hgeu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   __hgtu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   __hleu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   __hltu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   __hneu2(h2, h2);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = cyl_bessel_i0f(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = cyl_bessel_i1f(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = erfcinvf(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = erfcxf(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = erfinvf(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = j0f(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = j1f(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = jnf(i, f);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = norm3df(f, f, f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = norm4df(f, f, f, f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = normcdff(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = normcdfinvf(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = normf(i, &f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = rcbrtf(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = rnorm3df(f, f, f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = rnorm4df(f, f, f, f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = rnormf(i, &f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = scalblnf(f, l);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = scalbnf(f, i);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = y0f(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = y1f(f);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = ynf(i, f);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = cyl_bessel_i0(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = cyl_bessel_i1(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = erfcinv(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = erfcx(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = erfinv(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = j0(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = j1(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = jn(i, d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = norm(i, &d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = norm3d(d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = norm4d(d, d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = normcdf(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = normcdfinv(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = rcbrt(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = rnorm3d(d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = rnorm4d(d, d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = rnorm(i, &d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = scalbln(d, l);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = scalbn(d, i);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = y0(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = y1(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = yn(i, d);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   f = __saturatef(f);
 
@@ -1595,89 +1595,89 @@ __global__ void testUnsupported() {
   // i = __shfl_xor_sync(u, h, u, i);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   i = __double2hiint(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   i = __double2loint(d);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   d = __hiloint2double(i, i);
 
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __brev(u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   ull = __brevll(ull);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __byte_perm(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   i = __ffs(i);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   i = __ffsll(ll);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __funnelshift_l(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __funnelshift_lc(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __funnelshift_r(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __funnelshift_rc(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   ll = __mul64hi(ll, ll);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   i = __rhadd(i, i);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __sad(i, i, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __uhadd(u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __umul24(u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   ull = __umul64hi(ull, ull);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __umulhi(u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __urhadd(u, u);
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: {{[a-zA-Z0-9_]+}} is not supported in DPC++
   // CHECK-NEXT: */
   u = __usad(u, u, u);
 }
@@ -1687,33 +1687,33 @@ __global__ void testSimulation() {
   double d;
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The nearbyintf is emulated by cl::sycl::floor in DPC++. You need to check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The nearbyintf is emulated by cl::sycl::floor in DPC++. You need to check the potential precision and/or performance issues of generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f = cl::sycl::floor(f + 0.5);
   f = nearbyintf(f);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The nearbyint is emulated by cl::sycl::floor in DPC++. You need to check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The nearbyint is emulated by cl::sycl::floor in DPC++. You need to check the potential precision and/or performance issues of generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d = cl::sycl::floor(d + 0.5);
   d = nearbyint(d);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The rhypotf is emulated by cl::sycl::hypot in DPC++. You need to check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The rhypotf is emulated by cl::sycl::hypot in DPC++. You need to check the potential precision and/or performance issues of generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f = 1 / cl::sycl::hypot(f, f);
   f = rhypotf(f, f);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The sincospif is emulated by cl::sycl::sincos in DPC++. You need to check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sincospif is emulated by cl::sycl::sincos in DPC++. You need to check the potential precision and/or performance issues of generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: f = cl::sycl::sincos(f * SYCLCT_PI_F, cl::sycl::make_ptr<float, cl::sycl::access::address_space::global_space>(&f));
+  // CHECK-NEXT: f = cl::sycl::sincos(f * DPCT_PI_F, cl::sycl::make_ptr<float, cl::sycl::access::address_space::global_space>(&f));
   sincospif(f, &f, &f);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1017:{{[0-9]+}}: The sincospi is emulated by cl::sycl::sincos in DPC++. You need to check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sincospi is emulated by cl::sycl::sincos in DPC++. You need to check the potential precision and/or performance issues of generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: d = cl::sycl::sincos(d * SYCLCT_PI, cl::sycl::make_ptr<double, cl::sycl::access::address_space::global_space>(&d));
+  // CHECK-NEXT: d = cl::sycl::sincos(d * DPCT_PI, cl::sycl::make_ptr<double, cl::sycl::access::address_space::global_space>(&d));
   sincospi(d, &d, &d);
 }
 

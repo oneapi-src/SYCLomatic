@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s  -- -std=c++14 -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck %s --match-full-lines --input-file %T/error-handling-trycatch.sycl.cpp
+// RUN: FileCheck %s --match-full-lines --input-file %T/error-handling-trycatch.dp.cpp
 
 void test_simple() {
 }

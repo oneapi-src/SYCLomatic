@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s -- -std=c++14 -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/macro-nested-cuda-attr.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/macro-nested-cuda-attr.dp.cpp --match-full-lines %s
 
 #define HAVE_CUDA
 

@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s -- -std=c++14 -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/cuda-event-api.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/cuda-event-api.dp.cpp --match-full-lines %s
 
 #include <stdio.h>
 
@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
   // CHECK-EMPTY:
   // CHECK-NEXT: float elapsed_time;
   // CHECK-EMPTY:
-  // CHECK-NEXT: syclct::get_device_manager().current_device().queues_wait_and_throw();
+  // CHECK-NEXT: dpct::get_device_manager().current_device().queues_wait_and_throw();
   // CHECK-EMPTY:
   // CHECK-NEXT: int blocks = 32, threads = 32;
   cudaEvent_t start, stop;
@@ -48,9 +48,9 @@ int main(int argc, char* argv[]) {
 
   // kernel call without sync
   // CHECK: {
-  // CHECK-NEXT:   syclct::get_default_queue().submit(
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1)), cl::sycl::range<3>(threads, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
@@ -60,16 +60,16 @@ int main(int argc, char* argv[]) {
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: auto start_ct1 = clock();
   cudaEventRecord(start, 0);
 
   // kernel call without sync
   // CHECK: {
-  // CHECK-NEXT:   syclct::get_default_queue().submit(
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1)), cl::sycl::range<3>(threads, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
@@ -79,26 +79,26 @@ int main(int argc, char* argv[]) {
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: start_ct1 = clock();
   cudaEventRecord(start, 0);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1012:{{[0-9a-f]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT: DPCT1012:{{[0-9a-f]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: SYCLCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: start_ct1 = clock(), checkCudaErrors(0);
   checkCudaErrors(cudaEventRecord(start, 0));
 
   // CHECK: if (0)
   // CHECK-NEXT:   /*
-  // CHECK-NEXT:   SYCLCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT:   DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
   // CHECK-NEXT:   */
   // CHECK-NEXT:   /*
-  // CHECK-NEXT:   SYCLCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
+  // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
   // CHECK-NEXT:   */
   // CHECK-NEXT:   start_ct1 = clock(), checkCudaErrors(0);
   if (0)
@@ -106,9 +106,9 @@ int main(int argc, char* argv[]) {
 
   // kernel call with sync
   // CHECK: {
-  // CHECK-NEXT:   stop = syclct::get_default_queue().submit(
+  // CHECK-NEXT:   stop = dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1)), cl::sycl::range<3>(threads, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
@@ -118,9 +118,9 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT: stop.wait();
   kernelFunc<<<blocks,threads>>>();
   // CHECK: {
-  // CHECK-NEXT:   stop = syclct::get_default_queue().submit(
+  // CHECK-NEXT:   stop = dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1)), cl::sycl::range<3>(threads, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
@@ -131,26 +131,26 @@ int main(int argc, char* argv[]) {
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: auto stop_ct1 = clock();
   cudaEventRecord(stop, 0);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT: DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: SYCLCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: stop_ct1 = clock(), checkCudaErrors(0);
   checkCudaErrors(cudaEventRecord(stop, 0));
 
   // CHECK: if (1)
   // CHECK-NEXT:   /*
-  // CHECK-NEXT:   SYCLCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT:   DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
   // CHECK-NEXT:   */
   // CHECK-NEXT:   /*
-  // CHECK-NEXT:   SYCLCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
+  // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
   // CHECK-NEXT:   */
   // CHECK-NEXT:   stop_ct1 = clock(), checkCudaErrors(0);
   if (1)
@@ -158,9 +158,9 @@ int main(int argc, char* argv[]) {
 
   // kernel call without sync
   // CHECK: {
-  // CHECK-NEXT:   stop = syclct::get_default_queue().submit(
+  // CHECK-NEXT:   stop = dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1)), cl::sycl::range<3>(threads, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
@@ -171,26 +171,26 @@ int main(int argc, char* argv[]) {
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: stop_ct1 = clock();
   cudaEventRecord(stop, 0);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT: DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: SYCLCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: stop_ct1 = clock(), checkCudaErrors(0);
   checkCudaErrors(cudaEventRecord(stop, 0));
 
   // CHECK: if (0)
   // CHECK-NEXT:   /*
-  // CHECK-NEXT:   SYCLCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT:   DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
   // CHECK-NEXT:   */
   // CHECK-NEXT:   /*
-  // CHECK-NEXT:   SYCLCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
+  // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
   // CHECK-NEXT:   */
   // CHECK-NEXT:   stop_ct1 = clock(), checkCudaErrors(0);
   if (0)
@@ -200,16 +200,16 @@ int main(int argc, char* argv[]) {
   cudaEventSynchronize(stop);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1003:{{[0-9a-z]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:{{[0-9a-z]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: checkCudaErrors((stop.wait_and_throw(), 0));
   checkCudaErrors(cudaEventSynchronize(stop));
 
   // kernel call without sync
   // CHECK: {
-  // CHECK-NEXT:   syclct::get_default_queue().submit(
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1)), cl::sycl::range<3>(threads, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
@@ -222,16 +222,16 @@ int main(int argc, char* argv[]) {
   cudaEventElapsedTime(&elapsed_time, start, stop);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1003:{{[0-9a-z]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:{{[0-9a-z]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
   // CHECK-NEXT: checkCudaErrors((*(&elapsed_time) = (float)(stop_ct1 - start_ct1) / CLOCKS_PER_SEC * 1000, 0));
   checkCudaErrors(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   // kernel call without sync
   // CHECK: {
-  // CHECK-NEXT:   syclct::get_default_queue().submit(
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1)), cl::sycl::range<3>(threads, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
@@ -240,7 +240,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT: }
   kernelFunc<<<blocks,threads>>>();
 
-  // CHECK: syclct::get_device_manager().current_device().queues_wait_and_throw();
+  // CHECK: dpct::get_device_manager().current_device().queues_wait_and_throw();
   // CHECK-EMPTY:
   // CHECK-NEXT: checkCudaErrors(0);
   // CHECK-NEXT: et = 0;

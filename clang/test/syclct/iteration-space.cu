@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/iteration-space.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/iteration-space.dp.cpp --match-full-lines %s
 
 // Test that the replacement happens when it should to.
 // CHECK: void test_00(cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {

@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s -- -std=c++14 -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/atomic_functions.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/atomic_functions.dp.cpp --match-full-lines %s
 
 #include <cuda_runtime.h>
 
@@ -13,49 +13,49 @@ __global__ void test(T *data) {
   // CHECK: T tid = item_ct1.get_local_id(0);
   T tid = threadIdx.x;
 
-  // CHECK: syclct::atomic_fetch_add(&data[0], tid);
+  // CHECK: dpct::atomic_fetch_add(&data[0], tid);
   atomicAdd(&data[0], tid);
 
-  // CHECK: syclct::atomic_fetch_sub(&data[1], tid);
+  // CHECK: dpct::atomic_fetch_sub(&data[1], tid);
   atomicSub(&data[1], tid);
 
-  // CHECK: syclct::atomic_exchange(&data[2], tid);
+  // CHECK: dpct::atomic_exchange(&data[2], tid);
   atomicExch(&data[2], tid);
 
-  // CHECK: syclct::atomic_fetch_max(&data[3], tid);
+  // CHECK: dpct::atomic_fetch_max(&data[3], tid);
   atomicMax(&data[3], tid);
 
-  // CHECK: syclct::atomic_fetch_min(&data[4], tid);
+  // CHECK: dpct::atomic_fetch_min(&data[4], tid);
   atomicMin(&data[4], tid);
 
   // CHECK: /*
-  // CHECK: SYCLCT1007:0: atomicInc: Migration of this API is not supported.
+  // CHECK: DPCT1007:0: atomicInc: Migration of this API is not supported.
   // CHECK: */
   atomicInc((unsigned int *)&data[5], (unsigned int)tid);
 
   // CHECK: /*
-  // CHECK: SYCLCT1007:1: atomicDec: Migration of this API is not supported.
+  // CHECK: DPCT1007:1: atomicDec: Migration of this API is not supported.
   // CHECK: */
   atomicDec((unsigned int *)&data[6], (unsigned int)tid);
 
-  // CHECK: syclct::atomic_compare_exchange_strong(&data[7], tid - 1, tid);
+  // CHECK: dpct::atomic_compare_exchange_strong(&data[7], tid - 1, tid);
   atomicCAS(&data[7], tid - 1, tid);
 
   T old, expected, desired;
   old = data[7];
   do {
     expected = old;
-    // CHECK: old = syclct::atomic_compare_exchange_strong(&data[7], expected, desired);
+    // CHECK: old = dpct::atomic_compare_exchange_strong(&data[7], expected, desired);
     old = atomicCAS(&data[7], expected, desired);
   } while  (expected != old);
 
-  // CHECK: syclct::atomic_fetch_and(&data[8], tid);
+  // CHECK: dpct::atomic_fetch_and(&data[8], tid);
   atomicAnd(&data[8], tid);
 
-  // CHECK: syclct::atomic_fetch_or(&data[9], tid);
+  // CHECK: dpct::atomic_fetch_or(&data[9], tid);
   atomicOr(&data[9], tid);
 
-  // CHECK: syclct::atomic_fetch_xor(&data[10], tid);
+  // CHECK: dpct::atomic_fetch_xor(&data[10], tid);
   atomicXor(&data[10], tid);
 }
 
@@ -63,13 +63,13 @@ template <>
 __global__ void test(unsigned long long int* data) {
   unsigned long long int tid = threadIdx.x;
 
-  // CHECK: syclct::atomic_fetch_add(&data[0], tid);
+  // CHECK: dpct::atomic_fetch_add(&data[0], tid);
   atomicAdd(&data[0], tid);
 
-  // CHECK: syclct::atomic_exchange(&data[2], tid);
+  // CHECK: dpct::atomic_exchange(&data[2], tid);
   atomicExch(&data[2], tid);
 
-  // CHECK: syclct::atomic_compare_exchange_strong(&data[7], tid - 1, tid);
+  // CHECK: dpct::atomic_compare_exchange_strong(&data[7], tid - 1, tid);
   atomicCAS(&data[7], tid - 1, tid);
 }
 
@@ -77,10 +77,10 @@ template <>
 __global__ void test(float* data) {
   float tid = threadIdx.x;
 
-  // CHECK: syclct::atomic_fetch_add(&data[0], tid);
+  // CHECK: dpct::atomic_fetch_add(&data[0], tid);
   atomicAdd(&data[0], tid);
 
-  // CHECK: syclct::atomic_exchange(&data[2], tid);
+  // CHECK: dpct::atomic_exchange(&data[2], tid);
   atomicExch(&data[2], tid);
 }
 
@@ -88,7 +88,7 @@ template <>
 __global__ void test(double* data) {
   double tid = threadIdx.x;
 
-  // CHECK: syclct::atomic_fetch_add(&data[0], tid);
+  // CHECK: dpct::atomic_fetch_add(&data[0], tid);
   atomicAdd(&data[0], tid);
 }
 
@@ -105,12 +105,12 @@ void InvokeKernel() {
 
   cudaMemcpy(dev_ptr, host.get(), size, cudaMemcpyHostToDevice);
   // CHECK: {
-  // CHECK:   std::pair<syclct::buffer_t, size_t> dev_ptr_buf = syclct::get_buffer_and_offset(dev_ptr);
+  // CHECK:   std::pair<dpct::buffer_t, size_t> dev_ptr_buf = dpct::get_buffer_and_offset(dev_ptr);
   // CHECK:   size_t dev_ptr_offset = dev_ptr_buf.second;
-  // CHECK:   syclct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
   // CHECK:       auto dev_ptr_acc = dev_ptr_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<syclct_kernel_name<class test_{{[a-f0-9]+}}, T>>(
+  // CHECK:       cgh.parallel_for<dpct_kernel_name<class test_{{[a-f0-9]+}}, T>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(k_threads_per_block, 1, 1)), cl::sycl::range<3>(k_threads_per_block, 1, 1)),
   // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK:           T *dev_ptr = (T*)(&dev_ptr_acc[0] + dev_ptr_offset);
@@ -121,20 +121,20 @@ void InvokeKernel() {
   test<T><<<1, k_threads_per_block>>>(dev_ptr);
 }
 
-// CHECK: syclct::device_memory<uint32_t, 1> d_error(1);
+// CHECK: dpct::device_memory<uint32_t, 1> d_error(1);
 static __device__ uint32_t d_error[1];
 
-// CHECK: void fun(syclct::syclct_accessor<uint32_t, syclct::device, 1> d_error){
+// CHECK: void fun(dpct::dpct_accessor<uint32_t, dpct::device, 1> d_error){
 __device__ void fun(){
   double *a;
   float b;
-  // CHECK: syclct::atomic_fetch_add(a, (double)(1));
+  // CHECK: dpct::atomic_fetch_add(a, (double)(1));
   atomicAdd(a, 1);
 
-  // CHECK: syclct::atomic_fetch_add(a, (double)(b));
+  // CHECK: dpct::atomic_fetch_add(a, (double)(b));
   atomicAdd(a, b);
 
-  // CHECK: syclct::atomic_fetch_add((uint32_t*)(d_error), (uint32_t)(1));
+  // CHECK: dpct::atomic_fetch_add((uint32_t*)(d_error), (uint32_t)(1));
   atomicAdd(d_error, 1);
 }
 

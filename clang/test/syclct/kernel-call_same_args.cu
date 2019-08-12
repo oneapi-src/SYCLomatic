@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/kernel-call_same_args.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/kernel-call_same_args.dp.cpp --match-full-lines %s
 
 // CHECK: void testKernelPtr(const int *L, const int *M, int N, cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
@@ -14,12 +14,12 @@ int main() {
   const int *karg2 = 0;
   int karg3 = 80;
   // CHECK:  {
-  // CHECK-NEXT:    std::pair<syclct::buffer_t, size_t> karg2_buf = syclct::get_buffer_and_offset(karg2);
+  // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> karg2_buf = dpct::get_buffer_and_offset(karg2);
   // CHECK-NEXT:    size_t karg2_offset = karg2_buf.second;
-  // CHECK-NEXT:    syclct::get_default_queue().submit(
+  // CHECK-NEXT:    dpct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        auto karg2_acc = karg2_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<syclct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK-NEXT:            const int *karg2 = (const int*)(&karg2_acc[0] + karg2_offset);

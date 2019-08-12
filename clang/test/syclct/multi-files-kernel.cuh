@@ -1,6 +1,6 @@
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
-// CHECK: #define ATOMIC_UPDATE( x ) syclct::atomic_fetch_add( &x, (unsigned int)(1) );
+// CHECK: #define ATOMIC_UPDATE( x ) dpct::atomic_fetch_add( &x, (unsigned int)(1) );
 #define ATOMIC_UPDATE( x ) atomicAdd( &x, 1 );
 
 // CHECK: int global_id(cl::sycl::nd_item<3> item_ct1);
@@ -28,11 +28,11 @@ void sgemm() {
   float alpha_S = 1.0f;
   float beta_S = 0.0f;
   // CHECK: {
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = syclct::memory_manager::get_instance().translate_ptr(d_A_S);
+  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_A_S);
   // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = syclct::memory_manager::get_instance().translate_ptr(d_B_S);
+  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_B_S);
   // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = syclct::memory_manager::get_instance().translate_ptr(d_C_S);
+  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_C_S);
   // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
   // CHECK-NEXT: status = (mkl::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N), 0);
   // CHECK-NEXT: }

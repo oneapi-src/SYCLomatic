@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/cusolverDnEi.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/cusolverDnEi.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas_v2.h>
 #include <cusolverDn.h>
@@ -102,10 +102,10 @@ int main(int argc, char *argv[])
     cuDoubleComplex W_z = make_cuDoubleComplex(1,0);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer3(cl::sycl::range<1>(1));
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct_mkl_a(cl::sycl::range<1>(1));
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct3.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer3.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer3(cl::sycl::range<1>(1));
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct_mkl_a(cl::sycl::range<1>(1));
@@ -131,41 +131,41 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct3.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer3.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAUQ_f);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAUQ_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAUP_f);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAUP_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&workspace_f);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&workspace_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer11(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::sgebrd(*cusolverH, m, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, buffer_ct8, buffer_ct9, Lwork, result_temp_buffer11), 0);
     // CHECK-NEXT: buffer_ct11.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAUQ_f);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAUQ_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAUP_f);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAUP_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&workspace_f);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&workspace_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer11(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::sgebrd(*cusolverH, m, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, buffer_ct8, buffer_ct9, Lwork, result_temp_buffer11);
@@ -177,10 +177,10 @@ int main(int argc, char *argv[])
     cusolverDnSgebrd(*cusolverH, m, n, &A_f, lda, &D_f, &E_f, &TAUQ_f, &TAUP_f, &workspace_f, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer3(cl::sycl::range<1>(1));
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct_mkl_a(cl::sycl::range<1>(1));
@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct3.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer3.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer3(cl::sycl::range<1>(1));
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct_mkl_a(cl::sycl::range<1>(1));
@@ -206,41 +206,41 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct3.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer3.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAUQ_d);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAUQ_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAUP_d);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAUP_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&workspace_d);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&workspace_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer11(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::dgebrd(*cusolverH, m, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, buffer_ct8, buffer_ct9, Lwork, result_temp_buffer11), 0);
     // CHECK-NEXT: buffer_ct11.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAUQ_d);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAUQ_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAUP_d);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAUP_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&workspace_d);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&workspace_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer11(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::dgebrd(*cusolverH, m, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, buffer_ct8, buffer_ct9, Lwork, result_temp_buffer11);
@@ -252,10 +252,10 @@ int main(int argc, char *argv[])
     cusolverDnDgebrd(*cusolverH, m, n, &A_d, lda, &D_d, &E_d, &TAUQ_d, &TAUP_d, &workspace_d, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer3(cl::sycl::range<1>(1));
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct_mkl_a(cl::sycl::range<1>(1));
@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct3.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer3.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer3(cl::sycl::range<1>(1));
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct_mkl_a(cl::sycl::range<1>(1));
@@ -281,41 +281,41 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct3.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer3.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAUQ_c);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAUQ_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAUP_c);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAUP_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&workspace_c);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&workspace_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer11(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::cgebrd(*cusolverH, m, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, buffer_ct8, buffer_ct9, Lwork, result_temp_buffer11), 0);
     // CHECK-NEXT: buffer_ct11.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAUQ_c);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAUQ_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAUP_c);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAUP_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&workspace_c);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&workspace_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer11(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::cgebrd(*cusolverH, m, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, buffer_ct8, buffer_ct9, Lwork, result_temp_buffer11);
@@ -327,10 +327,10 @@ int main(int argc, char *argv[])
     cusolverDnCgebrd(*cusolverH, m, n, &A_c, lda, &D_f, &E_f, &TAUQ_c, &TAUP_c, &workspace_c, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer3(cl::sycl::range<1>(1));
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct_mkl_a(cl::sycl::range<1>(1));
@@ -343,7 +343,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct3.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer3.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer3(cl::sycl::range<1>(1));
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct_mkl_a(cl::sycl::range<1>(1));
@@ -356,41 +356,41 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct3.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer3.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAUQ_z);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAUQ_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAUP_z);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAUP_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&workspace_z);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&workspace_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer11(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::zgebrd(*cusolverH, m, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, buffer_ct8, buffer_ct9, Lwork, result_temp_buffer11), 0);
     // CHECK-NEXT: buffer_ct11.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAUQ_z);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAUQ_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAUP_z);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAUP_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&workspace_z);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&workspace_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer11(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::zgebrd(*cusolverH, m, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, buffer_ct8, buffer_ct9, Lwork, result_temp_buffer11);
@@ -403,54 +403,54 @@ int main(int argc, char *argv[])
 
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_f);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::sorgbr_get_lwork(*cusolverH, (mkl::vector)side, m, n, k, buffer_ct5, lda, buffer_ct7, result_temp_buffer8), 0);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_f);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::sorgbr_get_lwork(*cusolverH, (mkl::vector)side, m, n, k, buffer_ct5, lda, buffer_ct7, result_temp_buffer8);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_f);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&workspace_f);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&workspace_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer10(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::sorgbr(*cusolverH, (mkl::vector)side, m, n, k, buffer_ct5, lda, buffer_ct7, buffer_ct8, Lwork, result_temp_buffer10), 0);
     // CHECK-NEXT: buffer_ct10.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer10.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_f);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&workspace_f);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&workspace_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer10(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::sorgbr(*cusolverH, (mkl::vector)side, m, n, k, buffer_ct5, lda, buffer_ct7, buffer_ct8, Lwork, result_temp_buffer10);
@@ -463,54 +463,54 @@ int main(int argc, char *argv[])
 
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_d);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::dorgbr_get_lwork(*cusolverH, (mkl::vector)side, m, n, k, buffer_ct5, lda, buffer_ct7, result_temp_buffer8), 0);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_d);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::dorgbr_get_lwork(*cusolverH, (mkl::vector)side, m, n, k, buffer_ct5, lda, buffer_ct7, result_temp_buffer8);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_d);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&workspace_d);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&workspace_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer10(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::dorgbr(*cusolverH, (mkl::vector)side, m, n, k, buffer_ct5, lda, buffer_ct7, buffer_ct8, Lwork, result_temp_buffer10), 0);
     // CHECK-NEXT: buffer_ct10.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer10.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_d);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&workspace_d);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&workspace_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer10(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::dorgbr(*cusolverH, (mkl::vector)side, m, n, k, buffer_ct5, lda, buffer_ct7, buffer_ct8, Lwork, result_temp_buffer10);
@@ -522,54 +522,54 @@ int main(int argc, char *argv[])
     cusolverDnDorgbr(*cusolverH, side, m, n, k, &A_d, lda, &TAU_d, &workspace_d, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_c);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::cungbr_get_lwork(*cusolverH, (mkl::vector)side, m, n, k, buffer_ct5, lda, buffer_ct7, result_temp_buffer8), 0);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_c);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::cungbr_get_lwork(*cusolverH, (mkl::vector)side, m, n, k, buffer_ct5, lda, buffer_ct7, result_temp_buffer8);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_c);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&workspace_c);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&workspace_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer10(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::cungbr(*cusolverH, (mkl::vector)side, m, n, k, buffer_ct5, lda, buffer_ct7, buffer_ct8, Lwork, result_temp_buffer10), 0);
     // CHECK-NEXT: buffer_ct10.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer10.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_c);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&workspace_c);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&workspace_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer10(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::cungbr(*cusolverH, (mkl::vector)side, m, n, k, buffer_ct5, lda, buffer_ct7, buffer_ct8, Lwork, result_temp_buffer10);
@@ -581,54 +581,54 @@ int main(int argc, char *argv[])
     cusolverDnCungbr(*cusolverH, side, m, n, k, &A_c, lda, &TAU_c, &workspace_c, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_z);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::zungbr_get_lwork(*cusolverH, (mkl::vector)side, m, n, k, buffer_ct5, lda, buffer_ct7, result_temp_buffer8), 0);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_z);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::zungbr_get_lwork(*cusolverH, (mkl::vector)side, m, n, k, buffer_ct5, lda, buffer_ct7, result_temp_buffer8);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_z);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&workspace_z);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&workspace_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer10(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::zungbr(*cusolverH, (mkl::vector)side, m, n, k, buffer_ct5, lda, buffer_ct7, buffer_ct8, Lwork, result_temp_buffer10), 0);
     // CHECK-NEXT: buffer_ct10.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer10.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_z);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&workspace_z);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&workspace_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer10(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::zungbr(*cusolverH, (mkl::vector)side, m, n, k, buffer_ct5, lda, buffer_ct7, buffer_ct8, Lwork, result_temp_buffer10);
@@ -644,70 +644,70 @@ int main(int argc, char *argv[])
 
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_f);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::ssytrd_get_lwork(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, result_temp_buffer8), 0);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_f);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::ssytrd_get_lwork(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, result_temp_buffer8);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_f);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&workspace_f);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&workspace_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer10(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::ssytrd(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, buffer_ct8, Lwork, result_temp_buffer10), 0);
     // CHECK-NEXT: buffer_ct10.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer10.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_f);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&workspace_f);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&workspace_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer10(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::ssytrd(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, buffer_ct8, Lwork, result_temp_buffer10);
@@ -719,70 +719,70 @@ int main(int argc, char *argv[])
     cusolverDnSsytrd(*cusolverH, uplo, n, &A_f, lda, &D_f, &E_f, &TAU_f, &workspace_f, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_d);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::dsytrd_get_lwork(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, result_temp_buffer8), 0);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_d);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::dsytrd_get_lwork(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, result_temp_buffer8);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_d);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&workspace_d);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&workspace_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer10(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::dsytrd(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, buffer_ct8, Lwork, result_temp_buffer10), 0);
     // CHECK-NEXT: buffer_ct10.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer10.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_d);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&workspace_d);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&workspace_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer10(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::dsytrd(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, buffer_ct8, Lwork, result_temp_buffer10);
@@ -794,70 +794,70 @@ int main(int argc, char *argv[])
     cusolverDnDsytrd(*cusolverH, uplo, n, &A_d, lda, &D_d, &E_d, &TAU_d, &workspace_d, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_c);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::chetrd_get_lwork(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, result_temp_buffer8), 0);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_c);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::chetrd_get_lwork(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, result_temp_buffer8);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_c);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&workspace_c);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&workspace_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer10(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::chetrd(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, buffer_ct8, Lwork, result_temp_buffer10), 0);
     // CHECK-NEXT: buffer_ct10.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer10.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_c);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&workspace_c);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&workspace_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer10(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::chetrd(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, buffer_ct8, Lwork, result_temp_buffer10);
@@ -869,70 +869,70 @@ int main(int argc, char *argv[])
     cusolverDnChetrd(*cusolverH, uplo, n, &A_c, lda, &D_f, &E_f, &TAU_c, &workspace_c, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_z);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::zhetrd_get_lwork(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, result_temp_buffer8), 0);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_z);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::zhetrd_get_lwork(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, result_temp_buffer8);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_z);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&workspace_z);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&workspace_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer10(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::zhetrd(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, buffer_ct8, Lwork, result_temp_buffer10), 0);
     // CHECK-NEXT: buffer_ct10.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer10.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&D_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&D_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&E_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&E_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&TAU_z);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&TAU_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&workspace_z);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&workspace_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer10(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::zhetrd(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, buffer_ct7, buffer_ct8, Lwork, result_temp_buffer10);
@@ -944,62 +944,62 @@ int main(int argc, char *argv[])
     cusolverDnZhetrd(*cusolverH, uplo, n, &A_z, lda, &D_d, &E_d, &TAU_z, &workspace_z, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAU_f);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAU_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&B_f);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&B_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer11(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::sormtr_get_lwork(*cusolverH, side, uplo, trans, m, n, buffer_ct6, lda, buffer_ct8, buffer_ct9, ldb, result_temp_buffer11), 0);
     // CHECK-NEXT: buffer_ct11.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAU_f);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAU_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&B_f);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&B_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer11(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::sormtr_get_lwork(*cusolverH, side, uplo, trans, m, n, buffer_ct6, lda, buffer_ct8, buffer_ct9, ldb, result_temp_buffer11);
     // CHECK-NEXT: buffer_ct11.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAU_f);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAU_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&B_f);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&B_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&workspace_f);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&workspace_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct13 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct13 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct13 = allocation_ct13.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct13.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer13(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::sormtr(*cusolverH, side, uplo, trans, m, n, buffer_ct6, lda, buffer_ct8, buffer_ct9, ldb, buffer_ct11, Lwork, result_temp_buffer13), 0);
     // CHECK-NEXT: buffer_ct13.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAU_f);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAU_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&B_f);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&B_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&workspace_f);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&workspace_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct13 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct13 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct13 = allocation_ct13.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct13.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer13(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::sormtr(*cusolverH, side, uplo, trans, m, n, buffer_ct6, lda, buffer_ct8, buffer_ct9, ldb, buffer_ct11, Lwork, result_temp_buffer13);
@@ -1011,62 +1011,62 @@ int main(int argc, char *argv[])
     cusolverDnSormtr(*cusolverH, side, uplo, trans, m, n, &A_f, lda, &TAU_f, &B_f, ldb, &workspace_f, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAU_d);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAU_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&B_d);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&B_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer11(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::dormtr_get_lwork(*cusolverH, side, uplo, trans, m, n, buffer_ct6, lda, buffer_ct8, buffer_ct9, ldb, result_temp_buffer11), 0);
     // CHECK-NEXT: buffer_ct11.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAU_d);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAU_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&B_d);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&B_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer11(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::dormtr_get_lwork(*cusolverH, side, uplo, trans, m, n, buffer_ct6, lda, buffer_ct8, buffer_ct9, ldb, result_temp_buffer11);
     // CHECK-NEXT: buffer_ct11.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAU_d);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAU_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&B_d);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&B_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&workspace_d);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&workspace_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct13 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct13 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct13 = allocation_ct13.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct13.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer13(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::dormtr(*cusolverH, side, uplo, trans, m, n, buffer_ct6, lda, buffer_ct8, buffer_ct9, ldb, buffer_ct11, Lwork, result_temp_buffer13), 0);
     // CHECK-NEXT: buffer_ct13.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAU_d);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAU_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&B_d);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&B_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&workspace_d);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&workspace_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct13 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct13 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct13 = allocation_ct13.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct13.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer13(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::dormtr(*cusolverH, side, uplo, trans, m, n, buffer_ct6, lda, buffer_ct8, buffer_ct9, ldb, buffer_ct11, Lwork, result_temp_buffer13);
@@ -1078,62 +1078,62 @@ int main(int argc, char *argv[])
     cusolverDnDormtr(*cusolverH, side, uplo, trans, m, n, &A_d, lda, &TAU_d, &B_d, ldb, &workspace_d, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAU_c);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAU_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&B_c);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&B_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer11(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::cunmtr_get_lwork(*cusolverH, side, uplo, trans, m, n, buffer_ct6, lda, buffer_ct8, buffer_ct9, ldb, result_temp_buffer11), 0);
     // CHECK-NEXT: buffer_ct11.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAU_c);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAU_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&B_c);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&B_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer11(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::cunmtr_get_lwork(*cusolverH, side, uplo, trans, m, n, buffer_ct6, lda, buffer_ct8, buffer_ct9, ldb, result_temp_buffer11);
     // CHECK-NEXT: buffer_ct11.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAU_c);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAU_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&B_c);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&B_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&workspace_c);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&workspace_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct13 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct13 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct13 = allocation_ct13.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct13.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer13(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::cunmtr(*cusolverH, side, uplo, trans, m, n, buffer_ct6, lda, buffer_ct8, buffer_ct9, ldb, buffer_ct11, Lwork, result_temp_buffer13), 0);
     // CHECK-NEXT: buffer_ct13.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAU_c);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAU_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&B_c);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&B_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&workspace_c);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&workspace_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct13 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct13 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct13 = allocation_ct13.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct13.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer13(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::cunmtr(*cusolverH, side, uplo, trans, m, n, buffer_ct6, lda, buffer_ct8, buffer_ct9, ldb, buffer_ct11, Lwork, result_temp_buffer13);
@@ -1145,62 +1145,62 @@ int main(int argc, char *argv[])
     cusolverDnCunmtr(*cusolverH, side, uplo, trans, m, n, &A_c, lda, &TAU_c, &B_c, ldb, &workspace_c, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAU_z);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAU_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&B_z);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&B_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer11(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::zunmtr_get_lwork(*cusolverH, side, uplo, trans, m, n, buffer_ct6, lda, buffer_ct8, buffer_ct9, ldb, result_temp_buffer11), 0);
     // CHECK-NEXT: buffer_ct11.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAU_z);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAU_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&B_z);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&B_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer11(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::zunmtr_get_lwork(*cusolverH, side, uplo, trans, m, n, buffer_ct6, lda, buffer_ct8, buffer_ct9, ldb, result_temp_buffer11);
     // CHECK-NEXT: buffer_ct11.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAU_z);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAU_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&B_z);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&B_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&workspace_z);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&workspace_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct13 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct13 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct13 = allocation_ct13.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct13.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer13(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::zunmtr(*cusolverH, side, uplo, trans, m, n, buffer_ct6, lda, buffer_ct8, buffer_ct9, ldb, buffer_ct11, Lwork, result_temp_buffer13), 0);
     // CHECK-NEXT: buffer_ct13.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&TAU_z);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&TAU_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct9 = syclct::memory_manager::get_instance().translate_ptr(&B_z);
+    // CHECK-NEXT: auto allocation_ct9 = dpct::memory_manager::get_instance().translate_ptr(&B_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct9 = allocation_ct9.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct9.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct11 = syclct::memory_manager::get_instance().translate_ptr(&workspace_z);
+    // CHECK-NEXT: auto allocation_ct11 = dpct::memory_manager::get_instance().translate_ptr(&workspace_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct11 = allocation_ct11.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct11.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct13 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct13 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct13 = allocation_ct13.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct13.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer13(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::zunmtr(*cusolverH, side, uplo, trans, m, n, buffer_ct6, lda, buffer_ct8, buffer_ct9, ldb, buffer_ct11, Lwork, result_temp_buffer13);
@@ -1212,54 +1212,54 @@ int main(int argc, char *argv[])
     cusolverDnZunmtr(*cusolverH, side, uplo, trans, m, n, &A_z, lda, &TAU_z, &B_z, ldb, &workspace_z, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&TAU_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&TAU_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer6(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::sorgtr_get_lwork(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, result_temp_buffer6), 0);
     // CHECK-NEXT: buffer_ct6.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&TAU_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&TAU_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer6(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::sorgtr_get_lwork(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, result_temp_buffer6);
     // CHECK-NEXT: buffer_ct6.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&TAU_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&TAU_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&workspace_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&workspace_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::sorgtr(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, Lwork, result_temp_buffer8), 0);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&TAU_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&TAU_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&workspace_f);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&workspace_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::sorgtr(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, Lwork, result_temp_buffer8);
@@ -1271,54 +1271,54 @@ int main(int argc, char *argv[])
     cusolverDnSorgtr(*cusolverH, uplo, n, &A_f, lda, &TAU_f, &workspace_f, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&TAU_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&TAU_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer6(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::dorgtr_get_lwork(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, result_temp_buffer6), 0);
     // CHECK-NEXT: buffer_ct6.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&TAU_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&TAU_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer6(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::dorgtr_get_lwork(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, result_temp_buffer6);
     // CHECK-NEXT: buffer_ct6.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&TAU_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&TAU_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&workspace_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&workspace_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::dorgtr(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, Lwork, result_temp_buffer8), 0);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&TAU_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&TAU_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&workspace_d);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&workspace_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::dorgtr(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, Lwork, result_temp_buffer8);
@@ -1330,54 +1330,54 @@ int main(int argc, char *argv[])
     cusolverDnDorgtr(*cusolverH, uplo, n, &A_d, lda, &TAU_d, &workspace_d, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&TAU_c);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&TAU_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer6(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::cungtr_get_lwork(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, result_temp_buffer6), 0);
     // CHECK-NEXT: buffer_ct6.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&TAU_c);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&TAU_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer6(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::cungtr_get_lwork(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, result_temp_buffer6);
     // CHECK-NEXT: buffer_ct6.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&TAU_c);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&TAU_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&workspace_c);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&workspace_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::cungtr(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, Lwork, result_temp_buffer8), 0);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&TAU_c);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&TAU_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&workspace_c);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&workspace_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::cungtr(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, Lwork, result_temp_buffer8);
@@ -1389,54 +1389,54 @@ int main(int argc, char *argv[])
     cusolverDnCungtr(*cusolverH, uplo, n, &A_c, lda, &TAU_c, &workspace_c, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&TAU_z);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&TAU_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer6(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::zungtr_get_lwork(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, result_temp_buffer6), 0);
     // CHECK-NEXT: buffer_ct6.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&TAU_z);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&TAU_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer6(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::zungtr_get_lwork(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, result_temp_buffer6);
     // CHECK-NEXT: buffer_ct6.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&TAU_z);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&TAU_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&workspace_z);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&workspace_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::zungtr(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, Lwork, result_temp_buffer8), 0);
     // CHECK-NEXT: buffer_ct8.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&TAU_z);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&TAU_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct6 = syclct::memory_manager::get_instance().translate_ptr(&workspace_z);
+    // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&workspace_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct6 = allocation_ct6.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct6.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer8(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::zungtr(*cusolverH, uplo, n, buffer_ct3, lda, buffer_ct5, buffer_ct6, Lwork, result_temp_buffer8);
@@ -1449,10 +1449,10 @@ int main(int argc, char *argv[])
 
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer3(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::job job_ct_mkl_jobu;
@@ -1468,7 +1468,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct3.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer3.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer3(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::job job_ct_mkl_jobu;
@@ -1484,37 +1484,37 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct3.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer3.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&S_f);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&S_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&U_f);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&U_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&VT_f);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&VT_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct12 = syclct::memory_manager::get_instance().translate_ptr(&workspace_f);
+    // CHECK-NEXT: auto allocation_ct12 = dpct::memory_manager::get_instance().translate_ptr(&workspace_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct12 = allocation_ct12.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct12.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct15 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct15 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct15 = allocation_ct15.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct15.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer15(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::sgesvd (*cusolverH, (mkl::job)jobu, (mkl::job)jobvt, m, n, buffer_ct5, lda, buffer_ct7, buffer_ct8, ldu, buffer_ct10, ldvt, buffer_ct12, Lwork,  result_temp_buffer15), 0);
     // CHECK-NEXT: buffer_ct15.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer15.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_f);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&S_f);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&S_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&U_f);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&U_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&VT_f);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&VT_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct12 = syclct::memory_manager::get_instance().translate_ptr(&workspace_f);
+    // CHECK-NEXT: auto allocation_ct12 = dpct::memory_manager::get_instance().translate_ptr(&workspace_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct12 = allocation_ct12.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct12.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct15 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct15 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct15 = allocation_ct15.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct15.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer15(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::sgesvd (*cusolverH, (mkl::job)jobu, (mkl::job)jobvt, m, n, buffer_ct5, lda, buffer_ct7, buffer_ct8, ldu, buffer_ct10, ldvt, buffer_ct12, Lwork,  result_temp_buffer15);
@@ -1526,10 +1526,10 @@ int main(int argc, char *argv[])
     cusolverDnSgesvd (*cusolverH, jobu, jobvt, m, n, &A_f, lda, &S_f, &U_f, ldu, &VT_f, ldvt, &workspace_f, Lwork, &Rwork_f, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer3(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::job job_ct_mkl_jobu;
@@ -1545,7 +1545,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct3.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer3.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer3(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::job job_ct_mkl_jobu;
@@ -1561,37 +1561,37 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct3.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer3.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&S_d);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&S_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&U_d);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&U_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&VT_d);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&VT_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct12 = syclct::memory_manager::get_instance().translate_ptr(&workspace_d);
+    // CHECK-NEXT: auto allocation_ct12 = dpct::memory_manager::get_instance().translate_ptr(&workspace_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct12 = allocation_ct12.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct12.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct15 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct15 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct15 = allocation_ct15.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct15.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer15(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::dgesvd (*cusolverH, (mkl::job)jobu, (mkl::job)jobvt, m, n, buffer_ct5, lda, buffer_ct7, buffer_ct8, ldu, buffer_ct10, ldvt, buffer_ct12, Lwork,  result_temp_buffer15), 0);
     // CHECK-NEXT: buffer_ct15.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer15.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_d);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&S_d);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&S_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&U_d);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&U_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&VT_d);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&VT_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct12 = syclct::memory_manager::get_instance().translate_ptr(&workspace_d);
+    // CHECK-NEXT: auto allocation_ct12 = dpct::memory_manager::get_instance().translate_ptr(&workspace_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct12 = allocation_ct12.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct12.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct15 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct15 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct15 = allocation_ct15.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct15.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer15(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::dgesvd (*cusolverH, (mkl::job)jobu, (mkl::job)jobvt, m, n, buffer_ct5, lda, buffer_ct7, buffer_ct8, ldu, buffer_ct10, ldvt, buffer_ct12, Lwork,  result_temp_buffer15);
@@ -1603,10 +1603,10 @@ int main(int argc, char *argv[])
     cusolverDnDgesvd (*cusolverH, jobu, jobvt, m, n, &A_d, lda, &S_d, &U_d, ldu, &VT_d, ldvt, &workspace_d, Lwork, &Rwork_d, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer3(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::job job_ct_mkl_jobu;
@@ -1622,7 +1622,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct3.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer3.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer3(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::job job_ct_mkl_jobu;
@@ -1638,41 +1638,41 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct3.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer3.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&S_f);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&S_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&U_c);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&U_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&VT_c);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&VT_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct12 = syclct::memory_manager::get_instance().translate_ptr(&workspace_c);
+    // CHECK-NEXT: auto allocation_ct12 = dpct::memory_manager::get_instance().translate_ptr(&workspace_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct12 = allocation_ct12.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct12.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct14 = syclct::memory_manager::get_instance().translate_ptr(&Rwork_f);
+    // CHECK-NEXT: auto allocation_ct14 = dpct::memory_manager::get_instance().translate_ptr(&Rwork_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct14 = allocation_ct14.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct14.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct15 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct15 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct15 = allocation_ct15.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct15.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer15(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::cgesvd (*cusolverH, (mkl::job)jobu, (mkl::job)jobvt, m, n, buffer_ct5, lda, buffer_ct7, buffer_ct8, ldu, buffer_ct10, ldvt, buffer_ct12, Lwork, buffer_ct14, result_temp_buffer15), 0);
     // CHECK-NEXT: buffer_ct15.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer15.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_c);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&S_f);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&S_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&U_c);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&U_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&VT_c);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&VT_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct12 = syclct::memory_manager::get_instance().translate_ptr(&workspace_c);
+    // CHECK-NEXT: auto allocation_ct12 = dpct::memory_manager::get_instance().translate_ptr(&workspace_c);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct12 = allocation_ct12.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct12.size/sizeof(std::complex<float>)));
-    // CHECK-NEXT: auto allocation_ct14 = syclct::memory_manager::get_instance().translate_ptr(&Rwork_f);
+    // CHECK-NEXT: auto allocation_ct14 = dpct::memory_manager::get_instance().translate_ptr(&Rwork_f);
     // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct14 = allocation_ct14.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct14.size/sizeof(float)));
-    // CHECK-NEXT: auto allocation_ct15 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct15 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct15 = allocation_ct15.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct15.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer15(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::cgesvd (*cusolverH, (mkl::job)jobu, (mkl::job)jobvt, m, n, buffer_ct5, lda, buffer_ct7, buffer_ct8, ldu, buffer_ct10, ldvt, buffer_ct12, Lwork, buffer_ct14, result_temp_buffer15);
@@ -1684,10 +1684,10 @@ int main(int argc, char *argv[])
     cusolverDnCgesvd (*cusolverH, jobu, jobvt, m, n, &A_c, lda, &S_f, &U_c, ldu, &VT_c, ldvt, &workspace_c, Lwork, &Rwork_f, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer3(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::job job_ct_mkl_jobu;
@@ -1703,7 +1703,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct3.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer3.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct3 = syclct::memory_manager::get_instance().translate_ptr(&Lwork);
+    // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&Lwork);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct3 = allocation_ct3.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct3.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer3(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::job job_ct_mkl_jobu;
@@ -1719,41 +1719,41 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct3.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer3.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&S_d);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&S_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&U_z);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&U_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&VT_z);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&VT_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct12 = syclct::memory_manager::get_instance().translate_ptr(&workspace_z);
+    // CHECK-NEXT: auto allocation_ct12 = dpct::memory_manager::get_instance().translate_ptr(&workspace_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct12 = allocation_ct12.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct12.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct14 = syclct::memory_manager::get_instance().translate_ptr(&Rwork_d);
+    // CHECK-NEXT: auto allocation_ct14 = dpct::memory_manager::get_instance().translate_ptr(&Rwork_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct14 = allocation_ct14.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct14.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct15 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct15 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct15 = allocation_ct15.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct15.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer15(cl::sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::zgesvd (*cusolverH, (mkl::job)jobu, (mkl::job)jobvt, m, n, buffer_ct5, lda, buffer_ct7, buffer_ct8, ldu, buffer_ct10, ldvt, buffer_ct12, Lwork, buffer_ct14, result_temp_buffer15), 0);
     // CHECK-NEXT: buffer_ct15.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer15.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto allocation_ct5 = syclct::memory_manager::get_instance().translate_ptr(&A_z);
+    // CHECK-NEXT: auto allocation_ct5 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct5 = allocation_ct5.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct5.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct7 = syclct::memory_manager::get_instance().translate_ptr(&S_d);
+    // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&S_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct8 = syclct::memory_manager::get_instance().translate_ptr(&U_z);
+    // CHECK-NEXT: auto allocation_ct8 = dpct::memory_manager::get_instance().translate_ptr(&U_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct8 = allocation_ct8.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct8.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct10 = syclct::memory_manager::get_instance().translate_ptr(&VT_z);
+    // CHECK-NEXT: auto allocation_ct10 = dpct::memory_manager::get_instance().translate_ptr(&VT_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct10 = allocation_ct10.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct10.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct12 = syclct::memory_manager::get_instance().translate_ptr(&workspace_z);
+    // CHECK-NEXT: auto allocation_ct12 = dpct::memory_manager::get_instance().translate_ptr(&workspace_z);
     // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct12 = allocation_ct12.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct12.size/sizeof(std::complex<double>)));
-    // CHECK-NEXT: auto allocation_ct14 = syclct::memory_manager::get_instance().translate_ptr(&Rwork_d);
+    // CHECK-NEXT: auto allocation_ct14 = dpct::memory_manager::get_instance().translate_ptr(&Rwork_d);
     // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct14 = allocation_ct14.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct14.size/sizeof(double)));
-    // CHECK-NEXT: auto allocation_ct15 = syclct::memory_manager::get_instance().translate_ptr(&devInfo);
+    // CHECK-NEXT: auto allocation_ct15 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct15 = allocation_ct15.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct15.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer15(cl::sycl::range<1>(1));
     // CHECK-NEXT: mkl::zgesvd (*cusolverH, (mkl::job)jobu, (mkl::job)jobvt, m, n, buffer_ct5, lda, buffer_ct7, buffer_ct8, ldu, buffer_ct10, ldvt, buffer_ct12, Lwork, buffer_ct14, result_temp_buffer15);

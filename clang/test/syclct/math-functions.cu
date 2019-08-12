@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/math-functions.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/math-functions.dp.cpp --match-full-lines %s
 
 #include <cmath>
 
@@ -39,9 +39,9 @@ __global__ void kernel() {
 
 void foo() {
   // CHECK: {
-  // CHECK-NEXT:   syclct::get_default_queue().submit(
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cgh.parallel_for<syclct_kernel_name<class kernel_{{[0-9a-z]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[0-9a-z]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(ceil(2.3), 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_{{[0-9a-z]+}}) {
   // CHECK-NEXT:           kernel();

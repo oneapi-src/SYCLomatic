@@ -1,13 +1,13 @@
 // UNSUPPORTED: cuda-8.0
 // RUN: syclct -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path=%cuda-path
-// RUN: FileCheck --input-file %T/thrust-copy.cc_sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/thrust-copy.cc_dp.cpp --match-full-lines %s
 // CHECK: #include <CL/sycl.hpp>
-// CHECK-NEXT: #include <syclct/syclct.hpp>
+// CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <iostream>
 // CHECK-NEXT: #include <iterator>
 // CHECK-NEXT: #include <dpstd/algorithm>
 // CHECK-NEXT: #include <dpstd/execution>
-// CHECK-NEXT: #include <syclct/syclct_dpstd_utils.hpp>
+// CHECK-NEXT: #include <dpct/dpct_dpstd_utils.hpp>
 
 #include <iostream>
 #include <iterator>

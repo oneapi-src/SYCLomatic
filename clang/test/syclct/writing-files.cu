@@ -1,6 +1,6 @@
-// RUN: syclct -out-root %T %S/../.././test/./syclct/writing-files.cu -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/writing-files.sycl.cpp --match-full-lines %s
-// RUN: FileCheck --input-file %T/test-header.sycl.hpp --match-full-lines %S/test-header.cuh
+// RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: FileCheck --input-file %T/writing-files.dp.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/test-header.dp.hpp --match-full-lines %S/test-header.cuh
 
 #include "test-header.cuh"
 

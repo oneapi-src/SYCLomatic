@@ -1,9 +1,9 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/replace-cuda-header-includes.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/replace-cuda-header-includes.dp.cpp --match-full-lines %s
 
 // CHECK: #include <CL/sycl.hpp>
-// CHECK-NEXT: #include <syclct/syclct.hpp>
-// CHECK-NEXT: #include "test-header.sycl.hpp"
+// CHECK-NEXT: #include <dpct/dpct.hpp>
+// CHECK-NEXT: #include "test-header.dp.hpp"
 // CHECK: // First function
 #include "test-header.cuh"
 #include <cuda.h>

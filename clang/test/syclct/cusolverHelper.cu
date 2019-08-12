@@ -1,8 +1,8 @@
 // RUN: syclct -out-root %T %s -- -std=c++14 -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/cusolverHelper.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/cusolverHelper.dp.cpp --match-full-lines %s
 
 // CHECK: #include <CL/sycl.hpp>
-// CHECK-NEXT: #include <syclct/syclct.hpp>
+// CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cusolverDn.h>
 
 // CHECK: #define MACRO_A cusolverDnCreate

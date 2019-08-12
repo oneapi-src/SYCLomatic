@@ -1,7 +1,7 @@
 // FIXME
 // UNSUPPORTED: -windows-
 // RUN: syclct -out-root %T %s -- -std=c++14 -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/replace-dim3.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/replace-dim3.dp.cpp --match-full-lines %s
 
 #include <cstdio>
 #include <algorithm>
@@ -161,9 +161,9 @@ int main() {
   // CHECK: cl::sycl::range<3> gpu_blocks(1 / (d3_6_3[0] * 200), 1, 1);
   dim3 gpu_blocks(1 / (d3_6_3.x * 200));
   // CHECK: {
-  // CHECK:   syclct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK:           kernel(d3_6[0]);
@@ -172,9 +172,9 @@ int main() {
   // CHECK: }
   kernel<<<1, 1>>>(d3_6.x);
   // CHECK: {
-  // CHECK:   syclct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(NUM, 1, 1) * cl::sycl::range<3>(NUM, 1, 1)), cl::sycl::range<3>(NUM, 1, 1)),
   // CHECK:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK:           kernel(d3_6[0]);

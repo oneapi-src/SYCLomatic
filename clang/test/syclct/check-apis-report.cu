@@ -53,11 +53,11 @@
 
 // RUN: syclct -output-file=output-file.txt -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: Starting to parse: {{(.+)/([^/]+)}}" >%T/check_output-file.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: {{(.+)/([^/]+)}}:{{[0-9]+}}:{{[0-9]+}} warning: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code" >>%T/check_output-file.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: {{(.+)/([^/]+)}}:{{[0-9]+}}:{{[0-9]+}} warning: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code" >>%T/check_output-file.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`:   cudaError_t err = cudaDeviceSynchronize();" >>%T/check_output-file.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: {{(.+)/([^/]+)}}:{{[0-9]+}}:{{[0-9]+}} warning: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code" >>%T/check_output-file.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: {{(.+)/([^/]+)}}:{{[0-9]+}}:{{[0-9]+}} warning: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code" >>%T/check_output-file.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`:   checkError(cudaDeviceSynchronize());" >>%T/check_output-file.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: {{(.+)/([^/]+)}}:{{[0-9]+}}:{{[0-9]+}} warning: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code" >>%T/check_output-file.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: {{(.+)/([^/]+)}}:{{[0-9]+}}:{{[0-9]+}} warning: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code" >>%T/check_output-file.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`:   return cudaDeviceSynchronize();" >>%T/check_output-file.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: Ending to parse: {{(.+)/([^/]+)}}" >>%T/check_output-file.txt
 // RUN: cat %T/output-file.txt >>%T/check_output-file.txt

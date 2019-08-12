@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck %s --match-full-lines --input-file %T/template_initialization.sycl.cpp
+// RUN: FileCheck %s --match-full-lines --input-file %T/template_initialization.dp.cpp
 
 #include <cuda_runtime.h>
 
@@ -43,15 +43,15 @@ void run_test() {
   cudaMalloc((void **)&d_out, mem_size);
 
   // CHECK: {
-  // CHECK:   std::pair<syclct::buffer_t, size_t> d_in_buf = syclct::get_buffer_and_offset(d_in);
+  // CHECK:   std::pair<dpct::buffer_t, size_t> d_in_buf = dpct::get_buffer_and_offset(d_in);
   // CHECK:   size_t d_in_offset = d_in_buf.second;
-  // CHECK:   std::pair<syclct::buffer_t, size_t> d_out_buf = syclct::get_buffer_and_offset(d_out);
+  // CHECK:   std::pair<dpct::buffer_t, size_t> d_out_buf = dpct::get_buffer_and_offset(d_out);
   // CHECK:   size_t d_out_offset = d_out_buf.second;
-  // CHECK:   syclct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
   // CHECK:       auto d_in_acc = d_in_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK:       auto d_out_acc = d_out_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel_{{[a-f0-9]+}}, T>>(
+  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}, T>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(num_threads, 1, 1)), cl::sycl::range<3>(num_threads, 1, 1)),
   // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK:           T *d_in = (T*)(&d_in_acc[0] + d_in_offset);

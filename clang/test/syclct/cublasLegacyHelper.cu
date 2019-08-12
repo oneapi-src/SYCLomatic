@@ -1,7 +1,7 @@
 // RUN: syclct -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/cublasLegacyHelper.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/cublasLegacyHelper.dp.cpp --match-full-lines %s
 // CHECK: #include <CL/sycl.hpp>
-// CHECK-NEXT: #include <syclct/syclct.hpp>
+// CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <cstdio>
 // CHECK: #include <mkl_blas_sycl.hpp>
 // CHECK-NEXT: #include <mkl_lapack_sycl.hpp>
@@ -16,7 +16,7 @@
 
 #define MACRO_B(status) (status)
 
-// CHECK: #define MACRO_C(pointer) status = (syclct::sycl_free(d_A), 0)
+// CHECK: #define MACRO_C(pointer) status = (dpct::dpct_free(d_A), 0)
 #define MACRO_C(pointer) status = cublasFree(d_A)
 
 void foo2(cublasStatus){}
@@ -67,37 +67,37 @@ int main() {
   int elemSize = 4;
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   //CHECK-NEXT: */
-  // CHECK-NEXT: status = (syclct::sycl_malloc((void **)&d_A, (n)*(elemSize)), 0);
-  // CHECK-NEXT: syclct::sycl_malloc((void **)&d_A, (n)*(elemSize));
+  // CHECK-NEXT: status = (dpct::dpct_malloc((void **)&d_A, (n)*(elemSize)), 0);
+  // CHECK-NEXT: dpct::dpct_malloc((void **)&d_A, (n)*(elemSize));
   status = cublasAlloc(n, elemSize, (void **)&d_A);
   cublasAlloc(n, elemSize, (void **)&d_A);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: foo2((syclct::sycl_malloc((void **)&d_A, (n)*(elemSize)), 0));
+  // CHECK-NEXT: foo2((dpct::dpct_malloc((void **)&d_A, (n)*(elemSize)), 0));
   foo2(cublasAlloc(n, elemSize, (void **)&d_A));
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (syclct::sycl_free(d_A), 0);
-  // CHECK-NEXT: syclct::sycl_free(d_A);
+  // CHECK-NEXT: status = (dpct::dpct_free(d_A), 0);
+  // CHECK-NEXT: dpct::dpct_free(d_A);
   status = cublasFree(d_A);
   cublasFree(d_A);
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: foo2((syclct::sycl_free(d_A), 0));
+  // CHECK-NEXT: foo2((dpct::dpct_free(d_A), 0));
   foo2(cublasFree(d_A));
 
   // CHECK: /*
-  // CHECK-NEXT: SYCLCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: MACRO_B((syclct::sycl_free(d_A), 0));
+  // CHECK-NEXT: MACRO_B((dpct::dpct_free(d_A), 0));
   MACRO_B(cublasFree(d_A));
 
   // CHECK: MACRO_B(0);

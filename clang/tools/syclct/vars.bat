@@ -15,11 +15,11 @@ set /A ERRORSTATE=0
 
 
 ::Binary check for SYCL CT
-IF NOT EXIST "%~dp0..\bin\syclct.exe" set ERRORSTATE=1
+IF NOT EXIST "%~dp0..\bin\dpct.exe" set ERRORSTATE=1
 IF NOT EXIST "%~dp0..\bin\intercept-build" set ERRORSTATE=1
 
 if /I "%ERRORSTATE%" NEQ "0" (
-    echo  Error: Cannot find neccessary syclct binary.
+    echo  Error: Cannot find neccessary dpct binary.
 )
 
 ::SYCL CT bundle

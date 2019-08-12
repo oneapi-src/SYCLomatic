@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s -passes "ErrorHandlingIfStmtRule,ErrorConstantsRule" -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck %s --match-full-lines --input-file %T/conflict-resolution.sycl.cpp
+// RUN: FileCheck %s --match-full-lines --input-file %T/conflict-resolution.dp.cpp
 
 int printf(const char *format, ...);
 

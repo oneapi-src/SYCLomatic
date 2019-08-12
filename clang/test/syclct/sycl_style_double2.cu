@@ -1,5 +1,5 @@
 // RUN: syclct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: FileCheck --input-file %T/sycl_style_double2.sycl.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/sycl_style_double2.dp.cpp --match-full-lines %s
 
 // CHECK: void func3(cl::sycl::double2 a, cl::sycl::double2 b, cl::sycl::double2 c) {
 void func3(double2 a, double2 b, double2 c) {
@@ -10,10 +10,10 @@ void fun(double2 a) {}
 // CHECK: void kernel(cl::sycl::double2* data) {}
 __global__ void kernel(double2* data) {}
 
-// CHECK: syclct::shared_memory<cl::sycl::double2, 1> ctemp2(2);
+// CHECK: dpct::shared_memory<cl::sycl::double2, 1> ctemp2(2);
 static __shared__ double2 ctemp2[2];
 
-// CHECK: static void gpuMain(syclct::syclct_accessor<cl::sycl::double2, syclct::shared, 1> ctemp2){
+// CHECK: static void gpuMain(dpct::dpct_accessor<cl::sycl::double2, dpct::shared, 1> ctemp2){
 // CHECK:   int* ctempi = (int*) (&ctemp2[0]);
 // CHECK:   cl::sycl::double2* ctempd =  ctemp2;
 // CHECK: }
@@ -72,12 +72,12 @@ int main() {
 
   // CHECK: cl::sycl::double2* data;
   // CHECK: {
-  // CHECK:   std::pair<syclct::buffer_t, size_t> data_buf = syclct::get_buffer_and_offset(data);
+  // CHECK:   std::pair<dpct::buffer_t, size_t> data_buf = dpct::get_buffer_and_offset(data);
   // CHECK:   size_t data_offset = data_buf.second;
-  // CHECK:   syclct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
   // CHECK:       auto data_acc = data_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<syclct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK:           cl::sycl::double2 *data = (cl::sycl::double2*)(&data_acc[0] + data_offset);
@@ -89,14 +89,14 @@ int main() {
   kernel<<<1, 1>>>(data);
 
   // CHECK:   {
-  // CHECK:     syclct::get_default_queue().submit(
+  // CHECK:     dpct::get_default_queue().submit(
   // CHECK:       [&](cl::sycl::handler &cgh) {
   // CHECK:         auto ctemp2_range_ct1 = ctemp2.get_range();
   // CHECK:         auto ctemp2_acc_ct1 = ctemp2.get_access(cgh);
-  // CHECK:         cgh.parallel_for<syclct_kernel_name<class gpuMain_{{[a-f0-9]+}}>>(
+  // CHECK:         cgh.parallel_for<dpct_kernel_name<class gpuMain_{{[a-f0-9]+}}>>(
   // CHECK:           cl::sycl::nd_range<3>((cl::sycl::range<3>(64, 1, 1) * cl::sycl::range<3>(64, 1, 1)), cl::sycl::range<3>(64, 1, 1)),
   // CHECK:           [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:             gpuMain(syclct::syclct_accessor<cl::sycl::double2, syclct::shared, 1>(ctemp2_acc_ct1, ctemp2_range_ct1));
+  // CHECK:             gpuMain(dpct::dpct_accessor<cl::sycl::double2, dpct::shared, 1>(ctemp2_acc_ct1, ctemp2_range_ct1));
   // CHECK:           });
   // CHECK:       });
   // CHECK:   }

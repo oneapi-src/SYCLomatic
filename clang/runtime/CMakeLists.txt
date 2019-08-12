@@ -164,4 +164,4 @@ if(LLVM_BUILD_EXTERNAL_COMPILER_RT AND EXISTS ${COMPILER_RT_SRC_ROOT}/)
   endif()
 endif()
 
-add_subdirectory(syclct-rt)
+add_subdirectory(dpct-rt)

@@ -106,7 +106,7 @@ llvm::Error CommonOptionsParser::init(
                "     --cuda-path=<value> : CUDA installation path.\n"
                "     --cuda-host-only : Compile CUDA code for host only.\n"
                "     -I <dir> : Add directory to include search path.\n"
-               "     See more options by syclct -- --help.\n"),
+               "     See more options by dpct -- --help.\n"),
       cl::cat(Category), cl::sub(*cl::AllSubCommands));
 
   static cl::list<std::string> ArgsBefore(
