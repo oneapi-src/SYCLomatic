@@ -128,10 +128,15 @@ public:
     prop.set_global_mem_size(get_info<cl::sycl::info::device::global_mem_size>());
     prop.set_local_mem_size(get_info<cl::sycl::info::device::local_mem_size>());
 
-    size_t max_sub_group_size = 32;
-#ifdef CL_DEVICE_SUB_GROUP_SIZES_INTEL
-    if (_default_queue.get_device().has_extension("cl_intel_required_subgroup_size")) {
-      cl::sycl::vector_class<size_t> sub_group_sizes = _default_queue.get_device().get_info<cl::sycl::info::device::sub_group_sizes>();
+    // For oneAPI DPC++ Compiler, if current device does not support
+    // "cl_intel_required_subgroup_size" extension, max_sub_group_size will be
+    // initialized to one.
+    // For other compilers, just initialize max_sub_group_size to one.
+    // This code may need to be updated depending on subgroup support by other compilers.
+    size_t max_sub_group_size = 1;
+#ifdef __SYCL_COMPILER_VERSION
+    if (has_extension("cl_intel_required_subgroup_size")) {
+      cl::sycl::vector_class<size_t> sub_group_sizes = get_info<cl::sycl::info::device::sub_group_sizes>();
       cl::sycl::vector_class<size_t>::const_iterator max_iter = std::max_element(sub_group_sizes.begin(), sub_group_sizes.end());
       max_sub_group_size = *max_iter;
     }
