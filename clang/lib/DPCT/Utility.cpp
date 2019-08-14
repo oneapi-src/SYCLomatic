@@ -289,14 +289,14 @@ const std::string &getFmtArgIndent(std::string &BaseIndent) {
   return FmtArgIndent;
 }
 
-std::vector<std::string> split(const std::string &str, char delim) {
-  std::vector<std::string> vs;
-  std::stringstream ss(str);
-  std::string token;
-  while (std::getline(ss, token, delim))
-    vs.push_back(token);
+std::vector<std::string> split(const std::string &Str, char Delim) {
+  std::vector<std::string> V;
+  std::stringstream S(Str);
+  std::string Token;
+  while (std::getline(S, Token, Delim))
+    V.push_back(Token);
 
-  return vs;
+  return V;
 }
 
 // Find the innermost (closest) block where S is located
@@ -400,7 +400,7 @@ bool startsWith(const std::string &Str, const std::string &Prefix) {
          std::equal(Prefix.begin(), Prefix.end(), Str.begin());
 }
 
-// Check if a string ends with the prefix
+// Check if a string ends with the suffix
 bool endsWith(const std::string &Str, const std::string &Suffix) {
   return Suffix.size() <= Str.size() &&
          std::equal(Suffix.rbegin(), Suffix.rend(), Str.rbegin());
@@ -433,21 +433,28 @@ bool IsSingleLineStatement(const clang::Stmt *S) {
          ParentStmtClass == Stmt::StmtClass::ForStmtClass;
 }
 
-// Find the nearest non-Expr non-Decl ancestor statement of Expr E
+// Find the nearest non-Expr non-Decl ancestor node of Expr E
 // Assumes: E != nullptr
-const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const clang::Expr *E) {
+const ast_type_traits::DynTypedNode
+findNearestNonExprNonDeclAncestorNode(const clang::Expr *E) {
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
-  const Stmt *CurrentStmt = E;
+  ast_type_traits::DynTypedNode LastNode, ParentNode;
   while (!ParentNodes.empty()) {
-    auto ParentNode = ParentNodes[0];
+    ParentNode = ParentNodes[0];
     if (!ParentNode.get<Expr>() && !ParentNode.get<Decl>()) {
       break;
     }
-    CurrentStmt = ParentNode.get<Stmt>();
-    ParentNodes = Context.getParents(*CurrentStmt);
+    LastNode = ParentNode;
+    ParentNodes = Context.getParents(LastNode);
   }
-  return CurrentStmt;
+  return LastNode;
+}
+
+// Find the nearest non-Expr non-Decl ancestor statement of Expr E
+// Assumes: E != nullptr
+const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const clang::Expr *E) {
+  return findNearestNonExprNonDeclAncestorNode(E).get<Stmt>();
 }
 
 SourceRange getScopeInsertRange(const MemberExpr *ME) {
@@ -466,24 +473,13 @@ SourceRange getScopeInsertRange(const Expr *E,
   if (ParentNode.empty()) {
     StmtBegin = FuncNameBegin;
     StmtEnd = FuncCallEnd;
-  } else if (ParentNode[0].get<Expr>() == nullptr &&
-             ParentNode[0].get<Decl>() == nullptr) {
+  } else if (!ParentNode[0].get<Expr>() && !ParentNode[0].get<Decl>()) {
     StmtBegin = FuncNameBegin;
     StmtEnd = FuncCallEnd;
   } else {
-    LastNode = ParentNode[0];
-    ParentNode = Context.getParents(LastNode);
-    while (!ParentNode.empty()) {
-      ParentNode = Context.getParents(LastNode);
-      const Expr *EX = ParentNode[0].get<Expr>();
-      const Decl *DE = ParentNode[0].get<Decl>();
-      if (EX == nullptr && DE == nullptr) {
-        break;
-      }
-      LastNode = ParentNode[0];
-    }
-    StmtBegin = LastNode.getSourceRange().getBegin();
-    StmtEnd = LastNode.getSourceRange().getEnd();
+    auto AncestorStmt = findNearestNonExprNonDeclAncestorNode(E);
+    StmtBegin = AncestorStmt.getSourceRange().getBegin();
+    StmtEnd = AncestorStmt.getSourceRange().getEnd();
     if (StmtBegin.isMacroID())
       StmtBegin = SM.getExpansionLoc(StmtBegin);
     if (StmtEnd.isMacroID())
