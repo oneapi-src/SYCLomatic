@@ -44,20 +44,19 @@ void recordTranslationInfo(const ASTContext &Context, const SourceLocation &SL,
     std::size_t PosRow = SLStr.rfind(':', PosCol - 1);
     std::string FileName = SLStr.substr(0, PosRow);
     std::string LineNo = SLStr.substr(PosRow + 1, PosCol - PosRow - 1);
+    std::string Key = FileName + ":" + LineNo;
 
-    std::string KeySYCL = FileName + ":" + LineNo;
-    std::string KeyAPI = FileName + ":" + LineNo + ":" + APIName;
-
-    if (DuplicateFilterAPI.find(KeyAPI) == end(DuplicateFilterAPI) &&
+    if (DuplicateFilterAPI.find(Key) == end(DuplicateFilterAPI) &&
         IsCompatibilityAPI == true) {
       LOCStaticsMap[FileName][0]++;
-      DuplicateFilterAPI.insert(KeyAPI);
+      DuplicateFilterAPI.insert(Key);
     }
 
-    if (DuplicateFilterSYCL.find(KeySYCL) == end(DuplicateFilterSYCL) &&
+    if (DuplicateFilterSYCL.find(Key) == end(DuplicateFilterSYCL) &&
+        DuplicateFilterAPI.find(Key) == end(DuplicateFilterAPI) &&
         IsCompatibilityAPI == false) {
       LOCStaticsMap[FileName][1]++;
-      DuplicateFilterSYCL.insert(KeySYCL);
+      DuplicateFilterSYCL.insert(Key);
     }
   }
 }
