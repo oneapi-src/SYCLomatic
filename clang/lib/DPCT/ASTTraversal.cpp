@@ -14,6 +14,7 @@
 #include "Debug.h"
 #include "SaveNewFiles.h"
 #include "Utility.h"
+#include "GAnalytics.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Analysis/AnalysisDeclContext.h"
 #include "clang/Tooling/Tooling.h"
@@ -4834,7 +4835,7 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
   SrcAPIStaticsMap[GetFunctionSignature(C->getCalleeDecl()->getAsFunction())]++;
 
   if (!TranslationStatistics::IsTranslated(APIName)) {
-
+    GAnalytics(GetFunctionSignature(C->getCalleeDecl()->getAsFunction()));
     const SourceManager &SM = (*Result.Context).getSourceManager();
     const SourceLocation FileLoc = SM.getFileLoc(C->getBeginLoc());
 

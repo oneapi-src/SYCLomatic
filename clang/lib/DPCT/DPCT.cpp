@@ -606,7 +606,7 @@ int run(int argc, const char **argv) {
     std::cout << CtHelpHint;
     return MigrationNoCodeChangeHappen;
   }
-  GAnalytics();
+  GAnalytics("");
 #if defined(__linux__) || defined(_WIN64)
   InstallSignalHandle();
 #endif

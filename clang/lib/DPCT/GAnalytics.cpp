@@ -10,42 +10,32 @@
 //===-----------------------------------------------------------------===//
 #include "GaHelper.h"
 #include "gahelper_impl.h"
-#include "Config.h"
 
 #include <iostream>
 #include <string>
 
 using namespace gahelper1;
-int GAnalytics() {
-  UuidPersistenceProvider uuidProvider(_U(""));
-  ActiveUserPersistenceProvider activeUserPersistenceProvider(_U(""));
-  AnalyticsCreateParams params = {0};
-  params.flags=ALLOW_COLLECTION_FROM_INTEL_NETWORK;
 
-  params.appName = "oneAPI DPC++ Compatibility Tool";
-  std::string AppVersion= std::string(DPCT_VERSION_MAJOR) + "." +
-     std::string(DPCT_VERSION_MINOR) + "-" + std::string(DPCT_VERSION_PATCH);
-  params.appVersion = AppVersion.c_str();
-  params.tid = "UA-17808594-22"; // this one is Analyzers GA sandbox
-  params.uuidPersistenceProvider = &uuidProvider;
-  params.activeUserPersistenceProvider = &activeUserPersistenceProvider;
-  auto analytics = IAnalytics::create(params);
+int GAnalytics(std::string Data) {
+  auto analytics = IAnalytics::create();
   if (analytics->getUserConsentValue() == UserConsent::optedIn) {
-      //std::cout << "send message .....\n";
-      analytics->postEvent("client.cli.start", nullptr, nullptr);
-      analytics->postEvent("client.cli.finish", nullptr, nullptr);
-
+    // std::cout << "send message .....\n";
+    if (Data == "") {
+      analytics->postEvent("client.cli.start", "start", nullptr, "");
+      analytics->postEvent("client.cli.finish", "start", nullptr, "");
+    } else {
+      analytics->postEvent("client.cli.start", "API", nullptr, Data);
+      analytics->postEvent("client.cli.finish", "API", nullptr, Data);
+    }
   }
-//  analytics->dumpStat();
- 
-  analytics->destroy();
+  // analytics->dumpStat();
+  // analytics->destroy();
   return 0;
-
 }
 
 #ifdef  GA_STANDALONE_TEST
 int main(int argc, const char *argv[]) {
     GAnalytics();
 }
-#endif 
+#endif
 

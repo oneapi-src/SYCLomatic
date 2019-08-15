@@ -52,17 +52,17 @@ class AnalyticsImpl : public IAnalytics
 {
 public:
     AnalyticsImpl(const AnalyticsCreateParams& params);
-    virtual void destroy() override;
+    // virtual void destroy() override;
     virtual UserConsent getUserConsentValue() const override;
     virtual void setStatisticCollectionEnabled(bool value) override;
-    virtual void postEvent(const char* category, const char* action, const char* label, int value = 0) override;
-	virtual void  dumpStat();
+    virtual void postEvent(const char *category, const char *action, const char *label, const std::string &Data, int value = 0) override;
+    virtual void  dumpStat();
 private:
     ustring getIsipFilePath();
     bool isEnabled();
 private:
     HttpConnector m_connector;
-    ActiveUserDetector m_activeUserDetector;
+    // ActiveUserDetector m_activeUserDetector;
     std::string m_osType;
     std::string m_osVersion;
     std::string m_constantPostFields;

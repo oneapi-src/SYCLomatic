@@ -11,6 +11,7 @@
 #include "gahelper_impl.h"
 #include "uuid.h"
 #include "os_specific.h"
+#include "Config.h"
 #include <sstream>
 #include <fstream>
 #include <iostream>
@@ -219,8 +220,7 @@ bool ActiveUserPersistenceProvider::write(WriterCallback * callback)
 }
 
 AnalyticsImpl::AnalyticsImpl(const AnalyticsCreateParams& params) :
-    m_connector(params.overrideCollectionUrl ? params.overrideCollectionUrl : "http://www.google-analytics.com/collect"),
-    m_activeUserDetector(params.activeUserPersistenceProvider)
+    m_connector(params.overrideCollectionUrl ? params.overrideCollectionUrl : "http://www.google-analytics.com/collect")
 {
     m_enabled = false;
     m_flags = params.flags;
@@ -276,13 +276,14 @@ void AnalyticsImpl::setStatisticCollectionEnabled(bool value)
     }
 }
 
-void AnalyticsImpl::postEvent(const char* category, const char* action, const char* label, int value)
-{
+void AnalyticsImpl::postEvent(const char *category, const char *action,
+                              const char *label, const std::string &Data,
+                              int value) {
     if (!m_enabled)
     {
         return;
     }
-    m_activeUserDetector.notify_activity();
+    // m_activeUserDetector.notify_activity();
     std::stringstream ss;
     ss << m_constantPostFields;
     ss << "&t=event";
@@ -302,7 +303,11 @@ void AnalyticsImpl::postEvent(const char* category, const char* action, const ch
     {
         ss << "&ev=" << value;
     }
-    ss << "&cd3=" << (m_activeUserDetector.is_active_user() ? "y" : "n");
+    ss << "&cd3=y";
+    // We use the "cd4" field to save and post the API info
+    if (!Data.empty()) {
+      ss << "&cd4=" << m_connector.urlencode(Data);
+    }
     m_connector.post(ss.str());
 }
 
@@ -399,23 +404,37 @@ void AnalyticsImpl::dumpStat() {
 #endif
     std::cout<< "m_flags: " << m_flags << "\n";
     std::cout<< "m_enabled: " << m_enabled << "\n";
-    m_activeUserDetector.dumpStat();
+    // m_activeUserDetector.dumpStat();
     m_connector.dumpStats();
     std::cout<< "------------------------------\n\n";
 
 }
 
 //#ifdef GAHELPER_EXPORTS
+static AnalyticsImpl &getAnalyticsImplInstance() {
+  UuidPersistenceProvider uuidProvider(_U(""));
+  ActiveUserPersistenceProvider activeUserPersistenceProvider(_U(""));
+  AnalyticsCreateParams params = {0};
+  params.flags = ALLOW_COLLECTION_FROM_INTEL_NETWORK;
 
-IAnalytics* IAnalytics ::create(const AnalyticsCreateParams& params)
-{
-    return new AnalyticsImpl(params);
+  params.appName = "oneAPI DPC++ Compatibility Tool";
+  std::string AppVersion = std::string(DPCT_VERSION_MAJOR) + "." +
+                           std::string(DPCT_VERSION_MINOR) + "-" +
+                           std::string(DPCT_VERSION_PATCH);
+  params.appVersion = AppVersion.c_str();
+  params.tid = "UA-17808594-22"; // this one is Analyzers GA sandbox
+  params.uuidPersistenceProvider = &uuidProvider;
+  params.activeUserPersistenceProvider = &activeUserPersistenceProvider;
+  static AnalyticsImpl AImpl(params);
+  return AImpl;
 }
 
-void AnalyticsImpl::destroy()
-{
-    delete this;
-}
+IAnalytics *IAnalytics ::create() { return &getAnalyticsImplInstance(); }
+
+//void AnalyticsImpl::destroy()
+//{
+//    delete this;
+//}
 
 //#endif
 

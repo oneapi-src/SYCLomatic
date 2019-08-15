@@ -11,6 +11,7 @@
 #pragma once
 #include "GaNamespace.h"
 #include <stdint.h>
+#include <string>
 
 /*
 #ifdef _WIN32
@@ -83,16 +84,16 @@ enum class UserConsent
 class IAnalytics
 {
 public:
-    static IAnalytics* create(const AnalyticsCreateParams& params);
-    virtual void destroy() = 0;
+    static IAnalytics* create();
+    // virtual void destroy() = 0;
     virtual UserConsent getUserConsentValue() const = 0;
     virtual void setStatisticCollectionEnabled(bool value) = 0;
     // In Analysers events sent surrently with categry filled by event name such as "client.gui.start"
     // and category="run" with label=<ANALYSIS_TYPE_NAME> for starting collection
     // 3 custom field are sent with each event: OS, OS Version, IsActiveUser along with standard dimensions
     // for application name, application version, and user UUID
-    virtual void postEvent(const char* category, const char* action, const char* label, int value = 0) = 0;
-	virtual void  dumpStat() =0;
+    virtual void postEvent(const char *category, const char *action, const char *label, const std::string &Data, int value = 0) = 0;
+    virtual void  dumpStat() =0;
 };
 
 GAHELPER_NS_END
