@@ -21,6 +21,11 @@ def build_libear(compiler, dst_dir):
 
     try:
         src_dir = os.path.dirname(os.path.realpath(__file__))
+        #INTEL_CUSTOMIZATION begin
+        prebuildlib = os.path.join(src_dir, "libear.so")
+        if os.path.exists(prebuildlib):
+            return prebuildlib
+        #INTEL_CUSTOMIZATION end
         toolset = make_toolset(src_dir)
         toolset.set_compiler(compiler)
         toolset.set_language_standard('c99')

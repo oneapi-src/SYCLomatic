@@ -10,11 +10,35 @@ set(LibScanBuildFiles
     shell.py
 )
 
+#INTEL_CUSTOMIZATION begin
+if(UNIX)
 set(LibearFiles
-    config.h.in
-    ear.c
     __init__.py
 )
+set(EARTARGET ear)
+add_library(ear SHARED
+    libear/ear.c
+)
+target_include_directories(ear PRIVATE libear/)
+target_link_libraries(ear PRIVATE
+    "-ldl -lpthread -shared -Wl,-soname,libear.so")
+target_compile_options(ear PRIVATE
+    "-DNDEBUG -O3 -fPIC -std=c99 -D_GNU_SOURCE")
+install(TARGETS ear
+    LIBRARY
+    DESTINATION libear
+    COMPONENT dpct-intercept-build
+)
+else()
+set(EARTARGET "")
+#windows, default install the binary
+set(LibearFiles
+   config.h.in
+   ear.c
+   __init__.py
+)
+endif()
+#INTEL_CUSTOMIZATION end
 
 set(OutPutBinFiles)
 foreach(BinFile ${BinFiles})
@@ -90,7 +114,7 @@ install(
   COMPONENT dpct-libear-files
   DESTINATION libear)
 
-add_custom_target(dpct-libear-files ALL DEPENDS ${OutPutLibearFile})
+add_custom_target(dpct-libear-files ALL DEPENDS ${OutPutLibearFile} ${EARTARGET})
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
   add_llvm_install_targets(install-dpct-libear-files
                            DEPENDS dpct-libear-files
