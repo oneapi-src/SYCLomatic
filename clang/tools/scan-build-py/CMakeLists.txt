@@ -27,7 +27,7 @@ target_compile_options(ear PRIVATE
 install(TARGETS ear
     LIBRARY
     DESTINATION libear
-    COMPONENT dpct-intercept-build
+    COMPONENT dpct-libear-files
 )
 else()
 set(EARTARGET "")
@@ -117,6 +117,6 @@ install(
 add_custom_target(dpct-libear-files ALL DEPENDS ${OutPutLibearFile} ${EARTARGET})
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
   add_llvm_install_targets(install-dpct-libear-files
-                           DEPENDS dpct-libear-files
+                           DEPENDS dpct-libear-files ${EARTARGET}
                            COMPONENT dpct-libear-files)
 endif()
