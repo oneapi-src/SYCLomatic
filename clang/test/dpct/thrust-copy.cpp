@@ -6,9 +6,9 @@
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <iostream>
 // CHECK-NEXT: #include <iterator>
-// CHECK-NEXT: #include <dpstd/algorithm>
-// CHECK-NEXT: #include <dpstd/execution>
 // CHECK-NEXT: #include <dpct/dpstd_utils.hpp>
+// CHECK-NEXT: #include <dpstd/execution>
+// CHECK-NEXT: #include <dpstd/algorithm>
 
 #include <iostream>
 #include <iterator>

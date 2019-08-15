@@ -303,9 +303,9 @@ void IncludesCallbacks::InclusionDirective(
   // For multi thrust header files, only insert once for PSTL mapping header.
   if (IsAngled && (FileName.find("thrust/") != std::string::npos)) {
     if (!DpstdHeaderInserted) {
-      std::string Replacement = std::string("<dpstd/algorithm>") + getNL() +
+      std::string Replacement = std::string("<dpct/dpstd_utils.hpp>") + getNL() +
                                 "#include <dpstd/execution>" + getNL() +
-                                "#include <dpct/dpstd_utils.hpp>";
+                                "#include <dpstd/algorithm>";
       DpstdHeaderInserted = true;
       TransformSet.emplace_back(
           new ReplaceInclude(FilenameRange, std::move(Replacement)));

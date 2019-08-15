@@ -8,6 +8,10 @@ set(dpct_rt_files
   include/util.hpp
   include/blas_utils.hpp
   include/dpstd_utils.hpp
+  include/dpstd_extras/functional.h
+  include/dpstd_extras/memory.h
+  include/dpstd_extras/iterators.h
+  include/dpstd_extras/algorithm.h
 )
 
 set(output_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include/dpct)

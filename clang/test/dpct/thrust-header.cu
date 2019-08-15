@@ -8,9 +8,9 @@
 // CHECK-NEXT: #include <algorithm>
 #include <cstdio>
 #include <algorithm>
-// CHECK: #include <dpstd/algorithm>
+// CHECK: #include <dpct/dpstd_utils.hpp>
 // CHECK-NEXT: #include <dpstd/execution>
-// CHECK-NEXT: #include <dpct/dpstd_utils.hpp>
+// CHECK-NEXT: #include <dpstd/algorithm>
 #include <cuda_runtime.h>
 #include <thrust/copy.h>
 #include <thrust/sequence.h>
