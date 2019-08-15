@@ -29,4 +29,9 @@ bool validatePaths(const std::string &InRoot,
 bool checkReportArgs(std::string &RType, std::string &RFormat,
         std::string &RFile, bool& ROnly, bool &GenReport, std::string &DVerbose);
 
+// Retrun value:
+//  0: Path is valid
+//  1: Path is empty, option "cuda-include-path" is not used
+// -1: Path is invaild
+int checkSDKIncludePath(const std::string &Path, std::string &RealPath);
 #endif // DPCT_VALIDATE_ARGUMENTS_H

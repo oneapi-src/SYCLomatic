@@ -109,6 +109,27 @@ bool validatePaths(const std::string &InRoot,
 
   return Ok;
 }
+
+int checkSDKIncludePath(const std::string &Path, std::string& RealPath) {
+  if (Path.empty()) {
+    return 1;
+  }
+  SmallString<512> AbsPath;
+  auto EC = llvm::sys::fs::real_path(Path, AbsPath);
+  if ((bool)EC) {
+    return -1;
+  }
+
+#if defined(_WIN32)
+  RealPath = AbsPath.str().lower();
+#elif defined(__linux__)
+  RealPath = AbsPath.c_str();
+#else
+#error Only support windows and Linux.
+#endif
+  return 0;
+}
+
 bool checkReportArgs(std::string &RType, std::string &RFormat,
                      std::string &RFile, bool &ROnly, bool &GenReport,
                      std::string &DVerbose) {

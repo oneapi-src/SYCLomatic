@@ -23,6 +23,12 @@
 #include "llvm/Support/Program.h"
 #include "llvm/Support/VirtualFileSystem.h"
 #include <system_error>
+#define INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
+#include <fstream>
+#include <regex>
+#include "clang/DPCT/DPCT.h"
+#endif
 
 using namespace clang::driver;
 using namespace clang::driver::toolchains;
@@ -30,6 +36,58 @@ using namespace clang::driver::tools;
 using namespace clang;
 using namespace llvm::opt;
 
+#define INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
+bool IsSetSDKIncludeOption = false;
+std::string RealSDKIncludePath = "";
+
+static bool ParseSDKVersionFile(const std::string &FilePath, CudaVersion& CV) {
+  CV = CudaVersion::UNKNOWN;
+  std::ifstream CudaFile(FilePath, std::ios::in);
+  if (!CudaFile.is_open()) {
+    return false;
+  }
+  std::string Line;
+  std::string Res;
+  while (std::getline(CudaFile, Line)) {
+    std::regex RE("^#define CUDA_VERSION [0-9]{4,5}", std::regex::extended);
+    std::smatch M;
+    std::regex_search(Line, M, RE);
+    if (!M.empty()) {
+      Res = M[0];
+      break;
+    }
+  }
+  if (Res == "") {
+    return false;
+  }
+  Res = Res.substr(21);
+  int DefineVersion = std::stoi(Res);
+  int Major = DefineVersion / 1000;
+  int Minor = (DefineVersion % 100) / 10;
+
+  if (Major == 8 && Minor == 0) {
+    CV = CudaVersion::CUDA_80;
+    return true;
+  } else if (Major == 9 && Minor == 0) {
+    CV = CudaVersion::CUDA_90;
+    return true;
+  } else if (Major == 9 && Minor == 1){
+    CV = CudaVersion::CUDA_91;
+    return true;
+  } else if (Major == 9 && Minor == 2) {
+    CV = CudaVersion::CUDA_92;
+    return true;
+  } else if (Major == 10 && Minor == 0) {
+    CV = CudaVersion::CUDA_100;
+    return true;
+  } else if (Major == 10 && Minor == 1) {
+    CV = CudaVersion::CUDA_101;
+    return true;
+  }
+  return false;
+}
+#else
 // Parses the contents of version.txt in an CUDA installation.  It should
 // contain one line of the from e.g. "CUDA Version 7.5.2".
 static CudaVersion ParseCudaVersionFile(llvm::StringRef V) {
@@ -64,6 +122,7 @@ static CudaVersion ParseCudaVersionFile(llvm::StringRef V) {
     return CudaVersion::CUDA_101;
   return CudaVersion::UNKNOWN;
 }
+#endif
 
 CudaInstallationDetector::CudaInstallationDetector(
     const Driver &D, const llvm::Triple &HostTriple,
@@ -138,11 +197,42 @@ CudaInstallationDetector::CudaInstallationDetector(
 
   bool NoCudaLib = Args.hasArg(options::OPT_nocudalib);
 
+#define INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
+  if (IsSetSDKIncludeOption) {
+    if (RealSDKIncludePath.empty() ||
+        !D.getVFS().exists(RealSDKIncludePath))
+      return;
+    auto &FS = D.getVFS();
+    if (!(FS.exists(RealSDKIncludePath + "/cuda_runtime.h") &&
+          FS.exists(RealSDKIncludePath + "/cuda.h")))
+      return;
+    InstallPath = RealSDKIncludePath;
+    IncludePath = RealSDKIncludePath;
+    bool IsFound =
+        ParseSDKVersionFile(RealSDKIncludePath + "/cuda.h", Version);
+    if (!IsFound)
+      return;
+    IsValid = true;
+  } else {
   for (const auto &Candidate : Candidates) {
     InstallPath = Candidate.Path;
     if (InstallPath.empty() || !D.getVFS().exists(InstallPath))
       continue;
 
+    auto &FS = D.getVFS();
+    IncludePath = InstallPath + "/include";
+    if (!(FS.exists(IncludePath + "/cuda_runtime.h") &&
+          FS.exists(IncludePath + "/cuda.h")))
+      continue;
+    bool IsFound = ParseSDKVersionFile(InstallPath + "/include/cuda.h", Version);
+    if (!IsFound)
+      continue;
+#else
+  for (const auto &Candidate : Candidates) {
+    InstallPath = Candidate.Path;
+    if (InstallPath.empty() || !D.getVFS().exists(InstallPath))
+      continue;
     BinPath = InstallPath + "/bin";
     IncludePath = InstallPath + "/include";
     LibDevicePath = InstallPath + "/nvvm/libdevice";
@@ -238,10 +328,14 @@ CudaInstallationDetector::CudaInstallationDetector(
     // -nocudalib hasn't been specified.
     if (LibDeviceMap.empty() && !NoCudaLib)
       continue;
-
+#endif
     IsValid = true;
     break;
   }
+#define INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
+  }
+#endif
 }
 
 void CudaInstallationDetector::AddCudaIncludeArgs(

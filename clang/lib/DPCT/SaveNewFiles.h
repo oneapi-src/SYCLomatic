@@ -32,7 +32,7 @@ enum ProcessStatus {
   MigrationSaveOutFail = -2, /*eg. have no write permission*/
   MigrationErrorRunFromSDKFolder = -3,
   MigrationErrorInRootContainCTTool = -4,
-
+  MigrationErrorInvalidSDKPath = -5,
 };
 
 enum OutputVerbosityLev { silent, normal, detailed, diagnostics };

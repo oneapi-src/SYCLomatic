@@ -8,5 +8,9 @@
 // from the company.
 //
 //===-----------------------------------------------------------------===//
+#include <string>
+
+extern bool IsSetSDKIncludeOption;
+extern std::string RealSDKIncludePath;
 
 int run(int argc, const char **argv);

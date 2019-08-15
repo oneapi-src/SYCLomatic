@@ -89,6 +89,12 @@ static opt<std::string>
             value_desc("/path/to/output/root/"), cat(DPCTCat),
             llvm::cl::Optional);
 
+static opt<std::string> SDKIncludePath(
+    "cuda-include-path",
+    desc("Directory path of CUDA header files.\n"
+         "If this option is set, option \"--cuda-path\" will be ignored."),
+    value_desc("/path/to/CUDA/include/"), cat(DPCTCat), llvm::cl::Optional);
+
 static opt<std::string> ReportType(
     "report-type",
     desc("Comma separated list of report types.\n"
@@ -337,10 +343,16 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   // Create minimalist CudaInstallationDetector and return the InstallPath.
   DiagnosticsEngine E(nullptr, nullptr, nullptr, false);
   driver::Driver Driver("", llvm::sys::getDefaultTargetTriple(), E, nullptr);
-  driver::CudaInstallationDetector CudaDetector(
+  driver::CudaInstallationDetector SDKDetector(
       Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
 
-  std::string Path = CudaDetector.getInstallPath();
+  std::string Path = SDKDetector.getInstallPath();
+  if (!SDKDetector.isValid()) {
+      std::string ErrMsg = "[ERROR] Not found valid SDK path\n";
+    PrintMsg(ErrMsg);
+    exit(MigrationErrorInvalidSDKPath);
+  }
+
   makeCanonical(Path);
   return Path;
 }
@@ -620,6 +632,13 @@ int run(int argc, const char **argv) {
   if (!validatePaths(InRoot, OptParser.getSourcePathList()))
     exit(-1);
 
+  int Res = checkSDKIncludePath(SDKIncludePath, RealSDKIncludePath);
+  if (Res == -1) {
+    exit(-1);
+  } else if (Res == 0) {
+    IsSetSDKIncludeOption = true;
+  }
+
   bool GenReport = false;
   if (checkReportArgs(ReportType, ReportFormat, ReportFilePrefix,
                       ReportOnlyFlag, GenReport, DiagsContent) == false)
@@ -644,12 +663,13 @@ int run(int argc, const char **argv) {
   DpctInstallPath = getInstallPath(Tool, argv[0]);
 
   ValidateInputDirectory(Tool, InRoot);
-  // Made "-- -x cuda --cuda-host-only" option set by default, .i.e
-  // commandline "dpct -in-root ./ -out-root ./ ./topologyQuery.cu  --  -x
-  // cuda
-  // --cuda-host-only  -I../common/inc" became "dpct -in-root ./ -out-root
-  // ./
-  // ./topologyQuery.cu  -- -I../common/inc"
+  // Made "-- -x cuda --cuda-host-only -nocudalib" option set by default, .i.e
+  // commandline "syclct -in-root ./ -out-root ./ ./topologyQuery.cu  --  -x
+  // cuda --cuda-host-only -nocudalib -I../common/inc" became "syclct -in-root
+  // ./ -out-root ./ ./topologyQuery.cu  -- -I../common/inc"
+  Tool.appendArgumentsAdjuster(
+      getInsertArgumentAdjuster("-nocudalib", ArgumentInsertPosition::BEGIN));
+
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "--cuda-host-only", ArgumentInsertPosition::BEGIN));
 
