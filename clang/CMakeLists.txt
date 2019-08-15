@@ -862,10 +862,10 @@ if (NOT CLANG_BUILT_STANDALONE)
     install-dpct-libear-files
     install-dpct-headers
     install-clang-resource-headers
-    install-syclct
+    install-dpct
     install-dpct-vars
     install-dpct-syscheck
     )
 endif()
-add_custom_target(install-syclct-tool DEPENDS ${DPCT_RUN})
-set_target_properties(install-syclct-tool PROPERTIES FOLDER "install dpct tool")
+add_custom_target(install-dpct-tool DEPENDS ${DPCT_RUN})
+set_target_properties(install-dpct-tool PROPERTIES FOLDER "install dpct tool")

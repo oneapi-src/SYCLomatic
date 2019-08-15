@@ -59,7 +59,7 @@ list(APPEND CLANG_TEST_DEPS
   clang-diff
   diagtool
   hmaptool
-  syclct
+  dpct
   )
 
 if(CLANG_ENABLE_STATIC_ANALYZER)
