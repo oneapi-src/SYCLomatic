@@ -11,13 +11,11 @@
 
 export DPCT_BUNDLE_ROOT=$(dirname $(dirname $(realpath "${BASH_SOURCE[0]}")))
 
-# Binary check for SYCL CT
 if [[ ! -e $DPCT_BUNDLE_ROOT/bin/dpct || \
       ! -e $DPCT_BUNDLE_ROOT/bin/intercept-build ]]; then
     printf "[\033[0;31mERROR\033[0m] Cannot find neccessary dpct binary\n"
     return 1
 fi
 
-# SYCL CT bundle
 export PATH=$DPCT_BUNDLE_ROOT/bin:$PATH
 export CPATH=$DPCT_BUNDLE_ROOT/include:$CPATH

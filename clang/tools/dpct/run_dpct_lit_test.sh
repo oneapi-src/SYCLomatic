@@ -6,7 +6,7 @@ set -e -x
 # different version of CUDA by modifing CUDA_PATH
 
 # Default: Assume CUDA is installed in /usr/local/cuda
-#   ninja check-clang-syclct
+#   ninja check-clang-dpct
 
 # Test with cuda 8.0:
 CUDA_PATH=/usr/local/cuda-8.0 ninja check-clang-dpct

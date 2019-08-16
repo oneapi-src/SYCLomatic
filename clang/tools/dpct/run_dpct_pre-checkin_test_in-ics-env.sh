@@ -40,7 +40,7 @@ dpct_sdk_8_samples_list=$(IFS=, ; echo "dpct_sdk_8_samples/${dpct_sdk_8_samples[
 
 set -x
 #Run test case from dpct_sdk_8_samples
-tc -r none -x efi2_linux64_syclct -t $syclct_sdk_8_samples_list
+tc -r none -x efi2_linux64_syclct -t $dpct_sdk_8_samples_list
 
 echo "---------------------------------------------------"
 #Run custom test set: dpct_internal_samples
