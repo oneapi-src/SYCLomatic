@@ -1,7 +1,7 @@
 /******************************************************************************
 * INTEL CONFIDENTIAL
 *
-* Copyright 2018-2019 Intel Corporation.
+* Copyright 2018 - 2019 Intel Corporation.
 *
 * This software and the related documents are Intel copyrighted materials,
 * and your use of them is governed by the express license under which they
