@@ -23,7 +23,6 @@
 #include <CL/sycl.hpp>
 #include <iostream>
 
-// Todo: update this temporary macro with the one available in DPC++ compiler.
 #define DPCPP_COMPATIBILITY_TEMP (200)
 
 #include "dpct_atomic.hpp"
@@ -33,7 +32,7 @@
 #include "dpct_image.hpp"
 #include "dpct_util.hpp"
 
-#if defined(_MSC_VER) // MSVC
+#if defined(_MSC_VER)
 #define __sycl_align__(n) __declspec(align(n))
 #else
 #define __sycl_align__(n) __attribute__((aligned(n)))
@@ -42,8 +41,8 @@
 template <class... Args> class dpct_kernel_name;
 template <int Arg> class dpct_kernel_scalar;
 
-#define DPCT_PI_F 3.14159274101257f
-#define DPCT_PI 3.141592653589793115998
+#define DPCT_PI_F (3.14159274101257f)
+#define DPCT_PI (3.141592653589793115998)
 
 #include <limits.h>
 
