@@ -38,6 +38,11 @@ using MemVarInfoMap = GlobalMap<MemVarInfo>;
 
 using ReplTy = std::map<std::string, tooling::Replacements>;
 
+template <class T>
+inline void merge(GlobalMap<T> &Master, const GlobalMap<T> &Branch) {
+  Master.insert(Branch.begin(), Branch.end());
+}
+
 inline void appendString(llvm::raw_string_ostream &OS) {}
 template <class T, class... Arguments>
 inline void appendString(llvm::raw_string_ostream &OS, const T &S,
@@ -376,7 +381,23 @@ public:
   inline static void setKeepOriginCode(bool KOC = true) {
     KeepOriginCode = KOC;
   }
-
+  template <class TargetTy, class NodeTy>
+  static const TargetTy *findAncestor(const NodeTy *Node) {
+    auto &Context = getContext();
+    clang::ASTContext::DynTypedNodeList Parents = Context.getParents(*Node);
+    while (!Parents.empty()) {
+      auto &Node = Parents[0];
+      if (auto Target = Node.get<TargetTy>())
+        return Target;
+      Parents = Context.getParents(Node);
+    }
+    return nullptr;
+  }
+  template <class NodeTy>
+  inline static const clang::FunctionDecl *
+  getParentFunction(const NodeTy *Node) {
+    return findAncestor<clang::FunctionDecl>(Node);
+  }
   template <class T>
   static inline std::pair<llvm::StringRef, unsigned>
   getLocInfo(const T *N, bool *IsInvalid = nullptr /* out */) {
@@ -395,6 +416,21 @@ public:
     return std::make_pair(StringRef(), 0);
   }
 
+  static inline std::string getTypeName(QualType QT,
+                                        const ASTContext &Context) {
+    return QT.getAsString(Context.getPrintingPolicy());
+  }
+  static inline std::string getTypeName(QualType QT) {
+    return getTypeName(QT, DpctGlobalInfo::getContext());
+  }
+  static inline std::string getUnqualifiedTypeName(QualType QT,
+                                                   const ASTContext &Context) {
+    return getTypeName(QT.getUnqualifiedType(), Context);
+  }
+  static inline std::string getUnqualifiedTypeName(QualType QT) {
+    return getUnqualifiedTypeName(QT, DpctGlobalInfo::getContext());
+  }
+
 #define GLOBAL_TYPE(TYPE, NODE_TYPE)                                           \
   std::shared_ptr<TYPE> find##TYPE(const NODE_TYPE *Node) {                    \
     return findNode<TYPE>(Node);                                               \
@@ -410,7 +446,8 @@ public:
   GLOBAL_TYPE(TextureInfo, VarDecl)
 #undef GLOBAL_TYPE
 
-  // Build kernel and device function declaration replacements and store them.
+  // Build kernel and device function declaration replacements and store
+  // them.
   void buildReplacements() {
     for (auto &File : FileMap)
       File.second->buildReplacements();
@@ -485,8 +522,7 @@ private:
         ->template insertNode<Info>(LocInfo.second, N);
   }
 
-  inline std::shared_ptr<DpctFileInfo>
-  insertFile(const std::string &FilePath) {
+  inline std::shared_ptr<DpctFileInfo> insertFile(const std::string &FilePath) {
     return insertObject(FileMap, FilePath);
   }
   template <class T> static inline SourceLocation getLocation(const T *N) {
@@ -787,34 +823,86 @@ private:
   static const std::string ExternVariableName;
 };
 
-class TextureInfo {
+class TextureTypeInfo {
   std::string DataType;
   int Dimension;
 
+public:
+  TextureTypeInfo(std::string &&DataType, int Dimension) {
+    setDataTypeAndDimension(std::move(DataType), Dimension);
+  }
+
+  void setDataTypeAndDimension(std::string &&Type, int Dim) {
+    DataType = std::move(Type);
+    Dimension = Dim;
+    MapNames::replaceName(MapNames::TypeNamesMap, DataType);
+  }
+
+  llvm::raw_ostream &printType(llvm::raw_ostream &OS,
+                               const std::string &TemplateName) {
+    return OS << TemplateName << "<" << DataType << ", " << Dimension << ">";
+  }
+};
+
+// Texture info.
+class TextureInfo {
+protected:
   const std::string FilePath;
   const unsigned Offset;
   const std::string Name;
 
-  llvm::raw_ostream &getDecl(llvm::raw_ostream &OS, StringRef TemplateType) {
-    return OS << "dpct::" << TemplateType << "<" << DataType << ", "
-              << Dimension << "> " << Name;
+  std::shared_ptr<TextureTypeInfo> Type;
+
+protected:
+  TextureInfo(unsigned Offset, const std::string &FilePath, StringRef Name)
+      : FilePath(FilePath), Offset(Offset), Name(Name) {}
+  TextureInfo(const VarDecl *VD)
+      : TextureInfo(DpctGlobalInfo::getLocInfo(
+                        VD->getTypeSourceInfo()->getTypeLoc().getBeginLoc()),
+                    VD->getName()) {}
+  TextureInfo(std::pair<StringRef, unsigned> LocInfo, StringRef Name)
+      : TextureInfo(LocInfo.second, LocInfo.first, Name) {}
+
+  llvm::raw_ostream &getDecl(llvm::raw_ostream &OS,
+                             const std::string &TemplateDeclName) {
+    return Type->printType(OS, "dpct::" + TemplateDeclName) << " " << Name;
   }
 
 public:
   TextureInfo(unsigned Offset, const std::string &FilePath, const VarDecl *VD)
-      : FilePath(FilePath), Offset(Offset), Name(VD->getName()) {
+      : TextureInfo(Offset, FilePath, VD->getName()) {
     if (auto D = dyn_cast<ClassTemplateSpecializationDecl>(
             VD->getType()->getAsCXXRecordDecl())) {
       auto &TemplateList = D->getTemplateInstantiationArgs();
       auto DataTy = TemplateList[0].getAsType();
       if (auto ET = dyn_cast<ElaboratedType>(DataTy))
         DataTy = ET->getNamedType();
-      DataType = DataTy.getUnqualifiedType().getAsString(
-          DpctGlobalInfo::getContext().getLangOpts());
-      MapNames::replaceName(MapNames::TypeNamesMap, DataType);
-      Dimension = TemplateList[1].getAsIntegral().getExtValue();
+      setType(DpctGlobalInfo::getUnqualifiedTypeName(DataTy),
+              TemplateList[1].getAsIntegral().getExtValue());
     }
   }
+
+  void setType(std::string &&DataType, int Dimension) {
+    setType(std::make_shared<TextureTypeInfo>(std::move(DataType), Dimension));
+  }
+  inline void setType(std::shared_ptr<TextureTypeInfo> TypeInfo) {
+    if (TypeInfo)
+      Type = TypeInfo;
+  }
+
+  inline std::shared_ptr<TextureTypeInfo> getType() const { return Type; }
+
+  virtual std::string getHostDeclString() {
+    std::string Result;
+    llvm::raw_string_ostream OS(Result);
+    getDecl(OS, "dpct_image") << ";";
+    return OS.str();
+  }
+
+  virtual std::string getAccessorDecl() {
+    return buildString("auto ", Name, "_acc = ", Name, ".get_access(cgh);");
+  }
+
   inline llvm::raw_ostream &getFuncDecl(llvm::raw_ostream &OS) {
     return getDecl(OS, "dpct_image_accessor");
   }
@@ -824,20 +912,57 @@ public:
   inline llvm::raw_ostream &getKernelArg(llvm::raw_ostream &OS) {
     return OS << Name << "_acc";
   }
+  inline const std::string &getName() { return Name; }
 
-  std::string getDeclReplacement() {
+  inline unsigned getOffset() { return Offset; }
+};
+
+// texture handle info
+class TextureObjectInfo : public TextureInfo {
+  static const int ReplaceTypeLength;
+
+  /// If it is a parameter in the function, it is the parameter index,either it
+  /// is 0.
+  unsigned ParamIdx;
+
+  TextureObjectInfo(const VarDecl *VD, unsigned ParamIdx)
+      : TextureInfo(VD), ParamIdx(ParamIdx) {}
+
+public:
+  TextureObjectInfo(const ParmVarDecl *PVD)
+      : TextureObjectInfo(PVD, PVD->getFunctionScopeIndex()) {}
+  TextureObjectInfo(const VarDecl *VD) : TextureObjectInfo(VD, 0) {}
+  std::string getAccessorDecl() override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
-    getDecl(OS, "dpct_image") << ";";
+    OS << "auto " << Name << "_acc = static_cast<";
+    getType()->printType(OS, "dpct::dpct_image")
+        << " *>(" << Name << ")->get_access(cgh);";
+    return OS.str();
+  }
+  inline unsigned getParamIdx() const { return ParamIdx; }
+
+  std::string getParamDeclType() {
+    std::string Result;
+    llvm::raw_string_ostream OS(Result);
+    Type->printType(OS, "dpct::dpct_image_accessor");
     return OS.str();
   }
 
-  std::string getAccessorDecl() {
-    return buildString("auto ", Name, "_acc = ", Name, ".get_access(cgh);");
+  void addParamDeclReplacement() {
+    if (Type) {
+      DpctGlobalInfo::getInstance().addReplacement(
+          std::make_shared<ExtReplacement>(FilePath, Offset, ReplaceTypeLength,
+                                           getParamDeclType(), nullptr));
+    }
   }
 
-  inline unsigned getOffset() { return Offset; }
-  inline const std::string &getName() { return Name; }
+  static inline bool isTextureObject(const Expr *E) {
+    if (E)
+      return DpctGlobalInfo::getUnqualifiedTypeName(E->getType()) ==
+             "cudaTextureObject_t";
+    return false;
+  }
 };
 
 class TemplateArgumentInfo {
@@ -855,8 +980,8 @@ public:
     Str = Ty.T->getBaseName();
   }
   TemplateArgumentInfo(const Expr *Expr)
-      : Kind(String),
-        Str(getStmtSpelling(Expr, DpctGlobalInfo::getContext())) {}
+      : Kind(String), Str(getStmtSpelling(Expr, DpctGlobalInfo::getContext())) {
+  }
 
   bool isType() { return Kind == Type; }
   std::shared_ptr<CtTypeInfo> getAsType() const {
@@ -903,12 +1028,12 @@ public:
     merge(LocalVarMap, VarMap.LocalVarMap, TemplateArgs);
     merge(GlobalVarMap, VarMap.GlobalVarMap, TemplateArgs);
     merge(ExternVarMap, VarMap.ExternVarMap, TemplateArgs);
-    merge(TextureMap, VarMap.TextureMap);
+    dpct::merge(TextureMap, VarMap.TextureMap);
   }
-  std::string getCallArguments(bool HasArgs) const {
+  std::string getExtraCallArguments(bool HasArgs) const {
     return getArgumentsOrParameters<CallArgument>(HasArgs);
   }
-  std::string getDeclParam(bool HasParams) const {
+  std::string getExtraDeclParam(bool HasParams) const {
     return getArgumentsOrParameters<DeclParameter>(HasParams);
   }
   std::string getKernelArguments(bool HasArgs) const {
@@ -937,16 +1062,11 @@ private:
   static void merge(MemVarInfoMap &Master, const MemVarInfoMap &Branch,
                     const std::vector<TemplateArgumentInfo> &TemplateArgs) {
     if (TemplateArgs.empty())
-      return merge(Master, Branch);
+      return dpct::merge(Master, Branch);
     for (auto &VarInfoPair : Branch)
       Master.insert(VarInfoPair)
           .first->second->getType()
           ->setTemplateType(TemplateArgs);
-  }
-  template <class T>
-  static void merge(GlobalMap<T> &Master, const GlobalMap<T> &Branch) {
-    for (auto &VarInfoPair : Branch)
-      Master.insert(VarInfoPair);
   }
 
   enum CallOrDecl {
@@ -1032,52 +1152,6 @@ MemVarMap::getStream<MemVarMap::DeclParameter>(llvm::raw_ostream &OS) const {
   return OS << StreamParamDecl;
 }
 
-class ArgumentsInfo {
-public:
-  ArgumentsInfo() = default;
-
-  inline bool empty() { return ArgInfos.empty(); }
-
-  void buildArgsInfo(const CallExpr *CE) {
-    KernelArgumentAnalysis Analysis;
-    for (auto Arg : CE->arguments()) {
-      KernelArgumentAnalysis Analysis;
-      Analysis.analyze(Arg);
-      ArgInfos.emplace_back(ArgInfo(Analysis, Arg));
-    }
-  }
-
-private:
-  struct ArgInfo {
-    ArgInfo(KernelArgumentAnalysis &Analysis, const Expr* arg) {
-      ArgString = Analysis.getReplacedString();
-      isPointer = Analysis.isPointer;
-      isRedeclareRequired = Analysis.isRedeclareRequired;
-      TypeString = arg->getType().getAsString(
-          DpctGlobalInfo::getContext().getPrintingPolicy());
-    }
-
-    const StringRef getArgString() {
-      return ArgString;
-    }
-
-    std::string getTypeString() {
-      return TypeString;
-    }
-    bool isPointer;
-    bool isRedeclareRequired;
-    std::string ArgString;
-    std::string TypeString;
-  };
-
-  std::vector<ArgInfo> ArgInfos;
-
-public:
-  std::vector<ArgInfo>& getArgInfos() {
-    return ArgInfos;
-  }
-};
-
 // call function expression includes location, name, arguments num, template
 // arguments and all function decls related to this call, also merges memory
 // variable info of all related function decls.
@@ -1087,11 +1161,19 @@ public:
                    const CallExpr *CE)
       : FilePath(FilePathIn), BeginLoc(Offset),
         RParenLoc(DpctGlobalInfo::getSourceManager().getFileOffset(
-            CE->getRParenLoc())) {}
+            CE->getRParenLoc())),
+        TextureObjectList(CE->getNumArgs(),
+                          std::shared_ptr<TextureObjectInfo>()) {
+    buildTextureObjectArgsInfo(CE);
+  }
 
   void buildCallExprInfo(const CallExpr *CE);
 
   inline const MemVarMap &getVarMap() { return VarMap; }
+  inline const std::vector<std::shared_ptr<TextureObjectInfo>> &
+  getTextureObjectList() {
+    return TextureObjectList;
+  }
 
   void emplaceReplacement();
   inline bool hasArgs() { return HasArgs; }
@@ -1101,8 +1183,20 @@ public:
   std::string getTemplateArguments(bool WithScalarWrapped = false);
 
   inline virtual std::string getExtraArguments() {
-    return getVarMap().getCallArguments(hasArgs());
+    return getVarMap().getExtraCallArguments(hasArgs());
   }
+
+  std::shared_ptr<TextureObjectInfo>
+	  addTextureObjectArgInfo(unsigned ArgIdx,
+		  std::shared_ptr<TextureObjectInfo> Info) {
+    auto &Obj = TextureObjectList[ArgIdx];
+    if (!Obj)
+      Obj = Info;
+	return Obj;
+  }
+  virtual std::shared_ptr<TextureObjectInfo>
+  addTextureObjectArg(unsigned ArgIdx, const DeclRefExpr *TexRef,
+                      bool isKernelCall = false);
 
 protected:
   inline unsigned getBegin() { return BeginLoc; }
@@ -1118,6 +1212,15 @@ private:
   }
   void addTemplateType(const TemplateArgumentLoc &TA);
 
+  void buildTextureObjectArgsInfo(const CallExpr *CE) {
+    for (unsigned Idx = 0; Idx < CE->getNumArgs(); ++Idx) {
+      addTextureObjectArg(
+          Idx, dyn_cast<DeclRefExpr>(CE->getArg(Idx)->IgnoreImpCasts()),
+          CE->getStmtClass() == Stmt::CUDAKernelCallExprClass);
+    }
+  }
+  void mergeTextureObjectTypeInfo();
+
 private:
   const std::string FilePath;
   unsigned BeginLoc;
@@ -1127,6 +1230,7 @@ private:
   std::shared_ptr<DeviceFunctionInfo> FuncInfo;
   MemVarMap VarMap;
   bool HasArgs;
+  std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
 };
 
 // device function declaration info includes location, name, and related
@@ -1138,6 +1242,7 @@ public:
       : Offset(Offset), FilePath(FilePathIn), ParamsNum(FD->param_size()),
         ReplaceOffset(0), ReplaceLength(0) {
     buildReplaceLocInfo(FD);
+    buildTextureObjectParamsInfo(FD);
   }
 
   inline static std::shared_ptr<DeviceFunctionInfo>
@@ -1201,26 +1306,43 @@ private:
   void buildReplaceLocInfo(const FunctionDecl *FD);
 
 private:
+  void buildTextureObjectParamsInfo(const FunctionDecl *FD) {
+    TextureObjectList.assign(FD->getNumParams(),
+                             std::shared_ptr<TextureObjectInfo>());
+    for (unsigned Idx = 0; Idx < FD->getNumParams(); ++Idx) {
+      auto Param = FD->getParamDecl(Idx);
+      if (DpctGlobalInfo::getUnqualifiedTypeName(Param->getType()) ==
+          "cudaTextureObject_t")
+        TextureObjectList[Idx] = std::make_shared<TextureObjectInfo>(Param);
+    }
+  }
+
   unsigned Offset;
   const std::string FilePath;
   unsigned ParamsNum;
   unsigned ReplaceOffset;
   unsigned ReplaceLength;
   std::shared_ptr<DeviceFunctionInfo> FuncInfo;
+
+  std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
 };
 
 // device function info includes parameters num, memory variable and call
 // expression in the function.
 class DeviceFunctionInfo {
 public:
-  DeviceFunctionInfo(size_t ParamsNum) : IsBuilt(false), ParamsNum(ParamsNum) {}
+  DeviceFunctionInfo(size_t ParamsNum)
+      : IsBuilt(false), ParamsNum(ParamsNum),
+        TextureObjectTypeList(ParamsNum, std::shared_ptr<TextureTypeInfo>()) {}
   DeviceFunctionInfo(const FunctionDecl *Func)
       : DeviceFunctionInfo(Func->param_size()) {}
 
-  inline void addCallee(const CallExpr *CE) {
+  inline std::shared_ptr<CallFunctionExpr> addCallee(const CallExpr *CE) {
     auto CallLocInfo = DpctGlobalInfo::getLocInfo(CE);
-    insertObject(CallExprMap, CallLocInfo.second, CallLocInfo.first, CE)
-        ->buildCallExprInfo(CE);
+    auto C =
+        insertObject(CallExprMap, CallLocInfo.second, CallLocInfo.first, CE);
+    C->buildCallExprInfo(CE);
+    return C;
   }
   inline void addVar(std::shared_ptr<MemVarInfo> Var) { VarMap.addVar(Var); }
   inline void setItem() { VarMap.setItem(); }
@@ -1229,6 +1351,11 @@ public:
     VarMap.addTexture(Tex);
   }
   inline const MemVarMap &getVarMap() { return VarMap; }
+  inline std::shared_ptr<TextureTypeInfo> getTextureTypeInfo(unsigned Idx) {
+    if (Idx < TextureObjectTypeList.size())
+      return TextureObjectTypeList[Idx];
+    return std::shared_ptr<TextureTypeInfo>();
+  }
 
   void buildInfo();
   inline bool hasParams() { return ParamsNum != 0; }
@@ -1236,28 +1363,57 @@ public:
   inline bool isBuilt() { return IsBuilt; }
   inline void setBuilt() { IsBuilt = true; }
 
-  inline const std::string &getParameters() {
-    if (!isBuilt())
-      buildInfo();
-    return Params;
+  inline const std::string &getExtraParameters() {
+    buildInfo();
+    return ExtraParams;
   }
 
   void merge(std::shared_ptr<DeviceFunctionInfo> Other);
 
 private:
-  void mergeCallMap(const GlobalMap<CallFunctionExpr> &Other);
+  void mergeCalledTexObj(
+      const std::vector<std::shared_ptr<TextureObjectInfo>> &TexObjList);
+
+  void mergeTextureTypeList(
+      const std::vector<std::shared_ptr<TextureTypeInfo>> &Other);
 
   bool IsBuilt;
   size_t ParamsNum;
-  std::string Params;
+  std::string ExtraParams;
 
   GlobalMap<CallFunctionExpr> CallExprMap;
   MemVarMap VarMap;
+
+  std::vector<std::shared_ptr<TextureTypeInfo>> TextureObjectTypeList;
 };
 
 // kernel call info is specific CallFunctionExpr, which include info of kernel
 // call.
 class KernelCallExpr : public CallFunctionExpr {
+	
+  struct ArgInfo {
+    ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg) {
+      Analysis.analyze(Arg);
+      ArgString = Analysis.getReplacedString();
+      isPointer = Analysis.isPointer;
+      isRedeclareRequired = Analysis.isRedeclareRequired;
+      TypeString = DpctGlobalInfo::getTypeName(Arg->getType());
+    }
+    ArgInfo(std::shared_ptr<TextureObjectInfo> Obj) {
+      ArgString = Obj->getName() + "_acc";
+      isPointer = false;
+      isRedeclareRequired = false;
+      TypeString = "";
+    }
+
+    inline const std::string &getArgString() const { return ArgString; }
+    inline const std::string &getTypeString() const { return TypeString; }
+
+    bool isPointer;
+    bool isRedeclareRequired;
+    std::string ArgString;
+    std::string TypeString;
+  };
 
   class FormatStmtBlock {
     const std::string &NL;
@@ -1283,7 +1439,7 @@ public:
                  const CUDAKernelCallExpr *KernelCall)
       : CallFunctionExpr(Offset, FilePath, KernelCall), IsSync(false) {
     buildCallExprInfo(KernelCall);
-    ArgsInfo.buildArgsInfo(KernelCall);
+    buildArgsInfo(KernelCall);
     buildKernelInfo(KernelCall);
   }
 
@@ -1293,9 +1449,7 @@ public:
     return getVarMap().getKernelArguments(hasArgs());
   }
 
-  ArgumentsInfo& getArgsInfo() {
-    return ArgsInfo;
-  }
+  inline const std::vector<ArgInfo> &getArgsInfo() { return ArgsInfo; }
 
   std::string getReplacement();
 
@@ -1306,6 +1460,17 @@ public:
   inline bool isSync() { return IsSync; }
 
 private:
+  void buildArgsInfo(const CallExpr *CE) {
+    KernelArgumentAnalysis Analysis;
+    auto &TexList = getTextureObjectList();
+    for (auto Arg : CE->arguments()) {
+      if (auto Obj = TexList[ArgsInfo.size()]) {
+        ArgsInfo.emplace_back(Obj);
+      } else {
+        ArgsInfo.emplace_back(Analysis, Arg);
+      }
+    }
+  }
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
   void buildExecutionConfig(const CUDAKernelCallExpr *KernelCall);
   std::string analysisExcutionConfig(const Expr *Config);
@@ -1340,7 +1505,7 @@ private:
 
   std::string Event;
   bool IsSync;
-  ArgumentsInfo ArgsInfo;
+  std::vector<ArgInfo> ArgsInfo;
 };
 
 class CudaMallocInfo {

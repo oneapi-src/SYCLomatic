@@ -116,6 +116,11 @@ const MapNames::MapTy MapNames::TypeNamesMap{
     {"cusolverEigMode_t", "mkl::job"},
     {"cusolverStatus_t", "int"},
     {"cudaChannelFormatDesc", "dpct::dpct_image_channel"},
+    {"cudaArray", "dpct::dpct_image_matrix"},
+    {"cudaArray_t", "dpct::dpct_image_matrix_p"},
+    {"cudaTextureDesc", "dpct::dpct_image_info"},
+    {"cudaResourceDesc", "dpct::dpct_image_data"},
+    {"cudaTextureObject_t", "dpct::dpct_image_base_p"},
     // ...
 };
 
@@ -440,7 +445,7 @@ const std::map<std::string, MapNames::BLASFuncReplInfo>
         // ...
     };
 
-    const std::map<std::string, MapNames::BLASFuncReplInfo>
+const std::map<std::string, MapNames::BLASFuncReplInfo>
     MapNames::BLASFuncWrapperReplInfoMap{
         /*Extensions*/
         {"cublasSgetrfBatched",
@@ -2130,7 +2135,8 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              std::vector<int>{1, 5}, std::vector<int>{1, 4},
              std::vector<bool>{false, true},
              std::vector<std::string>{"mkl::uplo", "int64_t"},
-             std::vector<std::string>{"uplo_ct_mkl_upper_lower", "buffer_ct_mkl_ipiv"},
+             std::vector<std::string>{"uplo_ct_mkl_upper_lower",
+                                      "buffer_ct_mkl_ipiv"},
              "mkl::ssytrf_get_lwork")},
         {"cusolverDnDsytrf_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndMissed(
@@ -2138,7 +2144,8 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              std::vector<int>{1, 5}, std::vector<int>{1, 4},
              std::vector<bool>{false, true},
              std::vector<std::string>{"mkl::uplo", "int64_t"},
-             std::vector<std::string>{"uplo_ct_mkl_upper_lower", "buffer_ct_mkl_ipiv"},
+             std::vector<std::string>{"uplo_ct_mkl_upper_lower",
+                                      "buffer_ct_mkl_ipiv"},
              "mkl::dsytrf_get_lwork")},
         {"cusolverDnCsytrf_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndMissed(
@@ -2147,7 +2154,8 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              std::vector<int>{1, 5}, std::vector<int>{1, 4},
              std::vector<bool>{false, true},
              std::vector<std::string>{"mkl::uplo", "int64_t"},
-             std::vector<std::string>{"uplo_ct_mkl_upper_lower", "buffer_ct_mkl_ipiv"},
+             std::vector<std::string>{"uplo_ct_mkl_upper_lower",
+                                      "buffer_ct_mkl_ipiv"},
              "mkl::csytrf_get_lwork")},
         {"cusolverDnZsytrf_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndMissed(
@@ -2156,7 +2164,8 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              std::vector<int>{1, 5}, std::vector<int>{1, 4},
              std::vector<bool>{false, true},
              std::vector<std::string>{"mkl::uplo", "int64_t"},
-             std::vector<std::string>{"uplo_ct_mkl_upper_lower", "buffer_ct_mkl_ipiv"},
+             std::vector<std::string>{"uplo_ct_mkl_upper_lower",
+                                      "buffer_ct_mkl_ipiv"},
              "mkl::zsytrf_get_lwork")},
         {"cusolverDnSsytrf",
          MapNames::SOLVERFuncReplInfo::migrateBuffer(
@@ -2188,9 +2197,9 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              std::vector<bool>{true, false, true, true, true, true},
              std::vector<std::string>{"float", "int64_t", "float", "float",
                                       "float", "float"},
-             std::vector<std::string>{"buffer_ct_mkl_a", "int64_t_ct_mkl_lda",
-                                      "buffer_ct_mkl_d", "buffer_ct_mkl_e",
-                                      "buffer_ct_mkl_tauq", "buffer_ct_mkl_taup"},
+             std::vector<std::string>{
+                 "buffer_ct_mkl_a", "int64_t_ct_mkl_lda", "buffer_ct_mkl_d",
+                 "buffer_ct_mkl_e", "buffer_ct_mkl_tauq", "buffer_ct_mkl_taup"},
              "mkl::sgebrd_get_lwork")},
         {"cusolverDnDgebrd_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndMissed(
@@ -2200,9 +2209,9 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              std::vector<bool>{true, false, true, true, true, true},
              std::vector<std::string>{"double", "int64_t", "double", "double",
                                       "double", "double"},
-             std::vector<std::string>{"buffer_ct_mkl_a", "int64_t_ct_mkl_lda",
-                                      "buffer_ct_mkl_d", "buffer_ct_mkl_e",
-                                      "buffer_ct_mkl_tauq", "buffer_ct_mkl_taup"},
+             std::vector<std::string>{
+                 "buffer_ct_mkl_a", "int64_t_ct_mkl_lda", "buffer_ct_mkl_d",
+                 "buffer_ct_mkl_e", "buffer_ct_mkl_tauq", "buffer_ct_mkl_taup"},
              "mkl::dgebrd_get_lwork")},
         {"cusolverDnCgebrd_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndMissed(
@@ -2213,9 +2222,9 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              std::vector<std::string>{"std::complex<float>", "int64_t", "float",
                                       "float", "std::complex<float>",
                                       "std::complex<float>"},
-             std::vector<std::string>{"buffer_ct_mkl_a", "int64_t_ct_mkl_lda",
-                                      "buffer_ct_mkl_d", "buffer_ct_mkl_e",
-                                      "buffer_ct_mkl_tauq", "buffer_ct_mkl_taup"},
+             std::vector<std::string>{
+                 "buffer_ct_mkl_a", "int64_t_ct_mkl_lda", "buffer_ct_mkl_d",
+                 "buffer_ct_mkl_e", "buffer_ct_mkl_tauq", "buffer_ct_mkl_taup"},
              "mkl::cgebrd_get_lwork")},
         {"cusolverDnZgebrd_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndMissed(
@@ -2226,9 +2235,9 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              std::vector<std::string>{
                  "std::complex<double>", "int64_t", "double", "double",
                  "std::complex<double>", "std::complex<double>"},
-             std::vector<std::string>{"buffer_ct_mkl_a", "int64_t_ct_mkl_lda",
-                                      "buffer_ct_mkl_d", "buffer_ct_mkl_e",
-                                      "buffer_ct_mkl_tauq", "buffer_ct_mkl_taup"},
+             std::vector<std::string>{
+                 "buffer_ct_mkl_a", "int64_t_ct_mkl_lda", "buffer_ct_mkl_d",
+                 "buffer_ct_mkl_e", "buffer_ct_mkl_tauq", "buffer_ct_mkl_taup"},
              "mkl::zgebrd_get_lwork")},
         {"cusolverDnSgebrd",
          MapNames::SOLVERFuncReplInfo::migrateBuffer(
@@ -2466,10 +2475,11 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              std::vector<std::string>{"mkl::job", "mkl::job", "float",
                                       "int64_t", "float", "float", "int64_t",
                                       "float", "int64_t"},
-             std::vector<std::string>{
-                 "job_ct_mkl_jobu", "job_ct_mkl_jobvt", "buffer_ct_mkl_a", "int64_t_ct_mkl_lda",
-                 "buffer_ct_mkl_s", "buffer_ct_mkl_u", "int64_t_ct_mkl_ldu", "buffer_ct_mkl_vt",
-                 "int64_t_ct_mkl_ldvt"},
+             std::vector<std::string>{"job_ct_mkl_jobu", "job_ct_mkl_jobvt",
+                                      "buffer_ct_mkl_a", "int64_t_ct_mkl_lda",
+                                      "buffer_ct_mkl_s", "buffer_ct_mkl_u",
+                                      "int64_t_ct_mkl_ldu", "buffer_ct_mkl_vt",
+                                      "int64_t_ct_mkl_ldvt"},
              "mkl::sgesvd_get_lwork")},
         {"cusolverDnDgesvd_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndMissed(
@@ -2481,10 +2491,11 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              std::vector<std::string>{"mkl::job", "mkl::job", "double",
                                       "int64_t", "double", "double", "int64_t",
                                       "double", "int64_t"},
-             std::vector<std::string>{
-                 "job_ct_mkl_jobu", "job_ct_mkl_jobvt", "buffer_ct_mkl_a", "int64_t_ct_mkl_lda",
-                 "buffer_ct_mkl_s", "buffer_ct_mkl_u", "int64_t_ct_mkl_ldu", "buffer_ct_mkl_vt",
-                 "int64_t_ct_mkl_ldvt"},
+             std::vector<std::string>{"job_ct_mkl_jobu", "job_ct_mkl_jobvt",
+                                      "buffer_ct_mkl_a", "int64_t_ct_mkl_lda",
+                                      "buffer_ct_mkl_s", "buffer_ct_mkl_u",
+                                      "int64_t_ct_mkl_ldu", "buffer_ct_mkl_vt",
+                                      "int64_t_ct_mkl_ldvt"},
              "mkl::dgesvd_get_lwork")},
         {"cusolverDnCgesvd_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndMissed(
@@ -2497,10 +2508,11 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
                                       "std::complex<float>", "int64_t", "float",
                                       "std::complex<float>", "int64_t",
                                       "std::complex<float>", "int64_t"},
-             std::vector<std::string>{
-                 "job_ct_mkl_jobu", "job_ct_mkl_jobvt", "buffer_ct_mkl_a", "int64_t_ct_mkl_lda",
-                 "buffer_ct_mkl_s", "buffer_ct_mkl_u", "int64_t_ct_mkl_ldu", "buffer_ct_mkl_vt",
-                 "int64_t_ct_mkl_ldvt"},
+             std::vector<std::string>{"job_ct_mkl_jobu", "job_ct_mkl_jobvt",
+                                      "buffer_ct_mkl_a", "int64_t_ct_mkl_lda",
+                                      "buffer_ct_mkl_s", "buffer_ct_mkl_u",
+                                      "int64_t_ct_mkl_ldu", "buffer_ct_mkl_vt",
+                                      "int64_t_ct_mkl_ldvt"},
              "mkl::cgesvd_get_lwork")},
         {"cusolverDnZgesvd_bufferSize",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndMissed(
@@ -2513,29 +2525,26 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
                  "mkl::job", "mkl::job", "std::complex<double>", "int64_t",
                  "double", "std::complex<double>", "int64_t",
                  "std::complex<double>", "int64_t"},
-             std::vector<std::string>{
-                 "job_ct_mkl_jobu", "job_ct_mkl_jobvt", "buffer_ct_mkl_a", "int64_t_ct_mkl_lda",
-                 "buffer_ct_mkl_s", "buffer_ct_mkl_u", "int64_t_ct_mkl_ldu", "buffer_ct_mkl_vt",
-                 "int64_t_ct_mkl_ldvt"},
+             std::vector<std::string>{"job_ct_mkl_jobu", "job_ct_mkl_jobvt",
+                                      "buffer_ct_mkl_a", "int64_t_ct_mkl_lda",
+                                      "buffer_ct_mkl_s", "buffer_ct_mkl_u",
+                                      "int64_t_ct_mkl_ldu", "buffer_ct_mkl_vt",
+                                      "int64_t_ct_mkl_ldvt"},
              "mkl::zgesvd_get_lwork")},
         {"cusolverDnSgesvd",
          MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndCast(
              std::vector<int>{5, 7, 8, 10, 12, 15},
              std::vector<std::string>{"float", "float", "float", "float",
-                                      "float",  "int"},
-             std::vector<int>{14},
-             std::vector<int>{1, 2},
-             std::vector<std::string>{"mkl::job", "mkl::job"},
-             "mkl::sgesvd")},
+                                      "float", "int"},
+             std::vector<int>{14}, std::vector<int>{1, 2},
+             std::vector<std::string>{"mkl::job", "mkl::job"}, "mkl::sgesvd")},
         {"cusolverDnDgesvd",
          MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndCast(
              std::vector<int>{5, 7, 8, 10, 12, 15},
              std::vector<std::string>{"double", "double", "double", "double",
                                       "double", "int"},
-             std::vector<int>{14},
-             std::vector<int>{1, 2},
-             std::vector<std::string>{"mkl::job", "mkl::job"},
-             "mkl::dgesvd")},
+             std::vector<int>{14}, std::vector<int>{1, 2},
+             std::vector<std::string>{"mkl::job", "mkl::job"}, "mkl::dgesvd")},
         {"cusolverDnCgesvd",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndCast(
              std::vector<int>{5, 7, 8, 10, 12, 14, 15},
@@ -2543,17 +2552,16 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
                  "std::complex<float>", "float", "std::complex<float>",
                  "std::complex<float>", "std::complex<float>", "float", "int"},
              std::vector<int>{1, 2},
-             std::vector<std::string>{"mkl::job", "mkl::job"},
-             "mkl::cgesvd")},
+             std::vector<std::string>{"mkl::job", "mkl::job"}, "mkl::cgesvd")},
         {"cusolverDnZgesvd",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndCast(
              std::vector<int>{5, 7, 8, 10, 12, 14, 15},
-             std::vector<std::string>{
-                 "std::complex<double>", "double", "std::complex<double>",
-                 "std::complex<double>", "std::complex<double>", "double", "int"},
+             std::vector<std::string>{"std::complex<double>", "double",
+                                      "std::complex<double>",
+                                      "std::complex<double>",
+                                      "std::complex<double>", "double", "int"},
              std::vector<int>{1, 2},
-             std::vector<std::string>{"mkl::job", "mkl::job"},
-             "mkl::zgesvd")},
+             std::vector<std::string>{"mkl::job", "mkl::job"}, "mkl::zgesvd")},
     };
 
 // Atomic function names mapping
@@ -2673,6 +2681,9 @@ const MapNames::MapTy EnumConstantRule::EnumNamesMap{
     {"cudaChannelFormatKindSigned", "dpct::channel_signed"},
     {"cudaChannelFormatKindUnsigned", "dpct::channel_unsigned"},
     {"cudaChannelFormatKindFloat", "dpct::channel_float"},
+    // enum cudaResourceType
+    {"cudaResourceTypeArray", "dpct::data_matrix"},
+    {"cudaResourceTypeLinear", "dpct::data_linear"}
     // ...
 };
 
@@ -2685,11 +2696,11 @@ std::map<std::string, bool> TranslationStatistics::TranslationTable{
 #define ENTRY(APINAME, VALUE, TARGET, COMMENT) {#APINAME, VALUE},
 #include "APINames.inc"
 #include "APINames_cuBLAS.inc"
-#include "APINames_cuSOLVER.inc"
 #include "APINames_cuFFT.inc"
 #include "APINames_cuGRAPH.inc"
 #include "APINames_cuPARSE.inc"
 #include "APINames_cuRAND.inc"
+#include "APINames_cuSOLVER.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
 #undef ENTRY
@@ -2715,6 +2726,10 @@ std::vector<std::string> TranslationStatistics::GetAllAPINames(void) {
 
   return AllAPINames;
 }
+
+MapNames::MapTy TextureRule::LinearResourceTypeNames {
+  {"devPtr", "data"}, {"sizeInBytes", "size"}, { "desc", "chn" }
+};
 
 const std::map<std::string, std::string> WarpFunctionRewriter::WarpFunctionsMap{
 #define ENTRY_WARP(SOURCEAPINAME, TARGETAPINAME) {SOURCEAPINAME, TARGETAPINAME},

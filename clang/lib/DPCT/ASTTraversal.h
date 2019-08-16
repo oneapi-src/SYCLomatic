@@ -916,6 +916,11 @@ class TextureRule : public NamedTranslationRule<TextureRule> {
   const BinaryOperator *getAssignedBO(const Expr *E, ASTContext &Context);
   const BinaryOperator *getParentAsAssignedBO(const Expr *E,
                                               ASTContext &Context);
+  void replaceResourceDataExpr(const MemberExpr *ME, const ASTContext &Context);
+  inline const MemberExpr *getParentMemberExpr(const Stmt *S) {
+    return DpctGlobalInfo::findAncestor<MemberExpr>(S);
+  }
+  static MapNames::MapTy LinearResourceTypeNames;
 
 public:
   TextureRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }

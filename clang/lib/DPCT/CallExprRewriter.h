@@ -27,6 +27,8 @@ class MathBinaryOperatorRewriter;
 class MathUnsupportedRewriter;
 class WarpFunctionRewriter;
 class ReorderFunctionRewriter;
+class TexFunctionRewriter;
+class UnsupportFunctionRewriter;
 
 /*
 Factory usage example:
@@ -83,6 +85,10 @@ using WarpFunctionRewriterFactory =
 using ReorderFunctionRewriterFactory = CallExprRewriterFactory<
     ReorderFunctionRewriter, std::string,
     std::vector<unsigned> /*Rewrite arguments index list in-order*/>;
+using TexFunctionRewriterFactory =
+    CallExprRewriterFactory<TexFunctionRewriter, std::string>;
+using UnsupportFunctionRewriterFactory =
+    CallExprRewriterFactory<UnsupportFunctionRewriter, Diagnostics>;
 
 class CallExprRewriter {
 protected:
@@ -278,6 +284,35 @@ public:
   virtual Optional<std::string> rewrite() override;
 
   friend ReorderFunctionRewriterFactory;
+};
+
+class TexFunctionRewriter : public FuncCallExprRewriter {
+  void setTextureInfo();
+
+public:
+  TexFunctionRewriter(const CallExpr *Call, StringRef SourceCalleeName,
+                      StringRef TargetCalleeName)
+      : FuncCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {
+    setTextureInfo();
+  }
+
+  friend TexFunctionRewriterFactory;
+};
+
+class UnsupportFunctionRewriter : public CallExprRewriter {
+  Diagnostics ID;
+
+public:
+  UnsupportFunctionRewriter(const CallExpr *CE, StringRef CalleeName,
+                            Diagnostics MsgID)
+      : CallExprRewriter(CE, CalleeName), ID(MsgID) {}
+
+  Optional<std::string> rewrite() override {
+    report(ID, getSourceCalleeName());
+    return Optional<std::string>();
+  }
+
+  friend UnsupportFunctionRewriterFactory;
 };
 
 } // namespace dpct

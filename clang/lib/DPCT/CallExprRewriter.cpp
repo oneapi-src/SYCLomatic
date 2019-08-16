@@ -10,6 +10,7 @@
 //===-----------------------------------------------------------------===//
 
 #include "CallExprRewriter.h"
+#include "AnalysisInfo.h"
 #include "MapNames.h"
 
 namespace clang {
@@ -325,7 +326,7 @@ Optional<std::string> WarpFunctionRewriter::rewrite() {
       reportNoMaskWarning();
       RewriteArgList.emplace_back(getMigratedArg(0));
     } else if (SourceCalleeName == "__all_sync" ||
-             SourceCalleeName == "__any_sync") {
+               SourceCalleeName == "__any_sync") {
       reportNoMaskWarning();
       RewriteArgList.emplace_back(getMigratedArg(1));
     } else if (SourceCalleeName.endswith("_sync")) {
@@ -350,6 +351,36 @@ Optional<std::string> ReorderFunctionRewriter::rewrite() {
   return buildRewriteString();
 }
 
+void TexFunctionRewriter::setTextureInfo() {
+  const Expr *Obj = nullptr;
+  std::string DataTy;
+  int Dimension = 0, Idx = 0;
+  auto &Global = DpctGlobalInfo::getInstance();
+  if (Call->getArg(0)->getType()->isPointerType()) {
+    DataTy = Global.getUnqualifiedTypeName(
+        Call->getArg(0)->getType()->getPointeeType());
+    Obj = Call->getArg(1);
+    Dimension = Call->getNumArgs() - 2;
+    Idx = 1;
+  } else {
+    DataTy =
+        Global.getUnqualifiedTypeName(Call->getType().getUnqualifiedType());
+    Obj = Call->getArg(0);
+    Dimension = Call->getNumArgs() - 1;
+    Idx = 0;
+  }
+
+  if (auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(Call)) {
+    if (auto ObjInfo =
+            DeviceFunctionDecl::LinkRedecls(FD)
+                ->addCallee(Call)
+                ->addTextureObjectArg(
+                    Idx, dyn_cast<DeclRefExpr>(Obj->IgnoreImpCasts()))) {
+      ObjInfo->setType(std::move(DataTy), Dimension);
+    }
+  }
+}
+
 #define REWRITER_FACTORY_ENTRY(FuncName, RewriterTy, ...)                      \
   {FuncName, std::make_shared<RewriterTy>(FuncName, __VA_ARGS__)},
 #define FUNC_NAME_FACTORY_ENTRY(FuncName, RewriterName)                        \
@@ -369,33 +400,13 @@ Optional<std::string> ReorderFunctionRewriter::rewrite() {
 #define REORDER_FUNC_FACTORY_ENTRY(FuncName, RewriterName, ...)                \
   REWRITER_FACTORY_ENTRY(FuncName, ReorderFunctionRewriterFactory,             \
                          RewriterName, std::vector<unsigned>{__VA_ARGS__})
+#define TEX_FUNCTION_FACTORY_ENTRY(FuncName, RewriterName)                     \
+  REWRITER_FACTORY_ENTRY(FuncName, TexFunctionRewriterFactory, RewriterName)
+#define UNSUPPORTED_FACTORY_ENTRY(FuncName, MsgID)                             \
+  REWRITER_FACTORY_ENTRY(FuncName, UnsupportFunctionRewriterFactory, MsgID)
 const std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>
     CallExprRewriterFactoryBase::RewriterMap = {
-        FUNC_NAME_FACTORY_ENTRY("cudaCreateChannelDesc",
-                                "dpct::create_image_channel")
-        FUNC_NAME_FACTORY_ENTRY("cudaUnbindTexture",
-                                "dpct::dpct_detach_image")
-        FUNC_NAME_FACTORY_ENTRY("tex1D", "dpct::dpct_read_image")
-        FUNC_NAME_FACTORY_ENTRY("tex2D", "dpct::dpct_read_image")
-        FUNC_NAME_FACTORY_ENTRY("tex3D", "dpct::dpct_read_image")
-        FUNC_NAME_FACTORY_ENTRY("tex1Dfetch", "dpct::dpct_read_image")
-        FUNC_NAME_FACTORY_ENTRY("cudaFreeArray", "dpct::dpct_free")
-        REORDER_FUNC_FACTORY_ENTRY(
-            "cudaBindTexture", "dpct::dpct_attach_image",
-            1 /*ref to tex object*/, 2 /*source pointer*/,
-            3 /*ref to channel desc*/, 4 /*size in bytes*/)
-        REORDER_FUNC_FACTORY_ENTRY(
-            "cudaMallocArray", "dpct::dpct_malloc_image",
-            0 /*pointer to array*/, 1 /*pointer to channel desc*/, 2 /*width*/,
-            3 /*height*/)
-        REORDER_FUNC_FACTORY_ENTRY(
-            "cudaMemcpyToArray", "dpct::dpct_memcpy_to_image",
-            0 /*ref of array*/, 1 /*x offset*/, 2 /*y offset*/,
-            3 /*src pointer*/, 4 /*bytes to copy*/)
-        REORDER_FUNC_FACTORY_ENTRY(
-            "cudaBindTextureToArray", "dpct::dpct_attach_image",
-            0 /*ref of texture object*/, 1 /*ref of array*/)
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   MATH_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME)                           \
@@ -409,10 +420,24 @@ const std::unordered_map<std::string,
 #undef ENTRY_OPERATOR
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
+
 #define ENTRY_WARP(SOURCEAPINAME, TARGETAPINAME)                               \
   WARP_FUNC_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #include "APINamesWarp.inc"
 #undef ENTRY_WARP
+
+#define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
+  FUNC_NAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_TEXTURE(SOURCEAPINAME, TARGETAPINAME)                            \
+  TEX_FUNCTION_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_UNSUPPORTED(SOURCEAPINAME, MSGID)                                \
+  UNSUPPORTED_FACTORY_ENTRY(SOURCEAPINAME, MSGID)
+#define ENTRY_REORDER(SOURCEAPINAME, TARGETAPINAME, ...)                       \
+  REORDER_FUNC_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME, __VA_ARGS__)
+#include "APINamesTexture.inc"
+#undef ENTRY_RENAMED
+#undef ENTRY_TEXTURE
+#undef UNSUPPORTED_FACTORY_ENTRY
 };
 } // namespace dpct
 } // namespace clang

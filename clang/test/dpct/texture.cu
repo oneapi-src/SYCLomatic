@@ -1,4 +1,4 @@
-// RUN: dpct --usm-level=none -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct --usm-level=none -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path" -std=c++14
 // RUN: FileCheck --input-file %T/texture.dp.cpp --match-full-lines %s
 
 // CHECK: dpct::dpct_image<cl::sycl::float4, 2> tex42;
@@ -29,15 +29,15 @@ __global__ void kernel() {
 int main() {
 
   // CHECK: cl::sycl::float4 *d_data42;
-  // CHECK-NEXT: dpct::dpct_image_data a42;
+  // CHECK-NEXT: dpct::dpct_image_matrix_p a42;
   // CHECK-NEXT: dpct::dpct_malloc(&d_data42, sizeof(cl::sycl::float4) * 32 * 32);
   // CHECK-NEXT: dpct::dpct_image_channel desc42 = dpct::create_image_channel(32, 32, 32, 32, dpct::channel_float);
-  // CHECK-NEXT: dpct::dpct_malloc_image(&a42, &desc42, 32, 32);
-  // CHECK-NEXT: dpct::dpct_memcpy_to_image(a42, 0, 0, d_data42, 32 * 32 * sizeof(cl::sycl::float4));
-  // CHECK-NEXT: tex42.set_addr_mode( cl::sycl::addressing_mode::clamp_to_edge);
-  // CHECK-NEXT: tex42.set_addr_mode( cl::sycl::addressing_mode::clamp_to_edge);
-  // CHECK-NEXT: tex42.set_addr_mode( cl::sycl::addressing_mode::clamp_to_edge);
-  // CHECK-NEXT: tex42.set_filter_mode( cl::sycl::filtering_mode::nearest);
+  // CHECK-NEXT: dpct::dpct_malloc_matrix(&a42, &desc42, 32, 32);
+  // CHECK-NEXT: dpct::dpct_memcpy_to_matrix(a42, 0, 0, d_data42, 32 * 32 * sizeof(cl::sycl::float4));
+  // CHECK-NEXT: tex42.addr_mode() = cl::sycl::addressing_mode::clamp_to_edge;
+  // CHECK-NEXT: tex42.addr_mode() = cl::sycl::addressing_mode::clamp_to_edge;
+  // CHECK-NEXT: tex42.addr_mode() = cl::sycl::addressing_mode::clamp_to_edge;
+  // CHECK-NEXT: tex42.filter_mode() = cl::sycl::filtering_mode::nearest;
   // CHECK-NEXT: dpct::dpct_attach_image(tex42, a42);
   float4 *d_data42;
   cudaArray_t a42;
@@ -54,10 +54,10 @@ int main() {
   // CHECK: cl::sycl::uint2 *d_data21;
   // CHECK-NEXT: dpct::dpct_malloc(&d_data21, sizeof(cl::sycl::uint2) * 32);
   // CHECK-NEXT: dpct::dpct_image_channel desc21 = dpct::create_image_channel(32, 32, 0, 0, dpct::channel_unsigned);
-  // CHECK-NEXT: tex21.set_addr_mode( cl::sycl::addressing_mode::clamp_to_edge);
-  // CHECK-NEXT: tex21.set_addr_mode( cl::sycl::addressing_mode::clamp_to_edge);
-  // CHECK-NEXT: tex21.set_addr_mode( cl::sycl::addressing_mode::clamp_to_edge);
-  // CHECK-NEXT: tex21.set_filter_mode( cl::sycl::filtering_mode::linear);
+  // CHECK-NEXT: tex21.addr_mode() = cl::sycl::addressing_mode::clamp_to_edge;
+  // CHECK-NEXT: tex21.addr_mode() = cl::sycl::addressing_mode::clamp_to_edge;
+  // CHECK-NEXT: tex21.addr_mode() = cl::sycl::addressing_mode::clamp_to_edge;
+  // CHECK-NEXT: tex21.filter_mode() = cl::sycl::filtering_mode::linear;
   // CHECK-NEXT: dpct::dpct_attach_image(tex21, d_data21, desc21, 32 * sizeof(cl::sycl::uint2));
   uint2 *d_data21;
   cudaMalloc(&d_data21, sizeof(uint2) * 32);

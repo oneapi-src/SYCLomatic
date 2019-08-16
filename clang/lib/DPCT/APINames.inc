@@ -293,11 +293,11 @@ ENTRY(cudaBindSurfaceToArray, false, P0, "comment")
 ENTRY(cudaGetSurfaceReference, false, P4, "comment")
 
 // low level texture object management functions of runtime API
-ENTRY(cudaCreateTextureObject, false, P0, "comment")
-ENTRY(cudaDestroyTextureObject, false, P0, "comment")
-ENTRY(cudaGetTextureObjectResourceDesc, false, P0, "comment")
-ENTRY(cudaGetTextureObjectResourceViewDesc, false, P4, "comment")
-ENTRY(cudaGetTextureObjectTextureDesc, false, P4, "comment")
+ENTRY(cudaCreateTextureObject, true, P0, "Successful")
+ENTRY(cudaDestroyTextureObject, true, P0, "Successful")
+ENTRY(cudaGetTextureObjectResourceDesc, true, P0, "Successful")
+ENTRY(cudaGetTextureObjectResourceViewDesc, true, P4, "Successful: DPCT1004")
+ENTRY(cudaGetTextureObjectTextureDesc, true, P4, "Successful")
 
 // low level texture object management functions of runtime API
 ENTRY(cudaCreateSurfaceObject, false, P0, "comment")

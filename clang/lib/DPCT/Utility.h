@@ -40,6 +40,7 @@ class ValueDecl;
 class DeclRefExpr;
 class Expr;
 class MemberExpr;
+class FunctionDecl;
 } // namespace clang
 
 // classes for keeping track of Stmt->String mappings

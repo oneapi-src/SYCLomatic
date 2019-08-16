@@ -5016,25 +5016,41 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
                                 .bind("texFunc")),
                 // Match the __globla__/__device__ functions inside which
                 // texture object is referenced
-                hasAncestor(memberExpr().bind("texMember")),
-                // Match the MemberExpr if member of texture is used
                 anything()) // Make this matcher available whether it has
                             // ancestors as before
           )
           .bind("tex"),
       this);
-  MF.addMatcher(
-      varDecl(hasType(pointsTo(namedDecl(hasName("cudaArray"))))).bind("array"),
-      this);
-  MF.addMatcher(varDecl(hasType(recordDecl(hasName("cudaChannelFormatDesc"))))
-                    .bind("chnDecl"),
+  MF.addMatcher(varDecl(hasType(typedefDecl(hasName("cudaTextureObject_t"))))
+                    .bind("texObj"),
                 this);
+  MF.addMatcher(memberExpr(hasObjectExpression(hasType(namedDecl(
+                               hasAnyName("cudaTextureDesc", "cudaResourceDesc",
+                                          "textureReference")))))
+                    .bind("texMember"),
+                this);
+  MF.addMatcher(varDecl(hasType(namedDecl(hasAnyName(
+                            "cudaChannelFormatDesc", "cudaTextureDesc",
+                            "cudaResourceDesc", "cudaArray", "cudaArray_t"))))
+                    .bind("texType"),
+                this);
+
+  MF.addMatcher(
+      declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasAnyName(
+                      "cudaTextureAddressMode", "cudaTextureFilterMode",
+                      "cudaChannelFormatKind", "cudaResourceType"))))))
+          .bind("texEnum"),
+      this);
   MF.addMatcher(
       callExpr(
           callee(functionDecl(hasAnyName(
               "cudaCreateChannelDesc", "cudaUnbindTexture", "cudaFreeArray",
               "cudaMallocArray", "cudaMemcpyToArray", "cudaBindTextureToArray",
-              "cudaBindTexture", "tex1D", "tex2D", "tex3D", "tex1Dfetch"))))
+              "cudaBindTexture", "tex1D", "tex2D", "tex3D", "tex1Dfetch",
+              "cudaCreateTextureObject", "cudaDestroyTextureObject",
+              "cudaGetTextureObjectResourceDesc",
+              "cudaGetTextureObjectTextureDesc",
+              "cudaGetTextureObjectResourceViewDesc"))))
           .bind("call"),
       this);
 }
@@ -5042,54 +5058,92 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
 void TextureRule::run(const MatchFinder::MatchResult &Result) {
   if (auto VD = getAssistNodeAsType<VarDecl>(Result, "texDecl")) {
     auto Tex = DpctGlobalInfo::getInstance().insertTextureInfo(VD);
-    emplaceTransformation(new ReplaceVarDecl(VD, Tex->getDeclReplacement()));
+    emplaceTransformation(new ReplaceVarDecl(VD, Tex->getHostDeclString()));
     if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "texFunc")) {
       DeviceFunctionDecl::LinkRedecls(FD)->addTexture(Tex);
     }
-    if (auto ME = getNodeAsType<MemberExpr>(Result, "texMember")) {
-      auto Field = MapNames::findReplacedName(
-          TextureMemberNames, ME->getMemberNameInfo().getAsString());
-      if (auto BO = getAssignedBO(ME, *Result.Context)) {
-        // e.g.: t.filterMode = cudaFilterModeLinear =>
-        // t.set_filter_mode(cl::sycl::filtering_mode::linear)
-        /// Add rename field with "set_" prefix.
-        emplaceTransformation(new RenameFieldInMemberExpr(ME, "set_" + Field));
-        /// Remove operator "=".
-        emplaceTransformation(new ReplaceToken(
-            Lexer::getLocForEndOfToken(BO->getLHS()->getEndLoc(), 0,
-                                       *Result.SourceManager,
-                                       Result.Context->getLangOpts()),
-            BO->getRHS()->getBeginLoc().getLocWithOffset(-1), "("));
-        /// Insert ")" at the end of the expression.
-        emplaceTransformation(new InsertAfterStmt(BO, ")"));
-        if (auto DRE = dyn_cast<DeclRefExpr>(BO->getRHS()->IgnoreImpCasts())) {
-          /// Replace rhs of BinaryOperator if it is a EnumConstantDecl
-          if (auto Enum = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
-            emplaceTransformation(new ReplaceStmt(
-                BO->getRHS(),
-                MapNames::findReplacedName(EnumConstantRule::EnumNamesMap,
-                                           Enum->getName())));
-          }
+  } else if (auto ME = getNodeAsType<MemberExpr>(Result, "texMember")) {
+    auto BaseTy = DpctGlobalInfo::getUnqualifiedTypeName(
+        ME->getBase()->getType().getUnqualifiedType(), *Result.Context);
+    auto MemberName = ME->getMemberNameInfo().getAsString();
+    if (BaseTy == "cudaResourceDesc") {
+      if (MemberName == "res") {
+        emplaceTransformation(new RenameFieldInMemberExpr(ME, "data"));
+        replaceResourceDataExpr(getParentMemberExpr(ME), *Result.Context);
+      } else if (MemberName == "resType") {
+        emplaceTransformation(new RenameFieldInMemberExpr(ME, "type"));
+      }
+    } else {
+      auto Field = ME->getMemberNameInfo().getAsString();
+      auto ReplField = MapNames::findReplacedName(TextureMemberNames, Field);
+      if (ReplField.empty()) {
+        return report(ME->getBeginLoc(), Diagnostics::NOTSUPPORTED, Field);
+      }
+      emplaceTransformation(new RenameFieldInMemberExpr(ME, ReplField + "()"));
+      if (Field == "addressMode") {
+        if (auto A = DpctGlobalInfo::findAncestor<ArraySubscriptExpr>(ME)) {
+          emplaceTransformation(new ReplaceToken(
+              Lexer::getLocForEndOfToken(A->getLHS()->getEndLoc(), 0,
+                                         *Result.SourceManager,
+                                         Result.Context->getLangOpts()),
+              A->getRBracketLoc(), ""));
         }
-      } else {
-        emplaceTransformation(
-            new RenameFieldInMemberExpr(ME, buildString("get_", Field, "()")));
       }
     }
-  } else if (auto VD = getNodeAsType<VarDecl>(Result, "array")) {
-    std::string ReplType = "dpct::dpct_image_data";
-    if (VD->getType()->getTypeClass() == Type::Pointer)
-      ReplType += " ";
-    emplaceTransformation(new ReplaceTypeInDecl(VD, std::move(ReplType)));
-  } else if (auto VD = getNodeAsType<VarDecl>(Result, "chnDecl")) {
+  } else if (auto VD = getNodeAsType<VarDecl>(Result, "texType")) {
     const std::string &ReplType = MapNames::findReplacedName(
-        MapNames::TypeNamesMap, VD->getType().getUnqualifiedType().getAsString(
-                                    Result.Context->getLangOpts()));
-    emplaceTransformation(new ReplaceTypeInDecl(VD, std::string(ReplType)));
+        MapNames::TypeNamesMap,
+        DpctGlobalInfo::getUnqualifiedTypeName(VD->getType(), *Result.Context));
+    if (!ReplType.empty())
+      emplaceTransformation(new ReplaceTypeInDecl(VD, std::string(ReplType)));
   } else if (auto CE = getNodeAsType<CallExpr>(Result, "call")) {
     ExprAnalysis A;
     A.analyze(CE);
     emplaceTransformation(A.getReplacement());
+  } else if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "texEnum")) {
+    if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
+      std::string EnumName = ECD->getName();
+      if (MapNames::replaceName(EnumConstantRule::EnumNamesMap, EnumName)) {
+        emplaceTransformation(new ReplaceStmt(DRE, EnumName));
+      } else {
+        report(DRE->getBeginLoc(), Diagnostics::NOTSUPPORTED, EnumName);
+      }
+    }
+  } else if (auto VD = getNodeAsType<VarDecl>(Result, "texObj")) {
+    if (auto FD = dyn_cast<FunctionDecl>(VD->getParentFunctionOrMethod())) {
+      if (!FD->hasAttr<CUDAGlobalAttr>() && !FD->hasAttr<CUDADeviceAttr>()) {
+        emplaceTransformation(
+            new ReplaceTypeInDecl(VD, "dpct::dpct_image_base_p"));
+      }
+    }
+  }
+}
+
+void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
+                                          const ASTContext &Context) {
+  if (!ME)
+    return;
+  auto ResName = ME->getMemberNameInfo().getAsString();
+  if (ResName == "array") {
+    if (auto ArrayMemberExpr = getParentMemberExpr(ME)) {
+      emplaceTransformation(new ReplaceToken(
+          ME->getMemberLoc(),
+          Lexer::getLocForEndOfToken(ArrayMemberExpr->getEndLoc(), 0,
+                                     Context.getSourceManager(),
+                                     Context.getLangOpts()),
+          "matrix"));
+    }
+  } else if (ResName == "linear") {
+    if (auto LinearMemberExpr = getParentMemberExpr(ME)) {
+      emplaceTransformation(new RenameFieldInMemberExpr(
+          LinearMemberExpr,
+          std::string(MapNames::findReplacedName(
+              LinearResourceTypeNames,
+              LinearMemberExpr->getMemberNameInfo().getAsString()))));
+    }
+  } else {
+    report(ME->getBeginLoc(), Diagnostics::NOTSUPPORTED,
+           ME->getMemberDecl()->getName());
   }
 }
 

@@ -26,9 +26,12 @@ ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
 const std::string MemVarInfo::ExternVariableName = "dpct_extern_memory";
+const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
 
 bool DpctFileInfo::isInRoot() { return DpctGlobalInfo::isInRoot(FilePath); }
-bool DpctFileInfo::isInCudaPath() { return DpctGlobalInfo::isInCudaPath(FilePath); }
+bool DpctFileInfo::isInCudaPath() {
+  return DpctGlobalInfo::isInCudaPath(FilePath);
+}
 
 void DpctFileInfo::buildLinesInfo() {
   if (FilePath.empty())
@@ -74,8 +77,7 @@ void DpctGlobalInfo::insertCublasAlloc(const CallExpr *CE) {
   if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(2)))
     insertCudaMallocInfo(MallocVar)->setSizeExpr(CE->getArg(0), CE->getArg(1));
 }
-std::shared_ptr<CudaMallocInfo>
-DpctGlobalInfo::findCudaMalloc(const Expr *E) {
+std::shared_ptr<CudaMallocInfo> DpctGlobalInfo::findCudaMalloc(const Expr *E) {
   if (auto Src = CudaMallocInfo::getMallocVar(E))
     return findCudaMallocInfo(Src);
   return std::shared_ptr<CudaMallocInfo>();
@@ -114,6 +116,11 @@ void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block) {
   getAccessorDecl(Block, MemVarInfo::Global);
   for (auto &Tex : VM.getTextureMap())
     Block.pushStmt(Tex.second->getAccessorDecl());
+  for (auto &Tex : getTextureObjectList()) {
+    if (Tex) {
+      Block.pushStmt(Tex->getAccessorDecl());
+    }
+  }
 }
 
 void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block,
@@ -174,11 +181,11 @@ void KernelCallExpr::buildKernelPointerArgsStmt(StmtList &Buffers,
                                                 StmtList &Accessors,
                                                 StmtList &Redecls) {
   int ArgIndex = 0;
-  for (auto &Arg : getArgsInfo().getArgInfos()) {
+  for (auto &Arg : getArgsInfo()) {
     auto NewArgName = "arg_ct" + std::to_string(ArgIndex++);
     if (Arg.isPointer) {
-      buildKernelPointerArgBufferAndOffsetStmt(Arg.getArgString().str(), NewArgName,
-        Buffers);
+      buildKernelPointerArgBufferAndOffsetStmt(Arg.getArgString(), NewArgName,
+                                               Buffers);
       buildKernelPointerArgAccessorStmt(NewArgName, Accessors);
       buildKernelPointerArgRedeclStmt(
         NewArgName, Arg.getTypeString(), Redecls);
@@ -205,10 +212,10 @@ std::string KernelCallExpr::getReplacement() {
 
     // Redeclare all the non-pointer arguments
     int ArgIndex = 0;
-    for (auto &Arg : getArgsInfo().getArgInfos()) {
+    for (auto &Arg : getArgsInfo()) {
       if (!Arg.isPointer && Arg.isRedeclareRequired) {
         Block.pushStmt("auto arg_ct", std::to_string(ArgIndex), " = ",
-                       Arg.getArgString().str(), ";");
+                       Arg.getArgString(), ";");
       }
       ++ArgIndex;
     }
@@ -256,15 +263,15 @@ std::string KernelCallExpr::getReplacement() {
 
             // build original args string for the kernal call
             std::string OriginalArgs;
-            for (size_t i = 0; i < getArgsInfo().getArgInfos().size(); ++i) {
+            for (size_t i = 0; i < getArgsInfo().size(); ++i) {
               if (i > 0) {
                 OriginalArgs += ", ";
               }
-              if (getArgsInfo().getArgInfos()[i].isPointer || getArgsInfo().getArgInfos()[i].isRedeclareRequired) {
+              if (getArgsInfo()[i].isPointer || getArgsInfo()[i].isRedeclareRequired) {
                 OriginalArgs += "arg_ct" + std::to_string(i);
               }
               else {
-                OriginalArgs += getArgsInfo().getArgInfos()[i].getArgString();
+                OriginalArgs += getArgsInfo()[i].getArgString();
               }
             }
 
@@ -290,9 +297,8 @@ void KernelCallExpr::buildInfo() {
   CallFunctionExpr::buildInfo();
 
   // TODO: Output debug info.
-  DpctGlobalInfo::getInstance().addReplacement(
-      std::make_shared<ExtReplacement>(getFilePath(), getBegin(), 0,
-                                       getReplacement(), nullptr));
+  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
+      getFilePath(), getBegin(), 0, getReplacement(), nullptr));
 }
 
 void CallFunctionExpr::addTemplateType(const TemplateArgumentLoc &TAL) {
@@ -327,6 +333,31 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   }
 }
 
+std::shared_ptr<TextureObjectInfo>
+CallFunctionExpr::addTextureObjectArg(unsigned ArgIdx,
+                                          const DeclRefExpr *TexRef,bool isKernelCall) {
+  if (TextureObjectInfo::isTextureObject(TexRef)) {
+    if (isKernelCall) {
+      if (auto VD = dyn_cast<VarDecl>(TexRef->getDecl())) {
+        return addTextureObjectArgInfo(ArgIdx,
+                                       std::make_shared<TextureObjectInfo>(VD));
+      }
+    } else if (auto PVD = dyn_cast<ParmVarDecl>(TexRef->getDecl())) {
+      return addTextureObjectArgInfo(ArgIdx,
+                                     std::make_shared<TextureObjectInfo>(PVD));
+    }
+  }
+  return std::shared_ptr<TextureObjectInfo>();
+}
+
+void CallFunctionExpr::mergeTextureObjectTypeInfo() {
+  for (unsigned Idx = 0; Idx < TextureObjectList.size(); ++Idx) {
+    if (auto &Obj = TextureObjectList[Idx]) {
+      Obj->setType(FuncInfo->getTextureTypeInfo(Idx));
+    }
+  }
+}
+
 std::string CallFunctionExpr::getName(const NamedDecl *D) {
   if (auto ID = D->getIdentifier())
     return ID->getName().str();
@@ -338,13 +369,13 @@ void CallFunctionExpr::buildInfo() {
     return;
   FuncInfo->buildInfo();
   VarMap.merge(FuncInfo->getVarMap(), TemplateArgs);
+  mergeTextureObjectTypeInfo();
 }
 
 void CallFunctionExpr::emplaceReplacement() {
   buildInfo();
-  DpctGlobalInfo::getInstance().addReplacement(
-      std::make_shared<ExtReplacement>(FilePath, RParenLoc, 0,
-                                       getExtraArguments(), nullptr));
+  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
+      FilePath, RParenLoc, 0, getExtraArguments(), nullptr));
 }
 
 std::string CallFunctionExpr::getTemplateArguments(bool WithScalarWrapped) {
@@ -364,13 +395,31 @@ void DeviceFunctionInfo::merge(std::shared_ptr<DeviceFunctionInfo> Other) {
   if (this == Other.get())
     return;
   VarMap.merge(Other->getVarMap());
-  mergeCallMap(Other->CallExprMap);
+  dpct::merge(CallExprMap, Other->CallExprMap);
+  mergeTextureTypeList(Other->TextureObjectTypeList);
 }
 
-void DeviceFunctionInfo::mergeCallMap(
-    const GlobalMap<CallFunctionExpr> &Other) {
-  for (const auto &Call : Other)
-    CallExprMap.insert(Call);
+void DeviceFunctionInfo::mergeTextureTypeList(
+    const std::vector<std::shared_ptr<TextureTypeInfo>> &Other) {
+  auto SelfItr = TextureObjectTypeList.begin();
+  auto BranchItr = Other.begin();
+  while ((SelfItr != TextureObjectTypeList.end()) &&
+         (BranchItr != Other.end())) {
+    if (!(*SelfItr))
+      *SelfItr = *BranchItr;
+    ++SelfItr;
+    ++BranchItr;
+  }
+  TextureObjectTypeList.insert(SelfItr, BranchItr, Other.end());
+}
+
+void DeviceFunctionInfo::mergeCalledTexObj(
+    const std::vector<std::shared_ptr<TextureObjectInfo>> &TexObjList) {
+  for (auto &Ty : TexObjList) {
+    if (Ty) {
+      TextureObjectTypeList[Ty->getParamIdx()] = Ty->getType();
+    }
+  }
 }
 
 void DeviceFunctionInfo::buildInfo() {
@@ -380,15 +429,22 @@ void DeviceFunctionInfo::buildInfo() {
   for (auto &Call : CallExprMap) {
     Call.second->emplaceReplacement();
     VarMap.merge(Call.second->getVarMap());
+    mergeCalledTexObj(Call.second->getTextureObjectList());
   }
-  Params = VarMap.getDeclParam(hasParams());
+  ExtraParams = VarMap.getExtraDeclParam(hasParams());
 }
 
 inline void DeviceFunctionDecl::emplaceReplacement() {
   // TODO: Output debug info.
-  DpctGlobalInfo::getInstance().addReplacement(
-      std::make_shared<ExtReplacement>(FilePath, ReplaceOffset, ReplaceLength,
-                                       FuncInfo->getParameters(), nullptr));
+  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
+      FilePath, ReplaceOffset, ReplaceLength, FuncInfo->getExtraParameters(),
+      nullptr));
+  for (auto &Obj : TextureObjectList) {
+    if (Obj) {
+      Obj->setType(FuncInfo->getTextureTypeInfo(Obj->getParamIdx()));
+      Obj->addParamDeclReplacement();
+    }
+  }
 }
 
 void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionDecl *FD) {
@@ -558,7 +614,7 @@ std::string CtTypeInfo::getRangeArgument(const std::string &MemSize,
     if (Size.empty()) {
       if (MemSize.empty())
         dpct_unreachable("array size should not be empty "
-                           "when external mem size is not set");
+                         "when external mem size is not set");
       Arg += MemSize;
     } else
       Arg += Size;
