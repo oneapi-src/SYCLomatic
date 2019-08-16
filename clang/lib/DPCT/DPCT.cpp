@@ -20,7 +20,6 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/Path.h"
-
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "Config.h"
@@ -29,6 +28,9 @@
 #include "SaveNewFiles.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
+#include "SignalProcess.h"
+#include "VcxprojParser.h"
+
 #include <string>
 
 #include "ToolChains/Cuda.h"
@@ -46,15 +48,12 @@
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 
-#include "SignalProcess.h"
-
 using namespace clang;
 using namespace clang::ast_matchers;
 using namespace clang::dpct;
 using namespace clang::tooling;
 
 using namespace llvm::cl;
-
 const char *const CtHelpMessage =
     "\n"
     "<source0> ... Paths of input source files. These paths are\n"
@@ -627,11 +626,11 @@ int run(int argc, const char **argv) {
     return MigrationNoCodeChangeHappen;
   }
   GAnalytics("");
-#if defined(__linux__) || defined(_WIN64)
+#if defined(__linux__) || defined(_WIN32)
   InstallSignalHandle();
 #endif
 
-#if defined(_WIN64)
+#if defined(_WIN32)
   // To support wildcard "*" in source file name in windows.
   llvm::InitLLVM X(argc, argv);
 #endif
@@ -641,6 +640,10 @@ int run(int argc, const char **argv) {
 
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;
+#ifdef _WIN32
+  // Set function handle for libclangTooling to parse vcxproj file.
+  clang::tooling::SetParserHandle(vcxprojParser);
+#endif
   llvm::cl::SetVersionPrinter(
       [](llvm::raw_ostream &OS) { OS << printCTVersion() << "\n"; });
   CommonOptionsParser OptParser(argc, argv, DPCTCat);

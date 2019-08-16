@@ -52,6 +52,29 @@ const char *const CommonOptionsParser::HelpMessage =
     "\tsuffix of a path in the compile command database.\n"
     "\n";
 
+#if INTEL_CUSTOMIZATION
+#ifdef _WIN32
+namespace clang {
+namespace tooling {
+
+static FunPtrParserType FPtrParser = nullptr;
+
+void SetParserHandle(FunPtrParserType FPParser) {
+  FPtrParser = FPParser;
+}
+
+void DoParserHandle(std::string &BuildDir, std::string &FilePath) {
+  if (FPtrParser != nullptr) {
+    FPtrParser(BuildDir, FilePath);
+  }
+}
+
+} // namespace tooling
+} // namespace clang
+#endif
+#endif
+
+
 void ArgumentsAdjustingCompilations::appendArgumentsAdjuster(
     ArgumentsAdjuster Adjuster) {
   Adjusters.push_back(std::move(Adjuster));
@@ -89,14 +112,27 @@ llvm::Error CommonOptionsParser::init(
           "Path where to read compilation database: compile_commands.json."),
       cl::Optional, cl::cat(Category), cl::value_desc("path"),
       cl::sub(*cl::AllSubCommands));
+
+  static cl::list<std::string> SourcePaths(
+      cl::Positional, cl::desc("<source0> [... <sourceN>]"), llvm::cl::ZeroOrMore,
+      cl::cat(Category), cl::sub(*cl::AllSubCommands));
+#ifdef _WIN32
+ static cl::opt<std::string>
+    VcxprojFile("vcxprojfile",
+                cl::desc("file path of vcxproj."),
+                cl::value_desc("vcxproj file"),
+                cl::Optional, cl::cat(Category),
+                cl::sub(*cl::AllSubCommands));
+#endif
 #else
   static cl::opt<std::string> BuildPath("p", cl::desc("Build path"),
                                         cl::Optional, cl::cat(Category),
                                         cl::sub(*cl::AllSubCommands));
-#endif
+
   static cl::list<std::string> SourcePaths(
       cl::Positional, cl::desc("<source0> [... <sourceN>]"), OccurrencesFlag,
       cl::cat(Category), cl::sub(*cl::AllSubCommands));
+#endif
 
 #if INTEL_CUSTOMIZATION
   static cl::list<std::string> ArgsAfter(
@@ -146,6 +182,31 @@ llvm::Error CommonOptionsParser::init(
   cl::PrintOptionValues();
 
   SourcePathList = SourcePaths;
+#if INTEL_CUSTOMIZATION
+#if _WIN32
+  // In Windows, the option "-p" and "-vcxproj" are mutually exclusive, user can
+  // only give one of them. If both of them exist, dpct will exit with
+  // -1 (.i.e MigrationError).
+  if (!BuildPath.empty() && !VcxprojFile.empty()) {
+    ErrorMessage =
+        "The option \"-p\" and \"-vcxproj\" are set together, please specify one of them.\n";
+    llvm::errs() << ErrorMessage;
+    exit(-1);
+  }
+
+  // In Windows, If the option
+  // "--cuda-path" specifies SDK path in the command line, duplicate find the
+  // the compilation database in the directory of the vcxproj file.
+  if (!VcxprojFile.empty()) {
+    SmallString<1024> AbsolutePath(getAbsolutePath(VcxprojFile));
+    StringRef Directory = llvm::sys::path::parent_path(AbsolutePath);
+    std::string BuildDir = Directory.str();
+    DoParserHandle(BuildDir, VcxprojFile);
+    Compilations =
+        CompilationDatabase::autoDetectFromDirectory(BuildDir, ErrorMessage);
+  }
+#endif
+#endif
   if ((OccurrencesFlag == cl::ZeroOrMore || OccurrencesFlag == cl::Optional) &&
       SourcePathList.empty())
     return llvm::Error::success();
@@ -153,7 +214,16 @@ llvm::Error CommonOptionsParser::init(
     if (!BuildPath.empty()) {
       Compilations =
           CompilationDatabase::autoDetectFromDirectory(BuildPath, ErrorMessage);
-    } else {
+    }
+#if INTEL_CUSTOMIZATION
+    // if neither option "-p" or target source file names exist in the
+    // command line, e.g "dpct -in-root=./ -out-root=out", dpct will not
+    // continue.
+    else if (BuildPath.empty() && SourcePathList.empty()) {
+      Compilations = nullptr;
+    }
+#endif
+    else {
       Compilations = CompilationDatabase::autoDetectFromSource(SourcePaths[0],
                                                                ErrorMessage);
     }

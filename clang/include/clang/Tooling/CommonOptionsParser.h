@@ -150,6 +150,14 @@ private:
   adjustCommands(std::vector<CompileCommand> Commands) const;
 };
 
+#if INTEL_CUSTOMIZATION
+#ifdef _WIN32
+using FunPtrParserType = void (*)(std::string &, std::string &);
+void SetParserHandle(FunPtrParserType FPParser);
+void DoParserHandle(std::string &BuildDir, std::string &FilePath);
+#endif
+#endif
+
 }  // namespace tooling
 }  // namespace clang
 

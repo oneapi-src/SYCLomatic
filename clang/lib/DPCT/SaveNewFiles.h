@@ -37,6 +37,8 @@ enum ProcessStatus {
   MigrationErrorInvalidInRootPath = -7,
   MigrationErrorInvalidReportArgs = -8,
   MigrationErrorNotSupportFileType = -9,
+  VcxprojPaserFileNotExist = -10,
+  VcxprojPaserCreateCompilationDBFail = -11, /*eg. hav no write permission*/
 };
 
 enum OutputVerbosityLev { silent, normal, detailed, diagnostics };

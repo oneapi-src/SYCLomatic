@@ -31,6 +31,7 @@ add_clang_library(DPCT
   ValidateArguments.cpp
   ExternalReplacement.cpp
   SignalProcess.cpp
+  VcxprojParser.cpp
   GaHelper/active_user_detector.cpp
   GaHelper/filelock.cpp
   GaHelper/filesystem_util.cpp

@@ -461,7 +461,16 @@ int ClangTool::run(ToolAction *Action) {
     }
     AbsolutePaths.push_back(std::move(*AbsPath));
   }
-
+#if INTEL_CUSTOMIZATION
+  // If target source file names do not exist in the command line, dpct will
+  // migrate all relevant files it detects in the compilation database.
+  if (SourcePaths.size() == 0) {
+    std::vector<std::string> SourcePaths = Compilations.getAllFiles();
+    for (const auto &SourcePath : SourcePaths) {
+      AbsolutePaths.push_back(SourcePath);
+    }
+  }
+#endif
   // Remember the working directory in case we need to restore it.
   std::string InitialWorkingDir;
   if (RestoreCWD) {
