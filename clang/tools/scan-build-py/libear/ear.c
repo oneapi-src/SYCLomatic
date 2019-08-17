@@ -486,9 +486,28 @@ static int call_posix_spawnp(pid_t *restrict pid, const char *restrict file,
 
 #if INTEL_CUSTOMIZATION
 static int generate_file(char * filename){
+    char buf[256];
+    char cmd[256];
+    int len=strlen(filename);
+    strncpy(buf, filename, len);
+    buf[len]='\0';
+    while(len>0){
+        if(buf[len]=='/'){
+          buf[len]='\0';
+          sprintf(cmd, "mkdir -p %s ", buf);
+          system(cmd);
+          break;
+        }
+        len--;
+    }
+
+
     FILE * fd = fopen(filename, "a+");
     if (0 == fd) {
-        perror("bear: fopen");
+        char errormsg[64];
+        memset(errormsg,'\0',64);
+        sprintf(errormsg, "bear: generate_file fopen:%s\n", filename);
+        perror(errormsg);
         exit(EXIT_FAILURE);
     }
     fprintf(fd, "emtpy-file");
