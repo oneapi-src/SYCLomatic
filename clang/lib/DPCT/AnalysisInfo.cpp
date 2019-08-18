@@ -1,4 +1,4 @@
-//===--- TextModification.cpp ---------------------------*- C++ -*---===//
+//===--- AnalysisInfo.cpp -------------------------------*- C++ -*---===//
 //
 // Copyright (C) 2018 - 2019 Intel Corporation. All rights reserved.
 //

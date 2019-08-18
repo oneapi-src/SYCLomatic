@@ -1,3 +1,13 @@
+//===---Diagnostics.inc-----------------------------------------------===//
+//
+// Copyright (C) 2018 - 2019 Intel Corporation. All rights reserved.
+//
+// The information and source code contained herein is the exclusive
+// property of Intel Corporation and may not be disclosed, examined
+// or reproduced in whole or in part without explicit written authorization
+// from the company.
+//
+//===-----------------------------------------------------------------===//
 // TODO: Make the format for comments and warnings/errors the same
 // The format for arguments is %0 for warnings/errors and {0} for comments.
 // A warning, note and error may not have the same ID, but comment can have the same ID with warning or note or error.

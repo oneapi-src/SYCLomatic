@@ -1,4 +1,4 @@
-//===--- MapNames.cpp -----------------------------------*- C++ -*---===//
+//===--- __clang_dpct_math.h -----------------------------*- C++ -*---===//
 //
 // Copyright (C) 2018 - 2019 Intel Corporation. All rights reserved.
 //
