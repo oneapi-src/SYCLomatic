@@ -52,14 +52,13 @@
 // RUN: FileCheck --match-full-lines --input-file %T/check-apis-report_check.txt %T/check-apis-report_check.txt
 
 // RUN: dpct -output-file=output-file.txt -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: Starting to parse: {{(.+)/([^/]+)}}" >%T/check_output-file.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: Processing: {{(.+)/([^/]+)}}" >%T/check_output-file.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: {{(.+)/([^/]+)}}:{{[0-9]+}}:{{[0-9]+}} warning: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code" >>%T/check_output-file.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`:   cudaError_t err = cudaDeviceSynchronize();" >>%T/check_output-file.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: {{(.+)/([^/]+)}}:{{[0-9]+}}:{{[0-9]+}} warning: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code" >>%T/check_output-file.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`:   checkError(cudaDeviceSynchronize());" >>%T/check_output-file.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: {{(.+)/([^/]+)}}:{{[0-9]+}}:{{[0-9]+}} warning: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code" >>%T/check_output-file.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`:   return cudaDeviceSynchronize();" >>%T/check_output-file.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: Ending to parse: {{(.+)/([^/]+)}}" >>%T/check_output-file.txt
 // RUN: cat %T/output-file.txt >>%T/check_output-file.txt
 // RUN: FileCheck --match-full-lines --input-file %T/check_output-file.txt %T/check_output-file.txt
 
@@ -69,8 +68,8 @@
 // RUN: | FileCheck -check-prefix=NOMATCH-CHECK -allow-empty %s
 
 
-// FAKE-FILE-CHECK-NOT:Starting to parse: {{(.+)/([^/]+)}}
-// FAKE-FILE-STDERR: Ending to parse: {{(.+)/([^/]+)}}
+// FAKE-FILE-CHECK-NOT:Processing: {{(.+)/([^/]+)}}
+// FAKE-FILE-STDERR: Processing: {{(.+)/([^/]+)}}
 
 // RUN: dpct -output-verbosity=normal  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"  2>&1  \
 // RUN: | FileCheck -check-prefix=FAKE-FILE-CHECK -allow-empty %s

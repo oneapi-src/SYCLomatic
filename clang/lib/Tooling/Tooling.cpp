@@ -475,7 +475,7 @@ int ClangTool::run(ToolAction *Action) {
 
   for (llvm::StringRef File : AbsolutePaths) {
 #if INTEL_CUSTOMIZATION
-    const std::string Msg = "Starting to parse: " + File.str()  +  ".\n";
+    const std::string Msg = "Processing: " + File.str()  +  ".\n";
     DoPrintHandler(Msg, false);
 #endif
     // Currently implementations of CompilationDatabase::getCompileCommands can
@@ -542,12 +542,6 @@ int ClangTool::run(ToolAction *Action) {
         llvm::errs() << "Error while processing " << File << ".\n";
         ProcessingFailed = true;
       }
-#if INTEL_CUSTOMIZATION
-      if (!ProcessingFailed) {
-        const std::string Msg = "Ending to parse: " + File.str()  +  ".\n";
-        DoPrintHandler(Msg, false);
-      }
-#endif
     }
   }
 
