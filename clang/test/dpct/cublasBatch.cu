@@ -50,98 +50,143 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::dpct_getrf_batch(handle, n, Aarray_S, lda, PivotArray, infoArray, batchSize), 0);
-  // CHECK-NEXT: dpct::dpct_getrf_batch(handle, n, Aarray_S, lda, PivotArray, infoArray, batchSize);
+  // CHECK-NEXT: status = (dpct::getrf_batch_wrapper(handle, n, Aarray_S, lda, PivotArray, infoArray, batchSize), 0);
+  // CHECK-NEXT: dpct::getrf_batch_wrapper(handle, n, Aarray_S, lda, PivotArray, infoArray, batchSize);
   status = cublasSgetrfBatched(handle, n, Aarray_S, lda, PivotArray, infoArray, batchSize);
   cublasSgetrfBatched(handle, n, Aarray_S, lda, PivotArray, infoArray, batchSize);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::dpct_getrf_batch(handle, n, Aarray_D, lda, PivotArray, infoArray, batchSize), 0);
-  // CHECK-NEXT: dpct::dpct_getrf_batch(handle, n, Aarray_D, lda, PivotArray, infoArray, batchSize);
+  // CHECK-NEXT: status = (dpct::getrf_batch_wrapper(handle, n, Aarray_D, lda, PivotArray, infoArray, batchSize), 0);
+  // CHECK-NEXT: dpct::getrf_batch_wrapper(handle, n, Aarray_D, lda, PivotArray, infoArray, batchSize);
   status = cublasDgetrfBatched(handle, n, Aarray_D, lda, PivotArray, infoArray, batchSize);
   cublasDgetrfBatched(handle, n, Aarray_D, lda, PivotArray, infoArray, batchSize);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::dpct_getrf_batch(handle, n, Aarray_C, lda, PivotArray, infoArray, batchSize), 0);
-  // CHECK-NEXT: dpct::dpct_getrf_batch(handle, n, Aarray_C, lda, PivotArray, infoArray, batchSize);
+  // CHECK-NEXT: status = (dpct::getrf_batch_wrapper(handle, n, Aarray_C, lda, PivotArray, infoArray, batchSize), 0);
+  // CHECK-NEXT: dpct::getrf_batch_wrapper(handle, n, Aarray_C, lda, PivotArray, infoArray, batchSize);
   status = cublasCgetrfBatched(handle, n, Aarray_C, lda, PivotArray, infoArray, batchSize);
   cublasCgetrfBatched(handle, n, Aarray_C, lda, PivotArray, infoArray, batchSize);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::dpct_getrf_batch(handle, n, Aarray_Z, lda, PivotArray, infoArray, batchSize), 0);
-  // CHECK-NEXT: dpct::dpct_getrf_batch(handle, n, Aarray_Z, lda, PivotArray, infoArray, batchSize);
+  // CHECK-NEXT: status = (dpct::getrf_batch_wrapper(handle, n, Aarray_Z, lda, PivotArray, infoArray, batchSize), 0);
+  // CHECK-NEXT: dpct::getrf_batch_wrapper(handle, n, Aarray_Z, lda, PivotArray, infoArray, batchSize);
   status = cublasZgetrfBatched(handle, n, Aarray_Z, lda, PivotArray, infoArray, batchSize);
   cublasZgetrfBatched(handle, n, Aarray_Z, lda, PivotArray, infoArray, batchSize);
+
+  // getrs_batch
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: */
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct1 = trans0;
+  // CHECK-NEXT: status = (dpct::getrs_batch_wrapper(handle, (((int)transpose_ct1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct1)), n, nrhs, Aarray_Sc, lda, PivotArray, Barray_S, ldb, infoArray, batchSize), 0);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: dpct::getrs_batch_wrapper(handle, mkl::transpose::nontrans, n, nrhs, Aarray_Sc, lda, PivotArray, Barray_S, ldb, infoArray, batchSize);
+  status = cublasSgetrsBatched(handle, (cublasOperation_t)trans0, n, nrhs, Aarray_Sc, lda, PivotArray, Barray_S, ldb, infoArray, batchSize);
+  cublasSgetrsBatched(handle, CUBLAS_OP_N, n, nrhs, Aarray_Sc, lda, PivotArray, Barray_S, ldb, infoArray, batchSize);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: */
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct1 = trans1;
+  // CHECK-NEXT: status = (dpct::getrs_batch_wrapper(handle, (((int)transpose_ct1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct1)), n, nrhs, Aarray_Dc, lda, PivotArray, Barray_D, ldb, infoArray, batchSize), 0);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: dpct::getrs_batch_wrapper(handle, mkl::transpose::nontrans, n, nrhs, Aarray_Dc, lda, PivotArray, Barray_D, ldb, infoArray, batchSize);
+  status = cublasDgetrsBatched(handle, (cublasOperation_t)trans1, n, nrhs, Aarray_Dc, lda, PivotArray, Barray_D, ldb, infoArray, batchSize);
+  cublasDgetrsBatched(handle, CUBLAS_OP_N, n, nrhs, Aarray_Dc, lda, PivotArray, Barray_D, ldb, infoArray, batchSize);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: */
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct1 = trans2;
+  // CHECK-NEXT: status = (dpct::getrs_batch_wrapper(handle, (((int)transpose_ct1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct1)), n, nrhs, Aarray_Cc, lda, PivotArray, Barray_C, ldb, infoArray, batchSize), 0);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: dpct::getrs_batch_wrapper(handle, mkl::transpose::nontrans, n, nrhs, Aarray_Cc, lda, PivotArray, Barray_C, ldb, infoArray, batchSize);
+  status = cublasCgetrsBatched(handle, (cublasOperation_t)trans2, n, nrhs, Aarray_Cc, lda, PivotArray, Barray_C, ldb, infoArray, batchSize);
+  cublasCgetrsBatched(handle, CUBLAS_OP_N, n, nrhs, Aarray_Cc, lda, PivotArray, Barray_C, ldb, infoArray, batchSize);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: */
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto transpose_ct1 = 2;
+  // CHECK-NEXT: status = (dpct::getrs_batch_wrapper(handle, (((int)transpose_ct1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct1)), n, nrhs, Aarray_Zc, lda, PivotArray, Barray_Z, ldb, infoArray, batchSize), 0);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: dpct::getrs_batch_wrapper(handle, mkl::transpose::nontrans, n, nrhs, Aarray_Zc, lda, PivotArray, Barray_Z, ldb, infoArray, batchSize);
+  status = cublasZgetrsBatched(handle, (cublasOperation_t)2, n, nrhs, Aarray_Zc, lda, PivotArray, Barray_Z, ldb, infoArray, batchSize);
+  cublasZgetrsBatched(handle, CUBLAS_OP_N, n, nrhs, Aarray_Zc, lda, PivotArray, Barray_Z, ldb, infoArray, batchSize);
 
   // getri_batch
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::dpct_getri_batch(handle, n, Aarray_Sc, lda, PivotArray, Carray_S, ldc, infoArray, batchSize), 0);
-  // CHECK-NEXT: dpct::dpct_getri_batch(handle, n, Aarray_Sc, lda, PivotArray, Carray_S, ldc, infoArray, batchSize);
+  // CHECK-NEXT: status = (dpct::getri_batch_wrapper(handle, n, Aarray_Sc, lda, PivotArray, Carray_S, ldc, infoArray, batchSize), 0);
+  // CHECK-NEXT: dpct::getri_batch_wrapper(handle, n, Aarray_Sc, lda, PivotArray, Carray_S, ldc, infoArray, batchSize);
   status = cublasSgetriBatched(handle, n, Aarray_Sc, lda, PivotArray, Carray_S, ldc, infoArray, batchSize);
   cublasSgetriBatched(handle, n, Aarray_Sc, lda, PivotArray, Carray_S, ldc, infoArray, batchSize);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::dpct_getri_batch(handle, n, Aarray_Dc, lda, PivotArray, Carray_D, ldc, infoArray, batchSize), 0);
-  // CHECK-NEXT: dpct::dpct_getri_batch(handle, n, Aarray_Dc, lda, PivotArray, Carray_D, ldc, infoArray, batchSize);
+  // CHECK-NEXT: status = (dpct::getri_batch_wrapper(handle, n, Aarray_Dc, lda, PivotArray, Carray_D, ldc, infoArray, batchSize), 0);
+  // CHECK-NEXT: dpct::getri_batch_wrapper(handle, n, Aarray_Dc, lda, PivotArray, Carray_D, ldc, infoArray, batchSize);
   status = cublasDgetriBatched(handle, n, Aarray_Dc, lda, PivotArray, Carray_D, ldc, infoArray, batchSize);
   cublasDgetriBatched(handle, n, Aarray_Dc, lda, PivotArray, Carray_D, ldc, infoArray, batchSize);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::dpct_getri_batch(handle, n, Aarray_Cc, lda, PivotArray, Carray_C, ldc, infoArray, batchSize), 0);
-  // CHECK-NEXT: dpct::dpct_getri_batch(handle, n, Aarray_Cc, lda, PivotArray, Carray_C, ldc, infoArray, batchSize);
+  // CHECK-NEXT: status = (dpct::getri_batch_wrapper(handle, n, Aarray_Cc, lda, PivotArray, Carray_C, ldc, infoArray, batchSize), 0);
+  // CHECK-NEXT: dpct::getri_batch_wrapper(handle, n, Aarray_Cc, lda, PivotArray, Carray_C, ldc, infoArray, batchSize);
   status = cublasCgetriBatched(handle, n, Aarray_Cc, lda, PivotArray, Carray_C, ldc, infoArray, batchSize);
   cublasCgetriBatched(handle, n, Aarray_Cc, lda, PivotArray, Carray_C, ldc, infoArray, batchSize);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::dpct_getri_batch(handle, n, Aarray_Zc, lda, PivotArray, Carray_Z, ldc, infoArray, batchSize), 0);
-  // CHECK-NEXT: dpct::dpct_getri_batch(handle, n, Aarray_Zc, lda, PivotArray, Carray_Z, ldc, infoArray, batchSize);
+  // CHECK-NEXT: status = (dpct::getri_batch_wrapper(handle, n, Aarray_Zc, lda, PivotArray, Carray_Z, ldc, infoArray, batchSize), 0);
+  // CHECK-NEXT: dpct::getri_batch_wrapper(handle, n, Aarray_Zc, lda, PivotArray, Carray_Z, ldc, infoArray, batchSize);
   status = cublasZgetriBatched(handle, n, Aarray_Zc, lda, PivotArray, Carray_Z, ldc, infoArray, batchSize);
   cublasZgetriBatched(handle, n, Aarray_Zc, lda, PivotArray, Carray_Z, ldc, infoArray, batchSize);
 
   // geqrf_batch
-  // TODO-CHECK: /*
-  // TODO-CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
-  // TODO-CHECK-NEXT: */
-  // TODO-CHECK-NEXT: status = (dpct::dpct_geqrf_batch(handle, m, n, Aarray_S, lda, TauArray_S, infoArray, batchSize), 0);
-  // TODO-CHECK-NEXT: dpct::dpct_geqrf_batch(handle, m, n, Aarray_S, lda, TauArray_S, infoArray, batchSize);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = (dpct::geqrf_batch_wrapper(handle, m, n, Aarray_S, lda, TauArray_S, infoArray, batchSize), 0);
+  // CHECK-NEXT: dpct::geqrf_batch_wrapper(handle, m, n, Aarray_S, lda, TauArray_S, infoArray, batchSize);
   status = cublasSgeqrfBatched(handle, m, n, Aarray_S, lda, TauArray_S, infoArray, batchSize);
   cublasSgeqrfBatched(handle, m, n, Aarray_S, lda, TauArray_S, infoArray, batchSize);
 
-  // TODO-CHECK: /*
-  // TODO-CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
-  // TODO-CHECK-NEXT: */
-  // TODO-CHECK-NEXT: status = (dpct::dpct_geqrf_batch(handle, m, n, Aarray_D, lda, TauArray_D, infoArray, batchSize), 0);
-  // TODO-CHECK-NEXT: dpct::dpct_geqrf_batch(handle, m, n, Aarray_D, lda, TauArray_D, infoArray, batchSize);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = (dpct::geqrf_batch_wrapper(handle, m, n, Aarray_D, lda, TauArray_D, infoArray, batchSize), 0);
+  // CHECK-NEXT: dpct::geqrf_batch_wrapper(handle, m, n, Aarray_D, lda, TauArray_D, infoArray, batchSize);
   status = cublasDgeqrfBatched(handle, m, n, Aarray_D, lda, TauArray_D, infoArray, batchSize);
   cublasDgeqrfBatched(handle, m, n, Aarray_D, lda, TauArray_D, infoArray, batchSize);
 
-  // TODO-CHECK: /*
-  // TODO-CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
-  // TODO-CHECK-NEXT: */
-  // TODO-CHECK-NEXT: status = (dpct::dpct_geqrf_batch(handle, m, n, Aarray_C, lda, TauArray_C, infoArray, batchSize), 0);
-  // TODO-CHECK-NEXT: dpct::dpct_geqrf_batch(handle, m, n, Aarray_C, lda, TauArray_C, infoArray, batchSize);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = (dpct::geqrf_batch_wrapper(handle, m, n, Aarray_C, lda, TauArray_C, infoArray, batchSize), 0);
+  // CHECK-NEXT: dpct::geqrf_batch_wrapper(handle, m, n, Aarray_C, lda, TauArray_C, infoArray, batchSize);
   status = cublasCgeqrfBatched(handle, m, n, Aarray_C, lda, TauArray_C, infoArray, batchSize);
   cublasCgeqrfBatched(handle, m, n, Aarray_C, lda, TauArray_C, infoArray, batchSize);
 
-  // TODO-CHECK: /*
-  // TODO-CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
-  // TODO-CHECK-NEXT: */
-  // TODO-CHECK-NEXT: status = (dpct::dpct_geqrf_batch(handle, m, n, Aarray_Z, lda, TauArray_Z, infoArray, batchSize), 0);
-  // TODO-CHECK-NEXT: dpct::dpct_geqrf_batch(handle, m, n, Aarray_Z, lda, TauArray_Z, infoArray, batchSize);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = (dpct::geqrf_batch_wrapper(handle, m, n, Aarray_Z, lda, TauArray_Z, infoArray, batchSize), 0);
+  // CHECK-NEXT: dpct::geqrf_batch_wrapper(handle, m, n, Aarray_Z, lda, TauArray_Z, infoArray, batchSize);
   status = cublasZgeqrfBatched(handle, m, n, Aarray_Z, lda, TauArray_Z, infoArray, batchSize);
   cublasZgeqrfBatched(handle, m, n, Aarray_Z, lda, TauArray_Z, infoArray, batchSize);
 

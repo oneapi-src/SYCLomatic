@@ -158,7 +158,7 @@ public:
   }
 
   // Deallocate
-  void mem_free(void *ptr) {
+  void mem_free(const void *ptr) {
     std::lock_guard<std::mutex> lock(m_mutex);
     auto it = get_map_iterator(ptr);
     m_map.erase(it);
@@ -236,7 +236,7 @@ static inline void dpct_malloc(T1 **ptr, T2 size) {
 
 // free
 // TODO: ret values to adjust for error handling.
-static void dpct_free(void *ptr) {
+static void dpct_free(const void *ptr) {
   if (ptr)
     memory_manager::get_instance().mem_free(ptr);
 }
@@ -703,8 +703,7 @@ static void dpct_memcpy(void *to_ptr, void *from_ptr, size_t size,
 /// the address specified by to_ptr. The value of direction, which is used to
 /// specify the copy direction, should be one of host_to_host,
 /// host_to_device, device_to_host, device_to_device, or automatic. The return
-/// of
-/// the function does NOT guarantee the copy is completed
+/// of the function does NOT guarantee the copy is completed
 ///
 /// \param to_ptr Pointer to destination memory address.
 /// \param from_ptr Pointer to source memory address.

@@ -2221,9 +2221,11 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasStrmm_v2", "cublasDtrmm_v2", "cublasCtrmm_v2", "cublasZtrmm_v2",
         /*Extensions*/
         "cublasSgetrfBatched", "cublasDgetrfBatched", "cublasCgetrfBatched",
-        "cublasZgetrfBatched", "cublasSgetriBatched", "cublasDgetriBatched",
-        "cublasCgetriBatched", "cublasZgetriBatched", "cublasSgeqrfBatched",
-        "cublasDgeqrfBatched", "cublasCgeqrfBatched", "cublasZgeqrfBatched",
+        "cublasZgetrfBatched", "cublasSgetrsBatched", "cublasDgetrsBatched",
+        "cublasCgetrsBatched", "cublasZgetrsBatched", "cublasSgetriBatched",
+        "cublasDgetriBatched", "cublasCgetriBatched", "cublasZgetriBatched",
+        "cublasSgeqrfBatched", "cublasDgeqrfBatched", "cublasCgeqrfBatched",
+        "cublasZgeqrfBatched",
         /*Legacy API*/
         "cublasInit", "cublasShutdown", "cublasGetError",
         /*level 1*/

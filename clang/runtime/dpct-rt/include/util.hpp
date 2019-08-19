@@ -41,18 +41,28 @@ template <typename T> struct DataType<cl::sycl::vec<T, 2>> {
   using T2 = std::complex<T>;
 };
 
-// leading dim is col.
+/// Copy matrix data. The default leading dimension is column.
+/// \param [out] to_ptr A poniter points to the destination location.
+/// \param [in] from_ptr A poniter points to the source location.
+/// \param [in] to_ld The leading dimension the destination matrix.
+/// \param [in] from_ld The leading dimension the source matrix.
+/// \param [in] rows The number of rows of the source matrix.
+/// \param [in] cols The number of columns of the source matrix.
+/// \param [in] direction The direction of the data copy.
+/// \param [in] queue The queue where the routine should be executed.
+/// \param [in] async The copy is async or not.
 template <typename T>
 inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
                             int from_ld, int rows, int cols,
-                            memcpy_direction direction) {
+                            memcpy_direction direction, cl::sycl::queue queue,
+                            bool async) {
   using Ty = typename DataType<T>::T2;
   if (to_ptr == from_ptr && to_ld == from_ld) {
     return;
   }
   if (to_ld == from_ld) {
     dpct_memcpy((void *)to_ptr, (void *)from_ptr, sizeof(Ty) * to_ld * cols,
-                direction);
+                direction, queue, async);
   } else {
     auto to_ptr_t = to_ptr;
     auto from_ptr_t = from_ptr;
@@ -62,7 +72,7 @@ inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
       to_ptr_t = to_ptr_t + to_ld;
       from_ptr_t = from_ptr_t + from_ld;
       dpct_memcpy((void *)(to_ptr_t), (void *)(from_ptr_t), sizeof(Ty) * rows,
-                  direction);
+                  direction, queue, async);
     }
   }
 }
