@@ -664,8 +664,8 @@ int run(int argc, const char **argv) {
 
   ValidateInputDirectory(Tool, InRoot);
   // Made "-- -x cuda --cuda-host-only -nocudalib" option set by default, .i.e
-  // commandline "syclct -in-root ./ -out-root ./ ./topologyQuery.cu  --  -x
-  // cuda --cuda-host-only -nocudalib -I../common/inc" became "syclct -in-root
+  // commandline "dpct -in-root ./ -out-root ./ ./topologyQuery.cu  --  -x
+  // cuda --cuda-host-only -nocudalib -I../common/inc" became "dpct -in-root
   // ./ -out-root ./ ./topologyQuery.cu  -- -I../common/inc"
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-nocudalib", ArgumentInsertPosition::BEGIN));

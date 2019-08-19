@@ -12,7 +12,7 @@
 echo ""
 echo "-------------------------------------------------------------------------------------"
 echo " Please setup ICS env for the test!"
-echo "  Ref to: https://securewiki.ith.intel.com/display/DPCPP/How+to+configure%2C+build+and+test+SYCLCT"
+echo "  Ref to: https://securewiki.ith.intel.com/display/DPCPP/How+to+configure%2C+build+and+test+DPCT"
 echo "  Detail in [Pre-checkin test] section."
 echo "-------------------------------------------------------------------------------------"
 echo ""
