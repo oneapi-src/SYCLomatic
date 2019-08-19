@@ -17,7 +17,6 @@
 
 //===--- dpct_kernel.hpp ------------------------------*- C++ -*---===//
 
-
 #ifndef DPCT_KERNEL_H
 #define DPCT_KERNEL_H
 

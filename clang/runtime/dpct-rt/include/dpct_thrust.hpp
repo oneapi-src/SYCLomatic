@@ -15,14 +15,11 @@
 * License.
 *****************************************************************************/
 
-//===--- dpct_thurst.hpp ------------------------------*- C++ -*---===//
+//===--- dpct_thrust.hpp ------------------------------*- C++ -*---===//
 
 #ifndef __DPCT_THRUST_HPP__
 #define __DPCT_THRUST_HPP__
-// todo: including thrust mapping header here.
 
 #include <tbb/iterators.h>
 #include "thrust_memory.hpp"
-
-
 #endif

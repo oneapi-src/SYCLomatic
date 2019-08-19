@@ -135,11 +135,10 @@ public:
   // the same memory when it inited by a raw pointer.
   template <typename OtherT>
   device_ptr(OtherT ptr)
-      : Base(
-            cl::sycl::buffer<T, 1>(cl::sycl::range<1>(
-                dpct::memory_manager::get_instance().translate_ptr(ptr).size /
-                sizeof(T))),
-            std::size_t{}) {}
+      : Base(cl::sycl::buffer<T, 1>(cl::sycl::range<1>(
+                 dpct::memory_manager::get_instance().translate_ptr(ptr).size /
+                 sizeof(T))),
+             std::size_t{}) {}
 #endif
 
   // needed for device_malloc

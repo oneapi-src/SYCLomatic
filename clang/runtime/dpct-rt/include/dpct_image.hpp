@@ -15,7 +15,7 @@
 * License.
 *****************************************************************************/
 
-//===--- dpct_texture.hpp ------------------------------*- C++ -*---===//
+//===--- dpct_image.hpp ------------------------------*- C++ -*---===//
 
 #ifndef DPCT_TEXTURE_H
 #define DPCT_TEXTURE_H
@@ -211,7 +211,7 @@ enum dpct_channel_format_kind {
 
 inline dpct_image_channel
 create_image_channel(int x, int y, int z, int w,
-                    dpct_channel_format_kind channel_kind) {
+                     dpct_channel_format_kind channel_kind) {
   dpct_image_channel channel;
 
   if (x == 32) {
@@ -255,12 +255,12 @@ create_image_channel(int x, int y, int z, int w,
 
 template <class T, int Dimension>
 inline void dpct_attach_image(dpct_image<T, Dimension> &texture,
-                             dpct_image_data &a) {
+                              dpct_image_data &a) {
   texture.attach(a);
 }
 template <class T>
 inline void dpct_attach_image(dpct_image<T, 1> &texture, void *ptr,
-                             const dpct_image_channel &desc, size_t size) {
+                              const dpct_image_channel &desc, size_t size) {
   texture.attach(ptr, desc, size);
 }
 template <class T, int Dimension>
@@ -269,27 +269,27 @@ inline void dpct_detach_image(dpct_image<T, Dimension> &texture) {
 }
 template <class... Args>
 inline void dpct_malloc_image(dpct_image_data *a, dpct_image_channel *desc,
-                                Args &&... args) {
+                              Args &&... args) {
   a->malloc(*desc, std::forward<Args>(args)...);
 }
 inline void dpct_memcpy_to_image(dpct_image_data &a, size_t off_x, size_t off_y,
-                                   void *ptr, size_t count) {
+                                 void *ptr, size_t count) {
   a.copy_from(off_x, off_y, 0, ptr, count);
 }
 inline void dpct_free(dpct_image_data &a) { a.free(); }
 template <class T, class CoordT>
 inline typename image_trait<T>::data_t
-dpct_read_image(dpct_image_accessor<T, 1> &acc, CoordT x) {
+    dpct_read_image(dpct_image_accessor<T, 1> &acc, CoordT x) {
   return acc.read(x);
 }
 template <class T, class CoordT>
 inline typename image_trait<T>::data_t
-dpct_read_image(dpct_image_accessor<T, 2> &acc, CoordT x, CoordT y) {
+    dpct_read_image(dpct_image_accessor<T, 2> &acc, CoordT x, CoordT y) {
   return acc.read(cl::sycl::vec<CoordT, 2>(x, y));
 }
 template <class T, class CoordT>
 inline typename image_trait<T>::data_t
-dpct_read_image(dpct_image_accessor<T, 3> &acc, CoordT x, CoordT y,
+    dpct_read_image(dpct_image_accessor<T, 3> &acc, CoordT x, CoordT y,
                     float z) {
   return acc.read(cl::sycl::vec<CoordT, 4>(x, y, z, 0));
 }

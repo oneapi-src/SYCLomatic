@@ -278,10 +278,8 @@ private:
 template <> class dpct_range<3> {
 public:
   dpct_range() : dpct_range(0, 0, 0) {}
-  dpct_range(size_t dim1, size_t dim2, size_t dim3)
-      : range{dim1, dim2, dim3} {}
-  dpct_range(cl::sycl::range<3> range)
-      : range{range[0], range[1], range[2]} {}
+  dpct_range(size_t dim1, size_t dim2, size_t dim3) : range{dim1, dim2, dim3} {}
+  dpct_range(cl::sycl::range<3> range) : range{range[0], range[1], range[2]} {}
   operator cl::sycl::range<3>() const {
     return cl::sycl::range<3>(range[0], range[1], range[2]);
   }
@@ -347,7 +345,7 @@ public:
   dpct_accessor<T, Memory, Dimension - 1> operator[](size_t index) const {
     auto low = range.low();
     return dpct_accessor<T, Memory, Dimension - 1>(data + index * low.size(),
-                                                     low);
+                                                   low);
   }
 
 private:
@@ -356,8 +354,7 @@ private:
 };
 
 // dpct_accessor specialization while Dimension = 1
-template <class T, memory_attribute Memory>
-class dpct_accessor<T, Memory, 1> {
+template <class T, memory_attribute Memory> class dpct_accessor<T, Memory, 1> {
 public:
   using memory_t = memory_traits<Memory, T>;
   using element_t = typename memory_t::element_t;
@@ -365,8 +362,7 @@ public:
   using accessor_t = typename memory_t::template accessor_t<1>;
   dpct_accessor(pointer_t data, const dpct_range<1> &range)
       : data(data), range(range){};
-  dpct_accessor(
-      const typename dpct_accessor<T, constant, 1>::accessor_t &acc)
+  dpct_accessor(const typename dpct_accessor<T, constant, 1>::accessor_t &acc)
       : dpct_accessor(acc, dpct_range<1>(acc.get_range())) {
     static_assert(Memory == constant,
                   "only constant dpct_accessor can be initialized from "
@@ -396,8 +392,7 @@ private:
 };
 
 // dpct_accessor specialization while Dimension = 0
-template <class T, memory_attribute Memory>
-class dpct_accessor<T, Memory, 0> {
+template <class T, memory_attribute Memory> class dpct_accessor<T, Memory, 0> {
 public:
   using memory_t = memory_traits<Memory, T>;
   using element_t = typename memory_t::element_t;
@@ -425,8 +420,7 @@ public:
   using accessor_t =
       typename memory_traits<Memory, T>::template accessor_t<Dimension>;
 
-  dpct_accessor_acquirer(const dpct_range<Dimension> &range)
-      : range(range) {}
+  dpct_accessor_acquirer(const dpct_range<Dimension> &range) : range(range) {}
   accessor_t get_access(const buffer_t &buffer, cl::sycl::handler &cgh) {
     return buffer.reinterpret<T, Dimension>(range)
         .template get_access<memory_traits<Memory, T>::mode,
@@ -458,8 +452,7 @@ public:
   using accessor_t =
       typename memory_traits<shared, T>::template accessor_t<Dimension>;
 
-  dpct_accessor_acquirer(const dpct_range<Dimension> &range)
-      : range(range) {}
+  dpct_accessor_acquirer(const dpct_range<Dimension> &range) : range(range) {}
   accessor_t get_access(cl::sycl::handler &cgh) {
     return accessor_t(range, cgh);
   }
@@ -709,7 +702,8 @@ static void dpct_memcpy(void *to_ptr, void *from_ptr, size_t size,
 /// Asynchronously copies size bytes from the address specified by from_ptr to
 /// the address specified by to_ptr. The value of direction, which is used to
 /// specify the copy direction, should be one of host_to_host,
-/// host_to_device, device_to_host, device_to_device, or automatic. The return of
+/// host_to_device, device_to_host, device_to_device, or automatic. The return
+/// of
 /// the function does NOT guarantee the copy is completed
 ///
 /// \param to_ptr Pointer to destination memory address.

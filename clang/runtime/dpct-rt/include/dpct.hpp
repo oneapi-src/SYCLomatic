@@ -27,9 +27,9 @@
 
 #include "dpct_atomic.hpp"
 #include "dpct_device.hpp"
+#include "dpct_image.hpp"
 #include "dpct_kernel.hpp"
 #include "dpct_memory.hpp"
-#include "dpct_image.hpp"
 #include "dpct_util.hpp"
 
 #if defined(_MSC_VER)
