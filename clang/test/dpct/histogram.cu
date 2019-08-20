@@ -1,6 +1,8 @@
 // RUN: dpct -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --match-full-lines --input-file %T/histogram.dp.cpp %s
-
+#ifdef _WIN32
+#include <cstdint>
+#endif
 #include <cuda_runtime.h>
 
 __global__ void wg_private_local_kernel(const uint32_t N, const uint32_t B, const uint32_t* input, uint32_t* histogram)

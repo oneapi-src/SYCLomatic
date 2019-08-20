@@ -3,9 +3,9 @@
 // RUN: FileCheck --input-file %T/test_path_in_windows.dp.cpp --match-full-lines %S/test_path_in_windows.cu
 
 
-// CHECK: void testKernelPtr(const int *L, const int *M, int N, cl::sycl::nd_item<3> [[ITEMNAME:item_[a-f0-9]+]]) {
+// CHECK: void testKernelPtr(const int *L, const int *M, int N, cl::sycl::nd_item<3> item_ct1) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
-  // CHECK: int gtid = [[ITEMNAME]].get_group(0) * [[ITEMNAME]].get_local_range().get(0) + [[ITEMNAME]].get_local_id(0);
+  // CHECK: int gtid = item_ct1.get_group(0) * item_ct1.get_local_range().get(0) + item_ct1.get_local_id(0);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
@@ -23,9 +23,9 @@ int main() {
   // CHECK-NEXT:        auto karg2_acc = karg2_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_[a-f0-9]+]]) {
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:            const int *karg2 = (const int*)(&karg2_acc[0] + karg2_offset);
-  // CHECK-NEXT:            testKernelPtr((const int *)karg2, karg2, karg3, [[ITEM]]);
+  // CHECK-NEXT:            testKernelPtr((const int *)karg2, karg2, karg3, item_ct1);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
   // CHECK-NEXT:  }

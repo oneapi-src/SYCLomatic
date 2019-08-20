@@ -1,6 +1,8 @@
 // RUN: dpct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --input-file %T/sycl_style_int2.dp.cpp --match-full-lines %s
-
+#ifdef _WIN32
+#include <cstdint>
+#endif
 // CHECK: void func3(cl::sycl::int2 a, cl::sycl::int2 b, cl::sycl::int2 c) {
 void func3(int2 a, int2 b, int2 c) {
 }

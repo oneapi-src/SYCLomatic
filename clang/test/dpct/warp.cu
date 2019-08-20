@@ -1,4 +1,5 @@
 // UNSUPPORTED: cuda-8.0
+// UNSUPPORTED: v8.0
 // RUN: dpct -out-root %T %s -- -std=c++14 -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --input-file %T/warp.dp.cpp --match-full-lines %s
 

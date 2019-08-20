@@ -3503,7 +3503,7 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                             ReplInfo.MissedArgumentName[i] + ";" + getNL();
         }
         ReplStr = ReplStr + ReplInfo.MissedArgumentName[i] + ", ";
-        if (i == ReplInfo.MissedArgumentFinalLocation.size() ||
+        if (i == ReplInfo.MissedArgumentFinalLocation.size() -1 ||
             ReplInfo.MissedArgumentInsertBefore[i + 1] !=
                 ReplInfo.MissedArgumentInsertBefore[i]) {
           emplaceTransformation(new InsertBeforeStmt(

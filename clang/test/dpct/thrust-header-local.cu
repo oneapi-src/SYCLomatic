@@ -1,4 +1,5 @@
 // UNSUPPORTED: cuda-8.0
+// UNSUPPORTED: v8.0
 // RUN: dpct -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path" -I./thrust
 // RUN: FileCheck --input-file %T/thrust-header-local.dp.cpp --match-full-lines %s
 // CHECK: #include <CL/sycl.hpp>
