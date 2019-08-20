@@ -25,12 +25,12 @@
 
 #define DPCPP_COMPATIBILITY_TEMP (200)
 
-#include "dpct_atomic.hpp"
-#include "dpct_device.hpp"
-#include "dpct_image.hpp"
-#include "dpct_kernel.hpp"
-#include "dpct_memory.hpp"
-#include "dpct_util.hpp"
+#include "atomic.hpp"
+#include "device.hpp"
+#include "image.hpp"
+#include "kernel.hpp"
+#include "memory.hpp"
+#include "util.hpp"
 
 #if defined(_MSC_VER)
 #define __sycl_align__(n) __declspec(align(n))

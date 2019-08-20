@@ -1,14 +1,14 @@
 set(dpct_rt_files
   include/dpct.hpp
-  include/dpct_atomic.hpp
-  include/dpct_device.hpp
-  include/dpct_memory.hpp
-  include/dpct_kernel.hpp
-  include/dpct_image.hpp
+  include/atomic.hpp
+  include/device.hpp
+  include/memory.hpp
+  include/kernel.hpp
+  include/image.hpp
   include/dpct_thrust.hpp
-  include/dpct_util.hpp
+  include/util.hpp
   include/thrust_memory.hpp
-  include/dpct_blas.hpp
+  include/blas_utils.hpp
 )
 
 set(output_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include/dpct)

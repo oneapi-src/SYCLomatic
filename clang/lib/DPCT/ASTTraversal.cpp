@@ -320,7 +320,7 @@ void IncludesCallbacks::InclusionDirective(
       std::string Replacement = std::string("#include <mkl_blas_sycl.hpp>") +
                                 getNL() + "#include <mkl_lapack_sycl.hpp>" +
                                 getNL() + "#include <sycl_types.hpp>" +
-                                getNL() + "#include <dpct/dpct_blas.hpp>";
+                                getNL() + "#include <dpct/blas_utils.hpp>";
       TransformSet.emplace_back(new ReplaceInclude(
           CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                           /*IsTokenRange=*/false),
