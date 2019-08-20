@@ -109,7 +109,7 @@ enum SourceProcessType {
   // flag for *.cuh
   TypeCudaHeader = 2,
 
-  // flag for *.cpp, *.cxx, *.cc
+  // flag for *.cpp, *.cxx, *.cc, *.c, *.C
   TypeCppSource = 4,
 
   // flag for *.hpp, *.hxx *.h
