@@ -27,6 +27,7 @@ namespace dpct {
 class CudaMallocInfo;
 class TextureInfo;
 class KernelCallExpr;
+class DeviceFunctionInfo;
 class CallFunctionExpr;
 class DeviceFunctionDecl;
 class MemVarInfo;
@@ -1035,50 +1036,48 @@ class ArgumentsInfo {
 public:
   ArgumentsInfo() = default;
 
-  inline bool empty() { return Arguments.empty(); }
-  std::string getArguments() {
-    std::string Result;
-    for (auto &Arg : Arguments)
-      Result += (Arg.getArgString() + ", ").str();
-    return Result.empty() ? Result : Result.erase(Result.size() - 2, 2);
-  }
-  void emplaceReplacements() {
-    auto &Global = DpctGlobalInfo::getInstance();
-    for (auto &Arg : Arguments)
-      if (Arg.Repl)
-        // TODO: Output debug info.
-        Global.addReplacement(Arg.Repl);
-  }
+  inline bool empty() { return ArgInfos.empty(); }
 
-  void buildArgsInfo(const CallExpr *CE, ArgumentAnalysis &Analysis) {
+  void buildArgsInfo(const CallExpr *CE) {
+    KernelArgumentAnalysis Analysis;
     for (auto Arg : CE->arguments()) {
+      KernelArgumentAnalysis Analysis;
       Analysis.analyze(Arg);
-      Arguments.emplace_back(Analysis);
+      ArgInfos.emplace_back(ArgInfo(Analysis, Arg));
     }
   }
 
 private:
   struct ArgInfo {
-    ArgInfo(ArgumentAnalysis &Analysis) {
-      auto TM = Analysis.getReplacement();
-      if (TM)
-        Repl = TM->getReplacement(DpctGlobalInfo::getContext());
-      else
-        Arg = Analysis.getReplacedString();
+    ArgInfo(KernelArgumentAnalysis &Analysis, const Expr* arg) {
+      ArgString = Analysis.getReplacedString();
+      isPointer = Analysis.isPointer;
+      isRedeclareRequired = Analysis.isRedeclareRequired;
+      TypeString = arg->getType().getAsString(
+          DpctGlobalInfo::getContext().getPrintingPolicy());
     }
+
     const StringRef getArgString() {
-      if (Repl)
-        return Repl->getReplacementText();
-      return Arg;
+      return ArgString;
     }
-    std::string Arg;
-    std::shared_ptr<ExtReplacement> Repl;
+
+    std::string getTypeString() {
+      return TypeString;
+    }
+    bool isPointer;
+    bool isRedeclareRequired;
+    std::string ArgString;
+    std::string TypeString;
   };
 
-  std::vector<ArgInfo> Arguments;
+  std::vector<ArgInfo> ArgInfos;
+
+public:
+  std::vector<ArgInfo>& getArgInfos() {
+    return ArgInfos;
+  }
 };
 
-class DeviceFunctionInfo;
 // call function expression includes location, name, arguments num, template
 // arguments and all function decls related to this call, also merges memory
 // variable info of all related function decls.
@@ -1090,13 +1089,12 @@ public:
         RParenLoc(DpctGlobalInfo::getSourceManager().getFileOffset(
             CE->getRParenLoc())) {}
 
-  inline void buildCallExprInfo(const CallExpr *CE) {
-    buildCallExprInfo(CE, ArgumentAnalysis());
-  }
+  void buildCallExprInfo(const CallExpr *CE);
+
   inline const MemVarMap &getVarMap() { return VarMap; }
 
   void emplaceReplacement();
-  inline bool hasArgs() { return !Args.empty(); }
+  inline bool hasArgs() { return HasArgs; }
   inline bool hasTemplateArgs() { return !TemplateArgs.empty(); }
   inline const std::string &getName() { return Name; }
 
@@ -1105,16 +1103,8 @@ public:
   inline virtual std::string getExtraArguments() {
     return getVarMap().getCallArguments(hasArgs());
   }
-  inline std::string getOriginArguments() { return Args.getArguments(); }
-  inline std::string getArguments() {
-    return getOriginArguments() + getExtraArguments();
-  }
 
 protected:
-  void buildCallExprInfo(const CallExpr *CE, ArgumentAnalysis &A);
-  inline void buildCallExprInfo(const CallExpr *CE, ArgumentAnalysis &&A) {
-    buildCallExprInfo(CE, A);
-  }
   inline unsigned getBegin() { return BeginLoc; }
   inline const std::string &getFilePath() { return FilePath; }
   void buildInfo();
@@ -1133,10 +1123,10 @@ private:
   unsigned BeginLoc;
   unsigned RParenLoc;
   std::string Name;
-  ArgumentsInfo Args;
   std::vector<TemplateArgumentInfo> TemplateArgs;
   std::shared_ptr<DeviceFunctionInfo> FuncInfo;
   MemVarMap VarMap;
+  bool HasArgs;
 };
 
 // device function declaration info includes location, name, and related
@@ -1292,8 +1282,8 @@ public:
   KernelCallExpr(unsigned Offset, const std::string &FilePath,
                  const CUDAKernelCallExpr *KernelCall)
       : CallFunctionExpr(Offset, FilePath, KernelCall), IsSync(false) {
-    buildCallExprInfo(KernelCall,
-                      KernelArgumentAnalysis(PointerArgsList, RefArgsList));
+    buildCallExprInfo(KernelCall);
+    ArgsInfo.buildArgsInfo(KernelCall);
     buildKernelInfo(KernelCall);
   }
 
@@ -1301,6 +1291,10 @@ public:
   void buildInfo();
   inline std::string getExtraArguments() override {
     return getVarMap().getKernelArguments(hasArgs());
+  }
+
+  ArgumentsInfo& getArgsInfo() {
+    return ArgsInfo;
   }
 
   std::string getReplacement();
@@ -1346,7 +1340,7 @@ private:
 
   std::string Event;
   bool IsSync;
-  std::vector<std::shared_ptr<VarInfo>> PointerArgsList, RefArgsList;
+  ArgumentsInfo ArgsInfo;
 };
 
 class CudaMallocInfo {

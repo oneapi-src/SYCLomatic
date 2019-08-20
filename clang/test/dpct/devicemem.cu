@@ -62,41 +62,41 @@ int main() {
 
   const int threads_per_block = NUM_ELEMENTS;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> d_out_buf = dpct::get_buffer_and_offset(d_out);
-  // CHECK:   size_t d_out_offset = d_out_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto in_acc_ct1 = in.get_access(cgh);
-  // CHECK:       auto d_out_acc = d_out_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           float *d_out = (float*)(&d_out_acc[0] + d_out_offset);
-  // CHECK:           kernel1(d_out, [[ITEM]], dpct::dpct_accessor<float, dpct::device, 1>(in_acc_ct1));
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(d_out);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto in_acc_ct1 = in.get_access(cgh);
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           float *arg_ct0 = (float *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           kernel1(arg_ct0, item_ct1, dpct::dpct_accessor<float, dpct::device, 1>(in_acc_ct1));
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel1<<<1, threads_per_block>>>(d_out);
 
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> d_out_buf = dpct::get_buffer_and_offset(d_out);
-  // CHECK:   size_t d_out_offset = d_out_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       dpct::device_memory<float, 1> tmp(64/*size*/);
-  // CHECK:       auto tmp_acc_ct1 = tmp.get_access(cgh);
-  // CHECK:       auto al_acc_ct1 = al.get_access(cgh);
-  // CHECK:       auto fx_acc_ct1 = fx.get_access(cgh);
-  // CHECK:       auto fy_acc_ct1 = fy.get_access(cgh);
-  // CHECK:       auto d_out_acc = d_out_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           float *d_out = (float*)(&d_out_acc[0] + d_out_offset);
-  // CHECK:           kernel2(d_out, [[ITEM]], dpct::dpct_accessor<int, dpct::device, 0>(al_acc_ct1), dpct::dpct_accessor<float, dpct::device, 1>(fx_acc_ct1), dpct::dpct_accessor<float, dpct::device, 2>(fy_acc_ct1), dpct::dpct_accessor<float, dpct::device, 1>(tmp_acc_ct1));
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(d_out);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       dpct::device_memory<float, 1> tmp(64/*size*/);
+  // CHECK-NEXT:       auto tmp_acc_ct1 = tmp.get_access(cgh);
+  // CHECK-NEXT:       auto al_acc_ct1 = al.get_access(cgh);
+  // CHECK-NEXT:       auto fx_acc_ct1 = fx.get_access(cgh);
+  // CHECK-NEXT:       auto fy_acc_ct1 = fy.get_access(cgh);
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           float *arg_ct0 = (float *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           kernel2(arg_ct0, item_ct1, dpct::dpct_accessor<int, dpct::device, 0>(al_acc_ct1), dpct::dpct_accessor<float, dpct::device, 1>(fx_acc_ct1), dpct::dpct_accessor<float, dpct::device, 2>(fy_acc_ct1), dpct::dpct_accessor<float, dpct::device, 1>(tmp_acc_ct1));
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel2<<<1, threads_per_block>>>(d_out);
 
   cudaMemcpy(h_out, d_out, array_size, cudaMemcpyDeviceToHost);

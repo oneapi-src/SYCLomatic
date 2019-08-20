@@ -51,22 +51,22 @@ void testTemplate() {
   cudaMemcpy(d_d, a, mem_size, cudaMemcpyHostToDevice);
 
   // CHECK: {
-  // CHECK-NEXT:  std::pair<dpct::buffer_t, size_t> d_d_buf = dpct::get_buffer_and_offset(d_d);
-  // CHECK-NEXT:  size_t d_d_offset = d_d_buf.second;
-  // CHECK-NEXT:  dpct::get_default_queue().submit(
-  // CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:      dpct::shared_memory<T, 2> s(64/*size * 2*/, 128/*size * 4*/);
-  // CHECK-NEXT:      auto s_range_ct1 = s.get_range();
-  // CHECK-NEXT:      auto s_acc_ct1 = s.get_access(cgh);
-  // CHECK-NEXT:      auto d_d_acc = d_d_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, T>>(
-  // CHECK-NEXT:        cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1)), cl::sycl::range<3>(n, 1, 1)),
-  // CHECK-NEXT:        [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK-NEXT:          T *d_d = (T*)(&d_d_acc[0] + d_d_offset);
-  // CHECK-NEXT:          templateReverse<T>(d_d, n, [[ITEM]], dpct::dpct_accessor<T, dpct::shared, 2>(s_acc_ct1, s_range_ct1));
-  // CHECK-NEXT:      });
-  // CHECK-NEXT:    });
-  // CHECK-NEXT:}
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(d_d);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       dpct::shared_memory<T, 2> s(64/*size * 2*/, 128/*size * 4*/);
+  // CHECK-NEXT:       auto s_range_ct1 = s.get_range();
+  // CHECK-NEXT:       auto s_acc_ct1 = s.get_access(cgh);
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, T>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1)), cl::sycl::range<3>(n, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           T *arg_ct0 = (T *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           templateReverse<T>(arg_ct0, n, item_ct1, dpct::dpct_accessor<T, dpct::shared, 2>(s_acc_ct1, s_range_ct1));
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   templateReverse<T><<<1, n>>>(d_d, n);
 }
 
@@ -77,59 +77,60 @@ int main(void) {
   cudaMalloc((void **)&d_d, n * sizeof(int));
   cudaMemcpy(d_d, a, n * sizeof(int), cudaMemcpyHostToDevice);
   // CHECK: {
-  // CHECK-NEXT:  std::pair<dpct::buffer_t, size_t> d_d_buf = dpct::get_buffer_and_offset(d_d);
-  // CHECK-NEXT:  size_t d_d_offset = d_d_buf.second;
-  // CHECK-NEXT:  dpct::get_default_queue().submit(
-  // CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:      dpct::shared_memory<int, 1> s(64/*size*/);
-  // CHECK-NEXT:      auto s_range_ct1 = s.get_range();
-  // CHECK-NEXT:      auto s_acc_ct1 = s.get_access(cgh);
-  // CHECK-NEXT:      auto d_d_acc = d_d_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class staticReverse_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:        cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1)), cl::sycl::range<3>(n, 1, 1)),
-  // CHECK-NEXT:        [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK-NEXT:          int *d_d = (int*)(&d_d_acc[0] + d_d_offset);
-  // CHECK-NEXT:          staticReverse(d_d, n, [[ITEM]], dpct::dpct_accessor<int, dpct::shared, 1>(s_acc_ct1, s_range_ct1));
-  // CHECK-NEXT:        });
-  // CHECK-NEXT:    });
-  // CHECK-NEXT:}
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(d_d);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       dpct::shared_memory<int, 1> s(64/*size*/);
+  // CHECK-NEXT:       auto s_range_ct1 = s.get_range();
+  // CHECK-NEXT:       auto s_acc_ct1 = s.get_access(cgh);
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class staticReverse_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1)), cl::sycl::range<3>(n, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           int *arg_ct0 = (int *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           staticReverse(arg_ct0, n, item_ct1, dpct::dpct_accessor<int, dpct::shared, 1>(s_acc_ct1, s_range_ct1));
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   staticReverse<<<1, n>>>(d_d, n);
   cudaMemcpy(d, d_d, n * sizeof(int), cudaMemcpyDeviceToHost);
 
   // CHECK: {
-  // CHECK-NEXT:  std::pair<dpct::buffer_t, size_t> d_d_buf = dpct::get_buffer_and_offset(d_d);
-  // CHECK-NEXT:  size_t d_d_offset = d_d_buf.second;
-  // CHECK-NEXT:  dpct::get_default_queue().submit(
-  // CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:      dpct::shared_memory<int, 2> s(64/*size * 2*/, 128/*size * 4*/);
-  // CHECK-NEXT:      auto s_range_ct1 = s.get_range();
-  // CHECK-NEXT:      auto s_acc_ct1 = s.get_access(cgh);
-  // CHECK-NEXT:      auto d_d_acc = d_d_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, int>>(
-  // CHECK-NEXT:        cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1)), cl::sycl::range<3>(n, 1, 1)),
-  // CHECK-NEXT:        [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK-NEXT:          int *d_d = (int*)(&d_d_acc[0] + d_d_offset);
-  // CHECK-NEXT:          templateReverse<int>(d_d, n, [[ITEM]], dpct::dpct_accessor<int, dpct::shared, 2>(s_acc_ct1, s_range_ct1));
-  // CHECK-NEXT:        });
-  // CHECK-NEXT:    });
-  // CHECK-NEXT:}
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(d_d);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       dpct::shared_memory<int, 2> s(64/*size * 2*/, 128/*size * 4*/);
+  // CHECK-NEXT:       auto s_range_ct1 = s.get_range();
+  // CHECK-NEXT:       auto s_acc_ct1 = s.get_access(cgh);
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, int>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1)), cl::sycl::range<3>(n, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           int *arg_ct0 = (int *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           templateReverse<int>(arg_ct0, n, item_ct1, dpct::dpct_accessor<int, dpct::shared, 2>(s_acc_ct1, s_range_ct1));
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   templateReverse<int><<<1, n>>>(d_d, n);
+
   // CHECK: {
-  // CHECK-NEXT:  std::pair<dpct::buffer_t, size_t> d_d_buf = dpct::get_buffer_and_offset(d_d);
-  // CHECK-NEXT:  size_t d_d_offset = d_d_buf.second;
-  // CHECK-NEXT:  dpct::get_default_queue().submit(
-  // CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:      dpct::shared_memory<int, 1> s(2*SIZE*SIZE);
-  // CHECK-NEXT:      auto s_range_ct1 = s.get_range();
-  // CHECK-NEXT:      auto s_acc_ct1 = s.get_access(cgh);
-  // CHECK-NEXT:      auto d_d_acc = d_d_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class nonTypeTemplateReverse_{{[a-f0-9]+}}, dpct_kernel_scalar<SIZE>>>(
-  // CHECK-NEXT:        cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1)), cl::sycl::range<3>(n, 1, 1)),
-  // CHECK-NEXT:        [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK-NEXT:          int *d_d = (int*)(&d_d_acc[0] + d_d_offset);
-  // CHECK-NEXT:          nonTypeTemplateReverse<SIZE>(d_d, n, [[ITEM]], dpct::dpct_accessor<int, dpct::shared, 1>(s_acc_ct1, s_range_ct1));
-  // CHECK-NEXT:        });
-  // CHECK-NEXT:    });
-  // CHECK-NEXT:  }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(d_d);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       dpct::shared_memory<int, 1> s(2*SIZE*SIZE);
+  // CHECK-NEXT:       auto s_range_ct1 = s.get_range();
+  // CHECK-NEXT:       auto s_acc_ct1 = s.get_access(cgh);
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class nonTypeTemplateReverse_{{[a-f0-9]+}}, dpct_kernel_scalar<SIZE>>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1)), cl::sycl::range<3>(n, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           int *arg_ct0 = (int *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           nonTypeTemplateReverse<SIZE>(arg_ct0, n, item_ct1, dpct::dpct_accessor<int, dpct::shared, 1>(s_acc_ct1, s_range_ct1));
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   nonTypeTemplateReverse<SIZE><<<1, n>>>(d_d, n);
 }

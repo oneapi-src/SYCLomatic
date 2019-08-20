@@ -54,24 +54,24 @@ int main_char1() {
   // CHECK: int char1_q = sizeof(char1_d);
   int char1_q = sizeof(char1_d);
   int *char1v_cast;
-  // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> char1_e_buf = dpct::get_buffer_and_offset(char1_e);
-  // CHECK:   size_t char1_e_offset = char1_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> char1v_cast_buf = dpct::get_buffer_and_offset(char1v_cast);
-  // CHECK:   size_t char1v_cast_offset = char1v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto char1_e_acc = char1_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto char1v_cast_acc = char1v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_char1_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           char *char1_e = (char*)(&char1_e_acc[0] + char1_e_offset);
-  // CHECK:           int *char1v_cast = (int*)(&char1v_cast_acc[0] + char1v_cast_offset);
-  // CHECK:           kernel_char1(char1_e, (char *)char1v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // {
+  //   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(char1_e);
+  //   size_t arg_ct0_offset = arg_ct0_buf.second;
+  //   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((char *)char1v_cast);
+  //   size_t arg_ct1_offset = arg_ct1_buf.second;
+  //   dpct::get_default_queue().submit(
+  //     [&](cl::sycl::handler &cgh) {
+  //       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  //       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  //       cgh.parallel_for<dpct_kernel_name<class kernel_char1_{{[a-f0-9]+}}>>(
+  //         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  //         [=](cl::sycl::nd_item<3> item_ct1) {
+  //           char1 *arg_ct0 = (char1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  //           char1 *arg_ct1 = (char1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  //           kernel_char1(arg_ct0, arg_ct1);
+  //         });
+  //     });
+  // }
   kernel_char1<<<1,1>>>(char1_e, (char1 *)char1v_cast);
   return 0;
 }
@@ -130,23 +130,23 @@ int main_char2() {
   int char2_q = sizeof(char2_d);
   int *char2v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> char2_e_buf = dpct::get_buffer_and_offset(char2_e);
-  // CHECK:   size_t char2_e_offset = char2_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> char2v_cast_buf = dpct::get_buffer_and_offset(char2v_cast);
-  // CHECK:   size_t char2v_cast_offset = char2v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto char2_e_acc = char2_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto char2v_cast_acc = char2v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_char2_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::char2 *char2_e = (cl::sycl::char2*)(&char2_e_acc[0] + char2_e_offset);
-  // CHECK:           int *char2v_cast = (int*)(&char2v_cast_acc[0] + char2v_cast_offset);
-  // CHECK:           kernel_char2(char2_e, (cl::sycl::char2 *)char2v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(char2_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::char2 *)char2v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_char2_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           char2 *arg_ct0 = (char2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           char2 *arg_ct1 = (char2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_char2(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_char2<<<1,1>>>(char2_e, (char2 *)char2v_cast);
   return 0;
 }
@@ -205,23 +205,23 @@ int main_char3() {
   int char3_q = sizeof(char3_d);
   int *char3v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> char3_e_buf = dpct::get_buffer_and_offset(char3_e);
-  // CHECK:   size_t char3_e_offset = char3_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> char3v_cast_buf = dpct::get_buffer_and_offset(char3v_cast);
-  // CHECK:   size_t char3v_cast_offset = char3v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto char3_e_acc = char3_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto char3v_cast_acc = char3v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_char3_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::char3 *char3_e = (cl::sycl::char3*)(&char3_e_acc[0] + char3_e_offset);
-  // CHECK:           int *char3v_cast = (int*)(&char3v_cast_acc[0] + char3v_cast_offset);
-  // CHECK:           kernel_char3(char3_e, (cl::sycl::char3 *)char3v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(char3_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::char3 *)char3v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_char3_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           char3 *arg_ct0 = (char3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           char3 *arg_ct1 = (char3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_char3(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_char3<<<1,1>>>(char3_e, (char3 *)char3v_cast);
   return 0;
 }
@@ -280,23 +280,23 @@ int main_char4() {
   int char4_q = sizeof(char4_d);
   int *char4v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> char4_e_buf = dpct::get_buffer_and_offset(char4_e);
-  // CHECK:   size_t char4_e_offset = char4_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> char4v_cast_buf = dpct::get_buffer_and_offset(char4v_cast);
-  // CHECK:   size_t char4v_cast_offset = char4v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto char4_e_acc = char4_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto char4v_cast_acc = char4v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_char4_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::char4 *char4_e = (cl::sycl::char4*)(&char4_e_acc[0] + char4_e_offset);
-  // CHECK:           int *char4v_cast = (int*)(&char4v_cast_acc[0] + char4v_cast_offset);
-  // CHECK:           kernel_char4(char4_e, (cl::sycl::char4 *)char4v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(char4_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::char4 *)char4v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_char4_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           char4 *arg_ct0 = (char4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           char4 *arg_ct1 = (char4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_char4(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_char4<<<1,1>>>(char4_e, (char4 *)char4v_cast);
   return 0;
 }
@@ -355,23 +355,23 @@ int main_double1() {
   int double1_q = sizeof(double1_d);
   int *double1v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> double1_e_buf = dpct::get_buffer_and_offset(double1_e);
-  // CHECK:   size_t double1_e_offset = double1_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> double1v_cast_buf = dpct::get_buffer_and_offset(double1v_cast);
-  // CHECK:   size_t double1v_cast_offset = double1v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto double1_e_acc = double1_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto double1v_cast_acc = double1v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_double1_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           double *double1_e = (double*)(&double1_e_acc[0] + double1_e_offset);
-  // CHECK:           int *double1v_cast = (int*)(&double1v_cast_acc[0] + double1v_cast_offset);
-  // CHECK:           kernel_double1(double1_e, (double *)double1v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(double1_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((double *)double1v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_double1_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           double1 *arg_ct0 = (double1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           double1 *arg_ct1 = (double1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_double1(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_double1<<<1,1>>>(double1_e, (double1 *)double1v_cast);
   return 0;
 }
@@ -430,23 +430,23 @@ int main_double2() {
   int double2_q = sizeof(double2_d);
   int *double2v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> double2_e_buf = dpct::get_buffer_and_offset(double2_e);
-  // CHECK:   size_t double2_e_offset = double2_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> double2v_cast_buf = dpct::get_buffer_and_offset(double2v_cast);
-  // CHECK:   size_t double2v_cast_offset = double2v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto double2_e_acc = double2_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto double2v_cast_acc = double2v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_double2_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::double2 *double2_e = (cl::sycl::double2*)(&double2_e_acc[0] + double2_e_offset);
-  // CHECK:           int *double2v_cast = (int*)(&double2v_cast_acc[0] + double2v_cast_offset);
-  // CHECK:           kernel_double2(double2_e, (cl::sycl::double2 *)double2v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(double2_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::double2 *)double2v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_double2_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           double2 *arg_ct0 = (double2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           double2 *arg_ct1 = (double2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_double2(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_double2<<<1,1>>>(double2_e, (double2 *)double2v_cast);
   return 0;
 }
@@ -505,23 +505,23 @@ int main_double3() {
   int double3_q = sizeof(double3_d);
   int *double3v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> double3_e_buf = dpct::get_buffer_and_offset(double3_e);
-  // CHECK:   size_t double3_e_offset = double3_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> double3v_cast_buf = dpct::get_buffer_and_offset(double3v_cast);
-  // CHECK:   size_t double3v_cast_offset = double3v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto double3_e_acc = double3_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto double3v_cast_acc = double3v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_double3_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::double3 *double3_e = (cl::sycl::double3*)(&double3_e_acc[0] + double3_e_offset);
-  // CHECK:           int *double3v_cast = (int*)(&double3v_cast_acc[0] + double3v_cast_offset);
-  // CHECK:           kernel_double3(double3_e, (cl::sycl::double3 *)double3v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(double3_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::double3 *)double3v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_double3_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           double3 *arg_ct0 = (double3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           double3 *arg_ct1 = (double3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_double3(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_double3<<<1,1>>>(double3_e, (double3 *)double3v_cast);
   return 0;
 }
@@ -580,23 +580,23 @@ int main_double4() {
   int double4_q = sizeof(double4_d);
   int *double4v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> double4_e_buf = dpct::get_buffer_and_offset(double4_e);
-  // CHECK:   size_t double4_e_offset = double4_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> double4v_cast_buf = dpct::get_buffer_and_offset(double4v_cast);
-  // CHECK:   size_t double4v_cast_offset = double4v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto double4_e_acc = double4_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto double4v_cast_acc = double4v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_double4_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::double4 *double4_e = (cl::sycl::double4*)(&double4_e_acc[0] + double4_e_offset);
-  // CHECK:           int *double4v_cast = (int*)(&double4v_cast_acc[0] + double4v_cast_offset);
-  // CHECK:           kernel_double4(double4_e, (cl::sycl::double4 *)double4v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(double4_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::double4 *)double4v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_double4_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           double4 *arg_ct0 = (double4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           double4 *arg_ct1 = (double4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_double4(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_double4<<<1,1>>>(double4_e, (double4 *)double4v_cast);
   return 0;
 }
@@ -655,23 +655,23 @@ int main_float1() {
   int float1_q = sizeof(float1_d);
   int *float1v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> float1_e_buf = dpct::get_buffer_and_offset(float1_e);
-  // CHECK:   size_t float1_e_offset = float1_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> float1v_cast_buf = dpct::get_buffer_and_offset(float1v_cast);
-  // CHECK:   size_t float1v_cast_offset = float1v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto float1_e_acc = float1_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto float1v_cast_acc = float1v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_float1_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           float *float1_e = (float*)(&float1_e_acc[0] + float1_e_offset);
-  // CHECK:           int *float1v_cast = (int*)(&float1v_cast_acc[0] + float1v_cast_offset);
-  // CHECK:           kernel_float1(float1_e, (float *)float1v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(float1_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((float *)float1v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_float1_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           float1 *arg_ct0 = (float1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           float1 *arg_ct1 = (float1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_float1(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_float1<<<1,1>>>(float1_e, (float1 *)float1v_cast);
   return 0;
 }
@@ -730,23 +730,23 @@ int main_float2() {
   int float2_q = sizeof(float2_d);
   int *float2v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> float2_e_buf = dpct::get_buffer_and_offset(float2_e);
-  // CHECK:   size_t float2_e_offset = float2_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> float2v_cast_buf = dpct::get_buffer_and_offset(float2v_cast);
-  // CHECK:   size_t float2v_cast_offset = float2v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto float2_e_acc = float2_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto float2v_cast_acc = float2v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_float2_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::float2 *float2_e = (cl::sycl::float2*)(&float2_e_acc[0] + float2_e_offset);
-  // CHECK:           int *float2v_cast = (int*)(&float2v_cast_acc[0] + float2v_cast_offset);
-  // CHECK:           kernel_float2(float2_e, (cl::sycl::float2 *)float2v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(float2_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::float2 *)float2v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_float2_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           float2 *arg_ct0 = (float2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           float2 *arg_ct1 = (float2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_float2(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_float2<<<1,1>>>(float2_e, (float2 *)float2v_cast);
   return 0;
 }
@@ -805,23 +805,23 @@ int main_float3() {
   int float3_q = sizeof(float3_d);
   int *float3v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> float3_e_buf = dpct::get_buffer_and_offset(float3_e);
-  // CHECK:   size_t float3_e_offset = float3_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> float3v_cast_buf = dpct::get_buffer_and_offset(float3v_cast);
-  // CHECK:   size_t float3v_cast_offset = float3v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto float3_e_acc = float3_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto float3v_cast_acc = float3v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_float3_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::float3 *float3_e = (cl::sycl::float3*)(&float3_e_acc[0] + float3_e_offset);
-  // CHECK:           int *float3v_cast = (int*)(&float3v_cast_acc[0] + float3v_cast_offset);
-  // CHECK:           kernel_float3(float3_e, (cl::sycl::float3 *)float3v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(float3_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::float3 *)float3v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_float3_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           float3 *arg_ct0 = (float3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           float3 *arg_ct1 = (float3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_float3(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_float3<<<1,1>>>(float3_e, (float3 *)float3v_cast);
   return 0;
 }
@@ -880,23 +880,23 @@ int main_float4() {
   int float4_q = sizeof(float4_d);
   int *float4v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> float4_e_buf = dpct::get_buffer_and_offset(float4_e);
-  // CHECK:   size_t float4_e_offset = float4_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> float4v_cast_buf = dpct::get_buffer_and_offset(float4v_cast);
-  // CHECK:   size_t float4v_cast_offset = float4v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto float4_e_acc = float4_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto float4v_cast_acc = float4v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_float4_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::float4 *float4_e = (cl::sycl::float4*)(&float4_e_acc[0] + float4_e_offset);
-  // CHECK:           int *float4v_cast = (int*)(&float4v_cast_acc[0] + float4v_cast_offset);
-  // CHECK:           kernel_float4(float4_e, (cl::sycl::float4 *)float4v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(float4_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::float4 *)float4v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_float4_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           float4 *arg_ct0 = (float4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           float4 *arg_ct1 = (float4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_float4(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_float4<<<1,1>>>(float4_e, (float4 *)float4v_cast);
   return 0;
 }
@@ -955,23 +955,23 @@ int main_int1() {
   int int1_q = sizeof(int1_d);
   int *int1v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> int1_e_buf = dpct::get_buffer_and_offset(int1_e);
-  // CHECK:   size_t int1_e_offset = int1_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> int1v_cast_buf = dpct::get_buffer_and_offset(int1v_cast);
-  // CHECK:   size_t int1v_cast_offset = int1v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto int1_e_acc = int1_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto int1v_cast_acc = int1v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_int1_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           int *int1_e = (int*)(&int1_e_acc[0] + int1_e_offset);
-  // CHECK:           int *int1v_cast = (int*)(&int1v_cast_acc[0] + int1v_cast_offset);
-  // CHECK:           kernel_int1(int1_e, (int *)int1v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(int1_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((int *)int1v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_int1_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           int1 *arg_ct0 = (int1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           int1 *arg_ct1 = (int1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_int1(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_int1<<<1,1>>>(int1_e, (int1 *)int1v_cast);
   return 0;
 }
@@ -1030,23 +1030,23 @@ int main_int2() {
   int int2_q = sizeof(int2_d);
   int *int2v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> int2_e_buf = dpct::get_buffer_and_offset(int2_e);
-  // CHECK:   size_t int2_e_offset = int2_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> int2v_cast_buf = dpct::get_buffer_and_offset(int2v_cast);
-  // CHECK:   size_t int2v_cast_offset = int2v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto int2_e_acc = int2_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto int2v_cast_acc = int2v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_int2_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::int2 *int2_e = (cl::sycl::int2*)(&int2_e_acc[0] + int2_e_offset);
-  // CHECK:           int *int2v_cast = (int*)(&int2v_cast_acc[0] + int2v_cast_offset);
-  // CHECK:           kernel_int2(int2_e, (cl::sycl::int2 *)int2v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(int2_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::int2 *)int2v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_int2_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           int2 *arg_ct0 = (int2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           int2 *arg_ct1 = (int2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_int2(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_int2<<<1,1>>>(int2_e, (int2 *)int2v_cast);
   return 0;
 }
@@ -1105,23 +1105,23 @@ int main_int3() {
   int int3_q = sizeof(int3_d);
   int *int3v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> int3_e_buf = dpct::get_buffer_and_offset(int3_e);
-  // CHECK:   size_t int3_e_offset = int3_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> int3v_cast_buf = dpct::get_buffer_and_offset(int3v_cast);
-  // CHECK:   size_t int3v_cast_offset = int3v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto int3_e_acc = int3_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto int3v_cast_acc = int3v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_int3_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::int3 *int3_e = (cl::sycl::int3*)(&int3_e_acc[0] + int3_e_offset);
-  // CHECK:           int *int3v_cast = (int*)(&int3v_cast_acc[0] + int3v_cast_offset);
-  // CHECK:           kernel_int3(int3_e, (cl::sycl::int3 *)int3v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(int3_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::int3 *)int3v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_int3_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           int3 *arg_ct0 = (int3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           int3 *arg_ct1 = (int3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_int3(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_int3<<<1,1>>>(int3_e, (int3 *)int3v_cast);
   return 0;
 }
@@ -1180,23 +1180,23 @@ int main_int4() {
   int int4_q = sizeof(int4_d);
   int *int4v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> int4_e_buf = dpct::get_buffer_and_offset(int4_e);
-  // CHECK:   size_t int4_e_offset = int4_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> int4v_cast_buf = dpct::get_buffer_and_offset(int4v_cast);
-  // CHECK:   size_t int4v_cast_offset = int4v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto int4_e_acc = int4_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto int4v_cast_acc = int4v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_int4_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::int4 *int4_e = (cl::sycl::int4*)(&int4_e_acc[0] + int4_e_offset);
-  // CHECK:           int *int4v_cast = (int*)(&int4v_cast_acc[0] + int4v_cast_offset);
-  // CHECK:           kernel_int4(int4_e, (cl::sycl::int4 *)int4v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(int4_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::int4 *)int4v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_int4_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           int4 *arg_ct0 = (int4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           int4 *arg_ct1 = (int4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_int4(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_int4<<<1,1>>>(int4_e, (int4 *)int4v_cast);
   return 0;
 }
@@ -1255,23 +1255,23 @@ int main_long1() {
   int long1_q = sizeof(long1_d);
   int *long1v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> long1_e_buf = dpct::get_buffer_and_offset(long1_e);
-  // CHECK:   size_t long1_e_offset = long1_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> long1v_cast_buf = dpct::get_buffer_and_offset(long1v_cast);
-  // CHECK:   size_t long1v_cast_offset = long1v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto long1_e_acc = long1_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto long1v_cast_acc = long1v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_long1_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           long *long1_e = (long*)(&long1_e_acc[0] + long1_e_offset);
-  // CHECK:           int *long1v_cast = (int*)(&long1v_cast_acc[0] + long1v_cast_offset);
-  // CHECK:           kernel_long1(long1_e, (long *)long1v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(long1_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((long *)long1v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_long1_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           long1 *arg_ct0 = (long1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           long1 *arg_ct1 = (long1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_long1(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_long1<<<1,1>>>(long1_e, (long1 *)long1v_cast);
   return 0;
 }
@@ -1330,23 +1330,23 @@ int main_long2() {
   int long2_q = sizeof(long2_d);
   int *long2v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> long2_e_buf = dpct::get_buffer_and_offset(long2_e);
-  // CHECK:   size_t long2_e_offset = long2_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> long2v_cast_buf = dpct::get_buffer_and_offset(long2v_cast);
-  // CHECK:   size_t long2v_cast_offset = long2v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto long2_e_acc = long2_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto long2v_cast_acc = long2v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_long2_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::long2 *long2_e = (cl::sycl::long2*)(&long2_e_acc[0] + long2_e_offset);
-  // CHECK:           int *long2v_cast = (int*)(&long2v_cast_acc[0] + long2v_cast_offset);
-  // CHECK:           kernel_long2(long2_e, (cl::sycl::long2 *)long2v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(long2_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::long2 *)long2v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_long2_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           long2 *arg_ct0 = (long2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           long2 *arg_ct1 = (long2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_long2(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_long2<<<1,1>>>(long2_e, (long2 *)long2v_cast);
   return 0;
 }
@@ -1405,23 +1405,23 @@ int main_long3() {
   int long3_q = sizeof(long3_d);
   int *long3v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> long3_e_buf = dpct::get_buffer_and_offset(long3_e);
-  // CHECK:   size_t long3_e_offset = long3_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> long3v_cast_buf = dpct::get_buffer_and_offset(long3v_cast);
-  // CHECK:   size_t long3v_cast_offset = long3v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto long3_e_acc = long3_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto long3v_cast_acc = long3v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_long3_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::long3 *long3_e = (cl::sycl::long3*)(&long3_e_acc[0] + long3_e_offset);
-  // CHECK:           int *long3v_cast = (int*)(&long3v_cast_acc[0] + long3v_cast_offset);
-  // CHECK:           kernel_long3(long3_e, (cl::sycl::long3 *)long3v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(long3_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::long3 *)long3v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_long3_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           long3 *arg_ct0 = (long3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           long3 *arg_ct1 = (long3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_long3(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_long3<<<1,1>>>(long3_e, (long3 *)long3v_cast);
   return 0;
 }
@@ -1480,23 +1480,23 @@ int main_long4() {
   int long4_q = sizeof(long4_d);
   int *long4v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> long4_e_buf = dpct::get_buffer_and_offset(long4_e);
-  // CHECK:   size_t long4_e_offset = long4_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> long4v_cast_buf = dpct::get_buffer_and_offset(long4v_cast);
-  // CHECK:   size_t long4v_cast_offset = long4v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto long4_e_acc = long4_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto long4v_cast_acc = long4v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_long4_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::long4 *long4_e = (cl::sycl::long4*)(&long4_e_acc[0] + long4_e_offset);
-  // CHECK:           int *long4v_cast = (int*)(&long4v_cast_acc[0] + long4v_cast_offset);
-  // CHECK:           kernel_long4(long4_e, (cl::sycl::long4 *)long4v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(long4_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::long4 *)long4v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_long4_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           long4 *arg_ct0 = (long4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           long4 *arg_ct1 = (long4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_long4(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_long4<<<1,1>>>(long4_e, (long4 *)long4v_cast);
   return 0;
 }
@@ -1555,23 +1555,23 @@ int main_longlong1() {
   int longlong1_q = sizeof(longlong1_d);
   int *longlong1v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> longlong1_e_buf = dpct::get_buffer_and_offset(longlong1_e);
-  // CHECK:   size_t longlong1_e_offset = longlong1_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> longlong1v_cast_buf = dpct::get_buffer_and_offset(longlong1v_cast);
-  // CHECK:   size_t longlong1v_cast_offset = longlong1v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto longlong1_e_acc = longlong1_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto longlong1v_cast_acc = longlong1v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_longlong1_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           long long *longlong1_e = (long long*)(&longlong1_e_acc[0] + longlong1_e_offset);
-  // CHECK:           int *longlong1v_cast = (int*)(&longlong1v_cast_acc[0] + longlong1v_cast_offset);
-  // CHECK:           kernel_longlong1(longlong1_e, (long long *)longlong1v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(longlong1_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((long long *)longlong1v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_longlong1_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           longlong1 *arg_ct0 = (longlong1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           longlong1 *arg_ct1 = (longlong1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_longlong1(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_longlong1<<<1,1>>>(longlong1_e, (longlong1 *)longlong1v_cast);
   return 0;
 }
@@ -1630,23 +1630,23 @@ int main_longlong2() {
   int longlong2_q = sizeof(longlong2_d);
   int *longlong2v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> longlong2_e_buf = dpct::get_buffer_and_offset(longlong2_e);
-  // CHECK:   size_t longlong2_e_offset = longlong2_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> longlong2v_cast_buf = dpct::get_buffer_and_offset(longlong2v_cast);
-  // CHECK:   size_t longlong2v_cast_offset = longlong2v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto longlong2_e_acc = longlong2_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto longlong2v_cast_acc = longlong2v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_longlong2_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::longlong2 *longlong2_e = (cl::sycl::longlong2*)(&longlong2_e_acc[0] + longlong2_e_offset);
-  // CHECK:           int *longlong2v_cast = (int*)(&longlong2v_cast_acc[0] + longlong2v_cast_offset);
-  // CHECK:           kernel_longlong2(longlong2_e, (cl::sycl::longlong2 *)longlong2v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(longlong2_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::longlong2 *)longlong2v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_longlong2_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           longlong2 *arg_ct0 = (longlong2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           longlong2 *arg_ct1 = (longlong2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_longlong2(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_longlong2<<<1,1>>>(longlong2_e, (longlong2 *)longlong2v_cast);
   return 0;
 }
@@ -1705,23 +1705,23 @@ int main_longlong3() {
   int longlong3_q = sizeof(longlong3_d);
   int *longlong3v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> longlong3_e_buf = dpct::get_buffer_and_offset(longlong3_e);
-  // CHECK:   size_t longlong3_e_offset = longlong3_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> longlong3v_cast_buf = dpct::get_buffer_and_offset(longlong3v_cast);
-  // CHECK:   size_t longlong3v_cast_offset = longlong3v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto longlong3_e_acc = longlong3_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto longlong3v_cast_acc = longlong3v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_longlong3_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::longlong3 *longlong3_e = (cl::sycl::longlong3*)(&longlong3_e_acc[0] + longlong3_e_offset);
-  // CHECK:           int *longlong3v_cast = (int*)(&longlong3v_cast_acc[0] + longlong3v_cast_offset);
-  // CHECK:           kernel_longlong3(longlong3_e, (cl::sycl::longlong3 *)longlong3v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(longlong3_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::longlong3 *)longlong3v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_longlong3_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           longlong3 *arg_ct0 = (longlong3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           longlong3 *arg_ct1 = (longlong3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_longlong3(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_longlong3<<<1,1>>>(longlong3_e, (longlong3 *)longlong3v_cast);
   return 0;
 }
@@ -1780,23 +1780,23 @@ int main_longlong4() {
   int longlong4_q = sizeof(longlong4_d);
   int *longlong4v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> longlong4_e_buf = dpct::get_buffer_and_offset(longlong4_e);
-  // CHECK:   size_t longlong4_e_offset = longlong4_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> longlong4v_cast_buf = dpct::get_buffer_and_offset(longlong4v_cast);
-  // CHECK:   size_t longlong4v_cast_offset = longlong4v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto longlong4_e_acc = longlong4_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto longlong4v_cast_acc = longlong4v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_longlong4_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::longlong4 *longlong4_e = (cl::sycl::longlong4*)(&longlong4_e_acc[0] + longlong4_e_offset);
-  // CHECK:           int *longlong4v_cast = (int*)(&longlong4v_cast_acc[0] + longlong4v_cast_offset);
-  // CHECK:           kernel_longlong4(longlong4_e, (cl::sycl::longlong4 *)longlong4v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(longlong4_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::longlong4 *)longlong4v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_longlong4_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           longlong4 *arg_ct0 = (longlong4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           longlong4 *arg_ct1 = (longlong4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_longlong4(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_longlong4<<<1,1>>>(longlong4_e, (longlong4 *)longlong4v_cast);
   return 0;
 }
@@ -1855,23 +1855,23 @@ int main_short1() {
   int short1_q = sizeof(short1_d);
   int *short1v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> short1_e_buf = dpct::get_buffer_and_offset(short1_e);
-  // CHECK:   size_t short1_e_offset = short1_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> short1v_cast_buf = dpct::get_buffer_and_offset(short1v_cast);
-  // CHECK:   size_t short1v_cast_offset = short1v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto short1_e_acc = short1_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto short1v_cast_acc = short1v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_short1_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           short *short1_e = (short*)(&short1_e_acc[0] + short1_e_offset);
-  // CHECK:           int *short1v_cast = (int*)(&short1v_cast_acc[0] + short1v_cast_offset);
-  // CHECK:           kernel_short1(short1_e, (short *)short1v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(short1_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((short *)short1v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_short1_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           short1 *arg_ct0 = (short1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           short1 *arg_ct1 = (short1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_short1(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_short1<<<1,1>>>(short1_e, (short1 *)short1v_cast);
   return 0;
 }
@@ -1930,23 +1930,23 @@ int main_short2() {
   int short2_q = sizeof(short2_d);
   int *short2v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> short2_e_buf = dpct::get_buffer_and_offset(short2_e);
-  // CHECK:   size_t short2_e_offset = short2_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> short2v_cast_buf = dpct::get_buffer_and_offset(short2v_cast);
-  // CHECK:   size_t short2v_cast_offset = short2v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto short2_e_acc = short2_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto short2v_cast_acc = short2v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_short2_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::short2 *short2_e = (cl::sycl::short2*)(&short2_e_acc[0] + short2_e_offset);
-  // CHECK:           int *short2v_cast = (int*)(&short2v_cast_acc[0] + short2v_cast_offset);
-  // CHECK:           kernel_short2(short2_e, (cl::sycl::short2 *)short2v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(short2_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::short2 *)short2v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_short2_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           short2 *arg_ct0 = (short2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           short2 *arg_ct1 = (short2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_short2(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_short2<<<1,1>>>(short2_e, (short2 *)short2v_cast);
   return 0;
 }
@@ -2005,23 +2005,23 @@ int main_short3() {
   int short3_q = sizeof(short3_d);
   int *short3v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> short3_e_buf = dpct::get_buffer_and_offset(short3_e);
-  // CHECK:   size_t short3_e_offset = short3_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> short3v_cast_buf = dpct::get_buffer_and_offset(short3v_cast);
-  // CHECK:   size_t short3v_cast_offset = short3v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto short3_e_acc = short3_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto short3v_cast_acc = short3v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_short3_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::short3 *short3_e = (cl::sycl::short3*)(&short3_e_acc[0] + short3_e_offset);
-  // CHECK:           int *short3v_cast = (int*)(&short3v_cast_acc[0] + short3v_cast_offset);
-  // CHECK:           kernel_short3(short3_e, (cl::sycl::short3 *)short3v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(short3_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::short3 *)short3v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_short3_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           short3 *arg_ct0 = (short3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           short3 *arg_ct1 = (short3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_short3(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_short3<<<1,1>>>(short3_e, (short3 *)short3v_cast);
   return 0;
 }
@@ -2080,23 +2080,23 @@ int main_short4() {
   int short4_q = sizeof(short4_d);
   int *short4v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> short4_e_buf = dpct::get_buffer_and_offset(short4_e);
-  // CHECK:   size_t short4_e_offset = short4_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> short4v_cast_buf = dpct::get_buffer_and_offset(short4v_cast);
-  // CHECK:   size_t short4v_cast_offset = short4v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto short4_e_acc = short4_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto short4v_cast_acc = short4v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_short4_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::short4 *short4_e = (cl::sycl::short4*)(&short4_e_acc[0] + short4_e_offset);
-  // CHECK:           int *short4v_cast = (int*)(&short4v_cast_acc[0] + short4v_cast_offset);
-  // CHECK:           kernel_short4(short4_e, (cl::sycl::short4 *)short4v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(short4_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::short4 *)short4v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_short4_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           short4 *arg_ct0 = (short4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           short4 *arg_ct1 = (short4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_short4(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_short4<<<1,1>>>(short4_e, (short4 *)short4v_cast);
   return 0;
 }
@@ -2155,23 +2155,23 @@ int main_uchar1() {
   int uchar1_q = sizeof(uchar1_d);
   int *uchar1v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> uchar1_e_buf = dpct::get_buffer_and_offset(uchar1_e);
-  // CHECK:   size_t uchar1_e_offset = uchar1_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> uchar1v_cast_buf = dpct::get_buffer_and_offset(uchar1v_cast);
-  // CHECK:   size_t uchar1v_cast_offset = uchar1v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto uchar1_e_acc = uchar1_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto uchar1v_cast_acc = uchar1v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_uchar1_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           unsigned char *uchar1_e = (unsigned char*)(&uchar1_e_acc[0] + uchar1_e_offset);
-  // CHECK:           int *uchar1v_cast = (int*)(&uchar1v_cast_acc[0] + uchar1v_cast_offset);
-  // CHECK:           kernel_uchar1(uchar1_e, (unsigned char *)uchar1v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(uchar1_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((unsigned char *)uchar1v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uchar1_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           uchar1 *arg_ct0 = (uchar1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           uchar1 *arg_ct1 = (uchar1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_uchar1(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_uchar1<<<1,1>>>(uchar1_e, (uchar1 *)uchar1v_cast);
   return 0;
 }
@@ -2230,23 +2230,23 @@ int main_uchar2() {
   int uchar2_q = sizeof(uchar2_d);
   int *uchar2v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> uchar2_e_buf = dpct::get_buffer_and_offset(uchar2_e);
-  // CHECK:   size_t uchar2_e_offset = uchar2_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> uchar2v_cast_buf = dpct::get_buffer_and_offset(uchar2v_cast);
-  // CHECK:   size_t uchar2v_cast_offset = uchar2v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto uchar2_e_acc = uchar2_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto uchar2v_cast_acc = uchar2v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_uchar2_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::uchar2 *uchar2_e = (cl::sycl::uchar2*)(&uchar2_e_acc[0] + uchar2_e_offset);
-  // CHECK:           int *uchar2v_cast = (int*)(&uchar2v_cast_acc[0] + uchar2v_cast_offset);
-  // CHECK:           kernel_uchar2(uchar2_e, (cl::sycl::uchar2 *)uchar2v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(uchar2_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::uchar2 *)uchar2v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uchar2_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           uchar2 *arg_ct0 = (uchar2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           uchar2 *arg_ct1 = (uchar2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_uchar2(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_uchar2<<<1,1>>>(uchar2_e, (uchar2 *)uchar2v_cast);
   return 0;
 }
@@ -2305,23 +2305,23 @@ int main_uchar3() {
   int uchar3_q = sizeof(uchar3_d);
   int *uchar3v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> uchar3_e_buf = dpct::get_buffer_and_offset(uchar3_e);
-  // CHECK:   size_t uchar3_e_offset = uchar3_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> uchar3v_cast_buf = dpct::get_buffer_and_offset(uchar3v_cast);
-  // CHECK:   size_t uchar3v_cast_offset = uchar3v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto uchar3_e_acc = uchar3_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto uchar3v_cast_acc = uchar3v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_uchar3_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::uchar3 *uchar3_e = (cl::sycl::uchar3*)(&uchar3_e_acc[0] + uchar3_e_offset);
-  // CHECK:           int *uchar3v_cast = (int*)(&uchar3v_cast_acc[0] + uchar3v_cast_offset);
-  // CHECK:           kernel_uchar3(uchar3_e, (cl::sycl::uchar3 *)uchar3v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(uchar3_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::uchar3 *)uchar3v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uchar3_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           uchar3 *arg_ct0 = (uchar3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           uchar3 *arg_ct1 = (uchar3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_uchar3(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_uchar3<<<1,1>>>(uchar3_e, (uchar3 *)uchar3v_cast);
   return 0;
 }
@@ -2380,23 +2380,23 @@ int main_uchar4() {
   int uchar4_q = sizeof(uchar4_d);
   int *uchar4v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> uchar4_e_buf = dpct::get_buffer_and_offset(uchar4_e);
-  // CHECK:   size_t uchar4_e_offset = uchar4_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> uchar4v_cast_buf = dpct::get_buffer_and_offset(uchar4v_cast);
-  // CHECK:   size_t uchar4v_cast_offset = uchar4v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto uchar4_e_acc = uchar4_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto uchar4v_cast_acc = uchar4v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_uchar4_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::uchar4 *uchar4_e = (cl::sycl::uchar4*)(&uchar4_e_acc[0] + uchar4_e_offset);
-  // CHECK:           int *uchar4v_cast = (int*)(&uchar4v_cast_acc[0] + uchar4v_cast_offset);
-  // CHECK:           kernel_uchar4(uchar4_e, (cl::sycl::uchar4 *)uchar4v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(uchar4_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::uchar4 *)uchar4v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uchar4_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           uchar4 *arg_ct0 = (uchar4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           uchar4 *arg_ct1 = (uchar4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_uchar4(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_uchar4<<<1,1>>>(uchar4_e, (uchar4 *)uchar4v_cast);
   return 0;
 }
@@ -2455,23 +2455,23 @@ int main_uint1() {
   int uint1_q = sizeof(uint1_d);
   int *uint1v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> uint1_e_buf = dpct::get_buffer_and_offset(uint1_e);
-  // CHECK:   size_t uint1_e_offset = uint1_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> uint1v_cast_buf = dpct::get_buffer_and_offset(uint1v_cast);
-  // CHECK:   size_t uint1v_cast_offset = uint1v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto uint1_e_acc = uint1_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto uint1v_cast_acc = uint1v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_uint1_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           unsigned int *uint1_e = (unsigned int*)(&uint1_e_acc[0] + uint1_e_offset);
-  // CHECK:           int *uint1v_cast = (int*)(&uint1v_cast_acc[0] + uint1v_cast_offset);
-  // CHECK:           kernel_uint1(uint1_e, (unsigned int *)uint1v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(uint1_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((unsigned int *)uint1v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uint1_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           uint1 *arg_ct0 = (uint1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           uint1 *arg_ct1 = (uint1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_uint1(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_uint1<<<1,1>>>(uint1_e, (uint1 *)uint1v_cast);
   return 0;
 }
@@ -2530,23 +2530,23 @@ int main_uint2() {
   int uint2_q = sizeof(uint2_d);
   int *uint2v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> uint2_e_buf = dpct::get_buffer_and_offset(uint2_e);
-  // CHECK:   size_t uint2_e_offset = uint2_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> uint2v_cast_buf = dpct::get_buffer_and_offset(uint2v_cast);
-  // CHECK:   size_t uint2v_cast_offset = uint2v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto uint2_e_acc = uint2_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto uint2v_cast_acc = uint2v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_uint2_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::uint2 *uint2_e = (cl::sycl::uint2*)(&uint2_e_acc[0] + uint2_e_offset);
-  // CHECK:           int *uint2v_cast = (int*)(&uint2v_cast_acc[0] + uint2v_cast_offset);
-  // CHECK:           kernel_uint2(uint2_e, (cl::sycl::uint2 *)uint2v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(uint2_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::uint2 *)uint2v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uint2_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           uint2 *arg_ct0 = (uint2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           uint2 *arg_ct1 = (uint2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_uint2(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_uint2<<<1,1>>>(uint2_e, (uint2 *)uint2v_cast);
   return 0;
 }
@@ -2605,23 +2605,23 @@ int main_uint3() {
   int uint3_q = sizeof(uint3_d);
   int *uint3v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> uint3_e_buf = dpct::get_buffer_and_offset(uint3_e);
-  // CHECK:   size_t uint3_e_offset = uint3_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> uint3v_cast_buf = dpct::get_buffer_and_offset(uint3v_cast);
-  // CHECK:   size_t uint3v_cast_offset = uint3v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto uint3_e_acc = uint3_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto uint3v_cast_acc = uint3v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_uint3_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::uint3 *uint3_e = (cl::sycl::uint3*)(&uint3_e_acc[0] + uint3_e_offset);
-  // CHECK:           int *uint3v_cast = (int*)(&uint3v_cast_acc[0] + uint3v_cast_offset);
-  // CHECK:           kernel_uint3(uint3_e, (cl::sycl::uint3 *)uint3v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(uint3_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::uint3 *)uint3v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uint3_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           uint3 *arg_ct0 = (uint3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           uint3 *arg_ct1 = (uint3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_uint3(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_uint3<<<1,1>>>(uint3_e, (uint3 *)uint3v_cast);
   return 0;
 }
@@ -2680,23 +2680,23 @@ int main_uint4() {
   int uint4_q = sizeof(uint4_d);
   int *uint4v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> uint4_e_buf = dpct::get_buffer_and_offset(uint4_e);
-  // CHECK:   size_t uint4_e_offset = uint4_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> uint4v_cast_buf = dpct::get_buffer_and_offset(uint4v_cast);
-  // CHECK:   size_t uint4v_cast_offset = uint4v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto uint4_e_acc = uint4_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto uint4v_cast_acc = uint4v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_uint4_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::uint4 *uint4_e = (cl::sycl::uint4*)(&uint4_e_acc[0] + uint4_e_offset);
-  // CHECK:           int *uint4v_cast = (int*)(&uint4v_cast_acc[0] + uint4v_cast_offset);
-  // CHECK:           kernel_uint4(uint4_e, (cl::sycl::uint4 *)uint4v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(uint4_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::uint4 *)uint4v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uint4_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           uint4 *arg_ct0 = (uint4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           uint4 *arg_ct1 = (uint4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_uint4(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_uint4<<<1,1>>>(uint4_e, (uint4 *)uint4v_cast);
   return 0;
 }
@@ -2755,23 +2755,23 @@ int main_ulong1() {
   int ulong1_q = sizeof(ulong1_d);
   int *ulong1v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ulong1_e_buf = dpct::get_buffer_and_offset(ulong1_e);
-  // CHECK:   size_t ulong1_e_offset = ulong1_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ulong1v_cast_buf = dpct::get_buffer_and_offset(ulong1v_cast);
-  // CHECK:   size_t ulong1v_cast_offset = ulong1v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto ulong1_e_acc = ulong1_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto ulong1v_cast_acc = ulong1v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_ulong1_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           unsigned long *ulong1_e = (unsigned long*)(&ulong1_e_acc[0] + ulong1_e_offset);
-  // CHECK:           int *ulong1v_cast = (int*)(&ulong1v_cast_acc[0] + ulong1v_cast_offset);
-  // CHECK:           kernel_ulong1(ulong1_e, (unsigned long *)ulong1v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(ulong1_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((unsigned long *)ulong1v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulong1_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           ulong1 *arg_ct0 = (ulong1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           ulong1 *arg_ct1 = (ulong1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_ulong1(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_ulong1<<<1,1>>>(ulong1_e, (ulong1 *)ulong1v_cast);
   return 0;
 }
@@ -2830,23 +2830,23 @@ int main_ulong2() {
   int ulong2_q = sizeof(ulong2_d);
   int *ulong2v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ulong2_e_buf = dpct::get_buffer_and_offset(ulong2_e);
-  // CHECK:   size_t ulong2_e_offset = ulong2_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ulong2v_cast_buf = dpct::get_buffer_and_offset(ulong2v_cast);
-  // CHECK:   size_t ulong2v_cast_offset = ulong2v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto ulong2_e_acc = ulong2_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto ulong2v_cast_acc = ulong2v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_ulong2_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::ulong2 *ulong2_e = (cl::sycl::ulong2*)(&ulong2_e_acc[0] + ulong2_e_offset);
-  // CHECK:           int *ulong2v_cast = (int*)(&ulong2v_cast_acc[0] + ulong2v_cast_offset);
-  // CHECK:           kernel_ulong2(ulong2_e, (cl::sycl::ulong2 *)ulong2v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(ulong2_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::ulong2 *)ulong2v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulong2_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           ulong2 *arg_ct0 = (ulong2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           ulong2 *arg_ct1 = (ulong2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_ulong2(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_ulong2<<<1,1>>>(ulong2_e, (ulong2 *)ulong2v_cast);
   return 0;
 }
@@ -2905,23 +2905,23 @@ int main_ulong3() {
   int ulong3_q = sizeof(ulong3_d);
   int *ulong3v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ulong3_e_buf = dpct::get_buffer_and_offset(ulong3_e);
-  // CHECK:   size_t ulong3_e_offset = ulong3_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ulong3v_cast_buf = dpct::get_buffer_and_offset(ulong3v_cast);
-  // CHECK:   size_t ulong3v_cast_offset = ulong3v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto ulong3_e_acc = ulong3_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto ulong3v_cast_acc = ulong3v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_ulong3_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::ulong3 *ulong3_e = (cl::sycl::ulong3*)(&ulong3_e_acc[0] + ulong3_e_offset);
-  // CHECK:           int *ulong3v_cast = (int*)(&ulong3v_cast_acc[0] + ulong3v_cast_offset);
-  // CHECK:           kernel_ulong3(ulong3_e, (cl::sycl::ulong3 *)ulong3v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(ulong3_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::ulong3 *)ulong3v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulong3_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           ulong3 *arg_ct0 = (ulong3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           ulong3 *arg_ct1 = (ulong3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_ulong3(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_ulong3<<<1,1>>>(ulong3_e, (ulong3 *)ulong3v_cast);
   return 0;
 }
@@ -2980,23 +2980,23 @@ int main_ulong4() {
   int ulong4_q = sizeof(ulong4_d);
   int *ulong4v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ulong4_e_buf = dpct::get_buffer_and_offset(ulong4_e);
-  // CHECK:   size_t ulong4_e_offset = ulong4_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ulong4v_cast_buf = dpct::get_buffer_and_offset(ulong4v_cast);
-  // CHECK:   size_t ulong4v_cast_offset = ulong4v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto ulong4_e_acc = ulong4_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto ulong4v_cast_acc = ulong4v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_ulong4_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::ulong4 *ulong4_e = (cl::sycl::ulong4*)(&ulong4_e_acc[0] + ulong4_e_offset);
-  // CHECK:           int *ulong4v_cast = (int*)(&ulong4v_cast_acc[0] + ulong4v_cast_offset);
-  // CHECK:           kernel_ulong4(ulong4_e, (cl::sycl::ulong4 *)ulong4v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(ulong4_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::ulong4 *)ulong4v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulong4_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           ulong4 *arg_ct0 = (ulong4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           ulong4 *arg_ct1 = (ulong4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_ulong4(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_ulong4<<<1,1>>>(ulong4_e, (ulong4 *)ulong4v_cast);
   return 0;
 }
@@ -3055,23 +3055,23 @@ int main_ulonglong1() {
   int ulonglong1_q = sizeof(ulonglong1_d);
   int *ulonglong1v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ulonglong1_e_buf = dpct::get_buffer_and_offset(ulonglong1_e);
-  // CHECK:   size_t ulonglong1_e_offset = ulonglong1_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ulonglong1v_cast_buf = dpct::get_buffer_and_offset(ulonglong1v_cast);
-  // CHECK:   size_t ulonglong1v_cast_offset = ulonglong1v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto ulonglong1_e_acc = ulonglong1_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto ulonglong1v_cast_acc = ulonglong1v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong1_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           unsigned long long *ulonglong1_e = (unsigned long long*)(&ulonglong1_e_acc[0] + ulonglong1_e_offset);
-  // CHECK:           int *ulonglong1v_cast = (int*)(&ulonglong1v_cast_acc[0] + ulonglong1v_cast_offset);
-  // CHECK:           kernel_ulonglong1(ulonglong1_e, (unsigned long long *)ulonglong1v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(ulonglong1_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((unsigned long long *)ulonglong1v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong1_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           ulonglong1 *arg_ct0 = (ulonglong1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           ulonglong1 *arg_ct1 = (ulonglong1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_ulonglong1(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_ulonglong1<<<1,1>>>(ulonglong1_e, (ulonglong1 *)ulonglong1v_cast);
   return 0;
 }
@@ -3130,23 +3130,23 @@ int main_ulonglong2() {
   int ulonglong2_q = sizeof(ulonglong2_d);
   int *ulonglong2v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ulonglong2_e_buf = dpct::get_buffer_and_offset(ulonglong2_e);
-  // CHECK:   size_t ulonglong2_e_offset = ulonglong2_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ulonglong2v_cast_buf = dpct::get_buffer_and_offset(ulonglong2v_cast);
-  // CHECK:   size_t ulonglong2v_cast_offset = ulonglong2v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto ulonglong2_e_acc = ulonglong2_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto ulonglong2v_cast_acc = ulonglong2v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong2_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::ulonglong2 *ulonglong2_e = (cl::sycl::ulonglong2*)(&ulonglong2_e_acc[0] + ulonglong2_e_offset);
-  // CHECK:           int *ulonglong2v_cast = (int*)(&ulonglong2v_cast_acc[0] + ulonglong2v_cast_offset);
-  // CHECK:           kernel_ulonglong2(ulonglong2_e, (cl::sycl::ulonglong2 *)ulonglong2v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(ulonglong2_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::ulonglong2 *)ulonglong2v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong2_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           ulonglong2 *arg_ct0 = (ulonglong2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           ulonglong2 *arg_ct1 = (ulonglong2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_ulonglong2(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_ulonglong2<<<1,1>>>(ulonglong2_e, (ulonglong2 *)ulonglong2v_cast);
   return 0;
 }
@@ -3205,23 +3205,23 @@ int main_ulonglong3() {
   int ulonglong3_q = sizeof(ulonglong3_d);
   int *ulonglong3v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ulonglong3_e_buf = dpct::get_buffer_and_offset(ulonglong3_e);
-  // CHECK:   size_t ulonglong3_e_offset = ulonglong3_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ulonglong3v_cast_buf = dpct::get_buffer_and_offset(ulonglong3v_cast);
-  // CHECK:   size_t ulonglong3v_cast_offset = ulonglong3v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto ulonglong3_e_acc = ulonglong3_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto ulonglong3v_cast_acc = ulonglong3v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong3_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::ulonglong3 *ulonglong3_e = (cl::sycl::ulonglong3*)(&ulonglong3_e_acc[0] + ulonglong3_e_offset);
-  // CHECK:           int *ulonglong3v_cast = (int*)(&ulonglong3v_cast_acc[0] + ulonglong3v_cast_offset);
-  // CHECK:           kernel_ulonglong3(ulonglong3_e, (cl::sycl::ulonglong3 *)ulonglong3v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(ulonglong3_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::ulonglong3 *)ulonglong3v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong3_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           ulonglong3 *arg_ct0 = (ulonglong3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           ulonglong3 *arg_ct1 = (ulonglong3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_ulonglong3(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_ulonglong3<<<1,1>>>(ulonglong3_e, (ulonglong3 *)ulonglong3v_cast);
   return 0;
 }
@@ -3280,23 +3280,23 @@ int main_ulonglong4() {
   int ulonglong4_q = sizeof(ulonglong4_d);
   int *ulonglong4v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ulonglong4_e_buf = dpct::get_buffer_and_offset(ulonglong4_e);
-  // CHECK:   size_t ulonglong4_e_offset = ulonglong4_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ulonglong4v_cast_buf = dpct::get_buffer_and_offset(ulonglong4v_cast);
-  // CHECK:   size_t ulonglong4v_cast_offset = ulonglong4v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto ulonglong4_e_acc = ulonglong4_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto ulonglong4v_cast_acc = ulonglong4v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong4_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::ulonglong4 *ulonglong4_e = (cl::sycl::ulonglong4*)(&ulonglong4_e_acc[0] + ulonglong4_e_offset);
-  // CHECK:           int *ulonglong4v_cast = (int*)(&ulonglong4v_cast_acc[0] + ulonglong4v_cast_offset);
-  // CHECK:           kernel_ulonglong4(ulonglong4_e, (cl::sycl::ulonglong4 *)ulonglong4v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(ulonglong4_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::ulonglong4 *)ulonglong4v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong4_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           ulonglong4 *arg_ct0 = (ulonglong4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           ulonglong4 *arg_ct1 = (ulonglong4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_ulonglong4(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_ulonglong4<<<1,1>>>(ulonglong4_e, (ulonglong4 *)ulonglong4v_cast);
   return 0;
 }
@@ -3355,23 +3355,23 @@ int main_ushort1() {
   int ushort1_q = sizeof(ushort1_d);
   int *ushort1v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ushort1_e_buf = dpct::get_buffer_and_offset(ushort1_e);
-  // CHECK:   size_t ushort1_e_offset = ushort1_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ushort1v_cast_buf = dpct::get_buffer_and_offset(ushort1v_cast);
-  // CHECK:   size_t ushort1v_cast_offset = ushort1v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto ushort1_e_acc = ushort1_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto ushort1v_cast_acc = ushort1v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_ushort1_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           unsigned short *ushort1_e = (unsigned short*)(&ushort1_e_acc[0] + ushort1_e_offset);
-  // CHECK:           int *ushort1v_cast = (int*)(&ushort1v_cast_acc[0] + ushort1v_cast_offset);
-  // CHECK:           kernel_ushort1(ushort1_e, (unsigned short *)ushort1v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(ushort1_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((unsigned short *)ushort1v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ushort1_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           ushort1 *arg_ct0 = (ushort1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           ushort1 *arg_ct1 = (ushort1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_ushort1(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_ushort1<<<1,1>>>(ushort1_e, (ushort1 *)ushort1v_cast);
   return 0;
 }
@@ -3430,23 +3430,23 @@ int main_ushort2() {
   int ushort2_q = sizeof(ushort2_d);
   int *ushort2v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ushort2_e_buf = dpct::get_buffer_and_offset(ushort2_e);
-  // CHECK:   size_t ushort2_e_offset = ushort2_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ushort2v_cast_buf = dpct::get_buffer_and_offset(ushort2v_cast);
-  // CHECK:   size_t ushort2v_cast_offset = ushort2v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto ushort2_e_acc = ushort2_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto ushort2v_cast_acc = ushort2v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_ushort2_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::ushort2 *ushort2_e = (cl::sycl::ushort2*)(&ushort2_e_acc[0] + ushort2_e_offset);
-  // CHECK:           int *ushort2v_cast = (int*)(&ushort2v_cast_acc[0] + ushort2v_cast_offset);
-  // CHECK:           kernel_ushort2(ushort2_e, (cl::sycl::ushort2 *)ushort2v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(ushort2_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::ushort2 *)ushort2v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ushort2_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           ushort2 *arg_ct0 = (ushort2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           ushort2 *arg_ct1 = (ushort2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_ushort2(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_ushort2<<<1,1>>>(ushort2_e, (ushort2 *)ushort2v_cast);
   return 0;
 }
@@ -3505,23 +3505,23 @@ int main_ushort3() {
   int ushort3_q = sizeof(ushort3_d);
   int *ushort3v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ushort3_e_buf = dpct::get_buffer_and_offset(ushort3_e);
-  // CHECK:   size_t ushort3_e_offset = ushort3_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ushort3v_cast_buf = dpct::get_buffer_and_offset(ushort3v_cast);
-  // CHECK:   size_t ushort3v_cast_offset = ushort3v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto ushort3_e_acc = ushort3_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto ushort3v_cast_acc = ushort3v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_ushort3_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::ushort3 *ushort3_e = (cl::sycl::ushort3*)(&ushort3_e_acc[0] + ushort3_e_offset);
-  // CHECK:           int *ushort3v_cast = (int*)(&ushort3v_cast_acc[0] + ushort3v_cast_offset);
-  // CHECK:           kernel_ushort3(ushort3_e, (cl::sycl::ushort3 *)ushort3v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(ushort3_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::ushort3 *)ushort3v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ushort3_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           ushort3 *arg_ct0 = (ushort3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           ushort3 *arg_ct1 = (ushort3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_ushort3(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_ushort3<<<1,1>>>(ushort3_e, (ushort3 *)ushort3v_cast);
   return 0;
 }
@@ -3580,23 +3580,23 @@ int main_ushort4() {
   int ushort4_q = sizeof(ushort4_d);
   int *ushort4v_cast;
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ushort4_e_buf = dpct::get_buffer_and_offset(ushort4_e);
-  // CHECK:   size_t ushort4_e_offset = ushort4_e_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> ushort4v_cast_buf = dpct::get_buffer_and_offset(ushort4v_cast);
-  // CHECK:   size_t ushort4v_cast_offset = ushort4v_cast_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto ushort4_e_acc = ushort4_e_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto ushort4v_cast_acc = ushort4v_cast_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_ushort4_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::ushort4 *ushort4_e = (cl::sycl::ushort4*)(&ushort4_e_acc[0] + ushort4_e_offset);
-  // CHECK:           int *ushort4v_cast = (int*)(&ushort4v_cast_acc[0] + ushort4v_cast_offset);
-  // CHECK:           kernel_ushort4(ushort4_e, (cl::sycl::ushort4 *)ushort4v_cast);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(ushort4_e);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset((cl::sycl::ushort4 *)ushort4v_cast);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ushort4_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           ushort4 *arg_ct0 = (ushort4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           ushort4 *arg_ct1 = (ushort4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel_ushort4(arg_ct0, arg_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel_ushort4<<<1,1>>>(ushort4_e, (ushort4 *)ushort4v_cast);
   return 0;
 }

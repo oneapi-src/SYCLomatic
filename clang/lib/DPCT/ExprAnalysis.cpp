@@ -266,51 +266,26 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
 }
 
 void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
-  if (auto D = dyn_cast<VarDecl>(DRE->getDecl())) {
-    auto LocInfo = DpctGlobalInfo::getLocInfo(D);
-    if (DRE->getType()->isPointerType()) {
-      insertObject(PointerVarMap, LocInfo.second, LocInfo.first, D);
-    } else if (D->getType()->isReferenceType()) {
-      addReplacement(DRE,
-                     insertObject(RefVarMap, LocInfo.second, LocInfo.first, D)
-                         ->getDerefName());
-    }
+  if (DRE->getType()->isPointerType()) {
+    isRedeclareRequired = true;
+  }
+  else if (DRE->getType()->isReferenceType()) {
+    isRedeclareRequired = true;
   }
   Base::analyzeExpr(DRE);
 }
 
 void KernelArgumentAnalysis::analyzeExpr(const MemberExpr *ME) {
-  if (auto D = dyn_cast<FieldDecl>(ME->getMemberDecl())) {
-    auto LocInfo = DpctGlobalInfo::getLocInfo(ME);
-    auto MEStr = getStmtSpelling(ME, DpctGlobalInfo::getContext());
-    if (ME->getType()->isPointerType()) {
-      addReplacement(ME, insertObject(PointerVarMap, LocInfo.second,
-                                      LocInfo.first, D, MEStr)
-                             ->getName());
-    } else if (D->getType()->isReferenceType()) {
-      addReplacement(
-          ME, insertObject(RefVarMap, LocInfo.second, LocInfo.first, D, MEStr)
-                  ->getDerefName());
-    } else if (ME->getBase()->isImplicitCXXThis()) {
-      // Dereference implicit "this" pointer, for kernel functions can't capture
-      // host pointer.
-      auto LocInfo = DpctGlobalInfo::getLocInfo(ME->getMemberDecl());
-      addReplacement(
-          ME, insertObject(RefVarMap, LocInfo.second, LocInfo.first, D, MEStr)
-                  ->getDerefName());
-    } else {
-      // While base is still member expression, continue analyze it.
-      // Like a.b.c, will continue analyze "a.b".
-      if (auto Sub = dyn_cast<MemberExpr>(ME->getBase()->IgnoreImpCasts()))
-        analyzeExpr(Sub);
+  if (ME->getBase()->getType()->isDependentType()) {
+    isRedeclareRequired = true;
+  }
+  if (auto RD = ME->getBase()->getType()->getAsCXXRecordDecl()) {
+    if (!RD->isStandardLayout()) {
+      isRedeclareRequired = true;
     }
   }
   Base::analyzeExpr(ME);
 }
 
-KernelArgumentAnalysis::~KernelArgumentAnalysis() {
-  mapToList(PointerVarMap, PointerVarList);
-  mapToList(RefVarMap, RefVarList);
-}
 } // namespace dpct
 } // namespace clang

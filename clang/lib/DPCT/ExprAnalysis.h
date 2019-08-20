@@ -307,15 +307,16 @@ private:
   static DefaultArgMapTy DefaultArgMap;
 };
 
-class VarInfo;
-// analyze CUDA kernel call arguments, get out the passed in pointer variables.
 class KernelArgumentAnalysis : public ArgumentAnalysis {
 public:
-  using VarMapTy = std::map<unsigned, std::shared_ptr<VarInfo>>;
-  using VarListTy = std::vector<std::shared_ptr<VarInfo>>;
-  KernelArgumentAnalysis(VarListTy &PointerVarList, VarListTy &RefVarList)
-      : PointerVarList(PointerVarList), RefVarList(RefVarList) {}
-  ~KernelArgumentAnalysis();
+  bool isRedeclareRequired;
+  bool isPointer;
+
+  void analyze(const Expr *Expression) {
+    isPointer = Expression->getType()->isPointerType();
+    isRedeclareRequired = false;
+    ArgumentAnalysis::analyze(Expression);
+  }
 
 protected:
   void dispatch(const Stmt *Arg) override;
@@ -323,15 +324,8 @@ protected:
 private:
   inline void analyzeExpr(const DeclRefExpr *Arg);
   inline void analyzeExpr(const MemberExpr *Arg);
-
-  void mapToList(VarMapTy &Map, VarListTy &List) {
-    for (auto &V : Map)
-      List.emplace_back(V.second);
-  }
-
-  VarListTy &PointerVarList, &RefVarList;
-  VarMapTy PointerVarMap, RefVarMap;
 };
+
 } // namespace dpct
 } // namespace clang
 

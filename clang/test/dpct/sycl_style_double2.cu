@@ -71,34 +71,34 @@ int main() {
   i7 = double2(i6);
 
   // CHECK: cl::sycl::double2* data;
-  // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> data_buf = dpct::get_buffer_and_offset(data);
-  // CHECK:   size_t data_offset = data_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto data_acc = data_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           cl::sycl::double2 *data = (cl::sycl::double2*)(&data_acc[0] + data_offset);
-  // CHECK:           kernel(data);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(data);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           double2 *arg_ct0 = (double2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           kernel(arg_ct0);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   double2* data;
   kernel<<<1, 1>>>(data);
 
-  // CHECK:   {
-  // CHECK:     dpct::get_default_queue().submit(
-  // CHECK:       [&](cl::sycl::handler &cgh) {
-  // CHECK:         auto ctemp2_range_ct1 = ctemp2.get_range();
-  // CHECK:         auto ctemp2_acc_ct1 = ctemp2.get_access(cgh);
-  // CHECK:         cgh.parallel_for<dpct_kernel_name<class gpuMain_{{[a-f0-9]+}}>>(
-  // CHECK:           cl::sycl::nd_range<3>((cl::sycl::range<3>(64, 1, 1) * cl::sycl::range<3>(64, 1, 1)), cl::sycl::range<3>(64, 1, 1)),
-  // CHECK:           [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:             gpuMain(dpct::dpct_accessor<cl::sycl::double2, dpct::shared, 1>(ctemp2_acc_ct1, ctemp2_range_ct1));
-  // CHECK:           });
-  // CHECK:       });
-  // CHECK:   }
+  // CHECK: {
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto ctemp2_range_ct1 = ctemp2.get_range();
+  // CHECK-NEXT:       auto ctemp2_acc_ct1 = ctemp2.get_access(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class gpuMain_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(64, 1, 1) * cl::sycl::range<3>(64, 1, 1)), cl::sycl::range<3>(64, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           gpuMain(dpct::dpct_accessor<cl::sycl::double2, dpct::shared, 1>(ctemp2_acc_ct1, ctemp2_range_ct1));
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   gpuMain<<<64, 64>>>();
 }

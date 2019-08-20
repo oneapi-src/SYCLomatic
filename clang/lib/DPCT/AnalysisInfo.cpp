@@ -165,21 +165,24 @@ inline void
 KernelCallExpr::buildKernelPointerArgRedeclStmt(const std::string &ArgName,
                                                 const std::string &TypeName,
                                                 StmtList &Redecls) {
-  Redecls.emplace_back(buildString(TypeName, " *", ArgName, " = (", TypeName,
-                                   "*)(&", ArgName, "_acc[0] + ", ArgName,
+  Redecls.emplace_back(buildString(TypeName, ArgName, " = (", TypeName,
+                                   ")(&", ArgName, "_acc[0] + ", ArgName,
                                    "_offset);"));
 }
 
 void KernelCallExpr::buildKernelPointerArgsStmt(StmtList &Buffers,
                                                 StmtList &Accessors,
                                                 StmtList &Redecls) {
-  for (auto &Arg : PointerArgsList) {
-    auto &ArgName = Arg->getName();
-    buildKernelPointerArgBufferAndOffsetStmt(Arg->getRefString(), ArgName,
-                                             Buffers);
-    buildKernelPointerArgAccessorStmt(ArgName, Accessors);
-    buildKernelPointerArgRedeclStmt(
-        ArgName, Arg->getType()->getTemplateSpecializationName(), Redecls);
+  int ArgIndex = 0;
+  for (auto &Arg : getArgsInfo().getArgInfos()) {
+    auto NewArgName = "arg_ct" + std::to_string(ArgIndex++);
+    if (Arg.isPointer) {
+      buildKernelPointerArgBufferAndOffsetStmt(Arg.getArgString().str(), NewArgName,
+        Buffers);
+      buildKernelPointerArgAccessorStmt(NewArgName, Accessors);
+      buildKernelPointerArgRedeclStmt(
+        NewArgName, Arg.getTypeString(), Redecls);
+    }
   }
 }
 
@@ -199,6 +202,16 @@ std::string KernelCallExpr::getReplacement() {
     FormatStmtBlock Block(LocInfo.NL, LocInfo.Indent, OS);
     for (auto &BufferStmt : Buffers)
       Block.pushStmt(BufferStmt);
+
+    // Redeclare all the non-pointer arguments
+    int ArgIndex = 0;
+    for (auto &Arg : getArgsInfo().getArgInfos()) {
+      if (!Arg.isPointer && Arg.isRedeclareRequired) {
+        Block.pushStmt("auto arg_ct", std::to_string(ArgIndex), " = ",
+                       Arg.getArgString().str(), ";");
+      }
+      ++ArgIndex;
+    }
 
     // For default stream
     if (ExecutionConfig.Stream == "0") {
@@ -220,11 +233,10 @@ std::string KernelCallExpr::getReplacement() {
         FMT_STMT_BLOCK
         getStreamDecl(Block);
         getAccessorDecl(Block);
+
         for (auto &AccStmt : Accessors)
           Block.pushStmt(AccStmt);
-        for (auto &Ref : RefArgsList)
-          Block.pushStmt("auto ", Ref->getDerefName(), " = ", Ref->getName(),
-                         ";");
+
         Block.pushStmt(
             "cgh.parallel_for<dpct_kernel_name<class ", getName(), "_",
             LocInfo.LocHash,
@@ -241,11 +253,26 @@ std::string KernelCallExpr::getReplacement() {
             FMT_STMT_BLOCK
             for (auto &Redecl : Redecls)
               Block.pushStmt(Redecl);
+
+            // build original args string for the kernal call
+            std::string OriginalArgs;
+            for (size_t i = 0; i < getArgsInfo().getArgInfos().size(); ++i) {
+              if (i > 0) {
+                OriginalArgs += ", ";
+              }
+              if (getArgsInfo().getArgInfos()[i].isPointer || getArgsInfo().getArgInfos()[i].isRedeclareRequired) {
+                OriginalArgs += "arg_ct" + std::to_string(i);
+              }
+              else {
+                OriginalArgs += getArgsInfo().getArgInfos()[i].getArgString();
+              }
+            }
+
             Block.pushStmt(getName(),
                            (hasTemplateArgs()
                                 ? buildString("<", getTemplateArguments(), ">")
                                 : ""),
-                           "(", getArguments(), ");");
+              "(", OriginalArgs, getExtraArguments(), ");");
           }
           Block.pushStmt("});");
         }
@@ -281,9 +308,8 @@ void CallFunctionExpr::addTemplateType(const TemplateArgumentLoc &TAL) {
   }
 }
 
-void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE,
-                                         ArgumentAnalysis &A) {
-  Args.buildArgsInfo(CE, A);
+void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
+  HasArgs = CE->getNumArgs();
   if (auto CallDecl = CE->getDirectCallee()) {
     Name = getName(CallDecl);
     FuncInfo = DeviceFunctionDecl::LinkRedecls(CallDecl);

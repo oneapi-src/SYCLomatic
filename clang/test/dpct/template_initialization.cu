@@ -43,23 +43,23 @@ void run_test() {
   cudaMalloc((void **)&d_out, mem_size);
 
   // CHECK: {
-  // CHECK:   std::pair<dpct::buffer_t, size_t> d_in_buf = dpct::get_buffer_and_offset(d_in);
-  // CHECK:   size_t d_in_offset = d_in_buf.second;
-  // CHECK:   std::pair<dpct::buffer_t, size_t> d_out_buf = dpct::get_buffer_and_offset(d_out);
-  // CHECK:   size_t d_out_offset = d_out_buf.second;
-  // CHECK:   dpct::get_default_queue().submit(
-  // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto d_in_acc = d_in_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       auto d_out_acc = d_out_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}, T>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(num_threads, 1, 1)), cl::sycl::range<3>(num_threads, 1, 1)),
-  // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           T *d_in = (T*)(&d_in_acc[0] + d_in_offset);
-  // CHECK:           T *d_out = (T*)(&d_out_acc[0] + d_out_offset);
-  // CHECK:           kernel<T>(d_in, d_out, [[ITEM]]);
-  // CHECK:         });
-  // CHECK:     });
-  // CHECK: }
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(d_in);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset(d_out);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}, T>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(num_threads, 1, 1)), cl::sycl::range<3>(num_threads, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           T *arg_ct0 = (T *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           T *arg_ct1 = (T *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           kernel<T>(arg_ct0, arg_ct1, item_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   kernel<T><<<1, num_threads>>>(d_in, d_out);
 
   cudaMemcpy(h_out, d_out, mem_size, cudaMemcpyDeviceToHost);

@@ -44,141 +44,141 @@ void runTest() {
   const TestTemplate<T> *karg4 = 0;
   TT *karg5 = 0;
 
-  // CHECK:  {
-  // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> karg1_buf = dpct::get_buffer_and_offset(karg1);
-  // CHECK-NEXT:    size_t karg1_offset = karg1_buf.second;
-  // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> karg2_buf = dpct::get_buffer_and_offset(karg2);
-  // CHECK-NEXT:    size_t karg2_offset = karg2_buf.second;
-  // CHECK-NEXT:    dpct::get_default_queue().submit(
-  // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        auto karg1_acc = karg1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        auto karg2_acc = karg2_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, T>>(
-  // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK-NEXT:            const void *karg1 = (const void*)(&karg1_acc[0] + karg1_offset);
-  // CHECK-NEXT:            const T *karg2 = (const T*)(&karg2_acc[0] + karg2_offset);
-  // CHECK-NEXT:            testKernelPtr<class TestName, ktarg, T>((const T *)karg1, karg2, [[ITEM]]);
-  // CHECK-NEXT:          });
-  // CHECK-NEXT:      });
-  // CHECK-NEXT:  }
+  // CHECK: {
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset((const T *)karg1);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset(karg2);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, T>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           const T *arg_ct0 = (const T *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           const T *arg_ct1 = (const T *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           testKernelPtr<class TestName, ktarg, T>(arg_ct0, arg_ct1, item_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   testKernelPtr<class TestName, ktarg, T><<<griddim, threaddim>>>((const T *)karg1, karg2);
 
-  // CHECK:  {
-  // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> karg1_buf = dpct::get_buffer_and_offset(karg1);
-  // CHECK-NEXT:    size_t karg1_offset = karg1_buf.second;
-  // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> karg3_buf = dpct::get_buffer_and_offset(karg3);
-  // CHECK-NEXT:    size_t karg3_offset = karg3_buf.second;
-  // CHECK-NEXT:    dpct::get_default_queue().submit(
-  // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        auto karg1_acc = karg1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        auto karg3_acc = karg3_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestTemplate<T>, dpct_kernel_scalar<ktarg>, T>>(
-  // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK-NEXT:            const void *karg1 = (const void*)(&karg1_acc[0] + karg1_offset);
-  // CHECK-NEXT:            T *karg3 = (T*)(&karg3_acc[0] + karg3_offset);
-  // CHECK-NEXT:            testKernelPtr<class TestTemplate<T>, ktarg, T>(karg1, karg3, [[ITEM]]);
-  // CHECK-NEXT:          });
-  // CHECK-NEXT:      });
-  // CHECK-NEXT:  }
+  // CHECK: {
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(karg1);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset(karg3);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestTemplate<T>, dpct_kernel_scalar<ktarg>, T>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           const void *arg_ct0 = (const void *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           T *arg_ct1 = (T *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           testKernelPtr<class TestTemplate<T>, ktarg, T>(arg_ct0, arg_ct1, item_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   testKernelPtr<class TestTemplate<T>, ktarg, T><<<griddim, threaddim>>>(karg1, karg3);
 
-  // CHECK:  {
-  // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> karg4_buf = dpct::get_buffer_and_offset(karg4);
-  // CHECK-NEXT:    size_t karg4_offset = karg4_buf.second;
-  // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> karg5_buf = dpct::get_buffer_and_offset(karg5);
-  // CHECK-NEXT:    size_t karg5_offset = karg5_buf.second;
-  // CHECK-NEXT:    dpct::get_default_queue().submit(
-  // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        auto karg4_acc = karg4_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        auto karg5_acc = karg5_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, T, dpct_kernel_scalar<ktarg>, TestTemplate<T>>>(
-  // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK-NEXT:            const TestTemplate<T> *karg4 = (const TestTemplate<T>*)(&karg4_acc[0] + karg4_offset);
-  // CHECK-NEXT:            TT *karg5 = (TT*)(&karg5_acc[0] + karg5_offset);
-  // CHECK-NEXT:            testKernelPtr<T, ktarg, TestTemplate<T>>(karg4, karg5, [[ITEM]]);
-  // CHECK-NEXT:          });
-  // CHECK-NEXT:      });
-  // CHECK-NEXT:  }
+  // CHECK: {
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(karg4);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset(karg5);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, T, dpct_kernel_scalar<ktarg>, TestTemplate<T>>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           const TestTemplate<T> *arg_ct0 = (const TestTemplate<T> *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           TT *arg_ct1 = (TT *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           testKernelPtr<T, ktarg, TestTemplate<T>>(arg_ct0, arg_ct1, item_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   testKernelPtr<T, ktarg, TestTemplate<T> ><<<griddim, threaddim>>>(karg4, karg5);
 
   T karg1T, karg2T;
-  // CHECK:  {
-  // CHECK-NEXT:    dpct::get_default_queue().submit(
-  // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, T>>(
-  // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK-NEXT:            testKernel<T>(karg1T, karg2T, ktarg, [[ITEM]]);
-  // CHECK-NEXT:          });
-  // CHECK-NEXT:      });
-  // CHECK-NEXT:  }
+  // CHECK: {
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, T>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           testKernel<T>(karg1T, karg2T, ktarg, item_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   testKernel<T><<<griddim, threaddim>>>(karg1T, karg2T, ktarg);
 
   TestTemplate<T> karg3TT;
   TT karg4TT;
 
-  // CHECK:  {
-  // CHECK-NEXT:    dpct::get_default_queue().submit(
-  // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, TestTemplate<T>>>(
-  // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK-NEXT:            testKernel<TestTemplate<T>>(karg3TT, karg4TT, ktarg, [[ITEM]]);
-  // CHECK-NEXT:          });
-  // CHECK-NEXT:      });
-  // CHECK-NEXT:  }
+  // CHECK: {
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, TestTemplate<T>>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           testKernel<TestTemplate<T>>(karg3TT, karg4TT, ktarg, item_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   testKernel<TestTemplate<T> ><<<griddim, threaddim>>>(karg3TT, karg4TT, ktarg);
 
-  // CHECK:  {
-  // CHECK-NEXT:    dpct::get_default_queue().submit(
-  // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, TT>>(
-  // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK-NEXT:            testKernel<TT>(karg3TT, karg4TT, ktarg, [[ITEM]]);
-  // CHECK-NEXT:          });
-  // CHECK-NEXT:      });
-  // CHECK-NEXT:  }
+  // CHECK: {
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, TT>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           testKernel<TT>(karg3TT, karg4TT, ktarg, item_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   testKernel<TT><<<griddim, threaddim>>>(karg3TT, karg4TT, ktarg);
 }
 
 int main() {
   void *karg1 = 0;
   LA *karg2 = 0;
-  // CHECK:  {
-  // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> karg1_buf = dpct::get_buffer_and_offset(karg1);
-  // CHECK-NEXT:    size_t karg1_offset = karg1_buf.second;
-  // CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> karg2_buf = dpct::get_buffer_and_offset(karg2);
-  // CHECK-NEXT:    size_t karg2_offset = karg2_buf.second;
-  // CHECK-NEXT:    dpct::get_default_queue().submit(
-  // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        auto karg1_acc = karg1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        auto karg2_acc = karg2_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, LA>>(
-  // CHECK-NEXT:          cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK-NEXT:            void *karg1 = (void*)(&karg1_acc[0] + karg1_offset);
-  // CHECK-NEXT:            LA *karg2 = (LA*)(&karg2_acc[0] + karg2_offset);
-  // CHECK-NEXT:            testKernelPtr<class TestName, ktarg, LA>((const LA *)karg1, karg2, [[ITEM]]);
-  // CHECK-NEXT:          });
-  // CHECK-NEXT:      });
-  // CHECK-NEXT:  }
+  // CHECK: {
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset((const LA *)karg1);
+  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset(karg2);
+  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, LA>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           const LA *arg_ct0 = (const LA *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           const LA *arg_ct1 = (const LA *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           testKernelPtr<class TestName, ktarg, LA>(arg_ct0, arg_ct1, item_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   testKernelPtr<class TestName, ktarg, LA><<<griddim, threaddim>>>((const LA *)karg1, karg2);
 
   LA karg1LA, karg2LA;
   int intvar = 20;
-  // CHECK:  {
-  // CHECK-NEXT:    dpct::get_default_queue().submit(
-  // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, LA>>(
-  // CHECK-NEXT:          cl::sycl::nd_range<3>((cl::sycl::range<3>(10, 1, 1) * cl::sycl::range<3>(intvar, 1, 1)), cl::sycl::range<3>(intvar, 1, 1)),
-  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK-NEXT:            testKernel<LA>(karg1LA, karg2LA, ktarg, [[ITEM]]);
-  // CHECK-NEXT:          });
-  // CHECK-NEXT:      });
-  // CHECK-NEXT:  }
+  // CHECK: {
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, LA>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(10, 1, 1) * cl::sycl::range<3>(intvar, 1, 1)), cl::sycl::range<3>(intvar, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           testKernel<LA>(karg1LA, karg2LA, ktarg, item_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }
   testKernel<LA><<<10, intvar>>>(karg1LA, karg2LA, ktarg);
 }
