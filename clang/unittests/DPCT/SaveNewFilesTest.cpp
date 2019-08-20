@@ -34,19 +34,19 @@ TEST(rewriteFileName, dontRenameH) {
 TEST(rewriteFileName, renameCppfile) {
   SmallString<512> AbsPath = StringRef("/a/b/in/file.cpp");
   rewriteFileName(AbsPath);
-  EXPECT_EQ(AbsPath, "/a/b/in/file.cc_dp.cpp");
+  EXPECT_EQ(AbsPath, "/a/b/in/file.cpp.dp.cpp");
 }
 
 TEST(rewriteFileName, renameCxxfile) {
   SmallString<512> AbsPath = StringRef("/a/b/in/file.cxx");
   rewriteFileName(AbsPath);
-  EXPECT_EQ(AbsPath, "/a/b/in/file.cc_dp.cpp");
+  EXPECT_EQ(AbsPath, "/a/b/in/file.cxx.dp.cpp");
 }
 
 TEST(rewriteFileName, renameCCfile) {
   SmallString<512> AbsPath = StringRef("/a/b/in/file.cc");
   rewriteFileName(AbsPath);
-  EXPECT_EQ(AbsPath, "/a/b/in/file.cc_dp.cpp");
+  EXPECT_EQ(AbsPath, "/a/b/in/file.cc.dp.cpp");
 }
 
 TEST(rewriteFileName, dontRenameHpp) {

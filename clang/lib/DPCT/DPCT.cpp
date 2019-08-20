@@ -25,10 +25,10 @@
 #include "AnalysisInfo.h"
 #include "Config.h"
 #include "Debug.h"
+#include "GAnalytics.h"
 #include "SaveNewFiles.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
-#include "GAnalytics.h"
 #include <string>
 
 #include "ToolChains/Cuda.h"
@@ -79,13 +79,16 @@ static opt<std::string> Passes(
     desc("Comma separated list of migration passes, which will be applied.\n"
          "Only the specified passes are applied."),
     value_desc("FunctionAttrsRule,..."), cat(DPCTCat), llvm::cl::Hidden);
-static opt<std::string> InRoot(
-    "in-root", desc("Directory path for root of source tree to be migrated.\n"
-                    "Only files under this root will be migrated."),
-    value_desc("/path/to/input/root/"), cat(DPCTCat), llvm::cl::Optional);
 static opt<std::string>
-    OutRoot("out-root", desc("Directory path for root of generated files.\n"
-                             "Directory will be created if it doesn't exist."),
+    InRoot("in-root",
+           desc("Directory path for root of source tree to be migrated.\n"
+                "Only files under this root will be migrated."),
+           value_desc("/path/to/input/root/"), cat(DPCTCat),
+           llvm::cl::Optional);
+static opt<std::string>
+    OutRoot("out-root",
+            desc("Directory path for root of generated files.\n"
+                 "Directory will be created if it doesn't exist."),
             value_desc("/path/to/output/root/"), cat(DPCTCat),
             llvm::cl::Optional);
 
@@ -158,10 +161,10 @@ static opt<std::string>
                  llvm::cl::Optional, llvm::cl::Hidden);
 
 static std::string WarningDesc("Comma separated list of warnings to "
-                               " suppress.\nValid warning ids range from " +
+                               "suppress.\nValid warning ids range from " +
                                std::to_string((size_t)Warnings::BEGIN) +
                                " to " +
-                               std::to_string((size_t)Warnings::END - 1));
+                               std::to_string((size_t)Warnings::END - 1) + ".");
 opt<std::string> SuppressWarnings("suppress-warnings", desc(WarningDesc),
                                   value_desc("WarningID,..."), cat(DPCTCat));
 
@@ -180,25 +183,38 @@ static opt<bool, true>
                 cat(DPCTCat), llvm::cl::location(NoStopOnErrFlag));
 
 opt<OutputVerbosityLev> OutputVerbosity(
-    "output-verbosity", llvm::cl::desc("Set the output verbosity level:"),
+    "output-verbosity",
+    llvm::cl::desc("Sets the output verbosity level. "
+                   "Default is diagnostics."),
     llvm::cl::values(
         clEnumVal(silent, "Only messages from clang"),
         clEnumVal(normal,
                   "Only warnings, errors, notes from both clang and dpct"),
         clEnumVal(detailed,
                   "Normal + messages about start and end of file parsing"),
-        clEnumVal(diagnostics,
-                  "Everything, as now - which includes "
-                  "information about conflicts,\n\t\t\t\t\tseg faults, "
-                  "etc.... This one is default.")),
+        clEnumVal(
+            diagnostics,
+            "Detailed information about detected conflicts and crashes.")),
     llvm::cl::init(diagnostics), cat(DPCTCat), llvm::cl::Optional);
 
-opt<std::string> OutputFile(
-    "output-file", desc("redirects stdout/stderr output to <file> in the\n"
-                        "output diretory specified by '-out-root' option."),
-    value_desc("output file name"), cat(DPCTCat), llvm::cl::Optional);
+opt<std::string>
+    OutputFile("output-file",
+               desc("redirects stdout/stderr output to <file> in the\n"
+                    "output diretory specified by '-out-root' option."),
+               value_desc("output file name"), cat(DPCTCat),
+               llvm::cl::Optional);
 
-std::string CudaPath;          // Global value for the CUDA install path.
+opt<std::string> USMLevel(
+    "usm-level",
+    desc(
+        "Supported USM levels. Default is \"restricted\".\n"
+        "\"restricted\": Uses API from DPC++ Explicit and Restricted Unified\n"
+        "  Shared Memory extension for memory management migration.\n"
+        "\"none\": Uses helper functions from DPCT header files for memory\n"
+        "  management migration.\n"),
+    value_desc("[restricted|none]"), cat(DPCTCat), llvm::cl::Optional);
+
+std::string CudaPath;        // Global value for the CUDA install path.
 std::string DpctInstallPath; // Installation directory for this tool
 
 class DPCTConsumer : public ASTConsumer {
@@ -348,7 +364,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
 
   std::string Path = SDKDetector.getInstallPath();
   if (!SDKDetector.isValid()) {
-      std::string ErrMsg = "[ERROR] Not found valid SDK path\n";
+    std::string ErrMsg = "[ERROR] Not found valid SDK path\n";
     PrintMsg(ErrMsg);
     exit(MigrationErrorInvalidSDKPath);
   }
@@ -441,9 +457,9 @@ static void printMetrics(clang::tooling::RefactoringTool &Tool) {
            "API, LOC not needed to migrate, LOC not able to migrate";
     DpctStats() << "\n";
     DpctStats() << Elem.first + ", " + std::to_string(TransToSYCL) + ", " +
-                         std::to_string(TransToAPI) + ", " +
-                         std::to_string(NotTrans) + ", " +
-                         std::to_string(NotSupport);
+                       std::to_string(TransToAPI) + ", " +
+                       std::to_string(NotTrans) + ", " +
+                       std::to_string(NotSupport);
     DpctStats() << "\n";
   }
 }
@@ -497,7 +513,7 @@ static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
 
   printMetrics(Tool);
   DpctStats() << "\nTotal migration time: " + std::to_string(Duration) +
-                       " ms\n";
+                     " ms\n";
   if (ReportFilePrefix == "stdout") {
     std::string buf;
     llvm::raw_string_ostream OS(buf);
@@ -541,8 +557,8 @@ std::string printCTVersion() {
   std::string buf;
   llvm::raw_string_ostream OS(buf);
 
-  OS << "\noneAPI DPC++ Compatibility Tool Version: " << DPCT_VERSION_MAJOR << "."
-     << DPCT_VERSION_MINOR << "-" << DPCT_VERSION_PATCH << " codebase:";
+  OS << "\noneAPI DPC++ Compatibility Tool Version: " << DPCT_VERSION_MAJOR
+     << "." << DPCT_VERSION_MINOR << "-" << DPCT_VERSION_PATCH << " codebase:";
   // getClangRepositoryPath() export the machine name of repo in release build.
   // so skip the repo name.
   std::string Path = "";
@@ -655,8 +671,8 @@ int run(int argc, const char **argv) {
   }
 
   CudaPath = getCudaInstallPath(OriginalArgc, argv);
-  DPCT_DEBUG_WITH_TYPE(
-      "CudaPath", DpctLog() << "Cuda Path found: " << CudaPath << "\n");
+  DPCT_DEBUG_WITH_TYPE("CudaPath",
+                       DpctLog() << "Cuda Path found: " << CudaPath << "\n");
 
   RefactoringTool Tool(OptParser.getCompilations(),
                        OptParser.getSourcePathList());

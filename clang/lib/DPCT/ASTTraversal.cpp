@@ -12,9 +12,9 @@
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "Debug.h"
+#include "GAnalytics.h"
 #include "SaveNewFiles.h"
 #include "Utility.h"
-#include "GAnalytics.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Analysis/AnalysisDeclContext.h"
 #include "clang/Tooling/Tooling.h"
@@ -33,6 +33,7 @@ using namespace clang::tooling;
 
 extern std::string CudaPath;
 extern std::string DpctInstallPath; // Installation directory for this tool
+extern llvm::cl::opt<std::string> USMLevel;
 
 auto parentStmt = []() {
   return anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
@@ -303,9 +304,9 @@ void IncludesCallbacks::InclusionDirective(
   // For multi thrust header files, only insert once for PSTL mapping header.
   if (IsAngled && (FileName.find("thrust/") != std::string::npos)) {
     if (!DpstdHeaderInserted) {
-      std::string Replacement = std::string("<dpct/dpstd_utils.hpp>") + getNL() +
-                                "#include <dpstd/execution>" + getNL() +
-                                "#include <dpstd/algorithm>";
+      std::string Replacement = std::string("<dpct/dpstd_utils.hpp>") +
+                                getNL() + "#include <dpstd/execution>" +
+                                getNL() + "#include <dpstd/algorithm>";
       DpstdHeaderInserted = true;
       TransformSet.emplace_back(
           new ReplaceInclude(FilenameRange, std::move(Replacement)));
@@ -3399,7 +3400,7 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                             ReplInfo.MissedArgumentName[i] + ";" + getNL();
         }
         ReplStr = ReplStr + ReplInfo.MissedArgumentName[i] + ", ";
-        if (i == ReplInfo.MissedArgumentFinalLocation.size() -1 ||
+        if (i == ReplInfo.MissedArgumentFinalLocation.size() - 1 ||
             ReplInfo.MissedArgumentInsertBefore[i + 1] !=
                 ReplInfo.MissedArgumentInsertBefore[i]) {
           emplaceTransformation(new InsertBeforeStmt(
@@ -4184,8 +4185,48 @@ void MemoryTranslationRule::mallocTranslation(
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
   if (Name == "cudaMalloc") {
-    DpctGlobalInfo::getInstance().insertCudaMalloc(C);
-    emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
+    if (USMLevel == "none") {
+      DpctGlobalInfo::getInstance().insertCudaMalloc(C);
+      emplaceTransformation(
+          new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
+    } else {
+      // Migrate to sycl_malloc_device
+      std::ostringstream Repl;
+      Repl << "*(" << getStmtSpelling(C->getArg(0), *(Result.Context))
+           << ") = cl::sycl::malloc_device("
+           << getStmtSpelling(C->getArg(1), *(Result.Context))
+           << ", dpct::get_device_manager().current_device()"
+           << ", dpct::get_default_queue().get_context())";
+      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+    }
+  } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost") {
+    if (USMLevel == "none") {
+      std::ostringstream Repl;
+      Repl << "*(" << getStmtSpelling(C->getArg(0), *(Result.Context))
+           << ") = malloc(" << getStmtSpelling(C->getArg(1), *(Result.Context))
+           << ")";
+      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+    } else {
+      std::ostringstream Repl;
+      Repl << "*(" << getStmtSpelling(C->getArg(0), *(Result.Context))
+           << ") = cl::sycl::malloc_host("
+           << getStmtSpelling(C->getArg(1), *(Result.Context))
+           << ", dpct::get_default_queue().get_context())";
+      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+    }
+  } else if (Name == "cudaMallocManaged") {
+    if (USMLevel == "none") {
+      // Report unsupported warnings
+      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, Name);
+    } else {
+      std::ostringstream Repl;
+      Repl << "*(" << getStmtSpelling(C->getArg(0), *(Result.Context))
+           << ") = cl::sycl::malloc_shared("
+           << getStmtSpelling(C->getArg(1), *(Result.Context))
+           << ", dpct::get_device_manager().current_device()"
+           << ", dpct::get_default_queue().get_context())";
+      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+    }
   } else if (Name == "cublasAlloc") {
     // TODO: migrate functions when they are in template
     // TODO: migrate functions when they are in macro body
@@ -4444,7 +4485,29 @@ void MemoryTranslationRule::freeTranslation(
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
 
-  emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_free", Name));
+  if (Name == "cudaFree") {
+    if (USMLevel == "none") {
+      emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_free", Name));
+    } else {
+      std::ostringstream Repl;
+      Repl << "cl::sycl::free("
+           << getStmtSpelling(C->getArg(0), *(Result.Context))
+           << ", dpct::get_default_queue().get_context())";
+      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+    }
+  } else if (Name == "cudaFreeHost") {
+    if (USMLevel == "none") {
+      emplaceTransformation(new ReplaceCalleeName(C, "free", Name));
+    } else {
+      std::ostringstream Repl;
+      Repl << "cl::sycl::free("
+           << getStmtSpelling(C->getArg(0), *(Result.Context))
+           << ", dpct::get_default_queue().get_context())";
+      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+    }
+  } else if (Name == "cublasFree") {
+    emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_free", Name));
+  }
 }
 
 void MemoryTranslationRule::memsetTranslation(
@@ -4474,6 +4537,30 @@ void MemoryTranslationRule::memsetTranslation(
     handleAsync(C, 3, Result);
 }
 
+void MemoryTranslationRule::miscTranslation(
+    const MatchFinder::MatchResult &Result, const CallExpr *C,
+    const UnresolvedLookupExpr *ULExpr) {
+  std::string Name;
+  if (ULExpr) {
+    Name = ULExpr->getName().getAsString();
+  } else {
+    Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
+  }
+
+  if (Name == "cudaHostGetDevicePointer") {
+    if (USMLevel == "none") {
+      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, Name);
+    } else {
+      std::ostringstream Repl;
+      Repl << "*(" << getStmtSpelling(C->getArg(0), *(Result.Context))
+           << ") = " << getStmtSpelling(C->getArg(1), *(Result.Context));
+      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+    }
+  } else if (Name == "cudaHostRegister" || Name == "cudaHostUnregister") {
+    emplaceTransformation(new ReplaceStmt(C, ""));
+  }
+}
+
 // Memory migration rules live here.
 void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
   auto memoryAPI = [&]() {
@@ -4481,7 +4568,10 @@ void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
                       "cudaMemcpyToSymbol", "cudaMemcpyToSymbolAsync",
                       "cudaMemcpyFromSymbol", "cudaMemcpyFromSymbolAsync",
                       "cudaFree", "cudaMemset", "cudaMemsetAsync", "cublasFree",
-                      "cublasAlloc", "cudaGetSymbolAddress");
+                      "cublasAlloc", "cudaGetSymbolAddress", "cudaFreeHost",
+                      "cudaHostAlloc", "cudaHostGetDevicePointer",
+                      "cudaHostRegister", "cudaHostUnregister",
+                      "cudaMallocHost", "cudaMallocManaged");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -4562,6 +4652,15 @@ MemoryTranslationRule::MemoryTranslationRule() {
   TranslationDispatcher["cudaMalloc"] = std::bind(
       &MemoryTranslationRule::mallocTranslation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cudaHostAlloc"] = std::bind(
+      &MemoryTranslationRule::mallocTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cudaMallocHost"] = std::bind(
+      &MemoryTranslationRule::mallocTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cudaMallocManaged"] = std::bind(
+      &MemoryTranslationRule::mallocTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cublasAlloc"] = std::bind(
       &MemoryTranslationRule::mallocTranslation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
@@ -4586,6 +4685,9 @@ MemoryTranslationRule::MemoryTranslationRule() {
   TranslationDispatcher["cudaFree"] = std::bind(
       &MemoryTranslationRule::freeTranslation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cudaFreeHost"] = std::bind(
+      &MemoryTranslationRule::freeTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
   TranslationDispatcher["cublasFree"] = std::bind(
       &MemoryTranslationRule::freeTranslation, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3);
@@ -4598,6 +4700,15 @@ MemoryTranslationRule::MemoryTranslationRule() {
   TranslationDispatcher["cudaGetSymbolAddress"] = std::bind(
       &MemoryTranslationRule::getSymbolAddressTranslation, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cudaHostGetDevicePointer"] = std::bind(
+      &MemoryTranslationRule::miscTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cudaHostRegister"] = std::bind(
+      &MemoryTranslationRule::miscTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
+  TranslationDispatcher["cudaHostUnregister"] = std::bind(
+      &MemoryTranslationRule::miscTranslation, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3);
 }
 
 void MemoryTranslationRule::handleAsync(

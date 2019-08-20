@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct --usm-level=none -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --input-file %T/texture.dp.cpp --match-full-lines %s
 
 // CHECK: dpct::dpct_image<cl::sycl::float4, 2> tex42;

@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s  -- -w -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct --usm-level=none -out-root %T %s  -- -w -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck %s --match-full-lines --input-file %T/error-handling.dp.cpp
 
 #include <stdexcept>

@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct --usm-level=none -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --match-full-lines --input-file %T/api-name-migrated.dp.cpp %s
 
 #include <cuda_runtime.h>
@@ -12,14 +12,10 @@ void fooo() {
   size_t bytes = length * sizeof(float);
   float *src;
 
-  // CHECK: /*
-  // CHECK-NEXT:DPCT1007:{{[0-9]+}}: cudaFreeHost: Migration of this API is not supported.
-  // CHECK-NEXT:*/
+  // CHECK: free(d_A);
   cudaFreeHost(d_A);
 
-  // CHECK: /*
-  // CHECK-NEXT:DPCT1007:{{[0-9]+}}: cudaMallocHost: Migration of this API is not supported.
-  // CHECK-NEXT:*/
+  // CHECK: *(&src) = malloc(bytes);
   cudaMallocHost(&src, bytes);
 
   struct cudaPitchedPtr srcGPU;

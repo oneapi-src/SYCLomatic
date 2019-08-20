@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"  -I ./
+// RUN: dpct --usm-level=none -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"  -I ./
 // RUN: FileCheck %s --match-full-lines --input-file %T/cuda_kernel_include.dp.cpp
 
 // CHECK:#include <CL/sycl.hpp>
