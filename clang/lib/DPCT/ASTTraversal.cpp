@@ -1924,15 +1924,8 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
 ReplaceDim3Ctor *ReplaceDim3CtorRule::getReplaceDim3Modification(
     const MatchFinder::MatchResult &Result) {
   if (auto Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3CtorDecl")) {
-    // dim3 a(1);
-    if (Ctor->getParenOrBraceRange().isInvalid()) {
-      // dim3 a;
-      // No replacements are needed
-      return nullptr;
-    } else {
-      // dim3 a(1);
-      return new ReplaceDim3Ctor(Ctor, true /*isDecl*/);
-    }
+    // dim3 a; or dim3 a(1);
+    return new ReplaceDim3Ctor(Ctor, true /*isDecl*/);
   } else if (auto Ctor =
                  getNodeAsType<CXXConstructExpr>(Result, "dim3CtorNoDecl")) {
     // deflt = dim3(3);

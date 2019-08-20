@@ -439,9 +439,17 @@ ReplaceInclude::getReplacement(const ASTContext &Context) const {
 void ReplaceDim3Ctor::setRange() {
   if (isDecl) {
     SourceRange SR = Ctor->getParenOrBraceRange();
-    SourceRange SR1 =
-        SourceRange(SR.getBegin().getLocWithOffset(1), SR.getEnd());
-    CSR = CharSourceRange(SR1, false);
+    if (SR.isInvalid()) {
+      // dim3 a;
+      auto CtorEndLoc = Lexer::getLocForEndOfToken(
+          Ctor->getLocation(), 0, DpctGlobalInfo::getSourceManager(),
+          DpctGlobalInfo::getContext().getLangOpts());
+      CSR = CharSourceRange(SourceRange(CtorEndLoc, CtorEndLoc), false);
+    } else {
+      SourceRange SR1 =
+          SourceRange(SR.getBegin().getLocWithOffset(1), SR.getEnd());
+      CSR = CharSourceRange(SR1, false);
+    }
   } else {
     // adjust the statement to replace if top-level constructor includes the
     // variable being defined
@@ -495,6 +503,10 @@ std::string ReplaceDim3Ctor::getReplaceString() const {
     std::string ReplacedString = getSyclRangeCtor(Ctor);
     ReplacedString.replace(0, strlen("cl::sycl::range<3>("), "");
     ReplacedString.replace(ReplacedString.length() - 1, 1, "");
+    if (Ctor->getParenOrBraceRange().isInvalid()) {
+      // dim3 = a;
+      ReplacedString = "(" + ReplacedString + ")";
+    }
     return ReplacedString;
   } else {
     std::string S;

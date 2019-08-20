@@ -32,7 +32,7 @@ __global__ void kernel(int dim) {}
 
 int main() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::range<3> deflt;
+  // CHECK: cl::sycl::range<3> deflt(1, 1, 1);
   dim3 deflt;
 
   // CHECK: cl::sycl::range<3> round1(1, 1, 1);
