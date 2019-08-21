@@ -856,16 +856,26 @@ configure_file(
   ${CLANG_BINARY_DIR}/include/clang/Config/config.h)
 
 if (NOT CLANG_BUILT_STANDALONE)
-  list(APPEND DPCT_RUN
-    install-dpct-intercept-build
-    install-dpct-lib-scan-build-files
-    install-dpct-libear-files
-    install-dpct-headers
-    install-clang-resource-headers
-    install-dpct
-    install-dpct-vars
-    install-dpct-syscheck
-    )
+  if(WIN32)
+    list(APPEND DPCT_RUN
+      install-dpct-headers
+      install-clang-resource-headers
+      install-dpct
+      install-dpct-vars
+      install-dpct-syscheck
+      )
+  else()
+    list(APPEND DPCT_RUN
+      install-dpct-intercept-build
+      install-dpct-lib-scan-build-files
+      install-dpct-libear-files
+      install-dpct-headers
+      install-clang-resource-headers
+      install-dpct
+      install-dpct-vars
+      install-dpct-syscheck
+      )
+  endif()
 endif()
 add_custom_target(install-dpct-tool DEPENDS ${DPCT_RUN})
 set_target_properties(install-dpct-tool PROPERTIES FOLDER "install dpct tool")
