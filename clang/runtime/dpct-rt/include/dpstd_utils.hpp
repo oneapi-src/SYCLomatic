@@ -15,10 +15,10 @@
 * License.
 *****************************************************************************/
 
-//===--- dpct_dpstd_utils.hpp ------------------------------*- C++ -*---===//
+//===--- dpstd_utils.hpp ------------------------------*- C++ -*---===//
 
-#ifndef __DPCT_DPSTD_HPP__
-#define __DPCT_DPSTD_HPP__
+#ifndef __DPSTD_HPP__
+#define __DPSTD_HPP__
 
 // The definitions below are the ones that require non-trivial mapping to
 // the DPC++ library

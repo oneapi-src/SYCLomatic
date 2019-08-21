@@ -6,7 +6,7 @@
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <dpstd/algorithm>
 // CHECK-NEXT: #include <dpstd/execution>
-// CHECK-NEXT: #include <dpct/dpct_dpstd_utils.hpp>
+// CHECK-NEXT: #include <dpct/dpstd_utils.hpp>
 #include <thrust/copy.h>
 int main() {
 }

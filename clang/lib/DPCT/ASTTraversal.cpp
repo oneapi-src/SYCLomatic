@@ -369,7 +369,7 @@ void IncludesCallbacks::InclusionDirective(
     if (!ThrustHeaderInserted) {
       std::string Replacement = std::string("<dpstd/algorithm>") + getNL() +
                                 "#include <dpstd/execution>" + getNL() +
-                                "#include <dpct/dpct_dpstd_utils.hpp>";
+                                "#include <dpct/dpstd_utils.hpp>";
       if (!SyclHeaderInserted) {
         Replacement = std::string("<CL/sycl.hpp>") + getNL() +
                       "#include <dpct/dpct.hpp>" + getNL() + "#include " +

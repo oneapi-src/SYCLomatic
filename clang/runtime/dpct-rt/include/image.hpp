@@ -22,8 +22,8 @@
 
 #include <CL/sycl.hpp>
 
-#include "dpct_memory.hpp"
-#include "dpct_util.hpp"
+#include "memory.hpp"
+#include "util.hpp"
 
 namespace dpct {
 // Texture object type traits.

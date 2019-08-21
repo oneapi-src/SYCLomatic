@@ -20,7 +20,7 @@
 #ifndef DPCT_MEMORY_H
 #define DPCT_MEMORY_H
 
-#include "dpct_device.hpp"
+#include "device.hpp"
 #include <CL/sycl.hpp>
 #include <cassert>
 #include <cstdint>

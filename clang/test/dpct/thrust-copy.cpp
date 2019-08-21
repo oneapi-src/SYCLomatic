@@ -8,7 +8,7 @@
 // CHECK-NEXT: #include <iterator>
 // CHECK-NEXT: #include <dpstd/algorithm>
 // CHECK-NEXT: #include <dpstd/execution>
-// CHECK-NEXT: #include <dpct/dpct_dpstd_utils.hpp>
+// CHECK-NEXT: #include <dpct/dpstd_utils.hpp>
 
 #include <iostream>
 #include <iterator>

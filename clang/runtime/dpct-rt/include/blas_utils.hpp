@@ -20,8 +20,8 @@
 #ifndef __DPCT_BLAS_H__
 #define __DPCT_BLAS_H__
 
-#include "dpct_memory.hpp"
-#include "dpct_util.hpp"
+#include "memory.hpp"
+#include "util.hpp"
 #include <CL/sycl.hpp>
 #include <mkl_lapack_batch_sycl.hpp>
 #include <utility>
