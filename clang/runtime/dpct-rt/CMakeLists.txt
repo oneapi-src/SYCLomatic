@@ -5,10 +5,9 @@ set(dpct_rt_files
   include/memory.hpp
   include/kernel.hpp
   include/image.hpp
-  include/dpct_thrust.hpp
   include/util.hpp
-  include/thrust_memory.hpp
   include/blas_utils.hpp
+  include/dpstd_utils.hpp
 )
 
 set(output_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include/dpct)
