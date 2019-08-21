@@ -792,7 +792,7 @@ private:
 
   std::string getDpctAccessorType(bool UsingTemplateName) {
     if (isExtern()) {
-      return "dpct::dpct_accessor<dpct::byte_t, dpct::shared, 1>";
+      return "dpct::dpct_accessor<dpct::byte_t, dpct::local, 1>";
     } else {
       auto Type = getType();
       return buildString(

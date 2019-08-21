@@ -555,8 +555,8 @@ std::string MemVarInfo::getMemoryType() {
     return getMemoryType(ConstantMemory, getType());
   }
   case clang::dpct::MemVarInfo::Shared: {
-    static std::string SharedMemory = "dpct::shared_memory";
-    static std::string ExternSharedMemory = "dpct::extern_shared_memory";
+    static std::string SharedMemory = "dpct::local_memory";
+    static std::string ExternSharedMemory = "dpct::extern_local_memory";
     if (isExtern())
       return ExternSharedMemory;
     return getMemoryType(SharedMemory, getType());
@@ -577,7 +577,7 @@ const std::string &MemVarInfo::getMemoryAttr() {
     return ConstantMemory;
   }
   case clang::dpct::MemVarInfo::Shared: {
-    static std::string SharedMemory = "dpct::shared";
+    static std::string SharedMemory = "dpct::local";
     return SharedMemory;
   }
   default:

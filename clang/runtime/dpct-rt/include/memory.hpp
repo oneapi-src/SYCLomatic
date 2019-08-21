@@ -37,27 +37,6 @@
 #warning "Only support Windows and Linux."
 #endif
 
-// DESIGN CONSIDERATIONS
-// All known helper memory management classes do the following:
-// - create SYCL buffers behind the scene.
-// - return some kind of fake pointers to allow, which allow address
-//   arithmetics and back-mapping to SYCL buffers and offset inside the buffer.
-// Note, such implementation assumes that source program is not using Unified
-// Memory. I.e. device pointers are not dereferenced on the host.
-//
-// This functionality is pretty much straight forward to implement and enables
-// memory allocation, deallocation, and converting SYCL buffers functionality.
-//
-// The trickier part is memory copies (to and from device), as naturally these
-// operations in source are done by imperative API (i.e. explicit copy
-// operations), while in SYCL they are managed by declarative API (buffers
-// passed to kernels) and managed by runtime.
-//
-// It seems that the most practical approach to overcome this gap is to use
-// lower level OpenCL buffer API. Alternatives, which use pure SYCL API are
-// known to be less efficient (require either or both of memory and compute
-// overhead).
-
 namespace dpct {
 
 enum memcpy_direction {
@@ -70,7 +49,7 @@ enum memcpy_direction {
 enum memory_attribute {
   device = 0,
   constant,
-  shared,
+  local,
 };
 
 // Byte type to use.
@@ -79,19 +58,6 @@ typedef uint8_t byte_t;
 // Buffer type to be used in Memory Management runtime.
 typedef cl::sycl::buffer<byte_t> buffer_t;
 
-/// There may be a lot of different strategies for allocating and mapping
-/// fake device pointers to SYCL/OpenCL buffers. For example:
-/// - continuous address allocation
-/// - encoding buffer number in higher bits of the address and offset in the
-///   lower bits
-///
-/// Current algorithm allocates huge (128Gb) continuous address space and uses it
-/// for allocation of device pointers. In current version address space is not
-/// reused after freeing and not extended when the limit is reached. For mapping
-/// pointers to buffers std::map is used, which has log(N) complexity, where N is
-/// number of currently live allocations. This looks reasonable, given that
-/// number of buffers is typically not big (while quite often buffers may be big
-/// themselves).
 class memory_manager {
 public:
   using buffer_id_t = int;
@@ -136,7 +102,6 @@ public:
   void *mem_alloc(size_t size, cl::sycl::queue &queue) {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (next_free + size > mapped_address_space + mapped_region_size) {
-      // TODO: proper error reporting.
       std::abort();
     }
     // Allocation
@@ -197,7 +162,6 @@ private:
     auto it = m_map.upper_bound((byte_t *)ptr);
     if (it == m_map.end()) {
       // Not a device pointer or out of bound.
-      // TODO: proper error reporting.
       std::abort();
     }
     const allocation &alloc = it->second;
@@ -205,7 +169,6 @@ private:
       // Out of bound.
       // This may happen if there's a gap between allocations due to alignment
       // or extra padding and pointer points to this gap.
-      // TODO: proper error reporting.
       std::abort();
     }
     return it;
@@ -213,24 +176,30 @@ private:
 };
 
 // malloc
-// TODO: ret values to adjust for error handling.
 static void dpct_malloc(void **ptr, size_t size, cl::sycl::queue q) {
   *ptr = memory_manager::get_instance().mem_alloc(size * sizeof(byte_t), q);
 }
 
+// malloc
 static void dpct_malloc(void **ptr, size_t size) {
   cl::sycl::queue q =
       dpct::get_device_manager().current_device().default_queue();
   dpct_malloc(ptr, size, q);
 }
 
+/// Build a cl::sycl::buffer with \p Size, The pointer that \p ptr point to is
+/// set as a virtual pointer, which can map to the buffer.
+/// \param [out] ptr Point to pointer which need to malloc memory.
+/// \param size Size in bytes.
+/// \returns no return value.
 template <typename T1, typename T2>
 static inline void dpct_malloc(T1 **ptr, T2 size) {
   return dpct_malloc(reinterpret_cast<void **>(ptr), static_cast<size_t>(size));
 }
 
-// free
-// TODO: ret values to adjust for error handling.
+/// free
+/// \param ptr Point to free.
+/// \returns no return value.
 static void dpct_free(const void *ptr) {
   if (ptr)
     memory_manager::get_instance().mem_free(ptr);
@@ -408,6 +377,7 @@ private:
   pointer_t data;
 };
 
+// Accessor acquirer to get accessors from buffer
 template <class T, memory_attribute Memory, size_t Dimension>
 class dpct_accessor_acquirer {
 public:
@@ -425,6 +395,7 @@ private:
   const dpct_range<Dimension> &range;
 };
 
+// Accessor acquirer specialization with Dimension == 0
 template <class T, memory_attribute Memory>
 class dpct_accessor_acquirer<T, Memory, 0> {
 public:
@@ -440,11 +411,12 @@ private:
   const dpct_range<0> &range;
 };
 
+// Accessor acquirer specialization with local address space
 template <class T, size_t Dimension>
-class dpct_accessor_acquirer<T, shared, Dimension> {
+class dpct_accessor_acquirer<T, local, Dimension> {
 public:
   using accessor_t =
-      typename memory_traits<shared, T>::template accessor_t<Dimension>;
+      typename memory_traits<local, T>::template accessor_t<Dimension>;
 
   dpct_accessor_acquirer(const dpct_range<Dimension> &range) : range(range) {}
   accessor_t get_access(cl::sycl::handler &cgh) {
@@ -454,128 +426,14 @@ public:
 private:
   const dpct_range<Dimension> &range;
 };
-template <class T> class dpct_accessor_acquirer<T, shared, 0> {
+// Accessor acquirer specialization with local address space and Dimension == 0
+template <class T> class dpct_accessor_acquirer<T, local, 0> {
 public:
-  using accessor_t = typename memory_traits<shared, T>::template accessor_t<0>;
+  using accessor_t = typename memory_traits<local, T>::template accessor_t<0>;
 
   dpct_accessor_acquirer(const dpct_range<0> &range) {}
   accessor_t get_access(cl::sycl::handler &cgh) { return accessor_t(cgh); }
 };
-
-// base type of device memory
-template <class T, memory_attribute Memory, size_t Dimension>
-class base_memory {
-public:
-  using accessor_t =
-      typename memory_traits<Memory, T>::template accessor_t<Dimension>;
-  using value_t = typename memory_traits<Memory, T>::value_t;
-  using accessor_acquirer = dpct_accessor_acquirer<T, Memory, Dimension>;
-  base_memory(const dpct_range<Dimension> &in_range)
-      : size(in_range.size() * sizeof(T)), range(in_range), acquire(range) {}
-
-  virtual accessor_t get_access(cl::sycl::handler &cgh) = 0;
-
-protected:
-  size_t size;
-  dpct_range<Dimension> range;
-  accessor_acquirer acquire;
-};
-
-//__shared__ uses local memory
-template <class T, size_t Dimension>
-class shared_memory : public base_memory<T, shared, Dimension> {
-public:
-  using base_t = base_memory<T, shared, Dimension>;
-  using accessor_t = typename base_t::accessor_t;
-  template <class... Args>
-  shared_memory(Args... Arguments)
-      : shared_memory(dpct_range<Dimension>(Arguments...)) {}
-  shared_memory(const dpct_range<Dimension> &range) : base_t(range) {}
-  accessor_t get_access(cl::sycl::handler &cgh) override {
-    return base_t::acquire.get_access(cgh);
-  }
-  const dpct_range<Dimension> &get_range() { return base_t::range; }
-};
-using extern_shared_memory = shared_memory<byte_t, 1>;
-
-//__constant__ and __device__ both use global memory
-template <class T, memory_attribute Memory, size_t Dimension>
-class global_memory : public base_memory<T, Memory, Dimension> {
-public:
-  using base_t = base_memory<T, Memory, Dimension>;
-  using accessor_t = typename base_t::accessor_t;
-  using value_t = typename base_t::value_t;
-
-  global_memory() : global_memory(dpct_range<Dimension>()) {}
-
-  global_memory(const dpct_range<Dimension> &range, const value_t &val)
-      : global_memory(range) {
-    static_assert(Dimension == 0,
-                  "only non-array type can be inited with single value");
-    memcpy(memory_manager::get_instance()
-               .translate_ptr(memory_ptr)
-               .buffer.template get_access<cl::sycl::access::mode::write>()
-               .get_pointer(),
-           &val, sizeof(T));
-  }
-
-  global_memory(const dpct_range<Dimension> &range,
-                std::initializer_list<value_t> &&init_list)
-      : global_memory(range) {
-    // TODO: Now only 1-D array initialization list can be passed into construct
-    // function as argument. Multi-Dimension array initialization list should be
-    // done in future.
-    static_assert(Dimension == 1,
-                  "only 1-D array can be inited with intialization list");
-    assert(init_list.size() <= range.size());
-    memcpy(memory_manager::get_instance()
-               .translate_ptr(memory_ptr)
-               .buffer.template get_access<cl::sycl::access::mode::write>()
-               .get_pointer(),
-           init_list.begin(), init_list.size() * sizeof(T));
-  }
-
-  global_memory(void *memory_ptr, size_t size)
-      : base_t(dpct_range<1>(size / sizeof(T))), reference(true),
-        memory_ptr(memory_ptr) {
-    assert(memory_manager::get_instance().is_device_ptr(memory_ptr));
-  }
-
-  global_memory(const dpct_range<Dimension> &range)
-      : base_t(range), reference(false), memory_ptr(nullptr) {
-    static_assert((Memory == device) || (Memory == constant),
-                  "Global memory attribute should be constant or device");
-    if (base_t::size)
-      dpct_malloc((void **)&memory_ptr, base_t::size);
-  }
-
-  template <class... Args>
-  global_memory(Args... Arguments)
-      : global_memory(dpct_range<Dimension>(Arguments...)) {}
-
-  virtual ~global_memory() {
-    if (memory_ptr && !reference)
-      dpct_free(memory_ptr);
-  }
-
-  void assign(void *src, size_t size) {
-    this->~global_memory();
-    new (this) global_memory(src, size);
-  }
-  void *get_ptr() { return memory_ptr; }
-  accessor_t get_access(cl::sycl::handler &cgh) override {
-    return base_t::acquire.get_access(
-        memory_manager::get_instance().translate_ptr(memory_ptr).buffer, cgh);
-  }
-
-private:
-  bool reference;
-  void *memory_ptr;
-};
-template <class T, size_t Dimension>
-using constant_memory = global_memory<T, constant, Dimension>;
-template <class T, size_t Dimension>
-using device_memory = global_memory<T, device, Dimension>;
 
 // memcpy
 static void dpct_memcpy(void *to_ptr, void *from_ptr, size_t size,
@@ -711,37 +569,6 @@ static void async_dpct_memcpy(void *to_ptr, void *from_ptr, size_t size,
               /*async*/ true);
 }
 
-// In following functions buffer_t is returned instead of buffer_t*, because of
-// SYCL 1.2.1 #4.3.2 Common reference semantics, which explains why it's
-// ok to take a copy of buffer. On the other side, returning a pointer to
-// buffer would cause obligations for not moving referenced buffer.
-
-// FIXME: this function is not used in migration and causes segfault
-// with latest OpenCL CPU runtime and ComputeCpp 1.0.1.
-// TODO: this is commented out and to be removed in the future.
-// The reason to leave it as a commented out - we need to file a bug against
-// OpenCL CPU runtime, which has a bug triggered by this code.
-/*
-static buffer_t get_buffer(void *ptr) {
-  auto &mm = memory_manager::get_instance();
-  auto& alloc = mm.translate_ptr(ptr);
-  size_t offset = (byte_t*)ptr - alloc.alloc_ptr;
-  if (offset == 0) {
-    return alloc.buffer;
-  } else {
-    // TODO: taking subbuffers has some requirements for allignment/element
-    //       count in the new buffer.
-    // This causes incorrect work in case of bad offsets. This needs to be
-    // investigated.
-    assert(offset < alloc.size);
-    const cl::sycl::id<1> id(offset);
-    const cl::sycl::range<1> range(alloc.size-offset);
-    buffer_t sub_buffer = buffer_t(alloc.buffer, id, range);
-    return sub_buffer;
-  }
-}
-*/
-
 static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
   auto alloc = memory_manager::get_instance().translate_ptr(ptr);
   size_t offset = (byte_t *)ptr - alloc.alloc_ptr;
@@ -795,6 +622,119 @@ static void async_dpct_memset(void *dev_ptr, int value, size_t size) {
               dpct::get_device_manager().current_device().default_queue(),
               /*async*/ true);
 }
+
+// base type of device memory
+template <class T, memory_attribute Memory, size_t Dimension>
+class base_memory {
+public:
+  using accessor_t =
+      typename memory_traits<Memory, T>::template accessor_t<Dimension>;
+  using value_t = typename memory_traits<Memory, T>::value_t;
+  using accessor_acquirer = dpct_accessor_acquirer<T, Memory, Dimension>;
+  base_memory(const dpct_range<Dimension> &in_range)
+      : size(in_range.size() * sizeof(T)), range(in_range), acquire(range) {}
+
+  virtual accessor_t get_access(cl::sycl::handler &cgh) = 0;
+
+protected:
+  size_t size;
+  dpct_range<Dimension> range;
+  accessor_acquirer acquire;
+};
+
+// Variable with address space of local
+template <class T, size_t Dimension>
+class local_memory : public base_memory<T, local, Dimension> {
+public:
+  using base_t = base_memory<T, local, Dimension>;
+  using accessor_t = typename base_t::accessor_t;
+  template <class... Args>
+  local_memory(Args... Arguments)
+      : local_memory(dpct_range<Dimension>(Arguments...)) {}
+  local_memory(const dpct_range<Dimension> &range) : base_t(range) {}
+  accessor_t get_access(cl::sycl::handler &cgh) override {
+    return base_t::acquire.get_access(cgh);
+  }
+  const dpct_range<Dimension> &get_range() { return base_t::range; }
+};
+using extern_local_memory = local_memory<byte_t, 1>;
+
+// Variable with address space of global or constant
+template <class T, memory_attribute Memory, size_t Dimension>
+class global_memory : public base_memory<T, Memory, Dimension> {
+public:
+  using base_t = base_memory<T, Memory, Dimension>;
+  using accessor_t = typename base_t::accessor_t;
+  using value_t = typename base_t::value_t;
+
+  /// Default constructor
+  global_memory() : global_memory(dpct_range<Dimension>()) {}
+
+  /// Constructor of scalar variable with initial value
+  global_memory(const dpct_range<Dimension> &range, const value_t &val)
+      : global_memory(range) {
+    static_assert(Dimension == 0,
+                  "only non-array type can be inited with single value");
+    dpct_memcpy(memory_ptr, &val, sizeof(T), host_to_device);
+  }
+
+  /// Constructor of 1-D array with inlitializer list
+  global_memory(const dpct_range<Dimension> &range,
+                std::initializer_list<value_t> &&init_list)
+      : global_memory(range) {
+    static_assert(Dimension == 1,
+                  "only 1-D array can be inited with intialization list");
+    assert(init_list.size() <= range.size());
+    dpct_memcpy(memory_ptr, init_list.begin(), init_list.size() * sizeof(T),
+                host_to_device);
+  }
+
+  /// Constructor with range
+  global_memory(const dpct_range<Dimension> &range)
+      : base_t(range), reference(false), memory_ptr(nullptr) {
+    static_assert((Memory == device) || (Memory == constant),
+                  "Global memory attribute should be constant or device");
+    if (base_t::size)
+      dpct_malloc((void **)&memory_ptr, base_t::size);
+  }
+
+  /// Constructor with range
+  template <class... Args>
+  global_memory(Args... Arguments)
+      : global_memory(dpct_range<Dimension>(Arguments...)) {}
+
+  virtual ~global_memory() {
+    if (memory_ptr && !reference)
+      dpct_free(memory_ptr);
+  }
+
+  /// The variable is assigned to a device pointer.
+  void assign(void *src, size_t size) {
+    this->~global_memory();
+    new (this) global_memory(src, size);
+  }
+
+  /// Get the virtual pointer in host code.
+  void *get_ptr() { return memory_ptr; }
+  accessor_t get_access(cl::sycl::handler &cgh) override {
+    return base_t::acquire.get_access(
+        memory_manager::get_instance().translate_ptr(memory_ptr).buffer, cgh);
+  }
+
+private:
+  global_memory(void *memory_ptr, size_t size)
+      : base_t(dpct_range<1>(size / sizeof(T))), reference(true),
+        memory_ptr(memory_ptr) {
+    assert(memory_manager::get_instance().is_device_ptr(memory_ptr));
+  }
+
+  bool reference;
+  void *memory_ptr;
+};
+template <class T, size_t Dimension>
+using constant_memory = global_memory<T, constant, Dimension>;
+template <class T, size_t Dimension>
+using device_memory = global_memory<T, device, Dimension>;
 } // namespace dpct
 
 #endif // __DPCT_MEMORY_HPP__

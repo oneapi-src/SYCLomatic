@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 #define SIZE 100
-// CHECK: void staticReverse(int *d, int n, cl::sycl::nd_item<3> item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::shared, 1> dpct_extern_memory) {
+// CHECK: void staticReverse(int *d, int n, cl::sycl::nd_item<3> item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::local, 1> dpct_extern_memory) {
 // CHECK-NEXT:  auto s = dpct_extern_memory.reinterpret<int>(); // the size of s is dynamic
 __global__ void staticReverse(int *d, int n) {
   extern __shared__ int s[]; // the size of s is dynamic
@@ -16,7 +16,7 @@ __global__ void staticReverse(int *d, int n) {
 }
 
 // CHECK: template<typename TData>
-// CHECK-NEXT: void templateReverse(TData *d, TData n, cl::sycl::nd_item<3> item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::shared, 1> dpct_extern_memory) {
+// CHECK-NEXT: void templateReverse(TData *d, TData n, cl::sycl::nd_item<3> item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::local, 1> dpct_extern_memory) {
 template<typename TData>
 __global__ void templateReverse(TData *d, TData n) {
 
@@ -42,7 +42,7 @@ void testTemplate(){
   // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::extern_shared_memory dpct_extern_memory(mem_size);
+  // CHECK-NEXT:       dpct::extern_local_memory dpct_extern_memory(mem_size);
   // CHECK-NEXT:       auto dpct_extern_memory_range_ct1 = dpct_extern_memory.get_range();
   // CHECK-NEXT:       auto dpct_extern_memory_acc_ct1 = dpct_extern_memory.get_access(cgh);
   // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
@@ -50,7 +50,7 @@ void testTemplate(){
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1)), cl::sycl::range<3>(n, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           T *arg_ct0 = (T *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           templateReverse<T>(arg_ct0, n, item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::shared, 1>(dpct_extern_memory_acc_ct1, dpct_extern_memory_range_ct1));
+  // CHECK-NEXT:           templateReverse<T>(arg_ct0, n, item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::local, 1>(dpct_extern_memory_acc_ct1, dpct_extern_memory_range_ct1));
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -69,7 +69,7 @@ int main(void) {
   // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::extern_shared_memory dpct_extern_memory(mem_size);
+  // CHECK-NEXT:       dpct::extern_local_memory dpct_extern_memory(mem_size);
   // CHECK-NEXT:       auto dpct_extern_memory_range_ct1 = dpct_extern_memory.get_range();
   // CHECK-NEXT:       auto dpct_extern_memory_acc_ct1 = dpct_extern_memory.get_access(cgh);
   // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
@@ -77,7 +77,7 @@ int main(void) {
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1)), cl::sycl::range<3>(n, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           int *arg_ct0 = (int *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           staticReverse(arg_ct0, n, item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::shared, 1>(dpct_extern_memory_acc_ct1, dpct_extern_memory_range_ct1));
+  // CHECK-NEXT:           staticReverse(arg_ct0, n, item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::local, 1>(dpct_extern_memory_acc_ct1, dpct_extern_memory_range_ct1));
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -89,7 +89,7 @@ int main(void) {
   // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::extern_shared_memory dpct_extern_memory(sizeof(int));
+  // CHECK-NEXT:       dpct::extern_local_memory dpct_extern_memory(sizeof(int));
   // CHECK-NEXT:       auto dpct_extern_memory_range_ct1 = dpct_extern_memory.get_range();
   // CHECK-NEXT:       auto dpct_extern_memory_acc_ct1 = dpct_extern_memory.get_access(cgh);
   // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
@@ -97,7 +97,7 @@ int main(void) {
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1)), cl::sycl::range<3>(n, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           int *arg_ct0 = (int *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           staticReverse(arg_ct0, n, item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::shared, 1>(dpct_extern_memory_acc_ct1, dpct_extern_memory_range_ct1));
+  // CHECK-NEXT:           staticReverse(arg_ct0, n, item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::local, 1>(dpct_extern_memory_acc_ct1, dpct_extern_memory_range_ct1));
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -108,7 +108,7 @@ int main(void) {
   // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::extern_shared_memory dpct_extern_memory(4);
+  // CHECK-NEXT:       dpct::extern_local_memory dpct_extern_memory(4);
   // CHECK-NEXT:       auto dpct_extern_memory_range_ct1 = dpct_extern_memory.get_range();
   // CHECK-NEXT:       auto dpct_extern_memory_acc_ct1 = dpct_extern_memory.get_access(cgh);
   // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
@@ -116,7 +116,7 @@ int main(void) {
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1)), cl::sycl::range<3>(n, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           int *arg_ct0 = (int *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           templateReverse<int>(arg_ct0, n, item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::shared, 1>(dpct_extern_memory_acc_ct1, dpct_extern_memory_range_ct1));
+  // CHECK-NEXT:           templateReverse<int>(arg_ct0, n, item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::local, 1>(dpct_extern_memory_acc_ct1, dpct_extern_memory_range_ct1));
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
