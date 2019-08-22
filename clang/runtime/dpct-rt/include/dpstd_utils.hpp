@@ -17,8 +17,8 @@
 
 //===--- dpstd_utils.hpp ------------------------------*- C++ -*---===//
 
-#ifndef __DPSTD_HPP__
-#define __DPSTD_HPP__
+#ifndef __DPSTD_UTILS_HPP__
+#define __DPSTD_UTILS_HPP__
 
 // The definitions below are the ones that require non-trivial mapping to
 // the DPC++ library
@@ -252,7 +252,7 @@ public:
   */
 
   // TODO: Compiled with ComputeCpp, cl::sycl::buffer inited by another buffer
-  // or a raw pointer manager unaffected memory. But in CUDA, device_ptr manager
+  // or a raw pointer manager unaffected memory. But in source, device_ptr manager
   // the same memory when it inited by a raw pointer.
   template <typename OtherT>
   device_ptr(OtherT ptr)
@@ -776,4 +776,4 @@ void stable_sort_by_key(Policy &&policy, RandomAccessIter1 keys_first,
 } // end namespace dpct
 #endif
 
-#endif
+#endif//__DPSTD_UTILS_HPP__

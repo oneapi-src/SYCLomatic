@@ -17,8 +17,8 @@
 
 //===--- blas_utils.hpp ------------------------------*- C++ -*---===//
 
-#ifndef __DPCT_BLAS_H__
-#define __DPCT_BLAS_H__
+#ifndef __DPCT_BLAS_HPP__
+#define __DPCT_BLAS_HPP__
 
 #include "memory.hpp"
 #include "util.hpp"
@@ -289,4 +289,4 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
 }
 
 } // namespace dpct
-#endif // __DPCT_BLAS_H__
+#endif // __DPCT_BLAS_HPP__

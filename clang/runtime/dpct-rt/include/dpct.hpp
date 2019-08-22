@@ -17,13 +17,12 @@
 
 //===--- dpct.hpp --------------------------------------*- C++ -*---===//
 
-#ifndef DPCT_H
-#define DPCT_H
+#ifndef __DPCT_HPP__
+#define __DPCT_HPP__
 
 #include <CL/sycl.hpp>
 #include <iostream>
-
-#define DPCPP_COMPATIBILITY_TEMP (200)
+#include <limits.h>
 
 #include "atomic.hpp"
 #include "device.hpp"
@@ -33,17 +32,17 @@
 #include "util.hpp"
 
 #if defined(_MSC_VER)
-#define __sycl_align__(n) __declspec(align(n))
+#define __dpct_align__(n) __declspec(align(n))
 #else
-#define __sycl_align__(n) __attribute__((aligned(n)))
+#define __dpct_align__(n) __attribute__((aligned(n)))
 #endif
 
 template <class... Args> class dpct_kernel_name;
 template <int Arg> class dpct_kernel_scalar;
 
+#define DPCPP_COMPATIBILITY_TEMP (200)
+
 #define DPCT_PI_F (3.14159274101257f)
 #define DPCT_PI (3.141592653589793115998)
 
-#include <limits.h>
-
-#endif // DPCT_H
+#endif // __DPCT_HPP__

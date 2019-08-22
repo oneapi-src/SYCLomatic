@@ -1,7 +1,7 @@
 // RUN: dpct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --input-file %T/unnamed-struct.dp.cpp --match-full-lines %s
 
-//CHECK: struct __sycl_align__(4) dpct_type_{{[a-f0-9]+}}
+//CHECK: struct __dpct_align__(4) dpct_type_{{[a-f0-9]+}}
 struct __align__(4)
 {
     unsigned i;

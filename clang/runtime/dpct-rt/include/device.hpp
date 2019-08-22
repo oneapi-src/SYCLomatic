@@ -17,8 +17,8 @@
 
 //===--- device.hpp ------------------------------*- C++ -*---===//
 
-#ifndef DPCT_DEVICE_H
-#define DPCT_DEVICE_H
+#ifndef __DPCT_DEVICE_HPP__
+#define __DPCT_DEVICE_HPP__
 
 #include <CL/sycl.hpp>
 #include <cstring>
@@ -266,4 +266,4 @@ static inline cl::sycl::queue &get_default_queue() {
 
 } // namespace dpct
 
-#endif // DPCT_DEVICE_H
+#endif // __DPCT_DEVICE_HPP__

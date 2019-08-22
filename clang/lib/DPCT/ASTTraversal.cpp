@@ -629,7 +629,7 @@ void AlignAttrsRule::run(const MatchFinder::MatchResult &Result) {
       auto SM = Result.SourceManager;
       auto ExpB = SM->getExpansionLoc(A->getLocation());
       if (!strncmp(SM->getCharacterData(ExpB), "__align__(", 10))
-        emplaceTransformation(new ReplaceToken(ExpB, "__sycl_align__"));
+        emplaceTransformation(new ReplaceToken(ExpB, "__dpct_align__"));
     }
   }
 }
@@ -4737,10 +4737,10 @@ void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
 void KernelFunctionInfoRule::run(const MatchFinder::MatchResult &Result) {
   if (auto V = getNodeAsType<VarDecl>(Result, "decl"))
     emplaceTransformation(
-        new ReplaceTypeInDecl(V, "dpct_kernel_function_info"));
+        new ReplaceTypeInDecl(V, "dpct::dpct_kernel_function_info"));
   else if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
     emplaceTransformation(
-        new ReplaceToken(C->getBeginLoc(), "(get_kernel_function_info"));
+        new ReplaceToken(C->getBeginLoc(), "(dpct::get_kernel_function_info"));
     emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
     auto FuncArg = C->getArg(1);
     emplaceTransformation(new InsertBeforeStmt(FuncArg, "(const void *)"));

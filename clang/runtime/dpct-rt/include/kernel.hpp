@@ -17,10 +17,12 @@
 
 //===--- kernel.hpp ------------------------------*- C++ -*---===//
 
-#ifndef DPCT_KERNEL_H
-#define DPCT_KERNEL_H
+#ifndef __DPCT_KERNEL_HPP__
+#define __DPCT_KERNEL_HPP__
 
 #include <CL/sycl.hpp>
+
+namespace dpct {
 
 struct dpct_kernel_function_info {
   int max_work_group_size = 0;
@@ -34,4 +36,5 @@ static void get_kernel_function_info(dpct_kernel_function_info *kernel_info,
           .get_info<cl::sycl::info::device::max_work_group_size>();
 }
 
-#endif // !DPCT_KERNEL_H
+}//namespace
+#endif // __DPCT_KERNEL_HPP__

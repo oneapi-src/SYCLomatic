@@ -16,10 +16,10 @@ __global__ void testKernel(void* data)
 template<class T>
 void getTemplateFuncAttrs()
 {
-  //CHECK: dpct_kernel_function_info attrs;
+  //CHECK: dpct::dpct_kernel_function_info attrs;
   cudaFuncAttributes attrs;
 
-  //CHECK: (get_kernel_function_info(&attrs, (const void *)testTemplateKernel<T>), 0);
+  //CHECK: (dpct::get_kernel_function_info(&attrs, (const void *)testTemplateKernel<T>), 0);
   cudaFuncGetAttributes(&attrs, testTemplateKernel<T>);
 
   //CHECK: int threadPerBlock = attrs.max_work_group_size;
@@ -28,10 +28,10 @@ void getTemplateFuncAttrs()
 
 void getFuncAttrs()
 {
-  //CHECK: dpct_kernel_function_info attrs;
+  //CHECK: dpct::dpct_kernel_function_info attrs;
   cudaFuncAttributes attrs;
 
-  //CHECK: (get_kernel_function_info(&attrs, (const void *)testKernel), 0);
+  //CHECK: (dpct::get_kernel_function_info(&attrs, (const void *)testKernel), 0);
   cudaFuncGetAttributes(&attrs, testKernel);
 
   //CHECK: int threadPerBlock = attrs.max_work_group_size;

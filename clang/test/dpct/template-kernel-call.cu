@@ -20,7 +20,7 @@ __global__ void testKernel(TData L, TData M, int N) {
   L = M;
 }
 
-// CHECK: struct __sycl_align__(8) LA {
+// CHECK: struct __dpct_align__(8) LA {
 struct __align__(8) LA {
   unsigned int l, a;
 };

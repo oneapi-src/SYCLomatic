@@ -1,14 +1,14 @@
 // RUN: dpct -out-root %T %s -- -std=c++14  -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck %s --match-full-lines --input-file %T/replace-align.dp.cpp
 
-// CHECK:typedef struct __sycl_align__(4) dpct_type_{{[a-f0-9]+}}
+// CHECK:typedef struct __dpct_align__(4) dpct_type_{{[a-f0-9]+}}
 typedef struct __align__(4)
 {
     unsigned char r, g, b, a;
 }
 T0;
 
-// CHECK:class __sycl_align__(8) T1 {
+// CHECK:class __dpct_align__(8) T1 {
 class __align__(8) T1 {
     unsigned int l, a;
 };

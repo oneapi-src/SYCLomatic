@@ -17,8 +17,8 @@
 
 //===--- atomic.hpp -------------------------------*- C++ -*---===//
 
-#ifndef DPCT_ATOMIC_H
-#define DPCT_ATOMIC_H
+#ifndef __DPCT_ATOMIC_HPP__
+#define __DPCT_ATOMIC_HPP__
 
 #include <CL/sycl.hpp>
 
@@ -257,5 +257,4 @@ T atomic_compare_exchange_strong(
 }
 
 } // namespace dpct
-
-#endif // DPCT_ATOMIC_H
+#endif // __DPCT_ATOMIC_HPP__

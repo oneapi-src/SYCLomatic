@@ -17,8 +17,8 @@
 
 //===--- image.hpp ------------------------------*- C++ -*---===//
 
-#ifndef DPCT_TEXTURE_H
-#define DPCT_TEXTURE_H
+#ifndef __DPCT_IMAGE_HPP__
+#define __DPCT_IMAGE_HPP__
 
 #include <CL/sycl.hpp>
 
@@ -295,4 +295,4 @@ inline typename image_trait<T>::data_t
 }
 } // namespace dpct
 
-#endif // !DPCT_TEXTURE_H
+#endif // __DPCT_IMAGE_HPP__

@@ -17,8 +17,8 @@
 
 //===--- util.hpp -------------------------------*- C++ -*-----===//
 
-#ifndef DPCT_UTIL_H
-#define DPCT_UTIL_H
+#ifndef __DPCT_UTIL_HPP__
+#define __DPCT_UTIL_HPP__
 
 #include <CL/sycl.hpp>
 #include <complex>
@@ -79,4 +79,4 @@ inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
 
 } // namespace dpct
 
-#endif // DPCT_UTIL_H
+#endif // __DPCT_UTIL_HPP__

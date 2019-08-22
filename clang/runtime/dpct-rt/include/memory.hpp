@@ -17,8 +17,8 @@
 
 //===--- memory.hpp ------------------------------*- C++ -*---===//
 
-#ifndef DPCT_MEMORY_H
-#define DPCT_MEMORY_H
+#ifndef __DPCT_MEMORY_HPP__
+#define __DPCT_MEMORY_HPP__
 
 #include "device.hpp"
 #include <CL/sycl.hpp>
@@ -42,14 +42,14 @@
 // - create SYCL buffers behind the scene.
 // - return some kind of fake pointers to allow, which allow address
 //   arithmetics and back-mapping to SYCL buffers and offset inside the buffer.
-// Note, such implementation assumes that CUDA program is not using Unified
+// Note, such implementation assumes that source program is not using Unified
 // Memory. I.e. device pointers are not dereferenced on the host.
 //
 // This functionality is pretty much straight forward to implement and enables
 // memory allocation, deallocation, and converting SYCL buffers functionality.
 //
 // The trickier part is memory copies (to and from device), as naturally these
-// operations in CUDA are done by imperative API (i.e. explicit copy
+// operations in source are done by imperative API (i.e. explicit copy
 // operations), while in SYCL they are managed by declarative API (buffers
 // passed to kernels) and managed by runtime.
 //
@@ -290,7 +290,6 @@ private:
   size_t range[3];
 };
 
-// sycl memory traits
 template <memory_attribute Memory, class T = byte_t> class memory_traits {
 public:
   static constexpr cl::sycl::access::address_space asp =
@@ -803,4 +802,4 @@ static void async_dpct_memset(void *dev_ptr, int value, size_t size) {
 }
 } // namespace dpct
 
-#endif // DPCT_MEMORY_H
+#endif // __DPCT_MEMORY_HPP__
