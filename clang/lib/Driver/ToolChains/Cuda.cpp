@@ -38,8 +38,10 @@ using namespace llvm::opt;
 
 #define INTEL_CUSTOMIZATION
 #ifdef INTEL_CUSTOMIZATION
-bool IsSetSDKIncludeOption = false;
+bool HasSDKIncludeOption = false;
+bool HasSDKPathOption = false;
 std::string RealSDKIncludePath = "";
+std::string RealSDKPath = "";
 
 static bool ParseSDKVersionFile(const std::string &FilePath, CudaVersion& CV) {
   CV = CudaVersion::UNKNOWN;
@@ -145,11 +147,22 @@ CudaInstallationDetector::CudaInstallationDetector(
   #else
   std::initializer_list<const char *> Versions = {"8.0", "7.5", "7.0"};
   #endif
-
-
+#define INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
+  if (HasSDKPathOption) {
+    Candidates.emplace_back(RealSDKPath);
+  } else if (Args.hasArg(clang::driver::options::OPT_cuda_path_EQ)) {
+    std::string TempCandidate =
+        Args.getLastArgValue(clang::driver::options::OPT_cuda_path_EQ).str();
+    if (TempCandidate[0] == '"') {
+      TempCandidate = TempCandidate.substr(1, TempCandidate.size() - 2);
+    }
+    Candidates.emplace_back(TempCandidate);
+#else
   if (Args.hasArg(clang::driver::options::OPT_cuda_path_EQ)) {
     Candidates.emplace_back(
         Args.getLastArgValue(clang::driver::options::OPT_cuda_path_EQ).str());
+#endif
   } else if (HostTriple.isOSWindows()) {
 #ifdef INTEL_CUSTOMIZATION
     // if D.SysRoot empty (no --sysroot) , then default to "c:" in Windows.
@@ -199,7 +212,7 @@ CudaInstallationDetector::CudaInstallationDetector(
 
 #define INTEL_CUSTOMIZATION
 #ifdef INTEL_CUSTOMIZATION
-  if (IsSetSDKIncludeOption) {
+  if (HasSDKIncludeOption) {
     if (RealSDKIncludePath.empty() ||
         !D.getVFS().exists(RealSDKIncludePath))
       return;
@@ -221,13 +234,23 @@ CudaInstallationDetector::CudaInstallationDetector(
       continue;
 
     auto &FS = D.getVFS();
-    IncludePath = InstallPath + "/include";
-    if (!(FS.exists(IncludePath + "/cuda_runtime.h") &&
-          FS.exists(IncludePath + "/cuda.h")))
+    bool IsFound = false;
+    if (FS.exists(InstallPath + "/include/cuda_runtime.h") &&
+        FS.exists(InstallPath + "/include/cuda.h")) {
+      IsFound = ParseSDKVersionFile(InstallPath + "/include/cuda.h", Version);
+      if (!IsFound)
+        continue;
+      InstallPath = InstallPath + "/include/";
+      IncludePath = InstallPath;
+    } else if (FS.exists(InstallPath + "/cuda_runtime.h") &&
+               FS.exists(InstallPath + "/cuda.h")) {
+      IsFound = ParseSDKVersionFile(InstallPath + "/cuda.h", Version);
+      if (!IsFound)
+        continue;
+      IncludePath = InstallPath;
+    } else {
       continue;
-    bool IsFound = ParseSDKVersionFile(InstallPath + "/include/cuda.h", Version);
-    if (!IsFound)
-      continue;
+    }
 #else
   for (const auto &Candidate : Candidates) {
     InstallPath = Candidate.Path;

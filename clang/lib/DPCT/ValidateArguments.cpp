@@ -110,7 +110,7 @@ bool validatePaths(const std::string &InRoot,
   return Ok;
 }
 
-int checkSDKIncludePath(const std::string &Path, std::string& RealPath) {
+int checkSDKPathOrIncludePath(const std::string &Path, std::string& RealPath) {
   if (Path.empty()) {
     return 1;
   }

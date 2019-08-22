@@ -92,11 +92,16 @@ static opt<std::string>
             value_desc("/path/to/output/root/"), cat(DPCTCat),
             llvm::cl::Optional);
 
+static opt<std::string> SDKPath("cuda-path",
+                                desc("Directory path of SDK.\n"),
+                                value_desc("dir"), cat(DPCTCat),
+                                llvm::cl::Optional);
+
 static opt<std::string> SDKIncludePath(
     "cuda-include-path",
-    desc("Directory path of CUDA header files.\n"
+    desc("Directory path of header files.\n"
          "If this option is set, option \"--cuda-path\" will be ignored."),
-    value_desc("/path/to/CUDA/include/"), cat(DPCTCat), llvm::cl::Optional);
+    value_desc("dir"), cat(DPCTCat), llvm::cl::Optional);
 
 static opt<std::string> ReportType(
     "report-type",
@@ -364,8 +369,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
 
   std::string Path = SDKDetector.getInstallPath();
   if (!SDKDetector.isValid()) {
-    std::string ErrMsg = "[ERROR] Not found valid SDK path\n";
-    PrintMsg(ErrMsg);
+    DebugInfo::ShowStatus(MigrationErrorInvalidSDKPath);
     exit(MigrationErrorInvalidSDKPath);
   }
 
@@ -642,23 +646,40 @@ int run(int argc, const char **argv) {
   CommonOptionsParser OptParser(argc, argv, DPCTCat);
   clock_t StartTime = clock();
   if (!makeCanonicalOrSetDefaults(InRoot, OutRoot,
-                                  OptParser.getSourcePathList()))
-    exit(-1);
+                                  OptParser.getSourcePathList())) {
+    DebugInfo::ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
+    exit(MigrationErrorInvalidInRootOrOutRoot);
+  }
 
-  if (!validatePaths(InRoot, OptParser.getSourcePathList()))
-    exit(-1);
+  if (!validatePaths(InRoot, OptParser.getSourcePathList())) {
+    DebugInfo::ShowStatus(MigrationErrorInvalidInRootPath);
+    exit(MigrationErrorInvalidInRootPath);
+  }
 
-  int Res = checkSDKIncludePath(SDKIncludePath, RealSDKIncludePath);
-  if (Res == -1) {
-    exit(-1);
-  } else if (Res == 0) {
-    IsSetSDKIncludeOption = true;
+  int SDKIncPathRes =
+      checkSDKPathOrIncludePath(SDKIncludePath, RealSDKIncludePath);
+  if (SDKIncPathRes == -1) {
+    DebugInfo::ShowStatus(MigrationErrorInvalidSDKPath);
+    exit(MigrationErrorInvalidSDKPath);
+  } else if (SDKIncPathRes == 0) {
+    HasSDKIncludeOption = true;
+  }
+
+  int SDKPathRes =
+      checkSDKPathOrIncludePath(SDKPath, RealSDKPath);
+  if (SDKPathRes == -1) {
+    DebugInfo::ShowStatus(MigrationErrorInvalidSDKPath);
+    exit(MigrationErrorInvalidSDKPath);
+  } else if (SDKPathRes == 0) {
+    HasSDKPathOption = true;
   }
 
   bool GenReport = false;
   if (checkReportArgs(ReportType, ReportFormat, ReportFilePrefix,
-                      ReportOnlyFlag, GenReport, DiagsContent) == false)
-    exit(-1);
+                      ReportOnlyFlag, GenReport, DiagsContent) == false) {
+    DebugInfo::ShowStatus(MigrationErrorInvalidReportArgs);
+    exit(MigrationErrorInvalidReportArgs);
+  }
 
   if (GenReport) {
     std::string buf;

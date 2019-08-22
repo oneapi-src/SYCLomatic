@@ -10,7 +10,9 @@
 //===-----------------------------------------------------------------===//
 #include <string>
 
-extern bool IsSetSDKIncludeOption;
+extern bool HasSDKIncludeOption;
 extern std::string RealSDKIncludePath;
+extern bool HasSDKPathOption;
+extern std::string RealSDKPath;
 
 int run(int argc, const char **argv);

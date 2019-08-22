@@ -2702,6 +2702,7 @@ bool TranslationStatistics::IsTranslated(const std::string &APIName) {
   } else {
     llvm::errs() << "[NOTE] Find new API\"" << APIName
                  << "\" , please update migrated API database.\n";
+    DebugInfo::ShowStatus(MigrationError);
     std::exit(MigrationError);
   }
 }

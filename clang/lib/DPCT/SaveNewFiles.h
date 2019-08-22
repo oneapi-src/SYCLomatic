@@ -33,6 +33,10 @@ enum ProcessStatus {
   MigrationErrorRunFromSDKFolder = -3,
   MigrationErrorInRootContainCTTool = -4,
   MigrationErrorInvalidSDKPath = -5,
+  MigrationErrorInvalidInRootOrOutRoot = -6,
+  MigrationErrorInvalidInRootPath = -7,
+  MigrationErrorInvalidReportArgs = -8,
+  MigrationErrorNotSupportFileType = -9,
 };
 
 enum OutputVerbosityLev { silent, normal, detailed, diagnostics };

@@ -33,5 +33,5 @@ bool checkReportArgs(std::string &RType, std::string &RFormat,
 //  0: Path is valid
 //  1: Path is empty, option "cuda-include-path" is not used
 // -1: Path is invaild
-int checkSDKIncludePath(const std::string &Path, std::string &RealPath);
+int checkSDKPathOrIncludePath(const std::string &Path, std::string &RealPath);
 #endif // DPCT_VALIDATE_ARGUMENTS_H

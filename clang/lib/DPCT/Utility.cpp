@@ -13,6 +13,7 @@
 
 #include "AnalysisInfo.h"
 #include "SaveNewFiles.h"
+#include "Debug.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/Basic/SourceLocation.h"
@@ -200,8 +201,10 @@ SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
              Extension == ".hh") {
     return TypeCppHeader;
   } else {
-    llvm::errs() << "[ERROR] Not support \"" << Extension << "\" file type!\n";
-    std::exit(1);
+    std::string ErrMsg =
+        "[ERROR] Not support \"" + Extension.str() + "\" file type!\n";
+    dpct::PrintMsg(ErrMsg);
+    std::exit(MigrationErrorNotSupportFileType);
   }
 }
 
@@ -260,6 +263,7 @@ ruleTopoSort(std::vector<std::vector<std::string>> &TableRules) {
   }
   if (Vec.size() != InDegree.size()) {
     std::cout << "Error: Two rules have dependency on each other！\n";
+    dpct::DebugInfo::ShowStatus(MigrationError);
     exit(MigrationError);
   }
 
