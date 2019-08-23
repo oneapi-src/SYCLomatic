@@ -22,10 +22,8 @@ int GAnalytics(std::string Data) {
     // std::cout << "send message .....\n";
     if (Data == "") {
       analytics->postEvent("client.cli.start", "start", nullptr, "");
-      analytics->postEvent("client.cli.finish", "start", nullptr, "");
     } else {
       analytics->postEvent("client.cli.start", "API", nullptr, Data);
-      analytics->postEvent("client.cli.finish", "API", nullptr, Data);
     }
   }
   // analytics->dumpStat();
