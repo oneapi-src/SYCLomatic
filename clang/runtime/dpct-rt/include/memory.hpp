@@ -79,24 +79,19 @@ typedef uint8_t byte_t;
 // Buffer type to be used in Memory Management runtime.
 typedef cl::sycl::buffer<byte_t> buffer_t;
 
-// TODO:
-// - integration with error handling - error code to be returned.
-// - integration with stream support - proper queue to be used.
-// - extend mmaped space when the limit is reached.
-
-// There may be a lot of different strategies for allocating and mapping
-// fake device pointers to SYCL/OpenCL buffers. For example:
-// - continuous address allocation
-// - encoding buffer number in higher bits of the address and offset in the
-//   lower bits
-//
-// Current algorithm allocates huge (128Gb) continuous address space and uses it
-// for allocation of device pointers. In current version address space is not
-// reused after freeing and not extended when the limit is reached. For mapping
-// pointers to buffers std::map is used, which has log(N) complexity, where N is
-// number of currently live allocations. This looks reasonable, given that
-// number of buffers is typically not big (while quite often buffers may be big
-// themselves).
+/// There may be a lot of different strategies for allocating and mapping
+/// fake device pointers to SYCL/OpenCL buffers. For example:
+/// - continuous address allocation
+/// - encoding buffer number in higher bits of the address and offset in the
+///   lower bits
+///
+/// Current algorithm allocates huge (128Gb) continuous address space and uses it
+/// for allocation of device pointers. In current version address space is not
+/// reused after freeing and not extended when the limit is reached. For mapping
+/// pointers to buffers std::map is used, which has log(N) complexity, where N is
+/// number of currently live allocations. This looks reasonable, given that
+/// number of buffers is typically not big (while quite often buffers may be big
+/// themselves).
 class memory_manager {
 public:
   using buffer_id_t = int;

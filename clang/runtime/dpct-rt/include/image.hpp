@@ -26,7 +26,8 @@
 #include "util.hpp"
 
 namespace dpct {
-// Texture object type traits.
+
+/// Texture object type traits.
 template <class T> struct image_trait {
   using acc_data_t = cl::sycl::vec<T, 4>;
   template <int Dimension>
@@ -38,8 +39,10 @@ template <class T> struct image_trait {
     return original_data.r();
   }
 };
+
 template <class T>
 struct image_trait<cl::sycl::vec<T, 1>> : public image_trait<T> {};
+
 template <class T>
 struct image_trait<cl::sycl::vec<T, 2>> : public image_trait<T> {
   using data_t = cl::sycl::vec<T, 2>;
@@ -47,9 +50,11 @@ struct image_trait<cl::sycl::vec<T, 2>> : public image_trait<T> {
     return data_t(original_data.r(), original_data.g());
   }
 };
+
 template <class T>
 struct image_trait<cl::sycl::vec<T, 3>>
     : public image_trait<cl::sycl::vec<T, 4>> {};
+
 template <class T>
 struct image_trait<cl::sycl::vec<T, 4>> : public image_trait<T> {
   using data_t = cl::sycl::vec<T, 4>;
@@ -63,7 +68,8 @@ struct dpct_image_channel {
   cl::sycl::image_channel_type _type;
   unsigned _elem_size;
 };
-// This class prepare 2D or 3D data for image class.
+
+/// This class prepare 2D or 3D data for image class.
 class dpct_image_data {
   dpct_image_channel _channel;
   int _range[3] = {0};
@@ -77,6 +83,7 @@ class dpct_image_data {
     _range[dim] = first;
     return first * set_range(++dim, std::forward<Rest>(rest)...);
   }
+
   // If the dims are not used, set its range to 1.
   inline size_t set_range(int dim) {
     while (dim < 3)
@@ -123,8 +130,9 @@ public:
   ~dpct_image_data() { free(); }
 };
 
-// Texture object.
 template <class T, int Dimension> class dpct_image_accessor;
+
+/// dpct image
 template <class T, int Dimension> class dpct_image {
   cl::sycl::addressing_mode _addr_mode;
   cl::sycl::filtering_mode _filter_mode;
@@ -186,7 +194,7 @@ public:
   }
 };
 
-// Wrap sampler and image accessor together.
+/// Wrap sampler and image accessor together.
 template <class T, int Dimension> class dpct_image_accessor {
 public:
   using accessor_t = typename image_trait<T>::template accessor_t<Dimension>;
@@ -258,41 +266,50 @@ inline void dpct_attach_image(dpct_image<T, Dimension> &texture,
                               dpct_image_data &a) {
   texture.attach(a);
 }
+
 template <class T>
 inline void dpct_attach_image(dpct_image<T, 1> &texture, void *ptr,
                               const dpct_image_channel &desc, size_t size) {
   texture.attach(ptr, desc, size);
 }
+
 template <class T, int Dimension>
 inline void dpct_detach_image(dpct_image<T, Dimension> &texture) {
   texture.detach();
 }
+
 template <class... Args>
 inline void dpct_malloc_image(dpct_image_data *a, dpct_image_channel *desc,
                               Args &&... args) {
   a->malloc(*desc, std::forward<Args>(args)...);
 }
+
 inline void dpct_memcpy_to_image(dpct_image_data &a, size_t off_x, size_t off_y,
                                  void *ptr, size_t count) {
   a.copy_from(off_x, off_y, 0, ptr, count);
 }
+
 inline void dpct_free(dpct_image_data &a) { a.free(); }
+
 template <class T, class CoordT>
 inline typename image_trait<T>::data_t
     dpct_read_image(dpct_image_accessor<T, 1> &acc, CoordT x) {
   return acc.read(x);
 }
+
 template <class T, class CoordT>
 inline typename image_trait<T>::data_t
     dpct_read_image(dpct_image_accessor<T, 2> &acc, CoordT x, CoordT y) {
   return acc.read(cl::sycl::vec<CoordT, 2>(x, y));
 }
+
 template <class T, class CoordT>
 inline typename image_trait<T>::data_t
     dpct_read_image(dpct_image_accessor<T, 3> &acc, CoordT x, CoordT y,
                     float z) {
   return acc.read(cl::sycl::vec<CoordT, 4>(x, y, z, 0));
 }
+
 } // namespace dpct
 
 #endif // __DPCT_IMAGE_HPP__

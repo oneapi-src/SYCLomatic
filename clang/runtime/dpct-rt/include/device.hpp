@@ -30,6 +30,7 @@ namespace dpct {
 
 enum class compute_mode { default_, exclusive, prohibited, exclusive_process };
 
+/// DPC++ default exception handler
 auto exception_handler = [](cl::sycl::exception_list exceptions) {
   for (std::exception_ptr const &e : exceptions) {
     try {
@@ -41,6 +42,7 @@ auto exception_handler = [](cl::sycl::exception_list exceptions) {
   }
 };
 
+/// Device info
 class dpct_device_info {
 public:
   // get interface
@@ -116,6 +118,7 @@ private:
   compute_mode _compute_mode = compute_mode::default_;
 };
 
+/// dpct device extension
 class dpct_device : public cl::sycl::device {
 public:
   dpct_device() : cl::sycl::device() {}
@@ -129,7 +132,6 @@ public:
     get_version(major, minor);
     return major;
   }
-  //....
 
   void get_device_info(dpct_device_info &out) {
     dpct_device_info prop;
@@ -176,12 +178,11 @@ public:
         get_info<cl::sycl::info::device::max_work_group_size>());
     int max_nd_range_size[] = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
     prop.set_max_nd_range_size(max_nd_range_size);
-    //...
+
     out = prop;
   }
 
   void reset() {
-    // release ALL (TODO) resources and reset to initial state
     for (auto q : _queues) {
       // The destructor waits for all commands executing on the queue to
       // complete. It isn't possible to destroy a queue immediately. This is a
@@ -217,6 +218,7 @@ private:
   std::set<cl::sycl::queue> _queues;
 };
 
+/// dpct device manager
 class device_manager {
 public:
   device_manager() {
@@ -256,10 +258,14 @@ private:
   unsigned int _current_device = 0;
 };
 
+/// util function to get the instance of dpct device manager
 static device_manager &get_device_manager() {
   static device_manager d_m;
   return d_m;
 }
+
+/// util function to get the defualt queue of current device in
+/// dpct device manager
 static inline cl::sycl::queue &get_default_queue() {
   return dpct::get_device_manager().current_device().default_queue();
 }
