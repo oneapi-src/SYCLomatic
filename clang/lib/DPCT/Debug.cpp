@@ -383,7 +383,7 @@ void DebugInfo::ShowStatus(int Status) {
     StatusString = "Migration error: saving migrated file(s) failed";
     break;
   case MigrationErrorInvalidSDKPath:
-    StatusString = "Migration error: not found valid SDK include path";
+    StatusString = "Migration error: invalid SDK include path";
     break;
   case MigrationErrorInvalidInRootOrOutRoot:
     StatusString = "Migration error: invalid inroot or outroot path";
