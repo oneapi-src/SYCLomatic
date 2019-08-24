@@ -122,6 +122,9 @@ int checkSDKPathOrIncludePath(const std::string &Path, std::string& RealPath) {
 
 #if defined(_WIN32)
   RealPath = AbsPath.str().lower();
+  if (RealPath.substr(0, 3) == "unc") {
+    RealPath = "\\" + RealPath.substr(3);
+  }
 #elif defined(__linux__)
   RealPath = AbsPath.c_str();
 #else
