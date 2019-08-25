@@ -126,6 +126,15 @@
 #endif
 #include "cuda_runtime.h"
 
+#if defined(INTEL_CUSTOMIZATION) && defined(_WIN32) && defined(_MSC_VER)
+#undef va_start
+#undef va_end
+#undef va_arg
+#define va_start __crt_va_start
+#define va_arg   __crt_va_arg
+#define va_end   __crt_va_end
+#endif
+
 #pragma pop_macro("nv_weak")
 #undef __CUDACC__
 #define __CUDABE__
