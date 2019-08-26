@@ -33,7 +33,7 @@ using namespace clang::tooling;
 
 extern std::string CudaPath;
 extern std::string DpctInstallPath; // Installation directory for this tool
-extern llvm::cl::opt<std::string> USMLevel;
+extern llvm::cl::opt<UsmLevel> USMLevel;
 
 auto parentStmt = []() {
   return anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
@@ -4185,40 +4185,25 @@ void MemoryTranslationRule::mallocTranslation(
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
   if (Name == "cudaMalloc") {
-    if (USMLevel == "none") {
-      DpctGlobalInfo::getInstance().insertCudaMalloc(C);
-      emplaceTransformation(
-          new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
-    } else {
-      // Migrate to sycl_malloc_device
-      std::ostringstream Repl;
-      Repl << "*(" << getStmtSpelling(C->getArg(0), *(Result.Context))
-           << ") = cl::sycl::malloc_device("
-           << getStmtSpelling(C->getArg(1), *(Result.Context))
-           << ", dpct::get_device_manager().current_device()"
-           << ", dpct::get_default_queue().get_context())";
-      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
-    }
+    DpctGlobalInfo::getInstance().insertCudaMalloc(C);
+    emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost") {
-    if (USMLevel == "none") {
-      std::ostringstream Repl;
-      Repl << "*(" << getStmtSpelling(C->getArg(0), *(Result.Context))
-           << ") = malloc(" << getStmtSpelling(C->getArg(1), *(Result.Context))
-           << ")";
-      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
-    } else {
+    if (USMLevel == restricted) {
       std::ostringstream Repl;
       Repl << "*(" << getStmtSpelling(C->getArg(0), *(Result.Context))
            << ") = cl::sycl::malloc_host("
            << getStmtSpelling(C->getArg(1), *(Result.Context))
            << ", dpct::get_default_queue().get_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+    } else {
+      std::ostringstream Repl;
+      Repl << "*(" << getStmtSpelling(C->getArg(0), *(Result.Context))
+           << ") = malloc(" << getStmtSpelling(C->getArg(1), *(Result.Context))
+           << ")";
+      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     }
   } else if (Name == "cudaMallocManaged") {
-    if (USMLevel == "none") {
-      // Report unsupported warnings
-      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, Name);
-    } else {
+    if (USMLevel == restricted) {
       std::ostringstream Repl;
       Repl << "*(" << getStmtSpelling(C->getArg(0), *(Result.Context))
            << ") = cl::sycl::malloc_shared("
@@ -4226,6 +4211,9 @@ void MemoryTranslationRule::mallocTranslation(
            << ", dpct::get_device_manager().current_device()"
            << ", dpct::get_default_queue().get_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+    } else {
+      // Report unsupported warnings
+      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, Name);
     }
   } else if (Name == "cublasAlloc") {
     // TODO: migrate functions when they are in template
@@ -4486,24 +4474,24 @@ void MemoryTranslationRule::freeTranslation(
   }
 
   if (Name == "cudaFree") {
-    if (USMLevel == "none") {
-      emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_free", Name));
-    } else {
+    if (USMLevel == restricted) {
       std::ostringstream Repl;
       Repl << "cl::sycl::free("
            << getStmtSpelling(C->getArg(0), *(Result.Context))
            << ", dpct::get_default_queue().get_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+    } else {
+      emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_free", Name));
     }
   } else if (Name == "cudaFreeHost") {
-    if (USMLevel == "none") {
-      emplaceTransformation(new ReplaceCalleeName(C, "free", Name));
-    } else {
+    if (USMLevel == restricted) {
       std::ostringstream Repl;
       Repl << "cl::sycl::free("
            << getStmtSpelling(C->getArg(0), *(Result.Context))
            << ", dpct::get_default_queue().get_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+    } else {
+      emplaceTransformation(new ReplaceCalleeName(C, "free", Name));
     }
   } else if (Name == "cublasFree") {
     emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_free", Name));
@@ -4548,13 +4536,13 @@ void MemoryTranslationRule::miscTranslation(
   }
 
   if (Name == "cudaHostGetDevicePointer") {
-    if (USMLevel == "none") {
-      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, Name);
-    } else {
+    if (USMLevel == restricted) {
       std::ostringstream Repl;
       Repl << "*(" << getStmtSpelling(C->getArg(0), *(Result.Context))
            << ") = " << getStmtSpelling(C->getArg(1), *(Result.Context));
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+    } else {
+      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, Name);
     }
   } else if (Name == "cudaHostRegister" || Name == "cudaHostUnregister") {
     emplaceTransformation(new ReplaceStmt(C, ""));

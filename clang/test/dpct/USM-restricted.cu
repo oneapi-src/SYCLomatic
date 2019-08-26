@@ -1,6 +1,6 @@
 // FIXME
 // UNSUPPORTED: -windows-
-// RUN: dpct -out-root %T %s -- -std=c++14 -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct --usm-level=restricted -out-root %T %s -- -std=c++14 -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --match-full-lines --input-file %T/USM-restricted.dp.cpp %s
 
 #include <cuda_runtime.h>
@@ -10,7 +10,7 @@ void foo() {
   float *h_A = (float *)malloc(size);
   float *d_A = NULL;
 
-  // CHECK: *((void **)&d_A) = cl::sycl::malloc_device(size, dpct::get_device_manager().current_device(), dpct::get_default_queue().get_context());
+  // CHECK: dpct::dpct_malloc((void **)&d_A, size);
   cudaMalloc((void **)&d_A, size);
 
   // CHECK: *((void **)&h_A) = cl::sycl::malloc_host(size, dpct::get_default_queue().get_context());

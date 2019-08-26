@@ -546,7 +546,7 @@ static dpct_image_base *dpct_create_image(dpct_image_channel chn, int dims) {
 /// \param [out] image_p Point to a pointer of image base class.
 /// \param data Pointer to image data.
 /// \param info Pointer to image info.
-void dpct_create_image(dpct_image_base **image_p, dpct_image_data *data,
+inline void dpct_create_image(dpct_image_base **image_p, dpct_image_data *data,
                        dpct_image_info *info) {
   dpct_image_channel channel;
   int dims = 1;
@@ -566,19 +566,19 @@ void dpct_create_image(dpct_image_base **image_p, dpct_image_data *data,
 
 /// Free an image class.
 /// \param image Pointer of an Image base class.
-void dpct_free(dpct_image_base *image) { delete image; }
+inline void dpct_free(dpct_image_base *image) { delete image; }
 
 /// Get image info from an image class.
 /// \param [out] info Point to image info.
 /// \param image Point to image class.
-void dpct_get_image_info(dpct_image_info *info, dpct_image_base *image) {
+inline void dpct_get_image_info(dpct_image_info *info, dpct_image_base *image) {
   *info = *image->get_info();
 }
 
 /// Get image data from an image class.
 /// \param [out] info Point to image data.
 /// \param image Point to image class.
-void dpct_get_image_data(dpct_image_data *data, dpct_image_base *image) {
+inline void dpct_get_image_data(dpct_image_data *data, dpct_image_base *image) {
   *data = *image->get_data();
 }
 } // namespace dpct

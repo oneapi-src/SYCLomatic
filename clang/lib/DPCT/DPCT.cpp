@@ -10,6 +10,16 @@
 //===-----------------------------------------------------------------===//
 
 #include "clang/DPCT/DPCT.h"
+#include "ASTTraversal.h"
+#include "AnalysisInfo.h"
+#include "Config.h"
+#include "Debug.h"
+#include "GAnalytics.h"
+#include "SaveNewFiles.h"
+#include "SignalProcess.h"
+#include "Utility.h"
+#include "ValidateArguments.h"
+#include "VcxprojParser.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Frontend/CompilerInstance.h"
@@ -20,16 +30,6 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/Path.h"
-#include "ASTTraversal.h"
-#include "AnalysisInfo.h"
-#include "Config.h"
-#include "Debug.h"
-#include "GAnalytics.h"
-#include "SaveNewFiles.h"
-#include "Utility.h"
-#include "ValidateArguments.h"
-#include "SignalProcess.h"
-#include "VcxprojParser.h"
 
 #include <string>
 
@@ -91,8 +91,7 @@ static opt<std::string>
             value_desc("/path/to/output/root/"), cat(DPCTCat),
             llvm::cl::Optional);
 
-static opt<std::string> SDKPath("cuda-path",
-                                desc("Directory path of SDK.\n"),
+static opt<std::string> SDKPath("cuda-path", desc("Directory path of SDK.\n"),
                                 value_desc("dir"), cat(DPCTCat),
                                 llvm::cl::Optional);
 
@@ -208,15 +207,17 @@ opt<std::string>
                value_desc("output file name"), cat(DPCTCat),
                llvm::cl::Optional);
 
-opt<std::string> USMLevel(
-    "usm-level",
-    desc(
-        "Supported USM levels. Default is \"restricted\".\n"
-        "\"restricted\": Uses API from DPC++ Explicit and Restricted Unified\n"
-        "  Shared Memory extension for memory management migration.\n"
-        "\"none\": Uses helper functions from DPCT header files for memory\n"
-        "  management migration.\n"),
-    value_desc("[restricted|none]"), cat(DPCTCat), llvm::cl::Optional);
+opt<UsmLevel> USMLevel(
+    "usm-level", desc("Supported USM levels. Default is restricted.\n"),
+    values(clEnumVal(restricted,
+                     "Uses API from DPC++ Explicit and Restricted Unified "
+                     "Shared Memory\n                                          "
+                     "extension for memory management migration"),
+           clEnumVal(none,
+                     "Uses helper functions from DPCT header files for memory "
+                     "management\n                                          "
+                     "migration.\n")),
+    init(none), cat(DPCTCat), llvm::cl::Optional, llvm::cl::Hidden);
 
 std::string CudaPath;        // Global value for the CUDA install path.
 std::string DpctInstallPath; // Installation directory for this tool
@@ -668,8 +669,7 @@ int run(int argc, const char **argv) {
     HasSDKIncludeOption = true;
   }
 
-  int SDKPathRes =
-      checkSDKPathOrIncludePath(SDKPath, RealSDKPath);
+  int SDKPathRes = checkSDKPathOrIncludePath(SDKPath, RealSDKPath);
   if (SDKPathRes == -1) {
     DebugInfo::ShowStatus(MigrationErrorInvalidSDKPath);
     exit(MigrationErrorInvalidSDKPath);

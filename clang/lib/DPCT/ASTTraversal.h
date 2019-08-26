@@ -29,6 +29,12 @@
 namespace clang {
 namespace dpct {
 
+// none:       uses helper functions from DPCT header files for memory
+//             management migration
+// restricted: uses API from DPC++ Explicit and Restricted Unified
+//             Shared Memory extension for memory management migration
+enum UsmLevel { none, restricted };
+
 enum RuleType {
   // rule applied to cude source
   ApplyToCudaFile = 1,
