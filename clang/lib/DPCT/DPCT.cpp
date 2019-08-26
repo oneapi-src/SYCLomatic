@@ -80,14 +80,16 @@ static opt<std::string> Passes(
     value_desc("FunctionAttrsRule,..."), cat(DPCTCat), llvm::cl::Hidden);
 static opt<std::string>
     InRoot("in-root",
-           desc("Directory path for root of source tree to be migrated.\n"
-                "Only files under this root will be migrated."),
+           desc("Directory path for root of source tree to be migrated.\nOnly "
+                "files under this root will be migrated.\nCurrent directory "
+                "will be used by default, if the option is not specified.\n"),
            value_desc("/path/to/input/root/"), cat(DPCTCat),
            llvm::cl::Optional);
 static opt<std::string>
     OutRoot("out-root",
-            desc("Directory path for root of generated files.\n"
-                 "Directory will be created if it doesn't exist."),
+            desc("Directory path for root of generated files.\nDirectory will "
+                 "be created if it doesn't exist.\nCurrent directory will be "
+                 "used by default, if the option is not specified."),
             value_desc("/path/to/output/root/"), cat(DPCTCat),
             llvm::cl::Optional);
 
@@ -97,8 +99,9 @@ static opt<std::string> SDKPath("cuda-path", desc("Directory path of SDK.\n"),
 
 static opt<std::string> SDKIncludePath(
     "cuda-include-path",
-    desc("Directory path of header files.\n"
-         "If this option is set, option \"--cuda-path\" will be ignored."),
+    desc(
+        "Directory path of header files.\n"
+        "If this option is specified, option \"--cuda-path\" will be ignored."),
     value_desc("dir"), cat(DPCTCat), llvm::cl::Optional);
 
 static opt<std::string> ReportType(
@@ -108,11 +111,12 @@ static opt<std::string> ReportType(
          "  the number of times they were encountered.\n"
          "  The report file name will have \".apis\" suffix added.\n"
          "\"stats\": High level migration statistics;  Lines "
-         " Of Code (LOC) \n  migrated to DPC++, LOC migrated to Compatibility "
-         "API,\n  LOC not needing migration,  LOC needing migration, but not "
+         " Of Code (LOC) \n  migrated to DPC++, LOC migrated to DPC++ with "
+         "helper functions,\n  LOC not needing migration,  LOC needing "
+         "migration but not "
          "migrated.\n"
          "  The report file name will have \".stats\" suffix added.\n"
-         "\"all\": Generates all of the above reports.\n"
+         "\"all\": Generates all of the reports.\n"
          "Default is \"stats\"."),
     value_desc("[all|apis|stats]"), cat(DPCTCat), llvm::cl::Optional);
 
@@ -143,7 +147,7 @@ bool ReportOnlyFlag = false;
 static opt<bool, true> ReportOnly(
     "report-only",
     llvm::cl::desc("Only reports are generated.  No DPC++ code is generated.\n"
-                   "Default is to generate both reports and DPC++ code."),
+                   "Default is to generate DPC++ code."),
     cat(DPCTCat), llvm::cl::location(ReportOnlyFlag));
 
 bool KeepOriginalCodeFlag = false;
@@ -163,46 +167,47 @@ static opt<std::string>
                  value_desc("[pass|transformation]"), cat(DPCTCat),
                  llvm::cl::Optional, llvm::cl::Hidden);
 
-static std::string WarningDesc("Comma separated list of warnings to "
-                               "suppress.\nValid warning ids range from " +
-                               std::to_string((size_t)Warnings::BEGIN) +
-                               " to " +
-                               std::to_string((size_t)Warnings::END - 1) + ".");
+static std::string
+    WarningDesc("Comma separated list of migration warnings to "
+                "suppress.\nValid warning IDs range from " +
+                std::to_string((size_t)Warnings::BEGIN) + " to " +
+                std::to_string((size_t)Warnings::END - 1) +
+                ".\nHyphen separated ranges are also allowed.\nExamples: "
+                "-suppress-warnings=1000-1010,1011.");
 opt<std::string> SuppressWarnings("suppress-warnings", desc(WarningDesc),
                                   value_desc("WarningID,..."), cat(DPCTCat));
 
 bool SuppressWarningsAllFlag = false;
-static std::string WarningAllDesc("Suppress all warnings");
+static std::string WarningAllDesc("Suppress all migration warnings.");
 opt<bool, true> SuppressWarningsAll("suppress-warnings-all",
                                     desc(WarningAllDesc), cat(DPCTCat),
                                     location(SuppressWarningsAllFlag));
 
 bool NoStopOnErrFlag = false;
 
-static opt<bool, true>
-    NoStopOnErr("no-stop-on-err",
-                llvm::cl::desc("Continue migration and report generation after "
-                               "possible errors.\nDefault: off"),
-                cat(DPCTCat), llvm::cl::location(NoStopOnErrFlag));
+static opt<bool, true> NoStopOnErr(
+    "no-stop-on-err",
+    llvm::cl::desc("Continue migration and generation of reports after "
+                   "possible errors.\nDefault: off"),
+    cat(DPCTCat), llvm::cl::location(NoStopOnErrFlag));
 
 opt<OutputVerbosityLev> OutputVerbosity(
     "output-verbosity",
-    llvm::cl::desc("Sets the output verbosity level. "
-                   "Default is diagnostics."),
+    llvm::cl::desc("Output verbosity level. Default is Diagnostics"),
     llvm::cl::values(
         clEnumVal(silent, "Only messages from clang"),
         clEnumVal(normal,
-                  "Only warnings, errors, notes from both clang and dpct"),
+                  "Warnings, errors, notes from clang and dpct"),
         clEnumVal(detailed,
-                  "Normal + messages about start and end of file parsing"),
+                  "\"normal\" + messages about which file is being processed"),
         clEnumVal(
             diagnostics,
-            "Detailed information about detected conflicts and crashes.")),
+            "\"detailed\" + information about detected conflicts and crashes.")),
     llvm::cl::init(diagnostics), cat(DPCTCat), llvm::cl::Optional);
 
 opt<std::string>
     OutputFile("output-file",
-               desc("redirects stdout/stderr output to <file> in the\n"
+               desc("Redirects stdout/stderr output to <file> in the\n"
                     "output diretory specified by '-out-root' option."),
                value_desc("output file name"), cat(DPCTCat),
                llvm::cl::Optional);

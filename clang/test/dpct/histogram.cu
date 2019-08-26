@@ -12,13 +12,13 @@ void foo() {
   const int B = 32;
   int grid_size, block_size;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:0: cudaOccupancyMaxPotentialBlockSize is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:0: Could not generate replacement.
   // CHECK-NEXT: */
   cudaOccupancyMaxPotentialBlockSize(&grid_size, &block_size, &wg_private_local_kernel, B * sizeof(uint32_t));
 
   // CHECK: dpct::dpct_device_info device_properties;
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1019:{{[0-9a-z]+}}: The sharedMemPerBlock is not necessarily the same as local_mem_size in DPC++
+  // CHECK-NEXT: DPCT1019:{{[0-9a-z]+}}: local_mem_size in SYCL is not a complete equivalent of sharedMemPerBlock in CUDA. You may need to adjust the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: size_t smem_size = device_properties.get_local_mem_size();
   cudaDeviceProp device_properties;

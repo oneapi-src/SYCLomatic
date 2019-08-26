@@ -5,7 +5,7 @@
 
 // CHECK: void device_test(cl::sycl::stream [[STREAM:stream_ct1]]) {
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1015:0: Please adjust the code manually.
+// CHECK-NEXT: DPCT1015:0: Adjust the code manually.
 // CHECK-NEXT: */
 // CHECK-NEXT: [[STREAM]] << "TODO - output needs update" << cl::sycl::endl;
 // CHECK-NEXT: }
@@ -16,7 +16,7 @@ __device__ void device_test() {
 // CHECK: void kernel_test(cl::sycl::stream [[STREAM:stream_ct1]]) {
 // CHECK-NEXT: device_test([[STREAM]]);
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1015:1: Please adjust the code manually.
+// CHECK-NEXT: DPCT1015:1: Adjust the code manually.
 // CHECK-NEXT: */
 // CHECK-NEXT: [[STREAM]] << "TODO - output needs update" << cl::sycl::endl;
 // CHECK-NEXT: }

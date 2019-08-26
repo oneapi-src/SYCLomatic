@@ -164,7 +164,7 @@ int main() {
 
   // CHECK: /* DPCT_ORIG   CUDA_CHECK(cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float)));*/
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   CUDA_CHECK(cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float)));
 
@@ -173,27 +173,27 @@ int main() {
   float *d_odata = NULL;
   // CHECK: /* DPCT_ORIG   checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));*/
   // CHECK-NEXT:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));
 
   // CHECK: /*
-  // CHECK-NEXT:DPCT1007:{{[0-9]+}}: cudaThreadGetCacheConfig: Migration of this API is not supported.
+  // CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the oneAPI DPC++ Compatibility Tool.
   // CHECK-NEXT:*/
   cudaThreadGetCacheConfig(NULL);
 
   // CHECK: /* DPCT_ORIG   cudaThreadGetCacheConfig(NULL);cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float));*/
   // CHECK-NEXT: /*
-  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: cudaThreadGetCacheConfig: Migration of this API is not supported.
+  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the oneAPI DPC++ Compatibility Tool.
   // CHECK-NEXT: */
   cudaThreadGetCacheConfig(NULL);cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float));
 
   // CHECK: /* DPCT_ORIG   cudaEventCreate(NULL);checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));*/
   // CHECK-NEXT:  /*
-  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */
   // CHECK-NEXT:  /*
-  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */
   cudaEventCreate(NULL);checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));checkCudaErrors(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));
 }

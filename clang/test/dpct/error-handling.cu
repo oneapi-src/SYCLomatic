@@ -87,11 +87,11 @@ void test_no_braces() {
 // CHECK-NEXT:  int err;
 // CHECK-NEXT:  int i = 0;
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1000:{{[0-9]+}}: Error handling if-stmt was detected but could not be rewritten.
 // CHECK-NEXT:*/
 // CHECK-NEXT:   if (err != 0) {
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    ++i;
 // CHECK-NEXT:  }
@@ -163,7 +163,7 @@ void test_other_enum() {
 // CHECK:void test_assignment() {
 // CHECK-NEXT:  int err;
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1003:2: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:DPCT1003:2: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err = (dpct::dpct_malloc(0, 0), 0)) {
 // CHECK-NEXT:    printf("error!\n");
@@ -232,7 +232,7 @@ void test_14(cudaError_t err, int arg) {
 
 // CHECK:void test_15(int err, int arg) {
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1003:3: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:DPCT1003:3: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if ((dpct::dpct_malloc(0, 0), 0)) {
 // CHECK-NEXT:  }
@@ -261,7 +261,7 @@ void test_16(cudaError_t err, int arg) {
 
 // CHECK:void test_17(int err, int arg)  {
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1003:4: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:DPCT1003:4: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (!(dpct::dpct_malloc(0, 0), 0)) {
 // CHECK-NEXT:  } else {
@@ -340,30 +340,30 @@ void test_no_side_effects(cudaError_t err, int arg) {
 // CHECK:void test_side_effects(int err, int arg, int x, int y, int z) {
 // CHECK-NEXT:  ;
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1000:{{[0-9]+}}: Error handling if-stmt was detected but could not be rewritten.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err)
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1000:{{[0-9]+}}: Error handling if-stmt was detected but could not be rewritten.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err != 0) {
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:    exit(1);
 // CHECK-NEXT:  }
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1000:{{[0-9]+}}: Error handling if-stmt was detected but couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1000:{{[0-9]+}}: Error handling if-stmt was detected but could not be rewritten.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err)
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    x = printf("fmt string");
 // CHECK-NEXT:  ;
@@ -415,48 +415,48 @@ void specialize_ifs() {
 // CHECK-NEXT:    printf("efef");
 // CHECK-NEXT:  }
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. It couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err == 59) {
 // CHECK-NEXT:    printf("efef");
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:  }
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. It couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err == 255) {
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:  }
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. It couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err == 1) {
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:  }
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. It couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (666 == err) {
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:  }
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. It couldn't be rewritten. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (59 == err) {
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Below statement couldn't be removed from error handling if-stmt. SYCL error handling is based on exceptions, so you might need to rewrite this code. More details: <Error handling article link placeholder>
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:  }

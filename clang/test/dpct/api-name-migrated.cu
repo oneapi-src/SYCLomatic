@@ -21,12 +21,12 @@ void fooo() {
   struct cudaPitchedPtr srcGPU;
 
   // CHECK: /*
-  // CHECK-NEXT:DPCT1007:{{[0-9]+}}: make_cudaExtent: Migration of this API is not supported.
+  // CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the oneAPI DPC++ Compatibility Tool.
   // CHECK-NEXT:*/
   struct cudaExtent extent = make_cudaExtent(size * sizeof(float), size, size);
 
   // CHECK: /*
-  // CHECK-NEXT:DPCT1007:{{[0-9]+}}: cudaMalloc3D: Migration of this API is not supported.
+  // CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the oneAPI DPC++ Compatibility Tool.
   // CHECK-NEXT:*/
   cudaMalloc3D(&srcGPU, extent);
 }

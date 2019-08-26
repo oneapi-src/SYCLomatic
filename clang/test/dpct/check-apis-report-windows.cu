@@ -53,11 +53,11 @@
 
 // RUN: dpct -output-file=output-file.txt -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: echo "// CHECK: Processing: {{(.+)}}" >%T/check_output-file.txt
-// RUN: echo "// CHECK: {{(.+)}} warning: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code" >>%T/check_output-file.txt
+// RUN: echo "// CHECK: {{(.+)}} warning: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code." >>%T/check_output-file.txt
 // RUN: echo "// CHECK:   cudaError_t err = cudaDeviceSynchronize();" >>%T/check_output-file.txt
-// RUN: echo "// CHECK: {{(.+)}} warning: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code" >>%T/check_output-file.txt
+// RUN: echo "// CHECK: {{(.+)}} warning: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code." >>%T/check_output-file.txt
 // RUN: echo "// CHECK:   checkError(cudaDeviceSynchronize());" >>%T/check_output-file.txt
-// RUN: echo "// CHECK: {{(.+)}} warning: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code" >>%T/check_output-file.txt
+// RUN: echo "// CHECK: {{(.+)}} warning: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code." >>%T/check_output-file.txt
 // RUN: echo "// CHECK:   return cudaDeviceSynchronize();" >>%T/check_output-file.txt
 // RUN: cat %T/output-file.txt >>%T/check_output-file.txt
 // RUN: FileCheck --match-full-lines --input-file %T/check_output-file.txt %T/check_output-file.txt

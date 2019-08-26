@@ -12,12 +12,12 @@ int main(int argc, char **argv) {
   }
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:int major = deviceProp.get_major_version();
   int major = deviceProp.major;
 // CHECK:/*
-// CHECK-NEXT:DPCT1006:{{[0-9]+}}: SYCL doesn't provide standard API to differentiate between integrated/discrete GPU devices. Consider to re-implement the code which depends on this field
+// CHECK-NEXT:DPCT1006:{{[0-9]+}}: DPC++ does not provide a standard API to differentiate between integrated/ discrete GPU devices.
 // CHECK-NEXT:*/
 // CHECK-NEXT:int integrated = deviceProp.get_integrated();
   int integrated = deviceProp.integrated;
@@ -29,19 +29,19 @@ int main(int argc, char **argv) {
   int maxThreadsPerMultiProcessor = deviceProp.maxThreadsPerMultiProcessor;
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:deviceProp.set_major_version(1);
   deviceProp.major=1;
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:int minor = deviceProp.get_minor_version();
   int minor = deviceProp.minor;
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:deviceProp.set_minor_version(120);
   deviceProp.minor=120;
@@ -64,13 +64,13 @@ int main(int argc, char **argv) {
   count = deviceProp.maxThreadsPerBlock;
 
   // CHECK:  /*
-  // CHECK-NEXT:  DPCT1022:{{[0-9]+}}: There is no exact match between maxGridSize and nd_range size. Please verify the correctness.
+  // CHECK-NEXT:  DPCT1022:{{[0-9]+}}: There is no exact match between the maxGridSize and the max_nd_range size. Verify the correctness of the code.
   // CHECK-NEXT:  */
   // CHECK-NEXT:  int *maxGridSize = deviceProp.get_max_nd_range_size();
   int *maxGridSize = deviceProp.maxGridSize;
 
   // CHECK:/*
-  // CHECK-NEXT:DPCT1019:{{[0-9]+}}: The sharedMemPerBlock is not necessarily the same as local_mem_size in DPC++
+  // CHECK-NEXT:DPCT1019:{{[0-9]+}}: local_mem_size in SYCL is not a complete equivalent of sharedMemPerBlock in CUDA. You may need to adjust the code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:size_t share_mem_size = deviceProp.get_local_mem_size();
   size_t share_mem_size = deviceProp.sharedMemPerBlock;
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
   dim3 grid(deviceProp.multiProcessorCount * (deviceProp.maxThreadsPerMultiProcessor / deviceProp.warpSize));
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You may want to rewrite this code
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The device version is different. You need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:int n = deviceProp.get_minor_version() / deviceProp.get_major_version();
   int n = deviceProp.minor / deviceProp.major;

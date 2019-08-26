@@ -29,12 +29,12 @@ __global__ void test(T *data) {
   atomicMin(&data[4], tid);
 
   // CHECK: /*
-  // CHECK: DPCT1007:0: atomicInc: Migration of this API is not supported.
+  // CHECK: DPCT1007:0: Migration of this CUDA API is not supported by the oneAPI DPC++ Compatibility Tool.
   // CHECK: */
   atomicInc((unsigned int *)&data[5], (unsigned int)tid);
 
   // CHECK: /*
-  // CHECK: DPCT1007:1: atomicDec: Migration of this API is not supported.
+  // CHECK: DPCT1007:1: Migration of this CUDA API is not supported by the oneAPI DPC++ Compatibility Tool.
   // CHECK: */
   atomicDec((unsigned int *)&data[6], (unsigned int)tid);
 

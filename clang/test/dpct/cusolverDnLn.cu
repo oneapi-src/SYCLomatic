@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
     status = cusolverDnZgetrf_bufferSize(*cusolverH, m, n, &A_z, lda, &Lwork);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
     cusolverDnSpotrf(*cusolverH, uplo, n, &A_f, lda, &workspace_f, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
     cusolverDnDpotrf(*cusolverH, uplo, n, &A_d, lda, &workspace_d, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
     cusolverDnCpotrf(*cusolverH, uplo, n, &A_c, lda, &workspace_c, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
 
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct4 = dpct::memory_manager::get_instance().translate_ptr(&C_f);
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
     cusolverDnSpotrs(*cusolverH, uplo, n, nrhs, &C_f, lda, &B_f, ldb, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct4 = dpct::memory_manager::get_instance().translate_ptr(&C_d);
@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
     cusolverDnDpotrs(*cusolverH, uplo, n, nrhs, &C_d, lda, &B_d, ldb, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct4 = dpct::memory_manager::get_instance().translate_ptr(&C_c);
@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
 
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct4 = dpct::memory_manager::get_instance().translate_ptr(&C_z);
@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
     cusolverDnZpotrs(*cusolverH, uplo, n, nrhs, &C_z, lda, &B_z, ldb, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
@@ -330,7 +330,7 @@ int main(int argc, char *argv[])
     cusolverDnSgetrf(*cusolverH, m, n, &A_f, lda, &workspace_f, &devIpiv, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
@@ -362,7 +362,7 @@ int main(int argc, char *argv[])
     cusolverDnDgetrf(*cusolverH, m, n, &A_d, lda, &workspace_d, &devIpiv, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
@@ -394,7 +394,7 @@ int main(int argc, char *argv[])
     cusolverDnCgetrf(*cusolverH, m, n, &A_c, lda, &workspace_c, &devIpiv, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
@@ -426,7 +426,7 @@ int main(int argc, char *argv[])
     cusolverDnZgetrf(*cusolverH, m, n, &A_z, lda, &workspace_z, &devIpiv, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
@@ -458,7 +458,7 @@ int main(int argc, char *argv[])
     cusolverDnZgetrf(*cusolverH, m, n, &A_z, lda, &workspace_z, &devIpiv, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct4 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
@@ -494,7 +494,7 @@ int main(int argc, char *argv[])
     cusolverDnSgetrs(*cusolverH, trans, n, nrhs, &A_f, lda, &devIpiv, &B_f, ldb, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct4 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
@@ -530,7 +530,7 @@ int main(int argc, char *argv[])
     cusolverDnDgetrs(*cusolverH, trans, n, nrhs, &A_d, lda, &devIpiv, &B_d, ldb, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct4 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
@@ -566,7 +566,7 @@ int main(int argc, char *argv[])
     cusolverDnCgetrs(*cusolverH, trans, n, nrhs, &A_c, lda, &devIpiv, &B_c, ldb, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct4 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
@@ -602,7 +602,7 @@ int main(int argc, char *argv[])
     cusolverDnZgetrs(*cusolverH, trans, n, nrhs, &A_z, lda, &devIpiv, &B_z, ldb, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
@@ -625,7 +625,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct5.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
@@ -659,7 +659,7 @@ int main(int argc, char *argv[])
     cusolverDnSgeqrf(*cusolverH, m, n, &A_f, lda, &TAU_f, &workspace_f, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
@@ -682,7 +682,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct5.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
@@ -716,7 +716,7 @@ int main(int argc, char *argv[])
     cusolverDnDgeqrf(*cusolverH, m, n, &A_d, lda, &TAU_d, &workspace_d, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
@@ -739,7 +739,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct5.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
@@ -773,7 +773,7 @@ int main(int argc, char *argv[])
     cusolverDnCgeqrf(*cusolverH, m, n, &A_c, lda, &TAU_c, &workspace_c, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
@@ -796,7 +796,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct5.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
@@ -830,7 +830,7 @@ int main(int argc, char *argv[])
     cusolverDnZgeqrf(*cusolverH, m, n, &A_z, lda, &TAU_z, &workspace_z, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
@@ -859,7 +859,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct11.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
@@ -897,7 +897,7 @@ int main(int argc, char *argv[])
     cusolverDnSormqr(*cusolverH, side, trans, m, n, k, &A_f, lda, &TAU_f, &B_f, ldb, &workspace_f, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
@@ -926,7 +926,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct11.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
@@ -965,7 +965,7 @@ int main(int argc, char *argv[])
 
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
@@ -994,7 +994,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct11.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
@@ -1032,7 +1032,7 @@ int main(int argc, char *argv[])
     cusolverDnCunmqr(*cusolverH, side, trans, m, n, k, &A_c, lda, &TAU_c, &B_c, ldb, &workspace_c, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
@@ -1061,7 +1061,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct11.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct6 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
@@ -1099,7 +1099,7 @@ int main(int argc, char *argv[])
     cusolverDnZunmqr(*cusolverH, side, trans, m, n, k, &A_z, lda, &TAU_z, &B_z, ldb, &workspace_z, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct4 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
@@ -1124,7 +1124,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct7.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct4 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
@@ -1158,7 +1158,7 @@ int main(int argc, char *argv[])
     cusolverDnSorgqr(*cusolverH, m, n, k, &A_f, lda, &TAU_f, &workspace_f, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct4 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
@@ -1183,7 +1183,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct7.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct4 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
@@ -1217,7 +1217,7 @@ int main(int argc, char *argv[])
     cusolverDnDorgqr(*cusolverH, m, n, k, &A_d, lda, &TAU_d, &workspace_d, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct4 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
@@ -1242,7 +1242,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct7.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct4 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
@@ -1276,7 +1276,7 @@ int main(int argc, char *argv[])
     cusolverDnCungqr(*cusolverH, m, n, k, &A_c, lda, &TAU_c, &workspace_c, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct4 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
@@ -1301,7 +1301,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct7.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct4 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
@@ -1335,7 +1335,7 @@ int main(int argc, char *argv[])
     cusolverDnZungqr(*cusolverH, m, n, k, &A_z, lda, &TAU_z, &workspace_z, Lwork, &devInfo);
 
     // CHECK:/*
-    // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT:*/
     // CHECK-NEXT:{
     // CHECK-NEXT:auto allocation_ct2 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
@@ -1360,7 +1360,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT:buffer_ct4.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer4.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT:}
     // CHECK-NEXT:/*
-    // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT:*/
     // CHECK-NEXT:{
     // CHECK-NEXT:auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_f);
@@ -1398,7 +1398,7 @@ int main(int argc, char *argv[])
     cusolverDnSsytrf(*cusolverH, uplo, n, &A_f, lda, &devIpiv, &workspace_f, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct2 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
@@ -1423,7 +1423,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct4.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer4.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_d);
@@ -1461,7 +1461,7 @@ int main(int argc, char *argv[])
     cusolverDnDsytrf(*cusolverH, uplo, n, &A_d, lda, &devIpiv, &workspace_d, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct2 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
@@ -1486,7 +1486,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct4.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer4.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_c);
@@ -1524,7 +1524,7 @@ int main(int argc, char *argv[])
     cusolverDnCsytrf(*cusolverH, uplo, n, &A_c, lda, &devIpiv, &workspace_c, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct2 = dpct::memory_manager::get_instance().translate_ptr(&A_z);
@@ -1549,7 +1549,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: buffer_ct4.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer4.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto allocation_ct3 = dpct::memory_manager::get_instance().translate_ptr(&A_z);

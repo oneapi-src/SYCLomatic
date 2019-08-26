@@ -11,7 +11,7 @@ int main(int argc, char **argv)
 int deviceCount = 0;
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT: checkErrors((deviceCount = dpct::get_device_manager().device_count(), 0));
 checkErrors(cudaGetDeviceCount(&deviceCount));
@@ -22,7 +22,7 @@ checkErrors(cudaGetDevice(&dev_id));
 
 cudaDeviceProp deviceProp;
 // CHECK:/*
-// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:checkErrors((dpct::get_device_manager().get_device(0).get_device_info(deviceProp), 0));
 checkErrors(cudaGetDeviceProperties(&deviceProp, 0));
@@ -37,24 +37,24 @@ int perfRank = 0;
 int accessSupported = 0;
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1004:{{[0-9]+}}: P2P Access is not supported in DPC++
+// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Could not generate replacement.
 // CHECK-NEXT:*/
 // CHECK-NEXT: checkErrors(accessSupported = 0);
 checkErrors(cudaDeviceGetP2PAttribute(&accessSupported, cudaDevP2PAttrAccessSupported, device1, device2));
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1004:{{[0-9]+}}: P2P Access is not supported in DPC++
+// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Could not generate replacement.
 // CHECK-NEXT:*/
 // CHECK-NEXT: checkErrors(perfRank = 0);
 checkErrors(cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, device1, device2));
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1004:{{[0-9]+}}: P2P Access is not supported in DPC++
+// CHECK-NEXT:DPCT1004:{{[0-9]+}}: Could not generate replacement.
 // CHECK-NEXT:*/
 // CHECK-NEXT: checkErrors(atomicSupported = 0);
 checkErrors(cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtomicSupported, device1, device2));
 // CHECK:/*
-// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:checkErrors((dpct::get_device_manager().select_device(device2), 0));
 checkErrors(cudaSetDevice(device2));

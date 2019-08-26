@@ -22,7 +22,7 @@ int main() {
 #define LDA_MARCO 100
   const int ConstLda = 100;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (dpct::dpct_memcpy((void*)(d_A),(void*)(A),(LDA_MARCO)*(colsA)*(sizeof(A[0])),dpct::host_to_device), 0);
   status = cublasSetMatrix(100, colsA, sizeof(A[0]), A, LDA_MARCO, d_A, 100);
@@ -59,7 +59,7 @@ int main() {
   // CHECK-NEXT: DPCT1018:{{[0-9]+}}: The cublasSetMatrix was migrated, but due to parameter 99 is smaller than parameter 100, the generated code performance may be sub-optimal.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (dpct::dpct_memcpy((void*)(d_A),(void*)(A),(100)*(colsA)*(sizeof(A[0])),dpct::host_to_device), 0);
   status = cublasSetMatrix(99, colsA, sizeof(A[0]), A, 100, d_A, 100);
@@ -92,7 +92,7 @@ int main() {
   cublasGetMatrix(100, colsA, sizeof(A[0]), A, foo(ConstExprLda), d_A, ConstExprLdb);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (dpct::dpct_memcpy((void*)(d_A),(void*)(A),(100)*(colsA)*(sizeof(A[0])),dpct::host_to_device), 0);
   // CHECK-NEXT: dpct::dpct_memcpy((void*)(d_A),(void*)(A),(100)*(colsA)*(sizeof(A[0])),dpct::host_to_device);
@@ -100,7 +100,7 @@ int main() {
   cublasSetMatrixAsync(100, colsA, sizeof(A[0]), A, 100, d_A, 100, stream);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (dpct::dpct_memcpy((void*)(d_A),(void*)(A),(100)*(colsA)*(sizeof(A[0])),dpct::device_to_host), 0);
   // CHECK-NEXT: dpct::dpct_memcpy((void*)(d_A),(void*)(A),(100)*(colsA)*(sizeof(A[0])),dpct::device_to_host);

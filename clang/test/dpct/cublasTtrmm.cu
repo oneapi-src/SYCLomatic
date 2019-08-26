@@ -24,7 +24,7 @@ int main(){
   int side0 = 0; int side1 = 1; int fill0 = 0; int fill1 = 1;
   int trans0 = 0; int trans1 = 1; int trans2 = 2; int diag0 = 0; int diag1 = 1;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:0: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:0: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct3 = trans0;
@@ -54,7 +54,7 @@ int main(){
 
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:1: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:1: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct3 = trans1;
@@ -94,7 +94,7 @@ int main(){
 
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:2: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:2: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct3 = trans2;
@@ -124,7 +124,7 @@ int main(){
 
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:3: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:3: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct3 = 2;

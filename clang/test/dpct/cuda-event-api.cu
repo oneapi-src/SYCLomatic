@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: auto start_ct1 = clock();
   cudaEventRecord(start, 0);
@@ -79,13 +79,13 @@ int main(int argc, char* argv[]) {
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: start_ct1 = clock();
   cudaEventRecord(start, 0);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1012:{{[0-9a-f]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT: DPCT1012:{{[0-9a-f]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
 
   // CHECK: if (0)
   // CHECK-NEXT:   /*
-  // CHECK-NEXT:   DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT:   DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
   // CHECK-NEXT:   */
   // CHECK-NEXT:   /*
   // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
@@ -131,13 +131,13 @@ int main(int argc, char* argv[]) {
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: auto stop_ct1 = clock();
   cudaEventRecord(stop, 0);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT: DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
@@ -147,7 +147,7 @@ int main(int argc, char* argv[]) {
 
   // CHECK: if (1)
   // CHECK-NEXT:   /*
-  // CHECK-NEXT:   DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT:   DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
   // CHECK-NEXT:   */
   // CHECK-NEXT:   /*
   // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
@@ -171,13 +171,13 @@ int main(int argc, char* argv[]) {
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: stop_ct1 = clock();
   cudaEventRecord(stop, 0);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT: DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
@@ -187,7 +187,7 @@ int main(int argc, char* argv[]) {
 
   // CHECK: if (0)
   // CHECK-NEXT:   /*
-  // CHECK-NEXT:   DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in DPC++. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT:   DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
   // CHECK-NEXT:   */
   // CHECK-NEXT:   /*
   // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: Migrated code does not return error code. 0 is inserted. You may want to rewrite this code
@@ -200,7 +200,7 @@ int main(int argc, char* argv[]) {
   cudaEventSynchronize(stop);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9a-z]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:{{[0-9a-z]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: checkCudaErrors((stop.wait_and_throw(), 0));
   checkCudaErrors(cudaEventSynchronize(stop));
@@ -222,7 +222,7 @@ int main(int argc, char* argv[]) {
   cudaEventElapsedTime(&elapsed_time, start, stop);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9a-z]+}}: Migrated api does not return error code. (*, 0) is inserted. You may want to rewrite this code
+  // CHECK-NEXT: DPCT1003:{{[0-9a-z]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: checkCudaErrors((*(&elapsed_time) = (float)(stop_ct1 - start_ct1) / CLOCKS_PER_SEC * 1000, 0));
   checkCudaErrors(cudaEventElapsedTime(&elapsed_time, start, stop));

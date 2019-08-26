@@ -8,12 +8,12 @@
 __global__ static void timedReduction(const float *input, float *output, clock_t *timer)
 {
     // CHECK: /*
-    // CHECK-NEXT: DPCT1008:{{[0-9]+}}: Function clock is not defined in the SYCL specification. This is a hardware-specific feature. Consider consulting with hardware vendor to find a replacement.
+    // CHECK-NEXT: DPCT1008:{{[0-9]+}}: clock function is not defined in the DPC++. This is a hardware-specific feature. Consult with your hardware vendor to find a replacement.
     // CHECK-NEXT: */
     *timer = clock();
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1008:{{[0-9]+}}: Function clock is not defined in the SYCL specification. This is a hardware-specific feature. Consider consulting with hardware vendor to find a replacement.
+    // CHECK-NEXT: DPCT1008:{{[0-9]+}}: clock function is not defined in the DPC++. This is a hardware-specific feature. Consult with your hardware vendor to find a replacement.
     // CHECK-NEXT: */
     clock();
 }

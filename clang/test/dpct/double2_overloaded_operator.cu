@@ -18,7 +18,7 @@ typedef double2*** ty6;
 // CHECK: typedef const cl::sycl::double2*** ty7;
 typedef const double2*** ty7;
 // CHECK:/*
-// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted namespace to avoid the conflict. Consider using SYCL 1.2.1 standard operators instead.
+// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead.
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline cl::sycl::double2 &operator*=(cl::sycl::double2 &v, const cl::sycl::double2 &v2)          ;
@@ -36,7 +36,7 @@ __host__ __device__ inline double2 &copy(double2 &v, const double2 &v2) {
   return v;
 }
 // CHECK:/*
-// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted namespace to avoid the conflict. Consider using SYCL 1.2.1 standard operators instead.
+// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead.
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline cl::sycl::double2 &operator+=(cl::sycl::double2 &v, const cl::sycl::double2 &v2) {
@@ -51,7 +51,7 @@ __host__ __device__ inline double2 &operator+=(double2 &v, const double2 &v2) {
   return v;
 }
 // CHECK:/*
-// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted namespace to avoid the conflict. Consider using SYCL 1.2.1 standard operators instead.
+// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead.
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline cl::sycl::double2 &operator-=(cl::sycl::double2 &v, const cl::sycl::double2 &v2) {
@@ -65,7 +65,7 @@ __host__ __device__ inline double2 &operator-=(double2 &v, const double2 &v2) {
   return v;
 }
 // CHECK:/*
-// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted namespace to avoid the conflict. Consider using SYCL 1.2.1 standard operators instead.
+// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead.
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline cl::sycl::double2 &operator*=(cl::sycl::double2 &v, const double &r) {
@@ -79,7 +79,7 @@ __host__ __device__ inline double2 &operator*=(double2 &v, const double &r) {
   return v;
 }
 // CHECK:/*
-// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted namespace to avoid the conflict. Consider using SYCL 1.2.1 standard operators instead.
+// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead.
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline cl::sycl::double2 &operator/=(cl::sycl::double2 &v, const double &r) {
@@ -94,7 +94,7 @@ __host__ __device__ inline double2 &operator/=(double2 &v, const double &r) {
 }
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted namespace to avoid the conflict. Consider using SYCL 1.2.1 standard operators instead.
+// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead. 
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline bool operator==(const cl::sycl::double2 &v1,
@@ -108,7 +108,7 @@ __host__ __device__ inline bool operator==(const double2 &v1,
 }
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted namespace to avoid the conflict. Consider using SYCL 1.2.1 standard operators instead.
+// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead. 
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline bool operator!=(const cl::sycl::double2 &v1,
@@ -132,7 +132,7 @@ __host__ __device__ inline double2 operator-(const double2 &v) {
 }
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted namespace to avoid the conflict. Consider using SYCL 1.2.1 standard operators instead.
+// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead. 
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline cl::sycl::double2 operator+(const cl::sycl::double2 &v1,
@@ -145,7 +145,7 @@ __host__ __device__ inline double2 operator+(const double2 &v1,
   return make_double2(v1.x + v2.x, v1.y + v2.y);
 }
 // CHECK:/*
-// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted namespace to avoid the conflict. Consider using SYCL 1.2.1 standard operators instead.
+// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead. 
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline cl::sycl::double2 operator-(const cl::sycl::double2 &v1,
@@ -159,7 +159,7 @@ __host__ __device__ inline double2 operator-(const double2 &v1,
 }
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted namespace to avoid the conflict. Consider using SYCL 1.2.1 standard operators instead.
+// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead. 
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline cl::sycl::double2 operator*(const cl::sycl::double2 &v,
@@ -173,7 +173,7 @@ __host__ __device__ inline double2 operator*(const double2 &v,
 }
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted namespace to avoid the conflict. Consider using SYCL 1.2.1 standard operators instead.
+// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead.
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline cl::sycl::double2 operator*(const double &r,
@@ -187,7 +187,7 @@ __host__ __device__ inline double2 operator*(const double &r,
 }
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted namespace to avoid the conflict. Consider using SYCL 1.2.1 standard operators instead.
+// CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead.
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline cl::sycl::double2 operator/(const cl::sycl::double2 &v,

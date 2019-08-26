@@ -109,7 +109,9 @@ llvm::Error CommonOptionsParser::init(
   static cl::opt<std::string> BuildPath(
       "p",
       cl::desc(
-          "Path where to read compilation database: compile_commands.json."),
+          "Directory path to compile command database (compile_commands.json).\n"
+          "When no path is specified, a search for compile_commands.json\nis "
+          "attempted through all parent paths of the first input file."),
       cl::Optional, cl::cat(Category), cl::value_desc("path"),
       cl::sub(*cl::AllSubCommands));
 
@@ -119,7 +121,7 @@ llvm::Error CommonOptionsParser::init(
 #ifdef _WIN32
  static cl::opt<std::string>
     VcxprojFile("vcxprojfile",
-                cl::desc("file path of vcxproj."),
+                cl::desc("File path of vcxproj."),
                 cl::value_desc("vcxproj file"),
                 cl::Optional, cl::cat(Category),
                 cl::sub(*cl::AllSubCommands));
@@ -138,11 +140,9 @@ llvm::Error CommonOptionsParser::init(
   static cl::list<std::string> ArgsAfter(
       "extra-arg",
       cl::desc("Additional argument to append to the compiler command line.\n"
-               "e.g. -nocudainc : Ignore CUDA header file.\n"
-               "     --cuda-path=<value> : CUDA installation path.\n"
-               "     --cuda-host-only : Compile CUDA code for host only.\n"
-               "     -I <dir> : Add directory to include search path.\n"
-               "     See more options by dpct -- --help.\n"),
+              "example: -extra-arg=\"-I /path /to/header \".\n"
+              "Options, which can be passed that way can"
+              " be found by \"dpct -- --help\" command."),
       cl::cat(Category), cl::sub(*cl::AllSubCommands));
 
   static cl::list<std::string> ArgsBefore(

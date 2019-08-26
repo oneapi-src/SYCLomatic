@@ -18,7 +18,7 @@ void foo() {
   // CHECK: *((void **)&h_A) = malloc(size);
   cudaMallocHost((void **)&h_A, size);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: cudaMallocManaged is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
   cudaMallocManaged((void **)&d_A, size);
 
@@ -26,7 +26,7 @@ void foo() {
   cudaFreeHost(h_A);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: cudaHostGetDevicePointer is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
   cudaHostGetDevicePointer(&d_A, h_A, 0);
 
