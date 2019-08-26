@@ -1390,14 +1390,26 @@ private:
 // kernel call info is specific CallFunctionExpr, which include info of kernel
 // call.
 class KernelCallExpr : public CallFunctionExpr {
-	
   struct ArgInfo {
     ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg) {
       Analysis.analyze(Arg);
       ArgString = Analysis.getReplacedString();
       isPointer = Analysis.isPointer;
       isRedeclareRequired = Analysis.isRedeclareRequired;
-      TypeString = DpctGlobalInfo::getTypeName(Arg->getType());
+      if (isPointer) {
+        auto PointeeType =
+            dyn_cast<PointerType>(Arg->getType())->getPointeeType();
+        TypeString =
+            DpctGlobalInfo::getTypeName(PointeeType.getUnqualifiedType());
+        MapNames::replaceName(MapNames::TypeNamesMap, TypeString);
+        if (PointeeType.getQualifiers().isEmptyWhenPrinted(
+                DpctGlobalInfo::getContext().getPrintingPolicy())) {
+          TypeString = TypeString + " *";
+        } else {
+          TypeString = PointeeType.getQualifiers().getAsString() + " " +
+                       TypeString + " *";
+        }
+      }
     }
     ArgInfo(std::shared_ptr<TextureObjectInfo> Obj) {
       ArgString = Obj->getName() + "_acc";

@@ -66,8 +66,8 @@ int main_char1() {
   //       cgh.parallel_for<dpct_kernel_name<class kernel_char1_{{[a-f0-9]+}}>>(
   //         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   //         [=](cl::sycl::nd_item<3> item_ct1) {
-  //           char1 *arg_ct0 = (char1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  //           char1 *arg_ct1 = (char1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  //           char *arg_ct0 = (char *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  //           char *arg_ct1 = (char *)(&arg_ct1_acc[0] + arg_ct1_offset);
   //           kernel_char1(arg_ct0, arg_ct1);
   //         });
   //     });
@@ -141,8 +141,8 @@ int main_char2() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_char2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           char2 *arg_ct0 = (char2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           char2 *arg_ct1 = (char2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::char2 *arg_ct0 = (cl::sycl::char2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::char2 *arg_ct1 = (cl::sycl::char2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_char2(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -216,8 +216,8 @@ int main_char3() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_char3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           char3 *arg_ct0 = (char3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           char3 *arg_ct1 = (char3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::char3 *arg_ct0 = (cl::sycl::char3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::char3 *arg_ct1 = (cl::sycl::char3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_char3(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -291,8 +291,8 @@ int main_char4() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_char4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           char4 *arg_ct0 = (char4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           char4 *arg_ct1 = (char4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::char4 *arg_ct0 = (cl::sycl::char4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::char4 *arg_ct1 = (cl::sycl::char4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_char4(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -366,8 +366,8 @@ int main_double1() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_double1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           double1 *arg_ct0 = (double1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           double1 *arg_ct1 = (double1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           double *arg_ct0 = (double *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           double *arg_ct1 = (double *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_double1(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -441,8 +441,8 @@ int main_double2() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_double2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           double2 *arg_ct0 = (double2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           double2 *arg_ct1 = (double2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::double2 *arg_ct0 = (cl::sycl::double2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::double2 *arg_ct1 = (cl::sycl::double2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_double2(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -516,8 +516,8 @@ int main_double3() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_double3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           double3 *arg_ct0 = (double3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           double3 *arg_ct1 = (double3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::double3 *arg_ct0 = (cl::sycl::double3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::double3 *arg_ct1 = (cl::sycl::double3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_double3(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -591,8 +591,8 @@ int main_double4() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_double4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           double4 *arg_ct0 = (double4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           double4 *arg_ct1 = (double4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::double4 *arg_ct0 = (cl::sycl::double4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::double4 *arg_ct1 = (cl::sycl::double4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_double4(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -666,8 +666,8 @@ int main_float1() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_float1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           float1 *arg_ct0 = (float1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           float1 *arg_ct1 = (float1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           float *arg_ct0 = (float *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           float *arg_ct1 = (float *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_float1(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -741,8 +741,8 @@ int main_float2() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_float2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           float2 *arg_ct0 = (float2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           float2 *arg_ct1 = (float2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::float2 *arg_ct0 = (cl::sycl::float2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::float2 *arg_ct1 = (cl::sycl::float2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_float2(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -816,8 +816,8 @@ int main_float3() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_float3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           float3 *arg_ct0 = (float3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           float3 *arg_ct1 = (float3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::float3 *arg_ct0 = (cl::sycl::float3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::float3 *arg_ct1 = (cl::sycl::float3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_float3(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -891,8 +891,8 @@ int main_float4() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_float4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           float4 *arg_ct0 = (float4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           float4 *arg_ct1 = (float4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::float4 *arg_ct0 = (cl::sycl::float4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::float4 *arg_ct1 = (cl::sycl::float4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_float4(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -966,8 +966,8 @@ int main_int1() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_int1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           int1 *arg_ct0 = (int1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           int1 *arg_ct1 = (int1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           int *arg_ct0 = (int *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           int *arg_ct1 = (int *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_int1(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1041,8 +1041,8 @@ int main_int2() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_int2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           int2 *arg_ct0 = (int2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           int2 *arg_ct1 = (int2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::int2 *arg_ct0 = (cl::sycl::int2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::int2 *arg_ct1 = (cl::sycl::int2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_int2(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1116,8 +1116,8 @@ int main_int3() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_int3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           int3 *arg_ct0 = (int3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           int3 *arg_ct1 = (int3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::int3 *arg_ct0 = (cl::sycl::int3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::int3 *arg_ct1 = (cl::sycl::int3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_int3(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1191,8 +1191,8 @@ int main_int4() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_int4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           int4 *arg_ct0 = (int4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           int4 *arg_ct1 = (int4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::int4 *arg_ct0 = (cl::sycl::int4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::int4 *arg_ct1 = (cl::sycl::int4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_int4(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1266,8 +1266,8 @@ int main_long1() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_long1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           long1 *arg_ct0 = (long1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           long1 *arg_ct1 = (long1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           long *arg_ct0 = (long *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           long *arg_ct1 = (long *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_long1(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1341,8 +1341,8 @@ int main_long2() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_long2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           long2 *arg_ct0 = (long2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           long2 *arg_ct1 = (long2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::long2 *arg_ct0 = (cl::sycl::long2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::long2 *arg_ct1 = (cl::sycl::long2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_long2(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1416,8 +1416,8 @@ int main_long3() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_long3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           long3 *arg_ct0 = (long3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           long3 *arg_ct1 = (long3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::long3 *arg_ct0 = (cl::sycl::long3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::long3 *arg_ct1 = (cl::sycl::long3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_long3(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1491,8 +1491,8 @@ int main_long4() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_long4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           long4 *arg_ct0 = (long4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           long4 *arg_ct1 = (long4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::long4 *arg_ct0 = (cl::sycl::long4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::long4 *arg_ct1 = (cl::sycl::long4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_long4(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1566,8 +1566,8 @@ int main_longlong1() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_longlong1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           longlong1 *arg_ct0 = (longlong1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           longlong1 *arg_ct1 = (longlong1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           long long *arg_ct0 = (long long *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           long long *arg_ct1 = (long long *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_longlong1(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1641,8 +1641,8 @@ int main_longlong2() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_longlong2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           longlong2 *arg_ct0 = (longlong2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           longlong2 *arg_ct1 = (longlong2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::longlong2 *arg_ct0 = (cl::sycl::longlong2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::longlong2 *arg_ct1 = (cl::sycl::longlong2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_longlong2(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1716,8 +1716,8 @@ int main_longlong3() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_longlong3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           longlong3 *arg_ct0 = (longlong3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           longlong3 *arg_ct1 = (longlong3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::longlong3 *arg_ct0 = (cl::sycl::longlong3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::longlong3 *arg_ct1 = (cl::sycl::longlong3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_longlong3(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1791,8 +1791,8 @@ int main_longlong4() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_longlong4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           longlong4 *arg_ct0 = (longlong4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           longlong4 *arg_ct1 = (longlong4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::longlong4 *arg_ct0 = (cl::sycl::longlong4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::longlong4 *arg_ct1 = (cl::sycl::longlong4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_longlong4(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1866,8 +1866,8 @@ int main_short1() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_short1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           short1 *arg_ct0 = (short1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           short1 *arg_ct1 = (short1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           short *arg_ct0 = (short *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           short *arg_ct1 = (short *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_short1(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1941,8 +1941,8 @@ int main_short2() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_short2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           short2 *arg_ct0 = (short2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           short2 *arg_ct1 = (short2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::short2 *arg_ct0 = (cl::sycl::short2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::short2 *arg_ct1 = (cl::sycl::short2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_short2(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2016,8 +2016,8 @@ int main_short3() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_short3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           short3 *arg_ct0 = (short3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           short3 *arg_ct1 = (short3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::short3 *arg_ct0 = (cl::sycl::short3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::short3 *arg_ct1 = (cl::sycl::short3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_short3(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2091,8 +2091,8 @@ int main_short4() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_short4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           short4 *arg_ct0 = (short4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           short4 *arg_ct1 = (short4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::short4 *arg_ct0 = (cl::sycl::short4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::short4 *arg_ct1 = (cl::sycl::short4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_short4(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2166,8 +2166,8 @@ int main_uchar1() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uchar1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           uchar1 *arg_ct0 = (uchar1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           uchar1 *arg_ct1 = (uchar1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           unsigned char *arg_ct0 = (unsigned char *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           unsigned char *arg_ct1 = (unsigned char *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_uchar1(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2241,8 +2241,8 @@ int main_uchar2() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uchar2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           uchar2 *arg_ct0 = (uchar2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           uchar2 *arg_ct1 = (uchar2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::uchar2 *arg_ct0 = (cl::sycl::uchar2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::uchar2 *arg_ct1 = (cl::sycl::uchar2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_uchar2(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2316,8 +2316,8 @@ int main_uchar3() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uchar3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           uchar3 *arg_ct0 = (uchar3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           uchar3 *arg_ct1 = (uchar3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::uchar3 *arg_ct0 = (cl::sycl::uchar3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::uchar3 *arg_ct1 = (cl::sycl::uchar3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_uchar3(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2391,8 +2391,8 @@ int main_uchar4() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uchar4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           uchar4 *arg_ct0 = (uchar4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           uchar4 *arg_ct1 = (uchar4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::uchar4 *arg_ct0 = (cl::sycl::uchar4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::uchar4 *arg_ct1 = (cl::sycl::uchar4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_uchar4(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2466,8 +2466,8 @@ int main_uint1() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uint1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           uint1 *arg_ct0 = (uint1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           uint1 *arg_ct1 = (uint1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           unsigned int *arg_ct0 = (unsigned int *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           unsigned int *arg_ct1 = (unsigned int *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_uint1(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2541,8 +2541,8 @@ int main_uint2() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uint2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           uint2 *arg_ct0 = (uint2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           uint2 *arg_ct1 = (uint2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::uint2 *arg_ct0 = (cl::sycl::uint2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::uint2 *arg_ct1 = (cl::sycl::uint2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_uint2(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2616,8 +2616,8 @@ int main_uint3() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uint3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           uint3 *arg_ct0 = (uint3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           uint3 *arg_ct1 = (uint3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::uint3 *arg_ct0 = (cl::sycl::uint3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::uint3 *arg_ct1 = (cl::sycl::uint3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_uint3(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2691,8 +2691,8 @@ int main_uint4() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uint4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           uint4 *arg_ct0 = (uint4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           uint4 *arg_ct1 = (uint4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::uint4 *arg_ct0 = (cl::sycl::uint4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::uint4 *arg_ct1 = (cl::sycl::uint4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_uint4(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2766,8 +2766,8 @@ int main_ulong1() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulong1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           ulong1 *arg_ct0 = (ulong1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           ulong1 *arg_ct1 = (ulong1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           unsigned long *arg_ct0 = (unsigned long *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           unsigned long *arg_ct1 = (unsigned long *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_ulong1(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2841,8 +2841,8 @@ int main_ulong2() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulong2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           ulong2 *arg_ct0 = (ulong2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           ulong2 *arg_ct1 = (ulong2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::ulong2 *arg_ct0 = (cl::sycl::ulong2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::ulong2 *arg_ct1 = (cl::sycl::ulong2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_ulong2(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2916,8 +2916,8 @@ int main_ulong3() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulong3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           ulong3 *arg_ct0 = (ulong3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           ulong3 *arg_ct1 = (ulong3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::ulong3 *arg_ct0 = (cl::sycl::ulong3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::ulong3 *arg_ct1 = (cl::sycl::ulong3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_ulong3(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2991,8 +2991,8 @@ int main_ulong4() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulong4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           ulong4 *arg_ct0 = (ulong4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           ulong4 *arg_ct1 = (ulong4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::ulong4 *arg_ct0 = (cl::sycl::ulong4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::ulong4 *arg_ct1 = (cl::sycl::ulong4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_ulong4(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -3066,8 +3066,8 @@ int main_ulonglong1() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           ulonglong1 *arg_ct0 = (ulonglong1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           ulonglong1 *arg_ct1 = (ulonglong1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           unsigned long long *arg_ct0 = (unsigned long long *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           unsigned long long *arg_ct1 = (unsigned long long *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_ulonglong1(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -3141,8 +3141,8 @@ int main_ulonglong2() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           ulonglong2 *arg_ct0 = (ulonglong2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           ulonglong2 *arg_ct1 = (ulonglong2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::ulonglong2 *arg_ct0 = (cl::sycl::ulonglong2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::ulonglong2 *arg_ct1 = (cl::sycl::ulonglong2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_ulonglong2(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -3216,8 +3216,8 @@ int main_ulonglong3() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           ulonglong3 *arg_ct0 = (ulonglong3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           ulonglong3 *arg_ct1 = (ulonglong3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::ulonglong3 *arg_ct0 = (cl::sycl::ulonglong3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::ulonglong3 *arg_ct1 = (cl::sycl::ulonglong3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_ulonglong3(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -3291,8 +3291,8 @@ int main_ulonglong4() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           ulonglong4 *arg_ct0 = (ulonglong4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           ulonglong4 *arg_ct1 = (ulonglong4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::ulonglong4 *arg_ct0 = (cl::sycl::ulonglong4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::ulonglong4 *arg_ct1 = (cl::sycl::ulonglong4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_ulonglong4(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -3366,8 +3366,8 @@ int main_ushort1() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ushort1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           ushort1 *arg_ct0 = (ushort1 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           ushort1 *arg_ct1 = (ushort1 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           unsigned short *arg_ct0 = (unsigned short *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           unsigned short *arg_ct1 = (unsigned short *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_ushort1(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -3441,8 +3441,8 @@ int main_ushort2() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ushort2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           ushort2 *arg_ct0 = (ushort2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           ushort2 *arg_ct1 = (ushort2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::ushort2 *arg_ct0 = (cl::sycl::ushort2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::ushort2 *arg_ct1 = (cl::sycl::ushort2 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_ushort2(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -3516,8 +3516,8 @@ int main_ushort3() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ushort3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           ushort3 *arg_ct0 = (ushort3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           ushort3 *arg_ct1 = (ushort3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::ushort3 *arg_ct0 = (cl::sycl::ushort3 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::ushort3 *arg_ct1 = (cl::sycl::ushort3 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_ushort3(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -3591,8 +3591,8 @@ int main_ushort4() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ushort4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           ushort4 *arg_ct0 = (ushort4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           ushort4 *arg_ct1 = (ushort4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
+  // CHECK-NEXT:           cl::sycl::ushort4 *arg_ct0 = (cl::sycl::ushort4 *)(&arg_ct0_acc[0] + arg_ct0_offset);
+  // CHECK-NEXT:           cl::sycl::ushort4 *arg_ct1 = (cl::sycl::ushort4 *)(&arg_ct1_acc[0] + arg_ct1_offset);
   // CHECK-NEXT:           kernel_ushort4(arg_ct0, arg_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
