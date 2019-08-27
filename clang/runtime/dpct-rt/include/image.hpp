@@ -196,8 +196,8 @@ public:
   } data;
 };
 
-/// Image sampling info, include addressing mode, filtering mode and normalization
-/// info.
+/// Image sampling info, include addressing mode, filtering mode and
+/// normalization info.
 class dpct_image_info {
   cl::sycl::addressing_mode _addr_mode;
   cl::sycl::filtering_mode _filter_mode;
@@ -227,7 +227,7 @@ public:
   const dpct_image_info *get_info() { return this; }
   const dpct_image_data *get_data() { return &_data; }
 };
-dpct_image_base::~dpct_image_base() {}
+inline dpct_image_base::~dpct_image_base() {}
 using dpct_image_base_p = dpct_image_base *;
 
 template <class T, int Dimension> class dpct_image_accessor;
@@ -547,7 +547,7 @@ static dpct_image_base *dpct_create_image(dpct_image_channel chn, int dims) {
 /// \param data Pointer to image data.
 /// \param info Pointer to image info.
 inline void dpct_create_image(dpct_image_base **image_p, dpct_image_data *data,
-                       dpct_image_info *info) {
+                              dpct_image_info *info) {
   dpct_image_channel channel;
   int dims = 1;
   if (data->type == dpct::data_matrix) {
