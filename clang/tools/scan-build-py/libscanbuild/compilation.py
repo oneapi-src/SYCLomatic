@@ -201,6 +201,13 @@ MAP_FLAGS = {
     '-w' : '--no-warnings',
 }
 
+# Clang option --cuda-gpu-arch do not support the argument like "compute_30"
+# Convert prefix "compute_" to "sm_"
+def gpu_virtual_arch_to_arch(virtual_arch):
+    virtual_archprefix = virtual_arch[0:7]
+    virtual_arch_ver = virtual_arch[8:]
+    return 'sm_' + virtual_arch_ver
+
 def sub_arg_split(arg, separator):
     arg_split = []
     pattern_space = re.compile("\s+")
@@ -244,6 +251,7 @@ def parse_args(args):
             elif arg == '--gpu-architecture' or arg == '-arch':
                 index = arg_list.index(arg)
                 arg_next = arg_list[index + 1]
+                arg_next = gpu_virtual_arch_to_arch(arg_next)
                 new_flag += arg_next
                 next(args)
             flags.append(new_flag)
@@ -380,7 +388,7 @@ def parse_args(args):
         elif re.match(r'^--gpu-architecture=', arg) or re.match(r'^-arch=', arg):
             #split by '=' and strip whitespace
             result = [x.strip() for x in arg.split('=')]
-            new_opt = MAP_FLAGS[result[0]] + result[1]
+            new_opt = MAP_FLAGS[result[0]] + gpu_virtual_arch_to_arch(result[1])
             flags.append(new_opt)
             pass
         elif re.match(r'^--pre-include=', arg):
