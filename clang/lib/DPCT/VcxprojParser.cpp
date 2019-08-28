@@ -275,8 +275,11 @@ void ProcessMacrosDefined(std::string &Output) {
 
 void ProcessDirectoriesIncluded(std::string &Output) {
   for (auto const &Dir : DirIncludedSet) {
-    std::string DirectoryInclude = "-I\\\"" + Dir + "\\\" ";
+    std::string DirectoryInclude = Dir;
     replaceVar(DirectoryInclude);
+    backslashToForwardslash(DirectoryInclude);
+    DirectoryInclude = "-I\\\"" + DirectoryInclude + "\\\" ";
+
     if (DirectoryInclude.find("$") != std::string::npos) {
       // Skip variables such as $(TMP) in $(TMP)/tmp.exe, that still could not
       // be replaced.
@@ -335,7 +338,11 @@ void collectFiles(const std::string &Line) {
     size_t Start = Line.find("Include=") + sizeof("Include=\"") - 1;
     size_t End = Line.find("\"", Start + 1);
     std::string SubStr = Line.substr(Start, End - Start);
-    addFilesSet(SubStr);
+    backslashToForwardslash(SubStr);
+    // Exclude *.txt files, i.e. <CustomBuild Include="/path/to/CMakeLists.txt">
+    if (!endsWith(SubStr, ".txt")) {
+      addFilesSet(SubStr);
+    }
   }
 }
 
@@ -380,6 +387,17 @@ void collectMacrosAndIncludingDIr(const std::string &&Node,
     std::string SubStr = Line.substr(Start, End - Start);
     std::vector<std::string> VecSet = split(SubStr, ';');
     for (auto const &Entry : VecSet) {
+      // Skip CMAKE_INTDIR="Debug", CMAKE_INTDIR="MinSizeRel",
+      // CMAKE_INTDIR="RelWithDebInfo", CMAKE_INTDIR="Release",
+      // and skip the Entry that has the same name with Node, such as
+      // "<AdditionalIncludeDirectories>/path/to/dir/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>"
+      if (Entry.find("Debug") != std::string::npos ||
+          Entry.find("Release") != std::string::npos ||
+          Entry.find("MinSizeRel") != std::string::npos ||
+          Entry.find("RelWithDebInfo") != std::string::npos ||
+          Entry.find(Node) != std::string::npos) {
+        continue;
+      }
       FunPtr(Entry);
     }
   }
@@ -395,6 +413,8 @@ void processCompileNode(const std::vector<std::string> &CompileNode) {
 
     // Collect including directory
     collectMacrosAndIncludingDIr("Include", Line, addDiretoryToDirIncludedSet);
+    collectMacrosAndIncludingDIr("AdditionalIncludeDirectories", Line,
+                                 addDiretoryToDirIncludedSet);
 
     // Collect Macros defined
     collectMacrosAndIncludingDIr("PreprocessorDefinitions", Line,
@@ -482,6 +502,7 @@ void parseVcxprojFile(const std::string &VcxprojFile) {
   while (std::getline(Infile, Line)) {
     processCompileNode("CudaCompile", Infile, Line);
     processCompileNode("ClCompile", Infile, Line);
+    processCompileNode("CustomBuild", Infile, Line);
   }
 }
 
