@@ -4171,29 +4171,51 @@ void MemoryTranslationRule::mallocTranslation(
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
   if (Name == "cudaMalloc") {
-    DpctGlobalInfo::getInstance().insertCudaMalloc(C);
-    emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
-  } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost") {
     if (USMLevel == restricted) {
       std::ostringstream Repl;
-      Repl << "*(" << getStmtSpelling(C->getArg(0), *(Result.Context))
-           << ") = cl::sycl::malloc_host("
-           << getStmtSpelling(C->getArg(1), *(Result.Context))
-           << ", dpct::get_default_queue().get_context())";
+      auto Arg0Str = getStmtSpelling(C->getArg(0), *(Result.Context));
+      auto Arg1Str = getStmtSpelling(C->getArg(1), *(Result.Context));
+      if (C->getArg(0)->getStmtClass() == Stmt::CStyleCastExprClass) {
+        Repl << "*(" << Arg0Str << ")";
+      } else {
+        Repl << "*((void **)" << Arg0Str << ")";
+      }
+      Repl << " = cl::sycl::malloc_device(" << Arg1Str
+           << ", dpct::get_device_manager().current_device()"
+              ", dpct::get_default_queue().get_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
-      std::ostringstream Repl;
-      Repl << "*(" << getStmtSpelling(C->getArg(0), *(Result.Context))
-           << ") = malloc(" << getStmtSpelling(C->getArg(1), *(Result.Context))
-           << ")";
-      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+      DpctGlobalInfo::getInstance().insertCudaMalloc(C);
+      emplaceTransformation(
+          new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
     }
+  } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost") {
+    std::ostringstream Repl;
+    auto Arg0Str = getStmtSpelling(C->getArg(0), *(Result.Context));
+    auto Arg1Str = getStmtSpelling(C->getArg(1), *(Result.Context));
+    if (C->getArg(0)->getStmtClass() == Stmt::CStyleCastExprClass) {
+      Repl << "*(" << Arg0Str << ")";
+    } else {
+      Repl << "*((void **)" << Arg0Str << ")";
+    }
+    if (USMLevel == restricted) {
+      Repl << " = cl::sycl::malloc_host(" << Arg1Str
+           << ", dpct::get_default_queue().get_context())";
+    } else {
+      Repl << " = malloc(" << Arg1Str << ")";
+    }
+    emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
   } else if (Name == "cudaMallocManaged") {
     if (USMLevel == restricted) {
       std::ostringstream Repl;
-      Repl << "*(" << getStmtSpelling(C->getArg(0), *(Result.Context))
-           << ") = cl::sycl::malloc_shared("
-           << getStmtSpelling(C->getArg(1), *(Result.Context))
+      auto Arg0Str = getStmtSpelling(C->getArg(0), *(Result.Context));
+      auto Arg1Str = getStmtSpelling(C->getArg(1), *(Result.Context));
+      if (C->getArg(0)->getStmtClass() == Stmt::CStyleCastExprClass) {
+        Repl << "*(" << Arg0Str << ")";
+      } else {
+        Repl << "*((void **)" << Arg0Str << ")";
+      }
+      Repl << " = cl::sycl::malloc_shared(" << Arg1Str
            << ", dpct::get_device_manager().current_device()"
            << ", dpct::get_default_queue().get_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
@@ -4314,6 +4336,21 @@ void MemoryTranslationRule::replaceMemAPIArg(
   }
 }
 
+// Assume: i > 0
+TextModification *removeArg(const CallExpr *C, unsigned i,
+                            const SourceManager &SM) {
+  const Expr *ArgBefore = C->getArg(i - 1);
+  auto Begin = ArgBefore->getEndLoc();
+  Begin = Lexer::getLocForEndOfToken(Begin, 0, SM, LangOptions());
+  auto End = C->getArg(i)->getEndLoc();
+  End = Lexer::getLocForEndOfToken(End, 0, SM, LangOptions());
+  auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
+  if (Length > 0) {
+    return new ReplaceText(Begin, Length, "");
+  }
+  return nullptr;
+}
+
 void MemoryTranslationRule::memcpyTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr) {
@@ -4337,9 +4374,26 @@ void MemoryTranslationRule::memcpyTranslation(
 
   std::string ReplaceStr;
   if (Name == "cudaMemcpy") {
-    ReplaceStr = "dpct::dpct_memcpy";
+    if (USMLevel == restricted)
+      ReplaceStr = "dpct::get_default_queue().memcpy";
+    else
+      ReplaceStr = "dpct::dpct_memcpy";
   } else {
-    ReplaceStr = "dpct::async_dpct_memcpy";
+    if (USMLevel == restricted) {
+      if (C->getNumArgs() == 5) {
+        const Expr *Stream = C->getArg(4);
+        if (Stream) {
+          auto StreamStr = getStmtSpelling(Stream, *Result.Context);
+          if (StreamStr.empty() || StreamStr == "0")
+            ReplaceStr = "dpct::get_default_queue().memcpy";
+          else
+            ReplaceStr = StreamStr + ".memcpy";
+        }
+      } else {
+        ReplaceStr = "dpct::get_default_queue().memcpy";
+      }
+    } else
+      ReplaceStr = "dpct::async_dpct_memcpy";
   }
 
   if (ULExpr) {
@@ -4353,12 +4407,28 @@ void MemoryTranslationRule::memcpyTranslation(
   replaceMemAPIArg(C->getArg(0), Result);
   replaceMemAPIArg(C->getArg(1), Result);
 
-  emplaceTransformation(
-      new ReplaceStmt(C->getArg(3), std::move(DirectionName)));
+  if (USMLevel == restricted) {
+    if (auto TM = removeArg(C, 3, *Result.SourceManager))
+      emplaceTransformation(TM);
+  } else {
+    emplaceTransformation(
+        new ReplaceStmt(C->getArg(3), std::move(DirectionName)));
+  }
 
   // cudaMemcpyAsync
-  if (C->getNumArgs() == 5)
-    handleAsync(C, 4, Result);
+  if (Name == "cudaMemcpyAsync") {
+    if (C->getNumArgs() == 5) {
+      if (USMLevel == restricted) {
+        if (auto TM = removeArg(C, 4, *Result.SourceManager))
+          emplaceTransformation(TM);
+      } else {
+        handleAsync(C, 4, Result);
+      }
+    }
+  } else {
+    if (USMLevel == restricted)
+      emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
+  }
 }
 
 void MemoryTranslationRule::memcpyToAndFromSymbolTranslation(
@@ -4398,9 +4468,26 @@ void MemoryTranslationRule::memcpyToAndFromSymbolTranslation(
 
   std::string ReplaceStr;
   if (Name == "cudaMemcpyToSymbol" || Name == "cudaMemcpyFromSymbol") {
-    ReplaceStr = "dpct::dpct_memcpy";
+    if (USMLevel == restricted)
+      ReplaceStr = "dpct::get_default_queue().memcpy";
+    else
+      ReplaceStr = "dpct::dpct_memcpy";
   } else {
-    ReplaceStr = "dpct::async_dpct_memcpy";
+    if (USMLevel == restricted) {
+      if (C->getNumArgs() == 6) {
+        const Expr *Stream = C->getArg(5);
+        if (Stream) {
+          auto StreamStr = getStmtSpelling(Stream, *Result.Context);
+          if (StreamStr.empty() || StreamStr == "0")
+            ReplaceStr = "dpct::get_default_queue().memcpy";
+          else
+            ReplaceStr = StreamStr + ".memcpy";
+        }
+      } else {
+        ReplaceStr = "dpct::get_default_queue().memcpy";
+      }
+    } else
+      ReplaceStr = "dpct::async_dpct_memcpy";
   }
 
   if (ULExpr) {
@@ -4443,9 +4530,28 @@ void MemoryTranslationRule::memcpyToAndFromSymbolTranslation(
   emplaceTransformation(
       new ReplaceStmt(C->getArg(4), std::move(DirectionName)));
 
-  // cudaMemcpyToSymbolAsync
-  if (C->getNumArgs() == 6)
-    handleAsync(C, 5, Result);
+  // Async
+  if (Name == "cudaMemcpyToSymbolAsync" ||
+      Name == "cudaMemcpyFromSymbolAsync") {
+    if (C->getNumArgs() == 6) {
+      if (USMLevel == restricted) {
+        if (auto TM = removeArg(C, 4, *Result.SourceManager))
+          emplaceTransformation(TM);
+        if (auto TM = removeArg(C, 5, *Result.SourceManager))
+          emplaceTransformation(TM);
+      } else {
+        handleAsync(C, 5, Result);
+      }
+    }
+  } else {
+    if (C->getNumArgs() == 5) {
+      if (USMLevel == restricted) {
+        if (auto TM = removeArg(C, 4, *Result.SourceManager))
+          emplaceTransformation(TM);
+        emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
+      }
+    }
+  }
 }
 
 void MemoryTranslationRule::freeTranslation(
@@ -4496,19 +4602,47 @@ void MemoryTranslationRule::memsetTranslation(
   }
 
   std::string ReplaceStr;
-  if (Name == "cudaMemsetAsync") {
-    ReplaceStr = "dpct::async_dpct_memset";
+  if (Name == "cudaMemset") {
+    if (USMLevel == restricted)
+      ReplaceStr = "dpct::get_default_queue().memset";
+    else
+      ReplaceStr = "dpct::dpct_memset";
   } else {
-    ReplaceStr = "dpct::dpct_memset";
+    if (USMLevel == restricted) {
+      if (C->getNumArgs() == 4) {
+        const Expr *Stream = C->getArg(3);
+        if (Stream) {
+          auto StreamStr = getStmtSpelling(Stream, *Result.Context);
+          if (StreamStr.empty() || StreamStr == "0")
+            ReplaceStr = "dpct::get_default_queue().memset";
+          else
+            ReplaceStr = StreamStr + ".memset";
+        }
+      } else {
+        ReplaceStr = "dpct::get_default_queue().memset";
+      }
+    } else {
+      ReplaceStr = "dpct::async_dpct_memset";
+    }
   }
-
   emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr), Name));
 
   replaceMemAPIArg(C->getArg(0), Result);
 
   // cudaMemsetAsync
-  if (C->getNumArgs() == 4)
-    handleAsync(C, 3, Result);
+  if (Name == "cudaMemsetAsync") {
+    if (C->getNumArgs() == 4) {
+      if (USMLevel == restricted) {
+        if (auto TM = removeArg(C, 3, *Result.SourceManager))
+          emplaceTransformation(TM);
+      } else {
+        handleAsync(C, 3, Result);
+      }
+    }
+  } else {
+    if (USMLevel == restricted)
+      emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
+  }
 }
 
 void MemoryTranslationRule::miscTranslation(
@@ -4524,8 +4658,9 @@ void MemoryTranslationRule::miscTranslation(
   if (Name == "cudaHostGetDevicePointer") {
     if (USMLevel == restricted) {
       std::ostringstream Repl;
-      Repl << "*(" << getStmtSpelling(C->getArg(0), *(Result.Context))
-           << ") = " << getStmtSpelling(C->getArg(1), *(Result.Context));
+      auto Arg0Str = getStmtSpelling(C->getArg(0), *(Result.Context));
+      auto Arg1Str = getStmtSpelling(C->getArg(1), *(Result.Context));
+      Repl << "*(" << Arg0Str << ") = " << Arg1Str;
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
       report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, Name);
