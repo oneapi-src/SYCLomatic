@@ -436,7 +436,7 @@ public:
 };
 
 // memcpy
-static void dpct_memcpy(void *to_ptr, void *from_ptr, size_t size,
+static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
                         memcpy_direction direction, cl::sycl::queue q,
                         bool async) {
   auto &mm = memory_manager::get_instance();
@@ -544,7 +544,7 @@ static void dpct_memcpy(void *to_ptr, void *from_ptr, size_t size,
 /// \param size Number of bytes to be copied.
 /// \param direction Direction of the copy.
 /// \returns no return value.
-static void dpct_memcpy(void *to_ptr, void *from_ptr, size_t size,
+static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
                         memcpy_direction direction = automatic) {
   dpct_memcpy(to_ptr, from_ptr, size, direction,
               dpct::get_device_manager().current_device().default_queue(),
@@ -562,7 +562,7 @@ static void dpct_memcpy(void *to_ptr, void *from_ptr, size_t size,
 /// \param size Number of bytes to be copied.
 /// \param direction Direction of the copy.
 /// \returns no return value.
-static void async_dpct_memcpy(void *to_ptr, void *from_ptr, size_t size,
+static void async_dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
                               memcpy_direction direction = automatic) {
   dpct_memcpy(to_ptr, from_ptr, size, direction,
               dpct::get_device_manager().current_device().default_queue(),
