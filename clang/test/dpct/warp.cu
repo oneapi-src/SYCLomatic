@@ -19,23 +19,23 @@ __global__ void foo() {
   int laneMask;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for all
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for all.
   // CHECK-NEXT: */
   // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().all(predicate);
   __all(predicate);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for all
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for all.
   // CHECK-NEXT: */
   // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().all(predicate);
   __all_sync(mask, predicate);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for any
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for any.
   // CHECK-NEXT: */
   // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().any(predicate);
   __any(predicate);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for any
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for any.
   // CHECK-NEXT: */
   // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().any(predicate);
   __any_sync(mask, predicate);
@@ -43,12 +43,12 @@ __global__ void foo() {
   // CHECK: item_{{[0-9a-z]+}}.get_sub_group().shuffle(val, srcLane);
   __shfl(val, srcLane);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for shuffle
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle.
   // CHECK-NEXT: */
   // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle(val, srcLane);
   __shfl_sync(mask, val, srcLane);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for shuffle
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle.
   // CHECK-NEXT: */
   // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle(val, srcLane);
   __shfl_sync(mask, val, srcLane, warpSize);
@@ -56,12 +56,12 @@ __global__ void foo() {
   // CHECK: item_{{[0-9a-z]+}}.get_sub_group().shuffle_up(val, delta);
   __shfl_up(val, delta);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for shuffle_up
+  // CHECK-NEXT:DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle_up.
   // CHECK-NEXT: */
   // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle_up(val, delta);
   __shfl_up_sync(mask, val, delta);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for shuffle_up
+  // CHECK-NEXT:DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle_up.
   // CHECK-NEXT: */
   // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle_up(val, delta);
   __shfl_up_sync(mask, val, delta, warpSize);
@@ -69,12 +69,12 @@ __global__ void foo() {
   // CHECK: item_{{[0-9a-z]+}}.get_sub_group().shuffle_down(val, delta);
   __shfl_down(val, delta);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for shuffle_down
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle_down.
   // CHECK-NEXT: */
   // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle_down(val, delta);
   __shfl_down_sync(mask, val, delta);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for shuffle_down
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle_down.
   // CHECK-NEXT: */
   // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle_down(val, delta);
   __shfl_down_sync(mask, val, delta, warpSize);
@@ -82,29 +82,29 @@ __global__ void foo() {
   // CHECK: item_{{[0-9a-z]+}}.get_sub_group().shuffle_xor(val, laneMask);
   __shfl_xor(val, laneMask);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for shuffle_xor
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle_xor.
   // CHECK-NEXT: */
   // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle_xor(val, laneMask);
   __shfl_xor_sync(mask, val, laneMask);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for shuffle_xor
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle_xor.
   // CHECK-NEXT: */
   // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().shuffle_xor(val, laneMask);
   __shfl_xor_sync(mask, val, laneMask, warpSize);
 
   int input[NUM_ELEMENTS];
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: __ballot is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
   // CHECK-NEXT: mask = __ballot(item_{{[0-9a-z]+}}.get_local_id(0) < NUM_ELEMENTS);
   mask = __ballot(threadIdx.x < NUM_ELEMENTS);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: __ballot_sync is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
   // CHECK-NEXT: mask = __ballot_sync(FULL_MASK, item_{{[0-9a-z]+}}.get_local_id(0) < NUM_ELEMENTS);
   mask = __ballot_sync(FULL_MASK, threadIdx.x < NUM_ELEMENTS);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: __activemask is not supported in DPC++
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
   // CHECK-NEXT: mask = __activemask();
   mask = __activemask();
@@ -112,7 +112,7 @@ __global__ void foo() {
     val = input[threadIdx.x];
     for (int offset = 16; offset > 0; offset /= 2)
       // CHECK: /*
-      // CHECK-NEXT: DPCT1023:{{[0-9]+}}: DPC++ sub-group doesn't support mask options for shuffle_down
+      // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for shuffle_down.
       // CHECK-NEXT: */
       // CHECK-NEXT: val += item_{{[0-9a-z]+}}.get_sub_group().shuffle_down(val, offset);
       val += __shfl_down_sync(mask, val, offset);
