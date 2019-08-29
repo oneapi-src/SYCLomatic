@@ -435,9 +435,9 @@ public:
 };
 
 // memcpy
-static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
-                        memcpy_direction direction, cl::sycl::queue q,
-                        bool async) {
+static cl::sycl::event dpct_memcpy(void *to_ptr, const void *from_ptr,
+                                   size_t size, memcpy_direction direction,
+                                   cl::sycl::queue &q) {
   auto &mm = memory_manager::get_instance();
   memcpy_direction real_direction = direction;
   switch (direction) {
@@ -475,11 +475,11 @@ static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
   switch (real_direction) {
   case host_to_host:
     std::memcpy(to_ptr, from_ptr, size);
-    break;
+    return cl::sycl::event();
   case host_to_device: {
     auto alloc = mm.translate_ptr(to_ptr);
     size_t offset = (byte_t *)to_ptr - alloc.alloc_ptr;
-    auto ret = q.submit([&](cl::sycl::handler &cgh) {
+    return q.submit([&](cl::sycl::handler &cgh) {
       auto r = cl::sycl::range<1>(size);
       auto o = cl::sycl::id<1>(offset);
       cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
@@ -487,14 +487,11 @@ static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
           acc(alloc.buffer, cgh, r, o);
       cgh.copy(from_ptr, acc);
     });
-    if (!async) {
-      ret.wait();
-    }
-  } break;
+  }
   case device_to_host: {
     auto alloc = mm.translate_ptr(from_ptr);
     size_t offset = (byte_t *)from_ptr - alloc.alloc_ptr;
-    auto ret = q.submit([&](cl::sycl::handler &cgh) {
+    return q.submit([&](cl::sycl::handler &cgh) {
       auto r = cl::sycl::range<1>(size);
       auto o = cl::sycl::id<1>(offset);
       cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read,
@@ -502,16 +499,13 @@ static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
           acc(alloc.buffer, cgh, r, o);
       cgh.copy(acc, to_ptr);
     });
-    if (!async) {
-      ret.wait();
-    }
-  } break;
+  }
   case device_to_device: {
     auto to_alloc = mm.translate_ptr(to_ptr);
     auto from_alloc = mm.translate_ptr(from_ptr);
     size_t to_offset = (byte_t *)to_ptr - to_alloc.alloc_ptr;
     size_t from_offset = (byte_t *)from_ptr - from_alloc.alloc_ptr;
-    auto ret = q.submit([&](cl::sycl::handler &cgh) {
+    return q.submit([&](cl::sycl::handler &cgh) {
       auto r = cl::sycl::range<1>(size);
       auto to_o = cl::sycl::id<1>(to_offset);
       auto from_o = cl::sycl::id<1>(from_offset);
@@ -523,10 +517,7 @@ static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
           from_acc(from_alloc.buffer, cgh, r, from_o);
       cgh.copy(from_acc, to_acc);
     });
-    if (!async) {
-      ret.wait();
-    }
-  } break;
+  }
   default:
     std::abort();
   }
@@ -545,9 +536,8 @@ static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
 /// \returns no return value.
 static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
                         memcpy_direction direction = automatic) {
-  dpct_memcpy(to_ptr, from_ptr, size, direction,
-              dpct::get_device_manager().current_device().default_queue(),
-              /*async*/ false);
+  dpct_memcpy(to_ptr, from_ptr, size, direction, dpct::get_default_queue())
+      .wait();
 }
 
 /// Asynchronously copies size bytes from the address specified by from_ptr to
@@ -560,12 +550,12 @@ static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
 /// \param from_ptr Pointer to source memory address.
 /// \param size Number of bytes to be copied.
 /// \param direction Direction of the copy.
+/// \param q Queue to execute the copy task.
 /// \returns no return value.
 static void async_dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
-                              memcpy_direction direction = automatic) {
-  dpct_memcpy(to_ptr, from_ptr, size, direction,
-              dpct::get_device_manager().current_device().default_queue(),
-              /*async*/ true);
+                              memcpy_direction direction = automatic,
+                              cl::sycl::queue &q = dpct::get_default_queue()) {
+  dpct_memcpy(to_ptr, from_ptr, size, direction, q);
 }
 
 static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
@@ -575,14 +565,14 @@ static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
 }
 
 // memset
-static void dpct_memset(void *devPtr, int value, size_t count,
-                        cl::sycl::queue q, bool async) {
+static cl::sycl::event dpct_memset(void *devPtr, int value, size_t count,
+                                   cl::sycl::queue &q) {
   auto &mm = memory_manager::get_instance();
   assert(mm.is_device_ptr(devPtr));
   auto alloc = mm.translate_ptr(devPtr);
   size_t offset = (byte_t *)devPtr - alloc.alloc_ptr;
 
-  auto ret = q.submit([&](cl::sycl::handler &cgh) {
+  return q.submit([&](cl::sycl::handler &cgh) {
     auto r = cl::sycl::range<1>(count);
     auto o = cl::sycl::id<1>(offset);
     cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
@@ -590,9 +580,6 @@ static void dpct_memset(void *devPtr, int value, size_t count,
         acc(alloc.buffer, cgh, r, o);
     cgh.fill(acc, (byte_t)value);
   });
-  if (!async) {
-    ret.wait();
-  }
 }
 
 /// Synchronously sets value to the first size bytes starting from dev_ptr. The
@@ -603,9 +590,7 @@ static void dpct_memset(void *devPtr, int value, size_t count,
 /// \param size Number of bytes to be set to the value.
 /// \returns no return value.
 static void dpct_memset(void *dev_ptr, int value, size_t size) {
-  dpct_memset(dev_ptr, value, size,
-              dpct::get_device_manager().current_device().default_queue(),
-              /*async*/ false);
+  dpct_memset(dev_ptr, value, size, dpct::get_default_queue()).wait();
 }
 
 /// Asynchronously sets value to the first size bytes starting from dev_ptr.
@@ -616,10 +601,9 @@ static void dpct_memset(void *dev_ptr, int value, size_t size) {
 /// \param value Value to be set.
 /// \param size Number of bytes to be set to the value.
 /// \returns no return value.
-static void async_dpct_memset(void *dev_ptr, int value, size_t size) {
-  dpct_memset(dev_ptr, value, size,
-              dpct::get_device_manager().current_device().default_queue(),
-              /*async*/ true);
+static void async_dpct_memset(void *dev_ptr, int value, size_t size,
+                              cl::sycl::queue &q = dpct::get_default_queue()) {
+  dpct_memset(dev_ptr, value, size, q);
 }
 
 // base type of device memory

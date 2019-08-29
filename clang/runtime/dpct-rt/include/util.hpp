@@ -53,15 +53,15 @@ template <typename T> struct DataType<cl::sycl::vec<T, 2>> {
 template <typename T>
 inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
                             int from_ld, int rows, int cols,
-                            memcpy_direction direction, cl::sycl::queue queue,
-                            bool async) {
+                            memcpy_direction direction, cl::sycl::queue queue) {
   using Ty = typename DataType<T>::T2;
   if (to_ptr == from_ptr && to_ld == from_ld) {
     return;
   }
   if (to_ld == from_ld) {
     dpct_memcpy((void *)to_ptr, (void *)from_ptr, sizeof(Ty) * to_ld * cols,
-                direction, queue, async);
+                direction, queue)
+        .wait();
   } else {
     auto to_ptr_t = to_ptr;
     auto from_ptr_t = from_ptr;
@@ -71,7 +71,8 @@ inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
       to_ptr_t = to_ptr_t + to_ld;
       from_ptr_t = from_ptr_t + from_ld;
       dpct_memcpy((void *)(to_ptr_t), (void *)(from_ptr_t), sizeof(Ty) * rows,
-                  direction, queue, async);
+                  direction, queue)
+          .wait();
     }
   }
 }

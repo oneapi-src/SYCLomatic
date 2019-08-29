@@ -184,7 +184,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
     // Original code is input A and output B while MKL API is input A and output
     // A So copy A to B and use B as the parameter of MKL API.
     matrix_mem_copy(b[i], a[i], ldb, lda, n, n, dpct::device_to_device,
-                    exec_queue, false);
+                    exec_queue);
     // assumes data is in column-major order
     auto allocation_b =
         dpct::memory_manager::get_instance().translate_ptr(b[i]);
