@@ -25,7 +25,7 @@ CompilerInstance *DpctGlobalInfo::CI = nullptr;
 ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
-const std::string MemVarInfo::ExternVariableName = "dpct_extern_memory";
+const std::string MemVarInfo::ExternVariableName = "dpct_local";
 const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
 
 bool DpctFileInfo::isInRoot() { return DpctGlobalInfo::isInRoot(FilePath); }
@@ -132,11 +132,13 @@ void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block,
 
 void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block,
                                      std::shared_ptr<MemVarInfo> VI) {
-  if (!VI->isGlobal())
+  if (VI->isShared()) {
+    Block.pushStmt(VI->getRangeDecl(ExecutionConfig.ExternMemSize));
+  }
+  else if (!VI->isGlobal()) {
     Block.pushStmt(VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
-  if (VI->isShared())
-    Block.pushStmt(VI->getRangeDecl());
-  if (getFilePath() != VI->getFilePath() && !VI->isShared()) {
+  }
+  else if (getFilePath() != VI->getFilePath() && !VI->isShared()) {
     // Global variable definition and global variable reference are not in the
     // same file, and are not a share varible, insert extern variable
     // declaration.
@@ -593,6 +595,8 @@ std::string MemVarInfo::getDeclarationReplacement() {
     return buildString("auto ", getName(), " = ", ExternVariableName,
                        ".reinterpret<", getType()->getBaseName(), ">();");
   case clang::dpct::MemVarInfo::Global: {
+    if (isShared())
+      return "";
     return getMemoryDecl();
   }
   default:
@@ -612,10 +616,11 @@ std::string CtTypeInfo::getRangeArgument(const std::string &MemSize,
   for (auto &R : Range) {
     auto Size = R.getSize();
     if (Size.empty()) {
-      if (MemSize.empty())
-        dpct_unreachable("array size should not be empty "
-                         "when external mem size is not set");
-      Arg += MemSize;
+      if (MemSize.empty()) {
+        Arg += "1";
+      } else {
+        Arg += MemSize;
+      }
     } else
       Arg += Size;
     Arg += ", ";

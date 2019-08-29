@@ -152,9 +152,7 @@ public:
     }
   }
 
-  void setLastIncludeOffset(unsigned Offset) {
-    LastIncludeOffset = Offset;
-  }
+  void setLastIncludeOffset(unsigned Offset) { LastIncludeOffset = Offset; }
 
   void setMathHeaderInserted(bool B = true) {
     HeaderInsertedBitMap[HeaderType::Math] = B;
@@ -195,7 +193,7 @@ public:
     switch (Type) {
     case SYCL:
       return insertHeader(HeaderType::SYCL, FirstIncludeOffset, "<CL/sycl.hpp>",
-                           "<dpct/dpct.hpp>");
+                          "<dpct/dpct.hpp>");
     case Math:
       return insertHeader(HeaderType::Math, LastIncludeOffset, "<cmath>");
     case Complex:
@@ -205,9 +203,9 @@ public:
     case Time:
       return insertHeader(HeaderType::Time, LastIncludeOffset, "<time.h>");
     case MKL:
-      return insertHeader(HeaderType::MKL, LastIncludeOffset, "<mkl_blas_sycl.hpp>",
-                          "<mkl_lapack_sycl.hpp>", "<sycl_types.hpp>",
-                          "<dpct/blas_utils.hpp>");
+      return insertHeader(HeaderType::MKL, LastIncludeOffset,
+                          "<mkl_blas_sycl.hpp>", "<mkl_lapack_sycl.hpp>",
+                          "<sycl_types.hpp>", "<dpct/blas_utils.hpp>");
     }
   }
 
@@ -742,12 +740,23 @@ public:
   }
 
   std::string getAccessorDecl() {
+    if (isShared()) {
+      auto Type = getType();
+      return buildString("cl::sycl::accessor<", getAccessorDataType(false),
+                         ", ", Type->getDimension(),
+                         ", cl::sycl::access::mode::read_write, "
+                         "cl::sycl::access::target::local> ",
+                         getAccessorName(), "(",
+                         Type->getDimension() ? (getRangeName() + ", ") : "",
+                         "cgh);");
+    }
     return buildString("auto ", getAccessorName(), " = ", getArgName(),
                        ".get_access(cgh);");
   }
-  std::string getRangeDecl() {
-    return buildString("auto ", getRangeName(), " = ", getArgName(),
-                       ".get_range();");
+  std::string getRangeDecl(const std::string &MemSize) {
+    return buildString("dpct::dpct_range<", getType()->getDimension(), "> ",
+                       getRangeName(),
+                       getType()->getRangeArgument(MemSize, false), ";");
   }
   llvm::raw_ostream &getFuncDecl(llvm::raw_ostream &OS) {
     return OS << getDpctAccessorType(false) << " " << getArgName();
@@ -789,24 +798,26 @@ private:
                        ", " + InitList, ")");
   }
   const std::string &getMemoryAttr();
-
-  std::string getDpctAccessorType(bool UsingTemplateName) {
+  std::string getAccessorDataType(bool UsingTemplateName) {
     if (isExtern()) {
-      return "dpct::dpct_accessor<dpct::byte_t, dpct::local, 1>";
+      return "dpct::byte_t";
+    } else if (UsingTemplateName) {
+      return getType()->getTemplateSpecializationName();
     } else {
-      auto Type = getType();
-      return buildString(
-          "dpct::dpct_accessor<",
-          (UsingTemplateName ? Type->getTemplateSpecializationName()
-                             : Type->getBaseName()),
-          ", ", getMemoryAttr(), ", ", Type->getDimension(), ">");
+      return getType()->getBaseName();
     }
   }
+  std::string getDpctAccessorType(bool UsingTemplateName) {
+    auto Type = getType();
+    return buildString("dpct::dpct_accessor<",
+                       getAccessorDataType(UsingTemplateName), ", ",
+                       getMemoryAttr(), ", ", Type->getDimension(), ">");
+  }
   std::string getAccessorName() {
-    return buildString(getArgName(), "_acc" + getCTFixedSuffix());
+    return buildString(getArgName(), "_acc", getCTFixedSuffix());
   }
   std::string getRangeName() {
-    return buildString(getArgName(), "_range" + getCTFixedSuffix());
+    return buildString(getArgName(), "_range", getCTFixedSuffix());
   }
   std::string getArgName() {
     if (isExtern())
@@ -1187,12 +1198,12 @@ public:
   }
 
   std::shared_ptr<TextureObjectInfo>
-	  addTextureObjectArgInfo(unsigned ArgIdx,
-		  std::shared_ptr<TextureObjectInfo> Info) {
+  addTextureObjectArgInfo(unsigned ArgIdx,
+                          std::shared_ptr<TextureObjectInfo> Info) {
     auto &Obj = TextureObjectList[ArgIdx];
     if (!Obj)
       Obj = Info;
-	return Obj;
+    return Obj;
   }
   virtual std::shared_ptr<TextureObjectInfo>
   addTextureObjectArg(unsigned ArgIdx, const DeclRefExpr *TexRef,

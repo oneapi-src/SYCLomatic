@@ -410,30 +410,6 @@ private:
   const dpct_range<0> &range;
 };
 
-// Accessor acquirer specialization with local address space
-template <class T, size_t Dimension>
-class dpct_accessor_acquirer<T, local, Dimension> {
-public:
-  using accessor_t =
-      typename memory_traits<local, T>::template accessor_t<Dimension>;
-
-  dpct_accessor_acquirer(const dpct_range<Dimension> &range) : range(range) {}
-  accessor_t get_access(cl::sycl::handler &cgh) {
-    return accessor_t(range, cgh);
-  }
-
-private:
-  const dpct_range<Dimension> &range;
-};
-// Accessor acquirer specialization with local address space and Dimension == 0
-template <class T> class dpct_accessor_acquirer<T, local, 0> {
-public:
-  using accessor_t = typename memory_traits<local, T>::template accessor_t<0>;
-
-  dpct_accessor_acquirer(const dpct_range<0> &range) {}
-  accessor_t get_access(cl::sycl::handler &cgh) { return accessor_t(cgh); }
-};
-
 // memcpy
 static cl::sycl::event dpct_memcpy(void *to_ptr, const void *from_ptr,
                                    size_t size, memcpy_direction direction,
@@ -606,49 +582,12 @@ static void async_dpct_memset(void *dev_ptr, int value, size_t size,
   dpct_memset(dev_ptr, value, size, q);
 }
 
-// base type of device memory
-template <class T, memory_attribute Memory, size_t Dimension>
-class base_memory {
-public:
-  using accessor_t =
-      typename memory_traits<Memory, T>::template accessor_t<Dimension>;
-  using value_t = typename memory_traits<Memory, T>::value_t;
-  using accessor_acquirer = dpct_accessor_acquirer<T, Memory, Dimension>;
-  base_memory(const dpct_range<Dimension> &in_range)
-      : size(in_range.size() * sizeof(T)), range(in_range), acquire(range) {}
-
-  virtual accessor_t get_access(cl::sycl::handler &cgh) = 0;
-
-protected:
-  size_t size;
-  dpct_range<Dimension> range;
-  accessor_acquirer acquire;
-};
-
-// Variable with address space of local
-template <class T, size_t Dimension>
-class local_memory : public base_memory<T, local, Dimension> {
-public:
-  using base_t = base_memory<T, local, Dimension>;
-  using accessor_t = typename base_t::accessor_t;
-  template <class... Args>
-  local_memory(Args... Arguments)
-      : local_memory(dpct_range<Dimension>(Arguments...)) {}
-  local_memory(const dpct_range<Dimension> &range) : base_t(range) {}
-  accessor_t get_access(cl::sycl::handler &cgh) override {
-    return base_t::acquire.get_access(cgh);
-  }
-  const dpct_range<Dimension> &get_range() { return base_t::range; }
-};
-using extern_local_memory = local_memory<byte_t, 1>;
-
 // Variable with address space of global or constant
 template <class T, memory_attribute Memory, size_t Dimension>
-class global_memory : public base_memory<T, Memory, Dimension> {
+class global_memory {
 public:
-  using base_t = base_memory<T, Memory, Dimension>;
-  using accessor_t = typename base_t::accessor_t;
-  using value_t = typename base_t::value_t;
+  using accessor_t = typename memory_traits<Memory, T>::template accessor_t<Dimension>;
+  using value_t = typename memory_traits<Memory, T>::value_t;
 
   /// Default constructor
   global_memory() : global_memory(dpct_range<Dimension>()) {}
@@ -673,12 +612,12 @@ public:
   }
 
   /// Constructor with range
-  global_memory(const dpct_range<Dimension> &range)
-      : base_t(range), reference(false), memory_ptr(nullptr) {
+  global_memory(const dpct_range<Dimension> &range_in)
+      : size(range_in.size() * sizeof(T)), range(range_in), acquire(range), reference(false), memory_ptr(nullptr) {
     static_assert((Memory == device) || (Memory == constant),
                   "Global memory attribute should be constant or device");
-    if (base_t::size)
-      dpct_malloc((void **)&memory_ptr, base_t::size);
+    if (size)
+      dpct_malloc((void **)&memory_ptr, size);
   }
 
   /// Constructor with range
@@ -699,18 +638,21 @@ public:
 
   /// Get the virtual pointer in host code.
   void *get_ptr() { return memory_ptr; }
-  accessor_t get_access(cl::sycl::handler &cgh) override {
-    return base_t::acquire.get_access(
+  accessor_t get_access(cl::sycl::handler &cgh) {
+    return acquire.get_access(
         memory_manager::get_instance().translate_ptr(memory_ptr).buffer, cgh);
   }
 
 private:
   global_memory(void *memory_ptr, size_t size)
-      : base_t(dpct_range<1>(size / sizeof(T))), reference(true),
+      : size(size), range(size / sizeof(T)), acquire(range), reference(true),
         memory_ptr(memory_ptr) {
     assert(memory_manager::get_instance().is_device_ptr(memory_ptr));
   }
 
+  size_t size;
+  dpct_range<Dimension> range;
+  dpct_accessor_acquirer<T, Memory, Dimension> acquire;
   bool reference;
   void *memory_ptr;
 };

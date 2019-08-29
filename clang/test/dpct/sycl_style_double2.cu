@@ -10,8 +10,8 @@ void fun(double2 a) {}
 // CHECK: void kernel(cl::sycl::double2* data) {}
 __global__ void kernel(double2* data) {}
 
-// CHECK: dpct::local_memory<cl::sycl::double2, 1> ctemp2(2);
-static __shared__ double2 ctemp2[2];
+// CHECK: // Removed.
+static __shared__ double2 ctemp2[2]; // Removed.
 
 // CHECK: static void gpuMain(dpct::dpct_accessor<cl::sycl::double2, dpct::local, 1> ctemp2){
 // CHECK:   int* ctempi = (int*) (&ctemp2[0]);
@@ -91,8 +91,8 @@ int main() {
   // CHECK: {
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ctemp2_range_ct1 = ctemp2.get_range();
-  // CHECK-NEXT:       auto ctemp2_acc_ct1 = ctemp2.get_access(cgh);
+  // CHECK-NEXT:       dpct::dpct_range<1> ctemp2_range_ct1(2);
+  // CHECK-NEXT:       cl::sycl::accessor<cl::sycl::double2, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> ctemp2_acc_ct1(ctemp2_range_ct1, cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class gpuMain_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(64, 1, 1) * cl::sycl::range<3>(64, 1, 1)), cl::sycl::range<3>(64, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
