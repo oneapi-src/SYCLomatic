@@ -13,9 +13,7 @@
 setlocal
 set /A ERRORSTATE=0
 
-
 IF NOT EXIST "%~dp0..\bin\dpct.exe" set ERRORSTATE=1
-IF NOT EXIST "%~dp0..\bin\intercept-build" set ERRORSTATE=1
 
 if /I "%ERRORSTATE%" NEQ "0" (
     echo  Error: Cannot find neccessary dpct binary.
