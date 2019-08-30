@@ -77,7 +77,7 @@ static opt<std::string> Passes(
     "passes",
     desc("Comma separated list of migration passes, which will be applied.\n"
          "Only the specified passes are applied."),
-    value_desc("FunctionAttrsRule,..."), cat(DPCTCat), llvm::cl::Hidden);
+    value_desc("IterationSpaceBuiltinRule,..."), cat(DPCTCat), llvm::cl::Hidden);
 static opt<std::string>
     InRoot("in-root",
            desc("Directory path for root of source tree to be migrated.\nOnly "

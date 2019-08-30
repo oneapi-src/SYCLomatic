@@ -422,16 +422,6 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Migration rule for CUDA function attributes.
-///
-/// This rule removes __global__, __device__ and __host__ function attributes.
-class FunctionAttrsRule : public NamedTranslationRule<FunctionAttrsRule> {
-public:
-  FunctionAttrsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-};
-
 /// Migration rule for atomic functions.
 class AtomicFunctionRule : public NamedTranslationRule<AtomicFunctionRule> {
 public:

@@ -11,7 +11,6 @@
 RULE(IterationSpaceBuiltinRule)
 RULE(ErrorHandlingIfStmtRule)
 RULE(AlignAttrsRule)
-RULE(FunctionAttrsRule)
 RULE(AtomicFunctionRule)
 RULE(TypeInDeclRule)
 RULE(VectorTypeNamespaceRule)

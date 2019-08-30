@@ -21,3 +21,17 @@ void test_04();
 
 // CHECK: void test_05();
 __device__ void test_05();
+
+
+template <typename T>
+struct foo
+{
+    //check:  T *getPointer()
+    __device__ T *getPointer()
+    {
+        //check:  __device__ void error(void);
+        extern __device__ void error(void);
+        error();
+        return NULL;
+    }
+};

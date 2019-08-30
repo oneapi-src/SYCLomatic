@@ -1,8 +1,8 @@
-// RUN: dpct -out-root %T %s -passes "IterationSpaceBuiltinRule" -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck %s --match-full-lines --input-file %T/pass-filter.dp.cpp
 
 // Test that only IterationSpaceBuiltinRule is being run
-// CHECK:__global__ void test_00(cl::sycl::nd_item<3> item_ct1) {
+// CHECK: void test_00(cl::sycl::nd_item<3> item_ct1) {
 __global__ void test_00() {
   // CHECK: size_t tix = item_ct1.get_local_id(0);
   // CHECK: size_t tiy = item_ct1.get_local_id(1);

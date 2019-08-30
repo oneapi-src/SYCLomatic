@@ -105,6 +105,26 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     return;
   }
 
+  // For the un-specialized struct, there is no AST for the extern function
+  // declaration in its member function body in Windows. e.g: template <typename
+  // T> struct foo
+  //{
+  //    __device__ T *getPointer()
+  //    {
+  //        extern __device__ void error(void); // No AST for this line
+  //        error();
+  //        return NULL;
+  //    }
+  // };
+  // So dpct removes attributes "__host__"/"__device__"/"__global__" in the
+  // preprocessing stage.
+  auto TKind = MacroNameTok.getKind();
+  auto Name = MacroNameTok.getIdentifierInfo()->getName();
+  if (TKind == tok::identifier &&
+      (Name == "__host__" || Name == "__device__" || Name == "__global__")) {
+    TransformSet.emplace_back(new ReplaceToken(Range.getBegin(), ""));
+  }
+
   // Record the expansion locations of the macros containing CUDA attributes.
   // FunctionAttrsRule should/will NOT work on these locations.
   auto MI = MD.getMacroInfo();
@@ -637,38 +657,6 @@ void AlignAttrsRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(AlignAttrsRule)
-
-void FunctionAttrsRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(
-      functionDecl(anyOf(hasAttr(attr::CUDAGlobal), hasAttr(attr::CUDADevice),
-                         hasAttr(attr::CUDAHost)))
-          .bind("functionDecl"),
-      this);
-}
-
-void FunctionAttrsRule::run(const MatchFinder::MatchResult &Result) {
-  const FunctionDecl *FD = getNodeAsType<FunctionDecl>(Result, "functionDecl");
-  if (!FD)
-    return;
-  const AttrVec &AV = FD->getAttrs();
-
-  for (const Attr *A : AV) {
-    attr::Kind AK = A->getKind();
-    if (!A->isImplicit() && (AK == attr::CUDAGlobal || AK == attr::CUDADevice ||
-                             AK == attr::CUDAHost)) {
-      // If __global__, __host__ and __device__ are defined in other macros,
-      // the replacements should happen at spelling locations of these macros
-      // instead of expansion locations. In these cases, no work is needed here.
-      auto Loc = A->getLocation();
-      Loc = Result.SourceManager->getExpansionLoc(Loc);
-      if (AttrExpansionFilter.find(Loc) == AttrExpansionFilter.end()) {
-        emplaceTransformation(new RemoveAttr(A));
-      }
-    }
-  }
-}
-
-REGISTER_RULE(FunctionAttrsRule)
 
 void AtomicFunctionRule::registerMatcher(MatchFinder &MF) {
   std::vector<std::string> AtomicFuncNames(AtomicFuncNamesMap.size());
@@ -1524,9 +1512,7 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: {
-    return false;
-  }
+  default: { return false; }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
