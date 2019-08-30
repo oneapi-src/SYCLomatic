@@ -45,7 +45,7 @@ dpct_sdk_8_samples=(
   scalarProd
 )
 
-dpct_sdk_8_samples_list=$(IFS=, ; echo "dpct_sdk_8_samples/${dpct_sdk_8_samples[*]}")
+dpct_sdk_8_samples_list=$(IFS=, ; echo "syclct_sdk_8_samples_primary/${dpct_sdk_8_samples[*]}")
 
 set -x
 #Run test case from dpct_sdk_8_samples
@@ -53,14 +53,14 @@ tc -r none -x efi2_linux64_syclct -t $dpct_sdk_8_samples_list
 
 echo "---------------------------------------------------"
 #Run custom test set: dpct_internal_samples
-tc -r none -x efi2_linux64_dpct -s dpct_internal_samples
+tc -r none -x efi2_linux64_syclct -s syclct_internal_samples
 
 echo "---------------------------------------------------"
 #Run custom behavior test set: dpct_behavior_tests
-tc -r none -x efi2_linux64_dpct -s dpct_behavior_tests
+tc -r none -x efi2_linux64_syclct -s syclct_behavior_tests
 
 echo "---------------------------------------------------"
 #Run dpct benchamrks.
-tc -r none -x efi2_linux64_dpct -s dpct_benchmarks
+tc -r none -x efi2_linux64_syclct -s syclct_benchmarks
 
 echo "---------------------------------------------------"
