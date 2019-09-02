@@ -134,6 +134,7 @@
 #define va_arg   __crt_va_arg
 #define va_end   __crt_va_end
 #include <time.h>
+__device__ void _wassert(const wchar_t *, const wchar_t *, unsigned);
 #endif
 
 #pragma pop_macro("nv_weak")
