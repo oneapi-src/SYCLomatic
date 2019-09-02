@@ -28,6 +28,8 @@
 #include <unistd.h>
 #include <dlfcn.h>
 #include <pthread.h>
+#include <ctype.h>
+
 
 #if defined HAVE_POSIX_SPAWN || defined HAVE_POSIX_SPAWNP
 #include <spawn.h>
@@ -80,6 +82,8 @@ static char const **bear_strings_copy(char const **const in);
 static char const **bear_strings_append(char const **in, char const *e);
 static size_t bear_strings_length(char const *const *in);
 static void bear_strings_release(char const **);
+
+int is_option_end(char* working);
 
 
 static bear_env_t env_names =
@@ -486,9 +490,15 @@ static int call_posix_spawnp(pid_t *restrict pid, const char *restrict file,
 
 #if INTEL_CUSTOMIZATION
 static int generate_file(char * filename){
-    char buf[256];
-    char cmd[256];
+    char buf[512];
+    char cmd[512];
+    memset(cmd, '\0', 512);
+    memset(buf, '\0', 512);
     int len=strlen(filename);
+    if(len > 500) {
+        perror("bear: generate file fail.");
+        exit(EXIT_FAILURE);
+    }
     strncpy(buf, filename, len);
     buf[len]='\0';
     while(len>0){
@@ -504,10 +514,7 @@ static int generate_file(char * filename){
 
     FILE * fd = fopen(filename, "a+");
     if (0 == fd) {
-        char errormsg[64];
-        memset(errormsg,'\0',64);
-        sprintf(errormsg, "bear: generate_file fopen:%s\n", filename);
-        perror(errormsg);
+        perror("bear: generate_file fopen fail.");
         exit(EXIT_FAILURE);
     }
     fprintf(fd, "emtpy-file");
@@ -515,13 +522,14 @@ static int generate_file(char * filename){
         perror("bear: fclose");
         exit(EXIT_FAILURE);
     }
+    return 0;
 }
 // find xxx in "-o xxx"
 // return value:
 //  0 : found the project and create it.
 //  1 : have not found the object, indicate next arg is object
 //  -1: have not found the object.
-int find_create_object(char *str) {
+int find_create_object(const char *str) {
     char *p = strstr(str, "-o");
     if(p && is_option_end(p + 2)) {
         p+=2;
@@ -539,6 +547,7 @@ int find_create_object(char *str) {
         }
 
         char ofilename[512];
+        memset(ofilename, '\0', 512);
         memcpy(ofilename, p, q-p);
         ofilename[q-p]='\0';
         generate_file(ofilename);
@@ -571,6 +580,9 @@ char *skip_empty(char *working){
 
 // skip the option in "<option  value>"
 char *skip_option(char *working) {
+    if(working==NULL) {
+        return NULL;
+    }
     int len=strlen(working);
     while(len>0){
         len--;
@@ -588,6 +600,9 @@ char *skip_option(char *working) {
 }
 // skip the value in "<option  value>"
 char *skip_value(char *working){
+    if(working==NULL) {
+        return NULL;
+    }
     int len=strlen(working);
     int require_quotation=0;
     while(len>0){
@@ -755,7 +770,7 @@ int is_c_option(char *working) {
 //   command: the command that be parsed.
 //   c_found: return whether -c option is used.
 //   inputfile: return the inputfile in the command.
-int parse_input_file(char *command, int *c_found, int *inputfile) {
+int parse_input_file(char *command, int *c_found, char *inputfile) {
     // this function try to find the inputfile from command.
     // 1. must have -c|--compile option available.
     // 2. option format:
@@ -825,12 +840,17 @@ int parse_input_file(char *command, int *c_found, int *inputfile) {
 // will be parsed by scprits in scan-build-py.
 // '<option>' | 'file' are expected to write out to the fd.
 // while for 'file ' and 'file )' need to remove the space and ).
-void dump_US_field(char *str, FILE *fd, int US, int has_parenthesis){
-   char *working=str;
+void dump_US_field(const char *str, FILE *fd, int US, int has_parenthesis){
+   char *working=(char *)str;
    char *begin;
    working=skip_empty(working);
 
+   if(working==NULL) {
+        return;
+   }
+
    char  tmpbuf[512];
+   memset(tmpbuf, '\0', 512);
    begin=working;
    while(*working!='\0'){
        if(isblank(*working)) {
@@ -924,12 +944,12 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     int contflag=0;
     int ret=0;
     char *command_cp=NULL;
-    int it_cp=0;
+    size_t it_cp=0;
     // (CPATH=;command  args), need remove () around the command
     int has_parenthesis=0;
 
     for (size_t it = 0; it < argc; ++it) {
-        char *tail=argv[it];
+        const char *tail=argv[it];
         int len= strlen(tail);
         char *command=NULL;
         if(it<=3 /*eg. /bin/bash -c [CPATH=xxx;]command*/ && flag_command==0 &&
@@ -937,7 +957,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
           command_cp=command;
           it_cp=it;
           flag_command=1;
-          char *tmpp=tail;
+          const char *tmpp=tail;
           while(tmpp!=command) {
             if(*tmpp=='(') {
                 has_parenthesis=1;
@@ -954,7 +974,13 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
         }
         if(contflag==1){
           char ofilename[512];
-          strcpy(ofilename,argv[it]);
+          int olen=strlen(argv[it]);
+          memset(ofilename,'\0',512);
+          if(olen > 512) {
+            perror("bear: filename length too long.");
+            exit(EXIT_FAILURE);
+          }
+          strncpy(ofilename,argv[it], olen);
           generate_file(ofilename);
           contflag=0;
           flag_object=1;
@@ -998,10 +1024,15 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     } else if(flag_command == 1) {
         // object is not give by -o. Need figure out the default output for cmd "gcc -c xx.c"
         char *tmp=malloc(4096);
+        if(tmp==NULL) {
+            perror("bear: malloc memory fail.");
+            exit(EXIT_FAILURE);
+        }
         memset(tmp, '\0', 4096);
         int idx = 0;
         int c_option;
         char ofilename[512];
+        memset(ofilename, '\0', 512);
         int parse_ret = 0;
         for (size_t it = it_cp; it < argc; ++it) {
            memcpy(tmp+idx, argv[it], strlen(argv[it]));
@@ -1012,16 +1043,24 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
         parse_ret=parse_input_file(tmp, &c_option, ofilename);
         if(parse_ret==1 && c_option==1) {
             //change the suffix of the ofilename from .c .cpp => .o)
-            char *p=ofilename;
             int olen=strlen(ofilename);
             while(olen>=0 && ofilename[olen]!= '.') {
                 olen--;
             }
             if(olen==-1) {
+                olen=strlen(ofilename);
+                if(olen>499) {
+                    perror("bear: filename length too long.");
+                    exit(EXIT_FAILURE);
+                }
                 ofilename[olen] = '.';
                 ofilename[olen+1] = 'o';
                 ofilename[olen+2] = '\0';
             } else {
+                if(olen>500) {
+                    perror("bear: filename length too long.");
+                    exit(EXIT_FAILURE);
+                }
                 ofilename[olen+1] = 'o';
                 ofilename[olen+2] = '\0';
             }
