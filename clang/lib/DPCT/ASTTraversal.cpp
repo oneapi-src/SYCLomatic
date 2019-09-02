@@ -4335,7 +4335,7 @@ void MemoryTranslationRule::replaceMemAPIArg(
         new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
   } else {
     // Normal situation.
-    insertAroundStmt(E, "(void*)(", ")");
+    insertAroundStmt(E, "(void*)(", ")", true);
   }
 }
 

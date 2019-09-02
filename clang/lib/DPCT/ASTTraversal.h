@@ -381,10 +381,10 @@ protected:
   }
 
   void insertAroundStmt(const Stmt *S, std::string &&Prefix,
-                        std::string &&Suffix) {
+                        std::string &&Suffix, bool DoMacroExpansion = false) {
     auto P = incPairID();
-    emplaceTransformation(new InsertBeforeStmt(S, std::move(Prefix), P));
-    emplaceTransformation(new InsertAfterStmt(S, std::move(Suffix), P));
+    emplaceTransformation(new InsertBeforeStmt(S, std::move(Prefix), P, DoMacroExpansion));
+    emplaceTransformation(new InsertAfterStmt(S, std::move(Suffix), P, DoMacroExpansion));
   }
   void insertAroundRange(const SourceLocation &PrefixSL,
                          const SourceLocation &SuffixSL, std::string &&Prefix,

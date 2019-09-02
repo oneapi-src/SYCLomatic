@@ -387,6 +387,19 @@ InsertAfterStmt::getReplacement(const ASTContext &Context) const {
   auto Loc = SM.getSpellingLoc(S->getEndLoc());
   Loc = Loc.getLocWithOffset(
       Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts()));
+  if (DoMacroExpansion) {
+    if (S->getEndLoc().isMacroID()) {
+      auto TokenBegin = SM.getExpansionLoc(S->getEndLoc());
+      // If current macro is inside another macro or is a macro arg
+      // we can only modify the spelling part
+      // BeginLoc is more accurate than EndLoc
+      if (!SM.isAtStartOfImmediateMacroExpansion(S->getBeginLoc())) {
+        TokenBegin = SM.getSpellingLoc(S->getEndLoc());
+      }
+      auto Len = Lexer::MeasureTokenLength(TokenBegin, SM, LangOptions());
+      Loc = TokenBegin.getLocWithOffset(Len);
+    }
+  }
   recordTranslationInfo(Context, Loc);
   auto R = std::make_shared<ExtReplacement>(SM, Loc, 0, T, this);
   R->setPairID(PairID);
@@ -646,11 +659,19 @@ ReplacementFilter::ReplacementFilter(const std::vector<ExtReplacement> &RS)
 
 std::shared_ptr<ExtReplacement>
 InsertBeforeStmt::getReplacement(const ASTContext &Context) const {
+  auto &SM = Context.getSourceManager();
   SourceLocation Begin = S->getSourceRange().getBegin();
   if (DoMacroExpansion) {
-    auto &SM = Context.getSourceManager();
-    if (Begin.isMacroID())
-      Begin = SM.getExpansionLoc(Begin);
+    if (Begin.isMacroID()) {
+      if (!SM.isAtStartOfImmediateMacroExpansion(Begin)) {
+        // If current macro is inside another macro or is a macro arg
+        // we can only modify the spelling part
+        Begin = SM.getSpellingLoc(Begin);
+      }
+      else {
+        Begin = SM.getExpansionLoc(Begin);
+      }
+    }
   }
   recordTranslationInfo(Context, Begin);
   auto R = std::make_shared<ExtReplacement>(

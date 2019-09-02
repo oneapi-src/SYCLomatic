@@ -369,10 +369,11 @@ class InsertAfterStmt : public TextModification {
   const Stmt *S;
   std::string T;
   unsigned PairID;
+  bool DoMacroExpansion;
 
 public:
-  InsertAfterStmt(const Stmt *S, std::string &&T, unsigned PairID = 0)
-      : TextModification(TMID::InsertAfterStmt), S(S), T(T), PairID(PairID) {}
+  InsertAfterStmt(const Stmt *S, std::string &&T, unsigned PairID = 0, bool DoMacroExpansion = false)
+      : TextModification(TMID::InsertAfterStmt), S(S), T(T), PairID(PairID), DoMacroExpansion(DoMacroExpansion) {}
 
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
