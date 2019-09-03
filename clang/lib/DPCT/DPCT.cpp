@@ -222,7 +222,7 @@ opt<UsmLevel> USMLevel(
                      "Uses helper functions from DPCT header files for memory "
                      "management\n                                          "
                      "migration.\n")),
-    init(none), cat(DPCTCat), llvm::cl::Optional, llvm::cl::Hidden);
+    init(restricted), cat(DPCTCat), llvm::cl::Optional);
 
 std::string CudaPath;        // Global value for the CUDA install path.
 std::string DpctInstallPath; // Installation directory for this tool

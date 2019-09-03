@@ -794,22 +794,27 @@ public:
 private:
   void mallocTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C,
-                         const UnresolvedLookupExpr *ULExpr = NULL);
+                         const UnresolvedLookupExpr *ULExpr = NULL,
+                         bool IsAssigned = false);
   void memcpyTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C,
-                         const UnresolvedLookupExpr *ULExpr = NULL);
+                         const UnresolvedLookupExpr *ULExpr = NULL,
+                         bool IsAssigned = false);
   void freeTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
                        const CallExpr *C,
-                       const UnresolvedLookupExpr *ULExpr = NULL);
+                       const UnresolvedLookupExpr *ULExpr = NULL,
+                       bool IsAssigned = false);
   void memsetTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C,
-                         const UnresolvedLookupExpr *ULExpr = NULL);
+                         const UnresolvedLookupExpr *ULExpr = NULL,
+                         bool IsAssigned = false);
   void getSymbolAddressTranslation(
       const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
-      const UnresolvedLookupExpr *ULExpr = NULL);
+      const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false);
   void miscTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
                        const CallExpr *C,
-                       const UnresolvedLookupExpr *ULExpr = NULL);
+                       const UnresolvedLookupExpr *ULExpr = NULL,
+                       bool IsAssigned = false);
   void handleAsync(const CallExpr *C, unsigned i,
                    const ast_matchers::MatchFinder::MatchResult &Result);
   void replaceMemAPIArg(const Expr *E,
@@ -817,13 +822,14 @@ private:
                         std::string OffsetFromBaseStr = "");
   const ArraySubscriptExpr *getArraySubscriptExpr(const Expr *E);
   const Expr *getUnaryOperatorExpr(const Expr *E);
-  void memcpyToAndFromSymbolTranslation(
+  void memcpySymbolTranslation(
       const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
-      const UnresolvedLookupExpr *ULExpr = NULL);
+      const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false);
   std::unordered_map<
-      std::string, std::function<void(
-                       const ast_matchers::MatchFinder::MatchResult &Result,
-                       const CallExpr *C, const UnresolvedLookupExpr *ULExpr)>>
+      std::string,
+      std::function<void(const ast_matchers::MatchFinder::MatchResult &Result,
+                         const CallExpr *C, const UnresolvedLookupExpr *ULExpr,
+                         bool IsAssigned)>>
       TranslationDispatcher;
 };
 

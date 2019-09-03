@@ -1512,7 +1512,9 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: { return false; }
+  default: {
+    return false;
+  }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -4163,7 +4165,7 @@ REGISTER_RULE(MemVarRule)
 
 void MemoryTranslationRule::mallocTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
-    const UnresolvedLookupExpr *ULExpr) {
+    const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
   std::string Name;
   if (ULExpr) {
     Name = ULExpr->getName().getAsString();
@@ -4336,13 +4338,21 @@ void MemoryTranslationRule::replaceMemAPIArg(
   }
 }
 
-// Assume: i > 0
-TextModification *removeArg(const CallExpr *C, unsigned i,
+// Return a TextModication that removes nth argument of the CallExpr,
+// together with the preceding comma.
+// Assume: n > 0
+TextModification *removeArg(const CallExpr *C, unsigned n,
                             const SourceManager &SM) {
-  const Expr *ArgBefore = C->getArg(i - 1);
+  if (!n)
+    return nullptr;
+  const Expr *ArgBefore = C->getArg(n - 1);
   auto Begin = ArgBefore->getEndLoc();
+  if (Begin.isMacroID())
+    Begin = SM.getSpellingLoc(Begin);
   Begin = Lexer::getLocForEndOfToken(Begin, 0, SM, LangOptions());
-  auto End = C->getArg(i)->getEndLoc();
+  auto End = C->getArg(n)->getEndLoc();
+  if (End.isMacroID())
+    End = SM.getSpellingLoc(End);
   End = Lexer::getLocForEndOfToken(End, 0, SM, LangOptions());
   auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
   if (Length > 0) {
@@ -4353,7 +4363,7 @@ TextModification *removeArg(const CallExpr *C, unsigned i,
 
 void MemoryTranslationRule::memcpyTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
-    const UnresolvedLookupExpr *ULExpr) {
+    const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
   const Expr *Direction = C->getArg(3);
   std::string DirectionName;
   const DeclRefExpr *DD = dyn_cast_or_null<DeclRefExpr>(Direction);
@@ -4431,9 +4441,9 @@ void MemoryTranslationRule::memcpyTranslation(
   }
 }
 
-void MemoryTranslationRule::memcpyToAndFromSymbolTranslation(
+void MemoryTranslationRule::memcpySymbolTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
-    const UnresolvedLookupExpr *ULExpr) {
+    const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
 
   const Expr *Direction = C->getArg(4);
   std::string DirectionName;
@@ -4516,16 +4526,8 @@ void MemoryTranslationRule::memcpyToAndFromSymbolTranslation(
   }
 
   // Remove C->getArg(3)
-  const auto &SM = *Result.SourceManager;
-  const Expr *ArgBefore = C->getArg(2);
-  auto Begin = ArgBefore->getEndLoc();
-  Begin = Lexer::getLocForEndOfToken(Begin, 0, SM, LangOptions());
-  auto End = C->getArg(3)->getEndLoc();
-  End = Lexer::getLocForEndOfToken(End, 0, SM, LangOptions());
-  auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
-  if (Length > 0) {
-    emplaceTransformation(new ReplaceText(Begin, Length, ""));
-  }
+  if (auto TM = removeArg(C, 3, *Result.SourceManager))
+    emplaceTransformation(TM);
 
   emplaceTransformation(
       new ReplaceStmt(C->getArg(4), std::move(DirectionName)));
@@ -4556,7 +4558,7 @@ void MemoryTranslationRule::memcpyToAndFromSymbolTranslation(
 
 void MemoryTranslationRule::freeTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
-    const UnresolvedLookupExpr *ULExpr) {
+    const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
 
   std::string Name;
   if (ULExpr) {
@@ -4592,7 +4594,7 @@ void MemoryTranslationRule::freeTranslation(
 
 void MemoryTranslationRule::memsetTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
-    const UnresolvedLookupExpr *ULExpr) {
+    const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
 
   std::string Name;
   if (ULExpr) {
@@ -4647,7 +4649,7 @@ void MemoryTranslationRule::memsetTranslation(
 
 void MemoryTranslationRule::miscTranslation(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
-    const UnresolvedLookupExpr *ULExpr) {
+    const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
   std::string Name;
   if (ULExpr) {
     Name = ULExpr->getName().getAsString();
@@ -4666,7 +4668,10 @@ void MemoryTranslationRule::miscTranslation(
       report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, Name);
     }
   } else if (Name == "cudaHostRegister" || Name == "cudaHostUnregister") {
-    emplaceTransformation(new ReplaceStmt(C, ""));
+    if (IsAssigned)
+      emplaceTransformation(new ReplaceStmt(C, "0"));
+    else
+      emplaceTransformation(new ReplaceStmt(C, ""));
   }
 }
 
@@ -4712,11 +4717,6 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
     if (!C)
       return;
 
-    if (IsAssigned) {
-      report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
-      insertAroundStmt(C, "(", ", 0)");
-    }
-
     std::string Name;
     if (ULExpr && C) {
       Name = ULExpr->getName().getAsString();
@@ -4725,7 +4725,12 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
     }
 
     assert(TranslationDispatcher.find(Name) != TranslationDispatcher.end());
-    TranslationDispatcher.at(Name)(Result, C, ULExpr);
+    TranslationDispatcher.at(Name)(Result, C, ULExpr, IsAssigned);
+
+    if (IsAssigned) {
+      report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+      insertAroundStmt(C, "(", ", 0)");
+    }
   };
 
   TranslateCallExpr(getNodeAsType<CallExpr>(Result, "call"),
@@ -4745,7 +4750,7 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
 
 void MemoryTranslationRule::getSymbolAddressTranslation(
     const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
-    const UnresolvedLookupExpr *ULExpr) {
+    const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
   // Here only handle ordinary variable name reference, for accessing the
   // address of something residing on the device directly from host side should
   // not be possible.
@@ -4758,66 +4763,42 @@ void MemoryTranslationRule::getSymbolAddressTranslation(
 
 MemoryTranslationRule::MemoryTranslationRule() {
   SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
-  TranslationDispatcher["cudaMalloc"] = std::bind(
-      &MemoryTranslationRule::mallocTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cudaHostAlloc"] = std::bind(
-      &MemoryTranslationRule::mallocTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cudaMallocHost"] = std::bind(
-      &MemoryTranslationRule::mallocTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cudaMallocManaged"] = std::bind(
-      &MemoryTranslationRule::mallocTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cublasAlloc"] = std::bind(
-      &MemoryTranslationRule::mallocTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cudaMemcpy"] = std::bind(
-      &MemoryTranslationRule::memcpyTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cudaMemcpyAsync"] = std::bind(
-      &MemoryTranslationRule::memcpyTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cudaMemcpyToSymbol"] = std::bind(
-      &MemoryTranslationRule::memcpyToAndFromSymbolTranslation, this,
-      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cudaMemcpyToSymbolAsync"] = std::bind(
-      &MemoryTranslationRule::memcpyToAndFromSymbolTranslation, this,
-      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cudaMemcpyFromSymbol"] = std::bind(
-      &MemoryTranslationRule::memcpyToAndFromSymbolTranslation, this,
-      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cudaMemcpyFromSymbolAsync"] = std::bind(
-      &MemoryTranslationRule::memcpyToAndFromSymbolTranslation, this,
-      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cudaFree"] = std::bind(
-      &MemoryTranslationRule::freeTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cudaFreeHost"] = std::bind(
-      &MemoryTranslationRule::freeTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cublasFree"] = std::bind(
-      &MemoryTranslationRule::freeTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cudaMemset"] = std::bind(
-      &MemoryTranslationRule::memsetTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cudaMemsetAsync"] = std::bind(
-      &MemoryTranslationRule::memsetTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cudaGetSymbolAddress"] = std::bind(
-      &MemoryTranslationRule::getSymbolAddressTranslation, this,
-      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cudaHostGetDevicePointer"] = std::bind(
-      &MemoryTranslationRule::miscTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cudaHostRegister"] = std::bind(
-      &MemoryTranslationRule::miscTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
-  TranslationDispatcher["cudaHostUnregister"] = std::bind(
-      &MemoryTranslationRule::miscTranslation, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3);
+  std::map<
+      std::string,
+      std::function<void(MemoryTranslationRule *,
+                         const ast_matchers::MatchFinder::MatchResult &,
+                         const CallExpr *, const UnresolvedLookupExpr *, bool)>>
+      Dispatcher{
+          {"cudaMalloc", &MemoryTranslationRule::mallocTranslation},
+          {"cudaHostAlloc", &MemoryTranslationRule::mallocTranslation},
+          {"cudaMallocHost", &MemoryTranslationRule::mallocTranslation},
+          {"cudaMallocManaged", &MemoryTranslationRule::mallocTranslation},
+          {"cublasAlloc", &MemoryTranslationRule::mallocTranslation},
+          {"cudaMemcpy", &MemoryTranslationRule::memcpyTranslation},
+          {"cudaMemcpyAsync", &MemoryTranslationRule::memcpyTranslation},
+          {"cudaMemcpyToSymbol",
+           &MemoryTranslationRule::memcpySymbolTranslation},
+          {"cudaMemcpyToSymbolAsync",
+           &MemoryTranslationRule::memcpySymbolTranslation},
+          {"cudaMemcpyFromSymbol",
+           &MemoryTranslationRule::memcpySymbolTranslation},
+          {"cudaMemcpyFromSymbolAsync",
+           &MemoryTranslationRule::memcpySymbolTranslation},
+          {"cudaFree", &MemoryTranslationRule::freeTranslation},
+          {"cudaFreeHost", &MemoryTranslationRule::freeTranslation},
+          {"cublasFree", &MemoryTranslationRule::freeTranslation},
+          {"cudaMemset", &MemoryTranslationRule::memsetTranslation},
+          {"cudaMemsetAsync", &MemoryTranslationRule::memsetTranslation},
+          {"cudaGetSymbolAddress",
+           &MemoryTranslationRule::getSymbolAddressTranslation},
+          {"cudaHostGetDevicePointer", &MemoryTranslationRule::miscTranslation},
+          {"cudaHostRegister", &MemoryTranslationRule::miscTranslation},
+          {"cudaHostUnregister", &MemoryTranslationRule::miscTranslation}};
+
+  for (auto &P : Dispatcher)
+    TranslationDispatcher[P.first] =
+        std::bind(P.second, this, std::placeholders::_1, std::placeholders::_2,
+                  std::placeholders::_3, std::placeholders::_4);
 }
 
 void MemoryTranslationRule::handleAsync(
@@ -4829,13 +4810,8 @@ void MemoryTranslationRule::handleAsync(
     if (StreamStr == "0") {
       // Remove preceding semicolon and spaces
       if (i) {
-        const auto &SM = *Result.SourceManager;
-        const Expr *ArgBefore = C->getArg(i - 1);
-        auto Begin = ArgBefore->getEndLoc();
-        Begin = Lexer::getLocForEndOfToken(Begin, 0, SM, LangOptions());
-        auto End = Stream->getBeginLoc();
-        auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
-        emplaceTransformation(new ReplaceText(Begin, Length, ""));
+        if (auto TM = removeArg(C, i, *Result.SourceManager))
+          emplaceTransformation(TM);
       }
       emplaceTransformation(new ReplaceStmt(Stream, ""));
     }
