@@ -125,6 +125,10 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     TransformSet.emplace_back(new ReplaceToken(Range.getBegin(), ""));
   }
 
+  if (TKind == tok::identifier && Name == "__forceinline__") {
+    TransformSet.emplace_back(new ReplaceToken(Range.getBegin(), "__dpct_inline__"));
+  }
+
   // Record the expansion locations of the macros containing CUDA attributes.
   // FunctionAttrsRule should/will NOT work on these locations.
   auto MI = MD.getMacroInfo();
@@ -658,6 +662,32 @@ void AlignAttrsRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(AlignAttrsRule)
+
+void FuncAttrsRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(functionDecl(hasAttr(attr::AlwaysInline)).bind("funcDecl"), this);
+}
+
+void FuncAttrsRule::run(const MatchFinder::MatchResult &Result) {
+  auto FD = getNodeAsType<FunctionDecl>(Result, "funcDecl");
+  auto SM = Result.SourceManager;
+  if (!FD)
+    return;
+  auto &FA = FD->getAttrs();
+  for (auto A : FA) {
+    if (A->getKind() == attr::AlwaysInline) {
+      // directly used
+      auto Loc = SM->getExpansionLoc(A->getLocation());
+      if (!strncmp(SM->getCharacterData(Loc), "__forceinline__", 15))
+        emplaceTransformation(new ReplaceToken(Loc, "__dpct_inline__"));
+      // if is used in another macro
+      Loc = SM->getSpellingLoc(SM->getImmediateExpansionRange(A->getLocation()).getBegin());
+      if (!strncmp(SM->getCharacterData(Loc), "__forceinline__", 15))
+        emplaceTransformation(new ReplaceToken(Loc, "__dpct_inline__"));
+    }
+  }
+}
+
+REGISTER_RULE(FuncAttrsRule)
 
 void AtomicFunctionRule::registerMatcher(MatchFinder &MF) {
   std::vector<std::string> AtomicFuncNames(AtomicFuncNamesMap.size());

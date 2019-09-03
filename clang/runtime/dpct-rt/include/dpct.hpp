@@ -32,9 +32,13 @@
 
 #if defined(_MSC_VER)
 #define __dpct_align__(n) __declspec(align(n))
+#define __dpct_inline__ __forceinline
 #else
 #define __dpct_align__(n) __attribute__((aligned(n)))
+#define __dpct_inline__ __inline__ __attribute__((always_inline))
 #endif
+
+
 
 template <class... Args> class dpct_kernel_name;
 template <int Arg> class dpct_kernel_scalar;
