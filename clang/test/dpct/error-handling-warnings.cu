@@ -43,7 +43,7 @@ void test_side_effects(cudaError_t err, int arg, int x, int y, int z) {
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to rewrite this code. 
 // CHECK-NEXT:*/
-// CHECK-NEXT:  if (err == 59) {
+// CHECK-NEXT:  if (err == {{[0-9]+}}) {
 // CHECK-NEXT:    printf("efef");
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
@@ -80,7 +80,7 @@ void test_side_effects(cudaError_t err, int arg, int x, int y, int z) {
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to rewrite this code.
 // CHECK-NEXT:*/
-// CHECK-NEXT:  if (59 == err) {
+// CHECK-NEXT:  if ({{[0-9]+}} == err) {
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
 // CHECK-NEXT:*/

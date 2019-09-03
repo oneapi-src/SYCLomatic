@@ -149,7 +149,7 @@ void test_CUDA_SUCCESS_empty_CUresult() {
 
 // CHECK:void test_other_enum() {
 // CHECK-NEXT:  int err;
-// CHECK-NEXT:  if (err != 4) {
+// CHECK-NEXT:  if (err != {{[0-9]+}}) {
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
@@ -417,7 +417,7 @@ void specialize_ifs() {
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to rewrite this code.
 // CHECK-NEXT:*/
-// CHECK-NEXT:  if (err == 59) {
+// CHECK-NEXT:  if (err == {{[0-9]+}}) {
 // CHECK-NEXT:    printf("efef");
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
@@ -454,7 +454,7 @@ void specialize_ifs() {
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to rewrite this code.
 // CHECK-NEXT:*/
-// CHECK-NEXT:  if (59 == err) {
+// CHECK-NEXT:  if ({{[0-9]+}} == err) {
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
 // CHECK-NEXT:*/
