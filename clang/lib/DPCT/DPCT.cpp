@@ -735,6 +735,7 @@ int run(int argc, const char **argv) {
   DpctGlobalInfo::setInRoot(InRoot);
   DpctGlobalInfo::setCudaPath(CudaPath);
   DpctGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);
+  DpctGlobalInfo::setUsmLevel(USMLevel);
 
   DPCTActionFactory Factory(Tool.getReplacements());
   if (int RunResult = Tool.run(&Factory) && !NoStopOnErrFlag) {

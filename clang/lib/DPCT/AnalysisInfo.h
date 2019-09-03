@@ -33,6 +33,12 @@ class DeviceFunctionDecl;
 class MemVarInfo;
 class VarInfo;
 
+// none:       uses helper functions from DPCT header files for memory
+//             management migration
+// restricted: uses API from DPC++ Explicit and Restricted Unified
+//             Shared Memory extension for memory management migration
+enum UsmLevel { none, restricted };
+
 template <class T> using GlobalMap = std::map<unsigned, std::shared_ptr<T>>;
 using MemVarInfoMap = GlobalMap<MemVarInfo>;
 
@@ -379,6 +385,8 @@ public:
   inline static void setKeepOriginCode(bool KOC = true) {
     KeepOriginCode = KOC;
   }
+  inline static UsmLevel getUsmLevel() { return UsmLvl; }
+  inline static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
   template <class TargetTy, class NodeTy>
   static const TargetTy *findAncestor(const NodeTy *Node) {
     auto &Context = getContext();
@@ -540,6 +548,7 @@ private:
 
   static std::string InRoot;
   static std::string CudaPath;
+  static UsmLevel UsmLvl;
   static CompilerInstance *CI;
   static ASTContext *Context;
   static SourceManager *SM;
@@ -1402,10 +1411,12 @@ private:
 // call.
 class KernelCallExpr : public CallFunctionExpr {
   struct ArgInfo {
-    ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg) {
+    ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg)
+        : isPointer(false) {
       Analysis.analyze(Arg);
       ArgString = Analysis.getReplacedString();
-      isPointer = Analysis.isPointer;
+      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
+        isPointer = Analysis.isPointer;
       isRedeclareRequired = Analysis.isRedeclareRequired;
       if (isPointer) {
         auto PointeeType =

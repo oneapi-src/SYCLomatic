@@ -21,6 +21,7 @@ namespace clang {
 namespace dpct {
 std::string DpctGlobalInfo::InRoot = std::string();
 std::string DpctGlobalInfo::CudaPath = std::string();
+UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::none;
 CompilerInstance *DpctGlobalInfo::CI = nullptr;
 ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;

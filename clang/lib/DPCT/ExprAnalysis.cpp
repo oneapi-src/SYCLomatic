@@ -266,10 +266,7 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
 }
 
 void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
-  if (DRE->getType()->isPointerType()) {
-    isRedeclareRequired = true;
-  }
-  else if (DRE->getType()->isReferenceType()) {
+  if (DRE->getType()->isReferenceType()) {
     isRedeclareRequired = true;
   }
   Base::analyzeExpr(DRE);
@@ -285,6 +282,14 @@ void KernelArgumentAnalysis::analyzeExpr(const MemberExpr *ME) {
     }
   }
   Base::analyzeExpr(ME);
+}
+
+void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
+  if (UO->getOpcode() == UO_Deref) {
+    isRedeclareRequired = true;
+    return;
+  }
+  dispatch(UO->getSubExpr());
 }
 
 } // namespace dpct
