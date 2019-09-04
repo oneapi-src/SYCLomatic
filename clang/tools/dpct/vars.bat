@@ -25,9 +25,9 @@ if /I "%ERRORSTATE%" NEQ "0" (
     echo  Error: Cannot find neccessary dpct binary.
 )
 
-SET PATH="%~dp0..\bin";%PATH%
-SET INCLUDE="%~dp0..\include";%INCLUDE%
-SET CPATH="%~dp0..\include";%CPATH%
+SET PATH=%~dp0..\bin;%PATH%
+SET INCLUDE=%~dp0..\include;%INCLUDE%
+SET CPATH=%~dp0..\include;%CPATH%
 
 ::always return ERRORSTATE ( which is 0 if no error )
 exit /B %ERRORSTATE%
