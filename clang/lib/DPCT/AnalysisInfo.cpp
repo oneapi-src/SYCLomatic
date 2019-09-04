@@ -20,6 +20,7 @@
 namespace clang {
 namespace dpct {
 std::string DpctGlobalInfo::InRoot = std::string();
+// TODO: implement one of this for each source language.
 std::string DpctGlobalInfo::CudaPath = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::none;
 CompilerInstance *DpctGlobalInfo::CI = nullptr;
@@ -30,6 +31,7 @@ const std::string MemVarInfo::ExternVariableName = "dpct_local";
 const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
 
 bool DpctFileInfo::isInRoot() { return DpctGlobalInfo::isInRoot(FilePath); }
+// TODO: implement one of this for each source language.
 bool DpctFileInfo::isInCudaPath() {
   return DpctGlobalInfo::isInCudaPath(FilePath);
 }

@@ -11,7 +11,7 @@
 /****************************************************************************
 *
 * ENTRY(APINAME,  ProcessedOrNot, Priority, MigrationDesc)
-*  APIName: name of CUDA API
+*  APIName: name of library API
 *
 *  ProcessedOrNot:  false|true
 *    false: this API has not been processed.
@@ -29,7 +29,6 @@
 *    Comment:      extra comment on the migration.
 *
 ****************************************************************************/
-//cuRAND API call
 ENTRY(curandCreateGenerator, false, P4, "comment")
 ENTRY(curandCreateGeneratorHost, false, P4, "comment")
 ENTRY(curandCreatePoissonDistribution, false, P4, "comment")

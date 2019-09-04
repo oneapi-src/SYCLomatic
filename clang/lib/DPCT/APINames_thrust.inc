@@ -11,7 +11,7 @@
 /****************************************************************************
 *
 * ENTRY(APINAME,  ProcessedOrNot, Priority, MigrationDesc)
-*  APIName: name of CUDA API
+*  APIName: name of library API
 *
 *  ProcessedOrNot:  false|true
 *    false: this API has not been processed.

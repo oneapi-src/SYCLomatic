@@ -1,4 +1,4 @@
-//===---APINames_nvJPEG.inc-------------------------------------------===//
+//===---APINames_template.inc----------------------------------------===//
 //
 // Copyright (C) 2018 - 2019 Intel Corporation. All rights reserved.
 //
@@ -11,7 +11,7 @@
 /****************************************************************************
 *
 * ENTRY(APINAME,  ProcessedOrNot, Priority, MigrationDesc)
-*  APIName: name of library API
+*  APIName: name of Source Language API
 *
 *  ProcessedOrNot:  false|true
 *    false: this API has not been processed.
@@ -28,25 +28,10 @@
 *                  Must add Comment to explain why this API is Unsupported.
 *    Comment:      extra comment on the migration.
 *
+*
 ****************************************************************************/
-ENTRY(nvjpegGetProperty, false, P4, "comment")
-ENTRY(nvjpegCreate, false, P4, "comment")
-ENTRY(nvjpegCreateSimple, false, P4, "comment")
-ENTRY(nvjpegCreateEx, false, P4, "comment")
-ENTRY(nvjpegDestroy, false, P4, "comment")
-ENTRY(nvjpegSetDeviceMemoryPadding, false, P4, "comment")
-ENTRY(nvjpegGetDeviceMemoryPadding, false, P4, "comment")
-ENTRY(nvjpegSetPinnedMemoryPadding, false, P4, "comment")
-ENTRY(nvjpegGetPinnedMemoryPadding, false, P4, "comment")
-ENTRY(nvjpegJpegStateCreate, false, P4, "comment")
-ENTRY(nvjpegJpegStateDestroy, false, P4, "comment")
-ENTRY(nvjpegGetImageInfo, false, P4, "comment")
-ENTRY(nvjpegDecode, false, P4, "comment")
-ENTRY(nvjpegDecodeBatchedInitialize, false, P4, "comment")
-ENTRY(nvjpegDecodeBatched, false, P4, "comment")
-ENTRY(nvjpegDecodePhaseOne, false, P4, "comment")
-ENTRY(nvjpegDecodePhaseTwo, false, P4, "comment")
-ENTRY(nvjpegDecodePhaseThree, false, P4, "comment")
-ENTRY(nvjpegDecodeBatchedPhaseOne, false, P4, "comment")
-ENTRY(nvjpegDecodeBatchedPhaseTwo, false, P4, "comment")
-ENTRY(nvjpegDecodeBatchedPhaseThree, false, P4, "comment")
+// This is tempalte for API/lib in the source language.
+// Please copy this template file when enabling more source language and API.
+//
+// ENTRY(exampleAPI, false, P4, "not support yet.")
+

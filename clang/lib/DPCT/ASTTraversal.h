@@ -29,8 +29,9 @@
 namespace clang {
 namespace dpct {
 
+// TODO: implement one of this for each source language.
 enum RuleType {
-  // rule applied to cude source
+  // rule applied to cuda source
   ApplyToCudaFile = 1,
 
   // rule applied to cplusplus source
@@ -71,6 +72,7 @@ public:
              const MacroDefinition &MD) override;
   void Ifndef(SourceLocation Loc, const Token &MacroNameTok,
               const MacroDefinition &MD) override;
+  // TODO: implement one of this for each source language.
   void ReplaceCuMacro(const Token &MacroNameTok);
   void ReplaceCuMacro(SourceRange ConditionRange);
   void Defined(const Token &MacroNameTok, const MacroDefinition &MD,
@@ -225,7 +227,7 @@ protected:
   void report(SourceLocation SL, Comments MsgID, Ts &&... Vals) {
     auto &SM = getCompilerInstance().getSourceManager();
 
-    // Concatenate source file and line number (eg: xxx.cpp:4) and parameter.
+    // Concatenate source file and line number (eg: x.cpp:4) and parameter.
     std::string SourceAndLine =
         buildString(SM.getBufferName(SL), ":", SM.getPresumedLineNumber(SL),
                     ":", std::forward<Ts>(Vals)...);
@@ -394,6 +396,11 @@ protected:
 };
 
 template <typename T> const char NamedTranslationRule<T>::ID(0);
+
+/// As follow define the migration rules which target to migration source
+/// lanuage features to DPC++. The rules inherit from NamedTranslationRule
+/// TODO: implement similar rules for each source language.
+///
 
 /// Migration rule for iteration space builtin variables (threadIdx, etc).
 class IterationSpaceBuiltinRule

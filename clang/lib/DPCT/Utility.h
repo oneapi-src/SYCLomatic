@@ -103,6 +103,7 @@ inline std::string getCTFixedSuffix() { return "_ct1"; }
 
 template <typename T> const T *getDecl(const clang::Stmt *E);
 
+// TODO:  implement one of this for each source language.
 enum SourceProcessType {
   // flag for *.cu
   TypeCudaSource = 1,

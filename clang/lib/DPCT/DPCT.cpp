@@ -224,6 +224,7 @@ opt<UsmLevel> USMLevel(
                      "migration.\n")),
     init(restricted), cat(DPCTCat), llvm::cl::Optional);
 
+// TODO: implement one of this for each source language.
 std::string CudaPath;        // Global value for the CUDA install path.
 std::string DpctInstallPath; // Installation directory for this tool
 
@@ -699,6 +700,7 @@ int run(int argc, const char **argv) {
     PrintMsg(OS.str());
   }
 
+// TODO: implement one of this for each source language.
   CudaPath = getCudaInstallPath(OriginalArgc, argv);
   DPCT_DEBUG_WITH_TYPE("CudaPath",
                        DpctLog() << "Cuda Path found: " << CudaPath << "\n");

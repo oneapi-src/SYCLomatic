@@ -91,8 +91,6 @@ static void rewriteFileName(SmallString<512> &FilePath) {
   if (FileType & TypeCudaSource) {
     path::replace_extension(FilePath, "dp.cpp");
   } else if (FileType & TypeCppSource) {
-    // to avoid conflict in the case that xxx.cu xxx.cpp show up in the same
-    // folder
     auto Extension = path::extension(FilePath);
     path::replace_extension(FilePath, Extension + ".dp.cpp");
   } else if (FileType & TypeCudaHeader) {

@@ -268,6 +268,7 @@ private:
   }
 
   bool isInRoot();
+  // TODO: implement one of this for each source language.
   bool isInCudaPath();
 
   void buildLinesInfo();
@@ -328,10 +329,12 @@ public:
     makeCanonical(Path);
     return isChildPath(InRoot, Path);
   }
+  // TODO: implement one of this for each source language.
   inline static bool isInCudaPath(SourceLocation SL) {
     return isInCudaPath(
         getSourceManager().getFilename(getSourceManager().getExpansionLoc(SL)));
   }
+  // TODO: implement one of this for each source language.
   static bool isInCudaPath(const std::string &FilePath) {
     std::string Path = FilePath;
     makeCanonical(Path);
@@ -342,9 +345,11 @@ public:
     assert(!InRoot.empty());
     return InRoot;
   }
+  // TODO: implement one of this for each source language.
   static void setCudaPath(const std::string &InputCudaPath) {
     CudaPath = InputCudaPath;
   }
+  // TODO: implement one of this for each source language.
   static const std::string &getCudaPath() {
     assert(!CudaPath.empty());
     return CudaPath;
@@ -547,6 +552,7 @@ private:
   std::unordered_map<std::string, std::shared_ptr<DpctFileInfo>> FileMap;
 
   static std::string InRoot;
+  // TODO: implement one of this for each source language.
   static std::string CudaPath;
   static UsmLevel UsmLvl;
   static CompilerInstance *CI;
