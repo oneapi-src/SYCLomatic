@@ -268,6 +268,8 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
 void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   if (DRE->getType()->isReferenceType()) {
     isRedeclareRequired = true;
+  } else if (!DRE->getDecl()->isLexicallyWithinFunctionOrMethod()) {
+    isRedeclareRequired = true;
   }
   Base::analyzeExpr(DRE);
 }

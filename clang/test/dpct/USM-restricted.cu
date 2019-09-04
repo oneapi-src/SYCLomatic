@@ -3,7 +3,10 @@
 // RUN: dpct --usm-level=restricted -out-root %T %s -- -std=c++14 -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --match-full-lines --input-file %T/USM-restricted.dp.cpp %s
 
+// CHECK: #include <CL/sycl.hpp>
+// CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
+#include <stdio.h>
 
 #define CUDA_SAFE_CALL( call) do {\
   int err = call;                \

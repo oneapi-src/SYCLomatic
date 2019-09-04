@@ -175,15 +175,17 @@ private:
 };
 
 // malloc
-static void dpct_malloc(void **ptr, size_t size, cl::sycl::queue q) {
+static inline void dpct_malloc(void **ptr, size_t size, cl::sycl::queue &q) {
+#ifdef USM_DISABLED
   *ptr = memory_manager::get_instance().mem_alloc(size * sizeof(byte_t), q);
+#else
+  *ptr = cl::sycl::malloc_device(size, q.get_device(), q.get_context());
+#endif // USM_DESABLED
 }
 
 // malloc
 static void dpct_malloc(void **ptr, size_t size) {
-  cl::sycl::queue q =
-      dpct::get_device_manager().current_device().default_queue();
-  dpct_malloc(ptr, size, q);
+  dpct_malloc(ptr, size, get_default_queue());
 }
 
 /// Build a cl::sycl::buffer with \p Size, The pointer that \p ptr point to is
@@ -199,9 +201,14 @@ static inline void dpct_malloc(T1 **ptr, T2 size) {
 /// free
 /// \param ptr Point to free.
 /// \returns no return value.
-static void dpct_free(const void *ptr) {
-  if (ptr)
+static inline void dpct_free(void *ptr) {
+  if (ptr) {
+#ifdef USM_DISABLED
     memory_manager::get_instance().mem_free(ptr);
+#else
+    cl::sycl::free(ptr, get_default_queue().get_context());
+#endif // USM_DISABLED
+  }
 }
 
 // dpct_range used to store range infomation
@@ -253,6 +260,8 @@ private:
   size_t range[3];
 };
 
+template <class T, memory_attribute Memory, size_t Dimension>
+class dpct_accessor;
 template <memory_attribute Memory, class T = byte_t> class memory_traits {
 public:
   static constexpr cl::sycl::access::address_space asp =
@@ -270,12 +279,18 @@ public:
       (Memory == constant) ? cl::sycl::access::mode::read
                            : cl::sycl::access::mode::read_write;
   static constexpr size_t type_size = sizeof(T);
-  template <size_t Dimension = 1>
-  using accessor_t = cl::sycl::accessor<T, Dimension, mode, target>;
-  using pointer_t = cl::sycl::multi_ptr<T, asp>;
   using element_t =
       typename std::conditional<Memory == constant, const T, T>::type;
   using value_t = typename std::remove_cv<T>::type;
+  template <size_t Dimension = 1>
+  using accessor_t = cl::sycl::accessor<T, Dimension, mode, target>;
+#ifdef USM_DISABLED
+  // If without USM, must use cl::sycl::multi_ptr.
+  using pointer_t = cl::sycl::multi_ptr<T, asp>;
+#else
+  // Use raw pointer when USM is enabled.
+  using pointer_t = T *;
+#endif // USM_DISABLED
 };
 
 // dpct accessor used as kernel function and device function parameter
@@ -288,22 +303,12 @@ public:
   using accessor_t = typename memory_t::template accessor_t<Dimension>;
   dpct_accessor(pointer_t data, const dpct_range<Dimension> &range)
       : data(data), range(range) {}
+  template <memory_attribute M = Memory>
   dpct_accessor(
-      const typename dpct_accessor<T, constant, Dimension>::accessor_t &acc)
-      : dpct_accessor(acc, dpct_range<1>(acc.get_range())) {
-    static_assert(Memory == constant,
-                  "only constant dpct_accessor can be initialized from "
-                  "constant cl::sycl::accessor");
-  }
-  dpct_accessor(
-      const typename dpct_accessor<T, device, Dimension>::accessor_t &acc)
-      : dpct_accessor(acc, dpct_range<1>(acc.get_range())) {
-    static_assert(Memory == device,
-                  "only device dpct_accessor can be initialized from "
-                  "device cl::sycl::accessor");
-  }
+      typename std::enable_if<M != local, const accessor_t>::type &acc)
+      : dpct_accessor(acc, dpct_range<1>(acc.get_range())) {}
   dpct_accessor(const accessor_t &acc, const dpct_range<Dimension> &range)
-      : dpct_accessor((pointer_t)acc.get_pointer(), range) {}
+      : dpct_accessor(acc.get_pointer(), range) {}
   dpct_accessor<T, Memory, Dimension - 1> operator[](size_t index) const {
     auto low = range.low();
     return dpct_accessor<T, Memory, Dimension - 1>(data + index * low.size(),
@@ -323,28 +328,20 @@ public:
   using pointer_t = typename memory_t::pointer_t;
   using accessor_t = typename memory_t::template accessor_t<1>;
   dpct_accessor(pointer_t data, const dpct_range<1> &range)
-      : data(data), range(range){};
-  dpct_accessor(const typename dpct_accessor<T, constant, 1>::accessor_t &acc)
-      : dpct_accessor(acc, dpct_range<1>(acc.get_range())) {
-    static_assert(Memory == constant,
-                  "only constant dpct_accessor can be initialized from "
-                  "constant cl::sycl::accessor");
-  }
-  dpct_accessor(const typename dpct_accessor<T, device, 1>::accessor_t &acc)
-      : dpct_accessor(acc, dpct_range<1>(acc.get_range())) {
-    static_assert(Memory == device,
-                  "only device dpct_accessor can be initialized from "
-                  "device cl::sycl::accessor");
-  }
+      : data(data), range(range) {}
+  template <memory_attribute M = Memory>
+  dpct_accessor(
+      typename std::enable_if<M != local, const accessor_t>::type &acc)
+      : dpct_accessor(acc, dpct_range<1>(acc.get_range())) {}
   dpct_accessor(const accessor_t &acc, const dpct_range<1> &range)
-      : dpct_accessor((pointer_t)acc.get_pointer(), range) {}
+      : dpct_accessor(acc.get_pointer(), range) {}
   element_t &operator[](size_t index) const { return *(data + index); }
   element_t &operator*() { return *data; }
   template <class Ty> operator Ty *() { return (Ty *)(&(*data)); }
   template <class ReinterpretT>
   dpct_accessor<ReinterpretT, Memory, 1> reinterpret() {
     return dpct_accessor<ReinterpretT, Memory, 1>(
-        (typename memory_traits<Memory, ReinterpretT>::element_t *)data.get(),
+        (ReinterpretT *)data,
         dpct_range<1>(range.size() * sizeof(T) / sizeof(ReinterpretT)));
   }
 
@@ -361,9 +358,9 @@ public:
   using value_t = typename memory_t::value_t;
   using pointer_t = typename memory_t::pointer_t;
   using accessor_t = typename memory_t::template accessor_t<1>;
-  dpct_accessor(pointer_t data) : data(data) {}
-  dpct_accessor(const accessor_t &acc)
-      : dpct_accessor((pointer_t)acc.get_pointer(), dpct_range<0>()) {}
+  dpct_accessor(pointer_t data, dpct_range<0> range = dpct_range<0>())
+      : data(data) {}
+  dpct_accessor(const accessor_t &acc) : dpct_accessor(acc.get_pointer()) {}
   template <class Ty> operator Ty() { return static_cast<Ty>(*data); }
   operator element_t &() { return *data; }
   dpct_accessor &operator=(const value_t &val) {
@@ -380,44 +377,11 @@ private:
   pointer_t data;
 };
 
-// Accessor acquirer to get accessors from buffer
-template <class T, memory_attribute Memory, size_t Dimension>
-class dpct_accessor_acquirer {
-public:
-  using accessor_t =
-      typename memory_traits<Memory, T>::template accessor_t<Dimension>;
-
-  dpct_accessor_acquirer(const dpct_range<Dimension> &range) : range(range) {}
-  accessor_t get_access(const buffer_t &buffer, cl::sycl::handler &cgh) {
-    return buffer.reinterpret<T, Dimension>(range)
-        .template get_access<memory_traits<Memory, T>::mode,
-                             memory_traits<Memory, T>::target>(cgh);
-  }
-
-private:
-  const dpct_range<Dimension> &range;
-};
-
-// Accessor acquirer specialization with Dimension == 0
-template <class T, memory_attribute Memory>
-class dpct_accessor_acquirer<T, Memory, 0> {
-public:
-  using accessor_t = typename memory_traits<Memory, T>::template accessor_t<0>;
-
-  dpct_accessor_acquirer(const dpct_range<0> &range) : range(range) {}
-  accessor_t get_access(const buffer_t &buffer, cl::sycl::handler &cgh) {
-    auto buffer_r = buffer.reinterpret<T, 1>(cl::sycl::range<1>(1));
-    return accessor_t(buffer_r, cgh);
-  }
-
-private:
-  const dpct_range<0> &range;
-};
-
 // memcpy
-static cl::sycl::event dpct_memcpy(void *to_ptr, const void *from_ptr,
-                                   size_t size, memcpy_direction direction,
-                                   cl::sycl::queue &q) {
+static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
+                                   const void *from_ptr, size_t size,
+                                   memcpy_direction direction) {
+#ifdef USM_DISABLED
   auto &mm = memory_manager::get_instance();
   memcpy_direction real_direction = direction;
   switch (direction) {
@@ -501,6 +465,9 @@ static cl::sycl::event dpct_memcpy(void *to_ptr, const void *from_ptr,
   default:
     std::abort();
   }
+#else
+  return q.memcpy(to_ptr, from_ptr, size);
+#endif // USM_DISABLED
 }
 
 /// Synchronously copies size bytes from the address specified by from_ptr to
@@ -516,8 +483,7 @@ static cl::sycl::event dpct_memcpy(void *to_ptr, const void *from_ptr,
 /// \returns no return value.
 static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
                         memcpy_direction direction = automatic) {
-  dpct_memcpy(to_ptr, from_ptr, size, direction, dpct::get_default_queue())
-      .wait();
+  dpct_memcpy(get_default_queue(), to_ptr, from_ptr, size, direction).wait();
 }
 
 /// Asynchronously copies size bytes from the address specified by from_ptr to
@@ -535,7 +501,7 @@ static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
 static void async_dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
                               memcpy_direction direction = automatic,
                               cl::sycl::queue &q = dpct::get_default_queue()) {
-  dpct_memcpy(to_ptr, from_ptr, size, direction, q);
+  dpct_memcpy(q, to_ptr, from_ptr, size, direction);
 }
 
 static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
@@ -545,8 +511,9 @@ static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
 }
 
 // memset
-static cl::sycl::event dpct_memset(void *devPtr, int value, size_t count,
-                                   cl::sycl::queue &q) {
+static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *devPtr,
+                                          int value, size_t count) {
+#ifdef USM_DISABLED
   auto &mm = memory_manager::get_instance();
   assert(mm.is_device_ptr(devPtr));
   auto alloc = mm.translate_ptr(devPtr);
@@ -560,6 +527,9 @@ static cl::sycl::event dpct_memset(void *devPtr, int value, size_t count,
         acc(alloc.buffer, cgh, r, o);
     cgh.fill(acc, (byte_t)value);
   });
+#else
+  return q.memset(devPtr, value, count);
+#endif // USM_DISABLED
 }
 
 /// Synchronously sets value to the first size bytes starting from dev_ptr. The
@@ -570,7 +540,7 @@ static cl::sycl::event dpct_memset(void *devPtr, int value, size_t count,
 /// \param size Number of bytes to be set to the value.
 /// \returns no return value.
 static void dpct_memset(void *dev_ptr, int value, size_t size) {
-  dpct_memset(dev_ptr, value, size, dpct::get_default_queue()).wait();
+  dpct_memset(get_default_queue(), dev_ptr, value, size).wait();
 }
 
 /// Asynchronously sets value to the first size bytes starting from dev_ptr.
@@ -583,15 +553,17 @@ static void dpct_memset(void *dev_ptr, int value, size_t size) {
 /// \returns no return value.
 static void async_dpct_memset(void *dev_ptr, int value, size_t size,
                               cl::sycl::queue &q = dpct::get_default_queue()) {
-  dpct_memset(dev_ptr, value, size, q);
+  dpct_memset(q, dev_ptr, value, size);
 }
 
 // Variable with address space of global or constant
 template <class T, memory_attribute Memory, size_t Dimension>
 class global_memory {
 public:
-  using accessor_t = typename memory_traits<Memory, T>::template accessor_t<Dimension>;
+  using accessor_t =
+      typename memory_traits<Memory, T>::template accessor_t<Dimension>;
   using value_t = typename memory_traits<Memory, T>::value_t;
+  using dpct_accessor_t = dpct_accessor<T, Memory, Dimension>;
 
   /// Default constructor
   global_memory() : global_memory(dpct_range<Dimension>()) {}
@@ -617,11 +589,12 @@ public:
 
   /// Constructor with range
   global_memory(const dpct_range<Dimension> &range_in)
-      : size(range_in.size() * sizeof(T)), range(range_in), acquire(range), reference(false), memory_ptr(nullptr) {
+      : size(range_in.size() * sizeof(T)), range(range_in), reference(false),
+        memory_ptr(nullptr) {
     static_assert((Memory == device) || (Memory == constant),
                   "Global memory attribute should be constant or device");
     if (size)
-      dpct_malloc((void **)&memory_ptr, size);
+      dpct_malloc(&memory_ptr, size);
   }
 
   /// Constructor with range
@@ -629,7 +602,7 @@ public:
   global_memory(Args... Arguments)
       : global_memory(dpct_range<Dimension>(Arguments...)) {}
 
-  virtual ~global_memory() {
+  ~global_memory() {
     if (memory_ptr && !reference)
       dpct_free(memory_ptr);
   }
@@ -642,28 +615,44 @@ public:
 
   /// Get the virtual pointer in host code.
   void *get_ptr() { return memory_ptr; }
-  accessor_t get_access(cl::sycl::handler &cgh) {
-    return acquire.get_access(
+
+#ifdef USM_DISABLED
+  template <size_t D = Dimension>
+  typename std::enable_if<D == 0, accessor_t>::type
+  get_access(cl::sycl::handler &cgh) {
+    return accessor_t(
         memory_manager::get_instance().translate_ptr(memory_ptr).buffer, cgh);
   }
+  template <size_t D = Dimension>
+  typename std::enable_if<D != 0, accessor_t>::type
+  get_access(cl::sycl::handler &cgh) {
+    return memory_manager::get_instance()
+        .translate_ptr(memory_ptr)
+        .buffer.template reinterpret<T, Dimension>(range)
+        .template get_access<memory_traits<Memory, T>::mode,
+                             memory_traits<Memory, T>::target>(cgh);
+  }
+#else
+  dpct_accessor_t get_access(cl::sycl::handler &cgh) {
+    return dpct_accessor_t((T *)memory_ptr, range);
+  }
+#endif // USM_DISABLED
 
 private:
   global_memory(void *memory_ptr, size_t size)
-      : size(size), range(size / sizeof(T)), acquire(range), reference(true),
-        memory_ptr(memory_ptr) {
-    assert(memory_manager::get_instance().is_device_ptr(memory_ptr));
-  }
+      : size(size), range(size / sizeof(T)), reference(true),
+        memory_ptr(memory_ptr) {}
 
   size_t size;
   dpct_range<Dimension> range;
-  dpct_accessor_acquirer<T, Memory, Dimension> acquire;
   bool reference;
   void *memory_ptr;
 };
-template <class T, size_t Dimension>
-using constant_memory = global_memory<T, constant, Dimension>;
+
 template <class T, size_t Dimension>
 using device_memory = global_memory<T, device, Dimension>;
+template <class T, size_t Dimension>
+using constant_memory = global_memory<T, constant, Dimension>;
 } // namespace dpct
 
 #endif // __DPCT_MEMORY_HPP__

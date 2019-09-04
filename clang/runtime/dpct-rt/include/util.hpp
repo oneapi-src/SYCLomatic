@@ -49,19 +49,17 @@ template <typename T> struct DataType<cl::sycl::vec<T, 2>> {
 /// \param [in] cols The number of columns of the source matrix.
 /// \param [in] direction The direction of the data copy.
 /// \param [in] queue The queue where the routine should be executed.
-/// \param [in] async The copy is async or not.
 template <typename T>
 inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
                             int from_ld, int rows, int cols,
-                            memcpy_direction direction, cl::sycl::queue queue) {
+                            memcpy_direction direction, cl::sycl::queue &queue) {
   using Ty = typename DataType<T>::T2;
   if (to_ptr == from_ptr && to_ld == from_ld) {
     return;
   }
   if (to_ld == from_ld) {
-    dpct_memcpy((void *)to_ptr, (void *)from_ptr, sizeof(Ty) * to_ld * cols,
-                direction, queue)
-        .wait();
+    dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
+                sizeof(Ty) * to_ld * cols, direction);
   } else {
     auto to_ptr_t = to_ptr;
     auto from_ptr_t = from_ptr;
@@ -70,9 +68,8 @@ inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
     for (int c = 0; c < cols; ++c) {
       to_ptr_t = to_ptr_t + to_ld;
       from_ptr_t = from_ptr_t + from_ld;
-      dpct_memcpy((void *)(to_ptr_t), (void *)(from_ptr_t), sizeof(Ty) * rows,
-                  direction, queue)
-          .wait();
+      dpct_memcpy(queue, (void *)(to_ptr_t), (void *)(from_ptr_t),
+                  sizeof(Ty) * rows, direction);
     }
   }
 }

@@ -183,17 +183,7 @@ public:
   // Insert one or more header inclusion directives at first or last inclusion
   // locations
   template <typename... T>
-  void insertHeader(HeaderType Type, unsigned Offset, T... Args) {
-    if (!HeaderInsertedBitMap[Type]) {
-      HeaderInsertedBitMap[Type] = true;
-      std::string ReplStr;
-      llvm::raw_string_ostream RSO(ReplStr);
-      if (Offset == LastIncludeOffset)
-        RSO << getNL();
-      concatHeader(RSO, std::forward<T>(Args)...);
-      insertHeader(std::move(RSO.str()), Offset);
-    }
-  }
+  void insertHeader(HeaderType Type, unsigned Offset, T... Args);
 
   void insertHeader(HeaderType Type) {
     switch (Type) {
@@ -788,10 +778,16 @@ public:
     return OS << getArgName();
   }
   llvm::raw_ostream &getKernelArg(llvm::raw_ostream &OS) {
-    OS << getDpctAccessorType(true) << "(" << getAccessorName();
-    if (isShared())
-      OS << ", " << getRangeName();
-    return OS << ")";
+    if (isShared() || DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+      OS << getDpctAccessorType(true) << "(";
+      OS << getAccessorName();
+      if (isShared())
+        OS << ", " << getRangeName();
+      return OS << ")";
+    } else {
+      OS << getAccessorName();
+    }
+    return OS;
   }
 
 private:
@@ -1642,6 +1638,22 @@ private:
   std::string Size;
   std::string Name;
 };
+
+template <class... T>
+void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
+  if (!HeaderInsertedBitMap[Type]) {
+    HeaderInsertedBitMap[Type] = true;
+    std::string ReplStr;
+    llvm::raw_string_ostream RSO(ReplStr);
+    if (Offset == LastIncludeOffset)
+      RSO << getNL();
+    else if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::none) &&
+             (Type == SYCL))
+      RSO << "#define USM_DISABLED" << getNL();
+    concatHeader(RSO, std::forward<T>(Args)...);
+    insertHeader(std::move(RSO.str()), Offset);
+  }
+}
 
 } // namespace dpct
 } // namespace clang

@@ -162,13 +162,11 @@ public:
     _src = nullptr;
   }
 
-  /// Copy data from \p ptr.
-  void copy_from(size_t off_x, size_t off_y, size_t off_z, void *ptr,
-                 size_t count) {
-    char *dst = (char *)_src +
-                (off_x * _range[1] * _range[2] + off_y * _range[2] + off_z) *
-                    _channel._elem_size;
-    dpct_memcpy(dst, ptr, count, automatic);
+  /// Get data pointer with offset
+  inline void *get_data(size_t off_x, size_t off_y, size_t off_z) {
+    return (char *)_src +
+           (off_x * _range[1] * _range[2] + off_y * _range[2] + off_z) *
+               _channel._elem_size;
   }
   /// Get channel info.
   inline dpct_image_channel get_channel() { return _channel; }
@@ -409,11 +407,11 @@ inline void dpct_malloc_matrix(dpct_image_matrix **a, dpct_image_channel *chn,
 /// \param a Pointer to matrix.
 /// \param off_x Destination offset at dim x.
 /// \param off_y Destination offset at dim y.
-/// \param ptr Point to source data
+/// \param ptr Point to source data.
 /// \param count Size in bytes.
 inline void dpct_memcpy_to_matrix(dpct_image_matrix *a, size_t off_x,
                                   size_t off_y, void *ptr, size_t count) {
-  a->copy_from(off_x, off_y, 0, ptr, count);
+  dpct_memcpy(ptr, a->get_data(off_x, off_y, 0), count);
 }
 
 /// Free a matrix.
