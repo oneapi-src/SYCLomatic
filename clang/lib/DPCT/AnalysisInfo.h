@@ -1438,7 +1438,34 @@ class KernelCallExpr : public CallFunctionExpr {
                        TypeString + " *";
         }
       }
+
+      std::string newId = "";
+      if (isRedeclareRequired || isPointer) {
+        SourceManager &SM = DpctGlobalInfo::getContext().getSourceManager();
+        Arg = Arg->IgnoreCasts();
+        auto ExprEndLoc = Arg->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
+          Arg->getEndLoc(), SM, DpctGlobalInfo::getContext().getLangOpts()));
+        auto TokenBegin = Lexer::GetBeginningOfToken(
+          Arg->getBeginLoc(), SM, DpctGlobalInfo::getContext().getLangOpts());
+        auto TokenEnd = Lexer::getLocForEndOfToken(
+          Arg->getBeginLoc(), 0, SM, DpctGlobalInfo::getContext().getLangOpts());
+
+        while (SM.getCharacterData(TokenEnd) <= SM.getCharacterData(ExprEndLoc)) {
+          Token Tok;
+          Lexer::getRawToken(TokenBegin, Tok, SM, LangOptions());
+          if (Tok.isAnyIdentifier()) {
+            newId += Tok.getRawIdentifier().str() + "_";
+          }
+          Optional<Token> TokSharedPtr;
+          TokSharedPtr = Lexer::findNextToken(TokenBegin, SM, LangOptions());
+          TokenEnd = TokSharedPtr->getEndLoc();
+          TokenBegin = Lexer::GetBeginningOfToken(
+            TokenEnd, SM, DpctGlobalInfo::getContext().getLangOpts());
+        }
+      }
+      IdString = newId;
     }
+
     ArgInfo(std::shared_ptr<TextureObjectInfo> Obj) {
       ArgString = Obj->getName() + "_acc";
       isPointer = false;
@@ -1448,11 +1475,13 @@ class KernelCallExpr : public CallFunctionExpr {
 
     inline const std::string &getArgString() const { return ArgString; }
     inline const std::string &getTypeString() const { return TypeString; }
+    inline const std::string &getIdString() const { return IdString; }
 
     bool isPointer;
     bool isRedeclareRequired;
     std::string ArgString;
     std::string TypeString;
+    std::string IdString;
   };
 
   class FormatStmtBlock {
@@ -1524,10 +1553,13 @@ private:
                                   StmtList &Accessors, StmtList &Redecls);
   void buildKernelPointerArgBufferAndOffsetStmt(const std::string &RefName,
                                                 const std::string &ArgName,
+                                                const std::string &IdName,
                                                 StmtList &Buffers);
   void buildKernelPointerArgAccessorStmt(const std::string &ArgName,
+                                         const std::string &IdName,
                                          StmtList &Accessors);
   void buildKernelPointerArgRedeclStmt(const std::string &ArgName,
+                                       const std::string &IdName,
                                        const std::string &TypeName,
                                        StmtList &Redecls);
 

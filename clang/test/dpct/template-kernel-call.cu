@@ -45,60 +45,60 @@ void runTest() {
   TT *karg5 = 0;
 
   // CHECK: {
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset((const T *)karg1);
-  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset(karg2);
-  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg1_buf_ct0 = dpct::get_buffer_and_offset((const T *)karg1);
+  // CHECK-NEXT:   size_t karg1_offset_ct0 = karg1_buf_ct0.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg2_buf_ct1 = dpct::get_buffer_and_offset(karg2);
+  // CHECK-NEXT:   size_t karg2_offset_ct1 = karg2_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto karg1_acc_ct0 = karg1_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto karg2_acc_ct1 = karg2_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, T>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           const T *arg_ct0 = (const T *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           const T *arg_ct1 = (const T *)(&arg_ct1_acc[0] + arg_ct1_offset);
-  // CHECK-NEXT:           testKernelPtr<class TestName, ktarg, T>(arg_ct0, arg_ct1, item_ct1);
+  // CHECK-NEXT:           const T *karg1_ct0 = (const T *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
+  // CHECK-NEXT:           const T *karg2_ct1 = (const T *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
+  // CHECK-NEXT:           testKernelPtr<class TestName, ktarg, T>(karg1_ct0, karg2_ct1, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
   testKernelPtr<class TestName, ktarg, T><<<griddim, threaddim>>>((const T *)karg1, karg2);
 
   // CHECK: {
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(karg1);
-  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset(karg3);
-  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg1_buf_ct0 = dpct::get_buffer_and_offset(karg1);
+  // CHECK-NEXT:   size_t karg1_offset_ct0 = karg1_buf_ct0.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg3_buf_ct1 = dpct::get_buffer_and_offset(karg3);
+  // CHECK-NEXT:   size_t karg3_offset_ct1 = karg3_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto karg1_acc_ct0 = karg1_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto karg3_acc_ct1 = karg3_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestTemplate<T>, dpct_kernel_scalar<ktarg>, T>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           const void *arg_ct0 = (const void *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           T *arg_ct1 = (T *)(&arg_ct1_acc[0] + arg_ct1_offset);
-  // CHECK-NEXT:           testKernelPtr<class TestTemplate<T>, ktarg, T>(arg_ct0, arg_ct1, item_ct1);
+  // CHECK-NEXT:           const void *karg1_ct0 = (const void *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
+  // CHECK-NEXT:           T *karg3_ct1 = (T *)(&karg3_acc_ct1[0] + karg3_offset_ct1);
+  // CHECK-NEXT:           testKernelPtr<class TestTemplate<T>, ktarg, T>(karg1_ct0, karg3_ct1, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
   testKernelPtr<class TestTemplate<T>, ktarg, T><<<griddim, threaddim>>>(karg1, karg3);
 
   // CHECK: {
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(karg4);
-  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset(karg5);
-  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg4_buf_ct0 = dpct::get_buffer_and_offset(karg4);
+  // CHECK-NEXT:   size_t karg4_offset_ct0 = karg4_buf_ct0.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg5_buf_ct1 = dpct::get_buffer_and_offset(karg5);
+  // CHECK-NEXT:   size_t karg5_offset_ct1 = karg5_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto karg4_acc_ct0 = karg4_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto karg5_acc_ct1 = karg5_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, T, dpct_kernel_scalar<ktarg>, TestTemplate<T>>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           const TestTemplate<T> *arg_ct0 = (const TestTemplate<T> *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           TT *arg_ct1 = (TT *)(&arg_ct1_acc[0] + arg_ct1_offset);
-  // CHECK-NEXT:           testKernelPtr<T, ktarg, TestTemplate<T>>(arg_ct0, arg_ct1, item_ct1);
+  // CHECK-NEXT:           const TestTemplate<T> *karg4_ct0 = (const TestTemplate<T> *)(&karg4_acc_ct0[0] + karg4_offset_ct0);
+  // CHECK-NEXT:           TT *karg5_ct1 = (TT *)(&karg5_acc_ct1[0] + karg5_offset_ct1);
+  // CHECK-NEXT:           testKernelPtr<T, ktarg, TestTemplate<T>>(karg4_ct0, karg5_ct1, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -149,20 +149,20 @@ int main() {
   void *karg1 = 0;
   LA *karg2 = 0;
   // CHECK: {
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset((const LA *)karg1);
-  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset(karg2);
-  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg1_buf_ct0 = dpct::get_buffer_and_offset((const LA *)karg1);
+  // CHECK-NEXT:   size_t karg1_offset_ct0 = karg1_buf_ct0.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg2_buf_ct1 = dpct::get_buffer_and_offset(karg2);
+  // CHECK-NEXT:   size_t karg2_offset_ct1 = karg2_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto karg1_acc_ct0 = karg1_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto karg2_acc_ct1 = karg2_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, LA>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           const LA *arg_ct0 = (const LA *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           const LA *arg_ct1 = (const LA *)(&arg_ct1_acc[0] + arg_ct1_offset);
-  // CHECK-NEXT:           testKernelPtr<class TestName, ktarg, LA>(arg_ct0, arg_ct1, item_ct1);
+  // CHECK-NEXT:           const LA *karg1_ct0 = (const LA *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
+  // CHECK-NEXT:           const LA *karg2_ct1 = (const LA *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
+  // CHECK-NEXT:           testKernelPtr<class TestName, ktarg, LA>(karg1_ct0, karg2_ct1, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }

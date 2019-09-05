@@ -43,20 +43,20 @@ void run_test() {
   cudaMalloc((void **)&d_out, mem_size);
 
   // CHECK: {
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(d_in);
-  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset(d_out);
-  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> d_in_buf_ct0 = dpct::get_buffer_and_offset(d_in);
+  // CHECK-NEXT:   size_t d_in_offset_ct0 = d_in_buf_ct0.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> d_out_buf_ct1 = dpct::get_buffer_and_offset(d_out);
+  // CHECK-NEXT:   size_t d_out_offset_ct1 = d_out_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto d_in_acc_ct0 = d_in_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto d_out_acc_ct1 = d_out_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(num_threads, 1, 1)), cl::sycl::range<3>(num_threads, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           T *arg_ct0 = (T *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           T *arg_ct1 = (T *)(&arg_ct1_acc[0] + arg_ct1_offset);
-  // CHECK-NEXT:           kernel<T>(arg_ct0, arg_ct1, item_ct1);
+  // CHECK-NEXT:           T *d_in_ct0 = (T *)(&d_in_acc_ct0[0] + d_in_offset_ct0);
+  // CHECK-NEXT:           T *d_out_ct1 = (T *)(&d_out_acc_ct1[0] + d_out_offset_ct1);
+  // CHECK-NEXT:           kernel<T>(d_in_ct0, d_out_ct1, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }

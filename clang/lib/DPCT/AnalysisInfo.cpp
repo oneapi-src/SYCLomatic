@@ -157,29 +157,30 @@ void KernelCallExpr::getStreamDecl(FormatStmtBlock &Block) {
 }
 
 inline void KernelCallExpr::buildKernelPointerArgBufferAndOffsetStmt(
-    const std::string &RefName, const std::string &ArgName, StmtList &Buffers) {
+    const std::string &RefName, const std::string &ArgName,
+    const std::string &IdName, StmtList &Buffers) {
   Buffers.emplace_back(
       buildString("std::pair<dpct::buffer_t, size_t> ", ArgName,
-                  "_buf = dpct::get_buffer_and_offset(", RefName, ");"));
+                  "buf_", IdName, " = dpct::get_buffer_and_offset(", RefName, ");"));
   Buffers.emplace_back(
-      buildString("size_t ", ArgName, "_offset = ", ArgName, "_buf.second;"));
+      buildString("size_t ", ArgName, "offset_", IdName, " = ", ArgName, "buf_", IdName, ".second;"));
 }
 
 inline void
 KernelCallExpr::buildKernelPointerArgAccessorStmt(const std::string &ArgName,
+                                                  const std::string &IdName,
                                                   StmtList &Accessors) {
   Accessors.emplace_back(buildString(
-      "auto ", ArgName, "_acc = ", ArgName,
-      "_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);"));
+      "auto ", ArgName, "acc_", IdName, " = ", ArgName,
+      "buf_", IdName,".first.get_access<cl::sycl::access::mode::read_write>(cgh);"));
 }
 
-inline void
-KernelCallExpr::buildKernelPointerArgRedeclStmt(const std::string &ArgName,
-                                                const std::string &TypeName,
-                                                StmtList &Redecls) {
-  Redecls.emplace_back(buildString(TypeName, ArgName, " = (", TypeName,
-                                   ")(&", ArgName, "_acc[0] + ", ArgName,
-                                   "_offset);"));
+inline void KernelCallExpr::buildKernelPointerArgRedeclStmt(
+    const std::string &ArgName, const std::string &IdName,
+    const std::string &TypeName, StmtList &Redecls) {
+  Redecls.emplace_back(buildString(TypeName, ArgName, IdName, " = (", TypeName, ")(&",
+                                   ArgName, "acc_", IdName, "[0] + ", ArgName,
+                                   "offset_", IdName, ");"));
 }
 
 void KernelCallExpr::buildKernelPointerArgsStmt(StmtList &Buffers,
@@ -187,13 +188,14 @@ void KernelCallExpr::buildKernelPointerArgsStmt(StmtList &Buffers,
                                                 StmtList &Redecls) {
   int ArgIndex = 0;
   for (auto &Arg : getArgsInfo()) {
-    auto NewArgName = "arg_ct" + std::to_string(ArgIndex++);
+    auto NewArgName = Arg.getIdString();
+    auto ArgIdName = "ct" + std::to_string(ArgIndex++);
     if (Arg.isPointer) {
       buildKernelPointerArgBufferAndOffsetStmt(Arg.getArgString(), NewArgName,
-                                               Buffers);
-      buildKernelPointerArgAccessorStmt(NewArgName, Accessors);
-      buildKernelPointerArgRedeclStmt(
-        NewArgName, Arg.getTypeString(), Redecls);
+                                               ArgIdName, Buffers);
+      buildKernelPointerArgAccessorStmt(NewArgName, ArgIdName, Accessors);
+      buildKernelPointerArgRedeclStmt(NewArgName, ArgIdName,
+                                      Arg.getTypeString(), Redecls);
     }
   }
 }
@@ -219,7 +221,7 @@ std::string KernelCallExpr::getReplacement() {
     int ArgIndex = 0;
     for (auto &Arg : getArgsInfo()) {
       if (!Arg.isPointer && Arg.isRedeclareRequired) {
-        Block.pushStmt("auto arg_ct", std::to_string(ArgIndex), " = ",
+        Block.pushStmt("auto " + Arg.getIdString() + "ct", std::to_string(ArgIndex), " = ",
                        Arg.getArgString(), ";");
       }
       ++ArgIndex;
@@ -273,7 +275,8 @@ std::string KernelCallExpr::getReplacement() {
                 OriginalArgs += ", ";
               }
               if (getArgsInfo()[i].isPointer || getArgsInfo()[i].isRedeclareRequired) {
-                OriginalArgs += "arg_ct" + std::to_string(i);
+                OriginalArgs += getArgsInfo()[i].getIdString() +
+                                "ct" + std::to_string(i);
               }
               else {
                 OriginalArgs += getArgsInfo()[i].getArgString();

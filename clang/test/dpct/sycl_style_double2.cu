@@ -72,16 +72,16 @@ int main() {
 
   // CHECK: cl::sycl::double2* data;
   // CHECK-NEXT: {
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset(data);
-  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> data_buf_ct0 = dpct::get_buffer_and_offset(data);
+  // CHECK-NEXT:   size_t data_offset_ct0 = data_buf_ct0.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto data_acc_ct0 = data_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::double2 *arg_ct0 = (cl::sycl::double2 *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           kernel(arg_ct0);
+  // CHECK-NEXT:           cl::sycl::double2 *data_ct0 = (cl::sycl::double2 *)(&data_acc_ct0[0] + data_offset_ct0);
+  // CHECK-NEXT:           kernel(data_ct0);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }

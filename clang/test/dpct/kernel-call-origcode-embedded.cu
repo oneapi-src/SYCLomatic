@@ -70,20 +70,20 @@ int main() {
   // CHECK:  /* DPCT_ORIG   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1,
   // CHECK-NEXT:  karg2, karg3);*/
   // CHECK-NEXT: {
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct0_buf = dpct::get_buffer_and_offset((const int *)karg1);
-  // CHECK-NEXT:   size_t arg_ct0_offset = arg_ct0_buf.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> arg_ct1_buf = dpct::get_buffer_and_offset(karg2);
-  // CHECK-NEXT:   size_t arg_ct1_offset = arg_ct1_buf.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg1_buf_ct0 = dpct::get_buffer_and_offset((const int *)karg1);
+  // CHECK-NEXT:   size_t karg1_offset_ct0 = karg1_buf_ct0.second;
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg2_buf_ct1 = dpct::get_buffer_and_offset(karg2);
+  // CHECK-NEXT:   size_t karg2_offset_ct1 = karg2_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto arg_ct0_acc = arg_ct0_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto arg_ct1_acc = arg_ct1_buf.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto karg1_acc_ct0 = karg1_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto karg2_acc_ct1 = karg2_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((griddim * threaddim), threaddim),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           const int *arg_ct0 = (const int *)(&arg_ct0_acc[0] + arg_ct0_offset);
-  // CHECK-NEXT:           const int *arg_ct1 = (const int *)(&arg_ct1_acc[0] + arg_ct1_offset);
-  // CHECK-NEXT:           testKernelPtr(arg_ct0, arg_ct1, karg3, item_ct1);
+  // CHECK-NEXT:           const int *karg1_ct0 = (const int *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
+  // CHECK-NEXT:           const int *karg2_ct1 = (const int *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
+  // CHECK-NEXT:           testKernelPtr(karg1_ct0, karg2_ct1, karg3, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
