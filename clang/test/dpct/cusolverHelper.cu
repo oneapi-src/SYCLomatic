@@ -21,6 +21,9 @@ cusolverStatus_t foo3(int m, int n)
     return CUSOLVER_STATUS_SUCCESS;
 }
 
+// CHECK: extern cl::sycl::queue * cusolverH2 = NULL;
+extern cusolverDnHandle_t* cusolverH2 = NULL;
+
 int main(int argc, char *argv[])
 {
     // CHECK: cl::sycl::queue * cusolverH = NULL;

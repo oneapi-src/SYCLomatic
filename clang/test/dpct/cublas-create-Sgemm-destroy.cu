@@ -16,6 +16,9 @@ cublasStatus_t bar (cublasStatus_t s){
   return s;
 }
 
+// CHECK: extern cl::sycl::queue handle2;
+extern cublasHandle_t handle2;
+
 int main() {
   // CHECK: int status;
   // CHECK-NEXT: cl::sycl::queue handle;

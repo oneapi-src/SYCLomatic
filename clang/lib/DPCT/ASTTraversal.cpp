@@ -995,7 +995,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                       hasType(arrayType(
                           hasElementType(pointsTo(pointsTo(HandleTypedefs)))))),
                 unless(hasType(substTemplateTypeParmType()))),
-          hasAncestor(functionDecl(unless(
+          unless(hasAncestor(functionDecl(
               allOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal))))))
           .bind("TypeInVarDecl"),
       this);
@@ -1029,7 +1029,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                       hasType(arrayType(
                           hasElementType(pointsTo(pointsTo(HandleTypedefs)))))),
                 unless(hasType(substTemplateTypeParmType()))),
-          hasAncestor(functionDecl(unless(
+          unless(hasAncestor(functionDecl(
               allOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal))))))
           .bind("TypeInFieldDecl"),
       this);

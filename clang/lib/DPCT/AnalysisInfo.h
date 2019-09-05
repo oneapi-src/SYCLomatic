@@ -757,7 +757,7 @@ public:
   std::string getAccessorDecl() {
     if (isShared()) {
       auto Type = getType();
-      return buildString("cl::sycl::accessor<", getAccessorDataType(false),
+      return buildString("cl::sycl::accessor<", getAccessorDataType(true),
                          ", ", Type->getDimension(),
                          ", cl::sycl::access::mode::read_write, "
                          "cl::sycl::access::target::local> ",
@@ -1425,8 +1425,14 @@ class KernelCallExpr : public CallFunctionExpr {
         isPointer = Analysis.isPointer;
       isRedeclareRequired = Analysis.isRedeclareRequired;
       if (isPointer) {
-        auto PointeeType =
-            dyn_cast<PointerType>(Arg->getType())->getPointeeType();
+        QualType PointeeType;
+        if (Arg->getType().getTypePtr()->getTypeClass() ==
+            Type::TypeClass::Decayed) {
+          PointeeType = dyn_cast<PointerType>(Arg->getType().getCanonicalType())
+                            ->getPointeeType();
+        } else {
+          PointeeType = dyn_cast<PointerType>(Arg->getType())->getPointeeType();
+        }
         TypeString =
             DpctGlobalInfo::getTypeName(PointeeType.getUnqualifiedType());
         MapNames::replaceName(MapNames::TypeNamesMap, TypeString);

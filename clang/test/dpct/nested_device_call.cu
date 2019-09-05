@@ -61,6 +61,18 @@ __global__ void kernel_with_item() {
   test3(2);
 }
 
+namespace n1 {
+  __device__ void test4(int a);
+}
+
+namespace n2 {
+using namespace n1;
+// CHECK: void test4(int a, cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
+__device__ void test4(int a) {
+  int i = threadIdx.x;
+}
+}
+
 int main() {
   kernel<<<1, 1>>>();
   kernel_with_item<<<1, 1>>>();

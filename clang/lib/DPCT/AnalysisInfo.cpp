@@ -523,6 +523,11 @@ void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
     return LinkRedecls(static_cast<const FunctionDecl *>(ND), List, Info);
   case Decl::FunctionTemplate:
     return LinkDecl(static_cast<const FunctionTemplateDecl *>(ND), List, Info);
+  case Decl::UsingShadow:
+    return LinkDecl(
+        static_cast<const UsingShadowDecl *>(ND)->getUnderlyingDecl(), List,
+        Info);
+    break;
   default:
     dpct_unreachable("unexpected name decl type");
   }
