@@ -54,108 +54,119 @@ using namespace clang::dpct;
 using namespace clang::tooling;
 
 using namespace llvm::cl;
+
+namespace clang {
+namespace dpct {
+extern llvm::cl::OptionCategory DPCTCat;
+}
+} // namespace clang
+
+// clang-format off
 const char *const CtHelpMessage =
     "\n"
-    "<source0> ... Paths of input source files. These paths are\n"
-    "\tlooked up in the compilation database. If the path of a source file is\n"
-    "\tabsolute, it must exist in the CMake source tree. If the path is\n"
-    "\trelative, the current working directory must exist in the CMake\n"
-    "\tsource tree and the path must be a subdirectory of the current\n"
-    "\tworking directory. \"./\" prefixes in a relative path will be\n"
-    "\tautomatically removed.  The remainder of a relative path must be a\n"
-    "\tsuffix of a path in the compilation database.\n"
-    "\n";
+    "<source0> ... Paths of input source files. These paths are looked up in "
+    "the compilation database.\n";
 
 const char *const CtHelpHint =
     "  Warning: Please specify file(s) to be migrated.\n"
     "  Get help on oneAPI DPC++ Compatibility Tool, run: dpct --help\n"
     "\n";
 
-static OptionCategory DPCTCat("oneAPI DPC++ Compatibility Tool");
 static extrahelp CommonHelp(CtHelpMessage);
 static opt<std::string> Passes(
     "passes",
     desc("Comma separated list of migration passes, which will be applied.\n"
          "Only the specified passes are applied."),
-    value_desc("IterationSpaceBuiltinRule,..."), cat(DPCTCat), llvm::cl::Hidden);
+    value_desc("IterationSpaceBuiltinRule,..."), cat(DPCTCat),
+               llvm::cl::Hidden);
 static opt<std::string>
     InRoot("in-root",
-           desc("Directory path for root of source tree to be migrated.\nOnly "
-                "files under this root will be migrated.\nCurrent directory "
-                "will be used by default, if the option is not specified.\n"),
-           value_desc("/path/to/input/root/"), cat(DPCTCat),
+           desc("The directory path for the root of the source tree that needs "
+                "to be migrated.\n"
+                "Only files under this root are migrated. Default: current "
+                "directory.\n"),
+           value_desc("dir"), cat(DPCTCat),
            llvm::cl::Optional);
-static opt<std::string>
-    OutRoot("out-root",
-            desc("Directory path for root of generated files.\nDirectory will "
-                 "be created if it doesn't exist.\nCurrent directory will be "
-                 "used by default, if the option is not specified."),
-            value_desc("/path/to/output/root/"), cat(DPCTCat),
-            llvm::cl::Optional);
+static opt<std::string> OutRoot(
+    "out-root",
+    desc("The directory path for root of generated files. A directory is "
+         "created if it\n"
+         "does not exist. Default: current directory."),
+    value_desc("dir"), cat(DPCTCat), llvm::cl::Optional);
 
 static opt<std::string> SDKPath("cuda-path", desc("Directory path of SDK.\n"),
                                 value_desc("dir"), cat(DPCTCat),
-                                llvm::cl::Optional);
-
-static opt<std::string> SDKIncludePath(
-    "cuda-include-path",
-    desc(
-        "Directory path of header files.\n"
-        "If this option is specified, option \"--cuda-path\" will be ignored."),
-    value_desc("dir"), cat(DPCTCat), llvm::cl::Optional);
-
-static opt<std::string> ReportType(
-    "report-type",
-    desc("Comma separated list of report types.\n"
-         "\"apis\": Information about API signatures that need migration and\n"
-         "  the number of times they were encountered.\n"
-         "  The report file name will have \".apis\" suffix added.\n"
-         "\"stats\": High level migration statistics;  Lines "
-         " Of Code (LOC) \n  migrated to DPC++, LOC migrated to DPC++ with "
-         "helper functions,\n  LOC not needing migration,  LOC needing "
-         "migration but not "
-         "migrated.\n"
-         "  The report file name will have \".stats\" suffix added.\n"
-         "\"all\": Generates all of the reports.\n"
-         "Default is \"stats\"."),
-    value_desc("[all|apis|stats]"), cat(DPCTCat), llvm::cl::Optional);
+                                llvm::cl::Optional, llvm::cl::Hidden);
 
 static opt<std::string>
-    ReportFormat("report-format",
-                 desc("Format of reports:\n\"csv\": Output is lines of comma "
-                      "separated values.\n"
-                      "  Report file name extension will be \".csv\".\n"
-                      "\"formatted\": Output is formatted to be easier to read "
-                      "by human eyes.\n"
-                      "  Report file name extension will be \".log\".\n"
-                      "Default is \"csv\".\n"),
-                 value_desc("[csv|formatted]"), cat(DPCTCat),
-                 llvm::cl::Optional);
+    SDKIncludePath("cuda-include-path",
+                   desc("The directory path of CUDA header files."),
+                   value_desc("dir"), cat(DPCTCat), llvm::cl::Optional);
+
+static opt<ReportTypeEnum> ReportType(
+    "report-type", desc("Comma separated list of report types."),
+    llvm::cl::values(
+        clEnumVal(
+            apis,
+            "Information about API signatures that need migration and the "
+            "number of times\n"
+            "                                    they were encountered. The "
+            "report file name will have .apis suffix added."),
+        clEnumVal(stats,
+                  "High level migration statistics: Lines Of Code (LOC) that "
+                  "are migrated to\n"
+                  "                                    DPC++, LOC migrated to "
+                  "DPC++ with helper functions, LOC not needing migration,\n"
+                  "                                    LOC needing migration "
+                  "suffix added. (default)"),
+        clEnumVal(all, "All of the reports."),
+        llvm::cl::OptionEnumValue{"diags", int(diags), "diags information",
+                                  true}),
+    llvm::cl::init(notsettype), value_desc("value"), cat(DPCTCat),
+    llvm::cl::Optional);
+
+static opt<ReportFormatEnum> ReportFormat(
+    "report-format", desc("Format of the reports:\n"),
+    llvm::cl::values(
+        clEnumVal(csv,
+                  "Output is lines of comma separated values. The report file "
+                  "name extension will\n"
+                  "                                    be .csv (default)"),
+        clEnumVal(formatted, "Output is formatted to be easier to read for "
+                  "human eyes. Report file name\n"
+                  "                                    extension will be log."
+                  )),
+    llvm::cl::init(notsetformat), value_desc("value"), cat(DPCTCat),
+    llvm::cl::Optional);
 
 static opt<std::string> ReportFilePrefix(
     "report-file-prefix",
-    desc("Prefix for the report file names.\nThe full file name will have a "
-         "suffix "
-         "derived from the report-type\nand an extension derived from the "
-         "report-format.\n"
-         "For example: <prefix>.apis.csv or <prefix>.stats.log.\n"
-         "If this option is not specified, the report will go "
-         "to stdout.\nThe report files are created in the "
-         "directory, specified by -out-root.\nDefault is stdout."),
+    desc(
+        "Prefix for the report file names. The full file name will have a "
+        "suffix derived\n"
+        "from the report-type and an extension derived from the report-format. "
+        "For\n"
+        "example: <prefix>.apis.csv or <prefix>.stats.log. If this option is "
+        "not\n"
+        "specified, the report will go to stdout. The report files are created "
+        "in the\n"
+        "directory, specified by -out-root. Default is stdout."),
     value_desc("prefix"), cat(DPCTCat), llvm::cl::Optional);
 bool ReportOnlyFlag = false;
-static opt<bool, true> ReportOnly(
-    "report-only",
-    llvm::cl::desc("Only reports are generated.  No DPC++ code is generated.\n"
-                   "Default is to generate DPC++ code."),
-    cat(DPCTCat), llvm::cl::location(ReportOnlyFlag));
+static opt<bool, true>
+    ReportOnly("report-only",
+               llvm::cl::desc("Only reports are generated. No DPC++ code is "
+                              "generated. Default is to generate\n"
+                              "DPC++ code."),
+               cat(DPCTCat), llvm::cl::location(ReportOnlyFlag));
 
 bool KeepOriginalCodeFlag = false;
 
 static opt<bool, true>
     ShowOrigCode("keep-original-code",
-                 llvm::cl::desc("Keep original code in comments of generated "
-                                "DPC++ files.\nDefault: off"),
+                 llvm::cl::desc("Keeps the original code in comments of "
+                                "generated DPC++ files. The default is:\n"
+                                "off."),
                  cat(DPCTCat), llvm::cl::location(KeepOriginalCodeFlag));
 
 static opt<std::string>
@@ -168,61 +179,64 @@ static opt<std::string>
                  llvm::cl::Optional, llvm::cl::Hidden);
 
 static std::string
-    WarningDesc("Comma separated list of migration warnings to "
-                "suppress.\nValid warning IDs range from " +
-                std::to_string((size_t)Warnings::BEGIN) + " to " +
+    WarningDesc("Comma separated list of migration warnings to suppress. Valid "
+                "warning IDs range\n"
+                "from " + std::to_string((size_t)Warnings::BEGIN) + " to " +
                 std::to_string((size_t)Warnings::END - 1) +
-                ".\nHyphen separated ranges are also allowed.\nExamples: "
+                ". Hyphen separated ranges are also allowed. For example:\n"
                 "-suppress-warnings=1000-1010,1011.");
 opt<std::string> SuppressWarnings("suppress-warnings", desc(WarningDesc),
-                                  value_desc("WarningID,..."), cat(DPCTCat));
+                                  value_desc("value"), cat(DPCTCat));
 
 bool SuppressWarningsAllFlag = false;
-static std::string WarningAllDesc("Suppress all migration warnings.");
+static std::string WarningAllDesc("Suppresses all migration warnings.");
 opt<bool, true> SuppressWarningsAll("suppress-warnings-all",
                                     desc(WarningAllDesc), cat(DPCTCat),
                                     location(SuppressWarningsAllFlag));
 
 bool NoStopOnErrFlag = false;
 
-static opt<bool, true> NoStopOnErr(
-    "no-stop-on-err",
-    llvm::cl::desc("Continue migration and generation of reports after "
-                   "possible errors.\nDefault: off"),
-    cat(DPCTCat), llvm::cl::location(NoStopOnErrFlag));
+static opt<bool, true>
+    NoStopOnErr("no-stop-on-err",
+                llvm::cl::desc("Continue migration and generation of reports "
+                               "after possible errors. The default\n"
+                               "is: off."),
+                cat(DPCTCat), llvm::cl::location(NoStopOnErrFlag));
 
 opt<OutputVerbosityLev> OutputVerbosity(
-    "output-verbosity",
-    llvm::cl::desc("Output verbosity level. Default is Diagnostics"),
+    "output-verbosity", llvm::cl::desc("Sets the output verbosity level:"),
     llvm::cl::values(
-        clEnumVal(silent, "Only messages from clang"),
+        clEnumVal(silent, "Only messages from clang."),
         clEnumVal(normal,
-                  "Warnings, errors, notes from clang and dpct"),
-        clEnumVal(detailed,
-                  "\"normal\" + messages about which file is being processed"),
+                  "\'silent\' and warnings, errors, and notes from dpct"),
         clEnumVal(
-            diagnostics,
-            "\"detailed\" + information about detected conflicts and crashes.")),
-    llvm::cl::init(diagnostics), cat(DPCTCat), llvm::cl::Optional);
+            detailed,
+            "\'normal\' and messages about which file is being processed."),
+        clEnumVal(diagnostics, "\'detailed\' and information about detected "
+                               "conflicts and crashes (default)")),
+    llvm::cl::init(diagnostics), value_desc("value"), cat(DPCTCat),
+    llvm::cl::Optional);
 
 opt<std::string>
     OutputFile("output-file",
-               desc("Redirects stdout/stderr output to <file> in the\n"
-                    "output diretory specified by '-out-root' option."),
-               value_desc("output file name"), cat(DPCTCat),
+               desc("Redirects the stdout/stderr output to <file> in the output"
+                    " directory specified\n"
+                    "by the --out-root option."),
+               value_desc("file"), cat(DPCTCat),
                llvm::cl::Optional);
 
 opt<UsmLevel> USMLevel(
-    "usm-level", desc("Supported USM levels. Default is restricted.\n"),
+    "usm-level", desc("Sets the USM level to use in source code generation.\n"),
     values(clEnumVal(restricted,
                      "Uses API from DPC++ Explicit and Restricted Unified "
-                     "Shared Memory\n                                          "
-                     "extension for memory management migration"),
+                     "Shared Memory extension\n"
+                     "                                    for memory management"
+                     " migration. (default)"),
            clEnumVal(none,
                      "Uses helper functions from DPCT header files for memory "
-                     "management\n                                          "
-                     "migration.\n")),
-    init(restricted), cat(DPCTCat), llvm::cl::Optional);
+                     "management migration.")),
+    init(restricted), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
+// clang-format on
 
 // TODO: implement one of this for each source language.
 std::string CudaPath;        // Global value for the CUDA install path.
@@ -490,8 +504,10 @@ static void saveApisReport(void) {
     OS << "-------------------------------------------------\n";
     PrintMsg(OS.str());
   } else {
-    std::string RFile = OutRoot + "/" + ReportFilePrefix +
-                        (ReportFormat == "csv" ? ".apis.csv" : ".apis.log");
+    std::string RFile =
+        OutRoot + "/" + ReportFilePrefix +
+        (ReportFormat.getValue() == ReportFormatEnum::csv ? ".apis.csv"
+                                                          : ".apis.log");
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
     // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
     // on windows.
@@ -499,14 +515,15 @@ static void saveApisReport(void) {
 
     std::string Str;
     llvm::raw_string_ostream Title(Str);
-    Title << (ReportFormat == "csv" ? "API name, Frequency"
+    Title << (ReportFormat.getValue() == ReportFormatEnum::csv
+                  ? " API name, Frequency "
                                     : "API name\t\t\t\tFrequency");
 
     File << Title.str() << std::endl;
     for (const auto &Elem : SrcAPIStaticsMap) {
       std::string APIName = Elem.first;
       unsigned int Count = Elem.second;
-      if (ReportFormat == "csv") {
+      if (ReportFormat.getValue() == ReportFormatEnum::csv) {
         File << APIName << "," << std::to_string(Count) << std::endl;
       } else {
         std::string Str;
@@ -532,8 +549,10 @@ static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
     OS << "-------------------------------------\n";
     PrintMsg(OS.str());
   } else {
-    std::string RFile = OutRoot + "/" + ReportFilePrefix +
-                        (ReportFormat == "csv" ? ".stats.csv" : ".stats.log");
+    std::string RFile =
+        OutRoot + "/" + ReportFilePrefix +
+        (ReportFormat.getValue() == ReportFormatEnum::csv ? ".stats.csv"
+                                                          : ".stats.log");
     llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
     // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
     // on windows.
@@ -606,8 +625,10 @@ void PrintReportOnFault(std::string &FaultMsg) {
   saveApisReport();
   saveDiagsReport();
 
-  std::string FileApis = OutRoot + "/" + ReportFilePrefix +
-                         (ReportFormat == "csv" ? ".apis.csv" : ".apis.log");
+  std::string FileApis =
+      OutRoot + "/" + ReportFilePrefix +
+      (ReportFormat.getValue() == ReportFormatEnum::csv ? ".apis.csv"
+                                                        : ".apis.log");
   std::string FileDiags = OutRoot + "/" + ReportFilePrefix + ".diags.log";
 
   std::ofstream File;
@@ -684,7 +705,8 @@ int run(int argc, const char **argv) {
   }
 
   bool GenReport = false;
-  if (checkReportArgs(ReportType, ReportFormat, ReportFilePrefix,
+  if (checkReportArgs(ReportType.getValue(), ReportFormat.getValue(),
+                      ReportFilePrefix,
                       ReportOnlyFlag, GenReport, DiagsContent) == false) {
     DebugInfo::ShowStatus(MigrationErrorInvalidReportArgs);
     exit(MigrationErrorInvalidReportArgs);
@@ -694,7 +716,17 @@ int run(int argc, const char **argv) {
     std::string buf;
     llvm::raw_string_ostream OS(buf);
     OS << "Generate report: "
-       << "report-type:" << ReportType << ", report-format:" << ReportFormat
+       << "report-type:"
+       << (ReportType.getValue() == ReportTypeEnum::all
+               ? "all"
+               : (ReportType.getValue() == ReportTypeEnum::apis
+                      ? "apis"
+                      : (ReportType.getValue() == ReportTypeEnum::stats
+                             ? "stats"
+                                                            : "diags")))
+       << ", report-format:"
+       << (ReportFormat.getValue() == ReportFormatEnum::csv ? "csv"
+                                                            : "formatted")
        << ", report-file-prefix:" << ReportFilePrefix << "\n";
 
     PrintMsg(OS.str());
@@ -751,19 +783,19 @@ int run(int argc, const char **argv) {
   Global.emplaceReplacements(Tool.getReplacements());
 
   if (GenReport) {
-    // report: apis, stats, diags
-    if (ReportType.find("all") != std::string::npos ||
-        ReportType.find("apis") != std::string::npos)
+    // report: apis, stats, all, diags
+    if (ReportType.getValue() == ReportTypeEnum::all ||
+        ReportType.getValue() == ReportTypeEnum::apis)
       saveApisReport();
 
-    if (ReportType.find("all") != std::string::npos ||
-        ReportType.find("stats") != std::string::npos) {
+    if (ReportType.getValue() == ReportTypeEnum::all ||
+        ReportType.getValue() == ReportTypeEnum::stats) {
       clock_t EndTime = clock();
       double Duration = (double)(EndTime - StartTime) / (CLOCKS_PER_SEC / 1000);
       saveStatsReport(Tool, Duration);
     }
     // all doesn't include diags.
-    if (ReportType.find("diags") != std::string::npos) {
+    if (ReportType.getValue() == ReportTypeEnum::diags) {
       saveDiagsReport();
     }
     if (ReportOnlyFlag) {

@@ -19,6 +19,9 @@ namespace llvm {
 template <typename T> class SmallVectorImpl;
 }
 
+enum ReportFormatEnum { notsetformat, csv, formatted };
+enum ReportTypeEnum { notsettype, apis, stats, all, diags };
+
 bool makeCanonicalOrSetDefaults(std::string &InRoot, std::string &OutRoot,
                                 const std::vector<std::string> SourceFiles);
 
@@ -26,7 +29,7 @@ bool makeCanonicalOrSetDefaults(std::string &InRoot, std::string &OutRoot,
 // input root directory and have an extension.
 bool validatePaths(const std::string &InRoot,
                    const std::vector<std::string> &SourceFiles);
-bool checkReportArgs(std::string &RType, std::string &RFormat,
+bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
         std::string &RFile, bool& ROnly, bool &GenReport, std::string &DVerbose);
 
 // Retrun value:

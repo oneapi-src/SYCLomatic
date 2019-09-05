@@ -150,7 +150,7 @@ private:
   adjustCommands(std::vector<CompileCommand> Commands) const;
 };
 
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
 #ifdef _WIN32
 using FunPtrParserType = void (*)(std::string &, std::string &);
 void SetParserHandle(FunPtrParserType FPParser);

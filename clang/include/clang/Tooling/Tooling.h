@@ -48,8 +48,8 @@
 #include <utility>
 #include <vector>
 
-#define INTEL_CUSTOMIZATION 1
-#if INTEL_CUSTOMIZATION
+#define INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
 namespace clang {
 namespace tooling {
 void SetPrintHandler(void (*Handler)(const std::string &Msg, bool IsPrintOnNormal));

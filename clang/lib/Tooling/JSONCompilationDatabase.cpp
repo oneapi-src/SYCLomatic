@@ -354,7 +354,7 @@ bool JSONCompilationDatabase::parse(std::string &ErrorMessage) {
       }
     }
 
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     //ignore linker entry
     if(!File && Command && Directory) {
       continue;

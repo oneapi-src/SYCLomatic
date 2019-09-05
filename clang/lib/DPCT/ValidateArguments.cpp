@@ -133,33 +133,31 @@ int checkSDKPathOrIncludePath(const std::string &Path, std::string& RealPath) {
   return 0;
 }
 
-bool checkReportArgs(std::string &RType, std::string &RFormat,
+bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
                      std::string &RFile, bool &ROnly, bool &GenReport,
                      std::string &DVerbose) {
   bool Success = true;
-  if (ROnly || !RType.empty() || !RFormat.empty() || !RFile.empty() ||
-      !DVerbose.empty()) {
+  if (ROnly || !RFile.empty() || !DVerbose.empty() ||
+      RType != ReportTypeEnum::notsettype ||
+      RFormat != ReportFormatEnum::notsetformat) {
     GenReport = true;
     // check user provided value and give default value if required.
-    if (RType.empty()) {
-      RType = "stats";
-    } else if (!(RType == "all" || RType == "diags" || RType == "apis" ||
-                 RType == "stats")) {
-      // further check if Rtype is commam seperated list
-      auto SubTypes = split(RType, ',');
-      for (auto const &ST : SubTypes) {
-        if (!(ST == "all" || ST == "diags" || ST == "apis" || ST == "stats")) {
-          Success = false;
-          llvm::errs() << "error value provided in option: -report-type, use "
-                          "[all|apis|stats|apis,...].\n\n";
-        }
-      }
+    if (RType == ReportTypeEnum::notsettype) {
+      RType = ReportTypeEnum::stats;
+    } else if (!(RType == ReportTypeEnum::all ||
+                 RType == ReportTypeEnum::apis ||
+                 RType == ReportTypeEnum::stats ||
+                 RType == ReportTypeEnum::diags)) {
+      Success = false;
+      llvm::errs() << "error value provided in option: --report-type, use "
+                      "[all|apis|stats].\n\n";
     }
     // check the report format value
-    if (RFormat.empty()) {
-      RFormat = "csv";
-    } else if (!(RFormat == "csv" || RFormat == "formatted")) {
-      llvm::errs() << "error value provided in option: -report-format, use "
+    if (RFormat == ReportFormatEnum::notsetformat) {
+      RFormat = ReportFormatEnum::csv;
+    } else if (!(RFormat == ReportFormatEnum::csv ||
+                 RFormat == ReportFormatEnum::formatted)) {
+      llvm::errs() << "error value provided in option: --report-format, use "
                       "[csv|formatted].\n\n";
       Success = false;
     }

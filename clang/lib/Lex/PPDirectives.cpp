@@ -1999,7 +1999,8 @@ Preprocessor::ImportAction Preprocessor::HandleHeaderIncludeOrImport(
     Action = (SuggestedModule && !getLangOpts().CompilingPCH) ? Import : Skip;
   }
 
-#if INTEL_CUSTOMIZATION
+#define INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
   if (Callbacks && Action != Skip &&
     !Callbacks->ShouldEnter(
       LangOpts.MSVCCompat ? NormalizedPath.c_str() : Filename, isAngled)) {

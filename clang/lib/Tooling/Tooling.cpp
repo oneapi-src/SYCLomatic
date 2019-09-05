@@ -64,7 +64,8 @@
 using namespace clang;
 using namespace tooling;
 
-#if INTEL_CUSTOMIZATION
+#define INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
 namespace clang {
 namespace tooling {
 static void (* MsgPrintHandler) (const std::string &, bool) = nullptr;
@@ -461,7 +462,7 @@ int ClangTool::run(ToolAction *Action) {
     }
     AbsolutePaths.push_back(std::move(*AbsPath));
   }
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
   // If target source file names do not exist in the command line, dpct will
   // migrate all relevant files it detects in the compilation database.
   if (SourcePaths.size() == 0) {
@@ -483,7 +484,7 @@ int ClangTool::run(ToolAction *Action) {
   }
 
   for (llvm::StringRef File : AbsolutePaths) {
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     const std::string Msg = "Processing: " + File.str()  +  "\n";
     DoPrintHandler(Msg, false);
 #endif

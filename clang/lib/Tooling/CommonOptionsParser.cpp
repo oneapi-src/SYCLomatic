@@ -52,7 +52,8 @@ const char *const CommonOptionsParser::HelpMessage =
     "\tsuffix of a path in the compile command database.\n"
     "\n";
 
-#if INTEL_CUSTOMIZATION
+#define INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
 #ifdef _WIN32
 namespace clang {
 namespace tooling {
@@ -105,14 +106,13 @@ std::vector<CompileCommand> ArgumentsAdjustingCompilations::adjustCommands(
 llvm::Error CommonOptionsParser::init(
     int &argc, const char **argv, cl::OptionCategory &Category,
     llvm::cl::NumOccurrencesFlag OccurrencesFlag, const char *Overview) {
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
   static cl::opt<std::string> BuildPath(
       "p",
-      cl::desc(
-          "Directory path to compile command database (compile_commands.json).\n"
-          "When no path is specified, a search for compile_commands.json\nis "
-          "attempted through all parent paths of the first input file."),
-      cl::Optional, cl::cat(Category), cl::value_desc("path"),
+      cl::desc("The directory path for compilation database (compile_commands.json). When no\n"
+               "path is specified, a search for compile_commands.json is attempted through all\n"
+               "parent paths of the first input file."),
+      cl::Optional, cl::cat(Category), cl::value_desc("dir"),
       cl::sub(*cl::AllSubCommands));
 
   static cl::list<std::string> SourcePaths(
@@ -121,8 +121,8 @@ llvm::Error CommonOptionsParser::init(
 #ifdef _WIN32
  static cl::opt<std::string>
     VcxprojFile("vcxprojfile",
-                cl::desc("File path of vcxproj."),
-                cl::value_desc("vcxproj file"),
+                cl::desc("The file path of vcxproj."),
+                cl::value_desc("file"),
                 cl::Optional, cl::cat(Category),
                 cl::sub(*cl::AllSubCommands));
 #endif
@@ -136,20 +136,19 @@ llvm::Error CommonOptionsParser::init(
       cl::cat(Category), cl::sub(*cl::AllSubCommands));
 #endif
 
-#if INTEL_CUSTOMIZATION
-  static cl::list<std::string> ArgsAfter(
-      "extra-arg",
-      cl::desc("Additional argument to append to the compiler command line.\n"
-              "example: -extra-arg=\"-I /path /to/header \".\n"
-              "Options, which can be passed that way can"
-              " be found by \"dpct -- --help\" command."),
-      cl::cat(Category), cl::sub(*cl::AllSubCommands));
+#ifdef INTEL_CUSTOMIZATION
+ static cl::list<std::string> ArgsAfter(
+     "extra-arg",
+     cl::desc("Additional argument to append to the compiler command line, example:\n"
+              "--extra-arg=\"-I /path/to/header\". The options, which can be passed that way can\n"
+              "be found by dpct -- -help command."),
+     cl::value_desc("string"), cl::cat(Category), cl::sub(*cl::AllSubCommands));
 
   static cl::list<std::string> ArgsBefore(
-      "extra-arg-before",
-      cl::desc("Additional argument to prepend to the compiler command line.\n"
-               "Refer to extra-arg option.\n"),
-      cl::cat(Category), cl::sub(*cl::AllSubCommands));
+     "extra-arg-before",
+     cl::desc("Additional argument to prepend to the compiler command line.\n"
+              "Refer to extra-arg option.\n"),
+     cl::cat(Category), cl::sub(*cl::AllSubCommands), llvm::cl::Hidden);
 #else
   static cl::list<std::string> ArgsAfter(
       "extra-arg",
@@ -182,7 +181,7 @@ llvm::Error CommonOptionsParser::init(
   cl::PrintOptionValues();
 
   SourcePathList = SourcePaths;
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
 #if _WIN32
   // In Windows, the option "-p" and "-vcxproj" are mutually exclusive, user can
   // only give one of them. If both of them exist, dpct will exit with
@@ -215,7 +214,7 @@ llvm::Error CommonOptionsParser::init(
       Compilations =
           CompilationDatabase::autoDetectFromDirectory(BuildPath, ErrorMessage);
     }
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     // if neither option "-p" or target source file names exist in the
     // command line, e.g "dpct -in-root=./ -out-root=out", dpct will not
     // continue.
@@ -228,7 +227,7 @@ llvm::Error CommonOptionsParser::init(
                                                                ErrorMessage);
     }
     if (!Compilations) {
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
       if (SourcePaths.size() == 1 && BuildPath.getValue().empty()) {
         using namespace llvm::sys;
         SmallString<256> Name = StringRef(SourcePaths[0]);

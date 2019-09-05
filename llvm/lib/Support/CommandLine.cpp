@@ -1841,6 +1841,10 @@ void generic_parser_base::printOptionInfo(const Option &O,
                          EqValue.size() +
                              argPlusPrefixesSize(O.ArgStr));
     for (unsigned i = 0, e = getNumOptions(); i != e; ++i) {
+#define INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
+      if (getIsHiddenValue(i) == true) { continue; }
+#endif
       StringRef OptionName = getOption(i);
       StringRef Description = getDescription(i);
       if (!shouldPrintOption(OptionName, Description, O))
@@ -2182,8 +2186,13 @@ protected:
         continue;
 
       // Print category information.
+#ifdef INTEL_CUSTOMIZATION
+      //outs() << "\n";
+      //outs() << (*Category)->getName() << ":\n";
+#else
       outs() << "\n";
       outs() << (*Category)->getName() << ":\n";
+#endif
 
       // Check if description is set.
       if (!(*Category)->getDescription().empty())
@@ -2239,6 +2248,13 @@ static HelpPrinterWrapper WrappedHiddenPrinter(UncategorizedHiddenPrinter,
 
 // Define a category for generic options that all tools should have.
 static cl::OptionCategory GenericCategory("Generic Options");
+#ifdef INTEL_CUSTOMIZATION
+namespace clang {
+namespace dpct {
+llvm::cl::OptionCategory DPCTCat("oneAPI DPC++ Compatibility Tool");
+}
+} // namespace clang
+#endif
 
 // Define uncategorized help printers.
 // --help-list is hidden by default because if Option categories are being used
@@ -2258,10 +2274,19 @@ static cl::opt<HelpPrinter, true, parser<bool>>
 // Define uncategorized/categorized help printers. These printers change their
 // behaviour at runtime depending on whether one or more Option categories have
 // been declared.
+#ifdef INTEL_CUSTOMIZATION
+static cl::opt<HelpPrinterWrapper, true, parser<bool>> HOp(
+    "help",
+    cl::desc(
+        "Provides list of oneAPI DPC++ Compatibility Tool specific options"),
+    cl::location(WrappedNormalPrinter), cl::ValueDisallowed,
+    cl::cat(clang::dpct::DPCTCat), cl::sub(*AllSubCommands));
+#else
 static cl::opt<HelpPrinterWrapper, true, parser<bool>>
     HOp("help", cl::desc("Display available options (--help-hidden for more)"),
         cl::location(WrappedNormalPrinter), cl::ValueDisallowed,
         cl::cat(GenericCategory), cl::sub(*AllSubCommands));
+#endif
 
 static cl::alias HOpA("h", cl::desc("Alias for --help"), cl::aliasopt(HOp),
                       cl::DefaultOption);
@@ -2292,7 +2317,12 @@ void HelpPrinterWrapper::operator=(bool Value) {
   if (GlobalParser->RegisteredOptionCategories.size() > 1) {
     // unhide --help-list option so user can have uncategorized output if they
     // want it.
+#define INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
+    HLOp.setHiddenFlag(Hidden);
+#else
     HLOp.setHiddenFlag(NotHidden);
+#endif
 
     CategorizedPrinter = true; // Invoke categorized printer
   } else
@@ -2381,10 +2411,17 @@ public:
 // Define the --version option that prints out the LLVM version for the tool
 static VersionPrinter VersionPrinterInstance;
 
+#ifdef INTEL_CUSTOMIZATION
+static cl::opt<VersionPrinter, true, parser<bool>>
+    VersOp("version", cl::desc("Shows the version of the tool"),
+           cl::location(VersionPrinterInstance), cl::ValueDisallowed,
+           cl::cat(clang::dpct::DPCTCat));
+#else
 static cl::opt<VersionPrinter, true, parser<bool>>
     VersOp("version", cl::desc("Display the version of this program"),
            cl::location(VersionPrinterInstance), cl::ValueDisallowed,
            cl::cat(GenericCategory));
+#endif
 
 // Utility function for printing the help message.
 void cl::PrintHelpMessage(bool Hidden, bool Categorized) {
