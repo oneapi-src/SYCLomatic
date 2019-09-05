@@ -1,5 +1,5 @@
 // UNSUPPORTED: -linux-
-// RUN: dpct -out-root=%T -in-root=%S %S/test_PATH_in_Windows.cu  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct --usm-level=none -out-root=%T -in-root=%S %S/test_PATH_in_Windows.cu  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --input-file %T/test_path_in_windows.dp.cpp --match-full-lines %S/test_path_in_windows.cu
 
 

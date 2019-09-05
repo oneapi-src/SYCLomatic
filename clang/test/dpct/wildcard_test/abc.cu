@@ -1,4 +1,4 @@
-// RUN: dpct -out-root=%T/abc -in-root=%S %S/*.cu  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct --usm-level=none -out-root=%T/abc -in-root=%S %S/*.cu  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --input-file %T/abc/abc.dp.cpp --match-full-lines %S/abc.cu
 // RUN: FileCheck --input-file %T/abc/abd.dp.cpp --match-full-lines %S/abd.cu
 

@@ -1,7 +1,7 @@
 // FIXME
 // UNSUPPORTED: -windows-
 
-// RUN: dpct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct --usm-level=none -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck %s --match-full-lines --input-file %T/sharedmem_var_static.dp.cpp
 
 #include <stdio.h>
