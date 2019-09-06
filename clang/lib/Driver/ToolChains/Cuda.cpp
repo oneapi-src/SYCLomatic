@@ -405,9 +405,14 @@ void CudaInstallationDetector::CheckCudaVersionSupportsArch(
 }
 
 void CudaInstallationDetector::print(raw_ostream &OS) const {
+  #ifdef INTEL_CUSTOMIZATION
   if (isValid())
-    OS << "Found CUDA installation: " << InstallPath << ", version "
+    OS << "Found CUDA include folder: " << InstallPath << ", version "
        << CudaVersionToString(Version) << "\n";
+  #else
+  OS << "Found CUDA installation: " << InstallPath << ", version "
+     << CudaVersionToString(Version) << "\n";
+  #endif
 }
 
 namespace {
