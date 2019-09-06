@@ -323,7 +323,6 @@ Optional<std::string> WarpFunctionRewriter::rewrite() {
     setTargetCalleeName(SourceCalleeName);
   } else {
     if (SourceCalleeName == "__all" || SourceCalleeName == "__any") {
-      reportNoMaskWarning();
       RewriteArgList.emplace_back(getMigratedArg(0));
     } else if (SourceCalleeName == "__all_sync" ||
                SourceCalleeName == "__any_sync") {
