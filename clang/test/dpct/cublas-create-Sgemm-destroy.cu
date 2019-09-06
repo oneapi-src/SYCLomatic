@@ -7,7 +7,7 @@
 // CHECK-NEXT: #include <mkl_lapack_sycl.hpp>
 // CHECK-NEXT: #include <sycl_types.hpp>
 #include <cstdio>
-#include <cublas_v2.h>
+#include "cublas_v2.h"
 #include <cuda_runtime.h>
 
 void foo (cublasStatus_t s){
@@ -41,8 +41,8 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK: status = (mkl::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N), 0);
-  // CHECK: mkl::gemm(handle, (((int)transpose_ct1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct1)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N);
+  // CHECK: status = (mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N), 0);
+  // CHECK: mkl::blas::gemm(handle, (((int)transpose_ct1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct1)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N);
   status = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
   cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
   double *d_A_D = 0;
@@ -53,8 +53,8 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK: status = (mkl::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_D), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_D), buffer_ct{{[0-9]+}}, N), 0);
-  // CHECK: mkl::gemm(handle, (((int)transpose_ct1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct1)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), N, N, N, *(&alpha_D), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_D), buffer_ct{{[0-9]+}}, N);
+  // CHECK: status = (mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_D), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_D), buffer_ct{{[0-9]+}}, N), 0);
+  // CHECK: mkl::blas::gemm(handle, (((int)transpose_ct1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct1)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), N, N, N, *(&alpha_D), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_D), buffer_ct{{[0-9]+}}, N);
   status = cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
   cublasDgemm(handle, (cublasOperation_t)trans2, (cublasOperation_t)2, N, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
 
@@ -71,7 +71,7 @@ int main() {
   // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
   // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_C_S);
   // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: status = (mkl::gemm(handle, mkl::transpose::trans, mkl::transpose::trans, N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N), 0);
+  // CHECK-NEXT: status = (mkl::blas::gemm(handle, mkl::transpose::trans, mkl::transpose::trans, N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: beta_S = beta_S + 1;
   // CHECK-NEXT: }
@@ -90,7 +90,7 @@ int main() {
   // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
   // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_C_S);
   // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: mkl::gemm(handle, mkl::transpose::trans, mkl::transpose::trans, N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::trans, mkl::transpose::trans, N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: beta_S = beta_S + 1;
   // CHECK-NEXT: }
@@ -112,7 +112,7 @@ int main() {
   // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
   // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_C_S);
   // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: foo(bar((mkl::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N), 0)));
+  // CHECK-NEXT: foo(bar((mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N), 0)));
   foo(bar(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)));
 
   // CHECK: status = 0;

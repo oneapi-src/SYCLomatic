@@ -371,7 +371,11 @@ public:
     return *this;
   }
   T *operator&() { return static_cast<T *>(data); }
-
+  T operator+(const T &rhs) { return (*data) + rhs; }
+  T operator-(const T &rhs) { return (*data) - rhs; }
+  T operator*(const T &rhs) { return (*data) * rhs; }
+  T operator/(const T &rhs) { return (*data) / rhs; }
+  T operator-() { return  -(*data); }
 private:
   pointer_t data;
 };

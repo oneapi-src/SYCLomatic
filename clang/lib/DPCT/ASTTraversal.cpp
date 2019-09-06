@@ -281,9 +281,9 @@ void IncludesCallbacks::InclusionDirective(
 
   // Replace "#include <cublas_v2.h>" and "#include <cublas.h>" with
   // <mkl_blas_sycl.hpp>, <mkl_lapack_sycl.hpp> and <sycl_types.hpp>
-  if ((IsAngled && FileName.compare(StringRef("cublas_v2.h")) == 0) ||
-      (IsAngled && FileName.compare(StringRef("cublas.h")) == 0) ||
-      (IsAngled && FileName.compare(StringRef("cusolverDn.h")) == 0)) {
+  if ((FileName.compare(StringRef("cublas_v2.h")) == 0) ||
+      (FileName.compare(StringRef("cublas.h")) == 0) ||
+      (FileName.compare(StringRef("cusolverDn.h")) == 0)) {
     DpctGlobalInfo::getInstance().insertHeader(HashLoc, MKL);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),

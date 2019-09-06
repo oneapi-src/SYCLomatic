@@ -34,7 +34,7 @@ void sgemm() {
   // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
   // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_C_S);
   // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: status = (mkl::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N), 0);
+  // CHECK-NEXT: status = (mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N), 0);
   // CHECK-NEXT: }
   status = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
 }
