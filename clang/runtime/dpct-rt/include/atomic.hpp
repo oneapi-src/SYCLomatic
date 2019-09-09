@@ -28,9 +28,8 @@ namespace dpct {
 /// \param operand Be added to data pointed by \p addr.
 /// \param memoryOrder The memory ordering used.
 /// \return The old value addr point to.
-template <cl::sycl::access::address_space addressSpace =
-              cl::sycl::access::address_space::global_space,
-          typename T>
+template <typename T, cl::sycl::access::address_space addressSpace =
+              cl::sycl::access::address_space::global_space>
 inline T atomic_fetch_add(
     T *addr, T operand,
     cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed) {
@@ -105,9 +104,8 @@ inline double atomic_fetch_add(
 /// \param operand Be substracted from data pointed by \p addr.
 /// \param memoryOrder The memory ordering used.
 /// \return The old value addr point to.
-template <cl::sycl::access::address_space addressSpace =
-              cl::sycl::access::address_space::global_space,
-          typename T>
+template <typename T, cl::sycl::access::address_space addressSpace =
+              cl::sycl::access::address_space::global_space>
 inline T atomic_fetch_sub(
     T *addr, T operand,
     cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed) {
@@ -121,9 +119,8 @@ inline T atomic_fetch_sub(
 /// \param operand Be anded with data pointed by \p addr.
 /// \param memoryOrder The memory ordering used.
 /// \return The old value addr point to.
-template <cl::sycl::access::address_space addressSpace =
-              cl::sycl::access::address_space::global_space,
-          typename T>
+template <typename T, cl::sycl::access::address_space addressSpace =
+              cl::sycl::access::address_space::global_space>
 inline T atomic_fetch_and(
     T *addr, T operand,
     cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed) {
@@ -137,9 +134,8 @@ inline T atomic_fetch_and(
 /// \param operand Be or-ed with data pointed by \p addr.
 /// \param memoryOrder The memory ordering used.
 /// \return The old value addr point to.
-template <cl::sycl::access::address_space addressSpace =
-              cl::sycl::access::address_space::global_space,
-          typename T>
+template <typename T, cl::sycl::access::address_space addressSpace =
+              cl::sycl::access::address_space::global_space>
 inline T atomic_fetch_or(
     T *addr, T operor,
     cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed) {
@@ -153,9 +149,8 @@ inline T atomic_fetch_or(
 /// \param operxor Be xor-ed with data pointed by \p addr.
 /// \param memoryOrder The memory ordering used.
 /// \return The old value addr point to.
-template <cl::sycl::access::address_space addressSpace =
-              cl::sycl::access::address_space::global_space,
-          typename T>
+template <typename T, cl::sycl::access::address_space addressSpace =
+              cl::sycl::access::address_space::global_space>
 inline T atomic_fetch_xor(
     T *addr, T operxor,
     cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed) {
@@ -169,9 +164,8 @@ inline T atomic_fetch_xor(
 /// \param opermin.
 /// \param memoryOrder The memory ordering used.
 /// \return The old value addr point to.
-template <cl::sycl::access::address_space addressSpace =
-              cl::sycl::access::address_space::global_space,
-          typename T>
+template <typename T, cl::sycl::access::address_space addressSpace =
+              cl::sycl::access::address_space::global_space>
 inline T atomic_fetch_min(
     T *addr, T opermin,
     cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed) {
@@ -185,9 +179,8 @@ inline T atomic_fetch_min(
 /// \param opermax.
 /// \param memoryOrder The memory ordering used.
 /// \return The old value addr point to.
-template <cl::sycl::access::address_space addressSpace =
-              cl::sycl::access::address_space::global_space,
-          typename T>
+template <typename T, cl::sycl::access::address_space addressSpace =
+              cl::sycl::access::address_space::global_space>
 inline T atomic_fetch_max(
     T *addr, T opermax,
     cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed) {
@@ -201,9 +194,8 @@ inline T atomic_fetch_max(
 /// \param operand Be exchanged with data pointed by \p addr.
 /// \param memoryOrder The memory ordering used.
 /// \return The old value addr point to.
-template <cl::sycl::access::address_space addressSpace =
-              cl::sycl::access::address_space::global_space,
-          typename T>
+template <typename T, cl::sycl::access::address_space addressSpace =
+              cl::sycl::access::address_space::global_space>
 inline T atomic_exchange(
     T *addr, T operand,
     cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed) {
@@ -221,9 +213,8 @@ inline T atomic_exchange(
 /// \param success The memory ordering used when comparison succeeds.
 /// \param fail The memory ordering used when comparison fails.
 /// \return old data of *addr.
-template <cl::sycl::access::address_space addressSpace =
-              cl::sycl::access::address_space::global_space,
-          typename T>
+template <typename T, cl::sycl::access::address_space addressSpace =
+              cl::sycl::access::address_space::global_space>
 T atomic_compare_exchange_strong(
     cl::sycl::multi_ptr<T, cl::sycl::access::address_space::global_space> addr,
     T expected, T desired,
@@ -243,9 +234,8 @@ T atomic_compare_exchange_strong(
 /// \param success The memory ordering used when comparison succeeds.
 /// \param fail The memory ordering used when comparison fails.
 /// \return (*addr==expected)
-template <cl::sycl::access::address_space addressSpace =
-              cl::sycl::access::address_space::global_space,
-          typename T>
+template <typename T, cl::sycl::access::address_space addressSpace =
+              cl::sycl::access::address_space::global_space>
 T atomic_compare_exchange_strong(
     T *addr, T expected, T desired,
     cl::sycl::memory_order success = cl::sycl::memory_order::relaxed,
