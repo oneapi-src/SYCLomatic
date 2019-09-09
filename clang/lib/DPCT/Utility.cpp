@@ -162,15 +162,25 @@ std::string getStmtSpelling(const Stmt *S, const ASTContext &Context) {
   auto &SM = Context.getSourceManager();
   SourceLocation BeginLoc, EndLoc;
   if (SM.isMacroArgExpansion(S->getBeginLoc())) {
-    BeginLoc = SM.getSpellingLoc(S->getBeginLoc());
-    EndLoc = SM.getSpellingLoc(S->getEndLoc());
+    BeginLoc = SM.getImmediateSpellingLoc(S->getBeginLoc());
+    EndLoc = SM.getImmediateSpellingLoc(S->getEndLoc());
+    if (EndLoc.isMacroID()) {
+      // if the immediate spelling location of
+      // a macro arg is another macro, get the expansion loc
+      EndLoc = SM.getExpansionLoc(EndLoc);
+    }
+    if (BeginLoc.isMacroID()) {
+      // if the immediate spelling location of
+      // a macro arg is another macro, get the expansion loc
+      BeginLoc = SM.getExpansionLoc(BeginLoc);
+    }
   } else {
     BeginLoc = SM.getExpansionLoc(S->getBeginLoc());
     EndLoc = SM.getExpansionLoc(S->getEndLoc());
   }
-  auto Length = SM.getDecomposedLoc(EndLoc).second -
-                SM.getDecomposedLoc(BeginLoc).second +
-                Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
+
+  int Length = SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc)
+    + Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
   return std::string(SM.getCharacterData(BeginLoc), Length);
 }
 
