@@ -23,11 +23,12 @@
 
 namespace dpct {
 
-/// Atomically add operand to *addr, Int version.
-/// \param [in, out] addr Point to a data.
-/// \param operand Be added to data pointed by \p addr.
+/// Atomically add the value operand to the value at the addr and assign the
+/// result to the value at addr, Int version.
+/// \param [in, out] addr The pointer to the data.
+/// \param operand The value to add to the value at \p addr.
 /// \param memoryOrder The memory ordering used.
-/// \return The old value addr point to.
+/// \return The value at the \p addr before the call.
 template <typename T, cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space>
 inline T atomic_fetch_add(
@@ -38,11 +39,12 @@ inline T atomic_fetch_add(
   return cl::sycl::atomic_fetch_add(obj, operand, memoryOrder);
 }
 
-/// Atomically add operand to *addr, Float version.
-/// \param [in, out] addr Point to a data.
-/// \param operand Be added to data pointed by \p addr.
+/// Atomically add the value operand to the value at the addr and assign the
+/// result to the value at addr, Float version.
+/// \param [in, out] addr The pointer to the data.
+/// \param operand The value to add to the value at \p addr.
 /// \param memoryOrder The memory ordering used.
-/// \return The old value addr point to.
+/// \return The value at the \p addr before the call.
 template <cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space>
 inline float atomic_fetch_add(
@@ -67,11 +69,12 @@ inline float atomic_fetch_add(
   return old_float_value;
 }
 
-/// Atomically add operand to *addr, Double version.
-/// \param [in, out] addr Point to a data.
-/// \param operand Be added to data pointed by \p addr.
+/// Atomically add the value operand to the value at the addr and assign the
+/// result to the value at addr, Double version.
+/// \param [in, out] addr The pointer to the data.
+/// \param operand The value to add to the value at \p addr
 /// \param memoryOrder The memory ordering used.
-/// \return The old value addr point to.
+/// \return The value at the \p addr before the call.
 template <cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space>
 inline double atomic_fetch_add(
@@ -99,11 +102,12 @@ inline double atomic_fetch_add(
   return old_double_value;
 }
 
-/// Atomically subtract operand from *addr.
-/// \param [in, out] addr Point to a data.
-/// \param operand Be substracted from data pointed by \p addr.
+/// Atomically subtract the value operand from the value at the addr and assign
+/// the result to the value at addr.
+/// \param [in, out] addr The pointer to the data.
+/// \param operand The value to substract from the value at \p addr
 /// \param memoryOrder The memory ordering used.
-/// \return The old value addr point to.
+/// \return The value at the \p addr before the call.
 template <typename T, cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space>
 inline T atomic_fetch_sub(
@@ -114,11 +118,12 @@ inline T atomic_fetch_sub(
   return cl::sycl::atomic_fetch_sub(obj, operand, memoryOrder);
 }
 
-/// Atomically and *addr with operand.
-/// \param [in, out] addr Point to a data.
-/// \param operand Be anded with data pointed by \p addr.
+/// Atomically perform a bitwise AND between the value operand and the value at the addr
+/// and assign the result to the value at addr.
+/// \param [in, out] addr The pointer to the data.
+/// \param operand The value to use in bitwise AND operation with the value at the \p addr.
 /// \param memoryOrder The memory ordering used.
-/// \return The old value addr point to.
+/// \return The value at the \p addr before the call.
 template <typename T, cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space>
 inline T atomic_fetch_and(
@@ -129,71 +134,75 @@ inline T atomic_fetch_and(
   return cl::sycl::atomic_fetch_and(obj, operand, memoryOrder);
 }
 
-/// Atomically or *addr with operand.
-/// \param [in, out] addr Point to a data.
-/// \param operand Be or-ed with data pointed by \p addr.
+/// Atomically or the value at the addr with the value operand, and assign
+/// the result to the value at addr.
+/// \param [in, out] addr The pointer to the data.
+/// \param operand The value to use in bitwise OR operation with the value at the \p addr.
 /// \param memoryOrder The memory ordering used.
-/// \return The old value addr point to.
+/// \return The value at the \p addr before the call.
 template <typename T, cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space>
 inline T atomic_fetch_or(
-    T *addr, T operor,
+    T *addr, T operand,
     cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed) {
   cl::sycl::atomic<T, addressSpace> obj(
       (cl::sycl::multi_ptr<T, addressSpace>(addr)));
-  return cl::sycl::atomic_fetch_or(obj, operor, memoryOrder);
+  return cl::sycl::atomic_fetch_or(obj, operand, memoryOrder);
 }
 
-/// Atomically xor *addr with operxor.
-/// \param [in, out] addr Point to a data.
-/// \param operxor Be xor-ed with data pointed by \p addr.
+/// Atomically xor the value at the addr with the value operand, and assign
+/// the result to the value at addr.
+/// \param [in, out] addr The pointer to the data.
+/// \param operand The value to use in bitwise XOR operation with the value at the \p addr.
 /// \param memoryOrder The memory ordering used.
-/// \return The old value addr point to.
+/// \return The value at the \p addr before the call.
 template <typename T, cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space>
 inline T atomic_fetch_xor(
-    T *addr, T operxor,
+    T *addr, T operand,
     cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed) {
   cl::sycl::atomic<T, addressSpace> obj(
       (cl::sycl::multi_ptr<T, addressSpace>(addr)));
-  return cl::sycl::atomic_fetch_xor(obj, operxor, memoryOrder);
+  return cl::sycl::atomic_fetch_xor(obj, operand, memoryOrder);
 }
 
-/// Atomically do *addr=min(*addr, opermin).
-/// \param [in, out] addr Point to a data.
-/// \param opermin.
+/// Atomically calculate the minimum of the value at addr and the value operand
+/// and assign the result to the value at addr.
+/// \param [in, out] addr The pointer to the data.
+/// \param operand.
 /// \param memoryOrder The memory ordering used.
-/// \return The old value addr point to.
+/// \return The value at the \p addr before the call.
 template <typename T, cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space>
 inline T atomic_fetch_min(
-    T *addr, T opermin,
+    T *addr, T operand,
     cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed) {
   cl::sycl::atomic<T, addressSpace> obj(
       (cl::sycl::multi_ptr<T, addressSpace>(addr)));
-  return cl::sycl::atomic_fetch_min(obj, opermin, memoryOrder);
+  return cl::sycl::atomic_fetch_min(obj, operand, memoryOrder);
 }
 
-/// Atomically do *addr=max(*addr, opermax).
-/// \param [in, out] addr Point to a data.
-/// \param opermax.
+/// Atomically calculate the maximum of the value at addr and the value operand
+/// and assign the result to the value at addr.
+/// \param [in, out] addr The pointer to the data.
+/// \param operand.
 /// \param memoryOrder The memory ordering used.
-/// \return The old value addr point to.
+/// \return The value at the \p addr before the call.
 template <typename T, cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space>
 inline T atomic_fetch_max(
-    T *addr, T opermax,
+    T *addr, T operand,
     cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed) {
   cl::sycl::atomic<T, addressSpace> obj(
       (cl::sycl::multi_ptr<T, addressSpace>(addr)));
-  return cl::sycl::atomic_fetch_max(obj, opermax, memoryOrder);
+  return cl::sycl::atomic_fetch_max(obj, operand, memoryOrder);
 }
 
-/// Atomically exchange *addr with operand.
-/// \param [in, out] addr Point to a data.
-/// \param operand Be exchanged with data pointed by \p addr.
+/// Atomically exchange the value at the address addr with the value operand.
+/// \param [in, out] addr The pointer to the data.
+/// \param operand The value to be exchanged with the value pointed by \p addr.
 /// \param memoryOrder The memory ordering used.
-/// \return The old value addr point to.
+/// \return The value at the \p addr before the call.
 template <typename T, cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space>
 inline T atomic_exchange(
@@ -204,15 +213,15 @@ inline T atomic_exchange(
   return cl::sycl::atomic_exchange(obj, operand, memoryOrder);
 }
 
-/// Atomically compare and exchange.
-/// if(*addr==expected) *addr=desired, return expected
-/// if(*addr!=expected)  return *addr
+/// Atomically compare the value at \p addr to the value expected and exchange
+/// with the value desired if the value at \p addr is equal to the value expected.
+/// Returns the value at the \p addr before the call.
 /// \param [in, out] addr Multi_ptr.
-/// \param expected The value compare against *addr.
-/// \param desired The value store to *addr on success.
+/// \param expected The value to compare against the value at \p addr.
+/// \param desired The value to assign to \p addr if the value at \p addr is expected.
 /// \param success The memory ordering used when comparison succeeds.
 /// \param fail The memory ordering used when comparison fails.
-/// \return old data of *addr.
+/// \return The value at the \p addr before the call.
 template <typename T, cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space>
 T atomic_compare_exchange_strong(
@@ -225,15 +234,15 @@ T atomic_compare_exchange_strong(
   return expected;
 }
 
-/// Atomically compare and exchange.
-/// if(*addr==expected) *addr=desired, return true
-/// if(*addr!=expected)  return false
-/// \param [in, out] addr Point to a data.
-/// \param expected The value compare against *addr.
-/// \param desired The value store to *addr on success.
+/// Atomically compare the value at \p addr to the value expected and exchange
+/// with the value desired if the value at \p addr is equal to the value expected.
+/// Returns the value at the \p addr before the call.
+/// \param [in] addr The pointer to the data.
+/// \param expected The value to compare against the value at \p addr.
+/// \param desired The value to assign to \p addr if the value at \p addr is expected.
 /// \param success The memory ordering used when comparison succeeds.
 /// \param fail The memory ordering used when comparison fails.
-/// \return (*addr==expected)
+/// \return The value at the \p addr before the call.
 template <typename T, cl::sycl::access::address_space addressSpace =
               cl::sycl::access::address_space::global_space>
 T atomic_compare_exchange_strong(

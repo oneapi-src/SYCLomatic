@@ -44,11 +44,10 @@ void copy_back(int *ptr, const std::vector<int64_t> &vec) {
 
 /// Computes the LU factorizations of a batch of general matrices.
 /// \param [in] exec_queue The queue where the routine should be executed.
-/// \param [in] n The order of the batch matrices.
-/// \param [in, out] a A pointer array, each pointer points a matrix. These
-/// matrices will be overwirtten by lower triangulars with unit diagonal
-/// elements and upper triangulars.
-/// \param [in] lda The leading dimension of the batch matrices.
+/// \param [in] n The order of the matrices.
+/// \param [in, out] a Array of pointers to matrices. These matrices will be overwritten
+/// by lower triangulars with unit diagonal elements and upper triangulars.
+/// \param [in] lda The leading dimension of the matrices.
 /// \param [out] ipiv An array stores the pivot indices.
 /// \param [out] info An array stores the error information.
 /// \param [in] batch_size The size of the batch.
@@ -56,13 +55,12 @@ template <typename T>
 inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
                                 int lda, int *ipiv, int *info, int batch_size) {
   using Ty = typename DataType<T>::T2;
-  // Need construct std::vector to store m, n and lda
+  // Need to construct std::vector to store m, n and lda
   std::vector<int64_t> mn_vec = std::vector<int64_t>(batch_size, n);
   std::vector<int64_t> lda_vec = std::vector<int64_t>(batch_size, lda);
   std::vector<int64_t> info_vec(batch_size, 0);
   std::vector<int64_t> ipiv_vec(batch_size * n, 0);
 
-  // geqrf buffer block
   {
     std::vector<cl::sycl::buffer<Ty, 1>> a_buf_vec;
     std::vector<cl::sycl::buffer<int64_t, 1>> info_buf_vec;
@@ -90,14 +88,14 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
 /// coefficient matrices, with multiple right-hand sides.
 /// \param [in] exec_queue The queue where the routine should be executed.
 /// \param [in] trans Indicates the form of the linear equations.
-/// \param [in] n The order of the batch matrices.
+/// \param [in] n The order of the matrices.
 /// \param [in] nrhs The number of right hand sides.
-/// \param [in] a A pointer array, each pointer points a matrix.
-/// \param [in] lda The leading dimension of the batch matrices in \param a.
+/// \param [in, out] a Array of pointers to matrices.
+/// \param [in] lda The leading dimension of the matrices in \param a.
 /// \param [out] ipiv An array stores the pivots.
-/// \param [out] b A pointer array, each pointer points a matrix whose columns
-/// are the right-hand sides for the systems of equations.
-/// \param [in] ldb The leading dimension of the batch matrices in \param b.
+/// \param [out] b Array of pointers to matrices, whose columns are
+/// the right-hand sides for the systems of equations.
+/// \param [in] ldb The leading dimension of the matrices in \param b.
 /// \param [out] info An array stores the error information.
 /// \param [in] batch_size The size of the batch.
 template <typename T>
@@ -106,7 +104,7 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
                                 const T *a[], int lda, int *ipiv, T *b[],
                                 int ldb, int *info, int batch_size) {
   using Ty = typename DataType<T>::T2;
-  // Need construct std::vector to store trans, n, nrhs, lda and ldb
+  // Need to construct std::vector to store trans, n, nrhs, lda and ldb
   std::vector<mkl::transpose> trans_vec =
       std::vector<mkl::transpose>(batch_size, trans);
   std::vector<int64_t> n_vec = std::vector<int64_t>(batch_size, n);
@@ -130,7 +128,6 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
         cl::sycl::range<1>(allocation_b.size / sizeof(Ty))));
   }
 
-  // geqrs buffer block
   {
     auto allocation_ipiv =
         dpct::memory_manager::get_instance().translate_ptr(ipiv);
@@ -159,12 +156,12 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
 
 /// Computes the inverses of a batch of LU-factored matrices.
 /// \param [in] exec_queue The queue where the routine should be executed.
-/// \param [in] n The order of the batch matrices.
-/// \param [in] a A pointer array, each pointer points a matrix.
-/// \param [in] lda The leading dimension of the batch matrices in \param a.
+/// \param [in] n The order of the matrices.
+/// \param [in, out] a Array of pointers to matrices.
+/// \param [in] lda The leading dimension of the matrices in \param a.
 /// \param [out] ipiv An array stores the pivots.
-/// \param [out] b A pointer array, each pointer points an inverse matrix.
-/// \param [in] ldb The leading dimension of the batch matrices in \param b.
+/// \param [out] b b Array of pointers to inverse matrices.
+/// \param [in] ldb The leading dimension of the matrices in \param b.
 /// \param [out] info An array stores the error information.
 /// \param [in] batch_size The size of the batch.
 template <typename T>
@@ -172,7 +169,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
                                 const T *a[], int lda, int *ipiv, T *b[],
                                 int ldb, int *info, int batch_size) {
   using Ty = typename DataType<T>::T2;
-  // Need construct std::vector to store n and lda
+  // Need to construct std::vector to store n and lda
   std::vector<int64_t> n_vec = std::vector<int64_t>(batch_size, n);
   std::vector<int64_t> ldb_vec = std::vector<int64_t>(batch_size, ldb);
   std::vector<int64_t> info_vec(batch_size, 0);
@@ -181,8 +178,8 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
 
   std::vector<cl::sycl::buffer<Ty, 1>> b_buf_vec;
   for (int64_t i = 0; i < batch_size; i++) {
-    // Original code is input A and output B while MKL API is input A and output
-    // A So copy A to B and use B as the parameter of MKL API.
+  // Need to create a copy of input matrices A to keep them unchanged.
+  // B (copy of A) will be used as input and output parameter in MKL API call.
     matrix_mem_copy(b[i], a[i], ldb, lda, n, n, dpct::device_to_device,
                     exec_queue);
     // assumes data is in column-major order
@@ -192,7 +189,6 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
         cl::sycl::range<1>(allocation_b.size / sizeof(Ty))));
   }
 
-  // getri_get_lwork buffer block
   {
     std::vector<cl::sycl::buffer<int64_t>> lwork_buf_vec;
     std::vector<cl::sycl::buffer<int64_t, 1>> ipiv_buf_vec;
@@ -204,7 +200,6 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
                                ipiv_buf_vec, lwork_buf_vec);
   }
 
-  // getri buffer block
   {
     std::vector<cl::sycl::buffer<int64_t, 1>> info_buf_vec;
     std::vector<cl::sycl::buffer<int64_t, 1>> ipiv_buf_vec;
@@ -226,11 +221,11 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
 
 /// Computes the QR factorizations of a batch of general matrices.
 /// \param [in] exec_queue The queue where the routine should be executed.
-/// \param [in] m The number of rows of the batch matrices.
-/// \param [in] n The number of columns of the batch matrices.
-/// \param [in, out] a A pointer array, each pointer points a matrix. These
+/// \param [in] m The number of rows in the matrices.
+/// \param [in] n The number of columns in the matrices.
+/// \param [in, out] a Array of pointers to matrices. These
 /// matrices will be overwritten by the factorization data.
-/// \param [in] lda The leading dimension of the batch matrices in \param a.
+/// \param [in] lda The leading dimension of the matrices in \param a.
 /// \param [out] tau An array stores the scalars.
 /// \param [out] info An array stores the error information.
 /// \param [in] batch_size The size of the batch.
@@ -239,7 +234,7 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
                                 T *a[], int lda, T *tau[], int *info,
                                 int batchSize) {
   using Ty = typename DataType<T>::T2;
-  // Need construct std::vector to store m, n and lda
+  // Need to construct std::vector to store m, n and lda
   std::vector<int64_t> m_vec = std::vector<int64_t>(batchSize, m);
   std::vector<int64_t> n_vec = std::vector<int64_t>(batchSize, n);
   std::vector<int64_t> lda_vec = std::vector<int64_t>(batchSize, lda);
@@ -260,7 +255,6 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
         cl::sycl::range<1>(allocation_tau.size / sizeof(Ty))));
   }
 
-  // geqrf_get_lwork buffer block
   {
     std::vector<cl::sycl::buffer<int64_t>> lwork_buf_vec;
     for (int64_t i = 0; i < batchSize; i++) {
@@ -270,7 +264,6 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
                                tau_buf_vec, lwork_buf_vec);
   }
 
-  // geqrf buffer block
   {
     std::vector<cl::sycl::buffer<Ty, 1>> work_buf_vec;
     std::vector<cl::sycl::buffer<int64_t, 1>> info_buf_vec;
