@@ -528,6 +528,7 @@ def split_command(command):
     if result.compiler == 'cuda':
         result.flags.append("-D__CUDA_ARCH__=400")
         result.flags.append("-D__CUDACC__=1")
+        result.flags.append("-D__CUDA__")
     # do extra check on number of source files
     if result.files:
         return result
