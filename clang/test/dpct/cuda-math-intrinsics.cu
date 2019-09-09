@@ -1744,6 +1744,23 @@ void testTypecasts() {
 
 }
 
+__global__ void testConditionalOperator(float *deviceArrayFloat) {
+  float &f0 = *deviceArrayFloat, &f1 = *(deviceArrayFloat + 1),
+        &f2 = *(deviceArrayFloat + 2);
+  // CHECK: f0 = cl::sycl::fmax(f0 = (f1) > (f1 == 1 ? 0 : -f2) ? cl::sycl::native::divide(cl::sycl::pow(f1, 2.f), f1) : -f1, f1 + f1 < f2
+  // CHECK-NEXT:         ? ((f1) > (f1 == 1 ? 0 : -f2) ? cl::sycl::native::divide(cl::sycl::pow(f2, 2.f), f1) : -f1)
+  // CHECK-NEXT:         : -f1);
+  // CHECK-NEXT: f0 = f1 > f2 ? cl::sycl::native::divide(cl::sycl::pow(f1, 2.f), f1) : f1;
+  // CHECK-NEXT: f0 = cl::sycl::fmax(0 ? cl::sycl::native::divide(cl::sycl::pow(f1, 2.f), f1) : f1, f2);
+  f0 = fmaxf(
+      f0 = (f1) > (f1 == 1 ? 0 : -f2) ? __fdividef(__powf(f1, 2.f), f1) : -f1,
+      f1 + f1 < f2
+          ? ((f1) > (f1 == 1 ? 0 : -f2) ? __fdividef(__powf(f2, 2.f), f1) : -f1)
+          : -f1);
+  f0 = f1 > f2 ? __fdividef(__powf(f1, 2.f), f1) : f1;
+  f0 = fmax(0 ? __fdividef(__powf(f1, 2.f), f1) : f1, f2);
+}
+
 int main() {
   testDouble();
   testFloat();

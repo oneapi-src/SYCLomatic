@@ -240,6 +240,13 @@ protected:
     dispatch(BO->getLHS());
     dispatch(BO->getRHS());
   }
+
+  inline void analyzeExpr(const ConditionalOperator *CO) {
+    dispatch(CO->getCond());
+    dispatch(CO->getLHS());
+    dispatch(CO->getRHS());
+  }
+
   inline void analyzeExpr(const DeclRefExpr *DRE);
 
   inline void analyzeExpr(const ParenExpr *PE) { dispatch(PE->getSubExpr()); }

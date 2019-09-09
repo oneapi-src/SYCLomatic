@@ -18,10 +18,7 @@ __global__ void foo() {
   int warpSize;
   int laneMask;
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for all.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().all(predicate);
+  // CHECK: item_{{[0-9a-z]+}}.get_sub_group().all(predicate);
   __all(predicate);
   // CHECK: /*
   // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for all.
@@ -29,10 +26,7 @@ __global__ void foo() {
   // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().all(predicate);
   __all_sync(mask, predicate);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for any.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().any(predicate);
+  // CHECK: item_{{[0-9a-z]+}}.get_sub_group().any(predicate);
   __any(predicate);
   // CHECK: /*
   // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for any.
