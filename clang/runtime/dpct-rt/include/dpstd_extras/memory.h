@@ -28,8 +28,6 @@ namespace dpct {
 
 namespace sycl = cl::sycl;
 
-// template<typename T>
-// using device_reference = T&;
 template <typename T> class device_ptr;
 
 template <typename T> struct device_reference {
@@ -38,9 +36,6 @@ template <typename T> struct device_reference {
   template <typename OtherT>
   device_reference(const device_reference<OtherT> &input)
       : value(input.value) {}
-  // template<typename OtherT>
-  // device_reference(device_reference<OtherT>&& input):
-  // value(std::move(input.value)) {}
   device_reference(const pointer &input) : value((*input).value) {}
   device_reference(value_type &input) : value(input) {}
   template <typename OtherT>
@@ -137,7 +132,8 @@ template <typename T> void swap(T &x, T &y) {
 }
 
 template <typename T>
-using device_iterator = dpstd::sycl_iterator<sycl::access::mode::read_write, T>;
+using device_iterator =
+    dpstd::__internal::sycl_iterator<sycl::access::mode::read_write, T>;
 
 template <typename T> class device_ptr : public device_iterator<T> {
   using Base = device_iterator<T>;
@@ -182,17 +178,13 @@ public:
   typename Base::difference_type operator-(const device_ptr &it) const {
     return Base::idx - it.idx;
   }
+
 };
 
-// template <typename T>
-// using device_ptr = sycl::global_ptr<T>;
-
-//    device_ptr<void> device_malloc(const std::size_t n);
 template <typename T> device_ptr<T> device_malloc(const std::size_t n) {
   return device_ptr<T>(n / sizeof(T));
 }
-//    device_ptr<T> device_new(device_ptr<void> p, const T& exemplar, const
-//    std::size_t n = 1);
+
 template <typename T>
 device_ptr<T> device_new(device_ptr<T> p, const T &exemplar,
                          const std::size_t n = 1) {
@@ -200,7 +192,7 @@ device_ptr<T> device_new(device_ptr<T> p, const T &exemplar,
   p.buffer = sycl::buffer<T, 1>(result.begin(), result.end());
   return p + n;
 }
-//    device_ptr<T> device_new(device_ptr<void> p, const std::size_t n = 1);
+
 template <typename T>
 device_ptr<T> device_new(device_ptr<T> p, const std::size_t n = 1) {
   return device_new(p, T{}, n);
@@ -222,7 +214,6 @@ template <typename T>
 typename std::enable_if<std::is_trivially_destructible<T>::value, void>::type
 device_delete(device_ptr<T>, const std::size_t n = 1) {}
 
-// casts
 template <typename T> device_ptr<T> device_pointer_cast(T *ptr) {
   return device_ptr<T>(ptr);
 }
@@ -240,7 +231,6 @@ template <typename Pointer> Pointer raw_pointer_cast(const Pointer &ptr) {
   return ptr;
 }
 
-// allocators (Experimental implementation. It can be extended if needed)
 template <typename T> using device_allocator = sycl::buffer_allocator;
 template <typename T> using device_malloc_allocator = sycl::buffer_allocator;
 template <typename T> using device_new_allocator = sycl::buffer_allocator;

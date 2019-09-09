@@ -17,6 +17,8 @@
 #ifndef __DPCT_FUNCTIONAL_H
 #define __DPCT_FUNCTIONAL_H
 
+#include <functional>
+
 #include <dpstd/iterators.h>
 
 #ifdef __PSTL_BACKEND_SYCL
@@ -24,10 +26,21 @@
 #endif
 
 #include <tuple>
+#include <utility>
 
 namespace dpct {
 
 namespace internal {
+
+template <typename Policy, typename NewName> struct rebind_policy {
+  using type = Policy;
+};
+
+template <typename DevicePolicy, typename KernelName, typename NewName>
+struct rebind_policy<
+    dpstd::execution::v1::sycl_policy<DevicePolicy, KernelName>, NewName> {
+  using type = dpstd::execution::v1::sycl_policy<DevicePolicy, NewName>;
+};
 
 template <typename T1, typename T2,
           typename R1 = typename std::iterator_traits<T1>::reference,
@@ -44,8 +57,10 @@ private:
 
 } // end namespace internal
 
-template <typename T> struct identity {
-  T operator()(const T &x) const { return x; }
+struct identity {
+  template <typename _T> constexpr _T &&operator()(_T &&x) const noexcept {
+    return std::forward<_T>(x);
+  }
 };
 
 template <typename T> struct maximum {
@@ -70,13 +85,16 @@ template <typename T> struct minimum {
 
 namespace internal {
 
+using std::get;
 #ifdef __PSTL_BACKEND_SYCL
+using dpstd::__par_backend::__internal::get;
 using dpstd::__par_backend::__internal::make_tuplewrapper;
 #endif
 
 // Functor replacing a zip & discard iterator combination; useful for stencil
-// algorithm Used by: copy_if, remove_copy_if, stable_partition_copy Lambda:
-// [](OutRef1 x) { return std::tie(x, std::ignore); }
+// algorithm
+// Used by: copy_if, remove_copy_if, stable_partition_copy
+// Lambda: [](OutRef1 x) { return std::tie(x, std::ignore); }
 template <typename T> struct discard_fun {
 
 #ifdef __PSTL_BACKEND_SYCL
@@ -153,8 +171,7 @@ private:
   const T step;
 };
 
-//[binary_pred](Ref a, Ref b){
-//return(binary_pred(std::get<0>(a),std::get<0>(b)));
+//[binary_pred](Ref a, Ref b){ return(binary_pred(get<0>(a),get<0>(b)));
 template <typename Predicate> struct unique_by_key_fun {
   typedef bool result_of;
   unique_by_key_fun(Predicate _pred) : pred(_pred) {}
@@ -167,7 +184,24 @@ private:
   Predicate pred;
 };
 
-// Functor applies function if predicate
+// Lambda: [pred, &new_value](Ref1 a, Ref2 s) {return pred(s) ? new_value : a;
+// });
+template <typename T, typename Predicate>
+struct replace_if_fun {
+public:
+  typedef T result_of;
+  replace_if_fun(Predicate _pred, T _new_value)
+      : pred(_pred), new_value(_new_value) {}
+
+  template <typename _T1, typename _T2> T operator()(_T1 &&a, _T2 &&s) const {
+    return pred(s) ? new_value : a;
+  }
+
+private:
+  Predicate pred;
+  const T new_value;
+};
+
 //[pred,op](Ref a){return pred(a) ? op(a) : a; }
 template <typename T, typename Predicate, typename Operator>
 struct transform_if_fun {
@@ -182,62 +216,21 @@ private:
   Operator op;
 };
 
-// called by: transform_if(6 args)
-template <typename T, /*typename T2, */ typename Predicate = class identity<T>,
-          typename UnaryOperation = class identity<T>>
-class transform_if_stencil_fun1 {
-public:
-  typedef typename std::tuple_element<2, T>::type result_of;
-  transform_if_stencil_fun1(Predicate _pred = identity<T>(),
-                            UnaryOperation _op = identity<T>())
-      : pred(_pred), op(_op) {}
-  // template<typename _T> result_of operator() (const T& a, _T&& s) const {
-  // return pred(s) ? op(a) : a; }
-  template <typename _T> result_of operator()(_T &&t) {
-    using std::get;
-    //#ifdef __PSTL_BACKEND_SYCL
-    //            using dpstd::par_backend::internal::get;
-    //#endif
-    if (pred(get<1>(t)))
-      return op(get<0>(t));
-    else
-      return get<0>(t);
-  }
-
-private:
-  Predicate pred;
-  UnaryOperation op;
-};
-
-// called by: transform_if(7 args)
-//[pred,binary_op](Ref1 a, Ref2 s){return pred(s)
-//binary_op(std::get<0>(a),std::get<1>(a)) : std::get<0>(a); }
-template <typename T, /*typename T2, */ typename Predicate,
-          typename BinaryOperation>
+template <typename T, typename Predicate, typename BinaryOperation>
 class transform_if_zip_stencil_fun {
 public:
-  typedef typename std::tuple_element<3, T>::type result_of;
-  transform_if_zip_stencil_fun(Predicate _pred = identity<T>(),
-                               BinaryOperation _op = identity<T>())
+  transform_if_zip_stencil_fun(Predicate _pred = identity(),
+                               BinaryOperation _op = identity())
       : pred(_pred), op(_op) {}
-  // template<typename _T> result_of operator() (const T& a, _T&& s) const {
-  // return pred(s) ? op(a) : a; }
-  template <typename _T> result_of operator()(_T t) {
-    using std::get;
-    //#ifdef __PSTL_BACKEND_SYCL
-    //            using dpstd::par_backend::internal::get;
-    //#endif
+  template <typename _T> void operator()(_T &&t) {
     if (pred(get<2>(t)))
-      return op(get<0>(t), get<1>(t));
-    else
-      return get<0>(t);
+      get<3>(t) = op(get<0>(t), get<1>(t));
   }
 
 private:
   Predicate pred;
   BinaryOperation op;
 };
-
 } // end namespace internal
 
 } // end namespace dpct

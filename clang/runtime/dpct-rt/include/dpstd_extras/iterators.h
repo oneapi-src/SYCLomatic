@@ -17,16 +17,17 @@
 #ifndef __DPCT_ITERATORS_H
 #define __DPCT_ITERATORS_H
 
-#include "functional.h"
 #include <dpstd/iterators.h>
+
+#include "functional.h"
+
+#include <dpstd/pstl/utils.h>
 
 namespace dpct {
 
 using std::advance;
 
 using std::distance;
-
-// counting iterator:
 
 template <typename T> using counting_iterator = dpstd::counting_iterator<T>;
 
@@ -35,14 +36,10 @@ counting_iterator<T> make_counting_iterator(const T &input) {
   return counting_iterator<T>(input);
 }
 
-// transform iterator:
-
 using dpstd::make_transform_iterator;
 
 template <typename UnaryFunc, typename Iter>
 using transform_iterator = dpstd::transform_iterator<UnaryFunc, Iter>;
-
-// zip iterator
 
 template <typename... Types>
 auto zipit_decl(std::tuple<Types...>) -> dpstd::zip_iterator<Types...>;
@@ -50,21 +47,21 @@ template <typename U> using zip_iterator = decltype(zipit_decl(U()));
 
 namespace detail {
 template <typename T, size_t... Is>
-constexpr auto make_zip_iterator(T tuple, tbb::internal::index_sequence<Is...>)
+constexpr auto make_zip_iterator(T tuple,
+                                 dpstd::__internal::__index_sequence<Is...>)
     -> decltype(dpstd::make_zip_iterator(std::get<Is>(tuple)...)) {
   return dpstd::make_zip_iterator(std::get<Is>(tuple)...);
 }
-} // namespace detail
+}
 
 template <typename... T>
 constexpr dpstd::zip_iterator<T...>
 make_zip_iterator(const std::tuple<T...> &arg) {
   return detail::make_zip_iterator(
-      arg, tbb::internal::make_index_sequence<sizeof...(T)>{});
+      arg, dpstd::__internal::__make_index_sequence<sizeof...(T)>{});
 }
 
 // permutation iterator:
-
 // Simple aliasing won't work because of different constructor signatures
 // template< typename Iter1, typename Iter2 > using permutation_iterator =
 // tbb::transform_iterator<perm_fun<Iter1, Iter2>, Iter2>;

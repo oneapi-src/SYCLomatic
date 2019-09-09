@@ -22,13 +22,16 @@
 #define __PSTL_BACKEND_SYCL 1
 #define __USE_SYCL 1
 
-// Macros to indicate presence of dpct headers:
 #define __USE_DPCT 1
 
 #include <dpstd/execution>
 #include <dpstd/algorithm>
+#include <dpstd/numeric>
+
 #include "dpstd_extras/memory.h"
 #include "dpstd_extras/algorithm.h"
+#include "dpstd_extras/numeric.h"
 #include "dpstd_extras/iterators.h"
+
 
 #endif
