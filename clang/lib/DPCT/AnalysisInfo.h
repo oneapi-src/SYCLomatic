@@ -1658,4 +1658,4 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
 } // namespace dpct
 } // namespace clang
 
-#endif // CU2SYCL_ANALYSIS_INFO_H
+#endif

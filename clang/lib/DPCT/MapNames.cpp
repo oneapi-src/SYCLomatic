@@ -1368,7 +1368,6 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
           std::vector<std::string>{"double", "double"},
           std::vector<std::string>{}, std::vector<int>{2}, 1, 0, 3,
           "mkl::blas::trmm"}},
-        // cuComplex and cuDoubleComplex
         // level 1
         {"cublasIcamax",
          {std::vector<int>{1}, std::vector<int>{},
@@ -2563,7 +2562,6 @@ const MapNames::ThrustMapTy MapNames::ThrustFuncNamesMap{
      {"dpct::stable_sort_by_key", "dpstd::execution::sycl"}},
 };
 
-// CUDA dim3 dot member funciton names mapping.
 const MapNames::MapTy MapNames::Dim3MemberNamesMap{
     {"x", "[0]"}, {"y", "[1]"}, {"z", "[2]"},
     // ...
@@ -2629,41 +2627,41 @@ const MapNames::MapTy MapNames::MemberNamesMap{
 
 // Enum constants name mapping.
 const MapNames::MapTy EnumConstantRule::EnumNamesMap{
-    // enum cudaComputeMode
+    // enum Compute Mode
     {"cudaComputeModeDefault", "compute_mode::default_"},
     {"cudaComputeModeExclusive", "compute_mode::exclusive"},
     {"cudaComputeModeProhibited", "compute_mode::prohibited"},
     {"cudaComputeModeExclusiveProcess", "compute_mode::exclusive_process"},
     // ...
-    // enum cudaDeviceAttr
+    // enum Device Attribute
     // ...
     {"cudaDevAttrHostNativeAtomicSupported", "is_native_atomic_supported"},
     {"cudaDevAttrComputeCapabilityMajor", "get_major_version"},
-    // enum cudaMemcpyKind
+    // enum Memcpy Kind
     {"cudaMemcpyHostToHost", "host_to_host"},
     {"cudaMemcpyHostToDevice", "host_to_device"},
     {"cudaMemcpyDeviceToHost", "device_to_host"},
     {"cudaMemcpyDeviceToDevice", "device_to_device"},
     {"cudaMemcpyDefault", "automatic"},
-    // enum cudaTextureAddressMode
+    // enum Texture Address Mode
     {"cudaAddressModeWrap", "cl::sycl::addressing_mode::repeat"},
     {"cudaAddressModeClamp", "cl::sycl::addressing_mode::clamp_to_edge"},
     {"cudaAddressModeMirror", "cl::sycl::addressing_mode::mirrored_repeat"},
     {"cudaAddressModeBorder", "cl::sycl::addressing_mode::clamp"},
-    // enum cudaTextureFilterMode
+    // enum Texture Filter Mode
     {"cudaFilterModePoint", "cl::sycl::filtering_mode::nearest"},
     {"cudaFilterModeLinear", "cl::sycl::filtering_mode::linear"},
-    // enum cudaChannelFormatKind
+    // enum Channel Format Kind
     {"cudaChannelFormatKindSigned", "dpct::channel_signed"},
     {"cudaChannelFormatKindUnsigned", "dpct::channel_unsigned"},
     {"cudaChannelFormatKindFloat", "dpct::channel_float"},
-    // enum cudaResourceType
+    // enum Resource Type
     {"cudaResourceTypeArray", "dpct::data_matrix"},
     {"cudaResourceTypeLinear", "dpct::data_linear"}
     // ...
 };
 
-// cudaFuncAttributes names migration
+// Function Attributes names migration
 const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
     {"maxThreadsPerBlock", "max_work_group_size"},
 };

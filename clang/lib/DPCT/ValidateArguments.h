@@ -34,7 +34,7 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
 
 // Retrun value:
 //  0: Path is valid
-//  1: Path is empty, option "cuda-include-path" is not used
+//  1: Path is empty, option SDK include path is not used
 // -1: Path is invaild
 int checkSDKPathOrIncludePath(const std::string &Path, std::string &RealPath);
 #endif // DPCT_VALIDATE_ARGUMENTS_H

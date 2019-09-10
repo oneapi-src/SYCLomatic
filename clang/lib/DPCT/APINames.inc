@@ -308,7 +308,6 @@ ENTRY(cudaGetSurfaceObjectResourceDesc, false, P4, "comment")
 ENTRY(cudaDriverGetVersion, false, P0, "comment")
 ENTRY(cudaRuntimeGetVersion, false, P0, "comment")
 
-// the graph management functions of CUDA runtime API
 ENTRY(cudaGraphAddChildGraphNode, false, P4, "comment")
 ENTRY(cudaGraphAddDependencies, false, P4, "comment")
 ENTRY(cudaGraphAddEmptyNode, false, P4, "comment")

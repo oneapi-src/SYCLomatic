@@ -248,7 +248,7 @@ ENTRY(cusolverDnDsyevjBatched, false, P4, "comment")
 ENTRY(cusolverDnCheevjBatched, false, P4, "comment")
 ENTRY(cusolverDnZheevjBatched, false, P4, "comment")
 
-// cuSOLVERSP call api
+
 ENTRY(cusolverSpCreate, false, P4, "comment")
 ENTRY(cusolverSpDestroy, false, P4, "comment")
 ENTRY(cusolverSpSetStream, false, P4, "comment")
@@ -323,7 +323,6 @@ ENTRY(cusolverSpDcsrqrsvBatched, false, P4, "comment")
 ENTRY(cusolverSpCcsrqrsvBatched, false, P4, "comment")
 ENTRY(cusolverSpZcsrqrsvBatched, false, P4, "comment")
 
-// cuSOLVERRF call api
 ENTRY(cusolverRfAccessBundledFactors, false, P4, "comment")
 ENTRY(cusolverRfAnalyze, false, P4, "comment")
 ENTRY(cusolverRfSetupDevice, false, P4, "comment")

@@ -239,8 +239,8 @@ opt<UsmLevel> USMLevel(
 // clang-format on
 
 // TODO: implement one of this for each source language.
-std::string CudaPath;        // Global value for the CUDA install path.
-std::string DpctInstallPath; // Installation directory for this tool
+std::string CudaPath;
+std::string DpctInstallPath;
 
 class DPCTConsumer : public ASTConsumer {
 public:
@@ -362,11 +362,11 @@ public:
 std::string getCudaInstallPath(int argc, const char **argv) {
   std::vector<const char *> Argv;
   Argv.reserve(argc);
-  // do not copy "--" so the driver sees a possible --cuda-path option
+  // do not copy "--" so the driver sees a possible sdk include path option
   std::copy_if(argv, argv + argc, back_inserter(Argv),
                [](const char *s) { return std::strcmp(s, "--"); });
   // Remove the redundant prefix "--extra-arg=" so that
-  // CudaInstallationDetector can find correct path.
+  // SDK detector can find correct path.
   for (unsigned int i = 0; i < Argv.size(); i++) {
     if (strncmp(argv[i], "--extra-arg=--cuda-path", 23) == 0) {
       Argv[i] = argv[i] + 12;
@@ -741,10 +741,7 @@ int run(int argc, const char **argv) {
   DpctInstallPath = getInstallPath(Tool, argv[0]);
 
   ValidateInputDirectory(Tool, InRoot);
-  // Made "-- -x cuda --cuda-host-only -nocudalib" option set by default, .i.e
-  // commandline "dpct -in-root ./ -out-root ./ ./topologyQuery.cu  --  -x
-  // cuda --cuda-host-only -nocudalib -I../common/inc" became "dpct -in-root
-  // ./ -out-root ./ ./topologyQuery.cu  -- -I../common/inc"
+
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-nocudalib", ArgumentInsertPosition::BEGIN));
 

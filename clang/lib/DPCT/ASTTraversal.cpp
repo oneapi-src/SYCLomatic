@@ -79,8 +79,6 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
     return;
   }
 
-  // Remove __global__, __host__ and __device__ if they act as replacement
-  // tokens other macros.
   auto MI = MD->getMacroInfo();
   for (auto Iter = MI->tokens_begin(); Iter != MI->tokens_end(); ++Iter) {
     auto II = Iter->getIdentifierInfo();
@@ -116,8 +114,6 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   //        return NULL;
   //    }
   // };
-  // So dpct removes attributes "__host__"/"__device__"/"__global__" in the
-  // preprocessing stage.
   auto TKind = MacroNameTok.getKind();
   auto Name = MacroNameTok.getIdentifierInfo()->getName();
   if (TKind == tok::identifier &&
@@ -130,7 +126,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
         new ReplaceToken(Range.getBegin(), "__dpct_inline__"));
   }
 
-  // Record the expansion locations of the macros containing CUDA attributes.
+  // Record the expansion locations of the macros containing attributes.
   // FunctionAttrsRule should/will NOT work on these locations.
   auto MI = MD.getMacroInfo();
   for (auto Iter = MI->tokens_begin(); Iter != MI->tokens_end(); ++Iter) {
@@ -160,8 +156,6 @@ void IncludesCallbacks::Defined(const Token &MacroNameTok,
 }
 
 void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange) {
-  // __CUDA_ARCH__ is not defined in clang, and need check if it is use
-  // in #if and #elif
   auto Begin = SM.getExpansionLoc(ConditionRange.getBegin());
   auto End = SM.getExpansionLoc(ConditionRange.getEnd());
   const char *BP = SM.getCharacterData(Begin);
@@ -284,7 +278,7 @@ void IncludesCallbacks::InclusionDirective(
     DpctGlobalInfo::getInstance().setMathHeaderInserted(HashLoc, true);
   }
 
-  // Replace "#include <cublas_v2.h>" and "#include <cublas.h>" with
+  // Replace with
   // <mkl_blas_sycl.hpp>, <mkl_lapack_sycl.hpp> and <sycl_types.hpp>
   if ((FileName.compare(StringRef("cublas_v2.h")) == 0) ||
       (FileName.compare(StringRef("cublas.h")) == 0) ||
@@ -297,8 +291,6 @@ void IncludesCallbacks::InclusionDirective(
   }
 
   if (!isChildPath(CudaPath, IncludePath) &&
-      // CudaPath detection have not consider soft link, here do special
-      // for /usr/local/cuda
       IncludePath.compare(0, 15, "/usr/local/cuda", 15)) {
 
     // Replace "#include "*.cuh"" with "include "*.dp.hpp""
@@ -347,8 +339,8 @@ void IncludesCallbacks::InclusionDirective(
 
   //  TODO: implement one of this for each source language.
   // If it's not an include from the SDK, leave it,
-  // unless it's <cuda_runtime.h>, in which case it will be replaced.
-  // In other words, <cuda_runtime.h> will be replaced regardless of where it's
+  // unless it's runtime header, in which case it will be replaced.
+  // In other words, runtime header will be replaced regardless of where it's
   // coming from.
   if (!isChildPath(CudaPath, IncludePath) &&
       !isSamePath(CudaPath, IncludePath) &&
@@ -535,7 +527,6 @@ static bool isCudaFailureCheck(const BinaryOperator *Op, bool IsEq = false) {
     auto EnumDecl = dyn_cast<EnumConstantDecl>(D->getDecl());
     if (!EnumDecl)
       return false;
-    // Check for cudaSuccess or CUDA_SUCCESS.
     if (IsEq ^ (EnumDecl->getInitVal() != 0))
       return false;
   } else {
@@ -887,8 +878,6 @@ auto TypedefNames =
                "cublasOperation_t", "cublasStatus", "cusolverDnHandle_t",
                "cusolverStatus_t", "cusolverEigType_t", "cusolverEigMode_t");
 auto EnumTypeNames = hasAnyName("cudaError", "cufftResult_t", "cudaError_enum");
-// CUstream_st and CUevent_st are the actual types of cudaStream_t and
-// cudaEvent_st respectively
 auto RecordTypeNames =
     hasAnyName("cudaDeviceProp", "CUstream_st", "CUevent_st");
 auto HandleTypeNames = hasAnyName("cublasHandle_t", "cusolverDnHandle_t");
@@ -1232,8 +1221,8 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   if (DupFilter.find(Loc) != DupFilter.end())
     return;
 
-  // std::vector<cudaStream_t> is elaborated to
-  // std::vector<CUstream_st *, std::allocator<CUstream_st *>>
+  // std::vector<stream type> is elaborated to
+  // std::vector<stream type *, std::allocator<stream type *>>
   bool isElaboratedType = false;
   if (auto ET = dyn_cast<ElaboratedType>(QT.getTypePtr())) {
     QT = ET->desugar();
@@ -1980,8 +1969,8 @@ void ReturnTypeRule::registerMatcher(MatchFinder &MF) {
           .bind("functionDecl"),
       this);
 
-  // TODO: cublasHandle_t cannot migrate to cl::sycl::queue simplely.
-  // cublasHandle_t is a struct, so it could be returned as value by user
+  // TODO: blas handler cannot migrate to cl::sycl::queue simplely.
+  // blas handler is a struct, so it could be returned as value by user
   // defined function. But cl::sycl::queue cannot be return as value.
   // It will be replaced by a handle type later.
   MF.addMatcher(
@@ -2055,7 +2044,6 @@ void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(ReturnTypeRule)
 
-// Rule for cudaDeviceProp variables.
 void DevicePropVarRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       memberExpr(
@@ -2153,11 +2141,8 @@ void ErrorConstantsRule::run(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(ErrorConstantsRule)
 
 // Rule for BLAS enums.
-// All BLAS enums have the prefix CUBLAS_
 // Migrate BLAS status values to corresponding int values
-// Example: migrate CUBLAS_STATUS_SUCCESS to 0
 // Other BLAS named values are migrated to corresponding named values
-// Example: migrate CUBLAS_OP_N to mkl::transpose::nontrans
 void BLASEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(matchesName("CUBLAS_STATUS.*"))))
@@ -2360,8 +2345,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   const SourceManager *SM = Result.SourceManager;
   SourceLocation FuncNameBegin(CE->getBeginLoc());
   SourceLocation FuncCallEnd(CE->getEndLoc());
-  // There are some macroes like "#define cublasSgemm cublasSgemm_v2"
-  // in "cublas_v2.h", so the function names we match should have the
+  // There are some macroes like "#define API API_v2"
+  // so the function names we match should have the
   // suffix "_v2".
   if (FuncNameBegin.isMacroID())
     FuncNameBegin = SM->getExpansionLoc(FuncNameBegin);
@@ -2389,8 +2374,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       return;
     }
     int ArgNum = CE->getNumArgs();
-    // TODO: If the memory is not allocated by cudaMalloc(), the migrated
-    // program will abort at
+    // TODO: what if USM enabled. USM memory will error when call
     // dpct::memory_manager::get_instance().translate_ptr();
     for (int i = 0; i < ArgNum; ++i) {
       int IndexTemp = -1;
@@ -2502,8 +2486,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       return;
     }
     int ArgNum = CE->getNumArgs();
-    // TODO: If the memory is not allocated by cudaMalloc(), the migrated
-    // program will abort at
+    // TODO: what if USM enabled. USM memory will error when call
     // dpct::memory_manager::get_instance().translate_ptr();
 
     for (int i = 0; i < ArgNum; ++i) {
@@ -2672,8 +2655,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    // TODO: If the memory is not allocated by cudaMalloc(), the migrated
-    // program will abort at
+    // TODO: what if USM enabled. USM memory will error when call
     // dpct::memory_manager::get_instance().translate_ptr();
     if (FuncName == "cublasSnrm2" || FuncName == "cublasDnrm2" ||
         FuncName == "cublasScnrm2" || FuncName == "cublasDznrm2" ||
@@ -2807,7 +2789,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              "dpct::dpct_memcpy");
       return;
     }
-    // The 4th and 6th param (incx and incy) of cublasSetVector/cublasGetVector
+    // The 4th and 6th param (incx and incy) of blas Set/get Vector
     // specify the space between two consequent elements when stored.
     // We migrate the original code when incx and incy both equal to 1 (all
     // elements are stored consequently).
@@ -3012,12 +2994,12 @@ BLASFunctionCallRule::getParamsAsStrs(const CallExpr *CE,
   return ParamsStrVec;
 }
 
-// orignal cuda code looks like:
-//   cuComplex res1 = cublasLegacyAPI(...);
-//   res2 = cublasLegacyAPI(...);
+// sample code looks like:
+//   Complex-type res1 = API(...);
+//   res2 = API(...);
 //
 // migrated code looks like:
-//   cuComplex res1;
+//   Complex-type res1;
 //   {
 //   buffer res_buffer;
 //   mklAPI(res_buffer);
@@ -3086,9 +3068,6 @@ void BLASFunctionCallRule::processParamIntCastToBLASEnum(
                         "(((int)" + SubExprStr +
                             ")==0?(mkl::uplo::lower):(mkl::uplo::upper))"));
   }
-  // the value of enum in mkl::side/cublasSideMode_t and
-  // mkl::diag/cublasDiagType_t is same, so we don't need to
-  // transfer
 }
 
 void BLASFunctionCallRule::processTrmmParams(
@@ -3144,9 +3123,7 @@ void BLASFunctionCallRule::processTrmmCall(const CallExpr *CE,
 REGISTER_RULE(BLASFunctionCallRule)
 
 // Rule for SOLVER enums.
-// All SOLVER enums have the prefix CUSOLVER_
 // Migrate SOLVER status values to corresponding int values
-// Example: migrate CUSOLVER_STATUS_SUCCESS to 0
 // Other SOLVER named values are migrated to corresponding named values
 void SOLVEREnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
@@ -3612,7 +3589,6 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new InsertAfterStmt(
         CE, ".get_device_info(" + ResultVarName + ")" + Suffix));
   } else if (FuncName == "cudaDeviceReset" || FuncName == "cudaThreadExit") {
-    // The functionality of cudaThreadExit() is identical to cudaDeviceReset().
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
@@ -3685,9 +3661,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new InsertAfterStmt(CE, "*/"));
   } else if (FuncName == "cudaDeviceSetCacheConfig" ||
              FuncName == "cudaDeviceGetCacheConfig") {
-    // SYCL has no corresponding implementation for
-    // "cudaDeviceSetCacheConfig/cudaDeviceGetCacheConfig", so simply migrate
-    // "cudaDeviceSetCacheConfig/cudaDeviceGetCacheConfig" into expression "0;".
+    // SYCL has no corresponding implementation.
     std::string Replacement = "0";
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   } else if (FuncName == "clock") {
@@ -3837,7 +3811,7 @@ void EventAPICallRule::handleTimeMeasurement(
     return;
   }
   const CallExpr *RecordBegin = nullptr, *RecordEnd = nullptr;
-  // Find the last cudaEventRecord call on start and stop
+  // Find the last Event record call on start and stop
   for (auto Iter = Parent->child_begin(); Iter != Parent->child_end(); ++Iter) {
     if (Iter->getBeginLoc().getRawEncoding() > CELoc)
       continue;
@@ -3847,8 +3821,8 @@ void EventAPICallRule::handleTimeMeasurement(
         continue;
       std::string RecordFuncName =
           RecordCall->getDirectCallee()->getNameInfo().getName().getAsString();
-      // Find the last call of cudaEventRecord on start and stop before
-      // call to cudaElpasedTime
+      // Find the last call of Event Record on start and stop before
+      // calculate the time elapsed
       if (RecordFuncName == "cudaEventRecord") {
         auto Arg0 = getStmtSpelling(RecordCall->getArg(0), *Result.Context);
         if (Arg0 == getStmtSpelling(CE->getArg(1), *Result.Context))
@@ -4469,7 +4443,6 @@ void MemoryTranslationRule::memcpyTranslation(
         new ReplaceStmt(C->getArg(3), std::move(DirectionName)));
   }
 
-  // cudaMemcpyAsync
   if (Name == "cudaMemcpyAsync") {
     if (C->getNumArgs() == 5) {
       if (USMLevel == restricted) {
@@ -4675,7 +4648,6 @@ void MemoryTranslationRule::memsetTranslation(
 
   replaceMemAPIArg(C->getArg(0), Result);
 
-  // cudaMemsetAsync
   if (Name == "cudaMemsetAsync") {
     if (C->getNumArgs() == 4) {
       if (USMLevel == restricted) {

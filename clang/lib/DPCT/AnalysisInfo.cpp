@@ -227,13 +227,12 @@ std::string KernelCallExpr::getReplacement() {
       ++ArgIndex;
     }
 
-    // For default stream
     if (ExecutionConfig.Stream == "0") {
       if (!getEvent().empty())
         Block.pushStmt(getEvent() + " = dpct::get_default_queue().submit(");
       else
         Block.pushStmt("dpct::get_default_queue().submit(");
-    } else { // For non-default stream
+    } else {
       if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&')
         Block.pushStmt("(", ExecutionConfig.Stream, ").submit(");
       else

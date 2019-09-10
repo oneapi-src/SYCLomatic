@@ -31,10 +31,7 @@ namespace dpct {
 
 // TODO: implement one of this for each source language.
 enum RuleType {
-  // rule applied to cuda source
   ApplyToCudaFile = 1,
-
-  // rule applied to cplusplus source
   ApplyToCppFile = 2,
 };
 
@@ -413,8 +410,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Migration rule for CUDA class attributes.
-///
+/// Migration rule for class attributes.
 /// This rule replace __align__ class attributes to __dpct_align__.
 class AlignAttrsRule : public NamedTranslationRule<AlignAttrsRule> {
 public:
@@ -423,8 +419,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Migration rule for CUDA function attributes.
-///
+/// Migration rule for function attributes.
 /// This rule replace __forceinline__ class attributes to __dpct_inline__.
 class FuncAttrsRule : public NamedTranslationRule<FuncAttrsRule> {
 public:
@@ -472,9 +467,7 @@ private:
   std::unordered_set<unsigned> DupFilter;
 };
 
-/// Migration rule for types replacements in template var. declarations,
-/// e.g. "std::vector<cudaStream_t> streams;" is migrated to
-/// "std::vector<cl::sycl::queue> stream;"
+/// Migration rule for types replacements in template var. declarations
 class TemplateTypeInDeclRule
     : public NamedTranslationRule<TemplateTypeInDeclRule> {
 public:
@@ -598,7 +591,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Migration rule for cudaDeviceProp variables.
+/// Migration rule for Device Property variables.
 class DevicePropVarRule : public NamedTranslationRule<DevicePropVarRule> {
 public:
   DevicePropVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -619,7 +612,7 @@ public:
   static const std::map<std::string, std::string> EnumNamesMap;
 };
 
-// Migration rule for cudaError enums constants.
+// Migration rule for Error enums constants.
 class ErrorConstantsRule : public NamedTranslationRule<ErrorConstantsRule> {
 public:
   ErrorConstantsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -785,8 +778,7 @@ private:
 //     Using better type information requires some kind of global analysis and
 //     heuristics, as well as a mechnism for user hint (like "treat all
 //     buffers as float-typed")'
-//   - interplay with streams need to be designed. I.e. cudaMemcpyAsync() need
-//     to be defined;
+//   - interplay with streams need to be designed.
 //   - transformation rules are currently unordered, which create potential
 //     ambiguity, so need to understand how to handle function call arguments,
 //     which are modified by other rules.
@@ -891,7 +883,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-/// Migrate cudaFunctionAttributes to Sycl kernel info, defined in
+/// Migrate Function Attributes to Sycl kernel info, defined in
 /// runtime headers.
 // TODO: only maxThreadsPerBlock is supported.
 class KernelFunctionInfoRule

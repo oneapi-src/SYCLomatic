@@ -365,7 +365,6 @@ ENTRY(cublasXtDspmm, false, P4, "comment")
 ENTRY(cublasXtCspmm, false, P4, "comment")
 ENTRY(cublasXtZspmm, false, P4, "comment")
 
-// cuBLAS Legacy api
 ENTRY(cublasInit, true, P4, "Successful")
 ENTRY(cublasShutdown, true, P4, "Successful")
 ENTRY(cublasGetError, true, P4, "Successful")
