@@ -217,6 +217,7 @@ public:
 
   // Record line info in file.
   struct SourceLineInfo {
+    SourceLineInfo() : SourceLineInfo(-1, -1, -1, nullptr) {}
     SourceLineInfo(unsigned LineNumber, unsigned Offset, unsigned End,
                    const char *Buffer)
         : Number(LineNumber), Offset(Offset), Length(End - Offset),
@@ -236,8 +237,12 @@ public:
   };
 
   inline const SourceLineInfo &getLineInfo(unsigned LineNumber) {
-    if (!LineNumber || LineNumber > Lines.size())
-      dpct_unreachable("illegal line number " + std::to_string(LineNumber));
+    if (!LineNumber || LineNumber > Lines.size()) {
+      llvm::dbgs() << "[DpctFileInfo::getLineInfo] illegal line number "
+                   << LineNumber;
+      static SourceLineInfo InvalidLine;
+      return InvalidLine;
+    }
     return Lines[--LineNumber];
   }
   inline const std::string &getLineString(unsigned LineNumber) {
@@ -264,7 +269,9 @@ public:
 
 private:
   template <class Obj> GlobalMap<Obj> &getMap() {
-    dpct_unreachable("unknow map type");
+    llvm::dbgs() << "[DpctFileInfo::getMap] Unknow map type";
+    static GlobalMap<Obj> NullMap;
+    return NullMap;
   }
 
   bool isInRoot();
@@ -711,6 +718,7 @@ public:
     Device = 0,
     Constant,
     Shared,
+    Host,
   };
   enum VarScope { Local = 0, Extern, Global };
 
@@ -757,8 +765,8 @@ public:
   std::string getAccessorDecl() {
     if (isShared()) {
       auto Type = getType();
-      return buildString("cl::sycl::accessor<", getAccessorDataType(true),
-                         ", ", Type->getDimension(),
+      return buildString("cl::sycl::accessor<", getAccessorDataType(true), ", ",
+                         Type->getDimension(),
                          ", cl::sycl::access::mode::read_write, "
                          "cl::sycl::access::target::local> ",
                          getAccessorName(), "(",
@@ -1080,7 +1088,9 @@ public:
     case clang::dpct::MemVarInfo::Global:
       return GlobalVarMap;
     default:
-      llvm_unreachable("unknow variable scope");
+      llvm::dbgs() << "[MemVarMap::getMap] Unknow variable scope.";
+      static MemVarInfoMap InvalidMap;
+      return InvalidMap;
     }
   }
 
@@ -1449,14 +1459,18 @@ class KernelCallExpr : public CallFunctionExpr {
       if (isRedeclareRequired || isPointer) {
         SourceManager &SM = DpctGlobalInfo::getContext().getSourceManager();
         Arg = Arg->IgnoreCasts();
-        auto ExprEndLoc = Arg->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
-          Arg->getEndLoc(), SM, DpctGlobalInfo::getContext().getLangOpts()));
+        auto ExprEndLoc =
+            Arg->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
+                Arg->getEndLoc(), SM,
+                DpctGlobalInfo::getContext().getLangOpts()));
         auto TokenBegin = Lexer::GetBeginningOfToken(
-          Arg->getBeginLoc(), SM, DpctGlobalInfo::getContext().getLangOpts());
+            Arg->getBeginLoc(), SM, DpctGlobalInfo::getContext().getLangOpts());
         auto TokenEnd = Lexer::getLocForEndOfToken(
-          Arg->getBeginLoc(), 0, SM, DpctGlobalInfo::getContext().getLangOpts());
+            Arg->getBeginLoc(), 0, SM,
+            DpctGlobalInfo::getContext().getLangOpts());
 
-        while (SM.getCharacterData(TokenEnd) <= SM.getCharacterData(ExprEndLoc)) {
+        while (SM.getCharacterData(TokenEnd) <=
+               SM.getCharacterData(ExprEndLoc)) {
           Token Tok;
           Lexer::getRawToken(TokenBegin, Tok, SM, LangOptions());
           if (Tok.isAnyIdentifier()) {
@@ -1466,7 +1480,7 @@ class KernelCallExpr : public CallFunctionExpr {
           TokSharedPtr = Lexer::findNextToken(TokenBegin, SM, LangOptions());
           TokenEnd = TokSharedPtr->getEndLoc();
           TokenBegin = Lexer::GetBeginningOfToken(
-            TokenEnd, SM, DpctGlobalInfo::getContext().getLangOpts());
+              TokenEnd, SM, DpctGlobalInfo::getContext().getLangOpts());
         }
       }
       IdString = newId;

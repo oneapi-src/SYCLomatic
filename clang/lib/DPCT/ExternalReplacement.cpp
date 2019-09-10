@@ -100,9 +100,9 @@ void mergeAndUniqueReps(Replacements &Replaces,
     }
     if (DupFlag == false) {
       if (auto Err = Replaces.add(OldR)) {
-        llvm::errs() << Err << "\n";
-        llvm_unreachable("Adding replacement when merging previous "
-                         "replacement: Error occured!\n");
+        llvm::dbgs() << "Adding replacement when merging previous "
+                        "replacement: Error occured!\n"
+                     << Err << "\n";
       }
     }
   }

@@ -193,8 +193,11 @@ std::shared_ptr<ExtReplacement> ExtReplacements::filterOverlappedReplacement(
     return std::shared_ptr<ExtReplacement>();
   if (PrevEnd == ReplEnd && Repl->getLength())
     return std::shared_ptr<ExtReplacement>();
-  if ((Repl->getOffset() < PrevEnd) && !Repl->getReplacementText().empty())
-    dpct_unreachable("overlapped replacements");
+  if ((Repl->getOffset() < PrevEnd) && !Repl->getReplacementText().empty()) {
+    llvm::dbgs() << "Replacement Conflict.\nAbandon replacement: "
+              << Repl->toString() << "\n";
+    return std::shared_ptr<ExtReplacement>();
+  }
 
   PrevEnd = ReplEnd;
   return Repl;
@@ -248,7 +251,6 @@ void ExtReplacements::emplaceIntoReplSet(tooling::Replacements &ReplSet) {
     if (auto Repl = filterOverlappedReplacement(R, PrevEnd)) {
       if (auto Err = ReplSet.add(*Repl)) {
         llvm::dbgs() << Err << "\n";
-        dpct_unreachable("Adding the replacement: Error occured ");
       }
     }
   }

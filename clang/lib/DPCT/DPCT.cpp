@@ -287,7 +287,6 @@ public:
         if (!RuleID) {
           const std::string ErrMsg = "[ERROR] Rule\"" + *it + "\" not found\n";
           PrintMsg(ErrMsg);
-          llvm_unreachable(ErrMsg.c_str());
         }
         ATM.emplaceTranslationRule(RuleID);
       }
@@ -456,7 +455,7 @@ unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
   if (!Entry) {
     std::string ErrMsg = "FilePath Invalide...\n";
     PrintMsg(ErrMsg);
-    llvm_unreachable(ErrMsg.c_str());
+    exit(MigrationErrorInvalidFilePath);
   }
 
   FileID FID = SM.getOrCreateFileID(Entry, SrcMgr::C_User);

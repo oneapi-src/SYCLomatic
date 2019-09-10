@@ -126,7 +126,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   }
 
   if (TKind == tok::identifier && Name == "__forceinline__") {
-    TransformSet.emplace_back(new ReplaceToken(Range.getBegin(), "__dpct_inline__"));
+    TransformSet.emplace_back(
+        new ReplaceToken(Range.getBegin(), "__dpct_inline__"));
   }
 
   // Record the expansion locations of the macros containing CUDA attributes.
@@ -451,8 +452,10 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
     Dimension = 1;
   else if (FieldName == "__fetch_builtin_z")
     Dimension = 2;
-  else
-    dpct_unreachable("Unknown field name");
+  else {
+    llvm::dbgs() << "[" << getName() << "] Unexpected field name: " << FieldName;
+    return;
+  }
 
   std::string Replacement = getItemName();
   StringRef BuiltinName = VD->getName();
@@ -465,8 +468,11 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
     Replacement += ".get_group(";
   else if (BuiltinName == "gridDim")
     Replacement += ".get_group_range(";
-  else
-    dpct_unreachable("Unknown builtin variable");
+  else {
+    llvm::dbgs() << "[" << getName()
+                 << "] Unexpected builtin variable: " << BuiltinName;
+    return;
+  }
 
   Replacement += std::to_string(Dimension);
   Replacement += ")";
@@ -664,7 +670,8 @@ void AlignAttrsRule::run(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(AlignAttrsRule)
 
 void FuncAttrsRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(functionDecl(hasAttr(attr::AlwaysInline)).bind("funcDecl"), this);
+  MF.addMatcher(functionDecl(hasAttr(attr::AlwaysInline)).bind("funcDecl"),
+                this);
 }
 
 void FuncAttrsRule::run(const MatchFinder::MatchResult &Result) {
@@ -680,7 +687,8 @@ void FuncAttrsRule::run(const MatchFinder::MatchResult &Result) {
       if (!strncmp(SM->getCharacterData(Loc), "__forceinline__", 15))
         emplaceTransformation(new ReplaceToken(Loc, "__dpct_inline__"));
       // if is used in another macro
-      Loc = SM->getSpellingLoc(SM->getImmediateExpansionRange(A->getLocation()).getBegin());
+      Loc = SM->getSpellingLoc(
+          SM->getImmediateExpansionRange(A->getLocation()).getBegin());
       if (!strncmp(SM->getCharacterData(Loc), "__forceinline__", 15))
         emplaceTransformation(new ReplaceToken(Loc, "__dpct_inline__"));
     }
@@ -1543,9 +1551,7 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: {
-    return false;
-  }
+  default: { return false; }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -2177,7 +2183,7 @@ void BLASEnumsRule::run(const MatchFinder::MatchResult &Result) {
     std::string Name = EC->getNameAsString();
     auto Search = MapNames::BLASEnumsMap.find(Name);
     if (Search == MapNames::BLASEnumsMap.end()) {
-      dpct_unreachable("migration error");
+      llvm::dbgs() << "[" << getName() << "] Unexpected enum variable: " << Name;
       return;
     }
     std::string Replacement = Search->second;
@@ -3167,7 +3173,7 @@ void SOLVEREnumsRule::run(const MatchFinder::MatchResult &Result) {
     std::string Name = EC->getNameAsString();
     auto Search = MapNames::SOLVEREnumsMap.find(Name);
     if (Search == MapNames::SOLVEREnumsMap.end()) {
-      dpct_unreachable("migration error");
+      llvm::dbgs() << "[" << getName() << "] Unexpected enum variable: " << Name;
       return;
     }
     std::string Replacement = Search->second;
@@ -3698,7 +3704,9 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaOccupancyMaxPotentialBlockSize") {
     report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
   } else {
-    dpct_unreachable("Unknown function name");
+    llvm::dbgs() << "[" << getName()
+                 << "] Unexpected function name: " << FuncName;
+    return;
   }
 }
 
@@ -3755,7 +3763,9 @@ void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
     }
     emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ReplStr));
   } else {
-    dpct_unreachable("Unknown function name");
+    llvm::dbgs() << "[" << getName()
+                 << "] Unexpected function name: " << FuncName;
+    return;
   }
 }
 
@@ -4023,7 +4033,9 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ReplStr));
     DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), Future);
   } else {
-    dpct_unreachable("Unknown function name");
+    llvm::dbgs() << "[" << getName()
+                 << "] Unexpected function name: " << FuncName;
+    return;
   }
 }
 
@@ -4268,7 +4280,8 @@ void MemoryTranslationRule::mallocTranslation(
         "dpct::dpct_malloc(" + PtrStr + ", " + SizeStr + ")";
     emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
   } else {
-    dpct_unreachable("Unknown function name");
+    llvm::dbgs() << "[" << getName() << "] Unexpected function name: " << Name;
+    return;
   }
 }
 

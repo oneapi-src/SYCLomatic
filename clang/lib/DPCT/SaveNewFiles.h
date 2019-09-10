@@ -35,10 +35,11 @@ enum ProcessStatus {
   MigrationErrorInvalidSDKPath = -5,
   MigrationErrorInvalidInRootOrOutRoot = -6,
   MigrationErrorInvalidInRootPath = -7,
-  MigrationErrorInvalidReportArgs = -8,
-  MigrationErrorNotSupportFileType = -9,
-  VcxprojPaserFileNotExist = -10,
-  VcxprojPaserCreateCompilationDBFail = -11, /*eg. hav no write permission*/
+  MigrationErrorInvalidFilePath = -8,
+  MigrationErrorInvalidReportArgs = -9,
+  MigrationErrorNotSupportFileType = -10,
+  VcxprojPaserFileNotExist = -11,
+  VcxprojPaserCreateCompilationDBFail = -12, /*eg. hav no write permission*/
 };
 
 enum OutputVerbosityLev { silent, normal, detailed, diagnostics };

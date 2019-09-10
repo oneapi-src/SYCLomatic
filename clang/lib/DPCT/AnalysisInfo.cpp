@@ -318,7 +318,10 @@ void CallFunctionExpr::addTemplateType(const TemplateArgumentLoc &TAL) {
   case TemplateArgument::Integral:
     return TemplateArgs.push_back(TAL.getSourceIntegralExpression());
   default:
-    llvm_unreachable("unexpected template type");
+    llvm::dbgs()
+        << "[CallFunctionExpr::addTemplateType] Unexpected template type: "
+        << TAL.getArgument().getKind();
+    return;
   }
 }
 
@@ -529,7 +532,9 @@ void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
         Info);
     break;
   default:
-    dpct_unreachable("unexpected name decl type");
+    llvm::dbgs() << "[DeviceFunctionDecl::LinkDecl] Unexpected decl type: "
+                 << ND->getDeclKindName();
+    return;
   }
 }
 
@@ -554,7 +559,8 @@ MemVarInfo::VarAttrKind MemVarInfo::getAttr(const AttrVec &Attrs) {
     else if (Kind == attr::CUDAShared)
       return Shared;
   }
-  llvm_unreachable("unknow variable attribute");
+  llvm::dbgs() << "[MemVarInfo::getAttr] Can't get variable attribute.";
+  return Host;
 }
 
 std::string MemVarInfo::getMemoryType() {
@@ -575,7 +581,8 @@ std::string MemVarInfo::getMemoryType() {
     return getMemoryType(SharedMemory, getType());
   }
   default:
-    llvm_unreachable("unknow variable attribute");
+    llvm::dbgs() << "[MemVarInfo::getMemoryType] Unexpected attribute.";
+    return "";
   }
 }
 
@@ -594,7 +601,9 @@ const std::string &MemVarInfo::getMemoryAttr() {
     return SharedMemory;
   }
   default:
-    llvm_unreachable("unknow variable attribute");
+    llvm::dbgs() << "[MemVarInfo::getMemoryAttr] Unexpected attribute.";
+    static std::string NullString;
+    return NullString;
   }
 }
 
@@ -611,7 +620,8 @@ std::string MemVarInfo::getDeclarationReplacement() {
     return getMemoryDecl();
   }
   default:
-    dpct_unreachable("unknow variable scope");
+    llvm::dbgs() << "[MemVarInfo::getMemoryType] Unexpected scope.";
+    return "";
   }
 }
 
