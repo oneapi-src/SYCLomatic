@@ -52,7 +52,6 @@ const char *const CommonOptionsParser::HelpMessage =
     "\tsuffix of a path in the compile command database.\n"
     "\n";
 
-#define INTEL_CUSTOMIZATION
 #ifdef INTEL_CUSTOMIZATION
 #ifdef _WIN32
 namespace clang {

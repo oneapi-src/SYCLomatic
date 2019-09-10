@@ -40,7 +40,7 @@
 #else
 extern char **environ;
 #endif
-#define INTEL_CUSTOMIZATION 1
+#define INTEL_CUSTOMIZATION
 
 #define ENV_OUTPUT "INTERCEPT_BUILD_TARGET_DIR"
 #ifdef APPLE
@@ -72,7 +72,7 @@ static void bear_release_env_t(bear_env_t *env);
 static char const **bear_update_environment(char *const envp[], bear_env_t *env);
 static char const **bear_update_environ(char const **in, char const *key, char const *value);
 static char **bear_get_environment();
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
 static void bear_report_call(char const *fun, char const *argv[]);
 #else
 static void bear_report_call(char const *fun, char const *const argv[]);
@@ -167,7 +167,7 @@ static void on_unload(void) {
 
 #ifdef HAVE_EXECVE
 int execve(const char *path, char *const argv[], char *const envp[]) {
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     bear_report_call(__func__, (char const **)argv);
 #else
     bear_report_call(__func__, (char const *const *)argv);
@@ -181,7 +181,7 @@ int execve(const char *path, char *const argv[], char *const envp[]) {
 #error can not implement execv without execve
 #endif
 int execv(const char *path, char *const argv[]) {
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     bear_report_call(__func__, (char const **)argv);
 #else
     bear_report_call(__func__, (char const *const *)argv);
@@ -193,7 +193,7 @@ int execv(const char *path, char *const argv[]) {
 
 #ifdef HAVE_EXECVPE
 int execvpe(const char *file, char *const argv[], char *const envp[]) {
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     bear_report_call(__func__, (char const **)argv);
 #else
     bear_report_call(__func__, (char const *const *)argv);
@@ -204,7 +204,7 @@ int execvpe(const char *file, char *const argv[], char *const envp[]) {
 
 #ifdef HAVE_EXECVP
 int execvp(const char *file, char *const argv[]) {
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     bear_report_call(__func__, (char const **)argv);
 #else
     bear_report_call(__func__, (char const *const *)argv);
@@ -215,7 +215,7 @@ int execvp(const char *file, char *const argv[]) {
 
 #ifdef HAVE_EXECVP2
 int execvP(const char *file, const char *search_path, char *const argv[]) {
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     bear_report_call(__func__, (char const **)argv);
 #else
     bear_report_call(__func__, (char const *const *)argv);
@@ -226,7 +226,7 @@ int execvP(const char *file, const char *search_path, char *const argv[]) {
 
 #ifdef HAVE_EXECT
 int exect(const char *path, char *const argv[], char *const envp[]) {
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     bear_report_call(__func__, (char const **)argv);
 #else
     bear_report_call(__func__, (char const *const *)argv);
@@ -245,7 +245,7 @@ int execl(const char *path, const char *arg, ...) {
     char const **argv = bear_strings_build(arg, &args);
     va_end(args);
 
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     bear_report_call(__func__, (char const **)argv);
 #else
     bear_report_call(__func__, (char const *const *)argv);
@@ -268,7 +268,7 @@ int execlp(const char *file, const char *arg, ...) {
     char const **argv = bear_strings_build(arg, &args);
     va_end(args);
 
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     bear_report_call(__func__, (char const **)argv);
 #else
     bear_report_call(__func__, (char const *const *)argv);
@@ -292,7 +292,7 @@ int execle(const char *path, const char *arg, ...) {
     char const **envp = va_arg(args, char const **);
     va_end(args);
 
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     bear_report_call(__func__, (char const **)argv);
 #else
     bear_report_call(__func__, (char const *const *)argv);
@@ -310,7 +310,7 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path,
                 const posix_spawn_file_actions_t *file_actions,
                 const posix_spawnattr_t *restrict attrp,
                 char *const argv[restrict], char *const envp[restrict]) {
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     bear_report_call(__func__, (char const **)argv);
 #else
     bear_report_call(__func__, (char const *const *)argv);
@@ -324,7 +324,7 @@ int posix_spawnp(pid_t *restrict pid, const char *restrict file,
                  const posix_spawn_file_actions_t *file_actions,
                  const posix_spawnattr_t *restrict attrp,
                  char *const argv[restrict], char *const envp[restrict]) {
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     bear_report_call(__func__, (char const **)argv);
 #else
     bear_report_call(__func__, (char const *const *)argv);
@@ -455,7 +455,7 @@ static int call_posix_spawnp(pid_t *restrict pid, const char *restrict file,
 }
 #endif
 
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
 static int generate_file(char * filename){
     char buf[512];
     char cmd[512];
@@ -927,7 +927,7 @@ char * replace_binary_name(const char *src, const char *pos){
 #endif
 
 /* this method is to write log about the process creation. */
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
 static void bear_report_call(char const *fun, char const *argv[]) {
 #else
 static void bear_report_call(char const *fun, char const *const argv[]) {
@@ -937,7 +937,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     static int const US = 0x1f;
 
     if (!initialized)
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
         initialized = bear_capture_env_t(&initial_env);
 #else
         return;
@@ -970,7 +970,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     fprintf(fd, "%s%c", cwd, RS);
     size_t const argc = bear_strings_length(argv);
 
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     int flag_command=0;
     int flag_object=0;
     int contflag=0;
@@ -1080,7 +1080,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     }
     free((void *)cwd);
     pthread_mutex_unlock(&mutex);
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
     if(flag_command == 1 && flag_object == 1){
       ret=1;
     } else  if(flag_command == 1) {

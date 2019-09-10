@@ -221,6 +221,7 @@ function(add_flag_or_print_warning flag name)
 endfunction()
 
 # INTEL_CUSTOMIZATION
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DINTEL_CUSTOMIZATION")
 macro(intel_add_sdl_flag flag name)
   cmake_parse_arguments(ARG "FUTURE" "" "" ${ARGN})
   if(ARG_FUTURE)

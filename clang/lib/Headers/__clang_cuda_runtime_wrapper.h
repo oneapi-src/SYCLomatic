@@ -25,7 +25,7 @@
 
 #ifndef __CLANG_CUDA_RUNTIME_WRAPPER_H__
 #define __CLANG_CUDA_RUNTIME_WRAPPER_H__
-#define INTEL_CUSTOMIZATION 1
+#define INTEL_CUSTOMIZATION
 
 #if defined(__CUDA__) && defined(__clang__)
 
@@ -47,7 +47,7 @@
 // CUDA-7.x headers and are not expected to work with any other
 // version of CUDA headers.
 #include "cuda.h"
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
 #if !defined(CUDA_VERSION)
 #error "cuda.h did not define CUDA_VERSION"
 #elif CUDA_VERSION < 7000
@@ -103,7 +103,7 @@
 // Disables definitions of device-side runtime support stubs in
 // cuda_device_runtime_api.h
 #include "driver_types.h"
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
 // Including "host_config.h”, but left macro __CUDACC__ not defined.
 // But the contents of "host_config.h" is protected by __CUDACC__,
 // if __CUDACC__ not defined, the contents of "host_config.h"
@@ -121,7 +121,7 @@
 #define nv_weak weak
 #undef __CUDABE__
 #undef __CUDA_LIBDEVICE__
-#if !(INTEL_CUSTOMIZATION)
+#ifndef INTEL_CUSTOMIZATION
 #define __CUDACC__
 #endif
 #include "cuda_runtime.h"
@@ -433,7 +433,7 @@ __device__ inline __cuda_builtin_gridDim_t::operator dim3() const {
 #include <__clang_cuda_intrinsics.h>
 #include <__clang_cuda_complex_builtins.h>
 
-#if INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
 #include "__clang_dpct_math.h"
 #include <math.h>
 #endif

@@ -620,7 +620,6 @@ struct OptionEnumValue {
   StringRef Name;
   int Value;
   StringRef Description;
-#define INTEL_CUSTOMIZATION
 #ifdef INTEL_CUSTOMIZATION
   bool IsHidden;
 #endif

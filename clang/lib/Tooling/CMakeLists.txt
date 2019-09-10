@@ -42,7 +42,4 @@ add_clang_library(clangTooling
   clangToolingCore
   )
 
-# INTEL_CUSTOMIZATION
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DINTEL_CUSTOMIZATION=1" )
-# end INTEL_CUSTOMIZATION
 

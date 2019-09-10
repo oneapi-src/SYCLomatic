@@ -1328,7 +1328,7 @@ inline Error unwrap(LLVMErrorRef ErrRef) {
 
 } // end namespace llvm
 
-#define INTEL_CUSTOMIZATION
+
 #ifdef INTEL_CUSTOMIZATION
 class DPCTError : public llvm::ErrorInfo<DPCTError> {
 public:

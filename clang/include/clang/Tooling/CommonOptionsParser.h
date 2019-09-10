@@ -98,7 +98,7 @@ public:
          llvm::cl::NumOccurrencesFlag OccurrencesFlag,
          const char *Overview = nullptr);
 
-#define INTEL_CUSTOMIZATION
+
 #ifdef INTEL_CUSTOMIZATION
   static bool hasHelpOption(int argc, const char **argv);
 #endif

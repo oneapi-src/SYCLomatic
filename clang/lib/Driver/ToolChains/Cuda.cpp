@@ -23,7 +23,6 @@
 #include "llvm/Support/Program.h"
 #include "llvm/Support/VirtualFileSystem.h"
 #include <system_error>
-#define INTEL_CUSTOMIZATION
 #ifdef INTEL_CUSTOMIZATION
 #include <fstream>
 #include <regex>
@@ -36,7 +35,6 @@ using namespace clang::driver::tools;
 using namespace clang;
 using namespace llvm::opt;
 
-#define INTEL_CUSTOMIZATION
 #ifdef INTEL_CUSTOMIZATION
 bool HasSDKIncludeOption = false;
 bool HasSDKPathOption = false;
@@ -140,14 +138,12 @@ CudaInstallationDetector::CudaInstallationDetector(
   SmallVector<Candidate, 4> Candidates;
 
   // In decreasing order so we prefer newer versions to older versions.
-  #define INTEL_CUSTOMIZATION
   #ifdef INTEL_CUSTOMIZATION
   std::initializer_list<const char *> Versions = {"10.1", "10.0", "9.2", "9.0",
                                                    "8.0"};
   #else
   std::initializer_list<const char *> Versions = {"8.0", "7.5", "7.0"};
   #endif
-#define INTEL_CUSTOMIZATION
 #ifdef INTEL_CUSTOMIZATION
   if (HasSDKPathOption) {
     Candidates.emplace_back(RealSDKPath);
@@ -210,7 +206,6 @@ CudaInstallationDetector::CudaInstallationDetector(
 
   bool NoCudaLib = Args.hasArg(options::OPT_nogpulib);
 
-#define INTEL_CUSTOMIZATION
 #ifdef INTEL_CUSTOMIZATION
   if (HasSDKIncludeOption) {
     if (RealSDKIncludePath.empty() ||
@@ -355,7 +350,6 @@ CudaInstallationDetector::CudaInstallationDetector(
     IsValid = true;
     break;
   }
-#define INTEL_CUSTOMIZATION
 #ifdef INTEL_CUSTOMIZATION
   }
 #endif

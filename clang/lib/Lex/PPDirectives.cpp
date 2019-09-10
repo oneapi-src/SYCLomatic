@@ -2063,7 +2063,6 @@ Preprocessor::ImportAction Preprocessor::HandleHeaderIncludeOrImport(
     Action = (SuggestedModule && !getLangOpts().CompilingPCH) ? Import : Skip;
   }
 
-#define INTEL_CUSTOMIZATION
 #ifdef INTEL_CUSTOMIZATION
   if (Callbacks && Action != Skip &&
     !Callbacks->ShouldEnter(LookupFilename, isAngled)) {

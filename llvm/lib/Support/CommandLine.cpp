@@ -1891,7 +1891,6 @@ void generic_parser_base::printOptionInfo(const Option &O,
                          EqValue.size() +
                              argPlusPrefixesSize(O.ArgStr));
     for (unsigned i = 0, e = getNumOptions(); i != e; ++i) {
-#define INTEL_CUSTOMIZATION
 #ifdef INTEL_CUSTOMIZATION
       if (getIsHiddenValue(i) == true) { continue; }
 #endif
@@ -2367,7 +2366,6 @@ void HelpPrinterWrapper::operator=(bool Value) {
   if (GlobalParser->RegisteredOptionCategories.size() > 1) {
     // unhide --help-list option so user can have uncategorized output if they
     // want it.
-#define INTEL_CUSTOMIZATION
 #ifdef INTEL_CUSTOMIZATION
     HLOp.setHiddenFlag(Hidden);
 #else

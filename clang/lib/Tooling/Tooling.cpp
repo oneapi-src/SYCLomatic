@@ -64,7 +64,6 @@
 using namespace clang;
 using namespace tooling;
 
-#define INTEL_CUSTOMIZATION
 #ifdef INTEL_CUSTOMIZATION
 namespace clang {
 namespace tooling {

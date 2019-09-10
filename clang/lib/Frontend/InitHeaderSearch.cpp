@@ -136,7 +136,6 @@ bool InitHeaderSearch::AddUnmappedPath(const Twine &Path, IncludeDirGroup Group,
   FileManager &FM = Headers.getFileMgr();
   SmallString<256> MappedPathStorage;
   StringRef MappedPathStr = Path.toStringRef(MappedPathStorage);
-#define INTEL_CUSTOMIZATION 1
 #ifdef INTEL_CUSTOMIZATION
   // Remove redundant spaces in the beginning of MappedPathStr to pass the check
   // of FM.getDirectory(). E.g. -extra-arg="-I   /path/to/folder".

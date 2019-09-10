@@ -48,7 +48,6 @@
 #include <utility>
 #include <vector>
 
-#define INTEL_CUSTOMIZATION
 #ifdef INTEL_CUSTOMIZATION
 namespace clang {
 namespace tooling {

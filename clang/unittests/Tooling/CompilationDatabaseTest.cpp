@@ -40,7 +40,6 @@ TEST(JSONCompilationDatabase, ErrsOnInvalidFormat) {
   expectFailure("[{\"a\":\"b\"}]", "Unknown key");
   expectFailure("[{[]:\"\"}]", "Incorrectly typed entry");
   expectFailure("[{}]", "Empty entry");
-#define INTEL_CUSTOMIZATION
 #ifndef INTEL_CUSTOMIZATION
   expectFailure("[{\"directory\":\"\",\"command\":\"\"}]", "Missing file");
 #endif
