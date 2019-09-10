@@ -12,6 +12,41 @@
 
 using namespace std;
 
+// CHECK: dpct::constant_memory<double, 0> d;
+// CHECK-NEXT: dpct::constant_memory<double, 0> d2;
+__constant__ double d;
+__constant__ double d2;
+
+// CHECK: double test(double d3, dpct::dpct_accessor<double, dpct::constant, 0> d) {
+// CHECK-NEXT:  return cl::sycl::max((double)d, d3);
+// CHECK-NEXT:}
+__device__ double test(double d3) {
+  return max(d, d3);
+}
+
+// CHECK:  double test2(dpct::dpct_accessor<double, dpct::constant, 0> d, dpct::dpct_accessor<double, dpct::constant, 0> d2) {
+// CHECK-NEXT:   return cl::sycl::max((double)d, (double)d2);
+// CHECK-NEXT: }
+__device__ double test2() {
+  return max(d, d2);
+}
+
+// CHECK:  double test3(double d4, double d5) {
+// CHECK-NEXT:   return cl::sycl::max(d4, d5);
+// CHECK-NEXT: }
+__device__ double test3(double d4, double d5) {
+  return max(d4, d5);
+}
+
+// CHECK: dpct::constant_memory<float, 0> C;
+// CHECK-NEXT:  int foo(int n, dpct::dpct_accessor<float, dpct::constant, 0> C) {
+// CHECK-NEXT:   return n == 1 ? (float)C : 0;
+// CHECK-NEXT: }
+__constant__ float C;
+__device__ int foo(int n) {
+  return n == 1 ? C : 0;
+}
+
 __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   __half h, h_1, h_2;
   __half2 h2, h2_1, h2_2;

@@ -17,8 +17,6 @@ namespace clang {
 namespace dpct {
 
 std::string CallExprRewriter::getMigratedArg(unsigned Idx) {
-  if (!Call)
-    return "";
   Analyzer.analyze(Call->getArg(Idx));
   return Analyzer.getReplacedString();
 }
@@ -222,10 +220,40 @@ Optional<std::string> MathTypeCastRewriter::rewrite() {
   return ReplStr;
 }
 
+bool isArgMigratedToAccessor(const CallExpr *Call, unsigned Index) {
+  if (auto DRE = dyn_cast<DeclRefExpr>(Call->getArg(Index)->IgnoreImpCasts())) {
+    if (!DRE->getDecl()->hasAttrs())
+      return false;
+    for (auto A : DRE->getDecl()->getAttrs()) {
+      auto K = A->getKind();
+      if (K == attr::CUDAConstant || K == attr::CUDADevice ||
+          K == attr::CUDAShared)
+        return true;
+    }
+  }
+  return false;
+}
+
+std::string getTypecastName(const CallExpr *Call) {
+  auto Arg0TypeName = Call->getArg(0)->getType().getAsString();
+  auto Arg1TypeName = Call->getArg(1)->getType().getAsString();
+  auto RetTypeName = Call->getType().getAsString();
+  bool B0 = isArgMigratedToAccessor(Call, 0);
+  bool B1 = isArgMigratedToAccessor(Call, 1);
+  if (B0 && !B1)
+    return Arg1TypeName;
+  if (!B0 && B1)
+    return Arg0TypeName;
+  if (B0 && B1)
+    return RetTypeName;
+  return {};
+}
+
 Optional<std::string> MathSimulatedRewriter::rewrite() {
-  report(Diagnostics::MATH_EMULATION, SourceCalleeName, TargetCalleeName);
+  if (SourceCalleeName != "max")
+    report(Diagnostics::MATH_EMULATION, SourceCalleeName, TargetCalleeName);
   auto FD = Call->getDirectCallee();
-  if (!FD || !FD->hasAttr<CUDADeviceAttr>())
+  if (!FD || (!FD->hasAttr<CUDADeviceAttr>() && SourceCalleeName != "max"))
     return Base::rewrite();
 
   const std::string FuncName = SourceCalleeName;
@@ -298,6 +326,51 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
   } else if (FuncName == "rhypot" || FuncName == "rhypotf") {
     auto MigratedArg1 = getMigratedArg(1);
     OS << "1 / cl::sycl::hypot(" << MigratedArg0 << ", " << MigratedArg1 << ")";
+  } else if (FuncName == "max") {
+    std::string NamespaceStr;
+    auto DRE = dyn_cast<DeclRefExpr>(Call->getCallee()->IgnoreImpCasts());
+    if (DRE) {
+      auto Qualifier = DRE->getQualifier();
+      if (Qualifier) {
+        auto Namespace = Qualifier->getAsNamespace();
+        if (Namespace)
+          NamespaceStr = Namespace->getName();
+      }
+    }
+    if (FD->hasAttr<CUDADeviceAttr>() && !FD->hasAttr<CUDAHostAttr>() &&
+        NamespaceStr != "std") {
+      auto TypeName = getTypecastName(Call);
+      auto Itr = MapNames::TypeNamesMap.find(TypeName);
+      if (Itr != MapNames::TypeNamesMap.end())
+        TypeName = Itr->second;
+      OS << "cl::sycl::max(";
+      if (isArgMigratedToAccessor(Call, 0))
+        OS << "(" << TypeName << ")";
+      OS << getMigratedArg(0) << ", ";
+      if (isArgMigratedToAccessor(Call, 1))
+        OS << "(" << TypeName << ")";
+      OS << getMigratedArg(1) << ")";
+    } else {
+      std::string NewFuncName = SourceCalleeName;
+      auto *BT =
+          dyn_cast<BuiltinType>(Call->getArg(0)->IgnoreImpCasts()->getType());
+      if (BT) {
+        auto K = BT->getKind();
+        if (K == BuiltinType::Float) {
+          NewFuncName = "f" + SourceCalleeName.str();
+          NewFuncName += "f";
+        } else if (K == BuiltinType::Double) {
+          NewFuncName = "f" + SourceCalleeName.str();
+        } else if (K == BuiltinType::LongDouble) {
+          NewFuncName = "f" + SourceCalleeName.str();
+          NewFuncName += "l";
+        }
+      }
+      if (NamespaceStr != "")
+        NewFuncName = NamespaceStr + "::" + NewFuncName;
+      OS << NewFuncName << "(" << getMigratedArg(0) << ", " << getMigratedArg(1)
+         << ")";
+    }
   }
   OS.flush();
   return ReplStr;
