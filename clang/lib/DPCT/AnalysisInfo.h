@@ -1649,7 +1649,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
       RSO << getNL();
     else if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::none) &&
              (Type == SYCL))
-      RSO << "#define USM_DISABLED" << getNL();
+      RSO << "#define DPCT_USM_LEVEL_NONE" << getNL();
     concatHeader(RSO, std::forward<T>(Args)...);
     insertHeader(std::move(RSO.str()), Offset);
   }

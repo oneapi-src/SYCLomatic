@@ -176,11 +176,11 @@ private:
 
 // malloc
 static inline void dpct_malloc(void **ptr, size_t size, cl::sycl::queue &q) {
-#ifdef USM_DISABLED
+#ifdef DPCT_USM_LEVEL_NONE
   *ptr = memory_manager::get_instance().mem_alloc(size * sizeof(byte_t), q);
 #else
   *ptr = cl::sycl::malloc_device(size, q.get_device(), q.get_context());
-#endif // USM_DESABLED
+#endif // DPCT_USM_LEVEL_NONE
 }
 
 // malloc
@@ -203,11 +203,11 @@ static inline void dpct_malloc(T1 **ptr, T2 size) {
 /// \returns no return value.
 static inline void dpct_free(void *ptr) {
   if (ptr) {
-#ifdef USM_DISABLED
+#ifdef DPCT_USM_LEVEL_NONE
     memory_manager::get_instance().mem_free(ptr);
 #else
     cl::sycl::free(ptr, get_default_queue().get_context());
-#endif // USM_DISABLED
+#endif // DPCT_USM_LEVEL_NONE
   }
 }
 
@@ -284,13 +284,13 @@ public:
   using value_t = typename std::remove_cv<T>::type;
   template <size_t Dimension = 1>
   using accessor_t = cl::sycl::accessor<T, Dimension, mode, target>;
-#ifdef USM_DISABLED
+#ifdef DPCT_USM_LEVEL_NONE
   // If without USM, must use cl::sycl::multi_ptr.
   using pointer_t = cl::sycl::multi_ptr<T, asp>;
 #else
   // Use raw pointer when USM is enabled.
   using pointer_t = T *;
-#endif // USM_DISABLED
+#endif // DPCT_USM_LEVEL_NONE
 };
 
 // dpct accessor used as kernel function and device function parameter
@@ -381,7 +381,7 @@ private:
 static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
                                    const void *from_ptr, size_t size,
                                    memcpy_direction direction) {
-#ifdef USM_DISABLED
+#ifdef DPCT_USM_LEVEL_NONE
   auto &mm = memory_manager::get_instance();
   memcpy_direction real_direction = direction;
   switch (direction) {
@@ -467,7 +467,7 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
   }
 #else
   return q.memcpy(to_ptr, from_ptr, size);
-#endif // USM_DISABLED
+#endif // DPCT_USM_LEVEL_NONE
 }
 
 /// Synchronously copies size bytes from the address specified by from_ptr to
@@ -513,7 +513,7 @@ static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
 // memset
 static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *devPtr,
                                           int value, size_t count) {
-#ifdef USM_DISABLED
+#ifdef DPCT_USM_LEVEL_NONE
   auto &mm = memory_manager::get_instance();
   assert(mm.is_device_ptr(devPtr));
   auto alloc = mm.translate_ptr(devPtr);
@@ -529,7 +529,7 @@ static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *devPtr,
   });
 #else
   return q.memset(devPtr, value, count);
-#endif // USM_DISABLED
+#endif // DPCT_USM_LEVEL_NONE
 }
 
 /// Synchronously sets value to the first size bytes starting from dev_ptr. The
@@ -616,7 +616,7 @@ public:
   /// Get the virtual pointer in host code.
   void *get_ptr() { return memory_ptr; }
 
-#ifdef USM_DISABLED
+#ifdef DPCT_USM_LEVEL_NONE
   template <size_t D = Dimension>
   typename std::enable_if<D == 0, accessor_t>::type
   get_access(cl::sycl::handler &cgh) {
@@ -636,7 +636,7 @@ public:
   dpct_accessor_t get_access(cl::sycl::handler &cgh) {
     return dpct_accessor_t((T *)memory_ptr, range);
   }
-#endif // USM_DISABLED
+#endif // DPCT_USM_LEVEL_NONE
 
 private:
   global_memory(void *memory_ptr, size_t size)
