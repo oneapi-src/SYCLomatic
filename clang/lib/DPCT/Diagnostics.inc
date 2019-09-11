@@ -64,5 +64,5 @@ DEF_WARNING(MAX_GRID_SIZE, 1022, "There is no exact match between the maxGridSiz
 DEF_COMMENT(MAX_GRID_SIZE, 1022, "There is no exact match between the maxGridSize and the max_nd_range size. Verify the correctness of the code.")
 DEF_WARNING(MASK_UNSUPPORTED, 1023, "The DPC++ sub-group does not support mask options for %0.")
 DEF_COMMENT(MASK_UNSUPPORTED, 1023, "The DPC++ sub-group does not support mask options for {0}.")
-DEF_WARNING(NOERROR_RETURN_ZERO, 1024, "Migrated code does not return error code. 0 is inserted. You may want to rewrite this code")
-DEF_COMMENT(NOERROR_RETURN_ZERO, 1024, "Migrated code does not return error code. 0 is inserted. You may want to rewrite this code")
+DEF_WARNING(NOERROR_RETURN_ZERO, 1024, "The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.")
+DEF_COMMENT(NOERROR_RETURN_ZERO, 1024, "The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.")
