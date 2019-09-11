@@ -341,7 +341,12 @@ public:
   template <class ReinterpretT>
   dpct_accessor<ReinterpretT, Memory, 1> reinterpret() {
     return dpct_accessor<ReinterpretT, Memory, 1>(
+#ifdef DPCT_USM_LEVEL_NONE
+        // Need to get raw pointer if usm disabled.
+        (ReinterpretT *)data.get(),
+#else
         (ReinterpretT *)data,
+#endif // DPCT_USM_LEVEL_NONE
         dpct_range<1>(range.size() * sizeof(T) / sizeof(ReinterpretT)));
   }
 
@@ -368,11 +373,44 @@ public:
     return *this;
   }
   T *operator&() { return static_cast<T *>(data); }
-  T operator+(const T &rhs) { return (*data) + rhs; }
-  T operator-(const T &rhs) { return (*data) - rhs; }
-  T operator*(const T &rhs) { return (*data) * rhs; }
-  T operator/(const T &rhs) { return (*data) / rhs; }
-  T operator-() { return  -(*data); }
+  template <class OperandT>
+  auto operator+(const OperandT &rhs) -> decltype(T() + OperandT()) {
+    return *data + rhs;
+  }
+  template <class OperandT, memory_attribute OperandM>
+  auto operator+(const dpct_accessor<OperandT, OperandM, 0> &rhs)
+      -> decltype(T() + OperandT()) {
+    return *data + *rhs.data;
+  }
+  template <class OperandT>
+  auto operator-(const OperandT &rhs) -> decltype(T() - OperandT()) {
+    return *data - rhs;
+  }
+  template <class OperandT, memory_attribute OperandM>
+  auto operator-(const dpct_accessor<OperandT, OperandM, 0> &rhs)
+      -> decltype(T() - OperandT()) {
+    return *data - *rhs.data;
+  }
+  template <class OperandT>
+  auto operator*(const OperandT &rhs) -> decltype(T() * OperandT()) {
+    return *data * rhs;
+  }
+  template <class OperandT, memory_attribute OperandM>
+  auto operator*(const dpct_accessor<OperandT, OperandM, 0> &rhs)
+      -> decltype(T() * OperandT()) {
+    return (*data) * (*rhs.data);
+  }
+  template <class OperandT>
+  auto operator/(const OperandT &rhs) -> decltype(T() / OperandT()) {
+    return *data / rhs;
+  }
+  template <class OperandT, memory_attribute OperandM>
+  auto operator/(const dpct_accessor<OperandT, OperandM, 0> &rhs)
+      -> decltype(T() / OperandT()) {
+    return (*data) / (*rhs.data);
+  }
+  T operator-() { return -(*data); }
+
 private:
   pointer_t data;
 };
@@ -620,8 +658,10 @@ public:
   template <size_t D = Dimension>
   typename std::enable_if<D == 0, accessor_t>::type
   get_access(cl::sycl::handler &cgh) {
-    return accessor_t(
-        memory_manager::get_instance().translate_ptr(memory_ptr).buffer, cgh);
+    auto buffer = memory_manager::get_instance()
+                      .translate_ptr(memory_ptr)
+                      .buffer.template reinterpret<T, 1>(cl::sycl::range<1>(1));
+    return accessor_t(buffer, cgh);
   }
   template <size_t D = Dimension>
   typename std::enable_if<D != 0, accessor_t>::type

@@ -266,7 +266,9 @@ static device_manager &get_device_manager() {
 /// util function to get the defualt queue of current device in
 /// dpct device manager
 static inline cl::sycl::queue &get_default_queue() {
-  return dpct::get_device_manager().current_device().default_queue();
+  auto &q = dpct::get_device_manager().current_device().default_queue();
+  q.wait();
+  return q;
 }
 
 } // namespace dpct
