@@ -3,7 +3,7 @@
 // RUN: dpct --usm-level=none -out-root %T %s -- -std=c++14 -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --match-full-lines --input-file %T/USM-none.dp.cpp %s
 
-// CHECK: #define USM_DISABLED
+// CHECK: #define DPCT_USM_LEVEL_NONE
 // CHECK-NEXT: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>

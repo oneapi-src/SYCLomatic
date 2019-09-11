@@ -137,14 +137,9 @@ protected:
 
 protected:
   FuncCallExprRewriter(const CallExpr *Call, StringRef SourceCalleeName,
-                       StringRef TargetCalleeNameIn)
+                       StringRef TargetCalleeName)
       : CallExprRewriter(Call, SourceCalleeName),
-        TargetCalleeName(TargetCalleeNameIn) {
-    if ((SourceCalleeName == "cudaMemcpyToArray") &&
-        (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted)) {
-      TargetCalleeName = TargetCalleeName + "_usm";
-    }
-  }
+        TargetCalleeName(TargetCalleeName) {}
 
 public:
   virtual ~FuncCallExprRewriter() {}
