@@ -31,12 +31,22 @@ void foo() {
   // CHECK: CUDA_SAFE_CALL((*((void **)&d_A) = cl::sycl::malloc_device(size, dpct::get_device_manager().current_device(), dpct::get_default_queue().get_context()), 0));
   CUDA_SAFE_CALL(cudaMalloc((void **)&d_A, size));
 
+  // CHECK: *((void **)&d_A) = cl::sycl::malloc_device(sizeof(cl::sycl::double2) + size, dpct::get_device_manager().current_device(), dpct::get_default_queue().get_context());
+  // CHECK-NEXT: *((void **)&d_A) = cl::sycl::malloc_device(sizeof(cl::sycl::uchar4) + size, dpct::get_device_manager().current_device(), dpct::get_default_queue().get_context());
+  cudaMalloc((void **)&d_A, sizeof(double2) + size);
+  cudaMalloc((void **)&d_A, sizeof(uchar4) + size);
+
   // CHECK: *((void **)&h_A) = cl::sycl::malloc_host(size, dpct::get_default_queue().get_context());
   cudaHostAlloc((void **)&h_A, size, cudaHostAllocDefault);
   // CHECK: errorCode = (*((void **)&h_A) = cl::sycl::malloc_host(size, dpct::get_default_queue().get_context()), 0);
   errorCode = cudaHostAlloc((void **)&h_A, size, cudaHostAllocDefault);
   // CHECK: CUDA_SAFE_CALL((*((void **)&h_A) = cl::sycl::malloc_host(size, dpct::get_default_queue().get_context()), 0));
   CUDA_SAFE_CALL(cudaHostAlloc((void **)&h_A, size, cudaHostAllocDefault));
+
+  // CHECK: *((void **)&h_A) = cl::sycl::malloc_host(sizeof(cl::sycl::double2) - size, dpct::get_default_queue().get_context());
+  // CHECK-NEXT: *((void **)&h_A) = cl::sycl::malloc_host(sizeof(cl::sycl::uchar4) - size, dpct::get_default_queue().get_context());
+  cudaHostAlloc((void **)&h_A, sizeof(double2) - size, cudaHostAllocDefault);
+  cudaHostAlloc((void **)&h_A, sizeof(uchar4) - size, cudaHostAllocDefault);
 
   // CHECK: *((void **)&h_A) = cl::sycl::malloc_host(size, dpct::get_default_queue().get_context());
   cudaMallocHost((void **)&h_A, size);
@@ -45,6 +55,11 @@ void foo() {
   // CHECK: CUDA_SAFE_CALL((*((void **)&h_A) = cl::sycl::malloc_host(size, dpct::get_default_queue().get_context()), 0));
   CUDA_SAFE_CALL(cudaMallocHost((void **)&h_A, size));
 
+  // CHECK: *((void **)&h_A) = cl::sycl::malloc_host(sizeof(cl::sycl::double2) * size, dpct::get_default_queue().get_context());
+  // CHECK-NEXT: *((void **)&h_A) = cl::sycl::malloc_host(sizeof(cl::sycl::uchar4) * size, dpct::get_default_queue().get_context());
+  cudaMallocHost((void **)&h_A, sizeof(double2) * size);
+  cudaMallocHost((void **)&h_A, sizeof(uchar4) * size);
+
   // CHECK: *((void **)&h_A) = cl::sycl::malloc_host(size, dpct::get_default_queue().get_context());
   cudaMallocHost(&h_A, size);
   // CHECK: errorCode = (*((void **)&h_A) = cl::sycl::malloc_host(size, dpct::get_default_queue().get_context()), 0);
@@ -52,12 +67,22 @@ void foo() {
   // CHECK: CUDA_SAFE_CALL((*((void **)&h_A) = cl::sycl::malloc_host(size, dpct::get_default_queue().get_context()), 0));
   CUDA_SAFE_CALL(cudaMallocHost(&h_A, size));
 
+  // CHECK: *((void **)&h_A) = cl::sycl::malloc_host(sizeof(cl::sycl::double2) / size, dpct::get_default_queue().get_context());
+  // CHECK-NEXT: *((void **)&h_A) = cl::sycl::malloc_host(sizeof(cl::sycl::uchar4) / size, dpct::get_default_queue().get_context());
+  cudaMallocHost(&h_A, sizeof(double2) / size);
+  cudaMallocHost(&h_A, sizeof(uchar4) / size);
+
   // CHECK: *((void **)&d_A) = cl::sycl::malloc_shared(size, dpct::get_device_manager().current_device(), dpct::get_default_queue().get_context());
   cudaMallocManaged((void **)&d_A, size);
   // CHECK: errorCode = (*((void **)&d_A) = cl::sycl::malloc_shared(size, dpct::get_device_manager().current_device(), dpct::get_default_queue().get_context()), 0);
   errorCode = cudaMallocManaged((void **)&d_A, size);
   // CHECK: CUDA_SAFE_CALL((*((void **)&d_A) = cl::sycl::malloc_shared(size, dpct::get_device_manager().current_device(), dpct::get_default_queue().get_context()), 0));
   CUDA_SAFE_CALL(cudaMallocManaged((void **)&d_A, size));
+
+  // CHECK: *((void **)&d_A) = cl::sycl::malloc_shared(sizeof(cl::sycl::double2) + size + sizeof(cl::sycl::uchar4), dpct::get_device_manager().current_device(), dpct::get_default_queue().get_context());
+  // CHECK-NEXT: *((void **)&d_A) = cl::sycl::malloc_shared(sizeof(cl::sycl::double2) * size * sizeof(cl::sycl::uchar4), dpct::get_device_manager().current_device(), dpct::get_default_queue().get_context());
+  cudaMallocManaged((void **)&d_A, sizeof(double2) + size + sizeof(uchar4));
+  cudaMallocManaged((void **)&d_A, sizeof(double2) * size * sizeof(uchar4));
 
   /// memcpy
 

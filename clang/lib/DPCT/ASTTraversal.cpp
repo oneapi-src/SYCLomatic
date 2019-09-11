@@ -445,7 +445,8 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   else if (FieldName == "__fetch_builtin_z")
     Dimension = 2;
   else {
-    llvm::dbgs() << "[" << getName() << "] Unexpected field name: " << FieldName;
+    llvm::dbgs() << "[" << getName()
+                 << "] Unexpected field name: " << FieldName;
     return;
   }
 
@@ -1540,7 +1541,9 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: { return false; }
+  default: {
+    return false;
+  }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -2168,7 +2171,8 @@ void BLASEnumsRule::run(const MatchFinder::MatchResult &Result) {
     std::string Name = EC->getNameAsString();
     auto Search = MapNames::BLASEnumsMap.find(Name);
     if (Search == MapNames::BLASEnumsMap.end()) {
-      llvm::dbgs() << "[" << getName() << "] Unexpected enum variable: " << Name;
+      llvm::dbgs() << "[" << getName()
+                   << "] Unexpected enum variable: " << Name;
       return;
     }
     std::string Replacement = Search->second;
@@ -3150,7 +3154,8 @@ void SOLVEREnumsRule::run(const MatchFinder::MatchResult &Result) {
     std::string Name = EC->getNameAsString();
     auto Search = MapNames::SOLVEREnumsMap.find(Name);
     if (Search == MapNames::SOLVEREnumsMap.end()) {
-      llvm::dbgs() << "[" << getName() << "] Unexpected enum variable: " << Name;
+      llvm::dbgs() << "[" << getName()
+                   << "] Unexpected enum variable: " << Name;
       return;
     }
     std::string Replacement = Search->second;
@@ -4192,8 +4197,11 @@ void MemoryTranslationRule::mallocTranslation(
   if (Name == "cudaMalloc") {
     if (USMLevel == restricted) {
       std::ostringstream Repl;
-      auto Arg0Str = getStmtSpelling(C->getArg(0), *(Result.Context));
-      auto Arg1Str = getStmtSpelling(C->getArg(1), *(Result.Context));
+      ExprAnalysis EA;
+      EA.analyze(C->getArg(0));
+      auto Arg0Str = EA.getReplacedString();
+      EA.analyze(C->getArg(1));
+      auto Arg1Str = EA.getReplacedString();
       if (C->getArg(0)->getStmtClass() == Stmt::CStyleCastExprClass) {
         Repl << "*(" << Arg0Str << ")";
       } else {
@@ -4210,8 +4218,11 @@ void MemoryTranslationRule::mallocTranslation(
     }
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost") {
     std::ostringstream Repl;
-    auto Arg0Str = getStmtSpelling(C->getArg(0), *(Result.Context));
-    auto Arg1Str = getStmtSpelling(C->getArg(1), *(Result.Context));
+    ExprAnalysis EA;
+    EA.analyze(C->getArg(0));
+    auto Arg0Str = EA.getReplacedString();
+    EA.analyze(C->getArg(1));
+    auto Arg1Str = EA.getReplacedString();
     if (C->getArg(0)->getStmtClass() == Stmt::CStyleCastExprClass) {
       Repl << "*(" << Arg0Str << ")";
     } else {
@@ -4227,8 +4238,11 @@ void MemoryTranslationRule::mallocTranslation(
   } else if (Name == "cudaMallocManaged") {
     if (USMLevel == restricted) {
       std::ostringstream Repl;
-      auto Arg0Str = getStmtSpelling(C->getArg(0), *(Result.Context));
-      auto Arg1Str = getStmtSpelling(C->getArg(1), *(Result.Context));
+      ExprAnalysis EA;
+      EA.analyze(C->getArg(0));
+      auto Arg0Str = EA.getReplacedString();
+      EA.analyze(C->getArg(1));
+      auto Arg1Str = EA.getReplacedString();
       if (C->getArg(0)->getStmtClass() == Stmt::CStyleCastExprClass) {
         Repl << "*(" << Arg0Str << ")";
       } else {
@@ -4245,11 +4259,16 @@ void MemoryTranslationRule::mallocTranslation(
   } else if (Name == "cublasAlloc") {
     // TODO: migrate functions when they are in template
     // TODO: migrate functions when they are in macro body
+    ExprAnalysis EA;
+    EA.analyze(C->getArg(0));
+    auto Arg0Str = EA.getReplacedString();
+    EA.analyze(C->getArg(1));
+    auto Arg1Str = EA.getReplacedString();
+    EA.analyze(C->getArg(2));
+    auto Arg2Str = EA.getReplacedString();
     DpctGlobalInfo::getInstance().insertCublasAlloc(C);
-    auto PtrStr = getStmtSpelling(C->getArg(2), *(Result.Context));
-    auto SizeStr = "(" + getStmtSpelling(C->getArg(0), *(Result.Context)) +
-                   ")*(" + getStmtSpelling(C->getArg(1), *(Result.Context)) +
-                   ")";
+    auto PtrStr = Arg2Str;
+    auto SizeStr = "(" + Arg0Str + ")*(" + Arg1Str + ")";
     std::string Replacement =
         "dpct::dpct_malloc(" + PtrStr + ", " + SizeStr + ")";
     emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
@@ -4316,7 +4335,9 @@ void MemoryTranslationRule::replaceMemAPIArg(
 
     if (IsOffsetNeeded) {
       std::string Type = ASE->getType().getAsString();
-      auto StmtStrArg = getStmtSpelling(ASE->getIdx(), *Result.Context);
+      ExprAnalysis EA;
+      EA.analyze(ASE->getIdx());
+      auto StmtStrArg = EA.getReplacedString();
       std::string Offset = " + sizeof(" + Type + ") * (" + StmtStrArg + ")";
       VarName += Offset;
     }
@@ -4411,7 +4432,9 @@ void MemoryTranslationRule::memcpyTranslation(
       if (C->getNumArgs() == 5) {
         const Expr *Stream = C->getArg(4);
         if (Stream) {
-          auto StreamStr = getStmtSpelling(Stream, *Result.Context);
+          ExprAnalysis EA;
+          EA.analyze(Stream);
+          auto StreamStr = EA.getReplacedString();
           if (StreamStr.empty() || StreamStr == "0")
             ReplaceStr = "dpct::get_default_queue().memcpy";
           else
@@ -4504,7 +4527,9 @@ void MemoryTranslationRule::memcpySymbolTranslation(
       if (C->getNumArgs() == 6) {
         const Expr *Stream = C->getArg(5);
         if (Stream) {
-          auto StreamStr = getStmtSpelling(Stream, *Result.Context);
+          ExprAnalysis EA;
+          EA.analyze(Stream);
+          auto StreamStr = EA.getReplacedString();
           if (StreamStr.empty() || StreamStr == "0")
             ReplaceStr = "dpct::get_default_queue().memcpy";
           else
@@ -4525,8 +4550,9 @@ void MemoryTranslationRule::memcpySymbolTranslation(
         new ReplaceCalleeName(C, std::move(ReplaceStr), Name));
   }
 
-  std::string OffsetFromBaseStr =
-      getStmtSpelling(C->getArg(3), *Result.Context);
+  ExprAnalysis EA;
+  EA.analyze(C->getArg(3));
+  std::string OffsetFromBaseStr = EA.getReplacedString();
 
   if ((Name == "cudaMemcpyToSymbol" || Name == "cudaMemcpyToSymbolAsync") &&
       OffsetFromBaseStr != "0") {
@@ -4586,9 +4612,10 @@ void MemoryTranslationRule::freeTranslation(
 
   if (Name == "cudaFree") {
     if (USMLevel == restricted) {
+      ExprAnalysis EA;
+      EA.analyze(C->getArg(0));
       std::ostringstream Repl;
-      Repl << "cl::sycl::free("
-           << getStmtSpelling(C->getArg(0), *(Result.Context))
+      Repl << "cl::sycl::free(" << EA.getReplacedString()
            << ", dpct::get_default_queue().get_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
@@ -4596,9 +4623,10 @@ void MemoryTranslationRule::freeTranslation(
     }
   } else if (Name == "cudaFreeHost") {
     if (USMLevel == restricted) {
+      ExprAnalysis EA;
+      EA.analyze(C->getArg(0));
       std::ostringstream Repl;
-      Repl << "cl::sycl::free("
-           << getStmtSpelling(C->getArg(0), *(Result.Context))
+      Repl << "cl::sycl::free(" << EA.getReplacedString()
            << ", dpct::get_default_queue().get_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
@@ -4631,7 +4659,9 @@ void MemoryTranslationRule::memsetTranslation(
       if (C->getNumArgs() == 4) {
         const Expr *Stream = C->getArg(3);
         if (Stream) {
-          auto StreamStr = getStmtSpelling(Stream, *Result.Context);
+          ExprAnalysis EA;
+          EA.analyze(Stream);
+          auto StreamStr = EA.getReplacedString();
           if (StreamStr.empty() || StreamStr == "0")
             ReplaceStr = "dpct::get_default_queue().memset";
           else
@@ -4676,8 +4706,11 @@ void MemoryTranslationRule::miscTranslation(
   if (Name == "cudaHostGetDevicePointer") {
     if (USMLevel == restricted) {
       std::ostringstream Repl;
-      auto Arg0Str = getStmtSpelling(C->getArg(0), *(Result.Context));
-      auto Arg1Str = getStmtSpelling(C->getArg(1), *(Result.Context));
+      ExprAnalysis EA;
+      EA.analyze(C->getArg(0));
+      auto Arg0Str = EA.getReplacedString();
+      EA.analyze(C->getArg(1));
+      auto Arg1Str = EA.getReplacedString();
       Repl << "*(" << Arg0Str << ") = " << Arg1Str;
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
@@ -4771,8 +4804,11 @@ void MemoryTranslationRule::getSymbolAddressTranslation(
   // address of something residing on the device directly from host side should
   // not be possible.
   std::string Replacement;
-  auto StmtStrArg0 = getStmtSpelling(C->getArg(0), *(Result.Context));
-  auto StmtStrArg1 = getStmtSpelling(C->getArg(1), *(Result.Context));
+  ExprAnalysis EA;
+  EA.analyze(C->getArg(0));
+  auto StmtStrArg0 = EA.getReplacedString();
+  EA.analyze(C->getArg(1));
+  auto StmtStrArg1 = EA.getReplacedString();
   Replacement = "*(" + StmtStrArg0 + ")" + " = " + StmtStrArg1 + ".get_ptr()";
   emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
 }
@@ -4821,7 +4857,9 @@ void MemoryTranslationRule::handleAsync(
     const CallExpr *C, unsigned i, const MatchFinder::MatchResult &Result) {
   const Expr *Stream = C->getArg(i);
   if (Stream) {
-    auto StreamStr = getStmtSpelling(Stream, *Result.Context);
+    ExprAnalysis EA;
+    EA.analyze(Stream);
+    auto StreamStr = EA.getReplacedString();
     // Remove the default stream argument "0"
     if (StreamStr == "0") {
       // Remove preceding semicolon and spaces

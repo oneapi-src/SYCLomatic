@@ -56,7 +56,7 @@ std::string TemplateDependentStringInfo::getReplacedString(
 
 SourceLocation ExprAnalysis::getExprLocation(SourceLocation Loc) {
   if (SM.isMacroArgExpansion(Loc))
-    return SM.getSpellingLoc(Loc);
+    return getExprLocation(SM.getImmediateSpellingLoc(Loc));
   else
     return SM.getExpansionLoc(Loc);
 }
