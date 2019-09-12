@@ -4966,10 +4966,11 @@ void MemoryMigrationRule::handleAsync(
 REGISTER_RULE(MemoryMigrationRule)
 
 void UnnamedTypesRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(
-      cxxRecordDecl(unless(has(cxxRecordDecl(isImplicit()))), hasDefinition())
-          .bind("unnamedType"),
-      this);
+  MF.addMatcher(cxxRecordDecl(unless(anyOf(has(cxxRecordDecl(isImplicit())),
+                                           isImplicit())),
+                              hasDefinition())
+                    .bind("unnamedType"),
+                this);
 }
 
 void UnnamedTypesRule::run(const MatchFinder::MatchResult &Result) {

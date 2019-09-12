@@ -1,5 +1,17 @@
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/unnamed-struct.dp.cpp --match-full-lines %s
+
+#include <vector>
+#include <algorithm>
+#include <cctype>
+
+int main()
+{
+  std::vector<unsigned char> s;
+  // CHECK: std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) -> unsigned char { return std::toupper(c);  });
+  std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) -> unsigned char { return std::toupper(c);  });
+  return 0;
+}
 
 //CHECK: struct __dpct_align__(4) dpct_type_{{[a-f0-9]+}}
 struct __align__(4)
