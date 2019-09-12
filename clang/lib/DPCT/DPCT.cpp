@@ -100,7 +100,7 @@ static opt<std::string> SDKPath("cuda-path", desc("Directory path of SDK.\n"),
 
 static opt<std::string>
     SDKIncludePath("cuda-include-path",
-                   desc("The directory path of CUDA header files."),
+                   desc("The directory path of the CUDA header files."),
                    value_desc("dir"), cat(DPCTCat), llvm::cl::Optional);
 
 static opt<ReportTypeEnum> ReportType(
@@ -184,7 +184,7 @@ static std::string
                 "from " + std::to_string((size_t)Warnings::BEGIN) + " to " +
                 std::to_string((size_t)Warnings::END - 1) +
                 ". Hyphen separated ranges are also allowed. For example:\n"
-                "-suppress-warnings=1000-1010,1011.");
+                "--suppress-warnings=1000-1010,1011.");
 opt<std::string> SuppressWarnings("suppress-warnings", desc(WarningDesc),
                                   value_desc("value"), cat(DPCTCat));
 
@@ -212,7 +212,7 @@ opt<OutputVerbosityLev> OutputVerbosity(
         clEnumVal(
             detailed,
             "\'normal\' and messages about which file is being processed."),
-        clEnumVal(diagnostics, "\'detailed\' and information about detected "
+        clEnumVal(diagnostics, "\'detailed\' and information about the detected "
                                "conflicts and crashes (default)")),
     llvm::cl::init(diagnostics), value_desc("value"), cat(DPCTCat),
     llvm::cl::Optional);

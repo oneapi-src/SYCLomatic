@@ -109,7 +109,7 @@ llvm::Error CommonOptionsParser::init(
 #ifdef INTEL_CUSTOMIZATION
   static cl::opt<std::string> BuildPath(
       "p",
-      cl::desc("The directory path for compilation database (compile_commands.json). When no\n"
+      cl::desc("The directory path for the compilation database (compile_commands.json). When no\n"
                "path is specified, a search for compile_commands.json is attempted through all\n"
                "parent paths of the first input file."),
       cl::Optional, cl::cat(Category), cl::value_desc("dir"),
@@ -140,8 +140,8 @@ llvm::Error CommonOptionsParser::init(
  static cl::list<std::string> ArgsAfter(
      "extra-arg",
      cl::desc("Additional argument to append to the compiler command line, example:\n"
-              "--extra-arg=\"-I /path/to/header\". The options, which can be passed that way can\n"
-              "be found by dpct -- -help command."),
+              "--extra-arg=\"-I /path/to/header\". The options that can be passed this way can\n"
+              "be found with the dpct -- -help command."),
      cl::value_desc("string"), cl::cat(Category), cl::sub(*cl::AllSubCommands));
 
   static cl::list<std::string> ArgsBefore(
