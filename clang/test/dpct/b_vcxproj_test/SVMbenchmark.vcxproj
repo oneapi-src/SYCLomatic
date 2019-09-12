@@ -393,6 +393,12 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <CustomBuild Include="\path\to\name_intermediate_link.obj.rule">
+       <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">\path\to\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
     <Object Include="\path\to\CMakeFiles\SVMbenchmark.dir\cuSVM\$(Configuration)\SVMbenchmark_generated_cuSVMSolver.cu.obj" />
     <ClInclude Include="\path\to\debug.h" />
     <ClCompile Include="b_kernel.cu" />

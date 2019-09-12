@@ -340,7 +340,8 @@ void collectFiles(const std::string &Line) {
     std::string SubStr = Line.substr(Start, End - Start);
     backslashToForwardslash(SubStr);
     // Exclude *.txt files, i.e. <CustomBuild Include="/path/to/CMakeLists.txt">
-    if (!endsWith(SubStr, ".txt")) {
+    // Exclude *.rule files, i.e. <CustomBuild Include="/path/to/name_intermediate_link.obj.rule">
+    if (!endsWith(SubStr, ".txt") && !endsWith(SubStr, ".rule")) {
       addFilesSet(SubStr);
     }
   }
