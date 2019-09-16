@@ -32,7 +32,7 @@ int main() {
 
   int karg3 = 80;
   // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:   dpct::get_default_queue_wait().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((griddim * threaddim), threaddim),

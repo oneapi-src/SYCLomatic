@@ -257,16 +257,22 @@ private:
   unsigned int _current_device = 0;
 };
 
-/// util function to get the instance of dpct device manager
+/// Util function to get the instance of dpct device manager.
 static device_manager &get_device_manager() {
   static device_manager d_m;
   return d_m;
 }
 
-/// util function to get the defualt queue of current device in
-/// dpct device manager
+/// Util function to get the defualt queue of current device in
+/// dpct device manager.
 static inline cl::sycl::queue &get_default_queue() {
-  auto &q = dpct::get_device_manager().current_device().default_queue();
+  return dpct::get_device_manager().current_device().default_queue();
+}
+
+/// Util function to get the defualt queue of current device in
+/// dpct device manager. Wait till all the tasks in the queue are done.
+static inline cl::sycl::queue &get_default_queue_wait() {
+  auto &q = get_default_queue();
   q.wait();
   return q;
 }

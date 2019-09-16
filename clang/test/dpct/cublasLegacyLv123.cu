@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct --usm-level=none -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
 // RUN: FileCheck --input-file %T/cublasLegacyLv123.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas.h>

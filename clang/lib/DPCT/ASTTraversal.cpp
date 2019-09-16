@@ -1541,9 +1541,7 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
     return false;
 
   switch (Node.getOverloadedOperator()) {
-  default: {
-    return false;
-  }
+  default: { return false; }
 #define OVERLOADED_OPERATOR_MULTI(...)
 #define OVERLOADED_OPERATOR(Name, ...)                                         \
   case OO_##Name: {                                                            \
@@ -2573,6 +2571,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     PrefixInsertStr = std::string("{") + getNL();
     CallExprReplStr =
         CallExprReplStr + ReplInfo.ReplName + "(dpct::get_default_queue()";
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted)
+      CallExprReplStr.insert(CallExprReplStr.length() - 2, "_wait");
     std::string IndentStr =
         getIndent(StmtBegin, (Result.Context)->getSourceManager()).str();
 
@@ -4424,7 +4424,7 @@ void MemoryTranslationRule::memcpyTranslation(
   std::string ReplaceStr;
   if (Name == "cudaMemcpy") {
     if (USMLevel == restricted)
-      ReplaceStr = "dpct::get_default_queue().memcpy";
+      ReplaceStr = "dpct::get_default_queue_wait().memcpy";
     else
       ReplaceStr = "dpct::dpct_memcpy";
   } else {
@@ -4436,12 +4436,12 @@ void MemoryTranslationRule::memcpyTranslation(
           EA.analyze(Stream);
           auto StreamStr = EA.getReplacedString();
           if (StreamStr.empty() || StreamStr == "0")
-            ReplaceStr = "dpct::get_default_queue().memcpy";
+            ReplaceStr = "dpct::get_default_queue_wait().memcpy";
           else
             ReplaceStr = StreamStr + ".memcpy";
         }
       } else {
-        ReplaceStr = "dpct::get_default_queue().memcpy";
+        ReplaceStr = "dpct::get_default_queue_wait().memcpy";
       }
     } else
       ReplaceStr = "dpct::async_dpct_memcpy";
@@ -4519,7 +4519,7 @@ void MemoryTranslationRule::memcpySymbolTranslation(
   std::string ReplaceStr;
   if (Name == "cudaMemcpyToSymbol" || Name == "cudaMemcpyFromSymbol") {
     if (USMLevel == restricted)
-      ReplaceStr = "dpct::get_default_queue().memcpy";
+      ReplaceStr = "dpct::get_default_queue_wait().memcpy";
     else
       ReplaceStr = "dpct::dpct_memcpy";
   } else {
@@ -4531,12 +4531,12 @@ void MemoryTranslationRule::memcpySymbolTranslation(
           EA.analyze(Stream);
           auto StreamStr = EA.getReplacedString();
           if (StreamStr.empty() || StreamStr == "0")
-            ReplaceStr = "dpct::get_default_queue().memcpy";
+            ReplaceStr = "dpct::get_default_queue_wait().memcpy";
           else
             ReplaceStr = StreamStr + ".memcpy";
         }
       } else {
-        ReplaceStr = "dpct::get_default_queue().memcpy";
+        ReplaceStr = "dpct::get_default_queue_wait().memcpy";
       }
     } else
       ReplaceStr = "dpct::async_dpct_memcpy";
@@ -4651,7 +4651,7 @@ void MemoryTranslationRule::memsetTranslation(
   std::string ReplaceStr;
   if (Name == "cudaMemset") {
     if (USMLevel == restricted)
-      ReplaceStr = "dpct::get_default_queue().memset";
+      ReplaceStr = "dpct::get_default_queue_wait().memset";
     else
       ReplaceStr = "dpct::dpct_memset";
   } else {
@@ -4663,12 +4663,12 @@ void MemoryTranslationRule::memsetTranslation(
           EA.analyze(Stream);
           auto StreamStr = EA.getReplacedString();
           if (StreamStr.empty() || StreamStr == "0")
-            ReplaceStr = "dpct::get_default_queue().memset";
+            ReplaceStr = "dpct::get_default_queue_wait().memset";
           else
             ReplaceStr = StreamStr + ".memset";
         }
       } else {
-        ReplaceStr = "dpct::get_default_queue().memset";
+        ReplaceStr = "dpct::get_default_queue_wait().memset";
       }
     } else {
       ReplaceStr = "dpct::async_dpct_memset";

@@ -62,7 +62,7 @@ int main() {
 
   const int threads_per_block = NUM_ELEMENTS;
   // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:   dpct::get_default_queue_wait().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto in_acc_ct1 = in.get_access(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
@@ -75,7 +75,7 @@ int main() {
   kernel1<<<1, threads_per_block>>>(d_out);
 
   // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:   dpct::get_default_queue_wait().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       dpct::device_memory<float, 1> tmp(64/*size*/);
   // CHECK-NEXT:       auto tmp_acc_ct1 = tmp.get_access(cgh);

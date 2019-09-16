@@ -228,10 +228,13 @@ std::string KernelCallExpr::getReplacement() {
     }
 
     if (ExecutionConfig.Stream == "0") {
+      std::string Queue = "dpct::get_default_queue";
+      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted)
+        Queue += "_wait";
       if (!getEvent().empty())
-        Block.pushStmt(getEvent() + " = dpct::get_default_queue().submit(");
+        Block.pushStmt(getEvent() + " = ", Queue, "().submit(");
       else
-        Block.pushStmt("dpct::get_default_queue().submit(");
+        Block.pushStmt(Queue, "().submit(");
     } else {
       if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&')
         Block.pushStmt("(", ExecutionConfig.Stream, ").submit(");
