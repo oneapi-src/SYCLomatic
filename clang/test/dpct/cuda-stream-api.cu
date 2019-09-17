@@ -1,6 +1,6 @@
 // FIXME:
 // UNSUPPORTED: -windows-
-// RUN: dpct --usm-level=none -out-root %T %s -- -std=c++14 -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cuda-stream-api.dp.cpp --match-full-lines %s
 
 #include <list>

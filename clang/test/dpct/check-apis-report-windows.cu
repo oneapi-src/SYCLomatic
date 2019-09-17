@@ -1,5 +1,5 @@
 // UNSUPPORTED: -linux-
-// RUN: dpct -report-type=apis -report-file-prefix=check-apis-report -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct -report-type=apis -report-file-prefix=check-apis-report -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: echo "// CHECK: API name, Frequency" >%T/check-apis-report_csv_check.txt
 // RUN: echo "// CHECK: CUresult cuMemGetInfo_v2(size_t * free,size_t * total),1" >>%T/check-apis-report_csv_check.txt
 // RUN: echo "// CHECK: cudaDeviceProp,1" >>%T/check-apis-report_csv_check.txt
@@ -25,7 +25,7 @@
 // RUN: cat %T/check-apis-report.apis.csv >>%T/check-apis-report_csv_check.txt
 // RUN: FileCheck --match-full-lines --input-file %T/check-apis-report_csv_check.txt %T/check-apis-report_csv_check.txt
 
-// RUN: dpct -report-file-prefix=report -report-type=apis  -report-format=formatted -report-only  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct -report-file-prefix=report -report-type=apis  -report-format=formatted -report-only  -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: echo "// CHECK: API name				Frequency" >%T/check-apis-report_check.txt
 // RUN: echo "// CHECK: CUresult cuMemGetInfo_v2(size_t * free,size_t * total)               1" >>%T/check-apis-report_check.txt
 // RUN: echo "// CHECK: cudaDeviceProp                               1" >>%T/check-apis-report_check.txt
@@ -51,7 +51,7 @@
 // RUN: cat %T/report.apis.log >>%T/check-apis-report_check.txt
 // RUN: FileCheck --match-full-lines --input-file %T/check-apis-report_check.txt %T/check-apis-report_check.txt
 
-// RUN: dpct -output-file=output-file.txt -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct -output-file=output-file.txt -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: echo "// CHECK: Processing: {{(.+)}}" >%T/check_output-file.txt
 // RUN: echo "// CHECK: {{(.+)}} warning: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code." >>%T/check_output-file.txt
 // RUN: echo "// CHECK:   cudaError_t err = cudaDeviceSynchronize();" >>%T/check_output-file.txt
@@ -64,17 +64,17 @@
 
 // NOMATCH-CHECK-NOT: '{{.}}'
 
-// RUN: dpct -output-verbosity=silent  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"  2>&1  \
+// RUN: dpct -output-verbosity=silent  -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only  2>&1  \
 // RUN: | FileCheck -check-prefix=NOMATCH-CHECK -allow-empty %s
 
 
 // FAKE-FILE-CHECK-NOT:Processing: {{(.+)}}
 // FAKE-FILE-STDERR: Processing: {{(.+)}}
 
-// RUN: dpct -output-verbosity=normal  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"  2>&1  \
+// RUN: dpct -output-verbosity=normal  -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only  2>&1  \
 // RUN: | FileCheck -check-prefix=FAKE-FILE-CHECK -allow-empty %s
 
-// RUN: dpct -output-verbosity=detailed  -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"  2>&1  \
+// RUN: dpct -output-verbosity=detailed  -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only  2>&1  \
 // RUN: | FileCheck -check-prefix=FAKE-FILE-STDERR -allow-empty %s
 
 #include <cuda_runtime.h>

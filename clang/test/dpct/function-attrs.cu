@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s -passes "IterationSpaceBuiltinRule" -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct -out-root %T %s -passes "IterationSpaceBuiltinRule" --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/function-attrs.dp.cpp
 
 // CHECK: void test_00();

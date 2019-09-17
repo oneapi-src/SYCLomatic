@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cuda-math-intrinsics.dp.cpp --match-full-lines %s
 
 #include <cmath>

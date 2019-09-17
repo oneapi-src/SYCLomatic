@@ -1,6 +1,6 @@
 // UNSUPPORTED: -linux-
 // RUN: cat %S/DemoCudaProj.vcxproj > %T/DemoCudaProj.vcxproj
-// RUN: dpct  --vcxprojfile=%T/DemoCudaProj.vcxproj  -in-root=%S -out-root=%T  %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct  --vcxprojfile=%T/DemoCudaProj.vcxproj  -in-root=%S -out-root=%T  %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: echo "// CHECK: [" >%T/check_compilation_db.txt
 // RUN: echo "// CHECK:     {" >>%T/check_compilation_db.txt
 // RUN: echo "// CHECK:         \"file\":\"a_kernel.cu\"," >>%T/check_compilation_db.txt

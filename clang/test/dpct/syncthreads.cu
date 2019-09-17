@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/syncthreads.dp.cpp
 
 // CHECK: void test_syncthreads(int *arr, cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {

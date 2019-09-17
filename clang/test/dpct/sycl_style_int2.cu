@@ -1,4 +1,4 @@
-// RUN: dpct --usm-level=none -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/sycl_style_int2.dp.cpp --match-full-lines %s
 #ifdef _WIN32
 #include <cstdint>

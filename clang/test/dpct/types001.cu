@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/types001.dp.cpp
 
 // CHECK: dpct::dpct_device_info deviceProp;

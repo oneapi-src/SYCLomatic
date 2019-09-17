@@ -1,6 +1,6 @@
 // RUN: rm  %T/header_migration_merge.h.yaml -f
-// RUN: dpct -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path"
-// RUN: dpct -out-root %T %s  -- -x cuda --cuda-host-only --cuda-path="%cuda-path" -DMACROA
+// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -DMACROA
 // RUN: FileCheck --input-file %T/header_migration_merge.dp.cpp --match-full-lines %s
 // RUN: FileCheck --input-file %T/header_migration_merge.h --match-full-lines %S/header_migration_merge.h
 

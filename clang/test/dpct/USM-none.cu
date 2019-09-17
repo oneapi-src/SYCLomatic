@@ -1,6 +1,6 @@
 // FIXME
 // UNSUPPORTED: -windows-
-// RUN: dpct --usm-level=none -out-root %T %s -- -std=c++14 -x cuda --cuda-host-only --cuda-path="%cuda-path"
+// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/USM-none.dp.cpp %s
 
 // CHECK: #define DPCT_USM_LEVEL_NONE
