@@ -161,3 +161,16 @@ int main(int argc, char **argv) {
   printf("Test Passed!\n");
   return 0;
 }
+
+
+// CHECK: dpct::constant_memory<float, 0> C;
+__constant__ float C;
+
+// CHECK: void foo(float d, float y, dpct::dpct_accessor<float, dpct::constant, 0> C){
+// CHECK-NEXT:   float temp;
+// CHECK-NEXT:   float maxtemp = cl::sycl::fmax(temp=(y*d)<(y==1?(float)C:0) ? -(3*y) :-10, -10);
+// CHECK-NEXT: }
+__global__ void foo(float d, float y){
+  float temp;
+  float maxtemp = fmaxf(temp=(y*d)<(y==1?C:0) ? -(3*y) :-10, -10);
+}

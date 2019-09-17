@@ -198,6 +198,12 @@ protected:
     auto LocInfo = getOffsetAndLength(SL);
     addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
   }
+  // Replace string with relative offset to the stored string and length
+  inline void addReplacement(SourceLocation Begin, size_t Length,
+                             std::string Text) {
+    addReplacement(getOffset(getExprLocation(Begin)), Length,
+                                 std::move(Text));
+  }
   // Replace string between begin location and end location
   template <class TextData>
   inline void addReplacement(SourceLocation Begin, SourceLocation End,

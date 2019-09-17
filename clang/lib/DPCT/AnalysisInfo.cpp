@@ -556,7 +556,7 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
   return DpctGlobalInfo::getInstance().insertMemVarInfo(Var);
 }
 
-MemVarInfo::VarAttrKind MemVarInfo::getAttr(const AttrVec &Attrs) {
+MemVarInfo::VarAttrKind MemVarInfo::getAddressAttr(const AttrVec &Attrs) {
   for (auto VarAttr : Attrs) {
     auto Kind = VarAttr->getKind();
     if (Kind == attr::CUDAConstant)
@@ -566,7 +566,6 @@ MemVarInfo::VarAttrKind MemVarInfo::getAttr(const AttrVec &Attrs) {
     else if (Kind == attr::CUDAShared)
       return Shared;
   }
-  llvm::dbgs() << "[MemVarInfo::getAttr] Can't get variable attribute.";
   return Host;
 }
 

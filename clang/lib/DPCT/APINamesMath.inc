@@ -218,6 +218,10 @@ ENTRY_RENAMED("__uint_as_float", "dpct::bit_cast<unsigned int, float>")
 // Host:   int => abs, float => fabsf, double => fabs, long double => fabsl
 ENTRY_RENAMED("abs", "cl::sycl::abs")
 
+// Device: cl::sycl::max
+// Host:   int => max, float => fmaxf, double => fmax, long double => fmaxl
+ENTRY_RENAMED("max", "cl::sycl::max")
+
 // Device: cl::sycl::min
 // Host:   int => min, float => fminf, double => fmin, long double => fminl
 ENTRY_RENAMED("min", "cl::sycl::min")
@@ -255,10 +259,6 @@ ENTRY_EMULATED("remquo", "cl::sycl::remquo")
 ENTRY_EMULATED("rhypot", "cl::sycl::hypot")
 ENTRY_EMULATED("sincos", "cl::sycl::sincos")
 ENTRY_EMULATED("sincospi", "cl::sycl::sincos")
-
-// Device: cl::sycl::max
-// Host:   int => max, float => fmaxf, double => fmax, long double => fmaxl
-ENTRY_EMULATED("max", "cl::sycl::max")
 
 
 // Half/Half2 Arithmetic Functions

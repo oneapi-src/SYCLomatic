@@ -753,9 +753,14 @@ public:
   enum VarScope { Local = 0, Extern, Global };
 
   static std::shared_ptr<MemVarInfo> buildMemVarInfo(const VarDecl *Var);
+  static VarAttrKind getAddressAttr(const VarDecl *VD) {
+    if (VD->hasAttrs())
+      return getAddressAttr(VD->getAttrs());
+    return Host;
+  }
 
   MemVarInfo(unsigned Offset, const std::string &FilePath, const VarDecl *Var)
-      : VarInfo(Offset, FilePath, Var), Attr(getAttr(Var->getAttrs())),
+      : VarInfo(Offset, FilePath, Var), Attr(getAddressAttr(Var)),
         Scope((Var->isLexicallyWithinFunctionOrMethod())
                   ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
                   : Global),
@@ -831,7 +836,7 @@ public:
   }
 
 private:
-  static VarAttrKind getAttr(const AttrVec &Attrs);
+  static VarAttrKind getAddressAttr(const AttrVec &Attrs);
 
   void setInitList(const Expr *E) {
     if (auto Ctor = dyn_cast<CXXConstructExpr>(E)) {

@@ -152,6 +152,17 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
                                                 ECD->getName());
     if (!ReplEnum.empty())
       addReplacement(DRE, ReplEnum);
+  } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+    if (MemVarInfo::getAddressAttr(VD) != MemVarInfo::Host) {
+      if (auto FD = DpctGlobalInfo::getParentFunction(DRE)) {
+        if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
+          auto VarInfo = MemVarInfo::buildMemVarInfo(VD);
+          addReplacement(
+              DRE->getBeginLoc(), 0,
+              buildString("(", VarInfo->getType()->getBaseName(), ")"));
+        }
+      }
+    }
   }
 }
 

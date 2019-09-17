@@ -291,10 +291,9 @@ std::string getTypecastName(const CallExpr *Call) {
 }
 
 Optional<std::string> MathSimulatedRewriter::rewrite() {
-  if (SourceCalleeName != "max")
-    report(Diagnostics::MATH_EMULATION, SourceCalleeName, TargetCalleeName);
+  report(Diagnostics::MATH_EMULATION, SourceCalleeName, TargetCalleeName);
   auto FD = Call->getDirectCallee();
-  if (!FD || (!FD->hasAttr<CUDADeviceAttr>() && SourceCalleeName != "max"))
+  if (!FD || !FD->hasAttr<CUDADeviceAttr>())
     return Base::rewrite();
 
   const std::string FuncName = SourceCalleeName;
@@ -421,51 +420,6 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
   } else if (FuncName == "rhypot" || FuncName == "rhypotf") {
     auto MigratedArg1 = getMigratedArg(1);
     OS << "1 / cl::sycl::hypot(" << MigratedArg0 << ", " << MigratedArg1 << ")";
-  } else if (FuncName == "max") {
-    std::string NamespaceStr;
-    auto DRE = dyn_cast<DeclRefExpr>(Call->getCallee()->IgnoreImpCasts());
-    if (DRE) {
-      auto Qualifier = DRE->getQualifier();
-      if (Qualifier) {
-        auto Namespace = Qualifier->getAsNamespace();
-        if (Namespace)
-          NamespaceStr = Namespace->getName();
-      }
-    }
-    if (FD->hasAttr<CUDADeviceAttr>() && !FD->hasAttr<CUDAHostAttr>() &&
-        NamespaceStr != "std") {
-      auto TypeName = getTypecastName(Call);
-      auto Itr = MapNames::TypeNamesMap.find(TypeName);
-      if (Itr != MapNames::TypeNamesMap.end())
-        TypeName = Itr->second;
-      OS << "cl::sycl::max(";
-      if (isArgMigratedToAccessor(Call, 0))
-        OS << "(" << TypeName << ")";
-      OS << getMigratedArg(0) << ", ";
-      if (isArgMigratedToAccessor(Call, 1))
-        OS << "(" << TypeName << ")";
-      OS << getMigratedArg(1) << ")";
-    } else {
-      std::string NewFuncName = SourceCalleeName;
-      auto *BT =
-          dyn_cast<BuiltinType>(Call->getArg(0)->IgnoreImpCasts()->getType());
-      if (BT) {
-        auto K = BT->getKind();
-        if (K == BuiltinType::Float) {
-          NewFuncName = "f" + SourceCalleeName.str();
-          NewFuncName += "f";
-        } else if (K == BuiltinType::Double) {
-          NewFuncName = "f" + SourceCalleeName.str();
-        } else if (K == BuiltinType::LongDouble) {
-          NewFuncName = "f" + SourceCalleeName.str();
-          NewFuncName += "l";
-        }
-      }
-      if (NamespaceStr != "")
-        NewFuncName = NamespaceStr + "::" + NewFuncName;
-      OS << NewFuncName << "(" << getMigratedArg(0) << ", " << getMigratedArg(1)
-         << ")";
-    }
   }
   OS.flush();
   return ReplStr;
