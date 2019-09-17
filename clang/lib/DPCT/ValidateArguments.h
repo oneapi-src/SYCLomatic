@@ -25,7 +25,7 @@ enum ReportTypeEnum { notsettype, apis, stats, all, diags };
 bool makeCanonicalOrSetDefaults(std::string &InRoot, std::string &OutRoot,
                                 const std::vector<std::string> SourceFiles);
 
-// Make sure files passed to oneAPI DPC++ Compatibility Tool are under the
+// Make sure files passed to Intel(R) DPC++ Compatibility Tool are under the
 // input root directory and have an extension.
 bool validatePaths(const std::string &InRoot,
                    const std::vector<std::string> &SourceFiles);

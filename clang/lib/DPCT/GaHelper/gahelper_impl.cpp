@@ -417,7 +417,7 @@ static AnalyticsImpl &getAnalyticsImplInstance() {
   AnalyticsCreateParams params = {0};
   params.flags = ALLOW_COLLECTION_FROM_INTEL_NETWORK;
 
-  params.appName = "oneAPI DPC++ Compatibility Tool";
+  params.appName = "Intel(R) DPC++ Compatibility Tool";
   std::string AppVersion = std::string(DPCT_VERSION_MAJOR) + "." +
                            std::string(DPCT_VERSION_MINOR) + "-" +
                            std::string(DPCT_VERSION_PATCH);

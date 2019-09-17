@@ -15,7 +15,7 @@
 #
 ###############################################################################
 
-# oneAPI DPC++ Compatibility Tool System Check
+# Intel(R) DPC++ Compatibility Tool System Check
 #
 # 'echo' should be used for outputting messages in response to errors. 'echo' is always output.
 # 'speak' outputs only if the -v verbose flag it used. Affirmative messages ( "Everything OK!" ) should
@@ -37,7 +37,7 @@ source $LOC/../../../common.sh $@
 ERRORSTATE=0
 
 if [ -z $(which python) ]; then
-    echo -e "The oneAPI DPC++ Compatibility Tool requires the python to be installed."
+    echo -e "The Intel(R) DPC++ Compatibility Tool requires the python to be installed."
     ERRORSTATE=1
 fi
 

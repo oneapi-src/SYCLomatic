@@ -69,7 +69,7 @@ const char *const CtHelpMessage =
 
 const char *const CtHelpHint =
     "  Warning: Please specify file(s) to be migrated.\n"
-    "  Get help on oneAPI DPC++ Compatibility Tool, run: dpct --help\n"
+    "  Get help on Intel(R) DPC++ Compatibility Tool, run: dpct --help\n"
     "\n";
 
 static extrahelp CommonHelp(CtHelpMessage);
@@ -431,7 +431,7 @@ void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
       isSamePath(InRoot, DpctInstallPath)) {
     std::string ErrMsg = "[ERROR] Input folder \"" + InRoot +
                          "\" is the parent or the same as the folder where "
-                         "oneAPI DPC++ Compatibility Tool is installed \"" +
+                         "Intel(R) DPC++ Compatibility Tool is installed \"" +
                          DpctInstallPath + "\"\n";
     PrintMsg(ErrMsg);
     exit(MigrationErrorInRootContainCTTool);
@@ -585,7 +585,7 @@ std::string printCTVersion() {
   std::string buf;
   llvm::raw_string_ostream OS(buf);
 
-  OS << "\noneAPI DPC++ Compatibility Tool Version: " << DPCT_VERSION_MAJOR
+  OS << "\nIntel(R) DPC++ Compatibility Tool Version: " << DPCT_VERSION_MAJOR
      << "." << DPCT_VERSION_MINOR << "-" << DPCT_VERSION_PATCH << " codebase:";
   // getClangRepositoryPath() export the machine name of repo in release build.
   // so skip the repo name.
