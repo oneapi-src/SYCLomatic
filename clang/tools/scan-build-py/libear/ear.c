@@ -976,7 +976,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
           char ofilename[512];
           int olen=strlen(argv[it]);
           memset(ofilename,'\0',512);
-          if(olen > 512) {
+          if(olen >= 512) {
             perror("bear: filename length too long.");
             exit(EXIT_FAILURE);
           }
