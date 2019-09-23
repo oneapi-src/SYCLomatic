@@ -34,6 +34,7 @@ using namespace clang::tooling;
 extern std::string CudaPath;
 extern std::string DpctInstallPath; // Installation directory for this tool
 extern llvm::cl::opt<UsmLevel> USMLevel;
+extern bool ProcessAllFlag;
 
 auto parentStmt = []() {
   return anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
@@ -262,10 +263,7 @@ void IncludesCallbacks::InclusionDirective(
       (isChildPath(InRoot, DirPath) || isSamePath(InRoot, DirPath));
 
   if (IsFileInInRoot) {
-    auto Find = IncludeFileMap.find(FilePath);
-    if (Find == IncludeFileMap.end()) {
-      IncludeFileMap[FilePath] = false;
-    }
+    IncludeFileMap[FilePath] = false;
   }
 
   if (!SM.isWrittenInMainFile(HashLoc) && !IsIncludingFileInInRoot) {
@@ -363,6 +361,21 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
   // Record the location when a file is entered
   if (Reason == clang::PPCallbacks::EnterFile) {
     DpctGlobalInfo::getInstance().setFileEnterLocation(Loc);
+
+    std::string InRoot = ATM.InRoot;
+    std::string InFile = SM.getFilename(Loc);
+    bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
+                    (isChildPath(InRoot, InFile) || isSamePath(InRoot, InFile));
+
+    if (!IsInRoot) {
+      return;
+    }
+
+    InFile = getAbsolutePath(InFile);
+    makeCanonical(InFile);
+    if(ProcessAllFlag) {
+      IncludeFileMap[InFile] = false;
+    }
   }
 }
 

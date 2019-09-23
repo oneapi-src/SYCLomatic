@@ -237,6 +237,14 @@ opt<UsmLevel> USMLevel(
                      "Uses helper functions from DPCT header files for memory "
                      "management migration.")),
     init(restricted), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
+
+bool ProcessAllFlag = false;
+static opt<bool, true>
+    ProcessAll("process-all",
+                 llvm::cl::desc("Migrates/copies all files from the --in-root folder"
+                                " to the --out-root folder.\n"
+                                "The default is: off."),
+                 cat(DPCTCat), llvm::cl::location(ProcessAllFlag));
 // clang-format on
 
 // TODO: implement one of this for each source language.
