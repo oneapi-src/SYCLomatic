@@ -368,38 +368,39 @@ void DebugInfo::ShowStatus(int Status) {
   std::string StatusString;
   switch (Status) {
   case MigrationSucceeded:
-    StatusString = "Migration succeed";
+    StatusString = "Migration process completed";
     break;
   case MigrationNoCodeChangeHappen:
-    StatusString = "Migration keep input file unchanged";
+    StatusString = "Migration not necessary";
     break;
   case MigrationSkipped:
-    StatusString = "Migration skip for input file";
+    StatusString = "Some migration rules were skipped";
     break;
   case MigrationError:
-    StatusString = "Migration error happen";
+    StatusString = "Migration error happened";
     break;
   case MigrationSaveOutFail:
-    StatusString = "Migration error: saving migrated file(s) failed";
+    StatusString = "Error: Saving output file(s)";
     break;
   case MigrationErrorInvalidSDKPath:
-    StatusString = "Migration error: invalid SDK include path";
+    StatusString = "Error: Path for CUDA header files is invalid or "
+                   "not available. Specify with --cuda-include-path";
     break;
   case MigrationErrorInvalidInRootOrOutRoot:
-    StatusString = "Migration error: invalid inroot or outroot path";
+    StatusString = "Error: Invalid --in-root or --out-root path";
     break;
   case MigrationErrorInvalidInRootPath:
-    StatusString = "Migration error: invalid inroot path";
+    StatusString = "Error: Invalid --in-root path";
     break;
   case MigrationErrorInvalidReportArgs:
-    StatusString = "Migration error: error value provided in report option";
+    StatusString = "Error: Bad value provided for report option(s)";
     break;
   default:
     dpct_unreachable("no valid stats");
   }
 
   if (Status != 0) {
-    DpctLog() << "Dpct exited with code: " << Status << " (" << StatusString
+    DpctLog() << "dpct exited with code: " << Status << " (" << StatusString
                 << ")\n";
   }
 
