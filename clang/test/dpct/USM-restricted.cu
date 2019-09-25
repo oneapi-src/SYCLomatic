@@ -93,6 +93,10 @@ void foo() {
   // CHECK: CUDA_SAFE_CALL((dpct::get_default_queue_wait().memcpy((void*)(d_A), (void*)(h_A), size).wait(), 0));
   CUDA_SAFE_CALL(cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice));
 
+#define SIZE 100
+  // CHECK: dpct::get_default_queue_wait().memcpy( (void*)(d_A), (void*)(h_A), sizeof(double)*SIZE*SIZE ).wait();
+  cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );
+
   /// memcpy async
 
   // CHECK: dpct::get_default_queue_wait().memcpy((void*)(d_A), (void*)(h_A), size);

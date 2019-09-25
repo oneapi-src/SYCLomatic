@@ -4387,13 +4387,44 @@ TextModification *removeArg(const CallExpr *C, unsigned n,
     return nullptr;
   const Expr *ArgBefore = C->getArg(n - 1);
   auto Begin = ArgBefore->getEndLoc();
-  if (Begin.isMacroID())
-    Begin = SM.getSpellingLoc(Begin);
-  Begin = Lexer::getLocForEndOfToken(Begin, 0, SM, LangOptions());
+
+  if (Begin.isMacroID()) {
+    if (SM.isAtStartOfImmediateMacroExpansion(Begin)) {
+      // 1. fun(a,b,macro,d)
+      Begin = SM.getExpansionLoc(Begin);
+      Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
+          Begin, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+    } else {
+      // 2. #define macro(x) bar(x)
+      //    macro(fun(a,b,c,d))
+      // 3. #define macro1(x) fun(x)
+      //    #define macro2 m2
+      //    macro1(fun(a,b,macro2,d))
+      Begin = SM.getImmediateSpellingLoc(Begin);
+      Begin =
+          SM.getExpansionLoc(Begin).getLocWithOffset(Lexer::MeasureTokenLength(
+              SM.getExpansionLoc(Begin), SM,
+          dpct::DpctGlobalInfo::getContext().getLangOpts()));
+    }
+  } else {
+    Begin = Lexer::getLocForEndOfToken(Begin, 0, SM, LangOptions());
+  }
+
   auto End = C->getArg(n)->getEndLoc();
-  if (End.isMacroID())
-    End = SM.getSpellingLoc(End);
-  End = Lexer::getLocForEndOfToken(End, 0, SM, LangOptions());
+  if (End.isMacroID()) {
+    if (SM.isAtStartOfImmediateMacroExpansion(End)) {
+      End = SM.getExpansionLoc(End);
+      End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+          End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+    } else {
+      End = SM.getImmediateSpellingLoc(End);
+      End = SM.getExpansionLoc(End).getLocWithOffset(Lexer::MeasureTokenLength(
+          SM.getExpansionLoc(End), SM,
+              dpct::DpctGlobalInfo::getContext().getLangOpts()));
+    }
+  } else {
+    End = Lexer::getLocForEndOfToken(End, 0, SM, LangOptions());
+  }
   auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
   if (Length > 0) {
     return new ReplaceText(Begin, Length, "");
