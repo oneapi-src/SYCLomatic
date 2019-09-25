@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer7(cl::sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::spotri(*cusolverH, uplo, n, buffer_ct3, lda,   result_temp_buffer7), 0);
+    // CHECK-NEXT: status = (mkl::lapack::potri(*cusolverH, uplo, n, buffer_ct3, lda,   result_temp_buffer7), 0);
     // CHECK-NEXT: buffer_ct7.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer7(cl::sycl::range<1>(1));
-    // CHECK-NEXT: mkl::spotri(*cusolverH, uplo, n, buffer_ct3, lda,   result_temp_buffer7);
+    // CHECK-NEXT: mkl::lapack::potri(*cusolverH, uplo, n, buffer_ct3, lda,   result_temp_buffer7);
     // CHECK-NEXT: buffer_ct7.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
 
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer7(cl::sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::dpotri(*cusolverH, uplo, n, buffer_ct3, lda,   result_temp_buffer7), 0);
+    // CHECK-NEXT: status = (mkl::lapack::potri(*cusolverH, uplo, n, buffer_ct3, lda,   result_temp_buffer7), 0);
     // CHECK-NEXT: buffer_ct7.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer7(cl::sycl::range<1>(1));
-    // CHECK-NEXT: mkl::dpotri(*cusolverH, uplo, n, buffer_ct3, lda,   result_temp_buffer7);
+    // CHECK-NEXT: mkl::lapack::potri(*cusolverH, uplo, n, buffer_ct3, lda,   result_temp_buffer7);
     // CHECK-NEXT: buffer_ct7.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnDpotri(*cusolverH, uplo, n, &A_d, lda, &workspace_d, Lwork, &devInfo);
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer7(cl::sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::cpotri(*cusolverH, uplo, n, buffer_ct3, lda,   result_temp_buffer7), 0);
+    // CHECK-NEXT: status = (mkl::lapack::potri(*cusolverH, uplo, n, buffer_ct3, lda,   result_temp_buffer7), 0);
     // CHECK-NEXT: buffer_ct7.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer7(cl::sycl::range<1>(1));
-    // CHECK-NEXT: mkl::cpotri(*cusolverH, uplo, n, buffer_ct3, lda,   result_temp_buffer7);
+    // CHECK-NEXT: mkl::lapack::potri(*cusolverH, uplo, n, buffer_ct3, lda,   result_temp_buffer7);
     // CHECK-NEXT: buffer_ct7.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnCpotri(*cusolverH, uplo, n, &A_c, lda, &workspace_c, Lwork, &devInfo);
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer7(cl::sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::zpotri(*cusolverH, uplo, n, buffer_ct3, lda,   result_temp_buffer7), 0);
+    // CHECK-NEXT: status = (mkl::lapack::potri(*cusolverH, uplo, n, buffer_ct3, lda,   result_temp_buffer7), 0);
     // CHECK-NEXT: buffer_ct7.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto allocation_ct7 = dpct::memory_manager::get_instance().translate_ptr(&devInfo);
     // CHECK-NEXT: cl::sycl::buffer<int,1> buffer_ct7 = allocation_ct7.buffer.reinterpret<int, 1>(cl::sycl::range<1>(allocation_ct7.size/sizeof(int)));
     // CHECK-NEXT: cl::sycl::buffer<int64_t,1> result_temp_buffer7(cl::sycl::range<1>(1));
-    // CHECK-NEXT: mkl::zpotri(*cusolverH, uplo, n, buffer_ct3, lda,   result_temp_buffer7);
+    // CHECK-NEXT: mkl::lapack::potri(*cusolverH, uplo, n, buffer_ct3, lda,   result_temp_buffer7);
     // CHECK-NEXT: buffer_ct7.get_access<cl::sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<cl::sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnZpotri(*cusolverH, uplo, n, &A_z, lda, &workspace_z, Lwork, &devInfo);

@@ -5,7 +5,7 @@
 // CHECK-NEXT: #include <cstdio>
 // CHECK: #include <mkl_blas_sycl.hpp>
 // CHECK-NEXT: #include <mkl_lapack_sycl.hpp>
-// CHECK-NEXT: #include <sycl_types.hpp>
+// CHECK-NEXT: #include <mkl_sycl_types.hpp>
 // CHECK: #include <complex>
 #include <cstdio>
 #include <cublas.h>

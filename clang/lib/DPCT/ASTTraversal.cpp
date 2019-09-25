@@ -279,7 +279,7 @@ void IncludesCallbacks::InclusionDirective(
   }
 
   // Replace with
-  // <mkl_blas_sycl.hpp>, <mkl_lapack_sycl.hpp> and <sycl_types.hpp>
+  // <mkl_blas_sycl.hpp>, <mkl_lapack_sycl.hpp> and <mkl_sycl_types.hpp>
   if ((FileName.compare(StringRef("cublas_v2.h")) == 0) ||
       (FileName.compare(StringRef("cublas.h")) == 0) ||
       (FileName.compare(StringRef("cusolverDn.h")) == 0)) {

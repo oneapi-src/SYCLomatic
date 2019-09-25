@@ -201,7 +201,7 @@ public:
     case MKL:
       return insertHeader(HeaderType::MKL, LastIncludeOffset,
                           "<mkl_blas_sycl.hpp>", "<mkl_lapack_sycl.hpp>",
-                          "<sycl_types.hpp>", "<dpct/blas_utils.hpp>");
+                          "<mkl_sycl_types.hpp>", "<dpct/blas_utils.hpp>");
     }
   }
 

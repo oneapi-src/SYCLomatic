@@ -74,7 +74,7 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
       info_buf_vec.emplace_back(&info_vec[i], cl::sycl::range<1>(1));
       ipiv_buf_vec.emplace_back(&ipiv_vec[i * n], cl::sycl::range<1>(n));
     }
-    mkl::getrf_batch(exec_queue, mn_vec, mn_vec, a_buf_vec, lda_vec,
+    mkl::lapack::getrf_batch(exec_queue, mn_vec, mn_vec, a_buf_vec, lda_vec,
                      ipiv_buf_vec, info_buf_vec);
   }
 
@@ -145,7 +145,7 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
       info_buf_vec.emplace_back(&info_vec[i], cl::sycl::range<1>(1));
       ipiv_buf_vec.emplace_back(&ipiv_vec[i * n], cl::sycl::range<1>(n));
     }
-    mkl::getrs_batch(exec_queue, trans_vec, n_vec, nrhs_vec, a_buf_vec, lda_vec,
+    mkl::lapack::getrs_batch(exec_queue, trans_vec, n_vec, nrhs_vec, a_buf_vec, lda_vec,
                      ipiv_buf_vec, b_buf_vec, ldb_vec, info_buf_vec);
   }
 
@@ -196,7 +196,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
       lwork_buf_vec.emplace_back(&lwork_vec[i], cl::sycl::range<1>(1));
       ipiv_buf_vec.emplace_back(&ipiv_vec[i * n], cl::sycl::range<1>(n));
     }
-    mkl::getri_get_lwork_batch(exec_queue, n_vec, b_buf_vec, ldb_vec,
+    mkl::lapack::getri_get_lwork_batch(exec_queue, n_vec, b_buf_vec, ldb_vec,
                                ipiv_buf_vec, lwork_buf_vec);
   }
 
@@ -209,7 +209,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
       ipiv_buf_vec.emplace_back(&ipiv_vec[i * n], cl::sycl::range<1>(n));
       work_buf_vec.emplace_back(cl::sycl::range<1>(lwork_vec[i]));
     }
-    mkl::getri_batch(exec_queue, n_vec, b_buf_vec, ldb_vec, ipiv_buf_vec,
+    mkl::lapack::getri_batch(exec_queue, n_vec, b_buf_vec, ldb_vec, ipiv_buf_vec,
                      work_buf_vec, lwork_vec, info_buf_vec);
   }
 
@@ -260,7 +260,7 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
     for (int64_t i = 0; i < batchSize; i++) {
       lwork_buf_vec.emplace_back(&lwork_vec[i], cl::sycl::range<1>(1));
     }
-    mkl::geqrf_get_lwork_batch(exec_queue, m_vec, n_vec, a_buf_vec, lda_vec,
+    mkl::lapack::geqrf_get_lwork_batch(exec_queue, m_vec, n_vec, a_buf_vec, lda_vec,
                                tau_buf_vec, lwork_buf_vec);
   }
 
@@ -271,7 +271,7 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
       work_buf_vec.emplace_back(cl::sycl::range<1>(lwork_vec[i]));
       info_buf_vec.emplace_back(&info_vec[i], cl::sycl::range<1>(1));
     }
-    mkl::geqrf_batch(exec_queue, m_vec, n_vec, a_buf_vec, lda_vec, tau_buf_vec,
+    mkl::lapack::geqrf_batch(exec_queue, m_vec, n_vec, a_buf_vec, lda_vec, tau_buf_vec,
                      work_buf_vec, lwork_vec, info_buf_vec);
   }
 
