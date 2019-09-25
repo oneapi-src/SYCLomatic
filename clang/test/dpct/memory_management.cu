@@ -605,6 +605,9 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
   // CHECK: dpct::dpct_memcpy((void*)(DATAMACRO), (void*)(d_data), datasize * sizeof(T), dpct::device_to_host);
   cudaMemcpy(DATAMACRO, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
 
+  // CHECK: dpct::dpct_memcpy((void*)(32*32+DATAMACRO), (void*)(d_data), datasize * sizeof(T), dpct::device_to_host);
+  cudaMemcpy(32*32+DATAMACRO, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
+
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/

@@ -393,7 +393,7 @@ InsertAfterStmt::getReplacement(const ASTContext &Context) const {
       // If current macro is inside another macro or is a macro arg
       // we can only modify the spelling part
       // BeginLoc is more accurate than EndLoc
-      if (!SM.isAtStartOfImmediateMacroExpansion(S->getBeginLoc())) {
+      if (S->getBeginLoc().isMacroID() && !SM.isAtStartOfImmediateMacroExpansion(S->getBeginLoc())) {
         TokenBegin = SM.getSpellingLoc(S->getEndLoc());
       }
       auto Len = Lexer::MeasureTokenLength(TokenBegin, SM, LangOptions());
