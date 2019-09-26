@@ -75,7 +75,7 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
       ipiv_buf_vec.emplace_back(&ipiv_vec[i * n], cl::sycl::range<1>(n));
     }
     mkl::lapack::getrf_batch(exec_queue, mn_vec, mn_vec, a_buf_vec, lda_vec,
-                     ipiv_buf_vec, info_buf_vec);
+                             ipiv_buf_vec, info_buf_vec);
   }
 
   // Copy back to the original buffers while casting variables from int64_t to
@@ -145,8 +145,9 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
       info_buf_vec.emplace_back(&info_vec[i], cl::sycl::range<1>(1));
       ipiv_buf_vec.emplace_back(&ipiv_vec[i * n], cl::sycl::range<1>(n));
     }
-    mkl::lapack::getrs_batch(exec_queue, trans_vec, n_vec, nrhs_vec, a_buf_vec, lda_vec,
-                     ipiv_buf_vec, b_buf_vec, ldb_vec, info_buf_vec);
+    mkl::lapack::getrs_batch(exec_queue, trans_vec, n_vec, nrhs_vec, a_buf_vec,
+                             lda_vec, ipiv_buf_vec, b_buf_vec, ldb_vec,
+                             info_buf_vec);
   }
 
   // Copy back to the original buffers while casting variables from int64_t to
@@ -174,29 +175,27 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
   std::vector<int64_t> ldb_vec = std::vector<int64_t>(batch_size, ldb);
   std::vector<int64_t> info_vec(batch_size, 0);
   std::vector<int64_t> ipiv_vec(batch_size * n, 0);
-  std::vector<int64_t> lwork_vec(batch_size, 0);
-
-  std::vector<cl::sycl::buffer<Ty, 1>> b_buf_vec;
-  for (int64_t i = 0; i < batch_size; i++) {
-  // Need to create a copy of input matrices A to keep them unchanged.
-  // B (copy of A) will be used as input and output parameter in MKL API call.
-    matrix_mem_copy(b[i], a[i], ldb, lda, n, n, dpct::device_to_device,
-                    exec_queue);
-    // assumes data is in column-major order
-    auto allocation_b =
-        dpct::memory_manager::get_instance().translate_ptr(b[i]);
-    b_buf_vec.emplace_back(allocation_b.buffer.template reinterpret<Ty, 1>(
-        cl::sycl::range<1>(allocation_b.size / sizeof(Ty))));
-  }
 
   {
-    std::vector<cl::sycl::buffer<int64_t, 1>> info_buf_vec;
+    std::vector<cl::sycl::buffer<Ty, 1>> b_buf_vec;
     std::vector<cl::sycl::buffer<int64_t, 1>> ipiv_buf_vec;
-    for (int64_t i = 0; i < batch_size; ++i) {
+    std::vector<cl::sycl::buffer<int64_t, 1>> info_buf_vec;
+    for (int64_t i = 0; i < batch_size; i++) {
+      // Need to create a copy of input matrices A to keep them unchanged.
+      // B (copy of A) will be used as input and output parameter in MKL API
+      // call.
+      matrix_mem_copy(b[i], a[i], ldb, lda, n, n, dpct::device_to_device,
+                      exec_queue);
+      // assumes data is in column-major order
+      auto allocation_b =
+          dpct::memory_manager::get_instance().translate_ptr(b[i]);
+      b_buf_vec.emplace_back(allocation_b.buffer.template reinterpret<Ty, 1>(
+          cl::sycl::range<1>(allocation_b.size / sizeof(Ty))));
       info_buf_vec.emplace_back(&info_vec[i], cl::sycl::range<1>(1));
       ipiv_buf_vec.emplace_back(&ipiv_vec[i * n], cl::sycl::range<1>(n));
     }
-    mkl::lapack::getri_batch(exec_queue, n_vec, b_buf_vec, ldb_vec, ipiv_buf_vec, info_buf_vec);
+    mkl::lapack::getri_batch(exec_queue, n_vec, b_buf_vec, ldb_vec,
+                             ipiv_buf_vec, info_buf_vec);
   }
 
   // Copy back to the original buffers while casting variables from int64_t to
@@ -225,25 +224,22 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
   std::vector<int64_t> n_vec = std::vector<int64_t>(batchSize, n);
   std::vector<int64_t> lda_vec = std::vector<int64_t>(batchSize, lda);
   std::vector<int64_t> info_vec(batchSize, 0);
-  std::vector<int64_t> lwork_vec(batchSize, 0);
-
-  std::vector<cl::sycl::buffer<Ty, 1>> a_buf_vec;
-  std::vector<cl::sycl::buffer<Ty, 1>> tau_buf_vec;
-  for (int64_t i = 0; i < batchSize; i++) {
-    // assumes data is in column-major order
-    auto allocation_a =
-        dpct::memory_manager::get_instance().translate_ptr(a[i]);
-    a_buf_vec.emplace_back(allocation_a.buffer.template reinterpret<Ty, 1>(
-        cl::sycl::range<1>(allocation_a.size / sizeof(Ty))));
-    auto allocation_tau =
-        dpct::memory_manager::get_instance().translate_ptr(tau[i]);
-    tau_buf_vec.emplace_back(allocation_tau.buffer.template reinterpret<Ty, 1>(
-        cl::sycl::range<1>(allocation_tau.size / sizeof(Ty))));
-  }
 
   {
+    std::vector<cl::sycl::buffer<Ty, 1>> a_buf_vec;
+    std::vector<cl::sycl::buffer<Ty, 1>> tau_buf_vec;
     std::vector<cl::sycl::buffer<int64_t, 1>> info_buf_vec;
     for (int64_t i = 0; i < batchSize; i++) {
+      // assumes data is in column-major order
+      auto allocation_a =
+          dpct::memory_manager::get_instance().translate_ptr(a[i]);
+      a_buf_vec.emplace_back(allocation_a.buffer.template reinterpret<Ty, 1>(
+          cl::sycl::range<1>(allocation_a.size / sizeof(Ty))));
+      auto allocation_tau =
+          dpct::memory_manager::get_instance().translate_ptr(tau[i]);
+      tau_buf_vec.emplace_back(
+          allocation_tau.buffer.template reinterpret<Ty, 1>(
+              cl::sycl::range<1>(allocation_tau.size / sizeof(Ty))));
       info_buf_vec.emplace_back(&info_vec[i], cl::sycl::range<1>(1));
     }
     mkl::lapack::geqrf_batch(exec_queue, m_vec, n_vec, a_buf_vec, lda_vec,

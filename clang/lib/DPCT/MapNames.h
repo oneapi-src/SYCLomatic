@@ -43,6 +43,27 @@ public:
     };
 
     static SOLVERFuncReplInfo
+      migrateDeviceAndRedundant(bool q2d, std::vector<int> ri, std::string s) {
+      MapNames::SOLVERFuncReplInfo repl;
+      repl.ToDevice = true;
+      repl.RedundantIndexInfo = ri;
+      repl.ReplName = s;
+      return repl;
+    };
+
+    static SOLVERFuncReplInfo migrateDeviceAndCopy(bool q2d,
+                                                   std::vector<int> cfi,
+                                                   std::vector<int> cti,
+                                                   std::string s) {
+      MapNames::SOLVERFuncReplInfo repl;
+      repl.ToDevice = q2d;
+      repl.CopyFrom = cfi;
+      repl.CopyTo = cti;
+      repl.ReplName = s;
+      return repl;
+    };
+
+    static SOLVERFuncReplInfo
     migrateBufferAndMissed(std::vector<int> bi, std::vector<std::string> bt,
                            std::vector<int> mafl, std::vector<int> mai,
                            std::vector<bool> mab, std::vector<std::string> mat,
@@ -50,6 +71,41 @@ public:
       MapNames::SOLVERFuncReplInfo repl;
       repl.BufferIndexInfo = bi;
       repl.BufferTypeInfo = bt;
+      repl.MissedArgumentFinalLocation = mafl;
+      repl.MissedArgumentInsertBefore = mai;
+      repl.MissedArgumentIsBuffer = mab;
+      repl.MissedArgumentType = mat;
+      repl.MissedArgumentName = man;
+      repl.ReplName = s;
+      return repl;
+    };
+
+    static SOLVERFuncReplInfo
+      migrateDeviceCopyAndMissed(bool q2d, std::vector<int> cfi, std::vector<int> cti,
+        std::vector<int> mafl, std::vector<int> mai,
+        std::vector<bool> mab, std::vector<std::string> mat,
+        std::vector<std::string> man, std::string s) {
+      MapNames::SOLVERFuncReplInfo repl;
+      repl.ToDevice = q2d;
+      repl.CopyFrom = cfi;
+      repl.CopyTo = cti;
+      repl.MissedArgumentFinalLocation = mafl;
+      repl.MissedArgumentInsertBefore = mai;
+      repl.MissedArgumentIsBuffer = mab;
+      repl.MissedArgumentType = mat;
+      repl.MissedArgumentName = man;
+      repl.ReplName = s;
+      return repl;
+    };
+
+    static SOLVERFuncReplInfo
+      migrateDeviceRedundantAndMissed(bool q2d,
+        std::vector<int> ri, std::vector<int> mafl, std::vector<int> mai,
+        std::vector<bool> mab, std::vector<std::string> mat,
+        std::vector<std::string> man, std::string s) {
+      MapNames::SOLVERFuncReplInfo repl;
+      repl.ToDevice = q2d;
+      repl.RedundantIndexInfo = ri;
       repl.MissedArgumentFinalLocation = mafl;
       repl.MissedArgumentInsertBefore = mai;
       repl.MissedArgumentIsBuffer = mab;
@@ -103,6 +159,19 @@ public:
       return repl;
     };
 
+    static SOLVERFuncReplInfo
+    migrateDeviceRedundantAndCast(bool q2d, std::vector<int> ri,
+                                  std::vector<int> ci,
+                                  std::vector<std::string> ct, std::string s) {
+      MapNames::SOLVERFuncReplInfo repl;
+      repl.ToDevice = q2d;
+      repl.RedundantIndexInfo = ri;
+      repl.CastIndexInfo = ci;
+      repl.CastTypeInfo = ct;
+      repl.ReplName = s;
+      return repl;
+    };
+
     std::vector<int> BufferIndexInfo;
     std::vector<std::string> BufferTypeInfo;
 
@@ -118,6 +187,9 @@ public:
     std::vector<std::string> MissedArgumentType;
     std::vector<std::string> MissedArgumentName;
 
+    std::vector<int> CopyFrom;
+    std::vector<int> CopyTo;
+    bool ToDevice;
     std::string ReplName;
   };
 

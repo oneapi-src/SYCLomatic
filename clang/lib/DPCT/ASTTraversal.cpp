@@ -3392,6 +3392,42 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         emplaceTransformation(
             new ReplaceText(CE->getArg(i)->getBeginLoc(), ParameterLength, ""));
       }
+      if (isReplIndex(i, ReplInfo.RedundantIndexInfo, IndexTemp)) {
+        SourceLocation ParameterEndAfterSemi;
+        getParameterEnd(CE->getArg(i)->getEndLoc(), ParameterEndAfterSemi,
+          Result);
+        auto ParameterLength =
+          SM->getCharacterData(ParameterEndAfterSemi) -
+          SM->getCharacterData(CE->getArg(i)->getBeginLoc());
+        emplaceTransformation(
+          new ReplaceText(CE->getArg(i)->getBeginLoc(), ParameterLength, ""));
+      }
+      if (ReplInfo.ToDevice) {
+        if (i == 0) {
+          emplaceTransformation(new InsertBeforeStmt(
+            CE->getArg(i),
+            std::move("(")));
+          emplaceTransformation(new InsertAfterStmt(
+            CE->getArg(i),
+            std::move(").get_device()")));
+        }
+        if (i == ArgNum - 1) {
+          PrefixInsertStr = PrefixInsertStr + IndentStr + "int64_t lwork64 = *(" +
+                            getStmtSpelling(CE->getArg(i), *(Result.Context)) +
+                            ");" + getNL();
+          SourceLocation ParameterEndAfterSemi;
+          getParameterEnd(CE->getArg(i)->getEndLoc(), ParameterEndAfterSemi,
+                          Result);
+          auto ParameterLength =
+              SM->getCharacterData(ParameterEndAfterSemi) -
+              SM->getCharacterData(CE->getArg(i)->getBeginLoc()) - 1;
+          emplaceTransformation(new ReplaceText(CE->getArg(i)->getBeginLoc(),
+                                                ParameterLength, "lwork64"));
+          SuffixInsertStr = SuffixInsertStr + "*(" +
+                            getStmtSpelling(CE->getArg(i), *(Result.Context)) +
+                            ") = lwork64;" + getNL() + IndentStr;
+        }
+      }
     }
 
     if (!ReplInfo.MissedArgumentFinalLocation.empty()) {
@@ -3415,6 +3451,20 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
               CE->getArg(ReplInfo.MissedArgumentInsertBefore[i]),
               std::move(ReplStr)));
           ReplStr = "";
+        }
+      }
+    }
+
+    if (!ReplInfo.CopyFrom.empty()) {
+      std::string InsStr = "";
+      for (size_t i = 0; i < ReplInfo.CopyFrom.size(); ++i) {
+        InsStr = InsStr + getStmtSpelling(CE->getArg(ReplInfo.CopyFrom[i]), *(Result.Context)) + ", ";
+        if (i == ReplInfo.CopyTo.size() - 1 ||
+          ReplInfo.CopyTo[i + 1] !=
+          ReplInfo.CopyTo[i]) {
+          emplaceTransformation(new InsertBeforeStmt(
+            CE->getArg(ReplInfo.CopyTo[i]), std::move(InsStr)));
+          InsStr = "";
         }
       }
     }
