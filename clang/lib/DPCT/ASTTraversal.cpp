@@ -3117,7 +3117,8 @@ void BLASFunctionCallRule::processTrmmCall(const CallExpr *CE,
                     "dpct::matrix_mem_copy(ptr_ct12, " +
                     getStmtSpelling(CE->getArg(10), Context) + ", ld_ct13, " +
                     getStmtSpelling(CE->getArg(11), Context) +
-                    ", m_ct5, n_ct6, dpct::device_to_device);" + getNL();
+                    ", m_ct5, n_ct6, dpct::device_to_device, " +
+                    getStmtSpelling(CE->getArg(0), Context) + ");" + getNL();
   // replace the args in the function call
   emplaceTransformation(new ReplaceStmt(CE->getArg(13), "ld_ct13"));
   emplaceTransformation(new ReplaceStmt(CE->getArg(5), "m_ct5"));

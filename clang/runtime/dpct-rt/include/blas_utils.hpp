@@ -190,27 +190,13 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
   }
 
   {
-    std::vector<cl::sycl::buffer<int64_t>> lwork_buf_vec;
-    std::vector<cl::sycl::buffer<int64_t, 1>> ipiv_buf_vec;
-    for (int64_t i = 0; i < batch_size; ++i) {
-      lwork_buf_vec.emplace_back(&lwork_vec[i], cl::sycl::range<1>(1));
-      ipiv_buf_vec.emplace_back(&ipiv_vec[i * n], cl::sycl::range<1>(n));
-    }
-    mkl::lapack::getri_get_lwork_batch(exec_queue, n_vec, b_buf_vec, ldb_vec,
-                               ipiv_buf_vec, lwork_buf_vec);
-  }
-
-  {
     std::vector<cl::sycl::buffer<int64_t, 1>> info_buf_vec;
     std::vector<cl::sycl::buffer<int64_t, 1>> ipiv_buf_vec;
-    std::vector<cl::sycl::buffer<Ty, 1>> work_buf_vec;
     for (int64_t i = 0; i < batch_size; ++i) {
       info_buf_vec.emplace_back(&info_vec[i], cl::sycl::range<1>(1));
       ipiv_buf_vec.emplace_back(&ipiv_vec[i * n], cl::sycl::range<1>(n));
-      work_buf_vec.emplace_back(cl::sycl::range<1>(lwork_vec[i]));
     }
-    mkl::lapack::getri_batch(exec_queue, n_vec, b_buf_vec, ldb_vec, ipiv_buf_vec,
-                     work_buf_vec, lwork_vec, info_buf_vec);
+    mkl::lapack::getri_batch(exec_queue, n_vec, b_buf_vec, ldb_vec, ipiv_buf_vec, info_buf_vec);
   }
 
   // Copy back to the original buffers while casting variables from int64_t to
@@ -256,23 +242,12 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
   }
 
   {
-    std::vector<cl::sycl::buffer<int64_t>> lwork_buf_vec;
-    for (int64_t i = 0; i < batchSize; i++) {
-      lwork_buf_vec.emplace_back(&lwork_vec[i], cl::sycl::range<1>(1));
-    }
-    mkl::lapack::geqrf_get_lwork_batch(exec_queue, m_vec, n_vec, a_buf_vec, lda_vec,
-                               tau_buf_vec, lwork_buf_vec);
-  }
-
-  {
-    std::vector<cl::sycl::buffer<Ty, 1>> work_buf_vec;
     std::vector<cl::sycl::buffer<int64_t, 1>> info_buf_vec;
     for (int64_t i = 0; i < batchSize; i++) {
-      work_buf_vec.emplace_back(cl::sycl::range<1>(lwork_vec[i]));
       info_buf_vec.emplace_back(&info_vec[i], cl::sycl::range<1>(1));
     }
-    mkl::lapack::geqrf_batch(exec_queue, m_vec, n_vec, a_buf_vec, lda_vec, tau_buf_vec,
-                     work_buf_vec, lwork_vec, info_buf_vec);
+    mkl::lapack::geqrf_batch(exec_queue, m_vec, n_vec, a_buf_vec, lda_vec,
+                             tau_buf_vec, info_buf_vec);
   }
 
   // Copy back to the original buffers while casting variables from int64_t to

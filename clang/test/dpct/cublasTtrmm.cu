@@ -35,7 +35,7 @@ int main(){
   // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(ptr_ct12);
   // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
   // CHECK-NEXT: auto ld_ct13 = ldc; auto m_ct5 = m; auto n_ct6 = n;
-  // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_S, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device);
+  // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_S, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device, handle);
   // CHECK-NEXT: status = (mkl::blas::trmm(handle, (mkl::side)side0, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct3)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct3)), (mkl::diag)diag0, m_ct5, n_ct6, *(&alpha_S), buffer_ct{{[0-9]+}}, lda,  buffer_ct{{[0-9]+}}, ld_ct13), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
@@ -46,7 +46,7 @@ int main(){
   // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(ptr_ct12);
   // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
   // CHECK-NEXT: auto ld_ct13 = ldc; auto m_ct5 = m; auto n_ct6 = n;
-  // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_S, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device);
+  // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_S, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device, handle);
   // CHECK-NEXT: mkl::blas::trmm(handle, mkl::side::left, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::nonunit, m_ct5, n_ct6, *(&alpha_S), buffer_ct{{[0-9]+}}, lda,  buffer_ct{{[0-9]+}}, ld_ct13);
   // CHECK-NEXT: }
   status = cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, m, n, &alpha_S, A_S, lda, B_S, ldb, C_S, ldc);
@@ -65,7 +65,7 @@ int main(){
   // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(ptr_ct12);
   // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
   // CHECK-NEXT: auto ld_ct13 = ldc; auto m_ct5 = m; auto n_ct6 = n;
-  // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_D, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device);
+  // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_D, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device, handle);
   // CHECK-NEXT: status = (mkl::blas::trmm(handle, (mkl::side)side1, (((int)fill1)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct3)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct3)), (mkl::diag)diag1, m_ct5, n_ct6, *(&alpha_D), buffer_ct{{[0-9]+}}, lda,  buffer_ct{{[0-9]+}}, ld_ct13), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
@@ -76,7 +76,7 @@ int main(){
   // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(ptr_ct12);
   // CHECK-NEXT: cl::sycl::buffer<double,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
   // CHECK-NEXT: auto ld_ct13 = ldc; auto m_ct5 = m; auto n_ct6 = n;
-  // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_D, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device);
+  // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_D, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device, handle);
   // CHECK-NEXT: mkl::blas::trmm(handle, mkl::side::left, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::nonunit, m_ct5, n_ct6, *(&alpha_D), buffer_ct{{[0-9]+}}, lda,  buffer_ct{{[0-9]+}}, ld_ct13);
   // CHECK-NEXT: }
   status = cublasDtrmm(handle, (cublasSideMode_t)side1, (cublasFillMode_t)fill1, (cublasOperation_t)trans1, (cublasDiagType_t)diag1, m, n, &alpha_D, A_D, lda, B_D, ldb, C_D, ldc);
@@ -105,7 +105,7 @@ int main(){
   // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(ptr_ct12);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto ld_ct13 = ldc; auto m_ct5 = m; auto n_ct6 = n;
-  // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_C, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device);
+  // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_C, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device, handle);
   // CHECK-NEXT: status = (mkl::blas::trmm(handle, (mkl::side)0, (((int)0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct3)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct3)), (mkl::diag)0, m_ct5, n_ct6, std::complex<float>((&alpha_C)->x(),(&alpha_C)->y()), buffer_ct{{[0-9]+}}, lda,  buffer_ct{{[0-9]+}}, ld_ct13), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
@@ -116,7 +116,7 @@ int main(){
   // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(ptr_ct12);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<float>,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<std::complex<float>, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(std::complex<float>)));
   // CHECK-NEXT: auto ld_ct13 = ldc; auto m_ct5 = m; auto n_ct6 = n;
-  // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_C, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device);
+  // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_C, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device, handle);
   // CHECK-NEXT: mkl::blas::trmm(handle, mkl::side::left, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::nonunit, m_ct5, n_ct6, std::complex<float>((&alpha_C)->x(),(&alpha_C)->y()), buffer_ct{{[0-9]+}}, lda,  buffer_ct{{[0-9]+}}, ld_ct13);
   // CHECK-NEXT: }
   status = cublasCtrmm(handle, (cublasSideMode_t)0, (cublasFillMode_t)0, (cublasOperation_t)trans2, (cublasDiagType_t)0, m, n, &alpha_C, A_C, lda, B_C, ldb, C_C, ldc);
@@ -135,7 +135,7 @@ int main(){
   // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(ptr_ct12);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto ld_ct13 = ldc; auto m_ct5 = m; auto n_ct6 = n;
-  // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_Z, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device);
+  // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_Z, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device, handle);
   // CHECK-NEXT: status = (mkl::blas::trmm(handle, (mkl::side)1, (((int)1)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct3)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct3)), (mkl::diag)1, m_ct5, n_ct6, std::complex<double>((&alpha_Z)->x(),(&alpha_Z)->y()), buffer_ct{{[0-9]+}}, lda,  buffer_ct{{[0-9]+}}, ld_ct13), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
@@ -146,7 +146,7 @@ int main(){
   // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(ptr_ct12);
   // CHECK-NEXT: cl::sycl::buffer<std::complex<double>,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<std::complex<double>, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(std::complex<double>)));
   // CHECK-NEXT: auto ld_ct13 = ldc; auto m_ct5 = m; auto n_ct6 = n;
-  // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_Z, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device);
+  // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_Z, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device, handle);
   // CHECK-NEXT: mkl::blas::trmm(handle, mkl::side::left, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::nonunit, m_ct5, n_ct6, std::complex<double>((&alpha_Z)->x(),(&alpha_Z)->y()), buffer_ct{{[0-9]+}}, lda,  buffer_ct{{[0-9]+}}, ld_ct13);
   // CHECK-NEXT: }
   status = cublasZtrmm(handle, (cublasSideMode_t)1, (cublasFillMode_t)1, (cublasOperation_t)2, (cublasDiagType_t)1, m, n, &alpha_Z, A_Z, lda, B_Z, ldb, C_Z, ldc);
