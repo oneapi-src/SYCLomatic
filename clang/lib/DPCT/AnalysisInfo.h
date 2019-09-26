@@ -1502,8 +1502,8 @@ class KernelCallExpr : public CallFunctionExpr {
   struct ArgInfo {
     ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg, bool Used,
             int Index)
-        : isPointer(false), isUsedAsLvalueAfterMalloc(Used),
-          isRedeclareRequired(false), Index(Index) {
+        : isPointer(false), isRedeclareRequired(false),
+          isUsedAsLvalueAfterMalloc(Used), Index(Index) {
       Analysis.analyze(Arg);
       ArgString = Analysis.getReplacedString();
       if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)

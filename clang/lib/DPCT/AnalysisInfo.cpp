@@ -485,6 +485,7 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionDecl *FD) {
         ReplaceLength = Tok.getLength();
         return;
       }
+    // May fall through
     default:
       Result = Lexer::getRawToken(Tok.getEndLoc(), Tok, SM, LO, true);
     }

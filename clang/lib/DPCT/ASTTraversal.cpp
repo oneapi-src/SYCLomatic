@@ -65,8 +65,9 @@ void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
     return;
   }
   std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
-  if (MapNames::MacrosMap.find(MacroName) != MapNames::MacrosMap.end()) {
-    std::string ReplacedMacroName = MapNames::MacrosMap.at(MacroName);
+  auto Iter = MapNames::MacrosMap.find(MacroName);
+  if (Iter != MapNames::MacrosMap.end()) {
+    std::string ReplacedMacroName = Iter->second;
     TransformSet.emplace_back(new ReplaceToken(MacroNameTok.getLocation(),
                                                std::move(ReplacedMacroName)));
   }
@@ -4091,8 +4092,6 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
   if (FuncName == "cudaStreamCreate" ||
       FuncName == "cudaStreamCreateWithFlags" ||
       FuncName == "cudaStreamCreateWithPriority") {
-    auto Arg0 = CE->getArg(0);
-    auto DRE = getInnerValueDecl(Arg0);
     std::string ReplStr;
     auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
     // TODO: simplify expression

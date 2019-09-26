@@ -25,9 +25,9 @@ namespace
 GAHELPER_NS_BEGIN
 
 HttpConnector::HttpConnector(const char* server_url) :
+    m_serverUrl(server_url),
     m_currentProxyIndex(0),
-    m_enabled(true),
-    m_serverUrl(server_url)
+    m_enabled(true)
 {
     curl_global_init(CURL_GLOBAL_ALL);
     m_curl = curl_easy_init();

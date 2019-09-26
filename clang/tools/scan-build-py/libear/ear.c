@@ -866,7 +866,7 @@ void dump_US_field(const char *str, FILE *fd, int US, int has_parenthesis){
 ///                    "/usr/local/bin/nvcc/gcc  -Xcompiler ...".
 /// \returns the position of the character behind "nvcc" in str,
 ///          or NULL if no command "nvcc" found in str.
-char *find_nvcc(const char *str) {
+const char *find_nvcc(const char *str) {
   const char *pos = NULL;
   const char *ret = NULL;
 
@@ -1144,7 +1144,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     }
 
     // try to replace nvcc with intercept-stub.
-    char *pos = find_nvcc(argv[it_cp]);
+    const char *pos = find_nvcc(argv[it_cp]);
     if(pos != NULL && *pos !='\0')
     {
         ret = 0; // intercept-stub should continue to run.

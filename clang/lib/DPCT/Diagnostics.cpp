@@ -62,7 +62,7 @@ void initWarningIDs() {
         // Invalid number foramt: 100e
         if (!containOnlyDigits(Str))
           reportInvalidWarningID(Str);
-        auto ID = std::stoi(Str);
+        size_t ID = std::stoi(Str);
         // Invalid warning ID, not in range: 999 or 1025
         if (ID < (size_t)Warnings::BEGIN || ID >= (size_t)Warnings::END)
           reportInvalidWarningID(Str);
