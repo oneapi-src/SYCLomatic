@@ -12,6 +12,7 @@
 #include "ValidateArguments.h"
 #include "Debug.h"
 #include "Utility.h"
+#include "SaveNewFiles.h"
 
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
@@ -76,6 +77,13 @@ bool makeCanonicalOrSetDefaults(string &InRoot, string &OutRoot,
     return false;
   }
 
+  SmallString<512> InRootAbs;
+  std::error_code EC = llvm::sys::fs::real_path(InRoot, InRootAbs);
+  if ((bool)EC) {
+    clang::dpct::DebugInfo::ShowStatus(MigrationErrorInvalidInRootPath);
+    exit(MigrationErrorInvalidInRootPath);
+  }
+  InRoot = InRootAbs.str().str();
   return true;
 }
 

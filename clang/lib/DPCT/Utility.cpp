@@ -56,17 +56,15 @@ bool isCanonical(StringRef Path) {
   return HasNoDots && path::is_absolute(Path);
 }
 
-bool isChildPath(const std::string &Root, const std::string &Child) {
-  // 1st make Root and Child as absolute path, then do compare.
-  SmallString<256> RootAbs;
+/// Check \param Child is whether the child path of \param RootAbs
+/// \param [in] RootAbs An absolute path as reference.
+/// \param [in] Child A path to be checked.
+/// \return true: child path, false: not child path
+bool isChildPath(const std::string &RootAbs, const std::string &Child) {
+  // 1st make Child as absolute path, then do compare.
   SmallString<256> ChildAbs;
   std::error_code EC;
-  bool InRootAbsValid = true;
   bool InChildAbsValid = true;
-  EC = llvm::sys::fs::real_path(Root, RootAbs);
-  if ((bool)EC) {
-    InRootAbsValid = false;
-  }
 
   EC = llvm::sys::fs::real_path(Child, ChildAbs);
   if ((bool)EC) {
@@ -74,10 +72,10 @@ bool isChildPath(const std::string &Root, const std::string &Child) {
   }
 
 #if defined(_WIN64)
-  std::string LocalRoot = InRootAbsValid ? RootAbs.str().lower() : Root;
+  std::string LocalRoot = llvm::StringRef(RootAbs).lower();
   std::string LocalChild = InChildAbsValid ? ChildAbs.str().lower() : Child;
 #elif defined(__linux__)
-  std::string LocalRoot = InRootAbsValid ? RootAbs.c_str() : Root;
+  std::string LocalRoot = RootAbs.c_str();
   std::string LocalChild = InChildAbsValid ? ChildAbs.c_str() : Child;
 #else
 #error Only support windows and Linux.
@@ -90,26 +88,24 @@ bool isChildPath(const std::string &Root, const std::string &Child) {
          Diff.second != path::end(LocalChild);
 }
 
-bool isSamePath(const std::string &Root, const std::string &Child) {
-  // 1st make Root and Child as absolute path, then do compare.
-  SmallString<256> RootAbs;
+/// Check \param Child is whether have the same path of \param RootAbs
+/// \param [in] RootAbs An absolute path as reference.
+/// \param [in] Child A path to be checked.
+/// \return true: same path, false: different path
+bool isSamePath(const std::string &RootAbs, const std::string &Child) {
+  // 1st make Child as absolute path, then do compare.
   SmallString<256> ChildAbs;
   std::error_code EC;
-  bool InRootAbsValid = true;
   bool InChildAbsValid = true;
-  EC = llvm::sys::fs::real_path(Root, RootAbs);
-  if ((bool)EC) {
-    InRootAbsValid = false;
-  }
   EC = llvm::sys::fs::real_path(Child, ChildAbs);
   if ((bool)EC) {
     InChildAbsValid = false;
   }
 #if defined(_WIN64)
-  std::string LocalRoot = InRootAbsValid ? RootAbs.str().lower() : Root;
+  std::string LocalRoot = llvm::StringRef(RootAbs).lower();
   std::string LocalChild = InChildAbsValid ? ChildAbs.str().lower() : Child;
 #elif defined(__linux__)
-  std::string LocalRoot = InRootAbsValid ? RootAbs.c_str() : Root;
+  std::string LocalRoot = RootAbs.c_str();
   std::string LocalChild = InChildAbsValid ? ChildAbs.c_str() : Child;
 #else
 #error Only support windows and Linux.

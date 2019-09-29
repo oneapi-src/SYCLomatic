@@ -402,7 +402,14 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   }
 
   makeCanonical(Path);
-  return Path;
+
+  SmallString<512> CudaPathAbs;
+  std::error_code EC = llvm::sys::fs::real_path(Path, CudaPathAbs);
+  if ((bool)EC) {
+    DebugInfo::ShowStatus(MigrationErrorInvalidSDKPath);
+    exit(MigrationErrorInvalidSDKPath);
+  }
+  return CudaPathAbs.str().str();
 }
 
 std::string getInstallPath(clang::tooling::ClangTool &Tool,
@@ -421,7 +428,14 @@ std::string getInstallPath(clang::tooling::ClangTool &Tool,
   StringRef InstalledPathParent(llvm::sys::path::parent_path(InstalledPath));
   // Move up to parent directory of bin directory
   StringRef InstallPath = llvm::sys::path::parent_path(InstalledPathParent);
-  return InstallPath.str();
+
+  SmallString<512> InstallPathAbs;
+  std::error_code EC = llvm::sys::fs::real_path(InstallPath, InstallPathAbs);
+  if ((bool)EC) {
+    DebugInfo::ShowStatus(MigrationErrorInvalidInstallPath);
+    exit(MigrationErrorInvalidInstallPath);
+  }
+  return InstallPathAbs.str().str();
 }
 
 // To validate the root path of the project to be migrated.
