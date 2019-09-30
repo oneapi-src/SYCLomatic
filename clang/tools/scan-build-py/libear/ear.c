@@ -908,11 +908,11 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     static int const US = 0x1f;
 
     if (!initialized)
-        #if INTEL_CUSTOMIZATION
-        return 0;
-        #else
+#if INTEL_CUSTOMIZATION
+        initialized = bear_capture_env_t(&initial_env);
+#else
         return;
-        #endif
+#endif
 
     pthread_mutex_lock(&mutex);
     const char *cwd = getcwd(NULL, 0);
