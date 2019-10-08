@@ -150,7 +150,7 @@ public:
   /// Specify what needs to be done for each matched node.
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override = 0;
 
-  virtual bool isTranslationRule() const { return false; }
+  virtual bool isMigrationRule() const { return false; }
 };
 
 /// Pass manager for ASTTraversal instances.
@@ -168,7 +168,7 @@ public:
   /// Add \a TR to the manager.
   ///
   /// The ownership of the TR is transferred to the ASTTraversalManager.
-  void emplaceTranslationRule(const char *ID) {
+  void emplaceMigrationRule(const char *ID) {
     assert(ASTTraversalMetaInfo::getConstructorTable().find(ID) !=
            ASTTraversalMetaInfo::getConstructorTable().end());
     Storage.emplace_back(std::unique_ptr<ASTTraversal>(
@@ -185,7 +185,7 @@ public:
 ///
 /// The purpose of a MigrationRule is to populate TransformSet with
 /// SourceTransformation's.
-class TranslationRule : public ASTTraversal {
+class MigrationRule : public ASTTraversal {
   friend class ASTTraversalManager;
   ASTTraversalManager *TM;
 
@@ -315,8 +315,8 @@ private:
   std::vector<SourceRange> Replaced;
 
 public:
-  bool isTranslationRule() const override { return true; }
-  static bool classof(const ASTTraversal *T) { return T->isTranslationRule(); }
+  bool isMigrationRule() const override { return true; }
+  static bool classof(const ASTTraversal *T) { return T->isMigrationRule(); }
 
   virtual const std::string getName() const { return ""; }
   virtual const EmittedTransformationsTy getEmittedTransformations() const {
@@ -353,7 +353,7 @@ private:
   CommonRuleProperty RuleProperty;
 };
 
-template <typename T> class NamedTranslationRule : public TranslationRule {
+template <typename T> class NamedMigrationRule : public MigrationRule {
 public:
   static const char ID;
 
@@ -373,7 +373,7 @@ protected:
   void emplaceTransformation(TextModification *TM) {
     if (TM) {
       TM->setParentRuleID(&ID);
-      TranslationRule::emplaceTransformation(&ID, TM);
+      MigrationRule::emplaceTransformation(&ID, TM);
     }
   }
 
@@ -392,16 +392,16 @@ protected:
   }
 };
 
-template <typename T> const char NamedTranslationRule<T>::ID(0);
+template <typename T> const char NamedMigrationRule<T>::ID(0);
 
 /// As follow define the migration rules which target to migration source
-/// lanuage features to DPC++. The rules inherit from NamedTranslationRule
+/// lanuage features to DPC++. The rules inherit from NamedMigrationRule
 /// TODO: implement similar rules for each source language.
 ///
 
 /// Migration rule for iteration space builtin variables (threadIdx, etc).
 class IterationSpaceBuiltinRule
-    : public NamedTranslationRule<IterationSpaceBuiltinRule> {
+    : public NamedMigrationRule<IterationSpaceBuiltinRule> {
 public:
   IterationSpaceBuiltinRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
@@ -412,7 +412,7 @@ public:
 
 /// Migration rule for class attributes.
 /// This rule replace __align__ class attributes to __dpct_align__.
-class AlignAttrsRule : public NamedTranslationRule<AlignAttrsRule> {
+class AlignAttrsRule : public NamedMigrationRule<AlignAttrsRule> {
 public:
   AlignAttrsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -421,7 +421,7 @@ public:
 
 /// Migration rule for function attributes.
 /// This rule replace __forceinline__ class attributes to __dpct_inline__.
-class FuncAttrsRule : public NamedTranslationRule<FuncAttrsRule> {
+class FuncAttrsRule : public NamedMigrationRule<FuncAttrsRule> {
 public:
   FuncAttrsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -429,7 +429,7 @@ public:
 };
 
 /// Migration rule for atomic functions.
-class AtomicFunctionRule : public NamedTranslationRule<AtomicFunctionRule> {
+class AtomicFunctionRule : public NamedMigrationRule<AtomicFunctionRule> {
 public:
   AtomicFunctionRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -440,12 +440,12 @@ public:
 private:
   void ReportUnsupportedAtomicFunc(const CallExpr *CE);
   void
-  TranslateAtomicFunc(const CallExpr *CE,
+  MigrateAtomicFunc(const CallExpr *CE,
                       const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for thrust functions
-class ThrustFunctionRule : public NamedTranslationRule<ThrustFunctionRule> {
+class ThrustFunctionRule : public NamedMigrationRule<ThrustFunctionRule> {
 public:
   ThrustFunctionRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -455,7 +455,7 @@ private:
 };
 
 /// Migration rule for types replacements in var. declarations.
-class TypeInDeclRule : public NamedTranslationRule<TypeInDeclRule> {
+class TypeInDeclRule : public NamedMigrationRule<TypeInDeclRule> {
 public:
   TypeInDeclRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -469,7 +469,7 @@ private:
 
 /// Migration rule for types replacements in template var. declarations
 class TemplateTypeInDeclRule
-    : public NamedTranslationRule<TemplateTypeInDeclRule> {
+    : public NamedMigrationRule<TemplateTypeInDeclRule> {
 public:
   TemplateTypeInDeclRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
@@ -485,7 +485,7 @@ private:
 
 /// Migration rule for inserting namespace for vector types
 class VectorTypeNamespaceRule
-    : public NamedTranslationRule<VectorTypeNamespaceRule> {
+    : public NamedMigrationRule<VectorTypeNamespaceRule> {
 public:
   VectorTypeNamespaceRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
@@ -502,7 +502,7 @@ private:
 
 /// Migration rule for vector type member access
 class VectorTypeMemberAccessRule
-    : public NamedTranslationRule<VectorTypeMemberAccessRule> {
+    : public NamedMigrationRule<VectorTypeMemberAccessRule> {
 public:
   VectorTypeMemberAccessRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
@@ -517,7 +517,7 @@ public:
 
 /// Migration rule for vector type operator
 class VectorTypeOperatorRule
-    : public NamedTranslationRule<VectorTypeOperatorRule> {
+    : public NamedMigrationRule<VectorTypeOperatorRule> {
 public:
   VectorTypeOperatorRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
@@ -526,10 +526,10 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
 private:
-  void TranslateOverloadedOperatorDecl(
+  void MigrateOverloadedOperatorDecl(
       const ast_matchers::MatchFinder::MatchResult &Result,
       const FunctionDecl *FD);
-  void TranslateOverloadedOperatorCall(
+  void MigrateOverloadedOperatorCall(
       const ast_matchers::MatchFinder::MatchResult &Result,
       const CXXOperatorCallExpr *CE);
 
@@ -538,7 +538,7 @@ private:
 };
 
 /// Migration rule for vector type constructor and make_<vector type>()
-class VectorTypeCtorRule : public NamedTranslationRule<VectorTypeCtorRule> {
+class VectorTypeCtorRule : public NamedMigrationRule<VectorTypeCtorRule> {
 public:
   VectorTypeCtorRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -548,7 +548,7 @@ private:
   std::string getReplaceTypeName(const std::string &TypeName);
 };
 
-class ReplaceDim3CtorRule : public NamedTranslationRule<ReplaceDim3CtorRule> {
+class ReplaceDim3CtorRule : public NamedMigrationRule<ReplaceDim3CtorRule> {
   ReplaceDim3Ctor *getReplaceDim3Modification(
       const ast_matchers::MatchFinder::MatchResult &Result);
 
@@ -561,7 +561,7 @@ public:
 };
 
 /// Migration rule for dim3 types member fields replacements.
-class Dim3MemberFieldsRule : public NamedTranslationRule<Dim3MemberFieldsRule> {
+class Dim3MemberFieldsRule : public NamedMigrationRule<Dim3MemberFieldsRule> {
 public:
   Dim3MemberFieldsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -573,7 +573,7 @@ private:
 };
 
 /// Migration rule for return types replacements.
-class ReturnTypeRule : public NamedTranslationRule<ReturnTypeRule> {
+class ReturnTypeRule : public NamedMigrationRule<ReturnTypeRule> {
 public:
   ReturnTypeRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -582,7 +582,7 @@ public:
 
 /// Migration rule for removing of error hanlding if-stmt
 class ErrorHandlingIfStmtRule
-    : public NamedTranslationRule<ErrorHandlingIfStmtRule> {
+    : public NamedMigrationRule<ErrorHandlingIfStmtRule> {
 public:
   ErrorHandlingIfStmtRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
@@ -592,7 +592,7 @@ public:
 };
 
 /// Migration rule for Device Property variables.
-class DevicePropVarRule : public NamedTranslationRule<DevicePropVarRule> {
+class DevicePropVarRule : public NamedMigrationRule<DevicePropVarRule> {
 public:
   DevicePropVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -603,7 +603,7 @@ public:
 };
 
 // Migration rule for enums constants.
-class EnumConstantRule : public NamedTranslationRule<EnumConstantRule> {
+class EnumConstantRule : public NamedMigrationRule<EnumConstantRule> {
 public:
   EnumConstantRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -613,7 +613,7 @@ public:
 };
 
 // Migration rule for Error enums constants.
-class ErrorConstantsRule : public NamedTranslationRule<ErrorConstantsRule> {
+class ErrorConstantsRule : public NamedMigrationRule<ErrorConstantsRule> {
 public:
   ErrorConstantsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -621,14 +621,14 @@ public:
 };
 
 // Migration rule for BLAS enums.
-class BLASEnumsRule : public NamedTranslationRule<BLASEnumsRule> {
+class BLASEnumsRule : public NamedMigrationRule<BLASEnumsRule> {
 public:
   BLASEnumsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-class BLASFunctionCallRule : public NamedTranslationRule<BLASFunctionCallRule> {
+class BLASFunctionCallRule : public NamedMigrationRule<BLASFunctionCallRule> {
 public:
   BLASFunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -667,7 +667,7 @@ public:
 };
 
 // Migration rule for SOLVER enums.
-class SOLVEREnumsRule : public NamedTranslationRule<SOLVEREnumsRule> {
+class SOLVEREnumsRule : public NamedMigrationRule<SOLVEREnumsRule> {
 public:
   SOLVEREnumsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -675,7 +675,7 @@ public:
 };
 
 class SOLVERFunctionCallRule
-    : public NamedTranslationRule<SOLVERFunctionCallRule> {
+    : public NamedMigrationRule<SOLVERFunctionCallRule> {
 public:
   SOLVERFunctionCallRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
@@ -697,7 +697,7 @@ public:
 };
 
 /// Migration rule for function calls.
-class FunctionCallRule : public NamedTranslationRule<FunctionCallRule> {
+class FunctionCallRule : public NamedMigrationRule<FunctionCallRule> {
 public:
   FunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -705,7 +705,7 @@ public:
 };
 
 /// Migration rule for event API calls
-class EventAPICallRule : public NamedTranslationRule<EventAPICallRule> {
+class EventAPICallRule : public NamedMigrationRule<EventAPICallRule> {
 public:
   EventAPICallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -723,14 +723,14 @@ public:
 };
 
 /// Migration rule for stream API calls
-class StreamAPICallRule : public NamedTranslationRule<StreamAPICallRule> {
+class StreamAPICallRule : public NamedMigrationRule<StreamAPICallRule> {
 public:
   StreamAPICallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-class KernelCallRule : public NamedTranslationRule<KernelCallRule> {
+class KernelCallRule : public NamedMigrationRule<KernelCallRule> {
   std::unordered_set<unsigned> Insertions;
 
 public:
@@ -746,7 +746,7 @@ public:
 };
 
 class DeviceFunctionCallRule
-    : public NamedTranslationRule<DeviceFunctionCallRule> {
+    : public NamedMigrationRule<DeviceFunctionCallRule> {
 public:
   DeviceFunctionCallRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
@@ -756,7 +756,7 @@ public:
 };
 
 /// Migration rule for __constant__/__shared__/__device__ memory variables.
-class MemVarRule : public NamedTranslationRule<MemVarRule> {
+class MemVarRule : public NamedMigrationRule<MemVarRule> {
 public:
   MemVarRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -785,36 +785,34 @@ private:
 //
 // TODO:
 //   - trigger include of runtime library.
-class MemoryTranslationRule
-    : public NamedTranslationRule<MemoryTranslationRule> {
-  const Expr *stripConverts(const Expr *E) const;
+class MemoryMigrationRule : public NamedMigrationRule<MemoryMigrationRule> {
 
 public:
-  MemoryTranslationRule();
+  MemoryMigrationRule();
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
 private:
-  void mallocTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
+  void mallocMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C,
                          const UnresolvedLookupExpr *ULExpr = NULL,
                          bool IsAssigned = false);
-  void memcpyTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
+  void memcpyMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C,
                          const UnresolvedLookupExpr *ULExpr = NULL,
                          bool IsAssigned = false);
-  void freeTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
+  void freeMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                        const CallExpr *C,
                        const UnresolvedLookupExpr *ULExpr = NULL,
                        bool IsAssigned = false);
-  void memsetTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
+  void memsetMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C,
                          const UnresolvedLookupExpr *ULExpr = NULL,
                          bool IsAssigned = false);
-  void getSymbolAddressTranslation(
+  void getSymbolAddressMigration(
       const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
       const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false);
-  void miscTranslation(const ast_matchers::MatchFinder::MatchResult &Result,
+  void miscMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                        const CallExpr *C,
                        const UnresolvedLookupExpr *ULExpr = NULL,
                        bool IsAssigned = false);
@@ -825,7 +823,7 @@ private:
                         std::string OffsetFromBaseStr = "");
   const ArraySubscriptExpr *getArraySubscriptExpr(const Expr *E);
   const Expr *getUnaryOperatorExpr(const Expr *E);
-  void memcpySymbolTranslation(
+  void memcpySymbolMigration(
       const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
       const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false);
   std::unordered_map<
@@ -833,11 +831,11 @@ private:
       std::function<void(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C, const UnresolvedLookupExpr *ULExpr,
                          bool IsAssigned)>>
-      TranslationDispatcher;
+      MigrationDispatcher;
 };
 
 /// Name all unnamed types.
-class UnnamedTypesRule : public NamedTranslationRule<UnnamedTypesRule> {
+class UnnamedTypesRule : public NamedMigrationRule<UnnamedTypesRule> {
 public:
   UnnamedTypesRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -845,7 +843,7 @@ public:
 };
 
 /// Migration for math functions
-class MathFunctionsRule : public NamedTranslationRule<MathFunctionsRule> {
+class MathFunctionsRule : public NamedMigrationRule<MathFunctionsRule> {
 public:
   MathFunctionsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -866,7 +864,7 @@ public:
 };
 
 /// Migration for warp functions
-class WarpFunctionsRule : public NamedTranslationRule<WarpFunctionsRule> {
+class WarpFunctionsRule : public NamedMigrationRule<WarpFunctionsRule> {
 public:
   WarpFunctionsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -876,7 +874,7 @@ public:
 /// Migration rule for replacing __syncthreads() function call.
 ///
 /// This rule replace __syncthreads() with item.barrier()
-class SyncThreadsRule : public NamedTranslationRule<SyncThreadsRule> {
+class SyncThreadsRule : public NamedMigrationRule<SyncThreadsRule> {
 public:
   SyncThreadsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -887,7 +885,7 @@ public:
 /// runtime headers.
 // TODO: only maxThreadsPerBlock is supported.
 class KernelFunctionInfoRule
-    : public NamedTranslationRule<KernelFunctionInfoRule> {
+    : public NamedMigrationRule<KernelFunctionInfoRule> {
 public:
   KernelFunctionInfoRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
@@ -899,7 +897,7 @@ public:
 };
 
 /// Migration rule for type cast issue
-class TypeCastRule : public NamedTranslationRule<TypeCastRule> {
+class TypeCastRule : public NamedMigrationRule<TypeCastRule> {
 public:
   TypeCastRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -907,7 +905,7 @@ public:
 };
 
 /// RecognizeAPINameRule to give comments for the api not in the record table
-class RecognizeAPINameRule : public NamedTranslationRule<RecognizeAPINameRule> {
+class RecognizeAPINameRule : public NamedMigrationRule<RecognizeAPINameRule> {
 public:
   RecognizeAPINameRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
   const std::string GetFunctionSignature(const FunctionDecl *Func);
@@ -916,7 +914,7 @@ public:
 };
 
 /// Texture migration rule
-class TextureRule : public NamedTranslationRule<TextureRule> {
+class TextureRule : public NamedMigrationRule<TextureRule> {
   // Get the binary operator if E is lhs of an assign experssion.
   const BinaryOperator *getAssignedBO(const Expr *E, ASTContext &Context);
   const BinaryOperator *getParentAsAssignedBO(const Expr *E,

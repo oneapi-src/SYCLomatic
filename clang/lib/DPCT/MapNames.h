@@ -269,13 +269,13 @@ public:
   static const MapNames::MapTy MemberNamesMap;
 };
 
-class TranslationStatistics {
+class MigrationStatistics {
 private:
   static std::map<std::string /*API Name*/, bool /*Is Migrated*/>
-      TranslationTable;
+      MigrationTable;
 
 public:
-  static bool IsTranslated(const std::string &APIName);
+  static bool IsMigrated(const std::string &APIName);
   static std::vector<std::string> GetAllAPINames(void);
 };
 

@@ -1,4 +1,4 @@
-//===---TranslationRules.inc------------------------------------------===//
+//===---MigrationRules.inc------------------------------------------===//
 //
 // Copyright (C) 2018 - 2019 Intel Corporation. All rights reserved.
 //
@@ -28,7 +28,7 @@ RULE(KernelCallRule)
 RULE(SharedMemVarRule)
 RULE(ConstantMemVarRule)
 RULE(DeviceMemVarRule)
-RULE(MemoryTranslationRule)
+RULE(MemoryMigrationRule)
 RULE(ErrorTryCatchRule)
 RULE(KernelIterationSpaceRule)
 RULE(UnnamedTypesRule)

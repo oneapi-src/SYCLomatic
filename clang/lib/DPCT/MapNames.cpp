@@ -2531,7 +2531,7 @@ const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
     {"maxThreadsPerBlock", "max_work_group_size"},
 };
 
-std::map<std::string, bool> TranslationStatistics::TranslationTable{
+std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #define ENTRY(APINAME, VALUE, TARGET, COMMENT) {#APINAME, VALUE},
 #include "APINames.inc"
 #include "APINames_cuBLAS.inc"
@@ -2545,9 +2545,9 @@ std::map<std::string, bool> TranslationStatistics::TranslationTable{
 #undef ENTRY
 };
 
-bool TranslationStatistics::IsTranslated(const std::string &APIName) {
-  auto Search = TranslationTable.find(APIName);
-  if (Search != TranslationTable.end()) {
+bool MigrationStatistics::IsMigrated(const std::string &APIName) {
+  auto Search = MigrationTable.find(APIName);
+  if (Search != MigrationTable.end()) {
     return Search->second;
   } else {
     llvm::errs() << "[NOTE] Find new API\"" << APIName
@@ -2557,9 +2557,9 @@ bool TranslationStatistics::IsTranslated(const std::string &APIName) {
   }
 }
 
-std::vector<std::string> TranslationStatistics::GetAllAPINames(void) {
+std::vector<std::string> MigrationStatistics::GetAllAPINames(void) {
   std::vector<std::string> AllAPINames;
-  for (const auto &APIName : TranslationTable) {
+  for (const auto &APIName : MigrationTable) {
     AllAPINames.push_back(APIName.first);
   }
 

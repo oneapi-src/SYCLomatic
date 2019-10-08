@@ -67,7 +67,7 @@ class DebugInfo {
 public:
   static void ShowStatus(int status = 0);
   static void
-  printTranslationRules(const std::vector<std::unique_ptr<ASTTraversal>> &TRs);
+  printMigrationRules(const std::vector<std::unique_ptr<ASTTraversal>> &TRs);
   static void printMatchedRules(
       const std::vector<std::unique_ptr<ASTTraversal>> &MatchedRules);
   static void printReplacements(ReplacementFilter &ReplFilter,

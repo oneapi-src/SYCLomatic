@@ -42,11 +42,11 @@ auto parentStmt = []() {
 };
 
 std::unordered_map<std::string, std::unordered_set</* Comment ID */ int>>
-    TranslationRule::ReportedComment;
+    MigrationRule::ReportedComment;
 
 static std::set<SourceLocation> AttrExpansionFilter;
 
-unsigned TranslationRule::PairID = 0;
+unsigned MigrationRule::PairID = 0;
 
 void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
   std::string InRoot = ATM.InRoot;
@@ -366,7 +366,7 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
   }
 }
 
-void TranslationRule::print(llvm::raw_ostream &OS) {
+void MigrationRule::print(llvm::raw_ostream &OS) {
   const auto &EmittedTransformations = getEmittedTransformations();
   if (EmittedTransformations.empty()) {
     return;
@@ -381,7 +381,7 @@ void TranslationRule::print(llvm::raw_ostream &OS) {
   }
 }
 
-void TranslationRule::printStatistics(llvm::raw_ostream &OS) {
+void MigrationRule::printStatistics(llvm::raw_ostream &OS) {
   const auto &EmittedTransformations = getEmittedTransformations();
   if (EmittedTransformations.empty()) {
     return;
@@ -407,7 +407,7 @@ void TranslationRule::printStatistics(llvm::raw_ostream &OS) {
   }
 }
 
-void TranslationRule::emplaceTransformation(const char *RuleID,
+void MigrationRule::emplaceTransformation(const char *RuleID,
                                             TextModification *TM) {
   ASTTraversalMetaInfo::getEmittedTransformations()[RuleID].emplace_back(TM);
   TransformSet->emplace_back(TM);
@@ -740,7 +740,7 @@ void AtomicFunctionRule::ReportUnsupportedAtomicFunc(const CallExpr *CE) {
   report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, OSS.str());
 }
 
-void AtomicFunctionRule::TranslateAtomicFunc(
+void AtomicFunctionRule::MigrateAtomicFunc(
     const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result) {
   if (!CE)
     return;
@@ -810,7 +810,7 @@ void AtomicFunctionRule::run(const MatchFinder::MatchResult &Result) {
   ReportUnsupportedAtomicFunc(
       getNodeAsType<CallExpr>(Result, "unsupportedAtomicFuncCall"));
 
-  TranslateAtomicFunc(
+  MigrateAtomicFunc(
       getNodeAsType<CallExpr>(Result, "supportedAtomicFuncCall"), Result);
 }
 
@@ -1597,7 +1597,7 @@ void VectorTypeOperatorRule::registerMatcher(MatchFinder &MF) {
 const char VectorTypeOperatorRule::NamespaceName[] =
     "dpct_operator_overloading";
 
-void VectorTypeOperatorRule::TranslateOverloadedOperatorDecl(
+void VectorTypeOperatorRule::MigrateOverloadedOperatorDecl(
     const MatchFinder::MatchResult &Result, const FunctionDecl *FD) {
   if (!FD)
     return;
@@ -1663,7 +1663,7 @@ void VectorTypeOperatorRule::TranslateOverloadedOperatorDecl(
   emplaceTransformation(new InsertText(SR.getEnd(), Epilogue.str()));
 }
 
-void VectorTypeOperatorRule::TranslateOverloadedOperatorCall(
+void VectorTypeOperatorRule::MigrateOverloadedOperatorCall(
     const MatchFinder::MatchResult &Result, const CXXOperatorCallExpr *CE) {
   if (!CE)
     return;
@@ -1705,11 +1705,11 @@ void VectorTypeOperatorRule::TranslateOverloadedOperatorCall(
 
 void VectorTypeOperatorRule::run(const MatchFinder::MatchResult &Result) {
   // Add namespace to user overloaded operator declaration
-  TranslateOverloadedOperatorDecl(
+  MigrateOverloadedOperatorDecl(
       Result, getNodeAsType<FunctionDecl>(Result, "overloadedOperatorDecl"));
 
   // Explicitly call user overloaded operator
-  TranslateOverloadedOperatorCall(
+  MigrateOverloadedOperatorCall(
       Result,
       getNodeAsType<CXXOperatorCallExpr>(Result, "callOverloadedOperator"));
 }
@@ -4236,7 +4236,7 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(MemVarRule)
 
-void MemoryTranslationRule::mallocTranslation(
+void MemoryMigrationRule::mallocMigration(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
   std::string Name;
@@ -4330,7 +4330,7 @@ void MemoryTranslationRule::mallocTranslation(
 }
 
 const ArraySubscriptExpr *
-MemoryTranslationRule::getArraySubscriptExpr(const Expr *E) {
+MemoryMigrationRule::getArraySubscriptExpr(const Expr *E) {
   if (const auto MTE = dyn_cast<MaterializeTemporaryExpr>(E)) {
     if (auto TE = MTE->GetTemporaryExpr()) {
       if (auto UO = dyn_cast<UnaryOperator>(TE)) {
@@ -4343,7 +4343,7 @@ MemoryTranslationRule::getArraySubscriptExpr(const Expr *E) {
   return nullptr;
 }
 
-const Expr *MemoryTranslationRule::getUnaryOperatorExpr(const Expr *E) {
+const Expr *MemoryMigrationRule::getUnaryOperatorExpr(const Expr *E) {
   if (const auto MTE = dyn_cast<MaterializeTemporaryExpr>(E)) {
     if (auto TE = MTE->GetTemporaryExpr()) {
       if (auto UO = dyn_cast<UnaryOperator>(TE)) {
@@ -4354,7 +4354,7 @@ const Expr *MemoryTranslationRule::getUnaryOperatorExpr(const Expr *E) {
   return nullptr;
 }
 
-void MemoryTranslationRule::replaceMemAPIArg(
+void MemoryMigrationRule::replaceMemAPIArg(
     const Expr *E, const ast_matchers::MatchFinder::MatchResult &Result,
     std::string OffsetFromBaseStr) {
 
@@ -4482,7 +4482,7 @@ TextModification *removeArg(const CallExpr *C, unsigned n,
   return nullptr;
 }
 
-void MemoryTranslationRule::memcpyTranslation(
+void MemoryMigrationRule::memcpyMigration(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
   const Expr *Direction = C->getArg(3);
@@ -4563,7 +4563,7 @@ void MemoryTranslationRule::memcpyTranslation(
   }
 }
 
-void MemoryTranslationRule::memcpySymbolTranslation(
+void MemoryMigrationRule::memcpySymbolMigration(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
 
@@ -4681,7 +4681,7 @@ void MemoryTranslationRule::memcpySymbolTranslation(
   }
 }
 
-void MemoryTranslationRule::freeTranslation(
+void MemoryMigrationRule::freeMigration(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
 
@@ -4719,7 +4719,7 @@ void MemoryTranslationRule::freeTranslation(
   }
 }
 
-void MemoryTranslationRule::memsetTranslation(
+void MemoryMigrationRule::memsetMigration(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
 
@@ -4775,7 +4775,7 @@ void MemoryTranslationRule::memsetTranslation(
   }
 }
 
-void MemoryTranslationRule::miscTranslation(
+void MemoryMigrationRule::miscMigration(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
   std::string Name;
@@ -4807,7 +4807,7 @@ void MemoryTranslationRule::miscTranslation(
 }
 
 // Memory migration rules live here.
-void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
+void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
   auto memoryAPI = [&]() {
     return hasAnyName("cudaMalloc", "cudaMemcpy", "cudaMemcpyAsync",
                       "cudaMemcpyToSymbol", "cudaMemcpyToSymbolAsync",
@@ -4842,8 +4842,8 @@ void MemoryTranslationRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 
-void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
-  auto TranslateCallExpr = [&](const CallExpr *C, const bool IsAssigned,
+void MemoryMigrationRule::run(const MatchFinder::MatchResult &Result) {
+  auto MigrateCallExpr = [&](const CallExpr *C, const bool IsAssigned,
                                const UnresolvedLookupExpr *ULExpr = NULL) {
     if (!C)
       return;
@@ -4855,8 +4855,8 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
       Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
     }
 
-    assert(TranslationDispatcher.find(Name) != TranslationDispatcher.end());
-    TranslationDispatcher.at(Name)(Result, C, ULExpr, IsAssigned);
+    assert(MigrationDispatcher.find(Name) != MigrationDispatcher.end());
+    MigrationDispatcher.at(Name)(Result, C, ULExpr, IsAssigned);
 
     if (IsAssigned) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
@@ -4864,22 +4864,22 @@ void MemoryTranslationRule::run(const MatchFinder::MatchResult &Result) {
     }
   };
 
-  TranslateCallExpr(getNodeAsType<CallExpr>(Result, "call"),
+  MigrateCallExpr(getNodeAsType<CallExpr>(Result, "call"),
                     /* IsAssigned */ false);
-  TranslateCallExpr(getNodeAsType<CallExpr>(Result, "callUsed"),
+  MigrateCallExpr(getNodeAsType<CallExpr>(Result, "callUsed"),
                     /* IsAssigned */ true);
 
-  TranslateCallExpr(
+  MigrateCallExpr(
       getNodeAsType<CallExpr>(Result, "callExprUsed"),
       /* IsAssigned */ true,
       getNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedCallUsed"));
-  TranslateCallExpr(
+  MigrateCallExpr(
       getNodeAsType<CallExpr>(Result, "callExpr"),
       /* IsAssigned */ false,
       getNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedCall"));
 }
 
-void MemoryTranslationRule::getSymbolAddressTranslation(
+void MemoryMigrationRule::getSymbolAddressMigration(
     const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
   // Here only handle ordinary variable name reference, for accessing the
@@ -4895,47 +4895,45 @@ void MemoryTranslationRule::getSymbolAddressTranslation(
   emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
 }
 
-MemoryTranslationRule::MemoryTranslationRule() {
+MemoryMigrationRule::MemoryMigrationRule() {
   SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   std::map<
       std::string,
-      std::function<void(MemoryTranslationRule *,
+      std::function<void(MemoryMigrationRule *,
                          const ast_matchers::MatchFinder::MatchResult &,
                          const CallExpr *, const UnresolvedLookupExpr *, bool)>>
       Dispatcher{
-          {"cudaMalloc", &MemoryTranslationRule::mallocTranslation},
-          {"cudaHostAlloc", &MemoryTranslationRule::mallocTranslation},
-          {"cudaMallocHost", &MemoryTranslationRule::mallocTranslation},
-          {"cudaMallocManaged", &MemoryTranslationRule::mallocTranslation},
-          {"cublasAlloc", &MemoryTranslationRule::mallocTranslation},
-          {"cudaMemcpy", &MemoryTranslationRule::memcpyTranslation},
-          {"cudaMemcpyAsync", &MemoryTranslationRule::memcpyTranslation},
-          {"cudaMemcpyToSymbol",
-           &MemoryTranslationRule::memcpySymbolTranslation},
+          {"cudaMalloc", &MemoryMigrationRule::mallocMigration},
+          {"cudaHostAlloc", &MemoryMigrationRule::mallocMigration},
+          {"cudaMallocHost", &MemoryMigrationRule::mallocMigration},
+          {"cudaMallocManaged", &MemoryMigrationRule::mallocMigration},
+          {"cublasAlloc", &MemoryMigrationRule::mallocMigration},
+          {"cudaMemcpy", &MemoryMigrationRule::memcpyMigration},
+          {"cudaMemcpyAsync", &MemoryMigrationRule::memcpyMigration},
+          {"cudaMemcpyToSymbol", &MemoryMigrationRule::memcpySymbolMigration},
           {"cudaMemcpyToSymbolAsync",
-           &MemoryTranslationRule::memcpySymbolTranslation},
-          {"cudaMemcpyFromSymbol",
-           &MemoryTranslationRule::memcpySymbolTranslation},
+           &MemoryMigrationRule::memcpySymbolMigration},
+          {"cudaMemcpyFromSymbol", &MemoryMigrationRule::memcpySymbolMigration},
           {"cudaMemcpyFromSymbolAsync",
-           &MemoryTranslationRule::memcpySymbolTranslation},
-          {"cudaFree", &MemoryTranslationRule::freeTranslation},
-          {"cudaFreeHost", &MemoryTranslationRule::freeTranslation},
-          {"cublasFree", &MemoryTranslationRule::freeTranslation},
-          {"cudaMemset", &MemoryTranslationRule::memsetTranslation},
-          {"cudaMemsetAsync", &MemoryTranslationRule::memsetTranslation},
+           &MemoryMigrationRule::memcpySymbolMigration},
+          {"cudaFree", &MemoryMigrationRule::freeMigration},
+          {"cudaFreeHost", &MemoryMigrationRule::freeMigration},
+          {"cublasFree", &MemoryMigrationRule::freeMigration},
+          {"cudaMemset", &MemoryMigrationRule::memsetMigration},
+          {"cudaMemsetAsync", &MemoryMigrationRule::memsetMigration},
           {"cudaGetSymbolAddress",
-           &MemoryTranslationRule::getSymbolAddressTranslation},
-          {"cudaHostGetDevicePointer", &MemoryTranslationRule::miscTranslation},
-          {"cudaHostRegister", &MemoryTranslationRule::miscTranslation},
-          {"cudaHostUnregister", &MemoryTranslationRule::miscTranslation}};
+           &MemoryMigrationRule::getSymbolAddressMigration},
+          {"cudaHostGetDevicePointer", &MemoryMigrationRule::miscMigration},
+          {"cudaHostRegister", &MemoryMigrationRule::miscMigration},
+          {"cudaHostUnregister", &MemoryMigrationRule::miscMigration}};
 
   for (auto &P : Dispatcher)
-    TranslationDispatcher[P.first] =
+    MigrationDispatcher[P.first] =
         std::bind(P.second, this, std::placeholders::_1, std::placeholders::_2,
                   std::placeholders::_3, std::placeholders::_4);
 }
 
-void MemoryTranslationRule::handleAsync(
+void MemoryMigrationRule::handleAsync(
     const CallExpr *C, unsigned i, const MatchFinder::MatchResult &Result) {
   const Expr *Stream = C->getArg(i);
   if (Stream) {
@@ -4954,7 +4952,7 @@ void MemoryTranslationRule::handleAsync(
   }
 }
 
-REGISTER_RULE(MemoryTranslationRule)
+REGISTER_RULE(MemoryMigrationRule)
 
 void UnnamedTypesRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
@@ -5113,8 +5111,7 @@ void TypeCastRule::run(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(TypeCastRule)
 
 void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
-  std::vector<std::string> AllAPINames =
-      TranslationStatistics::GetAllAPINames();
+  std::vector<std::string> AllAPINames = MigrationStatistics::GetAllAPINames();
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(internal::Matcher<NamedDecl>(
                          new internal::HasNameMatcher(AllAPINames)))),
@@ -5167,7 +5164,7 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
 
   SrcAPIStaticsMap[GetFunctionSignature(C->getCalleeDecl()->getAsFunction())]++;
 
-  if (!TranslationStatistics::IsTranslated(APIName)) {
+  if (!MigrationStatistics::IsMigrated(APIName)) {
     GAnalytics(GetFunctionSignature(C->getCalleeDecl()->getAsFunction()));
     const SourceManager &SM = (*Result.Context).getSourceManager();
     const SourceLocation FileLoc = SM.getFileLoc(C->getBeginLoc());
@@ -5375,13 +5372,13 @@ void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
   this->Context = &Context;
   for (auto &I : Storage) {
     I->registerMatcher(Matchers);
-    if (auto TR = dyn_cast<TranslationRule>(&*I)) {
+    if (auto TR = dyn_cast<MigrationRule>(&*I)) {
       TR->TM = this;
       TR->setTransformSet(TS);
     }
   }
 
-  DebugInfo::printTranslationRules(Storage);
+  DebugInfo::printMigrationRules(Storage);
 
   Matchers.matchAST(Context);
 
@@ -5393,7 +5390,7 @@ void ASTTraversalManager::emplaceAllRules(int SourceFileFlag) {
 
   for (auto &F : ASTTraversalMetaInfo::getConstructorTable()) {
 
-    auto RuleObj = (TranslationRule *)F.second();
+    auto RuleObj = (MigrationRule *)F.second();
     CommonRuleProperty RuleProperty = RuleObj->GetRuleProperty();
 
     auto RType = RuleProperty.RType;
@@ -5419,10 +5416,10 @@ void ASTTraversalManager::emplaceAllRules(int SourceFileFlag) {
       llvm::errs() << "[ERROR] Rule\"" << *it << "\" not found\n";
       std::exit(MigrationError);
     }
-    emplaceTranslationRule(ID);
+    emplaceMigrationRule(ID);
   }
 }
 
-const CompilerInstance &TranslationRule::getCompilerInstance() {
+const CompilerInstance &MigrationRule::getCompilerInstance() {
   return TM->CI;
 }

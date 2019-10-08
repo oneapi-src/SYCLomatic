@@ -83,7 +83,7 @@ static std::vector<std::pair<std::string, std::unordered_set<std::string>>>
          {
 // Statically registed elements, no dynamic registation demanding so far
 #define RULE(TYPE) #TYPE,
-#include "TranslationRules.inc"
+#include "MigrationRules.inc"
 #undef RULE
          }},
         // TextModifications regards as level 3
@@ -113,7 +113,7 @@ static void ShowDebugLevels() {
 }
 #endif // Debug build
 
-void DebugInfo::printTranslationRules(
+void DebugInfo::printMigrationRules(
     const std::vector<std::unique_ptr<ASTTraversal>> &TRs) {
   auto print = [&]() {
     DpctDiags() << "Migration Rules:\n";
@@ -126,7 +126,7 @@ void DebugInfo::printTranslationRules(
 
     size_t NumRules = 0;
     for (auto &TR : TRs) {
-      if (auto I = dyn_cast<TranslationRule>(&*TR)) {
+      if (auto I = dyn_cast<MigrationRule>(&*TR)) {
         DpctDiags() << Indent << I->getName() << "\n";
         ++NumRules;
       }
@@ -158,25 +158,25 @@ static void printMatchedRulesDebugImpl(
   }
 
   for (auto &MR : MatchedRules) {
-    if (auto TR = dyn_cast<TranslationRule>(&*MR)) {
+    if (auto TR = dyn_cast<MigrationRule>(&*MR)) {
 #define RULE(TYPE)                                                             \
   if (TR->getName() == #TYPE) {                                                \
     DEBUG_WITH_TYPE(#TYPE, TR->print(DpctDiags()));                          \
     continue;                                                                  \
   }
-#include "TranslationRules.inc"
+#include "MigrationRules.inc"
 #undef RULE
     }
   }
 
   for (auto &MR : MatchedRules) {
-    if (auto TR = dyn_cast<TranslationRule>(&*MR)) {
+    if (auto TR = dyn_cast<MigrationRule>(&*MR)) {
 #define RULE(TYPE)                                                             \
   if (TR->getName() == #TYPE) {                                                \
     DEBUG_WITH_TYPE(#TYPE, TR->printStatistics(DpctDiags()));                \
     continue;                                                                  \
   }
-#include "TranslationRules.inc"
+#include "MigrationRules.inc"
 #undef RULE
     }
   }
@@ -211,7 +211,7 @@ static void printReplacementsDebugImpl(ReplacementFilter &ReplFilter,
 
   std::unordered_map<std::string, size_t> NameCountMap;
   std::unordered_map<std::string, std::unordered_set<std::string>>
-      TranslatedFiles;
+      MigratedFiles;
   for (const ExtReplacement &Repl : ReplFilter) {
     const TextModification *TM = nullptr;
 #define TRANSFORMATION(TYPE)                                                   \
@@ -222,7 +222,7 @@ static void printReplacementsDebugImpl(ReplacementFilter &ReplFilter,
     } else {                                                                   \
       ++NameCountMap[#TYPE];                                                   \
     }                                                                          \
-    TranslatedFiles[Repl.getFilePath()].emplace(#TYPE);                        \
+    MigratedFiles[Repl.getFilePath()].emplace(#TYPE);                        \
     continue;                                                                  \
   }
 #include "Transformations.inc"
@@ -264,13 +264,13 @@ static void printMatchedRulesReleaseImpl(
   }
 
   for (auto &MR : MatchedRules) {
-    if (auto TR = dyn_cast<TranslationRule>(&*MR)) {
+    if (auto TR = dyn_cast<MigrationRule>(&*MR)) {
       TR->print(DpctDiags());
     }
   }
 
   for (auto &MR : MatchedRules) {
-    if (auto TR = dyn_cast<TranslationRule>(&*MR)) {
+    if (auto TR = dyn_cast<MigrationRule>(&*MR)) {
       TR->printStatistics(DpctDiags());
     }
   }

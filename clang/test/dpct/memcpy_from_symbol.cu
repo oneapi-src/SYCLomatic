@@ -40,7 +40,7 @@ int main() {
     CHECK(h_b[i] == i);
 
   // TODO: Add test case for device copy to device after get symbol address API
-  //       translated
+  //       migrated
 
   std::cout << "Passed" << std::endl;
   return 0;

@@ -9,6 +9,7 @@
 //
 //===-----------------------------------------------------------------===//
 
+
 #include "clang/DPCT/DPCT.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
@@ -264,7 +265,7 @@ public:
       for (auto const &Name : Names) {
         auto *ID = ASTTraversalMetaInfo::getID(Name);
         auto MapEntry = ASTTraversalMetaInfo::getConstructorTable()[ID];
-        auto RuleObj = (TranslationRule *)MapEntry();
+        auto RuleObj = (MigrationRule *)MapEntry();
         CommonRuleProperty RuleProperty = RuleObj->GetRuleProperty();
         auto RType = RuleProperty.RType;
         auto RulesDependon = RuleProperty.RulesDependon;
@@ -288,7 +289,7 @@ public:
           const std::string ErrMsg = "[ERROR] Rule\"" + *it + "\" not found\n";
           PrintMsg(ErrMsg);
         }
-        ATM.emplaceTranslationRule(RuleID);
+        ATM.emplaceMigrationRule(RuleID);
       }
 
     } else {

@@ -202,7 +202,6 @@ MAP_FLAGS = {
 }
 
 # Clang option --cuda-gpu-arch do not support the argument like "compute_30"
-# Convert prefix "compute_" to "sm_"
 def gpu_virtual_arch_to_arch(virtual_arch):
     virtual_archprefix = virtual_arch[0:7]
     virtual_arch_ver = virtual_arch[8:]
