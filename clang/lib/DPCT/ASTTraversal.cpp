@@ -856,9 +856,9 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
   assert(CE->getNumArgs() > 0);
   auto ExtraParam = ReplInfo->second.ExtraParam;
   if (!ExtraParam.empty()) {
-    // This is a temporary fix until, the DPC++ compiler and the DPC++ library
-    // support creating a SYCL execution policy without creating a unique
-    // one for every use
+    // This is a temporary fix until, the oneAPI DPC++ Compiler and
+    // oneAPI DPC++ library support creating a SYCL execution policy
+    // without creating a unique one for every use
     if (ExtraParam == "dpstd::execution::sycl") {
       std::string Name = UniqueName(CE);
       ExtraParam = "dpstd::execution::make_sycl_policy<class Policy_" +
