@@ -237,9 +237,9 @@ std::string KernelCallExpr::getReplacement() {
         Block.pushStmt(Queue, "().submit(");
     } else {
       if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&')
-        Block.pushStmt("(", ExecutionConfig.Stream, ").submit(");
+        Block.pushStmt("(", ExecutionConfig.Stream, ")->submit(");
       else
-        Block.pushStmt(ExecutionConfig.Stream, ".submit(");
+        Block.pushStmt(ExecutionConfig.Stream, "->submit(");
     }
 
     {

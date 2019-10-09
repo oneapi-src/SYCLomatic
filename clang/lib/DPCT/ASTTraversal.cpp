@@ -3968,35 +3968,21 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
 
   if (FuncName == "cudaStreamCreate" ||
       FuncName == "cudaStreamCreateWithFlags" ||
-      FuncName == "cudaStreamCreateWithPriority" ||
-      FuncName == "cudaStreamDestroy") {
+      FuncName == "cudaStreamCreateWithPriority") {
     auto Arg0 = CE->getArg(0);
     auto DRE = getInnerValueDecl(Arg0);
     std::string ReplStr;
-    // If DRE is nullptr which means the stream is a complex expression
-    // (e.g. iterator getters), skip the scope analysis
-    if (DRE && isInSameScope(CE, DRE->getDecl())) {
-      if (IsAssigned) {
-        ReplStr = "(0, 0)";
-        report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
-      }
-    } else {
-      auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-      // TODO: simplify expression
-      if (FuncName == "cudaStreamDestroy") {
-        ReplStr = StmtStr0;
-      } else {
-        if (StmtStr0[0] == '&')
-          ReplStr = StmtStr0.substr(1);
-        else
-          ReplStr = "*(" + StmtStr0 + ")";
-      }
+    auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+    // TODO: simplify expression
+    if (StmtStr0[0] == '&')
+      ReplStr = StmtStr0.substr(1);
+    else
+      ReplStr = "*(" + StmtStr0 + ")";
 
-      ReplStr += " = cl::sycl::queue{}";
-      if (IsAssigned) {
-        ReplStr = "(" + ReplStr + ", 0)";
-        report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
-      }
+    ReplStr += " = new cl::sycl::queue{}";
+    if (IsAssigned) {
+      ReplStr = "(" + ReplStr + ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
     emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ReplStr));
     if (FuncName == "cudaStreamCreateWithFlags" ||
@@ -4004,10 +3990,18 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
       report(CE->getBeginLoc(),
              Diagnostics::STREAM_FLAG_PRIORITY_NOT_SUPPORTED);
     }
+  } else if (FuncName == "cudaStreamDestroy") {
+    auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+    auto ReplStr = "delete " + StmtStr0;
+    if (IsAssigned) {
+      ReplStr = "(" + ReplStr + ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
+    emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ReplStr));
   } else if (FuncName == "cudaStreamSynchronize") {
     auto StmtStr = getStmtSpelling(CE->getArg(0), *Result.Context);
     std::string ReplStr{StmtStr};
-    ReplStr += ".wait()";
+    ReplStr += "->wait()";
     const std::string Name =
         CE->getCalleeDecl()->getAsFunction()->getNameAsString();
     if (IsAssigned) {
@@ -4059,7 +4053,7 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
     auto StmtStr2 = getStmtSpelling(CE->getArg(2), *Result.Context);
     std::string ReplStr{"std::async([&]() { "};
     ReplStr += StmtStr0;
-    ReplStr += ".wait(); ";
+    ReplStr += "->wait(); ";
     ReplStr += StmtStr1;
     ReplStr += "(";
     ReplStr += StmtStr0;

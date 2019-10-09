@@ -50,7 +50,7 @@ const MapNames::MapTy MapNames::TypeNamesMap{
     {"half", "cl::sycl::half"},
     {"half2", "cl::sycl::half2"},
     {"cudaEvent_t", "cl::sycl::event"},
-    {"cudaStream_t", "cl::sycl::queue"},
+    {"cudaStream_t", "queue_p"},
     {"char1", "char"},
     {"char2", "cl::sycl::char2"},
     {"char3", "cl::sycl::char3"},

@@ -67,11 +67,11 @@ struct S {
   // CHECK: std::vector<cl::sycl::event> eventVector;
   std::vector<cudaEvent_t> eventVector;
 
-  // CHECK: cl::sycl::queue stream, stream0;
-  // CHECK-NEXT: cl::sycl::queue streams[23], streams0[45];
+  // CHECK: queue_p stream, stream0;
+  // CHECK-NEXT: queue_p streams[23], streams0[45];
   // CHECK-NEXT: cl::sycl::event event, events[23];
-  // CHECK-NEXT: C<cl::sycl::queue, cl::sycl::event> se, se2;
-  // CHECK-NEXT: std::list<cl::sycl::queue> streamlist;
+  // CHECK-NEXT: C<queue_p, cl::sycl::event> se, se2;
+  // CHECK-NEXT: std::list<queue_p> streamlist;
   // CHECK-NEXT: std::list<cl::sycl::event> eventlist;
   // CHECK-NEXT: std::list<int> errors;
   // CHECK-NEXT: std::list<dpct::dpct_device_info> props;
@@ -129,11 +129,11 @@ int main(int argc, char* argv[]) {
   // CHECK: cl::sycl::event &rrr6 = vvv, vvv6, *ppp6;
   cudaEvent_t &rrr6 = vvv, vvv6, *ppp6;
 
-  // CHECK: cl::sycl::queue stream, stream0;
-  // CHECK-NEXT: cl::sycl::queue streams[23], streams0[45];
+  // CHECK: queue_p stream, stream0;
+  // CHECK-NEXT: queue_p streams[23], streams0[45];
   // CHECK-NEXT: cl::sycl::event event, events[23];
-  // CHECK-NEXT: C<cl::sycl::queue, cl::sycl::event> se, se2;
-  // CHECK-NEXT: std::list<cl::sycl::queue> streamlist;
+  // CHECK-NEXT: C<queue_p, cl::sycl::event> se, se2;
+  // CHECK-NEXT: std::list<queue_p> streamlist;
   // CHECK-NEXT: std::list<cl::sycl::event> eventlist;
   // CHECK-NEXT: std::list<int> errors;
   // CHECK-NEXT: std::list<dpct::dpct_device_info> props;

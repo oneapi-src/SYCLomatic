@@ -15,9 +15,11 @@ void check(T result, char const *const func) {
 __global__ void kernelFunc() {
 }
 
+// CHECK: void process(queue_p st, char *data, int status) {}
 void process(cudaStream_t st, char *data, cudaError_t status) {}
 
 template<typename T>
+// CHECK: void callback(queue_p st, int status, void *vp) {
 void callback(cudaStream_t st, cudaError_t status, void *vp) {
   T *data = static_cast<T *>( vp);
   process(st, data, status);
@@ -26,42 +28,42 @@ void callback(cudaStream_t st, cudaError_t status, void *vp) {
 template<typename FloatN, typename Float>
 static void func()
 {
-  // CHECK: std::list<cl::sycl::queue> streams;
+  // CHECK: std::list<queue_p> streams;
   std::list<cudaStream_t> streams;
   for (auto Iter = streams.begin(); Iter != streams.end(); ++Iter)
-    // CHECK: *Iter = cl::sycl::queue{};
+    // CHECK: *Iter = new cl::sycl::queue{};
     cudaStreamCreate(&*Iter);
   for (auto Iter = streams.begin(); Iter != streams.end(); ++Iter)
-    // CHECK: *Iter = cl::sycl::queue{};
+    // CHECK: delete *Iter;
     cudaStreamDestroy(*Iter);
 
-  // CHECK: cl::sycl::queue s0, &s1 = s0;
-  // CHECK-NEXT: cl::sycl::queue s2, *s3 = &s2;
-  // CHECK-NEXT: cl::sycl::queue s4, s5;
+  // CHECK: queue_p s0, &s1 = s0;
+  // CHECK-NEXT: queue_p s2, *s3 = &s2;
+  // CHECK-NEXT: queue_p s4, s5;
   // CHECK-EMPTY:
   cudaStream_t s0, &s1 = s0;
   cudaStream_t s2, *s3 = &s2;
   cudaStream_t s4, s5;
 
   // CHECK: if (1)
-  // CHECK-NEXT: ;
+  // CHECK-NEXT: s0 = new cl::sycl::queue{};
   if (1)
     cudaStreamCreate(&s0);
 
   // CHECK: while (0)
-  // CHECK-NEXT: ;
+  // CHECK-NEXT: s0 = new cl::sycl::queue{};
   while (0)
     cudaStreamCreate(&s0);
 
   // CHECK: do
-  // CHECK-NEXT: ;
+  // CHECK-NEXT: s0 = new cl::sycl::queue{};
   // CHECK: while (0);
   do
     cudaStreamCreate(&s0);
   while (0);
 
   // CHECK: for (; 0; )
-  // CHECK-NEXT: ;
+  // CHECK-NEXT: s0 = new cl::sycl::queue{};
   for (; 0; )
     cudaStreamCreate(&s0);
 
@@ -80,11 +82,11 @@ static void func()
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: checkCudaErrors((0, 0));
+  // CHECK-NEXT: checkCudaErrors((s1 = new cl::sycl::queue{}, 0));
   checkCudaErrors(cudaStreamCreate(&s1));
 
   // CHECK: {
-  // CHECK-NEXT:   s0.submit(
+  // CHECK-NEXT:   s0->submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
@@ -96,7 +98,7 @@ static void func()
   kernelFunc<<<16, 32, 0, s0>>>();
 
   // CHECK: {
-  // CHECK-NEXT:   s1.submit(
+  // CHECK-NEXT:   s1->submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
@@ -111,7 +113,7 @@ static void func()
     // CHECK: /*
     // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported in the SYCL queue.
     // CHECK-NEXT: */
-    // CHECK-NEXT: s2 = cl::sycl::queue{};
+    // CHECK-NEXT: s2 = new cl::sycl::queue{};
     cudaStreamCreateWithFlags(&s2, cudaStreamDefault);
 
     // CHECK: /*
@@ -120,11 +122,11 @@ static void func()
     // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported in the SYCL queue.
     // CHECK-NEXT: */
-    // CHECK-NEXT: checkCudaErrors((*(s3) = cl::sycl::queue{}, 0));
+    // CHECK-NEXT: checkCudaErrors((*(s3) = new cl::sycl::queue{}, 0));
     checkCudaErrors(cudaStreamCreateWithFlags(s3, cudaStreamNonBlocking));
 
     // CHECK: {
-    // CHECK-NEXT:   s2.submit(
+    // CHECK-NEXT:   s2->submit(
     // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
     // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
     // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
@@ -136,7 +138,7 @@ static void func()
     kernelFunc<<<16, 32, 0, s2>>>();
 
     // CHECK: {
-    // CHECK-NEXT:   (*s3).submit(
+    // CHECK-NEXT:   (*s3)->submit(
     // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
     // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
     // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
@@ -147,12 +149,12 @@ static void func()
     // CHECK-NEXT: }
     kernelFunc<<<16, 32, 0, *s3>>>();
 
-    // CHECK: s2 = cl::sycl::queue{};
+    // CHECK: delete s2;
     cudaStreamDestroy(s2);
     // CHECK: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: checkCudaErrors((*s3 = cl::sycl::queue{}, 0));
+    // CHECK-NEXT: checkCudaErrors((delete *s3, 0));
     checkCudaErrors(cudaStreamDestroy(*s3));
   }
 
@@ -161,7 +163,7 @@ static void func()
       // CHECK: /*
       // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported in the SYCL queue.
       // CHECK-NEXT: */
-      // CHECK-NEXT: s4 = cl::sycl::queue{};
+      // CHECK-NEXT: s4 = new cl::sycl::queue{};
       cudaStreamCreateWithPriority(&s4, cudaStreamDefault, 2);
 
       // CHECK: /*
@@ -170,11 +172,11 @@ static void func()
       // CHECK-NEXT: /*
       // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported in the SYCL queue.
       // CHECK-NEXT: */
-      // CHECK-NEXT: checkCudaErrors((s5 = cl::sycl::queue{}, 0));
+      // CHECK-NEXT: checkCudaErrors((s5 = new cl::sycl::queue{}, 0));
       checkCudaErrors(cudaStreamCreateWithPriority(&s5, cudaStreamNonBlocking, 3));
 
       // CHECK: {
-      // CHECK-NEXT:   s4.submit(
+      // CHECK-NEXT:   s4->submit(
       // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
       // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
       // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
@@ -185,7 +187,7 @@ static void func()
       // CHECK-NEXT: }
       kernelFunc<<<16, 32, 0, s4>>>();
       // CHECK: {
-      // CHECK-NEXT:   s5.submit(
+      // CHECK-NEXT:   s5->submit(
       // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
       // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
       // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1)), cl::sycl::range<3>(32, 1, 1)),
@@ -196,12 +198,12 @@ static void func()
       // CHECK-NEXT: }
       kernelFunc<<<16, 32, 0, s5>>>();
 
-      // CHECK: s4 = cl::sycl::queue{};
+      // CHECK: delete s4;
       cudaStreamDestroy(s4);
       // CHECK: /*
       // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
       // CHECK-NEXT: */
-      // CHECK-NEXT: checkCudaErrors((s5 = cl::sycl::queue{}, 0));
+      // CHECK-NEXT: checkCudaErrors((delete s5, 0));
       checkCudaErrors(cudaStreamDestroy(s5));
     }
   }
@@ -238,8 +240,8 @@ static void func()
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: int status = (std::async([&]() { s0.wait(); callback<char *>(s0, 0, str); }), 0);
-  // CHECK-NEXT: std::async([&]() { s1.wait(); callback<char*>(s1, 0, str); });
+  // CHECK-NEXT: int status = (std::async([&]() { s0->wait(); callback<char *>(s0, 0, str); }), 0);
+  // CHECK-NEXT: std::async([&]() { s1->wait(); callback<char*>(s1, 0, str); });
   cudaError_t status = cudaStreamAddCallback(s0, callback<char *>, str, flags);
   cudaStreamAddCallback(s1, callback<char*>, str, flags);
 
@@ -257,16 +259,17 @@ static void func()
   // CHECK-NEXT: */
   cudaStreamAttachMemAsync(s0, nullptr);
 
-  // CHECK: s0.wait();
+  // CHECK: s0->wait();
   cudaStreamSynchronize(s0);
-  // CHECK: checkCudaErrors((s1.wait(), 0));
+  // CHECK: checkCudaErrors((s1->wait(), 0));
   // CHECK-EMPTY:
   checkCudaErrors(cudaStreamSynchronize(s1));
 
+  // CHECK: delete s0;
   cudaStreamDestroy(s0);
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: checkCudaErrors((0, 0));
+  // CHECK-NEXT: checkCudaErrors((delete s1, 0));
   checkCudaErrors(cudaStreamDestroy(s1));
 }
