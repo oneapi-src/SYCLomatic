@@ -92,7 +92,7 @@ static opt<std::string> OutRoot(
     "out-root",
     desc("The directory path for root of generated files. A directory is "
          "created if it\n"
-         "does not exist. Default: current directory."),
+         "does not exist. Default: dpct_output."),
     value_desc("dir"), cat(DPCTCat), llvm::cl::Optional);
 
 static opt<std::string> SDKPath("cuda-path", desc("Directory path of SDK.\n"),

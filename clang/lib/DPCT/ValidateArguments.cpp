@@ -33,7 +33,30 @@ static bool getDefaultOutRoot(std::string &OutRootPar) {
     llvm::errs() << "Could not get current path.\n";
     return false;
   }
-
+  OutRoot.append("/dpct_output");
+  if (fs::is_directory(OutRoot)) {
+    std::error_code EC;
+    fs::directory_iterator Iter(OutRoot, EC);
+    if ((bool)EC) {
+      llvm::errs() << "Could not access output directory.\n";
+      return false;
+    }
+    fs::directory_iterator End;
+    if (Iter != End) {
+      llvm::errs() << "dpct_output folder is not empty. Please use option"
+                      " \"--out-root\" to set output folder.\n";
+      return false;
+    } else {
+      clang::dpct::PrintMsg(
+          "dpct_output folder is used as \"out-root\"\n");
+    }
+  } else {
+    std::error_code EC = fs::create_directory(OutRoot, false);
+    if ((bool)EC) {
+      llvm::errs() << "Could not create dpct_output directory.\n";
+      return false;
+    }
+  }
   OutRootPar.assign(begin(OutRoot), end(OutRoot));
   return true;
 }
@@ -118,7 +141,7 @@ bool validatePaths(const std::string &InRoot,
   return Ok;
 }
 
-int checkSDKPathOrIncludePath(const std::string &Path, std::string& RealPath) {
+int checkSDKPathOrIncludePath(const std::string &Path, std::string &RealPath) {
   if (Path.empty()) {
     return 1;
   }
