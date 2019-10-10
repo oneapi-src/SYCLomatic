@@ -203,8 +203,9 @@ MAP_FLAGS = {
 
 # Clang option --cuda-gpu-arch do not support the argument like "compute_30"
 def gpu_virtual_arch_to_arch(virtual_arch):
-    virtual_archprefix = virtual_arch[0:7]
-    virtual_arch_ver = virtual_arch[8:]
+    pattern_underline = re.compile("_")
+    virtual_arch_split = [x for x in pattern_underline.split(virtual_arch) if x]
+    virtual_arch_ver = virtual_arch_split[1]
     return 'sm_' + virtual_arch_ver
 
 def sub_arg_split(arg, separator):
