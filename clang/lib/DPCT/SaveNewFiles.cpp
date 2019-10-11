@@ -123,7 +123,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   bool AppliedAll = true;
   if (Tool.getReplacements().empty()) {
     // There are no rules applying on the *.cpp files,
-    // cyclct just do nothing with them.
+    // dpct just do nothing with them.
     status = MigrationNoCodeChangeHappen;
   } else {
     // There are matching rules for *.cpp files ,*.cu files, also header files

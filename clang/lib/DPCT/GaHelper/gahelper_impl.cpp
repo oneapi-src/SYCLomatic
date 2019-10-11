@@ -224,13 +224,13 @@ AnalyticsImpl::AnalyticsImpl(const AnalyticsCreateParams& params) :
 {
     m_enabled = false;
     m_flags = params.flags;
-    auto uuid = params.uuidPersistenceProvider->load();
-    m_uuid = uuid ? uuid : "";
-    if (m_uuid.empty())
-    {
-        m_uuid = generate_uuid4();
-        params.uuidPersistenceProvider->store(m_uuid.c_str());
-    }
+    // auto uuid = params.uuidPersistenceProvider->load();
+    // m_uuid = uuid ? uuid : "";
+    // if (m_uuid.empty())
+    // {
+    m_uuid = generate_uuid4();
+    // params.uuidPersistenceProvider->store(m_uuid.c_str());
+    // }
     m_osVersion = getOsName();
     #ifdef _WIN32
     m_osType = STR(Windows);
@@ -412,8 +412,8 @@ void AnalyticsImpl::dumpStat() {
 
 //#ifdef GAHELPER_EXPORTS
 static AnalyticsImpl &getAnalyticsImplInstance() {
-  UuidPersistenceProvider uuidProvider(_U(""));
-  ActiveUserPersistenceProvider activeUserPersistenceProvider(_U(""));
+  // UuidPersistenceProvider uuidProvider(_U(""));
+  // ActiveUserPersistenceProvider activeUserPersistenceProvider(_U(""));
   AnalyticsCreateParams params = {0};
   params.flags = ALLOW_COLLECTION_FROM_INTEL_NETWORK;
 
@@ -423,8 +423,8 @@ static AnalyticsImpl &getAnalyticsImplInstance() {
                            std::string(DPCT_VERSION_PATCH);
   params.appVersion = AppVersion.c_str();
   params.tid = "UA-17808594-22"; // this one is Analyzers GA sandbox
-  params.uuidPersistenceProvider = &uuidProvider;
-  params.activeUserPersistenceProvider = &activeUserPersistenceProvider;
+  // params.uuidPersistenceProvider = &uuidProvider;
+  // params.activeUserPersistenceProvider = &activeUserPersistenceProvider;
   static AnalyticsImpl AImpl(params);
   return AImpl;
 }

@@ -71,7 +71,7 @@ bool createDirectories(const ustring& path)
     }
 #else
  // Creating a directory 
-    if (mkdir(path.c_str(), 0644) == -1) 
+    if (mkdir(path.c_str(), 0744) == -1)
         return false;
     else
         return true;

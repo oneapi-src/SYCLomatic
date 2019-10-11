@@ -453,7 +453,7 @@ public:
   /// 'fully qualified' requirement.
   bool foundMatch(bool AllowFullyQualified) const {
     for (auto& P: Patterns)
-      #if INTEL_CUSTOMIZATION
+      #ifdef INTEL_CUSTOMIZATION
       if (P.IsValid && P.P.empty() && (AllowFullyQualified || !P.IsFullyQualified))
         return true;
       #else

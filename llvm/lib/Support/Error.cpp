@@ -182,3 +182,6 @@ int DisableABIBreakingChecks;
 
 } // end namespace llvm
 #endif
+#ifdef INTEL_CUSTOMIZATION
+char DPCTError::ID = 0;
+#endif

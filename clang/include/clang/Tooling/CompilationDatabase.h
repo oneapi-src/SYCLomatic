@@ -113,8 +113,14 @@ public:
   ///
   /// Looks for a compilation database in directory 'SourceDir' and all
   /// its parent paths by calling loadFromDirectory.
+#ifdef INTEL_CUSTOMIZATION
+  static std::unique_ptr<CompilationDatabase>
+  autoDetectFromDirectory(StringRef SourceDir, std::string &ErrorMessage,
+                          int &ErrCode);
+#else
   static std::unique_ptr<CompilationDatabase>
   autoDetectFromDirectory(StringRef SourceDir, std::string &ErrorMessage);
+#endif
 
   /// Returns all compile commands in which the specified file was
   /// compiled.

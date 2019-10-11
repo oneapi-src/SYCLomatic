@@ -73,7 +73,19 @@ void initWarningIDs();
 const char *const CtHelpMessage =
     "\n"
     "<source0> ... Paths of input source files. These paths are looked up in "
-    "the compilation database.\n";
+    "the compilation database.\n\n"
+    "EXAMPLES:\n\n"
+    "Migrate single source file:\n\n"
+    "  dpct source.cpp\n\n"
+    "Migrate all files available in compilation database:\n\n"
+    "  dpct -p=<path to location of compilation database file>\n\n"
+    "Migrate one file in compilation database:\n\n"
+    "  dpct -p=<path to location of compilation database file>  source.cpp\n\n"
+#if defined(_WIN32)
+    "Migrate all files available in vcxprojfile:\n\n"
+    "  dpct --vcxprojfile=path/to/vcxprojfile.vcxproj\n"
+#endif
+    ;
 
 const char *const CtHelpHint =
     "  Warning: Please specify file(s) to be migrated.\n"
@@ -248,8 +260,8 @@ opt<UsmLevel> USMLevel(
 bool ProcessAllFlag = false;
 static opt<bool, true>
     ProcessAll("process-all",
-                 llvm::cl::desc("Migrates/copies all files from the --in-root folder"
-                                " to the --out-root folder.\n"
+                 llvm::cl::desc("Migrates/copies all files from the --in-root directory"
+                                " to the --out-root directory.\n"
                                 "The default is: off."),
                  cat(DPCTCat), llvm::cl::location(ProcessAllFlag));
 // clang-format on
@@ -484,7 +496,7 @@ unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
 
   const FileEntry *Entry = SM.getFileManager().getFile(Path);
   if (!Entry) {
-    std::string ErrMsg = "FilePath Invalide...\n";
+    std::string ErrMsg = "FilePath Invalid...\n";
     PrintMsg(ErrMsg);
     exit(MigrationErrorInvalidFilePath);
   }
@@ -681,7 +693,7 @@ int run(int argc, const char **argv) {
 
   if (argc < 2) {
     std::cout << CtHelpHint;
-    return MigrationNoCodeChangeHappen;
+    return MigrationErrorShowHelp;
   }
   GAnalytics("");
 #if defined(__linux__) || defined(_WIN32)
@@ -707,6 +719,21 @@ int run(int argc, const char **argv) {
   auto OptParser =
       CommonOptionsParser::create(argc, argv, DPCTCat, llvm::cl::OneOrMore);
   if (!OptParser) {
+    if (OptParser.errorIsA<DPCTError>()) {
+      llvm::Error NewE =
+          handleErrors(OptParser.takeError(), [](const DPCTError &DE) {
+            if (DE.EC == -101) {
+              DebugInfo::ShowStatus(MigrationErrorCannotParseDatabase);
+              exit(MigrationErrorCannotParseDatabase);
+            } else if (DE.EC == -102) {
+              DebugInfo::ShowStatus(MigrationErrorCannotFindDatabase);
+              exit(MigrationErrorCannotFindDatabase);
+            } else {
+              DebugInfo::ShowStatus(MigrationError);
+              exit(MigrationError);
+            }
+          });
+    }
     dpct::DebugInfo::ShowStatus(MigrationOptionParsingError);
     exit(MigrationOptionParsingError);
   }
@@ -728,6 +755,10 @@ int run(int argc, const char **argv) {
     exit(MigrationErrorPathTooLong);
   }
   clock_t StartTime = clock();
+  if (InRoot.empty() && ProcessAllFlag) {
+    DebugInfo::ShowStatus(MigrationErrorNoExplicitInRoot);
+    exit(MigrationErrorNoExplicitInRoot);
+  }
   if (!makeCanonicalOrSetDefaults(InRoot, OutRoot,
                                   OptParser->getSourcePathList())) {
     DebugInfo::ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
@@ -822,9 +853,16 @@ int run(int argc, const char **argv) {
 
   DPCTActionFactory Factory(Tool.getReplacements());
   if (int RunResult = Tool.run(&Factory) && !NoStopOnErrFlag) {
-    DebugInfo::ShowStatus(RunResult);
     DumpOutputFile();
-    return RunResult;
+    if (RunResult == 1) {
+      DebugInfo::ShowStatus(MigrationErrorFileParseError);
+      return MigrationErrorFileParseError;
+    } else {
+      // When RunResult equals to 2, it means no error but some files are
+      // skipped due to missing compile commands.
+      // And clang::tooling::ReFactoryTool will emit error message.
+      return MigrationSKIPForMissingCompileCommand;
+    }
   }
 
   auto &Global = DpctGlobalInfo::getInstance();

@@ -12,7 +12,9 @@
 #ifndef DPCT_SAVE_NEW_FILES_H
 #define DPCT_SAVE_NEW_FILES_H
 
+#include "llvm/Support/Error.h"
 #include <map>
+
 
 namespace llvm {
 class StringRef;
@@ -45,6 +47,12 @@ enum ProcessStatus {
   MigrationErrorPathTooLong = -14,
   MigrationErrorInvalidWarningID = -15,
   MigrationOptionParsingError = -16,
+  MigrationErrorFileParseError = -17,
+  MigrationErrorShowHelp = -18,
+  MigrationErrorCannotFindDatabase = -19,
+  MigrationErrorCannotParseDatabase = -20,
+  MigrationErrorNoExplicitInRoot = -21,
+  MigrationSKIPForMissingCompileCommand = -22,
 };
 
 /// OutputVerbosityLev defines various verbosity levels for dpct reports

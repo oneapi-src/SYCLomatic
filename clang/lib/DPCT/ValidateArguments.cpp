@@ -43,12 +43,12 @@ static bool getDefaultOutRoot(std::string &OutRootPar) {
     }
     fs::directory_iterator End;
     if (Iter != End) {
-      llvm::errs() << "dpct_output folder is not empty. Please use option"
-                      " \"--out-root\" to set output folder.\n";
+      llvm::errs() << "dpct_output directory is not empty. Please use option"
+                      " \"--out-root\" to set output directory.\n";
       return false;
     } else {
       clang::dpct::PrintMsg(
-          "dpct_output folder is used as \"out-root\"\n");
+          "The directory \"dpct_output\" is used as \"out-root\"\n");
     }
   } else {
     std::error_code EC = fs::create_directory(OutRoot, false);
@@ -56,6 +56,8 @@ static bool getDefaultOutRoot(std::string &OutRootPar) {
       llvm::errs() << "Could not create dpct_output directory.\n";
       return false;
     }
+    clang::dpct::PrintMsg(
+        "The directory \"dpct_output\" is used as \"out-root\"\n");
   }
   OutRootPar.assign(begin(OutRoot), end(OutRoot));
   return true;
@@ -155,7 +157,7 @@ int checkSDKPathOrIncludePath(const std::string &Path, std::string &RealPath) {
 
 #if defined(_WIN32)
   RealPath = AbsPath.str().lower();
-  if (RealPath.substr(0, 3) == "unc") {
+  if (RealPath.size() >= 3 && RealPath.substr(0, 3) == "unc") {
     RealPath = "\\" + RealPath.substr(3);
   }
 #elif defined(__linux__)

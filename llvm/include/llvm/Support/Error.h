@@ -1285,4 +1285,20 @@ inline Error unwrap(LLVMErrorRef ErrRef) {
 
 } // end namespace llvm
 
+#define INTEL_CUSTOMIZATION
+#ifdef INTEL_CUSTOMIZATION
+class DPCTError : public llvm::ErrorInfo<DPCTError> {
+public:
+  std::error_code convertToErrorCode() const override {
+    return std::error_code();
+  }
+  void log(llvm::raw_ostream &OS) const override { return; }
+  // Used by ErrorInfo::classID.
+  static char ID;
+  DPCTError() = default;
+  DPCTError(int EC) : EC(EC) {}
+
+  int EC = 0; // MigrationSucceeded
+};
+#endif
 #endif // LLVM_SUPPORT_ERROR_H

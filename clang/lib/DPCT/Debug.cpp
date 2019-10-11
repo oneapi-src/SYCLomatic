@@ -410,9 +410,22 @@ void DebugInfo::ShowStatus(int Status) {
     StatusString = "Error: path is too long, should be less than PATH_MAX (" +
                    std::to_string(PATH_MAX) + ")";
 #endif
+  case MigrationErrorFileParseError:
+    StatusString = "Error: Cannot parse input file(s)";
+    break;
+  case MigrationErrorCannotFindDatabase:
+    StatusString = "Error: Cannot find compilation database";
+    break;
+  case MigrationErrorCannotParseDatabase:
+    StatusString = "Error: Cannot parse compilation database";
+    break;
+  case MigrationErrorNoExplicitInRoot:
+    StatusString = "Error: --process-all option requires --in-root to be "
+                   "specified explicitly. Specify --in-root.";
     break;
   default:
-    dpct_unreachable("no valid stats");
+    DpctLog() << "Unknown error\n";
+    exit(-1);
   }
 
   if (Status != 0) {

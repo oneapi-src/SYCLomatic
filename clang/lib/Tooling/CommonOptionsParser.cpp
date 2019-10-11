@@ -111,12 +111,12 @@ llvm::Error CommonOptionsParser::init(
       "p",
       cl::desc("The directory path for the compilation database (compile_commands.json). When no\n"
                "path is specified, a search for compile_commands.json is attempted through all\n"
-               "parent paths of the first input file."),
+               "parent paths of the first input source file."),
       cl::Optional, cl::cat(Category), cl::value_desc("dir"),
       cl::sub(*cl::AllSubCommands));
 
   static cl::list<std::string> SourcePaths(
-      cl::Positional, cl::desc("<source0> [... <sourceN>]"), llvm::cl::ZeroOrMore,
+      cl::Positional, cl::desc("[<source0> ... <sourceN>]"), llvm::cl::ZeroOrMore,
       cl::cat(Category), cl::sub(*cl::AllSubCommands));
 #ifdef _WIN32
  static cl::opt<std::string>
@@ -182,6 +182,7 @@ llvm::Error CommonOptionsParser::init(
 
   SourcePathList = SourcePaths;
 #ifdef INTEL_CUSTOMIZATION
+  int ErrCode;
 #if _WIN32
   // In Windows, the option "-p" and "-vcxproj" are mutually exclusive, user can
   // only give one of them. If both of them exist, dpct will exit with
@@ -201,8 +202,8 @@ llvm::Error CommonOptionsParser::init(
     StringRef Directory = llvm::sys::path::parent_path(AbsolutePath);
     std::string BuildDir = Directory.str();
     DoParserHandle(BuildDir, VcxprojFile);
-    Compilations =
-        CompilationDatabase::autoDetectFromDirectory(BuildDir, ErrorMessage);
+    Compilations = CompilationDatabase::autoDetectFromDirectory(
+        BuildDir, ErrorMessage, ErrCode);
   }
 #endif
 #endif
@@ -211,8 +212,8 @@ llvm::Error CommonOptionsParser::init(
     return llvm::Error::success();
   if (!Compilations) {
     if (!BuildPath.empty()) {
-      Compilations =
-          CompilationDatabase::autoDetectFromDirectory(BuildPath, ErrorMessage);
+      Compilations = CompilationDatabase::autoDetectFromDirectory(
+          BuildPath, ErrorMessage, ErrCode);
     }
 #ifdef INTEL_CUSTOMIZATION
     // if neither option "-p" or target source file names exist in the
@@ -228,7 +229,20 @@ llvm::Error CommonOptionsParser::init(
     }
     if (!Compilations) {
 #ifdef INTEL_CUSTOMIZATION
-      if (SourcePaths.size() == 1 && BuildPath.getValue().empty()) {
+      if (SourcePaths.size() == 0 && !BuildPath.getValue().empty()){
+        std::string buf;
+        llvm::raw_string_ostream OS(buf);
+        OS << "Error while trying to load a compilation database:\n"
+           << ErrorMessage;
+        DoPrintHandler(OS.str(), true);
+        if (ErrCode == -101 /*map to MigrationErrorCannotParseDatabase*/) {
+          return llvm::make_error<DPCTError>(
+              -101 /*map to MigrationErrorCannotParseDatabase*/);
+        } else {
+          return llvm::make_error<DPCTError>(
+              -102 /*map to MigrationErrorCannotFindDatabase*/);
+        }
+      } else if (SourcePaths.size() == 1 && BuildPath.getValue().empty()) {
         using namespace llvm::sys;
         SmallString<256> Name = StringRef(SourcePaths[0]);
         StringRef File, Path;
@@ -245,14 +259,13 @@ llvm::Error CommonOptionsParser::init(
         llvm::raw_string_ostream OS(buf);
         OS << "NOTE: Could not auto-detect compilation database for"
            << " file '" << File << "' in '" << Path
-           << "' or any parent directory.\n"
-           << "Running without flags.\n";
+           << "' or any parent directory.\n";
         DoPrintHandler(OS.str(), true);
       } else {
         std::string buf;
         llvm::raw_string_ostream OS(buf);
         OS << "Error while trying to load a compilation database:\n"
-           << ErrorMessage << "Running without flags.\n";
+           << ErrorMessage;
         DoPrintHandler(OS.str(), true);
       }
 #else

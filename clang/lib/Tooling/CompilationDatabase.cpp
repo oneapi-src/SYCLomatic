@@ -73,29 +73,56 @@ CompilationDatabase::loadFromDirectory(StringRef BuildDirectory,
     if (std::unique_ptr<CompilationDatabase> DB =
             Plugin->loadFromDirectory(BuildDirectory, DatabaseErrorMessage))
       return DB;
+#ifdef INTEL_CUSTOMIZATION
+    if (It->getName() == "json-compilation-database") {
+      ErrorStream << DatabaseErrorMessage << "\n";
+    }
+#else
     ErrorStream << It->getName() << ": " << DatabaseErrorMessage << "\n";
+#endif
   }
   return nullptr;
 }
 
+#ifdef INTEL_CUSTOMIZATION
+static std::unique_ptr<CompilationDatabase>
+findCompilationDatabaseFromDirectory(StringRef Directory,
+                                     std::string &ErrorMessage, int &ErrCode) {
+#else
 static std::unique_ptr<CompilationDatabase>
 findCompilationDatabaseFromDirectory(StringRef Directory,
                                      std::string &ErrorMessage) {
+#endif
   std::stringstream ErrorStream;
   bool HasErrorMessage = false;
   while (!Directory.empty()) {
     std::string LoadErrorMessage;
 
+#ifdef INTEL_CUSTOMIZATION
+    std::unique_ptr<CompilationDatabase> DB =
+        CompilationDatabase::loadFromDirectory(Directory, LoadErrorMessage);
+    if (llvm::sys::fs::exists(Directory + "/compile_commands.json") && !DB) {
+      ErrCode = -101; // map to MigrationErrorCannotParseDatabase
+      ErrorMessage = LoadErrorMessage;
+      return nullptr;
+    }
+    if (DB) return DB;
+    if (!HasErrorMessage) {
+      ErrorStream << "No compilation database found in " << Directory.str()
+                  << " or any parent directory\n";
+      HasErrorMessage = true;
+    }
+#else
     if (std::unique_ptr<CompilationDatabase> DB =
             CompilationDatabase::loadFromDirectory(Directory, LoadErrorMessage))
       return DB;
-
     if (!HasErrorMessage) {
       ErrorStream << "No compilation database found in " << Directory.str()
-                  << " or any parent directory\n" << LoadErrorMessage;
+                  << " or any parent directory\n"
+                  << LoadErrorMessage;
       HasErrorMessage = true;
     }
-
+#endif
     Directory = llvm::sys::path::parent_path(Directory);
   }
   ErrorMessage = ErrorStream.str();
@@ -108,28 +135,59 @@ CompilationDatabase::autoDetectFromSource(StringRef SourceFile,
   SmallString<1024> AbsolutePath(getAbsolutePath(SourceFile));
   StringRef Directory = llvm::sys::path::parent_path(AbsolutePath);
 
+#ifdef INTEL_CUSTOMIZATION
+  int ErrCode;
+  std::unique_ptr<CompilationDatabase> DB =
+      findCompilationDatabaseFromDirectory(Directory, ErrorMessage, ErrCode);
+#else
   std::unique_ptr<CompilationDatabase> DB =
       findCompilationDatabaseFromDirectory(Directory, ErrorMessage);
-
+#endif
   if (!DB)
     ErrorMessage = ("Could not auto-detect compilation database for file \"" +
                    SourceFile + "\"\n" + ErrorMessage).str();
   return DB;
 }
 
+#ifdef INTEL_CUSTOMIZATION
+std::unique_ptr<CompilationDatabase>
+CompilationDatabase::autoDetectFromDirectory(StringRef SourceDir,
+                                             std::string &ErrorMessage,
+                                             int &ErrCode) {
+  SmallString<1024> AbsolutePath(getAbsolutePath(SourceDir));
+  std::unique_ptr<CompilationDatabase> DB =
+      findCompilationDatabaseFromDirectory(AbsolutePath, ErrorMessage, ErrCode);
+
+  if (!DB) {
+    if (ErrCode == -101 /*map to MigrationErrorCannotParseDatabase*/) {
+      ErrorMessage =
+          "Compilation database compile_commands.json from directory \"" +
+          SourceDir.str() + "\" or its parent directories cannot be parsed.\n" +
+          ErrorMessage;
+    } else {
+      ErrorMessage =
+          ("Could not auto-detect compilation database from directory \"" +
+           SourceDir + "\"\n" + ErrorMessage)
+              .str();
+    }
+  }
+  return DB;
+}
+#else
 std::unique_ptr<CompilationDatabase>
 CompilationDatabase::autoDetectFromDirectory(StringRef SourceDir,
                                              std::string &ErrorMessage) {
   SmallString<1024> AbsolutePath(getAbsolutePath(SourceDir));
-
   std::unique_ptr<CompilationDatabase> DB =
       findCompilationDatabaseFromDirectory(AbsolutePath, ErrorMessage);
-
   if (!DB)
-    ErrorMessage = ("Could not auto-detect compilation database from directory \"" +
-                   SourceDir + "\"\n" + ErrorMessage).str();
+    ErrorMessage =
+        ("Could not auto-detect compilation database from directory \"" +
+         SourceDir + "\"\n" + ErrorMessage)
+            .str();
   return DB;
 }
+#endif
 
 std::vector<CompileCommand> CompilationDatabase::getAllCompileCommands() const {
   std::vector<CompileCommand> Result;
