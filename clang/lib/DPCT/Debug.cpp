@@ -161,7 +161,7 @@ static void printMatchedRulesDebugImpl(
     if (auto TR = dyn_cast<MigrationRule>(&*MR)) {
 #define RULE(TYPE)                                                             \
   if (TR->getName() == #TYPE) {                                                \
-    DEBUG_WITH_TYPE(#TYPE, TR->print(DpctDiags()));                          \
+    DEBUG_WITH_TYPE(#TYPE, TR->print(DpctDiags()));                            \
     continue;                                                                  \
   }
 #include "MigrationRules.inc"
@@ -173,7 +173,7 @@ static void printMatchedRulesDebugImpl(
     if (auto TR = dyn_cast<MigrationRule>(&*MR)) {
 #define RULE(TYPE)                                                             \
   if (TR->getName() == #TYPE) {                                                \
-    DEBUG_WITH_TYPE(#TYPE, TR->printStatistics(DpctDiags()));                \
+    DEBUG_WITH_TYPE(#TYPE, TR->printStatistics(DpctDiags()));                  \
     continue;                                                                  \
   }
 #include "MigrationRules.inc"
@@ -202,7 +202,7 @@ static void printReplacementsDebugImpl(ReplacementFilter &ReplFilter,
 #define TRANSFORMATION(TYPE)                                                   \
   TM = Repl.getParentTM();                                                     \
   if (TM && TMID::TYPE == TM->getID()) {                                       \
-    DEBUG_WITH_TYPE(#TYPE, TM->print(DpctDiags(), Context));                 \
+    DEBUG_WITH_TYPE(#TYPE, TM->print(DpctDiags(), Context));                   \
     continue;                                                                  \
   }
 #include "Transformations.inc"
@@ -243,10 +243,9 @@ static void printReplacementsDebugImpl(ReplacementFilter &ReplFilter,
     const size_t &Numbers = Pair.second;
 #define TRANSFORMATION(TYPE)                                                   \
   if (Name == #TYPE) {                                                         \
-    DEBUG_WITH_TYPE(#TYPE, DpctDiags() << "# of replacement <" << #TYPE      \
-                                         << ">: " << Numbers << " ("           \
-                                         << Numbers << "/" << NumRepls         \
-                                         << ")\n");                            \
+    DEBUG_WITH_TYPE(#TYPE, DpctDiags() << "# of replacement <" << #TYPE        \
+                                       << ">: " << Numbers << " (" << Numbers  \
+                                       << "/" << NumRepls << ")\n");           \
     continue;                                                                  \
   }
 #include "Transformations.inc"
@@ -312,7 +311,7 @@ static void printReplacementsReleaseImpl(ReplacementFilter &ReplFilter,
     const std::string &Name = Pair.first;
     const size_t &Numbers = Pair.second;
     DpctDiags() << "# of replacement <" << Name << ">: " << Numbers << " ("
-                  << Numbers << "/" << NumRepls << ")\n";
+                << Numbers << "/" << NumRepls << ")\n";
   }
 }
 // End of release Build
@@ -340,11 +339,9 @@ void DebugInfo::printReplacements(ReplacementFilter &ReplFilter,
 // allocation is handled by SmallVector internally.
 static llvm::SmallVector<char, /* default buffer size */ 4096> DpctLogBuffer;
 static llvm::raw_svector_ostream DpctLogStream(DpctLogBuffer);
-static llvm::SmallVector<char, /* default buffer size */ 4096>
-    DpctStatsBuffer;
+static llvm::SmallVector<char, /* default buffer size */ 4096> DpctStatsBuffer;
 static llvm::raw_svector_ostream DpctStatsStream(DpctStatsBuffer);
-static llvm::SmallVector<char, /* default buffer size */ 4096>
-    DpctDiagsBuffer;
+static llvm::SmallVector<char, /* default buffer size */ 4096> DpctDiagsBuffer;
 static llvm::raw_svector_ostream DpctDiagsStream(DpctDiagsBuffer);
 
 static llvm::SmallVector<char, /* default buffer size */ 4096> DpctTermBuffer;
@@ -395,13 +392,32 @@ void DebugInfo::ShowStatus(int Status) {
   case MigrationErrorInvalidReportArgs:
     StatusString = "Error: Bad value provided for report option(s)";
     break;
+  case MigrationErrorInvalidWarningID:
+    StatusString = "Error: Invalid warning ID or range; "
+                   "valid warning IDs range from " +
+                   std::to_string((size_t)Warnings::BEGIN) + " to " +
+                   std::to_string((size_t)Warnings::END - 1);
+    break;
+  case MigrationOptionParsingError:
+    StatusString = "Option parsing error,"
+                   " run 'dpct --help' to see supported values";
+    break;
+  case MigrationErrorPathTooLong:
+#if defined(_WIN32)
+    StatusString = "Error: path is too long, should be less than _MAX_PATH (" +
+                   std::to_string(_MAX_PATH) + ")";
+#else
+    StatusString = "Error: path is too long, should be less than PATH_MAX (" +
+                   std::to_string(PATH_MAX) + ")";
+#endif
+    break;
   default:
     dpct_unreachable("no valid stats");
   }
 
   if (Status != 0) {
     DpctLog() << "dpct exited with code: " << Status << " (" << StatusString
-                << ")\n";
+              << ")\n";
   }
 
   llvm::dbgs() << DpctLogStream.str() << "\n";

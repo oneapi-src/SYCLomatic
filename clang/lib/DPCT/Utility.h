@@ -241,7 +241,9 @@ const clang::CompoundStmt *findImmediateBlock(const clang::ValueDecl *D);
 bool isInSameScope(const clang::Stmt *S, const clang::ValueDecl *D);
 const clang::DeclRefExpr *getInnerValueDecl(const clang::Expr *Arg);
 bool startsWith(const std::string &Str, const std::string &Prefix);
+bool startsWith(const std::string &Str, char C);
 bool endsWith(const std::string &Str, const std::string &Suffix);
+bool endsWith(const std::string &Str, char C);
 const clang::Stmt *getParentStmt(const clang::Stmt *S);
 bool IsSingleLineStatement(const clang::Stmt *S);
 clang::SourceRange getScopeInsertRange(const clang::MemberExpr *ME);
@@ -251,4 +253,5 @@ getScopeInsertRange(const clang::Expr *CE,
                     const clang::SourceLocation &FuncCallEnd);
 const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const clang::Expr *E);
 std::string getCanonicalPath(clang::SourceLocation Loc);
+bool containOnlyDigits(const std::string &str);
 #endif // DPCT_UTILITY_H

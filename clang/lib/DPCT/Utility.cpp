@@ -350,10 +350,18 @@ bool startsWith(const std::string &Str, const std::string &Prefix) {
          std::equal(Prefix.begin(), Prefix.end(), Str.begin());
 }
 
+bool startsWith(const std::string &Str, char C) {
+  return Str.size() && Str[0] == C;
+}
+
 // Check if a string ends with the suffix
 bool endsWith(const std::string &Str, const std::string &Suffix) {
   return Suffix.size() <= Str.size() &&
          std::equal(Suffix.rbegin(), Suffix.rend(), Str.rbegin());
+}
+
+bool endsWith(const std::string &Str, char C) {
+  return Str.size() && Str[Str.size()-1] == C;
 }
 
 const clang::Stmt *getParentStmt(const clang::Stmt *S) {
@@ -448,4 +456,8 @@ std::string getCanonicalPath(SourceLocation Loc) {
   std::string Path = SM.getFilename(SM.getExpansionLoc(Loc));
   makeCanonical(Path);
   return Path;
+}
+
+bool containOnlyDigits(const std::string &str) {
+  return std::all_of(str.begin(), str.end(), ::isdigit);
 }

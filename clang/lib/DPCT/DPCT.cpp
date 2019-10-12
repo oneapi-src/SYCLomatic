@@ -9,7 +9,6 @@
 //
 //===-----------------------------------------------------------------===//
 
-
 #include "clang/DPCT/DPCT.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
@@ -61,7 +60,13 @@ using namespace llvm::cl;
 namespace clang {
 namespace dpct {
 extern llvm::cl::OptionCategory DPCTCat;
-}
+void initWarningIDs();
+#if defined(_WIN32)
+#define MAX_PATH_LEN _MAX_PATH
+#else
+#define MAX_PATH_LEN PATH_MAX
+#endif
+} // namespace dpct
 } // namespace clang
 
 // clang-format off
@@ -542,7 +547,7 @@ static void saveApisReport(void) {
     llvm::raw_string_ostream Title(Str);
     Title << (ReportFormat.getValue() == ReportFormatEnum::csv
                   ? " API name, Frequency "
-                                    : "API name\t\t\t\tFrequency");
+                  : "API name\t\t\t\tFrequency");
 
     File << Title.str() << std::endl;
     for (const auto &Elem : SrcAPIStaticsMap) {
@@ -699,15 +704,37 @@ int run(int argc, const char **argv) {
 #endif
   llvm::cl::SetVersionPrinter(
       [](llvm::raw_ostream &OS) { OS << printCTVersion() << "\n"; });
-  CommonOptionsParser OptParser(argc, argv, DPCTCat);
+  auto OptParser =
+      CommonOptionsParser::create(argc, argv, DPCTCat, llvm::cl::OneOrMore);
+  if (!OptParser) {
+    dpct::DebugInfo::ShowStatus(MigrationOptionParsingError);
+    exit(MigrationOptionParsingError);
+  }
+  initWarningIDs();
+  if (InRoot.size() >= MAX_PATH_LEN - 1) {
+    DpctLog() << "Error: --in-root '" << InRoot << "' is too long\n";
+    DebugInfo::ShowStatus(MigrationErrorPathTooLong);
+    exit(MigrationErrorPathTooLong);
+  }
+  if (OutRoot.size() >= MAX_PATH_LEN - 1) {
+    DpctLog() << "Error: --out-root '" << OutRoot << "' is too long\n";
+    DebugInfo::ShowStatus(MigrationErrorPathTooLong);
+    exit(MigrationErrorPathTooLong);
+  }
+  if (SDKIncludePath.size() >= MAX_PATH_LEN - 1) {
+    DpctLog() << "Error: --cuda-include-path '" << SDKIncludePath
+              << "' is too long\n";
+    DebugInfo::ShowStatus(MigrationErrorPathTooLong);
+    exit(MigrationErrorPathTooLong);
+  }
   clock_t StartTime = clock();
   if (!makeCanonicalOrSetDefaults(InRoot, OutRoot,
-                                  OptParser.getSourcePathList())) {
+                                  OptParser->getSourcePathList())) {
     DebugInfo::ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
     exit(MigrationErrorInvalidInRootOrOutRoot);
   }
 
-  if (!validatePaths(InRoot, OptParser.getSourcePathList())) {
+  if (!validatePaths(InRoot, OptParser->getSourcePathList())) {
     DebugInfo::ShowStatus(MigrationErrorInvalidInRootPath);
     exit(MigrationErrorInvalidInRootPath);
   }
@@ -731,8 +758,8 @@ int run(int argc, const char **argv) {
 
   bool GenReport = false;
   if (checkReportArgs(ReportType.getValue(), ReportFormat.getValue(),
-                      ReportFilePrefix,
-                      ReportOnlyFlag, GenReport, DiagsContent) == false) {
+                      ReportFilePrefix, ReportOnlyFlag, GenReport,
+                      DiagsContent) == false) {
     DebugInfo::ShowStatus(MigrationErrorInvalidReportArgs);
     exit(MigrationErrorInvalidReportArgs);
   }
@@ -748,7 +775,7 @@ int run(int argc, const char **argv) {
                       ? "apis"
                       : (ReportType.getValue() == ReportTypeEnum::stats
                              ? "stats"
-                                                            : "diags")))
+                             : "diags")))
        << ", report-format:"
        << (ReportFormat.getValue() == ReportFormatEnum::csv ? "csv"
                                                             : "formatted")
@@ -757,13 +784,13 @@ int run(int argc, const char **argv) {
     PrintMsg(OS.str());
   }
 
-// TODO: implement one of this for each source language.
+  // TODO: implement one of this for each source language.
   CudaPath = getCudaInstallPath(OriginalArgc, argv);
   DPCT_DEBUG_WITH_TYPE("CudaPath",
                        DpctLog() << "Cuda Path found: " << CudaPath << "\n");
 
-  RefactoringTool Tool(OptParser.getCompilations(),
-                       OptParser.getSourcePathList());
+  RefactoringTool Tool(OptParser->getCompilations(),
+                       OptParser->getSourcePathList());
   DpctInstallPath = getInstallPath(Tool, argv[0]);
 
   ValidateInputDirectory(Tool, InRoot);

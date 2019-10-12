@@ -41,6 +41,9 @@ enum ProcessStatus {
   VcxprojPaserFileNotExist = -11,
   VcxprojPaserCreateCompilationDBFail = -12, /*eg. hav no write permission*/
   MigrationErrorInvalidInstallPath = -13,
+  MigrationErrorPathTooLong = -14,
+  MigrationErrorInvalidWarningID = -15,
+  MigrationOptionParsingError = -16,
 };
 
 enum OutputVerbosityLev { silent, normal, detailed, diagnostics };
