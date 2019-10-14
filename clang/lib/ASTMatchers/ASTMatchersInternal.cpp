@@ -404,23 +404,48 @@ class PatternSet {
 public:
   PatternSet(ArrayRef<std::string> Names) {
     for (StringRef Name : Names)
+      #ifdef INTEL_CUSTOMIZATION
+      Patterns.push_back({Name, Name.startswith("::"), true});
+      #else
       Patterns.push_back({Name, Name.startswith("::")});
+      #endif
   }
 
   /// Consumes the name suffix from each pattern in the set and removes the ones
   /// that didn't match.
   /// Return true if there are still any patterns left.
   bool consumeNameSuffix(StringRef NodeName, bool CanSkip) {
+    #ifdef INTEL_CUSTOMIZATION
+    bool IsEmpty=true;
+    #endif
     for (size_t I = 0; I < Patterns.size();) {
+      #ifdef INTEL_CUSTOMIZATION
+      if (!Patterns[I].IsValid) {
+        I++;
+        continue;
+      }
+      #endif
       if (::clang::ast_matchers::internal::consumeNameSuffix(Patterns[I].P,
                                                              NodeName) ||
           CanSkip) {
         ++I;
+        #ifdef INTEL_CUSTOMIZATION
+        IsEmpty = false;
+        #endif
       } else {
+        #ifdef INTEL_CUSTOMIZATION
+        Patterns[I].IsValid = false;
+        I++;
+        #else
         Patterns.erase(Patterns.begin() + I);
+        #endif
       }
     }
+    #ifdef INTEL_CUSTOMIZATION
+    return !IsEmpty;
+    #else
     return !Patterns.empty();
+    #endif
   }
 
   /// Check if any of the patterns are a match.
@@ -428,8 +453,13 @@ public:
   /// 'fully qualified' requirement.
   bool foundMatch(bool AllowFullyQualified) const {
     for (auto& P: Patterns)
+      #if INTEL_CUSTOMIZATION
+      if (P.IsValid && P.P.empty() && (AllowFullyQualified || !P.IsFullyQualified))
+        return true;
+      #else
       if (P.P.empty() && (AllowFullyQualified || !P.IsFullyQualified))
         return true;
+      #endif
     return false;
   }
 
@@ -437,9 +467,16 @@ private:
   struct Pattern {
     StringRef P;
     bool IsFullyQualified;
+    #ifdef INTEL_CUSTOMIZATION
+    bool IsValid;
+    #endif
   };
 
+  #ifdef INTEL_CUSTOMIZATION
+  llvm::SmallVector<Pattern, 1024> Patterns;
+  #else
   llvm::SmallVector<Pattern, 8> Patterns;
+  #endif
 };
 
 } // namespace
