@@ -61,13 +61,15 @@ static bool getDefaultOutRoot(std::string &OutRootPar) {
   return true;
 }
 
-// Set InRoot to the directory of the only input source file.
+// If input source files exist in the commandline,
+// set InRoot to the directory of the first input source file.
+// If input source file does not exist,
+// set InRoot to ".".
 static bool getDefaultInRoot(std::string &InRootPar,
                              const vector<string> &SourceFiles) {
-  if (SourceFiles.size() != 1) {
-    llvm::errs() << "-in-root was not specified; only one input file allowed "
-                    "in this mode.\n";
-    return false;
+  if (SourceFiles.size() == 0) {
+    InRootPar = ".";
+    return true;
   }
 
   SmallString<256> InRoot = StringRef(SourceFiles.front());

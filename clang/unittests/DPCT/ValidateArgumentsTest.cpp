@@ -41,16 +41,16 @@ TEST_F(MakeCanonicalOrSetDefaults, getDefaultOutRoot) {
   ASSERT_EQ(OutRoot, TestRunPath);
 }
 
-TEST(getDefaultInRoot, onlyOneInputAllowed) {
-  string InRoot = "";
-  ASSERT_EQ(false, getDefaultInRoot(
-                       InRoot, {"/a/b/in/file.cpp", "/a/b/in/c/file.cpp"}));
-}
-
 TEST(getDefaultInRoot, noInroot) {
   string inroot = "";
   ASSERT_EQ(true, getDefaultInRoot(inroot, {"/a/b/in/file.cpp"}));
   ASSERT_EQ(inroot, "/a/b/in");
+
+  ASSERT_EQ(true, getDefaultInRoot(inroot, {"/a/b/in/file.cpp", "/a/b/in/c/file.cpp"}));
+  ASSERT_EQ(inroot, "/a/b/in");
+
+  ASSERT_EQ(true, getDefaultInRoot(inroot, {}));
+  ASSERT_EQ(inroot, ".");
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, empty) {
