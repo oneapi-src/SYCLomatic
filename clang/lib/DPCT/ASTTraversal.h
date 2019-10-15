@@ -796,6 +796,12 @@ private:
   void getSymbolAddressMigration(
       const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
       const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false);
+  void getSymbolSizeMigration(
+    const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
+    const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false);
+  void prefetchMigration(
+    const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
+    const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false);
   void miscMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                        const CallExpr *C,
                        const UnresolvedLookupExpr *ULExpr = NULL,

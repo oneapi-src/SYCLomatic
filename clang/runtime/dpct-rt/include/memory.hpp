@@ -658,6 +658,8 @@ public:
   /// Get the virtual pointer in host code.
   void *get_ptr() { return memory_ptr; }
 
+  size_t get_size() { return size; }
+
 #ifdef DPCT_USM_LEVEL_NONE
   template <size_t D = Dimension>
   typename std::enable_if<D == 0, accessor_t>::type

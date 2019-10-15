@@ -4280,6 +4280,18 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(MemVarRule)
 
+bool isSimpleAddrOf(const Expr *E, std::string& SubExprStr) {
+  if (auto UO = dyn_cast<UnaryOperator>(E)) {
+    if (UO->getOpcode() == UO_AddrOf) {
+      ExprAnalysis SEA;
+      SEA.analyze(UO->getSubExpr());
+      SubExprStr = SEA.getReplacedString();
+      return true;
+    }
+  }
+  return false;
+}
+
 void MemoryMigrationRule::mallocMigration(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
@@ -4819,6 +4831,47 @@ void MemoryMigrationRule::memsetMigration(
   }
 }
 
+void MemoryMigrationRule::getSymbolSizeMigration(
+  const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
+  const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
+  // Here only handle ordinary variable name reference, for accessing the
+  // size of something residing on the device directly from host side should
+  // not be possible.
+  std::string Replacement;
+  ExprAnalysis EA;
+  EA.analyze(C->getArg(0));
+  auto StmtStrArg0 = EA.getReplacedString();
+  EA.analyze(C->getArg(1));
+  auto StmtStrArg1 = EA.getReplacedString();
+  if (isSimpleAddrOf(C->getArg(0), StmtStrArg0)) {
+    Replacement = StmtStrArg0 + " = " + StmtStrArg1 + ".get_size()";
+  }
+  else {
+    Replacement = "*(" + StmtStrArg0 + ")" + " = " + StmtStrArg1 + ".get_size()";
+  }
+  emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
+}
+
+void MemoryMigrationRule::prefetchMigration(
+  const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
+  const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
+  std::string Replacement;
+  ExprAnalysis EA;
+  EA.analyze(C->getArg(0));
+  auto StmtStrArg0 = EA.getReplacedString();
+  EA.analyze(C->getArg(1));
+  auto StmtStrArg1 = EA.getReplacedString();
+  EA.analyze(C->getArg(2));
+  auto StmtStrArg2 = EA.getReplacedString();
+  EA.analyze(C->getArg(3));
+  auto StmtStrArg3 = EA.getReplacedString();
+  Replacement = StmtStrArg3 + "?(" + StmtStrArg3 + ")->prefetch(" + StmtStrArg0 +
+    "," + StmtStrArg1 + "):dpct::get_device_manager().get_device(" +
+    StmtStrArg2 + ").default_queue().prefetch(" + StmtStrArg0 +
+    "," + StmtStrArg1 + ")";
+  emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
+}
+
 void MemoryMigrationRule::miscMigration(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
@@ -4860,7 +4913,7 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
                       "cublasAlloc", "cudaGetSymbolAddress", "cudaFreeHost",
                       "cudaHostAlloc", "cudaHostGetDevicePointer",
                       "cudaHostRegister", "cudaHostUnregister",
-                      "cudaMallocHost", "cudaMallocManaged");
+                      "cudaMallocHost", "cudaMallocManaged", "cudaGetSymbolSize", "cudaMemPrefetchAsync");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -4939,6 +4992,7 @@ void MemoryMigrationRule::getSymbolAddressMigration(
   emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
 }
 
+
 MemoryMigrationRule::MemoryMigrationRule() {
   SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   std::map<
@@ -4967,9 +5021,11 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaMemsetAsync", &MemoryMigrationRule::memsetMigration},
           {"cudaGetSymbolAddress",
            &MemoryMigrationRule::getSymbolAddressMigration},
+          {"cudaGetSymbolSize", &MemoryMigrationRule::getSymbolSizeMigration},
           {"cudaHostGetDevicePointer", &MemoryMigrationRule::miscMigration},
           {"cudaHostRegister", &MemoryMigrationRule::miscMigration},
-          {"cudaHostUnregister", &MemoryMigrationRule::miscMigration}};
+          {"cudaHostUnregister", &MemoryMigrationRule::miscMigration},
+          {"cudaMemPrefetchAsync", &MemoryMigrationRule::prefetchMigration}};
 
   for (auto &P : Dispatcher)
     MigrationDispatcher[P.first] =

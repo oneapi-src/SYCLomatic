@@ -573,6 +573,41 @@ void testCommas_in_device_memory() {
   // CHECK-NEXT:checkError((*(&p_addr) = d_A.get_ptr(), 0));
   checkError(cudaGetSymbolAddress(&p_addr, d_A));
 
+  size_t size2;
+  // CHECK: size2 = d_A.get_size();
+  cudaGetSymbolSize(&size2, d_A);
+
+  // CHECK: /*
+  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  err = (size2 = d_A.get_size(), 0);
+  err = cudaGetSymbolSize(&size2, d_A);
+
+  // CHECK: /*
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:checkError((size2 = d_A.get_size(), 0));
+  checkError(cudaGetSymbolSize(&size2, d_A));
+
+  int* a;
+  cudaStream_t stream;
+
+  err = cudaMallocManaged(&a, 100);
+  // CHECK: stream?(stream)->prefetch(a,100):dpct::get_device_manager().get_device(0).default_queue().prefetch(a,100);
+  cudaMemPrefetchAsync (a, 100, 0, stream);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: err = (stream?(stream)->prefetch(a,100):dpct::get_device_manager().get_device(0).default_queue().prefetch(a,100), 0);
+  err = cudaMemPrefetchAsync (a, 100, 0, stream);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkError((stream?(stream)->prefetch(a,100):dpct::get_device_manager().get_device(0).default_queue().prefetch(a,100), 0));
+  checkError(cudaMemPrefetchAsync (a, 100, 0, stream));
+
   // CHECK:  free(h_A);
   free(h_A);
 }
