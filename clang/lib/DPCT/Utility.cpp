@@ -56,66 +56,6 @@ bool isCanonical(StringRef Path) {
   return HasNoDots && path::is_absolute(Path);
 }
 
-/// Check \param Child is whether the child path of \param RootAbs
-/// \param [in] RootAbs An absolute path as reference.
-/// \param [in] Child A path to be checked.
-/// \return true: child path, false: not child path
-bool isChildPath(const std::string &RootAbs, const std::string &Child) {
-  // 1st make Child as absolute path, then do compare.
-  SmallString<256> ChildAbs;
-  std::error_code EC;
-  bool InChildAbsValid = true;
-
-  EC = llvm::sys::fs::real_path(Child, ChildAbs);
-  if ((bool)EC) {
-    InChildAbsValid = false;
-  }
-
-#if defined(_WIN64)
-  std::string LocalRoot = llvm::StringRef(RootAbs).lower();
-  std::string LocalChild = InChildAbsValid ? ChildAbs.str().lower() : Child;
-#elif defined(__linux__)
-  std::string LocalRoot = RootAbs.c_str();
-  std::string LocalChild = InChildAbsValid ? ChildAbs.c_str() : Child;
-#else
-#error Only support windows and Linux.
-#endif
-
-  auto Diff = mismatch(path::begin(LocalRoot), path::end(LocalRoot),
-                       path::begin(LocalChild));
-  // LocalRoot is not considered prefix of LocalChild if they are equal.
-  return Diff.first == path::end(LocalRoot) &&
-         Diff.second != path::end(LocalChild);
-}
-
-/// Check \param Child is whether have the same path of \param RootAbs
-/// \param [in] RootAbs An absolute path as reference.
-/// \param [in] Child A path to be checked.
-/// \return true: same path, false: different path
-bool isSamePath(const std::string &RootAbs, const std::string &Child) {
-  // 1st make Child as absolute path, then do compare.
-  SmallString<256> ChildAbs;
-  std::error_code EC;
-  bool InChildAbsValid = true;
-  EC = llvm::sys::fs::real_path(Child, ChildAbs);
-  if ((bool)EC) {
-    InChildAbsValid = false;
-  }
-#if defined(_WIN64)
-  std::string LocalRoot = llvm::StringRef(RootAbs).lower();
-  std::string LocalChild = InChildAbsValid ? ChildAbs.str().lower() : Child;
-#elif defined(__linux__)
-  std::string LocalRoot = RootAbs.c_str();
-  std::string LocalChild = InChildAbsValid ? ChildAbs.c_str() : Child;
-#else
-#error Only support windows and Linux.
-#endif
-  auto Diff = mismatch(path::begin(LocalRoot), path::end(LocalRoot),
-                       path::begin(LocalChild));
-  return Diff.first == path::end(LocalRoot) &&
-         Diff.second == path::end(LocalChild);
-}
-
 const char *getNL(void) {
 #if defined(__linux__)
   return "\n";

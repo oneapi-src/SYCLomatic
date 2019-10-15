@@ -53,7 +53,7 @@ void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
   std::string InRoot = ATM.InRoot;
   std::string InFile = SM.getFilename(MacroNameTok.getLocation());
   bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
-                  (isChildPath(InRoot, InFile) || isSamePath(InRoot, InFile));
+                  (isChildOrSamePath(InRoot, InFile));
 
   if (!IsInRoot) {
     return;
@@ -74,7 +74,7 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
   std::string InRoot = ATM.InRoot;
   std::string InFile = SM.getFilename(MacroNameTok.getLocation());
   bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
-                  (isChildPath(InRoot, InFile) || isSamePath(InRoot, InFile));
+                  (isChildOrSamePath(InRoot, InFile));
 
   if (!IsInRoot) {
     return;
@@ -98,7 +98,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   std::string InRoot = ATM.InRoot;
   std::string InFile = SM.getFilename(MacroNameTok.getLocation());
   bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
-                  (isChildPath(InRoot, InFile) || isSamePath(InRoot, InFile));
+                  (isChildOrSamePath(InRoot, InFile));
 
   if (!IsInRoot) {
     return;
@@ -195,7 +195,7 @@ void IncludesCallbacks::If(SourceLocation Loc, SourceRange ConditionRange,
   std::string InRoot = ATM.InRoot;
   std::string InFile = SM.getFilename(Loc);
   bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
-                  (isChildPath(InRoot, InFile) || isSamePath(InRoot, InFile));
+                  (isChildOrSamePath(InRoot, InFile));
 
   if (!IsInRoot) {
     return;
@@ -208,7 +208,7 @@ void IncludesCallbacks::Elif(SourceLocation Loc, SourceRange ConditionRange,
   std::string InRoot = ATM.InRoot;
   std::string InFile = SM.getFilename(Loc);
   bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
-                  (isChildPath(InRoot, InFile) || isSamePath(InRoot, InFile));
+                  (isChildOrSamePath(InRoot, InFile));
 
   if (!IsInRoot) {
     return;
@@ -247,8 +247,7 @@ void IncludesCallbacks::InclusionDirective(
   std::string InRoot = ATM.InRoot;
 
   bool IsIncludingFileInInRoot = !llvm::sys::fs::is_directory(IncludingFile) &&
-                                 (isChildPath(InRoot, Directory.str()) ||
-                                  isSamePath(InRoot, Directory.str()));
+                                 (isChildOrSamePath(InRoot, Directory.str()));
 
   // If the header file included can not be found, just return.
   if (!File) {
@@ -260,7 +259,7 @@ void IncludesCallbacks::InclusionDirective(
   std::string DirPath = llvm::sys::path::parent_path(FilePath);
   bool IsFileInInRoot =
       !isChildPath(DpctInstallPath, DirPath) &&
-      (isChildPath(InRoot, DirPath) || isSamePath(InRoot, DirPath));
+                        (isChildOrSamePath(InRoot, DirPath));
 
   if (IsFileInInRoot) {
     IncludeFileMap[FilePath] = false;
@@ -340,8 +339,7 @@ void IncludesCallbacks::InclusionDirective(
   // unless it's runtime header, in which case it will be replaced.
   // In other words, runtime header will be replaced regardless of where it's
   // coming from.
-  if (!isChildPath(CudaPath, IncludePath) &&
-      !isSamePath(CudaPath, IncludePath) &&
+  if (!isChildOrSamePath(CudaPath, IncludePath) &&
       IncludePath.compare(0, 15, "/usr/local/cuda", 15)) {
     if (!(IsAngled && FileName.compare(StringRef("cuda_runtime.h")) == 0)) {
       return;
@@ -365,7 +363,7 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
     std::string InRoot = ATM.InRoot;
     std::string InFile = SM.getFilename(Loc);
     bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
-                    (isChildPath(InRoot, InFile) || isSamePath(InRoot, InFile));
+                    (isChildOrSamePath(InRoot, InFile));
 
     if (!IsInRoot) {
       return;

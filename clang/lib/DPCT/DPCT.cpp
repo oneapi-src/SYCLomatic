@@ -41,6 +41,8 @@
 #include <cstring>
 #include <fstream>
 #include <vector>
+#include <map>
+#include <unordered_map>
 
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Basic/LangOptions.h"
@@ -250,6 +252,8 @@ static opt<bool, true>
 // TODO: implement one of this for each source language.
 std::string CudaPath;
 std::string DpctInstallPath;
+std::unordered_map<std::string, bool> ChildOrSameCache;
+
 
 class DPCTConsumer : public ASTConsumer {
 public:
@@ -442,7 +446,7 @@ std::string getInstallPath(clang::tooling::ClangTool &Tool,
 void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
                             std::string &InRoot) {
 
-  if (isChildPath(CudaPath, InRoot) || isSamePath(CudaPath, InRoot)) {
+  if (isChildOrSamePath(CudaPath, InRoot)) {
     std::string ErrMsg =
         "[ERROR] Input root specified by \"-in-root\" option \"" + InRoot +
         "\" is in CUDA_PATH folder \"" + CudaPath + "\"\n";
@@ -450,8 +454,7 @@ void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
     exit(MigrationErrorRunFromSDKFolder);
   }
 
-  if (isChildPath(InRoot, DpctInstallPath) ||
-      isSamePath(InRoot, DpctInstallPath)) {
+  if (isChildOrSamePath(InRoot, DpctInstallPath)) {
     std::string ErrMsg = "[ERROR] Input folder \"" + InRoot +
                          "\" is the parent or the same as the folder where "
                          "Intel(R) DPC++ Compatibility Tool is installed \"" +
