@@ -32,13 +32,13 @@ protected:
 TEST_F(MakeCanonicalOrSetDefaults, getDefaultOutRootEmpty) {
   string OutRoot;
   getDefaultOutRoot(OutRoot);
-  ASSERT_EQ(OutRoot, TestRunPath);
+  ASSERT_EQ(OutRoot, TestRunPath + "/dpct_output");
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, getDefaultOutRoot) {
   string OutRoot = "is not empty";
   getDefaultOutRoot(OutRoot);
-  ASSERT_EQ(OutRoot, TestRunPath);
+  ASSERT_EQ(OutRoot, TestRunPath + "/dpct_output");
 }
 
 TEST(getDefaultInRoot, noInroot) {
@@ -59,7 +59,7 @@ TEST_F(MakeCanonicalOrSetDefaults, empty) {
   ASSERT_EQ(true, makeCanonicalOrSetDefaults(
                       InRoot, OutRoot, {TempDirAbsolute + "/a/b/in/file.cpp"}));
   ASSERT_EQ(InRoot, TempDirAbsolute + "/a/b/in");
-  ASSERT_EQ(OutRoot, TestRunPath);
+  ASSERT_EQ(OutRoot, TestRunPath + "/dpct_output");
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, emptyOnlyOneFileAllowed) {
@@ -129,7 +129,7 @@ TEST_F(MakeCanonicalOrSetDefaults, relativePathsNoRoots) {
   string OutRoot;
   ASSERT_EQ(true, makeCanonicalOrSetDefaults(InRoot, OutRoot, {"file.cpp"}));
   ASSERT_EQ(InRoot, TestRunPath);
-  ASSERT_EQ(OutRoot, TestRunPath);
+  ASSERT_EQ(OutRoot, TestRunPath + "/dpct_output" );
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, relativePathsDots) {
