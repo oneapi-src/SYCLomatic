@@ -35,6 +35,7 @@ Factory usage example:
 using BinaryOperatorExprRewriterFactory =
     CallExprRewriterFactory<BinaryOperatorExprRewriter, BinaryOperatorKind>;
 */
+/// Base class in abstract factory pattern
 class CallExprRewriterFactoryBase {
 public:
   virtual std::shared_ptr<CallExprRewriter> create(const CallExpr *) = 0;
@@ -44,6 +45,8 @@ public:
                                   std::shared_ptr<CallExprRewriterFactoryBase>>
       RewriterMap;
 };
+
+/// Abstract factory for all rewriter factories
 template <class RewriterTy, class... Args>
 class CallExprRewriterFactory : public CallExprRewriterFactoryBase {
   std::tuple<std::string, Args...> Initializer;
@@ -90,6 +93,7 @@ using TexFunctionRewriterFactory =
 using UnsupportFunctionRewriterFactory =
     CallExprRewriterFactory<UnsupportFunctionRewriter, Diagnostics>;
 
+/// Base class for rewriting call expressions
 class CallExprRewriter {
 protected:
   // Call is guaranteed not to be nullptr
@@ -107,7 +111,7 @@ protected:
 public:
   virtual ~CallExprRewriter() {}
 
-  // This function should be overwrited to implement call expression rewriting.
+  /// This function should be overwrited to implement call expression rewriting.
   virtual Optional<std::string> rewrite() = 0;
 
 protected:
@@ -130,6 +134,7 @@ protected:
   }
 };
 
+/// Base class for rewriting function calls
 class FuncCallExprRewriter : public CallExprRewriter {
 protected:
   std::string TargetCalleeName;
@@ -159,6 +164,7 @@ protected:
   void setTargetCalleeName(const std::string &Str) { TargetCalleeName = Str; }
 };
 
+/// Base class for rewriting math function calls
 class MathCallExprRewriter : public FuncCallExprRewriter {
 public:
   virtual Optional<std::string> rewrite() override;
@@ -171,6 +177,7 @@ protected:
   void reportUnsupportedRoundingMode();
 };
 
+/// The rewriter for renaming math function calls
 class MathFuncNameRewriter : public MathCallExprRewriter {
 protected:
   MathFuncNameRewriter(const CallExpr *Call, StringRef SourceCalleeName,
@@ -186,6 +193,7 @@ protected:
   friend MathFuncNameRewriterFactory;
 };
 
+/// The rewriter for warning on unsupported math functions
 class MathUnsupportedRewriter : public MathCallExprRewriter {
 protected:
   using Base = MathCallExprRewriter;
@@ -198,6 +206,7 @@ protected:
   friend MathUnsupportedRewriterFactory;
 };
 
+/// The rewriter for replacing math function calls with type casting expressions
 class MathTypeCastRewriter : public MathCallExprRewriter {
 protected:
   using Base = MathCallExprRewriter;
@@ -210,6 +219,7 @@ protected:
   friend MathTypeCastRewriterFactory;
 };
 
+/// The rewriter for replacing math function calls with emulations
 class MathSimulatedRewriter : public MathCallExprRewriter {
 protected:
   using Base = MathCallExprRewriter;
@@ -222,6 +232,8 @@ protected:
   friend MathSimulatedRewriterFactory;
 };
 
+/// The rewriter for replacing math function calls with binary operator
+/// expressions
 class MathBinaryOperatorRewriter : public MathCallExprRewriter {
   std::string LHS, RHS;
   BinaryOperatorKind Op;
@@ -250,6 +262,7 @@ protected:
   friend MathBinaryOperatorRewriterFactory;
 };
 
+/// The rewriter for migrating warp functions
 class WarpFunctionRewriter : public FuncCallExprRewriter {
 private:
   static const std::map<std::string, std::string> WarpFunctionsMap;
@@ -271,6 +284,7 @@ protected:
   friend WarpFunctionRewriterFactory;
 };
 
+/// The rewriter for reordering function arguments
 class ReorderFunctionRewriter : public FuncCallExprRewriter {
   const std::vector<unsigned> &RewriterArgsIdx;
 

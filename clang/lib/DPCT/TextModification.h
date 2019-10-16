@@ -136,7 +136,7 @@ private:
   unsigned PairID = 0;
 };
 
-///  Insert string in given position.
+/// Insert string in given position.
 class InsertText : public TextModification {
   SourceLocation Begin;
   std::string T;
@@ -225,6 +225,7 @@ public:
   removeStmtWithCleanups(const SourceManager &SM) const;
 };
 
+/// Replace the call name of function calls
 class ReplaceCalleeName : public TextModification {
   const CallExpr *C;
   std::string ReplStr;
@@ -280,7 +281,7 @@ public:
              const bool PrintDetail = true) const override;
 };
 
-// Replace type in var. declaration.
+/// Replace type in variable declaration.
 class ReplaceTypeInDecl : public TextModification {
   TypeLoc TL;
   const DeclaratorDecl *DD; // DD points to a VarDecl or a FieldDecl
@@ -310,7 +311,7 @@ public:
              const bool PrintDetail = true) const override;
 };
 
-// Replace type in var. declaration.
+/// Replace type in variable declaration.
 class ReplaceVarDecl : public TextModification {
   const VarDecl *D;
   CharSourceRange SR;
@@ -333,7 +334,7 @@ private:
   static std::map<unsigned, ReplaceVarDecl *> ReplaceMap;
 };
 
-// Replace return type in function declaration.
+/// Replace return type in function declaration.
 class ReplaceReturnType : public TextModification {
   const FunctionDecl *FD;
   std::string T;
@@ -347,7 +348,7 @@ public:
              const bool PrintDetail = true) const override;
 };
 
-// Rename field in expression.
+/// Rename field in expression.
 class RenameFieldInMemberExpr : public TextModification {
   const MemberExpr *ME;
   std::string T;
@@ -365,6 +366,7 @@ public:
              const bool PrintDetail = true) const override;
 };
 
+/// Insert a string after a statement
 class InsertAfterStmt : public TextModification {
   const Stmt *S;
   std::string T;
@@ -381,7 +383,7 @@ public:
              const bool PrintDetail = true) const override;
 };
 
-// Insert '/*  */' C style multi line comment
+/// Insert '/*  */' C style multi line comments
 class InsertComment : public TextModification {
   // The comment will be inserted at this position
   SourceLocation SL;
@@ -397,6 +399,7 @@ public:
              const bool PrintDetail = true) const override;
 };
 
+/// Replace including diretives
 class ReplaceInclude : public TextModification {
   CharSourceRange Range;
   std::string T;
@@ -411,6 +414,7 @@ public:
              const bool PrintDetail = true) const override;
 };
 
+/// Replace Dim3 constructors
 class ReplaceDim3Ctor : public TextModification {
   bool isDecl;
   const CXXConstructExpr *Ctor;
@@ -491,6 +495,7 @@ public:
   iterator end() { return iterator(*this, -1); }
 };
 
+/// Insert a string before a statement
 class InsertBeforeStmt : public TextModification {
   const Stmt *S;
   std::string T;
@@ -509,6 +514,7 @@ public:
              const bool PrintDetail = true) const override;
 };
 
+/// Remove an argument in a function call
 class RemoveArg : public TextModification {
   const CallExpr *CE;
   const unsigned N;
@@ -523,6 +529,7 @@ public:
              const bool PrintDetail = true) const override;
 };
 
+/// Insert before constructor's initializer lists
 class InsertBeforeCtrInitList : public TextModification {
   const CXXConstructorDecl *CDecl;
   std::string T;
@@ -539,6 +546,7 @@ public:
              const bool PrintDetail = true) const override;
 };
 
+/// Insert class names
 class InsertClassName : public TextModification {
   const CXXRecordDecl *CD;
   static unsigned Count;
@@ -553,6 +561,7 @@ public:
              const bool PrintDetail = true) const override;
 };
 
+/// Replace raw texts
 class ReplaceText : public TextModification {
   SourceLocation BeginLoc;
   unsigned Len;

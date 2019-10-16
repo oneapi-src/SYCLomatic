@@ -18,6 +18,7 @@
 
 const std::string StringLiteralUnsupported{"UNSUPPORTED"};
 
+/// Record mapping between names
 class MapNames {
 public:
   struct SOLVERFuncReplInfo {

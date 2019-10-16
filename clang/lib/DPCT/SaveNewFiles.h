@@ -24,6 +24,7 @@ class RefactoringTool;
 }
 } // namespace clang
 
+/// ProcessStatus defines various statuses of dpct workflow
 enum ProcessStatus {
   MigrationSucceeded = 0,
   MigrationNoCodeChangeHappen = 1,
@@ -46,6 +47,7 @@ enum ProcessStatus {
   MigrationOptionParsingError = -16,
 };
 
+/// OutputVerbosityLev defines various verbosity levels for dpct reports
 enum OutputVerbosityLev { silent, normal, detailed, diagnostics };
 
 /// Apply all generated replacements, and immediately save the results to

@@ -41,6 +41,9 @@ typedef struct {
 } CommonRuleProperty;
 
 class ASTTraversalManager;
+
+/// Migraiton rules at the pre-processing stages, e.g. macro rewriting and
+/// including directives rewriting.
 class IncludesCallbacks : public PPCallbacks {
   TransformSetTy &TransformSet;
   SourceManager &SM;
@@ -353,6 +356,7 @@ private:
   CommonRuleProperty RuleProperty;
 };
 
+/// Migration rules with names
 template <typename T> class NamedMigrationRule : public MigrationRule {
 public:
   static const char ID;
@@ -602,7 +606,7 @@ public:
   static const std::map<std::string, std::string> PropNamesMap;
 };
 
-// Migration rule for enums constants.
+/// Migration rule for enums constants.
 class EnumConstantRule : public NamedMigrationRule<EnumConstantRule> {
 public:
   EnumConstantRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -612,7 +616,7 @@ public:
   static const std::map<std::string, std::string> EnumNamesMap;
 };
 
-// Migration rule for Error enums constants.
+/// Migration rule for Error enums constants.
 class ErrorConstantsRule : public NamedMigrationRule<ErrorConstantsRule> {
 public:
   ErrorConstantsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -620,7 +624,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
-// Migration rule for BLAS enums.
+/// Migration rule for BLAS enums.
 class BLASEnumsRule : public NamedMigrationRule<BLASEnumsRule> {
 public:
   BLASEnumsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -628,6 +632,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+/// Migration rule for BLAS function calls.
 class BLASFunctionCallRule : public NamedMigrationRule<BLASFunctionCallRule> {
 public:
   BLASFunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -666,7 +671,7 @@ public:
                          const SourceLocation &StmtBegin);
 };
 
-// Migration rule for SOLVER enums.
+/// Migration rule for SOLVER enums.
 class SOLVEREnumsRule : public NamedMigrationRule<SOLVEREnumsRule> {
 public:
   SOLVEREnumsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -674,6 +679,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+/// Migration rule for SOLVER function calls.
 class SOLVERFunctionCallRule
     : public NamedMigrationRule<SOLVERFunctionCallRule> {
 public:
@@ -696,7 +702,7 @@ public:
   const clang::VarDecl *getAncestralVarDecl(const clang::CallExpr *CE);
 };
 
-/// Migration rule for function calls.
+/// Migration rule for general function calls.
 class FunctionCallRule : public NamedMigrationRule<FunctionCallRule> {
 public:
   FunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
@@ -730,6 +736,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+/// Migration rule for kernel API calls
 class KernelCallRule : public NamedMigrationRule<KernelCallRule> {
   std::unordered_set<unsigned> Insertions;
 
@@ -745,6 +752,7 @@ public:
                           const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+/// Migration rule for device function calls
 class DeviceFunctionCallRule
     : public NamedMigrationRule<DeviceFunctionCallRule> {
 public:
@@ -766,25 +774,25 @@ private:
   void insertExplicitCast(const ImplicitCastExpr *Impl, const QualType &Type);
 };
 
-// Migration rule for memory management routine.
-// Current implementation is intentionally simplistic. The following things
-// need a more detailed design:
-//   - interplay with error handling (possible solution is that we keep
-//   function
-//     signature as close to original as possible, so return error codes when
-//     original functions return them);
-//   - SYCL memory buffers are typed. Using a "char" type is definitely a
-//   hack.
-//     Using better type information requires some kind of global analysis and
-//     heuristics, as well as a mechnism for user hint (like "treat all
-//     buffers as float-typed")'
-//   - interplay with streams need to be designed.
-//   - transformation rules are currently unordered, which create potential
-//     ambiguity, so need to understand how to handle function call arguments,
-//     which are modified by other rules.
-//
-// TODO:
-//   - trigger include of runtime library.
+/// Migration rule for memory management routine.
+/// Current implementation is intentionally simplistic. The following things
+/// need a more detailed design:
+///   - interplay with error handling (possible solution is that we keep
+///   function
+///     signature as close to original as possible, so return error codes when
+///     original functions return them);
+///   - SYCL memory buffers are typed. Using a "char" type is definitely a
+///   hack.
+///     Using better type information requires some kind of global analysis and
+///     heuristics, as well as a mechnism for user hint (like "treat all
+///     buffers as float-typed")'
+///   - interplay with streams need to be designed.
+///   - transformation rules are currently unordered, which create potential
+///     ambiguity, so need to understand how to handle function call arguments,
+///     which are modified by other rules.
+///
+/// TODO:
+///   - trigger include of runtime library.
 class MemoryMigrationRule : public NamedMigrationRule<MemoryMigrationRule> {
 
 public:

@@ -33,10 +33,12 @@ class DeviceFunctionDecl;
 class MemVarInfo;
 class VarInfo;
 
-// none:       uses helper functions from DPCT header files for memory
-//             management migration
-// restricted: uses API from DPC++ Explicit and Restricted Unified
-//             Shared Memory extension for memory management migration
+/// The enum that specifies the level of Unified Shared Memory, only
+/// two leves are supported currrently.
+/// none:       uses helper functions from DPCT header files for memory
+///             management migration
+/// restricted: uses API from DPC++ Explicit and Restricted Unified
+///             Shared Memory extension for memory management migration
 enum UsmLevel { none, restricted };
 
 template <class T> using GlobalMap = std::map<unsigned, std::shared_ptr<T>>;

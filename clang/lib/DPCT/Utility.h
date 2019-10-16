@@ -177,18 +177,18 @@ inline bool isChildOrSamePath(const std::string &RootAbs,
   return Ret;
 }
 
-// Returns character sequence ("\n") on Linux, return  ("\r\n") on Windows.
+/// Returns character sequence ("\n") on Linux, return  ("\r\n") on Windows.
 const char *getNL(void);
 
-// Returns the character sequence ("\n" or "\r\n") used to represent new line
-// in the source line containing Loc.
+/// Returns the character sequence ("\n" or "\r\n") used to represent new line
+/// in the source line containing Loc.
 const char *getNL(clang::SourceLocation Loc, const clang::SourceManager &SM);
 
-// Returns the character sequence indenting the source line containing Loc.
+/// Returns the character sequence indenting the source line containing Loc.
 llvm::StringRef getIndent(clang::SourceLocation Loc,
                           const clang::SourceManager &SM);
 
-// Get the Stmt spelling
+/// Get the Stmt spelling
 std::string getStmtSpelling(const clang::Stmt *E,
                             const clang::ASTContext &Context);
 
@@ -198,8 +198,10 @@ template <typename T> std::string getHashAsString(const T &Val) {
   return Stream.str();
 }
 
+/// Get the fixed suffix of compatibility tool
 inline std::string getCTFixedSuffix() { return "_ct1"; }
 
+/// Get the declaration of a statement
 template <typename T> const T *getDecl(const clang::Stmt *E);
 
 // TODO:  implement one of this for each source language.
@@ -219,13 +221,14 @@ enum SourceProcessType {
 
 SourceProcessType GetSourceFileType(llvm::StringRef SourcePath);
 
-// For exmaple we have four rules named "A", "B", "C" and "D"
-// "A" depends on "B" and "C"
-// "B" depends on "D"
-// "C" doesn't depend on anyone
-// "D" depends on "C"
-// Using topological sorting, it should output A -> B -> D -> C,
-// and all rule dependencies will be met.
+/// Topology sort for rules
+/// For exmaple we have four rules named "A", "B", "C" and "D"
+/// "A" depends on "B" and "C"
+/// "B" depends on "D"
+/// "C" doesn't depend on anyone
+/// "D" depends on "C"
+/// Using topological sorting, it should output A -> B -> D -> C,
+/// and all rule dependencies will be met.
 std::vector<std::string>
 ruleTopoSort(std::vector<std::vector<std::string>> &TableRules);
 
@@ -235,15 +238,35 @@ const std::string &getFmtStatementIndent(std::string &BaseIndent);
 const std::string &getFmtEndArg(void);
 const std::string &getFmtArgIndent(std::string &BaseIndent);
 
-std::vector<std::string> split(const std::string &str, char delim);
+/// Split a string into a vector of strings with a specific delimiter
+/// \param [in] Str The string to be splited
+/// \param [in] Delim The delimiter
+std::vector<std::string> split(const std::string &Str, char Delim);
+
+/// Determines if a string starts with a prefix
+/// \param [in] Str The target string
+/// \param [in] Prefix The prefix
+bool startsWith(const std::string &Str, const std::string &Prefix);
+
+/// Determines if a string starts with a char
+/// \param [in] Str The target string
+/// \param [in] C The char
+bool startsWith(const std::string &Str, char C);
+
+/// Determines if a string ends with a suffix
+/// \param [in] Str The target string
+/// \param [in] Prefix The prefix
+bool endsWith(const std::string &Str, const std::string &Suffix);
+
+/// Determines if a string ends with a char
+/// \param [in] Str The target string
+/// \param [in] C The char
+bool endsWith(const std::string &Str, char C);
+
 const clang::CompoundStmt *findImmediateBlock(const clang::Stmt *S);
 const clang::CompoundStmt *findImmediateBlock(const clang::ValueDecl *D);
 bool isInSameScope(const clang::Stmt *S, const clang::ValueDecl *D);
 const clang::DeclRefExpr *getInnerValueDecl(const clang::Expr *Arg);
-bool startsWith(const std::string &Str, const std::string &Prefix);
-bool startsWith(const std::string &Str, char C);
-bool endsWith(const std::string &Str, const std::string &Suffix);
-bool endsWith(const std::string &Str, char C);
 const clang::Stmt *getParentStmt(const clang::Stmt *S);
 bool IsSingleLineStatement(const clang::Stmt *S);
 clang::SourceRange getScopeInsertRange(const clang::MemberExpr *ME);

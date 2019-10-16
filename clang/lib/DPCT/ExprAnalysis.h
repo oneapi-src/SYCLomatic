@@ -22,7 +22,7 @@
 namespace clang {
 namespace dpct {
 
-// Store replacement info applied on a string
+/// Store replacement info applied on a string
 class StringReplacement {
 public:
   StringReplacement(std::string &Src, size_t Off, size_t Len, std::string Txt)
@@ -45,7 +45,7 @@ private:
 
 class TemplateArgumentInfo;
 
-// Store replacement dependent on template args
+/// Store replacement dependent on template args
 class TemplateDependentReplacement {
   std::string &SourceStr;
   size_t Offset;
@@ -66,7 +66,7 @@ public:
   void replace(const std::vector<TemplateArgumentInfo> &TemplateList);
 };
 
-// Store a string which actual text dependent on template args
+/// Store a string which actual text dependent on template args
 class TemplateDependentStringInfo {
   std::string SourceStr;
   std::vector<std::shared_ptr<TemplateDependentReplacement>> TDRs;
@@ -84,7 +84,7 @@ public:
   getReplacedString(const std::vector<TemplateArgumentInfo> &TemplateList);
 };
 
-// Store a expr source string which may need replaced and its replacements
+/// Store a expr source string which may need replaced and its replacements
 class StringReplacements {
 public:
   StringReplacements() : ShiftLength(0) {}
@@ -135,7 +135,7 @@ private:
   std::map<size_t, std::shared_ptr<TemplateDependentReplacement>> TDRs;
 };
 
-// analyze expression and generate its migrated string
+/// Analyze expression and generate its migrated string
 class ExprAnalysis {
 public:
   ExprAnalysis() : ExprAnalysis(nullptr) {}
@@ -279,7 +279,7 @@ private:
   StringReplacements ReplSet;
 };
 
-// analyze expression used as argument.
+/// Analyze expression used as argument.
 class ArgumentAnalysis : public ExprAnalysis {
 public:
   using Base = ExprAnalysis;
