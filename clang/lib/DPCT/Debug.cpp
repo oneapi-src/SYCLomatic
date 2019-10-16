@@ -222,7 +222,7 @@ static void printReplacementsDebugImpl(ReplacementFilter &ReplFilter,
     } else {                                                                   \
       ++NameCountMap[#TYPE];                                                   \
     }                                                                          \
-    MigratedFiles[Repl.getFilePath()].emplace(#TYPE);                        \
+    MigratedFiles[Repl.getFilePath()].emplace(#TYPE);                          \
     continue;                                                                  \
   }
 #include "Transformations.inc"
@@ -400,14 +400,14 @@ void DebugInfo::ShowStatus(int Status) {
     break;
   case MigrationOptionParsingError:
     StatusString = "Option parsing error,"
-                   " run 'dpct --help' to see supported values";
+                   " run 'dpct --help' to see supported options and values";
     break;
   case MigrationErrorPathTooLong:
 #if defined(_WIN32)
-    StatusString = "Error: path is too long, should be less than _MAX_PATH (" +
+    StatusString = "Error: Path is too long; should be less than _MAX_PATH (" +
                    std::to_string(_MAX_PATH) + ")";
 #else
-    StatusString = "Error: path is too long, should be less than PATH_MAX (" +
+    StatusString = "Error: Path is too long; should be less than PATH_MAX (" +
                    std::to_string(PATH_MAX) + ")";
 #endif
   case MigrationErrorFileParseError:
@@ -422,6 +422,24 @@ void DebugInfo::ShowStatus(int Status) {
   case MigrationErrorNoExplicitInRoot:
     StatusString = "Error: --process-all option requires --in-root to be "
                    "specified explicitly. Specify --in-root.";
+    break;
+  case MigrationErrorSpecialCharacter:
+    StatusString = "Error: Prefix contains special characters;"
+      " only alphabets, digits and underscores are allowed";
+    break;
+  case MigrationErrorNameTooLong:
+#if defined(_WIN32)
+    StatusString =
+        "Error: File name is too long; should be less than _MAX_FNAME (" +
+        std::to_string(_MAX_FNAME) + ")";
+#else
+    StatusString =
+        "Error: File name is too long; should be less than NAME_MAX (" +
+        std::to_string(NAME_MAX) + ")";
+#endif
+    break;
+  case MigrationErrorPrefixTooLong:
+    StatusString = "Error: Prefix is too long; shold be less than 128";
     break;
   default:
     DpctLog() << "Unknown error\n";

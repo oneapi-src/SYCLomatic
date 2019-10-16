@@ -461,3 +461,18 @@ std::string getCanonicalPath(SourceLocation Loc) {
 bool containOnlyDigits(const std::string &str) {
   return std::all_of(str.begin(), str.end(), ::isdigit);
 }
+
+void replaceSubStr(std::string &Str, const std::string &SubStr,
+                   const std::string &Repl) {
+  auto P = Str.find(SubStr);
+  if (P != std::string::npos)
+    Str.replace(P, SubStr.size(), Repl);
+}
+void replaceSubStrAll(std::string &Str, const std::string &SubStr,
+                   const std::string &Repl) {
+  auto P = Str.find(SubStr);
+  while (P != std::string::npos) {
+    Str.replace(P, SubStr.size(), Repl);
+    P = Str.find(SubStr);
+  }
+}

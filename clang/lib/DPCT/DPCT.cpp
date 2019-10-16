@@ -39,9 +39,9 @@
 #include <algorithm>
 #include <cstring>
 #include <fstream>
-#include <vector>
 #include <map>
 #include <unordered_map>
+#include <vector>
 
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Basic/LangOptions.h"
@@ -63,8 +63,10 @@ extern llvm::cl::OptionCategory DPCTCat;
 void initWarningIDs();
 #if defined(_WIN32)
 #define MAX_PATH_LEN _MAX_PATH
+#define MAX_NAME_LEN _MAX_FNAME
 #else
 #define MAX_PATH_LEN PATH_MAX
+#define MAX_NAME_LEN NAME_MAX
 #endif
 } // namespace dpct
 } // namespace clang
@@ -269,7 +271,6 @@ static opt<bool, true>
 std::string CudaPath;
 std::string DpctInstallPath;
 std::unordered_map<std::string, bool> ChildOrSameCache;
-
 
 class DPCTConsumer : public ASTConsumer {
 public:
@@ -733,6 +734,15 @@ int run(int argc, const char **argv) {
             }
           });
     }
+    // Filter and output error messages emitted by clang
+    auto E =
+        handleErrors(OptParser.takeError(), [](const llvm::StringError &E) {
+          std::string ErrorMsg = E.getMessage();
+          // Filter out unnecessary text from the messages
+          replaceSubStrAll(ErrorMsg, "[CommonOptionsParser]: ", "");
+          replaceSubStrAll(ErrorMsg, "  Try: 'dpct --help'\ndpct:", "");
+          DpctLog() << ErrorMsg;
+        });
     dpct::DebugInfo::ShowStatus(MigrationOptionParsingError);
     exit(MigrationOptionParsingError);
   }
@@ -752,6 +762,28 @@ int run(int argc, const char **argv) {
               << "' is too long\n";
     DebugInfo::ShowStatus(MigrationErrorPathTooLong);
     exit(MigrationErrorPathTooLong);
+  }
+  if (OutputFile.size() >= MAX_PATH_LEN - 1) {
+    DpctLog() << "Error: --output-file '" << OutputFile << "' is too long\n";
+    DebugInfo::ShowStatus(MigrationErrorPathTooLong);
+    exit(MigrationErrorPathTooLong);
+  }
+  // Report file prefix is limited to 128, so that <report-type> and
+  // <report-format> can be extended later
+  if (ReportFilePrefix.size() >= 128) {
+    DpctLog() << "Error: --report-file-prefix '" << ReportFilePrefix
+              << "' is too long\n";
+    DebugInfo::ShowStatus(MigrationErrorPrefixTooLong);
+    exit(MigrationErrorPrefixTooLong);
+  }
+  auto P = std::find_if_not(
+      ReportFilePrefix.begin(), ReportFilePrefix.end(),
+      [](char C) { return ::isalpha(C) || ::isdigit(C) || C == '_'; });
+  if (P != ReportFilePrefix.end()) {
+    DpctLog() << "Error: --report-file-prefix contains special character '"
+              << *P << "' \n";
+    DebugInfo::ShowStatus(MigrationErrorSpecialCharacter);
+    exit(MigrationErrorSpecialCharacter);
   }
   clock_t StartTime = clock();
   if (InRoot.empty() && ProcessAllFlag) {

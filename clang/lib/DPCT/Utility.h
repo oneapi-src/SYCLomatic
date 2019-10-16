@@ -277,4 +277,8 @@ getScopeInsertRange(const clang::Expr *CE,
 const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const clang::Expr *E);
 std::string getCanonicalPath(clang::SourceLocation Loc);
 bool containOnlyDigits(const std::string &str);
+void replaceSubStr(std::string &Str, const std::string &SubStr,
+                   const std::string &Repl);
+void replaceSubStrAll(std::string &Str, const std::string &SubStr,
+                   const std::string &Repl);
 #endif // DPCT_UTILITY_H
