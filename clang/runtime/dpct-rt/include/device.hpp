@@ -155,7 +155,7 @@ public:
         get_info<cl::sycl::info::device::global_mem_size>());
     prop.set_local_mem_size(get_info<cl::sycl::info::device::local_mem_size>());
 
-    // For oneAPI DPC++ Compiler, if current device does not support
+    // For Intel(R) oneAPI DPC++ Compiler, if current device does not support
     // "cl_intel_required_subgroup_size" extension, max_sub_group_size will be
     // initialized to one.
     // For other compilers, just initialize max_sub_group_size to one.
