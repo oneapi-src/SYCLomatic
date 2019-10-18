@@ -19,19 +19,18 @@
 #ifndef __DPSTD_UTILS_HPP
 #define __DPSTD_UTILS_HPP
 
+
 #define __PSTL_BACKEND_SYCL 1
 #define __USE_SYCL 1
-
 #define __USE_DPCT 1
 
 #include <dpstd/execution>
 #include <dpstd/algorithm>
 #include <dpstd/numeric>
 
-#include "dpstd_extras/memory.h"
-#include "dpstd_extras/algorithm.h"
-#include "dpstd_extras/numeric.h"
-#include "dpstd_extras/iterators.h"
+#include <dpct/dpstd_extras/memory.h>
+#include <dpct/dpstd_extras/algorithm.h>
+#include <dpct/dpstd_extras/numeric.h>
+#include <dpct/dpstd_extras/iterators.h>
 
-
-#endif
+#endif // __DPSTD_UTILS_HPP

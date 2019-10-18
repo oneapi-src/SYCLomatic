@@ -17,7 +17,7 @@
 #ifndef __DPCT_ALGORITHM_H
 #define __DPCT_ALGORITHM_H
 
-#include "functional.h"
+#include <dpct/dpstd_extras/functional.h>
 
 namespace dpct {
 
@@ -45,23 +45,24 @@ ForwardIt remove_if(Policy &&policy, ForwardIt first, ForwardIt last,
                     InputIt stencil, Predicate p) {
   using dpstd::make_zip_iterator;
   using dpstd::make_transform_iterator;
-  using cl::sycl::buffer;
+  using policy_type = typename std::remove_reference<Policy>::type;
+  using dpstd::internal::__buffer;
   using ValueType = typename std::iterator_traits<ForwardIt>::value_type;
   using Ref1 = typename dpstd::zip_iterator<ForwardIt, InputIt>::reference;
-  buffer<typename std::iterator_traits<ForwardIt>::value_type> _tmp(
-      std::distance(first, last));
-  auto tmp = dpstd::begin(_tmp);
+
+  __buffer<policy_type, typename std::iterator_traits<ForwardIt>::value_type>
+      _tmp(std::distance(first, last));
 
   typename internal::rebind_policy<Policy, class RemoveIf1>::type policy1(
       policy);
   auto end = std::copy_if(
       policy1, make_zip_iterator(first, stencil),
       make_zip_iterator(last, stencil + std::distance(first, last)),
-      make_transform_iterator(tmp, internal::discard_fun<ValueType>()),
+      make_transform_iterator(_tmp.get(), internal::discard_fun<ValueType>()),
       internal::negate_predicate_key_fun<Predicate>(p));
   typename internal::rebind_policy<Policy, class RemoveIf2>::type policy2(
       policy);
-  return std::copy(policy2, tmp, end.base(), first);
+  return std::copy(policy2, _tmp.get(), end.base(), first);
 }
 
 template <typename Policy, typename InputIt1, typename InputIt2,
@@ -562,9 +563,10 @@ template <typename Policy, typename ForwardIt, typename InputIt,
 dpstd::__internal::__enable_if_execution_policy<Policy, ForwardIt>
 stable_partition(Policy &&policy, ForwardIt first, ForwardIt last,
                  InputIt stencil, Predicate p) {
-  dpstd::__par_backend::__buffer<
-      typename std::iterator_traits<ForwardIt>::value_type>
-      _tmp(std::forward<Policy>(policy), std::distance(first, last));
+  typedef typename std::remove_reference<Policy>::type policy_type;
+  dpstd::internal::__buffer<
+      policy_type, typename std::iterator_traits<ForwardIt>::value_type>
+      _tmp(std::distance(first, last));
   std::copy(std::forward<Policy>(policy), stencil,
             stencil + std::distance(first, last), _tmp.get());
 
@@ -572,7 +574,7 @@ stable_partition(Policy &&policy, ForwardIt first, ForwardIt last,
       std::forward<Policy>(policy), dpstd::make_zip_iterator(first, _tmp.get()),
       dpstd::make_zip_iterator(last, _tmp.get() + std::distance(first, last)),
       internal::predicate_key_fun<Predicate>(p));
-  return std::get<0>(ret_val.base());
+  return dpstd::internal::get<0>(ret_val.base());
 }
 
 template <typename Policy, typename ForwardIt, typename InputIt,
@@ -586,4 +588,4 @@ partition(Policy &&policy, ForwardIt first, ForwardIt last, InputIt stencil,
 
 } // end namespace dpct
 
-#endif
+#endif //__DPCT_ALGORITHM_H

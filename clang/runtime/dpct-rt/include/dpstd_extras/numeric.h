@@ -17,6 +17,7 @@
 #ifndef __DPCT_NUMERIC_H
 #define __DPCT_NUMERIC_H
 
+
 namespace dpct {
 
 template <typename Policy, typename InputIt1, typename InputIt2, typename T>
@@ -37,4 +38,4 @@ T inner_product(Policy &&policy, InputIt1 first1, InputIt1 last1,
 
 } // end namespace dpct
 
-#endif
+#endif //__DPCT_NUMERIC_H

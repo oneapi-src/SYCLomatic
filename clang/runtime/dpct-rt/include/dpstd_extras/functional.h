@@ -18,7 +18,7 @@
 #define __DPCT_FUNCTIONAL_H
 
 #include <functional>
-
+#include <dpstd/internal/function.h>
 #include <dpstd/iterators.h>
 
 #ifdef __PSTL_BACKEND_SYCL
@@ -27,6 +27,15 @@
 
 #include <tuple>
 #include <utility>
+
+namespace dpstd {
+namespace internal {
+using std::get;
+#ifdef __PSTL_BACKEND_SYCL
+using dpstd::__par_backend_hetero::__internal::get;
+#endif
+}
+}
 
 namespace dpct {
 
@@ -85,22 +94,19 @@ template <typename T> struct minimum {
 
 namespace internal {
 
-using std::get;
-#ifdef __PSTL_BACKEND_SYCL
-using dpstd::__par_backend::__internal::get;
-using dpstd::__par_backend::__internal::make_tuplewrapper;
-#endif
-
-// Functor replacing a zip & discard iterator combination; useful for stencil
-// algorithm
-// Used by: copy_if, remove_copy_if, stable_partition_copy
-// Lambda: [](OutRef1 x) { return std::tie(x, std::ignore); }
+/// Functor replacing a zip & discard iterator combination; useful for stencil
+/// algorithm
+/// Used by: copy_if, remove_copy_if, stable_partition_copy
+/// Lambda: [](OutRef1 x) { return std::tie(x, std::ignore); }
 template <typename T> struct discard_fun {
 
 #ifdef __PSTL_BACKEND_SYCL
   template <typename _T>
-  auto operator()(_T &&x) const -> decltype(make_tuplewrapper(x, std::ignore)) {
-    return make_tuplewrapper(x, std::ignore);
+  auto operator()(_T &&x) const
+      -> decltype(dpstd::__par_backend_hetero::__internal::make_tuplewrapper(
+          x, std::ignore)) {
+    return dpstd::__par_backend_hetero::__internal::make_tuplewrapper(
+        x, std::ignore);
   }
 #else
   template <typename _T>
@@ -110,7 +116,7 @@ template <typename T> struct discard_fun {
 #endif
 };
 
-// Functor compares first element (key) from tied sequence.
+/// Functor compares first element (key) from tied sequence.
 template <typename Compare = class dpstd::__internal::__pstl_less>
 struct compare_key_fun {
   typedef bool result_of;
@@ -120,30 +126,29 @@ struct compare_key_fun {
   template <typename _T1, typename _T2>
   result_of operator()(_T1 &&a, _T2 &&b) const {
     using std::get;
-    return comp(get<0>(a), get<0>(b));
+    return comp(dpstd::internal::get<0>(a), dpstd::internal::get<0>(b));
   }
 
 private:
   Compare comp;
 };
 
-// Functor evaluates second element of tied sequence with predicate.
-// Used by: copy_if, remove_copy_if, stable_partition_copy
-// Lambda:
+/// Functor evaluates second element of tied sequence with predicate.
+/// Used by: copy_if, remove_copy_if, stable_partition_copy
+/// Lambda:
 template <typename Predicate> struct predicate_key_fun {
   typedef bool result_of;
   predicate_key_fun(Predicate _pred) : pred(_pred) {}
 
   template <typename _T1> result_of operator()(_T1 &&a) const {
     using std::get;
-    return pred(get<1>(a));
+    return pred(dpstd::internal::get<1>(a));
   }
 
 private:
   Predicate pred;
 };
 
-// Used by: remove_if
 template <typename Predicate>
 struct negate_predicate_key_fun {
   typedef bool result_of;
@@ -151,7 +156,7 @@ struct negate_predicate_key_fun {
 
   template <typename _T1> result_of operator()(_T1 &&a) const {
     using std::get;
-    return !pred(get<1>(a));
+    return !pred(dpstd::internal::get<1>(a));
   }
 
 private:
@@ -171,21 +176,21 @@ private:
   const T step;
 };
 
-//[binary_pred](Ref a, Ref b){ return(binary_pred(get<0>(a),get<0>(b)));
+/// [binary_pred](Ref a, Ref b){ return(binary_pred(get<0>(a),get<0>(b)));
 template <typename Predicate> struct unique_by_key_fun {
   typedef bool result_of;
   unique_by_key_fun(Predicate _pred) : pred(_pred) {}
   template <typename _T> result_of operator()(_T &&a, _T &&b) const {
     using std::get;
-    return pred(get<0>(a), get<0>(b));
+    return pred(dpstd::internal::get<0>(a), dpstd::internal::get<0>(b));
   }
 
 private:
   Predicate pred;
 };
 
-// Lambda: [pred, &new_value](Ref1 a, Ref2 s) {return pred(s) ? new_value : a;
-// });
+/// Lambda: [pred, &new_value](Ref1 a, Ref2 s) {return pred(s) ? new_value : a;
+/// });
 template <typename T, typename Predicate>
 struct replace_if_fun {
 public:
@@ -202,7 +207,7 @@ private:
   const T new_value;
 };
 
-//[pred,op](Ref a){return pred(a) ? op(a) : a; }
+/// [pred,op](Ref a){return pred(a) ? op(a) : a; }
 template <typename T, typename Predicate, typename Operator>
 struct transform_if_fun {
   typedef T result_of;
@@ -223,8 +228,9 @@ public:
                                BinaryOperation _op = identity())
       : pred(_pred), op(_op) {}
   template <typename _T> void operator()(_T &&t) {
-    if (pred(get<2>(t)))
-      get<3>(t) = op(get<0>(t), get<1>(t));
+    if (pred(dpstd::internal::get<2>(t)))
+      dpstd::internal::get<3>(t) =
+          op(dpstd::internal::get<0>(t), dpstd::internal::get<1>(t));
   }
 
 private:
@@ -235,4 +241,4 @@ private:
 
 } // end namespace dpct
 
-#endif
+#endif //__DPCT_FUNCTIONAL_H

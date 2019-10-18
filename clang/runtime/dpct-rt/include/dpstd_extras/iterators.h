@@ -19,7 +19,7 @@
 
 #include <dpstd/iterators.h>
 
-#include "functional.h"
+#include <dpct/dpstd_extras/functional.h>
 
 #include <dpstd/pstl/utils.h>
 
@@ -61,10 +61,6 @@ make_zip_iterator(const std::tuple<T...> &arg) {
       arg, dpstd::__internal::__make_index_sequence<sizeof...(T)>{});
 }
 
-// permutation iterator:
-// Simple aliasing won't work because of different constructor signatures
-// template< typename Iter1, typename Iter2 > using permutation_iterator =
-// tbb::transform_iterator<perm_fun<Iter1, Iter2>, Iter2>;
 template <typename Iter1, typename Iter2>
 class permutation_iterator
     : public dpstd::transform_iterator<internal::perm_fun<Iter1, Iter2>,
@@ -83,4 +79,4 @@ make_permutation_iterator(Iter1 source, Iter2 map) {
 
 } // end namespace dpct
 
-#endif
+#endif //__DPCT_ITERATORS_H

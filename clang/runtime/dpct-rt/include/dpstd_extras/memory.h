@@ -21,9 +21,6 @@
 #include <CL/sycl.hpp>
 #endif
 
-// Memory management section:
-// device_ptr, device_reference, swap, device_iterator, device_malloc,
-// device_new, device_free, device_delete
 namespace dpct {
 
 namespace sycl = cl::sycl;
@@ -151,7 +148,6 @@ public:
                  sizeof(T))),
              std::size_t{}) {}
 #endif
-  // needed for device_malloc
   device_ptr(const std::size_t n)
       : Base(sycl::buffer<T, 1>(sycl::range<1>(n)), std::size_t{}) {}
   device_ptr() : Base() {}
@@ -178,13 +174,11 @@ public:
   typename Base::difference_type operator-(const device_ptr &it) const {
     return Base::idx - it.idx;
   }
-
 };
 
 template <typename T> device_ptr<T> device_malloc(const std::size_t n) {
   return device_ptr<T>(n / sizeof(T));
 }
-
 template <typename T>
 device_ptr<T> device_new(device_ptr<T> p, const T &exemplar,
                          const std::size_t n = 1) {
@@ -192,7 +186,6 @@ device_ptr<T> device_new(device_ptr<T> p, const T &exemplar,
   p.buffer = sycl::buffer<T, 1>(result.begin(), result.end());
   return p + n;
 }
-
 template <typename T>
 device_ptr<T> device_new(device_ptr<T> p, const std::size_t n = 1) {
   return device_new(p, T{}, n);
@@ -237,4 +230,4 @@ template <typename T> using device_new_allocator = sycl::buffer_allocator;
 
 } // namespace dpct
 
-#endif
+#endif // __DPCT_MEMORY_H
