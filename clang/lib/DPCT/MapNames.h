@@ -190,7 +190,7 @@ public:
 
     std::vector<int> CopyFrom;
     std::vector<int> CopyTo;
-    bool ToDevice;
+    bool ToDevice = false;
     std::string ReplName;
   };
 
