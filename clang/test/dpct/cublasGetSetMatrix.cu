@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
+// CHECK: using queue_p = cl::sycl::queue *;
 
 constexpr int foo(int i) {
   return i;

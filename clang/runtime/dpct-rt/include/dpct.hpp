@@ -48,6 +48,4 @@ template <int Arg> class dpct_kernel_scalar;
 #define DPCT_PI_F (3.14159274101257f)
 #define DPCT_PI (3.141592653589793115998)
 
-using queue_p = cl::sycl::queue *;
-
 #endif // __DPCT_HPP__

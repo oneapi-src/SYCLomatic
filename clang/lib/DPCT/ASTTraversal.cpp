@@ -1156,6 +1156,9 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       TypeStr = QT.getAsString();
     }
   }
+  if (TypeStr == "cudaStream_t") {
+    DpctGlobalInfo::getInstance().insertUsing(BeginLoc, QUEUE_P);
+  }
 
   // Add '#include <complex>' directive to the file only once
   if (TypeStr == "cuComplex" || TypeStr == "cuDoubleComplex") {
@@ -3960,6 +3963,7 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
     IsAssigned = true;
   }
   assert(CE && "Unknown result");
+  DpctGlobalInfo::getInstance().insertUsing(CE->getBeginLoc(), QUEUE_P);
 
   if (!CE->getDirectCallee())
     return;

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <list>
+// CHECK: using queue_p = cl::sycl::queue *;
 
 // CHECK: cl::sycl::event gv;
 cudaEvent_t gv;

@@ -4,6 +4,7 @@
 // RUN: FileCheck --input-file %T/cuda-stream-api.dp.cpp --match-full-lines %s
 
 #include <list>
+// CHECK: using queue_p = cl::sycl::queue *;
 
 template <typename T>
 // CHECK: void check(T result, char const *const func) {
