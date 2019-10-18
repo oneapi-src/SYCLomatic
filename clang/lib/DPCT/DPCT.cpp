@@ -338,9 +338,9 @@ public:
     for (const auto &I : TransformSet) {
       auto Repl = I->getReplacement(Context);
       Global.addReplacement(Repl);
-
-      // TODO: Need to print debug info here
     }
+
+    DebugInfo::printReplacements(TransformSet, Context);
   }
 
   void Initialize(ASTContext &Context) override {
@@ -848,8 +848,7 @@ int run(int argc, const char **argv) {
 
   // TODO: implement one of this for each source language.
   CudaPath = getCudaInstallPath(OriginalArgc, argv);
-  DPCT_DEBUG_WITH_TYPE("CudaPath",
-                       DpctLog() << "Cuda Path found: " << CudaPath << "\n");
+  DpctDiags() << "Cuda Include Path found: " << CudaPath << "\n";
 
   RefactoringTool Tool(OptParser->getCompilations(),
                        OptParser->getSourcePathList());

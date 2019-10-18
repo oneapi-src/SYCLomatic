@@ -570,29 +570,6 @@ std::string printTemplateArgument(const TemplateArgument &Arg,
   return OS.str();
 }
 
-bool ReplacementFilter::containsInterval(const IntervalSet &IS,
-                                         const Interval &I) const {
-  size_t Low = 0;
-  size_t High = IS.size();
-
-  while (High != Low) {
-    size_t Mid = Low + (High - Low) / 2;
-
-    if (IS[Mid].Offset == I.Offset && I.Length == 0)
-      // I is designed to replace the deletion at IS[Mid].
-      return false;
-    if (IS[Mid].Offset <= I.Offset) {
-      if (IS[Mid].Offset + IS[Mid].Length >= I.Offset + I.Length)
-        return true;
-      Low = Mid + 1;
-    } else {
-      High = Mid;
-    }
-  }
-
-  return false;
-}
-
 SourceLocation InsertBeforeCtrInitList::getInsertLoc() const {
   auto Init = CDecl->init_begin();
   while (Init != CDecl->init_end()) {
@@ -616,45 +593,6 @@ InsertBeforeCtrInitList::getReplacement(const ASTContext &Context) const {
   recordMigrationInfo(Context, CDecl->getBeginLoc());
   return std::make_shared<ExtReplacement>(Context.getSourceManager(),
                                           getInsertLoc(), 0, T, this);
-}
-
-bool ReplacementFilter::isDeletedReplacement(const ExtReplacement &R) const {
-  if (R.getReplacementText().empty())
-    return false;
-  auto Found = FileMap.find(R.getFilePath());
-  if (Found == FileMap.end())
-    return false;
-  return containsInterval(Found->second, {R.getOffset(), R.getLength()});
-}
-
-size_t ReplacementFilter::findFirstNotDeletedReplacement(size_t Start) const {
-  size_t Size = ReplSet.size();
-  for (size_t Index = Start; Index < Size; ++Index)
-    if (!isDeletedReplacement(ReplSet[Index]))
-      return Index;
-  return -1;
-}
-
-ReplacementFilter::ReplacementFilter(const std::vector<ExtReplacement> &RS)
-    : ReplSet(RS) {
-  for (const ExtReplacement &R : ReplSet)
-    if (R.getReplacementText().empty())
-      FileMap[R.getFilePath()].push_back({R.getOffset(), R.getLength()});
-  for (auto &FMI : FileMap) {
-    IntervalSet &IS = FMI.second;
-    std::sort(IS.begin(), IS.end());
-    // delete smaller intervals if they are overlapped by the preceeding one
-    IntervalSet::iterator It = IS.begin();
-    IntervalSet::iterator Prev = It++;
-    while (It != IS.end()) {
-      if (Prev->Offset + Prev->Length > It->Offset) {
-        It = IS.erase(It);
-      } else {
-        Prev = It;
-        It++;
-      }
-    }
-  }
 }
 
 std::shared_ptr<ExtReplacement>
@@ -728,14 +666,14 @@ ReplaceText::getReplacement(const ASTContext &Context) const {
   return std::make_shared<ExtReplacement>(SM, BeginLoc, Len, T, this);
 }
 
-static const std::unordered_map<int, std::string> TMNameMap = {
-#define TRANSFORMATION(TYPE) {static_cast<int>(TMID::TYPE), #TYPE},
+const std::unordered_map<int, std::string> TextModification::TMNameMap = {
+#define TRANSFORMATION(TYPE) {(int)TMID::TYPE, #TYPE},
 #include "Transformations.inc"
 #undef TRANSFORMATION
 };
 
-const std::string TextModification::getName() const {
-  return TMNameMap.at(static_cast<int>(getID()));
+const std::string &TextModification::getName() const {
+  return TMNameMap.at((int)getID());
 }
 
 constexpr char TransformStr[] = " => ";
@@ -745,7 +683,7 @@ static void printHeader(llvm::raw_ostream &OS, const TMID &ID,
   if (ParentRuleID) {
     OS << ASTTraversalMetaInfo::getNameTable()[ParentRuleID] << ":";
   }
-  OS << TMNameMap.at(static_cast<int>(ID));
+  OS << TextModification::TMNameMap.at((int)ID);
   OS << "] ";
 }
 

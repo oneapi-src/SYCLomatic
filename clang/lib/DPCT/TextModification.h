@@ -106,6 +106,8 @@ public:
   // before modifications belonging to G2, and G2s before G3s
   enum Group { Any = 0, G1 = 1, G2 = 2, G3 = 3 };
 
+  static const std::unordered_map<int, std::string> TMNameMap;
+
 public:
   TextModification(TMID _TMID) : ID(_TMID), Key(Any), ParentRuleID(0) {}
   TextModification(TMID _TMID, Group _Key)
@@ -123,7 +125,7 @@ public:
   }
 
   TMID getID() const { return ID; }
-  const std::string getName() const;
+  const std::string &getName() const;
 
   void setParentRuleID(const char *RuleID) { ParentRuleID = RuleID; }
   const char *getParentRuleID() const { return ParentRuleID; }
@@ -374,8 +376,10 @@ class InsertAfterStmt : public TextModification {
   bool DoMacroExpansion;
 
 public:
-  InsertAfterStmt(const Stmt *S, std::string &&T, unsigned PairID = 0, bool DoMacroExpansion = false)
-      : TextModification(TMID::InsertAfterStmt), S(S), T(T), PairID(PairID), DoMacroExpansion(DoMacroExpansion) {}
+  InsertAfterStmt(const Stmt *S, std::string &&T, unsigned PairID = 0,
+                  bool DoMacroExpansion = false)
+      : TextModification(TMID::InsertAfterStmt), S(S), T(T), PairID(PairID),
+        DoMacroExpansion(DoMacroExpansion) {}
 
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
@@ -447,55 +451,6 @@ public:
              const bool PrintDetail = true) const override;
 };
 
-/// A class that filters out Replacements that modify text inside a deleted code
-/// block.
-class ReplacementFilter {
-  struct Interval {
-    size_t Offset;
-    size_t Length;
-    bool operator<(const Interval &Other) const {
-      return Offset < Other.Offset;
-    }
-  };
-
-  using IntervalSet = std::vector<Interval>;
-
-  const std::vector<ExtReplacement> &ReplSet;
-  std::map<std::string, IntervalSet> FileMap;
-
-private:
-  bool containsInterval(const IntervalSet &IS, const Interval &I) const;
-  bool isDeletedReplacement(const ExtReplacement &R) const;
-  size_t findFirstNotDeletedReplacement(size_t Start) const;
-
-  class iterator {
-    const ReplacementFilter &RF;
-    size_t Idx;
-
-  public:
-    iterator(const ReplacementFilter &RF, size_t Idx) : RF(RF), Idx(Idx) {}
-    const ExtReplacement &operator*() const { return RF.ReplSet[Idx]; }
-    iterator &operator++() {
-      Idx = RF.findFirstNotDeletedReplacement(Idx + 1);
-      return *this;
-    }
-    bool operator==(const iterator &Other) const {
-      assert(&RF == &Other.RF && "Mismatching iterators");
-      return Idx == Other.Idx;
-    }
-    bool operator!=(const iterator &Other) const { return !operator==(Other); }
-  };
-
-public:
-  ReplacementFilter(const std::vector<ExtReplacement> &RS);
-
-  iterator begin() {
-    return iterator(*this, findFirstNotDeletedReplacement(0));
-  }
-  iterator end() { return iterator(*this, -1); }
-};
-
-/// Insert a string before a statement
 class InsertBeforeStmt : public TextModification {
   const Stmt *S;
   std::string T;
