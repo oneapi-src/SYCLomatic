@@ -30,17 +30,17 @@ int main() {
   dpct::dpct_image_channel chn4 =
       dpct::create_image_channel(32, 32, 32, 32, dpct::channel_float);
 
-  dpct::dpct_image_matrix_p array1;
-  dpct::dpct_image_matrix_p array2;
-  dpct::dpct_image_matrix_p array3;
+  dpct::dpct_image_data array1;
+  dpct::dpct_image_data array2;
+  dpct::dpct_image_data array3;
 
-  dpct::dpct_malloc_matrix(&array1, &chn1, 640);
-  dpct::dpct_malloc_matrix(&array2, &chn4, 640, 480);
-  dpct::dpct_malloc_matrix(&array3, &chn2, 640, 480, 24);
+  dpct::dpct_malloc_image(&array1, &chn1, 640);
+  dpct::dpct_malloc_image(&array2, &chn4, 640, 480);
+  dpct::dpct_malloc_image(&array3, &chn2, 640, 480, 24);
 
-  dpct::dpct_memcpy_to_matrix(array1, 0, 0, host_buffer, 640 * 480 * 24 * sizeof(cl::sycl::float4));
-  dpct::dpct_memcpy_to_matrix(array1, 0, 0, host_buffer, 640 * 480 * 24 * sizeof(cl::sycl::float4));
-  dpct::dpct_memcpy_to_matrix(array1, 0, 0, device_buffer, 640 * 480 * 24 * sizeof(cl::sycl::float4));
+  dpct::dpct_memcpy_to_image(array1, 0, 0, host_buffer, 640 * 480 * 24 * sizeof(cl::sycl::float4));
+  dpct::dpct_memcpy_to_image(array1, 0, 0, host_buffer, 640 * 480 * 24 * sizeof(cl::sycl::float4));
+  dpct::dpct_memcpy_to_image(array1, 0, 0, device_buffer, 640 * 480 * 24 * sizeof(cl::sycl::float4));
 
   dpct::dpct_attach_image(tex42, array2);
   dpct::dpct_attach_image(tex21, array1);

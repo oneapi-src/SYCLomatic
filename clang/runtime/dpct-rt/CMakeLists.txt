@@ -5,7 +5,6 @@ set(dpct_rt_files
   include/memory.hpp
   include/kernel.hpp
   include/image.hpp
-  include/types.hpp
   include/util.hpp
   include/blas_utils.hpp
   include/dpstd_utils.hpp

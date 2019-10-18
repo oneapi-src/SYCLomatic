@@ -22,6 +22,7 @@
 #include <CL/sycl.hpp>
 
 #include "memory.hpp"
+#include "util.hpp"
 
 namespace dpct {
 
@@ -104,6 +105,94 @@ template <class T> struct fetch_data<cl::sycl::vec<T, 4>> {
   }
 };
 
+// Image channel info, include channel number, order, data width and type
+struct dpct_image_channel {
+  cl::sycl::image_channel_order _order;
+  cl::sycl::image_channel_type _type;
+  unsigned _elem_size;
+};
+
+/// 2D or 3D matrix data for image.
+class dpct_image_matrix {
+  dpct_image_channel _channel;
+  int _range[3] = {0};
+  int _dims = 0;
+  void *_src = nullptr;
+
+  /// Set range of each dimension.
+  template <class... Rest>
+  size_t set_range(int dim_idx, int first, Rest &&... rest) {
+    if (!first)
+      return set_range(dim_idx);
+    _range[dim_idx] = first;
+    return first * set_range(++dim_idx, std::forward<Rest>(rest)...);
+  }
+
+  inline size_t set_range(int dim_idx) {
+    _dims = dim_idx;
+    while (dim_idx < 3)
+      _range[dim_idx++] = 1;
+    return 1;
+  }
+
+  template <int... DimIdx>
+  cl::sycl::range<sizeof...(DimIdx)> get_range(integer_sequence<DimIdx...>) {
+    return cl::sycl::range<sizeof...(DimIdx)>(_range[DimIdx]...);
+  }
+
+public:
+  /// Constructor with channel info and dimension size info.
+  template <class... Args>
+  dpct_image_matrix(dpct_image_channel channel, Args &&... args)
+      : _channel(channel) {
+    auto size = set_range(0, std::forward<Args>(args)...);
+    _src = std::malloc(size * _channel._elem_size);
+  }
+  /// Construct a new image class with the matrix data.
+  template <int Dimension> cl::sycl::image<Dimension> *allocate_image() {
+    return new cl::sycl::image<Dimension>(
+        _src, _channel._order, _channel._type,
+        get_range(make_index_sequence<Dimension>()),
+        cl::sycl::property::image::use_host_ptr());
+  }
+  /// Free the data.
+  void free() {
+    if (_src)
+      std::free(_src);
+    _src = nullptr;
+  }
+
+  /// Get data pointer with offset
+  inline void *get_data(size_t off_x, size_t off_y, size_t off_z) {
+    return (char *)_src +
+           (off_x * _range[1] * _range[2] + off_y * _range[2] + off_z) *
+               _channel._elem_size;
+  }
+  /// Get channel info.
+  inline dpct_image_channel get_channel() { return _channel; }
+  /// Get matrix dims.
+  inline int get_dims() { return _dims; }
+
+  ~dpct_image_matrix() { free(); }
+};
+using dpct_image_matrix_p = dpct_image_matrix *;
+
+enum dpct_image_data_type { data_matrix, data_linear, data_unsupport };
+
+/// Image data info.
+class dpct_image_data {
+public:
+  dpct_image_data_type type;
+  union {
+    dpct_image_matrix *matrix;
+    struct {
+      void *data;
+      dpct_image_channel chn;
+      size_t size;
+    } linear;
+  } data;
+};
+
 /// Image sampling info, include addressing mode, filtering mode and
 /// normalization info.
 class dpct_image_info {
@@ -179,15 +268,15 @@ public:
     attach_data<T, Dimension>()(this, data);
   }
   // Attach matrix data to this class.
-  void attach(dpct_matrix_p data) {
+  void attach(dpct_image_matrix *data) {
     detach();
     _image = data->allocate_image<Dimension>();
   }
   // Attach linear data to this class.
   void attach(void *ptr, const dpct_image_channel &chn_desc, size_t count) {
     detach();
-    if (internal::memory_manager::get_instance().is_device_ptr(ptr))
-      ptr = internal::memory_manager::get_instance()
+    if (memory_manager::get_instance().is_device_ptr(ptr))
+      ptr = memory_manager::get_instance()
                 .translate_ptr(ptr)
                 .buffer.get_access<cl::sycl::access::mode::read_write>()
                 .get_pointer();
@@ -282,7 +371,7 @@ create_image_channel(int r, int g, int b, int a,
 /// \param a The matrix data class pointer.
 template <class T, int Dimension>
 inline void dpct_attach_image(dpct_image<T, Dimension> &image,
-                              dpct_matrix_p a) {
+                              dpct_image_matrix *a) {
   image.attach(a);
 }
 
@@ -309,9 +398,9 @@ inline void dpct_detach_image(dpct_image<T, Dimension> &image) {
 /// \param chn Pointer to channel info.
 /// \param args Varidic arguments of range.
 template <class... Args>
-inline void dpct_malloc_matrix(dpct_matrix_p *a, dpct_image_channel *chn,
+inline void dpct_malloc_matrix(dpct_image_matrix **a, dpct_image_channel *chn,
                                Args &&... args) {
-  *a = new dpct_matrix(*chn, std::forward<Args>(args)...);
+  *a = new dpct_image_matrix(*chn, std::forward<Args>(args)...);
 }
 
 /// Copy data to matrix.
@@ -320,14 +409,14 @@ inline void dpct_malloc_matrix(dpct_matrix_p *a, dpct_image_channel *chn,
 /// \param off_y Destination offset at dim y.
 /// \param ptr Point to source data.
 /// \param count Size in bytes.
-inline void dpct_memcpy_to_matrix(dpct_matrix_p a, size_t off_x,
+inline void dpct_memcpy_to_matrix(dpct_image_matrix *a, size_t off_x,
                                   size_t off_y, void *ptr, size_t count) {
   dpct_memcpy(ptr, a->get_data(off_x, off_y, 0), count);
 }
 
 /// Free a matrix.
 /// \param a Pointer to matrix.
-inline void dpct_free(dpct_matrix_p a) { delete a; }
+inline void dpct_free(dpct_image_matrix *a) { delete a; }
 
 /// Read data from image accessor.
 /// \param acc Image accessor.
@@ -394,8 +483,6 @@ inline void dpct_read_image(typename image_trait<T>::data_t *data,
   *data = dpct_read_image(acc, x, y, z);
 }
 
-namespace internal {
-
 /// Create image according with given type \p T and \p dims.
 template <class T> static dpct_image_base *dpct_create_image(int dims) {
   switch (dims) {
@@ -451,7 +538,6 @@ static dpct_image_base *dpct_create_image(dpct_image_channel chn, int dims) {
     return nullptr;
   }
 }
-} // namespace internal
 
 /// Create image according to image data and image info.
 /// \param [out] image_p Point to a pointer of image base class.
@@ -468,7 +554,7 @@ inline void dpct_create_image(dpct_image_base **image_p, dpct_image_data *data,
     channel = data->data.linear.chn;
   }
 
-  if (auto image = internal::dpct_create_image(channel, dims)) {
+  if (auto image = dpct_create_image(channel, dims)) {
     image->set_info(info);
     image->set_data(data);
     *image_p = image;

@@ -29,7 +29,7 @@ __global__ void kernel() {
 int main() {
 
   // CHECK: cl::sycl::float4 *d_data42;
-  // CHECK-NEXT: dpct::dpct_matrix_p a42;
+  // CHECK-NEXT: dpct::dpct_image_matrix_p a42;
   // CHECK-NEXT: dpct::dpct_malloc(&d_data42, sizeof(cl::sycl::float4) * 32 * 32);
   // CHECK-NEXT: dpct::dpct_image_channel desc42 = dpct::create_image_channel(32, 32, 32, 32, dpct::channel_float);
   // CHECK-NEXT: dpct::dpct_malloc_matrix(&a42, &desc42, 32, 32);

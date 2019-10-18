@@ -20,7 +20,6 @@
 #define __DPCT_MEMORY_HPP__
 
 #include "device.hpp"
-#include "types.hpp"
 #include <CL/sycl.hpp>
 #include <cassert>
 #include <cstdint>
@@ -39,15 +38,24 @@
 
 namespace dpct {
 
-#define PITCH_DEFAULT_ALIGN(x) (((x) + 31) & ~(0x1F))
+enum memcpy_direction {
+  host_to_host,
+  host_to_device,
+  device_to_host,
+  device_to_device,
+  automatic
+};
+enum memory_attribute {
+  device = 0,
+  constant,
+  local,
+};
 
 // Byte type to use.
 typedef uint8_t byte_t;
 
 // Buffer type to be used in Memory Management runtime.
 typedef cl::sycl::buffer<byte_t> buffer_t;
-
-namespace internal {
 
 class memory_manager {
 public:
@@ -180,140 +188,6 @@ static void dpct_malloc(void **ptr, size_t size) {
   dpct_malloc(ptr, size, get_default_queue());
 }
 
-// memcpy
-static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
-                                   const void *from_ptr, size_t size,
-                                   memcpy_direction direction) {
-#ifdef DPCT_USM_LEVEL_NONE
-  auto &mm = memory_manager::get_instance();
-  memcpy_direction real_direction = direction;
-  switch (direction) {
-  case host_to_host:
-    assert(!mm.is_device_ptr(from_ptr) && !mm.is_device_ptr(to_ptr));
-    break;
-  case host_to_device:
-    assert(!mm.is_device_ptr(from_ptr) && mm.is_device_ptr(to_ptr));
-    break;
-  case device_to_host:
-    assert(mm.is_device_ptr(from_ptr) && !mm.is_device_ptr(to_ptr));
-    break;
-  case device_to_device:
-    assert(mm.is_device_ptr(from_ptr) && mm.is_device_ptr(to_ptr));
-    break;
-  case automatic:
-    bool from_device = mm.is_device_ptr(from_ptr);
-    bool to_device = mm.is_device_ptr(to_ptr);
-    if (from_device) {
-      if (to_device) {
-        real_direction = device_to_device;
-      } else {
-        real_direction = device_to_host;
-      }
-    } else {
-      if (to_device) {
-        real_direction = host_to_device;
-      } else {
-        real_direction = host_to_host;
-      }
-    }
-    break;
-  }
-
-  switch (real_direction) {
-  case host_to_host:
-    std::memcpy(to_ptr, from_ptr, size);
-    return cl::sycl::event();
-  case host_to_device: {
-    auto alloc = mm.translate_ptr(to_ptr);
-    size_t offset = (byte_t *)to_ptr - alloc.alloc_ptr;
-    return q.submit([&](cl::sycl::handler &cgh) {
-      auto r = cl::sycl::range<1>(size);
-      auto o = cl::sycl::id<1>(offset);
-      cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
-                         cl::sycl::access::target::global_buffer>
-          acc(alloc.buffer, cgh, r, o);
-      cgh.copy(from_ptr, acc);
-    });
-  }
-  case device_to_host: {
-    auto alloc = mm.translate_ptr(from_ptr);
-    size_t offset = (byte_t *)from_ptr - alloc.alloc_ptr;
-    return q.submit([&](cl::sycl::handler &cgh) {
-      auto r = cl::sycl::range<1>(size);
-      auto o = cl::sycl::id<1>(offset);
-      cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read,
-                         cl::sycl::access::target::global_buffer>
-          acc(alloc.buffer, cgh, r, o);
-      cgh.copy(acc, to_ptr);
-    });
-  }
-  case device_to_device: {
-    auto to_alloc = mm.translate_ptr(to_ptr);
-    auto from_alloc = mm.translate_ptr(from_ptr);
-    size_t to_offset = (byte_t *)to_ptr - to_alloc.alloc_ptr;
-    size_t from_offset = (byte_t *)from_ptr - from_alloc.alloc_ptr;
-    return q.submit([&](cl::sycl::handler &cgh) {
-      auto r = cl::sycl::range<1>(size);
-      auto to_o = cl::sycl::id<1>(to_offset);
-      auto from_o = cl::sycl::id<1>(from_offset);
-      cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
-                         cl::sycl::access::target::global_buffer>
-          to_acc(to_alloc.buffer, cgh, r, to_o);
-      cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read,
-                         cl::sycl::access::target::global_buffer>
-          from_acc(from_alloc.buffer, cgh, r, from_o);
-      cgh.copy(from_acc, to_acc);
-    });
-  }
-  default:
-    std::abort();
-  }
-#else
-  return q.memcpy(to_ptr, from_ptr, size);
-#endif // DPCT_USM_LEVEL_NONE
-}
-
-// memcpy 2D/3D matrix with pitch
-static inline cl::sycl::vector_class<cl::sycl::event>
-dpct_memcpy(cl::sycl::queue &q, const dpct_pitch &to, const dpct_pitch &from,
-            cl::sycl::range<3> copy_size,
-            memcpy_direction direction = automatic) {
-  cl::sycl::vector_class<cl::sycl::event> e;
-  unsigned char *to_ptr = (unsigned char *)to.ptr,
-                *from_ptr = (unsigned char *)from.ptr;
-  size_t to_slice = to.pitch * (to.y - copy_size.get(1)),
-         from_slice = from.pitch * (from.y - copy_size.get(1));
-  for (unsigned z = 0; z < copy_size.get(2); ++z) {
-    for (unsigned y = 0; y < copy_size.get(1); ++y) {
-      e.push_back(
-          dpct_memcpy(q, to_ptr, from_ptr, copy_size.get(0), direction));
-      to_ptr += to.pitch;
-      from_ptr += from.pitch;
-    }
-    to_ptr += to_slice;
-    from_ptr += from_slice;
-  }
-  return e;
-}
-
-// memcpy 2D
-static inline cl::sycl::vector_class<cl::sycl::event>
-dpct_memcpy(cl::sycl::queue &q, void *to_ptr, void *from_ptr, size_t to_pitch,
-            size_t from_pitch, size_t x, size_t y,
-            memcpy_direction direction = automatic) {
-  return dpct_memcpy(q, dpct_create_pitch(to_ptr, to_pitch, to_pitch, y),
-                     dpct_create_pitch(from_ptr, from_pitch, from_pitch, y),
-                     cl::sycl::range<3>(x, y, 1), direction);
-}
-
-// memcpy 3D
-static inline cl::sycl::vector_class<cl::sycl::event>
-dpct_memcpy(cl::sycl::queue &q, dpct_memcpy_param *param) {
-  return dpct_memcpy(q, param->to.to_pitch(), param->from.to_pitch(),
-                     param->copy_size);
-}
-} // namespace internal
-
 /// Build a cl::sycl::buffer with \p Size, The pointer that \p ptr point to is
 /// set as a virtual pointer, which can map to the buffer.
 /// \param [out] ptr Point to pointer which need to malloc memory.
@@ -321,31 +195,7 @@ dpct_memcpy(cl::sycl::queue &q, dpct_memcpy_param *param) {
 /// \returns no return value.
 template <typename T1, typename T2>
 static inline void dpct_malloc(T1 **ptr, T2 size) {
-  return internal::dpct_malloc(reinterpret_cast<void **>(ptr),
-                               static_cast<size_t>(size));
-}
-
-/// Malloc 3D array on device with range of pitch, y, z. Pitch is the aligned
-/// size of x.
-/// \param [out] ptr Point to pointer which need to malloc memory.
-/// \param [out] pitch Aligned size of x in bytes.
-/// \param x Range in dim x.
-/// \param y Range in dim y.
-/// \param z Range in dim z.
-/// \returns no return value.
-static inline void dpct_malloc(void **ptr, size_t *pitch, size_t x, size_t y,
-                               size_t z = 1) {
-  *pitch = PITCH_DEFAULT_ALIGN(x);
-  dpct_malloc(ptr, *pitch * y * z);
-}
-
-/// Malloc 3D array on device with size of \p size.
-/// \param [out] pitch Pointer to pitch info which store the memory info.
-/// \param [out] size Malloc memory size.
-static inline void dpct_malloc(dpct_pitch *pitch, cl::sycl::range<3> size) {
-  *pitch = dpct_create_pitch(nullptr, 0, size.get(0), size.get(1));
-  dpct_malloc(&pitch->ptr, &pitch->pitch, size.get(0), size.get(1),
-              size.get(2));
+  return dpct_malloc(reinterpret_cast<void **>(ptr), static_cast<size_t>(size));
 }
 
 /// free
@@ -354,7 +204,7 @@ static inline void dpct_malloc(dpct_pitch *pitch, cl::sycl::range<3> size) {
 static inline void dpct_free(void *ptr) {
   if (ptr) {
 #ifdef DPCT_USM_LEVEL_NONE
-    internal::memory_manager::get_instance().mem_free(ptr);
+    memory_manager::get_instance().mem_free(ptr);
 #else
     cl::sycl::free(ptr, get_default_queue().get_context());
 #endif // DPCT_USM_LEVEL_NONE
@@ -565,6 +415,99 @@ private:
   pointer_t data;
 };
 
+// memcpy
+static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
+                                   const void *from_ptr, size_t size,
+                                   memcpy_direction direction) {
+#ifdef DPCT_USM_LEVEL_NONE
+  auto &mm = memory_manager::get_instance();
+  memcpy_direction real_direction = direction;
+  switch (direction) {
+  case host_to_host:
+    assert(!mm.is_device_ptr(from_ptr) && !mm.is_device_ptr(to_ptr));
+    break;
+  case host_to_device:
+    assert(!mm.is_device_ptr(from_ptr) && mm.is_device_ptr(to_ptr));
+    break;
+  case device_to_host:
+    assert(mm.is_device_ptr(from_ptr) && !mm.is_device_ptr(to_ptr));
+    break;
+  case device_to_device:
+    assert(mm.is_device_ptr(from_ptr) && mm.is_device_ptr(to_ptr));
+    break;
+  case automatic:
+    bool from_device = mm.is_device_ptr(from_ptr);
+    bool to_device = mm.is_device_ptr(to_ptr);
+    if (from_device) {
+      if (to_device) {
+        real_direction = device_to_device;
+      } else {
+        real_direction = device_to_host;
+      }
+    } else {
+      if (to_device) {
+        real_direction = host_to_device;
+      } else {
+        real_direction = host_to_host;
+      }
+    }
+    break;
+  }
+
+  switch (real_direction) {
+  case host_to_host:
+    std::memcpy(to_ptr, from_ptr, size);
+    return cl::sycl::event();
+  case host_to_device: {
+    auto alloc = mm.translate_ptr(to_ptr);
+    size_t offset = (byte_t *)to_ptr - alloc.alloc_ptr;
+    return q.submit([&](cl::sycl::handler &cgh) {
+      auto r = cl::sycl::range<1>(size);
+      auto o = cl::sycl::id<1>(offset);
+      cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
+                         cl::sycl::access::target::global_buffer>
+          acc(alloc.buffer, cgh, r, o);
+      cgh.copy(from_ptr, acc);
+    });
+  }
+  case device_to_host: {
+    auto alloc = mm.translate_ptr(from_ptr);
+    size_t offset = (byte_t *)from_ptr - alloc.alloc_ptr;
+    return q.submit([&](cl::sycl::handler &cgh) {
+      auto r = cl::sycl::range<1>(size);
+      auto o = cl::sycl::id<1>(offset);
+      cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read,
+                         cl::sycl::access::target::global_buffer>
+          acc(alloc.buffer, cgh, r, o);
+      cgh.copy(acc, to_ptr);
+    });
+  }
+  case device_to_device: {
+    auto to_alloc = mm.translate_ptr(to_ptr);
+    auto from_alloc = mm.translate_ptr(from_ptr);
+    size_t to_offset = (byte_t *)to_ptr - to_alloc.alloc_ptr;
+    size_t from_offset = (byte_t *)from_ptr - from_alloc.alloc_ptr;
+    return q.submit([&](cl::sycl::handler &cgh) {
+      auto r = cl::sycl::range<1>(size);
+      auto to_o = cl::sycl::id<1>(to_offset);
+      auto from_o = cl::sycl::id<1>(from_offset);
+      cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
+                         cl::sycl::access::target::global_buffer>
+          to_acc(to_alloc.buffer, cgh, r, to_o);
+      cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::read,
+                         cl::sycl::access::target::global_buffer>
+          from_acc(from_alloc.buffer, cgh, r, from_o);
+      cgh.copy(from_acc, to_acc);
+    });
+  }
+  default:
+    std::abort();
+  }
+#else
+  return q.memcpy(to_ptr, from_ptr, size);
+#endif // DPCT_USM_LEVEL_NONE
+}
+
 /// Synchronously copies size bytes from the address specified by from_ptr to
 /// the address specified by to_ptr. The value of direction, which is used to
 /// specify the copy direction, should be one of host_to_host, host_to_device,
@@ -578,8 +521,7 @@ private:
 /// \returns no return value.
 static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
                         memcpy_direction direction = automatic) {
-  internal::dpct_memcpy(get_default_queue(), to_ptr, from_ptr, size, direction)
-      .wait();
+  dpct_memcpy(get_default_queue(), to_ptr, from_ptr, size, direction).wait();
 }
 
 /// Asynchronously copies size bytes from the address specified by from_ptr to
@@ -597,116 +539,11 @@ static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
 static void async_dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
                               memcpy_direction direction = automatic,
                               cl::sycl::queue &q = dpct::get_default_queue()) {
-  internal::dpct_memcpy(q, to_ptr, from_ptr, size, direction);
-}
-
-/// Synchronously copies 2D matrix specified by x and y from the address
-/// specified by from_ptr to the address specified by to_ptr, while from_pitch
-/// and to_pitch are the range of dim x in bytes of the matrix specified by
-/// from_ptr and to_ptr, The value of direction, which is used to specify the
-/// copy direction, should be one of host_to_host, host_to_device,
-/// device_to_host, device_to_device, or automatic. The function will return
-/// after the copy is completed.
-///
-/// \param to_ptr Pointer to destination memory address.
-/// \param to_pitch Range of dim x in bytes of destination matrix specified by to_ptr.
-/// \param from_ptr Pointer to source memory address.
-/// \param from_pitch Range of dim x in bytes of source matrix specified by to_ptr.
-/// \param x Range of dim x of matrix to be copied.
-/// \param y Range of dim y of matrix to be copied.
-/// \param direction Direction of the copy.
-/// \returns no return value.
-static inline void dpct_memcpy(void *to_ptr, size_t to_pitch, void *from_ptr,
-                               size_t from_pitch, size_t x, size_t y,
-                               memcpy_direction direction = automatic) {
-  cl::sycl::event::wait(internal::dpct_memcpy(get_default_queue_wait(), to_ptr,
-                                              from_ptr, to_pitch, from_pitch, x,
-                                              y, direction));
-}
-
-/// Asynchronously copies 2D matrix specified by x and y from the address
-/// specified by from_ptr to the address specified by to_ptr, while from_pitch
-/// and to_pitch are the range of dim x in bytes of the matrix specified by
-/// from_ptr and to_ptr, The value of direction, which is used to specify the
-/// copy direction, should be one of host_to_host, host_to_device,
-/// device_to_host, device_to_device, or automatic. The return of the function
-/// does NOT guarantee the copy is completed
-///
-/// \param to_ptr Pointer to destination memory address.
-/// \param to_pitch Range of dim x in bytes of destination matrix specified by to_ptr.
-/// \param from_ptr Pointer to source memory address.
-/// \param from_pitch Range of dim x in bytes of source matrix specified by to_ptr.
-/// \param x Range of dim x of matrix to be copied.
-/// \param y Range of dim y of matrix to be copied.
-/// \param q Queue to execute the copy task.
-/// \returns no return value.
-static inline void
-async_dpct_memcpy(void *to_ptr, size_t to_pitch, void *from_ptr,
-                  size_t from_pitch, size_t x, size_t y,
-                  memcpy_direction direction = automatic,
-                  cl::sycl::queue &q = get_default_queue_wait()) {
-  internal::dpct_memcpy(q, to_ptr, from_ptr, to_pitch, from_pitch, x, y,
-                        direction);
-}
-
-/// Synchronously copies a subset of a 3D matrix to another 3D matrix. The param
-/// contains source and destination matrix info. The copied matrix info and
-/// position info is also contained in param. Copy direction, should be one of
-/// host_to_host, host_to_device, device_to_host, device_to_device, or automatic
-/// is specified by the param. The function will return after the copy is completed.
-///
-/// \param param Copy parameters.
-/// \returns no return value.
-static inline void dpct_memcpy(dpct_memcpy_param *param) {
-  cl::sycl::event::wait(internal::dpct_memcpy(get_default_queue_wait(), param));
-}
-
-/// Asynchronously copies a subset of a 3D matrix to another 3D matrix. The param
-/// contains source and destination matrix info. The copied matrix info and
-/// position info is also contained in param. Copy direction, should be one of
-/// host_to_host, host_to_device, device_to_host, device_to_device, or automatic
-/// is specified by the param. The return of the function does NOT guarantee the
-/// copy is completed.
-///
-/// \param param Copy parameters.
-/// \param q Queue to execute the copy task.
-/// \returns no return value.
-static inline void
-async_dpct_memcpy(dpct_memcpy_param *param,
-                  cl::sycl::queue &q = get_default_queue_wait()) {
-  internal::dpct_memcpy(q, param);
-}
-
-/// Copy matrix data. The default leading dimension is column.
-/// \param [out] to_ptr A poniter points to the destination location.
-/// \param [in] from_ptr A poniter points to the source location.
-/// \param [in] to_ld The leading dimension the destination matrix.
-/// \param [in] from_ld The leading dimension the source matrix.
-/// \param [in] rows The number of rows of the source matrix.
-/// \param [in] cols The number of columns of the source matrix.
-/// \param [in] direction The direction of the data copy.
-/// \param [in] queue The queue where the routine should be executed.
-template <typename T>
-inline void
-matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld, int from_ld, int rows,
-                int cols, memcpy_direction direction, cl::sycl::queue &queue) {
-  using Ty = typename DataType<T>::T2;
-  if (to_ptr == from_ptr && to_ld == from_ld) {
-    return;
-  }
-  if (to_ld == from_ld) {
-    internal::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
-                          sizeof(Ty) * to_ld * cols, direction);
-  } else {
-    cl::sycl::event::wait_and_throw(internal::dpct_memcpy(
-        queue, dpct_pitch(to_ptr, to_ld * sizeof(Ty), to_ld, cols),
-        dpct_pitch(from_ptr, from_ld * sizeof(Ty), from_ld, cols),
-        cl::sycl::range<3>(rows * sizeof(Ty), cols, 1), direction));
-  }
+  dpct_memcpy(q, to_ptr, from_ptr, size, direction);
 }
 
 static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
-  auto alloc = internal::memory_manager::get_instance().translate_ptr(ptr);
+  auto alloc = memory_manager::get_instance().translate_ptr(ptr);
   size_t offset = (byte_t *)ptr - alloc.alloc_ptr;
   return std::make_pair(alloc.buffer, offset);
 }
@@ -715,7 +552,7 @@ static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
 static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *devPtr,
                                           int value, size_t count) {
 #ifdef DPCT_USM_LEVEL_NONE
-  auto &mm = internal::memory_manager::get_instance();
+  auto &mm = memory_manager::get_instance();
   assert(mm.is_device_ptr(devPtr));
   auto alloc = mm.translate_ptr(devPtr);
   size_t offset = (byte_t *)devPtr - alloc.alloc_ptr;
@@ -761,7 +598,6 @@ static void async_dpct_memset(void *dev_ptr, int value, size_t size,
 template <class T, memory_attribute Memory, size_t Dimension>
 class global_memory {
 public:
-  using memory_manager = internal::memory_manager;
   using accessor_t =
       typename memory_traits<Memory, T>::template accessor_t<Dimension>;
   using value_t = typename memory_traits<Memory, T>::value_t;

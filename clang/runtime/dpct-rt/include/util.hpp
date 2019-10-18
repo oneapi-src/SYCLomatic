@@ -27,7 +27,7 @@ namespace dpct {
 template <typename I, typename O> inline O bit_cast(I i) {
   return *reinterpret_cast<O *>(&i);
 }
-namespace internal {
+
 template <int... Ints> struct integer_sequence {};
 template <int Size, int... Ints>
 struct make_index_sequence
@@ -35,22 +35,45 @@ struct make_index_sequence
 template <int... Ints>
 struct make_index_sequence<0, Ints...> : public integer_sequence<Ints...> {};
 
-template <class T>
-static inline T *compute_offset(T *ptr, const cl::sycl::range<3> &range,
-                                const cl::sycl::id<3> &offset) {
-  return ptr + (offset.get(0) + offset.get(1) * range.get(0) +
-                offset.get(2) * range.get(0) * range.get(1));
-}
-static inline void *compute_offset(void *ptr, const cl::sycl::range<3> &range,
-                                   const cl::sycl::id<3> &offset) {
-  return compute_offset((char *)ptr, range, offset);
-}
-} // namespace internal
-
 template <typename T> struct DataType { using T2 = T; };
 template <typename T> struct DataType<cl::sycl::vec<T, 2>> {
   using T2 = std::complex<T>;
 };
+
+/// Copy matrix data. The default leading dimension is column.
+/// \param [out] to_ptr A poniter points to the destination location.
+/// \param [in] from_ptr A poniter points to the source location.
+/// \param [in] to_ld The leading dimension the destination matrix.
+/// \param [in] from_ld The leading dimension the source matrix.
+/// \param [in] rows The number of rows of the source matrix.
+/// \param [in] cols The number of columns of the source matrix.
+/// \param [in] direction The direction of the data copy.
+/// \param [in] queue The queue where the routine should be executed.
+template <typename T>
+inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
+                            int from_ld, int rows, int cols,
+                            memcpy_direction direction, cl::sycl::queue &queue) {
+  using Ty = typename DataType<T>::T2;
+  if (to_ptr == from_ptr && to_ld == from_ld) {
+    return;
+  }
+  if (to_ld == from_ld) {
+    dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
+                sizeof(Ty) * to_ld * cols, direction);
+  } else {
+    auto to_ptr_t = to_ptr;
+    auto from_ptr_t = from_ptr;
+    to_ptr_t = to_ptr_t - to_ld;
+    from_ptr_t = from_ptr_t - from_ld;
+    for (int c = 0; c < cols; ++c) {
+      to_ptr_t = to_ptr_t + to_ld;
+      from_ptr_t = from_ptr_t + from_ld;
+      dpct_memcpy(queue, (void *)(to_ptr_t), (void *)(from_ptr_t),
+                  sizeof(Ty) * rows, direction);
+    }
+  }
+}
+
 } // namespace dpct
 
 #endif // __DPCT_UTIL_HPP__
