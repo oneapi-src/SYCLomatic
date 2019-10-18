@@ -103,8 +103,10 @@ static opt<std::string>
     InRoot("in-root",
            desc("The directory path for the root of the source tree that needs "
                 "to be migrated.\n"
-                "Only files under this root are migrated. Default: current "
-                "directory.\n"),
+                "Only files under this root are migrated. Default: Current"
+                " directory, if input\nsource files are not provided. "
+                "The directory of the first input source file, if\ninput"
+                " source files are provided."),
            value_desc("dir"), cat(DPCTCat),
            llvm::cl::Optional);
 static opt<std::string> OutRoot(
@@ -170,14 +172,13 @@ static opt<std::string> ReportFilePrefix(
         "not\n"
         "specified, the report will go to stdout. The report files are created "
         "in the\n"
-        "directory, specified by -out-root. Default is stdout."),
+        "directory, specified by -out-root."),
     value_desc("prefix"), cat(DPCTCat), llvm::cl::Optional);
 bool ReportOnlyFlag = false;
 static opt<bool, true>
     ReportOnly("report-only",
                llvm::cl::desc("Only reports are generated. No DPC++ code is "
-                              "generated. Default is to generate\n"
-                              "DPC++ code."),
+                              "generated. Default: off."),
                cat(DPCTCat), llvm::cl::location(ReportOnlyFlag));
 
 bool KeepOriginalCodeFlag = false;
@@ -185,8 +186,7 @@ bool KeepOriginalCodeFlag = false;
 static opt<bool, true>
     ShowOrigCode("keep-original-code",
                  llvm::cl::desc("Keeps the original code in comments of "
-                                "generated DPC++ files. The default is:\n"
-                                "off."),
+                                "generated DPC++ files. Default: off.\n"),
                  cat(DPCTCat), llvm::cl::location(KeepOriginalCodeFlag));
 
 static opt<std::string>
@@ -209,7 +209,7 @@ opt<std::string> SuppressWarnings("suppress-warnings", desc(WarningDesc),
                                   value_desc("value"), cat(DPCTCat));
 
 bool SuppressWarningsAllFlag = false;
-static std::string WarningAllDesc("Suppresses all migration warnings.");
+static std::string WarningAllDesc("Suppresses all migration warnings. Default: off.");
 opt<bool, true> SuppressWarningsAll("suppress-warnings-all",
                                     desc(WarningAllDesc), cat(DPCTCat),
                                     location(SuppressWarningsAllFlag));
@@ -219,8 +219,7 @@ bool NoStopOnErrFlag = false;
 static opt<bool, true>
     NoStopOnErr("no-stop-on-err",
                 llvm::cl::desc("Continue migration and generation of reports "
-                               "after possible errors. The default\n"
-                               "is: off."),
+                               "after possible errors. Default: off.\n"),
                 cat(DPCTCat), llvm::cl::location(NoStopOnErrFlag));
 
 opt<OutputVerbosityLev> OutputVerbosity(

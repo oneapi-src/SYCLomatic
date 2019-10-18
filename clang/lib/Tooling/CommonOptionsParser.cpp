@@ -111,7 +111,7 @@ llvm::Error CommonOptionsParser::init(
       "p",
       cl::desc("The directory path for the compilation database (compile_commands.json). When no\n"
                "path is specified, a search for compile_commands.json is attempted through all\n"
-               "parent paths of the first input source file."),
+               "parent directories of the first input file."),
       cl::Optional, cl::cat(Category), cl::value_desc("dir"),
       cl::sub(*cl::AllSubCommands));
 
