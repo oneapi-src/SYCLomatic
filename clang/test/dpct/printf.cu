@@ -37,8 +37,10 @@ int main() {
   // CHECK-NEXT:  dpct::get_default_queue().submit(
   // CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:      cl::sycl::stream [[STREAM:stream_ct1]](64 * 1024, 80, cgh);
-  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class kernel_test_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:        cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:      auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1);
+  // CHECK-NEXT:      auto dpct_local_range = cl::sycl::range<3>(1, 1, 1);
+  // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class kernel_test_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:        [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK-NEXT:           kernel_test([[STREAM]]);
   // CHECK-NEXT:      });

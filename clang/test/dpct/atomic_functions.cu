@@ -10,7 +10,7 @@
 
 template <typename T>
 __global__ void test(T *data) {
-  // CHECK: T tid = item_ct1.get_local_id(0);
+  // CHECK: T tid = item_ct1.get_local_id(2);
   T tid = threadIdx.x;
 
   // CHECK: dpct::atomic_fetch_add(&data[0], tid);
@@ -110,8 +110,10 @@ void InvokeKernel() {
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dev_ptr_acc_ct0 = dev_ptr_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(k_threads_per_block, 1, 1);
+  // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(k_threads_per_block, 1, 1);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class test_{{[a-f0-9]+}}, T>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(k_threads_per_block, 1, 1)), cl::sycl::range<3>(k_threads_per_block, 1, 1)),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           T *dev_ptr_ct0 = (T *)(&dev_ptr_acc_ct0[0] + dev_ptr_offset_ct0);
   // CHECK-NEXT:           test<T>(dev_ptr_ct0, item_ct1);

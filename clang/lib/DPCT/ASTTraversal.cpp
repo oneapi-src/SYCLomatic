@@ -450,11 +450,11 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   unsigned Dimension;
 
   if (FieldName == "__fetch_builtin_x")
-    Dimension = 0;
+    Dimension = 2;
   else if (FieldName == "__fetch_builtin_y")
     Dimension = 1;
   else if (FieldName == "__fetch_builtin_z")
-    Dimension = 2;
+    Dimension = 0;
   else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected field name: " << FieldName;
