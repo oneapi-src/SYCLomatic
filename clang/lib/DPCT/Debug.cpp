@@ -410,6 +410,7 @@ void DebugInfo::ShowStatus(int Status) {
     StatusString = "Error: Path is too long; should be less than PATH_MAX (" +
                    std::to_string(PATH_MAX) + ")";
 #endif
+    break;
   case MigrationErrorFileParseError:
     StatusString = "Error: Cannot parse input file(s)";
     break;
