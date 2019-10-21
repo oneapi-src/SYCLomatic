@@ -205,8 +205,13 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
 }
 
 void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
-  if (UETT->getKind() == UnaryExprOrTypeTrait::UETT_SizeOf)
-    analyzeType(UETT->getArgumentTypeInfo());
+  if (UETT->getKind() == UnaryExprOrTypeTrait::UETT_SizeOf) {
+    if (UETT->isArgumentType()) {
+      analyzeType(UETT->getArgumentTypeInfo());
+    } else {
+      analyzeExpr(UETT->getArgumentExpr());
+    }
+  }
 }
 
 void ExprAnalysis::analyzeExpr(const CStyleCastExpr *Cast) {
