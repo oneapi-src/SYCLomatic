@@ -440,7 +440,7 @@ void DebugInfo::ShowStatus(int Status) {
 #endif
     break;
   case MigrationErrorPrefixTooLong:
-    StatusString = "Error: Prefix is too long; shold be less than 128";
+    StatusString = "Error: Prefix is too long; should be less than 128";
     break;
   default:
     DpctLog() << "Unknown error\n";
