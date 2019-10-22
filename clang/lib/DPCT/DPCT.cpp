@@ -737,11 +737,7 @@ int run(int argc, const char **argv) {
     // Filter and output error messages emitted by clang
     auto E =
         handleErrors(OptParser.takeError(), [](const llvm::StringError &E) {
-          std::string ErrorMsg = E.getMessage();
-          // Filter out unnecessary text from the messages
-          replaceSubStrAll(ErrorMsg, "[CommonOptionsParser]: ", "");
-          replaceSubStrAll(ErrorMsg, "  Try: 'dpct --help'\ndpct:", "");
-          DpctLog() << ErrorMsg;
+          DpctLog() << E.getMessage();
         });
     dpct::DebugInfo::ShowStatus(MigrationOptionParsingError);
     exit(MigrationOptionParsingError);

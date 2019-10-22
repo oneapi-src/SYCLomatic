@@ -1400,13 +1400,22 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
 
     if (!Handler) {
       if (SinkOpts.empty()) {
+#ifdef INTEL_CUSTOMIZATION
+        *Errs << "Unknown command line argument '" << argv[i] << "'. ";
+#else
         *Errs << ProgramName << ": Unknown command line argument '" << argv[i]
               << "'.  Try: '" << argv[0] << " --help'\n";
+#endif
 
         if (NearestHandler) {
           // If we know a near match, report it as well.
+#ifdef INTEL_CUSTOMIZATION
+          *Errs << "Did you mean '"
+                << PrintArg(NearestHandlerString) << "'?\n";
+#else
           *Errs << ProgramName << ": Did you mean '"
                 << PrintArg(NearestHandlerString) << "'?\n";
+#endif
         }
 
         ErrorParsing = true;
