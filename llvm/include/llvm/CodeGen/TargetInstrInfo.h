@@ -22,10 +22,12 @@
 #include "llvm/CodeGen/MachineCombinerPattern.h"
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/CodeGen/MachineInstr.h"
+#include "llvm/CodeGen/MachineInstrBuilder.h"
 #include "llvm/CodeGen/MachineLoopInfo.h"
 #include "llvm/CodeGen/MachineOperand.h"
 #include "llvm/CodeGen/MachineOutliner.h"
 #include "llvm/CodeGen/PseudoSourceValue.h"
+#include "llvm/CodeGen/VirtRegMap.h"
 #include "llvm/MC/MCInstrInfo.h"
 #include "llvm/Support/BranchProbability.h"
 #include "llvm/Support/ErrorHandling.h"
@@ -59,6 +61,8 @@ class TargetSubtargetInfo;
 
 template <class T> class SmallVectorImpl;
 
+using ParamLoadedValue = std::pair<MachineOperand, DIExpression*>;
+
 //---------------------------------------------------------------------------
 ///
 /// TargetInstrInfo - Interface to description of machine instruction set
@@ -80,6 +84,7 @@ public:
 
   /// Given a machine instruction descriptor, returns the register
   /// class constraint for OpNum, or NULL.
+  virtual
   const TargetRegisterClass *getRegClass(const MCInstrDesc &MCID, unsigned OpNum,
                                          const TargetRegisterInfo *TRI,
                                          const MachineFunction &MF) const;
@@ -417,7 +422,8 @@ public:
   ///     findCommutedOpIndices(MI, Op1, Op2);
   /// can be interpreted as a query asking to find an operand that would be
   /// commutable with the operand#1.
-  virtual bool findCommutedOpIndices(MachineInstr &MI, unsigned &SrcOpIdx1,
+  virtual bool findCommutedOpIndices(const MachineInstr &MI,
+                                     unsigned &SrcOpIdx1,
                                      unsigned &SrcOpIdx2) const;
 
   /// A pair composed of a register and a sub-register index.
@@ -657,6 +663,50 @@ public:
                         BytesAdded);
   }
 
+  /// Object returned by analyzeLoopForPipelining. Allows software pipelining
+  /// implementations to query attributes of the loop being pipelined and to
+  /// apply target-specific updates to the loop once pipelining is complete.
+  class PipelinerLoopInfo {
+  public:
+    virtual ~PipelinerLoopInfo();
+    /// Return true if the given instruction should not be pipelined and should
+    /// be ignored. An example could be a loop comparison, or induction variable
+    /// update with no users being pipelined.
+    virtual bool shouldIgnoreForPipelining(const MachineInstr *MI) const = 0;
+
+    /// Create a condition to determine if the trip count of the loop is greater
+    /// than TC.
+    ///
+    /// If the trip count is statically known to be greater than TC, return
+    /// true. If the trip count is statically known to be not greater than TC,
+    /// return false. Otherwise return nullopt and fill out Cond with the test
+    /// condition.
+    virtual Optional<bool>
+    createTripCountGreaterCondition(int TC, MachineBasicBlock &MBB,
+                                    SmallVectorImpl<MachineOperand> &Cond) = 0;
+
+    /// Modify the loop such that the trip count is
+    /// OriginalTC + TripCountAdjust.
+    virtual void adjustTripCount(int TripCountAdjust) = 0;
+
+    /// Called when the loop's preheader has been modified to NewPreheader.
+    virtual void setPreheader(MachineBasicBlock *NewPreheader) = 0;
+
+    /// Called when the loop is being removed. Any instructions in the preheader
+    /// should be removed.
+    ///
+    /// Once this function is called, no other functions on this object are
+    /// valid; the loop has been removed.
+    virtual void disposed() = 0;
+  };
+
+  /// Analyze loop L, which must be a single-basic-block loop, and if the
+  /// conditions can be understood enough produce a PipelinerLoopInfo object.
+  virtual std::unique_ptr<PipelinerLoopInfo>
+  analyzeLoopForPipelining(MachineBasicBlock *LoopBB) const {
+    return nullptr;
+  }
+
   /// Analyze the loop code, return true if it cannot be understoo. Upon
   /// success, this function returns false and returns information about the
   /// induction variable and compare instruction used at the end.
@@ -669,8 +719,9 @@ public:
   /// is finished.  Return the value/register of the new loop count.  We need
   /// this function when peeling off one or more iterations of a loop. This
   /// function assumes the nth iteration is peeled first.
-  virtual unsigned reduceLoopCount(MachineBasicBlock &MBB, MachineInstr *IndVar,
-                                   MachineInstr &Cmp,
+  virtual unsigned reduceLoopCount(MachineBasicBlock &MBB,
+                                   MachineBasicBlock &PreHeader,
+                                   MachineInstr *IndVar, MachineInstr &Cmp,
                                    SmallVectorImpl<MachineOperand> &Cond,
                                    SmallVectorImpl<MachineInstr *> &PrevInsts,
                                    unsigned Iter, unsigned MaxIter) const {
@@ -932,9 +983,12 @@ public:
   /// operand folded, otherwise NULL is returned.
   /// The new instruction is inserted before MI, and the client is responsible
   /// for removing the old instruction.
+  /// If VRM is passed, the assigned physregs can be inspected by target to
+  /// decide on using an opcode (note that those assignments can still change).
   MachineInstr *foldMemoryOperand(MachineInstr &MI, ArrayRef<unsigned> Ops,
                                   int FI,
-                                  LiveIntervals *LIS = nullptr) const;
+                                  LiveIntervals *LIS = nullptr,
+                                  VirtRegMap *VRM = nullptr) const;
 
   /// Same as the previous version except it allows folding of any load and
   /// store from / to any address, not just from a specific stack slot.
@@ -1024,7 +1078,8 @@ protected:
   foldMemoryOperandImpl(MachineFunction &MF, MachineInstr &MI,
                         ArrayRef<unsigned> Ops,
                         MachineBasicBlock::iterator InsertPt, int FrameIndex,
-                        LiveIntervals *LIS = nullptr) const {
+                        LiveIntervals *LIS = nullptr,
+                        VirtRegMap *VRM = nullptr) const {
     return nullptr;
   }
 
@@ -1551,8 +1606,7 @@ public:
   /// function.
   virtual bool
   areMemAccessesTriviallyDisjoint(const MachineInstr &MIa,
-                                  const MachineInstr &MIb,
-                                  AliasAnalysis *AA = nullptr) const {
+                                  const MachineInstr &MIb) const {
     assert((MIa.mayLoad() || MIa.mayStore()) &&
            "MIa must load from or modify a memory location");
     assert((MIb.mayLoad() || MIb.mayStore()) &&
@@ -1629,6 +1683,28 @@ public:
     return false;
   }
 
+  /// During PHI eleimination lets target to make necessary checks and
+  /// insert the copy to the PHI destination register in a target specific
+  /// manner.
+  virtual MachineInstr *createPHIDestinationCopy(
+      MachineBasicBlock &MBB, MachineBasicBlock::iterator InsPt,
+      const DebugLoc &DL, Register Src, Register Dst) const {
+    return BuildMI(MBB, InsPt, DL, get(TargetOpcode::COPY), Dst)
+        .addReg(Src);
+  }
+
+  /// During PHI eleimination lets target to make necessary checks and
+  /// insert the copy to the PHI destination register in a target specific
+  /// manner.
+  virtual MachineInstr *createPHISourceCopy(MachineBasicBlock &MBB,
+                                            MachineBasicBlock::iterator InsPt,
+                                            const DebugLoc &DL, Register Src,
+                                            Register SrcSubReg,
+                                            Register Dst) const {
+    return BuildMI(MBB, InsPt, DL, get(TargetOpcode::COPY), Dst)
+        .addReg(Src, 0, SrcSubReg);
+  }
+
   /// Returns a \p outliner::OutlinedFunction struct containing target-specific
   /// information for a set of outlining candidates.
   virtual outliner::OutlinedFunction getOutliningCandidateInfo(
@@ -1683,6 +1759,11 @@ public:
   virtual bool shouldOutlineFromFunctionByDefault(MachineFunction &MF) const {
     return false;
   }
+
+  /// Produce the expression describing the \p MI loading a value into
+  /// the parameter's forwarding register.
+  virtual Optional<ParamLoadedValue>
+  describeLoadedValue(const MachineInstr &MI) const;
 
 private:
   unsigned CallFrameSetupOpcode, CallFrameDestroyOpcode;

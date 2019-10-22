@@ -111,18 +111,18 @@ static DWARFExpression MakeLocationExpressionInternal(lldb::ModuleSP module,
   uint32_t address_size = architecture.GetAddressByteSize();
   uint32_t byte_size = architecture.GetDataByteSize();
   if (byte_order == eByteOrderInvalid || address_size == 0)
-    return DWARFExpression(nullptr);
+    return DWARFExpression();
 
   RegisterKind register_kind = eRegisterKindDWARF;
   StreamBuffer<32> stream(Stream::eBinary, address_size, byte_order);
 
   if (!writer(stream, register_kind))
-    return DWARFExpression(nullptr);
+    return DWARFExpression();
 
   DataBufferSP buffer =
       std::make_shared<DataBufferHeap>(stream.GetData(), stream.GetSize());
   DataExtractor extractor(buffer, byte_order, address_size, byte_size);
-  DWARFExpression result(module, extractor, nullptr, 0, buffer->GetByteSize());
+  DWARFExpression result(module, extractor, nullptr);
   result.SetRegisterKind(register_kind);
 
   return result;
@@ -247,6 +247,6 @@ DWARFExpression lldb_private::npdb::MakeConstantLocationExpression(
               .take_front(size);
   buffer->CopyData(bytes.data(), size);
   DataExtractor extractor(buffer, lldb::eByteOrderLittle, address_size);
-  DWARFExpression result(nullptr, extractor, nullptr, 0, size);
+  DWARFExpression result(nullptr, extractor, nullptr);
   return result;
 }

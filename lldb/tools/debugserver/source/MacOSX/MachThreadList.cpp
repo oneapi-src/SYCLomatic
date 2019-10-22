@@ -12,6 +12,7 @@
 
 #include "MachThreadList.h"
 
+#include "DNB.h"
 #include "DNBLog.h"
 #include "DNBThreadResumeActions.h"
 #include "MachProcess.h"
@@ -214,7 +215,7 @@ bool MachThreadList::RestoreRegisterState(nub_thread_t tid, uint32_t save_id) {
   MachThreadSP thread_sp(GetThreadByID(tid));
   if (thread_sp)
     return thread_sp->RestoreRegisterState(save_id);
-  return 0;
+  return false;
 }
 
 nub_size_t MachThreadList::NumThreads() const {
@@ -278,8 +279,12 @@ MachThreadList::UpdateThreadList(MachProcess *process, bool update,
 #elif defined(__arm__) || defined(__arm64__) || defined(__aarch64__)
     if (m_is_64_bit)
       DNBArchProtocol::SetArchitecture(CPU_TYPE_ARM64);
-    else
-      DNBArchProtocol::SetArchitecture(CPU_TYPE_ARM);
+    else {
+      if (process->GetCPUType() == CPU_TYPE_ARM64_32)
+        DNBArchProtocol::SetArchitecture(CPU_TYPE_ARM64_32);
+      else
+        DNBArchProtocol::SetArchitecture(CPU_TYPE_ARM);
+    }
 #endif
   }
 

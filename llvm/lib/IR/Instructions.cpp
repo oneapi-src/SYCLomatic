@@ -816,6 +816,17 @@ void CallBrInst::init(FunctionType *FTy, Value *Fn, BasicBlock *Fallthrough,
   setName(NameStr);
 }
 
+void CallBrInst::updateArgBlockAddresses(unsigned i, BasicBlock *B) {
+  assert(getNumIndirectDests() > i && "IndirectDest # out of range for callbr");
+  if (BasicBlock *OldBB = getIndirectDest(i)) {
+    BlockAddress *Old = BlockAddress::get(OldBB);
+    BlockAddress *New = BlockAddress::get(B);
+    for (unsigned ArgNo = 0, e = getNumArgOperands(); ArgNo != e; ++ArgNo)
+      if (dyn_cast<BlockAddress>(getArgOperand(ArgNo)) == Old)
+        setArgOperand(ArgNo, New);
+  }
+}
+
 CallBrInst::CallBrInst(const CallBrInst &CBI)
     : CallBase(CBI.Attrs, CBI.FTy, CBI.getType(), Instruction::CallBr,
                OperandTraits<CallBase>::op_end(this) - CBI.getNumOperands(),
@@ -1217,7 +1228,7 @@ AllocaInst::AllocaInst(Type *Ty, unsigned AddrSpace, Value *ArraySize,
   : UnaryInstruction(PointerType::get(Ty, AddrSpace), Alloca,
                      getAISize(Ty->getContext(), ArraySize), InsertBefore),
     AllocatedType(Ty) {
-  setAlignment(Align);
+  setAlignment(MaybeAlign(Align));
   assert(!Ty->isVoidTy() && "Cannot allocate void!");
   setName(Name);
 }
@@ -1228,18 +1239,21 @@ AllocaInst::AllocaInst(Type *Ty, unsigned AddrSpace, Value *ArraySize,
   : UnaryInstruction(PointerType::get(Ty, AddrSpace), Alloca,
                      getAISize(Ty->getContext(), ArraySize), InsertAtEnd),
       AllocatedType(Ty) {
-  setAlignment(Align);
+  setAlignment(MaybeAlign(Align));
   assert(!Ty->isVoidTy() && "Cannot allocate void!");
   setName(Name);
 }
 
-void AllocaInst::setAlignment(unsigned Align) {
-  assert((Align & (Align-1)) == 0 && "Alignment is not a power of 2!");
-  assert(Align <= MaximumAlignment &&
+void AllocaInst::setAlignment(MaybeAlign Align) {
+  assert((!Align || *Align <= MaximumAlignment) &&
          "Alignment is greater than MaximumAlignment!");
   setInstructionSubclassData((getSubclassDataFromInstruction() & ~31) |
-                             (Log2_32(Align) + 1));
-  assert(getAlignment() == Align && "Alignment representation error!");
+                             encode(Align));
+  if (Align)
+    assert(getAlignment() == Align->value() &&
+           "Alignment representation error!");
+  else
+    assert(getAlignment() == 0 && "Alignment representation error!");
 }
 
 bool AllocaInst::isArrayAllocation() const {
@@ -1303,7 +1317,7 @@ LoadInst::LoadInst(Type *Ty, Value *Ptr, const Twine &Name, bool isVolatile,
     : UnaryInstruction(Ty, Load, Ptr, InsertBef) {
   assert(Ty == cast<PointerType>(Ptr->getType())->getElementType());
   setVolatile(isVolatile);
-  setAlignment(Align);
+  setAlignment(MaybeAlign(Align));
   setAtomic(Order, SSID);
   AssertOK();
   setName(Name);
@@ -1315,19 +1329,22 @@ LoadInst::LoadInst(Type *Ty, Value *Ptr, const Twine &Name, bool isVolatile,
     : UnaryInstruction(Ty, Load, Ptr, InsertAE) {
   assert(Ty == cast<PointerType>(Ptr->getType())->getElementType());
   setVolatile(isVolatile);
-  setAlignment(Align);
+  setAlignment(MaybeAlign(Align));
   setAtomic(Order, SSID);
   AssertOK();
   setName(Name);
 }
 
-void LoadInst::setAlignment(unsigned Align) {
-  assert((Align & (Align-1)) == 0 && "Alignment is not a power of 2!");
-  assert(Align <= MaximumAlignment &&
+void LoadInst::setAlignment(MaybeAlign Align) {
+  assert((!Align || *Align <= MaximumAlignment) &&
          "Alignment is greater than MaximumAlignment!");
   setInstructionSubclassData((getSubclassDataFromInstruction() & ~(31 << 1)) |
-                             ((Log2_32(Align)+1)<<1));
-  assert(getAlignment() == Align && "Alignment representation error!");
+                             (encode(Align) << 1));
+  if (Align)
+    assert(getAlignment() == Align->value() &&
+           "Alignment representation error!");
+  else
+    assert(getAlignment() == 0 && "Alignment representation error!");
 }
 
 //===----------------------------------------------------------------------===//
@@ -1380,7 +1397,7 @@ StoreInst::StoreInst(Value *val, Value *addr, bool isVolatile,
   Op<0>() = val;
   Op<1>() = addr;
   setVolatile(isVolatile);
-  setAlignment(Align);
+  setAlignment(MaybeAlign(Align));
   setAtomic(Order, SSID);
   AssertOK();
 }
@@ -1396,18 +1413,21 @@ StoreInst::StoreInst(Value *val, Value *addr, bool isVolatile,
   Op<0>() = val;
   Op<1>() = addr;
   setVolatile(isVolatile);
-  setAlignment(Align);
+  setAlignment(MaybeAlign(Align));
   setAtomic(Order, SSID);
   AssertOK();
 }
 
-void StoreInst::setAlignment(unsigned Align) {
-  assert((Align & (Align-1)) == 0 && "Alignment is not a power of 2!");
-  assert(Align <= MaximumAlignment &&
+void StoreInst::setAlignment(MaybeAlign Align) {
+  assert((!Align || *Align <= MaximumAlignment) &&
          "Alignment is greater than MaximumAlignment!");
   setInstructionSubclassData((getSubclassDataFromInstruction() & ~(31 << 1)) |
-                             ((Log2_32(Align)+1) << 1));
-  assert(getAlignment() == Align && "Alignment representation error!");
+                             (encode(Align) << 1));
+  if (Align)
+    assert(getAlignment() == Align->value() &&
+           "Alignment representation error!");
+  else
+    assert(getAlignment() == 0 && "Alignment representation error!");
 }
 
 //===----------------------------------------------------------------------===//
@@ -3868,6 +3888,130 @@ void SwitchInst::growOperands() {
 
   ReservedSpace = NumOps;
   growHungoffUses(ReservedSpace);
+}
+
+MDNode *
+SwitchInstProfUpdateWrapper::getProfBranchWeightsMD(const SwitchInst &SI) {
+  if (MDNode *ProfileData = SI.getMetadata(LLVMContext::MD_prof))
+    if (auto *MDName = dyn_cast<MDString>(ProfileData->getOperand(0)))
+      if (MDName->getString() == "branch_weights")
+        return ProfileData;
+  return nullptr;
+}
+
+MDNode *SwitchInstProfUpdateWrapper::buildProfBranchWeightsMD() {
+  assert(Changed && "called only if metadata has changed");
+
+  if (!Weights)
+    return nullptr;
+
+  assert(SI.getNumSuccessors() == Weights->size() &&
+         "num of prof branch_weights must accord with num of successors");
+
+  bool AllZeroes =
+      all_of(Weights.getValue(), [](uint32_t W) { return W == 0; });
+
+  if (AllZeroes || Weights.getValue().size() < 2)
+    return nullptr;
+
+  return MDBuilder(SI.getParent()->getContext()).createBranchWeights(*Weights);
+}
+
+void SwitchInstProfUpdateWrapper::init() {
+  MDNode *ProfileData = getProfBranchWeightsMD(SI);
+  if (!ProfileData)
+    return;
+
+  if (ProfileData->getNumOperands() != SI.getNumSuccessors() + 1) {
+    llvm_unreachable("number of prof branch_weights metadata operands does "
+                     "not correspond to number of succesors");
+  }
+
+  SmallVector<uint32_t, 8> Weights;
+  for (unsigned CI = 1, CE = SI.getNumSuccessors(); CI <= CE; ++CI) {
+    ConstantInt *C = mdconst::extract<ConstantInt>(ProfileData->getOperand(CI));
+    uint32_t CW = C->getValue().getZExtValue();
+    Weights.push_back(CW);
+  }
+  this->Weights = std::move(Weights);
+}
+
+SwitchInst::CaseIt
+SwitchInstProfUpdateWrapper::removeCase(SwitchInst::CaseIt I) {
+  if (Weights) {
+    assert(SI.getNumSuccessors() == Weights->size() &&
+           "num of prof branch_weights must accord with num of successors");
+    Changed = true;
+    // Copy the last case to the place of the removed one and shrink.
+    // This is tightly coupled with the way SwitchInst::removeCase() removes
+    // the cases in SwitchInst::removeCase(CaseIt).
+    Weights.getValue()[I->getCaseIndex() + 1] = Weights.getValue().back();
+    Weights.getValue().pop_back();
+  }
+  return SI.removeCase(I);
+}
+
+void SwitchInstProfUpdateWrapper::addCase(
+    ConstantInt *OnVal, BasicBlock *Dest,
+    SwitchInstProfUpdateWrapper::CaseWeightOpt W) {
+  SI.addCase(OnVal, Dest);
+
+  if (!Weights && W && *W) {
+    Changed = true;
+    Weights = SmallVector<uint32_t, 8>(SI.getNumSuccessors(), 0);
+    Weights.getValue()[SI.getNumSuccessors() - 1] = *W;
+  } else if (Weights) {
+    Changed = true;
+    Weights.getValue().push_back(W ? *W : 0);
+  }
+  if (Weights)
+    assert(SI.getNumSuccessors() == Weights->size() &&
+           "num of prof branch_weights must accord with num of successors");
+}
+
+SymbolTableList<Instruction>::iterator
+SwitchInstProfUpdateWrapper::eraseFromParent() {
+  // Instruction is erased. Mark as unchanged to not touch it in the destructor.
+  Changed = false;
+  if (Weights)
+    Weights->resize(0);
+  return SI.eraseFromParent();
+}
+
+SwitchInstProfUpdateWrapper::CaseWeightOpt
+SwitchInstProfUpdateWrapper::getSuccessorWeight(unsigned idx) {
+  if (!Weights)
+    return None;
+  return Weights.getValue()[idx];
+}
+
+void SwitchInstProfUpdateWrapper::setSuccessorWeight(
+    unsigned idx, SwitchInstProfUpdateWrapper::CaseWeightOpt W) {
+  if (!W)
+    return;
+
+  if (!Weights && *W)
+    Weights = SmallVector<uint32_t, 8>(SI.getNumSuccessors(), 0);
+
+  if (Weights) {
+    auto &OldW = Weights.getValue()[idx];
+    if (*W != OldW) {
+      Changed = true;
+      OldW = *W;
+    }
+  }
+}
+
+SwitchInstProfUpdateWrapper::CaseWeightOpt
+SwitchInstProfUpdateWrapper::getSuccessorWeight(const SwitchInst &SI,
+                                                unsigned idx) {
+  if (MDNode *ProfileData = getProfBranchWeightsMD(SI))
+    if (ProfileData->getNumOperands() == SI.getNumSuccessors() + 1)
+      return mdconst::extract<ConstantInt>(ProfileData->getOperand(idx + 1))
+          ->getValue()
+          .getZExtValue();
+
+  return None;
 }
 
 //===----------------------------------------------------------------------===//

@@ -27,7 +27,8 @@
 //  variant<Types...>&& v);
 
 #include "test_macros.h"
-#include "variant_test_helpers.hpp"
+#include "test_workarounds.h"
+#include "variant_test_helpers.h"
 #include <cassert>
 #include <type_traits>
 #include <utility>

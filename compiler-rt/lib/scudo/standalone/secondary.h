@@ -50,7 +50,7 @@ class MapAllocator {
 public:
   void initLinkerInitialized(GlobalStats *S) {
     Stats.initLinkerInitialized();
-    if (S)
+    if (LIKELY(S))
       S->link(&Stats);
   }
   void init(GlobalStats *S) {
@@ -82,7 +82,7 @@ public:
   }
 
 private:
-  StaticSpinMutex Mutex;
+  HybridMutex Mutex;
   LargeBlock::Header *Tail;
   uptr AllocatedBytes;
   uptr FreedBytes;

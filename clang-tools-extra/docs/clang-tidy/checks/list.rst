@@ -4,6 +4,7 @@ Clang-Tidy Checks
 =================
 
 .. toctree::
+
    abseil-duration-addition
    abseil-duration-comparison
    abseil-duration-conversion-cast
@@ -32,6 +33,8 @@ Clang-Tidy Checks
    android-cloexec-inotify-init1
    android-cloexec-memfd-create
    android-cloexec-open
+   android-cloexec-pipe
+   android-cloexec-pipe2
    android-cloexec-socket
    android-comparison-in-temp-failure-retry
    boost-use-to-string
@@ -41,12 +44,14 @@ Clang-Tidy Checks
    bugprone-branch-clone
    bugprone-copy-constructor-init
    bugprone-dangling-handle
+   bugprone-dynamic-static-initializers
    bugprone-exception-escape
    bugprone-fold-init-type
    bugprone-forward-declaration-namespace
    bugprone-forwarding-reference-overload
    bugprone-inaccurate-erase
    bugprone-incorrect-roundings
+   bugprone-infinite-loop
    bugprone-integer-division
    bugprone-lambda-function-name
    bugprone-macro-parentheses
@@ -56,6 +61,7 @@ Clang-Tidy Checks
    bugprone-move-forwarding-reference
    bugprone-multiple-statement-macro
    bugprone-parent-virtual-call
+   bugprone-posix-return
    bugprone-sizeof-container
    bugprone-sizeof-expression
    bugprone-string-constructor
@@ -98,11 +104,97 @@ Clang-Tidy Checks
    cert-msc50-cpp
    cert-msc51-cpp
    cert-oop11-cpp (redirects to performance-move-constructor-init) <cert-oop11-cpp>
+   cert-oop54-cpp (redirects to bugprone-unhandled-self-assignment) <cert-oop54-cpp>
+   clang-analyzer-core.CallAndMessage
+   clang-analyzer-core.DivideZero
+   clang-analyzer-core.DynamicTypePropagation
+   clang-analyzer-core.NonNullParamChecker
+   clang-analyzer-core.NullDereference
+   clang-analyzer-core.StackAddressEscape
+   clang-analyzer-core.UndefinedBinaryOperatorResult
+   clang-analyzer-core.VLASize
+   clang-analyzer-core.uninitialized.ArraySubscript
+   clang-analyzer-core.uninitialized.Assign
+   clang-analyzer-core.uninitialized.Branch
+   clang-analyzer-core.uninitialized.CapturedBlockVariable
+   clang-analyzer-core.uninitialized.UndefReturn
+   clang-analyzer-cplusplus.InnerPointer
+   clang-analyzer-cplusplus.Move
+   clang-analyzer-cplusplus.NewDelete
+   clang-analyzer-cplusplus.NewDeleteLeaks
+   clang-analyzer-deadcode.DeadStores
+   clang-analyzer-nullability.NullPassedToNonnull
+   clang-analyzer-nullability.NullReturnedFromNonnull
+   clang-analyzer-nullability.NullableDereferenced
+   clang-analyzer-nullability.NullablePassedToNonnull
+   clang-analyzer-nullability.NullableReturnedFromNonnull
+   clang-analyzer-optin.cplusplus.UninitializedObject
+   clang-analyzer-optin.cplusplus.VirtualCall
+   clang-analyzer-optin.mpi.MPI-Checker
+   clang-analyzer-optin.osx.OSObjectCStyleCast
+   clang-analyzer-optin.osx.cocoa.localizability.EmptyLocalizationContextChecker
+   clang-analyzer-optin.osx.cocoa.localizability.NonLocalizedStringChecker
+   clang-analyzer-optin.performance.GCDAntipattern
+   clang-analyzer-optin.performance.Padding
+   clang-analyzer-optin.portability.UnixAPI
+   clang-analyzer-osx.API
+   clang-analyzer-osx.MIG
+   clang-analyzer-osx.NumberObjectConversion
+   clang-analyzer-osx.OSObjectRetainCount
+   clang-analyzer-osx.ObjCProperty
+   clang-analyzer-osx.SecKeychainAPI
+   clang-analyzer-osx.cocoa.AtSync
+   clang-analyzer-osx.cocoa.AutoreleaseWrite
+   clang-analyzer-osx.cocoa.ClassRelease
+   clang-analyzer-osx.cocoa.Dealloc
+   clang-analyzer-osx.cocoa.IncompatibleMethodTypes
+   clang-analyzer-osx.cocoa.Loops
+   clang-analyzer-osx.cocoa.MissingSuperCall
+   clang-analyzer-osx.cocoa.NSAutoreleasePool
+   clang-analyzer-osx.cocoa.NSError
+   clang-analyzer-osx.cocoa.NilArg
+   clang-analyzer-osx.cocoa.NonNilReturnValue
+   clang-analyzer-osx.cocoa.ObjCGenerics
+   clang-analyzer-osx.cocoa.RetainCount
+   clang-analyzer-osx.cocoa.RunLoopAutoreleaseLeak
+   clang-analyzer-osx.cocoa.SelfInit
+   clang-analyzer-osx.cocoa.SuperDealloc
+   clang-analyzer-osx.cocoa.UnusedIvars
+   clang-analyzer-osx.cocoa.VariadicMethodTypes
+   clang-analyzer-osx.coreFoundation.CFError
+   clang-analyzer-osx.coreFoundation.CFNumber
+   clang-analyzer-osx.coreFoundation.CFRetainRelease
+   clang-analyzer-osx.coreFoundation.containers.OutOfBounds
+   clang-analyzer-osx.coreFoundation.containers.PointerSizedValues
+   clang-analyzer-security.FloatLoopCounter
+   clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
+   clang-analyzer-security.insecureAPI.UncheckedReturn
+   clang-analyzer-security.insecureAPI.bcmp
+   clang-analyzer-security.insecureAPI.bcopy
+   clang-analyzer-security.insecureAPI.bzero
+   clang-analyzer-security.insecureAPI.getpw
+   clang-analyzer-security.insecureAPI.gets
+   clang-analyzer-security.insecureAPI.mkstemp
+   clang-analyzer-security.insecureAPI.mktemp
+   clang-analyzer-security.insecureAPI.rand
+   clang-analyzer-security.insecureAPI.strcpy
+   clang-analyzer-security.insecureAPI.vfork
+   clang-analyzer-unix.API
+   clang-analyzer-unix.Malloc
+   clang-analyzer-unix.MallocSizeof
+   clang-analyzer-unix.MismatchedDeallocator
+   clang-analyzer-unix.Vfork
+   clang-analyzer-unix.cstring.BadSizeArg
+   clang-analyzer-unix.cstring.NullArg
+   clang-analyzer-valist.CopyToSelf
+   clang-analyzer-valist.Uninitialized
+   clang-analyzer-valist.Unterminated
    cppcoreguidelines-avoid-c-arrays (redirects to modernize-avoid-c-arrays) <cppcoreguidelines-avoid-c-arrays>
    cppcoreguidelines-avoid-goto
    cppcoreguidelines-avoid-magic-numbers (redirects to readability-magic-numbers) <cppcoreguidelines-avoid-magic-numbers>
    cppcoreguidelines-c-copy-assignment-signature (redirects to misc-unconventional-assign-operator) <cppcoreguidelines-c-copy-assignment-signature>
    cppcoreguidelines-explicit-virtual-functions (redirects to modernize-use-override) <cppcoreguidelines-explicit-virtual-functions>
+   cppcoreguidelines-init-variables
    cppcoreguidelines-interfaces-global-init
    cppcoreguidelines-macro-usage
    cppcoreguidelines-narrowing-conversions
@@ -121,7 +213,10 @@ Clang-Tidy Checks
    cppcoreguidelines-pro-type-vararg
    cppcoreguidelines-slicing
    cppcoreguidelines-special-member-functions
-   fuchsia-default-arguments
+   darwin-avoid-spinlock
+   darwin-dispatch-once-nonstatic
+   fuchsia-default-arguments-calls
+   fuchsia-default-arguments-declarations
    fuchsia-header-anon-namespaces (redirects to google-build-namespaces) <fuchsia-header-anon-namespaces>
    fuchsia-multiple-inheritance
    fuchsia-overloaded-operator
@@ -135,6 +230,7 @@ Clang-Tidy Checks
    google-default-arguments
    google-explicit-constructor
    google-global-names-in-headers
+   google-objc-avoid-nsobject-new
    google-objc-avoid-throwing-exception
    google-objc-function-naming
    google-objc-global-variable-declaration
@@ -147,6 +243,7 @@ Clang-Tidy Checks
    google-runtime-int
    google-runtime-operator
    google-runtime-references
+   google-upgrade-googletest-case
    hicpp-avoid-c-arrays (redirects to modernize-avoid-c-arrays) <hicpp-avoid-c-arrays>
    hicpp-avoid-goto
    hicpp-braces-around-statements (redirects to readability-braces-around-statements) <hicpp-braces-around-statements>
@@ -177,10 +274,12 @@ Clang-Tidy Checks
    hicpp-use-nullptr (redirects to modernize-use-nullptr) <hicpp-use-nullptr>
    hicpp-use-override (redirects to modernize-use-override) <hicpp-use-override>
    hicpp-vararg (redirects to cppcoreguidelines-pro-type-vararg) <hicpp-vararg>
+   linuxkernel-must-use-errs
    llvm-header-guard
    llvm-include-order
    llvm-namespace-comment
    llvm-prefer-isa-or-dyn-cast-in-conditionals
+   llvm-prefer-register-over-unsigned
    llvm-twine-local
    misc-definitions-in-headers
    misc-misplaced-const
@@ -228,8 +327,8 @@ Clang-Tidy Checks
    mpi-buffer-deref
    mpi-type-mismatch
    objc-avoid-nserror-init
-   objc-avoid-spinlock
    objc-forbidden-subclassing
+   objc-missing-hash
    objc-property-declaration
    objc-super-self
    openmp-exception-escape
@@ -251,6 +350,7 @@ Clang-Tidy Checks
    readability-braces-around-statements
    readability-const-return-type
    readability-container-size-empty
+   readability-convert-member-functions-to-static
    readability-delete-null-pointer
    readability-deleted-default
    readability-else-after-return

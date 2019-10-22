@@ -50,6 +50,7 @@ option(LLDB_USE_SYSTEM_SIX "Use six.py shipped with system and do not install a 
 option(LLDB_USE_ENTITLEMENTS "When codesigning, use entitlements if available" ON)
 option(LLDB_BUILD_FRAMEWORK "Build LLDB.framework (Darwin only)" OFF)
 option(LLDB_NO_INSTALL_DEFAULT_RPATH "Disable default RPATH settings in binaries" OFF)
+option(LLDB_USE_SYSTEM_DEBUGSERVER "Use the system's debugserver for testing (Darwin only)." OFF)
 
 if(LLDB_BUILD_FRAMEWORK)
   if(NOT APPLE)
@@ -64,14 +65,19 @@ if(LLDB_BUILD_FRAMEWORK)
   set(LLDB_FRAMEWORK_VERSION A CACHE STRING "LLDB.framework version (default is A)")
   set(LLDB_FRAMEWORK_BUILD_DIR bin CACHE STRING "Output directory for LLDB.framework")
   set(LLDB_FRAMEWORK_INSTALL_DIR Library/Frameworks CACHE STRING "Install directory for LLDB.framework")
-  set(LLDB_FRAMEWORK_TOOLS darwin-debug;debugserver;lldb-argdumper;lldb-server CACHE STRING
-      "List of tools to include in LLDB.framework/Resources")
 
-  # Set designated directory for all dSYMs. Essentially, this emits the
-  # framework's dSYM outside of the framework directory.
-  if(LLVM_EXTERNALIZE_DEBUGINFO)
-    set(LLVM_EXTERNALIZE_DEBUGINFO_OUTPUT_DIR ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/bin CACHE STRING
-        "Directory to emit dSYM files stripped from executables and libraries (Darwin Only)")
+  # Essentially, emit the framework's dSYM outside of the framework directory.
+  set(LLDB_DEBUGINFO_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/bin CACHE STRING
+      "Directory to emit dSYM files stripped from executables and libraries (Darwin Only)")
+endif()
+
+if(APPLE AND CMAKE_GENERATOR STREQUAL Xcode)
+  if(NOT LLDB_EXPLICIT_XCODE_CACHE_USED)
+    message(WARNING
+      "When building with Xcode, we recommend using the corresponding cache script. "
+      "If this was a mistake, clean your build directory and re-run CMake with:\n"
+      "  -C ${CMAKE_SOURCE_DIR}/cmake/caches/Apple-lldb-Xcode.cmake\n"
+      "See: https://lldb.llvm.org/resources/build.html#cmakegeneratedxcodeproject\n")
   endif()
 endif()
 
@@ -128,9 +134,51 @@ endif()
 #    locate 64-bit Python libraries.
 # This function is designed to address those limitations.  Currently it only partially
 # addresses them, but it can be improved and extended on an as-needed basis.
+function(find_python_libs_windows_helper LOOKUP_DEBUG OUT_EXE_PATH_VARNAME OUT_LIB_PATH_VARNAME OUT_DLL_PATH_VARNAME OUT_VERSION_VARNAME)
+  if(LOOKUP_DEBUG)
+      set(POSTFIX "_d")
+  else()
+      set(POSTFIX "")
+  endif()
+
+  file(TO_CMAKE_PATH "${PYTHON_HOME}/python${POSTFIX}.exe"                       PYTHON_EXE)
+  file(TO_CMAKE_PATH "${PYTHON_HOME}/libs/${PYTHONLIBS_BASE_NAME}${POSTFIX}.lib" PYTHON_LIB)
+  file(TO_CMAKE_PATH "${PYTHON_HOME}/${PYTHONLIBS_BASE_NAME}${POSTFIX}.dll"      PYTHON_DLL)
+
+  foreach(component PYTHON_EXE;PYTHON_LIB;PYTHON_DLL)
+    if(NOT EXISTS ${${component}})
+      message(WARNING "Unable to find ${component}")
+      unset(${component})
+    endif()
+  endforeach()
+
+  if (NOT PYTHON_EXE OR NOT PYTHON_LIB OR NOT PYTHON_DLL)
+    message(WARNING "Unable to find all Python components.  Python support will be disabled for this build.")
+    set(LLDB_DISABLE_PYTHON 1 PARENT_SCOPE)
+    return()
+  endif()
+
+  # Find the version of the Python interpreter.
+  execute_process(COMMAND "${PYTHON_EXE}" -c
+                  "import sys; sys.stdout.write('.'.join([str(x) for x in sys.version_info[:3]]))"
+                  OUTPUT_VARIABLE PYTHON_VERSION_OUTPUT
+                  RESULT_VARIABLE PYTHON_VERSION_RESULT
+                  ERROR_QUIET)
+
+  if(PYTHON_VERSION_RESULT)
+    message(WARNING "Unable to retrieve Python executable version")
+    set(PYTHON_VERSION_OUTPUT "")
+  endif()
+
+  set(${OUT_EXE_PATH_VARNAME} ${PYTHON_EXE} PARENT_SCOPE)
+  set(${OUT_LIB_PATH_VARNAME} ${PYTHON_LIB} PARENT_SCOPE)
+  set(${OUT_DLL_PATH_VARNAME} ${PYTHON_DLL} PARENT_SCOPE)
+  set(${OUT_VERSION_VARNAME}  ${PYTHON_VERSION_OUTPUT} PARENT_SCOPE)
+endfunction()
+
 function(find_python_libs_windows)
   if ("${PYTHON_HOME}" STREQUAL "")
-    message("LLDB embedded Python on Windows requires specifying a value for PYTHON_HOME.  Python support disabled.")
+    message(WARNING "LLDB embedded Python on Windows requires specifying a value for PYTHON_HOME.  Python support disabled.")
     set(LLDB_DISABLE_PYTHON 1 PARENT_SCOPE)
     return()
   endif()
@@ -142,99 +190,83 @@ function(find_python_libs_windows)
          REGEX "^#define[ \t]+PY_VERSION[ \t]+\"[^\"]+\"")
     string(REGEX REPLACE "^#define[ \t]+PY_VERSION[ \t]+\"([^\"+]+)[+]?\".*" "\\1"
          PYTHONLIBS_VERSION_STRING "${python_version_str}")
-    message("-- Found Python version ${PYTHONLIBS_VERSION_STRING}")
+    message(STATUS "Found Python library version ${PYTHONLIBS_VERSION_STRING}")
     string(REGEX REPLACE "([0-9]+)[.]([0-9]+)[.][0-9]+" "python\\1\\2" PYTHONLIBS_BASE_NAME "${PYTHONLIBS_VERSION_STRING}")
     unset(python_version_str)
   else()
-    message("Unable to find ${PYTHON_INCLUDE_DIR}/patchlevel.h, Python installation is corrupt.")
-    message("Python support will be disabled for this build.")
+    message(WARNING "Unable to find ${PYTHON_INCLUDE_DIR}/patchlevel.h, Python installation is corrupt.")
+    message(WARNING "Python support will be disabled for this build.")
     set(LLDB_DISABLE_PYTHON 1 PARENT_SCOPE)
     return()
   endif()
 
   file(TO_CMAKE_PATH "${PYTHON_HOME}" PYTHON_HOME)
-  file(TO_CMAKE_PATH "${PYTHON_HOME}/python_d.exe" PYTHON_DEBUG_EXE)
-  file(TO_CMAKE_PATH "${PYTHON_HOME}/libs/${PYTHONLIBS_BASE_NAME}_d.lib" PYTHON_DEBUG_LIB)
-  file(TO_CMAKE_PATH "${PYTHON_HOME}/${PYTHONLIBS_BASE_NAME}_d.dll" PYTHON_DEBUG_DLL)
+  # TODO(compnerd) when CMake Policy `CMP0091` is set to NEW, we should use
+  # if(CMAKE_MSVC_RUNTIME_LIBRARY MATCHES MultiThreadedDebug)
+  if(NOT DEFINED CMAKE_BUILD_TYPE)
+    # Multi-target generator was selected (like Visual Studio or Xcode) where no concrete build type was passed
+    # Lookup for both debug and release python installations
+    find_python_libs_windows_helper(TRUE  PYTHON_DEBUG_EXE   PYTHON_DEBUG_LIB   PYTHON_DEBUG_DLL   PYTHON_DEBUG_VERSION_STRING)
+    find_python_libs_windows_helper(FALSE PYTHON_RELEASE_EXE PYTHON_RELEASE_LIB PYTHON_RELEASE_DLL PYTHON_RELEASE_VERSION_STRING)
+    if(LLDB_DISABLE_PYTHON)
+      set(LLDB_DISABLE_PYTHON 1 PARENT_SCOPE)
+      return()
+    endif()
 
-  file(TO_CMAKE_PATH "${PYTHON_HOME}/python.exe" PYTHON_RELEASE_EXE)
-  file(TO_CMAKE_PATH "${PYTHON_HOME}/libs/${PYTHONLIBS_BASE_NAME}.lib" PYTHON_RELEASE_LIB)
-  file(TO_CMAKE_PATH "${PYTHON_HOME}/${PYTHONLIBS_BASE_NAME}.dll" PYTHON_RELEASE_DLL)
+    # We should have been found both debug and release python here
+    # Now check that their versions are equal
+    if(NOT PYTHON_DEBUG_VERSION_STRING STREQUAL PYTHON_RELEASE_VERSION_STRING)
+      message(FATAL_ERROR "Python versions for debug (${PYTHON_DEBUG_VERSION_STRING}) and release (${PYTHON_RELEASE_VERSION_STRING}) are different."
+                          "Python installation is corrupted")
+    endif ()
 
-  if (NOT EXISTS ${PYTHON_DEBUG_EXE})
-    message("Unable to find ${PYTHON_DEBUG_EXE}")
-    unset(PYTHON_DEBUG_EXE)
+    set(PYTHON_EXECUTABLE $<$<CONFIG:Debug>:${PYTHON_DEBUG_EXE}>$<$<NOT:$<CONFIG:Debug>>:${PYTHON_RELEASE_EXE}>)
+    set(PYTHON_LIBRARY    $<$<CONFIG:Debug>:${PYTHON_DEBUG_LIB}>$<$<NOT:$<CONFIG:Debug>>:${PYTHON_RELEASE_LIB}>)
+    set(PYTHON_DLL        $<$<CONFIG:Debug>:${PYTHON_DEBUG_DLL}>$<$<NOT:$<CONFIG:Debug>>:${PYTHON_RELEASE_DLL}>)
+    set(PYTHON_VERSION_STRING ${PYTHON_RELEASE_VERSION_STRING})
+  else()
+    # Lookup for concrete python installation depending on build type
+    if (CMAKE_BUILD_TYPE STREQUAL Debug)
+      set(LOOKUP_DEBUG_PYTHON TRUE)
+    else()
+      set(LOOKUP_DEBUG_PYTHON FALSE)
+    endif()
+    find_python_libs_windows_helper(${LOOKUP_DEBUG_PYTHON} PYTHON_EXECUTABLE PYTHON_LIBRARY PYTHON_DLL PYTHON_VERSION_STRING)
+    if(LLDB_DISABLE_PYTHON)
+      set(LLDB_DISABLE_PYTHON 1 PARENT_SCOPE)
+      return()
+    endif()
   endif()
 
-  if (NOT EXISTS ${PYTHON_RELEASE_EXE})
-    message("Unable to find ${PYTHON_RELEASE_EXE}")
-    unset(PYTHON_RELEASE_EXE)
+  if(PYTHON_VERSION_STRING)
+    string(REPLACE "." ";" PYTHON_VERSION_PARTS "${PYTHON_VERSION_STRING}")
+    list(GET PYTHON_VERSION_PARTS 0 PYTHON_VERSION_MAJOR)
+    list(GET PYTHON_VERSION_PARTS 1 PYTHON_VERSION_MINOR)
+    list(GET PYTHON_VERSION_PARTS 2 PYTHON_VERSION_PATCH)
+  else()
+    unset(PYTHON_VERSION_MAJOR)
+    unset(PYTHON_VERSION_MINOR)
+    unset(PYTHON_VERSION_PATCH)
   endif()
 
-  if (NOT EXISTS ${PYTHON_DEBUG_LIB})
-    message("Unable to find ${PYTHON_DEBUG_LIB}")
-    unset(PYTHON_DEBUG_LIB)
-  endif()
+  # Set the same variables as FindPythonInterp and FindPythonLibs.
+  set(PYTHON_EXECUTABLE         "${PYTHON_EXECUTABLE}"          CACHE PATH "")
+  set(PYTHON_LIBRARY            "${PYTHON_LIBRARY}"             CACHE PATH "")
+  set(PYTHON_DLL                "${PYTHON_DLL}"                 CACHE PATH "")
+  set(PYTHON_INCLUDE_DIR        "${PYTHON_INCLUDE_DIR}"         CACHE PATH "")
+  set(PYTHONLIBS_VERSION_STRING "${PYTHONLIBS_VERSION_STRING}"  PARENT_SCOPE)
+  set(PYTHON_VERSION_STRING     "${PYTHON_VERSION_STRING}"      PARENT_SCOPE)
+  set(PYTHON_VERSION_MAJOR      "${PYTHON_VERSION_MAJOR}"       PARENT_SCOPE)
+  set(PYTHON_VERSION_MINOR      "${PYTHON_VERSION_MINOR}"       PARENT_SCOPE)
+  set(PYTHON_VERSION_PATCH      "${PYTHON_VERSION_PATCH}"       PARENT_SCOPE)
 
-  if (NOT EXISTS ${PYTHON_RELEASE_LIB})
-    message("Unable to find ${PYTHON_RELEASE_LIB}")
-    unset(PYTHON_RELEASE_LIB)
-  endif()
-
-  if (NOT EXISTS ${PYTHON_DEBUG_DLL})
-    message("Unable to find ${PYTHON_DEBUG_DLL}")
-    unset(PYTHON_DEBUG_DLL)
-  endif()
-
-  if (NOT EXISTS ${PYTHON_RELEASE_DLL})
-    message("Unable to find ${PYTHON_RELEASE_DLL}")
-    unset(PYTHON_RELEASE_DLL)
-  endif()
-
-  if (NOT (PYTHON_DEBUG_EXE AND PYTHON_RELEASE_EXE AND PYTHON_DEBUG_LIB AND PYTHON_RELEASE_LIB AND PYTHON_DEBUG_DLL AND PYTHON_RELEASE_DLL))
-    message("Python installation is corrupt. Python support will be disabled for this build.")
-    set(LLDB_DISABLE_PYTHON 1 PARENT_SCOPE)
-    return()
-  endif()
-
-  # Generator expressions are evaluated in the context of each build configuration generated
-  # by CMake. Here we use the $<CONFIG:Debug>:VALUE logical generator expression to ensure
-  # that the debug Python library, DLL, and executable are used in the Debug build configuration.
-  #
-  # Generator expressions can be difficult to grok at first so here's a breakdown of the one
-  # used for PYTHON_LIBRARY:
-  #
-  # 1. $<CONFIG:Debug> evaluates to 1 when the Debug configuration is being generated,
-  #    or 0 in all other cases.
-  # 2. $<$<CONFIG:Debug>:${PYTHON_DEBUG_LIB}> expands to ${PYTHON_DEBUG_LIB} when the Debug
-  #    configuration is being generated, or nothing (literally) in all other cases.
-  # 3. $<$<NOT:$<CONFIG:Debug>>:${PYTHON_RELEASE_LIB}> expands to ${PYTHON_RELEASE_LIB} when
-  #    any configuration other than Debug is being generated, or nothing in all other cases.
-  # 4. The conditionals in 2 & 3 are mutually exclusive.
-  # 5. A logical expression with a conditional that evaluates to 0 yields no value at all.
-  #
-  # Due to 4 & 5 it's possible to concatenate 2 & 3 to obtain a single value specific to each
-  # build configuration. In this example the value will be ${PYTHON_DEBUG_LIB} when generating the
-  # Debug configuration, or ${PYTHON_RELEASE_LIB} when generating any other configuration.
-  # Note that it's imperative that there is no whitespace between the two expressions, otherwise
-  # CMake will insert a semicolon between the two.
-  set (PYTHON_EXECUTABLE $<$<CONFIG:Debug>:${PYTHON_DEBUG_EXE}>$<$<NOT:$<CONFIG:Debug>>:${PYTHON_RELEASE_EXE}>)
-  set (PYTHON_LIBRARY $<$<CONFIG:Debug>:${PYTHON_DEBUG_LIB}>$<$<NOT:$<CONFIG:Debug>>:${PYTHON_RELEASE_LIB}>)
-  set (PYTHON_DLL $<$<CONFIG:Debug>:${PYTHON_DEBUG_DLL}>$<$<NOT:$<CONFIG:Debug>>:${PYTHON_RELEASE_DLL}>)
-
-  set (PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE} PARENT_SCOPE)
-  set (PYTHON_LIBRARY ${PYTHON_LIBRARY} PARENT_SCOPE)
-  set (PYTHON_DLL ${PYTHON_DLL} PARENT_SCOPE)
-  set (PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR} PARENT_SCOPE)
-
-  message("-- LLDB Found PythonExecutable: ${PYTHON_RELEASE_EXE} and ${PYTHON_DEBUG_EXE}")
-  message("-- LLDB Found PythonLibs: ${PYTHON_RELEASE_LIB} and ${PYTHON_DEBUG_LIB}")
-  message("-- LLDB Found PythonDLL: ${PYTHON_RELEASE_DLL} and ${PYTHON_DEBUG_DLL}")
-  message("-- LLDB Found PythonIncludeDirs: ${PYTHON_INCLUDE_DIR}")
+  message(STATUS "LLDB Found PythonExecutable: ${PYTHON_EXECUTABLE} (${PYTHON_VERSION_STRING})")
+  message(STATUS "LLDB Found PythonLibs: ${PYTHON_LIBRARY} (${PYTHONLIBS_VERSION_STRING})")
+  message(STATUS "LLDB Found PythonDLL: ${PYTHON_DLL}")
+  message(STATUS "LLDB Found PythonIncludeDirs: ${PYTHON_INCLUDE_DIR}")
 endfunction(find_python_libs_windows)
 
 if (NOT LLDB_DISABLE_PYTHON)
-
   if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     find_python_libs_windows()
 
@@ -243,8 +275,22 @@ if (NOT LLDB_DISABLE_PYTHON)
       add_definitions( -DLLDB_PYTHON_HOME="${LLDB_PYTHON_HOME}" )
     endif()
   else()
-    find_package(PythonInterp)
-    find_package(PythonLibs)
+    find_package(PythonInterp REQUIRED)
+    find_package(PythonLibs REQUIRED)
+  endif()
+
+  if (NOT CMAKE_CROSSCOMPILING)
+    string(REPLACE "." ";" pythonlibs_version_list ${PYTHONLIBS_VERSION_STRING})
+    list(GET pythonlibs_version_list 0 pythonlibs_major)
+    list(GET pythonlibs_version_list 1 pythonlibs_minor)
+
+    # Ignore the patch version. Some versions of macOS report a different patch
+    # version for the system provided interpreter and libraries.
+    if (NOT PYTHON_VERSION_MAJOR VERSION_EQUAL pythonlibs_major OR
+        NOT PYTHON_VERSION_MINOR VERSION_EQUAL pythonlibs_minor)
+      message(FATAL_ERROR "Found incompatible Python interpreter (${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR})"
+                          " and Python libraries (${pythonlibs_major}.${pythonlibs_minor})")
+    endif()
   endif()
 
   if (PYTHON_INCLUDE_DIR)
@@ -339,8 +385,8 @@ set(LLDB_VERSION "${LLDB_VERSION_MAJOR}.${LLDB_VERSION_MINOR}.${LLDB_VERSION_PAT
 message(STATUS "LLDB version: ${LLDB_VERSION}")
 
 include_directories(BEFORE
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_BINARY_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
   )
 
 if (NOT LLVM_INSTALL_TOOLCHAIN_ONLY)
@@ -351,7 +397,6 @@ if (NOT LLVM_INSTALL_TOOLCHAIN_ONLY)
     PATTERN "*.h"
     PATTERN ".svn" EXCLUDE
     PATTERN ".cmake" EXCLUDE
-    PATTERN "Config.h" EXCLUDE
     )
 
   install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
@@ -364,7 +409,7 @@ if (NOT LLVM_INSTALL_TOOLCHAIN_ONLY)
     )
 
   add_custom_target(lldb-headers)
-  set_target_properties(lldb-headers PROPERTIES FOLDER "Misc")
+  set_target_properties(lldb-headers PROPERTIES FOLDER "lldb misc")
 
   if (NOT CMAKE_CONFIGURATION_TYPES)
     add_llvm_install_targets(install-lldb-headers
@@ -381,7 +426,6 @@ if (APPLE)
   if(NOT IOS)
     find_library(CARBON_LIBRARY Carbon)
     find_library(CORE_SERVICES_LIBRARY CoreServices)
-    find_library(DEBUG_SYMBOLS_LIBRARY DebugSymbols PATHS "/System/Library/PrivateFrameworks")
   endif()
   find_library(FOUNDATION_LIBRARY Foundation)
   find_library(CORE_FOUNDATION_LIBRARY CoreFoundation)
@@ -416,18 +460,18 @@ list(APPEND system_libs ${CMAKE_DL_LIBS})
 
 # Figure out if lldb could use lldb-server.  If so, then we'll
 # ensure we build lldb-server when an lldb target is being built.
-if (CMAKE_SYSTEM_NAME MATCHES "Android|Darwin|FreeBSD|Linux|NetBSD")
-  set(LLDB_CAN_USE_LLDB_SERVER 1)
+if (CMAKE_SYSTEM_NAME MATCHES "Android|Darwin|FreeBSD|Linux|NetBSD|Windows")
+  set(LLDB_CAN_USE_LLDB_SERVER ON)
 else()
-  set(LLDB_CAN_USE_LLDB_SERVER 0)
+  set(LLDB_CAN_USE_LLDB_SERVER OFF)
 endif()
 
 # Figure out if lldb could use debugserver.  If so, then we'll
 # ensure we build debugserver when we build lldb.
-if ( CMAKE_SYSTEM_NAME MATCHES "Darwin" )
-    set(LLDB_CAN_USE_DEBUGSERVER 1)
+if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    set(LLDB_CAN_USE_DEBUGSERVER ON)
 else()
-    set(LLDB_CAN_USE_DEBUGSERVER 0)
+    set(LLDB_CAN_USE_DEBUGSERVER OFF)
 endif()
 
 if (NOT LLDB_DISABLE_CURSES)
@@ -444,28 +488,6 @@ if (NOT LLDB_DISABLE_CURSES)
     list(APPEND system_libs ${CURSES_LIBRARIES})
     include_directories(${CURSES_INCLUDE_DIR})
 endif ()
-
-check_cxx_symbol_exists("__GLIBCXX__" "string" LLDB_USING_LIBSTDCXX)
-if(LLDB_USING_LIBSTDCXX)
-    # There doesn't seem to be an easy way to check the library version. Instead, we rely on the
-    # fact that std::set did not have the allocator constructor available until version 4.9
-    check_cxx_source_compiles("
-            #include <set>
-            std::set<int> s = std::set<int>(std::allocator<int>());
-            int main() { return 0; }"
-            LLDB_USING_LIBSTDCXX_4_9)
-    if (NOT LLDB_USING_LIBSTDCXX_4_9 AND NOT LLVM_ENABLE_EH)
-        message(WARNING
-            "You appear to be linking to libstdc++ version lesser than 4.9 without exceptions "
-            "enabled. These versions of the library have an issue, which causes occasional "
-            "lldb crashes. See <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=59656> for "
-            "details. Possible courses of action are:\n"
-            "- use libstdc++ version 4.9 or newer\n"
-            "- use libc++ (via LLVM_ENABLE_LIBCXX)\n"
-            "- enable exceptions (via LLVM_ENABLE_EH)\n"
-            "- ignore this warning and accept occasional instability")
-    endif()
-endif()
 
 if ((CMAKE_SYSTEM_NAME MATCHES "Android") AND LLVM_BUILD_STATIC AND
     ((ANDROID_ABI MATCHES "armeabi") OR (ANDROID_ABI MATCHES "mips")))

@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include <CL/sycl/detail/cnri.h>
 #include <CL/sycl/detail/common.hpp>
 #include <CL/sycl/detail/os_util.hpp>
+#include <CL/sycl/detail/pi.hpp>
 #include <CL/sycl/stl.hpp>
 
 #include <map>
@@ -20,12 +20,12 @@
 
 /// Executed as a part of current module's (.exe, .dll) static initialization.
 /// Registers device executable images with the runtime.
-extern "C" void __tgt_register_lib(cnri_bin_desc *desc);
+extern "C" void __tgt_register_lib(pi_device_binaries desc);
 
 /// Executed as a part of current module's (.exe, .dll) static
 /// de-initialization.
 /// Unregisters device executable images with the runtime.
-extern "C" void __tgt_unregister_lib(cnri_bin_desc *desc);
+extern "C" void __tgt_unregister_lib(pi_device_binaries desc);
 
 // +++ }
 
@@ -34,7 +34,7 @@ namespace sycl {
 class context;
 namespace detail {
 
-using DeviceImage = cnri_device_image;
+using DeviceImage = pi_device_binary_struct;
 
 // Custom deleter for the DeviceImage. Must only be called for "orphan" images
 // allocated by the runtime. Those Images which are part of binaries must not
@@ -48,38 +48,30 @@ public:
   // Returns the single instance of the program manager for the entire process.
   // Can only be called after staticInit is done.
   static ProgramManager &getInstance();
-  cl_program createOpenCLProgram(OSModuleHandle M, const context &Context,
+  RT::PiProgram createOpenCLProgram(OSModuleHandle M, const context &Context,
                                  DeviceImage **I = nullptr) {
     return loadProgram(M, Context, I);
   }
-  cl_program getBuiltOpenCLProgram(OSModuleHandle M, const context &Context);
-  cl_kernel getOrCreateKernel(OSModuleHandle M, const context &Context,
-                              const string_class &KernelName);
-  cl_program getClProgramFromClKernel(cl_kernel ClKernel);
+  RT::PiProgram getBuiltOpenCLProgram(OSModuleHandle M, const context &Context);
+  RT::PiKernel getOrCreateKernel(OSModuleHandle M, const context &Context,
+                                  const string_class &KernelName);
+  RT::PiProgram getClProgramFromClKernel(RT::PiKernel Kernel);
 
-  void addImages(cnri_bin_desc *DeviceImages);
+  void addImages(pi_device_binaries DeviceImages);
   void debugDumpBinaryImages() const;
   void debugDumpBinaryImage(const DeviceImage *Img) const;
+  static string_class getProgramBuildLog(const RT::PiProgram &Program);
 
 private:
-  cnri_program loadProgram(OSModuleHandle M, const context &Context,
-                           DeviceImage **I = nullptr);
-  void build(cl_program &ClProgram, const string_class &Options = "",
-             std::vector<cl_device_id> ClDevices = std::vector<cl_device_id>());
-
-  struct ContextAndModuleLess {
-    bool operator()(const std::pair<context, OSModuleHandle> &LHS,
-                    const std::pair<context, OSModuleHandle> &RHS) const;
-  };
+  RT::PiProgram loadProgram(OSModuleHandle M, const context &Context,
+                            DeviceImage **I = nullptr);
+  void build(RT::PiProgram Program, const string_class &Options = "",
+             std::vector<RT::PiDevice> Devices = std::vector<RT::PiDevice>());
 
   ProgramManager() = default;
   ~ProgramManager() = default;
   ProgramManager(ProgramManager const &) = delete;
   ProgramManager &operator=(ProgramManager const &) = delete;
-
-  std::map<std::pair<context, OSModuleHandle>, cl_program, ContextAndModuleLess>
-      m_CachedSpirvPrograms;
-  std::map<cl_program, std::map<string_class, cl_kernel>> m_CachedKernels;
 
   /// Keeps all available device executable images added via \ref addImages.
   /// Organizes the images as a map from a module handle (.exe .dll) to the

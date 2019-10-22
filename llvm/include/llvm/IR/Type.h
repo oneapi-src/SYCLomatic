@@ -366,6 +366,7 @@ public:
     return ContainedTys[0];
   }
 
+  inline bool getVectorIsScalable() const;
   inline unsigned getVectorNumElements() const;
   Type *getVectorElementType() const {
     assert(getTypeID() == VectorTyID);
@@ -376,6 +377,10 @@ public:
     assert(getTypeID() == PointerTyID);
     return ContainedTys[0];
   }
+
+  /// Given scalar/vector integer type, returns a type with elements twice as
+  /// wide as in the original type. For vectors, preserves element count.
+  inline Type *getExtendedType() const;
 
   /// Get the address space of this pointer or pointer vector type.
   inline unsigned getPointerAddressSpace() const;

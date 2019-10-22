@@ -346,7 +346,7 @@ public:
     // Set Context for build information
     DpctGlobalInfo::setCompilerInstance(CI);
 
-    PP.addPPCallbacks(llvm::make_unique<IncludesCallbacks>(
+    PP.addPPCallbacks(std::make_unique<IncludesCallbacks>(
         TransformSet, Context.getSourceManager(), ATM));
   }
 
@@ -372,7 +372,7 @@ public:
 
   std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
                                                  StringRef InFile) override {
-    return llvm::make_unique<DPCTConsumer>(Repl, CI, InFile);
+    return std::make_unique<DPCTConsumer>(Repl, CI, InFile);
   }
 
   bool usesPreprocessorOnly() const override { return false; }
@@ -385,7 +385,9 @@ class DPCTActionFactory : public FrontendActionFactory {
 
 public:
   DPCTActionFactory(ReplTy &R) : Repl(R) {}
-  FrontendAction *create() override { return new DPCTAction{Repl}; }
+  std::unique_ptr<FrontendAction> create() override {
+    return std::make_unique<DPCTAction>(Repl);
+  }
 };
 
 std::string getCudaInstallPath(int argc, const char **argv) {
@@ -405,9 +407,9 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   // Output parameters to indicate errors in parsing. Not checked here,
   // OptParser will handle errors.
   unsigned MissingArgIndex, MissingArgCount;
-  std::unique_ptr<llvm::opt::OptTable> Opts = driver::createDriverOptTable();
+  auto &Opts = driver::getDriverOptTable();
   llvm::opt::InputArgList ParsedArgs =
-      Opts->ParseArgs(Argv, MissingArgIndex, MissingArgCount);
+      Opts.ParseArgs(Argv, MissingArgIndex, MissingArgCount);
 
   // Create minimalist CudaInstallationDetector and return the InstallPath.
   DiagnosticsEngine E(nullptr, nullptr, nullptr, false);
@@ -493,7 +495,7 @@ unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
   Rewriter Rewrite(Sources, DefaultLangOptions);
   SourceManager &SM = Rewrite.getSourceMgr();
 
-  const FileEntry *Entry = SM.getFileManager().getFile(Path);
+  const FileEntry *Entry = SM.getFileManager().getFile(Path).get();
   if (!Entry) {
     std::string ErrMsg = "FilePath Invalid...\n";
     PrintMsg(ErrMsg);

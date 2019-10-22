@@ -47,12 +47,15 @@ enum ActionType {
   GenClangCommentNodes,
   GenClangDeclNodes,
   GenClangStmtNodes,
+  GenClangTypeNodes,
+  GenClangOpcodes,
   GenClangSACheckers,
   GenClangCommentHTMLTags,
   GenClangCommentHTMLTagsProperties,
   GenClangCommentHTMLNamedCharacterReferences,
   GenClangCommentCommandInfo,
   GenClangCommentCommandList,
+  GenClangOpenCLBuiltins,
   GenArmNeon,
   GenArmFP16,
   GenArmNeonSema,
@@ -128,6 +131,10 @@ cl::opt<ActionType> Action(
                    "Generate Clang AST declaration nodes"),
         clEnumValN(GenClangStmtNodes, "gen-clang-stmt-nodes",
                    "Generate Clang AST statement nodes"),
+        clEnumValN(GenClangTypeNodes, "gen-clang-type-nodes",
+                   "Generate Clang AST type nodes"),
+        clEnumValN(GenClangOpcodes, "gen-clang-opcodes",
+                   "Generate Clang constexpr interpreter opcodes"),
         clEnumValN(GenClangSACheckers, "gen-clang-sa-checkers",
                    "Generate Clang Static Analyzer checkers"),
         clEnumValN(GenClangCommentHTMLTags, "gen-clang-comment-html-tags",
@@ -147,6 +154,8 @@ cl::opt<ActionType> Action(
         clEnumValN(GenClangCommentCommandList, "gen-clang-comment-command-list",
                    "Generate list of commands that are used in "
                    "documentation comments"),
+        clEnumValN(GenClangOpenCLBuiltins, "gen-clang-opencl-builtins",
+                   "Generate OpenCL builtin declaration handlers"),
         clEnumValN(GenArmNeon, "gen-arm-neon", "Generate arm_neon.h for clang"),
         clEnumValN(GenArmFP16, "gen-arm-fp16", "Generate arm_fp16.h for clang"),
         clEnumValN(GenArmNeonSema, "gen-arm-neon-sema",
@@ -248,6 +257,12 @@ bool ClangTableGenMain(raw_ostream &OS, RecordKeeper &Records) {
   case GenClangStmtNodes:
     EmitClangASTNodes(Records, OS, "Stmt", "");
     break;
+  case GenClangTypeNodes:
+    EmitClangTypeNodes(Records, OS);
+    break;
+  case GenClangOpcodes:
+    EmitClangOpcodes(Records, OS);
+    break;
   case GenClangSACheckers:
     EmitClangSACheckers(Records, OS);
     break;
@@ -265,6 +280,9 @@ bool ClangTableGenMain(raw_ostream &OS, RecordKeeper &Records) {
     break;
   case GenClangCommentCommandList:
     EmitClangCommentCommandList(Records, OS);
+    break;
+  case GenClangOpenCLBuiltins:
+    EmitClangOpenCLBuiltins(Records, OS);
     break;
   case GenArmNeon:
     EmitNeon(Records, OS);

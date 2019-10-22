@@ -16,7 +16,6 @@
 #include "lldb/Symbol/Function.h"
 #include "lldb/Symbol/ObjectFile.h"
 #include "lldb/Target/ABI.h"
-#include "lldb/Target/ObjCLanguageRuntime.h"
 #include "lldb/Target/RegisterContext.h"
 #include "lldb/Target/StackFrame.h"
 #include "lldb/Target/Target.h"
@@ -29,6 +28,8 @@
 
 #include "DynamicLoaderDarwin.h"
 #include "DynamicLoaderMacOSXDYLD.h"
+
+#include "Plugins/LanguageRuntime/ObjC/ObjCLanguageRuntime.h"
 
 //#define ENABLE_DEBUG_PRINTF // COMMENT THIS LINE OUT PRIOR TO CHECKIN
 #ifdef ENABLE_DEBUG_PRINTF
@@ -88,7 +89,7 @@ DynamicLoader *DynamicLoaderMacOSXDYLD::CreateInstance(Process *process,
 
   if (create)
     return new DynamicLoaderMacOSXDYLD(process);
-  return NULL;
+  return nullptr;
 }
 
 // Constructor
@@ -524,8 +525,7 @@ bool DynamicLoaderMacOSXDYLD::AddModulesUsingImageInfosAddress(
     lldb::addr_t image_infos_addr, uint32_t image_infos_count) {
   ImageInfo::collection image_infos;
   Log *log(lldb_private::GetLogIfAnyCategoriesSet(LIBLLDB_LOG_DYNAMIC_LOADER));
-  if (log)
-    log->Printf("Adding %d modules.\n", image_infos_count);
+  LLDB_LOGF(log, "Adding %d modules.\n", image_infos_count);
 
   std::lock_guard<std::recursive_mutex> guard(m_mutex);
   std::lock_guard<std::recursive_mutex> baseclass_guard(GetMutex());
@@ -580,14 +580,13 @@ bool DynamicLoaderMacOSXDYLD::RemoveModulesUsingImageInfosAddress(
     return false;
   }
 
-  if (log)
-    log->Printf("Removing %d modules.", image_infos_count);
+  LLDB_LOGF(log, "Removing %d modules.", image_infos_count);
 
   ModuleList unloaded_module_list;
   for (uint32_t idx = 0; idx < image_infos.size(); ++idx) {
     if (log) {
-      log->Printf("Removing module at address=0x%16.16" PRIx64 ".",
-                  image_infos[idx].address);
+      LLDB_LOGF(log, "Removing module at address=0x%16.16" PRIx64 ".",
+                image_infos[idx].address);
       image_infos[idx].PutToLog(log);
     }
 
@@ -608,7 +607,7 @@ bool DynamicLoaderMacOSXDYLD::RemoveModulesUsingImageInfosAddress(
         // We'll remove them all at one go later on.
 
         ModuleSP unload_image_module_sp(
-            FindTargetModuleForImageInfo(image_infos[idx], false, NULL));
+            FindTargetModuleForImageInfo(image_infos[idx], false, nullptr));
         if (unload_image_module_sp.get()) {
           // When we unload, be sure to use the image info from the old list,
           // since that has sections correctly filled in.
@@ -616,7 +615,7 @@ bool DynamicLoaderMacOSXDYLD::RemoveModulesUsingImageInfosAddress(
           unloaded_module_list.AppendIfNeeded(unload_image_module_sp);
         } else {
           if (log) {
-            log->Printf("Could not find module for unloading info entry:");
+            LLDB_LOGF(log, "Could not find module for unloading info entry:");
             image_infos[idx].PutToLog(log);
           }
         }
@@ -630,7 +629,7 @@ bool DynamicLoaderMacOSXDYLD::RemoveModulesUsingImageInfosAddress(
 
     if (pos == end) {
       if (log) {
-        log->Printf("Could not find image_info entry for unloading image:");
+        LLDB_LOGF(log, "Could not find image_info entry for unloading image:");
         image_infos[idx].PutToLog(log);
       }
     }
@@ -735,7 +734,7 @@ bool DynamicLoaderMacOSXDYLD::InitializeFromAllImageInfos() {
         if (log) {
           StreamString s;
           module_sp->GetDescription(&s);
-          log->Printf("Unloading pre-run module: %s.", s.GetData());
+          LLDB_LOGF(log, "Unloading pre-run module: %s.", s.GetData());
         }
         not_loaded_modules.Append(module_sp);
       }
@@ -794,7 +793,7 @@ bool DynamicLoaderMacOSXDYLD::ReadMachHeader(lldb::addr_t addr,
     if (data.GetU32(&offset, &header->cputype,
                     (sizeof(llvm::MachO::mach_header) / sizeof(uint32_t)) -
                         1)) {
-      if (load_command_data == NULL)
+      if (load_command_data == nullptr)
         return true; // We were able to read the mach_header and weren't asked
                      // to read the load command bytes
 
@@ -922,7 +921,7 @@ void DynamicLoaderMacOSXDYLD::UpdateImageInfosHeaderAndLoadCommands(
                           &data))
         continue;
 
-      ParseLoadCommands(data, image_infos[i], NULL);
+      ParseLoadCommands(data, image_infos[i], nullptr);
 
       if (image_infos[i].header.filetype == llvm::MachO::MH_EXECUTE)
         exe_idx = i;
@@ -933,8 +932,8 @@ void DynamicLoaderMacOSXDYLD::UpdateImageInfosHeaderAndLoadCommands(
 
   if (exe_idx < image_infos.size()) {
     const bool can_create = true;
-    ModuleSP exe_module_sp(
-        FindTargetModuleForImageInfo(image_infos[exe_idx], can_create, NULL));
+    ModuleSP exe_module_sp(FindTargetModuleForImageInfo(image_infos[exe_idx],
+                                                        can_create, nullptr));
 
     if (exe_module_sp) {
       UpdateImageLoadAddress(exe_module_sp.get(), image_infos[exe_idx]);
@@ -969,17 +968,18 @@ void DynamicLoaderMacOSXDYLD::UpdateImageInfosHeaderAndLoadCommands(
 // Dump the _dyld_all_image_infos members and all current image infos that we
 // have parsed to the file handle provided.
 void DynamicLoaderMacOSXDYLD::PutToLog(Log *log) const {
-  if (log == NULL)
+  if (log == nullptr)
     return;
 
   std::lock_guard<std::recursive_mutex> guard(m_mutex);
   std::lock_guard<std::recursive_mutex> baseclass_guard(GetMutex());
-  log->Printf(
-      "dyld_all_image_infos = { version=%d, count=%d, addr=0x%8.8" PRIx64
-      ", notify=0x%8.8" PRIx64 " }",
-      m_dyld_all_image_infos.version, m_dyld_all_image_infos.dylib_info_count,
-      (uint64_t)m_dyld_all_image_infos.dylib_info_addr,
-      (uint64_t)m_dyld_all_image_infos.notification);
+  LLDB_LOGF(log,
+            "dyld_all_image_infos = { version=%d, count=%d, addr=0x%8.8" PRIx64
+            ", notify=0x%8.8" PRIx64 " }",
+            m_dyld_all_image_infos.version,
+            m_dyld_all_image_infos.dylib_info_count,
+            (uint64_t)m_dyld_all_image_infos.dylib_info_addr,
+            (uint64_t)m_dyld_all_image_infos.notification);
   size_t i;
   const size_t count = m_dyld_image_infos.size();
   if (count > 0) {

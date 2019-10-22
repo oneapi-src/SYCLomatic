@@ -431,7 +431,7 @@ public:
 // Declare Traverse*() for all concrete Type classes.
 #define ABSTRACT_TYPE(CLASS, BASE)
 #define TYPE(CLASS, BASE) bool Traverse##CLASS##Type(CLASS##Type *T);
-#include "clang/AST/TypeNodes.def"
+#include "clang/AST/TypeNodes.inc"
   // The above header #undefs ABSTRACT_TYPE and TYPE upon exit.
 
   // Define WalkUpFrom*() and empty Visit*() for all Type classes.
@@ -444,7 +444,7 @@ public:
     return true;                                                               \
   }                                                                            \
   bool Visit##CLASS##Type(CLASS##Type *T) { return true; }
-#include "clang/AST/TypeNodes.def"
+#include "clang/AST/TypeNodes.inc"
 
 // ---- Methods on TypeLocs ----
 // FIXME: this currently just calls the matching Type methods
@@ -460,7 +460,7 @@ public:
   bool VisitTypeLoc(TypeLoc TL) { return true; }
 
   // QualifiedTypeLoc and UnqualTypeLoc are not declared in
-  // TypeNodes.def and thus need to be handled specially.
+  // TypeNodes.inc and thus need to be handled specially.
   bool WalkUpFromQualifiedTypeLoc(QualifiedTypeLoc TL) {
     return getDerived().VisitUnqualTypeLoc(TL.getUnqualifiedLoc());
   }
@@ -478,7 +478,7 @@ public:
     return true;                                                               \
   }                                                                            \
   bool Visit##CLASS##TypeLoc(CLASS##TypeLoc TL) { return true; }
-#include "clang/AST/TypeNodes.def"
+#include "clang/AST/TypeNodes.inc"
 
 // ---- Methods on Decls ----
 
@@ -676,7 +676,7 @@ bool RecursiveASTVisitor<Derived>::TraverseType(QualType T) {
 #define TYPE(CLASS, BASE)                                                      \
   case Type::CLASS:                                                            \
     DISPATCH(CLASS##Type, CLASS##Type, const_cast<Type *>(T.getTypePtr()));
-#include "clang/AST/TypeNodes.def"
+#include "clang/AST/TypeNodes.inc"
   }
 
   return true;
@@ -721,12 +721,6 @@ bool RecursiveASTVisitor<Derived>::TraverseDecl(Decl *D) {
       return false;                                                            \
     break;
 #include "clang/AST/DeclNodes.inc"
-  }
-
-  // Visit any attributes attached to this declaration.
-  for (auto *I : D->attrs()) {
-    if (!getDerived().TraverseAttr(I))
-      return false;
   }
   return true;
 }
@@ -965,8 +959,11 @@ DEF_TRAVERSE_TYPE(AdjustedType, { TRY_TO(TraverseType(T->getOriginalType())); })
 
 DEF_TRAVERSE_TYPE(DecayedType, { TRY_TO(TraverseType(T->getOriginalType())); })
 
-DEF_TRAVERSE_TYPE(ConstantArrayType,
-                  { TRY_TO(TraverseType(T->getElementType())); })
+DEF_TRAVERSE_TYPE(ConstantArrayType, {
+  TRY_TO(TraverseType(T->getElementType()));
+  if (T->getSizeExpr())
+    TRY_TO(TraverseStmt(const_cast<Expr*>(T->getSizeExpr())));
+})
 
 DEF_TRAVERSE_TYPE(IncompleteArrayType,
                   { TRY_TO(TraverseType(T->getElementType())); })
@@ -1407,6 +1404,11 @@ bool RecursiveASTVisitor<Derived>::TraverseDeclContextHelper(DeclContext *DC) {
     { CODE; }                                                                  \
     if (ReturnValue && ShouldVisitChildren)                                    \
       TRY_TO(TraverseDeclContextHelper(dyn_cast<DeclContext>(D)));             \
+    if (ReturnValue) {                                                         \
+      /* Visit any attributes attached to this declaration. */                 \
+      for (auto *I : D->attrs())                                               \
+        TRY_TO(getDerived().TraverseAttr(I));                                  \
+    }                                                                          \
     if (ReturnValue && getDerived().shouldTraversePostOrder())                 \
       TRY_TO(WalkUpFrom##DECL(D));                                             \
     return ReturnValue;                                                        \
@@ -1800,6 +1802,11 @@ DEF_TRAVERSE_DECL(TypeAliasTemplateDecl, {
   TRY_TO(TraverseTemplateParameterListHelper(D->getTemplateParameters()));
 })
 
+DEF_TRAVERSE_DECL(ConceptDecl, {
+  TRY_TO(TraverseTemplateParameterListHelper(D->getTemplateParameters()));
+  TRY_TO(TraverseStmt(D->getConstraintExpr()));
+})
+
 DEF_TRAVERSE_DECL(UnresolvedUsingTypenameDecl, {
   // A dependent using declaration which was marked with 'typename'.
   //   template<class T> class A : public B<T> { using typename B<T>::foo; };
@@ -2018,11 +2025,18 @@ bool RecursiveASTVisitor<Derived>::TraverseFunctionHelper(FunctionDecl *D) {
   if (CXXConstructorDecl *Ctor = dyn_cast<CXXConstructorDecl>(D)) {
     // Constructor initializers.
     for (auto *I : Ctor->inits()) {
-      TRY_TO(TraverseConstructorInitializer(I));
+      if (I->isWritten() || getDerived().shouldVisitImplicitCode())
+        TRY_TO(TraverseConstructorInitializer(I));
     }
   }
 
-  if (D->isThisDeclarationADefinition()) {
+  bool VisitBody = D->isThisDeclarationADefinition();
+  // If a method is set to default outside the class definition the compiler
+  // generates the method body and adds it to the AST.
+  if (const auto *MD = dyn_cast<CXXMethodDecl>(D))
+    VisitBody &= !MD->isDefaulted() || getDerived().shouldVisitImplicitCode();
+
+  if (VisitBody) {
     TRY_TO(TraverseStmt(D->getBody())); // Function body.
   }
   return true;
@@ -2282,6 +2296,10 @@ DEF_TRAVERSE_STMT(CXXStaticCastExpr, {
   TRY_TO(TraverseTypeLoc(S->getTypeInfoAsWritten()->getTypeLoc()));
 })
 
+DEF_TRAVERSE_STMT(BuiltinBitCastExpr, {
+  TRY_TO(TraverseTypeLoc(S->getTypeInfoAsWritten()->getTypeLoc()));
+})
+
 template <typename Derived>
 bool RecursiveASTVisitor<Derived>::TraverseSynOrSemInitListExpr(
     InitListExpr *S, DataRecursionQueue *Queue) {
@@ -2299,19 +2317,30 @@ bool RecursiveASTVisitor<Derived>::TraverseSynOrSemInitListExpr(
   return true;
 }
 
-// This method is called once for each pair of syntactic and semantic
-// InitListExpr, and it traverses the subtrees defined by the two forms. This
-// may cause some of the children to be visited twice, if they appear both in
-// the syntactic and the semantic form.
+// If shouldVisitImplicitCode() returns false, this method traverses only the
+// syntactic form of InitListExpr.
+// If shouldVisitImplicitCode() return true, this method is called once for
+// each pair of syntactic and semantic InitListExpr, and it traverses the
+// subtrees defined by the two forms. This may cause some of the children to be
+// visited twice, if they appear both in the syntactic and the semantic form.
 //
 // There is no guarantee about which form \p S takes when this method is called.
 template <typename Derived>
 bool RecursiveASTVisitor<Derived>::TraverseInitListExpr(
     InitListExpr *S, DataRecursionQueue *Queue) {
+  if (S->isSemanticForm() && S->isSyntacticForm()) {
+    // `S` does not have alternative forms, traverse only once.
+    TRY_TO(TraverseSynOrSemInitListExpr(S, Queue));
+    return true;
+  }
   TRY_TO(TraverseSynOrSemInitListExpr(
       S->isSemanticForm() ? S->getSyntacticForm() : S, Queue));
-  TRY_TO(TraverseSynOrSemInitListExpr(
-      S->isSemanticForm() ? S : S->getSemanticForm(), Queue));
+  if (getDerived().shouldVisitImplicitCode()) {
+    // Only visit the semantic form if the clients are interested in implicit
+    // compiler-generated.
+    TRY_TO(TraverseSynOrSemInitListExpr(
+        S->isSemanticForm() ? S : S->getSemanticForm(), Queue));
+  }
   return true;
 }
 
@@ -2817,6 +2846,8 @@ bool RecursiveASTVisitor<Derived>::TraverseOMPClause(OMPClause *C) {
 #include "clang/Basic/OpenMPKinds.def"
   case OMPC_threadprivate:
   case OMPC_uniform:
+  case OMPC_device_type:
+  case OMPC_match:
   case OMPC_unknown:
     break;
   }

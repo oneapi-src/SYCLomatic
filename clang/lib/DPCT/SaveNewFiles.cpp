@@ -177,7 +177,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           tooling::applyAllReplacements(Entry.second, Rewrite) || AppliedAll;
       Rewrite
           .getEditBuffer(Sources.getOrCreateFileID(
-              Tool.getFiles().getFile(Entry.first),
+              Tool.getFiles().getFile(Entry.first).get(),
               clang::SrcMgr::C_User /*normal user code*/))
           .write(Stream);
     }
@@ -224,7 +224,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
       Rewrite
           .getEditBuffer(Sources.getOrCreateFileID(
-              Tool.getFiles().getFile(Entry.first),
+              Tool.getFiles().getFile(Entry.first).get(),
               clang::SrcMgr::C_User /*normal user code*/))
           .write(Stream);
     }

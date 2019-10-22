@@ -17,6 +17,7 @@
 #include "RISCVTargetStreamer.h"
 #include "TargetInfo/RISCVTargetInfo.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/CodeGen/Register.h"
 #include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCInstrInfo.h"
 #include "llvm/MC/MCRegisterInfo.h"
@@ -50,7 +51,13 @@ static MCRegisterInfo *createRISCVMCRegisterInfo(const Triple &TT) {
 
 static MCAsmInfo *createRISCVMCAsmInfo(const MCRegisterInfo &MRI,
                                        const Triple &TT) {
-  return new RISCVMCAsmInfo(TT);
+  MCAsmInfo *MAI = new RISCVMCAsmInfo(TT);
+
+  Register SP = MRI.getDwarfRegNum(RISCV::X2, true);
+  MCCFIInstruction Inst = MCCFIInstruction::createDefCfa(nullptr, SP, 0);
+  MAI->addInitialFrameState(Inst);
+
+  return MAI;
 }
 
 static MCSubtargetInfo *createRISCVMCSubtargetInfo(const Triple &TT,

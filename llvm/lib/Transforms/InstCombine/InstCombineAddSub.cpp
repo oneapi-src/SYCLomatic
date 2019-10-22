@@ -872,7 +872,14 @@ Instruction *InstCombiner::foldAddWithConstant(BinaryOperator &Add) {
   if (Instruction *NV = foldBinOpIntoSelectOrPhi(Add))
     return NV;
 
-  Value *X, *Y;
+  Value *X;
+  Constant *Op00C;
+
+  // add (sub C1, X), C2 --> sub (add C1, C2), X
+  if (match(Op0, m_Sub(m_Constant(Op00C), m_Value(X))))
+    return BinaryOperator::CreateSub(ConstantExpr::getAdd(Op00C, Op1C), X);
+
+  Value *Y;
 
   // add (sub X, Y), -1 --> add (not Y), X
   if (match(Op0, m_OneUse(m_Sub(m_Value(X), m_Value(Y)))) &&
@@ -1195,7 +1202,10 @@ Instruction *InstCombiner::visitAdd(BinaryOperator &I) {
 
   // (A + 1) + ~B --> A - B
   // ~B + (A + 1) --> A - B
-  if (match(&I, m_c_BinOp(m_Add(m_Value(A), m_One()), m_Not(m_Value(B)))))
+  // (~B + A) + 1 --> A - B
+  // (A + ~B) + 1 --> A - B
+  if (match(&I, m_c_BinOp(m_Add(m_Value(A), m_One()), m_Not(m_Value(B)))) ||
+      match(&I, m_BinOp(m_c_Add(m_Not(m_Value(B)), m_Value(A)), m_One())))
     return BinaryOperator::CreateSub(A, B);
 
   // X % C0 + (( X / C0 ) % C1) * C0 => X % (C0 * C1)
@@ -1298,6 +1308,22 @@ Instruction *InstCombiner::visitAdd(BinaryOperator &I) {
   return Changed ? &I : nullptr;
 }
 
+/// Eliminate an op from a linear interpolation (lerp) pattern.
+static Instruction *factorizeLerp(BinaryOperator &I,
+                                  InstCombiner::BuilderTy &Builder) {
+  Value *X, *Y, *Z;
+  if (!match(&I, m_c_FAdd(m_OneUse(m_c_FMul(m_Value(Y),
+                                            m_OneUse(m_FSub(m_FPOne(),
+                                                            m_Value(Z))))),
+                          m_OneUse(m_c_FMul(m_Value(X), m_Deferred(Z))))))
+    return nullptr;
+
+  // (Y * (1.0 - Z)) + (X * Z) --> Y + Z * (X - Y) [8 commuted variants]
+  Value *XY = Builder.CreateFSubFMF(X, Y, &I);
+  Value *MulZ = Builder.CreateFMulFMF(Z, XY, &I);
+  return BinaryOperator::CreateFAddFMF(Y, MulZ, &I);
+}
+
 /// Factor a common operand out of fadd/fsub of fmul/fdiv.
 static Instruction *factorizeFAddFSub(BinaryOperator &I,
                                       InstCombiner::BuilderTy &Builder) {
@@ -1305,6 +1331,10 @@ static Instruction *factorizeFAddFSub(BinaryOperator &I,
           I.getOpcode() == Instruction::FSub) && "Expecting fadd/fsub");
   assert(I.hasAllowReassoc() && I.hasNoSignedZeros() &&
          "FP factorization requires FMF");
+
+  if (Instruction *Lerp = factorizeLerp(I, Builder))
+    return Lerp;
+
   Value *Op0 = I.getOperand(0), *Op1 = I.getOperand(1);
   Value *X, *Y, *Z;
   bool IsFMul;
@@ -1352,17 +1382,32 @@ Instruction *InstCombiner::visitFAdd(BinaryOperator &I) {
   if (Instruction *FoldedFAdd = foldBinOpIntoSelectOrPhi(I))
     return FoldedFAdd;
 
-  Value *LHS = I.getOperand(0), *RHS = I.getOperand(1);
-  Value *X;
   // (-X) + Y --> Y - X
-  if (match(LHS, m_FNeg(m_Value(X))))
-    return BinaryOperator::CreateFSubFMF(RHS, X, &I);
-  // Y + (-X) --> Y - X
-  if (match(RHS, m_FNeg(m_Value(X))))
-    return BinaryOperator::CreateFSubFMF(LHS, X, &I);
+  Value *X, *Y;
+  if (match(&I, m_c_FAdd(m_FNeg(m_Value(X)), m_Value(Y))))
+    return BinaryOperator::CreateFSubFMF(Y, X, &I);
+
+  // Similar to above, but look through fmul/fdiv for the negated term.
+  // (-X * Y) + Z --> Z - (X * Y) [4 commuted variants]
+  Value *Z;
+  if (match(&I, m_c_FAdd(m_OneUse(m_c_FMul(m_FNeg(m_Value(X)), m_Value(Y))),
+                         m_Value(Z)))) {
+    Value *XY = Builder.CreateFMulFMF(X, Y, &I);
+    return BinaryOperator::CreateFSubFMF(Z, XY, &I);
+  }
+  // (-X / Y) + Z --> Z - (X / Y) [2 commuted variants]
+  // (X / -Y) + Z --> Z - (X / Y) [2 commuted variants]
+  if (match(&I, m_c_FAdd(m_OneUse(m_FDiv(m_FNeg(m_Value(X)), m_Value(Y))),
+                         m_Value(Z))) ||
+      match(&I, m_c_FAdd(m_OneUse(m_FDiv(m_Value(X), m_FNeg(m_Value(Y)))),
+                         m_Value(Z)))) {
+    Value *XY = Builder.CreateFDivFMF(X, Y, &I);
+    return BinaryOperator::CreateFSubFMF(Z, XY, &I);
+  }
 
   // Check for (fadd double (sitofp x), y), see if we can merge this into an
   // integer add followed by a promotion.
+  Value *LHS = I.getOperand(0), *RHS = I.getOperand(1);
   if (SIToFPInst *LHSConv = dyn_cast<SIToFPInst>(LHS)) {
     Value *LHSIntVal = LHSConv->getOperand(0);
     Type *FPType = LHSConv->getType();
@@ -1570,6 +1615,12 @@ Instruction *InstCombiner::visitSub(BinaryOperator &I) {
   if (match(Op1, m_OneUse(m_Add(m_Value(X), m_One()))))
     return BinaryOperator::CreateAdd(Builder.CreateNot(X), Op0);
 
+  // Y - ~X --> (X + 1) + Y
+  if (match(Op1, m_OneUse(m_Not(m_Value(X))))) {
+    return BinaryOperator::CreateAdd(
+        Builder.CreateAdd(Op0, ConstantInt::get(I.getType(), 1)), X);
+  }
+
   if (Constant *C = dyn_cast<Constant>(Op0)) {
     bool IsNegate = match(C, m_ZeroInt());
     Value *X;
@@ -1602,45 +1653,63 @@ Instruction *InstCombiner::visitSub(BinaryOperator &I) {
       if (Instruction *R = foldOpIntoPhi(I, PN))
         return R;
 
-    // C-(X+C2) --> (C-C2)-X
     Constant *C2;
+
+    // C-(C2-X) --> X+(C-C2)
+    if (match(Op1, m_Sub(m_Constant(C2), m_Value(X))))
+      return BinaryOperator::CreateAdd(X, ConstantExpr::getSub(C, C2));
+
+    // C-(X+C2) --> (C-C2)-X
     if (match(Op1, m_Add(m_Value(X), m_Constant(C2))))
       return BinaryOperator::CreateSub(ConstantExpr::getSub(C, C2), X);
   }
 
   const APInt *Op0C;
   if (match(Op0, m_APInt(Op0C))) {
-    unsigned BitWidth = I.getType()->getScalarSizeInBits();
 
-    // -(X >>u 31) -> (X >>s 31)
-    // -(X >>s 31) -> (X >>u 31)
     if (Op0C->isNullValue()) {
+      Value *Op1Wide;
+      match(Op1, m_TruncOrSelf(m_Value(Op1Wide)));
+      bool HadTrunc = Op1Wide != Op1;
+      bool NoTruncOrTruncIsOneUse = !HadTrunc || Op1->hasOneUse();
+      unsigned BitWidth = Op1Wide->getType()->getScalarSizeInBits();
+
       Value *X;
       const APInt *ShAmt;
-      if (match(Op1, m_LShr(m_Value(X), m_APInt(ShAmt))) &&
+      // -(X >>u 31) -> (X >>s 31)
+      if (NoTruncOrTruncIsOneUse &&
+          match(Op1Wide, m_LShr(m_Value(X), m_APInt(ShAmt))) &&
           *ShAmt == BitWidth - 1) {
-        Value *ShAmtOp = cast<Instruction>(Op1)->getOperand(1);
-        return BinaryOperator::CreateAShr(X, ShAmtOp);
+        Value *ShAmtOp = cast<Instruction>(Op1Wide)->getOperand(1);
+        Instruction *NewShift = BinaryOperator::CreateAShr(X, ShAmtOp);
+        NewShift->copyIRFlags(Op1Wide);
+        if (!HadTrunc)
+          return NewShift;
+        Builder.Insert(NewShift);
+        return TruncInst::CreateTruncOrBitCast(NewShift, Op1->getType());
       }
-      if (match(Op1, m_AShr(m_Value(X), m_APInt(ShAmt))) &&
+      // -(X >>s 31) -> (X >>u 31)
+      if (NoTruncOrTruncIsOneUse &&
+          match(Op1Wide, m_AShr(m_Value(X), m_APInt(ShAmt))) &&
           *ShAmt == BitWidth - 1) {
-        Value *ShAmtOp = cast<Instruction>(Op1)->getOperand(1);
-        return BinaryOperator::CreateLShr(X, ShAmtOp);
+        Value *ShAmtOp = cast<Instruction>(Op1Wide)->getOperand(1);
+        Instruction *NewShift = BinaryOperator::CreateLShr(X, ShAmtOp);
+        NewShift->copyIRFlags(Op1Wide);
+        if (!HadTrunc)
+          return NewShift;
+        Builder.Insert(NewShift);
+        return TruncInst::CreateTruncOrBitCast(NewShift, Op1->getType());
       }
 
-      if (Op1->hasOneUse()) {
+      if (!HadTrunc && Op1->hasOneUse()) {
         Value *LHS, *RHS;
         SelectPatternFlavor SPF = matchSelectPattern(Op1, LHS, RHS).Flavor;
         if (SPF == SPF_ABS || SPF == SPF_NABS) {
           // This is a negate of an ABS/NABS pattern. Just swap the operands
           // of the select.
-          SelectInst *SI = cast<SelectInst>(Op1);
-          Value *TrueVal = SI->getTrueValue();
-          Value *FalseVal = SI->getFalseValue();
-          SI->setTrueValue(FalseVal);
-          SI->setFalseValue(TrueVal);
+          cast<SelectInst>(Op1)->swapValues();
           // Don't swap prof metadata, we didn't change the branch behavior.
-          return replaceInstUsesWith(I, SI);
+          return replaceInstUsesWith(I, Op1);
         }
       }
     }
@@ -1665,12 +1734,38 @@ Instruction *InstCombiner::visitSub(BinaryOperator &I) {
       return BinaryOperator::CreateNeg(Y);
   }
 
+  // (sub (or A, B) (and A, B)) --> (xor A, B)
+  {
+    Value *A, *B;
+    if (match(Op1, m_And(m_Value(A), m_Value(B))) &&
+        match(Op0, m_c_Or(m_Specific(A), m_Specific(B))))
+      return BinaryOperator::CreateXor(A, B);
+  }
+
+  // (sub (and A, B) (or A, B)) --> neg (xor A, B)
+  {
+    Value *A, *B;
+    if (match(Op0, m_And(m_Value(A), m_Value(B))) &&
+        match(Op1, m_c_Or(m_Specific(A), m_Specific(B))) &&
+        (Op0->hasOneUse() || Op1->hasOneUse()))
+      return BinaryOperator::CreateNeg(Builder.CreateXor(A, B));
+  }
+
   // (sub (or A, B), (xor A, B)) --> (and A, B)
   {
     Value *A, *B;
     if (match(Op1, m_Xor(m_Value(A), m_Value(B))) &&
         match(Op0, m_c_Or(m_Specific(A), m_Specific(B))))
       return BinaryOperator::CreateAnd(A, B);
+  }
+
+  // (sub (xor A, B) (or A, B)) --> neg (and A, B)
+  {
+    Value *A, *B;
+    if (match(Op0, m_Xor(m_Value(A), m_Value(B))) &&
+        match(Op1, m_c_Or(m_Specific(A), m_Specific(B))) &&
+        (Op0->hasOneUse() || Op1->hasOneUse()))
+      return BinaryOperator::CreateNeg(Builder.CreateAnd(A, B));
   }
 
   {
@@ -1757,7 +1852,7 @@ Instruction *InstCombiner::visitSub(BinaryOperator &I) {
         std::swap(LHS, RHS);
       // LHS is now O above and expected to have at least 2 uses (the min/max)
       // NotA is epected to have 2 uses from the min/max and 1 from the sub.
-      if (IsFreeToInvert(LHS, !LHS->hasNUsesOrMore(3)) &&
+      if (isFreeToInvert(LHS, !LHS->hasNUsesOrMore(3)) &&
           !NotA->hasNUsesOrMore(4)) {
         // Note: We don't generate the inverse max/min, just create the not of
         // it and let other folds do the rest.
@@ -1844,13 +1939,41 @@ static Instruction *foldFNegIntoConstant(Instruction &I) {
   return nullptr;
 }
 
+static Instruction *hoistFNegAboveFMulFDiv(Instruction &I,
+                                           InstCombiner::BuilderTy &Builder) {
+  Value *FNeg;
+  if (!match(&I, m_FNeg(m_Value(FNeg))))
+    return nullptr;
+
+  Value *X, *Y;
+  if (match(FNeg, m_OneUse(m_FMul(m_Value(X), m_Value(Y)))))
+    return BinaryOperator::CreateFMulFMF(Builder.CreateFNegFMF(X, &I), Y, &I);
+
+  if (match(FNeg, m_OneUse(m_FDiv(m_Value(X), m_Value(Y)))))
+    return BinaryOperator::CreateFDivFMF(Builder.CreateFNegFMF(X, &I), Y, &I);
+
+  return nullptr;
+}
+
 Instruction *InstCombiner::visitFNeg(UnaryOperator &I) {
-  if (Value *V = SimplifyFNegInst(I.getOperand(0), I.getFastMathFlags(),
+  Value *Op = I.getOperand(0);
+
+  if (Value *V = SimplifyFNegInst(Op, I.getFastMathFlags(),
                                   SQ.getWithInstruction(&I)))
     return replaceInstUsesWith(I, V);
 
   if (Instruction *X = foldFNegIntoConstant(I))
     return X;
+
+  Value *X, *Y;
+
+  // If we can ignore the sign of zeros: -(X - Y) --> (Y - X)
+  if (I.hasNoSignedZeros() &&
+      match(Op, m_OneUse(m_FSub(m_Value(X), m_Value(Y)))))
+    return BinaryOperator::CreateFSubFMF(Y, X, &I);
+
+  if (Instruction *R = hoistFNegAboveFMulFDiv(I, Builder))
+    return R;
 
   return nullptr;
 }
@@ -1872,6 +1995,9 @@ Instruction *InstCombiner::visitFSub(BinaryOperator &I) {
 
   if (Instruction *X = foldFNegIntoConstant(I))
     return X;
+
+  if (Instruction *R = hoistFNegAboveFMulFDiv(I, Builder))
+    return R;
 
   Value *X, *Y;
   Constant *C;
@@ -1913,6 +2039,21 @@ Instruction *InstCombiner::visitFSub(BinaryOperator &I) {
   // X - (fpext(-Y)) --> X + fpext(Y)
   if (match(Op1, m_OneUse(m_FPExt(m_FNeg(m_Value(Y))))))
     return BinaryOperator::CreateFAddFMF(Op0, Builder.CreateFPExt(Y, Ty), &I);
+
+  // Similar to above, but look through fmul/fdiv of the negated value:
+  // Op0 - (-X * Y) --> Op0 + (X * Y)
+  // Op0 - (Y * -X) --> Op0 + (X * Y)
+  if (match(Op1, m_OneUse(m_c_FMul(m_FNeg(m_Value(X)), m_Value(Y))))) {
+    Value *FMul = Builder.CreateFMulFMF(X, Y, &I);
+    return BinaryOperator::CreateFAddFMF(Op0, FMul, &I);
+  }
+  // Op0 - (-X / Y) --> Op0 + (X / Y)
+  // Op0 - (X / -Y) --> Op0 + (X / Y)
+  if (match(Op1, m_OneUse(m_FDiv(m_FNeg(m_Value(X)), m_Value(Y)))) ||
+      match(Op1, m_OneUse(m_FDiv(m_Value(X), m_FNeg(m_Value(Y)))))) {
+    Value *FDiv = Builder.CreateFDivFMF(X, Y, &I);
+    return BinaryOperator::CreateFAddFMF(Op0, FDiv, &I);
+  }
 
   // Handle special cases for FSub with selects feeding the operation
   if (Value *V = SimplifySelectsFeedingBinaryOp(I, Op0, Op1))

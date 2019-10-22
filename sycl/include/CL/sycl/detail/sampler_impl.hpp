@@ -26,8 +26,9 @@ public:
 #ifdef __SYCL_DEVICE_ONLY__
   __ocl_sampler_t m_Sampler;
   sampler_impl(__ocl_sampler_t Sampler) : m_Sampler(Sampler) {}
+  sampler_impl() = default;
 #else
-  std::unordered_map<context, cl_sampler> m_contextToSampler;
+  std::unordered_map<context, RT::PiSampler> m_contextToSampler;
 
 private:
   coordinate_normalization_mode m_CoordNormMode;
@@ -46,7 +47,7 @@ public:
 
   coordinate_normalization_mode get_coordinate_normalization_mode() const;
 
-  cl_sampler getOrCreateSampler(const context &Context);
+  RT::PiSampler getOrCreateSampler(const context &Context);
 #endif
 
 #ifdef __SYCL_DEVICE_ONLY__

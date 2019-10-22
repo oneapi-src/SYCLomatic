@@ -8,6 +8,7 @@ set(LIBCXX_SOURCES
   charconv.cpp
   chrono.cpp
   condition_variable.cpp
+  condition_variable_destructor.cpp
   debug.cpp
   exception.cpp
   functional.cpp
@@ -22,6 +23,7 @@ set(LIBCXX_SOURCES
   locale.cpp
   memory.cpp
   mutex.cpp
+  mutex_destructor.cpp
   new.cpp
   optional.cpp
   random.cpp
@@ -194,31 +196,17 @@ function(cxx_link_system_libraries target)
   endif()
 endfunction()
 
+if (LIBCXX_ENABLE_PARALLEL_ALGORITHMS AND NOT TARGET pstl::ParallelSTL)
+  message(FATAL_ERROR "Could not find ParallelSTL")
+endif()
+
 function(cxx_set_common_defines name)
   if(LIBCXX_CXX_ABI_HEADER_TARGET)
     add_dependencies(${name} ${LIBCXX_CXX_ABI_HEADER_TARGET})
   endif()
-  if(WIN32 AND NOT MINGW)
-    target_compile_definitions(${name}
-                               PRIVATE
-                                 # Ignore the -MSC_VER mismatch, as we may build
-                                 # with a different compatibility version.
-                                 _ALLOW_MSC_VER_MISMATCH
-                                 # Don't check the msvcprt iterator debug levels
-                                 # as we will define the iterator types; libc++
-                                 # uses a different macro to identify the debug
-                                 # level.
-                                 _ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH
-                                 # We are building the c++ runtime, don't pull in
-                                 # msvcprt.
-                                 _CRTBLD
-                                 # Don't warn on the use of "deprecated"
-                                 # "insecure" functions which are standards
-                                 # specified.
-                                 _CRT_SECURE_NO_WARNINGS
-                                 # Use the ISO conforming behaviour for conversion
-                                 # in printf, scanf.
-                                 _CRT_STDIO_ISO_WIDE_SPECIFIERS)
+
+  if (LIBCXX_ENABLE_PARALLEL_ALGORITHMS)
+    target_link_libraries(${name} PUBLIC pstl::ParallelSTL)
   endif()
 endfunction()
 
@@ -242,7 +230,14 @@ if (LIBCXX_ENABLE_SHARED)
       SOVERSION     "${LIBCXX_ABI_VERSION}"
       DEFINE_SYMBOL ""
   )
+  cxx_add_basic_build_flags(cxx_shared)
   cxx_set_common_defines(cxx_shared)
+  cxx_add_warning_flags(cxx_shared)
+  cxx_add_windows_flags(cxx_shared)
+  cxx_add_config_site(cxx_shared)
+  cxx_add_exception_flags(cxx_shared)
+  cxx_add_rtti_flags(cxx_shared)
+  cxx_add_module_flags(cxx_shared)
 
   # Link against LLVM libunwind
   if (LIBCXXABI_USE_LLVM_UNWINDER)
@@ -321,9 +316,6 @@ if (LIBCXX_ENABLE_SHARED)
   endif()
 
   list(APPEND LIBCXX_BUILD_TARGETS "cxx_shared")
-  if (LIBCXX_INSTALL_SHARED_LIBRARY)
-    list(APPEND LIBCXX_INSTALL_TARGETS "cxx_shared")
-  endif()
   if(WIN32 AND NOT MINGW AND NOT "${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Windows")
     # Since we most likely do not have a mt.exe replacement, disable the
     # manifest bundling.  This allows a normal cmake invocation to pass which
@@ -345,10 +337,16 @@ if (LIBCXX_ENABLE_STATIC)
       LINK_FLAGS    "${LIBCXX_LINK_FLAGS}"
       OUTPUT_NAME   "c++"
   )
+  cxx_add_basic_build_flags(cxx_static)
   cxx_set_common_defines(cxx_static)
+  cxx_add_warning_flags(cxx_static)
+  cxx_add_windows_flags(cxx_static)
+  cxx_add_config_site(cxx_static)
+  cxx_add_exception_flags(cxx_static)
+  cxx_add_rtti_flags(cxx_static)
+  cxx_add_module_flags(cxx_static)
 
   if (LIBCXX_HERMETIC_STATIC_LIBRARY)
-    append_flags_if_supported(CXX_STATIC_LIBRARY_FLAGS -fvisibility=hidden)
     # If the hermetic library doesn't define the operator new/delete functions
     # then its code shouldn't declare them with hidden visibility.  They might
     # actually be provided by a shared library at link time.
@@ -360,9 +358,6 @@ if (LIBCXX_ENABLE_STATIC)
   endif()
 
   list(APPEND LIBCXX_BUILD_TARGETS "cxx_static")
-  if (LIBCXX_INSTALL_STATIC_LIBRARY)
-    list(APPEND LIBCXX_INSTALL_TARGETS "cxx_static")
-  endif()
   # Attempt to merge the libc++.a archive and the ABI library archive into one.
   if (LIBCXX_STATICALLY_LINK_ABI_IN_STATIC_LIBRARY)
     set(MERGE_ARCHIVES_SEARCH_PATHS "")
@@ -375,12 +370,16 @@ if (LIBCXX_ENABLE_STATIC)
       set(MERGE_ARCHIVES_ABI_TARGET
         "${CMAKE_STATIC_LIBRARY_PREFIX}${LIBCXX_CXX_STATIC_ABI_LIBRARY}${CMAKE_STATIC_LIBRARY_SUFFIX}")
     endif()
+    if (APPLE)
+      set(MERGE_ARCHIVES_LIBTOOL "--use-libtool" "--libtool" "${CMAKE_LIBTOOL}")
+    endif()
     add_custom_command(TARGET cxx_static POST_BUILD
     COMMAND
       ${PYTHON_EXECUTABLE} ${LIBCXX_SOURCE_DIR}/utils/merge_archives.py
     ARGS
       -o $<TARGET_LINKER_FILE:cxx_static>
       --ar "${CMAKE_AR}"
+      ${MERGE_ARCHIVES_LIBTOOL}
       "$<TARGET_LINKER_FILE:cxx_static>"
       "${MERGE_ARCHIVES_ABI_TARGET}"
       "${MERGE_ARCHIVES_SEARCH_PATHS}"
@@ -433,13 +432,27 @@ if (LIBCXX_BUILD_EXTERNAL_THREAD_LIBRARY)
 endif()
 
 if (LIBCXX_INSTALL_LIBRARY)
-  if (LIBCXX_INSTALL_EXPERIMENTAL_LIBRARY)
-    set(experimental_lib cxx_experimental)
+  if (LIBCXX_INSTALL_SHARED_LIBRARY)
+    install(TARGETS cxx_shared
+      ARCHIVE DESTINATION ${LIBCXX_INSTALL_PREFIX}${LIBCXX_INSTALL_LIBRARY_DIR} COMPONENT cxx
+      LIBRARY DESTINATION ${LIBCXX_INSTALL_PREFIX}${LIBCXX_INSTALL_LIBRARY_DIR} COMPONENT cxx
+      RUNTIME DESTINATION ${LIBCXX_INSTALL_PREFIX}bin COMPONENT cxx)
   endif()
-  install(TARGETS ${LIBCXX_INSTALL_TARGETS} ${experimental_lib}
-    LIBRARY DESTINATION ${LIBCXX_INSTALL_PREFIX}${LIBCXX_INSTALL_LIBRARY_DIR} COMPONENT cxx
-    ARCHIVE DESTINATION ${LIBCXX_INSTALL_PREFIX}${LIBCXX_INSTALL_LIBRARY_DIR} COMPONENT cxx
-    )
+
+  if (LIBCXX_INSTALL_STATIC_LIBRARY)
+    install(TARGETS cxx_static
+      ARCHIVE DESTINATION ${LIBCXX_INSTALL_PREFIX}${LIBCXX_INSTALL_LIBRARY_DIR} COMPONENT cxx
+      LIBRARY DESTINATION ${LIBCXX_INSTALL_PREFIX}${LIBCXX_INSTALL_LIBRARY_DIR} COMPONENT cxx
+      RUNTIME DESTINATION ${LIBCXX_INSTALL_PREFIX}bin COMPONENT cxx)
+  endif()
+
+  if(LIBCXX_INSTALL_EXPERIMENTAL_LIBRARY)
+    install(TARGETS ${LIBCXX_INSTALL_TARGETS} ${experimental_lib}
+      LIBRARY DESTINATION ${LIBCXX_INSTALL_PREFIX}${LIBCXX_INSTALL_LIBRARY_DIR} COMPONENT cxx
+      ARCHIVE DESTINATION ${LIBCXX_INSTALL_PREFIX}${LIBCXX_INSTALL_LIBRARY_DIR} COMPONENT cxx
+      RUNTIME DESTINATION ${LIBCXX_INSTALL_PREFIX}bin COMPONENT cxx)
+  endif()
+
   # NOTE: This install command must go after the cxx install command otherwise
   # it will not be executed after the library symlinks are installed.
   if (LIBCXX_ENABLE_SHARED AND LIBCXX_ENABLE_ABI_LINKER_SCRIPT)

@@ -27,11 +27,11 @@
 #include "lldb/Target/ExecutionContext.h"
 #include "lldb/Target/Process.h"
 #include "lldb/Target/Thread.h"
-#include "lldb/Utility/CleanUp.h"
 #include "lldb/Utility/DataBufferHeap.h"
 #include "lldb/Utility/FileSpec.h"
 #include "lldb/Utility/Log.h"
 #include "lldb/Utility/StreamString.h"
+#include "llvm/ADT/ScopeExit.h"
 
 using namespace lldb;
 using namespace lldb_private;
@@ -223,8 +223,8 @@ static uint32_t chown_file(Platform *platform, const char *path,
     command.Printf(":%d", gid);
   command.Printf("%s", path);
   int status;
-  platform->RunShellCommand(command.GetData(), NULL, &status, NULL, NULL,
-                            std::chrono::seconds(10));
+  platform->RunShellCommand(command.GetData(), nullptr, &status, nullptr,
+                            nullptr, std::chrono::seconds(10));
   return status;
 }
 
@@ -248,7 +248,7 @@ PlatformPOSIX::PutFile(const lldb_private::FileSpec &source,
     StreamString command;
     command.Printf("cp %s %s", src_path.c_str(), dst_path.c_str());
     int status;
-    RunShellCommand(command.GetData(), NULL, &status, NULL, NULL,
+    RunShellCommand(command.GetData(), nullptr, &status, nullptr, nullptr,
                     std::chrono::seconds(10));
     if (status != 0)
       return Status("unable to perform copy");
@@ -276,11 +276,10 @@ PlatformPOSIX::PutFile(const lldb_private::FileSpec &source,
       } else
         command.Printf("rsync %s %s %s:%s", GetRSyncOpts(), src_path.c_str(),
                        GetHostname(), dst_path.c_str());
-      if (log)
-        log->Printf("[PutFile] Running command: %s\n", command.GetData());
+      LLDB_LOGF(log, "[PutFile] Running command: %s\n", command.GetData());
       int retcode;
-      Host::RunShellCommand(command.GetData(), NULL, &retcode, NULL, NULL,
-                            std::chrono::minutes(1));
+      Host::RunShellCommand(command.GetData(), nullptr, &retcode, nullptr,
+                            nullptr, std::chrono::minutes(1));
       if (retcode == 0) {
         // Don't chown a local file for a remote system
         //                if (chown_file(this,dst_path.c_str(),uid,gid) != 0)
@@ -315,7 +314,7 @@ lldb_private::Status PlatformPOSIX::GetFile(
     StreamString cp_command;
     cp_command.Printf("cp %s %s", src_path.c_str(), dst_path.c_str());
     int status;
-    RunShellCommand(cp_command.GetData(), NULL, &status, NULL, NULL,
+    RunShellCommand(cp_command.GetData(), nullptr, &status, nullptr, nullptr,
                     std::chrono::seconds(10));
     if (status != 0)
       return Status("unable to perform copy");
@@ -334,11 +333,10 @@ lldb_private::Status PlatformPOSIX::GetFile(
         command.Printf("rsync %s %s:%s %s", GetRSyncOpts(),
                        m_remote_platform_sp->GetHostname(), src_path.c_str(),
                        dst_path.c_str());
-      if (log)
-        log->Printf("[GetFile] Running command: %s\n", command.GetData());
+      LLDB_LOGF(log, "[GetFile] Running command: %s\n", command.GetData());
       int retcode;
-      Host::RunShellCommand(command.GetData(), NULL, &retcode, NULL, NULL,
-                            std::chrono::minutes(1));
+      Host::RunShellCommand(command.GetData(), nullptr, &retcode, nullptr,
+                            nullptr, std::chrono::minutes(1));
       if (retcode == 0)
         return Status();
       // If we are here, rsync has failed - let's try the slow way before
@@ -348,8 +346,7 @@ lldb_private::Status PlatformPOSIX::GetFile(
     // read/write, read/write, read/write, ...
     // close src
     // close dst
-    if (log)
-      log->Printf("[GetFile] Using block by block transfer....\n");
+    LLDB_LOGF(log, "[GetFile] Using block by block transfer....\n");
     Status error;
     user_id_t fd_src = OpenFile(source, File::eOpenOptionRead,
                                 lldb::eFilePermissionsFileDefault, error);
@@ -509,35 +506,32 @@ lldb::ProcessSP PlatformPOSIX::Attach(ProcessAttachInfo &attach_info,
   Log *log(GetLogIfAnyCategoriesSet(LIBLLDB_LOG_PLATFORM));
 
   if (IsHost()) {
-    if (target == NULL) {
+    if (target == nullptr) {
       TargetSP new_target_sp;
 
       error = debugger.GetTargetList().CreateTarget(
-          debugger, "", "", eLoadDependentsNo, NULL, new_target_sp);
+          debugger, "", "", eLoadDependentsNo, nullptr, new_target_sp);
       target = new_target_sp.get();
-      if (log)
-        log->Printf("PlatformPOSIX::%s created new target", __FUNCTION__);
+      LLDB_LOGF(log, "PlatformPOSIX::%s created new target", __FUNCTION__);
     } else {
       error.Clear();
-      if (log)
-        log->Printf("PlatformPOSIX::%s target already existed, setting target",
-                    __FUNCTION__);
+      LLDB_LOGF(log, "PlatformPOSIX::%s target already existed, setting target",
+                __FUNCTION__);
     }
 
     if (target && error.Success()) {
       debugger.GetTargetList().SetSelectedTarget(target);
       if (log) {
         ModuleSP exe_module_sp = target->GetExecutableModule();
-        log->Printf("PlatformPOSIX::%s set selected target to %p %s",
-                    __FUNCTION__, (void *)target,
-                    exe_module_sp
-                        ? exe_module_sp->GetFileSpec().GetPath().c_str()
-                        : "<null>");
+        LLDB_LOGF(log, "PlatformPOSIX::%s set selected target to %p %s",
+                  __FUNCTION__, (void *)target,
+                  exe_module_sp ? exe_module_sp->GetFileSpec().GetPath().c_str()
+                                : "<null>");
       }
 
       process_sp =
           target->CreateProcess(attach_info.GetListenerForProcess(debugger),
-                                attach_info.GetProcessPluginName(), NULL);
+                                attach_info.GetProcessPluginName(), nullptr);
 
       if (process_sp) {
         ListenerSP listener_sp = attach_info.GetHijackListener();
@@ -804,12 +798,13 @@ uint32_t PlatformPOSIX::DoLoadImage(lldb_private::Process *process,
                                     "for path: %s", utility_error.AsCString());
     return LLDB_INVALID_IMAGE_TOKEN;
   }
-  
+
   // Make sure we deallocate the input string memory:
-  CleanUp path_cleanup([process, path_addr] { 
-      process->DeallocateMemory(path_addr); 
+  auto path_cleanup = llvm::make_scope_exit([process, path_addr] {
+    // Deallocate the buffer.
+    process->DeallocateMemory(path_addr);
   });
-  
+
   process->WriteMemory(path_addr, path.c_str(), path_len, utility_error);
   if (utility_error.Fail()) {
     error.SetErrorStringWithFormat("dlopen error: could not write path string:"
@@ -830,21 +825,24 @@ uint32_t PlatformPOSIX::DoLoadImage(lldb_private::Process *process,
   }
   
   // Make sure we deallocate the result structure memory
-  CleanUp return_cleanup([process, return_addr] {
-      process->DeallocateMemory(return_addr);
+  auto return_cleanup = llvm::make_scope_exit([process, return_addr] {
+    // Deallocate the buffer
+    process->DeallocateMemory(return_addr);
   });
-  
+
   // This will be the address of the storage for paths, if we are using them,
   // or nullptr to signal we aren't.
   lldb::addr_t path_array_addr = 0x0;
-  llvm::Optional<CleanUp> path_array_cleanup;
+  llvm::Optional<llvm::detail::scope_exit<std::function<void()>>>
+      path_array_cleanup;
 
   // This is the address to a buffer large enough to hold the largest path
   // conjoined with the library name we're passing in.  This is a convenience 
   // to avoid having to call malloc in the dlopen function.
   lldb::addr_t buffer_addr = 0x0;
-  llvm::Optional<CleanUp> buffer_cleanup;
-  
+  llvm::Optional<llvm::detail::scope_exit<std::function<void()>>>
+      buffer_cleanup;
+
   // Set the values into our args and write them to the target:
   if (paths != nullptr) {
     // First insert the paths into the target.  This is expected to be a 
@@ -877,8 +875,9 @@ uint32_t PlatformPOSIX::DoLoadImage(lldb_private::Process *process,
     }
     
     // Make sure we deallocate the paths array.
-    path_array_cleanup.emplace([process, path_array_addr] { 
-        process->DeallocateMemory(path_array_addr); 
+    path_array_cleanup.emplace([process, path_array_addr]() {
+      // Deallocate the path array.
+      process->DeallocateMemory(path_array_addr);
     });
 
     process->WriteMemory(path_array_addr, path_array.data(), 
@@ -904,8 +903,9 @@ uint32_t PlatformPOSIX::DoLoadImage(lldb_private::Process *process,
     }
   
     // Make sure we deallocate the buffer memory:
-    buffer_cleanup.emplace([process, buffer_addr] { 
-        process->DeallocateMemory(buffer_addr); 
+    buffer_cleanup.emplace([process, buffer_addr]() {
+      // Deallocate the buffer.
+      process->DeallocateMemory(buffer_addr);
     });
   }
     
@@ -930,10 +930,11 @@ uint32_t PlatformPOSIX::DoLoadImage(lldb_private::Process *process,
   // Make sure we clean up the args structure.  We can't reuse it because the
   // Platform lives longer than the process and the Platforms don't get a
   // signal to clean up cached data when a process goes away.
-  CleanUp args_cleanup([do_dlopen_function, &exe_ctx, func_args_addr] {
-    do_dlopen_function->DeallocateFunctionResults(exe_ctx, func_args_addr);
-  });
-  
+  auto args_cleanup =
+      llvm::make_scope_exit([do_dlopen_function, &exe_ctx, func_args_addr] {
+        do_dlopen_function->DeallocateFunctionResults(exe_ctx, func_args_addr);
+      });
+
   // Now run the caller:
   EvaluateExpressionOptions options;
   options.SetExecutionPolicy(eExecutionPolicyAlways);

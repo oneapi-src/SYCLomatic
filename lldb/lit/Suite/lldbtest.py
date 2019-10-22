@@ -102,10 +102,15 @@ class LLDBTest(TestFormat):
             if 'XPASS:' in out or 'XPASS:' in err:
                 return lit.Test.XPASS, out + err
 
+        has_unsupported_tests = 'UNSUPPORTED:' in out or 'UNSUPPORTED:' in err
+        has_passing_tests = 'PASS:' in out or 'PASS:' in err
+        if has_unsupported_tests and not has_passing_tests:
+            return lit.Test.UNSUPPORTED, out + err
+
         passing_test_line = 'RESULT: PASSED'
         if passing_test_line not in out and passing_test_line not in err:
-            msg = ('Unable to find %r in dotest output:\n\n%s%s' %
-                   (passing_test_line, out, err))
+            msg = ('Unable to find %r in dotest output (exit code %d):\n\n%s%s'
+                   % (passing_test_line, exitCode, out, err))
             return lit.Test.UNRESOLVED, msg
 
         return lit.Test.PASS, ''

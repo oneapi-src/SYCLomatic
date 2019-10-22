@@ -23,8 +23,7 @@ using namespace sema;
 
 static Attr *handleFallThroughAttr(Sema &S, Stmt *St, const ParsedAttr &A,
                                    SourceRange Range) {
-  FallThroughAttr Attr(A.getRange(), S.Context,
-                       A.getAttributeSpellingListIndex());
+  FallThroughAttr Attr(S.Context, A);
   if (!isa<NullStmt>(St)) {
     S.Diag(A.getRange().getBegin(), diag::err_fallthrough_attr_wrong_target)
         << Attr.getSpelling() << St->getBeginLoc();
@@ -45,10 +44,10 @@ static Attr *handleFallThroughAttr(Sema &S, Stmt *St, const ParsedAttr &A,
   // about using it as an extension.
   if (!S.getLangOpts().CPlusPlus17 && A.isCXX11Attribute() &&
       !A.getScopeName())
-    S.Diag(A.getLoc(), diag::ext_cxx17_attr) << A.getName();
+    S.Diag(A.getLoc(), diag::ext_cxx17_attr) << A;
 
   FnScope->setHasFallthroughStmt();
-  return ::new (S.Context) auto(Attr);
+  return ::new (S.Context) FallThroughAttr(S.Context, A);
 }
 
 static Attr *handleSuppressAttr(Sema &S, Stmt *St, const ParsedAttr &A,
@@ -71,22 +70,25 @@ static Attr *handleSuppressAttr(Sema &S, Stmt *St, const ParsedAttr &A,
   }
 
   return ::new (S.Context) SuppressAttr(
-      A.getRange(), S.Context, DiagnosticIdentifiers.data(),
-      DiagnosticIdentifiers.size(), A.getAttributeSpellingListIndex());
+      S.Context, A, DiagnosticIdentifiers.data(), DiagnosticIdentifiers.size());
 }
 
 template <typename FPGALoopAttrT>
 static Attr *handleIntelFPGALoopAttr(Sema &S, Stmt *St, const ParsedAttr &A) {
+
+  if(S.LangOpts.SYCLIsHost)
+    return nullptr;
+
   unsigned NumArgs = A.getNumArgs();
   if (NumArgs > 1) {
-    S.Diag(A.getLoc(), diag::err_attribute_too_many_arguments) << A << 1;
+    S.Diag(A.getLoc(), diag::warn_attribute_too_many_arguments) << A << 1;
     return nullptr;
   }
 
   if (NumArgs == 0) {
     if (A.getKind() == ParsedAttr::AT_SYCLIntelFPGAII ||
         A.getKind() == ParsedAttr::AT_SYCLIntelFPGAMaxConcurrency) {
-      S.Diag(A.getLoc(), diag::err_attribute_too_few_arguments) << A << 1;
+      S.Diag(A.getLoc(), diag::warn_attribute_too_few_arguments) << A << 1;
       return nullptr;
     }
   }
@@ -105,11 +107,20 @@ static Attr *handleIntelFPGALoopAttr(Sema &S, Stmt *St, const ParsedAttr &A) {
 
     int Val = ArgVal.getSExtValue();
 
-    if (Val <= 0) {
-      S.Diag(A.getRange().getBegin(),
-          diag::err_attribute_requires_positive_integer)
-        << A << /* positive */ 0;
-      return nullptr;
+    if (A.getKind() != ParsedAttr::AT_SYCLIntelFPGAMaxConcurrency) {
+      if (Val <= 0) {
+        S.Diag(A.getRange().getBegin(),
+            diag::warn_attribute_requires_positive_integer)
+          << A << /* positive */ 0;
+        return nullptr;
+      }
+    } else {
+      if (Val < 0) {
+        S.Diag(A.getRange().getBegin(),
+            diag::warn_attribute_requires_positive_integer)
+          << A << /* non-negative */ 1;
+        return nullptr;
+      }
     }
     SafeInterval = Val;
   }
@@ -124,58 +135,46 @@ static Attr *handleLoopHintAttr(Sema &S, Stmt *St, const ParsedAttr &A,
   IdentifierLoc *StateLoc = A.getArgAsIdent(2);
   Expr *ValueExpr = A.getArgAsExpr(3);
 
-  bool PragmaUnroll = PragmaNameLoc->Ident->getName() == "unroll";
-  bool PragmaNoUnroll = PragmaNameLoc->Ident->getName() == "nounroll";
-  bool PragmaUnrollAndJam = PragmaNameLoc->Ident->getName() == "unroll_and_jam";
-  bool PragmaNoUnrollAndJam =
-      PragmaNameLoc->Ident->getName() == "nounroll_and_jam";
+  StringRef PragmaName =
+      llvm::StringSwitch<StringRef>(PragmaNameLoc->Ident->getName())
+          .Cases("unroll", "nounroll", "unroll_and_jam", "nounroll_and_jam",
+                 PragmaNameLoc->Ident->getName())
+          .Default("clang loop");
+
   if (St->getStmtClass() != Stmt::DoStmtClass &&
       St->getStmtClass() != Stmt::ForStmtClass &&
       St->getStmtClass() != Stmt::CXXForRangeStmtClass &&
       St->getStmtClass() != Stmt::WhileStmtClass) {
-    const char *Pragma =
-        llvm::StringSwitch<const char *>(PragmaNameLoc->Ident->getName())
-            .Case("unroll", "#pragma unroll")
-            .Case("nounroll", "#pragma nounroll")
-            .Case("unroll_and_jam", "#pragma unroll_and_jam")
-            .Case("nounroll_and_jam", "#pragma nounroll_and_jam")
-            .Default("#pragma clang loop");
+    std::string Pragma = "#pragma " + std::string(PragmaName);
     S.Diag(St->getBeginLoc(), diag::err_pragma_loop_precedes_nonloop) << Pragma;
     return nullptr;
   }
 
-  LoopHintAttr::Spelling Spelling =
-      LoopHintAttr::Spelling(A.getAttributeSpellingListIndex());
   LoopHintAttr::OptionType Option;
   LoopHintAttr::LoopHintState State;
-  if (PragmaNoUnroll) {
-    // #pragma nounroll
-    Option = LoopHintAttr::Unroll;
-    State = LoopHintAttr::Disable;
-  } else if (PragmaUnroll) {
-    if (ValueExpr) {
-      // #pragma unroll N
-      Option = LoopHintAttr::UnrollCount;
-      State = LoopHintAttr::Numeric;
-    } else {
-      // #pragma unroll
-      Option = LoopHintAttr::Unroll;
-      State = LoopHintAttr::Enable;
-    }
-  } else if (PragmaNoUnrollAndJam) {
-    // #pragma nounroll_and_jam
-    Option = LoopHintAttr::UnrollAndJam;
-    State = LoopHintAttr::Disable;
-  } else if (PragmaUnrollAndJam) {
-    if (ValueExpr) {
-      // #pragma unroll_and_jam N
-      Option = LoopHintAttr::UnrollAndJamCount;
-      State = LoopHintAttr::Numeric;
-    } else {
-      // #pragma unroll_and_jam
-      Option = LoopHintAttr::UnrollAndJam;
-      State = LoopHintAttr::Enable;
-    }
+
+  auto SetHints = [&Option, &State](LoopHintAttr::OptionType O,
+                                    LoopHintAttr::LoopHintState S) {
+    Option = O;
+    State = S;
+  };
+
+  if (PragmaName == "nounroll") {
+    SetHints(LoopHintAttr::Unroll, LoopHintAttr::Disable);
+  } else if (PragmaName == "unroll") {
+    // #pragma unroll N
+    if (ValueExpr)
+      SetHints(LoopHintAttr::UnrollCount, LoopHintAttr::Numeric);
+    else
+      SetHints(LoopHintAttr::Unroll, LoopHintAttr::Enable);
+  } else if (PragmaName == "nounroll_and_jam") {
+    SetHints(LoopHintAttr::UnrollAndJam, LoopHintAttr::Disable);
+  } else if (PragmaName == "unroll_and_jam") {
+    // #pragma unroll_and_jam N
+    if (ValueExpr)
+      SetHints(LoopHintAttr::UnrollAndJamCount, LoopHintAttr::Numeric);
+    else
+      SetHints(LoopHintAttr::UnrollAndJam, LoopHintAttr::Enable);
   } else {
     // #pragma clang loop ...
     assert(OptionLoc && OptionLoc->Ident &&
@@ -185,6 +184,7 @@ static Attr *handleLoopHintAttr(Sema &S, Stmt *St, const ParsedAttr &A,
                  .Case("vectorize", LoopHintAttr::Vectorize)
                  .Case("vectorize_width", LoopHintAttr::VectorizeWidth)
                  .Case("interleave", LoopHintAttr::Interleave)
+                 .Case("vectorize_predicate", LoopHintAttr::VectorizePredicate)
                  .Case("interleave_count", LoopHintAttr::InterleaveCount)
                  .Case("unroll", LoopHintAttr::Unroll)
                  .Case("unroll_count", LoopHintAttr::UnrollCount)
@@ -203,6 +203,7 @@ static Attr *handleLoopHintAttr(Sema &S, Stmt *St, const ParsedAttr &A,
       State = LoopHintAttr::Numeric;
     } else if (Option == LoopHintAttr::Vectorize ||
                Option == LoopHintAttr::Interleave ||
+               Option == LoopHintAttr::VectorizePredicate ||
                Option == LoopHintAttr::Unroll ||
                Option == LoopHintAttr::Distribute ||
                Option == LoopHintAttr::PipelineDisabled) {
@@ -221,8 +222,7 @@ static Attr *handleLoopHintAttr(Sema &S, Stmt *St, const ParsedAttr &A,
       llvm_unreachable("bad loop hint");
   }
 
-  return LoopHintAttr::CreateImplicit(S.Context, Spelling, Option, State,
-                                      ValueExpr, A.getRange());
+  return LoopHintAttr::CreateImplicit(S.Context, Option, State, ValueExpr, A);
 }
 
 static void
@@ -241,7 +241,8 @@ CheckForIncompatibleAttributes(Sema &S,
     const LoopHintAttr *StateAttr;
     const LoopHintAttr *NumericAttr;
   } HintAttrs[] = {{nullptr, nullptr}, {nullptr, nullptr}, {nullptr, nullptr},
-                   {nullptr, nullptr}, {nullptr, nullptr}, {nullptr, nullptr}};
+                   {nullptr, nullptr}, {nullptr, nullptr}, {nullptr, nullptr},
+                   {nullptr, nullptr}};
 
   for (const auto *I : Attrs) {
     const LoopHintAttr *LH = dyn_cast<LoopHintAttr>(I);
@@ -257,7 +258,8 @@ CheckForIncompatibleAttributes(Sema &S,
       Unroll,
       UnrollAndJam,
       Distribute,
-      Pipeline
+      Pipeline,
+      VectorizePredicate
     } Category;
     switch (Option) {
     case LoopHintAttr::Vectorize:
@@ -284,6 +286,9 @@ CheckForIncompatibleAttributes(Sema &S,
     case LoopHintAttr::PipelineInitiationInterval:
       Category = Pipeline;
       break;
+    case LoopHintAttr::VectorizePredicate:
+      Category = VectorizePredicate;
+      break;
     };
 
     assert(Category < sizeof(HintAttrs) / sizeof(HintAttrs[0]));
@@ -292,6 +297,7 @@ CheckForIncompatibleAttributes(Sema &S,
     if (Option == LoopHintAttr::Vectorize ||
         Option == LoopHintAttr::Interleave || Option == LoopHintAttr::Unroll ||
         Option == LoopHintAttr::UnrollAndJam ||
+        Option == LoopHintAttr::VectorizePredicate ||
         Option == LoopHintAttr::PipelineDisabled ||
         Option == LoopHintAttr::Distribute) {
       // Enable|Disable|AssumeSafety hint.  For example, vectorize(enable).
@@ -326,42 +332,69 @@ CheckForIncompatibleAttributes(Sema &S,
   }
 }
 
-
-template <typename FPGALoopAttrT> static void
-CheckForDuplicationFPGALoopAttribute(Sema &S,
-                                     const SmallVectorImpl<const Attr *>
-                                     &Attrs, SourceRange Range) {
-  const FPGALoopAttrT *LoopFPGAAttr = nullptr;
+template <typename LoopAttrT>
+static void CheckForDuplicationSYCLLoopAttribute(
+    Sema &S, const SmallVectorImpl<const Attr *> &Attrs, SourceRange Range,
+    bool isIntelFPGAAttr = true) {
+  const LoopAttrT *LoopAttr = nullptr;
 
   for (const auto *I : Attrs) {
-    if (LoopFPGAAttr) {
-      if (isa<FPGALoopAttrT>(I)) {
+    if (LoopAttr) {
+      if (isa<LoopAttrT>(I)) {
         SourceLocation Loc = Range.getBegin();
         // Cannot specify same type of attribute twice.
-        S.Diag(Loc, diag::err_intel_fpga_loop_attr_duplication)
-          << LoopFPGAAttr->getName();
+        S.Diag(Loc, diag::err_sycl_loop_attr_duplication)
+            << isIntelFPGAAttr << LoopAttr->getName();
       }
     }
-    if (isa<FPGALoopAttrT>(I))
-      LoopFPGAAttr = cast<FPGALoopAttrT>(I);
+    if (isa<LoopAttrT>(I))
+      LoopAttr = cast<LoopAttrT>(I);
   }
 }
 
-static void
-CheckForIncompatibleFPGALoopAttributes(Sema &S,
-                                       const SmallVectorImpl<const Attr *>
-                                       &Attrs, SourceRange Range) {
-  CheckForDuplicationFPGALoopAttribute<SYCLIntelFPGAIVDepAttr>(S, Attrs, Range);
-  CheckForDuplicationFPGALoopAttribute<SYCLIntelFPGAIIAttr>(S, Attrs, Range);
-  CheckForDuplicationFPGALoopAttribute<
-    SYCLIntelFPGAMaxConcurrencyAttr>(S, Attrs, Range);
+static void CheckForIncompatibleSYCLLoopAttributes(
+    Sema &S, const SmallVectorImpl<const Attr *> &Attrs, SourceRange Range) {
+  CheckForDuplicationSYCLLoopAttribute<SYCLIntelFPGAIVDepAttr>(S, Attrs, Range);
+  CheckForDuplicationSYCLLoopAttribute<SYCLIntelFPGAIIAttr>(S, Attrs, Range);
+  CheckForDuplicationSYCLLoopAttribute<SYCLIntelFPGAMaxConcurrencyAttr>(
+      S, Attrs, Range);
+  CheckForDuplicationSYCLLoopAttribute<LoopUnrollHintAttr>(S, Attrs, Range,
+                                                           false);
 }
 
-static Attr *handleOpenCLUnrollHint(Sema &S, Stmt *St, const ParsedAttr &A,
-                                    SourceRange Range) {
+void CheckForIncompatibleUnrollHintAttributes(
+    Sema &S, const SmallVectorImpl<const Attr *> &Attrs, SourceRange Range) {
+
+  // This check is entered after it was analyzed that there are no duplicating
+  // pragmas and loop attributes. So, let's perform check that there are no
+  // conflicting pragma unroll and unroll attribute for the loop.
+  const LoopUnrollHintAttr *AttrUnroll = nullptr;
+  const LoopHintAttr *PragmaUnroll = nullptr;
+  for (const auto *I : Attrs) {
+    if (auto *LH = dyn_cast<LoopUnrollHintAttr>(I))
+      AttrUnroll = LH;
+    if (auto *LH = dyn_cast<LoopHintAttr>(I)) {
+      LoopHintAttr::OptionType Opt = LH->getOption();
+      if (Opt == LoopHintAttr::Unroll || Opt == LoopHintAttr::UnrollCount)
+        PragmaUnroll = LH;
+    }
+  }
+
+  if (AttrUnroll && PragmaUnroll) {
+    PrintingPolicy Policy(S.Context.getLangOpts());
+    SourceLocation Loc = Range.getBegin();
+    S.Diag(Loc, diag::err_loop_unroll_compatibility)
+        << PragmaUnroll->getDiagnosticName(Policy)
+        << AttrUnroll->getDiagnosticName();
+  }
+}
+
+template <typename LoopUnrollAttrT>
+static Attr *handleLoopUnrollHint(Sema &S, Stmt *St, const ParsedAttr &A,
+                                  SourceRange Range) {
   // Although the feature was introduced only in OpenCL C v2.0 s6.11.5, it's
   // useful for OpenCL 1.x too and doesn't require HW support.
-  // opencl_unroll_hint can have 0 arguments (compiler
+  // opencl_unroll_hint or clang::unroll can have 0 arguments (compiler
   // determines unrolling factor) or 1 argument (the unroll factor provided
   // by the user).
 
@@ -395,7 +428,7 @@ static Attr *handleOpenCLUnrollHint(Sema &S, Stmt *St, const ParsedAttr &A,
     UnrollFactor = Val;
   }
 
-  return OpenCLUnrollHintAttr::CreateImplicit(S.Context, UnrollFactor);
+  return LoopUnrollAttrT::CreateImplicit(S.Context, UnrollFactor);
 }
 
 static Attr *ProcessStmtAttribute(Sema &S, Stmt *St, const ParsedAttr &A,
@@ -405,7 +438,7 @@ static Attr *ProcessStmtAttribute(Sema &S, Stmt *St, const ParsedAttr &A,
     S.Diag(A.getLoc(), A.isDeclspecAttribute()
                            ? (unsigned)diag::warn_unhandled_ms_attribute_ignored
                            : (unsigned)diag::warn_unknown_attribute_ignored)
-        << A.getName();
+        << A;
     return nullptr;
   case ParsedAttr::AT_FallThrough:
     return handleFallThroughAttr(S, St, A, Range);
@@ -418,14 +451,16 @@ static Attr *ProcessStmtAttribute(Sema &S, Stmt *St, const ParsedAttr &A,
   case ParsedAttr::AT_SYCLIntelFPGAMaxConcurrency:
     return handleIntelFPGALoopAttr<SYCLIntelFPGAMaxConcurrencyAttr>(S, St, A);
   case ParsedAttr::AT_OpenCLUnrollHint:
-    return handleOpenCLUnrollHint(S, St, A, Range);
+    return handleLoopUnrollHint<OpenCLUnrollHintAttr>(S, St, A, Range);
+  case ParsedAttr::AT_LoopUnrollHint:
+    return handleLoopUnrollHint<LoopUnrollHintAttr>(S, St, A, Range);
   case ParsedAttr::AT_Suppress:
     return handleSuppressAttr(S, St, A, Range);
   default:
     // if we're here, then we parsed a known attribute, but didn't recognize
     // it as a statement attribute => it is declaration attribute
     S.Diag(A.getRange().getBegin(), diag::err_decl_attribute_invalid_on_stmt)
-        << A.getName() << St->getBeginLoc();
+        << A << St->getBeginLoc();
     return nullptr;
   }
 }
@@ -440,7 +475,8 @@ StmtResult Sema::ProcessStmtAttributes(Stmt *S,
   }
 
   CheckForIncompatibleAttributes(*this, Attrs);
-  CheckForIncompatibleFPGALoopAttributes(*this, Attrs, Range);
+  CheckForIncompatibleSYCLLoopAttributes(*this, Attrs, Range);
+  CheckForIncompatibleUnrollHintAttributes(*this, Attrs, Range);
 
   if (Attrs.empty())
     return S;

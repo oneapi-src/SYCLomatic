@@ -95,6 +95,13 @@ class AArch64FunctionInfo final : public MachineFunctionInfo {
   /// returned struct in a register. This field holds the virtual register into
   /// which the sret argument is passed.
   unsigned SRetReturnReg = 0;
+  /// SVE stack size (for predicates and data vectors) are maintained here
+  /// rather than in FrameInfo, as the placement and Stack IDs are target
+  /// specific.
+  uint64_t StackSizeSVE = 0;
+
+  /// HasCalculatedStackSizeSVE indicates whether StackSizeSVE is valid.
+  bool HasCalculatedStackSizeSVE = false;
 
   /// Has a value when it is known whether or not the function uses a
   /// redzone, and no value otherwise.
@@ -105,6 +112,12 @@ class AArch64FunctionInfo final : public MachineFunctionInfo {
   /// ForwardedMustTailRegParms - A list of virtual and physical registers
   /// that must be forwarded to every musttail call.
   SmallVector<ForwardedRegister, 1> ForwardedMustTailRegParms;
+
+  // Offset from SP-at-entry to the tagged base pointer.
+  // Tagged base pointer is set up to point to the first (lowest address) tagged
+  // stack slot.
+  unsigned TaggedBasePointerOffset;
+
 public:
   AArch64FunctionInfo() = default;
 
@@ -124,6 +137,15 @@ public:
   void setArgumentStackToRestore(unsigned bytes) {
     ArgumentStackToRestore = bytes;
   }
+
+  bool hasCalculatedStackSizeSVE() const { return HasCalculatedStackSizeSVE; }
+
+  void setStackSizeSVE(uint64_t S) {
+    HasCalculatedStackSizeSVE = true;
+    StackSizeSVE = S;
+  }
+
+  uint64_t getStackSizeSVE() const { return StackSizeSVE; }
 
   bool hasStackFrame() const { return HasStackFrame; }
   void setHasStackFrame(bool s) { HasStackFrame = s; }
@@ -222,6 +244,13 @@ public:
 
   SmallVectorImpl<ForwardedRegister> &getForwardedMustTailRegParms() {
     return ForwardedMustTailRegParms;
+  }
+
+  unsigned getTaggedBasePointerOffset() const {
+    return TaggedBasePointerOffset;
+  }
+  void setTaggedBasePointerOffset(unsigned Offset) {
+    TaggedBasePointerOffset = Offset;
   }
 
 private:

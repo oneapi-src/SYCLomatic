@@ -12,6 +12,7 @@
 //===----------------------------------------------------------------------===//
 #ifndef LLVM_CLANG_TOOLS_EXTRA_CLANGD_SOURCECODE_H
 #define LLVM_CLANG_TOOLS_EXTRA_CLANGD_SOURCECODE_H
+
 #include "Context.h"
 #include "Protocol.h"
 #include "clang/Basic/Diagnostic.h"
@@ -20,9 +21,11 @@
 #include "clang/Basic/SourceManager.h"
 #include "clang/Format/Format.h"
 #include "clang/Tooling/Core/Replacement.h"
-#include "llvm/ADT/StringSet.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/StringSet.h"
+#include "llvm/Support/Error.h"
 #include "llvm/Support/SHA1.h"
+#include <string>
 
 namespace clang {
 class SourceManager;
@@ -32,7 +35,7 @@ namespace clangd {
 // We tend to generate digests for source codes in a lot of different places.
 // This represents the type for those digests to prevent us hard coding details
 // of hashing function at every place that needs to store this information.
-using FileDigest = decltype(llvm::SHA1::hash({}));
+using FileDigest = std::array<uint8_t, 8>;
 FileDigest digest(StringRef Content);
 Optional<FileDigest> digestFile(const SourceManager &SM, FileID FID);
 
@@ -65,10 +68,50 @@ Position offsetToPosition(llvm::StringRef Code, size_t Offset);
 /// FIXME: This should return an error if the location is invalid.
 Position sourceLocToPosition(const SourceManager &SM, SourceLocation Loc);
 
+/// Returns the taken range at \p TokLoc.
+llvm::Optional<Range> getTokenRange(const SourceManager &SM,
+                                    const LangOptions &LangOpts,
+                                    SourceLocation TokLoc);
+
 /// Return the file location, corresponding to \p P. Note that one should take
 /// care to avoid comparing the result with expansion locations.
 llvm::Expected<SourceLocation> sourceLocationInMainFile(const SourceManager &SM,
                                                         Position P);
+
+/// Get the beginning SourceLocation at a specified \p Pos in the main file.
+/// May be invalid if Pos is, or if there's no identifier or operators.
+/// The returned position is in the main file, callers may prefer to
+/// obtain the macro expansion location.
+SourceLocation getBeginningOfIdentifier(const Position &Pos,
+                                        const SourceManager &SM,
+                                        const LangOptions &LangOpts);
+
+/// Returns true iff \p Loc is inside the main file. This function handles
+/// file & macro locations. For macro locations, returns iff the macro is being
+/// expanded inside the main file.
+///
+/// The function is usually used to check whether a declaration is inside the
+/// the main file.
+bool isInsideMainFile(SourceLocation Loc, const SourceManager &SM);
+
+/// Returns the #include location through which IncludedFIle was loaded.
+/// Where SM.getIncludeLoc() returns the location of the *filename*, which may
+/// be in a macro, includeHashLoc() returns the location of the #.
+SourceLocation includeHashLoc(FileID IncludedFile, const SourceManager &SM);
+
+/// Returns true if the token at Loc is spelled in the source code.
+/// This is not the case for:
+///   * symbols formed via macro concatenation, the spelling location will
+///     be "<scratch space>"
+///   * symbols controlled and defined by a compile command-line option
+///     `-DName=foo`, the spelling location will be "<command line>".
+bool isSpelledInSource(SourceLocation Loc, const SourceManager &SM);
+
+/// Returns the spelling location of the token at Loc if isSpelledInSource,
+/// otherwise its expansion location.
+/// FIXME: Most callers likely want some variant of "file location" instead.
+SourceLocation spellingLocIfSpelled(SourceLocation Loc,
+                                    const SourceManager &SM);
 
 /// Turns a token range into a half-open range and checks its correctness.
 /// The resulting range will have only valid source location on both sides, both
@@ -157,10 +200,33 @@ format::FormatStyle getFormatStyleForFile(llvm::StringRef File,
                                           llvm::StringRef Content,
                                           llvm::vfs::FileSystem *FS);
 
-// Cleanup and format the given replacements.
+/// Cleanup and format the given replacements.
 llvm::Expected<tooling::Replacements>
 cleanupAndFormat(StringRef Code, const tooling::Replacements &Replaces,
                  const format::FormatStyle &Style);
+
+/// A set of edits generated for a single file. Can verify whether it is safe to
+/// apply these edits to a code block.
+struct Edit {
+  tooling::Replacements Replacements;
+  std::string InitialCode;
+
+  Edit(llvm::StringRef Code, tooling::Replacements Reps)
+      : Replacements(std::move(Reps)), InitialCode(Code) {}
+
+  /// Returns the file contents after changes are applied.
+  llvm::Expected<std::string> apply() const;
+
+  /// Represents Replacements as TextEdits that are available for use in LSP.
+  std::vector<TextEdit> asTextEdits() const;
+
+  /// Checks whether the Replacements are applicable to given Code.
+  bool canApplyTo(llvm::StringRef Code) const;
+};
+
+/// Formats the edits and code around it according to Style. Changes
+/// Replacements to formatted ones if succeeds.
+llvm::Error reformatEdit(Edit &E, const format::FormatStyle &Style);
 
 /// Collects identifiers with counts in the source code.
 llvm::StringMap<unsigned> collectIdentifiers(llvm::StringRef Content,
@@ -195,6 +261,14 @@ llvm::StringSet<> collectWords(llvm::StringRef Content);
 /// visibleNamespaces are {"foo::", "", "a::", "b::", "foo::b::"}, not "a::b::".
 std::vector<std::string> visibleNamespaces(llvm::StringRef Code,
                                            const format::FormatStyle &Style);
+
+struct DefinedMacro {
+  llvm::StringRef Name;
+  const MacroInfo *Info;
+};
+// Gets the macro at a specified \p Loc.
+llvm::Optional<DefinedMacro> locateMacroAt(SourceLocation Loc,
+                                           Preprocessor &PP);
 
 } // namespace clangd
 } // namespace clang

@@ -310,7 +310,7 @@ void PassManagerPrettyStackEntry::print(raw_ostream &OS) const {
     OS << "value";
 
   OS << " '";
-  V->printAsOperand(OS, /*PrintTy=*/false, M);
+  V->printAsOperand(OS, /*PrintType=*/false, M);
   OS << "'\n";
 }
 
@@ -1680,7 +1680,6 @@ bool FPPassManager::runOnFunction(Function &F) {
 bool FPPassManager::runOnModule(Module &M) {
   bool Changed = false;
 
-  llvm::TimeTraceScope TimeScope("OptModule", M.getName());
   for (Function &F : M)
     Changed |= runOnFunction(F);
 
@@ -1727,14 +1726,12 @@ MPPassManager::runOnModule(Module &M) {
   for (unsigned Index = 0; Index < getNumContainedPasses(); ++Index)
     Changed |= getContainedPass(Index)->doInitialization(M);
 
-  unsigned InstrCount, ModuleCount = 0;
+  unsigned InstrCount;
   StringMap<std::pair<unsigned, unsigned>> FunctionToInstrCount;
   bool EmitICRemark = M.shouldEmitInstrCountChangedRemark();
   // Collect the initial size of the module.
-  if (EmitICRemark) {
+  if (EmitICRemark)
     InstrCount = initSizeRemarkInfo(M, FunctionToInstrCount);
-    ModuleCount = InstrCount;
-  }
 
   for (unsigned Index = 0; Index < getNumContainedPasses(); ++Index) {
     ModulePass *MP = getContainedPass(Index);
@@ -1752,7 +1749,7 @@ MPPassManager::runOnModule(Module &M) {
       LocalChanged |= MP->runOnModule(M);
       if (EmitICRemark) {
         // Update the size of the module.
-        ModuleCount = M.getInstructionCount();
+        unsigned ModuleCount = M.getInstructionCount();
         if (ModuleCount != InstrCount) {
           int64_t Delta = static_cast<int64_t>(ModuleCount) -
                           static_cast<int64_t>(InstrCount);
@@ -2001,10 +1998,28 @@ void FunctionPass::assignPassManager(PMStack &PMS,
   FPP->add(this);
 }
 
+void BasicBlockPass::preparePassManager(PMStack &PMS) {
+  // Find BBPassManager
+  while (!PMS.empty() &&
+         PMS.top()->getPassManagerType() > PMT_BasicBlockPassManager)
+    PMS.pop();
+
+  // If this pass is destroying high level information that is used
+  // by other passes that are managed by BBPM then do not insert
+  // this pass in current BBPM. Use new BBPassManager.
+  if (PMS.top()->getPassManagerType() == PMT_BasicBlockPassManager &&
+      !PMS.top()->preserveHigherLevelAnalysis(this))
+    PMS.pop();
+}
+
 /// Find appropriate Basic Pass Manager or Call Graph Pass Manager
 /// in the PM Stack and add self into that manager.
 void BasicBlockPass::assignPassManager(PMStack &PMS,
                                        PassManagerType PreferredType) {
+  while (!PMS.empty() &&
+         PMS.top()->getPassManagerType() > PMT_BasicBlockPassManager)
+    PMS.pop();
+
   BBPassManager *BBP;
 
   // Basic Pass Manager is a leaf pass manager. It does not handle
@@ -2020,6 +2035,7 @@ void BasicBlockPass::assignPassManager(PMStack &PMS,
 
     // [1] Create new Basic Block Manager
     BBP = new BBPassManager();
+    BBP->populateInheritedAnalysis(PMS);
 
     // [2] Set up new manager's top level manager
     // Basic Block Pass Manager does not live by itself

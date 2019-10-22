@@ -14,6 +14,7 @@
 #define LLVM_CODEGEN_TARGETFRAMELOWERING_H
 
 #include "llvm/CodeGen/MachineBasicBlock.h"
+#include "llvm/ADT/StringSwitch.h"
 #include <utility>
 #include <vector>
 
@@ -22,6 +23,15 @@ namespace llvm {
   class CalleeSavedInfo;
   class MachineFunction;
   class RegScavenger;
+
+namespace TargetStackID {
+  enum Value {
+    Default = 0,
+    SGPRSpill = 1,
+    SVEVector = 2,
+    NoAlloc = 255
+  };
+}
 
 /// Information about stack frame layout on the target.  It holds the direction
 /// of stack growth, the known stack alignment on entry to each function, and
@@ -345,6 +355,16 @@ public:
     return true;
   }
 
+  virtual bool isSupportedStackID(TargetStackID::Value ID) const {
+    switch (ID) {
+    default:
+      return false;
+    case TargetStackID::Default:
+    case TargetStackID::NoAlloc:
+      return true;
+    }
+  }
+
   /// Check if given function is safe for not having callee saved registers.
   /// This is used when interprocedural register allocation is enabled.
   static bool isSafeForNoCSROpt(const Function &F) {
@@ -356,6 +376,11 @@ public:
       if (auto CS = ImmutableCallSite(U))
         if (CS.isTailCall())
           return false;
+    return true;
+  }
+
+  /// Check if the no-CSR optimisation is profitable for the given function.
+  virtual bool isProfitableForNoCSROpt(const Function &F) const {
     return true;
   }
 

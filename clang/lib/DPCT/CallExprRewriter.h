@@ -54,7 +54,7 @@ class CallExprRewriterFactory : public CallExprRewriterFactoryBase {
 private:
   template <size_t... Idx>
   inline std::shared_ptr<CallExprRewriter>
-  createRewriter(const CallExpr *Call, llvm::index_sequence<Idx...>) {
+  createRewriter(const CallExpr *Call, std::index_sequence<Idx...>) {
     return std::shared_ptr<RewriterTy>(
         new RewriterTy(Call, std::get<Idx>(Initializer)...));
   }
@@ -67,7 +67,7 @@ public:
     if (!Call)
       return std::shared_ptr<CallExprRewriter>();
     return createRewriter(Call,
-                          llvm::index_sequence_for<std::string, Args...>());
+                          std::index_sequence_for<std::string, Args...>());
   }
 };
 

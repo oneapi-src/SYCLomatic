@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <stdlib.h>
 
 #ifdef _WIN32
@@ -28,9 +29,23 @@
 #endif // _WIN32
 
 #if defined(SYCL_RT_OS_WINDOWS)
+
 #define DLL_LOCAL
+// If SYCL headers are included to build SYCL library then the macro is used
+// to set dllexport attribute for global variables/functions/classes.
+// Otherwise, the macro is used used to set dllimport for the same global
+// variables/functions/classes.
+#if defined(__SYCL_BUILD_SYCL_DLL)
+#define __SYCL_EXPORTED __declspec(dllexport)
+#else
+#define __SYCL_EXPORTED __declspec(dllimport)
+#endif
+
 #elif defined(SYCL_RT_OS_LINUX)
+
 #define DLL_LOCAL __attribute__((visibility("hidden")))
+#define __SYCL_EXPORTED
+
 #endif
 
 namespace cl {
@@ -39,7 +54,7 @@ namespace detail {
 
 /// Uniquely identifies an operating system module (executable or a dynamic
 /// library)
-using OSModuleHandle = void *;
+using OSModuleHandle = intptr_t;
 
 /// Groups the OS-dependent services.
 class OSUtil {
@@ -49,7 +64,7 @@ public:
 
   /// Module handle for the executable module - it is assumed there is always
   /// single one at most.
-  static const OSModuleHandle ExeModuleHandle;
+  static constexpr OSModuleHandle ExeModuleHandle = -1;
 
   /// Returns the amount of RAM available for the operating system.
   static size_t getOSMemSize();

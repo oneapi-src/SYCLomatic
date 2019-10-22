@@ -323,7 +323,8 @@ std::pair<ProgramStateRef, SVal> ExprEngine::prepareForObjectConstruction(
       CallEventManager &CEMgr = getStateManager().getCallEventManager();
       SVal V = UnknownVal();
       auto getArgLoc = [&](CallEventRef<> Caller) -> Optional<SVal> {
-        const LocationContext *FutureSFC = Caller->getCalleeStackFrame();
+        const LocationContext *FutureSFC =
+            Caller->getCalleeStackFrame(currBldrCtx->blockCount());
         // Return early if we are unable to reliably foresee
         // the future stack frame.
         if (!FutureSFC)
@@ -342,7 +343,7 @@ std::pair<ProgramStateRef, SVal> ExprEngine::prepareForObjectConstruction(
         // because this-argument is implemented as a normal argument in
         // operator call expressions but not in operator declarations.
         const VarRegion *VR = Caller->getParameterLocation(
-            *Caller->getAdjustedParameterIndex(Idx));
+            *Caller->getAdjustedParameterIndex(Idx), currBldrCtx->blockCount());
         if (!VR)
           return None;
 
@@ -428,25 +429,20 @@ void ExprEngine::VisitCXXConstructExpr(const CXXConstructExpr *CE,
         prepareForObjectConstruction(CE, State, LCtx, CC, CallOpts);
     break;
   }
-  case CXXConstructExpr::CK_VirtualBase:
+  case CXXConstructExpr::CK_VirtualBase: {
     // Make sure we are not calling virtual base class initializers twice.
     // Only the most-derived object should initialize virtual base classes.
-    if (const Stmt *Outer = LCtx->getStackFrame()->getCallSite()) {
-      const CXXConstructExpr *OuterCtor = dyn_cast<CXXConstructExpr>(Outer);
-      if (OuterCtor) {
-        switch (OuterCtor->getConstructionKind()) {
-        case CXXConstructExpr::CK_NonVirtualBase:
-        case CXXConstructExpr::CK_VirtualBase:
-          // Bail out!
-          destNodes.Add(Pred);
-          return;
-        case CXXConstructExpr::CK_Complete:
-        case CXXConstructExpr::CK_Delegating:
-          break;
-        }
-      }
-    }
+    const auto *OuterCtor = dyn_cast_or_null<CXXConstructExpr>(
+        LCtx->getStackFrame()->getCallSite());
+    assert(
+        (!OuterCtor ||
+         OuterCtor->getConstructionKind() == CXXConstructExpr::CK_Complete ||
+         OuterCtor->getConstructionKind() == CXXConstructExpr::CK_Delegating) &&
+        ("This virtual base should have already been initialized by "
+         "the most derived class!"));
+    (void)OuterCtor;
     LLVM_FALLTHROUGH;
+  }
   case CXXConstructExpr::CK_NonVirtualBase:
     // In C++17, classes with non-virtual bases may be aggregates, so they would
     // be initialized as aggregates without a constructor call, so we may have
@@ -608,7 +604,7 @@ void ExprEngine::VisitCXXDestructor(QualType ObjectType,
                                     bool IsBaseDtor,
                                     ExplodedNode *Pred,
                                     ExplodedNodeSet &Dst,
-                                    const EvalCallOptions &CallOpts) {
+                                    EvalCallOptions &CallOpts) {
   assert(S && "A destructor without a trigger!");
   const LocationContext *LCtx = Pred->getLocationContext();
   ProgramStateRef State = Pred->getState();
@@ -616,7 +612,6 @@ void ExprEngine::VisitCXXDestructor(QualType ObjectType,
   const CXXRecordDecl *RecordDecl = ObjectType->getAsCXXRecordDecl();
   assert(RecordDecl && "Only CXXRecordDecls should have destructors");
   const CXXDestructorDecl *DtorDecl = RecordDecl->getDestructor();
-
   // FIXME: There should always be a Decl, otherwise the destructor call
   // shouldn't have been added to the CFG in the first place.
   if (!DtorDecl) {
@@ -630,9 +625,27 @@ void ExprEngine::VisitCXXDestructor(QualType ObjectType,
     return;
   }
 
+  if (!Dest) {
+    // We're trying to destroy something that is not a region. This may happen
+    // for a variety of reasons (unknown target region, concrete integer instead
+    // of target region, etc.). The current code makes an attempt to recover.
+    // FIXME: We probably don't really need to recover when we're dealing
+    // with concrete integers specifically.
+    CallOpts.IsCtorOrDtorWithImproperlyModeledTargetRegion = true;
+    if (const Expr *E = dyn_cast_or_null<Expr>(S)) {
+      Dest = MRMgr.getCXXTempObjectRegion(E, Pred->getLocationContext());
+    } else {
+      static SimpleProgramPointTag T("ExprEngine", "SkipInvalidDestructor");
+      NodeBuilder Bldr(Pred, Dst, *currBldrCtx);
+      Bldr.generateSink(Pred->getLocation().withTag(&T),
+                        Pred->getState(), Pred);
+      return;
+    }
+  }
+
   CallEventManager &CEMgr = getStateManager().getCallEventManager();
   CallEventRef<CXXDestructorCall> Call =
-    CEMgr.getCXXDestructorCall(DtorDecl, S, Dest, IsBaseDtor, State, LCtx);
+      CEMgr.getCXXDestructorCall(DtorDecl, S, Dest, IsBaseDtor, State, LCtx);
 
   PrettyStackTraceLoc CrashInfo(getContext().getSourceManager(),
                                 Call->getSourceRange().getBegin(),
@@ -762,7 +775,8 @@ void ExprEngine::VisitCXXNewExpr(const CXXNewExpr *CNE, ExplodedNode *Pred,
   if (!AMgr.getAnalyzerOptions().MayInlineCXXAllocator) {
     // Invalidate placement args.
     // FIXME: Once we figure out how we want allocators to work,
-    // we should be using the usual pre-/(default-)eval-/post-call checks here.
+    // we should be using the usual pre-/(default-)eval-/post-call checkers
+    // here.
     State = Call->invalidateRegions(blockCount);
     if (!State)
       return;
@@ -790,9 +804,8 @@ void ExprEngine::VisitCXXNewExpr(const CXXNewExpr *CNE, ExplodedNode *Pred,
   if (CNE->isArray()) {
     // FIXME: allocating an array requires simulating the constructors.
     // For now, just return a symbolicated region.
-    if (const SubRegion *NewReg =
-            dyn_cast_or_null<SubRegion>(symVal.getAsRegion())) {
-      QualType ObjTy = CNE->getType()->getAs<PointerType>()->getPointeeType();
+    if (const auto *NewReg = cast_or_null<SubRegion>(symVal.getAsRegion())) {
+      QualType ObjTy = CNE->getType()->getPointeeType();
       const ElementRegion *EleReg =
           getStoreManager().GetElementZeroRegion(NewReg, ObjTy);
       Result = loc::MemRegionVal(EleReg);

@@ -125,7 +125,7 @@ namespace {
 #define TYPE(CLASS, PARENT) \
     void print##CLASS##Before(const CLASS##Type *T, raw_ostream &OS); \
     void print##CLASS##After(const CLASS##Type *T, raw_ostream &OS);
-#include "clang/AST/TypeNodes.def"
+#include "clang/AST/TypeNodes.inc"
 
   private:
     void printBefore(const Type *ty, Qualifiers qs, raw_ostream &OS);
@@ -292,6 +292,14 @@ void TypePrinter::printBefore(const Type *T,Qualifiers Quals, raw_ostream &OS) {
   if (Policy.SuppressSpecifiers && T->isSpecifierType())
     return;
 
+  if (Policy.SuppressTypedefs && (T->getTypeClass() == Type::Typedef)) {
+    QualType UnderlyingType = T->getCanonicalTypeInternal();
+    SplitQualType Split = splitAccordingToPolicy(UnderlyingType, Policy);
+    Qualifiers FullQuals = Quals + Split.Quals;
+    printBefore(Split.Ty, FullQuals, OS);
+    return;
+  }
+
   SaveAndRestore<bool> PrevPHIsEmpty(HasEmptyPlaceHolder);
 
   // Print qualifiers as appropriate.
@@ -321,7 +329,7 @@ void TypePrinter::printBefore(const Type *T,Qualifiers Quals, raw_ostream &OS) {
 #define TYPE(CLASS, PARENT) case Type::CLASS: \
     print##CLASS##Before(cast<CLASS##Type>(T), OS); \
     break;
-#include "clang/AST/TypeNodes.def"
+#include "clang/AST/TypeNodes.inc"
   }
 
   if (hasAfterQuals) {
@@ -347,7 +355,7 @@ void TypePrinter::printAfter(const Type *T, Qualifiers Quals, raw_ostream &OS) {
 #define TYPE(CLASS, PARENT) case Type::CLASS: \
     print##CLASS##After(cast<CLASS##Type>(T), OS); \
     break;
-#include "clang/AST/TypeNodes.def"
+#include "clang/AST/TypeNodes.inc"
   }
 }
 
@@ -734,6 +742,8 @@ FunctionProtoType::printExceptionSpecification(raw_ostream &OS,
         OS << getExceptionType(I).stream(Policy);
       }
     OS << ')';
+  } else if (EST_NoThrow == getExceptionSpecType()) {
+    OS << " __attribute__((nothrow))";
   } else if (isNoexceptExceptionSpec(getExceptionSpecType())) {
     OS << " noexcept";
     // FIXME:Is it useful to print out the expression for a non-dependent
@@ -940,7 +950,6 @@ void TypePrinter::printFunctionNoProtoAfter(const FunctionNoProtoType *T,
 }
 
 void TypePrinter::printTypeSpec(NamedDecl *D, raw_ostream &OS) {
-
   // Compute the full nested-name-specifier for this type.
   // In C, this will always be empty except when the type
   // being printed is anonymous within other Record.
@@ -1321,7 +1330,8 @@ void TypePrinter::printElaboratedBefore(const ElaboratedType *T,
     if (T->getKeyword() != ETK_None)
       OS << " ";
     NestedNameSpecifier *Qualifier = T->getQualifier();
-    if (Qualifier)
+    if (Qualifier && !(Policy.SuppressTypedefs &&
+                       T->getNamedType()->getTypeClass() == Type::Typedef))
       Qualifier->print(OS, Policy);
   }
 
@@ -1816,10 +1826,10 @@ void Qualifiers::print(raw_ostream &OS, const PrintingPolicy& Policy,
         OS << "__generic";
         break;
       case LangAS::cuda_device:
-        OS << "__device";
+        OS << "__device__";
         break;
       case LangAS::cuda_shared:
-        OS << "__shared";
+        OS << "__shared__";
         break;
       default:
         OS << "__attribute__((address_space(";

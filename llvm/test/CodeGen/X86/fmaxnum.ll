@@ -44,7 +44,7 @@ define float @test_fmaxf(float %x, float %y) {
 ; AVX512:       # %bb.0:
 ; AVX512-NEXT:    vmaxss %xmm0, %xmm1, %xmm2
 ; AVX512-NEXT:    vcmpunordss %xmm0, %xmm0, %k1
-; AVX512-NEXT:    vmovss %xmm1, %xmm0, %xmm2 {%k1}
+; AVX512-NEXT:    vmovss %xmm1, %xmm2, %xmm2 {%k1}
 ; AVX512-NEXT:    vmovaps %xmm2, %xmm0
 ; AVX512-NEXT:    retq
   %z = call float @fmaxf(float %x, float %y) readnone
@@ -85,7 +85,7 @@ define double @test_fmax(double %x, double %y) {
 ; AVX512:       # %bb.0:
 ; AVX512-NEXT:    vmaxsd %xmm0, %xmm1, %xmm2
 ; AVX512-NEXT:    vcmpunordsd %xmm0, %xmm0, %k1
-; AVX512-NEXT:    vmovsd %xmm1, %xmm0, %xmm2 {%k1}
+; AVX512-NEXT:    vmovsd %xmm1, %xmm2, %xmm2 {%k1}
 ; AVX512-NEXT:    vmovapd %xmm2, %xmm0
 ; AVX512-NEXT:    retq
   %z = call double @fmax(double %x, double %y) readnone
@@ -133,7 +133,7 @@ define float @test_intrinsic_fmaxf(float %x, float %y) {
 ; AVX512:       # %bb.0:
 ; AVX512-NEXT:    vmaxss %xmm0, %xmm1, %xmm2
 ; AVX512-NEXT:    vcmpunordss %xmm0, %xmm0, %k1
-; AVX512-NEXT:    vmovss %xmm1, %xmm0, %xmm2 {%k1}
+; AVX512-NEXT:    vmovss %xmm1, %xmm2, %xmm2 {%k1}
 ; AVX512-NEXT:    vmovaps %xmm2, %xmm0
 ; AVX512-NEXT:    retq
   %z = call float @llvm.maxnum.f32(float %x, float %y) readnone
@@ -164,7 +164,7 @@ define double @test_intrinsic_fmax(double %x, double %y) {
 ; AVX512:       # %bb.0:
 ; AVX512-NEXT:    vmaxsd %xmm0, %xmm1, %xmm2
 ; AVX512-NEXT:    vcmpunordsd %xmm0, %xmm0, %k1
-; AVX512-NEXT:    vmovsd %xmm1, %xmm0, %xmm2 {%k1}
+; AVX512-NEXT:    vmovsd %xmm1, %xmm2, %xmm2 {%k1}
 ; AVX512-NEXT:    vmovapd %xmm2, %xmm0
 ; AVX512-NEXT:    retq
   %z = call double @llvm.maxnum.f64(double %x, double %y) readnone
@@ -467,6 +467,34 @@ define <2 x double> @maxnum_intrinsic_nnan_attr_f64(<2 x double> %a, <2 x double
 ; AVX-NEXT:    retq
   %r = tail call <2 x double> @llvm.maxnum.v2f64(<2 x double> %a, <2 x double> %b)
   ret <2 x double> %r
+}
+
+define float @test_maxnum_const_op1(float %x) {
+; SSE-LABEL: test_maxnum_const_op1:
+; SSE:       # %bb.0:
+; SSE-NEXT:    maxss {{.*}}(%rip), %xmm0
+; SSE-NEXT:    retq
+;
+; AVX-LABEL: test_maxnum_const_op1:
+; AVX:       # %bb.0:
+; AVX-NEXT:    vmaxss {{.*}}(%rip), %xmm0, %xmm0
+; AVX-NEXT:    retq
+  %r = call float @llvm.maxnum.f32(float 1.0, float %x)
+  ret float %r
+}
+
+define float @test_maxnum_const_op2(float %x) {
+; SSE-LABEL: test_maxnum_const_op2:
+; SSE:       # %bb.0:
+; SSE-NEXT:    maxss {{.*}}(%rip), %xmm0
+; SSE-NEXT:    retq
+;
+; AVX-LABEL: test_maxnum_const_op2:
+; AVX:       # %bb.0:
+; AVX-NEXT:    vmaxss {{.*}}(%rip), %xmm0, %xmm0
+; AVX-NEXT:    retq
+  %r = call float @llvm.maxnum.f32(float %x, float 1.0)
+  ret float %r
 }
 
 attributes #0 = { "no-nans-fp-math"="true" }

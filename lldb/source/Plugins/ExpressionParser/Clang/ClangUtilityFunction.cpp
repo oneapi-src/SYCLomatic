@@ -6,6 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "lldb/Host/Config.h"
+
 #include "ClangUtilityFunction.h"
 #include "ClangExpressionDeclMap.h"
 #include "ClangExpressionParser.h"
@@ -90,7 +92,7 @@ bool ClangUtilityFunction::Install(DiagnosticManager &diagnostic_manager,
 
   ResetDeclMap(exe_ctx, keep_result_in_memory);
 
-  if (!DeclMap()->WillParse(exe_ctx, NULL)) {
+  if (!DeclMap()->WillParse(exe_ctx, nullptr)) {
     diagnostic_manager.PutString(
         eDiagnosticSeverityError,
         "current process state is unsuitable for expression parsing");

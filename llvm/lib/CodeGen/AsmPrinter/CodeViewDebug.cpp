@@ -51,6 +51,7 @@
 #include "llvm/DebugInfo/CodeView/TypeIndex.h"
 #include "llvm/DebugInfo/CodeView/TypeRecord.h"
 #include "llvm/DebugInfo/CodeView/TypeTableCollection.h"
+#include "llvm/DebugInfo/CodeView/TypeVisitorCallbackPipeline.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/DebugInfoMetadata.h"
@@ -93,6 +94,43 @@
 
 using namespace llvm;
 using namespace llvm::codeview;
+
+namespace {
+class CVMCAdapter : public CodeViewRecordStreamer {
+public:
+  CVMCAdapter(MCStreamer &OS, TypeCollection &TypeTable)
+      : OS(&OS), TypeTable(TypeTable) {}
+
+  void EmitBytes(StringRef Data) { OS->EmitBytes(Data); }
+
+  void EmitIntValue(uint64_t Value, unsigned Size) {
+    OS->EmitIntValueInHex(Value, Size);
+  }
+
+  void EmitBinaryData(StringRef Data) { OS->EmitBinaryData(Data); }
+
+  void AddComment(const Twine &T) { OS->AddComment(T); }
+
+  void AddRawComment(const Twine &T) { OS->emitRawComment(T); }
+
+  bool isVerboseAsm() { return OS->isVerboseAsm(); }
+
+  std::string getTypeName(TypeIndex TI) {
+    std::string TypeName;
+    if (!TI.isNoneType()) {
+      if (TI.isSimple())
+        TypeName = TypeIndex::simpleTypeName(TI);
+      else
+        TypeName = TypeTable.getTypeName(TI);
+    }
+    return TypeName;
+  }
+
+private:
+  MCStreamer *OS = nullptr;
+  TypeCollection &TypeTable;
+};
+} // namespace
 
 static CPUType mapArchToCVCPUType(Triple::ArchType Type) {
   switch (Type) {
@@ -583,8 +621,9 @@ void CodeViewDebug::endModule() {
   clear();
 }
 
-static void emitNullTerminatedSymbolName(MCStreamer &OS, StringRef S,
-    unsigned MaxFixedRecordLength = 0xF00) {
+static void
+emitNullTerminatedSymbolName(MCStreamer &OS, StringRef S,
+                             unsigned MaxFixedRecordLength = 0xF00) {
   // The maximum CV record length is 0xFF00. Most of the strings we emit appear
   // after a fixed length portion of the record. The fixed length portion should
   // always be less than 0xF00 (3840) bytes, so truncate the string so that the
@@ -603,39 +642,26 @@ void CodeViewDebug::emitTypeInformation() {
   OS.SwitchSection(Asm->getObjFileLowering().getCOFFDebugTypesSection());
   emitCodeViewMagicVersion();
 
-  SmallString<8> CommentPrefix;
-  if (OS.isVerboseAsm()) {
-    CommentPrefix += '\t';
-    CommentPrefix += Asm->MAI->getCommentString();
-    CommentPrefix += ' ';
-  }
-
   TypeTableCollection Table(TypeTable.records());
+  TypeVisitorCallbackPipeline Pipeline;
+
+  // To emit type record using Codeview MCStreamer adapter
+  CVMCAdapter CVMCOS(OS, Table);
+  TypeRecordMapping typeMapping(CVMCOS);
+  Pipeline.addCallbackToPipeline(typeMapping);
+
   Optional<TypeIndex> B = Table.getFirst();
   while (B) {
     // This will fail if the record data is invalid.
     CVType Record = Table.getType(*B);
 
-    if (OS.isVerboseAsm()) {
-      // Emit a block comment describing the type record for readability.
-      SmallString<512> CommentBlock;
-      raw_svector_ostream CommentOS(CommentBlock);
-      ScopedPrinter SP(CommentOS);
-      SP.setPrefix(CommentPrefix);
-      TypeDumpVisitor TDV(Table, &SP, false);
+    Error E = codeview::visitTypeRecord(Record, *B, Pipeline);
 
-      Error E = codeview::visitTypeRecord(Record, *B, TDV);
-      if (E) {
-        logAllUnhandledErrors(std::move(E), errs(), "error: ");
-        llvm_unreachable("produced malformed type record");
-      }
-      // emitRawComment will insert its own tab and comment string before
-      // the first line, so strip off our first one. It also prints its own
-      // newline.
-      OS.emitRawComment(
-          CommentOS.str().drop_front(CommentPrefix.size() - 1).rtrim());
+    if (E) {
+      logAllUnhandledErrors(std::move(E), errs(), "error: ");
+      llvm_unreachable("produced malformed type record");
     }
-    OS.EmitBinaryData(Record.str_data());
+
     B = Table.getNext(*B);
   }
 }
@@ -1082,7 +1108,7 @@ void CodeViewDebug::emitDebugInfoForFunction(const Function *GV,
       if (!BeginLabel->isDefined() || !EndLabel->isDefined())
         continue;
 
-      DIType *DITy = std::get<2>(HeapAllocSite);
+      const DIType *DITy = std::get<2>(HeapAllocSite);
       MCSymbol *HeapAllocEnd = beginSymbolRecord(SymbolKind::S_HEAPALLOCSITE);
       OS.AddComment("Call site offset");
       OS.EmitCOFFSecRel32(BeginLabel, /*Offset=*/0);
@@ -1142,9 +1168,15 @@ void CodeViewDebug::collectVariableInfoFromMFTable(
     // If the variable has an attached offset expression, extract it.
     // FIXME: Try to handle DW_OP_deref as well.
     int64_t ExprOffset = 0;
-    if (VI.Expr)
-      if (!VI.Expr->extractIfOffset(ExprOffset))
+    bool Deref = false;
+    if (VI.Expr) {
+      // If there is one DW_OP_deref element, use offset of 0 and keep going.
+      if (VI.Expr->getNumElements() == 1 &&
+          VI.Expr->getElement(0) == llvm::dwarf::DW_OP_deref)
+        Deref = true;
+      else if (!VI.Expr->extractIfOffset(ExprOffset))
         continue;
+    }
 
     // Get the frame register used and the offset.
     unsigned FrameReg = 0;
@@ -1154,6 +1186,7 @@ void CodeViewDebug::collectVariableInfoFromMFTable(
     // Calculate the label ranges.
     LocalVarDefRange DefRange =
         createDefRangeMem(CVReg, FrameOffset + ExprOffset);
+
     for (const InsnRange &Range : Scope->getRanges()) {
       const MCSymbol *Begin = getLabelBeforeInsn(Range.first);
       const MCSymbol *End = getLabelAfterInsn(Range.second);
@@ -1164,6 +1197,9 @@ void CodeViewDebug::collectVariableInfoFromMFTable(
     LocalVariable Var;
     Var.DIVar = VI.Var;
     Var.DefRanges.emplace_back(std::move(DefRange));
+    if (Deref)
+      Var.UseReferenceType = true;
+
     recordLocalVariable(std::move(Var), Scope);
   }
 }
@@ -1300,7 +1336,7 @@ void CodeViewDebug::beginFunctionImpl(const MachineFunction *MF) {
   const TargetRegisterInfo *TRI = TSI.getRegisterInfo();
   const MachineFrameInfo &MFI = MF->getFrameInfo();
   const Function &GV = MF->getFunction();
-  auto Insertion = FnDebugInfo.insert({&GV, llvm::make_unique<FunctionInfo>()});
+  auto Insertion = FnDebugInfo.insert({&GV, std::make_unique<FunctionInfo>()});
   assert(Insertion.second && "function already has info");
   CurFn = Insertion.first->second.get();
   CurFn->FuncId = NextFuncId++;
@@ -2570,17 +2606,6 @@ void CodeViewDebug::emitLocalVariableList(const FunctionInfo &FI,
       emitLocalVariable(FI, L);
 }
 
-/// Only call this on endian-specific types like ulittle16_t and little32_t, or
-/// structs composed of them.
-template <typename T>
-static void copyBytesForDefRange(SmallString<20> &BytePrefix,
-                                 SymbolKind SymKind, const T &DefRangeHeader) {
-  BytePrefix.resize(2 + sizeof(T));
-  ulittle16_t SymKindLE = ulittle16_t(SymKind);
-  memcpy(&BytePrefix[0], &SymKindLE, 2);
-  memcpy(&BytePrefix[2], &DefRangeHeader, sizeof(T));
-}
-
 void CodeViewDebug::emitLocalVariable(const FunctionInfo &FI,
                                       const LocalVariable &Var) {
   // LocalSym record, see SymbolRecord.h for more info.
@@ -2629,8 +2654,9 @@ void CodeViewDebug::emitLocalVariable(const FunctionInfo &FI,
           (bool(Flags & LocalSymFlags::IsParameter)
                ? (EncFP == FI.EncodedParamFramePtrReg)
                : (EncFP == FI.EncodedLocalFramePtrReg))) {
-        little32_t FPOffset = little32_t(Offset);
-        copyBytesForDefRange(BytePrefix, S_DEFRANGE_FRAMEPOINTER_REL, FPOffset);
+        DefRangeFramePointerRelSym::Header DRHdr;
+        DRHdr.Offset = Offset;
+        OS.EmitCVDefRangeDirective(DefRange.Ranges, DRHdr);
       } else {
         uint16_t RegRelFlags = 0;
         if (DefRange.IsSubfield) {
@@ -2642,7 +2668,7 @@ void CodeViewDebug::emitLocalVariable(const FunctionInfo &FI,
         DRHdr.Register = Reg;
         DRHdr.Flags = RegRelFlags;
         DRHdr.BasePointerOffset = Offset;
-        copyBytesForDefRange(BytePrefix, S_DEFRANGE_REGISTER_REL, DRHdr);
+        OS.EmitCVDefRangeDirective(DefRange.Ranges, DRHdr);
       }
     } else {
       assert(DefRange.DataOffset == 0 && "unexpected offset into register");
@@ -2651,15 +2677,14 @@ void CodeViewDebug::emitLocalVariable(const FunctionInfo &FI,
         DRHdr.Register = DefRange.CVRegister;
         DRHdr.MayHaveNoName = 0;
         DRHdr.OffsetInParent = DefRange.StructOffset;
-        copyBytesForDefRange(BytePrefix, S_DEFRANGE_SUBFIELD_REGISTER, DRHdr);
+        OS.EmitCVDefRangeDirective(DefRange.Ranges, DRHdr);
       } else {
         DefRangeRegisterSym::Header DRHdr;
         DRHdr.Register = DefRange.CVRegister;
         DRHdr.MayHaveNoName = 0;
-        copyBytesForDefRange(BytePrefix, S_DEFRANGE_REGISTER, DRHdr);
+        OS.EmitCVDefRangeDirective(DefRange.Ranges, DRHdr);
       }
     }
-    OS.EmitCVDefRangeDirective(DefRange.Ranges, BytePrefix);
   }
 }
 
@@ -2963,7 +2988,7 @@ void CodeViewDebug::collectGlobalVariableInfo() {
         auto Insertion = ScopeGlobals.insert(
             {Scope, std::unique_ptr<GlobalVariableList>()});
         if (Insertion.second)
-          Insertion.first->second = llvm::make_unique<GlobalVariableList>();
+          Insertion.first->second = std::make_unique<GlobalVariableList>();
         VariableList = Insertion.first->second.get();
       } else if (GV->hasComdat())
         // Emit this global variable into a COMDAT section.
@@ -3069,7 +3094,13 @@ void CodeViewDebug::emitDebugInfoForGlobal(const CVGlobalVariable &CVGV) {
     OS.EmitBinaryData(SRef);
 
     OS.AddComment("Name");
-    emitNullTerminatedSymbolName(OS, DIGV->getDisplayName());
+    const DIScope *Scope = DIGV->getScope();
+    // For static data members, get the scope from the declaration.
+    if (const auto *MemberDecl = dyn_cast_or_null<DIDerivedType>(
+            DIGV->getRawStaticDataMemberDeclaration()))
+      Scope = MemberDecl->getScope();
+    emitNullTerminatedSymbolName(OS,
+                                 getFullyQualifiedName(Scope, DIGV->getName()));
     endSymbolRecord(SConstantEnd);
   }
 }

@@ -78,8 +78,8 @@ class LLVM_LIBRARY_VISIBILITY X86TargetInfo : public TargetInfo {
   bool HasAVX512VBMI = false;
   bool HasAVX512VBMI2 = false;
   bool HasAVX512IFMA = false;
+  bool HasAVX512VP2INTERSECT = false;
   bool HasSHA = false;
-  bool HasMPX = false;
   bool HasSHSTK = false;
   bool HasSGX = false;
   bool HasCX8 = false;
@@ -107,6 +107,7 @@ class LLVM_LIBRARY_VISIBILITY X86TargetInfo : public TargetInfo {
   bool HasMOVDIR64B = false;
   bool HasPTWRITE = false;
   bool HasINVPCID = false;
+  bool HasENQCMD = false;
 
 protected:
   /// Enumeration of all of the X86 CPUs supported by Clang.
@@ -129,6 +130,10 @@ public:
   X86TargetInfo(const llvm::Triple &Triple, const TargetOptions &)
       : TargetInfo(Triple) {
     LongDoubleFormat = &llvm::APFloat::x87DoubleExtended();
+  }
+
+  const char *getLongDoubleMangling() const override {
+    return LongDoubleFormat == &llvm::APFloat::IEEEquad() ? "g" : "e";
   }
 
   unsigned getFloatEvalMethod() const override {
@@ -314,8 +319,8 @@ public:
     }
   }
 
-  CallingConv getDefaultCallingConv(CallingConvMethodType MT) const override {
-    return MT == CCMT_Member ? CC_X86ThisCall : CC_C;
+  CallingConv getDefaultCallingConv() const override {
+    return CC_C;
   }
 
   bool hasSjLjLowering() const override { return true; }
@@ -334,7 +339,8 @@ public:
     LongDoubleWidth = 96;
     LongDoubleAlign = 32;
     SuitableAlign = 128;
-    resetDataLayout("e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128");
+    resetDataLayout("e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-f64:32:64-"
+                    "f80:32-n8:16:32-S128");
     SizeType = UnsignedInt;
     PtrDiffType = SignedInt;
     IntPtrType = SignedInt;
@@ -434,7 +440,8 @@ public:
       UseSignedCharForObjCBool = false;
     SizeType = UnsignedLong;
     IntPtrType = SignedLong;
-    resetDataLayout("e-m:o-p:32:32-f64:32:64-f80:128-n8:16:32-S128");
+    resetDataLayout("e-m:o-p:32:32-p270:32:32-p271:32:32-p272:64:64-f64:32:64-"
+                    "f80:128-n8:16:32-S128");
     HasAlignMac68kSupport = true;
   }
 
@@ -459,9 +466,10 @@ public:
     DoubleAlign = LongLongAlign = 64;
     bool IsWinCOFF =
         getTriple().isOSWindows() && getTriple().isOSBinFormatCOFF();
-    resetDataLayout(IsWinCOFF
-                        ? "e-m:x-p:32:32-i64:64-f80:32-n8:16:32-a:0:32-S32"
-                        : "e-m:e-p:32:32-i64:64-f80:32-n8:16:32-a:0:32-S32");
+    resetDataLayout(IsWinCOFF ? "e-m:x-p:32:32-p270:32:32-p271:32:32-p272:64:"
+                                "64-i64:64-f80:32-n8:16:32-a:0:32-S32"
+                              : "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:"
+                                "64-i64:64-f80:32-n8:16:32-a:0:32-S32");
   }
 };
 
@@ -479,7 +487,6 @@ public:
   void getTargetDefines(const LangOptions &Opts,
                         MacroBuilder &Builder) const override {
     WindowsX86_32TargetInfo::getTargetDefines(Opts, Builder);
-    WindowsX86_32TargetInfo::getVisualStudioDefines(Opts, Builder);
     // The value of the following reflects processor type.
     // 300=386, 400=486, 500=Pentium, 600=Blend (default)
     // We lost the original triple, so we use the default.
@@ -510,7 +517,8 @@ public:
       : X86_32TargetInfo(Triple, Opts) {
     this->WCharType = TargetInfo::UnsignedShort;
     DoubleAlign = LongLongAlign = 64;
-    resetDataLayout("e-m:x-p:32:32-i64:64-f80:32-n8:16:32-a:0:32-S32");
+    resetDataLayout("e-m:x-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:"
+                    "32-n8:16:32-a:0:32-S32");
   }
 
   void getTargetDefines(const LangOptions &Opts,
@@ -547,7 +555,8 @@ public:
       : X86_32TargetInfo(Triple, Opts) {
     LongDoubleWidth = 64;
     LongDoubleFormat = &llvm::APFloat::IEEEdouble();
-    resetDataLayout("e-m:e-p:32:32-i64:32-f64:32-f128:32-n8:16:32-a:0:32-S32");
+    resetDataLayout("e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:32-f64:"
+                    "32-f128:32-n8:16:32-a:0:32-S32");
     WIntType = UnsignedInt;
   }
 
@@ -606,10 +615,12 @@ public:
     RegParmMax = 6;
 
     // Pointers are 32-bit in x32.
-    resetDataLayout(IsX32
-                        ? "e-m:e-p:32:32-i64:64-f80:128-n8:16:32:64-S128"
-                        : IsWinCOFF ? "e-m:w-i64:64-f80:128-n8:16:32:64-S128"
-                                    : "e-m:e-i64:64-f80:128-n8:16:32:64-S128");
+    resetDataLayout(IsX32 ? "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-"
+                            "i64:64-f80:128-n8:16:32:64-S128"
+                          : IsWinCOFF ? "e-m:w-p270:32:32-p271:32:32-p272:64:"
+                                        "64-i64:64-f80:128-n8:16:32:64-S128"
+                                      : "e-m:e-p270:32:32-p271:32:32-p272:64:"
+                                        "64-i64:64-f80:128-n8:16:32:64-S128");
 
     // Use fpret only for long double.
     RealTypeUsesObjCFPRet = (1 << TargetInfo::LongDouble);
@@ -654,7 +665,7 @@ public:
     }
   }
 
-  CallingConv getDefaultCallingConv(CallingConvMethodType MT) const override {
+  CallingConv getDefaultCallingConv() const override {
     return CC_C;
   }
 
@@ -743,7 +754,6 @@ public:
   void getTargetDefines(const LangOptions &Opts,
                         MacroBuilder &Builder) const override {
     WindowsX86_64TargetInfo::getTargetDefines(Opts, Builder);
-    WindowsX86_64TargetInfo::getVisualStudioDefines(Opts, Builder);
     Builder.defineMacro("_M_X64", "100");
     Builder.defineMacro("_M_AMD64", "100");
   }
@@ -800,7 +810,8 @@ public:
     llvm::Triple T = llvm::Triple(Triple);
     if (T.isiOS())
       UseSignedCharForObjCBool = false;
-    resetDataLayout("e-m:o-i64:64-f80:128-n8:16:32:64-S128");
+    resetDataLayout("e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:"
+                    "16:32:64-S128");
   }
 
   bool handleTargetFeatures(std::vector<std::string> &Features,
@@ -845,8 +856,6 @@ public:
       : LinuxTargetInfo<X86_64TargetInfo>(Triple, Opts) {
     LongDoubleFormat = &llvm::APFloat::IEEEquad();
   }
-
-  bool useFloat128ManglingForLongDouble() const override { return true; }
 };
 } // namespace targets
 } // namespace clang

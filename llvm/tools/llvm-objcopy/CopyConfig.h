@@ -9,6 +9,7 @@
 #ifndef LLVM_TOOLS_LLVM_OBJCOPY_COPY_CONFIG_H
 #define LLVM_TOOLS_LLVM_OBJCOPY_COPY_CONFIG_H
 
+#include "ELF/ELFConfig.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/BitmaskEnum.h"
 #include "llvm/ADT/Optional.h"
@@ -25,6 +26,13 @@
 
 namespace llvm {
 namespace objcopy {
+
+enum class FileFormat {
+  Unspecified,
+  ELF,
+  Binary,
+  IHex,
+};
 
 // This type keeps track of the machine info for various architectures. This
 // lets us map architecture names to ELF types and the e_machine value of the
@@ -91,25 +99,30 @@ public:
   bool operator!=(StringRef S) const { return !operator==(S); }
 };
 
-struct NewSymbolInfo {
-  StringRef SymbolName;
-  StringRef SectionName;
-  uint64_t Value = 0;
-  uint8_t Type = ELF::STT_NOTYPE;
-  uint8_t Bind = ELF::STB_GLOBAL;
-  uint8_t Visibility = ELF::STV_DEFAULT;
+// Matcher that checks symbol or section names against the command line flags
+// provided for that option.
+class NameMatcher {
+  std::vector<NameOrRegex> Matchers;
+
+public:
+  void addMatcher(NameOrRegex Matcher) {
+    Matchers.push_back(std::move(Matcher));
+  }
+  bool matches(StringRef S) const { return is_contained(Matchers, S); }
+  bool empty() const { return Matchers.empty(); }
 };
 
 // Configuration for copying/stripping a single file.
 struct CopyConfig {
+  // Format-specific options to be initialized lazily when needed.
+  Optional<elf::ELFCopyConfig> ELF;
+
   // Main input/output options
   StringRef InputFilename;
-  StringRef InputFormat;
+  FileFormat InputFormat;
   StringRef OutputFilename;
-  StringRef OutputFormat;
+  FileFormat OutputFormat;
 
-  // Only applicable for --input-format=binary
-  MachineInfo BinaryArch;
   // Only applicable when --output-format!=binary (e.g. elf64-x86-64).
   Optional<MachineInfo> OutputArch;
 
@@ -120,28 +133,35 @@ struct CopyConfig {
   StringRef BuildIdLinkDir;
   Optional<StringRef> BuildIdLinkInput;
   Optional<StringRef> BuildIdLinkOutput;
+  Optional<StringRef> ExtractPartition;
   StringRef SplitDWO;
   StringRef SymbolsPrefix;
   StringRef AllocSectionsPrefix;
   DiscardType DiscardMode = DiscardType::None;
+  Optional<StringRef> NewSymbolVisibility;
 
   // Repeated options
   std::vector<StringRef> AddSection;
   std::vector<StringRef> DumpSection;
-  std::vector<NewSymbolInfo> SymbolsToAdd;
-  std::vector<NameOrRegex> KeepSection;
-  std::vector<NameOrRegex> OnlySection;
-  std::vector<NameOrRegex> SymbolsToGlobalize;
-  std::vector<NameOrRegex> SymbolsToKeep;
-  std::vector<NameOrRegex> SymbolsToLocalize;
-  std::vector<NameOrRegex> SymbolsToRemove;
-  std::vector<NameOrRegex> UnneededSymbolsToRemove;
-  std::vector<NameOrRegex> SymbolsToWeaken;
-  std::vector<NameOrRegex> ToRemove;
-  std::vector<NameOrRegex> SymbolsToKeepGlobal;
+  std::vector<StringRef> SymbolsToAdd;
+
+  // Section matchers
+  NameMatcher KeepSection;
+  NameMatcher OnlySection;
+  NameMatcher ToRemove;
+
+  // Symbol matchers
+  NameMatcher SymbolsToGlobalize;
+  NameMatcher SymbolsToKeep;
+  NameMatcher SymbolsToLocalize;
+  NameMatcher SymbolsToRemove;
+  NameMatcher UnneededSymbolsToRemove;
+  NameMatcher SymbolsToWeaken;
+  NameMatcher SymbolsToKeepGlobal;
 
   // Map options
   StringMap<SectionRename> SectionsToRename;
+  StringMap<uint64_t> SetSectionAlignment;
   StringMap<SectionFlagsUpdate> SetSectionFlags;
   StringMap<StringRef> SymbolsToRename;
 
@@ -155,6 +175,7 @@ struct CopyConfig {
   bool AllowBrokenLinks = false;
   bool DeterministicArchives = true;
   bool ExtractDWO = false;
+  bool ExtractMainPartition = false;
   bool KeepFileSymbols = false;
   bool LocalizeHidden = false;
   bool OnlyKeepDebug = false;
@@ -169,6 +190,18 @@ struct CopyConfig {
   bool Weaken = false;
   bool DecompressDebugSections = false;
   DebugCompressionType CompressionType = DebugCompressionType::None;
+
+  // parseELFConfig performs ELF-specific command-line parsing. Fills `ELF` on
+  // success or returns an Error otherwise.
+  Error parseELFConfig() {
+    if (!ELF) {
+      Expected<elf::ELFCopyConfig> ELFConfig = elf::parseConfig(*this);
+      if (!ELFConfig)
+        return ELFConfig.takeError();
+      ELF = *ELFConfig;
+    }
+    return Error::success();
+  }
 };
 
 // Configuration for the overall invocation of this tool. When invoked as
@@ -186,8 +219,11 @@ Expected<DriverConfig> parseObjcopyOptions(ArrayRef<const char *> ArgsArr);
 
 // ParseStripOptions returns the config and sets the input arguments. If a
 // help flag is set then ParseStripOptions will print the help messege and
-// exit.
-Expected<DriverConfig> parseStripOptions(ArrayRef<const char *> ArgsArr);
+// exit. ErrorCallback is used to handle recoverable errors. An Error returned
+// by the callback aborts the parsing and is then returned by this function.
+Expected<DriverConfig>
+parseStripOptions(ArrayRef<const char *> ArgsArr,
+                  std::function<Error(Error)> ErrorCallback);
 
 } // namespace objcopy
 } // namespace llvm

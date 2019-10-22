@@ -142,6 +142,14 @@ bool InitHeaderSearch::AddUnmappedPath(const Twine &Path, IncludeDirGroup Group,
   // of FM.getDirectory(). E.g. -extra-arg="-I   /path/to/folder".
   MappedPathStr = MappedPathStr.substr(MappedPathStr.find_first_not_of(" "));
 #endif
+
+  // If use system headers while cross-compiling, emit the warning.
+  if (HasSysroot && (MappedPathStr.startswith("/usr/include") ||
+                     MappedPathStr.startswith("/usr/local/include"))) {
+    Headers.getDiags().Report(diag::warn_poison_system_directories)
+        << MappedPathStr;
+  }
+
   // Compute the DirectoryLookup type.
   SrcMgr::CharacteristicKind Type;
   if (Group == Quoted || Group == Angled || Group == IndexHeaderMap) {
@@ -153,17 +161,17 @@ bool InitHeaderSearch::AddUnmappedPath(const Twine &Path, IncludeDirGroup Group,
   }
 
   // If the directory exists, add it.
-  if (const DirectoryEntry *DE = FM.getDirectory(MappedPathStr)) {
+  if (auto DE = FM.getOptionalDirectoryRef(MappedPathStr)) {
     IncludePath.push_back(
-      std::make_pair(Group, DirectoryLookup(DE, Type, isFramework)));
+      std::make_pair(Group, DirectoryLookup(*DE, Type, isFramework)));
     return true;
   }
 
   // Check to see if this is an apple-style headermap (which are not allowed to
   // be frameworks).
   if (!isFramework) {
-    if (const FileEntry *FE = FM.getFile(MappedPathStr)) {
-      if (const HeaderMap *HM = Headers.CreateHeaderMap(FE)) {
+    if (auto FE = FM.getFile(MappedPathStr)) {
+      if (const HeaderMap *HM = Headers.CreateHeaderMap(*FE)) {
         // It is a headermap, add it to the search path.
         IncludePath.push_back(
           std::make_pair(Group,
@@ -419,14 +427,22 @@ void InitHeaderSearch::AddDefaultIncludePaths(const LangOptions &Lang,
   default:
     break; // Everything else continues to use this routine's logic.
 
+  case llvm::Triple::Emscripten:
   case llvm::Triple::Linux:
   case llvm::Triple::Hurd:
   case llvm::Triple::Solaris:
+  case llvm::Triple::WASI:
     return;
 
   case llvm::Triple::Win32:
     if (triple.getEnvironment() != llvm::Triple::Cygnus ||
         triple.isOSBinFormatMachO())
+      return;
+    break;
+
+  case llvm::Triple::UnknownOS:
+    if (triple.getArch() == llvm::Triple::wasm32 ||
+        triple.getArch() == llvm::Triple::wasm64)
       return;
     break;
   }
@@ -633,8 +649,8 @@ void clang::ApplyHeaderSearchOptions(HeaderSearch &HS,
     // Set up the builtin include directory in the module map.
     SmallString<128> P = StringRef(HSOpts.ResourceDir);
     llvm::sys::path::append(P, "include");
-    if (const DirectoryEntry *Dir = HS.getFileMgr().getDirectory(P))
-      HS.getModuleMap().setBuiltinIncludeDir(Dir);
+    if (auto Dir = HS.getFileMgr().getDirectory(P))
+      HS.getModuleMap().setBuiltinIncludeDir(*Dir);
   }
 
   Init.Realize(Lang);

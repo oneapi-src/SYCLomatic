@@ -8,7 +8,6 @@
 
 #define DEBUG_TYPE "mcasmparser"
 
-#include "Hexagon.h"
 #include "HexagonTargetStreamer.h"
 #include "MCTargetDesc/HexagonMCChecker.h"
 #include "MCTargetDesc/HexagonMCELFStreamer.h"
@@ -703,7 +702,7 @@ bool HexagonAsmParser::ParseDirectiveFalign(unsigned Size, SMLoc L) {
     // Make sure we have a number (false is returned if expression is a number)
     if (!getParser().parseExpression(Value)) {
       // Make sure this is a number that is in range
-      const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(Value);
+      auto *MCE = cast<MCConstantExpr>(Value);
       uint64_t IntValue = MCE->getValue();
       if (!isUIntN(Size, IntValue) && !isIntN(Size, IntValue))
         return Error(ExprLoc, "literal value out of range (256) for falign");

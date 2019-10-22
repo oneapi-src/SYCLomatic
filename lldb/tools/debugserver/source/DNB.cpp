@@ -141,7 +141,7 @@ void *kqueue_thread(void *arg) {
 #endif
 
   struct kevent death_event;
-  while (1) {
+  while (true) {
     int n_events = kevent(kq_id, NULL, 0, &death_event, 1, NULL);
     if (n_events == -1) {
       if (errno == EINTR)
@@ -267,7 +267,7 @@ static void *waitpid_thread(void *arg) {
 #endif
 #endif
 
-  while (1) {
+  while (true) {
     pid_t child_pid = waitpid(pid, &status, 0);
     DNBLogThreadedIf(LOG_PROCESS, "waitpid_thread (): waitpid (pid = %i, "
                                   "&status, 0) => %i, status = %i, errno = %i",
@@ -1695,6 +1695,10 @@ bool DNBGetOSVersionNumbers(uint64_t *major, uint64_t *minor, uint64_t *patch) {
   return MachProcess::GetOSVersionNumbers(major, minor, patch);
 }
 
+std::string DNBGetMacCatalystVersionString() {
+  return MachProcess::GetMacCatalystVersionString();
+}
+
 void DNBInitialize() {
   DNBLogThreadedIf(LOG_PROCESS, "DNBInitialize ()");
 #if defined(__i386__) || defined(__x86_64__)
@@ -1715,6 +1719,8 @@ nub_bool_t DNBSetArchitecture(const char *arch) {
     else if ((strcasecmp(arch, "x86_64") == 0) ||
              (strcasecmp(arch, "x86_64h") == 0))
       return DNBArchProtocol::SetArchitecture(CPU_TYPE_X86_64);
+    else if (strstr(arch, "arm64_32") == arch)
+      return DNBArchProtocol::SetArchitecture(CPU_TYPE_ARM64_32);
     else if (strstr(arch, "arm64") == arch || strstr(arch, "armv8") == arch ||
              strstr(arch, "aarch64") == arch)
       return DNBArchProtocol::SetArchitecture(CPU_TYPE_ARM64);

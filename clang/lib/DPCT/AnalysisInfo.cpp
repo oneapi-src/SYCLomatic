@@ -40,7 +40,7 @@ void DpctFileInfo::buildLinesInfo() {
   if (FilePath.empty())
     return;
   auto &SM = DpctGlobalInfo::getSourceManager();
-  auto FID = SM.getOrCreateFileID(SM.getFileManager().getFile(FilePath),
+  auto FID = SM.getOrCreateFileID(SM.getFileManager().getFile(FilePath).get(),
                                   SrcMgr::C_User);
   auto Content = SM.getSLocEntry(FID).getFile().getContentCache();
   if (!Content->SourceLineCache)
@@ -52,7 +52,7 @@ void DpctFileInfo::buildLinesInfo() {
     return;
   }
   if (DpctGlobalInfo::isKeepOriginCode())
-    Buffer = Content->getBuffer(SM.getDiagnostics(), SM)->getBufferStart();
+    Buffer = Content->getBuffer(SM.getDiagnostics(), SM.getFileManager())->getBufferStart();
   for (unsigned L = 1; L < Content->NumLines; ++L)
     Lines.emplace_back(L, LineCache, Buffer);
   Lines.emplace_back(NumLines, LineCache[NumLines - 1], Content->getSize(),

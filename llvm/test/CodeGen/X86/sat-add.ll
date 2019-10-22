@@ -236,7 +236,7 @@ define i16 @unsigned_sat_variable_i16_using_min(i16 %x, i16 %y) {
 ; ANY-NEXT:    notl %eax
 ; ANY-NEXT:    cmpw %ax, %di
 ; ANY-NEXT:    cmovbl %edi, %eax
-; ANY-NEXT:    leal (%rax,%rsi), %eax
+; ANY-NEXT:    addl %esi, %eax
 ; ANY-NEXT:    # kill: def $ax killed $ax killed $eax
 ; ANY-NEXT:    retq
   %noty = xor i16 %y, -1
@@ -287,7 +287,7 @@ define i32 @unsigned_sat_variable_i32_using_min(i32 %x, i32 %y) {
 ; ANY-NEXT:    notl %eax
 ; ANY-NEXT:    cmpl %eax, %edi
 ; ANY-NEXT:    cmovbl %edi, %eax
-; ANY-NEXT:    leal (%rax,%rsi), %eax
+; ANY-NEXT:    addl %esi, %eax
 ; ANY-NEXT:    retq
   %noty = xor i32 %y, -1
   %c = icmp ult i32 %x, %noty
@@ -334,7 +334,7 @@ define i64 @unsigned_sat_variable_i64_using_min(i64 %x, i64 %y) {
 ; ANY-NEXT:    notq %rax
 ; ANY-NEXT:    cmpq %rax, %rdi
 ; ANY-NEXT:    cmovbq %rdi, %rax
-; ANY-NEXT:    leaq (%rax,%rsi), %rax
+; ANY-NEXT:    addq %rsi, %rax
 ; ANY-NEXT:    retq
   %noty = xor i64 %y, -1
   %c = icmp ult i64 %x, %noty
@@ -581,12 +581,11 @@ define <2 x i64> @unsigned_sat_constant_v2i64_using_min(<2 x i64> %x) {
 ; SSE41-NEXT:    pxor %xmm1, %xmm0
 ; SSE41-NEXT:    movdqa {{.*#+}} xmm3 = [9223372034707292117,9223372034707292117]
 ; SSE41-NEXT:    movdqa %xmm3, %xmm4
-; SSE41-NEXT:    pcmpgtd %xmm0, %xmm4
-; SSE41-NEXT:    pshufd {{.*#+}} xmm5 = xmm4[0,0,2,2]
-; SSE41-NEXT:    pcmpeqd %xmm3, %xmm0
-; SSE41-NEXT:    pshufd {{.*#+}} xmm0 = xmm0[1,1,3,3]
-; SSE41-NEXT:    pand %xmm5, %xmm0
-; SSE41-NEXT:    por %xmm4, %xmm0
+; SSE41-NEXT:    pcmpeqd %xmm0, %xmm4
+; SSE41-NEXT:    pcmpgtd %xmm0, %xmm3
+; SSE41-NEXT:    pshufd {{.*#+}} xmm0 = xmm3[0,0,2,2]
+; SSE41-NEXT:    pand %xmm4, %xmm0
+; SSE41-NEXT:    por %xmm3, %xmm0
 ; SSE41-NEXT:    blendvpd %xmm0, %xmm1, %xmm2
 ; SSE41-NEXT:    paddq {{.*}}(%rip), %xmm2
 ; SSE41-NEXT:    movdqa %xmm2, %xmm0
@@ -877,12 +876,11 @@ define <2 x i64> @unsigned_sat_variable_v2i64_using_min(<2 x i64> %x, <2 x i64> 
 ; SSE41-NEXT:    movdqa {{.*#+}} xmm4 = [9223372034707292159,9223372034707292159]
 ; SSE41-NEXT:    pxor %xmm1, %xmm4
 ; SSE41-NEXT:    movdqa %xmm4, %xmm5
-; SSE41-NEXT:    pcmpgtd %xmm0, %xmm5
-; SSE41-NEXT:    pshufd {{.*#+}} xmm6 = xmm5[0,0,2,2]
-; SSE41-NEXT:    pcmpeqd %xmm0, %xmm4
-; SSE41-NEXT:    pshufd {{.*#+}} xmm0 = xmm4[1,1,3,3]
-; SSE41-NEXT:    pand %xmm6, %xmm0
-; SSE41-NEXT:    por %xmm5, %xmm0
+; SSE41-NEXT:    pcmpeqd %xmm0, %xmm5
+; SSE41-NEXT:    pcmpgtd %xmm0, %xmm4
+; SSE41-NEXT:    pshufd {{.*#+}} xmm0 = xmm4[0,0,2,2]
+; SSE41-NEXT:    pand %xmm5, %xmm0
+; SSE41-NEXT:    por %xmm4, %xmm0
 ; SSE41-NEXT:    blendvpd %xmm0, %xmm2, %xmm3
 ; SSE41-NEXT:    paddq %xmm1, %xmm3
 ; SSE41-NEXT:    movdqa %xmm3, %xmm0

@@ -96,7 +96,7 @@ RNBRunLoopMode RNBRunLoopGetStartModeFromRemote(RNBRemote *remote) {
                           RNBContext::event_read_thread_exiting;
 
     // Spin waiting to get the A packet.
-    while (1) {
+    while (true) {
       DNBLogThreadedIf(LOG_RNB_MAX,
                        "%s ctx.Events().WaitForSetEvents( 0x%08x ) ...",
                        __FUNCTION__, event_mask);
@@ -490,6 +490,7 @@ RNBRunLoopMode HandleProcessStateChange(RNBRemote *remote, bool initialize) {
   // Catch all...
   return eRNBRunLoopModeExit;
 }
+
 // This function handles the case where our inferior program is stopped and
 // we are waiting for gdb remote protocol packets. When a packet occurs that
 // makes the inferior run, we need to leave this function with a new state
@@ -788,6 +789,12 @@ void FileLogCallback(void *baton, uint32_t flags, const char *format,
   ::fflush((FILE *)baton);
 }
 
+void show_version_and_exit(int exit_code) {
+  printf("%s-%s for %s.\n", DEBUGSERVER_PROGRAM_NAME, DEBUGSERVER_VERSION_STR,
+         RNB_ARCH);
+  exit(exit_code);
+}
+
 void show_usage_and_exit(int exit_code) {
   RNBLogSTDERR(
       "Usage:\n  %s host:port [program-name program-arg1 program-arg2 ...]\n",
@@ -810,6 +817,7 @@ static struct option g_long_options[] = {
     {"debug", no_argument, NULL, 'g'},
     {"kill-on-error", no_argument, NULL, 'K'},
     {"verbose", no_argument, NULL, 'v'},
+    {"version", no_argument, NULL, 'V'},
     {"lockdown", no_argument, &g_lockdown_opt, 1}, // short option "-k"
     {"applist", no_argument, &g_applist_opt, 1},   // short option "-t"
     {"log-file", required_argument, NULL, 'l'},
@@ -1170,6 +1178,10 @@ int main(int argc, char *argv[]) {
       break;
     case 'v':
       DNBLogSetVerbose(1);
+      break;
+
+    case 'V':
+      show_version_and_exit(0);
       break;
 
     case 's':

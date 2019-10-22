@@ -152,8 +152,8 @@ public:
         (TotalQuarantinedBytes == 0)
             ? 0
             : TotalOverheadBytes * 100 / TotalQuarantinedBytes;
-    Printf("Global quarantine stats: batches: %zd; bytes: %zd (user: %zd); "
-           "chunks: %zd (capacity: %zd); %zd%% chunks used; %zd%% memory "
+    Printf("Global quarantine stats: batches: %zu; bytes: %zu (user: %zu); "
+           "chunks: %zu (capacity: %zu); %zu%% chunks used; %zu%% memory "
            "overhead\n",
            BatchCount, TotalBytes, TotalQuarantinedBytes, TotalQuarantineChunks,
            QuarantineChunksCapacity, ChunksUsagePercent, MemoryOverheadPercent);
@@ -185,8 +185,6 @@ public:
     atomic_store_relaxed(&MaxCacheSize, CacheSize);
 
     Cache.initLinkerInitialized();
-    CacheMutex.initLinkerInitialized();
-    RecyleMutex.initLinkerInitialized();
   }
   void init(uptr Size, uptr CacheSize) {
     memset(this, 0, sizeof(*this));
@@ -204,7 +202,7 @@ public:
 
   void NOINLINE drain(CacheT *C, Callback Cb) {
     {
-      SpinMutexLock L(&CacheMutex);
+      ScopedLock L(CacheMutex);
       Cache.transfer(C);
     }
     if (Cache.getSize() > getMaxSize() && RecyleMutex.tryLock())
@@ -213,7 +211,7 @@ public:
 
   void NOINLINE drainAndRecycle(CacheT *C, Callback Cb) {
     {
-      SpinMutexLock L(&CacheMutex);
+      ScopedLock L(CacheMutex);
       Cache.transfer(C);
     }
     RecyleMutex.lock();
@@ -222,16 +220,16 @@ public:
 
   void printStats() const {
     // It assumes that the world is stopped, just as the allocator's printStats.
-    Printf("Quarantine limits: global: %zdM; thread local: %zdK\n",
+    Printf("Quarantine limits: global: %zuM; thread local: %zuK\n",
            getMaxSize() >> 20, getCacheSize() >> 10);
     Cache.printStats();
   }
 
 private:
   // Read-only data.
-  alignas(SCUDO_CACHE_LINE_SIZE) StaticSpinMutex CacheMutex;
+  alignas(SCUDO_CACHE_LINE_SIZE) HybridMutex CacheMutex;
   CacheT Cache;
-  alignas(SCUDO_CACHE_LINE_SIZE) StaticSpinMutex RecyleMutex;
+  alignas(SCUDO_CACHE_LINE_SIZE) HybridMutex RecyleMutex;
   atomic_uptr MinSize;
   atomic_uptr MaxSize;
   alignas(SCUDO_CACHE_LINE_SIZE) atomic_uptr MaxCacheSize;
@@ -240,7 +238,7 @@ private:
     CacheT Tmp;
     Tmp.init();
     {
-      SpinMutexLock L(&CacheMutex);
+      ScopedLock L(CacheMutex);
       // Go over the batches and merge partially filled ones to
       // save some memory, otherwise batches themselves (since the memory used
       // by them is counted against quarantine limit) can overcome the actual

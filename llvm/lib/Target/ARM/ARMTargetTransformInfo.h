@@ -48,7 +48,7 @@ class ARMTTIImpl : public BasicTTIImplBase<ARMTTIImpl> {
   const ARMTargetLowering *TLI;
 
   // Currently the following features are excluded from InlineFeatureWhitelist.
-  // ModeThumb, FeatureNoARM, ModeSoftFloat, FeatureVFPOnlySP, FeatureD16
+  // ModeThumb, FeatureNoARM, ModeSoftFloat, FeatureFP64, FeatureD32
   // Depending on whether they are set or unset, different
   // instructions/registers are available. For example, inlining a callee with
   // -thumb-mode in a caller with +thumb-mode, may cause the assembler to
@@ -101,9 +101,9 @@ public:
 
   /// Floating-point computation using ARMv8 AArch32 Advanced
   /// SIMD instructions remains unchanged from ARMv7. Only AArch64 SIMD
-  /// is IEEE-754 compliant, but it's not covered in this target.
+  /// and Arm MVE are IEEE-754 compliant.
   bool isFPVectorizationPotentiallyUnsafe() {
-    return !ST->isTargetDarwin();
+    return !ST->isTargetDarwin() && !ST->hasMVEFloatOps();
   }
 
   /// \name Scalar TTI Implementations
@@ -126,6 +126,8 @@ public:
     if (Vector) {
       if (ST->hasNEON())
         return 16;
+      if (ST->hasMVEIntegerOps())
+        return 8;
       return 0;
     }
 
@@ -138,6 +140,8 @@ public:
     if (Vector) {
       if (ST->hasNEON())
         return 128;
+      if (ST->hasMVEIntegerOps())
+        return 128;
       return 0;
     }
 
@@ -148,9 +152,19 @@ public:
     return ST->getMaxInterleaveFactor();
   }
 
+  bool isLegalMaskedLoad(Type *DataTy);
+  bool isLegalMaskedStore(Type *DataTy) { return isLegalMaskedLoad(DataTy); }
+
   int getMemcpyCost(const Instruction *I);
 
   int getShuffleCost(TTI::ShuffleKind Kind, Type *Tp, int Index, Type *SubTp);
+
+  bool useReductionIntrinsic(unsigned Opcode, Type *Ty,
+                             TTI::ReductionFlags Flags) const;
+
+  bool shouldExpandReduction(const IntrinsicInst *II) const {
+    return false;
+  }
 
   int getCastInstrCost(unsigned Opcode, Type *Dst, Type *Src,
                        const Instruction *I = nullptr);
@@ -179,6 +193,12 @@ public:
                                  unsigned AddressSpace,
                                  bool UseMaskForCond = false,
                                  bool UseMaskForGaps = false);
+
+  bool isLoweredToCall(const Function *F);
+  bool isHardwareLoopProfitable(Loop *L, ScalarEvolution &SE,
+                                AssumptionCache &AC,
+                                TargetLibraryInfo *LibInfo,
+                                HardwareLoopInfo &HWLoopInfo);
 
   void getUnrollingPreferences(Loop *L, ScalarEvolution &SE,
                                TTI::UnrollingPreferences &UP);

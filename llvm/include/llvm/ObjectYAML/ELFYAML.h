@@ -25,6 +25,8 @@
 namespace llvm {
 namespace ELFYAML {
 
+StringRef dropUniqueSuffix(StringRef S);
+
 // These types are invariant across 32/64-bit ELF, so for simplicity just
 // directly give them their exact sizes. We don't need to worry about
 // endianness because these are just the types in the YAMLIO structures,
@@ -54,8 +56,6 @@ LLVM_YAML_STRONG_TYPEDEF(uint64_t, ELF_SHF)
 LLVM_YAML_STRONG_TYPEDEF(uint16_t, ELF_SHN)
 LLVM_YAML_STRONG_TYPEDEF(uint8_t, ELF_STB)
 LLVM_YAML_STRONG_TYPEDEF(uint8_t, ELF_STT)
-LLVM_YAML_STRONG_TYPEDEF(uint8_t, ELF_STV)
-LLVM_YAML_STRONG_TYPEDEF(uint8_t, ELF_STO)
 
 LLVM_YAML_STRONG_TYPEDEF(uint8_t, MIPS_AFL_REG)
 LLVM_YAML_STRONG_TYPEDEF(uint8_t, MIPS_ABI_FP)
@@ -75,6 +75,11 @@ struct FileHeader {
   ELF_EM Machine;
   ELF_EF Flags;
   llvm::yaml::Hex64 Entry;
+
+  Optional<llvm::yaml::Hex16> SHEntSize;
+  Optional<llvm::yaml::Hex64> SHOff;
+  Optional<llvm::yaml::Hex16> SHNum;
+  Optional<llvm::yaml::Hex16> SHStrNdx;
 };
 
 struct SectionName {
@@ -102,7 +107,7 @@ struct Symbol {
   ELF_STB Binding;
   llvm::yaml::Hex64 Value;
   llvm::yaml::Hex64 Size;
-  uint8_t Other;
+  Optional<uint8_t> Other;
 };
 
 struct SectionOrType {
@@ -114,6 +119,11 @@ struct DynamicEntry {
   llvm::yaml::Hex64 Val;
 };
 
+struct StackSizeEntry {
+  llvm::yaml::Hex64 Address;
+  llvm::yaml::Hex64 Size;
+};
+
 struct Section {
   enum class SectionKind {
     Dynamic,
@@ -121,22 +131,62 @@ struct Section {
     RawContent,
     Relocation,
     NoBits,
+    Hash,
     Verdef,
     Verneed,
+    StackSizes,
+    SymtabShndxSection,
     Symver,
-    MipsABIFlags
+    MipsABIFlags,
+    Addrsig
   };
   SectionKind Kind;
   StringRef Name;
   ELF_SHT Type;
-  ELF_SHF Flags;
+  Optional<ELF_SHF> Flags;
   llvm::yaml::Hex64 Address;
   StringRef Link;
   llvm::yaml::Hex64 AddressAlign;
   Optional<llvm::yaml::Hex64> EntSize;
 
-  Section(SectionKind Kind) : Kind(Kind) {}
+  // Usually sections are not created implicitly, but loaded from YAML.
+  // When they are, this flag is used to signal about that.
+  bool IsImplicit;
+
+  Section(SectionKind Kind, bool IsImplicit = false)
+      : Kind(Kind), IsImplicit(IsImplicit) {}
   virtual ~Section();
+
+  // The following members are used to override section fields which is
+  // useful for creating invalid objects.
+
+  // This can be used to override the offset stored in the sh_name field.
+  // It does not affect the name stored in the string table.
+  Optional<llvm::yaml::Hex64> ShName;
+
+  // This can be used to override the sh_offset field. It does not place the
+  // section data at the offset specified.
+  Optional<llvm::yaml::Hex64> ShOffset;
+
+  // This can be used to override the sh_size field. It does not affect the
+  // content written.
+  Optional<llvm::yaml::Hex64> ShSize;
+};
+
+struct StackSizesSection : Section {
+  Optional<yaml::BinaryRef> Content;
+  Optional<llvm::yaml::Hex64> Size;
+  Optional<std::vector<StackSizeEntry>> Entries;
+
+  StackSizesSection() : Section(SectionKind::StackSizes) {}
+
+  static bool classof(const Section *S) {
+    return S->Kind == SectionKind::StackSizes;
+  }
+
+  static bool nameMatches(StringRef Name) {
+    return Name == ".stack_sizes";
+  }
 };
 
 struct DynamicSection : Section {
@@ -151,9 +201,9 @@ struct DynamicSection : Section {
 };
 
 struct RawContentSection : Section {
-  yaml::BinaryRef Content;
-  llvm::yaml::Hex64 Size;
-  llvm::yaml::Hex64 Info;
+  Optional<yaml::BinaryRef> Content;
+  Optional<llvm::yaml::Hex64> Size;
+  Optional<llvm::yaml::Hex64> Info;
 
   RawContentSection() : Section(SectionKind::RawContent) {}
 
@@ -170,6 +220,17 @@ struct NoBitsSection : Section {
   static bool classof(const Section *S) {
     return S->Kind == SectionKind::NoBits;
   }
+};
+
+struct HashSection : Section {
+  Optional<yaml::BinaryRef> Content;
+  Optional<llvm::yaml::Hex64> Size;
+  Optional<std::vector<uint32_t>> Bucket;
+  Optional<std::vector<uint32_t>> Chain;
+
+  HashSection() : Section(SectionKind::Hash) {}
+
+  static bool classof(const Section *S) { return S->Kind == SectionKind::Hash; }
 };
 
 struct VernauxEntry {
@@ -193,6 +254,26 @@ struct VerneedSection : Section {
 
   static bool classof(const Section *S) {
     return S->Kind == SectionKind::Verneed;
+  }
+};
+
+struct AddrsigSymbol {
+  AddrsigSymbol(StringRef N) : Name(N), Index(None) {}
+  AddrsigSymbol(llvm::yaml::Hex32 Ndx) : Name(None), Index(Ndx) {}
+  AddrsigSymbol() : Name(None), Index(None) {}
+
+  Optional<StringRef> Name;
+  Optional<llvm::yaml::Hex32> Index;
+};
+
+struct AddrsigSection : Section {
+  Optional<yaml::BinaryRef> Content;
+  Optional<llvm::yaml::Hex64> Size;
+  Optional<std::vector<AddrsigSymbol>> Symbols;
+
+  AddrsigSection() : Section(SectionKind::Addrsig) {}
+  static bool classof(const Section *S) {
+    return S->Kind == SectionKind::Addrsig;
   }
 };
 
@@ -256,6 +337,16 @@ struct RelocationSection : Section {
   }
 };
 
+struct SymtabShndxSection : Section {
+  std::vector<uint32_t> Entries;
+
+  SymtabShndxSection() : Section(SectionKind::SymtabShndxSection) {}
+
+  static bool classof(const Section *S) {
+    return S->Kind == SectionKind::SymtabShndxSection;
+  }
+};
+
 // Represents .MIPS.abiflags section
 struct MipsABIFlags : Section {
   llvm::yaml::Hex16 Version;
@@ -292,6 +383,8 @@ struct Object {
 } // end namespace ELFYAML
 } // end namespace llvm
 
+LLVM_YAML_IS_SEQUENCE_VECTOR(llvm::ELFYAML::AddrsigSymbol)
+LLVM_YAML_IS_SEQUENCE_VECTOR(llvm::ELFYAML::StackSizeEntry)
 LLVM_YAML_IS_SEQUENCE_VECTOR(llvm::ELFYAML::DynamicEntry)
 LLVM_YAML_IS_SEQUENCE_VECTOR(llvm::ELFYAML::ProgramHeader)
 LLVM_YAML_IS_SEQUENCE_VECTOR(std::unique_ptr<llvm::ELFYAML::Section>)
@@ -368,16 +461,6 @@ struct ScalarEnumerationTraits<ELFYAML::ELF_STT> {
 };
 
 template <>
-struct ScalarEnumerationTraits<ELFYAML::ELF_STV> {
-  static void enumeration(IO &IO, ELFYAML::ELF_STV &Value);
-};
-
-template <>
-struct ScalarBitSetTraits<ELFYAML::ELF_STO> {
-  static void bitset(IO &IO, ELFYAML::ELF_STO &Value);
-};
-
-template <>
 struct ScalarEnumerationTraits<ELFYAML::ELF_REL> {
   static void enumeration(IO &IO, ELFYAML::ELF_REL &Value);
 };
@@ -437,6 +520,10 @@ struct MappingTraits<ELFYAML::Symbol> {
   static StringRef validate(IO &IO, ELFYAML::Symbol &Symbol);
 };
 
+template <> struct MappingTraits<ELFYAML::StackSizeEntry> {
+  static void mapping(IO &IO, ELFYAML::StackSizeEntry &Rel);
+};
+
 template <> struct MappingTraits<ELFYAML::DynamicEntry> {
   static void mapping(IO &IO, ELFYAML::DynamicEntry &Rel);
 };
@@ -451,6 +538,10 @@ template <> struct MappingTraits<ELFYAML::VerneedEntry> {
 
 template <> struct MappingTraits<ELFYAML::VernauxEntry> {
   static void mapping(IO &IO, ELFYAML::VernauxEntry &E);
+};
+
+template <> struct MappingTraits<ELFYAML::AddrsigSymbol> {
+  static void mapping(IO &IO, ELFYAML::AddrsigSymbol &Sym);
 };
 
 template <> struct MappingTraits<ELFYAML::Relocation> {

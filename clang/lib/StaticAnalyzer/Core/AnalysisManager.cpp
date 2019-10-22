@@ -13,7 +13,7 @@ using namespace ento;
 
 void AnalysisManager::anchor() { }
 
-AnalysisManager::AnalysisManager(ASTContext &ASTCtx, DiagnosticsEngine &diags,
+AnalysisManager::AnalysisManager(ASTContext &ASTCtx,
                                  const PathDiagnosticConsumers &PDC,
                                  StoreManagerCreator storemgr,
                                  ConstraintManagerCreator constraintmgr,
@@ -23,7 +23,7 @@ AnalysisManager::AnalysisManager(ASTContext &ASTCtx, DiagnosticsEngine &diags,
     : AnaCtxMgr(
           ASTCtx, Options.UnoptimizedCFG,
           Options.ShouldIncludeImplicitDtorsInCFG,
-          /*AddInitializers=*/true,
+          /*addInitializers=*/true,
           Options.ShouldIncludeTemporaryDtorsInCFG,
           Options.ShouldIncludeLifetimeInCFG,
           // Adding LoopExit elements to the CFG is a requirement for loop
@@ -35,8 +35,10 @@ AnalysisManager::AnalysisManager(ASTContext &ASTCtx, DiagnosticsEngine &diags,
           Options.ShouldConditionalizeStaticInitializers,
           /*addCXXNewAllocator=*/true,
           Options.ShouldIncludeRichConstructorsInCFG,
-          Options.ShouldElideConstructors, injector),
-      Ctx(ASTCtx), Diags(diags), LangOpts(ASTCtx.getLangOpts()),
+          Options.ShouldElideConstructors,
+          /*addVirtualBaseBranches=*/true,
+          injector),
+      Ctx(ASTCtx), LangOpts(ASTCtx.getLangOpts()),
       PathConsumers(PDC), CreateStoreMgr(storemgr),
       CreateConstraintMgr(constraintmgr), CheckerMgr(checkerMgr),
       options(Options) {

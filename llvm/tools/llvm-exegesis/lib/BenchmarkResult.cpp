@@ -8,6 +8,7 @@
 
 #include "BenchmarkResult.h"
 #include "BenchmarkRunner.h"
+#include "Error.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/ScopeExit.h"
 #include "llvm/ADT/StringMap.h"
@@ -343,7 +344,7 @@ InstructionBenchmark::readYaml(const LLVMState &State,
     if (Yin.setCurrentDocument())
       llvm::yaml::yamlize(Yin, Benchmark, /*unused*/ true, Context);
     if (!Context.getLastError().empty())
-      return llvm::make_error<BenchmarkFailure>(Context.getLastError());
+      return make_error<Failure>(Context.getLastError());
     return Benchmark;
   } else {
     return ExpectedMemoryBuffer.takeError();
@@ -364,7 +365,7 @@ InstructionBenchmark::readYamls(const LLVMState &State,
       if (Yin.error())
         return llvm::errorCodeToError(Yin.error());
       if (!Context.getLastError().empty())
-        return llvm::make_error<BenchmarkFailure>(Context.getLastError());
+        return make_error<Failure>(Context.getLastError());
       Yin.nextDocument();
     }
     return Benchmarks;
@@ -381,7 +382,7 @@ llvm::Error InstructionBenchmark::writeYamlTo(const LLVMState &State,
   Yout.beginDocuments();
   llvm::yaml::yamlize(Yout, *this, /*unused*/ true, Context);
   if (!Context.getLastError().empty())
-    return llvm::make_error<BenchmarkFailure>(Context.getLastError());
+    return make_error<Failure>(Context.getLastError());
   Yout.endDocuments();
   return Error::success();
 }
@@ -393,7 +394,7 @@ llvm::Error InstructionBenchmark::readYamlFrom(const LLVMState &State,
   if (Yin.setCurrentDocument())
     llvm::yaml::yamlize(Yin, *this, /*unused*/ true, Context);
   if (!Context.getLastError().empty())
-    return llvm::make_error<BenchmarkFailure>(Context.getLastError());
+    return make_error<Failure>(Context.getLastError());
   return Error::success();
 }
 
@@ -406,7 +407,7 @@ llvm::Error InstructionBenchmark::writeYaml(const LLVMState &State,
     int ResultFD = 0;
     if (auto E = llvm::errorCodeToError(
             openFileForWrite(Filename, ResultFD, llvm::sys::fs::CD_CreateAlways,
-                             llvm::sys::fs::F_Text))) {
+                             llvm::sys::fs::OF_Text))) {
       return E;
     }
     llvm::raw_fd_ostream Ostr(ResultFD, true /*shouldClose*/);

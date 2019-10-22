@@ -19,6 +19,7 @@
 #include "llvm/Analysis/InstructionSimplify.h"
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Analysis/LoopPass.h"
+#include "llvm/Analysis/MemorySSA.h"
 #include "llvm/Analysis/MemorySSAUpdater.h"
 #include "llvm/Analysis/MustExecute.h"
 #include "llvm/Analysis/ScalarEvolution.h"
@@ -45,6 +46,7 @@ using namespace llvm::PatternMatch;
 #define DEBUG_TYPE "loop-utils"
 
 static const char *LLVMLoopDisableNonforced = "llvm.loop.disable_nonforced";
+static const char *LLVMLoopDisableLICM = "llvm.licm.disable";
 
 bool llvm::formDedicatedExitBlocks(Loop *L, DominatorTree *DT, LoopInfo *LI,
                                    MemorySSAUpdater *MSSAU,
@@ -169,6 +171,8 @@ void llvm::getLoopAnalysisUsage(AnalysisUsage &AU) {
   AU.addPreserved<SCEVAAWrapperPass>();
   AU.addRequired<ScalarEvolutionWrapperPass>();
   AU.addPreserved<ScalarEvolutionWrapperPass>();
+  // FIXME: When all loop passes preserve MemorySSA, it can be required and
+  // preserved here instead of the individual handling in each pass.
 }
 
 /// Manually defined generic "LoopPass" dependency initialization. This is used
@@ -189,6 +193,54 @@ void llvm::initializeLoopPassPass(PassRegistry &Registry) {
   INITIALIZE_PASS_DEPENDENCY(GlobalsAAWrapperPass)
   INITIALIZE_PASS_DEPENDENCY(SCEVAAWrapperPass)
   INITIALIZE_PASS_DEPENDENCY(ScalarEvolutionWrapperPass)
+  INITIALIZE_PASS_DEPENDENCY(MemorySSAWrapperPass)
+}
+
+/// Create MDNode for input string.
+static MDNode *createStringMetadata(Loop *TheLoop, StringRef Name, unsigned V) {
+  LLVMContext &Context = TheLoop->getHeader()->getContext();
+  Metadata *MDs[] = {
+      MDString::get(Context, Name),
+      ConstantAsMetadata::get(ConstantInt::get(Type::getInt32Ty(Context), V))};
+  return MDNode::get(Context, MDs);
+}
+
+/// Set input string into loop metadata by keeping other values intact.
+/// If the string is already in loop metadata update value if it is
+/// different.
+void llvm::addStringMetadataToLoop(Loop *TheLoop, const char *StringMD,
+                                   unsigned V) {
+  SmallVector<Metadata *, 4> MDs(1);
+  // If the loop already has metadata, retain it.
+  MDNode *LoopID = TheLoop->getLoopID();
+  if (LoopID) {
+    for (unsigned i = 1, ie = LoopID->getNumOperands(); i < ie; ++i) {
+      MDNode *Node = cast<MDNode>(LoopID->getOperand(i));
+      // If it is of form key = value, try to parse it.
+      if (Node->getNumOperands() == 2) {
+        MDString *S = dyn_cast<MDString>(Node->getOperand(0));
+        if (S && S->getString().equals(StringMD)) {
+          ConstantInt *IntMD =
+              mdconst::extract_or_null<ConstantInt>(Node->getOperand(1));
+          if (IntMD && IntMD->getSExtValue() == V)
+            // It is already in place. Do nothing.
+            return;
+          // We need to update the value, so just skip it here and it will
+          // be added after copying other existed nodes.
+          continue;
+        }
+      }
+      MDs.push_back(Node);
+    }
+  }
+  // Add new metadata.
+  MDs.push_back(createStringMetadata(TheLoop, StringMD, V));
+  // Replace current metadata node with new one.
+  LLVMContext &Context = TheLoop->getHeader()->getContext();
+  MDNode *NewLoopID = MDNode::get(Context, MDs);
+  // Set operand 0 to refer to the loop id itself.
+  NewLoopID->replaceOperandWith(0, NewLoopID);
+  TheLoop->setLoopID(NewLoopID);
 }
 
 /// Find string metadata for loop
@@ -330,6 +382,10 @@ Optional<MDNode *> llvm::makeFollowupLoopID(
 
 bool llvm::hasDisableAllTransformsHint(const Loop *L) {
   return getBooleanLoopAttribute(L, LLVMLoopDisableNonforced);
+}
+
+bool llvm::hasDisableLICMTransformsHint(const Loop *L) {
+  return getBooleanLoopAttribute(L, LLVMLoopDisableLICM);
 }
 
 TransformationMode llvm::hasUnrollTransformation(Loop *L) {
@@ -621,19 +677,27 @@ void llvm::deleteDeadLoop(Loop *L, DominatorTree *DT = nullptr,
 }
 
 Optional<unsigned> llvm::getLoopEstimatedTripCount(Loop *L) {
-  // Only support loops with a unique exiting block, and a latch.
-  if (!L->getExitingBlock())
-    return None;
+  // Support loops with an exiting latch and other existing exists only
+  // deoptimize.
 
   // Get the branch weights for the loop's backedge.
-  BranchInst *LatchBR =
-      dyn_cast<BranchInst>(L->getLoopLatch()->getTerminator());
-  if (!LatchBR || LatchBR->getNumSuccessors() != 2)
+  BasicBlock *Latch = L->getLoopLatch();
+  if (!Latch)
+    return None;
+  BranchInst *LatchBR = dyn_cast<BranchInst>(Latch->getTerminator());
+  if (!LatchBR || LatchBR->getNumSuccessors() != 2 || !L->isLoopExiting(Latch))
     return None;
 
   assert((LatchBR->getSuccessor(0) == L->getHeader() ||
           LatchBR->getSuccessor(1) == L->getHeader()) &&
          "At least one edge out of the latch must go to the header");
+
+  SmallVector<BasicBlock *, 4> ExitBlocks;
+  L->getUniqueNonLatchExitBlocks(ExitBlocks);
+  if (any_of(ExitBlocks, [](const BasicBlock *EB) {
+        return !EB->getTerminatingDeoptimizeCall();
+      }))
+    return None;
 
   // To estimate the number of times the loop body was executed, we want to
   // know the number of times the backedge was taken, vs. the number of times
@@ -673,12 +737,6 @@ bool llvm::hasIterationCountInvariantInParent(Loop *InnerLoop,
     return false;
 
   return true;
-}
-
-static Value *addFastMathFlag(Value *V, FastMathFlags FMF) {
-  if (isa<FPMathOperator>(V))
-    cast<Instruction>(V)->setFastMathFlags(FMF);
-  return V;
 }
 
 Value *llvm::createMinMaxOp(IRBuilder<> &Builder,
@@ -761,7 +819,7 @@ llvm::getOrderedReduction(IRBuilder<> &Builder, Value *Acc, Value *Src,
 Value *
 llvm::getShuffleReduction(IRBuilder<> &Builder, Value *Src, unsigned Op,
                           RecurrenceDescriptor::MinMaxRecurrenceKind MinMaxKind,
-                          FastMathFlags FMF, ArrayRef<Value *> RedOps) {
+                          ArrayRef<Value *> RedOps) {
   unsigned VF = Src->getType()->getVectorNumElements();
   // VF is a power of 2 so we can emit the reduction using log2(VF) shuffles
   // and vector ops, reducing the set of values being computed by half each
@@ -784,10 +842,9 @@ llvm::getShuffleReduction(IRBuilder<> &Builder, Value *Src, unsigned Op,
         ConstantVector::get(ShuffleMask), "rdx.shuf");
 
     if (Op != Instruction::ICmp && Op != Instruction::FCmp) {
-      // Floating point operations had to be 'fast' to enable the reduction.
-      TmpVec = addFastMathFlag(Builder.CreateBinOp((Instruction::BinaryOps)Op,
-                                                   TmpVec, Shuf, "bin.rdx"),
-                               FMF);
+      // The builder propagates its fast-math-flags setting.
+      TmpVec = Builder.CreateBinOp((Instruction::BinaryOps)Op, TmpVec, Shuf,
+                                   "bin.rdx");
     } else {
       assert(MinMaxKind != RecurrenceDescriptor::MRK_Invalid &&
              "Invalid min/max");
@@ -804,17 +861,13 @@ llvm::getShuffleReduction(IRBuilder<> &Builder, Value *Src, unsigned Op,
 /// flags (if generating min/max reductions).
 Value *llvm::createSimpleTargetReduction(
     IRBuilder<> &Builder, const TargetTransformInfo *TTI, unsigned Opcode,
-    Value *Src, TargetTransformInfo::ReductionFlags Flags, FastMathFlags FMF,
+    Value *Src, TargetTransformInfo::ReductionFlags Flags,
     ArrayRef<Value *> RedOps) {
   assert(isa<VectorType>(Src->getType()) && "Type must be a vector");
 
-  Value *ScalarUdf = UndefValue::get(Src->getType()->getVectorElementType());
   std::function<Value *()> BuildFunc;
   using RD = RecurrenceDescriptor;
   RD::MinMaxRecurrenceKind MinMaxKind = RD::MRK_Invalid;
-  // TODO: Support creating ordered reductions.
-  FastMathFlags FMFFast;
-  FMFFast.setFast();
 
   switch (Opcode) {
   case Instruction::Add:
@@ -834,15 +887,15 @@ Value *llvm::createSimpleTargetReduction(
     break;
   case Instruction::FAdd:
     BuildFunc = [&]() {
-      auto Rdx = Builder.CreateFAddReduce(ScalarUdf, Src);
-      cast<CallInst>(Rdx)->setFastMathFlags(FMFFast);
+      auto Rdx = Builder.CreateFAddReduce(
+          Constant::getNullValue(Src->getType()->getVectorElementType()), Src);
       return Rdx;
     };
     break;
   case Instruction::FMul:
     BuildFunc = [&]() {
-      auto Rdx = Builder.CreateFMulReduce(ScalarUdf, Src);
-      cast<CallInst>(Rdx)->setFastMathFlags(FMFFast);
+      Type *Ty = Src->getType()->getVectorElementType();
+      auto Rdx = Builder.CreateFMulReduce(ConstantFP::get(Ty, 1.0), Src);
       return Rdx;
     };
     break;
@@ -874,7 +927,7 @@ Value *llvm::createSimpleTargetReduction(
   }
   if (TTI->useReductionIntrinsic(Opcode, Src->getType(), Flags))
     return BuildFunc();
-  return getShuffleReduction(Builder, Src, Opcode, MinMaxKind, FMF, RedOps);
+  return getShuffleReduction(Builder, Src, Opcode, MinMaxKind, RedOps);
 }
 
 /// Create a vector reduction using a given recurrence descriptor.
@@ -887,39 +940,36 @@ Value *llvm::createTargetReduction(IRBuilder<> &B,
   RD::RecurrenceKind RecKind = Desc.getRecurrenceKind();
   TargetTransformInfo::ReductionFlags Flags;
   Flags.NoNaN = NoNaN;
+
+  // All ops in the reduction inherit fast-math-flags from the recurrence
+  // descriptor.
+  IRBuilder<>::FastMathFlagGuard FMFGuard(B);
+  B.setFastMathFlags(Desc.getFastMathFlags());
+
   switch (RecKind) {
   case RD::RK_FloatAdd:
-    return createSimpleTargetReduction(B, TTI, Instruction::FAdd, Src, Flags,
-                                       Desc.getFastMathFlags());
+    return createSimpleTargetReduction(B, TTI, Instruction::FAdd, Src, Flags);
   case RD::RK_FloatMult:
-    return createSimpleTargetReduction(B, TTI, Instruction::FMul, Src, Flags,
-                                       Desc.getFastMathFlags());
+    return createSimpleTargetReduction(B, TTI, Instruction::FMul, Src, Flags);
   case RD::RK_IntegerAdd:
-    return createSimpleTargetReduction(B, TTI, Instruction::Add, Src, Flags,
-                                       Desc.getFastMathFlags());
+    return createSimpleTargetReduction(B, TTI, Instruction::Add, Src, Flags);
   case RD::RK_IntegerMult:
-    return createSimpleTargetReduction(B, TTI, Instruction::Mul, Src, Flags,
-                                       Desc.getFastMathFlags());
+    return createSimpleTargetReduction(B, TTI, Instruction::Mul, Src, Flags);
   case RD::RK_IntegerAnd:
-    return createSimpleTargetReduction(B, TTI, Instruction::And, Src, Flags,
-                                       Desc.getFastMathFlags());
+    return createSimpleTargetReduction(B, TTI, Instruction::And, Src, Flags);
   case RD::RK_IntegerOr:
-    return createSimpleTargetReduction(B, TTI, Instruction::Or, Src, Flags,
-                                       Desc.getFastMathFlags());
+    return createSimpleTargetReduction(B, TTI, Instruction::Or, Src, Flags);
   case RD::RK_IntegerXor:
-    return createSimpleTargetReduction(B, TTI, Instruction::Xor, Src, Flags,
-                                       Desc.getFastMathFlags());
+    return createSimpleTargetReduction(B, TTI, Instruction::Xor, Src, Flags);
   case RD::RK_IntegerMinMax: {
     RD::MinMaxRecurrenceKind MMKind = Desc.getMinMaxRecurrenceKind();
     Flags.IsMaxOp = (MMKind == RD::MRK_SIntMax || MMKind == RD::MRK_UIntMax);
     Flags.IsSigned = (MMKind == RD::MRK_SIntMax || MMKind == RD::MRK_SIntMin);
-    return createSimpleTargetReduction(B, TTI, Instruction::ICmp, Src, Flags,
-                                       Desc.getFastMathFlags());
+    return createSimpleTargetReduction(B, TTI, Instruction::ICmp, Src, Flags);
   }
   case RD::RK_FloatMinMax: {
     Flags.IsMaxOp = Desc.getMinMaxRecurrenceKind() == RD::MRK_FloatMax;
-    return createSimpleTargetReduction(B, TTI, Instruction::FCmp, Src, Flags,
-                                       Desc.getFastMathFlags());
+    return createSimpleTargetReduction(B, TTI, Instruction::FCmp, Src, Flags);
   }
   default:
     llvm_unreachable("Unhandled RecKind");

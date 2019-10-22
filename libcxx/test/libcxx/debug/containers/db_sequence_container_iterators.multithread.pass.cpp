@@ -24,7 +24,9 @@
 #include <list>
 #include <thread>
 #include <vector>
-#include "container_debug_tests.hpp"
+#include "container_debug_tests.h"
+
+#include "test_macros.h"
 
 
 template <typename Container>

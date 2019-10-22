@@ -110,7 +110,10 @@ class Value;
     ///
     /// Based on the blocks used when constructing the code extractor,
     /// determine whether it is eligible for extraction.
-    bool isEligible() const { return !Blocks.empty(); }
+    /// 
+    /// Checks that varargs handling (with vastart and vaend) is only done in
+    /// the outlined blocks.
+    bool isEligible() const;
 
     /// Compute the set of input values and output values for the code.
     ///
@@ -151,6 +154,16 @@ class Value;
     BasicBlock *findOrCreateBlockForHoisting(BasicBlock *CommonExitBlock);
 
   private:
+    struct LifetimeMarkerInfo {
+      bool SinkLifeStart = false;
+      bool HoistLifeEnd = false;
+      Instruction *LifeStart = nullptr;
+      Instruction *LifeEnd = nullptr;
+    };
+
+    LifetimeMarkerInfo getLifetimeMarkers(Instruction *Addr,
+                                          BasicBlock *ExitBlock) const;
+
     void severSplitPHINodesOfEntry(BasicBlock *&Header);
     void severSplitPHINodesOfExits(const SmallPtrSetImpl<BasicBlock *> &Exits);
     void splitReturnBlocks();

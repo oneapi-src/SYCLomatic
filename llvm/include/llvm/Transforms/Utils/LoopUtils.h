@@ -106,6 +106,7 @@ struct SinkAndHoistLICMFlags {
   unsigned LicmMssaOptCounter;
   unsigned LicmMssaOptCap;
   unsigned LicmMssaNoAccForPromotionCap;
+  bool IsSink;
 };
 
 /// Walk the specified region of the CFG (defined by all blocks
@@ -214,6 +215,9 @@ makeFollowupLoopID(MDNode *OrigLoopID, ArrayRef<StringRef> FollowupAttrs,
 /// Look for the loop attribute that disables all transformation heuristic.
 bool hasDisableAllTransformsHint(const Loop *L);
 
+/// Look for the loop attribute that disables the LICM transformation heuristics.
+bool hasDisableLICMTransformsHint(const Loop *L);
+
 /// The mode sets how eager a transformation should be applied.
 enum TransformationMode {
   /// The pass can use heuristics to determine whether a transformation should
@@ -251,6 +255,8 @@ TransformationMode hasLICMVersioningTransformation(Loop *L);
 /// @}
 
 /// Set input string into loop metadata by keeping other values intact.
+/// If the string is already in loop metadata update value if it is
+/// different.
 void addStringMetadataToLoop(Loop *TheLoop, const char *MDString,
                              unsigned V = 0);
 
@@ -299,10 +305,10 @@ getOrderedReduction(IRBuilder<> &Builder, Value *Acc, Value *Src, unsigned Op,
                     ArrayRef<Value *> RedOps = None);
 
 /// Generates a vector reduction using shufflevectors to reduce the value.
+/// Fast-math-flags are propagated using the IRBuilder's setting.
 Value *getShuffleReduction(IRBuilder<> &Builder, Value *Src, unsigned Op,
                            RecurrenceDescriptor::MinMaxRecurrenceKind
                                MinMaxKind = RecurrenceDescriptor::MRK_Invalid,
-                           FastMathFlags FMF = FastMathFlags(),
                            ArrayRef<Value *> RedOps = None);
 
 /// Create a target reduction of the given vector. The reduction operation
@@ -310,17 +316,18 @@ Value *getShuffleReduction(IRBuilder<> &Builder, Value *Src, unsigned Op,
 /// additional information supplied in \p Flags.
 /// The target is queried to determine if intrinsics or shuffle sequences are
 /// required to implement the reduction.
+/// Fast-math-flags are propagated using the IRBuilder's setting.
 Value *createSimpleTargetReduction(IRBuilder<> &B,
                                    const TargetTransformInfo *TTI,
                                    unsigned Opcode, Value *Src,
                                    TargetTransformInfo::ReductionFlags Flags =
                                        TargetTransformInfo::ReductionFlags(),
-                                   FastMathFlags FMF = FastMathFlags(),
                                    ArrayRef<Value *> RedOps = None);
 
 /// Create a generic target reduction using a recurrence descriptor \p Desc
 /// The target is queried to determine if intrinsics or shuffle sequences are
 /// required to implement the reduction.
+/// Fast-math-flags are propagated using the RecurrenceDescriptor.
 Value *createTargetReduction(IRBuilder<> &B, const TargetTransformInfo *TTI,
                              RecurrenceDescriptor &Desc, Value *Src,
                              bool NoNaN = false);

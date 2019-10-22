@@ -15,6 +15,8 @@
 
 namespace llvm {
 
+extern cl::opt<bool> ForgetSCEVInLoopUnroll;
+
 class Function;
 class Loop;
 class LPMUpdater;
@@ -28,9 +30,16 @@ class LoopFullUnrollPass : public PassInfoMixin<LoopFullUnrollPass> {
   /// metadata are considered. All other loops are skipped.
   const bool OnlyWhenForced;
 
+  /// If true, forget all loops when unrolling. If false, forget top-most loop
+  /// of the currently processed loops, which removes one entry at a time from
+  /// the internal SCEV records. For large loops, the former is faster.
+  const bool ForgetSCEV;
+
 public:
-  explicit LoopFullUnrollPass(int OptLevel = 2, bool OnlyWhenForced = false)
-      : OptLevel(OptLevel), OnlyWhenForced(OnlyWhenForced) {}
+  explicit LoopFullUnrollPass(int OptLevel = 2, bool OnlyWhenForced = false,
+                              bool ForgetSCEV = false)
+      : OptLevel(OptLevel), OnlyWhenForced(OnlyWhenForced),
+        ForgetSCEV(ForgetSCEV) {}
 
   PreservedAnalyses run(Loop &L, LoopAnalysisManager &AM,
                         LoopStandardAnalysisResults &AR, LPMUpdater &U);
@@ -53,6 +62,8 @@ struct LoopUnrollOptions {
   Optional<bool> AllowPeeling;
   Optional<bool> AllowRuntime;
   Optional<bool> AllowUpperBound;
+  Optional<bool> AllowProfileBasedPeeling;
+  Optional<unsigned> FullUnrollMaxCount;
   int OptLevel;
 
   /// If false, use a cost model to determine whether unrolling of a loop is
@@ -60,8 +71,15 @@ struct LoopUnrollOptions {
   /// metadata are considered. All other loops are skipped.
   bool OnlyWhenForced;
 
-  LoopUnrollOptions(int OptLevel = 2, bool OnlyWhenForced = false)
-      : OptLevel(OptLevel), OnlyWhenForced(OnlyWhenForced) {}
+  /// If true, forget all loops when unrolling. If false, forget top-most loop
+  /// of the currently processed loops, which removes one entry at a time from
+  /// the internal SCEV records. For large loops, the former is faster.
+  const bool ForgetSCEV;
+
+  LoopUnrollOptions(int OptLevel = 2, bool OnlyWhenForced = false,
+                    bool ForgetSCEV = false)
+      : OptLevel(OptLevel), OnlyWhenForced(OnlyWhenForced),
+        ForgetSCEV(ForgetSCEV) {}
 
   /// Enables or disables partial unrolling. When disabled only full unrolling
   /// is allowed.
@@ -92,6 +110,18 @@ struct LoopUnrollOptions {
   // Sets "optimization level" tuning parameter for loop unrolling.
   LoopUnrollOptions &setOptLevel(int O) {
     OptLevel = O;
+    return *this;
+  }
+
+  // Enables or disables loop peeling basing on profile.
+  LoopUnrollOptions &setProfileBasedPeeling(int O) {
+    AllowProfileBasedPeeling = O;
+    return *this;
+  }
+
+  // Sets the max full unroll count.
+  LoopUnrollOptions &setFullUnrollMaxCount(unsigned O) {
+    FullUnrollMaxCount = O;
     return *this;
   }
 };

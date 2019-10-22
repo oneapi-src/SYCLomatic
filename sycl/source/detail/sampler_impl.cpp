@@ -21,49 +21,50 @@ sampler_impl::sampler_impl(coordinate_normalization_mode normalizationMode,
 
 sampler_impl::sampler_impl(cl_sampler clSampler, const context &syclContext) {
 
-  m_contextToSampler[syclContext] = clSampler;
-  CHECK_OCL_CODE(clRetainSampler(clSampler));
-  CHECK_OCL_CODE(clGetSamplerInfo(clSampler, CL_SAMPLER_NORMALIZED_COORDS,
-                                  sizeof(cl_bool), &m_CoordNormMode, nullptr));
-  CHECK_OCL_CODE(clGetSamplerInfo(clSampler, CL_SAMPLER_ADDRESSING_MODE,
-                                  sizeof(cl_addressing_mode), &m_AddrMode,
-                                  nullptr));
-  CHECK_OCL_CODE(clGetSamplerInfo(clSampler, CL_SAMPLER_FILTER_MODE,
-                                  sizeof(cl_filter_mode), &m_FiltMode,
-                                  nullptr));
+  RT::PiSampler Sampler = pi::cast<RT::PiSampler>(clSampler);
+  m_contextToSampler[syclContext] = Sampler;
+  PI_CALL(RT::piSamplerRetain(Sampler));
+  PI_CALL(RT::piSamplerGetInfo(Sampler, PI_SAMPLER_INFO_NORMALIZED_COORDS,
+                               sizeof(pi_bool), &m_CoordNormMode, nullptr));
+  PI_CALL(RT::piSamplerGetInfo(Sampler, PI_SAMPLER_INFO_ADDRESSING_MODE,
+                               sizeof(pi_sampler_addressing_mode), &m_AddrMode,
+                               nullptr));
+  PI_CALL(RT::piSamplerGetInfo(Sampler, PI_SAMPLER_INFO_FILTER_MODE,
+                               sizeof(pi_sampler_filter_mode), &m_FiltMode,
+                               nullptr));
 }
 
 sampler_impl::~sampler_impl() {
   for (auto &Iter : m_contextToSampler) {
-    // TODO replace CHECK_OCL_CODE_NO_EXC to CHECK_OCL_CODE and
     // TODO catch an exception and add it to the list of asynchronous exceptions
-    CHECK_OCL_CODE_NO_EXC(clReleaseSampler(Iter.second));
+    PI_CALL(RT::piSamplerRelease(Iter.second));
   }
 }
 
-cl_sampler sampler_impl::getOrCreateSampler(const context &Context) {
-  cl_int errcode_ret = CL_SUCCESS;
+RT::PiSampler sampler_impl::getOrCreateSampler(const context &Context) {
   if (m_contextToSampler[Context])
     return m_contextToSampler[Context];
 
-#if CL_TARGET_OPENCL_VERSION > 120
-  const cl_sampler_properties sprops[] = {
-      CL_SAMPLER_NORMALIZED_COORDS,
-      static_cast<cl_sampler_properties>(m_CoordNormMode),
-      CL_SAMPLER_ADDRESSING_MODE,
-      static_cast<cl_sampler_properties>(m_AddrMode),
-      CL_SAMPLER_FILTER_MODE,
-      static_cast<cl_sampler_properties>(m_FiltMode),
+  const pi_sampler_properties sprops[] = {
+      PI_SAMPLER_INFO_NORMALIZED_COORDS,
+      static_cast<pi_sampler_properties>(m_CoordNormMode),
+      PI_SAMPLER_INFO_ADDRESSING_MODE,
+      static_cast<pi_sampler_properties>(m_AddrMode),
+      PI_SAMPLER_INFO_FILTER_MODE,
+      static_cast<pi_sampler_properties>(m_FiltMode),
       0};
-  m_contextToSampler[Context] =
-      clCreateSamplerWithProperties(Context.get(), sprops, &errcode_ret);
-#else
-  m_contextToSampler[Context] =
-      clCreateSampler(Context.get(), static_cast<cl_bool>(m_CoordNormMode),
-                      static_cast<cl_addressing_mode>(m_AddrMode),
-                      static_cast<cl_filter_mode>(m_FiltMode), &errcode_ret);
-#endif
-  CHECK_OCL_CODE(errcode_ret);
+
+  RT::PiResult errcode_ret = PI_SUCCESS;
+  RT::PiSampler resultSampler = nullptr;
+  PI_CALL_RESULT((errcode_ret = RT::piSamplerCreate(
+      getSyclObjImpl(Context)->getHandleRef(), sprops, &resultSampler)));
+
+  if (errcode_ret == PI_INVALID_OPERATION)
+    throw feature_not_supported("Images are not supported by this device.");
+
+  PI_CHECK(errcode_ret);
+  m_contextToSampler[Context] = resultSampler;
+
   return m_contextToSampler[Context];
 }
 

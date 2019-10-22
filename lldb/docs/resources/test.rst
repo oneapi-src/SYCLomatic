@@ -1,11 +1,20 @@
 Testing
 =======
 
-The LLDB test suite consists of Python scripts located under the test
-directory. Each script contains a number of test cases and is usually
-accompanied by a C (C++, ObjC, etc.) source file. Each test first compiles the
-source file and then uses LLDB to debug the resulting executable. The tests
-verify both the LLDB command line interface and the scripting API.
+The LLDB test suite consists of three different kinds of test:
+
+* Python scripts located under ``lldb/packages/Python/lldbsuite``.
+  These are written using python's unittest2 testing framework.
+
+* Unit tests, located under ``lldb/unittests``.   These are written in C++,
+  using googletest.
+
+* LIT tests, located under ``lldb/lit``.  These use the LLVM Integrated Tester.
+
+Many of the tests are accompanied by a C (C++, ObjC, etc.) source file. Each test
+first compiles the source file and then uses LLDB to debug the resulting executable.
+
+The tests verify both the LLDB command line interface and the scripting API.
 
 .. contents::
    :local:
@@ -30,9 +39,7 @@ target.
 By default, the ``check-lldb`` target builds the test programs with the same
 compiler that was used to build LLDB. To build the tests with a different
 compiler, you can set the ``LLDB_TEST_C_COMPILER`` or the
-``LLDB_TEST_CXX_COMPILER`` CMake variables. These variables are ignored unless
-the respective ``LLDB_TEST_USE_CUSTOM_C_COMPILER`` and
-``LLDB_TEST_USE_CUSTOM_CXX_COMPILER`` are set to ``ON``.
+``LLDB_TEST_CXX_COMPILER`` CMake variables.
 
 It is possible to customize the architecture of the test binaries and compiler
 used by appending ``-A`` and ``-C`` options respectively to the CMake variable
@@ -48,8 +55,8 @@ Note that multiple ``-A`` and ``-C`` flags can be specified to
 ``LLDB_TEST_USER_ARGS``.
 
 
-Running a Specific Test or Set of Tests
----------------------------------------
+Running a Specific Test or Set of Tests: Python
+-----------------------------------------------
 
 In addition to running all the LLDB test suites with the ``check-lldb`` CMake
 target above, it is possible to run individual LLDB tests. If you have a CMake
@@ -88,21 +95,51 @@ Many more options that are available. To see a list of all of them, run:
 
    > python dotest.py -h
 
-The ``dotest.py`` script runs tests in parallel by default. To disable the
-parallel test running feature, use the ``--no-multiprocess`` flag. The number
-of concurrent tests is controlled by the ``LLDB_TEST_THREADS`` environment
-variable or the ``--threads command`` line parameter. The default value is the
-number of CPU cores on your system.
 
-The parallel test running feature will handle an additional ``--test-subdir
-SUBDIR`` arg. When specified, ``SUBDIR`` is relative to the root test directory
-and will limit all parallel test running to that subdirectory's tree of tests.
+Running a Specific Test or Set of Tests: Unit Tests
+---------------------------------------------------
 
-The parallel test runner will run all tests within a given directory serially,
-but will run multiple directories concurrently. Thus, as a test writer, we
-provide serialized test run semantics within a directory. Note child
-directories are considered entirely separate, so two child directories could be
-running in parallel with a parent directory.
+The unit tests are simple executables, located in the build directory under ``tools/lldb/unittests``.
+
+To run them, just run the test binary, for example, to run all the Host tests:
+
+::
+
+   > ./tools/lldb/unittests/Host/HostTests
+
+
+To run a specific test, pass a filter, for example:
+
+::
+
+   > ./tools/lldb/unittests/Host/HostTests --gtest_filter=SocketTest.DomainListenConnectAccept
+
+
+Running a Specific Test or Set of Tests: LIT
+--------------------------------------------
+
+LIT automatically scans a directory for tests.   To run a subset of the LIT tests, pass it a
+subdirectory, for example:
+
+::
+
+   > ./bin/llvm-lit -sv tools/lldb/lit/Commands/CommandScriptImmediateOutput
+
+
+LIT can also filter based on test name.
+
+::
+
+   > ./bin/llvm-lit -sv tools/lldb/lit --filter CommandScriptImmediateOutput
+
+
+It is also possible to forward arguments to dotest.py by passing ``--param`` to
+lit and setting a value for ``dotest-args``.
+
+::
+
+   > ./bin/llvm-lit -sv tools/lldb/lit --param dotest-args='-C gcc'
+
 
 Running the Test Suite Remotely
 -------------------------------
@@ -157,13 +194,11 @@ A quick guide to getting started with PTVS is as follows:
     #. If you want to enabled mixed mode debugging, check Enable native code debugging (this slows down debugging, so enable it only on an as-needed basis.)
 #. Set the command line for the test suite to run.
     #. Right click the project in solution explorer and choose the Debug tab.
-    #. Enter the arguments to dotest.py. Note you must add --no-multiprocess
+    #. Enter the arguments to dotest.py.
     #. Example command options:
 
 ::
 
-   # quiet mode
-   -q
    --arch=i686
    # Path to debug lldb.exe
    --executable D:/src/llvmbuild/ninja/bin/lldb.exe
@@ -178,12 +213,10 @@ A quick guide to getting started with PTVS is as follows:
    -p TestPaths.py
    # Root of test tree
    D:\src\llvm\tools\lldb\packages\Python\lldbsuite\test
-   # Required in order to be able to debug the test.
-   --no-multiprocess
 
 ::
 
-   -q --arch=i686 --executable D:/src/llvmbuild/ninja/bin/lldb.exe -s D:/src/llvmbuild/ninja/lldb-test-traces -u CXXFLAGS -u CFLAGS --enable-crash-dialog -C d:\src\llvmbuild\ninja_release\bin\clang.exe -p TestPaths.py D:\src\llvm\tools\lldb\packages\Python\lldbsuite\test --no-multiprocess
+   --arch=i686 --executable D:/src/llvmbuild/ninja/bin/lldb.exe -s D:/src/llvmbuild/ninja/lldb-test-traces -u CXXFLAGS -u CFLAGS --enable-crash-dialog -C d:\src\llvmbuild\ninja_release\bin\clang.exe -p TestPaths.py D:\src\llvm\tools\lldb\packages\Python\lldbsuite\test --no-multiprocess
 
 
 

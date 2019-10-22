@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// /file
+/// \file
 /// This file defines the *Stencil* abstraction: a code-generating object,
 /// parameterized by named references to (bound) AST nodes.  Given a match
 /// result, a stencil can be evaluated to a string of source code.
@@ -23,6 +23,7 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTTypeTraits.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
+#include "clang/Tooling/Refactoring/MatchConsumer.h"
 #include "clang/Tooling/Refactoring/RangeSelector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
@@ -153,15 +154,46 @@ inline StencilPart node(llvm::StringRef Id) {
   return selection(tooling::node(Id));
 }
 
-/// Variant of \c node() that identifies the node as a statement, for purposes
-/// of deciding whether to include any trailing semicolon.  Only relevant for
-/// Expr nodes, which, by default, are *not* considered as statements.
-/// \returns the source corresponding to the identified node, considered as a
-/// statement.
-/// FIXME: Deprecated. Write `selection(statement(Id))` instead.
-inline StencilPart sNode(llvm::StringRef Id) {
-  return selection(tooling::statement(Id));
+/// Generates the source of the expression bound to \p Id, wrapping it in
+/// parentheses if it may parse differently depending on context. For example, a
+/// binary operation is always wrapped, while a variable reference is never
+/// wrapped.
+StencilPart expression(llvm::StringRef Id);
+
+/// Constructs an idiomatic dereferencing of the expression bound to \p ExprId.
+/// \p ExprId is wrapped in parentheses, if needed.
+StencilPart deref(llvm::StringRef ExprId);
+
+/// Constructs an expression that idiomatically takes the address of the
+/// expression bound to \p ExprId. \p ExprId is wrapped in parentheses, if
+/// needed.
+StencilPart addressOf(llvm::StringRef ExprId);
+
+/// Constructs a `MemberExpr` that accesses the named member (\p Member) of the
+/// object bound to \p BaseId. The access is constructed idiomatically: if \p
+/// BaseId is bound to `e` and \p Member identifies member `m`, then returns
+/// `e->m`, when e is a pointer, `e2->m` when e = `*e2` and `e.m` otherwise.
+/// Additionally, `e` is wrapped in parentheses, if needed.
+StencilPart access(llvm::StringRef BaseId, StencilPart Member);
+inline StencilPart access(llvm::StringRef BaseId, llvm::StringRef Member) {
+  return access(BaseId, text(Member));
 }
+
+/// Chooses between the two stencil parts, based on whether \p ID is bound in
+/// the match.
+StencilPart ifBound(llvm::StringRef Id, StencilPart TruePart,
+                    StencilPart FalsePart);
+
+/// Chooses between the two strings, based on whether \p ID is bound in the
+/// match.
+inline StencilPart ifBound(llvm::StringRef Id, llvm::StringRef TrueText,
+                           llvm::StringRef FalseText) {
+  return ifBound(Id, text(TrueText), text(FalseText));
+}
+
+/// Wraps a MatchConsumer in a StencilPart, so that it can be used in a Stencil.
+/// This supports user-defined extensions to the Stencil language.
+StencilPart run(MatchConsumer<std::string> C);
 
 /// For debug use only; semantics are not guaranteed.
 ///

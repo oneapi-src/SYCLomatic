@@ -8,12 +8,18 @@
 #define ASSERT_TYPE(...) static_assert(__is_same(__VA_ARGS__))
 #define ASSERT_EXPR_TYPE(Expr, Expect) static_assert(__is_same(decltype(Expr), Expect));
 
+struct S {
+  static int x[5];
+};
+
 void self_compare() {
   int a;
   int *b = nullptr;
+  S s;
 
   (void)(a <=> a); // expected-warning {{self-comparison always evaluates to 'std::strong_ordering::equal'}}
   (void)(b <=> b); // expected-warning {{self-comparison always evaluates to 'std::strong_ordering::equal'}}
+  (void)(s.x[a] <=> S::x[a]); // expected-warning {{self-comparison always evaluates to 'std::strong_ordering::equal'}}
 }
 
 void test0(long a, unsigned long b) {
@@ -398,8 +404,8 @@ enum class StrongE {};
 enum WeakE { E_One,
              E_Two };
 
-void test_diag(_Complex int ci, _Complex float cf, _Complex double cd, int i, float f, StrongE E1, WeakE E2, int *p) {
-  (void)(ci <=> (_Complex int &)ci);
+void test_diag(_Complex int ci, _Complex float cf, _Complex double cd, int i, float f, StrongE E1, WeakE E2, int *p) {  // expected-warning 3 {{'_Complex' is a C99 extension}}
+  (void)(ci <=> (_Complex int &)ci); // expected-warning {{'_Complex' is a C99 extension}}
   (void)(ci <=> cf);
   (void)(ci <=> i);
   (void)(ci <=> f);
@@ -410,12 +416,12 @@ void test_diag(_Complex int ci, _Complex float cf, _Complex double cd, int i, fl
   (void)(E2 <=> cf); // expected-error {{invalid operands}}
 }
 
-void test_int(_Complex int x, _Complex int y) {
+void test_int(_Complex int x, _Complex int y) { // expected-warning 2 {{'_Complex' is a C99 extension}}
   auto r = x <=> y;
   ASSERT_EXPR_TYPE(r, std::strong_equality);
 }
 
-void test_double(_Complex double x, _Complex double y) {
+void test_double(_Complex double x, _Complex double y) { // expected-warning 2 {{'_Complex' is a C99 extension}}
   auto r = x <=> y;
   ASSERT_EXPR_TYPE(r, std::weak_equality);
 }

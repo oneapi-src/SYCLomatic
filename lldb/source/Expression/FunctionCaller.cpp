@@ -35,10 +35,9 @@ FunctionCaller::FunctionCaller(ExecutionContextScope &exe_scope,
                                const Address &functionAddress,
                                const ValueList &arg_value_list,
                                const char *name)
-    : Expression(exe_scope, eKindFunctionCaller),
-      m_execution_unit_sp(), m_parser(),
-      m_jit_module_wp(), m_name(name ? name : "<unknown>"),
-      m_function_ptr(NULL), m_function_addr(functionAddress),
+    : Expression(exe_scope, eKindFunctionCaller), m_execution_unit_sp(),
+      m_parser(), m_jit_module_wp(), m_name(name ? name : "<unknown>"),
+      m_function_ptr(nullptr), m_function_addr(functionAddress),
       m_function_return_type(return_type),
       m_wrapper_function_name("__lldb_caller_function"),
       m_wrapper_struct_name("__lldb_caller_struct"), m_wrapper_args_addrs(),
@@ -138,7 +137,7 @@ bool FunctionCaller::WriteFunctionArguments(
 
   Process *process = exe_ctx.GetProcessPtr();
 
-  if (process == NULL)
+  if (process == nullptr)
     return return_value;
 
   lldb::ProcessSP jit_process_sp(m_jit_process_wp.lock());
@@ -218,9 +217,8 @@ bool FunctionCaller::InsertFunction(ExecutionContext &exe_ctx,
     return false;
 
   Log *log(lldb_private::GetLogIfAllCategoriesSet(LIBLLDB_LOG_STEP));
-  if (log)
-    log->Printf("Call Address: 0x%" PRIx64 " Struct Address: 0x%" PRIx64 ".\n",
-                m_jit_start_addr, args_addr_ref);
+  LLDB_LOGF(log, "Call Address: 0x%" PRIx64 " Struct Address: 0x%" PRIx64 ".\n",
+            m_jit_start_addr, args_addr_ref);
 
   return true;
 }
@@ -232,18 +230,18 @@ lldb::ThreadPlanSP FunctionCaller::GetThreadPlanToCallFunction(
   Log *log(lldb_private::GetLogIfAnyCategoriesSet(LIBLLDB_LOG_EXPRESSIONS |
                                                   LIBLLDB_LOG_STEP));
 
-  if (log)
-    log->Printf("-- [FunctionCaller::GetThreadPlanToCallFunction] Creating "
-                "thread plan to call function \"%s\" --",
-                m_name.c_str());
+  LLDB_LOGF(log,
+            "-- [FunctionCaller::GetThreadPlanToCallFunction] Creating "
+            "thread plan to call function \"%s\" --",
+            m_name.c_str());
 
   // FIXME: Use the errors Stream for better error reporting.
   Thread *thread = exe_ctx.GetThreadPtr();
-  if (thread == NULL) {
+  if (thread == nullptr) {
     diagnostic_manager.PutString(
         eDiagnosticSeverityError,
         "Can't call a function without a valid thread.");
-    return NULL;
+    return nullptr;
   }
 
   // Okay, now run the function:
@@ -272,14 +270,14 @@ bool FunctionCaller::FetchFunctionResults(ExecutionContext &exe_ctx,
   Log *log(lldb_private::GetLogIfAnyCategoriesSet(LIBLLDB_LOG_EXPRESSIONS |
                                                   LIBLLDB_LOG_STEP));
 
-  if (log)
-    log->Printf("-- [FunctionCaller::FetchFunctionResults] Fetching function "
-                "results for \"%s\"--",
-                m_name.c_str());
+  LLDB_LOGF(log,
+            "-- [FunctionCaller::FetchFunctionResults] Fetching function "
+            "results for \"%s\"--",
+            m_name.c_str());
 
   Process *process = exe_ctx.GetProcessPtr();
 
-  if (process == NULL)
+  if (process == nullptr)
     return false;
 
   lldb::ProcessSP jit_process_sp(m_jit_process_wp.lock());
@@ -326,7 +324,7 @@ lldb::ExpressionResults FunctionCaller::ExecuteFunction(
 
   lldb::addr_t args_addr;
 
-  if (args_addr_ptr != NULL)
+  if (args_addr_ptr != nullptr)
     args_addr = *args_addr_ptr;
   else
     args_addr = LLDB_INVALID_ADDRESS;
@@ -342,10 +340,9 @@ lldb::ExpressionResults FunctionCaller::ExecuteFunction(
   Log *log(lldb_private::GetLogIfAnyCategoriesSet(LIBLLDB_LOG_EXPRESSIONS |
                                                   LIBLLDB_LOG_STEP));
 
-  if (log)
-    log->Printf(
-        "== [FunctionCaller::ExecuteFunction] Executing function \"%s\" ==",
-        m_name.c_str());
+  LLDB_LOGF(log,
+            "== [FunctionCaller::ExecuteFunction] Executing function \"%s\" ==",
+            m_name.c_str());
 
   lldb::ThreadPlanSP call_plan_sp = GetThreadPlanToCallFunction(
       exe_ctx, args_addr, real_options, diagnostic_manager);
@@ -363,20 +360,22 @@ lldb::ExpressionResults FunctionCaller::ExecuteFunction(
 
   if (log) {
     if (return_value != lldb::eExpressionCompleted) {
-      log->Printf("== [FunctionCaller::ExecuteFunction] Execution of \"%s\" "
-                  "completed abnormally ==",
-                  m_name.c_str());
+      LLDB_LOGF(log,
+                "== [FunctionCaller::ExecuteFunction] Execution of \"%s\" "
+                "completed abnormally ==",
+                m_name.c_str());
     } else {
-      log->Printf("== [FunctionCaller::ExecuteFunction] Execution of \"%s\" "
-                  "completed normally ==",
-                  m_name.c_str());
+      LLDB_LOGF(log,
+                "== [FunctionCaller::ExecuteFunction] Execution of \"%s\" "
+                "completed normally ==",
+                m_name.c_str());
     }
   }
 
   if (exe_ctx.GetProcessPtr())
     exe_ctx.GetProcessPtr()->SetRunningUserExpression(false);
 
-  if (args_addr_ptr != NULL)
+  if (args_addr_ptr != nullptr)
     *args_addr_ptr = args_addr;
 
   if (return_value != lldb::eExpressionCompleted)
@@ -384,7 +383,7 @@ lldb::ExpressionResults FunctionCaller::ExecuteFunction(
 
   FetchFunctionResults(exe_ctx, args_addr, results);
 
-  if (args_addr_ptr == NULL)
+  if (args_addr_ptr == nullptr)
     DeallocateFunctionResults(exe_ctx, args_addr);
 
   return lldb::eExpressionCompleted;

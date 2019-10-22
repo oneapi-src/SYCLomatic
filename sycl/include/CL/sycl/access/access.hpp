@@ -63,10 +63,10 @@ constexpr bool modeWritesNewData(access::mode m) {
 }
 
 #ifdef __SYCL_DEVICE_ONLY__
-#define SYCL_GLOBAL_AS __global
-#define SYCL_LOCAL_AS __local
-#define SYCL_CONSTANT_AS __constant
-#define SYCL_PRIVATE_AS __private
+#define SYCL_GLOBAL_AS __attribute__((ocl_global))
+#define SYCL_LOCAL_AS __attribute__((ocl_local))
+#define SYCL_CONSTANT_AS __attribute__((ocl_constant))
+#define SYCL_PRIVATE_AS __attribute__((ocl_private))
 #else
 #define SYCL_GLOBAL_AS
 #define SYCL_LOCAL_AS
@@ -127,7 +127,15 @@ struct PtrValueType<ElementType, access::address_space::global_space> {
 
 template <typename ElementType>
 struct PtrValueType<ElementType, access::address_space::constant_space> {
-  using type = SYCL_CONSTANT_AS ElementType;
+  // Current implementation of address spaces handling leads to possibility
+  // of emitting incorrect (in terms of OpenCL) address space casts from
+  // constant to generic (and vise-versa). So, global address space is used here
+  // instead of constant to avoid incorrect address space casts in the produced
+  // device code. "const" qualifier is not used here because multi_ptr interface
+  // contains function members which return pure ElementType without qualifiers
+  // and adding const qualifier here will require adding const casts to
+  // multi_ptr methods to remove const qualifiers from underlying pointer type.
+  using type = SYCL_GLOBAL_AS ElementType;
 };
 
 template <typename ElementType>

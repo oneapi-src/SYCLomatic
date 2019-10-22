@@ -1,17 +1,15 @@
-// RUN: %clang -std=c++11 -fsycl %s -o %t.out -lstdc++ -lOpenCL -lsycl
+// RUN: %clangxx -fsycl %s -o %t.out -lOpenCL
 // RUN: env SYCL_DEVICE_TYPE=HOST %t.out
 // RUN: %CPU_RUN_PLACEHOLDER %t.out
 // RUN: %GPU_RUN_PLACEHOLDER %t.out
 // RUN: %ACC_RUN_PLACEHOLDER %t.out
-//==-----------------sampler.cpp - SYCL sampler basic test ----*- C++ -*----==//
+//==--------------- sampler.cpp - SYCL sampler basic test ------------------==//
 //
-// Copyright (C) 2018 Intel Corporation. All rights reserved.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// The information and source code contained herein is the exclusive property
-// of Intel Corporation and may not be disclosed, examined or reproduced in
-// whole or in part without explicit written authorization from the company.
-//
-// ===--------------------------------------------------------------------=== //
+//===----------------------------------------------------------------------===//
 
 #include <CL/sycl.hpp>
 #include <CL/sycl/context.hpp>
@@ -39,7 +37,7 @@ int main() {
              B.get_coordinate_normalization_mode() &&
          A.get_filtering_mode() == B.get_filtering_mode());
 
-  // Check assigment operator
+  // Check assignment operator
   if (!Queue.is_host()) {
     // OpenCL sampler
     cl_int Err = CL_SUCCESS;
@@ -59,9 +57,12 @@ int main() {
         clCreateSampler(Queue.get_context().get(), true, CL_ADDRESS_REPEAT,
                         CL_FILTER_LINEAR, &Err);
 #endif
+    // If device doesn't support sampler - skip it
+    if (Err == CL_INVALID_OPERATION)
+      return 0;
+
     CHECK_OCL_CODE(Err);
     B = sycl::sampler(ClSampler, Queue.get_context());
-
   } else {
     // Host sampler
     B = sycl::sampler(sycl::coordinate_normalization_mode::normalized,
@@ -77,7 +78,7 @@ int main() {
   sycl::hash_class<cl::sycl::sampler> Hasher;
   assert(Hasher(A) != Hasher(B));
 
-  // Check move assigment
+  // Check move assignment
   sycl::sampler C(B);
   A = std::move(B);
   assert(Hasher(C) == Hasher(A));

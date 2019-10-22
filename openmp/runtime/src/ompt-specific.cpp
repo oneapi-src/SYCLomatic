@@ -210,7 +210,8 @@ ompt_data_t *__ompt_get_thread_data_internal() {
 void __ompt_thread_assign_wait_id(void *variable) {
   kmp_info_t *ti = ompt_get_thread();
 
-  ti->th.ompt_thread_info.wait_id = (ompt_wait_id_t)(uintptr_t)variable;
+  if (ti)
+    ti->th.ompt_thread_info.wait_id = (ompt_wait_id_t)(uintptr_t)variable;
 }
 
 int __ompt_get_state_internal(ompt_wait_id_t *omp_wait_id) {
@@ -268,10 +269,11 @@ void __ompt_lw_taskteam_init(ompt_lw_taskteam_t *lwt, kmp_info_t *thr, int gtid,
 }
 
 void __ompt_lw_taskteam_link(ompt_lw_taskteam_t *lwt, kmp_info_t *thr,
-                             int on_heap) {
+                             int on_heap, bool always) {
   ompt_lw_taskteam_t *link_lwt = lwt;
-  if (thr->th.th_team->t.t_serialized >
-      1) { // we already have a team, so link the new team and swap values
+  if (always ||
+      thr->th.th_team->t.t_serialized >
+          1) { // we already have a team, so link the new team and swap values
     if (on_heap) { // the lw_taskteam cannot stay on stack, allocate it on heap
       link_lwt =
           (ompt_lw_taskteam_t *)__kmp_allocate(sizeof(ompt_lw_taskteam_t));
@@ -432,6 +434,9 @@ int __ompt_get_task_memory_internal(void **addr, size_t *size, int blocknum) {
     return 0; // support only a single block
 
   kmp_info_t *thr = ompt_get_thread();
+  if (!thr)
+    return 0;
+
   kmp_taskdata_t *taskdata = thr->th.th_current_task;
   kmp_task_t *task = KMP_TASKDATA_TO_TASK(taskdata);
 

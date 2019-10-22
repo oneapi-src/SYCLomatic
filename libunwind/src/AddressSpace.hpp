@@ -27,6 +27,9 @@
 
 #if _LIBUNWIND_USE_DLADDR
 #include <dlfcn.h>
+#if defined(__unix__) && defined(__ELF__) && defined(_LIBUNWIND_HAS_COMMENT_LIB_PRAGMA)
+#pragma comment(lib, "dl")
+#endif
 #endif
 
 #ifdef __APPLE__
@@ -494,9 +497,6 @@ inline bool LocalAddressSpace::findUnwindSections(pint_t targetAddr,
 #if !defined(Elf_Phdr)
         typedef ElfW(Phdr) Elf_Phdr;
 #endif
-#if !defined(Elf_Addr) && defined(__ANDROID__)
-        typedef ElfW(Addr) Elf_Addr;
-#endif
 
  #if defined(_LIBUNWIND_SUPPORT_DWARF_UNWIND)
   #if !defined(_LIBUNWIND_SUPPORT_DWARF_INDEX)
@@ -504,6 +504,9 @@ inline bool LocalAddressSpace::findUnwindSections(pint_t targetAddr,
   #endif
         size_t object_length;
 #if defined(__ANDROID__)
+#if !defined(Elf_Addr)
+        typedef ElfW(Addr) Elf_Addr;
+#endif
         Elf_Addr image_base =
             pinfo->dlpi_phnum
                 ? reinterpret_cast<Elf_Addr>(pinfo->dlpi_phdr) -

@@ -157,9 +157,6 @@ Fuzzer::Fuzzer(UserCallback CB, InputCorpus &Corpus, MutationDispatcher &MD,
   AllocateCurrentUnitData();
   CurrentUnitSize = 0;
   memset(BaseSha1, 0, sizeof(BaseSha1));
-  auto FocusFunctionOrAuto = Options.FocusFunction;
-  DFT.Init(Options.DataFlowTrace, &FocusFunctionOrAuto , MD.GetRand());
-  TPC.SetFocusFunction(FocusFunctionOrAuto);
 }
 
 Fuzzer::~Fuzzer() {}
@@ -322,14 +319,15 @@ void Fuzzer::RssLimitCallback() {
   _Exit(Options.OOMExitCode); // Stop right now.
 }
 
-void Fuzzer::PrintStats(const char *Where, const char *End, size_t Units) {
+void Fuzzer::PrintStats(const char *Where, const char *End, size_t Units,
+                        size_t Features) {
   size_t ExecPerSec = execPerSec();
   if (!Options.Verbosity)
     return;
   Printf("#%zd\t%s", TotalNumberOfRuns, Where);
   if (size_t N = TPC.GetTotalPCCoverage())
     Printf(" cov: %zd", N);
-  if (size_t N = Corpus.NumFeatures())
+  if (size_t N = Features ? Features : Corpus.NumFeatures())
     Printf(" ft: %zd", N);
   if (!Corpus.empty()) {
     Printf(" corp: %zd", Corpus.NumActiveUnits());
@@ -515,10 +513,12 @@ size_t Fuzzer::GetCurrentUnitInFuzzingThead(const uint8_t **Data) const {
 }
 
 void Fuzzer::CrashOnOverwrittenData() {
-  Printf("==%d== ERROR: libFuzzer: fuzz target overwrites it's const input\n",
+  Printf("==%d== ERROR: libFuzzer: fuzz target overwrites its const input\n",
          GetPid());
+  PrintStackTrace();
+  Printf("SUMMARY: libFuzzer: overwrites-const-input\n");
   DumpCurrentUnit("crash-");
-  Printf("SUMMARY: libFuzzer: out-of-memory\n");
+  PrintFinalStats();
   _Exit(Options.ErrorExitCode); // Stop right now.
 }
 
@@ -742,10 +742,6 @@ void Fuzzer::ReadAndExecuteSeedCorpora(Vector<SizedFile> &CorporaFiles) {
   uint8_t dummy = 0;
   ExecuteCallback(&dummy, 0);
 
-  // Protect lazy counters here, after the once-init code has been executed.
-  if (Options.LazyCounters)
-    TPC.ProtectLazyCounters();
-
   if (CorporaFiles.empty()) {
     Printf("INFO: A corpus is not provided, starting from an empty corpus\n");
     Unit U({'\n'}); // Valid ASCII input.
@@ -789,6 +785,10 @@ void Fuzzer::ReadAndExecuteSeedCorpora(Vector<SizedFile> &CorporaFiles) {
 }
 
 void Fuzzer::Loop(Vector<SizedFile> &CorporaFiles) {
+  auto FocusFunctionOrAuto = Options.FocusFunction;
+  DFT.Init(Options.DataFlowTrace, &FocusFunctionOrAuto, CorporaFiles,
+           MD.GetRand());
+  TPC.SetFocusFunction(FocusFunctionOrAuto);
   ReadAndExecuteSeedCorpora(CorporaFiles);
   DFT.Clear();  // No need for DFT any more.
   TPC.SetPrintNewPCs(Options.PrintNewCovPcs);
@@ -800,6 +800,9 @@ void Fuzzer::Loop(Vector<SizedFile> &CorporaFiles) {
 
   while (true) {
     auto Now = system_clock::now();
+    if (!Options.StopFile.empty() &&
+        !FileToVector(Options.StopFile, 1, false).empty())
+      break;
     if (duration_cast<seconds>(Now - LastCorpusReload).count() >=
         Options.ReloadIntervalSec) {
       RereadOutputCorpus(MaxInputLen);

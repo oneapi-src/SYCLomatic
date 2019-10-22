@@ -113,6 +113,9 @@ static inline bool isCanonicalPredicate(CmpInst::Predicate Pred) {
   }
 }
 
+llvm::Optional<std::pair<CmpInst::Predicate, Constant *>>
+getFlippedStrictnessPredicateAndConstant(CmpInst::Predicate Pred, Constant *C);
+
 /// Return the source operand of a potentially bitcasted value while optionally
 /// checking if it has one use. If there is no bitcast or the one use check is
 /// not met, return the input value itself.
@@ -139,31 +142,16 @@ static inline Constant *SubOne(Constant *C) {
 /// This happens in cases where the ~ can be eliminated.  If WillInvertAllUses
 /// is true, work under the assumption that the caller intends to remove all
 /// uses of V and only keep uses of ~V.
-static inline bool IsFreeToInvert(Value *V, bool WillInvertAllUses) {
+///
+/// See also: canFreelyInvertAllUsersOf()
+static inline bool isFreeToInvert(Value *V, bool WillInvertAllUses) {
   // ~(~(X)) -> X.
   if (match(V, m_Not(m_Value())))
     return true;
 
   // Constants can be considered to be not'ed values.
-  if (isa<ConstantInt>(V))
+  if (match(V, m_AnyIntegralConstant()))
     return true;
-
-  // A vector of constant integers can be inverted easily.
-  if (V->getType()->isVectorTy() && isa<Constant>(V)) {
-    unsigned NumElts = V->getType()->getVectorNumElements();
-    for (unsigned i = 0; i != NumElts; ++i) {
-      Constant *Elt = cast<Constant>(V)->getAggregateElement(i);
-      if (!Elt)
-        return false;
-
-      if (isa<UndefValue>(Elt))
-        continue;
-
-      if (!isa<ConstantInt>(Elt))
-        return false;
-    }
-    return true;
-  }
 
   // Compares can be inverted if all of their uses are being modified to use the
   // ~V.
@@ -185,38 +173,30 @@ static inline bool IsFreeToInvert(Value *V, bool WillInvertAllUses) {
   return false;
 }
 
-/// Specific patterns of overflow check idioms that we match.
-enum OverflowCheckFlavor {
-  OCF_UNSIGNED_ADD,
-  OCF_SIGNED_ADD,
-  OCF_UNSIGNED_SUB,
-  OCF_SIGNED_SUB,
-  OCF_UNSIGNED_MUL,
-  OCF_SIGNED_MUL,
+/// Given i1 V, can every user of V be freely adapted if V is changed to !V ?
+///
+/// See also: isFreeToInvert()
+static inline bool canFreelyInvertAllUsersOf(Value *V, Value *IgnoredUser) {
+  // Look at every user of V.
+  for (User *U : V->users()) {
+    if (U == IgnoredUser)
+      continue; // Don't consider this user.
 
-  OCF_INVALID
-};
-
-/// Returns the OverflowCheckFlavor corresponding to a overflow_with_op
-/// intrinsic.
-static inline OverflowCheckFlavor
-IntrinsicIDToOverflowCheckFlavor(unsigned ID) {
-  switch (ID) {
-  default:
-    return OCF_INVALID;
-  case Intrinsic::uadd_with_overflow:
-    return OCF_UNSIGNED_ADD;
-  case Intrinsic::sadd_with_overflow:
-    return OCF_SIGNED_ADD;
-  case Intrinsic::usub_with_overflow:
-    return OCF_UNSIGNED_SUB;
-  case Intrinsic::ssub_with_overflow:
-    return OCF_SIGNED_SUB;
-  case Intrinsic::umul_with_overflow:
-    return OCF_UNSIGNED_MUL;
-  case Intrinsic::smul_with_overflow:
-    return OCF_SIGNED_MUL;
+    auto *I = cast<Instruction>(U);
+    switch (I->getOpcode()) {
+    case Instruction::Select:
+    case Instruction::Br:
+      break; // Free to invert by swapping true/false values/destinations.
+    case Instruction::Xor: // Can invert 'xor' if it's a 'not', by ignoring it.
+      if (!match(I, m_Not(m_Value())))
+        return false; // Not a 'not'.
+      break;
+    default:
+      return false; // Don't know, likely not freely invertible.
+    }
+    // So far all users were free to invert...
   }
+  return true; // Can freely invert all users!
 }
 
 /// Some binary operators require special handling to avoid poison and undefined
@@ -371,6 +351,8 @@ public:
   Instruction *visitOr(BinaryOperator &I);
   Instruction *visitXor(BinaryOperator &I);
   Instruction *visitShl(BinaryOperator &I);
+  Instruction *foldVariableSignZeroExtensionOfVariableHighBitExtract(
+      BinaryOperator &OldAShr);
   Instruction *visitAShr(BinaryOperator &I);
   Instruction *visitLShr(BinaryOperator &I);
   Instruction *commonShiftTransforms(BinaryOperator &I);
@@ -469,7 +451,8 @@ private:
   /// operation in OperationResult and result of the overflow check in
   /// OverflowResult, and return true.  If no simplification is possible,
   /// returns false.
-  bool OptimizeOverflowCheck(OverflowCheckFlavor OCF, Value *LHS, Value *RHS,
+  bool OptimizeOverflowCheck(Instruction::BinaryOps BinaryOp, bool IsSigned,
+                             Value *LHS, Value *RHS,
                              Instruction &CtxI, Value *&OperationResult,
                              Constant *&OverflowResult);
 
@@ -590,7 +573,7 @@ private:
 
   Value *foldAndOfICmps(ICmpInst *LHS, ICmpInst *RHS, Instruction &CxtI);
   Value *foldOrOfICmps(ICmpInst *LHS, ICmpInst *RHS, Instruction &CxtI);
-  Value *foldXorOfICmps(ICmpInst *LHS, ICmpInst *RHS);
+  Value *foldXorOfICmps(ICmpInst *LHS, ICmpInst *RHS, BinaryOperator &I);
 
   /// Optimize (fcmp)&(fcmp) or (fcmp)|(fcmp).
   /// NOTE: Unlike most of instcombine, this returns a Value which should
@@ -725,7 +708,7 @@ public:
   }
 
   OverflowResult computeOverflowForSignedMul(const Value *LHS,
-	                                         const Value *RHS,
+                                             const Value *RHS,
                                              const Instruction *CxtI) const {
     return llvm::computeOverflowForSignedMul(LHS, RHS, DL, &AC, CxtI, &DT);
   }
@@ -753,8 +736,12 @@ public:
     return llvm::computeOverflowForSignedSub(LHS, RHS, DL, &AC, CxtI, &DT);
   }
 
+  OverflowResult computeOverflow(
+      Instruction::BinaryOps BinaryOp, bool IsSigned,
+      Value *LHS, Value *RHS, Instruction *CxtI) const;
+
   /// Maximum size of array considered when transforming.
-  uint64_t MaxArraySizeForCombine;
+  uint64_t MaxArraySizeForCombine = 0;
 
 private:
   /// Performs a few simplifications for operators which are associative
@@ -876,16 +863,19 @@ private:
                                     Constant *RHSC);
   Instruction *foldICmpAddOpConst(Value *X, const APInt &C,
                                   ICmpInst::Predicate Pred);
-  Instruction *foldICmpWithCastAndCast(ICmpInst &ICI);
+  Instruction *foldICmpWithCastOp(ICmpInst &ICI);
 
   Instruction *foldICmpUsingKnownBits(ICmpInst &Cmp);
   Instruction *foldICmpWithDominatingICmp(ICmpInst &Cmp);
   Instruction *foldICmpWithConstant(ICmpInst &Cmp);
   Instruction *foldICmpInstWithConstant(ICmpInst &Cmp);
   Instruction *foldICmpInstWithConstantNotInt(ICmpInst &Cmp);
-  Instruction *foldICmpBinOp(ICmpInst &Cmp);
+  Instruction *foldICmpBinOp(ICmpInst &Cmp, const SimplifyQuery &SQ);
   Instruction *foldICmpEquality(ICmpInst &Cmp);
+  Instruction *foldIRemByPowerOfTwoToBitTest(ICmpInst &I);
   Instruction *foldICmpWithZero(ICmpInst &Cmp);
+
+  Value *foldUnsignedMultiplicationOverflowCheck(ICmpInst &Cmp);
 
   Instruction *foldICmpSelectConstant(ICmpInst &Cmp, SelectInst *Select,
                                       ConstantInt *C);
@@ -903,6 +893,8 @@ private:
                                    const APInt &C);
   Instruction *foldICmpShrConstant(ICmpInst &Cmp, BinaryOperator *Shr,
                                    const APInt &C);
+  Instruction *foldICmpSRemConstant(ICmpInst &Cmp, BinaryOperator *UDiv,
+                                    const APInt &C);
   Instruction *foldICmpUDivConstant(ICmpInst &Cmp, BinaryOperator *UDiv,
                                     const APInt &C);
   Instruction *foldICmpDivConstant(ICmpInst &Cmp, BinaryOperator *Div,

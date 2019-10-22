@@ -16,7 +16,7 @@
 #include "WebAssemblyAsmPrinter.h"
 #include "WebAssemblyMachineFunctionInfo.h"
 #include "WebAssemblyRuntimeLibcallSignatures.h"
-#include "WebAssemblyUtilities.h"
+#include "MCTargetDesc/WebAssemblyMCTargetDesc.h"
 #include "llvm/CodeGen/AsmPrinter.h"
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/IR/Constants.h"
@@ -77,9 +77,11 @@ MCSymbol *WebAssemblyMCInstLower::GetExternalSymbolSymbol(
   // functions. It's OK to hardcode knowledge of specific symbols here; this
   // method is precisely there for fetching the signatures of known
   // Clang-provided symbols.
-  if (strcmp(Name, "__stack_pointer") == 0 ||
-      strcmp(Name, "__memory_base") == 0 || strcmp(Name, "__table_base") == 0) {
-    bool Mutable = strcmp(Name, "__stack_pointer") == 0;
+  if (strcmp(Name, "__stack_pointer") == 0 || strcmp(Name, "__tls_base") == 0 ||
+      strcmp(Name, "__memory_base") == 0 || strcmp(Name, "__table_base") == 0 ||
+      strcmp(Name, "__tls_size") == 0 || strcmp(Name, "__tls_align") == 0) {
+    bool Mutable =
+        strcmp(Name, "__stack_pointer") == 0 || strcmp(Name, "__tls_base") == 0;
     WasmSym->setType(wasm::WASM_SYMBOL_TYPE_GLOBAL);
     WasmSym->setGlobalType(wasm::WasmGlobalType{
         uint8_t(Subtarget.hasAddr64() ? wasm::WASM_TYPE_I64
@@ -113,7 +115,7 @@ MCSymbol *WebAssemblyMCInstLower::GetExternalSymbolSymbol(
     getLibcallSignature(Subtarget, Name, Returns, Params);
   }
   auto Signature =
-      make_unique<wasm::WasmSignature>(std::move(Returns), std::move(Params));
+      std::make_unique<wasm::WasmSignature>(std::move(Returns), std::move(Params));
   WasmSym->setSignature(Signature.get());
   Printer.addSignature(std::move(Signature));
 
@@ -221,11 +223,22 @@ void WebAssemblyMCInstLower::lower(const MachineInstr *MI,
 
           // call_indirect instructions have a callee operand at the end which
           // doesn't count as a param.
-          if (WebAssembly::isCallIndirect(*MI))
+          if (WebAssembly::isCallIndirect(MI->getOpcode()))
             Params.pop_back();
 
+          // return_call_indirect instructions have the return type of the
+          // caller
+          if (MI->getOpcode() == WebAssembly::RET_CALL_INDIRECT) {
+            const Function &F = MI->getMF()->getFunction();
+            const TargetMachine &TM = MI->getMF()->getTarget();
+            Type *RetTy = F.getReturnType();
+            SmallVector<MVT, 4> CallerRetTys;
+            computeLegalValueVTs(F, TM, RetTy, CallerRetTys);
+            valTypesFromMVTs(CallerRetTys, Returns);
+          }
+
           auto *WasmSym = cast<MCSymbolWasm>(Sym);
-          auto Signature = make_unique<wasm::WasmSignature>(std::move(Returns),
+          auto Signature = std::make_unique<wasm::WasmSignature>(std::move(Returns),
                                                             std::move(Params));
           WasmSym->setSignature(Signature.get());
           Printer.addSignature(std::move(Signature));

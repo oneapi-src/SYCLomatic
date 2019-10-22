@@ -9,14 +9,13 @@
 #pragma once
 
 #include <CL/cl.h>
-#include <CL/sycl/detail/cnri.h>
 #include <CL/sycl/detail/common.hpp>
 #include <CL/sycl/detail/os_util.hpp>
 #include <CL/sycl/range.hpp>
 
 #include <algorithm>
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
 #include <memory>
 #include <vector>
 
@@ -34,6 +33,11 @@ public:
 public:
   template <typename U> struct rebind { typedef aligned_allocator<U> other; };
 
+  aligned_allocator() = default;
+  ~aligned_allocator() = default;
+
+  explicit aligned_allocator(size_t Alignment) : MAlignment(Alignment) {}
+
   // Construct an object
   void construct(pointer Ptr, const_reference Val) {
     new (Ptr) value_type(Val);
@@ -45,15 +49,13 @@ public:
   pointer address(reference Val) const { return &Val; }
   const_pointer address(const_reference Val) { return &Val; }
 
-  // Allocate sufficiently aligned memory
+  // Allocate memory aligned to Alignment
   pointer allocate(size_t Size) {
     size_t NumBytes = Size * sizeof(value_type);
-    const size_t Alignment =
-        std::max<size_t>(getNextPowerOfTwo(sizeof(value_type)), 64);
-    NumBytes = ((NumBytes - 1) | (Alignment - 1)) + 1;
+    NumBytes = ((NumBytes - 1) | (MAlignment - 1)) + 1;
 
     pointer Result = reinterpret_cast<pointer>(
-        detail::OSUtil::alignedAlloc(Alignment, NumBytes));
+        detail::OSUtil::alignedAlloc(MAlignment, NumBytes));
     if (!Result)
       throw std::bad_alloc();
     return Result;
@@ -67,6 +69,12 @@ public:
 
   bool operator==(const aligned_allocator&) { return true; }
   bool operator!=(const aligned_allocator& rhs) { return false; }
+
+  void setAlignment(size_t Alignment) { MAlignment = Alignment; }
+
+private:
+  // By default assume the "worst" case
+  size_t MAlignment = 128;
 };
 } // namespace detail
 } // namespace sycl

@@ -107,6 +107,10 @@ void RTLsTy::LoadRTLs() {
               dynlib_handle, "__tgt_rtl_run_target_team_region")))
       continue;
 
+    // Optional functions
+    *((void**) &R.init_requires) = dlsym(
+        dynlib_handle, "__tgt_rtl_init_requires");
+
     // No devices are supported by this RTL?
     if (!(R.NumberOfDevices = R.number_of_devices())) {
       DP("No devices supported in this RTL\n");
@@ -262,8 +266,6 @@ void RTLsTy::RegisterLib(__tgt_bin_desc *desc) {
           Devices[start + device_id].DeviceID = start + device_id;
           // RTL local device ID
           Devices[start + device_id].RTLDeviceID = device_id;
-          // RTL requires flags
-          Devices[start + device_id].RTLRequiresFlags = RequiresFlags;
         }
 
         // Initialize the index of this RTL and save it in the used RTLs.

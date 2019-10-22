@@ -308,7 +308,7 @@ void WebAssemblyCFGStackify::placeBlockMarker(MachineBasicBlock &MBB) {
 
   // Add the BLOCK.
 
-  // 'br_on_exn' extracts except_ref object and pushes variable number of values
+  // 'br_on_exn' extracts exnref object and pushes variable number of values
   // depending on its tag. For C++ exception, its a single i32 value, and the
   // generated code will be in the form of:
   // block i32
@@ -694,8 +694,26 @@ void WebAssemblyCFGStackify::removeUnnecessaryInstrs(MachineFunction &MF) {
   }
 }
 
+// When MBB is split into MBB and Split, we should unstackify defs in MBB that
+// have their uses in Split.
+static void unstackifyVRegsUsedInSplitBB(MachineBasicBlock &MBB,
+                                         MachineBasicBlock &Split,
+                                         WebAssemblyFunctionInfo &MFI,
+                                         MachineRegisterInfo &MRI) {
+  for (auto &MI : Split) {
+    for (auto &MO : MI.explicit_uses()) {
+      if (!MO.isReg() || Register::isPhysicalRegister(MO.getReg()))
+        continue;
+      if (MachineInstr *Def = MRI.getUniqueVRegDef(MO.getReg()))
+        if (Def->getParent() == &MBB)
+          MFI.unstackifyVReg(MO.getReg());
+    }
+  }
+}
+
 bool WebAssemblyCFGStackify::fixUnwindMismatches(MachineFunction &MF) {
   const auto &TII = *MF.getSubtarget<WebAssemblySubtarget>().getInstrInfo();
+  auto &MFI = *MF.getInfo<WebAssemblyFunctionInfo>();
   MachineRegisterInfo &MRI = MF.getRegInfo();
 
   // Linearizing the control flow by placing TRY / END_TRY markers can create
@@ -766,11 +784,11 @@ bool WebAssemblyCFGStackify::fixUnwindMismatches(MachineFunction &MF) {
   // Note that the new wrapping block/end_block will be generated later in
   // placeBlockMarker.
   //
-  // TODO Currently local.set and local.gets are generated to move except_ref
-  // value created by catches. That's because we don't support yielding values
-  // from a block in LLVM machine IR yet, even though it is supported by wasm.
-  // Delete unnecessary local.get/local.sets once yielding values from a block
-  // is supported. The full EH spec requires multi-value support to do this, but
+  // TODO Currently local.set and local.gets are generated to move exnref value
+  // created by catches. That's because we don't support yielding values from a
+  // block in LLVM machine IR yet, even though it is supported by wasm. Delete
+  // unnecessary local.get/local.sets once yielding values from a block is
+  // supported. The full EH spec requires multi-value support to do this, but
   // for C++ we don't yet need it because we only throw a single i32.
   //
   // ---
@@ -834,7 +852,7 @@ bool WebAssemblyCFGStackify::fixUnwindMismatches(MachineFunction &MF) {
   DenseMap<MachineBasicBlock *, SmallVector<TryRange, 4>> UnwindDestToTryRanges;
   // In new CFG, <destination to branch to, a vector of try ranges>
   DenseMap<MachineBasicBlock *, SmallVector<TryRange, 4>> BrDestToTryRanges;
-  // In new CFG, <destination to branch to, register containing except_ref>
+  // In new CFG, <destination to branch to, register containing exnref>
   DenseMap<MachineBasicBlock *, unsigned> BrDestToExnReg;
 
   // Gather possibly throwing calls (i.e., previously invokes) whose current
@@ -894,7 +912,7 @@ bool WebAssemblyCFGStackify::fixUnwindMismatches(MachineFunction &MF) {
 
       // We wrap up the current range when we see a marker even if we haven't
       // finished a BB.
-      if (RangeEnd && WebAssembly::isMarker(MI)) {
+      if (RangeEnd && WebAssembly::isMarker(MI.getOpcode())) {
         NeedAppendixBlock = true;
         // Record the range. nullptr here means the unwind destination is the
         // caller.
@@ -936,8 +954,7 @@ bool WebAssemblyCFGStackify::fixUnwindMismatches(MachineFunction &MF) {
   // of the function with a local.get and a rethrow instruction.
   if (NeedAppendixBlock) {
     auto *AppendixBB = getAppendixBlock(MF);
-    unsigned ExnReg =
-        MRI.createVirtualRegister(&WebAssembly::EXCEPT_REFRegClass);
+    Register ExnReg = MRI.createVirtualRegister(&WebAssembly::EXNREFRegClass);
     BuildMI(AppendixBB, DebugLoc(), TII.get(WebAssembly::RETHROW))
         .addReg(ExnReg);
     // These instruction ranges should branch to this appendix BB.
@@ -1008,6 +1025,7 @@ bool WebAssemblyCFGStackify::fixUnwindMismatches(MachineFunction &MF) {
     BrDest->insert(BrDest->end(), EndTry->removeFromParent());
     // Take out the handler body from EH pad to the new branch destination BB.
     BrDest->splice(BrDest->end(), EHPad, SplitPos, EHPad->end());
+    unstackifyVRegsUsedInSplitBB(*EHPad, *BrDest, MFI, MRI);
     // Fix predecessor-successor relationship.
     BrDest->transferSuccessors(EHPad);
     EHPad->addSuccessor(BrDest);
@@ -1123,6 +1141,7 @@ bool WebAssemblyCFGStackify::fixUnwindMismatches(MachineFunction &MF) {
       // new nested continuation BB.
       NestedCont->splice(NestedCont->end(), MBB,
                          std::next(RangeEnd->getIterator()), MBB->end());
+      unstackifyVRegsUsedInSplitBB(*MBB, *NestedCont, MFI, MRI);
       registerTryScope(NestedTry, NestedEndTry, NestedEHPad);
 
       // Fix predecessor-successor relationship.
@@ -1225,8 +1244,8 @@ void WebAssemblyCFGStackify::fixEndsAtEndOfFunction(MachineFunction &MF) {
   case MVT::v2f64:
     RetType = WebAssembly::ExprType::V128;
     break;
-  case MVT::ExceptRef:
-    RetType = WebAssembly::ExprType::ExceptRef;
+  case MVT::exnref:
+    RetType = WebAssembly::ExprType::Exnref;
     break;
   default:
     llvm_unreachable("unexpected return type");

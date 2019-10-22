@@ -13,6 +13,7 @@ static_library("google") {
   ]
   sources = [
     "AvoidCStyleCastsCheck.cpp",
+    "AvoidNSObjectNewCheck.cpp",
     "AvoidThrowingObjCExceptionCheck.cpp",
     "AvoidUnderscoreInGoogletestNameCheck.cpp",
     "DefaultArgumentsCheck.cpp",
@@ -27,6 +28,7 @@ static_library("google") {
     "OverloadedUnaryAndCheck.cpp",
     "TodoCommentCheck.cpp",
     "UnnamedNamespaceInHeaderCheck.cpp",
+    "UpgradeGoogletestCaseCheck.cpp",
     "UsingNamespaceDirectiveCheck.cpp",
   ]
 }

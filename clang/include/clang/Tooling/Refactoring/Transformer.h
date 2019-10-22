@@ -19,6 +19,7 @@
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/ASTMatchers/ASTMatchersInternal.h"
 #include "clang/Tooling/Refactoring/AtomicChange.h"
+#include "clang/Tooling/Refactoring/MatchConsumer.h"
 #include "clang/Tooling/Refactoring/RangeSelector.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
@@ -32,11 +33,7 @@
 namespace clang {
 namespace tooling {
 
-// Note that \p TextGenerator is allowed to fail, e.g. when trying to access a
-// matched node that was not bound.  Allowing this to fail simplifies error
-// handling for interactive tools like clang-query.
-using TextGenerator = std::function<Expected<std::string>(
-    const ast_matchers::MatchFinder::MatchResult &)>;
+using TextGenerator = MatchConsumer<std::string>;
 
 /// Wraps a string as a TextGenerator.
 inline TextGenerator text(std::string M) {
@@ -86,6 +83,12 @@ struct ASTEdit {
   TextGenerator Note;
 };
 
+/// Format of the path in an include directive -- angle brackets or quotes.
+enum class IncludeFormat {
+  Quoted,
+  Angled,
+};
+
 /// Description of a source-code transformation.
 //
 // A *rewrite rule* describes a transformation of source code. A simple rule
@@ -114,6 +117,10 @@ struct RewriteRule {
     ast_matchers::internal::DynTypedMatcher Matcher;
     SmallVector<ASTEdit, 1> Edits;
     TextGenerator Explanation;
+    // Include paths to add to the file affected by this case.  These are
+    // bundled with the `Case`, rather than the `RewriteRule`, because each case
+    // might have different associated changes to the includes.
+    std::vector<std::pair<std::string, IncludeFormat>> AddedIncludes;
   };
   // We expect RewriteRules will most commonly include only one case.
   SmallVector<Case, 1> Cases;
@@ -125,21 +132,34 @@ struct RewriteRule {
 
 /// Convenience function for constructing a simple \c RewriteRule.
 RewriteRule makeRule(ast_matchers::internal::DynTypedMatcher M,
-                     SmallVector<ASTEdit, 1> Edits);
+                     SmallVector<ASTEdit, 1> Edits,
+                     TextGenerator Explanation = nullptr);
 
 /// Convenience overload of \c makeRule for common case of only one edit.
 inline RewriteRule makeRule(ast_matchers::internal::DynTypedMatcher M,
-                            ASTEdit Edit) {
+                            ASTEdit Edit,
+                            TextGenerator Explanation = nullptr) {
   SmallVector<ASTEdit, 1> Edits;
   Edits.emplace_back(std::move(Edit));
-  return makeRule(std::move(M), std::move(Edits));
+  return makeRule(std::move(M), std::move(Edits), std::move(Explanation));
 }
 
-/// Applies the first rule whose pattern matches; other rules are ignored.
-///
-/// N.B. All of the rules must use the same kind of matcher (that is, share a
-/// base class in the AST hierarchy).  However, this constraint is caused by an
-/// implementation detail and should be lifted in the future.
+/// For every case in Rule, adds an include directive for the given header. The
+/// common use is assumed to be a rule with only one case. For example, to
+/// replace a function call and add headers corresponding to the new code, one
+/// could write:
+/// \code
+///   auto R = makeRule(callExpr(callee(functionDecl(hasName("foo")))),
+///            change(text("bar()")));
+///   AddInclude(R, "path/to/bar_header.h");
+///   AddInclude(R, "vector", IncludeFormat::Angled);
+/// \endcode
+void addInclude(RewriteRule &Rule, llvm::StringRef Header,
+                IncludeFormat Format = IncludeFormat::Quoted);
+
+/// Applies the first rule whose pattern matches; other rules are ignored.  If
+/// the matchers are independent then order doesn't matter. In that case,
+/// `applyFirst` is simply joining the set of rules into one.
 //
 // `applyFirst` is like an `anyOf` matcher with an edit action attached to each
 // of its cases. Anywhere you'd use `anyOf(m1.bind("id1"), m2.bind("id2"))` and
@@ -191,6 +211,23 @@ inline ASTEdit change(TextGenerator Replacement) {
   return change(node(RewriteRule::RootID), std::move(Replacement));
 }
 
+/// Inserts \p Replacement before \p S, leaving the source selected by \S
+/// unchanged.
+inline ASTEdit insertBefore(RangeSelector S, TextGenerator Replacement) {
+  return change(before(std::move(S)), std::move(Replacement));
+}
+
+/// Inserts \p Replacement after \p S, leaving the source selected by \S
+/// unchanged.
+inline ASTEdit insertAfter(RangeSelector S, TextGenerator Replacement) {
+  return change(after(std::move(S)), std::move(Replacement));
+}
+
+/// Removes the source selected by \p S.
+inline ASTEdit remove(RangeSelector S) {
+  return change(std::move(S), text(""));
+}
+
 /// The following three functions are a low-level part of the RewriteRule
 /// API. We expose them for use in implementing the fixtures that interpret
 /// RewriteRule, like Transformer and TransfomerTidy, or for more advanced
@@ -201,7 +238,24 @@ inline ASTEdit change(TextGenerator Replacement) {
 // public and well-supported and move them out of `detail`.
 namespace detail {
 /// Builds a single matcher for the rule, covering all of the rule's cases.
+/// Only supports Rules whose cases' matchers share the same base "kind"
+/// (`Stmt`, `Decl`, etc.)  Deprecated: use `buildMatchers` instead, which
+/// supports mixing matchers of different kinds.
 ast_matchers::internal::DynTypedMatcher buildMatcher(const RewriteRule &Rule);
+
+/// Builds a set of matchers that cover the rule (one for each distinct node
+/// matcher base kind: Stmt, Decl, etc.). Node-matchers for `QualType` and
+/// `Type` are not permitted, since such nodes carry no source location
+/// information and are therefore not relevant for rewriting. If any such
+/// matchers are included, will return an empty vector.
+std::vector<ast_matchers::internal::DynTypedMatcher>
+buildMatchers(const RewriteRule &Rule);
+
+/// Gets the beginning location of the source matched by a rewrite rule. If the
+/// match occurs within a macro expansion, returns the beginning of the
+/// expansion point. `Result` must come from the matching of a rewrite rule.
+SourceLocation
+getRuleMatchLoc(const ast_matchers::MatchFinder::MatchResult &Result);
 
 /// Returns the \c Case of \c Rule that was selected in the match result.
 /// Assumes a matcher built with \c buildMatcher.

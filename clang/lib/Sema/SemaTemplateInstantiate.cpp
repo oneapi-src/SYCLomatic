@@ -19,6 +19,7 @@
 #include "clang/AST/Expr.h"
 #include "clang/AST/PrettyDeclStackTrace.h"
 #include "clang/Basic/LangOptions.h"
+#include "clang/Basic/Stack.h"
 #include "clang/Sema/DeclSpec.h"
 #include "clang/Sema/Initialization.h"
 #include "clang/Sema/Lookup.h"
@@ -365,6 +366,11 @@ void Sema::pushCodeSynthesisContext(CodeSynthesisContext Ctx) {
 
   if (!Ctx.isInstantiationRecord())
     ++NonInstantiationEntries;
+
+  // Check to see if we're low on stack space. We can't do anything about this
+  // from here, but we can at least warn the user.
+  if (isStackNearlyExhausted())
+    warnStackExhausted(Ctx.PointOfInstantiation);
 }
 
 void Sema::popCodeSynthesisContext() {
@@ -1181,6 +1187,30 @@ TemplateInstantiator::TransformPredefinedExpr(PredefinedExpr *E) {
   if (!E->isTypeDependent())
     return E;
 
+  if (E->getIdentKind() == PredefinedExpr::UniqueStableNameExpr) {
+    EnterExpressionEvaluationContext Unevaluated(
+        SemaRef, Sema::ExpressionEvaluationContext::Unevaluated);
+
+    ExprResult SubExpr = getDerived().TransformExpr(E->getExpr());
+    if (SubExpr.isInvalid())
+      return ExprError();
+
+    if (!getDerived().AlwaysRebuild() && SubExpr.get() == E->getExpr())
+      return E;
+
+    return getSema().BuildUniqueStableName(E->getLocation(), SubExpr.get());
+  }
+
+  if (E->getIdentKind() == PredefinedExpr::UniqueStableNameType) {
+    TypeSourceInfo *Info = getDerived().TransformType(E->getTypeSourceInfo());
+    if (!Info)
+      return ExprError();
+
+    if (!getDerived().AlwaysRebuild() && Info == E->getTypeSourceInfo())
+      return E;
+    return getSema().BuildUniqueStableName(E->getLocation(), Info);
+  }
+
   return getSema().BuildPredefinedExpr(E->getLocation(), E->getIdentKind());
 }
 
@@ -1252,9 +1282,8 @@ TemplateInstantiator::TransformLoopHintAttr(const LoopHintAttr *LH) {
 
   // Create new LoopHintValueAttr with integral expression in place of the
   // non-type template parameter.
-  return LoopHintAttr::CreateImplicit(
-      getSema().Context, LH->getSemanticSpelling(), LH->getOption(),
-      LH->getState(), TransformedExpr, LH->getRange());
+  return LoopHintAttr::CreateImplicit(getSema().Context, LH->getOption(),
+                                      LH->getState(), TransformedExpr, *LH);
 }
 
 ExprResult TemplateInstantiator::transformNonTypeTemplateParmRef(
@@ -1368,9 +1397,11 @@ TemplateInstantiator::TransformFunctionParmPackExpr(FunctionParmPackExpr *E) {
     Vars.push_back(D);
   }
 
-  return FunctionParmPackExpr::Create(getSema().Context, T,
-                                      E->getParameterPack(),
-                                      E->getParameterPackLocation(), Vars);
+  auto *PackExpr =
+      FunctionParmPackExpr::Create(getSema().Context, T, E->getParameterPack(),
+                                   E->getParameterPackLocation(), Vars);
+  getSema().MarkFunctionParmPackReferenced(PackExpr);
+  return PackExpr;
 }
 
 ExprResult
@@ -1389,8 +1420,10 @@ TemplateInstantiator::TransformFunctionParmPackRefExpr(DeclRefExpr *E,
       QualType T = TransformType(E->getType());
       if (T.isNull())
         return ExprError();
-      return FunctionParmPackExpr::Create(getSema().Context, T, PD,
-                                          E->getExprLoc(), *Pack);
+      auto *PackExpr = FunctionParmPackExpr::Create(getSema().Context, T, PD,
+                                                    E->getExprLoc(), *Pack);
+      getSema().MarkFunctionParmPackReferenced(PackExpr);
+      return PackExpr;
     }
 
     TransformedDecl = (*Pack)[getSema().ArgumentPackSubstitutionIndex];

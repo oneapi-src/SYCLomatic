@@ -104,6 +104,8 @@ const char *Section::GetTypeAsCString() const {
     return "dwarf-str-offsets-dwo";
   case eSectionTypeDWARFDebugTypes:
     return "dwarf-types";
+  case eSectionTypeDWARFDebugTypesDwo:
+    return "dwarf-types-dwo";
   case eSectionTypeDWARFDebugNames:
     return "dwarf-names";
   case eSectionTypeELFSymbolTable:
@@ -267,7 +269,7 @@ bool Section::ResolveContainedAddress(addr_t offset, Address &so_addr,
 
 bool Section::ContainsFileAddress(addr_t vm_addr) const {
   const addr_t file_addr = GetFileAddress();
-  if (file_addr != LLDB_INVALID_ADDRESS) {
+  if (file_addr != LLDB_INVALID_ADDRESS && !IsThreadSpecific()) {
     if (file_addr <= vm_addr) {
       const addr_t offset = (vm_addr - file_addr) * m_target_byte_size;
       return offset < GetByteSize();
@@ -342,7 +344,7 @@ void Section::DumpName(Stream *s) const {
     s->PutChar('.');
   } else {
     // The top most section prints the module basename
-    const char *name = NULL;
+    const char *name = nullptr;
     ModuleSP module_sp(GetModule());
 
     if (m_obj_file) {
@@ -414,10 +416,6 @@ lldb::offset_t Section::GetSectionData(DataExtractor &section_data) {
 }
 
 #pragma mark SectionList
-
-SectionList::SectionList() : m_sections() {}
-
-SectionList::~SectionList() {}
 
 SectionList &SectionList::operator=(const SectionList &rhs) {
   if (this != &rhs)
@@ -509,7 +507,7 @@ SectionList::FindSectionByName(ConstString section_dstr) const {
     const_iterator sect_iter;
     const_iterator end = m_sections.end();
     for (sect_iter = m_sections.begin();
-         sect_iter != end && sect_sp.get() == NULL; ++sect_iter) {
+         sect_iter != end && sect_sp.get() == nullptr; ++sect_iter) {
       Section *child_section = sect_iter->get();
       if (child_section) {
         if (child_section->GetName() == section_dstr) {
@@ -530,7 +528,7 @@ SectionSP SectionList::FindSectionByID(user_id_t sect_id) const {
     const_iterator sect_iter;
     const_iterator end = m_sections.end();
     for (sect_iter = m_sections.begin();
-         sect_iter != end && sect_sp.get() == NULL; ++sect_iter) {
+         sect_iter != end && sect_sp.get() == nullptr; ++sect_iter) {
       if ((*sect_iter)->GetID() == sect_id) {
         sect_sp = *sect_iter;
         break;
@@ -567,7 +565,7 @@ SectionSP SectionList::FindSectionContainingFileAddress(addr_t vm_addr,
   const_iterator sect_iter;
   const_iterator end = m_sections.end();
   for (sect_iter = m_sections.begin();
-       sect_iter != end && sect_sp.get() == NULL; ++sect_iter) {
+       sect_iter != end && sect_sp.get() == nullptr; ++sect_iter) {
     Section *sect = sect_iter->get();
     if (sect->ContainsFileAddress(vm_addr)) {
       // The file address is in this section. We need to make sure one of our
@@ -577,7 +575,7 @@ SectionSP SectionList::FindSectionContainingFileAddress(addr_t vm_addr,
         sect_sp = sect->GetChildren().FindSectionContainingFileAddress(
             vm_addr, depth - 1);
 
-      if (sect_sp.get() == NULL && !sect->IsFake())
+      if (sect_sp.get() == nullptr && !sect->IsFake())
         sect_sp = *sect_iter;
     }
   }
@@ -585,7 +583,7 @@ SectionSP SectionList::FindSectionContainingFileAddress(addr_t vm_addr,
 }
 
 bool SectionList::ContainsSection(user_id_t sect_id) const {
-  return FindSectionByID(sect_id).get() != NULL;
+  return FindSectionByID(sect_id).get() != nullptr;
 }
 
 void SectionList::Dump(Stream *s, Target *target, bool show_header,
@@ -608,7 +606,7 @@ void SectionList::Dump(Stream *s, Target *target, bool show_header,
   const_iterator sect_iter;
   const_iterator end = m_sections.end();
   for (sect_iter = m_sections.begin(); sect_iter != end; ++sect_iter) {
-    (*sect_iter)->Dump(s, target_has_loaded_sections ? target : NULL, depth);
+    (*sect_iter)->Dump(s, target_has_loaded_sections ? target : nullptr, depth);
   }
 
   if (show_header && !m_sections.empty())

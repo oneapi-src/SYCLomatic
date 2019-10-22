@@ -54,7 +54,7 @@ public:
 
   Options *GetOptions() override;
 
-  int HandleCompletion(CompletionRequest &request) override;
+  void HandleCompletion(CompletionRequest &request) override;
 
 protected:
   // IOHandler::Delegate functions
@@ -68,7 +68,7 @@ protected:
 
   bool EvaluateExpression(llvm::StringRef expr, Stream *output_stream,
                           Stream *error_stream,
-                          CommandReturnObject *result = NULL);
+                          CommandReturnObject *result = nullptr);
 
   void GetMultilineExpression();
 

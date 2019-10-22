@@ -1262,6 +1262,22 @@ TEST(APIntTest, StringBitsNeeded10) {
   EXPECT_EQ(5U, APInt::getBitsNeeded("-10", 10));
   EXPECT_EQ(6U, APInt::getBitsNeeded("-19", 10));
   EXPECT_EQ(6U, APInt::getBitsNeeded("-20", 10));
+
+  EXPECT_EQ(1U, APInt::getBitsNeeded("-1", 10));
+  EXPECT_EQ(2U, APInt::getBitsNeeded("-2", 10));
+  EXPECT_EQ(3U, APInt::getBitsNeeded("-4", 10));
+  EXPECT_EQ(4U, APInt::getBitsNeeded("-8", 10));
+  EXPECT_EQ(5U, APInt::getBitsNeeded("-16", 10));
+  EXPECT_EQ(6U, APInt::getBitsNeeded("-23", 10));
+  EXPECT_EQ(6U, APInt::getBitsNeeded("-32", 10));
+  EXPECT_EQ(7U, APInt::getBitsNeeded("-64", 10));
+  EXPECT_EQ(8U, APInt::getBitsNeeded("-127", 10));
+  EXPECT_EQ(8U, APInt::getBitsNeeded("-128", 10));
+  EXPECT_EQ(9U, APInt::getBitsNeeded("-255", 10));
+  EXPECT_EQ(9U, APInt::getBitsNeeded("-256", 10));
+  EXPECT_EQ(10U, APInt::getBitsNeeded("-512", 10));
+  EXPECT_EQ(11U, APInt::getBitsNeeded("-1024", 10));
+  EXPECT_EQ(12U, APInt::getBitsNeeded("-1025", 10));
 }
 
 TEST(APIntTest, StringBitsNeeded16) {
@@ -1374,15 +1390,15 @@ TEST(APIntTest, magicu) {
 #ifdef GTEST_HAS_DEATH_TEST
 #ifndef NDEBUG
 TEST(APIntTest, StringDeath) {
-  EXPECT_DEATH(APInt(0, "", 0), "Bitwidth too small");
-  EXPECT_DEATH(APInt(32, "", 0), "Invalid string length");
-  EXPECT_DEATH(APInt(32, "0", 0), "Radix should be 2, 8, 10, 16, or 36!");
-  EXPECT_DEATH(APInt(32, "", 10), "Invalid string length");
-  EXPECT_DEATH(APInt(32, "-", 10), "String is only a sign, needs a value.");
-  EXPECT_DEATH(APInt(1, "1234", 10), "Insufficient bit width");
-  EXPECT_DEATH(APInt(32, "\0", 10), "Invalid string length");
-  EXPECT_DEATH(APInt(32, StringRef("1\02", 3), 10), "Invalid character in digit string");
-  EXPECT_DEATH(APInt(32, "1L", 10), "Invalid character in digit string");
+  EXPECT_DEATH((void)APInt(0, "", 0), "Bitwidth too small");
+  EXPECT_DEATH((void)APInt(32, "", 0), "Invalid string length");
+  EXPECT_DEATH((void)APInt(32, "0", 0), "Radix should be 2, 8, 10, 16, or 36!");
+  EXPECT_DEATH((void)APInt(32, "", 10), "Invalid string length");
+  EXPECT_DEATH((void)APInt(32, "-", 10), "String is only a sign, needs a value.");
+  EXPECT_DEATH((void)APInt(1, "1234", 10), "Insufficient bit width");
+  EXPECT_DEATH((void)APInt(32, "\0", 10), "Invalid string length");
+  EXPECT_DEATH((void)APInt(32, StringRef("1\02", 3), 10), "Invalid character in digit string");
+  EXPECT_DEATH((void)APInt(32, "1L", 10), "Invalid character in digit string");
 }
 #endif
 #endif
@@ -1842,6 +1858,64 @@ TEST(APIntTest, insertBits) {
   EXPECT_EQ(i260.extractBits(4, 256).getZExtValue(), 0x000000000000000Full);
 }
 
+TEST(APIntTest, insertBitsUInt64) {
+  // Tests cloned from insertBits but adapted to the numBits <= 64 constraint
+  uint64_t iSrc = 0x00123456;
+
+  // Direct copy.
+  APInt i31(31, 0x76543210ull);
+  i31.insertBits(iSrc, 0, 31);
+  EXPECT_EQ(static_cast<int64_t>(0x00123456ull), i31.getSExtValue());
+
+  // Single word src/dst insertion.
+  APInt i63(63, 0x01234567FFFFFFFFull);
+  i63.insertBits(iSrc, 4, 31);
+  EXPECT_EQ(static_cast<int64_t>(0x012345600123456Full), i63.getSExtValue());
+
+  // Insert single word src into one word of dst.
+  APInt i120(120, UINT64_MAX, true);
+  i120.insertBits(iSrc, 8, 31);
+  EXPECT_EQ(static_cast<int64_t>(0xFFFFFF80123456FFull), i120.getSExtValue());
+
+  // Insert single word src into two words of dst.
+  APInt i127(127, UINT64_MAX, true);
+  i127.insertBits(iSrc, 48, 31);
+  EXPECT_EQ(i127.extractBits(64, 0).getZExtValue(), 0x3456FFFFFFFFFFFFull);
+  EXPECT_EQ(i127.extractBits(63, 64).getZExtValue(), 0x7FFFFFFFFFFF8012ull);
+
+  // Insert on word boundaries.
+  APInt i128(128, 0);
+  i128.insertBits(UINT64_MAX, 0, 64);
+  i128.insertBits(UINT64_MAX, 64, 64);
+  EXPECT_EQ(-1, i128.getSExtValue());
+
+  APInt i256(256, UINT64_MAX, true);
+  i256.insertBits(0, 0, 64);
+  i256.insertBits(0, 64, 1);
+  i256.insertBits(0, 64, 64);
+  i256.insertBits(0, 128, 5);
+  i256.insertBits(0, 128, 64);
+  i256.insertBits(0, 192, 64);
+  EXPECT_EQ(0u, i256.getSExtValue());
+
+  APInt i257(257, 0);
+  i257.insertBits(APInt(96, UINT64_MAX, true), 64);
+  EXPECT_EQ(i257.extractBitsAsZExtValue(64, 0), 0x0000000000000000ull);
+  EXPECT_EQ(i257.extractBitsAsZExtValue(64, 64), 0xFFFFFFFFFFFFFFFFull);
+  EXPECT_EQ(i257.extractBitsAsZExtValue(64, 128), 0x00000000FFFFFFFFull);
+  EXPECT_EQ(i257.extractBitsAsZExtValue(64, 192), 0x0000000000000000ull);
+  EXPECT_EQ(i257.extractBitsAsZExtValue(1, 256), 0x0000000000000000ull);
+
+  // General insertion.
+  APInt i260(260, UINT64_MAX, true);
+  i260.insertBits(APInt(129, 1ull << 48), 15);
+  EXPECT_EQ(i260.extractBitsAsZExtValue(64, 0), 0x8000000000007FFFull);
+  EXPECT_EQ(i260.extractBitsAsZExtValue(64, 64), 0x0000000000000000ull);
+  EXPECT_EQ(i260.extractBitsAsZExtValue(64, 128), 0xFFFFFFFFFFFF0000ull);
+  EXPECT_EQ(i260.extractBitsAsZExtValue(64, 192), 0xFFFFFFFFFFFFFFFFull);
+  EXPECT_EQ(i260.extractBitsAsZExtValue(4, 256), 0x000000000000000Full);
+}
+
 TEST(APIntTest, extractBits) {
   APInt i32(32, 0x1234567);
   EXPECT_EQ(0x3456, i32.extractBits(16, 4));
@@ -1863,6 +1937,33 @@ TEST(APIntTest, extractBits) {
             APInt(144, "281474976710655", 10).extractBits(48, 0));
   EXPECT_EQ(APInt(48, 0x00007fffffffffffull),
             APInt(144, "281474976710655", 10).extractBits(48, 1));
+}
+
+TEST(APIntTest, extractBitsAsZExtValue) {
+  // Tests based on extractBits
+  APInt i32(32, 0x1234567);
+  EXPECT_EQ(0x3456u, i32.extractBitsAsZExtValue(16, 4));
+
+  APInt i257(257, 0xFFFFFFFFFF0000FFull, true);
+  EXPECT_EQ(0xFFu, i257.extractBitsAsZExtValue(16, 0));
+  EXPECT_EQ((0xFFu >> 1), i257.extractBitsAsZExtValue(16, 1));
+  EXPECT_EQ(0xFFFFFFFFull, i257.extractBitsAsZExtValue(32, 64));
+  EXPECT_EQ(0xFFFFFFFFFFFFFFFFull, i257.extractBitsAsZExtValue(64, 128));
+  EXPECT_EQ(0xFFFFFFFFFFFFFFFFull, i257.extractBitsAsZExtValue(64, 192));
+  EXPECT_EQ(0xFFFFFFFFFFFFFFFFull, i257.extractBitsAsZExtValue(64, 191));
+  EXPECT_EQ(0x3u, i257.extractBitsAsZExtValue(2, 255));
+  EXPECT_EQ(0xFFFFFFFFFF80007Full, i257.extractBitsAsZExtValue(64, 1));
+  EXPECT_EQ(0xFFFFFFFFFFFFFFFFull, i257.extractBitsAsZExtValue(64, 65));
+  EXPECT_EQ(0xFFFFFFFFFF80007Full, i257.extractBitsAsZExtValue(64, 1));
+  EXPECT_EQ(0xFFFFFFFFFFFFFFFFull, i257.extractBitsAsZExtValue(64, 65));
+  EXPECT_EQ(0x1ull, i257.extractBitsAsZExtValue(1, 129));
+
+  EXPECT_EQ(APInt(48, 0),
+            APInt(144, "281474976710655", 10).extractBitsAsZExtValue(48, 48));
+  EXPECT_EQ(APInt(48, 0x0000ffffffffffffull),
+            APInt(144, "281474976710655", 10).extractBitsAsZExtValue(48, 0));
+  EXPECT_EQ(APInt(48, 0x00007fffffffffffull),
+            APInt(144, "281474976710655", 10).extractBitsAsZExtValue(48, 1));
 }
 
 TEST(APIntTest, getLowBitsSet) {
@@ -2099,6 +2200,71 @@ TEST(APIntTest, getHiBits) {
   APInt i128(128, 0xfa);
   i128.setHighBits(2);
   EXPECT_EQ(0xc, i128.getHiBits(4));
+}
+
+TEST(APIntTest, clearLowBits) {
+  APInt i64hi32 = APInt::getAllOnesValue(64);
+  i64hi32.clearLowBits(32);
+  EXPECT_EQ(32u, i64hi32.countLeadingOnes());
+  EXPECT_EQ(0u, i64hi32.countLeadingZeros());
+  EXPECT_EQ(64u, i64hi32.getActiveBits());
+  EXPECT_EQ(32u, i64hi32.countTrailingZeros());
+  EXPECT_EQ(0u, i64hi32.countTrailingOnes());
+  EXPECT_EQ(32u, i64hi32.countPopulation());
+
+  APInt i128hi64 = APInt::getAllOnesValue(128);
+  i128hi64.clearLowBits(64);
+  EXPECT_EQ(64u, i128hi64.countLeadingOnes());
+  EXPECT_EQ(0u, i128hi64.countLeadingZeros());
+  EXPECT_EQ(128u, i128hi64.getActiveBits());
+  EXPECT_EQ(64u, i128hi64.countTrailingZeros());
+  EXPECT_EQ(0u, i128hi64.countTrailingOnes());
+  EXPECT_EQ(64u, i128hi64.countPopulation());
+
+  APInt i128hi24 = APInt::getAllOnesValue(128);
+  i128hi24.clearLowBits(104);
+  EXPECT_EQ(24u, i128hi24.countLeadingOnes());
+  EXPECT_EQ(0u, i128hi24.countLeadingZeros());
+  EXPECT_EQ(128u, i128hi24.getActiveBits());
+  EXPECT_EQ(104u, i128hi24.countTrailingZeros());
+  EXPECT_EQ(0u, i128hi24.countTrailingOnes());
+  EXPECT_EQ(24u, i128hi24.countPopulation());
+
+  APInt i128hi104 = APInt::getAllOnesValue(128);
+  i128hi104.clearLowBits(24);
+  EXPECT_EQ(104u, i128hi104.countLeadingOnes());
+  EXPECT_EQ(0u, i128hi104.countLeadingZeros());
+  EXPECT_EQ(128u, i128hi104.getActiveBits());
+  EXPECT_EQ(24u, i128hi104.countTrailingZeros());
+  EXPECT_EQ(0u, i128hi104.countTrailingOnes());
+  EXPECT_EQ(104u, i128hi104.countPopulation());
+
+  APInt i128hi0 = APInt::getAllOnesValue(128);
+  i128hi0.clearLowBits(128);
+  EXPECT_EQ(0u, i128hi0.countLeadingOnes());
+  EXPECT_EQ(128u, i128hi0.countLeadingZeros());
+  EXPECT_EQ(0u, i128hi0.getActiveBits());
+  EXPECT_EQ(128u, i128hi0.countTrailingZeros());
+  EXPECT_EQ(0u, i128hi0.countTrailingOnes());
+  EXPECT_EQ(0u, i128hi0.countPopulation());
+
+  APInt i80hi1 = APInt::getAllOnesValue(80);
+  i80hi1.clearLowBits(79);
+  EXPECT_EQ(1u, i80hi1.countLeadingOnes());
+  EXPECT_EQ(0u, i80hi1.countLeadingZeros());
+  EXPECT_EQ(80u, i80hi1.getActiveBits());
+  EXPECT_EQ(79u, i80hi1.countTrailingZeros());
+  EXPECT_EQ(0u, i80hi1.countTrailingOnes());
+  EXPECT_EQ(1u, i80hi1.countPopulation());
+
+  APInt i32hi16 = APInt::getAllOnesValue(32);
+  i32hi16.clearLowBits(16);
+  EXPECT_EQ(16u, i32hi16.countLeadingOnes());
+  EXPECT_EQ(0u, i32hi16.countLeadingZeros());
+  EXPECT_EQ(32u, i32hi16.getActiveBits());
+  EXPECT_EQ(16u, i32hi16.countTrailingZeros());
+  EXPECT_EQ(0u, i32hi16.countTrailingOnes());
+  EXPECT_EQ(16u, i32hi16.countPopulation());
 }
 
 TEST(APIntTest, GCD) {
@@ -2500,6 +2666,26 @@ TEST(APIntTest, SolveQuadraticEquationWrap) {
   // Test all widths in [2..6].
   for (unsigned i = 2; i <= 6; ++i)
     Iterate(i);
+}
+
+TEST(APIntTest, MultiplicativeInverseExaustive) {
+  for (unsigned BitWidth = 1; BitWidth <= 16; ++BitWidth) {
+    for (unsigned Value = 0; Value < (1u << BitWidth); ++Value) {
+      APInt V = APInt(BitWidth, Value);
+      APInt MulInv =
+          V.zext(BitWidth + 1)
+              .multiplicativeInverse(APInt::getSignedMinValue(BitWidth + 1))
+              .trunc(BitWidth);
+      APInt One = V * MulInv;
+      if (!V.isNullValue() && V.countTrailingZeros() == 0) {
+        // Multiplicative inverse exists for all odd numbers.
+        EXPECT_TRUE(One.isOneValue());
+      } else {
+        // Multiplicative inverse does not exist for even numbers (and 0).
+        EXPECT_TRUE(MulInv.isNullValue());
+      }
+    }
+  }
 }
 
 } // end anonymous namespace

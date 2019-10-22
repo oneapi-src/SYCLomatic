@@ -224,7 +224,7 @@ public:
       HighInsn = (HighInsn & 0xf800) | ((Value >> 12) & 0x7ff);
 
       uint16_t LowInsn = readBytesUnaligned(LocalAddress + 2, 2);
-      assert((LowInsn & 0xf800) != 0xf8000 &&
+      assert((LowInsn & 0xf800) == 0xf800 &&
              "Unrecognized thumb branch encoding (BR22 low bits)");
       LowInsn = (LowInsn & 0xf800) | ((Value >> 1) & 0x7ff);
 
@@ -289,7 +289,10 @@ public:
   Error finalizeSection(const ObjectFile &Obj, unsigned SectionID,
                        const SectionRef &Section) {
     StringRef Name;
-    Section.getName(Name);
+    if (Expected<StringRef> NameOrErr = Section.getName())
+      Name = *NameOrErr;
+    else
+      consumeError(NameOrErr.takeError());
 
     if (Name == "__nl_symbol_ptr")
       return populateIndirectSymbolPointersSection(cast<MachOObjectFile>(Obj),

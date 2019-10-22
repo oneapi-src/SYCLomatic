@@ -531,6 +531,7 @@ within the LLVM IR. By the end of CodeGen, this becomes a mapping from each
 variable to their machine locations over ranges of instructions.
 From IR to object emission, the major transformations which affect variable
 location fidelity are:
+
 1. Instruction Selection
 2. Register allocation
 3. Block layout
@@ -538,6 +539,14 @@ location fidelity are:
 each of which are discussed below. In addition, instruction scheduling can
 significantly change the ordering of the program, and occurs in a number of
 different passes.
+
+Some variable locations are not transformed during CodeGen. Stack locations
+specified by ``llvm.dbg.declare`` are valid and unchanging for the entire
+duration of the function, and are recorded in a simple MachineFunction table.
+Location changes in the prologue and epilogue of a function are also ignored:
+frame setup and destruction may take several instructions, require a
+disproportionate amount of debugging information in the output binary to
+describe, and should be stepped over by debuggers anyway.
 
 Variable locations in Instruction Selection and MIR
 ---------------------------------------------------
@@ -573,10 +582,10 @@ inserted. These ``DBG_VALUE`` instructions appear thus:
   DBG_VALUE %1, $noreg, !123, !DIExpression()
 
 And have the following operands:
- * The first operand can record the variable location as a register, an
-   immediate, or the base address register if the original debug intrinsic
-   referred to memory. ``$noreg`` indicates the variable location is undefined,
-   equivalent to an ``undef`` dbg.value operand.
+ * The first operand can record the variable location as a register,
+   a frame index, an immediate, or the base address register if the original
+   debug intrinsic referred to memory. ``$noreg`` indicates the variable
+   location is undefined, equivalent to an ``undef`` dbg.value operand.
  * The type of the second operand indicates whether the variable location is
    directly referred to by the DBG_VALUE, or whether it is indirect. The
    ``$noreg`` register signifies the former, an immediate operand (0) the
@@ -831,25 +840,25 @@ of variable ``!23`` should not flow "down" into the ``%exit`` block.
 C/C++ front-end specific debug information
 ==========================================
 
-The C and C++ front-ends represent information about the program in a format
-that is effectively identical to `DWARF 3.0
-<http://www.eagercon.com/dwarf/dwarf3std.htm>`_ in terms of information
-content.  This allows code generators to trivially support native debuggers by
-generating standard dwarf information, and contains enough information for
-non-dwarf targets to translate it as needed.
+The C and C++ front-ends represent information about the program in a
+format that is effectively identical to `DWARF <http://www.dwarfstd.org/>`_
+in terms of information content.  This allows code generators to
+trivially support native debuggers by generating standard dwarf
+information, and contains enough information for non-dwarf targets to
+translate it as needed.
 
 This section describes the forms used to represent C and C++ programs.  Other
 languages could pattern themselves after this (which itself is tuned to
-representing programs in the same way that DWARF 3 does), or they could choose
+representing programs in the same way that DWARF does), or they could choose
 to provide completely different forms if they don't fit into the DWARF model.
 As support for debugging information gets added to the various LLVM
 source-language front-ends, the information used should be documented here.
 
-The following sections provide examples of a few C/C++ constructs and the debug
-information that would best describe those constructs.  The canonical
-references are the ``DIDescriptor`` classes defined in
-``include/llvm/IR/DebugInfo.h`` and the implementations of the helper functions
-in ``lib/IR/DIBuilder.cpp``.
+The following sections provide examples of a few C/C++ constructs and
+the debug information that would best describe those constructs.  The
+canonical references are the ``DINode`` classes defined in
+``include/llvm/IR/DebugInfoMetadata.h`` and the implementations of the
+helper functions in ``lib/IR/DIBuilder.cpp``.
 
 C/C++ source file information
 -----------------------------

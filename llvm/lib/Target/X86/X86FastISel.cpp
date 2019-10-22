@@ -289,7 +289,7 @@ bool X86FastISel::foldX86XALUIntrinsic(X86::CondCode &CC, const Instruction *I,
 }
 
 bool X86FastISel::isTypeLegal(Type *Ty, MVT &VT, bool AllowI1) {
-  EVT evt = TLI.getValueType(DL, Ty, /*HandleUnknown=*/true);
+  EVT evt = TLI.getValueType(DL, Ty, /*AllowUnknown=*/true);
   if (evt == MVT::Other || !evt.isSimple())
     // Unhandled type. Halt "fast" selection and bail.
     return false;
@@ -347,13 +347,17 @@ bool X86FastISel::X86FastEmitLoad(MVT VT, X86AddressMode &AM,
     break;
   case MVT::f32:
     if (X86ScalarSSEf32)
-      Opc = HasAVX512 ? X86::VMOVSSZrm : HasAVX ? X86::VMOVSSrm : X86::MOVSSrm;
+      Opc = HasAVX512 ? X86::VMOVSSZrm_alt :
+            HasAVX    ? X86::VMOVSSrm_alt :
+                        X86::MOVSSrm_alt;
     else
       Opc = X86::LD_Fp32m;
     break;
   case MVT::f64:
     if (X86ScalarSSEf64)
-      Opc = HasAVX512 ? X86::VMOVSDZrm : HasAVX ? X86::VMOVSDrm : X86::MOVSDrm;
+      Opc = HasAVX512 ? X86::VMOVSDZrm_alt :
+            HasAVX    ? X86::VMOVSDrm_alt :
+                        X86::MOVSDrm_alt;
     else
       Opc = X86::LD_Fp64m;
     break;
@@ -1237,7 +1241,7 @@ bool X86FastISel::X86SelectRet(const Instruction *I) {
     }
 
     // Make the copy.
-    unsigned DstReg = VA.getLocReg();
+    Register DstReg = VA.getLocReg();
     const TargetRegisterClass *SrcRC = MRI.getRegClass(SrcReg);
     // Avoid a cross-class copy. This is very unlikely.
     if (!SrcRC->contains(DstReg))
@@ -3383,6 +3387,7 @@ bool X86FastISel::fastLowerCall(CallLoweringInfo &CLI) {
     case CCValAssign::SExtUpper:
     case CCValAssign::ZExtUpper:
     case CCValAssign::FPExt:
+    case CCValAssign::Trunc:
       llvm_unreachable("Unexpected loc info!");
     case CCValAssign::Indirect:
       // FIXME: Indirect doesn't need extending, but fast-isel doesn't fully
@@ -3543,7 +3548,7 @@ bool X86FastISel::fastLowerCall(CallLoweringInfo &CLI) {
     CCValAssign &VA = RVLocs[i];
     EVT CopyVT = VA.getValVT();
     unsigned CopyReg = ResultReg + i;
-    unsigned SrcReg = VA.getLocReg();
+    Register SrcReg = VA.getLocReg();
 
     // If this is x86-64, and we disabled SSE, we can't return FP values
     if ((CopyVT == MVT::f32 || CopyVT == MVT::f64) &&
@@ -3575,7 +3580,7 @@ bool X86FastISel::fastLowerCall(CallLoweringInfo &CLI) {
       addFrameReference(BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc,
                                 TII.get(Opc)), FI)
         .addReg(CopyReg);
-      Opc = ResVT == MVT::f32 ? X86::MOVSSrm : X86::MOVSDrm;
+      Opc = ResVT == MVT::f32 ? X86::MOVSSrm_alt : X86::MOVSDrm_alt;
       addFrameReference(BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc,
                                 TII.get(Opc), ResultReg + i), FI);
     }
@@ -3642,24 +3647,19 @@ X86FastISel::fastSelectInstruction(const Instruction *I)  {
     return true;
   }
   case Instruction::BitCast: {
-    // Select SSE2/AVX bitcasts between 128/256 bit vector types.
+    // Select SSE2/AVX bitcasts between 128/256/512 bit vector types.
     if (!Subtarget->hasSSE2())
       return false;
 
-    EVT SrcVT = TLI.getValueType(DL, I->getOperand(0)->getType());
-    EVT DstVT = TLI.getValueType(DL, I->getType());
-
-    if (!SrcVT.isSimple() || !DstVT.isSimple())
+    MVT SrcVT, DstVT;
+    if (!isTypeLegal(I->getOperand(0)->getType(), SrcVT) ||
+        !isTypeLegal(I->getType(), DstVT))
       return false;
 
-    MVT SVT = SrcVT.getSimpleVT();
-    MVT DVT = DstVT.getSimpleVT();
-
-    if (!SVT.is128BitVector() &&
-        !(Subtarget->hasAVX() && SVT.is256BitVector()) &&
-        !(Subtarget->hasAVX512() && SVT.is512BitVector() &&
-          (Subtarget->hasBWI() || (SVT.getScalarSizeInBits() >= 32 &&
-                                   DVT.getScalarSizeInBits() >= 32))))
+    // Only allow vectors that use xmm/ymm/zmm.
+    if (!SrcVT.isVector() || !DstVT.isVector() ||
+        SrcVT.getVectorElementType() == MVT::i1 ||
+        DstVT.getVectorElementType() == MVT::i1)
       return false;
 
     unsigned Reg = getRegForValue(I->getOperand(0));
@@ -3743,13 +3743,17 @@ unsigned X86FastISel::X86MaterializeFP(const ConstantFP *CFP, MVT VT) {
   default: return 0;
   case MVT::f32:
     if (X86ScalarSSEf32)
-      Opc = HasAVX512 ? X86::VMOVSSZrm : HasAVX ? X86::VMOVSSrm : X86::MOVSSrm;
+      Opc = HasAVX512 ? X86::VMOVSSZrm_alt :
+            HasAVX    ? X86::VMOVSSrm_alt :
+                        X86::MOVSSrm_alt;
     else
       Opc = X86::LD_Fp32m;
     break;
   case MVT::f64:
     if (X86ScalarSSEf64)
-      Opc = HasAVX512 ? X86::VMOVSDZrm : HasAVX ? X86::VMOVSDrm : X86::MOVSDrm;
+      Opc = HasAVX512 ? X86::VMOVSDZrm_alt :
+            HasAVX    ? X86::VMOVSDrm_alt :
+                        X86::MOVSDrm_alt;
     else
       Opc = X86::LD_Fp64m;
     break;

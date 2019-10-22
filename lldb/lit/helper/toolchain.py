@@ -16,11 +16,6 @@ def use_lldb_substitutions(config):
 
     dsname = 'debugserver' if platform.system() in ['Darwin'] else 'lldb-server'
     dsargs = [] if platform.system() in ['Darwin'] else ['gdbserver']
-    lldbmi = ToolSubst('%lldbmi',
-                       command=FindTool('lldb-mi'),
-                       extra_args=['--synchronous'],
-                       unresolved='ignore')
-
 
     build_script = os.path.dirname(__file__)
     build_script = os.path.join(build_script, 'build.py')
@@ -34,18 +29,15 @@ def use_lldb_substitutions(config):
     if config.llvm_libs_dir:
         build_script_args.append('--libs-dir={0}'.format(config.llvm_libs_dir))
 
+    lldb_init = os.path.join(config.test_exec_root, 'lit-lldb-init')
+
     primary_tools = [
         ToolSubst('%lldb',
                   command=FindTool('lldb'),
-                  extra_args=['--no-lldbinit', '-S',
-                              os.path.join(config.test_source_root,
-                                           'lit-lldb-init')]),
+                  extra_args=['--no-lldbinit', '-S', lldb_init]),
         ToolSubst('%lldb-init',
                   command=FindTool('lldb'),
-                  extra_args=['-S',
-                              os.path.join(config.test_source_root,
-                                           'lit-lldb-init')]),
-        lldbmi,
+                  extra_args=['-S', lldb_init]),
         ToolSubst('%debugserver',
                   command=FindTool(dsname),
                   extra_args=dsargs,
@@ -63,9 +55,6 @@ def use_lldb_substitutions(config):
 
     llvm_config.add_tool_substitutions(primary_tools,
                                        [config.lldb_tools_dir])
-    # lldb-mi always fails without Python support
-    if lldbmi.was_resolved and not config.lldb_disable_python:
-        config.available_features.add('lldb-mi')
 
 def _use_msvc_substitutions(config):
     # If running from a Visual Studio Command prompt (e.g. vcvars), this will
@@ -114,6 +103,9 @@ def use_support_substitutions(config):
         # needed e.g. to use freshly built libc++
         flags += ['-L' + config.llvm_libs_dir,
                   '-Wl,-rpath,' + config.llvm_libs_dir]
+
+    # The clang module cache is used for building inferiors.
+    flags += ['-fmodules-cache-path={}'.format(config.clang_module_cache)]
 
     additional_tool_dirs=[]
     if config.lldb_lit_tools_dir:

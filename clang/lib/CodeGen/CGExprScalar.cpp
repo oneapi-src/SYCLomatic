@@ -313,7 +313,7 @@ public:
   /// boolean (i1) truth value.  This is equivalent to "Val != 0".
   Value *EmitConversionToBool(Value *Src, QualType DstTy);
 
-  /// Emit a check that a conversion to or from a floating-point type does not
+  /// Emit a check that a conversion from a floating-point type does not
   /// overflow.
   void EmitFloatConversionCheck(Value *OrigSrc, QualType OrigSrcType,
                                 Value *Src, QualType SrcType, QualType DstType,
@@ -864,128 +864,63 @@ Value *ScalarExprEmitter::EmitConversionToBool(Value *Src, QualType SrcType) {
 void ScalarExprEmitter::EmitFloatConversionCheck(
     Value *OrigSrc, QualType OrigSrcType, Value *Src, QualType SrcType,
     QualType DstType, llvm::Type *DstTy, SourceLocation Loc) {
+  assert(SrcType->isFloatingType() && "not a conversion from floating point");
+  if (!isa<llvm::IntegerType>(DstTy))
+    return;
+
   CodeGenFunction::SanitizerScope SanScope(&CGF);
   using llvm::APFloat;
   using llvm::APSInt;
 
-  llvm::Type *SrcTy = Src->getType();
-
   llvm::Value *Check = nullptr;
-  if (llvm::IntegerType *IntTy = dyn_cast<llvm::IntegerType>(SrcTy)) {
-    // Integer to floating-point. This can fail for unsigned short -> __half
-    // or unsigned __int128 -> float.
-    assert(DstType->isFloatingType());
-    bool SrcIsUnsigned = OrigSrcType->isUnsignedIntegerOrEnumerationType();
+  const llvm::fltSemantics &SrcSema =
+    CGF.getContext().getFloatTypeSemantics(OrigSrcType);
 
-    APFloat LargestFloat =
-      APFloat::getLargest(CGF.getContext().getFloatTypeSemantics(DstType));
-    APSInt LargestInt(IntTy->getBitWidth(), SrcIsUnsigned);
+  // Floating-point to integer. This has undefined behavior if the source is
+  // +-Inf, NaN, or doesn't fit into the destination type (after truncation
+  // to an integer).
+  unsigned Width = CGF.getContext().getIntWidth(DstType);
+  bool Unsigned = DstType->isUnsignedIntegerOrEnumerationType();
 
-    bool IsExact;
-    if (LargestFloat.convertToInteger(LargestInt, APFloat::rmTowardZero,
-                                      &IsExact) != APFloat::opOK)
-      // The range of representable values of this floating point type includes
-      // all values of this integer type. Don't need an overflow check.
-      return;
+  APSInt Min = APSInt::getMinValue(Width, Unsigned);
+  APFloat MinSrc(SrcSema, APFloat::uninitialized);
+  if (MinSrc.convertFromAPInt(Min, !Unsigned, APFloat::rmTowardZero) &
+      APFloat::opOverflow)
+    // Don't need an overflow check for lower bound. Just check for
+    // -Inf/NaN.
+    MinSrc = APFloat::getInf(SrcSema, true);
+  else
+    // Find the largest value which is too small to represent (before
+    // truncation toward zero).
+    MinSrc.subtract(APFloat(SrcSema, 1), APFloat::rmTowardNegative);
 
-    llvm::Value *Max = llvm::ConstantInt::get(VMContext, LargestInt);
-    if (SrcIsUnsigned)
-      Check = Builder.CreateICmpULE(Src, Max);
-    else {
-      llvm::Value *Min = llvm::ConstantInt::get(VMContext, -LargestInt);
-      llvm::Value *GE = Builder.CreateICmpSGE(Src, Min);
-      llvm::Value *LE = Builder.CreateICmpSLE(Src, Max);
-      Check = Builder.CreateAnd(GE, LE);
-    }
-  } else {
-    const llvm::fltSemantics &SrcSema =
-      CGF.getContext().getFloatTypeSemantics(OrigSrcType);
-    if (isa<llvm::IntegerType>(DstTy)) {
-      // Floating-point to integer. This has undefined behavior if the source is
-      // +-Inf, NaN, or doesn't fit into the destination type (after truncation
-      // to an integer).
-      unsigned Width = CGF.getContext().getIntWidth(DstType);
-      bool Unsigned = DstType->isUnsignedIntegerOrEnumerationType();
+  APSInt Max = APSInt::getMaxValue(Width, Unsigned);
+  APFloat MaxSrc(SrcSema, APFloat::uninitialized);
+  if (MaxSrc.convertFromAPInt(Max, !Unsigned, APFloat::rmTowardZero) &
+      APFloat::opOverflow)
+    // Don't need an overflow check for upper bound. Just check for
+    // +Inf/NaN.
+    MaxSrc = APFloat::getInf(SrcSema, false);
+  else
+    // Find the smallest value which is too large to represent (before
+    // truncation toward zero).
+    MaxSrc.add(APFloat(SrcSema, 1), APFloat::rmTowardPositive);
 
-      APSInt Min = APSInt::getMinValue(Width, Unsigned);
-      APFloat MinSrc(SrcSema, APFloat::uninitialized);
-      if (MinSrc.convertFromAPInt(Min, !Unsigned, APFloat::rmTowardZero) &
-          APFloat::opOverflow)
-        // Don't need an overflow check for lower bound. Just check for
-        // -Inf/NaN.
-        MinSrc = APFloat::getInf(SrcSema, true);
-      else
-        // Find the largest value which is too small to represent (before
-        // truncation toward zero).
-        MinSrc.subtract(APFloat(SrcSema, 1), APFloat::rmTowardNegative);
-
-      APSInt Max = APSInt::getMaxValue(Width, Unsigned);
-      APFloat MaxSrc(SrcSema, APFloat::uninitialized);
-      if (MaxSrc.convertFromAPInt(Max, !Unsigned, APFloat::rmTowardZero) &
-          APFloat::opOverflow)
-        // Don't need an overflow check for upper bound. Just check for
-        // +Inf/NaN.
-        MaxSrc = APFloat::getInf(SrcSema, false);
-      else
-        // Find the smallest value which is too large to represent (before
-        // truncation toward zero).
-        MaxSrc.add(APFloat(SrcSema, 1), APFloat::rmTowardPositive);
-
-      // If we're converting from __half, convert the range to float to match
-      // the type of src.
-      if (OrigSrcType->isHalfType()) {
-        const llvm::fltSemantics &Sema =
-          CGF.getContext().getFloatTypeSemantics(SrcType);
-        bool IsInexact;
-        MinSrc.convert(Sema, APFloat::rmTowardZero, &IsInexact);
-        MaxSrc.convert(Sema, APFloat::rmTowardZero, &IsInexact);
-      }
-
-      llvm::Value *GE =
-        Builder.CreateFCmpOGT(Src, llvm::ConstantFP::get(VMContext, MinSrc));
-      llvm::Value *LE =
-        Builder.CreateFCmpOLT(Src, llvm::ConstantFP::get(VMContext, MaxSrc));
-      Check = Builder.CreateAnd(GE, LE);
-    } else {
-      // FIXME: Maybe split this sanitizer out from float-cast-overflow.
-      //
-      // Floating-point to floating-point. This has undefined behavior if the
-      // source is not in the range of representable values of the destination
-      // type. The C and C++ standards are spectacularly unclear here. We
-      // diagnose finite out-of-range conversions, but allow infinities and NaNs
-      // to convert to the corresponding value in the smaller type.
-      //
-      // C11 Annex F gives all such conversions defined behavior for IEC 60559
-      // conforming implementations. Unfortunately, LLVM's fptrunc instruction
-      // does not.
-
-      // Converting from a lower rank to a higher rank can never have
-      // undefined behavior, since higher-rank types must have a superset
-      // of values of lower-rank types.
-      if (CGF.getContext().getFloatingTypeOrder(OrigSrcType, DstType) != 1)
-        return;
-
-      assert(!OrigSrcType->isHalfType() &&
-             "should not check conversion from __half, it has the lowest rank");
-
-      const llvm::fltSemantics &DstSema =
-        CGF.getContext().getFloatTypeSemantics(DstType);
-      APFloat MinBad = APFloat::getLargest(DstSema, false);
-      APFloat MaxBad = APFloat::getInf(DstSema, false);
-
-      bool IsInexact;
-      MinBad.convert(SrcSema, APFloat::rmTowardZero, &IsInexact);
-      MaxBad.convert(SrcSema, APFloat::rmTowardZero, &IsInexact);
-
-      Value *AbsSrc = CGF.EmitNounwindRuntimeCall(
-        CGF.CGM.getIntrinsic(llvm::Intrinsic::fabs, Src->getType()), Src);
-      llvm::Value *GE =
-        Builder.CreateFCmpOGT(AbsSrc, llvm::ConstantFP::get(VMContext, MinBad));
-      llvm::Value *LE =
-        Builder.CreateFCmpOLT(AbsSrc, llvm::ConstantFP::get(VMContext, MaxBad));
-      Check = Builder.CreateNot(Builder.CreateAnd(GE, LE));
-    }
+  // If we're converting from __half, convert the range to float to match
+  // the type of src.
+  if (OrigSrcType->isHalfType()) {
+    const llvm::fltSemantics &Sema =
+      CGF.getContext().getFloatTypeSemantics(SrcType);
+    bool IsInexact;
+    MinSrc.convert(Sema, APFloat::rmTowardZero, &IsInexact);
+    MaxSrc.convert(Sema, APFloat::rmTowardZero, &IsInexact);
   }
+
+  llvm::Value *GE =
+    Builder.CreateFCmpOGT(Src, llvm::ConstantFP::get(VMContext, MinSrc));
+  llvm::Value *LE =
+    Builder.CreateFCmpOLT(Src, llvm::ConstantFP::get(VMContext, MaxSrc));
+  Check = Builder.CreateAnd(GE, LE);
 
   llvm::Constant *StaticArgs[] = {CGF.EmitCheckSourceLocation(Loc),
                                   CGF.EmitCheckTypeDescriptor(OrigSrcType),
@@ -1391,9 +1326,12 @@ Value *ScalarExprEmitter::EmitScalarConversion(Value *Src, QualType SrcType,
   llvm::Type *ResTy = DstTy;
 
   // An overflowing conversion has undefined behavior if either the source type
-  // or the destination type is a floating-point type.
+  // or the destination type is a floating-point type. However, we consider the
+  // range of representable values for all floating-point types to be
+  // [-inf,+inf], so no overflow can ever happen when the destination type is a
+  // floating-point type.
   if (CGF.SanOpts.has(SanitizerKind::FloatCastOverflow) &&
-      (OrigSrcType->isFloatingType() || DstType->isFloatingType()))
+      OrigSrcType->isFloatingType())
     EmitFloatConversionCheck(OrigSrc, OrigSrcType, Src, SrcType, DstType, DstTy,
                              Loc);
 
@@ -1719,8 +1657,8 @@ Value *ScalarExprEmitter::VisitConvertVectorExpr(ConvertVectorExpr *E) {
   if (SrcTy == DstTy)
     return Src;
 
-  QualType SrcEltType = SrcType->getAs<VectorType>()->getElementType(),
-           DstEltType = DstType->getAs<VectorType>()->getElementType();
+  QualType SrcEltType = SrcType->castAs<VectorType>()->getElementType(),
+           DstEltType = DstType->castAs<VectorType>()->getElementType();
 
   assert(SrcTy->isVectorTy() &&
          "ConvertVector source IR type must be a vector");
@@ -2033,6 +1971,15 @@ Value *ScalarExprEmitter::VisitCastExpr(CastExpr *CE) {
     return EmitLoadOfLValue(LV, CE->getExprLoc());
   }
 
+  case CK_LValueToRValueBitCast: {
+    LValue SourceLVal = CGF.EmitLValue(E);
+    Address Addr = Builder.CreateElementBitCast(SourceLVal.getAddress(),
+                                                CGF.ConvertTypeForMem(DestTy));
+    LValue DestLV = CGF.MakeAddrLValue(Addr, DestTy);
+    DestLV.setTBAAInfo(TBAAAccessInfo::getMayAliasInfo());
+    return EmitLoadOfLValue(DestLV, CE->getExprLoc());
+  }
+
   case CK_CPointerToObjCPointerCast:
   case CK_BlockPointerToObjCPointerCast:
   case CK_AnyPointerToBlockPointerCast:
@@ -2040,10 +1987,26 @@ Value *ScalarExprEmitter::VisitCastExpr(CastExpr *CE) {
     Value *Src = Visit(const_cast<Expr*>(E));
     llvm::Type *SrcTy = Src->getType();
     llvm::Type *DstTy = ConvertType(DestTy);
+    bool NeedAddrspaceCast = false;
     if (SrcTy->isPtrOrPtrVectorTy() && DstTy->isPtrOrPtrVectorTy() &&
         SrcTy->getPointerAddressSpace() != DstTy->getPointerAddressSpace()) {
-      llvm_unreachable("wrong cast for pointers in different address spaces"
-                       "(must be an address space cast)!");
+      // If we have the same address space in AST, which is then codegen'ed to
+      // different address spaces in IR, then an address space cast should be
+      // valid.
+      //
+      // This is the case for SYCL, where both types have Default address space
+      // in AST, but in IR one of them may be in opencl_private, and another in
+      // opencl_generic address space:
+      //
+      //   int arr[5];    // automatic variable, default AS in AST,
+      //                  // private AS in IR
+      //
+      //   char* p = arr; // default AS in AST, generic AS in IR
+      //
+      if (E->getType().getAddressSpace() != DestTy.getAddressSpace())
+        llvm_unreachable("wrong cast for pointers in different address spaces"
+                         "(must be an address space cast)!");
+      NeedAddrspaceCast = true;
     }
 
     if (CGF.SanOpts.has(SanitizerKind::CFIUnrelatedCast)) {
@@ -2078,6 +2041,13 @@ Value *ScalarExprEmitter::VisitCastExpr(CastExpr *CE) {
           CGF.getDebugInfo()->
               addHeapAllocSiteMetadata(CI, CE->getType(), CE->getExprLoc());
 
+    if (NeedAddrspaceCast) {
+      llvm::Type *SrcPointeeTy = Src->getType()->getPointerElementType();
+      llvm::Type *SrcNewAS = llvm::PointerType::get(
+          SrcPointeeTy, cast<llvm::PointerType>(DstTy)->getAddressSpace());
+
+      Src = Builder.CreateAddrSpaceCast(Src, SrcNewAS);
+    }
     return Builder.CreateBitCast(Src, DstTy);
   }
   case CK_AddressSpaceConversion: {
@@ -2148,14 +2118,14 @@ Value *ScalarExprEmitter::VisitCastExpr(CastExpr *CE) {
 
   case CK_NullToPointer:
     if (MustVisitNullValue(E))
-      (void) Visit(E);
+      CGF.EmitIgnoredExpr(E);
 
     return CGF.CGM.getNullPointer(cast<llvm::PointerType>(ConvertType(DestTy)),
                               DestTy);
 
   case CK_NullToMemberPointer: {
     if (MustVisitNullValue(E))
-      (void) Visit(E);
+      CGF.EmitIgnoredExpr(E);
 
     const MemberPointerType *MPT = CE->getType()->getAs<MemberPointerType>();
     return CGF.CGM.getCXXABI().EmitNullMemberPointer(MPT);
@@ -2715,7 +2685,7 @@ Value *ScalarExprEmitter::VisitOffsetOfExpr(OffsetOfExpr *E) {
 
     case OffsetOfNode::Field: {
       FieldDecl *MemberDecl = ON.getField();
-      RecordDecl *RD = CurrentType->getAs<RecordType>()->getDecl();
+      RecordDecl *RD = CurrentType->castAs<RecordType>()->getDecl();
       const ASTRecordLayout &RL = CGF.getContext().getASTRecordLayout(RD);
 
       // Compute the index of the field in its parent.
@@ -2748,7 +2718,7 @@ Value *ScalarExprEmitter::VisitOffsetOfExpr(OffsetOfExpr *E) {
         continue;
       }
 
-      RecordDecl *RD = CurrentType->getAs<RecordType>()->getDecl();
+      RecordDecl *RD = CurrentType->castAs<RecordType>()->getDecl();
       const ASTRecordLayout &RL = CGF.getContext().getASTRecordLayout(RD);
 
       // Save the element type.
@@ -2852,6 +2822,53 @@ Value *ScalarExprEmitter::VisitUnaryImag(const UnaryOperator *E) {
 //===----------------------------------------------------------------------===//
 //                           Binary Operators
 //===----------------------------------------------------------------------===//
+
+static Value *insertAddressSpaceCast(Value *V, unsigned NewAS) {
+  auto *VTy = cast<llvm::PointerType>(V->getType());
+  if (VTy->getAddressSpace() == NewAS)
+    return V;
+
+  llvm::PointerType *VTyNewAS =
+      llvm::PointerType::get(VTy->getElementType(), NewAS);
+
+  if (auto *Constant = dyn_cast<llvm::Constant>(V))
+    return llvm::ConstantExpr::getAddrSpaceCast(Constant, VTyNewAS);
+
+  llvm::Instruction *NewV =
+      new llvm::AddrSpaceCastInst(V, VTyNewAS, V->getName() + ".ascast");
+  NewV->insertAfter(cast<llvm::Instruction>(V));
+  return NewV;
+}
+
+static void ensureSameAddrSpace(Value *&RHS, Value *&LHS,
+                                bool CanInsertAddrspaceCast,
+                                const LangOptions &Opts,
+                                const ASTContext &Context) {
+  if (RHS->getType() == LHS->getType())
+    return;
+
+  auto *RHSTy = dyn_cast<llvm::PointerType>(RHS->getType());
+  auto *LHSTy = dyn_cast<llvm::PointerType>(LHS->getType());
+  if (!RHSTy || !LHSTy || RHSTy->getAddressSpace() == LHSTy->getAddressSpace())
+    return;
+
+  if (!CanInsertAddrspaceCast)
+    // Pointers have different address spaces and we cannot do anything with
+    // this.
+    llvm_unreachable("Pointers are expected to have the same address space.");
+
+  // Language rules define if it is legal to cast from one address space to
+  // another, and which address space we should use as a "common
+  // denominator". In SYCL, generic address space overlaps with all other
+  // address spaces.
+  if (Opts.SYCLIsDevice) {
+    unsigned GenericAS = Context.getTargetAddressSpace(LangAS::opencl_generic);
+    RHS = insertAddressSpaceCast(RHS, GenericAS);
+    LHS = insertAddressSpaceCast(LHS, GenericAS);
+  } else
+    llvm_unreachable("Unable to find a common address space for "
+                     "two pointers.");
+}
 
 BinOpInfo ScalarExprEmitter::EmitBinOps(const BinaryOperator *E) {
   TestAndClearIgnoreResultAssign();
@@ -3640,7 +3657,8 @@ Value *ScalarExprEmitter::EmitShl(const BinOpInfo &Ops) {
 
   bool SanitizeBase = CGF.SanOpts.has(SanitizerKind::ShiftBase) &&
                       Ops.Ty->hasSignedIntegerRepresentation() &&
-                      !CGF.getLangOpts().isSignedOverflowDefined();
+                      !CGF.getLangOpts().isSignedOverflowDefined() &&
+                      !CGF.getLangOpts().CPlusPlus2a;
   bool SanitizeExponent = CGF.SanOpts.has(SanitizerKind::ShiftExponent);
   // OpenCL 6.3j: shift values are effectively % word size of LHS.
   if (CGF.getLangOpts().OpenCL)
@@ -3797,7 +3815,7 @@ Value *ScalarExprEmitter::EmitCompare(const BinaryOperator *E,
       Value *FirstVecArg = LHS,
             *SecondVecArg = RHS;
 
-      QualType ElTy = LHSTy->getAs<VectorType>()->getElementType();
+      QualType ElTy = LHSTy->castAs<VectorType>()->getElementType();
       const BuiltinType *BTy = ElTy->getAs<BuiltinType>();
       BuiltinType::Kind ElementKind = BTy->getKind();
 
@@ -3885,6 +3903,14 @@ Value *ScalarExprEmitter::EmitCompare(const BinaryOperator *E,
         if (RHSTy.mayBeDynamicClass())
           RHS = Builder.CreateStripInvariantGroup(RHS);
       }
+
+      // Expression operands may have the same addrspace in AST, but different
+      // addrspaces in LLVM IR, in which case an addrspacecast should be valid.
+      bool CanInsertAddrspaceCast =
+             LHSTy.getAddressSpace() == RHSTy.getAddressSpace();
+
+      ensureSameAddrSpace(RHS, LHS, CanInsertAddrspaceCast, CGF.getLangOpts(),
+                          CGF.getContext());
 
       Result = Builder.CreateICmp(UICmpOpc, LHS, RHS, "cmp");
     }
@@ -4191,7 +4217,6 @@ static bool isCheapEnoughToEvaluateUnconditionally(const Expr *E,
   // exist in the source-level program.
 }
 
-
 Value *ScalarExprEmitter::
 VisitAbstractConditionalOperator(const AbstractConditionalOperator *E) {
   TestAndClearIgnoreResultAssign();
@@ -4287,6 +4312,15 @@ VisitAbstractConditionalOperator(const AbstractConditionalOperator *E) {
       assert(!RHS && "LHS and RHS types must match");
       return nullptr;
     }
+
+    // Expressions may have the same addrspace in AST, but different address
+    // space in LLVM IR, in which case an addrspacecast should be valid.
+    bool CanInsertAddrspaceCast = rhsExpr->getType().getAddressSpace() ==
+                                  lhsExpr->getType().getAddressSpace();
+
+    ensureSameAddrSpace(RHS, LHS, CanInsertAddrspaceCast, CGF.getLangOpts(),
+                        CGF.getContext());
+
     return Builder.CreateSelect(CondV, LHS, RHS, "cond");
   }
 
@@ -4320,6 +4354,14 @@ VisitAbstractConditionalOperator(const AbstractConditionalOperator *E) {
     return RHS;
   if (!RHS)
     return LHS;
+
+  // Expressions may have the same addrspace in AST, but different address
+  // space in LLVM IR, in which case an addrspacecast should be valid.
+  bool CanInsertAddrspaceCast = rhsExpr->getType().getAddressSpace() ==
+                                lhsExpr->getType().getAddressSpace();
+
+  ensureSameAddrSpace(RHS, LHS, CanInsertAddrspaceCast, CGF.getLangOpts(),
+                      CGF.getContext());
 
   // Create a PHI node for the real part.
   llvm::PHINode *PN = Builder.CreatePHI(LHS->getType(), 2, "cond");
@@ -4585,31 +4627,24 @@ LValue CodeGenFunction::EmitCompoundAssignmentLValue(
   llvm_unreachable("Unhandled compound assignment operator");
 }
 
-Value *CodeGenFunction::EmitCheckedInBoundsGEP(Value *Ptr,
-                                               ArrayRef<Value *> IdxList,
-                                               bool SignedIndices,
-                                               bool IsSubtraction,
-                                               SourceLocation Loc,
-                                               const Twine &Name) {
-  Value *GEPVal = Builder.CreateInBoundsGEP(Ptr, IdxList, Name);
+struct GEPOffsetAndOverflow {
+  // The total (signed) byte offset for the GEP.
+  llvm::Value *TotalOffset;
+  // The offset overflow flag - true if the total offset overflows.
+  llvm::Value *OffsetOverflows;
+};
 
-  // If the pointer overflow sanitizer isn't enabled, do nothing.
-  if (!SanOpts.has(SanitizerKind::PointerOverflow))
-    return GEPVal;
-
-  // If the GEP has already been reduced to a constant, leave it be.
-  if (isa<llvm::Constant>(GEPVal))
-    return GEPVal;
-
-  // Only check for overflows in the default address space.
-  if (GEPVal->getType()->getPointerAddressSpace())
-    return GEPVal;
-
+/// Evaluate given GEPVal, which must be an inbounds GEP,
+/// and compute the total offset it applies from it's base pointer BasePtr.
+/// Returns offset in bytes and a boolean flag whether an overflow happened
+/// during evaluation.
+static GEPOffsetAndOverflow EmitGEPOffsetInBytes(Value *BasePtr, Value *GEPVal,
+                                                 llvm::LLVMContext &VMContext,
+                                                 CodeGenModule &CGM,
+                                                 CGBuilderTy Builder) {
   auto *GEP = cast<llvm::GEPOperator>(GEPVal);
   assert(GEP->isInBounds() && "Expected inbounds GEP");
 
-  SanitizerScope SanScope(this);
-  auto &VMContext = getLLVMContext();
   const auto &DL = CGM.getDataLayout();
   auto *IntPtrTy = DL.getIntPtrType(GEP->getPointerOperandType());
 
@@ -4679,41 +4714,89 @@ Value *CodeGenFunction::EmitCheckedInBoundsGEP(Value *Ptr,
       TotalOffset = eval(BO_Add, TotalOffset, LocalOffset);
   }
 
+  return {TotalOffset, OffsetOverflows};
+}
+
+Value *
+CodeGenFunction::EmitCheckedInBoundsGEP(Value *Ptr, ArrayRef<Value *> IdxList,
+                                        bool SignedIndices, bool IsSubtraction,
+                                        SourceLocation Loc, const Twine &Name) {
+  Value *GEPVal = Builder.CreateInBoundsGEP(Ptr, IdxList, Name);
+
+  // If the pointer overflow sanitizer isn't enabled, do nothing.
+  if (!SanOpts.has(SanitizerKind::PointerOverflow))
+    return GEPVal;
+
+  // If the GEP has already been reduced to a constant, leave it be.
+  if (isa<llvm::Constant>(GEPVal))
+    return GEPVal;
+
+  // Only check for overflows in the default address space.
+  if (GEPVal->getType()->getPointerAddressSpace())
+    return GEPVal;
+
+  SanitizerScope SanScope(this);
+
+  GEPOffsetAndOverflow EvaluatedGEP =
+      EmitGEPOffsetInBytes(Ptr, GEPVal, getLLVMContext(), CGM, Builder);
+
+  auto *GEP = cast<llvm::GEPOperator>(GEPVal);
+
+  const auto &DL = CGM.getDataLayout();
+  auto *IntPtrTy = DL.getIntPtrType(GEP->getPointerOperandType());
+
+  auto *Zero = llvm::ConstantInt::getNullValue(IntPtrTy);
+
   // Common case: if the total offset is zero, don't emit a check.
-  if (TotalOffset == Zero)
+  if (EvaluatedGEP.TotalOffset == Zero)
     return GEPVal;
 
   // Now that we've computed the total offset, add it to the base pointer (with
   // wrapping semantics).
   auto *IntPtr = Builder.CreatePtrToInt(GEP->getPointerOperand(), IntPtrTy);
-  auto *ComputedGEP = Builder.CreateAdd(IntPtr, TotalOffset);
+  auto *ComputedGEP = Builder.CreateAdd(IntPtr, EvaluatedGEP.TotalOffset);
+
+  llvm::SmallVector<std::pair<llvm::Value *, SanitizerMask>, 1> Checks;
 
   // The GEP is valid if:
   // 1) The total offset doesn't overflow, and
   // 2) The sign of the difference between the computed address and the base
   // pointer matches the sign of the total offset.
   llvm::Value *ValidGEP;
-  auto *NoOffsetOverflow = Builder.CreateNot(OffsetOverflows);
+  auto *NoOffsetOverflow = Builder.CreateNot(EvaluatedGEP.OffsetOverflows);
   if (SignedIndices) {
+    // GEP is computed as `unsigned base + signed offset`, therefore:
+    // * If offset was positive, then the computed pointer can not be
+    //   [unsigned] less than the base pointer, unless it overflowed.
+    // * If offset was negative, then the computed pointer can not be
+    //   [unsigned] greater than the bas pointere, unless it overflowed.
     auto *PosOrZeroValid = Builder.CreateICmpUGE(ComputedGEP, IntPtr);
-    auto *PosOrZeroOffset = Builder.CreateICmpSGE(TotalOffset, Zero);
+    auto *PosOrZeroOffset =
+        Builder.CreateICmpSGE(EvaluatedGEP.TotalOffset, Zero);
     llvm::Value *NegValid = Builder.CreateICmpULT(ComputedGEP, IntPtr);
-    ValidGEP = Builder.CreateAnd(
-        Builder.CreateSelect(PosOrZeroOffset, PosOrZeroValid, NegValid),
-        NoOffsetOverflow);
-  } else if (!SignedIndices && !IsSubtraction) {
-    auto *PosOrZeroValid = Builder.CreateICmpUGE(ComputedGEP, IntPtr);
-    ValidGEP = Builder.CreateAnd(PosOrZeroValid, NoOffsetOverflow);
+    ValidGEP = Builder.CreateSelect(PosOrZeroOffset, PosOrZeroValid, NegValid);
+  } else if (!IsSubtraction) {
+    // GEP is computed as `unsigned base + unsigned offset`,  therefore the
+    // computed pointer can not be [unsigned] less than base pointer,
+    // unless there was an overflow.
+    // Equivalent to `@llvm.uadd.with.overflow(%base, %offset)`.
+    ValidGEP = Builder.CreateICmpUGE(ComputedGEP, IntPtr);
   } else {
-    auto *NegOrZeroValid = Builder.CreateICmpULE(ComputedGEP, IntPtr);
-    ValidGEP = Builder.CreateAnd(NegOrZeroValid, NoOffsetOverflow);
+    // GEP is computed as `unsigned base - unsigned offset`, therefore the
+    // computed pointer can not be [unsigned] greater than base pointer,
+    // unless there was an overflow.
+    // Equivalent to `@llvm.usub.with.overflow(%base, sub(0, %offset))`.
+    ValidGEP = Builder.CreateICmpULE(ComputedGEP, IntPtr);
   }
+  ValidGEP = Builder.CreateAnd(ValidGEP, NoOffsetOverflow);
+  Checks.emplace_back(ValidGEP, SanitizerKind::PointerOverflow);
+
+  assert(!Checks.empty() && "Should have produced some checks.");
 
   llvm::Constant *StaticArgs[] = {EmitCheckSourceLocation(Loc)};
   // Pass the computed GEP to the runtime to avoid emitting poisoned arguments.
   llvm::Value *DynamicArgs[] = {IntPtr, ComputedGEP};
-  EmitCheck(std::make_pair(ValidGEP, SanitizerKind::PointerOverflow),
-            SanitizerHandler::PointerOverflow, StaticArgs, DynamicArgs);
+  EmitCheck(Checks, SanitizerHandler::PointerOverflow, StaticArgs, DynamicArgs);
 
   return GEPVal;
 }

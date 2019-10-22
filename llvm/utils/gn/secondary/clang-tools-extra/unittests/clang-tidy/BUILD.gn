@@ -18,12 +18,14 @@ unittest("ClangTidyTests") {
     "//clang/lib/Serialization",
     "//clang/lib/Tooling",
     "//clang/lib/Tooling/Core",
+    "//clang/lib/Tooling/Refactoring",
     "//llvm/lib/Support",
   ]
   include_dirs = [ "//clang-tools-extra/clang-tidy" ]
   sources = [
     "ClangTidyDiagnosticConsumerTest.cpp",
     "ClangTidyOptionsTest.cpp",
+    "GlobListTest.cpp",
     "GoogleModuleTest.cpp",
     "IncludeInserterTest.cpp",
     "LLVMModuleTest.cpp",

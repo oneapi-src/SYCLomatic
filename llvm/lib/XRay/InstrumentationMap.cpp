@@ -67,10 +67,11 @@ loadObj(StringRef Filename, object::OwningBinary<object::ObjectFile> &ObjFile,
   StringRef Contents = "";
   const auto &Sections = ObjFile.getBinary()->sections();
   auto I = llvm::find_if(Sections, [&](object::SectionRef Section) {
-    StringRef Name = "";
-    if (Section.getName(Name))
-      return false;
-    return Name == "xray_instr_map";
+    Expected<StringRef> NameOrErr = Section.getName();
+    if (NameOrErr)
+      return *NameOrErr == "xray_instr_map";
+    consumeError(NameOrErr.takeError());
+    return false;
   });
 
   if (I == Sections.end())
@@ -118,7 +119,7 @@ loadObj(StringRef Filename, object::OwningBinary<object::ObjectFile> &ObjFile,
               "an XRay sled entry in ELF64."),
         std::make_error_code(std::errc::executable_format_error));
 
-  auto RelocateOrElse = [&](uint32_t Offset, uint64_t Address) {
+  auto RelocateOrElse = [&](uint64_t Offset, uint64_t Address) {
     if (!Address) {
       uint64_t A = I->getAddress() + C - Contents.bytes_begin() + Offset;
       RelocMap::const_iterator R = Relocs.find(A);
@@ -136,10 +137,10 @@ loadObj(StringRef Filename, object::OwningBinary<object::ObjectFile> &ObjFile,
         8);
     Sleds.push_back({});
     auto &Entry = Sleds.back();
-    uint32_t OffsetPtr = 0;
-    uint32_t AddrOff = OffsetPtr;
+    uint64_t OffsetPtr = 0;
+    uint64_t AddrOff = OffsetPtr;
     Entry.Address = RelocateOrElse(AddrOff, Extractor.getU64(&OffsetPtr));
-    uint32_t FuncOff = OffsetPtr;
+    uint64_t FuncOff = OffsetPtr;
     Entry.Function = RelocateOrElse(FuncOff, Extractor.getU64(&OffsetPtr));
     auto Kind = Extractor.getU8(&OffsetPtr);
     static constexpr SledEntry::FunctionKinds Kinds[] = {
@@ -172,13 +173,14 @@ loadObj(StringRef Filename, object::OwningBinary<object::ObjectFile> &ObjFile,
 }
 
 static Error
-loadYAML(int Fd, size_t FileSize, StringRef Filename,
+loadYAML(sys::fs::file_t Fd, size_t FileSize, StringRef Filename,
          InstrumentationMap::SledContainer &Sleds,
          InstrumentationMap::FunctionAddressMap &FunctionAddresses,
          InstrumentationMap::FunctionAddressReverseMap &FunctionIds) {
   std::error_code EC;
   sys::fs::mapped_file_region MappedFile(
       Fd, sys::fs::mapped_file_region::mapmode::readonly, FileSize, 0, EC);
+  sys::fs::closeFile(Fd);
   if (EC)
     return make_error<StringError>(
         Twine("Failed memory-mapping file '") + Filename + "'.", EC);
@@ -214,9 +216,12 @@ llvm::xray::loadInstrumentationMap(StringRef Filename) {
   if (!ObjectFileOrError) {
     auto E = ObjectFileOrError.takeError();
     // We try to load it as YAML if the ELF load didn't work.
-    int Fd;
-    if (sys::fs::openFileForRead(Filename, Fd))
+    Expected<sys::fs::file_t> FdOrErr = sys::fs::openNativeFileForRead(Filename);
+    if (!FdOrErr) {
+      // Report the ELF load error if YAML failed.
+      consumeError(FdOrErr.takeError());
       return std::move(E);
+    }
 
     uint64_t FileSize;
     if (sys::fs::file_size(Filename, FileSize))
@@ -229,7 +234,7 @@ llvm::xray::loadInstrumentationMap(StringRef Filename) {
     // From this point on the errors will be only for the YAML parts, so we
     // consume the errors at this point.
     consumeError(std::move(E));
-    if (auto E = loadYAML(Fd, FileSize, Filename, Map.Sleds,
+    if (auto E = loadYAML(*FdOrErr, FileSize, Filename, Map.Sleds,
                           Map.FunctionAddresses, Map.FunctionIds))
       return std::move(E);
   } else if (auto E = loadObj(Filename, *ObjectFileOrError, Map.Sleds,

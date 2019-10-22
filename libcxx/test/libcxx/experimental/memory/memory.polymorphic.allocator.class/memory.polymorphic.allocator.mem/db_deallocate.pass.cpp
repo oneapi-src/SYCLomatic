@@ -22,7 +22,9 @@ int AssertCount = 0;
 #include <type_traits>
 #include <cassert>
 
-#include "test_memory_resource.hpp"
+#include "test_memory_resource.h"
+
+#include "test_macros.h"
 
 namespace ex = std::experimental::pmr;
 

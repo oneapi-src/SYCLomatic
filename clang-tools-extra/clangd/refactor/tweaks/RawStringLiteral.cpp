@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-#include "ClangdUnit.h"
 #include "Logger.h"
+#include "ParsedAST.h"
 #include "SourceCode.h"
 #include "refactor/Tweak.h"
 #include "clang/AST/ASTContext.h"
@@ -39,8 +39,9 @@ public:
   const char *id() const override final;
 
   bool prepare(const Selection &Inputs) override;
-  Expected<tooling::Replacements> apply(const Selection &Inputs) override;
-  std::string title() const override;
+  Expected<Effect> apply(const Selection &Inputs) override;
+  std::string title() const override { return "Convert to raw string"; }
+  Intent intent() const override { return Refactor; }
 
 private:
   const clang::StringLiteral *Str = nullptr;
@@ -82,22 +83,19 @@ bool RawStringLiteral::prepare(const Selection &Inputs) {
     return false;
   Str = dyn_cast_or_null<StringLiteral>(N->ASTNode.get<Stmt>());
   return Str &&
-         isNormalString(*Str, Inputs.Cursor,
-                        Inputs.AST.getASTContext().getSourceManager()) &&
+         isNormalString(*Str, Inputs.Cursor, Inputs.AST.getSourceManager()) &&
          needsRaw(Str->getBytes()) && canBeRaw(Str->getBytes());
 }
 
-Expected<tooling::Replacements>
-RawStringLiteral::apply(const Selection &Inputs) {
-  return tooling::Replacements(
-      tooling::Replacement(Inputs.AST.getASTContext().getSourceManager(), Str,
+Expected<Tweak::Effect> RawStringLiteral::apply(const Selection &Inputs) {
+  auto &SM = Inputs.AST.getSourceManager();
+  auto Reps = tooling::Replacements(
+      tooling::Replacement(Inputs.AST.getSourceManager(), Str,
                            ("R\"(" + Str->getBytes() + ")\"").str(),
                            Inputs.AST.getASTContext().getLangOpts()));
+  return Effect::mainFileEdit(SM, std::move(Reps));
 }
-
-std::string RawStringLiteral::title() const { return "Convert to raw string"; }
 
 } // namespace
 } // namespace clangd
 } // namespace clang
-

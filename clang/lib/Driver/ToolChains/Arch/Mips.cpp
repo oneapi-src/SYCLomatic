@@ -246,7 +246,6 @@ void mips::getMIPSTargetFeatures(const Driver &D, const llvm::Triple &Triple,
   if (IsN64 && NonPIC && (!ABICallsArg || UseAbiCalls)) {
     D.Diag(diag::warn_drv_unsupported_pic_with_mabicalls)
         << LastPICArg->getAsString(Args) << (!ABICallsArg ? 0 : 1);
-    NonPIC = false;
   }
 
   if (ABICallsArg && !UseAbiCalls && IsPIC) {
@@ -266,6 +265,13 @@ void mips::getMIPSTargetFeatures(const Driver &D, const llvm::Triple &Triple,
       Features.push_back("+long-calls");
     else
       D.Diag(diag::warn_drv_unsupported_longcalls) << (ABICallsArg ? 0 : 1);
+  }
+
+  if (Arg *A = Args.getLastArg(options::OPT_mxgot, options::OPT_mno_xgot)) {
+    if (A->getOption().matches(options::OPT_mxgot))
+      Features.push_back("+xgot");
+    else
+      Features.push_back("-xgot");
   }
 
   mips::FloatABI FloatABI = mips::getMipsFloatABI(D, Args);

@@ -46,16 +46,22 @@ void barriers() {
 
 void prefetch() {
   __builtin_arm_prefetch(0, 1, 2, 0, 1); // pstl3keep
-// CHECK: call {{.*}} @llvm.prefetch(i8* null, i32 1, i32 1, i32 1)
+  // CHECK: call {{.*}} @llvm.prefetch.p0i8(i8* null, i32 1, i32 1, i32 1)
 
   __builtin_arm_prefetch(0, 0, 0, 1, 1); // pldl1keep
-// CHECK: call {{.*}} @llvm.prefetch(i8* null, i32 0, i32 0, i32 1)
+  // CHECK: call {{.*}} @llvm.prefetch.p0i8(i8* null, i32 0, i32 0, i32 1)
 
   __builtin_arm_prefetch(0, 0, 0, 1, 1); // pldl1strm
-// CHECK: call {{.*}} @llvm.prefetch(i8* null, i32 0, i32 0, i32 1)
+  // CHECK: call {{.*}} @llvm.prefetch.p0i8(i8* null, i32 0, i32 0, i32 1)
 
   __builtin_arm_prefetch(0, 0, 0, 0, 0); // plil1keep
-// CHECK: call {{.*}} @llvm.prefetch(i8* null, i32 0, i32 3, i32 0)
+  // CHECK: call {{.*}} @llvm.prefetch.p0i8(i8* null, i32 0, i32 3, i32 0)
+}
+
+int32_t jcvt(double v) {
+  //CHECK-LABEL: @jcvt(
+  //CHECK: call i32 @llvm.aarch64.fjcvtzs
+  return __builtin_arm_jcvt(v);
 }
 
 __typeof__(__builtin_arm_rsr("1:2:3:4:5")) rsr(void);

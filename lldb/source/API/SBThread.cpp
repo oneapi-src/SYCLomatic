@@ -16,6 +16,7 @@
 #include "lldb/API/SBFrame.h"
 #include "lldb/API/SBProcess.h"
 #include "lldb/API/SBStream.h"
+#include "lldb/API/SBStructuredData.h"
 #include "lldb/API/SBSymbolContext.h"
 #include "lldb/API/SBThreadCollection.h"
 #include "lldb/API/SBThreadPlan.h"
@@ -23,6 +24,7 @@
 #include "lldb/Breakpoint/BreakpointLocation.h"
 #include "lldb/Core/Debugger.h"
 #include "lldb/Core/StreamFile.h"
+#include "lldb/Core/StructuredDataImpl.h"
 #include "lldb/Core/ValueObject.h"
 #include "lldb/Interpreter/CommandInterpreter.h"
 #include "lldb/Symbol/CompileUnit.h"
@@ -122,7 +124,7 @@ SBThread::operator bool() const {
   if (target && process) {
     Process::StopLocker stop_locker;
     if (stop_locker.TryLock(&process->GetRunLock()))
-      return m_opaque_sp->GetThreadSP().get() != NULL;
+      return m_opaque_sp->GetThreadSP().get() != nullptr;
   }
   // Without a valid target & process, this thread can't be valid.
   return false;
@@ -359,7 +361,7 @@ size_t SBThread::GetStopDescription(char *dst, size_t dst_len) {
             stop_desc =
                 exe_ctx.GetProcessPtr()->GetUnixSignals()->GetSignalAsCString(
                     stop_info_sp->GetValue());
-            if (stop_desc == NULL || stop_desc[0] == '\0') {
+            if (stop_desc == nullptr || stop_desc[0] == '\0') {
               static char signal_desc[] = "signal";
               stop_desc = signal_desc;
               stop_desc_len =
@@ -452,7 +454,7 @@ uint32_t SBThread::GetIndexID() const {
 const char *SBThread::GetName() const {
   LLDB_RECORD_METHOD_CONST_NO_ARGS(const char *, SBThread, GetName);
 
-  const char *name = NULL;
+  const char *name = nullptr;
   std::unique_lock<std::recursive_mutex> lock;
   ExecutionContext exe_ctx(m_opaque_sp.get(), lock);
 
@@ -469,7 +471,7 @@ const char *SBThread::GetName() const {
 const char *SBThread::GetQueueName() const {
   LLDB_RECORD_METHOD_CONST_NO_ARGS(const char *, SBThread, GetQueueName);
 
-  const char *name = NULL;
+  const char *name = nullptr;
   std::unique_lock<std::recursive_mutex> lock;
   ExecutionContext exe_ctx(m_opaque_sp.get(), lock);
 
@@ -566,7 +568,7 @@ SBError SBThread::ResumeNewPlan(ExecutionContext &exe_ctx,
 
   // User level plans should be Master Plans so they can be interrupted, other
   // plans executed, and then a "continue" will resume the plan.
-  if (new_plan != NULL) {
+  if (new_plan != nullptr) {
     new_plan->SetIsMasterPlan(true);
     new_plan->SetOkayToDiscard(false);
   }
@@ -577,7 +579,7 @@ SBError SBThread::ResumeNewPlan(ExecutionContext &exe_ctx,
   if (process->GetTarget().GetDebugger().GetAsyncExecution())
     sb_error.ref() = process->Resume();
   else
-    sb_error.ref() = process->ResumeSynchronous(NULL);
+    sb_error.ref() = process->ResumeSynchronous(nullptr);
 
   return sb_error;
 }
@@ -627,7 +629,7 @@ void SBThread::StepInto(lldb::RunMode stop_other_threads) {
   LLDB_RECORD_METHOD(void, SBThread, StepInto, (lldb::RunMode),
                      stop_other_threads);
 
-  StepInto(NULL, stop_other_threads);
+  StepInto(nullptr, stop_other_threads);
 }
 
 void SBThread::StepInto(const char *target_name,
@@ -716,7 +718,7 @@ void SBThread::StepOut(SBError &error) {
   const LazyBool avoid_no_debug = eLazyBoolCalculate;
   Status new_plan_status;
   ThreadPlanSP new_plan_sp(thread->QueueThreadPlanForStepOut(
-      abort_other_plans, NULL, false, stop_other_threads, eVoteYes,
+      abort_other_plans, nullptr, false, stop_other_threads, eVoteYes,
       eVoteNoOpinion, 0, new_plan_status, avoid_no_debug));
 
   if (new_plan_status.Success())
@@ -763,7 +765,7 @@ void SBThread::StepOutOfFrame(SBFrame &sb_frame, SBError &error) {
 
   Status new_plan_status;
   ThreadPlanSP new_plan_sp(thread->QueueThreadPlanForStepOut(
-      abort_other_plans, NULL, false, stop_other_threads, eVoteYes,
+      abort_other_plans, nullptr, false, stop_other_threads, eVoteYes,
       eVoteNoOpinion, frame_sp->GetFrameIndex(), new_plan_status));
 
   if (new_plan_status.Success())
@@ -878,7 +880,7 @@ SBError SBThread::StepOverUntil(lldb::SBFrame &sb_frame,
         eSymbolContextCompUnit | eSymbolContextFunction |
         eSymbolContextLineEntry | eSymbolContextSymbol);
 
-    if (frame_sc.comp_unit == NULL) {
+    if (frame_sc.comp_unit == nullptr) {
       sb_error.SetErrorStringWithFormat(
           "frame %u doesn't have debug information", frame_sp->GetFrameIndex());
       return LLDB_RECORD_RESULT(sb_error);
@@ -965,9 +967,24 @@ SBError SBThread::StepUsingScriptedThreadPlan(const char *script_class_name) {
 }
 
 SBError SBThread::StepUsingScriptedThreadPlan(const char *script_class_name,
+                                            bool resume_immediately) {
+  LLDB_RECORD_METHOD(lldb::SBError, SBThread, StepUsingScriptedThreadPlan,
+                     (const char *, bool), script_class_name, 
+                     resume_immediately);
+
+  lldb::SBStructuredData no_data;
+  return LLDB_RECORD_RESULT(
+      StepUsingScriptedThreadPlan(script_class_name, 
+                                  no_data, 
+                                  resume_immediately));
+}
+
+SBError SBThread::StepUsingScriptedThreadPlan(const char *script_class_name,
+                                              SBStructuredData &args_data,
                                               bool resume_immediately) {
   LLDB_RECORD_METHOD(lldb::SBError, SBThread, StepUsingScriptedThreadPlan,
-                     (const char *, bool), script_class_name,
+                     (const char *, lldb::SBStructuredData &, bool), 
+                     script_class_name, args_data,
                      resume_immediately);
 
   SBError error;
@@ -982,8 +999,10 @@ SBError SBThread::StepUsingScriptedThreadPlan(const char *script_class_name,
 
   Thread *thread = exe_ctx.GetThreadPtr();
   Status new_plan_status;
+  StructuredData::ObjectSP obj_sp = args_data.m_impl_up->GetObjectSP();
+
   ThreadPlanSP new_plan_sp = thread->QueueThreadPlanForStepScripted(
-      false, script_class_name, false, new_plan_status);
+      false, script_class_name, obj_sp, false, new_plan_status);
 
   if (new_plan_status.Fail()) {
     error.SetErrorString(new_plan_status.AsCString());
@@ -1235,7 +1254,7 @@ bool SBThread::EventIsThreadEvent(const SBEvent &event) {
   LLDB_RECORD_STATIC_METHOD(bool, SBThread, EventIsThreadEvent,
                             (const lldb::SBEvent &), event);
 
-  return Thread::ThreadEventData::GetEventDataFromEvent(event.get()) != NULL;
+  return Thread::ThreadEventData::GetEventDataFromEvent(event.get()) != nullptr;
 }
 
 SBFrame SBThread::GetStackFrameFromEvent(const SBEvent &event) {
@@ -1460,6 +1479,8 @@ void RegisterMethods<SBThread>(Registry &R) {
                        (const char *));
   LLDB_REGISTER_METHOD(lldb::SBError, SBThread, StepUsingScriptedThreadPlan,
                        (const char *, bool));
+  LLDB_REGISTER_METHOD(lldb::SBError, SBThread, StepUsingScriptedThreadPlan,
+                       (const char *, SBStructuredData &, bool));
   LLDB_REGISTER_METHOD(lldb::SBError, SBThread, JumpToLine,
                        (lldb::SBFileSpec &, uint32_t));
   LLDB_REGISTER_METHOD(lldb::SBError, SBThread, ReturnFromFrame,

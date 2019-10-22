@@ -2,10 +2,10 @@
 # does not have enough information for our heuristics to determine the path
 # style, so we will just treat them as native host paths.
 
-# REQUIRES: lld
+# REQUIRES: lld, x86
 
 # RUN: llvm-mc -triple x86_64-pc-linux %s -filetype=obj > %t.o
-# RUN: ld.lld %t.o -o %t
+# RUN: ld.lld %t.o -o %t -z separate-code
 # RUN: %lldb %t -s %S/Inputs/dir-separator-no-comp-dir-relative-name.lldbinit -o exit | FileCheck %s
 
 # CHECK-LABEL: image dump line-table a.c

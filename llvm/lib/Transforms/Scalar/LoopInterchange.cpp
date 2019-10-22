@@ -410,8 +410,6 @@ public:
   void removeChildLoop(Loop *OuterLoop, Loop *InnerLoop);
 
 private:
-  void splitInnerLoopLatch(Instruction *);
-  void splitInnerLoopHeader();
   bool adjustLoopLinks();
   void adjustLoopPreheaders();
   bool adjustLoopBranches();
@@ -1226,7 +1224,7 @@ bool LoopInterchangeTransform::transform() {
 
   if (InnerLoop->getSubLoops().empty()) {
     BasicBlock *InnerLoopPreHeader = InnerLoop->getLoopPreheader();
-    LLVM_DEBUG(dbgs() << "Calling Split Inner Loop\n");
+    LLVM_DEBUG(dbgs() << "Splitting the inner loop latch\n");
     PHINode *InductionPHI = getInductionVariable(InnerLoop, SE);
     if (!InductionPHI) {
       LLVM_DEBUG(dbgs() << "Failed to find the point to split loop latch \n");
@@ -1242,11 +1240,55 @@ bool LoopInterchangeTransform::transform() {
     if (&InductionPHI->getParent()->front() != InductionPHI)
       InductionPHI->moveBefore(&InductionPHI->getParent()->front());
 
-    // Split at the place were the induction variable is
-    // incremented/decremented.
-    // TODO: This splitting logic may not work always. Fix this.
-    splitInnerLoopLatch(InnerIndexVar);
-    LLVM_DEBUG(dbgs() << "splitInnerLoopLatch done\n");
+    // Create a new latch block for the inner loop. We split at the
+    // current latch's terminator and then move the condition and all
+    // operands that are not either loop-invariant or the induction PHI into the
+    // new latch block.
+    BasicBlock *NewLatch =
+        SplitBlock(InnerLoop->getLoopLatch(),
+                   InnerLoop->getLoopLatch()->getTerminator(), DT, LI);
+
+    SmallSetVector<Instruction *, 4> WorkList;
+    unsigned i = 0;
+    auto MoveInstructions = [&i, &WorkList, this, InductionPHI, NewLatch]() {
+      for (; i < WorkList.size(); i++) {
+        // Duplicate instruction and move it the new latch. Update uses that
+        // have been moved.
+        Instruction *NewI = WorkList[i]->clone();
+        NewI->insertBefore(NewLatch->getFirstNonPHI());
+        assert(!NewI->mayHaveSideEffects() &&
+               "Moving instructions with side-effects may change behavior of "
+               "the loop nest!");
+        for (auto UI = WorkList[i]->use_begin(), UE = WorkList[i]->use_end();
+             UI != UE;) {
+          Use &U = *UI++;
+          Instruction *UserI = cast<Instruction>(U.getUser());
+          if (!InnerLoop->contains(UserI->getParent()) ||
+              UserI->getParent() == NewLatch || UserI == InductionPHI)
+            U.set(NewI);
+        }
+        // Add operands of moved instruction to the worklist, except if they are
+        // outside the inner loop or are the induction PHI.
+        for (Value *Op : WorkList[i]->operands()) {
+          Instruction *OpI = dyn_cast<Instruction>(Op);
+          if (!OpI ||
+              this->LI->getLoopFor(OpI->getParent()) != this->InnerLoop ||
+              OpI == InductionPHI)
+            continue;
+          WorkList.insert(OpI);
+        }
+      }
+    };
+
+    // FIXME: Should we interchange when we have a constant condition?
+    Instruction *CondI = dyn_cast<Instruction>(
+        cast<BranchInst>(InnerLoop->getLoopLatch()->getTerminator())
+            ->getCondition());
+    if (CondI)
+      WorkList.insert(CondI);
+    MoveInstructions();
+    WorkList.insert(cast<Instruction>(InnerIndexVar));
+    MoveInstructions();
 
     // Splits the inner loops phi nodes out into a separate basic block.
     BasicBlock *InnerLoopHeader = InnerLoop->getHeader();
@@ -1261,12 +1303,6 @@ bool LoopInterchangeTransform::transform() {
   }
 
   return true;
-}
-
-void LoopInterchangeTransform::splitInnerLoopLatch(Instruction *Inc) {
-  BasicBlock *InnerLoopLatch = InnerLoop->getLoopLatch();
-  BasicBlock *InnerLoopLatchPred = InnerLoopLatch;
-  InnerLoopLatch = SplitBlock(InnerLoopLatchPred, Inc, DT, LI);
 }
 
 /// \brief Move all instructions except the terminator from FromBB right before
@@ -1301,8 +1337,41 @@ static void updateSuccessor(BranchInst *BI, BasicBlock *OldBB,
 }
 
 // Move Lcssa PHIs to the right place.
-static void moveLCSSAPhis(BasicBlock *InnerExit, BasicBlock *InnerLatch,
-                          BasicBlock *OuterLatch) {
+static void moveLCSSAPhis(BasicBlock *InnerExit, BasicBlock *InnerHeader,
+                          BasicBlock *InnerLatch, BasicBlock *OuterHeader,
+                          BasicBlock *OuterLatch, BasicBlock *OuterExit) {
+
+  // Deal with LCSSA PHI nodes in the exit block of the inner loop, that are
+  // defined either in the header or latch. Those blocks will become header and
+  // latch of the new outer loop, and the only possible users can PHI nodes
+  // in the exit block of the loop nest or the outer loop header (reduction
+  // PHIs, in that case, the incoming value must be defined in the inner loop
+  // header). We can just substitute the user with the incoming value and remove
+  // the PHI.
+  for (PHINode &P : make_early_inc_range(InnerExit->phis())) {
+    assert(P.getNumIncomingValues() == 1 &&
+           "Only loops with a single exit are supported!");
+
+    // Incoming values are guaranteed be instructions currently.
+    auto IncI = cast<Instruction>(P.getIncomingValueForBlock(InnerLatch));
+    // Skip phis with incoming values from the inner loop body, excluding the
+    // header and latch.
+    if (IncI->getParent() != InnerLatch && IncI->getParent() != InnerHeader)
+      continue;
+
+    assert(all_of(P.users(),
+                  [OuterHeader, OuterExit, IncI, InnerHeader](User *U) {
+                    return (cast<PHINode>(U)->getParent() == OuterHeader &&
+                            IncI->getParent() == InnerHeader) ||
+                           cast<PHINode>(U)->getParent() == OuterExit;
+                  }) &&
+           "Can only replace phis iff the uses are in the loop nest exit or "
+           "the incoming value is defined in the inner header (it will "
+           "dominate all loop blocks after interchanging)");
+    P.replaceAllUsesWith(IncI);
+    P.eraseFromParent();
+  }
+
   SmallVector<PHINode *, 8> LcssaInnerExit;
   for (PHINode &P : InnerExit->phis())
     LcssaInnerExit.push_back(&P);
@@ -1315,30 +1384,38 @@ static void moveLCSSAPhis(BasicBlock *InnerExit, BasicBlock *InnerLatch,
   // If a PHI node has users outside of InnerExit, it has a use outside the
   // interchanged loop and we have to preserve it. We move these to
   // InnerLatch, which will become the new exit block for the innermost
-  // loop after interchanging. For PHIs only used in InnerExit, we can just
-  // replace them with the incoming value.
-  for (PHINode *P : LcssaInnerExit) {
-    bool hasUsersOutside = false;
-    for (auto UI = P->use_begin(), E = P->use_end(); UI != E;) {
-      Use &U = *UI;
-      ++UI;
-      auto *Usr = cast<Instruction>(U.getUser());
-      if (Usr->getParent() != InnerExit) {
-        hasUsersOutside = true;
-        continue;
-      }
-      U.set(P->getIncomingValueForBlock(InnerLatch));
-    }
-    if (hasUsersOutside)
-      P->moveBefore(InnerLatch->getFirstNonPHI());
-    else
-      P->eraseFromParent();
-  }
+  // loop after interchanging.
+  for (PHINode *P : LcssaInnerExit)
+    P->moveBefore(InnerLatch->getFirstNonPHI());
 
   // If the inner loop latch contains LCSSA PHIs, those come from a child loop
   // and we have to move them to the new inner latch.
   for (PHINode *P : LcssaInnerLatch)
     P->moveBefore(InnerExit->getFirstNonPHI());
+
+  // Deal with LCSSA PHI nodes in the loop nest exit block. For PHIs that have
+  // incoming values from the outer latch or header, we have to add a new PHI
+  // in the inner loop latch, which became the exit block of the outer loop,
+  // after interchanging.
+  if (OuterExit) {
+    for (PHINode &P : OuterExit->phis()) {
+      if (P.getNumIncomingValues() != 1)
+        continue;
+      // Skip Phis with incoming values not defined in the outer loop's header
+      // and latch. Also skip incoming phis defined in the latch. Those should
+      // already have been updated.
+      auto I = dyn_cast<Instruction>(P.getIncomingValue(0));
+      if (!I || ((I->getParent() != OuterLatch || isa<PHINode>(I)) &&
+                 I->getParent() != OuterHeader))
+        continue;
+
+      PHINode *NewPhi = dyn_cast<PHINode>(P.clone());
+      NewPhi->setIncomingValue(0, P.getIncomingValue(0));
+      NewPhi->setIncomingBlock(0, OuterLatch);
+      NewPhi->insertBefore(InnerLatch->getFirstNonPHI());
+      P.setIncomingValue(0, NewPhi);
+    }
+  }
 
   // Now adjust the incoming blocks for the LCSSA PHIs.
   // For PHIs moved from Inner's exit block, we need to replace Inner's latch
@@ -1442,7 +1519,8 @@ bool LoopInterchangeTransform::adjustLoopBranches() {
   restructureLoops(OuterLoop, InnerLoop, InnerLoopPreHeader,
                    OuterLoopPreHeader);
 
-  moveLCSSAPhis(InnerLoopLatchSuccessor, InnerLoopLatch, OuterLoopLatch);
+  moveLCSSAPhis(InnerLoopLatchSuccessor, InnerLoopHeader, InnerLoopLatch,
+                OuterLoopHeader, OuterLoopLatch, InnerLoop->getExitBlock());
   // For PHIs in the exit block of the outer loop, outer's latch has been
   // replaced by Inners'.
   OuterLoopLatchSuccessor->replacePhiUsesWith(OuterLoopLatch, InnerLoopLatch);

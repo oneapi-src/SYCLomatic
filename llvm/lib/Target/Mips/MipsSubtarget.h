@@ -189,6 +189,9 @@ class MipsSubtarget : public MipsGenSubtargetInfo {
   // Disable use of the `jal` instruction.
   bool UseLongCalls = false;
 
+  // Assume 32-bit GOT.
+  bool UseXGOT = false;
+
   /// The minimum alignment known to hold of the stack frame on
   /// entry to the function and which must be maintained by every function.
   unsigned stackAlignment;
@@ -323,6 +326,8 @@ public:
 
   bool useLongCalls() const { return UseLongCalls; }
 
+  bool useXGOT() const { return UseXGOT; }
+
   bool enableLongBranchPass() const {
     return hasStandardEncoding() || inMicroMipsMode() || allowMixed16_32();
   }
@@ -391,7 +396,7 @@ public:
   const CallLowering *getCallLowering() const override;
   const LegalizerInfo *getLegalizerInfo() const override;
   const RegisterBankInfo *getRegBankInfo() const override;
-  const InstructionSelector *getInstructionSelector() const override;
+  InstructionSelector *getInstructionSelector() const override;
 };
 } // End llvm namespace
 

@@ -46,6 +46,11 @@ enum LLVMConstants : uint32_t {
   DW_VIRTUALITY_invalid = ~0U, // Virtuality for invalid results.
   DW_MACINFO_invalid = ~0U,    // Macinfo type for invalid results.
 
+  // Special values for an initial length field.
+  DW_LENGTH_lo_reserved = 0xfffffff0, // Lower bound of the reserved range.
+  DW_LENGTH_DWARF64 = 0xffffffff,     // Indicator of 64-bit DWARF format.
+  DW_LENGTH_hi_reserved = 0xffffffff, // Upper bound of the reserved range.
+
   // Other constants.
   DWARF_VERSION = 4,       // Default dwarf version we output.
   DW_PUBTYPES_VERSION = 2, // Section version number for .debug_pubtypes.
@@ -75,7 +80,7 @@ const uint64_t DW64_CIE_ID = UINT64_MAX;
 const uint32_t DW_INVALID_OFFSET = UINT32_MAX;
 
 enum Tag : uint16_t {
-#define HANDLE_DW_TAG(ID, NAME, VERSION, VENDOR) DW_TAG_##NAME = ID,
+#define HANDLE_DW_TAG(ID, NAME, VERSION, VENDOR, KIND) DW_TAG_##NAME = ID,
 #include "llvm/BinaryFormat/Dwarf.def"
   DW_TAG_lo_user = 0x4080,
   DW_TAG_hi_user = 0xffff,
@@ -84,29 +89,12 @@ enum Tag : uint16_t {
 
 inline bool isType(Tag T) {
   switch (T) {
-  case DW_TAG_array_type:
-  case DW_TAG_class_type:
-  case DW_TAG_interface_type:
-  case DW_TAG_enumeration_type:
-  case DW_TAG_pointer_type:
-  case DW_TAG_reference_type:
-  case DW_TAG_rvalue_reference_type:
-  case DW_TAG_string_type:
-  case DW_TAG_structure_type:
-  case DW_TAG_subroutine_type:
-  case DW_TAG_union_type:
-  case DW_TAG_ptr_to_member_type:
-  case DW_TAG_set_type:
-  case DW_TAG_subrange_type:
-  case DW_TAG_base_type:
-  case DW_TAG_const_type:
-  case DW_TAG_file_type:
-  case DW_TAG_packed_type:
-  case DW_TAG_volatile_type:
-  case DW_TAG_typedef:
-    return true;
   default:
     return false;
+#define HANDLE_DW_TAG(ID, NAME, VERSION, VENDOR, KIND)                         \
+  case DW_TAG_##NAME:                                                          \
+    return (KIND == DW_KIND_TYPE);
+#include "llvm/BinaryFormat/Dwarf.def"
   }
 }
 
@@ -129,8 +117,9 @@ enum LocationAtom {
 #include "llvm/BinaryFormat/Dwarf.def"
   DW_OP_lo_user = 0xe0,
   DW_OP_hi_user = 0xff,
-  DW_OP_LLVM_fragment = 0x1000, ///< Only used in LLVM metadata.
-  DW_OP_LLVM_convert  = 0x1001  ///< Only used in LLVM metadata.
+  DW_OP_LLVM_fragment = 0x1000,   ///< Only used in LLVM metadata.
+  DW_OP_LLVM_convert = 0x1001,    ///< Only used in LLVM metadata.
+  DW_OP_LLVM_tag_offset = 0x1002, ///< Only used in LLVM metadata.
 };
 
 enum TypeKind : uint8_t {
@@ -190,6 +179,59 @@ enum SourceLanguage {
   DW_LANG_lo_user = 0x8000,
   DW_LANG_hi_user = 0xffff
 };
+
+inline bool isCPlusPlus(SourceLanguage S) {
+  // Deliberately enumerate all the language options so we get a warning when
+  // new language options are added (-Wswitch) that'll hopefully help keep this
+  // switch up-to-date when new C++ versions are added.
+  switch (S) {
+  case DW_LANG_C_plus_plus:
+  case DW_LANG_C_plus_plus_03:
+  case DW_LANG_C_plus_plus_11:
+  case DW_LANG_C_plus_plus_14:
+    return true;
+  case DW_LANG_C89:
+  case DW_LANG_C:
+  case DW_LANG_Ada83:
+  case DW_LANG_Cobol74:
+  case DW_LANG_Cobol85:
+  case DW_LANG_Fortran77:
+  case DW_LANG_Fortran90:
+  case DW_LANG_Pascal83:
+  case DW_LANG_Modula2:
+  case DW_LANG_Java:
+  case DW_LANG_C99:
+  case DW_LANG_Ada95:
+  case DW_LANG_Fortran95:
+  case DW_LANG_PLI:
+  case DW_LANG_ObjC:
+  case DW_LANG_ObjC_plus_plus:
+  case DW_LANG_UPC:
+  case DW_LANG_D:
+  case DW_LANG_Python:
+  case DW_LANG_OpenCL:
+  case DW_LANG_Go:
+  case DW_LANG_Modula3:
+  case DW_LANG_Haskell:
+  case DW_LANG_OCaml:
+  case DW_LANG_Rust:
+  case DW_LANG_C11:
+  case DW_LANG_Swift:
+  case DW_LANG_Julia:
+  case DW_LANG_Dylan:
+  case DW_LANG_Fortran03:
+  case DW_LANG_Fortran08:
+  case DW_LANG_RenderScript:
+  case DW_LANG_BLISS:
+  case DW_LANG_Mips_Assembler:
+  case DW_LANG_GOOGLE_RenderScript:
+  case DW_LANG_BORLAND_Delphi:
+  case DW_LANG_lo_user:
+  case DW_LANG_hi_user:
+    return false;
+  }
+  llvm_unreachable("Invalid source language");
+}
 
 enum CaseSensitivity {
   // Identifier case codes
@@ -523,6 +565,17 @@ struct FormParams {
 
   explicit operator bool() const { return Version && AddrSize; }
 };
+
+/// Get the byte size of the unit length field depending on the DWARF format.
+inline uint8_t getUnitLengthFieldByteSize(DwarfFormat Format) {
+  switch (Format) {
+  case DwarfFormat::DWARF32:
+    return 4;
+  case DwarfFormat::DWARF64:
+    return 12;
+  }
+  llvm_unreachable("Invalid Format value");
+}
 
 /// Get the fixed byte size for a given form.
 ///

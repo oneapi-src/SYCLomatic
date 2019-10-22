@@ -145,9 +145,9 @@ private:
   ObjCNoReturn ObjCNoRet;
 
   /// The BugReporter associated with this engine.  It is important that
-  ///  this object be placed at the very end of member variables so that its
-  ///  destructor is called before the rest of the ExprEngine is destroyed.
-  GRBugReporter BR;
+  /// this object be placed at the very end of member variables so that its
+  /// destructor is called before the rest of the ExprEngine is destroyed.
+  PathSensitiveBugReporter BR;
 
   /// The functions which have been analyzed through inlining. This is owned by
   /// AnalysisConsumer. It can be null.
@@ -156,14 +156,12 @@ private:
   /// The flag, which specifies the mode of inlining for the engine.
   InliningModes HowToInline;
 
-  NoteTag::Factory NoteTags;
-
 public:
   ExprEngine(cross_tu::CrossTranslationUnitContext &CTU, AnalysisManager &mgr,
              SetOfConstDecls *VisitedCalleesIn,
              FunctionSummariesTy *FS, InliningModes HowToInlineIn);
 
-  ~ExprEngine() override;
+  ~ExprEngine() override = default;
 
   /// Returns true if there is still simulation state on the worklist.
   bool ExecuteWorkList(const LocationContext *L, unsigned Steps = 150000) {
@@ -378,10 +376,10 @@ public:
                        const LocationContext *LCtx,
                        const CallEvent *Call) override;
 
-  /// printState - Called by ProgramStateManager to print checker-specific data.
-  void printState(raw_ostream &Out, ProgramStateRef State, const char *NL,
-                  const char *Sep,
-                  const LocationContext *LCtx = nullptr) override;
+  /// printJson - Called by ProgramStateManager to print checker-specific data.
+  void printJson(raw_ostream &Out, ProgramStateRef State,
+                 const LocationContext *LCtx, const char *NL,
+                 unsigned int Space, bool IsDot) const override;
 
   ProgramStateManager &getStateManager() override { return StateMgr; }
 
@@ -399,7 +397,7 @@ public:
   SymbolManager &getSymbolManager() { return SymMgr; }
   MemRegionManager &getRegionManager() { return MRMgr; }
 
-  NoteTag::Factory &getNoteTags() { return NoteTags; }
+  NoteTag::Factory &getNoteTags() { return Engine.getNoteTags(); }
 
 
   // Functions for external checking of whether we have unfinished work
@@ -532,7 +530,7 @@ public:
   void VisitCXXDestructor(QualType ObjectType, const MemRegion *Dest,
                           const Stmt *S, bool IsBaseDtor,
                           ExplodedNode *Pred, ExplodedNodeSet &Dst,
-                          const EvalCallOptions &Options);
+                          EvalCallOptions &Options);
 
   void VisitCXXNewAllocatorCall(const CXXNewExpr *CNE,
                                 ExplodedNode *Pred,
@@ -668,7 +666,7 @@ public:
                                   const LocationContext *LCtx,
                                   ProgramStateRef State);
 
-  /// Evaluate a call, running pre- and post-call checks and allowing checkers
+  /// Evaluate a call, running pre- and post-call checkers and allowing checkers
   /// to be responsible for handling the evaluation of the call itself.
   void evalCall(ExplodedNodeSet &Dst, ExplodedNode *Pred,
                 const CallEvent &Call);

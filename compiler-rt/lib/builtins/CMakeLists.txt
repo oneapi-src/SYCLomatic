@@ -20,6 +20,9 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   if(APPLE)
     include(CompilerRTDarwinUtils)
   endif()
+  if(CMAKE_HOST_APPLE AND APPLE)
+    include(UseLibtool)
+  endif()
   include(AddCompilerRT)
 endif()
 
@@ -94,6 +97,7 @@ set(GENERIC_SOURCES
   floatunsisf.c
   floatuntidf.c
   floatuntisf.c
+  fp_mode.c
   int_util.c
   lshrdi3.c
   lshrti3.c
@@ -303,6 +307,7 @@ set(i386_SOURCES ${i386_SOURCES} ${x86_ARCH_SOURCES})
 set(i686_SOURCES ${i686_SOURCES} ${x86_ARCH_SOURCES})
 
 set(arm_SOURCES
+  arm/fp_mode.c
   arm/bswapdi2.S
   arm/bswapsi2.S
   arm/clzdi2.S
@@ -428,25 +433,7 @@ if(MINGW)
     arm/aeabi_uidivmod.S
     arm/aeabi_uldivmod.S
     arm/chkstk.S
-    divmoddi4.c
-    divmodsi4.c
-    divdi3.c
-    divsi3.c
-    fixdfdi.c
-    fixsfdi.c
-    fixunsdfdi.c
-    fixunssfdi.c
-    floatdidf.c
-    floatdisf.c
-    floatundidf.c
-    floatundisf.c
     mingw_fixfloat.c
-    moddi3.c
-    udivmoddi4.c
-    udivmodsi4.c
-    udivsi3.c
-    umoddi3.c
-    emutls.c
   )
   filter_builtin_sources(arm_SOURCES EXCLUDE arm_SOURCES "${arm_SOURCES};${GENERIC_SOURCES}")
 elseif(NOT WIN32)
@@ -466,6 +453,7 @@ endif()
 set(aarch64_SOURCES
   ${GENERIC_TF_SOURCES}
   ${GENERIC_SOURCES}
+  aarch64/fp_mode.c
 )
 
 if (MINGW)
@@ -552,6 +540,9 @@ set(riscv32_SOURCES
   ${riscv_SOURCES}
 )
 set(riscv64_SOURCES ${riscv_SOURCES})
+
+set(sparc_SOURCES ${GENERIC_SOURCES} ${GENERIC_TF_SOURCES})
+set(sparcv9_SOURCES ${GENERIC_SOURCES} ${GENERIC_TF_SOURCES})
 
 set(wasm32_SOURCES
   ${GENERIC_TF_SOURCES}

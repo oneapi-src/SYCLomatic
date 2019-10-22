@@ -573,7 +573,7 @@ class CastExpressionIdValidator final : public CorrectionCandidateCallback {
   }
 
   std::unique_ptr<CorrectionCandidateCallback> clone() override {
-    return llvm::make_unique<CastExpressionIdValidator>(*this);
+    return std::make_unique<CastExpressionIdValidator>(*this);
   }
 
  private:
@@ -1191,7 +1191,7 @@ ExprResult Parser::ParseCastExpression(bool isUnaryExpression,
   }
   case tok::kw__Alignof:   // unary-expression: '_Alignof' '(' type-name ')'
     if (!getLangOpts().C11)
-      Diag(Tok, diag::ext_c11_alignment) << Tok.getName();
+      Diag(Tok, diag::ext_c11_feature) << Tok.getName();
     LLVM_FALLTHROUGH;
   case tok::kw_alignof:    // unary-expression: 'alignof' '(' type-id ')'
   case tok::kw___alignof:  // unary-expression: '__alignof' unary-expression
@@ -1223,8 +1223,14 @@ ExprResult Parser::ParseCastExpression(bool isUnaryExpression,
   case tok::kw_static_cast:
     Res = ParseCXXCasts();
     break;
+  case tok::kw___builtin_bit_cast:
+    Res = ParseBuiltinBitCast();
+    break;
   case tok::kw_typeid:
     Res = ParseCXXTypeid();
+    break;
+  case tok::kw___unique_stable_name:
+    Res = ParseUniqueStableNameExpression();
     break;
   case tok::kw___uuidof:
     Res = ParseCXXUuidof();
@@ -1767,14 +1773,14 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
       if (Tok.is(tok::code_completion)) {
         tok::TokenKind CorrectedOpKind =
             OpKind == tok::arrow ? tok::period : tok::arrow;
-        ExprResult CorrectedLHS(/*IsInvalid=*/true);
+        ExprResult CorrectedLHS(/*Invalid=*/true);
         if (getLangOpts().CPlusPlus && OrigLHS) {
-          const bool DiagsAreSuppressed = Diags.getSuppressAllDiagnostics();
-          Diags.setSuppressAllDiagnostics(true);
+          // FIXME: Creating a TentativeAnalysisScope from outside Sema is a
+          // hack.
+          Sema::TentativeAnalysisScope Trap(Actions);
           CorrectedLHS = Actions.ActOnStartCXXMemberReference(
               getCurScope(), OrigLHS, OpLoc, CorrectedOpKind, ObjectType,
               MayBePseudoDestructor);
-          Diags.setSuppressAllDiagnostics(DiagsAreSuppressed);
         }
 
         Expr *Base = LHS.get();
@@ -1953,6 +1959,48 @@ Parser::ParseExprAfterUnaryExprOrTypeTrait(const Token &OpTok,
   return Operand;
 }
 
+ExprResult Parser::ParseUniqueStableNameExpression() {
+  assert(Tok.is(tok::kw___unique_stable_name) && "Not unique stable name");
+
+  SourceLocation OpLoc = ConsumeToken();
+  BalancedDelimiterTracker T(*this, tok::l_paren);
+
+  // typeid expressions are always parenthesized.
+  if (T.expectAndConsume(diag::err_expected_lparen_after,
+                         "__unique_stable_name"))
+    return ExprError();
+
+  ExprResult Result;
+
+  if (isTypeIdInParens()) {
+    TypeResult Ty = ParseTypeName();
+
+    // Match the ')'.
+    T.consumeClose();
+
+    if (Ty.isInvalid())
+      return ExprError();
+
+    Result = Actions.ActOnUniqueStableNameExpr(OpLoc, T.getOpenLocation(),
+                                               T.getCloseLocation(), Ty.get());
+  } else {
+    EnterExpressionEvaluationContext Unevaluated(
+        Actions, Sema::ExpressionEvaluationContext::Unevaluated);
+    Result = ParseExpression();
+
+    // Match the ')'.
+    if (Result.isInvalid())
+      SkipUntil(tok::r_paren, StopAtSemi);
+    else {
+      T.consumeClose();
+
+      Result = Actions.ActOnUniqueStableNameExpr(
+          OpLoc, T.getOpenLocation(), T.getCloseLocation(), Result.get());
+    }
+  }
+
+  return Result;
+}
 
 /// Parse a sizeof or alignof expression.
 ///
@@ -2049,7 +2097,7 @@ ExprResult Parser::ParseUnaryExprOrTypeTraitExpression() {
   if (isCastExpr)
     return Actions.ActOnUnaryExprOrTypeTraitExpr(OpTok.getLocation(),
                                                  ExprKind,
-                                                 /*isType=*/true,
+                                                 /*IsType=*/true,
                                                  CastTy.getAsOpaquePtr(),
                                                  CastRange);
 
@@ -2060,7 +2108,7 @@ ExprResult Parser::ParseUnaryExprOrTypeTraitExpression() {
   if (!Operand.isInvalid())
     Operand = Actions.ActOnUnaryExprOrTypeTraitExpr(OpTok.getLocation(),
                                                     ExprKind,
-                                                    /*isType=*/false,
+                                                    /*IsType=*/false,
                                                     Operand.get(),
                                                     CastRange);
   return Operand;
@@ -2730,11 +2778,10 @@ ExprResult Parser::ParseStringLiteralExpression(bool AllowUserDefinedLiteral) {
 /// \endverbatim
 ExprResult Parser::ParseGenericSelectionExpression() {
   assert(Tok.is(tok::kw__Generic) && "_Generic keyword expected");
-  SourceLocation KeyLoc = ConsumeToken();
-
   if (!getLangOpts().C11)
-    Diag(KeyLoc, diag::ext_c11_generic_selection);
+    Diag(Tok, diag::ext_c11_feature) << Tok.getName();
 
+  SourceLocation KeyLoc = ConsumeToken();
   BalancedDelimiterTracker T(*this, tok::l_paren);
   if (T.expectAndConsume())
     return ExprError();
@@ -3052,7 +3099,7 @@ ExprResult Parser::ParseBlockLiteralExpression() {
                                      /*IsAmbiguous=*/false,
                                      /*RParenLoc=*/NoLoc,
                                      /*ArgInfo=*/nullptr,
-                                     /*NumArgs=*/0,
+                                     /*NumParams=*/0,
                                      /*EllipsisLoc=*/NoLoc,
                                      /*RParenLoc=*/NoLoc,
                                      /*RefQualifierIsLvalueRef=*/true,

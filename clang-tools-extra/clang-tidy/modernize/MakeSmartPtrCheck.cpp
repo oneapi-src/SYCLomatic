@@ -69,7 +69,7 @@ void MakeSmartPtrCheck::registerPPCallbacks(const SourceManager &SM,
                                             Preprocessor *PP,
                                             Preprocessor *ModuleExpanderPP) {
   if (isLanguageVersionSupported(getLangOpts())) {
-    Inserter = llvm::make_unique<utils::IncludeInserter>(SM, getLangOpts(),
+    Inserter = std::make_unique<utils::IncludeInserter>(SM, getLangOpts(),
                                                          IncludeStyle);
     PP->addPPCallbacks(Inserter->CreatePPCallbacks());
   }
@@ -128,7 +128,7 @@ void MakeSmartPtrCheck::check(const MatchFinder::MatchResult &Result) {
   // Be conservative for cases where we construct an array without any
   // initalization.
   // For example,
-  //    P.reset(new int[5]) // check fix: P = make_unique<int []>(5)
+  //    P.reset(new int[5]) // check fix: P = std::make_unique<int []>(5)
   //
   // The fix of the check has side effect, it introduces default initialization
   // which maybe unexpected and cause performance regression.
@@ -298,11 +298,20 @@ bool MakeSmartPtrCheck::replaceNew(DiagnosticBuilder &Diag,
         return true;
       // Check whether we implicitly construct a class from a
       // std::initializer_list.
-      if (const auto *ImplicitCE = dyn_cast<CXXConstructExpr>(Arg)) {
-        if (ImplicitCE->isStdInitListInitialization())
+      if (const auto *CEArg = dyn_cast<CXXConstructExpr>(Arg)) {
+        // Strip the elidable move constructor, it is present in the AST for
+        // C++11/14, e.g. Foo(Bar{1, 2}), the move constructor is around the
+        // init-list constructor.
+        if (CEArg->isElidable()) {
+          if (const auto *TempExp = CEArg->getArg(0)) {
+            if (const auto *UnwrappedCE =
+                    dyn_cast<CXXConstructExpr>(TempExp->IgnoreImplicit()))
+              CEArg = UnwrappedCE;
+          }
+        }
+        if (CEArg->isStdInitListInitialization())
           return true;
       }
-      return false;
     }
     return false;
   };

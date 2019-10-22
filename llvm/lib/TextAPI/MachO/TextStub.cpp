@@ -246,7 +246,7 @@ template <> struct MappingTraits<const InterfaceFile *> {
     NormalizedTBD(IO &IO, const InterfaceFile *&File) {
       Architectures = File->getArchitectures();
       UUIDs = File->uuids();
-      Platform = File->getPlatform();
+      Platforms = File->getPlatforms();
       InstallName = File->getInstallName();
       CurrentVersion = PackedVersion(File->getCurrentVersion());
       CompatibilityVersion = PackedVersion(File->getCompatibilityVersion());
@@ -263,7 +263,10 @@ template <> struct MappingTraits<const InterfaceFile *> {
       if (File->isInstallAPI())
         Flags |= TBDFlags::InstallAPI;
 
-      ParentUmbrella = File->getParentUmbrella();
+      for (const auto &Iter : File->umbrellas()) {
+        ParentUmbrella = Iter.second;
+        break;
+      }
 
       std::set<ArchitectureSet> ArchSet;
       for (const auto &Library : File->allowableClients())
@@ -396,6 +399,29 @@ template <> struct MappingTraits<const InterfaceFile *> {
       }
     }
 
+    // TBD v1 - TBD v3 files only support one platform and several
+    // architectures. It is possible to have more than one platform for TBD v3
+    // files, but the architectures don't apply to all
+    // platforms, specifically to filter out the i386 slice from
+    // platform macCatalyst.
+    TargetList synthesizeTargets(ArchitectureSet Architectures,
+                                          const PlatformSet &Platforms) {
+      TargetList Targets;
+
+      for (auto Platform : Platforms) {
+        Platform = mapToPlatformKind(Platform, Architectures.hasX86());
+
+        for (const auto &&Architecture : Architectures) {
+          if ((Architecture == AK_i386) &&
+              (Platform == PlatformKind::macCatalyst))
+            continue;
+
+          Targets.emplace_back(Architecture, Platform);
+        }
+      }
+      return Targets;
+    }
+
     const InterfaceFile *denormalize(IO &IO) {
       auto Ctx = reinterpret_cast<TextAPIContext *>(IO.getContext());
       assert(Ctx);
@@ -403,16 +429,16 @@ template <> struct MappingTraits<const InterfaceFile *> {
       auto *File = new InterfaceFile;
       File->setPath(Ctx->Path);
       File->setFileType(Ctx->FileKind);
+      File->addTargets(synthesizeTargets(Architectures, Platforms));
       for (auto &ID : UUIDs)
         File->addUUID(ID.first, ID.second);
-      File->setPlatform(Platform);
-      File->setArchitectures(Architectures);
       File->setInstallName(InstallName);
       File->setCurrentVersion(CurrentVersion);
       File->setCompatibilityVersion(CompatibilityVersion);
       File->setSwiftABIVersion(SwiftABIVersion);
       File->setObjCConstraint(ObjCConstraint);
-      File->setParentUmbrella(ParentUmbrella);
+      for (const auto &Target : File->targets())
+        File->addParentUmbrella(Target, ParentUmbrella);
 
       if (Ctx->FileKind == FileType::TBD_V1) {
         File->setTwoLevelNamespace();
@@ -425,76 +451,80 @@ template <> struct MappingTraits<const InterfaceFile *> {
       }
 
       for (const auto &Section : Exports) {
-        for (const auto &Library : Section.AllowableClients)
-          File->addAllowableClient(Library, Section.Architectures);
-        for (const auto &Library : Section.ReexportedLibraries)
-          File->addReexportedLibrary(Library, Section.Architectures);
+        const auto Targets =
+            synthesizeTargets(Section.Architectures, Platforms);
+
+        for (const auto &Lib : Section.AllowableClients)
+          for (const auto &Target : Targets)
+            File->addAllowableClient(Lib, Target);
+
+        for (const auto &Lib : Section.ReexportedLibraries)
+          for (const auto &Target : Targets)
+            File->addReexportedLibrary(Lib, Target);
 
         for (const auto &Symbol : Section.Symbols) {
           if (Ctx->FileKind != FileType::TBD_V3 &&
               Symbol.value.startswith("_OBJC_EHTYPE_$_"))
             File->addSymbol(SymbolKind::ObjectiveCClassEHType,
-                            Symbol.value.drop_front(15), Section.Architectures);
+                            Symbol.value.drop_front(15), Targets);
           else
-            File->addSymbol(SymbolKind::GlobalSymbol, Symbol,
-                            Section.Architectures);
+            File->addSymbol(SymbolKind::GlobalSymbol, Symbol, Targets);
         }
         for (auto &Symbol : Section.Classes) {
           auto Name = Symbol.value;
           if (Ctx->FileKind != FileType::TBD_V3)
             Name = Name.drop_front();
-          File->addSymbol(SymbolKind::ObjectiveCClass, Name,
-                          Section.Architectures);
+          File->addSymbol(SymbolKind::ObjectiveCClass, Name, Targets);
         }
         for (auto &Symbol : Section.ClassEHs)
-          File->addSymbol(SymbolKind::ObjectiveCClassEHType, Symbol,
-                          Section.Architectures);
+          File->addSymbol(SymbolKind::ObjectiveCClassEHType, Symbol, Targets);
         for (auto &Symbol : Section.IVars) {
           auto Name = Symbol.value;
           if (Ctx->FileKind != FileType::TBD_V3)
             Name = Name.drop_front();
           File->addSymbol(SymbolKind::ObjectiveCInstanceVariable, Name,
-                          Section.Architectures);
+                          Targets);
         }
         for (auto &Symbol : Section.WeakDefSymbols)
-          File->addSymbol(SymbolKind::GlobalSymbol, Symbol,
-                          Section.Architectures, SymbolFlags::WeakDefined);
+          File->addSymbol(SymbolKind::GlobalSymbol, Symbol, Targets,
+                          SymbolFlags::WeakDefined);
         for (auto &Symbol : Section.TLVSymbols)
-          File->addSymbol(SymbolKind::GlobalSymbol, Symbol,
-                          Section.Architectures, SymbolFlags::ThreadLocalValue);
+          File->addSymbol(SymbolKind::GlobalSymbol, Symbol, Targets,
+                          SymbolFlags::ThreadLocalValue);
       }
 
       for (const auto &Section : Undefineds) {
+        const auto Targets =
+            synthesizeTargets(Section.Architectures, Platforms);
         for (auto &Symbol : Section.Symbols) {
           if (Ctx->FileKind != FileType::TBD_V3 &&
               Symbol.value.startswith("_OBJC_EHTYPE_$_"))
             File->addSymbol(SymbolKind::ObjectiveCClassEHType,
-                            Symbol.value.drop_front(15), Section.Architectures,
+                            Symbol.value.drop_front(15), Targets,
                             SymbolFlags::Undefined);
           else
-            File->addSymbol(SymbolKind::GlobalSymbol, Symbol,
-                            Section.Architectures, SymbolFlags::Undefined);
+            File->addSymbol(SymbolKind::GlobalSymbol, Symbol, Targets,
+                            SymbolFlags::Undefined);
         }
         for (auto &Symbol : Section.Classes) {
           auto Name = Symbol.value;
           if (Ctx->FileKind != FileType::TBD_V3)
             Name = Name.drop_front();
-          File->addSymbol(SymbolKind::ObjectiveCClass, Name,
-                          Section.Architectures, SymbolFlags::Undefined);
+          File->addSymbol(SymbolKind::ObjectiveCClass, Name, Targets,
+                          SymbolFlags::Undefined);
         }
         for (auto &Symbol : Section.ClassEHs)
-          File->addSymbol(SymbolKind::ObjectiveCClassEHType, Symbol,
-                          Section.Architectures, SymbolFlags::Undefined);
+          File->addSymbol(SymbolKind::ObjectiveCClassEHType, Symbol, Targets,
+                          SymbolFlags::Undefined);
         for (auto &Symbol : Section.IVars) {
           auto Name = Symbol.value;
           if (Ctx->FileKind != FileType::TBD_V3)
             Name = Name.drop_front();
-          File->addSymbol(SymbolKind::ObjectiveCInstanceVariable, Name,
-                          Section.Architectures, SymbolFlags::Undefined);
+          File->addSymbol(SymbolKind::ObjectiveCInstanceVariable, Name, Targets,
+                          SymbolFlags::Undefined);
         }
         for (auto &Symbol : Section.WeakRefSymbols)
-          File->addSymbol(SymbolKind::GlobalSymbol, Symbol,
-                          Section.Architectures,
+          File->addSymbol(SymbolKind::GlobalSymbol, Symbol, Targets,
                           SymbolFlags::Undefined | SymbolFlags::WeakReferenced);
       }
 
@@ -513,7 +543,7 @@ template <> struct MappingTraits<const InterfaceFile *> {
 
     std::vector<Architecture> Architectures;
     std::vector<UUID> UUIDs;
-    PlatformKind Platform{PlatformKind::unknown};
+    PlatformSet Platforms;
     StringRef InstallName;
     PackedVersion CurrentVersion;
     PackedVersion CompatibilityVersion;
@@ -534,9 +564,9 @@ template <> struct MappingTraits<const InterfaceFile *> {
 
     // prope file type when reading.
     if (!IO.outputting()) {
-      if (IO.mapTag("!tapi-tbd-v2", false))
-        Ctx->FileKind = FileType::TBD_V2;
-      else if (IO.mapTag("!tapi-tbd-v3", false))
+      if (IO.mapTag("!tapi-tbd-v3", false))
+        Ctx->FileKind = FileType::TBD_V3;
+      else if (IO.mapTag("!tapi-tbd-v2", false))
         Ctx->FileKind = FileType::TBD_V2;
       else if (IO.mapTag("!tapi-tbd-v1", false) ||
                IO.mapTag("tag:yaml.org,2002:map", false))
@@ -547,7 +577,7 @@ template <> struct MappingTraits<const InterfaceFile *> {
       }
     }
 
-    // Set file tyoe when writing.
+    // Set file type when writing.
     if (IO.outputting()) {
       switch (Ctx->FileKind) {
       default:
@@ -567,7 +597,7 @@ template <> struct MappingTraits<const InterfaceFile *> {
     IO.mapRequired("archs", Keys->Architectures);
     if (Ctx->FileKind != FileType::TBD_V1)
       IO.mapOptional("uuids", Keys->UUIDs);
-    IO.mapRequired("platform", Keys->Platform);
+    IO.mapRequired("platform", Keys->Platforms);
     if (Ctx->FileKind != FileType::TBD_V1)
       IO.mapOptional("flags", Keys->Flags, TBDFlags::None);
     IO.mapRequired("install-name", Keys->InstallName);
@@ -623,15 +653,17 @@ static void DiagHandler(const SMDiagnostic &Diag, void *Context) {
 }
 
 Expected<std::unique_ptr<InterfaceFile>>
-TextAPIReader::get(std::unique_ptr<MemoryBuffer> InputBuffer) {
+TextAPIReader::get(MemoryBufferRef InputBuffer) {
   TextAPIContext Ctx;
-  Ctx.Path = InputBuffer->getBufferIdentifier();
-  yaml::Input YAMLIn(InputBuffer->getBuffer(), &Ctx, DiagHandler, &Ctx);
+  Ctx.Path = InputBuffer.getBufferIdentifier();
+  yaml::Input YAMLIn(InputBuffer.getBuffer(), &Ctx, DiagHandler, &Ctx);
 
   // Fill vector with interface file objects created by parsing the YAML file.
   std::vector<const InterfaceFile *> Files;
   YAMLIn >> Files;
 
+  // YAMLIn dynamically allocates for Interface file and in case of error,
+  // memory leak will occur unless wrapped around unique_ptr
   auto File = std::unique_ptr<InterfaceFile>(
       const_cast<InterfaceFile *>(Files.front()));
 

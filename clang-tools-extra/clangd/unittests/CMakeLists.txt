@@ -23,11 +23,11 @@ endif()
 add_custom_target(ClangdUnitTests)
 add_unittest(ClangdUnitTests ClangdTests
   Annotations.cpp
+  ASTTests.cpp
   BackgroundIndexTests.cpp
   CancellationTests.cpp
   CanonicalIncludesTests.cpp
   ClangdTests.cpp
-  ClangdUnitTests.cpp
   CodeCompleteTests.cpp
   CodeCompletionStringsTests.cpp
   ContextTests.cpp
@@ -38,20 +38,26 @@ add_unittest(ClangdUnitTests ClangdTests
   FileDistanceTests.cpp
   FileIndexTests.cpp
   FindSymbolsTests.cpp
+  FindTargetTests.cpp
   FormattedStringTests.cpp
+  FormatTests.cpp
   FSTests.cpp
   FunctionTests.cpp
   FuzzyMatchTests.cpp
   GlobalCompilationDatabaseTests.cpp
   HeadersTests.cpp
+  HeaderSourceSwitchTests.cpp
   IndexActionTests.cpp
   IndexTests.cpp
   JSONTransportTests.cpp
+  ParsedASTTests.cpp
   PrintASTTests.cpp
   QualityTests.cpp
   RenameTests.cpp
   RIFFTests.cpp
   SelectionTests.cpp
+  SemanticHighlightingTests.cpp
+  SemanticSelectionTests.cpp
   SerializationTests.cpp
   SourceCodeTests.cpp
   SymbolCollectorTests.cpp
@@ -65,6 +71,7 @@ add_unittest(ClangdUnitTests ClangdTests
   TraceTests.cpp
   TypeHierarchyTests.cpp
   TweakTests.cpp
+  TweakTesting.cpp
   URITests.cpp
   XRefsTests.cpp
 
@@ -86,6 +93,8 @@ target_link_libraries(ClangdTests
   clangTooling
   clangToolingCore
   clangToolingInclusions
+  clangToolingRefactoring
+  clangToolingSyntax
   LLVMSupport
   LLVMTestingSupport
   )

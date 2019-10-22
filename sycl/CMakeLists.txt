@@ -6,6 +6,18 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+option(SYCL_ENABLE_WERROR "Treat all warnings as errors in SYCL project" OFF)
+
+if(SYCL_ENABLE_WERROR)
+  if(MSVC)
+    set(CMAKE_CXX_FLAGS "/W4 /WX ${CMAKE_CXX_FLAGS}")
+    add_definitions(
+      -wd4996 # Suppress 'function': was declared deprecated'
+    )
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wno-deprecated-declarations")
+  endif()
+endif()
 
 if(MSVC)
   set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -34,12 +46,20 @@ set(CLANG_VERSION "${CLANG_VERSION_MAJOR}.${CLANG_VERSION_MINOR}.${CLANG_VERSION
 set(LLVM_INST_INC_DIRECTORY "lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION}/include")
 set(dst_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include)
 
-find_package(OpenCL)
+# Find OpenCL headers and libraries installed in the system and use them to
+# build SYCL runtime.
+# WARNING: use with caution, building SYCL runtime with OpenCL implementation
+# instead of Khronos ICD loader might cause build and/or portability issues.
+option(OpenCL_BUILD_WITH_SYSTEM_SDK OFF)
+
+if( (OpenCL_INCLUDE_DIR AND OpenCL_LIBRARY) OR OpenCL_BUILD_WITH_SYSTEM_SDK)
+  find_package(OpenCL)
+endif()
 
 include(ExternalProject)
 
 if( NOT OpenCL_INCLUDE_DIRS )
-  message ("OpenCL_INCLUDE_DIRS is missed. Try to download headers from github.com")
+  message("OpenCL_INCLUDE_DIRS is missed. Will try to download OpenCL headers from github.com")
   set(OpenCL_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/OpenCL/inc")
   ExternalProject_Add(ocl-headers
     GIT_REPOSITORY    https://github.com/KhronosGroup/OpenCL-Headers.git
@@ -52,7 +72,6 @@ if( NOT OpenCL_INCLUDE_DIRS )
     COMMENT           "Downloading OpenCL headers."
   )
 else()
-  message("OpenCL header have been found under ${OpenCL_INCLUDE_DIRS}.")
   add_custom_target( ocl-headers ALL
     DEPENDS ${OpenCL_INCLUDE_DIRS}
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${OpenCL_INCLUDE_DIRS}/CL ${dst_dir}/CL
@@ -61,29 +80,49 @@ else()
 endif()
 
 if( NOT OpenCL_LIBRARIES )
-  message("OpenCL_LIBRARIES is missed. Try to build from GitHub sources.")
-  set(OpenCL_LIBRARIES "${LLVM_LIBRARY_OUTPUT_INTDIR}/libOpenCL.so")
+  message("OpenCL_LIBRARIES is missed. Will try to download OpenCL ICD Loader from github.com")
+  if(MSVC)
+    set(OpenCL_LIBRARIES
+        "${LLVM_LIBRARY_OUTPUT_INTDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}OpenCL${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    set(OPENCL_ICD_LOADER_WDK "-DOPENCL_ICD_LOADER_REQUIRE_WDK=OFF")
+  else()
+    set(OpenCL_LIBRARIES
+        "${LLVM_LIBRARY_OUTPUT_INTDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}OpenCL${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    set(OPENCL_ICD_LOADER_WDK "")
+  endif()
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/icd_build)
   ExternalProject_Add(ocl-icd
     GIT_REPOSITORY    https://github.com/KhronosGroup/OpenCL-ICD-Loader.git
     GIT_TAG           origin/master
     SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/OpenCL/icd"
     BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/icd_build"
-    CONFIGURE_COMMAND ${CMAKE_COMMAND} "${CMAKE_CURRENT_BINARY_DIR}/OpenCL/icd" -DCMAKE_INSTALL_PREFIX=${LLVM_BINARY_DIR}
-    BUILD_COMMAND     make C_INCLUDE_PATH=${CMAKE_CURRENT_BINARY_DIR}/OpenCL/inc
-    INSTALL_COMMAND   make install 
+    CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+               -DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
+               -DOPENCL_ICD_LOADER_HEADERS_DIR=${CMAKE_CURRENT_BINARY_DIR}/OpenCL/inc
+               -DCMAKE_INSTALL_PREFIX=${LLVM_BINARY_DIR}
+               -DCMAKE_INSTALL_LIBDIR:PATH=lib
+               ${OPENCL_ICD_LOADER_WDK}
     STEP_TARGETS      configure,build,install
     DEPENDS           ocl-headers
+    BUILD_BYPRODUCTS ${OpenCL_LIBRARIES}
   )
 else()
-  message("OpenCL loader has been found: ${OpenCL_LIBRARIES}.")
   file(GLOB ICD_LOADER_SRC "${OpenCL_LIBRARIES}*")
   file(COPY ${ICD_LOADER_SRC} DESTINATION ${LLVM_LIBRARY_OUTPUT_INTDIR})
   add_custom_target(ocl-icd DEPENDS ${OpenCL_LIBRARIES} COMMENT "Copying OpenCL ICD Loader ...")
 endif()
 
-set(SYCL_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 set(OPENCL_INCLUDE "${OpenCL_INCLUDE_DIRS}")
+
+add_library (OpenCL-Headers INTERFACE)
+add_library (OpenCL::Headers ALIAS OpenCL-Headers)
+target_include_directories(OpenCL-Headers
+  INTERFACE ${OPENCL_INCLUDE}
+)
+install(DIRECTORY ${OPENCL_INCLUDE}/CL
+  DESTINATION ${LLVM_INST_INC_DIRECTORY}
+  COMPONENT opencl-headers
+)
 
 # Configure SYCL version macro
 set(sycl_inc_dir ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -96,104 +135,98 @@ add_custom_target(sycl-headers ALL
 COMMAND ${CMAKE_COMMAND} -E copy_directory ${sycl_inc_dir}/CL ${dst_dir}/CL
 COMMENT "Copying SYCL headers ...")
 
-# Main library
+# Configure SYCL headers
+install(DIRECTORY "${sycl_inc_dir}/." DESTINATION "${LLVM_INST_INC_DIRECTORY}" COMPONENT sycl-headers)
 
-set(sourceRootPath "${CMAKE_CURRENT_SOURCE_DIR}/source")
-set(includeRootPath "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(SYCL_RT_LIBS sycl)
+if (MSVC)
+  list(APPEND SYCL_RT_LIBS sycld)
+endif()
 
-include_directories(AFTER "${includeRootPath}" "${OpenCL_INCLUDE_DIRS}")
-link_libraries(${OpenCL_LIBRARIES})
+# SYCL runtime library
+add_subdirectory(source)
 
-set(SYCLLibrary sycl)
-
-#To-Do:
-#1. Figure out why CMP0057 has to be set. Should have been taken care of earlier in the build
-#2. Use AddLLVM to modify the build and access config options
-#cmake_policy(SET CMP0057 NEW)
-#include(AddLLVM)
-set(LLVM_BUILD_LIBRARY_DIRS "${LLVM_BINARY_DIR}/lib/")
-
-set(SYCL_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
-set(SYCL_TESTS_BINARY_DIR ${SYCL_BINARY_DIR}/test)
-
-set(CLANG_IN_BUILD "${LLVM_BINARY_DIR}/bin/clang")
-
-set(LLVM_TOOLS_DIR "${LLVM_BINARY_DIR}/bin/")
-
-add_library("${SYCLLibrary}" SHARED
-  "${includeRootPath}/CL/sycl.hpp"
-  "${sourceRootPath}/detail/builtins.cpp"
-  "${sourceRootPath}/detail/cnri.cpp"
-  "${sourceRootPath}/detail/common.cpp"
-  "${sourceRootPath}/detail/context_impl.cpp"
-  "${sourceRootPath}/detail/device_info.cpp"
-  "${sourceRootPath}/detail/event_impl.cpp"
-  "${sourceRootPath}/detail/force_device.cpp"
-  "${sourceRootPath}/detail/helpers.cpp"
-  "${sourceRootPath}/detail/image_impl.cpp"
-  "${sourceRootPath}/detail/kernel_impl.cpp"
-  "${sourceRootPath}/detail/kernel_info.cpp"
-  "${sourceRootPath}/detail/memory_manager.cpp"
-  "${sourceRootPath}/detail/platform_host.cpp"
-  "${sourceRootPath}/detail/platform_opencl.cpp"
-  "${sourceRootPath}/detail/platform_info.cpp"
-  "${sourceRootPath}/detail/program_impl.cpp"
-  "${sourceRootPath}/detail/program_manager/program_manager.cpp"
-  "${sourceRootPath}/detail/queue_impl.cpp"
-  "${sourceRootPath}/detail/os_util.cpp"
-  "${sourceRootPath}/detail/platform_util.cpp"
-  "${sourceRootPath}/detail/sampler_impl.cpp"
-  "${sourceRootPath}/detail/stream_impl.cpp"
-  "${sourceRootPath}/detail/scheduler/commands.cpp"
-  "${sourceRootPath}/detail/scheduler/scheduler.cpp"
-  "${sourceRootPath}/detail/scheduler/graph_processor.cpp"
-  "${sourceRootPath}/detail/scheduler/graph_builder.cpp"
-  "${sourceRootPath}/detail/util.cpp"
-  "${sourceRootPath}/context.cpp"
-  "${sourceRootPath}/device.cpp"
-  "${sourceRootPath}/device_selector.cpp"
-  "${sourceRootPath}/event.cpp"
-  "${sourceRootPath}/exception.cpp"
-  "${sourceRootPath}/half_type.cpp"
-  "${sourceRootPath}/kernel.cpp"
-  "${sourceRootPath}/platform.cpp"
-  "${sourceRootPath}/queue.cpp"
-  "${sourceRootPath}/sampler.cpp"
-  "${sourceRootPath}/stream.cpp"
-  "${sourceRootPath}/spirv_ops.cpp"
-)
-
-add_dependencies("${SYCLLibrary}"
-  ocl-icd
-  ocl-headers
-  sycl-headers
-)
-
+# SYCL toolchain builds all components: compiler, libraries, headers, etc.
 add_custom_target( sycl-toolchain
-  DEPENDS "${SYCLLibrary}"
+  DEPENDS ${SYCL_RT_LIBS}
           clang
           clang-offload-wrapper
           clang-offload-bundler
           llc
           llvm-as
+          llvm-ar
           llvm-dis
+          llvm-no-spir-kernel
           llvm-spirv
           llvm-link
+          llvm-objcopy
           opt
+          sycl-post-link
   COMMENT "Building SYCL compiler toolchain..."
 )
 
-set_target_properties("${SYCLLibrary}" PROPERTIES LINKER_LANGUAGE CXX)
-
-# Workaround for bug in GCC version 5 and higher.
-# More information https://bugs.launchpad.net/ubuntu/+source/gcc-5/+bug/1568899
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND
-    CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.0)
-  target_link_libraries("${SYCLLibrary}" gcc_s gcc)
+if (NOT DEFINED LLVM_INCLUDE_TESTS)
+  set(LLVM_INCLUDE_TESTS ON)
 endif()
 
-install(TARGETS "${SYCLLibrary}" DESTINATION "lib" COMPONENT ${SYCLLibrary})
-install(DIRECTORY "${includeRootPath}/." DESTINATION "${LLVM_INST_INC_DIRECTORY}" COMPONENT sycl-headers)
+option(SYCL_INCLUDE_TESTS
+  "Generate build targets for the SYCL unit tests."
+  ${LLVM_INCLUDE_TESTS})
 
-add_subdirectory( test )
-add_subdirectory( tools )
+add_subdirectory(tools)
+
+if(SYCL_INCLUDE_TESTS)
+  if(EXISTS ${LLVM_MAIN_SRC_DIR}/utils/unittest/googletest/include/gtest/gtest.h)
+    add_subdirectory(unittests)
+    list(APPEND SYCL_TEST_DEPS SYCLUnitTests)
+  endif()
+  add_subdirectory(test)
+endif()
+
+# Package deploy support
+# Listed here are component names contributing the package
+set( SYCL_TOOLCHAIN_DEPLOY_COMPONENTS
+     clang
+     clang-offload-wrapper
+     clang-offload-bundler
+     llc
+     llvm-as
+     llvm-ar
+     llvm-dis
+     llvm-no-spir-kernel
+     llvm-spirv
+     llvm-link
+     llvm-objcopy
+     opt
+     clang-resource-headers
+     opencl-headers
+     sycl-headers
+)
+
+# Use it as fake dependency in order to force another command(s) to execute.
+add_custom_command(OUTPUT __force_it
+  COMMAND "${CMAKE_COMMAND}" -E echo
+)
+#Serialize installation to avoid missing components due to build race conditions
+set(__chain_dep __force_it)
+
+set(manifest_list)
+foreach( comp ${SYCL_TOOLCHAIN_DEPLOY_COMPONENTS} )
+  message( STATUS "Adding component ${comp} to deploy")
+
+  set (manifest_file ${CMAKE_CURRENT_BINARY_DIR}/install_manifest_${comp}.txt)
+  add_custom_command(OUTPUT ${manifest_file}
+    COMMAND "${CMAKE_COMMAND}"
+    "-DCMAKE_INSTALL_COMPONENT=${comp}"
+    -P "${CMAKE_BINARY_DIR}/cmake_install.cmake"
+    DEPENDS  ${__chain_dep}
+    COMMENT "Deploying component ${comp}"
+    USES_TERMINAL
+  )
+  list(APPEND manifest_list ${manifest_file})
+  set(__chain_dep ${manifest_file})
+endforeach( comp )
+
+add_custom_target(deploy-sycl-toolchain
+  DEPENDS sycl-toolchain ${manifest_list}
+)

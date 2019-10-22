@@ -248,7 +248,11 @@ template <class ELFT>
 Expected<StringRef> Elf_Sym_Impl<ELFT>::getName(StringRef StrTab) const {
   uint32_t Offset = this->st_name;
   if (Offset >= StrTab.size())
-    return errorCodeToError(object_error::parse_failed);
+    return createStringError(object_error::parse_failed,
+                             "st_name (0x%" PRIx32
+                             ") is past the end of the string table"
+                             " of size 0x%zx",
+                             Offset, StrTab.size());
   return StringRef(StrTab.data() + Offset);
 }
 
@@ -592,9 +596,9 @@ class Elf_Note_Impl {
 
   template <class NoteIteratorELFT> friend class Elf_Note_Iterator_Impl;
 
+public:
   Elf_Note_Impl(const Elf_Nhdr_Impl<ELFT> &Nhdr) : Nhdr(Nhdr) {}
 
-public:
   /// Get the note's name, excluding the terminating null byte.
   StringRef getName() const {
     if (!Nhdr.n_namesz)

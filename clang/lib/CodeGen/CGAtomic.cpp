@@ -102,12 +102,13 @@ namespace {
           llvm::APInt Size(
               /*numBits=*/32,
               C.toCharUnitsFromBits(AtomicSizeInBits).getQuantity());
-          AtomicTy = C.getConstantArrayType(C.CharTy, Size, ArrayType::Normal,
-                                            /*IndexTypeQuals=*/0);
+          AtomicTy =
+              C.getConstantArrayType(C.CharTy, Size, nullptr, ArrayType::Normal,
+                                     /*IndexTypeQuals=*/0);
         }
         AtomicAlign = ValueAlign = lvalue.getAlignment();
       } else if (lvalue.isVectorElt()) {
-        ValueTy = lvalue.getType()->getAs<VectorType>()->getElementType();
+        ValueTy = lvalue.getType()->castAs<VectorType>()->getElementType();
         ValueSizeInBits = C.getTypeSize(ValueTy);
         AtomicTy = lvalue.getType();
         AtomicSizeInBits = C.getTypeSize(AtomicTy);

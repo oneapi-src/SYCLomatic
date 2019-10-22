@@ -359,6 +359,11 @@ public:
     return find(Key) == end() ? 0 : 1;
   }
 
+  template <typename InputTy>
+  size_type count(const StringMapEntry<InputTy> &MapEntry) const {
+    return count(MapEntry.getKey());
+  }
+
   /// insert - Insert the specified key/value pair into the map.  If the key
   /// already exists in the map, return false and ignore the request, otherwise
   /// insert it and return true.
@@ -384,6 +389,16 @@ public:
   /// the pair points to the element with key equivalent to the key of the pair.
   std::pair<iterator, bool> insert(std::pair<StringRef, ValueTy> KV) {
     return try_emplace(KV.first, std::move(KV.second));
+  }
+
+  /// Inserts an element or assigns to the current element if the key already
+  /// exists. The return type is the same as try_emplace.
+  template <typename V>
+  std::pair<iterator, bool> insert_or_assign(StringRef Key, V &&Val) {
+    auto Ret = try_emplace(Key, std::forward<V>(Val));
+    if (!Ret.second)
+      Ret.first->second = std::forward<V>(Val);
+    return Ret;
   }
 
   /// Emplace a new element for the specified key into the map if the key isn't

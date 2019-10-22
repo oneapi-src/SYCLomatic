@@ -33,6 +33,10 @@
 
 namespace llvm {
 
+namespace jitlink {
+class EHFrameRegistrar;
+} // namespace jitlink
+
 namespace object {
 class ObjectFile;
 } // namespace object
@@ -139,8 +143,9 @@ private:
   std::vector<std::unique_ptr<Plugin>> Plugins;
 };
 
-class LocalEHFrameRegistrationPlugin : public ObjectLinkingLayer::Plugin {
+class EHFrameRegistrationPlugin : public ObjectLinkingLayer::Plugin {
 public:
+  EHFrameRegistrationPlugin(jitlink::EHFrameRegistrar &Registrar);
   Error notifyEmitted(MaterializationResponsibility &MR) override;
   void modifyPassConfig(MaterializationResponsibility &MR, const Triple &TT,
                         jitlink::PassConfiguration &PassConfig) override;
@@ -148,9 +153,16 @@ public:
   Error notifyRemovingAllModules() override;
 
 private:
-  DenseMap<MaterializationResponsibility *, const void *> InProcessLinks;
-  DenseMap<VModuleKey, const void *> TrackedEHFrameAddrs;
-  std::vector<const void *> UntrackedEHFrameAddrs;
+
+  struct EHFrameRange {
+    JITTargetAddress Addr = 0;
+    size_t Size;
+  };
+
+  jitlink::EHFrameRegistrar &Registrar;
+  DenseMap<MaterializationResponsibility *, EHFrameRange> InProcessLinks;
+  DenseMap<VModuleKey, EHFrameRange> TrackedEHFrameRanges;
+  std::vector<EHFrameRange> UntrackedEHFrameRanges;
 };
 
 } // end namespace orc

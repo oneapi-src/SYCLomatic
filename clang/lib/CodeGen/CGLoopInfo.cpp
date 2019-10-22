@@ -218,6 +218,7 @@ LoopInfo::createLoopVectorizeMetadata(const LoopAttributes &Attrs,
   if (Attrs.VectorizeEnable == LoopAttributes::Disable)
     Enabled = false;
   else if (Attrs.VectorizeEnable != LoopAttributes::Unspecified ||
+           Attrs.VectorizePredicateEnable != LoopAttributes::Unspecified ||
            Attrs.InterleaveCount != 0 || Attrs.VectorizeWidth != 0)
     Enabled = true;
 
@@ -251,6 +252,22 @@ LoopInfo::createLoopVectorizeMetadata(const LoopAttributes &Attrs,
   Args.push_back(TempNode.get());
   Args.append(LoopProperties.begin(), LoopProperties.end());
 
+  // Setting vectorize.predicate
+  bool IsVectorPredicateEnabled = false;
+  if (Attrs.VectorizePredicateEnable != LoopAttributes::Unspecified &&
+      Attrs.VectorizeEnable != LoopAttributes::Disable &&
+      Attrs.VectorizeWidth < 1) {
+
+    IsVectorPredicateEnabled =
+        (Attrs.VectorizePredicateEnable == LoopAttributes::Enable);
+
+    Metadata *Vals[] = {
+        MDString::get(Ctx, "llvm.loop.vectorize.predicate.enable"),
+        ConstantAsMetadata::get(ConstantInt::get(llvm::Type::getInt1Ty(Ctx),
+                                                 IsVectorPredicateEnabled))};
+    Args.push_back(MDNode::get(Ctx, Vals));
+  }
+
   // Setting vectorize.width
   if (Attrs.VectorizeWidth > 0) {
     Metadata *Vals[] = {
@@ -270,12 +287,15 @@ LoopInfo::createLoopVectorizeMetadata(const LoopAttributes &Attrs,
   }
 
   // Setting vectorize.enable
-  if (Attrs.VectorizeEnable != LoopAttributes::Unspecified) {
+  if (Attrs.VectorizeEnable != LoopAttributes::Unspecified ||
+      IsVectorPredicateEnabled) {
     Metadata *Vals[] = {
         MDString::get(Ctx, "llvm.loop.vectorize.enable"),
         ConstantAsMetadata::get(ConstantInt::get(
             llvm::Type::getInt1Ty(Ctx),
-            (Attrs.VectorizeEnable == LoopAttributes::Enable)))};
+            IsVectorPredicateEnabled
+                ? true
+                : (Attrs.VectorizeEnable == LoopAttributes::Enable)))};
     Args.push_back(MDNode::get(Ctx, Vals));
   }
 
@@ -430,7 +450,7 @@ MDNode *LoopInfo::createMetadata(
   }
 
   // Setting max_concurrency attribute with number of threads
-  if (Attrs.SYCLMaxConcurrencyNThreads > 0) {
+  if (Attrs.SYCLMaxConcurrencyEnable) {
     LLVMContext &Ctx = Header->getContext();
     Metadata *Vals[] = {MDString::get(Ctx, "llvm.loop.max_concurrency.count"),
                         ConstantAsMetadata::get(ConstantInt::get(
@@ -446,11 +466,12 @@ MDNode *LoopInfo::createMetadata(
 
 LoopAttributes::LoopAttributes(bool IsParallel)
     : IsParallel(IsParallel), VectorizeEnable(LoopAttributes::Unspecified),
-      SYCLIVDepEnable(false), SYCLIVDepSafelen(0), SYCLIInterval(0),
-      SYCLMaxConcurrencyNThreads(0),
       UnrollEnable(LoopAttributes::Unspecified),
-      UnrollAndJamEnable(LoopAttributes::Unspecified), VectorizeWidth(0),
-      InterleaveCount(0), UnrollCount(0), UnrollAndJamCount(0),
+      UnrollAndJamEnable(LoopAttributes::Unspecified),
+      VectorizePredicateEnable(LoopAttributes::Unspecified), VectorizeWidth(0),
+      InterleaveCount(0), SYCLIVDepEnable(false), SYCLIVDepSafelen(0),
+      SYCLIInterval(0), SYCLMaxConcurrencyEnable(false),
+      SYCLMaxConcurrencyNThreads(0), UnrollCount(0), UnrollAndJamCount(0),
       DistributeEnable(LoopAttributes::Unspecified), PipelineDisabled(false),
       PipelineInitiationInterval(0) {}
 
@@ -460,6 +481,7 @@ void LoopAttributes::clear() {
   SYCLIVDepEnable = false;
   SYCLIVDepSafelen = 0;
   SYCLIInterval = 0;
+  SYCLMaxConcurrencyEnable = false;
   SYCLMaxConcurrencyNThreads = 0;
   InterleaveCount = 0;
   UnrollCount = 0;
@@ -467,6 +489,7 @@ void LoopAttributes::clear() {
   VectorizeEnable = LoopAttributes::Unspecified;
   UnrollEnable = LoopAttributes::Unspecified;
   UnrollAndJamEnable = LoopAttributes::Unspecified;
+  VectorizePredicateEnable = LoopAttributes::Unspecified;
   DistributeEnable = LoopAttributes::Unspecified;
   PipelineDisabled = false;
   PipelineInitiationInterval = 0;
@@ -487,9 +510,10 @@ LoopInfo::LoopInfo(BasicBlock *Header, const LoopAttributes &Attrs,
   if (!Attrs.IsParallel && Attrs.VectorizeWidth == 0 &&
       Attrs.InterleaveCount == 0 && Attrs.SYCLIVDepEnable == false &&
       Attrs.SYCLIVDepSafelen == 0 && Attrs.SYCLIInterval == 0 &&
-      Attrs.SYCLMaxConcurrencyNThreads == 0 && Attrs.UnrollCount == 0 &&
+      Attrs.SYCLMaxConcurrencyEnable == false && Attrs.UnrollCount == 0 &&
       Attrs.UnrollAndJamCount == 0 && !Attrs.PipelineDisabled &&
       Attrs.PipelineInitiationInterval == 0 &&
+      Attrs.VectorizePredicateEnable == LoopAttributes::Unspecified &&
       Attrs.VectorizeEnable == LoopAttributes::Unspecified &&
       Attrs.UnrollEnable == LoopAttributes::Unspecified &&
       Attrs.UnrollAndJamEnable == LoopAttributes::Unspecified &&
@@ -524,6 +548,7 @@ void LoopInfo::finish() {
     BeforeJam.InterleaveCount = Attrs.InterleaveCount;
     BeforeJam.VectorizeEnable = Attrs.VectorizeEnable;
     BeforeJam.DistributeEnable = Attrs.DistributeEnable;
+    BeforeJam.VectorizePredicateEnable = Attrs.VectorizePredicateEnable;
 
     switch (Attrs.UnrollEnable) {
     case LoopAttributes::Unspecified:
@@ -539,6 +564,7 @@ void LoopInfo::finish() {
       break;
     }
 
+    AfterJam.VectorizePredicateEnable = Attrs.VectorizePredicateEnable;
     AfterJam.UnrollCount = Attrs.UnrollCount;
     AfterJam.PipelineDisabled = Attrs.PipelineDisabled;
     AfterJam.PipelineInitiationInterval = Attrs.PipelineInitiationInterval;
@@ -560,6 +586,7 @@ void LoopInfo::finish() {
       // add it manually.
       SmallVector<Metadata *, 1> BeforeLoopProperties;
       if (BeforeJam.VectorizeEnable != LoopAttributes::Unspecified ||
+          BeforeJam.VectorizePredicateEnable != LoopAttributes::Unspecified ||
           BeforeJam.InterleaveCount != 0 || BeforeJam.VectorizeWidth != 0)
         BeforeLoopProperties.push_back(
             MDNode::get(Ctx, MDString::get(Ctx, "llvm.loop.isvectorized")));
@@ -581,8 +608,9 @@ void LoopInfo::finish() {
 
 void LoopInfoStack::push(BasicBlock *Header, const llvm::DebugLoc &StartLoc,
                          const llvm::DebugLoc &EndLoc) {
-  Active.push_back(LoopInfo(Header, StagedAttrs, StartLoc, EndLoc,
-                            Active.empty() ? nullptr : &Active.back()));
+  Active.emplace_back(
+      new LoopInfo(Header, StagedAttrs, StartLoc, EndLoc,
+                   Active.empty() ? nullptr : Active.back().get()));
   // Clear the attributes so nested loops do not inherit them.
   StagedAttrs.clear();
 }
@@ -597,23 +625,25 @@ void LoopInfoStack::push(BasicBlock *Header, clang::ASTContext &Ctx,
     const LoopHintAttr *LH = dyn_cast<LoopHintAttr>(Attr);
     const OpenCLUnrollHintAttr *OpenCLHint =
         dyn_cast<OpenCLUnrollHintAttr>(Attr);
+    const LoopUnrollHintAttr *UnrollHint = dyn_cast<LoopUnrollHintAttr>(Attr);
 
     // Skip non loop hint attributes
-    if (!LH && !OpenCLHint) {
+    if (!LH && !OpenCLHint && !UnrollHint) {
       continue;
     }
 
     LoopHintAttr::OptionType Option = LoopHintAttr::Unroll;
     LoopHintAttr::LoopHintState State = LoopHintAttr::Disable;
     unsigned ValueInt = 1;
-    // Translate opencl_unroll_hint attribute argument to
-    // equivalent LoopHintAttr enums.
+    // Translate opencl_unroll_hint and clang::unroll attribute
+    // argument to equivalent LoopHintAttr enums.
     // OpenCL v2.0 s6.11.5:
     // 0 - enable unroll (no argument).
     // 1 - disable unroll.
     // other positive integer n - unroll by n.
-    if (OpenCLHint) {
-      ValueInt = OpenCLHint->getUnrollHint();
+    if (OpenCLHint || UnrollHint) {
+      ValueInt = OpenCLHint ? OpenCLHint->getUnrollHint()
+                            : UnrollHint->getUnrollHint();
       if (ValueInt == 0) {
         State = LoopHintAttr::Enable;
       } else if (ValueInt != 1) {
@@ -647,6 +677,9 @@ void LoopInfoStack::push(BasicBlock *Header, clang::ASTContext &Ctx,
       case LoopHintAttr::UnrollAndJam:
         setUnrollAndJamState(LoopAttributes::Disable);
         break;
+      case LoopHintAttr::VectorizePredicate:
+        setVectorizePredicateState(LoopAttributes::Disable);
+        break;
       case LoopHintAttr::Distribute:
         setDistributeState(false);
         break;
@@ -674,6 +707,9 @@ void LoopInfoStack::push(BasicBlock *Header, clang::ASTContext &Ctx,
       case LoopHintAttr::UnrollAndJam:
         setUnrollAndJamState(LoopAttributes::Enable);
         break;
+      case LoopHintAttr::VectorizePredicate:
+        setVectorizePredicateState(LoopAttributes::Enable);
+        break;
       case LoopHintAttr::Distribute:
         setDistributeState(true);
         break;
@@ -697,6 +733,7 @@ void LoopInfoStack::push(BasicBlock *Header, clang::ASTContext &Ctx,
         break;
       case LoopHintAttr::Unroll:
       case LoopHintAttr::UnrollAndJam:
+      case LoopHintAttr::VectorizePredicate:
       case LoopHintAttr::UnrollCount:
       case LoopHintAttr::UnrollAndJamCount:
       case LoopHintAttr::VectorizeWidth:
@@ -725,6 +762,7 @@ void LoopInfoStack::push(BasicBlock *Header, clang::ASTContext &Ctx,
       case LoopHintAttr::Distribute:
       case LoopHintAttr::PipelineDisabled:
       case LoopHintAttr::PipelineInitiationInterval:
+      case LoopHintAttr::VectorizePredicate:
         llvm_unreachable("Options cannot be used with 'full' hint.");
         break;
       }
@@ -748,6 +786,7 @@ void LoopInfoStack::push(BasicBlock *Header, clang::ASTContext &Ctx,
         break;
       case LoopHintAttr::Unroll:
       case LoopHintAttr::UnrollAndJam:
+      case LoopHintAttr::VectorizePredicate:
       case LoopHintAttr::Vectorize:
       case LoopHintAttr::Interleave:
       case LoopHintAttr::Distribute:
@@ -785,20 +824,19 @@ void LoopInfoStack::push(BasicBlock *Header, clang::ASTContext &Ctx,
       unsigned ValueInt = IntelFPGAIVDep->getSafelen();
       if (ValueInt == 0)
         setSYCLIVDepEnable();
-      else if (ValueInt > 1)
+      else if (ValueInt > 0)
         setSYCLIVDepSafelen(ValueInt);
     }
 
     if (IntelFPGAII) {
       unsigned ValueInt = IntelFPGAII->getInterval();
-      if (ValueInt > 1)
+      if (ValueInt > 0)
         setSYCLIInterval(ValueInt);
     }
 
     if (IntelFPGAMaxConcurrency) {
-      unsigned ValueInt = IntelFPGAMaxConcurrency->getNThreads();
-      if (ValueInt > 1)
-        setSYCLMaxConcurrencyNThreads(ValueInt);
+      setSYCLMaxConcurrencyEnable();
+      setSYCLMaxConcurrencyNThreads(IntelFPGAMaxConcurrency->getNThreads());
     }
   }
 
@@ -808,16 +846,16 @@ void LoopInfoStack::push(BasicBlock *Header, clang::ASTContext &Ctx,
 
 void LoopInfoStack::pop() {
   assert(!Active.empty() && "No active loops to pop");
-  Active.back().finish();
+  Active.back()->finish();
   Active.pop_back();
 }
 
 void LoopInfoStack::InsertHelper(Instruction *I) const {
   if (I->mayReadOrWriteMemory()) {
     SmallVector<Metadata *, 4> AccessGroups;
-    for (const LoopInfo &AL : Active) {
+    for (const auto &AL : Active) {
       // Here we assume that every loop that has an access group is parallel.
-      if (MDNode *Group = AL.getAccessGroup())
+      if (MDNode *Group = AL->getAccessGroup())
         AccessGroups.push_back(Group);
     }
     MDNode *UnionMD = nullptr;

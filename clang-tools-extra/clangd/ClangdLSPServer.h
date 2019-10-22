@@ -55,6 +55,9 @@ private:
   // Implement DiagnosticsConsumer.
   void onDiagnosticsReady(PathRef File, std::vector<Diag> Diagnostics) override;
   void onFileUpdated(PathRef File, const TUStatus &Status) override;
+  void
+  onHighlightingsReady(PathRef File,
+                       std::vector<HighlightingToken> Highlightings) override;
 
   // LSP methods. Notifications have signature void(const Params&).
   // Calls have signature void(const Params&, Callback<Response>).
@@ -92,14 +95,20 @@ private:
   void onCommand(const ExecuteCommandParams &, Callback<llvm::json::Value>);
   void onWorkspaceSymbol(const WorkspaceSymbolParams &,
                          Callback<std::vector<SymbolInformation>>);
+  void onPrepareRename(const TextDocumentPositionParams &,
+                       Callback<llvm::Optional<Range>>);
   void onRename(const RenameParams &, Callback<WorkspaceEdit>);
   void onHover(const TextDocumentPositionParams &,
                Callback<llvm::Optional<Hover>>);
   void onTypeHierarchy(const TypeHierarchyParams &,
                        Callback<llvm::Optional<TypeHierarchyItem>>);
+  void onResolveTypeHierarchy(const ResolveTypeHierarchyItemParams &,
+                              Callback<llvm::Optional<TypeHierarchyItem>>);
   void onChangeConfiguration(const DidChangeConfigurationParams &);
   void onSymbolInfo(const TextDocumentPositionParams &,
                     Callback<std::vector<SymbolDetails>>);
+  void onSelectionRange(const SelectionRangeParams &,
+                        Callback<std::vector<SelectionRange>>);
 
   std::vector<Fix> getFixes(StringRef File, const clangd::Diagnostic &D);
 
@@ -115,6 +124,9 @@ private:
   void reparseOpenedFiles();
   void applyConfiguration(const ConfigurationSettings &Settings);
 
+  /// Sends a "publishSemanticHighlighting" notification to the LSP client.
+  void publishSemanticHighlighting(SemanticHighlightingParams Params);
+
   /// Sends a "publishDiagnostics" notification to the LSP client.
   void publishDiagnostics(const URIForFile &File,
                           std::vector<clangd::Diagnostic> Diagnostics);
@@ -123,20 +135,45 @@ private:
   /// Language Server client.
   bool ShutdownRequestReceived = false;
 
+  /// Used to indicate the ClangdLSPServer is being destroyed.
+  std::atomic<bool> IsBeingDestroyed = {false};
+
   std::mutex FixItsMutex;
   typedef std::map<clangd::Diagnostic, std::vector<Fix>, LSPDiagnosticCompare>
       DiagnosticToReplacementMap;
   /// Caches FixIts per file and diagnostics
   llvm::StringMap<DiagnosticToReplacementMap> FixItsMap;
+  std::mutex HighlightingsMutex;
+  llvm::StringMap<std::vector<HighlightingToken>> FileToHighlightings;
 
   // Most code should not deal with Transport directly.
   // MessageHandler deals with incoming messages, use call() etc for outgoing.
   clangd::Transport &Transp;
   class MessageHandler;
   std::unique_ptr<MessageHandler> MsgHandler;
-  std::atomic<int> NextCallID = {0};
   std::mutex TranspWriter;
-  void call(StringRef Method, llvm::json::Value Params);
+
+  template <typename Response>
+  void call(StringRef Method, llvm::json::Value Params, Callback<Response> CB) {
+    // Wrap the callback with LSP conversion and error-handling.
+    auto HandleReply =
+        [CB = std::move(CB)](
+            llvm::Expected<llvm::json::Value> RawResponse) mutable {
+          Response Rsp;
+          if (!RawResponse) {
+            CB(RawResponse.takeError());
+          } else if (fromJSON(*RawResponse, Rsp)) {
+            CB(std::move(Rsp));
+          } else {
+            elog("Failed to decode {0} response", *RawResponse);
+            CB(llvm::make_error<LSPError>("failed to decode reponse",
+                                          ErrorCode::InvalidParams));
+          }
+        };
+    callRaw(Method, std::move(Params), std::move(HandleReply));
+  }
+  void callRaw(StringRef Method, llvm::json::Value Params,
+               Callback<llvm::json::Value> CB);
   void notify(StringRef Method, llvm::json::Value Params);
 
   const FileSystemProvider &FSProvider;
@@ -154,6 +191,10 @@ private:
   bool SupportsHierarchicalDocumentSymbol = false;
   /// Whether the client supports showing file status.
   bool SupportFileStatus = false;
+  /// Which kind of markup should we use in textDocument/hover responses.
+  MarkupKind HoverContentFormat = MarkupKind::PlainText;
+  /// Whether the client supports offsets for parameter info labels.
+  bool SupportsOffsetsInSignatureHelp = false;
   // Store of the current versions of the open documents.
   DraftStore DraftMgr;
 

@@ -804,7 +804,7 @@ MacroArgs *Preprocessor::ReadMacroCallArgumentList(Token &MacroName,
           return nullptr;
         }
         // Do not lose the EOF/EOD.
-        auto Toks = llvm::make_unique<Token[]>(1);
+        auto Toks = std::make_unique<Token[]>(1);
         Toks[0] = Tok;
         EnterTokenStream(std::move(Toks), 1, true, /*IsReinject*/ false);
         break;
@@ -1210,19 +1210,20 @@ static bool EvaluateHasIncludeCommon(Token &Tok,
 
   // Search include directories.
   const DirectoryLookup *CurDir;
-  const FileEntry *File =
+  Optional<FileEntryRef> File =
       PP.LookupFile(FilenameLoc, Filename, isAngled, LookupFrom, LookupFromFile,
                     CurDir, nullptr, nullptr, nullptr, nullptr, nullptr);
 
   if (PPCallbacks *Callbacks = PP.getPPCallbacks()) {
     SrcMgr::CharacteristicKind FileType = SrcMgr::C_User;
     if (File)
-      FileType = PP.getHeaderSearchInfo().getFileDirFlavor(File);
+      FileType =
+          PP.getHeaderSearchInfo().getFileDirFlavor(&File->getFileEntry());
     Callbacks->HasInclude(FilenameLoc, Filename, isAngled, File, FileType);
   }
 
   // Get the result value.  A result of true means the file exists.
-  return File != nullptr;
+  return File.hasValue();
 }
 
 /// EvaluateHasInclude - Process a '__has_include("path")' expression.
@@ -1330,9 +1331,13 @@ already_lexed:
 
         // The last ')' has been reached; return the value if one found or
         // a diagnostic and a dummy value.
-        if (Result.hasValue())
+        if (Result.hasValue()) {
           OS << Result.getValue();
-        else {
+          // For strict conformance to __has_cpp_attribute rules, use 'L'
+          // suffix for dated literals.
+          if (Result.getValue() > 1)
+            OS << 'L';
+        } else {
           OS << 0;
           if (!SuppressDiagnostic)
             PP.Diag(Tok.getLocation(), diag::err_too_few_args_in_macro_invoc);
@@ -1454,6 +1459,8 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
   // Set up the return result.
   Tok.setIdentifierInfo(nullptr);
   Tok.clearFlag(Token::NeedsCleaning);
+  bool IsAtStartOfLine = Tok.isAtStartOfLine();
+  bool HasLeadingSpace = Tok.hasLeadingSpace();
 
   if (II == Ident__LINE__) {
     // C99 6.10.8: "__LINE__: The presumed line number (within the current
@@ -1607,20 +1614,44 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
             // denotes date of behavior change to support calling arbitrary
             // usual allocation and deallocation functions. Required by libc++
             return 201802;
+          case Builtin::BI__builtin_intel_fpga_reg:
+            return LangOpts.SYCLIsDevice;
           default:
             return true;
           }
           return true;
+        } else if (II->getTokenID() != tok::identifier ||
+                   II->hasRevertedTokenIDToIdentifier()) {
+          // Treat all keywords that introduce a custom syntax of the form
+          //
+          //   '__some_keyword' '(' [...] ')'
+          //
+          // as being "builtin functions", even if the syntax isn't a valid
+          // function call (for example, because the builtin takes a type
+          // argument).
+          if (II->getName().startswith("__builtin_") ||
+              II->getName().startswith("__is_") ||
+              II->getName().startswith("__has_"))
+            return true;
+          return llvm::StringSwitch<bool>(II->getName())
+              .Case("__array_rank", true)
+              .Case("__array_extent", true)
+              .Case("__reference_binds_to_temporary", true)
+              .Case("__underlying_type", true)
+              .Default(false);
         } else {
           return llvm::StringSwitch<bool>(II->getName())
-                      .Case("__make_integer_seq", LangOpts.CPlusPlus)
-                      .Case("__type_pack_element", LangOpts.CPlusPlus)
-                      .Case("__builtin_available", true)
-                      .Case("__is_target_arch", true)
-                      .Case("__is_target_vendor", true)
-                      .Case("__is_target_os", true)
-                      .Case("__is_target_environment", true)
-                      .Default(false);
+              // Report builtin templates as being builtins.
+              .Case("__make_integer_seq", LangOpts.CPlusPlus)
+              .Case("__type_pack_element", LangOpts.CPlusPlus)
+              // Likewise for some builtin preprocessor macros.
+              // FIXME: This is inconsistent; we usually suggest detecting
+              // builtin macros via #ifdef. Don't add more cases here.
+              .Case("__is_target_arch", true)
+              .Case("__is_target_vendor", true)
+              .Case("__is_target_os", true)
+              .Case("__is_target_environment", true)
+              .Default(false);
         }
       });
   } else if (II == Ident__is_identifier) {
@@ -1696,7 +1727,7 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
 
         HasLexedNextToken = Tok.is(tok::string_literal);
         if (!FinishLexStringLiteral(Tok, WarningName, "'__has_warning'",
-                                    /*MacroExpansion=*/false))
+                                    /*AllowMacroExpansion=*/false))
           return false;
 
         // FIXME: Should we accept "-R..." flags here, or should that be
@@ -1803,6 +1834,8 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
     llvm_unreachable("Unknown identifier!");
   }
   CreateString(OS.str(), Tok, Tok.getLocation(), Tok.getLocation());
+  Tok.setFlagValue(Token::StartOfLine, IsAtStartOfLine);
+  Tok.setFlagValue(Token::LeadingSpace, HasLeadingSpace);
 }
 
 void Preprocessor::markMacroAsUsed(MacroInfo *MI) {

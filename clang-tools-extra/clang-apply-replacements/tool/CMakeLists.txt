@@ -12,8 +12,5 @@ target_link_libraries(clang-apply-replacements
   clangFormat
   clangRewrite
   clangToolingCore
-  clangToolingRefactor
+  clangToolingRefactoring
   )
-
-install(TARGETS clang-apply-replacements
-  RUNTIME DESTINATION bin)

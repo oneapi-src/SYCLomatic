@@ -9,6 +9,7 @@
 #pragma once
 
 #include <CL/sycl/detail/common.hpp>
+#include <CL/sycl/detail/pi.hpp>
 #include <CL/sycl/id.hpp>
 
 namespace cl {
@@ -18,16 +19,17 @@ class program;
 class device;
 class platform;
 
+// TODO: stop using OpenCL directly, use PI.
 namespace info {
 
 // Information descriptors
 // A.1 Platform information descriptors
-enum class platform : cl_platform_info {
-  profile = CL_PLATFORM_PROFILE,
-  version = CL_PLATFORM_VERSION,
-  name = CL_PLATFORM_NAME,
-  vendor = CL_PLATFORM_VENDOR,
-  extensions = CL_PLATFORM_EXTENSIONS
+enum class platform {
+  profile     = PI_PLATFORM_INFO_PROFILE,
+  version     = PI_PLATFORM_INFO_VERSION,
+  name        = PI_PLATFORM_INFO_NAME,
+  vendor      = PI_PLATFORM_INFO_VENDOR,
+  extensions  = PI_PLATFORM_INFO_EXTENSIONS,
 };
 
 // A.2 Context information desctiptors
@@ -122,14 +124,15 @@ enum class device : cl_device_info {
   partition_type_property
 };
 
-enum class device_type : cl_device_type {
-  cpu = CL_DEVICE_TYPE_CPU,
-  gpu = CL_DEVICE_TYPE_GPU,
-  accelerator = CL_DEVICE_TYPE_ACCELERATOR,
-  custom = CL_DEVICE_TYPE_CUSTOM,
+enum class device_type : pi_uint64 {
+  cpu         = PI_DEVICE_TYPE_CPU,
+  gpu         = PI_DEVICE_TYPE_GPU,
+  accelerator = PI_DEVICE_TYPE_ACC,
+  // TODO: figure out if we need all the below in PI
+  custom      = CL_DEVICE_TYPE_CUSTOM,
   automatic,
   host,
-  all = CL_DEVICE_TYPE_ALL
+  all         = CL_DEVICE_TYPE_ALL
 };
 
 enum class partition_property : cl_device_partition_property {
@@ -169,8 +172,13 @@ enum class execution_capability : unsigned int {
   exec_native_kernel
 };
 
-// A.4 Queue information desctiptors
+// A.4 Queue information descriptors
 enum class queue : cl_command_queue_info {
+  context = CL_QUEUE_CONTEXT,
+  device = CL_QUEUE_DEVICE,
+  reference_count = CL_QUEUE_REFERENCE_COUNT
+};
+enum class ordered_queue : cl_command_queue_info {
   context = CL_QUEUE_CONTEXT,
   device = CL_QUEUE_DEVICE,
   reference_count = CL_QUEUE_REFERENCE_COUNT
@@ -200,7 +208,8 @@ enum class kernel_sub_group : cl_kernel_sub_group_info {
   sub_group_count_for_ndrange = CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE,
   local_size_for_sub_group_count = CL_KERNEL_LOCAL_SIZE_FOR_SUB_GROUP_COUNT,
   max_num_sub_groups = CL_KERNEL_MAX_NUM_SUB_GROUPS,
-  compile_num_sub_groups = CL_KERNEL_COMPILE_NUM_SUB_GROUPS
+  compile_num_sub_groups = CL_KERNEL_COMPILE_NUM_SUB_GROUPS,
+  compile_sub_group_size = CL_KERNEL_COMPILE_SUB_GROUP_SIZE_INTEL
 };
 
 // A.6 Program information desctiptors
@@ -361,6 +370,7 @@ PARAM_TRAITS_SPEC_WITH_INPUT(kernel_sub_group, local_size_for_sub_group_count,
                              cl::sycl::range<3>, size_t)
 PARAM_TRAITS_SPEC(kernel_sub_group, max_num_sub_groups, size_t)
 PARAM_TRAITS_SPEC(kernel_sub_group, compile_num_sub_groups, size_t)
+PARAM_TRAITS_SPEC(kernel_sub_group, compile_sub_group_size, size_t)
 
 PARAM_TRAITS_SPEC(platform, profile, string_class)
 PARAM_TRAITS_SPEC(platform, version, string_class)

@@ -3,7 +3,7 @@
 ; RUN: llc < %s -mtriple=powerpc64le -debug-only=isel -o /dev/null 2>&1                        | FileCheck %s --check-prefix=FMFDEBUG
 ; RUN: llc < %s -mtriple=powerpc64le                                                           | FileCheck %s --check-prefix=FMF
 ; RUN: llc < %s -mtriple=powerpc64le -debug-only=isel -o /dev/null 2>&1 -enable-unsafe-fp-math -enable-no-nans-fp-math | FileCheck %s --check-prefix=GLOBALDEBUG
-; RUN: llc < %s -mtriple=powerpc64le -enable-unsafe-fp-math -enable-no-nans-fp-math                                    | FileCheck %s --check-prefix=GLOBAL
+; RUN: llc < %s -mtriple=powerpc64le -enable-unsafe-fp-math -enable-no-nans-fp-math -enable-no-signed-zeros-fp-math | FileCheck %s --check-prefix=GLOBAL
 
 ; Test FP transforms using instruction/node-level fast-math-flags.
 ; We're also checking debug output to verify that FMF is propagated to the newly created nodes.
@@ -375,11 +375,11 @@ define float @sqrt_fast(float %x) {
 ; fcmp can have fast-math-flags.
 
 ; FMFDEBUG-LABEL: Optimized lowered selection DAG: %bb.0 'fcmp_nnan:'
-; FMFDEBUG:         select_cc {{t[0-9]+}}
+; FMFDEBUG:         select_cc nnan {{t[0-9]+}}
 ; FMFDEBUG:       Type-legalized selection DAG: %bb.0 'fcmp_nnan:'
 
 ; GLOBALDEBUG-LABEL: Optimized lowered selection DAG: %bb.0 'fcmp_nnan:'
-; GLOBALDEBUG:         select_cc {{t[0-9]+}}
+; GLOBALDEBUG:         select_cc nnan {{t[0-9]+}}
 ; GLOBALDEBUG:       Type-legalized selection DAG: %bb.0 'fcmp_nnan:'
 
 define double @fcmp_nnan(double %a, double %y, double %z) {

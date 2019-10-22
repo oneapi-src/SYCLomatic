@@ -6,6 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <CL/sycl/detail/device_impl.hpp>
 #include <CL/sycl/detail/device_info.hpp>
 #include <CL/sycl/detail/os_util.hpp>
 #include <CL/sycl/detail/platform_util.hpp>
@@ -21,6 +22,23 @@
 namespace cl {
 namespace sycl {
 namespace detail {
+
+// Specialization for parent device
+template <>
+device get_device_info<device, info::device::parent_device>::_(
+  RT::PiDevice dev) {
+
+  typename sycl_to_pi<device>::type result;
+  PI_CALL(RT::piDeviceGetInfo(
+    dev, pi::cast<RT::PiDeviceInfo>(info::device::parent_device),
+    sizeof(result), &result, NULL));
+  if (result == nullptr)
+    throw invalid_object_error(
+        "No parent for device because it is not a subdevice");
+
+  return createSyclObjFromImpl<device>(
+    std::make_shared<device_impl_pi>(result));
+}
 
 vector_class<info::fp_config> read_fp_bitfield(cl_device_fp_config bits) {
   vector_class<info::fp_config> result;

@@ -1,10 +1,10 @@
-// RUN: %clang_cc1 -fsycl-is-device -Wno-return-type -verify -fsyntax-only -x c++ -emit-llvm-only %s
+// RUN: %clang_cc1 -fsycl-is-device -Wno-return-type -verify -fsyntax-only -x c++ %s
 
 struct Base {
   virtual void f() const {}
 };
 
-// expected-error@+1 3{{No class with a vtable can be used in a SYCL kernel or any code included in the kernel}}
+// expected-error@+1 3{{SYCL kernel cannot have a class with a virtual function table}}
 struct Inherit : Base {
   virtual void f() const override {}
 };

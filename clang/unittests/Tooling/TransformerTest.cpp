@@ -137,7 +137,7 @@ protected:
   TransformerTest() { appendToHeader(KHeaderContents); }
 };
 
-// Given string s, change strlen($s.c_str()) to $s.size().
+// Given string s, change strlen($s.c_str()) to REPLACED.
 static RewriteRule ruleStrlenSize() {
   StringRef StringExpr = "strexpr";
   auto StringType = namedDecl(hasAnyName("::basic_string", "::string"));
@@ -147,8 +147,7 @@ static RewriteRule ruleStrlenSize() {
                                   on(expr(hasType(isOrPointsTo(StringType)))
                                          .bind(StringExpr)),
                                   callee(cxxMethodDecl(hasName("c_str")))))),
-      change(text("REPLACED")));
-  R.Cases[0].Explanation = text("Use size() method directly on string.");
+      change(text("REPLACED")), text("Use size() method directly on string."));
   return R;
 }
 
@@ -162,17 +161,6 @@ TEST_F(TransformerTest, StrlenSize) {
 TEST_F(TransformerTest, NoMatch) {
   std::string Input = "int f(string s) { return s.size(); }";
   testRule(ruleStrlenSize(), Input, Input);
-}
-
-// Tests that expressions in macro arguments are rewritten (when applicable).
-TEST_F(TransformerTest, StrlenSizeMacro) {
-  std::string Input = R"cc(
-#define ID(e) e
-    int f(string s) { return ID(strlen(s.c_str())); })cc";
-  std::string Expected = R"cc(
-#define ID(e) e
-    int f(string s) { return ID(REPLACED); })cc";
-  testRule(ruleStrlenSize(), Input, Expected);
 }
 
 // Tests replacing an expression.
@@ -197,6 +185,42 @@ TEST_F(TransformerTest, Flag) {
   )cc";
 
   testRule(std::move(Rule), Input, Expected);
+}
+
+TEST_F(TransformerTest, AddIncludeQuoted) {
+  RewriteRule Rule = makeRule(callExpr(callee(functionDecl(hasName("f")))),
+                              change(text("other()")));
+  addInclude(Rule, "clang/OtherLib.h");
+
+  std::string Input = R"cc(
+    int f(int x);
+    int h(int x) { return f(x); }
+  )cc";
+  std::string Expected = R"cc(#include "clang/OtherLib.h"
+
+    int f(int x);
+    int h(int x) { return other(); }
+  )cc";
+
+  testRule(Rule, Input, Expected);
+}
+
+TEST_F(TransformerTest, AddIncludeAngled) {
+  RewriteRule Rule = makeRule(callExpr(callee(functionDecl(hasName("f")))),
+                              change(text("other()")));
+  addInclude(Rule, "clang/OtherLib.h", IncludeFormat::Angled);
+
+  std::string Input = R"cc(
+    int f(int x);
+    int h(int x) { return f(x); }
+  )cc";
+  std::string Expected = R"cc(#include <clang/OtherLib.h>
+
+    int f(int x);
+    int h(int x) { return other(); }
+  )cc";
+
+  testRule(Rule, Input, Expected);
 }
 
 TEST_F(TransformerTest, NodePartNameNamedDecl) {
@@ -350,6 +374,64 @@ TEST_F(TransformerTest, NodePartMemberMultiToken) {
            Input, Expected);
 }
 
+TEST_F(TransformerTest, InsertBeforeEdit) {
+  std::string Input = R"cc(
+    int f() {
+      return 7;
+    }
+  )cc";
+  std::string Expected = R"cc(
+    int f() {
+      int y = 3;
+      return 7;
+    }
+  )cc";
+
+  StringRef Ret = "return";
+  testRule(makeRule(returnStmt().bind(Ret),
+                    insertBefore(statement(Ret), text("int y = 3;"))),
+           Input, Expected);
+}
+
+TEST_F(TransformerTest, InsertAfterEdit) {
+  std::string Input = R"cc(
+    int f() {
+      int x = 5;
+      return 7;
+    }
+  )cc";
+  std::string Expected = R"cc(
+    int f() {
+      int x = 5;
+      int y = 3;
+      return 7;
+    }
+  )cc";
+
+  StringRef Decl = "decl";
+  testRule(makeRule(declStmt().bind(Decl),
+                    insertAfter(statement(Decl), text("int y = 3;"))),
+           Input, Expected);
+}
+
+TEST_F(TransformerTest, RemoveEdit) {
+  std::string Input = R"cc(
+    int f() {
+      int x = 5;
+      return 7;
+    }
+  )cc";
+  std::string Expected = R"cc(
+    int f() {
+      return 7;
+    }
+  )cc";
+
+  StringRef Decl = "decl";
+  testRule(makeRule(declStmt().bind(Decl), remove(statement(Decl))), Input,
+           Expected);
+}
+
 TEST_F(TransformerTest, MultiChange) {
   std::string Input = R"cc(
     void foo() {
@@ -400,65 +482,85 @@ TEST_F(TransformerTest, OrderedRuleUnrelated) {
   testRule(applyFirst({ruleStrlenSize(), FlagRule}), Input, Expected);
 }
 
-// Version of ruleStrlenSizeAny that inserts a method with a different name than
-// ruleStrlenSize, so we can tell their effect apart.
-RewriteRule ruleStrlenSizeDistinct() {
-  StringRef S;
-  return makeRule(
-      callExpr(callee(functionDecl(hasName("strlen"))),
-               hasArgument(0, cxxMemberCallExpr(
-                                  on(expr().bind(S)),
-                                  callee(cxxMethodDecl(hasName("c_str")))))),
-      change(text("DISTINCT")));
-}
-
 TEST_F(TransformerTest, OrderedRuleRelated) {
   std::string Input = R"cc(
-    namespace foo {
-    struct mystring {
-      char* c_str();
-    };
-    int f(mystring s) { return strlen(s.c_str()); }
-    }  // namespace foo
-    int g(string s) { return strlen(s.c_str()); }
+    void f1();
+    void f2();
+    void call_f1() { f1(); }
+    void call_f2() { f2(); }
   )cc";
   std::string Expected = R"cc(
-    namespace foo {
-    struct mystring {
-      char* c_str();
-    };
-    int f(mystring s) { return DISTINCT; }
-    }  // namespace foo
-    int g(string s) { return REPLACED; }
+    void f1();
+    void f2();
+    void call_f1() { REPLACE_F1; }
+    void call_f2() { REPLACE_F1_OR_F2; }
   )cc";
 
-  testRule(applyFirst({ruleStrlenSize(), ruleStrlenSizeDistinct()}), Input,
-           Expected);
+  RewriteRule ReplaceF1 =
+      makeRule(callExpr(callee(functionDecl(hasName("f1")))),
+               change(text("REPLACE_F1")));
+  RewriteRule ReplaceF1OrF2 =
+      makeRule(callExpr(callee(functionDecl(hasAnyName("f1", "f2")))),
+               change(text("REPLACE_F1_OR_F2")));
+  testRule(applyFirst({ReplaceF1, ReplaceF1OrF2}), Input, Expected);
 }
 
-// Change the order of the rules to get a different result.
+// Change the order of the rules to get a different result. When `ReplaceF1OrF2`
+// comes first, it applies for both uses, so `ReplaceF1` never applies.
 TEST_F(TransformerTest, OrderedRuleRelatedSwapped) {
   std::string Input = R"cc(
-    namespace foo {
-    struct mystring {
-      char* c_str();
-    };
-    int f(mystring s) { return strlen(s.c_str()); }
-    }  // namespace foo
-    int g(string s) { return strlen(s.c_str()); }
+    void f1();
+    void f2();
+    void call_f1() { f1(); }
+    void call_f2() { f2(); }
   )cc";
   std::string Expected = R"cc(
-    namespace foo {
-    struct mystring {
-      char* c_str();
-    };
-    int f(mystring s) { return DISTINCT; }
-    }  // namespace foo
-    int g(string s) { return DISTINCT; }
+    void f1();
+    void f2();
+    void call_f1() { REPLACE_F1_OR_F2; }
+    void call_f2() { REPLACE_F1_OR_F2; }
   )cc";
 
-  testRule(applyFirst({ruleStrlenSizeDistinct(), ruleStrlenSize()}), Input,
-           Expected);
+  RewriteRule ReplaceF1 =
+      makeRule(callExpr(callee(functionDecl(hasName("f1")))),
+               change(text("REPLACE_F1")));
+  RewriteRule ReplaceF1OrF2 =
+      makeRule(callExpr(callee(functionDecl(hasAnyName("f1", "f2")))),
+               change(text("REPLACE_F1_OR_F2")));
+  testRule(applyFirst({ReplaceF1OrF2, ReplaceF1}), Input, Expected);
+}
+
+// Verify that a set of rules whose matchers have different base kinds works
+// properly, including that `applyFirst` produces multiple matchers.  We test
+// two different kinds of rules: Expr and Decl. We place the Decl rule in the
+// middle to test that `buildMatchers` works even when the kinds aren't grouped
+// together.
+TEST_F(TransformerTest, OrderedRuleMultipleKinds) {
+  std::string Input = R"cc(
+    void f1();
+    void f2();
+    void call_f1() { f1(); }
+    void call_f2() { f2(); }
+  )cc";
+  std::string Expected = R"cc(
+    void f1();
+    void DECL_RULE();
+    void call_f1() { REPLACE_F1; }
+    void call_f2() { REPLACE_F1_OR_F2; }
+  )cc";
+
+  RewriteRule ReplaceF1 =
+      makeRule(callExpr(callee(functionDecl(hasName("f1")))),
+               change(text("REPLACE_F1")));
+  RewriteRule ReplaceF1OrF2 =
+      makeRule(callExpr(callee(functionDecl(hasAnyName("f1", "f2")))),
+               change(text("REPLACE_F1_OR_F2")));
+  RewriteRule DeclRule = makeRule(functionDecl(hasName("f2")).bind("fun"),
+                                  change(name("fun"), text("DECL_RULE")));
+
+  RewriteRule Rule = applyFirst({ReplaceF1, DeclRule, ReplaceF1OrF2});
+  EXPECT_EQ(tooling::detail::buildMatchers(Rule).size(), 2UL);
+  testRule(Rule, Input, Expected);
 }
 
 //
@@ -526,23 +628,179 @@ TEST_F(TransformerTest, ErrorOccurredMatchSkipped) {
   EXPECT_EQ(ErrorCount, 0);
 }
 
-TEST_F(TransformerTest, NoTransformationInMacro) {
+// Transformation of macro source text when the change encompasses the entirety
+// of the expanded text.
+TEST_F(TransformerTest, SimpleMacro) {
   std::string Input = R"cc(
-#define MACRO(str) strlen((str).c_str())
-    int f(string s) { return MACRO(s); })cc";
-  testRule(ruleStrlenSize(), Input, Input);
+#define ZERO 0
+    int f(string s) { return ZERO; }
+  )cc";
+  std::string Expected = R"cc(
+#define ZERO 0
+    int f(string s) { return 999; }
+  )cc";
+
+  StringRef zero = "zero";
+  RewriteRule R = makeRule(integerLiteral(equals(0)).bind(zero),
+                           change(node(zero), text("999")));
+  testRule(R, Input, Expected);
 }
 
-// This test handles the corner case where a macro called within another macro
-// expands to matching code, but the matched code is an argument to the nested
-// macro.  A simple check of isMacroArgExpansion() vs. isMacroBodyExpansion()
-// will get this wrong, and transform the code. This test verifies that no such
-// transformation occurs.
-TEST_F(TransformerTest, NoTransformationInNestedMacro) {
+// Transformation of macro source text when the change encompasses the entirety
+// of the expanded text, for the case of function-style macros.
+TEST_F(TransformerTest, FunctionMacro) {
+  std::string Input = R"cc(
+#define MACRO(str) strlen((str).c_str())
+    int f(string s) { return MACRO(s); }
+  )cc";
+  std::string Expected = R"cc(
+#define MACRO(str) strlen((str).c_str())
+    int f(string s) { return REPLACED; }
+  )cc";
+
+  testRule(ruleStrlenSize(), Input, Expected);
+}
+
+// Tests that expressions in macro arguments can be rewritten.
+TEST_F(TransformerTest, MacroArg) {
+  std::string Input = R"cc(
+#define PLUS(e) e + 1
+    int f(string s) { return PLUS(strlen(s.c_str())); }
+  )cc";
+  std::string Expected = R"cc(
+#define PLUS(e) e + 1
+    int f(string s) { return PLUS(REPLACED); }
+  )cc";
+
+  testRule(ruleStrlenSize(), Input, Expected);
+}
+
+// Tests that expressions in macro arguments can be rewritten, even when the
+// macro call occurs inside another macro's definition.
+TEST_F(TransformerTest, MacroArgInMacroDef) {
   std::string Input = R"cc(
 #define NESTED(e) e
 #define MACRO(str) NESTED(strlen((str).c_str()))
-    int f(string s) { return MACRO(s); })cc";
+    int f(string s) { return MACRO(s); }
+  )cc";
+  std::string Expected = R"cc(
+#define NESTED(e) e
+#define MACRO(str) NESTED(strlen((str).c_str()))
+    int f(string s) { return REPLACED; }
+  )cc";
+
+  testRule(ruleStrlenSize(), Input, Expected);
+}
+
+// Tests the corner case of the identity macro, specifically that it is
+// discarded in the rewrite rather than preserved (like PLUS is preserved in the
+// previous test).  This behavior is of dubious value (and marked with a FIXME
+// in the code), but we test it to verify (and demonstrate) how this case is
+// handled.
+TEST_F(TransformerTest, IdentityMacro) {
+  std::string Input = R"cc(
+#define ID(e) e
+    int f(string s) { return ID(strlen(s.c_str())); }
+  )cc";
+  std::string Expected = R"cc(
+#define ID(e) e
+    int f(string s) { return REPLACED; }
+  )cc";
+
+  testRule(ruleStrlenSize(), Input, Expected);
+}
+
+// Tests that two changes in a single macro expansion do not lead to conflicts
+// in applying the changes.
+TEST_F(TransformerTest, TwoChangesInOneMacroExpansion) {
+  std::string Input = R"cc(
+#define PLUS(a,b) (a) + (b)
+    int f() { return PLUS(3, 4); }
+  )cc";
+  std::string Expected = R"cc(
+#define PLUS(a,b) (a) + (b)
+    int f() { return PLUS(LIT, LIT); }
+  )cc";
+
+  testRule(makeRule(integerLiteral(), change(text("LIT"))), Input, Expected);
+}
+
+// Tests case where the rule's match spans both source from the macro and its
+// arg, with the begin location (the "anchor") being the arg.
+TEST_F(TransformerTest, MatchSpansMacroTextButChangeDoesNot) {
+  std::string Input = R"cc(
+#define PLUS_ONE(a) a + 1
+    int f() { return PLUS_ONE(3); }
+  )cc";
+  std::string Expected = R"cc(
+#define PLUS_ONE(a) a + 1
+    int f() { return PLUS_ONE(LIT); }
+  )cc";
+
+  StringRef E = "expr";
+  testRule(makeRule(binaryOperator(hasLHS(expr().bind(E))),
+                    change(node(E), text("LIT"))),
+           Input, Expected);
+}
+
+// Tests case where the rule's match spans both source from the macro and its
+// arg, with the begin location (the "anchor") being inside the macro.
+TEST_F(TransformerTest, MatchSpansMacroTextButChangeDoesNotAnchoredInMacro) {
+  std::string Input = R"cc(
+#define PLUS_ONE(a) 1 + a
+    int f() { return PLUS_ONE(3); }
+  )cc";
+  std::string Expected = R"cc(
+#define PLUS_ONE(a) 1 + a
+    int f() { return PLUS_ONE(LIT); }
+  )cc";
+
+  StringRef E = "expr";
+  testRule(makeRule(binaryOperator(hasRHS(expr().bind(E))),
+                    change(node(E), text("LIT"))),
+           Input, Expected);
+}
+
+// No rewrite is applied when the changed text does not encompass the entirety
+// of the expanded text. That is, the edit would have to be applied to the
+// macro's definition to succeed and editing the expansion point would not
+// suffice.
+TEST_F(TransformerTest, NoPartialRewriteOMacroExpansion) {
+  std::string Input = R"cc(
+#define ZERO_PLUS 0 + 3
+    int f(string s) { return ZERO_PLUS; })cc";
+
+  StringRef zero = "zero";
+  RewriteRule R = makeRule(integerLiteral(equals(0)).bind(zero),
+                           change(node(zero), text("0")));
+  testRule(R, Input, Input);
+}
+
+// This test handles the corner case where a macro expands within another macro
+// to matching code, but that code is an argument to the nested macro call.  A
+// simple check of isMacroArgExpansion() vs. isMacroBodyExpansion() will get
+// this wrong, and transform the code.
+TEST_F(TransformerTest, NoPartialRewriteOfMacroExpansionForMacroArgs) {
+  std::string Input = R"cc(
+#define NESTED(e) e
+#define MACRO(str) 1 + NESTED(strlen((str).c_str()))
+    int f(string s) { return MACRO(s); }
+  )cc";
+
   testRule(ruleStrlenSize(), Input, Input);
 }
+
+#if !defined(NDEBUG) && GTEST_HAS_DEATH_TEST
+// Verifies that `Type` and `QualType` are not allowed as top-level matchers in
+// rules.
+TEST(TransformerDeathTest, OrderedRuleTypes) {
+  RewriteRule QualTypeRule = makeRule(qualType(), change(text("Q")));
+  EXPECT_DEATH(tooling::detail::buildMatchers(QualTypeRule),
+               "Matcher must be.*node matcher");
+
+  RewriteRule TypeRule = makeRule(arrayType(), change(text("T")));
+  EXPECT_DEATH(tooling::detail::buildMatchers(TypeRule),
+               "Matcher must be.*node matcher");
+}
+#endif
 } // namespace

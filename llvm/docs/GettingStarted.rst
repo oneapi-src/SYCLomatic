@@ -95,7 +95,7 @@ Here's the short story for getting up and running quickly with LLVM:
        ``make -j NNN`` (with an appropriate value of NNN, e.g. number of CPUs
        you have.)
 
-   * For more information see `CMake <CMake.html>`_
+   * For more information see `CMake <CMake.html>`__
 
    * If you get an "internal compiler error (ICE)" or test failures, see
      `below`_.
@@ -128,8 +128,8 @@ FreeBSD            x86\ :sup:`1`         GCC, Clang
 FreeBSD            amd64                 GCC, Clang
 NetBSD             x86\ :sup:`1`         GCC, Clang
 NetBSD             amd64                 GCC, Clang
-MacOS X\ :sup:`2`  PowerPC               GCC
-MacOS X            x86                   GCC, Clang
+macOS\ :sup:`2`    PowerPC               GCC
+macOS              x86                   GCC, Clang
 Cygwin/Win32       x86\ :sup:`1, 3`      GCC
 Windows            x86\ :sup:`1`         Visual Studio
 Windows x64        x86-64                Visual Studio
@@ -169,10 +169,11 @@ uses the package and provides other details.
 =========================================================== ============ ==========================================
 Package                                                     Version      Notes
 =========================================================== ============ ==========================================
-`GNU Make <http://savannah.gnu.org/projects/make>`_         3.79, 3.79.1 Makefile/build processor
+`CMake <http://cmake.org/>`__                               >=3.4.3      Makefile/workspace generator
 `GCC <http://gcc.gnu.org/>`_                                >=5.1.0      C/C++ compiler\ :sup:`1`
 `python <http://www.python.org/>`_                          >=2.7        Automated test suite\ :sup:`2`
 `zlib <http://zlib.net>`_                                   >=1.2.3.4    Compression library\ :sup:`3`
+`GNU Make <http://savannah.gnu.org/projects/make>`_         3.79, 3.79.1 Makefile/build processor\ :sup:`4`
 =========================================================== ============ ==========================================
 
 .. note::
@@ -184,6 +185,7 @@ Package                                                     Version      Notes
       ``llvm/test`` directory.
    #. Optional, adds compression / uncompression capabilities to selected LLVM
       tools.
+   #. Optional, you can use any other build tool supported by CMake.
 
 Additionally, your compilation host is expected to have the usual plethora of
 Unix utilities. Specifically:
@@ -233,15 +235,6 @@ popular host toolchains for specific minimum versions in our build systems:
 * GCC 5.1
 * Visual Studio 2017
 
-The below versions currently soft-error as we transition to the new compiler
-versions listed above. The LLVM codebase is currently known to compile correctly
-with the following compilers, though this will change in the near future:
-
-* Clang 3.1
-* Apple Clang 3.1
-* GCC 4.8
-* Visual Studio 2015 (Update 3)
-
 Anything older than these toolchains *may* work, but will require forcing the
 build system with a special option and is not really a supported host platform.
 Also note that older versions of these compilers have often crashed or
@@ -272,10 +265,10 @@ newer version of Gold.
 Getting a Modern Host C++ Toolchain
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This section mostly applies to Linux and older BSDs. On Mac OS X, you should
+This section mostly applies to Linux and older BSDs. On macOS, you should
 have a sufficiently modern Xcode, or you will likely need to upgrade until you
 do. Windows does not have a "system compiler", so you must install either Visual
-Studio 2015 or a recent version of mingw64. FreeBSD 10.0 and newer have a modern
+Studio 2017 or a recent version of mingw64. FreeBSD 10.0 and newer have a modern
 Clang as the system compiler.
 
 However, some Linux distributions and some other or older BSDs sometimes have
@@ -525,6 +518,26 @@ through all the steps of committing _without_ actually doing the commit, and
 tell you what it would have done. That can be useful if you're unsure whether
 the right thing will happen.
 
+Reverting a change when using Git
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you're using Git and need to revert a patch, Git needs to be supplied a
+commit hash, not an svn revision. To make things easier, you can use
+``git llvm revert`` to revert with either an SVN revision or a Git hash instead.
+
+Additionally, you can first run with ``git llvm revert -n`` to print which Git
+commands will run, without doing anything.
+
+Running ``git llvm revert`` will only revert things in your local repository. To
+push the revert upstream, you still need to run ``git llvm push`` as described
+earlier.
+
+.. code-block:: console
+
+  % git llvm revert rNNNNNN       # Revert by SVN id
+  % git llvm revert abcdef123456  # Revert by Git commit hash
+  % git llvm revert -n rNNNNNN    # Print the commands without doing anything
+
 Checkout via SVN (deprecated)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -577,6 +590,11 @@ used by people developing LLVM.
 +-------------------------+----------------------------------------------------+
 | CMAKE_INSTALL_PREFIX    | Specifies the install directory to target when     |
 |                         | running the install action of the build files.     |
++-------------------------+----------------------------------------------------+
+| PYTHON_EXECUTABLE       | Forces CMake to use a specific Python version by   |
+|                         | passing a path to a Python interpreter. By default |
+|                         | the Python version of the interpreter in your PATH |
+|                         | is used.                                           |
 +-------------------------+----------------------------------------------------+
 | LLVM_TARGETS_TO_BUILD   | A semicolon delimited list controlling which       |
 |                         | targets will be built and linked into llvm.        |
@@ -711,7 +729,7 @@ define compiler flags and variables used during the CMake test operations.
 
 The result of such a build is executables that are not runnable on the build
 host but can be executed on the target. As an example the following CMake
-invocation can generate build files targeting iOS. This will work on Mac OS X
+invocation can generate build files targeting iOS. This will work on macOS
 with the latest Xcode:
 
 .. code-block:: console

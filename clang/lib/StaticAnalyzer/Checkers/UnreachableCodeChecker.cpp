@@ -55,7 +55,7 @@ void UnreachableCodeChecker::checkEndAnalysis(ExplodedGraph &G,
 
   const Decl *D = nullptr;
   CFG *C = nullptr;
-  ParentMap *PM = nullptr;
+  const ParentMap *PM = nullptr;
   const LocationContext *LC = nullptr;
   // Iterate over ExplodedGraph
   for (ExplodedGraph::node_iterator I = G.nodes_begin(), E = G.nodes_end();
@@ -204,7 +204,7 @@ const Stmt *UnreachableCodeChecker::getUnreachableStmt(const CFGBlock *CB) {
         return S->getStmt();
     }
   }
-  if (const Stmt *S = CB->getTerminator())
+  if (const Stmt *S = CB->getTerminatorStmt())
     return S;
   else
     return nullptr;
@@ -250,7 +250,7 @@ bool UnreachableCodeChecker::isInvalidPath(const CFGBlock *CB,
 bool UnreachableCodeChecker::isEmptyCFGBlock(const CFGBlock *CB) {
   return CB->getLabel() == nullptr // No labels
       && CB->size() == 0           // No statements
-      && !CB->getTerminator();     // No terminator
+      && !CB->getTerminatorStmt(); // No terminator
 }
 
 void ento::registerUnreachableCodeChecker(CheckerManager &mgr) {

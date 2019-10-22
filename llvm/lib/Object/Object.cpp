@@ -15,6 +15,7 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Object/ObjectFile.h"
+#include "llvm/Object/MachOUniversal.h"
 
 using namespace llvm;
 using namespace object;
@@ -131,6 +132,20 @@ LLVMBinaryType LLVMBinaryGetType(LLVMBinaryRef BR) {
   return BinaryTypeMapper::mapBinaryTypeToLLVMBinaryType(unwrap(BR)->getType());
 }
 
+LLVMBinaryRef LLVMMachOUniversalBinaryCopyObjectForArch(LLVMBinaryRef BR,
+                                                        const char *Arch,
+                                                        size_t ArchLen,
+                                                        char **ErrorMessage) {
+  auto universal = cast<MachOUniversalBinary>(unwrap(BR));
+  Expected<std::unique_ptr<ObjectFile>> ObjOrErr(
+      universal->getMachOObjectForArch({Arch, ArchLen}));
+  if (!ObjOrErr) {
+    *ErrorMessage = strdup(toString(ObjOrErr.takeError()).c_str());
+    return nullptr;
+  }
+  return wrap(ObjOrErr.get().release());
+}
+
 LLVMSectionIteratorRef LLVMObjectFileCopySectionIterator(LLVMBinaryRef BR) {
   auto OF = cast<ObjectFile>(unwrap(BR));
   auto sections = OF->sections();
@@ -236,10 +251,10 @@ void LLVMMoveToNextSymbol(LLVMSymbolIteratorRef SI) {
 
 // SectionRef accessors
 const char *LLVMGetSectionName(LLVMSectionIteratorRef SI) {
-  StringRef ret;
-  if (std::error_code ec = (*unwrap(SI))->getName(ret))
-   report_fatal_error(ec.message());
-  return ret.data();
+  auto NameOrErr = (*unwrap(SI))->getName();
+  if (!NameOrErr)
+    report_fatal_error(NameOrErr.takeError());
+  return NameOrErr->data();
 }
 
 uint64_t LLVMGetSectionSize(LLVMSectionIteratorRef SI) {

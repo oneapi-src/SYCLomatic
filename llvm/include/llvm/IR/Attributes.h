@@ -22,6 +22,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/iterator_range.h"
 #include "llvm/Config/llvm-config.h"
+#include "llvm/Support/Alignment.h"
 #include "llvm/Support/PointerLikeTypeTraits.h"
 #include <bitset>
 #include <cassert>
@@ -90,6 +91,7 @@ public:
   static Attribute get(LLVMContext &Context, AttrKind Kind, uint64_t Val = 0);
   static Attribute get(LLVMContext &Context, StringRef Kind,
                        StringRef Val = StringRef());
+  static Attribute get(LLVMContext &Context, AttrKind Kind, Type *Ty);
 
   /// Return a uniquified Attribute object that has the specific
   /// alignment set.
@@ -102,6 +104,7 @@ public:
   static Attribute getWithAllocSizeArgs(LLVMContext &Context,
                                         unsigned ElemSizeArg,
                                         const Optional<unsigned> &NumElemsArg);
+  static Attribute getWithByValType(LLVMContext &Context, Type *Ty);
 
   //===--------------------------------------------------------------------===//
   // Attribute Accessors
@@ -116,6 +119,9 @@ public:
   /// Return true if the attribute is a string (target-dependent)
   /// attribute.
   bool isStringAttribute() const;
+
+  /// Return true if the attribute is a type attribute.
+  bool isTypeAttribute() const;
 
   /// Return true if the attribute is present.
   bool hasAttribute(AttrKind Val) const;
@@ -138,6 +144,10 @@ public:
   /// Return the attribute's value as a string. This requires the
   /// attribute to be a string attribute.
   StringRef getValueAsString() const;
+
+  /// Return the attribute's value as a Type. This requires the attribute to be
+  /// a type attribute.
+  Type *getValueAsType() const;
 
   /// Returns the alignment field of an attribute as a byte alignment
   /// value.
@@ -279,6 +289,7 @@ public:
   unsigned getStackAlignment() const;
   uint64_t getDereferenceableBytes() const;
   uint64_t getDereferenceableOrNullBytes() const;
+  Type *getByValType() const;
   std::pair<unsigned, Optional<unsigned>> getAllocSizeArgs() const;
   std::string getAsString(bool InAttrGrp = false) const;
 
@@ -598,6 +609,9 @@ public:
   /// Return the alignment for the specified function parameter.
   unsigned getParamAlignment(unsigned ArgNo) const;
 
+  /// Return the byval type for the specified function parameter.
+  Type *getParamByValType(unsigned ArgNo) const;
+
   /// Get the stack alignment.
   unsigned getStackAlignment(unsigned Index) const;
 
@@ -691,12 +705,13 @@ template <> struct DenseMapInfo<AttributeList> {
 /// equality, presence of attributes, etc.
 class AttrBuilder {
   std::bitset<Attribute::EndAttrKinds> Attrs;
-  std::map<std::string, std::string> TargetDepAttrs;
-  uint64_t Alignment = 0;
-  uint64_t StackAlignment = 0;
+  std::map<std::string, std::string, std::less<>> TargetDepAttrs;
+  MaybeAlign Alignment;
+  MaybeAlign StackAlignment;
   uint64_t DerefBytes = 0;
   uint64_t DerefOrNullBytes = 0;
   uint64_t AllocSizeArgs = 0;
+  Type *ByValType = nullptr;
 
 public:
   AttrBuilder() = default;
@@ -759,10 +774,12 @@ public:
   bool hasAlignmentAttr() const;
 
   /// Retrieve the alignment attribute, if it exists.
-  uint64_t getAlignment() const { return Alignment; }
+  uint64_t getAlignment() const { return Alignment ? Alignment->value() : 0; }
 
   /// Retrieve the stack alignment attribute, if it exists.
-  uint64_t getStackAlignment() const { return StackAlignment; }
+  uint64_t getStackAlignment() const {
+    return StackAlignment ? StackAlignment->value() : 0;
+  }
 
   /// Retrieve the number of dereferenceable bytes, if the
   /// dereferenceable attribute exists (zero is returned otherwise).
@@ -771,6 +788,9 @@ public:
   /// Retrieve the number of dereferenceable_or_null bytes, if the
   /// dereferenceable_or_null attribute exists (zero is returned otherwise).
   uint64_t getDereferenceableOrNullBytes() const { return DerefOrNullBytes; }
+
+  /// Retrieve the byval type.
+  Type *getByValType() const { return ByValType; }
 
   /// Retrieve the allocsize args, if the allocsize attribute exists.  If it
   /// doesn't exist, pair(0, 0) is returned.
@@ -795,6 +815,9 @@ public:
   /// This turns one (or two) ints into the form used internally in Attribute.
   AttrBuilder &addAllocSizeAttr(unsigned ElemSizeArg,
                                 const Optional<unsigned> &NumElemsArg);
+
+  /// This turns a byval type into the form used internally in Attribute.
+  AttrBuilder &addByValAttr(Type *Ty);
 
   /// Add an allocsize attribute, using the representation returned by
   /// Attribute.getIntValue().

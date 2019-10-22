@@ -130,6 +130,9 @@ public:
   int getCmpSelInstrCost(unsigned Opcode, Type *ValTy, Type *CondTy,
                          const Instruction *I = nullptr);
 
+  TTI::MemCmpExpansionOptions enableMemCmpExpansion(bool OptSize,
+                                                    bool IsZeroCmp) const;
+
   int getMemoryOpCost(unsigned Opcode, Type *Src, unsigned Alignment,
                       unsigned AddressSpace, const Instruction *I = nullptr);
 
@@ -163,6 +166,10 @@ public:
 
   bool shouldExpandReduction(const IntrinsicInst *II) const {
     return false;
+  }
+
+  unsigned getGISelRematGlobalCost() const {
+    return 2;
   }
 
   bool useReductionIntrinsic(unsigned Opcode, Type *Ty,

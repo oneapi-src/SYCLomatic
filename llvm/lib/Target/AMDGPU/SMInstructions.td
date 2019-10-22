@@ -768,21 +768,23 @@ multiclass SMRD_Pattern <string Instr, ValueType vt> {
 multiclass SMLoad_Pattern <string Instr, ValueType vt> {
   // 1. Offset as an immediate
   def : GCNPat <
-    (SIsbuffer_load v4i32:$sbase, (SMRDBufferImm i32:$offset), i1:$glc),
-    (vt (!cast<SM_Pseudo>(Instr#"_IMM") $sbase, $offset, (as_i1imm $glc), 0))
+    (SIsbuffer_load v4i32:$sbase, (SMRDBufferImm i32:$offset), i1:$glc, i1:$dlc),
+    (vt (!cast<SM_Pseudo>(Instr#"_IMM") $sbase, $offset, (as_i1imm $glc),
+                                        (as_i1imm $dlc)))
   >;
 
   // 2. 32-bit IMM offset on CI
   def : GCNPat <
-    (vt (SIsbuffer_load v4i32:$sbase, (SMRDBufferImm32 i32:$offset), i1:$glc)),
-    (!cast<InstSI>(Instr#"_IMM_ci") $sbase, $offset, (as_i1imm $glc), 0)> {
+    (vt (SIsbuffer_load v4i32:$sbase, (SMRDBufferImm32 i32:$offset), i1:$glc, i1:$dlc)),
+    (!cast<InstSI>(Instr#"_IMM_ci") $sbase, $offset, (as_i1imm $glc), (as_i1imm $dlc))> {
     let OtherPredicates = [isGFX7Only];
   }
 
   // 3. Offset loaded in an 32bit SGPR
   def : GCNPat <
-    (SIsbuffer_load v4i32:$sbase, i32:$offset, i1:$glc),
-    (vt (!cast<SM_Pseudo>(Instr#"_SGPR") $sbase, $offset, (as_i1imm $glc), 0))
+    (SIsbuffer_load v4i32:$sbase, i32:$offset, i1:$glc, i1:$dlc),
+    (vt (!cast<SM_Pseudo>(Instr#"_SGPR") $sbase, $offset, (as_i1imm $glc),
+                                         (as_i1imm $dlc)))
   >;
 }
 
@@ -791,9 +793,18 @@ multiclass SMLoad_Pattern <string Instr, ValueType vt> {
 // selector to prefer those.
 let AddedComplexity = 100 in {
 
-defm : SMRD_Pattern <"S_LOAD_DWORD",    i32>;
-defm : SMRD_Pattern <"S_LOAD_DWORDX2",  v2i32>;
-defm : SMRD_Pattern <"S_LOAD_DWORDX4",  v4i32>;
+foreach vt = Reg32Types.types in {
+defm : SMRD_Pattern <"S_LOAD_DWORD", vt>;
+}
+
+foreach vt = SReg_64.RegTypes in {
+defm : SMRD_Pattern <"S_LOAD_DWORDX2", vt>;
+}
+
+foreach vt = SReg_128.RegTypes in {
+defm : SMRD_Pattern <"S_LOAD_DWORDX4", vt>;
+}
+
 defm : SMRD_Pattern <"S_LOAD_DWORDX8",  v8i32>;
 defm : SMRD_Pattern <"S_LOAD_DWORDX16", v16i32>;
 
@@ -810,21 +821,10 @@ defm : SMLoad_Pattern <"S_BUFFER_LOAD_DWORDX8",   v8f32>;
 defm : SMLoad_Pattern <"S_BUFFER_LOAD_DWORDX16",  v16f32>;
 } // End let AddedComplexity = 100
 
-let OtherPredicates = [isGFX6GFX7] in {
 def : GCNPat <
   (i64 (readcyclecounter)),
   (S_MEMTIME)
 >;
-}
-
-let OtherPredicates = [isGFX8Plus] in {
-
-def : GCNPat <
-  (i64 (readcyclecounter)),
-  (S_MEMREALTIME)
->;
-
-} // let OtherPredicates = [isGFX8Plus]
 
 //===----------------------------------------------------------------------===//
 // GFX10.

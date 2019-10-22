@@ -218,6 +218,15 @@ Lexer *Lexer::Create_PragmaLexer(SourceLocation SpellingLoc,
   return L;
 }
 
+bool Lexer::skipOver(unsigned NumBytes) {
+  IsAtPhysicalStartOfLine = true;
+  IsAtStartOfLine = true;
+  if ((BufferPtr + NumBytes) > BufferEnd)
+    return true;
+  BufferPtr += NumBytes;
+  return false;
+}
+
 template <typename T> static void StringifyImpl(T &Str, char Quote) {
   typename T::size_type i = 0, e = Str.size();
   while (i < e) {
@@ -687,7 +696,6 @@ PreambleBounds Lexer::ComputePreamble(StringRef Buffer,
       // We only end up here if we didn't recognize the preprocessor
       // directive or it was one that can't occur in the preamble at this
       // point. Roll back the current token to the location of the '#'.
-      InPreprocessorDirective = false;
       TheTok = HashTok;
     }
 
@@ -3232,7 +3240,7 @@ LexNextToken:
 
   case '\r':
     if (CurPtr[0] == '\n')
-      Char = getAndAdvanceChar(CurPtr, Result);
+      (void)getAndAdvanceChar(CurPtr, Result);
     LLVM_FALLTHROUGH;
   case '\n':
     // If we are inside a preprocessor directive and we see the end of line,

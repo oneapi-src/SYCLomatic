@@ -33,8 +33,8 @@ define i32 @func(i32 %x, i32 %y) nounwind {
 ; X64-NEXT:    subl %esi, %edi
 ; X64-NEXT:    cmovnol %edi, %eax
 ; X64-NEXT:    retq
-  %tmp = call i32 @llvm.ssub.sat.i32(i32 %x, i32 %y);
-  ret i32 %tmp;
+  %tmp = call i32 @llvm.ssub.sat.i32(i32 %x, i32 %y)
+  ret i32 %tmp
 }
 
 define i64 @func2(i64 %x, i64 %y) nounwind {
@@ -85,8 +85,8 @@ define i64 @func2(i64 %x, i64 %y) nounwind {
 ; X64-NEXT:    subq %rsi, %rdi
 ; X64-NEXT:    cmovnoq %rdi, %rax
 ; X64-NEXT:    retq
-  %tmp = call i64 @llvm.ssub.sat.i64(i64 %x, i64 %y);
-  ret i64 %tmp;
+  %tmp = call i64 @llvm.ssub.sat.i64(i64 %x, i64 %y)
+  ret i64 %tmp
 }
 
 define i4 @func3(i4 %x, i4 %y) nounwind {
@@ -123,8 +123,8 @@ define i4 @func3(i4 %x, i4 %y) nounwind {
 ; X64-NEXT:    sarb $4, %al
 ; X64-NEXT:    # kill: def $al killed $al killed $eax
 ; X64-NEXT:    retq
-  %tmp = call i4 @llvm.ssub.sat.i4(i4 %x, i4 %y);
-  ret i4 %tmp;
+  %tmp = call i4 @llvm.ssub.sat.i4(i4 %x, i4 %y)
+  ret i4 %tmp
 }
 
 define <4 x i32> @vec(<4 x i32> %x, <4 x i32> %y) nounwind {
@@ -183,31 +183,21 @@ define <4 x i32> @vec(<4 x i32> %x, <4 x i32> %y) nounwind {
 ;
 ; X64-LABEL: vec:
 ; X64:       # %bb.0:
-; X64-NEXT:    movdqa %xmm0, %xmm2
-; X64-NEXT:    pxor %xmm3, %xmm3
-; X64-NEXT:    pxor %xmm0, %xmm0
-; X64-NEXT:    pcmpgtd %xmm1, %xmm0
-; X64-NEXT:    pcmpeqd %xmm4, %xmm4
-; X64-NEXT:    pxor %xmm4, %xmm0
-; X64-NEXT:    pxor %xmm5, %xmm5
-; X64-NEXT:    pcmpgtd %xmm2, %xmm5
-; X64-NEXT:    pxor %xmm4, %xmm5
-; X64-NEXT:    pcmpeqd %xmm5, %xmm0
-; X64-NEXT:    psubd %xmm1, %xmm2
-; X64-NEXT:    pcmpgtd %xmm2, %xmm3
-; X64-NEXT:    movdqa %xmm3, %xmm1
-; X64-NEXT:    pxor %xmm4, %xmm1
-; X64-NEXT:    pcmpeqd %xmm5, %xmm1
-; X64-NEXT:    pxor %xmm4, %xmm1
-; X64-NEXT:    pandn %xmm1, %xmm0
-; X64-NEXT:    movdqa %xmm3, %xmm1
+; X64-NEXT:    pxor %xmm2, %xmm2
+; X64-NEXT:    movdqa %xmm0, %xmm3
+; X64-NEXT:    psubd %xmm1, %xmm3
+; X64-NEXT:    pcmpgtd %xmm2, %xmm1
+; X64-NEXT:    pcmpgtd %xmm3, %xmm0
+; X64-NEXT:    pxor %xmm1, %xmm0
+; X64-NEXT:    pcmpgtd %xmm3, %xmm2
+; X64-NEXT:    movdqa %xmm2, %xmm1
 ; X64-NEXT:    pandn {{.*}}(%rip), %xmm1
-; X64-NEXT:    psrld $1, %xmm3
-; X64-NEXT:    por %xmm1, %xmm3
-; X64-NEXT:    pand %xmm0, %xmm3
-; X64-NEXT:    pandn %xmm2, %xmm0
-; X64-NEXT:    por %xmm3, %xmm0
+; X64-NEXT:    psrld $1, %xmm2
+; X64-NEXT:    por %xmm1, %xmm2
+; X64-NEXT:    pand %xmm0, %xmm2
+; X64-NEXT:    pandn %xmm3, %xmm0
+; X64-NEXT:    por %xmm2, %xmm0
 ; X64-NEXT:    retq
-  %tmp = call <4 x i32> @llvm.ssub.sat.v4i32(<4 x i32> %x, <4 x i32> %y);
-  ret <4 x i32> %tmp;
+  %tmp = call <4 x i32> @llvm.ssub.sat.v4i32(<4 x i32> %x, <4 x i32> %y)
+  ret <4 x i32> %tmp
 }

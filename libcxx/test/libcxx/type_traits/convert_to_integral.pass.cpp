@@ -21,7 +21,9 @@
 #include <cstdint>
 #include <cassert>
 
-#include "user_defined_integral.hpp"
+#include "user_defined_integral.h"
+
+#include "test_macros.h"
 
 template <class T>
 struct EnumType

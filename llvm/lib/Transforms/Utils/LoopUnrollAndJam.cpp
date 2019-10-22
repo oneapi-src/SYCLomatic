@@ -517,6 +517,7 @@ LoopUnrollResult llvm::UnrollAndJamLoop(
     movePHIs(AftBlocksFirst[It], AftBlocksFirst[0]);
   }
 
+  DomTreeUpdater DTU(DT, DomTreeUpdater::UpdateStrategy::Lazy);
   // Dominator Tree. Remove the old links between Fore, Sub and Aft, adding the
   // new ones required.
   if (Count != 1) {
@@ -530,7 +531,7 @@ LoopUnrollResult llvm::UnrollAndJamLoop(
                            ForeBlocksLast.back(), SubLoopBlocksFirst[0]);
     DTUpdates.emplace_back(DominatorTree::UpdateKind::Insert,
                            SubLoopBlocksLast.back(), AftBlocksFirst[0]);
-    DT->applyUpdates(DTUpdates);
+    DTU.applyUpdatesPermissive(DTUpdates);
   }
 
   // Merge adjacent basic blocks, if possible.
@@ -543,7 +544,8 @@ LoopUnrollResult llvm::UnrollAndJamLoop(
     BranchInst *Term = dyn_cast<BranchInst>(BB->getTerminator());
     if (Term && Term->isUnconditional() && L->contains(Term->getSuccessor(0))) {
       BasicBlock *Dest = Term->getSuccessor(0);
-      if (BasicBlock *Fold = foldBlockIntoPredecessor(Dest, LI, SE, DT)) {
+      BasicBlock *Fold = Dest->getUniquePredecessor();
+      if (MergeBlockIntoPredecessor(Dest, &DTU, LI)) {
         // Don't remove BB and add Fold as they are the same BB
         assert(Fold == BB);
         (void)Fold;
@@ -553,6 +555,8 @@ LoopUnrollResult llvm::UnrollAndJamLoop(
     } else
       MergeBlocks.erase(BB);
   }
+  // Apply updates to the DomTree.
+  DT = &DTU.getDomTree();
 
   // At this point, the code is well formed.  We now do a quick sweep over the
   // inserted code, doing constant propagation and dead code elimination as we

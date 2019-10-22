@@ -29,8 +29,8 @@
 using namespace lldb_private;
 using namespace lldb;
 
-void StructuredPythonObject::Dump(Stream &s, bool pretty_print) const {
-  s << "Python Obj: 0x" << GetValue();
+void StructuredPythonObject::Serialize(llvm::json::OStream &s) const {
+  s.value(llvm::formatv("Python Obj: {0:X}", GetValue()).str());
 }
 
 // PythonObject
@@ -887,6 +887,20 @@ void PythonCallable::Reset(PyRefType type, PyObject *py_obj) {
   PythonObject::Reset(PyRefType::Borrowed, result.get());
 }
 
+PythonCallable::ArgInfo PythonCallable::GetNumInitArguments() const {
+  ArgInfo result = {0, false, false, false};
+  if (!IsValid())
+    return result;
+
+  PythonObject __init__ = GetAttributeValue("__init__");
+  if (__init__.IsValid() ) {
+    auto __init_callable__ = __init__.AsType<PythonCallable>();
+    if (__init_callable__.IsValid())
+      return __init_callable__.GetNumArguments();
+  }
+  return result;
+}
+
 PythonCallable::ArgInfo PythonCallable::GetNumArguments() const {
   ArgInfo result = {0, false, false, false};
   if (!IsValid())
@@ -949,17 +963,13 @@ PythonFile::PythonFile() : PythonObject() {}
 
 PythonFile::PythonFile(File &file, const char *mode) { Reset(file, mode); }
 
-PythonFile::PythonFile(const char *path, const char *mode) {
-  lldb_private::File file;
-  FileSystem::Instance().Open(file, FileSpec(path), GetOptionsFromMode(mode));
-  Reset(file, mode);
-}
-
 PythonFile::PythonFile(PyRefType type, PyObject *o) { Reset(type, o); }
 
 PythonFile::~PythonFile() {}
 
 bool PythonFile::Check(PyObject *py_obj) {
+  if (!py_obj)
+    return false;
 #if PY_MAJOR_VERSION < 3
   return PyFile_Check(py_obj);
 #else
@@ -1019,34 +1029,20 @@ void PythonFile::Reset(File &file, const char *mode) {
 #endif
 }
 
-uint32_t PythonFile::GetOptionsFromMode(llvm::StringRef mode) {
-  if (mode.empty())
-    return 0;
 
-  return llvm::StringSwitch<uint32_t>(mode.str())
-      .Case("r", File::eOpenOptionRead)
-      .Case("w", File::eOpenOptionWrite)
-      .Case("a", File::eOpenOptionWrite | File::eOpenOptionAppend |
-                     File::eOpenOptionCanCreate)
-      .Case("r+", File::eOpenOptionRead | File::eOpenOptionWrite)
-      .Case("w+", File::eOpenOptionRead | File::eOpenOptionWrite |
-                      File::eOpenOptionCanCreate | File::eOpenOptionTruncate)
-      .Case("a+", File::eOpenOptionRead | File::eOpenOptionWrite |
-                      File::eOpenOptionAppend | File::eOpenOptionCanCreate)
-      .Default(0);
-}
-
-bool PythonFile::GetUnderlyingFile(File &file) const {
+FileUP PythonFile::GetUnderlyingFile() const {
   if (!IsValid())
-    return false;
+    return nullptr;
 
-  file.Close();
   // We don't own the file descriptor returned by this function, make sure the
   // File object knows about that.
-  file.SetDescriptor(PyObject_AsFileDescriptor(m_py_obj), false);
   PythonString py_mode = GetAttributeValue("mode").AsType<PythonString>();
-  file.SetOptions(PythonFile::GetOptionsFromMode(py_mode.GetString()));
-  return file.IsValid();
+  auto options = File::GetOptionsFromMode(py_mode.GetString());
+  auto file = std::unique_ptr<File>(
+      new NativeFile(PyObject_AsFileDescriptor(m_py_obj), options, false));
+  if (!file->IsValid())
+    return nullptr;
+  return file;
 }
 
 #endif

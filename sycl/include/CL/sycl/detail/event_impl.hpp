@@ -10,6 +10,7 @@
 
 #include <CL/sycl/detail/common.hpp>
 #include <CL/sycl/detail/event_info.hpp>
+#include <CL/sycl/detail/pi.hpp>
 #include <CL/sycl/stl.hpp>
 
 #include <cassert>
@@ -20,11 +21,26 @@ class context;
 namespace detail {
 class context_impl;
 using ContextImplPtr = std::shared_ptr<cl::sycl::detail::context_impl>;
+class queue_impl;
+
+// Profiling info for the host execution.
+class HostProfilingInfo {
+  cl_ulong StartTime = 0;
+  cl_ulong EndTime = 0;
+
+public:
+  cl_ulong getStartTime() const { return StartTime; }
+  cl_ulong getEndTime() const { return EndTime; }
+
+  void start();
+  void end();
+};
 
 class event_impl {
 public:
   event_impl() = default;
   event_impl(cl_event CLEvent, const context &SyclContext);
+  event_impl(std::shared_ptr<cl::sycl::detail::queue_impl> Queue);
 
   // Threat all devices that don't support interoperability as host devices to
   // avoid attempts to call method get on such events.
@@ -51,7 +67,8 @@ public:
   void setComplete();
 
   // Warning. Returned reference will be invalid if event_impl was destroyed.
-  cl_event &getHandleRef();
+  RT::PiEvent &getHandleRef();
+  const RT::PiEvent &getHandleRef() const;
 
   const ContextImplPtr &getContextImpl();
 
@@ -63,11 +80,16 @@ public:
 
   void setCommand(void *Command) { m_Command = Command; }
 
+  HostProfilingInfo *getHostProfilingInfo() {
+    return m_HostProfilingInfo.get();
+  }
+
 private:
-  cl_event m_Event = nullptr;
+  RT::PiEvent m_Event = nullptr;
   ContextImplPtr m_Context;
   bool m_OpenCLInterop = false;
   bool m_HostEvent = true;
+  std::unique_ptr<HostProfilingInfo> m_HostProfilingInfo;
   void *m_Command = nullptr;
 };
 

@@ -43,6 +43,11 @@ def FeatureStdExtC
 def HasStdExtC : Predicate<"Subtarget->hasStdExtC()">,
                            AssemblerPredicate<"FeatureStdExtC">;
 
+def FeatureRVCHints
+    : SubtargetFeature<"rvc-hints", "EnableRVCHintInstrs", "true",
+                       "Enable RVC Hint Instructions.">;
+def HasRVCHints : Predicate<"Subtarget->enableRVCHintInstrs()">,
+                            AssemblerPredicate<"FeatureRVCHints">;
 
 def Feature64Bit
     : SubtargetFeature<"64bit", "HasRV64", "true", "Implements RV64">;
@@ -65,26 +70,28 @@ def FeatureRelax
                        "Enable Linker relaxation.">;
 
 //===----------------------------------------------------------------------===//
-// Registers, calling conventions, instruction descriptions.
-//===----------------------------------------------------------------------===//
-
-include "RISCVRegisterInfo.td"
-include "RISCVCallingConv.td"
-include "RISCVInstrInfo.td"
-
-//===----------------------------------------------------------------------===//
 // Named operands for CSR instructions.
 //===----------------------------------------------------------------------===//
 
 include "RISCVSystemOperands.td"
 
 //===----------------------------------------------------------------------===//
+// Registers, calling conventions, instruction descriptions.
+//===----------------------------------------------------------------------===//
+
+include "RISCVRegisterInfo.td"
+include "RISCVCallingConv.td"
+include "RISCVInstrInfo.td"
+include "RISCVRegisterBanks.td"
+
+//===----------------------------------------------------------------------===//
 // RISC-V processors supported.
 //===----------------------------------------------------------------------===//
 
-def : ProcessorModel<"generic-rv32", NoSchedModel, []>;
+def : ProcessorModel<"generic-rv32", NoSchedModel, [FeatureRVCHints]>;
 
-def : ProcessorModel<"generic-rv64", NoSchedModel, [Feature64Bit]>;
+def : ProcessorModel<"generic-rv64", NoSchedModel, [Feature64Bit,
+                     FeatureRVCHints]>;
 
 //===----------------------------------------------------------------------===//
 // Define the RISC-V target.

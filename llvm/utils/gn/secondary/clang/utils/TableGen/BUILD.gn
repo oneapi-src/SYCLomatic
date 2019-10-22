@@ -11,8 +11,11 @@ executable("clang-tblgen") {
     "ClangCommentHTMLTagsEmitter.cpp",
     "ClangDataCollectorsEmitter.cpp",
     "ClangDiagnosticsEmitter.cpp",
+    "ClangOpcodesEmitter.cpp",
+    "ClangOpenCLBuiltinEmitter.cpp",
     "ClangOptionDocEmitter.cpp",
     "ClangSACheckersEmitter.cpp",
+    "ClangTypeNodesEmitter.cpp",
     "NeonEmitter.cpp",
     "TableGen.cpp",
   ]

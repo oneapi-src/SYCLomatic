@@ -815,7 +815,7 @@ static void findBlockLocations(CFG *CFGraph,
 
     // Find the source location of the last statement in the block, if the
     // block is not empty.
-    if (const Stmt *S = CurrBlock->getTerminator()) {
+    if (const Stmt *S = CurrBlock->getTerminatorStmt()) {
       CurrBlockInfo->EntryLoc = CurrBlockInfo->ExitLoc = S->getBeginLoc();
     } else {
       for (CFGBlock::const_reverse_iterator BI = CurrBlock->rbegin(),
@@ -882,7 +882,7 @@ public:
                     StringRef DiagKind) const override {
     FSet.removeLock(FactMan, Cp);
     if (!Cp.negative()) {
-      FSet.addLock(FactMan, llvm::make_unique<LockableFactEntry>(
+      FSet.addLock(FactMan, std::make_unique<LockableFactEntry>(
                                 !Cp, LK_Exclusive, UnlockLoc));
     }
   }
@@ -987,7 +987,7 @@ private:
     } else {
       FSet.removeLock(FactMan, !Cp);
       FSet.addLock(FactMan,
-                   llvm::make_unique<LockableFactEntry>(Cp, kind, loc));
+                   std::make_unique<LockableFactEntry>(Cp, kind, loc));
     }
   }
 
@@ -996,7 +996,7 @@ private:
               StringRef DiagKind) const {
     if (FSet.findLock(FactMan, Cp)) {
       FSet.removeLock(FactMan, Cp);
-      FSet.addLock(FactMan, llvm::make_unique<LockableFactEntry>(
+      FSet.addLock(FactMan, std::make_unique<LockableFactEntry>(
                                 !Cp, LK_Exclusive, loc));
     } else if (Handler) {
       Handler->handleUnmatchedUnlock(DiagKind, Cp.toString(), loc);
@@ -1499,7 +1499,7 @@ void ThreadSafetyAnalyzer::getEdgeLockset(FactSet& Result,
 
   const Stmt *Cond = PredBlock->getTerminatorCondition();
   // We don't acquire try-locks on ?: branches, only when its result is used.
-  if (!Cond || isa<ConditionalOperator>(PredBlock->getTerminator()))
+  if (!Cond || isa<ConditionalOperator>(PredBlock->getTerminatorStmt()))
     return;
 
   bool Negate = false;
@@ -1551,11 +1551,11 @@ void ThreadSafetyAnalyzer::getEdgeLockset(FactSet& Result,
   // Add and remove locks.
   SourceLocation Loc = Exp->getExprLoc();
   for (const auto &ExclusiveLockToAdd : ExclusiveLocksToAdd)
-    addLock(Result, llvm::make_unique<LockableFactEntry>(ExclusiveLockToAdd,
+    addLock(Result, std::make_unique<LockableFactEntry>(ExclusiveLockToAdd,
                                                          LK_Exclusive, Loc),
             CapDiagKind);
   for (const auto &SharedLockToAdd : SharedLocksToAdd)
-    addLock(Result, llvm::make_unique<LockableFactEntry>(SharedLockToAdd,
+    addLock(Result, std::make_unique<LockableFactEntry>(SharedLockToAdd,
                                                          LK_Shared, Loc),
             CapDiagKind);
 }
@@ -1840,7 +1840,7 @@ void BuildLockset::handleCall(const Expr *Exp, const NamedDecl *D,
         Analyzer->getMutexIDs(AssertLocks, A, Exp, D, VD);
         for (const auto &AssertLock : AssertLocks)
           Analyzer->addLock(FSet,
-                            llvm::make_unique<LockableFactEntry>(
+                            std::make_unique<LockableFactEntry>(
                                 AssertLock, LK_Exclusive, Loc, false, true),
                             ClassifyDiagnostic(A));
         break;
@@ -1852,7 +1852,7 @@ void BuildLockset::handleCall(const Expr *Exp, const NamedDecl *D,
         Analyzer->getMutexIDs(AssertLocks, A, Exp, D, VD);
         for (const auto &AssertLock : AssertLocks)
           Analyzer->addLock(FSet,
-                            llvm::make_unique<LockableFactEntry>(
+                            std::make_unique<LockableFactEntry>(
                                 AssertLock, LK_Shared, Loc, false, true),
                             ClassifyDiagnostic(A));
         break;
@@ -1864,7 +1864,7 @@ void BuildLockset::handleCall(const Expr *Exp, const NamedDecl *D,
         Analyzer->getMutexIDs(AssertLocks, A, Exp, D, VD);
         for (const auto &AssertLock : AssertLocks)
           Analyzer->addLock(FSet,
-                            llvm::make_unique<LockableFactEntry>(
+                            std::make_unique<LockableFactEntry>(
                                 AssertLock,
                                 A->isShared() ? LK_Shared : LK_Exclusive, Loc,
                                 false, true),
@@ -1928,11 +1928,11 @@ void BuildLockset::handleCall(const Expr *Exp, const NamedDecl *D,
 
   // Add locks.
   for (const auto &M : ExclusiveLocksToAdd)
-    Analyzer->addLock(FSet, llvm::make_unique<LockableFactEntry>(
+    Analyzer->addLock(FSet, std::make_unique<LockableFactEntry>(
                                 M, LK_Exclusive, Loc, isScopedVar),
                       CapDiagKind);
   for (const auto &M : SharedLocksToAdd)
-    Analyzer->addLock(FSet, llvm::make_unique<LockableFactEntry>(
+    Analyzer->addLock(FSet, std::make_unique<LockableFactEntry>(
                                 M, LK_Shared, Loc, isScopedVar),
                       CapDiagKind);
 
@@ -1944,7 +1944,7 @@ void BuildLockset::handleCall(const Expr *Exp, const NamedDecl *D,
     // FIXME: does this store a pointer to DRE?
     CapabilityExpr Scp = Analyzer->SxBuilder.translateAttrExpr(&DRE, nullptr);
 
-    auto ScopedEntry = llvm::make_unique<ScopedLockableFactEntry>(Scp, MLoc);
+    auto ScopedEntry = std::make_unique<ScopedLockableFactEntry>(Scp, MLoc);
     for (const auto &M : ExclusiveLocksToAdd)
       ScopedEntry->addExclusiveLock(M);
     for (const auto &M : ScopedExclusiveReqs)
@@ -2349,12 +2349,12 @@ void ThreadSafetyAnalyzer::runAnalysis(AnalysisDeclContext &AC) {
 
     // FIXME -- Loc can be wrong here.
     for (const auto &Mu : ExclusiveLocksToAdd) {
-      auto Entry = llvm::make_unique<LockableFactEntry>(Mu, LK_Exclusive, Loc);
+      auto Entry = std::make_unique<LockableFactEntry>(Mu, LK_Exclusive, Loc);
       Entry->setDeclared(true);
       addLock(InitialLockset, std::move(Entry), CapDiagKind, true);
     }
     for (const auto &Mu : SharedLocksToAdd) {
-      auto Entry = llvm::make_unique<LockableFactEntry>(Mu, LK_Shared, Loc);
+      auto Entry = std::make_unique<LockableFactEntry>(Mu, LK_Shared, Loc);
       Entry->setDeclared(true);
       addLock(InitialLockset, std::move(Entry), CapDiagKind, true);
     }
@@ -2402,7 +2402,7 @@ void ThreadSafetyAnalyzer::runAnalysis(AnalysisDeclContext &AC) {
       // a difference in locksets is probably due to a bug in that block, rather
       // than in some other predecessor. In that case, keep the other
       // predecessor's lockset.
-      if (const Stmt *Terminator = (*PI)->getTerminator()) {
+      if (const Stmt *Terminator = (*PI)->getTerminatorStmt()) {
         if (isa<ContinueStmt>(Terminator) || isa<BreakStmt>(Terminator)) {
           SpecialBlocks.push_back(*PI);
           continue;
@@ -2441,7 +2441,7 @@ void ThreadSafetyAnalyzer::runAnalysis(AnalysisDeclContext &AC) {
         // it might also be part of a switch. Also, a subsequent destructor
         // might add to the lockset, in which case the real issue might be a
         // double lock on the other path.
-        const Stmt *Terminator = PrevBlock->getTerminator();
+        const Stmt *Terminator = PrevBlock->getTerminatorStmt();
         bool IsLoop = Terminator && isa<ContinueStmt>(Terminator);
 
         FactSet PrevLockset;
@@ -2523,10 +2523,10 @@ void ThreadSafetyAnalyzer::runAnalysis(AnalysisDeclContext &AC) {
   // issue the appropriate warning.
   // FIXME: the location here is not quite right.
   for (const auto &Lock : ExclusiveLocksAcquired)
-    ExpectedExitSet.addLock(FactMan, llvm::make_unique<LockableFactEntry>(
+    ExpectedExitSet.addLock(FactMan, std::make_unique<LockableFactEntry>(
                                          Lock, LK_Exclusive, D->getLocation()));
   for (const auto &Lock : SharedLocksAcquired)
-    ExpectedExitSet.addLock(FactMan, llvm::make_unique<LockableFactEntry>(
+    ExpectedExitSet.addLock(FactMan, std::make_unique<LockableFactEntry>(
                                          Lock, LK_Shared, D->getLocation()));
   for (const auto &Lock : LocksReleased)
     ExpectedExitSet.removeLock(FactMan, Lock);

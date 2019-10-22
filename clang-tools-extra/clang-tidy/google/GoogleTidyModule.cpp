@@ -13,6 +13,7 @@
 #include "../readability/FunctionSizeCheck.h"
 #include "../readability/NamespaceCommentCheck.h"
 #include "AvoidCStyleCastsCheck.h"
+#include "AvoidNSObjectNewCheck.h"
 #include "AvoidThrowingObjCExceptionCheck.h"
 #include "AvoidUnderscoreInGoogletestNameCheck.h"
 #include "DefaultArgumentsCheck.h"
@@ -26,6 +27,7 @@
 #include "OverloadedUnaryAndCheck.h"
 #include "TodoCommentCheck.h"
 #include "UnnamedNamespaceInHeaderCheck.h"
+#include "UpgradeGoogletestCaseCheck.h"
 #include "UsingNamespaceDirectiveCheck.h"
 
 using namespace clang::ast_matchers;
@@ -49,6 +51,8 @@ class GoogleModule : public ClangTidyModule {
         "google-explicit-constructor");
     CheckFactories.registerCheck<readability::GlobalNamesInHeadersCheck>(
         "google-global-names-in-headers");
+    CheckFactories.registerCheck<objc::AvoidNSObjectNewCheck>(
+        "google-objc-avoid-nsobject-new");
     CheckFactories.registerCheck<objc::AvoidThrowingObjCExceptionCheck>(
         "google-objc-avoid-throwing-exception");
     CheckFactories.registerCheck<objc::FunctionNamingCheck>(
@@ -76,6 +80,8 @@ class GoogleModule : public ClangTidyModule {
     CheckFactories
         .registerCheck<clang::tidy::readability::NamespaceCommentCheck>(
             "google-readability-namespace-comments");
+    CheckFactories.registerCheck<UpgradeGoogletestCaseCheck>(
+        "google-upgrade-googletest-case");
   }
 
   ClangTidyOptions getModuleOptions() override {

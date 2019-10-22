@@ -14,6 +14,7 @@
 #include "clang/Basic/FileSystemOptions.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Index/IndexingAction.h"
+#include "clang/Index/IndexingOptions.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/IntrusiveRefCntPtr.h"
 #include "llvm/ADT/STLExtras.h"
@@ -123,11 +124,10 @@ public:
     assert(AST.hasValue());
     const NamedDecl &ND =
         Qualified ? findDecl(*AST, Name) : findUnqualifiedDecl(*AST, Name);
-    ASTContext& Ctx = AST->getASTContext();
-    const SourceManager& SM = Ctx.getSourceManager();
-    bool MainFile = SM.isWrittenInMainFile(SM.getExpansionLoc(ND.getBeginLoc()));
+    const SourceManager &SM = AST->getSourceManager();
+    bool MainFile = isInsideMainFile(ND.getBeginLoc(), SM);
     return SymbolCollector::shouldCollectSymbol(
-        ND, Ctx, SymbolCollector::Options(), MainFile);
+        ND, AST->getASTContext(), SymbolCollector::Options(), MainFile);
   }
 
 protected:
@@ -201,31 +201,31 @@ public:
                            CommentHandler *PragmaHandler)
       : COpts(std::move(COpts)), PragmaHandler(PragmaHandler) {}
 
-  clang::FrontendAction *create() override {
-    class WrappedIndexAction : public WrapperFrontendAction {
+  std::unique_ptr<FrontendAction> create() override {
+    class IndexAction : public ASTFrontendAction {
     public:
-      WrappedIndexAction(std::shared_ptr<SymbolCollector> C,
-                         const index::IndexingOptions &Opts,
-                         CommentHandler *PragmaHandler)
-          : WrapperFrontendAction(
-                index::createIndexingAction(C, Opts, nullptr)),
+      IndexAction(std::shared_ptr<index::IndexDataConsumer> DataConsumer,
+                  const index::IndexingOptions &Opts,
+                  CommentHandler *PragmaHandler)
+          : DataConsumer(std::move(DataConsumer)), Opts(Opts),
             PragmaHandler(PragmaHandler) {}
 
       std::unique_ptr<ASTConsumer>
       CreateASTConsumer(CompilerInstance &CI, llvm::StringRef InFile) override {
         if (PragmaHandler)
           CI.getPreprocessor().addCommentHandler(PragmaHandler);
-        return WrapperFrontendAction::CreateASTConsumer(CI, InFile);
+        return createIndexingASTConsumer(DataConsumer, Opts, CI.getPreprocessorPtr());
       }
 
       bool BeginInvocation(CompilerInstance &CI) override {
         // Make the compiler parse all comments.
         CI.getLangOpts().CommentOpts.ParseAllComments = true;
-        return WrapperFrontendAction::BeginInvocation(CI);
+        return true;
       }
 
     private:
-      index::IndexingOptions IndexOpts;
+      std::shared_ptr<index::IndexDataConsumer> DataConsumer;
+      index::IndexingOptions Opts;
       CommentHandler *PragmaHandler;
     };
     index::IndexingOptions IndexOpts;
@@ -233,8 +233,8 @@ public:
         index::IndexingOptions::SystemSymbolFilterKind::All;
     IndexOpts.IndexFunctionLocals = false;
     Collector = std::make_shared<SymbolCollector>(COpts);
-    return new WrappedIndexAction(Collector, std::move(IndexOpts),
-                                  PragmaHandler);
+    return std::make_unique<IndexAction>(Collector, std::move(IndexOpts),
+                                         PragmaHandler);
   }
 
   std::shared_ptr<SymbolCollector> Collector;
@@ -259,7 +259,7 @@ public:
     llvm::IntrusiveRefCntPtr<FileManager> Files(
         new FileManager(FileSystemOptions(), InMemoryFileSystem));
 
-    auto Factory = llvm::make_unique<SymbolIndexActionFactory>(
+    auto Factory = std::make_unique<SymbolIndexActionFactory>(
         CollectorOpts, PragmaHandler.get());
 
     std::vector<std::string> Args = {"symbol_collector", "-fsyntax-only",
@@ -273,13 +273,14 @@ public:
         Args, Factory->create(), Files.get(),
         std::make_shared<PCHContainerOperations>());
 
-    InMemoryFileSystem->addFile(
-        TestHeaderName, 0, llvm::MemoryBuffer::getMemBuffer(HeaderCode));
+    InMemoryFileSystem->addFile(TestHeaderName, 0,
+                                llvm::MemoryBuffer::getMemBuffer(HeaderCode));
     InMemoryFileSystem->addFile(TestFileName, 0,
                                 llvm::MemoryBuffer::getMemBuffer(MainCode));
     Invocation.run();
     Symbols = Factory->Collector->takeSymbols();
     Refs = Factory->Collector->takeRefs();
+    Relations = Factory->Collector->takeRelations();
     return true;
   }
 
@@ -291,6 +292,7 @@ protected:
   std::string TestFileURI;
   SymbolSlab Symbols;
   RefSlab Refs;
+  RelationSlab Relations;
   SymbolCollector::Options CollectorOpts;
   std::unique_ptr<CommentHandler> PragmaHandler;
 };
@@ -624,6 +626,33 @@ TEST_F(SymbolCollectorTest, Refs) {
   EXPECT_THAT(Refs, Not(Contains(Pair(findSymbol(MainSymbols, "c").ID, _))));
 }
 
+
+TEST_F(SymbolCollectorTest, HeaderAsMainFile) {
+  CollectorOpts.RefFilter = RefKind::All;
+  Annotations Header(R"(
+  class $Foo[[Foo]] {};
+
+  void $Func[[Func]]() {
+    $Foo[[Foo]] fo;
+  }
+  )");
+  // The main file is normal .cpp file, we shouldn't collect any refs of symbols
+  // which are not declared in the preamble.
+  TestFileName = testPath("foo.cpp");
+  runSymbolCollector("", Header.code());
+  EXPECT_THAT(Refs, UnorderedElementsAre());
+
+  // Run the .h file as main file, we should collect the refs.
+  TestFileName = testPath("foo.h");
+  runSymbolCollector("", Header.code(),
+                     /*ExtraArgs=*/{"-xobjective-c++-header"});
+  EXPECT_THAT(Symbols, UnorderedElementsAre(QName("Foo"), QName("Func")));
+  EXPECT_THAT(Refs, UnorderedElementsAre(Pair(findSymbol(Symbols, "Foo").ID,
+                                  HaveRanges(Header.ranges("Foo"))),
+                             Pair(findSymbol(Symbols, "Func").ID,
+                                  HaveRanges(Header.ranges("Func")))));
+}
+
 TEST_F(SymbolCollectorTest, RefsInHeaders) {
   CollectorOpts.RefFilter = RefKind::All;
   CollectorOpts.RefsInHeaders = true;
@@ -633,6 +662,19 @@ TEST_F(SymbolCollectorTest, RefsInHeaders) {
   runSymbolCollector(Header.code(), "");
   EXPECT_THAT(Refs, Contains(Pair(findSymbol(Symbols, "Foo").ID,
                                   HaveRanges(Header.ranges()))));
+}
+
+TEST_F(SymbolCollectorTest, Relations) {
+  std::string Header = R"(
+  class Base {};
+  class Derived : public Base {};
+  )";
+  runSymbolCollector(Header, /*Main=*/"");
+  const Symbol &Base = findSymbol(Symbols, "Base");
+  const Symbol &Derived = findSymbol(Symbols, "Derived");
+  EXPECT_THAT(Relations,
+              Contains(Relation{Base.ID, index::SymbolRole::RelationBaseOf,
+                                Derived.ID}));
 }
 
 TEST_F(SymbolCollectorTest, References) {
@@ -784,10 +826,9 @@ TEST_F(SymbolCollectorTest, SymbolsInMainFile) {
     void f1() {}
   )";
   runSymbolCollector(/*Header=*/"", Main);
-  EXPECT_THAT(Symbols,
-              UnorderedElementsAre(QName("Foo"), QName("f1"), QName("f2"),
-                                   QName("ff"), QName("foo"), QName("foo::Bar"),
-                                   QName("main_f")));
+  EXPECT_THAT(Symbols, UnorderedElementsAre(
+                           QName("Foo"), QName("f1"), QName("f2"), QName("ff"),
+                           QName("foo"), QName("foo::Bar"), QName("main_f")));
 }
 
 TEST_F(SymbolCollectorTest, Documentation) {
@@ -931,7 +972,9 @@ TEST_F(SymbolCollectorTest, IncludeHeaderSameAsFileURI) {
 TEST_F(SymbolCollectorTest, CanonicalSTLHeader) {
   CollectorOpts.CollectIncludePath = true;
   CanonicalIncludes Includes;
-  addSystemHeadersMapping(&Includes);
+  auto Language = LangOptions();
+  Language.CPlusPlus = true;
+  Includes.addSystemHeadersMapping(Language);
   CollectorOpts.Includes = &Includes;
   runSymbolCollector("namespace std { class string {}; }", /*Main=*/"");
   EXPECT_THAT(Symbols,

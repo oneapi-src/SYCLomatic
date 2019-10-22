@@ -277,9 +277,17 @@ let TargetPrefix = "x86" in {  // All intrinsics start with "llvm.x86.".
 // Control register.
 let TargetPrefix = "x86" in {  // All intrinsics start with "llvm.x86.".
   def int_x86_sse_stmxcsr :
-              Intrinsic<[], [llvm_ptr_ty], []>;
+              Intrinsic<[], [llvm_ptr_ty],
+                         [IntrWriteMem, IntrArgMemOnly,
+                         // This prevents reordering with ldmxcsr
+                         IntrHasSideEffects]>;
   def int_x86_sse_ldmxcsr :
-              Intrinsic<[], [llvm_ptr_ty], []>;
+              Intrinsic<[], [llvm_ptr_ty],
+                        [IntrReadMem, IntrArgMemOnly, IntrHasSideEffects,
+                         // FIXME: LDMXCSR does not actualy write to memory,
+                         // but Fast and DAG Isel both use writing to memory
+                         // as a proxy for having side effects.
+                         IntrWriteMem]>;
 }
 
 // Misc.
@@ -2083,16 +2091,20 @@ let TargetPrefix = "x86" in {  // All intrinsics start with "llvm.x86.".
               Intrinsic<[llvm_ptr_ty], [], []>;
   def int_x86_lwpins32 :
               GCCBuiltin<"__builtin_ia32_lwpins32">,
-              Intrinsic<[llvm_i8_ty], [llvm_i32_ty, llvm_i32_ty, llvm_i32_ty], []>;
+              Intrinsic<[llvm_i8_ty], [llvm_i32_ty, llvm_i32_ty, llvm_i32_ty],
+                        [ImmArg<2>]>;
   def int_x86_lwpins64 :
               GCCBuiltin<"__builtin_ia32_lwpins64">,
-              Intrinsic<[llvm_i8_ty], [llvm_i64_ty, llvm_i32_ty, llvm_i32_ty], []>;
+              Intrinsic<[llvm_i8_ty], [llvm_i64_ty, llvm_i32_ty, llvm_i32_ty],
+                        [ImmArg<2>]>;
   def int_x86_lwpval32 :
               GCCBuiltin<"__builtin_ia32_lwpval32">,
-              Intrinsic<[], [llvm_i32_ty, llvm_i32_ty, llvm_i32_ty], []>;
+              Intrinsic<[], [llvm_i32_ty, llvm_i32_ty, llvm_i32_ty],
+                        [ImmArg<2>]>;
   def int_x86_lwpval64 :
               GCCBuiltin<"__builtin_ia32_lwpval64">,
-              Intrinsic<[], [llvm_i64_ty, llvm_i32_ty, llvm_i32_ty], []>;
+              Intrinsic<[], [llvm_i64_ty, llvm_i32_ty, llvm_i32_ty],
+                        [ImmArg<2>]>;
 }
 
 //===----------------------------------------------------------------------===//
@@ -4697,6 +4709,34 @@ let TargetPrefix = "x86" in {
                     [IntrNoMem, ImmArg<3>]>;
 }
 
+// vp2intersect
+let TargetPrefix = "x86" in {
+  def int_x86_avx512_vp2intersect_q_512 :
+          Intrinsic<[llvm_v8i1_ty, llvm_v8i1_ty],
+                    [llvm_v8i64_ty, llvm_v8i64_ty],
+                    [IntrNoMem]>;
+  def int_x86_avx512_vp2intersect_q_256 :
+          Intrinsic<[llvm_v4i1_ty, llvm_v4i1_ty],
+                    [llvm_v4i64_ty, llvm_v4i64_ty],
+                    [IntrNoMem]>;
+  def int_x86_avx512_vp2intersect_q_128 :
+          Intrinsic<[llvm_v2i1_ty, llvm_v2i1_ty],
+                    [llvm_v2i64_ty, llvm_v2i64_ty],
+                    [IntrNoMem]>;
+  def int_x86_avx512_vp2intersect_d_512 :
+          Intrinsic<[llvm_v16i1_ty, llvm_v16i1_ty],
+                    [llvm_v16i32_ty, llvm_v16i32_ty],
+                    [IntrNoMem]>;
+  def int_x86_avx512_vp2intersect_d_256 :
+          Intrinsic<[llvm_v8i1_ty, llvm_v8i1_ty],
+                    [llvm_v8i32_ty, llvm_v8i32_ty],
+                    [IntrNoMem]>;
+  def int_x86_avx512_vp2intersect_d_128 :
+          Intrinsic<[llvm_v4i1_ty, llvm_v4i1_ty],
+                    [llvm_v4i32_ty, llvm_v4i32_ty],
+                    [IntrNoMem]>;
+}
+
 // Misc.
 let TargetPrefix = "x86" in {
   // NOTE: These comparison intrinsics are not used by clang as long as the
@@ -4871,4 +4911,14 @@ let TargetPrefix = "x86" in {
               GCCBuiltin<"__builtin_ia32_dpbf16ps_512">,
               Intrinsic<[llvm_v16f32_ty],
               [llvm_v16f32_ty, llvm_v16i32_ty, llvm_v16i32_ty], [IntrNoMem]>;
+}
+
+//===----------------------------------------------------------------------===//
+// ENQCMD - Enqueue Stores Instructions
+
+let TargetPrefix = "x86" in {
+  def int_x86_enqcmd : GCCBuiltin<"__builtin_ia32_enqcmd">,
+              Intrinsic<[llvm_i8_ty], [llvm_ptr_ty, llvm_ptr_ty], []>;
+  def int_x86_enqcmds : GCCBuiltin<"__builtin_ia32_enqcmds">,
+              Intrinsic<[llvm_i8_ty], [llvm_ptr_ty, llvm_ptr_ty], []>;
 }

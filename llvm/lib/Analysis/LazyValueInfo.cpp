@@ -188,7 +188,7 @@ namespace {
       else {
         auto It = ValueCache.find_as(Val);
         if (It == ValueCache.end()) {
-          ValueCache[Val] = make_unique<ValueCacheEntryTy>(Val, this);
+          ValueCache[Val] = std::make_unique<ValueCacheEntryTy>(Val, this);
           It = ValueCache.find_as(Val);
           assert(It != ValueCache.end() && "Val was just added to the map!");
         }
@@ -422,10 +422,20 @@ namespace {
                              BasicBlock *BB);
   Optional<ConstantRange> getRangeForOperand(unsigned Op, Instruction *I,
                                              BasicBlock *BB);
+  bool solveBlockValueBinaryOpImpl(
+      ValueLatticeElement &BBLV, Instruction *I, BasicBlock *BB,
+      std::function<ConstantRange(const ConstantRange &,
+                                  const ConstantRange &)> OpFn);
   bool solveBlockValueBinaryOp(ValueLatticeElement &BBLV, BinaryOperator *BBI,
                                BasicBlock *BB);
   bool solveBlockValueCast(ValueLatticeElement &BBLV, CastInst *CI,
                            BasicBlock *BB);
+  bool solveBlockValueOverflowIntrinsic(
+      ValueLatticeElement &BBLV, WithOverflowInst *WO, BasicBlock *BB);
+  bool solveBlockValueIntrinsic(ValueLatticeElement &BBLV, IntrinsicInst *II,
+                                BasicBlock *BB);
+  bool solveBlockValueExtractValue(ValueLatticeElement &BBLV,
+                                   ExtractValueInst *EVI, BasicBlock *BB);
   void intersectAssumeOrGuardBlockValueConstantRange(Value *Val,
                                                      ValueLatticeElement &BBLV,
                                                      Instruction *BBI);
@@ -638,6 +648,12 @@ bool LazyValueInfoImpl::solveBlockValueImpl(ValueLatticeElement &Res,
 
     if (BinaryOperator *BO = dyn_cast<BinaryOperator>(BBI))
       return solveBlockValueBinaryOp(Res, BO, BB);
+
+    if (auto *EVI = dyn_cast<ExtractValueInst>(BBI))
+      return solveBlockValueExtractValue(Res, EVI, BB);
+
+    if (auto *II = dyn_cast<IntrinsicInst>(BBI))
+      return solveBlockValueIntrinsic(Res, II, BB);
   }
 
   LLVM_DEBUG(dbgs() << " compute BB '" << BB->getName()
@@ -1040,55 +1056,109 @@ bool LazyValueInfoImpl::solveBlockValueCast(ValueLatticeElement &BBLV,
   return true;
 }
 
-bool LazyValueInfoImpl::solveBlockValueBinaryOp(ValueLatticeElement &BBLV,
-                                                BinaryOperator *BO,
-                                                BasicBlock *BB) {
-
-  assert(BO->getOperand(0)->getType()->isSized() &&
-         "all operands to binary operators are sized");
-
-  // Filter out operators we don't know how to reason about before attempting to
-  // recurse on our operand(s).  This can cut a long search short if we know
-  // we're not going to be able to get any useful information anyways.
-  switch (BO->getOpcode()) {
-  case Instruction::Add:
-  case Instruction::Sub:
-  case Instruction::Mul:
-  case Instruction::UDiv:
-  case Instruction::Shl:
-  case Instruction::LShr:
-  case Instruction::AShr:
-  case Instruction::And:
-  case Instruction::Or:
-    // continue into the code below
-    break;
-  default:
-    // Unhandled instructions are overdefined.
-    LLVM_DEBUG(dbgs() << " compute BB '" << BB->getName()
-                      << "' - overdefined (unknown binary operator).\n");
-    BBLV = ValueLatticeElement::getOverdefined();
-    return true;
-  };
-
+bool LazyValueInfoImpl::solveBlockValueBinaryOpImpl(
+    ValueLatticeElement &BBLV, Instruction *I, BasicBlock *BB,
+    std::function<ConstantRange(const ConstantRange &,
+                                const ConstantRange &)> OpFn) {
   // Figure out the ranges of the operands.  If that fails, use a
   // conservative range, but apply the transfer rule anyways.  This
   // lets us pick up facts from expressions like "and i32 (call i32
   // @foo()), 32"
-  Optional<ConstantRange> LHSRes = getRangeForOperand(0, BO, BB);
-  Optional<ConstantRange> RHSRes = getRangeForOperand(1, BO, BB);
-
+  Optional<ConstantRange> LHSRes = getRangeForOperand(0, I, BB);
+  Optional<ConstantRange> RHSRes = getRangeForOperand(1, I, BB);
   if (!LHSRes.hasValue() || !RHSRes.hasValue())
     // More work to do before applying this transfer rule.
     return false;
 
   ConstantRange LHSRange = LHSRes.getValue();
   ConstantRange RHSRange = RHSRes.getValue();
+  BBLV = ValueLatticeElement::getRange(OpFn(LHSRange, RHSRange));
+  return true;
+}
 
-  // NOTE: We're currently limited by the set of operations that ConstantRange
-  // can evaluate symbolically.  Enhancing that set will allows us to analyze
-  // more definitions.
-  Instruction::BinaryOps BinOp = BO->getOpcode();
-  BBLV = ValueLatticeElement::getRange(LHSRange.binaryOp(BinOp, RHSRange));
+bool LazyValueInfoImpl::solveBlockValueBinaryOp(ValueLatticeElement &BBLV,
+                                                BinaryOperator *BO,
+                                                BasicBlock *BB) {
+
+  assert(BO->getOperand(0)->getType()->isSized() &&
+         "all operands to binary operators are sized");
+  if (BO->getOpcode() == Instruction::Xor) {
+    // Xor is the only operation not supported by ConstantRange::binaryOp().
+    LLVM_DEBUG(dbgs() << " compute BB '" << BB->getName()
+                      << "' - overdefined (unknown binary operator).\n");
+    BBLV = ValueLatticeElement::getOverdefined();
+    return true;
+  }
+
+  return solveBlockValueBinaryOpImpl(BBLV, BO, BB,
+      [BO](const ConstantRange &CR1, const ConstantRange &CR2) {
+        return CR1.binaryOp(BO->getOpcode(), CR2);
+      });
+}
+
+bool LazyValueInfoImpl::solveBlockValueOverflowIntrinsic(
+    ValueLatticeElement &BBLV, WithOverflowInst *WO, BasicBlock *BB) {
+  return solveBlockValueBinaryOpImpl(BBLV, WO, BB,
+      [WO](const ConstantRange &CR1, const ConstantRange &CR2) {
+        return CR1.binaryOp(WO->getBinaryOp(), CR2);
+      });
+}
+
+bool LazyValueInfoImpl::solveBlockValueIntrinsic(
+    ValueLatticeElement &BBLV, IntrinsicInst *II, BasicBlock *BB) {
+  switch (II->getIntrinsicID()) {
+  case Intrinsic::uadd_sat:
+    return solveBlockValueBinaryOpImpl(BBLV, II, BB,
+        [](const ConstantRange &CR1, const ConstantRange &CR2) {
+          return CR1.uadd_sat(CR2);
+        });
+  case Intrinsic::usub_sat:
+    return solveBlockValueBinaryOpImpl(BBLV, II, BB,
+        [](const ConstantRange &CR1, const ConstantRange &CR2) {
+          return CR1.usub_sat(CR2);
+        });
+  case Intrinsic::sadd_sat:
+    return solveBlockValueBinaryOpImpl(BBLV, II, BB,
+        [](const ConstantRange &CR1, const ConstantRange &CR2) {
+          return CR1.sadd_sat(CR2);
+        });
+  case Intrinsic::ssub_sat:
+    return solveBlockValueBinaryOpImpl(BBLV, II, BB,
+        [](const ConstantRange &CR1, const ConstantRange &CR2) {
+          return CR1.ssub_sat(CR2);
+        });
+  default:
+    LLVM_DEBUG(dbgs() << " compute BB '" << BB->getName()
+                      << "' - overdefined (unknown intrinsic).\n");
+    BBLV = ValueLatticeElement::getOverdefined();
+    return true;
+  }
+}
+
+bool LazyValueInfoImpl::solveBlockValueExtractValue(
+    ValueLatticeElement &BBLV, ExtractValueInst *EVI, BasicBlock *BB) {
+  if (auto *WO = dyn_cast<WithOverflowInst>(EVI->getAggregateOperand()))
+    if (EVI->getNumIndices() == 1 && *EVI->idx_begin() == 0)
+      return solveBlockValueOverflowIntrinsic(BBLV, WO, BB);
+
+  // Handle extractvalue of insertvalue to allow further simplification
+  // based on replaced with.overflow intrinsics.
+  if (Value *V = SimplifyExtractValueInst(
+          EVI->getAggregateOperand(), EVI->getIndices(),
+          EVI->getModule()->getDataLayout())) {
+    if (!hasBlockValue(V, BB)) {
+      if (pushBlockValue({ BB, V }))
+        return false;
+      BBLV = ValueLatticeElement::getOverdefined();
+      return true;
+    }
+    BBLV = getBlockValue(V, BB);
+    return true;
+  }
+
+  LLVM_DEBUG(dbgs() << " compute BB '" << BB->getName()
+                    << "' - overdefined (unknown extractvalue).\n");
+  BBLV = ValueLatticeElement::getOverdefined();
   return true;
 }
 
@@ -1532,7 +1602,7 @@ bool LazyValueInfoWrapperPass::runOnFunction(Function &F) {
   DominatorTreeWrapperPass *DTWP =
       getAnalysisIfAvailable<DominatorTreeWrapperPass>();
   Info.DT = DTWP ? &DTWP->getDomTree() : nullptr;
-  Info.TLI = &getAnalysis<TargetLibraryInfoWrapperPass>().getTLI();
+  Info.TLI = &getAnalysis<TargetLibraryInfoWrapperPass>().getTLI(F);
 
   if (Info.PImpl)
     getImpl(Info.PImpl, Info.AC, &DL, Info.DT).clear();
@@ -1760,7 +1830,7 @@ LazyValueInfo::getPredicateAt(unsigned Pred, Value *V, Constant *C,
   // through would still be correct.
   const DataLayout &DL = CxtI->getModule()->getDataLayout();
   if (V->getType()->isPointerTy() && C->isNullValue() &&
-      isKnownNonZero(V->stripPointerCasts(), DL)) {
+      isKnownNonZero(V->stripPointerCastsSameRepresentation(), DL)) {
     if (Pred == ICmpInst::ICMP_EQ)
       return LazyValueInfo::False;
     else if (Pred == ICmpInst::ICMP_NE)

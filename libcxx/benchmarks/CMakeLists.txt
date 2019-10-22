@@ -84,6 +84,7 @@ endif()
 
 set(BENCHMARK_TEST_COMPILE_FLAGS
     ${BENCHMARK_DIALECT_FLAG} -O2
+    -fsized-deallocation
     -I${BENCHMARK_LIBCXX_INSTALL}/include
     -I${LIBCXX_SOURCE_DIR}/test/support
 )
@@ -94,10 +95,6 @@ set(BENCHMARK_TEST_LIBCXX_COMPILE_FLAGS
     ${SANITIZER_FLAGS}
     -Wno-user-defined-literals
 )
-if (LIBCXX_NEEDS_SITE_CONFIG)
-  list(APPEND BENCHMARK_TEST_LIBCXX_COMPILE_FLAGS
-      -include "${LIBCXX_BINARY_DIR}/__config_site")
-endif()
 
 set(BENCHMARK_TEST_LIBCXX_LINK_FLAGS
     -nodefaultlibs
@@ -219,3 +216,4 @@ if (LIBCXX_INCLUDE_TESTS)
           DEPENDS cxx-benchmarks ${LIBCXX_TEST_DEPS}
           ARGS ${BENCHMARK_LIT_ARGS})
 endif()
+

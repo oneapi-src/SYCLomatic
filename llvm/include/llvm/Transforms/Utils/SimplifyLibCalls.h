@@ -57,14 +57,41 @@ private:
   Value *optimizeMemMoveChk(CallInst *CI, IRBuilder<> &B);
   Value *optimizeMemSetChk(CallInst *CI, IRBuilder<> &B);
 
-  // Str/Stp cpy are similar enough to be handled in the same functions.
+  /// Str/Stp cpy are similar enough to be handled in the same functions.
   Value *optimizeStrpCpyChk(CallInst *CI, IRBuilder<> &B, LibFunc Func);
   Value *optimizeStrpNCpyChk(CallInst *CI, IRBuilder<> &B, LibFunc Func);
+  Value *optimizeMemCCpyChk(CallInst *CI, IRBuilder<> &B);
+  Value *optimizeSNPrintfChk(CallInst *CI, IRBuilder<> &B);
+  Value *optimizeSPrintfChk(CallInst *CI,IRBuilder<> &B);
+  Value *optimizeStrCatChk(CallInst *CI, IRBuilder<> &B);
+  Value *optimizeStrLCat(CallInst *CI, IRBuilder<> &B);
+  Value *optimizeStrNCatChk(CallInst *CI, IRBuilder<> &B);
+  Value *optimizeStrLCpyChk(CallInst *CI, IRBuilder<> &B);
+  Value *optimizeVSNPrintfChk(CallInst *CI, IRBuilder<> &B);
+  Value *optimizeVSPrintfChk(CallInst *CI, IRBuilder<> &B);
 
   /// Checks whether the call \p CI to a fortified libcall is foldable
   /// to the non-fortified version.
+  ///
+  /// \param CI the call to the fortified libcall.
+  ///
+  /// \param ObjSizeOp the index of the object size parameter of this chk
+  /// function. Not optional since this is mandatory.
+  ///
+  /// \param SizeOp optionally set to the parameter index of an explicit buffer
+  /// size argument. For instance, set to '2' for __strncpy_chk.
+  ///
+  /// \param StrOp optionally set to the parameter index of the source string
+  /// parameter to strcpy-like functions, where only the strlen of the source
+  /// will be writtin into the destination.
+  ///
+  /// \param FlagsOp optionally set to the parameter index of a 'flags'
+  /// parameter. These are used by an implementation to opt-into stricter
+  /// checking.
   bool isFortifiedCallFoldable(CallInst *CI, unsigned ObjSizeOp,
-                               unsigned SizeOp, bool isString);
+                               Optional<unsigned> SizeOp = None,
+                               Optional<unsigned> StrOp = None,
+                               Optional<unsigned> FlagsOp = None);
 };
 
 /// LibCallSimplifier - This class implements a collection of optimizations
@@ -99,6 +126,12 @@ private:
   /// Erase an instruction from its parent with our eraser.
   void eraseFromParent(Instruction *I);
 
+  /// Replace an instruction with a value and erase it from its parent.
+  void substituteInParent(Instruction *I, Value *With) {
+    replaceAllUsesWith(I, With);
+    eraseFromParent(I);
+  }
+
   Value *foldMallocMemset(CallInst *Memset, IRBuilder<> &B);
 
 public:
@@ -127,6 +160,7 @@ private:
   Value *optimizeStrRChr(CallInst *CI, IRBuilder<> &B);
   Value *optimizeStrCmp(CallInst *CI, IRBuilder<> &B);
   Value *optimizeStrNCmp(CallInst *CI, IRBuilder<> &B);
+  Value *optimizeStrNDup(CallInst *CI, IRBuilder<> &B);
   Value *optimizeStrCpy(CallInst *CI, IRBuilder<> &B);
   Value *optimizeStpCpy(CallInst *CI, IRBuilder<> &B);
   Value *optimizeStrNCpy(CallInst *CI, IRBuilder<> &B);
@@ -137,14 +171,17 @@ private:
   Value *optimizeStrCSpn(CallInst *CI, IRBuilder<> &B);
   Value *optimizeStrStr(CallInst *CI, IRBuilder<> &B);
   Value *optimizeMemChr(CallInst *CI, IRBuilder<> &B);
+  Value *optimizeMemRChr(CallInst *CI, IRBuilder<> &B);
   Value *optimizeMemCmp(CallInst *CI, IRBuilder<> &B);
   Value *optimizeBCmp(CallInst *CI, IRBuilder<> &B);
   Value *optimizeMemCmpBCmpCommon(CallInst *CI, IRBuilder<> &B);
+  Value *optimizeMemPCpy(CallInst *CI, IRBuilder<> &B);
   Value *optimizeMemCpy(CallInst *CI, IRBuilder<> &B);
   Value *optimizeMemMove(CallInst *CI, IRBuilder<> &B);
   Value *optimizeMemSet(CallInst *CI, IRBuilder<> &B);
   Value *optimizeRealloc(CallInst *CI, IRBuilder<> &B);
   Value *optimizeWcslen(CallInst *CI, IRBuilder<> &B);
+  Value *optimizeBCopy(CallInst *CI, IRBuilder<> &B);
   // Wrapper for all String/Memory Library Call Optimizations
   Value *optimizeStringMemoryLibCall(CallInst *CI, IRBuilder<> &B);
 

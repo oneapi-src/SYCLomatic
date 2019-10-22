@@ -205,6 +205,10 @@ void DwarfUnit::insertDIE(const DINode *Desc, DIE *D) {
   MDNodeToDieMap.insert(std::make_pair(Desc, D));
 }
 
+void DwarfUnit::insertDIE(DIE *D) {
+  MDNodeToDieMap.insert(std::make_pair(nullptr, D));
+}
+
 void DwarfUnit::addFlag(DIE &Die, dwarf::Attribute Attribute) {
   if (DD->getDwarfVersion() >= 4)
     Die.addValue(DIEValueAllocator, Attribute, dwarf::DW_FORM_flag_present,
@@ -531,6 +535,10 @@ void DwarfUnit::addConstantValue(DIE &Die, const MachineOperand &MO,
   addConstantValue(Die, isUnsignedDIType(DD, Ty), MO.getImm());
 }
 
+void DwarfUnit::addConstantValue(DIE &Die, uint64_t Val, const DIType *Ty) {
+  addConstantValue(Die, isUnsignedDIType(DD, Ty), Val);
+}
+
 void DwarfUnit::addConstantValue(DIE &Die, bool Unsigned, uint64_t Val) {
   // FIXME: This is a bit conservative/simple - it emits negative values always
   // sign extended to 64 bits rather than minimizing the number of bytes.
@@ -714,7 +722,7 @@ std::string DwarfUnit::getParentContextString(const DIScope *Context) const {
     return "";
 
   // FIXME: Decide whether to implement this for non-C++ languages.
-  if (getLanguage() != dwarf::DW_LANG_C_plus_plus)
+  if (!dwarf::isCPlusPlus((dwarf::SourceLanguage)getLanguage()))
     return "";
 
   std::string CS;
@@ -937,6 +945,9 @@ void DwarfUnit::constructTypeDIE(DIE &Buffer, const DICompositeType *CTy) {
 
     if (CTy->isAppleBlockExtension())
       addFlag(Buffer, dwarf::DW_AT_APPLE_block);
+
+    if (CTy->getExportSymbols())
+      addFlag(Buffer, dwarf::DW_AT_export_symbols);
 
     // This is outside the DWARF spec, but GDB expects a DW_AT_containing_type
     // inside C++ composite types to point to the base class with the vtable.
@@ -1389,6 +1400,9 @@ void DwarfUnit::constructEnumTypeDIE(DIE &Buffer, const DICompositeType *CTy) {
       addFlag(Buffer, dwarf::DW_AT_enum_class);
   }
 
+  auto *Context = CTy->getScope();
+  bool IndexEnumerators = !Context || isa<DICompileUnit>(Context) || isa<DIFile>(Context) ||
+      isa<DINamespace>(Context) || isa<DICommonBlock>(Context);
   DINodeArray Elements = CTy->getElements();
 
   // Add enumerators to enumeration type.
@@ -1400,6 +1414,8 @@ void DwarfUnit::constructEnumTypeDIE(DIE &Buffer, const DICompositeType *CTy) {
       addString(Enumerator, dwarf::DW_AT_name, Name);
       auto Value = static_cast<uint64_t>(Enum->getValue());
       addConstantValue(Enumerator, IsUnsigned, Value);
+      if (IndexEnumerators)
+        addGlobalName(Name, Enumerator, Context);
     }
   }
 }

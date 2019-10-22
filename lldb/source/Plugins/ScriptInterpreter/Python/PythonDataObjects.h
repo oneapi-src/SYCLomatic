@@ -43,7 +43,7 @@ public:
 
   bool IsValid() const override { return GetValue() && GetValue() != Py_None; }
 
-  void Dump(Stream &s, bool pretty_print = true) const override;
+  void Serialize(llvm::json::OStream &s) const override;
 
 private:
   DISALLOW_COPY_AND_ASSIGN(StructuredPythonObject);
@@ -438,6 +438,10 @@ public:
   void Reset(PyRefType type, PyObject *py_obj) override;
 
   ArgInfo GetNumArguments() const;
+  
+  // If the callable is a Py_Class, then find the number of arguments
+  // of the __init__ method.
+  ArgInfo GetNumInitArguments() const;
 
   PythonObject operator()();
 
@@ -455,7 +459,6 @@ class PythonFile : public PythonObject {
 public:
   PythonFile();
   PythonFile(File &file, const char *mode);
-  PythonFile(const char *path, const char *mode);
   PythonFile(PyRefType type, PyObject *o);
 
   ~PythonFile() override;
@@ -467,9 +470,7 @@ public:
   void Reset(PyRefType type, PyObject *py_obj) override;
   void Reset(File &file, const char *mode);
 
-  static uint32_t GetOptionsFromMode(llvm::StringRef mode);
-
-  bool GetUnderlyingFile(File &file) const;
+  lldb::FileUP GetUnderlyingFile() const;
 };
 
 } // namespace lldb_private

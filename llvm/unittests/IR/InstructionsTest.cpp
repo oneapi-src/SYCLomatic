@@ -753,6 +753,47 @@ TEST(InstructionsTest, SwitchInst) {
   EXPECT_EQ(BB1.get(), Handle.getCaseSuccessor());
 }
 
+TEST(InstructionsTest, SwitchInstProfUpdateWrapper) {
+  LLVMContext C;
+
+  std::unique_ptr<BasicBlock> BB1, BB2, BB3;
+  BB1.reset(BasicBlock::Create(C));
+  BB2.reset(BasicBlock::Create(C));
+  BB3.reset(BasicBlock::Create(C));
+
+  // We create block 0 after the others so that it gets destroyed first and
+  // clears the uses of the other basic blocks.
+  std::unique_ptr<BasicBlock> BB0(BasicBlock::Create(C));
+
+  auto *Int32Ty = Type::getInt32Ty(C);
+
+  SwitchInst *SI =
+      SwitchInst::Create(UndefValue::get(Int32Ty), BB0.get(), 4, BB0.get());
+  SI->addCase(ConstantInt::get(Int32Ty, 1), BB1.get());
+  SI->addCase(ConstantInt::get(Int32Ty, 2), BB2.get());
+  SI->setMetadata(LLVMContext::MD_prof,
+                  MDBuilder(C).createBranchWeights({ 9, 1, 22 }));
+
+  {
+    SwitchInstProfUpdateWrapper SIW(*SI);
+    EXPECT_EQ(*SIW.getSuccessorWeight(0), 9u);
+    EXPECT_EQ(*SIW.getSuccessorWeight(1), 1u);
+    EXPECT_EQ(*SIW.getSuccessorWeight(2), 22u);
+    SIW.setSuccessorWeight(0, 99u);
+    SIW.setSuccessorWeight(1, 11u);
+    EXPECT_EQ(*SIW.getSuccessorWeight(0), 99u);
+    EXPECT_EQ(*SIW.getSuccessorWeight(1), 11u);
+    EXPECT_EQ(*SIW.getSuccessorWeight(2), 22u);
+  }
+
+  { // Create another wrapper and check that the data persist.
+    SwitchInstProfUpdateWrapper SIW(*SI);
+    EXPECT_EQ(*SIW.getSuccessorWeight(0), 99u);
+    EXPECT_EQ(*SIW.getSuccessorWeight(1), 11u);
+    EXPECT_EQ(*SIW.getSuccessorWeight(2), 22u);
+  }
+}
+
 TEST(InstructionsTest, CommuteShuffleMask) {
   SmallVector<int, 16> Indices({-1, 0, 7});
   ShuffleVectorInst::commuteShuffleMask(Indices, 4);
@@ -993,13 +1034,85 @@ TEST(InstructionsTest, SkipDebug) {
   EXPECT_EQ(nullptr, Term->getNextNonDebugInstruction());
 }
 
-TEST(InstructionsTest, PhiIsNotFPMathOperator) {
+TEST(InstructionsTest, PhiMightNotBeFPMathOperator) {
   LLVMContext Context;
   IRBuilder<> Builder(Context);
   MDBuilder MDHelper(Context);
-  Instruction *I = Builder.CreatePHI(Builder.getDoubleTy(), 0);
+  Instruction *I = Builder.CreatePHI(Builder.getInt32Ty(), 0);
   EXPECT_FALSE(isa<FPMathOperator>(I));
   I->deleteValue();
+  Instruction *FP = Builder.CreatePHI(Builder.getDoubleTy(), 0);
+  EXPECT_TRUE(isa<FPMathOperator>(FP));
+  FP->deleteValue();
+}
+
+TEST(InstructionsTest, FNegInstruction) {
+  LLVMContext Context;
+  Type *FltTy = Type::getFloatTy(Context);
+  Constant *One = ConstantFP::get(FltTy, 1.0);
+  BinaryOperator *FAdd = BinaryOperator::CreateFAdd(One, One);
+  FAdd->setHasNoNaNs(true);
+  UnaryOperator *FNeg = UnaryOperator::CreateFNegFMF(One, FAdd);
+  EXPECT_TRUE(FNeg->hasNoNaNs());
+  EXPECT_FALSE(FNeg->hasNoInfs());
+  EXPECT_FALSE(FNeg->hasNoSignedZeros());
+  EXPECT_FALSE(FNeg->hasAllowReciprocal());
+  EXPECT_FALSE(FNeg->hasAllowContract());
+  EXPECT_FALSE(FNeg->hasAllowReassoc());
+  EXPECT_FALSE(FNeg->hasApproxFunc());
+  FAdd->deleteValue();
+  FNeg->deleteValue();
+}
+
+TEST(InstructionsTest, CallBrInstruction) {
+  LLVMContext Context;
+  std::unique_ptr<Module> M = parseIR(Context, R"(
+define void @foo() {
+entry:
+  callbr void asm sideeffect "// XXX: ${0:l}", "X"(i8* blockaddress(@foo, %branch_test.exit))
+          to label %land.rhs.i [label %branch_test.exit]
+
+land.rhs.i:
+  br label %branch_test.exit
+
+branch_test.exit:
+  %0 = phi i1 [ true, %entry ], [ false, %land.rhs.i ]
+  br i1 %0, label %if.end, label %if.then
+
+if.then:
+  ret void
+
+if.end:
+  ret void
+}
+)");
+  Function *Foo = M->getFunction("foo");
+  auto BBs = Foo->getBasicBlockList().begin();
+  CallBrInst &CBI = cast<CallBrInst>(BBs->front());
+  ++BBs;
+  ++BBs;
+  BasicBlock &BranchTestExit = *BBs;
+  ++BBs;
+  BasicBlock &IfThen = *BBs;
+
+  // Test that setting the first indirect destination of callbr updates the dest
+  EXPECT_EQ(&BranchTestExit, CBI.getIndirectDest(0));
+  CBI.setIndirectDest(0, &IfThen);
+  EXPECT_EQ(&IfThen, CBI.getIndirectDest(0));
+
+  // Further, test that changing the indirect destination updates the arg
+  // operand to use the block address of the new indirect destination basic
+  // block. This is a critical invariant of CallBrInst.
+  BlockAddress *IndirectBA = BlockAddress::get(CBI.getIndirectDest(0));
+  BlockAddress *ArgBA = cast<BlockAddress>(CBI.getArgOperand(0));
+  EXPECT_EQ(IndirectBA, ArgBA)
+      << "After setting the indirect destination, callbr had an indirect "
+         "destination of '"
+      << CBI.getIndirectDest(0)->getName() << "', but a argument of '"
+      << ArgBA->getBasicBlock()->getName() << "'. These should always match:\n"
+      << CBI;
+  EXPECT_EQ(IndirectBA->getBasicBlock(), &IfThen);
+  EXPECT_EQ(ArgBA->getBasicBlock(), &IfThen);
 }
 
 } // end anonymous namespace

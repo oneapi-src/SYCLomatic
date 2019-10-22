@@ -67,6 +67,14 @@ isSafeToSpeculatePHIUsers(PHINode &PN, DominatorTree &DT,
       return false;
     }
 
+    if (auto CS = ImmutableCallSite(UI)) {
+      if (CS.isConvergent() || CS.cannotDuplicate()) {
+        LLVM_DEBUG(dbgs() << "  Unsafe: convergent "
+                   "callsite cannot de duplicated: " << *UI << '\n');
+        return false;
+      }
+    }
+
     // FIXME: This check is much too conservative. We're not going to move these
     // instructions onto new dynamic paths through the program unless there is
     // a call instruction between the use and the PHI node. And memory isn't
@@ -769,8 +777,10 @@ static bool tryToSpeculatePHIs(SmallVectorImpl<PHINode *> &PNs,
     // speculation if the predecessor is an invoke. This doesn't seem
     // fundamental and we should probably be splitting critical edges
     // differently.
-    if (isa<IndirectBrInst>(PredBB->getTerminator()) ||
-        isa<InvokeInst>(PredBB->getTerminator())) {
+    const auto *TermInst = PredBB->getTerminator();
+    if (isa<IndirectBrInst>(TermInst) ||
+        isa<InvokeInst>(TermInst) ||
+        isa<CallBrInst>(TermInst)) {
       LLVM_DEBUG(dbgs() << "  Invalid: predecessor terminator: "
                         << PredBB->getName() << "\n");
       return false;

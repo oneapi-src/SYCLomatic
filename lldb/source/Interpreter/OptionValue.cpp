@@ -165,13 +165,13 @@ const OptionValueFormat *OptionValue::GetAsFormat() const {
 OptionValueLanguage *OptionValue::GetAsLanguage() {
   if (GetType() == OptionValue::eTypeLanguage)
     return static_cast<OptionValueLanguage *>(this);
-  return NULL;
+  return nullptr;
 }
 
 const OptionValueLanguage *OptionValue::GetAsLanguage() const {
   if (GetType() == OptionValue::eTypeLanguage)
     return static_cast<const OptionValueLanguage *>(this);
-  return NULL;
+  return nullptr;
 }
 
 OptionValueFormatEntity *OptionValue::GetAsFormatEntity() {
@@ -520,7 +520,7 @@ lldb::OptionValueSP OptionValue::CreateValueFromCStringForTypeMask(
     value_sp.reset(new OptionValueFormat(eFormatInvalid));
     break;
   case 1u << eTypeFormatEntity:
-    value_sp.reset(new OptionValueFormatEntity(NULL));
+    value_sp.reset(new OptionValueFormatEntity(nullptr));
     break;
   case 1u << eTypeLanguage:
     value_sp.reset(new OptionValueLanguage(eLanguageTypeUnknown));
@@ -565,11 +565,8 @@ bool OptionValue::DumpQualifiedName(Stream &strm) const {
   return dumped_something;
 }
 
-size_t OptionValue::AutoComplete(CommandInterpreter &interpreter,
-                                 CompletionRequest &request) {
-  request.SetWordComplete(false);
-  return request.GetNumberOfMatches();
-}
+void OptionValue::AutoComplete(CommandInterpreter &interpreter,
+                               CompletionRequest &request) {}
 
 Status OptionValue::SetValueFromString(llvm::StringRef value,
                                        VarSetOperationType op) {
