@@ -224,7 +224,8 @@ void DebugInfo::ShowStatus(int Status) {
     break;
   case MigrationErrorSpecialCharacter:
     StatusString = "Error: Prefix contains special characters;"
-      " only alphabets, digits and underscores are allowed";
+                   " only alphabetical characters, digits and underscore "
+                   "character are allowed";
     break;
   case MigrationErrorNameTooLong:
 #if defined(_WIN32)
