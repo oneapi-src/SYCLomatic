@@ -96,22 +96,19 @@ static void printReplacementsDebugImpl(const TransformSetTy &TS,
     TM->print(DpctDiags(), Context);
   }
 
-  std::unordered_map<TMID, size_t> NameCountMap;
+  std::unordered_map<int, size_t> NameCountMap;
   for (auto &TM : TS) {
-    auto Itr = NameCountMap.find(TM->getID());
-    if (Itr == NameCountMap.end())
-      Itr = NameCountMap.insert(std::make_pair(TM->getID(), 0)).first;
-    ++(Itr->second);
+    ++(NameCountMap.insert(std::make_pair((int)TM->getID(), 0)).first->second);
   }
 
   if (NameCountMap.empty())
     return;
 
-  const size_t NumRepls = std::accumulate(
-      NameCountMap.begin(), NameCountMap.end(), 0,
-      [](const size_t &a, const std::pair<TMID, size_t> &obj) {
-        return a + obj.second;
-      });
+  const size_t NumRepls =
+      std::accumulate(NameCountMap.begin(), NameCountMap.end(), 0,
+                      [](const size_t &a, const std::pair<int, size_t> &obj) {
+                        return a + obj.second;
+                      });
   for (const auto &Pair : NameCountMap) {
     auto &ID = Pair.first;
     auto &Numbers = Pair.second;
