@@ -263,7 +263,7 @@ static opt<bool, true>
     ProcessAll("process-all",
                  llvm::cl::desc("Migrates/copies all files from the --in-root directory"
                                 " to the --out-root directory.\n"
-                                "The default is: off."),
+                                "--in-root option should be explicitly specified. Default: off."),
                  cat(DPCTCat), llvm::cl::location(ProcessAllFlag));
 // clang-format on
 
