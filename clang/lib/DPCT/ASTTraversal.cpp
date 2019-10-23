@@ -116,6 +116,9 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   //    }
   // };
   auto TKind = MacroNameTok.getKind();
+  if (!MacroNameTok.getIdentifierInfo()) {
+    return;
+  }
   auto Name = MacroNameTok.getIdentifierInfo()->getName();
   if (TKind == tok::identifier &&
       (Name == "__host__" || Name == "__device__" || Name == "__global__")) {
