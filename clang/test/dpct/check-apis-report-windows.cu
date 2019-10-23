@@ -1,55 +1,55 @@
 // UNSUPPORTED: -linux-
-// RUN: dpct -report-type=apis -report-file-prefix=check-apis-report -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: echo "// CHECK: API name, Frequency" >%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: CUresult cuMemGetInfo_v2(size_t * free,size_t * total),1" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: cudaDeviceProp,1" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: cudaError_t,3" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaDeviceSynchronize(),4" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaFree(void * devPtr),1" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaFreeHost(void * ptr),1" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaFuncGetAttributes(struct cudaFuncAttributes * attr,void (*)(float *, const float *, const float *) entry),1" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaMalloc(void ** devPtr,size_t size),2" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaMalloc3D(struct cudaPitchedPtr * pitchedDevPtr,struct cudaExtent extent),1" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaMallocHost(float ** ptr,size_t size,unsigned int flags),1" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaMemcpy(void * dst,const void * src,size_t count,enum cudaMemcpyKind kind),2" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaMemset(void * devPtr,int value,size_t count),1" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: cudaStream_t,1" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: dim3,1" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: float max(float a,float b),1" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: int2,3" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: longlong4,1" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: struct cudaChannelFormatDesc cudaCreateChannelDesc(),1" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: struct cudaExtent make_cudaExtent(size_t w,size_t h,size_t d),2" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: struct cudaPitchedPtr make_cudaPitchedPtr(void * d,size_t p,size_t xsz,size_t ysz),1" >>%T/check-apis-report_csv_check.txt
-// RUN: echo "// CHECK: uint4,1" >>%T/check-apis-report_csv_check.txt
-// RUN: cat %T/check-apis-report.apis.csv >>%T/check-apis-report_csv_check.txt
-// RUN: FileCheck --match-full-lines --input-file %T/check-apis-report_csv_check.txt %T/check-apis-report_csv_check.txt
+// RUN: dpct -report-type=apis -report-file-prefix=check_apis_report -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: echo "// CHECK: API name, Frequency" >%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: CUresult cuMemGetInfo_v2(size_t * free,size_t * total),1" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: cudaDeviceProp,1" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: cudaError_t,3" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaDeviceSynchronize(),4" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaFree(void * devPtr),1" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaFreeHost(void * ptr),1" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaFuncGetAttributes(struct cudaFuncAttributes * attr,void (*)(float *, const float *, const float *) entry),1" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaMalloc(void ** devPtr,size_t size),2" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaMalloc3D(struct cudaPitchedPtr * pitchedDevPtr,struct cudaExtent extent),1" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaMallocHost(float ** ptr,size_t size,unsigned int flags),1" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaMemcpy(void * dst,const void * src,size_t count,enum cudaMemcpyKind kind),2" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaMemset(void * devPtr,int value,size_t count),1" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: cudaStream_t,1" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: dim3,1" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: float max(float a,float b),1" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: int2,3" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: longlong4,1" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: struct cudaChannelFormatDesc cudaCreateChannelDesc(),1" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: struct cudaExtent make_cudaExtent(size_t w,size_t h,size_t d),2" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: struct cudaPitchedPtr make_cudaPitchedPtr(void * d,size_t p,size_t xsz,size_t ysz),1" >>%T/check_apis_report_csv_check.txt
+// RUN: echo "// CHECK: uint4,1" >>%T/check_apis_report_csv_check.txt
+// RUN: cat %T/check_apis_report.apis.csv >>%T/check_apis_report_csv_check.txt
+// RUN: FileCheck --match-full-lines --input-file %T/check_apis_report_csv_check.txt %T/check_apis_report_csv_check.txt
 
 // RUN: dpct -report-file-prefix=report -report-type=apis  -report-format=formatted -report-only  -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: echo "// CHECK: API name				Frequency" >%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: CUresult cuMemGetInfo_v2(size_t * free,size_t * total)               1" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: cudaDeviceProp                               1" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: cudaError_t                                  3" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaDeviceSynchronize()               4" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaFree(void * devPtr)               1" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaFreeHost(void * ptr)               1" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaFuncGetAttributes(struct cudaFuncAttributes * attr,void (*)(float *, const float *, const float *) entry)               1" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaMalloc(void ** devPtr,size_t size)               2" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaMalloc3D(struct cudaPitchedPtr * pitchedDevPtr,struct cudaExtent extent)               1" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaMallocHost(float ** ptr,size_t size,unsigned int flags)               1" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaMemcpy(void * dst,const void * src,size_t count,enum cudaMemcpyKind kind)               2" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: cudaError_t cudaMemset(void * devPtr,int value,size_t count)               1" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: cudaStream_t                                 1" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: dim3                                         1" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: float max(float a,float b)                   1" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: int2                                         3" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: longlong4                                    1" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: struct cudaChannelFormatDesc cudaCreateChannelDesc()               1" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: struct cudaExtent make_cudaExtent(size_t w,size_t h,size_t d)               2" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: struct cudaPitchedPtr make_cudaPitchedPtr(void * d,size_t p,size_t xsz,size_t ysz)               1" >>%T/check-apis-report_check.txt
-// RUN: echo "// CHECK: uint4                                        1" >>%T/check-apis-report_check.txt
-// RUN: cat %T/report.apis.log >>%T/check-apis-report_check.txt
-// RUN: FileCheck --match-full-lines --input-file %T/check-apis-report_check.txt %T/check-apis-report_check.txt
+// RUN: echo "// CHECK: API name				Frequency" >%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: CUresult cuMemGetInfo_v2(size_t * free,size_t * total)               1" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: cudaDeviceProp                               1" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: cudaError_t                                  3" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaDeviceSynchronize()               4" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaFree(void * devPtr)               1" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaFreeHost(void * ptr)               1" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaFuncGetAttributes(struct cudaFuncAttributes * attr,void (*)(float *, const float *, const float *) entry)               1" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaMalloc(void ** devPtr,size_t size)               2" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaMalloc3D(struct cudaPitchedPtr * pitchedDevPtr,struct cudaExtent extent)               1" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaMallocHost(float ** ptr,size_t size,unsigned int flags)               1" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaMemcpy(void * dst,const void * src,size_t count,enum cudaMemcpyKind kind)               2" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: cudaError_t cudaMemset(void * devPtr,int value,size_t count)               1" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: cudaStream_t                                 1" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: dim3                                         1" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: float max(float a,float b)                   1" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: int2                                         3" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: longlong4                                    1" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: struct cudaChannelFormatDesc cudaCreateChannelDesc()               1" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: struct cudaExtent make_cudaExtent(size_t w,size_t h,size_t d)               2" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: struct cudaPitchedPtr make_cudaPitchedPtr(void * d,size_t p,size_t xsz,size_t ysz)               1" >>%T/check_apis_report_check.txt
+// RUN: echo "// CHECK: uint4                                        1" >>%T/check_apis_report_check.txt
+// RUN: cat %T/report.apis.log >>%T/check_apis_report_check.txt
+// RUN: FileCheck --match-full-lines --input-file %T/check_apis_report_check.txt %T/check_apis_report_check.txt
 
 // RUN: dpct -output-file=output-file.txt -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: echo "// CHECK: Processing: {{(.+)}}" >%T/check_output-file.txt
