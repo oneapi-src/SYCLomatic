@@ -440,21 +440,23 @@ public:
     return findAncestor<clang::FunctionDecl>(Node);
   }
   template <class T>
-  static inline std::pair<llvm::StringRef, unsigned>
+  static inline std::pair<std::string, unsigned>
   getLocInfo(const T *N, bool *IsInvalid = nullptr /* out */) {
     return getLocInfo(getLocation(N), IsInvalid);
   }
 
-  static inline std::pair<llvm::StringRef, unsigned>
+  static inline std::pair<std::string, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {
     auto LocInfo =
         SM->getDecomposedLoc(getSourceManager().getExpansionLoc(Loc));
     if (auto FileEntry = SM->getFileEntryForID(LocInfo.first)) {
-      return std::make_pair(FileEntry->getName(), LocInfo.second);
+      llvm::SmallString<512> FilePathAbs(FileEntry->getName().str());
+      getSourceManager().getFileManager().makeAbsolutePath(FilePathAbs);
+      return std::make_pair(FilePathAbs.str(), LocInfo.second);
     }
     if (IsInvalid)
       *IsInvalid = true;
-    return std::make_pair(StringRef(), 0);
+    return std::make_pair("", 0);
   }
 
   static inline std::string getTypeName(QualType QT,

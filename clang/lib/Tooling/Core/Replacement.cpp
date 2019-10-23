@@ -123,7 +123,17 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
   const std::pair<FileID, unsigned> DecomposedLocation =
       Sources.getDecomposedLoc(Start);
   const FileEntry *Entry = Sources.getFileEntryForID(DecomposedLocation.first);
+#ifdef INTEL_CUSTOMIZATION
+  if (Entry) {
+    llvm::SmallString<512> FilePathAbs(Entry->getName());
+    Sources.getFileManager().makeAbsolutePath(FilePathAbs);
+    this->FilePath = FilePathAbs.str();
+  } else {
+    this->FilePath = InvalidLocation;
+  }
+#else
   this->FilePath = Entry ? Entry->getName() : InvalidLocation;
+#endif
   this->ReplacementRange = Range(DecomposedLocation.second, Length);
   this->ReplacementText = ReplacementText;
 }

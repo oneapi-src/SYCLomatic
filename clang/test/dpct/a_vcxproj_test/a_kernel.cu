@@ -1,14 +1,11 @@
 // UNSUPPORTED: -linux-
 // RUN: cat %S/DemoCudaProj.vcxproj > %T/DemoCudaProj.vcxproj
+// RUN: cd %T
 // RUN: dpct  --vcxprojfile=%T/DemoCudaProj.vcxproj  -in-root=%S -out-root=%T  %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: echo "// CHECK: [" >%T/check_compilation_db.txt
-// RUN: echo "// CHECK:     {" >>%T/check_compilation_db.txt
-// RUN: echo "// CHECK:         \"file\":\"a_kernel.cu\"," >>%T/check_compilation_db.txt
-// RUN: echo "// CHECK:         \"command\":\"compile -m64 -DNDEBUG -DWIN32 -DWIN64 -D_CONSOLE -D_DEBUG  {{.*}}">>%T/check_compilation_db.txt
-// RUN: echo "// CHECK:         \"directory\":\"{{.*}}/a_vcxproj_test/Output\"" >>%T/check_compilation_db.txt
-// RUN: echo "// CHECK:     }" >>%T/check_compilation_db.txt
-// RUN: echo "// CHECK: ]" >>%T/check_compilation_db.txt
+
+// RUN: cat %S/check_compilation_ref.txt  >%T/check_compilation_db.txt
 // RUN: cat %T/compile_commands.json >>%T/check_compilation_db.txt
+
 // RUN: FileCheck --match-full-lines --input-file %T/check_compilation_db.txt %T/check_compilation_db.txt
 
 #include "cuda_runtime.h"
@@ -21,4 +18,3 @@ __global__ void addKernel(int *c, const int *a, const int *b)
     int i = threadIdx.x;
     c[i] = a[i] + b[i];
 }
-

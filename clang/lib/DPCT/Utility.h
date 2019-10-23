@@ -93,7 +93,7 @@ inline bool isChildPath(const std::string &RootAbs, const std::string &Child) {
 
 #if defined(_WIN64)
   std::string LocalRoot = llvm::StringRef(RootAbs).lower();
-  std::string LocalChild = InChildAbsValid ? ChildAbs.str().lower() : Child;
+  std::string LocalChild = InChildAbsValid ? ChildAbs.str().lower() : llvm::StringRef(Child).lower();
 #elif defined(__linux__)
   std::string LocalRoot = RootAbs.c_str();
   std::string LocalChild = InChildAbsValid ? ChildAbs.c_str() : Child;

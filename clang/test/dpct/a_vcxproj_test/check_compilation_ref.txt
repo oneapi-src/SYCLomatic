@@ -1,0 +1,7 @@
+// CHECK: [
+// CHECK:     {
+// CHECK:         "file":"a_kernel.cu",
+// CHECK:         "command":"compile -m64 -DNDEBUG -DWIN32 -DWIN64 -D_CONSOLE -D_DEBUG \"{{.*}}\"",
+// CHECK:         "directory":"{{.*}}/a_vcxproj_test/Output"
+// CHECK:     }
+// CHECK: ]
