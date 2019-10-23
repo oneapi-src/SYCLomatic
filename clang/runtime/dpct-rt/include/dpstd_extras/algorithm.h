@@ -17,7 +17,7 @@
 #ifndef __DPCT_ALGORITHM_H
 #define __DPCT_ALGORITHM_H
 
-#include <dpct/dpstd_extras/functional.h>
+#include "functional.h"
 
 namespace dpct {
 

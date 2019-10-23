@@ -28,9 +28,9 @@
 #include <dpstd/algorithm>
 #include <dpstd/numeric>
 
-#include <dpct/dpstd_extras/memory.h>
-#include <dpct/dpstd_extras/algorithm.h>
-#include <dpct/dpstd_extras/numeric.h>
-#include <dpct/dpstd_extras/iterators.h>
+#include "dpstd_extras/memory.h"
+#include "dpstd_extras/algorithm.h"
+#include "dpstd_extras/numeric.h"
+#include "dpstd_extras/iterators.h"
 
 #endif // __DPSTD_UTILS_HPP
