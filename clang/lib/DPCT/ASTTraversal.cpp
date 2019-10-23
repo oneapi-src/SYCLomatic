@@ -4255,6 +4255,7 @@ void MemoryMigrationRule::mallocMigration(
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
   if (Name == "cudaMalloc") {
+    DpctGlobalInfo::getInstance().insertCudaMalloc(C);
     if (USMLevel == restricted) {
       std::ostringstream Repl;
       ExprAnalysis EA;
@@ -4272,7 +4273,6 @@ void MemoryMigrationRule::mallocMigration(
               ", dpct::get_default_queue().get_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
-      DpctGlobalInfo::getInstance().insertCudaMalloc(C);
       emplaceTransformation(
           new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
     }
