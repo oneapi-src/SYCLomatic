@@ -90,12 +90,12 @@ __global__ void foo() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
-  // CHECK-NEXT: mask = __ballot(item_{{[0-9a-z]+}}.get_local_id(0) < NUM_ELEMENTS);
+  // CHECK-NEXT: mask = __ballot(item_{{[0-9a-z]+}}.get_local_id(2) < NUM_ELEMENTS);
   mask = __ballot(threadIdx.x < NUM_ELEMENTS);
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
   // CHECK-NEXT: */
-  // CHECK-NEXT: mask = __ballot_sync(FULL_MASK, item_{{[0-9a-z]+}}.get_local_id(0) < NUM_ELEMENTS);
+  // CHECK-NEXT: mask = __ballot_sync(FULL_MASK, item_{{[0-9a-z]+}}.get_local_id(2) < NUM_ELEMENTS);
   mask = __ballot_sync(FULL_MASK, threadIdx.x < NUM_ELEMENTS);
   // CHECK: /*
   // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
