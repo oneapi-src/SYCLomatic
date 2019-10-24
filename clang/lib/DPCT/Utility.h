@@ -46,6 +46,7 @@ class DeclRefExpr;
 class Expr;
 class MemberExpr;
 class FunctionDecl;
+class CallExpr;
 } // namespace clang
 
 // classes for keeping track of Stmt->String mappings
@@ -264,6 +265,7 @@ bool endsWith(const std::string &Str, char C);
 
 const clang::CompoundStmt *findImmediateBlock(const clang::Stmt *S);
 const clang::CompoundStmt *findImmediateBlock(const clang::ValueDecl *D);
+bool callingFuncHasDeviceAttr(const clang::CallExpr *CE);
 bool isInSameScope(const clang::Stmt *S, const clang::ValueDecl *D);
 const clang::DeclRefExpr *getInnerValueDecl(const clang::Expr *Arg);
 const clang::Stmt *getParentStmt(const clang::Stmt *S);

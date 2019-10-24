@@ -64,6 +64,14 @@ Optional<std::string> MathFuncNameRewriter::rewrite() {
   return buildRewriteString();
 }
 
+/// Policies to migrate math functions:
+/// 1) Functions with the "std" namespace are treated as host functions;
+/// 2) Functions with __device__ attribute but without __host__
+///    attribute are treated as device functions;
+/// 3) Functions whose calling functions are augmented with __device__
+///    or __global__ attributes are treated as device functions;
+/// 4) Other functions are treated as host functions.
+///    eg. "__host__ __device__ fabs()" falls in 4) if fabs is not called in device or kernel
 std::string MathFuncNameRewriter::getNewFuncName() {
   auto FD = Call->getDirectCallee();
   std::string NewFuncName;
@@ -83,8 +91,9 @@ std::string MathFuncNameRewriter::getNewFuncName() {
     }
 
     // For device functions
-    if (FD->hasAttr<CUDADeviceAttr>() && !FD->hasAttr<CUDAHostAttr>() &&
-        NamespaceStr != "std") {
+    if (NamespaceStr != "std" &&
+        ((FD->hasAttr<CUDADeviceAttr>() && !FD->hasAttr<CUDAHostAttr>()) ||
+         callingFuncHasDeviceAttr(Call))) {
       if (SourceCalleeName == "abs") {
         // further check the type of the args.
         if (!Call->getArg(0)->getType()->isIntegerType()) {

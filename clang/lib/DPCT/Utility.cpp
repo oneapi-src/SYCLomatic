@@ -12,8 +12,8 @@
 #include "Utility.h"
 
 #include "AnalysisInfo.h"
-#include "SaveNewFiles.h"
 #include "Debug.h"
+#include "SaveNewFiles.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/Basic/SourceLocation.h"
@@ -115,8 +115,8 @@ std::string getStmtSpelling(const Stmt *S, const ASTContext &Context) {
     EndLoc = SM.getExpansionLoc(S->getEndLoc());
   }
 
-  int Length = SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc)
-    + Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
+  int Length = SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc) +
+               Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
   return std::string(SM.getCharacterData(BeginLoc), Length);
 }
 
@@ -315,6 +315,28 @@ const clang::CompoundStmt *findImmediateBlock(const ValueDecl *D) {
   return nullptr;
 }
 
+const clang::FunctionDecl *getImmediateOuterFuncDecl(const clang::Stmt *S) {
+  if (!S)
+    return nullptr;
+
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*S);
+  while (Parents.size() == 1) {
+    if (auto *Parent = Parents[0].get<Decl>())
+      if (auto FD = dyn_cast<clang::FunctionDecl>(Parent))
+        return FD;
+
+    Parents = Context.getParents(Parents[0]);
+  }
+
+  return nullptr;
+}
+
+bool callingFuncHasDeviceAttr(const CallExpr *CE) {
+  auto FD = getImmediateOuterFuncDecl(CE);
+  return FD && FD->hasAttr<CUDADeviceAttr>();
+}
+
 // Determine if a Stmt and a ValueDecl are in the same scope
 bool isInSameScope(const Stmt *S, const ValueDecl *D) {
   if (!S || !D)
@@ -361,7 +383,7 @@ bool endsWith(const std::string &Str, const std::string &Suffix) {
 }
 
 bool endsWith(const std::string &Str, char C) {
-  return Str.size() && Str[Str.size()-1] == C;
+  return Str.size() && Str[Str.size() - 1] == C;
 }
 
 const clang::Stmt *getParentStmt(const clang::Stmt *S) {
@@ -469,7 +491,7 @@ void replaceSubStr(std::string &Str, const std::string &SubStr,
     Str.replace(P, SubStr.size(), Repl);
 }
 void replaceSubStrAll(std::string &Str, const std::string &SubStr,
-                   const std::string &Repl) {
+                      const std::string &Repl) {
   auto P = Str.find(SubStr);
   while (P != std::string::npos) {
     Str.replace(P, SubStr.size(), Repl);
