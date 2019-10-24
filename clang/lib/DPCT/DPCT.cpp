@@ -109,6 +109,7 @@ static opt<std::string>
                 " source files are provided."),
            value_desc("dir"), cat(DPCTCat),
            llvm::cl::Optional);
+
 static opt<std::string> OutRoot(
     "out-root",
     desc("The directory path for root of generated files. A directory is "

@@ -2066,8 +2066,7 @@ Preprocessor::ImportAction Preprocessor::HandleHeaderIncludeOrImport(
 #define INTEL_CUSTOMIZATION
 #ifdef INTEL_CUSTOMIZATION
   if (Callbacks && Action != Skip &&
-    !Callbacks->ShouldEnter(
-      LangOpts.MSVCCompat ? NormalizedPath.c_str() : Filename, isAngled)) {
+    !Callbacks->ShouldEnter(LookupFilename, isAngled)) {
     Action = Skip;
   }
 #endif
