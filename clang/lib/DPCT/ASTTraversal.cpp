@@ -434,32 +434,34 @@ void IterationSpaceBuiltinRule::registerMatcher(MatchFinder &MF) {
                  hasAncestor(functionDecl().bind("func")))
           .bind("memberExpr"),
       this);
+  MF.addMatcher(declRefExpr(to(varDecl(hasAnyName("warpSize")).bind("varDecl")))
+                    .bind("declRefExpr"),
+                this);
 }
 
 void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   const MemberExpr *ME = getNodeAsType<MemberExpr>(Result, "memberExpr");
-  if (!ME)
-    return;
-  if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "func"))
-    DeviceFunctionDecl::LinkRedecls(FD)->setItem();
-  const VarDecl *VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
-  assert(ME && VD && "Unknown result");
-
-  ValueDecl *Field = ME->getMemberDecl();
-  StringRef FieldName = Field->getName();
-  unsigned Dimension;
-
-  if (FieldName == "__fetch_builtin_x")
-    Dimension = 2;
-  else if (FieldName == "__fetch_builtin_y")
-    Dimension = 1;
-  else if (FieldName == "__fetch_builtin_z")
-    Dimension = 0;
-  else {
-    llvm::dbgs() << "[" << getName()
-                 << "] Unexpected field name: " << FieldName;
+  const VarDecl *VD = nullptr;
+  const DeclRefExpr *DRE = nullptr;
+  bool IsME = false;
+  if (ME) {
+    if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "func"))
+      DeviceFunctionDecl::LinkRedecls(FD)->setItem();
+    VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
+    if (!VD) { return; }
+    IsME = true;
+  } else if ((DRE = getNodeAsType<DeclRefExpr>(Result, "declRefExpr"))) {
+    VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
+    if (!VD) { return; }
+    std::string InFile =
+        dpct::DpctGlobalInfo::getSourceManager().getFilename(VD->getBeginLoc());
+    if (!isChildOrSamePath(DpctInstallPath, InFile)) {
+      return;
+    }
+  } else {
     return;
   }
+  assert((ME || DRE) && VD && "Unknown result");
 
   std::string Replacement = getItemName();
   StringRef BuiltinName = VD->getName();
@@ -472,15 +474,37 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
     Replacement += ".get_group(";
   else if (BuiltinName == "gridDim")
     Replacement += ".get_group_range(";
+  else if (BuiltinName == "warpSize")
+    Replacement += ".get_sub_group().get_local_range().get(0)";
   else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected builtin variable: " << BuiltinName;
     return;
   }
 
-  Replacement += std::to_string(Dimension);
-  Replacement += ")";
-  emplaceTransformation(new ReplaceStmt(ME, std::move(Replacement)));
+  if (IsME) {
+    ValueDecl *Field = ME->getMemberDecl();
+    StringRef FieldName = Field->getName();
+    unsigned Dimension;
+    if (FieldName == "__fetch_builtin_x")
+      Dimension = 2;
+    else if (FieldName == "__fetch_builtin_y")
+      Dimension = 1;
+    else if (FieldName == "__fetch_builtin_z")
+      Dimension = 0;
+    else {
+      llvm::dbgs() << "[" << getName()
+                   << "] Unexpected field name: " << FieldName;
+      return;
+    }
+    Replacement += std::to_string(Dimension);
+    Replacement += ")";
+  }
+  if (IsME) {
+    emplaceTransformation(new ReplaceStmt(ME, std::move(Replacement)));
+  } else {
+    emplaceTransformation(new ReplaceStmt(DRE, std::move(Replacement)));
+  }
 }
 
 REGISTER_RULE(IterationSpaceBuiltinRule)
@@ -4220,7 +4244,8 @@ void MemVarRule::registerMatcher(MatchFinder &MF) {
   auto DeclMatcher = varDecl(
       anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice),
             hasAttr(attr::CUDAShared)),
-      unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim")));
+              unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
+                                "warpSize")));
   MF.addMatcher(DeclMatcher.bind("var"), this);
   MF.addMatcher(
       declRefExpr(anyOf(hasParent(implicitCastExpr(
