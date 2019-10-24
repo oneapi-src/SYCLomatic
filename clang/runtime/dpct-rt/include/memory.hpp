@@ -33,7 +33,7 @@
 #elif defined(_WIN64)
 #include <windows.h>
 #else
-#warning "Only support Windows and Linux."
+#error "Only support Windows and Linux."
 #endif
 
 namespace dpct {
@@ -91,7 +91,7 @@ public:
 #elif defined(_WIN64)
     VirtualFree(mapped_address_space, 0, MEM_RELEASE);
 #else
-#warning "Only support Windows and Linux."
+#error "Only support Windows and Linux."
 #endif
   };
 
