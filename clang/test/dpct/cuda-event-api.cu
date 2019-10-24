@@ -177,6 +177,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
+  // CHECK-NEXT: stop.wait();
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
