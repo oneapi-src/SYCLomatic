@@ -2,15 +2,29 @@
 #include "gtest/gtest.h"
 
 TEST(rewriteDir, fileUnderInRoot) {
+#if _WIN32
+  SmallString<512> AbsPath = StringRef{"p:/a/b/in/file.cpp"};
+  rewriteDir(AbsPath, "p:/a/b/in", "p:/a/c");
+  std::replace(AbsPath.begin(), AbsPath.end(), '\\', '/');
+  EXPECT_EQ(AbsPath, "p:/a/c/file.cpp");
+#else
   SmallString<512> AbsPath = StringRef{"/a/b/in/file.cpp"};
   rewriteDir(AbsPath, "/a/b/in", "/a/c");
   EXPECT_EQ(AbsPath, "/a/c/file.cpp");
+#endif
 }
 
 TEST(rewriteDir, fileInDirUnderInRoot) {
+#if _WIN32
+  SmallString<512> AbsPath = StringRef{"p:/a/b/in/d/file.cpp"};
+  rewriteDir(AbsPath, "p:/a/b/in", "p:/a/c");
+  std::replace(AbsPath.begin(), AbsPath.end(), '\\', '/');
+  EXPECT_EQ(AbsPath, "p:/a/c/d/file.cpp");
+#else
   SmallString<512> AbsPath = StringRef{"/a/b/in/d/file.cpp"};
   rewriteDir(AbsPath, "/a/b/in", "/a/c");
   EXPECT_EQ(AbsPath, "/a/c/d/file.cpp");
+#endif
 }
 
 TEST(rewriteFileName, renameCU) {

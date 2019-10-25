@@ -2,6 +2,7 @@
 #include "gtest/gtest.h"
 
 #include "clang/Tooling/Tooling.h"
+#include "llvm/Support/Process.h"
 
 using namespace llvm;
 using namespace clang::dpct;
@@ -23,6 +24,14 @@ protected:
     TempDir = llvm::sys::path::stem(TempDirAbsolute).str();
 
     llvm::sys::fs::create_directories(TempDirAbsolute + "/a/b/in");
+    llvm::SmallString<256> TempDirAbsoluteReal;
+    llvm::sys::fs::real_path(TempDirAbsolute + "/a/b/in", TempDirAbsoluteReal);
+    TempDirAbsolute = TempDirAbsoluteReal.str();
+
+    int FD = 0;
+    llvm::sys::fs::openFileForWrite(
+            TempDir + "/../" + TempDir + "/a/b/in/File.cpp", FD);
+    llvm::sys::Process::SafelyCloseFileDescriptor(FD);
   }
 
   void TearDown() override {
@@ -31,7 +40,7 @@ protected:
 };
 
 TEST_F(AnalysisInfoTest, isInRoot) {
-  const std::string InRootPath = TempDirAbsolute + "/a/b";
+  const std::string InRootPath = TempDirAbsolute;
   const std::string FilePath = TempDir + "/../" + TempDir + "/a/b/in/File.cpp";
   DpctGlobalInfo::setInRoot(InRootPath);
   bool ret = DpctGlobalInfo::isInRoot(FilePath);
