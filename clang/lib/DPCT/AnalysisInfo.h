@@ -13,13 +13,13 @@
 #define DPCT_ANALYSIS_INFO_H
 
 #include "Debug.h"
-#include "Diagnostics.h"
 #include "ExprAnalysis.h"
 #include "ExtReplacements.h"
 #include <bitset>
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/Frontend/CompilerInstance.h"
 
 namespace clang {
 namespace dpct {

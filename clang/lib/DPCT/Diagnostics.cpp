@@ -16,6 +16,8 @@ namespace dpct {
 
 namespace DiagnosticsUtils {
 unsigned int UniqueID = 0;
+std::unordered_map<std::string, std::unordered_set<std::string>>
+    ReportedWarningInfo::ReportedWarning;
 }
 
 std::unordered_map<int, DiagnosticsMessage> DiagnosticIDTable;

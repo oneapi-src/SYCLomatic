@@ -27,7 +27,10 @@ void sgemm() {
   float *d_C_S = 0;
   float alpha_S = 1.0f;
   float beta_S = 0.0f;
-  // CHECK: {
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: {
   // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_A_S);
   // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
   // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_B_S);

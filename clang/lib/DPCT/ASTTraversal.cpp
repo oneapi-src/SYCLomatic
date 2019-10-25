@@ -42,9 +42,6 @@ auto parentStmt = []() {
                hasParent(ifStmt()));
 };
 
-std::unordered_map<std::string, std::unordered_set</* Comment ID */ int>>
-    MigrationRule::ReportedComment;
-
 static std::set<SourceLocation> AttrExpansionFilter;
 
 unsigned MigrationRule::PairID = 0;

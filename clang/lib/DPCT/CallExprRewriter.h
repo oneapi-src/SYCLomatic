@@ -12,7 +12,7 @@
 #ifndef CALL_EXPR_REWRITER_H
 #define CALL_EXPR_REWRITER_H
 
-#include "AnalysisInfo.h"
+#include "Diagnostics.h"
 
 namespace clang {
 namespace dpct {
@@ -125,9 +125,9 @@ protected:
   template <typename IDTy, typename... Ts>
   inline void report(IDTy MsgID, Ts &&... Vals) {
     TransformSetTy TS;
-    DiagnosticsUtils::report<IDTy, Ts...>(
-        Call->getBeginLoc(), MsgID, DpctGlobalInfo::getCompilerInstance(),
-        &TS, std::forward<Ts>(Vals)...);
+    DiagnosticsUtils::report<IDTy, Ts...>(Call->getBeginLoc(), MsgID,
+                                          DpctGlobalInfo::getCompilerInstance(),
+                                          &TS, std::forward<Ts>(Vals)...);
     for (auto &T : TS)
       DpctGlobalInfo::getInstance().addReplacement(
           T->getReplacement(DpctGlobalInfo::getContext()));

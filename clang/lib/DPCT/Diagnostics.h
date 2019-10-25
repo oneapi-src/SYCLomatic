@@ -12,6 +12,7 @@
 #ifndef DPCT_AST_DIAGNOSTICS_H
 #define DPCT_AST_DIAGNOSTICS_H
 
+#include "AnalysisInfo.h"
 #include "Debug.h"
 #include "SaveNewFiles.h"
 #include "TextModification.h"
@@ -21,7 +22,9 @@
 #include "llvm/Support/FormatVariadic.h"
 
 #include <assert.h>
+#include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 extern llvm::cl::opt<std::string> SuppressWarnings;
 extern llvm::cl::opt<std::string> OutputFile;
@@ -189,16 +192,41 @@ insertCommentPrevLine(SourceLocation SL, const DiagnosticsMessage &Msg,
   return new InsertComment(StartLoc, OS.str());
 }
 
+class ReportedWarningInfo {
+public:
+  static std::unordered_map<std::string, std::unordered_set<std::string>> &
+  getInfo() {
+    return ReportedWarning;
+  }
+
+private:
+  static std::unordered_map<std::string, std::unordered_set<std::string>>
+      ReportedWarning;
+};
+
 // Emits a warning/error/note and/or comment depending on MsgID. For details
 template <typename IDTy, typename... Ts>
 void report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
             TransformSetTy *TS, Ts &&... Vals) {
+  auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
+  std::string FileAndLine = clang::dpct::buildString(
+      SM.getBufferName(SL), ":", SM.getPresumedLineNumber(SL));
+  std::string WarningIDAndMsg = clang::dpct::buildString(
+      std::to_string(static_cast<int>(MsgID)), ":", std::forward<Ts>(Vals)...);
+  if (ReportedWarningInfo::getInfo().count(FileAndLine) == 0) {
+    ReportedWarningInfo::getInfo()[FileAndLine].insert(WarningIDAndMsg);
+  } else if (ReportedWarningInfo::getInfo()[FileAndLine].count(
+                 WarningIDAndMsg) != 0) {
+    return;
+  }
+
   if (!SuppressWarningsAllFlag) {
     // Only report warnings that are not suppressed
     if (WarningIDs.find((int)MsgID) == WarningIDs.end() &&
-        DiagnosticIDTable.find((int)MsgID) != DiagnosticIDTable.end())
+        DiagnosticIDTable.find((int)MsgID) != DiagnosticIDTable.end()) {
       reportWarning(SL, DiagnosticIDTable[(int)MsgID], CI,
                     std::forward<Ts>(Vals)...);
+    }
   }
   if (TS && CommentIDTable.find((int)MsgID) != CommentIDTable.end()) {
     TS->emplace_back(insertCommentPrevLine(SL, CommentIDTable[(int)MsgID], CI,
