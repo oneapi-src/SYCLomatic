@@ -191,6 +191,10 @@ protected:
   std::string getNewFuncName();
 
   friend MathFuncNameRewriterFactory;
+
+private:
+  static const std::vector<std::string> SingleFuctions;
+  static const std::vector<std::string> DoubleFuctions;
 };
 
 /// The rewriter for warning on unsupported math functions

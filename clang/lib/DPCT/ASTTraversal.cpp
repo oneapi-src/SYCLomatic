@@ -5017,12 +5017,16 @@ REGISTER_RULE(UnnamedTypesRule)
 void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
   std::vector<std::string> MathFunctions = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
+#define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
+#define ENTRY_RENAMED_DOUBLE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
 #define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
 #define ENTRY_OPERATOR(APINAME, OPKIND) APINAME,
 #define ENTRY_TYPECAST(APINAME) APINAME,
 #define ENTRY_UNSUPPORTED(APINAME) APINAME,
 #include "APINamesMath.inc"
 #undef ENTRY_RENAMED
+#undef ENTRY_RENAMED_SINGLE
+#undef ENTRY_RENAMED_DOUBLE
 #undef ENTRY_EMULATED
 #undef ENTRY_OPERATOR
 #undef ENTRY_TYPECAST
@@ -5046,7 +5050,6 @@ void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
     ExprAnalysis EA(CE);
     EA.analyze();
     emplaceTransformation(EA.getReplacement());
-    DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), Math);
   }
 }
 

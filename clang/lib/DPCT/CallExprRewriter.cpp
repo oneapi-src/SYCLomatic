@@ -113,9 +113,41 @@ std::string MathFuncNameRewriter::getNewFuncName() {
           }
         }
       }
+
+      if (std::find(SingleFuctions.begin(), SingleFuctions.end(),
+                    SourceCalleeName) != SingleFuctions.end()) {
+        LangOptions LO;
+        for (unsigned i = 0; i < Call->getNumArgs(); i++) {
+          if (SourceCalleeName == "ldexpf" && i == 1)
+            continue;
+          std::string ArgT =
+              Call->getArg(i)->IgnoreImplicit()->getType().getAsString(
+                  PrintingPolicy(LO));
+          std::string ArgExpr = Call->getArg(i)->getStmtClassName();
+          if (ArgT != "float" && ArgT != "double") {
+            RewriteArgList[i] = "(float)(" + RewriteArgList[i] + ")";
+          }
+        }
+      } else if (std::find(DoubleFuctions.begin(), DoubleFuctions.end(),
+                           SourceCalleeName) != DoubleFuctions.end()) {
+        LangOptions LO;
+        for (unsigned i = 0; i < Call->getNumArgs(); i++) {
+          if (SourceCalleeName == "ldexp" && i == 1)
+            continue;
+          std::string ArgT =
+              Call->getArg(i)->IgnoreImplicit()->getType().getAsString(
+                  PrintingPolicy(LO));
+          std::string ArgExpr = Call->getArg(i)->getStmtClassName();
+          if (ArgT != "double" && ArgT != "float") {
+            RewriteArgList[i] = "(double)(" + RewriteArgList[i] + ")";
+          }
+        }
+      }
     }
     // For host functions
     else {
+      // Insert "#include <cmath>" to migrated code
+      DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), Math);
       NewFuncName = SourceCalleeName;
       if (SourceCalleeName == "abs" || SourceCalleeName == "max" ||
           SourceCalleeName == "min") {
@@ -271,11 +303,31 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
   auto MigratedArg0 = getMigratedArg(0);
 
   if (FuncName == "frexp" || FuncName == "frexpf") {
+    std::string ArgT =
+        Call->getArg(0)->IgnoreImplicit()->getType().getAsString(
+            PrintingPolicy(LangOptions()));
+    std::string ArgExpr = Call->getArg(0)->getStmtClassName();
+    if (ArgT == "int") {
+      if (FuncName == "frexpf")
+        MigratedArg0 = "(float)(" + MigratedArg0 + ")";
+      else
+        MigratedArg0 = "(double)(" + MigratedArg0 + ")";
+    }
     auto MigratedArg1 = getMigratedArg(1);
     OS << "cl::sycl::frexp(" << MigratedArg0 << ", cl::sycl::make_ptr<int, "
        << "cl::sycl::access::address_space::global_space>(" << MigratedArg1
        << "))";
   } else if (FuncName == "modf" || FuncName == "modff") {
+    std::string ArgT =
+        Call->getArg(0)->IgnoreImplicit()->getType().getAsString(
+            PrintingPolicy(LangOptions()));
+    std::string ArgExpr = Call->getArg(0)->getStmtClassName();
+    if (ArgT == "int") {
+      if (FuncName == "modff")
+        MigratedArg0 = "(float)(" + MigratedArg0 + ")";
+      else
+        MigratedArg0 = "(double)(" + MigratedArg0 + ")";
+    }
     auto MigratedArg1 = getMigratedArg(1);
     OS << "cl::sycl::modf(" << MigratedArg0;
     if (FuncName == "modf")
@@ -289,6 +341,16 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << "cl::sycl::nan(0u)";
   } else if (FuncName == "sincos" || FuncName == "sincosf" ||
              FuncName == "__sincosf") {
+    std::string ArgT =
+        Call->getArg(0)->IgnoreImplicit()->getType().getAsString(
+            PrintingPolicy(LangOptions()));
+    std::string ArgExpr = Call->getArg(0)->getStmtClassName();
+    if (ArgT == "int") {
+      if (FuncName == "sincosf" || FuncName == "__sincosf")
+        MigratedArg0 = "(float)(" + MigratedArg0 + ")";
+      else
+        MigratedArg0 = "(double)(" + MigratedArg0 + ")";
+    }
     auto MigratedArg1 = getMigratedArg(1);
     auto MigratedArg2 = getMigratedArg(2);
     if (MigratedArg1[0] == '&')
@@ -324,7 +386,31 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
             "cl::sycl::access::address_space::global_space>(";
     OS << MigratedArg2 << "))";
   } else if (FuncName == "remquo" || FuncName == "remquof") {
+    {
+      std::string ArgT =
+          Call->getArg(0)->IgnoreImplicit()->getType().getAsString(
+              PrintingPolicy(LangOptions()));
+      std::string ArgExpr = Call->getArg(0)->getStmtClassName();
+      if (ArgT == "int") {
+        if (FuncName == "remquof")
+          MigratedArg0 = "(float)(" + MigratedArg0 + ")";
+        else
+          MigratedArg0 = "(double)(" + MigratedArg0 + ")";
+      }
+    }
     auto MigratedArg1 = getMigratedArg(1);
+    {
+      std::string ArgT =
+          Call->getArg(1)->IgnoreImplicit()->getType().getAsString(
+              PrintingPolicy(LangOptions()));
+      std::string ArgExpr = Call->getArg(1)->getStmtClassName();
+      if (ArgT == "int") {
+        if (FuncName == "remquof")
+          MigratedArg1 = "(float)(" + MigratedArg1 + ")";
+        else
+          MigratedArg1 = "(double)(" + MigratedArg1 + ")";
+      }
+    }
     auto MigratedArg2 = getMigratedArg(2);
     OS << "cl::sycl::remquo(" << MigratedArg0 << ", " << MigratedArg1
        << ", cl::sycl::make_ptr<int, "
@@ -486,10 +572,15 @@ void TexFunctionRewriter::setTextureInfo() {
   REWRITER_FACTORY_ENTRY(FuncName, TexFunctionRewriterFactory, RewriterName)
 #define UNSUPPORTED_FACTORY_ENTRY(FuncName, MsgID)                             \
   REWRITER_FACTORY_ENTRY(FuncName, UnsupportFunctionRewriterFactory, MsgID)
+
 const std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>
     CallExprRewriterFactoryBase::RewriterMap = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
+  MATH_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME)                     \
+  MATH_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_DOUBLE(SOURCEAPINAME, TARGETAPINAME)                     \
   MATH_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME)                           \
   MATH_SIMULATED_FUNC_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
@@ -498,6 +589,8 @@ const std::unordered_map<std::string,
 #define ENTRY_UNSUPPORTED(APINAME) MATH_UNSUPPORTED_FUNC_FACTORY_ENTRY(APINAME)
 #include "APINamesMath.inc"
 #undef ENTRY_RENAMED
+#undef ENTRY_RENAMED_SINGLE
+#undef ENTRY_RENAMED_DOUBLE
 #undef ENTRY_EMULATED
 #undef ENTRY_OPERATOR
 #undef ENTRY_TYPECAST
@@ -521,5 +614,42 @@ const std::unordered_map<std::string,
 #undef ENTRY_TEXTURE
 #undef UNSUPPORTED_FACTORY_ENTRY
 };
+
+const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {
+#define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
+#define ENTRY_RENAMED_DOUBLE(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_OPERATOR(APINAME, OPKIND)
+#define ENTRY_TYPECAST(APINAME)
+#define ENTRY_UNSUPPORTED(APINAME)
+#include "APINamesMath.inc"
+#undef ENTRY_RENAMED
+#undef ENTRY_RENAMED_SINGLE
+#undef ENTRY_RENAMED_DOUBLE
+#undef ENTRY_EMULATED
+#undef ENTRY_OPERATOR
+#undef ENTRY_TYPECAST
+#undef ENTRY_UNSUPPORTED
+};
+
+const std::vector<std::string> MathFuncNameRewriter::DoubleFuctions = {
+#define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_DOUBLE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
+#define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_OPERATOR(APINAME, OPKIND)
+#define ENTRY_TYPECAST(APINAME)
+#define ENTRY_UNSUPPORTED(APINAME)
+#include "APINamesMath.inc"
+#undef ENTRY_RENAMED
+#undef ENTRY_RENAMED_SINGLE
+#undef ENTRY_RENAMED_DOUBLE
+#undef ENTRY_EMULATED
+#undef ENTRY_OPERATOR
+#undef ENTRY_TYPECAST
+#undef ENTRY_UNSUPPORTED
+};
+
 } // namespace dpct
 } // namespace clang
