@@ -2328,7 +2328,7 @@ static cl::opt<HelpPrinter, true, parser<bool>>
 static cl::opt<HelpPrinterWrapper, true, parser<bool>> HOp(
     "help",
     cl::desc(
-        "Provides list of Intel(R) DPC++ Compatibility Tool specific options"),
+        "Provides list of Intel(R) DPC++ Compatibility Tool specific options."),
     cl::location(WrappedNormalPrinter), cl::ValueDisallowed,
     cl::cat(clang::dpct::DPCTCat), cl::sub(*AllSubCommands));
 #else
@@ -2463,7 +2463,7 @@ static VersionPrinter VersionPrinterInstance;
 
 #ifdef INTEL_CUSTOMIZATION
 static cl::opt<VersionPrinter, true, parser<bool>>
-    VersOp("version", cl::desc("Shows the version of the tool"),
+    VersOp("version", cl::desc("Shows the version of the tool."),
            cl::location(VersionPrinterInstance), cl::ValueDisallowed,
            cl::cat(clang::dpct::DPCTCat));
 #else

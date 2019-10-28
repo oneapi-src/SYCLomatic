@@ -107,6 +107,7 @@ llvm::Error CommonOptionsParser::init(
     int &argc, const char **argv, cl::OptionCategory &Category,
     llvm::cl::NumOccurrencesFlag OccurrencesFlag, const char *Overview) {
 #ifdef INTEL_CUSTOMIZATION
+  int OriArgc = argc;
   static cl::opt<std::string> BuildPath(
       "p",
       cl::desc("The directory path for the compilation database (compile_commands.json). When no\n"
@@ -139,7 +140,7 @@ llvm::Error CommonOptionsParser::init(
 #ifdef INTEL_CUSTOMIZATION
  static cl::list<std::string> ArgsAfter(
      "extra-arg",
-     cl::desc("Additional argument to append to the compiler command line, example:\n"
+     cl::desc("Additional argument to append to the migration command line, example:\n"
               "--extra-arg=\"-I /path/to/header\". The options that can be passed this way can\n"
               "be found with the dpct -- -help command."),
      cl::value_desc("string"), cl::cat(Category), cl::sub(*cl::AllSubCommands));
@@ -267,11 +268,13 @@ llvm::Error CommonOptionsParser::init(
            << "' or any parent directory.\n";
         DoPrintHandler(OS.str(), true);
       } else {
-        std::string buf;
-        llvm::raw_string_ostream OS(buf);
-        OS << "Error while trying to load a compilation database:\n"
-           << ErrorMessage;
-        DoPrintHandler(OS.str(), true);
+        if (!hasHelpOption(OriArgc, argv)) {
+          std::string buf;
+          llvm::raw_string_ostream OS(buf);
+          OS << "Error while trying to load a compilation database:\n"
+             << ErrorMessage;
+          DoPrintHandler(OS.str(), true);
+        }
       }
 #else
       llvm::errs() << "Error while trying to load a compilation database:\n"
@@ -304,6 +307,19 @@ llvm::Expected<CommonOptionsParser> CommonOptionsParser::create(
     return std::move(Err);
   return std::move(Parser);
 }
+
+#ifdef INTEL_CUSTOMIZATION
+bool CommonOptionsParser::hasHelpOption(int argc, const char **argv) {
+  for (auto i = 0; i < argc; i++) {
+    int Res1 = strcmp(argv[i], "-help");
+    int Res2 = strcmp(argv[i], "--help");
+    int Res3 = strcmp(argv[i], "--help-hidden");
+    if (Res1 == 0 || Res2 == 0 || Res3 == 0)
+      return true;
+  }
+  return false;
+}
+#endif
 
 CommonOptionsParser::CommonOptionsParser(
     int &argc, const char **argv, cl::OptionCategory &Category,

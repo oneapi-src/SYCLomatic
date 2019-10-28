@@ -155,7 +155,7 @@ static opt<ReportFormatEnum> ReportFormat(
         clEnumVal(csv,
                   "Output is lines of comma separated values. The report file "
                   "name extension will\n"
-                  "                                    be .csv (default)"),
+                  "                                    be .csv. (default)"),
         clEnumVal(formatted, "Output is formatted to be easier to read for "
                   "human eyes. Report file name\n"
                   "                                    extension will be log."
@@ -229,12 +229,12 @@ opt<OutputVerbosityLev> OutputVerbosity(
     llvm::cl::values(
         clEnumVal(silent, "Only messages from clang."),
         clEnumVal(normal,
-                  "\'silent\' and warnings, errors, and notes from dpct"),
+                  "\'silent\' and warnings, errors, and notes from dpct."),
         clEnumVal(
             detailed,
             "\'normal\' and messages about which file is being processed."),
         clEnumVal(diagnostics, "\'detailed\' and information about the detected "
-                               "conflicts and crashes (default)")),
+                               "conflicts and crashes. (default)")),
     llvm::cl::init(diagnostics), value_desc("value"), cat(DPCTCat),
     llvm::cl::Optional);
 
@@ -785,6 +785,9 @@ int run(int argc, const char **argv) {
     exit(MigrationErrorSpecialCharacter);
   }
   clock_t StartTime = clock();
+  // just show -- --help information and then exit
+  if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
+    exit(MigrationSucceeded);
   if (InRoot.empty() && ProcessAllFlag) {
     DebugInfo::ShowStatus(MigrationErrorNoExplicitInRoot);
     exit(MigrationErrorNoExplicitInRoot);

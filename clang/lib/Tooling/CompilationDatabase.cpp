@@ -376,7 +376,9 @@ static bool stripPositionalArgs(std::vector<const char *> Args,
   }
 
   if (CompileAnalyzer.Inputs.empty()) {
+#ifndef INTEL_CUSTOMIZATION
     ErrorMsg = "warning: no compile jobs found\n";
+#endif
     return false;
   }
 
