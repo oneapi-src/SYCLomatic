@@ -772,6 +772,11 @@ public:
 
 private:
   void insertExplicitCast(const ImplicitCastExpr *Impl, const QualType &Type);
+  template <class T>
+  void replaceMemberOperator(const ast_type_traits::DynTypedNode &Node) {
+    if (auto M = Node.get<T>())
+      emplaceTransformation(new ReplaceToken(M->getOperatorLoc(), "->"));
+  }
 };
 
 /// Migration rule for memory management routine.

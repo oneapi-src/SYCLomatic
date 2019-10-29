@@ -755,7 +755,7 @@ public:
   MemVarInfo(unsigned Offset, const std::string &FilePath, const VarDecl *Var)
       : VarInfo(Offset, FilePath, Var), Attr(getAttr(Var->getAttrs())),
         Scope((Var->isLexicallyWithinFunctionOrMethod())
-                  ? (Var->isExternallyDeclarable() ? Extern : Local)
+                  ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
                   : Global),
         PointerAsArray(false) {
     setType(std::make_shared<CtTypeInfo>(Var->getTypeSourceInfo()->getTypeLoc(),

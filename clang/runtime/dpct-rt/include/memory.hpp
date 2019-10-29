@@ -412,6 +412,7 @@ public:
     return (*data) / (*rhs.data);
   }
   T operator-() { return -(*data); }
+  T *operator->() { return data; }
 
 private:
   pointer_t data;

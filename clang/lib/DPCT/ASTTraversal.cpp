@@ -4243,6 +4243,11 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
       if (auto Impl = getAssistNodeAsType<ImplicitCastExpr>(Result, "impl"))
         insertExplicitCast(Impl, VD->getType());
     }
+    auto Parents = Result.Context->getParents(*MemVarRef);
+    if (!Parents.empty()) {
+      replaceMemberOperator<MemberExpr>(Parents[0]);
+      replaceMemberOperator<CXXDependentScopeMemberExpr>(Parents[0]);
+    }
   }
 }
 
