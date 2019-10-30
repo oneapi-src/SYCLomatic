@@ -3744,8 +3744,16 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     DpctGlobalInfo::getInstance().insertHeader(Loc, Time);
   } else if (FuncName == "cudaDeviceSetLimit" ||
              FuncName == "cudaThreadSetLimit") {
-    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
-    emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ""));
+    std::string Msg =
+      "DPC++ currently doesn't support setting resource limits on devices.";
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, FuncName,
+             Msg);
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, "0"));
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, FuncName, Msg);
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ""));
+    }
   } else if (FuncName == "cudaFuncSetCacheConfig") {
     report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
   } else if (FuncName == "cudaOccupancyMaxPotentialBlockSize") {
@@ -3995,7 +4003,7 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
     if (FuncName == "cudaStreamCreateWithFlags" ||
         FuncName == "cudaStreamCreateWithPriority") {
       report(CE->getBeginLoc(),
-             Diagnostics::STREAM_FLAG_PRIORITY_NOT_SUPPORTED);
+             Diagnostics::QUEUE_CREATED_IGNORING_OPTIONS);
     }
   } else if (FuncName == "cudaStreamDestroy") {
     auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
@@ -4050,10 +4058,29 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaStreamBeginCapture" ||
              FuncName == "cudaStreamEndCapture" ||
              FuncName == "cudaStreamIsCapturing" ||
-             FuncName == "cudaStreamQuery" ||
-             FuncName == "cudaStreamWaitEvent") {
-    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
-    emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ""));
+             FuncName == "cudaStreamQuery") {
+    std::string Msg;
+    if (FuncName == "cudaStreamAttachMemAsync")
+      Msg = "DPC++ currently doesn't support associating USM with a specific queue.";
+    else if (FuncName == "cudaStreamQuery")
+      Msg = "DPC++ currently doesn't support query operations on queues.";
+    else
+      Msg = "DPC++ currently doesn't support capture operations on queues.";
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, FuncName, Msg);
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, "0"));
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, FuncName, Msg);
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ""));
+    }
+  } else if (FuncName == "cudaStreamWaitEvent") {
+    auto StmtStr1 = getStmtSpelling(CE->getArg(1), *Result.Context);
+    std::string ReplStr = StmtStr1 + ".wait()";
+    if (IsAssigned) {
+      ReplStr = "(" + ReplStr + ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
+    emplaceTransformation(new ReplaceStmt(CE, false, FuncName, std::move(ReplStr)));
   } else if (FuncName == "cudaStreamAddCallback") {
     auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
     auto StmtStr1 = getStmtSpelling(CE->getArg(1), *Result.Context);

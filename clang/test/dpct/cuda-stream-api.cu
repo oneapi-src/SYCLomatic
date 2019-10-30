@@ -118,7 +118,7 @@ static void func()
 
   {
     // CHECK: /*
-    // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported in the SYCL queue.
+    // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
     // CHECK-NEXT: */
     // CHECK-NEXT: s2 = new cl::sycl::queue{};
     cudaStreamCreateWithFlags(&s2, cudaStreamDefault);
@@ -127,7 +127,7 @@ static void func()
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported in the SYCL queue.
+    // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
     // CHECK-NEXT: */
     // CHECK-NEXT: checkCudaErrors((*(s3) = new cl::sycl::queue{}, 0));
     checkCudaErrors(cudaStreamCreateWithFlags(s3, cudaStreamNonBlocking));
@@ -172,7 +172,7 @@ static void func()
   {
     {
       // CHECK: /*
-      // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported in the SYCL queue.
+      // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
       // CHECK-NEXT: */
       // CHECK-NEXT: s4 = new cl::sycl::queue{};
       cudaStreamCreateWithPriority(&s4, cudaStreamDefault, 2);
@@ -181,7 +181,7 @@ static void func()
       // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
       // CHECK-NEXT: */
       // CHECK-NEXT: /*
-      // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported in the SYCL queue.
+      // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
       // CHECK-NEXT: */
       // CHECK-NEXT: checkCudaErrors((s5 = new cl::sycl::queue{}, 0));
       checkCudaErrors(cudaStreamCreateWithPriority(&s5, cudaStreamNonBlocking, 3));
@@ -226,12 +226,12 @@ static void func()
   int priority_low;
   int priority_hi;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported in the SYCL queue.
+  // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag/priority options are not supported for SYCL queues; the output parameter(s) are set to 0.
   // CHECK-NEXT: */
   // CHECK-NEXT: *(&priority_low) = 0, *(&priority_hi) = 0;
   cudaDeviceGetStreamPriorityRange(&priority_low, &priority_hi);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported in the SYCL queue.
+  // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag/priority options are not supported for SYCL queues; the output parameter(s) are set to 0.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -241,7 +241,7 @@ static void func()
 
   int priority;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported in the SYCL queue.
+  // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag/priority options are not supported for SYCL queues; the output parameter(s) are set to 0.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -261,7 +261,7 @@ static void func()
   cudaStreamAddCallback(s1, callback<char*>, str, flags);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported in the SYCL queue.
+  // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag/priority options are not supported for SYCL queues; the output parameter(s) are set to 0.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -270,9 +270,35 @@ static void func()
   checkCudaErrors(cudaStreamGetFlags(s0, &flags));
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaStreamAttachMemAsync was removed. DPC++ currently doesn't support associating USM with a specific queue.
   // CHECK-NEXT: */
   cudaStreamAttachMemAsync(s0, nullptr);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaStreamAttachMemAsync was replaced with 0. DPC++ currently doesn't support associating USM with a specific queue.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkCudaErrors(0);
+  checkCudaErrors(cudaStreamAttachMemAsync(s0, nullptr));
+
+  cudaEvent_t e;
+  // CHECK; e.wait();
+  cudaStreamWaitEvent(s0, e, 0);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaStreamQuery was removed. DPC++ currently doesn't support query operations on queues.
+  // CHECK-NEXT: */
+  cudaStreamQuery(s0);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaStreamQuery was replaced with 0. DPC++ currently doesn't support query operations on queues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkCudaErrors(0);
+  checkCudaErrors(cudaStreamQuery(s0));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkCudaErrors((e.wait(), 0));
+  checkCudaErrors(cudaStreamWaitEvent(s0, e, 0));
 
   // CHECK: s0->wait();
   cudaStreamSynchronize(s0);
