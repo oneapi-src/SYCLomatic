@@ -580,4 +580,6 @@ def compiler_language(command):
             return 'c++' if cplusplus.match(executable) else 'c'
         if executable == 'nvcc':
             return 'cuda'
+        if executable == 'intercept-stub':
+            return 'cuda'
     return None

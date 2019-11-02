@@ -29,6 +29,12 @@ install(TARGETS ear
     DESTINATION libear
     COMPONENT dpct-libear-files
 )
+
+set(INTERCEPT_STUB_TARGET intercept-stub)
+add_executable(intercept-stub
+  libear/intercept-stub.c
+  )
+
 else()
 set(EARTARGET "")
 #windows, default install the binary
@@ -79,6 +85,9 @@ foreach(LibearFile ${LibearFiles})
                      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/libear/${LibearFile})
   list(APPEND Depends ${CMAKE_BINARY_DIR}/libear/${LibearFile})
   list(APPEND OutPutLibearFile ${CMAKE_BINARY_DIR}/libear/${LibearFile})
+if(UNIX)
+  list(APPEND OutPutLibearFile ${CMAKE_BINARY_DIR}/bin/intercept-stub)
+endif()
   install(PROGRAMS libear/${LibearFile} DESTINATION libear)
 endforeach()
 
@@ -114,7 +123,7 @@ install(
   COMPONENT dpct-libear-files
   DESTINATION libear)
 
-add_custom_target(dpct-libear-files ALL DEPENDS ${OutPutLibearFile} ${EARTARGET})
+add_custom_target(dpct-libear-files ALL DEPENDS ${OutPutLibearFile} ${EARTARGET} ${INTERCEPT_STUB_TARGET})
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
   add_llvm_install_targets(install-dpct-libear-files
                            DEPENDS dpct-libear-files ${EARTARGET}

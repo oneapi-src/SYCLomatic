@@ -73,7 +73,7 @@ static char const **bear_update_environment(char *const envp[], bear_env_t *env)
 static char const **bear_update_environ(char const **in, char const *key, char const *value);
 static char **bear_get_environment();
 #if INTEL_CUSTOMIZATION
-static int bear_report_call(char const *fun, char const *const argv[]);
+static void bear_report_call(char const *fun, char const *argv[]);
 #else
 static void bear_report_call(char const *fun, char const *const argv[]);
 #endif
@@ -167,14 +167,11 @@ static void on_unload(void) {
 
 #ifdef HAVE_EXECVE
 int execve(const char *path, char *const argv[], char *const envp[]) {
-    #if INTEL_CUSTOMIZATION
-    int ret = bear_report_call(__func__, (char const *const *)argv);
-    if(ret==1) {
-      exit(0);
-    }
-    #else
+#if INTEL_CUSTOMIZATION
+    bear_report_call(__func__, (char const **)argv);
+#else
     bear_report_call(__func__, (char const *const *)argv);
-    #endif
+#endif
     return call_execve(path, argv, envp);
 }
 #endif
@@ -184,14 +181,11 @@ int execve(const char *path, char *const argv[], char *const envp[]) {
 #error can not implement execv without execve
 #endif
 int execv(const char *path, char *const argv[]) {
-    #if INTEL_CUSTOMIZATION
-    int ret = bear_report_call(__func__, (char const *const *)argv);
-    if(ret==1) {
-      exit(0);
-    }
-    #else
+#if INTEL_CUSTOMIZATION
+    bear_report_call(__func__, (char const **)argv);
+#else
     bear_report_call(__func__, (char const *const *)argv);
-    #endif
+#endif
     char * const * envp = bear_get_environment();
     return call_execve(path, argv, envp);
 }
@@ -199,56 +193,44 @@ int execv(const char *path, char *const argv[]) {
 
 #ifdef HAVE_EXECVPE
 int execvpe(const char *file, char *const argv[], char *const envp[]) {
-    #if INTEL_CUSTOMIZATION
-    int ret = bear_report_call(__func__, (char const *const *)argv);
-    if(ret==1) {
-      exit(0);
-    }
-    #else
+#if INTEL_CUSTOMIZATION
+    bear_report_call(__func__, (char const **)argv);
+#else
     bear_report_call(__func__, (char const *const *)argv);
-    #endif
+#endif
     return call_execvpe(file, argv, envp);
 }
 #endif
 
 #ifdef HAVE_EXECVP
 int execvp(const char *file, char *const argv[]) {
-    #if INTEL_CUSTOMIZATION
-    int ret=bear_report_call(__func__, (char const *const *)argv);
-    if(ret==1) {
-      exit(0);
-    }
-    #else
+#if INTEL_CUSTOMIZATION
+    bear_report_call(__func__, (char const **)argv);
+#else
     bear_report_call(__func__, (char const *const *)argv);
-    #endif
+#endif
     return call_execvp(file, argv);
 }
 #endif
 
 #ifdef HAVE_EXECVP2
 int execvP(const char *file, const char *search_path, char *const argv[]) {
-    #if INTEL_CUSTOMIZATION
-    int ret = bear_report_call(__func__, (char const *const *)argv);
-    if(ret==1) {
-      exit(0);
-    }
-    #else
+#if INTEL_CUSTOMIZATION
+    bear_report_call(__func__, (char const **)argv);
+#else
     bear_report_call(__func__, (char const *const *)argv);
-    #endif
+#endif
     return call_execvP(file, search_path, argv);
 }
 #endif
 
 #ifdef HAVE_EXECT
 int exect(const char *path, char *const argv[], char *const envp[]) {
-    #if INTEL_CUSTOMIZATION
-    int ret = bear_report_call(__func__, (char const *const *)argv);
-    if(ret==1) {
-      exit(0);
-    }
-    #else
+#if INTEL_CUSTOMIZATION
+    bear_report_call(__func__, (char const **)argv);
+#else
     bear_report_call(__func__, (char const *const *)argv);
-    #endif
+#endif
     return call_exect(path, argv, envp);
 }
 #endif
@@ -264,10 +246,7 @@ int execl(const char *path, const char *arg, ...) {
     va_end(args);
 
 #if INTEL_CUSTOMIZATION
-    int ret = bear_report_call(__func__, (char const *const *)argv);
-    if(ret==1) {
-      exit(0);
-    }
+    bear_report_call(__func__, (char const **)argv);
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -290,10 +269,7 @@ int execlp(const char *file, const char *arg, ...) {
     va_end(args);
 
 #if INTEL_CUSTOMIZATION
-    int ret = bear_report_call(__func__, (char const *const *)argv);
-    if(ret==1) {
-      exit(0);
-    }
+    bear_report_call(__func__, (char const **)argv);
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -317,10 +293,7 @@ int execle(const char *path, const char *arg, ...) {
     va_end(args);
 
 #if INTEL_CUSTOMIZATION
-    int ret = bear_report_call(__func__, (char const *const *)argv);
-    if(ret==1) {
-      exit(0);
-    }
+    bear_report_call(__func__, (char const **)argv);
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -338,10 +311,7 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path,
                 const posix_spawnattr_t *restrict attrp,
                 char *const argv[restrict], char *const envp[restrict]) {
 #if INTEL_CUSTOMIZATION
-    int ret = bear_report_call(__func__, (char const *const *)argv);
-    if(ret==1) {
-      exit(0);
-    }
+    bear_report_call(__func__, (char const **)argv);
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -355,10 +325,7 @@ int posix_spawnp(pid_t *restrict pid, const char *restrict file,
                  const posix_spawnattr_t *restrict attrp,
                  char *const argv[restrict], char *const envp[restrict]) {
 #if INTEL_CUSTOMIZATION
-    int ret = bear_report_call(__func__, (char const *const *)argv);
-    if(ret==1) {
-      exit(0);
-    }
+    bear_report_call(__func__, (char const **)argv);
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -492,12 +459,13 @@ static int call_posix_spawnp(pid_t *restrict pid, const char *restrict file,
 static int generate_file(char * filename){
     char buf[512];
     char cmd[512];
+    int ret = 0;
     memset(cmd, '\0', 512);
     memset(buf, '\0', 512);
     int len=strlen(filename);
     if(len > 500) {
         perror("bear: generate file fail.");
-        exit(EXIT_FAILURE);
+        ret = -1;
     }
     strncpy(buf, filename, len);
     buf[len]='\0';
@@ -505,24 +473,22 @@ static int generate_file(char * filename){
         if(buf[len]=='/'){
           buf[len]='\0';
           sprintf(cmd, "mkdir -p %s ", buf);
-          system(cmd);
+          ret = system(cmd);
           break;
         }
         len--;
     }
-
-
     FILE * fd = fopen(filename, "a+");
     if (0 == fd) {
         perror("bear: generate_file fopen fail.");
-        exit(EXIT_FAILURE);
+        ret = -1;
     }
     fprintf(fd, "emtpy-file");
     if (fclose(fd)) {
         perror("bear: fclose");
-        exit(EXIT_FAILURE);
+        ret = -1;
     }
-    return 0;
+    return ret;
 }
 // find xxx in "-o xxx"
 // return value:
@@ -550,8 +516,8 @@ int find_create_object(const char *str) {
         memset(ofilename, '\0', 512);
         memcpy(ofilename, p, q-p);
         ofilename[q-p]='\0';
-        generate_file(ofilename);
-        return 0;
+        int ret = generate_file(ofilename);
+        return ret;
     }
     return -1;
 }
@@ -895,11 +861,74 @@ void dump_US_field(const char *str, FILE *fd, int US, int has_parenthesis){
    return;
 }
 
+/// Find command "nvcc" in \p str, and give the position of the character behind "nvcc".
+/// e.g: str could be: "/usr/local/bin/nvcc  -Xcompiler ...",
+///                    "/usr/local/bin/nvcc/gcc  -Xcompiler ...".
+/// \returns the position of the character behind "nvcc" in str,
+///          or NULL if no command "nvcc" found in str.
+char *find_nvcc(const char *str) {
+  const char *pos = NULL;
+  const char *ret = NULL;
+
+  for (const char *ptr = str; *ptr != '\0'; ptr++) {
+    if (isspace(*ptr)) {
+      pos = ptr;
+      break;
+    }
+  }
+
+  if (pos == NULL) {
+    int len = strlen(str);
+    if (len >= 4 && str[len - 1] == 'c' && str[len - 2] == 'c' &&
+        str[len - 3] == 'v' && str[len - 4] == 'n') {
+      ret = str + len;
+    }
+  } else {
+    int len = pos - str;
+    if (len >= 4 && *(pos - 1) == 'c' && *(pos - 2) == 'c' &&
+        *(pos - 3) == 'v' && *(pos - 4) == 'n') {
+      ret = pos;
+    }
+  }
+
+  return ret;
+}
+
+/// Repalce the command "nvcc" with path to command "intercept-stub" with path.
+/// \param [in] src It could be:"/usr/local/bin/nvcc",
+///                             "/usr/local/bin/nvcc -Xcompiler ...",
+/// \param [in] pos Points to the position of the character behind "nvcc".
+/// \returns no return value.
+char * replace_binary_name(const char *src, const char *pos){
+    FILE *fp;
+    char replacement[2048];
+    fp = popen("which dpct", "r");
+    if (fp == NULL) {
+        perror("bear: failed to run command 'which dpct'\n" );
+        exit(EXIT_FAILURE);
+    }
+
+    if(fgets(replacement, sizeof(replacement), fp) == NULL) {
+        perror("bear: fgets\n" );
+        exit(EXIT_FAILURE);
+    }
+    pclose(fp);
+    strcpy(replacement + strlen(replacement) - strlen("bin/dpct") - 1, "libear/intercept-stub");
+
+    char *buffer = (char *)malloc(strlen(src) + strlen(replacement) - strlen("nvcc"));
+    char *insert_point = buffer;
+
+    memcpy(insert_point, replacement, strlen(replacement));
+    insert_point += strlen(replacement);
+    src = pos;
+    strcpy(insert_point, src);
+    return buffer;
+}
 #endif
 
 /* this method is to write log about the process creation. */
 #if INTEL_CUSTOMIZATION
-static int bear_report_call(char const *fun, char const *const argv[]) {
+static void bear_report_call(char const *fun, char const *argv[]) {
 #else
 static void bear_report_call(char const *fun, char const *const argv[]) {
 #endif
@@ -941,11 +970,13 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     fprintf(fd, "%s%c", cwd, RS);
     size_t const argc = bear_strings_length(argv);
 
-    #if INTEL_CUSTOMIZATION
+#if INTEL_CUSTOMIZATION
     int flag_command=0;
     int flag_object=0;
     int contflag=0;
-    int ret=0;
+    int ret = 0;
+    int nvcc_in_shell = 1;
+    int link_command = 0;
     char *command_cp=NULL;
     size_t it_cp=0;
     // (CPATH=;command  args), need remove () around the command
@@ -968,12 +999,35 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
             }
             tmpp++;
           }
-
+          if(it == 0) {
+              nvcc_in_shell = 0;
+          }
           fprintf(fd, "%s%c", "nvcc", US);
-        } else if((len ==2  &&  tail[0]=='l'  && tail[1] =='d') ||
-                  (len > 2 &&  tail[len-3]=='/'  && tail[len-2] =='l'
-                  && tail[len-1] =='d') ){
-          flag_command=1;
+        } else if((len ==2 && tail[0]=='l' && tail[1] =='d') ||
+                  (len > 2 && tail[len-3]=='/' && tail[len-2] =='l' && tail[len-1] =='d')) {
+            flag_command=1;
+            for(size_t i=it; i< argc; i++){
+                if(strcmp(argv[i], "-o") == 0){
+                    char ofilename[512];
+                    int olen=strlen(argv[i+1]);
+                    memset(ofilename,'\0',512);
+                    if(olen >= 512) {
+                        perror("bear: filename length too long.");
+                        pthread_mutex_unlock(&mutex);
+                        exit(EXIT_FAILURE);
+                    }
+                    strncpy(ofilename,argv[i+1], olen);
+                    if(generate_file(ofilename) != 0) {
+                        pthread_mutex_unlock(&mutex);
+                        exit(EXIT_FAILURE);
+                    }
+                    if(strstr(argv[i+1], ".o")==NULL) {
+                        // For linker command to generate executable binary, fake the
+                        // generated file and  will be terminated with exit(0).
+                        link_command = 1;
+                     }
+                }
+            }
         }
         if(contflag==1){
           char ofilename[512];
@@ -985,7 +1039,10 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
             exit(EXIT_FAILURE);
           }
           strncpy(ofilename,argv[it], olen);
-          generate_file(ofilename);
+          if(generate_file(ofilename) != 0) {
+            pthread_mutex_unlock(&mutex);
+            exit(EXIT_FAILURE);
+          }
           contflag=0;
           flag_object=1;
         }
@@ -1009,11 +1066,11 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
            dump_US_field(argv[it], fd, US, has_parenthesis);
         }
     }
-    #else
+#else
     for (size_t it = 0; it < argc; ++it) {
         fprintf(fd, "%s%c", argv[it], US);
     }
-    #endif
+#endif
 
     fprintf(fd, "%c", GS);
     if (fclose(fd)) {
@@ -1023,10 +1080,10 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     }
     free((void *)cwd);
     pthread_mutex_unlock(&mutex);
-    #if INTEL_CUSTOMIZATION
+#if INTEL_CUSTOMIZATION
     if(flag_command == 1 && flag_object == 1){
       ret=1;
-    } else if(flag_command == 1) {
+    } else  if(flag_command == 1) {
         // object is not give by -o. Need figure out the default output for cmd "gcc -c xx.c"
         char *tmp=malloc(4096);
         if(tmp==NULL) {
@@ -1069,13 +1126,26 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
                 ofilename[olen+1] = 'o';
                 ofilename[olen+2] = '\0';
             }
-            generate_file(ofilename);
-            ret=1;
+          if(generate_file(ofilename) != 0) {
+            exit(EXIT_FAILURE);
+          }
         }
         free(tmp);
     }
-    return ret;
-    #endif
+
+    for (size_t it = 0; it < argc; ++it) {
+       if(strstr(argv[it], "nvcc")!=NULL && it < 3 /*eg: /bin/sh -c /path_to/nvcc ...*/){
+            char *pos = find_nvcc(argv[it]);
+            if(pos != NULL)
+            {
+                argv[it] = replace_binary_name(argv[it], pos);
+            }
+        }
+    }
+    if(ret == 1 && nvcc_in_shell ==0 || link_command == 1){
+        exit(0);
+    }
+#endif
 }
 
 /* update environment assure that chilren processes will copy the desired
