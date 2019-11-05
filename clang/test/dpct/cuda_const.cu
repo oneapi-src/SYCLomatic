@@ -13,7 +13,7 @@ __constant__ double2 vec_d;
 
 // CHECK:void simple_kernel(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::dpct_accessor<float, dpct::constant, 1> const_angle) {
 // CHECK-NEXT:  int index;
-// CHECK-NEXT:  index = [[ITEM]].get_group(0) * [[ITEM]].get_local_range().get(0) + [[ITEM]].get_local_id(0);
+// CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range().get(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  if (index < 360) {
 // CHECK-NEXT:    d_array[index] = const_angle[index];
 // CHECK-NEXT:  }
@@ -33,7 +33,7 @@ __constant__ float const_one;
 
 // CHECK:void simple_kernel_one(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::dpct_accessor<float, dpct::constant, 2> const_float, dpct::dpct_accessor<float, dpct::constant, 0> const_one) {
 // CHECK-NEXT:  int index;
-// CHECK-NEXT:  index = [[ITEM]].get_group(0) * [[ITEM]].get_local_range().get(0) + [[ITEM]].get_local_id(0);
+// CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range().get(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  if (index < 33) {
 // CHECK-NEXT:    d_array[index] = (float)const_one + const_float[index][index];
 // CHECK-NEXT:  }
@@ -99,8 +99,10 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto const_angle_acc_ct1 = const_angle.get_access(cgh);
   // CHECK-NEXT:       auto d_array_acc_ct0 = d_array_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(size / 64, 1, 1) * cl::sycl::range<3>(64, 1, 1);
+  // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(64, 1, 1);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(size / 64, 1, 1) * cl::sycl::range<3>(64, 1, 1)), cl::sycl::range<3>(64, 1, 1)),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           float *d_array_ct0 = (float *)(&d_array_acc_ct0[0] + d_array_offset_ct0);
   // CHECK-NEXT:           simple_kernel(d_array_ct0, item_ct1, dpct::dpct_accessor<float, dpct::constant, 1>(const_angle_acc_ct1));
@@ -133,8 +135,10 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:       auto const_float_acc_ct1 = const_float.get_access(cgh);
   // CHECK-NEXT:       auto const_one_acc_ct1 = const_one.get_access(cgh);
   // CHECK-NEXT:       auto d_array_acc_ct0 = d_array_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(size / 64, 1, 1) * cl::sycl::range<3>(64, 1, 1);
+  // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(64, 1, 1);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class simple_kernel_one_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(size / 64, 1, 1) * cl::sycl::range<3>(64, 1, 1)), cl::sycl::range<3>(64, 1, 1)),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           float *d_array_ct0 = (float *)(&d_array_acc_ct0[0] + d_array_offset_ct0);
   // CHECK-NEXT:           simple_kernel_one(d_array_ct0, item_ct1, dpct::dpct_accessor<float, dpct::constant, 2>(const_float_acc_ct1), dpct::dpct_accessor<float, dpct::constant, 0>(const_one_acc_ct1));

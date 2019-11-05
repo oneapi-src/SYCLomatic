@@ -173,9 +173,14 @@ llvm::Error CommonOptionsParser::init(
   // Stop initializing if command-line option parsing failed.
   if (!cl::ParseCommandLineOptions(argc, argv, Overview, &OS)) {
     OS.flush();
+#ifdef INTEL_CUSTOMIZATION
+    return llvm::make_error<llvm::StringError>(ErrorMessage,
+                                               llvm::inconvertibleErrorCode());
+#else
     return llvm::make_error<llvm::StringError>("[CommonOptionsParser]: " +
                                                    ErrorMessage,
                                                llvm::inconvertibleErrorCode());
+#endif
   }
 
   cl::PrintOptionValues();

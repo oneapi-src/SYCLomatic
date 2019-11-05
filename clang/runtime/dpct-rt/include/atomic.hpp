@@ -55,16 +55,16 @@ inline float atomic_fetch_add(
   cl::sycl::atomic<int, addressSpace> obj(
       (cl::sycl::multi_ptr<int, addressSpace>(reinterpret_cast<int *>(addr))));
 
-  const int old_value = obj.load(memoryOrder);
-  const float old_float_value = *reinterpret_cast<const float *>(&old_value);
-  const float new_float_value = old_float_value + operand;
-  const int new_value = *reinterpret_cast<const int *>(&new_float_value);
+  int old_value = obj.load(memoryOrder);
 
-  while (true) {
-    int expected = old_value;
-    if (obj.compare_exchange_strong(expected, new_value, memoryOrder))
+  float old_float_value;
+  do {
+    old_float_value = *reinterpret_cast<const float *>(&old_value);
+    const float new_float_value = old_float_value + operand;
+    const int new_value = *reinterpret_cast<const int *>(&new_float_value);
+    if (obj.compare_exchange_strong(old_value, new_value, memoryOrder))
       break;
-  }
+  } while (true);
 
   return old_float_value;
 }
@@ -87,17 +87,18 @@ inline double atomic_fetch_add(
       (cl::sycl::multi_ptr<unsigned long long int, addressSpace>(
           reinterpret_cast<unsigned long long int *>(addr))));
 
-  const unsigned long long int old_value = obj.load(memoryOrder);
-  const double old_double_value = *reinterpret_cast<const double *>(&old_value);
-  const double new_double_value = old_double_value + operand;
-  const unsigned long long int new_value =
+  unsigned long long int old_value = obj.load(memoryOrder);
+
+  double old_double_value;
+  do {
+    old_double_value = *reinterpret_cast<const double *>(&old_value);
+    const double new_double_value = old_double_value + operand;
+    const unsigned long long int new_value =
       *reinterpret_cast<const unsigned long long int *>(&new_double_value);
 
-  while (true) {
-    unsigned long long int expected = old_value;
-    if (obj.compare_exchange_strong(expected, new_value, memoryOrder))
+    if (obj.compare_exchange_strong(old_value, new_value, memoryOrder))
       break;
-  }
+  } while (true);
 
   return old_double_value;
 }

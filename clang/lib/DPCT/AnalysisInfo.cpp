@@ -253,6 +253,9 @@ std::string KernelCallExpr::getReplacement() {
         for (auto &AccStmt : Accessors)
           Block.pushStmt(AccStmt);
 
+		Block.pushStmt("auto dpct_global_range = ", ExecutionConfig.NDSize,
+                       " * ", ExecutionConfig.WGSize, ";");
+        Block.pushStmt("auto dpct_local_range = ", ExecutionConfig.WGSize, ";");
         Block.pushStmt(
             "cgh.parallel_for<dpct_kernel_name<class ", getName(), "_",
             LocInfo.LocHash,
@@ -260,9 +263,11 @@ std::string KernelCallExpr::getReplacement() {
             ">>(");
         {
           FMT_STMT_BLOCK
-          Block.pushStmt("cl::sycl::nd_range<3>((", ExecutionConfig.NDSize,
-                         " * ", ExecutionConfig.WGSize, "), ",
-                         ExecutionConfig.WGSize, "),");
+          Block.pushStmt(
+              "cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get("
+              "2), dpct_global_range.get(1), dpct_global_range.get(0)), "
+              "cl::sycl::range<3>(dpct_local_range.get(2), "
+              "dpct_local_range.get(1), dpct_local_range.get(0))),");
           Block.pushStmt("[=](cl::sycl::nd_item<3> ",
                          DpctGlobalInfo::getItemName(), ") {");
           {

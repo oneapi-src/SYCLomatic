@@ -10,7 +10,7 @@
 __device__ float out[NUM_ELEMENTS];
 
 // CHECK: void kernel1(cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::dpct_accessor<float, dpct::device, 1> out) {
-// CHECK:   out[{{.*}}[[ITEM]].get_local_id(0)] = [[ITEM]].get_local_id(0);
+// CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] = [[ITEM]].get_local_id(2);
 // CHECK: }
 __global__ void kernel1() {
   out[threadIdx.x] = threadIdx.x;
@@ -33,8 +33,10 @@ int main() {
   // CHECK:   dpct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
   // CHECK:       auto out_acc_ct1 = out.get_access(cgh);
+  // CHECK:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1);
+  // CHECK:       auto dpct_local_range = cl::sycl::range<3>(threads_per_block, 1, 1);
   // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK:           kernel1([[ITEM]], dpct::dpct_accessor<float, dpct::device, 1>(out_acc_ct1));
   // CHECK:         });
@@ -45,8 +47,10 @@ int main() {
   // CHECK: {
   // CHECK:   dpct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
+  // CHECK:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1);
+  // CHECK:       auto dpct_local_range = cl::sycl::range<3>(1, 1, 1);
   // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
-  // CHECK:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1)), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK:           kernel2();
   // CHECK:         });

@@ -33,8 +33,10 @@ void foo() {
 
   // CHECK: *((void **)&d_A) = cl::sycl::malloc_device(sizeof(cl::sycl::double2) + size, dpct::get_device_manager().current_device(), dpct::get_default_queue().get_context());
   // CHECK-NEXT: *((void **)&d_A) = cl::sycl::malloc_device(sizeof(cl::sycl::uchar4) + size, dpct::get_device_manager().current_device(), dpct::get_default_queue().get_context());
+  // CHECK-NEXT: *((void **)&d_A) = cl::sycl::malloc_device(sizeof(d_A[0]), dpct::get_device_manager().current_device(), dpct::get_default_queue().get_context());
   cudaMalloc((void **)&d_A, sizeof(double2) + size);
   cudaMalloc((void **)&d_A, sizeof(uchar4) + size);
+  cudaMalloc((void **)&d_A, sizeof(d_A[0]));
 
   // CHECK: *((void **)&h_A) = cl::sycl::malloc_host(size, dpct::get_default_queue().get_context());
   cudaHostAlloc((void **)&h_A, size, cudaHostAllocDefault);

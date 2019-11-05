@@ -552,6 +552,8 @@ inline void dpct_create_image(dpct_image_base **image_p, dpct_image_data *data,
     dims = data->data.matrix->get_dims();
   } else if (data->type == dpct::data_linear) {
     channel = data->data.linear.chn;
+  } else {
+    assert(data->type != dpct::data_unsupport);
   }
 
   if (auto image = dpct_create_image(channel, dims)) {

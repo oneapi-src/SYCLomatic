@@ -53,6 +53,9 @@ enum ProcessStatus {
   MigrationErrorCannotParseDatabase = -20,
   MigrationErrorNoExplicitInRoot = -21,
   MigrationSKIPForMissingCompileCommand = -22,
+  MigrationErrorSpecialCharacter = -23,
+  MigrationErrorNameTooLong = -24,
+  MigrationErrorPrefixTooLong = -25,
 };
 
 /// OutputVerbosityLev defines various verbosity levels for dpct reports

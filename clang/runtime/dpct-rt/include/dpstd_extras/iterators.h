@@ -19,7 +19,7 @@
 
 #include <dpstd/iterators.h>
 
-#include <dpct/dpstd_extras/functional.h>
+#include "functional.h"
 
 #include <dpstd/pstl/utils.h>
 

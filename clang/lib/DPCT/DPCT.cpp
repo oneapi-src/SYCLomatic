@@ -39,9 +39,9 @@
 #include <algorithm>
 #include <cstring>
 #include <fstream>
-#include <vector>
 #include <map>
 #include <unordered_map>
+#include <vector>
 
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Basic/LangOptions.h"
@@ -63,8 +63,10 @@ extern llvm::cl::OptionCategory DPCTCat;
 void initWarningIDs();
 #if defined(_WIN32)
 #define MAX_PATH_LEN _MAX_PATH
+#define MAX_NAME_LEN _MAX_FNAME
 #else
 #define MAX_PATH_LEN PATH_MAX
+#define MAX_NAME_LEN NAME_MAX
 #endif
 } // namespace dpct
 } // namespace clang
@@ -262,7 +264,7 @@ static opt<bool, true>
     ProcessAll("process-all",
                  llvm::cl::desc("Migrates/copies all files from the --in-root directory"
                                 " to the --out-root directory.\n"
-                                "The default is: off."),
+                                "--in-root option should be explicitly specified. Default: off."),
                  cat(DPCTCat), llvm::cl::location(ProcessAllFlag));
 // clang-format on
 
@@ -270,7 +272,6 @@ static opt<bool, true>
 std::string CudaPath;
 std::string DpctInstallPath;
 std::unordered_map<std::string, bool> ChildOrSameCache;
-
 
 class DPCTConsumer : public ASTConsumer {
 public:
@@ -338,9 +339,9 @@ public:
     for (const auto &I : TransformSet) {
       auto Repl = I->getReplacement(Context);
       Global.addReplacement(Repl);
-
-      // TODO: Need to print debug info here
     }
+
+    DebugInfo::printReplacements(TransformSet, Context);
   }
 
   void Initialize(ASTContext &Context) override {
@@ -408,7 +409,8 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   // Output parameters to indicate errors in parsing. Not checked here,
   // OptParser will handle errors.
   unsigned MissingArgIndex, MissingArgCount;
-  auto &Opts = driver::getDriverOptTable();
+  MissingArgIndex = MissingArgCount = 0;
+  std::unique_ptr<llvm::opt::OptTable> Opts = driver::createDriverOptTable();
   llvm::opt::InputArgList ParsedArgs =
       Opts.ParseArgs(Argv, MissingArgIndex, MissingArgCount);
 
@@ -736,6 +738,11 @@ int run(int argc, const char **argv) {
             }
           });
     }
+    // Filter and output error messages emitted by clang
+    auto E =
+        handleErrors(OptParser.takeError(), [](const llvm::StringError &E) {
+          DpctLog() << E.getMessage();
+        });
     dpct::DebugInfo::ShowStatus(MigrationOptionParsingError);
     exit(MigrationOptionParsingError);
   }
@@ -755,6 +762,28 @@ int run(int argc, const char **argv) {
               << "' is too long\n";
     DebugInfo::ShowStatus(MigrationErrorPathTooLong);
     exit(MigrationErrorPathTooLong);
+  }
+  if (OutputFile.size() >= MAX_PATH_LEN - 1) {
+    DpctLog() << "Error: --output-file '" << OutputFile << "' is too long\n";
+    DebugInfo::ShowStatus(MigrationErrorPathTooLong);
+    exit(MigrationErrorPathTooLong);
+  }
+  // Report file prefix is limited to 128, so that <report-type> and
+  // <report-format> can be extended later
+  if (ReportFilePrefix.size() >= 128) {
+    DpctLog() << "Error: --report-file-prefix '" << ReportFilePrefix
+              << "' is too long\n";
+    DebugInfo::ShowStatus(MigrationErrorPrefixTooLong);
+    exit(MigrationErrorPrefixTooLong);
+  }
+  auto P = std::find_if_not(
+      ReportFilePrefix.begin(), ReportFilePrefix.end(),
+      [](char C) { return ::isalpha(C) || ::isdigit(C) || C == '_'; });
+  if (P != ReportFilePrefix.end()) {
+    DpctLog() << "Error: --report-file-prefix contains special character '"
+              << *P << "' \n";
+    DebugInfo::ShowStatus(MigrationErrorSpecialCharacter);
+    exit(MigrationErrorSpecialCharacter);
   }
   clock_t StartTime = clock();
   if (InRoot.empty() && ProcessAllFlag) {
@@ -819,8 +848,7 @@ int run(int argc, const char **argv) {
 
   // TODO: implement one of this for each source language.
   CudaPath = getCudaInstallPath(OriginalArgc, argv);
-  DPCT_DEBUG_WITH_TYPE("CudaPath",
-                       DpctLog() << "Cuda Path found: " << CudaPath << "\n");
+  DpctDiags() << "Cuda Include Path found: " << CudaPath << "\n";
 
   RefactoringTool Tool(OptParser->getCompilations(),
                        OptParser->getSourcePathList());

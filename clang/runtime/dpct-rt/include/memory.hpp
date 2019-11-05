@@ -33,7 +33,7 @@
 #elif defined(_WIN64)
 #include <windows.h>
 #else
-#warning "Only support Windows and Linux."
+#error "Only support Windows and Linux."
 #endif
 
 namespace dpct {
@@ -58,6 +58,24 @@ typedef uint8_t byte_t;
 typedef cl::sycl::buffer<byte_t> buffer_t;
 
 class memory_manager {
+  memory_manager() {
+    // Reserved address space, no real memory allocation happens here.
+#if defined(__linux__)
+        mapped_address_space =
+            (byte_t *)mmap(nullptr, mapped_region_size, PROT_NONE,
+                           MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+#elif defined(_WIN64)
+        mapped_address_space = (byte_t *)VirtualAlloc(
+            NULL,               // NULL specified as the base address parameter
+            mapped_region_size, // Size of allocation
+            MEM_RESERVE,        // Allocate reserved pages
+            PAGE_NOACCESS);     // Protection = no access
+#else
+#error "Only support Windows and Linux."
+#endif
+        next_free = mapped_address_space;
+      };
+
 public:
   using buffer_id_t = int;
 
@@ -67,38 +85,23 @@ public:
     size_t size;
   };
 
-  memory_manager() {
-// Reserved address space, no real memory allocation happens here.
-#if defined(__linux__)
-    mapped_address_space =
-        (byte_t *)mmap(nullptr, mapped_region_size, PROT_NONE,
-                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-#elif defined(_WIN64)
-    mapped_address_space = (byte_t *)VirtualAlloc(
-        NULL,               // NULL specified as the base address parameter
-        mapped_region_size, // Size of allocation
-        MEM_RESERVE,        // Allocate reserved pages
-        PAGE_NOACCESS);     // Protection = no access
-#else
-#warning "Only support Windows and Linux."
-#endif
-    next_free = mapped_address_space;
-  };
-
   ~memory_manager() {
 #if defined(__linux__)
     munmap(mapped_address_space, mapped_region_size);
 #elif defined(_WIN64)
     VirtualFree(mapped_address_space, 0, MEM_RELEASE);
 #else
-#warning "Only support Windows and Linux."
+#error "Only support Windows and Linux."
 #endif
   };
 
   memory_manager(const memory_manager &) = delete;
+  memory_manager& operator=(const memory_manager &) = delete;
+  memory_manager(memory_manager &&) = delete;
+  memory_manager& operator=(memory_manager &&) = delete;
 
   // Allocate
-  void *mem_alloc(size_t size, cl::sycl::queue &queue) {
+  void *mem_alloc(size_t size) {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (next_free + size > mapped_address_space + mapped_region_size) {
       std::abort();
@@ -146,7 +149,6 @@ public:
   }
 
 private:
-  std::unordered_map<buffer_id_t, allocation> m_map_old;
   std::map<byte_t *, allocation> m_map;
   mutable std::mutex m_mutex;
   byte_t *mapped_address_space;
@@ -177,7 +179,7 @@ private:
 // malloc
 static inline void dpct_malloc(void **ptr, size_t size, cl::sycl::queue &q) {
 #ifdef DPCT_USM_LEVEL_NONE
-  *ptr = memory_manager::get_instance().mem_alloc(size * sizeof(byte_t), q);
+  *ptr = memory_manager::get_instance().mem_alloc(size * sizeof(byte_t));
 #else
   *ptr = cl::sycl::malloc_device(size, q.get_device(), q.get_context());
 #endif // DPCT_USM_LEVEL_NONE
@@ -410,6 +412,7 @@ public:
     return (*data) / (*rhs.data);
   }
   T operator-() { return -(*data); }
+  T *operator->() { return data; }
 
 private:
   pointer_t data;

@@ -5,31 +5,31 @@
 // CHECK: void test_00(cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__
 void test_00() {
-  // CHECK: size_t tix = [[ITEMNAME]].get_local_id(0);
+  // CHECK: size_t tix = [[ITEMNAME]].get_local_id(2);
   // CHECK: size_t tiy = [[ITEMNAME]].get_local_id(1);
-  // CHECK: size_t tiz = [[ITEMNAME]].get_local_id(2);
+  // CHECK: size_t tiz = [[ITEMNAME]].get_local_id(0);
   size_t tix = threadIdx.x;
   size_t tiy = threadIdx.y;
   size_t tiz = threadIdx.z;
 
-  // CHECK: size_t bix = [[ITEMNAME]].get_group(0);
+  // CHECK: size_t bix = [[ITEMNAME]].get_group(2);
   // CHECK: size_t biy = [[ITEMNAME]].get_group(1);
-  // CHECK: size_t biz = [[ITEMNAME]].get_group(2);
+  // CHECK: size_t biz = [[ITEMNAME]].get_group(0);
 
   size_t bix = blockIdx.x;
   size_t biy = blockIdx.y;
   size_t biz = blockIdx.z;
 
-  // CHECK: size_t bdx = [[ITEMNAME]].get_local_range().get(0);
+  // CHECK: size_t bdx = [[ITEMNAME]].get_local_range().get(2);
   // CHECK: size_t bdy = [[ITEMNAME]].get_local_range().get(1);
-  // CHECK: size_t bdz = [[ITEMNAME]].get_local_range().get(2);
+  // CHECK: size_t bdz = [[ITEMNAME]].get_local_range().get(0);
   size_t bdx = blockDim.x;
   size_t bdy = blockDim.y;
   size_t bdz = blockDim.z;
 
-  // CHECK: size_t gdx = [[ITEMNAME]].get_group_range(0);
+  // CHECK: size_t gdx = [[ITEMNAME]].get_group_range(2);
   // CHECK: size_t gdy = [[ITEMNAME]].get_group_range(1);
-  // CHECK: size_t gdz = [[ITEMNAME]].get_group_range(2);
+  // CHECK: size_t gdz = [[ITEMNAME]].get_group_range(0);
 
   size_t gdx = gridDim.x;
   size_t gdy = gridDim.y;

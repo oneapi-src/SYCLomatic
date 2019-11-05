@@ -116,6 +116,9 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   //    }
   // };
   auto TKind = MacroNameTok.getKind();
+  if (!MacroNameTok.getIdentifierInfo()) {
+    return;
+  }
   auto Name = MacroNameTok.getIdentifierInfo()->getName();
   if (TKind == tok::identifier &&
       (Name == "__host__" || Name == "__device__" || Name == "__global__")) {
@@ -450,11 +453,11 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
   unsigned Dimension;
 
   if (FieldName == "__fetch_builtin_x")
-    Dimension = 0;
+    Dimension = 2;
   else if (FieldName == "__fetch_builtin_y")
     Dimension = 1;
   else if (FieldName == "__fetch_builtin_z")
-    Dimension = 2;
+    Dimension = 0;
   else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected field name: " << FieldName;
@@ -4240,6 +4243,11 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
       if (auto Impl = getAssistNodeAsType<ImplicitCastExpr>(Result, "impl"))
         insertExplicitCast(Impl, VD->getType());
     }
+    auto Parents = Result.Context->getParents(*MemVarRef);
+    if (!Parents.empty()) {
+      replaceMemberOperator<MemberExpr>(Parents[0]);
+      replaceMemberOperator<CXXDependentScopeMemberExpr>(Parents[0]);
+    }
   }
 }
 
@@ -4255,6 +4263,7 @@ void MemoryMigrationRule::mallocMigration(
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
   if (Name == "cudaMalloc") {
+    DpctGlobalInfo::getInstance().insertCudaMalloc(C);
     if (USMLevel == restricted) {
       std::ostringstream Repl;
       ExprAnalysis EA;
@@ -4272,7 +4281,6 @@ void MemoryMigrationRule::mallocMigration(
               ", dpct::get_default_queue().get_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
-      DpctGlobalInfo::getInstance().insertCudaMalloc(C);
       emplaceTransformation(
           new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
     }

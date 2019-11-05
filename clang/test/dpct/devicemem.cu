@@ -13,7 +13,7 @@ __device__ float in[NUM_ELEMENTS];
 __device__ int init[4] = {1, 2, 3, 4};
 
 // CHECK: void kernel1(float *out, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::dpct_accessor<float, dpct::device, 1> in) {
-// CHECK:   out[{{.*}}[[ITEM]].get_local_id(0)] = in[{{.*}}[[ITEM]].get_local_id(0)];
+// CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] = in[{{.*}}[[ITEM]].get_local_id(2)];
 // CHECK: }
 __global__ void kernel1(float *out) {
   out[threadIdx.x] = in[threadIdx.x];
@@ -30,8 +30,8 @@ const int num_elements = 16;
 __device__ float fx[2], fy[num_elements][4 * num_elements];
 
 // CHECK: void kernel2(float *out, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::dpct_accessor<int, dpct::device, 0> al, dpct::dpct_accessor<float, dpct::device, 1> fx, dpct::dpct_accessor<float, dpct::device, 2> fy, dpct::dpct_accessor<float, dpct::device, 1> tmp) {
-// CHECK:   out[{{.*}}[[ITEM]].get_local_id(0)] += (int)al;
-// CHECK:   fx[{{.*}}[[ITEM]].get_local_id(0)] = fy[{{.*}}[[ITEM]].get_local_id(0)][{{.*}}[[ITEM]].get_local_id(0)];
+// CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] += (int)al;
+// CHECK:   fx[{{.*}}[[ITEM]].get_local_id(2)] = fy[{{.*}}[[ITEM]].get_local_id(2)][{{.*}}[[ITEM]].get_local_id(2)];
 // CHECK: }
 __global__ void kernel2(float *out) {
   const int size = 64;
@@ -68,8 +68,10 @@ int main() {
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto in_acc_ct1 = in.get_access(cgh);
   // CHECK-NEXT:       auto d_out_acc_ct0 = d_out_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1);
+  // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(threads_per_block, 1, 1);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           float *d_out_ct0 = (float *)(&d_out_acc_ct0[0] + d_out_offset_ct0);
   // CHECK-NEXT:           kernel1(d_out_ct0, item_ct1, dpct::dpct_accessor<float, dpct::device, 1>(in_acc_ct1));
@@ -89,8 +91,10 @@ int main() {
   // CHECK-NEXT:       auto fx_acc_ct1 = fx.get_access(cgh);
   // CHECK-NEXT:       auto fy_acc_ct1 = fy.get_access(cgh);
   // CHECK-NEXT:       auto d_out_acc_ct0 = d_out_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1);
+  // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(threads_per_block, 1, 1);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>((cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1)), cl::sycl::range<3>(threads_per_block, 1, 1)),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           float *d_out_ct0 = (float *)(&d_out_acc_ct0[0] + d_out_offset_ct0);
   // CHECK-NEXT:           kernel2(d_out_ct0, item_ct1, dpct::dpct_accessor<int, dpct::device, 0>(al_acc_ct1), dpct::dpct_accessor<float, dpct::device, 1>(fx_acc_ct1), dpct::dpct_accessor<float, dpct::device, 2>(fy_acc_ct1), dpct::dpct_accessor<float, dpct::device, 1>(tmp_acc_ct1));

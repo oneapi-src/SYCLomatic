@@ -30,37 +30,7 @@ class ASTTraversal;
 #undef DPCT_DEBUG_BUILD
 #else
 #undef DPCT_DEBUG_BUILD
-#define DPCT_DEBUG_BUILD true
-#endif
-
-#ifdef DPCT_DEBUG_BUILD
-// Stat of debug build
-
-#define DPCT_DEBUG_WITH_TYPE(TYPE, X)                                        \
-  DebugTypeRegister(TYPE);                                                     \
-  DEBUG_WITH_TYPE(TYPE, X)
-
-// General debug information with TYPE = "dpct"
-#define DPCT_DEBUG(X) DPCT_DEBUG_WITH_TYPE("dpct", X)
-
-class DebugTypeRegister {
-public:
-  DebugTypeRegister(const std::string &type);
-};
-
-// End of debug Build
-#else
-// Start of release build
-
-#define DPCT_DEBUG_WITH_TYPE(TYPE, X)                                        \
-  do {                                                                         \
-  } while (false)
-
-#define DPCT_DEBUG(X)                                                        \
-  do {                                                                         \
-  } while (false)
-
-// End of release build
+#define DPCT_DEBUG_BUILD 1
 #endif
 
 class DebugInfo {
@@ -70,8 +40,7 @@ public:
   printMigrationRules(const std::vector<std::unique_ptr<ASTTraversal>> &TRs);
   static void printMatchedRules(
       const std::vector<std::unique_ptr<ASTTraversal>> &MatchedRules);
-  static void printReplacements(ReplacementFilter &ReplFilter,
-                                clang::ASTContext &Context);
+  static void printReplacements(const TransformSetTy &TS, ASTContext &Context);
 };
 
 llvm::raw_ostream &DpctLog();

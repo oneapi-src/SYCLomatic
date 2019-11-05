@@ -37,7 +37,8 @@ void copy_back(int *ptr, const std::vector<int64_t> &vec) {
       cl::sycl::range<1>(allocation_ptr.size / sizeof(int)));
   auto acc_ptr_write =
       buffer_ptr.template get_access<cl::sycl::access::mode::write>();
-  for (int i = 0; i < vec.size(); ++i) {
+  int vec_size = vec.size();
+  for (int i = 0; i < vec_size; ++i) {
     acc_ptr_write[i] = static_cast<int>(vec[i]);
   }
 }

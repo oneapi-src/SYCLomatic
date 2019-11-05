@@ -151,9 +151,9 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
 
 void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   static const std::map<std::string, std::string> MemberMap{
-      {"__fetch_builtin_x", "0"},
+      {"__fetch_builtin_x", "2"},
       {"__fetch_builtin_y", "1"},
-      {"__fetch_builtin_z", "2"}};
+      {"__fetch_builtin_z", "0"}};
   CtTypeInfo Ty(ME->getBase()->getType());
   if (Ty.getBaseName() == "cl::sycl::range<3>") {
     addReplacement(
@@ -205,8 +205,13 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
 }
 
 void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
-  if (UETT->getKind() == UnaryExprOrTypeTrait::UETT_SizeOf)
-    analyzeType(UETT->getArgumentTypeInfo());
+  if (UETT->getKind() == UnaryExprOrTypeTrait::UETT_SizeOf) {
+    if (UETT->isArgumentType()) {
+      analyzeType(UETT->getArgumentTypeInfo());
+    } else {
+      analyzeExpr(UETT->getArgumentExpr());
+    }
+  }
 }
 
 void ExprAnalysis::analyzeExpr(const CStyleCastExpr *Cast) {
