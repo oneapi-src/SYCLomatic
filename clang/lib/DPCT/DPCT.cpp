@@ -410,7 +410,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   // OptParser will handle errors.
   unsigned MissingArgIndex, MissingArgCount;
   MissingArgIndex = MissingArgCount = 0;
-  std::unique_ptr<llvm::opt::OptTable> Opts = driver::createDriverOptTable();
+  auto &Opts = driver::getDriverOptTable();
   llvm::opt::InputArgList ParsedArgs =
       Opts.ParseArgs(Argv, MissingArgIndex, MissingArgCount);
 
