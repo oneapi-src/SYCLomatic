@@ -21,7 +21,6 @@
 
 
 #define __PSTL_BACKEND_SYCL 1
-#define __USE_SYCL 1
 #define __USE_DPCT 1
 
 #include <dpstd/execution>
