@@ -87,6 +87,12 @@ int main(int argc, char **argv) {
   // CHECK: size_t memsize = deviceProp.get_global_mem_size();
   size_t memsize = deviceProp.totalGlobalMem;
 
+  // CHECK: int i=true;
+  int i=deviceProp.deviceOverlap;
+  // CHECK: if(true){
+  if(deviceProp.deviceOverlap){
+  //dosomething.
+  }
   return 0;
 }
 

@@ -2085,6 +2085,9 @@ void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
     report(ME->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE);
   } else if (MemberName == "maxGridSize") {
     report(ME->getBeginLoc(), Diagnostics::MAX_GRID_SIZE);
+  } else if(MemberName == "deviceOverlap") {
+    emplaceTransformation(new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "true"));
+    return ;
   }
 
   auto Search = PropNamesMap.find(MemberName);
