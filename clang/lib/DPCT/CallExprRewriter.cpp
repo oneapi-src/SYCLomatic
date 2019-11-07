@@ -418,7 +418,8 @@ Optional<std::string> WarpFunctionRewriter::rewrite() {
 
 Optional<std::string> ReorderFunctionRewriter::rewrite() {
   for (auto ArgIdx : RewriterArgsIdx) {
-    appendRewriteArg(getMigratedArg(ArgIdx));
+    if (ArgIdx < Call->getNumArgs())
+      appendRewriteArg(getMigratedArg(ArgIdx));
   }
   return buildRewriteString();
 }

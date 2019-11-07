@@ -26,6 +26,12 @@
 
 namespace dpct {
 
+enum dpct_channel_data_kind {
+  channel_signed,
+  channel_unsigned,
+  channel_float,
+};
+
 /// Image object type traits, with accessor type and sampled data type defined.
 /// The data type of an image accessor must be one of cl_int4, cl_uint4,
 /// cl_float4 and cl_half4. The data type of accessors with 8bits/16bits channel
@@ -37,23 +43,33 @@ template <class T> struct image_trait {
       cl::sycl::accessor<acc_data_t, Dimension, cl::sycl::access::mode::read,
                          cl::sycl::access::target::image>;
   using data_t = T;
+  using elem_t = T;
+  static constexpr dpct_channel_data_kind channel_kind =
+      std::is_integral<T>::value
+          ? (std::is_signed<T>::value ? channel_signed : channel_unsigned)
+          : channel_float;
+  static constexpr int channel_nums = 1;
 };
 template <>
 struct image_trait<cl::sycl::cl_uchar> : public image_trait<cl::sycl::cl_uint> {
   using data_t = cl::sycl::cl_uchar;
+  using elem_t = data_t;
 };
 template <>
 struct image_trait<cl::sycl::cl_ushort>
     : public image_trait<cl::sycl::cl_uint> {
   using data_t = cl::sycl::cl_ushort;
+  using elem_t = data_t;
 };
 template <>
 struct image_trait<cl::sycl::cl_char> : public image_trait<cl::sycl::cl_int> {
   using data_t = cl::sycl::cl_char;
+  using elem_t = data_t;
 };
 template <>
 struct image_trait<cl::sycl::cl_short> : public image_trait<cl::sycl::cl_int> {
   using data_t = cl::sycl::cl_short;
+  using elem_t = data_t;
 };
 
 template <class T>
@@ -62,15 +78,19 @@ struct image_trait<cl::sycl::vec<T, 1>> : public image_trait<T> {};
 template <class T>
 struct image_trait<cl::sycl::vec<T, 2>> : public image_trait<T> {
   using data_t = cl::sycl::vec<T, 2>;
+  static constexpr int channel_nums = 2;
 };
 
 template <class T>
 struct image_trait<cl::sycl::vec<T, 3>>
-    : public image_trait<cl::sycl::vec<T, 4>> {};
+    : public image_trait<cl::sycl::vec<T, 4>> {
+  static constexpr int channel_nums = 3;
+};
 
 template <class T>
 struct image_trait<cl::sycl::vec<T, 4>> : public image_trait<T> {
   using data_t = cl::sycl::vec<T, 4>;
+  static constexpr int channel_nums = 4;
 };
 
 // Functor to fetch data from read result of an image accessor.
@@ -310,11 +330,43 @@ public:
   }
 };
 
-enum dpct_channel_data_kind {
-  channel_signed,
-  channel_unsigned,
-  channel_float,
-};
+static inline dpct_image_channel
+create_image_channel(int elem_size, int channel_nums,
+                     dpct_channel_data_kind channel_kind) {
+  dpct_image_channel channel;
+  channel._elem_size = elem_size;
+  if (elem_size == 4) {
+    if (channel_kind == channel_signed)
+      channel._type = cl::sycl::image_channel_type::signed_int32;
+    else if (channel_kind == channel_unsigned)
+      channel._type = cl::sycl::image_channel_type::unsigned_int32;
+    else if (channel_kind == channel_float)
+      channel._type = cl::sycl::image_channel_type::fp32;
+  } else if (elem_size == 2) {
+    if (channel_kind == channel_signed)
+      channel._type = cl::sycl::image_channel_type::signed_int16;
+    else if (channel_kind == channel_unsigned)
+      channel._type = cl::sycl::image_channel_type::unsigned_int16;
+    else if (channel_kind == channel_float)
+      channel._type = cl::sycl::image_channel_type::fp16;
+  } else {
+    if (channel_kind == channel_signed)
+      channel._type = cl::sycl::image_channel_type::signed_int8;
+    else if (channel_kind == channel_unsigned)
+      channel._type = cl::sycl::image_channel_type::unsigned_int8;
+  }
+  channel._elem_size *= channel_nums;
+  if (channel_nums >= 4) {
+    channel._order = cl::sycl::image_channel_order::rgba;
+  } else if (channel_nums == 3) {
+    channel._order = cl::sycl::image_channel_order::rgb;
+  } else if (channel_nums == 2) {
+    channel._order = cl::sycl::image_channel_order::rg;
+  } else {
+    channel._order = cl::sycl::image_channel_order::r;
+  }
+  return channel;
+}
 
 /// Create image channel info.
 /// \param r Channel r width in bits.
@@ -322,48 +374,24 @@ enum dpct_channel_data_kind {
 /// \param b Channel b width in bits. Should be same with \p g, or zero.
 /// \param a Channel a width in bits. Should be same with \p b, or zero.
 /// \channel_kind Channel data type kind: signed int, unsigned int or float.
-inline dpct_image_channel
+static inline dpct_image_channel
 create_image_channel(int r, int g, int b, int a,
                      dpct_channel_data_kind channel_kind) {
-  dpct_image_channel channel;
-
-  if (r == 32) {
-    channel._elem_size = 4;
-    if (channel_kind == channel_signed)
-      channel._type = cl::sycl::image_channel_type::signed_int32;
-    else if (channel_kind == channel_unsigned)
-      channel._type = cl::sycl::image_channel_type::unsigned_int32;
-    else if (channel_kind == channel_float)
-      channel._type = cl::sycl::image_channel_type::fp32;
-  } else if (r == 16) {
-    channel._elem_size = 2;
-    if (channel_kind == channel_signed)
-      channel._type = cl::sycl::image_channel_type::signed_int16;
-    else if (channel_kind == channel_unsigned)
-      channel._type = cl::sycl::image_channel_type::unsigned_int16;
-    else if (channel_kind == channel_float)
-      channel._type = cl::sycl::image_channel_type::fp16;
-  } else if (r == 8) {
-    channel._elem_size = 1;
-    if (channel_kind == channel_signed)
-      channel._type = cl::sycl::image_channel_type::signed_int8;
-    else if (channel_kind == channel_unsigned)
-      channel._type = cl::sycl::image_channel_type::unsigned_int8;
-  }
-  if (g == 0) {
-    channel._order = cl::sycl::image_channel_order::r;
-  } else if (b == 0) {
-    channel._order = cl::sycl::image_channel_order::rg;
-    channel._elem_size *= 2;
-  } else if (a == 0) {
-    channel._order = cl::sycl::image_channel_order::rgb;
-    channel._elem_size *= 3;
+  if (a) {
+    return create_image_channel(r / 32, 4, channel_kind);
+  } else if (b) {
+    return create_image_channel(r / 32, 3, channel_kind);
+  } else if (g) {
+    return create_image_channel(r / 32, 2, channel_kind);
   } else {
-    channel._order = cl::sycl::image_channel_order::rgba;
-    channel._elem_size *= 4;
+    return create_image_channel(r / 32, 1, channel_kind);
   }
+}
 
-  return channel;
+template <class T> static inline dpct_image_channel create_image_channel() {
+  return create_image_channel(sizeof(typename image_trait<T>::elem_t),
+                              image_trait<T>::channel_nums,
+                              image_trait<T>::channel_kind);
 }
 
 /// Attach a matrix to an image class.
@@ -386,11 +414,27 @@ inline void dpct_attach_image(dpct_image<T, 1> &image, void *ptr,
   image.attach(ptr, chn, size);
 }
 
+/// Attach a memory block to an image class.
+/// \param image The image class to be attached.
+/// \param ptr The pointer that point to the memory block.
+/// \param size Memory block size in bytes.
+template <class T>
+inline void dpct_attach_image(dpct_image<T, 1> &image, void *ptr, size_t size) {
+  image.attach(ptr, create_image_channel<T>(), size);
+}
+
+/// Detach data from an image class.
+/// \param image The image class to be detached.
+template <class T, int Dimension>
+inline void dpct_detach_image(dpct_image<T, Dimension> *image) {
+  image->detach();
+}
+
 /// Detach data from an image class.
 /// \param image The image class to be detached.
 template <class T, int Dimension>
 inline void dpct_detach_image(dpct_image<T, Dimension> &image) {
-  image.detach();
+  return dpct_detach_image(&image);
 }
 
 /// Malloc matrix data.
