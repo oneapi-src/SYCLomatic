@@ -15,10 +15,6 @@
 #include <string>
 #include <vector>
 
-namespace llvm {
-template <typename T> class SmallVectorImpl;
-}
-
 enum ReportFormatEnum { notsetformat, csv, formatted };
 enum ReportTypeEnum { notsettype, apis, stats, all, diags };
 

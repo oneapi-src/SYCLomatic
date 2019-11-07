@@ -31,7 +31,6 @@
 namespace path = llvm::sys::path;
 
 namespace llvm {
-template <typename T> class SmallVectorImpl;
 class StringRef;
 } // namespace llvm
 

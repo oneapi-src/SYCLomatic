@@ -14,6 +14,7 @@ else()
   set(LIBCURL ${CMAKE_SOURCE_DIR}/../clang/lib/DPCT/libcurl/lib/win/libcurl_a.lib)
 endif()
 
+add_subdirectory(docs)
 
 add_clang_library(DPCT
   ASTTraversal.cpp
