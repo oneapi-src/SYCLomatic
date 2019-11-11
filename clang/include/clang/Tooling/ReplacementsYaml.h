@@ -36,11 +36,14 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
     NormalizedReplacement(const IO &, const clang::tooling::Replacement &R)
         : FilePath(R.getFilePath()), Offset(R.getOffset()),
           Length(R.getLength()), ReplacementText(R.getReplacementText()) {
+      #ifdef INTEL_CUSTOMIZATION
+      #else
       size_t lineBreakPos = ReplacementText.find('\n');
       while (lineBreakPos != std::string::npos) {
         ReplacementText.replace(lineBreakPos, 1, "\n\n");
         lineBreakPos = ReplacementText.find('\n', lineBreakPos + 2);
       }
+      #endif
     }
 
     clang::tooling::Replacement denormalize(const IO &) {
