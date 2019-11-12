@@ -59,6 +59,7 @@ int main() {
   // CHECK-NEXT: tex21.addr_mode() = cl::sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex21.filter_mode() = cl::sycl::filtering_mode::linear;
   // CHECK-NEXT: dpct::dpct_attach_image(tex21, d_data21, desc21, 32 * sizeof(cl::sycl::uint2));
+  // CHECK-NEXT: dpct::dpct_attach_image(tex21, d_data21, 32 * sizeof(cl::sycl::uint2));
   uint2 *d_data21;
   cudaMalloc(&d_data21, sizeof(uint2) * 32);
   cudaChannelFormatDesc desc21 = cudaCreateChannelDesc(32, 32, 0, 0, cudaChannelFormatKindUnsigned);
@@ -67,6 +68,7 @@ int main() {
   tex21.addressMode[2] = cudaAddressModeClamp;
   tex21.filterMode = cudaFilterModeLinear;
   cudaBindTexture(0, tex21, d_data21, desc21, 32 * sizeof(uint2));
+  cudaBindTexture(0, tex21, d_data21, 32 * sizeof(uint2));
 
   // CHECK:   {
   // CHECK-NEXT:   dpct::get_default_queue().submit(
@@ -85,9 +87,9 @@ int main() {
   kernel<<<1, 1>>>();
 
   // CHECK: dpct::dpct_detach_image(tex42);
-  // CHECK-NEXT: dpct::dpct_detach_image(tex21);
+  // CHECK-NEXT: dpct::dpct_detach_image(&tex21);
   cudaUnbindTexture(tex42);
-  cudaUnbindTexture(tex21);
+  cudaUnbindTexture(&tex21);
 
   // CHECK: dpct::dpct_free(a42);
   cudaFreeArray(a42);
