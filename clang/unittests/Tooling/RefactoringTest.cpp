@@ -711,13 +711,27 @@ public:
 TEST(Replacement, CanBeConstructedFromNode) {
   ClassDeclXVisitor ClassDeclX;
   EXPECT_TRUE(ClassDeclX.runOver("     class X;"));
-  expectReplacementAt(ClassDeclX.Replace, "input.cc", 5, 7);
+  SmallString<512> CurrentDir;
+  llvm::sys::fs::current_path(CurrentDir);
+#if _WIN32
+  std::string FilePathStr = CurrentDir.str().str() + "\\input.cc";
+#else
+  std::string FilePathStr = CurrentDir.str().str() + "/input.cc";
+#endif
+  expectReplacementAt(ClassDeclX.Replace, FilePathStr.c_str(), 5, 7);
 }
 
 TEST(Replacement, ReplacesAtSpellingLocation) {
   ClassDeclXVisitor ClassDeclX;
   EXPECT_TRUE(ClassDeclX.runOver("#define A(Y) Y\nA(class X);"));
-  expectReplacementAt(ClassDeclX.Replace, "input.cc", 17, 7);
+  SmallString<512> CurrentDir;
+  llvm::sys::fs::current_path(CurrentDir);
+#if _WIN32
+  std::string FilePathStr = CurrentDir.str().str() + "\\input.cc";
+#else
+  std::string FilePathStr = CurrentDir.str().str() + "/input.cc";
+#endif
+  expectReplacementAt(ClassDeclX.Replace, FilePathStr.c_str(), 17, 7);
 }
 
 class CallToFVisitor : public TestVisitor<CallToFVisitor> {
@@ -734,14 +748,28 @@ public:
 TEST(Replacement, FunctionCall) {
   CallToFVisitor CallToF;
   EXPECT_TRUE(CallToF.runOver("void F(); void G() { F(); }"));
-  expectReplacementAt(CallToF.Replace, "input.cc", 21, 3);
+  SmallString<512> CurrentDir;
+  llvm::sys::fs::current_path(CurrentDir);
+#if _WIN32
+  std::string FilePathStr = CurrentDir.str().str() + "\\input.cc";
+#else
+  std::string FilePathStr = CurrentDir.str().str() + "/input.cc";
+#endif
+  expectReplacementAt(CallToF.Replace, FilePathStr.c_str(), 21, 3);
 }
 
 TEST(Replacement, TemplatedFunctionCall) {
   CallToFVisitor CallToF;
   EXPECT_TRUE(CallToF.runOver(
         "template <typename T> void F(); void G() { F<int>(); }"));
-  expectReplacementAt(CallToF.Replace, "input.cc", 43, 8);
+  SmallString<512> CurrentDir;
+  llvm::sys::fs::current_path(CurrentDir);
+#if _WIN32
+  std::string FilePathStr = CurrentDir.str().str() + "\\input.cc";
+#else
+  std::string FilePathStr = CurrentDir.str().str() + "/input.cc";
+#endif
+  expectReplacementAt(CallToF.Replace, FilePathStr.c_str(), 43, 8);
 }
 
 class NestedNameSpecifierAVisitor
@@ -764,7 +792,14 @@ public:
 TEST(Replacement, ColonColon) {
   NestedNameSpecifierAVisitor VisitNNSA;
   EXPECT_TRUE(VisitNNSA.runOver("namespace a { void f() { ::a::f(); } }"));
-  expectReplacementAt(VisitNNSA.Replace, "input.cc", 25, 5);
+  SmallString<512> CurrentDir;
+  llvm::sys::fs::current_path(CurrentDir);
+#if _WIN32
+  std::string FilePathStr = CurrentDir.str().str() + "\\input.cc";
+#else
+  std::string FilePathStr = CurrentDir.str().str() + "/input.cc";
+#endif
+  expectReplacementAt(VisitNNSA.Replace, FilePathStr.c_str(), 25, 5);
 }
 
 TEST(Range, overlaps) {
@@ -1117,30 +1152,43 @@ TEST_F(AtomicChangeTest, AtomicChangeToYAML) {
   Change.addHeader("a.h");
   Change.removeHeader("b.h");
   std::string YAMLString = Change.toYAMLString();
-
+  SmallString<512> CurrentDir;
+  llvm::sys::fs::current_path(CurrentDir);
+#if _WIN32
+  std::string FilePathStr = "'" + CurrentDir.str().str() + "\\input.cpp'";
+#else
+  std::string FilePathStr = "'" + CurrentDir.str().str() + "/input.cpp'";
+#endif
   // NOTE: If this test starts to fail for no obvious reason, check whitespace.
-  ASSERT_STREQ("---\n"
-               "Key:             'input.cpp:20'\n"
-               "FilePath:        input.cpp\n"
-               "Error:           ''\n"
-               "InsertedHeaders:\n"
-               "  - a.h\n"
-               "RemovedHeaders:\n"
-               "  - b.h\n"
-               "Replacements:\n"
-               "  - FilePath:        input.cpp\n"
-               "    Offset:          20\n"
-               "    Length:          0\n"
-               "    ReplacementText: aa\n"
-               "  - FilePath:        input.cpp\n"
-               "    Offset:          30\n"
-               "    Length:          0\n"
-               "    ReplacementText: bb\n"
-               "...\n",
-               YAMLString.c_str());
+  std::string ExpectStr = std::string("---\n") +
+                          "Key:             'input.cpp:20'\n"
+                          "FilePath:        input.cpp\n"
+                          "Error:           ''\n"
+                          "InsertedHeaders:\n"
+                          "  - a.h\n"
+                          "RemovedHeaders:\n"
+                          "  - b.h\n"
+                          "Replacements:\n"
+                          "  - FilePath:        " + FilePathStr + "\n"
+                          "    Offset:          20\n"
+                          "    Length:          0\n"
+                          "    ReplacementText: aa\n"
+                          "  - FilePath:        " + FilePathStr + "\n"
+                          "    Offset:          30\n"
+                          "    Length:          0\n"
+                          "    ReplacementText: bb\n"
+                          "...\n";
+  ASSERT_STREQ(ExpectStr.c_str(), YAMLString.c_str());
 }
 
 TEST_F(AtomicChangeTest, YAMLToAtomicChange) {
+  SmallString<512> CurrentDir;
+  llvm::sys::fs::current_path(CurrentDir);
+#if _WIN32
+  std::string FilePathStr = "'" + CurrentDir.str().str() + "\\input.cpp'";
+#else
+  std::string FilePathStr = "'" + CurrentDir.str().str() + "/input.cpp'";
+#endif
   std::string YamlContent = "---\n"
                             "Key:             'input.cpp:20'\n"
                             "FilePath:        input.cpp\n"
@@ -1150,11 +1198,11 @@ TEST_F(AtomicChangeTest, YAMLToAtomicChange) {
                             "RemovedHeaders:\n"
                             "  - b.h\n"
                             "Replacements:\n"
-                            "  - FilePath:        input.cpp\n"
+                            "  - FilePath:        " + FilePathStr + "\n"
                             "    Offset:          20\n"
                             "    Length:          0\n"
                             "    ReplacementText: aa\n"
-                            "  - FilePath:        input.cpp\n"
+                            "  - FilePath:        " + FilePathStr + "\n"
                             "    Offset:          30\n"
                             "    Length:          0\n"
                             "    ReplacementText: bb\n"
