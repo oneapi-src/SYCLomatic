@@ -388,6 +388,7 @@ create_image_channel(int r, int g, int b, int a,
   }
 }
 
+/// Create image channel info according to template argument \p T.
 template <class T> static inline dpct_image_channel create_image_channel() {
   return create_image_channel(sizeof(typename image_trait<T>::elem_t),
                               image_trait<T>::channel_nums,

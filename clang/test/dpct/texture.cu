@@ -28,6 +28,9 @@ __global__ void kernel() {
 
 int main() {
 
+  // CHECK: dpct::dpct_image_channel halfChn = dpct::create_image_channel<cl::sycl::cl_half>();
+  cudaChannelFormatDesc halfChn = cudaCreateChannelDescHalf();
+
   // CHECK: cl::sycl::float4 *d_data42;
   // CHECK-NEXT: dpct::dpct_image_matrix_p a42;
   // CHECK-NEXT: dpct::dpct_malloc(&d_data42, sizeof(cl::sycl::float4) * 32 * 32);

@@ -1,5 +1,6 @@
 
 ENTRY_RENAMED("cudaCreateChannelDesc", "dpct::create_image_channel")
+ENTRY_RENAMED("cudaCreateChannelDescHalf", "dpct::create_image_channel<cl::sycl::cl_half>")
 ENTRY_RENAMED("cudaUnbindTexture", "dpct::dpct_detach_image")
 ENTRY_RENAMED("cudaFreeArray", "dpct::dpct_free")
 ENTRY_RENAMED("cudaDestroyTextureObject", "dpct::dpct_free")
