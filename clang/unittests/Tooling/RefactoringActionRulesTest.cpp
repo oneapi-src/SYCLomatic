@@ -111,6 +111,7 @@ TEST_F(RefactoringActionRulesTest, MyFirstRefactoringRule) {
     ASSERT_EQ(Result.size(), 1u);
     std::string YAMLString =
         const_cast<AtomicChange &>(Result[0]).toYAMLString();
+#ifdef INTEL_CUSTOMIZATION
     SmallString<512> CurrentDir;
     llvm::sys::fs::current_path(CurrentDir);
 #if _WIN32
@@ -131,6 +132,21 @@ TEST_F(RefactoringActionRulesTest, MyFirstRefactoringRule) {
                             "    ReplacementText: b\n"
                             "...\n";
     ASSERT_STREQ(ExpectStr.c_str(), YAMLString.c_str());
+#else
+    ASSERT_STREQ("---\n"
+                 "Key:             'input.cpp:30'\n"
+                 "FilePath:        input.cpp\n"
+                 "Error:           ''\n"
+                 "InsertedHeaders: []\n"
+                 "RemovedHeaders:  []\n"
+                 "Replacements:\n"
+                 "  - FilePath:        input.cpp\n"
+                 "    Offset:          30\n"
+                 "    Length:          1\n"
+                 "    ReplacementText: b\n"
+                 "...\n",
+                 YAMLString.c_str());
+#endif
   }
 
   // When one of the requirements is not satisfied, invoke should return a

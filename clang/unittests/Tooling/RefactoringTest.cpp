@@ -711,6 +711,7 @@ public:
 TEST(Replacement, CanBeConstructedFromNode) {
   ClassDeclXVisitor ClassDeclX;
   EXPECT_TRUE(ClassDeclX.runOver("     class X;"));
+#ifdef INTEL_CUSTOMIZATION
   SmallString<512> CurrentDir;
   llvm::sys::fs::current_path(CurrentDir);
 #if _WIN32
@@ -719,11 +720,15 @@ TEST(Replacement, CanBeConstructedFromNode) {
   std::string FilePathStr = CurrentDir.str().str() + "/input.cc";
 #endif
   expectReplacementAt(ClassDeclX.Replace, FilePathStr.c_str(), 5, 7);
+#else
+  expectReplacementAt(ClassDeclX.Replace, "input.cc", 5, 7);
+#endif
 }
 
 TEST(Replacement, ReplacesAtSpellingLocation) {
   ClassDeclXVisitor ClassDeclX;
   EXPECT_TRUE(ClassDeclX.runOver("#define A(Y) Y\nA(class X);"));
+#ifdef INTEL_CUSTOMIZATION
   SmallString<512> CurrentDir;
   llvm::sys::fs::current_path(CurrentDir);
 #if _WIN32
@@ -732,6 +737,9 @@ TEST(Replacement, ReplacesAtSpellingLocation) {
   std::string FilePathStr = CurrentDir.str().str() + "/input.cc";
 #endif
   expectReplacementAt(ClassDeclX.Replace, FilePathStr.c_str(), 17, 7);
+#else
+  expectReplacementAt(ClassDeclX.Replace, "input.cc", 17, 7);
+#endif
 }
 
 class CallToFVisitor : public TestVisitor<CallToFVisitor> {
@@ -748,6 +756,7 @@ public:
 TEST(Replacement, FunctionCall) {
   CallToFVisitor CallToF;
   EXPECT_TRUE(CallToF.runOver("void F(); void G() { F(); }"));
+#ifdef INTEL_CUSTOMIZATION
   SmallString<512> CurrentDir;
   llvm::sys::fs::current_path(CurrentDir);
 #if _WIN32
@@ -756,12 +765,16 @@ TEST(Replacement, FunctionCall) {
   std::string FilePathStr = CurrentDir.str().str() + "/input.cc";
 #endif
   expectReplacementAt(CallToF.Replace, FilePathStr.c_str(), 21, 3);
+#else
+  expectReplacementAt(CallToF.Replace, "input.cc", 21, 3);
+#endif
 }
 
 TEST(Replacement, TemplatedFunctionCall) {
   CallToFVisitor CallToF;
   EXPECT_TRUE(CallToF.runOver(
         "template <typename T> void F(); void G() { F<int>(); }"));
+#ifdef INTEL_CUSTOMIZATION
   SmallString<512> CurrentDir;
   llvm::sys::fs::current_path(CurrentDir);
 #if _WIN32
@@ -770,6 +783,9 @@ TEST(Replacement, TemplatedFunctionCall) {
   std::string FilePathStr = CurrentDir.str().str() + "/input.cc";
 #endif
   expectReplacementAt(CallToF.Replace, FilePathStr.c_str(), 43, 8);
+#else
+  expectReplacementAt(CallToF.Replace, "input.cc", 43, 8);
+#endif
 }
 
 class NestedNameSpecifierAVisitor
@@ -792,6 +808,7 @@ public:
 TEST(Replacement, ColonColon) {
   NestedNameSpecifierAVisitor VisitNNSA;
   EXPECT_TRUE(VisitNNSA.runOver("namespace a { void f() { ::a::f(); } }"));
+#ifdef INTEL_CUSTOMIZATION
   SmallString<512> CurrentDir;
   llvm::sys::fs::current_path(CurrentDir);
 #if _WIN32
@@ -800,6 +817,9 @@ TEST(Replacement, ColonColon) {
   std::string FilePathStr = CurrentDir.str().str() + "/input.cc";
 #endif
   expectReplacementAt(VisitNNSA.Replace, FilePathStr.c_str(), 25, 5);
+#else
+  expectReplacementAt(VisitNNSA.Replace, "input.cc", 25, 5);
+#endif
 }
 
 TEST(Range, overlaps) {
@@ -1152,6 +1172,8 @@ TEST_F(AtomicChangeTest, AtomicChangeToYAML) {
   Change.addHeader("a.h");
   Change.removeHeader("b.h");
   std::string YAMLString = Change.toYAMLString();
+
+#ifdef INTEL_CUSTOMIZATION
   SmallString<512> CurrentDir;
   llvm::sys::fs::current_path(CurrentDir);
 #if _WIN32
@@ -1179,9 +1201,32 @@ TEST_F(AtomicChangeTest, AtomicChangeToYAML) {
                           "    ReplacementText: bb\n"
                           "...\n";
   ASSERT_STREQ(ExpectStr.c_str(), YAMLString.c_str());
+#else
+  // NOTE: If this test starts to fail for no obvious reason, check whitespace.
+  ASSERT_STREQ("---\n"
+               "Key:             'input.cpp:20'\n"
+               "FilePath:        input.cpp\n"
+               "Error:           ''\n"
+               "InsertedHeaders:\n"
+               "  - a.h\n"
+               "RemovedHeaders:\n"
+               "  - b.h\n"
+               "Replacements:\n"
+               "  - FilePath:        input.cpp\n"
+               "    Offset:          20\n"
+               "    Length:          0\n"
+               "    ReplacementText: aa\n"
+               "  - FilePath:        input.cpp\n"
+               "    Offset:          30\n"
+               "    Length:          0\n"
+               "    ReplacementText: bb\n"
+               "...\n",
+               YAMLString.c_str());
+#endif
 }
 
 TEST_F(AtomicChangeTest, YAMLToAtomicChange) {
+#ifdef INTEL_CUSTOMIZATION
   SmallString<512> CurrentDir;
   llvm::sys::fs::current_path(CurrentDir);
 #if _WIN32
@@ -1207,6 +1252,26 @@ TEST_F(AtomicChangeTest, YAMLToAtomicChange) {
                             "    Length:          0\n"
                             "    ReplacementText: bb\n"
                             "...\n";
+#else
+  std::string YamlContent = "---\n"
+                            "Key:             'input.cpp:20'\n"
+                            "FilePath:        input.cpp\n"
+                            "Error:           'ok'\n"
+                            "InsertedHeaders:\n"
+                            "  - a.h\n"
+                            "RemovedHeaders:\n"
+                            "  - b.h\n"
+                            "Replacements:\n"
+                            "  - FilePath:        input.cpp\n"
+                            "    Offset:          20\n"
+                            "    Length:          0\n"
+                            "    ReplacementText: aa\n"
+                            "  - FilePath:        input.cpp\n"
+                            "    Offset:          30\n"
+                            "    Length:          0\n"
+                            "    ReplacementText: bb\n"
+                            "...\n";
+#endif
   AtomicChange ExpectedChange(Context.Sources, DefaultLoc);
   llvm::Error Err = ExpectedChange.insert(Context.Sources, DefaultLoc, "aa",
                                         /*InsertAfter=*/false);
