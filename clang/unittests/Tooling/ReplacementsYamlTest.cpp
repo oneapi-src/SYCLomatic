@@ -59,6 +59,17 @@ TEST(ReplacementsYamlTest, serializesNewLines) {
   YAML << Doc;
 
   // NOTE: If this test starts to fail for no obvious reason, check whitespace.
+#ifdef INTEL_CUSTOMIZATION
+  ASSERT_STREQ("---\n"
+               "MainSourceFile:  '/path/to/source.cpp'\n"
+               "Replacements:\n"
+               "  - FilePath:        '/path/to/file1.h'\n"
+               "    Offset:          0\n"
+               "    Length:          0\n"
+               "    ReplacementText: '#include <utility>\n'\n"
+               "...\n",
+               YamlContentStream.str().c_str());
+#else
   ASSERT_STREQ("---\n"
                "MainSourceFile:  '/path/to/source.cpp'\n"
                "Replacements:\n"
@@ -68,6 +79,7 @@ TEST(ReplacementsYamlTest, serializesNewLines) {
                "    ReplacementText: '#include <utility>\n\n'\n"
                "...\n",
                YamlContentStream.str().c_str());
+#endif
 }
 
 TEST(ReplacementsYamlTest, deserializesReplacements) {
