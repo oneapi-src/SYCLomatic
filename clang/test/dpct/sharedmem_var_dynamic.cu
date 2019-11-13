@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 #define SIZE 100
-// CHECK: void staticReverse(int *d, int n, cl::sycl::nd_item<3> item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::local, 1> dpct_local) {
+// CHECK: void staticReverse(int *d, int n, cl::sycl::nd_item<3> item_ct1, dpct::accessor<dpct::byte_t, dpct::local, 1> dpct_local) {
 // CHECK-NEXT:  auto s = dpct_local.reinterpret<int>(); // the size of s is dynamic
 __global__ void staticReverse(int *d, int n) {
   extern __shared__ int s[]; // the size of s is dynamic
@@ -16,7 +16,7 @@ __global__ void staticReverse(int *d, int n) {
 }
 
 // CHECK: template<typename TData>
-// CHECK-NEXT: void templateReverse(TData *d, TData n, cl::sycl::nd_item<3> item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::local, 1> dpct_local) {
+// CHECK-NEXT: void templateReverse(TData *d, TData n, cl::sycl::nd_item<3> item_ct1, dpct::accessor<dpct::byte_t, dpct::local, 1> dpct_local) {
 template<typename TData>
 __global__ void templateReverse(TData *d, TData n) {
 
@@ -42,7 +42,7 @@ void testTemplate(){
   // CHECK-NEXT:   size_t d_d_offset_ct0 = d_d_buf_ct0.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::dpct_range<1> dpct_local_range_ct1(mem_size);
+  // CHECK-NEXT:       dpct::range<1> dpct_local_range_ct1(mem_size);
   // CHECK-NEXT:       cl::sycl::accessor<dpct::byte_t, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> dpct_local_acc_ct1(dpct_local_range_ct1, cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1);
@@ -51,7 +51,7 @@ void testTemplate(){
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           T *d_d_ct0 = (T *)(&d_d_acc_ct0[0] + d_d_offset_ct0);
-  // CHECK-NEXT:           templateReverse<T>(d_d_ct0, n, item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::local, 1>(dpct_local_acc_ct1, dpct_local_range_ct1));
+  // CHECK-NEXT:           templateReverse<T>(d_d_ct0, n, item_ct1, dpct::accessor<dpct::byte_t, dpct::local, 1>(dpct_local_acc_ct1, dpct_local_range_ct1));
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -70,7 +70,7 @@ int main(void) {
   // CHECK-NEXT:   size_t d_d_offset_ct0 = d_d_buf_ct0.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::dpct_range<1> dpct_local_range_ct1(mem_size);
+  // CHECK-NEXT:       dpct::range<1> dpct_local_range_ct1(mem_size);
   // CHECK-NEXT:       cl::sycl::accessor<dpct::byte_t, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> dpct_local_acc_ct1(dpct_local_range_ct1, cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1);
@@ -79,7 +79,7 @@ int main(void) {
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           int *d_d_ct0 = (int *)(&d_d_acc_ct0[0] + d_d_offset_ct0);
-  // CHECK-NEXT:           staticReverse(d_d_ct0, n, item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::local, 1>(dpct_local_acc_ct1, dpct_local_range_ct1));
+  // CHECK-NEXT:           staticReverse(d_d_ct0, n, item_ct1, dpct::accessor<dpct::byte_t, dpct::local, 1>(dpct_local_acc_ct1, dpct_local_range_ct1));
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -91,7 +91,7 @@ int main(void) {
   // CHECK-NEXT:   size_t d_d_offset_ct0 = d_d_buf_ct0.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::dpct_range<1> dpct_local_range_ct1(sizeof(int));
+  // CHECK-NEXT:       dpct::range<1> dpct_local_range_ct1(sizeof(int));
   // CHECK-NEXT:       cl::sycl::accessor<dpct::byte_t, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> dpct_local_acc_ct1(dpct_local_range_ct1, cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1);
@@ -100,7 +100,7 @@ int main(void) {
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           int *d_d_ct0 = (int *)(&d_d_acc_ct0[0] + d_d_offset_ct0);
-  // CHECK-NEXT:           staticReverse(d_d_ct0, n, item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::local, 1>(dpct_local_acc_ct1, dpct_local_range_ct1));
+  // CHECK-NEXT:           staticReverse(d_d_ct0, n, item_ct1, dpct::accessor<dpct::byte_t, dpct::local, 1>(dpct_local_acc_ct1, dpct_local_range_ct1));
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -111,7 +111,7 @@ int main(void) {
   // CHECK-NEXT:   size_t d_d_offset_ct0 = d_d_buf_ct0.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::dpct_range<1> dpct_local_range_ct1(4);
+  // CHECK-NEXT:       dpct::range<1> dpct_local_range_ct1(4);
   // CHECK-NEXT:       cl::sycl::accessor<dpct::byte_t, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> dpct_local_acc_ct1(dpct_local_range_ct1, cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1);
@@ -120,7 +120,7 @@ int main(void) {
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           int *d_d_ct0 = (int *)(&d_d_acc_ct0[0] + d_d_offset_ct0);
-  // CHECK-NEXT:           templateReverse<int>(d_d_ct0, n, item_ct1, dpct::dpct_accessor<dpct::byte_t, dpct::local, 1>(dpct_local_acc_ct1, dpct_local_range_ct1));
+  // CHECK-NEXT:           templateReverse<int>(d_d_ct0, n, item_ct1, dpct::accessor<dpct::byte_t, dpct::local, 1>(dpct_local_acc_ct1, dpct_local_range_ct1));
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }

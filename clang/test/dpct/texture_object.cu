@@ -3,20 +3,20 @@
 // UNSUPPORTED: cdua-9.0, cuda-9.2, cuda-10.0, cuda-10.1
 // UNSUPPORTED: v9.0, v9.2, v10.0, v10.1
 
-// CHECK: void device01(dpct::dpct_image_accessor<cl::sycl::uint2, 1> tex21) {
+// CHECK: void device01(dpct::image_accessor<cl::sycl::uint2, 1> tex21) {
 // CHECK-NEXT: cl::sycl::uint2 u21;
-// CHECK-NEXT: dpct::dpct_read_image(&u21, tex21, 0.5f);
-// CHECK-NEXT: dpct::dpct_read_image(&u21, tex21, 1);
+// CHECK-NEXT: dpct::read_image(&u21, tex21, 0.5f);
+// CHECK-NEXT: dpct::read_image(&u21, tex21, 1);
 __device__ void device01(cudaTextureObject_t tex21) {
   uint2 u21;
   tex1D(&u21, tex21, 0.5f);
   tex1Dfetch(&u21, tex21, 1);
 }
 
-// CHECK: void kernel(dpct::dpct_image_accessor<cl::sycl::uint2, 1> tex21, dpct::dpct_image_accessor<cl::sycl::float4, 2> tex42) {
+// CHECK: void kernel(dpct::image_accessor<cl::sycl::uint2, 1> tex21, dpct::image_accessor<cl::sycl::float4, 2> tex42) {
 // CHECK-NEXT: device01(tex21);
 // CHECK-NEXT: cl::sycl::float4 f42;
-// CHECK-NEXT: dpct::dpct_read_image(&f42, tex42, 0.5f, 0.5f);
+// CHECK-NEXT: dpct::read_image(&f42, tex42, 0.5f, 0.5f);
 /// Texture accessors should be passed down to __global__/__device__ function if used.
 __global__ void kernel(cudaTextureObject_t tex21, cudaTextureObject_t tex42) {
   device01(tex21);
@@ -27,21 +27,21 @@ __global__ void kernel(cudaTextureObject_t tex21, cudaTextureObject_t tex42) {
 int main() {
 
   // CHECK: cl::sycl::float4 *d_data42;
-  // CHECK-NEXT: dpct::dpct_image_matrix_p a42;
+  // CHECK-NEXT: dpct::image_matrix_p a42;
   // CHECK-NEXT: dpct::dpct_malloc(&d_data42, sizeof(cl::sycl::float4) * 32 * 32);
-  // CHECK-NEXT: dpct::dpct_image_channel desc42 = dpct::create_image_channel(32, 32, 32, 32, dpct::channel_float);
-  // CHECK-NEXT: dpct::dpct_malloc_matrix(&a42, &desc42, 32, 32);
-  // CHECK-NEXT: dpct::dpct_memcpy_to_matrix(a42, 0, 0, d_data42, 32 * 32 * sizeof(cl::sycl::float4));
-  // CHECK-NEXT: dpct::dpct_image_base_p tex42;
-  // CHECK-NEXT: dpct::dpct_image_data res42;
-  // CHECK-NEXT: dpct::dpct_image_info texDesc42;
+  // CHECK-NEXT: dpct::image_channel desc42 = dpct::create_image_channel(32, 32, 32, 32, dpct::channel_float);
+  // CHECK-NEXT: dpct::malloc_matrix(&a42, &desc42, 32, 32);
+  // CHECK-NEXT: dpct::memcpy_to_matrix(a42, 0, 0, d_data42, 32 * 32 * sizeof(cl::sycl::float4));
+  // CHECK-NEXT: dpct::image_base_p tex42;
+  // CHECK-NEXT: dpct::image_data res42;
+  // CHECK-NEXT: dpct::image_info texDesc42;
   // CHECK-NEXT: res42.type = dpct::data_matrix;
   // CHECK-NEXT: res42.data.matrix = a42;
   // CHECK-NEXT: texDesc42.addr_mode() = cl::sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: texDesc42.addr_mode() = cl::sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: texDesc42.addr_mode() = cl::sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: texDesc42.filter_mode() = cl::sycl::filtering_mode::nearest;
-  // CHECK-NEXT: dpct::dpct_create_image(&tex42, &res42, &texDesc42);
+  // CHECK-NEXT: dpct::create_image(&tex42, &res42, &texDesc42);
   float4 *d_data42;
   cudaArray_t a42;
   cudaMalloc(&d_data42, sizeof(float4) * 32 * 32);
@@ -61,10 +61,10 @@ int main() {
 
   // CHECK: cl::sycl::uint2 *d_data21;
   // CHECK-NEXT: dpct::dpct_malloc(&d_data21, sizeof(cl::sycl::uint2) * 32);
-  // CHECK-NEXT: dpct::dpct_image_channel desc21 = dpct::create_image_channel(32, 32, 0, 0, dpct::channel_unsigned);
-  // CHECK-NEXT: dpct::dpct_image_base_p tex21;
-  // CHECK-NEXT: dpct::dpct_image_data res21;
-  // CHECK-NEXT: dpct::dpct_image_info texDesc21;
+  // CHECK-NEXT: dpct::image_channel desc21 = dpct::create_image_channel(32, 32, 0, 0, dpct::channel_unsigned);
+  // CHECK-NEXT: dpct::image_base_p tex21;
+  // CHECK-NEXT: dpct::image_data res21;
+  // CHECK-NEXT: dpct::image_info texDesc21;
   // CHECK-NEXT: res21.type = dpct::data_linear;
   // CHECK-NEXT: res21.data.linear.data = d_data21;
   // CHECK-NEXT: res21.data.linear.size = sizeof(cl::sycl::uint2) * 32;
@@ -73,7 +73,7 @@ int main() {
   // CHECK-NEXT: texDesc21.addr_mode() = cl::sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: texDesc21.addr_mode() = cl::sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: texDesc21.filter_mode() = cl::sycl::filtering_mode::linear;
-  // CHECK-NEXT: dpct::dpct_create_image(&tex21, &res21, &texDesc21);
+  // CHECK-NEXT: dpct::create_image(&tex21, &res21, &texDesc21);
   uint2 *d_data21;
   cudaMalloc(&d_data21, sizeof(uint2) * 32);
   cudaChannelFormatDesc desc21 = cudaCreateChannelDesc(32, 32, 0, 0, cudaChannelFormatKindUnsigned);
@@ -93,8 +93,8 @@ int main() {
   // CHECK:   {
   // CHECK-NEXT: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:     auto tex21_acc = static_cast<dpct::dpct_image<cl::sycl::uint2, 1> *>(tex21)->get_access(cgh);
-  // CHECK-NEXT:     auto tex42_acc = static_cast<dpct::dpct_image<cl::sycl::float4, 2> *>(tex42)->get_access(cgh);
+  // CHECK-NEXT:     auto tex21_acc = static_cast<dpct::image<cl::sycl::uint2, 1> *>(tex21)->get_access(cgh);
+  // CHECK-NEXT:     auto tex42_acc = static_cast<dpct::image<cl::sycl::float4, 2> *>(tex42)->get_access(cgh);
   // CHECK-NEXT:     auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1);
   // CHECK-NEXT:     auto dpct_local_range = cl::sycl::range<3>(1, 1, 1);
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(

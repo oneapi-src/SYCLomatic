@@ -214,57 +214,57 @@ static inline void dpct_free(void *ptr) {
   }
 }
 
-// dpct_range used to store range infomation
-// dpct_range has specialization when Dimesion = 1, 2, 3
-template <int Dimesion> class dpct_range;
-template <> class dpct_range<0> {
+// range used to store range infomation
+// range has specialization when Dimesion = 1, 2, 3
+template <int Dimesion> class range;
+template <> class range<0> {
 public:
-  dpct_range(){};
+  range(){};
   size_t size() const { return 1; }
 };
-template <> class dpct_range<1> {
+template <> class range<1> {
 public:
-  dpct_range() : dpct_range(0) {}
-  dpct_range(size_t dim1) : range{dim1} {}
-  dpct_range(cl::sycl::range<1> range) : range{range[0]} {}
-  operator cl::sycl::range<1>() const { return cl::sycl::range<1>(range[0]); }
-  size_t size() const { return range[0]; }
-  dpct_range<0> low() const { return dpct_range<0>(); }
+  range() : range(0) {}
+  range(size_t dim1) : _range{dim1} {}
+  range(cl::sycl::range<1> in_range) : _range{in_range[0]} {}
+  operator cl::sycl::range<1>() const { return cl::sycl::range<1>(_range[0]); }
+  size_t size() const { return _range[0]; }
+  range<0> low() const { return range<0>(); }
 
 private:
-  size_t range[1];
+  size_t _range[1];
 };
-template <> class dpct_range<2> {
+template <> class range<2> {
 public:
-  dpct_range() : dpct_range(0, 0) {}
-  dpct_range(size_t dim1, size_t dim2) : range{dim1, dim2} {}
-  dpct_range(cl::sycl::range<2> range) : range{range[0], range[1]} {}
+  range() : range(0, 0) {}
+  range(size_t dim1, size_t dim2) : _range{dim1, dim2} {}
+  range(cl::sycl::range<2> in_range) : _range{in_range[0], in_range[1]} {}
   operator cl::sycl::range<2>() const {
-    return cl::sycl::range<2>(range[0], range[1]);
+    return cl::sycl::range<2>(_range[0], _range[1]);
   }
-  size_t size() const { return range[0] * range[1]; }
-  dpct_range<1> low() const { return dpct_range<1>(range[1]); }
+  size_t size() const { return _range[0] * _range[1]; }
+  range<1> low() const { return range<1>(_range[1]); }
 
 private:
-  size_t range[2];
+  size_t _range[2];
 };
-template <> class dpct_range<3> {
+template <> class range<3> {
 public:
-  dpct_range() : dpct_range(0, 0, 0) {}
-  dpct_range(size_t dim1, size_t dim2, size_t dim3) : range{dim1, dim2, dim3} {}
-  dpct_range(cl::sycl::range<3> range) : range{range[0], range[1], range[2]} {}
+  range() : range(0, 0, 0) {}
+  range(size_t dim1, size_t dim2, size_t dim3) : _range{dim1, dim2, dim3} {}
+  range(cl::sycl::range<3> in_range) : _range{in_range[0], in_range[1], in_range[2]} {}
   operator cl::sycl::range<3>() const {
-    return cl::sycl::range<3>(range[0], range[1], range[2]);
+    return cl::sycl::range<3>(_range[0], _range[1], _range[2]);
   }
-  size_t size() const { return range[0] * range[1] * range[2]; }
-  dpct_range<2> low() const { return dpct_range<2>(range[1], range[2]); }
+  size_t size() const { return _range[0] * _range[1] * _range[2]; }
+  range<2> low() const { return range<2>(_range[1], _range[2]); }
 
 private:
-  size_t range[3];
+  size_t _range[3];
 };
 
 template <class T, memory_attribute Memory, size_t Dimension>
-class dpct_accessor;
+class accessor;
 template <memory_attribute Memory, class T = byte_t> class memory_traits {
 public:
   static constexpr cl::sycl::access::address_space asp =
@@ -298,80 +298,80 @@ public:
 
 // dpct accessor used as kernel function and device function parameter
 template <class T, memory_attribute Memory, size_t Dimension>
-class dpct_accessor {
+class accessor {
 public:
   using memory_t = memory_traits<Memory, T>;
   using element_t = typename memory_t::element_t;
   using pointer_t = typename memory_t::pointer_t;
   using accessor_t = typename memory_t::template accessor_t<Dimension>;
-  dpct_accessor(pointer_t data, const dpct_range<Dimension> &range)
-      : data(data), range(range) {}
+  accessor(pointer_t data, const range<Dimension> &in_range)
+      : data(data), _range(in_range) {}
   template <memory_attribute M = Memory>
-  dpct_accessor(
+  accessor(
       typename std::enable_if<M != local, const accessor_t>::type &acc)
-      : dpct_accessor(acc, dpct_range<1>(acc.get_range())) {}
-  dpct_accessor(const accessor_t &acc, const dpct_range<Dimension> &range)
-      : dpct_accessor(acc.get_pointer(), range) {}
-  dpct_accessor<T, Memory, Dimension - 1> operator[](size_t index) const {
-    auto low = range.low();
-    return dpct_accessor<T, Memory, Dimension - 1>(data + index * low.size(),
+      : accessor(acc, range<1>(acc.get_range())) {}
+  accessor(const accessor_t &acc, const range<Dimension> &in_range)
+      : accessor(acc.get_pointer(), in_range) {}
+  accessor<T, Memory, Dimension - 1> operator[](size_t index) const {
+    auto low = _range.low();
+    return accessor<T, Memory, Dimension - 1>(data + index * low.size(),
                                                    low);
   }
 
 private:
   pointer_t data;
-  dpct_range<Dimension> range;
+  range<Dimension> _range;
 };
 
-// dpct_accessor specialization while Dimension = 1
-template <class T, memory_attribute Memory> class dpct_accessor<T, Memory, 1> {
+// accessor specialization while Dimension = 1
+template <class T, memory_attribute Memory> class accessor<T, Memory, 1> {
 public:
   using memory_t = memory_traits<Memory, T>;
   using element_t = typename memory_t::element_t;
   using pointer_t = typename memory_t::pointer_t;
   using accessor_t = typename memory_t::template accessor_t<1>;
-  dpct_accessor(pointer_t data, const dpct_range<1> &range)
-      : data(data), range(range) {}
+  accessor(pointer_t data, const range<1> &in_range)
+      : data(data), _range(in_range) {}
   template <memory_attribute M = Memory>
-  dpct_accessor(
+  accessor(
       typename std::enable_if<M != local, const accessor_t>::type &acc)
-      : dpct_accessor(acc, dpct_range<1>(acc.get_range())) {}
-  dpct_accessor(const accessor_t &acc, const dpct_range<1> &range)
-      : dpct_accessor(acc.get_pointer(), range) {}
+      : accessor(acc, range<1>(acc.get_range())) {}
+  accessor(const accessor_t &acc, const range<1> &in_range)
+      : accessor(acc.get_pointer(), in_range) {}
   element_t &operator[](size_t index) const { return *(data + index); }
   element_t &operator*() { return *data; }
   template <class Ty> operator Ty *() { return (Ty *)(&(*data)); }
   template <class ReinterpretT>
-  dpct_accessor<ReinterpretT, Memory, 1> reinterpret() {
-    return dpct_accessor<ReinterpretT, Memory, 1>(
+  accessor<ReinterpretT, Memory, 1> reinterpret() {
+    return accessor<ReinterpretT, Memory, 1>(
 #ifdef DPCT_USM_LEVEL_NONE
         // Need to get raw pointer if usm disabled.
         (ReinterpretT *)data.get(),
 #else
         (ReinterpretT *)data,
 #endif // DPCT_USM_LEVEL_NONE
-        dpct_range<1>(range.size() * sizeof(T) / sizeof(ReinterpretT)));
+        range<1>(_range.size() * sizeof(T) / sizeof(ReinterpretT)));
   }
 
 private:
   pointer_t data;
-  dpct_range<1> range;
+  range<1> _range;
 };
 
-// dpct_accessor specialization while Dimension = 0
-template <class T, memory_attribute Memory> class dpct_accessor<T, Memory, 0> {
+// accessor specialization while Dimension = 0
+template <class T, memory_attribute Memory> class accessor<T, Memory, 0> {
 public:
   using memory_t = memory_traits<Memory, T>;
   using element_t = typename memory_t::element_t;
   using value_t = typename memory_t::value_t;
   using pointer_t = typename memory_t::pointer_t;
   using accessor_t = typename memory_t::template accessor_t<1>;
-  dpct_accessor(pointer_t data, dpct_range<0> range = dpct_range<0>())
+  accessor(pointer_t data, range<0> in_range = range<0>())
       : data(data) {}
-  dpct_accessor(const accessor_t &acc) : dpct_accessor(acc.get_pointer()) {}
+  accessor(const accessor_t &acc) : accessor(acc.get_pointer()) {}
   template <class Ty> operator Ty() { return static_cast<Ty>(*data); }
   operator element_t &() { return *data; }
-  dpct_accessor &operator=(const value_t &val) {
+  accessor &operator=(const value_t &val) {
     *data = val;
     return *this;
   }
@@ -381,7 +381,7 @@ public:
     return *data + rhs;
   }
   template <class OperandT, memory_attribute OperandM>
-  auto operator+(const dpct_accessor<OperandT, OperandM, 0> &rhs)
+  auto operator+(const accessor<OperandT, OperandM, 0> &rhs)
       -> decltype(T() + OperandT()) {
     return *data + *rhs.data;
   }
@@ -390,7 +390,7 @@ public:
     return *data - rhs;
   }
   template <class OperandT, memory_attribute OperandM>
-  auto operator-(const dpct_accessor<OperandT, OperandM, 0> &rhs)
+  auto operator-(const accessor<OperandT, OperandM, 0> &rhs)
       -> decltype(T() - OperandT()) {
     return *data - *rhs.data;
   }
@@ -399,7 +399,7 @@ public:
     return *data * rhs;
   }
   template <class OperandT, memory_attribute OperandM>
-  auto operator*(const dpct_accessor<OperandT, OperandM, 0> &rhs)
+  auto operator*(const accessor<OperandT, OperandM, 0> &rhs)
       -> decltype(T() * OperandT()) {
     return (*data) * (*rhs.data);
   }
@@ -408,7 +408,7 @@ public:
     return *data / rhs;
   }
   template <class OperandT, memory_attribute OperandM>
-  auto operator/(const dpct_accessor<OperandT, OperandM, 0> &rhs)
+  auto operator/(const accessor<OperandT, OperandM, 0> &rhs)
       -> decltype(T() / OperandT()) {
     return (*data) / (*rhs.data);
   }
@@ -605,33 +605,33 @@ public:
   using accessor_t =
       typename memory_traits<Memory, T>::template accessor_t<Dimension>;
   using value_t = typename memory_traits<Memory, T>::value_t;
-  using dpct_accessor_t = dpct_accessor<T, Memory, Dimension>;
+  using dpct_accessor_t = accessor<T, Memory, Dimension>;
 
   /// Default constructor
-  global_memory() : global_memory(dpct_range<Dimension>()) {}
+  global_memory() : global_memory(range<Dimension>()) {}
 
   /// Constructor of scalar variable with initial value
-  global_memory(const dpct_range<Dimension> &range, const value_t &val)
-      : global_memory(range) {
+  global_memory(const range<Dimension> &in_range, const value_t &val)
+      : global_memory(in_range) {
     static_assert(Dimension == 0,
                   "only non-array type can be inited with single value");
     dpct_memcpy(memory_ptr, &val, sizeof(T), host_to_device);
   }
 
   /// Constructor of 1-D array with inlitializer list
-  global_memory(const dpct_range<Dimension> &range,
+  global_memory(const range<Dimension> &in_range,
                 std::initializer_list<value_t> &&init_list)
-      : global_memory(range) {
+      : global_memory(in_range) {
     static_assert(Dimension == 1,
                   "only 1-D array can be inited with intialization list");
-    assert(init_list.size() <= range.size());
+    assert(init_list.size() <= in_range.size());
     dpct_memcpy(memory_ptr, init_list.begin(), init_list.size() * sizeof(T),
                 host_to_device);
   }
 
   /// Constructor with range
-  global_memory(const dpct_range<Dimension> &range_in)
-      : size(range_in.size() * sizeof(T)), range(range_in), reference(false),
+  global_memory(const range<Dimension> &range_in)
+      : size(range_in.size() * sizeof(T)), _range(range_in), reference(false),
         memory_ptr(nullptr) {
     static_assert((Memory == device) || (Memory == constant),
                   "Global memory attribute should be constant or device");
@@ -642,7 +642,7 @@ public:
   /// Constructor with range
   template <class... Args>
   global_memory(Args... Arguments)
-      : global_memory(dpct_range<Dimension>(Arguments...)) {}
+      : global_memory(range<Dimension>(Arguments...)) {}
 
   ~global_memory() {
     if (memory_ptr && !reference)
@@ -674,23 +674,23 @@ public:
   get_access(cl::sycl::handler &cgh) {
     return memory_manager::get_instance()
         .translate_ptr(memory_ptr)
-        .buffer.template reinterpret<T, Dimension>(range)
+        .buffer.template reinterpret<T, Dimension>(_range)
         .template get_access<memory_traits<Memory, T>::mode,
                              memory_traits<Memory, T>::target>(cgh);
   }
 #else
   dpct_accessor_t get_access(cl::sycl::handler &cgh) {
-    return dpct_accessor_t((T *)memory_ptr, range);
+    return dpct_accessor_t((T *)memory_ptr, _range);
   }
 #endif // DPCT_USM_LEVEL_NONE
 
 private:
   global_memory(void *memory_ptr, size_t size)
-      : size(size), range(size / sizeof(T)), reference(true),
+      : size(size), _range(size / sizeof(T)), reference(true),
         memory_ptr(memory_ptr) {}
 
   size_t size;
-  dpct_range<Dimension> range;
+  range<Dimension> _range;
   bool reference;
   void *memory_ptr;
 };

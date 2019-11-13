@@ -9,10 +9,10 @@
 
 // CHECK: dpct::device_memory<float, 1> in(NUM_ELEMENTS);
 __device__ float in[NUM_ELEMENTS];
-// CHECK: dpct::device_memory<int, 1> init(dpct::dpct_range<1>(4), {1, 2, 3, 4});
+// CHECK: dpct::device_memory<int, 1> init(dpct::range<1>(4), {1, 2, 3, 4});
 __device__ int init[4] = {1, 2, 3, 4};
 
-// CHECK: void kernel1(float *out, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::dpct_accessor<float, dpct::device, 1> in) {
+// CHECK: void kernel1(float *out, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::accessor<float, dpct::device, 1> in) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] = in[{{.*}}[[ITEM]].get_local_id(2)];
 // CHECK: }
 __global__ void kernel1(float *out) {
@@ -21,7 +21,7 @@ __global__ void kernel1(float *out) {
 
 // CHECK: dpct::device_memory<int, 0> al;
 __device__ int al;
-// CHECK: dpct::device_memory<int, 0> ainit(dpct::dpct_range<0>(), NUM_ELEMENTS);
+// CHECK: dpct::device_memory<int, 0> ainit(dpct::range<0>(), NUM_ELEMENTS);
 __device__ int ainit = NUM_ELEMENTS;
 
 const int num_elements = 16;
@@ -29,7 +29,7 @@ const int num_elements = 16;
 // CHECK: dpct::device_memory<float, 2> fy(num_elements, 4 * num_elements);
 __device__ float fx[2], fy[num_elements][4 * num_elements];
 
-// CHECK: void kernel2(float *out, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::dpct_accessor<int, dpct::device, 0> al, dpct::dpct_accessor<float, dpct::device, 1> fx, dpct::dpct_accessor<float, dpct::device, 2> fy, dpct::dpct_accessor<float, dpct::device, 1> tmp) {
+// CHECK: void kernel2(float *out, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::accessor<int, dpct::device, 0> al, dpct::accessor<float, dpct::device, 1> fx, dpct::accessor<float, dpct::device, 2> fy, dpct::accessor<float, dpct::device, 1> tmp) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] += (int)al;
 // CHECK:   fx[{{.*}}[[ITEM]].get_local_id(2)] = fy[{{.*}}[[ITEM]].get_local_id(2)][{{.*}}[[ITEM]].get_local_id(2)];
 // CHECK: }

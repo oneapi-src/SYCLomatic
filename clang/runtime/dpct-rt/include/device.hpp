@@ -42,7 +42,7 @@ auto exception_handler = [](cl::sycl::exception_list exceptions) {
 };
 
 /// Device info
-class dpct_device_info {
+class device_info {
 public:
   // get interface
   char *get_name() { return _name; }
@@ -118,10 +118,10 @@ private:
 };
 
 /// dpct device extension
-class dpct_device : public cl::sycl::device {
+class device : public cl::sycl::device {
 public:
-  dpct_device() : cl::sycl::device() {}
-  dpct_device(const cl::sycl::device &base) : cl::sycl::device(base) {
+  device() : cl::sycl::device() {}
+  device(const cl::sycl::device &base) : cl::sycl::device(base) {
     _default_queue = cl::sycl::queue(base, exception_handler);
   }
 
@@ -132,8 +132,8 @@ public:
     return major;
   }
 
-  void get_device_info(dpct_device_info &out) {
-    dpct_device_info prop;
+  void get_device_info(device_info &out) {
+    device_info prop;
     prop.set_name(get_info<cl::sycl::info::device::name>().c_str());
 
     int major, minor;
@@ -217,26 +217,26 @@ private:
   std::set<cl::sycl::queue> _queues;
 };
 
-/// dpct device manager
+/// device manager
 class device_manager {
 public:
   device_manager() {
     std::vector<cl::sycl::device> sycl_gpu_devs =
         cl::sycl::device::get_devices(cl::sycl::info::device_type::gpu);
     for (auto &dev : sycl_gpu_devs) {
-      _devs.push_back(dpct_device(dev));
+      _devs.push_back(device(dev));
     }
     std::vector<cl::sycl::device> sycl_cpu_devs =
         cl::sycl::device::get_devices(cl::sycl::info::device_type::cpu);
     for (auto &dev : sycl_cpu_devs) {
-      _devs.push_back(dpct_device(dev));
+      _devs.push_back(device(dev));
     }
   }
-  dpct_device &current_device() {
+  device &current_device() {
     check_id(_current_device);
     return _devs[_current_device];
   }
-  dpct_device get_device(unsigned int id) const {
+  device get_device(unsigned int id) const {
     check_id(id);
     return _devs[id];
   }
@@ -253,7 +253,7 @@ private:
       throw std::string("invalid device id");
     }
   }
-  std::vector<dpct_device> _devs;
+  std::vector<device> _devs;
   unsigned int _current_device = 0;
 };
 

@@ -11,7 +11,7 @@ __constant__ float const_angle[360], const_float[NUM_ELEMENTS][num_elements * 2]
 // CHECK: dpct::constant_memory<cl::sycl::double2, 0> vec_d;
 __constant__ double2 vec_d;
 
-// CHECK:void simple_kernel(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::dpct_accessor<float, dpct::constant, 1> const_angle) {
+// CHECK:void simple_kernel(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::accessor<float, dpct::constant, 1> const_angle) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range().get(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  if (index < 360) {
@@ -31,7 +31,7 @@ __global__ void simple_kernel(float *d_array) {
 // CHECK: dpct::constant_memory<float, 0> const_one;
 __constant__ float const_one;
 
-// CHECK:void simple_kernel_one(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::dpct_accessor<float, dpct::constant, 2> const_float, dpct::dpct_accessor<float, dpct::constant, 0> const_one) {
+// CHECK:void simple_kernel_one(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::accessor<float, dpct::constant, 2> const_float, dpct::accessor<float, dpct::constant, 0> const_one) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range().get(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  if (index < 33) {

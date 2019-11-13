@@ -1,13 +1,13 @@
 // RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/types001.dp.cpp
 
-// CHECK: dpct::dpct_device_info deviceProp;
+// CHECK: dpct::device_info deviceProp;
 cudaDeviceProp deviceProp;
 
-// CHECK: const dpct::dpct_device_info deviceProp1 = {};
+// CHECK: const dpct::device_info deviceProp1 = {};
 const cudaDeviceProp deviceProp1 = {};
 
-// CHECK: volatile dpct::dpct_device_info deviceProp2;
+// CHECK: volatile dpct::device_info deviceProp2;
 volatile cudaDeviceProp deviceProp2;
 
 // CHDCK: cl::sycl::event events[23];
@@ -68,7 +68,7 @@ struct s {
   const dim3 **ppdims[23];
 };
 
-// CHECK:  void foo(dpct::dpct_device_info p) {
+// CHECK:  void foo(dpct::device_info p) {
 void foo(cudaDeviceProp p) {
   return;
 }

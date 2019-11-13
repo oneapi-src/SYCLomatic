@@ -9,7 +9,7 @@
 
 __device__ float out[NUM_ELEMENTS];
 
-// CHECK: void kernel1(cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::dpct_accessor<float, dpct::device, 1> out) {
+// CHECK: void kernel1(cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::accessor<float, dpct::device, 1> out) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] = [[ITEM]].get_local_id(2);
 // CHECK: }
 __global__ void kernel1() {
@@ -38,7 +38,7 @@ int main() {
   // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
-  // CHECK:           kernel1([[ITEM]], dpct::dpct_accessor<float, dpct::device, 1>(out_acc_ct1));
+  // CHECK:           kernel1([[ITEM]], dpct::accessor<float, dpct::device, 1>(out_acc_ct1));
   // CHECK:         });
   // CHECK:     });
   // CHECK: }

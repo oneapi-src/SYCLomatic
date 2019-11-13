@@ -17,14 +17,14 @@ using namespace std;
 __constant__ double d;
 __constant__ double d2;
 
-// CHECK: double test(double d3, dpct::dpct_accessor<double, dpct::constant, 0> d) {
+// CHECK: double test(double d3, dpct::accessor<double, dpct::constant, 0> d) {
 // CHECK-NEXT:  return cl::sycl::max((double)d, d3);
 // CHECK-NEXT:}
 __device__ double test(double d3) {
   return max(d, d3);
 }
 
-// CHECK:  double test2(dpct::dpct_accessor<double, dpct::constant, 0> d, dpct::dpct_accessor<double, dpct::constant, 0> d2) {
+// CHECK:  double test2(dpct::accessor<double, dpct::constant, 0> d, dpct::accessor<double, dpct::constant, 0> d2) {
 // CHECK-NEXT:   return cl::sycl::max((double)d, (double)d2);
 // CHECK-NEXT: }
 __device__ double test2() {
@@ -39,7 +39,7 @@ __device__ double test3(double d4, double d5) {
 }
 
 // CHECK: dpct::constant_memory<float, 0> C;
-// CHECK-NEXT:  int foo(int n, dpct::dpct_accessor<float, dpct::constant, 0> C) {
+// CHECK-NEXT:  int foo(int n, dpct::accessor<float, dpct::constant, 0> C) {
 // CHECK-NEXT:   return n == 1 ? (float)C : 0;
 // CHECK-NEXT: }
 __constant__ float C;

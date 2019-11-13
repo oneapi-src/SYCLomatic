@@ -23,7 +23,7 @@
 #include <CL/sycl.hpp>
 #include "../include/dpct.hpp"
 
-dpct::device_memory<volatile int, 0> g_a(dpct::dpct_range<0>(), 0);
+dpct::device_memory<volatile int, 0> g_a(dpct::range<0>(), 0);
 dpct::device_memory<int, 1> d_a(36);
 
 
@@ -31,7 +31,7 @@ void test2(volatile int &a) {
   a = 3;
 }
 
-void test1(dpct::dpct_accessor<volatile int, dpct::device, 0> acc_a, dpct::dpct_accessor<int, dpct::device, 1> acc_b) {
+void test1(dpct::accessor<volatile int, dpct::device, 0> acc_a, dpct::accessor<int, dpct::device, 1> acc_b) {
   unsigned d_a = 1;
   acc_a = 0;
   acc_a = d_a;
@@ -49,7 +49,7 @@ int main() try {
         cgh.parallel_for<dpct_kernel_name<class kernel_test>>(
           cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
           [=] (cl::sycl::nd_item<3> item) {
-            test1(dpct::dpct_accessor<volatile int, dpct::device, 0>(g_acc), dpct::dpct_accessor<int, dpct::device, 1>(d_acc));
+            test1(dpct::accessor<volatile int, dpct::device, 0>(g_acc), dpct::accessor<int, dpct::device, 1>(d_acc));
           });
       });
   }

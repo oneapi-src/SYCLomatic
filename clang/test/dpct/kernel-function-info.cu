@@ -16,7 +16,7 @@ __global__ void testKernel(void* data)
 template<class T>
 void getTemplateFuncAttrs()
 {
-  //CHECK: dpct::dpct_kernel_function_info attrs;
+  //CHECK: dpct::kernel_function_info attrs;
   cudaFuncAttributes attrs;
 
   //CHECK: (dpct::get_kernel_function_info(&attrs, (const void *)testTemplateKernel<T>), 0);
@@ -28,7 +28,7 @@ void getTemplateFuncAttrs()
 
 void getFuncAttrs()
 {
-  //CHECK: dpct::dpct_kernel_function_info attrs;
+  //CHECK: dpct::kernel_function_info attrs;
   cudaFuncAttributes attrs;
 
   //CHECK: (dpct::get_kernel_function_info(&attrs, (const void *)testKernel), 0);

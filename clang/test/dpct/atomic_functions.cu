@@ -126,7 +126,7 @@ void InvokeKernel() {
 // CHECK: dpct::device_memory<uint32_t, 1> d_error(1);
 static __device__ uint32_t d_error[1];
 
-// CHECK: void fun(dpct::dpct_accessor<uint32_t, dpct::device, 1> d_error){
+// CHECK: void fun(dpct::accessor<uint32_t, dpct::device, 1> d_error){
 __device__ void fun(){
   double *a;
   float b;

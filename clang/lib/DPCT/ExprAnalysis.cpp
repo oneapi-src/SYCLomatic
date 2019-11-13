@@ -160,7 +160,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
         ME->getOperatorLoc(), ME->getMemberLoc(),
         MapNames::findReplacedName(MapNames::Dim3MemberNamesMap,
                                    ME->getMemberNameInfo().getAsString()));
-  } else if (Ty.getBaseName() == "dpct::dpct_device_info") {
+  } else if (Ty.getBaseName() == "dpct::device_info") {
     std::string ReplacementStr = MapNames::findReplacedName(
         DevicePropVarRule::PropNamesMap, ME->getMemberNameInfo().getAsString());
     if (!ReplacementStr.empty()) {

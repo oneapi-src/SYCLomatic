@@ -3,7 +3,7 @@
 
 int main() {
 
-  // CHECK: dpct::dpct_device_info deviceProp;
+  // CHECK: dpct::device_info deviceProp;
   cudaDeviceProp deviceProp;
 
   // CHECK:/*

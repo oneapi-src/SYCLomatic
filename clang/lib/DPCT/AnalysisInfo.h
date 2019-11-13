@@ -807,7 +807,7 @@ public:
                        ".get_access(cgh);");
   }
   std::string getRangeDecl(const std::string &MemSize) {
-    return buildString("dpct::dpct_range<", getType()->getDimension(), "> ",
+    return buildString("dpct::range<", getType()->getDimension(), "> ",
                        getRangeName(),
                        getType()->getRangeArgument(MemSize, false), ";");
   }
@@ -852,7 +852,7 @@ private:
                                bool MustArguments = false) {
     if (InitList.empty())
       return getType()->getRangeArgument(MemSize, MustArguments);
-    return buildString("(dpct::dpct_range<", getType()->getDimension(), ">",
+    return buildString("(dpct::range<", getType()->getDimension(), ">",
                        getType()->getRangeArgument(MemSize, true),
                        ", " + InitList, ")");
   }
@@ -868,7 +868,7 @@ private:
   }
   std::string getDpctAccessorType(bool UsingTemplateName) {
     auto Type = getType();
-    return buildString("dpct::dpct_accessor<",
+    return buildString("dpct::accessor<",
                        getAccessorDataType(UsingTemplateName), ", ",
                        getMemoryAttr(), ", ", Type->getDimension(), ">");
   }
@@ -965,7 +965,7 @@ public:
   virtual std::string getHostDeclString() {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
-    getDecl(OS, "dpct_image") << ";";
+    getDecl(OS, "image") << ";";
     return OS.str();
   }
 
@@ -974,7 +974,7 @@ public:
   }
 
   inline llvm::raw_ostream &getFuncDecl(llvm::raw_ostream &OS) {
-    return getDecl(OS, "dpct_image_accessor");
+    return getDecl(OS, "image_accessor");
   }
   inline llvm::raw_ostream &getFuncArg(llvm::raw_ostream &OS) {
     return OS << Name;
@@ -1006,7 +1006,7 @@ public:
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     OS << "auto " << Name << "_acc = static_cast<";
-    getType()->printType(OS, "dpct::dpct_image")
+    getType()->printType(OS, "dpct::image")
         << " *>(" << Name << ")->get_access(cgh);";
     return OS.str();
   }
@@ -1015,7 +1015,7 @@ public:
   std::string getParamDeclType() {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
-    Type->printType(OS, "dpct::dpct_image_accessor");
+    Type->printType(OS, "dpct::image_accessor");
     return OS.str();
   }
 

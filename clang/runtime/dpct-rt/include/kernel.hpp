@@ -23,11 +23,11 @@
 
 namespace dpct {
 
-struct dpct_kernel_function_info {
+struct kernel_function_info {
   int max_work_group_size = 0;
 };
 
-static void get_kernel_function_info(dpct_kernel_function_info *kernel_info,
+static void get_kernel_function_info(kernel_function_info *kernel_info,
                                      const void *function) {
   kernel_info->max_work_group_size =
       dpct::device_manager()

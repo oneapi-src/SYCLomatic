@@ -3,7 +3,7 @@
 
 int main(int argc, char **argv) {
 
-  // CHECK: dpct::dpct_device_info deviceProp;
+  // CHECK: dpct::device_info deviceProp;
   cudaDeviceProp deviceProp;
 
   // CHECK: if (deviceProp.get_mode() == dpct::compute_mode::prohibited) {
@@ -102,7 +102,7 @@ __global__ void foo_kernel(void)
 
 void test()
 {
-  // CHECK: dpct::dpct_device_info deviceProp;
+  // CHECK: dpct::device_info deviceProp;
   cudaDeviceProp deviceProp;
   // CHECK: {
   // CHECK-NEXT:   dpct::get_default_queue().submit(

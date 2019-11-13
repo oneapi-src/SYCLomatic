@@ -34,7 +34,7 @@ const MapNames::SetTy MapNames::SupportedVectorTypes{
 
 // Type names mapping.
 const MapNames::MapTy MapNames::TypeNamesMap{
-    {"cudaDeviceProp", "dpct::dpct_device_info"},
+    {"cudaDeviceProp", "dpct::device_info"},
     {"cudaError_t", "int"},
     {"cudaError", "int"},
     {"CUresult", "int"},
@@ -115,12 +115,12 @@ const MapNames::MapTy MapNames::TypeNamesMap{
     {"cusolverEigType_t", "int64_t"},
     {"cusolverEigMode_t", "mkl::job"},
     {"cusolverStatus_t", "int"},
-    {"cudaChannelFormatDesc", "dpct::dpct_image_channel"},
-    {"cudaArray", "dpct::dpct_image_matrix"},
-    {"cudaArray_t", "dpct::dpct_image_matrix_p"},
-    {"cudaTextureDesc", "dpct::dpct_image_info"},
-    {"cudaResourceDesc", "dpct::dpct_image_data"},
-    {"cudaTextureObject_t", "dpct::dpct_image_base_p"},
+    {"cudaChannelFormatDesc", "dpct::image_channel"},
+    {"cudaArray", "dpct::image_matrix"},
+    {"cudaArray_t", "dpct::image_matrix_p"},
+    {"cudaTextureDesc", "dpct::image_info"},
+    {"cudaResourceDesc", "dpct::image_data"},
+    {"cudaTextureObject_t", "dpct::image_base_p"},
     // ...
 };
 

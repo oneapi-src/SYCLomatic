@@ -5197,7 +5197,7 @@ void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
 void KernelFunctionInfoRule::run(const MatchFinder::MatchResult &Result) {
   if (auto V = getNodeAsType<VarDecl>(Result, "decl"))
     emplaceTransformation(
-        new ReplaceTypeInDecl(V, "dpct::dpct_kernel_function_info"));
+        new ReplaceTypeInDecl(V, "dpct::kernel_function_info"));
   else if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
     emplaceTransformation(
         new ReplaceToken(C->getBeginLoc(), "(dpct::get_kernel_function_info"));
@@ -5460,7 +5460,7 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
     if (auto FD = dyn_cast<FunctionDecl>(VD->getParentFunctionOrMethod())) {
       if (!FD->hasAttr<CUDAGlobalAttr>() && !FD->hasAttr<CUDADeviceAttr>()) {
         emplaceTransformation(
-            new ReplaceTypeInDecl(VD, "dpct::dpct_image_base_p"));
+            new ReplaceTypeInDecl(VD, "dpct::image_base_p"));
       }
     }
   }

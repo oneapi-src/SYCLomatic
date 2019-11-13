@@ -26,7 +26,7 @@
 
 namespace dpct {
 
-enum dpct_channel_data_kind {
+enum channel_data_kind {
   channel_signed,
   channel_unsigned,
   channel_float,
@@ -44,7 +44,7 @@ template <class T> struct image_trait {
                          cl::sycl::access::target::image>;
   using data_t = T;
   using elem_t = T;
-  static constexpr dpct_channel_data_kind channel_kind =
+  static constexpr channel_data_kind channel_kind =
       std::is_integral<T>::value
           ? (std::is_signed<T>::value ? channel_signed : channel_unsigned)
           : channel_float;
@@ -126,15 +126,15 @@ template <class T> struct fetch_data<cl::sycl::vec<T, 4>> {
 };
 
 // Image channel info, include channel number, order, data width and type
-struct dpct_image_channel {
+struct image_channel {
   cl::sycl::image_channel_order _order;
   cl::sycl::image_channel_type _type;
   unsigned _elem_size;
 };
 
 /// 2D or 3D matrix data for image.
-class dpct_image_matrix {
-  dpct_image_channel _channel;
+class image_matrix {
+  image_channel _channel;
   int _range[3] = {0};
   int _dims = 0;
   void *_src = nullptr;
@@ -163,7 +163,7 @@ class dpct_image_matrix {
 public:
   /// Constructor with channel info and dimension size info.
   template <class... Args>
-  dpct_image_matrix(dpct_image_channel channel, Args &&... args)
+  image_matrix(image_channel channel, Args &&... args)
       : _channel(channel) {
     auto size = set_range(0, std::forward<Args>(args)...);
     _src = std::malloc(size * _channel._elem_size);
@@ -189,25 +189,25 @@ public:
                _channel._elem_size;
   }
   /// Get channel info.
-  inline dpct_image_channel get_channel() { return _channel; }
+  inline image_channel get_channel() { return _channel; }
   /// Get matrix dims.
   inline int get_dims() { return _dims; }
 
-  ~dpct_image_matrix() { free(); }
+  ~image_matrix() { free(); }
 };
-using dpct_image_matrix_p = dpct_image_matrix *;
+using image_matrix_p = image_matrix *;
 
-enum dpct_image_data_type { data_matrix, data_linear, data_unsupport };
+enum image_data_type { data_matrix, data_linear, data_unsupport };
 
 /// Image data info.
-class dpct_image_data {
+class image_data {
 public:
-  dpct_image_data_type type;
+  image_data_type type;
   union {
-    dpct_image_matrix *matrix;
+    image_matrix *matrix;
     struct {
       void *data;
-      dpct_image_channel chn;
+      image_channel chn;
       size_t size;
     } linear;
   } data;
@@ -215,7 +215,7 @@ public:
 
 /// Image sampling info, include addressing mode, filtering mode and
 /// normalization info.
-class dpct_image_info {
+class image_info {
   cl::sycl::addressing_mode _addr_mode;
   cl::sycl::filtering_mode _filter_mode;
   bool _normalized;
@@ -229,55 +229,55 @@ public:
 };
 
 /// Image base class.
-class dpct_image_base : public dpct_image_info {
-  dpct_image_data _data;
+class image_base : public image_info {
+  image_data _data;
 
 public:
-  virtual ~dpct_image_base() = 0;
+  virtual ~image_base() = 0;
 
   // Set image info.
-  void set_info(dpct_image_info *info) {
-    *(static_cast<dpct_image_info *>(this)) = *info;
+  void set_info(image_info *info) {
+    *(static_cast<image_info *>(this)) = *info;
   }
   // Set data info.
-  virtual void set_data(dpct_image_data *data) { _data = *data; }
-  const dpct_image_info *get_info() { return this; }
-  const dpct_image_data *get_data() { return &_data; }
+  virtual void set_data(image_data *data) { _data = *data; }
+  const image_info *get_info() { return this; }
+  const image_data *get_data() { return &_data; }
 };
-inline dpct_image_base::~dpct_image_base() {}
-using dpct_image_base_p = dpct_image_base *;
+inline image_base::~image_base() {}
+using image_base_p = image_base *;
 
-template <class T, int Dimension> class dpct_image_accessor;
+template <class T, int Dimension> class image_accessor;
 
 /// Image class, wrapper of cl::sycl::image.
-template <class T, int Dimension> class dpct_image : public dpct_image_base {
+template <class T, int Dimension> class image : public image_base {
   cl::sycl::image<Dimension> *_image = nullptr;
 
   // Functor for attaching data to image class.
   template <class DataT, int Dim> struct attach_data {
-    void operator()(dpct_image<DataT, Dim> *image, dpct_image_data *data) {
+    void operator()(image<DataT, Dim> *in_image, image_data *data) {
       assert(data->type == data_matrix);
-      image->attach(data->data.matrix);
+      in_image->attach(data->data.matrix);
     }
   };
   template <class DataT> struct attach_data<DataT, 1> {
-    void operator()(dpct_image<DataT, 1> *image, dpct_image_data *data) {
+    void operator()(image<DataT, 1> *in_image, image_data *data) {
       if (data->type == data_linear)
-        image->attach(data->data.linear.data, data->data.linear.chn,
+        in_image->attach(data->data.linear.data, data->data.linear.chn,
                       data->data.linear.size);
       else if (data->type == data_matrix)
-        image->attach(data->data.matrix);
+        in_image->attach(data->data.matrix);
     }
   };
 
 public:
-  ~dpct_image() { detach(); }
+  ~image() { detach(); }
 
 public:
   using acc_data_t = typename image_trait<T>::acc_data_t;
   // Get image accessor.
-  dpct_image_accessor<T, Dimension> get_access(cl::sycl::handler &cgh) {
-    return dpct_image_accessor<T, Dimension>(
+  image_accessor<T, Dimension> get_access(cl::sycl::handler &cgh) {
+    return image_accessor<T, Dimension>(
         cl::sycl::sampler(
             coord_normalized()
                 ? cl::sycl::coordinate_normalization_mode::normalized
@@ -287,17 +287,17 @@ public:
             cgh));
   }
   // Set data info, attach the data to this class.
-  void set_data(dpct_image_data *data) override {
-    dpct_image_base::set_data(data);
+  void set_data(image_data *data) override {
+    image_base::set_data(data);
     attach_data<T, Dimension>()(this, data);
   }
   // Attach matrix data to this class.
-  void attach(dpct_image_matrix *data) {
+  void attach(image_matrix *data) {
     detach();
     _image = data->allocate_image<Dimension>();
   }
   // Attach linear data to this class.
-  void attach(void *ptr, const dpct_image_channel &chn_desc, size_t count) {
+  void attach(void *ptr, const image_channel &chn_desc, size_t count) {
     detach();
     if (memory_manager::get_instance().is_device_ptr(ptr))
       ptr = memory_manager::get_instance()
@@ -317,7 +317,7 @@ public:
 };
 
 /// Wrap sampler and image accessor together.
-template <class T, int Dimension> class dpct_image_accessor {
+template <class T, int Dimension> class image_accessor {
 public:
   using accessor_t = typename image_trait<T>::template accessor_t<Dimension>;
   using data_t = typename image_trait<T>::data_t;
@@ -325,7 +325,7 @@ public:
   accessor_t _img_acc;
 
 public:
-  dpct_image_accessor(cl::sycl::sampler sampler, accessor_t acc)
+  image_accessor(cl::sycl::sampler sampler, accessor_t acc)
       : _sampler(sampler), _img_acc(acc) {}
 
   // Read data from accessor.
@@ -334,10 +334,10 @@ public:
   }
 };
 
-static inline dpct_image_channel
+static inline image_channel
 create_image_channel(int elem_size, int channel_nums,
-                     dpct_channel_data_kind channel_kind) {
-  dpct_image_channel channel;
+                     channel_data_kind channel_kind) {
+  image_channel channel;
   channel._elem_size = elem_size;
   if (elem_size == 4) {
     if (channel_kind == channel_signed)
@@ -378,9 +378,9 @@ create_image_channel(int elem_size, int channel_nums,
 /// \param b Channel b width in bits. Should be same with \p g, or zero.
 /// \param a Channel a width in bits. Should be same with \p b, or zero.
 /// \channel_kind Channel data type kind: signed int, unsigned int or float.
-static inline dpct_image_channel
+static inline image_channel
 create_image_channel(int r, int g, int b, int a,
-                     dpct_channel_data_kind channel_kind) {
+                     channel_data_kind channel_kind) {
   if (a) {
     return create_image_channel(r / 8, 4, channel_kind);
   } else if (b) {
@@ -393,7 +393,7 @@ create_image_channel(int r, int g, int b, int a,
 }
 
 /// Create image channel info according to template argument \p T.
-template <class T> static inline dpct_image_channel create_image_channel() {
+template <class T> static inline image_channel create_image_channel() {
   return create_image_channel(sizeof(typename image_trait<T>::elem_t),
                               image_trait<T>::channel_nums,
                               image_trait<T>::channel_kind);
@@ -403,9 +403,9 @@ template <class T> static inline dpct_image_channel create_image_channel() {
 /// \param image The image class to be attached.
 /// \param a The matrix data class pointer.
 template <class T, int Dimension>
-inline void dpct_attach_image(dpct_image<T, Dimension> &image,
-                              dpct_image_matrix *a) {
-  image.attach(a);
+inline void attach_image(image<T, Dimension> &in_image,
+                              image_matrix *a) {
+  in_image.attach(a);
 }
 
 /// Attach a memory block to an image class.
@@ -414,9 +414,9 @@ inline void dpct_attach_image(dpct_image<T, Dimension> &image,
 /// \param desc Channel info.
 /// \param size Memory block size in bytes.
 template <class T>
-inline void dpct_attach_image(dpct_image<T, 1> &image, void *ptr,
-                              const dpct_image_channel &chn, size_t size) {
-  image.attach(ptr, chn, size);
+inline void attach_image(image<T, 1> &in_image, void *ptr,
+                              const image_channel &chn, size_t size) {
+  in_image.attach(ptr, chn, size);
 }
 
 /// Attach a memory block to an image class.
@@ -424,22 +424,22 @@ inline void dpct_attach_image(dpct_image<T, 1> &image, void *ptr,
 /// \param ptr The pointer that point to the memory block.
 /// \param size Memory block size in bytes.
 template <class T>
-inline void dpct_attach_image(dpct_image<T, 1> &image, void *ptr, size_t size) {
-  image.attach(ptr, create_image_channel<T>(), size);
+inline void attach_image(image<T, 1> &in_image, void *ptr, size_t size) {
+  in_image.attach(ptr, create_image_channel<T>(), size);
 }
 
 /// Detach data from an image class.
 /// \param image The image class to be detached.
 template <class T, int Dimension>
-inline void dpct_detach_image(dpct_image<T, Dimension> *image) {
-  image->detach();
+inline void detach_image(image<T, Dimension> *in_image) {
+  in_image->detach();
 }
 
 /// Detach data from an image class.
 /// \param image The image class to be detached.
 template <class T, int Dimension>
-inline void dpct_detach_image(dpct_image<T, Dimension> &image) {
-  return dpct_detach_image(&image);
+inline void detach_image(image<T, Dimension> &in_image) {
+  return detach_image(&in_image);
 }
 
 /// Malloc matrix data.
@@ -447,9 +447,9 @@ inline void dpct_detach_image(dpct_image<T, Dimension> &image) {
 /// \param chn Pointer to channel info.
 /// \param args Varidic arguments of range.
 template <class... Args>
-inline void dpct_malloc_matrix(dpct_image_matrix **a, dpct_image_channel *chn,
+inline void malloc_matrix(image_matrix **a, image_channel *chn,
                                Args &&... args) {
-  *a = new dpct_image_matrix(*chn, std::forward<Args>(args)...);
+  *a = new image_matrix(*chn, std::forward<Args>(args)...);
 }
 
 /// Copy data to matrix.
@@ -458,21 +458,21 @@ inline void dpct_malloc_matrix(dpct_image_matrix **a, dpct_image_channel *chn,
 /// \param off_y Destination offset at dim y.
 /// \param ptr Point to source data.
 /// \param count Size in bytes.
-inline void dpct_memcpy_to_matrix(dpct_image_matrix *a, size_t off_x,
+inline void memcpy_to_matrix(image_matrix *a, size_t off_x,
                                   size_t off_y, void *ptr, size_t count) {
   dpct_memcpy(ptr, a->get_data(off_x, off_y, 0), count);
 }
 
 /// Free a matrix.
 /// \param a Pointer to matrix.
-inline void dpct_free(dpct_image_matrix *a) { delete a; }
+inline void dpct_free(image_matrix *a) { delete a; }
 
 /// Read data from image accessor.
 /// \param acc Image accessor.
 /// \param x Coordinate.
 template <class T, class CoordT>
 inline typename image_trait<T>::data_t
-dpct_read_image(dpct_image_accessor<T, 1> &acc, CoordT x) {
+read_image(image_accessor<T, 1> &acc, CoordT x) {
   return acc.read(x);
 }
 
@@ -481,9 +481,9 @@ dpct_read_image(dpct_image_accessor<T, 1> &acc, CoordT x) {
 /// \param acc Image accessor.
 /// \param x Coordinate.
 template <class T, class CoordT>
-inline void dpct_read_image(typename image_trait<T>::data_t *data,
-                            dpct_image_accessor<T, 1> &acc, CoordT x) {
-  *data = dpct_read_image(acc, x);
+inline void read_image(typename image_trait<T>::data_t *data,
+                            image_accessor<T, 1> &acc, CoordT x) {
+  *data = read_image(acc, x);
 }
 
 /// Read data from image accessor.
@@ -492,7 +492,7 @@ inline void dpct_read_image(typename image_trait<T>::data_t *data,
 /// \param y Coordinate.
 template <class T, class CoordT>
 inline typename image_trait<T>::data_t
-dpct_read_image(dpct_image_accessor<T, 2> &acc, CoordT x, CoordT y) {
+read_image(image_accessor<T, 2> &acc, CoordT x, CoordT y) {
   return acc.read(cl::sycl::vec<CoordT, 2>(x, y));
 }
 
@@ -502,10 +502,10 @@ dpct_read_image(dpct_image_accessor<T, 2> &acc, CoordT x, CoordT y) {
 /// \param x Coordinate.
 /// \param y Coordinate.
 template <class T, class CoordT>
-inline void dpct_read_image(typename image_trait<T>::data_t *data,
-                            dpct_image_accessor<T, 2> &acc, CoordT x,
+inline void read_image(typename image_trait<T>::data_t *data,
+                            image_accessor<T, 2> &acc, CoordT x,
                             CoordT y) {
-  *data = dpct_read_image(acc, x, y);
+  *data = read_image(acc, x, y);
 }
 
 /// Read data from image accessor.
@@ -515,7 +515,7 @@ inline void dpct_read_image(typename image_trait<T>::data_t *data,
 /// \param z Coordinate.
 template <class T, class CoordT>
 inline typename image_trait<T>::data_t
-dpct_read_image(dpct_image_accessor<T, 3> &acc, CoordT x, CoordT y, CoordT z) {
+read_image(image_accessor<T, 3> &acc, CoordT x, CoordT y, CoordT z) {
   return acc.read(cl::sycl::vec<CoordT, 4>(x, y, z, 0));
 }
 
@@ -526,21 +526,21 @@ dpct_read_image(dpct_image_accessor<T, 3> &acc, CoordT x, CoordT y, CoordT z) {
 /// \param y Coordinate.
 /// \param z Coordinate.
 template <class T, class CoordT>
-inline void dpct_read_image(typename image_trait<T>::data_t *data,
-                            dpct_image_accessor<T, 4> &acc, CoordT x, CoordT y,
+inline void read_image(typename image_trait<T>::data_t *data,
+                            image_accessor<T, 4> &acc, CoordT x, CoordT y,
                             CoordT z) {
-  *data = dpct_read_image(acc, x, y, z);
+  *data = read_image(acc, x, y, z);
 }
 
 /// Create image according with given type \p T and \p dims.
-template <class T> static dpct_image_base *dpct_create_image(int dims) {
+template <class T> static image_base *create_image(int dims) {
   switch (dims) {
   case 1:
-    return new dpct_image<T, 1>();
+    return new image<T, 1>();
   case 2:
-    return new dpct_image<T, 2>();
+    return new image<T, 2>();
   case 3:
-    return new dpct_image<T, 3>();
+    return new image<T, 3>();
   default:
     return nullptr;
   }
@@ -548,41 +548,41 @@ template <class T> static dpct_image_base *dpct_create_image(int dims) {
 
 /// Create image with given data type \p T, channel order and dims
 template <class T>
-static dpct_image_base *dpct_create_image(cl::sycl::image_channel_order order,
+static image_base *create_image(cl::sycl::image_channel_order order,
                                           int dims) {
   switch (order) {
   case cl::sycl::image_channel_order::r:
-    return dpct_create_image<T>(dims);
+    return create_image<T>(dims);
   case cl::sycl::image_channel_order::rg:
-    return dpct_create_image<cl::sycl::vec<T, 2>>(dims);
+    return create_image<cl::sycl::vec<T, 2>>(dims);
   case cl::sycl::image_channel_order::rgb:
-    return dpct_create_image<cl::sycl::vec<T, 3>>(dims);
+    return create_image<cl::sycl::vec<T, 3>>(dims);
   case cl::sycl::image_channel_order::rgba:
-    return dpct_create_image<cl::sycl::vec<T, 4>>(dims);
+    return create_image<cl::sycl::vec<T, 4>>(dims);
   default:
     return nullptr;
   }
 }
 
 /// Create image with channel info and specified dimensions.
-static dpct_image_base *dpct_create_image(dpct_image_channel chn, int dims) {
+static image_base *create_image(image_channel chn, int dims) {
   switch (chn._type) {
   case cl::sycl::image_channel_type::fp16:
-    return dpct_create_image<cl::sycl::cl_half>(chn._order, dims);
+    return create_image<cl::sycl::cl_half>(chn._order, dims);
   case cl::sycl::image_channel_type::fp32:
-    return dpct_create_image<cl::sycl::cl_float>(chn._order, dims);
+    return create_image<cl::sycl::cl_float>(chn._order, dims);
   case cl::sycl::image_channel_type::signed_int8:
-    return dpct_create_image<cl::sycl::cl_char>(chn._order, dims);
+    return create_image<cl::sycl::cl_char>(chn._order, dims);
   case cl::sycl::image_channel_type::signed_int16:
-    return dpct_create_image<cl::sycl::cl_short>(chn._order, dims);
+    return create_image<cl::sycl::cl_short>(chn._order, dims);
   case cl::sycl::image_channel_type::signed_int32:
-    return dpct_create_image<cl::sycl::cl_int>(chn._order, dims);
+    return create_image<cl::sycl::cl_int>(chn._order, dims);
   case cl::sycl::image_channel_type::unsigned_int8:
-    return dpct_create_image<cl::sycl::cl_uchar>(chn._order, dims);
+    return create_image<cl::sycl::cl_uchar>(chn._order, dims);
   case cl::sycl::image_channel_type::unsigned_int16:
-    return dpct_create_image<cl::sycl::cl_ushort>(chn._order, dims);
+    return create_image<cl::sycl::cl_ushort>(chn._order, dims);
   case cl::sycl::image_channel_type::unsigned_int32:
-    return dpct_create_image<cl::sycl::cl_uint>(chn._order, dims);
+    return create_image<cl::sycl::cl_uint>(chn._order, dims);
   default:
     return nullptr;
   }
@@ -592,9 +592,9 @@ static dpct_image_base *dpct_create_image(dpct_image_channel chn, int dims) {
 /// \param [out] image_p Point to a pointer of image base class.
 /// \param data Pointer to image data.
 /// \param info Pointer to image info.
-inline void dpct_create_image(dpct_image_base **image_p, dpct_image_data *data,
-                              dpct_image_info *info) {
-  dpct_image_channel channel;
+inline void create_image(image_base **image_p, image_data *data,
+                              image_info *info) {
+  image_channel channel;
   int dims = 1;
   if (data->type == dpct::data_matrix) {
     channel = data->data.matrix->get_channel();
@@ -605,29 +605,29 @@ inline void dpct_create_image(dpct_image_base **image_p, dpct_image_data *data,
     assert(data->type != dpct::data_unsupport);
   }
 
-  if (auto image = dpct_create_image(channel, dims)) {
-    image->set_info(info);
-    image->set_data(data);
-    *image_p = image;
+  if (auto _image = create_image(channel, dims)) {
+    _image->set_info(info);
+    _image->set_data(data);
+    *image_p = _image;
   }
 }
 
 /// Free an image class.
 /// \param image Pointer of an Image base class.
-inline void dpct_free(dpct_image_base *image) { delete image; }
+inline void dpct_free(image_base *in_image) { delete in_image; }
 
 /// Get image info from an image class.
 /// \param [out] info Point to image info.
 /// \param image Point to image class.
-inline void dpct_get_image_info(dpct_image_info *info, dpct_image_base *image) {
-  *info = *image->get_info();
+inline void get_image_info(image_info *info, image_base *in_image) {
+  *info = *in_image->get_info();
 }
 
 /// Get image data from an image class.
 /// \param [out] info Point to image data.
 /// \param image Point to image class.
-inline void dpct_get_image_data(dpct_image_data *data, dpct_image_base *image) {
-  *data = *image->get_data();
+inline void get_image_data(image_data *data, image_base *in_image) {
+  *data = *in_image->get_data();
 }
 } // namespace dpct
 

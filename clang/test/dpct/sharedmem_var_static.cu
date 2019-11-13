@@ -9,7 +9,7 @@
 
 class TestObject{
 public:
-  // CHECK: static void run(int *in, int *out, cl::sycl::nd_item<3> item_ct1, dpct::dpct_accessor<int, dpct::local, 0> a0) {
+  // CHECK: static void run(int *in, int *out, cl::sycl::nd_item<3> item_ct1, dpct::accessor<int, dpct::local, 0> a0) {
   __device__ static void run(int *in, int *out) {
     // CHECK:  // the size of s is static
     __shared__ int a0; // the size of s is static
@@ -17,7 +17,7 @@ public:
   }
 };
 
-// CHECK: void nonTypeTemplateReverse(int *d, int n, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::dpct_accessor<int, dpct::local, 1> s) {
+// CHECK: void nonTypeTemplateReverse(int *d, int n, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::accessor<int, dpct::local, 1> s) {
 // CHECK-NEXT:  // the size of s is dependent on parameter
 template <int ArraySize>
 __global__ void nonTypeTemplateReverse(int *d, int n) {
@@ -28,7 +28,7 @@ __global__ void nonTypeTemplateReverse(int *d, int n) {
   }
 }
 
-// CHECK: void staticReverse(int *d, int n, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::dpct_accessor<int, dpct::local, 0> a0, dpct::dpct_accessor<int, dpct::local, 1> s) {
+// CHECK: void staticReverse(int *d, int n, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::accessor<int, dpct::local, 0> a0, dpct::accessor<int, dpct::local, 1> s) {
 __global__ void staticReverse(int *d, int n) {
   const int size = 64;
   // CHECK:  // the size of s is static
@@ -42,7 +42,7 @@ __global__ void staticReverse(int *d, int n) {
 }
 
 // CHECK: template<typename TData>
-// CHECK-NEXT: void templateReverse(TData *d, TData n, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::dpct_accessor<TData, dpct::local, 2> s) {
+// CHECK-NEXT: void templateReverse(TData *d, TData n, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::accessor<TData, dpct::local, 2> s) {
 template<typename TData>
 __global__ void templateReverse(TData *d, TData n) {
   const int size = 32;
@@ -68,7 +68,7 @@ void testTemplate() {
   // CHECK-NEXT:   size_t d_d_offset_ct0 = d_d_buf_ct0.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::dpct_range<2> s_range_ct1(64/*size * 2*/, 128/*size * 4*/);
+  // CHECK-NEXT:       dpct::range<2> s_range_ct1(64/*size * 2*/, 128/*size * 4*/);
   // CHECK-NEXT:       cl::sycl::accessor<T, 2, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s_acc_ct1(s_range_ct1, cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1);
@@ -77,7 +77,7 @@ void testTemplate() {
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           T *d_d_ct0 = (T *)(&d_d_acc_ct0[0] + d_d_offset_ct0);
-  // CHECK-NEXT:           templateReverse<T>(d_d_ct0, n, item_ct1, dpct::dpct_accessor<T, dpct::local, 2>(s_acc_ct1, s_range_ct1));
+  // CHECK-NEXT:           templateReverse<T>(d_d_ct0, n, item_ct1, dpct::accessor<T, dpct::local, 2>(s_acc_ct1, s_range_ct1));
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -95,9 +95,9 @@ int main(void) {
   // CHECK-NEXT:   size_t d_d_offset_ct0 = d_d_buf_ct0.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::dpct_range<0> a0_range_ct1;
+  // CHECK-NEXT:       dpct::range<0> a0_range_ct1;
   // CHECK-NEXT:       cl::sycl::accessor<int, 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> a0_acc_ct1(cgh);
-  // CHECK-NEXT:       dpct::dpct_range<1> s_range_ct1(64/*size*/);
+  // CHECK-NEXT:       dpct::range<1> s_range_ct1(64/*size*/);
   // CHECK-NEXT:       cl::sycl::accessor<int, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s_acc_ct1(s_range_ct1, cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1);
@@ -106,7 +106,7 @@ int main(void) {
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           int *d_d_ct0 = (int *)(&d_d_acc_ct0[0] + d_d_offset_ct0);
-  // CHECK-NEXT:           staticReverse(d_d_ct0, n, item_ct1, dpct::dpct_accessor<int, dpct::local, 0>(a0_acc_ct1, a0_range_ct1), dpct::dpct_accessor<int, dpct::local, 1>(s_acc_ct1, s_range_ct1));
+  // CHECK-NEXT:           staticReverse(d_d_ct0, n, item_ct1, dpct::accessor<int, dpct::local, 0>(a0_acc_ct1, a0_range_ct1), dpct::accessor<int, dpct::local, 1>(s_acc_ct1, s_range_ct1));
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -118,7 +118,7 @@ int main(void) {
   // CHECK-NEXT:   size_t d_d_offset_ct0 = d_d_buf_ct0.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::dpct_range<2> s_range_ct1(64/*size * 2*/, 128/*size * 4*/);
+  // CHECK-NEXT:       dpct::range<2> s_range_ct1(64/*size * 2*/, 128/*size * 4*/);
   // CHECK-NEXT:       cl::sycl::accessor<int, 2, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s_acc_ct1(s_range_ct1, cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1);
@@ -127,7 +127,7 @@ int main(void) {
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           int *d_d_ct0 = (int *)(&d_d_acc_ct0[0] + d_d_offset_ct0);
-  // CHECK-NEXT:           templateReverse<int>(d_d_ct0, n, item_ct1, dpct::dpct_accessor<int, dpct::local, 2>(s_acc_ct1, s_range_ct1));
+  // CHECK-NEXT:           templateReverse<int>(d_d_ct0, n, item_ct1, dpct::accessor<int, dpct::local, 2>(s_acc_ct1, s_range_ct1));
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -138,7 +138,7 @@ int main(void) {
   // CHECK-NEXT:   size_t d_d_offset_ct0 = d_d_buf_ct0.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::dpct_range<1> s_range_ct1(2*SIZE*SIZE);
+  // CHECK-NEXT:       dpct::range<1> s_range_ct1(2*SIZE*SIZE);
   // CHECK-NEXT:       cl::sycl::accessor<int, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s_acc_ct1(s_range_ct1, cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(n, 1, 1);
@@ -147,7 +147,7 @@ int main(void) {
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           int *d_d_ct0 = (int *)(&d_d_acc_ct0[0] + d_d_offset_ct0);
-  // CHECK-NEXT:           nonTypeTemplateReverse<SIZE>(d_d_ct0, n, item_ct1, dpct::dpct_accessor<int, dpct::local, 1>(s_acc_ct1, s_range_ct1));
+  // CHECK-NEXT:           nonTypeTemplateReverse<SIZE>(d_d_ct0, n, item_ct1, dpct::accessor<int, dpct::local, 1>(s_acc_ct1, s_range_ct1));
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }

@@ -24,6 +24,9 @@
 
 namespace dpct {
 
+/// Obtain a value of type O by reinterpreting the object representation of I
+/// \param i input data with type I
+/// \return The value of type O
 template <typename I, typename O> inline O bit_cast(I i) {
   return *reinterpret_cast<O *>(&i);
 }

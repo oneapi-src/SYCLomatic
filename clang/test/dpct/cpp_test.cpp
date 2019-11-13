@@ -13,7 +13,7 @@
 
 int main()
 {
-  // CHECK: dpct::dpct_device_info deviceProp;
+  // CHECK: dpct::device_info deviceProp;
   cudaDeviceProp deviceProp;
   // CHECK: if (deviceProp.get_mode() == dpct::compute_mode::prohibited) {
   if (deviceProp.computeMode == cudaComputeModeProhibited) {
