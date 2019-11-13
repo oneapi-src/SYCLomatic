@@ -521,11 +521,19 @@ class ReplaceText : public TextModification {
   SourceLocation BeginLoc;
   unsigned Len;
   std::string T;
+  // If ReplaceText replaces calls to compatibility APIs
+  bool IsReplaceCompatibilityAPI;
+  std::string OrigAPIName;
 
 public:
   ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
-        T(std::move(S)) {}
+        T(std::move(S)), IsReplaceCompatibilityAPI(false), OrigAPIName("") {}
+  ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S,
+              bool IsReplaceCompatibilityAPI, std::string OrigAPIName)
+      : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
+        T(std::move(S)), IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI),
+        OrigAPIName(OrigAPIName) {}
 
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;

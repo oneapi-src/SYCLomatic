@@ -662,7 +662,11 @@ InsertClassName::getReplacement(const ASTContext &Context) const {
 std::shared_ptr<ExtReplacement>
 ReplaceText::getReplacement(const ASTContext &Context) const {
   auto &SM = Context.getSourceManager();
-  recordMigrationInfo(Context, BeginLoc);
+  if (IsReplaceCompatibilityAPI) {
+    recordMigrationInfo(Context, BeginLoc, true, OrigAPIName);
+  } else {
+    recordMigrationInfo(Context, BeginLoc);
+  }
   return std::make_shared<ExtReplacement>(SM, BeginLoc, Len, T, this);
 }
 

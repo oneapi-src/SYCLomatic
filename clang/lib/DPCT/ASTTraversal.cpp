@@ -2771,8 +2771,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                                       PrefixInsertStr);
       }
     }
-    emplaceTransformation(
-        new ReplaceText(FuncNameBegin, FuncNameLength, std::move(Replacement)));
+    emplaceTransformation(new ReplaceText(
+        FuncNameBegin, FuncNameLength, std::move(Replacement), true, FuncName));
     if (PrefixInsertStr != "") {
       insertAroundRange(
           StmtBegin, StmtEndAfterSemi,
