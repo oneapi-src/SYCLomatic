@@ -861,7 +861,7 @@ void dump_US_field(const char *str, FILE *fd, int US, int has_parenthesis){
    return;
 }
 
-/// Find command "nvcc" in \p str, and give the position of the character behind "nvcc".
+/// Find command "nvcc" in \p str, and return the position of the character behind "nvcc".
 /// e.g: str could be: "/usr/local/bin/nvcc  -Xcompiler ...",
 ///                    "/usr/local/bin/nvcc/gcc  -Xcompiler ...".
 /// \returns the position of the character behind "nvcc" in str,
@@ -971,17 +971,29 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     size_t const argc = bear_strings_length(argv);
 
 #ifdef INTEL_CUSTOMIZATION
+    // To indicate whether the captured argv[i] is a nvcc command,
+    // value: 1 yes, value 0 no.
     int flag_command=0;
+
+    // To indicate whether the object file has been fake generated,
+    // value: 1 obj file generated, value: 0 not generated.
     int flag_object=0;
+
+    // contfalg is use for case: for options "-o xxx.o", "-o" and "xxx.o" is in
+    // argv[i] and argv[i+1],  if "-o" is found in argv[i], then conflag
+    // is set to show argv[i+1] contains the xxx.o
     int contflag=0;
+
+    // value 1: means current command line is a nvcc comand, and the fake obj file
+    // has been created, else ret is set to 0.
     int ret = 0;
-    int nvcc_in_shell = 1;
-    int link_command = 0;
+
     char *command_cp=NULL;
     size_t it_cp=0;
     // (CPATH=;command  args), need remove () around the command
     int has_parenthesis=0;
 
+    // try to parse out nvcc and generate obj_file.
     for (size_t it = 0; it < argc; ++it) {
         const char *tail=argv[it];
         int len= strlen(tail);
@@ -998,9 +1010,6 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
                 break;
             }
             tmpp++;
-          }
-          if(it == 0) {
-              nvcc_in_shell = 0;
           }
           fprintf(fd, "%s%c", "nvcc", US);
         } else if((len ==2 && tail[0]=='l' && tail[1] =='d') ||
@@ -1021,11 +1030,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
                         pthread_mutex_unlock(&mutex);
                         exit(EXIT_FAILURE);
                     }
-                    if(strstr(argv[i+1], ".o")==NULL) {
-                        // For linker command to generate executable binary, fake the
-                        // generated file and  will be terminated with exit(0).
-                        link_command = 1;
-                     }
+                    flag_object=1;
                 }
             }
         }
@@ -1047,7 +1052,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
           flag_object=1;
         }
         if(flag_object==0) {
-          // here we need parse out the object file if -o option is not used.
+          // here we need parse out the object file if -o option is used.
           // find xxx in the -o xxx of the command, generate it.
           int r=find_create_object(tail);
           if(r==0){
@@ -1131,18 +1136,24 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
           }
         }
         free(tmp);
+        ret = 1;
     }
 
-    for (size_t it = 0; it < argc; ++it) {
-       if(strstr(argv[it], "nvcc")!=NULL && it < 3 /*eg: /bin/sh -c /path_to/nvcc ...*/){
-            char *pos = find_nvcc(argv[it]);
-            if(pos != NULL)
-            {
-                argv[it] = replace_binary_name(argv[it], pos);
-            }
-        }
+    // try to replace nvcc with intercept-stub.
+    char *pos = find_nvcc(argv[it_cp]);
+    if(pos != NULL && *pos !='\0')
+    {
+        ret = 0; // intercept-stub should continue to run.
+
+        // intercept-stub is used to handle the nvcc command like
+        // "/bin/sh -c nvcc -c `echo ./`hello.c", it will change the nvcc command to
+        // "/bin/sh -c /path/to/libear/intercept-stub -c `echo ./`hello.c", then the coming
+        // command "/path/to/libear/intercept-stub -c ./hello.c" will be run, and the source file
+        // name "hello.c" will be captured by intercept.py.
+        argv[it_cp] = replace_binary_name(argv[it_cp], pos);
     }
-    if(ret == 1 && nvcc_in_shell ==0 || link_command == 1){
+
+    if(ret == 1){
         exit(0);
     }
 #endif
