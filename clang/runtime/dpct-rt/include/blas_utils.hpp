@@ -31,7 +31,7 @@ namespace dpct {
 /// Cast \param vec data to int, then assign to \param ptr array.
 /// \param [out] ptr A data pointer.
 /// \param [in] vec Input vector with int64_t type elements.
-void copy_back(int *ptr, const std::vector<int64_t> &vec) {
+inline void copy_back(int *ptr, const std::vector<int64_t> &vec) {
   auto allocation_ptr = dpct::memory_manager::get_instance().translate_ptr(ptr);
   auto buffer_ptr = allocation_ptr.buffer.template reinterpret<int, 1>(
       cl::sycl::range<1>(allocation_ptr.size / sizeof(int)));
