@@ -37,6 +37,8 @@ void test1(dpct::accessor<volatile int, dpct::device, 0> acc_a, dpct::accessor<i
   acc_a = d_a;
   unsigned d_c = (unsigned)acc_a;
   unsigned *d_d = (unsigned *)acc_b;
+  unsigned *d_e = (unsigned *)(acc_b + 5);
+  int *d_f = acc_b - 6;
   test2(acc_a);
 }
 

@@ -62,20 +62,20 @@ class memory_manager {
   memory_manager() {
     // Reserved address space, no real memory allocation happens here.
 #if defined(__linux__)
-        mapped_address_space =
-            (byte_t *)mmap(nullptr, mapped_region_size, PROT_NONE,
-                           MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    mapped_address_space =
+        (byte_t *)mmap(nullptr, mapped_region_size, PROT_NONE,
+                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 #elif defined(_WIN64)
-        mapped_address_space = (byte_t *)VirtualAlloc(
-            NULL,               // NULL specified as the base address parameter
-            mapped_region_size, // Size of allocation
-            MEM_RESERVE,        // Allocate reserved pages
-            PAGE_NOACCESS);     // Protection = no access
+    mapped_address_space = (byte_t *)VirtualAlloc(
+        NULL,               // NULL specified as the base address parameter
+        mapped_region_size, // Size of allocation
+        MEM_RESERVE,        // Allocate reserved pages
+        PAGE_NOACCESS);     // Protection = no access
 #else
 #error "Only support Windows and Linux."
 #endif
-        next_free = mapped_address_space;
-      };
+    next_free = mapped_address_space;
+  };
 
 public:
   using buffer_id_t = int;
@@ -97,9 +97,9 @@ public:
   };
 
   memory_manager(const memory_manager &) = delete;
-  memory_manager& operator=(const memory_manager &) = delete;
+  memory_manager &operator=(const memory_manager &) = delete;
   memory_manager(memory_manager &&) = delete;
-  memory_manager& operator=(memory_manager &&) = delete;
+  memory_manager &operator=(memory_manager &&) = delete;
 
   // Allocate
   void *mem_alloc(size_t size) {
@@ -340,6 +340,8 @@ public:
       : accessor(acc.get_pointer(), in_range) {}
   element_t &operator[](size_t index) const { return *(data + index); }
   element_t &operator*() { return *data; }
+  T *operator+(int val) { return data + val; }
+  T *operator-(int val) { return data - val; }
   template <class Ty> operator Ty *() { return (Ty *)(&(*data)); }
   template <class ReinterpretT>
   accessor<ReinterpretT, Memory, 1> reinterpret() {
