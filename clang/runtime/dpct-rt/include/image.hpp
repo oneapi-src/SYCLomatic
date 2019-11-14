@@ -218,13 +218,13 @@ public:
 class dpct_image_info {
   cl::sycl::addressing_mode _addr_mode;
   cl::sycl::filtering_mode _filter_mode;
-  cl::sycl::coordinate_normalization_mode _norm_mode;
+  bool _normalized;
 
 public:
   inline cl::sycl::addressing_mode &addr_mode() { return _addr_mode; }
   inline cl::sycl::filtering_mode &filter_mode() { return _filter_mode; }
-  inline cl::sycl::coordinate_normalization_mode &coord_norm_mode() {
-    return _norm_mode;
+  inline bool &coord_normalized() {
+    return _normalized;
   }
 };
 
@@ -278,7 +278,11 @@ public:
   // Get image accessor.
   dpct_image_accessor<T, Dimension> get_access(cl::sycl::handler &cgh) {
     return dpct_image_accessor<T, Dimension>(
-        cl::sycl::sampler(coord_norm_mode(), addr_mode(), filter_mode()),
+        cl::sycl::sampler(
+            coord_normalized()
+                ? cl::sycl::coordinate_normalization_mode::normalized
+                : cl::sycl::coordinate_normalization_mode::unnormalized,
+            addr_mode(), filter_mode()),
         _image->template get_access<acc_data_t, cl::sycl::access::mode::read>(
             cgh));
   }
@@ -378,13 +382,13 @@ static inline dpct_image_channel
 create_image_channel(int r, int g, int b, int a,
                      dpct_channel_data_kind channel_kind) {
   if (a) {
-    return create_image_channel(r / 32, 4, channel_kind);
+    return create_image_channel(r / 8, 4, channel_kind);
   } else if (b) {
-    return create_image_channel(r / 32, 3, channel_kind);
+    return create_image_channel(r / 8, 3, channel_kind);
   } else if (g) {
-    return create_image_channel(r / 32, 2, channel_kind);
+    return create_image_channel(r / 8, 2, channel_kind);
   } else {
-    return create_image_channel(r / 32, 1, channel_kind);
+    return create_image_channel(r / 8, 1, channel_kind);
   }
 }
 

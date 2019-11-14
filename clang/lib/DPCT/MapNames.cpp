@@ -2463,7 +2463,7 @@ const MapNames::SetTy MapNames::ThrustFileExcludeSet{
 const MapNames::MapTy TextureRule::TextureMemberNames{
     {"addressMode", "addr_mode"},
     {"filterMode", "filter_mode"},
-    {"normalized", "norm_mode"},
+    {"normalized", "coord_normalized"},
 };
 
 // DeviceProp names mapping.

@@ -96,9 +96,18 @@ int main() {
 
   // CHECK: dpct::dpct_free(a42);
   cudaFreeArray(a42);
- 
+
   // CHECK: dpct::dpct_free(d_data42);
   // CHECK-NEXT: dpct::dpct_free(d_data21);
   cudaFree(d_data42);
   cudaFree(d_data21);
+
+  // CHECK:  dpct::dpct_image<unsigned int, 1> tex_tmp;
+  // CHECK-NEXT:   tex_tmp.coord_normalized() = false;
+  // CHECK-NEXT:   tex_tmp.addr_mode() = cl::sycl::addressing_mode::clamp_to_edge;
+  // CHECK-NEXT:   tex_tmp.filter_mode() = cl::sycl::filtering_mode::nearest;
+  texture<unsigned int, 1, cudaReadModeElementType> tex_tmp;
+  tex_tmp.normalized = false;
+  tex_tmp.addressMode[0] = cudaAddressModeClamp;
+  tex_tmp.filterMode = cudaFilterModePoint;
 }
