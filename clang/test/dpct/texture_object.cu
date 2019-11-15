@@ -1,4 +1,4 @@
-// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
+// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/texture_object.dp.cpp --match-full-lines %s
 // UNSUPPORTED: cdua-9.0, cuda-9.2, cuda-10.0, cuda-10.1
 // UNSUPPORTED: v9.0, v9.2, v10.0, v10.1

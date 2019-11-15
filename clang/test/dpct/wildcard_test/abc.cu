@@ -1,4 +1,4 @@
-// RUN: dpct --usm-level=none -out-root=%T/abc -in-root=%S %S/*.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --usm-level=none -out-root=%T/abc -in-root=%S %S/*.cu --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/abc/abc.dp.cpp --match-full-lines %S/abc.cu
 // RUN: FileCheck --input-file %T/abc/abd.dp.cpp --match-full-lines %S/abd.cu
 

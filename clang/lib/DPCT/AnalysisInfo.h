@@ -420,6 +420,10 @@ public:
   inline static void setKeepOriginCode(bool KOC = true) {
     KeepOriginCode = KOC;
   }
+  inline static bool isSyclNamedLambda() { return SyclNamedLambda; }
+  inline static void setSyclNamedLambda(bool SNL = true) {
+    SyclNamedLambda = SNL;
+  }
   inline static UsmLevel getUsmLevel() { return UsmLvl; }
   inline static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
   template <class TargetTy, class NodeTy>
@@ -628,6 +632,7 @@ private:
   static ASTContext *Context;
   static SourceManager *SM;
   static bool KeepOriginCode;
+  static bool SyclNamedLambda;
 };
 
 class TemplateArgumentInfo;
@@ -1796,11 +1801,16 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
     std::string ReplStr;
     llvm::raw_string_ostream RSO(ReplStr);
     // Start a new line if we're not inserting at the first inclusion offset
-    if (Offset != FirstIncludeOffset)
+    if (Offset != FirstIncludeOffset) {
       RSO << getNL();
-    else if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::none) &&
-             (Type == SYCL))
-      RSO << "#define DPCT_USM_LEVEL_NONE" << getNL();
+    } else {
+      if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::none) && (Type == SYCL)) {
+        RSO << "#define DPCT_USM_LEVEL_NONE" << getNL();
+      }
+      if (DpctGlobalInfo::isSyclNamedLambda() && (Type == SYCL)) {
+        RSO << "#define DPCT_NAMED_LAMBDA" << getNL();
+      }
+    }
     concatHeader(RSO, std::forward<T>(Args)...);
     insertHeader(std::move(RSO.str()), Offset);
   }

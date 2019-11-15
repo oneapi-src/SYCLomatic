@@ -2,6 +2,7 @@
 // /usr/local/ComputeCpp/include/ -L /usr/local/ComputeCpp/lib/ -lOpenCL
 // -lComputeCpp
 
+#define DPCT_NAMED_LAMBDA
 #include "../include/dpct.hpp"
 
 dpct::image<cl::sycl::float4, 2> tex42;

@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s --usm-level=restricted --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
+// RUN: dpct -out-root %T %s --usm-level=restricted --cuda-include-path="%cuda-path/include" --sycl-named-lambda  -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/kernel-usm.dp.cpp
 
 #include <cuda_runtime.h>

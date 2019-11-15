@@ -1,4 +1,4 @@
-// RUN: dpct --usm-level=none -in-root %S -out-root %T %s %S/mf-kernel.cu %S/mf-kernel.cuh --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --usm-level=none -in-root %S -out-root %T %s %S/mf-kernel.cu %S/mf-kernel.cuh --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/mf-test.dp.cpp
 // RUN: FileCheck %S/mf-kernel.cuh --match-full-lines --input-file %T/mf-kernel.dp.hpp
 

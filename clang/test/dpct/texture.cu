@@ -1,4 +1,4 @@
-// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
+// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/texture.dp.cpp --match-full-lines %s
 
 // CHECK: dpct::image<cl::sycl::float4, 2> tex42;

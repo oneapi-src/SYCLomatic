@@ -217,12 +217,17 @@ opt<bool, true> SuppressWarningsAll("suppress-warnings-all",
                                     location(SuppressWarningsAllFlag));
 
 bool NoStopOnErrFlag = false;
-
 static opt<bool, true>
     NoStopOnErr("no-stop-on-err",
                 llvm::cl::desc("Continue migration and generation of reports "
                                "after possible errors. Default: off.\n"),
                 cat(DPCTCat), llvm::cl::location(NoStopOnErrFlag));
+
+bool SyclNamedLambdaFlag = false;
+static opt<bool, true>
+    SyclNamedLambda("sycl-named-lambda",
+                llvm::cl::desc("Generate kernels with kernel name. Default: off.\n"),
+                cat(DPCTCat), llvm::cl::location(SyclNamedLambdaFlag), llvm::cl::Hidden);
 
 opt<OutputVerbosityLev> OutputVerbosity(
     "output-verbosity", llvm::cl::desc("Sets the output verbosity level:"),
@@ -887,6 +892,7 @@ int run(int argc, const char **argv) {
   DpctGlobalInfo::setInRoot(InRoot);
   DpctGlobalInfo::setCudaPath(CudaPath);
   DpctGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);
+  DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
   DpctGlobalInfo::setUsmLevel(USMLevel);
 
   DPCTActionFactory Factory(Tool.getReplacements());

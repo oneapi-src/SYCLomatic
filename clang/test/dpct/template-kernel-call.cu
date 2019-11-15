@@ -1,6 +1,6 @@
 // FIXME
 // UNSUPPORTED: -windows-
-// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/template-kernel-call.dp.cpp --match-full-lines %s
 
 void printf(const char *format, unsigned char data);

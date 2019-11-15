@@ -38,10 +38,10 @@
 #define __dpct_inline__ __inline__ __attribute__((always_inline))
 #endif
 
-
-
+#ifdef DPCT_NAMED_LAMBDA
 template <class... Args> class dpct_kernel_name;
 template <int Arg> class dpct_kernel_scalar;
+#endif
 
 #define DPCPP_COMPATIBILITY_TEMP (200)
 

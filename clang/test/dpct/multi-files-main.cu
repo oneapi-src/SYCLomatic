@@ -1,4 +1,4 @@
-// RUN: dpct --usm-level=none -in-root %S -out-root %T %s %S/multi-files-device.cuh --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --usm-level=none -in-root %S -out-root %T %s %S/multi-files-device.cuh --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/multi-files-main.dp.cpp
 // RUN: FileCheck %S/multi-files-device.cuh --match-full-lines --input-file %T/multi-files-device.dp.hpp
 // RUN: FileCheck %S/multi-files-kernel.cuh --match-full-lines --input-file %T/multi-files-kernel.dp.hpp

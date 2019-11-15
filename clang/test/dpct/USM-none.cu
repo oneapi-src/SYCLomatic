@@ -1,9 +1,10 @@
 // FIXME
 // UNSUPPORTED: -windows-
-// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/USM-none.dp.cpp %s
 
 // CHECK: #define DPCT_USM_LEVEL_NONE
+// CHECK-NEXT: #define DPCT_NAMED_LAMBDA
 // CHECK-NEXT: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>

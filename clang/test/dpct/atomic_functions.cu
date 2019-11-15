@@ -1,4 +1,4 @@
-// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/atomic_functions.dp.cpp --match-full-lines %s
 
 #include <cuda_runtime.h>

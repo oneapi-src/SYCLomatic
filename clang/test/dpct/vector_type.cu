@@ -1,4 +1,4 @@
-// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/vector_type.dp.cpp --match-full-lines %s
 
 // CHECK: void func3_char1(char a, char b, char c) {

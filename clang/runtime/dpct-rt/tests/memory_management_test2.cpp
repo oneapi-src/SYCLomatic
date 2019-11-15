@@ -20,6 +20,7 @@
 // c++ -Wall $NAME.cpp.o  -o $NAME -rdynamic /lib/libComputeCpp.so -lOpenCL -Wl,-rpath,/lib: $GCC_ABI_HACK &&
 // ./$NAME
 //
+#define DPCT_NAMED_LAMBDA
 #include <CL/sycl.hpp>
 #include "../include/dpct.hpp"
 

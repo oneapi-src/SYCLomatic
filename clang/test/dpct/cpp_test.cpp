@@ -1,4 +1,4 @@
-// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cpp_test.cpp.dp.cpp --match-full-lines %s
 
 // CHECK: #include <CL/sycl.hpp>

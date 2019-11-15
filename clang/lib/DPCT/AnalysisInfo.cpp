@@ -27,6 +27,7 @@ CompilerInstance *DpctGlobalInfo::CI = nullptr;
 ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
+bool DpctGlobalInfo::SyclNamedLambda = false;
 const std::string MemVarInfo::ExternVariableName = "dpct_local";
 const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
 
@@ -248,10 +249,14 @@ void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
 }
 
 void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
-  Printer.line("cgh.parallel_for<dpct_kernel_name<class ", getName(), "_",
-               LocInfo.LocHash,
-               (hasTemplateArgs() ? (", " + getTemplateArguments(true)) : ""),
-               ">>(");
+  if (DpctGlobalInfo::isSyclNamedLambda()) {
+    Printer.line("cgh.parallel_for<dpct_kernel_name<class ", getName(), "_",
+                 LocInfo.LocHash,
+                 (hasTemplateArgs() ? (", " + getTemplateArguments(true)) : ""),
+                 ">>(");
+  } else {
+    Printer.line("cgh.parallel_for(");
+  }
   auto B = Printer.block();
   Printer.indent() << "cl::sycl::nd_range<3>(";
   if (ExecutionConfig.DeclGlobalRange) {

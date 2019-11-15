@@ -1,4 +1,4 @@
-// RUN: dpct --usm-level=none -keep-original-code -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --usm-level=none -keep-original-code -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/kernel-call-origcode-embedded.dp.cpp --match-full-lines %s
 
 #include <iostream>

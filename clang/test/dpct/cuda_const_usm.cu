@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/cuda_const_usm.dp.cpp
 
 #include <stdio.h>
