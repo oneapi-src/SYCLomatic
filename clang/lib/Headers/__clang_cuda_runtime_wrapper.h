@@ -357,9 +357,14 @@ static inline __device__ void __brkpt(int __c) { __brkpt(); }
 
 #pragma pop_macro("__host__")
 
-
+#ifdef INTEL_CUSTOMIZATION
+#pragma push_macro("__CUDA_ARCH__")
+#undef __CUDA_ARCH__
 #include "texture_indirect_functions.h"
-
+#pragma pop_macro("__CUDA_ARCH__")
+#else
+#include "texture_indirect_functions.h"
+#endif
 // Restore state of __CUDA_ARCH__ and __THROW we had on entry.
 #pragma pop_macro("__CUDA_ARCH__")
 #pragma pop_macro("__THROW")
@@ -464,7 +469,10 @@ extern "C" unsigned __cudaPushCallConfiguration(dim3 gridDim, dim3 blockDim,
 #endif
 
 #ifdef INTEL_CUSTOMIZATION
+#pragma push_macro("__CUDA_ARCH__")
+#undef __CUDA_ARCH__
 #include <texture_fetch_functions.h>
+#pragma pop_macro("__CUDA_ARCH__")
 #endif
 
 #endif // __CUDA__

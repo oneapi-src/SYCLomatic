@@ -111,3 +111,12 @@ int main() {
   tex_tmp.addressMode[0] = cudaAddressModeClamp;
   tex_tmp.filterMode = cudaFilterModePoint;
 }
+
+// Before the patch for CTST-1078 is merged, when dpct parses device function foo(),
+// dpct parser will emit parser error: use of undeclared identifier '__nv_tex_surf_handler',
+// the patch is to fix this issue.
+__device__ void foo() {
+   cudaTextureObject_t foo;
+   float *ret;
+   tex1D(ret, foo, 1.0);
+}
