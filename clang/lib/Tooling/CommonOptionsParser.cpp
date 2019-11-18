@@ -187,7 +187,7 @@ llvm::Error CommonOptionsParser::init(
 
   SourcePathList = SourcePaths;
 #ifdef INTEL_CUSTOMIZATION
-  int ErrCode;
+  int ErrCode = -100; //map to MigrationError
 #if _WIN32
   // In Windows, the option "-p" and "-vcxproj" are mutually exclusive, user can
   // only give one of them. If both of them exist, dpct will exit with
@@ -243,9 +243,12 @@ llvm::Error CommonOptionsParser::init(
         if (ErrCode == -101 /*map to MigrationErrorCannotParseDatabase*/) {
           return llvm::make_error<DPCTError>(
               -101 /*map to MigrationErrorCannotParseDatabase*/);
-        } else {
+        } else if (ErrCode ==
+                   -101 /*map to MigrationErrorCannotFindDatabase*/) {
           return llvm::make_error<DPCTError>(
               -102 /*map to MigrationErrorCannotFindDatabase*/);
+        } else {
+          return llvm::make_error<DPCTError>(-100 /*map to MigrationError*/);
         }
       } else if (SourcePaths.size() == 1 && BuildPath.getValue().empty()) {
         using namespace llvm::sys;
