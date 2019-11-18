@@ -68,6 +68,7 @@ using namespace tooling;
 namespace clang {
 namespace tooling {
 static void (* MsgPrintHandler) (const std::string &, bool) = nullptr;
+static std::string SDKInlcudePath = "";
 
 void SetPrintHandler(void (*Handler)(const std::string &Msg, bool IsPrintOnNormal)){
   MsgPrintHandler = Handler;
@@ -78,6 +79,9 @@ void DoPrintHandler(const std::string &Msg, bool IsPrintOnNormal) {
     (*MsgPrintHandler)(Msg, IsPrintOnNormal);
   }
 }
+
+void SetSDKInlcudePath(const std::string &Path) { SDKInlcudePath = Path; }
+
 } // namespace tooling
 } // namespace clang
 #endif
@@ -530,6 +534,41 @@ int ClangTool::run(ToolAction *Action) {
                 llvm::MemoryBuffer::getMemBuffer(MappedFile.second));
 
       std::vector<std::string> CommandLine = CompileCommand.CommandLine;
+#ifdef INTEL_CUSTOMIZATION
+      for (int index = 0; index < SDKInlcudePath.size(); index++) {
+        if (SDKInlcudePath[index] == '\\') {
+          SDKInlcudePath[index] = '/';
+        }
+      }
+#ifdef _WIN32
+      if ((!CommandLine.empty() && CommandLine[0] == "CudaCompile") ||
+          (!CommandLine.empty() && CommandLine[0] == "CustomBuild" &&
+           llvm::sys::path::extension(File)==".cu")) {
+        ArgsAdjuster = combineAdjusters(
+            std::move(ArgsAdjuster),
+            getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
+        ArgsAdjuster = combineAdjusters(
+            std::move(ArgsAdjuster),
+            getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
+      } else {
+        std::string IncludeOptionStr = std::string("-I") + SDKInlcudePath;
+        CommandLine.push_back(IncludeOptionStr);
+      }
+#else
+      if (!CommandLine.empty() && CommandLine[0].size() >= 4 &&
+          CommandLine[0].substr(CommandLine[0].size() - 4) == "nvcc") {
+        ArgsAdjuster = combineAdjusters(
+            std::move(ArgsAdjuster),
+            getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
+        ArgsAdjuster = combineAdjusters(
+            std::move(ArgsAdjuster),
+            getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
+      } else {
+        std::string IncludeOptionStr = std::string("-I") + SDKInlcudePath;
+        CommandLine.push_back(IncludeOptionStr);
+      }
+#endif
+#endif
       if (ArgsAdjuster)
         CommandLine = ArgsAdjuster(CommandLine, CompileCommand.Filename);
       assert(!CommandLine.empty());

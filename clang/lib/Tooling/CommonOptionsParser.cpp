@@ -106,6 +106,7 @@ llvm::Error CommonOptionsParser::init(
     int &argc, const char **argv, cl::OptionCategory &Category,
     llvm::cl::NumOccurrencesFlag OccurrencesFlag, const char *Overview) {
 #ifdef INTEL_CUSTOMIZATION
+  IsCudaFile = false;
   int OriArgc = argc;
   static cl::opt<std::string> BuildPath(
       "p",
@@ -258,6 +259,8 @@ llvm::Error CommonOptionsParser::init(
               /*map to MigrationErrorCannotFindDatabase in DPCT*/);
         }
       } else if (SourcePaths.size() == 1 && BuildPath.getValue().empty()) {
+        // need add -x cuda option for not using database
+        IsCudaFile = true;
         using namespace llvm::sys;
         SmallString<256> Name = StringRef(SourcePaths[0]);
         StringRef File, Path;
@@ -277,6 +280,10 @@ llvm::Error CommonOptionsParser::init(
            << "' or any parent directory.\n";
         DoPrintHandler(OS.str(), true);
       } else {
+        if (SourcePaths.size() >= 2 && BuildPath.getValue().empty()) {
+          // need add -x cuda option for not using database
+          IsCudaFile = true;
+        }
         if (!hasHelpOption(OriArgc, argv)) {
           std::string buf;
           llvm::raw_string_ostream OS(buf);
