@@ -455,3 +455,32 @@ double test_max(float a, double b) { return max(a, b); }
 // CHECK: double test_max(double a, float b) { return fmax(a, b); }
 double test_max(double a, float b) { return max(a, b); }
 
+// max/min() without argments bellow are differnt with max(a,b)/min(a,b).
+void foo_1() {
+  // CHECK: unsigned long long max = (unsigned long long) std::numeric_limits<int>::max();
+  // CHECK: unsigned long long min = (unsigned long long) std::numeric_limits<int>::min();
+  unsigned long long max = (unsigned long long) std::numeric_limits<int>::max();
+  unsigned long long min = (unsigned long long) std::numeric_limits<int>::min();
+}
+
+template<typename T>
+void foo_2(T t)
+{
+  // CHECK: unsigned long long max = (unsigned long long) std::numeric_limits<int>::max();
+  // CHECK: unsigned long long min = (unsigned long long) std::numeric_limits<int>::min();
+  unsigned long long max = (unsigned long long) std::numeric_limits<int>::max();
+  unsigned long long min = (unsigned long long) std::numeric_limits<int>::min();
+}
+
+// CHECK: #define MAX_INT (unsigned long long) std::numeric_limits<int>::max()
+// CHECK: #define MIN_INT (unsigned long long) std::numeric_limits<int>::min()
+#define MAX_INT (unsigned long long) std::numeric_limits<int>::max()
+#define MIN_INT (unsigned long long) std::numeric_limits<int>::min()
+
+#define foo_inner(x) (x)
+void foo_3(){
+    // CHECK: unsigned long long max = foo_inner((unsigned long long) std::numeric_limits<int>::max());
+    // CHECK: unsigned long long min = foo_inner((unsigned long long) std::numeric_limits<int>::min());
+  unsigned long long max = foo_inner((unsigned long long) std::numeric_limits<int>::max());
+  unsigned long long min = foo_inner((unsigned long long) std::numeric_limits<int>::min());
+}

@@ -124,7 +124,27 @@ void ExprAnalysis::dispatch(const Stmt *Expression) {
 }
 
 void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
-  RefString = DRE->getNameInfo().getAsString();
+  std::string CTSName;
+  auto Qualifier = DRE->getQualifier();
+  if (Qualifier) {
+    // To handle class template specializations,
+    // e.g: template<> class numeric_limits<int>.
+    if (Qualifier->getKind() == clang::NestedNameSpecifier::TypeSpec) {
+      auto CTSDecl = dyn_cast<ClassTemplateSpecializationDecl>(
+          DRE->getDecl()->getDeclContext());
+      if (CTSDecl) {
+        CTSName =
+            CTSDecl->getTypeForDecl()->getAsCXXRecordDecl()->getNameAsString();
+        CTSName += "::" + DRE->getNameInfo().getAsString();
+      }
+    }
+  }
+  if (!CTSName.empty()) {
+    RefString = CTSName;
+  } else {
+    RefString = DRE->getNameInfo().getAsString();
+  }
+
   if (auto TemplateDecl = dyn_cast<NonTypeTemplateParmDecl>(DRE->getDecl()))
     addReplacement(DRE, TemplateDecl->getIndex());
   else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
