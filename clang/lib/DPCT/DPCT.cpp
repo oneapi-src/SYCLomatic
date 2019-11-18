@@ -867,11 +867,14 @@ int run(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "--cuda-host-only", ArgumentInsertPosition::BEGIN));
 
-  Tool.appendArgumentsAdjuster(
-      getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
+  if (OptParser->IsCudaFile) {
+    Tool.appendArgumentsAdjuster(
+        getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
 
-  Tool.appendArgumentsAdjuster(
-      getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
+    Tool.appendArgumentsAdjuster(
+        getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
+  }
+  SetSDKInlcudePath(CudaPath);
 
 #ifdef _WIN32
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(

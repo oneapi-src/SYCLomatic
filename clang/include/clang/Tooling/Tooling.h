@@ -53,6 +53,7 @@ namespace clang {
 namespace tooling {
 void SetPrintHandler(void (*Handler)(const std::string &Msg, bool IsPrintOnNormal));
 void DoPrintHandler(const std::string &Msg, bool IsPrintOnNormal);
+void SetSDKInlcudePath(const std::string &Path);
 } // namespace tooling
 } // namespace clang
 #endif
