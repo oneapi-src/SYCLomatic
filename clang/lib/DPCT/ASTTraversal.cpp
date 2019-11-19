@@ -4878,23 +4878,41 @@ void MemoryMigrationRule::getSymbolSizeMigration(
 }
 
 void MemoryMigrationRule::prefetchMigration(
-  const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
-  const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
-  std::string Replacement;
-  ExprAnalysis EA;
-  EA.analyze(C->getArg(0));
-  auto StmtStrArg0 = EA.getReplacedString();
-  EA.analyze(C->getArg(1));
-  auto StmtStrArg1 = EA.getReplacedString();
-  EA.analyze(C->getArg(2));
-  auto StmtStrArg2 = EA.getReplacedString();
-  EA.analyze(C->getArg(3));
-  auto StmtStrArg3 = EA.getReplacedString();
-  Replacement = StmtStrArg3 + "?(" + StmtStrArg3 + ")->prefetch(" + StmtStrArg0 +
-    "," + StmtStrArg1 + "):dpct::get_device_manager().get_device(" +
-    StmtStrArg2 + ").default_queue().prefetch(" + StmtStrArg0 +
-    "," + StmtStrArg1 + ")";
-  emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
+    const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
+    const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
+  if (USMLevel == restricted) {
+    const SourceManager *SM = Result.SourceManager;
+    std::string Replacement;
+    ExprAnalysis EA;
+    EA.analyze(C->getArg(0));
+    auto StmtStrArg0 = EA.getReplacedString();
+    EA.analyze(C->getArg(1));
+    auto StmtStrArg1 = EA.getReplacedString();
+    EA.analyze(C->getArg(2));
+    auto StmtStrArg2 = EA.getReplacedString();
+    EA.analyze(C->getArg(3));
+    auto StmtStrArg3 = EA.getReplacedString();
+    if (StmtStrArg3 == "0" || StmtStrArg3 == "NULL" ||
+        StmtStrArg3 == "nullptr" || StmtStrArg3 == "") {
+      Replacement = "dpct::get_device_manager().get_device(" + StmtStrArg2 +
+                    ").default_queue().prefetch(" + StmtStrArg0 + "," +
+                    StmtStrArg1 + ")";
+    } else {
+      if (SM->getCharacterData(C->getArg(3)->getBeginLoc()) -
+              SM->getCharacterData(C->getArg(3)->getEndLoc()) ==
+          0) {
+        Replacement =
+            StmtStrArg3 + "->prefetch(" + StmtStrArg0 + "," + StmtStrArg1 + ")";
+      }
+      else {
+        Replacement = "(" + StmtStrArg3 + ")->prefetch(" + StmtStrArg0 + "," +
+          StmtStrArg1 + ")";
+      }
+    }
+    emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
+  } else {
+    report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, "cudaMemPrefetchAsync");
+  }
 }
 
 void MemoryMigrationRule::miscMigration(
