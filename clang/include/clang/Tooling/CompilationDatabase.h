@@ -75,6 +75,13 @@ struct CompileCommand {
   }
 };
 
+#ifdef INTEL_CUSTOMIZATION
+enum DatabaseStatus {
+  CannotParseDatabase = -101, //map to MigrationErrorCannotParseDatabase in DPCT
+  CannotFindDatabase = -102, //map to MigrationErrorCannotFindDatabase in DPCT
+};
+#endif
+
 /// Interface for compilation databases.
 ///
 /// A compilation database allows the user to retrieve compile command lines
@@ -116,7 +123,7 @@ public:
 #ifdef INTEL_CUSTOMIZATION
   static std::unique_ptr<CompilationDatabase>
   autoDetectFromDirectory(StringRef SourceDir, std::string &ErrorMessage,
-                          int &ErrCode);
+                          DatabaseStatus &ErrCode);
 #else
   static std::unique_ptr<CompilationDatabase>
   autoDetectFromDirectory(StringRef SourceDir, std::string &ErrorMessage);

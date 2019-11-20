@@ -187,7 +187,8 @@ llvm::Error CommonOptionsParser::init(
 
   SourcePathList = SourcePaths;
 #ifdef INTEL_CUSTOMIZATION
-  int ErrCode = -100; //map to MigrationError
+  DatabaseStatus ErrCode =
+      CannotFindDatabase; // map to MigrationErrorCannotFindDatabase in DPCT
 #if _WIN32
   // In Windows, the option "-p" and "-vcxproj" are mutually exclusive, user can
   // only give one of them. If both of them exist, dpct will exit with
@@ -240,15 +241,21 @@ llvm::Error CommonOptionsParser::init(
         OS << "Error while trying to load a compilation database:\n"
            << ErrorMessage;
         DoPrintHandler(OS.str(), true);
-        if (ErrCode == -101 /*map to MigrationErrorCannotParseDatabase*/) {
+        // The ErrCode is set to CannotParseDatabase(-101) from
+        // findCompilationDatabaseFromDirectory in autoDetectFromDirectory when
+        // database file exists but it cannot be parsed successfully. No other
+        // value will set be to ErrCode. So the situation will be either
+        // "CannotParseDatabase" or "CannotFindDatabase".
+
+        if (ErrCode == CannotParseDatabase
+          /*map to MigrationErrorCannotParseDatabase in DPCT*/) {
           return llvm::make_error<DPCTError>(
-              -101 /*map to MigrationErrorCannotParseDatabase*/);
-        } else if (ErrCode ==
-                   -101 /*map to MigrationErrorCannotFindDatabase*/) {
-          return llvm::make_error<DPCTError>(
-              -102 /*map to MigrationErrorCannotFindDatabase*/);
+              CannotParseDatabase
+              /*map to MigrationErrorCannotParseDatabase in DPCT*/);
         } else {
-          return llvm::make_error<DPCTError>(-100 /*map to MigrationError*/);
+          return llvm::make_error<DPCTError>(
+              CannotFindDatabase
+              /*map to MigrationErrorCannotFindDatabase in DPCT*/);
         }
       } else if (SourcePaths.size() == 1 && BuildPath.getValue().empty()) {
         using namespace llvm::sys;

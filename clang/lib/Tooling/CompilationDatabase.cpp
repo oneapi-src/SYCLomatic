@@ -87,7 +87,8 @@ CompilationDatabase::loadFromDirectory(StringRef BuildDirectory,
 #ifdef INTEL_CUSTOMIZATION
 static std::unique_ptr<CompilationDatabase>
 findCompilationDatabaseFromDirectory(StringRef Directory,
-                                     std::string &ErrorMessage, int &ErrCode) {
+                                     std::string &ErrorMessage,
+                                     DatabaseStatus &ErrCode) {
 #else
 static std::unique_ptr<CompilationDatabase>
 findCompilationDatabaseFromDirectory(StringRef Directory,
@@ -102,7 +103,8 @@ findCompilationDatabaseFromDirectory(StringRef Directory,
     std::unique_ptr<CompilationDatabase> DB =
         CompilationDatabase::loadFromDirectory(Directory, LoadErrorMessage);
     if (llvm::sys::fs::exists(Directory + "/compile_commands.json") && !DB) {
-      ErrCode = -101; // map to MigrationErrorCannotParseDatabase
+      ErrCode = CannotParseDatabase; // map to MigrationErrorCannotParseDatabase
+                                     // in DPCT
       ErrorMessage = LoadErrorMessage;
       return nullptr;
     }
@@ -136,7 +138,7 @@ CompilationDatabase::autoDetectFromSource(StringRef SourceFile,
   StringRef Directory = llvm::sys::path::parent_path(AbsolutePath);
 
 #ifdef INTEL_CUSTOMIZATION
-  int ErrCode;
+  DatabaseStatus ErrCode;
   std::unique_ptr<CompilationDatabase> DB =
       findCompilationDatabaseFromDirectory(Directory, ErrorMessage, ErrCode);
 #else
@@ -153,13 +155,14 @@ CompilationDatabase::autoDetectFromSource(StringRef SourceFile,
 std::unique_ptr<CompilationDatabase>
 CompilationDatabase::autoDetectFromDirectory(StringRef SourceDir,
                                              std::string &ErrorMessage,
-                                             int &ErrCode) {
+                                             DatabaseStatus &ErrCode) {
   SmallString<1024> AbsolutePath(getAbsolutePath(SourceDir));
   std::unique_ptr<CompilationDatabase> DB =
       findCompilationDatabaseFromDirectory(AbsolutePath, ErrorMessage, ErrCode);
 
   if (!DB) {
-    if (ErrCode == -101 /*map to MigrationErrorCannotParseDatabase*/) {
+    if (ErrCode == CannotParseDatabase
+        /*map to MigrationErrorCannotParseDatabase in DPCT*/) {
       ErrorMessage =
           "Compilation database compile_commands.json from directory \"" +
           SourceDir.str() + "\" or its parent directories cannot be parsed.\n" +
