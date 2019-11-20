@@ -971,18 +971,18 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     size_t const argc = bear_strings_length(argv);
 
 #ifdef INTEL_CUSTOMIZATION
-    // To indicate whether the captured argv[i] is a nvcc command,
+    // To indicate whether the captured argv[i] is a nvcc or ld command,
     // value: 1 yes, value 0 no.
-    int flag_command=0;
+    int is_nvcc_or_ld=0;
 
     // To indicate whether the object file has been fake generated,
     // value: 1 obj file generated, value: 0 not generated.
     int flag_object=0;
 
-    // contfalg is use for case: for options "-o xxx.o", "-o" and "xxx.o" is in
-    // argv[i] and argv[i+1],  if "-o" is found in argv[i], then conflag
+    // flag_optval is use for case: for options "-o xxx.o", "-o" and "xxx.o" is in
+    // argv[i] and argv[i+1],  if "-o" is found in argv[i], then flag_optval
     // is set to show argv[i+1] contains the xxx.o
-    int contflag=0;
+    int flag_optval=0;
 
     // value 1: means current command line is a nvcc comand, and the fake obj file
     // has been created, else ret is set to 0.
@@ -998,11 +998,11 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
         const char *tail=argv[it];
         int len= strlen(tail);
         char *command=NULL;
-        if(it<=3 /*eg. /bin/bash -c [CPATH=xxx;]command*/ && flag_command==0 &&
+        if(it<=3 /*eg. /bin/bash -c [CPATH=xxx;]command*/ && is_nvcc_or_ld==0 &&
                 ((command=strstr(tail, "nvcc"))!=NULL)) {
           command_cp=command;
           it_cp=it;
-          flag_command=1;
+          is_nvcc_or_ld=1;
           const char *tmpp=tail;
           while(tmpp!=command) {
             if(*tmpp=='(') {
@@ -1014,7 +1014,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
           fprintf(fd, "%s%c", "nvcc", US);
         } else if((len ==2 && tail[0]=='l' && tail[1] =='d') ||
                   (len > 2 && tail[len-3]=='/' && tail[len-2] =='l' && tail[len-1] =='d')) {
-            flag_command=1;
+            is_nvcc_or_ld=1;
             for(size_t i=it; i< argc; i++){
                 if(strcmp(argv[i], "-o") == 0){
                     char ofilename[512];
@@ -1034,7 +1034,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
                 }
             }
         }
-        if(contflag==1){
+        if(flag_optval==1){
           char ofilename[512];
           int olen=strlen(argv[it]);
           memset(ofilename,'\0',512);
@@ -1048,7 +1048,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
             pthread_mutex_unlock(&mutex);
             exit(EXIT_FAILURE);
           }
-          contflag=0;
+          flag_optval=0;
           flag_object=1;
         }
         if(flag_object==0) {
@@ -1059,7 +1059,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
             flag_object=1;
           }
           if(r==1){
-            contflag=1;
+            flag_optval=1;
           }
         }
 
@@ -1086,9 +1086,9 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     free((void *)cwd);
     pthread_mutex_unlock(&mutex);
 #ifdef INTEL_CUSTOMIZATION
-    if(flag_command == 1 && flag_object == 1){
+    if(is_nvcc_or_ld == 1 && flag_object == 1){
       ret=1;
-    } else  if(flag_command == 1) {
+    } else  if(is_nvcc_or_ld == 1) {
         // object is not give by -o. Need figure out the default output for cmd "gcc -c xx.c"
         char *tmp=malloc(4096);
         if(tmp==NULL) {
