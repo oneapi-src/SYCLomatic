@@ -5,6 +5,10 @@
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include "inc/header.h"
 #include "inc/header.h"
+#include "inc/header.inl"
+#include "inc/header.inc"
+#include "inc/header.INL"
+#include "inc/header.INC"
 
 // CHECK: #ifdef CUDA
 // CHECK-NEXT: void foo() {
