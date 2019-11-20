@@ -401,7 +401,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   <ItemGroup>
     <Object Include="\path\to\CMakeFiles\SVMbenchmark.dir\cuSVM\$(Configuration)\SVMbenchmark_generated_cuSVMSolver.cu.obj" />
     <ClInclude Include="\path\to\debug.h" />
-    <ClCompile Include="b_kernel.cu" />
+    <CustomBuild Include="b_kernel.cu" />
     <ClCompile Include="\path\to\debug.cpp" />
     <ClInclude Include="\path\to\cudaerror.h" />
     <ClInclude Include="\path\to\cuda_utils.h" />

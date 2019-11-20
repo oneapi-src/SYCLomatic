@@ -18,7 +18,8 @@ std::map<std::string, std::string> VariablesMap;
 
 std::set<std::string> MacroDefinedSet;
 std::set<std::string> DirIncludedSet;
-std::set<std::string> FilesSet;
+std::map<std::string /*compiler*/, std::vector<std::string> /*source file*/>
+    FilesSet;
 
 const std::unordered_map<std::string /*option*/, std::string /*option*/>
     OptionsMapped = {
@@ -205,10 +206,8 @@ void addMacroDefinedSet(const std::string &MacroDefined) {
   }
 }
 
-void addFilesSet(const std::string &File) {
-  if (FilesSet.find(File) == end(FilesSet)) {
-    FilesSet.insert(File);
-  }
+void addFilesSet(const std::string Compiler, std::string &File) {
+  FilesSet[Compiler].push_back(File);
 }
 
 void updateOptionsMap(const std::string &Option, const std::string &Value) {
@@ -303,6 +302,11 @@ void generateCompilationDatabase(const std::string &BuildDir) {
   ProcessDirectoriesIncluded(DirectoriesIncluded);
 
   size_t EntryCount = 0;
+  size_t TotalCount = 0;
+  for (auto const &Entry : FilesSet) {
+    TotalCount += Entry.second.size();
+  }
+
   std::string FilePath = BuildDir + "/compile_commands.json";
   std::ofstream OutFile(FilePath);
   if (!OutFile) {
@@ -313,26 +317,31 @@ void generateCompilationDatabase(const std::string &BuildDir) {
   }
 
   OutFile << "[\n";
-  for (auto const &File : FilesSet) {
-    EntryCount++;
-    std::string FileName = "\"file\":\"" + File + "\",";
-    std::string Command = "\"command\":\"compile " + Options + MacrosDefined +
-                          DirectoriesIncluded + "\\\"" + File + "\\\"\",";
-    std::string Directory = "\"directory\":\"" + BuildDir + "\"";
-    OutFile << "    {\n";
-    OutFile << "        " << FileName << "\n";
-    OutFile << "        " << Command << "\n";
-    OutFile << "        " << Directory << "\n";
-    if (FilesSet.size() > 1 && EntryCount < FilesSet.size()) {
-      OutFile << "    },\n";
-    } else {
-      OutFile << "    }\n";
+  for (auto const &Entry : FilesSet) {
+    const std::string Compiler = Entry.first + " ";
+    auto FilesSet = Entry.second;
+    for (auto const &File : FilesSet) {
+      EntryCount++;
+      std::string FileName = "\"file\":\"" + File + "\",";
+      std::string Command = "\"command\":\"" + Compiler + Options +
+                            MacrosDefined + DirectoriesIncluded + "\\\"" +
+                            File + "\\\"\",";
+      std::string Directory = "\"directory\":\"" + BuildDir + "\"";
+      OutFile << "    {\n";
+      OutFile << "        " << FileName << "\n";
+      OutFile << "        " << Command << "\n";
+      OutFile << "        " << Directory << "\n";
+      if (EntryCount < TotalCount) {
+        OutFile << "    },\n";
+      } else {
+        OutFile << "    }\n";
+      }
     }
   }
   OutFile << "]\n";
 }
 
-void collectFiles(const std::string &Line) {
+void collectFiles(const std::string &Compiler, const std::string &Line) {
   size_t Pos = Line.find("Include=");
   if (Pos != std::string::npos) {
     size_t Start = Line.find("Include=") + sizeof("Include=\"") - 1;
@@ -340,9 +349,10 @@ void collectFiles(const std::string &Line) {
     std::string SubStr = Line.substr(Start, End - Start);
     backslashToForwardslash(SubStr);
     // Exclude *.txt files, i.e. <CustomBuild Include="/path/to/CMakeLists.txt">
-    // Exclude *.rule files, i.e. <CustomBuild Include="/path/to/name_intermediate_link.obj.rule">
+    // Exclude *.rule files, i.e. <CustomBuild
+    // Include="/path/to/name_intermediate_link.obj.rule">
     if (!endsWith(SubStr, ".txt") && !endsWith(SubStr, ".rule")) {
-      addFilesSet(SubStr);
+      addFilesSet(Compiler, SubStr);
     }
   }
 }
@@ -404,10 +414,11 @@ void collectMacrosAndIncludingDIr(const std::string &&Node,
   }
 }
 
-void processCompileNode(const std::vector<std::string> &CompileNode) {
+void collectCompileNodeInfo(const std::string &Compiler,
+                            const std::vector<std::string> &CompileNode) {
   for (auto const &Line : CompileNode) {
     collectOtions(Line);
-    collectFiles(Line);
+    collectFiles(Compiler, Line);
 
     // Collect Macros defined.
     collectMacrosAndIncludingDIr("Defines", Line, addMacroDefinedSet);
@@ -463,11 +474,11 @@ void parseVaribles(const std::string &VcxprojFile) {
   }
 }
 
-void processCompileNode(const std::string &&CompileNode, std::ifstream &Infile,
-                        std::string &Line) {
-  const std::string StartCompileNode = "<" + CompileNode + ">";
-  const std::string EndCompileNode = "</" + CompileNode + ">";
-  const std::string WholeCompileNode = "<" + CompileNode + " ";
+void processCompileNode(const std::string &&CompileNodeName,
+                        std::ifstream &Infile, std::string &Line) {
+  const std::string StartCompileNode = "<" + CompileNodeName + ">";
+  const std::string EndCompileNode = "</" + CompileNodeName + ">";
+  const std::string WholeCompileNode = "<" + CompileNodeName + " ";
 
   if (Line.find(StartCompileNode) != std::string::npos) {
     std::vector<std::string> CompileNode;
@@ -479,11 +490,11 @@ void processCompileNode(const std::string &&CompileNode, std::ifstream &Infile,
         break;
       }
     }
-    processCompileNode(CompileNode);
+    collectCompileNodeInfo(CompileNodeName, CompileNode);
   } else if (Line.find(WholeCompileNode) != std::string::npos) {
     std::vector<std::string> CompileNode;
     CompileNode.push_back(Line);
-    processCompileNode(CompileNode);
+    collectCompileNodeInfo(CompileNodeName, CompileNode);
   }
 }
 
