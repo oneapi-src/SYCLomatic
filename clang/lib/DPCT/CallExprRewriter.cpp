@@ -566,6 +566,7 @@ const std::unordered_map<std::string,
 #include "APINamesTexture.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE
+#undef ENTRY_UNSUPPORTED
 #undef UNSUPPORTED_FACTORY_ENTRY
 };
 

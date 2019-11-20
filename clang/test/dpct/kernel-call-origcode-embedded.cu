@@ -145,7 +145,7 @@ int main() {
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
+  // CHECK-NEXT:     }); // comments
   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int,
 	  karg2int, /* comments */karg3int/* comments */); // comments
 

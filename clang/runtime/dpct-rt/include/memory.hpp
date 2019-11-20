@@ -548,13 +548,32 @@ static void async_dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
   dpct_memcpy(q, to_ptr, from_ptr, size, direction);
 }
 
+/// Get the buffer and the offset of a piece of memory pointed to by \param ptr.
+///
+/// \param ptr Pointer to a piece of memory.
+/// \returns a pair containing both the buffer and the offset.
 static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
   auto alloc = memory_manager::get_instance().translate_ptr(ptr);
   size_t offset = (byte_t *)ptr - alloc.alloc_ptr;
   return std::make_pair(alloc.buffer, offset);
 }
 
-// memset
+/// Get the buffer of a piece of memory pointed to by \param ptr.
+///
+/// \param ptr Pointer to a piece of memory.
+/// \returns the buffer.
+static buffer_t get_buffer(const void *ptr) {
+  return memory_manager::get_instance().translate_ptr(ptr).buffer;
+}
+
+/// Synchronously sets value to the first size bytes starting from dev_ptr in
+/// \pararm q. The function will return after the memset operation is completed.
+///
+/// \param q The queue in which the operation is done.
+/// \param dev_ptr Pointer to the device memory address.
+/// \param value Value to be set.
+/// \param size Number of bytes to be set to the value.
+/// \returns no return value.
 static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *devPtr,
                                           int value, size_t count) {
 #ifdef DPCT_USM_LEVEL_NONE

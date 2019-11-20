@@ -254,7 +254,7 @@ std::vector<std::string> split(const std::string &Str, char Delim) {
   return V;
 }
 
-// Find the innermost (closest) block where S is located
+/// Find the innermost (closest) block (CompoundStmt) where S is located
 const clang::CompoundStmt *findImmediateBlock(const clang::Stmt *S) {
   if (!S)
     return nullptr;
@@ -502,4 +502,220 @@ void replaceSubStrAll(std::string &Str, const std::string &SubStr,
     Str.replace(P, SubStr.size(), Repl);
     P = Str.find(SubStr);
   }
+}
+
+/// Get the immediate ancestor with type \tparam T of \param S
+template <typename T> const T *getImmediateAncestor(const Stmt *S) {
+  if (!S)
+    return nullptr;
+
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*S);
+  while (Parents.size() == 1) {
+    if (auto *Parent = Parents[0].get<T>()) {
+      return Parent;
+    } else {
+      Parents = Context.getParents(Parents[0]);
+    }
+  }
+
+  return nullptr;
+}
+
+/// Find the FunctionDecl where \param S is located
+const FunctionDecl *getFunctionDecl(const Stmt *S) {
+  return getImmediateAncestor<FunctionDecl>(S);
+}
+
+/// Get the CallExpr where \param S is referenced
+const CallExpr *getCallExpr(const Stmt *S) {
+  return getImmediateAncestor<CallExpr>(S);
+}
+
+/// Check if \param E is an expr that loads the address of \param DRE,
+/// ignoring any casts and parens.
+bool isAddressOfExpr(const Expr *E, const DeclRefExpr *DRE) {
+  E = E->IgnoreCasts()->IgnoreParens();
+  if (auto UO = dyn_cast<UnaryOperator>(E))
+    if (UO->getOpcode() == UO_AddrOf)
+      if (auto DRE2 = dyn_cast<DeclRefExpr>(UO->getSubExpr()))
+        if (DRE->getDecl() == DRE2->getDecl())
+          return true;
+  return false;
+}
+
+/// Check if \param CE allocates memory pointed to by \param Arg
+bool isCudaMemoryAllocation(const DeclRefExpr *Arg, const CallExpr *CE) {
+  auto FD = CE->getDirectCallee();
+  if (!FD)
+    return false;
+  auto FuncName = FD->getNameAsString();
+  if (FuncName == "cudaMalloc" || FuncName == "cudaMallocPitch") {
+    if (!CE->getNumArgs())
+      return false;
+    if (isAddressOfExpr(CE->getArg(0), Arg))
+      return true;
+  }
+  return false;
+}
+
+/// This function traverses all the nodes in the AST represented by \param Root
+/// in a depth-first manner, until the node \param Sentinal is reached, to check
+/// if the pointer \param Arg to a piece of memory is used as lvalue after the
+/// most recent memory allocation until \param Sentinal.
+///
+/// \param Arg: the expr that represents a reference to a declared variable
+/// \param Root: the root of an AST
+/// \param Sentinal: the sentinal node indicating termination of traversal
+/// \param CurrentScope: the current scope of searching
+/// \param UsedInScope: the map recording used-as-lavlue status for all scopes
+/// \param Done: if current searching should stop or not
+///
+/// devPtr (T *) can be initialized in the following ways:
+///   1. cudaMalloc(&devPtr, size);
+///   2. cudaMallocPitch(&devPtr, pitch, width, height);
+/// where "&devPtr" can be surrounded by arbitrary number of cast or paren
+/// expressions.
+/// If a new allocation happens on the memory pointed to by devPtr, \Used is
+/// reset to false.
+///
+/// devPtr (T *) can be used as lvalue in the various ways:
+///   1. devPtr = devPtr + 1;
+///   2. devPtr = devPtr - 1;
+///   3. devPtr += 1;
+///   4. devPtr -= 1;
+///   5. mod(&devPtr); // void mod(int **);
+///   6. mod(devPtr);  // void mod(int *&);
+///   ...
+/// In a Clang AST, \param Arg is judged of used-as-lvalue when it is not under
+/// a LValueToRValue cast node in the AST, which covers all the above cases.
+/// Each used-as-lvalue scenario sets \param Used to true.
+///
+/// If the memory is never seen to be allocated in the traversing process,
+/// \param Used is conservatively treated as true.
+void findUsedAsLvalue(const DeclRefExpr *Arg, const Stmt *Root,
+                      const Stmt *Sentinal,
+                      std::vector<const Stmt *> &CurrentScope,
+                      std::map<std::vector<const Stmt *>, bool> &UsedInScope,
+                      bool &Done) {
+  // Done with searching when Sentinal is reached.
+  if (!Arg || !Root || !Sentinal)
+    return;
+  if (Root == Sentinal) {
+    Done = true;
+    return;
+  }
+
+  if (auto DRE = dyn_cast<DeclRefExpr>(Root)) {
+    if (DRE->getType()->isPointerType()) {
+      if (DRE->getDecl() != Arg->getDecl())
+        return;
+      if (auto *Parent = getParentStmt(DRE))
+        if (auto *ICE = dyn_cast<ImplicitCastExpr>(Parent))
+          if (ICE->getCastKind() == CK_LValueToRValue)
+            return;
+      // Arg is used as lvalue
+      UsedInScope[CurrentScope] = true;
+    }
+  } else if (auto CE = dyn_cast<CallExpr>(Root)) {
+    if (isCudaMemoryAllocation(Arg, CE))
+      UsedInScope[CurrentScope] = false;
+    else
+      for (auto It = CE->arg_begin(); !Done && It != CE->arg_end(); ++It)
+        findUsedAsLvalue(Arg, *It, Sentinal, CurrentScope, UsedInScope, Done);
+  } else if (auto IS = dyn_cast<IfStmt>(Root)) {
+    // Condition
+    findUsedAsLvalue(Arg, IS->getCond(), Sentinal, CurrentScope, UsedInScope, Done);
+    if (Done)
+      return;
+    bool Used = UsedInScope[CurrentScope];
+
+    // Then branch
+    CurrentScope.push_back(IS->getThen());
+    UsedInScope[CurrentScope] = Used;
+    findUsedAsLvalue(Arg, IS->getThen(), Sentinal, CurrentScope, UsedInScope, Done);
+    if (Done)
+      return;
+    CurrentScope.pop_back();
+
+    // Else branch
+    if (auto ElseBranch = IS->getElse()) {
+      CurrentScope.push_back(ElseBranch);
+      UsedInScope[CurrentScope] = Used;
+      findUsedAsLvalue(Arg, ElseBranch, Sentinal, CurrentScope, UsedInScope, Done);
+      if (Done)
+        return;
+      CurrentScope.pop_back();
+    }
+  } else if (auto WS = dyn_cast<WhileStmt>(Root)) {
+    // Condition
+    findUsedAsLvalue(Arg, WS->getCond(), Sentinal, CurrentScope, UsedInScope, Done);
+    if (Done)
+      return;
+
+    // Body
+    bool Used = UsedInScope[CurrentScope];
+    CurrentScope.push_back(WS->getBody());
+    UsedInScope[CurrentScope] = Used;
+    findUsedAsLvalue(Arg, WS->getBody(), Sentinal, CurrentScope, UsedInScope, Done);
+    if (Done)
+      return;
+    CurrentScope.pop_back();
+  } else if (auto FS = dyn_cast<ForStmt>(Root)) {
+    // Initilization
+    findUsedAsLvalue(Arg, FS->getInit(), Sentinal, CurrentScope, UsedInScope, Done);
+    if (Done)
+      return;
+    // Condition
+    findUsedAsLvalue(Arg, FS->getCond(), Sentinal, CurrentScope, UsedInScope, Done);
+    if (Done)
+      return;
+    // Increment
+    findUsedAsLvalue(Arg, FS->getInc(), Sentinal, CurrentScope, UsedInScope, Done);
+    if (Done)
+      return;
+
+    // Body
+    bool Used = UsedInScope[CurrentScope];
+    CurrentScope.push_back(FS->getBody());
+    UsedInScope[CurrentScope] = Used;
+    findUsedAsLvalue(Arg, FS->getBody(), Sentinal, CurrentScope, UsedInScope, Done);
+    if (Done)
+      return;
+    CurrentScope.pop_back();
+  } else {
+    // Finishes when Sentinal is reached or we're done searching current
+    // children nodes
+    for (auto It = Root->child_begin(); !Done && It != Root->child_end(); ++It)
+      findUsedAsLvalue(Arg, *It, Sentinal, CurrentScope, UsedInScope, Done);
+  }
+}
+
+/// This function checks if the pointer \param Arg to a piece of memory is used
+/// as lvalue after the memory is allocated, until \param S in the same
+/// function. If the memory not allocated before \param S in the same function,
+/// \param Arg is considered used-as-lvalue before \param S.
+bool isArgUsedAsLvalueUntil(const DeclRefExpr *Arg, const Stmt *S) {
+  // Global variables are always treated as used-as-lvalue
+  if (Arg->getDecl()->isDefinedOutsideFunctionOrMethod())
+    return true;
+
+  auto *FD = getFunctionDecl(S);
+  if (!FD)
+    return true;
+
+  auto *CS = FD->getBody();
+
+  std::vector<const Stmt *> CurrentScope{CS};
+  // If \param Arg is used as lvalue before \param S in the scope
+  std::map<std::vector<const Stmt *>, bool> UsedInScope;
+  UsedInScope[CurrentScope] = true;
+
+  // If we are done with searching (\param S has been reached)
+  bool Done = false;
+
+  // Traverse from the function body
+  findUsedAsLvalue(Arg, CS, S, CurrentScope, UsedInScope, Done);
+
+  return UsedInScope[CurrentScope];
 }

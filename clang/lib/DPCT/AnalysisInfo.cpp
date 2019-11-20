@@ -146,20 +146,33 @@ void KernelCallExpr::buildKernelArgsStmt() {
   for (auto &Arg : getArgsInfo()) {
     if (Arg.isPointer) {
       auto BufferName = Arg.getIdStringWithSuffix("buf");
-      OuterStmts.emplace_back(buildString(
-          "std::pair<dpct::buffer_t, size_t> ", BufferName,
-          " = dpct::get_buffer_and_offset(", Arg.getArgString(), ");"));
-      OuterStmts.emplace_back(buildString("size_t ",
-                                          Arg.getIdStringWithSuffix("offset"),
-                                          " = ", BufferName, ".second;"));
-      SubmitStmts.emplace_back(buildString(
-          "auto ", Arg.getIdStringWithSuffix("acc"), " = ", BufferName,
-          ".first.get_access<cl::sycl::access::mode::read_write>(cgh);"));
-      KernelStmts.emplace_back(buildString(
-          Arg.getTypeString(), Arg.getIdStringWithIndex(), " = (",
-          Arg.getTypeString(), ")(&", Arg.getIdStringWithSuffix("acc"),
-          "[0] + ", Arg.getIdStringWithSuffix("offset"), ");"));
-      KernelArgs += Arg.getIdStringWithIndex() + ", ";
+      // If Arg is used as lvalue after its most recent memory allocation,
+      // offsets are necessary; otherwise, offsets are not necessary.
+      if (Arg.isUsedAsLvalueAfterMalloc) {
+        OuterStmts.emplace_back(buildString(
+            "std::pair<dpct::buffer_t, size_t> ", BufferName,
+            " = dpct::get_buffer_and_offset(", Arg.getArgString(), ");"));
+        SubmitStmts.emplace_back(buildString(
+            "auto ", Arg.getIdStringWithSuffix("acc"), " = ", BufferName,
+            ".first.get_access<cl::sycl::access::mode::read_write>(cgh);"));
+        OuterStmts.emplace_back(buildString("size_t ",
+                                            Arg.getIdStringWithSuffix("offset"),
+                                            " = ", BufferName, ".second;"));
+        KernelStmts.emplace_back(buildString(
+            Arg.getTypeString(), Arg.getIdStringWithIndex(), " = (",
+            Arg.getTypeString(), ")(&", Arg.getIdStringWithSuffix("acc"),
+            "[0] + ", Arg.getIdStringWithSuffix("offset"), ");"));
+        KernelArgs += Arg.getIdStringWithIndex() + ", ";
+      } else {
+        OuterStmts.emplace_back(buildString(
+            "dpct::buffer_t ", BufferName,
+            " = dpct::get_buffer(", Arg.getArgString(), ");"));
+        SubmitStmts.emplace_back(buildString(
+            "auto ", Arg.getIdStringWithSuffix("acc"), " = ", BufferName,
+            ".get_access<cl::sycl::access::mode::read_write>(cgh);"));
+        KernelArgs += buildString("(", Arg.getTypeString(), ")(&",
+                                  Arg.getIdStringWithSuffix("acc"), "[0]), ");
+      }
     } else if (Arg.isRedeclareRequired) {
       OuterStmts.emplace_back(buildString("auto ", Arg.getIdStringWithIndex(),
                                           " = ", Arg.getArgString(), ";"));
@@ -259,7 +272,7 @@ std::string KernelCallExpr::getReplacement() {
   llvm::raw_string_ostream OS(Result);
   KernelPrinter Printer(LocInfo.NL, LocInfo.Indent, OS);
   print(Printer);
-  return OS.str();
+  return removeReduntIndentAndNL(OS.str(), LocInfo.Indent.length());
 }
 
 void KernelCallExpr::buildInfo() {

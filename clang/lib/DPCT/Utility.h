@@ -282,4 +282,6 @@ void replaceSubStr(std::string &Str, const std::string &SubStr,
                    const std::string &Repl);
 void replaceSubStrAll(std::string &Str, const std::string &SubStr,
                    const std::string &Repl);
+bool isArgUsedAsLvalueUntil(const clang::DeclRefExpr *Arg,
+                            const clang::Stmt *S);
 #endif // DPCT_UTILITY_H

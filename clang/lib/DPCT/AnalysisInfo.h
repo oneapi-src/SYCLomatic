@@ -1480,8 +1480,10 @@ private:
 // call.
 class KernelCallExpr : public CallFunctionExpr {
   struct ArgInfo {
-    ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg, int Index)
-        : isPointer(false), isRedeclareRequired(false), Index(Index) {
+    ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg, bool Used,
+            int Index)
+        : isPointer(false), isUsedAsLvalueAfterMalloc(Used),
+          isRedeclareRequired(false), Index(Index) {
       Analysis.analyze(Arg);
       ArgString = Analysis.getReplacedString();
       if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
@@ -1511,9 +1513,9 @@ class KernelCallExpr : public CallFunctionExpr {
         Token Tok;
         while (SM.getCharacterData(TokenBegin) <=
                SM.getCharacterData(ExprEndLoc)) {
-          if(Lexer::getRawToken(TokenBegin, Tok, SM,
-                                  DpctGlobalInfo::getContext().getLangOpts(),
-                                  true)) {
+          if (Lexer::getRawToken(TokenBegin, Tok, SM,
+                                 DpctGlobalInfo::getContext().getLangOpts(),
+                                 true)) {
             break;
           }
           if (Tok.isAnyIdentifier()) {
@@ -1543,6 +1545,8 @@ class KernelCallExpr : public CallFunctionExpr {
 
     bool isPointer;
     bool isRedeclareRequired;
+    // If the pointer is used as lvalue after its most recent memory allocation
+    bool isUsedAsLvalueAfterMalloc;
     std::string ArgString;
     std::string TypeString;
     std::string IdString;
@@ -1600,6 +1604,10 @@ class KernelCallExpr : public CallFunctionExpr {
   void printSubmitLamda(KernelPrinter &Printer);
   void printParallelFor(KernelPrinter &Printer);
   void printKenel(KernelPrinter &Printer);
+  std::string removeReduntIndentAndNL(const std::string &Input,
+                                      unsigned IndentSize) {
+    return Input.substr(IndentSize, Input.length() - IndentSize - 1);
+  }
 
 public:
   KernelCallExpr(unsigned Offset, const std::string &FilePath,
@@ -1634,7 +1642,11 @@ private:
       if (auto Obj = TexList[Idx]) {
         ArgsInfo.emplace_back(Obj);
       } else {
-        ArgsInfo.emplace_back(Analysis, CE->getArg(Idx), Idx);
+        auto Arg = CE->getArg(Idx);
+        bool Used = true;
+        if (auto *ArgDRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
+          Used = isArgUsedAsLvalueUntil(ArgDRE, CE);
+        ArgsInfo.emplace_back(Analysis, Arg, Used, Idx);
       }
     }
   }
