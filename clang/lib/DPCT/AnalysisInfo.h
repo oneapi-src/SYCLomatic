@@ -472,16 +472,35 @@ public:
   static inline std::string getUnqualifiedTypeName(QualType QT) {
     return getUnqualifiedTypeName(QT, DpctGlobalInfo::getContext());
   }
+
+  static inline void
+  getReplacedTypeNameRecursive(QualType QT, const ASTContext &Context,
+                               std::string &MigratedTypeStr) {
+    if (!QT.hasQualifiers() && !QT.getTypePtr()->isPointerType()) {
+      std::string TypeName = QT.getAsString(Context.getPrintingPolicy());
+      MapNames::replaceName(MapNames::TypeNamesMap, TypeName);
+      MigratedTypeStr = buildString(TypeName, MigratedTypeStr);
+      return;
+    }
+    if (!QT.getQualifiers().isEmptyWhenPrinted(Context.getPrintingPolicy())) {
+      MigratedTypeStr = buildString(
+          " ", QT.getQualifiers().getAsString(Context.getPrintingPolicy()),
+          MigratedTypeStr);
+    }
+    QualType RemovedQ = QT.getUnqualifiedType();
+    QualType RemovedP = RemovedQ;
+    if (RemovedQ.getTypePtr()->isPointerType()) {
+      MigratedTypeStr = buildString(" *", MigratedTypeStr);
+      RemovedP = RemovedQ.getTypePtr()->getPointeeType();
+    }
+    getReplacedTypeNameRecursive(RemovedP, Context, MigratedTypeStr);
+    return;
+  }
   static inline std::string getReplacedTypeName(QualType QT,
                                                 const ASTContext &Context) {
-    auto TypeName = getUnqualifiedTypeName(QT, Context);
-    MapNames::replaceName(MapNames::TypeNamesMap, TypeName);
-    if (!QT.getQualifiers().isEmptyWhenPrinted(Context.getPrintingPolicy())) {
-      TypeName = buildString(
-          QT.getQualifiers().getAsString(Context.getPrintingPolicy()), " ",
-          TypeName);
-    }
-    return TypeName;
+    std::string MigratedTypeStr;
+    getReplacedTypeNameRecursive(QT, Context, MigratedTypeStr);
+    return MigratedTypeStr;
   }
   static inline std::string getReplacedTypeName(QualType QT) {
     return getReplacedTypeName(QT, DpctGlobalInfo::getContext());

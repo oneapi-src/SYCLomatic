@@ -58,8 +58,8 @@ void runTest() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, T>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           const T *karg1_ct0 = (const T *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
-  // CHECK-NEXT:           const T *karg2_ct1 = (const T *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
+  // CHECK-NEXT:           T const *karg1_ct0 = (T const *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
+  // CHECK-NEXT:           T const *karg2_ct1 = (T const *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
   // CHECK-NEXT:           testKernelPtr<class TestName, ktarg, T>(karg1_ct0, karg2_ct1, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -80,7 +80,7 @@ void runTest() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestTemplate<T>, dpct_kernel_scalar<ktarg>, T>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           const void *karg1_ct0 = (const void *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
+  // CHECK-NEXT:           void const *karg1_ct0 = (void const *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
   // CHECK-NEXT:           T *karg3_ct1 = (T *)(&karg3_acc_ct1[0] + karg3_offset_ct1);
   // CHECK-NEXT:           testKernelPtr<class TestTemplate<T>, ktarg, T>(karg1_ct0, karg3_ct1, item_ct1);
   // CHECK-NEXT:         });
@@ -102,7 +102,7 @@ void runTest() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, T, dpct_kernel_scalar<ktarg>, TestTemplate<T>>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           const TestTemplate<T> *karg4_ct0 = (const TestTemplate<T> *)(&karg4_acc_ct0[0] + karg4_offset_ct0);
+  // CHECK-NEXT:           TestTemplate<T> const *karg4_ct0 = (TestTemplate<T> const *)(&karg4_acc_ct0[0] + karg4_offset_ct0);
   // CHECK-NEXT:           TT *karg5_ct1 = (TT *)(&karg5_acc_ct1[0] + karg5_offset_ct1);
   // CHECK-NEXT:           testKernelPtr<T, ktarg, TestTemplate<T>>(karg4_ct0, karg5_ct1, item_ct1);
   // CHECK-NEXT:         });
@@ -177,8 +177,8 @@ int main() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, LA>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           const LA *karg1_ct0 = (const LA *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
-  // CHECK-NEXT:           const LA *karg2_ct1 = (const LA *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
+  // CHECK-NEXT:           LA const *karg1_ct0 = (LA const *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
+  // CHECK-NEXT:           LA const *karg2_ct1 = (LA const *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
   // CHECK-NEXT:           testKernelPtr<class TestName, ktarg, LA>(karg1_ct0, karg2_ct1, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });

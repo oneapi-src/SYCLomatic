@@ -277,6 +277,17 @@ static inline cl::sycl::queue &get_default_queue_wait() {
   return q;
 }
 
+/// Util function to get the current device.
+static inline cl::sycl::device &get_current_device() {
+  return dpct::get_device_manager().current_device();
+}
+
+/// Util function to get the context of the default queue of current
+/// device in dpct device manager.
+static inline cl::sycl::context get_default_context() {
+  return dpct::get_default_queue().get_context();
+}
+
 } // namespace dpct
 
 #endif // __DPCT_DEVICE_HPP__

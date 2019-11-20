@@ -15,7 +15,7 @@ void fooo() {
   // CHECK: free(d_A);
   cudaFreeHost(d_A);
 
-  // CHECK: *((void **)&src) = malloc(bytes);
+  // CHECK: src = (float *)malloc(bytes);
   cudaMallocHost(&src, bytes);
 
   struct cudaPitchedPtr srcGPU;

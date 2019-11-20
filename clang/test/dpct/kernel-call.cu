@@ -103,8 +103,8 @@ int main() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           const int *karg1_ct0 = (const int *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
-  // CHECK-NEXT:           const int *karg2_ct1 = (const int *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
+  // CHECK-NEXT:           int const *karg1_ct0 = (int const *)(&karg1_acc_ct0[0] + karg1_offset_ct0);
+  // CHECK-NEXT:           int const *karg2_ct1 = (int const *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
   // CHECK-NEXT:           testKernelPtr(karg1_ct0, karg2_ct1, karg3, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -144,8 +144,8 @@ int main() {
   // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
   // CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:          const int *args_arg1_ct0 = (const int *)(&args_arg1_acc_ct0[0] + args_arg1_offset_ct0);
-  // CHECK-NEXT:          const int *args_arg2_ct1 = (const int *)(&args_arg2_acc_ct1[0] + args_arg2_offset_ct1);
+  // CHECK-NEXT:          int const *args_arg1_ct0 = (int const *)(&args_arg1_acc_ct0[0] + args_arg1_offset_ct0);
+  // CHECK-NEXT:          int const *args_arg2_ct1 = (int const *)(&args_arg2_acc_ct1[0] + args_arg2_offset_ct1);
   // CHECK-NEXT:          testKernelPtr(args_arg1_ct0, args_arg2_ct1, karg3int, item_ct1);
   // CHECK-NEXT:        });
   // CHECK-NEXT:    });

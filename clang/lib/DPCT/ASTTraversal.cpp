@@ -1930,7 +1930,7 @@ void VectorTypeCtorRule::run(const MatchFinder::MatchResult &Result) {
   }
 
   if (const UnaryExprOrTypeTraitExpr *ExprSizeof =
-          getNodeAsType<UnaryExprOrTypeTraitExpr>(Result, "Sizeof")) {
+          getAssistNodeAsType<UnaryExprOrTypeTraitExpr>(Result, "Sizeof")) {
     if (ExprSizeof->isArgumentType()) {
       emplaceTransformation(new ReplaceToken(
           ExprSizeof->getArgumentTypeInfo()->getTypeLoc().getBeginLoc(),
@@ -4368,16 +4368,79 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(MemVarRule)
 
-bool isSimpleAddrOf(const Expr *E, std::string& SubExprStr) {
+bool MemoryMigrationRule::isSimpleAddrOf(const Expr *E) {
   if (auto UO = dyn_cast<UnaryOperator>(E)) {
     if (UO->getOpcode() == UO_AddrOf) {
-      ExprAnalysis SEA;
-      SEA.analyze(UO->getSubExpr());
-      SubExprStr = SEA.getReplacedString();
       return true;
     }
   }
   return false;
+}
+
+bool MemoryMigrationRule::isCOCESimpleAddrOf(const Expr *E) {
+  if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
+    if (COCE->getOperator() == clang::OverloadedOperatorKind::OO_Amp &&
+        COCE->getNumArgs() == 1) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::string MemoryMigrationRule::getNameStrRemovedAddrOf(const Expr *E,
+                                                            bool isCOCE) {
+  if (isCOCE) {
+    auto COCE = dyn_cast<CXXOperatorCallExpr>(E);
+    ExprAnalysis SEA;
+    SEA.analyze(COCE->getArg(0));
+    return SEA.getReplacedString();
+  } else {
+    auto UO = dyn_cast<UnaryOperator>(E);
+    ExprAnalysis SEA;
+    SEA.analyze(UO->getSubExpr());
+    return SEA.getReplacedString();
+  }
+}
+
+std::string MemoryMigrationRule::getTypeStrRemovedAddrOf(const Expr *E,
+                                                        bool isCOCE) {
+  QualType QT;
+  if (isCOCE) {
+    auto COCE = dyn_cast<CXXOperatorCallExpr>(E);
+    QT = COCE->getArg(0)->getType();
+  } else {
+    auto UO = dyn_cast<UnaryOperator>(E);
+    QT = UO->getSubExpr()->getType();
+  }
+  std::string ReplType = DpctGlobalInfo::getReplacedTypeName(QT);
+  return ReplType;
+}
+
+/// Get the assigned part of the malloc function call.
+/// \param [in] E The expression need to be analyzed.
+/// \param [in] Arg0Str The original string of the first argument of the malloc.
+/// e.g.:
+/// origin code:
+///   int2 const * d_data;
+///   cudaMalloc((void **)&d_data, sizeof(int2));
+/// This function will return a string "d_data = (cl::sycl::int2 const *)"
+/// In this example, \param E is "&d_data", \param Arg0Str is "(void **)&d_data"
+std::string MemoryMigrationRule::getAssignedStr(const Expr *E,
+                                                const std::string &Arg0Str) {
+  std::ostringstream Repl;
+  if (isSimpleAddrOf(E)) {
+    Repl << getNameStrRemovedAddrOf(E);
+    Repl << " = (" << getTypeStrRemovedAddrOf(E) << ")";
+  } else if (isCOCESimpleAddrOf(E)) {
+    Repl << getNameStrRemovedAddrOf(E, true);
+    Repl << " = (" << getTypeStrRemovedAddrOf(E, true) << ")";
+  } else {
+    Repl << "*(" << Arg0Str << ")";
+    auto QT = E->getType().getTypePtr()->getPointeeType();
+    std::string ReplType = DpctGlobalInfo::getReplacedTypeName(QT);
+    Repl << " = (" << ReplType << ")";
+  }
+  return Repl.str();
 }
 
 void MemoryMigrationRule::mallocMigration(
@@ -4398,14 +4461,18 @@ void MemoryMigrationRule::mallocMigration(
       auto Arg0Str = EA.getReplacedString();
       EA.analyze(C->getArg(1));
       auto Arg1Str = EA.getReplacedString();
-      if (C->getArg(0)->getStmtClass() == Stmt::CStyleCastExprClass) {
-        Repl << "*(" << Arg0Str << ")";
+      if (auto CSE = dyn_cast<CStyleCastExpr>(C->getArg(0))) {
+        ExprAnalysis SEA;
+        SEA.analyze(CSE->getSubExpr());
+        SEA.getReplacedString();
+        auto SEAStr = SEA.getReplacedString();
+        Repl << getAssignedStr(CSE->getSubExpr(), SEAStr);
       } else {
-        Repl << "*((void **)" << Arg0Str << ")";
+        Repl << getAssignedStr(C->getArg(0), Arg0Str);
       }
-      Repl << " = cl::sycl::malloc_device(" << Arg1Str
-           << ", dpct::get_device_manager().current_device()"
-              ", dpct::get_default_queue().get_context())";
+      Repl << "cl::sycl::malloc_device(" << Arg1Str
+           << ", dpct::get_current_device()"
+              ", dpct::get_default_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
       emplaceTransformation(
@@ -4418,16 +4485,20 @@ void MemoryMigrationRule::mallocMigration(
     auto Arg0Str = EA.getReplacedString();
     EA.analyze(C->getArg(1));
     auto Arg1Str = EA.getReplacedString();
-    if (C->getArg(0)->getStmtClass() == Stmt::CStyleCastExprClass) {
-      Repl << "*(" << Arg0Str << ")";
+    if (auto CSE = dyn_cast<CStyleCastExpr>(C->getArg(0))) {
+      ExprAnalysis SEA;
+      SEA.analyze(CSE->getSubExpr());
+      SEA.getReplacedString();
+      auto SEAStr = SEA.getReplacedString();
+      Repl << getAssignedStr(CSE->getSubExpr(), SEAStr);
     } else {
-      Repl << "*((void **)" << Arg0Str << ")";
+      Repl << getAssignedStr(C->getArg(0), Arg0Str);
     }
     if (USMLevel == restricted) {
-      Repl << " = cl::sycl::malloc_host(" << Arg1Str
-           << ", dpct::get_default_queue().get_context())";
+      Repl << "cl::sycl::malloc_host(" << Arg1Str
+           << ", dpct::get_default_context())";
     } else {
-      Repl << " = malloc(" << Arg1Str << ")";
+      Repl << "malloc(" << Arg1Str << ")";
     }
     emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
   } else if (Name == "cudaMallocManaged") {
@@ -4438,14 +4509,18 @@ void MemoryMigrationRule::mallocMigration(
       auto Arg0Str = EA.getReplacedString();
       EA.analyze(C->getArg(1));
       auto Arg1Str = EA.getReplacedString();
-      if (C->getArg(0)->getStmtClass() == Stmt::CStyleCastExprClass) {
-        Repl << "*(" << Arg0Str << ")";
+      if (auto CSE = dyn_cast<CStyleCastExpr>(C->getArg(0))) {
+        ExprAnalysis SEA;
+        SEA.analyze(CSE->getSubExpr());
+        SEA.getReplacedString();
+        auto SEAStr = SEA.getReplacedString();
+        Repl << getAssignedStr(CSE->getSubExpr(), SEAStr);
       } else {
-        Repl << "*((void **)" << Arg0Str << ")";
+        Repl << getAssignedStr(C->getArg(0), Arg0Str);
       }
-      Repl << " = cl::sycl::malloc_shared(" << Arg1Str
-           << ", dpct::get_device_manager().current_device()"
-           << ", dpct::get_default_queue().get_context())";
+      Repl << "cl::sycl::malloc_shared(" << Arg1Str
+           << ", dpct::get_current_device()"
+           << ", dpct::get_default_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
       // Report unsupported warnings
@@ -4539,7 +4614,7 @@ void MemoryMigrationRule::replaceMemAPIArg(
 
     if (!OffsetFromBaseStr.empty()) {
       VarName =
-          "(void *)((char *)(" + VarName + ") + " + OffsetFromBaseStr + ")";
+          "(char *)(" + VarName + ") + " + OffsetFromBaseStr;
     }
     emplaceTransformation(
         new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
@@ -4551,7 +4626,7 @@ void MemoryMigrationRule::replaceMemAPIArg(
 
     if (!OffsetFromBaseStr.empty()) {
       VarName =
-          "(void *)((char *)(" + VarName + ") + " + OffsetFromBaseStr + ")";
+          "(char *)(" + VarName + ") + " + OffsetFromBaseStr;
     }
     emplaceTransformation(
         new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
@@ -4562,13 +4637,10 @@ void MemoryMigrationRule::replaceMemAPIArg(
 
     if (!OffsetFromBaseStr.empty()) {
       VarName =
-          "(void *)((char *)(" + VarName + ") + " + OffsetFromBaseStr + ")";
+          "(char *)(" + VarName + ") + " + OffsetFromBaseStr;
     }
     emplaceTransformation(
         new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
-  } else {
-    // Normal situation.
-    insertAroundStmt(E, "(void*)(", ")", true);
   }
 }
 
@@ -4842,7 +4914,7 @@ void MemoryMigrationRule::freeMigration(
       EA.analyze(C->getArg(0));
       std::ostringstream Repl;
       Repl << "cl::sycl::free(" << EA.getReplacedString()
-           << ", dpct::get_default_queue().get_context())";
+           << ", dpct::get_default_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
       emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_free", Name));
@@ -4853,7 +4925,7 @@ void MemoryMigrationRule::freeMigration(
       EA.analyze(C->getArg(0));
       std::ostringstream Repl;
       Repl << "cl::sycl::free(" << EA.getReplacedString()
-           << ", dpct::get_default_queue().get_context())";
+           << ", dpct::get_default_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
       emplaceTransformation(new ReplaceCalleeName(C, "free", Name));
@@ -4931,8 +5003,9 @@ void MemoryMigrationRule::getSymbolSizeMigration(
   auto StmtStrArg0 = EA.getReplacedString();
   EA.analyze(C->getArg(1));
   auto StmtStrArg1 = EA.getReplacedString();
-  if (isSimpleAddrOf(C->getArg(0), StmtStrArg0)) {
-    Replacement = StmtStrArg0 + " = " + StmtStrArg1 + ".get_size()";
+  if (isSimpleAddrOf(C->getArg(0))) {
+    Replacement = getNameStrRemovedAddrOf(C->getArg(0)) + " = " +
+                  StmtStrArg1 + ".get_size()";
   }
   else {
     Replacement = "*(" + StmtStrArg0 + ")" + " = " + StmtStrArg1 + ".get_size()";
@@ -5059,6 +5132,30 @@ void MemoryMigrationRule::run(const MatchFinder::MatchResult &Result) {
     }
 
     assert(MigrationDispatcher.find(Name) != MigrationDispatcher.end());
+
+    // If there is a malloc function call in a template function, and the
+    // template function is implicitly instantiated with two types. Then there
+    // will be three FunctionDecl nodes in the AST. We should do replacement on
+    // the FunctionDecl node which is not implicitly instantiated.
+    if (USMLevel == restricted &&
+        (Name == "cudaMalloc" || Name == "cudaHostAlloc" ||
+         Name == "cudaMallocHost" || Name == "cudaMallocManaged")) {
+      auto &Context = dpct::DpctGlobalInfo::getContext();
+      auto Parents = Context.getParents(*C);
+      while (Parents.size() == 1) {
+        auto *Parent = Parents[0].get<FunctionDecl>();
+        if (Parent) {
+          if (Parent->isImplicitlyInstantiable()) {
+            return;
+          } else {
+            break;
+          }
+        } else {
+          Parents = Context.getParents(Parents[0]);
+        }
+      }
+    }
+
     MigrationDispatcher.at(Name)(Result, C, ULExpr, IsAssigned);
 
     if (IsAssigned) {
@@ -5067,19 +5164,19 @@ void MemoryMigrationRule::run(const MatchFinder::MatchResult &Result) {
     }
   };
 
-  MigrateCallExpr(getNodeAsType<CallExpr>(Result, "call"),
+  MigrateCallExpr(getAssistNodeAsType<CallExpr>(Result, "call"),
                     /* IsAssigned */ false);
-  MigrateCallExpr(getNodeAsType<CallExpr>(Result, "callUsed"),
+  MigrateCallExpr(getAssistNodeAsType<CallExpr>(Result, "callUsed"),
                     /* IsAssigned */ true);
 
   MigrateCallExpr(
-      getNodeAsType<CallExpr>(Result, "callExprUsed"),
+      getAssistNodeAsType<CallExpr>(Result, "callExprUsed"),
       /* IsAssigned */ true,
-      getNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedCallUsed"));
+      getAssistNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedCallUsed"));
   MigrateCallExpr(
-      getNodeAsType<CallExpr>(Result, "callExpr"),
+      getAssistNodeAsType<CallExpr>(Result, "callExpr"),
       /* IsAssigned */ false,
-      getNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedCall"));
+      getAssistNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedCall"));
 }
 
 void MemoryMigrationRule::getSymbolAddressMigration(

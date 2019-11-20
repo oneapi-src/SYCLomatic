@@ -833,6 +833,11 @@ private:
                          const CallExpr *C, const UnresolvedLookupExpr *ULExpr,
                          bool IsAssigned)>>
       MigrationDispatcher;
+  bool isSimpleAddrOf(const Expr *E);
+  std::string getNameStrRemovedAddrOf(const Expr *E, bool isCOCE = false);
+  std::string getTypeStrRemovedAddrOf(const Expr *E, bool isCOCE = false);
+  std::string getAssignedStr(const Expr *E, const std::string &Arg0Str);
+  bool isCOCESimpleAddrOf(const Expr *E);
 };
 
 /// Name all unnamed types.

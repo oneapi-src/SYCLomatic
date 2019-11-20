@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
   // CHECK: dpct::dpct_malloc((void **)&d_array, sizeof(float) * size);
   cudaMalloc((void **)&d_array, sizeof(float) * size);
 
-  // CHECK: dpct::dpct_memset((void*)(d_array), 0, sizeof(float) * size);
+  // CHECK: dpct::dpct_memset(d_array, 0, sizeof(float) * size);
   cudaMemset(d_array, 0, sizeof(float) * size);
 
   for (int loop = 0; loop < 360; loop++)
@@ -65,32 +65,32 @@ int main(int argc, char **argv) {
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   (dpct::dpct_memcpy(const_angle.get_ptr(), (void*)(&h_array[0]), sizeof(float) * 360), 0);
+  // CHECK-NEXT:   (dpct::dpct_memcpy(const_angle.get_ptr(), &h_array[0], sizeof(float) * 360), 0);
   cudaMemcpyToSymbol(&const_angle[0], &h_array[0], sizeof(float) * 360);
 
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   (dpct::dpct_memcpy(const_angle.get_ptr() + sizeof(float) * (3), (void*)(&h_array[0]), sizeof(float) * 357), 0);
+  // CHECK-NEXT:   (dpct::dpct_memcpy(const_angle.get_ptr() + sizeof(float) * (3), &h_array[0], sizeof(float) * 357), 0);
   cudaMemcpyToSymbol(&const_angle[3], &h_array[0], sizeof(float) * 357);
 
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  (dpct::dpct_memcpy((void*)(&h_array[0]), const_angle.get_ptr() + sizeof(float) * (3), sizeof(float) * 357), 0);
+  // CHECK-NEXT:  (dpct::dpct_memcpy(&h_array[0], const_angle.get_ptr() + sizeof(float) * (3), sizeof(float) * 357), 0);
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3], sizeof(float) * 357);
 
   #define NUM 3
   // CHECK:/*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: (dpct::dpct_memcpy(const_angle.get_ptr() + sizeof(float) * (3+NUM), (void*)(&h_array[0]), sizeof(float) * 354), 0);
+  // CHECK-NEXT: (dpct::dpct_memcpy(const_angle.get_ptr() + sizeof(float) * (3+NUM), &h_array[0], sizeof(float) * 354), 0);
   cudaMemcpyToSymbol(&const_angle[3+NUM], &h_array[0], sizeof(float) * 354);
 
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  (dpct::dpct_memcpy((void*)(&h_array[0]), const_angle.get_ptr() + sizeof(float) * (3+NUM), sizeof(float) * 354), 0);
+  // CHECK-NEXT:  (dpct::dpct_memcpy(&h_array[0], const_angle.get_ptr() + sizeof(float) * (3+NUM), sizeof(float) * 354), 0);
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3+NUM], sizeof(float) * 354);
   // CHECK: {
   // CHECK-NEXT:   dpct::buffer_t d_array_buf_ct0 = dpct::get_buffer(d_array);
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
   simple_kernel<<<size / 64, 64>>>(d_array);
 
   float hangle_h[360];
-  // CHECK:  dpct::dpct_memcpy((void*)(hangle_h), (void*)(d_array), 360 * sizeof(float), dpct::device_to_host);
+  // CHECK:  dpct::dpct_memcpy(hangle_h, d_array, 360 * sizeof(float), dpct::device_to_host);
   cudaMemcpy(hangle_h, d_array, 360 * sizeof(float), cudaMemcpyDeviceToHost);
   for (int i = 0; i < 360; i++) {
     if (fabs(h_array[i] - hangle_h[i]) > 1e-5) {
@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT:  (dpct::dpct_memcpy(const_one.get_ptr(), (void*)(&h_array[0]), sizeof(float) * 1), 0);
+  // CHECK-NEXT:  (dpct::dpct_memcpy(const_one.get_ptr(), &h_array[0], sizeof(float) * 1), 0);
   cudaMemcpyToSymbol(&const_one, &h_array[0], sizeof(float) * 1);
 
   // CHECK: {
@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT: }
   simple_kernel_one<<<size / 64, 64>>>(d_array);
 
-  // CHECK:  dpct::dpct_memcpy((void*)(hangle_h), (void*)(d_array), 360 * sizeof(float), dpct::device_to_host);
+  // CHECK:  dpct::dpct_memcpy(hangle_h, d_array, 360 * sizeof(float), dpct::device_to_host);
   cudaMemcpy(hangle_h, d_array, 360 * sizeof(float), cudaMemcpyDeviceToHost);
 
   for (int i = 1; i < 360; i++) {

@@ -22,7 +22,7 @@ int main(){
     //CHECK:  /*
     //CHECK-NEXT:  DPCT1003:0: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT:  */
-    //CHECK-NEXT:  checkCudaErrors((*((void **)data) = cl::sycl::malloc_device(DATAMACRO, dpct::get_device_manager().current_device(), dpct::get_default_queue().get_context()), 0));
+    //CHECK-NEXT:  checkCudaErrors((*(data) = (float *)cl::sycl::malloc_device(DATAMACRO, dpct::get_current_device(), dpct::get_default_context()), 0));
     checkCudaErrors(cudaMalloc((void **)data, DATAMACRO));
 
     size_t size2;

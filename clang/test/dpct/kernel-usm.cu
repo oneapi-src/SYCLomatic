@@ -25,9 +25,9 @@ int main() {
   dim3 griddim = 2;
   dim3 threaddim = 32;
   int *karg1, *karg2;
-  // CHECK: *((void **)&karg1) = cl::sycl::malloc_device(32 * sizeof(int), dpct::get_device_manager().current_device(), dpct::get_default_queue().get_context());
+  // CHECK: karg1 = (int *)cl::sycl::malloc_device(32 * sizeof(int), dpct::get_current_device(), dpct::get_default_context());
   cudaMalloc(&karg1, 32 * sizeof(int));
-  // CHECK: *((void **)&karg2) = cl::sycl::malloc_device(32 * sizeof(int), dpct::get_device_manager().current_device(), dpct::get_default_queue().get_context());
+  // CHECK: karg2 = (int *)cl::sycl::malloc_device(32 * sizeof(int), dpct::get_current_device(), dpct::get_default_context());
   cudaMalloc(&karg2, 32 * sizeof(int));
 
   int karg3 = 80;
