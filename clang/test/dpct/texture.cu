@@ -73,8 +73,7 @@ int main() {
   cudaBindTexture(0, tex21, d_data21, desc21, 32 * sizeof(uint2));
   cudaBindTexture(0, tex21, d_data21, 32 * sizeof(uint2));
 
-  // CHECK:   {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:       [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:         auto tex42_acc = tex42.get_access(cgh);
   // CHECK-NEXT:         auto tex21_acc = tex21.get_access(cgh);
@@ -86,7 +85,6 @@ int main() {
   // CHECK-NEXT:               kernel(tex42_acc, tex21_acc);
   // CHECK-NEXT:             });
   // CHECK-NEXT:       });
-  // CHECK-NEXT: }
   kernel<<<1, 1>>>();
 
   // CHECK: dpct::detach_image(tex42);

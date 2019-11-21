@@ -31,8 +31,7 @@ int main() {
   cudaMalloc(&karg2, 32 * sizeof(int));
 
   int karg3 = 80;
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue_wait().submit(
+  // CHECK:   dpct::get_default_queue_wait().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
   // CHECK-NEXT:       auto dpct_local_range = threaddim;
@@ -42,6 +41,5 @@ int main() {
   // CHECK-NEXT:           testKernelPtr((const int *)karg1, karg2, karg3, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1, karg2, karg3);
 }

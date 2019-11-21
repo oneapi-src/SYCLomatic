@@ -47,8 +47,7 @@ int main(int argc, char* argv[]) {
 
 
   // kernel call without sync
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(threads, 1, 1);
@@ -58,7 +57,6 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
@@ -68,8 +66,7 @@ int main(int argc, char* argv[]) {
   cudaEventRecord(start, 0);
 
   // kernel call without sync
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(threads, 1, 1);
@@ -79,7 +76,6 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: /*
@@ -109,8 +105,7 @@ int main(int argc, char* argv[]) {
     checkCudaErrors(cudaEventRecord(start, 0));
 
   // kernel call with sync
-  // CHECK: {
-  // CHECK-NEXT:   stop = dpct::get_default_queue().submit(
+  // CHECK:   stop = dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(threads, 1, 1);
@@ -120,11 +115,9 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   // CHECK-NEXT: stop.wait();
   kernelFunc<<<blocks,threads>>>();
-  // CHECK: {
-  // CHECK-NEXT:   stop = dpct::get_default_queue().submit(
+  // CHECK:   stop = dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(threads, 1, 1);
@@ -134,7 +127,6 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   // CHECK-NEXT: stop.wait();
   kernelFunc<<<blocks,threads>>>();
 
@@ -165,8 +157,7 @@ int main(int argc, char* argv[]) {
     checkCudaErrors(cudaEventRecord(stop, 0));
 
   // kernel call without sync
-  // CHECK: {
-  // CHECK-NEXT:   stop = dpct::get_default_queue().submit(
+  // CHECK:   stop = dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(threads, 1, 1);
@@ -176,7 +167,6 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   // CHECK-NEXT: stop.wait();
   kernelFunc<<<blocks,threads>>>();
 
@@ -216,8 +206,7 @@ int main(int argc, char* argv[]) {
   checkCudaErrors(cudaEventSynchronize(stop));
 
   // kernel call without sync
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(threads, 1, 1);
@@ -227,7 +216,6 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: *(&elapsed_time) = (float)(stop_ct1 - start_ct1) / CLOCKS_PER_SEC * 1000;
@@ -240,8 +228,7 @@ int main(int argc, char* argv[]) {
   checkCudaErrors(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   // kernel call without sync
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(blocks, 1, 1) * cl::sycl::range<3>(threads, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(threads, 1, 1);
@@ -251,7 +238,6 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK: dpct::get_device_manager().current_device().queues_wait_and_throw();

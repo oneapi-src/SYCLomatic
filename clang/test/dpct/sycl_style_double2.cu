@@ -90,8 +90,7 @@ int main() {
   double2* data;
   kernel<<<1, 1>>>(data);
 
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       dpct::range<1> ctemp2_range_ct1(2);
   // CHECK-NEXT:       cl::sycl::accessor<cl::sycl::double2, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> ctemp2_acc_ct1(ctemp2_range_ct1, cgh);
@@ -103,6 +102,5 @@ int main() {
   // CHECK-NEXT:           gpuMain(dpct::accessor<cl::sycl::double2, dpct::local, 1>(ctemp2_acc_ct1, ctemp2_range_ct1));
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   gpuMain<<<64, 64>>>();
 }

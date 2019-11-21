@@ -160,8 +160,7 @@ int main() {
   dim3 d3_6_3 = dim3(ceil(test.x + NUM), NUM + test.y, NUM + test.z + NUM);
   // CHECK: cl::sycl::range<3> gpu_blocks(1 / (d3_6_3[0] * 200), 1, 1);
   dim3 gpu_blocks(1 / (d3_6_3.x * 200));
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(1, 1, 1);
@@ -171,10 +170,8 @@ int main() {
   // CHECK-NEXT:           kernel(d3_6[0]);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   kernel<<<1, 1>>>(d3_6.x);
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(NUM, 1, 1) * cl::sycl::range<3>(NUM, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(NUM, 1, 1);
@@ -184,7 +181,6 @@ int main() {
   // CHECK-NEXT:           kernel(d3_6[0]);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   kernel<<<NUM, NUM>>>(d3_6.x);
 }
 

@@ -52,7 +52,8 @@ void DpctFileInfo::buildLinesInfo() {
     return;
   }
   if (DpctGlobalInfo::isKeepOriginCode())
-    Buffer = Content->getBuffer(SM.getDiagnostics(), SM.getFileManager())->getBufferStart();
+    Buffer = Content->getBuffer(SM.getDiagnostics(), SM.getFileManager())
+                 ->getBufferStart();
   for (unsigned L = 1; L < Content->NumLines; ++L)
     Lines.emplace_back(L, LineCache, Buffer);
   Lines.emplace_back(NumLines, LineCache[NumLines - 1], Content->getSize(),
@@ -86,19 +87,14 @@ std::shared_ptr<CudaMallocInfo> DpctGlobalInfo::findCudaMalloc(const Expr *E) {
   return std::shared_ptr<CudaMallocInfo>();
 }
 
-std::string KernelCallExpr::analysisExcutionConfig(const Expr *Config) {
-  ArgumentAnalysis Analysis(Config);
-  Analysis.analyze();
-  return Analysis.getReplacedString();
-}
-
 void KernelCallExpr::buildExecutionConfig(
     const CUDAKernelCallExpr *KernelCall) {
   auto Config = KernelCall->getConfig();
-  ExecutionConfig.NDSize = analysisExcutionConfig(Config->getArg(0));
-  ExecutionConfig.WGSize = analysisExcutionConfig(Config->getArg(1));
-  ExecutionConfig.ExternMemSize = analysisExcutionConfig(Config->getArg(2));
-  ExecutionConfig.Stream = analysisExcutionConfig(Config->getArg(3));
+  ArgumentAnalysis A;
+  for (unsigned Idx = 0; Idx < 4; ++Idx) {
+    A.analyze(Config->getArg(Idx));
+    ExecutionConfig.Config[Idx] = A.getReplacedString();
+  }
 }
 
 void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
@@ -110,201 +106,159 @@ void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
   buildExecutionConfig(KernelCall);
 }
 
-void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block) {
+void KernelCallExpr::addAccessorDecl() {
   auto &VM = getVarMap();
   if (VM.hasExternShared()) {
-    getAccessorDecl(Block, VM.getMap(MemVarInfo::Extern).begin()->second);
+    addAccessorDecl(VM.getMap(MemVarInfo::Extern).begin()->second);
   }
-  getAccessorDecl(Block, MemVarInfo::Local);
-  getAccessorDecl(Block, MemVarInfo::Global);
+  addAccessorDecl(MemVarInfo::Local);
+  addAccessorDecl(MemVarInfo::Global);
   for (auto &Tex : VM.getTextureMap())
-    Block.pushStmt(Tex.second->getAccessorDecl());
+    SubmitStmts.emplace_back(Tex.second->getAccessorDecl());
   for (auto &Tex : getTextureObjectList()) {
     if (Tex) {
-      Block.pushStmt(Tex->getAccessorDecl());
+      SubmitStmts.emplace_back(Tex->getAccessorDecl());
     }
   }
 }
 
-void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block,
-                                     MemVarInfo::VarScope Scope) {
+void KernelCallExpr::addAccessorDecl(MemVarInfo::VarScope Scope) {
   for (auto &VI : getVarMap().getMap(Scope)) {
-    getAccessorDecl(Block, VI.second);
+    addAccessorDecl(VI.second);
   }
 }
 
-void KernelCallExpr::getAccessorDecl(FormatStmtBlock &Block,
-                                     std::shared_ptr<MemVarInfo> VI) {
+void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
   if (VI->isShared()) {
-    Block.pushStmt(VI->getRangeDecl(ExecutionConfig.ExternMemSize));
-  }
-  else if (!VI->isGlobal()) {
-    Block.pushStmt(VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
-  }
-  else if (getFilePath() != VI->getFilePath() && !VI->isShared()) {
+    SubmitStmts.emplace_back(VI->getRangeDecl(ExecutionConfig.ExternMemSize));
+  } else if (!VI->isGlobal()) {
+    SubmitStmts.emplace_back(VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
+  } else if (getFilePath() != VI->getFilePath() && !VI->isShared()) {
     // Global variable definition and global variable reference are not in the
     // same file, and are not a share varible, insert extern variable
     // declaration.
-    Block.pushStmt(VI->getExternGlobalVarDecl());
+    SubmitStmts.emplace_back(VI->getExternGlobalVarDecl());
   }
-  Block.pushStmt(VI->getAccessorDecl());
+  SubmitStmts.emplace_back(VI->getAccessorDecl());
 }
 
-void KernelCallExpr::getStreamDecl(FormatStmtBlock &Block) {
-  if (getVarMap().hasStream())
-    Block.pushStmt("cl::sycl::stream ", DpctGlobalInfo::getStreamName(),
-                   "(64 * 1024, 80, cgh);");
-}
-
-inline void KernelCallExpr::buildKernelPointerArgBufferAndOffsetStmt(
-    const std::string &RefName, const std::string &ArgName,
-    const std::string &IdName, StmtList &Buffers) {
-  Buffers.emplace_back(
-      buildString("std::pair<dpct::buffer_t, size_t> ", ArgName,
-                  "buf_", IdName, " = dpct::get_buffer_and_offset(", RefName, ");"));
-  Buffers.emplace_back(
-      buildString("size_t ", ArgName, "offset_", IdName, " = ", ArgName, "buf_", IdName, ".second;"));
-}
-
-inline void
-KernelCallExpr::buildKernelPointerArgAccessorStmt(const std::string &ArgName,
-                                                  const std::string &IdName,
-                                                  StmtList &Accessors) {
-  Accessors.emplace_back(buildString(
-      "auto ", ArgName, "acc_", IdName, " = ", ArgName,
-      "buf_", IdName,".first.get_access<cl::sycl::access::mode::read_write>(cgh);"));
-}
-
-inline void KernelCallExpr::buildKernelPointerArgRedeclStmt(
-    const std::string &ArgName, const std::string &IdName,
-    const std::string &TypeName, StmtList &Redecls) {
-  Redecls.emplace_back(buildString(TypeName, ArgName, IdName, " = (", TypeName, ")(&",
-                                   ArgName, "acc_", IdName, "[0] + ", ArgName,
-                                   "offset_", IdName, ");"));
-}
-
-void KernelCallExpr::buildKernelPointerArgsStmt(StmtList &Buffers,
-                                                StmtList &Accessors,
-                                                StmtList &Redecls) {
-  int ArgIndex = 0;
+void KernelCallExpr::buildKernelArgsStmt() {
   for (auto &Arg : getArgsInfo()) {
-    auto NewArgName = Arg.getIdString();
-    auto ArgIdName = "ct" + std::to_string(ArgIndex++);
     if (Arg.isPointer) {
-      buildKernelPointerArgBufferAndOffsetStmt(Arg.getArgString(), NewArgName,
-                                               ArgIdName, Buffers);
-      buildKernelPointerArgAccessorStmt(NewArgName, ArgIdName, Accessors);
-      buildKernelPointerArgRedeclStmt(NewArgName, ArgIdName,
-                                      Arg.getTypeString(), Redecls);
+      auto BufferName = Arg.getIdStringWithSuffix("buf");
+      OuterStmts.emplace_back(buildString(
+          "std::pair<dpct::buffer_t, size_t> ", BufferName,
+          " = dpct::get_buffer_and_offset(", Arg.getArgString(), ");"));
+      OuterStmts.emplace_back(buildString("size_t ",
+                                          Arg.getIdStringWithSuffix("offset"),
+                                          " = ", BufferName, ".second;"));
+      SubmitStmts.emplace_back(buildString(
+          "auto ", Arg.getIdStringWithSuffix("acc"), " = ", BufferName,
+          ".first.get_access<cl::sycl::access::mode::read_write>(cgh);"));
+      KernelStmts.emplace_back(buildString(
+          Arg.getTypeString(), Arg.getIdStringWithIndex(), " = (",
+          Arg.getTypeString(), ")(&", Arg.getIdStringWithSuffix("acc"),
+          "[0] + ", Arg.getIdStringWithSuffix("offset"), ");"));
+      KernelArgs += Arg.getIdStringWithIndex() + ", ";
+    } else if (Arg.isRedeclareRequired) {
+      OuterStmts.emplace_back(buildString("auto ", Arg.getIdStringWithIndex(),
+                                          " = ", Arg.getArgString(), ";"));
+      KernelArgs += Arg.getIdStringWithIndex() + ", ";
+    } else {
+      KernelArgs += Arg.getArgString() + ", ";
     }
   }
+  if (!KernelArgs.empty())
+    KernelArgs.erase(KernelArgs.length() - 2, 2);
+}
+
+void KernelCallExpr::print(KernelPrinter &Printer) {
+  std::unique_ptr<KernelPrinter::Block> Block;
+  if (!OuterStmts.empty()) {
+    Block = std::move(Printer.block(true));
+    for (auto &S : OuterStmts)
+      Printer.line(S);
+  }
+  printSubmit(Printer);
+  Block.reset();
+  if (!getEvent().empty() && isSync())
+    Printer.line(getEvent(), ".wait();");
+}
+
+void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
+  Printer.indent();
+  if (!getEvent().empty()) {
+    Printer << getEvent() << " = ";
+  }
+  if (ExecutionConfig.Stream == "0") {
+    Printer << "dpct::get_default_queue";
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+      Printer << "_wait";
+    }
+    Printer << "().";
+  } else {
+    if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
+      Printer << "(" << ExecutionConfig.Stream << ")";
+    } else {
+      Printer << ExecutionConfig.Stream;
+    }
+    Printer << "->";
+  }
+  (Printer << "submit(").newLine();
+  printSubmitLamda(Printer);
+}
+
+void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
+  auto Lamda = Printer.block();
+  Printer.line("[&](cl::sycl::handler &cgh) {");
+  {
+    auto Body = Printer.block();
+    for (const auto &S : SubmitStmts) {
+      Printer.line(S);
+    }
+    printParallelFor(Printer);
+  }
+  Printer.line("});");
+}
+
+void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
+  Printer.line("cgh.parallel_for<dpct_kernel_name<class ", getName(), "_",
+               LocInfo.LocHash,
+               (hasTemplateArgs() ? (", " + getTemplateArguments(true)) : ""),
+               ">>(");
+  auto B = Printer.block();
+  Printer.line("cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get("
+               "2), dpct_global_range.get(1), dpct_global_range.get(0)), "
+               "cl::sycl::range<3>(dpct_local_range.get(2), "
+               "dpct_local_range.get(1), dpct_local_range.get(0))),");
+  Printer.line("[=](cl::sycl::nd_item<3> ", DpctGlobalInfo::getItemName(),
+               ") {");
+  printKenel(Printer);
+  Printer.line("});");
+}
+
+void KernelCallExpr::printKenel(KernelPrinter &Printer) {
+  auto B = Printer.block();
+  for (auto &S : KernelStmts)
+    Printer.line(S);
+  Printer.indent() << getName()
+                   << (hasTemplateArgs()
+                           ? buildString("<", getTemplateArguments(), ">")
+                           : "")
+                   << "(" << KernelArgs << getExtraArguments() << ");";
+  Printer.newLine();
 }
 
 std::string KernelCallExpr::getReplacement() {
+  addAccessorDecl();
+  addStreamDecl();
+  buildKernelArgsStmt();
+  addNdRangeDecl();
+
   std::string Result;
-
-  StmtList Buffers, Accessors, Redecls;
-  buildKernelPointerArgsStmt(Buffers, Accessors, Redecls);
-
-#define FMT_STMT_BLOCK                                                         \
-  FormatStmtBlock &BlockPrev = Block;                                          \
-  FormatStmtBlock Block(BlockPrev);
-
   llvm::raw_string_ostream OS(Result);
-  appendString(OS, "{", LocInfo.NL);
-  {
-    FormatStmtBlock Block(LocInfo.NL, LocInfo.Indent, OS);
-    for (auto &BufferStmt : Buffers)
-      Block.pushStmt(BufferStmt);
-
-    // Redeclare all the non-pointer arguments
-    int ArgIndex = 0;
-    for (auto &Arg : getArgsInfo()) {
-      if (!Arg.isPointer && Arg.isRedeclareRequired) {
-        Block.pushStmt("auto " + Arg.getIdString() + "ct", std::to_string(ArgIndex), " = ",
-                       Arg.getArgString(), ";");
-      }
-      ++ArgIndex;
-    }
-
-    if (ExecutionConfig.Stream == "0") {
-      std::string Queue = "dpct::get_default_queue";
-      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted)
-        Queue += "_wait";
-      if (!getEvent().empty())
-        Block.pushStmt(getEvent() + " = ", Queue, "().submit(");
-      else
-        Block.pushStmt(Queue, "().submit(");
-    } else {
-      if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&')
-        Block.pushStmt("(", ExecutionConfig.Stream, ")->submit(");
-      else
-        Block.pushStmt(ExecutionConfig.Stream, "->submit(");
-    }
-
-    {
-      FMT_STMT_BLOCK
-      Block.pushStmt("[&](cl::sycl::handler &cgh) {");
-      {
-        FMT_STMT_BLOCK
-        getStreamDecl(Block);
-        getAccessorDecl(Block);
-
-        for (auto &AccStmt : Accessors)
-          Block.pushStmt(AccStmt);
-
-		Block.pushStmt("auto dpct_global_range = ", ExecutionConfig.NDSize,
-                       " * ", ExecutionConfig.WGSize, ";");
-        Block.pushStmt("auto dpct_local_range = ", ExecutionConfig.WGSize, ";");
-        Block.pushStmt(
-            "cgh.parallel_for<dpct_kernel_name<class ", getName(), "_",
-            LocInfo.LocHash,
-            (hasTemplateArgs() ? (", " + getTemplateArguments(true)) : ""),
-            ">>(");
-        {
-          FMT_STMT_BLOCK
-          Block.pushStmt(
-              "cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get("
-              "2), dpct_global_range.get(1), dpct_global_range.get(0)), "
-              "cl::sycl::range<3>(dpct_local_range.get(2), "
-              "dpct_local_range.get(1), dpct_local_range.get(0))),");
-          Block.pushStmt("[=](cl::sycl::nd_item<3> ",
-                         DpctGlobalInfo::getItemName(), ") {");
-          {
-            FMT_STMT_BLOCK
-            for (auto &Redecl : Redecls)
-              Block.pushStmt(Redecl);
-
-            // build original args string for the kernal call
-            std::string OriginalArgs;
-            for (size_t i = 0; i < getArgsInfo().size(); ++i) {
-              if (i > 0) {
-                OriginalArgs += ", ";
-              }
-              if (getArgsInfo()[i].isPointer || getArgsInfo()[i].isRedeclareRequired) {
-                OriginalArgs += getArgsInfo()[i].getIdString() +
-                                "ct" + std::to_string(i);
-              }
-              else {
-                OriginalArgs += getArgsInfo()[i].getArgString();
-              }
-            }
-
-            Block.pushStmt(getName(),
-                           (hasTemplateArgs()
-                                ? buildString("<", getTemplateArguments(), ">")
-                                : ""),
-              "(", OriginalArgs, getExtraArguments(), ");");
-          }
-          Block.pushStmt("});");
-        }
-      }
-      Block.pushStmt("});");
-    }
-  }
-  appendString(OS, LocInfo.Indent, "}", LocInfo.NL);
-  if (!getEvent().empty() && isSync())
-    appendString(OS, LocInfo.Indent, getEvent() + ".wait();", LocInfo.NL);
+  KernelPrinter Printer(LocInfo.NL, LocInfo.Indent, OS);
+  print(Printer);
   return OS.str();
 }
 
@@ -351,9 +305,8 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   }
 }
 
-std::shared_ptr<TextureObjectInfo>
-CallFunctionExpr::addTextureObjectArg(unsigned ArgIdx,
-                                          const DeclRefExpr *TexRef,bool isKernelCall) {
+std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArg(
+    unsigned ArgIdx, const DeclRefExpr *TexRef, bool isKernelCall) {
   if (TextureObjectInfo::isTextureObject(TexRef)) {
     if (isKernelCall) {
       if (auto VD = dyn_cast<VarDecl>(TexRef->getDecl())) {

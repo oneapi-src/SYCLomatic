@@ -46,8 +46,7 @@ __global__ void helloFromGPU2() {
 void testReference(const int &i) {
   dim3 griddim = 2;
   dim3 threaddim = 32;
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
   // CHECK-NEXT:       auto dpct_local_range = threaddim;
@@ -57,7 +56,6 @@ void testReference(const int &i) {
   // CHECK-NEXT:           helloFromGPU(i, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   helloFromGPU<<<griddim, threaddim>>>(i);
 
 }
@@ -71,8 +69,7 @@ struct TestThis {
   void test() {
     /// Kernel function is called in method declaration, and fields are used as arguments.
     /// Check the miggration of implicit "this" pointer.
-    // CHECK: {
-    // CHECK-NEXT:   dpct::get_default_queue().submit(
+    // CHECK:   dpct::get_default_queue().submit(
     // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
     // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
     // CHECK-NEXT:       auto dpct_local_range = threaddim;
@@ -82,7 +79,6 @@ struct TestThis {
     // CHECK-NEXT:           testKernel(args.arg1, args.arg2, arg3, item_ct1);
     // CHECK-NEXT:         });
     // CHECK-NEXT:     });
-    // CHECK-NEXT: }
     testKernel<<<griddim, threaddim>>>(args.arg1, args.arg2, arg3);
   }
 };
@@ -119,8 +115,7 @@ int main() {
   int karg2int = 2;
   int karg3int = 3;
   int intvar = 20;
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(10, 1, 1) * cl::sycl::range<3>(intvar, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(intvar, 1, 1);
@@ -130,7 +125,6 @@ int main() {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   testKernel<<<10, intvar>>>(karg1int, karg2int, karg3int);
 
   struct KernelPointer {
@@ -158,8 +152,7 @@ int main() {
   // CHECK-NEXT:}
   testKernelPtr<<<dim3(1), dim3(1, 2)>>>(args.arg1, args.arg2, karg3int);
 
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 2, 1) * cl::sycl::range<3>(1, 2, 3);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(1, 2, 3);
@@ -169,11 +162,9 @@ int main() {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int, karg2int, karg3int);
 
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(griddim[0], 1, 1) * cl::sycl::range<3>(griddim[1] + 2, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(griddim[1] + 2, 1, 1);
@@ -183,11 +174,9 @@ int main() {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   testKernel <<<griddim.x, griddim.y + 2 >>>(karg1int, karg2int, karg3int);
 
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(2, 1, 1) * cl::sycl::range<3>(4, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(4, 1, 1);
@@ -197,11 +186,9 @@ int main() {
   // CHECK-NEXT:           helloFromGPU(23, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   helloFromGPU <<<2, 4>>>(23);
 
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(2, 1, 1) * cl::sycl::range<3>(4, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(4, 1, 1);
@@ -211,11 +198,9 @@ int main() {
   // CHECK-NEXT:           helloFromGPU(item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   helloFromGPU <<<2, 4>>>();
 
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(2, 1, 1) * cl::sycl::range<3>(3, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(3, 1, 1);
@@ -225,6 +210,5 @@ int main() {
   // CHECK-NEXT:           helloFromGPU2(item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   helloFromGPU2 <<<2, 3>>>();
 }

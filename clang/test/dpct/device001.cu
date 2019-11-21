@@ -104,8 +104,7 @@ void test()
 {
   // CHECK: dpct::device_info deviceProp;
   cudaDeviceProp deviceProp;
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(deviceProp.get_max_compute_units(), 1, 1) * cl::sycl::range<3>(deviceProp.get_max_work_group_size(), 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(deviceProp.get_max_work_group_size(), 1, 1);
@@ -115,7 +114,6 @@ void test()
   // CHECK-NEXT:           foo_kernel();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   foo_kernel<<<deviceProp.multiProcessorCount, deviceProp.maxThreadsPerBlock,  deviceProp.maxThreadsPerBlock>>>();
 }
 

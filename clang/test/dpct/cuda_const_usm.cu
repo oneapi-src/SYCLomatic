@@ -92,8 +92,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:  */
   // CHECK-NEXT:  (dpct::get_default_queue_wait().memcpy((void*)(&h_array[0]), const_angle.get_ptr() + sizeof(float) * (3+NUM), sizeof(float) * 354).wait(), 0);
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3+NUM], sizeof(float) * 354);
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue_wait().submit(
+  // CHECK:   dpct::get_default_queue_wait().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto const_angle_acc_ct1 = const_angle.get_access(cgh);
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(size / 64, 1, 1) * cl::sycl::range<3>(64, 1, 1);
@@ -104,7 +103,6 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:           simple_kernel(d_array, item_ct1, const_angle_acc_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   simple_kernel<<<size / 64, 64>>>(d_array);
 
   float hangle_h[360];
@@ -123,8 +121,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:  (dpct::get_default_queue_wait().memcpy(const_one.get_ptr(), (void*)(&h_array[0]), sizeof(float) * 1).wait(), 0);
   cudaMemcpyToSymbol(&const_one, &h_array[0], sizeof(float) * 1);
 
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue_wait().submit(
+  // CHECK:   dpct::get_default_queue_wait().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto const_float_acc_ct1 = const_float.get_access(cgh);
   // CHECK-NEXT:       auto const_one_acc_ct1 = const_one.get_access(cgh);
@@ -136,7 +133,6 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:           simple_kernel_one(d_array, item_ct1, const_float_acc_ct1, const_one_acc_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   simple_kernel_one<<<size / 64, 64>>>(d_array);
 
   // CHECK:  dpct::get_default_queue_wait().memcpy((void*)(hangle_h), (void*)(d_array), 360 * sizeof(float)).wait();

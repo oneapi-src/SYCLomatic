@@ -68,8 +68,7 @@ static void func()
   for (; 0; )
     cudaStreamCreate(&s0);
 
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(32, 1, 1);
@@ -79,7 +78,6 @@ static void func()
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   kernelFunc<<<16, 32, 0>>>();
 
   // CHECK: /*
@@ -88,8 +86,7 @@ static void func()
   // CHECK-NEXT: checkCudaErrors((s1 = new cl::sycl::queue{}, 0));
   checkCudaErrors(cudaStreamCreate(&s1));
 
-  // CHECK: {
-  // CHECK-NEXT:   s0->submit(
+  // CHECK:   s0->submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(32, 1, 1);
@@ -99,11 +96,9 @@ static void func()
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   kernelFunc<<<16, 32, 0, s0>>>();
 
-  // CHECK: {
-  // CHECK-NEXT:   s1->submit(
+  // CHECK:   s1->submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(32, 1, 1);
@@ -113,7 +108,6 @@ static void func()
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   kernelFunc<<<16, 32, 0, s1>>>();
 
   {
@@ -132,8 +126,7 @@ static void func()
     // CHECK-NEXT: checkCudaErrors((*(s3) = new cl::sycl::queue{}, 0));
     checkCudaErrors(cudaStreamCreateWithFlags(s3, cudaStreamNonBlocking));
 
-    // CHECK: {
-    // CHECK-NEXT:   s2->submit(
+    // CHECK:   s2->submit(
     // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
     // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1);
     // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(32, 1, 1);
@@ -143,11 +136,9 @@ static void func()
     // CHECK-NEXT:           kernelFunc();
     // CHECK-NEXT:         });
     // CHECK-NEXT:     });
-    // CHECK-NEXT: }
     kernelFunc<<<16, 32, 0, s2>>>();
 
-    // CHECK: {
-    // CHECK-NEXT:   (*s3)->submit(
+    // CHECK:   (*s3)->submit(
     // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
     // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1);
     // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(32, 1, 1);
@@ -157,7 +148,6 @@ static void func()
     // CHECK-NEXT:           kernelFunc();
     // CHECK-NEXT:         });
     // CHECK-NEXT:     });
-    // CHECK-NEXT: }
     kernelFunc<<<16, 32, 0, *s3>>>();
 
     // CHECK: delete s2;
@@ -186,8 +176,7 @@ static void func()
       // CHECK-NEXT: checkCudaErrors((s5 = new cl::sycl::queue{}, 0));
       checkCudaErrors(cudaStreamCreateWithPriority(&s5, cudaStreamNonBlocking, 3));
 
-      // CHECK: {
-      // CHECK-NEXT:   s4->submit(
+      // CHECK:   s4->submit(
       // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
       // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1);
       // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(32, 1, 1);
@@ -197,10 +186,8 @@ static void func()
       // CHECK-NEXT:           kernelFunc();
       // CHECK-NEXT:         });
       // CHECK-NEXT:     });
-      // CHECK-NEXT: }
       kernelFunc<<<16, 32, 0, s4>>>();
-      // CHECK: {
-      // CHECK-NEXT:   s5->submit(
+      // CHECK:   s5->submit(
       // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
       // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(16, 1, 1) * cl::sycl::range<3>(32, 1, 1);
       // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(32, 1, 1);
@@ -210,7 +197,6 @@ static void func()
       // CHECK-NEXT:           kernelFunc();
       // CHECK-NEXT:         });
       // CHECK-NEXT:     });
-      // CHECK-NEXT: }
       kernelFunc<<<16, 32, 0, s5>>>();
 
       // CHECK: delete s4;

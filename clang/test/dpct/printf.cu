@@ -33,8 +33,7 @@ void host_test() {
 }
 
 int main() {
-  // CHECK: {
-  // CHECK-NEXT:  dpct::get_default_queue().submit(
+  // CHECK:  dpct::get_default_queue().submit(
   // CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:      cl::sycl::stream [[STREAM:stream_ct1]](64 * 1024, 80, cgh);
   // CHECK-NEXT:      auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1);
@@ -45,7 +44,6 @@ int main() {
   // CHECK-NEXT:           kernel_test([[STREAM]]);
   // CHECK-NEXT:      });
   // CHECK-NEXT:    });
-  // CHECK-NEXT:}
   kernel_test<<<1, 1>>>();
   host_test();
 }

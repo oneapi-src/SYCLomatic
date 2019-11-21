@@ -26,8 +26,7 @@ void foo() {
 
 int main() {
 #ifdef CUDA
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue_wait().submit(
+  // CHECK:   dpct::get_default_queue_wait().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(1, 1, 1);
@@ -37,10 +36,8 @@ int main() {
   // CHECK-NEXT:           foo();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
 
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue_wait().submit(
+  // CHECK:   dpct::get_default_queue_wait().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(1, 1, 1);
@@ -50,7 +47,6 @@ int main() {
   // CHECK-NEXT:           bar();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   foo<<<1, 1, 1>>>();
   bar<<<1, 1, 1>>>();
 #else

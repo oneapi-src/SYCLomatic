@@ -176,8 +176,7 @@ int kernel_test() {
   int karg2int = 2;
   int karg3int = 3;
   int intvar = 20;
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(10, 1, 1) * cl::sycl::range<3>(intvar, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(intvar, 1, 1);
@@ -187,11 +186,9 @@ int kernel_test() {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   testKernel<<<10, intvar>>>(karg1int, karg2int, karg3int);
 
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 2, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(1, 2, 1);
@@ -201,11 +198,9 @@ int kernel_test() {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int, karg2int, karg3int);
 
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 2, 1) * cl::sycl::range<3>(1, 2, 3);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(1, 2, 3);
@@ -215,6 +210,5 @@ int kernel_test() {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int, karg2int, karg3int);
 }

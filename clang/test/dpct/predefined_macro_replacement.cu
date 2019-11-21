@@ -51,7 +51,6 @@ printf("<200 \n");
 
 int main() {
 //CHECK: #if defined(DPCPP_COMPATIBILITY_TEMP)
-//CHECK-NEXT:   {
 //CHECK-NEXT:     dpct::get_default_queue().submit(
 #if defined(__NVCC__)
   hello<<<1,1>>>();

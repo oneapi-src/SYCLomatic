@@ -38,8 +38,7 @@ __global__ void kernel() {
 }
 
 void foo() {
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(ceil(2.3), 1, 1) * cl::sycl::range<3>(1, 1, 1);
   // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(1, 1, 1);
@@ -49,7 +48,6 @@ void foo() {
   // CHECK-NEXT:           kernel();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   kernel<<< ceil(2.3), 1 >>>();
 }
 

@@ -99,7 +99,6 @@ int main() {
   int intvar = 20;
   // CHECK: /* DPCT_ORIG   testKernel<<<10, intvar>>>(karg1int, karg2int, 
   // CHECK:  karg3int);*/
-  // CHECK-NEXT: {
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(10, 1, 1) * cl::sycl::range<3>(intvar, 1, 1);
@@ -110,7 +109,6 @@ int main() {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   testKernel<<<10, intvar>>>(karg1int, karg2int, // comments
                              // comments.
                              karg3int);
@@ -118,7 +116,6 @@ int main() {
   // CHECK: /* DPCT_ORIG   testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int,
   // CHECK:  karg2int,
   // CHECK:  karg3int);*/
-  // CHECK-NEXT: {
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 2, 1);
@@ -129,7 +126,6 @@ int main() {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int,
                                       /* comments */
                                       karg2int, // comments
@@ -140,7 +136,6 @@ int main() {
 
   // CHECK: /* DPCT_ORIG   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int,
   // CHECK-NEXT:  karg2int, karg3int); */
-  // CHECK-NEXT: {
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 2, 1) * cl::sycl::range<3>(1, 2, 3);
@@ -151,12 +146,10 @@ int main() {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int,
 	  karg2int, /* comments */karg3int/* comments */); // comments
 
   // CHECK: /* DPCT_ORIG   testKernel<<<griddim.x, griddim.y + 2>>>(karg1int, karg2int, karg3int);*/
-  // CHECK-NEXT: {
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(griddim[0], 1, 1) * cl::sycl::range<3>(griddim[1] + 2, 1, 1);
@@ -167,7 +160,6 @@ int main() {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   testKernel<<<griddim.x, griddim.y + 2>>>(karg1int, karg2int, karg3int);
 
   float *deviceOutputData = NULL;

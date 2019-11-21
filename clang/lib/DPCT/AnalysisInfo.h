@@ -51,12 +51,9 @@ inline void merge(GlobalMap<T> &Master, const GlobalMap<T> &Branch) {
   Master.insert(Branch.begin(), Branch.end());
 }
 
-inline void appendString(llvm::raw_string_ostream &OS) {}
-template <class T, class... Arguments>
-inline void appendString(llvm::raw_string_ostream &OS, const T &S,
-                         Arguments &&... Args) {
-  OS << S;
-  appendString(OS, std::forward<Arguments>(Args)...);
+template <class... Arguments>
+inline void appendString(llvm::raw_string_ostream &OS, Arguments &&... Args) {
+  std::initializer_list<int>{(OS << std::forward<Arguments>(Args), 0)...};
 }
 
 template <class... Arguments>
@@ -170,14 +167,12 @@ public:
     HeaderInsertedBitMap[HeaderType::Math] = B;
   }
 
-  // Concat several header inclusion directives to one
-  inline void concatHeader(llvm::raw_string_ostream &OS) {}
-
   template <class... Args>
-  void concatHeader(llvm::raw_string_ostream &OS, std::string &&FirstHeaderName,
-                    Args... Arguments) {
-    appendString(OS, "#include ", std::move(FirstHeaderName), getNL());
-    concatHeader(OS, std::forward<Args>(Arguments)...);
+  void concatHeader(llvm::raw_string_ostream &OS, Args... Arguments) {
+    std::initializer_list<int>{
+        (appendString(OS, "#include ", std::move(std::forward<Args>(Arguments)),
+                      getNL()),
+         0)...};
   }
 
   // Insert one or more header inclusion directives at a specified offset
@@ -212,11 +207,11 @@ public:
   }
 
   void insertUsing(std::string &&Repl, unsigned Offset) {
-    auto R = std::make_shared<ExtReplacement>(FilePath, Offset, 0, Repl, nullptr);
+    auto R =
+        std::make_shared<ExtReplacement>(FilePath, Offset, 0, Repl, nullptr);
     R->setInsertPosition(InsertPositionRight);
     addReplacement(R);
   }
-
 
   void insertUsing(UsingType Type, unsigned Offset, const std::string &Str) {
     if (!UsingInsertedBitMap[Type]) {
@@ -236,7 +231,8 @@ public:
   void insertUsing(UsingType Type) {
     switch (Type) {
     case QUEUE_P:
-      return insertUsing(UsingType::QUEUE_P, LastIncludeOffset, "using queue_p = cl::sycl::queue *;");
+      return insertUsing(UsingType::QUEUE_P, LastIncludeOffset,
+                         "using queue_p = cl::sycl::queue *;");
     }
   }
 
@@ -476,7 +472,20 @@ public:
   static inline std::string getUnqualifiedTypeName(QualType QT) {
     return getUnqualifiedTypeName(QT, DpctGlobalInfo::getContext());
   }
-
+  static inline std::string getReplacedTypeName(QualType QT,
+                                                const ASTContext &Context) {
+    auto TypeName = getUnqualifiedTypeName(QT, Context);
+    MapNames::replaceName(MapNames::TypeNamesMap, TypeName);
+    if (!QT.getQualifiers().isEmptyWhenPrinted(Context.getPrintingPolicy())) {
+      TypeName = buildString(
+          QT.getQualifiers().getAsString(Context.getPrintingPolicy()), " ",
+          TypeName);
+    }
+    return TypeName;
+  }
+  static inline std::string getReplacedTypeName(QualType QT) {
+    return getReplacedTypeName(QT, DpctGlobalInfo::getContext());
+  }
 #define GLOBAL_TYPE(TYPE, NODE_TYPE)                                           \
   std::shared_ptr<TYPE> find##TYPE(const NODE_TYPE *Node) {                    \
     return findNode<TYPE>(Node);                                               \
@@ -1471,8 +1480,8 @@ private:
 // call.
 class KernelCallExpr : public CallFunctionExpr {
   struct ArgInfo {
-    ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg)
-        : isPointer(false) {
+    ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg, int Index)
+        : isPointer(false), isRedeclareRequired(false), Index(Index) {
       Analysis.analyze(Arg);
       ArgString = Analysis.getReplacedString();
       if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
@@ -1487,47 +1496,32 @@ class KernelCallExpr : public CallFunctionExpr {
         } else {
           PointeeType = dyn_cast<PointerType>(Arg->getType())->getPointeeType();
         }
-        TypeString =
-            DpctGlobalInfo::getTypeName(PointeeType.getUnqualifiedType());
-        MapNames::replaceName(MapNames::TypeNamesMap, TypeString);
-        if (PointeeType.getQualifiers().isEmptyWhenPrinted(
-                DpctGlobalInfo::getContext().getPrintingPolicy())) {
-          TypeString = TypeString + " *";
-        } else {
-          TypeString = PointeeType.getQualifiers().getAsString() + " " +
-                       TypeString + " *";
-        }
+        TypeString = DpctGlobalInfo::getReplacedTypeName(PointeeType) + " *";
       }
 
-      std::string newId = "";
       if (isRedeclareRequired || isPointer) {
-        SourceManager &SM = DpctGlobalInfo::getContext().getSourceManager();
+        SourceManager &SM = DpctGlobalInfo::getSourceManager();
         Arg = Arg->IgnoreCasts();
-        auto ExprEndLoc =
-            Arg->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
-                Arg->getEndLoc(), SM,
-                DpctGlobalInfo::getContext().getLangOpts()));
+        auto ExprEndLoc = Lexer::getLocForEndOfToken(
+            Arg->getEndLoc(), 0, SM,
+            DpctGlobalInfo::getContext().getLangOpts());
         auto TokenBegin = Lexer::GetBeginningOfToken(
             Arg->getBeginLoc(), SM, DpctGlobalInfo::getContext().getLangOpts());
-        auto TokenEnd = Lexer::getLocForEndOfToken(
-            Arg->getBeginLoc(), 0, SM,
-            DpctGlobalInfo::getContext().getLangOpts());
-
-        while (SM.getCharacterData(TokenEnd) <=
+        llvm::raw_string_ostream OS(IdString);
+        Token Tok;
+        while (SM.getCharacterData(TokenBegin) <=
                SM.getCharacterData(ExprEndLoc)) {
-          Token Tok;
-          Lexer::getRawToken(TokenBegin, Tok, SM, LangOptions());
-          if (Tok.isAnyIdentifier()) {
-            newId += Tok.getRawIdentifier().str() + "_";
+          if(Lexer::getRawToken(TokenBegin, Tok, SM,
+                                  DpctGlobalInfo::getContext().getLangOpts(),
+                                  true)) {
+            break;
           }
-          Optional<Token> TokSharedPtr;
-          TokSharedPtr = Lexer::findNextToken(TokenBegin, SM, LangOptions());
-          TokenEnd = TokSharedPtr->getEndLoc();
-          TokenBegin = Lexer::GetBeginningOfToken(
-              TokenEnd, SM, DpctGlobalInfo::getContext().getLangOpts());
+          if (Tok.isAnyIdentifier()) {
+            OS << Tok.getRawIdentifier() << "_";
+          }
+          TokenBegin = Tok.getEndLoc();
         }
       }
-      IdString = newId;
     }
 
     ArgInfo(std::shared_ptr<TextureObjectInfo> Obj) {
@@ -1535,37 +1529,77 @@ class KernelCallExpr : public CallFunctionExpr {
       isPointer = false;
       isRedeclareRequired = false;
       TypeString = "";
+      Index = 0;
     }
 
     inline const std::string &getArgString() const { return ArgString; }
     inline const std::string &getTypeString() const { return TypeString; }
-    inline const std::string &getIdString() const { return IdString; }
+    inline std::string getIdStringWithIndex() const {
+      return buildString(IdString, "ct", Index);
+    }
+    inline std::string getIdStringWithSuffix(const std::string &Suffix) const {
+      return buildString(IdString, Suffix, "_ct", Index);
+    }
 
     bool isPointer;
     bool isRedeclareRequired;
     std::string ArgString;
     std::string TypeString;
     std::string IdString;
+    int Index;
   };
 
-  class FormatStmtBlock {
-    const std::string &NL;
-    std::string &Indent;
-    llvm::raw_string_ostream &StmtStream;
+  class KernelPrinter {
+    const std::string NL;
+    std::string Indent;
+    llvm::raw_string_ostream &Stream;
+
+    void incIndent() { Indent += "  "; }
+    void decIndent() { Indent.erase(Indent.length() - 2, 2); }
 
   public:
-    FormatStmtBlock(const std::string &NL, std::string &Indent,
-                    llvm::raw_string_ostream &Stmts)
-        : NL(NL), Indent(Indent), StmtStream(Stmts) {
-      Indent += "  ";
+    class Block {
+      KernelPrinter &Printer;
+      bool WithBrackets;
+
+    public:
+      Block(KernelPrinter &Printer, bool WithBrackets)
+          : Printer(Printer), WithBrackets(WithBrackets) {
+        if (WithBrackets)
+          Printer.line("{");
+        Printer.incIndent();
+      }
+      ~Block() {
+        Printer.decIndent();
+        if (WithBrackets)
+          Printer.line("}");
+      }
+    };
+
+  public:
+    KernelPrinter(const std::string &NL, const std::string &Indent,
+                  llvm::raw_string_ostream &OS)
+        : NL(NL), Indent(Indent), Stream(OS) {}
+    std::unique_ptr<Block> block(bool WithBrackets = false) {
+      return std::make_unique<Block>(*this, WithBrackets);
     }
-    FormatStmtBlock(const FormatStmtBlock &Parent)
-        : FormatStmtBlock(Parent.NL, Parent.Indent, Parent.StmtStream) {}
-    ~FormatStmtBlock() { Indent.erase(Indent.size() - 2); }
-    template <class... Arguments> inline void pushStmt(Arguments &&... Args) {
-      appendString(StmtStream, Indent, std::forward<Arguments>(Args)..., NL);
+    template <class T> KernelPrinter &operator<<(const T &S) {
+      Stream << S;
+      return *this;
     }
+    template <class... Args> KernelPrinter &line(Args &&... Arguments) {
+      appendString(Stream, Indent, std::forward<Args>(Arguments)..., NL);
+      return *this;
+    }
+    KernelPrinter &indent() { return (*this) << Indent; }
+    KernelPrinter &newLine() { return (*this) << NL; }
   };
+
+  void print(KernelPrinter &Printer);
+  void printSubmit(KernelPrinter &Printer);
+  void printSubmitLamda(KernelPrinter &Printer);
+  void printParallelFor(KernelPrinter &Printer);
+  void printKenel(KernelPrinter &Printer);
 
 public:
   KernelCallExpr(unsigned Offset, const std::string &FilePath,
@@ -1576,7 +1610,7 @@ public:
     buildKernelInfo(KernelCall);
   }
 
-  void getAccessorDecl(FormatStmtBlock &Block);
+  void addAccessorDecl();
   void buildInfo();
   inline std::string getExtraArguments() override {
     return getVarMap().getKernelArguments(hasArgs());
@@ -1587,7 +1621,7 @@ public:
   std::string getReplacement();
 
   inline void setEvent(const std::string &E) { Event = E; }
-  inline std::string getEvent() { return Event; }
+  inline const std::string &getEvent() { return Event; }
 
   inline void setSync(bool Sync = true) { IsSync = Sync; }
   inline bool isSync() { return IsSync; }
@@ -1596,36 +1630,41 @@ private:
   void buildArgsInfo(const CallExpr *CE) {
     KernelArgumentAnalysis Analysis;
     auto &TexList = getTextureObjectList();
-    for (auto Arg : CE->arguments()) {
-      if (auto Obj = TexList[ArgsInfo.size()]) {
+    for (unsigned Idx = 0; Idx < CE->getNumArgs(); ++Idx) {
+      if (auto Obj = TexList[Idx]) {
         ArgsInfo.emplace_back(Obj);
       } else {
-        ArgsInfo.emplace_back(Analysis, Arg);
+        ArgsInfo.emplace_back(Analysis, CE->getArg(Idx), Idx);
       }
     }
   }
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
   void buildExecutionConfig(const CUDAKernelCallExpr *KernelCall);
-  std::string analysisExcutionConfig(const Expr *Config);
 
-  void getAccessorDecl(FormatStmtBlock &Block, MemVarInfo::VarScope Scope);
-  void getAccessorDecl(FormatStmtBlock &Block, std::shared_ptr<MemVarInfo> VI);
-  void getStreamDecl(FormatStmtBlock &Block);
+  void removeExtraIndent() {
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(getFilePath(),
+                                         getBegin() - LocInfo.Indent.length(),
+                                         LocInfo.Indent.length(), "", nullptr));
+  }
+  void addAccessorDecl(MemVarInfo::VarScope Scope);
+  void addAccessorDecl(std::shared_ptr<MemVarInfo> VI);
+  void addStreamDecl() {
+    if (getVarMap().hasStream())
+      SubmitStmts.emplace_back(buildString("cl::sycl::stream ",
+                                           DpctGlobalInfo::getStreamName(),
+                                           "(64 * 1024, 80, cgh);"));
+  }
+  void addNdRangeDecl() {
+    SubmitStmts.emplace_back(
+        buildString("auto dpct_global_range = ", ExecutionConfig.NDSize, " * ",
+                    ExecutionConfig.WGSize, ";"));
+    SubmitStmts.emplace_back(
+        buildString("auto dpct_local_range = ", ExecutionConfig.WGSize, ";"));
+  }
 
   using StmtList = std::vector<std::string>;
-  void buildKernelPointerArgsStmt(StmtList &BufferAndOffsets,
-                                  StmtList &Accessors, StmtList &Redecls);
-  void buildKernelPointerArgBufferAndOffsetStmt(const std::string &RefName,
-                                                const std::string &ArgName,
-                                                const std::string &IdName,
-                                                StmtList &Buffers);
-  void buildKernelPointerArgAccessorStmt(const std::string &ArgName,
-                                         const std::string &IdName,
-                                         StmtList &Accessors);
-  void buildKernelPointerArgRedeclStmt(const std::string &ArgName,
-                                       const std::string &IdName,
-                                       const std::string &TypeName,
-                                       StmtList &Redecls);
+  void buildKernelArgsStmt();
 
   struct {
     std::string LocHash;
@@ -1633,15 +1672,20 @@ private:
     std::string Indent;
   } LocInfo;
   struct {
-    std::string NDSize;
-    std::string WGSize;
-    std::string ExternMemSize;
-    std::string Stream;
+    std::string Config[4];
+    std::string &NDSize = Config[0];
+    std::string &WGSize = Config[1];
+    std::string &ExternMemSize = Config[2];
+    std::string &Stream = Config[3];
   } ExecutionConfig;
 
   std::string Event;
   bool IsSync;
   std::vector<ArgInfo> ArgsInfo;
+  StmtList OuterStmts;
+  StmtList SubmitStmts;
+  StmtList KernelStmts;
+  std::string KernelArgs;
 };
 
 class CudaMallocInfo {

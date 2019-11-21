@@ -29,7 +29,6 @@ int main() {
 
   cudaMemcpyToSymbol(out, buf, mem_size);
 
-  // CHECK: {
   // CHECK:   dpct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
   // CHECK:       auto out_acc_ct1 = out.get_access(cgh);
@@ -41,10 +40,8 @@ int main() {
   // CHECK:           kernel1([[ITEM]], dpct::accessor<float, dpct::device, 1>(out_acc_ct1));
   // CHECK:         });
   // CHECK:     });
-  // CHECK: }
   kernel1<<<1, threads_per_block>>>();
 
-  // CHECK: {
   // CHECK:   dpct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
   // CHECK:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1);
@@ -55,7 +52,6 @@ int main() {
   // CHECK:           kernel2();
   // CHECK:         });
   // CHECK:     });
-  // CHECK: }
   kernel2<<<1, 1>>>();
 
   return 0;

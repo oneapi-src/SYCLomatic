@@ -61,8 +61,7 @@ int main() {
   cudaMalloc((void **)&d_out, array_size);
 
   const int threads_per_block = NUM_ELEMENTS;
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue_wait().submit(
+  // CHECK:   dpct::get_default_queue_wait().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto in_acc_ct1 = in.get_access(cgh);
   // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1);
@@ -73,11 +72,9 @@ int main() {
   // CHECK-NEXT:           kernel1(d_out, item_ct1, in_acc_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   kernel1<<<1, threads_per_block>>>(d_out);
 
-  // CHECK: {
-  // CHECK-NEXT:   dpct::get_default_queue_wait().submit(
+  // CHECK:   dpct::get_default_queue_wait().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       dpct::device_memory<float, 1> tmp(64/*size*/);
   // CHECK-NEXT:       auto tmp_acc_ct1 = tmp.get_access(cgh);
@@ -92,7 +89,6 @@ int main() {
   // CHECK-NEXT:           kernel2(d_out, item_ct1, al_acc_ct1, fx_acc_ct1, fy_acc_ct1, tmp_acc_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   kernel2<<<1, threads_per_block>>>(d_out);
 
   cudaMemcpy(h_out, d_out, array_size, cudaMemcpyDeviceToHost);
