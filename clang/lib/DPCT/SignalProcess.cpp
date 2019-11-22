@@ -43,7 +43,7 @@ static const std::string SigDescription(const int &Signo) {
 #if defined(_WIN64)
 void FaultHandler(int Signo) {
   std::string FaultMsg = "\nMeet signal:" + SigDescription(Signo) +
-                         "\nIntel(R) DPC++ Compatibility Tool trys to give "
+                         "\nIntel(R) DPC++ Compatibility Tool tries to give "
                          "analysis reports and terminates...\n";
   PrintReportOnFault(FaultMsg);
   exit(1);

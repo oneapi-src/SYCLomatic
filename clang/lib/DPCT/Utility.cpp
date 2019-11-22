@@ -95,6 +95,9 @@ StringRef getIndent(SourceLocation Loc, const SourceManager &SM) {
 
 // Get textual representation of the Stmt.
 std::string getStmtSpelling(const Stmt *S, const ASTContext &Context) {
+  std::string Str;
+  if(!S)
+    return Str;
   auto &SM = Context.getSourceManager();
   SourceLocation BeginLoc, EndLoc;
   if (SM.isMacroArgExpansion(S->getBeginLoc())) {
@@ -117,7 +120,8 @@ std::string getStmtSpelling(const Stmt *S, const ASTContext &Context) {
 
   int Length = SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc) +
                Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
-  return std::string(SM.getCharacterData(BeginLoc), Length);
+  Str = std::string(SM.getCharacterData(BeginLoc), Length);
+  return Str;
 }
 
 std::string getStmtExpansion(const Stmt *S, const ASTContext &Context) {
