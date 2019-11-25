@@ -118,10 +118,10 @@ private:
 };
 
 /// dpct device extension
-class device : public cl::sycl::device {
+class device_ext : public cl::sycl::device {
 public:
-  device() : cl::sycl::device() {}
-  device(const cl::sycl::device &base) : cl::sycl::device(base) {
+  device_ext() : cl::sycl::device() {}
+  device_ext(const cl::sycl::device &base) : cl::sycl::device(base) {
     _default_queue = cl::sycl::queue(base, exception_handler);
   }
 
@@ -224,19 +224,19 @@ public:
     std::vector<cl::sycl::device> sycl_gpu_devs =
         cl::sycl::device::get_devices(cl::sycl::info::device_type::gpu);
     for (auto &dev : sycl_gpu_devs) {
-      _devs.push_back(device(dev));
+      _devs.push_back(device_ext(dev));
     }
     std::vector<cl::sycl::device> sycl_cpu_devs =
         cl::sycl::device::get_devices(cl::sycl::info::device_type::cpu);
     for (auto &dev : sycl_cpu_devs) {
-      _devs.push_back(device(dev));
+      _devs.push_back(device_ext(dev));
     }
   }
-  device &current_device() {
+  device_ext &current_device() {
     check_id(_current_device);
     return _devs[_current_device];
   }
-  device get_device(unsigned int id) const {
+  device_ext get_device(unsigned int id) const {
     check_id(id);
     return _devs[id];
   }
@@ -253,7 +253,7 @@ private:
       throw std::string("invalid device id");
     }
   }
-  std::vector<device> _devs;
+  std::vector<device_ext> _devs;
   unsigned int _current_device = 0;
 };
 
