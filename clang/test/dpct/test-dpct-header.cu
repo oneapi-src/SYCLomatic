@@ -7,8 +7,8 @@
 #include "inc/header.h"
 #include "inc/header.inl"
 #include "inc/header.inc"
-#include "inc/header.INL"
-#include "inc/header.INC"
+#include "inc/header2.INL"
+#include "inc/header2.INC"
 
 // CHECK: #ifdef CUDA
 // CHECK-NEXT: void foo() {
