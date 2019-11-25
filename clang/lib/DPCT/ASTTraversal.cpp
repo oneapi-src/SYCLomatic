@@ -4601,7 +4601,7 @@ void MemoryMigrationRule::memcpyMigration(
           if (StreamStr.empty() || StreamStr == "0")
             ReplaceStr = "dpct::get_default_queue_wait().memcpy";
           else
-            ReplaceStr = StreamStr + ".memcpy";
+            ReplaceStr = StreamStr + "->memcpy";
         }
       } else {
         ReplaceStr = "dpct::get_default_queue_wait().memcpy";
@@ -4696,7 +4696,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
           if (StreamStr.empty() || StreamStr == "0")
             ReplaceStr = "dpct::get_default_queue_wait().memcpy";
           else
-            ReplaceStr = StreamStr + ".memcpy";
+            ReplaceStr = StreamStr + "->memcpy";
         }
       } else {
         ReplaceStr = "dpct::get_default_queue_wait().memcpy";
@@ -4828,7 +4828,7 @@ void MemoryMigrationRule::memsetMigration(
           if (StreamStr.empty() || StreamStr == "0")
             ReplaceStr = "dpct::get_default_queue_wait().memset";
           else
-            ReplaceStr = StreamStr + ".memset";
+            ReplaceStr = StreamStr + "->memset";
         }
       } else {
         ReplaceStr = "dpct::get_default_queue_wait().memset";

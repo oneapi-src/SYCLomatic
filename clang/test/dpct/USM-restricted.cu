@@ -115,11 +115,11 @@ void foo() {
   // CHECK: CUDA_SAFE_CALL((dpct::get_default_queue_wait().memcpy((void*)(d_A), (void*)(h_A), size), 0));
   CUDA_SAFE_CALL(cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, 0));
 
-  // CHECK: stream.memcpy((void*)(d_A), (void*)(h_A), size);
+  // CHECK: stream->memcpy((void*)(d_A), (void*)(h_A), size);
   cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, stream);
-  // CHECK: errorCode = (stream.memcpy((void*)(d_A), (void*)(h_A), size), 0);
+  // CHECK: errorCode = (stream->memcpy((void*)(d_A), (void*)(h_A), size), 0);
   errorCode = cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, stream);
-  // CHECK: CUDA_SAFE_CALL((stream.memcpy((void*)(d_A), (void*)(h_A), size), 0));
+  // CHECK: CUDA_SAFE_CALL((stream->memcpy((void*)(d_A), (void*)(h_A), size), 0));
   CUDA_SAFE_CALL(cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, stream));
 
   /// memcpy from symbol
@@ -154,11 +154,11 @@ void foo() {
   // CHECK: CUDA_SAFE_CALL((dpct::get_default_queue_wait().memcpy((void*)(h_A), (void *)((char *)(constData.get_ptr()) + 2), size), 0));
   CUDA_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size, 2, cudaMemcpyDeviceToHost, 0));
 
-  // CHECK: stream.memcpy((void*)(h_A), (void *)((char *)(constData.get_ptr()) + 3), size);
+  // CHECK: stream->memcpy((void*)(h_A), (void *)((char *)(constData.get_ptr()) + 3), size);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream);
-  // CHECK: errorCode = (stream.memcpy((void*)(h_A), (void *)((char *)(constData.get_ptr()) + 3), size), 0);
+  // CHECK: errorCode = (stream->memcpy((void*)(h_A), (void *)((char *)(constData.get_ptr()) + 3), size), 0);
   errorCode = cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream);
-  // CHECK: CUDA_SAFE_CALL((stream.memcpy((void*)(h_A), (void *)((char *)(constData.get_ptr()) + 3), size), 0));
+  // CHECK: CUDA_SAFE_CALL((stream->memcpy((void*)(h_A), (void *)((char *)(constData.get_ptr()) + 3), size), 0));
   CUDA_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream));
 
   /// memcpy to symbol
@@ -193,11 +193,11 @@ void foo() {
   // CHECK: CUDA_SAFE_CALL((dpct::get_default_queue_wait().memcpy((void *)((char *)(constData.get_ptr()) + 2), (void*)(h_A), size), 0));
   CUDA_SAFE_CALL(cudaMemcpyToSymbolAsync(constData, h_A, size, 2, cudaMemcpyHostToDevice, 0));
 
-  // CHECK: stream.memcpy((void *)((char *)(constData.get_ptr()) + 3), (void*)(h_A), size);
+  // CHECK: stream->memcpy((void *)((char *)(constData.get_ptr()) + 3), (void*)(h_A), size);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream);
-  // CHECK: errorCode = (stream.memcpy((void *)((char *)(constData.get_ptr()) + 3), (void*)(h_A), size), 0);
+  // CHECK: errorCode = (stream->memcpy((void *)((char *)(constData.get_ptr()) + 3), (void*)(h_A), size), 0);
   errorCode = cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream);
-  // CHECK: CUDA_SAFE_CALL((stream.memcpy((void *)((char *)(constData.get_ptr()) + 3), (void*)(h_A), size), 0));
+  // CHECK: CUDA_SAFE_CALL((stream->memcpy((void *)((char *)(constData.get_ptr()) + 3), (void*)(h_A), size), 0));
   CUDA_SAFE_CALL(cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream));
 
   /// memset
@@ -225,11 +225,11 @@ void foo() {
   // CHECK: CUDA_SAFE_CALL((dpct::get_default_queue_wait().memset((void*)(d_A), 23, size), 0));
   CUDA_SAFE_CALL(cudaMemsetAsync(d_A, 23, size, 0));
 
-  // CHECK: stream.memset((void*)(d_A), 23, size);
+  // CHECK: stream->memset((void*)(d_A), 23, size);
   cudaMemsetAsync(d_A, 23, size, stream);
-  // CHECK: errorCode = (stream.memset((void*)(d_A), 23, size), 0);
+  // CHECK: errorCode = (stream->memset((void*)(d_A), 23, size), 0);
   errorCode = cudaMemsetAsync(d_A, 23, size, stream);
-  // CHECK: CUDA_SAFE_CALL((stream.memset((void*)(d_A), 23, size), 0));
+  // CHECK: CUDA_SAFE_CALL((stream->memset((void*)(d_A), 23, size), 0));
   CUDA_SAFE_CALL(cudaMemsetAsync(d_A, 23, size, stream));
 
   // CHECK: cl::sycl::free(h_A, dpct::get_default_queue().get_context());
