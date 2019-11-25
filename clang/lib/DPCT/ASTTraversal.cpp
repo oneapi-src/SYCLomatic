@@ -2096,15 +2096,31 @@ void ReturnTypeRule::registerMatcher(MatchFinder &MF) {
   // blas handler is a struct, so it could be returned as value by user
   // defined function. But cl::sycl::queue cannot be return as value.
   // It will be replaced by a handle type later.
+  auto TypedefNames = hasAnyName(
+      "dim3", "cudaError_t", "CUresult", "CUcontext", "cudaEvent_t",
+      "cudaStream_t", "__half", "__half2", "half", "half2",
+      "cublasStatus_t", "cuComplex", "cuDoubleComplex",
+      "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
+      "cublasOperation_t", "cublasStatus", "cusolverDnHandle_t",
+      "cusolverStatus_t", "cusolverEigType_t", "cusolverEigMode_t",
+      "cublasHandle_t", "cusolverDnHandle_t");
+
+  auto T =
+      hasDeclaration(anyOf(typedefDecl(TypedefNames), enumDecl(EnumTypeNames),
+                           typedefDecl(TypedefNames)));
+  auto P = anyOf(pointsTo(typedefDecl(TypedefNames)),
+                 pointsTo(enumDecl(EnumTypeNames)),
+                 pointsTo(typedefDecl(TypedefNames)));
+  auto PP = anyOf(pointsTo(pointsTo(typedefDecl(TypedefNames))),
+                  pointsTo(pointsTo(enumDecl(EnumTypeNames))),
+                  pointsTo(pointsTo(cxxRecordDecl(RecordTypeNames))));
+  auto R = anyOf(references(typedefDecl(TypedefNames)),
+                 references(enumDecl(EnumTypeNames)),
+                 references(cxxRecordDecl(RecordTypeNames)));
+
   MF.addMatcher(
       functionDecl(
-          returns(anyOf(
-              asString("cuComplex"), asString("cuDoubleComplex"),
-              asString("cublasHandle_t"), asString("cublasStatus_t"),
-              asString("cublasFillMode_t"), asString("cublasDiagType_t"),
-              asString("cublasSideMode_t"), asString("cublasOperation_t"),
-              asString("cusolverDnHandle_t"), asString("cusolverStatus_t"),
-              asString("cusolverEigType_t"), asString("cusolverEigMode_t"))))
+          returns(anyOf(T, P, PP, R)))
           .bind("functionDeclWithTypedef"),
       this);
 }
@@ -2124,15 +2140,14 @@ void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
                    .str();
   } else if ((FD = getNodeAsType<FunctionDecl>(Result,
                                                "functionDeclWithTypedef"))) {
-    const clang::Type *Type = FD->getReturnType().getTypePtr();
-    if (Type == nullptr)
-      return;
-    auto TDT = static_cast<const TypedefType *>(Type);
-    if (TDT == nullptr)
-      return;
-    TypeName = TDT->getDecl()->getName().str();
+    auto QT = FD->getReturnType();
+    TypeName = QT.getAsString();
   } else {
     return;
+  }
+
+  if (TypeName.find("cudaStream_t") != std::string::npos) {
+    DpctGlobalInfo::getInstance().insertUsing(FD->getBeginLoc(), QUEUE_P);
   }
 
   // Add '#include <complex>' directive to the file only once
@@ -2142,12 +2157,7 @@ void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
   }
 
   SrcAPIStaticsMap[TypeName]++;
-  auto Search = MapNames::TypeNamesMap.find(TypeName);
-  if (Search == MapNames::TypeNamesMap.end()) {
-    // TODO report migration error
-    return;
-  }
-  std::string Replacement = Search->second;
+  auto Replacement = getReplacementForType(TypeName);
 
   auto BeginLoc = FD->getBeginLoc();
   if (BeginLoc.isMacroID()) {
