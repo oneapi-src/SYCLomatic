@@ -225,7 +225,10 @@ public:
       llvm::raw_string_ostream RSO(ReplStr);
       if (Offset == LastIncludeOffset)
         RSO << getNL();
-      RSO << Str;
+      if (FirstIncludeOffset != LastIncludeOffset)
+        RSO << getNL() << Str;
+      else
+        RSO << Str << getNL();
       insertUsing(std::move(RSO.str()), Offset);
     }
   }
@@ -1690,7 +1693,8 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
     HeaderInsertedBitMap[Type] = true;
     std::string ReplStr;
     llvm::raw_string_ostream RSO(ReplStr);
-    if (Offset == LastIncludeOffset)
+    // Start a new line if we're not inserting at the first inclusion offset
+    if (Offset != FirstIncludeOffset)
       RSO << getNL();
     else if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::none) &&
              (Type == SYCL))
