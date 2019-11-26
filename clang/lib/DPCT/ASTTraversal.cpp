@@ -1180,7 +1180,7 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       TypeStr = QT.getAsString();
     }
   }
-  if (TypeStr == "cudaStream_t") {
+  if (TypeStr.find("cudaStream_t") != std::string::npos) {
     DpctGlobalInfo::getInstance().insertUsing(BeginLoc, QUEUE_P);
   }
 

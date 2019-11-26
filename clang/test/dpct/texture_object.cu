@@ -90,8 +90,7 @@ int main() {
   texDesc21.filterMode = cudaFilterModeLinear;
   cudaCreateTextureObject(&tex21, &res21, &texDesc21, NULL);
 
-  // CHECK:   {
-  // CHECK-NEXT: dpct::get_default_queue().submit(
+  // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:     auto tex21_acc = static_cast<dpct::image<cl::sycl::uint2, 1> *>(tex21)->get_access(cgh);
   // CHECK-NEXT:     auto tex42_acc = static_cast<dpct::image<cl::sycl::float4, 2> *>(tex42)->get_access(cgh);
@@ -103,7 +102,6 @@ int main() {
   // CHECK-NEXT:         kernel(tex21_acc, tex42_acc);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
-  // CHECK-NEXT: }
   kernel<<<1, 1>>>(tex21, tex42);
 
   // CHECK: dpct::dpct_free(tex42);
