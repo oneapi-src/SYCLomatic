@@ -791,32 +791,38 @@ private:
   void mallocMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C,
                          const UnresolvedLookupExpr *ULExpr = NULL,
-                         bool IsAssigned = false);
+                       bool IsAssigned = false, std::string SpecifiedQueue = "");
   void memcpyMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C,
                          const UnresolvedLookupExpr *ULExpr = NULL,
-                         bool IsAssigned = false);
+                       bool IsAssigned = false,
+                       std::string SpecifiedQueue = "");
   void freeMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                        const CallExpr *C,
                        const UnresolvedLookupExpr *ULExpr = NULL,
-                       bool IsAssigned = false);
+                     bool IsAssigned = false, std::string SpecifiedQueue = "");
   void memsetMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C,
                          const UnresolvedLookupExpr *ULExpr = NULL,
-                         bool IsAssigned = false);
+                       bool IsAssigned = false,
+                       std::string SpecifiedQueue = "");
   void getSymbolAddressMigration(
       const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
-      const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false);
+      const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false,
+      std::string SpecifiedQueue = "");
   void getSymbolSizeMigration(
-    const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
-    const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false);
+      const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
+      const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false,
+      std::string SpecifiedQueue = "");
   void prefetchMigration(
     const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
-    const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false);
+                         const UnresolvedLookupExpr *ULExpr = NULL,
+                         bool IsAssigned = false,
+                         std::string SpecifiedQueue = "");
   void miscMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                        const CallExpr *C,
                        const UnresolvedLookupExpr *ULExpr = NULL,
-                       bool IsAssigned = false);
+                     bool IsAssigned = false, std::string SpecifiedQueue = "");
   void handleAsync(const CallExpr *C, unsigned i,
                    const ast_matchers::MatchFinder::MatchResult &Result);
   void replaceMemAPIArg(const Expr *E,
@@ -826,18 +832,37 @@ private:
   const Expr *getUnaryOperatorExpr(const Expr *E);
   void memcpySymbolMigration(
       const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
-      const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false);
+      const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false,
+      std::string SpecifiedQueue = "");
   std::unordered_map<
       std::string,
       std::function<void(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C, const UnresolvedLookupExpr *ULExpr,
-                         bool IsAssigned)>>
+                         bool IsAssigned, std::string SpecifiedQueue)>>
       MigrationDispatcher;
   bool isSimpleAddrOf(const Expr *E);
   std::string getNameStrRemovedAddrOf(const Expr *E, bool isCOCE = false);
   std::string getTypeStrRemovedAddrOf(const Expr *E, bool isCOCE = false);
   std::string getAssignedStr(const Expr *E, const std::string &Arg0Str);
   bool isCOCESimpleAddrOf(const Expr *E);
+  void handleMemcpyAndMemset(
+      const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
+      const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false,
+      std::string SpecifiedQueue = "");
+  bool isStmtSimpleMemcpyOrMemset(const clang::Stmt *Stmt);
+  const CallExpr *getMemcpyOrMemsetCallExprFromStmt(const clang::Stmt *Stmt);
+  int DPCTQueueCounter;
+  std::unordered_set<const CallExpr *> HandledMemcpyMemsetSet;
+  void continuousMemcpyMemsetHandler(
+      Stmt::const_child_iterator Begin, Stmt::const_child_iterator Endconst,
+      const ast_matchers::MatchFinder::MatchResult &Result, int QueueIndex);
+  void defaultMemcpyMemsetHandler(
+      const ast_matchers::MatchFinder::MatchResult &Result,
+                        const CallExpr *C, const UnresolvedLookupExpr *ULExpr,
+                        bool IsAssigned);
+  bool
+  findFirstNotProcessedSpecialStmtIter(const CompoundStmt *P,
+                                       Stmt::const_child_iterator &ResIter);
 };
 
 /// Name all unnamed types.

@@ -14,8 +14,8 @@
 
 #include "Debug.h"
 #include "ExprAnalysis.h"
-#include "Utility.h"
 #include "ExtReplacements.h"
+#include "Utility.h"
 #include <bitset>
 
 #include "clang/AST/DeclTemplate.h"
@@ -426,17 +426,62 @@ public:
   }
   inline static UsmLevel getUsmLevel() { return UsmLvl; }
   inline static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
+
+  template <class TargetTy, class NodeTy>
+  static inline const TargetTy *
+  findAncestor(const NodeTy *N,
+               const std::function<bool(const ast_type_traits::DynTypedNode &)>
+                   &Condition) {
+    if (!N)
+      return nullptr;
+
+    auto &Context = getContext();
+    clang::ASTContext::DynTypedNodeList Parents = Context.getParents(*N);
+    while (!Parents.empty()) {
+      auto &Cur = Parents[0];
+      if (Condition(Cur))
+        return Cur.get<TargetTy>();
+      Parents = Context.getParents(Cur);
+    }
+
+    return nullptr;
+  }
+
+  /// 1. {
+  ///      cudaMemcpy();
+  ///    }
+  /// 2. {
+  ///      cudaError_t a;
+  ///      a = cudaMemcpy();
+  ///    }
+  /// 3. {
+  ///      int a;
+  ///      a = cudaMemcpy();
+  ///    }
+  /// 4. {
+  ///      cudaError_t a = cudaMemcpy();
+  ///    }
+  /// 5. {
+  ///      int a = cudaMemcpy();
+  ///    }
+  /// Node is the node of cudaMemcpy(), need return the CompoundStmt node, other
+  /// cases return nullptr.
+  static const CompoundStmt *findAncestor(const CallExpr *Node) {
+    return findAncestor<CompoundStmt>(
+        Node, [&](const ast_type_traits::DynTypedNode &Cur) -> bool {
+          if (Cur.get<ImplicitCastExpr>() || Cur.get<DeclStmt>() ||
+              Cur.get<VarDecl>() || Cur.get<BinaryOperator>())
+            return false;
+          return true;
+        });
+  }
+
   template <class TargetTy, class NodeTy>
   static const TargetTy *findAncestor(const NodeTy *Node) {
-    auto &Context = getContext();
-    clang::ASTContext::DynTypedNodeList Parents = Context.getParents(*Node);
-    while (!Parents.empty()) {
-      auto &Node = Parents[0];
-      if (auto Target = Node.get<TargetTy>())
-        return Target;
-      Parents = Context.getParents(Node);
-    }
-    return nullptr;
+    return findAncestor<TargetTy>(
+        Node, [&](const ast_type_traits::DynTypedNode &Cur) -> bool {
+          return Cur.get<TargetTy>();
+        });
   }
   template <class NodeTy>
   inline static const clang::FunctionDecl *
@@ -1633,7 +1678,8 @@ class KernelCallExpr : public CallFunctionExpr {
   void printKenel(KernelPrinter &Printer);
   std::string removeReduntIndentAndNL(const std::string &Input,
                                       unsigned IndentSize) {
-    return Input.substr(IndentSize, Input.length() - IndentSize - std::strlen(getNL()));
+    return Input.substr(IndentSize,
+                        Input.length() - IndentSize - std::strlen(getNL()));
   }
 
 public:
