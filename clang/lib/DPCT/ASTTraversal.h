@@ -930,6 +930,16 @@ public:
   }
 };
 
+/// CXXNewExprRule is to migrate types in C++ new expressions, e.g.
+/// "new cudaStream_t[10]" => "new queue_p[10]"
+/// "new cudaStream_t" => "new queue_p"
+class CXXNewExprRule : public NamedMigrationRule<CXXNewExprRule> {
+public:
+  CXXNewExprRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 #define REGISTER_RULE(TYPE_NAME)                                               \
   RuleRegister<TYPE_NAME> g_##TYPE_NAME(&TYPE_NAME::ID, #TYPE_NAME);
 

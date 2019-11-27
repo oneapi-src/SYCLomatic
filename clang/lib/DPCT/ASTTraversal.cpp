@@ -5514,6 +5514,25 @@ void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
 
 REGISTER_RULE(TextureRule)
 
+void CXXNewExprRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(cxxNewExpr().bind("newExpr"), this);
+}
+
+void CXXNewExprRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto CNE = getAssistNodeAsType<CXXNewExpr>(Result, "newExpr")) {
+    auto TypeName = CNE->getAllocatedType().getAsString();
+    auto ReplName = std::string(
+        MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName));
+    if (!ReplName.empty()) {
+      auto BeginLoc =
+          CNE->getAllocatedTypeSourceInfo()->getTypeLoc().getBeginLoc();
+      emplaceTransformation(new ReplaceToken(BeginLoc, std::move(ReplName)));
+    }
+  }
+}
+
+REGISTER_RULE(CXXNewExprRule)
+
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {
   this->Context = &Context;
