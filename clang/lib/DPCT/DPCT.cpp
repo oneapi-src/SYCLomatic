@@ -513,23 +513,26 @@ unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
 
 static void printMetrics(clang::tooling::RefactoringTool &Tool) {
 
+  size_t Count = 0;
   for (const auto &Elem : LOCStaticsMap) {
     unsigned TotalLines = GetLinesNumber(Tool, Elem.first);
     unsigned TransToAPI = Elem.second[0];
     unsigned TransToSYCL = Elem.second[1];
     unsigned NotTrans = TotalLines - TransToSYCL - TransToAPI;
     unsigned NotSupport = Elem.second[2];
-
-    DpctStats() << "\n";
-    DpctStats()
-        << "File name, LOC migrated to SYCL, LOC migrated to Compatibility "
-           "API, LOC not needed to migrate, LOC not able to migrate";
-    DpctStats() << "\n";
+    if(Count == 0) {
+      DpctStats() << "\n";
+      DpctStats()
+          << "File name, LOC migrated to DPC++, LOC migrated to helper functions, "
+            "LOC not needed to migrate, LOC not able to migrate";
+      DpctStats() << "\n";
+    }
     DpctStats() << Elem.first + ", " + std::to_string(TransToSYCL) + ", " +
                        std::to_string(TransToAPI) + ", " +
                        std::to_string(NotTrans) + ", " +
                        std::to_string(NotSupport);
     DpctStats() << "\n";
+    Count ++;
   }
 }
 
