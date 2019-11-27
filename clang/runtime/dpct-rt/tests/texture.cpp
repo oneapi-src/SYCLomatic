@@ -4,9 +4,9 @@
 
 #include "../include/dpct.hpp"
 
-dpct::dpct_image<cl::sycl::float4, 2> tex42;
-dpct::dpct_image<cl::sycl::float2, 1> tex21;
-dpct::dpct_image<unsigned short, 3> tex13;
+dpct::image<cl::sycl::float4, 2> tex42;
+dpct::image<cl::sycl::float2, 1> tex21;
+dpct::image<unsigned short, 3> tex13;
 
 void test_texture(dpct::image_accessor<cl::sycl::float4, 2> acc42,
                   dpct::image_accessor<cl::sycl::float2, 1> acc21,
@@ -25,7 +25,7 @@ int main() {
                       640 * 480 * 24 * sizeof(cl::sycl::float4));
 
   dpct::image_channel chn1 =
-      dpct::image_channel(16, 0, 0, 0, dpct::channel_unsigned);
+      dpct::create_image_channel(16, 0, 0, 0, dpct::channel_unsigned);
   dpct::image_channel chn2 =
       dpct::create_image_channel(32, 32, 0, 0, dpct::channel_float);
   dpct::image_channel chn4 =
