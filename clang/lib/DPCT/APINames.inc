@@ -151,9 +151,9 @@ ENTRY(cudaMallocHost, true, P0, "Successful")
 ENTRY(cudaMallocManaged, true, P0, "Successful")
 ENTRY(cudaMallocMipmappedArray, false, P0, "comment")
 ENTRY(cudaMallocPitch, false, P0, "comment")
-ENTRY(cudaMemAdvise, false, P0, "comment")
-ENTRY(cudaMemGetInfo, false, P0, "comment")
-ENTRY(cudaMemPrefetchAsync, true, P0, "Successful")
+ENTRY(cudaMemAdvise, false, P0, "Wait for concurrent USM")
+ENTRY(cudaMemGetInfo, true, P0, "Successful: DPCT1004")
+ENTRY(cudaMemPrefetchAsync, true, P0, "Successful: USM only")
 ENTRY(cudaMemRangeGetAttribute, false, P4, "comment")
 ENTRY(cudaMemRangeGetAttributes, false, P4, "comment")
 ENTRY(cudaMemcpy, true, P0, "Successful")
@@ -191,7 +191,7 @@ ENTRY(make_cudaPitchedPtr, false, P0, "comment")
 ENTRY(make_cudaPos, false, P0, "comment")
 
 // unified addressing functions of runtime API
-ENTRY(cudaPointerGetAttributes, false, P0, "comment")
+ENTRY(cudaPointerGetAttributes, false, P0, "Wait for get_info() in USM")
 
 // peer device memory access functions of runtime API
 ENTRY(cudaDeviceCanAccessPeer, false, P0, "comment")
