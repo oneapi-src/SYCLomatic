@@ -9,7 +9,7 @@ __global__ void foo_kernel(T** R)
 
 
 //CHECK: void foo(float* R[])
-//CHECK-NEXT: try {
+//CHECK-NEXT: {
 //CHECK-NEXT:   {
 //CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> R_buf_ct0 = dpct::get_buffer_and_offset(R);
 //CHECK-NEXT:     size_t R_offset_ct0 = R_buf_ct0.second;

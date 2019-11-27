@@ -44,6 +44,12 @@ auto parentStmt = []() {
 
 static std::set<SourceLocation> AttrExpansionFilter;
 
+static const CXXConstructorDecl *getIfConstructorDecl(const Decl *ND) {
+  if (const auto *Tmpl = dyn_cast<FunctionTemplateDecl>(ND))
+    ND = Tmpl->getTemplatedDecl();
+  return dyn_cast<CXXConstructorDecl>(ND);
+}
+
 unsigned MigrationRule::PairID = 0;
 
 void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
@@ -676,6 +682,80 @@ void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(ErrorHandlingIfStmtRule)
+
+void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
+  std::vector<StringRef> MigratedAPIName{};
+#define ENTRY(APINAME, VALUE, TARGET, COMMENT)                                 \
+  if (VALUE)                                                                   \
+    MigratedAPIName.push_back(#APINAME);
+#include "APINames.inc"
+#include "APINames_cuBLAS.inc"
+#include "APINames_cuFFT.inc"
+#include "APINames_cuGRAPH.inc"
+#include "APINames_cuPARSE.inc"
+#include "APINames_cuRAND.inc"
+#include "APINames_cuSOLVER.inc"
+#include "APINames_nvJPEG.inc"
+#include "APINames_thrust.inc"
+#undef ENTRY
+
+  auto isMigratedHostAPI =
+      allOf(hasAnyName(MigratedAPIName),
+            anyOf(unless(hasAttr(attr::CUDADevice)), hasAttr(attr::CUDAHost)));
+
+  MF.addMatcher(
+      functionDecl(
+          allOf(unless(anyOf(hasAttr(attr::CUDADevice),
+                             hasAttr(attr::CUDAGlobal))),
+                anyOf(
+                    // Match host api call in if/for/while/do
+                    hasDescendant(ifStmt(hasCondition(expr(hasDescendant(
+                        callExpr(callee(functionDecl(isMigratedHostAPI)))))))),
+                    hasDescendant(doStmt(hasCondition(expr(hasDescendant(
+                        callExpr(callee(functionDecl(isMigratedHostAPI)))))))),
+                    hasDescendant(whileStmt(hasCondition(expr(hasDescendant(
+                        callExpr(callee(functionDecl(isMigratedHostAPI)))))))),
+                    hasDescendant(forStmt(hasCondition(expr(hasDescendant(
+                        callExpr(callee(functionDecl(isMigratedHostAPI)))))))),
+                    // Match host api in assignment
+                    hasDescendant(callExpr(allOf(
+                        callee(functionDecl(isMigratedHostAPI)),
+                        hasAncestor(binaryOperator(isAssignmentOperator()))))),
+                    hasDescendant(
+                        callExpr(allOf(callee(functionDecl(isMigratedHostAPI)),
+                                       hasAncestor(varDecl())))))))
+          .bind("caller"),
+      this);
+}
+
+void ErrorHandlingHostAPIRule::run(const MatchFinder::MatchResult &Result) {
+  auto SM = Result.SourceManager;
+  auto FD = getNodeAsType<FunctionDecl>(Result, "caller");
+  if (!FD)
+    return;
+
+  if (const CXXConstructorDecl *CDecl = getIfConstructorDecl(FD)) {
+    emplaceTransformation(new InsertBeforeCtrInitList(CDecl, "try "));
+  }
+  else {
+    emplaceTransformation(new InsertBeforeStmt(FD->getBody(), "try "));
+  }
+  std::string IndentStr = getIndent(FD->getBeginLoc(), *SM).str();
+  std::string ReplaceStr =
+      getNL() + IndentStr +
+      std::string("catch (cl::sycl::exception const &exc) {") + getNL() +
+      IndentStr + IndentStr +
+      std::string("std::cerr << exc.what() << \"EOE at line \" << ") +
+      IndentStr + IndentStr + std::string("__LINE__ << std::endl;") + getNL() +
+      IndentStr + IndentStr + std::string("std::exit(1);") + IndentStr +
+      getNL() + IndentStr + "}";
+
+  emplaceTransformation(
+    new InsertAfterStmt(FD->getBody(), std::move(ReplaceStr)));
+
+}
+
+REGISTER_RULE(ErrorHandlingHostAPIRule)
 
 void AlignAttrsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(cxxRecordDecl(hasAttr(attr::Aligned)).bind("classDecl"), this);
@@ -4137,11 +4217,7 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(StreamAPICallRule)
 
-static const CXXConstructorDecl *getIfConstructorDecl(const Decl *ND) {
-  if (const auto *Tmpl = dyn_cast<FunctionTemplateDecl>(ND))
-    ND = Tmpl->getTemplatedDecl();
-  return dyn_cast<CXXConstructorDecl>(ND);
-}
+
 
 // kernel call information collection
 void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
@@ -4177,22 +4253,6 @@ void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
 
     Insertions.insert(BodySLoc);
 
-    // First check if this is a constructor decl
-    if (const CXXConstructorDecl *CDecl = getIfConstructorDecl(FD)) {
-      emplaceTransformation(new InsertBeforeCtrInitList(CDecl, "try "));
-    } else {
-      emplaceTransformation(new InsertBeforeStmt(FD->getBody(), "try "));
-    }
-
-    std::string ReplaceStr =
-        getNL() + std::string("catch (cl::sycl::exception const &exc) {") +
-        getNL() +
-        std::string("  std::cerr << exc.what() << \"EOE at line \" << ") +
-        std::string("__LINE__ << std::endl;") + getNL() +
-        std::string("  std::exit(1);") + getNL() + "}";
-
-    emplaceTransformation(
-        new InsertAfterStmt(FD->getBody(), std::move(ReplaceStr)));
   }
 }
 

@@ -566,6 +566,17 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+/// Migration rule for adding try-catch for host APIs calls
+class ErrorHandlingHostAPIRule
+  : public NamedMigrationRule<ErrorHandlingHostAPIRule> {
+public:
+  ErrorHandlingHostAPIRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 /// Migration rule for Device Property variables.
 class DevicePropVarRule : public NamedMigrationRule<DevicePropVarRule> {
 public:

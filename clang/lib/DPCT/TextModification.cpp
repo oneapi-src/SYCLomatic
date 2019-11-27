@@ -574,7 +574,7 @@ SourceLocation InsertBeforeCtrInitList::getInsertLoc() const {
   auto Init = CDecl->init_begin();
   while (Init != CDecl->init_end()) {
     auto InitLoc = (*Init)->getSourceLocation();
-    if (InitLoc.isValid()) {
+    if (InitLoc.isValid() && (*Init)->isWritten()) {
       // Try to insert before ":"
       int i = 0;
       auto Data =
