@@ -465,7 +465,7 @@ static int generate_file(char * filename){
     int len=strlen(filename);
     if(len > 500) {
         perror("bear: generate file fail.");
-        ret = -1;
+        return -1;
     }
     strncpy(buf, filename, len);
     buf[len]='\0';
@@ -481,12 +481,12 @@ static int generate_file(char * filename){
     FILE * fd = fopen(filename, "a+");
     if (0 == fd) {
         perror("bear: generate_file fopen fail.");
-        ret = -1;
+        return -1;
     }
     fprintf(fd, "emtpy-file");
     if (fclose(fd)) {
         perror("bear: fclose");
-        ret = -1;
+        return -1;
     }
     return ret;
 }
