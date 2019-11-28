@@ -1,7 +1,7 @@
 // UNSUPPORTED: -windows-
 // RUN: cd %T
 // RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include"  --report-type=stats -- -x cuda --cuda-host-only > stats.txt
-// RUN: echo "// `perl -e 'print "CH","ECK"'`: File name, LOC migrated to SYCL, LOC migrated to Compatibility API, LOC not needed to migrate, LOC not able to migrate" > %T/test_helpapi_stats_with_replacetext_ref.txt
+// RUN: echo "// `perl -e 'print "CH","ECK"'`: File name, LOC migrated to DPC++, LOC migrated to helper functions, LOC not needed to migrate, LOC not able to migrate" > %T/test_helpapi_stats_with_replacetext_ref.txt
 // RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: %S/test_helpapi_stats_with_replacetext.cu, 14, 16, 44, 0" >> %T/test_helpapi_stats_with_replacetext_ref.txt
 // RUN: FileCheck --match-full-lines --input-file %T/stats.txt %T/test_helpapi_stats_with_replacetext_ref.txt
 
