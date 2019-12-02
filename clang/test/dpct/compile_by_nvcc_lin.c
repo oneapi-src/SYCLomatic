@@ -4,7 +4,7 @@
 // RUN: cp %s %T/compile_by_nvcc
 // RUN: echo "[" > %T/compile_by_nvcc/compile_commands.json
 // RUN: echo "  {" >> %T/compile_by_nvcc/compile_commands.json
-// RUN: echo "    \"command\": \"nvcc -c -m64 -I/%cuda-path/include -o compile_by_nvcc_lin.o compile_by_nvcc_lin.c\"," >> %T/compile_by_nvcc/compile_commands.json
+// RUN: echo "    \"command\": \"nvcc -c -m64 -o compile_by_nvcc_lin.o compile_by_nvcc_lin.c\"," >> %T/compile_by_nvcc/compile_commands.json
 // RUN: echo "    \"directory\": \"%T/compile_by_nvcc\"," >> %T/compile_by_nvcc/compile_commands.json
 // RUN: echo "    \"file\": \"%T/compile_by_nvcc/compile_by_nvcc_lin.c\"" >> %T/compile_by_nvcc/compile_commands.json
 // RUN: echo "  }" >> %T/compile_by_nvcc/compile_commands.json

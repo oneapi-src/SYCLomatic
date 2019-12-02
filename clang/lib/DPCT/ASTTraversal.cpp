@@ -84,7 +84,8 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
       continue;
     if (II->hasMacroDefinition() && (II->getName().str() == "__host__" ||
                                      II->getName().str() == "__device__" ||
-                                     II->getName().str() == "__global__")) {
+                                     II->getName().str() == "__global__" ||
+                                     II->getName().str() == "__constant__")) {
       TransformSet.emplace_back(new ReplaceToken(Iter->getLocation(), ""));
     }
   }
@@ -118,7 +119,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   }
   auto Name = MacroNameTok.getIdentifierInfo()->getName();
   if (TKind == tok::identifier &&
-      (Name == "__host__" || Name == "__device__" || Name == "__global__")) {
+      (Name == "__host__" || Name == "__device__" || Name == "__global__" ||
+       Name == "__constant__")) {
     TransformSet.emplace_back(new ReplaceToken(Range.getBegin(), ""));
   }
 
@@ -136,7 +138,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
       continue;
     if (II->hasMacroDefinition() && (II->getName().str() == "__host__" ||
                                      II->getName().str() == "__device__" ||
-                                     II->getName().str() == "__global__")) {
+                                     II->getName().str() == "__global__" ||
+                                     II->getName().str() == "__constant__")) {
       AttrExpansionFilter.insert(Range.getBegin());
     }
   }
