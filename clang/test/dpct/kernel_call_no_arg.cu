@@ -32,10 +32,8 @@ int main() {
   // CHECK:   dpct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
   // CHECK:       auto out_acc_ct1 = out.get_access(cgh);
-  // CHECK:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1);
-  // CHECK:       auto dpct_local_range = cl::sycl::range<3>(threads_per_block, 1, 1);
   // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
+  // CHECK:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, threads_per_block), cl::sycl::range<3>(1, 1, threads_per_block)),
   // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK:           kernel1([[ITEM]], dpct::accessor<float, dpct::device, 1>(out_acc_ct1));
   // CHECK:         });
@@ -44,10 +42,8 @@ int main() {
 
   // CHECK:   dpct::get_default_queue().submit(
   // CHECK:     [&](cl::sycl::handler &cgh) {
-  // CHECK:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1);
-  // CHECK:       auto dpct_local_range = cl::sycl::range<3>(1, 1, 1);
   // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
+  // CHECK:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   // CHECK:         [=](cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK:           kernel2();
   // CHECK:         });

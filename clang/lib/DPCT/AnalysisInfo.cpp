@@ -90,11 +90,24 @@ std::shared_ptr<CudaMallocInfo> DpctGlobalInfo::findCudaMalloc(const Expr *E) {
 void KernelCallExpr::buildExecutionConfig(
     const CUDAKernelCallExpr *KernelCall) {
   auto Config = KernelCall->getConfig();
-  ArgumentAnalysis A;
+  bool LocalReversed = false, GroupReversed = false;
   for (unsigned Idx = 0; Idx < 4; ++Idx) {
-    A.analyze(Config->getArg(Idx));
+    KernelConfigAnalysis A;
+    A.analyze(Config->getArg(Idx), Idx < 2);
     ExecutionConfig.Config[Idx] = A.getReplacedString();
+    if (Idx == 0) {
+      GroupReversed = A.reversed();
+      ExecutionConfig.GroupDirectRef = A.isDirectRef();
+    } else if (Idx == 1) {
+      LocalReversed = A.reversed();
+      ExecutionConfig.LocalDirectRef = A.isDirectRef();
+    }
   }
+  ExecutionConfig.DeclLocalRange =
+      !LocalReversed && !ExecutionConfig.LocalDirectRef;
+  ExecutionConfig.DeclGroupRange =
+      LocalReversed && !GroupReversed && !ExecutionConfig.GroupDirectRef;
+  ExecutionConfig.DeclGlobalRange = !LocalReversed && !GroupReversed;
 }
 
 void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
@@ -240,10 +253,23 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
                (hasTemplateArgs() ? (", " + getTemplateArguments(true)) : ""),
                ">>(");
   auto B = Printer.block();
-  Printer.line("cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get("
-               "2), dpct_global_range.get(1), dpct_global_range.get(0)), "
-               "cl::sycl::range<3>(dpct_local_range.get(2), "
-               "dpct_local_range.get(1), dpct_local_range.get(0))),");
+  Printer.indent() << "cl::sycl::nd_range<3>(";
+  if (ExecutionConfig.DeclGlobalRange) {
+    printReverseRange(Printer, "dpct_global_range");
+  } else {
+    printKernelRange(Printer, ExecutionConfig.GroupSize, "dpct_group_range",
+                     ExecutionConfig.DeclGroupRange,
+                     ExecutionConfig.GroupDirectRef);
+    Printer << " * ";
+    printKernelRange(Printer, ExecutionConfig.LocalSize, "dpct_local_range",
+                     ExecutionConfig.DeclLocalRange,
+                     ExecutionConfig.LocalDirectRef);
+  }
+  Printer << ", ";
+  printKernelRange(Printer, ExecutionConfig.LocalSize, "dpct_local_range",
+                   ExecutionConfig.DeclLocalRange,
+                   ExecutionConfig.LocalDirectRef);
+  (Printer << "), ").newLine();
   Printer.line("[=](cl::sycl::nd_item<3> ", DpctGlobalInfo::getItemName(),
                ") {");
   printKenel(Printer);

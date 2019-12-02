@@ -347,5 +347,42 @@ void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
   dispatch(UO->getSubExpr());
 }
 
+void KernelConfigAnalysis::dispatch(const Stmt *Expression) {
+  switch (Expression->getStmtClass()) {
+    ANALYZE_EXPR(CXXConstructExpr)
+    ANALYZE_EXPR(CXXTemporaryObjectExpr)
+  default:
+    return ArgumentAnalysis::dispatch(Expression);
+  }
+}
+
+void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
+  if (Ctor->getConstructor()->getName().compare("dim3")) {
+    std::string CtorString = "cl::sycl::range<3>(";
+    auto Args = getCtorArgs(Ctor);
+    if (DoReverse && Ctor->getNumArgs() == 3) {
+      Reversed = true;
+      int Index = Args.size();
+      while (Index)
+        CtorString += Args[--Index] + ", ";
+    } else {
+      for (auto &A : Args)
+        CtorString += A + ", ";
+    }
+    return addReplacement(Ctor,
+                          CtorString.replace(CtorString.length() - 2, 2, ")"));
+  }
+  return ArgumentAnalysis::analyzeExpr(Ctor);
+}
+
+std::vector<std::string>
+KernelConfigAnalysis::getCtorArgs(const CXXConstructExpr *Ctor) {
+  std::vector<std::string> Args;
+  ArgumentAnalysis A;
+  for (auto Arg : Ctor->arguments())
+    Args.emplace_back(getCtorArg(A, Arg));
+  return Args;
+}
+
 } // namespace dpct
 } // namespace clang

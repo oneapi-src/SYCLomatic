@@ -9,10 +9,8 @@ void test() {
   // CHECK-NEXT:       [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:         extern dpct::device_memory<volatile int, 0> g_mutex;
   // CHECK-NEXT:         auto g_mutex_acc_ct1 = g_mutex.get_access(cgh);
-  // CHECK-NEXT:         auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1);
-  // CHECK-NEXT:         auto dpct_local_range = cl::sycl::range<3>(1, 1, 1);
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class Reset_kernel_parameters_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
+  // CHECK-NEXT:           cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:           [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:             Reset_kernel_parameters(dpct::accessor<volatile int, dpct::device, 0>(g_mutex_acc_ct1));
   // CHECK-NEXT:           });

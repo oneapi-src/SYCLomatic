@@ -67,10 +67,8 @@ int main() {
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto in_acc_ct1 = in.get_access(cgh);
   // CHECK-NEXT:       auto d_out_acc_ct0 = d_out_buf_ct0.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1);
-  // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(threads_per_block, 1, 1);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, threads_per_block), cl::sycl::range<3>(1, 1, threads_per_block)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernel1((float *)(&d_out_acc_ct0[0]), item_ct1, dpct::accessor<float, dpct::device, 1>(in_acc_ct1));
   // CHECK-NEXT:         });
@@ -88,10 +86,8 @@ int main() {
   // CHECK-NEXT:       auto fx_acc_ct1 = fx.get_access(cgh);
   // CHECK-NEXT:       auto fy_acc_ct1 = fy.get_access(cgh);
   // CHECK-NEXT:       auto d_out_acc_ct0 = d_out_buf_ct0.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(threads_per_block, 1, 1);
-  // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(threads_per_block, 1, 1);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, threads_per_block), cl::sycl::range<3>(1, 1, threads_per_block)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernel2((float *)(&d_out_acc_ct0[0]), item_ct1, dpct::accessor<int, dpct::device, 0>(al_acc_ct1), dpct::accessor<float, dpct::device, 1>(fx_acc_ct1), dpct::accessor<float, dpct::device, 2>(fy_acc_ct1), dpct::accessor<float, dpct::device, 1>(tmp_acc_ct1));
   // CHECK-NEXT:         });

@@ -1687,15 +1687,38 @@ private:
                                            "(64 * 1024, 80, cgh);"));
   }
   void addNdRangeDecl() {
-    SubmitStmts.emplace_back(
-        buildString("auto dpct_global_range = ", ExecutionConfig.NDSize, " * ",
-                    ExecutionConfig.WGSize, ";"));
-    SubmitStmts.emplace_back(
-        buildString("auto dpct_local_range = ", ExecutionConfig.WGSize, ";"));
+    if (ExecutionConfig.DeclGlobalRange) {
+      SubmitStmts.emplace_back(
+          buildString("auto dpct_global_range = ", ExecutionConfig.GroupSize,
+                      " * ", ExecutionConfig.LocalSize, ";"));
+    }
+    if (ExecutionConfig.DeclGroupRange) {
+      SubmitStmts.emplace_back(buildString(
+          "auto dpct_group_range = ", ExecutionConfig.GroupSize, ";"));
+    }
+    if (ExecutionConfig.DeclLocalRange) {
+      SubmitStmts.emplace_back(buildString(
+          "auto dpct_local_range = ", ExecutionConfig.LocalSize, ";"));
+    }
   }
 
   using StmtList = std::vector<std::string>;
   void buildKernelArgsStmt();
+  void printReverseRange(KernelPrinter &Printer, const std::string &RangeName) {
+    Printer << "cl::sycl::range<3>(" << RangeName << ".get(2), " << RangeName
+            << ".get(1), " << RangeName << ".get(0))";
+  }
+  void printKernelRange(KernelPrinter &Printer, const std::string &RangeStr,
+                        const std::string &DeclName, bool DeclRange,
+                        bool DirectRef) {
+    if (DeclRange) {
+      printReverseRange(Printer, DeclName);
+    } else if (DirectRef) {
+      printReverseRange(Printer, RangeStr);
+    } else {
+      Printer << RangeStr;
+    }
+  }
 
   struct {
     std::string LocHash;
@@ -1704,10 +1727,13 @@ private:
   } LocInfo;
   struct {
     std::string Config[4];
-    std::string &NDSize = Config[0];
-    std::string &WGSize = Config[1];
+    std::string &GroupSize = Config[0];
+    std::string &LocalSize = Config[1];
     std::string &ExternMemSize = Config[2];
     std::string &Stream = Config[3];
+    bool DeclGlobalRange = false, DeclLocalRange = false,
+         DeclGroupRange = false;
+    bool LocalDirectRef = false, GroupDirectRef = false;
   } ExecutionConfig;
 
   std::string Event;

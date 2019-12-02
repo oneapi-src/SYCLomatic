@@ -50,10 +50,8 @@ void run_test() {
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto d_in_acc_ct0 = d_in_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto d_out_acc_ct1 = d_out_buf_ct1.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(num_threads, 1, 1);
-  // CHECK-NEXT:       auto dpct_local_range = cl::sycl::range<3>(num_threads, 1, 1);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}, T>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, num_threads), cl::sycl::range<3>(1, 1, num_threads)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           T *d_in_ct0 = (T *)(&d_in_acc_ct0[0] + d_in_offset_ct0);
   // CHECK-NEXT:           kernel<T>(d_in_ct0, (T *)(&d_out_acc_ct1[0]), item_ct1);

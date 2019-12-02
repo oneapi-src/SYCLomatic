@@ -92,6 +92,7 @@ public:
     SourceStr = std::move(SrcStr);
     ReplMap.clear();
   }
+  inline void reset() { ReplMap.clear(); }
 
   // Add a template dependent replacement
   inline void addTemplateDependentReplacement(size_t Offset, size_t Length,
@@ -164,6 +165,8 @@ public:
     return hasReplacement() ? new ReplaceStmt(E, getReplacedString()) : nullptr;
   }
 
+  inline void clearReplacement() { ReplSet.reset(); }
+
 private:
   SourceLocation getExprLocation(SourceLocation Loc);
   size_t getOffset(SourceLocation Loc) {
@@ -201,8 +204,7 @@ protected:
   // Replace string with relative offset to the stored string and length
   inline void addReplacement(SourceLocation Begin, size_t Length,
                              std::string Text) {
-    addReplacement(getOffset(getExprLocation(Begin)), Length,
-                                 std::move(Text));
+    addReplacement(getOffset(getExprLocation(Begin)), Length, std::move(Text));
   }
   // Replace string between begin location and end location
   template <class TextData>
@@ -271,6 +273,8 @@ protected:
   // Doing nothing when it doesn't need analyze
   inline void analyzeExpr(const Stmt *S) {}
 
+  inline const Expr *getTargetExpr() { return E; }
+
   const ASTContext &Context;
   const SourceManager &SM;
 
@@ -338,6 +342,39 @@ private:
   inline void analyzeExpr(const DeclRefExpr *Arg);
   inline void analyzeExpr(const MemberExpr *Arg);
   inline void analyzeExpr(const UnaryOperator *Arg);
+};
+
+class KernelConfigAnalysis : public ArgumentAnalysis {
+private:
+  bool DoReverse = false;
+  bool Reversed = false;
+  bool DirectRef = false;
+
+  void analyzeExpr(const CXXConstructExpr *Ctor);
+
+  std::vector<std::string> getCtorArgs(const CXXConstructExpr *Ctor);
+  inline std::string getCtorArg(ArgumentAnalysis &KCA, const Expr *Arg) {
+    KCA.analyze(Arg);
+    return KCA.getReplacedString();
+  }
+
+protected:
+  void dispatch(const Stmt *Expression) override;
+
+public:
+  void analyze(const Expr *E, bool ReverseIfNeed = false) {
+    DoReverse = ReverseIfNeed;
+    ArgumentAnalysis::analyze(E);
+    if (getTargetExpr()->IgnoreImplicit()->getStmtClass() ==
+            Stmt::DeclRefExprClass ||
+        getTargetExpr()->IgnoreImpCasts()->getStmtClass() ==
+            Stmt::MemberExprClass) {
+      DirectRef = true;
+    }
+  }
+
+  inline bool reversed() { return Reversed; }
+  inline bool isDirectRef() { return DirectRef; }
 };
 
 } // namespace dpct
