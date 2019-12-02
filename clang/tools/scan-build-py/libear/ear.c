@@ -1131,9 +1131,13 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
                 ofilename[olen+1] = 'o';
                 ofilename[olen+2] = '\0';
             }
+
+          pthread_mutex_lock(&mutex);
           if(generate_file(ofilename) != 0) {
+            pthread_mutex_unlock(&mutex);
             exit(EXIT_FAILURE);
           }
+          pthread_mutex_unlock(&mutex);
         }
         free(tmp);
         ret = 1;
