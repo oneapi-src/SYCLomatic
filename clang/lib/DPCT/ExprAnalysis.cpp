@@ -314,6 +314,23 @@ void KernelArgumentAnalysis::analyzeExpr(const MemberExpr *ME) {
   if (ME->getBase()->getType()->isDependentType()) {
     isRedeclareRequired = true;
   }
+
+  if (ME->getBase()->isImplicitCXXThis()) {
+    isRedeclareRequired = true;
+  } else {
+    const MemberExpr *LastExpr = nullptr;
+    const MemberExpr *IterExpr =
+        dyn_cast_or_null<const MemberExpr>(ME->getBase());
+    while (IterExpr) {
+      LastExpr = IterExpr;
+      IterExpr = dyn_cast_or_null<const MemberExpr>(IterExpr->getBase());
+    }
+
+    if (LastExpr && LastExpr->getBase()->isImplicitCXXThis()) {
+      isRedeclareRequired = true;
+    }
+  }
+
   if (auto RD = ME->getBase()->getType()->getAsCXXRecordDecl()) {
     if (!RD->isStandardLayout()) {
       isRedeclareRequired = true;

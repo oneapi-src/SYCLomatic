@@ -69,14 +69,17 @@ struct TestThis {
   void test() {
     /// Kernel function is called in method declaration, and fields are used as arguments.
     /// Check the miggration of implicit "this" pointer.
-    // CHECK:   dpct::get_default_queue().submit(
+    // CHECK:       auto args_arg1_ct0 = args.arg1;
+    // CHECK-NEXT:  auto args_arg2_ct1 = args.arg2;
+    // CHECK-NEXT:  auto arg3_ct2 = arg3;
+    // CHECK-NEXT:  dpct::get_default_queue().submit(
     // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
     // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
     // CHECK-NEXT:       auto dpct_local_range = threaddim;
     // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
     // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-    // CHECK-NEXT:           testKernel(args.arg1, args.arg2, arg3, item_ct1);
+    // CHECK-NEXT:           testKernel(args_arg1_ct0, args_arg2_ct1, arg3_ct2, item_ct1);
     // CHECK-NEXT:         });
     // CHECK-NEXT:     });
     testKernel<<<griddim, threaddim>>>(args.arg1, args.arg2, arg3);
@@ -212,3 +215,41 @@ int main() {
   // CHECK-NEXT:     });
   helloFromGPU2 <<<2, 3>>>();
 }
+
+struct config {
+  int b;
+  struct subconfig {
+    int d;
+  } c;
+};
+
+// CHECK: void foo_kernel(int a, int b, int c) {}
+__global__ void foo_kernel(int a, int b, int c) {}
+
+class foo_class {
+public:
+  foo_class(int n) : a(n) {}
+
+  // CHECK:  int run_foo() {   {
+  // CHECK-NEXT:    auto a_ct0 = a;
+  // CHECK-NEXT:    auto aa_b_ct1 = aa.b;
+  // CHECK-NEXT:    auto aa_c_d_ct2 = aa.c.d;
+  // CHECK-NEXT:    dpct::get_default_queue().submit(
+  // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:        auto dpct_global_range = cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1);
+  // CHECK-NEXT:        auto dpct_local_range = cl::sycl::range<3>(1, 1, 1);
+  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(dpct_local_range.get(2), dpct_local_range.get(1), dpct_local_range.get(0))),
+  // CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:            foo_kernel(a_ct0, aa_b_ct1, aa_c_d_ct2);
+  // CHECK-NEXT:          });
+  // CHECK-NEXT:      });
+  // CHECK-NEXT:  }
+  // CHECK-NEXT: }
+  int run_foo() { foo_kernel<<<1, 1>>>(a, aa.b, aa.c.d); }
+
+private:
+  int a;
+  struct config aa;
+};
+
