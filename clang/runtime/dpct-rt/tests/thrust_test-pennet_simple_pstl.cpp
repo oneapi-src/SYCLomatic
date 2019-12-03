@@ -24,12 +24,15 @@ compute++   thrust_test-pennet_simple_pstl.cpp.cpp
   -lComputeCpp   -I/path/to/dpct-install/include/
   -sycl-driver
 */
+
+#define DPCT_USM_LEVEL_NONE
+
 #include <algorithm>
 #include <cstdio>
 
 #include <CL/sycl.hpp>
 #include <dpct/dpct.hpp>
-#include <dpct/dpct_thrust.hpp>
+#include <dpct/dpstd_utils.hpp>
 
 int main() {
 
@@ -43,9 +46,9 @@ int main() {
   dpct::dpct_malloc((void **)&mapspkeyD, numsH * sizeof(int));
   dpct::dpct_malloc((void **)&mapspvalD, numsH * sizeof(int));
 
-  thrust::device_ptr<int> mapsp1T(mapsp1D);
-  thrust::device_ptr<int> mapspkeyT(mapspkeyD);
-  thrust::device_ptr<int> mapspvalT(mapspvalD);
+  dpct::device_ptr<int> mapsp1T(mapsp1D);
+  dpct::device_ptr<int> mapspkeyT(mapspkeyD);
+  dpct::device_ptr<int> mapspvalT(mapspvalD);
 
   mapspkeyT[0] = 100;
   mapspkeyT[1] = 101;
@@ -58,9 +61,9 @@ int main() {
   mapspkeyT[8] = 108;
   mapspkeyT[9] = 109;
 
-  thrust::copy(mapsp1T, mapsp1T + numsH, mapspkeyT);
-  thrust::sequence(mapspvalT, mapspvalT + numsH);
-  thrust::stable_sort_by_key(mapspkeyT, mapspkeyT + numsH, mapspvalT);
+  std::copy(dpstd::execution::make_sycl_policy<class Policy_1>(dpstd::execution::sycl), mapsp1T, mapsp1T + numsH, mapspkeyT);
+  dpct::sequence(dpstd::execution::make_sycl_policy<class Policy_2>(dpstd::execution::sycl), mapspvalT, mapspvalT + numsH);
+  dpct::stable_sort_by_key(dpstd::execution::make_sycl_policy<class Policy_3>(dpstd::execution::sycl), mapspkeyT, mapspkeyT + numsH, mapspvalT);
 
   for (int i = 0; i < numsH; ++i) {
     std::cout << "i = " << i << ", " << mapspkeyT[i] << " " << mapspvalT[i]
