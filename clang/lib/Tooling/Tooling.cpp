@@ -68,7 +68,7 @@ using namespace tooling;
 namespace clang {
 namespace tooling {
 static void (* MsgPrintHandler) (const std::string &, bool) = nullptr;
-static std::string SDKInlcudePath = "";
+static std::string SDKIncludePath = "";
 
 void SetPrintHandler(void (*Handler)(const std::string &Msg, bool IsPrintOnNormal)){
   MsgPrintHandler = Handler;
@@ -80,7 +80,7 @@ void DoPrintHandler(const std::string &Msg, bool IsPrintOnNormal) {
   }
 }
 
-void SetSDKInlcudePath(const std::string &Path) { SDKInlcudePath = Path; }
+void SetSDKIncludePath(const std::string &Path) { SDKIncludePath = Path; }
 
 } // namespace tooling
 } // namespace clang
@@ -535,9 +535,9 @@ int ClangTool::run(ToolAction *Action) {
 
       std::vector<std::string> CommandLine = CompileCommand.CommandLine;
 #ifdef INTEL_CUSTOMIZATION
-      for (int index = 0; index < SDKInlcudePath.size(); index++) {
-        if (SDKInlcudePath[index] == '\\') {
-          SDKInlcudePath[index] = '/';
+      for (int index = 0; index < SDKIncludePath.size(); index++) {
+        if (SDKIncludePath[index] == '\\') {
+          SDKIncludePath[index] = '/';
         }
       }
 #ifdef _WIN32
@@ -551,7 +551,7 @@ int ClangTool::run(ToolAction *Action) {
             std::move(ArgsAdjuster),
             getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
       } else {
-        std::string IncludeOptionStr = std::string("-I") + SDKInlcudePath;
+        std::string IncludeOptionStr = std::string("-I") + SDKIncludePath;
         CommandLine.push_back(IncludeOptionStr);
       }
 #else
@@ -564,7 +564,7 @@ int ClangTool::run(ToolAction *Action) {
             std::move(ArgsAdjuster),
             getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
       } else {
-        std::string IncludeOptionStr = std::string("-I") + SDKInlcudePath;
+        std::string IncludeOptionStr = std::string("-I") + SDKIncludePath;
         CommandLine.push_back(IncludeOptionStr);
       }
 #endif

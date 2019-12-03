@@ -874,7 +874,7 @@ int run(int argc, const char **argv) {
     Tool.appendArgumentsAdjuster(
         getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
   }
-  SetSDKInlcudePath(CudaPath);
+  SetSDKIncludePath(CudaPath);
 
 #ifdef _WIN32
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
