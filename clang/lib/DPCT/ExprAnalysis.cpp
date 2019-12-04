@@ -357,7 +357,7 @@ void KernelConfigAnalysis::dispatch(const Stmt *Expression) {
 }
 
 void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
-  if (Ctor->getConstructor()->getName().compare("dim3")) {
+  if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     std::string CtorString = "cl::sycl::range<3>(";
     auto Args = getCtorArgs(Ctor);
     if (DoReverse && Ctor->getNumArgs() == 3) {
