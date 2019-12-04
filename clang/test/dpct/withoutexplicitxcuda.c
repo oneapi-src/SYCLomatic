@@ -1,5 +1,5 @@
 // RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include"
-// RUN: FileCheck %s --match-full-lines --input-file %T/withoutxcuda.c.dp.cpp
+// RUN: FileCheck %s --match-full-lines --input-file %T/withoutexplicitxcuda.c.dp.cpp
 
 // This file is migrated as CUDA file as default if compilation db is not used.
 
