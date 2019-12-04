@@ -523,7 +523,7 @@ void foo1(){
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   while((dpct::async_dpct_memcpy((void*)(d_A), (void*)(h_A), size, dpct::host_to_device), 0)){
+// CHECK-NEXT:   while((dpct::async_dpct_memcpy(d_A, h_A, size, dpct::host_to_device), 0)){
 // CHECK-NEXT:     printf("efef");
 // CHECK-NEXT:   }
 // CHECK-NEXT: }

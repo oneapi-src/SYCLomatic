@@ -244,8 +244,7 @@ public:
   // CHECK-NEXT:            foo_kernel(a_ct0, aa_b_ct1, aa_c_d_ct2);
   // CHECK-NEXT:          });
   // CHECK-NEXT:      });
-  // CHECK-NEXT:  }
-  // CHECK-NEXT: }
+  // CHECK-NEXT:  } }
   int run_foo() { foo_kernel<<<1, 1>>>(a, aa.b, aa.c.d); }
 
 private:
