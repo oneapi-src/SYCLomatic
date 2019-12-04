@@ -36,7 +36,9 @@ auto exception_handler = [](cl::sycl::exception_list exceptions) {
       std::rethrow_exception(e);
     } catch (cl::sycl::exception const &e) {
       std::cerr << "Caught asynchronous SYCL exception:\n"
-                << e.what() << std::endl;
+                << e.what() << "\n"
+                << "EOE at file:" << __FILE__ << ", line:" << __LINE__
+                << std::endl;
     }
   }
 };

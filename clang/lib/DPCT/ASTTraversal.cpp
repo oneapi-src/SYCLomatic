@@ -746,10 +746,10 @@ void ErrorHandlingHostAPIRule::run(const MatchFinder::MatchResult &Result) {
       getNL() + IndentStr +
       std::string("catch (cl::sycl::exception const &exc) {") + getNL() +
       IndentStr + IndentStr +
-      std::string("std::cerr << exc.what() << \"EOE at line \" << ") +
-      IndentStr + IndentStr + std::string("__LINE__ << std::endl;") + getNL() +
-      IndentStr + IndentStr + std::string("std::exit(1);") + IndentStr +
-      getNL() + IndentStr + "}";
+      std::string("std::cerr << exc.what() << \"EOE at file:\" << __FILE__ << "
+                  "\", line:\" << __LINE__ << std::endl;") +
+      getNL() + IndentStr + IndentStr + std::string("std::exit(1);") + getNL() +
+      IndentStr + "}";
 
   emplaceTransformation(
     new InsertAfterStmt(FD->getBody(), std::move(ReplaceStr)));

@@ -171,7 +171,7 @@ void test_other_enum() {
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at line " << __LINE__ << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void test_assignment() {
@@ -243,7 +243,7 @@ void test_14(cudaError_t err, int arg) {
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at line " << __LINE__ << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void test_15(cudaError_t err, int arg) {
@@ -279,7 +279,7 @@ void test_16(cudaError_t err, int arg) {
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at line " << __LINE__ << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void test_17(cudaError_t err, int arg) {
@@ -506,7 +506,7 @@ void specialize_ifs_negative() {
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at line " << __LINE__ << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void foo1(){
@@ -528,7 +528,7 @@ void foo1(){
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at line " << __LINE__ << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void foo2(){
@@ -550,7 +550,7 @@ void foo2(){
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at line " << __LINE__ << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void foo3(){
@@ -570,7 +570,7 @@ void foo3(){
 // CHECK-NEXT:   } while((dpct::dpct_malloc(0, 0), 0));
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at line " << __LINE__ << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void foo4(){
@@ -591,7 +591,7 @@ void foo4(){
 // CHECK-NEXT:   }
 // CHECK: }
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at line " << __LINE__ << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void foo5(){
@@ -606,7 +606,7 @@ void foo5(){
 // CHECK-NEXT:   a = (dpct::dpct_malloc(0, 0), 0);
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at line " << __LINE__ << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void foo6(){
@@ -638,7 +638,7 @@ void foo7(){
 // CHECK-NEXT:     int a = (dpct::dpct_malloc(0, 0), 0);
 // CHECK-NEXT:   }
 // CHECK-NEXT:   catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:     std::cerr << exc.what() << "EOE at line " <<     __LINE__ << std::endl;
+// CHECK-NEXT:     std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:     std::exit(1);  
 // CHECK-NEXT:   }
 // CHECK-NEXT: };
