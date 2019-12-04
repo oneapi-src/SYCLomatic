@@ -14,6 +14,7 @@
 
 #include "Debug.h"
 #include "ExprAnalysis.h"
+#include "Utility.h"
 #include "ExtReplacements.h"
 #include <bitset>
 
@@ -1625,7 +1626,7 @@ class KernelCallExpr : public CallFunctionExpr {
   void printKenel(KernelPrinter &Printer);
   std::string removeReduntIndentAndNL(const std::string &Input,
                                       unsigned IndentSize) {
-    return Input.substr(IndentSize, Input.length() - IndentSize - 1);
+    return Input.substr(IndentSize, Input.length() - IndentSize - std::strlen(getNL()));
   }
 
 public:
