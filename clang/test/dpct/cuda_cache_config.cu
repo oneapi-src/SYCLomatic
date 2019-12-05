@@ -24,13 +24,27 @@ int main(int argc, char **argv) {
 
   // CHECK: dpct::dpct_malloc((void **)&d_array, sizeof(float) * size);
   cudaMalloc((void **)&d_array, sizeof(float) * size);
-  // CHECK: CHKERR(0);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaDeviceSetCacheConfig was replaced with 0, because DPC++ currently does not support setting cache config on devices.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: CHKERR(0);
   CHKERR(cudaDeviceSetCacheConfig(cudaFuncCachePreferNone));
-  // CHECK: CHKERR(0);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaDeviceSetCacheConfig was replaced with 0, because DPC++ currently does not support setting cache config on devices.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: CHKERR(0);
   CHKERR(cudaDeviceSetCacheConfig(cudaFuncCachePreferShared));
-  // CHECK: 0;
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceSetCacheConfig was removed, because DPC++ currently does not support setting cache config on devices.
+  // CHECK-NEXT: */
   cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
-  // CHECK: CHKERR(0);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaDeviceSetCacheConfig was replaced with 0, because DPC++ currently does not support setting cache config on devices.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: CHKERR(0);
   CHKERR(cudaDeviceSetCacheConfig(cudaFuncCachePreferEqual));
 
   // CHECK: if(CHKERR(0)) {

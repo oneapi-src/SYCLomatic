@@ -497,7 +497,7 @@ void specialize_ifs_negative() {
   }
 }
 
-// CHECK: void foo1()try {
+// CHECK: void foo1() try {
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:   */
@@ -516,7 +516,7 @@ void foo1(){
 }
 
 
-// CHECK: void foo2()try {
+// CHECK: void foo2() try {
 // CHECK-NEXT:   size_t size = 1234567 * sizeof(float);
 // CHECK-NEXT:   float *h_A = (float *)malloc(size);
 // CHECK-NEXT:   float *d_A = NULL;
@@ -541,7 +541,7 @@ void foo2(){
 }
 
 
-// CHECK: void foo3()try {
+// CHECK: void foo3() try {
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:   */
@@ -561,7 +561,7 @@ void foo3(){
 
 
 
-// CHECK: void foo4()try {
+// CHECK: void foo4() try {
 // CHECK-NEXT:   do{
 // CHECK-NEXT:     printf("efef");
 // CHECK-NEXT:   /*
@@ -580,7 +580,7 @@ void foo4(){
 }
 
 
-// CHECK: void foo5()try {
+// CHECK: void foo5() try {
 // CHECK-NEXT:   int res;
 // CHECK-NEXT:   {
 // CHECK-NEXT:   auto allocation_ct1 = dpct::memory_manager::get_instance().translate_ptr(0);
@@ -598,7 +598,7 @@ void foo5(){
   int res = cublasIsamax(10, 0, 0);
 }
 
-// CHECK: void foo6()try {
+// CHECK: void foo6() try {
 // CHECK-NEXT:   int a;
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -618,12 +618,21 @@ void foo6(){
 // CHECK-NEXT:   dpct::dpct_malloc(0, 0);
 // CHECK-NEXT:   int a = printf("a");
 // CHECK-NEXT:   if(printf("a")){}
+// CHECK-NEXT:   cl::sycl::event start;
+// CHECK-NEXT:   /*
+// CHECK-NEXT:   DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0, because Function call is redundant in DPC++.
+// CHECK-NEXT:   */
+// CHECK-NEXT:   int b = 0;
 // CHECK-NEXT: }
 void foo7(){
   cudaMalloc(0, 0);
   int a = printf("a");
   if(printf("a")){}
+  cudaEvent_t start;
+  int b = cudaEventCreate(&start);
 }
+
+
 
 // CHECK: class ClassA
 // CHECK-NEXT: {

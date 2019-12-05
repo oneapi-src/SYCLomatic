@@ -32,6 +32,12 @@ const MapNames::SetTy MapNames::SupportedVectorTypes{
     "longlong3", "ulonglong3", "longlong4",  "ulonglong4", "double1",
     "double2",   "double3",    "double4"};
 
+const MapNames::MapTy MapNames::RemovedAPIWarningMessage{
+#define ENTRY(APINAME, MSG) {#APINAME, MSG},
+#include "APINames_removed.inc"
+#undef ENTRY
+};
+
 // Type names mapping.
 const MapNames::MapTy MapNames::TypeNamesMap{
     {"cudaDeviceProp", "dpct::device_info"},

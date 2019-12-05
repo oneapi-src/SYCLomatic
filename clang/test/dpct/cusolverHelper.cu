@@ -34,15 +34,29 @@ int main(int argc, char *argv[])
     status = CUSOLVER_STATUS_NOT_INITIALIZED;
 
     // CHECK: foo(0, 1, 2, 3, 4, 6, 7, 8);
-    // CHECK-NEXT: status = 0;
     foo(CUSOLVER_STATUS_SUCCESS, CUSOLVER_STATUS_NOT_INITIALIZED, CUSOLVER_STATUS_ALLOC_FAILED, CUSOLVER_STATUS_INVALID_VALUE, CUSOLVER_STATUS_ARCH_MISMATCH, CUSOLVER_STATUS_EXECUTION_FAILED, CUSOLVER_STATUS_INTERNAL_ERROR, CUSOLVER_STATUS_MATRIX_TYPE_NOT_SUPPORTED);
+
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusolverDnCreate was removed, because Function call is redundant in DPC++.
+    // CHECK-NEXT: */
     cusolverDnCreate(cusolverH);
+
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnCreate was replaced with 0, because Function call is redundant in DPC++.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: status = 0;
     status = cusolverDnCreate(cusolverH);
 
-    // CHECK: status = 0;
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnCreate was replaced with 0, because Function call is redundant in DPC++.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: status = 0;
     status = MACRO_A(cusolverH);
 
-    // CHECK: status = 0;
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroy was replaced with 0, because Function call is redundant in DPC++.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: status = 0;
     status = cusolverDnDestroy(*cusolverH);
 
     // CHECK: int a = sizeof(int);

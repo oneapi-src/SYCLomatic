@@ -227,6 +227,7 @@ public:
   using ThrustMapTy = std::map<std::string, ThrustFuncReplInfo>;
 
   static const SetTy SupportedVectorTypes;
+  static const MapTy RemovedAPIWarningMessage;
   static const MapTy TypeNamesMap;
   static const MapTy Dim3MemberNamesMap;
   static const MapTy MacrosMap;

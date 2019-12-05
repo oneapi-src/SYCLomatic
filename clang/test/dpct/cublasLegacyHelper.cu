@@ -39,8 +39,17 @@ int main() {
   bar(CUBLAS_STATUS_SUCCESS, CUBLAS_STATUS_NOT_INITIALIZED, CUBLAS_STATUS_ALLOC_FAILED, CUBLAS_STATUS_INVALID_VALUE, CUBLAS_STATUS_ARCH_MISMATCH, CUBLAS_STATUS_MAPPING_ERROR, CUBLAS_STATUS_EXECUTION_FAILED, CUBLAS_STATUS_INTERNAL_ERROR, CUBLAS_STATUS_NOT_SUPPORTED, CUBLAS_STATUS_LICENSE_ERROR);
 
   // CHECK: int status;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasInit was replaced with 0, because Function call is redundant in DPC++.
+  // CHECK-NEXT: */
   // CHECK-NEXT: status = 0;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasInit was removed, because Function call is redundant in DPC++.
+  // CHECK-NEXT: */
   // CHECK-NEXT: if (status != 0) {
+  // CHECK-NEXT:   fprintf(stderr, "!!!! CUBLAS initialization error\n");
+  // CHECK-NEXT:   return EXIT_FAILURE;
+  // CHECK-NEXT: }
   cublasStatus status;
   status = cublasInit();
   cublasInit();
@@ -100,25 +109,52 @@ int main() {
   // CHECK-NEXT: MACRO_B((dpct::dpct_free(d_A), 0));
   MACRO_B(cublasFree(d_A));
 
-  // CHECK: MACRO_B(0);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasGetError was replaced with 0, because Function call is redundant in DPC++.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: MACRO_B(0);
   MACRO_B(cublasGetError());
 
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:11: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
   MACRO_C(d_A);
 
-  // CHECK: status = 0;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetError was removed, because Function call is redundant in DPC++.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasGetError was replaced with 0, because Function call is redundant in DPC++.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = 0;
   cublasGetError();
   status = cublasGetError();
 
-  // CHECK: foo2(0);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasGetError was replaced with 0, because Function call is redundant in DPC++.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: foo2(0);
   foo2(cublasGetError());
 
-  // CHECK: foo2(0);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasShutdown was replaced with 0, because Function call is redundant in DPC++.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: foo2(0);
   foo2(cublasShutdown());
 
-  // CHECK: foo2(0);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasInit was replaced with 0, because Function call is redundant in DPC++.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: foo2(0);
   foo2(cublasInit());
 
-  // CHECK: status = 0;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasShutdown was replaced with 0, because Function call is redundant in DPC++.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = 0;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasShutdown was removed, because Function call is redundant in DPC++.
+  // CHECK-NEXT: */
   // CHECK-NEXT: return 0;
   status = cublasShutdown();
   cublasShutdown();

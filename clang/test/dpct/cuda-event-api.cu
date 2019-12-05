@@ -28,6 +28,12 @@ __global__ void kernelFunc()
 int main(int argc, char* argv[]) {
   // CHECK: cl::sycl::event start, stop;
   // CHECK-EMPTY:
+  // CHECK: /*
+  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed, because Function call is redundant in DPC++.
+  // CHECK: */
+  // CHECK: /*
+  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed, because Function call is redundant in DPC++.
+  // CHECK: */
   // CHECK-EMPTY:
   // CHECK-NEXT: float elapsed_time;
   // CHECK-EMPTY:
@@ -46,9 +52,18 @@ int main(int argc, char* argv[]) {
 
   int blocks = 32, threads = 32;
 
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed, because Function call is redundant in DPC++.
+  //CHECK-NEXT: */
   CudaEvent(start);
 
-  // CHECK: checkCudaErrors(0);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0, because Function call is redundant in DPC++.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkCudaErrors(0);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0, because Function call is redundant in DPC++.
+  // CHECK-NEXT: */
   // CHECK-NEXT: int et = 0;
   checkCudaErrors(cudaEventCreate(&start));
   cudaError_t et = cudaEventCreate(&stop);
@@ -236,7 +251,19 @@ int main(int argc, char* argv[]) {
 
   // CHECK: dpct::get_device_manager().current_device().queues_wait_and_throw();
   // CHECK-EMPTY:
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaEventDestroy was removed, because Function call is redundant in DPC++.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaEventDestroy was removed, because Function call is redundant in DPC++.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaEventDestroy was replaced with 0, because Function call is redundant in DPC++.
+  // CHECK-NEXT: */
   // CHECK-NEXT: checkCudaErrors(0);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaEventDestroy was replaced with 0, because Function call is redundant in DPC++.
+  // CHECK-NEXT: */
   // CHECK-NEXT: et = 0;
   // CHECK-NEXT: }
   cudaDeviceSynchronize();

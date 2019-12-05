@@ -692,9 +692,15 @@ void ErrorHandlingIfStmtRule::run(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(ErrorHandlingIfStmtRule)
 
 void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
+  std::vector<StringRef> RemovedAPINAME{};
+#define ENTRY(APINAME, MSG) RemovedAPINAME.push_back(#APINAME);
+#include "APINames_removed.inc"
+#undef ENTRY
+
   std::vector<StringRef> MigratedAPIName{};
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)                                 \
-  if (VALUE)                                                                   \
+  if (VALUE && std::find(RemovedAPINAME.begin(), RemovedAPINAME.end(),         \
+                         #APINAME) == RemovedAPINAME.end())                    \
     MigratedAPIName.push_back(#APINAME);
 #include "APINames.inc"
 #include "APINames_cuBLAS.inc"
@@ -743,10 +749,10 @@ void ErrorHandlingHostAPIRule::run(const MatchFinder::MatchResult &Result) {
     return;
 
   if (const CXXConstructorDecl *CDecl = getIfConstructorDecl(FD)) {
-    emplaceTransformation(new InsertBeforeCtrInitList(CDecl, "try "));
+    emplaceTransformation(new InsertBeforeCtrInitList(CDecl, " try "));
   }
   else {
-    emplaceTransformation(new InsertBeforeStmt(FD->getBody(), "try "));
+    emplaceTransformation(new InsertBeforeStmt(FD->getBody(), " try "));
   }
   std::string IndentStr = getIndent(FD->getBeginLoc(), *SM).str();
   std::string ReplaceStr =
@@ -2993,11 +2999,16 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
   } else if (FuncName == "cublasCreate_v2" || FuncName == "cublasDestroy_v2") {
+    auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0,
+             MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(
           new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
                           /*IsProcessMacro*/ true, "0"));
     } else {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED,
+             MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(
           new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
                           /*IsProcessMacro*/ true, ""));
@@ -3006,11 +3017,16 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cublasGetError") {
     // Remove these three function calls.
     // TODO: migrate functions when they are in template
+    auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0,
+             MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(
           new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
                           /*IsProcessMacro*/ false, "0"));
     } else {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED,
+             MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(
           new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
                           /*IsProcessMacro*/ false, ""));
@@ -3722,12 +3738,16 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cusolverDnDgetrf_bufferSize" ||
              FuncName == "cusolverDnCgetrf_bufferSize" ||
              FuncName == "cusolverDnZgetrf_bufferSize") {
-    // Replace helper function calls to "0" or ""
+    auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0,
+             MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(
           new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
                           /*IsProcessMacro*/ true, "0"));
     } else {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED,
+             MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(
           new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
                           /*IsProcessMacro*/ true, ""));
@@ -3935,26 +3955,23 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new InsertBeforeStmt(CE, "\"" + FuncName + " not supported\"/*"));
     emplaceTransformation(new InsertAfterStmt(CE, "*/"));
-  } else if (FuncName == "cudaDeviceSetCacheConfig" ||
-             FuncName == "cudaDeviceGetCacheConfig") {
-    // SYCL has no corresponding implementation.
-    std::string Replacement = "0";
-    emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   } else if (FuncName == "clock") {
     report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF);
     // Add '#include <time.h>' directive to the file only once
     auto Loc = CE->getBeginLoc();
     DpctGlobalInfo::getInstance().insertHeader(Loc, Time);
   } else if (FuncName == "cudaDeviceSetLimit" ||
-             FuncName == "cudaThreadSetLimit") {
-    std::string Msg =
-      "DPC++ currently does not support setting resource limits on devices.";
+             FuncName == "cudaThreadSetLimit" ||
+             FuncName == "cudaDeviceSetCacheConfig" ||
+             FuncName == "cudaDeviceGetCacheConfig") {
+    auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, MapNames::ITFName.at(FuncName),
-             Msg);
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0,
+             MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, "0"));
     } else {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, MapNames::ITFName.at(FuncName), Msg);
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED,
+             MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ""));
     }
   } else if (FuncName == "cudaFuncSetCacheConfig") {
@@ -4004,10 +4021,21 @@ void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
 
   if (FuncName == "cudaEventCreate" || FuncName == "cudaEventCreateWithFlags" ||
       FuncName == "cudaEventDestroy") {
-    std::string ReplStr;
-    if (IsAssigned)
-      ReplStr = "0";
-    emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ReplStr));
+    auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0,
+             MapNames::ITFName.at(FuncName), Msg->second);
+      emplaceTransformation(
+        new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
+          /*IsProcessMacro*/ false, "0"));
+    }
+    else {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED,
+             MapNames::ITFName.at(FuncName), Msg->second);
+      emplaceTransformation(
+        new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
+          /*IsProcessMacro*/ false, ""));
+    }
   } else if (FuncName == "cudaEventRecord") {
     handleEventRecord(CE, Result, IsAssigned);
   } else if (FuncName == "cudaEventElapsedTime") {
@@ -4260,20 +4288,14 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaStreamEndCapture" ||
              FuncName == "cudaStreamIsCapturing" ||
              FuncName == "cudaStreamQuery") {
-    std::string Msg;
-    if (FuncName == "cudaStreamAttachMemAsync")
-      Msg = "DPC++ currently does not support associating USM with a specific queue.";
-    else if (FuncName == "cudaStreamQuery")
-      Msg = "DPC++ currently does not support query operations on queues.";
-    else
-      Msg = "DPC++ currently does not support capture operations on queues.";
+    auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0,
-             MapNames::ITFName.at(FuncName), Msg);
+             MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, "0"));
     } else {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED,
-             MapNames::ITFName.at(FuncName), Msg);
+             MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ""));
     }
   } else if (FuncName == "cudaStreamWaitEvent") {
@@ -5454,10 +5476,17 @@ void MemoryMigrationRule::miscMigration(
       report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, MapNames::ITFName.at(Name));
     }
   } else if (Name == "cudaHostRegister" || Name == "cudaHostUnregister") {
-    if (IsAssigned)
-      emplaceTransformation(new ReplaceStmt(C, "0"));
-    else
-      emplaceTransformation(new ReplaceStmt(C, ""));
+    auto Msg = MapNames::RemovedAPIWarningMessage.find(Name);
+    if (IsAssigned) {
+      report(C->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0,
+             MapNames::ITFName.at(Name), Msg->second);
+      emplaceTransformation(new ReplaceStmt(C, false, Name, "0"));
+    }
+    else {
+      report(C->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED,
+             MapNames::ITFName.at(Name), Msg->second);
+      emplaceTransformation(new ReplaceStmt(C, false, Name, ""));
+    }
   }
 }
 
