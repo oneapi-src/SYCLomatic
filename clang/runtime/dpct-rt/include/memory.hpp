@@ -567,23 +567,23 @@ static buffer_t get_buffer(const void *ptr) {
 }
 
 /// Synchronously sets value to the first size bytes starting from dev_ptr in
-/// \pararm q. The function will return after the memset operation is completed.
+/// \param q. The function will return after the memset operation is completed.
 ///
 /// \param q The queue in which the operation is done.
 /// \param dev_ptr Pointer to the device memory address.
 /// \param value Value to be set.
 /// \param size Number of bytes to be set to the value.
 /// \returns no return value.
-static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *devPtr,
-                                          int value, size_t count) {
+static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *dev_ptr,
+                                          int value, size_t size) {
 #ifdef DPCT_USM_LEVEL_NONE
   auto &mm = memory_manager::get_instance();
-  assert(mm.is_device_ptr(devPtr));
-  auto alloc = mm.translate_ptr(devPtr);
-  size_t offset = (byte_t *)devPtr - alloc.alloc_ptr;
+  assert(mm.is_device_ptr(dev_ptr));
+  auto alloc = mm.translate_ptr(dev_ptr);
+  size_t offset = (byte_t *)dev_ptr - alloc.alloc_ptr;
 
   return q.submit([&](cl::sycl::handler &cgh) {
-    auto r = cl::sycl::range<1>(count);
+    auto r = cl::sycl::range<1>(size);
     auto o = cl::sycl::id<1>(offset);
     cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
                        cl::sycl::access::target::global_buffer>
@@ -591,7 +591,7 @@ static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *devPtr,
     cgh.fill(acc, (byte_t)value);
   });
 #else
-  return q.memset(devPtr, value, count);
+  return q.memset(dev_ptr, value, size);
 #endif // DPCT_USM_LEVEL_NONE
 }
 
