@@ -8,6 +8,21 @@
 // CHECK:#include "simple_kernel.dp.hpp"
 #include "simple_kernel.cuh"
 
+// CHECK: void hello(cl::sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:  int index = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2);
+// CHECK-NEXT:  int tmp = cl::sycl::min((unsigned int)((item_ct1.get_group(2)+1)*item_ct1.get_local_range(2)+item_ct1.get_local_id(2)), (unsigned int)(cl::sycl::max(index, 45)));
+// CHECK-NEXT:  int num = cl::sycl::max((unsigned int)((item_ct1.get_group(2)+1)*item_ct1.get_local_range(2)+item_ct1.get_local_id(2)), (unsigned int)(cl::sycl::min(tmp, 45)));
+// CHECK-NEXT:  cl::sycl::log((float)(item_ct1.get_group(2) + item_ct1.get_local_range(2) + item_ct1.get_local_id(2)));
+// CHECK-NEXT:  cl::sycl::log((float)(item_ct1.get_local_range(2) + item_ct1.get_local_range(1) + item_ct1.get_local_range(0)));
+// CHECK-NEXT:}
+__global__ void hello() {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  int tmp = min((blockIdx.x+1)*blockDim.x+threadIdx.x, max(index, 45));
+  int num = max((blockIdx.x+1)*blockDim.x+threadIdx.x, min(tmp, 45));
+  log(blockIdx.x + blockDim.x + threadIdx.x);
+  log(blockDim.x + blockDim.y + blockDim.z);
+}
+
 int main(int argc, char **argv) {
   int size = 360;
   float *d_array;

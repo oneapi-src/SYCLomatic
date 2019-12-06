@@ -101,14 +101,14 @@ std::string MathFuncNameRewriter::getNewFuncName() {
         }
       }
 
-      if (SourceCalleeName == "min") {
+      if (SourceCalleeName == "min" || SourceCalleeName == "max") {
         LangOptions LO;
         std::string FT = Call->getType().getAsString(PrintingPolicy(LO));
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
           std::string ArgT =
               Call->getArg(i)->getType().getAsString(PrintingPolicy(LO));
-          std::string ArgExpr = Call->getArg(i)->getStmtClassName();
-          if (ArgT != FT || ArgExpr == "BinaryOperator") {
+          auto ArgExpr = Call->getArg(i)->getStmtClass();
+          if (ArgT != FT || ArgExpr == Stmt::BinaryOperatorClass) {
             RewriteArgList[i] = "(" + FT + ")(" + RewriteArgList[i] + ")";
           }
         }

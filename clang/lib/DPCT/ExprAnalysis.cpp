@@ -206,6 +206,15 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
            << ")";
       addReplacement(ME, Repl.str());
     }
+  } else if (Ty.getBaseName() == "const __cuda_builtin_blockDim_t") {
+    ValueDecl *Field = ME->getMemberDecl();
+    std::string FieldName = Field->getName();
+    if (MapNames::replaceName(MemberMap, FieldName)) {
+      std::ostringstream Repl;
+      Repl << DpctGlobalInfo::getItemName() << ".get_local_range(" << FieldName
+           << ")";
+      addReplacement(ME, Repl.str());
+    }
   } else if (Ty.getBaseName() == "const __cuda_builtin_threadIdx_t") {
     ValueDecl *Field = ME->getMemberDecl();
     std::string FieldName = Field->getName();
