@@ -67,8 +67,14 @@ std::pair<tooling::Replacements, unsigned> TokenAnalyzer::process() {
   FormatTokenLexer Tokens(Env.getSourceManager(), Env.getFileID(),
                           Env.getFirstStartColumn(), Style, Encoding);
 
+#ifdef INTEL_CUSTOMIZATION
+  UnwrappedLineParser Parser(Style, Tokens.getKeywords(),
+                             Env.getFirstStartColumn(), Tokens.lex(), *this,
+                             Env.getSourceManager());
+#else
   UnwrappedLineParser Parser(Style, Tokens.getKeywords(),
                              Env.getFirstStartColumn(), Tokens.lex(), *this);
+#endif
   Parser.parse();
   assert(UnwrappedLines.rbegin()->empty());
   unsigned Penalty = 0;

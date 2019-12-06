@@ -15,8 +15,18 @@
 #include <string>
 #include <vector>
 
-enum ReportFormatEnum { notsetformat, csv, formatted };
-enum ReportTypeEnum { notsettype, apis, stats, all, diags };
+/// The enum that specifies the level of Unified Shared Memory, only
+/// two levels are supported currrently.
+/// none:       uses helper functions from DPCT header files for memory
+///             management migration
+/// restricted: uses API from DPC++ Explicit and Restricted Unified
+///             Shared Memory extension for memory management migration
+enum class UsmLevel { none, restricted };
+/// OutputVerbosityLev defines various verbosity levels for dpct reports
+enum class OutputVerbosityLev { silent, normal, detailed, diagnostics };
+enum class DPCTFormatStyle { llvm, google, custom };
+enum class ReportFormatEnum { notsetformat, csv, formatted };
+enum class ReportTypeEnum { notsettype, apis, stats, all, diags };
 
 bool makeCanonicalOrSetDefaults(std::string &InRoot, std::string &OutRoot,
                                 const std::vector<std::string> SourceFiles);

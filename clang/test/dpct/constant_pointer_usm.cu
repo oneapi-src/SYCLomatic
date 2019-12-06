@@ -1,4 +1,4 @@
-// RUN: dpct --usm-level=restricted -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --usm-level=restricted -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/constant_pointer_usm.dp.cpp
 
 // CHECK: dpct::device_memory<int, 1> schsfirst;

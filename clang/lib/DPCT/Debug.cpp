@@ -261,16 +261,16 @@ void PrintMsg(const std::string &Msg, bool IsPrintOnNormal) {
   }
 
   switch (OutputVerbosity) {
-  case detailed:
-  case diagnostics:
+  case OutputVerbosityLev::detailed:
+  case OutputVerbosityLev::diagnostics:
     llvm::outs() << Msg;
     break;
-  case normal:
+  case OutputVerbosityLev::normal:
     if (IsPrintOnNormal) {
       llvm::outs() << Msg;
     }
     break;
-  case silent:
+  case OutputVerbosityLev::silent:
   default:
     break;
   }

@@ -74,10 +74,18 @@ class FormatTokenSource;
 
 class UnwrappedLineParser {
 public:
+#ifdef INTEL_CUSTOMIZATION
+  UnwrappedLineParser(const FormatStyle &Style,
+                      const AdditionalKeywords &Keywords,
+                      unsigned FirstStartColumn, ArrayRef<FormatToken *> Tokens,
+                      UnwrappedLineConsumer &Callback,
+                      const SourceManager &SourceMgr);
+#else
   UnwrappedLineParser(const FormatStyle &Style,
                       const AdditionalKeywords &Keywords,
                       unsigned FirstStartColumn, ArrayRef<FormatToken *> Tokens,
                       UnwrappedLineConsumer &Callback);
+#endif
 
   void parse();
 
@@ -273,6 +281,9 @@ private:
   // normal source code and may be nonzero when formatting a code fragment that
   // does not start at the beginning of the file.
   unsigned FirstStartColumn;
+#ifdef INTEL_CUSTOMIZATION
+  const SourceManager &SourceMgr;
+#endif
 
   friend class ScopedLineState;
   friend class CompoundStatementIndenter;

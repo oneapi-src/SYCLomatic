@@ -12,9 +12,9 @@
 #ifndef DPCT_SAVE_NEW_FILES_H
 #define DPCT_SAVE_NEW_FILES_H
 
+#include "ValidateArguments.h"
 #include "llvm/Support/Error.h"
 #include <map>
-
 
 namespace llvm {
 class StringRef;
@@ -56,10 +56,8 @@ enum ProcessStatus {
   MigrationErrorSpecialCharacter = -23,
   MigrationErrorNameTooLong = -24,
   MigrationErrorPrefixTooLong = -25,
+  MigrationErrorFormatFail = -26,
 };
-
-/// OutputVerbosityLev defines various verbosity levels for dpct reports
-enum OutputVerbosityLev { silent, normal, detailed, diagnostics };
 
 /// Apply all generated replacements, and immediately save the results to
 /// files in output directory.

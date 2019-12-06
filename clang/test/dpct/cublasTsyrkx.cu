@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublasTsyrkx.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas.h>

@@ -22,6 +22,7 @@
 #include "VcxprojParser.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
+#include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Tooling/CommonOptionsParser.h"
@@ -132,37 +133,38 @@ static opt<std::string>
 static opt<ReportTypeEnum> ReportType(
     "report-type", desc("Comma separated list of report types."),
     llvm::cl::values(
-        clEnumVal(
-            apis,
+        llvm::cl::OptionEnumValue{"apis", int(ReportTypeEnum::apis),
             "Information about API signatures that need migration and the "
             "number of times\n"
             "                                    they were encountered. The "
-            "report file name will have .apis suffix added."),
-        clEnumVal(stats,
+            "report file name will have .apis suffix added.", false},
+        llvm::cl::OptionEnumValue{"stats", int(ReportTypeEnum::stats),
                   "High level migration statistics: Lines Of Code (LOC) that "
                   "are migrated to\n"
                   "                                    DPC++, LOC migrated to "
                   "DPC++ with helper functions, LOC not needing migration,\n"
                   "                                    LOC needing migration "
-                  "suffix added. (default)"),
-        clEnumVal(all, "All of the reports."),
-        llvm::cl::OptionEnumValue{"diags", int(diags), "diags information",
-                                  true}),
-    llvm::cl::init(notsettype), value_desc("value"), cat(DPCTCat),
+                  "suffix added. (default)", false},
+        llvm::cl::OptionEnumValue{"all", int(ReportTypeEnum::all),
+                  "All of the reports.", false},
+        llvm::cl::OptionEnumValue{"diags", int(ReportTypeEnum::diags),
+                  "diags information", true}),
+    llvm::cl::init(ReportTypeEnum::notsettype), value_desc("value"), cat(DPCTCat),
     llvm::cl::Optional);
 
 static opt<ReportFormatEnum> ReportFormat(
     "report-format", desc("Format of the reports:\n"),
     llvm::cl::values(
-        clEnumVal(csv,
+        llvm::cl::OptionEnumValue{"csv", int(ReportFormatEnum::csv),
                   "Output is lines of comma separated values. The report file "
                   "name extension will\n"
-                  "                                    be .csv. (default)"),
-        clEnumVal(formatted, "Output is formatted to be easier to read for "
+                  "                                    be .csv. (default)", false},
+        llvm::cl::OptionEnumValue{"formatted", int(ReportFormatEnum::formatted),
+                  "Output is formatted to be easier to read for "
                   "human eyes. Report file name\n"
-                  "                                    extension will be log."
-                  )),
-    llvm::cl::init(notsetformat), value_desc("value"), cat(DPCTCat),
+                  "                                    extension will be log.",
+                  false}),
+    llvm::cl::init(ReportFormatEnum::notsetformat), value_desc("value"), cat(DPCTCat),
     llvm::cl::Optional);
 
 static opt<std::string> ReportFilePrefix(
@@ -234,15 +236,18 @@ static opt<bool, true>
 opt<OutputVerbosityLev> OutputVerbosity(
     "output-verbosity", llvm::cl::desc("Sets the output verbosity level:"),
     llvm::cl::values(
-        clEnumVal(silent, "Only messages from clang."),
-        clEnumVal(normal,
-                  "\'silent\' and warnings, errors, and notes from dpct."),
-        clEnumVal(
-            detailed,
-            "\'normal\' and messages about which file is being processed."),
-        clEnumVal(diagnostics, "\'detailed\' and information about the detected "
-                               "conflicts and crashes. (default)")),
-    llvm::cl::init(diagnostics), value_desc("value"), cat(DPCTCat),
+        llvm::cl::OptionEnumValue{"silent", int(OutputVerbosityLev::silent),
+                                  "Only messages from clang.", false},
+        llvm::cl::OptionEnumValue{"normal", int(OutputVerbosityLev::normal),
+                                  "\'silent\' and warnings, errors, and notes from dpct.",
+                                  false},
+        llvm::cl::OptionEnumValue{"detailed", int(OutputVerbosityLev::detailed),
+                                  "\'normal\' and messages about which file is being processed.",
+                                  false},
+        llvm::cl::OptionEnumValue{"diagnostics", int(OutputVerbosityLev::diagnostics),
+                                  "\'detailed\' and information about the detected "
+                                  "conflicts and crashes. (default)", false}),
+    llvm::cl::init(OutputVerbosityLev::diagnostics), value_desc("value"), cat(DPCTCat),
     llvm::cl::Optional);
 
 opt<std::string>
@@ -255,15 +260,37 @@ opt<std::string>
 
 opt<UsmLevel> USMLevel(
     "usm-level", desc("Sets the USM level to use in source code generation.\n"),
-    values(clEnumVal(restricted,
+    values(llvm::cl::OptionEnumValue{"restricted", int(UsmLevel::restricted),
                      "Uses API from DPC++ Explicit and Restricted Unified "
                      "Shared Memory extension\n"
                      "                                    for memory management"
-                     " migration. (default)"),
-           clEnumVal(none,
+                     " migration. (default)", false},
+           llvm::cl::OptionEnumValue{"none", int(UsmLevel::none),
                      "Uses helper functions from DPCT header files for memory "
-                     "management migration.")),
-    init(restricted), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
+                     "management migration.", false}),
+    init(UsmLevel::restricted), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
+
+opt<format::FormatRange>
+    FormatRng("format-range",
+                llvm::cl::desc("Sets the range of formatting.\n"),
+                values(llvm::cl::OptionEnumValue{"migrated", int(format::FormatRange::migrated),
+                     "Only format the migrated code. (default)", false},
+                       llvm::cl::OptionEnumValue{"all", int(format::FormatRange::all),
+                     "Format all code.", false},
+                       llvm::cl::OptionEnumValue{"none", int(format::FormatRange::none),
+                     "Not format any code.", false}),
+    init(format::FormatRange::migrated), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
+
+opt<DPCTFormatStyle>
+    FormatST("format-style",
+                llvm::cl::desc("Sets the formatting style.\n"),
+                values(llvm::cl::OptionEnumValue{"llvm", int(DPCTFormatStyle::llvm),
+                     "Using the LLVM coding style.", false},
+                       llvm::cl::OptionEnumValue{"google", int(DPCTFormatStyle::google),
+                     "Using the Google coding style.", false},
+                       llvm::cl::OptionEnumValue{"custom", int(DPCTFormatStyle::custom),
+                     "Using the custom defined coding style by .clang-format file. (default)", false}),
+    init(DPCTFormatStyle::custom), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
 
 bool ProcessAllFlag = false;
 static opt<bool, true>
@@ -527,11 +554,11 @@ static void printMetrics(clang::tooling::RefactoringTool &Tool) {
     unsigned TransToSYCL = Elem.second[1];
     unsigned NotTrans = TotalLines - TransToSYCL - TransToAPI;
     unsigned NotSupport = Elem.second[2];
-    if(Count == 0) {
+    if (Count == 0) {
       DpctStats() << "\n";
-      DpctStats()
-          << "File name, LOC migrated to DPC++, LOC migrated to helper functions, "
-            "LOC not needed to migrate, LOC not able to migrate";
+      DpctStats() << "File name, LOC migrated to DPC++, LOC migrated to helper "
+                     "functions, "
+                     "LOC not needed to migrate, LOC not able to migrate";
       DpctStats() << "\n";
     }
     DpctStats() << Elem.first + ", " + std::to_string(TransToSYCL) + ", " +
@@ -539,7 +566,7 @@ static void printMetrics(clang::tooling::RefactoringTool &Tool) {
                        std::to_string(NotTrans) + ", " +
                        std::to_string(NotSupport);
     DpctStats() << "\n";
-    Count ++;
+    Count++;
   }
 }
 
@@ -902,6 +929,8 @@ int run(int argc, const char **argv) {
   DpctGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
   DpctGlobalInfo::setUsmLevel(USMLevel);
+  DpctGlobalInfo::setFormatRange(FormatRng);
+  DpctGlobalInfo::setFormatStyle(FormatST);
 
   DPCTActionFactory Factory(Tool.getReplacements());
   if (int RunResult = Tool.run(&Factory) && !NoStopOnErrFlag) {

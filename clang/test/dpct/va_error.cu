@@ -1,4 +1,4 @@
-// RUN: dpct -in-root=%S -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -in-root=%S -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/va_error.dp.cpp
 
 #include "cuda_runtime.h"

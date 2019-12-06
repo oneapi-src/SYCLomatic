@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/writing-files.dp.cpp --match-full-lines %s
 // RUN: FileCheck --input-file %T/test-header.dp.hpp --match-full-lines %S/test-header.cuh
 

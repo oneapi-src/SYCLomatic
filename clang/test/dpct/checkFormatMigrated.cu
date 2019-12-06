@@ -1,0 +1,94 @@
+// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
+// RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/checkFormatMigrated.dp.cpp
+
+#include <cuda_runtime.h>
+#include <cassert>
+
+     //CHECK:void testDevice(const int *K) {
+//CHECK-NEXT:  int t = K[0];
+//CHECK-NEXT:}
+__device__ void testDevice(const int *K) {
+  int t = K[0];
+}
+
+     //CHECK:void testDevice1(const int *K) { int t = K[0]; }
+__device__ void testDevice1(const int *K) { int t = K[0]; }
+
+     //CHECK:void testKernelPtr(const int *L, const int *M, int N,
+//CHECK-NEXT:                   cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:  testDevice(L);
+//CHECK-NEXT:  int gtid = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) +
+//CHECK-NEXT:             item_ct1.get_local_id(2);
+//CHECK-NEXT:}
+__global__ void testKernelPtr(const int *L, const int *M, int N) {
+  testDevice(L);
+  int gtid = blockIdx.x * blockDim.x + threadIdx.x;
+}
+
+
+     //CHECK:int main() {
+//CHECK-NEXT:  cl::sycl::range<3> griddim = cl::sycl::range<3>(2, 1, 1);
+//CHECK-NEXT:  cl::sycl::range<3> threaddim = cl::sycl::range<3>(32, 1, 1);
+//CHECK-NEXT:  int *karg1, *karg2;
+//CHECK-NEXT:  karg1 = (int *)cl::sycl::malloc_device(32 * sizeof(int),
+//CHECK-NEXT:                                         dpct::get_current_device(),
+//CHECK-NEXT:                                         dpct::get_default_context());
+//CHECK-NEXT:  karg2 = (int *)cl::sycl::malloc_device(32 * sizeof(int),
+//CHECK-NEXT:                                         dpct::get_current_device(),
+//CHECK-NEXT:                                         dpct::get_default_context());
+//CHECK-NEXT:  int karg3 = 80;
+//CHECK-NEXT:  dpct::get_default_queue_wait().submit([&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:      auto dpct_global_range = griddim * threaddim;
+//CHECK-NEXT:      cgh.parallel_for(
+//CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2),
+//CHECK-NEXT:                                                   dpct_global_range.get(1),
+//CHECK-NEXT:                                                   dpct_global_range.get(0)),
+//CHECK-NEXT:                                cl::sycl::range<3>(threaddim.get(2),
+//CHECK-NEXT:                                                   threaddim.get(1),
+//CHECK-NEXT:                                                   threaddim.get(0))),
+//CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:          testKernelPtr((const int *)karg1, karg2, karg3, item_ct1);
+//CHECK-NEXT:          });
+//CHECK-NEXT:  });
+//CHECK-NEXT:}
+int main() {
+  dim3 griddim = 2;
+  dim3 threaddim = 32;
+  int *karg1, *karg2;
+  cudaMalloc(&karg1, 32 * sizeof(int));
+  cudaMalloc(&karg2, 32 * sizeof(int));
+  int karg3 = 80;
+  testKernelPtr<<<griddim, threaddim>>>((const int *)karg1, karg2, karg3);
+}
+
+     //CHECK:#define DEVICE
+#define DEVICE __device__
+
+     //CHECK:struct SharedMemory
+//CHECK-NEXT:{
+//CHECK-NEXT:  unsigned int *
+//CHECK-NEXT:  getPointer(dpct::accessor<dpct::byte_t, dpct::local, 1> dpct_local)
+//CHECK-NEXT:  {
+//CHECK-NEXT:    auto s_uint = dpct_local.reinterpret<unsigned int>();
+//CHECK-NEXT:    return s_uint;
+//CHECK-NEXT:  }
+//CHECK-NEXT:};
+struct SharedMemory
+{
+  __device__ unsigned int *getPointer()
+  {
+    extern __shared__ unsigned int s_uint[];
+    return s_uint;
+  }
+};
+
+     //CHECK:typedef struct dpct_type_{{[0-9a-z]+}}
+//CHECK-NEXT:{
+//CHECK-NEXT:  int SM;
+//CHECK-NEXT:  int Cores;
+//CHECK-NEXT:} sSMtoCores;
+typedef struct
+{
+  int SM;
+  int Cores;
+} sSMtoCores;

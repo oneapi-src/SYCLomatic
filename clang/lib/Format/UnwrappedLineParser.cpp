@@ -13,6 +13,9 @@
 //===----------------------------------------------------------------------===//
 
 #include "UnwrappedLineParser.h"
+#ifdef INTEL_CUSTOMIZATION
+#include "clang/Basic/SourceManager.h"
+#endif
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
@@ -23,7 +26,26 @@
 
 namespace clang {
 namespace format {
-
+#ifdef INTEL_CUSTOMIZATION
+static bool isAllSpaceUntilNL(const FormatToken *FormatTok,
+                              const SourceManager &SourceMgr) {
+  auto Loc = FormatTok->getStartOfNonWhitespace();
+  const char *C = SourceMgr.getCharacterData(Loc);
+  bool AllSpaceUntilNL = false;
+  --C;
+  while (C) {
+    if (!isspace(*C)) {
+      break;
+    }
+    if (*C == '\n') {
+      AllSpaceUntilNL = true;
+      break;
+    }
+    --C;
+  }
+  return AllSpaceUntilNL;
+}
+#endif
 class FormatTokenSource {
 public:
   virtual ~FormatTokenSource() {}
@@ -221,6 +243,23 @@ private:
 
 } // end anonymous namespace
 
+#ifdef INTEL_CUSTOMIZATION
+UnwrappedLineParser::UnwrappedLineParser(const FormatStyle &Style,
+                                         const AdditionalKeywords &Keywords,
+                                         unsigned FirstStartColumn,
+                                         ArrayRef<FormatToken *> Tokens,
+                                         UnwrappedLineConsumer &Callback,
+                                         const SourceManager &SourceMgr)
+    : Line(new UnwrappedLine), MustBreakBeforeNextToken(false),
+      CurrentLines(&Lines), Style(Style), Keywords(Keywords),
+      CommentPragmasRegex(Style.CommentPragmas), Tokens(nullptr),
+      Callback(Callback), AllTokens(Tokens), PPBranchLevel(-1),
+      IncludeGuard(Style.IndentPPDirectives == FormatStyle::PPDIS_None
+                       ? IG_Rejected
+                       : IG_Inited),
+      IncludeGuardToken(nullptr), FirstStartColumn(FirstStartColumn),
+      SourceMgr(SourceMgr) {}
+#else
 UnwrappedLineParser::UnwrappedLineParser(const FormatStyle &Style,
                                          const AdditionalKeywords &Keywords,
                                          unsigned FirstStartColumn,
@@ -234,6 +273,7 @@ UnwrappedLineParser::UnwrappedLineParser(const FormatStyle &Style,
                        ? IG_Rejected
                        : IG_Inited),
       IncludeGuardToken(nullptr), FirstStartColumn(FirstStartColumn) {}
+#endif
 
 void UnwrappedLineParser::reset() {
   PPBranchLevel = -1;
@@ -1052,12 +1092,25 @@ void UnwrappedLineParser::parseStructuralElement() {
     if (FormatTok->Tok.is(tok::string_literal)) {
       nextToken();
       if (FormatTok->Tok.is(tok::l_brace)) {
+
+#ifdef INTEL_CUSTOMIZATION
+        if ((formatRangeGetter() == FormatRange::all &&
+             Style.BraceWrapping.AfterExternBlock) ||
+            (formatRangeGetter() == FormatRange::migrated &&
+             isAllSpaceUntilNL(FormatTok, SourceMgr))) {
+          addUnwrappedLine();
+          parseBlock(/*MustBeDeclaration=*/true);
+        } else {
+          parseBlock(/*MustBeDeclaration=*/true, /*AddLevel=*/false);
+        }
+#else
         if (Style.BraceWrapping.AfterExternBlock) {
           addUnwrappedLine();
           parseBlock(/*MustBeDeclaration=*/true);
         } else {
           parseBlock(/*MustBeDeclaration=*/true, /*AddLevel=*/false);
         }
+#endif
         addUnwrappedLine();
         return;
       }
@@ -1279,8 +1332,17 @@ void UnwrappedLineParser::parseStructuralElement() {
         // structural element.
         // FIXME: Figure out cases where this is not true, and add projections
         // for them (the one we know is missing are lambdas).
+#ifdef INTEL_CUSTOMIZATION
+        if ((Style.BraceWrapping.AfterFunction &&
+             formatRangeGetter() == FormatRange::all) ||
+            (formatRangeGetter() == FormatRange::migrated &&
+             isAllSpaceUntilNL(FormatTok, SourceMgr))) {
+          addUnwrappedLine();
+        }
+#else
         if (Style.BraceWrapping.AfterFunction)
           addUnwrappedLine();
+#endif
         FormatTok->Type = TT_FunctionLBrace;
         parseBlock(/*MustBeDeclaration=*/false);
         addUnwrappedLine();
@@ -1770,6 +1832,12 @@ void UnwrappedLineParser::parseIfThenElse() {
     parseParens();
   bool NeedsUnwrappedLine = false;
   if (FormatTok->Tok.is(tok::l_brace)) {
+#ifdef INTEL_CUSTOMIZATION
+    if (formatRangeGetter() == FormatRange::migrated &&
+        isAllSpaceUntilNL(FormatTok, SourceMgr)) {
+      addUnwrappedLine();
+    }
+#endif
     CompoundStatementIndenter Indenter(this, Style, Line->Level);
     parseBlock(/*MustBeDeclaration=*/false);
     if (Style.BraceWrapping.BeforeElse)
@@ -1825,11 +1893,22 @@ void UnwrappedLineParser::parseTryCatch() {
   if (FormatTok->is(tok::l_brace)) {
     CompoundStatementIndenter Indenter(this, Style, Line->Level);
     parseBlock(/*MustBeDeclaration=*/false);
+#ifdef INTEL_CUSTOMIZATION
+    if ((formatRangeGetter() == FormatRange::all &&
+         Style.BraceWrapping.BeforeCatch) ||
+        (formatRangeGetter() == FormatRange::migrated &&
+         isAllSpaceUntilNL(FormatTok, SourceMgr))) {
+      addUnwrappedLine();
+    } else {
+      NeedsUnwrappedLine = true;
+    }
+#else
     if (Style.BraceWrapping.BeforeCatch) {
       addUnwrappedLine();
     } else {
       NeedsUnwrappedLine = true;
     }
+#endif
   } else if (!FormatTok->is(tok::kw_catch)) {
     // The C++ standard requires a compound-statement after a try.
     // If there's none, we try to assume there's a structuralElement
@@ -1890,8 +1969,17 @@ void UnwrappedLineParser::parseNamespace() {
     }
   }
   if (FormatTok->Tok.is(tok::l_brace)) {
+#ifdef INTEL_CUSTOMIZATION
+    if ((formatRangeGetter() == FormatRange::all &&
+         ShouldBreakBeforeBrace(Style, InitialToken)) ||
+        (formatRangeGetter() == FormatRange::migrated &&
+         isAllSpaceUntilNL(FormatTok, SourceMgr))) {
+      addUnwrappedLine();
+    }
+#else
     if (ShouldBreakBeforeBrace(Style, InitialToken))
       addUnwrappedLine();
+#endif
 
     bool AddLevel = Style.NamespaceIndentation == FormatStyle::NI_All ||
                     (Style.NamespaceIndentation == FormatStyle::NI_Inner &&
@@ -1942,6 +2030,12 @@ void UnwrappedLineParser::parseForOrWhileLoop() {
   if (FormatTok->Tok.is(tok::l_paren))
     parseParens();
   if (FormatTok->Tok.is(tok::l_brace)) {
+#ifdef INTEL_CUSTOMIZATION
+    if (formatRangeGetter() == FormatRange::migrated &&
+        isAllSpaceUntilNL(FormatTok, SourceMgr)) {
+      addUnwrappedLine();
+    }
+#endif
     CompoundStatementIndenter Indenter(this, Style, Line->Level);
     parseBlock(/*MustBeDeclaration=*/false);
     addUnwrappedLine();
@@ -1957,6 +2051,12 @@ void UnwrappedLineParser::parseDoWhile() {
   assert(FormatTok->Tok.is(tok::kw_do) && "'do' expected");
   nextToken();
   if (FormatTok->Tok.is(tok::l_brace)) {
+#ifdef INTEL_CUSTOMIZATION
+    if (formatRangeGetter() == FormatRange::migrated &&
+        isAllSpaceUntilNL(FormatTok, SourceMgr)) {
+      addUnwrappedLine();
+    }
+#endif
     CompoundStatementIndenter Indenter(this, Style, Line->Level);
     parseBlock(/*MustBeDeclaration=*/false);
     if (Style.BraceWrapping.IndentBraces)
@@ -2024,6 +2124,12 @@ void UnwrappedLineParser::parseSwitch() {
   if (FormatTok->Tok.is(tok::l_paren))
     parseParens();
   if (FormatTok->Tok.is(tok::l_brace)) {
+#ifdef INTEL_CUSTOMIZATION
+    if (formatRangeGetter() == FormatRange::migrated &&
+        isAllSpaceUntilNL(FormatTok, SourceMgr)) {
+      addUnwrappedLine();
+    }
+#endif
     CompoundStatementIndenter Indenter(this, Style, Line->Level);
     parseBlock(/*MustBeDeclaration=*/false);
     addUnwrappedLine();
@@ -2233,8 +2339,17 @@ void UnwrappedLineParser::parseRecord(bool ParseAsExpr) {
     if (ParseAsExpr) {
       parseChildBlock();
     } else {
+#ifdef INTEL_CUSTOMIZATION
+      if ((formatRangeGetter() == FormatRange::all &&
+           ShouldBreakBeforeBrace(Style, InitialToken)) ||
+          (formatRangeGetter() == FormatRange::migrated &&
+           isAllSpaceUntilNL(FormatTok, SourceMgr))) {
+        addUnwrappedLine();
+      }
+#else
       if (ShouldBreakBeforeBrace(Style, InitialToken))
         addUnwrappedLine();
+#endif
 
       parseBlock(/*MustBeDeclaration=*/true, /*AddLevel=*/true,
                  /*MunchSemi=*/false);

@@ -1094,7 +1094,18 @@ unsigned UnwrappedLineFormatter::format(
 
     bool FixIndentation = (FixBadIndentation || ContinueFormatting) &&
                           Indent != TheLine.First->OriginalColumn;
+#ifdef INTEL_CUSTOMIZATION
+    bool ShouldFormat = false;
+    if (formatRangeGetter() == FormatRange::all) {
+      // foramt all lines
+      ShouldFormat = TheLine.Affected || FixIndentation;
+    } else {
+      // Only foramt migrated lines
+      ShouldFormat = TheLine.Affected;
+    }
+#else
     bool ShouldFormat = TheLine.Affected || FixIndentation;
+#endif
     // We cannot format this line; if the reason is that the line had a
     // parsing error, remember that.
     if (ShouldFormat && TheLine.Type == LT_Invalid && Status) {
@@ -1106,10 +1117,35 @@ unsigned UnwrappedLineFormatter::format(
     if (ShouldFormat && TheLine.Type != LT_Invalid) {
       if (!DryRun) {
         bool LastLine = Line->First->is(tok::eof);
+#ifdef INTEL_CUSTOMIZATION
+        if (formatRangeGetter() == FormatRange::all) {
+          // foramt all lines
+          formatFirstToken(TheLine, PreviousLine, Lines, Indent,
+                           LastLine ? LastStartColumn
+                                    : NextStartColumn + Indent);
+        }
+#else
         formatFirstToken(TheLine, PreviousLine, Lines, Indent,
                          LastLine ? LastStartColumn : NextStartColumn + Indent);
+#endif
       }
 
+#ifdef INTEL_CUSTOMIZATION
+      //getIndent from dpct
+      auto Loc = TheLine.First->getStartOfNonWhitespace();
+      auto LocInfo = SourceMgr.getDecomposedLoc(Loc);
+      auto Buffer = SourceMgr.getBufferData(LocInfo.first);
+      // Find start of indentation.
+      auto begin = Buffer.find_last_of('\n', LocInfo.second);
+      if (begin != StringRef::npos) {
+        ++begin;
+      } else {
+        // We're at the beginning of the file.
+        begin = 0;
+      }
+      auto end = Buffer.find_if([](char c) { return !isspace(c); }, begin);
+      auto OriginIndentLen = Buffer.substr(begin, end - begin).size();
+#endif
       NextLine = Joiner.getNextMergedLine(DryRun, IndentTracker);
       unsigned ColumnLimit = getColumnLimit(TheLine.InPPDirective, NextLine);
       bool FitsIntoOneLine =
@@ -1128,9 +1164,19 @@ unsigned UnwrappedLineFormatter::format(
                        .formatLine(TheLine, NextStartColumn + Indent,
                                    FirstLine ? FirstStartColumn : 0, DryRun);
       else
+#ifdef INTEL_CUSTOMIZATION
+        Penalty += OptimizingLineFormatter(Indenter, Whitespaces, Style, this)
+                       .formatLine(TheLine,
+                                   NextStartColumn +
+                                       (formatRangeGetter() == FormatRange::all
+                                            ? Indent
+                                            : OriginIndentLen),
+                                   FirstLine ? FirstStartColumn : 0, DryRun);
+#else
         Penalty += OptimizingLineFormatter(Indenter, Whitespaces, Style, this)
                        .formatLine(TheLine, NextStartColumn + Indent,
                                    FirstLine ? FirstStartColumn : 0, DryRun);
+#endif
       RangeMinLevel = std::min(RangeMinLevel, TheLine.Level);
     } else {
       // If no token in the current line is affected, we still need to format

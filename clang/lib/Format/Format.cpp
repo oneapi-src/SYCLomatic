@@ -43,11 +43,24 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#ifdef INTEL_CUSTOMIZATION
+#include <functional>
+#endif
 
 #define DEBUG_TYPE "format-formatter"
 
 using clang::format::FormatStyle;
 
+#ifdef INTEL_CUSTOMIZATION
+namespace clang {
+namespace format {
+std::function<FormatRange()> formatRangeGetter = nullptr;
+void setFormatRangeGetterHandler(std::function<FormatRange()> Getter) {
+  formatRangeGetter = Getter;
+}
+} // namespace format
+} // namespace clang
+#endif
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::format::FormatStyle::RawStringFormat)
 
 namespace llvm {
@@ -2409,6 +2422,9 @@ reformat(const FormatStyle &Style, StringRef Code,
       AnalyzerPass;
   SmallVector<AnalyzerPass, 4> Passes;
 
+#ifdef INTEL_CUSTOMIZATION
+  if (formatRangeGetter() == FormatRange::all) {
+#endif
   if (Style.Language == FormatStyle::LK_Cpp) {
     if (Style.FixNamespaceComments)
       Passes.emplace_back([&](const Environment &Env) {
@@ -2426,6 +2442,9 @@ reformat(const FormatStyle &Style, StringRef Code,
     Passes.emplace_back([&](const Environment &Env) {
       return JavaScriptRequoter(Env, Expanded).process();
     });
+#ifdef INTEL_CUSTOMIZATION
+  }
+#endif
 
   Passes.emplace_back([&](const Environment &Env) {
     return Formatter(Env, Expanded, Status).process();
@@ -2593,6 +2612,12 @@ llvm::Expected<FormatStyle> getStyle(StringRef StyleName, StringRef FileName,
   if (!FS) {
     FS = llvm::vfs::getRealFileSystem().get();
   }
+#ifdef INTEL_CUSTOMIZATION
+  FormatStyle Style = getLLVMStyle(FormatStyle::LanguageKind::LK_Cpp);
+  FormatStyle FallbackStyle = getNoStyle();
+  // Default fallback style is LLVM
+  getPredefinedStyle(DefaultFallbackStyle, Style.Language, &FallbackStyle);
+#else
   FormatStyle Style = getLLVMStyle(guessLanguage(FileName, Code));
 
   FormatStyle FallbackStyle = getNoStyle();
@@ -2605,10 +2630,15 @@ llvm::Expected<FormatStyle> getStyle(StringRef StyleName, StringRef FileName,
       return make_string_error("Error parsing -style: " + ec.message());
     return Style;
   }
+#endif
 
   if (!StyleName.equals_lower("file")) {
     if (!getPredefinedStyle(StyleName, Style.Language, &Style))
+#ifdef INTEL_CUSTOMIZATION
+      return make_string_error("Invalid value for --format-style");
+#else
       return make_string_error("Invalid value for -style");
+#endif
     return Style;
   }
 

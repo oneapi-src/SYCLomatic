@@ -9,7 +9,7 @@
 // RUN: echo "    \"file\": \"%T/compile_by_gcc/compile_by_gcc_lin.c\"" >> %T/compile_by_gcc/compile_commands.json
 // RUN: echo "  }" >> %T/compile_by_gcc/compile_commands.json
 // RUN: echo "]" >> %T/compile_by_gcc/compile_commands.json
-// RUN: dpct --out-root %T/compile_by_gcc -p=./ --cuda-include-path="%cuda-path/include"
+// RUN: dpct --format-range=none --out-root %T/compile_by_gcc -p=./ --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/compile_by_gcc/compile_by_gcc_lin.c.dp.cpp
 // RUN: cd ..
 // RUN: rm -r ./compile_by_gcc

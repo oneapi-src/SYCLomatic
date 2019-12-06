@@ -9,6 +9,7 @@
 //
 //===-----------------------------------------------------------------===//
 
+#include "AnalysisInfo.h"
 #include "SaveNewFiles.h"
 #include "Debug.h"
 #include "ExternalReplacement.h"
@@ -24,6 +25,7 @@
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "clang/Tooling/Refactoring.h"
+
 #include "llvm/Support/raw_os_ostream.h"
 
 #include "Utility.h"
@@ -34,6 +36,77 @@ using namespace clang::dpct;
 using namespace llvm;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
+
+static bool formatFile(StringRef FileName,
+                       const std::vector<clang::tooling::Range>& Ranges,
+                       clang::SourceManager &SM) {
+  ErrorOr<std::unique_ptr<MemoryBuffer>> ErrorOrMemoryBuffer =
+      MemoryBuffer::getFileAsStream(FileName);
+  if (std::error_code EC = ErrorOrMemoryBuffer.getError()) {
+    return false;
+  }
+
+  std::unique_ptr<llvm::MemoryBuffer> FileBuffer =
+      std::move(ErrorOrMemoryBuffer.get());
+  if (FileBuffer->getBufferSize() == 0)
+    return false;
+
+  clang::format::FormattingAttemptStatus Status;
+  StringRef StyleStr = "file"; // DPCTFormatStyle::custom
+  if (clang::dpct::DpctGlobalInfo::getFormatStyle() == DPCTFormatStyle::google) {
+    StyleStr = "google";
+  } else if (clang::dpct::DpctGlobalInfo::getFormatStyle() == DPCTFormatStyle::llvm) {
+    StyleStr = "llvm";
+  }
+  llvm::Expected<clang::format::FormatStyle> StyleOrErr =
+      clang::format::getStyle(StyleStr, FileName, "llvm",
+                              FileBuffer->getBuffer());
+  clang::format::FormatStyle Style;
+  if (!StyleOrErr) {
+    PrintMsg(llvm::toString(StyleOrErr.takeError()) + "\n");
+    PrintMsg("Using LLVM style as fallback formatting style.\n");
+    clang::format::FormatStyle FallbackStyle = clang::format::getNoStyle();
+    getPredefinedStyle("llvm", clang::format::FormatStyle::LanguageKind::LK_Cpp,
+                       &FallbackStyle);
+    Style = FallbackStyle;
+  } else {
+    Style = StyleOrErr.get();
+  }
+  if (clang::dpct::DpctGlobalInfo::getFormatRange() ==
+      clang::format::FormatRange::migrated) {
+    Style.AllowShortFunctionsOnASingleLine =
+        clang::format::FormatStyle::SFS_None;
+  }
+
+  clang::Rewriter Rewrite(SM, clang::LangOptions());
+
+  if (DpctGlobalInfo::getFormatRange() == clang::format::FormatRange::all) {
+    std::vector<clang::tooling::Range> AllLineRanges;
+    AllLineRanges.push_back(clang::tooling::Range(
+        /*Offest*/ 0, /*Length*/ FileBuffer.get()->getBufferSize()));
+    clang::tooling::Replacements Replaces = clang::format::sortIncludes(
+        Style, FileBuffer->getBuffer(), AllLineRanges, FileName);
+    auto ChangedCode =
+        clang::tooling::applyAllReplacements(FileBuffer->getBuffer(), Replaces);
+    if (!ChangedCode) {
+      PrintMsg(llvm::toString(ChangedCode.takeError()) + "\n");
+      return false;
+    }
+    AllLineRanges = clang::tooling::calculateRangesAfterReplacements(
+        Replaces, AllLineRanges);
+    clang::tooling::Replacements FormatChanges = reformat(
+        Style, FileBuffer->getBuffer(), AllLineRanges, FileName, &Status);
+    Replaces = Replaces.merge(FormatChanges);
+    clang::tooling::applyAllReplacements(Replaces, Rewrite);
+  } else {
+    // only format migrated lines
+    clang::tooling::Replacements FormatChanges =
+        reformat(Style, FileBuffer->getBuffer(), Ranges, FileName, &Status);
+    clang::tooling::applyAllReplacements(FormatChanges, Rewrite);
+  }
+  Rewrite.overwriteChangedFiles();
+  return true;
+}
 
 // TODO: it's global variable,  refine in future.
 std::map<std::string, bool> IncludeFileMap;
@@ -126,6 +199,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     // dpct just do nothing with them.
     status = MigrationNoCodeChangeHappen;
   } else {
+    std::unordered_map<std::string, std::vector<clang::tooling::Range>>
+        FileRangesMap;
     // There are matching rules for *.cpp files ,*.cu files, also header files
     // included, migrate these files into *.dp.cpp files.
     for (auto &Entry : groupReplacementsByFile(
@@ -151,6 +226,11 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         // note the replacement of Entry.second are updated by this call.
         mergeExternalReps(std::string(OutPath.str()), Entry.second);
       }
+
+      std::vector<clang::tooling::Range> Ranges;
+      Ranges = tooling::calculateRangesAfterReplacements(Entry.second, Ranges);
+      FileRangesMap.insert(std::make_pair(OutPath.str(), Ranges));
+
       std::error_code EC;
       EC = fs::create_directories(path::parent_path(OutPath));
       if ((bool)EC) {
@@ -180,6 +260,19 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
               Tool.getFiles().getFile(Entry.first).get(),
               clang::SrcMgr::C_User /*normal user code*/))
           .write(Stream);
+    }
+    if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
+      clang::format::setFormatRangeGetterHandler(
+          clang::dpct::DpctGlobalInfo::getFormatRange);
+      bool FormatResult = true;
+      for (auto Iter : FileRangesMap) {
+        FormatResult =
+            formatFile(Iter.first, Iter.second, Sources) && FormatResult;
+      }
+      if (!FormatResult) {
+        PrintMsg("[Warning] Error happened while formatting. Generating "
+                 "unformatted code.\n");
+      }
     }
   }
 

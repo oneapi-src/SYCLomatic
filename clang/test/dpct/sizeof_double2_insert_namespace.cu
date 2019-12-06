@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/sizeof_double2_insert_namespace.dp.cpp --match-full-lines %s
 
 void fun() {

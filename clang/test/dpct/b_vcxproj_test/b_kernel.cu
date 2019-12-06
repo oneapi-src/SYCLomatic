@@ -1,6 +1,6 @@
 // UNSUPPORTED: -linux-
 // RUN: cat %S/SVMbenchmark.vcxproj > %T/SVMbenchmark.vcxproj
-// RUN: dpct  --vcxprojfile=%T/SVMbenchmark.vcxproj  -in-root=%S -out-root=%T  %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none  --vcxprojfile=%T/SVMbenchmark.vcxproj  -in-root=%S -out-root=%T  %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 
 // RUN: cat %S/check_compilation_ref.txt  >%T/check_compilation_db.txt
 // RUN: cat %T/compile_commands.json >>%T/check_compilation_db.txt

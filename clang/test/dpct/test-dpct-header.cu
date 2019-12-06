@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only -DCUDA
+// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only -DCUDA
 // RUN: FileCheck --match-full-lines --input-file %T/test-dpct-header.dp.cpp %s
 
 // RUN: FileCheck --match-full-lines --input-file %T/inc/header.tpp %S/inc/header.tpp

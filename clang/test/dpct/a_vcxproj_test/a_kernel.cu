@@ -1,7 +1,7 @@
 // UNSUPPORTED: -linux-
 // RUN: cat %S/DemoCudaProj.vcxproj > %T/DemoCudaProj.vcxproj
 // RUN: cd %T
-// RUN: dpct  --vcxprojfile=%T/DemoCudaProj.vcxproj  -in-root=%S -out-root=%T  %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none  --vcxprojfile=%T/DemoCudaProj.vcxproj  -in-root=%S -out-root=%T  %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 
 // RUN: cat %S/check_compilation_ref.txt  >%T/check_compilation_db.txt
 // RUN: cat %T/compile_commands.json >>%T/check_compilation_db.txt

@@ -119,7 +119,7 @@ void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
   DiagnosticsEngine &DiagEngine = CI.getDiagnostics();
   std::string Message = getMessagePrefix(Msg.ID) + Msg.Msg;
 
-  if (OutputVerbosity != silent) {
+  if (OutputVerbosity != OutputVerbosityLev::silent) {
     unsigned ID = DiagEngine.getDiagnosticIDs()->getCustomDiagID(
         (DiagnosticIDs::Level)Msg.Category, Message);
     auto B = DiagEngine.Report(SL, ID);

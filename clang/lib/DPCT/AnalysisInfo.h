@@ -16,11 +16,13 @@
 #include "ExprAnalysis.h"
 #include "ExtReplacements.h"
 #include "Utility.h"
+#include "ValidateArguments.h"
 #include <bitset>
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/Frontend/CompilerInstance.h"
+#include "clang/Format/Format.h"
 
 namespace clang {
 namespace dpct {
@@ -33,14 +35,6 @@ class CallFunctionExpr;
 class DeviceFunctionDecl;
 class MemVarInfo;
 class VarInfo;
-
-/// The enum that specifies the level of Unified Shared Memory, only
-/// two leves are supported currrently.
-/// none:       uses helper functions from DPCT header files for memory
-///             management migration
-/// restricted: uses API from DPC++ Explicit and Restricted Unified
-///             Shared Memory extension for memory management migration
-enum UsmLevel { none, restricted };
 
 template <class T> using GlobalMap = std::map<unsigned, std::shared_ptr<T>>;
 using MemVarInfoMap = GlobalMap<MemVarInfo>;
@@ -426,6 +420,10 @@ public:
   }
   inline static UsmLevel getUsmLevel() { return UsmLvl; }
   inline static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
+  inline static format::FormatRange getFormatRange() { return FmtRng; }
+  inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
+  inline static DPCTFormatStyle getFormatStyle() { return FmtST; }
+  inline static void setFormatStyle(DPCTFormatStyle FS) { FmtST = FS; }
 
   template <class TargetTy, class NodeTy>
   static inline const TargetTy *
@@ -673,6 +671,8 @@ private:
   // TODO: implement one of this for each source language.
   static std::string CudaPath;
   static UsmLevel UsmLvl;
+  static format::FormatRange FmtRng;
+  static DPCTFormatStyle FmtST;
   static CompilerInstance *CI;
   static ASTContext *Context;
   static SourceManager *SM;

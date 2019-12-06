@@ -1,4 +1,4 @@
-// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -D__NVCC__  -D __CUDA_ARCH__ -D__CUDACC__
+// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -D__NVCC__  -D __CUDA_ARCH__ -D__CUDACC__
 // RUN: FileCheck --input-file %T/predefined_macro_replacement.dp.cpp --match-full-lines %s
 #include <stdio.h>
 //CHECK: #ifdef DPCPP_COMPATIBILITY_TEMP

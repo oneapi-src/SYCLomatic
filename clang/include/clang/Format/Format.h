@@ -21,6 +21,20 @@
 #include "llvm/Support/Regex.h"
 #include <system_error>
 
+#ifdef INTEL_CUSTOMIZATION
+namespace clang {
+namespace format {
+/// The enum that specifies the range of code formatting, only
+/// three levels are supported currrently.
+/// migrated: Only format the migrated code
+/// all:      Format all code
+/// none:     Not format any code
+enum class FormatRange { migrated, all, none };
+extern std::function<FormatRange()> formatRangeGetter;
+void setFormatRangeGetterHandler(std::function<FormatRange()> Getter);
+} // namespace format
+} // namespace clang
+#endif
 namespace llvm {
 namespace vfs {
 class FileSystem;

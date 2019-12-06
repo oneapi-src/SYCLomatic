@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/replace-align.dp.cpp
 
 // CHECK:typedef struct __dpct_align__(4) dpct_type_{{[a-f0-9]+}}

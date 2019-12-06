@@ -23,6 +23,8 @@ std::string DpctGlobalInfo::InRoot = std::string();
 // TODO: implement one of this for each source language.
 std::string DpctGlobalInfo::CudaPath = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::none;
+format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
+DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::llvm;
 CompilerInstance *DpctGlobalInfo::CI = nullptr;
 ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;

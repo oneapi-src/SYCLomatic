@@ -4556,7 +4556,7 @@ void MemoryMigrationRule::mallocMigration(
   }
   if (Name == "cudaMalloc") {
     DpctGlobalInfo::getInstance().insertCudaMalloc(C);
-    if (USMLevel == restricted) {
+    if (USMLevel == UsmLevel::restricted) {
       std::ostringstream Repl;
       ExprAnalysis EA;
       EA.analyze(C->getArg(0));
@@ -4596,7 +4596,7 @@ void MemoryMigrationRule::mallocMigration(
     } else {
       Repl << getAssignedStr(C->getArg(0), Arg0Str);
     }
-    if (USMLevel == restricted) {
+    if (USMLevel == UsmLevel::restricted) {
       Repl << "cl::sycl::malloc_host(" << Arg1Str
            << ", dpct::get_default_context())";
     } else {
@@ -4604,7 +4604,7 @@ void MemoryMigrationRule::mallocMigration(
     }
     emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
   } else if (Name == "cudaMallocManaged") {
-    if (USMLevel == restricted) {
+    if (USMLevel == UsmLevel::restricted) {
       std::ostringstream Repl;
       ExprAnalysis EA;
       EA.analyze(C->getArg(0));
@@ -5071,12 +5071,12 @@ void MemoryMigrationRule::memcpyMigration(
   }
   std::string ReplaceStr;
   if (Name == "cudaMemcpy") {
-    if (USMLevel == restricted)
+    if (USMLevel == UsmLevel::restricted)
       ReplaceStr = QueueForExcute + ".memcpy";
     else
       ReplaceStr = "dpct::dpct_memcpy";
   } else {
-    if (USMLevel == restricted) {
+    if (USMLevel == UsmLevel::restricted) {
       if (C->getNumArgs() == 5) {
         const Expr *Stream = C->getArg(4);
         if (Stream) {
@@ -5106,7 +5106,7 @@ void MemoryMigrationRule::memcpyMigration(
   replaceMemAPIArg(C->getArg(0), Result);
   replaceMemAPIArg(C->getArg(1), Result);
 
-  if (USMLevel == restricted) {
+  if (USMLevel == UsmLevel::restricted) {
     if (auto TM = removeArg(C, 3, *Result.SourceManager))
       emplaceTransformation(TM);
   } else {
@@ -5116,7 +5116,7 @@ void MemoryMigrationRule::memcpyMigration(
 
   if (Name == "cudaMemcpyAsync") {
     if (C->getNumArgs() == 5) {
-      if (USMLevel == restricted) {
+      if (USMLevel == UsmLevel::restricted) {
         if (auto TM = removeArg(C, 4, *Result.SourceManager))
           emplaceTransformation(TM);
       } else {
@@ -5124,7 +5124,7 @@ void MemoryMigrationRule::memcpyMigration(
       }
     }
   } else {
-    if (USMLevel == restricted)
+    if (USMLevel == UsmLevel::restricted)
       emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
   }
 }
@@ -5175,12 +5175,12 @@ void MemoryMigrationRule::memcpySymbolMigration(
   }
   std::string ReplaceStr;
   if (Name == "cudaMemcpyToSymbol" || Name == "cudaMemcpyFromSymbol") {
-    if (USMLevel == restricted)
+    if (USMLevel == UsmLevel::restricted)
       ReplaceStr = QueueForExcute + ".memcpy";
     else
       ReplaceStr = "dpct::dpct_memcpy";
   } else {
-    if (USMLevel == restricted) {
+    if (USMLevel == UsmLevel::restricted) {
       if (C->getNumArgs() == 6) {
         const Expr *Stream = C->getArg(5);
         if (Stream) {
@@ -5236,7 +5236,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
   if (Name == "cudaMemcpyToSymbolAsync" ||
       Name == "cudaMemcpyFromSymbolAsync") {
     if (C->getNumArgs() == 6) {
-      if (USMLevel == restricted) {
+      if (USMLevel == UsmLevel::restricted) {
         if (auto TM = removeArg(C, 4, *Result.SourceManager))
           emplaceTransformation(TM);
         if (auto TM = removeArg(C, 5, *Result.SourceManager))
@@ -5247,7 +5247,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
     }
   } else {
     if (C->getNumArgs() == 5) {
-      if (USMLevel == restricted) {
+      if (USMLevel == UsmLevel::restricted) {
         if (auto TM = removeArg(C, 4, *Result.SourceManager))
           emplaceTransformation(TM);
         emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
@@ -5270,7 +5270,7 @@ void MemoryMigrationRule::freeMigration(
   }
 
   if (Name == "cudaFree") {
-    if (USMLevel == restricted) {
+    if (USMLevel == UsmLevel::restricted) {
       ExprAnalysis EA;
       EA.analyze(C->getArg(0));
       std::ostringstream Repl;
@@ -5281,7 +5281,7 @@ void MemoryMigrationRule::freeMigration(
       emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_free", Name));
     }
   } else if (Name == "cudaFreeHost") {
-    if (USMLevel == restricted) {
+    if (USMLevel == UsmLevel::restricted) {
       ExprAnalysis EA;
       EA.analyze(C->getArg(0));
       std::ostringstream Repl;
@@ -5318,12 +5318,12 @@ void MemoryMigrationRule::memsetMigration(
   }
   std::string ReplaceStr;
   if (Name == "cudaMemset") {
-    if (USMLevel == restricted)
+    if (USMLevel == UsmLevel::restricted)
       ReplaceStr = QueueForExcute + ".memset";
     else
       ReplaceStr = "dpct::dpct_memset";
   } else {
-    if (USMLevel == restricted) {
+    if (USMLevel == UsmLevel::restricted) {
       if (C->getNumArgs() == 4) {
         const Expr *Stream = C->getArg(3);
         if (Stream) {
@@ -5348,7 +5348,7 @@ void MemoryMigrationRule::memsetMigration(
 
   if (Name == "cudaMemsetAsync") {
     if (C->getNumArgs() == 4) {
-      if (USMLevel == restricted) {
+      if (USMLevel == UsmLevel::restricted) {
         if (auto TM = removeArg(C, 3, *Result.SourceManager))
           emplaceTransformation(TM);
       } else {
@@ -5356,7 +5356,7 @@ void MemoryMigrationRule::memsetMigration(
       }
     }
   } else {
-    if (USMLevel == restricted)
+    if (USMLevel == UsmLevel::restricted)
       emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
   }
 }
@@ -5388,7 +5388,7 @@ void MemoryMigrationRule::prefetchMigration(
     const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned,
     std::string SpecifiedQueue) {
-  if (USMLevel == restricted) {
+  if (USMLevel == UsmLevel::restricted) {
     const SourceManager *SM = Result.SourceManager;
     std::string Replacement;
     ExprAnalysis EA;
@@ -5436,7 +5436,7 @@ void MemoryMigrationRule::miscMigration(
   }
 
   if (Name == "cudaHostGetDevicePointer") {
-    if (USMLevel == restricted) {
+    if (USMLevel == UsmLevel::restricted) {
       std::ostringstream Repl;
       ExprAnalysis EA;
       EA.analyze(C->getArg(0));
@@ -5511,7 +5511,7 @@ void MemoryMigrationRule::run(const MatchFinder::MatchResult &Result) {
     // template function is implicitly instantiated with two types. Then there
     // will be three FunctionDecl nodes in the AST. We should do replacement on
     // the FunctionDecl node which is not implicitly instantiated.
-    if (USMLevel == restricted &&
+    if (USMLevel == UsmLevel::restricted &&
         (Name == "cudaMalloc" || Name == "cudaHostAlloc" ||
          Name == "cudaMallocHost" || Name == "cudaMallocManaged")) {
       auto &Context = dpct::DpctGlobalInfo::getContext();
