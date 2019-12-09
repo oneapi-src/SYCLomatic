@@ -34,9 +34,8 @@
 using namespace llvm;
 using namespace llvm::object;
 
-using namespace lld;
-using namespace lld::elf;
-
+namespace lld {
+namespace elf {
 using SymbolMapTy = DenseMap<const SectionBase *, SmallVector<Defined *, 4>>;
 
 static constexpr char indent8[] = "        ";          // 8 spaces
@@ -139,7 +138,7 @@ static void printEhFrame(raw_ostream &os, const EhFrameSection *sec) {
   }
 }
 
-void elf::writeMapFile() {
+void writeMapFile() {
   if (config->mapFile.empty())
     return;
 
@@ -214,7 +213,7 @@ void elf::writeMapFile() {
 }
 
 static void print(StringRef a, StringRef b) {
-  outs() << left_justify(a, 49) << " " << b << "\n";
+  lld::outs() << left_justify(a, 49) << " " << b << "\n";
 }
 
 // Output a cross reference table to stdout. This is for --cref.
@@ -228,7 +227,7 @@ static void print(StringRef a, StringRef b) {
 //
 // In this case, strlen is defined by libc.so.6 and used by other two
 // files.
-void elf::writeCrossReferenceTable() {
+void writeCrossReferenceTable() {
   if (!config->cref)
     return;
 
@@ -245,7 +244,7 @@ void elf::writeCrossReferenceTable() {
   }
 
   // Print out a header.
-  outs() << "Cross Reference Table\n\n";
+  lld::outs() << "Cross Reference Table\n\n";
   print("Symbol", "File");
 
   // Print out a table.
@@ -259,3 +258,6 @@ void elf::writeCrossReferenceTable() {
         print("", toString(file));
   }
 }
+
+} // namespace elf
+} // namespace lld

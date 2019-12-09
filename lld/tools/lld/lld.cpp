@@ -33,6 +33,7 @@
 #include "llvm/ADT/Triple.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Host.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/Path.h"
 #include <cstdlib>
@@ -50,7 +51,7 @@ enum Flavor {
 };
 
 LLVM_ATTRIBUTE_NORETURN static void die(const Twine &s) {
-  errs() << s << "\n";
+  llvm::errs() << s << "\n";
   exit(1);
 }
 
@@ -149,14 +150,14 @@ int main(int argc, const char **argv) {
   switch (parseFlavor(args)) {
   case Gnu:
     if (isPETarget(args))
-      return !mingw::link(args);
-    return !elf::link(args, canExitEarly());
+      return !mingw::link(args, canExitEarly(), llvm::outs(), llvm::errs());
+    return !elf::link(args, canExitEarly(), llvm::outs(), llvm::errs());
   case WinLink:
-    return !coff::link(args, canExitEarly());
+    return !coff::link(args, canExitEarly(), llvm::outs(), llvm::errs());
   case Darwin:
-    return !mach_o::link(args, canExitEarly());
+    return !mach_o::link(args, canExitEarly(), llvm::outs(), llvm::errs());
   case Wasm:
-    return !wasm::link(args, canExitEarly());
+    return !wasm::link(args, canExitEarly(), llvm::outs(), llvm::errs());
   default:
     die("lld is a generic driver.\n"
         "Invoke ld.lld (Unix), ld64.lld (macOS), lld-link (Windows), wasm-ld"

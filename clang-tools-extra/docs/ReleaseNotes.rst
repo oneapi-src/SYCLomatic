@@ -67,6 +67,12 @@ The improvements are...
 Improvements to clang-tidy
 --------------------------
 
+- New :doc:`bugprone-bad-signal-to-kill-thread
+  <clang-tidy/checks/bugprone-bad-signal-to-kill-thread>` check.
+
+  Finds ``pthread_kill`` function calls when a thread is terminated by 
+  raising ``SIGTERM`` signal.
+
 - New :doc:`bugprone-dynamic-static-initializers
   <clang-tidy/checks/bugprone-dynamic-static-initializers>` check.
 
@@ -78,6 +84,26 @@ Improvements to clang-tidy
 
   Finds obvious infinite loops (loops where the condition variable is not
   changed at all).
+
+- New :doc:`bugprone-not-null-terminated-result
+  <clang-tidy/checks/bugprone-not-null-terminated-result>` check
+
+  Finds function calls where it is possible to cause a not null-terminated
+  result. Usually the proper length of a string is ``strlen(str) + 1`` or equal
+  length of this expression, because the null terminator needs an extra space.
+  Without the null terminator it can result in undefined behaviour when the
+  string is read.
+
+- New :doc:`cert-mem57-cpp
+  <clang-tidy/checks/cert-mem57-cpp>` check.
+
+  Checks if an object of type with extended alignment is allocated by using
+  the default ``operator new``.
+
+- New alias :doc:`cert-pos44-c
+  <clang-tidy/checks/cert-pos44-c>` to
+  :doc:`bugprone-bad-signal-to-kill-thread
+  <clang-tidy/checks/bugprone-bad-signal-to-kill-thread>` was added.
 
 - New :doc:`cppcoreguidelines-init-variables
   <clang-tidy/checks/cppcoreguidelines-init-variables>` check.
@@ -93,6 +119,11 @@ Improvements to clang-tidy
 
   Finds uses of deprecated Googletest APIs with names containing ``case`` and
   replaces them with equivalent APIs with ``suite``.
+
+- Improved :doc:`hicpp-signed-bitwise
+  <clang-tidy/checks/hicpp-signed-bitwise>` check.
+
+  The check now supports the ``IgnorePositiveIntegerLiterals`` option.
 
 - New :doc:`linuxkernel-must-use-errs
   <clang-tidy/checks/linuxkernel-must-use-errs>` check.
@@ -112,6 +143,17 @@ Improvements to clang-tidy
   Finds Objective-C implementations that implement ``-isEqual:`` without also
   appropriately implementing ``-hash``.
 
+- New :doc:`performance-no-automatic-move
+  <clang-tidy/checks/performance-no-automatic-move>` check.
+
+  Finds local variables that cannot be automatically moved due to constness.
+
+- New :doc:`performance-trivially-destructible
+  <clang-tidy/checks/performance-trivially-destructible>` check.
+
+  Finds types that could be made trivially-destructible by removing out-of-line
+  defaulted destructor declarations.
+
 - Improved :doc:`bugprone-posix-return
   <clang-tidy/checks/bugprone-posix-return>` check.
 
@@ -120,6 +162,47 @@ Improvements to clang-tidy
 
 - The 'objc-avoid-spinlock' check was renamed to :doc:`darwin-avoid-spinlock
   <clang-tidy/checks/darwin-avoid-spinlock>`
+
+- The :doc:`modernize-use-equals-default
+  <clang-tidy/checks/modernize-use-equals-default>` fix no longer adds
+  semicolons where they would be redundant.
+
+- New :doc:`readability-redundant-access-specifiers
+  <clang-tidy/checks/readability-redundant-access-specifiers>` check.
+
+  Finds classes, structs, and unions that contain redundant member
+  access specifiers.
+
+- New :doc:`readability-make-member-function-const
+  <clang-tidy/checks/readability-make-member-function-const>` check.
+
+  Finds non-static member functions that can be made ``const``
+  because the functions don't use ``this`` in a non-const way.
+
+- Improved :doc:`modernize-use-override
+  <clang-tidy/checks/modernize-use-override>` check.
+
+  The check now supports the ``AllowOverrideAndFinal`` option to eliminate
+  conflicts with ``gcc -Wsuggest-override`` or ``gcc -Werror=suggest-override``.
+
+- Improved :doc:`readability-redundant-member-init
+  <clang-tidy/checks/readability-redundant-member-init>` check.
+
+  The check  now supports the ``IgnoreBaseInCopyConstructors`` option to avoid
+  `"base class 'Foo' should be explicitly initialized in the copy constructor"`
+  warnings or errors with ``gcc -Wextra`` or ``gcc -Werror=extra``.
+
+- The :doc:`readability-redundant-string-init
+  <clang-tidy/checks/readability-redundant-string-init>` check now supports a
+  `StringNames` option enabling its application to custom string classes.
+
+- Improved :doc:`modernize-avoid-bind
+  <clang-tidy/checks/modernize-avoid-bind>` check.
+
+  The check now supports supports diagnosing and fixing arbitrary callables instead of
+  only simple free functions. The `PermissiveParameterList` option has also been
+  added to address situations where the existing fix-it logic would sometimes generate
+  code that no longer compiles.
 
 Improvements to include-fixer
 -----------------------------

@@ -59,6 +59,7 @@ class EnumDecl;
 class Expr;
 class FunctionTemplateDecl;
 class FunctionTemplateSpecializationInfo;
+class FunctionTypeLoc;
 class LabelStmt;
 class MemberSpecializationInfo;
 class Module;
@@ -920,11 +921,13 @@ protected:
     /// Whether this parameter is an ObjC method parameter or not.
     unsigned IsObjCMethodParam : 1;
 
+    enum { NumScopeDepthOrObjCQualsBits = 7 };
+
     /// If IsObjCMethodParam, a Decl::ObjCDeclQualifier.
     /// Otherwise, the number of function parameter scopes enclosing
     /// the function parameter scope in which this parameter was
     /// declared.
-    unsigned ScopeDepthOrObjCQuals : 7;
+    unsigned ScopeDepthOrObjCQuals : NumScopeDepthOrObjCQualsBits;
 
     /// The number of parameters preceding this parameter in the
     /// function parameter scope in which it was declared.
@@ -1649,6 +1652,10 @@ public:
     return ParmVarDeclBits.ScopeDepthOrObjCQuals;
   }
 
+  static constexpr unsigned getMaxFunctionScopeDepth() {
+    return (1u << ParmVarDeclBitfields::NumScopeDepthOrObjCQualsBits) - 1;
+  }
+
   /// Returns the index of this parameter in its prototype or method scope.
   unsigned getFunctionScopeIndex() const {
     return getParameterIndex();
@@ -1957,6 +1964,14 @@ public:
 
   void setRangeEnd(SourceLocation E) { EndRangeLoc = E; }
 
+  /// Returns the location of the ellipsis of a variadic function.
+  SourceLocation getEllipsisLoc() const {
+    const auto *FPT = getType()->getAs<FunctionProtoType>();
+    if (FPT && FPT->isVariadic())
+      return FPT->getEllipsisLoc();
+    return SourceLocation();
+  }
+
   SourceRange getSourceRange() const override LLVM_READONLY;
 
   // Function definitions.
@@ -2030,6 +2045,10 @@ public:
   ///
   /// This does not determine whether the function has been defined (e.g., in a
   /// previous definition); for that information, use isDefined.
+  ///
+  /// Note: the function declaration does not become a definition until the
+  /// parser reaches the definition, if called before, this function will return
+  /// `false`.
   bool isThisDeclarationADefinition() const {
     return isDeletedAsWritten() || isDefaulted() || Body || hasSkippedBody() ||
            isLateTemplateParsed() || willHaveBody() || hasDefiningAttr();
@@ -2176,6 +2195,10 @@ public:
   /// Indicates the function uses __try.
   bool usesSEHTry() const { return FunctionDeclBits.UsesSEHTry; }
   void setUsesSEHTry(bool UST) { FunctionDeclBits.UsesSEHTry = UST; }
+
+  /// Indicates the function uses Floating Point constrained intrinsics
+  bool usesFPIntrin() const { return FunctionDeclBits.UsesFPIntrin; }
+  void setUsesFPIntrin(bool Val) { FunctionDeclBits.UsesFPIntrin = Val; }
 
   /// Whether this function has been deleted.
   ///
@@ -2362,6 +2385,12 @@ public:
   /// parameters have default arguments (in C++).
   unsigned getMinRequiredArguments() const;
 
+  /// Find the source location information for how the type of this function
+  /// was written. May be absent (for example if the function was declared via
+  /// a typedef) and may contain a different type from that of the function
+  /// (for example if the function type was adjusted by an attribute).
+  FunctionTypeLoc getFunctionTypeLoc() const;
+
   QualType getReturnType() const {
     return getType()->castAs<FunctionType>()->getReturnType();
   }
@@ -2370,6 +2399,12 @@ public:
   /// function return type. This may omit qualifiers and other information with
   /// limited representation in the AST.
   SourceRange getReturnTypeSourceRange() const;
+
+  /// Attempt to compute an informative source range covering the
+  /// function parameters, including the ellipsis of a variadic function.
+  /// The source range excludes the parentheses, and is invalid if there are
+  /// no parameters and no ellipsis.
+  SourceRange getParametersSourceRange() const;
 
   /// Get the declared return type, which may differ from the actual return
   /// type if the return type is deduced.
@@ -4114,13 +4149,9 @@ public:
   void setCaptures(ASTContext &Context, ArrayRef<Capture> Captures,
                    bool CapturesCXXThis);
 
-   unsigned getBlockManglingNumber() const {
-     return ManglingNumber;
-   }
+  unsigned getBlockManglingNumber() const { return ManglingNumber; }
 
-   Decl *getBlockManglingContextDecl() const {
-     return ManglingContextDecl;
-   }
+  Decl *getBlockManglingContextDecl() const { return ManglingContextDecl; }
 
   void setBlockMangling(unsigned Number, Decl *Ctx) {
     ManglingNumber = Number;

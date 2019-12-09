@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "TableGenBackends.h"
+#include "ClangASTEmitters.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/DenseMap.h"
@@ -1808,7 +1809,7 @@ struct PragmaClangAttributeSupport {
 } // end anonymous namespace
 
 static bool doesDeclDeriveFrom(const Record *D, const Record *Base) {
-  const Record *CurrentBase = D->getValueAsDef("Base");
+  const Record *CurrentBase = D->getValueAsOptionalDef(BaseFieldName);
   if (!CurrentBase)
     return false;
   if (CurrentBase == Base)
@@ -1849,7 +1850,8 @@ PragmaClangAttributeSupport::PragmaClangAttributeSupport(
 
   std::vector<Record *> Aggregates =
       Records.getAllDerivedDefinitions("AttrSubjectMatcherAggregateRule");
-  std::vector<Record *> DeclNodes = Records.getAllDerivedDefinitions("DDecl");
+  std::vector<Record *> DeclNodes =
+    Records.getAllDerivedDefinitions(DeclNodeClassName);
   for (const auto *Aggregate : Aggregates) {
     Record *SubjectDecl = Aggregate->getValueAsDef("Subject");
 
@@ -2762,9 +2764,11 @@ void EmitClangAttrList(RecordKeeper &Records, raw_ostream &OS) {
   // Add defaulting macro definitions.
   Hierarchy.emitDefaultDefines(OS);
   emitDefaultDefine(OS, "PRAGMA_SPELLING_ATTR", nullptr);
+  emitDefaultDefine(OS, "DEPENDENT_STMT_ATTR", nullptr);
 
   std::vector<Record *> Attrs = Records.getAllDerivedDefinitions("Attr");
   std::vector<Record *> PragmaAttrs;
+  std::vector<Record *> DependentStmtAttrs;
   for (auto *Attr : Attrs) {
     if (!Attr->getValueAsBit("ASTNode"))
       continue;
@@ -2772,6 +2776,9 @@ void EmitClangAttrList(RecordKeeper &Records, raw_ostream &OS) {
     // Add the attribute to the ad-hoc groups.
     if (AttrHasPragmaSpelling(Attr))
       PragmaAttrs.push_back(Attr);
+
+    if (Attr->getValueAsBit("HasCustomTypeTransform"))
+      DependentStmtAttrs.push_back(Attr);
 
     // Place it in the hierarchy.
     Hierarchy.classifyAttr(Attr);
@@ -2782,6 +2789,7 @@ void EmitClangAttrList(RecordKeeper &Records, raw_ostream &OS) {
 
   // Emit the ad hoc groups.
   emitAttrList(OS, "PRAGMA_SPELLING_ATTR", PragmaAttrs);
+  emitAttrList(OS, "DEPENDENT_STMT_ATTR", DependentStmtAttrs);
 
   // Emit the attribute ranges.
   OS << "#ifdef ATTR_RANGE\n";
@@ -2790,6 +2798,7 @@ void EmitClangAttrList(RecordKeeper &Records, raw_ostream &OS) {
   OS << "#endif\n";
 
   Hierarchy.emitUndefs(OS);
+  OS << "#undef DEPENDENT_STMT_ATTR\n";
   OS << "#undef PRAGMA_SPELLING_ATTR\n";
 }
 
@@ -3303,9 +3312,8 @@ static std::string GetDiagnosticSpelling(const Record &R) {
   // If we couldn't find the DiagSpelling in this object, we can check to see
   // if the object is one that has a base, and if it is, loop up to the Base
   // member recursively.
-  std::string Super = R.getSuperClasses().back().first->getName();
-  if (Super == "DDecl" || Super == "DStmt")
-    return GetDiagnosticSpelling(*R.getValueAsDef("Base"));
+  if (auto Base = R.getValueAsOptionalDef(BaseFieldName))
+    return GetDiagnosticSpelling(*Base);
 
   return "";
 }
@@ -3385,7 +3393,8 @@ static std::string GenerateCustomAppertainsTo(const Record &Subject,
   if (I != CustomSubjectSet.end())
     return *I;
 
-  Record *Base = Subject.getValueAsDef("Base");
+  // This only works with non-root Decls.
+  Record *Base = Subject.getValueAsDef(BaseFieldName);
 
   // Not currently support custom subjects within custom subjects.
   if (Base->isSubClassOf("SubsetSubject")) {

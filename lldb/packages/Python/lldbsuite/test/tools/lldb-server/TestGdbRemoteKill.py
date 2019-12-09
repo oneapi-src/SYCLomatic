@@ -32,7 +32,7 @@ class TestGdbRemoteKill(gdbremote_testcase.GdbRemoteTestCaseBase):
 
         # Wait a moment for completed and now-detached inferior process to
         # clear.
-        time.sleep(1)
+        time.sleep(self._WAIT_TIMEOUT)
 
         if not lldb.remote_platform:
             # Process should be dead now. Reap results.
@@ -52,6 +52,7 @@ class TestGdbRemoteKill(gdbremote_testcase.GdbRemoteTestCaseBase):
         self.set_inferior_startup_attach()
         self.attach_commandline_kill_after_initial_stop()
 
+    @expectedFailureNetBSD
     @llgs_test
     def test_attach_commandline_kill_after_initial_stop_llgs(self):
         self.init_llgs_test()

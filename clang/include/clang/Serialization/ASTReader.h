@@ -36,7 +36,7 @@
 #include "clang/Sema/IdentifierResolver.h"
 #include "clang/Serialization/ASTBitCodes.h"
 #include "clang/Serialization/ContinuousRangeMap.h"
-#include "clang/Serialization/Module.h"
+#include "clang/Serialization/ModuleFile.h"
 #include "clang/Serialization/ModuleFileExtension.h"
 #include "clang/Serialization/ModuleManager.h"
 #include "llvm/ADT/APFloat.h"
@@ -551,6 +551,14 @@ private:
   llvm::DenseMap<Decl*, llvm::SmallVector<NamedDecl*, 2>>
     AnonymousDeclarationsForMerging;
 
+  /// Key used to identify LifetimeExtendedTemporaryDecl for merging,
+  /// containing the lifetime-extending declaration and the mangling number.
+  using LETemporaryKey = std::pair<Decl *, unsigned>;
+
+  /// Map of already deserialiazed temporaries.
+  llvm::DenseMap<LETemporaryKey, LifetimeExtendedTemporaryDecl *>
+      LETemporaryForMerging;
+
   struct FileDeclsInfo {
     ModuleFile *Mod = nullptr;
     ArrayRef<serialization::LocalDeclID> Decls;
@@ -930,6 +938,9 @@ private:
   /// Whether validate system input files.
   bool ValidateSystemInputs;
 
+  /// Whether validate headers and module maps using hash based on contents.
+  bool ValidateASTInputFilesContent;
+
   /// Whether we are allowed to use the global module index.
   bool UseGlobalIndex;
 
@@ -1203,6 +1214,7 @@ private:
 
   struct InputFileInfo {
     std::string Filename;
+    uint64_t ContentHash;
     off_t StoredSize;
     time_t StoredTime;
     bool Overridden;
@@ -1436,7 +1448,9 @@ private:
   /// do with non-routine failures (e.g., corrupted AST file).
   void Error(StringRef Msg) const;
   void Error(unsigned DiagID, StringRef Arg1 = StringRef(),
-             StringRef Arg2 = StringRef()) const;
+             StringRef Arg2 = StringRef(), StringRef Arg3 = StringRef()) const;
+  void Error(unsigned DiagID, StringRef Arg1, StringRef Arg2,
+             unsigned Select) const;
   void Error(llvm::Error &&Err) const;
 
 public:
@@ -1485,7 +1499,9 @@ public:
             StringRef isysroot = "", bool DisableValidation = false,
             bool AllowASTWithCompilerErrors = false,
             bool AllowConfigurationMismatch = false,
-            bool ValidateSystemInputs = false, bool UseGlobalIndex = true,
+            bool ValidateSystemInputs = false,
+            bool ValidateASTInputFilesContent = false,
+            bool UseGlobalIndex = true,
             std::unique_ptr<llvm::Timer> ReadTimer = {});
   ASTReader(const ASTReader &) = delete;
   ASTReader &operator=(const ASTReader &) = delete;

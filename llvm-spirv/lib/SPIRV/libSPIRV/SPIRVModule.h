@@ -374,6 +374,10 @@ public:
                                                      SPIRVId TheVector,
                                                      SPIRVId TheScalar,
                                                      SPIRVBasicBlock *BB) = 0;
+  virtual SPIRVInstruction *addVectorTimesMatrixInst(SPIRVType *TheType,
+                                                     SPIRVId TheVector,
+                                                     SPIRVId TheMatrix,
+                                                     SPIRVBasicBlock *BB) = 0;
   virtual SPIRVInstruction *addMatrixTimesScalarInst(SPIRVType *TheType,
                                                      SPIRVId TheMatrix,
                                                      SPIRVId TheScalar,
@@ -381,6 +385,9 @@ public:
   virtual SPIRVInstruction *addMatrixTimesVectorInst(SPIRVType *TheType,
                                                      SPIRVId TheMatrix,
                                                      SPIRVId TheVector,
+                                                     SPIRVBasicBlock *BB) = 0;
+  virtual SPIRVInstruction *addMatrixTimesMatrixInst(SPIRVType *TheType,
+                                                     SPIRVId M1, SPIRVId M2,
                                                      SPIRVBasicBlock *BB) = 0;
   virtual SPIRVInstruction *addUnaryInst(Op, SPIRVType *, SPIRVValue *,
                                          SPIRVBasicBlock *) = 0;

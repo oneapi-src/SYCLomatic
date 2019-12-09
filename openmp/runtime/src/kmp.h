@@ -3115,7 +3115,6 @@ extern void __kmp_internal_begin(void);
 extern void __kmp_internal_end_library(int gtid);
 extern void __kmp_internal_end_thread(int gtid);
 extern void __kmp_internal_end_atexit(void);
-extern void __kmp_internal_end_fini(void);
 extern void __kmp_internal_end_dtor(void);
 extern void __kmp_internal_end_dest(void *);
 
@@ -3341,7 +3340,7 @@ extern int __kmp_aux_set_affinity_mask_proc(int proc, void **mask);
 extern int __kmp_aux_unset_affinity_mask_proc(int proc, void **mask);
 extern int __kmp_aux_get_affinity_mask_proc(int proc, void **mask);
 extern void __kmp_balanced_affinity(kmp_info_t *th, int team_size);
-#if KMP_OS_LINUX
+#if KMP_OS_LINUX || KMP_OS_FREEBSD
 extern int kmp_set_thread_affinity_mask_initial(void);
 #endif
 #endif /* KMP_AFFINITY_SUPPORTED */

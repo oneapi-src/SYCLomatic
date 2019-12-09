@@ -16,9 +16,9 @@
 ///
 /// Definitions:
 /// * Cluster
-///   * An ordered list of input sections which are layed out as a unit. At the
+///   * An ordered list of input sections which are laid out as a unit. At the
 ///     beginning of the algorithm each input section has its own cluster and
-///     the weight of the cluster is the sum of the weight of all incomming
+///     the weight of the cluster is the sum of the weight of all incoming
 ///     edges.
 /// * Call-Chain Clustering (C³) Heuristic
 ///   * Defines when and how clusters are combined. Pick the highest weighted
@@ -26,7 +26,7 @@
 ///     penalize it too much.
 /// * Density
 ///   * The weight of the cluster divided by the size of the cluster. This is a
-///     proxy for the ammount of execution time spent per byte of the cluster.
+///     proxy for the amount of execution time spent per byte of the cluster.
 ///
 /// It does so given a call graph profile by the following:
 /// * Build a weighted call graph from the call graph profile
@@ -48,8 +48,9 @@
 #include <numeric>
 
 using namespace llvm;
-using namespace lld;
-using namespace lld::elf;
+
+namespace lld {
+namespace elf {
 
 namespace {
 struct Edge {
@@ -85,7 +86,7 @@ private:
   std::vector<const InputSectionBase *> sections;
 };
 
-// Maximum ammount the combined cluster density can be worse than the original
+// Maximum amount the combined cluster density can be worse than the original
 // cluster to consider merging.
 constexpr int MAX_DENSITY_DEGRADATION = 8;
 
@@ -264,6 +265,9 @@ DenseMap<const InputSectionBase *, int> CallGraphSort::run() {
 // This first builds a call graph based on the profile data then merges sections
 // according to the C³ huristic. All clusters are then sorted by a density
 // metric to further improve locality.
-DenseMap<const InputSectionBase *, int> elf::computeCallGraphProfileOrder() {
+DenseMap<const InputSectionBase *, int> computeCallGraphProfileOrder() {
   return CallGraphSort().run();
 }
+
+} // namespace elf
+} // namespace lld

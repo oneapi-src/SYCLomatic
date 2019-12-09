@@ -22,9 +22,8 @@ namespace detail {
 template <> cl_uint queue_impl::get_info<info::queue::reference_count>() const {
   RT::PiResult result = PI_SUCCESS;
   if (!is_host())
-    PI_CALL(RT::piQueueGetInfo(m_CommandQueue,
-                               PI_QUEUE_INFO_REFERENCE_COUNT,
-                               sizeof(result), &result, nullptr));
+    PI_CALL(piQueueGetInfo)(m_CommandQueue, PI_QUEUE_INFO_REFERENCE_COUNT,
+                            sizeof(result), &result, nullptr);
   return result;
 }
 
@@ -52,9 +51,7 @@ event queue_impl::memcpy(std::shared_ptr<detail::queue_impl> Impl, void *Dest,
                          const void *Src, size_t Count) {
   context Context = get_context();
   RT::PiEvent Event = nullptr;
-  // Not entirely sure when UseExclusiveQueue should be true
-  MemoryManager::copy_usm(Src, Impl, Count, Dest, /*DepEvents*/ {},
-                          /*ExclusiveQueue*/ false, Event);
+  MemoryManager::copy_usm(Src, Impl, Count, Dest, /*DepEvents*/ {}, Event);
 
   if (Context.is_host())
     return event();

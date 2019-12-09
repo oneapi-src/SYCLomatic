@@ -11,6 +11,7 @@
 #include <CL/cl.h>
 #include <CL/sycl/access/access.hpp>
 #include <CL/sycl/context.hpp>
+#include <CL/sycl/detail/context_impl.hpp>
 #include <CL/sycl/detail/aligned_allocator.hpp>
 #include <CL/sycl/detail/common.hpp>
 #include <CL/sycl/detail/helpers.hpp>
@@ -143,9 +144,17 @@ public:
   }
 
   void *allocateMem(ContextImplPtr Context, bool InitFromUserData,
-                    RT::PiEvent &OutEventToWait) override {
+                    void *HostPtr, RT::PiEvent &OutEventToWait) override {
 
-    void *UserPtr = InitFromUserData ? BaseT::getUserPtr() : nullptr;
+    assert(!(InitFromUserData && HostPtr) &&
+           "Cannot init from user data and reuse host ptr provided "
+           "simultaneously");
+
+    void *UserPtr = InitFromUserData ? BaseT::getUserPtr() : HostPtr;
+
+    assert(!(nullptr == UserPtr && BaseT::useHostPtr() && Context->is_host()) &&
+           "Internal error. Allocating memory on the host "
+           "while having use_host_ptr property");
 
     return MemoryManager::allocateMemBuffer(
         std::move(Context), this, UserPtr, BaseT::MHostPtrReadOnly,

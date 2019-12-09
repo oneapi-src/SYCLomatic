@@ -331,8 +331,12 @@ bool PPCTTIImpl::mightUseCTR(BasicBlock *BB,
           case Intrinsic::ceil:               Opcode = ISD::FCEIL;      break;
           case Intrinsic::trunc:              Opcode = ISD::FTRUNC;     break;
           case Intrinsic::rint:               Opcode = ISD::FRINT;      break;
+          case Intrinsic::lrint:              Opcode = ISD::LRINT;      break;
+          case Intrinsic::llrint:             Opcode = ISD::LLRINT;     break;
           case Intrinsic::nearbyint:          Opcode = ISD::FNEARBYINT; break;
           case Intrinsic::round:              Opcode = ISD::FROUND;     break;
+          case Intrinsic::lround:             Opcode = ISD::LROUND;     break;
+          case Intrinsic::llround:            Opcode = ISD::LLROUND;    break;
           case Intrinsic::minnum:             Opcode = ISD::FMINNUM;    break;
           case Intrinsic::maxnum:             Opcode = ISD::FMAXNUM;    break;
           case Intrinsic::umul_with_overflow: Opcode = ISD::UMULO;      break;
@@ -550,7 +554,7 @@ bool PPCTTIImpl::isHardwareLoopProfitable(Loop *L, ScalarEvolution &SE,
 
 void PPCTTIImpl::getUnrollingPreferences(Loop *L, ScalarEvolution &SE,
                                          TTI::UnrollingPreferences &UP) {
-  if (ST->getDarwinDirective() == PPC::DIR_A2) {
+  if (ST->getCPUDirective() == PPC::DIR_A2) {
     // The A2 is in-order with a deep pipeline, and concatenation unrolling
     // helps expose latency-hiding opportunities to the instruction scheduler.
     UP.Partial = UP.Runtime = true;
@@ -576,7 +580,7 @@ bool PPCTTIImpl::enableAggressiveInterleaving(bool LoopHasReductions) {
   // on combining the loads generated for consecutive accesses, and failure to
   // do so is particularly expensive. This makes it much more likely (compared
   // to only using concatenation unrolling).
-  if (ST->getDarwinDirective() == PPC::DIR_A2)
+  if (ST->getCPUDirective() == PPC::DIR_A2)
     return true;
 
   return LoopHasReductions;
@@ -594,10 +598,37 @@ bool PPCTTIImpl::enableInterleavedAccessVectorization() {
   return true;
 }
 
-unsigned PPCTTIImpl::getNumberOfRegisters(bool Vector) {
-  if (Vector && !ST->hasAltivec() && !ST->hasQPX())
-    return 0;
-  return ST->hasVSX() ? 64 : 32;
+unsigned PPCTTIImpl::getNumberOfRegisters(unsigned ClassID) const {
+  assert(ClassID == GPRRC || ClassID == FPRRC ||
+         ClassID == VRRC || ClassID == VSXRC);
+  if (ST->hasVSX()) {
+    assert(ClassID == GPRRC || ClassID == VSXRC);
+    return ClassID == GPRRC ? 32 : 64;
+  }
+  assert(ClassID == GPRRC || ClassID == FPRRC || ClassID == VRRC);
+  return 32;
+}
+
+unsigned PPCTTIImpl::getRegisterClassForType(bool Vector, Type *Ty) const {
+  if (Vector)
+    return ST->hasVSX() ? VSXRC : VRRC;
+  else if (Ty && Ty->getScalarType()->isFloatTy())
+    return ST->hasVSX() ? VSXRC : FPRRC;
+  else
+    return GPRRC;
+}
+
+const char* PPCTTIImpl::getRegisterClassName(unsigned ClassID) const {
+
+  switch (ClassID) {
+    default:
+      llvm_unreachable("unknown register class");
+      return "PPC::unknown register class";
+    case GPRRC:       return "PPC::GPRRC";
+    case FPRRC:       return "PPC::FPRRC";
+    case VRRC:        return "PPC::VRRC";
+    case VSXRC:       return "PPC::VSXRC";
+  }
 }
 
 unsigned PPCTTIImpl::getRegisterBitWidth(bool Vector) const {
@@ -613,29 +644,30 @@ unsigned PPCTTIImpl::getRegisterBitWidth(bool Vector) const {
 
 }
 
-unsigned PPCTTIImpl::getCacheLineSize() {
+unsigned PPCTTIImpl::getCacheLineSize() const {
   // Check first if the user specified a custom line size.
   if (CacheLineSize.getNumOccurrences() > 0)
     return CacheLineSize;
 
   // On P7, P8 or P9 we have a cache line size of 128.
-  unsigned Directive = ST->getDarwinDirective();
+  unsigned Directive = ST->getCPUDirective();
+  // Assume that Future CPU has the same cache line size as the others.
   if (Directive == PPC::DIR_PWR7 || Directive == PPC::DIR_PWR8 ||
-      Directive == PPC::DIR_PWR9)
+      Directive == PPC::DIR_PWR9 || Directive == PPC::DIR_PWR_FUTURE)
     return 128;
 
   // On other processors return a default of 64 bytes.
   return 64;
 }
 
-unsigned PPCTTIImpl::getPrefetchDistance() {
+unsigned PPCTTIImpl::getPrefetchDistance() const {
   // This seems like a reasonable default for the BG/Q (this pass is enabled, by
   // default, only on the BG/Q).
   return 300;
 }
 
 unsigned PPCTTIImpl::getMaxInterleaveFactor(unsigned VF) {
-  unsigned Directive = ST->getDarwinDirective();
+  unsigned Directive = ST->getCPUDirective();
   // The 440 has no SIMD support, but floating-point instructions
   // have a 5-cycle latency, so unroll by 5x for latency hiding.
   if (Directive == PPC::DIR_440)
@@ -653,8 +685,9 @@ unsigned PPCTTIImpl::getMaxInterleaveFactor(unsigned VF) {
   // For P7 and P8, floating-point instructions have a 6-cycle latency and
   // there are two execution units, so unroll by 12x for latency hiding.
   // FIXME: the same for P9 as previous gen until POWER9 scheduling is ready
+  // Assume that future is the same as the others.
   if (Directive == PPC::DIR_PWR7 || Directive == PPC::DIR_PWR8 ||
-      Directive == PPC::DIR_PWR9)
+      Directive == PPC::DIR_PWR9 || Directive == PPC::DIR_PWR_FUTURE)
     return 12;
 
   // For most things, modern systems have two execution units (and
@@ -802,8 +835,9 @@ int PPCTTIImpl::getVectorInstrCost(unsigned Opcode, Type *Val, unsigned Index) {
   return Cost;
 }
 
-int PPCTTIImpl::getMemoryOpCost(unsigned Opcode, Type *Src, unsigned Alignment,
-                                unsigned AddressSpace, const Instruction *I) {
+int PPCTTIImpl::getMemoryOpCost(unsigned Opcode, Type *Src,
+                                MaybeAlign Alignment, unsigned AddressSpace,
+                                const Instruction *I) {
   // Legalize the type.
   std::pair<int, MVT> LT = TLI->getTypeLegalizationCost(DL, Src);
   assert((Opcode == Instruction::Load || Opcode == Instruction::Store) &&
@@ -861,7 +895,8 @@ int PPCTTIImpl::getMemoryOpCost(unsigned Opcode, Type *Src, unsigned Alignment,
   // to be decomposed based on the alignment factor.
 
   // Add the cost of each scalar load or store.
-  Cost += LT.first*(SrcBytes/Alignment-1);
+  assert(Alignment);
+  Cost += LT.first * ((SrcBytes / Alignment->value()) - 1);
 
   // For a vector type, there is also scalarization overhead (only for
   // stores, loads are expanded using the vector-load + permutation sequence,
@@ -892,7 +927,8 @@ int PPCTTIImpl::getInterleavedMemoryOpCost(unsigned Opcode, Type *VecTy,
   std::pair<int, MVT> LT = TLI->getTypeLegalizationCost(DL, VecTy);
 
   // Firstly, the cost of load/store operation.
-  int Cost = getMemoryOpCost(Opcode, VecTy, Alignment, AddressSpace);
+  int Cost =
+      getMemoryOpCost(Opcode, VecTy, MaybeAlign(Alignment), AddressSpace);
 
   // PPC, for both Altivec/VSX and QPX, support cheap arbitrary permutations
   // (at least in the sense that there need only be one non-loop-invariant

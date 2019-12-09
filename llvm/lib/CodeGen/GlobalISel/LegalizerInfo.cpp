@@ -433,7 +433,7 @@ LegalizeRuleSet &LegalizerInfo::getActionDefinitionsBuilder(
     std::initializer_list<unsigned> Opcodes) {
   unsigned Representative = *Opcodes.begin();
 
-  assert(!empty(Opcodes) && Opcodes.begin() + 1 != Opcodes.end() &&
+  assert(!llvm::empty(Opcodes) && Opcodes.begin() + 1 != Opcodes.end() &&
          "Initializer list must have at least two opcodes");
 
   for (auto I = Opcodes.begin() + 1, E = Opcodes.end(); I != E; ++I)
@@ -683,6 +683,10 @@ bool LegalizerInfo::legalizeIntrinsic(MachineInstr &MI,
                                       MachineRegisterInfo &MRI,
                                       MachineIRBuilder &MIRBuilder) const {
   return true;
+}
+
+unsigned LegalizerInfo::getExtOpcodeForWideningConstant(LLT SmallTy) const {
+  return SmallTy.isByteSized() ? TargetOpcode::G_SEXT : TargetOpcode::G_ZEXT;
 }
 
 /// \pre Type indices of every opcode form a dense set starting from 0.

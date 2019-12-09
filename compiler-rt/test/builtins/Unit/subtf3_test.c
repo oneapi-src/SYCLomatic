@@ -1,4 +1,5 @@
 // RUN: %clang_builtins %s %librt -o %t && %run %t
+// REQUIRES: librt_has_subtf3
 //===--------------- subtf3_test.c - Test __subtf3 ------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -68,7 +69,8 @@ int main()
                      UINT64_C(0xa44a7bca780a166c)))
         return 1;
 
-#if (defined(__arm__) || defined(__aarch64__)) && defined(__ARM_FP)
+#if (defined(__arm__) || defined(__aarch64__)) && defined(__ARM_FP) || \
+    defined(i386) || defined(__x86_64__)
     // Rounding mode tests on supported architectures
     const long double m = 1234.02L, n = 0.01L;
 

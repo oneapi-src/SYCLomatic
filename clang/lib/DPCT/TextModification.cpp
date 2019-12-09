@@ -484,7 +484,7 @@ const CXXConstructExpr *ReplaceDim3Ctor::getConstructExpr(const Expr *E) {
     return C;
   } else if (isa<MaterializeTemporaryExpr>(E)) {
     return getConstructExpr(
-        dyn_cast<MaterializeTemporaryExpr>(E)->GetTemporaryExpr());
+        dyn_cast<MaterializeTemporaryExpr>(E)->getSubExpr());
   } else if (isa<CastExpr>(E)) {
     return getConstructExpr(dyn_cast<CastExpr>(E)->getSubExpr());
   } else {

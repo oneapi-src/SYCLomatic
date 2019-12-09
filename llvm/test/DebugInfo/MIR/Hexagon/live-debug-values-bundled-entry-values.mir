@@ -59,13 +59,13 @@
   !13 = !DISubroutineType(types: !14)
   !14 = !{!7, !7}
   !15 = !{!16}
-  !16 = !DILocalVariable(name: "arg", arg: 1, scope: !12, file: !1, line: 3, type: !7, flags: DIFlagArgumentNotModified)
+  !16 = !DILocalVariable(name: "arg", arg: 1, scope: !12, file: !1, line: 3, type: !7)
   !17 = !DILocation(line: 0, scope: !12)
   !18 = !DILocation(line: 4, scope: !12)
   !19 = !DILocation(line: 5, scope: !12)
   !20 = distinct !DISubprogram(name: "bar", scope: !1, file: !1, line: 8, type: !13, scopeLine: 8, flags: DIFlagPrototyped | DIFlagAllCallsDescribed, spFlags: DISPFlagDefinition | DISPFlagOptimized, unit: !0, retainedNodes: !21)
   !21 = !{!22}
-  !22 = !DILocalVariable(name: "arg", arg: 1, scope: !20, file: !1, line: 8, type: !7, flags: DIFlagArgumentNotModified)
+  !22 = !DILocalVariable(name: "arg", arg: 1, scope: !20, file: !1, line: 8, type: !7)
   !23 = !DILocation(line: 0, scope: !20)
   !24 = !DILocation(line: 9, scope: !20)
   !25 = !DILocation(line: 9, scope: !26)
@@ -98,7 +98,7 @@ body:             |
 # CHECK-NEXT: $r29 = S2_allocframe $r29, 0
 # CHECK-NEXT: J2_call @clobber
 # CHECK-NEXT: }
-# CHECK-NEXT: DBG_VALUE $r0, $noreg, !16, !DIExpression(DW_OP_entry_value, 1)
+# CHECK-NEXT: DBG_VALUE $r0, $noreg, !16, !DIExpression(DW_OP_LLVM_entry_value, 1)
 
 ---
 name:            bar
@@ -136,4 +136,4 @@ body:             |
 # CHECK-NEXT: $r29 = S2_allocframe $r29, 0
 # CHECK-NEXT: J2_call @clobber
 # CHECK-NEXT: }
-# CHECK-NEXT: DBG_VALUE $r0, $noreg, !22, !DIExpression(DW_OP_entry_value, 1)
+# CHECK-NEXT: DBG_VALUE $r0, $noreg, !22, !DIExpression(DW_OP_LLVM_entry_value, 1)

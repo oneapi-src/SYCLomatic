@@ -1173,7 +1173,7 @@ public:
 
   llvm::Constant *VisitMaterializeTemporaryExpr(MaterializeTemporaryExpr *E,
                                                 QualType T) {
-    return Visit(E->GetTemporaryExpr(), T);
+    return Visit(E->getSubExpr(), T);
   }
 
   llvm::Constant *EmitArrayInitialization(InitListExpr *ILE, QualType T) {
@@ -1269,8 +1269,8 @@ public:
       return nullptr;
 
     // FIXME: We should not have to call getBaseElementType here.
-    const RecordType *RT =
-      CGM.getContext().getBaseElementType(Ty)->getAs<RecordType>();
+    const auto *RT =
+        CGM.getContext().getBaseElementType(Ty)->castAs<RecordType>();
     const CXXRecordDecl *RD = cast<CXXRecordDecl>(RT->getDecl());
 
     // If the class doesn't have a trivial destructor, we can't emit it as a
@@ -2003,8 +2003,8 @@ ConstantLValueEmitter::VisitMaterializeTemporaryExpr(
   assert(E->getStorageDuration() == SD_Static);
   SmallVector<const Expr *, 2> CommaLHSs;
   SmallVector<SubobjectAdjustment, 2> Adjustments;
-  const Expr *Inner = E->GetTemporaryExpr()
-      ->skipRValueSubobjectAdjustments(CommaLHSs, Adjustments);
+  const Expr *Inner =
+      E->getSubExpr()->skipRValueSubobjectAdjustments(CommaLHSs, Adjustments);
   return CGM.GetAddrOfGlobalTemporary(E, Inner);
 }
 

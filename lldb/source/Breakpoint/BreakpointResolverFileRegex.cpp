@@ -94,17 +94,15 @@ BreakpointResolverFileRegex::SerializeToStructuredData() {
   return WrapOptionsDict(options_dict_sp);
 }
 
-Searcher::CallbackReturn
-BreakpointResolverFileRegex::SearchCallback(SearchFilter &filter,
-                                            SymbolContext &context,
-                                            Address *addr, bool containing) {
+Searcher::CallbackReturn BreakpointResolverFileRegex::SearchCallback(
+    SearchFilter &filter, SymbolContext &context, Address *addr) {
 
   assert(m_breakpoint != nullptr);
   if (!context.target_sp)
     return eCallbackReturnContinue;
 
   CompileUnit *cu = context.comp_unit;
-  FileSpec cu_file_spec = *(static_cast<FileSpec *>(cu));
+  FileSpec cu_file_spec = cu->GetPrimaryFile();
   std::vector<uint32_t> line_matches;
   context.target_sp->GetSourceManager().FindLinesMatchingRegex(
       cu_file_spec, m_regex, 1, UINT32_MAX, line_matches);

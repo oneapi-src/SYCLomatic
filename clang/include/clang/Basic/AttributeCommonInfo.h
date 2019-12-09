@@ -148,6 +148,20 @@ public:
     return SyntaxUsed == AS_CXX11 || isAlignasAttribute();
   }
 
+  bool isAllowedOnLambdas() const {
+    // FIXME: Eventually we want to do a list here populated via tablegen.  But
+    // we want C++ attributes to be permissible on Lambdas, and get propagated
+    // to the call operator declaration.
+    auto ParsedAttr = getParsedKind();
+    if (ParsedAttr == AT_SYCLIntelKernelArgsRestrict ||
+        (ParsedAttr == AT_ReqdWorkGroupSize && isCXX11Attribute()) ||
+        ParsedAttr == AT_SYCLIntelNumSimdWorkItems ||
+        ParsedAttr == AT_SYCLIntelMaxWorkGroupSize)
+      return true;
+
+    return false;
+  }
+
   bool isC2xAttribute() const { return SyntaxUsed == AS_C2x; }
 
   bool isKeywordAttribute() const {

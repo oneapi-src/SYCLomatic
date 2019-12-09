@@ -28,7 +28,7 @@
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
-#include "llvm/Analysis/LegacyDivergenceAnalysis.h"
+#include "llvm/Analysis/ProfileSummaryInfo.h"
 #include "llvm/CodeGen/DAGCombine.h"
 #include "llvm/CodeGen/ISDOpcodes.h"
 #include "llvm/CodeGen/RuntimeLibcalls.h"
@@ -54,6 +54,7 @@
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/MachineValueType.h"
 #include "llvm/Target/TargetMachine.h"
+#include "llvm/Transforms/Utils/SizeOpts.h"
 #include <algorithm>
 #include <cassert>
 #include <climits>
@@ -76,6 +77,7 @@ class GlobalValue;
 class GISelKnownBits;
 class IntrinsicInst;
 struct KnownBits;
+class LegacyDivergenceAnalysis;
 class LLVMContext;
 class MachineBasicBlock;
 class MachineFunction;
@@ -188,13 +190,14 @@ public:
     bool IsReturned : 1;
     bool IsSwiftSelf : 1;
     bool IsSwiftError : 1;
+    bool IsCFGuardTarget : 1;
     uint16_t Alignment = 0;
     Type *ByValType = nullptr;
 
     ArgListEntry()
         : IsSExt(false), IsZExt(false), IsInReg(false), IsSRet(false),
           IsNest(false), IsByVal(false), IsInAlloca(false), IsReturned(false),
-          IsSwiftSelf(false), IsSwiftError(false) {}
+          IsSwiftSelf(false), IsSwiftError(false), IsCFGuardTarget(false) {}
 
     void setAttributes(const CallBase *Call, unsigned ArgIdx);
 
@@ -227,6 +230,11 @@ public:
   TargetLoweringBase(const TargetLoweringBase &) = delete;
   TargetLoweringBase &operator=(const TargetLoweringBase &) = delete;
   virtual ~TargetLoweringBase() = default;
+
+  /// Return true if the target support strict float operation
+  bool isStrictFPEnabled() const {
+    return IsStrictFPEnabled;
+  }
 
 protected:
   /// Initialize all of the actions to default values.
@@ -468,6 +476,10 @@ public:
   virtual bool isCtlzFast() const {
     return false;
   }
+
+  /// Return true if instruction generated for equality comparison is folded
+  /// with instruction generated for signed comparison.
+  virtual bool isEqualityCmpFoldedWithSignedCmp() const { return true; }
 
   /// Return true if it is safe to transform an integer-domain bitwise operation
   /// into the equivalent floating-point operation. This should be set to true
@@ -937,34 +949,9 @@ public:
     unsigned EqOpc;
     switch (Op) {
       default: llvm_unreachable("Unexpected FP pseudo-opcode");
-      case ISD::STRICT_FADD: EqOpc = ISD::FADD; break;
-      case ISD::STRICT_FSUB: EqOpc = ISD::FSUB; break;
-      case ISD::STRICT_FMUL: EqOpc = ISD::FMUL; break;
-      case ISD::STRICT_FDIV: EqOpc = ISD::FDIV; break;
-      case ISD::STRICT_FREM: EqOpc = ISD::FREM; break;
-      case ISD::STRICT_FSQRT: EqOpc = ISD::FSQRT; break;
-      case ISD::STRICT_FPOW: EqOpc = ISD::FPOW; break;
-      case ISD::STRICT_FPOWI: EqOpc = ISD::FPOWI; break;
-      case ISD::STRICT_FMA: EqOpc = ISD::FMA; break;
-      case ISD::STRICT_FSIN: EqOpc = ISD::FSIN; break;
-      case ISD::STRICT_FCOS: EqOpc = ISD::FCOS; break;
-      case ISD::STRICT_FEXP: EqOpc = ISD::FEXP; break;
-      case ISD::STRICT_FEXP2: EqOpc = ISD::FEXP2; break;
-      case ISD::STRICT_FLOG: EqOpc = ISD::FLOG; break;
-      case ISD::STRICT_FLOG10: EqOpc = ISD::FLOG10; break;
-      case ISD::STRICT_FLOG2: EqOpc = ISD::FLOG2; break;
-      case ISD::STRICT_FRINT: EqOpc = ISD::FRINT; break;
-      case ISD::STRICT_FNEARBYINT: EqOpc = ISD::FNEARBYINT; break;
-      case ISD::STRICT_FMAXNUM: EqOpc = ISD::FMAXNUM; break;
-      case ISD::STRICT_FMINNUM: EqOpc = ISD::FMINNUM; break;
-      case ISD::STRICT_FCEIL: EqOpc = ISD::FCEIL; break;
-      case ISD::STRICT_FFLOOR: EqOpc = ISD::FFLOOR; break;
-      case ISD::STRICT_FROUND: EqOpc = ISD::FROUND; break;
-      case ISD::STRICT_FTRUNC: EqOpc = ISD::FTRUNC; break;
-      case ISD::STRICT_FP_TO_SINT: EqOpc = ISD::FP_TO_SINT; break;
-      case ISD::STRICT_FP_TO_UINT: EqOpc = ISD::FP_TO_UINT; break;
-      case ISD::STRICT_FP_ROUND: EqOpc = ISD::FP_ROUND; break;
-      case ISD::STRICT_FP_EXTEND: EqOpc = ISD::FP_EXTEND; break;
+#define INSTRUCTION(NAME, NARG, ROUND_MODE, INTRINSIC, DAGN)                   \
+      case ISD::STRICT_##DAGN: EqOpc = ISD::DAGN; break;
+#include "llvm/IR/ConstrainedOps.def"
     }
 
     return getOperationAction(EqOpc, VT);
@@ -1025,24 +1012,8 @@ public:
   /// Return true if lowering to a jump table is suitable for a set of case
   /// clusters which may contain \p NumCases cases, \p Range range of values.
   virtual bool isSuitableForJumpTable(const SwitchInst *SI, uint64_t NumCases,
-                                      uint64_t Range) const {
-    // FIXME: This function check the maximum table size and density, but the
-    // minimum size is not checked. It would be nice if the minimum size is
-    // also combined within this function. Currently, the minimum size check is
-    // performed in findJumpTable() in SelectionDAGBuiler and
-    // getEstimatedNumberOfCaseClusters() in BasicTTIImpl.
-    const bool OptForSize = SI->getParent()->getParent()->hasOptSize();
-    const unsigned MinDensity = getMinimumJumpTableDensity(OptForSize);
-    const unsigned MaxJumpTableSize = getMaximumJumpTableSize();
-    
-    // Check whether the number of cases is small enough and
-    // the range is dense enough for a jump table.
-    if ((OptForSize || Range <= MaxJumpTableSize) &&
-        (NumCases * 100 >= Range * MinDensity)) {
-      return true;
-    }
-    return false;
-  }
+                                      uint64_t Range, ProfileSummaryInfo *PSI,
+                                      BlockFrequencyInfo *BFI) const;
 
   /// Return true if lowering to a bit test is suitable for a set of case
   /// clusters which contains \p NumDests unique destinations, \p Low and
@@ -1139,12 +1110,8 @@ public:
   /// Return how the indexed load should be treated: either it is legal, needs
   /// to be promoted to a larger size, needs to be expanded to some other code
   /// sequence, or the target has a custom expander for it.
-  LegalizeAction
-  getIndexedLoadAction(unsigned IdxMode, MVT VT) const {
-    assert(IdxMode < ISD::LAST_INDEXED_MODE && VT.isValid() &&
-           "Table isn't big enough!");
-    unsigned Ty = (unsigned)VT.SimpleTy;
-    return (LegalizeAction)((IndexedModeActions[Ty][IdxMode] & 0xf0) >> 4);
+  LegalizeAction getIndexedLoadAction(unsigned IdxMode, MVT VT) const {
+    return getIndexedModeAction(IdxMode, VT, IMAB_Load);
   }
 
   /// Return true if the specified indexed load is legal on this target.
@@ -1157,12 +1124,8 @@ public:
   /// Return how the indexed store should be treated: either it is legal, needs
   /// to be promoted to a larger size, needs to be expanded to some other code
   /// sequence, or the target has a custom expander for it.
-  LegalizeAction
-  getIndexedStoreAction(unsigned IdxMode, MVT VT) const {
-    assert(IdxMode < ISD::LAST_INDEXED_MODE && VT.isValid() &&
-           "Table isn't big enough!");
-    unsigned Ty = (unsigned)VT.SimpleTy;
-    return (LegalizeAction)(IndexedModeActions[Ty][IdxMode] & 0x0f);
+  LegalizeAction getIndexedStoreAction(unsigned IdxMode, MVT VT) const {
+    return getIndexedModeAction(IdxMode, VT, IMAB_Store);
   }
 
   /// Return true if the specified indexed load is legal on this target.
@@ -1170,6 +1133,34 @@ public:
     return VT.isSimple() &&
       (getIndexedStoreAction(IdxMode, VT.getSimpleVT()) == Legal ||
        getIndexedStoreAction(IdxMode, VT.getSimpleVT()) == Custom);
+  }
+
+  /// Return how the indexed load should be treated: either it is legal, needs
+  /// to be promoted to a larger size, needs to be expanded to some other code
+  /// sequence, or the target has a custom expander for it.
+  LegalizeAction getIndexedMaskedLoadAction(unsigned IdxMode, MVT VT) const {
+    return getIndexedModeAction(IdxMode, VT, IMAB_MaskedLoad);
+  }
+
+  /// Return true if the specified indexed load is legal on this target.
+  bool isIndexedMaskedLoadLegal(unsigned IdxMode, EVT VT) const {
+    return VT.isSimple() &&
+           (getIndexedMaskedLoadAction(IdxMode, VT.getSimpleVT()) == Legal ||
+            getIndexedMaskedLoadAction(IdxMode, VT.getSimpleVT()) == Custom);
+  }
+
+  /// Return how the indexed store should be treated: either it is legal, needs
+  /// to be promoted to a larger size, needs to be expanded to some other code
+  /// sequence, or the target has a custom expander for it.
+  LegalizeAction getIndexedMaskedStoreAction(unsigned IdxMode, MVT VT) const {
+    return getIndexedModeAction(IdxMode, VT, IMAB_MaskedStore);
+  }
+
+  /// Return true if the specified indexed load is legal on this target.
+  bool isIndexedMaskedStoreLegal(unsigned IdxMode, EVT VT) const {
+    return VT.isSimple() &&
+           (getIndexedMaskedStoreAction(IdxMode, VT.getSimpleVT()) == Legal ||
+            getIndexedMaskedStoreAction(IdxMode, VT.getSimpleVT()) == Custom);
   }
 
   /// Return how the condition code should be treated: either it is legal, needs
@@ -1353,9 +1344,9 @@ public:
 
   /// Certain targets have context senstive alignment requirements, where one
   /// type has the alignment requirement of another type.
-  virtual unsigned getABIAlignmentForCallingConv(Type *ArgTy,
-                                                 DataLayout DL) const {
-    return DL.getABITypeAlignment(ArgTy);
+  virtual Align getABIAlignmentForCallingConv(Type *ArgTy,
+                                              DataLayout DL) const {
+    return Align(DL.getABITypeAlignment(ArgTy));
   }
 
   /// If true, then instruction selection should seek to shrink the FP constant
@@ -2059,13 +2050,8 @@ protected:
   ///
   /// NOTE: All indexed mode loads are initialized to Expand in
   /// TargetLowering.cpp
-  void setIndexedLoadAction(unsigned IdxMode, MVT VT,
-                            LegalizeAction Action) {
-    assert(VT.isValid() && IdxMode < ISD::LAST_INDEXED_MODE &&
-           (unsigned)Action < 0xf && "Table isn't big enough!");
-    // Load action are kept in the upper half.
-    IndexedModeActions[(unsigned)VT.SimpleTy][IdxMode] &= ~0xf0;
-    IndexedModeActions[(unsigned)VT.SimpleTy][IdxMode] |= ((uint8_t)Action) <<4;
+  void setIndexedLoadAction(unsigned IdxMode, MVT VT, LegalizeAction Action) {
+    setIndexedModeAction(IdxMode, VT, IMAB_Load, Action);
   }
 
   /// Indicate that the specified indexed store does or does not work with the
@@ -2073,13 +2059,28 @@ protected:
   ///
   /// NOTE: All indexed mode stores are initialized to Expand in
   /// TargetLowering.cpp
-  void setIndexedStoreAction(unsigned IdxMode, MVT VT,
-                             LegalizeAction Action) {
-    assert(VT.isValid() && IdxMode < ISD::LAST_INDEXED_MODE &&
-           (unsigned)Action < 0xf && "Table isn't big enough!");
-    // Store action are kept in the lower half.
-    IndexedModeActions[(unsigned)VT.SimpleTy][IdxMode] &= ~0x0f;
-    IndexedModeActions[(unsigned)VT.SimpleTy][IdxMode] |= ((uint8_t)Action);
+  void setIndexedStoreAction(unsigned IdxMode, MVT VT, LegalizeAction Action) {
+    setIndexedModeAction(IdxMode, VT, IMAB_Store, Action);
+  }
+
+  /// Indicate that the specified indexed masked load does or does not work with
+  /// the specified type and indicate what to do about it.
+  ///
+  /// NOTE: All indexed mode masked loads are initialized to Expand in
+  /// TargetLowering.cpp
+  void setIndexedMaskedLoadAction(unsigned IdxMode, MVT VT,
+                                  LegalizeAction Action) {
+    setIndexedModeAction(IdxMode, VT, IMAB_MaskedLoad, Action);
+  }
+
+  /// Indicate that the specified indexed masked store does or does not work
+  /// with the specified type and indicate what to do about it.
+  ///
+  /// NOTE: All indexed mode masked stores are initialized to Expand in
+  /// TargetLowering.cpp
+  void setIndexedMaskedStoreAction(unsigned IdxMode, MVT VT,
+                                   LegalizeAction Action) {
+    setIndexedModeAction(IdxMode, VT, IMAB_MaskedStore, Action);
   }
 
   /// Indicate that the specified condition code is or isn't supported on the
@@ -2500,7 +2501,8 @@ public:
   /// Return true if an fpext operation input to an \p Opcode operation is free
   /// (for instance, because half-precision floating-point numbers are
   /// implicitly extended to float-precision) for an FMA instruction.
-  virtual bool isFPExtFoldable(unsigned Opcode, EVT DestVT, EVT SrcVT) const {
+  virtual bool isFPExtFoldable(const SelectionDAG &DAG, unsigned Opcode,
+                               EVT DestVT, EVT SrcVT) const {
     assert(DestVT.isFloatingPoint() && SrcVT.isFloatingPoint() &&
            "invalid fpext types");
     return isFPExtFree(DestVT, SrcVT);
@@ -2532,8 +2534,22 @@ public:
   /// not legal, but should return true if those types will eventually legalize
   /// to types that support FMAs. After legalization, it will only be called on
   /// types that support FMAs (via Legal or Custom actions)
-  virtual bool isFMAFasterThanFMulAndFAdd(EVT) const {
+  virtual bool isFMAFasterThanFMulAndFAdd(const MachineFunction &MF,
+                                          EVT) const {
     return false;
+  }
+
+  /// IR version
+  virtual bool isFMAFasterThanFMulAndFAdd(const Function &F, Type *) const {
+    return false;
+  }
+
+  /// Returns true if the FADD or FSUB node passed could legally be combined with
+  /// an fmul to form an ISD::FMAD.
+  virtual bool isFMADLegalForFAddFSub(const SelectionDAG &DAG,
+                                      const SDNode *N) const {
+    assert(N->getOpcode() == ISD::FADD || N->getOpcode() == ISD::FSUB);
+    return isOperationLegal(ISD::FMAD, N->getValueType(0));
   }
 
   /// Return true if it's profitable to narrow operations of type VT1 to
@@ -2603,6 +2619,12 @@ public:
   // GEP to make the GEP fit into the addressing mode and can be sunk into the
   // same blocks of its users.
   virtual bool shouldConsiderGEPOffsetSplit() const { return false; }
+
+  /// Return true if creating a shift of the type by the given
+  /// amount is not profitable.
+  virtual bool shouldAvoidTransformToShift(EVT VT, unsigned Amount) const {
+    return false;
+  }
 
   //===--------------------------------------------------------------------===//
   // Runtime Library hooks
@@ -2731,7 +2753,7 @@ private:
   /// This indicates the default register class to use for each ValueType the
   /// target supports natively.
   const TargetRegisterClass *RegClassForVT[MVT::LAST_VALUETYPE];
-  unsigned char NumRegistersForVT[MVT::LAST_VALUETYPE];
+  uint16_t NumRegistersForVT[MVT::LAST_VALUETYPE];
   MVT RegisterTypeForVT[MVT::LAST_VALUETYPE];
 
   /// This indicates the "representative" register class to use for each
@@ -2771,13 +2793,13 @@ private:
   /// truncating store of a specific value type and truncating type is legal.
   LegalizeAction TruncStoreActions[MVT::LAST_VALUETYPE][MVT::LAST_VALUETYPE];
 
-  /// For each indexed mode and each value type, keep a pair of LegalizeAction
+  /// For each indexed mode and each value type, keep a quad of LegalizeAction
   /// that indicates how instruction selection should deal with the load /
-  /// store.
+  /// store / maskedload / maskedstore.
   ///
   /// The first dimension is the value_type for the reference. The second
   /// dimension represents the various modes for load store.
-  uint8_t IndexedModeActions[MVT::LAST_VALUETYPE][ISD::LAST_INDEXED_MODE];
+  uint16_t IndexedModeActions[MVT::LAST_VALUETYPE][ISD::LAST_INDEXED_MODE];
 
   /// For each condition code (ISD::CondCode) keep a LegalizeAction that
   /// indicates how instruction selection should deal with the condition code.
@@ -2819,6 +2841,32 @@ private:
 
   /// Set default libcall names and calling conventions.
   void InitLibcalls(const Triple &TT);
+
+  /// The bits of IndexedModeActions used to store the legalisation actions
+  /// We store the data as   | ML | MS |  L |  S | each taking 4 bits.
+  enum IndexedModeActionsBits {
+    IMAB_Store = 0,
+    IMAB_Load = 4,
+    IMAB_MaskedStore = 8,
+    IMAB_MaskedLoad = 12
+  };
+
+  void setIndexedModeAction(unsigned IdxMode, MVT VT, unsigned Shift,
+                            LegalizeAction Action) {
+    assert(VT.isValid() && IdxMode < ISD::LAST_INDEXED_MODE &&
+           (unsigned)Action < 0xf && "Table isn't big enough!");
+    unsigned Ty = (unsigned)VT.SimpleTy;
+    IndexedModeActions[Ty][IdxMode] &= ~(0xf << Shift);
+    IndexedModeActions[Ty][IdxMode] |= ((uint16_t)Action) << Shift;
+  }
+
+  LegalizeAction getIndexedModeAction(unsigned IdxMode, MVT VT,
+                                      unsigned Shift) const {
+    assert(IdxMode < ISD::LAST_INDEXED_MODE && VT.isValid() &&
+           "Table isn't big enough!");
+    unsigned Ty = (unsigned)VT.SimpleTy;
+    return (LegalizeAction)((IndexedModeActions[Ty][IdxMode] >> Shift) & 0xf);
+  }
 
 protected:
   /// Return true if the extension represented by \p I is free.
@@ -2922,6 +2970,8 @@ protected:
   /// details.
   MachineBasicBlock *emitXRayTypedEvent(MachineInstr &MI,
                                         MachineBasicBlock *MBB) const;
+
+  bool IsStrictFPEnabled;
 };
 
 /// This class defines information used to lower LLVM code to legal SelectionDAG
@@ -3019,7 +3069,8 @@ public:
   std::pair<SDValue, SDValue> makeLibCall(SelectionDAG &DAG, RTLIB::Libcall LC,
                                           EVT RetVT, ArrayRef<SDValue> Ops,
                                           MakeLibCallOptions CallOptions,
-                                          const SDLoc &dl) const;
+                                          const SDLoc &dl,
+                                          SDValue Chain = SDValue()) const;
 
   /// Check whether parameters to a call that are passed in callee saved
   /// registers are the same as from the calling function.  This needs to be
@@ -3252,9 +3303,7 @@ public:
 
     bool isBeforeLegalize() const { return Level == BeforeLegalizeTypes; }
     bool isBeforeLegalizeOps() const { return Level < AfterLegalizeVectorOps; }
-    bool isAfterLegalizeDAG() const {
-      return Level == AfterLegalizeDAG;
-    }
+    bool isAfterLegalizeDAG() const { return Level >= AfterLegalizeDAG; }
     CombineLevel getDAGCombineLevel() { return Level; }
     bool isCalledByLegalizer() const { return CalledByLegalizer; }
 
@@ -3262,6 +3311,8 @@ public:
     SDValue CombineTo(SDNode *N, ArrayRef<SDValue> To, bool AddTo = true);
     SDValue CombineTo(SDNode *N, SDValue Res, bool AddTo = true);
     SDValue CombineTo(SDNode *N, SDValue Res0, SDValue Res1, bool AddTo = true);
+
+    bool recursivelyDeleteUnusedNodes(SDNode *N);
 
     void CommitTargetLoweringOpt(const TargetLoweringOpt &TLO);
   };
@@ -3746,7 +3797,7 @@ public:
   /// Should SelectionDAG lower an atomic store of the given kind as a normal
   /// StoreSDNode (as opposed to an AtomicSDNode)?  NOTE: The intention is to
   /// eventually migrate all targets to the using StoreSDNodes, but porting is
-  /// being done target at a time.  
+  /// being done target at a time.
   virtual bool lowerAtomicStoreAsStoreSDNode(const StoreInst &SI) const {
     assert(SI.isAtomic() && "violated precondition");
     return false;

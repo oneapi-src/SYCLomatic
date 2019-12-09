@@ -1059,9 +1059,9 @@ Value *InstCombiner::simplifyMaskedLoad(IntrinsicInst &II) {
 
   // If we can unconditionally load from this address, replace with a
   // load/select idiom. TODO: use DT for context sensitive query
-  if (isDereferenceableAndAlignedPointer(LoadPtr, II.getType(), Alignment,
-                                         II.getModule()->getDataLayout(),
-                                         &II, nullptr)) {
+  if (isDereferenceableAndAlignedPointer(
+          LoadPtr, II.getType(), MaybeAlign(Alignment),
+          II.getModule()->getDataLayout(), &II, nullptr)) {
     Value *LI = Builder.CreateAlignedLoad(II.getType(), LoadPtr, Alignment,
                                          "unmaskedload");
     return Builder.CreateSelect(II.getArgOperand(2), LI, II.getArgOperand(3));
@@ -1085,7 +1085,8 @@ Instruction *InstCombiner::simplifyMaskedStore(IntrinsicInst &II) {
   // If the mask is all ones, this is a plain vector store of the 1st argument.
   if (ConstMask->isAllOnesValue()) {
     Value *StorePtr = II.getArgOperand(1);
-    unsigned Alignment = cast<ConstantInt>(II.getArgOperand(2))->getZExtValue();
+    MaybeAlign Alignment(
+        cast<ConstantInt>(II.getArgOperand(2))->getZExtValue());
     return new StoreInst(II.getArgOperand(0), StorePtr, false, Alignment);
   }
 
@@ -2278,6 +2279,21 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
 
     break;
   }
+  case Intrinsic::copysign: {
+    const APFloat *C;
+    if (match(II->getArgOperand(1), m_APFloat(C))) {
+      // If we know the sign bit of the sign argument, reduce to FABS/FNABS:
+      // copysign X, PosC --> fabs X
+      // copysign X, NegC --> fneg (fabs X)
+      Value *Fabs = Builder.CreateUnaryIntrinsic(Intrinsic::fabs,
+                                                 II->getArgOperand(0), II);
+      if (C->isNegative())
+        Fabs = Builder.CreateFNegFMF(Fabs, II);
+
+      return replaceInstUsesWith(*II, Fabs);
+    }
+    break;
+  }
   case Intrinsic::fabs: {
     Value *Cond;
     Constant *LHS, *RHS;
@@ -2342,7 +2358,7 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
     // Turn PPC VSX loads into normal loads.
     Value *Ptr = Builder.CreateBitCast(II->getArgOperand(0),
                                        PointerType::getUnqual(II->getType()));
-    return new LoadInst(II->getType(), Ptr, Twine(""), false, 1);
+    return new LoadInst(II->getType(), Ptr, Twine(""), false, Align::None());
   }
   case Intrinsic::ppc_altivec_stvx:
   case Intrinsic::ppc_altivec_stvxl:
@@ -2360,7 +2376,7 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
     // Turn PPC VSX stores into normal stores.
     Type *OpPtrTy = PointerType::getUnqual(II->getArgOperand(0)->getType());
     Value *Ptr = Builder.CreateBitCast(II->getArgOperand(1), OpPtrTy);
-    return new StoreInst(II->getArgOperand(0), Ptr, false, 1);
+    return new StoreInst(II->getArgOperand(0), Ptr, false, Align::None());
   }
   case Intrinsic::ppc_qpx_qvlfs:
     // Turn PPC QPX qvlfs -> load if the pointer is known aligned.
@@ -3307,6 +3323,60 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
     }
     break;
   }
+  case Intrinsic::arm_mve_pred_i2v: {
+    Value *Arg = II->getArgOperand(0);
+    Value *ArgArg;
+    if (match(Arg, m_Intrinsic<Intrinsic::arm_mve_pred_v2i>(m_Value(ArgArg))) &&
+        II->getType() == ArgArg->getType())
+      return replaceInstUsesWith(*II, ArgArg);
+    Constant *XorMask;
+    if (match(Arg,
+              m_Xor(m_Intrinsic<Intrinsic::arm_mve_pred_v2i>(m_Value(ArgArg)),
+                    m_Constant(XorMask))) &&
+        II->getType() == ArgArg->getType()) {
+      if (auto *CI = dyn_cast<ConstantInt>(XorMask)) {
+        if (CI->getValue().trunc(16).isAllOnesValue()) {
+          auto TrueVector = Builder.CreateVectorSplat(
+              II->getType()->getVectorNumElements(), Builder.getTrue());
+          return BinaryOperator::Create(Instruction::Xor, ArgArg, TrueVector);
+        }
+      }
+    }
+    KnownBits ScalarKnown(32);
+    if (SimplifyDemandedBits(II, 0, APInt::getLowBitsSet(32, 16),
+                             ScalarKnown, 0))
+      return II;
+    break;
+  }
+  case Intrinsic::arm_mve_pred_v2i: {
+    Value *Arg = II->getArgOperand(0);
+    Value *ArgArg;
+    if (match(Arg, m_Intrinsic<Intrinsic::arm_mve_pred_i2v>(m_Value(ArgArg))))
+      return replaceInstUsesWith(*II, ArgArg);
+    if (!II->getMetadata(LLVMContext::MD_range)) {
+      Type *IntTy32 = Type::getInt32Ty(II->getContext());
+      Metadata *M[] = {
+        ConstantAsMetadata::get(ConstantInt::get(IntTy32, 0)),
+        ConstantAsMetadata::get(ConstantInt::get(IntTy32, 0xFFFF))
+      };
+      II->setMetadata(LLVMContext::MD_range, MDNode::get(II->getContext(), M));
+      return II;
+    }
+    break;
+  }
+  case Intrinsic::arm_mve_vadc:
+  case Intrinsic::arm_mve_vadc_predicated: {
+    unsigned CarryOp =
+        (II->getIntrinsicID() == Intrinsic::arm_mve_vadc_predicated) ? 3 : 2;
+    assert(II->getArgOperand(CarryOp)->getType()->getScalarSizeInBits() == 32 &&
+           "Bad type for intrinsic!");
+
+    KnownBits CarryKnown(32);
+    if (SimplifyDemandedBits(II, CarryOp, APInt::getOneBitSet(32, 29),
+                             CarryKnown))
+      return II;
+    break;
+  }
   case Intrinsic::amdgcn_rcp: {
     Value *Src = II->getArgOperand(0);
 
@@ -3316,7 +3386,7 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
 
     if (const ConstantFP *C = dyn_cast<ConstantFP>(Src)) {
       const APFloat &ArgVal = C->getValueAPF();
-      APFloat Val(ArgVal.getSemantics(), 1.0);
+      APFloat Val(ArgVal.getSemantics(), 1);
       APFloat::opStatus Status = Val.divide(ArgVal,
                                             APFloat::rmNearestTiesToEven);
       // Only do this if it was exact and therefore not dependent on the
@@ -4018,12 +4088,12 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
     // Is this guard followed by another guard?  We scan forward over a small
     // fixed window of instructions to handle common cases with conditions
     // computed between guards.
-    Instruction *NextInst = II->getNextNode();
+    Instruction *NextInst = II->getNextNonDebugInstruction();
     for (unsigned i = 0; i < GuardWideningWindow; i++) {
       // Note: Using context-free form to avoid compile time blow up
       if (!isSafeToSpeculativelyExecute(NextInst))
         break;
-      NextInst = NextInst->getNextNode();
+      NextInst = NextInst->getNextNonDebugInstruction();
     }
     Value *NextCond = nullptr;
     if (match(NextInst,
@@ -4035,10 +4105,10 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
         return eraseInstFromFunction(*NextInst);
 
       // Otherwise canonicalize guard(a); guard(b) -> guard(a & b).
-      Instruction* MoveI = II->getNextNode();
+      Instruction *MoveI = II->getNextNonDebugInstruction();
       while (MoveI != NextInst) {
         auto *Temp = MoveI;
-        MoveI = MoveI->getNextNode();
+        MoveI = MoveI->getNextNonDebugInstruction();
         Temp->moveBefore(II);
       }
       II->setArgOperand(0, Builder.CreateAnd(CurrCond, NextCond));

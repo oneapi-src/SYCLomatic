@@ -57,6 +57,7 @@ namespace PPC {
     DIR_PWR7,
     DIR_PWR8,
     DIR_PWR9,
+    DIR_PWR_FUTURE,
     DIR_64
   };
 }
@@ -78,13 +79,13 @@ protected:
 
   /// stackAlignment - The minimum alignment known to hold of the stack frame on
   /// entry to the function and which must be maintained by every function.
-  unsigned StackAlignment;
+  Align StackAlignment;
 
   /// Selected instruction itineraries (one entry per itinerary class.)
   InstrItineraryData InstrItins;
 
   /// Which cpu directive was used.
-  unsigned DarwinDirective;
+  unsigned CPUDirective;
 
   /// Used by the ISel to turn in optimizations for POWER4-derived architectures
   bool HasMFOCRF;
@@ -166,11 +167,14 @@ public:
   /// getStackAlignment - Returns the minimum alignment known to hold of the
   /// stack frame on entry to the function and which must be maintained by every
   /// function for this subtarget.
-  unsigned getStackAlignment() const { return StackAlignment; }
+  Align getStackAlignment() const { return StackAlignment; }
 
   /// getDarwinDirective - Returns the -m directive specified for the cpu.
+  unsigned getDarwinDirective() const { return CPUDirective; }
+
+  /// getCPUDirective - Returns the -m directive specified for the cpu.
   ///
-  unsigned getDarwinDirective() const { return DarwinDirective; }
+  unsigned getCPUDirective() const { return CPUDirective; }
 
   /// getInstrItins - Return the instruction itineraries based on subtarget
   /// selection.
@@ -281,11 +285,11 @@ public:
   bool hasDirectMove() const { return HasDirectMove; }
 
   bool isQPXStackUnaligned() const { return IsQPXStackUnaligned; }
-  unsigned getPlatformStackAlignment() const {
+  Align getPlatformStackAlignment() const {
     if ((hasQPX() || isBGQ()) && !isQPXStackUnaligned())
-      return 32;
+      return Align(32);
 
-    return 16;
+    return Align(16);
   }
 
   // DarwinABI has a 224-byte red zone. PPC32 SVR4ABI(Non-DarwinABI) has no

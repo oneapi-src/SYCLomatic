@@ -209,7 +209,7 @@ void SearchFilter::Search(Searcher &searcher) {
   empty_sc.target_sp = m_target_sp;
 
   if (searcher.GetDepth() == lldb::eSearchDepthTarget)
-    searcher.SearchCallback(*this, empty_sc, nullptr, false);
+    searcher.SearchCallback(*this, empty_sc, nullptr);
   else
     DoModuleIteration(empty_sc, searcher);
 }
@@ -222,7 +222,7 @@ void SearchFilter::SearchInModuleList(Searcher &searcher, ModuleList &modules) {
   empty_sc.target_sp = m_target_sp;
 
   if (searcher.GetDepth() == lldb::eSearchDepthTarget)
-    searcher.SearchCallback(*this, empty_sc, nullptr, false);
+    searcher.SearchCallback(*this, empty_sc, nullptr);
   else {
     std::lock_guard<std::recursive_mutex> guard(modules.GetMutex());
     const size_t numModules = modules.GetSize();
@@ -252,7 +252,7 @@ SearchFilter::DoModuleIteration(const SymbolContext &context,
     if (context.module_sp) {
       if (searcher.GetDepth() == lldb::eSearchDepthModule) {
         SymbolContext matchingContext(context.module_sp.get());
-        searcher.SearchCallback(*this, matchingContext, nullptr, false);
+        searcher.SearchCallback(*this, matchingContext, nullptr);
       } else {
         return DoCUIteration(context.module_sp, context, searcher);
       }
@@ -272,7 +272,7 @@ SearchFilter::DoModuleIteration(const SymbolContext &context,
           SymbolContext matchingContext(m_target_sp, module_sp);
 
           Searcher::CallbackReturn shouldContinue =
-              searcher.SearchCallback(*this, matchingContext, nullptr, false);
+              searcher.SearchCallback(*this, matchingContext, nullptr);
           if (shouldContinue == Searcher::eCallbackReturnStop ||
               shouldContinue == Searcher::eCallbackReturnPop)
             return shouldContinue;
@@ -306,7 +306,7 @@ SearchFilter::DoCUIteration(const ModuleSP &module_sp,
           SymbolContext matchingContext(m_target_sp, module_sp, cu_sp.get());
 
           shouldContinue =
-              searcher.SearchCallback(*this, matchingContext, nullptr, false);
+              searcher.SearchCallback(*this, matchingContext, nullptr);
 
           if (shouldContinue == Searcher::eCallbackReturnPop)
             return Searcher::eCallbackReturnContinue;
@@ -328,9 +328,8 @@ SearchFilter::DoCUIteration(const ModuleSP &module_sp,
             if (searcher.GetDepth() == lldb::eSearchDepthFunction) {
               SymbolContext matchingContext(m_target_sp, module_sp, 
                                             cu_sp.get(), func_sp.get());
-              shouldContinue = searcher.SearchCallback(*this, 
-                                                       matchingContext, 
-                                                       nullptr, false);
+              shouldContinue =
+                  searcher.SearchCallback(*this, matchingContext, nullptr);
             } else {
               shouldContinue = DoFunctionIteration(func_sp.get(), context, 
                                                    searcher);
@@ -343,7 +342,7 @@ SearchFilter::DoCUIteration(const ModuleSP &module_sp,
   } else {
     if (CompUnitPasses(*context.comp_unit)) {
       SymbolContext matchingContext(m_target_sp, module_sp, context.comp_unit);
-      return searcher.SearchCallback(*this, matchingContext, nullptr, false);
+      return searcher.SearchCallback(*this, matchingContext, nullptr);
     }
   }
   return Searcher::eCallbackReturnContinue;
@@ -404,13 +403,11 @@ SearchFilterByModule::~SearchFilterByModule() = default;
 
 bool SearchFilterByModule::ModulePasses(const ModuleSP &module_sp) {
   return (module_sp &&
-          FileSpec::Equal(module_sp->GetFileSpec(), m_module_spec, false));
+          FileSpec::Match(m_module_spec, module_sp->GetFileSpec()));
 }
 
 bool SearchFilterByModule::ModulePasses(const FileSpec &spec) {
-  // Do a full match only if "spec" has a directory
-  const bool full_match = (bool)spec.GetDirectory();
-  return FileSpec::Equal(spec, m_module_spec, full_match);
+  return FileSpec::Match(m_module_spec, spec);
 }
 
 bool SearchFilterByModule::AddressPasses(Address &address) {
@@ -431,7 +428,7 @@ void SearchFilterByModule::Search(Searcher &searcher) {
   if (searcher.GetDepth() == lldb::eSearchDepthTarget) {
     SymbolContext empty_sc;
     empty_sc.target_sp = m_target_sp;
-    searcher.SearchCallback(*this, empty_sc, nullptr, false);
+    searcher.SearchCallback(*this, empty_sc, nullptr);
   }
 
   // If the module file spec is a full path, then we can just find the one
@@ -444,8 +441,7 @@ void SearchFilterByModule::Search(Searcher &searcher) {
   const size_t num_modules = target_modules.GetSize();
   for (size_t i = 0; i < num_modules; i++) {
     Module *module = target_modules.GetModulePointerAtIndexUnlocked(i);
-    const bool full_match = (bool)m_module_spec.GetDirectory();
-    if (FileSpec::Equal(m_module_spec, module->GetFileSpec(), full_match)) {
+    if (FileSpec::Match(m_module_spec, module->GetFileSpec())) {
       SymbolContext matchingContext(m_target_sp, module->shared_from_this());
       Searcher::CallbackReturn shouldContinue;
 
@@ -524,13 +520,6 @@ SearchFilterByModuleList::SearchFilterByModuleList(
     enum FilterTy filter_ty)
     : SearchFilter(target_sp, filter_ty), m_module_spec_list(module_list) {}
 
-SearchFilterByModuleList &SearchFilterByModuleList::
-operator=(const SearchFilterByModuleList &rhs) {
-  m_target_sp = rhs.m_target_sp;
-  m_module_spec_list = rhs.m_module_spec_list;
-  return *this;
-}
-
 SearchFilterByModuleList::~SearchFilterByModuleList() = default;
 
 bool SearchFilterByModuleList::ModulePasses(const ModuleSP &module_sp) {
@@ -568,7 +557,7 @@ void SearchFilterByModuleList::Search(Searcher &searcher) {
   if (searcher.GetDepth() == lldb::eSearchDepthTarget) {
     SymbolContext empty_sc;
     empty_sc.target_sp = m_target_sp;
-    searcher.SearchCallback(*this, empty_sc, nullptr, false);
+    searcher.SearchCallback(*this, empty_sc, nullptr);
   }
 
   // If the module file spec is a full path, then we can just find the one
@@ -670,19 +659,6 @@ SearchFilterByModuleListAndCU::SearchFilterByModuleListAndCU(
                                FilterTy::ByModulesAndCU),
       m_cu_spec_list(cu_list) {}
 
-SearchFilterByModuleListAndCU::SearchFilterByModuleListAndCU(
-    const SearchFilterByModuleListAndCU &rhs) = default;
-
-SearchFilterByModuleListAndCU &SearchFilterByModuleListAndCU::
-operator=(const SearchFilterByModuleListAndCU &rhs) {
-  if (&rhs != this) {
-    m_target_sp = rhs.m_target_sp;
-    m_module_spec_list = rhs.m_module_spec_list;
-    m_cu_spec_list = rhs.m_cu_spec_list;
-  }
-  return *this;
-}
-
 SearchFilterByModuleListAndCU::~SearchFilterByModuleListAndCU() = default;
 
 lldb::SearchFilterSP SearchFilterByModuleListAndCU::CreateFromStructuredData(
@@ -747,8 +723,11 @@ bool SearchFilterByModuleListAndCU::AddressPasses(Address &address) {
     if (m_cu_spec_list.GetSize() != 0)
       return false; // Has no comp_unit so can't pass the file check.
   }
-  if (m_cu_spec_list.FindFileIndex(0, sym_ctx.comp_unit, false) == UINT32_MAX)
-        return false; // Fails the file check
+  FileSpec cu_spec;
+  if (sym_ctx.comp_unit)
+    cu_spec = sym_ctx.comp_unit->GetPrimaryFile();
+  if (m_cu_spec_list.FindFileIndex(0, cu_spec, false) == UINT32_MAX)
+    return false; // Fails the file check
   return SearchFilterByModuleList::ModulePasses(sym_ctx.module_sp); 
 }
 
@@ -757,8 +736,8 @@ bool SearchFilterByModuleListAndCU::CompUnitPasses(FileSpec &fileSpec) {
 }
 
 bool SearchFilterByModuleListAndCU::CompUnitPasses(CompileUnit &compUnit) {
-  bool in_cu_list =
-      m_cu_spec_list.FindFileIndex(0, compUnit, false) != UINT32_MAX;
+  bool in_cu_list = m_cu_spec_list.FindFileIndex(0, compUnit.GetPrimaryFile(),
+                                                 false) != UINT32_MAX;
   if (in_cu_list) {
     ModuleSP module_sp(compUnit.GetModule());
     if (module_sp) {
@@ -777,7 +756,7 @@ void SearchFilterByModuleListAndCU::Search(Searcher &searcher) {
   if (searcher.GetDepth() == lldb::eSearchDepthTarget) {
     SymbolContext empty_sc;
     empty_sc.target_sp = m_target_sp;
-    searcher.SearchCallback(*this, empty_sc, nullptr, false);
+    searcher.SearchCallback(*this, empty_sc, nullptr);
   }
 
   // If the module file spec is a full path, then we can just find the one
@@ -808,8 +787,9 @@ void SearchFilterByModuleListAndCU::Search(Searcher &searcher) {
           CompUnitSP cu_sp = module_sp->GetCompileUnitAtIndex(cu_idx);
           matchingContext.comp_unit = cu_sp.get();
           if (matchingContext.comp_unit) {
-            if (m_cu_spec_list.FindFileIndex(0, *matchingContext.comp_unit,
-                                             false) != UINT32_MAX) {
+            if (m_cu_spec_list.FindFileIndex(
+                    0, matchingContext.comp_unit->GetPrimaryFile(), false) !=
+                UINT32_MAX) {
               shouldContinue =
                   DoCUIteration(module_sp, matchingContext, searcher);
               if (shouldContinue == Searcher::eCallbackReturnStop)

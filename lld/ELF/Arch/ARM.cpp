@@ -18,8 +18,9 @@
 using namespace llvm;
 using namespace llvm::support::endian;
 using namespace llvm::ELF;
-using namespace lld;
-using namespace lld::elf;
+
+namespace lld {
+namespace elf {
 
 namespace {
 class ARM final : public TargetInfo {
@@ -38,7 +39,8 @@ public:
   void addPltSymbols(InputSection &isec, uint64_t off) const override;
   void addPltHeaderSymbols(InputSection &isd) const override;
   bool needsThunk(RelExpr expr, RelType type, const InputFile *file,
-                  uint64_t branchAddr, const Symbol &s) const override;
+                  uint64_t branchAddr, const Symbol &s,
+                  int64_t a) const override;
   uint32_t getThunkSectionSpacing() const override;
   bool inBranchRange(RelType type, uint64_t src, uint64_t dst) const override;
   void relocateOne(uint8_t *loc, RelType type, uint64_t val) const override;
@@ -261,7 +263,7 @@ void ARM::addPltSymbols(InputSection &isec, uint64_t off) const {
 }
 
 bool ARM::needsThunk(RelExpr expr, RelType type, const InputFile *file,
-                     uint64_t branchAddr, const Symbol &s) const {
+                     uint64_t branchAddr, const Symbol &s, int64_t /*a*/) const {
   // If S is an undefined weak symbol and does not have a PLT entry then it
   // will be resolved as a branch to the next instruction.
   if (s.isUndefWeak() && !s.isInPlt())
@@ -600,7 +602,10 @@ int64_t ARM::getImplicitAddend(const uint8_t *buf, RelType type) const {
   }
 }
 
-TargetInfo *elf::getARMTargetInfo() {
+TargetInfo *getARMTargetInfo() {
   static ARM target;
   return &target;
 }
+
+} // namespace elf
+} // namespace lld

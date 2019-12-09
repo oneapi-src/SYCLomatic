@@ -9,6 +9,7 @@
 #include "HeaderSourceSwitch.h"
 #include "AST.h"
 #include "Logger.h"
+#include "SourceCode.h"
 #include "index/SymbolCollector.h"
 #include "clang/AST/Decl.h"
 
@@ -86,7 +87,9 @@ llvm::Optional<Path> getCorrespondingHeaderOrSource(const Path &OriginalFile,
     if (auto TargetPath = URI::resolve(TargetURI, OriginalFile)) {
       if (*TargetPath != OriginalFile) // exclude the original file.
         ++Candidates[*TargetPath];
-    };
+    } else {
+      elog("Failed to resolve URI {0}: {1}", TargetURI, TargetPath.takeError());
+    }
   };
   // If we switch from a header, we are looking for the implementation
   // file, so we use the definition loc; otherwise we look for the header file,
@@ -94,7 +97,7 @@ llvm::Optional<Path> getCorrespondingHeaderOrSource(const Path &OriginalFile,
   //
   // For each symbol in the original file, we get its target location (decl or
   // def) from the index, then award that target file.
-  bool IsHeader = AST.getASTContext().getLangOpts().IsHeaderFile;
+  bool IsHeader = isHeaderFile(OriginalFile, AST.getLangOpts());
   Index->lookup(Request, [&](const Symbol &Sym) {
     if (IsHeader)
       AwardTarget(Sym.Definition.FileURI);

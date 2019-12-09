@@ -20,6 +20,7 @@
 #include "llvm/Support/MD5.h"
 #include "llvm/Support/MathExtras.h"
 #include "llvm/Support/SHA1.h"
+#include <regex>
 
 using namespace llvm;
 using namespace llvm::dwarf;
@@ -27,9 +28,8 @@ using namespace llvm::object;
 using namespace llvm::support::endian;
 using namespace llvm::ELF;
 
-using namespace lld;
-using namespace lld::elf;
-
+namespace lld {
+namespace elf {
 uint8_t *Out::bufferStart;
 uint8_t Out::first;
 PhdrEntry *Out::tlsPhdr;
@@ -39,7 +39,7 @@ OutputSection *Out::preinitArray;
 OutputSection *Out::initArray;
 OutputSection *Out::finiArray;
 
-std::vector<OutputSection *> elf::outputSections;
+std::vector<OutputSection *> outputSections;
 
 uint32_t OutputSection::getPhdrFlags() const {
   uint32_t ret = 0;
@@ -226,7 +226,7 @@ static void sortByOrder(MutableArrayRef<InputSection *> in,
     in[i] = v[i].second;
 }
 
-uint64_t elf::getHeaderSize() {
+uint64_t getHeaderSize() {
   if (config->oFormatBinary)
     return 0;
   return Out::elfHeader->size + Out::programHeaders->size;
@@ -272,7 +272,12 @@ template <class ELFT> void OutputSection::maybeCompress() {
   // Write section contents to a temporary buffer and compress it.
   std::vector<uint8_t> buf(size);
   writeTo<ELFT>(buf.data());
-  if (Error e = zlib::compress(toStringRef(buf), compressedData))
+  // We chose 1 as the default compression level because it is the fastest. If
+  // -O2 is given, we use level 6 to compress debug info more by ~15%. We found
+  // that level 7 to 9 doesn't make much difference (~1% more compression) while
+  // they take significant amount of time (~2x), so level 6 seems enough.
+  if (Error e = zlib::compress(toStringRef(buf), compressedData,
+                               config->optimize >= 2 ? 6 : 1))
     fatal("compress failed: " + llvm::toString(std::move(e)));
 
   // Update section headers.
@@ -297,7 +302,7 @@ template <class ELFT> void OutputSection::writeTo(uint8_t *buf) {
   if (type == SHT_NOBITS)
     return;
 
-  // If -compress-debug-section is specified and if this is a debug seciton,
+  // If -compress-debug-section is specified and if this is a debug section,
   // we've already compressed section contents. If that's the case,
   // just write it down.
   if (!compressedData.empty()) {
@@ -385,18 +390,23 @@ void OutputSection::finalize() {
   flags |= SHF_INFO_LINK;
 }
 
-// Returns true if S matches /Filename.?\.o$/.
-static bool isCrtBeginEnd(StringRef s, StringRef filename) {
-  if (!s.endswith(".o"))
-    return false;
-  s = s.drop_back(2);
-  if (s.endswith(filename))
-    return true;
-  return !s.empty() && s.drop_back().endswith(filename);
+// Returns true if S is in one of the many forms the compiler driver may pass
+// crtbegin files.
+//
+// Gcc uses any of crtbegin[<empty>|S|T].o.
+// Clang uses Gcc's plus clang_rt.crtbegin[<empty>|S|T][-<arch>|<empty>].o.
+
+static bool isCrtbegin(StringRef s) {
+  static std::regex re(R"((clang_rt\.)?crtbegin[ST]?(-.*)?\.o)");
+  s = sys::path::filename(s);
+  return std::regex_match(s.begin(), s.end(), re);
 }
 
-static bool isCrtbegin(StringRef s) { return isCrtBeginEnd(s, "crtbegin"); }
-static bool isCrtend(StringRef s) { return isCrtBeginEnd(s, "crtend"); }
+static bool isCrtend(StringRef s) {
+  static std::regex re(R"((clang_rt\.)?crtend[ST]?(-.*)?\.o)");
+  s = sys::path::filename(s);
+  return std::regex_match(s.begin(), s.end(), re);
+}
 
 // .ctors and .dtors are sorted by this priority from highest to lowest.
 //
@@ -446,7 +456,7 @@ void OutputSection::sortCtorsDtors() {
 // If an input string is in the form of "foo.N" where N is a number,
 // return N. Otherwise, returns 65536, which is one greater than the
 // lowest priority.
-int elf::getPriority(StringRef s) {
+int getPriority(StringRef s) {
   size_t pos = s.rfind('.');
   if (pos == StringRef::npos)
     return 65536;
@@ -456,7 +466,7 @@ int elf::getPriority(StringRef s) {
   return v;
 }
 
-std::vector<InputSection *> elf::getInputSections(OutputSection *os) {
+std::vector<InputSection *> getInputSections(OutputSection *os) {
   std::vector<InputSection *> ret;
   for (BaseCommand *base : os->sectionCommands)
     if (auto *isd = dyn_cast<InputSectionDescription>(base))
@@ -497,3 +507,6 @@ template void OutputSection::maybeCompress<ELF32LE>();
 template void OutputSection::maybeCompress<ELF32BE>();
 template void OutputSection::maybeCompress<ELF64LE>();
 template void OutputSection::maybeCompress<ELF64BE>();
+
+} // namespace elf
+} // namespace lld

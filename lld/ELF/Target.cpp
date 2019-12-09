@@ -34,19 +34,19 @@
 using namespace llvm;
 using namespace llvm::object;
 using namespace llvm::ELF;
-using namespace lld;
-using namespace lld::elf;
 
-const TargetInfo *elf::target;
-
-std::string lld::toString(RelType type) {
+namespace lld {
+std::string toString(elf::RelType type) {
   StringRef s = getELFRelocationTypeName(elf::config->emachine, type);
   if (s == "Unknown")
     return ("Unknown (" + Twine(type) + ")").str();
   return s;
 }
 
-TargetInfo *elf::getTarget() {
+namespace elf {
+const TargetInfo *target;
+
+TargetInfo *getTarget() {
   switch (config->emachine) {
   case EM_386:
   case EM_IAMCU:
@@ -91,6 +91,9 @@ TargetInfo *elf::getTarget() {
 }
 
 template <class ELFT> static ErrorPlace getErrPlace(const uint8_t *loc) {
+  if (!Out::bufferStart)
+    return {};
+
   for (InputSectionBase *d : inputSections) {
     auto *isec = cast<InputSection>(d);
     if (!isec->getParent())
@@ -103,7 +106,7 @@ template <class ELFT> static ErrorPlace getErrPlace(const uint8_t *loc) {
   return {};
 }
 
-ErrorPlace elf::getErrorPlace(const uint8_t *loc) {
+ErrorPlace getErrorPlace(const uint8_t *loc) {
   switch (config->ekind) {
   case ELF32LEKind:
     return getErrPlace<ELF32LE>(loc);
@@ -127,7 +130,8 @@ int64_t TargetInfo::getImplicitAddend(const uint8_t *buf, RelType type) const {
 bool TargetInfo::usesOnlyLowPageBits(RelType type) const { return false; }
 
 bool TargetInfo::needsThunk(RelExpr expr, RelType type, const InputFile *file,
-                            uint64_t branchAddr, const Symbol &s) const {
+                            uint64_t branchAddr, const Symbol &s,
+                            int64_t a) const {
   return false;
 }
 
@@ -179,3 +183,6 @@ uint64_t TargetInfo::getImageBase() const {
     return *config->imageBase;
   return config->isPic ? 0 : defaultImageBase;
 }
+
+} // namespace elf
+} // namespace lld

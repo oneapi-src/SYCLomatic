@@ -21,14 +21,14 @@ namespace sycl {
 namespace detail {
 
 void Scheduler::waitForRecordToFinish(MemObjRecord *Record) {
-  for (Command *Cmd : Record->MReadLeafs) {
+  for (Command *Cmd : Record->MReadLeaves) {
     EnqueueResultT Res;
     bool Enqueued = GraphProcessor::enqueueCommand(Cmd, Res);
     if (!Enqueued && EnqueueResultT::FAILED == Res.MResult)
       throw runtime_error("Enqueue process failed.");
     GraphProcessor::waitForEvent(Cmd->getEvent());
   }
-  for (Command *Cmd : Record->MWriteLeafs) {
+  for (Command *Cmd : Record->MWriteLeaves) {
     EnqueueResultT Res;
     bool Enqueued = GraphProcessor::enqueueCommand(Cmd, Res);
     if (!Enqueued && EnqueueResultT::FAILED == Res.MResult)
@@ -109,7 +109,6 @@ std::vector<EventImplPtr> Scheduler::getWaitList(EventImplPtr Event) {
 }
 
 void Scheduler::waitForEvent(EventImplPtr Event) {
-  std::lock_guard<std::mutex> lock(MGraphLock);
   GraphProcessor::waitForEvent(std::move(Event));
 }
 
@@ -128,8 +127,7 @@ void Scheduler::removeMemoryObject(detail::SYCLMemObjI *MemObj) {
 EventImplPtr Scheduler::addHostAccessor(Requirement *Req) {
   std::lock_guard<std::mutex> lock(MGraphLock);
 
-  EventImplPtr RetEvent;
-  Command *NewCmd = MGraphBuilder.addHostAccessor(Req, RetEvent);
+  Command *NewCmd = MGraphBuilder.addHostAccessor(Req);
 
   if (!NewCmd)
     return nullptr;
@@ -137,7 +135,11 @@ EventImplPtr Scheduler::addHostAccessor(Requirement *Req) {
   bool Enqueued = GraphProcessor::enqueueCommand(NewCmd, Res);
   if (!Enqueued && EnqueueResultT::FAILED == Res.MResult)
     throw runtime_error("Enqueue process failed.");
-  return RetEvent;
+  return NewCmd->getEvent();
+}
+
+void Scheduler::releaseHostAccessor(Requirement *Req) {
+  Req->MBlockedCmd->MCanEnqueue = true;
 }
 
 Scheduler::Scheduler() {

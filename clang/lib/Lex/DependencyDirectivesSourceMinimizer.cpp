@@ -185,17 +185,6 @@ static void skipRawString(const char *&First, const char *const End) {
   }
 }
 
-static void skipString(const char *&First, const char *const End) {
-  assert(*First == '\'' || *First == '"' || *First == '<');
-  const char Terminator = *First == '<' ? '>' : *First;
-  for (++First; First != End && *First != Terminator; ++First)
-    if (*First == '\\')
-      if (++First == End)
-        return;
-  if (First != End)
-    ++First; // Finish off the string.
-}
-
 // Returns the length of EOL, either 0 (no end-of-line), 1 (\n) or 2 (\r\n)
 static unsigned isEOL(const char *First, const char *const End) {
   if (First == End)
@@ -204,6 +193,35 @@ static unsigned isEOL(const char *First, const char *const End) {
       isVerticalWhitespace(First[1]) && First[0] != First[1])
     return 2;
   return !!isVerticalWhitespace(First[0]);
+}
+
+static void skipString(const char *&First, const char *const End) {
+  assert(*First == '\'' || *First == '"' || *First == '<');
+  const char Terminator = *First == '<' ? '>' : *First;
+  for (++First; First != End && *First != Terminator; ++First) {
+    // String and character literals don't extend past the end of the line.
+    if (isVerticalWhitespace(*First))
+      return;
+    if (*First != '\\')
+      continue;
+    // Skip past backslash to the next character. This ensures that the
+    // character right after it is skipped as well, which matters if it's
+    // the terminator.
+    if (++First == End)
+      return;
+    if (!isWhitespace(*First))
+      continue;
+    // Whitespace after the backslash might indicate a line continuation.
+    const char *FirstAfterBackslashPastSpace = First;
+    skipOverSpaces(FirstAfterBackslashPastSpace, End);
+    if (unsigned NLSize = isEOL(FirstAfterBackslashPastSpace, End)) {
+      // Advance the character pointer to the next line for the next
+      // iteration.
+      First = FirstAfterBackslashPastSpace + NLSize - 1;
+    }
+  }
+  if (First != End)
+    ++First; // Finish off the string.
 }
 
 // Returns the length of the skipped newline
@@ -745,12 +763,13 @@ bool Minimizer::lexEndif(const char *&First, const char *const End) {
   if (top() == pp_else)
     popToken();
 
-  // Strip out "#elif" if they're empty.
-  while (top() == pp_elif)
-    popToken();
-
-  // If "#if" is empty, strip it and skip the "#endif".
-  if (top() == pp_if || top() == pp_ifdef || top() == pp_ifndef) {
+  // If "#ifdef" is empty, strip it and skip the "#endif".
+  //
+  // FIXME: Once/if Clang starts disallowing __has_include in macro expansions,
+  // we can skip empty `#if` and `#elif` blocks as well after scanning for a
+  // literal __has_include in the condition.  Even without that rule we could
+  // drop the tokens if we scan for identifiers in the condition and find none.
+  if (top() == pp_ifdef || top() == pp_ifndef) {
     popToken();
     skipLine(First, End);
     return false;

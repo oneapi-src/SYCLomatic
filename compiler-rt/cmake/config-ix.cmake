@@ -146,6 +146,7 @@ check_library_exists(stdc++ __cxa_throw "" COMPILER_RT_HAS_LIBSTDCXX)
 
 # Linker flags.
 check_linker_flag("-Wl,-z,text" COMPILER_RT_HAS_Z_TEXT)
+check_linker_flag("-fuse-ld=lld" COMPILER_RT_HAS_FUSE_LD_LLD_FLAG)
 
 if(ANDROID)
   check_linker_flag("-Wl,-z,global" COMPILER_RT_HAS_Z_GLOBAL)
@@ -256,11 +257,11 @@ if(APPLE)
   set(X86_64 x86_64 x86_64h)
 endif()
 
-set(ALL_SANITIZER_COMMON_SUPPORTED_ARCH ${X86} ${X86_64} ${PPC64}
+set(ALL_SANITIZER_COMMON_SUPPORTED_ARCH ${X86} ${X86_64} ${PPC64} ${RISCV64}
     ${ARM32} ${ARM64} ${MIPS32} ${MIPS64} ${S390X} ${SPARC} ${SPARCV9})
 set(ALL_ASAN_SUPPORTED_ARCH ${X86} ${X86_64} ${ARM32} ${ARM64}
     ${MIPS32} ${MIPS64} ${PPC64} ${S390X} ${SPARC} ${SPARCV9})
-set(ALL_CRT_SUPPORTED_ARCH ${X86} ${X86_64} ${ARM32} ${ARM64})
+set(ALL_CRT_SUPPORTED_ARCH ${X86} ${X86_64} ${ARM32} ${ARM64} ${RISCV32} ${RISCV64})
 set(ALL_DFSAN_SUPPORTED_ARCH ${X86_64} ${MIPS64} ${ARM64})
 
 if(ANDROID)
@@ -290,7 +291,7 @@ set(ALL_HWASAN_SUPPORTED_ARCH ${X86_64} ${ARM64})
 set(ALL_PROFILE_SUPPORTED_ARCH ${X86} ${X86_64} ${ARM32} ${ARM64} ${PPC64}
     ${MIPS32} ${MIPS64} ${S390X} ${SPARC} ${SPARCV9})
 set(ALL_TSAN_SUPPORTED_ARCH ${X86_64} ${MIPS64} ${ARM64} ${PPC64})
-set(ALL_UBSAN_SUPPORTED_ARCH ${X86} ${X86_64} ${ARM32} ${ARM64}
+set(ALL_UBSAN_SUPPORTED_ARCH ${X86} ${X86_64} ${ARM32} ${ARM64} ${RISCV64}
     ${MIPS32} ${MIPS64} ${PPC64} ${S390X} ${SPARC} ${SPARCV9})
 set(ALL_SAFESTACK_SUPPORTED_ARCH ${X86} ${X86_64} ${ARM64} ${MIPS32} ${MIPS64})
 set(ALL_CFI_SUPPORTED_ARCH ${X86} ${X86_64} ${ARM32} ${ARM64} ${MIPS64})
@@ -315,6 +316,7 @@ if(APPLE)
   find_darwin_sdk_dir(DARWIN_tvos_SYSROOT appletvos)
 
   if(NOT DARWIN_osx_SYSROOT)
+    message(WARNING "Could not determine OS X sysroot, trying /usr/include")
     if(EXISTS /usr/include)
       set(DARWIN_osx_SYSROOT /)
     else()
@@ -326,7 +328,7 @@ if(APPLE)
     list(APPEND DARWIN_EMBEDDED_PLATFORMS ios)
     set(DARWIN_ios_MIN_VER_FLAG -miphoneos-version-min)
     set(DARWIN_ios_SANITIZER_MIN_VER_FLAG
-      ${DARWIN_ios_MIN_VER_FLAG}=8.0)
+      ${DARWIN_ios_MIN_VER_FLAG}=9.0)
   endif()
   if(COMPILER_RT_ENABLE_WATCHOS)
     list(APPEND DARWIN_EMBEDDED_PLATFORMS watchos)
@@ -341,12 +343,14 @@ if(APPLE)
       ${DARWIN_tvos_MIN_VER_FLAG}=9.0)
   endif()
 
-  # Note: In order to target x86_64h on OS X the minimum deployment target must
-  # be 10.8 or higher.
   set(SANITIZER_COMMON_SUPPORTED_OS osx)
   set(PROFILE_SUPPORTED_OS osx)
   set(TSAN_SUPPORTED_OS osx)
   set(XRAY_SUPPORTED_OS osx)
+
+  # Note: In order to target x86_64h on OS X the minimum deployment target must
+  # be 10.8 or higher.
+  set(DEFAULT_SANITIZER_MIN_OSX_VERSION 10.10)
   if(NOT SANITIZER_MIN_OSX_VERSION)
     string(REGEX MATCH "-mmacosx-version-min=([.0-9]+)"
            MACOSX_VERSION_MIN_FLAG "${CMAKE_CXX_FLAGS}")
@@ -355,14 +359,14 @@ if(APPLE)
     elseif(CMAKE_OSX_DEPLOYMENT_TARGET)
       set(SANITIZER_MIN_OSX_VERSION ${CMAKE_OSX_DEPLOYMENT_TARGET})
     else()
-      set(SANITIZER_MIN_OSX_VERSION 10.9)
+      set(SANITIZER_MIN_OSX_VERSION ${DEFAULT_SANITIZER_MIN_OSX_VERSION})
     endif()
     if(SANITIZER_MIN_OSX_VERSION VERSION_LESS "10.7")
       message(FATAL_ERROR "macOS deployment target '${SANITIZER_MIN_OSX_VERSION}' is too old.")
     endif()
-    if(SANITIZER_MIN_OSX_VERSION VERSION_GREATER "10.9")
-      message(WARNING "macOS deployment target '${SANITIZER_MIN_OSX_VERSION}' is too new, setting to '10.9' instead.")
-      set(SANITIZER_MIN_OSX_VERSION 10.9)
+    if(SANITIZER_MIN_OSX_VERSION VERSION_GREATER ${DEFAULT_SANITIZER_MIN_OSX_VERSION})
+      message(WARNING "macOS deployment target '${SANITIZER_MIN_OSX_VERSION}' is too new, setting to '${DEFAULT_SANITIZER_MIN_OSX_VERSION}' instead.")
+      set(SANITIZER_MIN_OSX_VERSION ${DEFAULT_SANITIZER_MIN_OSX_VERSION})
     endif()
   endif()
 

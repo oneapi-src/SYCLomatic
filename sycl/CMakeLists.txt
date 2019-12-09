@@ -84,11 +84,16 @@ if( NOT OpenCL_LIBRARIES )
   if(MSVC)
     set(OpenCL_LIBRARIES
         "${LLVM_LIBRARY_OUTPUT_INTDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}OpenCL${CMAKE_STATIC_LIBRARY_SUFFIX}")
-    set(OPENCL_ICD_LOADER_WDK "-DOPENCL_ICD_LOADER_REQUIRE_WDK=OFF")
+    set(AUX_CMAKE_FLAGS "${AUX_CMAKE_FLAGS} -DOPENCL_ICD_LOADER_REQUIRE_WDK=OFF")
   else()
     set(OpenCL_LIBRARIES
         "${LLVM_LIBRARY_OUTPUT_INTDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}OpenCL${CMAKE_SHARED_LIBRARY_SUFFIX}")
-    set(OPENCL_ICD_LOADER_WDK "")
+  endif()
+  if (CMAKE_C_COMPILER)
+      set(AUX_CMAKE_FLAGS "${AUX_CMAKE_FLAGS} -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}")
+  endif()
+  if (CMAKE_CXX_COMPILER)
+      set(AUX_CMAKE_FLAGS "${AUX_CMAKE_FLAGS} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
   endif()
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/icd_build)
   ExternalProject_Add(ocl-icd
@@ -101,7 +106,7 @@ if( NOT OpenCL_LIBRARIES )
                -DOPENCL_ICD_LOADER_HEADERS_DIR=${CMAKE_CURRENT_BINARY_DIR}/OpenCL/inc
                -DCMAKE_INSTALL_PREFIX=${LLVM_BINARY_DIR}
                -DCMAKE_INSTALL_LIBDIR:PATH=lib
-               ${OPENCL_ICD_LOADER_WDK}
+               ${AUX_CMAKE_FLAGS}
     STEP_TARGETS      configure,build,install
     DEPENDS           ocl-headers
     BUILD_BYPRODUCTS ${OpenCL_LIBRARIES}
@@ -143,12 +148,42 @@ if (MSVC)
   list(APPEND SYCL_RT_LIBS sycld)
 endif()
 
+# This function allows building multiple libraries with the same options.
+# Currently used by sycl and plugins library.
+# Currently handles linking with libcxx support and gcc workaround
+function( add_common_options LIB_NAME)
+  if (SYCL_USE_LIBCXX)
+      if ((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") OR
+          (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
+          target_compile_options(${LIB_NAME} PRIVATE -nostdinc++)
+          if ((NOT (DEFINED SYCL_LIBCXX_INCLUDE_PATH)) OR (NOT (DEFINED SYCL_LIBCXX_LIBRARY_PATH)))
+              message(FATAL_ERROR "When building with libc++ SYCL_LIBCXX_INCLUDE_PATHS and"
+                                  "SYCL_LIBCXX_LIBRARY_PATH should be set")
+          endif()
+          target_include_directories(${LIB_NAME} PRIVATE "${SYCL_LIBCXX_INCLUDE_PATH}")
+          target_link_libraries(${LIB_NAME} PRIVATE "-L${SYCL_LIBCXX_LIBRARY_PATH}" -nodefaultlibs -lc++ -lc++abi -lm -lc -lgcc_s -lgcc)
+      else()
+          message(FATAL_ERROR "Build with libc++ is not yet supported for this compiler")
+      endif()
+  else()
+
+# Workaround for bug in GCC version 5 and higher.
+# More information https://bugs.launchpad.net/ubuntu/+source/gcc-5/+bug/1568899
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND
+        CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.0)
+    target_link_libraries(${LIB_NAME} PRIVATE gcc_s gcc)
+    endif()
+
+  endif()
+endfunction(add_common_options)
+
 # SYCL runtime library
-add_subdirectory(source)
+add_subdirectory( source )
 
 # SYCL toolchain builds all components: compiler, libraries, headers, etc.
 add_custom_target( sycl-toolchain
   DEPENDS ${SYCL_RT_LIBS}
+          pi_opencl
           clang
           clang-offload-wrapper
           clang-offload-bundler
@@ -156,6 +191,7 @@ add_custom_target( sycl-toolchain
           llvm-as
           llvm-ar
           llvm-dis
+          llvm-foreach
           llvm-no-spir-kernel
           llvm-spirv
           llvm-link
@@ -172,6 +208,10 @@ endif()
 option(SYCL_INCLUDE_TESTS
   "Generate build targets for the SYCL unit tests."
   ${LLVM_INCLUDE_TESTS})
+
+
+# Plugin Library
+add_subdirectory( plugins )
 
 add_subdirectory(tools)
 
@@ -193,14 +233,18 @@ set( SYCL_TOOLCHAIN_DEPLOY_COMPONENTS
      llvm-as
      llvm-ar
      llvm-dis
+     llvm-foreach
      llvm-no-spir-kernel
      llvm-spirv
      llvm-link
      llvm-objcopy
      opt
+     sycl-post-link
      clang-resource-headers
      opencl-headers
      sycl-headers
+     sycl
+     pi_opencl
 )
 
 # Use it as fake dependency in order to force another command(s) to execute.
@@ -230,3 +274,6 @@ endforeach( comp )
 add_custom_target(deploy-sycl-toolchain
   DEPENDS sycl-toolchain ${manifest_list}
 )
+
+# SYCL Runtime documentation
+add_subdirectory(doc)

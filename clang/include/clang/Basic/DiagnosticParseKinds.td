@@ -61,6 +61,13 @@ def warn_null_statement : Warning<
   "remove unnecessary ';' to silence this warning">,
   InGroup<ExtraSemiStmt>, DefaultIgnore;
 
+def warn_misleading_indentation : Warning<
+  "misleading indentation; statement is not part of "
+  "the previous '%select{if|else|for|while|else if}0'">,
+  InGroup<MisleadingIndentation>, DefaultIgnore;
+def note_previous_statement : Note<
+  "previous statement is here">;
+
 def ext_thread_before : Extension<"'__thread' before '%0'">;
 def ext_keyword_as_ident : ExtWarn<
   "keyword '%0' will be made available as an identifier "
@@ -325,6 +332,8 @@ def err_for_range_expected_decl : Error<
 def err_argument_required_after_attribute : Error<
   "argument required after attribute">;
 def err_missing_param : Error<"expected parameter declarator">;
+def err_function_scope_depth_exceeded : Error<
+  "function scope depth exceeded maximum of %0">, DefaultFatal;
 def err_missing_comma_before_ellipsis : Error<
   "C requires a comma prior to the ellipsis in a variadic function type">;
 def err_unexpected_typedef_ident : Error<
@@ -976,9 +985,9 @@ def err_pragma_misplaced_in_decl : Error<"this pragma cannot appear in %0 declar
 
 // '#pragma clang section' related errors
 def err_pragma_expected_clang_section_name : Error<
-  "expected one of [bss|data|rodata|text] section kind in '#pragma %0'">;
+  "expected one of [bss|data|rodata|text|relro] section kind in '#pragma %0'">;
 def err_pragma_clang_section_expected_equal : Error<
-  "expected '=' following '#pragma clang section %select{invalid|bss|data|rodata|text}0'">;
+  "expected '=' following '#pragma clang section %select{invalid|bss|data|rodata|text|relro}0'">;
 def warn_pragma_expected_section_name : Warning<
   "expected a string literal for the section name in '#pragma %0' - ignored">,
   InGroup<IgnoredPragmas>;
@@ -1211,9 +1220,21 @@ def warn_omp_declare_variant_cs_name_expected : Warning<
   InGroup<OpenMPClauses>;
 def err_omp_declare_variant_item_expected : Error<
   "expected %0 in '%1' context selector of '%2' selector set of 'omp declare variant' directive">;
+def err_omp_declare_variant_ctx_set_mutiple_use : Error<
+  "context selector set '%0' is used already in the same 'omp declare variant' directive">;
+def note_omp_declare_variant_ctx_set_used_here : Note<
+  "previously context selector set '%0' used here">;
+def err_omp_expected_comma_brace : Error<"expected '}' or ',' after '%0'">;
+def err_omp_declare_variant_ctx_mutiple_use : Error<
+  "context trait selector '%0' is used already in the same '%1' context selector set of 'omp declare variant' directive">;
+def note_omp_declare_variant_ctx_used_here : Note<
+  "previously context trait selector '%0' used here">;
 def warn_omp_more_one_device_type_clause : Warning<
   "more than one 'device_type' clause is specified">,
   InGroup<OpenMPClauses>;
+def err_omp_wrong_device_kind_trait : Error<
+  "unknown '%0' device kind trait in the 'device' context selector set, expected"
+  " one of 'host', 'nohost', 'cpu', 'gpu' or 'fpga'">;
 
 // Pragma loop support.
 def err_pragma_loop_missing_argument : Error<

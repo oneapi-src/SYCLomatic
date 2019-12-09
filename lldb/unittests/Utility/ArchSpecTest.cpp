@@ -157,8 +157,13 @@ TEST(ArchSpecTest, MergeFrom) {
     ArchSpec A("aarch64");
     ArchSpec B("aarch64--linux-android");
 
+    ArchSpec C("arm64_32");
+    ArchSpec D("arm64_32--watchos");
+
     EXPECT_TRUE(A.IsValid());
     EXPECT_TRUE(B.IsValid());
+    EXPECT_TRUE(C.IsValid());
+    EXPECT_TRUE(D.IsValid());
 
     EXPECT_EQ(llvm::Triple::ArchType::aarch64, B.GetTriple().getArch());
     EXPECT_EQ(llvm::Triple::VendorType::UnknownVendor,
@@ -174,6 +179,17 @@ TEST(ArchSpecTest, MergeFrom) {
     EXPECT_EQ(llvm::Triple::OSType::Linux, A.GetTriple().getOS());
     EXPECT_EQ(llvm::Triple::EnvironmentType::Android,
               A.GetTriple().getEnvironment());
+
+    EXPECT_EQ(llvm::Triple::ArchType::aarch64_32, D.GetTriple().getArch());
+    EXPECT_EQ(llvm::Triple::VendorType::UnknownVendor,
+              D.GetTriple().getVendor());
+    EXPECT_EQ(llvm::Triple::OSType::WatchOS, D.GetTriple().getOS());
+
+    C.MergeFrom(D);
+    EXPECT_EQ(llvm::Triple::ArchType::aarch64_32, C.GetTriple().getArch());
+    EXPECT_EQ(llvm::Triple::VendorType::UnknownVendor,
+              C.GetTriple().getVendor());
+    EXPECT_EQ(llvm::Triple::OSType::WatchOS, C.GetTriple().getOS());
   }
   {
     ArchSpec A, B;
@@ -198,6 +214,41 @@ TEST(ArchSpecTest, MergeFrom) {
               A.GetTriple().getVendor());
     EXPECT_EQ(llvm::Triple::OSType::Linux, A.GetTriple().getOS());
     EXPECT_EQ(llvm::Triple::EnvironmentType::UnknownEnvironment,
+              A.GetTriple().getEnvironment());
+  }
+  {
+    ArchSpec A("arm--linux-eabihf");
+    ArchSpec B("armv8l--linux-gnueabihf");
+
+    EXPECT_TRUE(A.IsValid());
+    EXPECT_TRUE(B.IsValid());
+
+    EXPECT_EQ(llvm::Triple::ArchType::arm, A.GetTriple().getArch());
+    EXPECT_EQ(llvm::Triple::ArchType::arm, B.GetTriple().getArch());
+
+    EXPECT_EQ(ArchSpec::eCore_arm_generic, A.GetCore());
+    EXPECT_EQ(ArchSpec::eCore_arm_armv8l, B.GetCore());
+
+    EXPECT_EQ(llvm::Triple::VendorType::UnknownVendor,
+              A.GetTriple().getVendor());
+    EXPECT_EQ(llvm::Triple::VendorType::UnknownVendor,
+              B.GetTriple().getVendor());
+
+    EXPECT_EQ(llvm::Triple::OSType::Linux, A.GetTriple().getOS());
+    EXPECT_EQ(llvm::Triple::OSType::Linux, B.GetTriple().getOS());
+
+    EXPECT_EQ(llvm::Triple::EnvironmentType::EABIHF,
+              A.GetTriple().getEnvironment());
+    EXPECT_EQ(llvm::Triple::EnvironmentType::GNUEABIHF,
+              B.GetTriple().getEnvironment());
+
+    A.MergeFrom(B);
+    EXPECT_EQ(llvm::Triple::ArchType::arm, A.GetTriple().getArch());
+    EXPECT_EQ(ArchSpec::eCore_arm_armv8l, A.GetCore());
+    EXPECT_EQ(llvm::Triple::VendorType::UnknownVendor,
+              A.GetTriple().getVendor());
+    EXPECT_EQ(llvm::Triple::OSType::Linux, A.GetTriple().getOS());
+    EXPECT_EQ(llvm::Triple::EnvironmentType::EABIHF,
               A.GetTriple().getEnvironment());
   }
 }

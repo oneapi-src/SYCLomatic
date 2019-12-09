@@ -1,4 +1,4 @@
-add_llvm_library(LLVMTransformUtils
+add_llvm_component_library(LLVMTransformUtils
   ASanStackFrameLayout.cpp
   AddDiscriminators.cpp
   BasicBlockUtils.cpp
@@ -10,7 +10,9 @@ add_llvm_library(LLVMTransformUtils
   CloneFunction.cpp
   CloneModule.cpp
   CodeExtractor.cpp
+  CodeMoverUtils.cpp
   CtorUtils.cpp
+  Debugify.cpp
   DemoteRegToStack.cpp
   EntryExitInstrumenter.cpp
   EscapeEnumerator.cpp
@@ -22,6 +24,7 @@ add_llvm_library(LLVMTransformUtils
   GuardUtils.cpp
   InlineFunction.cpp
   ImportedFunctionsInliningStatistics.cpp
+  InjectTLIMappings.cpp
   InstructionNamer.cpp
   IntegerDivision.cpp
   LCSSA.cpp

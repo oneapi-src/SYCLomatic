@@ -175,6 +175,9 @@ public:
       RelSet Flags;
       Visitor(TargetFinder &Outer, RelSet Flags) : Outer(Outer), Flags(Flags) {}
 
+      void VisitCallExpr(const CallExpr *CE) {
+        Outer.add(CE->getCalleeDecl(), Flags);
+      }
       void VisitDeclRefExpr(const DeclRefExpr *DRE) {
         const Decl *D = DRE->getDecl();
         // UsingShadowDecl allows us to record the UsingDecl.
@@ -412,63 +415,93 @@ explicitReferenceTargets(DynTypedNode N, DeclRelationSet Mask = {}) {
   return Targets;
 }
 
-Optional<ReferenceLoc> refInDecl(const Decl *D) {
+llvm::SmallVector<ReferenceLoc, 2> refInDecl(const Decl *D) {
   struct Visitor : ConstDeclVisitor<Visitor> {
-    llvm::Optional<ReferenceLoc> Ref;
+    llvm::SmallVector<ReferenceLoc, 2> Refs;
 
     void VisitUsingDirectiveDecl(const UsingDirectiveDecl *D) {
-      Ref = ReferenceLoc{D->getQualifierLoc(),
-                         D->getIdentLocation(),
-                         {D->getNominatedNamespaceAsWritten()}};
+      // We want to keep it as non-declaration references, as the
+      // "using namespace" declaration doesn't have a name.
+      Refs.push_back(ReferenceLoc{D->getQualifierLoc(),
+                                  D->getIdentLocation(),
+                                  /*IsDecl=*/false,
+                                  {D->getNominatedNamespaceAsWritten()}});
     }
 
     void VisitUsingDecl(const UsingDecl *D) {
-      Ref = ReferenceLoc{D->getQualifierLoc(), D->getLocation(),
-                         explicitReferenceTargets(DynTypedNode::create(*D),
-                                                  DeclRelation::Underlying)};
+      // "using ns::identifer;" is a non-declaration reference.
+      Refs.push_back(
+          ReferenceLoc{D->getQualifierLoc(), D->getLocation(), /*IsDecl=*/false,
+                       explicitReferenceTargets(DynTypedNode::create(*D),
+                                                DeclRelation::Underlying)});
     }
 
     void VisitNamespaceAliasDecl(const NamespaceAliasDecl *D) {
-      Ref = ReferenceLoc{D->getQualifierLoc(),
-                         D->getTargetNameLoc(),
-                         {D->getAliasedNamespace()}};
+      // For namespace alias, "namespace Foo = Target;", we add two references.
+      // Add a declaration reference for Foo.
+      VisitNamedDecl(D);
+      // Add a non-declaration reference for Target.
+      Refs.push_back(ReferenceLoc{D->getQualifierLoc(),
+                                  D->getTargetNameLoc(),
+                                  /*IsDecl=*/false,
+                                  {D->getAliasedNamespace()}});
+    }
+
+    void VisitNamedDecl(const NamedDecl *ND) {
+      // FIXME: decide on how to surface destructors when we need them.
+      if (llvm::isa<CXXDestructorDecl>(ND))
+        return;
+      // Filter anonymous decls, name location will point outside the name token
+      // and the clients are not prepared to handle that.
+      if (ND->getDeclName().isIdentifier() &&
+          !ND->getDeclName().getAsIdentifierInfo())
+        return;
+      Refs.push_back(ReferenceLoc{getQualifierLoc(*ND),
+                                  ND->getLocation(),
+                                  /*IsDecl=*/true,
+                                  {ND}});
     }
   };
 
   Visitor V;
   V.Visit(D);
-  return V.Ref;
+  return V.Refs;
 }
 
-Optional<ReferenceLoc> refInExpr(const Expr *E) {
+llvm::SmallVector<ReferenceLoc, 2> refInExpr(const Expr *E) {
   struct Visitor : ConstStmtVisitor<Visitor> {
     // FIXME: handle more complicated cases, e.g. ObjC, designated initializers.
-    llvm::Optional<ReferenceLoc> Ref;
+    llvm::SmallVector<ReferenceLoc, 2> Refs;
 
     void VisitDeclRefExpr(const DeclRefExpr *E) {
-      Ref = ReferenceLoc{
-          E->getQualifierLoc(), E->getNameInfo().getLoc(), {E->getFoundDecl()}};
+      Refs.push_back(ReferenceLoc{E->getQualifierLoc(),
+                                  E->getNameInfo().getLoc(),
+                                  /*IsDecl=*/false,
+                                  {E->getFoundDecl()}});
     }
 
     void VisitMemberExpr(const MemberExpr *E) {
-      Ref = ReferenceLoc{E->getQualifierLoc(),
-                         E->getMemberNameInfo().getLoc(),
-                         {E->getFoundDecl()}};
+      Refs.push_back(ReferenceLoc{E->getQualifierLoc(),
+                                  E->getMemberNameInfo().getLoc(),
+                                  /*IsDecl=*/false,
+                                  {E->getFoundDecl()}});
     }
 
     void VisitOverloadExpr(const OverloadExpr *E) {
-      Ref = ReferenceLoc{E->getQualifierLoc(), E->getNameInfo().getLoc(),
-                         llvm::SmallVector<const NamedDecl *, 1>(
-                             E->decls().begin(), E->decls().end())};
+      Refs.push_back(ReferenceLoc{E->getQualifierLoc(),
+                                  E->getNameInfo().getLoc(),
+                                  /*IsDecl=*/false,
+                                  llvm::SmallVector<const NamedDecl *, 1>(
+                                      E->decls().begin(), E->decls().end())});
     }
   };
 
   Visitor V;
   V.Visit(E);
-  return V.Ref;
+  return V.Refs;
 }
 
-Optional<ReferenceLoc> refInTypeLoc(TypeLoc L) {
+llvm::SmallVector<ReferenceLoc, 2> refInTypeLoc(TypeLoc L) {
   struct Visitor : TypeLocVisitor<Visitor> {
     llvm::Optional<ReferenceLoc> Ref;
 
@@ -483,13 +516,17 @@ Optional<ReferenceLoc> refInTypeLoc(TypeLoc L) {
     }
 
     void VisitTagTypeLoc(TagTypeLoc L) {
-      Ref =
-          ReferenceLoc{NestedNameSpecifierLoc(), L.getNameLoc(), {L.getDecl()}};
+      Ref = ReferenceLoc{NestedNameSpecifierLoc(),
+                         L.getNameLoc(),
+                         /*IsDecl=*/false,
+                         {L.getDecl()}};
     }
 
     void VisitTemplateTypeParmTypeLoc(TemplateTypeParmTypeLoc L) {
-      Ref =
-          ReferenceLoc{NestedNameSpecifierLoc(), L.getNameLoc(), {L.getDecl()}};
+      Ref = ReferenceLoc{NestedNameSpecifierLoc(),
+                         L.getNameLoc(),
+                         /*IsDecl=*/false,
+                         {L.getDecl()}};
     }
 
     void VisitTemplateSpecializationTypeLoc(TemplateSpecializationTypeLoc L) {
@@ -502,14 +539,14 @@ Optional<ReferenceLoc> refInTypeLoc(TypeLoc L) {
       //    2. 'vector<int>' with mask 'Underlying'.
       //  we want to return only #1 in this case.
       Ref = ReferenceLoc{
-          NestedNameSpecifierLoc(), L.getTemplateNameLoc(),
+          NestedNameSpecifierLoc(), L.getTemplateNameLoc(), /*IsDecl=*/false,
           explicitReferenceTargets(DynTypedNode::create(L.getType()),
                                    DeclRelation::Alias)};
     }
     void VisitDeducedTemplateSpecializationTypeLoc(
         DeducedTemplateSpecializationTypeLoc L) {
       Ref = ReferenceLoc{
-          NestedNameSpecifierLoc(), L.getNameLoc(),
+          NestedNameSpecifierLoc(), L.getNameLoc(), /*IsDecl=*/false,
           explicitReferenceTargets(DynTypedNode::create(L.getType()),
                                    DeclRelation::Alias)};
     }
@@ -517,25 +554,29 @@ Optional<ReferenceLoc> refInTypeLoc(TypeLoc L) {
     void VisitDependentTemplateSpecializationTypeLoc(
         DependentTemplateSpecializationTypeLoc L) {
       Ref = ReferenceLoc{
-          L.getQualifierLoc(), L.getTemplateNameLoc(),
+          L.getQualifierLoc(), L.getTemplateNameLoc(), /*IsDecl=*/false,
           explicitReferenceTargets(DynTypedNode::create(L.getType()))};
     }
 
     void VisitDependentNameTypeLoc(DependentNameTypeLoc L) {
       Ref = ReferenceLoc{
-          L.getQualifierLoc(), L.getNameLoc(),
+          L.getQualifierLoc(), L.getNameLoc(), /*IsDecl=*/false,
           explicitReferenceTargets(DynTypedNode::create(L.getType()))};
     }
 
     void VisitTypedefTypeLoc(TypedefTypeLoc L) {
-      Ref = ReferenceLoc{
-          NestedNameSpecifierLoc(), L.getNameLoc(), {L.getTypedefNameDecl()}};
+      Ref = ReferenceLoc{NestedNameSpecifierLoc(),
+                         L.getNameLoc(),
+                         /*IsDecl=*/false,
+                         {L.getTypedefNameDecl()}};
     }
   };
 
   Visitor V;
   V.Visit(L.getUnqualifiedLoc());
-  return V.Ref;
+  if (!V.Ref)
+    return {};
+  return {*V.Ref};
 }
 
 class ExplicitReferenceColletor
@@ -575,6 +616,7 @@ public:
     case TemplateArgument::TemplateExpansion:
       reportReference(ReferenceLoc{A.getTemplateQualifierLoc(),
                                    A.getTemplateNameLoc(),
+                                   /*IsDecl=*/false,
                                    {A.getArgument()
                                         .getAsTemplateOrTemplatePattern()
                                         .getAsTemplateDecl()}},
@@ -610,6 +652,11 @@ public:
     return RecursiveASTVisitor::TraverseNestedNameSpecifierLoc(L);
   }
 
+  bool TraverseConstructorInitializer(CXXCtorInitializer *Init) {
+    visitNode(DynTypedNode::create(*Init));
+    return RecursiveASTVisitor::TraverseConstructorInitializer(Init);
+  }
+
 private:
   /// Obtain information about a reference directly defined in \p N. Does not
   /// recurse into child nodes, e.g. do not expect references for constructor
@@ -625,34 +672,38 @@ private:
   ///     be references. However, declarations can have references inside them,
   ///     e.g. 'namespace foo = std' references namespace 'std' and this
   ///     function will return the corresponding reference.
-  llvm::Optional<ReferenceLoc> explicitReference(DynTypedNode N) {
+  llvm::SmallVector<ReferenceLoc, 2> explicitReference(DynTypedNode N) {
     if (auto *D = N.get<Decl>())
       return refInDecl(D);
     if (auto *E = N.get<Expr>())
       return refInExpr(E);
-    if (auto *NNSL = N.get<NestedNameSpecifierLoc>())
-      return ReferenceLoc{NNSL->getPrefix(), NNSL->getLocalBeginLoc(),
-                          explicitReferenceTargets(DynTypedNode::create(
-                              *NNSL->getNestedNameSpecifier()))};
+    if (auto *NNSL = N.get<NestedNameSpecifierLoc>()) {
+      // (!) 'DeclRelation::Alias' ensures we do not loose namespace aliases.
+      return {ReferenceLoc{
+          NNSL->getPrefix(), NNSL->getLocalBeginLoc(), false,
+          explicitReferenceTargets(
+              DynTypedNode::create(*NNSL->getNestedNameSpecifier()),
+              DeclRelation::Alias)}};
+    }
     if (const TypeLoc *TL = N.get<TypeLoc>())
       return refInTypeLoc(*TL);
     if (const CXXCtorInitializer *CCI = N.get<CXXCtorInitializer>()) {
-      if (CCI->isBaseInitializer())
-        return refInTypeLoc(CCI->getBaseClassLoc());
-      assert(CCI->isAnyMemberInitializer());
-      return ReferenceLoc{NestedNameSpecifierLoc(),
-                          CCI->getMemberLocation(),
-                          {CCI->getAnyMember()}};
+      // Other type initializers (e.g. base initializer) are handled by visiting
+      // the typeLoc.
+      if (CCI->isAnyMemberInitializer()) {
+        return {ReferenceLoc{NestedNameSpecifierLoc(),
+                             CCI->getMemberLocation(),
+                             /*IsDecl=*/false,
+                             {CCI->getAnyMember()}}};
+      }
     }
     // We do not have location information for other nodes (QualType, etc)
-    return llvm::None;
+    return {};
   }
 
   void visitNode(DynTypedNode N) {
-    auto Ref = explicitReference(N);
-    if (!Ref)
-      return;
-    reportReference(*Ref, N);
+    for (const auto &R : explicitReference(N))
+      reportReference(R, N);
   }
 
   void reportReference(const ReferenceLoc &Ref, DynTypedNode N) {
@@ -683,6 +734,10 @@ void findExplicitReferences(const Decl *D,
                             llvm::function_ref<void(ReferenceLoc)> Out) {
   assert(D);
   ExplicitReferenceColletor(Out).TraverseDecl(const_cast<Decl *>(D));
+}
+void findExplicitReferences(const ASTContext &AST,
+                            llvm::function_ref<void(ReferenceLoc)> Out) {
+  ExplicitReferenceColletor(Out).TraverseAST(const_cast<ASTContext &>(AST));
 }
 
 llvm::raw_ostream &operator<<(llvm::raw_ostream &OS, DeclRelation R) {
@@ -727,6 +782,8 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &OS, ReferenceLoc R) {
                                                 PrintingPolicy(LangOptions()));
     OS << "'";
   }
+  if (R.IsDecl)
+    OS << ", decl";
   return OS;
 }
 

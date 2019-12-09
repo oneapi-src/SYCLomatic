@@ -44,6 +44,7 @@
 #include "clang/AST/TypeLoc.h"
 #include "clang/AST/TypeVisitor.h"
 #include "clang/AST/UnresolvedSet.h"
+#include "clang/Basic/Builtins.h"
 #include "clang/Basic/ExceptionSpecificationType.h"
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/IdentifierTable.h"
@@ -483,6 +484,9 @@ namespace clang {
     ExpectedDecl VisitUsingDirectiveDecl(UsingDirectiveDecl *D);
     ExpectedDecl VisitUnresolvedUsingValueDecl(UnresolvedUsingValueDecl *D);
     ExpectedDecl VisitUnresolvedUsingTypenameDecl(UnresolvedUsingTypenameDecl *D);
+    ExpectedDecl VisitBuiltinTemplateDecl(BuiltinTemplateDecl *D);
+    ExpectedDecl
+    VisitLifetimeExtendedTemporaryDecl(LifetimeExtendedTemporaryDecl *D);
 
     Expected<ObjCTypeParamList *>
     ImportObjCTypeParamList(ObjCTypeParamList *list);
@@ -1836,71 +1840,10 @@ Error ASTNodeImporter::ImportDefinition(
 
     struct CXXRecordDecl::DefinitionData &ToData = ToCXX->data();
     struct CXXRecordDecl::DefinitionData &FromData = FromCXX->data();
-    ToData.UserDeclaredConstructor = FromData.UserDeclaredConstructor;
-    ToData.UserDeclaredSpecialMembers = FromData.UserDeclaredSpecialMembers;
-    ToData.Aggregate = FromData.Aggregate;
-    ToData.PlainOldData = FromData.PlainOldData;
-    ToData.Empty = FromData.Empty;
-    ToData.Polymorphic = FromData.Polymorphic;
-    ToData.Abstract = FromData.Abstract;
-    ToData.IsStandardLayout = FromData.IsStandardLayout;
-    ToData.IsCXX11StandardLayout = FromData.IsCXX11StandardLayout;
-    ToData.HasBasesWithFields = FromData.HasBasesWithFields;
-    ToData.HasBasesWithNonStaticDataMembers =
-        FromData.HasBasesWithNonStaticDataMembers;
-    ToData.HasPrivateFields = FromData.HasPrivateFields;
-    ToData.HasProtectedFields = FromData.HasProtectedFields;
-    ToData.HasPublicFields = FromData.HasPublicFields;
-    ToData.HasMutableFields = FromData.HasMutableFields;
-    ToData.HasVariantMembers = FromData.HasVariantMembers;
-    ToData.HasOnlyCMembers = FromData.HasOnlyCMembers;
-    ToData.HasInClassInitializer = FromData.HasInClassInitializer;
-    ToData.HasUninitializedReferenceMember
-      = FromData.HasUninitializedReferenceMember;
-    ToData.HasUninitializedFields = FromData.HasUninitializedFields;
-    ToData.HasInheritedConstructor = FromData.HasInheritedConstructor;
-    ToData.HasInheritedAssignment = FromData.HasInheritedAssignment;
-    ToData.NeedOverloadResolutionForCopyConstructor
-      = FromData.NeedOverloadResolutionForCopyConstructor;
-    ToData.NeedOverloadResolutionForMoveConstructor
-      = FromData.NeedOverloadResolutionForMoveConstructor;
-    ToData.NeedOverloadResolutionForMoveAssignment
-      = FromData.NeedOverloadResolutionForMoveAssignment;
-    ToData.NeedOverloadResolutionForDestructor
-      = FromData.NeedOverloadResolutionForDestructor;
-    ToData.DefaultedCopyConstructorIsDeleted
-      = FromData.DefaultedCopyConstructorIsDeleted;
-    ToData.DefaultedMoveConstructorIsDeleted
-      = FromData.DefaultedMoveConstructorIsDeleted;
-    ToData.DefaultedMoveAssignmentIsDeleted
-      = FromData.DefaultedMoveAssignmentIsDeleted;
-    ToData.DefaultedDestructorIsDeleted = FromData.DefaultedDestructorIsDeleted;
-    ToData.HasTrivialSpecialMembers = FromData.HasTrivialSpecialMembers;
-    ToData.HasIrrelevantDestructor = FromData.HasIrrelevantDestructor;
-    ToData.HasConstexprNonCopyMoveConstructor
-      = FromData.HasConstexprNonCopyMoveConstructor;
-    ToData.HasDefaultedDefaultConstructor
-      = FromData.HasDefaultedDefaultConstructor;
-    ToData.DefaultedDefaultConstructorIsConstexpr
-      = FromData.DefaultedDefaultConstructorIsConstexpr;
-    ToData.HasConstexprDefaultConstructor
-      = FromData.HasConstexprDefaultConstructor;
-    ToData.HasNonLiteralTypeFieldsOrBases
-      = FromData.HasNonLiteralTypeFieldsOrBases;
-    // ComputedVisibleConversions not imported.
-    ToData.UserProvidedDefaultConstructor
-      = FromData.UserProvidedDefaultConstructor;
-    ToData.DeclaredSpecialMembers = FromData.DeclaredSpecialMembers;
-    ToData.ImplicitCopyConstructorCanHaveConstParamForVBase
-      = FromData.ImplicitCopyConstructorCanHaveConstParamForVBase;
-    ToData.ImplicitCopyConstructorCanHaveConstParamForNonVBase
-      = FromData.ImplicitCopyConstructorCanHaveConstParamForNonVBase;
-    ToData.ImplicitCopyAssignmentHasConstParam
-      = FromData.ImplicitCopyAssignmentHasConstParam;
-    ToData.HasDeclaredCopyConstructorWithConstParam
-      = FromData.HasDeclaredCopyConstructorWithConstParam;
-    ToData.HasDeclaredCopyAssignmentWithConstParam
-      = FromData.HasDeclaredCopyAssignmentWithConstParam;
+
+    #define FIELD(Name, Width, Merge) \
+    ToData.Name = FromData.Name;
+    #include "clang/AST/CXXRecordDeclDefinitionBits.def"
 
     // Copy over the data stored in RecordDeclBits
     ToCXX->setArgPassingRestrictions(FromCXX->getArgPassingRestrictions());
@@ -2640,10 +2583,10 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
   }
 
   // Import the major distinguishing characteristics of this record.
-  DeclContext *DC, *LexicalDC;
+  DeclContext *DC = nullptr, *LexicalDC = nullptr;
   DeclarationName Name;
   SourceLocation Loc;
-  NamedDecl *ToD;
+  NamedDecl *ToD = nullptr;
   if (Error Err = ImportDeclParts(D, DC, LexicalDC, Name, ToD, Loc))
     return std::move(Err);
   if (ToD)
@@ -2755,7 +2698,8 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
       ExpectedDecl CDeclOrErr = import(DCXX->getLambdaContextDecl());
       if (!CDeclOrErr)
         return CDeclOrErr.takeError();
-      D2CXX->setLambdaMangling(DCXX->getLambdaManglingNumber(), *CDeclOrErr);
+      D2CXX->setLambdaMangling(DCXX->getLambdaManglingNumber(), *CDeclOrErr,
+                               DCXX->hasKnownLambdaInternalLinkage());
     } else if (DCXX->isInjectedClassName()) {
       // We have to be careful to do a similar dance to the one in
       // Sema::ActOnStartCXXMemberDeclarations
@@ -4021,10 +3965,10 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
 
   ObjCMethodDecl *ToMethod;
   if (GetImportedOrCreateDecl(
-          ToMethod, D, Importer.getToContext(), Loc,
-          ToEndLoc, Name.getObjCSelector(), ToReturnType,
-          ToReturnTypeSourceInfo, DC, D->isInstanceMethod(), D->isVariadic(),
-          D->isPropertyAccessor(), D->isImplicit(), D->isDefined(),
+          ToMethod, D, Importer.getToContext(), Loc, ToEndLoc,
+          Name.getObjCSelector(), ToReturnType, ToReturnTypeSourceInfo, DC,
+          D->isInstanceMethod(), D->isVariadic(), D->isPropertyAccessor(),
+          D->isSynthesizedAccessorStub(), D->isImplicit(), D->isDefined(),
           D->getImplementationControl(), D->hasRelatedResultType()))
     return ToMethod;
 
@@ -4524,6 +4468,20 @@ ExpectedDecl ASTNodeImporter::VisitUnresolvedUsingTypenameDecl(
   return ToUsing;
 }
 
+ExpectedDecl ASTNodeImporter::VisitBuiltinTemplateDecl(BuiltinTemplateDecl *D) {
+  Decl* ToD = nullptr;
+  switch (D->getBuiltinTemplateKind()) {
+  case BuiltinTemplateKind::BTK__make_integer_seq:
+    ToD = Importer.getToContext().getMakeIntegerSeqDecl();
+    break;
+  case BuiltinTemplateKind::BTK__type_pack_element:
+    ToD = Importer.getToContext().getTypePackElementDecl();
+    break;
+  }
+  assert(ToD && "BuiltinTemplateDecl of unsupported kind!");
+  Importer.MapImported(D, ToD);
+  return ToD;
+}
 
 Error ASTNodeImporter::ImportDefinition(
     ObjCInterfaceDecl *From, ObjCInterfaceDecl *To, ImportDefinitionKind Kind) {
@@ -5119,6 +5077,8 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
       Decl *Found = FoundDecl;
       auto *FoundTemplate = dyn_cast<ClassTemplateDecl>(Found);
       if (FoundTemplate) {
+        if (!hasSameVisibilityContext(FoundTemplate, D))
+          continue;
 
         if (IsStructuralMatch(D, FoundTemplate)) {
           ClassTemplateDecl *TemplateWithDef =
@@ -7049,23 +7009,52 @@ ASTNodeImporter::VisitCXXTemporaryObjectExpr(CXXTemporaryObjectExpr *E) {
       E->requiresZeroInitialization());
 }
 
+ExpectedDecl ASTNodeImporter::VisitLifetimeExtendedTemporaryDecl(
+    LifetimeExtendedTemporaryDecl *D) {
+  DeclContext *DC, *LexicalDC;
+  if (Error Err = ImportDeclContext(D, DC, LexicalDC))
+    return std::move(Err);
+
+  auto Imp = importSeq(D->getTemporaryExpr(), D->getExtendingDecl());
+  // FIXME: the APValue should be imported as well if present.
+  if (!Imp)
+    return Imp.takeError();
+
+  Expr *Temporary;
+  ValueDecl *ExtendingDecl;
+  std::tie(Temporary, ExtendingDecl) = *Imp;
+  // FIXME: Should ManglingNumber get numbers associated with 'to' context?
+
+  LifetimeExtendedTemporaryDecl *To;
+  if (GetImportedOrCreateDecl(To, D, Temporary, ExtendingDecl,
+                              D->getManglingNumber()))
+    return To;
+
+  To->setLexicalDeclContext(LexicalDC);
+  LexicalDC->addDeclInternal(To);
+  return To;
+}
+
 ExpectedStmt
 ASTNodeImporter::VisitMaterializeTemporaryExpr(MaterializeTemporaryExpr *E) {
-  auto Imp = importSeq(
-      E->getType(), E->GetTemporaryExpr(), E->getExtendingDecl());
+  auto Imp = importSeq(E->getType(),
+                       E->getLifetimeExtendedTemporaryDecl() ? nullptr
+                                                             : E->getSubExpr(),
+                       E->getLifetimeExtendedTemporaryDecl());
   if (!Imp)
     return Imp.takeError();
 
   QualType ToType;
   Expr *ToTemporaryExpr;
-  const ValueDecl *ToExtendingDecl;
-  std::tie(ToType, ToTemporaryExpr, ToExtendingDecl) = *Imp;
+  LifetimeExtendedTemporaryDecl *ToMaterializedDecl;
+  std::tie(ToType, ToTemporaryExpr, ToMaterializedDecl) = *Imp;
+  if (!ToTemporaryExpr)
+    ToTemporaryExpr = cast<Expr>(ToMaterializedDecl->getTemporaryExpr());
 
-  auto *ToMTE =  new (Importer.getToContext()) MaterializeTemporaryExpr(
-      ToType, ToTemporaryExpr, E->isBoundToLvalueReference());
+  auto *ToMTE = new (Importer.getToContext()) MaterializeTemporaryExpr(
+      ToType, ToTemporaryExpr, E->isBoundToLvalueReference(),
+      ToMaterializedDecl);
 
-  // FIXME: Should ManglingNumber get numbers associated with 'to' context?
-  ToMTE->setExtendingDecl(ToExtendingDecl, E->getManglingNumber());
   return ToMTE;
 }
 

@@ -11,7 +11,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "LiveRangeCalc.h"
 #include "Spiller.h"
 #include "SplitKit.h"
 #include "llvm/ADT/ArrayRef.h"
@@ -26,6 +25,7 @@
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/CodeGen/LiveInterval.h"
 #include "llvm/CodeGen/LiveIntervals.h"
+#include "llvm/CodeGen/LiveRangeCalc.h"
 #include "llvm/CodeGen/LiveRangeEdit.h"
 #include "llvm/CodeGen/LiveStacks.h"
 #include "llvm/CodeGen/MachineBasicBlock.h"
@@ -543,8 +543,7 @@ bool InlineSpiller::canGuaranteeAssignmentAfterRemat(unsigned VReg,
 bool InlineSpiller::reMaterializeFor(LiveInterval &VirtReg, MachineInstr &MI) {
   // Analyze instruction
   SmallVector<std::pair<MachineInstr *, unsigned>, 8> Ops;
-  MIBundleOperands::VirtRegInfo RI =
-      MIBundleOperands(MI).analyzeVirtReg(VirtReg.reg, &Ops);
+  VirtRegInfo RI = AnalyzeVirtRegInBundle(MI, VirtReg.reg, &Ops);
 
   if (!RI.Reads)
     return false;
@@ -782,7 +781,7 @@ static void dumpMachineInstrRangeWithSlotIndex(MachineBasicBlock::iterator B,
 /// foldMemoryOperand - Try folding stack slot references in Ops into their
 /// instructions.
 ///
-/// @param Ops    Operand indices from analyzeVirtReg().
+/// @param Ops    Operand indices from AnalyzeVirtRegInBundle().
 /// @param LoadMI Load instruction to use instead of stack slot when non-null.
 /// @return       True on success.
 bool InlineSpiller::
@@ -851,8 +850,7 @@ foldMemoryOperand(ArrayRef<std::pair<MachineInstr *, unsigned>> Ops,
     // Skip non-Defs, including undef uses and internal reads.
     if (MO->isUse())
       continue;
-    MIBundleOperands::PhysRegInfo RI =
-        MIBundleOperands(*FoldMI).analyzePhysReg(Reg, &TRI);
+    PhysRegInfo RI = AnalyzePhysRegInBundle(*FoldMI, Reg, &TRI);
     if (RI.FullyDefined)
       continue;
     // FoldMI does not define this physreg. Remove the LI segment.
@@ -867,7 +865,7 @@ foldMemoryOperand(ArrayRef<std::pair<MachineInstr *, unsigned>> Ops,
     --NumSpills;
   LIS.ReplaceMachineInstrInMaps(*MI, *FoldMI);
   if (MI->isCall())
-    MI->getMF()->updateCallSiteInfo(MI, FoldMI);
+    MI->getMF()->moveCallSiteInfo(MI, FoldMI);
   MI->eraseFromParent();
 
   // Insert any new instructions other than FoldMI into the LIS maps.
@@ -992,8 +990,7 @@ void InlineSpiller::spillAroundUses(unsigned Reg) {
 
     // Analyze instruction.
     SmallVector<std::pair<MachineInstr*, unsigned>, 8> Ops;
-    MIBundleOperands::VirtRegInfo RI =
-        MIBundleOperands(*MI).analyzeVirtReg(Reg, &Ops);
+    VirtRegInfo RI = AnalyzeVirtRegInBundle(*MI, Reg, &Ops);
 
     // Find the slot index where this instruction reads and writes OldLI.
     // This is usually the def slot, except for tied early clobbers.

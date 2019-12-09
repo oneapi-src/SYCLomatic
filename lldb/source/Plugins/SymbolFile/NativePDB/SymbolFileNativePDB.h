@@ -9,7 +9,6 @@
 #ifndef LLDB_PLUGINS_SYMBOLFILE_NATIVEPDB_SYMBOLFILENATIVEPDB_H
 #define LLDB_PLUGINS_SYMBOLFILE_NATIVEPDB_SYMBOLFILENATIVEPDB_H
 
-#include "lldb/Symbol/ClangASTImporter.h"
 #include "lldb/Symbol/SymbolFile.h"
 
 #include "llvm/ADT/DenseMap.h"
@@ -35,7 +34,6 @@ struct UnionRecord;
 } // namespace llvm
 
 namespace lldb_private {
-class ClangASTImporter;
 
 namespace npdb {
 class PdbAstBuilder;
@@ -43,7 +41,18 @@ class PdbAstBuilder;
 class SymbolFileNativePDB : public SymbolFile {
   friend class UdtRecordCompleter;
 
+  /// LLVM RTTI support.
+  static char ID;
+
 public:
+  /// LLVM RTTI support.
+  /// \{
+  bool isA(const void *ClassID) const override {
+    return ClassID == &ID || SymbolFile::isA(ClassID);
+  }
+  static bool classof(const SymbolFile *obj) { return obj->isA(&ID); }
+  /// \}
+
   // Static Functions
   static void Initialize();
 
@@ -90,10 +99,10 @@ public:
 
   size_t ParseBlocksRecursive(Function &func) override;
 
-  uint32_t FindGlobalVariables(ConstString name,
-                               const CompilerDeclContext *parent_decl_ctx,
-                               uint32_t max_matches,
-                               VariableList &variables) override;
+  void FindGlobalVariables(ConstString name,
+                           const CompilerDeclContext *parent_decl_ctx,
+                           uint32_t max_matches,
+                           VariableList &variables) override;
 
   size_t ParseVariablesForContext(const SymbolContext &sc) override;
 
@@ -119,14 +128,13 @@ public:
   void GetTypes(SymbolContextScope *sc_scope, lldb::TypeClass type_mask,
                 TypeList &type_list) override;
 
-  uint32_t FindFunctions(ConstString name,
-                         const CompilerDeclContext *parent_decl_ctx,
-                         lldb::FunctionNameType name_type_mask,
-                         bool include_inlines, bool append,
-                         SymbolContextList &sc_list) override;
+  void FindFunctions(ConstString name,
+                     const CompilerDeclContext *parent_decl_ctx,
+                     lldb::FunctionNameType name_type_mask,
+                     bool include_inlines, SymbolContextList &sc_list) override;
 
-  uint32_t FindFunctions(const RegularExpression &regex, bool include_inlines,
-                         bool append, SymbolContextList &sc_list) override;
+  void FindFunctions(const RegularExpression &regex, bool include_inlines,
+                     SymbolContextList &sc_list) override;
 
   void FindTypes(ConstString name, const CompilerDeclContext *parent_decl_ctx,
                  uint32_t max_matches,
@@ -134,6 +142,7 @@ public:
                  TypeMap &types) override;
 
   void FindTypes(llvm::ArrayRef<CompilerContext> pattern, LanguageSet languages,
+                 llvm::DenseSet<SymbolFile *> &searched_symbol_files,
                  TypeMap &types) override;
 
   llvm::Expected<TypeSystem &>

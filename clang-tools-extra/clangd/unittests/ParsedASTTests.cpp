@@ -144,6 +144,9 @@ TEST(ParsedASTTest,
     template <>
     int foo<bool> = 0;
   )cpp";
+  // FIXME: Auto-completion in a template requires disabling delayed template
+  // parsing.
+  TU.ExtraArgs.push_back("-fno-delayed-template-parsing");
 
   auto AST = TU.build();
   EXPECT_THAT(
@@ -257,6 +260,15 @@ TEST(ParsedASTTest, CollectsMainFileMacroExpansions) {
       // Includes macro expansions in arguments that are expressions
       ^assert(0 <= ^BAR);
     }
+
+    #ifdef ^UNDEFINED
+    #endif
+
+    #define ^MULTIPLE_DEFINITION 1
+    #undef ^MULTIPLE_DEFINITION
+
+    #define ^MULTIPLE_DEFINITION 2
+    #undef ^MULTIPLE_DEFINITION
   )cpp");
   auto TU = TestTU::withCode(TestCase.code());
   TU.HeaderCode = R"cpp(
@@ -271,7 +283,11 @@ TEST(ParsedASTTest, CollectsMainFileMacroExpansions) {
   )cpp";
   ParsedAST AST = TU.build();
   std::vector<Position> MacroExpansionPositions;
-  for (const auto &R : AST.getMacros().Ranges)
+  for (const auto &SIDToRefs : AST.getMacros().MacroRefs) {
+    for (const auto &R : SIDToRefs.second)
+      MacroExpansionPositions.push_back(R.start);
+  }
+  for (const auto &R : AST.getMacros().UnknownMacros)
     MacroExpansionPositions.push_back(R.start);
   EXPECT_THAT(MacroExpansionPositions,
               testing::UnorderedElementsAreArray(TestCase.points()));

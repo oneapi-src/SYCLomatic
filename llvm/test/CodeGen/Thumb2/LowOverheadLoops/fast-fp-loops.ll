@@ -36,25 +36,15 @@ define arm_aapcs_vfpcc void @fast_float_mul(float* nocapture %a, float* nocaptur
 ; CHECK-NEXT:    mov.w r12, #0
 ; CHECK-NEXT:    b .LBB0_8
 ; CHECK-NEXT:  .LBB0_4: @ %vector.ph
-; CHECK-NEXT:    adds r6, r3, #3
-; CHECK-NEXT:    bic r6, r6, #3
-; CHECK-NEXT:    subs r6, #4
-; CHECK-NEXT:    add.w lr, r12, r6, lsr #2
-; CHECK-NEXT:    dls lr, lr
+; CHECK-NEXT:    dlstp.32 lr, r3
 ; CHECK-NEXT:  .LBB0_5: @ %vector.body
 ; CHECK-NEXT:    @ =>This Inner Loop Header: Depth=1
-; CHECK-NEXT:    vctp.32 r3
+; CHECK-NEXT:    vldrw.u32 q0, [r1], #16
+; CHECK-NEXT:    vldrw.u32 q1, [r2], #16
 ; CHECK-NEXT:    subs r3, #4
-; CHECK-NEXT:    vpstt
-; CHECK-NEXT:    vldrwt.u32 q0, [r1]
-; CHECK-NEXT:    vldrwt.u32 q1, [r2]
-; CHECK-NEXT:    adds r1, #16
 ; CHECK-NEXT:    vmul.f32 q0, q1, q0
-; CHECK-NEXT:    vpst
-; CHECK-NEXT:    vstrwt.32 q0, [r0]
-; CHECK-NEXT:    adds r2, #16
-; CHECK-NEXT:    adds r0, #16
-; CHECK-NEXT:    le lr, .LBB0_5
+; CHECK-NEXT:    vstrw.32 q0, [r0], #16
+; CHECK-NEXT:    letp lr, .LBB0_5
 ; CHECK-NEXT:    b .LBB0_11
 ; CHECK-NEXT:  .LBB0_6: @ %for.body.preheader.new
 ; CHECK-NEXT:    subs r3, r3, r7
@@ -234,7 +224,7 @@ define arm_aapcs_vfpcc float @fast_float_mac(float* nocapture readonly %b, float
 ; CHECK-NEXT:    cbz r2, .LBB1_4
 ; CHECK-NEXT:  @ %bb.1: @ %vector.ph
 ; CHECK-NEXT:    adds r3, r2, #3
-; CHECK-NEXT:    vmov.i32 q1, #0x0
+; CHECK-NEXT:    vmov.i32 q0, #0x0
 ; CHECK-NEXT:    bic r3, r3, #3
 ; CHECK-NEXT:    sub.w r12, r3, #4
 ; CHECK-NEXT:    movs r3, #1
@@ -243,20 +233,17 @@ define arm_aapcs_vfpcc float @fast_float_mac(float* nocapture readonly %b, float
 ; CHECK-NEXT:  .LBB1_2: @ %vector.body
 ; CHECK-NEXT:    @ =>This Inner Loop Header: Depth=1
 ; CHECK-NEXT:    vctp.32 r2
-; CHECK-NEXT:    vmov q0, q1
-; CHECK-NEXT:    vpstt
-; CHECK-NEXT:    vldrwt.u32 q1, [r0]
-; CHECK-NEXT:    vldrwt.u32 q2, [r1]
 ; CHECK-NEXT:    mov r3, r2
-; CHECK-NEXT:    vmul.f32 q1, q2, q1
-; CHECK-NEXT:    adds r0, #16
-; CHECK-NEXT:    adds r1, #16
 ; CHECK-NEXT:    subs r2, #4
-; CHECK-NEXT:    vadd.f32 q1, q1, q0
+; CHECK-NEXT:    vpstt
+; CHECK-NEXT:    vldrwt.u32 q2, [r0], #16
+; CHECK-NEXT:    vldrwt.u32 q3, [r1], #16
+; CHECK-NEXT:    vmov q1, q0
+; CHECK-NEXT:    vfma.f32 q0, q3, q2
 ; CHECK-NEXT:    le lr, .LBB1_2
 ; CHECK-NEXT:  @ %bb.3: @ %middle.block
 ; CHECK-NEXT:    vctp.32 r3
-; CHECK-NEXT:    vpsel q0, q1, q0
+; CHECK-NEXT:    vpsel q0, q0, q1
 ; CHECK-NEXT:    vmov.f32 s4, s2
 ; CHECK-NEXT:    vmov.f32 s5, s3
 ; CHECK-NEXT:    vadd.f32 q0, q0, q1

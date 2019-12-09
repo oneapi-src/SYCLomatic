@@ -65,7 +65,8 @@ class Driver {
     GCCMode,
     GXXMode,
     CPPMode,
-    CLMode
+    CLMode,
+    FlangMode
   } Mode;
 
   enum SaveTempsMode {
@@ -179,6 +180,10 @@ public:
 
   /// Whether the driver should follow cl.exe like behavior.
   bool IsCLMode() const { return Mode == CLMode; }
+
+  /// Whether the driver should invoke flang for fortran inputs.
+  /// Other modes fall back to calling gcc which in turn calls gfortran.
+  bool IsFlangMode() const { return Mode == FlangMode; }
 
   /// Only print tool bindings, don't build any jobs.
   unsigned CCCPrintBindings : 1;
@@ -440,6 +445,10 @@ public:
   /// @name Helper Methods
   /// @{
 
+  /// MakeSYCLDeviceTriple - Returns the SYCL device triple for the
+  /// specified subarch
+  llvm::Triple MakeSYCLDeviceTriple(StringRef TargetArch = "spir64") const;
+
   /// PrintActions - Print the list of actions.
   void PrintActions(const Compilation &C) const;
 
@@ -536,6 +545,10 @@ public:
   /// ShouldUseClangCompiler - Should the clang compiler be used to
   /// handle this action.
   bool ShouldUseClangCompiler(const JobAction &JA) const;
+
+  /// ShouldUseFlangCompiler - Should the flang compiler be used to
+  /// handle this action.
+  bool ShouldUseFlangCompiler(const JobAction &JA) const;
 
   /// Returns true if we are performing any kind of LTO.
   bool isUsingLTO() const { return LTOMode != LTOK_None; }

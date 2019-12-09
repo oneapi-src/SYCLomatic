@@ -57,6 +57,7 @@ add_clang_library(clangDaemon
   GlobalCompilationDatabase.cpp
   Headers.cpp
   HeaderSourceSwitch.cpp
+  Hover.cpp
   IncludeFixer.cpp
   JSONTransport.cpp
   Logger.cpp
@@ -68,6 +69,7 @@ add_clang_library(clangDaemon
   Selection.cpp
   SemanticHighlighting.cpp
   SemanticSelection.cpp
+  Shutdown.cpp
   SourceCode.cpp
   QueryDriverDatabase.cpp
   Threading.cpp

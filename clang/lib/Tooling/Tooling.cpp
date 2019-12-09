@@ -113,7 +113,34 @@ static const llvm::opt::ArgStringList *getCC1Arguments(
   // We expect to get back exactly one Command job, if we didn't something
   // failed. Extract that job from the Compilation.
   const driver::JobList &Jobs = Compilation->getJobs();
-  if (Jobs.size() != 1 || !isa<driver::Command>(*Jobs.begin())) {
+  const driver::ActionList &Actions = Compilation->getActions();
+  bool OffloadCompilation = false;
+  if (Jobs.size() > 1) {
+    for (auto A : Actions){
+      // On MacOSX real actions may end up being wrapped in BindArchAction
+      if (isa<driver::BindArchAction>(A))
+        A = *A->input_begin();
+      if (isa<driver::OffloadAction>(A)) {
+        // Offload compilation has 2 top-level actions, one (at the front) is
+        // the original host compilation and the other is offload action
+        // composed of at least one device compilation. For such case, general
+        // tooling will consider host-compilation only. For tooling on device
+        // compilation, device compilation only option, such as
+        // `--cuda-device-only`, needs specifying.
+        assert(Actions.size() > 1);
+        assert(
+            isa<driver::CompileJobAction>(Actions.front()) ||
+            // On MacOSX real actions may end up being wrapped in
+            // BindArchAction.
+            (isa<driver::BindArchAction>(Actions.front()) &&
+             isa<driver::CompileJobAction>(*Actions.front()->input_begin())));
+        OffloadCompilation = true;
+        break;
+      }
+    }
+  }
+  if (Jobs.size() == 0 || !isa<driver::Command>(*Jobs.begin()) ||
+      (Jobs.size() > 1 && !OffloadCompilation)) {
     SmallString<256> error_msg;
     llvm::raw_svector_ostream error_stream(error_msg);
     Jobs.Print(error_stream, "; ", true);
@@ -662,7 +689,7 @@ buildASTFromCode(StringRef Code, StringRef FileName,
 std::unique_ptr<ASTUnit> buildASTFromCodeWithArgs(
     StringRef Code, const std::vector<std::string> &Args, StringRef FileName,
     StringRef ToolName, std::shared_ptr<PCHContainerOperations> PCHContainerOps,
-    ArgumentsAdjuster Adjuster) {
+    ArgumentsAdjuster Adjuster, const FileContentMappings &VirtualMappedFiles) {
   std::vector<std::unique_ptr<ASTUnit>> ASTs;
   ASTBuilderAction Action(ASTs);
   llvm::IntrusiveRefCntPtr<llvm::vfs::OverlayFileSystem> OverlayFileSystem(
@@ -679,6 +706,12 @@ std::unique_ptr<ASTUnit> buildASTFromCodeWithArgs(
 
   InMemoryFileSystem->addFile(FileName, 0,
                               llvm::MemoryBuffer::getMemBufferCopy(Code));
+  for (auto &FilenameWithContent : VirtualMappedFiles) {
+    InMemoryFileSystem->addFile(
+        FilenameWithContent.first, 0,
+        llvm::MemoryBuffer::getMemBuffer(FilenameWithContent.second));
+  }
+
   if (!Invocation.run())
     return nullptr;
 

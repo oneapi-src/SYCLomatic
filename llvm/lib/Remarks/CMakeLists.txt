@@ -1,8 +1,9 @@
-add_llvm_library(LLVMRemarks
+add_llvm_component_library(LLVMRemarks
   BitstreamRemarkParser.cpp
   BitstreamRemarkSerializer.cpp
   Remark.cpp
   RemarkFormat.cpp
+  RemarkLinker.cpp
   RemarkParser.cpp
   RemarkSerializer.cpp
   RemarkStringTable.cpp

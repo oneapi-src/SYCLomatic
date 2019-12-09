@@ -39,7 +39,6 @@
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
 #include "llvm/Passes/StandardInstrumentations.h"
-#include "llvm/SYCL/ASFixer.h"
 #include "llvm/Support/BuryPointer.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
@@ -415,14 +414,14 @@ getCodeModel(const CodeGenOptions &CodeGenOpts) {
   return static_cast<llvm::CodeModel::Model>(CodeModel);
 }
 
-static TargetMachine::CodeGenFileType getCodeGenFileType(BackendAction Action) {
+static CodeGenFileType getCodeGenFileType(BackendAction Action) {
   if (Action == Backend_EmitObj)
-    return TargetMachine::CGFT_ObjectFile;
+    return CGFT_ObjectFile;
   else if (Action == Backend_EmitMCNull)
-    return TargetMachine::CGFT_Null;
+    return CGFT_Null;
   else {
     assert(Action == Backend_EmitAssembly && "Invalid action!");
-    return TargetMachine::CGFT_AssemblyFile;
+    return CGFT_AssemblyFile;
   }
 }
 
@@ -493,6 +492,7 @@ static void initTargetOptions(llvm::TargetOptions &Options,
   Options.EmitStackSizeSection = CodeGenOpts.StackSizeSection;
   Options.EmitAddrsig = CodeGenOpts.Addrsig;
   Options.EnableDebugEntryValues = CodeGenOpts.EnableDebugEntryValues;
+  Options.ForceDwarfFrameSection = CodeGenOpts.ForceDwarfFrameSection;
 
   Options.MCOptions.SplitDwarfFile = CodeGenOpts.SplitDwarfFile;
   Options.MCOptions.MCRelaxAll = CodeGenOpts.RelaxAll;
@@ -795,7 +795,7 @@ bool EmitAssemblyHelper::AddEmitPasses(legacy::PassManager &CodeGenPasses,
 
   // Normal mode, emit a .s or .o file by running the code generator. Note,
   // this also adds codegenerator level optimization passes.
-  TargetMachine::CodeGenFileType CGFT = getCodeGenFileType(Action);
+  CodeGenFileType CGFT = getCodeGenFileType(Action);
 
   // Add ObjC ARC final-cleanup optimizations. This is done as part of the
   // "codegen" passes so that it isn't run multiple times when there is
@@ -853,8 +853,6 @@ void EmitAssemblyHelper::EmitAssembly(BackendAction Action,
 
   case Backend_EmitBC:
     if (LangOpts.SYCLIsDevice) {
-      if (getenv("DISABLE_INFER_AS"))
-        PerModulePasses.add(createASFixerPass());
       PerModulePasses.add(createDeadCodeEliminationPass());
     }
     if (CodeGenOpts.PrepareForThinLTO && !CodeGenOpts.DisableLLVMPasses) {
@@ -990,6 +988,7 @@ static void addSanitizersAtO0(ModulePassManager &MPM,
   }
 
   if (LangOpts.Sanitize.has(SanitizerKind::Memory)) {
+    MPM.addPass(MemorySanitizerPass({}));
     MPM.addPass(createModuleToFunctionPassAdaptor(MemorySanitizerPass({})));
   }
 
@@ -999,6 +998,7 @@ static void addSanitizersAtO0(ModulePassManager &MPM,
   }
 
   if (LangOpts.Sanitize.has(SanitizerKind::Thread)) {
+    MPM.addPass(ThreadSanitizerPass());
     MPM.addPass(createModuleToFunctionPassAdaptor(ThreadSanitizerPass()));
   }
 }
@@ -1178,16 +1178,23 @@ void EmitAssemblyHelper::EmitAssemblyWithNewPassManager(
             [](FunctionPassManager &FPM, PassBuilder::OptimizationLevel Level) {
               FPM.addPass(BoundsCheckingPass());
             });
-      if (LangOpts.Sanitize.has(SanitizerKind::Memory))
+      if (LangOpts.Sanitize.has(SanitizerKind::Memory)) {
+        PB.registerPipelineStartEPCallback([](ModulePassManager &MPM) {
+          MPM.addPass(MemorySanitizerPass({}));
+        });
         PB.registerOptimizerLastEPCallback(
             [](FunctionPassManager &FPM, PassBuilder::OptimizationLevel Level) {
               FPM.addPass(MemorySanitizerPass({}));
             });
-      if (LangOpts.Sanitize.has(SanitizerKind::Thread))
+      }
+      if (LangOpts.Sanitize.has(SanitizerKind::Thread)) {
+        PB.registerPipelineStartEPCallback(
+            [](ModulePassManager &MPM) { MPM.addPass(ThreadSanitizerPass()); });
         PB.registerOptimizerLastEPCallback(
             [](FunctionPassManager &FPM, PassBuilder::OptimizationLevel Level) {
               FPM.addPass(ThreadSanitizerPass());
             });
+      }
       if (LangOpts.Sanitize.has(SanitizerKind::Address)) {
         PB.registerPipelineStartEPCallback([&](ModulePassManager &MPM) {
           MPM.addPass(
@@ -1272,8 +1279,6 @@ void EmitAssemblyHelper::EmitAssemblyWithNewPassManager(
 
   case Backend_EmitBC:
     if (LangOpts.SYCLIsDevice) {
-      if (getenv("DISABLE_INFER_AS"))
-        CodeGenPasses.add(createASFixerPass());
       CodeGenPasses.add(createDeadCodeEliminationPass());
     }
     if (CodeGenOpts.PrepareForThinLTO && !CodeGenOpts.DisableLLVMPasses) {

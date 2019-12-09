@@ -126,7 +126,8 @@ def note_constexpr_lifetime_ended : Note<
   "%plural{8:storage duration|:lifetime}0 has ended">;
 def note_constexpr_access_uninit : Note<
   "%select{read of|read of|assignment to|increment of|decrement of|"
-  "member call on|dynamic_cast of|typeid applied to|<ERRPR>|destruction of}0 "
+  "member call on|dynamic_cast of|typeid applied to|"
+  "construction of subobject of|destruction of}0 "
   "%select{object outside its lifetime|uninitialized object}1 "
   "is not allowed in a constant expression">;
 def note_constexpr_use_uninit_reference : Note<
@@ -327,6 +328,10 @@ def warn_integer_constant_overflow : Warning<
 // in Sema.
 def note_unimplemented_constexpr_lambda_feature_ast : Note<
     "unimplemented constexpr lambda feature: %0 (coming soon!)">;
+
+def warn_is_constant_evaluated_always_true_constexpr : Warning<
+  "'%0' will always evaluate to 'true' in a manifestly constant-evaluated expression">,
+  InGroup<DiagGroup<"constant-evaluated">>;
 
 // inline asm related.
 let CategoryName = "Inline Assembly Issue" in {

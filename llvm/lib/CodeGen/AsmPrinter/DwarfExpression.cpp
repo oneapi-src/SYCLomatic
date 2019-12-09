@@ -155,20 +155,18 @@ bool DwarfExpression::addMachineReg(const TargetRegisterInfo &TRI,
     CurSubReg.set(Offset, Offset + Size);
 
     // If this sub-register has a DWARF number and we haven't covered
-    // its range, emit a DWARF piece for it.
-    if (CurSubReg.test(Coverage)) {
+    // its range, and its range covers the value, emit a DWARF piece for it.
+    if (Offset < MaxSize && CurSubReg.test(Coverage)) {
       // Emit a piece for any gap in the coverage.
       if (Offset > CurPos)
-        DwarfRegs.push_back({-1, Offset - CurPos, "no DWARF register encoding"});
+        DwarfRegs.push_back(
+            {-1, Offset - CurPos, "no DWARF register encoding"});
       DwarfRegs.push_back(
           {Reg, std::min<unsigned>(Size, MaxSize - Offset), "sub-register"});
-      if (Offset >= MaxSize)
-        break;
-
-      // Mark it as emitted.
-      Coverage.set(Offset, Offset + Size);
-      CurPos = Offset + Size;
     }
+    // Mark it as emitted.
+    Coverage.set(Offset, Offset + Size);
+    CurPos = Offset + Size;
   }
   // Failed to find any DWARF encoding.
   if (CurPos == 0)
@@ -246,13 +244,16 @@ bool DwarfExpression::addMachineRegExpression(const TargetRegisterInfo &TRI,
   // a call site parameter expression and if that expression is just a register
   // location, emit it with addBReg and offset 0, because we should emit a DWARF
   // expression representing a value, rather than a location.
-  if (!isMemoryLocation() && !HasComplexExpression &&
-      (!isParameterValue() || isEntryValue())) {
+  if (!isMemoryLocation() && !HasComplexExpression && (!isParameterValue() ||
+                                                       isEntryValue())) {
     for (auto &Reg : DwarfRegs) {
       if (Reg.DwarfRegNo >= 0)
         addReg(Reg.DwarfRegNo, Reg.Comment);
       addOpPiece(Reg.Size);
     }
+
+    if (isEntryValue())
+      finalizeEntryValue();
 
     if (isEntryValue() && !isParameterValue() && DwarfVersion >= 4)
       emitOp(dwarf::DW_OP_stack_value);
@@ -313,14 +314,34 @@ bool DwarfExpression::addMachineRegExpression(const TargetRegisterInfo &TRI,
   return true;
 }
 
-void DwarfExpression::addEntryValueExpression(DIExpressionCursor &ExprCursor) {
+void DwarfExpression::beginEntryValueExpression(
+    DIExpressionCursor &ExprCursor) {
   auto Op = ExprCursor.take();
-  assert(Op && Op->getOp() == dwarf::DW_OP_entry_value);
+  (void)Op;
+  assert(Op && Op->getOp() == dwarf::DW_OP_LLVM_entry_value);
   assert(!isMemoryLocation() &&
          "We don't support entry values of memory locations yet");
+  assert(!IsEmittingEntryValue && "Already emitting entry value?");
+  assert(Op->getArg(0) == 1 &&
+         "Can currently only emit entry values covering a single operation");
 
   emitOp(CU.getDwarf5OrGNULocationAtom(dwarf::DW_OP_entry_value));
-  emitUnsigned(Op->getArg(0));
+  IsEmittingEntryValue = true;
+  enableTemporaryBuffer();
+}
+
+void DwarfExpression::finalizeEntryValue() {
+  assert(IsEmittingEntryValue && "Entry value not open?");
+  disableTemporaryBuffer();
+
+  // Emit the entry value's size operand.
+  unsigned Size = getTemporaryBufferSize();
+  emitUnsigned(Size);
+
+  // Emit the entry value's DWARF block operand.
+  commitTemporaryBuffer();
+
+  IsEmittingEntryValue = false;
 }
 
 /// Assuming a well-formed expression, match "DW_OP_deref* DW_OP_LLVM_fragment?".
@@ -368,6 +389,7 @@ void DwarfExpression::addExpression(DIExpressionCursor &&ExprCursor,
       // empty DW_OP_piece / DW_OP_bit_piece before we emitted the base
       // location.
       assert(OffsetInBits >= FragmentOffset && "fragment offset not added?");
+      assert(SizeInBits >= OffsetInBits - FragmentOffset && "size underflow");
 
       // If addMachineReg already emitted DW_OP_piece operations to represent
       // a super-register by splicing together sub-registers, subtract the size
@@ -413,9 +435,6 @@ void DwarfExpression::addExpression(DIExpressionCursor &&ExprCursor,
       break;
     case dwarf::DW_OP_deref:
       assert(!isRegisterLocation());
-      // For more detailed explanation see llvm.org/PR43343.
-      assert(!isParameterValue() && "Parameter entry values should not be "
-                                    "dereferenced due to safety reasons.");
       if (!isMemoryLocation() && ::isMemoryLocation(ExprCursor))
         // Turning this into a memory location description makes the deref
         // implicit.

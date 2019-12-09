@@ -2395,6 +2395,23 @@ def : Thumb2DSPPat<(int_arm_qadd(int_arm_qadd rGPR:$Rm, rGPR:$Rm), rGPR:$Rn),
 def : Thumb2DSPPat<(int_arm_qsub rGPR:$Rm, (int_arm_qadd rGPR:$Rn, rGPR:$Rn)),
                    (t2QDSUB rGPR:$Rm, rGPR:$Rn)>;
 
+def : Thumb2DSPPat<(saddsat rGPR:$Rm, rGPR:$Rn),
+                   (t2QADD rGPR:$Rm, rGPR:$Rn)>;
+def : Thumb2DSPPat<(ssubsat rGPR:$Rm, rGPR:$Rn),
+                   (t2QSUB rGPR:$Rm, rGPR:$Rn)>;
+def : Thumb2DSPPat<(saddsat(saddsat rGPR:$Rm, rGPR:$Rm), rGPR:$Rn),
+                   (t2QDADD rGPR:$Rm, rGPR:$Rn)>;
+def : Thumb2DSPPat<(ssubsat rGPR:$Rm, (saddsat rGPR:$Rn, rGPR:$Rn)),
+                   (t2QDSUB rGPR:$Rm, rGPR:$Rn)>;
+def : Thumb2DSPPat<(ARMqadd8b rGPR:$Rm, rGPR:$Rn),
+                   (t2QADD8 rGPR:$Rm, rGPR:$Rn)>;
+def : Thumb2DSPPat<(ARMqsub8b rGPR:$Rm, rGPR:$Rn),
+                   (t2QSUB8 rGPR:$Rm, rGPR:$Rn)>;
+def : Thumb2DSPPat<(ARMqadd16b rGPR:$Rm, rGPR:$Rn),
+                   (t2QADD16 rGPR:$Rm, rGPR:$Rn)>;
+def : Thumb2DSPPat<(ARMqsub16b rGPR:$Rm, rGPR:$Rn),
+                   (t2QSUB16 rGPR:$Rm, rGPR:$Rn)>;
+
 // Signed/Unsigned add/subtract
 
 def t2SASX    : T2I_pam_intrinsics<0b010, 0b0000, "sasx", int_arm_sasx>;
@@ -4534,10 +4551,18 @@ class T2TT<bits<2> at, string asm, list<dag> pattern>
   let Unpredictable{5-0} = 0b111111;
 }
 
-def t2TT   : T2TT<0b00, "tt",   []>, Requires<[IsThumb,Has8MSecExt]>;
-def t2TTT  : T2TT<0b01, "ttt",  []>, Requires<[IsThumb,Has8MSecExt]>;
-def t2TTA  : T2TT<0b10, "tta",  []>, Requires<[IsThumb,Has8MSecExt]>;
-def t2TTAT : T2TT<0b11, "ttat", []>, Requires<[IsThumb,Has8MSecExt]>;
+def t2TT   : T2TT<0b00, "tt",
+                 [(set rGPR:$Rt, (int_arm_cmse_tt   GPRnopc:$Rn))]>,
+             Requires<[IsThumb, Has8MSecExt]>;
+def t2TTT  : T2TT<0b01, "ttt",
+                  [(set rGPR:$Rt, (int_arm_cmse_ttt  GPRnopc:$Rn))]>,
+             Requires<[IsThumb, Has8MSecExt]>;
+def t2TTA  : T2TT<0b10, "tta",
+                  [(set rGPR:$Rt, (int_arm_cmse_tta  GPRnopc:$Rn))]>,
+             Requires<[IsThumb, Has8MSecExt]>;
+def t2TTAT : T2TT<0b11, "ttat",
+                  [(set rGPR:$Rt, (int_arm_cmse_ttat GPRnopc:$Rn))]>,
+             Requires<[IsThumb, Has8MSecExt]>;
 
 //===----------------------------------------------------------------------===//
 // Non-Instruction Patterns

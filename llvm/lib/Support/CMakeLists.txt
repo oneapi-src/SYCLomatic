@@ -51,7 +51,7 @@ else()
   set(Z3_LINK_FILES "")
 endif()
 
-add_llvm_library(LLVMSupport
+add_llvm_component_library(LLVMSupport
   AArch64TargetParser.cpp
   ABIBreak.cpp
   ARMTargetParser.cpp
@@ -103,7 +103,6 @@ add_llvm_library(LLVMSupport
   IntEqClasses.cpp
   IntervalMap.cpp
   ItaniumManglingCanonicalizer.cpp
-  JamCRC.cpp
   JSON.cpp
   KnownBits.cpp
   LEB128.cpp
@@ -117,7 +116,6 @@ add_llvm_library(LLVMSupport
   MD5.cpp
   NativeFormatting.cpp
   Optional.cpp
-  Options.cpp
   Parallel.cpp
   PluginLoader.cpp
   PrettyStackTrace.cpp

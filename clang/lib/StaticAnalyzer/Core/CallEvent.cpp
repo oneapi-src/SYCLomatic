@@ -519,7 +519,7 @@ static void addParameterValuesToBindings(const StackFrameContext *CalleeCtx,
 
     // TODO: Support allocator calls.
     if (Call.getKind() != CE_CXXAllocator)
-      if (Call.isArgumentConstructedDirectly(Idx))
+      if (Call.isArgumentConstructedDirectly(Call.getASTArgumentIndex(Idx)))
         continue;
 
     // TODO: Allocators should receive the correct size and possibly alignment,
@@ -1080,7 +1080,7 @@ ObjCMessageKind ObjCMethodCall::getMessageKind() const {
 
 const ObjCPropertyDecl *ObjCMethodCall::getAccessedProperty() const {
   // Look for properties accessed with property syntax (foo.bar = ...)
-  if ( getMessageKind() == OCM_PropertyAccess) {
+  if (getMessageKind() == OCM_PropertyAccess) {
     const PseudoObjectExpr *POE = getContainingPseudoObjectExpr();
     assert(POE && "Property access without PseudoObjectExpr?");
 
@@ -1309,6 +1309,8 @@ RuntimeDefinition ObjCMethodCall::getRuntimeDefinition() const {
         }
 
         const ObjCMethodDecl *MD = Val.getValue();
+        if (MD && !MD->hasBody())
+          MD = MD->getCanonicalDecl();
         if (CanBeSubClassed)
           return RuntimeDefinition(MD, Receiver);
         else

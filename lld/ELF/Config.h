@@ -64,6 +64,9 @@ enum class ARMVFPArgKind { Default, Base, VFP, ToolChain };
 // For -z noseparate-code, -z separate-code and -z separate-loadable-segments.
 enum class SeparateSegmentKind { None, Code, Loadable };
 
+// For -z *stack
+enum class GnuStackKind { None, Exec, NoExec };
+
 struct SymbolVersion {
   llvm::StringRef name;
   bool isExternCpp;
@@ -165,6 +168,7 @@ struct Configuration {
   bool ltoNewPassManager;
   bool mergeArmExidx;
   bool mipsN32Abi = false;
+  bool mmapOutputFile;
   bool nmagic;
   bool noinhibitExec;
   bool nostdlib;
@@ -198,7 +202,6 @@ struct Configuration {
   bool writeAddends;
   bool zCombreloc;
   bool zCopyreloc;
-  bool zExecstack;
   bool zGlobal;
   bool zHazardplt;
   bool zIfuncNoplt;
@@ -216,6 +219,7 @@ struct Configuration {
   bool zRetpolineplt;
   bool zWxneeded;
   DiscardPolicy discard;
+  GnuStackKind zGnustack;
   ICFLevel icf;
   OrphanHandlingPolicy orphanHandling;
   SortSectionPolicy sortSection;
@@ -239,7 +243,7 @@ struct Configuration {
   int32_t splitStackAdjustSize;
 
   // The following config options do not directly correspond to any
-  // particualr command line options.
+  // particular command line options.
 
   // True if we need to pass through relocations in input files to the
   // output file. Usually false because we consume relocations.

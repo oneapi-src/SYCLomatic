@@ -18,6 +18,7 @@ namespace std {
 [[nodiscard]] void *operator new(std::size_t, std::align_val_t, const std::nothrow_t&) noexcept;
 [[nodiscard]] void *operator new[](std::size_t, const std::nothrow_t&) noexcept;
 [[nodiscard]] void *operator new[](std::size_t, std::align_val_t, const std::nothrow_t&) noexcept;
+[[nodiscard]] void *operator new[](std::size_t, std::align_val_t);
 void operator delete(void*, const std::nothrow_t&) noexcept;
 void operator delete(void*, std::align_val_t, const std::nothrow_t&) noexcept;
 void operator delete[](void*, const std::nothrow_t&) noexcept;
@@ -584,6 +585,48 @@ namespace Union {
     r.b.r.b = 2; // expected-note {{read of member 'b' of union with active member 'a'}}
     return r.b.r.b;
   }
+
+  namespace PR43762 {
+    struct A { int x = 1; constexpr int f() { return 1; } };
+    struct B : A { int y = 1; constexpr int g() { return 2; } };
+    struct C {
+      int x;
+      constexpr virtual int f() = 0;
+    };
+    struct D : C {
+      int y;
+      constexpr virtual int f() override { return 3; }
+    };
+
+    union U {
+      int n;
+      B b;
+      D d;
+    };
+
+    constexpr int test(int which) {
+      U u{.n = 5};
+      switch (which) {
+      case 0:
+        u.b.x = 10; // expected-note {{active member 'n'}}
+        return u.b.f();
+      case 1:
+        u.b.y = 10; // expected-note {{active member 'n'}}
+        return u.b.g();
+      case 2:
+        u.d.x = 10; // expected-note {{active member 'n'}}
+        return u.d.f();
+      case 3:
+        u.d.y = 10; // expected-note {{active member 'n'}}
+        return u.d.f();
+      }
+    }
+
+    static_assert(test(0)); // expected-error {{}} expected-note {{in call}}
+    static_assert(test(1)); // expected-error {{}} expected-note {{in call}}
+    static_assert(test(2)); // expected-error {{}} expected-note {{in call}}
+    static_assert(test(3)); // expected-error {{}} expected-note {{in call}}
+  }
 }
 
 namespace TwosComplementShifts {
@@ -1008,7 +1051,7 @@ namespace dynamic_alloc {
     // Ensure that we don't try to evaluate these for overflow and crash. These
     // are all value-dependent expressions.
     p = new char[n];
-    p = new (n) char[n];
+    p = new ((std::align_val_t)n) char[n];
     p = new char(n);
   }
 }
@@ -1189,6 +1232,25 @@ namespace dtor_call {
   static_assert(virt_dtor(2, "X"));
   static_assert(virt_dtor(3, "YX"));
   static_assert(virt_dtor(4, "X"));
+
+  constexpr bool virt_delete(bool global) {
+    struct A {
+      virtual constexpr ~A() {}
+    };
+    struct B : A {
+      void operator delete(void *);
+      constexpr ~B() {}
+    };
+
+    A *p = new B;
+    if (global)
+      ::delete p;
+    else
+      delete p; // expected-note {{call to class-specific 'operator delete'}}
+    return true;
+  }
+  static_assert(virt_delete(true));
+  static_assert(virt_delete(false)); // expected-error {{}} expected-note {{in call}}
 
   constexpr void use_after_virt_destroy() {
     char buff[4] = {};

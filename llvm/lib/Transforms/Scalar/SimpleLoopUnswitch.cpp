@@ -38,8 +38,10 @@
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Use.h"
 #include "llvm/IR/Value.h"
+#include "llvm/InitializePasses.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/Casting.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/GenericDomTree.h"
@@ -329,6 +331,20 @@ static void hoistLoopToNewParent(Loop &L, BasicBlock &Preheader,
   }
 }
 
+// Return the top-most loop containing ExitBB and having ExitBB as exiting block
+// or the loop containing ExitBB, if there is no parent loop containing ExitBB
+// as exiting block.
+static Loop *getTopMostExitingLoop(BasicBlock *ExitBB, LoopInfo &LI) {
+  Loop *TopMost = LI.getLoopFor(ExitBB);
+  Loop *Current = TopMost;
+  while (Current) {
+    if (Current->isLoopExiting(ExitBB))
+      TopMost = Current;
+    Current = Current->getParentLoop();
+  }
+  return TopMost;
+}
+
 /// Unswitch a trivial branch if the condition is loop invariant.
 ///
 /// This routine should only be called when loop code leading to the branch has
@@ -413,9 +429,10 @@ static bool unswitchTrivialBranch(Loop &L, BranchInst &BI, DominatorTree &DT,
   });
 
   // If we have scalar evolutions, we need to invalidate them including this
-  // loop and the loop containing the exit block.
+  // loop, the loop containing the exit block and the topmost parent loop
+  // exiting via LoopExitBB.
   if (SE) {
-    if (Loop *ExitL = LI.getLoopFor(LoopExitBB))
+    if (Loop *ExitL = getTopMostExitingLoop(LoopExitBB, LI))
       SE->forgetLoop(ExitL);
     else
       // Forget the entire nest as this exits the entire nest.
@@ -1909,7 +1926,7 @@ static void unswitchNontrivialInvariants(
 
   // We can only unswitch switches, conditional branches with an invariant
   // condition, or combining invariant conditions with an instruction.
-  assert((SI || BI->isConditional()) &&
+  assert((SI || (BI && BI->isConditional())) &&
          "Can only unswitch switches and conditional branch!");
   bool FullUnswitch = SI || BI->getCondition() == Invariants[0];
   if (FullUnswitch)
@@ -2141,17 +2158,21 @@ static void unswitchNontrivialInvariants(
     buildPartialUnswitchConditionalBranch(*SplitBB, Invariants, Direction,
                                           *ClonedPH, *LoopPH);
     DTUpdates.push_back({DominatorTree::Insert, SplitBB, ClonedPH});
+
+    if (MSSAU) {
+      DT.applyUpdates(DTUpdates);
+      DTUpdates.clear();
+
+      // Perform MSSA cloning updates.
+      for (auto &VMap : VMaps)
+        MSSAU->updateForClonedLoop(LBRPO, ExitBlocks, *VMap,
+                                   /*IgnoreIncomingWithNoClones=*/true);
+      MSSAU->updateExitBlocksForClonedLoop(ExitBlocks, VMaps, DT);
+    }
   }
 
   // Apply the updates accumulated above to get an up-to-date dominator tree.
   DT.applyUpdates(DTUpdates);
-  if (!FullUnswitch && MSSAU) {
-    // Update MSSA for partial unswitch, after DT update.
-    SmallVector<CFGUpdate, 1> Updates;
-    Updates.push_back(
-        {cfg::UpdateKind::Insert, SplitBB, ClonedPHs.begin()->second});
-    MSSAU->applyInsertUpdates(Updates, DT);
-  }
 
   // Now that we have an accurate dominator tree, first delete the dead cloned
   // blocks so that we can accurately build any cloned loops. It is important to
@@ -2422,7 +2443,7 @@ turnGuardIntoBranch(IntrinsicInst *GI, Loop &L,
 
   if (MSSAU) {
     MemoryDef *MD = cast<MemoryDef>(MSSAU->getMemorySSA()->getMemoryAccess(GI));
-    MSSAU->moveToPlace(MD, DeoptBlock, MemorySSA::End);
+    MSSAU->moveToPlace(MD, DeoptBlock, MemorySSA::BeforeTerminator);
     if (VerifyMemorySSA)
       MSSAU->getMemorySSA()->verifyMemorySSA();
   }
@@ -2720,7 +2741,7 @@ unswitchBestCondition(Loop &L, DominatorTree &DT, LoopInfo &LI,
     return Cost * (SuccessorsCount - 1);
   };
   Instruction *BestUnswitchTI = nullptr;
-  int BestUnswitchCost;
+  int BestUnswitchCost = 0;
   ArrayRef<Value *> BestUnswitchInvariants;
   for (auto &TerminatorAndInvariants : UnswitchCandidates) {
     Instruction &TI = *TerminatorAndInvariants.first;
@@ -2752,6 +2773,7 @@ unswitchBestCondition(Loop &L, DominatorTree &DT, LoopInfo &LI,
       BestUnswitchInvariants = Invariants;
     }
   }
+  assert(BestUnswitchTI && "Failed to find loop unswitch candidate");
 
   if (BestUnswitchCost >= UnswitchThreshold) {
     LLVM_DEBUG(dbgs() << "Cannot unswitch, lowest cost found: "

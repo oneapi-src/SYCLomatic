@@ -11,6 +11,7 @@
 #include "lldb/Core/ModuleSpec.h"
 #include "lldb/Core/PluginManager.h"
 #include "lldb/Core/Section.h"
+#include "lldb/Symbol/CallFrameInfo.h"
 #include "lldb/Symbol/ObjectContainer.h"
 #include "lldb/Symbol/SymbolFile.h"
 #include "lldb/Target/Process.h"
@@ -19,7 +20,6 @@
 #include "lldb/Utility/DataBuffer.h"
 #include "lldb/Utility/DataBufferHeap.h"
 #include "lldb/Utility/Log.h"
-#include "lldb/Utility/RegularExpression.h"
 #include "lldb/Utility/Timer.h"
 #include "lldb/lldb-private.h"
 
@@ -83,9 +83,8 @@ ObjectFile::FindPlugin(const lldb::ModuleSP &module_sp, const FileSpec *file,
 
       if (!data_sp || data_sp->GetByteSize() == 0) {
         // Check for archive file with format "/path/to/archive.a(object.o)"
-        char path_with_object[PATH_MAX * 2];
-        module_sp->GetFileSpec().GetPath(path_with_object,
-                                         sizeof(path_with_object));
+        llvm::SmallString<256> path_with_object;
+        module_sp->GetFileSpec().GetPath(path_with_object);
 
         ConstString archive_object;
         const bool must_exist = true;
@@ -361,6 +360,7 @@ AddressClass ObjectFile::GetAddressClass(addr_t file_addr) {
           case eSectionTypeDWARFDebugPubTypes:
           case eSectionTypeDWARFDebugRanges:
           case eSectionTypeDWARFDebugRngLists:
+          case eSectionTypeDWARFDebugRngListsDwo:
           case eSectionTypeDWARFDebugStr:
           case eSectionTypeDWARFDebugStrDwo:
           case eSectionTypeDWARFDebugStrOffsets:
@@ -477,7 +477,13 @@ size_t ObjectFile::GetData(lldb::offset_t offset, size_t length,
                            DataExtractor &data) const {
   // The entire file has already been mmap'ed into m_data, so just copy from
   // there as the back mmap buffer will be shared with shared pointers.
-  return data.SetData(m_data, offset, length);
+  size_t ret = data.SetData(m_data, offset, length);
+  // DataExtractor::SetData copies the address byte size from m_data, but
+  // m_data's address byte size is only set from sizeof(void*), and we can't
+  // access subclasses GetAddressByteSize() when setting up m_data in the
+  // constructor.
+  data.SetAddressByteSize(GetAddressByteSize());
+  return ret;
 }
 
 size_t ObjectFile::CopyData(lldb::offset_t offset, size_t length,
@@ -571,21 +577,22 @@ size_t ObjectFile::ReadSectionData(Section *section,
   }
 }
 
-bool ObjectFile::SplitArchivePathWithObject(const char *path_with_object,
+bool ObjectFile::SplitArchivePathWithObject(llvm::StringRef path_with_object,
                                             FileSpec &archive_file,
                                             ConstString &archive_object,
                                             bool must_exist) {
-  llvm::SmallVector<llvm::StringRef, 3> matches;
-  RegularExpression g_object_regex(llvm::StringRef("(.*)\\(([^\\)]+)\\)$"));
-  if (g_object_regex.Execute(llvm::StringRef::withNullAsEmpty(path_with_object),
-                             &matches)) {
-    std::string path = matches[1].str();
-    std::string obj = matches[2].str();
-    archive_file.SetFile(path, FileSpec::Style::native);
-    archive_object.SetCString(obj.c_str());
-    return !(must_exist && !FileSystem::Instance().Exists(archive_file));
-  }
-  return false;
+  size_t len = path_with_object.size();
+  if (len < 2 || path_with_object.back() != ')')
+    return false;
+  llvm::StringRef archive = path_with_object.substr(0, path_with_object.rfind('('));
+  if (archive.empty())
+    return false;
+  llvm::StringRef object = path_with_object.substr(archive.size() + 1).drop_back();
+  archive_file.SetFile(archive, FileSpec::Style::native);
+  if (must_exist && !FileSystem::Instance().Exists(archive_file))
+    return false;
+  archive_object.SetString(object);
+  return true;
 }
 
 void ObjectFile::ClearSymtab() {
@@ -669,6 +676,10 @@ ObjectFile::GetLoadableData(Target &target) {
     loadables.push_back(loadable);
   }
   return loadables;
+}
+
+std::unique_ptr<CallFrameInfo> ObjectFile::CreateCallFrameInfo() {
+  return {};
 }
 
 void ObjectFile::RelocateSection(lldb_private::Section *section)

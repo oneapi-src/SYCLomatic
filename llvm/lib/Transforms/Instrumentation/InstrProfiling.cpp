@@ -37,6 +37,7 @@
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
+#include "llvm/InitializePasses.h"
 #include "llvm/Pass.h"
 #include "llvm/ProfileData/InstrProf.h"
 #include "llvm/Support/Casting.h"
@@ -785,7 +786,7 @@ InstrProfiling::getOrCreateRegionCounters(InstrProfIncrementInst *Inc) {
   CounterPtr->setVisibility(Visibility);
   CounterPtr->setSection(
       getInstrProfSectionName(IPSK_cnts, TT.getObjectFormat()));
-  CounterPtr->setAlignment(8);
+  CounterPtr->setAlignment(Align(8));
   MaybeSetComdat(CounterPtr);
   CounterPtr->setLinkage(Linkage);
 
@@ -807,7 +808,7 @@ InstrProfiling::getOrCreateRegionCounters(InstrProfIncrementInst *Inc) {
       ValuesVar->setVisibility(Visibility);
       ValuesVar->setSection(
           getInstrProfSectionName(IPSK_vals, TT.getObjectFormat()));
-      ValuesVar->setAlignment(8);
+      ValuesVar->setAlignment(Align(8));
       MaybeSetComdat(ValuesVar);
       ValuesPtrExpr =
           ConstantExpr::getBitCast(ValuesVar, Type::getInt8PtrTy(Ctx));
@@ -840,7 +841,7 @@ InstrProfiling::getOrCreateRegionCounters(InstrProfIncrementInst *Inc) {
                                   getVarName(Inc, getInstrProfDataVarPrefix()));
   Data->setVisibility(Visibility);
   Data->setSection(getInstrProfSectionName(IPSK_data, TT.getObjectFormat()));
-  Data->setAlignment(INSTR_PROF_DATA_ALIGNMENT);
+  Data->setAlignment(Align(INSTR_PROF_DATA_ALIGNMENT));
   MaybeSetComdat(Data);
   Data->setLinkage(Linkage);
 
@@ -931,7 +932,7 @@ void InstrProfiling::emitNameData() {
   // On COFF, it's important to reduce the alignment down to 1 to prevent the
   // linker from inserting padding before the start of the names section or
   // between names entries.
-  NamesVar->setAlignment(1);
+  NamesVar->setAlignment(Align::None());
   UsedVars.push_back(NamesVar);
 
   for (auto *NamePtr : ReferencedNames)

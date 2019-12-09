@@ -57,7 +57,7 @@ public:
   }
   void MaterializeVisibleDecls(const clang::DeclContext *DC) { return; }
 
-  void InstallASTContext(clang::ASTContext &ast_context,
+  void InstallASTContext(ClangASTContext &ast_context,
                          clang::FileManager &file_manager,
                          bool is_shared_context = false);
 
@@ -89,7 +89,7 @@ public:
   /// \param[in] DC
   ///     The DeclContext being searched.
   ///
-  /// \param[in] isKindWeWant
+  /// \param[in] IsKindWeWant
   ///     A callback function that returns true given the
   ///     DeclKinds of desired Decls, and false otherwise.
   ///
@@ -155,7 +155,7 @@ public:
   /// setHasExternalVisibleStorage() and setHasExternalLexicalStorage() that
   /// this object has something to say about undefined names.
   ///
-  /// \param[in] ASTConsumer
+  /// \param[in] Consumer
   ///     Unused.
   void StartTranslationUnit(clang::ASTConsumer *Consumer) override;
 
@@ -321,13 +321,6 @@ protected:
   /// A wrapper for ClangASTContext::CopyType that sets a flag that
   /// indicates that we should not respond to queries during import.
   ///
-  /// \param[in] dest_context
-  ///     The target AST context, typically the parser's AST context.
-  ///
-  /// \param[in] source_context
-  ///     The source AST context, typically the AST context of whatever
-  ///     symbol file the type was found in.
-  ///
   /// \param[in] src_type
   ///     The source type.
   ///
@@ -341,7 +334,7 @@ public:
   /// \param[in] name
   ///     The name to be considered.
   ///
-  /// \param[in] ignore_all_dollar_nmmes
+  /// \param[in] ignore_all_dollar_names
   ///     True if $-names of all sorts should be ignored.
   ///
   /// \return
@@ -358,7 +351,7 @@ public:
   /// \return
   ///     A copy of the Decl in m_ast_context, or NULL if the copy failed.
   clang::Decl *CopyDecl(clang::Decl *src_decl);
-                         
+
   /// Copies a single Type to the target of the given ExternalASTMerger.
   ///
   /// \param[in] src_context
@@ -392,11 +385,11 @@ public:
   ///     True if lookup succeeded; false otherwise.
   bool ResolveDeclOrigin(const clang::Decl *decl, clang::Decl **original_decl,
                          clang::ASTContext **original_ctx);
- 
+
   /// Returns m_merger_up.  Only call this if the target is configured to use
   /// modern lookup,
 	clang::ExternalASTMerger &GetMergerUnchecked();
- 
+
   /// Returns true if there is a merger.  This only occurs if the target is
   /// using modern lookup.
   bool HasMerger() { return (bool)m_merger_up; }
@@ -411,15 +404,18 @@ protected:
   bool m_import_in_progress;
   bool m_lookups_enabled;
 
-  const lldb::TargetSP
-      m_target; ///< The target to use in finding variables and types.
-  clang::ASTContext
-      *m_ast_context; ///< The AST context requests are coming in for.
-  clang::FileManager
-      *m_file_manager; ///< The file manager paired with the AST context.
-  lldb::ClangASTImporterSP m_ast_importer_sp; ///< The target's AST importer.
+  /// The target to use in finding variables and types.
+  const lldb::TargetSP m_target;
+  /// The AST context requests are coming in for.
+  clang::ASTContext *m_ast_context;
+  /// The ClangASTContext for m_ast_context.
+  ClangASTContext *m_clang_ast_context;
+  /// The file manager paired with the AST context.
+  clang::FileManager *m_file_manager;
+  /// The target's AST importer.
+  lldb::ClangASTImporterSP m_ast_importer_sp;
+  /// The ExternalASTMerger for this parse.
   std::unique_ptr<clang::ExternalASTMerger> m_merger_up;
-      ///< The ExternalASTMerger for this parse.
   std::set<const clang::Decl *> m_active_lexical_decls;
   std::set<const char *> m_active_lookups;
 };
@@ -432,20 +428,20 @@ protected:
 /// what name is being searched for and provides helper functions to construct
 /// Decls given appropriate type information.
 struct NameSearchContext {
-  ClangASTSource &m_ast_source; ///< The AST source making the request
-  llvm::SmallVectorImpl<clang::NamedDecl *>
-      &m_decls; ///< The list of declarations already constructed
-  ClangASTImporter::NamespaceMapSP m_namespace_map; ///< The mapping of all
-                                                    ///namespaces found for this
-                                                    ///request back to their
-                                                    ///modules
-  const clang::DeclarationName &m_decl_name; ///< The name being looked for
-  const clang::DeclContext
-      *m_decl_context; ///< The DeclContext to put declarations into
-  llvm::SmallSet<CompilerType, 5> m_function_types; ///< All the types of
-                                                    ///functions that have been
-                                                    ///reported, so we don't
-                                                    ///report conflicts
+  /// The AST source making the request.
+  ClangASTSource &m_ast_source;
+  /// The list of declarations already constructed.
+  llvm::SmallVectorImpl<clang::NamedDecl *> &m_decls;
+  /// The mapping of all namespaces found for this request back to their
+  /// modules.
+  ClangASTImporter::NamespaceMapSP m_namespace_map;
+  /// The name being looked for.
+  const clang::DeclarationName &m_decl_name;
+  /// The DeclContext to put declarations into.
+  const clang::DeclContext *m_decl_context;
+  /// All the types of functions that have been reported, so we don't
+  /// report conflicts.
+  llvm::SmallSet<CompilerType, 5> m_function_types;
 
   struct {
     bool variable : 1;

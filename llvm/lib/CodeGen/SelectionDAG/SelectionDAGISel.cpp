@@ -27,6 +27,7 @@
 #include "llvm/Analysis/BranchProbabilityInfo.h"
 #include "llvm/Analysis/CFG.h"
 #include "llvm/Analysis/EHPersonalities.h"
+#include "llvm/Analysis/LegacyDivergenceAnalysis.h"
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
@@ -74,6 +75,7 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/User.h"
 #include "llvm/IR/Value.h"
+#include "llvm/InitializePasses.h"
 #include "llvm/MC/MCInstrDesc.h"
 #include "llvm/MC/MCRegisterInfo.h"
 #include "llvm/Pass.h"
@@ -146,16 +148,16 @@ static cl::opt<bool>
 ViewLegalizeTypesDAGs("view-legalize-types-dags", cl::Hidden,
           cl::desc("Pop up a window to show dags before legalize types"));
 static cl::opt<bool>
-ViewLegalizeDAGs("view-legalize-dags", cl::Hidden,
-          cl::desc("Pop up a window to show dags before legalize"));
+    ViewDAGCombineLT("view-dag-combine-lt-dags", cl::Hidden,
+                     cl::desc("Pop up a window to show dags before the post "
+                              "legalize types dag combine pass"));
+static cl::opt<bool>
+    ViewLegalizeDAGs("view-legalize-dags", cl::Hidden,
+                     cl::desc("Pop up a window to show dags before legalize"));
 static cl::opt<bool>
 ViewDAGCombine2("view-dag-combine2-dags", cl::Hidden,
           cl::desc("Pop up a window to show dags before the second "
                    "dag combine pass"));
-static cl::opt<bool>
-ViewDAGCombineLT("view-dag-combine-lt-dags", cl::Hidden,
-          cl::desc("Pop up a window to show dags before the post legalize types"
-                   " dag combine pass"));
 static cl::opt<bool>
 ViewISelDAGs("view-isel-dags", cl::Hidden,
           cl::desc("Pop up a window to show isel dags as they are selected"));
@@ -166,12 +168,10 @@ static cl::opt<bool>
 ViewSUnitDAGs("view-sunit-dags", cl::Hidden,
       cl::desc("Pop up a window to show SUnit dags after they are processed"));
 #else
-static const bool ViewDAGCombine1 = false,
-                  ViewLegalizeTypesDAGs = false, ViewLegalizeDAGs = false,
-                  ViewDAGCombine2 = false,
-                  ViewDAGCombineLT = false,
-                  ViewISelDAGs = false, ViewSchedDAGs = false,
-                  ViewSUnitDAGs = false;
+static const bool ViewDAGCombine1 = false, ViewLegalizeTypesDAGs = false,
+                  ViewDAGCombineLT = false, ViewLegalizeDAGs = false,
+                  ViewDAGCombine2 = false, ViewISelDAGs = false,
+                  ViewSchedDAGs = false, ViewSUnitDAGs = false;
 #endif
 
 //===---------------------------------------------------------------------===//
@@ -304,23 +304,18 @@ void TargetLowering::AdjustInstrPostInstrSelection(MachineInstr &MI,
 // SelectionDAGISel code
 //===----------------------------------------------------------------------===//
 
-SelectionDAGISel::SelectionDAGISel(TargetMachine &tm,
-                                   CodeGenOpt::Level OL) :
-  MachineFunctionPass(ID), TM(tm),
-  FuncInfo(new FunctionLoweringInfo()),
-  SwiftError(new SwiftErrorValueTracking()),
-  CurDAG(new SelectionDAG(tm, OL)),
-  SDB(new SelectionDAGBuilder(*CurDAG, *FuncInfo, *SwiftError, OL)),
-  AA(), GFI(),
-  OptLevel(OL),
-  DAGSize(0) {
-    initializeGCModuleInfoPass(*PassRegistry::getPassRegistry());
-    initializeBranchProbabilityInfoWrapperPassPass(
-        *PassRegistry::getPassRegistry());
-    initializeAAResultsWrapperPassPass(*PassRegistry::getPassRegistry());
-    initializeTargetLibraryInfoWrapperPassPass(
-        *PassRegistry::getPassRegistry());
-  }
+SelectionDAGISel::SelectionDAGISel(TargetMachine &tm, CodeGenOpt::Level OL)
+    : MachineFunctionPass(ID), TM(tm), FuncInfo(new FunctionLoweringInfo()),
+      SwiftError(new SwiftErrorValueTracking()),
+      CurDAG(new SelectionDAG(tm, OL)),
+      SDB(new SelectionDAGBuilder(*CurDAG, *FuncInfo, *SwiftError, OL)), AA(),
+      GFI(), OptLevel(OL), DAGSize(0) {
+  initializeGCModuleInfoPass(*PassRegistry::getPassRegistry());
+  initializeBranchProbabilityInfoWrapperPassPass(
+      *PassRegistry::getPassRegistry());
+  initializeAAResultsWrapperPassPass(*PassRegistry::getPassRegistry());
+  initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());
+}
 
 SelectionDAGISel::~SelectionDAGISel() {
   delete SDB;
@@ -447,7 +442,8 @@ bool SelectionDAGISel::runOnMachineFunction(MachineFunction &mf) {
   SplitCriticalSideEffectEdges(const_cast<Function &>(Fn), DT, LI);
 
   CurDAG->init(*MF, *ORE, this, LibInfo,
-   getAnalysisIfAvailable<LegacyDivergenceAnalysis>());
+               getAnalysisIfAvailable<LegacyDivergenceAnalysis>(),
+               nullptr, nullptr);
   FuncInfo->set(Fn, *MF, CurDAG);
   SwiftError->setFunction(*MF);
 
@@ -792,8 +788,8 @@ void SelectionDAGISel::CodeGenAndEmitDAG() {
                        FuncInfo->MBB->getBasicBlock()->getName());
 #endif
 #ifdef NDEBUG
-  if (ViewDAGCombine1 || ViewLegalizeTypesDAGs || ViewLegalizeDAGs ||
-      ViewDAGCombine2 || ViewDAGCombineLT || ViewISelDAGs || ViewSchedDAGs ||
+  if (ViewDAGCombine1 || ViewLegalizeTypesDAGs || ViewDAGCombineLT ||
+      ViewLegalizeDAGs || ViewDAGCombine2 || ViewISelDAGs || ViewSchedDAGs ||
       ViewSUnitDAGs)
 #endif
   {
@@ -1158,9 +1154,9 @@ void SelectionDAGISel::DoInstructionSelection() {
       // we convert them to normal FP opcodes instead at this point.  This
       // will allow them to be handled by existing target-specific instruction
       // selectors.
-      if (Node->isStrictFPOpcode() &&
+      if (!TLI->isStrictFPEnabled() && Node->isStrictFPOpcode() &&
           (TLI->getOperationAction(Node->getOpcode(), Node->getValueType(0))
-           != TargetLowering::Legal))
+           == TargetLowering::Expand))
         Node = CurDAG->mutateStrictFPToFP(Node);
 
       LLVM_DEBUG(dbgs() << "\nISEL: Starting selection on root node: ";
@@ -1588,7 +1584,7 @@ void SelectionDAGISel::SelectAllBasicBlocks(const Function &Fn) {
       // But if FastISel was run, we already selected some of the block.
       // If we emitted a tail-call, we need to delete any previously emitted
       // instruction that follows it.
-      if (HadTailCall && FuncInfo->InsertPt != FuncInfo->MBB->end())
+      if (FastIS && HadTailCall && FuncInfo->InsertPt != FuncInfo->MBB->end())
         FastIS->removeDeadCode(FuncInfo->InsertPt, FuncInfo->MBB->end());
     }
 

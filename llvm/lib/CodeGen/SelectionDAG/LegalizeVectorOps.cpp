@@ -38,6 +38,7 @@
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Compiler.h"
+#include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/MachineValueType.h"
 #include "llvm/Support/MathExtras.h"
@@ -309,43 +310,18 @@ SDValue VectorLegalizer::LegalizeOp(SDValue Op) {
   switch (Op.getOpcode()) {
   default:
     return TranslateLegalizeResults(Op, Result);
-  case ISD::STRICT_FADD:
-  case ISD::STRICT_FSUB:
-  case ISD::STRICT_FMUL:
-  case ISD::STRICT_FDIV:
-  case ISD::STRICT_FREM:
-  case ISD::STRICT_FSQRT:
-  case ISD::STRICT_FMA:
-  case ISD::STRICT_FPOW:
-  case ISD::STRICT_FPOWI:
-  case ISD::STRICT_FSIN:
-  case ISD::STRICT_FCOS:
-  case ISD::STRICT_FEXP:
-  case ISD::STRICT_FEXP2:
-  case ISD::STRICT_FLOG:
-  case ISD::STRICT_FLOG10:
-  case ISD::STRICT_FLOG2:
-  case ISD::STRICT_FRINT:
-  case ISD::STRICT_FNEARBYINT:
-  case ISD::STRICT_FMAXNUM:
-  case ISD::STRICT_FMINNUM:
-  case ISD::STRICT_FCEIL:
-  case ISD::STRICT_FFLOOR:
-  case ISD::STRICT_FROUND:
-  case ISD::STRICT_FTRUNC:
-  case ISD::STRICT_FP_TO_SINT:
-  case ISD::STRICT_FP_TO_UINT:
-  case ISD::STRICT_FP_ROUND:
-  case ISD::STRICT_FP_EXTEND:
+#define INSTRUCTION(NAME, NARG, ROUND_MODE, INTRINSIC, DAGN)                   \
+  case ISD::STRICT_##DAGN:
+#include "llvm/IR/ConstrainedOps.def"
     Action = TLI.getOperationAction(Node->getOpcode(), Node->getValueType(0));
     // If we're asked to expand a strict vector floating-point operation,
     // by default we're going to simply unroll it.  That is usually the
     // best approach, except in the case where the resulting strict (scalar)
     // operations would themselves use the fallback mutation to non-strict.
     // In that specific case, just do the fallback on the vector op.
-    if (Action == TargetLowering::Expand &&
+    if (Action == TargetLowering::Expand && !TLI.isStrictFPEnabled() &&
         TLI.getStrictFPOperationAction(Node->getOpcode(),
-                                       Node->getValueType(0))
+                                   Node->getValueType(0))
         == TargetLowering::Legal) {
       EVT EltVT = Node->getValueType(0).getVectorElementType();
       if (TLI.getOperationAction(Node->getOpcode(), EltVT)
@@ -837,32 +813,9 @@ SDValue VectorLegalizer::Expand(SDValue Op) {
     // targets? This should probably be investigated. And if we still prefer to
     // unroll an explanation could be helpful.
     return DAG.UnrollVectorOp(Op.getNode());
-  case ISD::STRICT_FADD:
-  case ISD::STRICT_FSUB:
-  case ISD::STRICT_FMUL:
-  case ISD::STRICT_FDIV:
-  case ISD::STRICT_FREM:
-  case ISD::STRICT_FSQRT:
-  case ISD::STRICT_FMA:
-  case ISD::STRICT_FPOW:
-  case ISD::STRICT_FPOWI:
-  case ISD::STRICT_FSIN:
-  case ISD::STRICT_FCOS:
-  case ISD::STRICT_FEXP:
-  case ISD::STRICT_FEXP2:
-  case ISD::STRICT_FLOG:
-  case ISD::STRICT_FLOG10:
-  case ISD::STRICT_FLOG2:
-  case ISD::STRICT_FRINT:
-  case ISD::STRICT_FNEARBYINT:
-  case ISD::STRICT_FMAXNUM:
-  case ISD::STRICT_FMINNUM:
-  case ISD::STRICT_FCEIL:
-  case ISD::STRICT_FFLOOR:
-  case ISD::STRICT_FROUND:
-  case ISD::STRICT_FTRUNC:
-  case ISD::STRICT_FP_TO_SINT:
-  case ISD::STRICT_FP_TO_UINT:
+#define INSTRUCTION(NAME, NARG, ROUND_MODE, INTRINSIC, DAGN)                   \
+  case ISD::STRICT_##DAGN:
+#include "llvm/IR/ConstrainedOps.def"
     return ExpandStrictFPOp(Op);
   case ISD::VECREDUCE_ADD:
   case ISD::VECREDUCE_MUL:

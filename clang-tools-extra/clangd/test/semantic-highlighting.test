@@ -41,6 +41,12 @@
 # CHECK-NEXT:            "entity.name.type.typedef.cpp"
 # CHECK-NEXT:          ],
 # CHECK-NEXT:          [
+# CHECK-NEXT:            "entity.name.type.dependent.cpp"
+# CHECK-NEXT:          ],
+# CHECK-NEXT:          [
+# CHECK-NEXT:            "entity.name.other.dependent.cpp"
+# CHECK-NEXT:          ],
+# CHECK-NEXT:          [
 # CHECK-NEXT:            "entity.name.namespace.cpp"
 # CHECK-NEXT:          ],
 # CHECK-NEXT:          [
@@ -51,6 +57,9 @@
 # CHECK-NEXT:          ],
 # CHECK-NEXT:          [
 # CHECK-NEXT:            "entity.name.function.preprocessor.cpp"
+# CHECK-NEXT:          ],
+# CHECK-NEXT:          [
+# CHECK-NEXT:            "meta.disabled"
 # CHECK-NEXT:          ]
 # CHECK-NEXT:        ]
 # CHECK-NEXT:      },
@@ -60,12 +69,13 @@
 # CHECK-NEXT:  "params": {
 # CHECK-NEXT:    "lines": [
 # CHECK-NEXT:      {
+# CHECK-NEXT:        "isInactive": false,
 # CHECK-NEXT:        "line": 0,
-# CHECK-NEXT:        "tokens": "AAAAAAADAA4AAAAEAAEAAA=="
+# CHECK-NEXT:        "tokens": "AAAABAABAAA="
 # CHECK-NEXT:      }
 # CHECK-NEXT:    ],
 # CHECK-NEXT:    "textDocument": {
-# CHECK-NEXT:      "uri": "file:///clangd-test/foo.cpp"
+# CHECK-NEXT:      "uri": "file://{{.*}}/clangd-test/foo.cpp"
 # CHECK-NEXT:    }
 # CHECK-NEXT:  }
 # CHECK-NEXT:}
@@ -75,16 +85,18 @@
 # CHECK-NEXT:  "params": {
 # CHECK-NEXT:    "lines": [
 # CHECK-NEXT:      {
+# CHECK-NEXT:        "isInactive": false,
 # CHECK-NEXT:        "line": 0,
-# CHECK-NEXT:        "tokens": "AAAAAAADAA4AAAAEAAEAAA=="
+# CHECK-NEXT:        "tokens": "AAAABAABAAA="
 # CHECK-NEXT:      }
 # CHECK-NEXT:      {
+# CHECK-NEXT:        "isInactive": false,
 # CHECK-NEXT:        "line": 1,
-# CHECK-NEXT:        "tokens": "AAAAAAADAA4AAAAEAAEAAA=="
+# CHECK-NEXT:        "tokens": "AAAABAABAAA="
 # CHECK-NEXT:      }
 # CHECK-NEXT:    ],
 # CHECK-NEXT:    "textDocument": {
-# CHECK-NEXT:      "uri": "file:///clangd-test/foo2.cpp"
+# CHECK-NEXT:      "uri": "file://{{.*}}/clangd-test/foo2.cpp"
 # CHECK-NEXT:    }
 # CHECK-NEXT:  }
 # CHECK-NEXT:}
@@ -94,12 +106,13 @@
 # CHECK-NEXT:  "params": {
 # CHECK-NEXT:    "lines": [
 # CHECK-NEXT:      {
+# CHECK-NEXT:        "isInactive": false,
 # CHECK-NEXT:        "line": 1,
-# CHECK-NEXT:        "tokens": "AAAAAAADAA4AAAAEAAEAAA=="
+# CHECK-NEXT:        "tokens": "AAAABAABAAA="
 # CHECK-NEXT:      }
 # CHECK-NEXT:   ],
 # CHECK-NEXT:    "textDocument": {
-# CHECK-NEXT:      "uri": "file:///clangd-test/foo.cpp"
+# CHECK-NEXT:      "uri": "file://{{.*}}/clangd-test/foo.cpp"
 # CHECK-NEXT:    }
 # CHECK-NEXT:  }
 # CHECK-NEXT:}
@@ -109,12 +122,13 @@
 # CHECK-NEXT:  "params": {
 # CHECK-NEXT:    "lines": [
 # CHECK-NEXT:      {
+# CHECK-NEXT:        "isInactive": false,
 # CHECK-NEXT:        "line": 1,
 # CHECK-NEXT:        "tokens": ""
 # CHECK-NEXT:      }
 # CHECK-NEXT:   ],
 # CHECK-NEXT:    "textDocument": {
-# CHECK-NEXT:      "uri": "file:///clangd-test/foo.cpp"
+# CHECK-NEXT:      "uri": "file://{{.*}}/clangd-test/foo.cpp"
 # CHECK-NEXT:    }
 # CHECK-NEXT:  }
 # CHECK-NEXT:}

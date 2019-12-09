@@ -48,6 +48,10 @@ static cl::opt<bool> NoCanonicalizeWhiteSpace(
     "strict-whitespace",
     cl::desc("Do not treat all horizontal whitespace as equivalent"));
 
+static cl::opt<bool> IgnoreCase(
+    "ignore-case",
+    cl::desc("Use case-insensitive matching"));
+
 static cl::list<std::string> ImplicitCheckNot(
     "implicit-check-not",
     cl::desc("Add an implicit negative check with this pattern to every\n"
@@ -104,24 +108,28 @@ static cl::opt<bool> DumpInputOnFailure(
              "FILECHECK_DUMP_INPUT_ON_FAILURE environment variable.\n"
              "This option is deprecated in favor of -dump-input=fail.\n"));
 
+// The order of DumpInputValue members affects their precedence, as documented
+// for -dump-input below.
 enum DumpInputValue {
   DumpInputDefault,
-  DumpInputHelp,
   DumpInputNever,
   DumpInputFail,
-  DumpInputAlways
+  DumpInputAlways,
+  DumpInputHelp
 };
 
-static cl::opt<DumpInputValue> DumpInput(
-    "dump-input", cl::init(DumpInputDefault),
+static cl::list<DumpInputValue> DumpInputs(
+    "dump-input",
     cl::desc("Dump input to stderr, adding annotations representing\n"
-             " currently enabled diagnostics\n"),
+             "currently enabled diagnostics.  When there are multiple\n"
+             "occurrences of this option, the <value> that appears earliest\n"
+             "in the list below has precedence.\n"),
     cl::value_desc("mode"),
     cl::values(clEnumValN(DumpInputHelp, "help",
                           "Explain dump format and quit"),
-               clEnumValN(DumpInputNever, "never", "Never dump input"),
+               clEnumValN(DumpInputAlways, "always", "Always dump input"),
                clEnumValN(DumpInputFail, "fail", "Dump input on failure"),
-               clEnumValN(DumpInputAlways, "always", "Always dump input")));
+               clEnumValN(DumpInputNever, "never", "Never dump input")));
 
 typedef cl::list<std::string>::const_iterator prefix_iterator;
 
@@ -512,6 +520,10 @@ int main(int argc, char **argv) {
   InitLLVM X(argc, argv);
   cl::ParseCommandLineOptions(argc, argv, /*Overview*/ "", /*Errs*/ nullptr,
                               "FILECHECK_OPTS");
+  DumpInputValue DumpInput =
+      DumpInputs.empty()
+          ? DumpInputDefault
+          : *std::max_element(DumpInputs.begin(), DumpInputs.end());
   if (DumpInput == DumpInputHelp) {
     DumpInputAnnotationHelp(outs());
     return 0;
@@ -555,6 +567,7 @@ int main(int argc, char **argv) {
   Req.VerboseVerbose = VerboseVerbose;
   Req.NoCanonicalizeWhiteSpace = NoCanonicalizeWhiteSpace;
   Req.MatchFullLines = MatchFullLines;
+  Req.IgnoreCase = IgnoreCase;
 
   if (VerboseVerbose)
     Req.Verbose = true;

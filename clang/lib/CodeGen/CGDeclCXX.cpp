@@ -56,10 +56,11 @@ static void EmitDeclInit(CodeGenFunction &CGF, const VarDecl &D,
     CGF.EmitComplexExprIntoLValue(Init, lv, /*isInit*/ true);
     return;
   case TEK_Aggregate:
-    CGF.EmitAggExpr(Init, AggValueSlot::forLValue(lv,AggValueSlot::IsDestructed,
-                                          AggValueSlot::DoesNotNeedGCBarriers,
-                                                  AggValueSlot::IsNotAliased,
-                                                  AggValueSlot::DoesNotOverlap));
+    CGF.EmitAggExpr(Init,
+                    AggValueSlot::forLValue(lv, CGF, AggValueSlot::IsDestructed,
+                                            AggValueSlot::DoesNotNeedGCBarriers,
+                                            AggValueSlot::IsNotAliased,
+                                            AggValueSlot::DoesNotOverlap));
     return;
   }
   llvm_unreachable("bad evaluation kind");
@@ -252,8 +253,8 @@ llvm::Function *CodeGenFunction::createAtExitStub(const VarDecl &VD,
   llvm::CallInst *call = CGF.Builder.CreateCall(dtor, addr);
 
  // Make sure the call and the callee agree on calling convention.
-  if (llvm::Function *dtorFn =
-          dyn_cast<llvm::Function>(dtor.getCallee()->stripPointerCasts()))
+  if (auto *dtorFn = dyn_cast<llvm::Function>(
+          dtor.getCallee()->stripPointerCastsAndAliases()))
     call->setCallingConv(dtorFn->getCallingConv());
 
   CGF.FinishFunction();
@@ -441,7 +442,7 @@ CodeGenModule::EmitCXXGlobalVarDeclInitFunc(const VarDecl *D,
   // that are of class type, cannot have a non-empty constructor. All
   // the checks have been done in Sema by now. Whatever initializers
   // are allowed are empty and we just need to ignore them here.
-  if (getLangOpts().CUDA && getLangOpts().CUDAIsDevice &&
+  if (getLangOpts().CUDAIsDevice && !getLangOpts().GPUAllowDeviceInit &&
       (D->hasAttr<CUDADeviceAttr>() || D->hasAttr<CUDAConstantAttr>() ||
        D->hasAttr<CUDASharedAttr>()))
     return;
@@ -610,6 +611,11 @@ CodeGenModule::EmitCXXGlobalInitFunc() {
   if (getLangOpts().OpenCL) {
     GenOpenCLArgMetadata(Fn);
     Fn->setCallingConv(llvm::CallingConv::SPIR_KERNEL);
+  }
+
+  if (getLangOpts().HIP) {
+    Fn->setCallingConv(llvm::CallingConv::AMDGPU_KERNEL);
+    Fn->addFnAttr("device-init");
   }
 
   CXXGlobalInits.clear();

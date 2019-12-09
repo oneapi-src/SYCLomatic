@@ -34,7 +34,7 @@ class TestGdbRemote_qThreadStopInfo(gdbremote_testcase.GdbRemoteTestCaseBase):
         self.assertIsNotNone(context)
 
         # Give threads time to start up, then break.
-        time.sleep(1)
+        time.sleep(self._WAIT_TIMEOUT)
         self.reset_test_sequence()
         self.test_sequence.add_log_lines(
             [
@@ -52,7 +52,8 @@ class TestGdbRemote_qThreadStopInfo(gdbremote_testcase.GdbRemoteTestCaseBase):
         self.assertIsNotNone(context)
 
         # Wait until all threads have started.
-        threads = self.wait_for_thread_count(thread_count, timeout_seconds=3)
+        threads = self.wait_for_thread_count(thread_count,
+                                             timeout_seconds=self._WAIT_TIMEOUT)
         self.assertIsNotNone(threads)
 
         # On Windows, there could be more threads spawned. For example, DebugBreakProcess will
@@ -124,6 +125,7 @@ class TestGdbRemote_qThreadStopInfo(gdbremote_testcase.GdbRemoteTestCaseBase):
         self.qThreadStopInfo_works_for_multiple_threads(self.THREAD_COUNT)
 
     @llgs_test
+    @skipIfNetBSD
     def test_qThreadStopInfo_works_for_multiple_threads_llgs(self):
         self.init_llgs_test()
         self.build()
@@ -163,6 +165,7 @@ class TestGdbRemote_qThreadStopInfo(gdbremote_testcase.GdbRemoteTestCaseBase):
         self.qThreadStopInfo_only_reports_one_thread_stop_reason_during_interrupt(
             self.THREAD_COUNT)
 
+    @expectedFailureNetBSD
     @llgs_test
     def test_qThreadStopInfo_only_reports_one_thread_stop_reason_during_interrupt_llgs(
             self):

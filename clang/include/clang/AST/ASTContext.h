@@ -272,12 +272,6 @@ private:
   /// Mapping from __block VarDecls to BlockVarCopyInit.
   llvm::DenseMap<const VarDecl *, BlockVarCopyInit> BlockVarCopyInits;
 
-  /// Mapping from materialized temporaries with static storage duration
-  /// that appear in constant initializers to their evaluated values.  These are
-  /// allocated in a std::map because their address must be stable.
-  llvm::DenseMap<const MaterializeTemporaryExpr *, APValue *>
-    MaterializedTemporaryValues;
-
   /// Used to cleanups APValues stored in the AST.
   mutable llvm::SmallVector<APValue *, 0> APValueCleanups;
 
@@ -514,6 +508,8 @@ private:
   /// need to be consistently numbered for the mangler).
   llvm::DenseMap<const DeclContext *, std::unique_ptr<MangleNumberingContext>>
       MangleNumberingContexts;
+  llvm::DenseMap<const Decl *, std::unique_ptr<MangleNumberingContext>>
+      ExtraMangleNumberingContexts;
 
   /// Side-table of mangling numbers for declarations which rarely
   /// need them (like static local vars).
@@ -1501,8 +1497,7 @@ public:
                              bool isKindOf) const;
 
   QualType getObjCTypeParamType(const ObjCTypeParamDecl *Decl,
-                                ArrayRef<ObjCProtocolDecl *> protocols,
-                                QualType Canonical = QualType()) const;
+                                ArrayRef<ObjCProtocolDecl *> protocols) const;
 
   bool ObjCObjectAdoptsQTypeProtocols(QualType QT, ObjCInterfaceDecl *Decl);
 
@@ -2812,6 +2807,9 @@ public:
   /// Retrieve the context for computing mangling numbers in the given
   /// DeclContext.
   MangleNumberingContext &getManglingNumberContext(const DeclContext *DC);
+  enum NeedExtraManglingDecl_t { NeedExtraManglingDecl };
+  MangleNumberingContext &getManglingNumberContext(NeedExtraManglingDecl_t,
+                                                   const Decl *D);
 
   std::unique_ptr<MangleNumberingContext> createMangleNumberingContext() const;
 
@@ -2822,11 +2820,6 @@ public:
   /// Used by ParmVarDecl to retrieve on the side the
   /// index of the parameter when it exceeds the size of the normal bitfield.
   unsigned getParameterIndex(const ParmVarDecl *D) const;
-
-  /// Get the storage for the constant value of a materialized temporary
-  /// of static storage duration.
-  APValue *getMaterializedTemporaryValue(const MaterializeTemporaryExpr *E,
-                                         bool MayCreate);
 
   /// Return a string representing the human readable name for the specified
   /// function declaration or file name. Used by SourceLocExpr and

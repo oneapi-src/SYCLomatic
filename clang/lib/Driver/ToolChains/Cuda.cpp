@@ -198,7 +198,8 @@ CudaInstallationDetector::CudaInstallationDetector(
     for (const char *Ver : Versions)
       Candidates.emplace_back(D.SysRoot + "/usr/local/cuda-" + Ver);
 
-    if (Distro(D.getVFS()).IsDebian() || Distro(D.getVFS()).IsUbuntu())
+    Distro Dist(D.getVFS(), llvm::Triple(llvm::sys::getProcessTriple()));
+    if (Dist.IsDebian() || Dist.IsUbuntu())
       // Special case for Debian to have nvidia-cuda-toolkit work
       // out of the box. More info on http://bugs.debian.org/882505
       Candidates.emplace_back(D.SysRoot + "/usr/lib/cuda");
@@ -693,8 +694,6 @@ void NVPTX::OpenMPLinker::ConstructJob(Compilation &C, const JobAction &JA,
 
     CmdArgs.push_back(CubinF);
   }
-
-  AddOpenMPLinkerScript(getToolChain(), C, Output, Inputs, Args, CmdArgs, JA);
 
   const char *Exec =
       Args.MakeArgString(getToolChain().GetProgramPath("nvlink"));

@@ -209,6 +209,38 @@ private:
                        unsigned NumVecs, const uint16_t *DOpcodes,
                        const uint16_t *QOpcodes);
 
+  /// Helper functions for setting up clusters of MVE predication operands.
+  template <typename SDValueVector>
+  void AddMVEPredicateToOps(SDValueVector &Ops, SDLoc Loc,
+                            SDValue PredicateMask);
+  template <typename SDValueVector>
+  void AddMVEPredicateToOps(SDValueVector &Ops, SDLoc Loc,
+                            SDValue PredicateMask, SDValue Inactive);
+
+  template <typename SDValueVector>
+  void AddEmptyMVEPredicateToOps(SDValueVector &Ops, SDLoc Loc);
+  template <typename SDValueVector>
+  void AddEmptyMVEPredicateToOps(SDValueVector &Ops, SDLoc Loc, EVT InactiveTy);
+
+  /// SelectMVE_WB - Select MVE writeback load/store intrinsics.
+  void SelectMVE_WB(SDNode *N, const uint16_t *Opcodes, bool Predicated);
+
+  /// SelectMVE_LongShift - Select MVE 64-bit scalar shift intrinsics.
+  void SelectMVE_LongShift(SDNode *N, uint16_t Opcode, bool Immediate,
+                           bool HasSaturationOperand);
+
+  /// SelectMVE_VADCSBC - Select MVE vector add/sub-with-carry intrinsics.
+  void SelectMVE_VADCSBC(SDNode *N, uint16_t OpcodeWithCarry,
+                         uint16_t OpcodeWithNoCarry, bool Add, bool Predicated);
+
+  /// SelectMVE_VLD - Select MVE interleaving load intrinsics. NumVecs
+  /// should be 2 or 4. The opcode array specifies the instructions
+  /// used for 8, 16 and 32-bit lane sizes respectively, and each
+  /// pointer points to a set of NumVecs sub-opcodes used for the
+  /// different stages (e.g. VLD20 versus VLD21) of each load family.
+  void SelectMVE_VLD(SDNode *N, unsigned NumVecs,
+                     const uint16_t *const *Opcodes);
+
   /// SelectVLDDup - Select NEON load-duplicate intrinsics.  NumVecs
   /// should be 1, 2, 3 or 4.  The opcode array specifies the instructions used
   /// for loading D registers.
@@ -1319,11 +1351,27 @@ bool ARMDAGToDAGISel::SelectT2AddrModeImm7Offset(SDNode *Op, SDValue N,
                                                  SDValue &OffImm,
                                                  unsigned Shift) {
   unsigned Opcode = Op->getOpcode();
-  ISD::MemIndexedMode AM = (Opcode == ISD::LOAD)
-                               ? cast<LoadSDNode>(Op)->getAddressingMode()
-                               : cast<StoreSDNode>(Op)->getAddressingMode();
+  ISD::MemIndexedMode AM;
+  switch (Opcode) {
+  case ISD::LOAD:
+    AM = cast<LoadSDNode>(Op)->getAddressingMode();
+    break;
+  case ISD::STORE:
+    AM = cast<StoreSDNode>(Op)->getAddressingMode();
+    break;
+  case ISD::MLOAD:
+    AM = cast<MaskedLoadSDNode>(Op)->getAddressingMode();
+    break;
+  case ISD::MSTORE:
+    AM = cast<MaskedStoreSDNode>(Op)->getAddressingMode();
+    break;
+  default:
+    llvm_unreachable("Unexpected Opcode for Imm7Offset");
+  }
+
   int RHSC;
-  if (isScaledConstantInRange(N, 1 << Shift, 0, 0x80, RHSC)) { // 7 bits.
+  // 7 bit constant, shifted by Shift.
+  if (isScaledConstantInRange(N, 1 << Shift, 0, 0x80, RHSC)) {
     OffImm =
         ((AM == ISD::PRE_INC) || (AM == ISD::POST_INC))
             ? CurDAG->getTargetConstant(RHSC * (1 << Shift), SDLoc(N), MVT::i32)
@@ -1593,58 +1641,93 @@ bool ARMDAGToDAGISel::tryT2IndexedLoad(SDNode *N) {
 }
 
 bool ARMDAGToDAGISel::tryMVEIndexedLoad(SDNode *N) {
-  LoadSDNode *LD = cast<LoadSDNode>(N);
-  ISD::MemIndexedMode AM = LD->getAddressingMode();
-  if (AM == ISD::UNINDEXED)
-    return false;
-  EVT LoadedVT = LD->getMemoryVT();
-  if (!LoadedVT.isVector())
-    return false;
-  bool isSExtLd = LD->getExtensionType() == ISD::SEXTLOAD;
-  SDValue Offset;
-  bool isPre = (AM == ISD::PRE_INC) || (AM == ISD::PRE_DEC);
+  EVT LoadedVT;
   unsigned Opcode = 0;
-  unsigned Align = LD->getAlignment();
-  bool IsLE = Subtarget->isLittle();
+  bool isSExtLd, isPre;
+  unsigned Align;
+  ARMVCC::VPTCodes Pred;
+  SDValue PredReg;
+  SDValue Chain, Base, Offset;
 
+  if (LoadSDNode *LD = dyn_cast<LoadSDNode>(N)) {
+    ISD::MemIndexedMode AM = LD->getAddressingMode();
+    if (AM == ISD::UNINDEXED)
+      return false;
+    LoadedVT = LD->getMemoryVT();
+    if (!LoadedVT.isVector())
+      return false;
+
+    Chain = LD->getChain();
+    Base = LD->getBasePtr();
+    Offset = LD->getOffset();
+    Align = LD->getAlignment();
+    isSExtLd = LD->getExtensionType() == ISD::SEXTLOAD;
+    isPre = (AM == ISD::PRE_INC) || (AM == ISD::PRE_DEC);
+    Pred = ARMVCC::None;
+    PredReg = CurDAG->getRegister(0, MVT::i32);
+  } else if (MaskedLoadSDNode *LD = dyn_cast<MaskedLoadSDNode>(N)) {
+    ISD::MemIndexedMode AM = LD->getAddressingMode();
+    if (AM == ISD::UNINDEXED)
+      return false;
+    LoadedVT = LD->getMemoryVT();
+    if (!LoadedVT.isVector())
+      return false;
+
+    Chain = LD->getChain();
+    Base = LD->getBasePtr();
+    Offset = LD->getOffset();
+    Align = LD->getAlignment();
+    isSExtLd = LD->getExtensionType() == ISD::SEXTLOAD;
+    isPre = (AM == ISD::PRE_INC) || (AM == ISD::PRE_DEC);
+    Pred = ARMVCC::Then;
+    PredReg = LD->getMask();
+  } else
+    llvm_unreachable("Expected a Load or a Masked Load!");
+
+  // We allow LE non-masked loads to change the type (for example use a vldrb.8
+  // as opposed to a vldrw.32). This can allow extra addressing modes or
+  // alignments for what is otherwise an equivalent instruction.
+  bool CanChangeType = Subtarget->isLittle() && !isa<MaskedLoadSDNode>(N);
+
+  SDValue NewOffset;
   if (Align >= 2 && LoadedVT == MVT::v4i16 &&
-      SelectT2AddrModeImm7Offset(N, LD->getOffset(), Offset, 1)) {
+      SelectT2AddrModeImm7Offset(N, Offset, NewOffset, 1)) {
     if (isSExtLd)
       Opcode = isPre ? ARM::MVE_VLDRHS32_pre : ARM::MVE_VLDRHS32_post;
     else
       Opcode = isPre ? ARM::MVE_VLDRHU32_pre : ARM::MVE_VLDRHU32_post;
   } else if (LoadedVT == MVT::v8i8 &&
-             SelectT2AddrModeImm7Offset(N, LD->getOffset(), Offset, 0)) {
+             SelectT2AddrModeImm7Offset(N, Offset, NewOffset, 0)) {
     if (isSExtLd)
       Opcode = isPre ? ARM::MVE_VLDRBS16_pre : ARM::MVE_VLDRBS16_post;
     else
       Opcode = isPre ? ARM::MVE_VLDRBU16_pre : ARM::MVE_VLDRBU16_post;
   } else if (LoadedVT == MVT::v4i8 &&
-             SelectT2AddrModeImm7Offset(N, LD->getOffset(), Offset, 0)) {
+             SelectT2AddrModeImm7Offset(N, Offset, NewOffset, 0)) {
     if (isSExtLd)
       Opcode = isPre ? ARM::MVE_VLDRBS32_pre : ARM::MVE_VLDRBS32_post;
     else
       Opcode = isPre ? ARM::MVE_VLDRBU32_pre : ARM::MVE_VLDRBU32_post;
   } else if (Align >= 4 &&
-             (IsLE || LoadedVT == MVT::v4i32 || LoadedVT == MVT::v4f32) &&
-             SelectT2AddrModeImm7Offset(N, LD->getOffset(), Offset, 2))
+             (CanChangeType || LoadedVT == MVT::v4i32 ||
+              LoadedVT == MVT::v4f32) &&
+             SelectT2AddrModeImm7Offset(N, Offset, NewOffset, 2))
     Opcode = isPre ? ARM::MVE_VLDRWU32_pre : ARM::MVE_VLDRWU32_post;
   else if (Align >= 2 &&
-           (IsLE || LoadedVT == MVT::v8i16 || LoadedVT == MVT::v8f16) &&
-           SelectT2AddrModeImm7Offset(N, LD->getOffset(), Offset, 1))
+           (CanChangeType || LoadedVT == MVT::v8i16 ||
+            LoadedVT == MVT::v8f16) &&
+           SelectT2AddrModeImm7Offset(N, Offset, NewOffset, 1))
     Opcode = isPre ? ARM::MVE_VLDRHU16_pre : ARM::MVE_VLDRHU16_post;
-  else if ((IsLE || LoadedVT == MVT::v16i8) &&
-           SelectT2AddrModeImm7Offset(N, LD->getOffset(), Offset, 0))
+  else if ((CanChangeType || LoadedVT == MVT::v16i8) &&
+           SelectT2AddrModeImm7Offset(N, Offset, NewOffset, 0))
     Opcode = isPre ? ARM::MVE_VLDRBU8_pre : ARM::MVE_VLDRBU8_post;
   else
     return false;
 
-  SDValue Chain = LD->getChain();
-  SDValue Base = LD->getBasePtr();
-  SDValue Ops[] = {Base, Offset,
-                   CurDAG->getTargetConstant(ARMVCC::None, SDLoc(N), MVT::i32),
-                   CurDAG->getRegister(0, MVT::i32), Chain};
-  SDNode *New = CurDAG->getMachineNode(Opcode, SDLoc(N), LD->getValueType(0),
+  SDValue Ops[] = {Base, NewOffset,
+                   CurDAG->getTargetConstant(Pred, SDLoc(N), MVT::i32), PredReg,
+                   Chain};
+  SDNode *New = CurDAG->getMachineNode(Opcode, SDLoc(N), N->getValueType(0),
                                        MVT::i32, MVT::Other, Ops);
   transferMemOperands(N, New);
   ReplaceUses(SDValue(N, 0), SDValue(New, 1));
@@ -2301,6 +2384,177 @@ void ARMDAGToDAGISel::SelectVLDSTLane(SDNode *N, bool IsLoad, bool isUpdating,
   ReplaceUses(SDValue(N, NumVecs), SDValue(VLdLn, 1));
   if (isUpdating)
     ReplaceUses(SDValue(N, NumVecs + 1), SDValue(VLdLn, 2));
+  CurDAG->RemoveDeadNode(N);
+}
+
+template <typename SDValueVector>
+void ARMDAGToDAGISel::AddMVEPredicateToOps(SDValueVector &Ops, SDLoc Loc,
+                                           SDValue PredicateMask) {
+  Ops.push_back(CurDAG->getTargetConstant(ARMVCC::Then, Loc, MVT::i32));
+  Ops.push_back(PredicateMask);
+}
+
+template <typename SDValueVector>
+void ARMDAGToDAGISel::AddMVEPredicateToOps(SDValueVector &Ops, SDLoc Loc,
+                                           SDValue PredicateMask,
+                                           SDValue Inactive) {
+  Ops.push_back(CurDAG->getTargetConstant(ARMVCC::Then, Loc, MVT::i32));
+  Ops.push_back(PredicateMask);
+  Ops.push_back(Inactive);
+}
+
+template <typename SDValueVector>
+void ARMDAGToDAGISel::AddEmptyMVEPredicateToOps(SDValueVector &Ops, SDLoc Loc) {
+  Ops.push_back(CurDAG->getTargetConstant(ARMVCC::None, Loc, MVT::i32));
+  Ops.push_back(CurDAG->getRegister(0, MVT::i32));
+}
+
+template <typename SDValueVector>
+void ARMDAGToDAGISel::AddEmptyMVEPredicateToOps(SDValueVector &Ops, SDLoc Loc,
+                                                EVT InactiveTy) {
+  Ops.push_back(CurDAG->getTargetConstant(ARMVCC::None, Loc, MVT::i32));
+  Ops.push_back(CurDAG->getRegister(0, MVT::i32));
+  Ops.push_back(SDValue(
+      CurDAG->getMachineNode(TargetOpcode::IMPLICIT_DEF, Loc, InactiveTy), 0));
+}
+
+void ARMDAGToDAGISel::SelectMVE_WB(SDNode *N, const uint16_t *Opcodes,
+                                   bool Predicated) {
+  SDLoc Loc(N);
+  SmallVector<SDValue, 8> Ops;
+
+  uint16_t Opcode;
+  switch (N->getValueType(1).getVectorElementType().getSizeInBits()) {
+  case 32:
+    Opcode = Opcodes[0];
+    break;
+  case 64:
+    Opcode = Opcodes[1];
+    break;
+  default:
+    llvm_unreachable("bad vector element size in SelectMVE_WB");
+  }
+
+  Ops.push_back(N->getOperand(2)); // vector of base addresses
+
+  int32_t ImmValue = cast<ConstantSDNode>(N->getOperand(3))->getZExtValue();
+  Ops.push_back(getI32Imm(ImmValue, Loc)); // immediate offset
+
+  if (Predicated)
+    AddMVEPredicateToOps(Ops, Loc, N->getOperand(4));
+  else
+    AddEmptyMVEPredicateToOps(Ops, Loc);
+
+  Ops.push_back(N->getOperand(0)); // chain
+
+  CurDAG->SelectNodeTo(N, Opcode, N->getVTList(), makeArrayRef(Ops));
+}
+
+void ARMDAGToDAGISel::SelectMVE_LongShift(SDNode *N, uint16_t Opcode,
+                                          bool Immediate,
+                                          bool HasSaturationOperand) {
+  SDLoc Loc(N);
+  SmallVector<SDValue, 8> Ops;
+
+  // Two 32-bit halves of the value to be shifted
+  Ops.push_back(N->getOperand(1));
+  Ops.push_back(N->getOperand(2));
+
+  // The shift count
+  if (Immediate) {
+    int32_t ImmValue = cast<ConstantSDNode>(N->getOperand(3))->getZExtValue();
+    Ops.push_back(getI32Imm(ImmValue, Loc)); // immediate shift count
+  } else {
+    Ops.push_back(N->getOperand(3));
+  }
+
+  // The immediate saturation operand, if any
+  if (HasSaturationOperand) {
+    int32_t SatOp = cast<ConstantSDNode>(N->getOperand(4))->getZExtValue();
+    int SatBit = (SatOp == 64 ? 0 : 1);
+    Ops.push_back(getI32Imm(SatBit, Loc));
+  }
+
+  // MVE scalar shifts are IT-predicable, so include the standard
+  // predicate arguments.
+  Ops.push_back(getAL(CurDAG, Loc));
+  Ops.push_back(CurDAG->getRegister(0, MVT::i32));
+
+  CurDAG->SelectNodeTo(N, Opcode, N->getVTList(), makeArrayRef(Ops));
+}
+
+void ARMDAGToDAGISel::SelectMVE_VADCSBC(SDNode *N, uint16_t OpcodeWithCarry,
+                                        uint16_t OpcodeWithNoCarry,
+                                        bool Add, bool Predicated) {
+  SDLoc Loc(N);
+  SmallVector<SDValue, 8> Ops;
+  uint16_t Opcode;
+
+  unsigned FirstInputOp = Predicated ? 2 : 1;
+
+  // Two input vectors and the input carry flag
+  Ops.push_back(N->getOperand(FirstInputOp));
+  Ops.push_back(N->getOperand(FirstInputOp + 1));
+  SDValue CarryIn = N->getOperand(FirstInputOp + 2);
+  ConstantSDNode *CarryInConstant = dyn_cast<ConstantSDNode>(CarryIn);
+  uint32_t CarryMask = 1 << 29;
+  uint32_t CarryExpected = Add ? 0 : CarryMask;
+  if (CarryInConstant &&
+      (CarryInConstant->getZExtValue() & CarryMask) == CarryExpected) {
+    Opcode = OpcodeWithNoCarry;
+  } else {
+    Ops.push_back(CarryIn);
+    Opcode = OpcodeWithCarry;
+  }
+
+  if (Predicated)
+    AddMVEPredicateToOps(Ops, Loc,
+                         N->getOperand(FirstInputOp + 3),  // predicate
+                         N->getOperand(FirstInputOp - 1)); // inactive
+  else
+    AddEmptyMVEPredicateToOps(Ops, Loc, N->getValueType(0));
+
+  CurDAG->SelectNodeTo(N, Opcode, N->getVTList(), makeArrayRef(Ops));
+}
+
+void ARMDAGToDAGISel::SelectMVE_VLD(SDNode *N, unsigned NumVecs,
+                                    const uint16_t *const *Opcodes) {
+  EVT VT = N->getValueType(0);
+  SDLoc Loc(N);
+
+  const uint16_t *OurOpcodes;
+  switch (VT.getVectorElementType().getSizeInBits()) {
+  case 8:
+    OurOpcodes = Opcodes[0];
+    break;
+  case 16:
+    OurOpcodes = Opcodes[1];
+    break;
+  case 32:
+    OurOpcodes = Opcodes[2];
+    break;
+  default:
+    llvm_unreachable("bad vector element size in SelectMVE_VLD");
+  }
+
+  EVT DataTy = EVT::getVectorVT(*CurDAG->getContext(), MVT::i64, NumVecs * 2);
+  EVT ResultTys[] = {DataTy, MVT::Other};
+
+  auto Data = SDValue(
+      CurDAG->getMachineNode(TargetOpcode::IMPLICIT_DEF, Loc, DataTy), 0);
+  SDValue Chain = N->getOperand(0);
+  for (unsigned Stage = 0; Stage < NumVecs; ++Stage) {
+    SDValue Ops[] = {Data, N->getOperand(2), Chain};
+    auto LoadInst =
+        CurDAG->getMachineNode(OurOpcodes[Stage], Loc, ResultTys, Ops);
+    Data = SDValue(LoadInst, 0);
+    Chain = SDValue(LoadInst, 1);
+  }
+
+  for (unsigned i = 0; i < NumVecs; i++)
+    ReplaceUses(SDValue(N, i),
+                CurDAG->getTargetExtractSubreg(ARM::qsub_0 + i, Loc, VT, Data));
+  ReplaceUses(SDValue(N, NumVecs), Chain);
   CurDAG->RemoveDeadNode(N);
 }
 
@@ -3089,6 +3343,11 @@ void ARMDAGToDAGISel::Select(SDNode *N) {
     // Other cases are autogenerated.
     break;
   }
+  case ISD::MLOAD:
+    if (Subtarget->hasMVEIntegerOps() && tryMVEIndexedLoad(N))
+      return;
+    // Other cases are autogenerated.
+    break;
   case ARMISD::WLS:
   case ARMISD::LE: {
     SDValue Ops[] = { N->getOperand(1),
@@ -4028,6 +4287,80 @@ void ARMDAGToDAGISel::Select(SDNode *N) {
       SelectVLDSTLane(N, false, false, 4, DOpcodes, QOpcodes);
       return;
     }
+
+    case Intrinsic::arm_mve_vldr_gather_base_wb:
+    case Intrinsic::arm_mve_vldr_gather_base_wb_predicated: {
+      static const uint16_t Opcodes[] = {ARM::MVE_VLDRWU32_qi_pre,
+                                         ARM::MVE_VLDRDU64_qi_pre};
+      SelectMVE_WB(N, Opcodes,
+                   IntNo == Intrinsic::arm_mve_vldr_gather_base_wb_predicated);
+      return;
+    }
+
+    case Intrinsic::arm_mve_vld2q: {
+      static const uint16_t Opcodes8[] = {ARM::MVE_VLD20_8, ARM::MVE_VLD21_8};
+      static const uint16_t Opcodes16[] = {ARM::MVE_VLD20_16,
+                                           ARM::MVE_VLD21_16};
+      static const uint16_t Opcodes32[] = {ARM::MVE_VLD20_32,
+                                           ARM::MVE_VLD21_32};
+      static const uint16_t *const Opcodes[] = {Opcodes8, Opcodes16, Opcodes32};
+      SelectMVE_VLD(N, 2, Opcodes);
+      return;
+    }
+
+    case Intrinsic::arm_mve_vld4q: {
+      static const uint16_t Opcodes8[] = {ARM::MVE_VLD40_8, ARM::MVE_VLD41_8,
+                                          ARM::MVE_VLD42_8, ARM::MVE_VLD43_8};
+      static const uint16_t Opcodes16[] = {ARM::MVE_VLD40_16, ARM::MVE_VLD41_16,
+                                           ARM::MVE_VLD42_16,
+                                           ARM::MVE_VLD43_16};
+      static const uint16_t Opcodes32[] = {ARM::MVE_VLD40_32, ARM::MVE_VLD41_32,
+                                           ARM::MVE_VLD42_32,
+                                           ARM::MVE_VLD43_32};
+      static const uint16_t *const Opcodes[] = {Opcodes8, Opcodes16, Opcodes32};
+      SelectMVE_VLD(N, 4, Opcodes);
+      return;
+    }
+    }
+    break;
+  }
+
+  case ISD::INTRINSIC_WO_CHAIN: {
+    unsigned IntNo = cast<ConstantSDNode>(N->getOperand(0))->getZExtValue();
+    switch (IntNo) {
+    default:
+      break;
+
+    case Intrinsic::arm_mve_urshrl:
+      SelectMVE_LongShift(N, ARM::MVE_URSHRL, true, false);
+      return;
+    case Intrinsic::arm_mve_uqshll:
+      SelectMVE_LongShift(N, ARM::MVE_UQSHLL, true, false);
+      return;
+    case Intrinsic::arm_mve_srshrl:
+      SelectMVE_LongShift(N, ARM::MVE_SRSHRL, true, false);
+      return;
+    case Intrinsic::arm_mve_sqshll:
+      SelectMVE_LongShift(N, ARM::MVE_SQSHLL, true, false);
+      return;
+    case Intrinsic::arm_mve_uqrshll:
+      SelectMVE_LongShift(N, ARM::MVE_UQRSHLL, false, true);
+      return;
+    case Intrinsic::arm_mve_sqrshrl:
+      SelectMVE_LongShift(N, ARM::MVE_SQRSHRL, false, true);
+      return;
+    case Intrinsic::arm_mve_lsll:
+      SelectMVE_LongShift(N, ARM::MVE_LSLLr, false, false);
+      return;
+    case Intrinsic::arm_mve_asrl:
+      SelectMVE_LongShift(N, ARM::MVE_ASRLr, false, false);
+      return;
+
+    case Intrinsic::arm_mve_vadc:
+    case Intrinsic::arm_mve_vadc_predicated:
+      SelectMVE_VADCSBC(N, ARM::MVE_VADC, ARM::MVE_VADCI, true,
+                        IntNo == Intrinsic::arm_mve_vadc_predicated);
+      return;
     }
     break;
   }

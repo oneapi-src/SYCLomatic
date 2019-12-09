@@ -53,7 +53,7 @@ class TestGdbRemoteProcessInfo(gdbremote_testcase.GdbRemoteTestCaseBase):
         self.add_process_info_collection_packets()
 
         # Run the stream
-        context = self.expect_gdbremote_sequence(timeout_seconds=8)
+        context = self.expect_gdbremote_sequence(timeout_seconds=self._DEFAULT_TIMEOUT)
         self.assertIsNotNone(context)
 
         # Gather process info response
@@ -75,6 +75,7 @@ class TestGdbRemoteProcessInfo(gdbremote_testcase.GdbRemoteTestCaseBase):
         self.set_inferior_startup_attach()
         self.attach_commandline_qProcessInfo_reports_correct_pid()
 
+    @expectedFailureNetBSD
     @llgs_test
     def test_attach_commandline_qProcessInfo_reports_correct_pid_llgs(self):
         self.init_llgs_test()

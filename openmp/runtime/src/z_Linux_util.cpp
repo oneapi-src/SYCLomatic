@@ -54,7 +54,7 @@
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #include <pthread_np.h>
-#elif KMP_OS_NETBSD
+#elif KMP_OS_NETBSD || KMP_OS_OPENBSD
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #endif
@@ -100,7 +100,7 @@ static void __kmp_print_cond(char *buffer, kmp_cond_align_t *cond) {
 }
 #endif
 
-#if (KMP_OS_LINUX && KMP_AFFINITY_SUPPORTED)
+#if ((KMP_OS_LINUX || KMP_OS_FREEBSD) && KMP_AFFINITY_SUPPORTED)
 
 /* Affinity support */
 
@@ -122,16 +122,21 @@ void __kmp_affinity_bind_thread(int which) {
 void __kmp_affinity_determine_capable(const char *env_var) {
 // Check and see if the OS supports thread affinity.
 
+#if KMP_OS_LINUX
 #define KMP_CPU_SET_SIZE_LIMIT (1024 * 1024)
+#elif KMP_OS_FREEBSD
+#define KMP_CPU_SET_SIZE_LIMIT (sizeof(cpuset_t))
+#endif
 
+
+#if KMP_OS_LINUX
+  // If Linux* OS:
+  // If the syscall fails or returns a suggestion for the size,
+  // then we don't have to search for an appropriate size.
   int gCode;
   int sCode;
   unsigned char *buf;
   buf = (unsigned char *)KMP_INTERNAL_MALLOC(KMP_CPU_SET_SIZE_LIMIT);
-
-  // If Linux* OS:
-  // If the syscall fails or returns a suggestion for the size,
-  // then we don't have to search for an appropriate size.
   gCode = syscall(__NR_sched_getaffinity, 0, KMP_CPU_SET_SIZE_LIMIT, buf);
   KA_TRACE(30, ("__kmp_affinity_determine_capable: "
                 "initial getaffinity call returned %d errno = %d\n",
@@ -270,6 +275,23 @@ void __kmp_affinity_determine_capable(const char *env_var) {
       }
     }
   }
+#elif KMP_OS_FREEBSD
+  int gCode;
+  unsigned char *buf;
+  buf = (unsigned char *)KMP_INTERNAL_MALLOC(KMP_CPU_SET_SIZE_LIMIT);
+  gCode = pthread_getaffinity_np(pthread_self(), KMP_CPU_SET_SIZE_LIMIT, reinterpret_cast<cpuset_t *>(buf));
+  KA_TRACE(30, ("__kmp_affinity_determine_capable: "
+                "initial getaffinity call returned %d errno = %d\n",
+                gCode, errno));
+  if (gCode == 0) {
+    KMP_AFFINITY_ENABLE(KMP_CPU_SET_SIZE_LIMIT);
+    KA_TRACE(10, ("__kmp_affinity_determine_capable: "
+                  "affinity supported (mask size %d)\n"<
+		  (int)__kmp_affin_mask_size));
+    KMP_INTERNAL_FREE(buf);
+    return;
+  }
+#endif
   // save uncaught error code
   // int error = errno;
   KMP_INTERNAL_FREE(buf);
@@ -1265,7 +1287,7 @@ static void __kmp_atfork_child(void) {
   ++__kmp_fork_count;
 
 #if KMP_AFFINITY_SUPPORTED
-#if KMP_OS_LINUX
+#if KMP_OS_LINUX || KMP_OS_FREEBSD
   // reset the affinity in the child to the initial thread
   // affinity in the parent
   kmp_set_thread_affinity_mask_initial();
@@ -2108,9 +2130,36 @@ int __kmp_is_address_mapped(void *addr) {
     }
   }
   KMP_INTERNAL_FREE(kiv);
-#elif KMP_OS_DRAGONFLY || KMP_OS_OPENBSD
+#elif KMP_OS_OPENBSD
 
-  // FIXME(DragonFly, OpenBSD): Implement this
+  int mib[3];
+  mib[0] = CTL_KERN;
+  mib[1] = KERN_PROC_VMMAP;
+  mib[2] = getpid();
+
+  size_t size;
+  uint64_t end;
+  rc = sysctl(mib, 3, NULL, &size, NULL, 0);
+  KMP_ASSERT(!rc);
+  KMP_ASSERT(size);
+  end = size;
+
+  struct kinfo_vmentry kiv = {.kve_start = 0};
+
+  while ((rc = sysctl(mib, 3, &kiv, &size, NULL, 0)) == 0) {
+    KMP_ASSERT(size);
+    if (kiv.kve_end == end)
+      break;
+
+    if (kiv.kve_start >= (uint64_t)addr && kiv.kve_end <= (uint64_t)addr) {
+      found = 1;
+      break;
+    }
+    kiv.kve_start += 1;
+  }
+#elif KMP_OS_DRAGONFLY
+
+  // FIXME(DragonFly): Implement this
   found = 1;
 
 #else

@@ -16,6 +16,7 @@
 #include "clang/Basic/TargetInfo.h"
 #include "clang/Basic/TargetOptions.h"
 #include "llvm/ADT/Triple.h"
+#include "llvm/IR/DataLayout.h"
 #include "llvm/Support/Compiler.h"
 #include "OSTargets.h"
 
@@ -63,8 +64,7 @@ public:
     TLSSupported = false;
     VLASupported = false;
     LongWidth = LongAlign = 64;
-    if (Triple.getEnvironment() == llvm::Triple::SYCLDevice &&
-        !getenv("DISABLE_INFER_AS")) {
+    if (Triple.getEnvironment() == llvm::Triple::SYCLDevice) {
       AddrSpaceMap = &SYCLAddrSpaceMap;
     } else {
       AddrSpaceMap = &SPIRAddrSpaceMap;

@@ -213,6 +213,16 @@ bool types::isHIP(ID Id) {
   }
 }
 
+bool types::isFortran(ID Id) {
+  switch (Id) {
+  default:
+    return false;
+
+  case TY_Fortran: case TY_PP_Fortran:
+    return true;
+  }
+}
+
 bool types::isSrcFile(ID Id) {
   return Id != TY_Object && getPreprocessedType(Id) != TY_INVALID;
 }
@@ -270,6 +280,7 @@ types::ID types::lookupTypeForExtension(llvm::StringRef Ext) {
            .Case("lib", TY_Object)
            .Case("mii", TY_PP_ObjCXX)
            .Case("obj", TY_Object)
+           .Case("ifs", TY_IFS)
            .Case("pch", TY_PCH)
            .Case("pcm", TY_ModuleFile)
            .Case("c++m", TY_CXXModule)
@@ -328,7 +339,6 @@ void types::getCompilationPhases(const clang::driver::Driver &Driver,
            DAL.getLastArg(options::OPT_rewrite_objc) ||
            DAL.getLastArg(options::OPT_rewrite_legacy_objc) ||
            DAL.getLastArg(options::OPT__migrate) ||
-           DAL.getLastArg(options::OPT_emit_iterface_stubs) ||
            DAL.getLastArg(options::OPT__analyze) ||
            DAL.getLastArg(options::OPT_emit_ast))
     llvm::copy_if(PhaseList, std::back_inserter(P),
@@ -336,7 +346,7 @@ void types::getCompilationPhases(const clang::driver::Driver &Driver,
 
   else if (DAL.getLastArg(options::OPT_S) ||
            DAL.getLastArg(options::OPT_emit_llvm) ||
-           DAL.getLastArg(options::OPT_sycl_device_only))
+           DAL.getLastArg(options::OPT_fsycl_device_only))
     llvm::copy_if(PhaseList, std::back_inserter(P),
                   [](phases::ID Phase) { return Phase <= phases::Backend; });
 

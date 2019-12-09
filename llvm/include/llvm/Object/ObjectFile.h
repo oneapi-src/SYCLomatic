@@ -130,7 +130,7 @@ public:
   iterator_range<relocation_iterator> relocations() const {
     return make_range(relocation_begin(), relocation_end());
   }
-  section_iterator getRelocatedSection() const;
+  Expected<section_iterator> getRelocatedSection() const;
 
   DataRefImpl getRawDataRefImpl() const;
   const ObjectFile *getObject() const;
@@ -154,6 +154,8 @@ inline bool operator==(const SectionedAddress &LHS,
   return std::tie(LHS.SectionIndex, LHS.Address) ==
          std::tie(RHS.SectionIndex, RHS.Address);
 }
+
+raw_ostream &operator<<(raw_ostream &OS, const SectionedAddress &Addr);
 
 /// This is a value type class that represents a single symbol in the list of
 /// symbols in the object file.
@@ -272,7 +274,7 @@ protected:
   virtual bool isBerkeleyData(DataRefImpl Sec) const;
   virtual relocation_iterator section_rel_begin(DataRefImpl Sec) const = 0;
   virtual relocation_iterator section_rel_end(DataRefImpl Sec) const = 0;
-  virtual section_iterator getRelocatedSection(DataRefImpl Sec) const;
+  virtual Expected<section_iterator> getRelocatedSection(DataRefImpl Sec) const;
 
   // Same as above for RelocationRef.
   friend class RelocationRef;
@@ -501,7 +503,7 @@ inline relocation_iterator SectionRef::relocation_end() const {
   return OwningObject->section_rel_end(SectionPimpl);
 }
 
-inline section_iterator SectionRef::getRelocatedSection() const {
+inline Expected<section_iterator> SectionRef::getRelocatedSection() const {
   return OwningObject->getRelocatedSection(SectionPimpl);
 }
 

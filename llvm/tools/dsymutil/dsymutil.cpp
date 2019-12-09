@@ -148,6 +148,11 @@ static Expected<std::vector<std::string>> getInputs(opt::InputArgList &Args,
 
 // Verify that the given combination of options makes sense.
 static Error verifyOptions(const DsymutilOptions &Options) {
+  if (Options.InputFiles.empty()) {
+    return make_error<StringError>("no input files specified",
+                                   errc::invalid_argument);
+  }
+
   if (Options.LinkOpts.Update &&
       std::find(Options.InputFiles.begin(), Options.InputFiles.end(), "-") !=
           Options.InputFiles.end()) {
@@ -260,6 +265,18 @@ static Expected<DsymutilOptions> getOptions(opt::InputArgList &Args) {
 
   if (getenv("RC_DEBUG_OPTIONS"))
     Options.PaperTrailWarnings = true;
+
+  if (opt::Arg *RemarksPrependPath = Args.getLastArg(OPT_remarks_prepend_path))
+    Options.LinkOpts.RemarksPrependPath = RemarksPrependPath->getValue();
+
+  if (opt::Arg *RemarksOutputFormat =
+          Args.getLastArg(OPT_remarks_output_format)) {
+    if (Expected<remarks::Format> FormatOrErr =
+            remarks::parseFormat(RemarksOutputFormat->getValue()))
+      Options.LinkOpts.RemarksFormat = *FormatOrErr;
+    else
+      return FormatOrErr.takeError();
+  }
 
   if (Error E = verifyOptions(Options))
     return std::move(E);
@@ -440,6 +457,11 @@ int main(int argc, char **argv) {
   std::string SDKPath = sys::fs::getMainExecutable(argv[0], P);
   SDKPath = sys::path::parent_path(SDKPath);
 
+  for (auto *Arg : Args.filtered(OPT_UNKNOWN)) {
+    WithColor::warning() << "ignoring unknown option: " << Arg->getSpelling()
+                         << '\n';
+  }
+
   if (Args.hasArg(OPT_help)) {
     T.PrintHelp(
         outs(), (std::string(argv[0]) + " [options] <input files>").c_str(),
@@ -496,6 +518,10 @@ int main(int argc, char **argv) {
                          << "': " << EC.message() << '\n';
       return 1;
     }
+
+    // Remember the number of debug maps that are being processed to decide how
+    // to name the remark files.
+    Options.LinkOpts.NumDebugMaps = DebugMapPtrsOrErr->size();
 
     if (Options.LinkOpts.Update) {
       // The debug map should be empty. Add one object file corresponding to

@@ -21,38 +21,45 @@
 using namespace llvm;
 
 namespace {
-// The ABI-defined register save slots, relative to the incoming stack
-// pointer.
+// The ABI-defined register save slots, relative to the CFA (i.e.
+// incoming stack pointer + SystemZMC::CallFrameSize).
 static const TargetFrameLowering::SpillSlot SpillOffsetTable[] = {
-  { SystemZ::R2D,  0x10 },
-  { SystemZ::R3D,  0x18 },
-  { SystemZ::R4D,  0x20 },
-  { SystemZ::R5D,  0x28 },
-  { SystemZ::R6D,  0x30 },
-  { SystemZ::R7D,  0x38 },
-  { SystemZ::R8D,  0x40 },
-  { SystemZ::R9D,  0x48 },
-  { SystemZ::R10D, 0x50 },
-  { SystemZ::R11D, 0x58 },
-  { SystemZ::R12D, 0x60 },
-  { SystemZ::R13D, 0x68 },
-  { SystemZ::R14D, 0x70 },
-  { SystemZ::R15D, 0x78 },
-  { SystemZ::F0D,  0x80 },
-  { SystemZ::F2D,  0x88 },
-  { SystemZ::F4D,  0x90 },
-  { SystemZ::F6D,  0x98 }
+  { SystemZ::R2D,  -SystemZMC::CallFrameSize + 0x10 },
+  { SystemZ::R3D,  -SystemZMC::CallFrameSize + 0x18 },
+  { SystemZ::R4D,  -SystemZMC::CallFrameSize + 0x20 },
+  { SystemZ::R5D,  -SystemZMC::CallFrameSize + 0x28 },
+  { SystemZ::R6D,  -SystemZMC::CallFrameSize + 0x30 },
+  { SystemZ::R7D,  -SystemZMC::CallFrameSize + 0x38 },
+  { SystemZ::R8D,  -SystemZMC::CallFrameSize + 0x40 },
+  { SystemZ::R9D,  -SystemZMC::CallFrameSize + 0x48 },
+  { SystemZ::R10D, -SystemZMC::CallFrameSize + 0x50 },
+  { SystemZ::R11D, -SystemZMC::CallFrameSize + 0x58 },
+  { SystemZ::R12D, -SystemZMC::CallFrameSize + 0x60 },
+  { SystemZ::R13D, -SystemZMC::CallFrameSize + 0x68 },
+  { SystemZ::R14D, -SystemZMC::CallFrameSize + 0x70 },
+  { SystemZ::R15D, -SystemZMC::CallFrameSize + 0x78 },
+  { SystemZ::F0D,  -SystemZMC::CallFrameSize + 0x80 },
+  { SystemZ::F2D,  -SystemZMC::CallFrameSize + 0x88 },
+  { SystemZ::F4D,  -SystemZMC::CallFrameSize + 0x90 },
+  { SystemZ::F6D,  -SystemZMC::CallFrameSize + 0x98 }
 };
 } // end anonymous namespace
 
 SystemZFrameLowering::SystemZFrameLowering()
-    : TargetFrameLowering(TargetFrameLowering::StackGrowsDown, 8,
-                          -SystemZMC::CallFrameSize, 8,
+    : TargetFrameLowering(TargetFrameLowering::StackGrowsDown, Align(8),
+                          -SystemZMC::CallFrameSize, Align(8),
                           false /* StackRealignable */) {
+  // Due to the SystemZ ABI, the DWARF CFA (Canonical Frame Address) is not
+  // equal to the incoming stack pointer, but to incoming stack pointer plus
+  // 160.  The getOffsetOfLocalArea() returned value is interpreted as "the
+  // offset of the local area from the CFA".
+
   // Create a mapping from register number to save slot offset.
+  // These offsets are relative to the start of the register save area.
   RegSpillOffsets.grow(SystemZ::NUM_TARGET_REGS);
   for (unsigned I = 0, E = array_lengthof(SpillOffsetTable); I != E; ++I)
-    RegSpillOffsets[SpillOffsetTable[I].Reg] = SpillOffsetTable[I].Offset;
+    RegSpillOffsets[SpillOffsetTable[I].Reg] =
+      SystemZMC::CallFrameSize + SpillOffsetTable[I].Offset;
 }
 
 const TargetFrameLowering::SpillSlot *
@@ -351,6 +358,23 @@ void SystemZFrameLowering::emitPrologue(MachineFunction &MF,
   const std::vector<CalleeSavedInfo> &CSI = MFFrame.getCalleeSavedInfo();
   bool HasFP = hasFP(MF);
 
+  // In GHC calling convention C stack space, including the ABI-defined
+  // 160-byte base area, is (de)allocated by GHC itself.  This stack space may
+  // be used by LLVM as spill slots for the tail recursive GHC functions.  Thus
+  // do not allocate stack space here, too.
+  if (MF.getFunction().getCallingConv() == CallingConv::GHC) {
+    if (MFFrame.getStackSize() > 2048 * sizeof(long)) {
+      report_fatal_error(
+          "Pre allocated stack space for GHC function is too small");
+    }
+    if (HasFP) {
+      report_fatal_error(
+          "In GHC calling convention a frame pointer is not supported");
+    }
+    MFFrame.setStackSize(MFFrame.getStackSize() + SystemZMC::CallFrameSize);
+    return;
+  }
+
   // Debug location must be unknown since the first debug location is used
   // to determine the end of the prologue.
   DebugLoc DL;
@@ -477,6 +501,10 @@ void SystemZFrameLowering::emitEpilogue(MachineFunction &MF,
       static_cast<const SystemZInstrInfo *>(MF.getSubtarget().getInstrInfo());
   SystemZMachineFunctionInfo *ZFI = MF.getInfo<SystemZMachineFunctionInfo>();
   MachineFrameInfo &MFFrame = MF.getFrameInfo();
+
+  // See SystemZFrameLowering::emitPrologue
+  if (MF.getFunction().getCallingConv() == CallingConv::GHC)
+    return;
 
   // Skip the return instruction.
   assert(MBBI->isReturn() && "Can only insert epilogue into returning blocks");

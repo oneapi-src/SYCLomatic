@@ -669,7 +669,7 @@ FindBestAlternateMangledName(ConstString demangled,
   std::vector<ConstString> param_matches;
   for (size_t i = 0; i < alternates.size(); i++) {
     ConstString alternate_mangled_name = alternates[i];
-    Mangled mangled(alternate_mangled_name, true);
+    Mangled mangled(alternate_mangled_name);
     ConstString demangled = mangled.GetDemangledName(lang_type);
 
     CPlusPlusLanguage::MethodName alternate_cpp_name(demangled);
@@ -717,7 +717,7 @@ void IRExecutionUnit::CollectCandidateCPlusPlusNames(
     ConstString name = C_spec.name;
 
     if (CPlusPlusLanguage::IsCPPMangledName(name.GetCString())) {
-      Mangled mangled(name, true);
+      Mangled mangled(name);
       ConstString demangled =
           mangled.GetDemangledName(lldb::eLanguageTypeC_plus_plus);
 
@@ -854,7 +854,6 @@ lldb::addr_t IRExecutionUnit::FindInSymbols(
       sc.module_sp->FindFunctions(spec.name, nullptr, spec.mask,
                                   true,  // include_symbols
                                   false, // include_inlines
-                                  true,  // append
                                   sc_list);
     }
 
@@ -870,7 +869,6 @@ lldb::addr_t IRExecutionUnit::FindInSymbols(
       sc.target_sp->GetImages().FindFunctions(spec.name, spec.mask,
                                               true,  // include_symbols
                                               false, // include_inlines
-                                              true,  // append
                                               sc_list);
     }
 
@@ -979,30 +977,49 @@ IRExecutionUnit::FindSymbol(lldb_private::ConstString name, bool &missing_weak) 
 
 void IRExecutionUnit::GetStaticInitializers(
     std::vector<lldb::addr_t> &static_initializers) {
-  if (llvm::GlobalVariable *global_ctors =
-          m_module->getNamedGlobal("llvm.global_ctors")) {
-    if (llvm::ConstantArray *ctor_array = llvm::dyn_cast<llvm::ConstantArray>(
-            global_ctors->getInitializer())) {
-      for (llvm::Use &ctor_use : ctor_array->operands()) {
-        if (llvm::ConstantStruct *ctor_struct =
-                llvm::dyn_cast<llvm::ConstantStruct>(ctor_use)) {
-          lldbassert(ctor_struct->getNumOperands() ==
-                     3); // this is standardized
-          if (llvm::Function *ctor_function =
-                  llvm::dyn_cast<llvm::Function>(ctor_struct->getOperand(1))) {
-            ConstString ctor_function_name_cs(ctor_function->getName().str());
+  Log *log(lldb_private::GetLogIfAllCategoriesSet(LIBLLDB_LOG_EXPRESSIONS));
 
-            for (JittedFunction &jitted_function : m_jitted_functions) {
-              if (ctor_function_name_cs == jitted_function.m_name) {
-                if (jitted_function.m_remote_addr != LLDB_INVALID_ADDRESS) {
-                  static_initializers.push_back(jitted_function.m_remote_addr);
-                }
-                break;
-              }
-            }
-          }
-        }
+  llvm::GlobalVariable *global_ctors =
+      m_module->getNamedGlobal("llvm.global_ctors");
+  if (!global_ctors) {
+    LLDB_LOG(log, "Couldn't find llvm.global_ctors.");
+    return;
+  }
+  auto *ctor_array =
+      llvm::dyn_cast<llvm::ConstantArray>(global_ctors->getInitializer());
+  if (!ctor_array) {
+    LLDB_LOG(log, "llvm.global_ctors not a ConstantArray.");
+    return;
+  }
+
+  for (llvm::Use &ctor_use : ctor_array->operands()) {
+    auto *ctor_struct = llvm::dyn_cast<llvm::ConstantStruct>(ctor_use);
+    if (!ctor_struct)
+      continue;
+    // this is standardized
+    lldbassert(ctor_struct->getNumOperands() == 3);
+    auto *ctor_function =
+        llvm::dyn_cast<llvm::Function>(ctor_struct->getOperand(1));
+    if (!ctor_function) {
+      LLDB_LOG(log, "global_ctor doesn't contain an llvm::Function");
+      continue;
+    }
+
+    ConstString ctor_function_name(ctor_function->getName().str());
+    LLDB_LOG(log, "Looking for callable jitted function with name {0}.",
+             ctor_function_name);
+
+    for (JittedFunction &jitted_function : m_jitted_functions) {
+      if (ctor_function_name != jitted_function.m_name)
+        continue;
+      if (jitted_function.m_remote_addr == LLDB_INVALID_ADDRESS) {
+        LLDB_LOG(log, "Found jitted function with invalid address.");
+        continue;
       }
+      static_initializers.push_back(jitted_function.m_remote_addr);
+      LLDB_LOG(log, "Calling function at address {0:x}.",
+               jitted_function.m_remote_addr);
+      break;
     }
   }
 }

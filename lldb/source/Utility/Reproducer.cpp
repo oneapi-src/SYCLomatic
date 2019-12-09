@@ -25,6 +25,16 @@ llvm::Error Reproducer::Initialize(ReproducerMode mode,
   lldbassert(!InstanceImpl() && "Already initialized.");
   InstanceImpl().emplace();
 
+  // The environment can override the capture mode.
+  if (mode != ReproducerMode::Replay) {
+    std::string env =
+        llvm::StringRef(getenv("LLDB_CAPTURE_REPRODUCER")).lower();
+    if (env == "0" || env == "off")
+      mode = ReproducerMode::Off;
+    else if (env == "1" || env == "on")
+      mode = ReproducerMode::Capture;
+  }
+
   switch (mode) {
   case ReproducerMode::Capture: {
     if (!root) {
@@ -143,10 +153,14 @@ static FileSpec MakeAbsolute(FileSpec file_spec) {
   return FileSpec(path, file_spec.GetPathStyle());
 }
 
-Generator::Generator(FileSpec root)
-    : m_root(MakeAbsolute(std::move(root))), m_done(false) {}
+Generator::Generator(FileSpec root) : m_root(MakeAbsolute(std::move(root))) {
+  GetOrCreate<repro::WorkingDirectoryProvider>();
+}
 
-Generator::~Generator() {}
+Generator::~Generator() {
+  if (!m_done)
+    Discard();
+}
 
 ProviderBase *Generator::Register(std::unique_ptr<ProviderBase> provider) {
   std::lock_guard<std::mutex> lock(m_providers_mutex);
@@ -281,6 +295,15 @@ void VersionProvider::Keep() {
   os << m_version << "\n";
 }
 
+void WorkingDirectoryProvider::Keep() {
+  FileSpec file = GetRoot().CopyByAppendingPathComponent(Info::file);
+  std::error_code ec;
+  llvm::raw_fd_ostream os(file.GetPath(), ec, llvm::sys::fs::OF_Text);
+  if (ec)
+    return;
+  os << m_cwd << "\n";
+}
+
 llvm::raw_ostream *ProcessGDBRemoteProvider::GetHistoryStream() {
   FileSpec history_file = GetRoot().CopyByAppendingPathComponent(Info::file);
 
@@ -330,6 +353,7 @@ char FileProvider::ID = 0;
 char ProcessGDBRemoteProvider::ID = 0;
 char ProviderBase::ID = 0;
 char VersionProvider::ID = 0;
+char WorkingDirectoryProvider::ID = 0;
 const char *CommandProvider::Info::file = "command-interpreter.yaml";
 const char *CommandProvider::Info::name = "command-interpreter";
 const char *FileProvider::Info::file = "files.yaml";
@@ -338,3 +362,5 @@ const char *ProcessGDBRemoteProvider::Info::file = "gdb-remote.yaml";
 const char *ProcessGDBRemoteProvider::Info::name = "gdb-remote";
 const char *VersionProvider::Info::file = "version.txt";
 const char *VersionProvider::Info::name = "version";
+const char *WorkingDirectoryProvider::Info::file = "cwd.txt";
+const char *WorkingDirectoryProvider::Info::name = "cwd";

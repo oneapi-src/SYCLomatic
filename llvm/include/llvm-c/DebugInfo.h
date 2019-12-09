@@ -17,10 +17,9 @@
 #define LLVM_C_DEBUGINFO_H
 
 #include "llvm-c/Core.h"
+#include "llvm-c/ExternC.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+LLVM_C_EXTERN_C_BEGIN
 
 /**
  * Debug info flags.
@@ -168,6 +167,19 @@ typedef unsigned LLVMMetadataKind;
  * An LLVM DWARF type encoding.
  */
 typedef unsigned LLVMDWARFTypeEncoding;
+
+/**
+ * Describes the kind of macro declaration used for LLVMDIBuilderCreateMacro.
+ * @see llvm::dwarf::MacinfoRecordType
+ * @note Values are from DW_MACINFO_* constants in the DWARF specification.
+ */
+typedef enum {
+  LLVMDWARFMacinfoRecordTypeDefine = 0x01,
+  LLVMDWARFMacinfoRecordTypeMacro = 0x02,
+  LLVMDWARFMacinfoRecordTypeStartFile = 0x03,
+  LLVMDWARFMacinfoRecordTypeEndFile = 0x04,
+  LLVMDWARFMacinfoRecordTypeVendorExt = 0xff
+} LLVMDWARFMacinfoRecordType;
 
 /**
  * The current debug metadata version number.
@@ -522,6 +534,38 @@ LLVMDIBuilderCreateSubroutineType(LLVMDIBuilderRef Builder,
                                   LLVMDIFlags Flags);
 
 /**
+ * Create debugging information entry for a macro.
+ * @param Builder         The DIBuilder.
+ * @param ParentMacroFile Macro parent (could be NULL).
+ * @param Line            Source line number where the macro is defined.
+ * @param RecordType      DW_MACINFO_define or DW_MACINFO_undef.
+ * @param Name            Macro name.
+ * @param NameLen         Macro name length.
+ * @param Value           Macro value.
+ * @param ValueLen        Macro value length.
+ */
+LLVMMetadataRef LLVMDIBuilderCreateMacro(LLVMDIBuilderRef Builder,
+                                         LLVMMetadataRef ParentMacroFile,
+                                         unsigned Line,
+                                         LLVMDWARFMacinfoRecordType RecordType,
+                                         const char *Name, size_t NameLen,
+                                         const char *Value, size_t ValueLen);
+
+/**
+ * Create debugging information temporary entry for a macro file.
+ * List of macro node direct children will be calculated by DIBuilder,
+ * using the \p ParentMacroFile relationship.
+ * @param Builder         The DIBuilder.
+ * @param ParentMacroFile Macro parent (could be NULL).
+ * @param Line            Source line number where the macro file is included.
+ * @param File            File descriptor containing the name of the macro file.
+ */
+LLVMMetadataRef
+LLVMDIBuilderCreateTempMacroFile(LLVMDIBuilderRef Builder,
+                                 LLVMMetadataRef ParentMacroFile, unsigned Line,
+                                 LLVMMetadataRef File);
+
+/**
  * Create debugging information entry for an enumerator.
  * @param Builder        The DIBuilder.
  * @param Name           Enumerator name.
@@ -830,7 +874,7 @@ LLVMMetadataRef
 LLVMDIBuilderCreateTypedef(LLVMDIBuilderRef Builder, LLVMMetadataRef Type,
                            const char *Name, size_t NameLen,
                            LLVMMetadataRef File, unsigned LineNo,
-                           LLVMMetadataRef Scope);
+                           LLVMMetadataRef Scope, uint32_t AlignInBits);
 
 /**
  * Create debugging information entry to establish inheritance relationship
@@ -1308,8 +1352,6 @@ void LLVMInstructionSetDebugLoc(LLVMValueRef Inst, LLVMMetadataRef Loc);
  */
 LLVMMetadataKind LLVMGetMetadataKind(LLVMMetadataRef Metadata);
 
-#ifdef __cplusplus
-} /* end extern "C" */
-#endif
+LLVM_C_EXTERN_C_END
 
 #endif

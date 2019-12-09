@@ -6,10 +6,11 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "tests/scudo_unit_test.h"
+
 #include "quarantine.h"
 
-#include "gtest/gtest.h"
-
+#include <pthread.h>
 #include <stdlib.h>
 
 static void *FakePtr = reinterpret_cast<void *>(0xFA83FA83);
@@ -213,7 +214,9 @@ TEST(ScudoQuarantineTest, GlobalQuarantine) {
   Quarantine.drainAndRecycle(&Cache, Cb);
   EXPECT_EQ(Cache.getSize(), 0UL);
 
-  Quarantine.printStats();
+  scudo::ScopedString Str(1024);
+  Quarantine.getStats(&Str);
+  Str.output();
 }
 
 void *populateQuarantine(void *Param) {
@@ -236,5 +239,7 @@ TEST(ScudoQuarantineTest, ThreadedGlobalQuarantine) {
   for (scudo::uptr I = 0; I < NumberOfThreads; I++)
     pthread_join(T[I], 0);
 
-  Quarantine.printStats();
+  scudo::ScopedString Str(1024);
+  Quarantine.getStats(&Str);
+  Str.output();
 }

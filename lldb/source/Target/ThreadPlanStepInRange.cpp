@@ -339,7 +339,7 @@ bool ThreadPlanStepInRange::FrameMatchesAvoidCriteria() {
     if (frame_library) {
       for (size_t i = 0; i < num_libraries; i++) {
         const FileSpec &file_spec(libraries_to_avoid.GetFileSpecAtIndex(i));
-        if (FileSpec::Equal(file_spec, frame_library, false)) {
+        if (FileSpec::Match(file_spec, frame_library)) {
           libraries_say_avoid = true;
           break;
         }
@@ -392,7 +392,7 @@ bool ThreadPlanStepInRange::DefaultShouldStopHereCallback(
   should_stop_here = ThreadPlanShouldStopHere::DefaultShouldStopHereCallback(
       current_plan, flags, operation, status, baton);
   if (!should_stop_here)
-    return should_stop_here;
+    return false;
 
   if (should_stop_here && current_plan->GetKind() == eKindStepInRange &&
       operation == eFrameCompareYounger) {

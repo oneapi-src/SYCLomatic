@@ -245,7 +245,7 @@ enum NodeType : unsigned {
   VICMPHS,
   VICMPHLS,
 
-  // Compare floating-point vector operands 0 and 1 to preoduce the usual 0/-1
+  // Compare floating-point vector operands 0 and 1 to produce the usual 0/-1
   // vector result.  VFCMPE is for "ordered and equal", VFCMPH for "ordered and
   // greater than" and VFCMPHE for "ordered and greater than or equal to".
   VFCMPE,
@@ -404,7 +404,8 @@ public:
   bool isCheapToSpeculateCtlz() const override { return true; }
   EVT getSetCCResultType(const DataLayout &DL, LLVMContext &,
                          EVT) const override;
-  bool isFMAFasterThanFMulAndFAdd(EVT VT) const override;
+  bool isFMAFasterThanFMulAndFAdd(const MachineFunction &MF,
+                                  EVT VT) const override;
   bool isFPImmLegal(const APFloat &Imm, EVT VT,
                     bool ForCodeSize) const override;
   bool isLegalICmpImmediate(int64_t Imm) const override;

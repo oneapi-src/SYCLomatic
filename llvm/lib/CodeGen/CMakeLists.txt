@@ -1,4 +1,4 @@
-add_llvm_library(LLVMCodeGen
+add_llvm_component_library(LLVMCodeGen
   AggressiveAntiDepBreaker.cpp
   AllocationOrder.cpp
   Analysis.cpp
@@ -10,6 +10,7 @@ add_llvm_library(LLVMCodeGen
   BuiltinGCs.cpp
   CalcSpillWeights.cpp
   CallingConvLower.cpp
+  CFGuardLongjmp.cpp
   CFIInstrInserter.cpp
   CodeGen.cpp
   CodeGenPrepare.cpp
@@ -92,6 +93,7 @@ add_llvm_library(LLVMCodeGen
   MachineRegisterInfo.cpp
   MachineScheduler.cpp
   MachineSink.cpp
+  MachineSizeOpts.cpp
   MachineSSAUpdater.cpp
   MachineTraceMetrics.cpp
   MachineVerifier.cpp
@@ -161,6 +163,7 @@ add_llvm_library(LLVMCodeGen
   TargetRegisterInfo.cpp
   TargetSchedule.cpp
   TargetSubtargetInfo.cpp
+  TypePromotion.cpp
   TwoAddressInstructionPass.cpp
   UnreachableBlockElim.cpp
   ValueTypes.cpp

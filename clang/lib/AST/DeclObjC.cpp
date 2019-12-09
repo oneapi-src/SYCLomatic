@@ -775,14 +775,12 @@ ObjCMethodDecl *ObjCInterfaceDecl::lookupPrivateMethod(
 // ObjCMethodDecl
 //===----------------------------------------------------------------------===//
 
-ObjCMethodDecl::ObjCMethodDecl(SourceLocation beginLoc, SourceLocation endLoc,
-                               Selector SelInfo, QualType T,
-                               TypeSourceInfo *ReturnTInfo,
-                               DeclContext *contextDecl, bool isInstance,
-                               bool isVariadic, bool isPropertyAccessor,
-                               bool isImplicitlyDeclared, bool isDefined,
-                               ImplementationControl impControl,
-                               bool HasRelatedResultType)
+ObjCMethodDecl::ObjCMethodDecl(
+    SourceLocation beginLoc, SourceLocation endLoc, Selector SelInfo,
+    QualType T, TypeSourceInfo *ReturnTInfo, DeclContext *contextDecl,
+    bool isInstance, bool isVariadic, bool isPropertyAccessor,
+    bool isSynthesizedAccessorStub, bool isImplicitlyDeclared, bool isDefined,
+    ImplementationControl impControl, bool HasRelatedResultType)
     : NamedDecl(ObjCMethod, contextDecl, beginLoc, SelInfo),
       DeclContext(ObjCMethod), MethodDeclType(T), ReturnTInfo(ReturnTInfo),
       DeclEndLoc(endLoc) {
@@ -793,6 +791,7 @@ ObjCMethodDecl::ObjCMethodDecl(SourceLocation beginLoc, SourceLocation endLoc,
   setInstanceMethod(isInstance);
   setVariadic(isVariadic);
   setPropertyAccessor(isPropertyAccessor);
+  setSynthesizedAccessorStub(isSynthesizedAccessorStub);
   setDefined(isDefined);
   setIsRedeclaration(false);
   setHasRedeclaration(false);
@@ -810,17 +809,22 @@ ObjCMethodDecl *ObjCMethodDecl::Create(
     ASTContext &C, SourceLocation beginLoc, SourceLocation endLoc,
     Selector SelInfo, QualType T, TypeSourceInfo *ReturnTInfo,
     DeclContext *contextDecl, bool isInstance, bool isVariadic,
-    bool isPropertyAccessor, bool isImplicitlyDeclared, bool isDefined,
-    ImplementationControl impControl, bool HasRelatedResultType) {
+    bool isPropertyAccessor, bool isSynthesizedAccessorStub,
+    bool isImplicitlyDeclared, bool isDefined, ImplementationControl impControl,
+    bool HasRelatedResultType) {
   return new (C, contextDecl) ObjCMethodDecl(
       beginLoc, endLoc, SelInfo, T, ReturnTInfo, contextDecl, isInstance,
-      isVariadic, isPropertyAccessor, isImplicitlyDeclared, isDefined,
-      impControl, HasRelatedResultType);
+      isVariadic, isPropertyAccessor, isSynthesizedAccessorStub,
+      isImplicitlyDeclared, isDefined, impControl, HasRelatedResultType);
 }
 
 ObjCMethodDecl *ObjCMethodDecl::CreateDeserialized(ASTContext &C, unsigned ID) {
   return new (C, ID) ObjCMethodDecl(SourceLocation(), SourceLocation(),
                                     Selector(), QualType(), nullptr, nullptr);
+}
+
+bool ObjCMethodDecl::isDirectMethod() const {
+  return hasAttr<ObjCDirectAttr>();
 }
 
 bool ObjCMethodDecl::isThisDeclarationADesignatedInitializer() const {
@@ -1077,7 +1081,7 @@ ObjCMethodFamily ObjCMethodDecl::getMethodFamily() const {
 QualType ObjCMethodDecl::getSelfType(ASTContext &Context,
                                      const ObjCInterfaceDecl *OID,
                                      bool &selfIsPseudoStrong,
-                                     bool &selfIsConsumed) {
+                                     bool &selfIsConsumed) const {
   QualType selfTy;
   selfIsPseudoStrong = false;
   selfIsConsumed = false;
@@ -1306,6 +1310,11 @@ ObjCMethodDecl::findPropertyDecl(bool CheckOverrides) const {
 
   if (isPropertyAccessor()) {
     const auto *Container = cast<ObjCContainerDecl>(getParent());
+    // For accessor stubs, go back to the interface.
+    if (auto *ImplDecl = dyn_cast<ObjCImplDecl>(Container))
+      if (isSynthesizedAccessorStub())
+        Container = ImplDecl->getClassInterface();
+
     bool IsGetter = (NumArgs == 0);
     bool IsInstance = isInstanceMethod();
 
@@ -1356,6 +1365,15 @@ ObjCMethodDecl::findPropertyDecl(bool CheckOverrides) const {
         if (const auto *Found = findMatchingProperty(Ext))
           return Found;
       }
+    }
+
+    assert(isSynthesizedAccessorStub() && "expected an accessor stub");
+    for (const auto *Cat : ClassDecl->known_categories()) {
+      if (Cat == Container)
+        continue;
+
+      if (const auto *Found = findMatchingProperty(Cat))
+        return Found;
     }
 
     llvm_unreachable("Marked as a property accessor but no property found!");

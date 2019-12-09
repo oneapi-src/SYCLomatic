@@ -2,9 +2,9 @@
 // REQUIRES: powerpc-registered-target
 
 // RUN: %clang -S -emit-llvm -target powerpc64-gnu-linux -mcpu=pwr8 -ffreestanding -DNO_WARN_X86_INTRINSICS %s \
-// RUN:   -fno-discard-value-names -mllvm -disable-llvm-optzns -o - | llvm-cxxfilt | FileCheck %s --check-prefixes=CHECK,CHECK-BE
+// RUN:   -fno-discard-value-names -mllvm -disable-llvm-optzns -o - | llvm-cxxfilt -n | FileCheck %s --check-prefixes=CHECK,CHECK-BE
 // RUN: %clang -S -emit-llvm -target powerpc64le-gnu-linux -mcpu=pwr8 -ffreestanding -DNO_WARN_X86_INTRINSICS %s \
-// RUN:   -fno-discard-value-names -mllvm -disable-llvm-optzns -o - | llvm-cxxfilt | FileCheck %s --check-prefixes=CHECK,CHECK-LE
+// RUN:   -fno-discard-value-names -mllvm -disable-llvm-optzns -o - | llvm-cxxfilt -n | FileCheck %s --check-prefixes=CHECK,CHECK-LE
 
 #include <tmmintrin.h>
 
@@ -108,7 +108,8 @@ test_alignr() {
 // CHECK: store <2 x i64> [[REG61]], <2 x i64>* [[REG65:[0-9a-zA-Z_%.]+]], align 16
 // CHECK-NEXT: store <2 x i64> [[REG62]], <2 x i64>* [[REG66:[0-9a-zA-Z_%.]+]], align 16
 // CHECK-NEXT: store i32 [[REG63]], i32* [[REG64:[0-9a-zA-Z_%.]+]], align 4
-// CHECK-NEXT: br i1 false, label %[[REG67:[0-9a-zA-Z_%.]+]], label %[[REG68:[0-9a-zA-Z_%.]+]]
+// CHECK: %[[REG64b:[0-9a-zA-Z_%.]+]] = call i1 @llvm.is.constant.i32(i32 %0)
+// CHECK-NEXT: br i1 %[[REG64b]], label %[[REG67:[0-9a-zA-Z_%.]+]], label %[[REG68:[0-9a-zA-Z_%.]+]]
 
 // CHECK: [[REG67]]:
 // CHECK-NEXT: [[REG69:[0-9a-zA-Z_%.]+]] = load i32, i32* [[REG64]], align 4

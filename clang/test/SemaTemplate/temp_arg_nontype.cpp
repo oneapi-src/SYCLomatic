@@ -445,10 +445,10 @@ namespace nondependent_default_arg_ordering {
   template<typename A> void f(X<A>); // expected-note {{candidate}}
   template<typename A> void f(X<A, &m>); // expected-note {{candidate}}
   template<typename A, A B> void f(X<A, B>); // expected-note 2{{candidate}}
-  template<template<typename U, U> class T, typename A, int *B> void f(T<A, B>); // expected-note 2{{candidate}}
+  template<template<typename U, U> class T, typename A, int *B> void f(T<A, B>);
   void g() {
     // FIXME: The first and second function templates above should be
-    // considered more specialized than the last two, but during partial
+    // considered more specialized than the third, but during partial
     // ordering we fail to check that we actually deduced template arguments
     // that make the deduced A identical to A.
     X<int *, &n> x; f(x); // expected-error {{ambiguous}}
@@ -492,4 +492,17 @@ namespace instantiation_dependent {
   template<typename T, int (*)[sizeof(sizeof(T))]> void g(int);
   template<typename T, int (*)[sizeof(sizeof(int))]> int &g(...);
   int &rg = g<struct incomplete, &arr>(0);
+}
+
+namespace complete_array_from_incomplete {
+  template <typename T, const char* const A[static_cast<int>(T::kNum)]>
+  class Base {};
+  template <class T, const char* const A[]>
+  class Derived : public Base<T, A> {};
+
+  struct T {
+    static const int kNum = 3;
+  };
+  extern const char *const kStrs[3] = {};
+  Derived<T, kStrs> d;
 }

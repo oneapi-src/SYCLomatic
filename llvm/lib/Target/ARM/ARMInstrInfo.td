@@ -51,8 +51,6 @@ def SDT_ARMAnd     : SDTypeProfile<1, 2,
                                     SDTCisVT<2, i32>]>;
 
 def SDT_ARMCmp     : SDTypeProfile<0, 2, [SDTCisSameAs<0, 1>]>;
-def SDT_ARMFCmp    : SDTypeProfile<0, 3, [SDTCisSameAs<0, 1>,
-                                          SDTCisVT<2, i32>]>;
 
 def SDT_ARMPICAdd  : SDTypeProfile<1, 2, [SDTCisSameAs<0, 1>,
                                           SDTCisPtrTy<1>, SDTCisVT<2, i32>]>;
@@ -240,6 +238,11 @@ def ARMsmlalbt      : SDNode<"ARMISD::SMLALBT", SDT_LongMac, []>;
 def ARMsmlaltb      : SDNode<"ARMISD::SMLALTB", SDT_LongMac, []>;
 def ARMsmlaltt      : SDNode<"ARMISD::SMLALTT", SDT_LongMac, []>;
 
+def ARMqadd8b       : SDNode<"ARMISD::QADD8b", SDT_ARMAnd, []>;
+def ARMqsub8b       : SDNode<"ARMISD::QSUB8b", SDT_ARMAnd, []>;
+def ARMqadd16b      : SDNode<"ARMISD::QADD16b", SDT_ARMAnd, []>;
+def ARMqsub16b      : SDNode<"ARMISD::QSUB16b", SDT_ARMAnd, []>;
+
 // Vector operations shared between NEON and MVE
 
 def ARMvdup      : SDNode<"ARMISD::VDUP", SDTypeProfile<1, 1, [SDTCisVec<0>]>>;
@@ -293,6 +296,28 @@ def ARMLoopDec  : SDNode<"ARMISD::LOOP_DEC", SDTIntBinOp, [SDNPHasChain]>;
 class RegConstraint<string C> {
   string Constraints = C;
 }
+
+// ARMCC condition codes. See ARMCC::CondCodes
+def ARMCCeq : PatLeaf<(i32 0)>;
+def ARMCCne : PatLeaf<(i32 1)>;
+def ARMCChs : PatLeaf<(i32 2)>;
+def ARMCClo : PatLeaf<(i32 3)>;
+def ARMCCmi : PatLeaf<(i32 4)>;
+def ARMCCpl : PatLeaf<(i32 5)>;
+def ARMCCvs : PatLeaf<(i32 6)>;
+def ARMCCvc : PatLeaf<(i32 7)>;
+def ARMCChi : PatLeaf<(i32 8)>;
+def ARMCCls : PatLeaf<(i32 9)>;
+def ARMCCge : PatLeaf<(i32 10)>;
+def ARMCClt : PatLeaf<(i32 11)>;
+def ARMCCgt : PatLeaf<(i32 12)>;
+def ARMCCle : PatLeaf<(i32 13)>;
+def ARMCCal : PatLeaf<(i32 14)>;
+
+// VCC predicates. See ARMVCC::VPTCodes
+def ARMVCCNone : PatLeaf<(i32 0)>;
+def ARMVCCThen : PatLeaf<(i32 1)>;
+def ARMVCCElse : PatLeaf<(i32 2)>;
 
 //===----------------------------------------------------------------------===//
 //  ARM specific transformation functions and pattern fragments.
@@ -3751,6 +3776,23 @@ let DecoderMethod = "DecodeQADDInstruction" in
   def QADD    : AAIRevOpr<0b00010000, 0b00000101, "qadd",
                 [(set GPRnopc:$Rd, (int_arm_qadd GPRnopc:$Rm, GPRnopc:$Rn))]>;
 }
+
+def : ARMV5TEPat<(saddsat GPR:$a, GPR:$b),
+                 (QADD GPR:$a, GPR:$b)>;
+def : ARMV5TEPat<(ssubsat GPR:$a, GPR:$b),
+                 (QSUB GPR:$a, GPR:$b)>;
+def : ARMV5TEPat<(saddsat(saddsat rGPR:$Rm, rGPR:$Rm), rGPR:$Rn),
+                 (QDADD rGPR:$Rm, rGPR:$Rn)>;
+def : ARMV5TEPat<(ssubsat rGPR:$Rm, (saddsat rGPR:$Rn, rGPR:$Rn)),
+                 (QDSUB rGPR:$Rm, rGPR:$Rn)>;
+def : ARMV6Pat<(ARMqadd8b rGPR:$Rm, rGPR:$Rn),
+               (QADD8 rGPR:$Rm, rGPR:$Rn)>;
+def : ARMV6Pat<(ARMqsub8b rGPR:$Rm, rGPR:$Rn),
+               (QSUB8 rGPR:$Rm, rGPR:$Rn)>;
+def : ARMV6Pat<(ARMqadd16b rGPR:$Rm, rGPR:$Rn),
+               (QADD16 rGPR:$Rm, rGPR:$Rn)>;
+def : ARMV6Pat<(ARMqsub16b rGPR:$Rm, rGPR:$Rn),
+               (QSUB16 rGPR:$Rm, rGPR:$Rn)>;
 
 def UQADD16 : AAIIntrinsic<0b01100110, 0b11110001, "uqadd16", int_arm_uqadd16>;
 def UQADD8  : AAIIntrinsic<0b01100110, 0b11111001, "uqadd8", int_arm_uqadd8>;

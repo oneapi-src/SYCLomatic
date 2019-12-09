@@ -59,6 +59,7 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Use.h"
 #include "llvm/IR/Value.h"
+#include "llvm/InitializePasses.h"
 #include "llvm/MC/MCSectionMachO.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/Casting.h"
@@ -1808,6 +1809,8 @@ bool ModuleAddressSanitizer::ShouldInstrumentGlobal(GlobalVariable *G) {
   if (GlobalsMD.get(G).IsBlacklisted) return false;
   if (!Ty->isSized()) return false;
   if (!G->hasInitializer()) return false;
+  // Only instrument globals of default address spaces
+  if (G->getAddressSpace()) return false;
   if (GlobalWasGeneratedByCompiler(G)) return false; // Our own globals.
   // Two problems with thread-locals:
   //   - The address of the main thread's copy can't be computed at link-time.
@@ -2054,7 +2057,7 @@ void ModuleAddressSanitizer::InstrumentGlobalsCOFF(
     unsigned SizeOfGlobalStruct = DL.getTypeAllocSize(Initializer->getType());
     assert(isPowerOf2_32(SizeOfGlobalStruct) &&
            "global metadata will not be padded appropriately");
-    Metadata->setAlignment(SizeOfGlobalStruct);
+    Metadata->setAlignment(assumeAligned(SizeOfGlobalStruct));
 
     SetComdatForGlobalMetadata(G, Metadata, "");
   }
@@ -2191,7 +2194,7 @@ void ModuleAddressSanitizer::InstrumentGlobalsWithMetadataArray(
       M, ArrayOfGlobalStructTy, false, GlobalVariable::InternalLinkage,
       ConstantArray::get(ArrayOfGlobalStructTy, MetadataInitializers), "");
   if (Mapping.Scale > 3)
-    AllGlobals->setAlignment(1ULL << Mapping.Scale);
+    AllGlobals->setAlignment(Align(1ULL << Mapping.Scale));
 
   IRB.CreateCall(AsanRegisterGlobals,
                  {IRB.CreatePointerCast(AllGlobals, IntptrTy),
@@ -2291,7 +2294,7 @@ bool ModuleAddressSanitizer::InstrumentGlobals(IRBuilder<> &IRB, Module &M,
                            "", G, G->getThreadLocalMode());
     NewGlobal->copyAttributesFrom(G);
     NewGlobal->setComdat(G->getComdat());
-    NewGlobal->setAlignment(MinRZ);
+    NewGlobal->setAlignment(MaybeAlign(MinRZ));
     // Don't fold globals with redzones. ODR violation detector and redzone
     // poisoning implicitly creates a dependence on the global's address, so it
     // is no longer valid for it to be marked unnamed_addr.
@@ -2359,7 +2362,7 @@ bool ModuleAddressSanitizer::InstrumentGlobals(IRBuilder<> &IRB, Module &M,
       // Set meaningful attributes for indicator symbol.
       ODRIndicatorSym->setVisibility(NewGlobal->getVisibility());
       ODRIndicatorSym->setDLLStorageClass(NewGlobal->getDLLStorageClass());
-      ODRIndicatorSym->setAlignment(1);
+      ODRIndicatorSym->setAlignment(Align::None());
       ODRIndicator = ODRIndicatorSym;
     }
 
@@ -2439,11 +2442,10 @@ bool ModuleAddressSanitizer::instrumentModule(Module &M) {
       /*InitArgs=*/{}, VersionCheckName);
 
   bool CtorComdat = true;
-  bool Changed = false;
   // TODO(glider): temporarily disabled globals instrumentation for KASan.
   if (ClGlobals) {
     IRBuilder<> IRB(AsanCtorFunction->getEntryBlock().getTerminator());
-    Changed |= InstrumentGlobals(IRB, M, &CtorComdat);
+    InstrumentGlobals(IRB, M, &CtorComdat);
   }
 
   const uint64_t Priority = GetCtorAndDtorPriority(TargetTriple);
@@ -2464,7 +2466,7 @@ bool ModuleAddressSanitizer::instrumentModule(Module &M) {
       appendToGlobalDtors(M, AsanDtorFunction, Priority);
   }
 
-  return Changed;
+  return true;
 }
 
 void AddressSanitizer::initializeCallbacks(Module &M) {
@@ -2994,7 +2996,6 @@ void FunctionStackPoisoner::processStaticAllocas() {
 
   Instruction *InsBefore = AllocaVec[0];
   IRBuilder<> IRB(InsBefore);
-  IRB.SetCurrentDebugLocation(EntryDebugLocation);
 
   // Make sure non-instrumented allocas stay in the entry block. Otherwise,
   // debug info is broken, because only entry-block allocas are treated as
@@ -3089,14 +3090,12 @@ void FunctionStackPoisoner::processStaticAllocas() {
     Instruction *Term =
         SplitBlockAndInsertIfThen(UseAfterReturnIsEnabled, InsBefore, false);
     IRBuilder<> IRBIf(Term);
-    IRBIf.SetCurrentDebugLocation(EntryDebugLocation);
     StackMallocIdx = StackMallocSizeClass(LocalStackSize);
     assert(StackMallocIdx <= kMaxAsanStackMallocSizeClass);
     Value *FakeStackValue =
         IRBIf.CreateCall(AsanStackMallocFunc[StackMallocIdx],
                          ConstantInt::get(IntptrTy, LocalStackSize));
     IRB.SetInsertPoint(InsBefore);
-    IRB.SetCurrentDebugLocation(EntryDebugLocation);
     FakeStack = createPHI(IRB, UseAfterReturnIsEnabled, FakeStackValue, Term,
                           ConstantInt::get(IntptrTy, 0));
 
@@ -3104,14 +3103,11 @@ void FunctionStackPoisoner::processStaticAllocas() {
         IRB.CreateICmpEQ(FakeStack, Constant::getNullValue(IntptrTy));
     Term = SplitBlockAndInsertIfThen(NoFakeStack, InsBefore, false);
     IRBIf.SetInsertPoint(Term);
-    IRBIf.SetCurrentDebugLocation(EntryDebugLocation);
     Value *AllocaValue =
         DoDynamicAlloca ? createAllocaForLayout(IRBIf, L, true) : StaticAlloca;
 
     IRB.SetInsertPoint(InsBefore);
-    IRB.SetCurrentDebugLocation(EntryDebugLocation);
     LocalStackBase = createPHI(IRB, NoFakeStack, AllocaValue, Term, FakeStack);
-    IRB.SetCurrentDebugLocation(EntryDebugLocation);
     IRB.CreateStore(LocalStackBase, LocalStackBaseAlloca);
     DIExprFlags |= DIExpression::DerefBefore;
   } else {

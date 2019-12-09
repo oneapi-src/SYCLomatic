@@ -18,6 +18,7 @@
 #include "clang/AST/Decl.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/StmtCXX.h"
+#include "clang/Basic/Builtins.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Sema/Initialization.h"
 #include "clang/Sema/Overload.h"
@@ -83,7 +84,7 @@ static QualType lookupPromiseType(Sema &S, const FunctionDecl *FD,
       //      ref-qualifier or with the & ref-qualifier
       //  -- "rvalue reference to cv X" for functions declared with the &&
       //      ref-qualifier
-      QualType T = MD->getThisType()->getAs<PointerType>()->getPointeeType();
+      QualType T = MD->getThisType()->castAs<PointerType>()->getPointeeType();
       T = FnType->getRefQualifier() == RQ_RValue
               ? S.Context.getRValueReferenceType(T)
               : S.Context.getLValueReferenceType(T, /*SpelledAsLValue*/ true);
@@ -1526,8 +1527,8 @@ bool Sema::buildCoroutineParameterMoves(SourceLocation Loc) {
   auto *FD = cast<FunctionDecl>(CurContext);
 
   auto *ScopeInfo = getCurFunction();
-  assert(ScopeInfo->CoroutineParameterMoves.empty() &&
-         "Should not build parameter moves twice");
+  if (!ScopeInfo->CoroutineParameterMoves.empty())
+    return false;
 
   for (auto *PD : FD->parameters()) {
     if (PD->getType()->isDependentType())

@@ -12,7 +12,7 @@ static_library("profile") {
   configs -= [ "//llvm/utils/gn/build:thin_archive" ]
 
   cflags = []
-  if (target_os != "win") {
+  if (current_os != "win") {
     cflags = [
       "-fPIC",
       "-Wno-pedantic",
@@ -24,6 +24,11 @@ static_library("profile") {
     #     cannot be initialized using address of automatic variable
     cflags += [ "/wd4221" ]
   }
+
+  include_dirs = [
+    "..",
+    "../../include",
+  ]
 
   sources = [
     "GCDAProfiling.c",
@@ -47,14 +52,14 @@ static_library("profile") {
     "InstrProfilingValue.c",
     "InstrProfilingWriter.c",
   ]
-  if (target_os == "win") {
+  if (current_os == "win") {
     sources += [
       "WindowsMMap.c",
       "WindowsMMap.h",
     ]
   }
 
-  if (target_os != "win") {
+  if (current_os != "win") {
     defines = [
       "COMPILER_RT_TARGET_HAS_ATOMICS",
       "COMPILER_RT_TARGET_HAS_FCNTL_LCK",

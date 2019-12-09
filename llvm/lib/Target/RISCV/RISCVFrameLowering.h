@@ -22,7 +22,7 @@ class RISCVFrameLowering : public TargetFrameLowering {
 public:
   explicit RISCVFrameLowering(const RISCVSubtarget &STI)
       : TargetFrameLowering(StackGrowsDown,
-                            /*StackAlignment=*/16,
+                            /*StackAlignment=*/Align(16),
                             /*LocalAreaOffset=*/0),
         STI(STI) {}
 
@@ -39,6 +39,8 @@ public:
                                            RegScavenger *RS) const override;
 
   bool hasFP(const MachineFunction &MF) const override;
+
+  bool hasBP(const MachineFunction &MF) const;
 
   bool hasReservedCallFrame(const MachineFunction &MF) const override;
   MachineBasicBlock::iterator

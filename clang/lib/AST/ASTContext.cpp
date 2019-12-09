@@ -163,7 +163,9 @@ static SourceLocation getDeclLocForCommentSearch(const Decl *D,
   if (isa<ObjCMethodDecl>(D) || isa<ObjCContainerDecl>(D) ||
       isa<ObjCPropertyDecl>(D) ||
       isa<RedeclarableTemplateDecl>(D) ||
-      isa<ClassTemplateSpecializationDecl>(D))
+      isa<ClassTemplateSpecializationDecl>(D) ||
+      // Allow association with Y across {} in `typedef struct X {} Y`.
+      isa<TypedefDecl>(D))
     return D->getBeginLoc();
   else {
     const SourceLocation DeclLoc = D->getLocation();
@@ -738,7 +740,7 @@ ASTContext::getCanonicalTemplateTemplateParmDecl(
                                            cast<TemplateTemplateParmDecl>(*P)));
   }
 
-  assert(!TTP->getRequiresClause() &&
+  assert(!TTP->getTemplateParameters()->getRequiresClause() &&
          "Unexpected requires-clause on template template-parameter");
   Expr *const CanonRequiresClause = nullptr;
 
@@ -769,6 +771,7 @@ CXXABI *ASTContext::createCXXABI(const TargetInfo &T) {
   if (!LangOpts.CPlusPlus) return nullptr;
 
   switch (T.getCXXABI().getKind()) {
+  case TargetCXXABI::Fuchsia:
   case TargetCXXABI::GenericARM: // Same as Itanium at this level
   case TargetCXXABI::iOS:
   case TargetCXXABI::iOS64:
@@ -879,10 +882,6 @@ ASTContext::~ASTContext() {
                                                     AEnd = DeclAttrs.end();
        A != AEnd; ++A)
     A->second->~AttrVec();
-
-  for (std::pair<const MaterializeTemporaryExpr *, APValue *> &MTVPair :
-       MaterializedTemporaryValues)
-    MTVPair.second->~APValue();
 
   for (const auto &Value : ModuleInitializers)
     Value.second->~PerModuleInitializers();
@@ -3882,10 +3881,11 @@ QualType ASTContext::getFunctionTypeInternal(
   auto ESH = FunctionProtoType::getExceptionSpecSize(
       EPI.ExceptionSpec.Type, EPI.ExceptionSpec.Exceptions.size());
   size_t Size = FunctionProtoType::totalSizeToAlloc<
-      QualType, FunctionType::FunctionTypeExtraBitfields,
+      QualType, SourceLocation, FunctionType::FunctionTypeExtraBitfields,
       FunctionType::ExceptionType, Expr *, FunctionDecl *,
       FunctionProtoType::ExtParameterInfo, Qualifiers>(
-      NumArgs, FunctionProtoType::hasExtraBitfields(EPI.ExceptionSpec.Type),
+      NumArgs, EPI.Variadic,
+      FunctionProtoType::hasExtraBitfields(EPI.ExceptionSpec.Type),
       ESH.NumExceptionType, ESH.NumExprPtr, ESH.NumFunctionDeclPtr,
       EPI.ExtParameterInfos ? NumArgs : 0,
       EPI.TypeQuals.hasNonFastQualifiers() ? 1 : 0);
@@ -4719,8 +4719,7 @@ ASTContext::applyObjCProtocolQualifiers(QualType type,
 
 QualType
 ASTContext::getObjCTypeParamType(const ObjCTypeParamDecl *Decl,
-                           ArrayRef<ObjCProtocolDecl *> protocols,
-                           QualType Canonical) const {
+                                 ArrayRef<ObjCProtocolDecl *> protocols) const {
   // Look in the folding set for an existing type.
   llvm::FoldingSetNodeID ID;
   ObjCTypeParamType::Profile(ID, Decl, protocols);
@@ -4729,16 +4728,14 @@ ASTContext::getObjCTypeParamType(const ObjCTypeParamDecl *Decl,
       ObjCTypeParamTypes.FindNodeOrInsertPos(ID, InsertPos))
     return QualType(TypeParam, 0);
 
-  if (Canonical.isNull()) {
-    // We canonicalize to the underlying type.
-    Canonical = getCanonicalType(Decl->getUnderlyingType());
-    if (!protocols.empty()) {
-      // Apply the protocol qualifers.
-      bool hasError;
-      Canonical = getCanonicalType(applyObjCProtocolQualifiers(
-          Canonical, protocols, hasError, true /*allowOnPointerType*/));
-      assert(!hasError && "Error when apply protocol qualifier to bound type");
-    }
+  // We canonicalize to the underlying type.
+  QualType Canonical = getCanonicalType(Decl->getUnderlyingType());
+  if (!protocols.empty()) {
+    // Apply the protocol qualifers.
+    bool hasError;
+    Canonical = getCanonicalType(applyObjCProtocolQualifiers(
+        Canonical, protocols, hasError, true /*allowOnPointerType*/));
+    assert(!hasError && "Error when apply protocol qualifier to bound type");
   }
 
   unsigned size = sizeof(ObjCTypeParamType);
@@ -8033,13 +8030,14 @@ bool ASTContext::ObjCQualifiedClassTypesAreCompatible(
 bool ASTContext::ObjCQualifiedIdTypesAreCompatible(
     const ObjCObjectPointerType *lhs, const ObjCObjectPointerType *rhs,
     bool compare) {
-  // Allow id<P..> and an 'id' or void* type in all cases.
-  if (lhs->isVoidPointerType() ||
-      lhs->isObjCIdType() || lhs->isObjCClassType())
+  // Allow id<P..> and an 'id' in all cases.
+  if (lhs->isObjCIdType() || rhs->isObjCIdType())
     return true;
-  else if (rhs->isVoidPointerType() ||
-           rhs->isObjCIdType() || rhs->isObjCClassType())
-    return true;
+
+  // Don't allow id<P..> to convert to Class or Class<P..> in either direction.
+  if (lhs->isObjCClassType() || lhs->isObjCQualifiedClassType() ||
+      rhs->isObjCClassType() || rhs->isObjCQualifiedClassType())
+    return false;
 
   if (lhs->isObjCQualifiedIdType()) {
     if (rhs->qual_empty()) {
@@ -8150,9 +8148,8 @@ bool ASTContext::canAssignObjCInterfaces(const ObjCObjectPointerType *LHSOPT,
   const ObjCObjectType* LHS = LHSOPT->getObjectType();
   const ObjCObjectType* RHS = RHSOPT->getObjectType();
 
-  // If either type represents the built-in 'id' or 'Class' types, return true.
-  if (LHS->isObjCUnqualifiedIdOrClass() ||
-      RHS->isObjCUnqualifiedIdOrClass())
+  // If either type represents the built-in 'id' type, return true.
+  if (LHS->isObjCUnqualifiedId() || RHS->isObjCUnqualifiedId())
     return true;
 
   // Function object that propagates a successful result or handles
@@ -8170,12 +8167,20 @@ bool ASTContext::canAssignObjCInterfaces(const ObjCObjectPointerType *LHSOPT,
                                    LHSOPT->stripObjCKindOfTypeAndQuals(*this));
   };
 
+  // Casts from or to id<P> are allowed when the other side has compatible
+  // protocols.
   if (LHS->isObjCQualifiedId() || RHS->isObjCQualifiedId()) {
     return finish(ObjCQualifiedIdTypesAreCompatible(LHSOPT, RHSOPT, false));
   }
 
+  // Verify protocol compatibility for casts from Class<P1> to Class<P2>.
   if (LHS->isObjCQualifiedClass() && RHS->isObjCQualifiedClass()) {
     return finish(ObjCQualifiedClassTypesAreCompatible(LHSOPT, RHSOPT));
+  }
+
+  // Casts from Class to Class<Foo>, or vice-versa, are allowed.
+  if (LHS->isObjCClass() && RHS->isObjCClass()) {
+    return true;
   }
 
   // If we have 2 user-defined types, fall into that path.
@@ -10174,6 +10179,7 @@ MangleContext *ASTContext::createMangleContext(const TargetInfo *T) {
   if (!T)
     T = Target;
   switch (T->getCXXABI().getKind()) {
+  case TargetCXXABI::Fuchsia:
   case TargetCXXABI::GenericAArch64:
   case TargetCXXABI::GenericItanium:
   case TargetCXXABI::GenericARM:
@@ -10270,6 +10276,16 @@ ASTContext::getManglingNumberContext(const DeclContext *DC) {
   return *MCtx;
 }
 
+MangleNumberingContext &
+ASTContext::getManglingNumberContext(NeedExtraManglingDecl_t, const Decl *D) {
+  assert(LangOpts.CPlusPlus); // We don't need mangling numbers for plain C.
+  std::unique_ptr<MangleNumberingContext> &MCtx =
+      ExtraMangleNumberingContexts[D];
+  if (!MCtx)
+    MCtx = createMangleNumberingContext();
+  return *MCtx;
+}
+
 std::unique_ptr<MangleNumberingContext>
 ASTContext::createMangleNumberingContext() const {
   return ABI->createMangleNumberingContext();
@@ -10316,21 +10332,6 @@ unsigned ASTContext::getParameterIndex(const ParmVarDecl *D) const {
   assert(I != ParamIndices.end() &&
          "ParmIndices lacks entry set by ParmVarDecl");
   return I->second;
-}
-
-APValue *
-ASTContext::getMaterializedTemporaryValue(const MaterializeTemporaryExpr *E,
-                                          bool MayCreate) {
-  assert(E && E->getStorageDuration() == SD_Static &&
-         "don't need to cache the computed value for this temporary");
-  if (MayCreate) {
-    APValue *&MTVI = MaterializedTemporaryValues[E];
-    if (!MTVI)
-      MTVI = new (*this) APValue;
-    return MTVI;
-  }
-
-  return MaterializedTemporaryValues.lookup(E);
 }
 
 QualType ASTContext::getStringLiteralArrayType(QualType EltTy,

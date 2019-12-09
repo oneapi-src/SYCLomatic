@@ -203,8 +203,10 @@ private:
   // Analyze a combined offset from an amdgcn_buffer_ intrinsic and store the
   // three offsets (voffset, soffset and instoffset) into the SDValue[3] array
   // pointed to by Offsets.
-  void setBufferOffsets(SDValue CombinedOffset, SelectionDAG &DAG,
-                        SDValue *Offsets, unsigned Align = 4) const;
+  /// \returns 0 If there is a non-constant offset or if the offset is 0.
+  /// Otherwise returns the constant offset.
+  unsigned setBufferOffsets(SDValue CombinedOffset, SelectionDAG &DAG,
+                           SDValue *Offsets, unsigned Align = 4) const;
 
   // Handle 8 bit and 16 bit buffer loads
   SDValue handleByteShortBufferLoads(SelectionDAG &DAG, EVT LoadVT, SDLoc DL,
@@ -220,7 +222,8 @@ public:
 
   const GCNSubtarget *getSubtarget() const;
 
-  bool isFPExtFoldable(unsigned Opcode, EVT DestVT, EVT SrcVT) const override;
+  bool isFPExtFoldable(const SelectionDAG &DAG, unsigned Opcode, EVT DestVT,
+                       EVT SrcVT) const override;
 
   bool isShuffleMaskLegal(ArrayRef<int> /*Mask*/, EVT /*VT*/) const override;
 
@@ -258,6 +261,14 @@ public:
 
   bool isMemOpUniform(const SDNode *N) const;
   bool isMemOpHasNoClobberedMemOperand(const SDNode *N) const;
+
+  static bool isFlatGlobalAddrSpace(unsigned AS) {
+    return AS == AMDGPUAS::GLOBAL_ADDRESS ||
+           AS == AMDGPUAS::FLAT_ADDRESS ||
+           AS == AMDGPUAS::CONSTANT_ADDRESS ||
+           AS > AMDGPUAS::MAX_AMDGPU_ADDRESS;
+  }
+
   bool isNoopAddrSpaceCast(unsigned SrcAS, unsigned DestAS) const override;
   bool isFreeAddrSpaceCast(unsigned SrcAS, unsigned DestAS) const override;
 
@@ -338,7 +349,11 @@ public:
   EVT getSetCCResultType(const DataLayout &DL, LLVMContext &Context,
                          EVT VT) const override;
   MVT getScalarShiftAmountTy(const DataLayout &, EVT) const override;
-  bool isFMAFasterThanFMulAndFAdd(EVT VT) const override;
+  bool isFMAFasterThanFMulAndFAdd(const MachineFunction &MF,
+                                  EVT VT) const override;
+  bool isFMADLegalForFAddFSub(const SelectionDAG &DAG,
+                              const SDNode *N) const override;
+
   SDValue splitUnaryVectorOp(SDValue Op, SelectionDAG &DAG) const;
   SDValue splitBinaryVectorOp(SDValue Op, SelectionDAG &DAG) const;
   SDValue splitTernaryVectorOp(SDValue Op, SelectionDAG &DAG) const;
@@ -378,7 +393,7 @@ public:
 
   bool isCanonicalized(SelectionDAG &DAG, SDValue Op,
                        unsigned MaxDepth = 5) const;
-  bool denormalsEnabledForType(EVT VT) const;
+  bool denormalsEnabledForType(const SelectionDAG &DAG, EVT VT) const;
 
   bool isKnownNeverNaNForTargetNode(SDValue Op,
                                     const SelectionDAG &DAG,
@@ -386,6 +401,10 @@ public:
                                     unsigned Depth = 0) const override;
   AtomicExpansionKind shouldExpandAtomicRMWInIR(AtomicRMWInst *) const override;
 
+  virtual const TargetRegisterClass *
+  getRegClassFor(MVT VT, bool isDivergent) const override;
+  virtual bool requiresUniformRegister(MachineFunction &MF,
+                                       const Value *V) const override;
   Align getPrefLoopAlignment(MachineLoop *ML) const override;
 
   void allocateHSAUserSGPRs(CCState &CCInfo,

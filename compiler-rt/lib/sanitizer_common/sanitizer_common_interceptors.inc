@@ -4177,11 +4177,27 @@ INTERCEPTOR(int, pthread_mutex_unlock, void *m) {
 
 #if SANITIZER_INTERCEPT___PTHREAD_MUTEX
 INTERCEPTOR(int, __pthread_mutex_lock, void *m) {
-  return WRAP(pthread_mutex_lock)(m);
+  void *ctx;
+  COMMON_INTERCEPTOR_ENTER(ctx, __pthread_mutex_lock, m);
+  COMMON_INTERCEPTOR_MUTEX_PRE_LOCK(ctx, m);
+  int res = REAL(__pthread_mutex_lock)(m);
+  if (res == errno_EOWNERDEAD)
+    COMMON_INTERCEPTOR_MUTEX_REPAIR(ctx, m);
+  if (res == 0 || res == errno_EOWNERDEAD)
+    COMMON_INTERCEPTOR_MUTEX_POST_LOCK(ctx, m);
+  if (res == errno_EINVAL)
+    COMMON_INTERCEPTOR_MUTEX_INVALID(ctx, m);
+  return res;
 }
 
 INTERCEPTOR(int, __pthread_mutex_unlock, void *m) {
-  return WRAP(pthread_mutex_unlock)(m);
+  void *ctx;
+  COMMON_INTERCEPTOR_ENTER(ctx, __pthread_mutex_unlock, m);
+  COMMON_INTERCEPTOR_MUTEX_UNLOCK(ctx, m);
+  int res = REAL(__pthread_mutex_unlock)(m);
+  if (res == errno_EINVAL)
+    COMMON_INTERCEPTOR_MUTEX_INVALID(ctx, m);
+  return res;
 }
 
 #define INIT___PTHREAD_MUTEX_LOCK \
@@ -9573,6 +9589,56 @@ INTERCEPTOR(SSIZE_T, getrandom, void *buf, SIZE_T buflen, unsigned int flags) {
 #define INIT_GETRANDOM
 #endif
 
+#if SANITIZER_INTERCEPT_CRYPT
+INTERCEPTOR(char *, crypt, char *key, char *salt) {
+  void *ctx;
+  COMMON_INTERCEPTOR_ENTER(ctx, crypt, key, salt);
+  COMMON_INTERCEPTOR_READ_RANGE(ctx, key, internal_strlen(key) + 1);
+  COMMON_INTERCEPTOR_READ_RANGE(ctx, salt, internal_strlen(salt) + 1);
+  char *res = REAL(crypt)(key, salt);
+  if (res != nullptr)
+    COMMON_INTERCEPTOR_INITIALIZE_RANGE(res, internal_strlen(res) + 1);
+  return res;
+}
+#define INIT_CRYPT COMMON_INTERCEPT_FUNCTION(crypt);
+#else
+#define INIT_CRYPT
+#endif
+
+#if SANITIZER_INTERCEPT_CRYPT_R
+INTERCEPTOR(char *, crypt_r, char *key, char *salt, void *data) {
+  void *ctx;
+  COMMON_INTERCEPTOR_ENTER(ctx, crypt_r, key, salt, data);
+  COMMON_INTERCEPTOR_READ_RANGE(ctx, key, internal_strlen(key) + 1);
+  COMMON_INTERCEPTOR_READ_RANGE(ctx, salt, internal_strlen(salt) + 1);
+  char *res = REAL(crypt_r)(key, salt, data);
+  if (res != nullptr) {
+    COMMON_INTERCEPTOR_WRITE_RANGE(ctx, data,
+                                   __sanitizer::struct_crypt_data_sz);
+    COMMON_INTERCEPTOR_INITIALIZE_RANGE(res, internal_strlen(res) + 1);
+  }
+  return res;
+}
+#define INIT_CRYPT_R COMMON_INTERCEPT_FUNCTION(crypt_r);
+#else
+#define INIT_CRYPT_R
+#endif
+
+#if SANITIZER_INTERCEPT_GETENTROPY
+INTERCEPTOR(int, getentropy, void *buf, SIZE_T buflen) {
+  void *ctx;
+  COMMON_INTERCEPTOR_ENTER(ctx, getentropy, buf, buflen);
+  int r = REAL(getentropy)(buf, buflen);
+  if (r == 0) {
+    COMMON_INTERCEPTOR_WRITE_RANGE(ctx, buf, buflen);
+  }
+  return r;
+}
+#define INIT_GETENTROPY COMMON_INTERCEPT_FUNCTION(getentropy)
+#else
+#define INIT_GETENTROPY
+#endif
+
 static void InitializeCommonInterceptors() {
 #if SI_POSIX
   static u64 metadata_mem[sizeof(MetadataHashMap) / sizeof(u64) + 1];
@@ -9871,6 +9937,9 @@ static void InitializeCommonInterceptors() {
   INIT_GETUSERSHELL;
   INIT_SL_INIT;
   INIT_GETRANDOM;
+  INIT_CRYPT;
+  INIT_CRYPT_R;
+  INIT_GETENTROPY;
 
   INIT___PRINTF_CHK;
 }

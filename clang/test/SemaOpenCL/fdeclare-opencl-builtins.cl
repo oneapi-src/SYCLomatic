@@ -4,8 +4,10 @@
 // RUN: %clang_cc1 %s -triple spir -verify -pedantic -Wconversion -Werror -fsyntax-only -cl-std=CL1.2 -fdeclare-opencl-builtins -finclude-default-header
 // RUN: %clang_cc1 %s -triple spir -verify -pedantic -Wconversion -Werror -fsyntax-only -cl-std=CL2.0 -fdeclare-opencl-builtins -DNO_HEADER
 // RUN: %clang_cc1 %s -triple spir -verify -pedantic -Wconversion -Werror -fsyntax-only -cl-std=CL2.0 -fdeclare-opencl-builtins -finclude-default-header
+// RUN: %clang_cc1 %s -triple spir -verify -pedantic -Wconversion -Werror -fsyntax-only -cl-std=CLC++ -fdeclare-opencl-builtins -DNO_HEADER
+// RUN: %clang_cc1 %s -triple spir -verify -pedantic -Wconversion -Werror -fsyntax-only -cl-std=CLC++ -fdeclare-opencl-builtins -finclude-default-header
 
-#if __OPENCL_C_VERSION__ >= CL_VERSION_2_0
+#if defined(__OPENCL_CPP_VERSION__) || __OPENCL_C_VERSION__ >= CL_VERSION_2_0
 // expected-no-diagnostics
 #endif
 
@@ -18,18 +20,20 @@
 
 // Provide typedefs when invoking clang without -finclude-default-header.
 #ifdef NO_HEADER
-typedef char char2 __attribute__((ext_vector_type(2)));
-typedef char char4 __attribute__((ext_vector_type(4)));
-typedef float float4 __attribute__((ext_vector_type(4)));
-typedef half half4 __attribute__((ext_vector_type(4)));
-typedef int int2 __attribute__((ext_vector_type(2)));
-typedef int int4 __attribute__((ext_vector_type(4)));
-typedef long long2 __attribute__((ext_vector_type(2)));
 typedef unsigned char uchar;
 typedef unsigned int uint;
 typedef unsigned long ulong;
 typedef unsigned short ushort;
 typedef __SIZE_TYPE__ size_t;
+typedef char char2 __attribute__((ext_vector_type(2)));
+typedef char char4 __attribute__((ext_vector_type(4)));
+typedef uchar uchar4 __attribute__((ext_vector_type(4)));
+typedef float float4 __attribute__((ext_vector_type(4)));
+typedef half half4 __attribute__((ext_vector_type(4)));
+typedef int int2 __attribute__((ext_vector_type(2)));
+typedef int int4 __attribute__((ext_vector_type(4)));
+typedef uint uint4 __attribute__((ext_vector_type(4)));
+typedef long long2 __attribute__((ext_vector_type(2)));
 #endif
 
 kernel void test_pointers(volatile global void *global_p, global const int4 *a) {
@@ -59,7 +63,16 @@ kernel void basic_conversion() {
 char4 test_int(char c, char4 c4) {
   char m = max(c, c);
   char4 m4 = max(c4, c4);
+  uchar4 abs1 = abs(c4);
+  uchar4 abs2 = abs(abs1);
   return max(c4, c);
+}
+
+kernel void basic_vector_misc(float4 a) {
+  float4 res;
+  uint4 mask = (uint4)(1, 2, 3, 4);
+
+  res = shuffle(a, mask);
 }
 
 kernel void basic_image_readonly(read_only image2d_t image_read_only_image2d) {
@@ -97,7 +110,7 @@ kernel void basic_image_writeonly(write_only image1d_buffer_t image_write_only_i
 
 kernel void basic_subgroup(global uint *out) {
   out[0] = get_sub_group_size();
-#if __OPENCL_C_VERSION__ < CL_VERSION_2_0
+#if !defined(__OPENCL_CPP_VERSION__) && __OPENCL_C_VERSION__ < CL_VERSION_2_0
 // expected-error@-2{{implicit declaration of function 'get_sub_group_size' is invalid in OpenCL}}
 // expected-error@-3{{implicit conversion changes signedness: 'int' to 'uint' (aka 'unsigned int')}}
 #endif
@@ -130,7 +143,7 @@ kernel void basic_work_item() {
   uint ui;
 
   get_enqueued_local_size(ui);
-#if __OPENCL_C_VERSION__ < CL_VERSION_2_0
+#if !defined(__OPENCL_CPP_VERSION__) && __OPENCL_C_VERSION__ < CL_VERSION_2_0
 // expected-error@-2{{implicit declaration of function 'get_enqueued_local_size' is invalid in OpenCL}}
 #endif
 }

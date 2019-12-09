@@ -11,10 +11,13 @@ add_llvm_unittest(UtilsTests
   BasicBlockUtilsTest.cpp
   CloningTest.cpp
   CodeExtractorTest.cpp
+  CodeMoverUtilsTest.cpp
   FunctionComparatorTest.cpp
   IntegerDivisionTest.cpp
   LocalTest.cpp
+  SizeOptsTest.cpp
   SSAUpdaterBulkTest.cpp
   UnrollLoopTest.cpp
   ValueMapperTest.cpp
+  VFABIUtils.cpp
   )

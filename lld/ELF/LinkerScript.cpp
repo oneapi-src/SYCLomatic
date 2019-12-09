@@ -43,10 +43,10 @@ using namespace llvm;
 using namespace llvm::ELF;
 using namespace llvm::object;
 using namespace llvm::support::endian;
-using namespace lld;
-using namespace lld::elf;
 
-LinkerScript *elf::script;
+namespace lld {
+namespace elf {
+LinkerScript *script;
 
 static uint64_t getOutputSectionVA(SectionBase *sec) {
   OutputSection *os = sec->getOutputSection();
@@ -442,7 +442,7 @@ LinkerScript::computeInputSections(const InputSectionDescription *cmd) {
 }
 
 void LinkerScript::discard(InputSectionBase *s) {
-  if (s == in.shStrTab || s == mainPart->relaDyn || s == mainPart->relrDyn)
+  if (s == in.shStrTab || s == mainPart->relrDyn)
     error("discarding " + s->name + " section is not allowed");
 
   // You can discard .hash and .gnu.hash sections by linker scripts. Since
@@ -1202,3 +1202,6 @@ std::vector<size_t> LinkerScript::getPhdrIndices(OutputSection *cmd) {
   }
   return ret;
 }
+
+} // namespace elf
+} // namespace lld

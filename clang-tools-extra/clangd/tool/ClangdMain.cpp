@@ -11,6 +11,7 @@
 #include "Features.inc"
 #include "Path.h"
 #include "Protocol.h"
+#include "Shutdown.h"
 #include "Trace.h"
 #include "Transport.h"
 #include "index/Background.h"
@@ -27,12 +28,17 @@
 #include "llvm/Support/Signals.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
+#include <chrono>
 #include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
+
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 namespace clang {
 namespace clangd {
@@ -263,6 +269,16 @@ list<std::string> TweakList{
     CommaSeparated,
 };
 
+opt<bool> CrossFileRename{
+    "cross-file-rename",
+    cat(Features),
+    desc("Enable cross-file rename feature. Note that this feature is "
+         "experimental and may lead to broken code or incomplete rename "
+         "results"),
+    init(false),
+    Hidden,
+};
+
 opt<unsigned> WorkerThreadsCount{
     "j",
     cat(Misc),
@@ -434,6 +450,7 @@ int main(int argc, char *argv[]) {
 
   llvm::InitializeAllTargetInfos();
   llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
+  llvm::sys::SetInterruptFunction(&requestShutdown);
   llvm::cl::SetVersionPrinter([](llvm::raw_ostream &OS) {
     OS << clang::getClangToolFullVersion("clangd") << "\n";
   });
@@ -530,6 +547,10 @@ clangd accepts flags on the commandline, and in the CLANGD_FLAGS environment var
   LoggingSession LoggingSession(Logger);
   // Write some initial logs before we start doing any real work.
   log("{0}", clang::getClangToolFullVersion("clangd"));
+// FIXME: abstract this better, and print PID on windows too.
+#ifndef _WIN32
+  log("PID: {0}", getpid());
+#endif
   {
     SmallString<128> CWD;
     if (auto Err = llvm::sys::fs::current_path(CWD))
@@ -594,6 +615,7 @@ clangd accepts flags on the commandline, and in the CLANGD_FLAGS environment var
   }
   Opts.StaticIndex = StaticIdx.get();
   Opts.AsyncThreadsCount = WorkerThreadsCount;
+  Opts.CrossFileRename = CrossFileRename;
 
   clangd::CodeCompleteOptions CCOpts;
   CCOpts.IncludeIneligibleResults = IncludeIneligibleResults;
@@ -670,6 +692,19 @@ clangd accepts flags on the commandline, and in the CLANGD_FLAGS environment var
       /*UseDirBasedCDB=*/CompileArgsFrom == FilesystemCompileArgs,
       OffsetEncodingFromFlag, Opts);
   llvm::set_thread_name("clangd.main");
-  return LSPServer.run() ? 0
-                         : static_cast<int>(ErrorResultCode::NoShutdownRequest);
+  int ExitCode = LSPServer.run()
+                     ? 0
+                     : static_cast<int>(ErrorResultCode::NoShutdownRequest);
+  log("LSP finished, exiting with status {0}", ExitCode);
+
+  // There may still be lingering background threads (e.g. slow requests
+  // whose results will be dropped, background index shutting down).
+  //
+  // These should terminate quickly, and ~ClangdLSPServer blocks on them.
+  // However if a bug causes them to run forever, we want to ensure the process
+  // eventually exits. As clangd isn't directly user-facing, an editor can
+  // "leak" clangd processes. Crashing in this case contains the damage.
+  abortAfterTimeout(std::chrono::minutes(5));
+
+  return ExitCode;
 }

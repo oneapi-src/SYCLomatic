@@ -356,7 +356,7 @@ protected:
       if (name.startswith("__Z"))
         name = name.drop_front();
 
-      Mangled mangled(name, true);
+      Mangled mangled(name);
       if (mangled.GuessLanguage() == lldb::eLanguageTypeC_plus_plus) {
         ConstString demangled(
             mangled.GetDisplayDemangledName(lldb::eLanguageTypeC_plus_plus));
@@ -559,6 +559,9 @@ ValueObjectSP ItaniumABILanguageRuntime::GetExceptionObjectForThread(
   modules.FindSymbolsWithNameAndType(
       ConstString("__cxa_current_exception_type"), eSymbolTypeCode, contexts);
   contexts.GetContextAtIndex(0, context);
+  if (!context.symbol) {
+    return {};
+  }
   Address addr = context.symbol->GetAddress();
 
   Status error;

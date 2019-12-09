@@ -113,6 +113,7 @@ def UndefinedVarTemplate : DiagGroup<"undefined-var-template">;
 def UndefinedFuncTemplate : DiagGroup<"undefined-func-template">;
 def MissingNoEscape : DiagGroup<"missing-noescape">;
 
+def DefaultedComparison : DiagGroup<"defaulted-comparison">;
 def DeleteIncomplete : DiagGroup<"delete-incomplete">;
 def DeleteNonAbstractNonVirtualDtor : DiagGroup<"delete-non-abstract-non-virtual-dtor">;
 def DeleteAbstractNonVirtualDtor : DiagGroup<"delete-abstract-non-virtual-dtor">;
@@ -127,6 +128,8 @@ def CXX11CompatDeprecatedWritableStr :
 
 def DeprecatedAttributes : DiagGroup<"deprecated-attributes">;
 def DeprecatedCommaSubscript : DiagGroup<"deprecated-comma-subscript">;
+def DeprecatedCopy : DiagGroup<"deprecated-copy">;
+def DeprecatedCopyDtor : DiagGroup<"deprecated-copy-dtor">;
 def DeprecatedDeclarations : DiagGroup<"deprecated-declarations">;
 def UnavailableDeclarations : DiagGroup<"unavailable-declarations">;
 def UnguardedAvailabilityNew : DiagGroup<"unguarded-availability-new">;
@@ -140,16 +143,20 @@ def DeprecatedImplementations :DiagGroup<"deprecated-implementations">;
 def DeprecatedIncrementBool : DiagGroup<"deprecated-increment-bool">;
 def DeprecatedRegister : DiagGroup<"deprecated-register">;
 def DeprecatedThisCapture : DiagGroup<"deprecated-this-capture">;
+def DeprecatedVolatile : DiagGroup<"deprecated-volatile">;
 def DeprecatedWritableStr : DiagGroup<"deprecated-writable-strings",
                                       [CXX11CompatDeprecatedWritableStr]>;
 // FIXME: Why is DeprecatedImplementations not in this group?
 def Deprecated : DiagGroup<"deprecated", [DeprecatedAttributes,
                                           DeprecatedCommaSubscript,
+                                          DeprecatedCopy,
+                                          DeprecatedCopyDtor,
                                           DeprecatedDeclarations,
                                           DeprecatedDynamicExceptionSpec,
                                           DeprecatedIncrementBool,
                                           DeprecatedRegister,
                                           DeprecatedThisCapture,
+                                          DeprecatedVolatile,
                                           DeprecatedWritableStr]>,
                  DiagCategory<"Deprecations">;
 
@@ -294,6 +301,7 @@ def ExitTimeDestructors : DiagGroup<"exit-time-destructors">;
 def FlexibleArrayExtensions : DiagGroup<"flexible-array-extensions">;
 def FourByteMultiChar : DiagGroup<"four-char-constants">;
 def GlobalConstructors : DiagGroup<"global-constructors">;
+def BitwiseConditionalParentheses: DiagGroup<"bitwise-conditional-parentheses">;
 def BitwiseOpParentheses: DiagGroup<"bitwise-op-parentheses">;
 def LogicalOpParentheses: DiagGroup<"logical-op-parentheses">;
 def LogicalNotParentheses: DiagGroup<"logical-not-parentheses">;
@@ -514,12 +522,14 @@ def TautologicalConstantCompare : DiagGroup<"tautological-constant-compare",
                                             [TautologicalOutOfRangeCompare]>;
 def TautologicalPointerCompare : DiagGroup<"tautological-pointer-compare">;
 def TautologicalOverlapCompare : DiagGroup<"tautological-overlap-compare">;
+def TautologicalBitwiseCompare : DiagGroup<"tautological-bitwise-compare">;
 def TautologicalUndefinedCompare : DiagGroup<"tautological-undefined-compare">;
 def TautologicalObjCBoolCompare : DiagGroup<"tautological-objc-bool-compare">;
 def TautologicalCompare : DiagGroup<"tautological-compare",
                                     [TautologicalConstantCompare,
                                      TautologicalPointerCompare,
                                      TautologicalOverlapCompare,
+                                     TautologicalBitwiseCompare,
                                      TautologicalUndefinedCompare,
                                      TautologicalObjCBoolCompare]>;
 def HeaderHygiene : DiagGroup<"header-hygiene">;
@@ -683,6 +693,7 @@ def ZeroLengthArray : DiagGroup<"zero-length-array">;
 def GNUZeroLineDirective : DiagGroup<"gnu-zero-line-directive">;
 def GNUZeroVariadicMacroArguments : DiagGroup<"gnu-zero-variadic-macro-arguments">;
 def Fallback : DiagGroup<"fallback">;
+def MisleadingIndentation : DiagGroup<"misleading-indentation">;
 
 // This covers both the deprecated case (in C++98)
 // and the extension case (in C++11 onwards).
@@ -733,6 +744,7 @@ def ParenthesesOnEquality : DiagGroup<"parentheses-equality">;
 def Parentheses : DiagGroup<"parentheses",
                             [LogicalOpParentheses,
                              LogicalNotParentheses,
+                             BitwiseConditionalParentheses,
                              BitwiseOpParentheses,
                              ShiftOpParentheses,
                              OverloadedShiftOpParentheses,
@@ -805,6 +817,7 @@ def Move : DiagGroup<"move", [
   ]>;
 
 def Extra : DiagGroup<"extra", [
+    DeprecatedCopy,
     MissingFieldInitializers,
     IgnoredQualifiers,
     InitializerOverrides,
@@ -836,6 +849,7 @@ def Most : DiagGroup<"most", [
     SizeofArrayArgument,
     SizeofArrayDecay,
     StringPlusInt,
+    TautologicalCompare,
     Trigraphs,
     Uninitialized,
     UnknownPragmas,
@@ -871,7 +885,7 @@ def Consumed       : DiagGroup<"consumed">;
 // Note that putting warnings in -Wall will not disable them by default. If a
 // warning should be active _only_ when -Wall is passed in, mark it as
 // DefaultIgnore in addition to putting it here.
-def All : DiagGroup<"all", [Most, Parentheses, Switch, SwitchBool]>;
+def All : DiagGroup<"all", [Most, Parentheses, Switch, SwitchBool, MisleadingIndentation]>;
 
 // Warnings that should be in clang-cl /w4.
 def : DiagGroup<"CL4", [All, Extra]>;
@@ -1046,6 +1060,7 @@ def OpenMPLoopForm : DiagGroup<"openmp-loop-form">;
 def OpenMPTarget : DiagGroup<"openmp-target">;
 
 // SYCL warnings
+def SyclStrict : DiagGroup<"sycl-strict">;
 def SyclTarget : DiagGroup<"sycl-target">;
 
 // Backend warnings.
@@ -1074,6 +1089,10 @@ def SerializedDiagnostics : DiagGroup<"serialized-diagnostics">;
 // compiling CUDA C/C++ but which is not compatible with the CUDA spec.
 def CudaCompat : DiagGroup<"cuda-compat">;
 
+// A warning group for warnings about features supported by HIP but
+// ignored by CUDA.
+def HIPOnly : DiagGroup<"hip-only">;
+
 // Warnings which cause linking of the runtime libraries like
 // libc and the CRT to be skipped.
 def AVRRtlibLinkingQuirks : DiagGroup<"avr-rtlib-linking-quirks">;
@@ -1094,6 +1113,9 @@ def SpirCompat : DiagGroup<"spir-compat">;
 // Warning for the experimental-isel options.
 def ExperimentalISel : DiagGroup<"experimental-isel">;
 
+// Warning for the experimental float control options.
+def ExperimentalFloatControl : DiagGroup<"experimental-float-control">;
+
 // A warning group specifically for warnings related to function
 // multiversioning.
 def FunctionMultiVersioning : DiagGroup<"function-multiversion">;
@@ -1105,6 +1127,6 @@ def CrossTU : DiagGroup<"ctu">;
 
 def CTADMaybeUnsupported : DiagGroup<"ctad-maybe-unsupported">;
 
-def FortifySource : DiagGroup<"fortify-source">;
-
 def IntelFPGA : DiagGroup<"intel-fpga">;
+
+def FortifySource : DiagGroup<"fortify-source">;

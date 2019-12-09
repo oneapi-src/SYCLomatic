@@ -50,6 +50,7 @@
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/DebugLoc.h"
 #include "llvm/IR/LLVMContext.h"
+#include "llvm/InitializePasses.h"
 #include "llvm/MC/MCInstrDesc.h"
 #include "llvm/MC/MCRegisterInfo.h"
 #include "llvm/Pass.h"
@@ -697,7 +698,7 @@ void ImplicitNullChecks::rewriteNullChecks(
 
     if (auto *DepMI = NC.getOnlyDependency()) {
       for (auto &MO : DepMI->operands()) {
-        if (!MO.isReg() || !MO.getReg() || !MO.isDef())
+        if (!MO.isReg() || !MO.getReg() || !MO.isDef() || MO.isDead())
           continue;
         if (!NC.getNotNullSucc()->isLiveIn(MO.getReg()))
           NC.getNotNullSucc()->addLiveIn(MO.getReg());

@@ -25,6 +25,8 @@ using namespace lldb;
 using namespace lldb_private;
 using namespace lldb_private::breakpad;
 
+char SymbolFileBreakpad::ID;
+
 class SymbolFileBreakpad::LineIterator {
 public:
   // begin iterator for sections of given type
@@ -289,23 +291,17 @@ uint32_t SymbolFileBreakpad::ResolveSymbolContext(
   return sc_list.GetSize() - old_size;
 }
 
-uint32_t SymbolFileBreakpad::FindFunctions(
+void SymbolFileBreakpad::FindFunctions(
     ConstString name, const CompilerDeclContext *parent_decl_ctx,
-    FunctionNameType name_type_mask, bool include_inlines, bool append,
+    FunctionNameType name_type_mask, bool include_inlines,
     SymbolContextList &sc_list) {
   // TODO
-  if (!append)
-    sc_list.Clear();
-  return sc_list.GetSize();
 }
 
-uint32_t SymbolFileBreakpad::FindFunctions(const RegularExpression &regex,
-                                           bool include_inlines, bool append,
-                                           SymbolContextList &sc_list) {
+void SymbolFileBreakpad::FindFunctions(const RegularExpression &regex,
+                                       bool include_inlines,
+                                       SymbolContextList &sc_list) {
   // TODO
-  if (!append)
-    sc_list.Clear();
-  return sc_list.GetSize();
 }
 
 void SymbolFileBreakpad::FindTypes(
@@ -313,8 +309,9 @@ void SymbolFileBreakpad::FindTypes(
     uint32_t max_matches, llvm::DenseSet<SymbolFile *> &searched_symbol_files,
     TypeMap &types) {}
 
-void SymbolFileBreakpad::FindTypes(llvm::ArrayRef<CompilerContext> pattern,
-                                   LanguageSet languages, TypeMap &types) {}
+void SymbolFileBreakpad::FindTypes(
+    llvm::ArrayRef<CompilerContext> pattern, LanguageSet languages,
+    llvm::DenseSet<SymbolFile *> &searched_symbol_files, TypeMap &types) {}
 
 void SymbolFileBreakpad::AddSymbols(Symtab &symtab) {
   Log *log = GetLogIfAllCategoriesSet(LIBLLDB_LOG_SYMBOLS);
@@ -340,8 +337,8 @@ void SymbolFileBreakpad::AddSymbols(Symtab &symtab) {
       return;
     }
     symbols.try_emplace(
-        address, /*symID*/ 0, Mangled(name, /*is_mangled*/ false),
-        eSymbolTypeCode, /*is_global*/ true, /*is_debug*/ false,
+        address, /*symID*/ 0, Mangled(name), eSymbolTypeCode,
+        /*is_global*/ true, /*is_debug*/ false,
         /*is_trampoline*/ false, /*is_artificial*/ false,
         AddressRange(section_sp, address - section_sp->GetFileAddress(),
                      size.getValueOr(0)),
@@ -734,7 +731,7 @@ void SymbolFileBreakpad::ParseLineTableAndSupportFiles(CompileUnit &cu,
   }
   if (next_addr)
     finish_sequence();
-  data.support_files = map.translate(cu, *m_files);
+  data.support_files = map.translate(cu.GetPrimaryFile(), *m_files);
 }
 
 void SymbolFileBreakpad::ParseUnwindData() {

@@ -154,6 +154,11 @@ public:
         nullptr, idx,
         g_processgdbremote_properties[idx].default_uint_value != 0);
   }
+
+  bool GetUseGPacketForReading() const {
+    const uint32_t idx = ePropertyUseGPacketForReading;
+    return m_collection_sp->GetPropertyAtIndexAsBoolean(nullptr, idx, true);
+  }
 };
 
 typedef std::shared_ptr<PluginProperties> ProcessKDPPropertiesSP;
@@ -309,6 +314,9 @@ ProcessGDBRemote::ProcessGDBRemote(lldb::TargetSP target_sp,
       GetGlobalPluginProperties()->GetPacketTimeout();
   if (timeout_seconds > 0)
     m_gdb_comm.SetPacketTimeout(std::chrono::seconds(timeout_seconds));
+
+  m_use_g_packet_for_reading =
+      GetGlobalPluginProperties()->GetUseGPacketForReading();
 }
 
 // Destructor
@@ -378,36 +386,6 @@ bool ProcessGDBRemote::ParsePythonTargetDefinition(
     }
   }
   return false;
-}
-
-// If the remote stub didn't give us eh_frame or DWARF register numbers for a
-// register, see if the ABI can provide them.
-// DWARF and eh_frame register numbers are defined as a part of the ABI.
-static void AugmentRegisterInfoViaABI(RegisterInfo &reg_info,
-                                      ConstString reg_name, ABISP abi_sp) {
-  if (reg_info.kinds[eRegisterKindEHFrame] == LLDB_INVALID_REGNUM ||
-      reg_info.kinds[eRegisterKindDWARF] == LLDB_INVALID_REGNUM) {
-    if (abi_sp) {
-      RegisterInfo abi_reg_info;
-      if (abi_sp->GetRegisterInfoByName(reg_name, abi_reg_info)) {
-        if (reg_info.kinds[eRegisterKindEHFrame] == LLDB_INVALID_REGNUM &&
-            abi_reg_info.kinds[eRegisterKindEHFrame] != LLDB_INVALID_REGNUM) {
-          reg_info.kinds[eRegisterKindEHFrame] =
-              abi_reg_info.kinds[eRegisterKindEHFrame];
-        }
-        if (reg_info.kinds[eRegisterKindDWARF] == LLDB_INVALID_REGNUM &&
-            abi_reg_info.kinds[eRegisterKindDWARF] != LLDB_INVALID_REGNUM) {
-          reg_info.kinds[eRegisterKindDWARF] =
-              abi_reg_info.kinds[eRegisterKindDWARF];
-        }
-        if (reg_info.kinds[eRegisterKindGeneric] == LLDB_INVALID_REGNUM &&
-            abi_reg_info.kinds[eRegisterKindGeneric] != LLDB_INVALID_REGNUM) {
-          reg_info.kinds[eRegisterKindGeneric] =
-              abi_reg_info.kinds[eRegisterKindGeneric];
-        }
-      }
-    }
-  }
 }
 
 static size_t SplitCommaSeparatedRegisterNumberString(
@@ -607,12 +585,12 @@ void ProcessGDBRemote::BuildDynamicRegisterInfo(bool force) {
           reg_info.invalidate_regs = invalidate_regs.data();
         }
 
+        reg_info.name = reg_name.AsCString();
         // We have to make a temporary ABI here, and not use the GetABI because
         // this code gets called in DidAttach, when the target architecture
         // (and consequently the ABI we'll get from the process) may be wrong.
-        ABISP abi_to_use = ABI::FindPlugin(shared_from_this(), arch_to_use);
-
-        AugmentRegisterInfoViaABI(reg_info, reg_name, abi_to_use);
+        if (ABISP abi_sp = ABI::FindPlugin(shared_from_this(), arch_to_use))
+          abi_sp->AugmentRegisterInfo(reg_info);
 
         m_register_info.AddRegister(reg_info, reg_name, alt_name, set_name);
       } else {
@@ -3627,9 +3605,9 @@ bool ProcessGDBRemote::StartAsyncThread() {
     llvm::Expected<HostThread> async_thread = ThreadLauncher::LaunchThread(
         "<lldb.process.gdb-remote.async>", ProcessGDBRemote::AsyncThread, this);
     if (!async_thread) {
-      LLDB_LOG(lldb_private::GetLogIfAllCategoriesSet(LIBLLDB_LOG_HOST),
-               "failed to launch host thread: {}",
-               llvm::toString(async_thread.takeError()));
+      LLDB_LOG_ERROR(lldb_private::GetLogIfAllCategoriesSet(LIBLLDB_LOG_HOST),
+                     async_thread.takeError(),
+                     "failed to launch host thread: {}");
       return false;
     }
     m_async_thread = *async_thread;
@@ -4475,7 +4453,9 @@ bool ParseRegisters(XMLNode feature_node, GdbServerTargetInfo &target_info,
         }
 
         ++cur_reg_num;
-        AugmentRegisterInfoViaABI(reg_info, reg_name, abi_sp);
+        reg_info.name = reg_name.AsCString();
+        if (abi_sp)
+          abi_sp->AugmentRegisterInfo(reg_info);
         dyn_reg_info.AddRegister(reg_info, reg_name, alt_name, set_name);
 
         return true; // Keep iterating through all "reg" elements

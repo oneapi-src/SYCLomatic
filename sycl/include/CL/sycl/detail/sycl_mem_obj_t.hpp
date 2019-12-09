@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include <CL/sycl/context.hpp>
 #include <CL/sycl/detail/common.hpp>
 #include <CL/sycl/detail/memory_manager.hpp>
 #include <CL/sycl/detail/scheduler/scheduler.hpp>
@@ -25,7 +24,6 @@ namespace sycl {
 namespace detail {
 
 // Forward declarations
-class context_impl;
 class event_impl;
 
 using ContextImplPtr = shared_ptr_class<context_impl>;
@@ -86,13 +84,13 @@ public:
 
     RT::PiMem Mem = pi::cast<RT::PiMem>(MInteropMemObject);
     RT::PiContext Context = nullptr;
-    PI_CALL(RT::piMemGetInfo(Mem, CL_MEM_CONTEXT, sizeof(Context), &Context,
-                             nullptr));
+    PI_CALL(piMemGetInfo)(Mem, CL_MEM_CONTEXT, sizeof(Context), &Context,
+                          nullptr);
 
     if (MInteropContext->getHandleRef() != Context)
       throw cl::sycl::invalid_parameter_error(
           "Input context must be the same as the context of cl_mem");
-    PI_CALL(RT::piMemRetain(Mem));
+    PI_CALL(piMemRetain)(Mem);
   }
 
   SYCLMemObjT(cl_mem MemObject, const context &SyclContext,
@@ -225,7 +223,7 @@ public:
     releaseHostMem(MShadowCopy);
 
     if (MOpenCLInterop)
-      PI_CALL(RT::piMemRelease(pi::cast<RT::PiMem>(MInteropMemObject)));
+      PI_CALL(piMemRelease)(pi::cast<RT::PiMem>(MInteropMemObject));
   }
 
   bool useHostPtr() {

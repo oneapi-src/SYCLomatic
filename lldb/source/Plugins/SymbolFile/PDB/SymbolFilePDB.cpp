@@ -58,6 +58,8 @@ using namespace lldb;
 using namespace lldb_private;
 using namespace llvm::pdb;
 
+char SymbolFilePDB::ID;
+
 namespace {
 lldb::LanguageType TranslateLanguage(PDB_Lang lang) {
   switch (lang) {
@@ -368,10 +370,6 @@ bool SymbolFilePDB::ParseSupportFiles(
     FileSpec spec(file->getFileName(), FileSpec::Style::windows);
     support_files.AppendIfUnique(spec);
   }
-
-  // LLDB uses the DWARF-like file numeration (one based),
-  // the zeroth file is the compile unit itself
-  support_files.Insert(0, comp_unit);
 
   return true;
 }
@@ -1097,19 +1095,19 @@ SymbolFilePDB::ParseVariables(const lldb_private::SymbolContext &sc,
   return num_added;
 }
 
-uint32_t SymbolFilePDB::FindGlobalVariables(
+void SymbolFilePDB::FindGlobalVariables(
     lldb_private::ConstString name,
     const lldb_private::CompilerDeclContext *parent_decl_ctx,
     uint32_t max_matches, lldb_private::VariableList &variables) {
   std::lock_guard<std::recursive_mutex> guard(GetModuleMutex());
   if (!DeclContextMatchesThisSymbolFile(parent_decl_ctx))
-    return 0;
+    return;
   if (name.IsEmpty())
-    return 0;
+    return;
 
   auto results = m_global_scope_up->findAllChildren<PDBSymbolData>();
   if (!results)
-    return 0;
+    return;
 
   uint32_t matches = 0;
   size_t old_size = variables.GetSize();
@@ -1138,20 +1136,17 @@ uint32_t SymbolFilePDB::FindGlobalVariables(
     ParseVariables(sc, *pdb_data, &variables);
     matches = variables.GetSize() - old_size;
   }
-
-  return matches;
 }
 
-uint32_t
-SymbolFilePDB::FindGlobalVariables(const lldb_private::RegularExpression &regex,
-                                   uint32_t max_matches,
-                                   lldb_private::VariableList &variables) {
+void SymbolFilePDB::FindGlobalVariables(
+    const lldb_private::RegularExpression &regex, uint32_t max_matches,
+    lldb_private::VariableList &variables) {
   std::lock_guard<std::recursive_mutex> guard(GetModuleMutex());
   if (!regex.IsValid())
-    return 0;
+    return;
   auto results = m_global_scope_up->findAllChildren<PDBSymbolData>();
   if (!results)
-    return 0;
+    return;
 
   uint32_t matches = 0;
   size_t old_size = variables.GetSize();
@@ -1176,8 +1171,6 @@ SymbolFilePDB::FindGlobalVariables(const lldb_private::RegularExpression &regex,
     ParseVariables(sc, *pdb_data, &variables);
     matches = variables.GetSize() - old_size;
   }
-
-  return matches;
 }
 
 bool SymbolFilePDB::ResolveFunction(const llvm::pdb::PDBSymbolFunc &pdb_func,
@@ -1299,24 +1292,21 @@ void SymbolFilePDB::CacheFunctionNames() {
   m_func_base_names.SizeToFit();
 }
 
-uint32_t SymbolFilePDB::FindFunctions(
+void SymbolFilePDB::FindFunctions(
     lldb_private::ConstString name,
     const lldb_private::CompilerDeclContext *parent_decl_ctx,
-    FunctionNameType name_type_mask, bool include_inlines, bool append,
+    FunctionNameType name_type_mask, bool include_inlines,
     lldb_private::SymbolContextList &sc_list) {
   std::lock_guard<std::recursive_mutex> guard(GetModuleMutex());
-  if (!append)
-    sc_list.Clear();
   lldbassert((name_type_mask & eFunctionNameTypeAuto) == 0);
 
   if (name_type_mask == eFunctionNameTypeNone)
-    return 0;
+    return;
   if (!DeclContextMatchesThisSymbolFile(parent_decl_ctx))
-    return 0;
+    return;
   if (name.IsEmpty())
-    return 0;
+    return;
 
-  auto old_size = sc_list.GetSize();
   if (name_type_mask & eFunctionNameTypeFull ||
       name_type_mask & eFunctionNameTypeBase ||
       name_type_mask & eFunctionNameTypeMethod) {
@@ -1346,27 +1336,20 @@ uint32_t SymbolFilePDB::FindFunctions(
       ResolveFn(m_func_base_names);
       ResolveFn(m_func_method_names);
     }
-    if (name_type_mask & eFunctionNameTypeBase) {
+    if (name_type_mask & eFunctionNameTypeBase)
       ResolveFn(m_func_base_names);
-    }
-    if (name_type_mask & eFunctionNameTypeMethod) {
+    if (name_type_mask & eFunctionNameTypeMethod)
       ResolveFn(m_func_method_names);
-    }
   }
-  return sc_list.GetSize() - old_size;
 }
 
-uint32_t
-SymbolFilePDB::FindFunctions(const lldb_private::RegularExpression &regex,
-                             bool include_inlines, bool append,
-                             lldb_private::SymbolContextList &sc_list) {
+void SymbolFilePDB::FindFunctions(const lldb_private::RegularExpression &regex,
+                                  bool include_inlines,
+                                  lldb_private::SymbolContextList &sc_list) {
   std::lock_guard<std::recursive_mutex> guard(GetModuleMutex());
-  if (!append)
-    sc_list.Clear();
   if (!regex.IsValid())
-    return 0;
+    return;
 
-  auto old_size = sc_list.GetSize();
   CacheFunctionNames();
 
   std::set<uint32_t> resolved_ids;
@@ -1383,8 +1366,6 @@ SymbolFilePDB::FindFunctions(const lldb_private::RegularExpression &regex,
   };
   ResolveFn(m_func_full_names);
   ResolveFn(m_func_base_names);
-
-  return sc_list.GetSize() - old_size;
 }
 
 void SymbolFilePDB::GetMangledNamesForFunction(
@@ -1422,7 +1403,6 @@ void SymbolFilePDB::AddSymbols(lldb_private::Symtab &symtab) {
     symtab.AddSymbol(
         Symbol(pub_symbol->getSymIndexId(),   // symID
                pub_symbol->getName().c_str(), // name
-               true,                          // name_is_mangled
                pub_symbol->isCode() ? eSymbolTypeCode : eSymbolTypeData, // type
                true,      // external
                false,     // is_debug
@@ -1580,9 +1560,10 @@ void SymbolFilePDB::FindTypesByName(
   }
 }
 
-void SymbolFilePDB::FindTypes(llvm::ArrayRef<CompilerContext> pattern,
-                              LanguageSet languages,
-                              lldb_private::TypeMap &types) {}
+void SymbolFilePDB::FindTypes(
+    llvm::ArrayRef<CompilerContext> pattern, LanguageSet languages,
+    llvm::DenseSet<SymbolFile *> &searched_symbol_files,
+    lldb_private::TypeMap &types) {}
 
 void SymbolFilePDB::GetTypesForPDBSymbol(const llvm::pdb::PDBSymbol &pdb_symbol,
                                          uint32_t type_mask,
@@ -1795,7 +1776,6 @@ bool SymbolFilePDB::ParseCompileUnitLineTable(CompileUnit &comp_unit,
   auto line_table = std::make_unique<LineTable>(&comp_unit);
 
   // Find contributions to `compiland` from all source and header files.
-  std::string path = comp_unit.GetPath();
   auto files = m_session_up->getSourceFilesForCompiland(*compiland_up);
   if (!files)
     return false;
@@ -1897,9 +1877,7 @@ void SymbolFilePDB::BuildSupportFileIdToSupportFileIndexMap(
   if (!source_files)
     return;
 
-  // LLDB uses the DWARF-like file numeration (one based)
-  int index = 1;
-
+  int index = 0;
   while (auto file = source_files->getNext()) {
     uint32_t source_id = file->getUniqueId();
     index_map[source_id] = index++;

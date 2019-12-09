@@ -62,6 +62,9 @@ def HasAM            : Predicate<"Subtarget->hasAM()">,
 def HasSEL2          : Predicate<"Subtarget->hasSEL2()">,
                        AssemblerPredicate<"FeatureSEL2", "sel2">;
 
+def HasPMU           : Predicate<"Subtarget->hasPMU()">,
+                       AssemblerPredicate<"FeaturePMU", "pmu">;
+
 def HasTLB_RMI          : Predicate<"Subtarget->hasTLB_RMI()">,
                        AssemblerPredicate<"FeatureTLB_RMI", "tlb-rmi">;
 
@@ -211,6 +214,7 @@ def SDT_AArch64FCmp   : SDTypeProfile<0, 2,
                                     SDTCisSameAs<0, 1>]>;
 def SDT_AArch64Dup   : SDTypeProfile<1, 1, [SDTCisVec<0>]>;
 def SDT_AArch64DupLane   : SDTypeProfile<1, 2, [SDTCisVec<0>, SDTCisInt<2>]>;
+def SDT_AArch64Insr  : SDTypeProfile<1, 2, [SDTCisVec<0>]>;
 def SDT_AArch64Zip   : SDTypeProfile<1, 2, [SDTCisVec<0>,
                                           SDTCisSameAs<0, 1>,
                                           SDTCisSameAs<0, 2>]>;
@@ -256,6 +260,88 @@ def SDT_AArch64WrapperLarge : SDTypeProfile<1, 4,
                                          SDTCisSameAs<1, 2>, SDTCisSameAs<1, 3>,
                                          SDTCisSameAs<1, 4>]>;
 
+// non-extending masked load fragment.
+def nonext_masked_load :
+  PatFrag<(ops node:$ptr, node:$pred, node:$def),
+          (masked_ld node:$ptr, undef, node:$pred, node:$def), [{
+  return cast<MaskedLoadSDNode>(N)->getExtensionType() == ISD::NON_EXTLOAD &&
+         cast<MaskedLoadSDNode>(N)->isUnindexed();
+}]>;
+// sign extending masked load fragments.
+def asext_masked_load :
+  PatFrag<(ops node:$ptr, node:$pred, node:$def),
+          (masked_ld node:$ptr, undef, node:$pred, node:$def),[{
+  return (cast<MaskedLoadSDNode>(N)->getExtensionType() == ISD::EXTLOAD ||
+          cast<MaskedLoadSDNode>(N)->getExtensionType() == ISD::SEXTLOAD) &&
+         cast<MaskedLoadSDNode>(N)->isUnindexed();
+}]>;
+def asext_masked_load_i8 :
+  PatFrag<(ops node:$ptr, node:$pred, node:$def),
+          (asext_masked_load node:$ptr, node:$pred, node:$def), [{
+  return cast<MaskedLoadSDNode>(N)->getMemoryVT().getScalarType() == MVT::i8;
+}]>;
+def asext_masked_load_i16 :
+  PatFrag<(ops node:$ptr, node:$pred, node:$def),
+          (asext_masked_load node:$ptr, node:$pred, node:$def), [{
+  return cast<MaskedLoadSDNode>(N)->getMemoryVT().getScalarType() == MVT::i16;
+}]>;
+def asext_masked_load_i32 :
+  PatFrag<(ops node:$ptr, node:$pred, node:$def),
+          (asext_masked_load node:$ptr, node:$pred, node:$def), [{
+  return cast<MaskedLoadSDNode>(N)->getMemoryVT().getScalarType() == MVT::i32;
+}]>;
+// zero extending masked load fragments.
+def zext_masked_load :
+  PatFrag<(ops node:$ptr, node:$pred, node:$def),
+          (masked_ld node:$ptr, undef, node:$pred, node:$def), [{
+  return cast<MaskedLoadSDNode>(N)->getExtensionType() == ISD::ZEXTLOAD &&
+         cast<MaskedLoadSDNode>(N)->isUnindexed();
+}]>;
+def zext_masked_load_i8 :
+  PatFrag<(ops node:$ptr, node:$pred, node:$def),
+          (zext_masked_load node:$ptr, node:$pred, node:$def), [{
+  return cast<MaskedLoadSDNode>(N)->getMemoryVT().getScalarType() == MVT::i8;
+}]>;
+def zext_masked_load_i16 :
+  PatFrag<(ops node:$ptr, node:$pred, node:$def),
+          (zext_masked_load node:$ptr, node:$pred, node:$def), [{
+  return cast<MaskedLoadSDNode>(N)->getMemoryVT().getScalarType() == MVT::i16;
+}]>;
+def zext_masked_load_i32 :
+  PatFrag<(ops node:$ptr, node:$pred, node:$def),
+          (zext_masked_load node:$ptr, node:$pred, node:$def), [{
+  return cast<MaskedLoadSDNode>(N)->getMemoryVT().getScalarType() == MVT::i32;
+}]>;
+
+// non-truncating masked store fragment.
+def nontrunc_masked_store :
+  PatFrag<(ops node:$val, node:$ptr, node:$pred),
+          (masked_st node:$val, node:$ptr, undef, node:$pred), [{
+  return !cast<MaskedStoreSDNode>(N)->isTruncatingStore() &&
+         cast<MaskedStoreSDNode>(N)->isUnindexed();
+}]>;
+// truncating masked store fragments.
+def trunc_masked_store :
+  PatFrag<(ops node:$val, node:$ptr, node:$pred),
+          (masked_st node:$val, node:$ptr, undef, node:$pred), [{
+  return cast<MaskedStoreSDNode>(N)->isTruncatingStore() &&
+         cast<MaskedStoreSDNode>(N)->isUnindexed();
+}]>;
+def trunc_masked_store_i8 :
+  PatFrag<(ops node:$val, node:$ptr, node:$pred),
+          (trunc_masked_store node:$val, node:$ptr, node:$pred), [{
+  return cast<MaskedStoreSDNode>(N)->getMemoryVT().getScalarType() == MVT::i8;
+}]>;
+def trunc_masked_store_i16 :
+  PatFrag<(ops node:$val, node:$ptr, node:$pred),
+          (trunc_masked_store node:$val, node:$ptr, node:$pred), [{
+  return cast<MaskedStoreSDNode>(N)->getMemoryVT().getScalarType() == MVT::i16;
+}]>;
+def trunc_masked_store_i32 :
+  PatFrag<(ops node:$val, node:$ptr, node:$pred),
+          (trunc_masked_store node:$val, node:$ptr, node:$pred), [{
+  return cast<MaskedStoreSDNode>(N)->getMemoryVT().getScalarType() == MVT::i32;
+}]>;
 
 // Node definitions.
 def AArch64adrp          : SDNode<"AArch64ISD::ADRP", SDTIntUnaryOp, []>;
@@ -315,6 +401,8 @@ def AArch64duplane8  : SDNode<"AArch64ISD::DUPLANE8", SDT_AArch64DupLane>;
 def AArch64duplane16 : SDNode<"AArch64ISD::DUPLANE16", SDT_AArch64DupLane>;
 def AArch64duplane32 : SDNode<"AArch64ISD::DUPLANE32", SDT_AArch64DupLane>;
 def AArch64duplane64 : SDNode<"AArch64ISD::DUPLANE64", SDT_AArch64DupLane>;
+
+def AArch64insr      : SDNode<"AArch64ISD::INSR", SDT_AArch64Insr>;
 
 def AArch64zip1      : SDNode<"AArch64ISD::ZIP1", SDT_AArch64Zip>;
 def AArch64zip2      : SDNode<"AArch64ISD::ZIP2", SDT_AArch64Zip>;
@@ -421,6 +509,14 @@ def AArch64stzg : SDNode<"AArch64ISD::STZG", SDT_AArch64SETTAG, [SDNPHasChain, S
 def AArch64st2g : SDNode<"AArch64ISD::ST2G", SDT_AArch64SETTAG, [SDNPHasChain, SDNPMayStore, SDNPMemOperand]>;
 def AArch64stz2g : SDNode<"AArch64ISD::STZ2G", SDT_AArch64SETTAG, [SDNPHasChain, SDNPMayStore, SDNPMemOperand]>;
 
+def SDT_AArch64unpk : SDTypeProfile<1, 1, [
+    SDTCisInt<0>, SDTCisInt<1>, SDTCisOpSmallerThanOp<1, 0>
+]>;
+def AArch64sunpkhi : SDNode<"AArch64ISD::SUNPKHI", SDT_AArch64unpk>;
+def AArch64sunpklo : SDNode<"AArch64ISD::SUNPKLO", SDT_AArch64unpk>;
+def AArch64uunpkhi : SDNode<"AArch64ISD::UUNPKHI", SDT_AArch64unpk>;
+def AArch64uunpklo : SDNode<"AArch64ISD::UUNPKLO", SDT_AArch64unpk>;
+
 //===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//
@@ -430,10 +526,10 @@ def AArch64stz2g : SDNode<"AArch64ISD::STZ2G", SDT_AArch64SETTAG, [SDNPHasChain,
 // the Function object through the <Target>Subtarget and objections were raised
 // to that (see post-commit review comments for r301750).
 let RecomputePerFunction = 1 in {
-  def ForCodeSize   : Predicate<"MF->getFunction().hasOptSize()">;
-  def NotForCodeSize   : Predicate<"!MF->getFunction().hasOptSize()">;
+  def ForCodeSize   : Predicate<"shouldOptForSize(MF)">;
+  def NotForCodeSize   : Predicate<"!shouldOptForSize(MF)">;
   // Avoid generating STRQro if it is slow, unless we're optimizing for code size.
-  def UseSTRQro : Predicate<"!Subtarget->isSTRQroSlow() || MF->getFunction().hasOptSize()">;
+  def UseSTRQro : Predicate<"!Subtarget->isSTRQroSlow() || shouldOptForSize(MF)">;
 
   def UseBTI : Predicate<[{ MF->getFunction().hasFnAttribute("branch-target-enforcement") }]>;
   def NotUseBTI : Predicate<[{ !MF->getFunction().hasFnAttribute("branch-target-enforcement") }]>;
@@ -663,6 +759,29 @@ defm FCADD : SIMDThreeSameVectorComplexHSD<1, 0b111, complexrotateopodd,
                                            "fcadd", null_frag>;
 defm FCMLA : SIMDIndexedTiedComplexHSD<1, 0, 1, complexrotateop, "fcmla",
                                        null_frag>;
+
+let Predicates = [HasComplxNum, HasNEON, HasFullFP16] in {
+  def : Pat<(v4f16 (int_aarch64_neon_vcadd_rot90 (v4f16 V64:$Rn), (v4f16 V64:$Rm))),
+            (FCADDv4f16 (v4f16 V64:$Rn), (v4f16 V64:$Rm), (i32 0))>;
+  def : Pat<(v4f16 (int_aarch64_neon_vcadd_rot270 (v4f16 V64:$Rn), (v4f16 V64:$Rm))),
+            (FCADDv4f16 (v4f16 V64:$Rn), (v4f16 V64:$Rm), (i32 1))>;
+  def : Pat<(v8f16 (int_aarch64_neon_vcadd_rot90 (v8f16 V128:$Rn), (v8f16 V128:$Rm))),
+            (FCADDv8f16 (v8f16 V128:$Rn), (v8f16 V128:$Rm), (i32 0))>;
+  def : Pat<(v8f16 (int_aarch64_neon_vcadd_rot270 (v8f16 V128:$Rn), (v8f16 V128:$Rm))),
+            (FCADDv8f16 (v8f16 V128:$Rn), (v8f16 V128:$Rm), (i32 1))>;
+}
+let Predicates = [HasComplxNum, HasNEON] in {
+  def : Pat<(v2f32 (int_aarch64_neon_vcadd_rot90 (v2f32 V64:$Rn), (v2f32 V64:$Rm))),
+            (FCADDv2f32 (v2f32 V64:$Rn), (v2f32 V64:$Rm), (i32 0))>;
+  def : Pat<(v2f32 (int_aarch64_neon_vcadd_rot270 (v2f32 V64:$Rn), (v2f32 V64:$Rm))),
+            (FCADDv2f32 (v2f32 V64:$Rn), (v2f32 V64:$Rm), (i32 1))>;
+  foreach Ty = [v4f32, v2f64] in {
+    def : Pat<(Ty (int_aarch64_neon_vcadd_rot90 (Ty V128:$Rn), (Ty V128:$Rm))),
+              (!cast<Instruction>("FCADD"#Ty) (Ty V128:$Rn), (Ty V128:$Rm), (i32 0))>;
+    def : Pat<(Ty (int_aarch64_neon_vcadd_rot270 (Ty V128:$Rn), (Ty V128:$Rm))),
+              (!cast<Instruction>("FCADD"#Ty) (Ty V128:$Rn), (Ty V128:$Rm), (i32 1))>;
+  }
+}
 
 // v8.3a Pointer Authentication
 // These instructions inhabit part of the hint space and so can be used for
@@ -1467,6 +1586,8 @@ def : Pat<(ctlz (or (shl (xor (sra GPR32:$Rn, (i64 31)), GPR32:$Rn), (i64 1)),
 def : Pat<(ctlz (or (shl (xor (sra GPR64:$Rn, (i64 63)), GPR64:$Rn), (i64 1)),
                 (i64 1))),
           (CLSXr GPR64:$Rn)>;
+def : Pat<(int_aarch64_cls GPR32:$Rn), (CLSWr GPR32:$Rn)>;
+def : Pat<(int_aarch64_cls64 GPR64:$Rm), (EXTRACT_SUBREG (CLSXr GPR64:$Rm), sub_32)>;
 
 // Unlike the other one operand instructions, the instructions with the "rev"
 // mnemonic do *not* just different in the size bit, but actually use different
@@ -2203,8 +2324,8 @@ def : InstAlias<"prfm $Rt, [$Rn]", (PRFMui prfop:$Rt, GPR64sp:$Rn, 0)>;
 def alignedglobal : PatLeaf<(iPTR iPTR:$label), [{
   if (auto *G = dyn_cast<GlobalAddressSDNode>(N)) {
     const DataLayout &DL = MF->getDataLayout();
-    unsigned Align = G->getGlobal()->getPointerAlignment(DL);
-    return Align >= 4 && G->getOffset() % 4 == 0;
+    MaybeAlign Align = G->getGlobal()->getPointerAlignment(DL);
+    return Align && *Align >= 4 && G->getOffset() % 4 == 0;
   }
   if (auto *C = dyn_cast<ConstantPoolSDNode>(N))
     return C->getAlignment() >= 4 && C->getOffset() % 4 == 0;
@@ -3703,10 +3824,11 @@ defm FMUL     : SIMDThreeSameVectorFP<1,0,0b011,"fmul", fmul>;
 defm FRECPS   : SIMDThreeSameVectorFP<0,0,0b111,"frecps", int_aarch64_neon_frecps>;
 defm FRSQRTS  : SIMDThreeSameVectorFP<0,1,0b111,"frsqrts", int_aarch64_neon_frsqrts>;
 defm FSUB     : SIMDThreeSameVectorFP<0,1,0b010,"fsub", fsub>;
-defm MLA      : SIMDThreeSameVectorBHSTied<0, 0b10010, "mla",
-                      TriOpFrag<(add node:$LHS, (mul node:$MHS, node:$RHS))> >;
-defm MLS      : SIMDThreeSameVectorBHSTied<1, 0b10010, "mls",
-                      TriOpFrag<(sub node:$LHS, (mul node:$MHS, node:$RHS))> >;
+
+// MLA and MLS are generated in MachineCombine
+defm MLA      : SIMDThreeSameVectorBHSTied<0, 0b10010, "mla", null_frag>;
+defm MLS      : SIMDThreeSameVectorBHSTied<1, 0b10010, "mls", null_frag>;
+
 defm MUL      : SIMDThreeSameVectorBHS<0, 0b10011, "mul", mul>;
 defm PMUL     : SIMDThreeSameVectorB<1, 0b10011, "pmul", int_aarch64_neon_pmul>;
 defm SABA     : SIMDThreeSameVectorBHSTied<0, 0b01111, "saba",
@@ -3748,6 +3870,12 @@ defm SQRDMLAH : SIMDThreeSameVectorSQRDMLxHTiedHS<1,0b10000,"sqrdmlah",
                                                   int_aarch64_neon_sqadd>;
 defm SQRDMLSH : SIMDThreeSameVectorSQRDMLxHTiedHS<1,0b10001,"sqrdmlsh",
                                                     int_aarch64_neon_sqsub>;
+
+// Extra saturate patterns, other than the intrinsics matches above
+defm : SIMDThreeSameVectorExtraPatterns<"SQADD", saddsat>;
+defm : SIMDThreeSameVectorExtraPatterns<"UQADD", uaddsat>;
+defm : SIMDThreeSameVectorExtraPatterns<"SQSUB", ssubsat>;
+defm : SIMDThreeSameVectorExtraPatterns<"UQSUB", usubsat>;
 
 defm AND : SIMDLogicalThreeVector<0, 0b00, "and", and>;
 defm BIC : SIMDLogicalThreeVector<0, 0b01, "bic",
@@ -4344,6 +4472,25 @@ defm : Neon_mul_widen_patterns<AArch64smull, SMULLv8i8_v8i16,
   SMULLv4i16_v4i32, SMULLv2i32_v2i64>;
 defm : Neon_mul_widen_patterns<AArch64umull, UMULLv8i8_v8i16,
   UMULLv4i16_v4i32, UMULLv2i32_v2i64>;
+
+// Patterns for smull2/umull2.
+multiclass Neon_mul_high_patterns<SDPatternOperator opnode,
+  Instruction INST8B, Instruction INST4H, Instruction INST2S> {
+  def : Pat<(v8i16 (opnode (extract_high_v16i8 V128:$Rn),
+                           (extract_high_v16i8 V128:$Rm))),
+             (INST8B V128:$Rn, V128:$Rm)>;
+  def : Pat<(v4i32 (opnode (extract_high_v8i16 V128:$Rn),
+                           (extract_high_v8i16 V128:$Rm))),
+             (INST4H V128:$Rn, V128:$Rm)>;
+  def : Pat<(v2i64 (opnode (extract_high_v4i32 V128:$Rn),
+                           (extract_high_v4i32 V128:$Rm))),
+             (INST2S V128:$Rn, V128:$Rm)>;
+}
+
+defm : Neon_mul_high_patterns<AArch64smull, SMULLv16i8_v8i16,
+  SMULLv8i16_v4i32, SMULLv4i32_v2i64>;
+defm : Neon_mul_high_patterns<AArch64umull, UMULLv16i8_v8i16,
+  UMULLv8i16_v4i32, UMULLv4i32_v2i64>;
 
 // Additional patterns for SMLAL/SMLSL and UMLAL/UMLSL
 multiclass Neon_mulacc_widen_patterns<SDPatternOperator opnode,
@@ -5411,10 +5558,11 @@ def : Pat<(v2f64 (fmul V128:$Rn, (AArch64dup (f64 FPR64:$Rm)))),
 
 defm SQDMULH : SIMDIndexedHS<0, 0b1100, "sqdmulh", int_aarch64_neon_sqdmulh>;
 defm SQRDMULH : SIMDIndexedHS<0, 0b1101, "sqrdmulh", int_aarch64_neon_sqrdmulh>;
-defm MLA   : SIMDVectorIndexedHSTied<1, 0b0000, "mla",
-              TriOpFrag<(add node:$LHS, (mul node:$MHS, node:$RHS))>>;
-defm MLS   : SIMDVectorIndexedHSTied<1, 0b0100, "mls",
-              TriOpFrag<(sub node:$LHS, (mul node:$MHS, node:$RHS))>>;
+
+// Generated by MachineCombine
+defm MLA   : SIMDVectorIndexedHSTied<1, 0b0000, "mla", null_frag>;
+defm MLS   : SIMDVectorIndexedHSTied<1, 0b0100, "mls", null_frag>;
+
 defm MUL   : SIMDVectorIndexedHS<0, 0b1000, "mul", mul>;
 defm SMLAL : SIMDVectorIndexedLongSDTied<0, 0b0010, "smlal",
     TriOpFrag<(add node:$LHS, (int_aarch64_neon_smull node:$MHS, node:$RHS))>>;

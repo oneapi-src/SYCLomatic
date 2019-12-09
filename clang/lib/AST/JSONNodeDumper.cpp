@@ -180,17 +180,41 @@ void JSONNodeDumper::Visit(const GenericSelectionExpr::ConstAssociation &A) {
   attributeOnlyIfTrue("selected", A.isSelected());
 }
 
+void JSONNodeDumper::writeIncludeStack(PresumedLoc Loc, bool JustFirst) {
+  if (Loc.isInvalid())
+    return;
+
+  JOS.attributeBegin("includedFrom");
+  JOS.objectBegin();
+
+  if (!JustFirst) {
+    // Walk the stack recursively, then print out the presumed location.
+    writeIncludeStack(SM.getPresumedLoc(Loc.getIncludeLoc()));
+  }
+
+  JOS.attribute("file", Loc.getFilename());
+  JOS.objectEnd();
+  JOS.attributeEnd();
+}
+
 void JSONNodeDumper::writeBareSourceLocation(SourceLocation Loc,
                                              bool IsSpelling) {
   PresumedLoc Presumed = SM.getPresumedLoc(Loc);
   unsigned ActualLine = IsSpelling ? SM.getSpellingLineNumber(Loc)
                                    : SM.getExpansionLineNumber(Loc);
+  StringRef ActualFile = SM.getBufferName(Loc);
+
   if (Presumed.isValid()) {
-    if (LastLocFilename != Presumed.getFilename()) {
-      JOS.attribute("file", Presumed.getFilename());
+    JOS.attribute("offset", SM.getDecomposedLoc(Loc).second);
+    if (LastLocFilename != ActualFile) {
+      JOS.attribute("file", ActualFile);
       JOS.attribute("line", ActualLine);
     } else if (LastLocLine != ActualLine)
       JOS.attribute("line", ActualLine);
+
+    StringRef PresumedFile = Presumed.getFilename();
+    if (PresumedFile != ActualFile && LastLocPresumedFilename != PresumedFile)
+      JOS.attribute("presumedFile", PresumedFile);
 
     unsigned PresumedLine = Presumed.getLine();
     if (ActualLine != PresumedLine && LastLocPresumedLine != PresumedLine)
@@ -199,9 +223,16 @@ void JSONNodeDumper::writeBareSourceLocation(SourceLocation Loc,
     JOS.attribute("col", Presumed.getColumn());
     JOS.attribute("tokLen",
                   Lexer::MeasureTokenLength(Loc, SM, Ctx.getLangOpts()));
-    LastLocFilename = Presumed.getFilename();
+    LastLocFilename = ActualFile;
+    LastLocPresumedFilename = PresumedFile;
     LastLocPresumedLine = PresumedLine;
     LastLocLine = ActualLine;
+
+    // Orthogonal to the file, line, and column de-duplication is whether the
+    // given location was a result of an include. If so, print where the
+    // include location came from.
+    writeIncludeStack(SM.getPresumedLoc(Presumed.getIncludeLoc()),
+                      /*JustFirst*/ true);
   }
 }
 
@@ -664,8 +695,12 @@ void JSONNodeDumper::VisitMemberPointerType(const MemberPointerType *MPT) {
 }
 
 void JSONNodeDumper::VisitNamedDecl(const NamedDecl *ND) {
-  if (ND && ND->getDeclName())
+  if (ND && ND->getDeclName()) {
     JOS.attribute("name", ND->getNameAsString());
+    std::string MangledName = ASTNameGen.getName(ND);
+    if (!MangledName.empty())
+      JOS.attribute("mangledName", MangledName);
+  }
 }
 
 void JSONNodeDumper::VisitTypedefDecl(const TypedefDecl *TD) {
@@ -850,12 +885,6 @@ void JSONNodeDumper::VisitLinkageSpecDecl(const LinkageSpecDecl *LSD) {
   switch (LSD->getLanguage()) {
   case LinkageSpecDecl::lang_c: Lang = "C"; break;
   case LinkageSpecDecl::lang_cxx: Lang = "C++"; break;
-  case LinkageSpecDecl::lang_cxx_11:
-    Lang = "C++11";
-    break;
-  case LinkageSpecDecl::lang_cxx_14:
-    Lang = "C++14";
-    break;
   }
   JOS.attribute("language", Lang);
   attributeOnlyIfTrue("hasBraces", LSD->hasBraces());
@@ -989,6 +1018,7 @@ void JSONNodeDumper::VisitObjCPropertyDecl(const ObjCPropertyDecl *D) {
     attributeOnlyIfTrue("unsafe_unretained",
                         Attrs & ObjCPropertyDecl::OBJC_PR_unsafe_unretained);
     attributeOnlyIfTrue("class", Attrs & ObjCPropertyDecl::OBJC_PR_class);
+    attributeOnlyIfTrue("direct", Attrs & ObjCPropertyDecl::OBJC_PR_direct);
     attributeOnlyIfTrue("nullability",
                         Attrs & ObjCPropertyDecl::OBJC_PR_nullability);
     attributeOnlyIfTrue("null_resettable",

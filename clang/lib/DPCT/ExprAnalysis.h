@@ -237,7 +237,7 @@ protected:
   }
 
   inline void analyzeExpr(const MaterializeTemporaryExpr *MTE) {
-    return dispatch(MTE->getTemporary());
+    return dispatch(MTE->getSubExpr());
   }
 
   inline void analyzeExpr(const PseudoObjectExpr *POE) {

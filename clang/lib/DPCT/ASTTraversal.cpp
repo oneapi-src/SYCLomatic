@@ -4550,7 +4550,7 @@ void MemoryMigrationRule::mallocMigration(
 const ArraySubscriptExpr *
 MemoryMigrationRule::getArraySubscriptExpr(const Expr *E) {
   if (const auto MTE = dyn_cast<MaterializeTemporaryExpr>(E)) {
-    if (auto TE = MTE->GetTemporaryExpr()) {
+    if (auto TE = MTE->getSubExpr()) {
       if (auto UO = dyn_cast<UnaryOperator>(TE)) {
         if (auto Arg = dyn_cast<ArraySubscriptExpr>(UO->getSubExpr())) {
           return Arg;
@@ -4563,7 +4563,7 @@ MemoryMigrationRule::getArraySubscriptExpr(const Expr *E) {
 
 const Expr *MemoryMigrationRule::getUnaryOperatorExpr(const Expr *E) {
   if (const auto MTE = dyn_cast<MaterializeTemporaryExpr>(E)) {
-    if (auto TE = MTE->GetTemporaryExpr()) {
+    if (auto TE = MTE->getSubExpr()) {
       if (auto UO = dyn_cast<UnaryOperator>(TE)) {
         return UO->getSubExpr();
       }

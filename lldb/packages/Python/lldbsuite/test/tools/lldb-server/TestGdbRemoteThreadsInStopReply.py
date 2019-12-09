@@ -43,7 +43,7 @@ class TestGdbRemoteThreadsInStopReply(
         hw_info = self.parse_hw_info(context)
 
         # Give threads time to start up, then break.
-        time.sleep(1)
+        time.sleep(self._WAIT_TIMEOUT)
         self.reset_test_sequence()
         self.test_sequence.add_log_lines(
             [
@@ -61,7 +61,8 @@ class TestGdbRemoteThreadsInStopReply(
         self.assertIsNotNone(context)
 
         # Wait until all threads have started.
-        threads = self.wait_for_thread_count(thread_count, timeout_seconds=3)
+        threads = self.wait_for_thread_count(thread_count,
+                                             timeout_seconds=self._WAIT_TIMEOUT)
         self.assertIsNotNone(threads)
         self.assertEqual(len(threads), thread_count)
 
@@ -210,6 +211,7 @@ class TestGdbRemoteThreadsInStopReply(
     # to handle the exception debug event. So one more stop thread will be notified to the
     # delegate, e.g. llgs.  So tests below to assert the stop threads number will all fail.
     @expectedFailureAll(oslist=["windows"])
+    @skipIfNetBSD
     @llgs_test
     def test_stop_reply_reports_multiple_threads_llgs(self):
         self.init_llgs_test()
@@ -232,6 +234,7 @@ class TestGdbRemoteThreadsInStopReply(
         self.no_QListThreadsInStopReply_supplies_no_threads(5)
 
     @expectedFailureAll(oslist=["windows"])
+    @skipIfNetBSD
     @llgs_test
     def test_no_QListThreadsInStopReply_supplies_no_threads_llgs(self):
         self.init_llgs_test()
@@ -270,6 +273,7 @@ class TestGdbRemoteThreadsInStopReply(
         self.stop_reply_reports_correct_threads(5)
 
     @expectedFailureAll(oslist=["windows"])
+    @skipIfNetBSD
     @llgs_test
     def test_stop_reply_reports_correct_threads_llgs(self):
         self.init_llgs_test()
@@ -295,6 +299,7 @@ class TestGdbRemoteThreadsInStopReply(
                     == int(threads_info_pcs[thread_id], 16))
 
     @expectedFailureAll(oslist=["windows"])
+    @skipIfNetBSD
     @llgs_test
     def test_stop_reply_contains_thread_pcs_llgs(self):
         self.init_llgs_test()

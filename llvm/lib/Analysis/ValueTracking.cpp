@@ -915,7 +915,7 @@ static void computeKnownBitsFromShiftOperator(
   // If the shift amount could be greater than or equal to the bit-width of the
   // LHS, the value could be poison, but bail out because the check below is
   // expensive. TODO: Should we just carry on?
-  if ((~Known.Zero).uge(BitWidth)) {
+  if (Known.getMaxValue().uge(BitWidth)) {
     Known.resetAll();
     return;
   }
@@ -1721,9 +1721,9 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
 
   // Aligned pointers have trailing zeros - refine Known.Zero set
   if (V->getType()->isPointerTy()) {
-    unsigned Align = V->getPointerAlignment(Q.DL);
+    const MaybeAlign Align = V->getPointerAlignment(Q.DL);
     if (Align)
-      Known.Zero.setLowBits(countTrailingZeros(Align));
+      Known.Zero.setLowBits(countTrailingZeros(Align->value()));
   }
 
   // computeKnownBitsFromAssume strictly refines Known.
@@ -3095,6 +3095,58 @@ bool llvm::SignBitMustBeZero(const Value *V, const TargetLibraryInfo *TLI) {
   return cannotBeOrderedLessThanZeroImpl(V, TLI, true, 0);
 }
 
+bool llvm::isKnownNeverInfinity(const Value *V, const TargetLibraryInfo *TLI,
+                                unsigned Depth) {
+  assert(V->getType()->isFPOrFPVectorTy() && "Querying for Inf on non-FP type");
+
+  // If we're told that infinities won't happen, assume they won't.
+  if (auto *FPMathOp = dyn_cast<FPMathOperator>(V))
+    if (FPMathOp->hasNoInfs())
+      return true;
+
+  // Handle scalar constants.
+  if (auto *CFP = dyn_cast<ConstantFP>(V))
+    return !CFP->isInfinity();
+
+  if (Depth == MaxDepth)
+    return false;
+
+  if (auto *Inst = dyn_cast<Instruction>(V)) {
+    switch (Inst->getOpcode()) {
+    case Instruction::Select: {
+      return isKnownNeverInfinity(Inst->getOperand(1), TLI, Depth + 1) &&
+             isKnownNeverInfinity(Inst->getOperand(2), TLI, Depth + 1);
+    }
+    case Instruction::UIToFP:
+      // If the input type fits into the floating type the result is finite.
+      return ilogb(APFloat::getLargest(
+                 Inst->getType()->getScalarType()->getFltSemantics())) >=
+             (int)Inst->getOperand(0)->getType()->getScalarSizeInBits();
+    default:
+      break;
+    }
+  }
+
+  // Bail out for constant expressions, but try to handle vector constants.
+  if (!V->getType()->isVectorTy() || !isa<Constant>(V))
+    return false;
+
+  // For vectors, verify that each element is not infinity.
+  unsigned NumElts = V->getType()->getVectorNumElements();
+  for (unsigned i = 0; i != NumElts; ++i) {
+    Constant *Elt = cast<Constant>(V)->getAggregateElement(i);
+    if (!Elt)
+      return false;
+    if (isa<UndefValue>(Elt))
+      continue;
+    auto *CElt = dyn_cast<ConstantFP>(Elt);
+    if (!CElt || CElt->isInfinity())
+      return false;
+  }
+  // All elements were confirmed non-infinity or undefined.
+  return true;
+}
+
 bool llvm::isKnownNeverNaN(const Value *V, const TargetLibraryInfo *TLI,
                            unsigned Depth) {
   assert(V->getType()->isFPOrFPVectorTy() && "Querying for NaN on non-FP type");
@@ -3114,13 +3166,26 @@ bool llvm::isKnownNeverNaN(const Value *V, const TargetLibraryInfo *TLI,
   if (auto *Inst = dyn_cast<Instruction>(V)) {
     switch (Inst->getOpcode()) {
     case Instruction::FAdd:
-    case Instruction::FMul:
     case Instruction::FSub:
+      // Adding positive and negative infinity produces NaN.
+      return isKnownNeverNaN(Inst->getOperand(0), TLI, Depth + 1) &&
+             isKnownNeverNaN(Inst->getOperand(1), TLI, Depth + 1) &&
+             (isKnownNeverInfinity(Inst->getOperand(0), TLI, Depth + 1) ||
+              isKnownNeverInfinity(Inst->getOperand(1), TLI, Depth + 1));
+
+    case Instruction::FMul:
+      // Zero multiplied with infinity produces NaN.
+      // FIXME: If neither side can be zero fmul never produces NaN.
+      return isKnownNeverNaN(Inst->getOperand(0), TLI, Depth + 1) &&
+             isKnownNeverInfinity(Inst->getOperand(0), TLI, Depth + 1) &&
+             isKnownNeverNaN(Inst->getOperand(1), TLI, Depth + 1) &&
+             isKnownNeverInfinity(Inst->getOperand(1), TLI, Depth + 1);
+
     case Instruction::FDiv:
-    case Instruction::FRem: {
-      // TODO: Need isKnownNeverInfinity
+    case Instruction::FRem:
+      // FIXME: Only 0/0, Inf/Inf, Inf REM x and x REM 0 produce NaN.
       return false;
-    }
+
     case Instruction::Select: {
       return isKnownNeverNaN(Inst->getOperand(1), TLI, Depth + 1) &&
              isKnownNeverNaN(Inst->getOperand(2), TLI, Depth + 1);
@@ -3938,9 +4003,9 @@ bool llvm::isSafeToSpeculativelyExecute(const Value *V,
     if (mustSuppressSpeculation(*LI))
       return false;
     const DataLayout &DL = LI->getModule()->getDataLayout();
-    return isDereferenceableAndAlignedPointer(LI->getPointerOperand(),
-                                              LI->getType(), LI->getAlignment(),
-                                              DL, CtxI, DT);
+    return isDereferenceableAndAlignedPointer(
+        LI->getPointerOperand(), LI->getType(), MaybeAlign(LI->getAlignment()),
+        DL, CtxI, DT);
   }
   case Instruction::Call: {
     auto *CI = cast<const CallInst>(Inst);
@@ -4222,6 +4287,20 @@ bool llvm::isOverflowIntrinsicNoWrap(const WithOverflowInst *WO,
   return llvm::any_of(GuardingBranches, AllUsesGuardedByBranch);
 }
 
+bool llvm::isGuaranteedNotToBeUndefOrPoison(const Value *V) {
+  // If the value is a freeze instruction, then it can never
+  // be undef or poison.
+  if (isa<FreezeInst>(V))
+    return true;
+  // TODO: Some instructions are guaranteed to return neither undef
+  // nor poison if their arguments are not poison/undef.
+
+  // TODO: Deal with other Constant subclasses.
+  if (isa<ConstantInt>(V) || isa<GlobalVariable>(V))
+    return true;
+
+  return false;
+}
 
 OverflowResult llvm::computeOverflowForSignedAdd(const AddOperator *Add,
                                                  const DataLayout &DL,
@@ -5755,17 +5834,47 @@ Optional<int64_t> llvm::isPointerOffset(const Value *Ptr1, const Value *Ptr2,
   const GEPOperator *GEP1 = dyn_cast<GEPOperator>(Ptr1);
   const GEPOperator *GEP2 = dyn_cast<GEPOperator>(Ptr2);
 
-  // If one pointer is a GEP and the other isn't, then see if the GEP is a
-  // constant offset from the base, as in "P" and "gep P, 1".
-  if (GEP1 && !GEP2 && GEP1->getOperand(0)->stripPointerCasts() == Ptr2) {
-    auto Offset = getOffsetFromIndex(GEP1, 1, DL);
-    if (!Offset)
+  // If one pointer is a GEP see if the GEP is a constant offset from the base,
+  // as in "P" and "gep P, 1".
+  // Also do this iteratively to handle the the following case:
+  //   Ptr_t1 = GEP Ptr1, c1
+  //   Ptr_t2 = GEP Ptr_t1, c2
+  //   Ptr2 = GEP Ptr_t2, c3
+  // where we will return c1+c2+c3.
+  // TODO: Handle the case when both Ptr1 and Ptr2 are GEPs of some common base
+  // -- replace getOffsetFromBase with getOffsetAndBase, check that the bases
+  // are the same, and return the difference between offsets.
+  auto getOffsetFromBase = [&DL](const GEPOperator *GEP,
+                                 const Value *Ptr) -> Optional<int64_t> {
+    const GEPOperator *GEP_T = GEP;
+    int64_t OffsetVal = 0;
+    bool HasSameBase = false;
+    while (GEP_T) {
+      auto Offset = getOffsetFromIndex(GEP_T, 1, DL);
+      if (!Offset)
+        return None;
+      OffsetVal += *Offset;
+      auto Op0 = GEP_T->getOperand(0)->stripPointerCasts();
+      if (Op0 == Ptr) {
+        HasSameBase = true;
+        break;
+      }
+      GEP_T = dyn_cast<GEPOperator>(Op0);
+    }
+    if (!HasSameBase)
       return None;
-    return -*Offset;
-  }
+    return OffsetVal;
+  };
 
-  if (GEP2 && !GEP1 && GEP2->getOperand(0)->stripPointerCasts() == Ptr1) {
-    return getOffsetFromIndex(GEP2, 1, DL);
+  if (GEP1) {
+    auto Offset = getOffsetFromBase(GEP1, Ptr2);
+    if (Offset)
+      return -*Offset;
+  }
+  if (GEP2) {
+    auto Offset = getOffsetFromBase(GEP2, Ptr1);
+    if (Offset)
+      return Offset;
   }
 
   // Right now we handle the case when Ptr1/Ptr2 are both GEPs with an identical

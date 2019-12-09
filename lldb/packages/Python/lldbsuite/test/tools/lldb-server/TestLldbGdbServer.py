@@ -230,6 +230,7 @@ class LldbGdbServerTestCase(gdbremote_testcase.GdbRemoteTestCaseBase, DwarfOpcod
         self.set_inferior_startup_attach()
         self.attach_commandline_continue_app_exits()
 
+    @expectedFailureNetBSD
     @llgs_test
     def test_attach_commandline_continue_app_exits_llgs(self):
         self.init_llgs_test()
@@ -436,6 +437,7 @@ class LldbGdbServerTestCase(gdbremote_testcase.GdbRemoteTestCaseBase, DwarfOpcod
             "Advanced Vector Extensions" in register_sets)
 
     @expectedFailureAll(oslist=["windows"]) # no avx for now.
+    @expectedFailureNetBSD
     @llgs_test
     def test_qRegisterInfo_contains_avx_registers_llgs(self):
         self.init_llgs_test()
@@ -481,6 +483,7 @@ class LldbGdbServerTestCase(gdbremote_testcase.GdbRemoteTestCaseBase, DwarfOpcod
         self.qThreadInfo_contains_thread()
 
     @expectedFailureAll(oslist=["windows"]) # expect one more thread stopped
+    @expectedFailureNetBSD
     @llgs_test
     def test_qThreadInfo_contains_thread_attach_llgs(self):
         self.init_llgs_test()
@@ -540,6 +543,7 @@ class LldbGdbServerTestCase(gdbremote_testcase.GdbRemoteTestCaseBase, DwarfOpcod
         self.qThreadInfo_matches_qC()
 
     @expectedFailureAll(oslist=["windows"]) # expect one more thread stopped
+    @expectedFailureNetBSD
     @llgs_test
     def test_qThreadInfo_matches_qC_attach_llgs(self):
         self.init_llgs_test()
@@ -603,6 +607,7 @@ class LldbGdbServerTestCase(gdbremote_testcase.GdbRemoteTestCaseBase, DwarfOpcod
         self.set_inferior_startup_launch()
         self.p_returns_correct_data_size_for_each_qRegisterInfo()
 
+    @expectedFailureNetBSD
     @llgs_test
     def test_p_returns_correct_data_size_for_each_qRegisterInfo_launch_llgs(
             self):
@@ -620,6 +625,7 @@ class LldbGdbServerTestCase(gdbremote_testcase.GdbRemoteTestCaseBase, DwarfOpcod
         self.set_inferior_startup_attach()
         self.p_returns_correct_data_size_for_each_qRegisterInfo()
 
+    @expectedFailureNetBSD
     @llgs_test
     def test_p_returns_correct_data_size_for_each_qRegisterInfo_attach_llgs(
             self):
@@ -639,7 +645,7 @@ class LldbGdbServerTestCase(gdbremote_testcase.GdbRemoteTestCaseBase, DwarfOpcod
         self.run_process_then_stop(run_seconds=1)
 
         # Wait at most x seconds for 3 threads to be present.
-        threads = self.wait_for_thread_count(3, timeout_seconds=5)
+        threads = self.wait_for_thread_count(3, timeout_seconds=self._WAIT_TIMEOUT)
         self.assertEqual(len(threads), 3)
 
         # verify we can $H to each thead, and $qC matches the thread we set.
@@ -685,6 +691,7 @@ class LldbGdbServerTestCase(gdbremote_testcase.GdbRemoteTestCaseBase, DwarfOpcod
         self.Hg_switches_to_3_threads()
 
     @expectedFailureAll(oslist=["windows"]) # expecting one more thread
+    @expectedFailureNetBSD
     @llgs_test
     def test_Hg_switches_to_3_threads_attach_llgs(self):
         self.init_llgs_test()
@@ -735,7 +742,7 @@ class LldbGdbServerTestCase(gdbremote_testcase.GdbRemoteTestCaseBase, DwarfOpcod
                                                             2: "thread_id"}}],
                                              True)
 
-            context = self.expect_gdbremote_sequence(timeout_seconds=10)
+            context = self.expect_gdbremote_sequence(timeout_seconds=self._DEFAULT_TIMEOUT)
             self.assertIsNotNone(context)
             signo = context.get("signo")
             self.assertEqual(int(signo, 16), segfault_signo)
@@ -771,7 +778,8 @@ class LldbGdbServerTestCase(gdbremote_testcase.GdbRemoteTestCaseBase, DwarfOpcod
                 True)
 
             # Run the sequence.
-            context = self.expect_gdbremote_sequence(timeout_seconds=10)
+            context = self.expect_gdbremote_sequence(
+                timeout_seconds=self._DEFAULT_TIMEOUT)
             self.assertIsNotNone(context)
 
             # Ensure the stop signal is the signal we delivered.
@@ -815,6 +823,7 @@ class LldbGdbServerTestCase(gdbremote_testcase.GdbRemoteTestCaseBase, DwarfOpcod
         self.Hc_then_Csignal_signals_correct_thread(self.TARGET_EXC_BAD_ACCESS)
 
     @skipIfWindows # no SIGSEGV support
+    @expectedFailureNetBSD
     @llgs_test
     def test_Hc_then_Csignal_signals_correct_thread_launch_llgs(self):
         self.init_llgs_test()
@@ -1485,7 +1494,7 @@ class LldbGdbServerTestCase(gdbremote_testcase.GdbRemoteTestCaseBase, DwarfOpcod
         self.assertIsNotNone(context)
 
         # Wait for 3 threads to be present.
-        threads = self.wait_for_thread_count(3, timeout_seconds=5)
+        threads = self.wait_for_thread_count(3, timeout_seconds=self._WAIT_TIMEOUT)
         self.assertEqual(len(threads), 3)
 
         expected_reg_values = []

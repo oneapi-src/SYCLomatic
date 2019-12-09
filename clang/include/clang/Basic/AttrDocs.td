@@ -253,12 +253,87 @@ any option of a multiversioned function is undefined.
   }];
 }
 
+def SYCLKernelDocs : Documentation {
+  let Category = DocCatFunction;
+  let Content = [{
+The ``sycl_kernel`` attribute specifies that a function template will be used
+to outline device code and to generate an OpenCL kernel.
+Here is a code example of the SYCL program, which demonstrates the compiler's
+outlining job:
+.. code-block:: c++
+
+  int foo(int x) { return ++x; }
+
+  using namespace cl::sycl;
+  queue Q;
+  buffer<int, 1> a(range<1>{1024});
+  Q.submit([&](handler& cgh) {
+    auto A = a.get_access<access::mode::write>(cgh);
+    cgh.parallel_for<init_a>(range<1>{1024}, [=](id<1> index) {
+      A[index] = index[0] + foo(42);
+    });
+  }
+
+A C++ function object passed to the ``parallel_for`` is called a "SYCL kernel".
+A SYCL kernel defines the entry point to the "device part" of the code. The
+compiler will emit all symbols accessible from a "kernel". In this code
+example, the compiler will emit "foo" function.  More details about the
+compilation of functions for the device part can be found in the SYCL 1.2.1
+specification Section 6.4.
+To show to the compiler entry point to the "device part" of the code, the SYCL
+runtime can use the ``sycl_kernel`` attribute in the following way:
+.. code-block:: c++
+namespace cl {
+namespace sycl {
+class handler {
+  template <typename KernelName, typename KernelType/*, ...*/>
+  __attribute__((sycl_kernel)) void sycl_kernel_function(KernelType KernelFuncObj) {
+    // ...
+    KernelFuncObj();
+  }
+
+  template <typename KernelName, typename KernelType, int Dims>
+  void parallel_for(range<Dims> NumWorkItems, KernelType KernelFunc) {
+#ifdef __SYCL_DEVICE_ONLY__
+    sycl_kernel_function<KernelName, KernelType, Dims>(KernelFunc);
+#else
+    // Host implementation
+#endif
+  }
+};
+} // namespace sycl
+} // namespace cl
+
+The compiler will also generate an OpenCL kernel using the function marked with
+the ``sycl_kernel`` attribute.
+Here is the list of SYCL device compiler expectations with regard to the
+function marked with the ``sycl_kernel`` attribute:
+
+- The function must be a template with at least two type template parameters.
+  The compiler generates an OpenCL kernel and uses the first template parameter
+  as a unique name for the generated OpenCL kernel. The host application uses
+  this unique name to invoke the OpenCL kernel generated for the SYCL kernel
+  specialized by this name and second template parameter ``KernelType`` (which
+  might be an unnamed function object type).
+- The function must have at least one parameter. The first parameter is
+  required to be a function object type (named or unnamed i.e. lambda). The
+  compiler uses function object type fields to generate OpenCL kernel
+  parameters.
+- The function must return void. The compiler reuses the body of marked functions to
+  generate the OpenCL kernel body, and the OpenCL kernel must return `void`.
+
+The SYCL kernel in the previous code sample meets these expectations.
+  }];
+}
+
 def C11NoReturnDocs : Documentation {
   let Category = DocCatFunction;
   let Content = [{
 A function declared as ``_Noreturn`` shall not return to its caller. The
 compiler will generate a diagnostic for a function declared as ``_Noreturn``
-that appears to be capable of returning to its caller.
+that appears to be capable of returning to its caller. Despite being a type
+specifier, the ``_Noreturn`` attribute cannot be specified on a function
+pointer type.
   }];
 }
 
@@ -1632,6 +1707,17 @@ The semantics are as follows:
   }];
 }
 
+def BPFPreserveAccessIndexDocs : Documentation {
+  let Category = DocCatFunction;
+  let Content = [{
+Clang supports the ``__attribute__((preserve_access_index))``
+attribute for the BPF target. This attribute may be attached to a
+struct or union declaration, where if -g is specified, it enables
+preserving struct or union member access debuginfo indicies of this
+struct or union, similar to clang ``__builtin_preserve_acceess_index()``.
+  }];
+}
+
 def MipsInterruptDocs : Documentation {
   let Category = DocCatFunction;
   let Heading = "interrupt (MIPS)";
@@ -1835,14 +1921,107 @@ loads).
   }];
 }
 
+def IntelFPGABankBitsDocs : Documentation {
+  let Category = DocCatVariable;
+  let Heading = "bank_bits (IntelFPGA)";
+  let Content = [{
+This attribute may be attached to a variable or struct member declaration and
+instructs the backend to implement the variable or struct member in a banked
+memory with 2^(N+1) banks, where the (b0, ..., bn) bits specified determine the
+pointer address bits to bank on.
+  }];
+}
+
+def SYCLIntelKernelArgsRestrictDocs : Documentation {
+  let Category = DocCatVariable;
+  let Heading = "kernel_args_restrict";
+  let Content = [{
+The attribute ``intel::kernel_args_restrict`` is legal on device functions, and
+can be ignored on non-device functions. When applied to a function, lambda, or
+function call operator (of a function object), the attribute is a hint to the
+compiler equivalent to specifying the C99 restrict attribute on all pointer
+arguments or the pointer member of any accessors, which are a function argument,
+lambda capture, or function object member, of the callable to which the
+attribute was applied. This effect is equivalent to annotating restrict on
+**all** kernel pointer arguments in an OpenCL or SPIR-V kernel.
+
+If ``intel::kernel_args_restrict`` is applied to a function called from a device
+kernel, the attribute is ignored and it is not propagated to a kernel.
+
+The attribute forms an unchecked assertion, in that implementations
+do not need to check/confirm the pre-condition in any way. If a user applies
+``intel::_kernel_args_restrict`` to a kernel, but there is in fact aliasing
+between kernel pointer arguments at runtime, the behavior is undefined.
+
+The attribute-token ``intel::kernel_args_restrict`` shall appear at most once in
+each attribute-list and no attribute-argument-clause shall be present. The
+attribute may be applied to the function-type in a function declaration. The
+first declaration of a function shall specify the
+``intel::kernel_args_restrict`` attribute if any declaration of that function
+specifies the ``intel::kernel_args_restrict`` attribute. If a function is
+declared with the ``intel::kernel_args_restrict`` attribute in one translation
+unit and the same function is declared without the
+``intel::kernel_args_restrict`` attribute in another translation unit, the
+program is ill-formed and no diagnostic is required.
+
+The ``intel::kernel_args_restrict`` attribute has an effect when applied to a
+function, and no effect otherwise.
+  }];
+}
+
+def SYCLIntelNumSimdWorkItemsAttrDocs : Documentation {
+  let Category = DocCatFunction;
+  let Heading = "num_simd_work_items (IntelFPGA)";
+  let Content = [{
+Applies to a device function/lambda function. Indicates the number of work
+items that should be processed in parallel. Valid values are positive integers.
+If ``intelfpga::num_simd_work_items`` is applied to a function called from a
+device kernel, the attribute is ignored and it is not propagated to a kernel.
+  }];
+}
+
+def SYCLIntelMaxWorkGroupSizeAttrDocs : Documentation {
+  let Category = DocCatFunction;
+  let Heading = "max_work_group_size (IntelFPGA)";
+  let Content = [{
+Applies to a device function/lambda function. Indicates the maximum dimensions
+of a work group. Values must be positive integers. This is similar to
+reqd_work_group_size, but allows work groups that are smaller or equal to the
+specified sizes.
+If ``intelfpga::max_work_group_size`` is applied to a function called from a
+device kernel, the attribute is ignored and it is not propagated to a kernel.
+  }];
+}
+
+def SYCLFPGAPipeDocs : Documentation {
+  let Category = DocCatStmt;
+  let Heading = "pipe (read_only, write_only)";
+  let Content = [{
+This attribute applies to a type to indicate that it is a pipe type.
+It requires a string argument that specifies if the pipe is read only or
+write only. Expected to be used only in SYCL headers.
+  }];
+}
+
 def SYCLIntelFPGAIVDepAttrDocs : Documentation {
   let Category = DocCatVariable;
   let Heading = "ivdep";
   let Content = [{
 This attribute applies to a loop. If no additional arguments are provided, it
 indicates that the backend may assume that the loop carries no dependences.
-If a safelen is provided then the backend may assume that all loop carried
+If a safelen is provided then the backend may assume that all loop-carried
 dependences have a dependence distance of at least that length.
+If an array variable is provided then the backend may assume that there are
+no loop-carried dependences for this particular array within this loop.
+If both an array variable and a safelen are specified, the backend may assume
+that all loop-carried dependences for this particular array have a dependence
+distance of at least that length.
+Multiple ivdep attributes can be applied to the same loop, but only the greatest
+possible safelen will be chosen for each array, including the case where safelen
+is unspecified and is therefore considered infinite.
+In case of ivdep being applied both w/o an array variable and for a particular
+array, the array variables that were not designated a separate ivdep will receive
+the no-array ivdep's safelen, with the correspondent treatment by the backend.
   }];
 }
 
@@ -1961,6 +2140,10 @@ The current set of options correspond to the existing "subtarget features" for
 the target with or without a "-mno-" in front corresponding to the absence
 of the feature, as well as ``arch="CPU"`` which will change the default "CPU"
 for the function.
+
+For AArch64, the attribute also allows the "branch-protection=<args>" option,
+where the permissible arguments and their effect on code generation are the same
+as for the command-line option ``-mbranch-protection``.
 
 Example "subtarget features" from the x86 backend include: "mmx", "sse", "sse4.2",
 "avx", "xop" and largely correspond to the machine specific options handled by
@@ -4097,6 +4280,104 @@ overheads associated with defining and calling such a method.
   }];
 }
 
+def ObjCDirectDocs : Documentation {
+  let Category = DocCatDecl;
+  let Content = [{
+The ``objc_direct`` attribute can be used to mark an Objective-C method as
+being *direct*.  A direct method is treated statically like an ordinary method,
+but dynamically it behaves more like a C function.  This lowers some of the costs
+associated with the method but also sacrifices some of the ordinary capabilities
+of Objective-C methods.
+
+A message send of a direct method calls the implementation directly, as if it
+were a C function, rather than using ordinary Objective-C method dispatch. This
+is substantially faster and potentially allows the implementation to be inlined,
+but it also means the method cannot be overridden in subclasses or replaced
+dynamically, as ordinary Objective-C methods can.
+
+Furthermore, a direct method is not listed in the class's method lists. This
+substantially reduces the code-size overhead of the method but also means it
+cannot be called dynamically using ordinary Objective-C method dispatch at all;
+in particular, this means that it cannot override a superclass method or satisfy
+a protocol requirement.
+
+Because a direct method cannot be overridden, it is an error to perform
+a ``super`` message send of one.
+
+Although a message send of a direct method causes the method to be called
+directly as if it were a C function, it still obeys Objective-C semantics in other
+ways:
+
+- If the receiver is ``nil``, the message send does nothing and returns the zero value
+  for the return type.
+
+- A message send of a direct class method will cause the class to be initialized,
+  including calling the ``+initialize`` method if present.
+
+- The implicit ``_cmd`` parameter containing the method's selector is still defined.
+ In order to minimize code-size costs, the implementation will not emit a reference
+ to the selector if the parameter is unused within the method.
+
+Symbols for direct method implementations are implicitly given hidden
+visibility, meaning that they can only be called within the same linkage unit.
+
+It is an error to do any of the following:
+
+- declare a direct method in a protocol,
+- declare an override of a direct method with a method in a subclass,
+- declare an override of a non-direct method with a direct method in a subclass,
+- declare a method with different directness in different class interfaces, or
+- implement a non-direct method (as declared in any class interface) with a direct method.
+
+If any of these rules would be violated if every method defined in an
+``@implementation`` within a single linkage unit were declared in an
+appropriate class interface, the program is ill-formed with no diagnostic
+required.  If a violation of this rule is not diagnosed, behavior remains
+well-defined; this paragraph is simply reserving the right to diagnose such
+conflicts in the future, not to treat them as undefined behavior.
+
+Additionally, Clang will warn about any ``@selector`` expression that
+names a selector that is only known to be used for direct methods.
+
+For the purpose of these rules, a "class interface" includes a class's primary
+``@interface`` block, its class extensions, its categories, its declared protocols,
+and all the class interfaces of its superclasses.
+
+An Objective-C property can be declared with the ``direct`` property
+attribute.  If a direct property declaration causes an implicit declaration of
+a getter or setter method (that is, if the given method is not explicitly
+declared elsewhere), the method is declared to be direct.
+
+Some programmers may wish to make many methods direct at once.  In order
+to simplify this, the ``objc_direct_members`` attribute is provided; see its
+documentation for more information.
+  }];
+}
+
+def ObjCDirectMembersDocs : Documentation {
+  let Category = DocCatDecl;
+  let Content = [{
+The ``objc_direct_members`` attribute can be placed on an  Objective-C
+``@interface`` or ``@implementation`` to mark that methods declared
+therein should be considered direct by default.  See the documentation
+for ``objc_direct`` for more information about direct methods.
+
+When ``objc_direct_members`` is placed on an ``@interface`` block, every
+method in the block is considered to be declared as direct.  This includes any
+implicit method declarations introduced by property declarations.  If the method
+redeclares a non-direct method, the declaration is ill-formed, exactly as if the
+method was annotated with the ``objc_direct`` attribute.  ``objc_direct_members``
+cannot be placed on the primary interface of a class, only on category or class
+extension interfaces.
+
+When ``objc_direct_members`` is placed on an ``@implementation`` block,
+methods defined in the block are considered to be declared as direct unless
+they have been previously declared as non-direct in any interface of the class.
+This includes the implicit method definitions introduced by synthesized
+properties, including auto-synthesized properties.
+  }];
+}
+
 def SelectAnyDocs : Documentation {
   let Category = DocCatDecl;
   let Content = [{
@@ -4592,4 +4873,63 @@ When the Owner's lifetime ends, it will consider the Pointer to be dangling.
   }
 
 }];
+}
+
+def ArmMveAliasDocs : Documentation {
+  let Category = DocCatFunction;
+  let Content = [{
+This attribute is used in the implementation of the ACLE intrinsics
+for the Arm MVE instruction set. It allows the intrinsic functions to
+be declared using the names defined in ACLE, and still be recognized
+as clang builtins equivalent to the underlying name. For example,
+``arm_mve.h`` declares the function ``vaddq_u32`` with
+``__attribute__((__clang_arm_mve_alias(__builtin_arm_mve_vaddq_u32)))``,
+and similarly, one of the type-overloaded declarations of ``vaddq``
+will have the same attribute. This ensures that both functions are
+recognized as that clang builtin, and in the latter case, the choice
+of which builtin to identify the function as can be deferred until
+after overload resolution.
+
+This attribute can only be used to set up the aliases for the MVE
+intrinsic functions; it is intended for use only inside ``arm_mve.h``,
+and is not a general mechanism for declaring arbitrary aliases for
+clang builtin functions.
+  }];
+}
+
+def NoBuiltinDocs : Documentation {
+  let Category = DocCatFunction;
+  let Content = [{
+.. Note:: This attribute is not yet fully implemented, it is validated but has
+no effect on the generated code.
+
+The ``__attribute__((no_builtin))`` is similar to the ``-fno-builtin`` flag
+except it is specific to the body of a function. The attribute may also be
+applied to a virtual function but has no effect on the behavior of overriding
+functions in a derived class.
+
+It accepts one or more strings corresponding to the specific names of the
+builtins to disable (e.g. "memcpy", "memset").
+If the attribute is used without parameters it will disable all buitins at
+once.
+
+.. code-block:: c++
+
+  // The compiler is not allowed to add any builtin to foo's body.
+  void foo(char* data, size_t count) __attribute__((no_builtin)) {
+    // The compiler is not allowed to convert the loop into
+    // `__builtin_memset(data, 0xFE, count);`.
+    for (size_t i = 0; i < count; ++i)
+      data[i] = 0xFE;
+  }
+
+  // The compiler is not allowed to add the `memcpy` builtin to bar's body.
+  void bar(char* data, size_t count) __attribute__((no_builtin("memcpy"))) {
+    // The compiler is allowed to convert the loop into
+    // `__builtin_memset(data, 0xFE, count);` but cannot generate any
+    // `__builtin_memcpy`
+    for (size_t i = 0; i < count; ++i)
+      data[i] = 0xFE;
+  }
+  }];
 }

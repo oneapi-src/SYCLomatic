@@ -12,6 +12,7 @@
 #include "Arch/Sparc.h"
 #include "CommonArgs.h"
 #include "clang/Driver/Compilation.h"
+#include "clang/Driver/DriverDiagnostic.h"
 #include "clang/Driver/Options.h"
 #include "clang/Driver/SanitizerArgs.h"
 #include "llvm/Option/ArgList.h"
@@ -30,6 +31,7 @@ void freebsd::Assembler::ConstructJob(Compilation &C, const JobAction &JA,
                                       const char *LinkingOutput) const {
   claimNoWarnArgs(Args);
   ArgStringList CmdArgs;
+  const auto &D = getToolChain().getDriver();
 
   // When building 32-bit code on FreeBSD/amd64, we have to explicitly
   // instruct as in the base system to assemble 32-bit code.
@@ -101,6 +103,19 @@ void freebsd::Assembler::ConstructJob(Compilation &C, const JobAction &JA,
     AddAssemblerKPIC(getToolChain(), Args, CmdArgs);
     break;
   }
+  }
+
+  for (const Arg *A : Args.filtered(options::OPT_ffile_prefix_map_EQ,
+                                    options::OPT_fdebug_prefix_map_EQ)) {
+    StringRef Map = A->getValue();
+    if (Map.find('=') == StringRef::npos)
+      D.Diag(diag::err_drv_invalid_argument_to_option)
+          << Map << A->getOption().getName();
+    else {
+      CmdArgs.push_back(Args.MakeArgString("--debug-prefix-map"));
+      CmdArgs.push_back(Args.MakeArgString(Map));
+    }
+    A->claim();
   }
 
   Args.AddAllArgValues(CmdArgs, options::OPT_Wa_COMMA, options::OPT_Xassembler);
@@ -397,6 +412,11 @@ void FreeBSD::AddCXXStdlibLibArgs(const ArgList &Args,
   }
 }
 
+void FreeBSD::AddCudaIncludeArgs(const ArgList &DriverArgs,
+                                 ArgStringList &CC1Args) const {
+  CudaInstallation.AddCudaIncludeArgs(DriverArgs, CC1Args);
+}
+
 Tool *FreeBSD::buildAssembler() const {
   return new tools::freebsd::Assembler(*this);
 }
@@ -419,6 +439,8 @@ llvm::ExceptionHandling FreeBSD::GetExceptionModel(const ArgList &Args) const {
 }
 
 bool FreeBSD::HasNativeLLVMSupport() const { return true; }
+
+bool FreeBSD::IsUnwindTablesDefault(const ArgList &Args) const { return true; }
 
 bool FreeBSD::isPIEDefault() const { return getSanitizerArgs().requiresPIE(); }
 

@@ -146,7 +146,7 @@ void DWARFExpression::GetDescription(Stream *s, lldb::DescriptionLevel level,
           // We have a new base address
           if (count > 0)
             s->PutCString(", ");
-          *s << "base_addr = " << end_addr_offset;
+          s->Format("base_addr = {0:x}", end_addr_offset);
         }
       }
 
@@ -477,7 +477,7 @@ bool DWARFExpression::Update_DW_OP_addr(lldb::addr_t file_addr) {
                           m_data.GetByteOrder(), addr_byte_size);
 
       // Replace the address in the new buffer
-      if (encoder.PutMaxU64(offset, addr_byte_size, file_addr) == UINT32_MAX)
+      if (encoder.PutUnsigned(offset, addr_byte_size, file_addr) == UINT32_MAX)
         return false;
 
       // All went well, so now we can reset the data using a shared pointer to
@@ -583,8 +583,8 @@ bool DWARFExpression::LinkThreadLocalStorage(
         if (linked_file_addr == LLDB_INVALID_ADDRESS)
           return false;
         // Replace the address in the new buffer
-        if (encoder.PutMaxU64(const_offset, const_byte_size,
-                              linked_file_addr) == UINT32_MAX)
+        if (encoder.PutUnsigned(const_offset, const_byte_size,
+                                linked_file_addr) == UINT32_MAX)
           return false;
       }
       break;
@@ -636,6 +636,11 @@ bool DWARFExpression::LocationListContainsAddress(
       if (lo_pc == 0 && hi_pc == 0)
         break;
 
+      if ((m_data.GetAddressByteSize() == 4 && (lo_pc == UINT32_MAX)) ||
+          (m_data.GetAddressByteSize() == 8 && (lo_pc == UINT64_MAX))) {
+        loclist_base_addr = hi_pc + m_loclist_slide;
+        continue;
+      }
       lo_pc += loclist_base_addr - m_loclist_slide;
       hi_pc += loclist_base_addr - m_loclist_slide;
 
@@ -670,6 +675,12 @@ bool DWARFExpression::GetLocation(addr_t base_addr, addr_t pc,
 
       if (lo_pc == 0 && hi_pc == 0)
         break;
+
+      if ((m_data.GetAddressByteSize() == 4 && (lo_pc == UINT32_MAX)) ||
+          (m_data.GetAddressByteSize() == 8 && (lo_pc == UINT64_MAX))) {
+        curr_base_addr = hi_pc + m_loclist_slide;
+        continue;
+      }
 
       lo_pc += curr_base_addr - m_loclist_slide;
       hi_pc += curr_base_addr - m_loclist_slide;
@@ -819,6 +830,8 @@ static bool Evaluate_DW_OP_entry_value(std::vector<Value> &stack,
 
   CallEdge *call_edge = nullptr;
   ModuleList &modlist = target.GetImages();
+  ExecutionContext parent_exe_ctx = *exe_ctx;
+  parent_exe_ctx.SetFrameSP(parent_frame);
   if (!parent_frame->IsArtificial()) {
     // If the parent frame is not artificial, the current activation may be
     // produced by an ambiguous tail call. In this case, refuse to proceed.
@@ -830,7 +843,7 @@ static bool Evaluate_DW_OP_entry_value(std::vector<Value> &stack,
                return_pc, parent_func->GetName());
       return false;
     }
-    Function *callee_func = call_edge->GetCallee(modlist);
+    Function *callee_func = call_edge->GetCallee(modlist, parent_exe_ctx);
     if (callee_func != current_func) {
       LLDB_LOG(log, "Evaluate_DW_OP_entry_value: ambiguous call sequence, "
                     "can't find real parent frame");
@@ -840,9 +853,9 @@ static bool Evaluate_DW_OP_entry_value(std::vector<Value> &stack,
     // The StackFrameList solver machinery has deduced that an unambiguous tail
     // call sequence that produced the current activation.  The first edge in
     // the parent that points to the current function must be valid.
-    for (CallEdge &edge : parent_func->GetTailCallingEdges()) {
-      if (edge.GetCallee(modlist) == current_func) {
-        call_edge = &edge;
+    for (auto &edge : parent_func->GetTailCallingEdges()) {
+      if (edge->GetCallee(modlist, parent_exe_ctx) == current_func) {
+        call_edge = edge.get();
         break;
       }
     }
@@ -896,8 +909,6 @@ static bool Evaluate_DW_OP_entry_value(std::vector<Value> &stack,
   // TODO: Add support for DW_OP_push_object_address within a DW_OP_entry_value
   // subexpresion whenever llvm does.
   Value result;
-  ExecutionContext parent_exe_ctx = *exe_ctx;
-  parent_exe_ctx.SetFrameSP(parent_frame);
   const DWARFExpression &param_expr = matched_param->LocationInCaller;
   if (!param_expr.Evaluate(&parent_exe_ctx,
                            parent_frame->GetRegisterContext().get(),
@@ -967,6 +978,13 @@ bool DWARFExpression::Evaluate(ExecutionContext *exe_ctx,
         if (lo_pc == 0 && hi_pc == 0)
           break;
 
+        if ((m_data.GetAddressByteSize() == 4 &&
+             (lo_pc == UINT32_MAX)) ||
+            (m_data.GetAddressByteSize() == 8 &&
+             (lo_pc == UINT64_MAX))) {
+          curr_loclist_base_load_addr = hi_pc + m_loclist_slide;
+          continue;
+        }
         lo_pc += curr_loclist_base_load_addr - m_loclist_slide;
         hi_pc += curr_loclist_base_load_addr - m_loclist_slide;
 

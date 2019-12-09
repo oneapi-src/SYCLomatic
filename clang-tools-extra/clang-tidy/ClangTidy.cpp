@@ -33,6 +33,7 @@
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "clang/Lex/PPCallbacks.h"
 #include "clang/Lex/Preprocessor.h"
+#include "clang/Lex/PreprocessorOptions.h"
 #include "clang/Rewrite/Frontend/FixItRewriter.h"
 #include "clang/Rewrite/Frontend/FrontendActions.h"
 #include "clang/Tooling/Core/Diagnostic.h"
@@ -313,10 +314,8 @@ ClangTidyASTConsumerFactory::ClangTidyASTConsumerFactory(
     IntrusiveRefCntPtr<llvm::vfs::OverlayFileSystem> OverlayFS)
     : Context(Context), OverlayFS(OverlayFS),
       CheckFactories(new ClangTidyCheckFactories) {
-  for (ClangTidyModuleRegistry::iterator I = ClangTidyModuleRegistry::begin(),
-                                         E = ClangTidyModuleRegistry::end();
-       I != E; ++I) {
-    std::unique_ptr<ClangTidyModule> Module(I->instantiate());
+  for (ClangTidyModuleRegistry::entry E : ClangTidyModuleRegistry::entries()) {
+    std::unique_ptr<ClangTidyModule> Module = E.instantiate();
     Module->addCheckFactories(*CheckFactories);
   }
 }
@@ -539,10 +538,8 @@ runClangTidy(clang::tidy::ClangTidyContext &Context,
                        FileManager *Files,
                        std::shared_ptr<PCHContainerOperations> PCHContainerOps,
                        DiagnosticConsumer *DiagConsumer) override {
-      // Explicitly set ProgramAction to RunAnalysis to make the preprocessor
-      // define __clang_analyzer__ macro. The frontend analyzer action will not
-      // be called here.
-      Invocation->getFrontendOpts().ProgramAction = frontend::RunAnalysis;
+      // Explicitly ask to define __clang_analyzer__ macro.
+      Invocation->getPreprocessorOpts().SetUpStaticAnalyzer = true;
       return FrontendActionFactory::runInvocation(
           Invocation, Files, PCHContainerOps, DiagConsumer);
     }

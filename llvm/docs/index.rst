@@ -30,7 +30,8 @@ Several introductory papers and presentations.
   .. __: http://llvm.org/pubs/2008-10-04-ACAT-LLVM-Intro.html
 
 `Intro to LLVM`__
-  Book chapter providing a compiler hacker's introduction to LLVM.
+  A chapter from the book "The Architecture of Open Source Applications" that
+  describes high-level design decisions that shaped LLVM.
 
   .. __: http://www.aosabook.org/en/llvm.html
 
@@ -53,45 +54,18 @@ Getting Started, How-tos, Developer Guides, and Tutorials.
 .. toctree::
    :hidden:
 
-   UserGuides
-   ProgrammingDocumentation
+   GettingStartedTutorials
    Reference
-   SubsystemDocumentation
+   UserGuides
 
-:doc:`UserGuides`
+:doc:`GettingStartedTutorials`
   For those new to the LLVM system.
 
-:doc:`ProgrammingDocumentation`
-  For developers of applications which use LLVM as a library.
-
-:doc:`SubsystemDocumentation`
-  For API clients and LLVM developers.
+:doc:`UserGuides`
+  User guides and How-tos.
 
 :doc:`Reference`
   LLVM and API reference documentation.
-
-Getting Started/Tutorials
--------------------------
-
-.. toctree::
-   :hidden:
-
-   GettingStarted
-   tutorial/index
-   GettingStartedVS
-
-:doc:`GettingStarted`
-   Discusses how to get up and running quickly with the LLVM infrastructure.
-   Everything from unpacking and compilation of the distribution to execution
-   of some tools.
-
-:doc:`tutorial/index`
-   Tutorials about using LLVM. Includes a tutorial about making a custom
-   language with LLVM.
-
-:doc:`GettingStartedVS`
-   An addendum to the main Getting Started guide for those using Visual Studio
-   on Windows.
 
 Community
 =========

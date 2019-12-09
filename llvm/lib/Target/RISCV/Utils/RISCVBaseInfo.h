@@ -13,9 +13,11 @@
 #ifndef LLVM_LIB_TARGET_RISCV_MCTARGETDESC_RISCVBASEINFO_H
 #define LLVM_LIB_TARGET_RISCV_MCTARGETDESC_RISCVBASEINFO_H
 
+#include "RISCVRegisterInfo.h"
 #include "MCTargetDesc/RISCVMCTargetDesc.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/StringSwitch.h"
+#include "llvm/MC/MCInstrDesc.h"
 #include "llvm/MC/SubtargetFeature.h"
 
 namespace llvm {
@@ -62,6 +64,21 @@ enum {
   MO_TLS_GD_HI,
 };
 } // namespace RISCVII
+
+namespace RISCVOp {
+enum OperandType : unsigned {
+  OPERAND_FIRST_RISCV_IMM = MCOI::OPERAND_FIRST_TARGET,
+  OPERAND_UIMM4 = OPERAND_FIRST_RISCV_IMM,
+  OPERAND_UIMM5,
+  OPERAND_UIMM12,
+  OPERAND_SIMM12,
+  OPERAND_SIMM13_LSB0,
+  OPERAND_UIMM20,
+  OPERAND_SIMM21_LSB0,
+  OPERAND_UIMMLOG2XLEN,
+  OPERAND_LAST_RISCV_IMM = OPERAND_UIMMLOG2XLEN
+};
+} // namespace RISCVOp
 
 // Describes the predecessor/successor bits used in the FENCE instruction.
 namespace RISCVFenceField {
@@ -178,6 +195,9 @@ enum ABI {
 // not supported for the given TT and FeatureBits combination.
 ABI computeTargetABI(const Triple &TT, FeatureBitset FeatureBits,
                      StringRef ABIName);
+
+// Returns the register used to hold the stack pointer after realignment.
+Register getBPReg();
 
 } // namespace RISCVABI
 

@@ -10,6 +10,7 @@
 #include "clang/AST/ASTDiagnostic.h"
 #include "clang/AST/ExternalASTSource.h"
 #include "clang/AST/PrettyPrinter.h"
+#include "clang/Basic/Builtins.h"
 #include "clang/Basic/DiagnosticIDs.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/TargetInfo.h"
@@ -162,53 +163,69 @@ public:
 
   void HandleDiagnostic(DiagnosticsEngine::Level DiagLevel,
                         const clang::Diagnostic &Info) override {
+    if (!m_manager) {
+      // We have no DiagnosticManager before/after parsing but we still could
+      // receive diagnostics (e.g., by the ASTImporter failing to copy decls
+      // when we move the expression result ot the ScratchASTContext). Let's at
+      // least log these diagnostics until we find a way to properly render
+      // them and display them to the user.
+      Log *log(lldb_private::GetLogIfAllCategoriesSet(LIBLLDB_LOG_EXPRESSIONS));
+      if (log) {
+        llvm::SmallVector<char, 32> diag_str;
+        Info.FormatDiagnostic(diag_str);
+        diag_str.push_back('\0');
+        const char *plain_diag = diag_str.data();
+        LLDB_LOG(log, "Received diagnostic outside parsing: {0}", plain_diag);
+      }
+      return;
+    }
+
     // Render diagnostic message to m_output.
     m_output.clear();
     m_passthrough->HandleDiagnostic(DiagLevel, Info);
     m_os->flush();
 
-    if (m_manager) {
-      lldb_private::DiagnosticSeverity severity;
-      bool make_new_diagnostic = true;
+    lldb_private::DiagnosticSeverity severity;
+    bool make_new_diagnostic = true;
 
-      switch (DiagLevel) {
-      case DiagnosticsEngine::Level::Fatal:
-      case DiagnosticsEngine::Level::Error:
-        severity = eDiagnosticSeverityError;
-        break;
-      case DiagnosticsEngine::Level::Warning:
-        severity = eDiagnosticSeverityWarning;
-        break;
-      case DiagnosticsEngine::Level::Remark:
-      case DiagnosticsEngine::Level::Ignored:
-        severity = eDiagnosticSeverityRemark;
-        break;
-      case DiagnosticsEngine::Level::Note:
-        m_manager->AppendMessageToDiagnostic(m_output);
-        make_new_diagnostic = false;
-      }
-      if (make_new_diagnostic) {
-        // ClangDiagnostic messages are expected to have no whitespace/newlines
-        // around them.
-        std::string stripped_output = llvm::StringRef(m_output).trim();
+    switch (DiagLevel) {
+    case DiagnosticsEngine::Level::Fatal:
+    case DiagnosticsEngine::Level::Error:
+      severity = eDiagnosticSeverityError;
+      break;
+    case DiagnosticsEngine::Level::Warning:
+      severity = eDiagnosticSeverityWarning;
+      break;
+    case DiagnosticsEngine::Level::Remark:
+    case DiagnosticsEngine::Level::Ignored:
+      severity = eDiagnosticSeverityRemark;
+      break;
+    case DiagnosticsEngine::Level::Note:
+      m_manager->AppendMessageToDiagnostic(m_output);
+      make_new_diagnostic = false;
+    }
+    if (make_new_diagnostic) {
+      // ClangDiagnostic messages are expected to have no whitespace/newlines
+      // around them.
+      std::string stripped_output = llvm::StringRef(m_output).trim();
 
-        ClangDiagnostic *new_diagnostic =
-            new ClangDiagnostic(stripped_output, severity, Info.getID());
-        m_manager->AddDiagnostic(new_diagnostic);
+      auto new_diagnostic = std::make_unique<ClangDiagnostic>(
+          stripped_output, severity, Info.getID());
 
-        // Don't store away warning fixits, since the compiler doesn't have
-        // enough context in an expression for the warning to be useful.
-        // FIXME: Should we try to filter out FixIts that apply to our generated
-        // code, and not the user's expression?
-        if (severity == eDiagnosticSeverityError) {
-          size_t num_fixit_hints = Info.getNumFixItHints();
-          for (size_t i = 0; i < num_fixit_hints; i++) {
-            const clang::FixItHint &fixit = Info.getFixItHint(i);
-            if (!fixit.isNull())
-              new_diagnostic->AddFixitHint(fixit);
-          }
+      // Don't store away warning fixits, since the compiler doesn't have
+      // enough context in an expression for the warning to be useful.
+      // FIXME: Should we try to filter out FixIts that apply to our generated
+      // code, and not the user's expression?
+      if (severity == eDiagnosticSeverityError) {
+        size_t num_fixit_hints = Info.getNumFixItHints();
+        for (size_t i = 0; i < num_fixit_hints; i++) {
+          const clang::FixItHint &fixit = Info.getFixItHint(i);
+          if (!fixit.isNull())
+            new_diagnostic->AddFixitHint(fixit);
         }
       }
+
+      m_manager->AddDiagnostic(std::move(new_diagnostic));
     }
   }
 
@@ -499,6 +516,9 @@ ClangExpressionParser::ClangExpressionParser(
     lang_opts.DoubleSquareBracketAttributes = true;
     lang_opts.CPlusPlus11 = true;
 
+    // The Darwin libc expects this macro to be set.
+    lang_opts.GNUCVersion = 40201;
+
     SetupModuleHeaderPaths(m_compiler.get(), m_include_directories,
                            target_sp);
   }
@@ -677,10 +697,7 @@ class CodeComplete : public CodeCompleteConsumer {
 
 public:
   /// Constructs a CodeComplete consumer that can be attached to a Sema.
-  /// \param[out] matches
-  ///    The list of matches that the lldb completion API expects as a result.
-  ///    This may already contain matches, so it's only allowed to append
-  ///    to this variable.
+  ///
   /// \param[out] expr
   ///    The whole expression string that we are currently parsing. This
   ///    string needs to be equal to the input the user typed, and NOT the
@@ -957,7 +974,7 @@ ClangExpressionParser::ParseInternal(DiagnosticManager &diagnostic_manager,
   m_compiler->setASTConsumer(std::move(Consumer));
 
   if (ast_context.getLangOpts().Modules) {
-    m_compiler->createModuleManager();
+    m_compiler->createASTReader();
     m_ast_context->setSema(&m_compiler->getSema());
   }
 
@@ -980,7 +997,7 @@ ClangExpressionParser::ParseInternal(DiagnosticManager &diagnostic_manager,
     } else {
       ast_context.setExternalSource(ast_source);
     }
-    decl_map->InstallASTContext(ast_context, m_compiler->getFileManager());
+    decl_map->InstallASTContext(*m_ast_context, m_compiler->getFileManager());
   }
 
   // Check that the ASTReader is properly attached to ASTContext and Sema.
@@ -1014,15 +1031,6 @@ ClangExpressionParser::ParseInternal(DiagnosticManager &diagnostic_manager,
                                  "while importing modules:");
     diagnostic_manager.AppendMessageToDiagnostic(
         m_pp_callbacks->getErrorString());
-  }
-
-  if (!num_errors) {
-    if (type_system_helper->DeclMap() &&
-        !type_system_helper->DeclMap()->ResolveUnknownTypes()) {
-      diagnostic_manager.Printf(eDiagnosticSeverityError,
-                                "Couldn't infer the type of a variable");
-      num_errors++;
-    }
   }
 
   if (!num_errors) {
@@ -1085,8 +1093,8 @@ bool ClangExpressionParser::RewriteExpression(
   if (num_diags == 0)
     return false;
 
-  for (const Diagnostic *diag : diagnostic_manager.Diagnostics()) {
-    const ClangDiagnostic *diagnostic = llvm::dyn_cast<ClangDiagnostic>(diag);
+  for (const auto &diag : diagnostic_manager.Diagnostics()) {
+    const auto *diagnostic = llvm::dyn_cast<ClangDiagnostic>(diag.get());
     if (diagnostic && diagnostic->HasFixIts()) {
       for (const FixItHint &fixit : diagnostic->FixIts()) {
         // This is cobbed from clang::Rewrite::FixItRewriter.

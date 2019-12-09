@@ -22,6 +22,7 @@
 ; CHECK-NEXT:      Expand memcmp() to load/stores
 ; CHECK-NEXT:      Lower Garbage Collection Instructions
 ; CHECK-NEXT:      Shadow Stack GC Lowering
+; CHECK-NEXT:      Lower constant intrinsics
 ; CHECK-NEXT:      Remove unreachable blocks from the CFG
 ; CHECK-NEXT:      Dominator Tree Construction
 ; CHECK-NEXT:      Natural Loop Information
@@ -39,7 +40,7 @@
 ; CHECK-NEXT:      Function Alias Analysis Results
 ; CHECK-NEXT:      Transform functions to use DSP intrinsics
 ; CHECK-NEXT:      Interleaved Access Pass
-; CHECK-NEXT:      ARM IR optimizations
+; CHECK-NEXT:      Type Promotion
 ; CHECK-NEXT:      Dominator Tree Construction
 ; CHECK-NEXT:      Natural Loop Information
 ; CHECK-NEXT:      CodeGen Prepare
@@ -51,6 +52,9 @@
 ; CHECK-NEXT:      Dominator Tree Construction
 ; CHECK-NEXT:      Natural Loop Information
 ; CHECK-NEXT:      Scalar Evolution Analysis
+; CHECK-NEXT:      Lazy Branch Probability Analysis
+; CHECK-NEXT:      Lazy Block Frequency Analysis
+; CHECK-NEXT:      Optimization Remark Emitter
 ; CHECK-NEXT:      Hardware Loop Insertion
 ; CHECK-NEXT:      Scalar Evolution Analysis
 ; CHECK-NEXT:      Loop Pass Manager
@@ -137,6 +141,7 @@
 ; CHECK-NEXT:      Thumb IT blocks insertion pass
 ; CHECK-NEXT:      MachineDominator Tree Construction
 ; CHECK-NEXT:      Machine Natural Loop Construction
+; CHECK-NEXT:      PostRA Machine Instruction Scheduler
 ; CHECK-NEXT:      Post RA top-down list latency scheduler
 ; CHECK-NEXT:      Analyze Machine Code For Garbage Collection
 ; CHECK-NEXT:      Machine Block Frequency Analysis
@@ -149,6 +154,7 @@
 ; CHECK-NEXT:      ARM constant island placement and branch shortening pass
 ; CHECK-NEXT:      MachineDominator Tree Construction
 ; CHECK-NEXT:      Machine Natural Loop Construction
+; CHECK-NEXT:      ReachingDefAnalysis
 ; CHECK-NEXT:      ARM Low Overhead Loops pass
 ; CHECK-NEXT:      Contiguously Lay Out Funclets
 ; CHECK-NEXT:      StackMap Liveness Analysis

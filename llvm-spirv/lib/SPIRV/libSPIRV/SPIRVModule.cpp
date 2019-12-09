@@ -373,6 +373,10 @@ public:
                                              SPIRVId TheVector,
                                              SPIRVId TheScalar,
                                              SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *addVectorTimesMatrixInst(SPIRVType *TheType,
+                                             SPIRVId TheVector,
+                                             SPIRVId TheScalar,
+                                             SPIRVBasicBlock *BB) override;
   SPIRVInstruction *addMatrixTimesScalarInst(SPIRVType *TheType,
                                              SPIRVId TheMatrix,
                                              SPIRVId TheScalar,
@@ -380,6 +384,9 @@ public:
   SPIRVInstruction *addMatrixTimesVectorInst(SPIRVType *TheType,
                                              SPIRVId TheMatrix,
                                              SPIRVId TheVector,
+                                             SPIRVBasicBlock *BB) override;
+  SPIRVInstruction *addMatrixTimesMatrixInst(SPIRVType *TheType, SPIRVId M1,
+                                             SPIRVId M2,
                                              SPIRVBasicBlock *BB) override;
   SPIRVInstruction *addUnaryInst(Op, SPIRVType *, SPIRVValue *,
                                  SPIRVBasicBlock *) override;
@@ -1072,6 +1079,14 @@ SPIRVModuleImpl::addVectorTimesScalarInst(SPIRVType *TheType, SPIRVId TheVector,
 }
 
 SPIRVInstruction *
+SPIRVModuleImpl::addVectorTimesMatrixInst(SPIRVType *TheType, SPIRVId TheVector,
+                                          SPIRVId TheMatrix,
+                                          SPIRVBasicBlock *BB) {
+  return BB->addInstruction(
+      new SPIRVVectorTimesMatrix(TheType, getId(), TheVector, TheMatrix, BB));
+}
+
+SPIRVInstruction *
 SPIRVModuleImpl::addMatrixTimesScalarInst(SPIRVType *TheType, SPIRVId TheMatrix,
                                           SPIRVId TheScalar,
                                           SPIRVBasicBlock *BB) {
@@ -1085,6 +1100,13 @@ SPIRVModuleImpl::addMatrixTimesVectorInst(SPIRVType *TheType, SPIRVId TheMatrix,
                                           SPIRVBasicBlock *BB) {
   return BB->addInstruction(
       new SPIRVMatrixTimesVector(TheType, getId(), TheMatrix, TheVector, BB));
+}
+
+SPIRVInstruction *
+SPIRVModuleImpl::addMatrixTimesMatrixInst(SPIRVType *TheType, SPIRVId M1,
+                                          SPIRVId M2, SPIRVBasicBlock *BB) {
+  return BB->addInstruction(
+      new SPIRVMatrixTimesMatrix(TheType, getId(), M1, M2, BB));
 }
 
 SPIRVInstruction *

@@ -72,7 +72,7 @@ LoopVectorizeHints::LoopVectorizeHints(const Loop *L,
       Interleave("interleave.count", InterleaveOnlyWhenForced, HK_UNROLL),
       Force("vectorize.enable", FK_Undefined, HK_FORCE),
       IsVectorized("isvectorized", 0, HK_ISVECTORIZED),
-      Predicate("vectorize.predicate.enable", 0, HK_PREDICATE), TheLoop(L),
+      Predicate("vectorize.predicate.enable", FK_Undefined, HK_PREDICATE), TheLoop(L),
       ORE(ORE) {
   // Populate values with existing loop metadata.
   getHintsFromMetadata();
@@ -409,7 +409,8 @@ int LoopVectorizationLegality::isConsecutivePtr(Value *Ptr) {
   const ValueToValueMap &Strides =
       getSymbolicStrides() ? *getSymbolicStrides() : ValueToValueMap();
 
-  int Stride = getPtrStride(PSE, Ptr, TheLoop, Strides, true, false);
+  bool CanAddPredicate = !TheLoop->getHeader()->getParent()->hasOptSize();
+  int Stride = getPtrStride(PSE, Ptr, TheLoop, Strides, CanAddPredicate, false);
   if (Stride == 1 || Stride == -1)
     return Stride;
   return 0;
@@ -740,9 +741,9 @@ bool LoopVectorizationLegality::canVectorizeInstrs() {
           // Arbitrarily try a vector of 2 elements.
           Type *VecTy = VectorType::get(T, /*NumElements=*/2);
           assert(VecTy && "did not find vectorized version of stored type");
-          unsigned Alignment = getLoadStoreAlignment(ST);
+          const MaybeAlign Alignment = getLoadStoreAlignment(ST);
           assert(Alignment && "Alignment should be set");
-          if (!TTI->isLegalNTStore(VecTy, Align(Alignment))) {
+          if (!TTI->isLegalNTStore(VecTy, *Alignment)) {
             reportVectorizationFailure(
                 "nontemporal store instruction cannot be vectorized",
                 "nontemporal store instruction cannot be vectorized",
@@ -757,9 +758,9 @@ bool LoopVectorizationLegality::canVectorizeInstrs() {
           // supported on the target (arbitrarily try a vector of 2 elements).
           Type *VecTy = VectorType::get(I.getType(), /*NumElements=*/2);
           assert(VecTy && "did not find vectorized version of load type");
-          unsigned Alignment = getLoadStoreAlignment(LD);
+          const MaybeAlign Alignment = getLoadStoreAlignment(LD);
           assert(Alignment && "Alignment should be set");
-          if (!TTI->isLegalNTLoad(VecTy, Align(Alignment))) {
+          if (!TTI->isLegalNTLoad(VecTy, *Alignment)) {
             reportVectorizationFailure(
                 "nontemporal load instruction cannot be vectorized",
                 "nontemporal load instruction cannot be vectorized",
@@ -813,6 +814,18 @@ bool LoopVectorizationLegality::canVectorizeInstrs() {
       LLVM_DEBUG(dbgs() << "LV: Did not find one integer induction var.\n");
     }
   }
+
+  // For first order recurrences, we use the previous value (incoming value from
+  // the latch) to check if it dominates all users of the recurrence. Bail out
+  // if we have to sink such an instruction for another recurrence, as the
+  // dominance requirement may not hold after sinking.
+  BasicBlock *LoopLatch = TheLoop->getLoopLatch();
+  if (any_of(FirstOrderRecurrences, [LoopLatch, this](const PHINode *Phi) {
+        Instruction *V =
+            cast<Instruction>(Phi->getIncomingValueForBlock(LoopLatch));
+        return SinkAfter.find(V) != SinkAfter.end();
+      }))
+    return false;
 
   // Now we know the widest induction type, check if our found induction
   // is the same size. If it's not, unset it here and InnerLoopVectorizer

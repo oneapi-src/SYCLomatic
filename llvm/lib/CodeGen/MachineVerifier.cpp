@@ -22,7 +22,6 @@
 // the verifier errors.
 //===----------------------------------------------------------------------===//
 
-#include "LiveRangeCalc.h"
 #include "llvm/ADT/BitVector.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/DenseSet.h"
@@ -37,6 +36,7 @@
 #include "llvm/CodeGen/GlobalISel/RegisterBank.h"
 #include "llvm/CodeGen/LiveInterval.h"
 #include "llvm/CodeGen/LiveIntervals.h"
+#include "llvm/CodeGen/LiveRangeCalc.h"
 #include "llvm/CodeGen/LiveStacks.h"
 #include "llvm/CodeGen/LiveVariables.h"
 #include "llvm/CodeGen/MachineBasicBlock.h"
@@ -59,6 +59,7 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/InlineAsm.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/InitializePasses.h"
 #include "llvm/MC/LaneBitmask.h"
 #include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCInstrDesc.h"
@@ -123,8 +124,8 @@ namespace {
     void addRegWithSubRegs(RegVector &RV, unsigned Reg) {
       RV.push_back(Reg);
       if (Register::isPhysicalRegister(Reg))
-        for (MCSubRegIterator SubRegs(Reg, TRI); SubRegs.isValid(); ++SubRegs)
-          RV.push_back(*SubRegs);
+        for (const MCPhysReg &SubReg : TRI->subregs(Reg))
+          RV.push_back(SubReg);
     }
 
     struct BBInfo {
@@ -801,18 +802,16 @@ MachineVerifier::visitMachineBasicBlockBefore(const MachineBasicBlock *MBB) {
         report("MBB live-in list contains non-physical register", MBB);
         continue;
       }
-      for (MCSubRegIterator SubRegs(LI.PhysReg, TRI, /*IncludeSelf=*/true);
-           SubRegs.isValid(); ++SubRegs)
-        regsLive.insert(*SubRegs);
+      for (const MCPhysReg &SubReg : TRI->subregs_inclusive(LI.PhysReg))
+        regsLive.insert(SubReg);
     }
   }
 
   const MachineFrameInfo &MFI = MF->getFrameInfo();
   BitVector PR = MFI.getPristineRegs(*MF);
   for (unsigned I : PR.set_bits()) {
-    for (MCSubRegIterator SubRegs(I, TRI, /*IncludeSelf=*/true);
-         SubRegs.isValid(); ++SubRegs)
-      regsLive.insert(*SubRegs);
+    for (const MCPhysReg &SubReg : TRI->subregs_inclusive(I))
+      regsLive.insert(SubReg);
   }
 
   regsKilled.clear();
@@ -1100,7 +1099,7 @@ void MachineVerifier::verifyPreISelGenericInstruction(const MachineInstr *MI) {
 
     break;
   }
-  case TargetOpcode::G_GEP: {
+  case TargetOpcode::G_PTR_ADD: {
     LLT DstTy = MRI->getType(MI->getOperand(0).getReg());
     LLT PtrTy = MRI->getType(MI->getOperand(1).getReg());
     LLT OffsetTy = MRI->getType(MI->getOperand(2).getReg());
@@ -1609,13 +1608,23 @@ MachineVerifier::visitMachineOperand(const MachineOperand *MO, unsigned MONum) {
   } else if (MONum < MCID.getNumOperands()) {
     const MCOperandInfo &MCOI = MCID.OpInfo[MONum];
     // Don't check if it's the last operand in a variadic instruction. See,
-    // e.g., LDM_RET in the arm back end.
-    if (MO->isReg() &&
-        !(MI->isVariadic() && MONum == MCID.getNumOperands()-1)) {
-      if (MO->isDef() && !MCOI.isOptionalDef())
-        report("Explicit operand marked as def", MO, MONum);
-      if (MO->isImplicit())
-        report("Explicit operand marked as implicit", MO, MONum);
+    // e.g., LDM_RET in the arm back end. Check non-variadic operands only.
+    bool IsOptional = MI->isVariadic() && MONum == MCID.getNumOperands() - 1;
+    if (!IsOptional) {
+      if (MO->isReg()) {
+        if (MO->isDef() && !MCOI.isOptionalDef())
+          report("Explicit operand marked as def", MO, MONum);
+        if (MO->isImplicit())
+          report("Explicit operand marked as implicit", MO, MONum);
+      }
+
+      // Check that an instruction has register operands only as expected.
+      if (MCOI.OperandType == MCOI::OPERAND_REGISTER &&
+          !MO->isReg() && !MO->isFI())
+        report("Expected a register operand.", MO, MONum);
+      if ((MCOI.OperandType == MCOI::OPERAND_IMMEDIATE ||
+           MCOI.OperandType == MCOI::OPERAND_PCREL) && MO->isReg())
+        report("Expected a non-register operand.", MO, MONum);
     }
 
     int TiedTo = MCID.getOperandConstraint(MONum, MCOI::TIED_TO);
@@ -2005,9 +2014,9 @@ void MachineVerifier::checkLiveness(const MachineOperand *MO, unsigned MONum) {
         bool Bad = !isReserved(Reg);
         // We are fine if just any subregister has a defined value.
         if (Bad) {
-          for (MCSubRegIterator SubRegs(Reg, TRI); SubRegs.isValid();
-               ++SubRegs) {
-            if (regsLive.count(*SubRegs)) {
+
+          for (const MCPhysReg &SubReg : TRI->subregs(Reg)) {
+            if (regsLive.count(SubReg)) {
               Bad = false;
               break;
             }
@@ -2025,9 +2034,8 @@ void MachineVerifier::checkLiveness(const MachineOperand *MO, unsigned MONum) {
             if (!Register::isPhysicalRegister(MOP.getReg()))
               continue;
 
-            for (MCSubRegIterator SubRegs(MOP.getReg(), TRI); SubRegs.isValid();
-                 ++SubRegs) {
-              if (*SubRegs == Reg) {
+            for (const MCPhysReg &SubReg : TRI->subregs(MOP.getReg())) {
+              if (SubReg == Reg) {
                 Bad = false;
                 break;
               }

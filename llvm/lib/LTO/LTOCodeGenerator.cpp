@@ -151,7 +151,7 @@ void LTOCodeGenerator::initializeLTOPasses() {
 void LTOCodeGenerator::setAsmUndefinedRefs(LTOModule *Mod) {
   const std::vector<StringRef> &undefs = Mod->getAsmUndefinedRefs();
   for (int i = 0, e = undefs.size(); i != e; ++i)
-    AsmUndefinedRefs[undefs[i]] = 1;
+    AsmUndefinedRefs.insert(undefs[i]);
 }
 
 bool LTOCodeGenerator::addModule(LTOModule *Mod) {
@@ -259,7 +259,7 @@ bool LTOCodeGenerator::compileOptimizedToFile(const char **Name) {
   int FD;
 
   StringRef Extension
-      (FileType == TargetMachine::CGFT_AssemblyFile ? "s" : "o");
+      (FileType == CGFT_AssemblyFile ? "s" : "o");
 
   std::error_code EC =
       sys::fs::createTemporaryFile("lto-llvm", Extension, FD, Filename);
@@ -463,6 +463,8 @@ void LTOCodeGenerator::applyScopeRestrictions() {
 
   internalizeModule(*MergedModule, mustPreserveGV);
 
+  MergedModule->addModuleFlag(Module::Error, "LTOPostLink", 1);
+
   ScopeRestrictionsDone = true;
 }
 
@@ -620,12 +622,9 @@ bool LTOCodeGenerator::compileOptimized(ArrayRef<raw_pwrite_stream *> Out) {
   return true;
 }
 
-/// setCodeGenDebugOptions - Set codegen debugging options to aid in debugging
-/// LTO problems.
-void LTOCodeGenerator::setCodeGenDebugOptions(StringRef Options) {
-  for (std::pair<StringRef, StringRef> o = getToken(Options); !o.first.empty();
-       o = getToken(o.second))
-    CodegenOptions.push_back(o.first);
+void LTOCodeGenerator::setCodeGenDebugOptions(ArrayRef<const char *> Options) {
+  for (StringRef Option : Options)
+    CodegenOptions.push_back(Option);
 }
 
 void LTOCodeGenerator::parseCodeGenDebugOptions() {

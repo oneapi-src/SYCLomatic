@@ -1338,6 +1338,17 @@ void TextNodeDumper::VisitFunctionDecl(const FunctionDecl *D) {
     OS << " <<<NULL params x " << D->getNumParams() << ">>>";
 }
 
+void TextNodeDumper::VisitLifetimeExtendedTemporaryDecl(
+    const LifetimeExtendedTemporaryDecl *D) {
+  OS << " extended by ";
+  dumpBareDeclRef(D->getExtendingDecl());
+  OS << " mangling ";
+  {
+    ColorScope Color(OS, ShowColors, ValueColor);
+    OS << D->getManglingNumber();
+  }
+}
+
 void TextNodeDumper::VisitFieldDecl(const FieldDecl *D) {
   dumpName(D);
   dumpType(D->getType());
@@ -1643,6 +1654,7 @@ void TextNodeDumper::VisitCXXRecordDecl(const CXXRecordDecl *D) {
       FLAG(hasTrivialDestructor, trivial);
       FLAG(hasNonTrivialDestructor, non_trivial);
       FLAG(hasUserDeclaredDestructor, user_declared);
+      FLAG(hasConstexprDestructor, constexpr);
       FLAG(needsImplicitDestructor, needs_implicit);
       FLAG(needsOverloadResolutionForDestructor, needs_overload_resolution);
       if (!D->needsOverloadResolutionForDestructor())
@@ -1767,12 +1779,6 @@ void TextNodeDumper::VisitLinkageSpecDecl(const LinkageSpecDecl *D) {
     break;
   case LinkageSpecDecl::lang_cxx:
     OS << " C++";
-    break;
-  case LinkageSpecDecl::lang_cxx_11:
-    OS << " C++11";
-    break;
-  case LinkageSpecDecl::lang_cxx_14:
-    OS << " C++14";
     break;
   }
 }
@@ -1920,6 +1926,8 @@ void TextNodeDumper::VisitObjCPropertyDecl(const ObjCPropertyDecl *D) {
       OS << " unsafe_unretained";
     if (Attrs & ObjCPropertyDecl::OBJC_PR_class)
       OS << " class";
+    if (Attrs & ObjCPropertyDecl::OBJC_PR_direct)
+      OS << " direct";
     if (Attrs & ObjCPropertyDecl::OBJC_PR_getter)
       dumpDeclRef(D->getGetterMethodDecl(), "getter");
     if (Attrs & ObjCPropertyDecl::OBJC_PR_setter)

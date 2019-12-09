@@ -102,15 +102,15 @@ static cl::opt<llvm::ExceptionHandling> ExceptionModel(
         clEnumValN(ExceptionHandling::Wasm, "wasm",
                    "WebAssembly exception handling")));
 
-static cl::opt<TargetMachine::CodeGenFileType> FileType(
-    "filetype", cl::init(TargetMachine::CGFT_AssemblyFile),
+static cl::opt<CodeGenFileType> FileType(
+    "filetype", cl::init(CGFT_AssemblyFile),
     cl::desc(
         "Choose a file type (not all types are supported by all targets):"),
-    cl::values(clEnumValN(TargetMachine::CGFT_AssemblyFile, "asm",
+    cl::values(clEnumValN(CGFT_AssemblyFile, "asm",
                           "Emit an assembly ('.s') file"),
-               clEnumValN(TargetMachine::CGFT_ObjectFile, "obj",
+               clEnumValN(CGFT_ObjectFile, "obj",
                           "Emit a native object ('.o') file"),
-               clEnumValN(TargetMachine::CGFT_Null, "null",
+               clEnumValN(CGFT_Null, "null",
                           "Emit nothing, for performance testing")));
 
 static cl::opt<llvm::FramePointer::FP> FramePointerUsage(
@@ -151,7 +151,7 @@ static cl::opt<bool>
                                     "attribute not to use exceptions"),
                            cl::init(false));
 
-static cl::opt<llvm::FPDenormal::DenormalMode> DenormalMode(
+static cl::opt<llvm::FPDenormal::DenormalMode> DenormalFPMath(
     "denormal-fp-math",
     cl::desc("Select which denormal numbers the code is permitted to require"),
     cl::init(FPDenormal::IEEE),
@@ -276,6 +276,11 @@ static cl::opt<bool>
                            cl::desc("Emit debug info about parameter's entry values"),
                            cl::init(false));
 
+static cl::opt<bool>
+    ForceDwarfFrameSection("force-dwarf-frame-section",
+                           cl::desc("Always emit a debug frame section."),
+                           cl::init(false));
+
 // Common utility function tightly tied to the options listed here. Initializes
 // a TargetOptions object with CodeGen flags and returns it.
 static TargetOptions InitTargetOptionsFromCodeGenFlags() {
@@ -286,7 +291,7 @@ static TargetOptions InitTargetOptionsFromCodeGenFlags() {
   Options.NoNaNsFPMath = EnableNoNaNsFPMath;
   Options.NoSignedZerosFPMath = EnableNoSignedZerosFPMath;
   Options.NoTrappingFPMath = EnableNoTrappingFPMath;
-  Options.FPDenormalMode = DenormalMode;
+  Options.FPDenormalMode = DenormalFPMath;
   Options.HonorSignDependentRoundingFPMathOption =
       EnableHonorSignDependentRoundingFPMath;
   if (FloatABIForCalls != FloatABI::Default)
@@ -306,6 +311,7 @@ static TargetOptions InitTargetOptionsFromCodeGenFlags() {
   Options.EmitStackSizeSection = EnableStackSizeSection;
   Options.EmitAddrsig = EnableAddrsig;
   Options.EnableDebugEntryValues = EnableDebugEntryValues;
+  Options.ForceDwarfFrameSection = ForceDwarfFrameSection;
 
   Options.MCOptions = InitMCTargetOptionsFromFlags();
 

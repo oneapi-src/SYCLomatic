@@ -30,6 +30,7 @@ add_unittest(ClangdUnitTests ClangdTests
   ClangdTests.cpp
   CodeCompleteTests.cpp
   CodeCompletionStringsTests.cpp
+  CollectMacrosTests.cpp
   ContextTests.cpp
   DexTests.cpp
   DiagnosticsTests.cpp
@@ -47,6 +48,7 @@ add_unittest(ClangdUnitTests ClangdTests
   GlobalCompilationDatabaseTests.cpp
   HeadersTests.cpp
   HeaderSourceSwitchTests.cpp
+  HoverTests.cpp
   IndexActionTests.cpp
   IndexTests.cpp
   JSONTransportTests.cpp
@@ -78,23 +80,26 @@ add_unittest(ClangdUnitTests ClangdTests
   $<TARGET_OBJECTS:obj.clangDaemonTweaks>
   )
 
-target_link_libraries(ClangdTests
+clang_target_link_libraries(ClangdTests
   PRIVATE
   clangAST
   clangBasic
-  clangDaemon
   clangFormat
   clangFrontend
   clangIndex
   clangLex
   clangSema
   clangSerialization
-  clangTidy
   clangTooling
   clangToolingCore
   clangToolingInclusions
   clangToolingRefactoring
   clangToolingSyntax
+  )
+target_link_libraries(ClangdTests
+  PRIVATE
+  clangDaemon
+  clangTidy
   LLVMSupport
   LLVMTestingSupport
   )

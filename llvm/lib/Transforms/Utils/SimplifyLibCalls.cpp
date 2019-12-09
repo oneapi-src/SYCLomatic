@@ -48,7 +48,6 @@ static cl::opt<bool>
                          cl::desc("Enable unsafe double to float "
                                   "shrinking for math lib calls"));
 
-
 //===----------------------------------------------------------------------===//
 // Helper Functions
 //===----------------------------------------------------------------------===//
@@ -178,7 +177,8 @@ static bool canTransformToMemCmp(CallInst *CI, Value *Str, uint64_t Len,
   if (!isOnlyUsedInComparisonWithZero(CI))
     return false;
 
-  if (!isDereferenceableAndAlignedPointer(Str, 1, APInt(64, Len), DL))
+  if (!isDereferenceableAndAlignedPointer(Str, Align::None(), APInt(64, Len),
+                                          DL))
     return false;
 
   if (CI->getFunction()->hasFnAttribute(Attribute::SanitizeMemory))
@@ -364,8 +364,8 @@ Value *LibCallSimplifier::optimizeStrChr(CallInst *CI, IRBuilder<> &B) {
   StringRef Str;
   if (!getConstantStringInfo(SrcStr, Str)) {
     if (CharC->isZero()) // strchr(p, 0) -> p + strlen(p)
-      return B.CreateGEP(B.getInt8Ty(), SrcStr, emitStrLen(SrcStr, B, DL, TLI),
-                         "strchr");
+      if (Value *StrLen = emitStrLen(SrcStr, B, DL, TLI))
+        return B.CreateGEP(B.getInt8Ty(), SrcStr, StrLen, "strchr");
     return nullptr;
   }
 
@@ -1119,6 +1119,45 @@ Value *LibCallSimplifier::optimizeMemCpy(CallInst *CI, IRBuilder<> &B) {
   return CI->getArgOperand(0);
 }
 
+Value *LibCallSimplifier::optimizeMemCCpy(CallInst *CI, IRBuilder<> &B) {
+  Value *Dst = CI->getArgOperand(0);
+  Value *Src = CI->getArgOperand(1);
+  ConstantInt *StopChar = dyn_cast<ConstantInt>(CI->getArgOperand(2));
+  ConstantInt *N = dyn_cast<ConstantInt>(CI->getArgOperand(3));
+  StringRef SrcStr;
+  if (CI->use_empty() && Dst == Src)
+    return Dst;
+  // memccpy(d, s, c, 0) -> nullptr
+  if (N) {
+    if (N->isNullValue())
+      return Constant::getNullValue(CI->getType());
+    if (!getConstantStringInfo(Src, SrcStr, /*Offset=*/0,
+                               /*TrimAtNul=*/false) ||
+        !StopChar)
+      return nullptr;
+  } else {
+    return nullptr;
+  }
+
+  // Wrap arg 'c' of type int to char
+  size_t Pos = SrcStr.find(StopChar->getSExtValue() & 0xFF);
+  if (Pos == StringRef::npos) {
+    if (N->getZExtValue() <= SrcStr.size()) {
+      B.CreateMemCpy(Dst, 1, Src, 1, CI->getArgOperand(3));
+      return Constant::getNullValue(CI->getType());
+    }
+    return nullptr;
+  }
+
+  Value *NewN =
+      ConstantInt::get(N->getType(), std::min(uint64_t(Pos + 1), N->getZExtValue()));
+  // memccpy -> llvm.memcpy
+  B.CreateMemCpy(Dst, 1, Src, 1, NewN);
+  return Pos + 1 <= N->getZExtValue()
+             ? B.CreateInBoundsGEP(B.getInt8Ty(), Dst, NewN)
+             : Constant::getNullValue(CI->getType());
+}
+
 Value *LibCallSimplifier::optimizeMemPCpy(CallInst *CI, IRBuilder<> &B) {
   Value *Dst = CI->getArgOperand(0);
   Value *N = CI->getArgOperand(2);
@@ -1696,7 +1735,7 @@ Value *LibCallSimplifier::optimizePow(CallInst *Pow, IRBuilder<> &B) {
     // TODO: This whole transformation should be backend specific (e.g. some
     //       backends might prefer libcalls or the limit for the exponent might
     //       be different) and it should also consider optimizing for size.
-    APFloat LimF(ExpoF->getSemantics(), 33.0),
+    APFloat LimF(ExpoF->getSemantics(), 33),
             ExpoA(abs(*ExpoF));
     if (ExpoA.compare(LimF) == APFloat::cmpLessThan) {
       // This transformation applies to integer or integer+0.5 exponents only.
@@ -1916,11 +1955,9 @@ Value *LibCallSimplifier::optimizeLog(CallInst *Log, IRBuilder<> &B) {
   IRBuilder<>::FastMathFlagGuard Guard(B);
   B.setFastMathFlags(FastMathFlags::getFast());
 
-  Function *ArgFn = Arg->getCalledFunction();
-  StringRef ArgNm = ArgFn->getName();
-  Intrinsic::ID ArgID = ArgFn->getIntrinsicID();
+  Intrinsic::ID ArgID = Arg->getIntrinsicID();
   LibFunc ArgLb = NotLibFunc;
-  TLI->getLibFunc(ArgNm, ArgLb);
+  TLI->getLibFunc(Arg, ArgLb);
 
   // log(pow(x,y)) -> y*log(x)
   if (ArgLb == PowLb || ArgID == Intrinsic::pow) {
@@ -1935,15 +1972,15 @@ Value *LibCallSimplifier::optimizeLog(CallInst *Log, IRBuilder<> &B) {
     substituteInParent(Arg, MulY);
     return MulY;
   }
+
   // log(exp{,2,10}(y)) -> y*log({e,2,10})
   // TODO: There is no exp10() intrinsic yet.
-  else if (ArgLb == ExpLb || ArgLb == Exp2Lb || ArgLb == Exp10Lb ||
+  if (ArgLb == ExpLb || ArgLb == Exp2Lb || ArgLb == Exp10Lb ||
            ArgID == Intrinsic::exp || ArgID == Intrinsic::exp2) {
     Constant *Eul;
     if (ArgLb == ExpLb || ArgID == Intrinsic::exp)
-      // FIXME: The Euler number should be M_E, but it's place of definition
-      // is not quite standard.
-      Eul = ConstantFP::get(Log->getType(), 2.7182818284590452354);
+      // FIXME: Add more precise value of e for long double.
+      Eul = ConstantFP::get(Log->getType(), numbers::e);
     else if (ArgLb == Exp2Lb || ArgID == Intrinsic::exp2)
       Eul = ConstantFP::get(Log->getType(), 2.0);
     else
@@ -2718,7 +2755,8 @@ Value *LibCallSimplifier::optimizeFPuts(CallInst *CI, IRBuilder<> &B) {
   // Don't rewrite fputs to fwrite when optimising for size because fwrite
   // requires more arguments and thus extra MOVs are required.
   bool OptForSize = CI->getFunction()->hasOptSize() ||
-                    llvm::shouldOptimizeForSize(CI->getParent(), PSI, BFI);
+                    llvm::shouldOptimizeForSize(CI->getParent(), PSI, BFI,
+                                                PGSOQueryType::IRPass);
   if (OptForSize)
     return nullptr;
 
@@ -2866,6 +2904,8 @@ Value *LibCallSimplifier::optimizeStringMemoryLibCall(CallInst *CI,
       return optimizeMemCmp(CI, Builder);
     case LibFunc_memcpy:
       return optimizeMemCpy(CI, Builder);
+    case LibFunc_memccpy:
+      return optimizeMemCCpy(CI, Builder);
     case LibFunc_mempcpy:
       return optimizeMemPCpy(CI, Builder);
     case LibFunc_memmove:

@@ -148,7 +148,12 @@ public:
     return HasMadMixInsts;
   }
 
-  bool hasFP32Denormals() const {
+  bool hasFP32Denormals(const Function &F) const {
+    // FIXME: This should not be a property of the subtarget. This should be a
+    // property with a default set by the calling convention which can be
+    // overridden by attributes. For now, use the subtarget feature as a
+    // placeholder attribute. The function arguments only purpose is to
+    // discourage use without a function context until this is removed.
     return FP32Denormals;
   }
 
@@ -196,8 +201,8 @@ public:
     return LocalMemorySize;
   }
 
-  unsigned getAlignmentForImplicitArgPtr() const {
-    return isAmdHsaOS() ? 8 : 4;
+  Align getAlignmentForImplicitArgPtr() const {
+    return isAmdHsaOS() ? Align(8) : Align(4);
   }
 
   /// Returns the offset in bytes from the start of the input buffer
@@ -238,10 +243,8 @@ public:
       return 16;
     return AMDGPU::getIntegerAttribute(F, "amdgpu-implicitarg-num-bytes", 0);
   }
-  uint64_t getExplicitKernArgSize(const Function &F,
-                                  unsigned &MaxAlign) const;
-  unsigned getKernArgSegmentSize(const Function &F,
-                                 unsigned &MaxAlign) const;
+  uint64_t getExplicitKernArgSize(const Function &F, Align &MaxAlign) const;
+  unsigned getKernArgSegmentSize(const Function &F, Align &MaxAlign) const;
 
   virtual ~AMDGPUSubtarget() {}
 };
@@ -614,11 +617,17 @@ public:
   unsigned getMaxLocalMemSizeWithWaveCount(unsigned WaveCount,
                                            const Function &) const;
 
-  bool hasFP16Denormals() const {
+  /// Alias for hasFP64FP16Denormals
+  bool hasFP16Denormals(const Function &F) const {
     return FP64FP16Denormals;
   }
 
-  bool hasFP64Denormals() const {
+  /// Alias for hasFP64FP16Denormals
+  bool hasFP64Denormals(const Function &F) const {
+    return FP64FP16Denormals;
+  }
+
+  bool hasFP64FP16Denormals(const Function &F) const {
     return FP64FP16Denormals;
   }
 
@@ -868,9 +877,7 @@ public:
   // on the pointer value itself may rely on the alignment / known low bits of
   // the pointer. Set this to something above the minimum to avoid needing
   // dynamic realignment in common cases.
-  unsigned getStackAlignment() const {
-    return 16;
-  }
+  Align getStackAlignment() const { return Align(16); }
 
   bool enableMachineScheduler() const override {
     return true;
@@ -1259,9 +1266,7 @@ public:
     return Gen;
   }
 
-  unsigned getStackAlignment() const {
-    return 4;
-  }
+  Align getStackAlignment() const { return Align(4); }
 
   R600Subtarget &initializeSubtargetDependencies(const Triple &TT,
                                                  StringRef GPU, StringRef FS);

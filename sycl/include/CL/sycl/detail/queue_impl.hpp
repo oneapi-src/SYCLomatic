@@ -9,6 +9,9 @@
 #pragma once
 
 #include <CL/sycl/context.hpp>
+#include <CL/sycl/detail/context_impl.hpp>
+#include <CL/sycl/detail/device_impl.hpp>
+#include <CL/sycl/detail/event_impl.hpp>
 #include <CL/sycl/detail/scheduler/scheduler.hpp>
 #include <CL/sycl/device.hpp>
 #include <CL/sycl/event.hpp>
@@ -53,25 +56,25 @@ public:
 
     RT::PiDevice Device = nullptr;
     // TODO catch an exception and put it to list of asynchronous exceptions
-    PI_CALL(RT::piQueueGetInfo(m_CommandQueue, PI_QUEUE_INFO_DEVICE,
-                               sizeof(Device), &Device, nullptr));
+    PI_CALL(piQueueGetInfo)(m_CommandQueue, PI_QUEUE_INFO_DEVICE,
+                            sizeof(Device), &Device, nullptr);
     m_Device =
-        createSyclObjFromImpl<device>(std::make_shared<device_impl_pi>(Device));
+        createSyclObjFromImpl<device>(std::make_shared<device_impl>(Device));
 
     // TODO catch an exception and put it to list of asynchronous exceptions
-    PI_CALL(RT::piQueueRetain(m_CommandQueue));
+    PI_CALL(piQueueRetain)(m_CommandQueue);
   }
 
   ~queue_impl() {
     throw_asynchronous();
     if (m_OpenCLInterop) {
-      PI_CALL(RT::piQueueRelease(m_CommandQueue));
+      PI_CALL(piQueueRelease)(m_CommandQueue);
     }
   }
 
   cl_command_queue get() {
     if (m_OpenCLInterop) {
-      PI_CALL(RT::piQueueRetain(m_CommandQueue));
+      PI_CALL(piQueueRetain)(m_CommandQueue);
       return pi::cast<cl_command_queue>(m_CommandQueue);
     }
     throw invalid_object_error(
@@ -94,28 +97,26 @@ public:
   template <typename T>
   event submit(T cgf, std::shared_ptr<queue_impl> self,
                std::shared_ptr<queue_impl> second_queue) {
-    event Event;
     try {
-      Event = submit_impl(cgf, self);
+      return submit_impl(cgf, self);
     } catch (...) {
       {
         std::lock_guard<mutex_class> guard(m_Mutex);
         m_Exceptions.PushBack(std::current_exception());
       }
-      Event = second_queue->submit(cgf, second_queue);
+      return second_queue->submit(cgf, second_queue);
     }
-    return Event;
   }
 
   template <typename T> event submit(T cgf, std::shared_ptr<queue_impl> self) {
-    event Event;
     try {
-      Event = submit_impl(cgf, self);
+      return submit_impl(cgf, self);
     } catch (...) {
       std::lock_guard<mutex_class> guard(m_Mutex);
       m_Exceptions.PushBack(std::current_exception());
+      return event(
+          createSyclObjFromImpl<event>(std::make_shared<event_impl>(self)));
     }
-    return Event;
   }
 
   void wait() {
@@ -161,8 +162,8 @@ public:
     RT::PiQueue Queue;
     RT::PiContext Context = detail::getSyclObjImpl(m_Context)->getHandleRef();
     RT::PiDevice Device = detail::getSyclObjImpl(m_Device)->getHandleRef();
-    RT::PiResult Error = PI_CALL_RESULT(
-        RT::piQueueCreate(Context, Device, CreationFlags, &Queue));
+    RT::PiResult Error =
+        PI_CALL_NOCHECK(piQueueCreate)(Context, Device, CreationFlags, &Queue);
 
     // If creating out-of-order queue failed and this property is not
     // supported (for example, on FPGA), it will return
@@ -171,7 +172,7 @@ public:
       m_SupportOOO = false;
       Queue = createQueue(QueueOrder::Ordered);
     } else {
-      PI_CHECK(Error);
+      RT::checkPiResult(Error);
     }
 
     return Queue;
@@ -194,7 +195,7 @@ public:
     m_QueueNumber %= MaxNumQueues;
     size_t FreeQueueNum = m_QueueNumber++;
 
-    PI_CALL(RT::piQueueFinish(m_Queues[FreeQueueNum]));
+    PI_CALL(piQueueFinish)(m_Queues[FreeQueueNum]);
     return m_Queues[FreeQueueNum];
   }
 

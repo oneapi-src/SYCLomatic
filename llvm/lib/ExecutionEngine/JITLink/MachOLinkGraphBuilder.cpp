@@ -179,7 +179,9 @@ Error MachOLinkGraphBuilder::createNormalizedSections() {
   llvm::sort(Sections,
              [](const NormalizedSection *LHS, const NormalizedSection *RHS) {
                assert(LHS && RHS && "Null section?");
-               return LHS->Address < RHS->Address;
+               if (LHS->Address != RHS->Address)
+                 return LHS->Address < RHS->Address;
+               return LHS->Size < RHS->Size;
              });
 
   for (unsigned I = 0, E = Sections.size() - 1; I != E; ++I) {
@@ -319,7 +321,9 @@ Error MachOLinkGraphBuilder::graphifyRegularSymbols() {
           return make_error<JITLinkError>("Anonymous external symbol at "
                                           "index " +
                                           Twine(KV.first));
-        NSym.GraphSymbol = &G->addExternalSymbol(*NSym.Name, 0);
+        NSym.GraphSymbol = &G->addExternalSymbol(
+            *NSym.Name, 0,
+            NSym.Desc & MachO::N_WEAK_REF ? Linkage::Weak : Linkage::Strong);
       }
       break;
     case MachO::N_ABS:

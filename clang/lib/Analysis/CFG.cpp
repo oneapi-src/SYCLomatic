@@ -1139,6 +1139,31 @@ private:
     return {};
   }
 
+  /// A bitwise-or with a non-zero constant always evaluates to true.
+  TryResult checkIncorrectBitwiseOrOperator(const BinaryOperator *B) {
+    const Expr *LHSConstant =
+        tryTransformToIntOrEnumConstant(B->getLHS()->IgnoreParenImpCasts());
+    const Expr *RHSConstant =
+        tryTransformToIntOrEnumConstant(B->getRHS()->IgnoreParenImpCasts());
+
+    if ((LHSConstant && RHSConstant) || (!LHSConstant && !RHSConstant))
+      return {};
+
+    const Expr *Constant = LHSConstant ? LHSConstant : RHSConstant;
+
+    Expr::EvalResult Result;
+    if (!Constant->EvaluateAsInt(Result, *Context))
+      return {};
+
+    if (Result.Val.getInt() == 0)
+      return {};
+
+    if (BuildOpts.Observer)
+      BuildOpts.Observer->compareBitwiseOr(B);
+
+    return TryResult(true);
+  }
+
   /// Try and evaluate an expression to an integer constant.
   bool tryEvaluate(Expr *S, Expr::EvalResult &outResult) {
     if (!BuildOpts.PruneTriviallyFalseEdges)
@@ -1156,7 +1181,7 @@ private:
       return {};
 
     if (BinaryOperator *Bop = dyn_cast<BinaryOperator>(S)) {
-      if (Bop->isLogicalOp()) {
+      if (Bop->isLogicalOp() || Bop->isEqualityOp()) {
         // Check the cache first.
         CachedBoolEvalsTy::iterator I = CachedBoolEvals.find(S);
         if (I != CachedBoolEvals.end())
@@ -1238,6 +1263,10 @@ private:
             return BopRes.isTrue();
       } else if (Bop->isRelationalOp()) {
         TryResult BopRes = checkIncorrectRelationalOperator(Bop);
+        if (BopRes.isKnown())
+          return BopRes.isTrue();
+      } else if (Bop->getOpcode() == BO_Or) {
+        TryResult BopRes = checkIncorrectBitwiseOrOperator(Bop);
         if (BopRes.isKnown())
           return BopRes.isTrue();
       }
@@ -1399,7 +1428,7 @@ void CFGBuilder::findConstructionContexts(
     if (Layer->getItem().getKind() ==
         ConstructionContextItem::ElidableConstructorKind) {
       auto *MTE = cast<MaterializeTemporaryExpr>(Child);
-      findConstructionContexts(withExtraLayer(MTE), MTE->GetTemporaryExpr());
+      findConstructionContexts(withExtraLayer(MTE), MTE->getSubExpr());
     }
     break;
   }
@@ -1665,7 +1694,7 @@ static QualType getReferenceInitTemporaryType(const Expr *Init,
     // Skip through the temporary-materialization expression.
     if (const MaterializeTemporaryExpr *MTE
           = dyn_cast<MaterializeTemporaryExpr>(Init)) {
-      Init = MTE->GetTemporaryExpr();
+      Init = MTE->getSubExpr();
       if (FoundMTE)
         *FoundMTE = true;
       continue;
@@ -2340,6 +2369,9 @@ CFGBlock *CFGBuilder::VisitUnaryOperator(UnaryOperator *U,
     appendStmt(Block, U);
   }
 
+  if (U->getOpcode() == UO_LNot)
+    tryEvaluateBool(U->getSubExpr()->IgnoreParens());
+
   return Visit(U->getSubExpr(), AddStmtChoice());
 }
 
@@ -2473,6 +2505,9 @@ CFGBlock *CFGBuilder::VisitBinaryOperator(BinaryOperator *B,
     autoCreateBlock();
     appendStmt(Block, B);
   }
+
+  if (B->isEqualityOp() || B->isRelationalOp())
+    tryEvaluateBool(B);
 
   CFGBlock *RBlock = Visit(B->getRHS());
   CFGBlock *LBlock = Visit(B->getLHS());
@@ -3427,7 +3462,7 @@ CFGBuilder::VisitMaterializeTemporaryExpr(MaterializeTemporaryExpr *MTE,
                                           AddStmtChoice asc) {
   findConstructionContexts(
       ConstructionContextLayer::create(cfg->getBumpVectorContext(), MTE),
-      MTE->getTemporary());
+      MTE->getSubExpr());
 
   return VisitStmt(MTE, asc);
 }
@@ -4527,6 +4562,10 @@ CFGBlock *CFGBuilder::VisitImplicitCastExpr(ImplicitCastExpr *E,
     autoCreateBlock();
     appendStmt(Block, E);
   }
+
+  if (E->getCastKind() == CK_IntegralToBoolean)
+    tryEvaluateBool(E->getSubExpr()->IgnoreParens());
+
   return Visit(E->getSubExpr(), AddStmtChoice());
 }
 
@@ -4610,7 +4649,7 @@ tryAgain:
       // Find the expression whose lifetime needs to be extended.
       E = const_cast<Expr *>(
           cast<MaterializeTemporaryExpr>(E)
-              ->GetTemporaryExpr()
+              ->getSubExpr()
               ->skipRValueSubobjectAdjustments(CommaLHSs, Adjustments));
       // Visit the skipped comma operator left-hand sides for other temporaries.
       for (const Expr *CommaLHS : CommaLHSs) {
@@ -4824,7 +4863,8 @@ CFGBlock *CFGBuilder::VisitOMPExecutableDirective(OMPExecutableDirective *D,
   }
   // Visit associated structured block if any.
   if (!D->isStandaloneDirective())
-    if (Stmt *S = D->getStructuredBlock()) {
+    if (CapturedStmt *CS = D->getInnermostCapturedStmt()) {
+      Stmt *S = CS->getCapturedStmt();
       if (!isa<CompoundStmt>(S))
         addLocalScopeAndDtors(S);
       if (CFGBlock *R = addStmt(S))
@@ -5837,6 +5877,10 @@ const Expr *CFGBlock::getLastCondition() const {
   // Also, if this method was called on a block that doesn't have 2 successors,
   // this block doesn't have retrievable condition.
   if (succ_size() < 2)
+    return nullptr;
+
+  // FIXME: Is there a better condition expression we can return in this case?
+  if (size() == 0)
     return nullptr;
 
   auto StmtElem = rbegin()->getAs<CFGStmt>();

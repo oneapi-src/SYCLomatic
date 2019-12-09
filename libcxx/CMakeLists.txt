@@ -27,7 +27,7 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR OR LIBCXX_STANDALONE_BUIL
   project(libcxx CXX C)
 
   set(PACKAGE_NAME libcxx)
-  set(PACKAGE_VERSION 10.0.0svn)
+  set(PACKAGE_VERSION 10.0.0git)
   set(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
   set(PACKAGE_BUGREPORT "llvm-bugs@lists.llvm.org")
 
@@ -81,6 +81,7 @@ option(LIBCXX_ENABLE_FILESYSTEM "Build filesystem as part of the main libc++ lib
     ${ENABLE_FILESYSTEM_DEFAULT})
 option(LIBCXX_INCLUDE_TESTS "Build the libc++ tests." ${LLVM_INCLUDE_TESTS})
 option(LIBCXX_ENABLE_PARALLEL_ALGORITHMS "Enable the parallel algorithms library. This requires the PSTL to be available." OFF)
+option(LIBCXX_TEST_GDB_PRETTY_PRINTERS "Test gdb pretty printers." OFF)
 
 # Benchmark options -----------------------------------------------------------
 option(LIBCXX_INCLUDE_BENCHMARKS "Build the libc++ benchmarks and their dependencies" ON)
@@ -379,9 +380,6 @@ if (LIBCXX_ENABLE_ABI_LINKER_SCRIPT)
     if (APPLE)
       message(FATAL_ERROR "LIBCXX_ENABLE_ABI_LINKER_SCRIPT cannot be used on APPLE targets")
     endif()
-    if (NOT PYTHONINTERP_FOUND)
-      message(FATAL_ERROR "LIBCXX_ENABLE_ABI_LINKER_SCRIPT requires python but it was not found.")
-    endif()
     if (NOT LIBCXX_ENABLE_SHARED)
       message(FATAL_ERROR "LIBCXX_ENABLE_ABI_LINKER_SCRIPT is only available for shared library builds.")
     endif()
@@ -446,12 +444,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${LIBCXX_LIBRARY_DIR})
 # LIBCXX_COMPILE_FLAGS: Compile only flags.
 # LIBCXX_LINK_FLAGS: Linker only flags.
 # LIBCXX_LIBRARIES: libraries libc++ is linked to.
-# LIBCXX_INTERFACE_LIBRARIES: Libraries that must be linked when using libc++
-#                             These libraries are exposed in the linker script.
 set(LIBCXX_COMPILE_FLAGS "")
 set(LIBCXX_LINK_FLAGS "")
 set(LIBCXX_LIBRARIES "")
-set(LIBCXX_INTERFACE_LIBRARIES "")
 
 # Include macros for adding and removing libc++ flags.
 include(HandleLibcxxFlags)
@@ -523,21 +518,18 @@ remove_flags(-Wno-pedantic -pedantic-errors -pedantic)
 
 # Required flags ==============================================================
 function(cxx_add_basic_build_flags target)
-  if (LIBCXX_HAS_MUSL_LIBC OR LIBCXX_TARGETING_CLANG_CL)
-    # musl's pthread implementations uses volatile types in their structs which is
-    # not a constexpr in C++11 but is in C++14, so we use C++14 with musl.
-    set(LIBCXX_STANDARD_VER c++14 CACHE STRING "internal option to change build dialect")
+  if(LIBCXX_HAS_MUSL_LIBC OR LIBCXX_TARGETING_CLANG_CL)
+    # musl's pthread implementations uses volatile types in their structs which
+    # is not a constexpr in C++11 but is in C++14, so we use C++14 with musl.
+    set_target_properties(${target} PROPERTIES
+      CXX_STANDARD 14
+      CXX_STANDARD_REQUIRED YES
+      CXX_EXTENSIONS NO)
   else()
-    set(LIBCXX_STANDARD_VER c++11 CACHE STRING "internal option to change build dialect")
-  endif()
-  target_add_compile_flags_if_supported(${target} PRIVATE -std=${LIBCXX_STANDARD_VER})
-  target_add_compile_flags_if_supported(${target} PRIVATE "/std:${LIBCXX_STANDARD_VER}")
-  mangle_name("LIBCXX_SUPPORTS_STD_EQ_${LIBCXX_STANDARD_VER}_FLAG" SUPPORTS_DIALECT_NAME)
-  mangle_name("LIBCXX_SUPPORTS_STD_COLON_${LIBCXX_STANDARD_VER}_FLAG" SUPPORTS_DIALECT_NAME_MSVC)
-  if(NOT ${SUPPORTS_DIALECT_NAME} AND NOT ${SUPPORTS_DIALECT_NAME_MSVC})
-    if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" AND NOT "${CMAKE_CXX_SIMULATE_ID}" STREQUAL "MSVC")
-      message(FATAL_ERROR "C++11 or greater is required but the compiler does not support ${LIBCXX_STANDARD_VER}")
-    endif()
+    set_target_properties(${target} PROPERTIES
+      CXX_STANDARD 11
+      CXX_STANDARD_REQUIRED YES
+      CXX_EXTENSIONS NO)
   endif()
 
   # On all systems the system c++ standard library headers need to be excluded.
@@ -573,7 +565,12 @@ function(cxx_add_basic_build_flags target)
   endif()
 
   if (LIBCXX_HAS_COMMENT_LIB_PRAGMA)
-    target_compile_definitions(${target} PRIVATE -D_LIBCPP_HAS_COMMENT_LIB_PRAGMA)
+    if (LIBCXX_HAS_PTHREAD_LIB)
+      target_compile_definitions(${target} PRIVATE -D_LIBCPP_LINK_PTHREAD_LIB)
+    endif()
+    if (LIBCXX_HAS_RT_LIB)
+      target_compile_definitions(${target} PRIVATE -D_LIBCPP_LINK_RT_LIB)
+    endif()
   endif()
 endfunction()
 
@@ -730,6 +727,66 @@ if (LIBCXX_STANDALONE_BUILD AND SANITIZER_FLAGS)
   add_flags(${SANITIZER_FLAGS})
 endif()
 
+# Link system libraries =======================================================
+function(cxx_link_system_libraries target)
+  target_add_link_flags_if_supported(${target} PRIVATE "-nodefaultlibs")
+  target_add_compile_flags_if_supported(${target} PRIVATE "/Zl")
+  target_add_link_flags_if_supported(${target} PRIVATE "/nodefaultlib")
+
+  if (LIBCXX_HAS_SYSTEM_LIB)
+    target_link_libraries(${target} PRIVATE System)
+  endif()
+
+  if (LIBCXX_HAS_PTHREAD_LIB)
+    target_link_libraries(${target} PRIVATE pthread)
+  endif()
+
+  if (LIBCXX_HAS_C_LIB)
+    target_link_libraries(${target} PRIVATE c)
+  endif()
+
+  if (LIBCXX_HAS_M_LIB)
+    target_link_libraries(${target} PRIVATE m)
+  endif()
+
+  if (LIBCXX_HAS_RT_LIB)
+    target_link_libraries(${target} PRIVATE rt)
+  endif()
+
+  if (LIBCXX_USE_COMPILER_RT)
+    find_compiler_rt_library(builtins LIBCXX_BUILTINS_LIBRARY)
+    if (LIBCXX_BUILTINS_LIBRARY)
+      target_link_libraries(${target} PRIVATE "${LIBCXX_BUILTINS_LIBRARY}")
+    endif()
+  elseif (LIBCXX_HAS_GCC_S_LIB)
+    target_link_libraries(${target} PRIVATE gcc_s)
+  endif()
+
+  if (LIBCXX_HAVE_CXX_ATOMICS_WITH_LIB)
+    target_link_libraries(${target} PRIVATE atomic)
+  endif()
+
+  if (MINGW)
+    target_link_libraries(${target} PRIVATE "${MINGW_LIBRARIES}")
+  endif()
+
+  if (LIBCXX_TARGETING_MSVC)
+    if (LIBCXX_DEBUG_BUILD)
+      set(LIB_SUFFIX "d")
+    else()
+      set(LIB_SUFFIX "")
+    endif()
+
+    target_link_libraries(${target} PRIVATE ucrt${LIB_SUFFIX}) # Universal C runtime
+    target_link_libraries(${target} PRIVATE vcruntime${LIB_SUFFIX}) # C++ runtime
+    target_link_libraries(${target} PRIVATE msvcrt${LIB_SUFFIX}) # C runtime startup files
+    target_link_libraries(${target} PRIVATE msvcprt${LIB_SUFFIX}) # C++ standard library. Required for exception_ptr internals.
+    # Required for standards-complaint wide character formatting functions
+    # (e.g. `printfw`/`scanfw`)
+    target_link_libraries(${target} PRIVATE iso_stdio_wide_specifiers)
+  endif()
+endfunction()
+
 # Windows-related flags =======================================================
 function(cxx_add_windows_flags target)
   if(WIN32 AND NOT MINGW)
@@ -761,7 +818,7 @@ if (NOT LIBCXX_ABI_VERSION EQUAL 1)
 endif()
 if (NOT LIBCXX_ABI_NAMESPACE STREQUAL "")
   if (NOT LIBCXX_ABI_NAMESPACE MATCHES "__.*")
-    message(WARNING "LIBCXX_ABI_NAMESPACE must be a reserved identifier.")
+    message(FATAL_ERROR "LIBCXX_ABI_NAMESPACE must be a reserved identifier.")
   endif()
   if (LIBCXX_ABI_NAMESPACE MATCHES "__[0-9]+$")
     message(FATAL_ERROR "LIBCXX_ABI_NAMESPACE '${LIBCXX_ABI_NAMESPACE}' is reserved for use by libc++.")
@@ -825,9 +882,21 @@ function(cxx_add_config_site target)
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_SIMULATE_ID}" STREQUAL "MSVC")
       target_compile_options(${target} PUBLIC "/FI\"${site_config_path}\"")
     else()
-      target_compile_options(${target} PUBLIC "-include${site_config_path}")
+      target_compile_options(${target} PUBLIC -include "${site_config_path}")
     endif()
   endif()
+endfunction()
+
+# Setup all common build flags =================================================
+function(cxx_add_common_build_flags target)
+  cxx_add_basic_build_flags(${target})
+  cxx_add_warning_flags(${target})
+  cxx_add_windows_flags(${target})
+  cxx_add_config_site(${target})
+  cxx_add_exception_flags(${target})
+  cxx_add_rtti_flags(${target})
+  cxx_add_module_flags(${target})
+  cxx_link_system_libraries(${target})
 endfunction()
 
 #===============================================================================

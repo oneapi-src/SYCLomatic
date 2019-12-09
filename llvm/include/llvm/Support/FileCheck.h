@@ -30,6 +30,7 @@ struct FileCheckRequest {
   std::vector<std::string> GlobalDefines;
   bool AllowEmptyInput = false;
   bool MatchFullLines = false;
+  bool IgnoreCase = false;
   bool EnableVarScope = false;
   bool AllowDeprecatedDagOverlap = false;
   bool Verbose = false;
@@ -70,6 +71,7 @@ class FileCheckType {
 public:
   FileCheckType(FileCheckKind Kind = CheckNone) : Kind(Kind), Count(1) {}
   FileCheckType(const FileCheckType &) = default;
+  FileCheckType &operator=(const FileCheckType &) = default;
 
   operator FileCheckKind() const { return Kind; }
 

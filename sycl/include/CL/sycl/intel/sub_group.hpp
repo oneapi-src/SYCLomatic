@@ -280,18 +280,26 @@ struct sub_group {
 
   template <typename T, access::address_space Space>
   typename std::enable_if<(sizeof(T) == sizeof(uint32_t) ||
-                           sizeof(T) == sizeof(uint16_t)) &&
+                           sizeof(T) == sizeof(uint16_t) ||
+                           sizeof(T) == sizeof(uint8_t)) &&
                               Space == access::address_space::global_space,
                           T>::type
   load(const multi_ptr<T, Space> src) const {
+    T data;
     if (sizeof(T) == sizeof(uint32_t)) {
       uint32_t t = __spirv_SubgroupBlockReadINTEL<uint32_t>(
-          (const __attribute__((ocl_global)) uint32_t *)src.get());
-      return *((T *)(&t));
+          (const __attribute__((opencl_global)) uint32_t *)src.get());
+      data = *((T *)(&t));
+    } else if (sizeof(T) == sizeof(uint16_t)) {
+      uint16_t t = __spirv_SubgroupBlockReadINTEL<uint16_t>(
+          (const __attribute__((opencl_global)) uint16_t *)src.get());
+      data = *((T *)(&t));
+    } else {
+      uint8_t t = __spirv_SubgroupBlockReadINTEL<uint8_t>(
+          (const __attribute__((opencl_global)) uint8_t *)src.get());
+      data = *((T *)(&t));
     }
-    uint16_t t = __spirv_SubgroupBlockReadINTEL<uint16_t>(
-        (const __attribute__((ocl_global)) uint16_t *)src.get());
-    return *((T *)(&t));
+    return data;
   }
 
   template <int N, typename T, access::address_space Space>
@@ -308,13 +316,13 @@ struct sub_group {
       typedef uint32_t ocl_t __attribute__((ext_vector_type(N)));
 
       ocl_t t = __spirv_SubgroupBlockReadINTEL<ocl_t>(
-          (const __attribute__((ocl_global)) uint32_t *)src.get());
+          (const __attribute__((opencl_global)) uint32_t *)src.get());
       return *((typename vec<T, N>::vector_t *)(&t));
     }
     typedef uint16_t ocl_t __attribute__((ext_vector_type(N)));
 
     ocl_t t = __spirv_SubgroupBlockReadINTEL<ocl_t>(
-        (const __attribute__((ocl_global)) uint16_t *)src.get());
+        (const __attribute__((opencl_global)) uint16_t *)src.get());
     return *((typename vec<T, N>::vector_t *)(&t));
   }
 
@@ -322,15 +330,19 @@ struct sub_group {
   void
   store(multi_ptr<T, Space> dst,
         const typename std::enable_if<
-            (sizeof(T) == sizeof(uint32_t) || sizeof(T) == sizeof(uint16_t)) &&
+            (sizeof(T) == sizeof(uint32_t) || sizeof(T) == sizeof(uint16_t) ||
+             sizeof(T) == sizeof(uint8_t)) &&
                 Space == access::address_space::global_space,
             T>::type &x) const {
     if (sizeof(T) == sizeof(uint32_t)) {
       __spirv_SubgroupBlockWriteINTEL<uint32_t>(
-          (__attribute__((ocl_global)) uint32_t *)dst.get(), *((uint32_t *)&x));
-    } else {
+          (__attribute__((opencl_global)) uint32_t *)dst.get(), *((uint32_t *)&x));
+    } else if (sizeof(T) == sizeof(uint16_t)) {
       __spirv_SubgroupBlockWriteINTEL<uint16_t>(
-          (__attribute__((ocl_global)) uint16_t *)dst.get(), *((uint16_t *)&x));
+          (__attribute__((opencl_global)) uint16_t *)dst.get(), *((uint16_t *)&x));
+    } else {
+      __spirv_SubgroupBlockWriteINTEL<uint8_t>(
+          (__attribute__((opencl_global)) uint8_t *)dst.get(), *((uint8_t *)&x));
     }
   }
 
@@ -351,11 +363,11 @@ struct sub_group {
                 N> &x) const {
     if (sizeof(T) == sizeof(uint32_t)) {
       typedef uint32_t ocl_t __attribute__((ext_vector_type(N)));
-      __spirv_SubgroupBlockWriteINTEL((__attribute__((ocl_global)) uint32_t *)dst.get(),
+      __spirv_SubgroupBlockWriteINTEL((__attribute__((opencl_global)) uint32_t *)dst.get(),
                                              *((ocl_t *)&x));
     } else {
       typedef uint16_t ocl_t __attribute__((ext_vector_type(N)));
-      __spirv_SubgroupBlockWriteINTEL((__attribute__((ocl_global)) uint16_t *)dst.get(),
+      __spirv_SubgroupBlockWriteINTEL((__attribute__((opencl_global)) uint16_t *)dst.get(),
                                              *((ocl_t *)&x));
     }
   }

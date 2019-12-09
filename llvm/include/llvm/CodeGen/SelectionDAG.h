@@ -26,8 +26,6 @@
 #include "llvm/ADT/ilist.h"
 #include "llvm/ADT/iterator.h"
 #include "llvm/ADT/iterator_range.h"
-#include "llvm/Analysis/AliasAnalysis.h"
-#include "llvm/Analysis/LegacyDivergenceAnalysis.h"
 #include "llvm/CodeGen/DAGCombine.h"
 #include "llvm/CodeGen/FunctionLoweringInfo.h"
 #include "llvm/CodeGen/ISDOpcodes.h"
@@ -58,7 +56,9 @@
 
 namespace llvm {
 
+class AAResults;
 class BlockAddress;
+class BlockFrequencyInfo;
 class Constant;
 class ConstantFP;
 class ConstantInt;
@@ -66,11 +66,13 @@ class DataLayout;
 struct fltSemantics;
 class GlobalValue;
 struct KnownBits;
+class LegacyDivergenceAnalysis;
 class LLVMContext;
 class MachineBasicBlock;
 class MachineConstantPoolValue;
 class MCSymbol;
 class OptimizationRemarkEmitter;
+class ProfileSummaryInfo;
 class SDDbgValue;
 class SDDbgLabel;
 class SelectionDAG;
@@ -234,6 +236,9 @@ class SelectionDAG {
   /// The function-level optimization remark emitter.  Used to emit remarks
   /// whenever manipulating the DAG.
   OptimizationRemarkEmitter *ORE;
+
+  ProfileSummaryInfo *PSI = nullptr;
+  BlockFrequencyInfo *BFI = nullptr;
 
   /// The starting token.
   SDNode EntryNode;
@@ -401,7 +406,8 @@ public:
   /// Prepare this SelectionDAG to process code in the given MachineFunction.
   void init(MachineFunction &NewMF, OptimizationRemarkEmitter &NewORE,
             Pass *PassPtr, const TargetLibraryInfo *LibraryInfo,
-            LegacyDivergenceAnalysis * Divergence);
+            LegacyDivergenceAnalysis * Divergence,
+            ProfileSummaryInfo *PSIin, BlockFrequencyInfo *BFIin);
 
   void setFunctionLoweringInfo(FunctionLoweringInfo * FuncInfo) {
     FLI = FuncInfo;
@@ -421,8 +427,10 @@ public:
   const TargetLibraryInfo &getLibInfo() const { return *LibInfo; }
   const SelectionDAGTargetInfo &getSelectionDAGInfo() const { return *TSI; }
   const LegacyDivergenceAnalysis *getDivergenceAnalysis() const { return DA; }
-  LLVMContext *getContext() const {return Context; }
+  LLVMContext *getContext() const { return Context; }
   OptimizationRemarkEmitter &getORE() const { return *ORE; }
+  ProfileSummaryInfo *getPSI() const { return PSI; }
+  BlockFrequencyInfo *getBFI() const { return BFI; }
 
   /// Pop up a GraphViz/gv window with the DAG rendered using 'dot'.
   void viewGraph(const std::string &Title);
@@ -499,7 +507,7 @@ public:
   /// certain types of nodes together, or eliminating superfluous nodes.  The
   /// Level argument controls whether Combine is allowed to produce nodes and
   /// types that are illegal on the target.
-  void Combine(CombineLevel Level, AliasAnalysis *AA,
+  void Combine(CombineLevel Level, AAResults *AA,
                CodeGenOpt::Level OptLevel);
 
   /// This transforms the SelectionDAG into a SelectionDAG that
@@ -777,6 +785,20 @@ public:
 
     SmallVector<SDValue, 16> Ops(VT.getVectorNumElements(), Op);
     return getNode(ISD::BUILD_VECTOR, DL, VT, Ops);
+  }
+
+  // Return a splat ISD::SPLAT_VECTOR node, consisting of Op splatted to all
+  // elements.
+  SDValue getSplatVector(EVT VT, const SDLoc &DL, SDValue Op) {
+    if (Op.getOpcode() == ISD::UNDEF) {
+      assert((VT.getVectorElementType() == Op.getValueType() ||
+              (VT.isInteger() &&
+               VT.getVectorElementType().bitsLE(Op.getValueType()))) &&
+             "A splatted value must have a width equal or (for integers) "
+             "greater than the vector element type!");
+      return getNode(ISD::UNDEF, SDLoc(), VT);
+    }
+    return getNode(ISD::SPLAT_VECTOR, DL, VT, Op);
   }
 
   /// Returns an ISD::VECTOR_SHUFFLE node semantically equivalent to
@@ -1114,14 +1136,19 @@ public:
   /// Returns sum of the base pointer and offset.
   SDValue getMemBasePlusOffset(SDValue Base, unsigned Offset, const SDLoc &DL);
 
-  SDValue getMaskedLoad(EVT VT, const SDLoc &dl, SDValue Chain, SDValue Ptr,
-                        SDValue Mask, SDValue Src0, EVT MemVT,
-                        MachineMemOperand *MMO, ISD::LoadExtType,
-                        bool IsExpanding = false);
+  SDValue getMaskedLoad(EVT VT, const SDLoc &dl, SDValue Chain, SDValue Base,
+                        SDValue Offset, SDValue Mask, SDValue Src0, EVT MemVT,
+                        MachineMemOperand *MMO, ISD::MemIndexedMode AM,
+                        ISD::LoadExtType, bool IsExpanding = false);
+  SDValue getIndexedMaskedLoad(SDValue OrigLoad, const SDLoc &dl, SDValue Base,
+                               SDValue Offset, ISD::MemIndexedMode AM);
   SDValue getMaskedStore(SDValue Chain, const SDLoc &dl, SDValue Val,
-                         SDValue Ptr, SDValue Mask, EVT MemVT,
-                         MachineMemOperand *MMO, bool IsTruncating = false,
-                         bool IsCompressing = false);
+                         SDValue Base, SDValue Offset, SDValue Mask, EVT MemVT,
+                         MachineMemOperand *MMO, ISD::MemIndexedMode AM,
+                         bool IsTruncating = false, bool IsCompressing = false);
+  SDValue getIndexedMaskedStore(SDValue OrigStore, const SDLoc &dl,
+                                SDValue Base, SDValue Offset,
+                                ISD::MemIndexedMode AM);
   SDValue getMaskedGather(SDVTList VTs, EVT VT, const SDLoc &dl,
                           ArrayRef<SDValue> Ops, MachineMemOperand *MMO,
                           ISD::MemIndexType IndexType);
@@ -1696,6 +1723,14 @@ public:
       return nullptr;
     return It->second.HeapAllocSite;
   }
+
+  /// Return the current function's default denormal handling kind for the given
+  /// floating point type.
+  DenormalMode getDenormalMode(EVT VT) const {
+    return MF->getDenormalMode(EVTToAPFloatSemantics(VT));
+  }
+
+  bool shouldOptForSize() const;
 
 private:
   void InsertNode(SDNode *N);

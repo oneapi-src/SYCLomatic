@@ -281,6 +281,21 @@ void CodeGenFunction::EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs) {
   case Stmt::OMPTaskLoopSimdDirectiveClass:
     EmitOMPTaskLoopSimdDirective(cast<OMPTaskLoopSimdDirective>(*S));
     break;
+  case Stmt::OMPMasterTaskLoopDirectiveClass:
+    EmitOMPMasterTaskLoopDirective(cast<OMPMasterTaskLoopDirective>(*S));
+    break;
+  case Stmt::OMPMasterTaskLoopSimdDirectiveClass:
+    EmitOMPMasterTaskLoopSimdDirective(
+        cast<OMPMasterTaskLoopSimdDirective>(*S));
+    break;
+  case Stmt::OMPParallelMasterTaskLoopDirectiveClass:
+    EmitOMPParallelMasterTaskLoopDirective(
+        cast<OMPParallelMasterTaskLoopDirective>(*S));
+    break;
+  case Stmt::OMPParallelMasterTaskLoopSimdDirectiveClass:
+    EmitOMPParallelMasterTaskLoopSimdDirective(
+        cast<OMPParallelMasterTaskLoopSimdDirective>(*S));
+    break;
   case Stmt::OMPDistributeDirectiveClass:
     EmitOMPDistributeDirective(cast<OMPDistributeDirective>(*S));
     break;
@@ -1095,16 +1110,13 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
     // rather than the value.
     RValue Result = EmitReferenceBindingToExpr(RV);
     llvm::Value *Val = Result.getScalarVal();
-    if (!getenv("DISABLE_INFER_AS")) {
-      if (auto *PtrTy = dyn_cast<llvm::PointerType>(Val->getType())) {
-        auto *ExpectedPtrType =
-            cast<llvm::PointerType>(ReturnValue.getType()->getElementType());
-        unsigned ValueAS = PtrTy->getAddressSpace();
-        unsigned ExpectedAS = ExpectedPtrType->getAddressSpace();
-        if (ValueAS != ExpectedAS) {
-          Val =
-              Builder.CreatePointerBitCastOrAddrSpaceCast(Val, ExpectedPtrType);
-        }
+    if (auto *PtrTy = dyn_cast<llvm::PointerType>(Val->getType())) {
+      auto *ExpectedPtrType =
+          cast<llvm::PointerType>(ReturnValue.getType()->getElementType());
+      unsigned ValueAS = PtrTy->getAddressSpace();
+      unsigned ExpectedAS = ExpectedPtrType->getAddressSpace();
+      if (ValueAS != ExpectedAS) {
+        Val = Builder.CreatePointerBitCastOrAddrSpaceCast(Val, ExpectedPtrType);
       }
     }
     Builder.CreateStore(Val, ReturnValue);
@@ -1113,16 +1125,14 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
     case TEK_Scalar:
     {
       llvm::Value *Val = EmitScalarExpr(RV);
-      if (!getenv("DISABLE_INFER_AS")) {
-        if (auto *PtrTy = dyn_cast<llvm::PointerType>(Val->getType())) {
-          auto *ExpectedPtrType =
-              cast<llvm::PointerType>(ReturnValue.getType()->getElementType());
-          unsigned ValueAS = PtrTy->getAddressSpace();
-          unsigned ExpectedAS = ExpectedPtrType->getAddressSpace();
-          if (ValueAS != ExpectedAS) {
-            Val = Builder.CreatePointerBitCastOrAddrSpaceCast(
-                Val, ExpectedPtrType);
-          }
+      if (auto *PtrTy = dyn_cast<llvm::PointerType>(Val->getType())) {
+        auto *ExpectedPtrType =
+            cast<llvm::PointerType>(ReturnValue.getType()->getElementType());
+        unsigned ValueAS = PtrTy->getAddressSpace();
+        unsigned ExpectedAS = ExpectedPtrType->getAddressSpace();
+        if (ValueAS != ExpectedAS) {
+          Val =
+              Builder.CreatePointerBitCastOrAddrSpaceCast(Val, ExpectedPtrType);
         }
       }
       Builder.CreateStore(Val, ReturnValue);
@@ -1847,15 +1857,15 @@ CodeGenFunction::EmitAsmInputLValue(const TargetInfo::ConstraintInfo &Info,
         Ty = llvm::IntegerType::get(getLLVMContext(), Size);
         Ty = llvm::PointerType::getUnqual(Ty);
 
-        Arg = Builder.CreateLoad(Builder.CreateBitCast(InputValue.getAddress(),
-                                                       Ty));
+        Arg = Builder.CreateLoad(
+            Builder.CreateBitCast(InputValue.getAddress(*this), Ty));
       } else {
-        Arg = InputValue.getPointer();
+        Arg = InputValue.getPointer(*this);
         ConstraintStr += '*';
       }
     }
   } else {
-    Arg = InputValue.getPointer();
+    Arg = InputValue.getPointer(*this);
     ConstraintStr += '*';
   }
 
@@ -2101,11 +2111,11 @@ void CodeGenFunction::EmitAsmStmt(const AsmStmt &S) {
 
       // Update largest vector width for any vector types.
       if (auto *VT = dyn_cast<llvm::VectorType>(ResultRegTypes.back()))
-        LargestVectorWidth = std::max(LargestVectorWidth,
-                                      VT->getPrimitiveSizeInBits());
+        LargestVectorWidth = std::max((uint64_t)LargestVectorWidth,
+                                   VT->getPrimitiveSizeInBits().getFixedSize());
     } else {
-      ArgTypes.push_back(Dest.getAddress().getType());
-      Args.push_back(Dest.getPointer());
+      ArgTypes.push_back(Dest.getAddress(*this).getType());
+      Args.push_back(Dest.getPointer(*this));
       Constraints += "=*";
       Constraints += OutputConstraint;
       ReadOnly = ReadNone = false;
@@ -2126,8 +2136,8 @@ void CodeGenFunction::EmitAsmStmt(const AsmStmt &S) {
 
       // Update largest vector width for any vector types.
       if (auto *VT = dyn_cast<llvm::VectorType>(Arg->getType()))
-        LargestVectorWidth = std::max(LargestVectorWidth,
-                                      VT->getPrimitiveSizeInBits());
+        LargestVectorWidth = std::max((uint64_t)LargestVectorWidth,
+                                   VT->getPrimitiveSizeInBits().getFixedSize());
       if (Info.allowsRegister())
         InOutConstraints += llvm::utostr(i);
       else
@@ -2213,8 +2223,8 @@ void CodeGenFunction::EmitAsmStmt(const AsmStmt &S) {
 
     // Update largest vector width for any vector types.
     if (auto *VT = dyn_cast<llvm::VectorType>(Arg->getType()))
-      LargestVectorWidth = std::max(LargestVectorWidth,
-                                    VT->getPrimitiveSizeInBits());
+      LargestVectorWidth = std::max((uint64_t)LargestVectorWidth,
+                                   VT->getPrimitiveSizeInBits().getFixedSize());
 
     ArgTypes.push_back(Arg->getType());
     Args.push_back(Arg);
@@ -2347,7 +2357,7 @@ void CodeGenFunction::EmitAsmStmt(const AsmStmt &S) {
     // ResultTypeRequiresCast.size() elements of RegResults.
     if ((i < ResultTypeRequiresCast.size()) && ResultTypeRequiresCast[i]) {
       unsigned Size = getContext().getTypeSize(ResultRegQualTys[i]);
-      Address A = Builder.CreateBitCast(Dest.getAddress(),
+      Address A = Builder.CreateBitCast(Dest.getAddress(*this),
                                         ResultRegTypes[i]->getPointerTo());
       QualType Ty = getContext().getIntTypeForBitwidth(Size, /*Signed*/ false);
       if (Ty.isNull()) {
@@ -2400,14 +2410,14 @@ CodeGenFunction::EmitCapturedStmt(const CapturedStmt &S, CapturedRegionKind K) {
   delete CGF.CapturedStmtInfo;
 
   // Emit call to the helper function.
-  EmitCallOrInvoke(F, CapStruct.getPointer());
+  EmitCallOrInvoke(F, CapStruct.getPointer(*this));
 
   return F;
 }
 
 Address CodeGenFunction::GenerateCapturedStmtArgument(const CapturedStmt &S) {
   LValue CapStruct = InitCapturedStruct(S);
-  return CapStruct.getAddress();
+  return CapStruct.getAddress(*this);
 }
 
 /// Creates the outlined function for a CapturedStmt.

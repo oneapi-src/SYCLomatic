@@ -79,7 +79,6 @@ private:
   bool selectPHI(MachineInstr &I) const;
   bool selectG_TRUNC(MachineInstr &I) const;
   bool selectG_SZA_EXT(MachineInstr &I) const;
-  bool selectG_SITOFP_UITOFP(MachineInstr &I) const;
   bool selectG_CONSTANT(MachineInstr &I) const;
   bool selectG_AND_OR_XOR(MachineInstr &I) const;
   bool selectG_ADD_SUB(MachineInstr &I) const;
@@ -87,7 +86,7 @@ private:
   bool selectG_EXTRACT(MachineInstr &I) const;
   bool selectG_MERGE_VALUES(MachineInstr &I) const;
   bool selectG_UNMERGE_VALUES(MachineInstr &I) const;
-  bool selectG_GEP(MachineInstr &I) const;
+  bool selectG_PTR_ADD(MachineInstr &I) const;
   bool selectG_IMPLICIT_DEF(MachineInstr &I) const;
   bool selectG_INSERT(MachineInstr &I) const;
   bool selectG_INTRINSIC(MachineInstr &I) const;

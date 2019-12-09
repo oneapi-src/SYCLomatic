@@ -734,7 +734,7 @@ void Parser::HandlePragmaMSVtorDisp() {
   uintptr_t Value = reinterpret_cast<uintptr_t>(Tok.getAnnotationValue());
   Sema::PragmaMsStackAction Action =
       static_cast<Sema::PragmaMsStackAction>((Value >> 16) & 0xFFFF);
-  MSVtorDispAttr::Mode Mode = MSVtorDispAttr::Mode(Value & 0xFFFF);
+  MSVtorDispMode Mode = MSVtorDispMode(Value & 0xFFFF);
   SourceLocation PragmaLoc = ConsumeAnnotationToken();
   Actions.ActOnPragmaMSVtorDisp(Action, PragmaLoc, Mode);
 }
@@ -1790,7 +1790,7 @@ void PragmaMSStructHandler::HandlePragma(Preprocessor &PP,
                       /*IsReinject=*/false);
 }
 
-// #pragma clang section bss="abc" data="" rodata="def" text=""
+// #pragma clang section bss="abc" data="" rodata="def" text="" relro=""
 void PragmaClangSectionHandler::HandlePragma(Preprocessor &PP,
                                              PragmaIntroducer Introducer,
                                              Token &FirstToken) {
@@ -1812,6 +1812,8 @@ void PragmaClangSectionHandler::HandlePragma(Preprocessor &PP,
       SecKind = Sema::PragmaClangSectionKind::PCSK_Data;
     else if (SecType->isStr("rodata"))
       SecKind = Sema::PragmaClangSectionKind::PCSK_Rodata;
+    else if (SecType->isStr("relro"))
+      SecKind = Sema::PragmaClangSectionKind::PCSK_Relro;
     else if (SecType->isStr("text"))
       SecKind = Sema::PragmaClangSectionKind::PCSK_Text;
     else {

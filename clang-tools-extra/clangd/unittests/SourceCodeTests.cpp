@@ -19,6 +19,7 @@
 #include "llvm/Testing/Support/Error.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include <tuple>
 
 namespace clang {
 namespace clangd {
@@ -26,7 +27,6 @@ namespace {
 
 using llvm::Failed;
 using llvm::HasValue;
-using ::testing::UnorderedElementsAreArray;
 
 MATCHER_P2(Pos, Line, Col, "") {
   return arg.line == int(Line) && arg.character == int(Col);
@@ -35,18 +35,18 @@ MATCHER_P2(Pos, Line, Col, "") {
 MATCHER_P(MacroName, Name, "") { return arg.Name == Name; }
 
 /// A helper to make tests easier to read.
-Position position(int line, int character) {
+Position position(int Line, int Character) {
   Position Pos;
-  Pos.line = line;
-  Pos.character = character;
+  Pos.line = Line;
+  Pos.character = Character;
   return Pos;
 }
 
-Range range(const std::pair<int, int> p1, const std::pair<int, int> p2) {
-  Range range;
-  range.start = position(p1.first, p1.second);
-  range.end = position(p2.first, p2.second);
-  return range;
+Range range(const std::pair<int, int> &P1, const std::pair<int, int> &P2) {
+  Range Range;
+  Range.start = position(P1.first, P1.second);
+  Range.end = position(P2.first, P2.second);
+  return Range;
 }
 
 TEST(SourceCodeTests, lspLength) {
@@ -358,7 +358,7 @@ Bar* bar;
     auto AST = TestTU::withCode(TestCase.code()).build();
     const auto &SourceMgr = AST.getSourceManager();
     SourceLocation Actual = getBeginningOfIdentifier(
-        TestCase.points().back(), SourceMgr, AST.getASTContext().getLangOpts());
+        TestCase.points().back(), SourceMgr, AST.getLangOpts());
     Position ActualPos = offsetToPosition(
         TestCase.code(),
         SourceMgr.getFileOffset(SourceMgr.getSpellingLoc(Actual)));
@@ -482,7 +482,7 @@ TEST(SourceCodeTests, GetMacros) {
   TestTU TU = TestTU::withCode(Code.code());
   auto AST = TU.build();
   auto Loc = getBeginningOfIdentifier(Code.point(), AST.getSourceManager(),
-                                      AST.getASTContext().getLangOpts());
+                                      AST.getLangOpts());
   auto Result = locateMacroAt(Loc, AST.getPreprocessor());
   ASSERT_TRUE(Result);
   EXPECT_THAT(*Result, MacroName("MACRO"));
@@ -548,7 +548,7 @@ TEST(SourceCodeTests, HalfOpenFileRange) {
   ParsedAST AST = TestTU::withCode(Test.code()).build();
   llvm::errs() << Test.code();
   const SourceManager &SM = AST.getSourceManager();
-  const LangOptions &LangOpts = AST.getASTContext().getLangOpts();
+  const LangOptions &LangOpts = AST.getLangOpts();
   // Turn a SourceLocation into a pair of positions
   auto SourceRangeToRange = [&SM](SourceRange SrcRange) {
     return Range{sourceLocToPosition(SM, SrcRange.getBegin()),
@@ -588,8 +588,7 @@ TEST(SourceCodeTests, HalfOpenFileRangePathologicalPreprocessor) {
   const auto &Body = cast<CompoundStmt>(Func.getBody());
   const auto &Loop = cast<WhileStmt>(*Body->child_begin());
   llvm::Optional<SourceRange> Range = toHalfOpenFileRange(
-      AST.getSourceManager(), AST.getASTContext().getLangOpts(),
-      Loop->getSourceRange());
+      AST.getSourceManager(), AST.getLangOpts(), Loop->getSourceRange());
   ASSERT_TRUE(Range) << "Failed to get file range";
   EXPECT_EQ(AST.getSourceManager().getFileOffset(Range->getBegin()),
             Test.llvm::Annotations::range().Begin);
@@ -616,6 +615,112 @@ $foo^#include "foo.inc"
   FileID Bar = SM.getFileID(findDecl(AST, "bar").getLocation());
   EXPECT_EQ(SM.getFileOffset(includeHashLoc(Bar, SM)),
             Test.llvm::Annotations::point("bar"));
+}
+
+TEST(SourceCodeTests, GetEligiblePoints) {
+  constexpr struct {
+    const char *Code;
+    const char *FullyQualifiedName;
+    const char *EnclosingNamespace;
+  } Cases[] = {
+      {R"cpp(// FIXME: We should also mark positions before and after
+                 //declarations/definitions as eligible.
+              namespace ns1 {
+              namespace a { namespace ns2 {} }
+              namespace ns2 {^
+              void foo();
+              namespace {}
+              void bar() {}
+              namespace ns3 {}
+              class T {};
+              ^}
+              using namespace ns2;
+              })cpp",
+       "ns1::ns2::symbol", "ns1::ns2::"},
+      {R"cpp(
+              namespace ns1 {^
+              namespace a { namespace ns2 {} }
+              namespace b {}
+              namespace ns {}
+              ^})cpp",
+       "ns1::ns2::symbol", "ns1::"},
+      {R"cpp(
+              namespace x {
+              namespace a { namespace ns2 {} }
+              namespace b {}
+              namespace ns {}
+              }^)cpp",
+       "ns1::ns2::symbol", ""},
+      {R"cpp(
+              namespace ns1 {
+              namespace ns2 {^^}
+              namespace b {}
+              namespace ns2 {^^}
+              }
+              namespace ns1 {namespace ns2 {^^}})cpp",
+       "ns1::ns2::symbol", "ns1::ns2::"},
+      {R"cpp(
+              namespace ns1 {^
+              namespace ns {}
+              namespace b {}
+              namespace ns {}
+              ^}
+              namespace ns1 {^namespace ns {}^})cpp",
+       "ns1::ns2::symbol", "ns1::"},
+  };
+  for (auto Case : Cases) {
+    Annotations Test(Case.Code);
+
+    auto Res = getEligiblePoints(Test.code(), Case.FullyQualifiedName,
+                                 format::getLLVMStyle());
+    EXPECT_THAT(Res.EligiblePoints, testing::ElementsAreArray(Test.points()))
+        << Test.code();
+    EXPECT_EQ(Res.EnclosingNamespace, Case.EnclosingNamespace) << Test.code();
+  }
+}
+
+TEST(SourceCodeTests, IdentifierRanges) {
+  Annotations Code(R"cpp(
+   class [[Foo]] {};
+   // Foo
+   /* Foo */
+   void f([[Foo]]* foo1) {
+     [[Foo]] foo2;
+     auto S = [[Foo]]();
+// cross-line identifier is not supported.
+F\
+o\
+o foo2;
+   }
+  )cpp");
+  LangOptions LangOpts;
+  LangOpts.CPlusPlus = true;
+  EXPECT_EQ(Code.ranges(),
+            collectIdentifierRanges("Foo", Code.code(), LangOpts));
+}
+
+TEST(SourceCodeTests, isHeaderFile) {
+  // Without lang options.
+  EXPECT_TRUE(isHeaderFile("foo.h"));
+  EXPECT_TRUE(isHeaderFile("foo.hh"));
+  EXPECT_TRUE(isHeaderFile("foo.hpp"));
+
+  EXPECT_FALSE(isHeaderFile("foo.cpp"));
+  EXPECT_FALSE(isHeaderFile("foo.c++"));
+  EXPECT_FALSE(isHeaderFile("foo.cxx"));
+  EXPECT_FALSE(isHeaderFile("foo.cc"));
+  EXPECT_FALSE(isHeaderFile("foo.c"));
+  EXPECT_FALSE(isHeaderFile("foo.mm"));
+  EXPECT_FALSE(isHeaderFile("foo.m"));
+
+  // With lang options
+  LangOptions LangOpts;
+  LangOpts.IsHeaderFile = true;
+  EXPECT_TRUE(isHeaderFile("string", LangOpts));
+  // Emulate cases where there is no "-x header" flag for a .h file, we still
+  // want to treat it as a header.
+  LangOpts.IsHeaderFile = false;
+  EXPECT_TRUE(isHeaderFile("header.h", LangOpts));
 }
 
 } // namespace

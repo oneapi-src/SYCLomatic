@@ -2100,6 +2100,8 @@ Parser::DeclGroupPtrTy Parser::ParseDeclGroup(ParsingDeclSpec &DS,
     bool IsForRangeLoop = false;
     if (TryConsumeToken(tok::colon, FRI->ColonLoc)) {
       IsForRangeLoop = true;
+      if (getLangOpts().OpenMP)
+        Actions.startOpenMPCXXRangeFor();
       if (Tok.is(tok::l_brace))
         FRI->RangeExpr = ParseBraceInitializer();
       else
@@ -2347,7 +2349,8 @@ Decl *Parser::ParseDeclarationAfterDeclaratorAndAttributes(
         Diag(ConsumeToken(), diag::err_default_delete_in_multiple_declaration)
           << 0 /* default */;
       else
-        Diag(ConsumeToken(), diag::err_default_special_members);
+        Diag(ConsumeToken(), diag::err_default_special_members)
+            << getLangOpts().CPlusPlus2a;
     } else {
       InitializerScopeRAII InitScope(*this, D, ThisDecl);
 
@@ -2928,28 +2931,29 @@ Parser::DiagnoseMissingSemiAfterTagDefinition(DeclSpec &DS, AccessSpecifier AS,
       IdentifierInfo *Name = AfterScope.getIdentifierInfo();
       Sema::NameClassification Classification = Actions.ClassifyName(
           getCurScope(), SS, Name, AfterScope.getLocation(), Next,
-          /*IsAddressOfOperand=*/false, /*CCC=*/nullptr);
+          /*CCC=*/nullptr);
       switch (Classification.getKind()) {
       case Sema::NC_Error:
         SkipMalformedDecl();
         return true;
 
       case Sema::NC_Keyword:
-      case Sema::NC_NestedNameSpecifier:
-        llvm_unreachable("typo correction and nested name specifiers not "
-                         "possible here");
+        llvm_unreachable("typo correction is not possible here");
 
       case Sema::NC_Type:
       case Sema::NC_TypeTemplate:
+      case Sema::NC_UndeclaredNonType:
+      case Sema::NC_UndeclaredTemplate:
         // Not a previously-declared non-type entity.
         MightBeDeclarator = false;
         break;
 
       case Sema::NC_Unknown:
-      case Sema::NC_Expression:
+      case Sema::NC_NonType:
+      case Sema::NC_DependentNonType:
+      case Sema::NC_ContextIndependentExpr:
       case Sema::NC_VarTemplate:
       case Sema::NC_FunctionTemplate:
-      case Sema::NC_UndeclaredTemplate:
         // Might be a redeclaration of a prior entity.
         break;
       }
@@ -3826,11 +3830,6 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
       }
       isInvalid = DS.SetTypePipe(true, Loc, PrevSpec, DiagID, Policy);
       break;
-    case tok::kw___pipe:
-      if (getLangOpts().SYCLIsDevice)
-        // __pipe keyword is defined only for SYCL kernel language
-        isInvalid = DS.SetTypePipe(true, Loc, PrevSpec, DiagID, Policy);
-      break;
 #define GENERIC_IMAGE_TYPE(ImgType, Id) \
   case tok::kw_##ImgType##_t: \
     isInvalid = DS.SetTypeSpecType(DeclSpec::TST_##ImgType##_t, Loc, PrevSpec, \
@@ -3951,9 +3950,14 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
         PrevSpec = Tok.getIdentifierInfo()->getNameStart();
         isInvalid = true;
         break;
-      };
+      }
       LLVM_FALLTHROUGH;
     case tok::kw_private:
+      // It's fine (but redundant) to check this for __generic on the
+      // fallthrough path; we only form the __generic token in OpenCL mode.
+      if (!getLangOpts().OpenCL)
+        goto DoneWithDeclSpec;
+      LLVM_FALLTHROUGH;
     case tok::kw___private:
     case tok::kw___global:
     case tok::kw___local:
@@ -4963,9 +4967,8 @@ bool Parser::isDeclarationSpecifier(bool DisambiguatingWithExpression) {
   default: return false;
 
   case tok::kw_pipe:
-  case tok::kw___pipe:
     return (getLangOpts().OpenCL && getLangOpts().OpenCLVersion >= 200) ||
-            getLangOpts().OpenCLCPlusPlus || getLangOpts().SYCLIsDevice;
+           getLangOpts().OpenCLCPlusPlus;
 
   case tok::identifier:   // foo::bar
     // Unfortunate hack to support "Class.factoryMethod" notation.
@@ -5459,9 +5462,8 @@ static bool isPtrOperatorToken(tok::TokenKind Kind, const LangOptions &Lang,
   if (Kind == tok::star || Kind == tok::caret)
     return true;
 
-  if ((Kind == tok::kw_pipe || Kind == tok::kw___pipe) &&
-      ((Lang.OpenCL && Lang.OpenCLVersion >= 200) || Lang.OpenCLCPlusPlus ||
-       Lang.SYCLIsDevice))
+  if ((Kind == tok::kw_pipe) &&
+      ((Lang.OpenCL && Lang.OpenCLVersion >= 200) || Lang.OpenCLCPlusPlus))
     return true;
 
   if (!Lang.CPlusPlus)
@@ -6570,6 +6572,19 @@ void Parser::ParseParameterDeclarationClause(
        ParsedAttributes &FirstArgAttrs,
        SmallVectorImpl<DeclaratorChunk::ParamInfo> &ParamInfo,
        SourceLocation &EllipsisLoc) {
+
+  // Avoid exceeding the maximum function scope depth.
+  // See https://bugs.llvm.org/show_bug.cgi?id=19607
+  // Note Sema::ActOnParamDeclarator calls ParmVarDecl::setScopeInfo with
+  // getFunctionPrototypeDepth() - 1.
+  if (getCurScope()->getFunctionPrototypeDepth() - 1 >
+      ParmVarDecl::getMaxFunctionScopeDepth()) {
+    Diag(Tok.getLocation(), diag::err_function_scope_depth_exceeded)
+        << ParmVarDecl::getMaxFunctionScopeDepth();
+    cutOffParsing();
+    return;
+  }
+
   do {
     // FIXME: Issue a diagnostic if we parsed an attribute-specifier-seq
     // before deciding this was a parameter-declaration-clause.

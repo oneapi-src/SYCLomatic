@@ -135,7 +135,14 @@ public:
 
   bool IsWindowsSubsystem();
 
+  uint32_t GetRVA(const lldb_private::Address &addr) const;
+  lldb_private::Address GetAddress(uint32_t rva);
+  lldb::addr_t GetFileAddress(uint32_t rva) const;
+
   lldb_private::DataExtractor ReadImageData(uint32_t offset, size_t size);
+  lldb_private::DataExtractor ReadImageDataByRVA(uint32_t rva, size_t size);
+
+  std::unique_ptr<lldb_private::CallFrameInfo> CreateCallFrameInfo() override;
 
 protected:
   bool NeedsEndianSwap() const;
@@ -216,6 +223,7 @@ protected:
   enum coff_data_dir_type {
     coff_data_dir_export_table = 0,
     coff_data_dir_import_table = 1,
+    coff_data_dir_exception_table = 3
   };
 
   typedef struct section_header {
@@ -275,6 +283,8 @@ protected:
   void DumpDependentModules(lldb_private::Stream *s);
 
   llvm::StringRef GetSectionName(const section_header_t &sect);
+  static lldb::SectionType GetSectionType(llvm::StringRef sect_name,
+                                          const section_header_t &sect);
 
   typedef std::vector<section_header_t> SectionHeaderColl;
   typedef SectionHeaderColl::iterator SectionHeaderCollIter;

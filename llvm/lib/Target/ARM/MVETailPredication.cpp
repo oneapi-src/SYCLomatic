@@ -41,7 +41,7 @@ using namespace llvm;
 #define DEBUG_TYPE "mve-tail-predication"
 #define DESC "Transform predicated vector loops to use MVE tail predication"
 
-static cl::opt<bool>
+cl::opt<bool>
 DisableTailPredication("disable-mve-tail-predication", cl::Hidden,
                        cl::init(true),
                        cl::desc("Disable MVE Tail Predication"));
@@ -299,7 +299,7 @@ bool MVETailPredication::IsPredicatedVectorLoop() {
         // MVE vectors are 128-bit, but don't support 128 x i1.
         // TODO: Can we support vectors larger than 128-bits?
         unsigned MaxWidth = TTI->getRegisterBitWidth(true); 
-        if (Lanes * ElementWidth != MaxWidth || Lanes == MaxWidth)
+        if (Lanes * ElementWidth > MaxWidth || Lanes == MaxWidth)
           return false;
         MaskedInsts.push_back(cast<IntrinsicInst>(&I));
       } else if (auto *Int = dyn_cast<IntrinsicInst>(&I)) {
@@ -485,10 +485,15 @@ bool MVETailPredication::TryConvert(Value *TripCount) {
     switch (VecTy->getNumElements()) {
     default:
       llvm_unreachable("unexpected number of lanes");
-    case 2:  VCTPID = Intrinsic::arm_vctp64; break;
-    case 4:  VCTPID = Intrinsic::arm_vctp32; break;
-    case 8:  VCTPID = Intrinsic::arm_vctp16; break;
-    case 16: VCTPID = Intrinsic::arm_vctp8; break;
+    case 4:  VCTPID = Intrinsic::arm_mve_vctp32; break;
+    case 8:  VCTPID = Intrinsic::arm_mve_vctp16; break;
+    case 16: VCTPID = Intrinsic::arm_mve_vctp8; break;
+
+      // FIXME: vctp64 currently not supported because the predicate
+      // vector wants to be <2 x i1>, but v2i1 is not a legal MVE
+      // type, so problems happen at isel time.
+      // Intrinsic::arm_mve_vctp64 exists for ACLE intrinsics
+      // purposes, but takes a v4i1 instead of a v2i1.
     }
     Function *VCTP = Intrinsic::getDeclaration(M, VCTPID);
     Value *TailPredicate = Builder.CreateCall(VCTP, Processed);

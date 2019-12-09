@@ -901,6 +901,10 @@ LinkageComputer::getLVForNamespaceScopeDecl(const NamedDecl *D,
   if (!isExternallyVisible(LV.getLinkage()))
     return LinkageInfo(LV.getLinkage(), DefaultVisibility, false);
 
+  // Mark the symbols as hidden when compiling for the device.
+  if (Context.getLangOpts().OpenMP && Context.getLangOpts().OpenMPIsDevice)
+    LV.mergeVisibility(HiddenVisibility, /*newExplicit=*/false);
+
   return LV;
 }
 
@@ -1385,7 +1389,8 @@ LinkageInfo LinkageComputer::computeLVForDecl(const NamedDecl *D,
     case Decl::CXXRecord: {
       const auto *Record = cast<CXXRecordDecl>(D);
       if (Record->isLambda()) {
-        if (!Record->getLambdaManglingNumber()) {
+        if (Record->hasKnownLambdaInternalLinkage() ||
+            !Record->getLambdaManglingNumber()) {
           // This lambda has no mangling number, so it's internal.
           return getInternalLinkageFor(D);
         }
@@ -1402,7 +1407,8 @@ LinkageInfo LinkageComputer::computeLVForDecl(const NamedDecl *D,
         //  };
         const CXXRecordDecl *OuterMostLambda =
             getOutermostEnclosingLambda(Record);
-        if (!OuterMostLambda->getLambdaManglingNumber())
+        if (OuterMostLambda->hasKnownLambdaInternalLinkage() ||
+            !OuterMostLambda->getLambdaManglingNumber())
           return getInternalLinkageFor(D);
 
         return getLVForClosure(
@@ -2787,6 +2793,7 @@ FunctionDecl::FunctionDecl(Kind DK, ASTContext &C, DeclContext *DC,
   FunctionDeclBits.ConstexprKind = ConstexprKind;
   FunctionDeclBits.InstantiationIsPending = false;
   FunctionDeclBits.UsesSEHTry = false;
+  FunctionDeclBits.UsesFPIntrin = false;
   FunctionDeclBits.HasSkippedBody = false;
   FunctionDeclBits.WillHaveBody = false;
   FunctionDeclBits.IsMultiVersion = false;
@@ -3113,10 +3120,17 @@ FunctionDecl *FunctionDecl::getCanonicalDecl() { return getFirstDecl(); }
 /// functions as their wrapped builtins. This shouldn't be done in general, but
 /// it's useful in Sema to diagnose calls to wrappers based on their semantics.
 unsigned FunctionDecl::getBuiltinID(bool ConsiderWrapperFunctions) const {
-  if (!getIdentifier())
-    return 0;
+  unsigned BuiltinID;
 
-  unsigned BuiltinID = getIdentifier()->getBuiltinID();
+  if (const auto *AMAA = getAttr<ArmMveAliasAttr>()) {
+    BuiltinID = AMAA->getBuiltinName()->getBuiltinID();
+  } else {
+    if (!getIdentifier())
+      return 0;
+
+    BuiltinID = getIdentifier()->getBuiltinID();
+  }
+
   if (!BuiltinID)
     return 0;
 
@@ -3140,7 +3154,8 @@ unsigned FunctionDecl::getBuiltinID(bool ConsiderWrapperFunctions) const {
 
   // If the function is marked "overloadable", it has a different mangled name
   // and is not the C library function.
-  if (!ConsiderWrapperFunctions && hasAttr<OverloadableAttr>())
+  if (!ConsiderWrapperFunctions && hasAttr<OverloadableAttr>() &&
+      !hasAttr<ArmMveAliasAttr>())
     return 0;
 
   if (!Context.BuiltinInfo.isPredefinedLibFunction(BuiltinID))
@@ -3320,12 +3335,14 @@ bool FunctionDecl::doesDeclarationForceExternallyVisibleDefinition() const {
   return FoundBody;
 }
 
-SourceRange FunctionDecl::getReturnTypeSourceRange() const {
+FunctionTypeLoc FunctionDecl::getFunctionTypeLoc() const {
   const TypeSourceInfo *TSI = getTypeSourceInfo();
-  if (!TSI)
-    return SourceRange();
-  FunctionTypeLoc FTL =
-      TSI->getTypeLoc().IgnoreParens().getAs<FunctionTypeLoc>();
+  return TSI ? TSI->getTypeLoc().IgnoreParens().getAs<FunctionTypeLoc>()
+             : FunctionTypeLoc();
+}
+
+SourceRange FunctionDecl::getReturnTypeSourceRange() const {
+  FunctionTypeLoc FTL = getFunctionTypeLoc();
   if (!FTL)
     return SourceRange();
 
@@ -3340,16 +3357,25 @@ SourceRange FunctionDecl::getReturnTypeSourceRange() const {
   return RTRange;
 }
 
-SourceRange FunctionDecl::getExceptionSpecSourceRange() const {
-  const TypeSourceInfo *TSI = getTypeSourceInfo();
-  if (!TSI)
-    return SourceRange();
-  FunctionTypeLoc FTL =
-    TSI->getTypeLoc().IgnoreParens().getAs<FunctionTypeLoc>();
-  if (!FTL)
+SourceRange FunctionDecl::getParametersSourceRange() const {
+  unsigned NP = getNumParams();
+  SourceLocation EllipsisLoc = getEllipsisLoc();
+
+  if (NP == 0 && EllipsisLoc.isInvalid())
     return SourceRange();
 
-  return FTL.getExceptionSpecRange();
+  SourceLocation Begin =
+      NP > 0 ? ParamInfo[0]->getSourceRange().getBegin() : EllipsisLoc;
+  SourceLocation End = EllipsisLoc.isValid()
+                           ? EllipsisLoc
+                           : ParamInfo[NP - 1]->getSourceRange().getEnd();
+
+  return SourceRange(Begin, End);
+}
+
+SourceRange FunctionDecl::getExceptionSpecSourceRange() const {
+  FunctionTypeLoc FTL = getFunctionTypeLoc();
+  return FTL ? FTL.getExceptionSpecRange() : SourceRange();
 }
 
 /// For an inline function definition in C, or for a gnu_inline function

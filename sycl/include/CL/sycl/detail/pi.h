@@ -23,6 +23,10 @@
 #define _PI_H_VERSION_MAJOR 1
 #define _PI_H_VERSION_MINOR 1
 
+#define _PI_STRING_HELPER(a) #a
+#define _PI_CONCAT(a, b) _PI_STRING_HELPER(a.b)
+#define _PI_H_VERSION_STRING                                                   \
+  _PI_CONCAT(_PI_H_VERSION_MAJOR, _PI_H_VERSION_MINOR)
 // TODO: we need a mapping of PI to OpenCL somewhere, and this can be done
 // elsewhere, e.g. in the pi_opencl, but constants/enums mapping is now
 // done here, for efficiency and simplicity.
@@ -58,7 +62,8 @@ typedef enum {
   PI_INVALID_DEVICE = CL_INVALID_DEVICE,
   PI_INVALID_BINARY = CL_INVALID_BINARY,
   PI_MISALIGNED_SUB_BUFFER_OFFSET = CL_MISALIGNED_SUB_BUFFER_OFFSET,
-  PI_OUT_OF_HOST_MEMORY = CL_OUT_OF_HOST_MEMORY
+  PI_OUT_OF_HOST_MEMORY = CL_OUT_OF_HOST_MEMORY,
+  PI_INVALID_WORK_GROUP_SIZE = CL_INVALID_WORK_GROUP_SIZE
 } _pi_result;
 
 typedef enum {
@@ -84,7 +89,9 @@ typedef enum {
   PI_DEVICE_INFO_PARENT         = CL_DEVICE_PARENT_DEVICE,
   PI_DEVICE_INFO_PLATFORM       = CL_DEVICE_PLATFORM,
   PI_DEVICE_INFO_PARTITION_TYPE = CL_DEVICE_PARTITION_TYPE,
-  PI_DEVICE_INFO_NAME           = CL_DEVICE_NAME
+  PI_DEVICE_INFO_NAME           = CL_DEVICE_NAME,
+  PI_DEVICE_VERSION             = CL_DEVICE_VERSION,
+  PI_DEVICE_MAX_WORK_GROUP_SIZE = CL_DEVICE_MAX_WORK_GROUP_SIZE
 } _pi_device_info;
 
 // TODO: populate
@@ -222,8 +229,16 @@ typedef _pi_sampler_addressing_mode pi_sampler_addressing_mode;
 typedef _pi_sampler_filter_mode     pi_sampler_filter_mode;
 typedef _pi_sampler_info            pi_sampler_info;
 
-// Opaque data type for compatibility with OpenMP.
-typedef void * _pi_offload_entry;
+// Entry type, matches OpenMP for compatibility
+struct _pi_offload_entry_struct {
+  void *addr;
+  char *name;
+  size_t size;
+  int32_t flags;
+  int32_t reserved;
+};
+
+typedef _pi_offload_entry_struct * _pi_offload_entry;
 
 /// Types of device binary.
 typedef uint8_t pi_device_binary_type;
@@ -295,7 +310,7 @@ struct pi_device_binary_struct {
   const unsigned char *BinaryStart;
   /// Pointer to the target code end
   const unsigned char *BinaryEnd;
-  /// the offload entry table (not used, for compatibility with OpenMP)
+  /// the offload entry table
   _pi_offload_entry EntriesBegin;
   _pi_offload_entry EntriesEnd;
 };
@@ -344,21 +359,21 @@ typedef _pi_event *       pi_event;
 typedef _pi_sampler *     pi_sampler;
 
 typedef struct {
-          pi_image_channel_order image_channel_order;
-          pi_image_channel_type  image_channel_data_type;
+  pi_image_channel_order image_channel_order;
+  pi_image_channel_type image_channel_data_type;
 } _pi_image_format;
 
 typedef struct {
-          pi_mem_type image_type;
-          size_t image_width;
-          size_t image_height;
-          size_t image_depth;
-          size_t image_array_size;
-          size_t image_row_pitch;
-          size_t image_slice_pitch;
-          pi_uint32 num_mip_levels;
-          pi_uint32 num_samples;
-          pi_mem buffer;
+  pi_mem_type image_type;
+  size_t image_width;
+  size_t image_height;
+  size_t image_depth;
+  size_t image_array_size;
+  size_t image_row_pitch;
+  size_t image_slice_pitch;
+  pi_uint32 num_mip_levels;
+  pi_uint32 num_samples;
+  pi_mem buffer;
 } _pi_image_desc;
 
 typedef _pi_image_format   pi_image_format;
@@ -376,6 +391,16 @@ typedef _pi_image_desc     pi_image_desc;
 //
 // TODO: describe interfaces in Doxygen format
 //
+
+struct _pi_plugin;
+typedef _pi_plugin pi_plugin;
+
+// PI Plugin Initialise.
+// Plugin will check the PI version of Plugin Interface,
+// populate the PI Version it supports, update targets field and populate
+// PiFunctionTable with Supported APIs. The pointers are in a predetermined
+// order in pi.def file.
+pi_result piPluginInit(pi_plugin *plugin_info);
 
 //
 // Platform
@@ -446,7 +471,7 @@ pi_result piextGetDeviceFunctionPointer(
 //
 // Context
 //
-pi_context piContextCreate( // TODO: change interface to return error code instead
+pi_result piContextCreate(
   const cl_context_properties * properties, // TODO: untie from OpenCL
   pi_uint32         num_devices,
   const pi_device * devices,
@@ -456,7 +481,7 @@ pi_context piContextCreate( // TODO: change interface to return error code inste
     size_t       cb,
     void *       user_data),
   void *            user_data,
-  pi_result *       result);
+  pi_context *      ret_context);
 
 pi_result piContextGetInfo(
   pi_context         context,
@@ -494,20 +519,20 @@ pi_result piQueueFinish(pi_queue command_queue);
 //
 // Memory
 //
-pi_mem piMemBufferCreate( // TODO: change interface to return error code
+pi_result piMemBufferCreate(
   pi_context   context,
   pi_mem_flags flags,
   size_t       size,
   void *       host_ptr,
-  pi_result *  errcode_ret);
+  pi_mem *     ret_mem);
 
-pi_mem piMemImageCreate( // TODO: change interface to return error code
+pi_result piMemImageCreate(
   pi_context              context,
   pi_mem_flags            flags,
   const pi_image_format * image_format,
   const pi_image_desc *   image_desc,
   void *                  host_ptr,
-  pi_result *             errcode_ret);
+  pi_mem *                ret_mem);
 
 pi_result piMemGetInfo(
   pi_mem           mem,
@@ -529,10 +554,12 @@ pi_result piMemRetain(
 pi_result piMemRelease(
   pi_mem mem);
 
-pi_mem piMemBufferPartition( // TODO: change interface to return error code
-    pi_mem context, pi_mem_flags flags,
-    pi_buffer_create_type buffer_create_type, void *buffer_create_info,
-    pi_result *errcode_ret);
+pi_result piMemBufferPartition(
+    pi_mem                    buffer,
+    pi_mem_flags              flags,
+    pi_buffer_create_type     buffer_create_type,
+    void *                    buffer_create_info,
+    pi_mem *                  ret_mem);
 //
 // Program
 //
@@ -542,21 +569,21 @@ pi_result piProgramCreate(
   size_t        length,
   pi_program *  res_program);
 
-pi_program piclProgramCreateWithBinary( // TODO: change to return pi_result
+pi_result piclProgramCreateWithSource(
+  pi_context        context,
+  pi_uint32         count,
+  const char **     strings,
+  const size_t *    lengths,
+  pi_program *      ret_program);
+
+pi_result piclProgramCreateWithBinary(
   pi_context                     context,
   pi_uint32                      num_devices,
   const pi_device *              device_list,
   const size_t *                 lengths,
   const unsigned char **         binaries,
   pi_int32 *                     binary_status,
-  pi_result *                    errcode_ret);
-
-pi_program piclProgramCreateWithSource( // TODO:  change to return pi_result
-  pi_context        context,
-  pi_uint32         count,
-  const char **     strings,
-  const size_t *    lengths,
-  pi_result *       errcode);
+  pi_program *                   ret_program);
 
 pi_result piProgramGetInfo(
   pi_program          program,
@@ -565,7 +592,7 @@ pi_result piProgramGetInfo(
   void *              param_value,
   size_t *            param_value_size_ret);
 
-pi_program piProgramLink( // TODO: change interface to return error code
+pi_result piProgramLink(
   pi_context          context,
   pi_uint32           num_devices,
   const pi_device *   device_list,
@@ -575,7 +602,7 @@ pi_program piProgramLink( // TODO: change interface to return error code
   void (*  pfn_notify)(pi_program program,
                        void * user_data),
   void *              user_data,
-  pi_result *         errcode_ret);
+  pi_program *        ret_program);
 
 pi_result piProgramCompile(
   pi_program           program,
@@ -611,10 +638,10 @@ pi_result piProgramRelease(pi_program program);
 //
 // Kernel
 //
-pi_kernel piKernelCreate( // TODO: change interface to return error code
+pi_result piKernelCreate(
   pi_program      program,
   const char *    kernel_name,
-  pi_result *     errcode_ret);
+  pi_kernel *     ret_kernel);
 
 pi_result piKernelSetArg(
   pi_kernel    kernel,
@@ -654,9 +681,9 @@ pi_result piKernelRelease(pi_kernel    kernel);
 //
 // Events
 //
-pi_event piEventCreate( // TODO: change to return pi_result
+pi_result piEventCreate(
   pi_context    context,
-  pi_result *   errcode_ret);
+  pi_event *    ret_event);
 
 pi_result piEventGetInfo(
   pi_event         event,
@@ -860,7 +887,7 @@ pi_result piEnqueueMemImageWrite(
   const pi_event *  event_wait_list,
   pi_event *        event);
 
-  pi_result piEnqueueMemImageCopy(
+pi_result piEnqueueMemImageCopy(
   pi_queue          command_queue,
   pi_mem            src_image,
   pi_mem            dst_image,
@@ -881,7 +908,7 @@ pi_result piEnqueueMemImageFill(
   const pi_event *  event_wait_list,
   pi_event *        event);
 
-void * piEnqueueMemBufferMap( // TODO: change to return pi_result
+pi_result piEnqueueMemBufferMap(
   pi_queue          command_queue,
   pi_mem            buffer,
   pi_bool           blocking_map,
@@ -891,7 +918,7 @@ void * piEnqueueMemBufferMap( // TODO: change to return pi_result
   pi_uint32         num_events_in_wait_list,
   const pi_event *  event_wait_list,
   pi_event *        event,
-  pi_result *       errcode_ret);
+  void* *           ret_map);
 
 pi_result piEnqueueMemUnmap(
   pi_queue         command_queue,
@@ -900,6 +927,25 @@ pi_result piEnqueueMemUnmap(
   pi_uint32        num_events_in_wait_list,
   const pi_event * event_wait_list,
   pi_event *       event);
+
+
+struct _pi_plugin {
+  // PI version supported by host passed to the plugin. The Plugin
+  // checks and writes the appropriate Function Pointers in
+  // PiFunctionTable.
+  // TODO: Work on version fields and their handshaking mechanism.
+  // Some choices are:
+  // - Use of integers to keep major and minor version.
+  // - Keeping char* Versions.
+  const char PiVersion[4] = _PI_H_VERSION_STRING;
+  // Plugin edits this.
+  char PluginVersion[4] = _PI_H_VERSION_STRING;
+  char *Targets;
+  struct FunctionPointers {
+#define _PI_API(api) decltype(::api) *api;
+#include <CL/sycl/detail/pi.def>
+  } PiFunctionTable;
+};
 
 #ifdef __cplusplus
 } // extern "C"

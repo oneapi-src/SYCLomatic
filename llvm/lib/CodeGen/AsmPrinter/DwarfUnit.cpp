@@ -47,30 +47,41 @@ using namespace llvm;
 #define DEBUG_TYPE "dwarfdebug"
 
 DIEDwarfExpression::DIEDwarfExpression(const AsmPrinter &AP,
-                                       DwarfCompileUnit &CU,
-                                       DIELoc &DIE)
-    : DwarfExpression(AP.getDwarfVersion(), CU), AP(AP),
-      DIE(DIE) {}
+                                       DwarfCompileUnit &CU, DIELoc &DIE)
+    : DwarfExpression(AP.getDwarfVersion(), CU), AP(AP), OutDIE(DIE) {}
 
 void DIEDwarfExpression::emitOp(uint8_t Op, const char* Comment) {
-  CU.addUInt(DIE, dwarf::DW_FORM_data1, Op);
+  CU.addUInt(getActiveDIE(), dwarf::DW_FORM_data1, Op);
 }
 
 void DIEDwarfExpression::emitSigned(int64_t Value) {
-  CU.addSInt(DIE, dwarf::DW_FORM_sdata, Value);
+  CU.addSInt(getActiveDIE(), dwarf::DW_FORM_sdata, Value);
 }
 
 void DIEDwarfExpression::emitUnsigned(uint64_t Value) {
-  CU.addUInt(DIE, dwarf::DW_FORM_udata, Value);
+  CU.addUInt(getActiveDIE(), dwarf::DW_FORM_udata, Value);
 }
 
 void DIEDwarfExpression::emitData1(uint8_t Value) {
-  CU.addUInt(DIE, dwarf::DW_FORM_data1, Value);
+  CU.addUInt(getActiveDIE(), dwarf::DW_FORM_data1, Value);
 }
 
 void DIEDwarfExpression::emitBaseTypeRef(uint64_t Idx) {
-  CU.addBaseTypeRef(DIE, Idx);
+  CU.addBaseTypeRef(getActiveDIE(), Idx);
 }
+
+void DIEDwarfExpression::enableTemporaryBuffer() {
+  assert(!IsBuffering && "Already buffering?");
+  IsBuffering = true;
+}
+
+void DIEDwarfExpression::disableTemporaryBuffer() { IsBuffering = false; }
+
+unsigned DIEDwarfExpression::getTemporaryBufferSize() {
+  return TmpDIE.ComputeSize(&AP);
+}
+
+void DIEDwarfExpression::commitTemporaryBuffer() { OutDIE.takeValues(TmpDIE); }
 
 bool DIEDwarfExpression::isFrameRegister(const TargetRegisterInfo &TRI,
                                          unsigned MachineReg) {
@@ -789,6 +800,15 @@ void DwarfUnit::constructTypeDIE(DIE &Buffer, const DIDerivedType *DTy) {
   if (!Name.empty())
     addString(Buffer, dwarf::DW_AT_name, Name);
 
+  // If alignment is specified for a typedef , create and insert DW_AT_alignment
+  // attribute in DW_TAG_typedef DIE.
+  if (Tag == dwarf::DW_TAG_typedef && DD->getDwarfVersion() >= 5) {
+    uint32_t AlignInBytes = DTy->getAlignInBytes();
+    if (AlignInBytes > 0)
+      addUInt(Buffer, dwarf::DW_AT_alignment, dwarf::DW_FORM_udata,
+              AlignInBytes);
+  }
+
   // Add size if non-zero (derived types might be zero-sized.)
   if (Size && Tag != dwarf::DW_TAG_pointer_type
            && Tag != dwarf::DW_TAG_ptr_to_member_type
@@ -1296,6 +1316,9 @@ void DwarfUnit::applySubprogramAttributes(const DISubprogram *SP, DIE &SPDie,
     addFlag(SPDie, dwarf::DW_AT_elemental);
   if (SP->isRecursive())
     addFlag(SPDie, dwarf::DW_AT_recursive);
+
+  if (DD->getDwarfVersion() >= 5 && SP->isDeleted())
+    addFlag(SPDie, dwarf::DW_AT_deleted);
 }
 
 void DwarfUnit::constructSubrangeDIE(DIE &Buffer, const DISubrange *SR,
@@ -1701,15 +1724,6 @@ void DwarfUnit::addRnglistsBase() {
   addSectionLabel(getUnitDie(), dwarf::DW_AT_rnglists_base,
                   DU->getRnglistsTableBaseSym(),
                   TLOF.getDwarfRnglistsSection()->getBeginSymbol());
-}
-
-void DwarfUnit::addLoclistsBase() {
-  assert(DD->getDwarfVersion() >= 5 &&
-         "DW_AT_loclists_base requires DWARF version 5 or later");
-  const TargetLoweringObjectFile &TLOF = Asm->getObjFileLowering();
-  addSectionLabel(getUnitDie(), dwarf::DW_AT_loclists_base,
-                  DU->getLoclistsTableBaseSym(),
-                  TLOF.getDwarfLoclistsSection()->getBeginSymbol());
 }
 
 void DwarfTypeUnit::finishNonUnitTypeDIE(DIE& D, const DICompositeType *CTy) {

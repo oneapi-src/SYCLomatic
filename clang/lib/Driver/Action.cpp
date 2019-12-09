@@ -31,6 +31,7 @@ const char *Action::getClassName(ActionClass AC) {
   case CompileJobClass: return "compiler";
   case BackendJobClass: return "backend";
   case AssembleJobClass: return "assembler";
+  case IfsMergeJobClass: return "interface-stub-merger";
   case LinkJobClass: return "linker";
   case LipoJobClass: return "lipo";
   case DsymutilJobClass: return "dsymutil";
@@ -40,12 +41,14 @@ const char *Action::getClassName(ActionClass AC) {
     return "clang-offload-bundler";
   case OffloadUnbundlingJobClass:
     return "clang-offload-unbundler";
-  case OffloadWrappingJobClass:
+  case OffloadWrapperJobClass:
     return "clang-offload-wrapper";
   case SPIRVTranslatorJobClass:
     return "llvm-spirv";
   case SPIRCheckJobClass:
     return "llvm-no-spir-kernel";
+  case SYCLPostLinkJobClass:
+    return "sycl-post-link";
   case BackendCompileJobClass:
     return "backend-compiler";
   }
@@ -371,6 +374,11 @@ void AssembleJobAction::anchor() {}
 AssembleJobAction::AssembleJobAction(Action *Input, types::ID OutputType)
     : JobAction(AssembleJobClass, Input, OutputType) {}
 
+void IfsMergeJobAction::anchor() {}
+
+IfsMergeJobAction::IfsMergeJobAction(ActionList &Inputs, types::ID Type)
+    : JobAction(IfsMergeJobClass, Inputs, Type) {}
+
 void LinkJobAction::anchor() {}
 
 LinkJobAction::LinkJobAction(ActionList &Inputs, types::ID Type)
@@ -416,11 +424,15 @@ void OffloadUnbundlingJobAction::anchor() {}
 OffloadUnbundlingJobAction::OffloadUnbundlingJobAction(ActionList &Inputs)
     : JobAction(OffloadUnbundlingJobClass, Inputs, Inputs.back()->getType()) {}
 
-void OffloadWrappingJobAction::anchor() {}
+void OffloadWrapperJobAction::anchor() {}
 
-OffloadWrappingJobAction::OffloadWrappingJobAction(Action *Input,
-                                                   types::ID Type)
-    : JobAction(OffloadWrappingJobClass, Input, Type) {}
+OffloadWrapperJobAction::OffloadWrapperJobAction(ActionList &Inputs,
+                                                 types::ID Type)
+  : JobAction(OffloadWrapperJobClass, Inputs, Type) {}
+
+OffloadWrapperJobAction::OffloadWrapperJobAction(Action *Input,
+                                                 types::ID Type)
+    : JobAction(OffloadWrapperJobClass, Input, Type) {}
 
 void SPIRVTranslatorJobAction::anchor() {}
 
@@ -432,6 +444,11 @@ void SPIRCheckJobAction::anchor() {}
 
 SPIRCheckJobAction::SPIRCheckJobAction(Action *Input, types::ID Type)
     : JobAction(SPIRCheckJobClass, Input, Type) {}
+
+void SYCLPostLinkJobAction::anchor() {}
+
+SYCLPostLinkJobAction::SYCLPostLinkJobAction(Action *Input, types::ID Type)
+    : JobAction(SYCLPostLinkJobClass, Input, Type) {}
 
 void BackendCompileJobAction::anchor() {}
 

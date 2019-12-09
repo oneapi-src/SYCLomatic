@@ -36,6 +36,7 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Type.h"
+#include "llvm/InitializePasses.h"
 #include "llvm/Pass.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 using namespace llvm;
@@ -151,7 +152,7 @@ bool UnreachableMachineBlockElim::runOnMachineFunction(MachineFunction &F) {
     // Remove any call site information for calls in the block.
     for (auto &I : DeadBlocks[i]->instrs())
       if (I.isCall(MachineInstr::IgnoreBundle))
-        DeadBlocks[i]->getParent()->updateCallSiteInfo(&I);
+        DeadBlocks[i]->getParent()->eraseCallSiteInfo(&I);
 
     DeadBlocks[i]->eraseFromParent();
   }

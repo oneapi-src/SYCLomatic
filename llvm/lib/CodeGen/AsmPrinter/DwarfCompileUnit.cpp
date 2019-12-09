@@ -52,10 +52,23 @@
 
 using namespace llvm;
 
+static dwarf::Tag GetCompileUnitType(UnitKind Kind, DwarfDebug *DW) {
+
+  //  According to DWARF Debugging Information Format Version 5,
+  //  3.1.2 Skeleton Compilation Unit Entries:
+  //  "When generating a split DWARF object file (see Section 7.3.2
+  //  on page 187), the compilation unit in the .debug_info section
+  //  is a "skeleton" compilation unit with the tag DW_TAG_skeleton_unit"
+  if (DW->getDwarfVersion() >= 5 && Kind == UnitKind::Skeleton)
+    return dwarf::DW_TAG_skeleton_unit;
+
+  return dwarf::DW_TAG_compile_unit;
+}
+
 DwarfCompileUnit::DwarfCompileUnit(unsigned UID, const DICompileUnit *Node,
                                    AsmPrinter *A, DwarfDebug *DW,
-                                   DwarfFile *DWU)
-    : DwarfUnit(dwarf::DW_TAG_compile_unit, Node, A, DW, DWU), UniqueID(UID) {
+                                   DwarfFile *DWU, UnitKind Kind)
+    : DwarfUnit(GetCompileUnitType(Kind, DW), Node, A, DW, DWU), UniqueID(UID) {
   insertDIE(Node, &getUnitDie());
   MacroLabelBegin = Asm->createTempSymbol("cu_macro_begin");
 }
@@ -467,14 +480,6 @@ void DwarfCompileUnit::constructScopeDIE(
 
 void DwarfCompileUnit::addScopeRangeList(DIE &ScopeDIE,
                                          SmallVector<RangeSpan, 2> Range) {
-  const TargetLoweringObjectFile &TLOF = Asm->getObjFileLowering();
-
-  // Emit the offset into .debug_ranges or .debug_rnglists as a relocatable
-  // label. emitDIE() will handle emitting it appropriately.
-  const MCSymbol *RangeSectionSym =
-      DD->getDwarfVersion() >= 5
-          ? TLOF.getDwarfRnglistsSection()->getBeginSymbol()
-          : TLOF.getDwarfRangesSection()->getBeginSymbol();
 
   HasRangeLists = true;
 
@@ -493,12 +498,17 @@ void DwarfCompileUnit::addScopeRangeList(DIE &ScopeDIE,
   // (DW_RLE_startx_endx etc.).
   if (DD->getDwarfVersion() >= 5)
     addUInt(ScopeDIE, dwarf::DW_AT_ranges, dwarf::DW_FORM_rnglistx, Index);
-  else if (isDwoUnit())
-    addSectionDelta(ScopeDIE, dwarf::DW_AT_ranges, List.getSym(),
-                    RangeSectionSym);
-  else
-    addSectionLabel(ScopeDIE, dwarf::DW_AT_ranges, List.getSym(),
-                    RangeSectionSym);
+  else {
+    const TargetLoweringObjectFile &TLOF = Asm->getObjFileLowering();
+    const MCSymbol *RangeSectionSym =
+        TLOF.getDwarfRangesSection()->getBeginSymbol();
+    if (isDwoUnit())
+      addSectionDelta(ScopeDIE, dwarf::DW_AT_ranges, List.getSym(),
+                      RangeSectionSym);
+    else
+      addSectionLabel(ScopeDIE, dwarf::DW_AT_ranges, List.getSym(),
+                      RangeSectionSym);
+  }
 }
 
 void DwarfCompileUnit::attachRangesOrLowHighPC(
@@ -1208,7 +1218,7 @@ void DwarfCompileUnit::addComplexAddress(const DbgVariable &DV, DIE &Die,
 
   if (DIExpr->isEntryValue()) {
     DwarfExpr.setEntryValueFlag();
-    DwarfExpr.addEntryValueExpression(Cursor);
+    DwarfExpr.beginEntryValueExpression(Cursor);
   }
 
   const TargetRegisterInfo &TRI = *Asm->MF->getSubtarget().getRegisterInfo();
@@ -1223,8 +1233,11 @@ void DwarfCompileUnit::addComplexAddress(const DbgVariable &DV, DIE &Die,
 /// Add a Dwarf loclistptr attribute data and value.
 void DwarfCompileUnit::addLocationList(DIE &Die, dwarf::Attribute Attribute,
                                        unsigned Index) {
-  dwarf::Form Form = DD->getDwarfVersion() >= 4 ? dwarf::DW_FORM_sec_offset
-                                                : dwarf::DW_FORM_data4;
+  dwarf::Form Form = dwarf::DW_FORM_data4;
+  if (DD->getDwarfVersion() == 4)
+    Form =dwarf::DW_FORM_sec_offset;
+  if (DD->getDwarfVersion() >= 5)
+    Form =dwarf::DW_FORM_loclistx;
   Die.addValue(DIEValueAllocator, Attribute, Form, DIELocList(Index));
 }
 

@@ -725,10 +725,9 @@ void SPIRVToLLVM::transLLVMLoopMetadata(const Function *F) {
         const auto *LCI = static_cast<const SPIRVLoopControlINTEL *>(LMD);
         setLLVMLoopMetadata<SPIRVLoopControlINTEL>(LCI, BI);
       }
-    }
 
-    // Loop metadata map should be re-filled during each function translation.
-    FuncLoopMetadataMap.clear();
+      FuncLoopMetadataMap.erase(LMDItr);
+    }
   }
 }
 
@@ -817,6 +816,36 @@ Value *SPIRVToLLVM::transConvertInst(SPIRVValue *BV, Function *F,
   return ConstantExpr::getCast(CO, dyn_cast<Constant>(Src), Dst);
 }
 
+static void applyNoIntegerWrapDecorations(const SPIRVValue *BV,
+                                          Instruction *Inst) {
+  if (BV->hasDecorate(DecorationNoSignedWrap)) {
+    Inst->setHasNoSignedWrap(true);
+  }
+
+  if (BV->hasDecorate(DecorationNoUnsignedWrap)) {
+    Inst->setHasNoUnsignedWrap(true);
+  }
+}
+
+static void applyFPFastMathModeDecorations(const SPIRVValue *BV,
+                                           Instruction *Inst) {
+  SPIRVWord V;
+  FastMathFlags FMF;
+  if (BV->hasDecorate(DecorationFPFastMathMode, 0, &V)) {
+    if (V & FPFastMathModeNotNaNMask)
+      FMF.setNoNaNs();
+    if (V & FPFastMathModeNotInfMask)
+      FMF.setNoInfs();
+    if (V & FPFastMathModeNSZMask)
+      FMF.setNoSignedZeros();
+    if (V & FPFastMathModeAllowRecipMask)
+      FMF.setAllowReciprocal();
+    if (V & FPFastMathModeFastMask)
+      FMF.setFast();
+    Inst->setFastMathFlags(FMF);
+  }
+}
+
 BinaryOperator *SPIRVToLLVM::transShiftLogicalBitwiseInst(SPIRVValue *BV,
                                                           BasicBlock *BB,
                                                           Function *F) {
@@ -830,15 +859,8 @@ BinaryOperator *SPIRVToLLVM::transShiftLogicalBitwiseInst(SPIRVValue *BV,
   auto Inst = BinaryOperator::Create(BO, transValue(BBN->getOperand(0), F, BB),
                                      transValue(BBN->getOperand(1), F, BB),
                                      BV->getName(), BB);
-
-  if (BV->hasDecorate(DecorationNoSignedWrap)) {
-    Inst->setHasNoSignedWrap(true);
-  }
-
-  if (BV->hasDecorate(DecorationNoUnsignedWrap)) {
-    Inst->setHasNoUnsignedWrap(true);
-  }
-
+  applyNoIntegerWrapDecorations(BV, Inst);
+  applyFPFastMathModeDecorations(BV, Inst);
   return Inst;
 }
 
@@ -1476,10 +1498,10 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpStore: {
     SPIRVStore *BS = static_cast<SPIRVStore *>(BV);
-    StoreInst *SI = new StoreInst(transValue(BS->getSrc(), F, BB),
-                                  transValue(BS->getDst(), F, BB),
-                                  BS->SPIRVMemoryAccess::isVolatile(),
-                                  BS->SPIRVMemoryAccess::getAlignment(), BB);
+    StoreInst *SI = new StoreInst(
+        transValue(BS->getSrc(), F, BB), transValue(BS->getDst(), F, BB),
+        BS->SPIRVMemoryAccess::isVolatile(),
+        MaybeAlign(BS->SPIRVMemoryAccess::getAlignment()), BB);
     if (BS->SPIRVMemoryAccess::isNonTemporal())
       transNonTemporalMetadata(SI);
     return mapValue(BV, SI);
@@ -1487,9 +1509,10 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpLoad: {
     SPIRVLoad *BL = static_cast<SPIRVLoad *>(BV);
-    LoadInst *LI = new LoadInst(transValue(BL->getSrc(), F, BB), BV->getName(),
-                                BL->SPIRVMemoryAccess::isVolatile(),
-                                BL->SPIRVMemoryAccess::getAlignment(), BB);
+    LoadInst *LI =
+        new LoadInst(transValue(BL->getSrc(), F, BB), BV->getName(),
+                     BL->SPIRVMemoryAccess::isVolatile(),
+                     MaybeAlign(BL->SPIRVMemoryAccess::getAlignment()), BB);
     if (BL->SPIRVMemoryAccess::isNonTemporal())
       transNonTemporalMetadata(LI);
     return mapValue(BV, LI);
@@ -1513,12 +1536,16 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
         if (isa<OpConstantNull>(Init)) {
           SPIRVType *Ty = static_cast<SPIRVConstantNull *>(Init)->getType();
           if (isa<OpTypeArray>(Ty)) {
-            SPIRVTypeArray *AT = static_cast<SPIRVTypeArray *>(Ty);
-            Type *SrcTy = transType(AT->getArrayElementType());
-            if (SrcTy->isIntegerTy(8)) {
-              llvm::Value *Src = ConstantInt::get(SrcTy, 0);
-              CI = Builder.CreateMemSet(Dst, Src, Size, Align, IsVolatile);
+            Type *Int8Ty = Type::getInt8Ty(Dst->getContext());
+            llvm::Value *Src = ConstantInt::get(Int8Ty, 0);
+            llvm::Value *NewDst = Dst;
+            if (!Dst->getType()->getPointerElementType()->isIntegerTy(8)) {
+              Type *Int8PointerTy = Type::getInt8PtrTy(
+                  Dst->getContext(), Dst->getType()->getPointerAddressSpace());
+              NewDst = llvm::BitCastInst::CreatePointerCast(Dst, Int8PointerTy,
+                                                            "", BB);
             }
+            CI = Builder.CreateMemSet(NewDst, Src, Size, Align, IsVolatile);
           }
         }
       }
@@ -1543,7 +1570,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpVmeImageINTEL:
   case OpLine:
-  case OpSelectionMerge:   // OpenCL Compiler does not use this instruction
+  case OpSelectionMerge: // OpenCL Compiler does not use this instruction
     return nullptr;
 
   case OpLoopMerge:        // Will be translated after all other function's
@@ -1584,6 +1611,48 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     NewVec->takeName(Scalar);
     auto Scale = Builder.CreateFMul(Vector, NewVec, "scale");
     return mapValue(BV, Scale);
+  }
+
+  case OpVectorTimesMatrix: {
+    auto *VTM = static_cast<SPIRVVectorTimesMatrix *>(BV);
+    IRBuilder<> Builder(BB);
+    Value *Mat = transValue(VTM->getMatrix(), F, BB);
+    Value *Vec = transValue(VTM->getVector(), F, BB);
+
+    // Vec is of N elements.
+    // Mat is of M columns and N rows.
+    // Mat consists of vectors: V_1, V_2, ..., V_M
+    //
+    // The product is:
+    //
+    //                |------- M ----------|
+    // Result = sum ( {Vec_1, Vec_1, ..., Vec_1} * {V_1_1, V_2_1, ..., V_M_1},
+    //                {Vec_2, Vec_2, ..., Vec_2} * {V_1_2, V_2_2, ..., V_M_2},
+    //                ...
+    //                {Vec_N, Vec_N, ..., Vec_N} * {V_1_N, V_2_N, ..., V_M_N});
+
+    unsigned M = Mat->getType()->getArrayNumElements();
+
+    VectorType *VTy =
+        VectorType::get(Vec->getType()->getVectorElementType(), M);
+    auto ETy = VTy->getElementType();
+    unsigned N = Vec->getType()->getVectorNumElements();
+    Value *V = Builder.CreateVectorSplat(M, ConstantFP::get(ETy, 0.0));
+
+    for (unsigned Idx = 0; Idx != N; ++Idx) {
+      Value *S = Builder.CreateExtractElement(Vec, Builder.getInt32(Idx));
+      Value *Lhs = Builder.CreateVectorSplat(M, S);
+      Value *Rhs = UndefValue::get(VTy);
+      for (unsigned Idx2 = 0; Idx2 != M; ++Idx2) {
+        Value *Vx = Builder.CreateExtractValue(Mat, Idx2);
+        Value *Vxi = Builder.CreateExtractElement(Vx, Builder.getInt32(Idx));
+        Rhs = Builder.CreateInsertElement(Rhs, Vxi, Builder.getInt32(Idx2));
+      }
+      Value *Mul = Builder.CreateFMul(Lhs, Rhs);
+      V = Builder.CreateFAdd(V, Mul);
+    }
+
+    return mapValue(BV, V);
   }
 
   case OpMatrixTimesScalar: {
@@ -1645,6 +1714,80 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     }
 
     return mapValue(BV, V);
+  }
+
+  case OpMatrixTimesMatrix: {
+    auto *MTM = static_cast<SPIRVMatrixTimesMatrix *>(BV);
+    IRBuilder<> Builder(BB);
+    Value *M1 = transValue(MTM->getLeftMatrix(), F, BB);
+    Value *M2 = transValue(MTM->getRightMatrix(), F, BB);
+
+    // Each matrix consists of a list of columns.
+    // M1 (the left matrix) is of C1 columns and R1 rows.
+    // M1 consists of a list of vectors: V_1, V_2, ..., V_C1
+    // where V_x are vectors of size R1.
+    //
+    // M2 (the right matrix) is of C2 columns and R2 rows.
+    // M2 consists of a list of vectors: U_1, U_2, ..., U_C2
+    // where U_x are vectors of size R2.
+    //
+    // Now M1 * M2 requires C1 == R2.
+    // The result is a matrix of C2 columns and R1 rows.
+    // That is, consists of C2 vectors of size R1.
+    //
+    // M1 * M2 algorithm is as below:
+    //
+    // Result = { dot_product(U_1, M1),
+    //            dot_product(U_2, M1),
+    //            ...
+    //            dot_product(U_C2, M1) };
+    // where
+    // dot_product (U, M) is defined as:
+    //
+    //                 |-------- C1 ------|
+    // Result = sum ( {U[1], U[1], ..., U[1]} * V_1,
+    //                {U[2], U[2], ..., U[2]} * V_2,
+    //                ...
+    //                {U[R2], U[R2], ..., U[R2]} * V_C1 );
+    // Note that C1 == R2
+    // sum is defined as vector sum.
+
+    unsigned C1 = M1->getType()->getArrayNumElements();
+    unsigned C2 = M2->getType()->getArrayNumElements();
+    VectorType *V1Ty =
+        cast<VectorType>(cast<ArrayType>(M1->getType())->getElementType());
+    VectorType *V2Ty =
+        cast<VectorType>(cast<ArrayType>(M2->getType())->getElementType());
+    unsigned R1 = V1Ty->getVectorNumElements();
+    unsigned R2 = V2Ty->getVectorNumElements();
+    auto ETy = V1Ty->getElementType();
+
+    (void)C1;
+    assert(C1 == R2 && "Unmatched matrix");
+
+    auto VTy = VectorType::get(ETy, R1);
+    auto ResultTy = ArrayType::get(VTy, C2);
+
+    Value *Res = UndefValue::get(ResultTy);
+
+    for (unsigned Idx = 0; Idx != C2; ++Idx) {
+      Value *U = Builder.CreateExtractValue(M2, Idx);
+
+      // Calculate dot_product(U, M1)
+      Value *Dot = Builder.CreateVectorSplat(R1, ConstantFP::get(ETy, 0.0));
+
+      for (unsigned Idx2 = 0; Idx2 != R2; ++Idx2) {
+        Value *Ux = Builder.CreateExtractElement(U, Builder.getInt32(Idx2));
+        Value *Lhs = Builder.CreateVectorSplat(R1, Ux);
+        Value *Rhs = Builder.CreateExtractValue(M1, Idx2);
+        Value *Mul = Builder.CreateFMul(Lhs, Rhs);
+        Dot = Builder.CreateFAdd(Dot, Mul);
+      }
+
+      Res = Builder.CreateInsertValue(Res, Dot, Idx);
+    }
+
+    return mapValue(BV, Res);
   }
 
   case OpCopyObject: {
@@ -1823,9 +1966,10 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpSNegate: {
     SPIRVUnary *BC = static_cast<SPIRVUnary *>(BV);
-    return mapValue(
-        BV, BinaryOperator::CreateNSWNeg(transValue(BC->getOperand(0), F, BB),
-                                         BV->getName(), BB));
+    auto Neg = BinaryOperator::CreateNeg(transValue(BC->getOperand(0), F, BB),
+                                         BV->getName(), BB);
+    applyNoIntegerWrapDecorations(BV, Neg);
+    return mapValue(BV, Neg);
   }
 
   case OpFMod: {
@@ -1869,9 +2013,10 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
 
   case OpFNegate: {
     SPIRVUnary *BC = static_cast<SPIRVUnary *>(BV);
-    return mapValue(
-        BV, BinaryOperator::CreateFNeg(transValue(BC->getOperand(0), F, BB),
-                                       BV->getName(), BB));
+    auto Neg = BinaryOperator::CreateFNeg(transValue(BC->getOperand(0), F, BB),
+                                          BV->getName(), BB);
+    applyFPFastMathModeDecorations(BV, Neg);
+    return mapValue(BV, Neg);
   }
 
   case OpNot:

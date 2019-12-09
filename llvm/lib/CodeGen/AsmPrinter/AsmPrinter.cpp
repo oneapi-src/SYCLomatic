@@ -139,17 +139,12 @@ static const char *const DbgTimerDescription = "Debug Info Emission";
 static const char *const EHTimerName = "write_exception";
 static const char *const EHTimerDescription = "DWARF Exception Writer";
 static const char *const CFGuardName = "Control Flow Guard";
-static const char *const CFGuardDescription = "Control Flow Guard Tables";
+static const char *const CFGuardDescription = "Control Flow Guard";
 static const char *const CodeViewLineTablesGroupName = "linetables";
 static const char *const CodeViewLineTablesGroupDescription =
   "CodeView Line Tables";
 
 STATISTIC(EmittedInsts, "Number of machine instrs printed");
-
-static cl::opt<bool> EnableRemarksSection(
-    "remarks-section",
-    cl::desc("Emit a section containing remark diagnostics metadata"),
-    cl::init(false));
 
 char AsmPrinter::ID = 0;
 
@@ -381,12 +376,12 @@ bool AsmPrinter::doInitialization(Module &M) {
                           EHTimerDescription, DWARFGroupName,
                           DWARFGroupDescription);
 
+  // Emit tables for any value of cfguard flag (i.e. cfguard=1 or cfguard=2).
   if (mdconst::extract_or_null<ConstantInt>(
-          MMI->getModule()->getModuleFlag("cfguardtable")))
+          MMI->getModule()->getModuleFlag("cfguard")))
     Handlers.emplace_back(std::make_unique<WinCFGuard>(this), CFGuardName,
                           CFGuardDescription, DWARFGroupName,
                           DWARFGroupDescription);
-
   return false;
 }
 
@@ -940,7 +935,7 @@ AsmPrinter::CFIMoveType AsmPrinter::needsCFIMoves() const {
       MF->getFunction().needsUnwindTableEntry())
     return CFI_M_EH;
 
-  if (MMI->hasDebugInfo())
+  if (MMI->hasDebugInfo() || MF->getTarget().Options.ForceDwarfFrameSection)
     return CFI_M_Debug;
 
   return CFI_M_None;
@@ -1357,14 +1352,14 @@ void AsmPrinter::emitGlobalIndirectSymbol(Module &M,
   }
 }
 
-void AsmPrinter::emitRemarksSection(Module &M) {
-  RemarkStreamer *RS = M.getContext().getRemarkStreamer();
-  if (!RS)
+void AsmPrinter::emitRemarksSection(RemarkStreamer &RS) {
+  if (!RS.needsSection())
     return;
-  remarks::RemarkSerializer &RemarkSerializer = RS->getSerializer();
+
+  remarks::RemarkSerializer &RemarkSerializer = RS.getSerializer();
 
   Optional<SmallString<128>> Filename;
-  if (Optional<StringRef> FilenameRef = RS->getFilename()) {
+  if (Optional<StringRef> FilenameRef = RS.getFilename()) {
     Filename = *FilenameRef;
     sys::fs::make_absolute(*Filename);
     assert(!Filename->empty() && "The filename can't be empty.");
@@ -1377,7 +1372,7 @@ void AsmPrinter::emitRemarksSection(Module &M) {
                : RemarkSerializer.metaSerializer(OS);
   MetaSerializer->emit();
 
-  // Switch to the right section: .remarks/__remarks.
+  // Switch to the remarks section.
   MCSection *RemarksSection =
       OutContext.getObjectFileInfo()->getRemarksSection();
   OutStreamer->SwitchSection(RemarksSection);
@@ -1419,8 +1414,8 @@ bool AsmPrinter::doFinalization(Module &M) {
   // Emit the remarks section contents.
   // FIXME: Figure out when is the safest time to emit this section. It should
   // not come after debug info.
-  if (EnableRemarksSection)
-    emitRemarksSection(M);
+  if (RemarkStreamer *RS = M.getContext().getRemarkStreamer())
+    emitRemarksSection(*RS);
 
   const TargetLoweringObjectFile &TLOF = getObjFileLowering();
 
@@ -1494,8 +1489,6 @@ bool AsmPrinter::doFinalization(Module &M) {
       OutStreamer->EmitSymbolAttribute(getSymbol(&GO), MCSA_WeakReference);
     }
   }
-
-  OutStreamer->AddBlankLine();
 
   // Print aliases in topological order, that is, for each alias a = b,
   // b must be printed before a.
@@ -1761,6 +1754,11 @@ void AsmPrinter::EmitConstantPool() {
       if (!Sym->isUndefined())
         continue;
 
+      if (TM.getTargetTriple().isOSBinFormatXCOFF()) {
+        cast<MCSymbolXCOFF>(Sym)->setContainingCsect(
+            cast<MCSectionXCOFF>(CPSections[i].S));
+      }
+
       if (CurSection != CPSections[i].S) {
         OutStreamer->SwitchSection(CPSections[i].S);
         EmitAlignment(Align(CPSections[i].Alignment));
@@ -1850,10 +1848,16 @@ void AsmPrinter::EmitJumpTableInfo() {
     // second label is actually referenced by the code.
     if (JTInDiffSection && DL.hasLinkerPrivateGlobalPrefix())
       // FIXME: This doesn't have to have any specific name, just any randomly
-      // named and numbered 'l' label would work.  Simplify GetJTISymbol.
+      // named and numbered local label started with 'l' would work.  Simplify
+      // GetJTISymbol.
       OutStreamer->EmitLabel(GetJTISymbol(JTI, true));
 
-    OutStreamer->EmitLabel(GetJTISymbol(JTI));
+    MCSymbol* JTISymbol = GetJTISymbol(JTI);
+    if (TM.getTargetTriple().isOSBinFormatXCOFF()) {
+      cast<MCSymbolXCOFF>(JTISymbol)->setContainingCsect(
+          cast<MCSectionXCOFF>(TLOF.getSectionForJumpTable(F, TM)));
+    }
+    OutStreamer->EmitLabel(JTISymbol);
 
     for (unsigned ii = 0, ee = JTBBs.size(); ii != ee; ++ii)
       EmitJumpTableEntry(MJTI, JTBBs[ii], JTI);

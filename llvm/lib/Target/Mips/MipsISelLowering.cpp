@@ -111,21 +111,19 @@ static bool isShiftedMask(uint64_t I, uint64_t &Pos, uint64_t &Size) {
 MVT MipsTargetLowering::getRegisterTypeForCallingConv(LLVMContext &Context,
                                                       CallingConv::ID CC,
                                                       EVT VT) const {
-  if (VT.isVector()) {
-      if (Subtarget.isABI_O32()) {
-        return MVT::i32;
-      } else {
-        return (VT.getSizeInBits() == 32) ? MVT::i32 : MVT::i64;
-      }
-  }
-  return MipsTargetLowering::getRegisterType(Context, VT);
+  if (!VT.isVector())
+    return getRegisterType(Context, VT);
+
+  return Subtarget.isABI_O32() || VT.getSizeInBits() == 32 ? MVT::i32
+                                                           : MVT::i64;
 }
 
 unsigned MipsTargetLowering::getNumRegistersForCallingConv(LLVMContext &Context,
                                                            CallingConv::ID CC,
                                                            EVT VT) const {
   if (VT.isVector())
-    return std::max((VT.getSizeInBits() / (Subtarget.isABI_O32() ? 32 : 64)),
+    return std::max(((unsigned)VT.getSizeInBits() /
+                     (Subtarget.isABI_O32() ? 32 : 64)),
                     1U);
   return MipsTargetLowering::getNumRegisters(Context, VT);
 }
@@ -528,8 +526,9 @@ MipsTargetLowering::MipsTargetLowering(const MipsTargetMachine &TM,
   isMicroMips = Subtarget.inMicroMipsMode();
 }
 
-const MipsTargetLowering *MipsTargetLowering::create(const MipsTargetMachine &TM,
-                                                     const MipsSubtarget &STI) {
+const MipsTargetLowering *
+MipsTargetLowering::create(const MipsTargetMachine &TM,
+                           const MipsSubtarget &STI) {
   if (STI.inMips16Mode())
     return createMips16TargetLowering(TM, STI);
 
@@ -2804,7 +2803,8 @@ static bool CC_MipsO32(unsigned ValNo, MVT ValVT, MVT LocVT,
       // allocate a register directly.
       Reg = State.AllocateReg(IntRegs);
     }
-  } else if (ValVT == MVT::i32 || (ValVT == MVT::f32 && AllocateFloatsInIntReg)) {
+  } else if (ValVT == MVT::i32 ||
+             (ValVT == MVT::f32 && AllocateFloatsInIntReg)) {
     Reg = State.AllocateReg(IntRegs);
     // If this is the first part of an i64 arg,
     // the allocated register must be either A0 or A2.
@@ -3625,8 +3625,8 @@ MipsTargetLowering::CanLowerReturn(CallingConv::ID CallConv,
   return CCInfo.CheckReturn(Outs, RetCC_Mips);
 }
 
-bool
-MipsTargetLowering::shouldSignExtendTypeInLibCall(EVT Type, bool IsSigned) const {
+bool MipsTargetLowering::shouldSignExtendTypeInLibCall(EVT Type,
+                                                       bool IsSigned) const {
   if ((ABI.IsN32() || ABI.IsN64()) && Type == MVT::i32)
       return true;
 
@@ -4006,11 +4006,13 @@ MipsTargetLowering::getRegForInlineAsmConstraint(const TargetRegisterInfo *TRI,
     }
   }
 
-  std::pair<unsigned, const TargetRegisterClass *> R;
-  R = parseRegForInlineAsmConstraint(Constraint, VT);
+  if (!Constraint.empty()) {
+    std::pair<unsigned, const TargetRegisterClass *> R;
+    R = parseRegForInlineAsmConstraint(Constraint, VT);
 
-  if (R.second)
-    return R;
+    if (R.second)
+      return R;
+  }
 
   return TargetLowering::getRegForInlineAsmConstraint(TRI, Constraint, VT);
 }
@@ -4113,7 +4115,8 @@ void MipsTargetLowering::LowerAsmOperandForConstraint(SDValue Op,
 
 bool MipsTargetLowering::isLegalAddressingMode(const DataLayout &DL,
                                                const AddrMode &AM, Type *Ty,
-                                               unsigned AS, Instruction *I) const {
+                                               unsigned AS,
+                                               Instruction *I) const {
   // No global is ever allowed as a base.
   if (AM.BaseGV)
     return false;
@@ -4489,8 +4492,9 @@ MachineBasicBlock *MipsTargetLowering::emitPseudoSELECT(MachineInstr &MI,
   return BB;
 }
 
-MachineBasicBlock *MipsTargetLowering::emitPseudoD_SELECT(MachineInstr &MI,
-                                                          MachineBasicBlock *BB) const {
+MachineBasicBlock *
+MipsTargetLowering::emitPseudoD_SELECT(MachineInstr &MI,
+                                       MachineBasicBlock *BB) const {
   assert(!(Subtarget.hasMips4() || Subtarget.hasMips32()) &&
          "Subtarget already supports SELECT nodes with the use of"
          "conditional-move instructions.");
@@ -4566,8 +4570,9 @@ MachineBasicBlock *MipsTargetLowering::emitPseudoD_SELECT(MachineInstr &MI,
 
 // FIXME? Maybe this could be a TableGen attribute on some registers and
 // this table could be generated automatically from RegInfo.
-Register MipsTargetLowering::getRegisterByName(const char* RegName, EVT VT,
-                                               const MachineFunction &MF) const {
+Register
+MipsTargetLowering::getRegisterByName(const char *RegName, EVT VT,
+                                      const MachineFunction &MF) const {
   // Named registers is expected to be fairly rare. For now, just support $28
   // since the linux kernel uses it.
   if (Subtarget.isGP64bit()) {

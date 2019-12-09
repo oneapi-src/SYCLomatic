@@ -42,6 +42,7 @@
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/MachineValueType.h"
+#include "llvm/Support/TypeSize.h"
 #include <algorithm>
 #include <cassert>
 #include <climits>
@@ -170,11 +171,15 @@ public:
   }
 
   /// Returns the size of the value in bits.
-  unsigned getValueSizeInBits() const {
+  ///
+  /// If the value type is a scalable vector type, the scalable property will
+  /// be set and the runtime size will be a positive integer multiple of the
+  /// base size.
+  TypeSize getValueSizeInBits() const {
     return getValueType().getSizeInBits();
   }
 
-  unsigned getScalarValueSizeInBits() const {
+  TypeSize getScalarValueSizeInBits() const {
     return getValueType().getScalarType().getSizeInBits();
   }
 
@@ -548,6 +553,7 @@ BEGIN_TWO_BYTE_PACK()
 
   class LSBaseSDNodeBitfields {
     friend class LSBaseSDNode;
+    friend class MaskedLoadStoreSDNode;
     friend class MaskedGatherScatterSDNode;
 
     uint16_t : NumMemSDNodeBits;
@@ -555,6 +561,7 @@ BEGIN_TWO_BYTE_PACK()
     // This storage is shared between disparate class hierarchies to hold an
     // enumeration specific to the class hierarchy in use.
     //   LSBaseSDNode => enum ISD::MemIndexedMode
+    //   MaskedLoadStoreBaseSDNode => enum ISD::MemIndexedMode
     //   MaskedGatherScatterSDNode => enum ISD::MemIndexType
     uint16_t AddressingMode : 3;
   };
@@ -685,34 +692,9 @@ public:
     switch (NodeType) {
       default:
         return false;
-      case ISD::STRICT_FADD:
-      case ISD::STRICT_FSUB:
-      case ISD::STRICT_FMUL:
-      case ISD::STRICT_FDIV:
-      case ISD::STRICT_FREM:
-      case ISD::STRICT_FMA:
-      case ISD::STRICT_FSQRT:
-      case ISD::STRICT_FPOW:
-      case ISD::STRICT_FPOWI:
-      case ISD::STRICT_FSIN:
-      case ISD::STRICT_FCOS:
-      case ISD::STRICT_FEXP:
-      case ISD::STRICT_FEXP2:
-      case ISD::STRICT_FLOG:
-      case ISD::STRICT_FLOG10:
-      case ISD::STRICT_FLOG2:
-      case ISD::STRICT_FRINT:
-      case ISD::STRICT_FNEARBYINT:
-      case ISD::STRICT_FMAXNUM:
-      case ISD::STRICT_FMINNUM:
-      case ISD::STRICT_FCEIL:
-      case ISD::STRICT_FFLOOR:
-      case ISD::STRICT_FROUND:
-      case ISD::STRICT_FTRUNC:
-      case ISD::STRICT_FP_TO_SINT:
-      case ISD::STRICT_FP_TO_UINT:
-      case ISD::STRICT_FP_ROUND:
-      case ISD::STRICT_FP_EXTEND:
+#define INSTRUCTION(NAME, NARG, ROUND_MODE, INTRINSIC, DAGN)                   \
+      case ISD::STRICT_##DAGN:
+#include "llvm/IR/ConstrainedOps.def"
         return true;
     }
   }
@@ -1018,7 +1000,11 @@ public:
   }
 
   /// Returns MVT::getSizeInBits(getValueType(ResNo)).
-  unsigned getValueSizeInBits(unsigned ResNo) const {
+  ///
+  /// If the value type is a scalable vector type, the scalable property will
+  /// be set and the runtime size will be a positive integer multiple of the
+  /// base size.
+  TypeSize getValueSizeInBits(unsigned ResNo) const {
     return getValueType(ResNo).getSizeInBits();
   }
 
@@ -2289,19 +2275,38 @@ public:
   friend class SelectionDAG;
 
   MaskedLoadStoreSDNode(ISD::NodeType NodeTy, unsigned Order,
-                        const DebugLoc &dl, SDVTList VTs, EVT MemVT,
+                        const DebugLoc &dl, SDVTList VTs,
+                        ISD::MemIndexedMode AM, EVT MemVT,
                         MachineMemOperand *MMO)
-      : MemSDNode(NodeTy, Order, dl, VTs, MemVT, MMO) {}
+      : MemSDNode(NodeTy, Order, dl, VTs, MemVT, MMO) {
+    LSBaseSDNodeBits.AddressingMode = AM;
+    assert(getAddressingMode() == AM && "Value truncated");
+  }
 
-  // MaskedLoadSDNode (Chain, ptr, mask, passthru)
-  // MaskedStoreSDNode (Chain, data, ptr, mask)
+  // MaskedLoadSDNode (Chain, ptr, offset, mask, passthru)
+  // MaskedStoreSDNode (Chain, data, ptr, offset, mask)
   // Mask is a vector of i1 elements
   const SDValue &getBasePtr() const {
     return getOperand(getOpcode() == ISD::MLOAD ? 1 : 2);
   }
-  const SDValue &getMask() const {
+  const SDValue &getOffset() const {
     return getOperand(getOpcode() == ISD::MLOAD ? 2 : 3);
   }
+  const SDValue &getMask() const {
+    return getOperand(getOpcode() == ISD::MLOAD ? 3 : 4);
+  }
+
+  /// Return the addressing mode for this load or store:
+  /// unindexed, pre-inc, pre-dec, post-inc, or post-dec.
+  ISD::MemIndexedMode getAddressingMode() const {
+    return static_cast<ISD::MemIndexedMode>(LSBaseSDNodeBits.AddressingMode);
+  }
+
+  /// Return true if this is a pre/post inc/dec load/store.
+  bool isIndexed() const { return getAddressingMode() != ISD::UNINDEXED; }
+
+  /// Return true if this is NOT a pre/post inc/dec load/store.
+  bool isUnindexed() const { return getAddressingMode() == ISD::UNINDEXED; }
 
   static bool classof(const SDNode *N) {
     return N->getOpcode() == ISD::MLOAD ||
@@ -2315,9 +2320,9 @@ public:
   friend class SelectionDAG;
 
   MaskedLoadSDNode(unsigned Order, const DebugLoc &dl, SDVTList VTs,
-                   ISD::LoadExtType ETy, bool IsExpanding, EVT MemVT,
-                   MachineMemOperand *MMO)
-      : MaskedLoadStoreSDNode(ISD::MLOAD, Order, dl, VTs, MemVT, MMO) {
+                   ISD::MemIndexedMode AM, ISD::LoadExtType ETy,
+                   bool IsExpanding, EVT MemVT, MachineMemOperand *MMO)
+      : MaskedLoadStoreSDNode(ISD::MLOAD, Order, dl, VTs, AM, MemVT, MMO) {
     LoadSDNodeBits.ExtTy = ETy;
     LoadSDNodeBits.IsExpanding = IsExpanding;
   }
@@ -2327,8 +2332,9 @@ public:
   }
 
   const SDValue &getBasePtr() const { return getOperand(1); }
-  const SDValue &getMask() const    { return getOperand(2); }
-  const SDValue &getPassThru() const { return getOperand(3); }
+  const SDValue &getOffset() const { return getOperand(2); }
+  const SDValue &getMask() const { return getOperand(3); }
+  const SDValue &getPassThru() const { return getOperand(4); }
 
   static bool classof(const SDNode *N) {
     return N->getOpcode() == ISD::MLOAD;
@@ -2343,9 +2349,9 @@ public:
   friend class SelectionDAG;
 
   MaskedStoreSDNode(unsigned Order, const DebugLoc &dl, SDVTList VTs,
-                    bool isTrunc, bool isCompressing, EVT MemVT,
-                    MachineMemOperand *MMO)
-      : MaskedLoadStoreSDNode(ISD::MSTORE, Order, dl, VTs, MemVT, MMO) {
+                    ISD::MemIndexedMode AM, bool isTrunc, bool isCompressing,
+                    EVT MemVT, MachineMemOperand *MMO)
+      : MaskedLoadStoreSDNode(ISD::MSTORE, Order, dl, VTs, AM, MemVT, MMO) {
     StoreSDNodeBits.IsTruncating = isTrunc;
     StoreSDNodeBits.IsCompressing = isCompressing;
   }
@@ -2361,9 +2367,10 @@ public:
   /// memory at base_addr.
   bool isCompressingStore() const { return StoreSDNodeBits.IsCompressing; }
 
-  const SDValue &getValue() const   { return getOperand(1); }
+  const SDValue &getValue() const { return getOperand(1); }
   const SDValue &getBasePtr() const { return getOperand(2); }
-  const SDValue &getMask() const    { return getOperand(3); }
+  const SDValue &getOffset() const { return getOperand(3); }
+  const SDValue &getMask() const { return getOperand(4); }
 
   static bool classof(const SDNode *N) {
     return N->getOpcode() == ISD::MSTORE;

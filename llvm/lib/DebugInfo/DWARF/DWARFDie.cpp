@@ -62,16 +62,10 @@ static void dumpRanges(const DWARFObject &Obj, raw_ostream &OS,
   if (!DumpOpts.ShowAddresses)
     return;
 
-  ArrayRef<SectionName> SectionNames;
-  if (DumpOpts.Verbose)
-    SectionNames = Obj.getSectionNames();
-
   for (const DWARFAddressRange &R : Ranges) {
     OS << '\n';
     OS.indent(Indent);
-    R.dump(OS, AddressSize);
-
-    DWARFFormValue::dumpAddressSection(Obj, OS, DumpOpts, R.SectionIndex);
+    R.dump(OS, AddressSize, DumpOpts, &Obj);
   }
 }
 
@@ -79,7 +73,6 @@ static void dumpLocation(raw_ostream &OS, DWARFFormValue &FormValue,
                          DWARFUnit *U, unsigned Indent,
                          DIDumpOptions DumpOpts) {
   DWARFContext &Ctx = U->getContext();
-  const DWARFObject &Obj = Ctx.getDWARFObj();
   const MCRegisterInfo *MRI = Ctx.getRegisterInfo();
   if (FormValue.isFormClass(DWARFFormValue::FC_Block) ||
       FormValue.isFormClass(DWARFFormValue::FC_Exprloc)) {
@@ -91,47 +84,24 @@ static void dumpLocation(raw_ostream &OS, DWARFFormValue &FormValue,
     return;
   }
 
-  FormValue.dump(OS, DumpOpts);
-  const auto &DumpLL = [&](auto ExpectedLL) {
-    if (ExpectedLL) {
-      uint64_t BaseAddr = 0;
-      if (Optional<object::SectionedAddress> BA = U->getBaseAddress())
-        BaseAddr = BA->Address;
-      ExpectedLL->dump(OS, BaseAddr, Ctx.isLittleEndian(), Obj.getAddressSize(),
-                       MRI, U, Indent);
-    } else {
-      OS << '\n';
-      OS.indent(Indent);
-      OS << formatv("error extracting location list: {0}",
-                    fmt_consume(ExpectedLL.takeError()));
-    }
-  };
   if (FormValue.isFormClass(DWARFFormValue::FC_SectionOffset)) {
     uint64_t Offset = *FormValue.getAsSectionOffset();
-    if (!U->isDWOUnit() && !U->getLocSection()->Data.empty()) {
-      DWARFDebugLoc DebugLoc;
-      DWARFDataExtractor Data(Obj, *U->getLocSection(), Ctx.isLittleEndian(),
-                              Obj.getAddressSize());
-      DumpLL(DebugLoc.parseOneLocationList(Data, &Offset));
-      return;
+
+    if (FormValue.getForm() == DW_FORM_loclistx) {
+      FormValue.dump(OS, DumpOpts);
+
+      if (auto LoclistOffset = U->getLoclistOffset(Offset))
+        Offset = *LoclistOffset;
+      else
+        return;
     }
-
-    bool UseLocLists = !U->isDWOUnit();
-    StringRef LoclistsSectionData =
-        UseLocLists ? Obj.getLoclistsSection().Data : U->getLocSectionData();
-
-    if (!LoclistsSectionData.empty()) {
-      DataExtractor Data(LoclistsSectionData, Ctx.isLittleEndian(),
-                         Obj.getAddressSize());
-
-      // Old-style location list were used in DWARF v4 (.debug_loc.dwo section).
-      // Modern locations list (.debug_loclists) are used starting from v5.
-      // Ideally we should take the version from the .debug_loclists section
-      // header, but using CU's version for simplicity.
-      DumpLL(DWARFDebugLoclists::parseOneLocationList(
-          Data, &Offset, UseLocLists ? U->getVersion() : 4));
-    }
+    U->getLocationTable().dumpLocationList(&Offset, OS, U->getBaseAddress(),
+                                           MRI, Ctx.getDWARFObj(), U, DumpOpts,
+                                           Indent);
+    return;
   }
+
+  FormValue.dump(OS, DumpOpts);
 }
 
 /// Dump the name encoded in the type tag.
@@ -439,6 +409,10 @@ Optional<uint64_t> DWARFDie::getRangesBaseAttribute() const {
   return toSectionOffset(find({DW_AT_rnglists_base, DW_AT_GNU_ranges_base}));
 }
 
+Optional<uint64_t> DWARFDie::getLocBaseAttribute() const {
+  return toSectionOffset(find(DW_AT_loclists_base));
+}
+
 Optional<uint64_t> DWARFDie::getHighPC(uint64_t LowPC) const {
   if (auto FormValue = find(DW_AT_high_pc)) {
     if (auto Address = FormValue->getAsAddress()) {
@@ -512,6 +486,27 @@ bool DWARFDie::addressRangeContainsAddress(const uint64_t Address) const {
     if (R.LowPC <= Address && Address < R.HighPC)
       return true;
   return false;
+}
+
+Expected<DWARFLocationExpressionsVector>
+DWARFDie::getLocations(dwarf::Attribute Attr) const {
+  Optional<DWARFFormValue> Location = find(Attr);
+  if (!Location)
+    return createStringError(inconvertibleErrorCode(), "No %s",
+                             dwarf::AttributeString(Attr).data());
+
+  if (Optional<uint64_t> Off = Location->getAsSectionOffset())
+    return U->findLoclistFromOffset(*Off);
+
+  if (Optional<ArrayRef<uint8_t>> Expr = Location->getAsBlock()) {
+    return DWARFLocationExpressionsVector{
+        DWARFLocationExpression{None, to_vector<4>(*Expr)}};
+  }
+
+  return createStringError(
+      inconvertibleErrorCode(), "Unsupported %s encoding: %s",
+      dwarf::AttributeString(Attr).data(),
+      dwarf::FormEncodingString(Location->getForm()).data());
 }
 
 const char *DWARFDie::getSubroutineName(DINameKind Kind) const {

@@ -24,7 +24,6 @@
 #include "llvm/Analysis/MemoryDependenceAnalysis.h"
 #include "llvm/Analysis/MemoryLocation.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
-#include "llvm/Transforms/Utils/Local.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/Argument.h"
 #include "llvm/IR/BasicBlock.h"
@@ -49,12 +48,14 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/User.h"
 #include "llvm/IR/Value.h"
+#include "llvm/InitializePasses.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/MathExtras.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Utils/Local.h"
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
@@ -513,9 +514,13 @@ static bool moveUp(AliasAnalysis &AA, StoreInst *SI, Instruction *P,
 
     ToLift.push_back(C);
     for (unsigned k = 0, e = C->getNumOperands(); k != e; ++k)
-      if (auto *A = dyn_cast<Instruction>(C->getOperand(k)))
-        if (A->getParent() == SI->getParent())
+      if (auto *A = dyn_cast<Instruction>(C->getOperand(k))) {
+        if (A->getParent() == SI->getParent()) {
+          // Cannot hoist user of P above P
+          if(A == P) return false;
           Args.insert(A);
+        }
+      }
   }
 
   // We made it, we need to lift

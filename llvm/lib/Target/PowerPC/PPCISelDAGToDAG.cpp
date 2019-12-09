@@ -138,9 +138,9 @@ namespace {
   ///
   class PPCDAGToDAGISel : public SelectionDAGISel {
     const PPCTargetMachine &TM;
-    const PPCSubtarget *PPCSubTarget;
-    const PPCTargetLowering *PPCLowering;
-    unsigned GlobalBaseReg;
+    const PPCSubtarget *PPCSubTarget = nullptr;
+    const PPCTargetLowering *PPCLowering = nullptr;
+    unsigned GlobalBaseReg = 0;
 
   public:
     explicit PPCDAGToDAGISel(PPCTargetMachine &tm, CodeGenOpt::Level OptLevel)
@@ -1044,7 +1044,7 @@ static unsigned allUsesTruncate(SelectionDAG *CurDAG, SDNode *N) {
       if (Use->isMachineOpcode())
         return 0;
       MaxTruncation =
-        std::max(MaxTruncation, Use->getValueType(0).getSizeInBits());
+        std::max(MaxTruncation, (unsigned)Use->getValueType(0).getSizeInBits());
       continue;
     case ISD::STORE: {
       if (Use->isMachineOpcode())
@@ -2385,7 +2385,7 @@ class BitPermutationSelector {
 
   SmallVector<ValueBit, 64> Bits;
 
-  bool NeedMask;
+  bool NeedMask = false;
   SmallVector<unsigned, 64> RLAmt;
 
   SmallVector<BitGroup, 16> BitGroups;
@@ -2393,7 +2393,7 @@ class BitPermutationSelector {
   DenseMap<std::pair<SDValue, unsigned>, ValueRotInfo> ValueRots;
   SmallVector<ValueRotInfo, 16> ValueRotsVec;
 
-  SelectionDAG *CurDAG;
+  SelectionDAG *CurDAG = nullptr;
 
 public:
   BitPermutationSelector(SelectionDAG *DAG)
