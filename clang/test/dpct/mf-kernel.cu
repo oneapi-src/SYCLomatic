@@ -3,7 +3,7 @@
 
 #include "mf-kernel.cuh"
 
-  // CHECK: dpct::device_memory<volatile int, 0> g_mutex(dpct::range<0>(), 0);
+  // CHECK: dpct::device_memory<volatile int, 0> g_mutex(0);
 volatile __device__ int g_mutex=0;
 
 __global__ void Reset_kernel_parameters(void)

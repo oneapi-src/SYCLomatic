@@ -90,7 +90,7 @@ int main() {
 
   // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::range<1> ctemp2_range_ct1(2);
+  // CHECK-NEXT:       cl::sycl::range<1> ctemp2_range_ct1(2);
   // CHECK-NEXT:       cl::sycl::accessor<cl::sycl::double2, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> ctemp2_acc_ct1(ctemp2_range_ct1, cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class gpuMain_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 64) * cl::sycl::range<3>(1, 1, 64), cl::sycl::range<3>(1, 1, 64)),

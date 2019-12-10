@@ -144,7 +144,9 @@ void KernelCallExpr::addAccessorDecl(MemVarInfo::VarScope Scope) {
 
 void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
   if (VI->isShared()) {
-    SubmitStmts.emplace_back(VI->getRangeDecl(ExecutionConfig.ExternMemSize));
+    if (VI->getType()->getDimension()) {
+      SubmitStmts.emplace_back(VI->getRangeDecl(ExecutionConfig.ExternMemSize));
+    }
   } else if (!VI->isGlobal()) {
     SubmitStmts.emplace_back(VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
   } else if (getFilePath() != VI->getFilePath() && !VI->isShared()) {

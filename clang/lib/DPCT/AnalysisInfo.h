@@ -849,7 +849,7 @@ public:
                        ".get_access(cgh);");
   }
   std::string getRangeDecl(const std::string &MemSize) {
-    return buildString("dpct::range<", getType()->getDimension(), "> ",
+    return buildString("cl::sycl::range<", getType()->getDimension(), "> ",
                        getRangeName(),
                        getType()->getRangeArgument(MemSize, false), ";");
   }
@@ -863,9 +863,9 @@ public:
     if (isShared() || DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
       OS << getDpctAccessorType(true) << "(";
       OS << getAccessorName();
-      if (isShared())
+      if (isShared() && getType()->getDimension())
         OS << ", " << getRangeName();
-      return OS << ")";
+      OS << ")";
     } else {
       OS << getAccessorName();
     }
@@ -894,9 +894,11 @@ private:
                                bool MustArguments = false) {
     if (InitList.empty())
       return getType()->getRangeArgument(MemSize, MustArguments);
-    return buildString("(dpct::range<", getType()->getDimension(), ">",
-                       getType()->getRangeArgument(MemSize, true),
-                       ", " + InitList, ")");
+    if (getType()->getDimension())
+      return buildString("(cl::sycl::range<", getType()->getDimension(), ">",
+                         getType()->getRangeArgument(MemSize, true),
+                         ", " + InitList, ")");
+    return buildString("(", InitList, ")");
   }
   const std::string &getMemoryAttr();
   std::string getAccessorDataType(bool UsingTemplateName) {
@@ -1507,8 +1509,8 @@ class KernelCallExpr : public CallFunctionExpr {
   struct ArgInfo {
     ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg, bool Used,
             int Index)
-        : isPointer(false), isRedeclareRequired(false),
-          isUsedAsLvalueAfterMalloc(Used), Index(Index) {
+        : isPointer(false), isUsedAsLvalueAfterMalloc(Used),
+          isRedeclareRequired(false), Index(Index) {
       Analysis.analyze(Arg);
       ArgString = Analysis.getReplacedString();
       if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)

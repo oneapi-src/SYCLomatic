@@ -24,7 +24,7 @@
 #include <CL/sycl.hpp>
 #include "../include/dpct.hpp"
 
-dpct::device_memory<volatile int, 0> g_a(dpct::range<0>(), 0);
+dpct::device_memory<volatile int, 0> g_a(0);
 dpct::device_memory<int, 1> d_a(36);
 
 

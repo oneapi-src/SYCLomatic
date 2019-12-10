@@ -9,7 +9,7 @@
 
 // CHECK: dpct::device_memory<float, 1> in(NUM_ELEMENTS);
 __device__ float in[NUM_ELEMENTS];
-// CHECK: dpct::device_memory<int, 1> init(dpct::range<1>(4), {1, 2, 3, 4});
+// CHECK: dpct::device_memory<int, 1> init(cl::sycl::range<1>(4), {1, 2, 3, 4});
 __device__ int init[4] = {1, 2, 3, 4};
 
 // CHECK: void kernel1(float *out, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::accessor<float, dpct::device, 1> in) {
@@ -21,7 +21,7 @@ __global__ void kernel1(float *out) {
 
 // CHECK: dpct::device_memory<int, 0> al;
 __device__ int al;
-// CHECK: dpct::device_memory<int, 0> ainit(dpct::range<0>(), NUM_ELEMENTS);
+// CHECK: dpct::device_memory<int, 0> ainit(NUM_ELEMENTS);
 __device__ int ainit = NUM_ELEMENTS;
 
 const int num_elements = 16;
