@@ -427,7 +427,8 @@ findNearestNonExprNonDeclAncestorNode(const clang::Expr *E) {
   ast_type_traits::DynTypedNode LastNode, ParentNode;
   while (!ParentNodes.empty()) {
     ParentNode = ParentNodes[0];
-    if (!ParentNode.get<Expr>() && !ParentNode.get<Decl>()) {
+    if (!ParentNode.get<Expr>() && !ParentNode.get<Decl>() &&
+        !ParentNode.getSourceRange().getBegin().isMacroID()) {
       break;
     }
     LastNode = ParentNode;

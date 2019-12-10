@@ -13,6 +13,14 @@ void check(T result, char const *const func) {
 #define CudaEvent(X)\
   cudaEventCreate(&X)
 
+#define cudaCheck(stmt) do {                         \
+  cudaError_t err = stmt;                            \
+  if (err != cudaSuccess) {                          \
+    char msg[256];                                   \
+    sprintf(msg, "%s in file %s, function %s, line %d\n", #stmt,__FILE__,__FUNCTION__,__LINE__); \
+  }                                                  \
+} while(0)
+
 __global__ void kernelFunc()
 {
 }
@@ -238,4 +246,60 @@ int main(int argc, char* argv[]) {
     ;   
   checkCudaErrors(cudaEventDestroy(start));
   et = cudaEventDestroy(stop);
+}
+
+void foo() {
+  cudaEvent_t start, stop;
+
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+
+  float elapsed_time;
+
+  cudaDeviceSynchronize();
+
+  int blocks = 32, threads = 32;
+
+  // CHECK: auto start_ct1 = clock(), cudaCheck(0);
+  cudaCheck(cudaEventRecord(start, 0));
+  kernelFunc<<<blocks,threads>>>();
+  // CHECK: auto stop_ct1 = clock(), cudaCheck(0);
+  cudaCheck(cudaEventRecord(stop, 0));
+
+  cudaEventSynchronize(stop);
+
+  // CHECK: cudaCheck((*(&elapsed_time) = (float)(stop_ct1 - start_ct1) / CLOCKS_PER_SEC * 1000, 0));
+  cudaCheck(cudaEventElapsedTime(&elapsed_time, start, stop));
+
+  cudaEventDestroy(start);
+  cudaEventDestroy(stop);
+}
+
+void fun(int) {}
+
+void bar() {
+  cudaEvent_t start, stop;
+
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+
+  float elapsed_time;
+
+  cudaDeviceSynchronize();
+
+  int blocks = 32, threads = 32;
+
+  // CHECK: auto start_ct1 = clock(), fun(0);
+  fun(cudaEventRecord(start, 0));
+  kernelFunc<<<blocks,threads>>>();
+  // CHECK: auto stop_ct1 = clock(), fun(0);
+  fun(cudaEventRecord(stop, 0));
+
+  cudaEventSynchronize(stop);
+
+  // CHECK: fun((*(&elapsed_time) = (float)(stop_ct1 - start_ct1) / CLOCKS_PER_SEC * 1000, 0));
+  fun(cudaEventElapsedTime(&elapsed_time, start, stop));
+
+  cudaEventDestroy(start);
+  cudaEventDestroy(stop);
 }
