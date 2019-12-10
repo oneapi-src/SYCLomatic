@@ -4184,7 +4184,12 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaThreadSynchronize", "cudaGetErrorString", "cudaGetErrorName",
         "cudaDeviceSetCacheConfig", "cudaDeviceGetCacheConfig", "clock",
         "cudaOccupancyMaxPotentialBlockSize", "cudaThreadSetLimit",
-        "cudaFuncSetCacheConfig", "cudaThreadExit");
+        "cudaFuncSetCacheConfig", "cudaThreadExit", "cudaDeviceGetLimit",
+        "cudaDeviceSetSharedMemConfig", "cudaIpcCloseMemHandle",
+        "cudaIpcGetEventHandle", "cudaIpcGetMemHandle",
+        "cudaIpcOpenEventHandle", "cudaIpcOpenMemHandle", "cudaSetDeviceFlags",
+        "cudaDeviceCanAccessPeer", "cudaDeviceDisablePeerAccess",
+        "cudaDeviceEnablePeerAccess");
   };
 
   MF.addMatcher(
@@ -4334,6 +4339,71 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaOccupancyMaxPotentialBlockSize") {
     report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED,
            MapNames::ITFName.at(FuncName));
+  } else if (FuncName == "cudaDeviceGetLimit") {
+    ExprAnalysis EA;
+    EA.analyze(CE->getArg(0));
+    auto Arg0Str = EA.getReplacedString();
+    std::string ReplStr{"*"};
+    ReplStr += Arg0Str;
+    ReplStr += " = 0";
+    if (IsAssigned) {
+      ReplStr = "(" + ReplStr + ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
+    emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+    report(CE->getBeginLoc(), Diagnostics::DEVICE_LIMIT_NOT_SUPPORTED);
+  } else if (FuncName == "cudaDeviceSetSharedMemConfig") {
+    std::string Msg = "DPC++ currently doesn't support configuring shared memory on devices.";
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, MapNames::ITFName.at(FuncName),
+             Msg);
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, "0"));
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, MapNames::ITFName.at(FuncName), Msg);
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ""));
+    }
+  } else if (FuncName == "cudaSetDeviceFlags") {
+    std::string Msg =
+      "DPC++ currently doesn't support setting flags for devices.";
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, MapNames::ITFName.at(FuncName),
+             Msg);
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, "0"));
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, MapNames::ITFName.at(FuncName), Msg);
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ""));
+    }
+  } else if (FuncName == "cudaDeviceEnablePeerAccess" ||
+             FuncName == "cudaDeviceDisablePeerAccess") {
+    std::string Msg =
+      "DPC++ currently doesn't require explicit enabling for peer access.";
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, MapNames::ITFName.at(FuncName),
+             Msg);
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, "0"));
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, MapNames::ITFName.at(FuncName), Msg);
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ""));
+    }
+  } else if (FuncName == "cudaDeviceCanAccessPeer") {
+    ExprAnalysis EA;
+    EA.analyze(CE->getArg(0));
+    auto Arg0Str = EA.getReplacedString();
+    std::string ReplStr{"*"};
+    ReplStr += Arg0Str;
+    ReplStr += " = 1";
+    if (IsAssigned) {
+      ReplStr = "(" + ReplStr + ", 0)";
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
+    emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+    report(CE->getBeginLoc(), Diagnostics::EXPLICIT_PEER_ACCESS, MapNames::ITFName.at(FuncName));
+  } else if (FuncName == "cudaIpcGetEventHandle" ||
+             FuncName == "cudaIpcOpenEventHandle" ||
+             FuncName == "cudaIpcGetMemHandle" ||
+             FuncName == "cudaIpcOpenMemHandle" ||
+             FuncName == "cudaIpcCloseMemHandle") {
+    report(CE->getBeginLoc(), Diagnostics::IPC_NOT_SUPPORTED, MapNames::ITFName.at(FuncName));
   } else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected function name: " << FuncName;

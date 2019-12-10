@@ -4,6 +4,7 @@
 //CHECK:#include <dpct/dpct.hpp>
 //CHECK:#include <mkl_rng_sycl.hpp>
 #include <cuda.h>
+#include <stdio.h>
 #include <curand.h>
 
 int main(){
