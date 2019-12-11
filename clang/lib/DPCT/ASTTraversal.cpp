@@ -287,6 +287,11 @@ void IncludesCallbacks::InclusionDirective(
     DpctGlobalInfo::getInstance().setMathHeaderInserted(HashLoc, true);
   }
 
+  // Record that algorithm header is included in this file
+  if (IsAngled && FileName.compare(StringRef("algorithm")) == 0) {
+    DpctGlobalInfo::getInstance().setAlgorithmHeaderInserted(HashLoc, true);
+  }
+
   // Replace with
   // <mkl_blas_sycl.hpp>, <mkl_lapack_sycl.hpp> and <mkl_sycl_types.hpp>
   if ((FileName.compare(StringRef("cublas_v2.h")) == 0) ||

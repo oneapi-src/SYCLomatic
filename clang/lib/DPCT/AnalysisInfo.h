@@ -82,6 +82,7 @@ insertObject(MapType &Map, const typename MapType::key_type &Key,
 enum HeaderType {
   SYCL = 0,
   Math,
+  Algorithm,
   Time,
   Complex,
   Future,
@@ -162,6 +163,10 @@ public:
     HeaderInsertedBitMap[HeaderType::Math] = B;
   }
 
+  void setAlgorithmHeaderInserted(bool B = true) {
+    HeaderInsertedBitMap[HeaderType::Algorithm] = B;
+  }
+
   template <class... Args>
   void concatHeader(llvm::raw_string_ostream &OS, Args... Arguments) {
     std::initializer_list<int>{
@@ -188,6 +193,9 @@ public:
                           "<dpct/dpct.hpp>");
     case Math:
       return insertHeader(HeaderType::Math, LastIncludeOffset, "<cmath>");
+    case Algorithm:
+      return insertHeader(HeaderType::Algorithm, LastIncludeOffset,
+                          "<algorithm>");
     case Complex:
       return insertHeader(HeaderType::Complex, LastIncludeOffset, "<complex>");
     case Future:
@@ -607,6 +615,11 @@ public:
   void setMathHeaderInserted(SourceLocation Loc, bool B) {
     auto LocInfo = getLocInfo(Loc);
     insertFile(LocInfo.first)->setMathHeaderInserted(B);
+  }
+
+  void setAlgorithmHeaderInserted(SourceLocation Loc, bool B) {
+    auto LocInfo = getLocInfo(Loc);
+    insertFile(LocInfo.first)->setAlgorithmHeaderInserted(B);
   }
 
   void insertHeader(SourceLocation Loc, HeaderType Type) {

@@ -149,8 +149,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
       // Insert "#include <cmath>" to migrated code
       DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), Math);
       NewFuncName = SourceCalleeName;
-      if (SourceCalleeName == "abs" || SourceCalleeName == "max" ||
-          SourceCalleeName == "min") {
+      if (SourceCalleeName == "abs") {
         auto *BT =
             dyn_cast<BuiltinType>(Call->getArg(0)->IgnoreImpCasts()->getType());
         if (BT) {
@@ -165,8 +164,159 @@ std::string MathFuncNameRewriter::getNewFuncName() {
             NewFuncName += "l";
           }
         }
+      } else if (SourceCalleeName == "max" || SourceCalleeName == "min") {
+        auto Arg0 = Call->getArg(0)->IgnoreImpCasts();
+        auto Arg1 = Call->getArg(1)->IgnoreImpCasts();
+        auto *BT0 = dyn_cast<BuiltinType>(Arg0->getType());
+        auto *BT1 = dyn_cast<BuiltinType>(Arg1->getType());
+        // Deal with cases where types of arguements are typedefs, e.g.,
+        // 1) typdef int INT;
+        // 2) using int_t = int;
+        const TypedefType *TT0, *TT1;
+        if (!BT0) {
+          TT0 = dyn_cast<TypedefType>(Arg0->getType());
+          if (TT0)
+            BT0 = dyn_cast<BuiltinType>(TT0->desugar().getTypePtr());
+        }
+        if (!BT1) {
+          TT1 = dyn_cast<TypedefType>(Arg1->getType());
+          if (TT1)
+            BT1 = dyn_cast<BuiltinType>(TT1->desugar().getTypePtr());
+        }
+        if (BT0 && BT1) {
+          auto K0 = BT0->getKind();
+          auto K1 = BT1->getKind();
+          if (K0 == BuiltinType::LongDouble || K1 == BuiltinType::LongDouble) {
+            NewFuncName = "f" + SourceCalleeName.str();
+            NewFuncName += "l";
+          } else if (K0 == BuiltinType::Double || K1 == BuiltinType::Double) {
+            NewFuncName = "f" + SourceCalleeName.str();
+          } else if (K0 == BuiltinType::Float || K1 == BuiltinType::Float) {
+            NewFuncName = "f" + SourceCalleeName.str();
+            NewFuncName += "f";
+          } else if (BT0->isInteger() && BT0->isInteger()) {
+            // Host max/min functions with integer parameters are in <algorithm>
+            // instead of <cmath>, so we need to migrate them to std versions
+            // and do necessary type conversions.
+            bool MigrateToStd = true;
+            std::string TypeName;
+            // Deal with integer types in this branch
+            PrintingPolicy PP{LangOptions()};
+            if (K0 == K1) {
+              // Nothing to do: no type conversion needed
+            } else if (BT0->isSignedInteger() && BT1->isSignedInteger()) {
+              // Only deal with short, int, long, and long long
+              if (K0 < BuiltinType::Short || K0 > BuiltinType::LongLong ||
+                  K1 < BuiltinType::Short || K1 > BuiltinType::LongLong)
+                return NewFuncName;
+              // Convert shorter types to longer types
+              if (K0 < K1) {
+                TypeName = BT1->getNameAsCString(PP);
+              } else {
+                TypeName = BT0->getNameAsCString(PP);
+              }
+            } else if (BT0->isUnsignedInteger() && BT1->isUnsignedInteger()) {
+              // Only deal with unsigned short, unsigned int, unsigned long,
+              // and unsigned long long
+              if (K0 < BuiltinType::UShort || K0 > BuiltinType::ULongLong ||
+                  K1 < BuiltinType::UShort || K1 > BuiltinType::ULongLong)
+                return NewFuncName;
+              // Convert shorter types to longer types
+              if (K0 < K1) {
+                TypeName = BT1->getNameAsCString(PP);
+              } else {
+                TypeName = BT0->getNameAsCString(PP);
+              }
+            } else {
+              // Convert signed types to unsigned types if the bitwidth of
+              // the signed is equal or smaller than that of the unsigned;
+              // otherwise, do not migrate them. Overflow is not considered.
+              const BuiltinType *UnsignedType;
+              const TypedefType *UnsignedTypedefType;
+              BuiltinType::Kind UnsignedKind, SignedKind;
+              if (BT0->isSignedInteger() && BT1->isUnsignedInteger()) {
+                UnsignedType = BT1;
+                UnsignedTypedefType = TT1;
+                UnsignedKind = K1;
+                SignedKind = K0;
+              } else if (BT0->isUnsignedInteger() && BT1->isSignedInteger()) {
+                UnsignedType = BT0;
+                UnsignedTypedefType = TT0;
+                UnsignedKind = K0;
+                SignedKind = K1;
+              }
+              auto GetType = [=]() -> std::string {
+                std::string TypeName;
+                  if (UnsignedTypedefType) {
+                    if (auto TND = UnsignedTypedefType->getDecl())
+                      TypeName = TND->getNameAsString();
+                    else
+                      TypeName = UnsignedType->getNameAsCString(PP);
+                  } else {
+                    TypeName = UnsignedType->getNameAsCString(PP);
+                  }
+                  return TypeName;
+              };
+              switch (UnsignedKind) {
+              case BuiltinType::ULongLong:
+                switch (SignedKind) {
+                case BuiltinType::LongLong:
+                case BuiltinType::Long:
+                case BuiltinType::Int:
+                case BuiltinType::Short:
+                  TypeName = GetType();
+                  break;
+                default:
+                  MigrateToStd = false;
+                }
+                break;
+              case BuiltinType::ULong:
+                switch (SignedKind) {
+                case BuiltinType::Long:
+                case BuiltinType::Int:
+                case BuiltinType::Short:
+                  TypeName = GetType();
+                  break;
+                default:
+                  MigrateToStd = false;
+                }
+                break;
+              case BuiltinType::UInt:
+                switch (SignedKind) {
+                case BuiltinType::Int:
+                case BuiltinType::Short:
+                  TypeName = GetType();
+                  break;
+                default:
+                  MigrateToStd = false;
+                }
+                break;
+              case BuiltinType::UShort:
+                switch (SignedKind) {
+                case BuiltinType::Short:
+                  TypeName = GetType();
+                  break;
+                default:
+                  MigrateToStd = false;
+                }
+                break;
+              default:
+                MigrateToStd = false;
+              }
+            }
+
+            if (NamespaceStr.empty() && MigrateToStd) {
+              DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(),
+                                                         Algorithm);
+              NewFuncName = "std::" + SourceCalleeName.str();
+              if (!TypeName.empty())
+                NewFuncName += "<" + TypeName + ">";
+            }
+          }
+        }
       }
-      if (NamespaceStr != "")
+
+      if (!NamespaceStr.empty())
         NewFuncName = NamespaceStr + "::" + NewFuncName;
     }
   }

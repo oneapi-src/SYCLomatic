@@ -65,10 +65,10 @@ int main() {
     // CHECK: d_b = fmax(d_a, d_b);
     d_b = max(d_a, d_b);
 
-    // CHECK: u_b = max(u_a, u_b);
+    // CHECK: u_b = std::max(u_a, u_b);
     u_b = max(u_a, u_b);
 
-    // CHECK: i_b = max(i_a, i_b);
+    // CHECK: i_b = std::max(i_a, i_b);
     i_b = max(i_a, i_b);
 
     // CHECK: ld_b = fmaxl(ld_a, ld_b);
@@ -92,10 +92,10 @@ int main() {
     // CHECK: d_b = fmin(d_a, d_b);
     d_b = min(d_a, d_b);
 
-    // CHECK: u_b = min(u_a, u_b);
+    // CHECK: u_b = std::min(u_a, u_b);
     u_b = min(u_a, u_b);
 
-    // CHECK: i_b = min(i_a, i_b);
+    // CHECK: i_b = std::min(i_a, i_b);
     i_b = min(i_a, i_b);
 
     // CHECK: ld_b = fminl(ld_a, ld_b);

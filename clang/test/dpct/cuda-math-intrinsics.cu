@@ -8,6 +8,8 @@
 
 #include <stdio.h>
 
+// CHECK: #include <algorithm>
+
 #include "cuda_fp16.h"
 
 using namespace std;
@@ -2532,4 +2534,128 @@ int main() {
   testDouble();
   testFloat();
   testTypecasts();
+}
+
+// Host max/min functions with integer parameters are in <algorithm> instead of <cmath>, so we need to
+// migrate them to std versions and do necessary casts.
+// The following migration is to make the resulted code compilable by dpcpp
+// rule1: in pure __host__ functions, math functions are migrated to std alternatives
+// rule2: math functions in __device__ or __global__ functions are always migrated to sycl alternatives
+// rule3: functions in std namespace always remain untouched
+
+// CHECK:  int foo(int i, int j) {
+// CHECK-NEXT:   return std::max(i, j) + std::min(i, j);
+// CHECK-NEXT: }
+__host__ int foo(int i, int j) {
+  return max(i, j) + min(i, j);
+}
+
+// CHECK:  float foo(float f, float g) {
+// CHECK-NEXT:   return fmaxf(f, g) + fminf(f, g);
+// CHECK-NEXT: }
+__host__ float foo(float f, float g) {
+  return max(f, g) + min(f, g);
+}
+
+// CHECK:  int foo2(int i, int j) {
+// CHECK-NEXT:   return cl::sycl::max(i, j) + cl::sycl::min(i, j);
+// CHECK-NEXT: }
+__device__ int foo2(int i, int j) {
+  return max(i, j) + min(i, j);
+}
+
+// CHECK:  float foo2(float f, float g) {
+// CHECK-NEXT:   return cl::sycl::max(f, g) + cl::sycl::min(f, g);
+// CHECK-NEXT: }
+__device__ float foo2(float f, float g) {
+  return max(f, g) + min(f, g);
+}
+
+// CHECK:  int  foo3(int i, int j) {
+// CHECK-NEXT:   return cl::sycl::max(i, j) + cl::sycl::min(i, j);
+// CHECK-NEXT: }
+__device__ int __host__ foo3(int i, int j) {
+  return max(i, j) + min(i, j);
+}
+
+// CHECK:  float  foo3(float f, float g) {
+// CHECK-NEXT:   return cl::sycl::max(f, g) + cl::sycl::min(f, g);
+// CHECK-NEXT: }
+__device__ float __host__ foo3(float f, float g) {
+  return max(f, g) + min(f, g);
+}
+
+// CHECK:  int bar(short i, long j) {
+// CHECK-NEXT:   return std::max<long>(i, j) + std::min<long>(i, j);
+// CHECK-NEXT: }
+__host__ int bar(short i, long j) {
+  return max(i, j) + min(i, j);
+}
+
+// CHECK:  int bar(unsigned short i, unsigned long j) {
+// CHECK-NEXT:   return std::max<unsigned long>(i, j) + std::min<unsigned long>(i, j);
+// CHECK-NEXT: }
+__host__ int bar(unsigned short i, unsigned long j) {
+  return max(i, j) + min(i, j);
+}
+
+// CHECK:  int bar(unsigned short i, long j) {
+// CHECK-NEXT:   return max(i, j) + min(i, j);
+// CHECK-NEXT: }
+__host__ int bar(unsigned short i, long j) {
+  return max(i, j) + min(i, j);
+}
+
+// CHECK:  int bar(long i, unsigned short j) {
+// CHECK-NEXT:   return max(i, j) + min(i, j);
+// CHECK-NEXT: }
+__host__ int bar(long i, unsigned short j) {
+  return max(i, j) + min(i, j);
+}
+
+// CHECK:  int bar(short i, unsigned long j) {
+// CHECK-NEXT:   return std::max<unsigned long>(i, j) + std::min<unsigned long>(i, j);
+// CHECK-NEXT: }
+__host__ int bar(short i, unsigned long j) {
+  return max(i, j) + min(i, j);
+}
+
+// CHECK:  int bar(unsigned long i, short j) {
+// CHECK-NEXT:   return std::max<unsigned long>(i, j) + std::min<unsigned long>(i, j);
+// CHECK-NEXT: }
+__host__ int bar(unsigned long i, short j) {
+  return max(i, j) + min(i, j);
+}
+
+typedef int INT;
+typedef unsigned UINT;
+using int_t = int;
+using uint_t = unsigned;
+
+// CHECK: int foo(UINT i, INT j) {
+// CHECK-NEXT:   return std::max<UINT>(i, j) + std::min<UINT>(i, j);
+// CHECK-NEXT: }
+int foo(UINT i, INT j) {
+  return max(i, j) + min(i, j);
+}
+
+// CHECK: int foo(INT i, UINT j) {
+// CHECK-NEXT:   return std::max<UINT>(i, j) + std::min<UINT>(i, j);
+// CHECK-NEXT: }
+int foo(INT i, UINT j) {
+  return max(i, j) + min(i, j);
+}
+
+// CHECK: int bar(uint_t i, int_t j) {
+// CHECK-NEXT:   return std::max<uint_t>(i, j) + std::min<uint_t>(i, j);
+// CHECK-NEXT: }
+int bar(uint_t i, int_t j) {
+  return max(i, j) + min(i, j);
+}
+
+// CHECK: int bar(int_t i, uint_t j) {
+// CHECK-NEXT:   return std::max<uint_t>(i, j) + std::min<uint_t>(i, j);
+// CHECK-NEXT: }
+int bar(int_t i, uint_t j) {
+  return max(i, j) + min(i, j);
 }
