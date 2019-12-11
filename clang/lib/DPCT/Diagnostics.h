@@ -116,31 +116,8 @@ static inline std::string getMessagePrefix(int ID) {
 template <typename... Ts>
 void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
                    const CompilerInstance &CI, Ts &&... Vals) {
-
   DiagnosticsEngine &DiagEngine = CI.getDiagnostics();
-
   std::string Message = getMessagePrefix(Msg.ID) + Msg.Msg;
-
-  if (!OutputFile.empty()) {
-    //  Redirects warning message to output file if the option "-output-file" is
-    //  set
-    const SourceManager &SM = CI.getSourceManager();
-    int LineNum = SM.getSpellingLineNumber(SL);
-    const std::pair<FileID, unsigned> DecomposedLocation =
-        SM.getDecomposedLoc(SL);
-
-    FileID FID = DecomposedLocation.first;
-    unsigned *LineCache =
-        SM.getSLocEntry(FID).getFile().getContentCache()->SourceLineCache;
-    const char *Buffer = SM.getBuffer(FID)->getBufferStart();
-    std::string LineOriCode(Buffer + LineCache[LineNum - 1],
-                            Buffer + LineCache[LineNum]);
-
-    const SourceLocation FileLoc = SM.getFileLoc(SL);
-    std::string File = FileLoc.printToString(SM);
-    Message = File + " warning: " + Message + "\n" + LineOriCode;
-    DpctTerm() << Message;
-  }
 
   if (OutputVerbosity != silent) {
     unsigned ID = DiagEngine.getDiagnosticIDs()->getCustomDiagID(

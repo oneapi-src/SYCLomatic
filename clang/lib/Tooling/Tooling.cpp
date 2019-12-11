@@ -82,6 +82,19 @@ void DoPrintHandler(const std::string &Msg, bool IsPrintOnNormal) {
 
 void SetSDKIncludePath(const std::string &Path) { SDKIncludePath = Path; }
 
+static llvm::raw_ostream *OSTerm = nullptr;
+void SetDiagnosticOutput(llvm::raw_ostream &OStream) {
+  OSTerm = &OStream;
+}
+
+llvm::raw_ostream &DiagnosticsOS() {
+  if (OSTerm != nullptr) {
+    return *OSTerm;
+  } else {
+    return llvm::errs();
+  }
+}
+
 } // namespace tooling
 } // namespace clang
 #endif
@@ -344,8 +357,13 @@ bool ToolInvocation::run() {
   llvm::opt::InputArgList ParsedArgs = driver::getDriverOptTable().ParseArgs(
       ArrayRef<const char *>(Argv).slice(1), MissingArgIndex, MissingArgCount);
   ParseDiagnosticArgs(*DiagOpts, ParsedArgs);
+#ifdef INTEL_CUSTOMIZATION
+  TextDiagnosticPrinter DiagnosticPrinter(DiagnosticsOS(), &*DiagOpts);
+  DiagConsumer = &DiagnosticPrinter;
+#else
   TextDiagnosticPrinter DiagnosticPrinter(
       llvm::errs(), &*DiagOpts);
+#endif
   DiagnosticsEngine Diagnostics(
       IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
       DiagConsumer ? DiagConsumer : &DiagnosticPrinter, false);

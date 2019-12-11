@@ -1,0 +1,23 @@
+// CHECK: API name, Frequency 
+// CHECK:CUresult cuMemGetInfo_v2(size_t * free,size_t * total),1
+// CHECK:cudaDeviceProp,1
+// CHECK:cudaError_t,3
+// CHECK:cudaError_t cudaDeviceSynchronize(),4
+// CHECK:cudaError_t cudaFree(void * devPtr),1
+// CHECK:cudaError_t cudaFreeHost(void * ptr),1
+// CHECK:cudaError_t cudaFuncGetAttributes(struct cudaFuncAttributes * attr,void (*)(float *, const float *, const float *) entry),1
+// CHECK:cudaError_t cudaMalloc(void ** devPtr,size_t size),2
+// CHECK:cudaError_t cudaMalloc3D(struct cudaPitchedPtr * pitchedDevPtr,struct cudaExtent extent),1
+// CHECK:cudaError_t cudaMallocHost(float ** ptr,size_t size,unsigned int flags),1
+// CHECK:cudaError_t cudaMemcpy(void * dst,const void * src,size_t count,enum cudaMemcpyKind kind),2
+// CHECK:cudaError_t cudaMemset(void * devPtr,int value,size_t count),1
+// CHECK:cudaStream_t,1
+// CHECK:dim3,1
+// CHECK:float max(float a,float b),1
+// CHECK:int2,3
+// CHECK:longlong4,1
+// CHECK:struct cudaChannelFormatDesc cudaCreateChannelDesc(),1
+// CHECK:struct cudaExtent make_cudaExtent(size_t w,size_t h,size_t d),2
+// CHECK:struct cudaPitchedPtr make_cudaPitchedPtr(void * d,size_t p,size_t xsz,size_t ysz),1
+// CHECK:typename __nv_tex_rmet_ret<float>::type tex3D(texture<float, 3, cudaReadModeElementType> t,float x,float y,float z),1
+// CHECK:uint4,1

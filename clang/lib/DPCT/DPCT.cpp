@@ -753,6 +753,12 @@ int run(int argc, const char **argv) {
     dpct::DebugInfo::ShowStatus(MigrationOptionParsingError);
     exit(MigrationOptionParsingError);
   }
+
+  if (!OutputFile.empty()) {
+      //Set handle for libclangTooling to redirect warning message to DpctTerm
+      clang::tooling::SetDiagnosticOutput(DpctTerm());
+  }
+
   initWarningIDs();
   if (InRoot.size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --in-root '" << InRoot << "' is too long\n";
