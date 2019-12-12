@@ -5157,7 +5157,10 @@ void MemoryMigrationRule::run(const MatchFinder::MatchResult &Result) {
 
     MigrationDispatcher.at(Name)(Result, C, ULExpr, IsAssigned);
 
-    if (IsAssigned) {
+    // if API is removed, then no need to add (*, 0)
+    // Currently, there are only cudaHostRegister and cudaHostUnregister
+    if (IsAssigned && Name.compare("cudaHostRegister") &&
+        Name.compare("cudaHostUnregister")) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
       insertAroundStmt(C, "(", ", 0)");
     }

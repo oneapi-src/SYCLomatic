@@ -247,14 +247,14 @@ void foo() {
   CUDA_SAFE_CALL(cudaHostGetDevicePointer(&d_A, h_A, 0));
 
   cudaHostRegister(h_A, size, 0);
-  // CHECK: errorCode = (0, 0);
+  // CHECK: errorCode = 0;
   errorCode = cudaHostRegister(h_A, size, 0);
-  // CHECK: CUDA_SAFE_CALL((0, 0));
+  // CHECK: CUDA_SAFE_CALL(0);
   CUDA_SAFE_CALL(cudaHostRegister(h_A, size, 0));
 
   cudaHostUnregister(h_A);
-  // CHECK: errorCode = (0, 0);
+  // CHECK: errorCode = 0;
   errorCode = cudaHostUnregister(h_A);
-  // CHECK: CUDA_SAFE_CALL((0, 0));
+  // CHECK: CUDA_SAFE_CALL(0);
   CUDA_SAFE_CALL(cudaHostUnregister(h_A));
 }
