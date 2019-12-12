@@ -293,4 +293,6 @@ unsigned int getLenToNextTokenBegin(const clang::Token &CurTokEnd,
 std::vector<const clang::Stmt *>
 getConditionNode(clang::ast_type_traits::DynTypedNode Node);
 bool isConditionOfFlowControl(const clang::Expr *E);
+void VarReferencedInFD(const clang::Stmt *S, const clang::ValueDecl *VD,
+                         std::vector<const clang::DeclRefExpr *> &Result);
 #endif // DPCT_UTILITY_H

@@ -59,11 +59,25 @@ struct MatchKey {
   DynTypedMatcher::MatcherIDType MatcherID;
   ast_type_traits::DynTypedNode Node;
   BoundNodesTreeBuilder BoundNodes;
-
+#ifdef INTEL_CUSTOMIZATION
+  enum MatcherType {
+    OTHERS,
+    HAS_PARENT,
+    HAS_ANCESTOR,
+    HAS_CHILDREN,
+    HAS_DECENDENT
+  };
+  MatcherType Type;
+  bool operator<(const MatchKey &Other) const {
+    return std::tie(MatcherID, Node, BoundNodes, Type) <
+           std::tie(Other.MatcherID, Other.Node, Other.BoundNodes, Other.Type);
+  }
+#else
   bool operator<(const MatchKey &Other) const {
     return std::tie(MatcherID, Node, BoundNodes) <
            std::tie(Other.MatcherID, Other.Node, Other.BoundNodes);
   }
+#endif // INTEL_CUSTOMIZATION
 };
 
 // Used to store the result of a match and possibly bound nodes.
@@ -405,6 +419,10 @@ public:
     // Note that we key on the bindings *before* the match.
     Key.BoundNodes = *Builder;
 
+#ifdef INTEL_CUSTOMIZATION
+    Key.Type = MaxDepth == 1 ? MatchKey::HAS_CHILDREN : MatchKey::HAS_DECENDENT;
+#endif
+
     MemoizationMap::iterator I = ResultCache.find(Key);
     if (I != ResultCache.end()) {
       *Builder = I->second.Nodes;
@@ -650,7 +668,11 @@ private:
     Key.MatcherID = Matcher.getID();
     Key.Node = Node;
     Key.BoundNodes = *Builder;
-
+#ifdef INTEL_CUSTOMIZATION
+    Key.Type = MatchMode == AncestorMatchMode::AMM_ParentOnly
+                   ? MatchKey::HAS_PARENT
+                   : MatchKey::HAS_ANCESTOR;
+#endif // INTEL_CUSTOMIZATION
     // Note that we cannot use insert and reuse the iterator, as recursive
     // calls to match might invalidate the result cache iterators.
     MemoizationMap::iterator I = ResultCache.find(Key);

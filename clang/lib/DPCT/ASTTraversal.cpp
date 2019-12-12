@@ -693,14 +693,36 @@ REGISTER_RULE(ErrorHandlingIfStmtRule)
 
 void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
   std::vector<StringRef> RemovedAPINAME{};
+  std::vector<StringRef> MathAPI{};
+  std::vector<StringRef> MigratedAPIName{};
+// Collect Removed APIs(FUNC_CALL_REMOVED_0/FUNC_CALL_REMOVED)
 #define ENTRY(APINAME, MSG) RemovedAPINAME.push_back(#APINAME);
 #include "APINames_removed.inc"
 #undef ENTRY
 
-  std::vector<StringRef> MigratedAPIName{};
-#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)                                 \
-  if (VALUE && std::find(RemovedAPINAME.begin(), RemovedAPINAME.end(),         \
-                         #APINAME) == RemovedAPINAME.end())                    \
+// Collect Math APIs because the return value is not the status
+#define ENTRY_RENAMED(NAME, VALUE) MathAPI.push_back(NAME);
+#define ENTRY_RENAMED_SINGLE(NAME, VALUE) MathAPI.push_back(NAME);
+#define ENTRY_RENAMED_DOUBLE(NAME, VALUE) MathAPI.push_back(NAME);
+#define ENTRY_EMULATED(NAME, VALUE) MathAPI.push_back(NAME);
+#define ENTRY_OPERATOR(NAME, VALUE) MathAPI.push_back(NAME);
+#define ENTRY_TYPECAST(NAME) MathAPI.push_back(NAME);
+#define ENTRY_UNSUPPORTED(NAME) MathAPI.push_back(NAME);
+#include "APINamesMath.inc"
+#undef ENTRY_RENAMED
+#undef ENTRY_RENAMED_SINGLE
+#undef ENTRY_RENAMED_DOUBLE
+#undef ENTRY_EMULATED
+#undef ENTRY_OPERATOR
+#undef ENTRY_TYPECAST
+#undef ENTRY_UNSUPPORTED
+
+// Target FunCall = All Migrated APIs - RemovedAPIs - MathAPIs
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
+  if (VALUE &&                                                                 \
+      std::find(RemovedAPINAME.begin(), RemovedAPINAME.end(), #APINAME) ==     \
+          RemovedAPINAME.end() &&                                              \
+      std::find(MathAPI.begin(), MathAPI.end(), #APINAME) == MathAPI.end())    \
     MigratedAPIName.push_back(#APINAME);
 #include "APINames.inc"
 #include "APINames_cuBLAS.inc"
@@ -713,48 +735,134 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
 #include "APINames_thrust.inc"
 #undef ENTRY
 
-  auto isMigratedHostAPI =
-      allOf(hasAnyName(MigratedAPIName),
-            anyOf(unless(hasAttr(attr::CUDADevice)), hasAttr(attr::CUDAHost)));
+  auto isMigratedHostAPI = [&]() {
+    return allOf(hasAnyName(MigratedAPIName),
+      anyOf(unless(hasAttr(attr::CUDADevice)), hasAttr(attr::CUDAHost))); };
 
+  // Match host api call in the condition session of flow control
+  MF.addMatcher(
+      functionDecl(
+          allOf(
+              unless(
+                  anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal))),
+              anyOf(
+                  hasDescendant(ifStmt(hasCondition(expr(hasDescendant(
+                      callExpr(callee(functionDecl(isMigratedHostAPI())))))))),
+                  hasDescendant(doStmt(hasCondition(expr(hasDescendant(
+                      callExpr(callee(functionDecl(isMigratedHostAPI())))))))),
+                  hasDescendant(whileStmt(hasCondition(expr(hasDescendant(
+                      callExpr(callee(functionDecl(isMigratedHostAPI())))))))),
+                  hasDescendant(switchStmt(hasCondition(expr(hasDescendant(
+                      callExpr(callee(functionDecl(isMigratedHostAPI())))))))),
+                  hasDescendant(
+                      forStmt(hasCondition(expr(hasDescendant(callExpr(
+                          callee(functionDecl(isMigratedHostAPI())))))))))))
+          .bind("inConditionHostAPI"),
+      this);
+
+  // Match host api call whose return value used inside flow control or return
   MF.addMatcher(
       functionDecl(
           allOf(unless(anyOf(hasAttr(attr::CUDADevice),
                              hasAttr(attr::CUDAGlobal))),
-                anyOf(
-                    // Match host api call in if/for/while/do
-                    hasDescendant(ifStmt(hasCondition(expr(hasDescendant(
-                        callExpr(callee(functionDecl(isMigratedHostAPI)))))))),
-                    hasDescendant(doStmt(hasCondition(expr(hasDescendant(
-                        callExpr(callee(functionDecl(isMigratedHostAPI)))))))),
-                    hasDescendant(whileStmt(hasCondition(expr(hasDescendant(
-                        callExpr(callee(functionDecl(isMigratedHostAPI)))))))),
-                    hasDescendant(forStmt(hasCondition(expr(hasDescendant(
-                        callExpr(callee(functionDecl(isMigratedHostAPI)))))))),
-                    // Match host api in assignment
-                    hasDescendant(callExpr(allOf(
-                        callee(functionDecl(isMigratedHostAPI)),
-                        hasAncestor(binaryOperator(isAssignmentOperator()))))),
-                    hasDescendant(
-                        callExpr(allOf(callee(functionDecl(isMigratedHostAPI)),
-                                       hasAncestor(varDecl())))))))
-          .bind("caller"),
+                hasDescendant(callExpr(allOf(
+                    callee(functionDecl(isMigratedHostAPI())),
+                    anyOf(hasAncestor(binaryOperator(allOf(
+                              hasLHS(declRefExpr()), isAssignmentOperator()))),
+                          hasAncestor(varDecl())),
+                    anyOf(hasAncestor(ifStmt()), hasAncestor(doStmt()),
+                          hasAncestor(switchStmt()), hasAncestor(whileStmt()),
+                          hasAncestor(callExpr()), hasAncestor(forStmt())))))))
+          .bind("inLoopHostAPI"),
       this);
+
+  MF.addMatcher(
+      functionDecl(allOf(unless(anyOf(hasAttr(attr::CUDADevice),
+                                      hasAttr(attr::CUDAGlobal))),
+                         hasDescendant(callExpr(
+                             allOf(callee(functionDecl(isMigratedHostAPI())),
+                                   hasAncestor(returnStmt()))))))
+          .bind("inReturnHostAPI"),
+      this);
+
+
+  // Match host api call whose return value captured and used
+  MF.addMatcher(
+      callExpr(allOf(
+          callee(functionDecl(isMigratedHostAPI())),
+          anyOf(hasAncestor(binaryOperator(
+                    allOf(hasLHS(declRefExpr().bind("targetLHS")),
+                          isAssignmentOperator()))),
+                hasAncestor(varDecl().bind("targetVarDecl"))),
+          hasAncestor(functionDecl(unless(anyOf(hasAttr(attr::CUDADevice),
+                                                hasAttr(attr::CUDAGlobal))))
+                          .bind("savedHostAPI")))).bind("referencedHostAPI"),
+      this);
+
 }
 
 void ErrorHandlingHostAPIRule::run(const MatchFinder::MatchResult &Result) {
-  auto SM = Result.SourceManager;
-  auto FD = getNodeAsType<FunctionDecl>(Result, "caller");
+  // if host api call in the condition session of flow control
+  // or host api call whose return value used inside flow control or return
+  // then add try catch.
+  auto FD = getNodeAsType<FunctionDecl>(Result, "inConditionHostAPI");
+  if (!FD) {
+    FD = getNodeAsType<FunctionDecl>(Result, "inLoopHostAPI");
+  }
+  if (!FD) {
+    FD = getNodeAsType<FunctionDecl>(Result, "inReturnHostAPI");
+  }
+  if (FD) {
+    insertTryCatch(FD);
+    return;
+  }
+
+  // Check if the return value is saved in an variable,
+  // if yes, get the varDecl as the target varDecl TD.
+  FD = getAssistNodeAsType<FunctionDecl>(Result, "savedHostAPI");
   if (!FD)
     return;
+  auto TVD = getAssistNodeAsType<VarDecl>(Result, "targetVarDecl");
+  auto TLHS = getAssistNodeAsType<DeclRefExpr>(Result, "targetLHS");
+  const ValueDecl *TD;
+  if (TVD || TLHS) {
+    TD = TVD ? TVD : TLHS->getDecl();
+  }
 
+  if (!TD)
+    return;
+
+  // Get the location of the API call to make sure the variable is referenced
+  // AFTER the API call.
+  auto CE = getAssistNodeAsType<CallExpr>(Result, "referencedHostAPI");
+
+  if (!CE)
+    return;
+
+  // For each reference of TD, check if the location is after CE,
+  // if yes, add try catch.
+  std::vector<const DeclRefExpr *> Refs;
+  VarReferencedInFD(FD->getBody(), TD, Refs);
+  SourceManager &SM = DpctGlobalInfo::getSourceManager();
+  auto CallLoc = SM.getExpansionLoc(CE->getBeginLoc());
+  for (auto It = Refs.begin(); It != Refs.end(); ++It) {
+    auto RefLoc = SM.getExpansionLoc((*It)->getBeginLoc());
+    if (SM.getCharacterData(RefLoc) - SM.getCharacterData(CallLoc) > 0) {
+      insertTryCatch(FD);
+      return;
+    }
+  }
+}
+
+void ErrorHandlingHostAPIRule::insertTryCatch(const FunctionDecl* FD) {
   if (const CXXConstructorDecl *CDecl = getIfConstructorDecl(FD)) {
     emplaceTransformation(new InsertBeforeCtrInitList(CDecl, " try "));
   }
   else {
     emplaceTransformation(new InsertBeforeStmt(FD->getBody(), " try "));
   }
-  std::string IndentStr = getIndent(FD->getBeginLoc(), *SM).str();
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  std::string IndentStr = getIndent(FD->getBeginLoc(), SM).str();
   std::string ReplaceStr =
       getNL() + IndentStr +
       std::string("catch (cl::sycl::exception const &exc) {") + getNL() +
@@ -766,7 +874,6 @@ void ErrorHandlingHostAPIRule::run(const MatchFinder::MatchResult &Result) {
 
   emplaceTransformation(
     new InsertAfterStmt(FD->getBody(), std::move(ReplaceStr)));
-
 }
 
 REGISTER_RULE(ErrorHandlingHostAPIRule)
@@ -5574,16 +5681,15 @@ void MemoryMigrationRule::run(const MatchFinder::MatchResult &Result) {
       insertAroundStmt(C, "(", ", 0)");
     }
   };
-
   MigrateCallExpr(getAssistNodeAsType<CallExpr>(Result, "call"),
                     /* IsAssigned */ false);
   MigrateCallExpr(getAssistNodeAsType<CallExpr>(Result, "callUsed"),
                     /* IsAssigned */ true);
-
   MigrateCallExpr(
       getAssistNodeAsType<CallExpr>(Result, "callExprUsed"),
       /* IsAssigned */ true,
       getAssistNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedCallUsed"));
+
   MigrateCallExpr(
       getAssistNodeAsType<CallExpr>(Result, "callExpr"),
       /* IsAssigned */ false,

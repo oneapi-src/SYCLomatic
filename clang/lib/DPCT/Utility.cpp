@@ -817,3 +817,20 @@ bool isConditionOfFlowControl(const clang::Expr* E) {
   }
   return false;
 }
+
+// Recursively travers the subtree under \p S for all the reference of \p VD,
+// store and return matched nodes in \p Result
+void VarReferencedInFD(const Stmt *S, const ValueDecl *VD,
+                       std::vector<const clang::DeclRefExpr *> &Result) {
+  if (!S)
+    return;
+
+  if (auto DRF = dyn_cast<DeclRefExpr>(S)) {
+    if (DRF->getDecl() == VD) {
+      Result.push_back(DRF);
+    }
+  }
+  for (auto It = S->child_begin(); It != S->child_end(); ++It) {
+    VarReferencedInFD(*It, VD, Result);
+  }
+}

@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -w -x cuda --cuda-host-only
+// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -w -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/error-handling.dp.cpp
 
 #include <stdexcept>
@@ -9,13 +9,6 @@ int fprintf(int, const char *s, ...);
 
 // CHECK:void test_simple_ifs() {
 // CHECK-NEXT:  int err;
-// checking for empty lines (with one or more spaces)
-// CHECK-NEXT:{{ +}}
-// CHECK-NEXT:{{ +}}
-// CHECK-NEXT:{{ +}}
-// CHECK-NEXT:{{ +}}
-// CHECK-NEXT:{{ +}}
-// CHECK-NEXT:{{ +}}
 // CHECK-NEXT:}
 void test_simple_ifs() {
   cudaError_t err;
@@ -35,13 +28,6 @@ void test_simple_ifs() {
 
 // CHECK:void test_simple_ifs_const() {
 // CHECK-NEXT:  const int err = 0;
-// Checking for empty lines (with one or more spaces).
-// CHECK-NEXT:{{ +}}
-// CHECK-NEXT:{{ +}}
-// CHECK-NEXT:{{ +}}
-// CHECK-NEXT:{{ +}}
-// CHECK-NEXT:{{ +}}
-// CHECK-NEXT:{{ +}}
 // CHECK-NEXT:}
 void test_simple_ifs_const() {
   const cudaError_t err = cudaSuccess;
@@ -62,8 +48,6 @@ void test_simple_ifs_const() {
 // CHECK:void test_typedef() {
 // CHECK-NEXT:  typedef cudaError_t someError_t;
 // CHECK-NEXT:  someError_t err;
-// CHECK-NEXT:{{ +}}
-// CHECK-NEXT:{{ +}}
 // CHECK-NEXT:}
 void test_typedef()  {
   typedef cudaError_t someError_t;
@@ -76,7 +60,7 @@ void test_typedef()  {
 
 // CHECK:void test_no_braces() {
 // CHECK-NEXT:  int err;
-// CHECK-NEXT:  {{ +}};
+// CHECK-NEXT:  ;
 // CHECK-NEXT:}
 void test_no_braces() {
   cudaError_t err;
@@ -108,7 +92,6 @@ void test_unrelated_then() {
 
 // CHECK:void test_CUDA_SUCCESS() {
 // CHECK-NEXT:  int err;
-// CHECK-NEXT:  {{ +}}
 // CHECK-NEXT:}
 void test_CUDA_SUCCESS() {
   cudaError_t err;
@@ -119,7 +102,6 @@ void test_CUDA_SUCCESS() {
 
 // CHECK:void test_CUDA_SUCCESS_empty() {
 // CHECK-NEXT:  int err;
-// CHECK-NEXT:{{ +}}
 // CHECK-NEXT:}
 void test_CUDA_SUCCESS_empty() {
   cudaError_t err;
@@ -129,7 +111,6 @@ void test_CUDA_SUCCESS_empty() {
 
 // CHECK:void test_CUDA_SUCCESS_CUresult() {
 // CHECK-NEXT:  int err;
-// CHECK-NEXT:  {{ +}}
 // CHECK-NEXT:}
 void test_CUDA_SUCCESS_CUresult() {
   CUresult err;
@@ -140,7 +121,6 @@ void test_CUDA_SUCCESS_CUresult() {
 
 // CHECK:void test_CUDA_SUCCESS_empty_CUresult() {
 // CHECK-NEXT:  int err;
-// CHECK-NEXT:{{ +}}
 // CHECK-NEXT:}
 void test_CUDA_SUCCESS_empty_CUresult() {
   CUresult err;
@@ -164,14 +144,16 @@ void test_other_enum() {
 // CHECK:void test_assignment() try {
 // CHECK-NEXT:  int err;
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1003:2: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+// CHECK-NEXT:may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err = (dpct::dpct_malloc(0, 0), 0)) {
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
+// CHECK-NEXT:             << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void test_assignment() {
@@ -193,7 +175,7 @@ void test_1(cudaError_t err, int arg) {
 // CHECK:void test_12(int err, int arg) {
 // CHECK-NEXT:  if (err) {
 // CHECK-NEXT:  } else {
-// CHECK-NEXT:{{ +}}
+// CHECK-NEXT:  {{ +}}
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
 void test_12(cudaError_t err, int arg) {
@@ -204,7 +186,6 @@ void test_12(cudaError_t err, int arg) {
 }
 
 // CHECK:void test_13(int err, int arg) {
-// CHECK-NEXT:  {{ +}}
 // CHECK-NEXT:}
 void test_13(cudaError_t err, int arg) {
   if (err) {
@@ -237,13 +218,15 @@ void test_14(cudaError_t err, int arg) {
 
 // CHECK:void test_15(int err, int arg) try {
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1003:3: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+// CHECK-NEXT:may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if ((dpct::dpct_malloc(0, 0), 0)) {
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
+// CHECK-NEXT:             << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void test_15(cudaError_t err, int arg) {
@@ -270,7 +253,8 @@ void test_16(cudaError_t err, int arg) {
 
 // CHECK:void test_17(int err, int arg)  try {
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1003:4: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+// CHECK-NEXT:may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (!(dpct::dpct_malloc(0, 0), 0)) {
 // CHECK-NEXT:  } else {
@@ -279,7 +263,8 @@ void test_16(cudaError_t err, int arg) {
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
+// CHECK-NEXT:             << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void test_17(cudaError_t err, int arg) {
@@ -323,8 +308,7 @@ void test_compare_to_3(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_21(const int & err, int arg) {
-// CHECK-NEXT:{{ +}}
+// CHECK:void test_21(const int &err, int arg) {
 // CHECK-NEXT:}
 void test_21(const cudaError_t& err, int arg) {
   if (err != 0) {
@@ -335,7 +319,6 @@ void test_21(const cudaError_t& err, int arg) {
 // CHECK-NEXT: ;
 // CHECK-NEXT: ;
 // CHECK-NEXT: ;
-// CHECK-NEXT:  {{ +}}
 // CHECK-NEXT:}
 void test_no_side_effects(cudaError_t err, int arg) {
   if (err)
@@ -400,12 +383,6 @@ void test_side_effects(cudaError_t err, int arg, int x, int y, int z) {
 
 // CHECK:void specialize_ifs() {
 // CHECK-NEXT:  int err;
-// checking for empty lines (with one or more spaces)
-// CHECK-NEXT:{{ +}}
-// CHECK-NEXT:{{ +}}
-// CHECK-NEXT:{{ +}}
-// CHECK-NEXT:{{ +}}
-// CHECK-NEXT:{{ +}}
 // CHECK-NEXT:}
 void specialize_ifs() {
   cudaError_t err;
@@ -428,7 +405,8 @@ void specialize_ifs() {
 // CHECK-NEXT:    printf("efef");
 // CHECK-NEXT:  }
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to rewrite this code.
+// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to
+// CHECK-NEXT:rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err == {{[0-9]+}}) {
 // CHECK-NEXT:    printf("efef");
@@ -438,7 +416,8 @@ void specialize_ifs() {
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:  }
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to rewrite this code.
+// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to
+// CHECK-NEXT:rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err == 255) {
 // CHECK-NEXT:/*
@@ -447,7 +426,8 @@ void specialize_ifs() {
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:  }
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to rewrite this code.
+// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to
+// CHECK-NEXT:rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err == 1) {
 // CHECK-NEXT:/*
@@ -456,7 +436,8 @@ void specialize_ifs() {
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:  }
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to rewrite this code.
+// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to
+// CHECK-NEXT:rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (666 == err) {
 // CHECK-NEXT:/*
@@ -465,7 +446,8 @@ void specialize_ifs() {
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:  }
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to rewrite this code.
+// CHECK-NEXT:DPCT1002:{{[0-9]+}}: Special case error handling if-stmt was detected. You may need to
+// CHECK-NEXT:rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if ({{[0-9]+}} == err) {
 // CHECK-NEXT:/*
@@ -499,14 +481,16 @@ void specialize_ifs_negative() {
 
 // CHECK: void foo1() try {
 // CHECK-NEXT:   /*
-// CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+// CHECK-NEXT:   may need to rewrite this code.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   if((dpct::dpct_malloc(0, 0), 0)){
+// CHECK-NEXT:   if ((dpct::dpct_malloc(0, 0), 0)) {
 // CHECK-NEXT:     printf("efef");
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
+// CHECK-NEXT:             << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void foo1(){
@@ -521,14 +505,16 @@ void foo1(){
 // CHECK-NEXT:   float *h_A = (float *)malloc(size);
 // CHECK-NEXT:   float *d_A = NULL;
 // CHECK-NEXT:   /*
-// CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+// CHECK-NEXT:   may need to rewrite this code.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   while((dpct::async_dpct_memcpy(d_A, h_A, size, dpct::host_to_device), 0)){
+// CHECK-NEXT:   while ((dpct::async_dpct_memcpy(d_A, h_A, size, dpct::host_to_device), 0)) {
 // CHECK-NEXT:     printf("efef");
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
+// CHECK-NEXT:             << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void foo2(){
@@ -543,14 +529,16 @@ void foo2(){
 
 // CHECK: void foo3() try {
 // CHECK-NEXT:   /*
-// CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+// CHECK-NEXT:   may need to rewrite this code.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   for(;(dpct::dpct_malloc(0, 0), 0);){
+// CHECK-NEXT:   for (; (dpct::dpct_malloc(0, 0), 0);) {
 // CHECK-NEXT:     printf("efef");
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
+// CHECK-NEXT:             << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void foo3(){
@@ -565,12 +553,14 @@ void foo3(){
 // CHECK-NEXT:   do{
 // CHECK-NEXT:     printf("efef");
 // CHECK-NEXT:   /*
-// CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+// CHECK-NEXT:   may need to rewrite this code.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   } while((dpct::dpct_malloc(0, 0), 0));
+// CHECK-NEXT:   } while ((dpct::dpct_malloc(0, 0), 0));
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
+// CHECK-NEXT:             << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void foo4(){
@@ -580,34 +570,30 @@ void foo4(){
 }
 
 
-// CHECK: void foo5() try {
+// CHECK: void foo5(){
 // CHECK-NEXT:   int res;
 // CHECK-NEXT:   {
 // CHECK-NEXT:   auto allocation_ct1 = dpct::memory_manager::get_instance().translate_ptr(0);
-// CHECK-NEXT:   cl::sycl::buffer<float,1> buffer_ct1 = allocation_ct1.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct1.size/sizeof(float)));
-// CHECK-NEXT:   cl::sycl::buffer<int64_t,1> result_temp_buffer(cl::sycl::range<1>(1));
-// CHECK-NEXT:   mkl::blas::iamax(dpct::get_default_queue(), 10, buffer_ct1, 0, result_temp_buffer);
+// CHECK-NEXT:   cl::sycl::buffer<float, 1> buffer_ct1 =
+// CHECK-NEXT:       allocation_ct1.buffer.reinterpret<float, 1>(
+// CHECK-NEXT:           cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
+// CHECK-NEXT:   cl::sycl::buffer<int64_t, 1> result_temp_buffer(cl::sycl::range<1>(1));
+// CHECK-NEXT:   mkl::blas::iamax(dpct::get_default_queue(), 10, buffer_ct1, 0,
+// CHECK-NEXT:                    result_temp_buffer);
 // CHECK-NEXT:   res = result_temp_buffer.get_access<cl::sycl::access::mode::read>()[0];
 // CHECK-NEXT:   }
-// CHECK: }
-// CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
-// CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void foo5(){
   int res = cublasIsamax(10, 0, 0);
 }
 
-// CHECK: void foo6() try {
+// CHECK: void foo6(){
 // CHECK-NEXT:   int a;
 // CHECK-NEXT:   /*
-// CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+// CHECK-NEXT:   may need to rewrite this code.
 // CHECK-NEXT:   */
 // CHECK-NEXT:   a = (dpct::dpct_malloc(0, 0), 0);
-// CHECK-NEXT: }
-// CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
-// CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void foo6(){
   int a;
@@ -620,7 +606,8 @@ void foo6(){
 // CHECK-NEXT:   if(printf("a")){}
 // CHECK-NEXT:   cl::sycl::event start;
 // CHECK-NEXT:   /*
-// CHECK-NEXT:   DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0, because Function call is redundant in DPC++.
+// CHECK-NEXT:   DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0, because Function
+// CHECK-NEXT:   call is redundant in DPC++.
 // CHECK-NEXT:   */
 // CHECK-NEXT:   int b = 0;
 // CHECK-NEXT: }
@@ -632,6 +619,100 @@ void foo7(){
   int b = cudaEventCreate(&start);
 }
 
+// CHECK: void foo8() try {
+// CHECK-NEXT:   /*
+// CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+// CHECK-NEXT:   may need to rewrite this code.
+// CHECK-NEXT:   */
+// CHECK-NEXT:   int a = (dpct::dpct_malloc(0, 0), 0);
+// CHECK-NEXT:   if(a) printf("a");
+// CHECK-NEXT: }
+// CHECK-NEXT: catch (cl::sycl::exception const &exc) {
+// CHECK-NEXT: std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
+// CHECK-NEXT:           << std::endl;
+// CHECK-NEXT: std::exit(1);
+// CHECK-NEXT: }
+void foo8(){
+  int a = cudaMalloc(0, 0);
+  if(a) printf("a");
+}
+
+// CHECK: void foo9() try {
+// CHECK-NEXT:   int a;
+// CHECK-NEXT:   /*
+// CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+// CHECK-NEXT:   may need to rewrite this code.
+// CHECK-NEXT:   */
+// CHECK-NEXT:   a = (dpct::dpct_malloc(0, 0), 0);
+// CHECK-NEXT:   if(a) printf("a");
+// CHECK-NEXT: }
+// CHECK-NEXT: catch (cl::sycl::exception const &exc) {
+// CHECK-NEXT: std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
+// CHECK-NEXT:           << std::endl;
+// CHECK-NEXT: std::exit(1);
+// CHECK-NEXT: }
+void foo9(){
+  int a;
+  a = cudaMalloc(0, 0);
+  if(a) printf("a");
+}
+
+//CHECK: int foo10() try {
+//CHECK-NEXT:   /*
+//CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+//CHECK-NEXT:   may need to rewrite this code.
+//CHECK-NEXT:   */
+//CHECK-NEXT:   return (dpct::dpct_malloc(0, 0), 0);
+//CHECK-NEXT: }
+//CHECK-NEXT: catch (cl::sycl::exception const &exc) {
+//CHECK-NEXT: std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
+//CHECK-NEXT:           << std::endl;
+//CHECK-NEXT: std::exit(1);
+//CHECK-NEXT: }
+int foo10(){
+  return cudaMalloc(0, 0);
+}
+
+//CHECK: int foo11(){
+//CHECK-NEXT: while(true){
+//CHECK-NEXT:   dpct::dpct_malloc(0, 0);
+//CHECK-NEXT: }
+//CHECK-NEXT: }
+int foo11(){
+  while(true){
+    cudaMalloc(0, 0);
+  }
+}
+
+//CHECK: void foo12() try {
+//CHECK-NEXT:   /*
+//CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+//CHECK-NEXT:   may need to rewrite this code.
+//CHECK-NEXT:   */
+//CHECK-NEXT:   switch ((dpct::dpct_malloc(0, 0), 0)) {
+//CHECK-NEXT:     case 0:
+//CHECK-NEXT:       break;
+//CHECK-NEXT:     case 1:
+//CHECK-NEXT:       break;
+//CHECK-NEXT:     default:
+//CHECK-NEXT:     ;
+//CHECK-NEXT:   }
+//CHECK-NEXT: }
+//CHECK-NEXT: catch (cl::sycl::exception const &exc) {
+//CHECK-NEXT: std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
+//CHECK-NEXT:           << std::endl;
+//CHECK-NEXT: std::exit(1);
+//CHECK-NEXT: }
+void foo12(){
+  switch(cudaMalloc(0, 0)){
+    case 0:
+      break;
+    case 1:
+      break;
+    default:
+    ;
+  }
+}
 
 
 // CHECK: class ClassA
@@ -639,15 +720,17 @@ void foo7(){
 // CHECK-NEXT:   public:
 // CHECK-NEXT:   std::vector<int> V;
 // CHECK-NEXT:   ClassA() : V() {}
-// CHECK-NEXT:   ClassA(int b)
-// CHECK-NEXT:   try {
+// CHECK-NEXT:   ClassA(int b) try {
 // CHECK-NEXT:     /*
-// CHECK-NEXT:     DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:     DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted.
+// CHECK-NEXT:     You may need to rewrite this code.
 // CHECK-NEXT:     */
 // CHECK-NEXT:     int a = (dpct::dpct_malloc(0, 0), 0);
+// CHECK-NEXT:     if(a){printf("a");}
 // CHECK-NEXT:   }
 // CHECK-NEXT:   catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:     std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
+// CHECK-NEXT:     std::cerr << exc.what() << "EOE at file:" << __FILE__
+// CHECK-NEXT:               << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:     std::exit(1);  
 // CHECK-NEXT:   }
 // CHECK-NEXT: };
@@ -659,5 +742,6 @@ class ClassA
   ClassA(int b)
   {
     int a = cudaMalloc(0, 0);
+    if(a){printf("a");}
   }
 };
