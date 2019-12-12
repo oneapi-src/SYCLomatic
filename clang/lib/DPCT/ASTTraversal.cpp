@@ -93,7 +93,8 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
                                      II->getName().str() == "__device__" ||
                                      II->getName().str() == "__global__" ||
                                      II->getName().str() == "__constant__")) {
-      TransformSet.emplace_back(new ReplaceToken(Iter->getLocation(), ""));
+      unsigned int Len = getLenToNextTokenBegin(*Iter, SM);
+      TransformSet.emplace_back(new ReplaceText(Iter->getLocation(), Len, ""));
     }
   }
 }
@@ -128,7 +129,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (TKind == tok::identifier &&
       (Name == "__host__" || Name == "__device__" || Name == "__global__" ||
        Name == "__constant__")) {
-    TransformSet.emplace_back(new ReplaceToken(Range.getBegin(), ""));
+    unsigned int Len = getLenToNextTokenBegin(MacroNameTok, SM);
+    TransformSet.emplace_back(new ReplaceText(Range.getBegin(), Len, ""));
   }
 
   if (TKind == tok::identifier && Name == "__forceinline__") {

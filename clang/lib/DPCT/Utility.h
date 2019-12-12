@@ -47,6 +47,7 @@ class Expr;
 class MemberExpr;
 class FunctionDecl;
 class CallExpr;
+class Token;
 } // namespace clang
 
 // classes for keeping track of Stmt->String mappings
@@ -284,4 +285,6 @@ void replaceSubStrAll(std::string &Str, const std::string &SubStr,
                    const std::string &Repl);
 bool isArgUsedAsLvalueUntil(const clang::DeclRefExpr *Arg,
                             const clang::Stmt *S);
+unsigned int getLenToNextTokenBegin(const clang::Token &CurTokEnd,
+                                    clang::SourceManager &SM);
 #endif // DPCT_UTILITY_H
