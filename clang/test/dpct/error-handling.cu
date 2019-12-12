@@ -92,7 +92,7 @@ void test_no_braces() {
 // CHECK-NEXT:*/
 // CHECK-NEXT:   if (err != 0) {
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: The statement could not be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    ++i;
 // CHECK-NEXT:  }
@@ -357,7 +357,7 @@ void test_no_side_effects(cudaError_t err, int arg) {
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err)
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: The statement could not be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:/*
@@ -365,7 +365,7 @@ void test_no_side_effects(cudaError_t err, int arg) {
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err != 0) {
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: The statement could not be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:    printf("error!\n");
@@ -376,7 +376,7 @@ void test_no_side_effects(cudaError_t err, int arg) {
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err)
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: The statement could not be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    x = printf("fmt string");
 // CHECK-NEXT:  ;
@@ -433,7 +433,7 @@ void specialize_ifs() {
 // CHECK-NEXT:  if (err == {{[0-9]+}}) {
 // CHECK-NEXT:    printf("efef");
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: The statement could not be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:  }
@@ -442,7 +442,7 @@ void specialize_ifs() {
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err == 255) {
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: The statement could not be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:  }
@@ -451,7 +451,7 @@ void specialize_ifs() {
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (err == 1) {
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: The statement could not be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:  }
@@ -460,7 +460,7 @@ void specialize_ifs() {
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if (666 == err) {
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: The statement could not be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:  }
@@ -469,7 +469,7 @@ void specialize_ifs() {
 // CHECK-NEXT:*/
 // CHECK-NEXT:  if ({{[0-9]+}} == err) {
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1001:{{[0-9]+}}: Statement couldn't be removed.
+// CHECK-NEXT:DPCT1001:{{[0-9]+}}: The statement could not be removed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:    malloc(0x100);
 // CHECK-NEXT:  }

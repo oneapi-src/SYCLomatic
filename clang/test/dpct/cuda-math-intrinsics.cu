@@ -2454,31 +2454,31 @@ __global__ void testSimulation() {
   double d;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The cl::sycl::floor call is used instead of nearbyintf call. These two calls are not providing exactly the same functionality. Check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The cl::sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f = cl::sycl::floor(f + 0.5);
   f = nearbyintf(f);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The cl::sycl::floor call is used instead of nearbyint call. These two calls are not providing exactly the same functionality. Check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The cl::sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d = cl::sycl::floor(d + 0.5);
   d = nearbyint(d);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The cl::sycl::hypot call is used instead of rhypotf call. These two calls are not providing exactly the same functionality. Check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The cl::sycl::hypot call is used instead of the rhypotf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f = 1 / cl::sycl::hypot(f, f);
   f = rhypotf(f, f);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The cl::sycl::sincos call is used instead of sincospif call. These two calls are not providing exactly the same functionality. Check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The cl::sycl::sincos call is used instead of the sincospif call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: f = cl::sycl::sincos(f * DPCT_PI_F, cl::sycl::make_ptr<float, cl::sycl::access::address_space::global_space>(&f));
   sincospif(f, &f, &f);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The cl::sycl::sincos call is used instead of sincospi call. These two calls are not providing exactly the same functionality. Check the potential precision and/or performance issues of generated code.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The cl::sycl::sincos call is used instead of the sincospi call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
   // CHECK-NEXT: d = cl::sycl::sincos(d * DPCT_PI, cl::sycl::make_ptr<double, cl::sycl::access::address_space::global_space>(&d));
   sincospi(d, &d, &d);

@@ -3853,7 +3853,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaDeviceSetLimit" ||
              FuncName == "cudaThreadSetLimit") {
     std::string Msg =
-      "DPC++ currently doesn't support setting resource limits on devices.";
+      "DPC++ currently does not support setting resource limits on devices.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, FuncName,
              Msg);
@@ -4167,11 +4167,11 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaStreamQuery") {
     std::string Msg;
     if (FuncName == "cudaStreamAttachMemAsync")
-      Msg = "DPC++ currently doesn't support associating USM with a specific queue.";
+      Msg = "DPC++ currently does not support associating USM with a specific queue.";
     else if (FuncName == "cudaStreamQuery")
-      Msg = "DPC++ currently doesn't support query operations on queues.";
+      Msg = "DPC++ currently does not support query operations on queues.";
     else
-      Msg = "DPC++ currently doesn't support capture operations on queues.";
+      Msg = "DPC++ currently does not support capture operations on queues.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, FuncName, Msg);
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, "0"));

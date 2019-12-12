@@ -118,23 +118,23 @@ void test()
 void test2() {
   cudaLimit limit;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceSetLimit was removed. DPC++ currently doesn't support setting resource limits on devices.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceSetLimit was removed, because DPC++ currently does not support setting resource limits on devices.
   // CHECK-NEXT: */
   cudaDeviceSetLimit(limit, 0);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaDeviceSetLimit was replaced with 0. DPC++ currently doesn't support setting resource limits on devices.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaDeviceSetLimit was replaced with 0, because DPC++ currently does not support setting resource limits on devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: int i = 0;
   int i = cudaDeviceSetLimit(limit, 0);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaThreadSetLimit was removed. DPC++ currently doesn't support setting resource limits on devices.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaThreadSetLimit was removed, because DPC++ currently does not support setting resource limits on devices.
   // CHECK-NEXT: */
   cudaThreadSetLimit(limit, 0);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaThreadSetLimit was replaced with 0. DPC++ currently doesn't support setting resource limits on devices.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaThreadSetLimit was replaced with 0, because DPC++ currently does not support setting resource limits on devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: int j = 0;
   int j = cudaThreadSetLimit(limit, 0);
