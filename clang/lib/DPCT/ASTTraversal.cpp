@@ -686,7 +686,7 @@ REGISTER_RULE(ErrorHandlingIfStmtRule)
 
 void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
   std::vector<StringRef> MigratedAPIName{};
-#define ENTRY(APINAME, VALUE, TARGET, COMMENT)                                 \
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)                                 \
   if (VALUE)                                                                   \
     MigratedAPIName.push_back(#APINAME);
 #include "APINames.inc"
@@ -855,7 +855,7 @@ void AtomicFunctionRule::ReportUnsupportedAtomicFunc(const CallExpr *CE) {
   // Atomic functions with __half and half2 are not supported.
   if (!CE->getDirectCallee())
     return;
-  OSS << "half version of " << CE->getDirectCallee()->getName().str();
+  OSS << "half version of " << MapNames::ITFName.at(CE->getDirectCallee()->getName().str());
   report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, OSS.str());
 }
 
@@ -2496,8 +2496,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     MapNames::BLASFuncReplInfo ReplInfo = ReplInfoPair->second;
     std::string Replacement = ReplInfo.ReplName;
     if (HasDeviceAttr) {
-      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, FuncName,
-             Replacement);
+      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE,
+             MapNames::ITFName.at(FuncName), Replacement);
       return;
     }
     int ArgNum = CE->getNumArgs();
@@ -2608,8 +2608,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     MapNames::BLASFuncComplexReplInfo ReplInfo = ReplInfoPair->second;
     std::string Replacement = ReplInfo.ReplName;
     if (HasDeviceAttr) {
-      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, FuncName,
-             Replacement);
+      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE,
+             MapNames::ITFName.at(FuncName), Replacement);
       return;
     }
     int ArgNum = CE->getNumArgs();
@@ -2860,8 +2860,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     MapNames::BLASFuncReplInfo ReplInfo = ReplInfoPair->second;
     std::string Replacement = ReplInfo.ReplName;
     if (HasDeviceAttr) {
-      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, FuncName,
-             Replacement);
+      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE,
+             MapNames::ITFName.at(FuncName), Replacement);
       return;
     }
     if (IsAssigned) {
@@ -2914,8 +2914,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cublasSetVectorAsync" ||
              FuncName == "cublasGetVectorAsync") {
     if (HasDeviceAttr) {
-      report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, FuncName,
-             "dpct::dpct_memcpy");
+      report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE,
+             MapNames::ITFName.at(FuncName), "dpct::dpct_memcpy");
       return;
     }
     // The 4th and 6th param (incx and incy) of blas Set/get Vector
@@ -2944,7 +2944,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       if (IncxStr != IncyStr) {
         // Keep original code, give a comment to let user migrate code manually
         report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-               FuncName,
+               MapNames::ITFName.at(FuncName),
                "parameter " + ParamsStrsVec[3] +
                    " does not equal to parameter " + ParamsStrsVec[5]);
         return;
@@ -2953,14 +2953,14 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         // incx equals to incy, but does not equal to 1. Performance issue may
         // occur.
         report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
-               FuncName,
+               MapNames::ITFName.at(FuncName),
                "parameter " + ParamsStrsVec[3] + " equals to parameter " +
                    ParamsStrsVec[5] + " but greater than 1");
       }
     } else {
       // Keep original code, give a comment to let user migrate code manually
       report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-             FuncName,
+             MapNames::ITFName.at(FuncName),
              "parameter(s) " + ParamsStrsVec[3] + " and/or " +
                  ParamsStrsVec[5] + " could not be evaluated");
       return;
@@ -2986,8 +2986,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cublasSetMatrixAsync" ||
              FuncName == "cublasGetMatrixAsync") {
     if (HasDeviceAttr) {
-      report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, FuncName,
-             "dpct::dpct_memcpy");
+      report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE,
+             MapNames::ITFName.at(FuncName), "dpct::dpct_memcpy");
       return;
     }
     std::vector<std::string> ParamsStrsVec =
@@ -3010,7 +3010,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       if (LdaStr != LdbStr) {
         // Keep original code, give a comment to let user migrate code manually
         report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-               FuncName,
+               MapNames::ITFName.at(FuncName),
                "parameter " + ParamsStrsVec[4] +
                    " does not equal to parameter " + ParamsStrsVec[6]);
         return;
@@ -3024,7 +3024,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         if (std::stoi(LdaStr) > std::stoi(RowsStr)) {
           // lda > rows. Performance issue may occur.
           report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
-                 FuncName,
+                 MapNames::ITFName.at(FuncName),
                  "parameter " + ParamsStrsVec[0] +
                      " is smaller than parameter " + ParamsStrsVec[4]);
         }
@@ -3032,7 +3032,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         // rows cannot be evaluated. Performance issue may occur.
         report(
             CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
-            FuncName,
+            MapNames::ITFName.at(FuncName),
             "parameter " + ParamsStrsVec[0] +
                 " could not be evaluated and may be smaller than parameter " +
                 ParamsStrsVec[4]);
@@ -3040,7 +3040,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     } else {
       // Keep original code, give a comment to let user migrate code manually
       report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-             FuncName,
+             MapNames::ITFName.at(FuncName),
              "parameter(s) " + ParamsStrsVec[4] + " and/or " +
                  ParamsStrsVec[6] + " could not be evaluated");
       return;
@@ -3435,8 +3435,8 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   }
 
   if (HasDeviceAttr) {
-    report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, FuncName,
-           "dpct::dpct_memcpy");
+    report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE,
+           MapNames::ITFName.at(FuncName), "dpct::dpct_memcpy");
     return;
   }
 
@@ -3829,14 +3829,14 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaGetLastError" ||
              FuncName == "cudaPeekAtLastError") {
     report(CE->getBeginLoc(),
-           Comments::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, FuncName);
+           Comments::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, MapNames::ITFName.at(FuncName));
     emplaceTransformation(new ReplaceStmt(CE, "0"));
   } else if (FuncName == "cudaGetErrorString" ||
              FuncName == "cudaGetErrorName") {
     // Insert warning messages into the spelling locations in case
     // that these functions are contained in macro definitions
     auto Loc = Result.SourceManager->getSpellingLoc(CE->getBeginLoc());
-    report(Loc, Comments::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED, FuncName);
+    report(Loc, Comments::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED, MapNames::ITFName.at(FuncName));
     emplaceTransformation(
         new InsertBeforeStmt(CE, "\"" + FuncName + " not supported\"/*"));
     emplaceTransformation(new InsertAfterStmt(CE, "*/"));
@@ -3855,17 +3855,17 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     std::string Msg =
       "DPC++ currently does not support setting resource limits on devices.";
     if (IsAssigned) {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, FuncName,
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, MapNames::ITFName.at(FuncName),
              Msg);
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, "0"));
     } else {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, FuncName, Msg);
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, MapNames::ITFName.at(FuncName), Msg);
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ""));
     }
   } else if (FuncName == "cudaFuncSetCacheConfig") {
-    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
+    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, MapNames::ITFName.at(FuncName));
   } else if (FuncName == "cudaOccupancyMaxPotentialBlockSize") {
-    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, FuncName);
+    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, MapNames::ITFName.at(FuncName));
   } else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected function name: " << FuncName;
@@ -4173,10 +4173,12 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
     else
       Msg = "DPC++ currently does not support capture operations on queues.";
     if (IsAssigned) {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, FuncName, Msg);
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0,
+             MapNames::ITFName.at(FuncName), Msg);
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, "0"));
     } else {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, FuncName, Msg);
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED,
+             MapNames::ITFName.at(FuncName), Msg);
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ""));
     }
   } else if (FuncName == "cudaStreamWaitEvent") {
@@ -4523,7 +4525,7 @@ void MemoryMigrationRule::mallocMigration(
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
       // Report unsupported warnings
-      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, Name);
+      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, MapNames::ITFName.at(Name));
     }
   } else if (Name == "cublasAlloc") {
     // TODO: migrate functions when they are in template
@@ -5071,7 +5073,7 @@ void MemoryMigrationRule::miscMigration(
       Repl << "*(" << Arg0Str << ") = " << Arg1Str;
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
-      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, Name);
+      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, MapNames::ITFName.at(Name));
     }
   } else if (Name == "cudaHostRegister" || Name == "cudaHostUnregister") {
     if (IsAssigned)
@@ -5484,7 +5486,8 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
     std::size_t PosRow = SLStr.rfind(':', PosCol - 1);
     std::string FileName = SLStr.substr(0, PosRow);
     LOCStaticsMap[FileName][2]++;
-    report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, APIName.c_str());
+    report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED,
+           MapNames::ITFName.at(APIName.c_str()));
   }
 }
 

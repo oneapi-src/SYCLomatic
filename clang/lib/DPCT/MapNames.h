@@ -247,6 +247,8 @@ public:
   static const std::map<std::string, MapNames::SOLVERFuncReplInfo>
       SOLVERFuncReplInfoMap;
 
+  static const MapTy ITFName;
+
   inline static const std::string &findReplacedName(const MapTy &Map,
                                                     const std::string &Name) {
     static const std::string EmptyString;

@@ -33,5 +33,5 @@
 // This is tempalte for API/lib in the source language.
 // Please copy this template file when enabling more source language and API.
 //
-// ENTRY(exampleAPI, false, P4, "not support yet.")
+// ENTRY(exampleAPI, false, 0 ,P4, "not support yet.")
 

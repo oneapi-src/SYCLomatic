@@ -174,7 +174,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
 }
 
 Optional<std::string> MathUnsupportedRewriter::rewrite() {
-  report(Diagnostics::NOTSUPPORTED, SourceCalleeName);
+  report(Diagnostics::NOTSUPPORTED, MapNames::ITFName.at(SourceCalleeName));
   return Base::rewrite();
 }
 
@@ -291,7 +291,7 @@ std::string getTypecastName(const CallExpr *Call) {
 }
 
 Optional<std::string> MathSimulatedRewriter::rewrite() {
-  report(Diagnostics::MATH_EMULATION, SourceCalleeName, TargetCalleeName);
+  report(Diagnostics::MATH_EMULATION, MapNames::ITFName.at(SourceCalleeName), TargetCalleeName);
   auto FD = Call->getDirectCallee();
   if (!FD || !FD->hasAttr<CUDADeviceAttr>())
     return Base::rewrite();
@@ -440,7 +440,7 @@ Optional<std::string> MathBinaryOperatorRewriter::rewrite() {
 Optional<std::string> WarpFunctionRewriter::rewrite() {
   if (SourceCalleeName == "__activemask" || SourceCalleeName == "__ballot" ||
       SourceCalleeName == "__ballot_sync") {
-    report(Diagnostics::NOTSUPPORTED, SourceCalleeName);
+    report(Diagnostics::NOTSUPPORTED, MapNames::ITFName.at(SourceCalleeName));
     RewriteArgList = getMigratedArgs();
     setTargetCalleeName(SourceCalleeName);
   } else {

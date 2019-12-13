@@ -124,6 +124,20 @@ const MapNames::MapTy MapNames::TypeNamesMap{
     // ...
 };
 
+const MapNames::MapTy MapNames::ITFName{
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT) {#APINAME, #INTERFACENAME},
+#include "APINames.inc"
+#include "APINames_cuBLAS.inc"
+#include "APINames_cuFFT.inc"
+#include "APINames_cuGRAPH.inc"
+#include "APINames_cuPARSE.inc"
+#include "APINames_cuRAND.inc"
+#include "APINames_cuSOLVER.inc"
+#include "APINames_nvJPEG.inc"
+#include "APINames_thrust.inc"
+#undef ENTRY
+};
+
 // BLAS enums mapping
 const MapNames::MapTy MapNames::BLASEnumsMap{
     {"CUBLAS_OP_N", "mkl::transpose::nontrans"},
@@ -2532,7 +2546,7 @@ const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
 };
 
 std::map<std::string, bool> MigrationStatistics::MigrationTable{
-#define ENTRY(APINAME, VALUE, TARGET, COMMENT) {#APINAME, VALUE},
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT) {#APINAME, VALUE},
 #include "APINames.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
