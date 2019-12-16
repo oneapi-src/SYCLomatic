@@ -79,6 +79,8 @@ const char *const CtHelpMessage =
     "EXAMPLES:\n\n"
     "Migrate single source file:\n\n"
     "  dpct source.cpp\n\n"
+    "Migrate single source file with C++11 features:\n\n"
+    "  dpct --extra-arg=\"-std=c++11\" source.cpp\n\n"
     "Migrate all files available in compilation database:\n\n"
     "  dpct -p=<path to location of compilation database file>\n\n"
     "Migrate one file in compilation database:\n\n"
