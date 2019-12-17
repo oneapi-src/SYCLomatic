@@ -661,7 +661,7 @@ private:
     return VD->getLocation();
   }
   static inline SourceLocation getLocation(const FunctionDecl *FD) {
-    return FD->getLocation();
+    return SM->getExpansionLoc(FD->getBeginLoc());
   }
   static inline SourceLocation getLocation(const FieldDecl *FD) {
     return FD->getLocation();
@@ -1402,6 +1402,15 @@ public:
                      const FunctionDecl *FD)
       : Offset(Offset), FilePath(FilePathIn), ParamsNum(FD->param_size()),
         ReplaceOffset(0), ReplaceLength(0) {
+    if(!FilePath.empty()) {
+      SourceProcessType FileType = GetSourceFileType(FilePath);
+      if ((FileType & TypeCudaHeader || FileType & TypeCppHeader) &&
+          FD->isThisDeclarationADefinition()) {
+        IsDefFilePathNeeded = false;
+      } else {
+        IsDefFilePathNeeded = FD->isThisDeclarationADefinition();
+      }
+    }
     buildReplaceLocInfo(FD);
     buildTextureObjectParamsInfo(FD);
   }
@@ -1459,11 +1468,7 @@ private:
     for (auto D : Range)
       LinkDecl(D, List, Info);
   }
-
-  inline void setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
-    FuncInfo = Info;
-  }
-
+  void setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info);
   void buildReplaceLocInfo(const FunctionDecl *FD);
 
 private:
@@ -1483,6 +1488,7 @@ private:
   unsigned ParamsNum;
   unsigned ReplaceOffset;
   unsigned ReplaceLength;
+  bool IsDefFilePathNeeded;
   std::shared_ptr<DeviceFunctionInfo> FuncInfo;
 
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
@@ -1529,6 +1535,13 @@ public:
     return ExtraParams;
   }
 
+  void setDefinitionFilePath(const std::string &Path) {
+    DefinitionFilePath = Path;
+  }
+  const std::string &getDefinitionFilePath() { return DefinitionFilePath; }
+  void setNeedSyclExternMacro() { NeedSyclExternMacro = true; }
+  bool IsSyclExternMacroNeeded() { return NeedSyclExternMacro; }
+
   void merge(std::shared_ptr<DeviceFunctionInfo> Other);
 
 private:
@@ -1541,6 +1554,8 @@ private:
   bool IsBuilt;
   size_t ParamsNum;
   std::string ExtraParams;
+  std::string DefinitionFilePath;
+  bool NeedSyclExternMacro = false;
 
   GlobalMap<CallFunctionExpr> CallExprMap;
   MemVarMap VarMap;

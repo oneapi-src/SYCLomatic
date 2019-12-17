@@ -180,9 +180,9 @@ void KernelCallExpr::buildKernelArgsStmt() {
             "[0] + ", Arg.getIdStringWithSuffix("offset"), ");"));
         KernelArgs += Arg.getIdStringWithIndex() + ", ";
       } else {
-        OuterStmts.emplace_back(buildString(
-            "dpct::buffer_t ", BufferName,
-            " = dpct::get_buffer(", Arg.getArgString(), ");"));
+        OuterStmts.emplace_back(buildString("dpct::buffer_t ", BufferName,
+                                            " = dpct::get_buffer(",
+                                            Arg.getArgString(), ");"));
         SubmitStmts.emplace_back(buildString(
             "auto ", Arg.getIdStringWithSuffix("acc"), " = ", BufferName,
             ".get_access<cl::sycl::access::mode::read_write>(cgh);"));
@@ -384,6 +384,11 @@ std::string CallFunctionExpr::getName(const NamedDecl *D) {
 void CallFunctionExpr::buildInfo() {
   if (!FuncInfo)
     return;
+
+  const std::string &DefFilePath = FuncInfo->getDefinitionFilePath();
+  if (!DefFilePath.empty() && DefFilePath != getFilePath()) {
+    FuncInfo->setNeedSyclExternMacro();
+  }
   FuncInfo->buildInfo();
   VarMap.merge(FuncInfo->getVarMap(), TemplateArgs);
   mergeTextureObjectTypeInfo();
@@ -456,6 +461,13 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
   DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
       FilePath, ReplaceOffset, ReplaceLength, FuncInfo->getExtraParameters(),
       nullptr));
+
+  if (FuncInfo->IsSyclExternMacroNeeded()) {
+    std::string StrRepl = "SYCL_EXTERNAL ";
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl,
+                                         nullptr));
+  }
   for (auto &Obj : TextureObjectList) {
     if (Obj) {
       Obj->setType(FuncInfo->getTextureTypeInfo(Obj->getParamIdx()));
@@ -497,6 +509,12 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionDecl *FD) {
       Result = Lexer::getRawToken(Tok.getEndLoc(), Tok, SM, LO, true);
     }
   }
+}
+
+void DeviceFunctionDecl::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
+  FuncInfo = Info;
+  if (IsDefFilePathNeeded)
+    FuncInfo->setDefinitionFilePath(FilePath);
 }
 
 void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,

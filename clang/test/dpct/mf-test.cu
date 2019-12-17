@@ -1,8 +1,12 @@
-// RUN: dpct --usm-level=none -in-root %S -out-root %T %s %S/mf-kernel.cu %S/mf-kernel.cuh --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --usm-level=none -in-root %S -out-root %T %s %S/mf-kernel.cu -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/mf-test.dp.cpp
 // RUN: FileCheck %S/mf-kernel.cuh --match-full-lines --input-file %T/mf-kernel.dp.hpp
 
 #include "mf-kernel.cuh"
+
+__global__ void cuda_hello(){
+    test_foo();
+}
 
 void test() {
   // CHECK:     dpct::get_default_queue().submit(
@@ -16,4 +20,5 @@ void test() {
   // CHECK-NEXT:           });
   // CHECK-NEXT:       });
   Reset_kernel_parameters<<<1,1>>>();
+  cuda_hello<<<2,2>>>();
 }
