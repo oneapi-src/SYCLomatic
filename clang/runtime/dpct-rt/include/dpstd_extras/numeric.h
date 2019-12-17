@@ -14,9 +14,8 @@
 * License.
 *****************************************************************************/
 
-#ifndef __DPCT_NUMERIC_H
-#define __DPCT_NUMERIC_H
-
+#ifndef __DPCT_NUMERIC_H__
+#define __DPCT_NUMERIC_H__
 
 namespace dpct {
 
@@ -38,4 +37,4 @@ T inner_product(Policy &&policy, InputIt1 first1, InputIt1 last1,
 
 } // end namespace dpct
 
-#endif //__DPCT_NUMERIC_H
+#endif

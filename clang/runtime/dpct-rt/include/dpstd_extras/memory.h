@@ -14,13 +14,16 @@
 * License.
 *****************************************************************************/
 
-#ifndef __DPCT_MEMORY_H
-#define __DPCT_MEMORY_H
+#ifndef __DPCT_MEMORY_H__
+#define __DPCT_MEMORY_H__
 
 #ifdef __PSTL_BACKEND_SYCL
 #include <CL/sycl.hpp>
 #endif
 
+// Memory management section:
+// device_ptr, device_reference, swap, device_iterator, device_malloc,
+// device_new, device_free, device_delete
 namespace dpct {
 
 namespace sycl = cl::sycl;
@@ -128,9 +131,93 @@ template <typename T> void swap(T &x, T &y) {
   y = tmp;
 }
 
-template <typename T>
-using device_iterator =
-    dpstd::__internal::sycl_iterator<sycl::access::mode::read_write, T>;
+template <typename T, sycl::access::mode Mode = sycl::access::mode::read_write,
+          typename Allocator = sycl::buffer_allocator>
+class device_iterator {
+protected:
+  sycl::buffer<T, 1> buffer;
+  std::size_t idx;
+
+public:
+  using value_type = T;
+  using difference_type = std::make_signed<std::size_t>::type;
+  using pointer = T *;
+  using reference = T &;
+  using iterator_category = std::random_access_iterator_tag;
+  using is_hetero = std::true_type;
+  static constexpr sycl::access::mode mode = Mode;
+
+  device_iterator() : buffer(cl::sycl::range<1>(1)), idx(0) {}
+  device_iterator(sycl::buffer<T, 1, Allocator> vec, std::size_t index)
+      : buffer(vec), idx(index) {}
+  template <cl::sycl::access::mode inMode>
+  device_iterator(const device_iterator<T, inMode, Allocator> &in)
+      : buffer(in.buffer), idx(in.idx) {}
+  device_iterator &operator=(const device_iterator &in) {
+    buffer = in.buffer;
+    idx = in.idx;
+    return *this;
+  }
+
+  reference operator*() const {
+    auto ptr = (const_cast<device_iterator *>(this)
+                    ->buffer.template get_access<mode>())
+                   .get_pointer();
+    return *(ptr + idx);
+  }
+
+  reference operator[](difference_type i) const { return *(*this + i); }
+  device_iterator &operator++() {
+    ++idx;
+    return *this;
+  }
+  device_iterator &operator--() {
+    --idx;
+    return *this;
+  }
+  device_iterator operator++(int) {
+    device_iterator it(*this);
+    ++(*this);
+    return it;
+  }
+  device_iterator operator--(int) {
+    device_iterator it(*this);
+    --(*this);
+    return it;
+  }
+  device_iterator operator+(difference_type forward) const {
+    const auto new_idx = idx + forward;
+    return {buffer, new_idx};
+  }
+  device_iterator &operator+=(difference_type forward) {
+    idx += forward;
+    return *this;
+  }
+  device_iterator operator-(difference_type backward) const {
+    return {buffer, idx - backward};
+  }
+  device_iterator &operator-=(difference_type backward) {
+    idx -= backward;
+    return *this;
+  }
+  friend device_iterator operator+(difference_type forward,
+                                   const device_iterator &it) {
+    return it + forward;
+  }
+  difference_type operator-(const device_iterator &it) const {
+    return idx - it.idx;
+  }
+  bool operator==(const device_iterator &it) const { return *this - it == 0; }
+  bool operator!=(const device_iterator &it) const { return !(*this == it); }
+  bool operator<(const device_iterator &it) const { return *this - it < 0; }
+  bool operator>(const device_iterator &it) const { return it < *this; }
+  bool operator<=(const device_iterator &it) const { return !(*this > it); }
+  bool operator>=(const device_iterator &it) const { return !(*this < it); }
+
+  std::size_t get_idx() { return idx; }
+
+  sycl::buffer<T, 1, Allocator> get_buffer() { return buffer; }
+};
 
 template <typename T> class device_ptr : public device_iterator<T> {
   using Base = device_iterator<T>;
@@ -143,11 +230,18 @@ public:
 #ifdef __USE_DPCT
   template <typename OtherT>
   device_ptr(OtherT ptr)
-      : Base(cl::sycl::buffer<T, 1>(cl::sycl::range<1>(
-                 dpct::memory_manager::get_instance().translate_ptr(ptr).size /
-                 sizeof(T))),
-             std::size_t{}) {}
+      : Base(
+#ifdef DPCT_USM_LEVEL_NONE
+            sycl::buffer<T, 1>(sycl::range<1>(
+                dpct::memory_manager::get_instance().translate_ptr(ptr).size /
+                sizeof(T))),
+#else
+            sycl::buffer<T, 1>(sycl::range<1>(1)),
 #endif
+            std::size_t{}) {
+  }
+#endif
+  // needed for device_malloc
   device_ptr(const std::size_t n)
       : Base(sycl::buffer<T, 1>(sycl::range<1>(n)), std::size_t{}) {}
   device_ptr() : Base() {}
@@ -230,4 +324,4 @@ template <typename T> using device_new_allocator = sycl::buffer_allocator;
 
 } // namespace dpct
 
-#endif // __DPCT_MEMORY_H
+#endif

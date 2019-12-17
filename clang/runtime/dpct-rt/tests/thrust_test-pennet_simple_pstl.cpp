@@ -11,18 +11,15 @@
 //===-----------------------------------------------------------------===//
 /*
 Thrust test case:
-package required:
-install tbb and pstl library(eg. install intel parallel studio)
-cd /path/to/tbb/bin &&  source  tbbvars.sh intel64
-cd /path/to/pstl/bin && source   pstlvars.sh intel64 auto_pstlroot
+package required: inteloneapi package
+$ . <path-to-inteloneapi>/setvars.sh
 
 build:
-compute++   thrust_test-pennet_simple_pstl.cpp.cpp
-  -I/Path/to/ComputeCpp-CE-1.0.2-Ubuntu-16.04-x86_64/include/
-  -std=c++11
-  -L/Path/to/ComputeCpp-CE-1.0.2-Ubuntu-16.04-x86_64/lib
-  -lComputeCpp   -I/path/to/dpct-install/include/
-  -sycl-driver
+$ dpcpp thrust_test-pennet_simple_pstl.cpp
+
+run:
+$ ./a.out
+
 */
 
 #define DPCT_USM_LEVEL_NONE

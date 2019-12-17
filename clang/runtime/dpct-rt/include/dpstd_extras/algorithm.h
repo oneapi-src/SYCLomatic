@@ -14,10 +14,15 @@
 * License.
 *****************************************************************************/
 
-#ifndef __DPCT_ALGORITHM_H
-#define __DPCT_ALGORITHM_H
+#ifndef __DPCT_ALGORITHM_H__
+#define __DPCT_ALGORITHM_H__
+
+#include <dpstd/execution>
+#include <dpstd/algorithm>
+#include <dpstd/numeric>
 
 #include "functional.h"
+#include "iterators.h"
 
 namespace dpct {
 
@@ -43,41 +48,41 @@ template <typename Policy, typename ForwardIt, typename InputIt,
           typename Predicate>
 ForwardIt remove_if(Policy &&policy, ForwardIt first, ForwardIt last,
                     InputIt stencil, Predicate p) {
-  using dpstd::make_zip_iterator;
   using dpstd::make_transform_iterator;
-  using policy_type = typename std::remove_reference<Policy>::type;
-  using dpstd::internal::__buffer;
+  using dpstd::make_zip_iterator;
+  using policy_type = typename std::decay<Policy>::type;
+  using internal::__buffer;
   using ValueType = typename std::iterator_traits<ForwardIt>::value_type;
+  using DiscardType = typename std::iterator_traits<InputIt>::value_type;
   using Ref1 = typename dpstd::zip_iterator<ForwardIt, InputIt>::reference;
 
-  __buffer<policy_type, typename std::iterator_traits<ForwardIt>::value_type>
-      _tmp(std::distance(first, last));
+  __buffer<ValueType> _tmp(std::distance(first, last));
 
-  typename internal::rebind_policy<Policy, class RemoveIf1>::type policy1(
+  typename internal::rebind_policy<policy_type, class RemoveIf1>::type policy1(
       policy);
   auto end = std::copy_if(
       policy1, make_zip_iterator(first, stencil),
       make_zip_iterator(last, stencil + std::distance(first, last)),
-      make_transform_iterator(_tmp.get(), internal::discard_fun<ValueType>()),
+      make_zip_iterator(_tmp.get(), discard_iterator<DiscardType>()),
       internal::negate_predicate_key_fun<Predicate>(p));
-  typename internal::rebind_policy<Policy, class RemoveIf2>::type policy2(
+  typename internal::rebind_policy<policy_type, class RemoveIf2>::type policy2(
       policy);
-  return std::copy(policy2, _tmp.get(), end.base(), first);
+  return std::copy(policy2, _tmp.get(), std::get<0>(end.base()), first);
 }
 
 template <typename Policy, typename InputIt1, typename InputIt2,
           typename OutputIt, typename Predicate>
 OutputIt remove_copy_if(Policy &&policy, InputIt1 first, InputIt1 last,
                         InputIt2 stencil, OutputIt result, Predicate p) {
-  using dpstd::make_zip_iterator;
   using dpstd::make_transform_iterator;
-  using Ref3 = typename std::iterator_traits<OutputIt>::reference;
+  using dpstd::make_zip_iterator;
+  using DiscardType = typename std::iterator_traits<InputIt2>::value_type;
   auto ret_val = std::remove_copy_if(
       std::forward<Policy>(policy), make_zip_iterator(first, stencil),
       make_zip_iterator(last, stencil + std::distance(first, last)),
-      make_transform_iterator(result, internal::discard_fun<Ref3>()),
+      make_zip_iterator(result, discard_iterator<DiscardType>()),
       internal::predicate_key_fun<Predicate>(p));
-  return ret_val.base();
+  return std::get<0>(ret_val.base());
 }
 
 template <class Policy, class ForwardIter1, class ForwardIter2,
@@ -149,13 +154,13 @@ template <typename Policy, typename InputIt1, typename InputIt2,
           typename OutputIt, typename Predicate>
 OutputIt copy_if(Policy &&policy, InputIt1 first, InputIt1 last,
                  InputIt2 stencil, OutputIt result, Predicate pred) {
-  using Ref3 = typename std::iterator_traits<OutputIt>::reference;
+  using DiscardType = typename std::iterator_traits<InputIt2>::value_type;
   auto ret_val = std::copy_if(
       std::forward<Policy>(policy), dpstd::make_zip_iterator(first, stencil),
       dpstd::make_zip_iterator(last, stencil + std::distance(first, last)),
-      dpstd::make_transform_iterator(result, internal::discard_fun<Ref3>()),
+      dpstd::make_zip_iterator(result, discard_iterator<DiscardType>()),
       internal::predicate_key_fun<Predicate>(pred));
-  return ret_val.base();
+  return std::get<0>(ret_val.base());
 }
 
 template <class Policy, class InputIt, class OutputIt, class UnaryOperation>
@@ -299,7 +304,7 @@ template <class Policy, class InputIter1, class InputIter2>
 void sort_by_key(Policy &&policy, InputIter1 keys_first, InputIter1 keys_last,
                  InputIter2 values_first) {
   sort_by_key(std::forward<Policy>(policy), keys_first, keys_last, values_first,
-              dpstd::__internal::__pstl_less());
+              internal::__less());
 }
 
 template <class Policy, class InputIter1, class InputIter2, class Compare>
@@ -319,7 +324,7 @@ void stable_sort_by_key(Policy &&policy, RandomAccessIter1 keys_first,
                         RandomAccessIter1 keys_last,
                         RandomAccessIter2 values_first) {
   stable_sort_by_key(std::forward<Policy>(policy), keys_first, keys_last,
-                     values_first, dpstd::__internal::__pstl_less());
+                     values_first, internal::__less());
 }
 
 template <class Policy, class InputIter, class Operator>
@@ -346,10 +351,10 @@ set_intersection_by_key(Policy &&policy, InputIter1 keys_first1,
           keys_last1, values_first1 + std::distance(keys_first1, keys_last1)),
       dpstd::make_zip_iterator(
           keys_first2,
-          keys_first2),
+          keys_first2), // second element is dummy and actually never used!
       dpstd::make_zip_iterator(
           keys_last2,
-          keys_last2),
+          keys_last2), // second element is dummy and actually never used!
       dpstd::make_zip_iterator(keys_result, values_result),
       internal::compare_key_fun<>());
   auto n1 = std::distance(dpstd::make_zip_iterator(keys_result, values_result),
@@ -370,10 +375,10 @@ std::pair<OutputIter1, OutputIter2> set_intersection_by_key(
           keys_last1, values_first1 + std::distance(keys_first1, keys_last1)),
       dpstd::make_zip_iterator(
           keys_first2,
-          keys_first2),
+          keys_first2), // second element is dummy and actually never used!
       dpstd::make_zip_iterator(
           keys_last2,
-          keys_last2),
+          keys_last2), // second element is dummy and actually never used!
       dpstd::make_zip_iterator(keys_result, values_result),
       internal::compare_key_fun<Compare>(comp));
   auto n1 = std::distance(dpstd::make_zip_iterator(keys_result, values_result),
@@ -473,8 +478,8 @@ set_difference_by_key(Policy &&policy, InputIter1 keys_first1,
 
 template <class Policy, class InputIter1, class InputIter2, class InputIter3,
           class InputIter4, class OutputIter1, class OutputIter2>
-dpstd::__internal::__enable_if_execution_policy<
-    Policy, std::pair<OutputIter1, OutputIter2>>
+internal::enable_if_execution_policy<Policy,
+                                     std::pair<OutputIter1, OutputIter2>>
 set_union_by_key(Policy &&policy, InputIter1 keys_first1, InputIter1 keys_last1,
                  InputIter2 keys_first2, InputIter2 keys_last2,
                  InputIter3 values_first1, InputIter4 values_first2,
@@ -496,8 +501,8 @@ set_union_by_key(Policy &&policy, InputIter1 keys_first1, InputIter1 keys_last1,
 
 template <class Policy, class InputIter1, class InputIter2, class InputIter3,
           class InputIter4, class OutputIter1, class OutputIter2, class Compare>
-dpstd::__internal::__enable_if_execution_policy<
-    Policy, std::pair<OutputIter1, OutputIter2>>
+internal::enable_if_execution_policy<Policy,
+                                     std::pair<OutputIter1, OutputIter2>>
 set_union_by_key(Policy &&policy, InputIter1 keys_first1, InputIter1 keys_last1,
                  InputIter2 keys_first2, InputIter2 keys_last2,
                  InputIter3 values_first1, InputIter4 values_first2,
@@ -520,28 +525,24 @@ set_union_by_key(Policy &&policy, InputIter1 keys_first1, InputIter1 keys_last1,
 
 template <typename Policy, typename InputIt1, typename InputIt2,
           typename OutputIt1, typename OutputIt2, typename Predicate>
-dpstd::__internal::__enable_if_execution_policy<Policy,
-                                                std::pair<OutputIt1, OutputIt2>>
+internal::enable_if_execution_policy<Policy, std::pair<OutputIt1, OutputIt2>>
 stable_partition_copy(Policy &&policy, InputIt1 first, InputIt1 last,
                       InputIt2 stencil, OutputIt1 out_true, OutputIt2 out_false,
                       Predicate p) {
-  using OutRef1 = typename std::iterator_traits<OutputIt1>::reference;
-  using OutRef2 = typename std::iterator_traits<OutputIt2>::reference;
+  using DiscardType = typename std::iterator_traits<InputIt2>::value_type;
   auto ret_val = std::partition_copy(
       std::forward<Policy>(policy), dpstd::make_zip_iterator(first, stencil),
       dpstd::make_zip_iterator(last, stencil + std::distance(first, last)),
-      dpstd::make_transform_iterator(out_true,
-                                     internal::discard_fun<OutRef1>()),
-      dpstd::make_transform_iterator(out_false,
-                                     internal::discard_fun<OutRef2>()),
+      dpstd::make_zip_iterator(out_true, discard_iterator<DiscardType>()),
+      dpstd::make_zip_iterator(out_false, discard_iterator<DiscardType>()),
       internal::predicate_key_fun<Predicate>(p));
-  return std::make_pair(ret_val.first.base(), ret_val.second.base());
+  return std::make_pair(std::get<0>(ret_val.first.base()),
+                        std::get<0>(ret_val.second.base()));
 }
 
 template <typename Policy, typename InputIt1, typename OutputIt1,
           typename OutputIt2, typename Predicate>
-dpstd::__internal::__enable_if_execution_policy<Policy,
-                                                std::pair<OutputIt1, OutputIt2>>
+internal::enable_if_execution_policy<Policy, std::pair<OutputIt1, OutputIt2>>
 stable_partition_copy(Policy &&policy, InputIt1 first, InputIt1 last,
                       OutputIt1 out_true, OutputIt2 out_false, Predicate p) {
   return std::partition_copy(std::forward<Policy>(policy), first, last,
@@ -550,8 +551,7 @@ stable_partition_copy(Policy &&policy, InputIt1 first, InputIt1 last,
 
 template <typename Policy, typename InputIt1, typename InputIt2,
           typename OutputIt1, typename OutputIt2, typename Predicate>
-dpstd::__internal::__enable_if_execution_policy<Policy,
-                                                std::pair<OutputIt1, OutputIt2>>
+internal::enable_if_execution_policy<Policy, std::pair<OutputIt1, OutputIt2>>
 partition_copy(Policy &&policy, InputIt1 first, InputIt1 last, InputIt2 stencil,
                OutputIt1 out_true, OutputIt2 out_false, Predicate p) {
   return stable_partition_copy(std::forward<Policy>(policy), first, last,
@@ -560,13 +560,13 @@ partition_copy(Policy &&policy, InputIt1 first, InputIt1 last, InputIt2 stencil,
 
 template <typename Policy, typename ForwardIt, typename InputIt,
           typename Predicate>
-dpstd::__internal::__enable_if_execution_policy<Policy, ForwardIt>
+internal::enable_if_execution_policy<Policy, ForwardIt>
 stable_partition(Policy &&policy, ForwardIt first, ForwardIt last,
                  InputIt stencil, Predicate p) {
-  typedef typename std::remove_reference<Policy>::type policy_type;
-  dpstd::internal::__buffer<
-      policy_type, typename std::iterator_traits<ForwardIt>::value_type>
-      _tmp(std::distance(first, last));
+  typedef typename std::decay<Policy>::type policy_type;
+  internal::__buffer<typename std::iterator_traits<ForwardIt>::value_type> _tmp(
+      std::distance(first, last));
+
   std::copy(std::forward<Policy>(policy), stencil,
             stencil + std::distance(first, last), _tmp.get());
 
@@ -579,7 +579,7 @@ stable_partition(Policy &&policy, ForwardIt first, ForwardIt last,
 
 template <typename Policy, typename ForwardIt, typename InputIt,
           typename Predicate>
-dpstd::__internal::__enable_if_execution_policy<Policy, ForwardIt>
+internal::enable_if_execution_policy<Policy, ForwardIt>
 partition(Policy &&policy, ForwardIt first, ForwardIt last, InputIt stencil,
           Predicate p) {
   return stable_partition(std::forward<Policy>(policy), first, last, stencil,
@@ -588,4 +588,4 @@ partition(Policy &&policy, ForwardIt first, ForwardIt last, InputIt stencil,
 
 } // end namespace dpct
 
-#endif //__DPCT_ALGORITHM_H
+#endif
