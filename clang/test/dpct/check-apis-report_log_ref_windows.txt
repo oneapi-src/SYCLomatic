@@ -19,5 +19,4 @@
 // CHECK: struct cudaChannelFormatDesc cudaCreateChannelDesc()               1
 // CHECK: struct cudaExtent make_cudaExtent(size_t w,size_t h,size_t d)               2
 // CHECK: struct cudaPitchedPtr make_cudaPitchedPtr(void * d,size_t p,size_t xsz,size_t ysz)               1
-// CHECK: typename __nv_tex_rmet_ret<float>::type tex3D(texture<float, 3, cudaReadModeElementType> t,float x,float y,float z)               1
 // CHECK: uint4                                        1
