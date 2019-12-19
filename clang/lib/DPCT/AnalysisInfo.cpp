@@ -25,6 +25,7 @@ std::string DpctGlobalInfo::CudaPath = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::none;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::llvm;
+bool DpctGlobalInfo::EnableCtad = false;
 CompilerInstance *DpctGlobalInfo::CI = nullptr;
 ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
@@ -288,7 +289,8 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
     Printer.line("cgh.parallel_for(");
   }
   auto B = Printer.block();
-  Printer.indent() << "cl::sycl::nd_range<3>(";
+  DpctGlobalInfo::printCtadClass(Printer.indent(), "cl::sycl::nd_range", 3)
+      << "(";
   if (ExecutionConfig.DeclGlobalRange) {
     printReverseRange(Printer, "dpct_global_range");
   } else {

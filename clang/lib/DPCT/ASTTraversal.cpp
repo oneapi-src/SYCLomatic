@@ -1298,7 +1298,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 
-std::string getReplacementForType(std::string TypeStr) {
+std::string getReplacementForType(std::string TypeStr, bool IsVarDecl = false) {
   std::istringstream ISS(TypeStr);
   std::vector<std::string> Strs(std::istream_iterator<std::string>{ISS},
                                 std::istream_iterator<std::string>());
@@ -1324,7 +1324,13 @@ std::string getReplacementForType(std::string TypeStr) {
   std::string Replacement = TypeStr;
   assert(Replacement.find(TypeName) != std::string::npos);
   Replacement = Replacement.substr(Replacement.find(TypeName));
-  Replacement.replace(0, TypeName.length(), Search->second);
+  if (IsVarDecl && TypeStr == "dim3") {
+    Replacement.clear();
+    llvm::raw_string_ostream OS(Replacement);
+    DpctGlobalInfo::printCtadClass(OS, "cl::sycl::range", 3);
+  } else {
+    Replacement.replace(0, TypeName.length(), Search->second);
+  }
 
   return Replacement;
 }
@@ -1419,7 +1425,8 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
     DpctGlobalInfo::getInstance().insertHeader(BeginLoc, Complex);
   }
 
-  auto Replacement = getReplacementForType(TypeStr);
+  auto Replacement =
+      getReplacementForType(TypeStr, DD && (DD->getKind() == Decl::Var));
   if (Replacement.empty())
     // TODO report migration error
     return;
@@ -1503,7 +1510,7 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       auto Arg = Args[i];
       QT = Arg.getAsType();
       auto TypeStr = QT.getAsString();
-      auto Replacement = getReplacementForType(TypeStr);
+      auto Replacement = getReplacementForType(TypeStr, false);
       if (Replacement.empty())
         // TODO report migration error
         continue;

@@ -39,7 +39,7 @@ const dim3 *pdims[23];
 const dim3 **ppdims[23];
 
 struct s {
-  // CHDCK: cl::sycl::event events[23];
+  // CHECK: cl::sycl::event events[23];
   cudaEvent_t events[23];
   // CHECK: const cl::sycl::event *pevents[23];
   const cudaEvent_t *pevents[23];

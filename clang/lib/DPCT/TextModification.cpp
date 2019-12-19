@@ -523,12 +523,20 @@ std::string ReplaceDim3Ctor::getReplaceString() const {
   if (isDecl) {
     // Get the new parameter list for the replaced constructor, without the
     // parens
-    std::string ReplacedString = getSyclRangeCtor(Ctor);
-    ReplacedString.replace(0, strlen("cl::sycl::range<3>("), "");
-    ReplacedString.replace(ReplacedString.length() - 1, 1, "");
+    std::string ReplacedString;
+    llvm::raw_string_ostream OS(ReplacedString);
+    ArgumentAnalysis AA;
+    for (auto Arg : Ctor->arguments()) {
+      AA.analyze(Arg);
+      OS << AA.getReplacedString() << ", ";
+    }
+    OS.flush();
     if (Ctor->getParenOrBraceRange().isInvalid()) {
       // dim3 = a;
-      ReplacedString = "(" + ReplacedString + ")";
+      ReplacedString =
+          "(" + ReplacedString.replace(ReplacedString.length() - 2, 2, ")");
+    } else {
+      ReplacedString.erase(ReplacedString.length() - 2, 2);
     }
     return ReplacedString;
   } else {

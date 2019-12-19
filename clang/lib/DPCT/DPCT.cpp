@@ -299,6 +299,12 @@ static opt<bool, true>
                                 " to the --out-root directory.\n"
                                 "--in-root option should be explicitly specified. Default: off."),
                  cat(DPCTCat), llvm::cl::location(ProcessAllFlag));
+static opt<bool> EnableCTAD(
+    "enable-ctad",
+    llvm::cl::desc("Use C++17 class template argument deduction (CTAD) in "
+                   "generated code.\n"
+                   "Default: off."),
+    cat(DPCTCat), init(false));
 // clang-format on
 
 // TODO: implement one of this for each source language.
@@ -928,6 +934,7 @@ int run(int argc, const char **argv) {
   DpctGlobalInfo::setUsmLevel(USMLevel);
   DpctGlobalInfo::setFormatRange(FormatRng);
   DpctGlobalInfo::setFormatStyle(FormatST);
+  DpctGlobalInfo::setCtadEnabled(EnableCTAD);
 
   DPCTActionFactory Factory(Tool.getReplacements());
   if (int RunResult = Tool.run(&Factory) && !NoStopOnErrFlag) {

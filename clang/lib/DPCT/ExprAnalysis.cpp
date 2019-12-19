@@ -221,16 +221,17 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
 }
 
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
-  const std::string Dim3Constructor = "dim3";
-  if (Ctor->getConstructor()->getDeclName().getAsString() == Dim3Constructor) {
-    std::string ArgsString = "cl::sycl::range<3>(";
+  if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
+    std::string ArgsString;
+    llvm::raw_string_ostream OS(ArgsString);
+    DpctGlobalInfo::printCtadClass(OS, "cl::sycl::range", 3) << "(";
     ArgumentAnalysis A;
     for (auto Arg : Ctor->arguments()) {
       A.analyze(Arg);
-      ArgsString += A.getReplacedString() + ", ";
+      OS << A.getReplacedString() << ", ";
     }
-    ArgsString.replace(ArgsString.length() - 2, 2, ")");
-    addReplacement(Ctor, ArgsString);
+    OS.flush();
+    addReplacement(Ctor, ArgsString.replace(ArgsString.length() - 2, 2, ")"));
   }
 }
 
@@ -421,17 +422,20 @@ void KernelConfigAnalysis::dispatch(const Stmt *Expression) {
 
 void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
-    std::string CtorString = "cl::sycl::range<3>(";
+    std::string CtorString;
+    llvm::raw_string_ostream OS(CtorString);
+    DpctGlobalInfo::printCtadClass(OS, "cl::sycl::range", 3) << "(";
     auto Args = getCtorArgs(Ctor);
     if (DoReverse && Ctor->getNumArgs() == 3) {
       Reversed = true;
       int Index = Args.size();
       while (Index)
-        CtorString += Args[--Index] + ", ";
+        OS << Args[--Index] << ", ";
     } else {
       for (auto &A : Args)
-        CtorString += A + ", ";
+        OS << A << ", ";
     }
+    OS.flush();
     return addReplacement(Ctor,
                           CtorString.replace(CtorString.length() - 2, 2, ")"));
   }

@@ -432,7 +432,8 @@ public:
   inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
   inline static DPCTFormatStyle getFormatStyle() { return FmtST; }
   inline static void setFormatStyle(DPCTFormatStyle FS) { FmtST = FS; }
-
+  inline static bool isCtadEnabled() { return EnableCtad; }
+  inline static void setCtadEnabled(bool Enable = true) { EnableCtad = Enable; }
   template <class TargetTy, class NodeTy>
   static inline const TargetTy *
   findAncestor(const NodeTy *N,
@@ -493,6 +494,26 @@ public:
   inline static const clang::FunctionDecl *
   getParentFunction(const NodeTy *Node) {
     return findAncestor<clang::FunctionDecl>(Node);
+  }
+  template <class StreamTy, class... Args>
+  static inline StreamTy &
+  printCtadClass(StreamTy &Stream, size_t CanNotDeducedArgsNum,
+                 StringRef ClassName, Args &&... Arguments) {
+    Stream << ClassName;
+    if (!DpctGlobalInfo::isCtadEnabled()) {
+      printArguments(Stream << "<", std::forward<Args>(Arguments)...) << ">";
+    } else if (CanNotDeducedArgsNum) {
+      printPartialArguments(Stream << "<", CanNotDeducedArgsNum,
+                            std::forward<Args>(Arguments)...)
+          << ">";
+    }
+    return Stream;
+  }
+  template <class StreamTy, class... Args>
+  static inline StreamTy &printCtadClass(StreamTy &Stream, StringRef ClassName,
+                                         Args &&... Arguments) {
+    return printCtadClass(Stream, 0, ClassName,
+                          std::forward<Args>(Arguments)...);
   }
   template <class T>
   static inline std::pair<std::string, unsigned>
@@ -686,6 +707,7 @@ private:
   static UsmLevel UsmLvl;
   static format::FormatRange FmtRng;
   static DPCTFormatStyle FmtST;
+  static bool EnableCtad;
   static CompilerInstance *CI;
   static ASTContext *Context;
   static SourceManager *SM;
@@ -912,7 +934,7 @@ public:
       if (Dimension > 1) {
         OS << getRangeName() << ", ";
       } else if (Dimension == 1) {
-        OS << "cl::sycl::range<" << Dimension << ">"
+        OS << getRangeClass()
            << getType()->getRangeArgument(ExternMemSize, false) << ", ";
       }
       OS << "cgh);";
@@ -925,9 +947,15 @@ public:
     return buildString("auto ", getAccessorName(), " = ", getArgName(),
                        ".get_access(cgh);");
   }
+  inline std::string getRangeClass() {
+    std::string Result;
+    llvm::raw_string_ostream OS(Result);
+    return DpctGlobalInfo::printCtadClass(OS, "cl::sycl::range",
+                                          getType()->getDimension())
+        .str();
+  }
   std::string getRangeDecl(const std::string &MemSize) {
-    return buildString("cl::sycl::range<", getType()->getDimension(), "> ",
-                       getRangeName(),
+    return buildString(getRangeClass(), " ", getRangeName(),
                        getType()->getRangeArgument(MemSize, false), ";");
   }
   llvm::raw_ostream &getFuncDecl(llvm::raw_ostream &OS) {
@@ -993,7 +1021,7 @@ private:
     if (InitList.empty())
       return getType()->getRangeArgument(MemSize, MustArguments);
     if (getType()->getDimension())
-      return buildString("(cl::sycl::range<", getType()->getDimension(), ">",
+      return buildString("(", getRangeClass(),
                          getType()->getRangeArgument(MemSize, true),
                          ", " + InitList, ")");
     return buildString("(", InitList, ")");
@@ -1840,8 +1868,9 @@ private:
   using StmtList = std::vector<std::string>;
   void buildKernelArgsStmt();
   void printReverseRange(KernelPrinter &Printer, const std::string &RangeName) {
-    Printer << "cl::sycl::range<3>(" << RangeName << ".get(2), " << RangeName
-            << ".get(1), " << RangeName << ".get(0))";
+    DpctGlobalInfo::printCtadClass(Printer, "cl::sycl::range", 3)
+        << "(" << RangeName << ".get(2), " << RangeName << ".get(1), "
+        << RangeName << ".get(0))";
   }
   void printKernelRange(KernelPrinter &Printer, const std::string &RangeStr,
                         const std::string &DeclName, bool DeclRange,

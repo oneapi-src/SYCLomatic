@@ -17,11 +17,11 @@
 #include <iostream>
 #include <list>
 #include <map>
-#include <unordered_map>
 #include <memory>
 #include <sstream>
 #include <stack>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -97,7 +97,8 @@ inline bool isChildPath(const std::string &RootAbs, const std::string &Child) {
 
 #if defined(_WIN64)
   std::string LocalRoot = llvm::StringRef(RootAbs).lower();
-  std::string LocalChild = InChildAbsValid ? ChildAbs.str().lower() : llvm::StringRef(Child).lower();
+  std::string LocalChild =
+      InChildAbsValid ? ChildAbs.str().lower() : llvm::StringRef(Child).lower();
 #elif defined(__linux__)
   std::string LocalRoot = RootAbs.c_str();
   std::string LocalChild = InChildAbsValid ? ChildAbs.c_str() : Child;
@@ -149,7 +150,7 @@ extern std::unordered_map<std::string, bool> ChildOrSameCache;
 /// \param [in] Child A path to be checked.
 /// \return true: child path, false: not child path
 inline bool isChildOrSamePath(const std::string &RootAbs,
-                            const std::string &Child) {
+                              const std::string &Child) {
   if (Child.empty()) {
     return false;
   }
@@ -285,7 +286,7 @@ bool containOnlyDigits(const std::string &str);
 void replaceSubStr(std::string &Str, const std::string &SubStr,
                    const std::string &Repl);
 void replaceSubStrAll(std::string &Str, const std::string &SubStr,
-                   const std::string &Repl);
+                      const std::string &Repl);
 bool isArgUsedAsLvalueUntil(const clang::DeclRefExpr *Arg,
                             const clang::Stmt *S);
 unsigned int getLenToNextTokenBegin(const clang::Token &CurTokEnd,
@@ -296,4 +297,28 @@ bool isConditionOfFlowControl(const clang::Expr *E);
 void VarReferencedInFD(const clang::Stmt *S, const clang::ValueDecl *VD,
                          std::vector<const clang::DeclRefExpr *> &Result);
 int getLengthOfSpacesToEndl(const char *CharData);
+
+template <class StreamTy>
+StreamTy &printPartialArguments(StreamTy &Stream, size_t PrintingArgsNum) {
+  return Stream;
+}
+template <class StreamTy, class FirstArg, class... RestArgs>
+StreamTy &printPartialArguments(StreamTy &Stream, size_t PrintingArgsNum,
+                                FirstArg &&First, RestArgs &&... Rest) {
+  if (PrintingArgsNum) {
+    Stream << std::forward<FirstArg>(First);
+    if (--PrintingArgsNum) {
+      Stream << ", ";
+    }
+    return printPartialArguments(Stream, PrintingArgsNum,
+                                 std::forward<RestArgs>(Rest)...);
+  }
+  return Stream;
+}
+template <class StreamTy, class... Args>
+StreamTy &printArguments(StreamTy &Stream, Args &&... Arguments) {
+  return printPartialArguments(Stream, sizeof...(Args),
+                               std::forward<Args>(Arguments)...);
+}
+
 #endif // DPCT_UTILITY_H
