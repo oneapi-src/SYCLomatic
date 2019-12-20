@@ -14,6 +14,10 @@
 
 __constant__ float constData[1234567 * 4];
 
+int foo_b(int a){
+  return 0;
+}
+
 void foo() {
   size_t size = 1234567 * sizeof(float);
   float *h_A = (float *)malloc(size);
@@ -94,6 +98,31 @@ void foo() {
   errorCode  = cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
   // CHECK: CUDA_SAFE_CALL((dpct::get_default_queue_wait().memcpy(d_A, h_A, size).wait(), 0));
   CUDA_SAFE_CALL(cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice));
+#define MACRO_A(x) size
+#define MACRO_A2(x) MACRO_A(x)
+#define MACRO_B size
+#define MACOR_C(x) cudaMemcpyDeviceToHost
+#define CUDA_SAFE_CALL2(x) CUDA_SAFE_CALL(x)
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: CUDA_SAFE_CALL2((dpct::get_default_queue_wait().memcpy(d_A, h_A, size).wait(), 0));
+  CUDA_SAFE_CALL2(cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice));
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: CUDA_SAFE_CALL2((dpct::get_default_queue_wait().memcpy(d_A, h_A, MACRO_B).wait(), 0));
+  CUDA_SAFE_CALL2(cudaMemcpy(d_A, h_A, MACRO_B, cudaMemcpyDeviceToHost));
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: CUDA_SAFE_CALL2((dpct::get_default_queue_wait().memcpy(d_A, h_A, MACRO_A2(1)).wait(), 0));
+  CUDA_SAFE_CALL2(cudaMemcpy(d_A, h_A, MACRO_A2(1), MACOR_C(1)));
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: CUDA_SAFE_CALL2((dpct::get_default_queue_wait().memcpy(d_A, h_A, foo_b(1)).wait(), 0));
+  CUDA_SAFE_CALL2(cudaMemcpy(d_A, h_A, foo_b(1), MACOR_C(1)));
 
 #define SIZE 100
   // CHECK: dpct::get_default_queue_wait().memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();

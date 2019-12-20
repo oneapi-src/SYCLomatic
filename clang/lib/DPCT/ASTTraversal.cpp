@@ -4653,45 +4653,44 @@ TextModification *removeArg(const CallExpr *C, unsigned n,
   if (!n)
     return nullptr;
   const Expr *ArgBefore = C->getArg(n - 1);
-  auto Begin = ArgBefore->getEndLoc();
 
-  if (Begin.isMacroID()) {
-    if (SM.isAtStartOfImmediateMacroExpansion(Begin)) {
-      // 1. fun(a,b,macro,d)
-      Begin = SM.getExpansionLoc(Begin);
-      Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
-          Begin, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
-    } else {
-      // 2. #define macro(x) bar(x)
-      //    macro(fun(a,b,c,d))
-      // 3. #define macro1(x) fun(x)
-      //    #define macro2 m2
-      //    macro1(fun(a,b,macro2,d))
-      Begin = SM.getImmediateSpellingLoc(Begin);
-      Begin =
-          SM.getExpansionLoc(Begin).getLocWithOffset(Lexer::MeasureTokenLength(
-              SM.getExpansionLoc(Begin), SM,
-          dpct::DpctGlobalInfo::getContext().getLangOpts()));
-    }
-  } else {
-    Begin = Lexer::getLocForEndOfToken(Begin, 0, SM, LangOptions());
+  // The start point of the removal is the end of the previous arg.
+  // Incase the previous arg is another macro or function-like macro,
+  // we take 1 token(the last token of Expr, because of the design of Clang's EndLoc)
+  // after getExpansionRange().getEnd() as the real end location.
+  // If the call expr is in a function-like macro or nested macros,
+  // to get the correct loc of the previous arg,
+  // we need to use getImmediateSpellingLoc step by step
+  // until reaching a FileID or a non-function-like macro.
+  // E.g.
+  // MACRO_A(MACRO_B(callexpr(arg1, arg2, arg3)));
+  // When we try to remove arg3, Begin should be at the end of arg2.
+  // However, the expansionLoc of Begin is at the beginning of MACRO_A.
+  // After 1st time of Begin=SM.getImmediateSpellingLoc(Begin),
+  // Begin is at the beginning of MACRO_B.
+  // After 2nd time of Begin=SM.getImmediateSpellingLoc(Begin),
+  // Begin is at the beginning of arg2.
+  // CANNOT use SM.getSpellingLoc because arg2 might be a simple macro,
+  // and SM.getSpellingLoc will return the macro definition in this case.
+
+  auto Begin = ArgBefore->getEndLoc();
+  while (Begin.isMacroID() && !SM.isAtStartOfImmediateMacroExpansion(Begin)) {
+    Begin = SM.getImmediateSpellingLoc(Begin);
   }
+  Begin = SM.getExpansionRange(Begin).getEnd();
+  Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
+      SM.getExpansionLoc(Begin), SM,
+      dpct::DpctGlobalInfo::getContext().getLangOpts()));
 
   auto End = C->getArg(n)->getEndLoc();
-  if (End.isMacroID()) {
-    if (SM.isAtStartOfImmediateMacroExpansion(End)) {
-      End = SM.getExpansionLoc(End);
-      End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-          End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
-    } else {
-      End = SM.getImmediateSpellingLoc(End);
-      End = SM.getExpansionLoc(End).getLocWithOffset(Lexer::MeasureTokenLength(
-          SM.getExpansionLoc(End), SM,
-              dpct::DpctGlobalInfo::getContext().getLangOpts()));
-    }
-  } else {
-    End = Lexer::getLocForEndOfToken(End, 0, SM, LangOptions());
+  while (End.isMacroID() && !SM.isAtStartOfImmediateMacroExpansion(End)) {
+    End = SM.getImmediateSpellingLoc(End);
   }
+  End = SM.getExpansionRange(End).getEnd();
+  End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+      SM.getExpansionLoc(End), SM,
+      dpct::DpctGlobalInfo::getContext().getLangOpts()));
+
   auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
   if (Length > 0) {
     return new ReplaceText(Begin, Length, "");
