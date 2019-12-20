@@ -217,6 +217,12 @@ public:
     std::string ReplName;
   };
 
+  struct RandomGenerateFuncReplInfo {
+    std::string BufferTypeInfo;
+    std::string DistributeName;
+    std::string DistributeType;
+  };
+
   struct ThrustFuncReplInfo {
     std::string ReplName;
     std::string ExtraParam;
@@ -249,6 +255,9 @@ public:
       SOLVERFuncReplInfoMap;
 
   static const MapTy ITFName;
+  static const MapTy RandomEngineTypeMap;
+  static const std::map<std::string, MapNames::RandomGenerateFuncReplInfo>
+      RandomGenerateFuncReplInfoMap;
 
   inline static const std::string &findReplacedName(const MapTy &Map,
                                                     const std::string &Name) {

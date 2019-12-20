@@ -314,7 +314,16 @@ void IncludesCallbacks::InclusionDirective(
   if ((FileName.compare(StringRef("cublas_v2.h")) == 0) ||
       (FileName.compare(StringRef("cublas.h")) == 0) ||
       (FileName.compare(StringRef("cusolverDn.h")) == 0)) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, MKL);
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, MKL_BLAS_Solver);
+    TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                        /*IsTokenRange=*/false),
+        ""));
+  }
+
+  // Replace with <mkl_rng_sycl.hpp>
+  if ((FileName.compare(StringRef("curand.h")) == 0)) {
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, MKL_RNG);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
@@ -1136,14 +1145,15 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(ThrustFunctionRule)
 
-auto TypedefNames =
-    hasAnyName("dim3", "cudaError_t", "CUresult", "CUcontext", "cudaEvent_t",
-               "cudaStream_t", "__half", "__half2", "half", "half2",
-               "cublasStatus_t", "cuComplex", "cuDoubleComplex",
-               "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
-               "cublasOperation_t", "cublasStatus", "cusolverDnHandle_t",
-               "cusolverStatus_t", "cusolverEigType_t", "cusolverEigMode_t");
-auto EnumTypeNames = hasAnyName("cudaError", "cufftResult_t", "cudaError_enum");
+auto TypedefNames = hasAnyName(
+    "dim3", "cudaError_t", "CUresult", "CUcontext", "cudaEvent_t",
+    "cudaStream_t", "__half", "__half2", "half", "half2", "cublasStatus_t",
+    "cuComplex", "cuDoubleComplex", "cublasFillMode_t", "cublasDiagType_t",
+    "cublasSideMode_t", "cublasOperation_t", "cublasStatus",
+    "cusolverStatus_t", "cusolverEigType_t", "cusolverEigMode_t",
+    "curandStatus_t");
+auto EnumTypeNames =
+    hasAnyName("cudaError", "cufftResult_t", "cudaError_enum", "curandStatus");
 auto RecordTypeNames =
     hasAnyName("cudaDeviceProp", "CUstream_st", "CUevent_st");
 auto HandleTypeNames = hasAnyName("cublasHandle_t", "cusolverDnHandle_t");
@@ -1210,23 +1220,19 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                     .bind("TypeInFieldDecl"),
                 this);
 
-  MF.addMatcher(unaryExprOrTypeTraitExpr(
-                    hasArgumentOfType(anyOf(
-                        asString("cublasStatus_t"), asString("cublasStatus"),
-                        asString("cusolverStatus_t"), asString("cuComplex"),
-                        asString("cuDoubleComplex"), asString("cublasHandle_t"),
-                        asString("cusolverDnHandle_t"))))
-                    .bind("TypeInUnaryExprOrTypeTraitExpr"),
-                this);
-
   MF.addMatcher(
-      cStyleCastExpr(
-          hasDestinationType(anyOf(
-              asString("cublasFillMode_t"), asString("cublasDiagType_t"),
-              asString("cublasSideMode_t"), asString("cublasOperation_t"),
-              asString("cusolverEigType_t"), asString("cusolverEigMode_t"))))
-          .bind("cStyleCastExpr"),
+      unaryExprOrTypeTraitExpr(
+          hasArgumentOfType(hasDeclaration(
+              anyOf(typedefDecl(TypedefNames), typedefDecl(HandleTypeNames),
+                    enumDecl(EnumTypeNames), cxxRecordDecl(RecordTypeNames),
+                    classTemplateSpecializationDecl(TemplateRecordTypeNames)))))
+          .bind("TypeInUnaryExprOrTypeTraitExpr"),
       this);
+
+  MF.addMatcher(cStyleCastExpr(hasDestinationType(
+                                   hasDeclaration(typedefDecl(TypedefNames))))
+                    .bind("cStyleCastExpr"),
+                this);
   // TODO: HandleType in template, in macro body, assigined, as function param
   // and as macro argument
   MF.addMatcher(
@@ -2254,7 +2260,8 @@ void ReturnTypeRule::registerMatcher(MatchFinder &MF) {
       "cuComplex", "cuDoubleComplex", "cublasFillMode_t", "cublasDiagType_t",
       "cublasSideMode_t", "cublasOperation_t", "cublasStatus",
       "cusolverDnHandle_t", "cusolverStatus_t", "cusolverEigType_t",
-      "cusolverEigMode_t", "cublasHandle_t", "cusolverDnHandle_t");
+      "cusolverEigMode_t", "cublasHandle_t", "cusolverDnHandle_t",
+      "curandStatus_t", "curandStatus");
 
   auto T =
       hasDeclaration(anyOf(typedefDecl(TypedefNames), enumDecl(EnumTypeNames),
@@ -2464,6 +2471,241 @@ void BLASEnumsRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(BLASEnumsRule)
+
+// Rule for Random function calls. Currently only support host APIs.
+void RandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
+  auto functionName = [&]() {
+    return hasAnyName(
+        "curandCreateGenerator", "curandSetPseudoRandomGeneratorSeed",
+        "curandSetGeneratorOffset", "curandSetQuasiRandomGeneratorDimensions",
+        "curandDestroyGenerator", "curandGenerate", "curandGenerateLongLong",
+        "curandGenerateLogNormal", "curandGenerateLogNormalDouble",
+        "curandGenerateNormal", "curandGenerateNormalDouble",
+        "curandGeneratePoisson", "curandGenerateUniform",
+        "curandGenerateUniformDouble");
+  };
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
+          .bind("FunctionCall"),
+      this);
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
+                               unless(parentStmt())))
+                    .bind("FunctionCallUsed"),
+                this);
+}
+
+void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
+  bool IsAssigned = false;
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
+  if (!CE) {
+    if (!(CE = getNodeAsType<CallExpr>(Result, "FunctionCallUsed")))
+      return;
+    IsAssigned = true;
+  }
+
+  if (!CE->getDirectCallee())
+    return;
+  std::string FuncName =
+      CE->getDirectCallee()->getNameInfo().getName().getAsString();
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  SourceLocation FuncNameBegin(CE->getBeginLoc());
+  SourceLocation FuncCallEnd(CE->getEndLoc());
+  if (FuncNameBegin.isMacroID())
+    FuncNameBegin = SM.getExpansionLoc(FuncNameBegin);
+  if (FuncCallEnd.isMacroID())
+    FuncCallEnd = SM.getExpansionLoc(FuncCallEnd);
+
+  auto SR = getScopeInsertRange(CE, FuncNameBegin, FuncCallEnd);
+  SourceLocation PrefixInsertLoc = SR.getBegin(), SuffixInsertLoc = SR.getEnd();
+  bool IsInCondition = isConditionOfFlowControl(CE);
+  if (IsInCondition) {
+    PrefixInsertLoc = FuncNameBegin;
+    SuffixInsertLoc =
+        SM.getExpansionLoc(FuncCallEnd)
+            .getLocWithOffset(Lexer::MeasureTokenLength(
+                SM.getExpansionLoc(FuncCallEnd), SM,
+                dpct::DpctGlobalInfo::getContext().getLangOpts()));
+  }
+
+  std::string IndentStr = getIndent(PrefixInsertLoc, SM);
+  std::string PrefixInsertStr, SuffixInsertStr;
+
+  std::string Msg = "the function call is redundant in DPC++.";
+  if (FuncName == "curandDestroyGenerator" ||
+      FuncName == "curandSetPseudoRandomGeneratorSeed" ||
+      FuncName == "curandSetQuasiRandomGeneratorDimensions") {
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, FuncName,
+             Msg);
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, "0"));
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, FuncName,
+             Msg);
+      emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, ""));
+    }
+  }
+
+  if (FuncName == "curandCreateGenerator") {
+    auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
+    if (!REInfo) {
+      DpctGlobalInfo::getInstance().insertRandomEngine(CE->getArg(0));
+      REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
+    }
+
+    std::string EnumStr =
+        getStmtSpelling(CE->getArg(1), DpctGlobalInfo::getContext());
+    if (MapNames::RandomEngineTypeMap.find(EnumStr) ==
+            MapNames::RandomEngineTypeMap.end() ||
+        MapNames::RandomEngineTypeMap.find(EnumStr)->second == "<NOTSUPPORT>") {
+      report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETER, FuncName,
+             "parameter " + EnumStr + " is unsupported");
+      return;
+    }
+
+    if (!REInfo->isClassMember()) {
+      if (IsAssigned) {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, FuncName,
+               Msg);
+        emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, "0"));
+      } else {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, FuncName,
+               Msg);
+        emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, ""));
+      }
+    }
+
+    REInfo->setEngineTypeReplacement(
+        MapNames::RandomEngineTypeMap.find(EnumStr)->second);
+
+    if (EnumStr == "CURAND_RNG_QUASI_DEFAULT" ||
+        EnumStr == "CURAND_RNG_QUASI_SOBOL32" ||
+        EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL32")
+      REInfo->setQuasiEngineFlag();
+
+    auto VD = REInfo->getDeclaratorDecl();
+    REInfo->setTypeBeginOffest(
+        SM.getDecomposedLoc(SM.getExpansionLoc(VD->getBeginLoc())).second);
+    REInfo->setTypeLength(
+        Lexer::MeasureTokenLength(SM.getExpansionLoc(VD->getBeginLoc()), SM,
+                                  DpctGlobalInfo::getContext().getLangOpts()));
+
+    unsigned int FuncCallLen =
+        SM.getDecomposedLoc(
+              SM.getExpansionLoc(FuncCallEnd)
+                  .getLocWithOffset(Lexer::MeasureTokenLength(
+                      SM.getExpansionLoc(FuncCallEnd), SM,
+                      dpct::DpctGlobalInfo::getContext().getLangOpts())))
+            .second -
+        SM.getDecomposedLoc(FuncNameBegin).second;
+    REInfo->setCreateAPILength(FuncCallLen);
+    REInfo->setCreateAPIBegin(
+            SM.getDecomposedLoc(FuncNameBegin).second);
+    auto EndLoc = VD->getEndLoc();
+    EndLoc = EndLoc.getLocWithOffset(
+        Lexer::MeasureTokenLength(SM.getExpansionLoc(EndLoc), SM,
+                                  DpctGlobalInfo::getContext().getLangOpts()));
+    REInfo->setIdentifierEndOffest(SM.getDecomposedLoc(EndLoc).second);
+
+    REInfo->setDeclFilePath(SM.getFilename(VD->getBeginLoc()).str());
+    REInfo->setCreateCallFilePath(SM.getFilename(FuncNameBegin).str());
+  } else if (FuncName == "curandSetPseudoRandomGeneratorSeed") {
+    auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
+    if (!REInfo) {
+      DpctGlobalInfo::getInstance().insertRandomEngine(CE->getArg(0));
+      REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
+    }
+    REInfo->setSeedExpr(CE->getArg(1));
+  } else if (FuncName == "curandSetQuasiRandomGeneratorDimensions") {
+    auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
+    if (!REInfo) {
+      DpctGlobalInfo::getInstance().insertRandomEngine(CE->getArg(0));
+      REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
+    }
+    REInfo->setDimExpr(CE->getArg(1));
+  } else if (MapNames::RandomGenerateFuncReplInfoMap.find(FuncName) !=
+             MapNames::RandomGenerateFuncReplInfoMap.end()) {
+    auto ReplInfoPair = MapNames::RandomGenerateFuncReplInfoMap.find(FuncName);
+    MapNames::RandomGenerateFuncReplInfo ReplInfo = ReplInfoPair->second;
+    std::string BufferDecl;
+    std::string BufferName = getBufferNameAndDeclStr(
+        CE->getArg(1), *(Result.Context), ReplInfo.BufferTypeInfo,
+                                PrefixInsertLoc, BufferDecl, 1);
+    std::string DistributeDecl;
+    if (FuncName == "curandGenerateLogNormal" ||
+        FuncName == "curandGenerateLogNormalDouble") {
+      ExprAnalysis EMean, EDev;
+      EMean.analyze(CE->getArg(3));
+      EDev.analyze(CE->getArg(4));
+      DistributeDecl = ReplInfo.DistributeName + "<" + ReplInfo.DistributeType+
+                       "> distr_ct1(" +
+                       EMean.getReplacedString() + ", " +
+                       EDev.getReplacedString() + ", 0.0, 1.0);";
+    } else if (FuncName == "curandGenerateNormal" ||
+               FuncName == "curandGenerateNormalDouble") {
+      ExprAnalysis EMean, EDev;
+      EMean.analyze(CE->getArg(3));
+      EDev.analyze(CE->getArg(4));
+      DistributeDecl = ReplInfo.DistributeName + "<" + ReplInfo.DistributeType +
+                       "> distr_ct1(" +
+                       EMean.getReplacedString() + ", " +
+                       EDev.getReplacedString() + ");";
+    } else if (FuncName == "curandGeneratePoisson") {
+      ExprAnalysis ELambda;
+      ELambda.analyze(CE->getArg(3));
+      DistributeDecl = ReplInfo.DistributeName + "<" + ReplInfo.DistributeType +
+                       "> distr_ct1(" +
+                       ELambda.getReplacedString() + ");";
+    } else {
+      DistributeDecl = ReplInfo.DistributeName + "<" + ReplInfo.DistributeType +
+                       "> distr_ct1;";
+    }
+    PrefixInsertStr = BufferDecl + IndentStr + DistributeDecl + getNL();
+    ExprAnalysis EA;
+    EA.analyze(CE->getArg(2));
+    std::string ReplStr = "mkl::rng::generate(distr_ct1, " +
+                          getStmtSpelling(CE->getArg(0), *(Result.Context)) +
+                          ", " + EA.getReplacedString() + ", " + BufferName +
+                          ")";
+    emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+    if (IsInCondition) {
+      if (IsAssigned) {
+        insertAroundRange(
+            PrefixInsertLoc, SuffixInsertLoc,
+            std::string("[&](){") + getNL() + PrefixInsertStr + IndentStr,
+            std::string(";") + getNL() + IndentStr + SuffixInsertStr +
+                "return 0;" + getNL() + IndentStr + std::string("}()"));
+      } else {
+        insertAroundRange(PrefixInsertLoc, SuffixInsertLoc,
+                          std::string("[&](){") + getNL() + PrefixInsertStr +
+                              IndentStr,
+                          std::string(";") + getNL() + IndentStr +
+                              SuffixInsertStr + std::string("}()"));
+      }
+    } else {
+      if (IsAssigned) {
+        insertAroundStmt(CE, "(", ", 0)");
+        report(FuncNameBegin, Diagnostics::NOERROR_RETURN_COMMA_OP);
+      }
+      insertAroundRange(
+          PrefixInsertLoc, SuffixInsertLoc,
+          std::string("{") + getNL() + PrefixInsertStr + IndentStr,
+          getNL() + IndentStr + SuffixInsertStr + std::string("}"));
+    }
+  } else if (FuncName == "curandSetGeneratorOffset") {
+    if (IsAssigned) {
+      insertAroundStmt(CE, "(", ", 0)");
+      report(FuncNameBegin, Diagnostics::NOERROR_RETURN_COMMA_OP);
+    }
+    std::string Repl = "mkl::rng::skip_ahead(" +
+                       getStmtSpelling(CE->getArg(0), *(Result.Context)) + ", ";
+    ExprAnalysis EO;
+    EO.analyze(CE->getArg(1));
+    Repl = Repl + EO.getReplacedString() + ")";
+    emplaceTransformation(new ReplaceStmt(CE, std::move(Repl)));
+  }
+}
+
+REGISTER_RULE(RandomFunctionCallRule)
 
 void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
@@ -3342,34 +3584,6 @@ bool BLASFunctionCallRule::isReplIndex(int Input,
     }
   }
   return false;
-}
-
-std::string BLASFunctionCallRule::getBufferNameAndDeclStr(
-    const Expr *Arg, const ASTContext &AC, const std::string &TypeAsStr,
-    SourceLocation SL, std::string &BufferDecl, int DistinctionID) {
-  std::string PointerName = getStmtSpelling(Arg, AC);
-  return getBufferNameAndDeclStr(PointerName, AC, TypeAsStr, SL, BufferDecl,
-                                 DistinctionID);
-}
-
-std::string BLASFunctionCallRule::getBufferNameAndDeclStr(
-    const std::string &PointerName, const ASTContext &AC,
-    const std::string &TypeAsStr, SourceLocation SL, std::string &BufferDecl,
-    int DistinctionID) {
-  std::string BufferTempName = "buffer_ct" + std::to_string(DistinctionID);
-  std::string AllocationTempName =
-      "allocation_ct" + std::to_string(DistinctionID);
-  // TODO: reinterpret will copy more data
-  BufferDecl = getIndent(SL, AC.getSourceManager()).str() + "auto " +
-               AllocationTempName +
-               " = dpct::memory_manager::get_instance().translate_ptr(" +
-               PointerName + ");" + getNL() +
-               getIndent(SL, AC.getSourceManager()).str() +
-               "cl::sycl::buffer<" + TypeAsStr + ",1> " + BufferTempName +
-               " = " + AllocationTempName + ".buffer.reinterpret<" + TypeAsStr +
-               ", 1>(cl::sycl::range<1>(" + AllocationTempName +
-               ".size/sizeof(" + TypeAsStr + ")));" + getNL();
-  return BufferTempName;
 }
 
 std::vector<std::string>

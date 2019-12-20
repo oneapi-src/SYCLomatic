@@ -127,6 +127,8 @@ const MapNames::MapTy MapNames::TypeNamesMap{
     {"cudaTextureDesc", "dpct::image_info"},
     {"cudaResourceDesc", "dpct::image_data"},
     {"cudaTextureObject_t", "dpct::image_base_p"},
+    {"curandStatus_t", "int"},
+    {"curandStatus", "int"},
     // ...
 };
 
@@ -2422,6 +2424,38 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
                                       "std::complex<double>", "double", "int"},
              std::vector<int>{1, 2},
              std::vector<std::string>{"mkl::job", "mkl::job"}, "mkl::lapack::gesvd")},
+    };
+
+// Random Engine Type mapping
+const MapNames::MapTy MapNames::RandomEngineTypeMap{
+    {"CURAND_RNG_PSEUDO_DEFAULT", "mkl::rng::philox4x32x10"},
+    {"CURAND_RNG_PSEUDO_XORWOW", "<NOTSUPPORT>"},
+    {"CURAND_RNG_PSEUDO_MRG32K3A", "mkl::rng::mrg32k3a"},
+    {"CURAND_RNG_PSEUDO_MTGP32", "mkl::rng::mt2203"},
+    {"CURAND_RNG_PSEUDO_MT19937", "mkl::rng::mt19937"},
+    {"CURAND_RNG_PSEUDO_PHILOX4_32_10", "mkl::rng::philox4x32x10"},
+    {"CURAND_RNG_QUASI_DEFAULT", "mkl::rng::sobol"},
+    {"CURAND_RNG_QUASI_SOBOL32", "mkl::rng::sobol"},
+    {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL32", "mkl::rng::sobol"},
+    {"CURAND_RNG_QUASI_SOBOL64", "<NOTSUPPORT>"},
+    {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL64", "<NOTSUPPORT>"},
+};
+
+const std::map<std::string, MapNames::RandomGenerateFuncReplInfo>
+    MapNames::RandomGenerateFuncReplInfoMap{
+        {"curandGenerate", {"uint32_t", "mkl::rng::uniform_bits", "uint32_t"}},
+        {"curandGenerateLongLong",
+         {"uint64_t", "mkl::rng::uniform_bits", "uint64_t"}},
+        {"curandGenerateLogNormal", {"float", "mkl::rng::lognormal", "float"}},
+        {"curandGenerateLogNormalDouble",
+         {"double", "mkl::rng::lognormal", "double"}},
+        {"curandGenerateNormal", {"float", "mkl::rng::gaussian", "float"}},
+        {"curandGenerateNormalDouble",
+         {"double", "mkl::rng::gaussian", "double"}},
+        {"curandGeneratePoisson", {"int32_t", "mkl::rng::poisson", "int32_t"}},
+        {"curandGenerateUniform", {"float", "mkl::rng::uniform", "float"}},
+        {"curandGenerateUniformDouble",
+         {"double", "mkl::rng::uniform", "double"}},
     };
 
 // Atomic function names mapping

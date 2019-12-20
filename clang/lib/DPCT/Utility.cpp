@@ -818,6 +818,35 @@ bool isConditionOfFlowControl(const clang::Expr* E) {
   return false;
 }
 
+std::string getBufferNameAndDeclStr(const std::string &PointerName,
+                                    const ASTContext &AC,
+                                    const std::string &TypeAsStr,
+                                    SourceLocation SL, std::string &BufferDecl,
+                                    int DistinctionID) {
+  std::string BufferTempName = "buffer_ct" + std::to_string(DistinctionID);
+  std::string AllocationTempName =
+      "allocation_ct" + std::to_string(DistinctionID);
+  // TODO: reinterpret will copy more data
+  BufferDecl = getIndent(SL, AC.getSourceManager()).str() + "auto " +
+               AllocationTempName +
+               " = dpct::memory_manager::get_instance().translate_ptr(" +
+               PointerName + ");" + getNL() +
+               getIndent(SL, AC.getSourceManager()).str() +
+               "cl::sycl::buffer<" + TypeAsStr + ",1> " + BufferTempName +
+               " = " + AllocationTempName + ".buffer.reinterpret<" + TypeAsStr +
+               ", 1>(cl::sycl::range<1>(" + AllocationTempName +
+               ".size/sizeof(" + TypeAsStr + ")));" + getNL();
+  return BufferTempName;
+}
+std::string getBufferNameAndDeclStr(const Expr *Arg, const ASTContext &AC,
+                                    const std::string &TypeAsStr,
+                                    SourceLocation SL, std::string &BufferDecl,
+                                    int DistinctionID) {
+  std::string PointerName = getStmtSpelling(Arg, AC);
+  return getBufferNameAndDeclStr(PointerName, AC, TypeAsStr, SL, BufferDecl,
+                                 DistinctionID);
+}
+
 // Recursively travers the subtree under \p S for all the reference of \p VD,
 // store and return matched nodes in \p Result
 void VarReferencedInFD(const Stmt *S, const ValueDecl *VD,

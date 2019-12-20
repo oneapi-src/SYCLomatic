@@ -622,16 +622,6 @@ public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
-  std::string getBufferNameAndDeclStr(const Expr *Arg, const ASTContext &AC,
-                                      const std::string &TypeAsStr,
-                                      SourceLocation SL,
-                                      std::string &BufferDecl,
-                                      int DistinctionID);
-  std::string
-  getBufferNameAndDeclStr(const std::string &PointerName, const ASTContext &AC,
-                          const std::string &TypeAsStr, SourceLocation SL,
-                          std::string &BufferDecl, int DistinctionID);
-
   bool isReplIndex(int i, const std::vector<int> &IndexInfo, int &IndexTemp);
 
   std::vector<std::string> getParamsAsStrs(const CallExpr *CE,
@@ -652,6 +642,15 @@ public:
                          const std::string IndentStr,
                          const std::vector<std::string> &BufferTypeInfo,
                          const SourceLocation &StmtBegin);
+};
+
+/// Migration rule for Random function calls.
+class RandomFunctionCallRule
+    : public NamedMigrationRule<RandomFunctionCallRule> {
+public:
+  RandomFunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
 /// Migration rule for SOLVER enums.

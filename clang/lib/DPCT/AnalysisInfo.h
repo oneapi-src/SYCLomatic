@@ -28,6 +28,7 @@ namespace clang {
 namespace dpct {
 
 class CudaMallocInfo;
+class RandomEngineInfo;
 class TextureInfo;
 class KernelCallExpr;
 class DeviceFunctionInfo;
@@ -86,7 +87,8 @@ enum HeaderType {
   Time,
   Complex,
   Future,
-  MKL,
+  MKL_BLAS_Solver,
+  MKL_RNG,
 };
 
 enum UsingType {
@@ -202,10 +204,13 @@ public:
       return insertHeader(HeaderType::Future, LastIncludeOffset, "<future>");
     case Time:
       return insertHeader(HeaderType::Time, LastIncludeOffset, "<time.h>");
-    case MKL:
-      return insertHeader(HeaderType::MKL, LastIncludeOffset,
+    case MKL_BLAS_Solver:
+      return insertHeader(HeaderType::MKL_BLAS_Solver, LastIncludeOffset,
                           "<mkl_blas_sycl.hpp>", "<mkl_lapack_sycl.hpp>",
                           "<mkl_sycl_types.hpp>", "<dpct/blas_utils.hpp>");
+    case MKL_RNG:
+      return insertHeader(HeaderType::MKL_RNG, LastIncludeOffset,
+                          "<mkl_rng_sycl.hpp>");
     }
   }
 
@@ -315,6 +320,7 @@ private:
   GlobalMap<DeviceFunctionDecl> FuncMap;
   GlobalMap<KernelCallExpr> KernelMap;
   GlobalMap<CudaMallocInfo> CudaMallocMap;
+  GlobalMap<RandomEngineInfo> RandomEngineMap;
   GlobalMap<TextureInfo> TextureMap;
 
   ExtReplacements Repls;
@@ -340,6 +346,9 @@ template <> inline GlobalMap<KernelCallExpr> &DpctFileInfo::getMap() {
 }
 template <> inline GlobalMap<CudaMallocInfo> &DpctFileInfo::getMap() {
   return CudaMallocMap;
+}
+template <> inline GlobalMap<RandomEngineInfo> &DpctFileInfo::getMap() {
+  return RandomEngineMap;
 }
 template <> inline GlobalMap<TextureInfo> &DpctFileInfo::getMap() {
   return TextureMap;
@@ -601,6 +610,7 @@ public:
   GLOBAL_TYPE(DeviceFunctionDecl, FunctionDecl)
   GLOBAL_TYPE(KernelCallExpr, CUDAKernelCallExpr)
   GLOBAL_TYPE(CudaMallocInfo, VarDecl)
+  GLOBAL_TYPE(RandomEngineInfo, DeclaratorDecl)
   GLOBAL_TYPE(TextureInfo, VarDecl)
 #undef GLOBAL_TYPE
 
@@ -624,6 +634,9 @@ public:
   void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     insertFile(Repl->getFilePath())->addReplacement(Repl);
   }
+
+  void insertRandomEngine(const Expr *E);
+  std::shared_ptr<RandomEngineInfo> findRandomEngine(const Expr *E);
 
   void setFileEnterLocation(SourceLocation Loc) {
     auto LocInfo = getLocInfo(Loc);
@@ -673,6 +686,7 @@ private:
   // FunctionDecl=>DeviceFunctionDecl
   // CUDAKernelCallExpr=>KernelCallExpr
   // VarDecl=>CudaMallocInfo
+  // DeclaratorDecl=>RandomEngineInfo
   template <class Info, class Node>
   inline std::shared_ptr<Info> findNode(const Node *N) {
     if (!N)
@@ -987,7 +1001,7 @@ public:
           OS << ", " << getRangeName();
         }
         OS << ")";
-      } else if(AccMode==Pointer){
+      } else if (AccMode == Pointer) {
         OS << getAccessorName() << ".get_pointer()";
       } else {
         OS << getAccessorName();
@@ -1669,8 +1683,8 @@ class KernelCallExpr : public CallFunctionExpr {
   struct ArgInfo {
     ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg, bool Used,
             int Index)
-        : isPointer(false), isUsedAsLvalueAfterMalloc(Used),
-          isRedeclareRequired(false), Index(Index) {
+        : isPointer(false), isRedeclareRequired(false),
+          isUsedAsLvalueAfterMalloc(Used), Index(Index) {
       Analysis.analyze(Arg);
       ArgString = Analysis.getReplacedString();
       if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
@@ -1959,6 +1973,97 @@ public:
 private:
   std::string Size;
   std::string Name;
+};
+
+class RandomEngineInfo {
+public:
+  RandomEngineInfo(unsigned Offset, const std::string &FilePath,
+                   const DeclaratorDecl *DD)
+      : SeedExpr("0"), DimExpr("1"), DD(DD), IsQuasiEngine(false) {}
+  // Seed is an unsigned long long type value in origin code, if it is not set,
+  // use 0 as default.
+  // The legal value of Dim in origin code is 1 to 20000, so if it is not set,
+  // use 1 as default.
+  static const DeclaratorDecl *getHandleVar(const Expr *Arg) {
+    const DeclaratorDecl *D;
+    if (auto UO = dyn_cast<UnaryOperator>(Arg->IgnoreImpCasts())) {
+      if (UO->getOpcode() == UO_AddrOf) {
+        D = getDecl(UO->getSubExpr());
+      }
+    } else {
+      D = getDecl(Arg);
+    }
+    return D;
+  }
+  static const DeclaratorDecl *getDecl(const Expr *E) {
+    if (auto DeclRef = dyn_cast<DeclRefExpr>(E->IgnoreImpCasts())) {
+      if (dyn_cast<VarDecl>(DeclRef->getDecl()))
+        return dyn_cast<DeclaratorDecl>(DeclRef->getDecl());
+    } else if (auto Member = dyn_cast<MemberExpr>(E->IgnoreImpCasts())) {
+      if (dyn_cast<FieldDecl>(Member->getMemberDecl()))
+        return dyn_cast<DeclaratorDecl>(Member->getMemberDecl());
+    }
+    return nullptr;
+  }
+
+  void setEngineTypeReplacement(std::string EngineType) {
+    TypeReplacement = EngineType;
+  }
+  void setSeedExpr(const Expr *Seed) {
+    ArgumentAnalysis AS(Seed);
+    AS.analyze();
+    SeedExpr = AS.getReplacedString();
+  }
+  void setDimExpr(const Expr *Dim) {
+    ArgumentAnalysis AD(Dim);
+    AD.analyze();
+    DimExpr = AD.getReplacedString();
+  }
+  std::string getSeedExpr() { return SeedExpr; }
+  std::string getDimExpr() { return DimExpr; }
+  const DeclaratorDecl *getDeclaratorDecl() { return DD; }
+
+  void setDeclFilePath(std::string Path) { DeclFilePath = Path; }
+  void setCreateCallFilePath(std::string Path) { CreateCallFilePath = Path; }
+  void setTypeBeginOffest(unsigned int Offest) { TypeBeginOffest = Offest; }
+  void setTypeLength(unsigned int Len) { TypeLength = Len; }
+  void setCreateAPIBegin(unsigned int Offest) { CreateAPIBegin = Offest; }
+  void setCreateAPILength(unsigned int Len) { CreateAPILength = Len; }
+
+  void setTypeReplacement(std::string Repl) { TypeReplacement = Repl; }
+  void setQuasiEngineFlag() { IsQuasiEngine = true; }
+
+  void setIdentifierEndOffest(unsigned int Offest) {
+    IdentifierEndOffest = Offest;
+  }
+  void buildInfo();
+  bool isClassMember() {
+    if (dyn_cast<FieldDecl>(DD))
+      return true;
+    return false;
+  }
+
+private:
+  std::string SeedExpr;     // Replaced Seed variable string
+  std::string DimExpr;      // Replaced Dimension variable string
+  const DeclaratorDecl *DD; // A DeclaratorDecl node used to distinguish
+                            // different curandGenerator_t handle
+  bool IsQuasiEngine; // If origin code used a quasirandom number generator,
+                      // this flag need be set as true.
+  std::string DeclFilePath; // Where the curandGenerator_t handle is declared.
+  std::string
+      CreateCallFilePath; // Where the curandCreateGenerator API is called.
+  unsigned int
+      TypeBeginOffest; // The offset of the begin of curandGenerator_t handle.
+  unsigned int TypeLength; // The length of the curandGenerator_t handle type.
+  unsigned int
+      CreateAPIBegin; // The offset of the begin of curandCreateGenerator API.
+  unsigned int
+      CreateAPILength; // The length of the begin of curandCreateGenerator API.
+  unsigned int IdentifierEndOffest; // The offset at the end of
+                                    // curandGenerator_t handle declaration.
+  std::string TypeReplacement;      // The replcaement string of the type of
+                                    // curandGenerator_t handle.
 };
 
 template <class... T>

@@ -294,6 +294,16 @@ unsigned int getLenToNextTokenBegin(const clang::Token &CurTokEnd,
 std::vector<const clang::Stmt *>
 getConditionNode(clang::ast_type_traits::DynTypedNode Node);
 bool isConditionOfFlowControl(const clang::Expr *E);
+std::string getBufferNameAndDeclStr(const std::string &PointerName,
+                                    const clang::ASTContext &AC,
+                                    const std::string &TypeAsStr,
+                                    clang::SourceLocation SL,
+                                    std::string &BufferDecl, int DistinctionID);
+std::string getBufferNameAndDeclStr(const clang::Expr *Arg,
+                                    const clang::ASTContext &AC,
+                                    const std::string &TypeAsStr,
+                                    clang::SourceLocation SL,
+                                    std::string &BufferDecl, int DistinctionID);
 void VarReferencedInFD(const clang::Stmt *S, const clang::ValueDecl *VD,
                          std::vector<const clang::DeclRefExpr *> &Result);
 int getLengthOfSpacesToEndl(const char *CharData);

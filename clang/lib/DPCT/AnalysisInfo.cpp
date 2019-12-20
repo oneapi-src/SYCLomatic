@@ -69,6 +69,12 @@ void DpctFileInfo::buildReplacements() {
     return;
   for (auto &Kernel : KernelMap)
     Kernel.second->buildInfo();
+
+  // DPCT need collect the information in curandGenerator_t decl,
+  // curandCreateGenerator API call and curandSetPseudoRandomGeneratorSeed API
+  // call, then can migrate them to MKL API.
+  for (auto &RandomEngine : RandomEngineMap)
+    RandomEngine.second->buildInfo();
 }
 
 void DpctFileInfo::emplaceReplacements(tooling::Replacements &ReplSet) {
@@ -89,6 +95,19 @@ std::shared_ptr<CudaMallocInfo> DpctGlobalInfo::findCudaMalloc(const Expr *E) {
   if (auto Src = CudaMallocInfo::getMallocVar(E))
     return findCudaMallocInfo(Src);
   return std::shared_ptr<CudaMallocInfo>();
+}
+
+void DpctGlobalInfo::insertRandomEngine(const Expr *E) {
+  if (auto Src = RandomEngineInfo::getHandleVar(E)) {
+    insertRandomEngineInfo(Src);
+  }
+}
+std::shared_ptr<RandomEngineInfo>
+DpctGlobalInfo::findRandomEngine(const Expr *E) {
+  if (auto Src = RandomEngineInfo::getHandleVar(E)) {
+    return findRandomEngineInfo(Src);
+  }
+  return std::shared_ptr<RandomEngineInfo>();
 }
 
 void KernelCallExpr::buildExecutionConfig(
@@ -793,5 +812,42 @@ void SizeInfo::setTemplateList(
   if (TDSI)
     Size = TDSI->getReplacedString(TemplateList);
 }
+
+void RandomEngineInfo::buildInfo() {
+  // replace type
+  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
+      DeclFilePath, TypeBeginOffest, TypeLength, TypeReplacement, nullptr));
+  // insert engine arguments
+  if (isClassMember()) {
+    if (IsQuasiEngine) {
+      DpctGlobalInfo::getInstance().addReplacement(
+          std::make_shared<ExtReplacement>(
+              CreateCallFilePath, CreateAPIBegin, CreateAPILength,
+              DD->getNameAsString() + " = " + TypeReplacement +
+                  "(dpct::get_default_queue_wait(), " + DimExpr + ")",
+              nullptr));
+    } else {
+      DpctGlobalInfo::getInstance().addReplacement(
+          std::make_shared<ExtReplacement>(
+              CreateCallFilePath, CreateAPIBegin, CreateAPILength,
+              DD->getNameAsString() + " = " + TypeReplacement +
+                  "(dpct::get_default_queue_wait(), " + SeedExpr + ")",
+              nullptr));
+    }
+  } else {
+    if (IsQuasiEngine) {
+      DpctGlobalInfo::getInstance().addReplacement(
+          std::make_shared<ExtReplacement>(
+              DeclFilePath, IdentifierEndOffest, 0,
+              "(dpct::get_default_queue_wait(), " + DimExpr + ")", nullptr));
+    } else {
+      DpctGlobalInfo::getInstance().addReplacement(
+          std::make_shared<ExtReplacement>(
+              DeclFilePath, IdentifierEndOffest, 0,
+              "(dpct::get_default_queue_wait(), " + SeedExpr + ")", nullptr));
+    }
+  }
+}
+
 } // namespace dpct
 } // namespace clang
