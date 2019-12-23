@@ -6,10 +6,10 @@
 
 // CHECK: #ifdef CUDA
 // CHECK-EMPTY:
-// CHECK-NEXT: void bar1() {
+// CHECK-NEXT: void bar6() {
 // CHECK-NEXT: }
 #ifdef CUDA
 #include <cuda.h>
-__global__ void bar1() {
+__global__ void bar6() {
 }
 #endif

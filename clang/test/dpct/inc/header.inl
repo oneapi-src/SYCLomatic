@@ -1,11 +1,11 @@
-// RUN: FileCheck --match-full-lines --input-file %T/header.inl %s
-
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #define DPCT_NAMED_LAMBDA
+// CHECK-NEXT: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <math.h>
 #include <math.h>
 
 // CHECK: #ifdef CUDA
+// CHECK-EMPTY:
 // CHECK-NEXT: void bar3() {
 // CHECK-NEXT: }
 #ifdef CUDA

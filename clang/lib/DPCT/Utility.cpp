@@ -148,8 +148,9 @@ SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
              Extension == ".c" || Extension == ".C") {
     return TypeCppSource;
   } else if (Extension == ".hpp" || Extension == ".hxx" || Extension == ".h" ||
-             Extension == ".hh" || Extension == ".inl" || Extension == ".inc" ||
-             Extension == ".INL" || Extension == ".INC") {
+             Extension == ".hh" || Extension == ".inl"  || Extension == ".inc" ||
+             Extension == ".INL" || Extension == ".INC" ||
+             Extension == ".TPP" ||Extension == ".tpp") {
     return TypeCppHeader;
   } else {
     std::string ErrMsg =

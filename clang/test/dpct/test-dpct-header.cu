@@ -1,6 +1,15 @@
 // RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only -DCUDA
 // RUN: FileCheck --match-full-lines --input-file %T/test-dpct-header.dp.cpp %s
 
+// RUN: FileCheck --match-full-lines --input-file %T/inc/header.tpp %S/inc/header.tpp
+// RUN: FileCheck --match-full-lines --input-file %T/inc/header2.TPP %S/inc/header2.TPP
+
+// RUN: FileCheck --match-full-lines --input-file %T/inc/header.inl %S/inc/header.inl
+// RUN: FileCheck --match-full-lines --input-file %T/inc/header2.INL %S/inc/header2.INL
+
+// RUN: FileCheck --match-full-lines --input-file %T/inc/header.inc %S/inc/header.inc
+// RUN: FileCheck --match-full-lines --input-file %T/inc/header2.INC %S/inc/header2.INC
+
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include "inc/header.h"
@@ -9,6 +18,8 @@
 #include "inc/header.inc"
 #include "inc/header2.INL"
 #include "inc/header2.INC"
+#include "inc/header.tpp"
+#include "inc/header2.TPP"
 
 // CHECK: #ifdef CUDA
 // CHECK-NEXT: void foo() {
