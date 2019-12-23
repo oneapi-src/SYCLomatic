@@ -2498,6 +2498,15 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       SM->getCharacterData(FuncNameEnd) - SM->getCharacterData(FuncNameBegin);
   auto SR = getScopeInsertRange(CE, FuncNameBegin, FuncCallEnd);
   SourceLocation StmtBegin = SR.getBegin(), StmtEndAfterSemi = SR.getEnd();
+  bool IsInCondition = isConditionOfFlowControl(CE);
+  if (IsInCondition) {
+    StmtBegin = FuncNameBegin;
+    StmtEndAfterSemi =
+        SM->getExpansionLoc(FuncCallEnd)
+            .getLocWithOffset(Lexer::MeasureTokenLength(
+                SM->getExpansionLoc(FuncCallEnd), *SM,
+                dpct::DpctGlobalInfo::getContext().getLangOpts()));
+  }
   std::string IndentStr = getIndent(StmtBegin, *SM).str();
   std::string PrefixInsertStr, SuffixInsertStr;
   // TODO: Need to process the situation when scalar pointers (alpha, beta)
@@ -2604,16 +2613,33 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (FuncName == "cublasStrmm_v2" || FuncName == "cublasDtrmm_v2") {
       processTrmmCall(CE, PrefixInsertStr, IndentStr);
     }
-    if (IsAssigned) {
-      insertAroundRange(FuncNameBegin, FuncCallEnd.getLocWithOffset(1), "(",
-                        ", 0)");
-      report(FuncNameBegin, Diagnostics::NOERROR_RETURN_COMMA_OP);
-    }
     emplaceTransformation(
         new ReplaceText(FuncNameBegin, FuncNameLength, std::move(Replacement)));
-    insertAroundRange(StmtBegin, StmtEndAfterSemi,
-                      std::string("{") + getNL() + PrefixInsertStr + IndentStr,
-                      getNL() + IndentStr + SuffixInsertStr + std::string("}"));
+    if (IsInCondition) {
+      if (IsAssigned) {
+        insertAroundRange(
+            StmtBegin, StmtEndAfterSemi,
+            std::string("[&](){") + getNL() + PrefixInsertStr + IndentStr,
+            std::string(";") + getNL() + IndentStr + SuffixInsertStr +
+                "return 0;" + getNL() + IndentStr + std::string("}()"));
+      } else {
+        insertAroundRange(StmtBegin, StmtEndAfterSemi,
+                          std::string("[&](){") + getNL() + PrefixInsertStr +
+                              IndentStr,
+                          std::string(";") + getNL() + IndentStr +
+                              SuffixInsertStr + std::string("}()"));
+      }
+    } else {
+      if (IsAssigned) {
+        insertAroundRange(FuncNameBegin, FuncCallEnd.getLocWithOffset(1), "(",
+                          ", 0)");
+        report(FuncNameBegin, Diagnostics::NOERROR_RETURN_COMMA_OP);
+      }
+      insertAroundRange(
+          StmtBegin, StmtEndAfterSemi,
+          std::string("{") + getNL() + PrefixInsertStr + IndentStr,
+          getNL() + IndentStr + SuffixInsertStr + std::string("}"));
+    }
   } else if (MapNames::BLASFuncComplexReplInfoMap.find(FuncName) !=
              MapNames::BLASFuncComplexReplInfoMap.end()) {
     auto ReplInfoPair = MapNames::BLASFuncComplexReplInfoMap.find(FuncName);
@@ -2690,22 +2716,44 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (FuncName == "cublasCtrmm_v2" || FuncName == "cublasZtrmm_v2") {
       processTrmmCall(CE, PrefixInsertStr, IndentStr);
     }
-    if (IsAssigned) {
-      insertAroundRange(FuncNameBegin, FuncCallEnd.getLocWithOffset(1), "(",
-                        ", 0)");
-      report(FuncNameBegin, Diagnostics::NOERROR_RETURN_COMMA_OP);
-    }
     emplaceTransformation(
         new ReplaceText(FuncNameBegin, FuncNameLength, std::move(Replacement)));
-    insertAroundRange(StmtBegin, StmtEndAfterSemi,
-                      std::string("{") + getNL() + PrefixInsertStr + IndentStr,
-                      getNL() + SuffixInsertStr + IndentStr + std::string("}"));
+
+    if (IsInCondition) {
+      if (IsAssigned) {
+        insertAroundRange(
+            StmtBegin, StmtEndAfterSemi,
+            std::string("[&](){") + getNL() + PrefixInsertStr + IndentStr,
+            std::string(";") + getNL() + SuffixInsertStr + IndentStr +
+                "return 0;" + getNL() + IndentStr + std::string("}()"));
+      } else {
+        insertAroundRange(StmtBegin, StmtEndAfterSemi,
+                          std::string("[&](){") + getNL() + PrefixInsertStr +
+                              IndentStr,
+                          std::string(";") + getNL() + SuffixInsertStr +
+                              IndentStr + std::string("}()"));
+      }
+    } else {
+      if (IsAssigned) {
+        insertAroundRange(FuncNameBegin, FuncCallEnd.getLocWithOffset(1), "(",
+                          ", 0)");
+        report(FuncNameBegin, Diagnostics::NOERROR_RETURN_COMMA_OP);
+      }
+      insertAroundRange(
+          StmtBegin, StmtEndAfterSemi,
+          std::string("{") + getNL() + PrefixInsertStr + IndentStr,
+          getNL() + SuffixInsertStr + IndentStr + std::string("}"));
+    }
+
   } else if (MapNames::LegacyBLASFuncReplInfoMap.find(FuncName) !=
              MapNames::LegacyBLASFuncReplInfoMap.end()) {
     auto ReplInfoPair = MapNames::LegacyBLASFuncReplInfoMap.find(FuncName);
     MapNames::BLASFuncComplexReplInfo ReplInfo = ReplInfoPair->second;
     std::string CallExprReplStr = "";
-    PrefixInsertStr = std::string("{") + getNL();
+    if (IsInCondition)
+      PrefixInsertStr = std::string("[&](){") + getNL();
+    else
+      PrefixInsertStr = std::string("{") + getNL();
     CallExprReplStr =
         CallExprReplStr + ReplInfo.ReplName + "(dpct::get_default_queue()";
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted)
@@ -2816,7 +2864,11 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           PrefixInsertStr + IndentStr + "cl::sycl::buffer<" + ResultType +
           ",1> result_temp_buffer(cl::sycl::range<1>(1));" + getNL() +
           IndentStr + CallExprReplStr + ", result_temp_buffer);" + getNL();
-      SuffixInsertStr = getNL() + IndentStr + "}" + getNL();
+      if (IsInCondition)
+        SuffixInsertStr = getNL() + IndentStr + "}()";
+      else
+        SuffixInsertStr = getNL() + IndentStr + "}" + getNL();
+
       insertAroundRange(StmtBegin, StmtEndAfterSemi,
                         PrefixInsertStr + IndentStr,
                         std::move(SuffixInsertStr));
@@ -2825,46 +2877,67 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           "access::mode::read>()[0].real(), "
           "result_temp_buffer.get_access<cl::sycl::"
           "access::mode::read>()[0].imag());";
-      if (IsInitializeVarDecl) {
-        auto ParentNodes = (Result.Context)->getParents(*VD);
-        const DeclStmt *DS = 0;
-        if ((DS = ParentNodes[0].get<DeclStmt>())) {
-          if (FuncName == "cublasCdotu" || FuncName == "cublasCdotc") {
-            emplaceTransformation(new ReplaceStmt(
-                DS, VarName + " = cl::sycl::float2" + ReturnValueParamsStr));
-          } else if (FuncName == "cublasZdotu" || FuncName == "cublasZdotc") {
-            emplaceTransformation(new ReplaceStmt(
-                DS, VarName + " = cl::sycl::double2" + ReturnValueParamsStr));
-          } else {
-            emplaceTransformation(new ReplaceStmt(
-                DS, VarName + " = result_temp_buffer.get_access<cl::sycl::"
-                              "access::mode::read>()[0];"));
-          }
+      if (IsInCondition) {
+        if (FuncName == "cublasCdotu" || FuncName == "cublasCdotc") {
+          emplaceTransformation(new ReplaceStmt(CE, "return cl::sycl::float2" +
+                                                        ReturnValueParamsStr));
+        } else if (FuncName == "cublasZdotu" || FuncName == "cublasZdotc") {
+          emplaceTransformation(new ReplaceStmt(CE, "return cl::sycl::double2" +
+                                                        ReturnValueParamsStr));
         } else {
-          assert(0 && "Fail to get Var Decl Stmt");
-          return;
+          emplaceTransformation(new ReplaceStmt(
+              CE, "return result_temp_buffer.get_access<cl::sycl::"
+                  "access::mode::read>()[0];"));
         }
       } else {
-        if (FuncName == "cublasCdotu" || FuncName == "cublasCdotc") {
-          emplaceTransformation(
-              new ReplaceStmt(CE, "cl::sycl::float2" + ReturnValueParamsStr));
-        } else if (FuncName == "cublasZdotu" || FuncName == "cublasZdotc") {
-          emplaceTransformation(
-              new ReplaceStmt(CE, "cl::sycl::double2" + ReturnValueParamsStr));
+        if (IsInitializeVarDecl) {
+          auto ParentNodes = (Result.Context)->getParents(*VD);
+          const DeclStmt *DS = 0;
+          if ((DS = ParentNodes[0].get<DeclStmt>())) {
+            if (FuncName == "cublasCdotu" || FuncName == "cublasCdotc") {
+              emplaceTransformation(new ReplaceStmt(
+                  DS, VarName + " = cl::sycl::float2" + ReturnValueParamsStr));
+            } else if (FuncName == "cublasZdotu" || FuncName == "cublasZdotc") {
+              emplaceTransformation(new ReplaceStmt(
+                  DS, VarName + " = cl::sycl::double2" + ReturnValueParamsStr));
+            } else {
+              emplaceTransformation(new ReplaceStmt(
+                  DS, VarName + " = result_temp_buffer.get_access<cl::sycl::"
+                                "access::mode::read>()[0];"));
+            }
+          } else {
+            assert(0 && "Fail to get Var Decl Stmt");
+            return;
+          }
         } else {
-          emplaceTransformation(
-              new ReplaceStmt(CE, "result_temp_buffer.get_access<cl::sycl::"
-                                  "access::mode::read>()[0]"));
+          if (FuncName == "cublasCdotu" || FuncName == "cublasCdotc") {
+            emplaceTransformation(
+                new ReplaceStmt(CE, "cl::sycl::float2" + ReturnValueParamsStr));
+          } else if (FuncName == "cublasZdotu" || FuncName == "cublasZdotc") {
+            emplaceTransformation(new ReplaceStmt(
+                CE, "cl::sycl::double2" + ReturnValueParamsStr));
+          } else {
+            emplaceTransformation(
+                new ReplaceStmt(CE, "result_temp_buffer.get_access<cl::sycl::"
+                                    "access::mode::read>()[0]"));
+          }
         }
       }
     } else {
       // APIs which haven't return value
-      // PrefixInsertStr = getNL() + IndentStr + PrefixInsertStr;
-      CallExprReplStr = CallExprReplStr + ")";
-      emplaceTransformation(new ReplaceStmt(CE, std::move(CallExprReplStr)));
-      insertAroundRange(StmtBegin, StmtEndAfterSemi,
-                        PrefixInsertStr + IndentStr,
-                        getNL() + IndentStr + std::string("}"));
+      if (IsInCondition) {
+        CallExprReplStr = CallExprReplStr + ");";
+        emplaceTransformation(new ReplaceStmt(CE, std::move(CallExprReplStr)));
+        insertAroundRange(StmtBegin, StmtEndAfterSemi,
+                          PrefixInsertStr + IndentStr,
+                          getNL() + IndentStr + std::string("}()"));
+      } else {
+        CallExprReplStr = CallExprReplStr + ")";
+        emplaceTransformation(new ReplaceStmt(CE, std::move(CallExprReplStr)));
+        insertAroundRange(StmtBegin, StmtEndAfterSemi,
+                          PrefixInsertStr + IndentStr,
+                          getNL() + IndentStr + std::string("}"));
+      }
     }
   } else if (MapNames::BLASFuncWrapperReplInfoMap.find(FuncName) !=
              MapNames::BLASFuncWrapperReplInfoMap.end()) {
@@ -2875,11 +2948,6 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE,
              MapNames::ITFName.at(FuncName), Replacement);
       return;
-    }
-    if (IsAssigned) {
-      insertAroundRange(FuncNameBegin, FuncCallEnd.getLocWithOffset(1), "(",
-                        ", 0)");
-      report(FuncNameBegin, Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
     int ArgNum = CE->getNumArgs();
     for (int i = 0; i < ArgNum; ++i) {
@@ -2893,11 +2961,31 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
     emplaceTransformation(new ReplaceText(
         FuncNameBegin, FuncNameLength, std::move(Replacement), true, FuncName));
-    if (PrefixInsertStr != "") {
-      insertAroundRange(
-          StmtBegin, StmtEndAfterSemi,
-          std::string("{") + getNL() + PrefixInsertStr + IndentStr,
-          getNL() + IndentStr + SuffixInsertStr + std::string("}"));
+    if (IsInCondition) {
+      if (IsAssigned) {
+        insertAroundRange(StmtBegin, StmtEndAfterSemi,
+                          std::string("[&](){") + getNL() + PrefixInsertStr +
+                              IndentStr,
+                          std::string(";") + getNL() + IndentStr + "return 0;" +
+                              getNL() + IndentStr + std::string("}()"));
+      } else {
+        insertAroundRange(
+            StmtBegin, StmtEndAfterSemi,
+            std::string("[&](){") + getNL() + PrefixInsertStr + IndentStr,
+            std::string(";") + getNL() + IndentStr + std::string("}()"));
+      }
+    } else {
+      if (IsAssigned) {
+        insertAroundRange(FuncNameBegin, FuncCallEnd.getLocWithOffset(1), "(",
+                          ", 0)");
+        report(FuncNameBegin, Diagnostics::NOERROR_RETURN_COMMA_OP);
+      }
+      if (PrefixInsertStr != "") {
+        insertAroundRange(
+            StmtBegin, StmtEndAfterSemi,
+            std::string("{") + getNL() + PrefixInsertStr + IndentStr,
+            getNL() + IndentStr + SuffixInsertStr + std::string("}"));
+      }
     }
   } else if (FuncName == "cublasCreate_v2" || FuncName == "cublasDestroy_v2") {
     if (IsAssigned) {
@@ -3528,16 +3616,6 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             SM->getCharacterData(CE->getArg(i)->getBeginLoc());
         emplaceTransformation(
             new ReplaceText(CE->getArg(i)->getBeginLoc(), ParameterLength, ""));
-      }
-      if (isReplIndex(i, ReplInfo.RedundantIndexInfo, IndexTemp)) {
-        SourceLocation ParameterEndAfterSemi;
-        getParameterEnd(CE->getArg(i)->getEndLoc(), ParameterEndAfterSemi,
-          Result);
-        auto ParameterLength =
-          SM->getCharacterData(ParameterEndAfterSemi) -
-          SM->getCharacterData(CE->getArg(i)->getBeginLoc());
-        emplaceTransformation(
-          new ReplaceText(CE->getArg(i)->getBeginLoc(), ParameterLength, ""));
       }
       if (ReplInfo.ToDevice) {
         if (i == 0) {

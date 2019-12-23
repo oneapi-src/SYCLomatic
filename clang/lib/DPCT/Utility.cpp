@@ -15,6 +15,7 @@
 #include "Debug.h"
 #include "SaveNewFiles.h"
 #include "clang/AST/ASTContext.h"
+#include "clang/AST/ASTTypeTraits.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/SourceManager.h"
@@ -750,4 +751,69 @@ unsigned int getLenToNextTokenBegin(const Token &CurTok, SourceManager &SM) {
     ++C;
   }
   return C - SM.getCharacterData(CurTokBegin);
+}
+
+/// This function gets the statement nodes of the initialization, condition or
+/// increment parts of the \p Node.
+/// \param Node The statement node which is if, for, do, while or switch.
+/// \return The result statement nodes vector.
+std::vector<const Stmt*> getConditionNode(ast_type_traits::DynTypedNode Node){
+  std::vector<const Stmt *> Res;
+  if (const IfStmt *CondtionNode = Node.get<IfStmt>()) {
+    Res.push_back(CondtionNode->getCond());
+    Res.push_back(CondtionNode->getConditionVariableDeclStmt());
+  } else if (const ForStmt *CondtionNode = Node.get<ForStmt>()) {
+    Res.push_back(CondtionNode->getCond());
+    Res.push_back(CondtionNode->getInc());
+    Res.push_back(CondtionNode->getInit());
+    Res.push_back(CondtionNode->getConditionVariableDeclStmt());
+  } else if (const WhileStmt *CondtionNode = Node.get<WhileStmt>()) {
+    Res.push_back(CondtionNode->getCond());
+    Res.push_back(CondtionNode->getConditionVariableDeclStmt());
+  } else if (const DoStmt *CondtionNode = Node.get<DoStmt>()) {
+    Res.push_back(CondtionNode->getCond());
+  } else if (const SwitchStmt *CondtionNode = Node.get<SwitchStmt>()) {
+    Res.push_back(CondtionNode->getCond());
+    Res.push_back(CondtionNode->getConditionVariableDeclStmt());
+  }
+  return Res;
+}
+
+/// This function checks whether expression \p E is a child node of the
+/// initialization, condition or increment part of for, while, do, if or switch.
+/// \param E The expression to be checked.
+/// \return The result.
+bool isConditionOfFlowControl(const clang::Expr* E) {
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto ParentNodes = Context.getParents(*E);
+  ast_type_traits::DynTypedNode ParentNode;
+  std::vector<ast_type_traits::DynTypedNode> AncestorNodes;
+  bool FoundStmtHasCondition = false;
+  while (!ParentNodes.empty()) {
+    ParentNode = ParentNodes[0];
+    AncestorNodes.push_back(ParentNode);
+    if (ParentNode.get<IfStmt>() || ParentNode.get<ForStmt>() ||
+        ParentNode.get<WhileStmt>() || ParentNode.get<DoStmt>() ||
+        ParentNode.get<SwitchStmt>()) {
+      FoundStmtHasCondition = true;
+      break;
+    }
+    ParentNodes = Context.getParents(ParentNode);
+  }
+  if (!FoundStmtHasCondition)
+    return false;
+  auto CondtionNodes =
+      getConditionNode(AncestorNodes[AncestorNodes.size() - 1]);
+
+  for (auto CondtionNode : CondtionNodes) {
+    if (CondtionNode == nullptr)
+      continue;
+    for (auto Node : AncestorNodes) {
+      if (Node.get<Stmt>() && Node.get<Stmt>() == CondtionNode)
+        return true;
+    }
+    if (E == CondtionNode)
+      return true;
+  }
+  return false;
 }
