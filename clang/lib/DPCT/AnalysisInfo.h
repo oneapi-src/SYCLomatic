@@ -21,8 +21,8 @@
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
-#include "clang/Frontend/CompilerInstance.h"
 #include "clang/Format/Format.h"
+#include "clang/Frontend/CompilerInstance.h"
 
 namespace clang {
 namespace dpct {
@@ -862,6 +862,13 @@ public:
         PointerAsArray(false) {
     setType(std::make_shared<CtTypeInfo>(Var->getTypeSourceInfo()->getTypeLoc(),
                                          isLocal()));
+    if (getType()->getDimension() == 0 && Attr == Constant) {
+      AccMode = Value;
+    } else if (getType()->getDimension() <= 1) {
+      AccMode = Pointer;
+    } else {
+      AccMode = Accessor;
+    }
     if (getType()->isPointer()) {
       Attr = Device;
       getType()->adjustAsMemType();
@@ -892,16 +899,28 @@ public:
     return buildString("extern ", getMemoryType(), " ", getArgName(), ";");
   }
 
-  std::string getAccessorDecl() {
+  std::string getAccessorDecl(const std::string &ExternMemSize) {
+    std::string Result;
+    llvm::raw_string_ostream OS(Result);
     if (isShared()) {
-      auto Type = getType();
-      return buildString("cl::sycl::accessor<", getAccessorDataType(true), ", ",
-                         Type->getDimension(),
-                         ", cl::sycl::access::mode::read_write, "
-                         "cl::sycl::access::target::local> ",
-                         getAccessorName(), "(",
-                         Type->getDimension() ? (getRangeName() + ", ") : "",
-                         "cgh);");
+      auto Dimension = getType()->getDimension();
+      OS << "cl::sycl::accessor<" << getAccessorDataType(true) << ", "
+         << Dimension
+         << ", cl::sycl::access::mode::read_write, "
+            "cl::sycl::access::target::local> "
+         << getAccessorName() << "(";
+      if (Dimension > 1) {
+        OS << getRangeName() << ", ";
+      } else if (Dimension == 1) {
+        OS << "cl::sycl::range<" << Dimension << ">"
+           << getType()->getRangeArgument(ExternMemSize, false) << ", ";
+      }
+      OS << "cgh);";
+      return OS.str();
+    } else if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted &&
+               AccMode != Accessor) {
+      return buildString("auto ", getPtrName(), " = ", getArgName(),
+                         ".get_ptr();");
     }
     return buildString("auto ", getAccessorName(), " = ", getArgName(),
                        ".get_access(cgh);");
@@ -912,20 +931,41 @@ public:
                        getType()->getRangeArgument(MemSize, false), ";");
   }
   llvm::raw_ostream &getFuncDecl(llvm::raw_ostream &OS) {
-    return OS << getDpctAccessorType(false) << " " << getArgName();
+    if (AccMode == Value) {
+      OS << getAccessorDataType(false) << " ";
+    } else if (AccMode == Pointer) {
+      OS << getAccessorDataType(false) << " *";
+    } else {
+      OS << getDpctAccessorType(false) << " ";
+    }
+    return OS << getArgName();
   }
   llvm::raw_ostream &getFuncArg(llvm::raw_ostream &OS) {
     return OS << getArgName();
   }
   llvm::raw_ostream &getKernelArg(llvm::raw_ostream &OS) {
     if (isShared() || DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
-      OS << getDpctAccessorType(true) << "(";
-      OS << getAccessorName();
-      if (isShared() && getType()->getDimension())
-        OS << ", " << getRangeName();
-      OS << ")";
+      if (AccMode == Accessor) {
+        OS << getDpctAccessorType(true) << "(";
+        OS << getAccessorName();
+        if (isShared()) {
+          OS << ", " << getRangeName();
+        }
+        OS << ")";
+      } else if(AccMode==Pointer){
+        OS << getAccessorName() << ".get_pointer()";
+      } else {
+        OS << getAccessorName();
+      }
     } else {
-      OS << getAccessorName();
+      if (AccMode == Accessor) {
+        OS << getAccessorName();
+      } else {
+        if (AccMode == Value) {
+          OS << "*";
+        }
+        OS << getPtrName();
+      }
     }
     return OS;
   }
@@ -974,12 +1014,12 @@ private:
                        getAccessorDataType(UsingTemplateName), ", ",
                        getMemoryAttr(), ", ", Type->getDimension(), ">");
   }
-  std::string getAccessorName() {
-    return buildString(getArgName(), "_acc", getCTFixedSuffix());
+  inline std::string getNameWithSuffix(StringRef Suffix) {
+    return buildString(getArgName(), "_", Suffix, getCTFixedSuffix());
   }
-  std::string getRangeName() {
-    return buildString(getArgName(), "_range", getCTFixedSuffix());
-  }
+  inline std::string getAccessorName() { return getNameWithSuffix("acc"); }
+  inline std::string getPtrName() { return getNameWithSuffix("ptr"); }
+  inline std::string getRangeName() { return getNameWithSuffix("range"); }
   std::string getArgName() {
     if (isExtern())
       return ExternVariableName;
@@ -987,8 +1027,20 @@ private:
   }
 
 private:
+  /// Passing by dpct::accessor, value or pointer when invoking kernel.
+  /// Constant scalar variables are passed by value while other 0/1D variables
+  /// defined on device memory are passed by pointer in device function calls.
+  /// The rest are passed by dpct::accessor.
+  enum DpctAccessMode {
+    Value,
+    Pointer,
+    Accessor,
+  };
+
+private:
   VarAttrKind Attr;
   VarScope Scope;
+  DpctAccessMode AccMode;
   bool PointerAsArray;
   std::string InitList;
 
@@ -1415,7 +1467,7 @@ public:
                      const FunctionDecl *FD)
       : Offset(Offset), FilePath(FilePathIn), ParamsNum(FD->param_size()),
         ReplaceOffset(0), ReplaceLength(0) {
-    if(!FilePath.empty()) {
+    if (!FilePath.empty()) {
       SourceProcessType FileType = GetSourceFileType(FilePath);
       if ((FileType & TypeCudaHeader || FileType & TypeCppHeader) &&
           FD->isThisDeclarationADefinition()) {

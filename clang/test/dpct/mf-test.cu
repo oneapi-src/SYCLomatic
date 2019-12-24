@@ -16,7 +16,7 @@ void test() {
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class Reset_kernel_parameters_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:           cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:           [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:             Reset_kernel_parameters(dpct::accessor<volatile int, dpct::device, 0>(g_mutex_acc_ct1));
+  // CHECK-NEXT:             Reset_kernel_parameters(g_mutex_acc_ct1.get_pointer());
   // CHECK-NEXT:           });
   // CHECK-NEXT:       });
   Reset_kernel_parameters<<<1,1>>>();

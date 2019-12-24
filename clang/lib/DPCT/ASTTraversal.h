@@ -754,12 +754,7 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
 private:
-  void insertExplicitCast(const ImplicitCastExpr *Impl, const QualType &Type);
-  template <class T>
-  void replaceMemberOperator(const ast_type_traits::DynTypedNode &Node) {
-    if (auto M = Node.get<T>())
-      emplaceTransformation(new ReplaceToken(M->getOperatorLoc(), "->"));
-  }
+  void processDeref(const Stmt *S, ASTContext &Context);
 };
 
 /// Migration rule for memory management routine.

@@ -5,13 +5,28 @@
 
 #define NUM_ELEMENTS 16
 const unsigned num_elements = 16;
+
+class TestStruct {
+public:
+  __device__ void test() {}
+};
+
+// CHECK: dpct::constant_memory<TestStruct, 0> t1;
+__constant__ TestStruct t1;
+
+// CHECK: void member_acc(TestStruct t1) {
+// CHECK-NEXT:  t1.test();
+// CHECK-NEXT:}
+__global__ void member_acc() {
+  t1.test();
+}
 // CHECK: dpct::constant_memory<float, 1> const_angle(360);
 // CHECK: dpct::constant_memory<float, 2> const_float(NUM_ELEMENTS, num_elements * 2);
 __constant__ float const_angle[360], const_float[NUM_ELEMENTS][num_elements * 2];
 // CHECK: dpct::constant_memory<cl::sycl::double2, 0> vec_d;
 __constant__ double2 vec_d;
 
-// CHECK:void simple_kernel(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::accessor<float, dpct::constant, 1> const_angle) {
+// CHECK:void simple_kernel(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_ct1]], float *const_angle) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range().get(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  if (index < 360) {
@@ -31,11 +46,11 @@ __global__ void simple_kernel(float *d_array) {
 // CHECK: dpct::constant_memory<float, 0> const_one;
 __constant__ float const_one;
 
-// CHECK:void simple_kernel_one(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::accessor<float, dpct::constant, 2> const_float, dpct::accessor<float, dpct::constant, 0> const_one) {
+// CHECK:void simple_kernel_one(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::accessor<float, dpct::constant, 2> const_float, float const_one) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range().get(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  if (index < 33) {
-// CHECK-NEXT:    d_array[index] = (float)const_one + const_float[index][index];
+// CHECK-NEXT:    d_array[index] = const_one + const_float[index][index];
 // CHECK-NEXT:  }
 // CHECK-NEXT:  return;
 // CHECK-NEXT:}
@@ -92,6 +107,17 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:  */
   // CHECK-NEXT:  (dpct::dpct_memcpy(&h_array[0], const_angle.get_ptr() + sizeof(float) * (3+NUM), sizeof(float) * 354), 0);
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3+NUM], sizeof(float) * 354);
+
+  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto t1_acc_ct1 = t1.get_access(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           member_acc(t1_acc_ct1);
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  member_acc<<<1, 1>>>();
   // CHECK: {
   // CHECK-NEXT:   dpct::buffer_t d_array_buf_ct0 = dpct::get_buffer(d_array);
   // CHECK-NEXT:   dpct::get_default_queue().submit(
@@ -101,7 +127,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, size / 64) * cl::sycl::range<3>(1, 1, 64), cl::sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           simple_kernel((float *)(&d_array_acc_ct0[0]), item_ct1, dpct::accessor<float, dpct::constant, 1>(const_angle_acc_ct1));
+  // CHECK-NEXT:           simple_kernel((float *)(&d_array_acc_ct0[0]), item_ct1, const_angle_acc_ct1.get_pointer());
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -133,7 +159,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class simple_kernel_one_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, size / 64) * cl::sycl::range<3>(1, 1, 64), cl::sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           simple_kernel_one((float *)(&d_array_acc_ct0[0]), item_ct1, dpct::accessor<float, dpct::constant, 2>(const_float_acc_ct1), dpct::accessor<float, dpct::constant, 0>(const_one_acc_ct1));
+  // CHECK-NEXT:           simple_kernel_one((float *)(&d_array_acc_ct0[0]), item_ct1, dpct::accessor<float, dpct::constant, 2>(const_float_acc_ct1), const_one_acc_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -158,9 +184,9 @@ int main(int argc, char **argv) {
 // CHECK: dpct::constant_memory<float, 0> C;
 __constant__ float C;
 
-// CHECK: void foo(float d, float y, dpct::accessor<float, dpct::constant, 0> C){
+// CHECK: void foo(float d, float y, float C){
 // CHECK-NEXT:   float temp;
-// CHECK-NEXT:   float maxtemp = cl::sycl::fmax(temp=(y*d)<(y==1?(float)C:0) ? -(3*y) :-10, (float)(-10));
+// CHECK-NEXT:   float maxtemp = cl::sycl::fmax(temp=(y*d)<(y==1?C:0) ? -(3*y) :-10, (float)(-10));
 // CHECK-NEXT: }
 __global__ void foo(float d, float y){
   float temp;

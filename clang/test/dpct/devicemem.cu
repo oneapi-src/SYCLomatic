@@ -7,12 +7,26 @@
 
 #define NUM_ELEMENTS (/* Threads per block */ 16)
 
+class TestStruct {
+public:
+  __device__ void test() {}
+};
+
+// CHECK: dpct::device_memory<TestStruct, 0> t1;
+__device__ TestStruct t1;
+
+// CHECK: void member_acc(TestStruct *t1) {
+// CHECK-NEXT:  t1->test();
+// CHECK-NEXT:}
+__global__ void member_acc() {
+  t1.test();
+}
 // CHECK: dpct::device_memory<float, 1> in(NUM_ELEMENTS);
 __device__ float in[NUM_ELEMENTS];
 // CHECK: dpct::device_memory<int, 1> init(cl::sycl::range<1>(4), {1, 2, 3, 4});
 __device__ int init[4] = {1, 2, 3, 4};
 
-// CHECK: void kernel1(float *out, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::accessor<float, dpct::device, 1> in) {
+// CHECK: void kernel1(float *out, cl::sycl::nd_item<3> [[ITEM:item_ct1]], float *in) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] = in[{{.*}}[[ITEM]].get_local_id(2)];
 // CHECK: }
 __global__ void kernel1(float *out) {
@@ -29,8 +43,8 @@ const int num_elements = 16;
 // CHECK: dpct::device_memory<float, 2> fy(num_elements, 4 * num_elements);
 __device__ float fx[2], fy[num_elements][4 * num_elements];
 
-// CHECK: void kernel2(float *out, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::accessor<int, dpct::device, 0> al, dpct::accessor<float, dpct::device, 1> fx, dpct::accessor<float, dpct::device, 2> fy, dpct::accessor<float, dpct::device, 1> tmp) {
-// CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] += (int)al;
+// CHECK: void kernel2(float *out, cl::sycl::nd_item<3> [[ITEM:item_ct1]], int *al, float *fx, dpct::accessor<float, dpct::device, 2> fy, float *tmp) {
+// CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] += *al;
 // CHECK:   fx[{{.*}}[[ITEM]].get_local_id(2)] = fy[{{.*}}[[ITEM]].get_local_id(2)][{{.*}}[[ITEM]].get_local_id(2)];
 // CHECK: }
 __global__ void kernel2(float *out) {
@@ -61,6 +75,16 @@ int main() {
   cudaMalloc((void **)&d_out, array_size);
 
   const int threads_per_block = NUM_ELEMENTS;
+  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto t1_acc_ct1 = t1.get_access(cgh);
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, threads_per_block), cl::sycl::range<3>(1, 1, threads_per_block)),
+  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           member_acc(t1_acc_ct1.get_pointer());
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  member_acc<<<1, threads_per_block>>>();
   // CHECK: {
   // CHECK-NEXT:   dpct::buffer_t d_out_buf_ct0 = dpct::get_buffer(d_out);
   // CHECK-NEXT:   dpct::get_default_queue().submit(
@@ -70,7 +94,7 @@ int main() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, threads_per_block), cl::sycl::range<3>(1, 1, threads_per_block)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           kernel1((float *)(&d_out_acc_ct0[0]), item_ct1, dpct::accessor<float, dpct::device, 1>(in_acc_ct1));
+  // CHECK-NEXT:           kernel1((float *)(&d_out_acc_ct0[0]), item_ct1, in_acc_ct1.get_pointer());
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -89,7 +113,7 @@ int main() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, threads_per_block), cl::sycl::range<3>(1, 1, threads_per_block)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           kernel2((float *)(&d_out_acc_ct0[0]), item_ct1, dpct::accessor<int, dpct::device, 0>(al_acc_ct1), dpct::accessor<float, dpct::device, 1>(fx_acc_ct1), dpct::accessor<float, dpct::device, 2>(fy_acc_ct1), dpct::accessor<float, dpct::device, 1>(tmp_acc_ct1));
+  // CHECK-NEXT:           kernel2((float *)(&d_out_acc_ct0[0]), item_ct1, al_acc_ct1.get_pointer(), fx_acc_ct1.get_pointer(), dpct::accessor<float, dpct::device, 2>(fy_acc_ct1), tmp_acc_ct1.get_pointer());
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }

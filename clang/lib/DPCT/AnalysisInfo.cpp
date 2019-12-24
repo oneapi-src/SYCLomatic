@@ -169,18 +169,18 @@ void KernelCallExpr::addAccessorDecl(MemVarInfo::VarScope Scope) {
 
 void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
   if (VI->isShared()) {
-    if (VI->getType()->getDimension()) {
+    if (VI->getType()->getDimension() > 1) {
       SubmitStmts.emplace_back(VI->getRangeDecl(ExecutionConfig.ExternMemSize));
     }
   } else if (!VI->isGlobal()) {
     SubmitStmts.emplace_back(VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
-  } else if (getFilePath() != VI->getFilePath() && !VI->isShared()) {
+  } else if (getFilePath() != VI->getFilePath()) {
     // Global variable definition and global variable reference are not in the
     // same file, and are not a share varible, insert extern variable
     // declaration.
     SubmitStmts.emplace_back(VI->getExternGlobalVarDecl());
   }
-  SubmitStmts.emplace_back(VI->getAccessorDecl());
+  SubmitStmts.emplace_back(VI->getAccessorDecl(ExecutionConfig.ExternMemSize));
 }
 
 void KernelCallExpr::buildKernelArgsStmt() {
@@ -664,8 +664,8 @@ std::string MemVarInfo::getDeclarationReplacement() {
   case clang::dpct::MemVarInfo::Local:
     return "";
   case clang::dpct::MemVarInfo::Extern:
-    return buildString("auto ", getName(), " = ", ExternVariableName,
-                       ".reinterpret<", getType()->getBaseName(), ">();");
+    return buildString("auto ", getName(), " = (", getType()->getBaseName(),
+                       " *)", ExternVariableName, ";");
   case clang::dpct::MemVarInfo::Global: {
     if (isShared())
       return "";

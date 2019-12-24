@@ -66,10 +66,9 @@ int main() {
 
      //CHECK:struct SharedMemory
 //CHECK-NEXT:{
-//CHECK-NEXT:  unsigned int *
-//CHECK-NEXT:  getPointer(dpct::accessor<dpct::byte_t, dpct::local, 1> dpct_local)
+//CHECK-NEXT:  unsigned int *getPointer(dpct::byte_t *dpct_local)
 //CHECK-NEXT:  {
-//CHECK-NEXT:    auto s_uint = dpct_local.reinterpret<unsigned int>();
+//CHECK-NEXT:    auto s_uint = (unsigned int *)dpct_local;
 //CHECK-NEXT:    return s_uint;
 //CHECK-NEXT:  }
 //CHECK-NEXT:};

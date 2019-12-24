@@ -269,8 +269,7 @@ void IncludesCallbacks::InclusionDirective(
   std::string FilePath = File->getName();
   makeCanonical(FilePath);
   std::string DirPath = llvm::sys::path::parent_path(FilePath);
-  bool IsFileInInRoot =
-      !isChildPath(DpctInstallPath, DirPath) &&
+  bool IsFileInInRoot = !isChildPath(DpctInstallPath, DirPath) &&
                         (isChildOrSamePath(InRoot, DirPath));
 
   if (IsFileInInRoot) {
@@ -388,7 +387,7 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
 
     InFile = getAbsolutePath(InFile);
     makeCanonical(InFile);
-    if(ProcessAllFlag) {
+    if (ProcessAllFlag) {
       IncludeFileMap[InFile] = false;
     }
   }
@@ -436,7 +435,7 @@ void MigrationRule::printStatistics(llvm::raw_ostream &OS) {
 }
 
 void MigrationRule::emplaceTransformation(const char *RuleID,
-                                            TextModification *TM) {
+                                          TextModification *TM) {
   ASTTraversalMetaInfo::getEmittedTransformations()[RuleID].emplace_back(TM);
   TransformSet->emplace_back(TM);
 }
@@ -465,11 +464,15 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
     if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "func"))
       DeviceFunctionDecl::LinkRedecls(FD)->setItem();
     VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
-    if (!VD) { return; }
+    if (!VD) {
+      return;
+    }
     IsME = true;
   } else if ((DRE = getNodeAsType<DeclRefExpr>(Result, "declRefExpr"))) {
     VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
-    if (!VD) { return; }
+    if (!VD) {
+      return;
+    }
     std::string InFile =
         dpct::DpctGlobalInfo::getSourceManager().getFilename(VD->getBeginLoc());
     if (!isChildOrSamePath(DpctInstallPath, InFile)) {
@@ -873,7 +876,7 @@ void ErrorHandlingHostAPIRule::insertTryCatch(const FunctionDecl* FD) {
       IndentStr + "}";
 
   emplaceTransformation(
-    new InsertAfterStmt(FD->getBody(), std::move(ReplaceStr)));
+      new InsertAfterStmt(FD->getBody(), std::move(ReplaceStr)));
 }
 
 REGISTER_RULE(ErrorHandlingHostAPIRule)
@@ -975,7 +978,8 @@ void AtomicFunctionRule::ReportUnsupportedAtomicFunc(const CallExpr *CE) {
   // Atomic functions with __half and half2 are not supported.
   if (!CE->getDirectCallee())
     return;
-  OSS << "half version of " << MapNames::ITFName.at(CE->getDirectCallee()->getName().str());
+  OSS << "half version of "
+      << MapNames::ITFName.at(CE->getDirectCallee()->getName().str());
   report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, OSS.str());
 }
 
@@ -1049,8 +1053,8 @@ void AtomicFunctionRule::run(const MatchFinder::MatchResult &Result) {
   ReportUnsupportedAtomicFunc(
       getNodeAsType<CallExpr>(Result, "unsupportedAtomicFuncCall"));
 
-  MigrateAtomicFunc(
-      getNodeAsType<CallExpr>(Result, "supportedAtomicFuncCall"), Result);
+  MigrateAtomicFunc(getNodeAsType<CallExpr>(Result, "supportedAtomicFuncCall"),
+                    Result);
 }
 
 REGISTER_RULE(AtomicFunctionRule)
@@ -1951,9 +1955,8 @@ void VectorTypeOperatorRule::run(const MatchFinder::MatchResult &Result) {
       Result, getNodeAsType<FunctionDecl>(Result, "overloadedOperatorDecl"));
 
   // Explicitly call user overloaded operator
-  MigrateOverloadedOperatorCall(
-      Result,
-      getNodeAsType<CXXOperatorCallExpr>(Result, "callOverloadedOperator"));
+  MigrateOverloadedOperatorCall(Result, getNodeAsType<CXXOperatorCallExpr>(
+                                            Result, "callOverloadedOperator"));
 }
 
 REGISTER_RULE(VectorTypeOperatorRule)
@@ -2218,12 +2221,11 @@ void ReturnTypeRule::registerMatcher(MatchFinder &MF) {
   // It will be replaced by a handle type later.
   auto TypedefNames = hasAnyName(
       "dim3", "cudaError_t", "CUresult", "CUcontext", "cudaEvent_t",
-      "cudaStream_t", "__half", "__half2", "half", "half2",
-      "cublasStatus_t", "cuComplex", "cuDoubleComplex",
-      "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
-      "cublasOperation_t", "cublasStatus", "cusolverDnHandle_t",
-      "cusolverStatus_t", "cusolverEigType_t", "cusolverEigMode_t",
-      "cublasHandle_t", "cusolverDnHandle_t");
+      "cudaStream_t", "__half", "__half2", "half", "half2", "cublasStatus_t",
+      "cuComplex", "cuDoubleComplex", "cublasFillMode_t", "cublasDiagType_t",
+      "cublasSideMode_t", "cublasOperation_t", "cublasStatus",
+      "cusolverDnHandle_t", "cusolverStatus_t", "cusolverEigType_t",
+      "cusolverEigMode_t", "cublasHandle_t", "cusolverDnHandle_t");
 
   auto T =
       hasDeclaration(anyOf(typedefDecl(TypedefNames), enumDecl(EnumTypeNames),
@@ -2239,9 +2241,7 @@ void ReturnTypeRule::registerMatcher(MatchFinder &MF) {
                  references(cxxRecordDecl(RecordTypeNames)));
 
   MF.addMatcher(
-      functionDecl(
-          returns(anyOf(T, P, PP, R)))
-          .bind("functionDeclWithTypedef"),
+      functionDecl(returns(anyOf(T, P, PP, R))).bind("functionDeclWithTypedef"),
       this);
 }
 
@@ -2320,9 +2320,10 @@ void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
     report(ME->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE);
   } else if (MemberName == "maxGridSize") {
     report(ME->getBeginLoc(), Diagnostics::MAX_GRID_SIZE);
-  } else if(MemberName == "deviceOverlap") {
-    emplaceTransformation(new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "true"));
-    return ;
+  } else if (MemberName == "deviceOverlap") {
+    emplaceTransformation(
+        new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "true"));
+    return;
   }
 
   auto Search = PropNamesMap.find(MemberName);
@@ -3747,15 +3748,14 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
       if (ReplInfo.ToDevice) {
         if (i == 0) {
-          emplaceTransformation(new InsertBeforeStmt(
-            CE->getArg(i),
-            std::move("(")));
-          emplaceTransformation(new InsertAfterStmt(
-            CE->getArg(i),
-            std::move(").get_device()")));
+          emplaceTransformation(
+              new InsertBeforeStmt(CE->getArg(i), std::move("(")));
+          emplaceTransformation(
+              new InsertAfterStmt(CE->getArg(i), std::move(").get_device()")));
         }
         if (i == ArgNum - 1) {
-          PrefixInsertStr = PrefixInsertStr + IndentStr + "int64_t lwork64 = *(" +
+          PrefixInsertStr = PrefixInsertStr + IndentStr +
+                            "int64_t lwork64 = *(" +
                             getStmtSpelling(CE->getArg(i), *(Result.Context)) +
                             ");" + getNL();
           SourceLocation ParameterEndAfterSemi;
@@ -3801,12 +3801,14 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (!ReplInfo.CopyFrom.empty()) {
       std::string InsStr = "";
       for (size_t i = 0; i < ReplInfo.CopyFrom.size(); ++i) {
-        InsStr = InsStr + getStmtSpelling(CE->getArg(ReplInfo.CopyFrom[i]), *(Result.Context)) + ", ";
+        InsStr = InsStr +
+                 getStmtSpelling(CE->getArg(ReplInfo.CopyFrom[i]),
+                                 *(Result.Context)) +
+                 ", ";
         if (i == ReplInfo.CopyTo.size() - 1 ||
-          ReplInfo.CopyTo[i + 1] !=
-          ReplInfo.CopyTo[i]) {
+            ReplInfo.CopyTo[i + 1] != ReplInfo.CopyTo[i]) {
           emplaceTransformation(new InsertBeforeStmt(
-            CE->getArg(ReplInfo.CopyTo[i]), std::move(InsStr)));
+              CE->getArg(ReplInfo.CopyTo[i]), std::move(InsStr)));
           InsStr = "";
         }
       }
@@ -4051,14 +4053,16 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaGetLastError" ||
              FuncName == "cudaPeekAtLastError") {
     report(CE->getBeginLoc(),
-           Comments::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, MapNames::ITFName.at(FuncName));
+           Comments::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0,
+           MapNames::ITFName.at(FuncName));
     emplaceTransformation(new ReplaceStmt(CE, "0"));
   } else if (FuncName == "cudaGetErrorString" ||
              FuncName == "cudaGetErrorName") {
     // Insert warning messages into the spelling locations in case
     // that these functions are contained in macro definitions
     auto Loc = Result.SourceManager->getSpellingLoc(CE->getBeginLoc());
-    report(Loc, Comments::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED, MapNames::ITFName.at(FuncName));
+    report(Loc, Comments::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
+           MapNames::ITFName.at(FuncName));
     emplaceTransformation(
         new InsertBeforeStmt(CE, "\"" + FuncName + " not supported\"/*"));
     emplaceTransformation(new InsertAfterStmt(CE, "*/"));
@@ -4082,9 +4086,11 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ""));
     }
   } else if (FuncName == "cudaFuncSetCacheConfig") {
-    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, MapNames::ITFName.at(FuncName));
+    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED,
+           MapNames::ITFName.at(FuncName));
   } else if (FuncName == "cudaOccupancyMaxPotentialBlockSize") {
-    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED, MapNames::ITFName.at(FuncName));
+    report(CE->getBeginLoc(), Diagnostics::NOTSUPPORTED,
+           MapNames::ITFName.at(FuncName));
   } else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected function name: " << FuncName;
@@ -4338,8 +4344,7 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ReplStr));
     if (FuncName == "cudaStreamCreateWithFlags" ||
         FuncName == "cudaStreamCreateWithPriority") {
-      report(CE->getBeginLoc(),
-             Diagnostics::QUEUE_CREATED_IGNORING_OPTIONS);
+      report(CE->getBeginLoc(), Diagnostics::QUEUE_CREATED_IGNORING_OPTIONS);
     }
   } else if (FuncName == "cudaStreamDestroy") {
     auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
@@ -4412,7 +4417,8 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
       ReplStr = "(" + ReplStr + ", 0)";
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
-    emplaceTransformation(new ReplaceStmt(CE, false, FuncName, std::move(ReplStr)));
+    emplaceTransformation(
+        new ReplaceStmt(CE, false, FuncName, std::move(ReplStr)));
   } else if (FuncName == "cudaStreamAddCallback") {
     auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
     auto StmtStr1 = getStmtSpelling(CE->getArg(1), *Result.Context);
@@ -4441,8 +4447,6 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(StreamAPICallRule)
-
-
 
 // kernel call information collection
 void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
@@ -4477,7 +4481,6 @@ void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
       return;
 
     Insertions.insert(BodySLoc);
-
   }
 }
 
@@ -4507,27 +4510,25 @@ void DeviceFunctionCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       this);
 
   MF.addMatcher(
-      functionDecl(anyOf(hasAttr(attr::CUDADevice),
-                                              hasAttr(attr::CUDAGlobal)),
-                                        unless(hasAttr(attr::CUDAHost)))
-                               .bind("funcDecl"),
+      functionDecl(anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)),
+                   unless(hasAttr(attr::CUDAHost)))
+          .bind("funcDecl"),
       this);
-
 }
 
 void DeviceFunctionCallRule::run(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr");
   auto FD = getAssistNodeAsType<FunctionDecl>(Result, "funcDecl");
-  if(FD){
+  if (FD) {
     auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
     if (CE) {
       FuncInfo->addCallee(CE);
       if (getAssistNodeAsType<FunctionDecl>(Result, "printf", false)) {
         emplaceTransformation(new ReplaceStmt(
-            CE,
-            buildString(DpctGlobalInfo::getStreamName(),
-                        " << \"TODO - output needs update\" << cl::sycl::endl")));
+            CE, buildString(
+                    DpctGlobalInfo::getStreamName(),
+                    " << \"TODO - output needs update\" << cl::sycl::endl")));
         report(CE->getBeginLoc(), Warnings::PRINTF_FUNC_MIGRATION_WARNING);
         FuncInfo->setStream();
       }
@@ -4539,9 +4540,9 @@ REGISTER_RULE(DeviceFunctionCallRule)
 
 /// __constant__/__shared__/__device__ var information collection
 void MemVarRule::registerMatcher(MatchFinder &MF) {
-  auto DeclMatcher = varDecl(
-      anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice),
-            hasAttr(attr::CUDAShared)),
+  auto DeclMatcher =
+      varDecl(anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice),
+                    hasAttr(attr::CUDAShared)),
               unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
                                 "warpSize")));
   MF.addMatcher(DeclMatcher.bind("var"), this);
@@ -4556,21 +4557,21 @@ void MemVarRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 
-void MemVarRule::insertExplicitCast(const ImplicitCastExpr *Impl,
-                                    const QualType &Type) {
-  if (Impl->getCastKind() == CastKind::CK_LValueToRValue) {
-    if (!Type->isArrayType()) {
-      auto TypeName = Type.getAsString();
-      if (Type->isPointerType()) {
-        TypeName = Type->getPointeeType().getAsString();
-      }
-      auto Itr = MapNames::TypeNamesMap.find(TypeName);
-      if (Itr != MapNames::TypeNamesMap.end())
-        TypeName = Itr->second;
-      if (Type->isPointerType()) {
-        TypeName += "*";
-      }
-      emplaceTransformation(new InsertBeforeStmt(Impl, "(" + TypeName + ")"));
+void MemVarRule::processDeref(const Stmt *S, ASTContext &Context) {
+  auto Parents = Context.getParents(*S);
+  if (Parents.size()) {
+    auto &Parent = Parents[0];
+    if (auto ICE = Parent.get<ImplicitCastExpr>()) {
+      processDeref(ICE, Context);
+    } else if (auto ME = Parent.get<MemberExpr>()) {
+      emplaceTransformation(new ReplaceToken(ME->getOperatorLoc(), "->"));
+    } else if (auto CDSME = Parent.get<CXXDependentScopeMemberExpr>()) {
+      emplaceTransformation(new ReplaceToken(CDSME->getOperatorLoc(), "->"));
+    } else if (Parent.get<BinaryOperator>() || Parent.get<CallExpr>() ||
+               Parent.get<CXXConstructExpr>() || Parent.get<ParenExpr>()) {
+      emplaceTransformation(new InsertBeforeStmt(S, "*"));
+    } else {
+      insertAroundStmt(S, "(*", ")");
     }
   }
 }
@@ -4590,13 +4591,9 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
       auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());
       if (auto Var = Global.findMemVarInfo(VD))
         DeviceFunctionDecl::LinkRedecls(Func)->addVar(Var);
-      if (auto Impl = getAssistNodeAsType<ImplicitCastExpr>(Result, "impl"))
-        insertExplicitCast(Impl, VD->getType());
-    }
-    auto Parents = Result.Context->getParents(*MemVarRef);
-    if (!Parents.empty()) {
-      replaceMemberOperator<MemberExpr>(Parents[0]);
-      replaceMemberOperator<CXXDependentScopeMemberExpr>(Parents[0]);
+      if (!VD->getType()->isArrayType() && !VD->hasAttr<CUDAConstantAttr>()) {
+        processDeref(MemVarRef, *Result.Context);
+      }
     }
   }
 }
@@ -4623,7 +4620,7 @@ bool MemoryMigrationRule::isCOCESimpleAddrOf(const Expr *E) {
 }
 
 std::string MemoryMigrationRule::getNameStrRemovedAddrOf(const Expr *E,
-                                                            bool isCOCE) {
+                                                         bool isCOCE) {
   if (isCOCE) {
     auto COCE = dyn_cast<CXXOperatorCallExpr>(E);
     ExprAnalysis SEA;
@@ -4638,7 +4635,7 @@ std::string MemoryMigrationRule::getNameStrRemovedAddrOf(const Expr *E,
 }
 
 std::string MemoryMigrationRule::getTypeStrRemovedAddrOf(const Expr *E,
-                                                        bool isCOCE) {
+                                                         bool isCOCE) {
   QualType QT;
   if (isCOCE) {
     auto COCE = dyn_cast<CXXOperatorCallExpr>(E);
@@ -4760,7 +4757,8 @@ void MemoryMigrationRule::mallocMigration(
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
       // Report unsupported warnings
-      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, MapNames::ITFName.at(Name));
+      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED,
+             MapNames::ITFName.at(Name));
     }
   } else if (Name == "cublasAlloc") {
     // TODO: migrate functions when they are in template
@@ -4849,8 +4847,7 @@ void MemoryMigrationRule::replaceMemAPIArg(
     }
 
     if (!OffsetFromBaseStr.empty()) {
-      VarName =
-          "(char *)(" + VarName + ") + " + OffsetFromBaseStr;
+      VarName = "(char *)(" + VarName + ") + " + OffsetFromBaseStr;
     }
     emplaceTransformation(
         new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
@@ -4861,8 +4858,7 @@ void MemoryMigrationRule::replaceMemAPIArg(
     VarName += ".get_ptr()";
 
     if (!OffsetFromBaseStr.empty()) {
-      VarName =
-          "(char *)(" + VarName + ") + " + OffsetFromBaseStr;
+      VarName = "(char *)(" + VarName + ") + " + OffsetFromBaseStr;
     }
     emplaceTransformation(
         new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
@@ -4872,8 +4868,7 @@ void MemoryMigrationRule::replaceMemAPIArg(
     VarName += ".get_ptr()";
 
     if (!OffsetFromBaseStr.empty()) {
-      VarName =
-          "(char *)(" + VarName + ") + " + OffsetFromBaseStr;
+      VarName = "(char *)(" + VarName + ") + " + OffsetFromBaseStr;
     }
     emplaceTransformation(
         new ReplaceToken(E->getBeginLoc(), E->getEndLoc(), std::move(VarName)));
@@ -4891,13 +4886,11 @@ TextModification *removeArg(const CallExpr *C, unsigned n,
 
   // The start point of the removal is the end of the previous arg.
   // Incase the previous arg is another macro or function-like macro,
-  // we take 1 token(the last token of Expr, because of the design of Clang's EndLoc)
-  // after getExpansionRange().getEnd() as the real end location.
-  // If the call expr is in a function-like macro or nested macros,
-  // to get the correct loc of the previous arg,
-  // we need to use getImmediateSpellingLoc step by step
-  // until reaching a FileID or a non-function-like macro.
-  // E.g.
+  // we take 1 token(the last token of Expr, because of the design of Clang's
+  // EndLoc) after getExpansionRange().getEnd() as the real end location. If the
+  // call expr is in a function-like macro or nested macros, to get the correct
+  // loc of the previous arg, we need to use getImmediateSpellingLoc step by
+  // step until reaching a FileID or a non-function-like macro. E.g.
   // MACRO_A(MACRO_B(callexpr(arg1, arg2, arg3)));
   // When we try to remove arg3, Begin should be at the end of arg2.
   // However, the expansionLoc of Begin is at the beginning of MACRO_A.
@@ -4938,8 +4931,7 @@ TextModification *removeArg(const CallExpr *C, unsigned n,
 /// a function argument.
 /// \param Stmt The statement needs to be checked.
 /// \return true or false.
-bool MemoryMigrationRule::isStmtSimpleMemcpyOrMemset(
-    const clang::Stmt *Stmt) {
+bool MemoryMigrationRule::isStmtSimpleMemcpyOrMemset(const clang::Stmt *Stmt) {
   auto CheckName = [&](std::string &Name) -> bool {
     if (Name == "cudaMemset" || Name == "cudaMemcpy" ||
         Name == "cudaMemcpyToSymbol" || Name == "cudaMemcpyFromSymbol") {
@@ -4964,7 +4956,7 @@ bool MemoryMigrationRule::isStmtSimpleMemcpyOrMemset(
     return false;
   };
 
-  if (const CallExpr* CE = getMemcpyOrMemsetCallExprFromStmt(Stmt)) {
+  if (const CallExpr *CE = getMemcpyOrMemsetCallExprFromStmt(Stmt)) {
     if (CheckCallExpr(CE))
       return true;
   }
@@ -4972,12 +4964,11 @@ bool MemoryMigrationRule::isStmtSimpleMemcpyOrMemset(
   return false;
 }
 
-
 const CallExpr *MemoryMigrationRule::getMemcpyOrMemsetCallExprFromStmt(
     const clang::Stmt *Stmt) {
   if (auto CE = dyn_cast<CallExpr>(Stmt)) {
     return CE;
-    //Case 1:
+    // Case 1:
     //{
     //  cudaMemcpy();
     //}
@@ -4986,7 +4977,7 @@ const CallExpr *MemoryMigrationRule::getMemcpyOrMemsetCallExprFromStmt(
   if (auto BO = dyn_cast<BinaryOperator>(Stmt)) {
     if (auto CE = dyn_cast<CallExpr>(BO->getRHS())) {
       return CE;
-      //Case 2:
+      // Case 2:
       //{
       //  cudaError_t a;
       //  a = cudaMemcpy();
@@ -4995,7 +4986,7 @@ const CallExpr *MemoryMigrationRule::getMemcpyOrMemsetCallExprFromStmt(
       if (ICE->getSubExpr()) {
         if (auto CE = dyn_cast<CallExpr>(ICE->getSubExpr())) {
           return CE;
-          //Case 3:
+          // Case 3:
           //{
           //  int a;
           //  a = cudaMemcpy();
@@ -5011,14 +5002,14 @@ const CallExpr *MemoryMigrationRule::getMemcpyOrMemsetCallExprFromStmt(
       if (VD && VD->hasInit()) {
         if (auto CE = dyn_cast<CallExpr>(VD->getInit())) {
           return CE;
-          //Case 4:
+          // Case 4:
           //{
           //  cudaError_t a = cudaMemcpy();
           //}
         } else if (auto ICE = dyn_cast<ImplicitCastExpr>(VD->getInit())) {
           if (auto CE = dyn_cast<CallExpr>(ICE->getSubExpr()))
             return CE;
-          //Case 5:
+          // Case 5:
           //{
           //  int a = cudaMemcpy();
           //}
@@ -5028,7 +5019,6 @@ const CallExpr *MemoryMigrationRule::getMemcpyOrMemsetCallExprFromStmt(
   }
   return nullptr;
 }
-
 
 /// For more than 1 continuous cudaMemcpy or cudaMemset APIs, this function try
 /// to add a temp queue variable "queue q_ct1 = dpct::default_queue()" to assist
@@ -5073,7 +5063,7 @@ void MemoryMigrationRule::continuousMemcpyMemsetHandler(
 /// \param IsAssigned Whether the return value of the call expression is used.
 void MemoryMigrationRule::defaultMemcpyMemsetHandler(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
-                      const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
+    const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
   std::string Name;
   if (ULExpr && C) {
     Name = ULExpr->getName().getAsString();
@@ -5133,7 +5123,7 @@ void MemoryMigrationRule::handleMemcpyAndMemset(
   }
 
   const CompoundStmt *P = DpctGlobalInfo::findAncestor(C);
-  if (P == nullptr){
+  if (P == nullptr) {
     defaultMemcpyMemsetHandler(Result, C, ULExpr, IsAssigned);
     return;
   }
@@ -5390,8 +5380,8 @@ void MemoryMigrationRule::memcpySymbolMigration(
   }
 }
 
-void MemoryMigrationRule::freeMigration(
-    const MatchFinder::MatchResult &Result, const CallExpr *C,
+void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
+                                        const CallExpr *C,
                                         const UnresolvedLookupExpr *ULExpr,
                                         bool IsAssigned,
                                         std::string SpecifiedQueue) {
@@ -5496,7 +5486,7 @@ void MemoryMigrationRule::memsetMigration(
 }
 
 void MemoryMigrationRule::getSymbolSizeMigration(
-  const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
+    const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned,
     std::string SpecifiedQueue) {
   // Here only handle ordinary variable name reference, for accessing the
@@ -5509,11 +5499,11 @@ void MemoryMigrationRule::getSymbolSizeMigration(
   EA.analyze(C->getArg(1));
   auto StmtStrArg1 = EA.getReplacedString();
   if (isSimpleAddrOf(C->getArg(0))) {
-    Replacement = getNameStrRemovedAddrOf(C->getArg(0)) + " = " +
-                  StmtStrArg1 + ".get_size()";
-  }
-  else {
-    Replacement = "*(" + StmtStrArg0 + ")" + " = " + StmtStrArg1 + ".get_size()";
+    Replacement = getNameStrRemovedAddrOf(C->getArg(0)) + " = " + StmtStrArg1 +
+                  ".get_size()";
+  } else {
+    Replacement =
+        "*(" + StmtStrArg0 + ")" + " = " + StmtStrArg1 + ".get_size()";
   }
   emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
 }
@@ -5545,10 +5535,9 @@ void MemoryMigrationRule::prefetchMigration(
           0) {
         Replacement =
             StmtStrArg3 + "->prefetch(" + StmtStrArg0 + "," + StmtStrArg1 + ")";
-      }
-      else {
+      } else {
         Replacement = "(" + StmtStrArg3 + ")->prefetch(" + StmtStrArg0 + "," +
-          StmtStrArg1 + ")";
+                      StmtStrArg1 + ")";
       }
     }
     emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
@@ -5557,8 +5546,8 @@ void MemoryMigrationRule::prefetchMigration(
   }
 }
 
-void MemoryMigrationRule::miscMigration(
-    const MatchFinder::MatchResult &Result, const CallExpr *C,
+void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
+                                        const CallExpr *C,
                                         const UnresolvedLookupExpr *ULExpr,
                                         bool IsAssigned,
                                         std::string SpecifiedQueue) {
@@ -5580,7 +5569,8 @@ void MemoryMigrationRule::miscMigration(
       Repl << "*(" << Arg0Str << ") = " << Arg1Str;
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
-      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, MapNames::ITFName.at(Name));
+      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED,
+             MapNames::ITFName.at(Name));
     }
   } else if (Name == "cudaHostRegister" || Name == "cudaHostUnregister") {
     auto Msg = MapNames::RemovedAPIWarningMessage.find(Name);
@@ -5600,14 +5590,14 @@ void MemoryMigrationRule::miscMigration(
 // Memory migration rules live here.
 void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
   auto memoryAPI = [&]() {
-    return hasAnyName("cudaMalloc", "cudaMemcpy", "cudaMemcpyAsync",
-                      "cudaMemcpyToSymbol", "cudaMemcpyToSymbolAsync",
-                      "cudaMemcpyFromSymbol", "cudaMemcpyFromSymbolAsync",
-                      "cudaFree", "cudaMemset", "cudaMemsetAsync", "cublasFree",
-                      "cublasAlloc", "cudaGetSymbolAddress", "cudaFreeHost",
-                      "cudaHostAlloc", "cudaHostGetDevicePointer",
-                      "cudaHostRegister", "cudaHostUnregister",
-                      "cudaMallocHost", "cudaMallocManaged", "cudaGetSymbolSize", "cudaMemPrefetchAsync");
+    return hasAnyName(
+        "cudaMalloc", "cudaMemcpy", "cudaMemcpyAsync", "cudaMemcpyToSymbol",
+        "cudaMemcpyToSymbolAsync", "cudaMemcpyFromSymbol",
+        "cudaMemcpyFromSymbolAsync", "cudaFree", "cudaMemset",
+        "cudaMemsetAsync", "cublasFree", "cublasAlloc", "cudaGetSymbolAddress",
+        "cudaFreeHost", "cudaHostAlloc", "cudaHostGetDevicePointer",
+        "cudaHostRegister", "cudaHostUnregister", "cudaMallocHost",
+        "cudaMallocManaged", "cudaGetSymbolSize", "cudaMemPrefetchAsync");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -5635,7 +5625,7 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
 
 void MemoryMigrationRule::run(const MatchFinder::MatchResult &Result) {
   auto MigrateCallExpr = [&](const CallExpr *C, const bool IsAssigned,
-                               const UnresolvedLookupExpr *ULExpr = NULL) {
+                             const UnresolvedLookupExpr *ULExpr = NULL) {
     if (!C)
       return;
 
@@ -5682,9 +5672,9 @@ void MemoryMigrationRule::run(const MatchFinder::MatchResult &Result) {
     }
   };
   MigrateCallExpr(getAssistNodeAsType<CallExpr>(Result, "call"),
-                    /* IsAssigned */ false);
+                  /* IsAssigned */ false);
   MigrateCallExpr(getAssistNodeAsType<CallExpr>(Result, "callUsed"),
-                    /* IsAssigned */ true);
+                  /* IsAssigned */ true);
   MigrateCallExpr(
       getAssistNodeAsType<CallExpr>(Result, "callExprUsed"),
       /* IsAssigned */ true,
@@ -5713,13 +5703,12 @@ void MemoryMigrationRule::getSymbolAddressMigration(
   emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
 }
 
-
 MemoryMigrationRule::MemoryMigrationRule() {
   SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   std::map<
       std::string,
-      std::function<void(MemoryMigrationRule *,
-                         const ast_matchers::MatchFinder::MatchResult &,
+      std::function<void(
+          MemoryMigrationRule *, const ast_matchers::MatchFinder::MatchResult &,
           const CallExpr *, const UnresolvedLookupExpr *, bool, std::string)>>
       Dispatcher{
           {"cudaMalloc", &MemoryMigrationRule::mallocMigration},
@@ -5749,15 +5738,15 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaMemPrefetchAsync", &MemoryMigrationRule::prefetchMigration}};
 
   for (auto &P : Dispatcher)
-    MigrationDispatcher[P.first] =
-        std::bind(P.second, this, std::placeholders::_1, std::placeholders::_2,
+    MigrationDispatcher[P.first] = std::bind(
+        P.second, this, std::placeholders::_1, std::placeholders::_2,
         std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
 
   DPCTQueueCounter = 0;
 }
 
-void MemoryMigrationRule::handleAsync(
-    const CallExpr *C, unsigned i, const MatchFinder::MatchResult &Result) {
+void MemoryMigrationRule::handleAsync(const CallExpr *C, unsigned i,
+                                      const MatchFinder::MatchResult &Result) {
   const Expr *Stream = C->getArg(i);
   if (Stream) {
     ExprAnalysis EA;
@@ -6158,8 +6147,7 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
   } else if (auto VD = getNodeAsType<VarDecl>(Result, "texObj")) {
     if (auto FD = dyn_cast<FunctionDecl>(VD->getParentFunctionOrMethod())) {
       if (!FD->hasAttr<CUDAGlobalAttr>() && !FD->hasAttr<CUDADeviceAttr>()) {
-        emplaceTransformation(
-            new ReplaceTypeInDecl(VD, "dpct::image_base_p"));
+        emplaceTransformation(new ReplaceTypeInDecl(VD, "dpct::image_base_p"));
       }
     }
   }
@@ -6267,6 +6255,4 @@ void ASTTraversalManager::emplaceAllRules(int SourceFileFlag) {
   }
 }
 
-const CompilerInstance &MigrationRule::getCompilerInstance() {
-  return TM->CI;
-}
+const CompilerInstance &MigrationRule::getCompilerInstance() { return TM->CI; }

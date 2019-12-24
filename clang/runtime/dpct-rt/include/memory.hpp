@@ -237,145 +237,54 @@ public:
   using value_t = typename std::remove_cv<T>::type;
   template <size_t Dimension = 1>
   using accessor_t = cl::sycl::accessor<T, Dimension, mode, target>;
-#ifdef DPCT_USM_LEVEL_NONE
-  // If without USM, must use cl::sycl::multi_ptr.
-  using pointer_t = cl::sycl::multi_ptr<T, asp>;
-#else
-  // Use raw pointer when USM is enabled.
   using pointer_t = T *;
-#endif // DPCT_USM_LEVEL_NONE
 };
 
 // dpct accessor used as kernel function and device function parameter
-template <class T, memory_attribute Memory, size_t Dimension> class accessor {
+template <class T, memory_attribute Memory, size_t Dimension> class accessor;
+template <class T, memory_attribute Memory> class accessor<T, Memory, 3> {
 public:
   using memory_t = memory_traits<Memory, T>;
   using element_t = typename memory_t::element_t;
   using pointer_t = typename memory_t::pointer_t;
-  using accessor_t = typename memory_t::template accessor_t<Dimension>;
-  accessor(pointer_t data, const cl::sycl::range<Dimension> &in_range)
-      : data(data), _range(in_range) {}
+  using accessor_t = typename memory_t::template accessor_t<3>;
+  accessor(pointer_t data, const cl::sycl::range<3> &in_range)
+      : data(data), range(in_range) {}
   template <memory_attribute M = Memory>
   accessor(typename std::enable_if<M != local, const accessor_t>::type &acc)
       : accessor(acc, acc.get_range()) {}
-  accessor(const accessor_t &acc, const cl::sycl::range<Dimension> &in_range)
+  accessor(const accessor_t &acc, const cl::sycl::range<3> &in_range)
       : accessor(acc.get_pointer(), in_range) {}
-  accessor<T, Memory, Dimension - 1> operator[](size_t index) const {
-    cl::sycl::range<Dimension - 1> sub = get_sub_range();
-    return accessor<T, Memory, Dimension - 1>(data + index * sub.size(), sub);
-  }
-
-private:
-  template <size_t D = Dimension>
-  typename std::enable_if<D == 3, cl::sycl::range<2>>::type
-  get_sub_range() const {
-    return cl::sycl::range<2>(_range.get(1), _range.get(2));
-  }
-  template <size_t D = Dimension>
-  typename std::enable_if<D == 2, cl::sycl::range<1>>::type
-  get_sub_range() const {
-    return cl::sycl::range<1>(_range.get(1));
+  accessor<T, Memory, 2> operator[](size_t index) const {
+    cl::sycl::range<2> sub(range.get(1), range.get(2));
+    return accessor<T, Memory, 2>(data + index * sub.size(), sub);
   }
 
 private:
   pointer_t data;
-  cl::sycl::range<Dimension> _range;
+  cl::sycl::range<3> range;
 };
-
-// accessor specialization while Dimension = 1
-template <class T, memory_attribute Memory> class accessor<T, Memory, 1> {
+template <class T, memory_attribute Memory> class accessor<T, Memory, 2> {
 public:
   using memory_t = memory_traits<Memory, T>;
   using element_t = typename memory_t::element_t;
   using pointer_t = typename memory_t::pointer_t;
-  using accessor_t = typename memory_t::template accessor_t<1>;
-  accessor(pointer_t data, const cl::sycl::range<1> &in_range)
-      : data(data), _range(in_range) {}
+  using accessor_t = typename memory_t::template accessor_t<2>;
+  accessor(pointer_t data, const cl::sycl::range<2> &in_range)
+      : data(data), range(in_range) {}
   template <memory_attribute M = Memory>
   accessor(typename std::enable_if<M != local, const accessor_t>::type &acc)
       : accessor(acc, acc.get_range()) {}
-  accessor(const accessor_t &acc, const cl::sycl::range<1> &in_range)
+  accessor(const accessor_t &acc, const cl::sycl::range<2> &in_range)
       : accessor(acc.get_pointer(), in_range) {}
-  element_t &operator[](size_t index) const { return *(data + index); }
-  element_t &operator*() { return *data; }
-  T *operator+(int val) { return data + val; }
-  T *operator-(int val) { return data - val; }
-  template <class Ty> operator Ty *() { return (Ty *)(&(*data)); }
-  template <class ReinterpretT>
-  accessor<ReinterpretT, Memory, 1> reinterpret() {
-    return accessor<ReinterpretT, Memory, 1>(
-#ifdef DPCT_USM_LEVEL_NONE
-        // Need to get raw pointer if usm disabled.
-        (ReinterpretT *)data.get(),
-#else
-        (ReinterpretT *)data,
-#endif // DPCT_USM_LEVEL_NONE
-        cl::sycl::range<1>(_range.size() * sizeof(T) / sizeof(ReinterpretT)));
+
+  pointer_t operator[](size_t index) const {
+    return data + range.get(1) * index;
   }
 
 private:
   pointer_t data;
-  cl::sycl::range<1> _range;
-};
-
-// accessor specialization while Dimension = 0
-template <class T, memory_attribute Memory> class accessor<T, Memory, 0> {
-public:
-  using memory_t = memory_traits<Memory, T>;
-  using element_t = typename memory_t::element_t;
-  using value_t = typename memory_t::value_t;
-  using pointer_t = typename memory_t::pointer_t;
-  using accessor_t = typename memory_t::template accessor_t<1>;
-  accessor(pointer_t data) : data(data) {}
-  accessor(const accessor_t &acc) : accessor(acc.get_pointer()) {}
-  template <class Ty> operator Ty() { return static_cast<Ty>(*data); }
-  operator element_t &() { return *data; }
-  accessor &operator=(const value_t &val) {
-    *data = val;
-    return *this;
-  }
-  T *operator&() { return static_cast<T *>(data); }
-  template <class OperandT>
-  auto operator+(const OperandT &rhs) -> decltype(T() + OperandT()) {
-    return *data + rhs;
-  }
-  template <class OperandT, memory_attribute OperandM>
-  auto operator+(const accessor<OperandT, OperandM, 0> &rhs)
-      -> decltype(T() + OperandT()) {
-    return *data + *rhs.data;
-  }
-  template <class OperandT>
-  auto operator-(const OperandT &rhs) -> decltype(T() - OperandT()) {
-    return *data - rhs;
-  }
-  template <class OperandT, memory_attribute OperandM>
-  auto operator-(const accessor<OperandT, OperandM, 0> &rhs)
-      -> decltype(T() - OperandT()) {
-    return *data - *rhs.data;
-  }
-  template <class OperandT>
-  auto operator*(const OperandT &rhs) -> decltype(T() * OperandT()) {
-    return *data * rhs;
-  }
-  template <class OperandT, memory_attribute OperandM>
-  auto operator*(const accessor<OperandT, OperandM, 0> &rhs)
-      -> decltype(T() * OperandT()) {
-    return (*data) * (*rhs.data);
-  }
-  template <class OperandT>
-  auto operator/(const OperandT &rhs) -> decltype(T() / OperandT()) {
-    return *data / rhs;
-  }
-  template <class OperandT, memory_attribute OperandM>
-  auto operator/(const accessor<OperandT, OperandM, 0> &rhs)
-      -> decltype(T() / OperandT()) {
-    return (*data) / (*rhs.data);
-  }
-  T operator-() { return -(*data); }
-  T *operator->() { return data; }
-
-private:
-  pointer_t data;
+  cl::sycl::range<2> range;
 };
 
 // memcpy
@@ -599,7 +508,7 @@ public:
 
   /// Constructor with range
   global_memory(const cl::sycl::range<Dimension> &range_in)
-      : size(range_in.size() * sizeof(T)), _range(range_in), reference(false),
+      : size(range_in.size() * sizeof(T)), range(range_in), reference(false),
         memory_ptr(nullptr) {
     static_assert((Memory == device) || (Memory == constant),
                   "Global memory attribute should be constant or device");
@@ -625,7 +534,7 @@ public:
 
   /// Get memory pointer of the memory object, which is virual pointer when
   /// usm off, and device ptr when usm on .
-  void *get_ptr() { return memory_ptr; }
+  value_t *get_ptr() { return memory_ptr; }
 
   /// Get the device memory object size in bytes.
   size_t get_size() { return size; }
@@ -635,78 +544,50 @@ public:
   accessor_t get_access(cl::sycl::handler &cgh) {
     return memory_manager::get_instance()
         .translate_ptr(memory_ptr)
-        .buffer.template reinterpret<T, Dimension>(_range)
+        .buffer.template reinterpret<T, Dimension>(range)
         .template get_access<memory_traits<Memory, T>::mode,
                              memory_traits<Memory, T>::target>(cgh);
   }
 #else
-  dpct_accessor_t get_access(cl::sycl::handler &cgh) {
-    return dpct_accessor_t((T *)memory_ptr, _range);
+  template <size_t D = Dimension>
+  typename std::enable_if<D != 1, dpct_accessor_t>::type
+  get_access(cl::sycl::handler &cgh) {
+    return dpct_accessor_t((T *)memory_ptr, range);
   }
 #endif // DPCT_USM_LEVEL_NONE
 
 private:
   global_memory(void *memory_ptr, size_t size)
-      : size(size), _range(size / sizeof(T)), reference(true),
+      : size(size), range(size / sizeof(T)), reference(true),
         memory_ptr(memory_ptr) {}
 
   size_t size;
-  cl::sycl::range<Dimension> _range;
+  cl::sycl::range<Dimension> range;
   bool reference;
-  void *memory_ptr;
+  value_t *memory_ptr;
 };
-template <class T, memory_attribute Memory> class global_memory<T, Memory, 0> {
+template <class T, memory_attribute Memory>
+class global_memory<T, Memory, 0> : public global_memory<T, Memory, 1> {
 public:
+  using base = global_memory<T, Memory, 1>;
+  using value_t = typename base::value_t;
   using accessor_t = typename memory_traits<Memory, T>::template accessor_t<0>;
-  using value_t = typename memory_traits<Memory, T>::value_t;
-  using dpct_accessor_t = accessor<T, Memory, 0>;
 
   /// Constructor with initial value.
-  global_memory(const value_t &val) : global_memory() {
-    dpct_memcpy(memory_ptr, &val, sizeof(T), host_to_device);
-  }
+  global_memory(const value_t &val) : base(cl::sycl::range<1>(1), {val}) {}
 
   /// Default constructor
-  global_memory() : memory_ptr(nullptr) {
-    static_assert((Memory == device) || (Memory == constant),
-                  "Global memory attribute should be constant or device");
-    dpct_malloc(&memory_ptr, sizeof(T));
-  }
+  global_memory() : base(1) {}
 
-  ~global_memory() {
-    if (memory_ptr)
-      dpct_free(memory_ptr);
-  }
-
-  /// The variable is assigned to a device pointer.
-  void assign(void *src, size_t size) {
-    this->~global_memory();
-    new (this) global_memory(src, size);
-  }
-
-  /// Get memory pointer of the memory object, which is virual pointer when
-  /// usm off, and device ptr when usm on.
-  void *get_ptr() { return memory_ptr; }
-
-  /// Get the device memory object size in bytes.
-  size_t get_size() { return sizeof(T); }
-
-  /// Get dpct::accessor with dimension info for the device memory object.
+  /// Get accessor with dimension info for the device memory object.
 #ifdef DPCT_USM_LEVEL_NONE
   accessor_t get_access(cl::sycl::handler &cgh) {
-    auto buffer = memory_manager::get_instance()
-                      .translate_ptr(memory_ptr)
-                      .buffer.template reinterpret<T, 1>(cl::sycl::range<1>(1));
-    return accessor_t(buffer, cgh);
-  }
-#else
-  dpct_accessor_t get_access(cl::sycl::handler &cgh) {
-    return dpct_accessor_t((T *)memory_ptr);
+    auto buf = memory_manager::get_instance()
+                   .translate_ptr(base::get_ptr())
+                   .buffer.template reinterpret<T, 1>(cl::sycl::range<1>(1));
+    return accessor_t(buf, cgh);
   }
 #endif // DPCT_USM_LEVEL_NONE
-
-private:
-  void *memory_ptr;
 };
 
 template <class T, size_t Dimension>
