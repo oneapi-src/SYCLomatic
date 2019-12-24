@@ -17,8 +17,6 @@
 
 @echo off
 
-call common.bat :speak   This Is A Message You Will See In Verbose Mode
-
 :: every syscheck script should set up an ERRORSTATE variable and return it on completion.
 setlocal
 set /A ERRORSTATE=0
