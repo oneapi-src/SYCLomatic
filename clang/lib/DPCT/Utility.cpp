@@ -834,3 +834,25 @@ void VarReferencedInFD(const Stmt *S, const ValueDecl *VD,
     VarReferencedInFD(*It, VD, Result);
   }
 }
+
+// Get the length of spaces until the next new line char, including the length
+// of new line chars ('\r' and '\n').
+// Return 0 if there is non-space char before the next new line char.
+int getLengthOfSpacesToEndl(const char *CharData) {
+  if (!CharData)
+    return 0;
+  int Len = 0;
+  while (CharData && *CharData) {
+    if (*CharData == '\n')
+      return Len + 1;
+    if (*CharData == '\r')
+      return Len + 2;
+    if (isspace(*CharData)) {
+      ++CharData;
+      ++Len;
+    } else {
+      return 0;
+    }
+  }
+  return 0;
+}

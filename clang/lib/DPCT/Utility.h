@@ -295,4 +295,5 @@ getConditionNode(clang::ast_type_traits::DynTypedNode Node);
 bool isConditionOfFlowControl(const clang::Expr *E);
 void VarReferencedInFD(const clang::Stmt *S, const clang::ValueDecl *VD,
                          std::vector<const clang::DeclRefExpr *> &Result);
+int getLengthOfSpacesToEndl(const char *CharData);
 #endif // DPCT_UTILITY_H

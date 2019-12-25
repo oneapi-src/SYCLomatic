@@ -238,6 +238,24 @@ bool IncludesCallbacks::ShouldEnter(StringRef FileName, bool IsAngled) {
 #endif
 }
 
+// A class that uses the RAII idiom to selectively update the locations of the
+// last inclusion directives.
+class LastInclusionLocationUpdater {
+public:
+  LastInclusionLocationUpdater(SourceLocation Loc, bool UpdateNeeded = true)
+    : Loc(Loc), UpdateNeeded(UpdateNeeded) {}
+  ~LastInclusionLocationUpdater() {
+    if (UpdateNeeded)
+      DpctGlobalInfo::getInstance().setLastIncludeLocation(Loc);
+  }
+  void update(bool UpdateNeeded) {
+    this->UpdateNeeded = UpdateNeeded;
+  }
+private:
+  SourceLocation Loc;
+  bool UpdateNeeded;
+};
+
 void IncludesCallbacks::InclusionDirective(
     SourceLocation HashLoc, const Token &IncludeTok, StringRef FileName,
     bool IsAngled, CharSourceRange FilenameRange, const FileEntry *File,
@@ -245,7 +263,7 @@ void IncludesCallbacks::InclusionDirective(
     SrcMgr::CharacteristicKind FileType) {
   // Record the locations of the first and last inclusion directives in a file
   DpctGlobalInfo::getInstance().setFirstIncludeLocation(HashLoc);
-  DpctGlobalInfo::getInstance().setLastIncludeLocation(FilenameRange.getEnd());
+  LastInclusionLocationUpdater Updater{FilenameRange.getEnd()};
 
   std::string IncludePath = SearchPath;
   makeCanonical(IncludePath);
@@ -301,6 +319,7 @@ void IncludesCallbacks::InclusionDirective(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
         ""));
+    Updater.update(false);
   }
 
   if (!isChildPath(CudaPath, IncludePath) &&
@@ -346,6 +365,7 @@ void IncludesCallbacks::InclusionDirective(
           CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                           /*IsTokenRange=*/false),
           ""));
+      Updater.update(false);
     }
     return;
   }
@@ -363,10 +383,12 @@ void IncludesCallbacks::InclusionDirective(
   }
 
   // Replace the complete include directive with an empty string.
+  // Also remove the trailing spaces to end of the line.
   TransformSet.emplace_back(new ReplaceInclude(
       CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                       /*IsTokenRange=*/false),
-      ""));
+      "", true));
+  Updater.update(false);
 }
 
 void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,

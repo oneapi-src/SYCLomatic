@@ -5,7 +5,6 @@
 #include <math.h>
 
 // CHECK: #ifdef CUDA
-// CHECK-EMPTY:
 // CHECK-NEXT: void bar5() {
 // CHECK-NEXT: }
 #ifdef CUDA

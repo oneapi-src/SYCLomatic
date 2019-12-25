@@ -444,7 +444,17 @@ ReplaceInclude::getReplacement(const ASTContext &Context) const {
     std::tie(FilePath, Offset, Length) = getReplacementInfo(Context, Range);
     return std::make_shared<ExtReplacement>(FilePath, Offset, Length, T, this);
   }
-
+  // Also remove the trailing spaces to the next new line char if the replacement
+  // is empty.
+  if (RemoveTrailingSpaces && T.empty()) {
+    auto EndLoc = Range.getEnd();
+    auto CharData = DpctGlobalInfo::getSourceManager().getCharacterData(EndLoc);
+    int Len = getLengthOfSpacesToEndl(CharData);
+    SourceRange SR{Range.getBegin(), EndLoc.getLocWithOffset(Len)};
+    CharSourceRange RealRange{SR, false};
+    return std::make_shared<ExtReplacement>(Context.getSourceManager(),
+                                            RealRange, T, this);
+  }
   return std::make_shared<ExtReplacement>(Context.getSourceManager(), Range, T,
                                           this);
 }

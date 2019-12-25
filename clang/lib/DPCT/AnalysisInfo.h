@@ -1696,9 +1696,9 @@ class KernelCallExpr : public CallFunctionExpr {
     }
 
     bool isPointer;
-    bool isRedeclareRequired;
     // If the pointer is used as lvalue after its most recent memory allocation
     bool isUsedAsLvalueAfterMalloc;
+    bool isRedeclareRequired;
     std::string ArgString;
     std::string TypeString;
     std::string IdString;

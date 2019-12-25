@@ -407,10 +407,12 @@ public:
 class ReplaceInclude : public TextModification {
   CharSourceRange Range;
   std::string T;
+  bool RemoveTrailingSpaces;
 
 public:
-  ReplaceInclude(CharSourceRange Range, std::string &&T)
-      : TextModification(TMID::ReplaceInclude), Range(Range), T(T) {}
+  ReplaceInclude(CharSourceRange Range, std::string &&T, bool RemoveTrailingSpaces = false)
+      : TextModification(TMID::ReplaceInclude), Range(Range), T(T),
+        RemoveTrailingSpaces(RemoveTrailingSpaces) {}
 
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
