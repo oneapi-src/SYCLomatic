@@ -24,91 +24,157 @@ int main() {
   float beta_S = 0.0f;
 
 
-  // CHECK: if([&](){
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_A_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_B_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_C_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N);
+  // CHECK: if ([&]() {
+  // CHECK-NEXT: auto allocation_ct7 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_A_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct7 =
+  // CHECK-NEXT:     allocation_ct7.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct7.size / sizeof(float)));
+  // CHECK-NEXT: auto allocation_ct9 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_B_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct9 =
+  // CHECK-NEXT:     allocation_ct9.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct9.size / sizeof(float)));
+  // CHECK-NEXT: auto allocation_ct12 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_C_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct12 =
+  // CHECK-NEXT:     allocation_ct12.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct12.size / sizeof(float)));
+  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N,
+  // CHECK-NEXT:                 N, N, *(&alpha_S), buffer_ct7, N, buffer_ct9, N, *(&beta_S),
+  // CHECK-NEXT:                 buffer_ct12, N);
   // CHECK-NEXT: return 0;
-  // CHECK-NEXT: }()){
+  // CHECK-NEXT:     }()) {
   // CHECK-NEXT: }
   if(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)){
   }
 
 
-  // CHECK: if(int stat = [&](){
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_A_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_B_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_C_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N);
+  // CHECK: if (int stat = [&]() {
+  // CHECK-NEXT: auto allocation_ct7 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_A_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct7 =
+  // CHECK-NEXT:     allocation_ct7.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct7.size / sizeof(float)));
+  // CHECK-NEXT: auto allocation_ct9 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_B_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct9 =
+  // CHECK-NEXT:     allocation_ct9.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct9.size / sizeof(float)));
+  // CHECK-NEXT: auto allocation_ct12 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_C_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct12 =
+  // CHECK-NEXT:     allocation_ct12.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct12.size / sizeof(float)));
+  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N,
+  // CHECK-NEXT:                 N, N, *(&alpha_S), buffer_ct7, N, buffer_ct9, N, *(&beta_S),
+  // CHECK-NEXT:                 buffer_ct12, N);
   // CHECK-NEXT: return 0;
-  // CHECK-NEXT: }()){
+  // CHECK-NEXT:     }()) {
   // CHECK-NEXT: }
   if(int stat = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)){
   }
 
 
-  // CHECK: for([&](){
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_A_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_B_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_C_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N);
-  // CHECK-NEXT: }();;){
+  // CHECK: for ([&]() {
+  // CHECK-NEXT: auto allocation_ct7 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_A_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct7 =
+  // CHECK-NEXT:     allocation_ct7.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct7.size / sizeof(float)));
+  // CHECK-NEXT: auto allocation_ct9 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_B_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct9 =
+  // CHECK-NEXT:     allocation_ct9.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct9.size / sizeof(float)));
+  // CHECK-NEXT: auto allocation_ct12 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_C_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct12 =
+  // CHECK-NEXT:     allocation_ct12.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct12.size / sizeof(float)));
+  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N,
+  // CHECK-NEXT:                 N, N, *(&alpha_S), buffer_ct7, N, buffer_ct9, N, *(&beta_S),
+  // CHECK-NEXT:                 buffer_ct12, N);
+  // CHECK-NEXT:      }();
+  // CHECK-NEXT:      ;) {
   // CHECK-NEXT: }
   for(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);;){
   }
 
 
-  // CHECK: while([&](){
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_A_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_B_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_C_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N);
+  // CHECK: while ([&]() {
+  // CHECK-NEXT: auto allocation_ct7 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_A_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct7 =
+  // CHECK-NEXT:     allocation_ct7.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct7.size / sizeof(float)));
+  // CHECK-NEXT: auto allocation_ct9 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_B_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct9 =
+  // CHECK-NEXT:     allocation_ct9.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct9.size / sizeof(float)));
+  // CHECK-NEXT: auto allocation_ct12 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_C_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct12 =
+  // CHECK-NEXT:     allocation_ct12.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct12.size / sizeof(float)));
+  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N,
+  // CHECK-NEXT:                 N, N, *(&alpha_S), buffer_ct7, N, buffer_ct9, N, *(&beta_S),
+  // CHECK-NEXT:                 buffer_ct12, N);
   // CHECK-NEXT: return 0;
-  // CHECK-NEXT: }()!=0){
+  // CHECK-NEXT: }() != 0) {
   // CHECK-NEXT: }
   while(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)!=0){
   }
 
 
   // CHECK: do{
-  // CHECK-NEXT: }while([&](){
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_A_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_B_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_C_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: } while ([&]() {
+  // CHECK-NEXT: auto allocation_ct7 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_A_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct7 =
+  // CHECK-NEXT:     allocation_ct7.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct7.size / sizeof(float)));
+  // CHECK-NEXT: auto allocation_ct9 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_B_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct9 =
+  // CHECK-NEXT:     allocation_ct9.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct9.size / sizeof(float)));
+  // CHECK-NEXT: auto allocation_ct12 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_C_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct12 =
+  // CHECK-NEXT:     allocation_ct12.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct12.size / sizeof(float)));
+  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N,
+  // CHECK-NEXT:                 N, N, *(&alpha_S), buffer_ct7, N, buffer_ct9, N, *(&beta_S),
+  // CHECK-NEXT:                 buffer_ct12, N);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }());
   do{
   }while(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
 
 
-  // CHECK: switch (int stat = [&](){
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_A_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_B_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(d_C_S);
-  // CHECK-NEXT: cl::sycl::buffer<float,1> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float, 1>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, *(&alpha_S), buffer_ct{{[0-9]+}}, N, buffer_ct{{[0-9]+}}, N, *(&beta_S), buffer_ct{{[0-9]+}}, N);
+  // CHECK: switch (int stat = [&]() {
+  // CHECK-NEXT: auto allocation_ct7 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_A_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct7 =
+  // CHECK-NEXT:     allocation_ct7.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct7.size / sizeof(float)));
+  // CHECK-NEXT: auto allocation_ct9 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_B_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct9 =
+  // CHECK-NEXT:     allocation_ct9.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct9.size / sizeof(float)));
+  // CHECK-NEXT: auto allocation_ct12 =
+  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_C_S);
+  // CHECK-NEXT: cl::sycl::buffer<float, 1> buffer_ct12 =
+  // CHECK-NEXT:     allocation_ct12.buffer.reinterpret<float, 1>(
+  // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct12.size / sizeof(float)));
+  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N,
+  // CHECK-NEXT:                 N, N, *(&alpha_S), buffer_ct7, N, buffer_ct9, N, *(&beta_S),
+  // CHECK-NEXT:                 buffer_ct12, N);
   // CHECK-NEXT: return 0;
-  // CHECK-NEXT: }()){
-  // CHECK-NEXT: }
+  // CHECK-NEXT: }()) {}
   switch (int stat = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)){
   }
 
