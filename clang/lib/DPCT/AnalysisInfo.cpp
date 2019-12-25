@@ -120,6 +120,29 @@ void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
   LocInfo.Indent = getIndent(Begin, SM).str();
   LocInfo.LocHash = getHashAsString(Begin.printToString(SM)).substr(0, 6);
   buildExecutionConfig(KernelCall);
+  buildNeedBracesInfo(KernelCall);
+}
+void KernelCallExpr::buildNeedBracesInfo(
+    const CUDAKernelCallExpr *KernelCall) {
+  NeedBraces = true;
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  // if parenet is CompoundStmt, then find if it has more than 1 children.
+  // else if parent is ExprWithCleanups, then do futher check.
+  // else it must be case like:  if/for/while(1) kernel-call, pair of
+  // braces are needed.
+  auto Parents = Context.getParents(*KernelCall);
+  while (Parents.size() == 1) {
+    if (auto *Parent = Parents[0].get<CompoundStmt>()) {
+      NeedBraces = (Parent->size() > 1);
+      return;
+    } else if (auto *EWC = Parents[0].get<ExprWithCleanups>()) {
+      // treat ExprWithCleanups same as CUDAKernelCallExpr when they shows
+      // up together
+      Parents = Context.getParents(Parents[0]);
+    } else {
+      return;
+    }
+  }
 }
 
 void KernelCallExpr::addAccessorDecl() {
@@ -206,7 +229,10 @@ void KernelCallExpr::buildKernelArgsStmt() {
 void KernelCallExpr::print(KernelPrinter &Printer) {
   std::unique_ptr<KernelPrinter::Block> Block;
   if (!OuterStmts.empty()) {
-    Block = std::move(Printer.block(true));
+    if (NeedBraces)
+      Block = std::move(Printer.block(true));
+    else
+      Block = std::move(Printer.block(false));
     for (auto &S : OuterStmts)
       Printer.line(S);
   }

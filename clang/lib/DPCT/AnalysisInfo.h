@@ -1751,6 +1751,7 @@ private:
       }
     }
   }
+  void buildNeedBracesInfo(const CUDAKernelCallExpr *KernelCall);
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
   void buildExecutionConfig(const CUDAKernelCallExpr *KernelCall);
 
@@ -1807,6 +1808,8 @@ private:
     std::string NL;
     std::string Indent;
   } LocInfo;
+  // true, if migrated DPC++ code block need extra { }
+  bool NeedBraces = true;
   struct {
     std::string Config[4];
     std::string &GroupSize = Config[0];

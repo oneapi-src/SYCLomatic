@@ -246,7 +246,6 @@ void foo() {
   // CHECK-NEXT:       dpct::dpct_malloc((void **)&d_a, n * sizeof(float));
   // CHECK-NEXT:     }
   // CHECK-NEXT:     {
-  // CHECK-NEXT:       {
   // CHECK-NEXT:         {
   // CHECK-NEXT:           dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
   // CHECK-NEXT:           dpct::get_default_queue().submit(
@@ -259,7 +258,6 @@ void foo() {
   // CHECK-NEXT:                 });
   // CHECK-NEXT:             });
   // CHECK-NEXT:         }
-  // CHECK-NEXT:       }
   // CHECK-NEXT:     }
   // CHECK-NEXT: }
   {
@@ -434,7 +432,6 @@ void foo() {
   // CHECK-NEXT:         });
   // CHECK-NEXT:     }
   // CHECK-NEXT:     if (n > 45) {
-  // CHECK-NEXT:       {
   // CHECK-NEXT:         dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
   // CHECK-NEXT:         dpct::get_default_queue().submit(
   // CHECK-NEXT:           [&](cl::sycl::handler &cgh) {
@@ -445,7 +442,6 @@ void foo() {
   // CHECK-NEXT:                 hello((int *)(&d_a_acc_ct0[0]));
   // CHECK-NEXT:               });
   // CHECK-NEXT:           });
-  // CHECK-NEXT:       }
   // CHECK-NEXT:     }
   // CHECK-NEXT:     if (n > 67) {
   // CHECK-NEXT:       d_a += 2;
