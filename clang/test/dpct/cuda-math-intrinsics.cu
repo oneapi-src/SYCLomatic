@@ -497,12 +497,16 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
 
   // CHECK: d2 = cl::sycl::pow(d0, d1);
   d2 = pow(d0, d1);
-  // CHECK: d2 = cl::sycl::pow((double)i, (double)i);
+  // CHECK: d2 = cl::sycl::pown((float)i, i);
   d2 = pow(i, i);
-  // CHECK: d2 = cl::sycl::pow(d0, (double)i);
+  // CHECK: d2 = cl::sycl::pown(d0, i);
   d2 = pow(d0, i);
   // CHECK: d2 = cl::sycl::pow((double)i, d1);
   d2 = pow(i, d1);
+
+  // CHECK: cl::sycl::pown(f, 1);
+  float f;
+  pow(f, 1);
 
   // CHECK: d2 = cl::sycl::remainder(d0, d1);
   d2 = remainder(d0, d1);
@@ -2527,7 +2531,7 @@ __global__ void testConditionalOperator(float *deviceArrayFloat) {
           ? ((f1) > (f1 == 1 ? 0 : -f2) ? __fdividef(__powf(f2, 2.f), f1) : -f1)
           : -f1);
   f0 = f1 > f2 ? __fdividef(__powf(f1, 2.f), f1) : f1;
-  f0 = fmax(0 ? __fdividef(__powf(f1, 2.f), f1) : f1, f2);
+  f0 = fmaxf(0 ? __fdividef(__powf(f1, 2.f), f1) : f1, f2);
 }
 
 int main() {
@@ -2658,4 +2662,31 @@ int bar(uint_t i, int_t j) {
 // CHECK-NEXT: }
 int bar(int_t i, uint_t j) {
   return max(i, j) + min(i, j);
+}
+
+__device__ void test_pow() {
+  int i;
+  float f;
+  double d;
+
+  // CHECK: cl::sycl::pown((float)i, i);
+  pow(i, i);
+  // CHECK: cl::sycl::pown(f, i);
+  pow(f, i);
+  // CHECK: cl::sycl::pown(d, i);
+  pow(d, i);
+
+  // CHECK: cl::sycl::pow((float)i, f);
+  pow(i, f);
+  // CHECK: cl::sycl::pow(f, f);
+  pow(f, f);
+  // CHECK: cl::sycl::pow(d, (double)f);
+  pow(d, f);
+
+  // CHECK: cl::sycl::pow((double)i, d);
+  pow(i, d);
+  // CHECK: cl::sycl::pow((double)f, d);
+  pow(f, d);
+  // CHECK: cl::sycl::pow(d, d);
+  pow(d, d);
 }

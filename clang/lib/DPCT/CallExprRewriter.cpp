@@ -118,6 +118,48 @@ std::string MathFuncNameRewriter::getNewFuncName() {
         }
       }
 
+      if (SourceCalleeName == "pow") {
+        if (Call->getNumArgs() != 2)
+          return SourceCalleeName;
+        LangOptions LO;
+        auto Arg0 = Call->getArg(0);
+        auto Arg1 = Call->getArg(1);
+        auto T0 = Arg0->getType().getAsString(PrintingPolicy(LO));
+        auto T1 = Arg1->getType().getAsString(PrintingPolicy(LO));
+        auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
+        auto DRE1 = dyn_cast<DeclRefExpr>(Arg1->IgnoreCasts());
+        if (T1 == "int") {
+          if (T0 == "int") {
+            if (DRE0)
+              RewriteArgList[0] = "(float)" + RewriteArgList[0];
+            else
+              RewriteArgList[0] = "(float)(" + RewriteArgList[0] + ")";
+          }
+          return "cl::sycl::pown";
+        } else if (T1 == "float") {
+          if (T0 == "int") {
+            if (DRE0)
+              RewriteArgList[0] = "(float)" + RewriteArgList[0];
+            else
+              RewriteArgList[0] = "(float)(" + RewriteArgList[0] + ")";
+          } else if (T0 == "double") {
+            if (DRE0)
+              RewriteArgList[1] = "(double)" + RewriteArgList[1];
+            else
+              RewriteArgList[1] = "(double)(" + RewriteArgList[1] + ")";
+          }
+          return "cl::sycl::pow";
+        } else if (T1 == "double") {
+          if (T0 == "int" || T0 == "float") {
+            if (DRE0)
+              RewriteArgList[0] = "(double)" + RewriteArgList[0];
+            else
+              RewriteArgList[0] = "(double)(" + RewriteArgList[0] + ")";
+          }
+          return "cl::sycl::pow";
+        }
+      }
+
       if (std::find(SingleFuctions.begin(), SingleFuctions.end(),
                     SourceCalleeName) != SingleFuctions.end()) {
         LangOptions LO;
@@ -129,8 +171,9 @@ std::string MathFuncNameRewriter::getNewFuncName() {
               PrintingPolicy(LO));
           std::string ArgExpr = Arg->getStmtClassName();
           auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
-          if (ArgT != "float" && ArgT != "double") {
-            if (DRE)
+          auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());
+          if (ArgT != "float") {
+            if (DRE || IL)
               RewriteArgList[i] = "(float)" + RewriteArgList[i];
             else
               RewriteArgList[i] = "(float)(" + RewriteArgList[i] + ")";
@@ -147,8 +190,9 @@ std::string MathFuncNameRewriter::getNewFuncName() {
               PrintingPolicy(LO));
           std::string ArgExpr = Arg->getStmtClassName();
           auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
-          if (ArgT != "double" && ArgT != "float") {
-            if (DRE)
+          auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());
+          if (ArgT != "double") {
+            if (DRE || IL)
               RewriteArgList[i] = "(double)" + RewriteArgList[i];
             else
               RewriteArgList[i] = "(double)(" + RewriteArgList[i] + ")";
