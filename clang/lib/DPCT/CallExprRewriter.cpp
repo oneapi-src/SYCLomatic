@@ -105,11 +105,15 @@ std::string MathFuncNameRewriter::getNewFuncName() {
         LangOptions LO;
         std::string FT = Call->getType().getAsString(PrintingPolicy(LO));
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
-          std::string ArgT =
-              Call->getArg(i)->getType().getAsString(PrintingPolicy(LO));
-          auto ArgExpr = Call->getArg(i)->getStmtClass();
+          auto Arg = Call->getArg(i);
+          std::string ArgT = Arg->getType().getAsString(PrintingPolicy(LO));
+          auto ArgExpr = Arg->getStmtClass();
+          auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
           if (ArgT != FT || ArgExpr == Stmt::BinaryOperatorClass) {
-            RewriteArgList[i] = "(" + FT + ")(" + RewriteArgList[i] + ")";
+            if (DRE)
+              RewriteArgList[i] = "(" + FT + ")" + RewriteArgList[i];
+            else
+              RewriteArgList[i] = "(" + FT + ")(" + RewriteArgList[i] + ")";
           }
         }
       }
@@ -120,12 +124,16 @@ std::string MathFuncNameRewriter::getNewFuncName() {
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
           if (SourceCalleeName == "ldexpf" && i == 1)
             continue;
-          std::string ArgT =
-              Call->getArg(i)->IgnoreImplicit()->getType().getAsString(
-                  PrintingPolicy(LO));
-          std::string ArgExpr = Call->getArg(i)->getStmtClassName();
+          auto Arg = Call->getArg(i);
+          std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
+              PrintingPolicy(LO));
+          std::string ArgExpr = Arg->getStmtClassName();
+          auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
           if (ArgT != "float" && ArgT != "double") {
-            RewriteArgList[i] = "(float)(" + RewriteArgList[i] + ")";
+            if (DRE)
+              RewriteArgList[i] = "(float)" + RewriteArgList[i];
+            else
+              RewriteArgList[i] = "(float)(" + RewriteArgList[i] + ")";
           }
         }
       } else if (std::find(DoubleFuctions.begin(), DoubleFuctions.end(),
@@ -134,12 +142,16 @@ std::string MathFuncNameRewriter::getNewFuncName() {
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
           if (SourceCalleeName == "ldexp" && i == 1)
             continue;
-          std::string ArgT =
-              Call->getArg(i)->IgnoreImplicit()->getType().getAsString(
-                  PrintingPolicy(LO));
-          std::string ArgExpr = Call->getArg(i)->getStmtClassName();
+          auto Arg = Call->getArg(i);
+          std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
+              PrintingPolicy(LO));
+          std::string ArgExpr = Arg->getStmtClassName();
+          auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
           if (ArgT != "double" && ArgT != "float") {
-            RewriteArgList[i] = "(double)(" + RewriteArgList[i] + ")";
+            if (DRE)
+              RewriteArgList[i] = "(double)" + RewriteArgList[i];
+            else
+              RewriteArgList[i] = "(double)(" + RewriteArgList[i] + ")";
           }
         }
       }
@@ -452,30 +464,46 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
   auto MigratedArg0 = getMigratedArg(0);
 
   if (FuncName == "frexp" || FuncName == "frexpf") {
-    std::string ArgT =
-        Call->getArg(0)->IgnoreImplicit()->getType().getAsString(
-            PrintingPolicy(LangOptions()));
-    std::string ArgExpr = Call->getArg(0)->getStmtClassName();
+    auto Arg = Call->getArg(0);
+    std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
+        PrintingPolicy(LangOptions()));
+    std::string ArgExpr = Arg->getStmtClassName();
+    auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
     if (ArgT == "int") {
-      if (FuncName == "frexpf")
-        MigratedArg0 = "(float)(" + MigratedArg0 + ")";
-      else
-        MigratedArg0 = "(double)(" + MigratedArg0 + ")";
+      if (FuncName == "frexpf") {
+        if (DRE)
+          MigratedArg0 = "(float)" + MigratedArg0;
+        else
+          MigratedArg0 = "(float)(" + MigratedArg0 + ")";
+      } else {
+        if (DRE)
+          MigratedArg0 = "(double)" + MigratedArg0;
+        else
+          MigratedArg0 = "(double)(" + MigratedArg0 + ")";
+      }
     }
     auto MigratedArg1 = getMigratedArg(1);
     OS << "cl::sycl::frexp(" << MigratedArg0 << ", cl::sycl::make_ptr<int, "
        << "cl::sycl::access::address_space::global_space>(" << MigratedArg1
        << "))";
   } else if (FuncName == "modf" || FuncName == "modff") {
-    std::string ArgT =
-        Call->getArg(0)->IgnoreImplicit()->getType().getAsString(
-            PrintingPolicy(LangOptions()));
-    std::string ArgExpr = Call->getArg(0)->getStmtClassName();
+    auto Arg = Call->getArg(0);
+    std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
+        PrintingPolicy(LangOptions()));
+    std::string ArgExpr = Arg->getStmtClassName();
+    auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
     if (ArgT == "int") {
-      if (FuncName == "modff")
-        MigratedArg0 = "(float)(" + MigratedArg0 + ")";
-      else
-        MigratedArg0 = "(double)(" + MigratedArg0 + ")";
+      if (FuncName == "modff") {
+        if (DRE)
+          MigratedArg0 = "(float)" + MigratedArg0;
+        else
+          MigratedArg0 = "(float)(" + MigratedArg0 + ")";
+      } else {
+        if (DRE)
+          MigratedArg0 = "(double)" + MigratedArg0;
+        else
+          MigratedArg0 = "(double)(" + MigratedArg0 + ")";
+      }
     }
     auto MigratedArg1 = getMigratedArg(1);
     OS << "cl::sycl::modf(" << MigratedArg0;
@@ -490,15 +518,23 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << "cl::sycl::nan(0u)";
   } else if (FuncName == "sincos" || FuncName == "sincosf" ||
              FuncName == "__sincosf") {
-    std::string ArgT =
-        Call->getArg(0)->IgnoreImplicit()->getType().getAsString(
-            PrintingPolicy(LangOptions()));
-    std::string ArgExpr = Call->getArg(0)->getStmtClassName();
+    auto Arg = Call->getArg(0);
+    std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
+        PrintingPolicy(LangOptions()));
+    std::string ArgExpr = Arg->getStmtClassName();
+    auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
     if (ArgT == "int") {
-      if (FuncName == "sincosf" || FuncName == "__sincosf")
-        MigratedArg0 = "(float)(" + MigratedArg0 + ")";
-      else
-        MigratedArg0 = "(double)(" + MigratedArg0 + ")";
+      if (FuncName == "sincosf" || FuncName == "__sincosf") {
+        if (DRE)
+          MigratedArg0 = "(float)" + MigratedArg0;
+        else
+          MigratedArg0 = "(float)(" + MigratedArg0 + ")";
+      } else {
+        if (DRE)
+          MigratedArg0 = "(double)" + MigratedArg0;
+        else
+          MigratedArg0 = "(double)(" + MigratedArg0 + ")";
+      }
     }
     auto MigratedArg1 = getMigratedArg(1);
     auto MigratedArg2 = getMigratedArg(2);
@@ -536,28 +572,44 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << MigratedArg2 << "))";
   } else if (FuncName == "remquo" || FuncName == "remquof") {
     {
-      std::string ArgT =
-          Call->getArg(0)->IgnoreImplicit()->getType().getAsString(
-              PrintingPolicy(LangOptions()));
-      std::string ArgExpr = Call->getArg(0)->getStmtClassName();
+      auto Arg = Call->getArg(0);
+      std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
+          PrintingPolicy(LangOptions()));
+      std::string ArgExpr = Arg->getStmtClassName();
+      auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
       if (ArgT == "int") {
-        if (FuncName == "remquof")
-          MigratedArg0 = "(float)(" + MigratedArg0 + ")";
-        else
-          MigratedArg0 = "(double)(" + MigratedArg0 + ")";
+        if (FuncName == "remquof") {
+          if (DRE)
+            MigratedArg0 = "(float)" + MigratedArg0;
+          else
+            MigratedArg0 = "(float)(" + MigratedArg0 + ")";
+        } else {
+          if (DRE)
+            MigratedArg0 = "(double)" + MigratedArg0;
+          else
+            MigratedArg0 = "(double)(" + MigratedArg0 + ")";
+        }
       }
     }
     auto MigratedArg1 = getMigratedArg(1);
     {
-      std::string ArgT =
-          Call->getArg(1)->IgnoreImplicit()->getType().getAsString(
-              PrintingPolicy(LangOptions()));
-      std::string ArgExpr = Call->getArg(1)->getStmtClassName();
+      auto Arg = Call->getArg(1);
+      std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
+          PrintingPolicy(LangOptions()));
+      std::string ArgExpr = Arg->getStmtClassName();
+      auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
       if (ArgT == "int") {
-        if (FuncName == "remquof")
-          MigratedArg1 = "(float)(" + MigratedArg1 + ")";
-        else
-          MigratedArg1 = "(double)(" + MigratedArg1 + ")";
+        if (FuncName == "remquof") {
+          if (DRE)
+            MigratedArg1 = "(float)" + MigratedArg1;
+          else
+            MigratedArg1 = "(float)(" + MigratedArg1 + ")";
+        } else {
+          if (DRE)
+            MigratedArg1 = "(double)" + MigratedArg1;
+          else
+            MigratedArg1 = "(double)(" + MigratedArg1 + ")";
+        }
       }
     }
     auto MigratedArg2 = getMigratedArg(2);
