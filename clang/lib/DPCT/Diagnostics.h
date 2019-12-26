@@ -186,8 +186,14 @@ template <typename IDTy, typename... Ts>
 void report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
             TransformSetTy *TS, Ts &&... Vals) {
   auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
+
+  SmallString<4096> FileName = SM.getBufferName(SL);
+  // Convert path to the native form.
+  // E.g, on Windows all '/' are converted to '\'.
+  llvm::sys::path::native(FileName);
+
   std::string FileAndLine = clang::dpct::buildString(
-      SM.getBufferName(SL), ":", SM.getPresumedLineNumber(SL));
+      FileName.str(), ":", SM.getPresumedLineNumber(SL));
   std::string WarningIDAndMsg = clang::dpct::buildString(
       std::to_string(static_cast<int>(MsgID)), ":", std::forward<Ts>(Vals)...);
   if (ReportedWarningInfo::getInfo().count(FileAndLine) == 0) {
@@ -196,7 +202,6 @@ void report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
                  WarningIDAndMsg) != 0) {
     return;
   }
-
   if (!SuppressWarningsAllFlag) {
     // Only report warnings that are not suppressed
     if (WarningIDs.find((int)MsgID) == WarningIDs.end() &&

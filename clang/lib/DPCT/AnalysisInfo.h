@@ -526,9 +526,16 @@ public:
     auto LocInfo =
         SM->getDecomposedLoc(getSourceManager().getExpansionLoc(Loc));
     if (auto FileEntry = SM->getFileEntryForID(LocInfo.first)) {
-      llvm::SmallString<512> FilePathAbs(FileEntry->getName().str());
-      getSourceManager().getFileManager().makeAbsolutePath(FilePathAbs);
-      return std::make_pair(FilePathAbs.str(), LocInfo.second);
+      SmallString<4096> FileName = FileEntry->getName();
+      llvm::sys::fs::make_absolute(FileName);
+
+      // Convert path to the native form.
+      // E.g, on Windows all '/' are converted to '\'.
+      llvm::sys::path::native(FileName);
+
+      llvm::sys::path::remove_dots(FileName, /* remove_dot_dot */ true);
+      getSourceManager().getFileManager().makeAbsolutePath(FileName);
+      return std::make_pair(FileName.str(), LocInfo.second);
     }
     if (IsInvalid)
       *IsInvalid = true;

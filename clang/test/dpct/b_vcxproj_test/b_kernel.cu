@@ -1,13 +1,16 @@
 // UNSUPPORTED: -linux-
 // RUN: cat %S/SVMbenchmark.vcxproj > %T/SVMbenchmark.vcxproj
-// RUN: dpct --format-range=none  --vcxprojfile=%T/SVMbenchmark.vcxproj  -in-root=%S -out-root=%T  %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct -output-file=b_kernel_outputfile_win.txt --format-range=none  --vcxprojfile=%T/SVMbenchmark.vcxproj  -in-root=%S -out-root=%T  %s -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 
 // RUN: cat %S/check_compilation_ref.txt  >%T/check_compilation_db.txt
 // RUN: cat %T/compile_commands.json >>%T/check_compilation_db.txt
-
 // RUN: FileCheck --match-full-lines --input-file %T/check_compilation_db.txt %T/check_compilation_db.txt
 
+// RUN: cat %S/b_kernel_outputfile_ref_window.txt > %T/check_b_kernel_outputfile_windows.txt
+// RUN: cat %T/b_kernel_outputfile_win.txt >>%T/check_b_kernel_outputfile_windows.txt
+// RUN: FileCheck --match-full-lines --input-file %T/check_b_kernel_outputfile_windows.txt %T/check_b_kernel_outputfile_windows.txt
 
+#include "header.cuh"
 #include "cuda_runtime.h"
 #include <stdio.h>
 
@@ -19,3 +22,11 @@ __global__ void addKernel(int *c, const int *a, const int *b)
     c[i] = a[i] + b[i];
 }
 
+// To make dpct clang parser emit three lines below:
+// In file included from \path\to\b_vcxproj_test\b_kernel.cu:line_number:
+// \path\to\b_vcxproj_test\header.cuh:5:9: warning: DPCT1003:0: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+//        return cudaDeviceReset();
+// This three lines are expected in check_b_kernel_outputfile_windows.txt.
+void foo(){
+    cudaError_t cudaStatus = resetDevice();
+}
