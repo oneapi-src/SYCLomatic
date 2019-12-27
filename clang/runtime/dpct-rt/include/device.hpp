@@ -223,15 +223,17 @@ private:
 class device_manager {
 public:
   device_manager() {
-    std::vector<cl::sycl::device> sycl_gpu_devs =
-        cl::sycl::device::get_devices(cl::sycl::info::device_type::gpu);
-    for (auto &dev : sycl_gpu_devs) {
-      _devs.push_back(device_ext(dev));
-    }
-    std::vector<cl::sycl::device> sycl_cpu_devs =
-        cl::sycl::device::get_devices(cl::sycl::info::device_type::cpu);
-    for (auto &dev : sycl_cpu_devs) {
-      _devs.push_back(device_ext(dev));
+    cl::sycl::device default_device =
+        cl::sycl::device(cl::sycl::default_selector{});
+    _devs.push_back(device_ext(default_device));
+
+    std::vector<cl::sycl::device> sycl_all_devs =
+        cl::sycl::device::get_devices(cl::sycl::info::device_type::all);
+    for (auto &dev : sycl_all_devs) {
+      if (dev.get_info<cl::sycl::info::device::vendor_id>() !=
+          default_device.get_info<cl::sycl::info::device::vendor_id>()) {
+        _devs.push_back(device_ext(dev));
+      }
     }
   }
   device_ext &current_device() {
