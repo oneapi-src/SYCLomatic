@@ -622,7 +622,7 @@ int testVectorAdd(void)
     // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class vectorAdd_{{[a-f0-9]+}}>>(
     // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, blocksPerGrid) * cl::sycl::range<3>(1, 1, threadsPerBlock), cl::sycl::range<3>(1, 1, threadsPerBlock)), 
     // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-    // CHECK-NEXT:           vectorAdd((float const *)(&d_A_acc_ct0[0]), (float const *)(&d_B_acc_ct1[0]), (float *)(&d_C_acc_ct2[0]), numElements);
+    // CHECK-NEXT:           vectorAdd((const float *)(&d_A_acc_ct0[0]), (const float *)(&d_B_acc_ct1[0]), (float *)(&d_C_acc_ct2[0]), numElements);
     // CHECK-NEXT:         });
     // CHECK-NEXT:     });
     // CHECK-NEXT: }

@@ -32,10 +32,10 @@ int main(){
     cudaMalloc((void **) &d_data_Point, sizeof(Point));
 
     const int2 * d_const_int2;
-    // CHECK: d_const_int2 = (cl::sycl::int2 const *)cl::sycl::malloc_device(sizeof(cl::sycl::int2), dpct::get_current_device(), dpct::get_default_context());
+    // CHECK: d_const_int2 = (const cl::sycl::int2 *)cl::sycl::malloc_device(sizeof(cl::sycl::int2), dpct::get_current_device(), dpct::get_default_context());
     cudaMalloc((void **) &d_const_int2, sizeof(int2));
 
     int2 const * volatile * d_data;
-    // CHECK: d_data = (cl::sycl::int2 const * volatile *)cl::sycl::malloc_device(sizeof(cl::sycl::int2), dpct::get_current_device(), dpct::get_default_context());
+    // CHECK: d_data = (const cl::sycl::int2 *volatile *)cl::sycl::malloc_device(sizeof(cl::sycl::int2), dpct::get_current_device(), dpct::get_default_context());
     cudaMalloc((void **) &d_data, sizeof(int2));
 }

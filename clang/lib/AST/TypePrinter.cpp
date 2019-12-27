@@ -134,6 +134,13 @@ namespace {
 
 } // namespace
 
+#ifdef INTEL_CUSTOMIZATION
+#include <map>
+static const std::map<std::string, std::string>* TypeNamesMapPtr;
+void setTypeNamesMapPtr(const std::map<std::string, std::string> *Ptr) {
+  TypeNamesMapPtr = Ptr;
+}
+#endif
 static void AppendTypeQualList(raw_ostream &OS, unsigned TypeQuals,
                                bool HasRestrictKeyword) {
   bool appendSpace = false;
@@ -957,7 +964,21 @@ void TypePrinter::printTypeSpec(NamedDecl *D, raw_ostream &OS) {
     AppendScope(D->getDeclContext(), OS);
 
   IdentifierInfo *II = D->getIdentifier();
+#ifdef INTEL_CUSTOMIZATION
+  if (TypeNamesMapPtr) {
+    std::string OriginType = II->getName();
+    auto P = TypeNamesMapPtr->find(OriginType);
+    if (P != TypeNamesMapPtr->end()) {
+      OS << P->second;
+    } else {
+      OS << II->getName();
+    }
+  } else {
+    OS << II->getName();
+  }
+#else
   OS << II->getName();
+#endif
   spaceBeforePlaceHolder(OS);
 }
 
@@ -1168,7 +1189,23 @@ void TypePrinter::printTag(TagDecl *D, raw_ostream &OS) {
     AppendScope(D->getDeclContext(), OS);
 
   if (const IdentifierInfo *II = D->getIdentifier())
+#ifdef INTEL_CUSTOMIZATION
+  {
+    if (TypeNamesMapPtr) {
+      std::string OriginType = II->getName();
+      auto P = TypeNamesMapPtr->find(OriginType);
+      if (P != TypeNamesMapPtr->end()) {
+        OS << P->second;
+      } else {
+        OS << II->getName();
+      }
+    } else {
+      OS << II->getName();
+    }
+  }
+#else
     OS << II->getName();
+#endif
   else if (TypedefNameDecl *Typedef = D->getTypedefNameForAnonDecl()) {
     assert(Typedef->getIdentifier() && "Typedef without identifier?");
     OS << Typedef->getIdentifier()->getName();

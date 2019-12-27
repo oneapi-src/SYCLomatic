@@ -18,7 +18,7 @@ __global__ void foo_kernel(T** R)
 //CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class foo_kernel_{{[a-f0-9]+}}, float>>(
 //CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:           [=](cl::sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:             float * *R_ct0 = (float * *)(&R_acc_ct0[0] + R_offset_ct0);
+//CHECK-NEXT:             float **R_ct0 = (float **)(&R_acc_ct0[0] + R_offset_ct0);
 //CHECK-NEXT:             foo_kernel<float>(R_ct0);
 //CHECK-NEXT:           });
 //CHECK-NEXT:       });

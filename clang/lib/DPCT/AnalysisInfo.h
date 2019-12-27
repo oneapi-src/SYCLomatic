@@ -25,6 +25,8 @@
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
 
+void setTypeNamesMapPtr(const std::map<std::string, std::string> *Ptr);
+
 namespace clang {
 namespace dpct {
 
@@ -591,10 +593,26 @@ public:
     getReplacedTypeNameRecursive(RemovedP, Context, MigratedTypeStr);
     return;
   }
+
+  /// This function will return the replaced type name with qualifiers.
+  /// Currently, since clang do not support get the order of original qualifiers,
+  /// this function will follow the behaivor of clang::QualType.print(), in
+  /// other words, the behaivor is that the qualifiers(const, volatile...) will
+  /// occur before the simple type(int, bool...) regardless its order in origin
+  /// code.
+  /// \param [in] QT The input qualified type which need migration.
+  /// \param [in] Context The AST context.
+  /// \return The replaced type name string with qualifiers.
   static inline std::string getReplacedTypeName(QualType QT,
                                                 const ASTContext &Context) {
     std::string MigratedTypeStr;
-    getReplacedTypeNameRecursive(QT, Context, MigratedTypeStr);
+    setTypeNamesMapPtr(&MapNames::TypeNamesMap);
+    llvm::raw_string_ostream OS(MigratedTypeStr);
+    clang::PrintingPolicy PP =
+        clang::PrintingPolicy(DpctGlobalInfo::getContext().getLangOpts());
+    QT.print(OS, PP);
+    OS.flush();
+    setTypeNamesMapPtr(nullptr);
     return MigratedTypeStr;
   }
   static inline std::string getReplacedTypeName(QualType QT) {
@@ -1694,16 +1712,16 @@ class KernelCallExpr : public CallFunctionExpr {
       if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
         isPointer = Analysis.isPointer;
       isRedeclareRequired = Analysis.isRedeclareRequired;
+
       if (isPointer) {
-        QualType PointeeType;
+        QualType PointerType;
         if (Arg->getType().getTypePtr()->getTypeClass() ==
             Type::TypeClass::Decayed) {
-          PointeeType = dyn_cast<PointerType>(Arg->getType().getCanonicalType())
-                            ->getPointeeType();
+          PointerType = Arg->getType().getCanonicalType();
         } else {
-          PointeeType = dyn_cast<PointerType>(Arg->getType())->getPointeeType();
+          PointerType = Arg->getType();
         }
-        TypeString = DpctGlobalInfo::getReplacedTypeName(PointeeType) + " *";
+        TypeString = DpctGlobalInfo::getReplacedTypeName(PointerType);
       }
 
       if (isRedeclareRequired || isPointer) {
@@ -1750,8 +1768,8 @@ class KernelCallExpr : public CallFunctionExpr {
 
     bool isPointer;
     // If the pointer is used as lvalue after its most recent memory allocation
-    bool isUsedAsLvalueAfterMalloc;
     bool isRedeclareRequired;
+    bool isUsedAsLvalueAfterMalloc;
     std::string ArgString;
     std::string TypeString;
     std::string IdString;
