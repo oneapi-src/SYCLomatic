@@ -172,7 +172,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
         // Deal with cases where types of arguements are typedefs, e.g.,
         // 1) typdef int INT;
         // 2) using int_t = int;
-        const TypedefType *TT0, *TT1;
+        const TypedefType *TT0 = nullptr, *TT1 = nullptr;
         if (!BT0) {
           TT0 = dyn_cast<TypedefType>(Arg0->getType());
           if (TT0)
