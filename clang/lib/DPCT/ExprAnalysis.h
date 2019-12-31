@@ -189,11 +189,14 @@ protected:
   std::pair<size_t, size_t> getOffsetAndLength(SourceLocation Begin,
                                                SourceLocation End);
   std::pair<size_t, size_t> getOffsetAndLength(SourceLocation SL);
+  std::pair<size_t, size_t> getOffsetAndLength(const Expr *);
+  bool isOuterMostMacro(const Expr *E);
 
   // Replace a sub expr
   template <class TextData>
   inline void addReplacement(const Expr *E, TextData Text) {
-    addReplacement(E->getBeginLoc(), E->getEndLoc(), std::move(Text));
+    auto LocInfo = getOffsetAndLength(E);
+    addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
   }
   // Replace a token with its begin location
   template <class TextData>
@@ -215,7 +218,7 @@ protected:
   }
   // Replace total string
   template <class TextData> inline void addReplacement(TextData Text) {
-    addReplacement(SourceLocation(), std::move(Text));
+    addReplacement(SrcBegin, SrcLength, std::move(Text));
   }
   // Replace string with relative offset to the stored string and length
   inline void addReplacement(size_t Offset, size_t Length, std::string Text) {
@@ -286,6 +289,7 @@ private:
   const Expr *E;
   size_t SrcBegin;
   size_t SrcLength;
+  FileID FileId;
   StringReplacements ReplSet;
 };
 
