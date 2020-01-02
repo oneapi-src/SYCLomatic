@@ -897,6 +897,8 @@ const char *find_nvcc(const char *str) {
 /// Repalce the command "nvcc" with path to command "intercept-stub" with path.
 /// \param [in] src It could be:"/usr/local/bin/nvcc",
 ///                             "/usr/local/bin/nvcc -Xcompiler ...",
+///                             "CPATH=...;/path/to/nvcc",
+///                             "cd /path/to/dir && /path/to/nvcc".
 /// \param [in] pos Points to the position of the character behind "nvcc".
 /// \returns no return value.
 char * replace_binary_name(const char *src, const char *pos){
@@ -918,6 +920,19 @@ char * replace_binary_name(const char *src, const char *pos){
     char *buffer = (char *)malloc(strlen(src) + strlen(replacement) - strlen("nvcc"));
     char *insert_point = buffer;
 
+    // To handle the situation that \psrc is
+    // "CPATH=...;/path/to/nvcc" and "cd /path/to/dir && /path/to/nvcc"
+    char *pos_prefix = pos - strlen("nvcc");
+    for (; pos_prefix != src; pos_prefix--) {
+        if (*pos_prefix == ';' || *pos_prefix == '&') {
+            pos_prefix++;
+            break;
+        }
+    }
+
+    int len = pos_prefix - src;
+    memcpy(insert_point, src, len);
+    insert_point += len;
     memcpy(insert_point, replacement, strlen(replacement));
     insert_point += strlen(replacement);
     src = pos;
@@ -1157,7 +1172,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
         argv[it_cp] = replace_binary_name(argv[it_cp], pos);
     }
 
-    if(ret == 1){
+    if(ret == 1 && it_cp == 0){
         exit(0);
     }
 #endif
