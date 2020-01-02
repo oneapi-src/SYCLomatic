@@ -4667,7 +4667,7 @@ std::string MemoryMigrationRule::getAssignedStr(const Expr *E,
     Repl << getNameStrRemovedAddrOf(E, true);
     Repl << " = (" << getTypeStrRemovedAddrOf(E, true) << ")";
   } else {
-    Repl << "*(" << Arg0Str << ")";
+    Repl << "*" << Arg0Str;
     auto QT = E->getType().getTypePtr()->getPointeeType();
     std::string ReplType = DpctGlobalInfo::getReplacedTypeName(QT);
     Repl << " = (" << ReplType << ")";
@@ -4701,7 +4701,7 @@ void MemoryMigrationRule::mallocMigration(
         auto SEAStr = SEA.getReplacedString();
         Repl << getAssignedStr(CSE->getSubExpr(), SEAStr);
       } else {
-        Repl << getAssignedStr(C->getArg(0), Arg0Str);
+        Repl << getAssignedStr(C->getArg(0), "(" + Arg0Str+ ")");
       }
       Repl << "cl::sycl::malloc_device(" << Arg1Str
            << ", dpct::get_current_device()"
@@ -4725,7 +4725,7 @@ void MemoryMigrationRule::mallocMigration(
       auto SEAStr = SEA.getReplacedString();
       Repl << getAssignedStr(CSE->getSubExpr(), SEAStr);
     } else {
-      Repl << getAssignedStr(C->getArg(0), Arg0Str);
+      Repl << getAssignedStr(C->getArg(0), "(" + Arg0Str + ")");
     }
     if (USMLevel == UsmLevel::restricted) {
       Repl << "cl::sycl::malloc_host(" << Arg1Str
@@ -4749,7 +4749,7 @@ void MemoryMigrationRule::mallocMigration(
         auto SEAStr = SEA.getReplacedString();
         Repl << getAssignedStr(CSE->getSubExpr(), SEAStr);
       } else {
-        Repl << getAssignedStr(C->getArg(0), Arg0Str);
+        Repl << getAssignedStr(C->getArg(0), "(" + Arg0Str + ")");
       }
       Repl << "cl::sycl::malloc_shared(" << Arg1Str
            << ", dpct::get_current_device()"
