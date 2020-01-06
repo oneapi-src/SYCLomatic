@@ -507,9 +507,11 @@ void DeviceFunctionInfo::buildInfo() {
 
 inline void DeviceFunctionDecl::emplaceReplacement() {
   // TODO: Output debug info.
-  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
-      FilePath, ReplaceOffset, ReplaceLength, FuncInfo->getExtraParameters(),
-      nullptr));
+  auto Repl =
+      std::make_shared<ExtReplacement>(FilePath, ReplaceOffset, ReplaceLength,
+                                       FuncInfo->getExtraParameters(), nullptr);
+  Repl->setNotFormatFlag();
+  DpctGlobalInfo::getInstance().addReplacement(Repl);
 
   if (FuncInfo->IsSyclExternMacroNeeded()) {
     std::string StrRepl = "SYCL_EXTERNAL ";

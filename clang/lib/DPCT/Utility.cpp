@@ -885,3 +885,31 @@ int getLengthOfSpacesToEndl(const char *CharData) {
   }
   return 0;
 }
+/// Calculate the ranges of the input \p Repls which has NOT set NotFormatFlags.
+/// \param Repls Replacements with format flags.
+/// \return The result ranges.
+std::vector<clang::tooling::Range> calculateRangesWithFormatFlag(
+    const clang::tooling::Replacements &Repls) {
+  std::vector<bool> NotFormatFlags;
+  std::vector<clang::tooling::Range> Ranges;
+
+  int Diff = 0;
+  for (auto R : Repls) {
+    if (R.getNotFormatFlag())
+      NotFormatFlags.push_back(true);
+    else
+      NotFormatFlags.push_back(false);
+    Ranges.emplace_back(/*offset*/ R.getOffset() + Diff,
+                                     /*length*/ R.getReplacementText().size());
+
+    Diff = Diff + R.getReplacementText().size() - R.getLength();
+  }
+
+  std::vector<clang::tooling::Range> RangesAfterFilter;
+  int Size = Ranges.size();
+  for (int i = 0; i < Size; ++i) {
+    if (!NotFormatFlags[i])
+      RangesAfterFilter.push_back(Ranges[i]);
+  }
+  return RangesAfterFilter;
+}

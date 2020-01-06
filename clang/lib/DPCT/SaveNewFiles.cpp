@@ -228,7 +228,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       }
 
       std::vector<clang::tooling::Range> Ranges;
-      Ranges = tooling::calculateRangesAfterReplacements(Entry.second, Ranges);
+      Ranges = calculateRangesWithFormatFlag(Entry.second);
       FileRangesMap.insert(std::make_pair(OutPath.str(), Ranges));
 
       std::error_code EC;

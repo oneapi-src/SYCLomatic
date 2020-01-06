@@ -128,6 +128,10 @@ public:
 
   /// Returns a human readable string representation.
   std::string toString() const;
+#ifdef INTEL_CUSTOMIZATION
+  void setNotFormatFlag() { NotFormatFlag = true; }
+  bool getNotFormatFlag() { return NotFormatFlag; }
+#endif
 
 private:
   void setFromSourceLocation(const SourceManager &Sources, SourceLocation Start,
@@ -140,6 +144,9 @@ private:
   std::string FilePath;
   Range ReplacementRange;
   std::string ReplacementText;
+#ifdef INTEL_CUSTOMIZATION
+  bool NotFormatFlag = false;
+#endif
 };
 
 enum class replacement_error {

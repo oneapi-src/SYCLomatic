@@ -685,7 +685,10 @@ ReplaceText::getReplacement(const ASTContext &Context) const {
   } else {
     recordMigrationInfo(Context, BeginLoc);
   }
-  return std::make_shared<ExtReplacement>(SM, BeginLoc, Len, T, this);
+  auto Repl = std::make_shared<ExtReplacement>(SM, BeginLoc, Len, T, this);
+  if (getNotFormatFlag())
+    Repl->setNotFormatFlag();
+  return Repl;
 }
 
 const std::unordered_map<int, std::string> TextModification::TMNameMap = {

@@ -14,8 +14,7 @@ __device__ void testDevice(const int *K) {
      //CHECK:void testDevice1(const int *K) { int t = K[0]; }
 __device__ void testDevice1(const int *K) { int t = K[0]; }
 
-     //CHECK:void testKernelPtr(const int *L, const int *M, int N,
-//CHECK-NEXT:                   cl::sycl::nd_item<3> item_ct1) {
+     //CHECK:void testKernelPtr(const int *L, const int *M, int N, cl::sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:  testDevice(L);
 //CHECK-NEXT:  int gtid = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) +
 //CHECK-NEXT:             item_ct1.get_local_id(2);
@@ -61,7 +60,7 @@ int main() {
   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1, karg2, karg3);
 }
 
-     //CHECK:#define DEVICE
+     //CHECK:#define DEVICE 
 #define DEVICE __device__
 
      //CHECK:struct SharedMemory
@@ -91,3 +90,41 @@ typedef struct
   int SM;
   int Cores;
 } sSMtoCores;
+
+// Currently, keep the parameters as original location.
+     //CHECK:template <int EFLAG>
+//CHECK-NEXT:void k_mdppp_outer_nn(const int * __restrict__ pos,
+//CHECK-NEXT:                                 const float * __restrict__ q,
+//CHECK-NEXT:                                 const int * __restrict__ numneigh,
+//CHECK-NEXT:                                 const int * __restrict__ firstneigh,
+//CHECK-NEXT:                                 const float * __restrict__ special_lj,
+//CHECK-NEXT:                                 const float * __restrict__ special_coul,
+//CHECK-NEXT:                                 const int * __restrict__ ljd_in,
+//CHECK-NEXT:                                 const int vflag, const int ntypes,
+//CHECK-NEXT:                                 const int nlocal, const int nbor_stride,
+//CHECK-NEXT:                                 const float cut_coulsq, const float cut_ljsq,
+//CHECK-NEXT:                                 const float cut_lj_innersq,
+//CHECK-NEXT:                                 const float g_ewald, const float qqrd2e,
+//CHECK-NEXT:                                 const float denom_lj_inv,
+//CHECK-NEXT:                                 const int loop_trip, cl::sycl::nd_item<3> item_ct1, float *sp_lj, float *sp_coul, int *ljd, dpct::accessor<double, dpct::local, 2> la) {
+template <int EFLAG>
+__global__ void k_mdppp_outer_nn(const int * __restrict__ pos,
+                                 const float * __restrict__ q,
+                                 const int * __restrict__ numneigh,
+                                 const int * __restrict__ firstneigh,
+                                 const float * __restrict__ special_lj,
+                                 const float * __restrict__ special_coul,
+                                 const int * __restrict__ ljd_in,
+                                 const int vflag, const int ntypes,
+                                 const int nlocal, const int nbor_stride,
+                                 const float cut_coulsq, const float cut_ljsq,
+                                 const float cut_lj_innersq,
+                                 const float g_ewald, const float qqrd2e,
+                                 const float denom_lj_inv,
+                                 const int loop_trip) {
+  __shared__ float sp_lj[4];
+  __shared__ float sp_coul[4];
+  __shared__ int ljd[0];
+  __shared__ double la[8][0];
+  const int tid = threadIdx.x;
+}

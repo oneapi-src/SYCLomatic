@@ -51,6 +51,10 @@ class Token;
 namespace ast_type_traits {
 class DynTypedNode;
 } // namespace ast_type_traits
+namespace tooling {
+class Range;
+class Replacements;
+} // namespace tooling
 } // namespace clang
 
 // classes for keeping track of Stmt->String mappings
@@ -331,4 +335,7 @@ StreamTy &printArguments(StreamTy &Stream, Args &&... Arguments) {
                                std::forward<Args>(Arguments)...);
 }
 
+std::vector<clang::tooling::Range>
+calculateRangesWithFormatFlag(
+    const clang::tooling::Replacements &Replaces);
 #endif // DPCT_UTILITY_H

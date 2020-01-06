@@ -526,21 +526,29 @@ class ReplaceText : public TextModification {
   // If ReplaceText replaces calls to compatibility APIs
   bool IsReplaceCompatibilityAPI;
   std::string OrigAPIName;
+  bool NotFormatFlag = false;
 
 public:
   ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
-        T(std::move(S)), IsReplaceCompatibilityAPI(false), OrigAPIName("") {}
+        T(std::move(S)), IsReplaceCompatibilityAPI(false), OrigAPIName(""),
+        NotFormatFlag(false) {}
+  ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S,
+              bool NotFormatFlag)
+      : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
+        T(std::move(S)), IsReplaceCompatibilityAPI(false), OrigAPIName(""),
+        NotFormatFlag(NotFormatFlag) {}
   ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S,
               bool IsReplaceCompatibilityAPI, std::string OrigAPIName)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
         T(std::move(S)), IsReplaceCompatibilityAPI(IsReplaceCompatibilityAPI),
-        OrigAPIName(OrigAPIName) {}
+        OrigAPIName(OrigAPIName), NotFormatFlag(false) {}
 
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
+  bool getNotFormatFlag() const { return NotFormatFlag; }
 };
 
 } // namespace dpct
