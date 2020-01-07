@@ -901,7 +901,7 @@ void ErrorHandlingHostAPIRule::insertTryCatch(const FunctionDecl *FD) {
       getNL() + IndentStr +
       std::string("catch (cl::sycl::exception const &exc) {") + getNL() +
       IndentStr + IndentStr +
-      std::string("std::cerr << exc.what() << \"EOE at file:\" << __FILE__ << "
+      std::string("std::cerr << exc.what() << \"Exception caught at file:\" << __FILE__ << "
                   "\", line:\" << __LINE__ << std::endl;") +
       getNL() + IndentStr + IndentStr + std::string("std::exit(1);") + getNL() +
       IndentStr + "}";

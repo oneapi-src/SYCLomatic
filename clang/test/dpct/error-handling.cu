@@ -152,8 +152,8 @@ void test_other_enum() {
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
-// CHECK-NEXT:             << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "Exception caught at file:" << __FILE__
+// CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void test_assignment() {
@@ -225,8 +225,8 @@ void test_14(cudaError_t err, int arg) {
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
-// CHECK-NEXT:             << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "Exception caught at file:" << __FILE__
+// CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void test_15(cudaError_t err, int arg) {
@@ -263,8 +263,8 @@ void test_16(cudaError_t err, int arg) {
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
-// CHECK-NEXT:             << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "Exception caught at file:" << __FILE__
+// CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void test_17(cudaError_t err, int arg) {
@@ -489,8 +489,8 @@ void specialize_ifs_negative() {
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
-// CHECK-NEXT:             << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "Exception caught at file:" << __FILE__
+// CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void foo1(){
@@ -513,8 +513,8 @@ void foo1(){
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
-// CHECK-NEXT:             << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "Exception caught at file:" << __FILE__
+// CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void foo2(){
@@ -537,8 +537,8 @@ void foo2(){
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
-// CHECK-NEXT:             << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "Exception caught at file:" << __FILE__
+// CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void foo3(){
@@ -559,8 +559,8 @@ void foo3(){
 // CHECK-NEXT:   } while ((dpct::dpct_malloc(0, 0), 0));
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:   std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
-// CHECK-NEXT:             << std::endl;
+// CHECK-NEXT:   std::cerr << exc.what() << "Exception caught at file:" << __FILE__
+// CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
 // CHECK-NEXT: }
 void foo4(){
@@ -628,8 +628,8 @@ void foo7(){
 // CHECK-NEXT:   if(a) printf("a");
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT: std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
-// CHECK-NEXT:           << std::endl;
+// CHECK-NEXT: std::cerr << exc.what() << "Exception caught at file:" << __FILE__
+// CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT: std::exit(1);
 // CHECK-NEXT: }
 void foo8(){
@@ -647,8 +647,8 @@ void foo8(){
 // CHECK-NEXT:   if(a) printf("a");
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT: std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
-// CHECK-NEXT:           << std::endl;
+// CHECK-NEXT: std::cerr << exc.what() << "Exception caught at file:" << __FILE__
+// CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT: std::exit(1);
 // CHECK-NEXT: }
 void foo9(){
@@ -665,8 +665,8 @@ void foo9(){
 //CHECK-NEXT:   return (dpct::dpct_malloc(0, 0), 0);
 //CHECK-NEXT: }
 //CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-//CHECK-NEXT: std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
-//CHECK-NEXT:           << std::endl;
+//CHECK-NEXT: std::cerr << exc.what() << "Exception caught at file:" << __FILE__
+// CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 //CHECK-NEXT: std::exit(1);
 //CHECK-NEXT: }
 int foo10(){
@@ -699,8 +699,8 @@ int foo11(){
 //CHECK-NEXT:   }
 //CHECK-NEXT: }
 //CHECK-NEXT: catch (cl::sycl::exception const &exc) {
-//CHECK-NEXT: std::cerr << exc.what() << "EOE at file:" << __FILE__ << ", line:" << __LINE__
-//CHECK-NEXT:           << std::endl;
+//CHECK-NEXT: std::cerr << exc.what() << "Exception caught at file:" << __FILE__
+// CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 //CHECK-NEXT: std::exit(1);
 //CHECK-NEXT: }
 void foo12(){
@@ -729,7 +729,7 @@ void foo12(){
 // CHECK-NEXT:     if(a){printf("a");}
 // CHECK-NEXT:   }
 // CHECK-NEXT:   catch (cl::sycl::exception const &exc) {
-// CHECK-NEXT:     std::cerr << exc.what() << "EOE at file:" << __FILE__
+// CHECK-NEXT:     std::cerr << exc.what() << "Exception caught at file:" << __FILE__
 // CHECK-NEXT:               << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:     std::exit(1);  
 // CHECK-NEXT:   }
