@@ -278,18 +278,18 @@ opt<format::FormatRange>
                        llvm::cl::OptionEnumValue{"all", int(format::FormatRange::all),
                      "Format all code.", false},
                        llvm::cl::OptionEnumValue{"none", int(format::FormatRange::none),
-                     "Not format any code.", false}),
+                     "Do not format any code.", false}),
     init(format::FormatRange::migrated), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
 
 opt<DPCTFormatStyle>
     FormatST("format-style",
                 llvm::cl::desc("Sets the formatting style.\n"),
                 values(llvm::cl::OptionEnumValue{"llvm", int(DPCTFormatStyle::llvm),
-                     "Using the LLVM coding style.", false},
+                     "Use the LLVM coding style.", false},
                        llvm::cl::OptionEnumValue{"google", int(DPCTFormatStyle::google),
-                     "Using the Google coding style.", false},
+                     "Use the Google coding style.", false},
                        llvm::cl::OptionEnumValue{"custom", int(DPCTFormatStyle::custom),
-                     "Using the custom defined coding style by .clang-format file. (default)", false}),
+                     "Use the coding style defined in .clang-format file. (default)", false}),
     init(DPCTFormatStyle::custom), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
 
 bool ProcessAllFlag = false;
