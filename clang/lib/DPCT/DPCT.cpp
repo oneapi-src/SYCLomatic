@@ -305,6 +305,13 @@ static opt<bool> EnableCTAD(
                    "generated code.\n"
                    "Default: off."),
     cat(DPCTCat), init(false));
+
+bool AsyncHandlerFlag = false;
+static opt<bool, true>
+    AsyncHandler("always-use-async-handler",
+                 llvm::cl::desc("Always create cl::sycl::queue with async "
+                                "exception handler. Default: off."),
+                 cat(DPCTCat), llvm::cl::location(AsyncHandlerFlag));
 // clang-format on
 
 // TODO: implement one of this for each source language.

@@ -32,7 +32,7 @@ static void func()
   // CHECK: std::list<queue_p> streams;
   std::list<cudaStream_t> streams;
   for (auto Iter = streams.begin(); Iter != streams.end(); ++Iter)
-    // CHECK: *Iter = new cl::sycl::queue{};
+    // CHECK: *Iter = new cl::sycl::queue();
     cudaStreamCreate(&*Iter);
   for (auto Iter = streams.begin(); Iter != streams.end(); ++Iter)
     // CHECK: delete *Iter;
@@ -47,24 +47,24 @@ static void func()
   cudaStream_t s4, s5;
 
   // CHECK: if (1)
-  // CHECK-NEXT: s0 = new cl::sycl::queue{};
+  // CHECK-NEXT: s0 = new cl::sycl::queue();
   if (1)
     cudaStreamCreate(&s0);
 
   // CHECK: while (0)
-  // CHECK-NEXT: s0 = new cl::sycl::queue{};
+  // CHECK-NEXT: s0 = new cl::sycl::queue();
   while (0)
     cudaStreamCreate(&s0);
 
   // CHECK: do
-  // CHECK-NEXT: s0 = new cl::sycl::queue{};
+  // CHECK-NEXT: s0 = new cl::sycl::queue();
   // CHECK: while (0);
   do
     cudaStreamCreate(&s0);
   while (0);
 
   // CHECK: for (; 0; )
-  // CHECK-NEXT: s0 = new cl::sycl::queue{};
+  // CHECK-NEXT: s0 = new cl::sycl::queue();
   for (; 0; )
     cudaStreamCreate(&s0);
 
@@ -81,7 +81,7 @@ static void func()
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: checkCudaErrors((s1 = new cl::sycl::queue{}, 0));
+  // CHECK-NEXT: checkCudaErrors((s1 = new cl::sycl::queue(), 0));
   checkCudaErrors(cudaStreamCreate(&s1));
 
   // CHECK:   s0->submit(
@@ -108,7 +108,7 @@ static void func()
     // CHECK: /*
     // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
     // CHECK-NEXT: */
-    // CHECK-NEXT: s2 = new cl::sycl::queue{};
+    // CHECK-NEXT: s2 = new cl::sycl::queue();
     cudaStreamCreateWithFlags(&s2, cudaStreamDefault);
 
     // CHECK: /*
@@ -117,7 +117,7 @@ static void func()
     // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
     // CHECK-NEXT: */
-    // CHECK-NEXT: checkCudaErrors((*(s3) = new cl::sycl::queue{}, 0));
+    // CHECK-NEXT: checkCudaErrors((*(s3) = new cl::sycl::queue(), 0));
     checkCudaErrors(cudaStreamCreateWithFlags(s3, cudaStreamNonBlocking));
 
     // CHECK:   s2->submit(
@@ -154,7 +154,7 @@ static void func()
       // CHECK: /*
       // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
       // CHECK-NEXT: */
-      // CHECK-NEXT: s4 = new cl::sycl::queue{};
+      // CHECK-NEXT: s4 = new cl::sycl::queue();
       cudaStreamCreateWithPriority(&s4, cudaStreamDefault, 2);
 
       // CHECK: /*
@@ -163,7 +163,7 @@ static void func()
       // CHECK-NEXT: /*
       // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
       // CHECK-NEXT: */
-      // CHECK-NEXT: checkCudaErrors((s5 = new cl::sycl::queue{}, 0));
+      // CHECK-NEXT: checkCudaErrors((s5 = new cl::sycl::queue(), 0));
       checkCudaErrors(cudaStreamCreateWithPriority(&s5, cudaStreamNonBlocking, 3));
 
       // CHECK:   s4->submit(

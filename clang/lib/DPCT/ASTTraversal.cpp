@@ -4621,6 +4621,16 @@ void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
                 this);
 }
 
+std::string getQueueCtor() {
+  extern bool AsyncHandlerFlag;
+  std::string Result;
+  llvm::raw_string_ostream OS(Result);
+  printPartialArguments(OS << "cl::sycl::queue(", AsyncHandlerFlag ? 1 : 0,
+                        "dpct::exception_handler")
+      << ")";
+  return OS.str();
+}
+
 void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
   bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "streamAPICall");
@@ -4648,7 +4658,7 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
     else
       ReplStr = "*(" + StmtStr0 + ")";
 
-    ReplStr += " = new cl::sycl::queue{}";
+    ReplStr += " = new " + getQueueCtor();
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
