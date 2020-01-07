@@ -128,3 +128,21 @@ __global__ void k_mdppp_outer_nn(const int * __restrict__ pos,
   __shared__ double la[8][0];
   const int tid = threadIdx.x;
 }
+
+// In windows, only when k_mdppp_outer_nn() is instantiated, there is an AST for k_mdppp_outer_nn template.
+void test() {
+  k_mdppp_outer_nn<1><<<1, 1, 1>>>(NULL,
+                                   NULL,
+                                   NULL,
+                                   NULL,
+                                   NULL,
+                                   NULL,
+                                   NULL,
+                                   0, 0,
+                                   0, 0,
+                                   0, 0,
+                                   1,
+                                   0, 0,
+                                   0,
+                                   0);
+}
