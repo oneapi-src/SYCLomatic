@@ -155,6 +155,7 @@ public:
   void setFirstIncludeOffset(unsigned Offset) {
     if (!HasInclusionDirective) {
       FirstIncludeOffset = Offset;
+      LastIncludeOffset = Offset;
       HasInclusionDirective = true;
     }
   }

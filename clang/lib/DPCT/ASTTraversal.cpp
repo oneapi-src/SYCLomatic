@@ -319,6 +319,7 @@ void IncludesCallbacks::InclusionDirective(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
         ""));
+    Updater.update(false);
   }
 
   // Replace with <mkl_rng_sycl.hpp>
