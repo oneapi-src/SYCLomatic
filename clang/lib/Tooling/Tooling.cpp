@@ -339,6 +339,10 @@ ToolInvocation::ToolInvocation(
 ToolInvocation::~ToolInvocation() {
   if (OwnsAction)
     delete Action;
+  #ifdef INTEL_CUSTOMIZATION
+  if(DiagnosticPrinter)
+    delete DiagnosticPrinter;
+  #endif
 }
 
 void ToolInvocation::mapVirtualFile(StringRef FilePath, StringRef Content) {
@@ -358,15 +362,20 @@ bool ToolInvocation::run() {
       ArrayRef<const char *>(Argv).slice(1), MissingArgIndex, MissingArgCount);
   ParseDiagnosticArgs(*DiagOpts, ParsedArgs);
 #ifdef INTEL_CUSTOMIZATION
-  TextDiagnosticPrinter DiagnosticPrinter(DiagnosticsOS(), &*DiagOpts);
-  DiagConsumer = &DiagnosticPrinter;
+  DiagnosticPrinter =new TextDiagnosticPrinter(DiagnosticsOS(), &*DiagOpts);
+  DiagConsumer = DiagnosticPrinter;
+  DiagnosticsEngine Diagnostics(
+    IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
+    DiagConsumer, false);
+
 #else
   TextDiagnosticPrinter DiagnosticPrinter(
       llvm::errs(), &*DiagOpts);
-#endif
   DiagnosticsEngine Diagnostics(
-      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
-      DiagConsumer ? DiagConsumer : &DiagnosticPrinter, false);
+    IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
+    DiagConsumer ? DiagConsumer : &DiagnosticPrinter, false);
+
+#endif
 
   const std::unique_ptr<driver::Driver> Driver(
       newDriver(&Diagnostics, BinaryName, &Files->getVirtualFileSystem()));

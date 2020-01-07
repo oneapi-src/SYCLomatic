@@ -305,6 +305,9 @@ public:
   // Maps <file name> -> <file content>.
   llvm::StringMap<StringRef> MappedFileContents;
   DiagnosticConsumer *DiagConsumer = nullptr;
+  #ifdef INTEL_CUSTOMIZATION
+  DiagnosticConsumer *DiagnosticPrinter = nullptr;
+  #endif
 };
 
 /// Utility to run a FrontendAction over a set of files.

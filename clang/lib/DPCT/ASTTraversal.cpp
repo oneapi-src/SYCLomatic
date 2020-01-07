@@ -244,14 +244,13 @@ bool IncludesCallbacks::ShouldEnter(StringRef FileName, bool IsAngled) {
 class LastInclusionLocationUpdater {
 public:
   LastInclusionLocationUpdater(SourceLocation Loc, bool UpdateNeeded = true)
-    : Loc(Loc), UpdateNeeded(UpdateNeeded) {}
+      : Loc(Loc), UpdateNeeded(UpdateNeeded) {}
   ~LastInclusionLocationUpdater() {
     if (UpdateNeeded)
       DpctGlobalInfo::getInstance().setLastIncludeLocation(Loc);
   }
-  void update(bool UpdateNeeded) {
-    this->UpdateNeeded = UpdateNeeded;
-  }
+  void update(bool UpdateNeeded) { this->UpdateNeeded = UpdateNeeded; }
+
 private:
   SourceLocation Loc;
   bool UpdateNeeded;
@@ -771,8 +770,10 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
 #undef ENTRY
 
   auto isMigratedHostAPI = [&]() {
-    return allOf(hasAnyName(MigratedAPIName),
-      anyOf(unless(hasAttr(attr::CUDADevice)), hasAttr(attr::CUDAHost))); };
+    return allOf(
+        hasAnyName(MigratedAPIName),
+        anyOf(unless(hasAttr(attr::CUDADevice)), hasAttr(attr::CUDAHost)));
+  };
 
   // Match host api call in the condition session of flow control
   MF.addMatcher(
@@ -820,20 +821,19 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
           .bind("inReturnHostAPI"),
       this);
 
-
   // Match host api call whose return value captured and used
   MF.addMatcher(
-      callExpr(allOf(
-          callee(functionDecl(isMigratedHostAPI())),
-          anyOf(hasAncestor(binaryOperator(
-                    allOf(hasLHS(declRefExpr().bind("targetLHS")),
-                          isAssignmentOperator()))),
-                hasAncestor(varDecl().bind("targetVarDecl"))),
-          hasAncestor(functionDecl(unless(anyOf(hasAttr(attr::CUDADevice),
-                                                hasAttr(attr::CUDAGlobal))))
-                          .bind("savedHostAPI")))).bind("referencedHostAPI"),
+      callExpr(allOf(callee(functionDecl(isMigratedHostAPI())),
+                     anyOf(hasAncestor(binaryOperator(
+                               allOf(hasLHS(declRefExpr().bind("targetLHS")),
+                                     isAssignmentOperator()))),
+                           hasAncestor(varDecl().bind("targetVarDecl"))),
+                     hasAncestor(
+                         functionDecl(unless(anyOf(hasAttr(attr::CUDADevice),
+                                                   hasAttr(attr::CUDAGlobal))))
+                             .bind("savedHostAPI"))))
+          .bind("referencedHostAPI"),
       this);
-
 }
 
 void ErrorHandlingHostAPIRule::run(const MatchFinder::MatchResult &Result) {
@@ -889,11 +889,10 @@ void ErrorHandlingHostAPIRule::run(const MatchFinder::MatchResult &Result) {
   }
 }
 
-void ErrorHandlingHostAPIRule::insertTryCatch(const FunctionDecl* FD) {
+void ErrorHandlingHostAPIRule::insertTryCatch(const FunctionDecl *FD) {
   if (const CXXConstructorDecl *CDecl = getIfConstructorDecl(FD)) {
     emplaceTransformation(new InsertBeforeCtrInitList(CDecl, " try "));
-  }
-  else {
+  } else {
     emplaceTransformation(new InsertBeforeStmt(FD->getBody(), " try "));
   }
   auto &SM = DpctGlobalInfo::getSourceManager();
@@ -4383,15 +4382,14 @@ void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0,
              MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(
-        new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
-          /*IsProcessMacro*/ false, "0"));
-    }
-    else {
+          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
+                          /*IsProcessMacro*/ false, "0"));
+    } else {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED,
              MapNames::ITFName.at(FuncName), Msg->second);
       emplaceTransformation(
-        new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
-          /*IsProcessMacro*/ false, ""));
+          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
+                          /*IsProcessMacro*/ false, ""));
     }
   } else if (FuncName == "cudaEventRecord") {
     handleEventRecord(CE, Result, IsAssigned);
@@ -4945,7 +4943,7 @@ void MemoryMigrationRule::mallocMigration(
         auto SEAStr = SEA.getReplacedString();
         Repl << getAssignedStr(CSE->getSubExpr(), SEAStr);
       } else {
-        Repl << getAssignedStr(C->getArg(0), "(" + Arg0Str+ ")");
+        Repl << getAssignedStr(C->getArg(0), "(" + Arg0Str + ")");
       }
       Repl << "cl::sycl::malloc_device(" << Arg1Str
            << ", dpct::get_current_device()"
@@ -5282,19 +5280,18 @@ void MemoryMigrationRule::continuousMemcpyMemsetHandler(
     if (!isStmtSimpleMemcpyOrMemset(*I)) {
       return;
     }
-    std::string Name =
-        dyn_cast<FunctionDecl>(
-            getMemcpyOrMemsetCallExprFromStmt(*I)->getCalleeDecl())
-            ->getNameAsString();
-    if (Name == "cudaMemset") {
-      memsetMigration(Result, getMemcpyOrMemsetCallExprFromStmt(*I), NULL,
-                      false, "q_ct" + std::to_string(QueueIndex));
-    } else if (Name == "cudaMemcpy") {
-      memcpyMigration(Result, getMemcpyOrMemsetCallExprFromStmt(*I), NULL,
-                      false, "q_ct" + std::to_string(QueueIndex));
-    } else {
-      memcpySymbolMigration(Result, getMemcpyOrMemsetCallExprFromStmt(*I), NULL,
-                            false, "q_ct" + std::to_string(QueueIndex));
+    if (auto FD = getMemcpyOrMemsetCallExprFromStmt(*I)->getDirectCallee()) {
+      std::string Name = FD->getNameAsString();
+      if (Name == "cudaMemset") {
+        memsetMigration(Result, getMemcpyOrMemsetCallExprFromStmt(*I), NULL,
+                        false, "q_ct" + std::to_string(QueueIndex));
+      } else if (Name == "cudaMemcpy") {
+        memcpyMigration(Result, getMemcpyOrMemsetCallExprFromStmt(*I), NULL,
+                        false, "q_ct" + std::to_string(QueueIndex));
+      } else {
+        memcpySymbolMigration(Result, getMemcpyOrMemsetCallExprFromStmt(*I),
+                              NULL, false, "q_ct" + std::to_string(QueueIndex));
+      }
     }
   }
 }
@@ -5312,7 +5309,8 @@ void MemoryMigrationRule::defaultMemcpyMemsetHandler(
   if (ULExpr && C) {
     Name = ULExpr->getName().getAsString();
   } else {
-    Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
+    if ( auto FD = C->getDirectCallee())
+      Name = FD->getNameAsString();
   }
   if (Name == "cudaMemset") {
     memsetMigration(Result, C, ULExpr, IsAssigned);
@@ -5822,8 +5820,7 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
       report(C->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0,
              MapNames::ITFName.at(Name), Msg->second);
       emplaceTransformation(new ReplaceStmt(C, false, Name, "0"));
-    }
-    else {
+    } else {
       report(C->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED,
              MapNames::ITFName.at(Name), Msg->second);
       emplaceTransformation(new ReplaceStmt(C, false, Name, ""));
