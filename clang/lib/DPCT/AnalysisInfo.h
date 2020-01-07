@@ -1680,6 +1680,8 @@ private:
 // kernel call info is specific CallFunctionExpr, which include info of kernel
 // call.
 class KernelCallExpr : public CallFunctionExpr {
+  using StmtList = std::vector<std::string>;
+
   struct ArgInfo {
     ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg, bool Used,
             int Index)
@@ -1796,6 +1798,11 @@ class KernelCallExpr : public CallFunctionExpr {
       appendString(Stream, Indent, std::forward<Args>(Arguments)..., NL);
       return *this;
     }
+    KernelPrinter &operator<<(const StmtList &Stmts) {
+      for (auto &S : Stmts)
+        line(S);
+      return *this;
+    }
     KernelPrinter &indent() { return (*this) << Indent; }
     KernelPrinter &newLine() { return (*this) << NL; }
   };
@@ -1866,27 +1873,26 @@ private:
   void addAccessorDecl(std::shared_ptr<MemVarInfo> VI);
   void addStreamDecl() {
     if (getVarMap().hasStream())
-      SubmitStmts.emplace_back(buildString("cl::sycl::stream ",
-                                           DpctGlobalInfo::getStreamName(),
-                                           "(64 * 1024, 80, cgh);"));
+      SubmitStmtsList.StreamList.emplace_back(
+          buildString("cl::sycl::stream ", DpctGlobalInfo::getStreamName(),
+                      "(64 * 1024, 80, cgh);"));
   }
   void addNdRangeDecl() {
     if (ExecutionConfig.DeclGlobalRange) {
-      SubmitStmts.emplace_back(
+      SubmitStmtsList.NdRangeList.emplace_back(
           buildString("auto dpct_global_range = ", ExecutionConfig.GroupSize,
                       " * ", ExecutionConfig.LocalSize, ";"));
     }
     if (ExecutionConfig.DeclGroupRange) {
-      SubmitStmts.emplace_back(buildString(
+      SubmitStmtsList.NdRangeList.emplace_back(buildString(
           "auto dpct_group_range = ", ExecutionConfig.GroupSize, ";"));
     }
     if (ExecutionConfig.DeclLocalRange) {
-      SubmitStmts.emplace_back(buildString(
+      SubmitStmtsList.NdRangeList.emplace_back(buildString(
           "auto dpct_local_range = ", ExecutionConfig.LocalSize, ";"));
     }
   }
 
-  using StmtList = std::vector<std::string>;
   void buildKernelArgsStmt();
   void printReverseRange(KernelPrinter &Printer, const std::string &RangeName) {
     DpctGlobalInfo::printCtadClass(Printer, "cl::sycl::range", 3)
@@ -1926,8 +1932,18 @@ private:
   std::string Event;
   bool IsSync;
   std::vector<ArgInfo> ArgsInfo;
+
+  struct {
+    StmtList StreamList;
+    StmtList RangeList;
+    StmtList MemoryList;
+    StmtList ExternList;
+    StmtList AccessorList;
+    StmtList TextureList;
+    StmtList NdRangeList;
+  } SubmitStmtsList;
+  
   StmtList OuterStmts;
-  StmtList SubmitStmts;
   StmtList KernelStmts;
   std::string KernelArgs;
 };

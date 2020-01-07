@@ -53,12 +53,14 @@ __global__ void staticReverse(int *d, int n) {
 }
 
 // CHECK: template<typename TData>
-// CHECK-NEXT: void templateReverse(TData *d, TData n, cl::sycl::nd_item<3> [[ITEM:item_ct1]],  dpct::accessor<TData, dpct::local, 2> s) {
+// CHECK-NEXT: void templateReverse(TData *d, TData n, cl::sycl::nd_item<3> [[ITEM:item_ct1]],  dpct::accessor<TData, dpct::local, 2> s, dpct::accessor<TData, dpct::local, 3> s3) {
 template<typename TData>
 __global__ void templateReverse(TData *d, TData n) {
   const int size = 32;
   // CHECK:  // the size of s is static
+  // CHECK-NEXT:  // the size of s is static
   __shared__ TData s[size * 2][size * 4]; // the size of s is static
+  __shared__ TData s3[size * 2][size * 4][size]; // the size of s is static
   int t = threadIdx.x;
   if (t < 64) {
     s[t][0] = d[t];
@@ -80,13 +82,15 @@ void testTemplate() {
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cl::sycl::range<2> s_range_ct1(64/*size * 2*/, 128/*size * 4*/);
+  // CHECK-NEXT:       cl::sycl::range<3> s3_range_ct1(64/*size * 2*/, 128/*size * 4*/, 32/*size*/);
   // CHECK-NEXT:       cl::sycl::accessor<T, 2, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s_acc_ct1(s_range_ct1, cgh);
+  // CHECK-NEXT:       cl::sycl::accessor<T, 3, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s3_acc_ct1(s3_range_ct1, cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, n), cl::sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           T *d_d_ct0 = (T *)(&d_d_acc_ct0[0] + d_d_offset_ct0);
-  // CHECK-NEXT:           templateReverse<T>(d_d_ct0, n, item_ct1, dpct::accessor<T, dpct::local, 2>(s_acc_ct1, s_range_ct1));
+  // CHECK-NEXT:           templateReverse<T>(d_d_ct0, n, item_ct1, dpct::accessor<T, dpct::local, 2>(s_acc_ct1, s_range_ct1), dpct::accessor<T, dpct::local, 3>(s3_acc_ct1, s3_range_ct1));
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -133,12 +137,14 @@ int main(void) {
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cl::sycl::range<2> s_range_ct1(64/*size * 2*/, 128/*size * 4*/);
+  // CHECK-NEXT:       cl::sycl::range<3> s3_range_ct1(64/*size * 2*/, 128/*size * 4*/, 32/*size*/);
   // CHECK-NEXT:       cl::sycl::accessor<int, 2, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s_acc_ct1(s_range_ct1, cgh);
+  // CHECK-NEXT:       cl::sycl::accessor<int, 3, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s3_acc_ct1(s3_range_ct1, cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, int>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, n), cl::sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           templateReverse<int>((int *)(&d_d_acc_ct0[0]), n, item_ct1, dpct::accessor<int, dpct::local, 2>(s_acc_ct1, s_range_ct1));
+  // CHECK-NEXT:           templateReverse<int>((int *)(&d_d_acc_ct0[0]), n, item_ct1, dpct::accessor<int, dpct::local, 2>(s_acc_ct1, s_range_ct1), dpct::accessor<int, dpct::local, 3>(s3_acc_ct1, s3_range_ct1));
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
