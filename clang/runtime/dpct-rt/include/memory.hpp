@@ -532,15 +532,15 @@ public:
     new (this) global_memory(src, size);
   }
 
-  /// Get memory pointer of the memory object, which is virual pointer when
-  /// usm off, and device ptr when usm on .
+  /// Get memory pointer of the memory object, which is virtual pointer when
+  /// usm is not used, and device pointer when usm is used .
   value_t *get_ptr() { return memory_ptr; }
 
   /// Get the device memory object size in bytes.
   size_t get_size() { return size; }
 
-  /// Get accessor with dimension info for the device memory object.
 #ifdef DPCT_USM_LEVEL_NONE
+  /// Get cl::sycl::accessor for the device memory object when usm is not used.
   accessor_t get_access(cl::sycl::handler &cgh) {
     return memory_manager::get_instance()
         .translate_ptr(memory_ptr)
@@ -549,6 +549,8 @@ public:
                              memory_traits<Memory, T>::target>(cgh);
   }
 #else
+  /// Get dpct::accessor with dimension info for the device memory object
+  /// when usm is used and dimension is greater than 1.
   template <size_t D = Dimension>
   typename std::enable_if<D != 1, dpct_accessor_t>::type
   get_access(cl::sycl::handler &cgh) {
@@ -579,8 +581,8 @@ public:
   /// Default constructor
   global_memory() : base(1) {}
 
-  /// Get accessor with dimension info for the device memory object.
 #ifdef DPCT_USM_LEVEL_NONE
+  /// Get cl::sycl::accessor for the device memory object when usm is not used.
   accessor_t get_access(cl::sycl::handler &cgh) {
     auto buf = memory_manager::get_instance()
                    .translate_ptr(base::get_ptr())
