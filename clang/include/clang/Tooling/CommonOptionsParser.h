@@ -156,6 +156,7 @@ private:
 };
 
 #ifdef INTEL_CUSTOMIZATION
+std::string getFormatSearchPath();
 #ifdef _WIN32
 using FunPtrParserType = void (*)(std::string &, std::string &);
 void SetParserHandle(FunPtrParserType FPParser);

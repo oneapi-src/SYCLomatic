@@ -439,6 +439,14 @@ public:
   inline static void setSyclNamedLambda(bool SNL = true) {
     SyclNamedLambda = SNL;
   }
+  inline static bool getGuessIndentWidthMatcherFlag() {
+    return GuessIndentWidthMatcherFlag;
+  }
+  inline static void setGuessIndentWidthMatcherFlag(bool Flag = true) {
+    GuessIndentWidthMatcherFlag = Flag;
+  }
+  inline static void setIndentWidth(unsigned int W) { IndentWidth = W; }
+  inline static unsigned int getIndentWidth() { return IndentWidth; }
   inline static UsmLevel getUsmLevel() { return UsmLvl; }
   inline static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
   inline static format::FormatRange getFormatRange() { return FmtRng; }
@@ -754,6 +762,8 @@ private:
   static SourceManager *SM;
   static bool KeepOriginCode;
   static bool SyclNamedLambda;
+  static bool GuessIndentWidthMatcherFlag;
+  static unsigned int IndentWidth;
 };
 
 class TemplateArgumentInfo;

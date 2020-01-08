@@ -1,5 +1,7 @@
-// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -w -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/error-handling.dp.cpp
+// RUN: cat %s > %T/error-handling.cu
+// RUN: cd %T
+// RUN: dpct --usm-level=none -out-root %T error-handling.cu --cuda-include-path="%cuda-path/include" -- -w -x cuda --cuda-host-only
+// RUN: FileCheck error-handling.cu --match-full-lines --input-file %T/error-handling.dp.cpp
 
 #include <stdexcept>
 #include <cublas.h>
@@ -552,10 +554,10 @@ void foo3(){
 // CHECK: void foo4() try {
 // CHECK-NEXT:   do{
 // CHECK-NEXT:     printf("efef");
-// CHECK-NEXT:   /*
-// CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
-// CHECK-NEXT:   may need to rewrite this code.
-// CHECK-NEXT:   */
+// CHECK-NEXT:     /*
+// CHECK-NEXT:     DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted.
+// CHECK-NEXT:     You may need to rewrite this code.
+// CHECK-NEXT:     */
 // CHECK-NEXT:   } while ((dpct::dpct_malloc(0, 0), 0));
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (cl::sycl::exception const &exc) {
@@ -574,8 +576,9 @@ void foo4(){
 // CHECK-NEXT:   int res;
 // CHECK-NEXT:   {
 // CHECK-NEXT:   auto allocation_ct1 = dpct::memory_manager::get_instance().translate_ptr(0);
-// CHECK-NEXT:   cl::sycl::buffer<float> buffer_ct1 = allocation_ct1.buffer.reinterpret<float>(
-// CHECK-NEXT:       cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
+// CHECK-NEXT:   cl::sycl::buffer<float> buffer_ct1 =
+// CHECK-NEXT:       allocation_ct1.buffer.reinterpret<float>(
+// CHECK-NEXT:           cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
 // CHECK-NEXT:   cl::sycl::buffer<int64_t> result_temp_buffer(cl::sycl::range<1>(1));
 // CHECK-NEXT:   mkl::blas::iamax(dpct::get_default_queue(), 10, buffer_ct1, 0,
 // CHECK-NEXT:                    result_temp_buffer);

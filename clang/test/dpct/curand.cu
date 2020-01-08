@@ -1,5 +1,7 @@
-//RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
-//RUN: FileCheck --input-file %T/curand.dp.cpp --match-full-lines %s
+// RUN: cat %s > %T/curand.cu
+// RUN: cd %T
+//RUN: dpct -out-root %T curand.cu --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
+//RUN: FileCheck --input-file %T/curand.dp.cpp --match-full-lines curand.cu
 //CHECK:#include <CL/sycl.hpp>
 //CHECK:#include <dpct/dpct.hpp>
 //CHECK:#include <mkl_rng_sycl.hpp>
@@ -30,50 +32,54 @@ int main(){
        //CHECK:{
   //CHECK-NEXT:auto allocation_ct1 =
   //CHECK-NEXT:    dpct::memory_manager::get_instance().translate_ptr(h_data);
-  //CHECK-NEXT:cl::sycl::buffer<float> buffer_ct1 = allocation_ct1.buffer.reinterpret<float>(
-  //CHECK-NEXT:    cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
+  //CHECK-NEXT:cl::sycl::buffer<float> buffer_ct1 =
+  //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<float>(
+  //CHECK-NEXT:        cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
   //CHECK-NEXT:mkl::rng::uniform<float> distr_ct1;
   //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, buffer_ct1);
   //CHECK-NEXT:}
   curandGenerateUniform(rng, h_data, 100*100);
 
        //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
-  //CHECK-NEXT:may need to rewrite this code.
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted.
+  //CHECK-NEXT:You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
   //CHECK-NEXT:auto allocation_ct1 =
   //CHECK-NEXT:    dpct::memory_manager::get_instance().translate_ptr(h_data);
-  //CHECK-NEXT:cl::sycl::buffer<float> buffer_ct1 = allocation_ct1.buffer.reinterpret<float>(
-  //CHECK-NEXT:    cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
+  //CHECK-NEXT:cl::sycl::buffer<float> buffer_ct1 =
+  //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<float>(
+  //CHECK-NEXT:        cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
   //CHECK-NEXT:mkl::rng::uniform<float> distr_ct1;
   //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, buffer_ct1), 0);
   //CHECK-NEXT:}
   s1 = curandGenerateUniform(rng, h_data, 100*100);
 
        //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
-  //CHECK-NEXT:may need to rewrite this code.
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted.
+  //CHECK-NEXT:You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
   //CHECK-NEXT:auto allocation_ct1 =
   //CHECK-NEXT:    dpct::memory_manager::get_instance().translate_ptr(h_data);
-  //CHECK-NEXT:cl::sycl::buffer<float> buffer_ct1 = allocation_ct1.buffer.reinterpret<float>(
-  //CHECK-NEXT:    cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
+  //CHECK-NEXT:cl::sycl::buffer<float> buffer_ct1 =
+  //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<float>(
+  //CHECK-NEXT:        cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
   //CHECK-NEXT:mkl::rng::lognormal<float> distr_ct1(123, 456, 0.0, 1.0);
   //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, buffer_ct1), 0);
   //CHECK-NEXT:}
   s1 = curandGenerateLogNormal(rng, h_data, 100*100, 123, 456);
 
        //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
-  //CHECK-NEXT:may need to rewrite this code.
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted.
+  //CHECK-NEXT:You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
   //CHECK-NEXT:auto allocation_ct1 =
   //CHECK-NEXT:    dpct::memory_manager::get_instance().translate_ptr(h_data);
-  //CHECK-NEXT:cl::sycl::buffer<float> buffer_ct1 = allocation_ct1.buffer.reinterpret<float>(
-  //CHECK-NEXT:    cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
+  //CHECK-NEXT:cl::sycl::buffer<float> buffer_ct1 =
+  //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<float>(
+  //CHECK-NEXT:        cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
   //CHECK-NEXT:mkl::rng::gaussian<float> distr_ct1(123, 456);
   //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, buffer_ct1), 0);
   //CHECK-NEXT:}
@@ -180,8 +186,9 @@ int main(){
   //CHECK-NEXT:{
   //CHECK-NEXT:auto allocation_ct1 =
   //CHECK-NEXT:    dpct::memory_manager::get_instance().translate_ptr(h_data);
-  //CHECK-NEXT:cl::sycl::buffer<float> buffer_ct1 = allocation_ct1.buffer.reinterpret<float>(
-  //CHECK-NEXT:    cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
+  //CHECK-NEXT:cl::sycl::buffer<float> buffer_ct1 =
+  //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<float>(
+  //CHECK-NEXT:        cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
   //CHECK-NEXT:mkl::rng::uniform<float> distr_ct1;
   //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng2, 100 * 100, buffer_ct1);
   //CHECK-NEXT:}

@@ -37,8 +37,14 @@ using namespace llvm;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
+namespace clang {
+namespace tooling {
+std::string getFormatSearchPath();
+}
+}
+
 static bool formatFile(StringRef FileName,
-                       const std::vector<clang::tooling::Range>& Ranges,
+                       const std::vector<clang::tooling::Range> &Ranges,
                        clang::SourceManager &SM) {
   ErrorOr<std::unique_ptr<MemoryBuffer>> ErrorOrMemoryBuffer =
       MemoryBuffer::getFileAsStream(FileName);
@@ -53,13 +59,18 @@ static bool formatFile(StringRef FileName,
 
   clang::format::FormattingAttemptStatus Status;
   StringRef StyleStr = "file"; // DPCTFormatStyle::custom
-  if (clang::dpct::DpctGlobalInfo::getFormatStyle() == DPCTFormatStyle::google) {
+  if (clang::dpct::DpctGlobalInfo::getFormatStyle() ==
+      DPCTFormatStyle::google) {
     StyleStr = "google";
-  } else if (clang::dpct::DpctGlobalInfo::getFormatStyle() == DPCTFormatStyle::llvm) {
+  } else if (clang::dpct::DpctGlobalInfo::getFormatStyle() ==
+             DPCTFormatStyle::llvm) {
     StyleStr = "llvm";
   }
+  std::string StyleSearchPath = clang::tooling::getFormatSearchPath().empty()
+                                    ? clang::dpct::DpctGlobalInfo::getInRoot()
+                                    : clang::tooling::getFormatSearchPath();
   llvm::Expected<clang::format::FormatStyle> StyleOrErr =
-      clang::format::getStyle(StyleStr, FileName, "llvm",
+      clang::format::getStyle(StyleStr, StyleSearchPath, "llvm",
                               FileBuffer->getBuffer());
   clang::format::FormatStyle Style;
   if (!StyleOrErr) {
@@ -76,6 +87,8 @@ static bool formatFile(StringRef FileName,
       clang::format::FormatRange::migrated) {
     Style.AllowShortFunctionsOnASingleLine =
         clang::format::FormatStyle::SFS_None;
+    if (clang::dpct::DpctGlobalInfo::getGuessIndentWidthMatcherFlag())
+      Style.IndentWidth = clang::dpct::DpctGlobalInfo::getIndentWidth();
   }
 
   clang::Rewriter Rewrite(SM, clang::LangOptions());

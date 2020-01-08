@@ -1,8 +1,17 @@
 // RUN: cd %T
-// RUN: cat %s > %T/use_format_file.cu
-// RUN: echo "ColumnLimit: 50" > %T/.clang-format
-// RUN: dpct use_format_file.cu --out-root=%T --cuda-include-path="%cuda-path/include" -- --cuda-host-only
-// RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/use_format_file.dp.cpp
+// RUN: mkdir foo
+// RUN: cat %s > %T/foo/use_format_file_with_p2.cu
+// RUN: echo "ColumnLimit: 50" > %T/foo/.clang-format
+// RUN: echo "[" > %T/foo/compile_commands.json
+// RUN: echo "  {" >> %T/foo/compile_commands.json
+// RUN: echo "    \"command\": \"nvcc -c -m64 -o use_format_file_with_p2.o use_format_file_with_p2.cu\"," >> %T/foo/compile_commands.json
+// RUN: echo "    \"directory\": \"%T/foo\"," >> %T/foo/compile_commands.json
+// RUN: echo "    \"file\": \"%T/foo/use_format_file_with_p2.cu\"" >> %T/foo/compile_commands.json
+// RUN: echo "  }" >> %T/foo/compile_commands.json
+// RUN: echo "]" >> %T/foo/compile_commands.json
+// RUN: dpct -p=./foo ./foo/use_format_file_with_p2.cu --out-root=%T/out --cuda-include-path="%cuda-path/include" -- --cuda-host-only
+// RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/out/use_format_file_with_p2.dp.cpp
+// RUN: rm -rf ./*
 #include "cuda.h"
 
 void bar();

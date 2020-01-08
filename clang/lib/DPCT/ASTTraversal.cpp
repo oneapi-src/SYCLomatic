@@ -6147,6 +6147,82 @@ void UnnamedTypesRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(UnnamedTypesRule)
 
+void GuessIndentWidthRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      functionDecl(allOf(hasParent(translationUnitDecl()),
+                         hasBody(compoundStmt(unless(anyOf(
+                             statementCountIs(0), statementCountIs(1)))))))
+          .bind("FunctionDecl"),
+      this);
+  MF.addMatcher(
+      cxxMethodDecl(hasParent(cxxRecordDecl(hasParent(translationUnitDecl()))))
+          .bind("CXXMethodDecl"),
+      this);
+  MF.addMatcher(
+      fieldDecl(hasParent(cxxRecordDecl(hasParent(translationUnitDecl()))))
+          .bind("FieldDecl"),
+      this);
+}
+
+void GuessIndentWidthRule::run(const MatchFinder::MatchResult &Result) {
+  if (DpctGlobalInfo::getGuessIndentWidthMatcherFlag())
+    return;
+  SourceManager &SM = DpctGlobalInfo::getSourceManager();
+  // Case 1:
+  // TranslationUnitDecl
+  // `-FunctionDecl
+  //   `-CompoundStmt
+  //     |-Stmt_1
+  //     |-Stmt_2
+  //     ...
+  //     |-Stmt_n-1
+  //     `-Stmt_n
+  // The stmt in the compound stmt should >= 2, then we use the indent of the
+  // first stmt as IndentWidth.
+  auto FD = getNodeAsType<FunctionDecl>(Result, "FunctionDecl");
+  if (FD) {
+    CompoundStmt* CS = nullptr;
+    Stmt *S = nullptr;
+    if ((CS = dyn_cast<CompoundStmt>(FD->getBody())) &&
+        (!CS->children().empty()) && (S = *(CS->children().begin()))) {
+      DpctGlobalInfo::setIndentWidth(
+          getIndent(SM.getExpansionLoc(S->getBeginLoc()), SM).size());
+      DpctGlobalInfo::setGuessIndentWidthMatcherFlag(true);
+      return;
+    }
+  }
+
+  // Case 2:
+  // TranslationUnitDecl
+  // `-CXXRecordDecl
+  //   |-CXXRecordDecl
+  //   `-CXXMethodDecl
+  // Use the indent of the CXXMethodDecl as the IndentWidth.
+  auto CMD = getNodeAsType<CXXMethodDecl>(Result, "CXXMethodDecl");
+  if (CMD) {
+    DpctGlobalInfo::setIndentWidth(
+        getIndent(SM.getExpansionLoc(CMD->getBeginLoc()), SM).size());
+    DpctGlobalInfo::setGuessIndentWidthMatcherFlag(true);
+    return;
+  }
+
+  // Case 3:
+  // TranslationUnitDecl
+  // `-CXXRecordDecl
+  //   |-CXXRecordDecl
+  //   `-FieldDecl
+  // Use the indent of the FieldDecl as the IndentWidth.
+  auto FieldD = getNodeAsType<FieldDecl>(Result, "FieldDecl");
+  if (FieldD) {
+    DpctGlobalInfo::setIndentWidth(
+        getIndent(SM.getExpansionLoc(FieldD->getBeginLoc()), SM).size());
+    DpctGlobalInfo::setGuessIndentWidthMatcherFlag(true);
+    return;
+  }
+}
+
+REGISTER_RULE(GuessIndentWidthRule)
+
 void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
   std::vector<std::string> MathFunctions = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,

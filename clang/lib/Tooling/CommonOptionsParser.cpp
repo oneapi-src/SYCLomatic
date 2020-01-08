@@ -53,10 +53,11 @@ const char *const CommonOptionsParser::HelpMessage =
     "\n";
 
 #ifdef INTEL_CUSTOMIZATION
-#ifdef _WIN32
 namespace clang {
 namespace tooling {
-
+static std::string FormatSearchPath = "";
+std::string getFormatSearchPath() { return FormatSearchPath; }
+#ifdef _WIN32
 static FunPtrParserType FPtrParser = nullptr;
 
 void SetParserHandle(FunPtrParserType FPParser) {
@@ -68,10 +69,9 @@ void DoParserHandle(std::string &BuildDir, std::string &FilePath) {
     FPtrParser(BuildDir, FilePath);
   }
 }
-
+#endif
 } // namespace tooling
 } // namespace clang
-#endif
 #endif
 
 
@@ -188,6 +188,9 @@ llvm::Error CommonOptionsParser::init(
 
   SourcePathList = SourcePaths;
 #ifdef INTEL_CUSTOMIZATION
+  if(!SourcePathList.empty()) {
+    clang::tooling::FormatSearchPath = SourcePaths[0];
+  }
   DatabaseStatus ErrCode =
       CannotFindDatabase; // map to MigrationErrorCannotFindDatabase in DPCT
 #if _WIN32
@@ -211,6 +214,7 @@ llvm::Error CommonOptionsParser::init(
     DoParserHandle(BuildDir, VcxprojFile);
     Compilations = CompilationDatabase::autoDetectFromDirectory(
         BuildDir, ErrorMessage, ErrCode);
+    clang::tooling::FormatSearchPath = BuildDir;
   }
 #endif
 #endif
@@ -221,6 +225,9 @@ llvm::Error CommonOptionsParser::init(
     if (!BuildPath.empty()) {
       Compilations = CompilationDatabase::autoDetectFromDirectory(
           BuildPath, ErrorMessage, ErrCode);
+#ifdef INTEL_CUSTOMIZATION
+      clang::tooling::FormatSearchPath = BuildPath;
+#endif
     }
 #ifdef INTEL_CUSTOMIZATION
     // if neither option "-p" or target source file names exist in the
@@ -233,6 +240,9 @@ llvm::Error CommonOptionsParser::init(
     else {
       Compilations = CompilationDatabase::autoDetectFromSource(SourcePaths[0],
                                                                ErrorMessage);
+#ifdef INTEL_CUSTOMIZATION
+      clang::tooling::FormatSearchPath = SourcePaths[0];
+#endif
     }
     if (!Compilations) {
 #ifdef INTEL_CUSTOMIZATION

@@ -33,6 +33,8 @@ bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
 const std::string MemVarInfo::ExternVariableName = "dpct_local";
 const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
+bool DpctGlobalInfo::GuessIndentWidthMatcherFlag = false;
+unsigned int DpctGlobalInfo::IndentWidth = 0;
 
 bool DpctFileInfo::isInRoot() { return DpctGlobalInfo::isInRoot(FilePath); }
 // TODO: implement one of this for each source language.

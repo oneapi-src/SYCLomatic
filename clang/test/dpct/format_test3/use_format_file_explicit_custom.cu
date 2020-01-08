@@ -28,11 +28,11 @@ float *d_A = NULL;
 //CHECK-NEXT:         0);
 //CHECK-NEXT:}
 //CHECK-NEXT:catch (cl::sycl::exception const &exc) {
-//CHECK-NEXT:std::cerr << exc.what()
-//CHECK-NEXT:          << "Exception caught at file:"
-//CHECK-NEXT:          << __FILE__ << ", line:" << __LINE__
-//CHECK-NEXT:          << std::endl;
-//CHECK-NEXT:std::exit(1);
+//CHECK-NEXT:  std::cerr << exc.what()
+//CHECK-NEXT:            << "Exception caught at file:"
+//CHECK-NEXT:            << __FILE__ << ", line:" << __LINE__
+//CHECK-NEXT:            << std::endl;
+//CHECK-NEXT:  std::exit(1);
 //CHECK-NEXT:}
 void foo1() {
   for(;;)

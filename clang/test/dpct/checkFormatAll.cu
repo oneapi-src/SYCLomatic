@@ -1,5 +1,7 @@
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" --format-range=all -- -std=c++14  -x cuda --cuda-host-only
-// RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/checkFormatAll.dp.cpp
+// RUN: cat %s > %T/checkFormatAll.cu
+// RUN: cd %T
+// RUN: dpct -out-root %T checkFormatAll.cu --cuda-include-path="%cuda-path/include" --format-range=all -- -std=c++14  -x cuda --cuda-host-only
+// RUN: FileCheck -strict-whitespace checkFormatAll.cu --match-full-lines --input-file %T/checkFormatAll.dp.cpp
 
 #include <cuda_runtime.h>
 #include <cassert>

@@ -868,6 +868,14 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+/// Guess original code indent width.
+class GuessIndentWidthRule : public NamedMigrationRule<GuessIndentWidthRule> {
+public:
+  GuessIndentWidthRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 /// Migration for math functions
 class MathFunctionsRule : public NamedMigrationRule<MathFunctionsRule> {
 public:
