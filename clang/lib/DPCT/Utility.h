@@ -49,6 +49,7 @@ class MemberExpr;
 class FunctionDecl;
 class CallExpr;
 class Token;
+class LangOptions;
 namespace ast_type_traits {
 class DynTypedNode;
 } // namespace ast_type_traits
@@ -294,6 +295,8 @@ void replaceSubStrAll(std::string &Str, const std::string &SubStr,
                       const std::string &Repl);
 bool isArgUsedAsLvalueUntil(const clang::DeclRefExpr *Arg,
                             const clang::Stmt *S);
+unsigned int getLenIncludingTrailingSpaces(clang::SourceRange Range,
+                                           const clang::SourceManager &SM);
 std::vector<const clang::Stmt *>
 getConditionNode(clang::ast_type_traits::DynTypedNode Node);
 bool isConditionOfFlowControl(const clang::Expr *E);
@@ -333,6 +336,9 @@ StreamTy &printArguments(StreamTy &Stream, Args &&... Arguments) {
   return printPartialArguments(Stream, sizeof...(Args),
                                std::forward<Args>(Arguments)...);
 }
+
+bool isInSameLine(clang::SourceLocation A, clang::SourceLocation B,
+                  const clang::SourceManager &SM, bool &Invalid);
 
 std::vector<clang::tooling::Range>
 calculateRangesWithFormatFlag(

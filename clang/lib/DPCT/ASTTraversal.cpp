@@ -154,29 +154,9 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
 }
 TextModification *
 IncludesCallbacks::removeMacroInvocationAndTrailingSpaces(SourceRange Range) {
-  const char *C = SM.getCharacterData(
-      Lexer::getLocForEndOfToken(Range.getEnd(), 0, SM, LangOptions()));
-  while (C && *C) {
-    if (!isspace(*C)) {
-      break;
-    }
-#if defined(__linux__)
-    if (*C == '\n') {
-      break;
-    }
-#elif defined(_WIN32)
-    if (*C == '\r') {
-      break;
-    }
-#else
-#error Only support Windows and Linux.
-#endif
-    ++C;
-  }
   return new ReplaceText(Range.getBegin(),
-                         C - SM.getCharacterData(Range.getBegin()), "", true);
+                         getLenIncludingTrailingSpaces(Range, SM), "", true);
 }
-
 
 void IncludesCallbacks::Ifdef(SourceLocation Loc, const Token &MacroNameTok,
                               const MacroDefinition &MD) {
@@ -2934,7 +2914,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   if (FuncCallEnd.isMacroID())
     FuncCallEnd = SM->getExpansionLoc(FuncCallEnd);
   Token Tok;
-  Lexer::getRawToken(FuncNameBegin, Tok, *SM, LangOptions());
+  Lexer::getRawToken(FuncNameBegin, Tok, *SM,
+                     DpctGlobalInfo::getContext().getLangOpts());
   SourceLocation FuncNameEnd = Tok.getEndLoc();
   auto FuncNameLength =
       SM->getCharacterData(FuncNameEnd) - SM->getCharacterData(FuncNameBegin);

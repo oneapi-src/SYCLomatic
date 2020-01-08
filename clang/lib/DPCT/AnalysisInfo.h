@@ -1333,15 +1333,14 @@ public:
     merge(ExternVarMap, VarMap.ExternVarMap, TemplateArgs);
     dpct::merge(TextureMap, VarMap.TextureMap);
   }
-  std::string getExtraCallArguments(bool HasArgs) const {
-    return getArgumentsOrParameters<CallArgument>(HasArgs);
-  }
-  std::string getExtraDeclParam(bool HasParams) const {
-    return getArgumentsOrParameters<DeclParameter>(HasParams);
-  }
-  std::string getKernelArguments(bool HasArgs) const {
-    return getArgumentsOrParameters<KernelArgument>(HasArgs);
-  }
+  std::string getExtraCallArguments(bool HasArgs) const;
+
+  // If want adding the ExtraParam with new line, the second argument should be
+  // true, and the third argument is the string of indent, which will occur
+  // before each ExtraParam.
+  std::string getExtraDeclParam(bool HasParams, bool IsExtraParamWithNL = false,
+                                std::string Indent = "") const;
+  std::string getKernelArguments(bool HasArgs) const;
 
   const MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) const {
     return const_cast<MemVarMap *>(this)->getMap(Scope);
@@ -1363,6 +1362,12 @@ public:
     }
   }
 
+  enum CallOrDecl {
+    CallArgument = 0,
+    KernelArgument,
+    DeclParameter,
+  };
+
 private:
   static void merge(MemVarInfoMap &Master, const MemVarInfoMap &Branch,
                     const std::vector<TemplateArgumentInfo> &TemplateArgs) {
@@ -1373,12 +1378,6 @@ private:
           .first->second->getType()
           ->setTemplateType(TemplateArgs);
   }
-
-  enum CallOrDecl {
-    CallArgument = 0,
-    KernelArgument,
-    DeclParameter,
-  };
 
   template <CallOrDecl COD>
   inline llvm::raw_ostream &getItem(llvm::raw_ostream &OS) const {
@@ -1391,7 +1390,9 @@ private:
   }
 
   template <CallOrDecl COD>
-  std::string getArgumentsOrParameters(bool HasData) const {
+  inline std::string getArgumentsOrParameters(bool HasData,
+                                              bool IsExtraParamWithNL = false,
+                                              std::string Indent = "") const {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     if (HasData)
@@ -1412,9 +1413,15 @@ private:
 
   template <class T, CallOrDecl COD>
   static void getArgumentsOrParametersFromMap(llvm::raw_ostream &OS,
-                                              const GlobalMap<T> &VarMap) {
-    for (auto VI : VarMap)
-      GetArgOrParam<T, COD>()(OS, VI.second) << ", ";
+                                              const GlobalMap<T> &VarMap,
+                                              bool AddNL = false,
+                                              std::string Indent = "") {
+    for (auto VI : VarMap) {
+      if (AddNL)
+        GetArgOrParam<T, COD>()(OS, VI.second) << "," << getNL() << Indent;
+      else
+        GetArgOrParam<T, COD>()(OS, VI.second) << ", ";
+    }
   }
 
   template <class T, CallOrDecl COD> struct GetArgOrParam;
@@ -1433,6 +1440,9 @@ private:
       return V->getKernelArg(OS);
     }
   };
+  inline void getArgumentsOrParametersForDecl(
+      llvm::raw_string_ostream &OS, bool HasData, bool AddNL,
+      std::string Indent, std::string ParamsSpliter) const;
 
   bool HasItem, HasStream;
   MemVarInfoMap LocalVarMap;
@@ -1455,6 +1465,55 @@ MemVarMap::getStream<MemVarMap::DeclParameter>(llvm::raw_ostream &OS) const {
   static std::string StreamParamDecl =
       "cl::sycl::stream " + DpctGlobalInfo::getStreamName();
   return OS << StreamParamDecl;
+}
+
+inline void MemVarMap::getArgumentsOrParametersForDecl(
+    llvm::raw_string_ostream &OS, bool HasData, bool AddNL, std::string Indent,
+    std::string ParamsSpliter) const {
+  if (HasData)
+    OS << ParamsSpliter;
+  if (hasItem())
+    getItem<MemVarMap::DeclParameter>(OS) << ParamsSpliter;
+  if (hasStream())
+    getStream<MemVarMap::DeclParameter>(OS) << ParamsSpliter;
+  if (!ExternVarMap.empty())
+    GetArgOrParam<MemVarInfo, MemVarMap::DeclParameter>()(
+        OS, ExternVarMap.begin()->second)
+        << ParamsSpliter;
+  getArgumentsOrParametersFromMap<MemVarInfo, MemVarMap::DeclParameter>(
+      OS, GlobalVarMap, AddNL, Indent);
+  getArgumentsOrParametersFromMap<MemVarInfo, MemVarMap::DeclParameter>(
+      OS, LocalVarMap, AddNL, Indent);
+  getArgumentsOrParametersFromMap<TextureInfo, MemVarMap::DeclParameter>(
+      OS, TextureMap, AddNL, Indent);
+  OS.flush();
+}
+
+template <>
+inline std::string
+MemVarMap::getArgumentsOrParameters<MemVarMap::DeclParameter>(
+    bool HasData, bool IsExtraParamWithNL, std::string Indent) const {
+  std::string Result;
+  llvm::raw_string_ostream OS(Result);
+  unsigned int RemoveLength;
+  if (IsExtraParamWithNL) {
+    getArgumentsOrParametersForDecl(OS, HasData, true, Indent,
+                                    std::string(",") + getNL() + Indent);
+#ifdef _WIN32
+    // comma, Indent '\r' and '\n'
+    RemoveLength = 1 + Indent.length() + 2;
+#else
+    // comma, Indent and '\n'
+    RemoveLength = 1 + Indent.length() + 1;
+#endif
+  } else {
+    getArgumentsOrParametersForDecl(OS, HasData, false, "", ", ");
+    // comma and space
+    RemoveLength = 2;
+  }
+  return Result.empty()
+             ? Result
+             : Result.erase(Result.size() - RemoveLength, RemoveLength);
 }
 
 // call function expression includes location, name, arguments num, template
@@ -1626,6 +1685,31 @@ private:
         TextureObjectList[Idx] = std::make_shared<TextureObjectInfo>(Param);
     }
   }
+  template <class T>
+  inline void
+  calculateRemoveLength(const FunctionDecl *FD, const std::string &AttrStr,
+                        unsigned int &NeedRemoveLength,
+                        const SourceLocation &BeginParamLoc,
+                        const SourceManager &SM, const LangOptions &LO) {
+    if (const Attr *A = FD->getAttr<T>()) {
+      if (SM.isMacroArgExpansion(A->getRange().getBegin()) &&
+          SM.isMacroArgExpansion(BeginParamLoc))
+        return;
+      auto Begin = SM.getExpansionLoc(A->getRange().getBegin());
+      auto BeginParamLocExpand = SM.getExpansionLoc(BeginParamLoc);
+      auto Length = Lexer::MeasureTokenLength(Begin, SM, LO);
+      auto C = SM.getCharacterData(Begin);
+      std::string Str = std::string(C, C + Length);
+      bool InValidFlag = false;
+      if (Str == AttrStr &&
+          isInSameLine(Begin, BeginParamLocExpand, SM, InValidFlag) &&
+          !InValidFlag) {
+        NeedRemoveLength =
+            NeedRemoveLength +
+            getLenIncludingTrailingSpaces(SourceRange(Begin, Begin), SM);
+      }
+    }
+  }
 
   unsigned Offset;
   const std::string FilePath;
@@ -1636,6 +1720,8 @@ private:
   std::shared_ptr<DeviceFunctionInfo> FuncInfo;
 
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
+  std::string Indent;
+  bool IsExtraParamWithNL = false;
 };
 
 // device function info includes parameters num, memory variable and call
@@ -1674,9 +1760,10 @@ public:
   inline bool isBuilt() { return IsBuilt; }
   inline void setBuilt() { IsBuilt = true; }
 
-  inline const std::string &getExtraParameters() {
+  inline std::string getExtraParameters(bool IsExtraParamWithNL = false,
+                                        std::string Indent = "") {
     buildInfo();
-    return ExtraParams;
+    return VarMap.getExtraDeclParam(hasParams(), IsExtraParamWithNL, Indent);
   }
 
   void setDefinitionFilePath(const std::string &Path) {
@@ -1697,7 +1784,6 @@ private:
 
   bool IsBuilt;
   size_t ParamsNum;
-  std::string ExtraParams;
   std::string DefinitionFilePath;
   bool NeedSyclExternMacro = false;
 

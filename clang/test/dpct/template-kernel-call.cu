@@ -6,14 +6,16 @@
 void printf(const char *format, unsigned char data);
 
 template <class TName, unsigned N, class TData>
-// CHECK: void testKernelPtr(const TData *L, const TData *M, cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
+// CHECK: void testKernelPtr(const TData *L, const TData *M,
+// CHECK: cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void testKernelPtr(const TData *L, const TData *M) {
   // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range().get(2) + [[ITEMNAME]].get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
 template<class TData>
-// CHECK: void testKernel(TData L, TData M, int N, cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
+// CHECK: void testKernel(TData L, TData M, int N,
+// CHECK: cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void testKernel(TData L, TData M, int N) {
   // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range().get(2) + [[ITEMNAME]].get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;

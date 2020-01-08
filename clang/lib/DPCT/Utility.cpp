@@ -724,6 +724,35 @@ bool isArgUsedAsLvalueUntil(const DeclRefExpr *Arg, const Stmt *S) {
   return UsedInScope[CurrentScope];
 }
 
+/// This function gets the length from \p eRange begin to the trailing
+/// spaces end of \p Range end.
+/// \param SourceRange Range
+/// \param SM SourceManager.
+/// \return The result length.
+unsigned int getLenIncludingTrailingSpaces(SourceRange Range,
+                                           const SourceManager &SM) {
+  const char *C = SM.getCharacterData(
+      Lexer::getLocForEndOfToken(Range.getEnd(), 0, SM, LangOptions()));
+  while (C && *C) {
+    if (!isspace(*C)) {
+      break;
+    }
+#if defined(__linux__)
+    if (*C == '\n') {
+      break;
+    }
+#elif defined(_WIN32)
+    if (*C == '\r') {
+      break;
+    }
+#else
+#error Only support Windows and Linux.
+#endif
+    ++C;
+  }
+  return C - SM.getCharacterData(Range.getBegin());
+}
+
 /// This function gets the statement nodes of the initialization, condition or
 /// increment parts of the \p Node.
 /// \param Node The statement node which is if, for, do, while or switch.
@@ -856,6 +885,37 @@ int getLengthOfSpacesToEndl(const char *CharData) {
   }
   return 0;
 }
+
+/// Determine whether \p A and \p B is in the same line.
+/// \param A A source location.
+/// \param B Another source location.
+/// \param SM SourceManager.
+/// \param [out] Invalid Is both source locations are valid.
+/// \return The result.
+bool isInSameLine(clang::SourceLocation A, clang::SourceLocation B,
+                  const clang::SourceManager &SM, bool& Invalid) {
+  auto ALocInfo = SM.getDecomposedLoc(A);
+  auto BLocInfo = SM.getDecomposedLoc(B);
+  bool InValidFlag = false;
+  auto ALineNumber =
+      SM.getLineNumber(ALocInfo.first, ALocInfo.second, &InValidFlag);
+  if (InValidFlag) {
+    Invalid = true;
+    return false;
+  }
+  auto BLineNumber =
+      SM.getLineNumber(BLocInfo.first, BLocInfo.second, &InValidFlag);
+  if (InValidFlag) {
+    Invalid = true;
+    return false;
+  }
+  Invalid = false;
+  if (ALineNumber == BLineNumber)
+    return true;
+  else
+    return false;
+}
+
 /// Calculate the ranges of the input \p Repls which has NOT set NotFormatFlags.
 /// \param Repls Replacements with format flags.
 /// \return The result ranges.

@@ -7,7 +7,8 @@
 #include <cuda_runtime.h>
 
 // CHECK:   /* DPCT_ORIG __global__ void testKernelPtr(const int *L, const int *M, int N) {*/
-// CHECK-NEXT:void testKernelPtr(const int *L, const int *M, int N, cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
+// CHECK-NEXT:void testKernelPtr(const int *L, const int *M, int N,
+// CHECK-NEXT:cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
 
   // CHECK: /* DPCT_ORIG   int gtid = blockIdx.x  * blockDim.x */
@@ -21,7 +22,8 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 }
 
 // CHECK:     /* DPCT_ORIG __global__ void testKernel(int L, int M, int N) {*/
-// CHECK-NEXT: void testKernel(int L, int M, int N, cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
+// CHECK-NEXT: void testKernel(int L, int M, int N,
+// CHECK-NEXT: cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void testKernel(int L, int M, int N) {
   // CHECK:      /* DPCT_ORIG   int gtid = blockIdx.x*/
   // CHECK-NEXT:  int gtid = item_ct1.get_group(2)

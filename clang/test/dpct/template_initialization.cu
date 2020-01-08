@@ -16,7 +16,8 @@ int main() {
 }
 
 // CHECK: template<typename T>
-// CHECK: void kernel(T* in, T* out, cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
+// CHECK: void kernel(T* in, T* out,
+// CHECK: cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] = in[{{.*}}[[ITEM]].get_local_id(2)];
 // CHECK: }
 template<typename T>

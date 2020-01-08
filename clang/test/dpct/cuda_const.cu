@@ -195,7 +195,8 @@ int main(int argc, char **argv) {
 // CHECK: dpct::constant_memory<float, 0> C;
 __constant__ float C;
 
-// CHECK: void foo(float d, float y, float C){
+// CHECK: void foo(float d, float y,
+// CHECK-NEXT: float C){
 // CHECK-NEXT:   float temp;
 // CHECK-NEXT:   float maxtemp = cl::sycl::fmax(temp=(y*d)<(y==1?C:0) ? -(3*y) :-10, (float)(-10));
 // CHECK-NEXT: }

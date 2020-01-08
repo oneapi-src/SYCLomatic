@@ -508,14 +508,13 @@ void DeviceFunctionInfo::buildInfo() {
     VarMap.merge(Call.second->getVarMap());
     mergeCalledTexObj(Call.second->getTextureObjectList());
   }
-  ExtraParams = VarMap.getExtraDeclParam(hasParams());
 }
 
 inline void DeviceFunctionDecl::emplaceReplacement() {
   // TODO: Output debug info.
-  auto Repl =
-      std::make_shared<ExtReplacement>(FilePath, ReplaceOffset, ReplaceLength,
-                                       FuncInfo->getExtraParameters(), nullptr);
+  auto Repl = std::make_shared<ExtReplacement>(
+      FilePath, ReplaceOffset, ReplaceLength,
+      FuncInfo->getExtraParameters(IsExtraParamWithNL, Indent), nullptr);
   Repl->setNotFormatFlag();
   DpctGlobalInfo::getInstance().addReplacement(Repl);
 
@@ -547,6 +546,66 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionDecl *FD) {
     auto EndParam = *(FD->param_end() - 1);
     NextToken = EndParam->getEndLoc();
   }
+
+  // The rule of wrapping extra parameters in device function declaration:
+  // 1. Origin parameters number < 2
+  //    Do not add new line.
+  // 2. Origin parameters number >= 2
+  //    2.1 The first parameter and the last parameter are not in one line
+  //        Add new line, and the extra parameters are aligned with the last
+  //        parameter.
+  //    2.2 The first parameter and the last parameter are in one line
+  //        Add new line, and the extra parameters are aligned with the first
+  //        parameter.
+  if (FD->getNumParams() >= 2) {
+    IsExtraParamWithNL = true;
+    auto BeginParam = *(FD->param_begin());
+    SourceLocation BeginParamLoc = BeginParam->getBeginLoc();
+
+    unsigned int NeedRemoveLength = 0;
+    calculateRemoveLength<CUDAGlobalAttr>(FD, "__global__", NeedRemoveLength,
+                                          BeginParamLoc, SM, LO);
+    calculateRemoveLength<CUDADeviceAttr>(FD, "__device__", NeedRemoveLength,
+                                          BeginParamLoc, SM, LO);
+    calculateRemoveLength<CUDAHostAttr>(FD, "__host__", NeedRemoveLength,
+                                        BeginParamLoc, SM, LO);
+
+    auto BeginExpLoc = BeginParamLoc;
+    auto EndExpLoc = NextToken;
+    if (BeginParamLoc.isMacroID())
+      BeginExpLoc = SM.getExpansionLoc(BeginParamLoc);
+    if (NextToken.isMacroID())
+      EndExpLoc = SM.getExpansionLoc(NextToken);
+
+    if (BeginExpLoc == EndExpLoc) {
+      IsExtraParamWithNL = false;
+      Indent = "";
+      NextToken =
+          SM.getSpellingLoc(SM.getImmediateExpansionRange(NextToken).getEnd());
+    } else {
+      if (BeginParamLoc.isMacroID())
+        BeginParamLoc = BeginExpLoc;
+      if (NextToken.isMacroID())
+        NextToken = EndExpLoc;
+      auto EndLocInfo = SM.getDecomposedLoc(NextToken);
+      auto Buffer = SM.getBufferData(EndLocInfo.first);
+      auto NLOffest = Buffer.find_last_of('\n', EndLocInfo.second);
+      bool InValidFlag = false;
+      if (isInSameLine(BeginParamLoc, NextToken, SM, InValidFlag) &&
+          !InValidFlag) {
+        // the first param and the last param are in the same line
+        // use the first param begin location as the extra param's indent
+        Indent = std::string(
+            SM.getDecomposedLoc(BeginParamLoc).second - NLOffest - 1, ' ');
+        Indent = Indent.substr(NeedRemoveLength);
+      } else {
+        // the first param and the last param are not in the same line
+        // use the indent of the last param line as the extra param's indent
+        Indent = getIndent(NextToken, SM);
+      }
+    }
+  }
+
   Token Tok;
   auto Result = Lexer::getRawToken(NextToken, Tok, SM, LO, true);
   while (!Result) {
@@ -705,6 +764,20 @@ std::string MemVarInfo::getDeclarationReplacement() {
     return "";
   }
 }
+
+std::string MemVarMap::getExtraCallArguments(bool HasArgs) const {
+  return getArgumentsOrParameters<CallArgument>(HasArgs);
+}
+std::string MemVarMap::getExtraDeclParam(bool HasParams,
+                                         bool IsExtraParamWithNL,
+                                         std::string Indent) const {
+  return getArgumentsOrParameters<DeclParameter>(HasParams, IsExtraParamWithNL,
+                                                 Indent);
+}
+std::string MemVarMap::getKernelArguments(bool HasArgs) const {
+  return getArgumentsOrParameters<KernelArgument>(HasArgs);
+}
+
 
 CtTypeInfo::CtTypeInfo(const QualType &Ty) : CtTypeInfo() { setTypeInfo(Ty); }
 
