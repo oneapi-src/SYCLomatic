@@ -494,7 +494,7 @@ public:
   using value_t = typename memory_traits<Memory, T>::value_t;
   using dpct_accessor_t = accessor<T, Memory, Dimension>;
 
-  global_memory() : global_memory(cl::sycl::range<Dimension>()) {}
+  global_memory() : global_memory(cl::sycl::range<Dimension>(1)) {}
   /// Constructor of 1-D array with inlitializer list
   global_memory(const cl::sycl::range<Dimension> &in_range,
                 std::initializer_list<value_t> &&init_list)
@@ -527,7 +527,7 @@ public:
   }
 
   /// The variable is assigned to a device pointer.
-  void assign(void *src, size_t size) {
+  void assign(value_t *src, size_t size) {
     this->~global_memory();
     new (this) global_memory(src, size);
   }
@@ -559,7 +559,7 @@ public:
 #endif // DPCT_USM_LEVEL_NONE
 
 private:
-  global_memory(void *memory_ptr, size_t size)
+  global_memory(value_t *memory_ptr, size_t size)
       : size(size), range(size / sizeof(T)), reference(true),
         memory_ptr(memory_ptr) {}
 

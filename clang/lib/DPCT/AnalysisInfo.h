@@ -905,13 +905,6 @@ public:
         PointerAsArray(false) {
     setType(std::make_shared<CtTypeInfo>(Var->getTypeSourceInfo()->getTypeLoc(),
                                          isLocal()));
-    if (getType()->getDimension() == 0 && Attr == Constant) {
-      AccMode = Value;
-    } else if (getType()->getDimension() <= 1) {
-      AccMode = Pointer;
-    } else {
-      AccMode = Accessor;
-    }
     if (getType()->isPointer()) {
       Attr = Device;
       getType()->adjustAsMemType();
@@ -919,6 +912,13 @@ public:
     }
     if (Var->hasInit())
       setInitList(Var->getInit());
+    if (getType()->getDimension() == 0 && Attr == Constant) {
+      AccMode = Value;
+    } else if (getType()->getDimension() <= 1) {
+      AccMode = Pointer;
+    } else {
+      AccMode = Accessor;
+    }
   }
 
   VarAttrKind getAttr() { return Attr; }

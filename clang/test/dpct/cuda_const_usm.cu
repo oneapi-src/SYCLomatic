@@ -25,10 +25,13 @@ __global__ void member_acc() {
 __constant__ float const_angle[360], const_float[NUM_ELEMENTS][num_elements * 2];
 // CHECK: dpct::constant_memory<cl::sycl::double2, 0> vec_d;
 __constant__ double2 vec_d;
+// CHECK: dpct::device_memory<int, 1> const_ptr;
+__constant__ int *const_ptr;
 
-// CHECK:void simple_kernel(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_ct1]], float *const_angle) {
+// CHECK:void simple_kernel(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_ct1]], float *const_angle, int *const_ptr) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range().get(2) + [[ITEM]].get_local_id(2);
+// CHECK-NEXT:  const_ptr[index] = index;
 // CHECK-NEXT:  if (index < 360) {
 // CHECK-NEXT:    d_array[index] = const_angle[index];
 // CHECK-NEXT:  }
@@ -37,6 +40,7 @@ __constant__ double2 vec_d;
 __global__ void simple_kernel(float *d_array) {
   int index;
   index = blockIdx.x * blockDim.x + threadIdx.x;
+  const_ptr[index] = index;
   if (index < 360) {
     d_array[index] = const_angle[index];
   }
@@ -66,10 +70,13 @@ __global__ void simple_kernel_one(float *d_array) {
 int main(int argc, char **argv) {
   int size = 3200;
   float *d_array;
+  int *d_int;
   float h_array[360];
 
   // CHECK: d_array = (float *)cl::sycl::malloc_device(sizeof(float) * size, dpct::get_current_device(), dpct::get_default_context());
   cudaMalloc((void **)&d_array, sizeof(float) * size);
+  // CHECK: d_int = (int *)cl::sycl::malloc_device(sizeof(int) * size, dpct::get_current_device(), dpct::get_default_context());
+  cudaMalloc(&d_int, sizeof(int) * size);
 
   // CHECK: dpct::get_default_queue_wait().memset(d_array, 0, sizeof(float) * size).wait();
   cudaMemset(d_array, 0, sizeof(float) * size);
@@ -77,6 +84,8 @@ int main(int argc, char **argv) {
   for (int loop = 0; loop < 360; loop++)
     h_array[loop] = acos(-1.0f) * loop / 180.0f;
 
+  // CHECK:   const_ptr.assign(d_int, sizeof(int) * size);
+  cudaMemcpyToSymbol(const_ptr, &d_int, sizeof(int *));
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
@@ -121,10 +130,11 @@ int main(int argc, char **argv) {
   // CHECK:   dpct::get_default_queue_wait().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       auto const_angle_ptr_ct1 = const_angle.get_ptr();
+  // CHECK-NEXT:       auto const_ptr_ptr_ct1 = const_ptr.get_ptr();
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, size / 64) * cl::sycl::range<3>(1, 1, 64), cl::sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           simple_kernel(d_array, item_ct1, const_angle_ptr_ct1);
+  // CHECK-NEXT:           simple_kernel(d_array, item_ct1, const_angle_ptr_ct1, const_ptr_ptr_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   simple_kernel<<<size / 64, 64>>>(d_array);
