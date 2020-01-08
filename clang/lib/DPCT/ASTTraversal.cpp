@@ -4522,8 +4522,13 @@ void EventAPICallRule::handleEventElapsedTime(
   auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
   auto StmtStrArg2 = getStmtSpelling(CE->getArg(2), *Result.Context);
   std::ostringstream Repl;
-  Repl << "*(" << StmtStrArg0 << ") = (float)(" << StmtStrArg2
-       << getCTFixedSuffix() << " - " << StmtStrArg1 << getCTFixedSuffix()
+  std::string Assginee = "*(" + StmtStrArg0 + ")";
+  if (auto UO = dyn_cast<UnaryOperator>(CE->getArg(0))) {
+    if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf)
+      Assginee = getStmtSpelling(UO->getSubExpr(), *Result.Context);
+  }
+  Repl << Assginee << " = (float)(" << StmtStrArg2 << getCTFixedSuffix()
+       << " - " << StmtStrArg1 << getCTFixedSuffix()
        << ") / CLOCKS_PER_SEC * 1000";
   if (IsAssigned) {
     std::ostringstream Temp;

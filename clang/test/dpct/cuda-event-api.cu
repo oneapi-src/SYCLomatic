@@ -229,13 +229,13 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:     });
   kernelFunc<<<blocks,threads>>>();
 
-  // CHECK: *(&elapsed_time) = (float)(stop_ct1 - start_ct1) / CLOCKS_PER_SEC * 1000;
+  // CHECK: elapsed_time = (float)(stop_ct1 - start_ct1) / CLOCKS_PER_SEC * 1000;
   cudaEventElapsedTime(&elapsed_time, start, stop);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9a-z]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: checkCudaErrors((*(&elapsed_time) = (float)(stop_ct1 - start_ct1) / CLOCKS_PER_SEC * 1000, 0));
+  // CHECK-NEXT: checkCudaErrors((elapsed_time = (float)(stop_ct1 - start_ct1) / CLOCKS_PER_SEC * 1000, 0));
   checkCudaErrors(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   // kernel call without sync
@@ -295,7 +295,7 @@ void foo() {
 
   cudaEventSynchronize(stop);
 
-  // CHECK: cudaCheck((*(&elapsed_time) = (float)(stop_ct1 - start_ct1) / CLOCKS_PER_SEC * 1000, 0));
+  // CHECK: cudaCheck((elapsed_time = (float)(stop_ct1 - start_ct1) / CLOCKS_PER_SEC * 1000, 0));
   cudaCheck(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   cudaEventDestroy(start);
@@ -324,7 +324,7 @@ void bar() {
 
   cudaEventSynchronize(stop);
 
-  // CHECK: fun((*(&elapsed_time) = (float)(stop_ct1 - start_ct1) / CLOCKS_PER_SEC * 1000, 0));
+  // CHECK: fun((elapsed_time = (float)(stop_ct1 - start_ct1) / CLOCKS_PER_SEC * 1000, 0));
   fun(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   cudaEventDestroy(start);
