@@ -219,6 +219,18 @@ public:
   sycl::buffer<T, 1, Allocator> get_buffer() { return buffer; }
 };
 
+namespace internal {
+// struct for checking if iterator is heterogeneous or not
+template <typename Iter,
+          typename Void = void> // for non-heterogeneous iterators
+struct is_hetero_iterator : std::false_type {};
+
+template <typename Iter> // for heterogeneous iterators
+struct is_hetero_iterator<
+    Iter, typename std::enable_if<Iter::is_hetero::value, void>::type>
+    : std::true_type {};
+} // namespace internal
+
 template <typename T> class device_ptr : public device_iterator<T> {
   using Base = device_iterator<T>;
 
@@ -267,6 +279,12 @@ public:
   }
   typename Base::difference_type operator-(const device_ptr &it) const {
     return Base::idx - it.idx;
+  }
+  template <typename OtherIterator>
+  typename std::enable_if<internal::is_hetero_iterator<OtherIterator>::value,
+                          typename Base::difference_type>::type
+  operator-(const OtherIterator &it) const {
+    return Base::idx - std::distance(dpstd::begin(Base::buffer), it);
   }
 };
 
