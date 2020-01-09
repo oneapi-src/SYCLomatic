@@ -913,3 +913,12 @@ std::vector<clang::tooling::Range> calculateRangesWithFormatFlag(
   }
   return RangesAfterFilter;
 }
+
+/// Determine if \param S is assigned or not
+/// \param S A Stmt node
+/// \return True if S is assigned and false if S is not assigned
+bool isAssigned(const Stmt *S) {
+  auto P = getParentStmt(S);
+  return !P || (!dyn_cast<CompoundStmt>(P) && !dyn_cast<ForStmt>(P) &&
+      !dyn_cast<WhileStmt>(P) && !dyn_cast<DoStmt>(P) && !dyn_cast<IfStmt>(P));
+}

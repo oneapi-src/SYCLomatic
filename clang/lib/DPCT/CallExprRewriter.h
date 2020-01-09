@@ -19,6 +19,7 @@ namespace dpct {
 
 class CallExprRewriter;
 class FuncCallExprRewriter;
+class FuncNameRewriter;
 class MathCallExprRewriter;
 class MathFuncNameRewriter;
 class MathSimulatedRewriter;
@@ -27,6 +28,7 @@ class MathBinaryOperatorRewriter;
 class MathUnsupportedRewriter;
 class WarpFunctionRewriter;
 class ReorderFunctionRewriter;
+class ReorderFunctionIsAssignedRewriter;
 class TexFunctionRewriter;
 class UnsupportFunctionRewriter;
 
@@ -88,10 +90,15 @@ using WarpFunctionRewriterFactory =
 using ReorderFunctionRewriterFactory = CallExprRewriterFactory<
     ReorderFunctionRewriter, std::string,
     std::vector<unsigned> /*Rewrite arguments index list in-order*/>;
+using ReorderFunctionIsAssignedRewriterFactory = CallExprRewriterFactory<
+    ReorderFunctionIsAssignedRewriter, std::string,
+    std::vector<unsigned> /*Rewrite arguments index list in-order*/>;
 using TexFunctionRewriterFactory =
     CallExprRewriterFactory<TexFunctionRewriter, std::string>;
 using UnsupportFunctionRewriterFactory =
     CallExprRewriterFactory<UnsupportFunctionRewriter, Diagnostics>;
+using FuncNameRewriterFactory =
+    CallExprRewriterFactory<FuncNameRewriter, std::string>;
 
 /// Base class for rewriting call expressions
 class CallExprRewriter {
@@ -162,6 +169,21 @@ protected:
   Optional<std::string> buildRewriteString();
 
   void setTargetCalleeName(const std::string &Str) { TargetCalleeName = Str; }
+};
+
+// A function name rewriter that also takes IsAssigned into account
+class FuncNameRewriter : public FuncCallExprRewriter {
+protected:
+  FuncNameRewriter(const CallExpr *Call, StringRef SourceCalleeName,
+                   StringRef TargetCalleeName)
+      : FuncCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {}
+
+public:
+  virtual Optional<std::string> rewrite() override;
+
+protected:
+  Optional<std::string> buildRewriteString();
+  friend FuncNameRewriterFactory;
 };
 
 /// Base class for rewriting math function calls
@@ -302,6 +324,19 @@ public:
   virtual Optional<std::string> rewrite() override;
 
   friend ReorderFunctionRewriterFactory;
+};
+
+// A reordering rewriter that also takes IsAssigned into account
+class ReorderFunctionIsAssignedRewriter : public ReorderFunctionRewriter {
+public:
+  ReorderFunctionIsAssignedRewriter(const CallExpr *Call,
+                                    StringRef SourceCalleeName,
+                                    StringRef TargetCalleeName,
+                                    const std::vector<unsigned> &ArgsIdx)
+      : ReorderFunctionRewriter(Call, SourceCalleeName, TargetCalleeName,
+                                ArgsIdx) {}
+  virtual Optional<std::string> rewrite() override;
+  friend ReorderFunctionIsAssignedRewriterFactory;
 };
 
 class TexFunctionRewriter : public FuncCallExprRewriter {

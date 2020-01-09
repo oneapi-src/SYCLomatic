@@ -3,6 +3,21 @@
 // UNSUPPORTED: cdua-9.0, cuda-9.2, cuda-10.0, cuda-10.1
 // UNSUPPORTED: v9.0, v9.2, v10.0, v10.1
 
+#include <stdio.h>
+
+#define cudaCheck(stmt) do {                         \
+  cudaError_t err = stmt;                            \
+  if (err != cudaSuccess) {                          \
+    char msg[256];                                   \
+    sprintf(msg, "%s in file %s, function %s, line %d\n", #stmt,__FILE__,__FUNCTION__,__LINE__); \
+  }                                                  \
+} while(0)
+
+void func(int i) {}
+
+template <typename T>
+void funcT(T t) {}
+
 // CHECK: void device01(dpct::image_accessor<cl::sycl::uint2, 1> tex21) {
 // CHECK-NEXT: cl::sycl::uint2 u21;
 // CHECK-NEXT: dpct::read_image(&u21, tex21, 0.5f);
@@ -114,4 +129,26 @@ int main() {
   // CHECK-NEXT: dpct::dpct_free(d_data21);
   cudaFree(d_data42);
   cudaFree(d_data21);
+
+  // Test IsAssigned
+  {
+    int errorCode;
+    // CHECK: errorCode = (dpct::create_image(&tex21, &res21, &texDesc21), 0);
+    errorCode = cudaCreateTextureObject(&tex21, &res21, &texDesc21, NULL);
+    // CHECK: cudaCheck((dpct::create_image(&tex21, &res21, &texDesc21), 0));
+    cudaCheck(cudaCreateTextureObject(&tex21, &res21, &texDesc21, NULL));
+    // CHECK: func((dpct::create_image(&tex21, &res21, &texDesc21), 0));
+    func(cudaCreateTextureObject(&tex21, &res21, &texDesc21, NULL));
+    // CHECK: funcT((dpct::create_image(&tex21, &res21, &texDesc21), 0));
+    funcT(cudaCreateTextureObject(&tex21, &res21, &texDesc21, NULL));
+
+    // CHECK: errorCode = (dpct::dpct_free(tex21), 0);
+    errorCode = cudaDestroyTextureObject(tex21);
+    // CHECK: cudaCheck((dpct::dpct_free(tex21), 0));
+    cudaCheck(cudaDestroyTextureObject(tex21));
+    // CHECK: func((dpct::dpct_free(tex21), 0));
+    func(cudaDestroyTextureObject(tex21));
+    // CHECK: funcT((dpct::dpct_free(tex21), 0));
+    funcT(cudaDestroyTextureObject(tex21));
+  }
 }

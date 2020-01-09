@@ -1,6 +1,21 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/texture.dp.cpp --match-full-lines %s
 
+#include <stdio.h>
+
+#define cudaCheck(stmt) do {                         \
+  cudaError_t err = stmt;                            \
+  if (err != cudaSuccess) {                          \
+    char msg[256];                                   \
+    sprintf(msg, "%s in file %s, function %s, line %d\n", #stmt,__FILE__,__FUNCTION__,__LINE__); \
+  }                                                  \
+} while(0)
+
+void func(int i) {}
+
+template <typename T>
+void funcT(T t) {}
+
 // CHECK: dpct::image<cl::sycl::float4, 2> tex42;
 static texture<float4, 2> tex42;
 // CHECK: dpct::image<cl::sycl::uint2, 1> tex21;
@@ -106,6 +121,55 @@ int main() {
   tex_tmp.normalized = false;
   tex_tmp.addressMode[0] = cudaAddressModeClamp;
   tex_tmp.filterMode = cudaFilterModePoint;
+
+  // Test IsAssigned
+  {
+    int errorCode;
+    // CHECK: errorCode = (dpct::attach_image(tex42, a42), 0);
+    errorCode = cudaBindTextureToArray(tex42, a42, desc42);
+    // CHECK: cudaCheck((dpct::attach_image(tex42, a42), 0));
+    cudaCheck(cudaBindTextureToArray(tex42, a42, desc42));
+    // CHECK: func((dpct::attach_image(tex42, a42), 0));
+    func(cudaBindTextureToArray(tex42, a42, desc42));
+    // CHECK: funcT((dpct::attach_image(tex42, a42), 0));
+    funcT(cudaBindTextureToArray(tex42, a42, desc42));
+
+    // CHECK: errorCode = (dpct::attach_image(tex21, d_data21, 32 * sizeof(cl::sycl::uint2)), 0);
+    errorCode = cudaBindTexture(0, tex21, d_data21, 32 * sizeof(uint2));
+    // CHECK: cudaCheck((dpct::attach_image(tex21, d_data21, 32 * sizeof(cl::sycl::uint2)), 0));
+    cudaCheck(cudaBindTexture(0, tex21, d_data21, 32 * sizeof(uint2)));
+    // CHECK: func((dpct::attach_image(tex21, d_data21, 32 * sizeof(cl::sycl::uint2)), 0));
+    func(cudaBindTexture(0, tex21, d_data21, 32 * sizeof(uint2)));
+    // CHECK: funcT((dpct::attach_image(tex21, d_data21, 32 * sizeof(cl::sycl::uint2)), 0));
+    funcT(cudaBindTexture(0, tex21, d_data21, 32 * sizeof(uint2)));
+
+    // CHECK: errorCode = (dpct::detach_image(tex42), 0);
+    errorCode = cudaUnbindTexture(tex42);
+    // CHECK: cudaCheck((dpct::detach_image(tex42), 0));
+    cudaCheck(cudaUnbindTexture(tex42));
+    // CHECK: func((dpct::detach_image(tex42), 0));
+    func(cudaUnbindTexture(tex42));
+    // CHECK: funcT((dpct::detach_image(tex42), 0));
+    funcT(cudaUnbindTexture(tex42));
+
+    // CHECK: errorCode = (dpct::dpct_free(a42), 0);
+    errorCode = cudaFreeArray(a42);
+    // CHECK: cudaCheck((dpct::dpct_free(a42), 0));
+    cudaCheck(cudaFreeArray(a42));
+    // CHECK: func((dpct::dpct_free(a42), 0));
+    func(cudaFreeArray(a42));
+    // CHECK: funcT((dpct::dpct_free(a42), 0));
+    funcT(cudaFreeArray(a42));
+
+    // CHECK: errorCode = (dpct::malloc_matrix(&a42, &desc42, 32, 32), 0);
+    errorCode = cudaMallocArray(&a42, &desc42, 32, 32);
+    // CHECK: cudaCheck((dpct::malloc_matrix(&a42, &desc42, 32, 32), 0));
+    cudaCheck(cudaMallocArray(&a42, &desc42, 32, 32));
+    // CHECK: func((dpct::malloc_matrix(&a42, &desc42, 32, 32), 0));
+    func(cudaMallocArray(&a42, &desc42, 32, 32));
+    // CHECK: funcT((dpct::malloc_matrix(&a42, &desc42, 32, 32), 0));
+    funcT(cudaMallocArray(&a42, &desc42, 32, 32));
+  }
 }
 
 // Before the patch for CTST-1078 is merged, when dpct parses device function foo(),

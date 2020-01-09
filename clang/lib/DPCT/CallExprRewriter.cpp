@@ -46,6 +46,18 @@ Optional<std::string> FuncCallExprRewriter::buildRewriteString() {
                                 : Result.replace(Result.length() - 2, 2, ")");
 }
 
+Optional<std::string> FuncNameRewriter::rewrite() {
+  RewriteArgList = getMigratedArgs();
+  return buildRewriteString();
+}
+
+Optional<std::string> FuncNameRewriter::buildRewriteString() {
+  auto S = FuncCallExprRewriter::buildRewriteString();
+  if (S.hasValue() && isAssigned(Call))
+    return "(" + S.getValue() + ", 0)";
+  return S;
+}
+
 Optional<std::string> MathCallExprRewriter::rewrite() {
   RewriteArgList = getMigratedArgs();
   setTargetCalleeName(SourceCalleeName);
@@ -721,6 +733,13 @@ Optional<std::string> ReorderFunctionRewriter::rewrite() {
   return buildRewriteString();
 }
 
+Optional<std::string> ReorderFunctionIsAssignedRewriter::rewrite() {
+  auto S = ReorderFunctionRewriter::rewrite();
+  if (S.hasValue() && isAssigned(Call))
+    return "(" + S.getValue() + ", 0)";
+  return S;
+}
+
 void TexFunctionRewriter::setTextureInfo() {
   const Expr *Obj = nullptr;
   std::string DataTy;
@@ -755,6 +774,8 @@ void TexFunctionRewriter::setTextureInfo() {
   {FuncName, std::make_shared<RewriterTy>(FuncName, __VA_ARGS__)},
 #define FUNC_NAME_FACTORY_ENTRY(FuncName, RewriterName)                        \
   REWRITER_FACTORY_ENTRY(FuncName, FuncCallExprRewriterFactory, RewriterName)
+#define FUNC_NAME_ISASSIGNED_FACTORY_ENTRY(FuncName, RewriterName)             \
+  REWRITER_FACTORY_ENTRY(FuncName, FuncNameRewriterFactory, RewriterName)
 #define MATH_FUNCNAME_FACTORY_ENTRY(FuncName, RewriterName)                    \
   REWRITER_FACTORY_ENTRY(FuncName, MathFuncNameRewriterFactory, RewriterName)
 #define MATH_SIMULATED_FUNC_FACTORY_ENTRY(FuncName, RewriterName)              \
@@ -769,6 +790,9 @@ void TexFunctionRewriter::setTextureInfo() {
   REWRITER_FACTORY_ENTRY(FuncName, WarpFunctionRewriterFactory, RewriterName)
 #define REORDER_FUNC_FACTORY_ENTRY(FuncName, RewriterName, ...)                \
   REWRITER_FACTORY_ENTRY(FuncName, ReorderFunctionRewriterFactory,             \
+                         RewriterName, std::vector<unsigned>{__VA_ARGS__})
+#define REORDER_FUNC_ISASSIGNED_FACTORY_ENTRY(FuncName, RewriterName, ...)     \
+  REWRITER_FACTORY_ENTRY(FuncName, ReorderFunctionIsAssignedRewriterFactory,   \
                          RewriterName, std::vector<unsigned>{__VA_ARGS__})
 #define TEX_FUNCTION_FACTORY_ENTRY(FuncName, RewriterName)                     \
   REWRITER_FACTORY_ENTRY(FuncName, TexFunctionRewriterFactory, RewriterName)
@@ -805,12 +829,14 @@ const std::unordered_map<std::string,
 
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   FUNC_NAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_ISASSIGNED(SOURCEAPINAME, TARGETAPINAME)                 \
+  FUNC_NAME_ISASSIGNED_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_TEXTURE(SOURCEAPINAME, TARGETAPINAME)                            \
   TEX_FUNCTION_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_UNSUPPORTED(SOURCEAPINAME, MSGID)                                \
   UNSUPPORTED_FACTORY_ENTRY(SOURCEAPINAME, MSGID)
-#define ENTRY_REORDER(SOURCEAPINAME, TARGETAPINAME, ...)                       \
-  REORDER_FUNC_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME, __VA_ARGS__)
+#define ENTRY_REORDER_ISASSIGNED(SOURCEAPINAME, TARGETAPINAME, ...)            \
+  REORDER_FUNC_ISASSIGNED_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME, __VA_ARGS__)
 #include "APINamesTexture.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE

@@ -339,4 +339,7 @@ StreamTy &printArguments(StreamTy &Stream, Args &&... Arguments) {
 std::vector<clang::tooling::Range>
 calculateRangesWithFormatFlag(
     const clang::tooling::Replacements &Replaces);
+
+bool isAssigned(const clang::Stmt *S);
+
 #endif // DPCT_UTILITY_H
