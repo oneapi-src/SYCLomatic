@@ -1943,7 +1943,7 @@ private:
     StmtList TextureList;
     StmtList NdRangeList;
   } SubmitStmtsList;
-  
+
   StmtList OuterStmts;
   StmtList KernelStmts;
   std::string KernelArgs;
@@ -1996,7 +1996,8 @@ class RandomEngineInfo {
 public:
   RandomEngineInfo(unsigned Offset, const std::string &FilePath,
                    const DeclaratorDecl *DD)
-      : SeedExpr("0"), DimExpr("1"), DD(DD), IsQuasiEngine(false) {}
+      : SeedExpr("0"), DimExpr("1"), DD(DD), IsQuasiEngine(false),
+        IsClassMember(false) {}
   // Seed is an unsigned long long type value in origin code, if it is not set,
   // use 0 as default.
   // The legal value of Dim in origin code is 1 to 20000, so if it is not set,
@@ -2056,9 +2057,12 @@ public:
   void buildInfo();
   bool isClassMember() {
     if (dyn_cast<FieldDecl>(DD))
-      return true;
-    return false;
+      IsClassMember = true;
+    else
+      IsClassMember = false;
+    return IsClassMember;
   }
+  void setDeclaratorDeclName() { DeclaratorDeclName = DD->getNameAsString(); }
 
 private:
   std::string SeedExpr;     // Replaced Seed variable string
@@ -2081,6 +2085,9 @@ private:
                                     // curandGenerator_t handle declaration.
   std::string TypeReplacement;      // The replcaement string of the type of
                                     // curandGenerator_t handle.
+  bool IsClassMember;               // Whether curandGenerator_t handle is a
+                                    // class member.
+  std::string DeclaratorDeclName;   // Name of declarator declaration.
 };
 
 template <class... T>
