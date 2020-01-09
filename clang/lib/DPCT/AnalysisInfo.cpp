@@ -824,19 +824,19 @@ void RandomEngineInfo::buildInfo() {
   DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
       DeclFilePath, TypeBeginOffest, TypeLength, TypeReplacement, nullptr));
   // insert engine arguments
-  if (isClassMember()) {
+  if (IsClassMember) {
     if (IsQuasiEngine) {
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(
               CreateCallFilePath, CreateAPIBegin, CreateAPILength,
-              DD->getNameAsString() + " = " + TypeReplacement +
+              DeclaratorDeclName + " = " + TypeReplacement +
                   "(dpct::get_default_queue_wait(), " + DimExpr + ")",
               nullptr));
     } else {
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(
               CreateCallFilePath, CreateAPIBegin, CreateAPILength,
-              DD->getNameAsString() + " = " + TypeReplacement +
+              DeclaratorDeclName + " = " + TypeReplacement +
                   "(dpct::get_default_queue_wait(), " + SeedExpr + ")",
               nullptr));
     }

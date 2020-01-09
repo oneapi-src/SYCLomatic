@@ -2575,6 +2575,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
+    REInfo->setDeclaratorDeclName();
     REInfo->setEngineTypeReplacement(
         MapNames::RandomEngineTypeMap.find(EnumStr)->second);
 
