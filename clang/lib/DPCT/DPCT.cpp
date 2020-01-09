@@ -231,7 +231,7 @@ bool SyclNamedLambdaFlag = false;
 static opt<bool, true>
     SyclNamedLambda("sycl-named-lambda",
                 llvm::cl::desc("Generate kernels with kernel name. Default: off.\n"),
-                cat(DPCTCat), llvm::cl::location(SyclNamedLambdaFlag), llvm::cl::Hidden);
+                cat(DPCTCat), llvm::cl::location(SyclNamedLambdaFlag));
 
 opt<OutputVerbosityLev> OutputVerbosity(
     "output-verbosity", llvm::cl::desc("Sets the output verbosity level:"),
