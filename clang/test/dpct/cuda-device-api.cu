@@ -35,21 +35,21 @@ void foo() {
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceEnablePeerAccess was removed, because DPC++
-  // CHECK-NEXT: currently doesn't require explicit enabling for peer access.
+  // CHECK-NEXT: currently doesn't support memory access across peer devices.
   // CHECK-NEXT: */
   cudaDeviceEnablePeerAccess(peerDevice, flags);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceDisablePeerAccess was removed, because DPC++
-  // CHECK-NEXT: currently doesn't require explicit enabling for peer access.
+  // CHECK-NEXT: currently doesn't support memory access across peer devices.
   // CHECK-NEXT: */
   cudaDeviceDisablePeerAccess(peerDevice);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1031:{{[0-9]+}}: DPC++ currently doesn't require explicit enabling for peer access;
-  // CHECK-NEXT: the output parameter(s) are set to 1.
+  // CHECK-NEXT: DPCT1031:{{[0-9]+}}: DPC++ currently doesn't support memory access across peer devices;
+  // CHECK-NEXT: the output parameter(s) are set to 0.
   // CHECK-NEXT: */
-  // CHECK-NEXT: *canAccessPeer = 1;
+  // CHECK-NEXT: *canAccessPeer = 0;
   cudaDeviceCanAccessPeer(canAccessPeer, device, peerDevice);
 
   // CHECK: /*

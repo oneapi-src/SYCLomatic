@@ -4377,7 +4377,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaDeviceEnablePeerAccess" ||
              FuncName == "cudaDeviceDisablePeerAccess") {
     std::string Msg =
-      "DPC++ currently doesn't require explicit enabling for peer access.";
+      "DPC++ currently doesn't support memory access across peer devices.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, MapNames::ITFName.at(FuncName),
              Msg);
@@ -4392,7 +4392,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     auto Arg0Str = EA.getReplacedString();
     std::string ReplStr{"*"};
     ReplStr += Arg0Str;
-    ReplStr += " = 1";
+    ReplStr += " = 0";
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);

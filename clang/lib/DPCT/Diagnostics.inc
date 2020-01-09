@@ -78,5 +78,5 @@ DEF_WARNING(DEVICE_LIMIT_NOT_SUPPORTED, 1029, "DPC++ currently doesn't support g
 DEF_COMMENT(DEVICE_LIMIT_NOT_SUPPORTED, 1029, "DPC++ currently doesn't support getting limits on devices; the output parameter(s) are set to 0.")
 DEF_WARNING(IPC_NOT_SUPPORTED, 1030, "DPC++ currently doesn't support IPC operations. You may need to rewrite the code.")
 DEF_COMMENT(IPC_NOT_SUPPORTED, 1030, "DPC++ currently doesn't support IPC operations. You may need to rewrite the code.")
-DEF_WARNING(EXPLICIT_PEER_ACCESS, 1031, "DPC++ currently doesn't require explicit enabling for peer access; the output parameter(s) are set to 1.")
-DEF_COMMENT(EXPLICIT_PEER_ACCESS, 1031, "DPC++ currently doesn't require explicit enabling for peer access; the output parameter(s) are set to 1.")
+DEF_WARNING(EXPLICIT_PEER_ACCESS, 1031, "DPC++ currently doesn't support memory access across peer devices; the output parameter(s) are set to 0.")
+DEF_COMMENT(EXPLICIT_PEER_ACCESS, 1031, "DPC++ currently doesn't support memory access across peer devices; the output parameter(s) are set to 0.")
