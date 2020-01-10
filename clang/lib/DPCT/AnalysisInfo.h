@@ -359,6 +359,25 @@ public:
     return Info;
   }
 
+  class MacroExpansionRecord {
+  public:
+    std::string Name;
+    int NumTokens;
+    SourceLocation ReplaceTokenBegin;
+    SourceLocation ReplaceTokenEnd;
+    SourceRange Range;
+    bool IsInRoot;
+    MacroExpansionRecord(IdentifierInfo *ID, const MacroInfo *MI,
+                         SourceRange Range, bool IsInRoot) {
+      Name = ID->getName();
+      NumTokens = MI->getNumTokens();
+      ReplaceTokenBegin = MI->getReplacementToken(0).getLocation();
+      ReplaceTokenEnd = MI->getReplacementToken(MI->getNumTokens() - 1).getLocation();
+      this->Range = Range;
+      this->IsInRoot = IsInRoot;
+    }
+  };
+
   inline static bool isInRoot(SourceLocation SL) {
     return isInRoot(
         getSourceManager().getFilename(getSourceManager().getExpansionLoc(SL)));
@@ -733,6 +752,16 @@ public:
     insertFile(LocInfo.first)->insertUsing(Type);
   }
 
+  static std::map<const char*, std::shared_ptr<MacroExpansionRecord>> &
+  getExpansionRangeToMacroRecord() {
+    return ExpansionRangeToMacroRecord;
+  }
+
+  static std::map<MacroInfo*, std::shared_ptr<MacroExpansionRecord>> &
+    getMacroExpansions() {
+    return MacroExpansions;
+  }
+
 private:
   DpctGlobalInfo() = default;
 
@@ -798,6 +827,9 @@ private:
   static bool GuessIndentWidthMatcherFlag;
   static unsigned int IndentWidth;
   static std::unordered_map<std::string, unsigned int> TempValueIdentifierMap;
+  static std::map<const char*, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
+      ExpansionRangeToMacroRecord;
+  static std::map<MacroInfo*, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>> MacroExpansions;
 };
 
 class TemplateArgumentInfo;
@@ -868,7 +900,7 @@ private:
   // dpct::shared_memory<int, 1>(24 /* SIZE */);
   inline std::string getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
     return getFoldedArraySize(TL.getTypePtr()) + "/*" +
-           getStmtSpelling(TL.getSizeExpr(), DpctGlobalInfo::getContext()) +
+           getStmtSpelling(TL.getSizeExpr()) +
            "*/";
   }
 
@@ -1093,7 +1125,7 @@ private:
       if (!Ctor->getNumArgs() || Ctor->getArg(0)->isDefaultArgument())
         return;
     }
-    InitList = getStmtSpelling(E, DpctGlobalInfo::getContext());
+    InitList = getStmtSpelling(E);
   }
 
   std::string getMemoryType();
@@ -1319,8 +1351,8 @@ public:
     Str = Ty.T->getBaseName();
   }
   TemplateArgumentInfo(const Expr *Expr)
-      : Kind(String), Str(getStmtSpelling(Expr, DpctGlobalInfo::getContext())) {
-  }
+      : Kind(String),
+        Str(getStmtSpelling(Expr)) {}
 
   bool isType() { return Kind == Type; }
   std::shared_ptr<CtTypeInfo> getAsType() const {

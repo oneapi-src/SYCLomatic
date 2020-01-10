@@ -81,49 +81,40 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
   return getOffsetAndLength(BeginLoc);
 }
 
-// Check if an Expr is the outer most function-like macro
-// E.g. MACRO_A(MACRO_B(x,y),z)
-// Where MACRO_A is outer most and MACRO_B, x, y, z are not.
-bool ExprAnalysis::isOuterMostMacro(const Expr *E) {
-  std::string ExpandedExpr, ExpandedParent;
-  // Save the preprocessing result of E in ExpandedExpr
-  llvm::raw_string_ostream StreamE(ExpandedExpr);
-  E->printPretty(StreamE, nullptr, PrintingPolicy(Context.getLangOpts()));
-  StreamE.flush();
-  const Stmt* P = E;
-
-  // Find a parent stmt whose preprocessing result is different from ExpandedExpr
-  // Since some parent is not writable.(is not shown in the preprocessing result),
-  // a while loop is required to find the first writable ancestor.
-  do {
-    ExpandedParent = "";
-    P = getParentStmt(P);
-    if (!P)
-      return true;
-    llvm::raw_string_ostream StreamP(ExpandedParent);
-    P->printPretty(StreamP, nullptr, PrintingPolicy(Context.getLangOpts()));
-    StreamP.flush();
-  } while (!ExpandedParent.compare(ExpandedExpr));
-
-  // Since SM.getExpansionLoc() will always return the range of the outer-most
-  // macro. If the expanded location of the parent stmt and E are the same, E is
-  // inside a function-like macro.
-  // E.g. MACRO_A(MACRO_B(x,y),z) While E is the PP
-  // result of MACRO_B and P will be the PP result of MACRO_A,
-  // SM.getExpansionLoc(E) is at the begining of MACRO_A, same as
-  // SM.getExpansionLoc(P), in the source code. E is not outer-most.
-  if (P->getBeginLoc().isValid() && P->getBeginLoc().isMacroID()) {
-    if (SM.getCharacterData(SM.getExpansionLoc(P->getBeginLoc())) ==
-        SM.getCharacterData(SM.getExpansionLoc(E->getBeginLoc()))) {
-      return false;
+std::pair<size_t, size_t>
+ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
+  SourceLocation EndLoc, const Expr *Parent) {
+  const std::shared_ptr<ast_type_traits::DynTypedNode> P =
+      std::make_shared<ast_type_traits::DynTypedNode>(
+          ast_type_traits::DynTypedNode::create(*Parent));
+  if (BeginLoc.isMacroID() &&
+      isInsideFunctionLikeMacro(BeginLoc, EndLoc, P)) {
+    BeginLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(BeginLoc));
+    EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(EndLoc));
+  }
+  else {
+    if (EndLoc.isValid()) {
+      BeginLoc = SM.getExpansionRange(BeginLoc).getBegin();
+      EndLoc = SM.getExpansionRange(EndLoc).getEnd();
     }
   }
-  return true;
+  // Calculate offset and length from SourceLocation
+  auto End = getOffset(EndLoc);
+  auto LastTokenLength =
+    Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
+
+  auto DecompLoc = SM.getDecomposedLoc(BeginLoc);
+  FileId = DecompLoc.first;
+  // The offset of Expr used in ExprAnalysis is related to SrcBegin not
+  // FileBegin
+  auto Begin = DecompLoc.second - SrcBegin;
+  return std::pair<size_t, size_t>(Begin, End - Begin + LastTokenLength);
 }
 
 std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   SourceLocation BeginLoc, EndLoc;
-  if (E->getBeginLoc().isMacroID() && !isOuterMostMacro(E)) {
+  if (E->getBeginLoc().isMacroID() &&
+      !isOuterMostMacro(E)) {
     // If E is not OuterMostMacro, use the spelling location
     BeginLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getBeginLoc()));
     EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getEndLoc()));
@@ -306,7 +297,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
 void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
   if (UETT->getKind() == UnaryExprOrTypeTrait::UETT_SizeOf) {
     if (UETT->isArgumentType()) {
-      analyzeType(UETT->getArgumentTypeInfo());
+      analyzeType(UETT->getArgumentTypeInfo(), UETT);
     } else {
       analyzeExpr(UETT->getArgumentExpr());
     }
@@ -314,8 +305,10 @@ void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
 }
 
 void ExprAnalysis::analyzeExpr(const CStyleCastExpr *Cast) {
-  if (Cast->getCastKind() == CastKind::CK_BitCast)
-    analyzeType(Cast->getTypeInfoAsWritten());
+  if (Cast->getCastKind() == CastKind::CK_BitCast ||
+      Cast->getCastKind() == CastKind::CK_IntegralCast) {
+    analyzeType(Cast->getTypeInfoAsWritten(), Cast);
+  }
   dispatch(Cast->getSubExpr());
 }
 
@@ -333,11 +326,11 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   }
 }
 
-void ExprAnalysis::analyzeType(const TypeLoc &TL) {
+void ExprAnalysis::analyzeType(const TypeLoc &TL, const Expr *CSCE) {
   std::string TyName;
   switch (TL.getTypeLocClass()) {
   case TypeLoc::Pointer:
-    return analyzeType(static_cast<const PointerTypeLoc &>(TL).getPointeeLoc());
+    return analyzeType(static_cast<const PointerTypeLoc &>(TL).getPointeeLoc(), CSCE);
   case TypeLoc::Typedef:
     TyName =
         static_cast<const TypedefTypeLoc &>(TL).getTypedefNameDecl()->getName();
@@ -350,13 +343,13 @@ void ExprAnalysis::analyzeType(const TypeLoc &TL) {
     return;
   }
   if (MapNames::replaceName(MapNames::TypeNamesMap, TyName))
-    addReplacement(TL.getBeginLoc(), TL.getEndLoc(), TyName);
+    addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE, TyName);
 }
 
 const std::string &ArgumentAnalysis::getDefaultArgument(const Expr *E) {
   auto &Str = DefaultArgMap[E];
   if (Str.empty())
-    Str = getStmtSpelling(E, DpctGlobalInfo::getContext());
+    Str = getStmtSpelling(E);
   return Str;
 }
 

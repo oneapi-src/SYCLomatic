@@ -96,13 +96,13 @@ StringRef getIndent(SourceLocation Loc, const SourceManager &SM) {
 }
 
 // Get textual representation of the Stmt.
-std::string getStmtSpelling(const Stmt *S, const ASTContext &Context) {
+std::string getStmtSpelling(const Stmt *S) {
   std::string Str;
   if(!S)
     return Str;
-  auto &SM = Context.getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   SourceLocation BeginLoc, EndLoc;
-  if (SM.isMacroArgExpansion(S->getBeginLoc())) {
+  if (S->getBeginLoc().isMacroID() && !isOuterMostMacro(S)) {
     BeginLoc = SM.getImmediateSpellingLoc(S->getBeginLoc());
     EndLoc = SM.getImmediateSpellingLoc(S->getEndLoc());
     if (EndLoc.isMacroID()) {
@@ -120,8 +120,10 @@ std::string getStmtSpelling(const Stmt *S, const ASTContext &Context) {
     EndLoc = SM.getExpansionLoc(S->getEndLoc());
   }
 
-  int Length = SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc) +
-               Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
+  int Length =
+      SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc) +
+      Lexer::MeasureTokenLength(
+          EndLoc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
   Str = std::string(SM.getCharacterData(BeginLoc), Length);
   return Str;
 }
@@ -405,6 +407,19 @@ const clang::Stmt *getParentStmt(const clang::Stmt *S) {
     return Parents[0].get<Stmt>();
 
   return nullptr;
+}
+
+const std::shared_ptr<clang::ast_type_traits::DynTypedNode>
+getParentNode(const std::shared_ptr<clang::ast_type_traits::DynTypedNode> N) {
+  if (!N)
+    return nullptr;
+
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*N);
+  //if (Parents.size() == 1)
+    return std::make_shared<clang::ast_type_traits::DynTypedNode>(Parents[0]);
+
+  //return nullptr;
 }
 
 // Determine if S is a single line statement inside
@@ -836,7 +851,7 @@ std::string getBufferNameAndDeclStr(const Expr *Arg, const ASTContext &AC,
                                     const std::string &TypeAsStr,
                                     SourceLocation SL, std::string &BufferDecl,
                                     int DistinctionID) {
-  std::string PointerName = getStmtSpelling(Arg, AC);
+  std::string PointerName = getStmtSpelling(Arg);
   std::string BufferTempName = getTempNameForExpr(Arg, true, true) + "buff_ct";
   BufferTempName = dpct::DpctGlobalInfo::getTempValueIdentifierWithUniqueIndex(
       BufferTempName);
@@ -1010,4 +1025,113 @@ std::string getTempNameForExpr(const Expr *E, bool HandleLiteral,
   if (!KeepLastUnderline)
     IdString.pop_back();
   return IdString;
+}
+// Check if an Expr is the outer most function-like macro
+// E.g. MACRO_A(MACRO_B(x,y),z)
+// Where MACRO_A is outer most and MACRO_B, x, y, z are not.
+bool isOuterMostMacro(const Stmt *E) {
+  auto &CT = dpct::DpctGlobalInfo::getContext();
+  std::string ExpandedExpr, ExpandedParent;
+  // Save the preprocessing result of E in ExpandedExpr
+  llvm::raw_string_ostream StreamE(ExpandedExpr);
+  E->printPretty(StreamE, nullptr, CT.getPrintingPolicy());
+  StreamE.flush();
+  std::shared_ptr<ast_type_traits::DynTypedNode> P =
+      std::make_shared<ast_type_traits::DynTypedNode>(
+          ast_type_traits::DynTypedNode::create(*E));
+  // Find a parent stmt whose preprocessing result is different from ExpandedExpr
+  // Since some parent is not writable.(is not shown in the preprocessing result),
+  // a while loop is required to find the first writable ancestor.
+  do {
+    ExpandedParent = "";
+    P = getParentNode(P);
+    if (!P)
+      return true;
+    llvm::raw_string_ostream StreamP(ExpandedParent);
+    P->print(StreamP, CT.getPrintingPolicy());
+    StreamP.flush();
+  } while (!ExpandedParent.compare(ExpandedExpr));
+  return !isInsideFunctionLikeMacro(E->getBeginLoc(), E->getEndLoc(), P);
+}
+
+bool isInsideFunctionLikeMacro(
+    const SourceLocation BeginLoc, const SourceLocation EndLoc,
+    const std::shared_ptr<ast_type_traits::DynTypedNode> Parent) {
+
+  if (!BeginLoc.isMacroID() || !EndLoc.isMacroID()) {
+    return false;
+  }
+
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  // If the begin/end location are different macro expansions,
+  // the expression is a combination of different macros
+  // which makes it outer-most.
+  if (SM.getCharacterData(SM.getExpansionRange(BeginLoc).getEnd()) <
+      SM.getCharacterData(SM.getExpansionLoc(EndLoc))) {
+    return false;
+  }
+
+  // Since SM.getExpansionLoc() will always return the range of the outer-most
+  // macro. If the expanded location of the parent stmt and E are the same, E is
+  // inside a function-like macro.
+  // E.g. MACRO_A(MACRO_B(x,y),z) where E is the PP
+  // result of MACRO_B and Parent is the PP result of MACRO_A,
+  // SM.getExpansionLoc(E) is at the begining of MACRO_A, same as
+  // SM.getExpansionLoc(Parent), in the source code. E is not outer-most.
+  if (Parent->getSourceRange().getBegin().isValid() && Parent->getSourceRange().getBegin().isMacroID()) {
+    if (SM.getCharacterData(SM.getExpansionLoc(Parent->getSourceRange().getBegin())) ==
+        SM.getCharacterData(SM.getExpansionLoc(BeginLoc))) {
+      return true;
+    }
+  }
+ 
+  // Another case which should to return true is
+  // #define MacroA(x) = x
+  // When MacroA is used for default arguments in function definition
+  // like foo(int x MacroA(0)) and the ASTMatcher matches the "0" in the expansion,
+  // since the parent of x in the AST is "int x MacroA(0)" not "= x",
+  // previous check cannot detect the "0" is inside a function like macro.
+  // Should check if the expansion is the whole macro definition.
+ 
+  // Get the location of "x" in "#define MacroA(x) = x"
+  SourceLocation ImmediateSpellingBegin = SM.getImmediateSpellingLoc(BeginLoc);
+  SourceLocation ImmediateSpellingEnd = SM.getImmediateSpellingLoc(EndLoc);
+  SourceLocation ImmediateExpansionBegin = SM.getImmediateExpansionRange(BeginLoc).getBegin();;
+  SourceLocation ImmediateExpansionEnd = SM.getImmediateExpansionRange(EndLoc).getEnd();
+
+  // Check if one of the 4 combinations of begin&end matches a macro def
+  // ExpansionBegin & ExpansionEnd
+  auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      SM.getCharacterData(ImmediateExpansionBegin));
+  if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+      SM.getCharacterData(It->second->ReplaceTokenEnd) ==
+          SM.getCharacterData(ImmediateExpansionEnd)) {
+    return false;
+  }
+  // ExpansionBegin & SpellingEnd
+  It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+    SM.getCharacterData(ImmediateExpansionBegin));
+  if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+    SM.getCharacterData(It->second->ReplaceTokenEnd) ==
+    SM.getCharacterData(ImmediateSpellingEnd)) {
+    return false;
+  }
+  // SpellingBegin & ExpansionEnd
+  It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+    SM.getCharacterData(ImmediateSpellingBegin));
+  if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+    SM.getCharacterData(It->second->ReplaceTokenEnd) ==
+    SM.getCharacterData(ImmediateExpansionEnd)) {
+    return false;
+  }
+  // SpellingBegin & SpellingEnd
+  It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+    SM.getCharacterData(ImmediateSpellingBegin));
+  if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+    SM.getCharacterData(It->second->ReplaceTokenEnd) ==
+    SM.getCharacterData(ImmediateSpellingEnd)) {
+    return false;
+  }
+
+  return true;
 }

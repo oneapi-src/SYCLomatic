@@ -56,4 +56,26 @@ void foo() {
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) { foo_kernel(); });
   // CHECK-NEXT: });
   foo_kernel<<<GET_BLOCKS4(outputThreadCount, CUDA_NUM_THREADS), 2, 0>>>();
+
+// CHECK: #define HANDLE_GPU_ERROR(err) \
+// CHECK-NEXT: do \
+// CHECK-NEXT: { \
+// CHECK-NEXT:     if (err != 0) \
+// CHECK-NEXT:     { \
+// CHECK-NEXT:         int currentDevice; \
+// CHECK-NEXT:         currentDevice = dpct::dev_mgr::instance().current_device_id(); \
+// CHECK-NEXT:     } \
+// CHECK-NEXT: } while (0)
+#define HANDLE_GPU_ERROR(err) \
+do \
+{ \
+    if(err != cudaSuccess) \
+    { \
+        int currentDevice; \
+        cudaGetDevice(&currentDevice); \
+    } \
+} \
+while(0)
+
+  HANDLE_GPU_ERROR(0);
 }

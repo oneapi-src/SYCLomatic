@@ -29,6 +29,7 @@
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
+#include "clang/Frontend/CompilerInstance.h"
 namespace path = llvm::sys::path;
 
 namespace llvm {
@@ -200,8 +201,7 @@ llvm::StringRef getIndent(clang::SourceLocation Loc,
                           const clang::SourceManager &SM);
 
 /// Get the Stmt spelling
-std::string getStmtSpelling(const clang::Stmt *E,
-                            const clang::ASTContext &Context);
+std::string getStmtSpelling(const clang::Stmt *E);
 
 template <typename T> std::string getHashAsString(const T &Val) {
   std::stringstream Stream;
@@ -280,6 +280,8 @@ bool callingFuncHasDeviceAttr(const clang::CallExpr *CE);
 bool isInSameScope(const clang::Stmt *S, const clang::ValueDecl *D);
 const clang::DeclRefExpr *getInnerValueDecl(const clang::Expr *Arg);
 const clang::Stmt *getParentStmt(const clang::Stmt *S);
+const std::shared_ptr<clang::ast_type_traits::DynTypedNode>
+getParentNode(const std::shared_ptr<clang::ast_type_traits::DynTypedNode> N);
 bool IsSingleLineStatement(const clang::Stmt *S);
 clang::SourceRange getScopeInsertRange(const clang::MemberExpr *ME);
 clang::SourceRange
@@ -347,4 +349,9 @@ bool isAssigned(const clang::Stmt *S);
 
 std::string getTempNameForExpr(const clang::Expr *E, bool HandleLiteral = false,
                                bool KeepLastUnderline = true);
+bool isOuterMostMacro(const clang::Stmt *E);
+bool isInsideFunctionLikeMacro(
+    const clang::SourceLocation BeginLoc, const clang::SourceLocation EndLoc,
+    const std::shared_ptr<clang::ast_type_traits::DynTypedNode> Parent);
+
 #endif // DPCT_UTILITY_H

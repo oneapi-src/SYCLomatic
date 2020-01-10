@@ -226,7 +226,7 @@ protected:
   std::string DereferenceArg(const clang::Expr *E, const ASTContext &Context) {
     if (auto arg = dyn_cast<clang::UnaryOperator>(E)) {
       if (arg->getOpcode() == UO_AddrOf) {
-        return getStmtSpelling(arg->getSubExpr(), Context);
+        return getStmtSpelling(arg->getSubExpr());
       }
     }
     /// TODO implement dereference for the general case, not only for foo(&a).
@@ -1000,5 +1000,4 @@ public:
 
 } // namespace dpct
 } // namespace clang
-
 #endif // DPCT_AST_TRAVERSAL_H

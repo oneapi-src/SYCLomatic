@@ -191,9 +191,12 @@ protected:
 
   std::pair<size_t, size_t> getOffsetAndLength(SourceLocation Begin,
                                                SourceLocation End);
+  // Advanced version to handle macros
+  std::pair<size_t, size_t> getOffsetAndLength(SourceLocation Begin,
+                                               SourceLocation End,
+                                               const Expr *Parent);
   std::pair<size_t, size_t> getOffsetAndLength(SourceLocation SL);
   std::pair<size_t, size_t> getOffsetAndLength(const Expr *);
-  bool isOuterMostMacro(const Expr *E);
 
   // Replace a sub expr
   template <class TextData>
@@ -212,6 +215,7 @@ protected:
                              std::string Text) {
     addReplacement(getOffset(getExprLocation(Begin)), Length, std::move(Text));
   }
+
   // Replace string between begin location and end location
   template <class TextData>
   inline void addReplacement(SourceLocation Begin, SourceLocation End,
@@ -219,6 +223,17 @@ protected:
     auto LocInfo = getOffsetAndLength(Begin, End);
     addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
   }
+  // Replace string between begin location and end location.
+  // Pass parent expr to calculate the correct location of macros
+  template <class TextData>
+  inline void addReplacement(SourceLocation Begin, SourceLocation End,
+                             const Expr *P, TextData Text) {
+    auto LocInfo = getOffsetAndLength(Begin, End, P);
+    if (LocInfo.first > 0 && LocInfo.first < SrcLength) {
+      addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
+    }
+  }
+
   // Replace total string
   template <class TextData> inline void addReplacement(TextData Text) {
     addReplacement(SrcBegin, SrcLength, std::move(Text));
@@ -271,17 +286,17 @@ protected:
   void analyzeExpr(const CStyleCastExpr *Cast);
   void analyzeExpr(const CallExpr *CE);
 
-  inline void analyzeType(const TypeSourceInfo *TSI) {
-    analyzeType(TSI->getTypeLoc());
+  inline void analyzeType(const TypeSourceInfo *TSI, const Expr *CSCE) {
+    analyzeType(TSI->getTypeLoc(), CSCE);
   }
-  void analyzeType(const TypeLoc &TL);
+  void analyzeType(const TypeLoc &TL, const Expr *E);
 
   // Doing nothing when it doesn't need analyze
   inline void analyzeExpr(const Stmt *S) {}
 
   inline const Expr *getTargetExpr() { return E; }
 
-  const ASTContext &Context;
+  ASTContext &Context;
   const SourceManager &SM;
 
   std::string RefString;

@@ -42,8 +42,6 @@ auto parentStmt = []() {
                hasParent(ifStmt()));
 };
 
-static std::set<SourceLocation> AttrExpansionFilter;
-
 static const CXXConstructorDecl *getIfConstructorDecl(const Decl *ND) {
   if (const auto *Tmpl = dyn_cast<FunctionTemplateDecl>(ND))
     ND = Tmpl->getTemplatedDecl();
@@ -105,6 +103,7 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
     }
   }
 }
+
 void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                                      const MacroDefinition &MD,
                                      SourceRange Range, const MacroArgs *Args) {
@@ -112,6 +111,19 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   std::string InFile = SM.getFilename(MacroNameTok.getLocation());
   bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
                   (isChildOrSamePath(InRoot, InFile));
+  if (MD.getMacroInfo()->getNumTokens() > 0) {
+    std::shared_ptr<dpct::DpctGlobalInfo::MacroExpansionRecord> R =
+      std::make_shared<dpct::DpctGlobalInfo::MacroExpansionRecord>(
+        MacroNameTok.getIdentifierInfo(), MD.getMacroInfo(), Range, IsInRoot);
+
+    if (dpct::DpctGlobalInfo::getMacroExpansions().find(MD.getMacroInfo()) ==
+        dpct::DpctGlobalInfo::getMacroExpansions().end()) {
+      dpct::DpctGlobalInfo::getMacroExpansions()[MD.getMacroInfo()] = R;
+      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
+          [SM.getCharacterData(
+              MD.getMacroInfo()->getReplacementToken(0).getLocation())] = R;
+    }
+  }
 
   if (!IsInRoot) {
     return;
@@ -142,21 +154,6 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (TKind == tok::identifier && Name == "__forceinline__") {
     TransformSet.emplace_back(
         new ReplaceToken(Range.getBegin(), "__dpct_inline__"));
-  }
-
-  // Record the expansion locations of the macros containing attributes.
-  // FunctionAttrsRule should/will NOT work on these locations.
-  auto MI = MD.getMacroInfo();
-  for (auto Iter = MI->tokens_begin(); Iter != MI->tokens_end(); ++Iter) {
-    auto II = Iter->getIdentifierInfo();
-    if (!II)
-      continue;
-    if (II->hasMacroDefinition() && (II->getName().str() == "__host__" ||
-                                     II->getName().str() == "__device__" ||
-                                     II->getName().str() == "__global__" ||
-                                     II->getName().str() == "__constant__")) {
-      AttrExpansionFilter.insert(Range.getBegin());
-    }
   }
 }
 TextModification *
@@ -2638,7 +2635,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
 
     std::string EnumStr =
-        getStmtSpelling(CE->getArg(1), DpctGlobalInfo::getContext());
+        getStmtSpelling(CE->getArg(1));
     if (MapNames::RandomEngineTypeMap.find(EnumStr) ==
             MapNames::RandomEngineTypeMap.end()) {
       report(PrefixInsertLoc, Diagnostics::NOT_SUPPORTED_PARAMETER, FuncName,
@@ -2785,11 +2782,11 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
     if (REInfo && REInfo->isClassMember()) {
       ReplStr = "mkl::rng::generate(distr_ct1, *" +
-                getStmtSpelling(CE->getArg(0), *(Result.Context)) + ", " +
+                getStmtSpelling(CE->getArg(0)) + ", " +
                 EA.getReplacedString() + ", " + BufferName + ")";
     } else {
       ReplStr = "mkl::rng::generate(distr_ct1, " +
-                getStmtSpelling(CE->getArg(0), *(Result.Context)) + ", " +
+                getStmtSpelling(CE->getArg(0)) + ", " +
                 EA.getReplacedString() + ", " + BufferName + ")";
     }
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
@@ -2823,7 +2820,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       report(FuncNameBegin, Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
     std::string Repl = "mkl::rng::skip_ahead(" +
-                       getStmtSpelling(CE->getArg(0), *(Result.Context)) + ", ";
+                       getStmtSpelling(CE->getArg(0)) + ", ";
     ExprAnalysis EO;
     EO.analyze(CE->getArg(1));
     Repl = Repl + EO.getReplacedString() + ")";
@@ -3101,7 +3098,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       if (isReplIndex(i, ReplInfo.PointerIndexInfo, IndexTemp)) {
         emplaceTransformation(new ReplaceStmt(
             CE->getArg(i),
-            "*(" + getStmtSpelling(CE->getArg(i), *(Result.Context)) + ")"));
+            "*(" + getStmtSpelling(CE->getArg(i)) + ")"));
       }
       const CStyleCastExpr *CSCE = nullptr;
       if ((CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(i)))) {
@@ -3113,7 +3110,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                  isReplIndex(i, ReplInfo.OperationIndexInfo, IndexTemp)) {
         std::string TransparamName = "transpose_ct" + std::to_string(i);
         std::string TransStr =
-            getStmtSpelling(CE->getArg(i), *(Result.Context));
+            getStmtSpelling(CE->getArg(i));
 
         auto TransPair = MapNames::BLASEnumsMap.find(TransStr);
         if (TransPair != MapNames::BLASEnumsMap.end()) {
@@ -3238,14 +3235,14 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             ReplInfo.PointerTypeInfo[IndexTemp] == "double") {
           emplaceTransformation(new ReplaceStmt(
               CE->getArg(i),
-              "*(" + getStmtSpelling(CE->getArg(i), *(Result.Context)) + ")"));
+              "*(" + getStmtSpelling(CE->getArg(i)) + ")"));
         } else {
           emplaceTransformation(new ReplaceStmt(
               CE->getArg(i),
               ReplInfo.PointerTypeInfo[IndexTemp] + "((" +
-                  getStmtSpelling(CE->getArg(i), *(Result.Context)) +
+                  getStmtSpelling(CE->getArg(i)) +
                   ")->x(),(" +
-                  getStmtSpelling(CE->getArg(i), *(Result.Context)) +
+                  getStmtSpelling(CE->getArg(i)) +
                   ")->y())"));
         }
       }
@@ -3793,7 +3790,7 @@ BLASFunctionCallRule::getParamsAsStrs(const CallExpr *CE,
                                       const ASTContext &Context) {
   std::vector<std::string> ParamsStrVec;
   for (auto Arg : CE->arguments())
-    ParamsStrVec.emplace_back(getStmtSpelling(Arg, Context));
+    ParamsStrVec.emplace_back(getStmtSpelling(Arg));
   return ParamsStrVec;
 }
 
@@ -3843,7 +3840,18 @@ void BLASFunctionCallRule::processParamIntCastToBLASEnum(
     std::string &PrefixInsertStr, bool IsMacroArg) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   const Expr *SubExpr = CSCE->getSubExpr();
-  std::string SubExprStr = getStmtSpelling(SubExpr, Context);
+  std::string SubExprStr;
+  if (SubExpr->getBeginLoc().isMacroID() && isOuterMostMacro(CSCE)) {
+    // when type casting syntax is in a macro,
+    // analyze the entire CSCE by ExprAnalysis
+    ExprAnalysis SEA;
+    SEA.analyze(CSCE);
+    SubExprStr = SEA.getReplacedString();
+  }
+  else {
+    // To eliminate the redundant cast of non-macro cases
+    SubExprStr = getStmtSpelling(SubExpr);
+  }
   SourceLocation BeginLoc = E->getBeginLoc();
   SourceLocation EndLoc = E->getEndLoc();
 
@@ -3886,7 +3894,7 @@ void BLASFunctionCallRule::processTrmmParams(
   // decl a temp var for ptrB and ptrC
   PrefixInsertStr = PrefixInsertStr + IndentStr + "auto ptr_ct" +
                     std::to_string(DistinctionID) + " = " +
-                    getStmtSpelling(CE->getArg(DistinctionID), Context) + ";" +
+                    getStmtSpelling(CE->getArg(DistinctionID)) + ";" +
                     getNL();
   BufferName = getBufferNameAndDeclStr("ptr_ct" + std::to_string(DistinctionID),
                                        Context, BufferTypeInfo[IndexTemp],
@@ -3912,17 +3920,17 @@ void BLASFunctionCallRule::processTrmmCall(const CallExpr *CE,
   // decl fout temp vars for ldb, ldc, n and m
   PrefixInsertStr =
       PrefixInsertStr + IndentStr +
-      "auto ld_ct13 = " + getStmtSpelling(CE->getArg(13), Context) + ";" +
-      " auto m_ct5 = " + getStmtSpelling(CE->getArg(5), Context) +
-      "; auto n_ct6 = " + getStmtSpelling(CE->getArg(6), Context) + ";" +
+      "auto ld_ct13 = " + getStmtSpelling(CE->getArg(13)) + ";" +
+      " auto m_ct5 = " + getStmtSpelling(CE->getArg(5)) +
+      "; auto n_ct6 = " + getStmtSpelling(CE->getArg(6)) + ";" +
       getNL();
   // insert a stmt copying the data ptrB pointing to where ptrC pointing
   PrefixInsertStr = PrefixInsertStr + IndentStr +
                     "dpct::matrix_mem_copy(ptr_ct12, " +
-                    getStmtSpelling(CE->getArg(10), Context) + ", ld_ct13, " +
-                    getStmtSpelling(CE->getArg(11), Context) +
+                    getStmtSpelling(CE->getArg(10)) + ", ld_ct13, " +
+                    getStmtSpelling(CE->getArg(11)) +
                     ", m_ct5, n_ct6, dpct::device_to_device, " +
-                    getStmtSpelling(CE->getArg(0), Context) + ");" + getNL();
+                    getStmtSpelling(CE->getArg(0)) + ");" + getNL();
   // replace the args in the function call
   emplaceTransformation(new ReplaceStmt(CE->getArg(13), "ld_ct13"));
   emplaceTransformation(new ReplaceStmt(CE->getArg(5), "m_ct5"));
@@ -4209,7 +4217,7 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         if (i == ArgNum - 1) {
           PrefixInsertStr = PrefixInsertStr + IndentStr +
                             "int64_t lwork64 = *(" +
-                            getStmtSpelling(CE->getArg(i), *(Result.Context)) +
+                            getStmtSpelling(CE->getArg(i)) +
                             ");" + getNL();
           SourceLocation ParameterEndAfterSemi;
           getParameterEnd(CE->getArg(i)->getEndLoc(), ParameterEndAfterSemi,
@@ -4220,7 +4228,7 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           emplaceTransformation(new ReplaceText(CE->getArg(i)->getBeginLoc(),
                                                 ParameterLength, "lwork64"));
           SuffixInsertStr = SuffixInsertStr + "*(" +
-                            getStmtSpelling(CE->getArg(i), *(Result.Context)) +
+                            getStmtSpelling(CE->getArg(i)) +
                             ") = lwork64;" + getNL() + IndentStr;
         }
       }
@@ -4256,8 +4264,7 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       std::string InsStr = "";
       for (size_t i = 0; i < ReplInfo.CopyFrom.size(); ++i) {
         InsStr = InsStr +
-                 getStmtSpelling(CE->getArg(ReplInfo.CopyFrom[i]),
-                                 *(Result.Context)) +
+                 getStmtSpelling(CE->getArg(ReplInfo.CopyFrom[i])) +
                  ", ";
         if (i == ReplInfo.CopyTo.size() - 1 ||
             ReplInfo.CopyTo[i + 1] != ReplInfo.CopyTo[i]) {
@@ -4345,7 +4352,7 @@ std::string SOLVERFunctionCallRule::getBufferNameAndDeclStr(
     const Expr *Arg, const ASTContext &AC, const std::string &TypeAsStr,
     SourceLocation SL, std::string &BufferDecl, int DistinctionID) {
 
-  std::string PointerName = getStmtSpelling(Arg, AC);
+  std::string PointerName = getStmtSpelling(Arg);
   std::string BufferTempName = getTempNameForExpr(Arg, true, true) + "buff_ct";
   BufferTempName = dpct::DpctGlobalInfo::getTempValueIdentifierWithUniqueIndex(
       BufferTempName);
@@ -4464,7 +4471,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                                     .getName()
                                     .getAsString();
     std::string ReplStr{ResultVarName};
-    auto StmtStrArg2 = getStmtSpelling(CE->getArg(2), *Result.Context);
+    auto StmtStrArg2 = getStmtSpelling(CE->getArg(2));
 
     if (AttributeName == "cudaDevAttrComputeMode") {
       ReplStr += " = dpct::compute_mode::default_";
@@ -4674,7 +4681,7 @@ void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaEventElapsedTime") {
     handleEventElapsedTime(CE, Result, IsAssigned);
   } else if (FuncName == "cudaEventSynchronize") {
-    std::string ReplStr{getStmtSpelling(CE->getArg(0), *Result.Context)};
+    std::string ReplStr{getStmtSpelling(CE->getArg(0))};
     ReplStr += ".wait_and_throw()";
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";
@@ -4731,14 +4738,14 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
 void EventAPICallRule::handleEventElapsedTime(
     const CallExpr *CE, const MatchFinder::MatchResult &Result,
     bool IsAssigned) {
-  auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+  auto StmtStrArg0 = getStmtSpelling(CE->getArg(0));
   auto StmtStrArg1 = getTempNameForExpr(CE->getArg(1), true, false);
   auto StmtStrArg2 = getTempNameForExpr(CE->getArg(2), true, false);
   std::ostringstream Repl;
   std::string Assginee = "*(" + StmtStrArg0 + ")";
   if (auto UO = dyn_cast<UnaryOperator>(CE->getArg(0))) {
     if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf)
-      Assginee = getStmtSpelling(UO->getSubExpr(), *Result.Context);
+      Assginee = getStmtSpelling(UO->getSubExpr());
   }
   Repl << Assginee << " = (float)(" << StmtStrArg2 << getCTFixedSuffix()
        << " - " << StmtStrArg1 << getCTFixedSuffix()
@@ -4779,10 +4786,10 @@ void EventAPICallRule::handleTimeMeasurement(
       // Find the last call of Event Record on start and stop before
       // calculate the time elapsed
       if (RecordFuncName == "cudaEventRecord") {
-        auto Arg0 = getStmtSpelling(RecordCall->getArg(0), *Result.Context);
-        if (Arg0 == getStmtSpelling(CE->getArg(1), *Result.Context))
+        auto Arg0 = getStmtSpelling(RecordCall->getArg(0));
+        if (Arg0 == getStmtSpelling(CE->getArg(1)))
           RecordBegin = RecordCall;
-        else if (Arg0 == getStmtSpelling(CE->getArg(2), *Result.Context))
+        else if (Arg0 == getStmtSpelling(CE->getArg(2)))
           RecordEnd = RecordCall;
       }
     }
@@ -4808,7 +4815,7 @@ void EventAPICallRule::handleTimeMeasurement(
       // Only the kernel calls between begin and end are set to be synced
       if (KCallLoc > RecordBeginLoc && KCallLoc < RecordEndLoc) {
         auto K = DpctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
-        K->setEvent(getStmtSpelling(CE->getArg(2), *Result.Context));
+        K->setEvent(getStmtSpelling(CE->getArg(2)));
         K->setSync();
       }
     }
@@ -4869,7 +4876,7 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
       FuncName == "cudaStreamCreateWithFlags" ||
       FuncName == "cudaStreamCreateWithPriority") {
     std::string ReplStr;
-    auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+    auto StmtStr0 = getStmtSpelling(CE->getArg(0));
     // TODO: simplify expression
     if (StmtStr0[0] == '&')
       ReplStr = StmtStr0.substr(1);
@@ -4887,7 +4894,7 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
       report(CE->getBeginLoc(), Diagnostics::QUEUE_CREATED_IGNORING_OPTIONS);
     }
   } else if (FuncName == "cudaStreamDestroy") {
-    auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
+    auto StmtStr0 = getStmtSpelling(CE->getArg(0));
     auto ReplStr = "delete " + StmtStr0;
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";
@@ -4895,7 +4902,7 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
     }
     emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ReplStr));
   } else if (FuncName == "cudaStreamSynchronize") {
-    auto StmtStr = getStmtSpelling(CE->getArg(0), *Result.Context);
+    auto StmtStr = getStmtSpelling(CE->getArg(0));
     std::string ReplStr{StmtStr};
     ReplStr += "->wait()";
     const std::string Name =
@@ -4908,7 +4915,7 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaStreamGetFlags" ||
              FuncName == "cudaStreamGetPriority") {
     report(CE->getBeginLoc(), Diagnostics::STREAM_FLAG_PRIORITY_NOT_SUPPORTED);
-    auto StmtStr1 = getStmtSpelling(CE->getArg(1), *Result.Context);
+    auto StmtStr1 = getStmtSpelling(CE->getArg(1));
     std::string ReplStr{"*("};
     ReplStr += StmtStr1;
     ReplStr += ") = 0";
@@ -4921,8 +4928,8 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceStmt(CE, false, Name, ReplStr));
   } else if (FuncName == "cudaDeviceGetStreamPriorityRange") {
     report(CE->getBeginLoc(), Diagnostics::STREAM_FLAG_PRIORITY_NOT_SUPPORTED);
-    auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-    auto StmtStr1 = getStmtSpelling(CE->getArg(1), *Result.Context);
+    auto StmtStr0 = getStmtSpelling(CE->getArg(0));
+    auto StmtStr1 = getStmtSpelling(CE->getArg(1));
     std::string ReplStr{"*("};
     ReplStr += StmtStr0;
     ReplStr += ") = 0, *(";
@@ -4951,7 +4958,7 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ""));
     }
   } else if (FuncName == "cudaStreamWaitEvent") {
-    auto StmtStr1 = getStmtSpelling(CE->getArg(1), *Result.Context);
+    auto StmtStr1 = getStmtSpelling(CE->getArg(1));
     std::string ReplStr = StmtStr1 + ".wait()";
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";
@@ -4960,9 +4967,9 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new ReplaceStmt(CE, false, FuncName, std::move(ReplStr)));
   } else if (FuncName == "cudaStreamAddCallback") {
-    auto StmtStr0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-    auto StmtStr1 = getStmtSpelling(CE->getArg(1), *Result.Context);
-    auto StmtStr2 = getStmtSpelling(CE->getArg(2), *Result.Context);
+    auto StmtStr0 = getStmtSpelling(CE->getArg(0));
+    auto StmtStr1 = getStmtSpelling(CE->getArg(1));
+    auto StmtStr2 = getStmtSpelling(CE->getArg(2));
     std::string ReplStr{"std::async([&]() { "};
     ReplStr += StmtStr0;
     ReplStr += "->wait(); ";
