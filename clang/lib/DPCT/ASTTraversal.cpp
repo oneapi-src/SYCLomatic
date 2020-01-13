@@ -5367,7 +5367,10 @@ void MemoryMigrationRule::continuousMemcpyMemsetHandler(
     if (!isStmtSimpleMemcpyOrMemset(*I)) {
       return;
     }
-    if (auto FD = getMemcpyOrMemsetCallExprFromStmt(*I)->getDirectCallee()) {
+    auto CE = getMemcpyOrMemsetCallExprFromStmt(*I);
+    if (!CE)
+      return;
+    if ( auto FD = CE->getDirectCallee()) {
       std::string Name = FD->getNameAsString();
       if (Name == "cudaMemset") {
         memsetMigration(Result, getMemcpyOrMemsetCallExprFromStmt(*I), NULL,
@@ -5396,6 +5399,8 @@ void MemoryMigrationRule::defaultMemcpyMemsetHandler(
   if (ULExpr && C) {
     Name = ULExpr->getName().getAsString();
   } else {
+    if(!C)
+        return;
     if ( auto FD = C->getDirectCallee())
       Name = FD->getNameAsString();
   }

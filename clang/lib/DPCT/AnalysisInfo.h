@@ -2003,7 +2003,7 @@ public:
   // The legal value of Dim in origin code is 1 to 20000, so if it is not set,
   // use 1 as default.
   static const DeclaratorDecl *getHandleVar(const Expr *Arg) {
-    const DeclaratorDecl *D;
+    const DeclaratorDecl *D = nullptr;
     if (auto UO = dyn_cast<UnaryOperator>(Arg->IgnoreImpCasts())) {
       if (UO->getOpcode() == UO_AddrOf) {
         D = getDecl(UO->getSubExpr());
