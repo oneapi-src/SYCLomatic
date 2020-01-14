@@ -336,10 +336,9 @@ StreamTy &printArguments(StreamTy &Stream, Args &&... Arguments) {
   return printPartialArguments(Stream, sizeof...(Args),
                                std::forward<Args>(Arguments)...);
 }
-
 bool isInSameLine(clang::SourceLocation A, clang::SourceLocation B,
                   const clang::SourceManager &SM, bool &Invalid);
-
+clang::SourceRange getFunctionRange(const clang::CallExpr *CE);
 std::vector<clang::tooling::Range>
 calculateRangesWithFormatFlag(
     const clang::tooling::Replacements &Replaces);

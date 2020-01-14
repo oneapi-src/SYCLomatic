@@ -177,24 +177,28 @@ curandStatus foo2();
 
 //CHECK:class A{
 //CHECK-NEXT:public:
-//CHECK-NEXT:  void create(){
-//CHECK-NEXT:    rng = mkl::rng::sobol(dpct::get_default_queue_wait(), 1243);
+//CHECK-NEXT:  A(){
+//CHECK-NEXT:    rng = new mkl::rng::sobol(dpct::get_default_queue_wait(), 1243);
 //CHECK-NEXT:    /*
 //CHECK-NEXT:    DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was
 //CHECK-NEXT:    removed, because the function call is redundant in DPC++.
 //CHECK-NEXT:    */
 //CHECK-NEXT:  }
-
-//CHECK:private:
-//CHECK-NEXT:  mkl::rng::sobol rng;
+//CHECK-NEXT:  ~A(){
+//CHECK-NEXT:    delete rng;
+//CHECK-NEXT:  }
+     //CHECK:private:
+//CHECK-NEXT:  mkl::rng::sobol *rng;
 //CHECK-NEXT:};
 class A{
 public:
-  void create(){
+  A(){
     curandCreateGenerator(&rng, CURAND_RNG_QUASI_DEFAULT);
     curandSetQuasiRandomGeneratorDimensions(rng, 1243);
   }
-
+  ~A(){
+    curandDestroyGenerator(rng);
+  }
 private:
   curandGenerator_t rng;
 };
@@ -202,12 +206,14 @@ private:
 
 
 void bar1(){
-//CHECK:curandGenerator_t rng;
+//CHECK:mkl::rng::philox4x32x10 rng(dpct::get_default_queue_wait(), 1337ull);
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1028:{{[0-9]+}}: The curandCreateGenerator was not migrated, because the parameter
-//CHECK-NEXT:CURAND_RNG_PSEUDO_XORWOW is unsupported.
+//CHECK-NEXT:DPCT1032:{{[0-9]+}}: Different generator is used, you may need to adjust the code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_XORWOW);
+//CHECK-NEXT:/*
+//CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the
+//CHECK-NEXT:function call is redundant in DPC++.
+//CHECK-NEXT:*/
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed,
 //CHECK-NEXT:because the function call is redundant in DPC++.
@@ -219,17 +225,78 @@ void bar1(){
 
 
 void bar2(){
-//CHECK:curandGenerator_t rng;
+//CHECK:mkl::rng::sobol rng(dpct::get_default_queue_wait(), 1243);
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1028:{{[0-9]+}}: The curandCreateGenerator was not migrated, because the parameter
-//CHECK-NEXT:CURAND_RNG_QUASI_SCRAMBLED_SOBOL64 is unsupported.
+//CHECK-NEXT:DPCT1032:{{[0-9]+}}: Different generator is used, you may need to adjust the code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:curandCreateGenerator(&rng, CURAND_RNG_QUASI_SCRAMBLED_SOBOL64);
+//CHECK-NEXT:/*
+//CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the
+//CHECK-NEXT:function call is redundant in DPC++.
+//CHECK-NEXT:*/
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed,
 //CHECK-NEXT:because the function call is redundant in DPC++.
 //CHECK-NEXT:*/
   curandGenerator_t rng;
   curandCreateGenerator(&rng, CURAND_RNG_QUASI_SCRAMBLED_SOBOL64);
+  curandSetQuasiRandomGeneratorDimensions(rng, 1243);
+}
+
+#define curandErrCheck(stat) { curandErrCheck_((stat), __FILE__, __LINE__); }
+void curandErrCheck_(curandStatus_t stat, const char *file, int line) {
+  if (stat != CURAND_STATUS_SUCCESS) {
+    fprintf(stderr, "cuRand Error: %d %s %d\n", stat, file, line);
+  }
+}
+
+void bar3(){
+//CHECK:mkl::rng::philox4x32x10 rng(dpct::get_default_queue_wait(), 1337ull);
+//CHECK-NEXT:/*
+//CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to curandCreateGenerator was replaced with 0, because
+//CHECK-NEXT:the function call is redundant in DPC++.
+//CHECK-NEXT:*/
+//CHECK-NEXT:curandErrCheck(0);
+//CHECK-NEXT:/*
+//CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was replaced with
+//CHECK-NEXT:0, because the function call is redundant in DPC++.
+//CHECK-NEXT:*/
+//CHECK-NEXT:curandErrCheck(0);
+//CHECK-NEXT:float *h_data;
+//CHECK-NEXT:curandErrCheck([&]() {
+//CHECK-NEXT:auto h_data_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(h_data);
+//CHECK-NEXT:mkl::rng::uniform<float> distr_ct1;
+//CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_buff_ct1);
+//CHECK-NEXT:return 0;
+//CHECK-NEXT:}());
+//CHECK-NEXT:/*
+//CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to curandDestroyGenerator was replaced with 0, because
+//CHECK-NEXT:the function call is redundant in DPC++.
+//CHECK-NEXT:*/
+//CHECK-NEXT:curandErrCheck(0);
+  curandGenerator_t rng;
+  curandErrCheck(curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_PHILOX4_32_10));
+  curandErrCheck(curandSetPseudoRandomGeneratorSeed(rng, 1337ull));
+  float *h_data;
+  curandErrCheck(curandGenerateUniform(rng, h_data, 100*100));
+  curandErrCheck(curandDestroyGenerator(rng));
+}
+
+void bar4(){
+//CHECK:mkl::rng::sobol rng(dpct::get_default_queue_wait(), 1243);
+//CHECK-NEXT:/*
+//CHECK-NEXT:DPCT1033:{{[0-9]+}}: Migrated code uses a basic Sobol generator. Initialize
+//CHECK-NEXT:mkl::rng::sobol generator with user-defined direction numbers to use it as
+//CHECK-NEXT:Scrambled Sobol generator.
+//CHECK-NEXT:*/
+//CHECK-NEXT:/*
+//CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the
+//CHECK-NEXT:function call is redundant in DPC++.
+//CHECK-NEXT:*/
+//CHECK-NEXT:/*
+//CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed,
+//CHECK-NEXT:because the function call is redundant in DPC++.
+//CHECK-NEXT:*/
+  curandGenerator_t rng;
+  curandCreateGenerator(&rng, CURAND_RNG_QUASI_SCRAMBLED_SOBOL32);
   curandSetQuasiRandomGeneratorDimensions(rng, 1243);
 }

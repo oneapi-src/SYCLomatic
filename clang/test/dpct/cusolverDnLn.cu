@@ -70,19 +70,19 @@ int main(int argc, char *argv[])
     int devIpiv = 0;
 
     //CHECK: /*
-    //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnSpotrf_bufferSize was replaced with 0, because Function call is redundant in DPC++.
+    //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnSpotrf_bufferSize was replaced with 0, because this call is redundant in DPC++.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = 0;
     //CHECK-NEXT: /*
-    //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnDpotrf_bufferSize was replaced with 0, because Function call is redundant in DPC++.
+    //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnDpotrf_bufferSize was replaced with 0, because this call is redundant in DPC++.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = 0;
     //CHECK-NEXT: /*
-    //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnCpotrf_bufferSize was replaced with 0, because Function call is redundant in DPC++.
+    //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnCpotrf_bufferSize was replaced with 0, because this call is redundant in DPC++.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = 0;
     //CHECK-NEXT: /*
-    //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnZpotrf_bufferSize was replaced with 0, because Function call is redundant in DPC++.
+    //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnZpotrf_bufferSize was replaced with 0, because this call is redundant in DPC++.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = 0;
     status = cusolverDnSpotrf_bufferSize(*cusolverH, uplo, n, &A_f, lda, &Lwork);
@@ -91,19 +91,19 @@ int main(int argc, char *argv[])
     status = cusolverDnZpotrf_bufferSize(*cusolverH, uplo, n, &A_z, lda, &Lwork);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnSgetrf_bufferSize was replaced with 0, because Function call is redundant in DPC++.
+    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnSgetrf_bufferSize was replaced with 0, because this call is redundant in DPC++.
     // CHECK-NEXT: */
     // CHECK-NEXT: status = 0;
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnDgetrf_bufferSize was replaced with 0, because Function call is redundant in DPC++.
+    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnDgetrf_bufferSize was replaced with 0, because this call is redundant in DPC++.
     // CHECK-NEXT: */
     // CHECK-NEXT: status = 0;
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnCgetrf_bufferSize was replaced with 0, because Function call is redundant in DPC++.
+    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnCgetrf_bufferSize was replaced with 0, because this call is redundant in DPC++.
     // CHECK-NEXT: */
     // CHECK-NEXT: status = 0;
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnZgetrf_bufferSize was replaced with 0, because Function call is redundant in DPC++.
+    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusolverDnZgetrf_bufferSize was replaced with 0, because this call is redundant in DPC++.
     // CHECK-NEXT: */
     // CHECK-NEXT: status = 0;
     status = cusolverDnSgetrf_bufferSize(*cusolverH, m, n, &A_f, lda, &Lwork);

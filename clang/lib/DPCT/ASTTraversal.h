@@ -632,13 +632,11 @@ public:
   std::vector<std::string> getParamsAsStrs(const CallExpr *CE,
                                            const ASTContext &Context);
   const clang::VarDecl *getAncestralVarDecl(const clang::CallExpr *CE);
-  void processParamIntCastToBLASEnum(const Expr *E, const CStyleCastExpr *CSCE,
-                                     const ASTContext &Context,
-                                     const int DistinctionID,
-                                     const std::string IndentStr,
-                                     const std::vector<int> &OperationIndexInfo,
-                                     const int FillModeIndexInfo,
-                                     std::string &PrefixInsertStr);
+  void processParamIntCastToBLASEnum(
+      const Expr *E, const CStyleCastExpr *CSCE, const ASTContext &Context,
+      const int DistinctionID, const std::string IndentStr,
+      const std::vector<int> &OperationIndexInfo, const int FillModeIndexInfo,
+      std::string &PrefixInsertStr, bool IsMacroArg);
   void processTrmmCall(const CallExpr *CE, std::string &PrefixInsertStr,
                        const std::string IndentStr);
   void processTrmmParams(const CallExpr *CE, std::string &PrefixInsertStr,

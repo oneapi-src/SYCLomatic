@@ -23,10 +23,10 @@ int main() {
   // CHECK: int status;
   // CHECK-NEXT: sycl::queue handle;
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasCreate was removed, because Function call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasCreate was removed, because this call is redundant in DPC++.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasCreate was replaced with 0, because Function call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasCreate was replaced with 0, because this call is redundant in DPC++.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = 0;
   // CHECK-NEXT: if (status != 0) {
@@ -116,11 +116,11 @@ int main() {
   foo(bar(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)));
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasDestroy was replaced with 0, because Function call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasDestroy was replaced with 0, because this call is redundant in DPC++.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = 0;
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasDestroy was removed, because Function call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasDestroy was removed, because this call is redundant in DPC++.
   // CHECK-NEXT: */
   // CHECK-NEXT: return 0;
   status = cublasDestroy(handle);

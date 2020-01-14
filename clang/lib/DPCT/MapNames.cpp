@@ -2479,7 +2479,7 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
 // Random Engine Type mapping
 const MapNames::MapTy MapNames::RandomEngineTypeMap{
     {"CURAND_RNG_PSEUDO_DEFAULT", "mkl::rng::philox4x32x10"},
-    {"CURAND_RNG_PSEUDO_XORWOW", "<NOTSUPPORT>"},
+    {"CURAND_RNG_PSEUDO_XORWOW", "mkl::rng::philox4x32x10"},
     {"CURAND_RNG_PSEUDO_MRG32K3A", "mkl::rng::mrg32k3a"},
     {"CURAND_RNG_PSEUDO_MTGP32", "mkl::rng::mt2203"},
     {"CURAND_RNG_PSEUDO_MT19937", "mkl::rng::mt19937"},
@@ -2487,8 +2487,8 @@ const MapNames::MapTy MapNames::RandomEngineTypeMap{
     {"CURAND_RNG_QUASI_DEFAULT", "mkl::rng::sobol"},
     {"CURAND_RNG_QUASI_SOBOL32", "mkl::rng::sobol"},
     {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL32", "mkl::rng::sobol"},
-    {"CURAND_RNG_QUASI_SOBOL64", "<NOTSUPPORT>"},
-    {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL64", "<NOTSUPPORT>"},
+    {"CURAND_RNG_QUASI_SOBOL64", "mkl::rng::sobol"},
+    {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL64", "mkl::rng::sobol"},
 };
 
 const std::map<std::string, MapNames::RandomGenerateFuncReplInfo>

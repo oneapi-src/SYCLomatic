@@ -909,27 +909,33 @@ void SizeInfo::setTemplateList(
 }
 
 void RandomEngineInfo::buildInfo() {
-  // replace type
-  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
-      DeclFilePath, TypeBeginOffest, TypeLength, TypeReplacement, nullptr));
   // insert engine arguments
   if (IsClassMember) {
+    // replace type
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(DeclFilePath, TypeBeginOffest,
+                                         TypeLength, TypeReplacement + "*",
+                                         nullptr));
     if (IsQuasiEngine) {
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(
               CreateCallFilePath, CreateAPIBegin, CreateAPILength,
-              DeclaratorDeclName + " = " + TypeReplacement +
+              DeclaratorDeclName + " = new " + TypeReplacement +
                   "(dpct::get_default_queue_wait(), " + DimExpr + ")",
               nullptr));
     } else {
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(
               CreateCallFilePath, CreateAPIBegin, CreateAPILength,
-              DeclaratorDeclName + " = " + TypeReplacement +
+              DeclaratorDeclName + " = new " + TypeReplacement +
                   "(dpct::get_default_queue_wait(), " + SeedExpr + ")",
               nullptr));
     }
   } else {
+    // replace type
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(DeclFilePath, TypeBeginOffest,
+                                         TypeLength, TypeReplacement, nullptr));
     if (IsQuasiEngine) {
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(

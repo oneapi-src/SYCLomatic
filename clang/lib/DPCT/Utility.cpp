@@ -916,6 +916,29 @@ bool isInSameLine(clang::SourceLocation A, clang::SourceLocation B,
     return false;
 }
 
+/// Get the source range of a function call when it is in a function-like macro:
+/// #define FUNCTION_LIKE_MACRO(X) fun(X)
+/// FUNCTION_LIKE_MACRO(anAPICall());
+///                     |         |
+///              range begin   range end
+/// \param CE A fucntion call in a function-like macro.
+/// \return The source range of \p CE.
+SourceRange getFunctionRange(const CallExpr *CE) {
+  SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto Begin = CE->getBeginLoc();
+  Begin = SM.getImmediateSpellingLoc(Begin);
+  Begin = SM.getExpansionLoc(Begin);
+
+  auto End = CE->getEndLoc();
+  End = SM.getImmediateSpellingLoc(End);
+  End = SM.getExpansionLoc(End);
+
+  End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+      SM.getExpansionLoc(End), SM,
+      dpct::DpctGlobalInfo::getContext().getLangOpts()));
+  return SourceRange(Begin, End);
+}
+
 /// Calculate the ranges of the input \p Repls which has NOT set NotFormatFlags.
 /// \param Repls Replacements with format flags.
 /// \return The result ranges.

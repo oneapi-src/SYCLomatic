@@ -80,3 +80,7 @@ DEF_WARNING(IPC_NOT_SUPPORTED, 1030, "DPC++ currently does not support inter-pro
 DEF_COMMENT(IPC_NOT_SUPPORTED, 1030, "DPC++ currently does not support inter-process communication (IPC) operations. You may need to rewrite the code.")
 DEF_WARNING(EXPLICIT_PEER_ACCESS, 1031, "DPC++ currently does not support memory access across peer devices. The output parameter(s) are set to 0.")
 DEF_COMMENT(EXPLICIT_PEER_ACCESS, 1031, "DPC++ currently does not support memory access across peer devices. The output parameter(s) are set to 0.")
+DEF_WARNING(DIFFERENT_GENERATOR, 1032, "Different generator is used, you may need to adjust the code.")
+DEF_COMMENT(DIFFERENT_GENERATOR, 1032, "Different generator is used, you may need to adjust the code.")
+DEF_WARNING(DIFFERENT_BASIC_GENERATOR, 1033, "Migrated code uses a basic Sobol generator. Initialize mkl::rng::sobol generator with user-defined direction numbers to use it as Scrambled Sobol generator.")
+DEF_COMMENT(DIFFERENT_BASIC_GENERATOR, 1033, "Migrated code uses a basic Sobol generator. Initialize mkl::rng::sobol generator with user-defined direction numbers to use it as Scrambled Sobol generator.")

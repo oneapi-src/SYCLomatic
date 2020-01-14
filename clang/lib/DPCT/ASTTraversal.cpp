@@ -2568,14 +2568,18 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   SourceLocation FuncNameBegin(CE->getBeginLoc());
   SourceLocation FuncCallEnd(CE->getEndLoc());
-  if (FuncNameBegin.isMacroID())
-    FuncNameBegin = SM.getExpansionLoc(FuncNameBegin);
-  if (FuncCallEnd.isMacroID())
-    FuncCallEnd = SM.getExpansionLoc(FuncCallEnd);
+  // TODO: For case like:
+  //  #define CHECK_STATUS(x) fun(c)
+  //  CHECK_STATUS(anAPICall());
+  // Below code can distinguish this kind of function like macro, need refine to
+  // cover more cases.
+  bool IsMacroArg = SM.isMacroArgExpansion(CE->getBeginLoc()) &&
+                    SM.isMacroArgExpansion(CE->getEndLoc());
 
   auto SR = getScopeInsertRange(CE, FuncNameBegin, FuncCallEnd);
   SourceLocation PrefixInsertLoc = SR.getBegin(), SuffixInsertLoc = SR.getEnd();
   bool IsInCondition = isConditionOfFlowControl(CE);
+
   if (IsInCondition) {
     PrefixInsertLoc = FuncNameBegin;
     SuffixInsertLoc =
@@ -2583,21 +2587,25 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             .getLocWithOffset(Lexer::MeasureTokenLength(
                 SM.getExpansionLoc(FuncCallEnd), SM,
                 dpct::DpctGlobalInfo::getContext().getLangOpts()));
+  } else if (IsMacroArg) {
+    IsInCondition = true;
+    SourceRange SR = getFunctionRange(CE);
+    PrefixInsertLoc = SR.getBegin();
+    SuffixInsertLoc = SR.getEnd();
   }
 
   std::string IndentStr = getIndent(PrefixInsertLoc, SM);
   std::string PrefixInsertStr, SuffixInsertStr;
 
   std::string Msg = "the function call is redundant in DPC++.";
-  if (FuncName == "curandDestroyGenerator" ||
-      FuncName == "curandSetPseudoRandomGeneratorSeed" ||
+  if (FuncName == "curandSetPseudoRandomGeneratorSeed" ||
       FuncName == "curandSetQuasiRandomGeneratorDimensions") {
     if (IsAssigned) {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, FuncName,
+      report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, FuncName,
              Msg);
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, "0"));
     } else {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, FuncName,
+      report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED, FuncName,
              Msg);
       emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, ""));
     }
@@ -2613,20 +2621,26 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     std::string EnumStr =
         getStmtSpelling(CE->getArg(1), DpctGlobalInfo::getContext());
     if (MapNames::RandomEngineTypeMap.find(EnumStr) ==
-            MapNames::RandomEngineTypeMap.end() ||
-        MapNames::RandomEngineTypeMap.find(EnumStr)->second == "<NOTSUPPORT>") {
-      report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETER, FuncName,
-             "the parameter " + EnumStr + " is unsupported");
+            MapNames::RandomEngineTypeMap.end()) {
+      report(PrefixInsertLoc, Diagnostics::NOT_SUPPORTED_PARAMETER, FuncName,
+             "parameter " + EnumStr + " is unsupported");
       return;
+    }
+    if (EnumStr == "CURAND_RNG_PSEUDO_XORWOW" ||
+        EnumStr == "CURAND_RNG_QUASI_SOBOL64" ||
+        EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL64") {
+      report(PrefixInsertLoc, Diagnostics::DIFFERENT_GENERATOR);
+    } else if (EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL32"){
+      report(PrefixInsertLoc, Diagnostics::DIFFERENT_BASIC_GENERATOR);
     }
 
     if (!REInfo->isClassMember()) {
       if (IsAssigned) {
-        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, FuncName,
+        report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, FuncName,
                Msg);
         emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, "0"));
       } else {
-        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, FuncName,
+        report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED, FuncName,
                Msg);
         emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, ""));
       }
@@ -2638,7 +2652,9 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
     if (EnumStr == "CURAND_RNG_QUASI_DEFAULT" ||
         EnumStr == "CURAND_RNG_QUASI_SOBOL32" ||
-        EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL32")
+        EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL32" ||
+        EnumStr == "CURAND_RNG_QUASI_SOBOL64" ||
+        EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL64")
       REInfo->setQuasiEngineFlag();
 
     auto VD = REInfo->getDeclaratorDecl();
@@ -2667,6 +2683,31 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
     REInfo->setDeclFilePath(SM.getFilename(VD->getBeginLoc()).str());
     REInfo->setCreateCallFilePath(SM.getFilename(FuncNameBegin).str());
+  } else if (FuncName == "curandDestroyGenerator") {
+    auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
+    if (!REInfo) {
+      DpctGlobalInfo::getInstance().insertRandomEngine(CE->getArg(0));
+      REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
+    }
+    if (REInfo->isClassMember()) {
+      if (IsAssigned) {
+        report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP);
+        insertAroundStmt(CE, "(", ", 0)");
+      }
+      emplaceTransformation(
+          new ReplaceStmt(CE, false, FuncName, false,
+                          "delete " + REInfo->getDeclaratorDeclName()));
+    } else {
+      if (IsAssigned) {
+        report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, FuncName,
+               Msg);
+        emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, "0"));
+      } else {
+        report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED, FuncName,
+               Msg);
+        emplaceTransformation(new ReplaceStmt(CE, false, FuncName, false, ""));
+      }
+    }
   } else if (FuncName == "curandSetPseudoRandomGeneratorSeed") {
     auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
     if (!REInfo) {
@@ -2721,10 +2762,17 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     PrefixInsertStr = BufferDecl + IndentStr + DistributeDecl + getNL();
     ExprAnalysis EA;
     EA.analyze(CE->getArg(2));
-    std::string ReplStr = "mkl::rng::generate(distr_ct1, " +
-                          getStmtSpelling(CE->getArg(0), *(Result.Context)) +
-                          ", " + EA.getReplacedString() + ", " + BufferName +
-                          ")";
+    std::string ReplStr;
+    auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
+    if (REInfo && REInfo->isClassMember()) {
+      ReplStr = "mkl::rng::generate(distr_ct1, *" +
+                getStmtSpelling(CE->getArg(0), *(Result.Context)) + ", " +
+                EA.getReplacedString() + ", " + BufferName + ")";
+    } else {
+      ReplStr = "mkl::rng::generate(distr_ct1, " +
+                getStmtSpelling(CE->getArg(0), *(Result.Context)) + ", " +
+                EA.getReplacedString() + ", " + BufferName + ")";
+    }
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
     if (IsInCondition) {
       if (IsAssigned) {
@@ -2937,10 +2985,23 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   // There are some macroes like "#define API API_v2"
   // so the function names we match should have the
   // suffix "_v2".
-  if (FuncNameBegin.isMacroID())
+  bool IsMacroArg = SM->isMacroArgExpansion(CE->getBeginLoc()) &&
+                    SM->isMacroArgExpansion(CE->getEndLoc());
+
+  if (FuncNameBegin.isMacroID() && IsMacroArg) {
+    FuncNameBegin = SM->getImmediateSpellingLoc(FuncNameBegin);
     FuncNameBegin = SM->getExpansionLoc(FuncNameBegin);
-  if (FuncCallEnd.isMacroID())
+  } else if (FuncNameBegin.isMacroID()) {
+    FuncNameBegin = SM->getExpansionLoc(FuncNameBegin);
+  }
+
+  if (FuncCallEnd.isMacroID() && IsMacroArg) {
+    FuncCallEnd = SM->getImmediateSpellingLoc(FuncCallEnd);
     FuncCallEnd = SM->getExpansionLoc(FuncCallEnd);
+  } else if (FuncCallEnd.isMacroID()) {
+    FuncCallEnd = SM->getExpansionLoc(FuncCallEnd);
+  }
+
   Token Tok;
   Lexer::getRawToken(FuncNameBegin, Tok, *SM,
                      DpctGlobalInfo::getContext().getLangOpts());
@@ -2952,12 +3013,15 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   bool IsInCondition = isConditionOfFlowControl(CE);
   if (IsInCondition) {
     StmtBegin = FuncNameBegin;
-    StmtEndAfterSemi =
-        SM->getExpansionLoc(FuncCallEnd)
-            .getLocWithOffset(Lexer::MeasureTokenLength(
-                SM->getExpansionLoc(FuncCallEnd), *SM,
-                dpct::DpctGlobalInfo::getContext().getLangOpts()));
+    StmtEndAfterSemi = FuncCallEnd.getLocWithOffset(Lexer::MeasureTokenLength(
+        FuncCallEnd, *SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+  } else if (IsMacroArg) {
+    IsInCondition = true;
+    SourceRange SR = getFunctionRange(CE);
+    StmtBegin = SR.getBegin();
+    StmtEndAfterSemi = SR.getEnd();
   }
+
   std::string IndentStr = getIndent(StmtBegin, *SM).str();
   std::string PrefixInsertStr, SuffixInsertStr;
   // TODO: Need to process the situation when scalar pointers (alpha, beta)
@@ -3025,7 +3089,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         processParamIntCastToBLASEnum(CE->getArg(i), CSCE, *(Result.Context), i,
                                       IndentStr, ReplInfo.OperationIndexInfo,
                                       ReplInfo.FillModeIndexInfo,
-                                      PrefixInsertStr);
+                                      PrefixInsertStr, IsMacroArg);
       } else if ((FuncName == "cublasSsyrkx" || FuncName == "cublasDsyrkx") &&
                  isReplIndex(i, ReplInfo.OperationIndexInfo, IndexTemp)) {
         std::string TransparamName = "transpose_ct" + std::to_string(i);
@@ -3052,7 +3116,9 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
     if (FuncName == "cublasSsyrkx" || FuncName == "cublasDsyrkx") {
       SourceLocation InsertSL = CE->getArg(3)->getBeginLoc();
-      if (InsertSL.isMacroID())
+      if (IsMacroArg)
+        InsertSL = SM->getExpansionLoc(SM->getImmediateSpellingLoc(InsertSL));
+      else if (InsertSL.isMacroID())
         InsertSL = SM->getExpansionLoc(InsertSL);
       const CStyleCastExpr *CSCE = nullptr;
       if ((CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(2)))) {
@@ -3169,7 +3235,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         processParamIntCastToBLASEnum(CE->getArg(i), CSCE, *(Result.Context), i,
                                       IndentStr, ReplInfo.OperationIndexInfo,
                                       ReplInfo.FillModeIndexInfo,
-                                      PrefixInsertStr);
+                                      PrefixInsertStr, IsMacroArg);
       }
     }
     if (FuncName == "cublasCtrmm_v2" || FuncName == "cublasZtrmm_v2") {
@@ -3431,7 +3497,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         processParamIntCastToBLASEnum(CE->getArg(i), CSCE, *(Result.Context), i,
                                       IndentStr, ReplInfo.OperationIndexInfo,
                                       ReplInfo.FillModeIndexInfo,
-                                      PrefixInsertStr);
+                                      PrefixInsertStr, IsMacroArg);
       }
     }
     emplaceTransformation(new ReplaceText(
@@ -3464,36 +3530,68 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
   } else if (FuncName == "cublasCreate_v2" || FuncName == "cublasDestroy_v2") {
     auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
-    if (IsAssigned) {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0,
-             MapNames::ITFName.at(FuncName), Msg->second);
-      emplaceTransformation(
-          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
-                          /*IsProcessMacro*/ true, "0"));
+    SourceRange SR = getFunctionRange(CE);
+    auto Len = SM->getDecomposedLoc(SR.getEnd()).second -
+               SM->getDecomposedLoc(SR.getBegin()).second;
+    if (SM->isMacroArgExpansion(CE->getBeginLoc()) &&
+        SM->isMacroArgExpansion(CE->getEndLoc())) {
+      if (IsAssigned) {
+        report(SR.getBegin(), Diagnostics::FUNC_CALL_REMOVED_0,
+               MapNames::ITFName.at(FuncName), Msg->second);
+        emplaceTransformation(
+            new ReplaceText(SR.getBegin(), Len, "0", false, FuncName));
+      } else {
+        report(SR.getBegin(), Diagnostics::FUNC_CALL_REMOVED,
+               MapNames::ITFName.at(FuncName), Msg->second);
+        emplaceTransformation(
+            new ReplaceText(SR.getBegin(), Len, "", false, FuncName));
+      }
     } else {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED,
-             MapNames::ITFName.at(FuncName), Msg->second);
-      emplaceTransformation(
-          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
-                          /*IsProcessMacro*/ true, ""));
+      if (IsAssigned) {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0,
+               MapNames::ITFName.at(FuncName), Msg->second);
+        emplaceTransformation(
+            new ReplaceStmt(CE, false, FuncName, true, "0"));
+      } else {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED,
+               MapNames::ITFName.at(FuncName), Msg->second);
+        emplaceTransformation(
+            new ReplaceStmt(CE, false, FuncName, true, ""));
+      }
     }
   } else if (FuncName == "cublasInit" || FuncName == "cublasShutdown" ||
              FuncName == "cublasGetError") {
     // Remove these three function calls.
     // TODO: migrate functions when they are in template
     auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
-    if (IsAssigned) {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0,
-             MapNames::ITFName.at(FuncName), Msg->second);
-      emplaceTransformation(
-          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
-                          /*IsProcessMacro*/ false, "0"));
+    SourceRange SR = getFunctionRange(CE);
+    auto Len = SM->getDecomposedLoc(SR.getEnd()).second -
+               SM->getDecomposedLoc(SR.getBegin()).second;
+    if (SM->isMacroArgExpansion(CE->getBeginLoc()) &&
+        SM->isMacroArgExpansion(CE->getEndLoc())) {
+      if (IsAssigned) {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0,
+               MapNames::ITFName.at(FuncName), Msg->second);
+        emplaceTransformation(
+            new ReplaceText(SR.getBegin(), Len, "0", false, FuncName));
+      } else {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED,
+               MapNames::ITFName.at(FuncName), Msg->second);
+        emplaceTransformation(
+            new ReplaceText(SR.getBegin(), Len, "0", false, FuncName));
+      }
     } else {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED,
-             MapNames::ITFName.at(FuncName), Msg->second);
-      emplaceTransformation(
-          new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
-                          /*IsProcessMacro*/ false, ""));
+      if (IsAssigned) {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0,
+               MapNames::ITFName.at(FuncName), Msg->second);
+        emplaceTransformation(
+            new ReplaceStmt(CE, false, FuncName, false, "0"));
+      } else {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED,
+               MapNames::ITFName.at(FuncName), Msg->second);
+        emplaceTransformation(
+            new ReplaceStmt(CE, false, FuncName, false, ""));
+      }
     }
   } else if (FuncName == "cublasSetVector" || FuncName == "cublasGetVector" ||
              FuncName == "cublasSetVectorAsync" ||
@@ -3723,13 +3821,17 @@ void BLASFunctionCallRule::processParamIntCastToBLASEnum(
     const Expr *E, const CStyleCastExpr *CSCE, const ASTContext &Context,
     const int DistinctionID, const std::string IndentStr,
     const std::vector<int> &OperationIndexInfo, const int FillModeIndexInfo,
-    std::string &PrefixInsertStr) {
+    std::string &PrefixInsertStr, bool IsMacroArg) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   const Expr *SubExpr = CSCE->getSubExpr();
   std::string SubExprStr = getStmtSpelling(SubExpr, Context);
   SourceLocation BeginLoc = E->getBeginLoc();
   SourceLocation EndLoc = E->getEndLoc();
-  if (E->getBeginLoc().isMacroID()) {
+
+  if (IsMacroArg) {
+    BeginLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(BeginLoc));
+    EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(EndLoc));
+  } else if (E->getBeginLoc().isMacroID()) {
     BeginLoc = SM.getExpansionLoc(BeginLoc);
     EndLoc = SM.getExpansionLoc(EndLoc);
   }
@@ -3779,14 +3881,15 @@ void BLASFunctionCallRule::processTrmmCall(const CallExpr *CE,
   auto &Context = dpct::DpctGlobalInfo::getContext();
   // remove parameters ptrB and ldb
   Optional<Token> TokSharedPtr;
-  TokSharedPtr =
-      Lexer::findNextToken(CE->getArg(11)->getEndLoc(), SM, LangOptions());
+  TokSharedPtr = Lexer::findNextToken(
+      SM.getSpellingLoc(CE->getArg(11)->getEndLoc()), SM, LangOptions());
   Token CommaTok = TokSharedPtr.getValue();
   auto CommaEnd = CommaTok.getEndLoc();
-  auto Len = SM.getCharacterData(CommaEnd) -
-             SM.getCharacterData(CE->getArg(10)->getBeginLoc());
-  emplaceTransformation(
-      new ReplaceText(CE->getArg(10)->getBeginLoc(), Len, ""));
+  auto Len =
+      SM.getCharacterData(CommaEnd) -
+      SM.getCharacterData(SM.getSpellingLoc(CE->getArg(10)->getBeginLoc()));
+  emplaceTransformation(new ReplaceText(
+      SM.getSpellingLoc(CE->getArg(10)->getBeginLoc()), Len, ""));
   // decl fout temp vars for ldb, ldc, n and m
   PrefixInsertStr =
       PrefixInsertStr + IndentStr +

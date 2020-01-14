@@ -607,7 +607,7 @@ void foo6(){
 // CHECK-NEXT:   if(printf("a")){}
 // CHECK-NEXT:   sycl::event start;
 // CHECK-NEXT:   /*
-// CHECK-NEXT:   DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0, because Function
+// CHECK-NEXT:   DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0, because this
 // CHECK-NEXT:   call is redundant in DPC++.
 // CHECK-NEXT:   */
 // CHECK-NEXT:   int b = 0;

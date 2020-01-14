@@ -2196,6 +2196,7 @@ public:
     return IsClassMember;
   }
   void setDeclaratorDeclName() { DeclaratorDeclName = DD->getNameAsString(); }
+  std::string getDeclaratorDeclName() { return DeclaratorDeclName; }
 
 private:
   std::string SeedExpr;     // Replaced Seed variable string
