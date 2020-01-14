@@ -50,24 +50,24 @@ int main(){
     // CHECK: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: err = (dpct::get_device_manager().get_device(deviceID).default_queue().prefetch(a,100), 0);
+    // CHECK-NEXT: err = (dpct::device_manager::get_instance().get_device(deviceID).default_queue().prefetch(a,100), 0);
     err = cudaMemPrefetchAsync(a, 100, deviceID);
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: checkCudaErrors((dpct::get_device_manager().get_device(deviceID).default_queue().prefetch(a,100), 0));
+    // CHECK-NEXT: checkCudaErrors((dpct::device_manager::get_instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
     checkCudaErrors(cudaMemPrefetchAsync(a, 100, deviceID, NULL));
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: checkCudaErrors((dpct::get_device_manager().get_device(deviceID).default_queue().prefetch(a,100), 0));
+    // CHECK-NEXT: checkCudaErrors((dpct::device_manager::get_instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
     checkCudaErrors(cudaMemPrefetchAsync(a, 100, deviceID, 0));
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: checkCudaErrors((dpct::get_device_manager().get_device(deviceID).default_queue().prefetch(a,100), 0));
+    // CHECK-NEXT: checkCudaErrors((dpct::device_manager::get_instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
     checkCudaErrors(cudaMemPrefetchAsync(a, 100, deviceID, nullptr));
 }

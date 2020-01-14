@@ -4232,14 +4232,14 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new InsertBeforeStmt(CE, Prefix + ResultVarName + " = "));
     emplaceTransformation(new ReplaceStmt(
-        CE, "dpct::get_device_manager().device_count()" + Suffix));
+        CE, "dpct::device_manager::get_instance().device_count()" + Suffix));
   } else if (FuncName == "cudaGetDeviceProperties") {
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
     std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
     emplaceTransformation(new ReplaceStmt(
-        CE->getCallee(), Prefix + "dpct::get_device_manager().get_device"));
+        CE->getCallee(), Prefix + "dpct::device_manager::get_instance().get_device"));
     emplaceTransformation(new RemoveArg(CE, 0));
     emplaceTransformation(new InsertAfterStmt(
         CE, ".get_device_info(" + ResultVarName + ")" + Suffix));
@@ -4248,14 +4248,14 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
     emplaceTransformation(new ReplaceStmt(
-        CE, Prefix + "dpct::get_device_manager().current_device().reset()" +
+        CE, Prefix + "dpct::device_manager::get_instance().current_device().reset()" +
                 Suffix));
   } else if (FuncName == "cudaSetDevice") {
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
     emplaceTransformation(new ReplaceStmt(
-        CE->getCallee(), Prefix + "dpct::get_device_manager().select_device"));
+        CE->getCallee(), Prefix + "dpct::device_manager::get_instance().select_device"));
     if (IsAssigned)
       emplaceTransformation(new InsertAfterStmt(CE, ", 0)"));
 
@@ -4274,7 +4274,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     emplaceTransformation(new ReplaceStmt(
-        CE->getCallee(), "dpct::get_device_manager().get_device"));
+        CE->getCallee(), "dpct::device_manager::get_instance().get_device"));
     emplaceTransformation(new RemoveArg(CE, 0));
     emplaceTransformation(new RemoveArg(CE, 1));
     emplaceTransformation(new InsertAfterStmt(CE, "." + Search->second + "()"));
@@ -4288,10 +4288,10 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     emplaceTransformation(
-        new ReplaceStmt(CE, "dpct::get_device_manager().current_device_id()"));
+        new ReplaceStmt(CE, "dpct::device_manager::get_instance().current_device_id()"));
   } else if (FuncName == "cudaDeviceSynchronize" ||
              FuncName == "cudaThreadSynchronize") {
-    std::string ReplStr = "dpct::get_device_manager()."
+    std::string ReplStr = "dpct::device_manager::get_instance()."
                           "current_device().queues_wait_"
                           "and_throw()";
     if (IsAssigned) {
@@ -5860,7 +5860,7 @@ void MemoryMigrationRule::prefetchMigration(
     auto StmtStrArg3 = EA.getReplacedString();
     if (StmtStrArg3 == "0" || StmtStrArg3 == "NULL" ||
         StmtStrArg3 == "nullptr" || StmtStrArg3 == "") {
-      Replacement = "dpct::get_device_manager().get_device(" + StmtStrArg2 +
+      Replacement = "dpct::device_manager::get_instance().get_device(" + StmtStrArg2 +
                     ").default_queue().prefetch(" + StmtStrArg0 + "," +
                     StmtStrArg1 + ")";
     } else {
