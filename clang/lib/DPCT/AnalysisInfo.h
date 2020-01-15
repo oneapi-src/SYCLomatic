@@ -1724,29 +1724,8 @@ class KernelCallExpr : public CallFunctionExpr {
         TypeString = DpctGlobalInfo::getReplacedTypeName(PointerType);
       }
 
-      if (isRedeclareRequired || isPointer) {
-        SourceManager &SM = DpctGlobalInfo::getSourceManager();
-        Arg = Arg->IgnoreCasts();
-        auto ExprEndLoc = Lexer::getLocForEndOfToken(
-            Arg->getEndLoc(), 0, SM,
-            DpctGlobalInfo::getContext().getLangOpts());
-        auto TokenBegin = Lexer::GetBeginningOfToken(
-            Arg->getBeginLoc(), SM, DpctGlobalInfo::getContext().getLangOpts());
-        llvm::raw_string_ostream OS(IdString);
-        Token Tok;
-        while (SM.getCharacterData(TokenBegin) <=
-               SM.getCharacterData(ExprEndLoc)) {
-          if (Lexer::getRawToken(TokenBegin, Tok, SM,
-                                 DpctGlobalInfo::getContext().getLangOpts(),
-                                 true)) {
-            break;
-          }
-          if (Tok.isAnyIdentifier()) {
-            OS << Tok.getRawIdentifier() << "_";
-          }
-          TokenBegin = Tok.getEndLoc();
-        }
-      }
+      if (isRedeclareRequired || isPointer)
+        IdString = getTempNameForExpr(Arg);
     }
 
     ArgInfo(std::shared_ptr<TextureObjectInfo> Obj) {

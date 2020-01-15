@@ -138,6 +138,8 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   auto LastTokenLength =
       Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
 
+  ExprBeginLoc = BeginLoc;
+  ExprEndLoc = EndLoc;
   auto DecompLoc = SM.getDecomposedLoc(BeginLoc);
   FileId = DecompLoc.first;
   // The offset of Expr used in ExprAnalysis is related to SrcBegin not
@@ -173,7 +175,7 @@ void StringReplacements::replaceString() {
 ExprAnalysis::ExprAnalysis(const Expr *Expression)
     : Context(DpctGlobalInfo::getContext()),
       SM(DpctGlobalInfo::getSourceManager()) {
-  initExpression(Expression);
+  analyze(Expression);
 }
 
 void ExprAnalysis::dispatch(const Stmt *Expression) {

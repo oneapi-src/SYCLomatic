@@ -4519,7 +4519,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
   // otherwise, just use it.
   static std::set<std::pair<const CompoundStmt *, const std::string>> DupFilter;
   const auto *CS = findImmediateBlock(CE);
-  auto StmtStr = getStmtSpelling(CE->getArg(0), *Result.Context);
+  auto StmtStr = getTempNameForExpr(CE->getArg(0), true, false);
   auto Pair = std::make_pair(CS, StmtStr);
 
   if (DupFilter.find(Pair) == DupFilter.end()) {
@@ -4534,7 +4534,12 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
     emplaceTransformation(new ReplaceStmt(CE, false, Name, "0"));
     report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_ZERO);
     auto OuterStmt = findNearestNonExprNonDeclAncestorStmt(CE);
-    Repl << ", ";
+    Repl << "; ";
+    auto IndentLoc = CE->getBeginLoc();
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    if (IndentLoc.isMacroID())
+      IndentLoc = SM.getExpansionLoc(IndentLoc);
+    Repl << getNL() << getIndent(IndentLoc, SM).str();
     emplaceTransformation(new InsertBeforeStmt(OuterStmt, std::move(Repl.str()),
                                                /*PairID*/ 0,
                                                /*DoMacroExpansion*/ true));
@@ -4548,8 +4553,8 @@ void EventAPICallRule::handleEventElapsedTime(
     const CallExpr *CE, const MatchFinder::MatchResult &Result,
     bool IsAssigned) {
   auto StmtStrArg0 = getStmtSpelling(CE->getArg(0), *Result.Context);
-  auto StmtStrArg1 = getStmtSpelling(CE->getArg(1), *Result.Context);
-  auto StmtStrArg2 = getStmtSpelling(CE->getArg(2), *Result.Context);
+  auto StmtStrArg1 = getTempNameForExpr(CE->getArg(1), true, false);
+  auto StmtStrArg2 = getTempNameForExpr(CE->getArg(2), true, false);
   std::ostringstream Repl;
   std::string Assginee = "*(" + StmtStrArg0 + ")";
   if (auto UO = dyn_cast<UnaryOperator>(CE->getArg(0))) {
@@ -6176,7 +6181,6 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
   if (auto CE = getNodeAsType<CallExpr>(Result, "math")) {
     ExprAnalysis EA(CE);
-    EA.analyze();
     emplaceTransformation(EA.getReplacement());
   }
 }
@@ -6203,7 +6207,6 @@ void WarpFunctionsRule::run(const MatchFinder::MatchResult &Result) {
 
   if (auto CE = getNodeAsType<CallExpr>(Result, "warp")) {
     ExprAnalysis EA(CE);
-    EA.analyze();
     emplaceTransformation(EA.getReplacement());
   }
 }

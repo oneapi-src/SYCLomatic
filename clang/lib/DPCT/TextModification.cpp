@@ -506,7 +506,6 @@ const CXXConstructExpr *ReplaceDim3Ctor::getConstructExpr(const Expr *E) {
 std::string
 ReplaceDim3Ctor::getSyclRangeCtor(const CXXConstructExpr *Ctor) const {
   ExprAnalysis Analysis(Ctor);
-  Analysis.analyze();
   return Analysis.getReplacedString();
 }
 

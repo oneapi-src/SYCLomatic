@@ -13,6 +13,7 @@
 
 #include "AnalysisInfo.h"
 #include "Debug.h"
+#include "ExprAnalysis.h"
 #include "SaveNewFiles.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTTypeTraits.h"
@@ -921,4 +922,39 @@ bool isAssigned(const Stmt *S) {
   auto P = getParentStmt(S);
   return !P || (!dyn_cast<CompoundStmt>(P) && !dyn_cast<ForStmt>(P) &&
       !dyn_cast<WhileStmt>(P) && !dyn_cast<DoStmt>(P) && !dyn_cast<IfStmt>(P));
+}
+
+/// Compute a temporary variable name for \param E
+/// \param E The Expr based on which the temp name is computed
+/// \param KeepLastUnderline A boolean value indicating if the last underline
+/// is to be perserved or not
+/// \return A temporary variable name
+std::string getTempNameForExpr(const Expr *E, bool HandleLiteral,
+                               bool KeepLastUnderline) {
+  SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
+  E = E->IgnoreCasts();
+  dpct::ExprAnalysis EA(E);
+  auto TokenBegin = EA.getExprBeginSrcLoc();
+  auto ExprEndLoc = EA.getExprEndSrcLoc();
+  std::string IdString;
+  llvm::raw_string_ostream OS(IdString);
+  Token Tok;
+  while (SM.getCharacterData(TokenBegin) <=
+         SM.getCharacterData(ExprEndLoc)) {
+    if (Lexer::getRawToken(TokenBegin, Tok, SM,
+                           dpct::DpctGlobalInfo::getContext().getLangOpts(),
+                           true)) {
+      break;
+    }
+    if (Tok.isAnyIdentifier()) {
+      OS << Tok.getRawIdentifier() << "_";
+    } else if (HandleLiteral && Tok.isLiteral()) {
+      OS << std::string(Tok.getLiteralData(), 0, Tok.getLength()) << "_";
+    }
+    TokenBegin = Tok.getEndLoc();
+  }
+  OS.flush();
+  if (!KeepLastUnderline)
+    IdString.pop_back();
+  return IdString;
 }

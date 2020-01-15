@@ -342,4 +342,6 @@ calculateRangesWithFormatFlag(
 
 bool isAssigned(const clang::Stmt *S);
 
+std::string getTempNameForExpr(const clang::Expr *E, bool HandleLiteral = false,
+                               bool KeepLastUnderline = true);
 #endif // DPCT_UTILITY_H

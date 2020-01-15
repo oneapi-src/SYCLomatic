@@ -167,6 +167,9 @@ public:
 
   inline void clearReplacement() { ReplSet.reset(); }
 
+  SourceLocation getExprBeginSrcLoc() { return ExprBeginLoc; }
+  SourceLocation getExprEndSrcLoc() { return ExprEndLoc; }
+
 private:
   SourceLocation getExprLocation(SourceLocation Loc);
   size_t getOffset(SourceLocation Loc) {
@@ -287,6 +290,8 @@ private:
   // E is analyze target expression, while ExprString is the source text of E.
   // Replacements contains all the replacements happened in E.
   const Expr *E;
+  SourceLocation ExprBeginLoc;
+  SourceLocation ExprEndLoc;
   size_t SrcBegin;
   size_t SrcLength;
   FileID FileId;

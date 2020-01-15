@@ -109,7 +109,8 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: start_ct1 = clock(), checkCudaErrors(0);
+  // CHECK-NEXT: start_ct1 = clock();
+  // CHECK-NEXT: checkCudaErrors(0);
   checkCudaErrors(cudaEventRecord(start, 0));
 
   // CHECK: if (0)
@@ -119,7 +120,8 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:   /*
   // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:   */
-  // CHECK-NEXT:   start_ct1 = clock(), checkCudaErrors(0);
+  // CHECK-NEXT:   start_ct1 = clock();
+  // CHECK-NEXT:   checkCudaErrors(0);
   if (0)
     checkCudaErrors(cudaEventRecord(start, 0));
 
@@ -157,7 +159,8 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: stop_ct1 = clock(), checkCudaErrors(0);
+  // CHECK-NEXT: stop_ct1 = clock();
+  // CHECK-NEXT: checkCudaErrors(0);
   checkCudaErrors(cudaEventRecord(stop, 0));
 
   // CHECK: if (1)
@@ -167,7 +170,8 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:   /*
   // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:   */
-  // CHECK-NEXT:   stop_ct1 = clock(), checkCudaErrors(0);
+  // CHECK-NEXT:   stop_ct1 = clock();
+  // CHECK-NEXT:   checkCudaErrors(0);
   if (1)
     checkCudaErrors(cudaEventRecord(stop, 0));
 
@@ -195,7 +199,8 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: stop_ct1 = clock(), checkCudaErrors(0);
+  // CHECK-NEXT: stop_ct1 = clock();
+  // CHECK-NEXT: checkCudaErrors(0);
   checkCudaErrors(cudaEventRecord(stop, 0));
 
   // CHECK: if (0)
@@ -205,7 +210,8 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:   /*
   // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:   */
-  // CHECK-NEXT:   stop_ct1 = clock(), checkCudaErrors(0);
+  // CHECK-NEXT:   stop_ct1 = clock();
+  // CHECK-NEXT:   checkCudaErrors(0);
   if (0)
     checkCudaErrors(cudaEventRecord(stop, 0));
 
@@ -287,10 +293,12 @@ void foo() {
 
   int blocks = 32, threads = 32;
 
-  // CHECK: auto start_ct1 = clock(), cudaCheck(0);
+  // CHECK: auto start_ct1 = clock();
+  // CHECK: cudaCheck(0);
   cudaCheck(cudaEventRecord(start, 0));
   kernelFunc<<<blocks,threads>>>();
-  // CHECK: auto stop_ct1 = clock(), cudaCheck(0);
+  // CHECK: auto stop_ct1 = clock();
+  // CHECK: cudaCheck(0);
   cudaCheck(cudaEventRecord(stop, 0));
 
   cudaEventSynchronize(stop);
@@ -316,10 +324,12 @@ void bar() {
 
   int blocks = 32, threads = 32;
 
-  // CHECK: auto start_ct1 = clock(), fun(0);
+  // CHECK: auto start_ct1 = clock();
+  // CHECK: fun(0);
   fun(cudaEventRecord(start, 0));
   kernelFunc<<<blocks,threads>>>();
-  // CHECK: auto stop_ct1 = clock(), fun(0);
+  // CHECK: auto stop_ct1 = clock();
+  // CHECK: fun(0);
   fun(cudaEventRecord(stop, 0));
 
   cudaEventSynchronize(stop);
@@ -329,4 +339,99 @@ void bar() {
 
   cudaEventDestroy(start);
   cudaEventDestroy(stop);
+}
+
+struct Node {
+ cudaEvent_t start;
+ cudaEvent_t end;
+ struct {
+  cudaEvent_t *ev[100];
+  cudaEvent_t events[100];
+ };
+};
+
+void foo2(Node *n) {
+  float elapsed_time;
+
+  // CHECK: auto n_start_ct1 = clock();
+  cudaEventRecord(n->start, 0);
+  // CHECK: n_start_ct1 = clock();
+  cudaEventRecord(n->start, 0);
+  // do something
+  // CHECK: auto n_end_ct1 = clock();
+  cudaEventRecord(n->end, 0);
+  // CHECK: n_end_ct1 = clock();
+  cudaEventRecord(n->end, 0);
+  // CHECK: elapsed_time = (float)(n_end_ct1 - n_start_ct1) / CLOCKS_PER_SEC * 1000;
+  cudaEventElapsedTime(&elapsed_time, n->start, n->end);
+  {
+    int errorCode;
+    // CHECK: auto n_start_ct1 = clock();
+    // CHECK: cudaCheck(0);
+    cudaCheck(cudaEventRecord(n->start, 0));
+    // CHECK: auto n_start_ct1 = clock();
+    // CHECK: errorCode = 0;
+    errorCode = cudaEventRecord(n->start, 0);
+  }
+
+  Node node;
+  // CHECK: auto node_start_ct1 = clock();
+  cudaEventRecord(node.start, 0);
+  // CHECK: node_start_ct1 = clock();
+  cudaEventRecord(node.start, 0);
+  // do something
+  // CHECK: auto node_end_ct1 = clock();
+  cudaEventRecord(node.end, 0);
+  // CHECK: node_end_ct1 = clock();
+  cudaEventRecord(node.end, 0);
+  // CHECK: elapsed_time = (float)(node_end_ct1 - node_start_ct1) / CLOCKS_PER_SEC * 1000;
+  cudaEventElapsedTime(&elapsed_time, node.start, node.end);
+  {
+    int errorCode;
+    // CHECK: auto node_start_ct1 = clock();
+    // CHECK: cudaCheck(0);
+    cudaCheck(cudaEventRecord(node.start, 0));
+    // CHECK: auto node_start_ct1 = clock();
+    // CHECK: errorCode = 0;
+    errorCode = cudaEventRecord(node.start, 0);
+  }
+
+  {
+    // CHECK: auto node_events_0_ct1 = clock();
+    cudaEventRecord(node.events[0]);
+    // CHECK: node_events_0_ct1 = clock();
+    cudaEventRecord(node.events[0]);
+    // CHECK: auto node_events_23_ct1 = clock();
+    cudaEventRecord(node.events[23]);
+    // CHECK: node_events_23_ct1 = clock();
+    cudaEventRecord(node.events[23]);
+    // CHECK: elapsed_time = (float)(node_events_23_ct1 - node_events_0_ct1) / CLOCKS_PER_SEC * 1000;
+    cudaEventElapsedTime(&elapsed_time, node.events[0], node.events[23]);
+  }
+
+  {
+    // CHECK: auto node_ev_0_ct1 = clock();
+    cudaEventRecord(*node.ev[0]);
+    // CHECK: node_ev_0_ct1 = clock();
+    cudaEventRecord(*node.ev[0]);
+    // CHECK: auto node_ev_23_ct1 = clock();
+    cudaEventRecord(*node.ev[23]);
+    // CHECK: node_ev_23_ct1 = clock();
+    cudaEventRecord(*node.ev[23]);
+    // CHECK: elapsed_time = (float)(node_ev_23_ct1 - node_ev_0_ct1) / CLOCKS_PER_SEC * 1000;
+    cudaEventElapsedTime(&elapsed_time, *node.ev[0], *node.ev[23]);
+  }
+
+  {
+    // CHECK: auto node_ev_0_ct1 = clock();
+    cudaEventRecord(*(&node)->ev[0]);
+    // CHECK: node_ev_0_ct1 = clock();
+    cudaEventRecord(*(&node)->ev[0]);
+    // CHECK: auto node_ev_23_ct1 = clock();
+    cudaEventRecord(*(&node)->ev[23]);
+    // CHECK: node_ev_23_ct1 = clock();
+    cudaEventRecord(*(&node)->ev[23]);
+    // CHECK: elapsed_time = (float)(node_ev_23_ct1 - node_ev_0_ct1) / CLOCKS_PER_SEC * 1000;
+    cudaEventElapsedTime(&elapsed_time, *(&node)->ev[0], *(&node)->ev[23]);
+  }
 }
