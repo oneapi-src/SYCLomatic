@@ -597,13 +597,6 @@ void SymbolFileDWARF::LoadSectionData(lldb::SectionType sect_type,
   m_objfile_sp->ReadSectionData(section_sp.get(), data);
 }
 
-const DWARFDataExtractor &SymbolFileDWARF::DebugLocData() {
-  const DWARFDataExtractor &debugLocData = get_debug_loc_data();
-  if (debugLocData.GetByteSize() > 0)
-    return debugLocData;
-  return get_debug_loclists_data();
-}
-
 const DWARFDataExtractor &SymbolFileDWARF::get_debug_loc_data() {
   return GetCachedSectionData(eSectionTypeDWARFDebugLoc, m_data_debug_loc);
 }
@@ -833,10 +826,12 @@ size_t SymbolFileDWARF::ParseFunctions(CompileUnit &comp_unit) {
     return 0;
 
   size_t functions_added = 0;
-  std::vector<DWARFDIE> function_dies;
-  dwarf_cu->GetNonSkeletonUnit().AppendDIEsWithTag(DW_TAG_subprogram,
-                                                    function_dies);
-  for (const DWARFDIE &die : function_dies) {
+  dwarf_cu = &dwarf_cu->GetNonSkeletonUnit();
+  for (DWARFDebugInfoEntry &entry : dwarf_cu->dies()) {
+    if (entry.Tag() != DW_TAG_subprogram)
+      continue;
+
+    DWARFDIE die(dwarf_cu, &entry);
     if (comp_unit.FindFunctionByUID(die.GetID()))
       continue;
     if (ParseFunction(comp_unit, die))
@@ -977,7 +972,7 @@ bool SymbolFileDWARF::ParseImportedModules(
               DW_AT_LLVM_include_path, nullptr))
         module.search_path = ConstString(include_path);
       if (const char *sysroot = module_die.GetAttributeValueAsString(
-              DW_AT_LLVM_isysroot, nullptr))
+              DW_AT_LLVM_sysroot, nullptr))
         module.sysroot = ConstString(sysroot);
       imported_modules.push_back(module);
     }
@@ -2282,9 +2277,12 @@ bool SymbolFileDWARF::ResolveFunction(const DWARFDIE &orig_die,
       addr = sc.function->GetAddressRange().GetBaseAddress();
     }
 
-    if (addr.IsValid()) {
-      sc_list.Append(sc);
-      return true;
+
+    if (auto section_sp = addr.GetSection()) {
+      if (section_sp->GetPermissions() & ePermissionsExecutable) {
+        sc_list.Append(sc);
+        return true;
+      }
     }
   }
 
@@ -3356,15 +3354,17 @@ VariableSP SymbolFileDWARF::ParseVariableDIE(const SymbolContext &sc,
                   module, DataExtractor(data, block_offset, block_length),
                   die.GetCU());
             } else {
-              DataExtractor data = DebugLocData();
-              const dw_offset_t offset = form_value.Unsigned();
+              DataExtractor data = die.GetCU()->GetLocationData();
+              dw_offset_t offset = form_value.Unsigned();
+              if (form_value.Form() == DW_FORM_loclistx)
+                offset = die.GetCU()->GetLoclistOffset(offset).getValueOr(-1);
               if (data.ValidOffset(offset)) {
                 data = DataExtractor(data, offset, data.GetByteSize() - offset);
                 location = DWARFExpression(module, data, die.GetCU());
                 assert(func_low_pc != LLDB_INVALID_ADDRESS);
-                location.SetLocationListSlide(
-                    func_low_pc -
-                    attributes.CompileUnitAtIndex(i)->GetBaseAddress());
+                location.SetLocationListAddresses(
+                    attributes.CompileUnitAtIndex(i)->GetBaseAddress(),
+                    func_low_pc);
               }
             }
           } break;
@@ -3969,13 +3969,6 @@ SymbolFileDWARFDebugMap *SymbolFileDWARF::GetDebugMapSymfile() {
     }
   }
   return m_debug_map_symfile;
-}
-
-DWARFExpression::LocationListFormat
-SymbolFileDWARF::GetLocationListFormat() const {
-  if (m_data_debug_loclists.m_data.GetByteSize() > 0)
-    return DWARFExpression::LocLists;
-  return DWARFExpression::RegularLocationList;
 }
 
 SymbolFileDWARFDwp *SymbolFileDWARF::GetDwpSymbolFile() {

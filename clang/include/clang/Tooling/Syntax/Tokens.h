@@ -78,6 +78,10 @@ struct FileRange {
   /// Gets the substring that this FileRange refers to.
   llvm::StringRef text(const SourceManager &SM) const;
 
+  /// Convert to the clang range. The returned range is always a char range,
+  /// never a token range.
+  CharSourceRange toCharRange(const SourceManager &SM) const;
+
   friend bool operator==(const FileRange &L, const FileRange &R) {
     return std::tie(L.File, L.Begin, L.End) == std::tie(R.File, R.Begin, R.End);
   }
@@ -308,6 +312,17 @@ private:
   // implicit assignment operator.
   const SourceManager *SourceMgr;
 };
+
+/// The spelled tokens that overlap or touch a spelling location Loc.
+/// This always returns 0-2 tokens.
+llvm::ArrayRef<syntax::Token>
+spelledTokensTouching(SourceLocation Loc, const syntax::TokenBuffer &Tokens);
+
+/// The identifier token that overlaps or touches a spelling location Loc.
+/// If there is none, returns nullptr.
+const syntax::Token *
+spelledIdentifierTouching(SourceLocation Loc,
+                          const syntax::TokenBuffer &Tokens);
 
 /// Lex the text buffer, corresponding to \p FID, in raw mode and record the
 /// resulting spelled tokens. Does minimal post-processing on raw identifiers,

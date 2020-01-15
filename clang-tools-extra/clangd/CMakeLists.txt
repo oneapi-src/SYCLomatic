@@ -41,6 +41,7 @@ add_clang_library(clangDaemon
   ClangdServer.cpp
   CodeComplete.cpp
   CodeCompletionStrings.cpp
+  CompileCommands.cpp
   Compiler.cpp
   Context.cpp
   Diagnostics.cpp
@@ -61,6 +62,7 @@ add_clang_library(clangDaemon
   IncludeFixer.cpp
   JSONTransport.cpp
   Logger.cpp
+  PathMapping.cpp
   Protocol.cpp
   Quality.cpp
   ParsedAST.cpp

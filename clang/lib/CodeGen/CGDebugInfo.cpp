@@ -19,6 +19,7 @@
 #include "CodeGenModule.h"
 #include "ConstantEmitter.h"
 #include "clang/AST/ASTContext.h"
+#include "clang/AST/Attr.h"
 #include "clang/AST/DeclFriend.h"
 #include "clang/AST/DeclObjC.h"
 #include "clang/AST/DeclTemplate.h"
@@ -292,13 +293,6 @@ StringRef CGDebugInfo::getObjCMethodName(const ObjCMethodDecl *OMD) {
     }
   } else if (const auto *OCD = dyn_cast<ObjCCategoryImplDecl>(DC)) {
     OS << OCD->getClassInterface()->getName() << '(' << OCD->getName() << ')';
-  } else if (isa<ObjCProtocolDecl>(DC)) {
-    // We can extract the type of the class from the self pointer.
-    if (ImplicitParamDecl *SelfDecl = OMD->getSelfDecl()) {
-      QualType ClassTy =
-          cast<ObjCObjectPointerType>(SelfDecl->getType())->getPointeeType();
-      ClassTy.print(OS, PrintingPolicy(LangOptions()));
-    }
   }
   OS << ' ' << OMD->getSelector().getAsString() << ']';
 
@@ -3501,6 +3495,9 @@ llvm::DISubprogram *CGDebugInfo::getObjCMethodDeclaration(
   if (CGM.getCodeGenOpts().DwarfVersion < 5 && !OMD->isDirectMethod())
     return nullptr;
 
+  if (OMD->isDirectMethod())
+    SPFlags |= llvm::DISubprogram::SPFlagObjCDirect;
+
   // Starting with DWARF V5 method declarations are emitted as children of
   // the interface type.
   auto *ID = dyn_cast_or_null<ObjCInterfaceDecl>(D->getDeclContext());
@@ -4488,7 +4485,7 @@ void CGDebugInfo::EmitGlobalVariable(llvm::GlobalVariable *Var,
 
     GVE = DBuilder.createGlobalVariableExpression(
         DContext, DeclName, LinkageName, Unit, LineNo, getOrCreateType(T, Unit),
-        Var->hasLocalLinkage(),
+        Var->hasLocalLinkage(), true,
         Expr.empty() ? nullptr : DBuilder.createExpression(Expr),
         getOrCreateStaticDataMemberDeclarationOrNull(D), TemplateParameters,
         Align);
@@ -4591,8 +4588,27 @@ void CGDebugInfo::EmitGlobalVariable(const ValueDecl *VD, const APValue &Init) {
 
   GV.reset(DBuilder.createGlobalVariableExpression(
       DContext, Name, StringRef(), Unit, getLineNumber(VD->getLocation()), Ty,
-      true, InitExpr, getOrCreateStaticDataMemberDeclarationOrNull(VarD),
+      true, true, InitExpr, getOrCreateStaticDataMemberDeclarationOrNull(VarD),
       TemplateParameters, Align));
+}
+
+void CGDebugInfo::EmitExternalVariable(llvm::GlobalVariable *Var,
+                                       const VarDecl *D) {
+  assert(DebugKind >= codegenoptions::LimitedDebugInfo);
+  if (D->hasAttr<NoDebugAttr>())
+    return;
+
+  auto Align = getDeclAlignIfRequired(D, CGM.getContext());
+  llvm::DIFile *Unit = getOrCreateFile(D->getLocation());
+  StringRef Name = D->getName();
+  llvm::DIType *Ty = getOrCreateType(D->getType(), Unit);
+
+  llvm::DIScope *DContext = getDeclContextDescriptor(D);
+  llvm::DIGlobalVariableExpression *GVE =
+      DBuilder.createGlobalVariableExpression(
+          DContext, Name, StringRef(), Unit, getLineNumber(D->getLocation()),
+          Ty, false, false, nullptr, nullptr, nullptr, Align);
+  Var->addDebugInfo(GVE);
 }
 
 llvm::DIScope *CGDebugInfo::getCurrentContextDescriptor(const Decl *D) {

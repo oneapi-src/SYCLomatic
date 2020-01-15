@@ -12,7 +12,7 @@
 #include <CL/sycl/detail/pi.hpp>
 #include <CL/sycl/id.hpp>
 
-namespace cl {
+__SYCL_INLINE namespace cl {
 namespace sycl {
 
 class program;
@@ -122,7 +122,13 @@ enum class device : cl_device_info {
       CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS,
   sub_group_sizes = CL_DEVICE_SUB_GROUP_SIZES_INTEL,
   partition_type_property,
-  kernel_kernel_pipe_support
+  kernel_kernel_pipe_support,
+  // USM
+  usm_device_allocations            = PI_USM_DEVICE_SUPPORT,
+  usm_host_allocations              = PI_USM_HOST_SUPPORT,
+  usm_shared_allocations            = PI_USM_SINGLE_SHARED_SUPPORT,
+  usm_restricted_shared_allocations = PI_USM_CROSS_SHARED_SUPPORT,
+  usm_system_allocator              = PI_USM_SYSTEM_SHARED_SUPPORT
 };
 
 enum class device_type : pi_uint64 {
@@ -266,15 +272,9 @@ template <typename T, T param> class param_traits {};
 #include <CL/sycl/info/kernel_traits.def>
 #include <CL/sycl/info/kernel_work_group_traits.def>
 
-PARAM_TRAITS_SPEC(platform, profile, string_class)
-PARAM_TRAITS_SPEC(platform, version, string_class)
-PARAM_TRAITS_SPEC(platform, name, string_class)
-PARAM_TRAITS_SPEC(platform, vendor, string_class)
-PARAM_TRAITS_SPEC(platform, extensions, vector_class<string_class>)
+#include <CL/sycl/info/platform_traits.def>
 
-PARAM_TRAITS_SPEC(program, context, cl::sycl::context)
-PARAM_TRAITS_SPEC(program, devices, vector_class<cl::sycl::device>)
-PARAM_TRAITS_SPEC(program, reference_count, cl_uint)
+#include <CL/sycl/info/program_traits.def>
 
 PARAM_TRAITS_SPEC(queue, reference_count, cl_uint)
 PARAM_TRAITS_SPEC(queue, context, cl::sycl::context)

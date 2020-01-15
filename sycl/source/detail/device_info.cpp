@@ -19,7 +19,7 @@
   (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
 #endif
 
-namespace cl {
+__SYCL_INLINE namespace cl {
 namespace sycl {
 namespace detail {
 
@@ -499,6 +499,27 @@ bool get_device_info_host<
 template <>
 bool get_device_info_host<info::device::kernel_kernel_pipe_support>() {
   return false;
+}
+
+template <> bool get_device_info_host<info::device::usm_device_allocations>() {
+  return true;
+}
+
+template <> bool get_device_info_host<info::device::usm_host_allocations>() {
+  return true;
+}
+
+template <> bool get_device_info_host<info::device::usm_shared_allocations>() {
+  return true;
+}
+
+template <>
+bool get_device_info_host<info::device::usm_restricted_shared_allocations>() {
+  return true;
+}
+
+template <> bool get_device_info_host<info::device::usm_system_allocator>() {
+  return true;
 }
 
 } // namespace detail

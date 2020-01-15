@@ -375,6 +375,9 @@ const static char VecTyHint[] = "vec_type_hint";
 const static char WGSize[] = "reqd_work_group_size";
 const static char WGSizeHint[] = "work_group_size_hint";
 const static char SubgroupSize[] = "intel_reqd_sub_group_size";
+const static char MaxWGSize[] = "max_work_group_size";
+const static char MaxWGDim[] = "max_global_work_dim";
+const static char NumSIMD[] = "num_simd_work_items";
 } // namespace kSPIR2MD
 
 enum Spir2SamplerKind {
@@ -774,6 +777,9 @@ int getMDOperandAsInt(MDNode *N, unsigned I);
 /// Get metadata operand as string.
 std::string getMDOperandAsString(MDNode *N, unsigned I);
 
+/// Get metadata operand as another metadata node
+MDNode *getMDOperandAsMDNode(MDNode *N, unsigned I);
+
 /// Get metadata operand as type.
 Type *getMDOperandAsType(MDNode *N, unsigned I);
 
@@ -929,13 +935,9 @@ template <> inline void SPIRVMap<std::string, Op, SPIRVOpaqueType>::init() {
   add(kSPIRVTypeName::SampledImg, OpTypeSampledImage);
 }
 
-// Check if the module contains llvm.loop.unroll.* metadata
-bool hasLoopUnrollMetadata(const Module *M);
+// Check if the module contains llvm.loop.* metadata
+bool hasLoopMetadata(const Module *M);
 
-// If the branch instruction has !llvm.loop metadata, go through its operands
-// and find Loop Control mask and possible parameters.
-spv::LoopControlMask getLoopControl(const BranchInst *Branch,
-                                    std::vector<SPIRVWord> &Parameters);
 } // namespace SPIRV
 
 #endif // SPIRV_SPIRVINTERNAL_H

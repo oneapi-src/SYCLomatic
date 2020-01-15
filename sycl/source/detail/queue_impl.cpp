@@ -16,7 +16,7 @@
 
 #include <cstring>
 
-namespace cl {
+__SYCL_INLINE namespace cl {
 namespace sycl {
 namespace detail {
 template <> cl_uint queue_impl::get_info<info::queue::reference_count>() const {
@@ -66,11 +66,9 @@ event queue_impl::mem_advise(const void *Ptr, size_t Length, int Advice) {
   }
 
   // non-Host device
-  std::shared_ptr<usm::USMDispatcher> USMDispatch =
-      getSyclObjImpl(Context)->getUSMDispatch();
   RT::PiEvent Event = nullptr;
-
-  USMDispatch->memAdvise(getHandleRef(), Ptr, Length, Advice, &Event);
+  PI_CALL(piextUSMEnqueueMemAdvise)(getHandleRef(), Ptr, Length, Advice,
+                                    &Event);
 
   return event(pi::cast<cl_event>(Event), Context);
 }

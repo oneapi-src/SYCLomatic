@@ -288,29 +288,29 @@ public:
   void addSymbols(ThunkSection &isec) override;
 
 protected:
-  PPC64LongBranchThunk(Symbol &dest) : Thunk(dest, 0) {}
+  PPC64LongBranchThunk(Symbol &dest, int64_t addend) : Thunk(dest, addend) {}
 };
 
 class PPC64PILongBranchThunk final : public PPC64LongBranchThunk {
 public:
-  PPC64PILongBranchThunk(Symbol &dest) : PPC64LongBranchThunk(dest) {
+  PPC64PILongBranchThunk(Symbol &dest, int64_t addend)
+      : PPC64LongBranchThunk(dest, addend) {
     assert(!dest.isPreemptible);
-    if (dest.isInPPC64Branchlt())
-      return;
-
-    in.ppc64LongBranchTarget->addEntry(dest);
-    mainPart->relaDyn->addReloc(
-        {target->relativeRel, in.ppc64LongBranchTarget,
-         dest.getPPC64LongBranchOffset(), true, &dest,
-         getPPC64GlobalEntryToLocalEntryOffset(dest.stOther)});
+    if (Optional<uint32_t> index =
+            in.ppc64LongBranchTarget->addEntry(&dest, addend)) {
+      mainPart->relaDyn->addReloc(
+          {target->relativeRel, in.ppc64LongBranchTarget, *index * UINT64_C(8),
+           true, &dest,
+           addend + getPPC64GlobalEntryToLocalEntryOffset(dest.stOther)});
+    }
   }
 };
 
 class PPC64PDLongBranchThunk final : public PPC64LongBranchThunk {
 public:
-  PPC64PDLongBranchThunk(Symbol &dest) : PPC64LongBranchThunk(dest) {
-    if (!dest.isInPPC64Branchlt())
-      in.ppc64LongBranchTarget->addEntry(dest);
+  PPC64PDLongBranchThunk(Symbol &dest, int64_t addend)
+      : PPC64LongBranchThunk(dest, addend) {
+    in.ppc64LongBranchTarget->addEntry(&dest, addend);
   }
 };
 
@@ -707,13 +707,13 @@ InputSection *MicroMipsR6Thunk::getTargetInputSection() const {
   return dyn_cast<InputSection>(dr.section);
 }
 
-void PPC32PltCallStub::writeTo(uint8_t *buf) {
+void writePPC32PltCallStub(uint8_t *buf, uint64_t gotPltVA,
+                           const InputFile *file, int64_t addend) {
   if (!config->isPic) {
-    uint64_t va = destination.getGotPltVA();
-    write32(buf + 0, 0x3d600000 | (va + 0x8000) >> 16); // lis r11,ha
-    write32(buf + 4, 0x816b0000 | (uint16_t)va);        // lwz r11,l(r11)
-    write32(buf + 8, 0x7d6903a6);                       // mtctr r11
-    write32(buf + 12, 0x4e800420);                      // bctr
+    write32(buf + 0, 0x3d600000 | (gotPltVA + 0x8000) >> 16); // lis r11,ha
+    write32(buf + 4, 0x816b0000 | (uint16_t)gotPltVA);        // lwz r11,l(r11)
+    write32(buf + 8, 0x7d6903a6);                             // mtctr r11
+    write32(buf + 12, 0x4e800420);                            // bctr
     return;
   }
   uint32_t offset;
@@ -721,12 +721,12 @@ void PPC32PltCallStub::writeTo(uint8_t *buf) {
     // The stub loads an address relative to r30 (.got2+Addend). Addend is
     // almost always 0x8000. The address of .got2 is different in another object
     // file, so a stub cannot be shared.
-    offset = destination.getGotPltVA() - (in.ppc32Got2->getParent()->getVA() +
-                                          file->ppc32Got2OutSecOff + addend);
+    offset = gotPltVA - (in.ppc32Got2->getParent()->getVA() +
+                         file->ppc32Got2OutSecOff + addend);
   } else {
     // The stub loads an address relative to _GLOBAL_OFFSET_TABLE_ (which is
     // currently the address of .got).
-    offset = destination.getGotPltVA() - in.got->getVA();
+    offset = gotPltVA - in.got->getVA();
   }
   uint16_t ha = (offset + 0x8000) >> 16, l = (uint16_t)offset;
   if (ha == 0) {
@@ -740,6 +740,10 @@ void PPC32PltCallStub::writeTo(uint8_t *buf) {
     write32(buf + 8, 0x7d6903a6);      // mtctr r11
     write32(buf + 12, 0x4e800420);     // bctr
   }
+}
+
+void PPC32PltCallStub::writeTo(uint8_t *buf) {
+  writePPC32PltCallStub(buf, destination.getGotPltVA(), file, addend);
 }
 
 void PPC32PltCallStub::addSymbols(ThunkSection &isec) {
@@ -761,7 +765,7 @@ bool PPC32PltCallStub::isCompatibleWith(const InputSection &isec,
   return !config->isPic || (isec.file == file && rel.addend == addend);
 }
 
-static void writePPCLoadAndBranch(uint8_t *buf, int64_t offset) {
+void writePPC64LoadAndBranch(uint8_t *buf, int64_t offset) {
   uint16_t offHa = (offset + 0x8000) >> 16;
   uint16_t offLo = offset & 0xffff;
 
@@ -775,18 +779,20 @@ void PPC64PltCallStub::writeTo(uint8_t *buf) {
   int64_t offset = destination.getGotPltVA() - getPPC64TocBase();
   // Save the TOC pointer to the save-slot reserved in the call frame.
   write32(buf + 0, 0xf8410018); // std     r2,24(r1)
-  writePPCLoadAndBranch(buf + 4, offset);
+  writePPC64LoadAndBranch(buf + 4, offset);
 }
 
 void PPC64PltCallStub::addSymbols(ThunkSection &isec) {
   Defined *s = addSymbol(saver.save("__plt_" + destination.getName()), STT_FUNC,
                          0, isec);
   s->needsTocRestore = true;
+  s->file = destination.file;
 }
 
 void PPC64LongBranchThunk::writeTo(uint8_t *buf) {
-  int64_t offset = destination.getPPC64LongBranchTableVA() - getPPC64TocBase();
-  writePPCLoadAndBranch(buf, offset);
+  int64_t offset = in.ppc64LongBranchTarget->getEntryVA(&destination, addend) -
+                   getPPC64TocBase();
+  writePPC64LoadAndBranch(buf, offset);
 }
 
 void PPC64LongBranchThunk::addSymbols(ThunkSection &isec) {
@@ -901,15 +907,15 @@ static Thunk *addThunkPPC32(const InputSection &isec, const Relocation &rel,
   return make<PPC32PltCallStub>(isec, rel, s);
 }
 
-static Thunk *addThunkPPC64(RelType type, Symbol &s) {
+static Thunk *addThunkPPC64(RelType type, Symbol &s, int64_t a) {
   assert(type == R_PPC64_REL24 && "unexpected relocation type for thunk");
   if (s.isInPlt())
     return make<PPC64PltCallStub>(s);
 
   if (config->picThunk)
-    return make<PPC64PILongBranchThunk>(s);
+    return make<PPC64PILongBranchThunk>(s, a);
 
-  return make<PPC64PDLongBranchThunk>(s);
+  return make<PPC64PDLongBranchThunk>(s, a);
 }
 
 Thunk *addThunk(const InputSection &isec, Relocation &rel) {
@@ -929,7 +935,7 @@ Thunk *addThunk(const InputSection &isec, Relocation &rel) {
     return addThunkPPC32(isec, rel, s);
 
   if (config->emachine == EM_PPC64)
-    return addThunkPPC64(rel.type, s);
+    return addThunkPPC64(rel.type, s, a);
 
   llvm_unreachable("add Thunk only supported for ARM, Mips and PowerPC");
 }

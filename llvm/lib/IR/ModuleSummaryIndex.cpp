@@ -15,6 +15,7 @@
 #include "llvm/ADT/SCCIterator.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/ADT/StringMap.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 using namespace llvm;
@@ -25,6 +26,10 @@ STATISTIC(ReadOnlyLiveGVars,
           "Number of live global variables marked read only");
 STATISTIC(WriteOnlyLiveGVars,
           "Number of live global variables marked write only");
+
+static cl::opt<bool> PropagateAttrs("propagate-attrs", cl::init(true),
+                                    cl::Hidden,
+                                    cl::desc("Propagate attributes in index"));
 
 FunctionSummary FunctionSummary::ExternalNode =
     FunctionSummary::makeDummyFunctionSummary({});
@@ -157,6 +162,8 @@ static void propagateAttributesToRefs(GlobalValueSummary *S) {
 // See internalizeGVsAfterImport.
 void ModuleSummaryIndex::propagateAttributes(
     const DenseSet<GlobalValue::GUID> &GUIDPreservedSymbols) {
+  if (!PropagateAttrs)
+    return;
   for (auto &P : *this)
     for (auto &S : P.second.SummaryList) {
       if (!isGlobalValueLive(S.get()))
@@ -183,6 +190,7 @@ void ModuleSummaryIndex::propagateAttributes(
         }
       propagateAttributesToRefs(S.get());
     }
+  setWithAttributePropagation();
   if (llvm::AreStatisticsEnabled())
     for (auto &P : *this)
       if (P.second.SummaryList.size())
@@ -236,7 +244,7 @@ void ModuleSummaryIndex::dumpSCCs(raw_ostream &O) {
        !I.isAtEnd(); ++I) {
     O << "SCC (" << utostr(I->size()) << " node" << (I->size() == 1 ? "" : "s")
       << ") {\n";
-    for (const ValueInfo V : *I) {
+    for (const ValueInfo &V : *I) {
       FunctionSummary *F = nullptr;
       if (V.getSummaryList().size())
         F = cast<FunctionSummary>(V.getSummaryList().front().get());
@@ -397,7 +405,9 @@ static bool hasWriteOnlyFlag(const GlobalValueSummary *S) {
   return false;
 }
 
-void ModuleSummaryIndex::exportToDot(raw_ostream &OS) const {
+void ModuleSummaryIndex::exportToDot(
+    raw_ostream &OS,
+    const DenseSet<GlobalValue::GUID> &GUIDPreservedSymbols) const {
   std::vector<Edge> CrossModuleEdges;
   DenseMap<GlobalValue::GUID, std::vector<uint64_t>> NodeMap;
   using GVSOrderedMapTy = std::map<GlobalValue::GUID, GlobalValueSummary *>;
@@ -477,6 +487,8 @@ void ModuleSummaryIndex::exportToDot(raw_ostream &OS) const {
         A.addComment("dsoLocal");
       if (Flags.CanAutoHide)
         A.addComment("canAutoHide");
+      if (GUIDPreservedSymbols.count(SummaryIt.first))
+        A.addComment("preserved");
 
       auto VI = getValueInfo(SummaryIt.first);
       A.add("label", getNodeLabel(VI, SummaryIt.second));

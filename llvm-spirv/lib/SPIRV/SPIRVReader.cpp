@@ -51,10 +51,11 @@
 #include "SPIRVValue.h"
 
 #include "llvm/ADT/DenseMap.h"
-#include "llvm/Analysis/CFG.h"
+#include "llvm/Analysis/LoopInfo.h"
 #include "llvm/BinaryFormat/Dwarf.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Dominators.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IntrinsicInst.h"
@@ -590,18 +591,17 @@ SPIRVToLLVM::getMetadataFromNameAndParameter(std::string Name,
 }
 
 template <typename LoopInstType>
-void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM, Instruction *BI) {
+void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM,
+                                      const Loop *LoopObj) {
   if (!LM)
     return;
-
-  assert(BI && isa<BranchInst>(BI));
 
   auto Temp = MDNode::getTemporary(*Context, None);
   auto Self = MDNode::get(*Context, Temp.get());
   Self->replaceOperandWith(0, Self);
   SPIRVWord LC = LM->getLoopControl();
   if (LC == LoopControlMaskNone) {
-    BI->setMetadata("llvm.loop", Self);
+    LoopObj->setLoopID(Self);
     return;
   }
 
@@ -685,8 +685,96 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM, Instruction *BI) {
                           LoopControlParameters[++NumParam])));
         break;
       }
-      default:
+      case DependencyArrayINTEL: {
+        // Collect array variable <-> safelen information
+        std::map<Value *, unsigned> ArraySflnMap;
+        unsigned NumOperandPairs = LoopControlParameters[++NumParam];
+        unsigned OperandsEndIndex = NumParam + NumOperandPairs * 2;
+        assert(OperandsEndIndex <= LoopControlParameters.size() &&
+               "Missing loop control parameter!");
+        SPIRVModule *M = LM->getModule();
+        while (NumParam < OperandsEndIndex) {
+          SPIRVId ArraySPIRVId = LoopControlParameters[++NumParam];
+          Value *ArrayVar = ValueMap[M->getValue(ArraySPIRVId)];
+          unsigned Safelen = LoopControlParameters[++NumParam];
+          ArraySflnMap.emplace(ArrayVar, Safelen);
+        }
+
+        // A single run over the loop to retrieve all GetElementPtr instructions
+        // that access relevant array variables
+        std::map<Value *, std::vector<GetElementPtrInst *>> ArrayGEPMap;
+        for (auto &BB : LoopObj->blocks()) {
+          for (Instruction &I : *BB) {
+            auto *GEP = dyn_cast<GetElementPtrInst>(&I);
+            if (!GEP)
+              continue;
+
+            Value *AccessedArray = GEP->getPointerOperand();
+            auto ArraySflnIt = ArraySflnMap.find(AccessedArray);
+            if (ArraySflnIt != ArraySflnMap.end())
+              ArrayGEPMap[AccessedArray].push_back(GEP);
+          }
+        }
+
+        // Create index group metadata nodes specific - one per each array
+        // variables. Mark each GEP accessing a particular array variable
+        // into a corresponding index group
+        std::map<unsigned, std::vector<MDNode *>> SafelenIdxGroupMap;
+        for (auto &ArrayGEPIt : ArrayGEPMap) {
+          // Emit a distinct index group that will be referenced from
+          // llvm.loop.parallel_access_indices metadata
+          auto *CurrentDepthIdxGroup =
+              llvm::MDNode::getDistinct(*Context, None);
+          unsigned Safelen = ArraySflnMap.find(ArrayGEPIt.first)->second;
+          SafelenIdxGroupMap[Safelen].push_back(CurrentDepthIdxGroup);
+
+          for (auto *GEP : ArrayGEPIt.second) {
+            StringRef IdxGroupMDName("llvm.index.group");
+            llvm::MDNode *PreviousIdxGroup = GEP->getMetadata(IdxGroupMDName);
+            if (!PreviousIdxGroup) {
+              GEP->setMetadata(IdxGroupMDName, CurrentDepthIdxGroup);
+              continue;
+            }
+
+            // If we're dealing with an embedded loop, it may be the case
+            // that GEP instructions for some of the arrays were already
+            // marked by the algorithm when it went over the outer level loops.
+            // In order to retain the IVDep information for each "loop
+            // dimension", we will mark such GEP's into a separate joined node
+            // that will refer to the previous levels' index groups AND to the
+            // index group specific to the current loop.
+            std::vector<llvm::Metadata *> CurrentDepthOperands;
+            for (auto &Op : PreviousIdxGroup->operands())
+              CurrentDepthOperands.push_back(Op);
+            if (CurrentDepthOperands.size() == 0)
+              CurrentDepthOperands.push_back(PreviousIdxGroup);
+            CurrentDepthOperands.push_back(CurrentDepthIdxGroup);
+            auto *JointIdxGroup =
+                llvm::MDNode::get(*Context, CurrentDepthOperands);
+            GEP->setMetadata(IdxGroupMDName, JointIdxGroup);
+          }
+        }
+
+        for (auto &SflnIdxGroupIt : SafelenIdxGroupMap) {
+          auto *Name =
+              MDString::get(*Context, "llvm.loop.parallel_access_indices");
+          unsigned SflnValue = SflnIdxGroupIt.first;
+          llvm::Metadata *SafelenMDOp =
+              SflnValue ? ConstantAsMetadata::get(ConstantInt::get(
+                              Type::getInt32Ty(*Context), SflnValue))
+                        : nullptr;
+          std::vector<llvm::Metadata *> Parameters{Name};
+          for (auto *Node : SflnIdxGroupIt.second)
+            Parameters.push_back(Node);
+          if (SafelenMDOp)
+            Parameters.push_back(SafelenMDOp);
+          Metadata.push_back(llvm::MDNode::get(*Context, Parameters));
+        }
         break;
+      }
+      default:
+        llvm_unreachable(
+            "Unexpected token in LoopControlExtendedConstrolsMask");
       }
       ++NumParam;
     }
@@ -695,39 +783,39 @@ void SPIRVToLLVM::setLLVMLoopMetadata(const LoopInstType *LM, Instruction *BI) {
 
   // Set the first operand to refer itself
   Node->replaceOperandWith(0, Node);
-  BI->setMetadata("llvm.loop", Node);
+  LoopObj->setLoopID(Node);
 }
 
 void SPIRVToLLVM::transLLVMLoopMetadata(const Function *F) {
   assert(F);
 
-  if (!FuncLoopMetadataMap.empty()) {
-    // In SPIRV loop metadata is linked to a header basic block of a loop
-    // whilst in LLVM IR it is linked to a latch basic block (the one
-    // whose back edge goes to a header basic block) of the loop.
+  if (FuncLoopMetadataMap.empty())
+    return;
 
-    using Edge = std::pair<const BasicBlock *, const BasicBlock *>;
-    SmallVector<Edge, 32> Edges;
-    FindFunctionBackedges(*F, Edges);
+  DominatorTree DomTree(*(const_cast<Function *>(F)));
+  LoopInfo LI(DomTree);
 
-    for (const auto &BkEdge : Edges) {
-      // Check that loop header BB contains loop metadata.
-      const auto LMDItr = FuncLoopMetadataMap.find(BkEdge.second);
-      if (LMDItr == FuncLoopMetadataMap.end())
-        continue;
+  // In SPIRV loop metadata is linked to a header basic block of a loop
+  // whilst in LLVM IR it is linked to a latch basic block (the one
+  // whose back edge goes to a header basic block) of the loop.
+  // To ensure consistent behaviour, we can rely on the `llvm::Loop`
+  // class to handle the metadata placement
+  for (const auto *LoopObj : LI.getLoopsInPreorder()) {
+    // Check that loop header BB contains loop metadata.
+    const auto LMDItr = FuncLoopMetadataMap.find(LoopObj->getHeader());
+    if (LMDItr == FuncLoopMetadataMap.end())
+      continue;
 
-      auto *BI = const_cast<Instruction *>(BkEdge.first->getTerminator());
-      const auto *LMD = LMDItr->second;
-      if (LMD->getOpCode() == OpLoopMerge) {
-        const auto *LM = static_cast<const SPIRVLoopMerge *>(LMD);
-        setLLVMLoopMetadata<SPIRVLoopMerge>(LM, BI);
-      } else if (LMD->getOpCode() == OpLoopControlINTEL) {
-        const auto *LCI = static_cast<const SPIRVLoopControlINTEL *>(LMD);
-        setLLVMLoopMetadata<SPIRVLoopControlINTEL>(LCI, BI);
-      }
-
-      FuncLoopMetadataMap.erase(LMDItr);
+    const auto *LMD = LMDItr->second;
+    if (LMD->getOpCode() == OpLoopMerge) {
+      const auto *LM = static_cast<const SPIRVLoopMerge *>(LMD);
+      setLLVMLoopMetadata<SPIRVLoopMerge>(LM, LoopObj);
+    } else if (LMD->getOpCode() == OpLoopControlINTEL) {
+      const auto *LCI = static_cast<const SPIRVLoopControlINTEL *>(LMD);
+      setLLVMLoopMetadata<SPIRVLoopControlINTEL>(LCI, LoopObj);
     }
+
+    FuncLoopMetadataMap.erase(LMDItr);
   }
 }
 
@@ -1522,7 +1610,7 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     SPIRVCopyMemorySized *BC = static_cast<SPIRVCopyMemorySized *>(BV);
     CallInst *CI = nullptr;
     llvm::Value *Dst = transValue(BC->getTarget(), F, BB);
-    unsigned Align = BC->getAlignment();
+    MaybeAlign Align(BC->getAlignment());
     llvm::Value *Size = transValue(BC->getSize(), F, BB);
     bool IsVolatile = BC->SPIRVMemoryAccess::isVolatile();
     IRBuilder<> Builder(BB);
@@ -1788,6 +1876,68 @@ Value *SPIRVToLLVM::transValueWithoutDecoration(SPIRVValue *BV, Function *F,
     }
 
     return mapValue(BV, Res);
+  }
+
+  case OpTranspose: {
+    auto TR = static_cast<SPIRVTranspose *>(BV);
+    IRBuilder<> Builder(BB);
+    auto Matrix = transValue(TR->getMatrix(), F, BB);
+    unsigned ColNum = Matrix->getType()->getArrayNumElements();
+    VectorType *ColTy =
+        cast<VectorType>(cast<ArrayType>(Matrix->getType())->getElementType());
+    unsigned RowNum = ColTy->getVectorNumElements();
+
+    auto VTy = VectorType::get(ColTy->getElementType(), ColNum);
+    auto ResultTy = ArrayType::get(VTy, RowNum);
+    Value *V = UndefValue::get(ResultTy);
+
+    SmallVector<Value *, 16> MCache;
+    MCache.reserve(ColNum);
+    for (unsigned Idx = 0; Idx != ColNum; ++Idx)
+      MCache.push_back(Builder.CreateExtractValue(Matrix, Idx));
+
+    if (ColNum == RowNum) {
+      // Fastpath
+      switch (ColNum) {
+      case 2: {
+        Value *V1 = Builder.CreateShuffleVector(MCache[0], MCache[1], {0, 2});
+        V = Builder.CreateInsertValue(V, V1, 0);
+        Value *V2 = Builder.CreateShuffleVector(MCache[0], MCache[1], {1, 3});
+        V = Builder.CreateInsertValue(V, V2, 1);
+        return mapValue(BV, V);
+      }
+
+      case 4: {
+        for (unsigned Idx = 0; Idx < 4; ++Idx) {
+          Value *V1 =
+              Builder.CreateShuffleVector(MCache[0], MCache[1], {Idx, Idx + 4});
+          Value *V2 =
+              Builder.CreateShuffleVector(MCache[2], MCache[3], {Idx, Idx + 4});
+          Value *V3 = Builder.CreateShuffleVector(V1, V2, {0, 1, 2, 3});
+          V = Builder.CreateInsertValue(V, V3, Idx);
+        }
+        return mapValue(BV, V);
+      }
+
+      default:
+        break;
+      }
+    }
+
+    // Slowpath
+    for (unsigned Idx = 0; Idx != RowNum; ++Idx) {
+      Value *Vec = UndefValue::get(VTy);
+
+      for (unsigned Idx2 = 0; Idx2 != ColNum; ++Idx2) {
+        Value *S =
+            Builder.CreateExtractElement(MCache[Idx2], Builder.getInt32(Idx));
+        Vec = Builder.CreateInsertElement(Vec, S, Idx2);
+      }
+
+      V = Builder.CreateInsertValue(V, Vec, Idx);
+    }
+
+    return mapValue(BV, V);
   }
 
   case OpCopyObject: {
@@ -2745,6 +2895,13 @@ void generateIntelFPGAAnnotation(const SPIRVEntry *E,
       Out << ":" << Str;
     Out << '}';
   }
+  if (E->hasDecorate(DecorationBankBitsINTEL)) {
+    Out << "{bank_bits:";
+    auto Literals = E->getDecorationLiterals(DecorationBankBitsINTEL);
+    for (size_t I = 0; I < Literals.size() - 1; ++I)
+      Out << Literals[I] << ",";
+    Out << Literals.back() << '}';
+  }
   if (E->hasDecorate(DecorationUserSemantic))
     Out << E->getDecorationStringLiteral(DecorationUserSemantic).front();
 }
@@ -2786,6 +2943,14 @@ void generateIntelFPGAAnnotationForStructMember(
       Out << ":" << Str;
     Out << '}';
   }
+  if (E->hasMemberDecorate(DecorationBankBitsINTEL, 0, MemberNumber)) {
+    Out << "{bank_bits:";
+    auto Literals =
+        E->getMemberDecorationLiterals(DecorationBankBitsINTEL, MemberNumber);
+    for (size_t I = 0; I < Literals.size() - 1; ++I)
+      Out << Literals[I] << ",";
+    Out << Literals.back() << '}';
+  }
 
   if (E->hasMemberDecorate(DecorationUserSemantic, 0, MemberNumber))
     Out << E->getMemberDecorationStringLiteral(DecorationUserSemantic,
@@ -2817,14 +2982,18 @@ void SPIRVToLLVM::transIntelFPGADecorations(SPIRVValue *BV, Value *V) {
         if (!AnnotStr.empty()) {
           auto *GS = Builder.CreateGlobalStringPtr(AnnotStr);
 
-          auto AnnotationFn = llvm::Intrinsic::getDeclaration(
-              M, Intrinsic::ptr_annotation, Int8PtrTyPrivate);
-
           auto GEP = Builder.CreateConstInBoundsGEP2_32(AL->getAllocatedType(),
                                                         AL, 0, I);
 
+          Type *IntTy = GEP->getType()->getPointerElementType()->isIntegerTy()
+                            ? GEP->getType()
+                            : Int8PtrTyPrivate;
+
+          auto AnnotationFn = llvm::Intrinsic::getDeclaration(
+              M, Intrinsic::ptr_annotation, IntTy);
+
           llvm::Value *Args[] = {
-              Builder.CreateBitCast(GEP, Int8PtrTyPrivate, GEP->getName()),
+              Builder.CreateBitCast(GEP, IntTy, GEP->getName()),
               Builder.CreateBitCast(GS, Int8PtrTyPrivate), UndefInt8Ptr,
               UndefInt32};
           Builder.CreateCall(AnnotationFn, Args);
@@ -3083,6 +3252,21 @@ bool SPIRVToLLVM::transKernelMetadata() {
     if (auto *EM = BF->getExecutionMode(ExecutionModeSubgroupSize)) {
       auto SizeMD = ConstantAsMetadata::get(getUInt32(M, EM->getLiterals()[0]));
       F->setMetadata(kSPIR2MD::SubgroupSize, MDNode::get(*Context, SizeMD));
+    }
+    // Generate metadata for max_work_group_size
+    if (auto EM = BF->getExecutionMode(ExecutionModeMaxWorkgroupSizeINTEL)) {
+      F->setMetadata(kSPIR2MD::MaxWGSize,
+                     getMDNodeStringIntVec(Context, EM->getLiterals()));
+    }
+    // Generate metadata for max_global_work_dim
+    if (auto EM = BF->getExecutionMode(ExecutionModeMaxWorkDimINTEL)) {
+      F->setMetadata(kSPIR2MD::MaxWGDim,
+                     getMDNodeStringIntVec(Context, EM->getLiterals()));
+    }
+    // Generate metadata for num_simd_work_items
+    if (auto EM = BF->getExecutionMode(ExecutionModeNumSIMDWorkitemsINTEL)) {
+      F->setMetadata(kSPIR2MD::NumSIMD,
+                     getMDNodeStringIntVec(Context, EM->getLiterals()));
     }
   }
   return true;

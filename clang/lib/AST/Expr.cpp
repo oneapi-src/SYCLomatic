@@ -2969,6 +2969,13 @@ static Expr *IgnoreImplicitSingleStep(Expr *E) {
   return E;
 }
 
+static Expr *IgnoreImplicitAsWrittenSingleStep(Expr *E) {
+  if (auto *ICE = dyn_cast<ImplicitCastExpr>(E))
+    return ICE->getSubExprAsWritten();
+
+  return IgnoreImplicitSingleStep(E);
+}
+
 static Expr *IgnoreParensSingleStep(Expr *E) {
   if (auto *PE = dyn_cast<ParenExpr>(E))
     return PE->getSubExpr();
@@ -3048,6 +3055,10 @@ Expr *Expr::IgnoreImplicit() {
   return IgnoreExprNodes(this, IgnoreImplicitSingleStep);
 }
 
+Expr *Expr::IgnoreImplicitAsWritten() {
+  return IgnoreExprNodes(this, IgnoreImplicitAsWrittenSingleStep);
+}
+
 Expr *Expr::IgnoreParens() {
   return IgnoreExprNodes(this, IgnoreParensSingleStep);
 }
@@ -3083,6 +3094,34 @@ Expr *Expr::IgnoreParenNoopCasts(const ASTContext &Ctx) {
   return IgnoreExprNodes(this, IgnoreParensSingleStep, [&Ctx](Expr *E) {
     return IgnoreNoopCastsSingleStep(Ctx, E);
   });
+}
+
+Expr *Expr::IgnoreUnlessSpelledInSource() {
+  Expr *E = this;
+
+  Expr *LastE = nullptr;
+  while (E != LastE) {
+    LastE = E;
+    E = E->IgnoreParenImpCasts();
+
+    auto SR = E->getSourceRange();
+
+    if (auto *C = dyn_cast<CXXConstructExpr>(E)) {
+      if (C->getNumArgs() == 1) {
+        Expr *A = C->getArg(0);
+        if (A->getSourceRange() == SR || !isa<CXXTemporaryObjectExpr>(C))
+          E = A;
+      }
+    }
+
+    if (auto *C = dyn_cast<CXXMemberCallExpr>(E)) {
+      Expr *ExprNode = C->getImplicitObjectArgument()->IgnoreParenImpCasts();
+      if (ExprNode->getSourceRange() == SR)
+        E = ExprNode;
+    }
+  }
+
+  return E;
 }
 
 bool Expr::isDefaultArgument() const {

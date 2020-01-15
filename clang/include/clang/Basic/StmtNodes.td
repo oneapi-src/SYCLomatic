@@ -1,6 +1,6 @@
-class AttrSubject;
+include "clang/Basic/ASTNode.td"
 
-class StmtNode<StmtNode base, bit abstract = 0> : AttrSubject {
+class StmtNode<StmtNode base, bit abstract = 0> : ASTNode, AttrSubject {
 	StmtNode Base = base;
   bit Abstract = abstract;
 }
@@ -223,6 +223,7 @@ def OMPMasterDirective : StmtNode<OMPExecutableDirective>;
 def OMPCriticalDirective : StmtNode<OMPExecutableDirective>;
 def OMPParallelForDirective : StmtNode<OMPLoopDirective>;
 def OMPParallelForSimdDirective : StmtNode<OMPLoopDirective>;
+def OMPParallelMasterDirective : StmtNode<OMPExecutableDirective>;
 def OMPParallelSectionsDirective : StmtNode<OMPExecutableDirective>;
 def OMPTaskDirective : StmtNode<OMPExecutableDirective>;
 def OMPTaskyieldDirective : StmtNode<OMPExecutableDirective>;

@@ -9,6 +9,8 @@
 //
 //===-----------------------------------------------------------------===//
 
+
+#include "clang/AST/Attr.h"
 #include "CallExprRewriter.h"
 #include "AnalysisInfo.h"
 #include "MapNames.h"

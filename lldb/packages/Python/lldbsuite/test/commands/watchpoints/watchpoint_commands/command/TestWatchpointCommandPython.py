@@ -2,7 +2,6 @@
 Test 'watchpoint command'.
 """
 
-from __future__ import print_function
 
 
 import os
@@ -33,11 +32,6 @@ class WatchpointPythonCommandTestCase(TestBase):
         self.d = {'CXX_SOURCES': self.source, 'EXE': self.exe_name}
 
     @skipIfFreeBSD  # timing out on buildbot
-    @expectedFailureAll(
-        oslist=["linux"],
-        archs=["aarch64"],
-        triple=no_match(".*-android"),
-        bugnumber="llvm.org/pr27710") # work on android
     def test_watchpoint_command(self):
         """Test 'watchpoint command'."""
         self.build(dictionary=self.d)
@@ -101,11 +95,6 @@ class WatchpointPythonCommandTestCase(TestBase):
                     substrs=['(int32_t)', 'cookie = 777'])
 
     @skipIfFreeBSD  # timing out on buildbot
-    @expectedFailureAll(
-        oslist=["linux"],
-        archs=["aarch64"],
-        triple=no_match(".*-android"),
-        bugnumber="llvm.org/pr27710") # work on android
     def test_continue_in_watchpoint_command(self):
         """Test continue in a watchpoint command."""
         self.build(dictionary=self.d)

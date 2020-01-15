@@ -94,6 +94,12 @@ Improvements to clang-tidy
   Without the null terminator it can result in undefined behaviour when the
   string is read.
 
+- New :doc:`bugprone-signed-char-misuse
+  <clang-tidy/checks/bugprone-signed-char-misuse>` check.
+
+  Finds ``signed char`` -> integer conversions which might indicate a programming
+  error.
+
 - New :doc:`cert-mem57-cpp
   <clang-tidy/checks/cert-mem57-cpp>` check.
 
@@ -104,6 +110,12 @@ Improvements to clang-tidy
   <clang-tidy/checks/cert-pos44-c>` to
   :doc:`bugprone-bad-signal-to-kill-thread
   <clang-tidy/checks/bugprone-bad-signal-to-kill-thread>` was added.
+
+- New :doc:`cert-oop58-cpp
+  <clang-tidy/checks/cert-oop58-cpp>` check.
+
+  Finds assignments to the copied object and its direct or indirect members
+  in copy constructors and copy assignment operators.
 
 - New :doc:`cppcoreguidelines-init-variables
   <clang-tidy/checks/cppcoreguidelines-init-variables>` check.
@@ -154,6 +166,10 @@ Improvements to clang-tidy
   Finds types that could be made trivially-destructible by removing out-of-line
   defaulted destructor declarations.
 
+- The :doc:`modernize-use-using
+  <clang-tidy/checks/modernize-use-using>` check now converts typedefs containing
+  struct definitions and multiple comma-separated types.
+
 - Improved :doc:`bugprone-posix-return
   <clang-tidy/checks/bugprone-posix-return>` check.
 
@@ -172,6 +188,16 @@ Improvements to clang-tidy
 
   Finds classes, structs, and unions that contain redundant member
   access specifiers.
+
+- Improved :doc:`readability-magic-numbers
+  <clang-tidy/checks/readability-magic-numbers>` check.
+
+  The check now supports the ``IgnoreBitFieldsWidths`` option to suppress
+  the warning for numbers used to specify bit field widths.
+
+  The check was updated to eliminate some false positives (such as using
+  class enumeration as non-type template parameters, or the synthetically
+  computed lengh of a static user string literal.)
 
 - New :doc:`readability-make-member-function-const
   <clang-tidy/checks/readability-make-member-function-const>` check.

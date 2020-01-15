@@ -155,6 +155,14 @@ enum NodeType : unsigned {
   SMAXV,
   UMAXV,
 
+  SMAXV_PRED,
+  UMAXV_PRED,
+  SMINV_PRED,
+  UMINV_PRED,
+  ORV_PRED,
+  EORV_PRED,
+  ANDV_PRED,
+
   // Vector bitwise negation
   NOT,
 
@@ -196,7 +204,15 @@ enum NodeType : unsigned {
   UUNPKHI,
   UUNPKLO,
 
+  CLASTA_N,
+  CLASTB_N,
+  LASTA,
+  LASTB,
+  REV,
+  TBL,
+
   INSR,
+  PTRUE,
 
   // Unsigned gather loads.
   GLD1,
@@ -206,6 +222,23 @@ enum NodeType : unsigned {
   GLD1_UXTW_SCALED,
   GLD1_SXTW_SCALED,
   GLD1_IMM,
+
+  // Signed gather loads
+  GLD1S,
+  GLD1S_SCALED,
+  GLD1S_UXTW,
+  GLD1S_SXTW,
+  GLD1S_UXTW_SCALED,
+  GLD1S_SXTW_SCALED,
+  GLD1S_IMM,
+  // Scatter store
+  SST1,
+  SST1_SCALED,
+  SST1_UXTW,
+  SST1_SXTW,
+  SST1_UXTW_SCALED,
+  SST1_SXTW_SCALED,
+  SST1_IMM,
 
   // NEON Load/Store with post-increment base updates
   LD2post = ISD::FIRST_TARGET_MEMORY_OPCODE,
@@ -235,8 +268,10 @@ enum NodeType : unsigned {
   STG,
   STZG,
   ST2G,
-  STZ2G
+  STZ2G,
 
+  LDP,
+  STP
 };
 
 } // end namespace AArch64ISD

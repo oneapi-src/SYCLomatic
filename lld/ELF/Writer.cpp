@@ -135,7 +135,7 @@ StringRef getOutputSectionName(const InputSectionBase *s) {
 }
 
 static bool needsInterpSection() {
-  return !sharedFiles.empty() && !config->dynamicLinker.empty() &&
+  return !config->shared && !config->dynamicLinker.empty() &&
          script->needsInterpSection();
 }
 
@@ -515,9 +515,9 @@ template <class ELFT> void createSyntheticSections() {
       /*sort=*/false);
   add(in.relaIplt);
 
-  in.plt = make<PltSection>(false);
+  in.plt = make<PltSection>();
   add(in.plt);
-  in.iplt = make<PltSection>(true);
+  in.iplt = make<IpltSection>();
   add(in.iplt);
 
   if (config->andFeatures)
@@ -1634,37 +1634,6 @@ static void removeUnusedSyntheticSections() {
         llvm::erase_if(isd->sections,
                        [=](InputSection *isec) { return isec == ss; });
   }
-}
-
-// Returns true if a symbol can be replaced at load-time by a symbol
-// with the same name defined in other ELF executable or DSO.
-static bool computeIsPreemptible(const Symbol &b) {
-  assert(!b.isLocal());
-
-  // Only symbols that appear in dynsym can be preempted.
-  if (!b.includeInDynsym())
-    return false;
-
-  // Only default visibility symbols can be preempted.
-  if (b.visibility != STV_DEFAULT)
-    return false;
-
-  // At this point copy relocations have not been created yet, so any
-  // symbol that is not defined locally is preemptible.
-  if (!b.isDefined())
-    return true;
-
-  if (!config->shared)
-    return false;
-
-  // If the dynamic list is present, it specifies preemptable symbols in a DSO.
-  if (config->hasDynamicList)
-    return b.inDynamicList;
-
-  // -Bsymbolic means that definitions are not preempted.
-  if (config->bsymbolic || (config->bsymbolicFunctions && b.isFunc()))
-    return false;
-  return true;
 }
 
 // Create output section objects and add them to OutputSections.

@@ -24,7 +24,6 @@
 #include "lldb/Interpreter/OptionGroupBoolean.h"
 #include "lldb/Interpreter/OptionGroupFile.h"
 #include "lldb/Interpreter/OptionGroupFormat.h"
-#include "lldb/Interpreter/OptionGroupPlatform.h"
 #include "lldb/Interpreter/OptionGroupString.h"
 #include "lldb/Interpreter/OptionGroupUInt64.h"
 #include "lldb/Interpreter/OptionGroupUUID.h"
@@ -53,7 +52,6 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/FormatAdapters.h"
 
-#include <cerrno>
 
 using namespace lldb;
 using namespace lldb_private;
@@ -1349,7 +1347,7 @@ static void DumpFullpath(Stream &strm, const FileSpec *file_spec_ptr,
       strm.Printf("%-*s", width, fullpath.c_str());
       return;
     } else {
-      file_spec_ptr->Dump(&strm);
+      file_spec_ptr->Dump(strm.AsRawOstream());
       return;
     }
   }

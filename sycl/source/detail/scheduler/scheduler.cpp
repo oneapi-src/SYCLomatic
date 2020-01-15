@@ -16,7 +16,7 @@
 #include <set>
 #include <vector>
 
-namespace cl {
+__SYCL_INLINE namespace cl {
 namespace sycl {
 namespace detail {
 
@@ -81,10 +81,15 @@ EventImplPtr Scheduler::addCopyBack(Requirement *Req) {
   // buffer.
   if (!NewCmd)
     return nullptr;
-  EnqueueResultT Res;
-  bool Enqueued = GraphProcessor::enqueueCommand(NewCmd, Res);
-  if (!Enqueued && EnqueueResultT::FAILED == Res.MResult)
-    throw runtime_error("Enqueue process failed.");
+
+  try {
+    EnqueueResultT Res;
+    bool Enqueued = GraphProcessor::enqueueCommand(NewCmd, Res);
+    if (!Enqueued && EnqueueResultT::FAILED == Res.MResult)
+      throw runtime_error("Enqueue process failed.");
+  } catch (...) {
+    NewCmd->getQueue()->reportAsyncException(std::current_exception());
+  }
   return NewCmd->getEvent();
 }
 
@@ -140,12 +145,24 @@ EventImplPtr Scheduler::addHostAccessor(Requirement *Req) {
 
 void Scheduler::releaseHostAccessor(Requirement *Req) {
   Req->MBlockedCmd->MCanEnqueue = true;
+  MemObjRecord* Record = Req->MSYCLMemObj->MRecord.get();
+  auto EnqueueLeaves = [](std::vector<Command *> &Leaves) {
+    for (Command *Cmd : Leaves) {
+      EnqueueResultT Res;
+      bool Enqueued = GraphProcessor::enqueueCommand(Cmd, Res);
+      if (!Enqueued && EnqueueResultT::FAILED == Res.MResult)
+        throw runtime_error("Enqueue process failed.");
+    }
+  };
+  EnqueueLeaves(Record->MReadLeaves);
+  EnqueueLeaves(Record->MWriteLeaves);
 }
 
 Scheduler::Scheduler() {
   sycl::device HostDevice;
   DefaultHostQueue = QueueImplPtr(new queue_impl(
-      HostDevice, /*AsyncHandler=*/{}, QueueOrder::Ordered, /*PropList=*/{}));
+      detail::getSyclObjImpl(HostDevice), /*AsyncHandler=*/{},
+          QueueOrder::Ordered, /*PropList=*/{}));
 }
 
 } // namespace detail

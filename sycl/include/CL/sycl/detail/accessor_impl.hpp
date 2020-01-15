@@ -16,7 +16,7 @@
 
 #include <memory>
 
-namespace cl {
+__SYCL_INLINE namespace cl {
 namespace sycl {
 namespace detail {
 
@@ -159,6 +159,8 @@ public:
     }
   }
 };
+
+using LocalAccessorImplPtr = std::shared_ptr<LocalAccessorImplHost>;
 
 class LocalAccessorBaseHost {
 public:

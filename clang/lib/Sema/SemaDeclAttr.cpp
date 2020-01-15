@@ -2857,32 +2857,59 @@ static void handleWeakImportAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
 }
 
 // Checks correctness of mutual usage of different work_group_size attributes:
-// reqd_work_group_size, max_work_group_size. Values of reqd_work_group_size
-// arguments shall be equal or less than values coming from max_work_group_size.
+// reqd_work_group_size, max_work_group_size and max_global_work_dim.
+// Values of reqd_work_group_size arguments shall be equal or less than values
+// coming from max_work_group_size.
+// In case the value of 'max_global_work_dim' attribute equals to 0 we shall
+// ensure that if max_work_group_size and reqd_work_group_size attributes exist,
+// they hold equal values (1, 1, 1).
 static bool checkWorkGroupSizeValues(Sema &S, Decl *D, const ParsedAttr &Attr,
                                      uint32_t WGSize[3]) {
-  if (const SYCLIntelMaxWorkGroupSizeAttr *A =
-      D->getAttr<SYCLIntelMaxWorkGroupSizeAttr>()) {
+  bool Result = true;
+  auto checkZeroDim = [&S, &Attr](auto &A, size_t X, size_t Y, size_t Z,
+                                  bool ReverseAttrs = false) -> bool {
+    if (X != 1 || Y != 1 || Z != 1) {
+      auto Diag =
+          S.Diag(Attr.getLoc(), diag::err_sycl_x_y_z_arguments_must_be_one);
+      if (ReverseAttrs)
+        Diag << Attr << A;
+      else
+        Diag << A << Attr;
+      return false;
+    }
+    return true;
+  };
+
+  if (Attr.getKind() == ParsedAttr::AT_SYCLIntelMaxGlobalWorkDim) {
+    if (const auto *A = D->getAttr<SYCLIntelMaxWorkGroupSizeAttr>())
+      Result &= checkZeroDim(A, A->getXDim(), A->getYDim(), A->getZDim());
+    if (const auto *A = D->getAttr<ReqdWorkGroupSizeAttr>())
+      Result &= checkZeroDim(A, A->getXDim(), A->getYDim(), A->getZDim());
+    return Result;
+  }
+
+  if (const auto *A = D->getAttr<SYCLIntelMaxGlobalWorkDimAttr>())
+    if (A->getNumber() == 0)
+      Result &= checkZeroDim(A, WGSize[0], WGSize[1], WGSize[2],
+                             /*ReverseAttrs=*/ true);
+
+  if (const auto *A = D->getAttr<SYCLIntelMaxWorkGroupSizeAttr>()) {
     if (!(WGSize[0] <= A->getXDim() && WGSize[1] <= A->getYDim() &&
           WGSize[2] <= A->getZDim())) {
       S.Diag(Attr.getLoc(), diag::err_conflicting_sycl_function_attributes)
           << Attr << A->getSpelling();
-      D->setInvalidDecl();
-      return false;
+      Result &= false;
     }
   }
-
-  if (const ReqdWorkGroupSizeAttr *A = D->getAttr<ReqdWorkGroupSizeAttr>()) {
+  if (const auto *A = D->getAttr<ReqdWorkGroupSizeAttr>()) {
     if (!(WGSize[0] >= A->getXDim() && WGSize[1] >= A->getYDim() &&
           WGSize[2] >= A->getZDim())) {
       S.Diag(Attr.getLoc(), diag::err_conflicting_sycl_function_attributes)
           << Attr << A->getSpelling();
-      D->setInvalidDecl();
-      return false;
+      Result &= false;
     }
   }
-
-  return true;
+  return Result;
 }
 
 // Handles reqd_work_group_size, work_group_size_hint and max_work_group_size
@@ -2963,6 +2990,39 @@ static void handleNumSimdWorkItemsAttr(Sema &S, Decl *D,
         S.Context, Attr, NumSimdWorkItems));
 }
 
+// Handles max_global_work_dim.
+static void handleMaxGlobalWorkDimAttr(Sema &S, Decl *D,
+                                       const ParsedAttr &Attr) {
+  if (D->isInvalidDecl())
+    return;
+
+  uint32_t MaxGlobalWorkDim;
+  const Expr *E = Attr.getArgAsExpr(0);
+  if (!checkUInt32Argument(S, Attr, E, MaxGlobalWorkDim, 0,
+                           /*StrictlyUnsigned=*/true))
+    return;
+
+  if (MaxGlobalWorkDim > 3) {
+    S.Diag(Attr.getLoc(), diag::err_intel_attribute_argument_is_not_in_range)
+      << Attr;
+    return;
+  }
+
+  if (MaxGlobalWorkDim == 0) {
+    uint32_t WGSize[3] = {1, 1, 1};
+    if (!checkWorkGroupSizeValues(S, D, Attr, WGSize)) {
+      D->setInvalidDecl();
+      return;
+    }
+  }
+
+  if (D->getAttr<SYCLIntelMaxGlobalWorkDimAttr>())
+    S.Diag(Attr.getLoc(), diag::warn_duplicate_attribute) << Attr;
+
+  D->addAttr(::new (S.Context) SYCLIntelMaxGlobalWorkDimAttr(
+        S.Context, Attr, MaxGlobalWorkDim));
+}
+
 static void handleVecTypeHint(Sema &S, Decl *D, const ParsedAttr &AL) {
   if (!AL.hasParsedType()) {
     S.Diag(AL.getLoc(), diag::err_attribute_wrong_number_arguments) << AL << 1;
@@ -2976,7 +3036,7 @@ static void handleVecTypeHint(Sema &S, Decl *D, const ParsedAttr &AL) {
   if (!ParmType->isExtVectorType() && !ParmType->isFloatingType() &&
       (ParmType->isBooleanType() ||
        !ParmType->isIntegralType(S.getASTContext()))) {
-    S.Diag(AL.getLoc(), diag::err_attribute_invalid_argument) << 3 << AL;
+    S.Diag(AL.getLoc(), diag::err_attribute_invalid_argument) << 2 << AL;
     return;
   }
 
@@ -3109,7 +3169,7 @@ bool Sema::checkTargetAttr(SourceLocation LiteralLoc, StringRef AttrStr) {
       return Diag(LiteralLoc, diag::warn_unsupported_target_attribute)
              << Unsupported << None << Str;
 
-  TargetAttr::ParsedTargetAttr ParsedAttrs = TargetAttr::parse(AttrStr);
+  ParsedTargetAttr ParsedAttrs = TargetAttr::parse(AttrStr);
 
   if (!ParsedAttrs.Architecture.empty() &&
       !Context.getTargetInfo().isValidCPUName(ParsedAttrs.Architecture))
@@ -4645,12 +4705,10 @@ static void handleLifetimeCategoryAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
     ParmType = S.GetTypeFromParser(AL.getTypeArg(), &DerefTypeLoc);
 
     unsigned SelectIdx = ~0U;
-    if (ParmType->isVoidType())
+    if (ParmType->isReferenceType())
       SelectIdx = 0;
-    else if (ParmType->isReferenceType())
-      SelectIdx = 1;
     else if (ParmType->isArrayType())
-      SelectIdx = 2;
+      SelectIdx = 1;
 
     if (SelectIdx != ~0U) {
       S.Diag(AL.getLoc(), diag::err_attribute_invalid_argument)
@@ -5891,9 +5949,11 @@ UuidAttr *Sema::mergeUuidAttr(Decl *D, const AttributeCommonInfo &CI,
   if (const auto *UA = D->getAttr<UuidAttr>()) {
     if (UA->getGuid().equals_lower(Uuid))
       return nullptr;
-    Diag(UA->getLocation(), diag::err_mismatched_uuid);
-    Diag(CI.getLoc(), diag::note_previous_uuid);
-    D->dropAttr<UuidAttr>();
+    if (!UA->getGuid().empty()) {
+      Diag(UA->getLocation(), diag::err_mismatched_uuid);
+      Diag(CI.getLoc(), diag::note_previous_uuid);
+      D->dropAttr<UuidAttr>();
+    }
   }
 
   return ::new (Context) UuidAttr(Context, CI, Uuid);
@@ -6249,6 +6309,28 @@ static void handleBPFPreserveAccessIndexAttr(Sema &S, Decl *D,
   auto *Rec = cast<RecordDecl>(D);
   handleBPFPreserveAIRecord(S, Rec);
   Rec->addAttr(::new (S.Context) BPFPreserveAccessIndexAttr(S.Context, AL));
+}
+
+static void handleWebAssemblyExportNameAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
+  if (!isFunctionOrMethod(D)) {
+    S.Diag(D->getLocation(), diag::warn_attribute_wrong_decl_type)
+        << "'export_name'" << ExpectedFunction;
+    return;
+  }
+
+  auto *FD = cast<FunctionDecl>(D);
+  if (FD->isThisDeclarationADefinition()) {
+    S.Diag(D->getLocation(), diag::err_alias_is_definition) << FD << 0;
+    return;
+  }
+
+  StringRef Str;
+  SourceLocation ArgLoc;
+  if (!S.checkStringLiteralArgumentAttr(AL, 0, Str, &ArgLoc))
+    return;
+
+  D->addAttr(::new (S.Context) WebAssemblyExportNameAttr(S.Context, AL, Str));
+  D->addAttr(UsedAttr::CreateImplicit(S.Context));
 }
 
 static void handleWebAssemblyImportModuleAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
@@ -7076,6 +7158,31 @@ static void handleMSAllocatorAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
   handleSimpleAttribute<MSAllocatorAttr>(S, D, AL);
 }
 
+static void handeAcquireHandleAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
+  if (AL.isUsedAsTypeAttr())
+    return;
+  // Warn if the parameter is definitely not an output parameter.
+  if (const auto *PVD = dyn_cast<ParmVarDecl>(D)) {
+    if (PVD->getType()->isIntegerType()) {
+      S.Diag(AL.getLoc(), diag::err_attribute_output_parameter)
+          << AL.getRange();
+      return;
+    }
+  }
+  StringRef Argument;
+  if (!S.checkStringLiteralArgumentAttr(AL, 0, Argument))
+    return;
+  D->addAttr(AcquireHandleAttr::Create(S.Context, Argument, AL));
+}
+
+template<typename Attr>
+static void handleHandleAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
+  StringRef Argument;
+  if (!S.checkStringLiteralArgumentAttr(AL, 0, Argument))
+    return;
+  D->addAttr(Attr::Create(S.Context, Argument, AL));
+}
+
 //===----------------------------------------------------------------------===//
 // Top Level Sema Entry Points
 //===----------------------------------------------------------------------===//
@@ -7179,6 +7286,9 @@ static void ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D,
     break;
   case ParsedAttr::AT_BPFPreserveAccessIndex:
     handleBPFPreserveAccessIndexAttr(S, D, AL);
+    break;
+  case ParsedAttr::AT_WebAssemblyExportName:
+    handleWebAssemblyExportNameAttr(S, D, AL);
     break;
   case ParsedAttr::AT_WebAssemblyImportModule:
     handleWebAssemblyImportModuleAttr(S, D, AL);
@@ -7485,6 +7595,9 @@ static void ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D,
     break;
   case ParsedAttr::AT_SYCLIntelNumSimdWorkItems:
     handleNumSimdWorkItemsAttr(S, D, AL);
+    break;
+  case ParsedAttr::AT_SYCLIntelMaxGlobalWorkDim:
+    handleMaxGlobalWorkDimAttr(S, D, AL);
     break;
   case ParsedAttr::AT_VecTypeHint:
     handleVecTypeHint(S, D, AL);
@@ -7914,6 +8027,18 @@ static void ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D,
   case ParsedAttr::AT_ArmMveAlias:
     handleArmMveAliasAttr(S, D, AL);
     break;
+
+  case ParsedAttr::AT_AcquireHandle:
+    handeAcquireHandleAttr(S, D, AL);
+    break;
+
+  case ParsedAttr::AT_ReleaseHandle:
+    handleHandleAttr<ReleaseHandleAttr>(S, D, AL);
+    break;
+
+  case ParsedAttr::AT_UseHandle:
+    handleHandleAttr<UseHandleAttr>(S, D, AL);
+    break;
   }
 }
 
@@ -8074,7 +8199,8 @@ NamedDecl * Sema::DeclClonePragmaWeak(NamedDecl *ND, IdentifierInfo *II,
     NewFD = FunctionDecl::Create(
         FD->getASTContext(), FD->getDeclContext(), Loc, Loc,
         DeclarationName(II), FD->getType(), FD->getTypeSourceInfo(), SC_None,
-        false /*isInlineSpecified*/, FD->hasPrototype(), CSK_unspecified);
+        false /*isInlineSpecified*/, FD->hasPrototype(), CSK_unspecified,
+        FD->getTrailingRequiresClause());
     NewD = NewFD;
 
     if (FD->getQualifier())

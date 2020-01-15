@@ -1011,6 +1011,9 @@ EmitComplexPrePostIncDec(const UnaryOperator *E, LValue LV,
 
   // Store the updated result through the lvalue.
   EmitStoreOfComplex(IncVal, LV, /*init*/ false);
+  if (getLangOpts().OpenMP)
+    CGM.getOpenMPRuntime().checkAndEmitLastprivateConditional(*this,
+                                                              E->getSubExpr());
 
   // If this is a postinc, return the value read from memory, otherwise use the
   // updated value.
@@ -2574,21 +2577,35 @@ LValue CodeGenFunction::EmitDeclRefLValue(const DeclRefExpr *E) {
       VD = VD->getCanonicalDecl();
       if (auto *FD = LambdaCaptureFields.lookup(VD))
         return EmitCapturedFieldLValue(*this, FD, CXXABIThisValue);
-      else if (CapturedStmtInfo) {
+      if (CapturedStmtInfo) {
         auto I = LocalDeclMap.find(VD);
         if (I != LocalDeclMap.end()) {
+          LValue CapLVal;
           if (VD->getType()->isReferenceType())
-            return EmitLoadOfReferenceLValue(I->second, VD->getType(),
-                                             AlignmentSource::Decl);
-          return MakeAddrLValue(I->second, T);
+            CapLVal = EmitLoadOfReferenceLValue(I->second, VD->getType(),
+                                                AlignmentSource::Decl);
+          else
+            CapLVal = MakeAddrLValue(I->second, T);
+          // Mark lvalue as nontemporal if the variable is marked as nontemporal
+          // in simd context.
+          if (getLangOpts().OpenMP &&
+              CGM.getOpenMPRuntime().isNontemporalDecl(VD))
+            CapLVal.setNontemporal(/*Value=*/true);
+          return CapLVal;
         }
         LValue CapLVal =
             EmitCapturedFieldLValue(*this, CapturedStmtInfo->lookup(VD),
                                     CapturedStmtInfo->getContextValue());
-        return MakeAddrLValue(
+        CapLVal = MakeAddrLValue(
             Address(CapLVal.getPointer(*this), getContext().getDeclAlign(VD)),
             CapLVal.getType(), LValueBaseInfo(AlignmentSource::Decl),
             CapLVal.getTBAAInfo());
+        // Mark lvalue as nontemporal if the variable is marked as nontemporal
+        // in simd context.
+        if (getLangOpts().OpenMP &&
+            CGM.getOpenMPRuntime().isNontemporalDecl(VD))
+          CapLVal.setNontemporal(/*Value=*/true);
+        return CapLVal;
       }
 
       assert(isa<BlockDecl>(CurCodeDecl));
@@ -3955,6 +3972,15 @@ LValue CodeGenFunction::EmitMemberExpr(const MemberExpr *E) {
   if (auto *Field = dyn_cast<FieldDecl>(ND)) {
     LValue LV = EmitLValueForField(BaseLV, Field);
     setObjCGCLValueClass(getContext(), E, LV);
+    if (getLangOpts().OpenMP) {
+      // If the member was explicitly marked as nontemporal, mark it as
+      // nontemporal. If the base lvalue is marked as nontemporal, mark access
+      // to children as nontemporal too.
+      if ((IsWrappedCXXThis(BaseExpr) &&
+           CGM.getOpenMPRuntime().isNontemporalDecl(Field)) ||
+          BaseLV.isNontemporal())
+        LV.setNontemporal(/*Value=*/true);
+    }
     return LV;
   }
 
@@ -4753,6 +4779,9 @@ LValue CodeGenFunction::EmitBinaryOperatorLValue(const BinaryOperator *E) {
     if (RV.isScalar())
       EmitNullabilityCheck(LV, RV.getScalarVal(), E->getExprLoc());
     EmitStoreThroughLValue(RV, LV);
+    if (getLangOpts().OpenMP)
+      CGM.getOpenMPRuntime().checkAndEmitLastprivateConditional(*this,
+                                                                E->getLHS());
     return LV;
   }
 

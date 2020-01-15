@@ -126,6 +126,10 @@ enum ExecutionMode {
     ExecutionModeFinalizer = 34,
     ExecutionModeSubgroupSize = 35,
     ExecutionModeSubgroupsPerWorkgroup = 36,
+    ExecutionModeMaxWorkgroupSizeINTEL = 5893,
+    ExecutionModeMaxWorkDimINTEL = 5894,
+    ExecutionModeNoGlobalOffsetINTEL = 5895,
+    ExecutionModeNumSIMDWorkitemsINTEL = 5896,
     ExecutionModeMax = 0x7fffffff,
 };
 
@@ -400,6 +404,7 @@ enum Decoration {
     DecorationMaxReplicatesINTEL = 5832,
     DecorationSimpleDualPortINTEL = 5833,
     DecorationMergeINTEL = 5834,
+    DecorationBankBitsINTEL = 5835,
     DecorationMax = 0x7fffffff,
 };
 
@@ -497,9 +502,13 @@ enum LoopControlMask {
     LoopControlExtendedControlsMask = 0x80000000,
 };
 
+// TODO: Align the controls handling with the latest revision
+// of the SPIR-V specification for FPGA Loop Controls by removing
+// the extended controls token and using the control bits directly
 enum ExtendedControls {
     InitiationIntervalINTEL = 5889,
     MaxConcurrencyINTEL = 5890,
+    DependencyArrayINTEL = 5891,
 };
 
 enum FunctionControlShift {
@@ -686,6 +695,8 @@ enum Capability {
   CapabilityFPGALoopControlsINTEL = 5888,
   CapabilityBlockingPipesINTEL = 5945,
   CapabilityFPGARegINTEL = 5948,
+  CapabilityKernelAttributesINTEL= 5892,
+  CapabilityFPGAKernelAttributesINTEL= 5897,
   CapabilityMax = 0x7fffffff,
 };
 

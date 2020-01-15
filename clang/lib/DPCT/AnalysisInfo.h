@@ -19,6 +19,7 @@
 #include "ValidateArguments.h"
 #include <bitset>
 
+#include "clang/AST/Attr.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/Format/Format.h"

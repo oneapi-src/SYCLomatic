@@ -51,6 +51,7 @@ template <class Allocator, u32 MaxTSDCount> struct TSDRegistrySharedT {
     unmap(reinterpret_cast<void *>(TSDs),
           sizeof(TSD<Allocator>) * NumberOfTSDs);
     setCurrentTSD(nullptr);
+    pthread_key_delete(PThreadKey);
   }
 
   ALWAYS_INLINE void initThreadMaybe(Allocator *Instance,
@@ -69,6 +70,16 @@ template <class Allocator, u32 MaxTSDCount> struct TSDRegistrySharedT {
       return TSD;
     // If that fails, go down the slow path.
     return getTSDAndLockSlow(TSD);
+  }
+
+  void disable() {
+    for (u32 I = 0; I < NumberOfTSDs; I++)
+      TSDs[I].lock();
+  }
+
+  void enable() {
+    for (u32 I = 0; I < NumberOfTSDs; I++)
+      TSDs[I].unlock();
   }
 
 private:

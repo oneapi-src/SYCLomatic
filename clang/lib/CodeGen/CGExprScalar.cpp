@@ -14,11 +14,13 @@
 #include "CGCleanup.h"
 #include "CGDebugInfo.h"
 #include "CGObjCRuntime.h"
+#include "CGOpenMPRuntime.h"
 #include "CodeGenFunction.h"
 #include "CodeGenModule.h"
 #include "ConstantEmitter.h"
 #include "TargetInfo.h"
 #include "clang/AST/ASTContext.h"
+#include "clang/AST/Attr.h"
 #include "clang/AST/DeclObjC.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/RecordLayout.h"
@@ -34,6 +36,7 @@
 #include "llvm/IR/GetElementPtrTypeIterator.h"
 #include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/Intrinsics.h"
+#include "llvm/IR/IntrinsicsPowerPC.h"
 #include "llvm/IR/Module.h"
 #include <cstdarg>
 
@@ -2376,10 +2379,29 @@ llvm::Value *ScalarExprEmitter::EmitIncDecConsiderOverflowBehavior(
   llvm_unreachable("Unknown SignedOverflowBehaviorTy");
 }
 
+namespace {
+/// Handles check and update for lastprivate conditional variables.
+class OMPLastprivateConditionalUpdateRAII {
+private:
+  CodeGenFunction &CGF;
+  const UnaryOperator *E;
+
+public:
+  OMPLastprivateConditionalUpdateRAII(CodeGenFunction &CGF,
+                                      const UnaryOperator *E)
+      : CGF(CGF), E(E) {}
+  ~OMPLastprivateConditionalUpdateRAII() {
+    if (CGF.getLangOpts().OpenMP)
+      CGF.CGM.getOpenMPRuntime().checkAndEmitLastprivateConditional(
+          CGF, E->getSubExpr());
+  }
+};
+} // namespace
+
 llvm::Value *
 ScalarExprEmitter::EmitScalarPrePostIncDec(const UnaryOperator *E, LValue LV,
                                            bool isInc, bool isPre) {
-
+  OMPLastprivateConditionalUpdateRAII OMPRegion(CGF, E);
   QualType type = E->getSubExpr()->getType();
   llvm::PHINode *atomicPHI = nullptr;
   llvm::Value *value;
@@ -3065,6 +3087,9 @@ LValue ScalarExprEmitter::EmitCompoundAssignLValue(
   else
     CGF.EmitStoreThroughLValue(RValue::get(Result), LHSLV);
 
+  if (CGF.getLangOpts().OpenMP)
+    CGF.CGM.getOpenMPRuntime().checkAndEmitLastprivateConditional(CGF,
+                                                                  E->getLHS());
   return LHSLV;
 }
 
@@ -3332,10 +3357,10 @@ static Value *emitPointerArithmetic(CodeGenFunction &CGF,
                                                        expr->getRHS()))
     return CGF.Builder.CreateIntToPtr(index, pointer->getType());
 
-  if (width != DL.getTypeSizeInBits(PtrTy)) {
+  if (width != DL.getIndexTypeSizeInBits(PtrTy)) {
     // Zero-extend or sign-extend the pointer value according to
     // whether the index is signed or not.
-    index = CGF.Builder.CreateIntCast(index, DL.getIntPtrType(PtrTy), isSigned,
+    index = CGF.Builder.CreateIntCast(index, DL.getIndexType(PtrTy), isSigned,
                                       "idx.ext");
   }
 
@@ -3413,17 +3438,10 @@ static Value* buildFMulAdd(llvm::BinaryOperator *MulOp, Value *Addend,
 
   Value *MulOp0 = MulOp->getOperand(0);
   Value *MulOp1 = MulOp->getOperand(1);
-  if (negMul) {
-    MulOp0 =
-      Builder.CreateFSub(
-        llvm::ConstantFP::getZeroValueForNegation(MulOp0->getType()), MulOp0,
-        "neg");
-  } else if (negAdd) {
-    Addend =
-      Builder.CreateFSub(
-        llvm::ConstantFP::getZeroValueForNegation(Addend->getType()), Addend,
-        "neg");
-  }
+  if (negMul)
+    MulOp0 = Builder.CreateFNeg(MulOp0, "neg");
+  if (negAdd)
+    Addend = Builder.CreateFNeg(Addend, "neg");
 
   Value *FMulAdd = Builder.CreateCall(
       CGF.CGM.getIntrinsic(llvm::Intrinsic::fmuladd, Addend->getType()),

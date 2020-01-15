@@ -21,7 +21,7 @@
 
 // 4.6.2 Context class
 
-namespace cl {
+__SYCL_INLINE namespace cl {
 namespace sycl {
 context::context(const async_handler &AsyncHandler)
     : context(default_selector().select_device(), AsyncHandler) {}
@@ -69,6 +69,8 @@ platform context::get_platform() const {
 vector_class<device> context::get_devices() const {
   return impl->get_info<info::context::devices>();
 }
+
+context::context(shared_ptr_class<detail::context_impl> Impl) : impl(Impl) {}
 
 } // namespace sycl
 } // namespace cl

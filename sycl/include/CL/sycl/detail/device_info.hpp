@@ -8,11 +8,13 @@
 
 #pragma once
 #include <CL/sycl/detail/common_info.hpp>
+#include <CL/sycl/detail/defines.hpp>
 #include <CL/sycl/detail/pi.hpp>
+#include <CL/sycl/detail/platform_impl.hpp>
 #include <CL/sycl/info/info_desc.hpp>
 #include <CL/sycl/platform.hpp>
 
-namespace cl {
+__SYCL_INLINE namespace cl {
 namespace sycl {
 namespace detail {
 
@@ -61,7 +63,7 @@ template <info::device param> struct get_device_info<platform, param> {
     PI_CALL(piDeviceGetInfo)(dev, pi::cast<RT::PiDeviceInfo>(param),
                              sizeof(result), &result, nullptr);
     return createSyclObjFromImpl<platform>(
-        std::make_shared<platform_impl_pi>(result));
+        std::make_shared<platform_impl>(result));
   }
 };
 
@@ -323,6 +325,75 @@ get_device_info_host() = delete;
 #undef PARAM_TRAITS_SPEC
 
 cl_uint get_native_vector_width(size_t idx);
+
+// USM
+
+// Specialization for device usm query.
+template <>
+struct get_device_info<bool, info::device::usm_device_allocations> {
+  static bool get(RT::PiDevice dev) {
+    pi_usm_capabilities caps;
+    pi_result Err = PI_CALL_NOCHECK(piDeviceGetInfo)(
+        dev, pi::cast<RT::PiDeviceInfo>(info::device::usm_device_allocations),
+        sizeof(pi_usm_capabilities), &caps, nullptr);
+
+    return (Err != PI_SUCCESS) ? false : (caps & PI_USM_ACCESS);
+  }
+};
+
+// Specialization for host usm query.
+template <>
+struct get_device_info<bool, info::device::usm_host_allocations> {
+  static bool get(RT::PiDevice dev) {
+    pi_usm_capabilities caps;
+    pi_result Err = PI_CALL_NOCHECK(piDeviceGetInfo)(
+        dev, pi::cast<RT::PiDeviceInfo>(info::device::usm_host_allocations),
+        sizeof(pi_usm_capabilities), &caps, nullptr);
+
+    return (Err != PI_SUCCESS) ? false : (caps & PI_USM_ACCESS);
+  }
+};
+
+// Specialization for shared usm query.
+template <>
+struct get_device_info<bool, info::device::usm_shared_allocations> {
+  static bool get(RT::PiDevice dev) {
+    pi_usm_capabilities caps;
+    pi_result Err = PI_CALL_NOCHECK(piDeviceGetInfo)(
+        dev, pi::cast<RT::PiDeviceInfo>(info::device::usm_shared_allocations),
+        sizeof(pi_usm_capabilities), &caps, nullptr);
+    return (Err != PI_SUCCESS) ? false : (caps & PI_USM_ACCESS);
+  }
+};
+
+// Specialization for restricted usm query
+template <>
+struct get_device_info<bool, info::device::usm_restricted_shared_allocations> {
+  static bool get(RT::PiDevice dev) {
+    pi_usm_capabilities caps;
+    pi_result Err = PI_CALL_NOCHECK(piDeviceGetInfo)(
+        dev,
+        pi::cast<RT::PiDeviceInfo>(
+            info::device::usm_restricted_shared_allocations),
+        sizeof(pi_usm_capabilities), &caps, nullptr);
+    // Check that we don't support any cross device sharing
+    return (Err != PI_SUCCESS)
+               ? false
+               : !(caps & (PI_USM_ACCESS | PI_USM_CONCURRENT_ACCESS));
+  }
+};
+
+// Specialization for system usm query
+template <>
+struct get_device_info<bool, info::device::usm_system_allocator> {
+  static bool get(RT::PiDevice dev) {
+    pi_usm_capabilities caps;
+    pi_result Err = PI_CALL_NOCHECK(piDeviceGetInfo)(
+        dev, pi::cast<RT::PiDeviceInfo>(info::device::usm_system_allocator),
+        sizeof(pi_usm_capabilities), &caps, nullptr);
+    return (Err != PI_SUCCESS) ? false : (caps & PI_USM_ACCESS);
+  }
+};
 
 } // namespace detail
 } // namespace sycl

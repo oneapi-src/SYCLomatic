@@ -71,7 +71,7 @@ define void @c() "sign-return-address"="all" "sign-return-address-key"="b_key" n
   ret void
 }
 
-; CHECK:            [[OUTLINED_FUNC]] 
+; CHECK:            [[OUTLINED_FUNC]]
 ; CHECK:            // %bb.0:
 ; CHECK-NEXT:           .cfi_b_key_frame
 ; CHECK-NEXT:           pacibsp

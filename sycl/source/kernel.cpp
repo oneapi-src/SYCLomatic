@@ -10,12 +10,13 @@
 #include <CL/sycl/kernel.hpp>
 #include <CL/sycl/program.hpp>
 
-namespace cl {
+__SYCL_INLINE namespace cl {
 namespace sycl {
 
 kernel::kernel(cl_kernel ClKernel, const context &SyclContext)
     : impl(std::make_shared<detail::kernel_impl>(
-          detail::pi::cast<detail::RT::PiKernel>(ClKernel), SyclContext)) {}
+          detail::pi::cast<detail::RT::PiKernel>(ClKernel),
+              detail::getSyclObjImpl(SyclContext))) {}
 
 cl_kernel kernel::get() const { return impl->get(); }
 

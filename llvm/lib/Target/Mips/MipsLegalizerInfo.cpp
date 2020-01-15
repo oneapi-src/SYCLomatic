@@ -13,6 +13,7 @@
 #include "MipsLegalizerInfo.h"
 #include "MipsTargetMachine.h"
 #include "llvm/CodeGen/GlobalISel/LegalizerHelper.h"
+#include "llvm/IR/IntrinsicsMips.h"
 
 using namespace llvm;
 
@@ -183,6 +184,23 @@ MipsLegalizerInfo::MipsLegalizerInfo(const MipsSubtarget &ST) {
 
   getActionDefinitionsBuilder(G_VASTART)
      .legalFor({p0});
+
+  getActionDefinitionsBuilder(G_BSWAP)
+      .legalIf([=, &ST](const LegalityQuery &Query) {
+        if (ST.hasMips32r2() && CheckTyN(0, Query, {s32}))
+          return true;
+        return false;
+      })
+      .lowerIf([=, &ST](const LegalityQuery &Query) {
+        if (!ST.hasMips32r2() && CheckTyN(0, Query, {s32}))
+          return true;
+        return false;
+      })
+      .maxScalar(0, s32);
+
+  getActionDefinitionsBuilder(G_BITREVERSE)
+      .lowerFor({s32})
+      .maxScalar(0, s32);
 
   // FP instructions
   getActionDefinitionsBuilder(G_FCONSTANT)

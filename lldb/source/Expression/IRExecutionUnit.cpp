@@ -348,7 +348,7 @@ void IRExecutionUnit::GetRunnableInfo(Status &error, lldb::addr_t &func_addr,
       return;
     }
     m_jitted_functions.push_back(JittedFunction(
-        function.getName().str().c_str(), external, (lldb::addr_t)fun_ptr));
+        function.getName().str().c_str(), external, reinterpret_cast<uintptr_t>(fun_ptr)));
   }
 
   CommitAllocations(process_sp);
@@ -728,8 +728,6 @@ void IRExecutionUnit::CollectCandidateCPlusPlusNames(
         if (best_alternate_mangled_name) {
           CPP_specs.push_back(best_alternate_mangled_name);
         }
-
-        CPP_specs.push_back(SearchSpec(demangled, lldb::eFunctionNameTypeFull));
       }
     }
 

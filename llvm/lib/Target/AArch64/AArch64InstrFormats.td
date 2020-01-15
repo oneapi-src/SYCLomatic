@@ -393,6 +393,27 @@ def uimm5s8 : Operand<i64>, ImmLeaf<i64,
   let PrintMethod = "printImmScale<8>";
 }
 
+// tuimm5sN predicate - similiar to uimm5sN, but use TImmLeaf (TargetConstant)
+// instead of ImmLeaf (Constant)
+def tuimm5s2 : Operand<i64>, TImmLeaf<i64,
+                [{ return Imm >= 0 && Imm < (32*2) && ((Imm % 2) == 0); }],
+                UImmS2XForm> {
+  let ParserMatchClass = UImm5s2Operand;
+  let PrintMethod = "printImmScale<2>";
+}
+def tuimm5s4 : Operand<i64>, TImmLeaf<i64,
+                [{ return Imm >= 0 && Imm < (32*4) && ((Imm % 4) == 0); }],
+                UImmS4XForm> {
+  let ParserMatchClass = UImm5s4Operand;
+  let PrintMethod = "printImmScale<4>";
+}
+def tuimm5s8 : Operand<i64>, TImmLeaf<i64,
+                [{ return Imm >= 0 && Imm < (32*8) && ((Imm % 8) == 0); }],
+                UImmS8XForm> {
+  let ParserMatchClass = UImm5s8Operand;
+  let PrintMethod = "printImmScale<8>";
+}
+
 // uimm6sN predicate - True if the immediate is a multiple of N in the range
 // [0 * N, 64 * N].
 def UImm6s1Operand : UImmScaledMemoryIndexed<6, 1>;
@@ -603,6 +624,30 @@ def vecshiftR64Narrow : Operand<i32>, ImmLeaf<i32, [{
   let ParserMatchClass = Imm1_32Operand;
 }
 
+// Same as vecshiftR#N, but use TargetConstant (TimmLeaf) instead of Constant
+// (ImmLeaf)
+def tvecshiftR8 : Operand<i32>, TImmLeaf<i32, [{
+  return (((uint32_t)Imm) > 0) && (((uint32_t)Imm) < 9);
+}]> {
+  let EncoderMethod = "getVecShiftR8OpValue";
+  let DecoderMethod = "DecodeVecShiftR8Imm";
+  let ParserMatchClass = Imm1_8Operand;
+}
+def tvecshiftR16 : Operand<i32>, TImmLeaf<i32, [{
+  return (((uint32_t)Imm) > 0) && (((uint32_t)Imm) < 17);
+}]> {
+  let EncoderMethod = "getVecShiftR16OpValue";
+  let DecoderMethod = "DecodeVecShiftR16Imm";
+  let ParserMatchClass = Imm1_16Operand;
+}
+def tvecshiftR32 : Operand<i32>, TImmLeaf<i32, [{
+  return (((uint32_t)Imm) > 0) && (((uint32_t)Imm) < 33);
+}]> {
+  let EncoderMethod = "getVecShiftR32OpValue";
+  let DecoderMethod = "DecodeVecShiftR32Imm";
+  let ParserMatchClass = Imm1_32Operand;
+}
+
 def Imm0_1Operand : AsmImmRange<0, 1>;
 def Imm0_7Operand : AsmImmRange<0, 7>;
 def Imm0_15Operand : AsmImmRange<0, 15>;
@@ -726,6 +771,13 @@ def imm0_127 : Operand<i32>, ImmLeaf<i32, [{
   let PrintMethod = "printImm";
 }
 
+def imm0_127_64b : Operand<i64>, ImmLeaf<i64, [{
+  return ((uint64_t)Imm) < 128;
+}]> {
+  let ParserMatchClass = Imm0_127Operand;
+  let PrintMethod = "printImm";
+}
+
 // NOTE: These imm0_N operands have to be of type i64 because i64 is the size
 // for all shift-amounts.
 
@@ -738,6 +790,14 @@ def imm0_63 : Operand<i64>, ImmLeaf<i64, [{
 
 // imm0_31 predicate - True if the immediate is in the range [0,31]
 def imm0_31 : Operand<i64>, ImmLeaf<i64, [{
+  return ((uint64_t)Imm) < 32;
+}]> {
+  let ParserMatchClass = Imm0_31Operand;
+}
+
+// timm0_31 predicate - same ass imm0_31, but use TargetConstant (TimmLeaf)
+// instead of Contant (ImmLeaf)
+def timm0_31 : Operand<i64>, TImmLeaf<i64, [{
   return ((uint64_t)Imm) < 32;
 }]> {
   let ParserMatchClass = Imm0_31Operand;

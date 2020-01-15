@@ -34,6 +34,7 @@
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Program.h"
+#include "llvm/Support/SmallVectorMemoryBuffer.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/ThreadPool.h"
 #include "llvm/Support/raw_ostream.h"
@@ -101,23 +102,25 @@ Error Config::addSaveTemps(std::string OutputFileName,
   setHook("4.opt", PostOptModuleHook);
   setHook("5.precodegen", PreCodeGenModuleHook);
 
-  CombinedIndexHook = [=](const ModuleSummaryIndex &Index) {
-    std::string Path = OutputFileName + "index.bc";
-    std::error_code EC;
-    raw_fd_ostream OS(Path, EC, sys::fs::OpenFlags::OF_None);
-    // Because -save-temps is a debugging feature, we report the error
-    // directly and exit.
-    if (EC)
-      reportOpenError(Path, EC.message());
-    WriteIndexToFile(Index, OS);
+  CombinedIndexHook =
+      [=](const ModuleSummaryIndex &Index,
+          const DenseSet<GlobalValue::GUID> &GUIDPreservedSymbols) {
+        std::string Path = OutputFileName + "index.bc";
+        std::error_code EC;
+        raw_fd_ostream OS(Path, EC, sys::fs::OpenFlags::OF_None);
+        // Because -save-temps is a debugging feature, we report the error
+        // directly and exit.
+        if (EC)
+          reportOpenError(Path, EC.message());
+        WriteIndexToFile(Index, OS);
 
-    Path = OutputFileName + "index.dot";
-    raw_fd_ostream OSDot(Path, EC, sys::fs::OpenFlags::OF_None);
-    if (EC)
-      reportOpenError(Path, EC.message());
-    Index.exportToDot(OSDot);
-    return true;
-  };
+        Path = OutputFileName + "index.dot";
+        raw_fd_ostream OSDot(Path, EC, sys::fs::OpenFlags::OF_None);
+        if (EC)
+          reportOpenError(Path, EC.message());
+        Index.exportToDot(OSDot, GUIDPreservedSymbols);
+        return true;
+      };
 
   return Error::success();
 }
@@ -312,10 +315,29 @@ bool opt(Config &Conf, TargetMachine *TM, unsigned Task, Module &Mod,
   return !Conf.PostOptModuleHook || Conf.PostOptModuleHook(Task, Mod);
 }
 
+static cl::opt<bool> EmbedBitcode(
+    "lto-embed-bitcode", cl::init(false),
+    cl::desc("Embed LLVM bitcode in object files produced by LTO"));
+
+static void EmitBitcodeSection(Module &M, Config &Conf) {
+  if (!EmbedBitcode)
+    return;
+  SmallVector<char, 0> Buffer;
+  raw_svector_ostream OS(Buffer);
+  WriteBitcodeToFile(M, OS);
+
+  std::unique_ptr<MemoryBuffer> Buf(
+      new SmallVectorMemoryBuffer(std::move(Buffer)));
+  llvm::EmbedBitcodeInModule(M, Buf->getMemBufferRef(), /*EmbedBitcode*/ true,
+                             /*EmbedMarker*/ false, /*CmdArgs*/ nullptr);
+}
+
 void codegen(Config &Conf, TargetMachine *TM, AddStreamFn AddStream,
              unsigned Task, Module &Mod) {
   if (Conf.PreCodeGenModuleHook && !Conf.PreCodeGenModuleHook(Task, Mod))
     return;
+
+  EmitBitcodeSection(Mod, Conf);
 
   std::unique_ptr<ToolOutputFile> DwoOut;
   SmallString<1024> DwoFile(Conf.SplitDwarfOutput);

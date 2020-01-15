@@ -689,6 +689,88 @@ AST_POLYMORPHIC_MATCHER_P(
                              Builder);
 }
 
+/// Causes all nested matchers to be matched with the specified traversal kind.
+///
+/// Given
+/// \code
+///   void foo()
+///   {
+///       int i = 3.0;
+///   }
+/// \endcode
+/// The matcher
+/// \code
+///   traverse(ast_type_traits::TK_IgnoreImplicitCastsAndParentheses,
+///     varDecl(hasInitializer(floatLiteral().bind("init")))
+///   )
+/// \endcode
+/// matches the variable declaration with "init" bound to the "3.0".
+template <typename T>
+internal::Matcher<T> traverse(ast_type_traits::TraversalKind TK,
+                              const internal::Matcher<T> &InnerMatcher) {
+  return internal::DynTypedMatcher::constructRestrictedWrapper(
+             new internal::TraversalMatcher<T>(TK, InnerMatcher),
+             InnerMatcher.getID().first)
+      .template unconditionalConvertTo<T>();
+}
+
+template <typename T>
+internal::BindableMatcher<T>
+traverse(ast_type_traits::TraversalKind TK,
+         const internal::BindableMatcher<T> &InnerMatcher) {
+  return internal::BindableMatcher<T>(
+      internal::DynTypedMatcher::constructRestrictedWrapper(
+          new internal::TraversalMatcher<T>(TK, InnerMatcher),
+          InnerMatcher.getID().first)
+          .template unconditionalConvertTo<T>());
+}
+
+template <typename... T>
+internal::TraversalWrapper<internal::VariadicOperatorMatcher<T...>>
+traverse(ast_type_traits::TraversalKind TK,
+         const internal::VariadicOperatorMatcher<T...> &InnerMatcher) {
+  return internal::TraversalWrapper<internal::VariadicOperatorMatcher<T...>>(
+      TK, InnerMatcher);
+}
+
+template <template <typename ToArg, typename FromArg> class ArgumentAdapterT,
+          typename T, typename ToTypes>
+internal::TraversalWrapper<
+    internal::ArgumentAdaptingMatcherFuncAdaptor<ArgumentAdapterT, T, ToTypes>>
+traverse(ast_type_traits::TraversalKind TK,
+         const internal::ArgumentAdaptingMatcherFuncAdaptor<
+             ArgumentAdapterT, T, ToTypes> &InnerMatcher) {
+  return internal::TraversalWrapper<
+      internal::ArgumentAdaptingMatcherFuncAdaptor<ArgumentAdapterT, T,
+                                                   ToTypes>>(TK, InnerMatcher);
+}
+
+template <template <typename T, typename P1> class MatcherT, typename P1,
+          typename ReturnTypesF>
+internal::TraversalWrapper<
+    internal::PolymorphicMatcherWithParam1<MatcherT, P1, ReturnTypesF>>
+traverse(
+    ast_type_traits::TraversalKind TK,
+    const internal::PolymorphicMatcherWithParam1<MatcherT, P1, ReturnTypesF>
+        &InnerMatcher) {
+  return internal::TraversalWrapper<
+      internal::PolymorphicMatcherWithParam1<MatcherT, P1, ReturnTypesF>>(
+      TK, InnerMatcher);
+}
+
+template <template <typename T, typename P1, typename P2> class MatcherT,
+          typename P1, typename P2, typename ReturnTypesF>
+internal::TraversalWrapper<
+    internal::PolymorphicMatcherWithParam2<MatcherT, P1, P2, ReturnTypesF>>
+traverse(
+    ast_type_traits::TraversalKind TK,
+    const internal::PolymorphicMatcherWithParam2<MatcherT, P1, P2, ReturnTypesF>
+        &InnerMatcher) {
+  return internal::TraversalWrapper<
+      internal::PolymorphicMatcherWithParam2<MatcherT, P1, P2, ReturnTypesF>>(
+      TK, InnerMatcher);
+}
+
 /// Matches expressions that match InnerMatcher after any implicit AST
 /// nodes are stripped off.
 ///
@@ -2457,6 +2539,36 @@ extern const internal::VariadicOperatorMatcherFunc<
 extern const internal::VariadicOperatorMatcherFunc<
     2, std::numeric_limits<unsigned>::max()>
     allOf;
+
+/// Matches any node regardless of the submatchers.
+///
+/// However, \c optionally will generate a result binding for each matching
+/// submatcher.
+///
+/// Useful when additional information which may or may not present about a
+/// main matching node is desired.
+///
+/// For example, in:
+/// \code
+///   class Foo {
+///     int bar;
+///   }
+/// \endcode
+/// The matcher:
+/// \code
+///   cxxRecordDecl(
+///     optionally(has(
+///       fieldDecl(hasName("bar")).bind("var")
+///   ))).bind("record")
+/// \endcode
+/// will produce a result binding for both "record" and "var".
+/// The matcher will produce a "record" binding for even if there is no data
+/// member named "bar" in that class.
+///
+/// Usable as: Any Matcher
+extern const internal::VariadicOperatorMatcherFunc<
+    1, std::numeric_limits<unsigned>::max()>
+    optionally;
 
 /// Matches sizeof (C99), alignof (C++11) and vec_step (OpenCL)
 ///
@@ -4270,6 +4382,35 @@ AST_POLYMORPHIC_MATCHER(isConstexpr,
                                                         FunctionDecl,
                                                         IfStmt)) {
   return Node.isConstexpr();
+}
+
+/// Matches selection statements with initializer.
+///
+/// Given:
+/// \code
+///  void foo() {
+///    if (int i = foobar(); i > 0) {}
+///    switch (int i = foobar(); i) {}
+///    for (auto& a = get_range(); auto& x : a) {}
+///  }
+///  void bar() {
+///    if (foobar() > 0) {}
+///    switch (foobar()) {}
+///    for (auto& x : get_range()) {}
+///  }
+/// \endcode
+/// ifStmt(hasInitStatement(anything()))
+///   matches the if statement in foo but not in bar.
+/// switchStmt(hasInitStatement(anything()))
+///   matches the switch statement in foo but not in bar.
+/// cxxForRangeStmt(hasInitStatement(anything()))
+///   matches the range for statement in foo but not in bar.
+AST_POLYMORPHIC_MATCHER_P(hasInitStatement,
+                          AST_POLYMORPHIC_SUPPORTED_TYPES(IfStmt, SwitchStmt,
+                                                          CXXForRangeStmt),
+                          internal::Matcher<Stmt>, InnerMatcher) {
+  const Stmt *Init = Node.getInit();
+  return Init != nullptr && InnerMatcher.matches(*Init, Finder, Builder);
 }
 
 /// Matches the condition expression of an if statement, for loop,
@@ -6519,6 +6660,20 @@ AST_MATCHER(NamedDecl, hasExternalFormalLinkage) {
 /// void x(int val) {}
 /// void y(int val = 0) {}
 /// \endcode
+///
+/// Deprecated. Use hasInitializer() instead to be able to
+/// match on the contents of the default argument.  For example:
+///
+/// \code
+/// void x(int val = 7) {}
+/// void y(int val = 42) {}
+/// \endcode
+/// parmVarDecl(hasInitializer(integerLiteral(equals(42))))
+///   matches the parameter of y
+///
+/// A matcher such as
+///   parmVarDecl(hasInitializer(anything()))
+/// is equivalent to parmVarDecl(hasDefaultArgument()).
 AST_MATCHER(ParmVarDecl, hasDefaultArgument) {
   return Node.hasDefaultArg();
 }
@@ -6541,7 +6696,7 @@ AST_MATCHER(CXXNewExpr, isArray) {
 /// \code
 ///   MyClass *p1 = new MyClass[10];
 /// \endcode
-/// cxxNewExpr(hasArraySize(intgerLiteral(equals(10))))
+/// cxxNewExpr(hasArraySize(integerLiteral(equals(10))))
 ///   matches the expression 'new MyClass[10]'.
 AST_MATCHER_P(CXXNewExpr, hasArraySize, internal::Matcher<Expr>, InnerMatcher) {
   return Node.isArray() && *Node.getArraySize() &&

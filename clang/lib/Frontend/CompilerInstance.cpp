@@ -672,7 +672,7 @@ CompilerInstance::createDefaultOutputFile(bool Binary, StringRef InFile,
                                           StringRef Extension) {
   return createOutputFile(getFrontendOpts().OutputFile, Binary,
                           /*RemoveFileOnSignal=*/true, InFile, Extension,
-                          /*UseTemporary=*/true);
+                          getFrontendOpts().UseTemporary);
 }
 
 std::unique_ptr<raw_pwrite_stream> CompilerInstance::createNullOutputFile() {
@@ -917,7 +917,7 @@ bool CompilerInstance::ExecuteAction(FrontendAction &Act) {
   if (!hasTarget())
     return false;
 
-  // Create TargetInfo for the other side of CUDA, SYCL and OpenMP compilation.
+  // Create TargetInfo for the other side of CUDA/OpenMP/SYCL compilation.
   if ((getLangOpts().CUDA || getLangOpts().OpenMPIsDevice ||
        getLangOpts().SYCLIsDevice) &&
       !getFrontendOpts().AuxTriple.empty()) {

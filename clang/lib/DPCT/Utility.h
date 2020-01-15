@@ -25,6 +25,7 @@
 #include <utility>
 #include <vector>
 
+#include "clang/AST/Attr.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"

@@ -1,7 +1,6 @@
 """
 Test that using a non-existent architecture name does not crash LLDB.
 """
-from __future__ import print_function
 
 
 import lldb
@@ -20,8 +19,8 @@ class NoSuchArchTestCase(TestBase):
         # Check that passing an invalid arch via the command-line fails but
         # doesn't crash
         self.expect(
-            "target crete --arch nothingtoseehere %s" %
-            (exe), error=True)
+            "target create --arch nothingtoseehere %s" %
+            (exe), error=True, substrs=["error: invalid triple 'nothingtoseehere'"])
 
         # Check that passing an invalid arch via the SB API fails but doesn't
         # crash

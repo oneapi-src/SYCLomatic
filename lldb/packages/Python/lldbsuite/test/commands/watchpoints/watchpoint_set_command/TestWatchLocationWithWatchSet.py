@@ -2,7 +2,6 @@
 Test lldb watchpoint that uses 'watchpoint set -w write -s size' to watch a pointed location with size.
 """
 
-from __future__ import print_function
 
 
 import lldb
@@ -28,7 +27,7 @@ class WatchLocationUsingWatchpointSetTestCase(TestBase):
         # Build dictionary to have unique executable names for each test
         # method.
 
-    @expectedFailureAll(
+    @skipIf(
         oslist=["linux"],
         archs=[
             'aarch64',

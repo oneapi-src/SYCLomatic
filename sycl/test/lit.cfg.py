@@ -35,6 +35,7 @@ config.test_source_root = os.path.dirname(__file__)
 config.test_exec_root = os.path.join(config.sycl_obj_root, 'test')
 
 if platform.system() == "Linux":
+    config.available_features.add('linux')
     # Propagate 'LD_LIBRARY_PATH' through the environment.
     if 'LD_LIBRARY_PATH' in os.environ:
         config.environment['LD_LIBRARY_PATH'] = os.path.pathsep.join((config.environment['LD_LIBRARY_PATH'], config.llvm_build_libs_dir))
@@ -77,6 +78,11 @@ config.substitutions.append( ('%sycl_include',  config.sycl_include ) )
 tools = ['llvm-spirv']
 tool_dirs = [config.llvm_tools_dir]
 llvm_config.add_tool_substitutions(tools, tool_dirs)
+
+if "opencl-aot" in config.llvm_enable_projects:
+    if 'PATH' in os.environ:
+        print("Adding path to opencl-aot tool to PATH")
+        os.environ['PATH'] = os.path.pathsep.join((os.getenv('PATH'), config.llvm_build_bins_dir))
 
 get_device_count_by_type_path = os.path.join(config.llvm_binary_dir,
     "bin", "get_device_count_by_type")
@@ -144,6 +150,7 @@ if getDeviceCount("accelerator"):
     print("Found available accelerator device")
     acc_run_substitute = " env SYCL_DEVICE_TYPE=ACC "
     acc_check_substitute = "| FileCheck %s"
+    config.available_features.add('accelerator')
 config.substitutions.append( ('%ACC_RUN_PLACEHOLDER',  acc_run_substitute) )
 config.substitutions.append( ('%ACC_CHECK_PLACEHOLDER',  acc_check_substitute) )
 
@@ -153,9 +160,9 @@ config.environment['PATH'] = path
 
 # Device AOT compilation tools aren't part of the SYCL project,
 # so they need to be pre-installed on the machine
-aot_tools = ["ioc64", "ocloc", "aoc"]
+aot_tools = ["opencl-aot", "ocloc", "aoc"]
 for aot_tool in aot_tools:
-    if find_executable(aot_tool) != None:
+    if find_executable(aot_tool) is not None:
         print("Found AOT device compiler " + aot_tool)
         config.available_features.add(aot_tool)
     else:

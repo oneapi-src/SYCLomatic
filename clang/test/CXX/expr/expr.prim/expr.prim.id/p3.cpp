@@ -72,6 +72,12 @@ template<typename T> struct T2 { static constexpr bool value = sizeof(T) == 2; }
 static_assert(IsTypePredicate<T2>);
 static_assert(!IsTypePredicate<T1>);
 
+template<typename T, typename U, typename... Ts>
+concept OneOf = (Same<T, Ts> || ...);
+
+static_assert(OneOf<int, long, int>);
+static_assert(!OneOf<long, int, char, char>);
+
 namespace piecewise_substitution {
   template <typename T>
   concept True = true;
@@ -147,3 +153,33 @@ template<typename T>
 struct X { static constexpr bool a = SameSize<T>; };
 
 static_assert(X<unsigned>::a);
+
+// static_assert concept diagnostics
+template<typename T>
+concept Large = sizeof(T) > 100;
+// expected-note@-1 2{{because 'sizeof(small) > 100' (1 > 100) evaluated to false}}
+
+struct small { };
+static_assert(Large<small>);
+// expected-error@-1 {{static_assert failed}}
+// expected-note@-2 {{because 'small' does not satisfy 'Large'}}
+static_assert(Large<small>, "small isn't large");
+// expected-error@-1 {{static_assert failed "small isn't large"}}
+// expected-note@-2 {{because 'small' does not satisfy 'Large'}}
+
+// Make sure access-checking can fail a concept specialization
+
+class T4 { static constexpr bool f = true; };
+template<typename T> concept AccessPrivate = T{}.f;
+// expected-note@-1{{because substituted constraint expression is ill-formed: 'f' is a private member of 'T4'}}
+static_assert(AccessPrivate<T4>);
+// expected-error@-1{{static_assert failed}}
+// expected-note@-2{{because 'T4' does not satisfy 'AccessPrivate'}}
+
+template<typename T, typename U>
+// expected-note@-1{{template parameter is declared here}}
+concept C8 = sizeof(T) > sizeof(U);
+
+template<typename... T>
+constexpr bool B8 = C8<T...>;
+// expected-error@-1{{pack expansion used as argument for non-pack parameter of concept}}

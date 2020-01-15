@@ -20,6 +20,8 @@ void malloc_disable(void);
 int malloc_iterate(uintptr_t base, size_t size,
                    void (*callback)(uintptr_t base, size_t size, void *arg),
                    void *arg);
+void *valloc(size_t size);
+void *pvalloc(size_t size);
 }
 
 // Note that every C allocation function in the test binary will be fulfilled
@@ -280,6 +282,21 @@ TEST(ScudoWrappersCTest, MallocIterateBoundary) {
   EXPECT_EQ(Count, 1U);
 
   free(P);
+}
+
+// We expect heap operations within a disable/enable scope to deadlock.
+TEST(ScudoWrappersCTest, MallocDisableDeadlock) {
+  EXPECT_DEATH(
+      {
+        void *P = malloc(Size);
+        EXPECT_NE(P, nullptr);
+        free(P);
+        malloc_disable();
+        alarm(1);
+        P = malloc(Size);
+        malloc_enable();
+      },
+      "");
 }
 
 #if !SCUDO_FUCHSIA

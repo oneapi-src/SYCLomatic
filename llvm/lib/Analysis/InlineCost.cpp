@@ -307,7 +307,7 @@ public:
                               Params.ComputeFullInlineCost || ORE),
         BoostIndirectCalls(BoostIndirect), EnableLoadElimination(true) {}
 
-  InlineResult analyzeCall(CallBase &Call);
+  InlineResult analyze();
 
   int getThreshold() { return Threshold; }
   int getCost() { return Cost; }
@@ -450,8 +450,8 @@ bool CallAnalyzer::visitAlloca(AllocaInst &I) {
   // Accumulate the allocated size.
   if (I.isStaticAlloca()) {
     Type *Ty = I.getAllocatedType();
-    AllocatedSize = SaturatingAdd(DL.getTypeAllocSize(Ty).getFixedSize(),
-                                  AllocatedSize);
+    AllocatedSize =
+        SaturatingAdd(DL.getTypeAllocSize(Ty).getFixedSize(), AllocatedSize);
   }
 
   // We will happily inline static alloca instructions.
@@ -1077,8 +1077,8 @@ bool CallAnalyzer::visitBinaryOperator(BinaryOperator &I) {
 
   Value *SimpleV = nullptr;
   if (auto FI = dyn_cast<FPMathOperator>(&I))
-    SimpleV = SimplifyBinOp(I.getOpcode(), CLHS ? CLHS : LHS,
-                            CRHS ? CRHS : RHS, FI->getFastMathFlags(), DL);
+    SimpleV = SimplifyBinOp(I.getOpcode(), CLHS ? CLHS : LHS, CRHS ? CRHS : RHS,
+                            FI->getFastMathFlags(), DL);
   else
     SimpleV =
         SimplifyBinOp(I.getOpcode(), CLHS ? CLHS : LHS, CRHS ? CRHS : RHS, DL);
@@ -1111,9 +1111,8 @@ bool CallAnalyzer::visitFNeg(UnaryOperator &I) {
   if (!COp)
     COp = SimplifiedValues.lookup(Op);
 
-  Value *SimpleV = SimplifyFNegInst(COp ? COp : Op,
-                                    cast<FPMathOperator>(I).getFastMathFlags(),
-                                    DL);
+  Value *SimpleV = SimplifyFNegInst(
+      COp ? COp : Op, cast<FPMathOperator>(I).getFastMathFlags(), DL);
 
   if (Constant *C = dyn_cast_or_null<Constant>(SimpleV))
     SimplifiedValues[&I] = C;
@@ -1319,7 +1318,7 @@ bool CallAnalyzer::visitCallBase(CallBase &Call) {
           InlineConstants::IndirectCallThreshold;
       CallAnalyzer CA(TTI, GetAssumptionCache, GetBFI, PSI, ORE, *F, Call,
                       IndirectCallParams, false);
-      if (CA.analyzeCall(Call)) {
+      if (CA.analyze()) {
         // We were able to inline the indirect call! Subtract the cost from the
         // threshold to get the bonus we want to apply, but don't go below zero.
         Cost -= std::max(0, CA.getThreshold() - CA.getCost());
@@ -1493,8 +1492,7 @@ bool CallAnalyzer::visitSwitchInst(SwitchInst &SI) {
   }
 
   int64_t ExpectedNumberOfCompare = 3 * (int64_t)NumCaseCluster / 2 - 1;
-  int64_t SwitchCost =
-    ExpectedNumberOfCompare * 2 * InlineConstants::InstrCost;
+  int64_t SwitchCost = ExpectedNumberOfCompare * 2 * InlineConstants::InstrCost;
 
   addCost(SwitchCost, (int64_t)CostUpperBound);
   return false;
@@ -1678,8 +1676,8 @@ ConstantInt *CallAnalyzer::stripAndComputeInBoundsConstantOffsets(Value *&V) {
     assert(V->getType()->isPointerTy() && "Unexpected operand type!");
   } while (Visited.insert(V).second);
 
-  Type *IntPtrTy = DL.getIntPtrType(V->getContext(), AS);
-  return cast<ConstantInt>(ConstantInt::get(IntPtrTy, Offset));
+  Type *IdxPtrTy = DL.getIndexType(V->getType());
+  return cast<ConstantInt>(ConstantInt::get(IdxPtrTy, Offset));
 }
 
 /// Find dead blocks due to deleted CFG edges during inlining.
@@ -1727,7 +1725,7 @@ void CallAnalyzer::findDeadBlocks(BasicBlock *CurrBB, BasicBlock *NextBB) {
 /// factors and heuristics. If this method returns false but the computed cost
 /// is below the computed threshold, then inlining was forcibly disabled by
 /// some artifact of the routine.
-InlineResult CallAnalyzer::analyzeCall(CallBase &Call) {
+InlineResult CallAnalyzer::analyze() {
   ++NumCallsAnalyzed;
 
   // Perform some tweaks to the cost and threshold based on the direct
@@ -1744,7 +1742,7 @@ InlineResult CallAnalyzer::analyzeCall(CallBase &Call) {
   assert(NumVectorInstructions == 0);
 
   // Update the threshold based on callsite properties
-  updateThreshold(Call, F);
+  updateThreshold(CandidateCall, F);
 
   // While Threshold depends on commandline options that can take negative
   // values, we want to enforce the invariant that the computed threshold and
@@ -1760,7 +1758,7 @@ InlineResult CallAnalyzer::analyzeCall(CallBase &Call) {
 
   // Give out bonuses for the callsite, as the instructions setting them up
   // will be gone after inlining.
-  addCost(-getCallsiteCost(Call, DL));
+  addCost(-getCallsiteCost(CandidateCall, DL));
 
   // If this function uses the coldcc calling convention, prefer not to inline
   // it.
@@ -1774,7 +1772,7 @@ InlineResult CallAnalyzer::analyzeCall(CallBase &Call) {
   if (F.empty())
     return true;
 
-  Function *Caller = Call.getFunction();
+  Function *Caller = CandidateCall.getFunction();
   // Check if the caller function is recursive itself.
   for (User *U : Caller->users()) {
     CallBase *Call = dyn_cast<CallBase>(U);
@@ -1786,10 +1784,10 @@ InlineResult CallAnalyzer::analyzeCall(CallBase &Call) {
 
   // Populate our simplified values by mapping from function arguments to call
   // arguments with known important simplifications.
-  auto CAI = Call.arg_begin();
+  auto CAI = CandidateCall.arg_begin();
   for (Function::arg_iterator FAI = F.arg_begin(), FAE = F.arg_end();
        FAI != FAE; ++FAI, ++CAI) {
-    assert(CAI != Call.arg_end());
+    assert(CAI != CandidateCall.arg_end());
     if (Constant *C = dyn_cast<Constant>(CAI))
       SimplifiedValues[&*FAI] = C;
 
@@ -1902,8 +1900,8 @@ InlineResult CallAnalyzer::analyzeCall(CallBase &Call) {
     }
   }
 
-  bool OnlyOneCallAndLocalLinkage =
-      F.hasLocalLinkage() && F.hasOneUse() && &F == Call.getCalledFunction();
+  bool OnlyOneCallAndLocalLinkage = F.hasLocalLinkage() && F.hasOneUse() &&
+                                    &F == CandidateCall.getCalledFunction();
   // If this is a noduplicate call, we can still inline as long as
   // inlining this would cause the removal of the caller (so the instruction
   // is not actually duplicated, just moved).
@@ -1934,7 +1932,7 @@ InlineResult CallAnalyzer::analyzeCall(CallBase &Call) {
   if (NumVectorInstructions <= NumInstructions / 10)
     Threshold -= VectorBonus;
   else if (NumVectorInstructions <= NumInstructions / 2)
-    Threshold -= VectorBonus/2;
+    Threshold -= VectorBonus / 2;
 
   return Cost < std::max(1, Threshold);
 }
@@ -2077,7 +2075,7 @@ InlineCost llvm::getInlineCost(
 
   CallAnalyzer CA(CalleeTTI, GetAssumptionCache, GetBFI, PSI, ORE, *Callee,
                   Call, Params);
-  InlineResult ShouldInline = CA.analyzeCall(Call);
+  InlineResult ShouldInline = CA.analyze();
 
   LLVM_DEBUG(CA.dump());
 
@@ -2175,7 +2173,8 @@ InlineParams llvm::getInlineParams(int Threshold) {
   if (LocallyHotCallSiteThreshold.getNumOccurrences() > 0)
     Params.LocallyHotCallSiteThreshold = LocallyHotCallSiteThreshold;
 
-  // Set the ColdCallSiteThreshold knob from the -inline-cold-callsite-threshold.
+  // Set the ColdCallSiteThreshold knob from the
+  // -inline-cold-callsite-threshold.
   Params.ColdCallSiteThreshold = ColdCallSiteThreshold;
 
   // Set the OptMinSizeThreshold and OptSizeThreshold params only if the

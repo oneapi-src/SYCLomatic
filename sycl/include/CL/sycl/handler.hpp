@@ -59,7 +59,7 @@ template <typename T_Src, int Dims_Src, cl::sycl::access::mode AccessMode_Src,
           cl::sycl::access::placeholder IsPlaceholder_Dst>
 class __copyAcc2Acc;
 
-namespace cl {
+__SYCL_INLINE namespace cl {
 namespace sycl {
 
 // Forward declaration
@@ -143,6 +143,7 @@ class handler {
   // we exit the method they are passed in.
   std::vector<std::vector<char>> MArgsStorage;
   std::vector<detail::AccessorImplPtr> MAccStorage;
+  std::vector<detail::LocalAccessorImplPtr> MLocalAccStorage;
   std::vector<std::shared_ptr<detail::stream_impl>> MStreamStorage;
   std::vector<std::shared_ptr<const void>> MSharedPtrStorage;
   // The list of arguments for the kernel.
@@ -190,6 +191,14 @@ private:
     return Storage;
   }
 
+  void throwIfActionIsCreated() {
+    if (detail::CG::NONE != MCGType)
+      throw sycl::runtime_error("Attempt to set multiple actions for the "
+                                "command group. Command group must consist of "
+                                "a single kernel or explicit memory operation.",
+                                CL_INVALID_OPERATION);
+  }
+
   // The method extracts and prepares kernel arguments from the lambda using
   // integration header.
   void
@@ -213,6 +222,10 @@ private:
           detail::AccessorBaseHost *AccBase =
               static_cast<detail::AccessorBaseHost *>(Ptr);
           Ptr = detail::getSyclObjImpl(*AccBase).get();
+        } else if (AccTarget == access::target::local) {
+          detail::LocalAccessorBaseHost *LocalAccBase =
+              static_cast<detail::LocalAccessorBaseHost *>(Ptr);
+          Ptr = detail::getSyclObjImpl(*LocalAccBase).get();
         }
       }
       processArg(Ptr, Kind, Size, I, IndexShift, IsKernelCreatedFromSource);
@@ -284,20 +297,17 @@ private:
         break;
       }
       case access::target::local: {
-        detail::LocalAccessorBaseHost *LAcc =
-            static_cast<detail::LocalAccessorBaseHost *>(Ptr);
+        detail::LocalAccessorImplHost *LAcc =
+            static_cast<detail::LocalAccessorImplHost *>(Ptr);
         // Stream implementation creates local accessor with size per work item
         // in work group. Number of work items is not available during stream
         // construction, that is why size of the accessor is updated here using
         // information about number of work items in the work group.
-        if (detail::getSyclObjImpl(*LAcc)->PerWI) {
-          auto LocalAccImpl = detail::getSyclObjImpl(*LAcc);
-          LocalAccImpl->resize(MNDRDesc.LocalSize.size(),
-                               MNDRDesc.GlobalSize.size());
-        }
-        range<3> &Size = LAcc->getSize();
-        const int Dims = LAcc->getNumOfDims();
-        int SizeInBytes = LAcc->getElementSize();
+        if (LAcc->PerWI)
+          LAcc->resize(MNDRDesc.LocalSize.size(), MNDRDesc.GlobalSize.size());
+        range<3> &Size = LAcc->MSize;
+        const int Dims = LAcc->MDims;
+        int SizeInBytes = LAcc->MElemSize;
         for (int I = 0; I < Dims; ++I)
           SizeInBytes *= Size[I];
         MArgs.emplace_back(kind_std_layout, nullptr, SizeInBytes,
@@ -472,7 +482,11 @@ private:
                              IsPlaceholder> &&Arg) {
     detail::LocalAccessorBaseHost *LocalAccBase =
         (detail::LocalAccessorBaseHost *)&Arg;
-    MArgs.emplace_back(detail::kernel_param_kind_t::kind_accessor, LocalAccBase,
+    detail::LocalAccessorImplPtr LocalAccImpl =
+        detail::getSyclObjImpl(*LocalAccBase);
+    detail::LocalAccessorImplHost *Req = LocalAccImpl.get();
+    MLocalAccStorage.push_back(std::move(LocalAccImpl));
+    MArgs.emplace_back(detail::kernel_param_kind_t::kind_accessor, Req,
                        static_cast<int>(access::target::local), ArgIndex);
   }
 
@@ -676,6 +690,7 @@ public:
   // single_task version with a kernel represented as a lambda.
   template <typename KernelName = detail::auto_name, typename KernelType>
   void single_task(KernelType KernelFunc) {
+    throwIfActionIsCreated();
     using NameT =
         typename detail::get_kernel_name_t<KernelName, KernelType>::name;
 #ifdef __SYCL_DEVICE_ONLY__
@@ -693,6 +708,7 @@ public:
   template <typename KernelName = detail::auto_name, typename KernelType,
             int Dims>
   void parallel_for(range<Dims> NumWorkItems, KernelType KernelFunc) {
+    throwIfActionIsCreated();
     using NameT =
         typename detail::get_kernel_name_t<KernelName, KernelType>::name;
 #ifdef __SYCL_DEVICE_ONLY__
@@ -706,6 +722,7 @@ public:
 
   // Similar to single_task, but passed lambda will be executed on host.
   template <typename FuncT> void run_on_host_intel(FuncT Func) {
+    throwIfActionIsCreated();
     MNDRDesc.set(range<1>{1});
 
     MArgs = std::move(MAssociatedAccesors);
@@ -719,6 +736,7 @@ public:
             int Dims>
   void parallel_for(range<Dims> NumWorkItems, id<Dims> WorkItemOffset,
                     KernelType KernelFunc) {
+    throwIfActionIsCreated();
     using NameT =
         typename detail::get_kernel_name_t<KernelName, KernelType>::name;
 #ifdef __SYCL_DEVICE_ONLY__
@@ -735,6 +753,7 @@ public:
   template <typename KernelName = detail::auto_name, typename KernelType,
             int Dims>
   void parallel_for(nd_range<Dims> ExecutionRange, KernelType KernelFunc) {
+    throwIfActionIsCreated();
     using NameT =
         typename detail::get_kernel_name_t<KernelName, KernelType>::name;
 #ifdef __SYCL_DEVICE_ONLY__
@@ -750,6 +769,7 @@ public:
             int Dims>
   void parallel_for_work_group(range<Dims> NumWorkGroups,
                                KernelType KernelFunc) {
+    throwIfActionIsCreated();
     using NameT =
         typename detail::get_kernel_name_t<KernelName, KernelType>::name;
 #ifdef __SYCL_DEVICE_ONLY__
@@ -766,6 +786,7 @@ public:
   void parallel_for_work_group(range<Dims> NumWorkGroups,
                                range<Dims> WorkGroupSize,
                                KernelType KernelFunc) {
+    throwIfActionIsCreated();
     using NameT =
         typename detail::get_kernel_name_t<KernelName, KernelType>::name;
 #ifdef __SYCL_DEVICE_ONLY__
@@ -780,6 +801,7 @@ public:
   // single_task version with a kernel represented as a sycl::kernel.
   // The kernel invocation method has no functors and cannot be called on host.
   void single_task(kernel SyclKernel) {
+    throwIfActionIsCreated();
     verifySyclKernelInvoc(SyclKernel);
     MNDRDesc.set(range<1>{1});
     MSyclKernel = detail::getSyclObjImpl(std::move(SyclKernel));
@@ -792,6 +814,7 @@ public:
   // functors and cannot be called on host.
   template <int Dims>
   void parallel_for(range<Dims> NumWorkItems, kernel SyclKernel) {
+    throwIfActionIsCreated();
     verifySyclKernelInvoc(SyclKernel);
     MSyclKernel = detail::getSyclObjImpl(std::move(SyclKernel));
     MNDRDesc.set(std::move(NumWorkItems));
@@ -805,6 +828,7 @@ public:
   template <int Dims>
   void parallel_for(range<Dims> NumWorkItems, id<Dims> workItemOffset,
                     kernel SyclKernel) {
+    throwIfActionIsCreated();
     verifySyclKernelInvoc(SyclKernel);
     MSyclKernel = detail::getSyclObjImpl(std::move(SyclKernel));
     MNDRDesc.set(std::move(NumWorkItems), std::move(workItemOffset));
@@ -817,6 +841,7 @@ public:
   // method has no functors and cannot be called on host.
   template <int Dims>
   void parallel_for(nd_range<Dims> NDRange, kernel SyclKernel) {
+    throwIfActionIsCreated();
     verifySyclKernelInvoc(SyclKernel);
     MSyclKernel = detail::getSyclObjImpl(std::move(SyclKernel));
     MNDRDesc.set(std::move(NDRange));
@@ -833,6 +858,7 @@ public:
   // which is used otherwise.
   template <typename KernelName = detail::auto_name, typename KernelType>
   void single_task(kernel SyclKernel, KernelType KernelFunc) {
+    throwIfActionIsCreated();
     using NameT =
         typename detail::get_kernel_name_t<KernelName, KernelType>::name;
 #ifdef __SYCL_DEVICE_ONLY__
@@ -855,6 +881,7 @@ public:
             int Dims>
   void parallel_for(kernel SyclKernel, range<Dims> NumWorkItems,
                     KernelType KernelFunc) {
+    throwIfActionIsCreated();
     using NameT =
         typename detail::get_kernel_name_t<KernelName, KernelType>::name;
 #ifdef __SYCL_DEVICE_ONLY__
@@ -877,6 +904,7 @@ public:
             int Dims>
   void parallel_for(kernel SyclKernel, range<Dims> NumWorkItems,
                     id<Dims> WorkItemOffset, KernelType KernelFunc) {
+    throwIfActionIsCreated();
     using NameT =
         typename detail::get_kernel_name_t<KernelName, KernelType>::name;
 #ifdef __SYCL_DEVICE_ONLY__
@@ -899,6 +927,7 @@ public:
             int Dims>
   void parallel_for(kernel SyclKernel, nd_range<Dims> NDRange,
                     KernelType KernelFunc) {
+    throwIfActionIsCreated();
     using NameT =
         typename detail::get_kernel_name_t<KernelName, KernelType>::name;
 #ifdef __SYCL_DEVICE_ONLY__
@@ -924,6 +953,7 @@ public:
             int Dims>
   void parallel_for_work_group(kernel SyclKernel, range<Dims> NumWorkGroups,
                                KernelType KernelFunc) {
+    throwIfActionIsCreated();
     using NameT =
         typename detail::get_kernel_name_t<KernelName, KernelType>::name;
 #ifdef __SYCL_DEVICE_ONLY__
@@ -943,6 +973,7 @@ public:
   void parallel_for_work_group(kernel SyclKernel, range<Dims> NumWorkGroups,
                                range<Dims> WorkGroupSize,
                                KernelType KernelFunc) {
+    throwIfActionIsCreated();
     using NameT =
         typename detail::get_kernel_name_t<KernelName, KernelType>::name;
 #ifdef __SYCL_DEVICE_ONLY__
@@ -977,6 +1008,7 @@ public:
             access::placeholder IsPlaceholder = access::placeholder::false_t>
   void copy(accessor<T_Src, Dims, AccessMode, AccessTarget, IsPlaceholder> Src,
             shared_ptr_class<T_Dst> Dst) {
+    throwIfActionIsCreated();
     static_assert(isValidTargetForExplicitOp(AccessTarget),
                   "Invalid accessor target for the copy method.");
     // Make sure data shared_ptr points to is not released until we finish
@@ -993,6 +1025,7 @@ public:
   void
   copy(shared_ptr_class<T_Src> Src,
        accessor<T_Dst, Dims, AccessMode, AccessTarget, IsPlaceholder> Dst) {
+    throwIfActionIsCreated();
     static_assert(isValidTargetForExplicitOp(AccessTarget),
                   "Invalid accessor target for the copy method.");
     // Make sure data shared_ptr points to is not released until we finish
@@ -1008,6 +1041,7 @@ public:
             access::placeholder IsPlaceholder = access::placeholder::false_t>
   void copy(accessor<T_Src, Dims, AccessMode, AccessTarget, IsPlaceholder> Src,
             T_Dst *Dst) {
+    throwIfActionIsCreated();
     static_assert(isValidTargetForExplicitOp(AccessTarget),
                   "Invalid accessor target for the copy method.");
 #ifndef __SYCL_DEVICE_ONLY__
@@ -1047,6 +1081,7 @@ public:
   void
   copy(const T_Src *Src,
        accessor<T_Dst, Dims, AccessMode, AccessTarget, IsPlaceholder> Dst) {
+    throwIfActionIsCreated();
     static_assert(isValidTargetForExplicitOp(AccessTarget),
                   "Invalid accessor target for the copy method.");
 #ifndef __SYCL_DEVICE_ONLY__
@@ -1124,6 +1159,7 @@ public:
             accessor<T_Dst, Dims_Dst, AccessMode_Dst, AccessTarget_Dst,
                      IsPlaceholder_Dst>
                 Dst) {
+    throwIfActionIsCreated();
     static_assert(isValidTargetForExplicitOp(AccessTarget_Src),
                   "Invalid source accessor target for the copy method.");
     static_assert(isValidTargetForExplicitOp(AccessTarget_Dst),
@@ -1177,6 +1213,7 @@ public:
             access::placeholder IsPlaceholder = access::placeholder::false_t>
   void
   update_host(accessor<T, Dims, AccessMode, AccessTarget, IsPlaceholder> Acc) {
+    throwIfActionIsCreated();
     static_assert(isValidTargetForExplicitOp(AccessTarget),
                   "Invalid accessor target for the update_host method.");
     MCGType = detail::CG::UPDATE_HOST;
@@ -1198,6 +1235,7 @@ public:
             access::placeholder IsPlaceholder = access::placeholder::false_t>
   void fill(accessor<T, Dims, AccessMode, AccessTarget, IsPlaceholder> Dst,
             const T &Pattern) {
+    throwIfActionIsCreated();
     // TODO add check:T must be an integral scalar value or a SYCL vector type
     static_assert(isValidTargetForExplicitOp(AccessTarget),
                   "Invalid accessor target for the fill method.");
@@ -1229,6 +1267,7 @@ public:
 
   // Copy memory from the source to the destination.
   void memcpy(void *Dest, const void *Src, size_t Count) {
+    throwIfActionIsCreated();
     MSrcPtr = const_cast<void *>(Src);
     MDstPtr = Dest;
     MLength = Count;
@@ -1237,6 +1276,7 @@ public:
 
   // Fill the memory pointed to by the destination with the given bytes.
   void memset(void *Dest, int Value, size_t Count) {
+    throwIfActionIsCreated();
     MDstPtr = Dest;
     MPattern.push_back((char)Value);
     MLength = Count;
@@ -1245,6 +1285,7 @@ public:
 
   // Prefetch the memory pointed to by the pointer.
   void prefetch(const void *Ptr, size_t Count) {
+    throwIfActionIsCreated();
     MDstPtr = const_cast<void *>(Ptr);
     MLength = Count;
     MCGType = detail::CG::PREFETCH_USM;

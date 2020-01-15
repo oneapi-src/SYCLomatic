@@ -12,9 +12,9 @@
 
 #include "CodeGenFunction.h"
 #include "CGBlocks.h"
-#include "CGCleanup.h"
 #include "CGCUDARuntime.h"
 #include "CGCXXABI.h"
+#include "CGCleanup.h"
 #include "CGDebugInfo.h"
 #include "CGOpenMPRuntime.h"
 #include "CGSYCLRuntime.h"
@@ -23,6 +23,7 @@
 #include "TargetInfo.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTLambda.h"
+#include "clang/AST/Attr.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/StmtCXX.h"
@@ -378,9 +379,15 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
   if (HasCleanups) {
     // Make sure the line table doesn't jump back into the body for
     // the ret after it's been at EndLoc.
-    if (CGDebugInfo *DI = getDebugInfo())
+    Optional<ApplyDebugLocation> AL;
+    if (CGDebugInfo *DI = getDebugInfo()) {
       if (OnlySimpleReturnStmts)
         DI->EmitLocation(Builder, EndLoc);
+      else
+        // We may not have a valid end location. Try to apply it anyway, and
+        // fall back to an artificial location if needed.
+        AL = ApplyDebugLocation::CreateDefaultArtificial(*this, EndLoc);
+    }
 
     PopCleanupBlocks(PrologueCleanupDepth);
   }
@@ -653,6 +660,14 @@ void CodeGenFunction::EmitOpenCLKernelMetadata(const FunctionDecl *FD,
     Fn->setMetadata("max_work_group_size",
                     llvm::MDNode::get(Context, AttrMDArgs));
   }
+
+  if (const SYCLIntelMaxGlobalWorkDimAttr *A =
+      FD->getAttr<SYCLIntelMaxGlobalWorkDimAttr>()) {
+    llvm::Metadata *AttrMDArgs[] = {
+        llvm::ConstantAsMetadata::get(Builder.getInt32(A->getNumber()))};
+    Fn->setMetadata("max_global_work_dim",
+                    llvm::MDNode::get(Context, AttrMDArgs));
+  }
 }
 
 /// Determine whether the function F ends with a return stmt.
@@ -676,6 +691,13 @@ void CodeGenFunction::markAsIgnoreThreadCheckingAtRuntime(llvm::Function *Fn) {
     Fn->addFnAttr("sanitize_thread_no_checking_at_run_time");
     Fn->removeFnAttr(llvm::Attribute::SanitizeThread);
   }
+}
+
+/// Check if the return value of this function requires sanitization.
+bool CodeGenFunction::requiresReturnValueCheck() const {
+  return requiresReturnValueNullabilityCheck() ||
+         (SanOpts.has(SanitizerKind::ReturnsNonnullAttribute) && CurCodeDecl &&
+          CurCodeDecl->getAttr<ReturnsNonNullAttr>());
 }
 
 static bool matchesStlAllocatorFn(const Decl *D, const ASTContext &Ctx) {
@@ -978,16 +1000,27 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
                       getTarget().getMCountName());
       }
       if (CGM.getCodeGenOpts().MNopMCount) {
-        if (getContext().getTargetInfo().getTriple().getArch() !=
-            llvm::Triple::systemz)
-          CGM.getDiags().Report(diag::err_opt_not_valid_on_target)
-            << "-mnop-mcount";
         if (!CGM.getCodeGenOpts().CallFEntry)
           CGM.getDiags().Report(diag::err_opt_not_valid_without_opt)
             << "-mnop-mcount" << "-mfentry";
-        Fn->addFnAttr("mnop-mcount", "true");
+        Fn->addFnAttr("mnop-mcount");
+      }
+
+      if (CGM.getCodeGenOpts().RecordMCount) {
+        if (!CGM.getCodeGenOpts().CallFEntry)
+          CGM.getDiags().Report(diag::err_opt_not_valid_without_opt)
+            << "-mrecord-mcount" << "-mfentry";
+        Fn->addFnAttr("mrecord-mcount");
       }
     }
+  }
+
+  if (CGM.getCodeGenOpts().PackedStack) {
+    if (getContext().getTargetInfo().getTriple().getArch() !=
+        llvm::Triple::systemz)
+      CGM.getDiags().Report(diag::err_opt_not_valid_on_target)
+        << "-mpacked-stack";
+    Fn->addFnAttr("packed-stack");
   }
 
   if (RetTy->isVoidType()) {
@@ -2196,15 +2229,23 @@ Address CodeGenFunction::EmitFieldAnnotations(const FieldDecl *D,
   assert(D->hasAttr<AnnotateAttr>() && "no annotate attribute");
   llvm::Value *V = Addr.getPointer();
   llvm::Type *VTy = V->getType();
+
+  // llvm.ptr.annotation intrinsic accepts a pointer to integer of any width -
+  // don't perform bitcasts if value is integer
+  if (VTy->getPointerElementType()->isIntegerTy()) {
+    llvm::Function *F = CGM.getIntrinsic(llvm::Intrinsic::ptr_annotation, VTy);
+
+    for (const auto *I : D->specific_attrs<AnnotateAttr>())
+      V = EmitAnnotationCall(F, V, I->getAnnotation(), D->getLocation());
+
+    return Address(V, Addr.getAlignment());
+  }
+
   llvm::Function *F = CGM.getIntrinsic(llvm::Intrinsic::ptr_annotation,
                                     CGM.Int8PtrTy);
 
   for (const auto *I : D->specific_attrs<AnnotateAttr>()) {
-    // FIXME Always emit the cast inst so we can differentiate between
-    // annotation on the first field of a struct and annotation on the struct
-    // itself.
-    if (VTy != CGM.Int8PtrTy)
-      V = Builder.CreateBitCast(V, CGM.Int8PtrTy);
+    V = Builder.CreateBitCast(V, CGM.Int8PtrTy);
     V = EmitAnnotationCall(F, V, I->getAnnotation(), D->getLocation());
     V = Builder.CreateBitCast(V, VTy);
   }
@@ -2283,7 +2324,7 @@ static bool hasRequiredFeatures(const SmallVectorImpl<StringRef> &ReqFeatures,
   // Now build up the set of caller features and verify that all the required
   // features are there.
   llvm::StringMap<bool> CallerFeatureMap;
-  CGM.getFunctionFeatureMap(CallerFeatureMap, GlobalDecl().getWithDecl(FD));
+  CGM.getContext().getFunctionFeatureMap(CallerFeatureMap, FD);
 
   // If we have at least one of the features in the feature list return
   // true, otherwise return false.
@@ -2345,11 +2386,13 @@ void CodeGenFunction::checkTargetFeatures(SourceLocation Loc,
     // Get the required features for the callee.
 
     const TargetAttr *TD = TargetDecl->getAttr<TargetAttr>();
-    TargetAttr::ParsedTargetAttr ParsedAttr = CGM.filterFunctionTargetAttrs(TD);
+    ParsedTargetAttr ParsedAttr =
+        CGM.getContext().filterFunctionTargetAttrs(TD);
 
     SmallVector<StringRef, 1> ReqFeatures;
     llvm::StringMap<bool> CalleeFeatureMap;
-    CGM.getFunctionFeatureMap(CalleeFeatureMap, TargetDecl);
+    CGM.getContext().getFunctionFeatureMap(CalleeFeatureMap,
+                                           GlobalDecl(TargetDecl));
 
     for (const auto &F : ParsedAttr.Features) {
       if (F[0] == '+' && CalleeFeatureMap.lookup(F.substr(1)))
@@ -2416,10 +2459,7 @@ static void CreateMultiVersionResolverReturn(CodeGenModule &CGM,
 
 void CodeGenFunction::EmitMultiVersionResolver(
     llvm::Function *Resolver, ArrayRef<MultiVersionResolverOption> Options) {
-  assert((getContext().getTargetInfo().getTriple().getArch() ==
-              llvm::Triple::x86 ||
-          getContext().getTargetInfo().getTriple().getArch() ==
-              llvm::Triple::x86_64) &&
+  assert(getContext().getTargetInfo().getTriple().isX86() &&
          "Only implemented for x86 targets");
 
   bool SupportsIFunc = getContext().getTargetInfo().supportsIFunc();

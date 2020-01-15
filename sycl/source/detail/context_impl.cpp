@@ -17,7 +17,7 @@
 #include <CL/sycl/platform.hpp>
 #include <CL/sycl/stl.hpp>
 
-namespace cl {
+__SYCL_INLINE namespace cl {
 namespace sycl {
 namespace detail {
 
@@ -29,7 +29,7 @@ context_impl::context_impl(const vector_class<cl::sycl::device> Devices,
                            async_handler AsyncHandler)
     : MAsyncHandler(AsyncHandler), MDevices(Devices), MContext(nullptr),
       MPlatform(), MPluginInterop(true), MHostContext(false) {
-  MPlatform = MDevices[0].get_platform();
+  MPlatform = detail::getSyclObjImpl(MDevices[0].get_platform());
   vector_class<RT::PiDevice> DeviceIds;
   for (const auto &D : MDevices) {
     DeviceIds.push_back(getSyclObjImpl(D)->getHandleRef());
@@ -37,8 +37,6 @@ context_impl::context_impl(const vector_class<cl::sycl::device> Devices,
 
   PI_CALL(piContextCreate)(nullptr, DeviceIds.size(), DeviceIds.data(), nullptr,
                            nullptr, &MContext);
-
-  MUSMDispatch.reset(new usm::USMDispatcher(MPlatform.get(), DeviceIds));
 }
 
 context_impl::context_impl(RT::PiContext PiContext, async_handler AsyncHandler)
@@ -61,7 +59,7 @@ context_impl::context_impl(RT::PiContext PiContext, async_handler AsyncHandler)
         createSyclObjFromImpl<device>(std::make_shared<device_impl>(Dev)));
   }
   // TODO What if m_Devices if empty? m_Devices[0].get_platform()
-  MPlatform = platform(MDevices[0].get_platform());
+  MPlatform = detail::getSyclObjImpl(MDevices[0].get_platform());
   // TODO catch an exception and put it to list of asynchronous exceptions
   PI_CALL(piContextRetain)(MContext);
 }
@@ -83,12 +81,9 @@ context_impl::~context_impl() {
     // TODO catch an exception and put it to list of asynchronous exceptions
     PI_CALL(piContextRelease)(MContext);
   }
-  // Release all programs and kernels created with this context
-  for (auto ProgIt : MCachedPrograms) {
-    RT::PiProgram ToBeDeleted = ProgIt.second;
-    for (auto KernIt : MCachedKernels[ToBeDeleted])
-      PI_CALL(piKernelRelease)(KernIt.second);
-    PI_CALL(piProgramRelease)(ToBeDeleted);
+  for (auto LibProg : MCachedLibPrograms) {
+    assert(LibProg.second && "Null program must not be kept in the cache");
+    PI_CALL(piProgramRelease)(LibProg.second);
   }
 }
 
@@ -104,7 +99,9 @@ cl_uint context_impl::get_info<info::context::reference_count>() const {
       this->getHandleRef());
 }
 template <> platform context_impl::get_info<info::context::platform>() const {
-  return MPlatform;
+  if (is_host())
+    return platform();
+  return createSyclObjFromImpl<platform>(MPlatform);
 }
 template <>
 vector_class<cl::sycl::device>
@@ -115,8 +112,8 @@ context_impl::get_info<info::context::devices>() const {
 RT::PiContext &context_impl::getHandleRef() { return MContext; }
 const RT::PiContext &context_impl::getHandleRef() const { return MContext; }
 
-std::shared_ptr<usm::USMDispatcher> context_impl::getUSMDispatch() const {
-  return MUSMDispatch;
+KernelProgramCache &context_impl::getKernelProgramCache() const {
+  return MKernelProgramCache;
 }
 
 } // namespace detail

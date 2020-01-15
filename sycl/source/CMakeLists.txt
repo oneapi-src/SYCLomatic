@@ -20,7 +20,13 @@ function(add_sycl_rt_library LIB_NAME)
   if (MSVC)
       target_compile_definitions(${LIB_NAME} PRIVATE __SYCL_BUILD_SYCL_DLL )
       target_link_libraries(${LIB_NAME} PRIVATE shlwapi)
+  else()
+      set(linker_script "${CMAKE_CURRENT_SOURCE_DIR}/ld-version-script.txt")
+      target_link_libraries(
+        ${LIB_NAME} PRIVATE "-Wl,--version-script=${linker_script}")
+      set_target_properties(${LIB_NAME} PROPERTIES LINK_DEPENDS ${linker_script})
   endif()
+
   target_include_directories(
       ${LIB_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} "${sycl_inc_dir}")
   target_link_libraries(${LIB_NAME}
@@ -55,6 +61,7 @@ set(SYCL_SOURCES
     "detail/image_impl.cpp"
     "detail/kernel_impl.cpp"
     "detail/kernel_info.cpp"
+    "detail/kernel_program_cache.cpp"
     "detail/memory_manager.cpp"
     "detail/platform_impl.cpp"
     "detail/platform_info.cpp"
@@ -82,6 +89,7 @@ set(SYCL_SOURCES
     "half_type.cpp"
     "kernel.cpp"
     "platform.cpp"
+    "program.cpp"
     "queue.cpp"
     "ordered_queue.cpp"
     "sampler.cpp"
@@ -137,3 +145,4 @@ install(TARGETS ${SYCL_RT_LIBS}
     ARCHIVE DESTINATION "lib" COMPONENT sycl
     LIBRARY DESTINATION "lib" COMPONENT sycl
     RUNTIME DESTINATION "bin" COMPONENT sycl)
+add_subdirectory(detail/devicelib)
