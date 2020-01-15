@@ -832,10 +832,10 @@ std::string getBufferNameAndDeclStr(const std::string &PointerName,
                " = dpct::memory_manager::get_instance().translate_ptr(" +
                PointerName + ");" + getNL() +
                getIndent(SL, AC.getSourceManager()).str() +
-               "cl::sycl::buffer<" + TypeAsStr + ",1> " + BufferTempName +
-               " = " + AllocationTempName + ".buffer.reinterpret<" + TypeAsStr +
-               ", 1>(cl::sycl::range<1>(" + AllocationTempName +
-               ".size/sizeof(" + TypeAsStr + ")));" + getNL();
+               "cl::sycl::buffer<" + TypeAsStr + "> " + BufferTempName + " = " +
+               AllocationTempName + ".buffer.reinterpret<" + TypeAsStr +
+               ">(cl::sycl::range<1>(" + AllocationTempName + ".size/sizeof(" +
+               TypeAsStr + ")));" + getNL();
   return BufferTempName;
 }
 std::string getBufferNameAndDeclStr(const Expr *Arg, const ASTContext &AC,

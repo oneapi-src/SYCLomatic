@@ -574,10 +574,9 @@ void foo4(){
 // CHECK-NEXT:   int res;
 // CHECK-NEXT:   {
 // CHECK-NEXT:   auto allocation_ct1 = dpct::memory_manager::get_instance().translate_ptr(0);
-// CHECK-NEXT:   cl::sycl::buffer<float, 1> buffer_ct1 =
-// CHECK-NEXT:       allocation_ct1.buffer.reinterpret<float, 1>(
-// CHECK-NEXT:           cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
-// CHECK-NEXT:   cl::sycl::buffer<int64_t, 1> result_temp_buffer(cl::sycl::range<1>(1));
+// CHECK-NEXT:   cl::sycl::buffer<float> buffer_ct1 = allocation_ct1.buffer.reinterpret<float>(
+// CHECK-NEXT:       cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
+// CHECK-NEXT:   cl::sycl::buffer<int64_t> result_temp_buffer(cl::sycl::range<1>(1));
 // CHECK-NEXT:   mkl::blas::iamax(dpct::get_default_queue(), 10, buffer_ct1, 0,
 // CHECK-NEXT:                    result_temp_buffer);
 // CHECK-NEXT:   res = result_temp_buffer.get_access<cl::sycl::access::mode::read>()[0];

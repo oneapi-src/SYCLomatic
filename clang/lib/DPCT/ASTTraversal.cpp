@@ -2935,7 +2935,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
         if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
           PrefixInsertStr = PrefixInsertStr + IndentStr +
-                            "cl::sycl::buffer<int64_t,1> "
+                            "cl::sycl::buffer<int64_t> "
                             "result_temp_buffer(cl::sycl::range<1>(1));" +
                             getNL();
           SuffixInsertStr = SuffixInsertStr + BufferName +
@@ -3064,7 +3064,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
         if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
           PrefixInsertStr = PrefixInsertStr + IndentStr +
-                            "cl::sycl::buffer<int64_t,1> "
+                            "cl::sycl::buffer<int64_t> "
                             "result_temp_buffer(cl::sycl::range<1>(1));" +
                             getNL();
           SuffixInsertStr = SuffixInsertStr + IndentStr + BufferName +
@@ -3254,8 +3254,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           ReplInfo.BufferTypeInfo[ReplInfo.BufferTypeInfo.size() - 1];
       PrefixInsertStr =
           PrefixInsertStr + IndentStr + "cl::sycl::buffer<" + ResultType +
-          ",1> result_temp_buffer(cl::sycl::range<1>(1));" + getNL() +
-          IndentStr + CallExprReplStr + ", result_temp_buffer);" + getNL();
+          "> result_temp_buffer(cl::sycl::range<1>(1));" + getNL() + IndentStr +
+          CallExprReplStr + ", result_temp_buffer);" + getNL();
       if (IsInCondition)
         SuffixInsertStr = getNL() + IndentStr + "}()";
       else
@@ -3962,7 +3962,7 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         PrefixInsertStr = PrefixInsertStr + BufferDecl;
         if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
           PrefixInsertStr = PrefixInsertStr + IndentStr +
-                            "cl::sycl::buffer<int64_t,1> "
+                            "cl::sycl::buffer<int64_t> "
                             "result_temp_buffer" +
                             std::to_string(i) + "(cl::sycl::range<1>(1));" +
                             getNL();
@@ -4023,7 +4023,7 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       for (size_t i = 0; i < ReplInfo.MissedArgumentFinalLocation.size(); ++i) {
         if (ReplInfo.MissedArgumentIsBuffer[i]) {
           PrefixInsertStr = PrefixInsertStr + IndentStr + "cl::sycl::buffer<" +
-                            ReplInfo.MissedArgumentType[i] + ",1> " +
+                            ReplInfo.MissedArgumentType[i] + "> " +
                             ReplInfo.MissedArgumentName[i] +
                             "(cl::sycl::range<1>(1));" + getNL();
         } else {
@@ -4152,10 +4152,10 @@ std::string SOLVERFunctionCallRule::getBufferNameAndDeclStr(
                " = dpct::memory_manager::get_instance().translate_ptr(" +
                PointerName + ");" + getNL() +
                getIndent(SL, AC.getSourceManager()).str() +
-               "cl::sycl::buffer<" + TypeAsStr + ",1> " + BufferTempName +
-               " = " + AllocationTempName + ".buffer.reinterpret<" + TypeAsStr +
-               ", 1>(cl::sycl::range<1>(" + AllocationTempName +
-               ".size/sizeof(" + TypeAsStr + ")));" + getNL();
+               "cl::sycl::buffer<" + TypeAsStr + "> " + BufferTempName + " = " +
+               AllocationTempName + ".buffer.reinterpret<" + TypeAsStr +
+               ">(cl::sycl::range<1>(" + AllocationTempName + ".size/sizeof(" +
+               TypeAsStr + ")));" + getNL();
   return BufferTempName;
 }
 
