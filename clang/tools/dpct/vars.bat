@@ -1,6 +1,6 @@
 ::#############################################################################
 ::#
-::#Copyright 2019 Intel Corporation.
+::#Copyright 2019 - 2020 Intel Corporation.
 ::#
 ::#This software and the related documents are Intel copyrighted materials,
 ::#and your use of them is governed by the express license under which they
@@ -129,7 +129,7 @@ goto Setup
 
 :Setup
 :: print product info
-echo Copyright (C) 2018-2019 Intel Corporation. All rights reserved.
+echo Copyright (C) 2018 - 2020 Intel Corporation. All rights reserved.
 echo Intel(R) DPC++ Compatibility Tool.
 echo.
 
