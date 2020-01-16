@@ -112,3 +112,23 @@ void foo7() {
   cudaMemcpy( d_A_unresolved, h_A_unresolved, sizeof(T)*SIZE*SIZE, cudaMemcpyDeviceToHost );
   cudaMemcpy( d_A_unresolved, h_A_unresolved, sizeof(T)*SIZE*SIZE, cudaMemcpyDeviceToHost );
 }
+
+
+template <typename T>
+int writeNStage2DDWT() {
+    T *src;
+    // CHECK: src = (T *)cl::sycl::malloc_host(10, dpct::get_default_context());
+    cudaMallocHost((void **)&src, 10);
+
+    // Currently, using a temp variable is not supported in template.
+    // CHECK: dpct::get_default_queue_wait().memcpy(src, src, 10).wait();
+    // CHECK-NEXT: dpct::get_default_queue_wait().memcpy(src, src, 10).wait();
+    // CHECK-NEXT: dpct::get_default_queue_wait().memcpy(src, src, 10).wait();
+    cudaMemcpy(src, src, 10, cudaMemcpyHostToDevice);
+    cudaMemcpy(src, src, 10, cudaMemcpyHostToDevice);
+    cudaMemcpy(src, src, 10, cudaMemcpyHostToDevice);
+
+    return 0;
+}
+template int writeNStage2DDWT<float>();
+template int writeNStage2DDWT<int>();

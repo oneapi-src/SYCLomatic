@@ -6000,32 +6000,32 @@ void MemoryMigrationRule::run(const MatchFinder::MatchResult &Result) {
     } else {
       Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
     }
-
     assert(MigrationDispatcher.find(Name) != MigrationDispatcher.end());
-
     // If there is a malloc function call in a template function, and the
     // template function is implicitly instantiated with two types. Then there
     // will be three FunctionDecl nodes in the AST. We should do replacement on
     // the FunctionDecl node which is not implicitly instantiated.
     if (USMLevel == UsmLevel::restricted &&
         (Name == "cudaMalloc" || Name == "cudaHostAlloc" ||
-         Name == "cudaMallocHost" || Name == "cudaMallocManaged")) {
+         Name == "cudaMallocHost" || Name == "cudaMallocManaged" ||
+         Name == "cudaMemcpy" || Name == "cudaMemcpyToSymbol" ||
+         Name == "cudaMemcpyFromSymbol" || Name == "cudaMemset")) {
       auto &Context = dpct::DpctGlobalInfo::getContext();
       auto Parents = Context.getParents(*C);
       while (Parents.size() == 1) {
         auto *Parent = Parents[0].get<FunctionDecl>();
         if (Parent) {
-          if (Parent->isImplicitlyInstantiable()) {
-            return;
-          } else {
+          if (Parent->getTemplateSpecializationKind() ==
+                  TSK_ExplicitSpecialization ||
+              Parent->getTemplateSpecializationKind() == TSK_Undeclared)
             break;
-          }
+          else
+            return;
         } else {
           Parents = Context.getParents(Parents[0]);
         }
       }
     }
-
     MigrationDispatcher.at(Name)(Result, C, ULExpr, IsAssigned, "");
 
     // if API is removed, then no need to add (*, 0)
