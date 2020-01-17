@@ -1395,6 +1395,8 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 
   TypeSourceInfo *ArgTypeInfo = nullptr;
   if (IsUETTE) {
+    if (!UETTE->isArgumentType())
+      return;
     if ((ArgTypeInfo = UETTE->getArgumentTypeInfo())) {
       BeginLoc = ArgTypeInfo->getTypeLoc().getBeginLoc();
     } else {
