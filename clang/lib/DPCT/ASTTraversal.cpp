@@ -1230,8 +1230,23 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
           .bind("TypeInUnaryExprOrTypeTraitExpr"),
       this);
 
-  MF.addMatcher(cStyleCastExpr(hasDestinationType(
-                                   hasDeclaration(typedefDecl(TypedefNames))))
+  auto CastTypes = anyOf(hasDeclaration(typedefDecl(TypedefNames)),
+                         hasDeclaration(enumDecl(EnumTypeNames)),
+                         hasDeclaration(cxxRecordDecl(RecordTypeNames)),
+                         pointsTo(typedefDecl(TypedefNames)),
+                         pointsTo(enumDecl(EnumTypeNames)),
+                         pointsTo(cxxRecordDecl(RecordTypeNames)),
+                         pointsTo(pointsTo(typedefDecl(TypedefNames))),
+                         pointsTo(pointsTo(enumDecl(EnumTypeNames))),
+                         pointsTo(pointsTo(cxxRecordDecl(RecordTypeNames))),
+                         pointsTo(pointsTo(pointsTo(typedefDecl(TypedefNames)))),
+                         pointsTo(pointsTo(pointsTo(enumDecl(EnumTypeNames)))),
+                         pointsTo(pointsTo(pointsTo(cxxRecordDecl(RecordTypeNames)))),
+                         references(typedefDecl(TypedefNames)),
+                         references(enumDecl(EnumTypeNames)),
+                         references(cxxRecordDecl(RecordTypeNames)));
+
+  MF.addMatcher(cStyleCastExpr(hasDestinationType(CastTypes))
                     .bind("cStyleCastExpr"),
                 this);
   // TODO: HandleType in template, in macro body, assigined, as function param
@@ -1414,6 +1429,18 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
     TypeStr = std::string(BeginLocChar, Len);
   } else if (IsCSCE) {
     TypeStr = CSCE->getType().getAsString();
+    auto TL = CSCE->getTypeInfoAsWritten()->getTypeLoc();
+    auto B = SM->getCharacterData(TL.getBeginLoc());
+    auto E = SM->getCharacterData(TL.getEndLoc());
+    if (TL.getTypeLocClass() == TypeLoc::Pointer) {
+      Len = E - B + 1;
+    } else if (TL.getTypeLocClass() == TypeLoc::Record ||
+               TL.getTypeLocClass() == TypeLoc::Enum) {
+      auto &Opts = DpctGlobalInfo::getContext().getLangOpts();
+      auto EndLoc = Lexer::getLocForEndOfToken(TL.getEndLoc(), 0, *SM, Opts);
+      E = SM->getCharacterData(EndLoc);
+      Len = E - B;
+    }
   } else {
     if (QT->isArrayType()) {
       auto ArrType = Result.Context->getAsArrayType(QT);

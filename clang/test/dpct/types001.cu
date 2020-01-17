@@ -105,3 +105,35 @@ int main(int argc, char **argv) {
   checkCudaErrors(apicall(0));
   return 0;
 }
+
+__global__ void foo() {
+  void *p;
+  // CHECK: (queue_p)p;
+  // CHECK-NEXT: (queue_p *)p;
+  // CHECK-NEXT: (queue_p **)p;
+  // CHECK-NEXT: (queue_p ***)p;
+  (cudaStream_t)p;
+  (cudaStream_t *)p;
+  (cudaStream_t **)p;
+  (cudaStream_t ***)p;
+
+  int i;
+  // CHECK: (int)i;
+  // CHECK-NEXT: (int *)p;
+  // CHECK-NEXT: (int **)p;
+  // CHECK-NEXT: (int ***)p;
+  (cudaError)i;
+  (cudaError *)p;
+  (cudaError **)p;
+  (cudaError ***)p;
+
+  cudaDeviceProp cdp;
+  // CHECK: dpct::device_info cdp2 = (dpct::device_info)cdp;
+  // CHECK-NEXT: (dpct::device_info *)p;
+  // CHECK-NEXT: (dpct::device_info **)p;
+  // CHECK-NEXT: (dpct::device_info ***)p;
+  cudaDeviceProp cdp2 = (cudaDeviceProp)cdp;
+  (cudaDeviceProp *)p;
+  (cudaDeviceProp **)p;
+  (cudaDeviceProp ***)p;
+}
