@@ -596,8 +596,8 @@ public:
 
   /// This function will return the replaced type name with qualifiers.
   /// Currently, since clang do not support get the order of original qualifiers,
-  /// this function will follow the behaivor of clang::QualType.print(), in
-  /// other words, the behaivor is that the qualifiers(const, volatile...) will
+  /// this function will follow the behavior of clang::QualType.print(), in
+  /// other words, the behavior is that the qualifiers(const, volatile...) will
   /// occur before the simple type(int, bool...) regardless its order in origin
   /// code.
   /// \param [in] QT The input qualified type which need migration.
