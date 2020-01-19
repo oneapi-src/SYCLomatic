@@ -85,6 +85,11 @@ public:
   void Elif(SourceLocation Loc, SourceRange ConditionRange,
             ConditionValueKind ConditionValue, SourceLocation IfLoc) override;
   bool ShouldEnter(StringRef FileName, bool IsAngled) override;
+
+private:
+  /// e.g. "__launch_bounds(32, 32)  void foo()"
+  /// Result is "void foo()"
+  TextModification *removeMacroInvocationAndTrailingSpaces(SourceRange Range);
 };
 
 class ASTTraversal;

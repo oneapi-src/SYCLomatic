@@ -10,7 +10,9 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
+// CHECK:  // Test Launch Bounds
 // CHECK: void testKernel(int L, int M, int N, cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
+__launch_bounds__(256, 512) // Test Launch Bounds
 __global__ void testKernel(int L, int M, int N) {
   // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range().get(2) + [[ITEMNAME]].get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;

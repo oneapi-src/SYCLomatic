@@ -294,8 +294,6 @@ void replaceSubStrAll(std::string &Str, const std::string &SubStr,
                       const std::string &Repl);
 bool isArgUsedAsLvalueUntil(const clang::DeclRefExpr *Arg,
                             const clang::Stmt *S);
-unsigned int getLenToNextTokenBegin(const clang::Token &CurTokEnd,
-                                    clang::SourceManager &SM);
 std::vector<const clang::Stmt *>
 getConditionNode(clang::ast_type_traits::DynTypedNode Node);
 bool isConditionOfFlowControl(const clang::Expr *E);

@@ -93,9 +93,8 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
                                      II->getName().str() == "__device__" ||
                                      II->getName().str() == "__global__" ||
                                      II->getName().str() == "__constant__")) {
-      unsigned int Len = getLenToNextTokenBegin(*Iter, SM);
-      TransformSet.emplace_back(
-          new ReplaceText(Iter->getLocation(), Len, "", true));
+      TransformSet.emplace_back(removeMacroInvocationAndTrailingSpaces(
+          SourceRange(Iter->getLocation(), Iter->getEndLoc())));
     }
   }
 }
@@ -129,9 +128,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   auto Name = MacroNameTok.getIdentifierInfo()->getName();
   if (TKind == tok::identifier &&
       (Name == "__host__" || Name == "__device__" || Name == "__global__" ||
-       Name == "__constant__")) {
-    unsigned int Len = getLenToNextTokenBegin(MacroNameTok, SM);
-    TransformSet.emplace_back(new ReplaceText(Range.getBegin(), Len, "", true));
+       Name == "__constant__" || Name == "__launch_bounds__")) {
+    TransformSet.emplace_back(removeMacroInvocationAndTrailingSpaces(Range));
   }
 
   if (TKind == tok::identifier && Name == "__forceinline__") {
@@ -154,6 +152,31 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     }
   }
 }
+TextModification *
+IncludesCallbacks::removeMacroInvocationAndTrailingSpaces(SourceRange Range) {
+  const char *C = SM.getCharacterData(
+      Lexer::getLocForEndOfToken(Range.getEnd(), 0, SM, LangOptions()));
+  while (C && *C) {
+    if (!isspace(*C)) {
+      break;
+    }
+#if defined(__linux__)
+    if (*C == '\n') {
+      break;
+    }
+#elif defined(_WIN32)
+    if (*C == '\r') {
+      break;
+    }
+#else
+#error Only support Windows and Linux.
+#endif
+    ++C;
+  }
+  return new ReplaceText(Range.getBegin(),
+                         C - SM.getCharacterData(Range.getBegin()), "");
+}
+
 
 void IncludesCallbacks::Ifdef(SourceLocation Loc, const Token &MacroNameTok,
                               const MacroDefinition &MD) {

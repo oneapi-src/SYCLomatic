@@ -724,36 +724,6 @@ bool isArgUsedAsLvalueUntil(const DeclRefExpr *Arg, const Stmt *S) {
   return UsedInScope[CurrentScope];
 }
 
-/// This function gets the length from current token begin to next token begin.
-/// But if there is any line break before next token, then the length will be
-/// from current token begin to the line break.
-/// \param CurTok Current token.
-/// \param SM SourceManager.
-/// \return The result length.
-unsigned int getLenToNextTokenBegin(const Token &CurTok, SourceManager &SM) {
-  SourceLocation CurTokBegin = CurTok.getLocation();
-  unsigned int TokLength = CurTok.getLength();
-  const char *C = SM.getCharacterData(CurTokBegin) + TokLength;
-  while (C && *C) {
-    if (!isspace(*C)) {
-      break;
-    }
-#if defined(__linux__)
-    if (*C == '\n') {
-      break;
-    }
-#elif defined(_WIN32)
-    if (*C == '\r') {
-      break;
-    }
-#else
-#error Only support Windows and Linux.
-#endif
-    ++C;
-  }
-  return C - SM.getCharacterData(CurTokBegin);
-}
-
 /// This function gets the statement nodes of the initialization, condition or
 /// increment parts of the \p Node.
 /// \param Node The statement node which is if, for, do, while or switch.
