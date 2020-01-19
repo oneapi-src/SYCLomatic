@@ -10,7 +10,7 @@
 #include <curand.h>
 
 int main(){
-       //CHECK:int s1;
+  //CHECK:int s1;
   //CHECK-NEXT:int s2;
   //CHECK-NEXT:mkl::rng::philox4x32x10 rng(dpct::get_default_queue_wait(), 1337ull);
   //CHECK-NEXT:/*
@@ -29,9 +29,8 @@ int main(){
   curandSetPseudoRandomGeneratorSeed(rng, 1337ull);
   float *h_data;
 
-       //CHECK:{
-  //CHECK-NEXT:auto allocation_ct1 =
-  //CHECK-NEXT:    dpct::memory_manager::get_instance().translate_ptr(h_data);
+  //CHECK:{
+  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data);
   //CHECK-NEXT:cl::sycl::buffer<float> buffer_ct1 =
   //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<float>(
   //CHECK-NEXT:        cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
@@ -40,13 +39,12 @@ int main(){
   //CHECK-NEXT:}
   curandGenerateUniform(rng, h_data, 100*100);
 
-       //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted.
-  //CHECK-NEXT:You may need to rewrite this code.
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+  //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto allocation_ct1 =
-  //CHECK-NEXT:    dpct::memory_manager::get_instance().translate_ptr(h_data);
+  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data);
   //CHECK-NEXT:cl::sycl::buffer<float> buffer_ct1 =
   //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<float>(
   //CHECK-NEXT:        cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
@@ -55,13 +53,12 @@ int main(){
   //CHECK-NEXT:}
   s1 = curandGenerateUniform(rng, h_data, 100*100);
 
-       //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted.
-  //CHECK-NEXT:You may need to rewrite this code.
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+  //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto allocation_ct1 =
-  //CHECK-NEXT:    dpct::memory_manager::get_instance().translate_ptr(h_data);
+  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data);
   //CHECK-NEXT:cl::sycl::buffer<float> buffer_ct1 =
   //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<float>(
   //CHECK-NEXT:        cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
@@ -70,13 +67,12 @@ int main(){
   //CHECK-NEXT:}
   s1 = curandGenerateLogNormal(rng, h_data, 100*100, 123, 456);
 
-       //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted.
-  //CHECK-NEXT:You may need to rewrite this code.
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+  //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto allocation_ct1 =
-  //CHECK-NEXT:    dpct::memory_manager::get_instance().translate_ptr(h_data);
+  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data);
   //CHECK-NEXT:cl::sycl::buffer<float> buffer_ct1 =
   //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<float>(
   //CHECK-NEXT:        cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
@@ -86,9 +82,8 @@ int main(){
   s1 = curandGenerateNormal(rng, h_data, 100*100, 123, 456);
 
   double* h_data_d;
-       //CHECK:{
-  //CHECK-NEXT:auto allocation_ct1 =
-  //CHECK-NEXT:    dpct::memory_manager::get_instance().translate_ptr(h_data_d);
+  //CHECK:{
+  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data_d);
   //CHECK-NEXT:cl::sycl::buffer<double> buffer_ct1 =
   //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<double>(
   //CHECK-NEXT:        cl::sycl::range<1>(allocation_ct1.size / sizeof(double)));
@@ -97,9 +92,8 @@ int main(){
   //CHECK-NEXT:}
   curandGenerateUniformDouble(rng, h_data_d, 100*100);
 
-       //CHECK:{
-  //CHECK-NEXT:auto allocation_ct1 =
-  //CHECK-NEXT:    dpct::memory_manager::get_instance().translate_ptr(h_data_d);
+  //CHECK:{
+  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data_d);
   //CHECK-NEXT:cl::sycl::buffer<double> buffer_ct1 =
   //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<double>(
   //CHECK-NEXT:        cl::sycl::range<1>(allocation_ct1.size / sizeof(double)));
@@ -108,9 +102,8 @@ int main(){
   //CHECK-NEXT:}
   curandGenerateLogNormalDouble(rng, h_data_d, 100*100, 123, 456);
 
-       //CHECK:{
-  //CHECK-NEXT:auto allocation_ct1 =
-  //CHECK-NEXT:    dpct::memory_manager::get_instance().translate_ptr(h_data_d);
+  //CHECK:{
+  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data_d);
   //CHECK-NEXT:cl::sycl::buffer<double> buffer_ct1 =
   //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<double>(
   //CHECK-NEXT:        cl::sycl::range<1>(allocation_ct1.size / sizeof(double)));
@@ -120,13 +113,12 @@ int main(){
   curandGenerateNormalDouble(rng, h_data_d, 100*100, 123, 456);
 
   unsigned int* h_data_ui;
-       //CHECK:/*
+  //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto allocation_ct1 =
-  //CHECK-NEXT:    dpct::memory_manager::get_instance().translate_ptr(h_data_ui);
+  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data_ui);
   //CHECK-NEXT:cl::sycl::buffer<uint32_t> buffer_ct1 =
   //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<uint32_t>(
   //CHECK-NEXT:        cl::sycl::range<1>(allocation_ct1.size / sizeof(uint32_t)));
@@ -135,13 +127,12 @@ int main(){
   //CHECK-NEXT:}
   s1 = curandGenerate(rng, h_data_ui, 100*100);
 
-       //CHECK:/*
+  //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto allocation_ct1 =
-  //CHECK-NEXT:    dpct::memory_manager::get_instance().translate_ptr(h_data_ui);
+  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data_ui);
   //CHECK-NEXT:cl::sycl::buffer<int32_t> buffer_ct1 =
   //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<int32_t>(
   //CHECK-NEXT:        cl::sycl::range<1>(allocation_ct1.size / sizeof(int32_t)));
@@ -151,9 +142,8 @@ int main(){
   s1 = curandGeneratePoisson(rng, h_data_ui, 100*100, 123.456);
 
   unsigned long long* h_data_ull;
-       //CHECK:{
-  //CHECK-NEXT:auto allocation_ct1 =
-  //CHECK-NEXT:    dpct::memory_manager::get_instance().translate_ptr(h_data_ull);
+  //CHECK:{
+  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data_ull);
   //CHECK-NEXT:cl::sycl::buffer<uint64_t> buffer_ct1 =
   //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<uint64_t>(
   //CHECK-NEXT:        cl::sycl::range<1>(allocation_ct1.size / sizeof(uint64_t)));
@@ -162,9 +152,9 @@ int main(){
   //CHECK-NEXT:}
   curandGenerateLongLong(rng, h_data_ull, 100*100);
 
-       //CHECK:if (s1 = [&]() {
+  //CHECK:if (s1 = [&]() {
   //CHECK-NEXT:auto allocation_ct1 =
-  //CHECK-NEXT:    dpct::memory_manager::get_instance().translate_ptr(h_data_ull);
+  //CHECK-NEXT:    dpct::mem_mgr::instance().translate_ptr(h_data_ull);
   //CHECK-NEXT:cl::sycl::buffer<uint64_t> buffer_ct1 =
   //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<uint64_t>(
   //CHECK-NEXT:        cl::sycl::range<1>(allocation_ct1.size / sizeof(uint64_t)));
@@ -174,7 +164,7 @@ int main(){
   //CHECK-NEXT:    }()) {}
   if(s1 = curandGenerateLongLong(rng, h_data_ull, 100*100)){}
 
-       //CHECK:mkl::rng::sobol rng2(dpct::get_default_queue_wait(), 1111);
+  //CHECK:mkl::rng::sobol rng2(dpct::get_default_queue_wait(), 1111);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the
   //CHECK-NEXT:function call is redundant in DPC++.
@@ -184,8 +174,7 @@ int main(){
   //CHECK-NEXT:because the function call is redundant in DPC++.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto allocation_ct1 =
-  //CHECK-NEXT:    dpct::memory_manager::get_instance().translate_ptr(h_data);
+  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data);
   //CHECK-NEXT:cl::sycl::buffer<float> buffer_ct1 =
   //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<float>(
   //CHECK-NEXT:        cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
@@ -197,7 +186,7 @@ int main(){
   curandSetQuasiRandomGeneratorDimensions(rng2, 1111);
   curandGenerateUniform(rng2, h_data, 100*100);
 
-       //CHECK:mkl::rng::skip_ahead(rng, 100);
+  //CHECK:mkl::rng::skip_ahead(rng, 100);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
@@ -216,7 +205,7 @@ curandStatus_t foo1();
 //CHECK:int foo2();
 curandStatus foo2();
 
-     //CHECK:class A{
+//CHECK:class A{
 //CHECK-NEXT:public:
 //CHECK-NEXT:  void create(){
 //CHECK-NEXT:    rng = mkl::rng::sobol(dpct::get_default_queue_wait(), 1243);
@@ -226,7 +215,7 @@ curandStatus foo2();
 //CHECK-NEXT:    */
 //CHECK-NEXT:  }
 
-     //CHECK:private:
+//CHECK:private:
 //CHECK-NEXT:  mkl::rng::sobol rng;
 //CHECK-NEXT:};
 class A{
@@ -243,7 +232,7 @@ private:
 
 
 void bar1(){
-     //CHECK:curandGenerator_t rng;
+//CHECK:curandGenerator_t rng;
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1028:{{[0-9]+}}: The curandCreateGenerator was not migrated, because parameter
 //CHECK-NEXT:CURAND_RNG_PSEUDO_XORWOW is unsupported.
@@ -260,7 +249,7 @@ void bar1(){
 
 
 void bar2(){
-     //CHECK:curandGenerator_t rng;
+//CHECK:curandGenerator_t rng;
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1028:{{[0-9]+}}: The curandCreateGenerator was not migrated, because parameter
 //CHECK-NEXT:CURAND_RNG_QUASI_SCRAMBLED_SOBOL64 is unsupported.

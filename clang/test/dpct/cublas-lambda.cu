@@ -27,18 +27,15 @@ int main() {
 
 
   // CHECK: if ([&]() {
-  // CHECK-NEXT: auto allocation_ct7 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_A_S);
+  // CHECK-NEXT: auto allocation_ct7 = dpct::mem_mgr::instance().translate_ptr(d_A_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct7 =
   // CHECK-NEXT:     allocation_ct7.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct7.size / sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct9 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_B_S);
+  // CHECK-NEXT: auto allocation_ct9 = dpct::mem_mgr::instance().translate_ptr(d_B_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct9 =
   // CHECK-NEXT:     allocation_ct9.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct9.size / sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct12 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_C_S);
+  // CHECK-NEXT: auto allocation_ct12 = dpct::mem_mgr::instance().translate_ptr(d_C_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct12 =
   // CHECK-NEXT:     allocation_ct12.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct12.size / sizeof(float)));
@@ -54,18 +51,15 @@ int main() {
 
 
   // CHECK: if (int stat = [&]() {
-  // CHECK-NEXT: auto allocation_ct7 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_A_S);
+  // CHECK-NEXT: auto allocation_ct7 = dpct::mem_mgr::instance().translate_ptr(d_A_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct7 =
   // CHECK-NEXT:     allocation_ct7.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct7.size / sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct9 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_B_S);
+  // CHECK-NEXT: auto allocation_ct9 = dpct::mem_mgr::instance().translate_ptr(d_B_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct9 =
   // CHECK-NEXT:     allocation_ct9.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct9.size / sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct12 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_C_S);
+  // CHECK-NEXT: auto allocation_ct12 = dpct::mem_mgr::instance().translate_ptr(d_C_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct12 =
   // CHECK-NEXT:     allocation_ct12.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct12.size / sizeof(float)));
@@ -81,18 +75,15 @@ int main() {
 
 
   // CHECK: for ([&]() {
-  // CHECK-NEXT: auto allocation_ct7 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_A_S);
+  // CHECK-NEXT: auto allocation_ct7 = dpct::mem_mgr::instance().translate_ptr(d_A_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct7 =
   // CHECK-NEXT:     allocation_ct7.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct7.size / sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct9 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_B_S);
+  // CHECK-NEXT: auto allocation_ct9 = dpct::mem_mgr::instance().translate_ptr(d_B_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct9 =
   // CHECK-NEXT:     allocation_ct9.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct9.size / sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct12 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_C_S);
+  // CHECK-NEXT: auto allocation_ct12 = dpct::mem_mgr::instance().translate_ptr(d_C_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct12 =
   // CHECK-NEXT:     allocation_ct12.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct12.size / sizeof(float)));
@@ -108,18 +99,15 @@ int main() {
 
 
   // CHECK: while ([&]() {
-  // CHECK-NEXT: auto allocation_ct7 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_A_S);
+  // CHECK-NEXT: auto allocation_ct7 = dpct::mem_mgr::instance().translate_ptr(d_A_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct7 =
   // CHECK-NEXT:     allocation_ct7.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct7.size / sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct9 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_B_S);
+  // CHECK-NEXT: auto allocation_ct9 = dpct::mem_mgr::instance().translate_ptr(d_B_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct9 =
   // CHECK-NEXT:     allocation_ct9.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct9.size / sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct12 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_C_S);
+  // CHECK-NEXT: auto allocation_ct12 = dpct::mem_mgr::instance().translate_ptr(d_C_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct12 =
   // CHECK-NEXT:     allocation_ct12.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct12.size / sizeof(float)));
@@ -135,18 +123,15 @@ int main() {
 
   // CHECK: do{
   // CHECK-NEXT: } while ([&]() {
-  // CHECK-NEXT: auto allocation_ct7 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_A_S);
+  // CHECK-NEXT: auto allocation_ct7 = dpct::mem_mgr::instance().translate_ptr(d_A_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct7 =
   // CHECK-NEXT:     allocation_ct7.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct7.size / sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct9 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_B_S);
+  // CHECK-NEXT: auto allocation_ct9 = dpct::mem_mgr::instance().translate_ptr(d_B_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct9 =
   // CHECK-NEXT:     allocation_ct9.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct9.size / sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct12 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_C_S);
+  // CHECK-NEXT: auto allocation_ct12 = dpct::mem_mgr::instance().translate_ptr(d_C_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct12 =
   // CHECK-NEXT:     allocation_ct12.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct12.size / sizeof(float)));
@@ -160,18 +145,15 @@ int main() {
 
 
   // CHECK: switch (int stat = [&]() {
-  // CHECK-NEXT: auto allocation_ct7 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_A_S);
+  // CHECK-NEXT: auto allocation_ct7 = dpct::mem_mgr::instance().translate_ptr(d_A_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct7 =
   // CHECK-NEXT:     allocation_ct7.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct7.size / sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct9 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_B_S);
+  // CHECK-NEXT: auto allocation_ct9 = dpct::mem_mgr::instance().translate_ptr(d_B_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct9 =
   // CHECK-NEXT:     allocation_ct9.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct9.size / sizeof(float)));
-  // CHECK-NEXT: auto allocation_ct12 =
-  // CHECK-NEXT:     dpct::memory_manager::get_instance().translate_ptr(d_C_S);
+  // CHECK-NEXT: auto allocation_ct12 = dpct::mem_mgr::instance().translate_ptr(d_C_S);
   // CHECK-NEXT: cl::sycl::buffer<float> buffer_ct12 =
   // CHECK-NEXT:     allocation_ct12.buffer.reinterpret<float>(
   // CHECK-NEXT:         cl::sycl::range<1>(allocation_ct12.size / sizeof(float)));

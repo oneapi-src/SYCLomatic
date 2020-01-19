@@ -299,8 +299,8 @@ public:
   // Attach linear data to this class.
   void attach(void *ptr, const image_channel &chn_desc, size_t count) {
     detach();
-    if (memory_manager::get_instance().is_device_ptr(ptr))
-      ptr = memory_manager::get_instance()
+    if (mem_mgr::instance().is_device_ptr(ptr))
+      ptr = mem_mgr::instance()
                 .translate_ptr(ptr)
                 .buffer.get_access<cl::sycl::access::mode::read_write>()
                 .get_pointer();

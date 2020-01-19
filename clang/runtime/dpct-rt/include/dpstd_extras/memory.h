@@ -245,7 +245,7 @@ public:
       : Base(
 #ifdef DPCT_USM_LEVEL_NONE
             sycl::buffer<T, 1>(sycl::range<1>(
-                dpct::memory_manager::get_instance().translate_ptr(ptr).size /
+                dpct::mem_mgr::instance().translate_ptr(ptr).size /
                 sizeof(T))),
 #else
             sycl::buffer<T, 1>(sycl::range<1>(1)),

@@ -52,21 +52,21 @@ int main() {
   //CHECK-NEXT: */
   //CHECK-NEXT: {
   //CHECK-NEXT: auto transpose_ct2 = trans0;
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(A_s);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(A_s);
   //CHECK-NEXT: cl::sycl::buffer<float> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(B_s);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(B_s);
   //CHECK-NEXT: cl::sycl::buffer<float> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(C_s);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(C_s);
   //CHECK-NEXT: cl::sycl::buffer<float> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
   //CHECK-NEXT: status = (mkl::blas::gemmt(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), ((((int)transpose_ct2)==0)?(mkl::transpose::trans):(mkl::transpose::nontrans)), n, k, *(&alpha_s), buffer_ct{{[0-9]+}}, lda, buffer_ct{{[0-9]+}}, ldb, *(&beta_s), buffer_ct{{[0-9]+}}, ldc), 0);
   //CHECK-NEXT: }
   //CHECK-NEXT: {
   //CHECK-NEXT: auto transpose_ct2 = trans1;
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(A_s);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(A_s);
   //CHECK-NEXT: cl::sycl::buffer<float> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(B_s);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(B_s);
   //CHECK-NEXT: cl::sycl::buffer<float> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(C_s);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(C_s);
   //CHECK-NEXT: cl::sycl::buffer<float> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<float>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(float)));
   //CHECK-NEXT: mkl::blas::gemmt(handle, (((int)fill1)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), ((((int)transpose_ct2)==0)?(mkl::transpose::trans):(mkl::transpose::nontrans)), n, k, *(&alpha_s), buffer_ct{{[0-9]+}}, lda, buffer_ct{{[0-9]+}}, ldb, *(&beta_s), buffer_ct{{[0-9]+}}, ldc);
   //CHECK-NEXT: }
@@ -78,21 +78,21 @@ int main() {
   //CHECK-NEXT: */
   //CHECK-NEXT: {
   //CHECK-NEXT: auto transpose_ct2 = 0;
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(A_d);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(A_d);
   //CHECK-NEXT: cl::sycl::buffer<double> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(B_d);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(B_d);
   //CHECK-NEXT: cl::sycl::buffer<double> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(C_d);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(C_d);
   //CHECK-NEXT: cl::sycl::buffer<double> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
   //CHECK-NEXT: status = (mkl::blas::gemmt(handle, (((int)0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), ((((int)transpose_ct2)==0)?(mkl::transpose::trans):(mkl::transpose::nontrans)), n, k, *(&alpha_d), buffer_ct{{[0-9]+}}, lda, buffer_ct{{[0-9]+}}, ldb, *(&beta_d), buffer_ct{{[0-9]+}}, ldc), 0);
   //CHECK-NEXT: }
   //CHECK-NEXT: {
   //CHECK-NEXT: auto transpose_ct2 = 1;
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(A_d);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(A_d);
   //CHECK-NEXT: cl::sycl::buffer<double> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(B_d);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(B_d);
   //CHECK-NEXT: cl::sycl::buffer<double> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(C_d);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(C_d);
   //CHECK-NEXT: cl::sycl::buffer<double> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
   //CHECK-NEXT: mkl::blas::gemmt(handle, (((int)1)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), ((((int)transpose_ct2)==0)?(mkl::transpose::trans):(mkl::transpose::nontrans)), n, k, *(&alpha_d), buffer_ct{{[0-9]+}}, lda, buffer_ct{{[0-9]+}}, ldb, *(&beta_d), buffer_ct{{[0-9]+}}, ldc);
   //CHECK-NEXT: }
@@ -102,11 +102,11 @@ int main() {
 
   //CHECK: {
   //CHECK-NEXT: auto transpose_ct2 = macro_a;
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(A_d);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(A_d);
   //CHECK-NEXT: cl::sycl::buffer<double> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(B_d);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(B_d);
   //CHECK-NEXT: cl::sycl::buffer<double> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(C_d);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(C_d);
   //CHECK-NEXT: cl::sycl::buffer<double> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
   //CHECK-NEXT: mkl::blas::gemmt(handle, foo(), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), ((((int)transpose_ct2)==0)?(mkl::transpose::trans):(mkl::transpose::nontrans)), n, k, *(&alpha_d), buffer_ct{{[0-9]+}}, lda, buffer_ct{{[0-9]+}}, ldb, *(&beta_d), buffer_ct{{[0-9]+}}, ldc);
   //CHECK-NEXT: }
@@ -117,11 +117,11 @@ int main() {
 
   //CHECK: {
   //CHECK-NEXT: auto transpose_ct2 = bar();
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(A_d);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(A_d);
   //CHECK-NEXT: cl::sycl::buffer<double> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(B_d);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(B_d);
   //CHECK-NEXT: cl::sycl::buffer<double> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(C_d);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(C_d);
   //CHECK-NEXT: cl::sycl::buffer<double> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
   //CHECK-NEXT: mkl::blas::gemmt(handle, (((int)macro_b)==0?(mkl::uplo::lower):(mkl::uplo::upper)), transpose_ct2, ((transpose_ct2)==(mkl::transpose::nontrans))?(mkl::transpose::trans):(mkl::transpose::nontrans), n, k, *(&alpha_d), buffer_ct{{[0-9]+}}, lda, buffer_ct{{[0-9]+}}, ldb, *(&beta_d), buffer_ct{{[0-9]+}}, ldc);
   //CHECK-NEXT: }
@@ -130,11 +130,11 @@ int main() {
 
   //CHECK: {
   //CHECK-NEXT: auto transpose_ct2 = mkl::transpose::trans;
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(A_d);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(A_d);
   //CHECK-NEXT: cl::sycl::buffer<double> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(B_d);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(B_d);
   //CHECK-NEXT: cl::sycl::buffer<double> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
-  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::memory_manager::get_instance().translate_ptr(C_d);
+  //CHECK-NEXT: auto allocation_ct{{[0-9]+}} = dpct::mem_mgr::instance().translate_ptr(C_d);
   //CHECK-NEXT: cl::sycl::buffer<double> buffer_ct{{[0-9]+}} = allocation_ct{{[0-9]+}}.buffer.reinterpret<double>(cl::sycl::range<1>(allocation_ct{{[0-9]+}}.size/sizeof(double)));
   //CHECK-NEXT: mkl::blas::gemmt(handle, mkl::uplo::lower, transpose_ct2, ((transpose_ct2)==(mkl::transpose::nontrans))?(mkl::transpose::trans):(mkl::transpose::nontrans), n, k, *(&alpha_d), buffer_ct{{[0-9]+}}, lda, buffer_ct{{[0-9]+}}, ldb, *(&beta_d), buffer_ct{{[0-9]+}}, ldc);
   //CHECK-NEXT: }

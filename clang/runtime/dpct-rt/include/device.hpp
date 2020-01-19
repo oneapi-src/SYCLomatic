@@ -220,7 +220,7 @@ private:
 };
 
 /// device manager
-class device_manager {
+class dev_mgr {
 public:
   device_ext &current_device() {
     check_id(_current_device);
@@ -237,17 +237,17 @@ public:
   }
   unsigned int device_count() { return _devs.size(); }
 
-  // Singleton to return the instance device_manager.
-  static device_manager &get_instance() {
-    static device_manager d_m;
+  // Singleton to return the instance dev_mgr.
+  static dev_mgr &instance() {
+    static dev_mgr d_m;
     return d_m;
   }
-  device_manager(const device_manager&) = delete;
-  device_manager&operator=(const device_manager&) = delete;
-  device_manager(device_manager&&) = delete;
-  device_manager&operator=(device_manager&&) = delete;
+  dev_mgr(const dev_mgr&) = delete;
+  dev_mgr&operator=(const dev_mgr&) = delete;
+  dev_mgr(dev_mgr&&) = delete;
+  dev_mgr&operator=(dev_mgr&&) = delete;
 private:
-  device_manager() {
+  dev_mgr() {
     cl::sycl::device default_device =
         cl::sycl::device(cl::sycl::default_selector{});
     _devs.push_back(device_ext(default_device));
@@ -273,7 +273,7 @@ private:
 /// Util function to get the defualt queue of current device in
 /// dpct device manager.
 static inline cl::sycl::queue &get_default_queue() {
-  return device_manager::get_instance().current_device().default_queue();
+  return dev_mgr::instance().current_device().default_queue();
 }
 
 /// Util function to get the defualt queue of current device in
@@ -286,7 +286,7 @@ static inline cl::sycl::queue &get_default_queue_wait() {
 
 /// Util function to get the current device.
 static inline cl::sycl::device &get_current_device() {
-  return device_manager::get_instance().current_device();
+  return dev_mgr::instance().current_device();
 }
 
 /// Util function to get the context of the default queue of current

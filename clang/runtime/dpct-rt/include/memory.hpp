@@ -58,8 +58,8 @@ typedef uint8_t byte_t;
 // Buffer type to be used in Memory Management runtime.
 typedef cl::sycl::buffer<byte_t> buffer_t;
 
-class memory_manager {
-  memory_manager() {
+class mem_mgr {
+  mem_mgr() {
     // Reserved address space, no real memory allocation happens here.
 #if defined(__linux__)
     mapped_address_space =
@@ -86,7 +86,7 @@ public:
     size_t size;
   };
 
-  ~memory_manager() {
+  ~mem_mgr() {
 #if defined(__linux__)
     munmap(mapped_address_space, mapped_region_size);
 #elif defined(_WIN64)
@@ -96,10 +96,10 @@ public:
 #endif
   };
 
-  memory_manager(const memory_manager &) = delete;
-  memory_manager &operator=(const memory_manager &) = delete;
-  memory_manager(memory_manager &&) = delete;
-  memory_manager &operator=(memory_manager &&) = delete;
+  mem_mgr(const mem_mgr &) = delete;
+  mem_mgr &operator=(const mem_mgr &) = delete;
+  mem_mgr(mem_mgr &&) = delete;
+  mem_mgr &operator=(mem_mgr &&) = delete;
 
   // Allocate
   void *mem_alloc(size_t size) {
@@ -141,11 +141,11 @@ public:
            (ptr < mapped_address_space + mapped_region_size);
   }
 
-  // Singleton to return the instance memory_manager.
+  // Singleton to return the instance mem_mgr.
   // Using singleton enables header-only library, but may be problematic for
   // thread safety.
-  static memory_manager &get_instance() {
-    static memory_manager m;
+  static mem_mgr &instance() {
+    static mem_mgr m;
     return m;
   }
 
@@ -180,7 +180,7 @@ private:
 // malloc
 static inline void dpct_malloc(void **ptr, size_t size, cl::sycl::queue &q) {
 #ifdef DPCT_USM_LEVEL_NONE
-  *ptr = memory_manager::get_instance().mem_alloc(size * sizeof(byte_t));
+  *ptr = mem_mgr::instance().mem_alloc(size * sizeof(byte_t));
 #else
   *ptr = cl::sycl::malloc_device(size, q.get_device(), q.get_context());
 #endif // DPCT_USM_LEVEL_NONE
@@ -207,7 +207,7 @@ static inline void dpct_malloc(T1 **ptr, T2 size) {
 static inline void dpct_free(void *ptr) {
   if (ptr) {
 #ifdef DPCT_USM_LEVEL_NONE
-    memory_manager::get_instance().mem_free(ptr);
+    mem_mgr::instance().mem_free(ptr);
 #else
     cl::sycl::free(ptr, get_default_queue().get_context());
 #endif // DPCT_USM_LEVEL_NONE
@@ -292,7 +292,7 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
                                    const void *from_ptr, size_t size,
                                    memcpy_direction direction) {
 #ifdef DPCT_USM_LEVEL_NONE
-  auto &mm = memory_manager::get_instance();
+  auto &mm = mem_mgr::instance();
   memcpy_direction real_direction = direction;
   switch (direction) {
   case host_to_host:
@@ -419,7 +419,7 @@ static void async_dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
 /// \param ptr Pointer to a piece of memory.
 /// \returns a pair containing both the buffer and the offset.
 static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
-  auto alloc = memory_manager::get_instance().translate_ptr(ptr);
+  auto alloc = mem_mgr::instance().translate_ptr(ptr);
   size_t offset = (byte_t *)ptr - alloc.alloc_ptr;
   return std::make_pair(alloc.buffer, offset);
 }
@@ -429,7 +429,7 @@ static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
 /// \param ptr Pointer to a piece of memory.
 /// \returns the buffer.
 static buffer_t get_buffer(const void *ptr) {
-  return memory_manager::get_instance().translate_ptr(ptr).buffer;
+  return mem_mgr::instance().translate_ptr(ptr).buffer;
 }
 
 /// Synchronously sets value to the first size bytes starting from dev_ptr in
@@ -443,7 +443,7 @@ static buffer_t get_buffer(const void *ptr) {
 static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *dev_ptr,
                                           int value, size_t size) {
 #ifdef DPCT_USM_LEVEL_NONE
-  auto &mm = memory_manager::get_instance();
+  auto &mm = mem_mgr::instance();
   assert(mm.is_device_ptr(dev_ptr));
   auto alloc = mm.translate_ptr(dev_ptr);
   size_t offset = (byte_t *)dev_ptr - alloc.alloc_ptr;
@@ -542,7 +542,7 @@ public:
 #ifdef DPCT_USM_LEVEL_NONE
   /// Get cl::sycl::accessor for the device memory object when usm is not used.
   accessor_t get_access(cl::sycl::handler &cgh) {
-    return memory_manager::get_instance()
+    return mem_mgr::instance()
         .translate_ptr(memory_ptr)
         .buffer.template reinterpret<T, Dimension>(range)
         .template get_access<memory_traits<Memory, T>::mode,
@@ -584,7 +584,7 @@ public:
 #ifdef DPCT_USM_LEVEL_NONE
   /// Get cl::sycl::accessor for the device memory object when usm is not used.
   accessor_t get_access(cl::sycl::handler &cgh) {
-    auto buf = memory_manager::get_instance()
+    auto buf = mem_mgr::instance()
                    .translate_ptr(base::get_ptr())
                    .buffer.template reinterpret<T, 1>(cl::sycl::range<1>(1));
     return accessor_t(buf, cgh);

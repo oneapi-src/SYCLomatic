@@ -174,7 +174,7 @@ IncludesCallbacks::removeMacroInvocationAndTrailingSpaces(SourceRange Range) {
     ++C;
   }
   return new ReplaceText(Range.getBegin(),
-                         C - SM.getCharacterData(Range.getBegin()), "");
+                         C - SM.getCharacterData(Range.getBegin()), "", true);
 }
 
 
@@ -2965,7 +2965,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
     int ArgNum = CE->getNumArgs();
     // TODO: what if USM enabled. USM memory will error when call
-    // dpct::memory_manager::get_instance().translate_ptr();
+    // dpct::mem_mgr::instance().translate_ptr();
     for (int i = 0; i < ArgNum; ++i) {
       int IndexTemp = -1;
       if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
@@ -3094,7 +3094,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
     int ArgNum = CE->getNumArgs();
     // TODO: what if USM enabled. USM memory will error when call
-    // dpct::memory_manager::get_instance().translate_ptr();
+    // dpct::mem_mgr::instance().translate_ptr();
 
     for (int i = 0; i < ArgNum; ++i) {
       int IndexTemp = -1;
@@ -3287,7 +3287,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
 
     // TODO: what if USM enabled. USM memory will error when call
-    // dpct::memory_manager::get_instance().translate_ptr();
+    // dpct::mem_mgr::instance().translate_ptr();
     if (FuncName == "cublasSnrm2" || FuncName == "cublasDnrm2" ||
         FuncName == "cublasScnrm2" || FuncName == "cublasDznrm2" ||
         FuncName == "cublasSdot" || FuncName == "cublasDdot" ||
@@ -4199,7 +4199,7 @@ std::string SOLVERFunctionCallRule::getBufferNameAndDeclStr(
   // TODO: reinterpret will copy more data
   BufferDecl = getIndent(SL, AC.getSourceManager()).str() + "auto " +
                AllocationTempName +
-               " = dpct::memory_manager::get_instance().translate_ptr(" +
+               " = dpct::mem_mgr::instance().translate_ptr(" +
                PointerName + ");" + getNL() +
                getIndent(SL, AC.getSourceManager()).str() +
                "cl::sycl::buffer<" + TypeAsStr + "> " + BufferTempName + " = " +
@@ -4282,14 +4282,14 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new InsertBeforeStmt(CE, Prefix + ResultVarName + " = "));
     emplaceTransformation(new ReplaceStmt(
-        CE, "dpct::device_manager::get_instance().device_count()" + Suffix));
+        CE, "dpct::dev_mgr::instance().device_count()" + Suffix));
   } else if (FuncName == "cudaGetDeviceProperties") {
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
     std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
     emplaceTransformation(new ReplaceStmt(
-        CE->getCallee(), Prefix + "dpct::device_manager::get_instance().get_device"));
+        CE->getCallee(), Prefix + "dpct::dev_mgr::instance().get_device"));
     emplaceTransformation(new RemoveArg(CE, 0));
     emplaceTransformation(new InsertAfterStmt(
         CE, ".get_device_info(" + ResultVarName + ")" + Suffix));
@@ -4298,14 +4298,14 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
     emplaceTransformation(new ReplaceStmt(
-        CE, Prefix + "dpct::device_manager::get_instance().current_device().reset()" +
+        CE, Prefix + "dpct::dev_mgr::instance().current_device().reset()" +
                 Suffix));
   } else if (FuncName == "cudaSetDevice") {
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
     emplaceTransformation(new ReplaceStmt(
-        CE->getCallee(), Prefix + "dpct::device_manager::get_instance().select_device"));
+        CE->getCallee(), Prefix + "dpct::dev_mgr::instance().select_device"));
     if (IsAssigned)
       emplaceTransformation(new InsertAfterStmt(CE, ", 0)"));
 
@@ -4324,7 +4324,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     emplaceTransformation(new ReplaceStmt(
-        CE->getCallee(), "dpct::device_manager::get_instance().get_device"));
+        CE->getCallee(), "dpct::dev_mgr::instance().get_device"));
     emplaceTransformation(new RemoveArg(CE, 0));
     emplaceTransformation(new RemoveArg(CE, 1));
     emplaceTransformation(new InsertAfterStmt(CE, "." + Search->second + "()"));
@@ -4338,10 +4338,10 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     emplaceTransformation(
-        new ReplaceStmt(CE, "dpct::device_manager::get_instance().current_device_id()"));
+        new ReplaceStmt(CE, "dpct::dev_mgr::instance().current_device_id()"));
   } else if (FuncName == "cudaDeviceSynchronize" ||
              FuncName == "cudaThreadSynchronize") {
-    std::string ReplStr = "dpct::device_manager::get_instance()."
+    std::string ReplStr = "dpct::dev_mgr::instance()."
                           "current_device().queues_wait_"
                           "and_throw()";
     if (IsAssigned) {
@@ -5915,7 +5915,7 @@ void MemoryMigrationRule::prefetchMigration(
     auto StmtStrArg3 = EA.getReplacedString();
     if (StmtStrArg3 == "0" || StmtStrArg3 == "NULL" ||
         StmtStrArg3 == "nullptr" || StmtStrArg3 == "") {
-      Replacement = "dpct::device_manager::get_instance().get_device(" + StmtStrArg2 +
+      Replacement = "dpct::dev_mgr::instance().get_device(" + StmtStrArg2 +
                     ").default_queue().prefetch(" + StmtStrArg0 + "," +
                     StmtStrArg1 + ")";
     } else {

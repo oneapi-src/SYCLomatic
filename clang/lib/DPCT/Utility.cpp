@@ -800,7 +800,7 @@ std::string getBufferNameAndDeclStr(const std::string &PointerName,
   // TODO: reinterpret will copy more data
   BufferDecl = getIndent(SL, AC.getSourceManager()).str() + "auto " +
                AllocationTempName +
-               " = dpct::memory_manager::get_instance().translate_ptr(" +
+               " = dpct::mem_mgr::instance().translate_ptr(" +
                PointerName + ");" + getNL() +
                getIndent(SL, AC.getSourceManager()).str() +
                "cl::sycl::buffer<" + TypeAsStr + "> " + BufferTempName + " = " +

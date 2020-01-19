@@ -575,7 +575,7 @@ void foo4(){
 // CHECK: void foo5(){
 // CHECK-NEXT:   int res;
 // CHECK-NEXT:   {
-// CHECK-NEXT:   auto allocation_ct1 = dpct::memory_manager::get_instance().translate_ptr(0);
+// CHECK-NEXT:   auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(0);
 // CHECK-NEXT:   cl::sycl::buffer<float> buffer_ct1 =
 // CHECK-NEXT:       allocation_ct1.buffer.reinterpret<float>(
 // CHECK-NEXT:           cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));

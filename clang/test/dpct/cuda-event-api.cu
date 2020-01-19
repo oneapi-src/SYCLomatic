@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
   // CHECK-EMPTY:
   // CHECK-NEXT: float elapsed_time;
   // CHECK-EMPTY:
-  // CHECK-NEXT: dpct::device_manager::get_instance().current_device().queues_wait_and_throw();
+  // CHECK-NEXT: dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
   // CHECK-EMPTY:
   // CHECK-NEXT: int blocks = 32, threads = 32;
   cudaEvent_t start, stop;
@@ -255,7 +255,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:     });
   kernelFunc<<<blocks,threads>>>();
 
-  // CHECK: dpct::device_manager::get_instance().current_device().queues_wait_and_throw();
+  // CHECK: dpct::dev_mgr::instance().current_device().queues_wait_and_throw();
   // CHECK-EMPTY:
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaEventDestroy was removed, because Function call is redundant in DPC++.
