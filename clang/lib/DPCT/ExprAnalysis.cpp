@@ -226,7 +226,9 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     std::string ArgsString;
     llvm::raw_string_ostream OS(ArgsString);
-    DpctGlobalInfo::printCtadClass(OS, "cl::sycl::range", 3) << "(";
+    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "::range",
+                                   3)
+        << "(";
     ArgumentAnalysis A;
     for (auto Arg : Ctor->arguments()) {
       A.analyze(Arg);
@@ -243,7 +245,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       {"__fetch_builtin_y", "1"},
       {"__fetch_builtin_z", "0"}};
   CtTypeInfo Ty(ME->getBase()->getType());
-  if (Ty.getBaseName() == "cl::sycl::range<3>") {
+  if (Ty.getBaseName() == MapNames::getClNamespace() + "::range<3>") {
     addReplacement(
         ME->getOperatorLoc(), ME->getMemberLoc(),
         MapNames::findReplacedName(MapNames::Dim3MemberNamesMap,
@@ -426,7 +428,7 @@ void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     std::string CtorString;
     llvm::raw_string_ostream OS(CtorString);
-    DpctGlobalInfo::printCtadClass(OS, "cl::sycl::range", 3) << "(";
+    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "::range", 3) << "(";
     auto Args = getCtorArgs(Ctor);
     if (DoReverse && Ctor->getNumArgs() == 3) {
       Reversed = true;

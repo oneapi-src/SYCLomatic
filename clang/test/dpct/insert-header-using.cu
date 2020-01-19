@@ -5,7 +5,7 @@
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <stdio.h>
 // CHECK-EMPTY:
-// CHECK-NEXT: using queue_p = cl::sycl::queue *;
+// CHECK-NEXT: using queue_p = sycl::queue *;
 // CHECK-EMPTY:
 // CHECK-NEXT: #ifndef _TEST_
 // CHECK-NEXT: #define _TEST_

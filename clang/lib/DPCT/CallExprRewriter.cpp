@@ -111,7 +111,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
       if (SourceCalleeName == "abs") {
         // further check the type of the args.
         if (!Call->getArg(0)->getType()->isIntegerType()) {
-          NewFuncName = "cl::sycl::fabs";
+          NewFuncName = MapNames::getClNamespace() + "fabs";
         }
       }
 
@@ -149,7 +149,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
             else
               RewriteArgList[0] = "(float)(" + RewriteArgList[0] + ")";
           }
-          return "cl::sycl::pown";
+          return MapNames::getClNamespace() + "::pown";
         } else if (T1 == "float") {
           if (T0 == "int") {
             if (DRE0)
@@ -162,7 +162,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
             else
               RewriteArgList[1] = "(double)(" + RewriteArgList[1] + ")";
           }
-          return "cl::sycl::pow";
+          return MapNames::getClNamespace() + "::pow";
         } else if (T1 == "double") {
           if (T0 == "int" || T0 == "float") {
             if (DRE0)
@@ -170,7 +170,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
             else
               RewriteArgList[0] = "(double)(" + RewriteArgList[0] + ")";
           }
-          return "cl::sycl::pow";
+          return MapNames::getClNamespace() + "::pow";
         }
       }
 
@@ -416,54 +416,62 @@ Optional<std::string> MathTypeCastRewriter::rewrite() {
   auto MigratedArg0 = getMigratedArg(0);
   if (FuncName == "__float22half2_rn") {
     OS << MigratedArg0
-       << ".convert<cl::sycl::half, cl::sycl::rounding_mode::rte>()";
+       << ".convert<" + MapNames::getClNamespace() + "::half, " +
+              MapNames::getClNamespace() + "::rounding_mode::rte>()";
   } else if (FuncName == "__float2half2_rn") {
-    OS << "cl::sycl::float2{" << MigratedArg0 << "," << MigratedArg0
-       << "}.convert<cl::sycl::half, cl::sycl::rounding_mode::rte>()";
+    OS << MapNames::getClNamespace() + "::float2{" << MigratedArg0 << ","
+       << MigratedArg0
+       << "}.convert<" + MapNames::getClNamespace() + "::half, " +
+              MapNames::getClNamespace() + "::rounding_mode::rte>()";
   } else if (FuncName == "__floats2half2_rn") {
     auto MigratedArg1 = getMigratedArg(1);
-    OS << "cl::sycl::float2{" << MigratedArg0 << "," << MigratedArg1
-       << "}.convert<cl::sycl::half, cl::sycl::rounding_mode::rte>()";
+    OS << MapNames::getClNamespace() + "::float2{" << MigratedArg0 << ","
+       << MigratedArg1
+       << "}.convert<" + MapNames::getClNamespace() + "::half, " +
+              MapNames::getClNamespace() + "::rounding_mode::rte>()";
   } else if (FuncName == "__half22float2") {
     OS << MigratedArg0
-       << ".convert<float, cl::sycl::rounding_mode::automatic>()";
+       << ".convert<float, " + MapNames::getClNamespace() +
+              "::rounding_mode::automatic>()";
   } else if (FuncName == "__half2half2") {
-    OS << "cl::sycl::half2{" << MigratedArg0 << "," << MigratedArg0 << "}";
+    OS << MapNames::getClNamespace() + "::half2{" << MigratedArg0 << ","
+       << MigratedArg0 << "}";
   } else if (FuncName == "__halves2half2") {
     auto MigratedArg1 = getMigratedArg(1);
-    OS << "cl::sycl::half2{" << MigratedArg0 << "," << MigratedArg1 << "}";
+    OS << MapNames::getClNamespace() + "::half2{" << MigratedArg0 << ","
+       << MigratedArg1 << "}";
   } else if (FuncName == "__high2float") {
     OS << MigratedArg0 << ".get_value(0)";
   } else if (FuncName == "__high2half") {
     OS << MigratedArg0 << ".get_value(0)";
   } else if (FuncName == "__high2half2") {
-    OS << "cl::sycl::half2{" << MigratedArg0 << ".get_value(0), "
-       << MigratedArg0 << ".get_value(0)}";
+    OS << MapNames::getClNamespace() + "::half2{" << MigratedArg0
+       << ".get_value(0), " << MigratedArg0 << ".get_value(0)}";
   } else if (FuncName == "__highs2half2") {
     auto MigratedArg1 = getMigratedArg(1);
-    OS << "cl::sycl::half2{" << MigratedArg0 << ".get_value(0), "
-       << MigratedArg1 << ".get_value(0)}";
+    OS << MapNames::getClNamespace() + "::half2{" << MigratedArg0
+       << ".get_value(0), " << MigratedArg1 << ".get_value(0)}";
   } else if (FuncName == "__low2float") {
     OS << MigratedArg0 << ".get_value(1)";
   } else if (FuncName == "__low2half") {
     OS << MigratedArg0 << ".get_value(1)";
   } else if (FuncName == "__low2half2") {
-    OS << "cl::sycl::half2{" << MigratedArg0 << ".get_value(1), "
-       << MigratedArg0 << ".get_value(1)}";
+    OS << MapNames::getClNamespace() + "::half2{" << MigratedArg0
+       << ".get_value(1), " << MigratedArg0 << ".get_value(1)}";
   } else if (FuncName == "__lowhigh2highlow") {
-    OS << "cl::sycl::half2{" << MigratedArg0 << ".get_value(1), "
-       << MigratedArg0 << ".get_value(0)}";
+    OS << MapNames::getClNamespace() + "::half2{" << MigratedArg0
+       << ".get_value(1), " << MigratedArg0 << ".get_value(0)}";
   } else if (FuncName == "__lows2half2") {
     auto MigratedArg1 = getMigratedArg(1);
-    OS << "cl::sycl::half2{" << MigratedArg0 << ".get_value(1), "
-       << MigratedArg1 << ".get_value(1)}";
+    OS << MapNames::getClNamespace() + "::half2{" << MigratedArg0
+       << ".get_value(1), " << MigratedArg1 << ".get_value(1)}";
   } else {
     //__half2short_rd and __half2float
     static SSMap TypeMap{{"ll", "long long"},
                          {"ull", "unsigned long long"},
                          {"ushort", "unsigned short"},
                          {"uint", "unsigned int"},
-                         {"half", "cl::sycl::half"}};
+                         {"half", MapNames::getClNamespace() + "::half"}};
     std::string RoundingMode;
     if (FuncName[FuncName.size() - 3] == '_')
       RoundingMode = FuncName.substr(FuncName.size() - 2);
@@ -472,10 +480,10 @@ Optional<std::string> MathTypeCastRewriter::rewrite() {
     assert(Types.size() == 2);
     MapNames::replaceName(TypeMap, Types[0]);
     MapNames::replaceName(TypeMap, Types[1]);
-    OS << "cl::sycl::vec<" << Types[0] << ", 1>{" << MigratedArg0
-       << "}.convert<" << Types[1]
-       << ", cl::sycl::rounding_mode::" << RoundingModeMap[RoundingMode]
-       << ">().get_value(0)";
+    OS << MapNames::getClNamespace() + "::vec<" << Types[0] << ", 1>{"
+       << MigratedArg0 << "}.convert<" << Types[1]
+       << ", " + MapNames::getClNamespace() + "::rounding_mode::"
+       << RoundingModeMap[RoundingMode] << ">().get_value(0)";
   }
   OS.flush();
   return ReplStr;
@@ -511,7 +519,8 @@ std::string getTypecastName(const CallExpr *Call) {
 }
 
 Optional<std::string> MathSimulatedRewriter::rewrite() {
-  report(Diagnostics::MATH_EMULATION, MapNames::ITFName.at(SourceCalleeName), TargetCalleeName);
+  report(Diagnostics::MATH_EMULATION, MapNames::ITFName.at(SourceCalleeName),
+         TargetCalleeName);
   auto FD = Call->getDirectCallee();
   if (!FD || !FD->hasAttr<CUDADeviceAttr>())
     return Base::rewrite();
@@ -541,9 +550,11 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       }
     }
     auto MigratedArg1 = getMigratedArg(1);
-    OS << "cl::sycl::frexp(" << MigratedArg0 << ", cl::sycl::make_ptr<int, "
-       << "cl::sycl::access::address_space::global_space>(" << MigratedArg1
-       << "))";
+    OS << MapNames::getClNamespace() + "::frexp(" << MigratedArg0
+       << ", " + MapNames::getClNamespace() + "::make_ptr<int, "
+       << MapNames::getClNamespace() +
+              "::access::address_space::global_space>("
+       << MigratedArg1 << "))";
   } else if (FuncName == "modf" || FuncName == "modff") {
     auto Arg = Call->getArg(0);
     std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
@@ -564,16 +575,18 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       }
     }
     auto MigratedArg1 = getMigratedArg(1);
-    OS << "cl::sycl::modf(" << MigratedArg0;
+    OS << MapNames::getClNamespace() + "::modf(" << MigratedArg0;
     if (FuncName == "modf")
-      OS << ", cl::sycl::make_ptr<double, "
-            "cl::sycl::access::address_space::global_space>(";
+      OS << ", " + MapNames::getClNamespace() + "::make_ptr<double, " +
+                MapNames::getClNamespace() +
+                "::access::address_space::global_space>(";
     else
-      OS << ", cl::sycl::make_ptr<float, "
-            "cl::sycl::access::address_space::global_space>(";
+      OS << ", " + MapNames::getClNamespace() + "::make_ptr<float, " +
+                MapNames::getClNamespace() +
+                "::access::address_space::global_space>(";
     OS << MigratedArg1 << "))";
   } else if (FuncName == "nan" || FuncName == "nanf") {
-    OS << "cl::sycl::nan(0u)";
+    OS << MapNames::getClNamespace() + "::nan(0u)";
   } else if (FuncName == "sincos" || FuncName == "sincosf" ||
              FuncName == "__sincosf") {
     auto Arg = Call->getArg(0);
@@ -600,13 +613,16 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       OS << MigratedArg1.substr(1);
     else
       OS << "*(" + MigratedArg1 + ")";
-    OS << " = cl::sycl::sincos(" << MigratedArg0;
+    OS << " = " + MapNames::getClNamespace() + "::sincos("
+       << MigratedArg0;
     if (FuncName == "sincos")
-      OS << ", cl::sycl::make_ptr<double, "
-            "cl::sycl::access::address_space::global_space>(";
+      OS << ", " + MapNames::getClNamespace() + "::make_ptr<double, " +
+                MapNames::getClNamespace() +
+                "::access::address_space::global_space>(";
     else
-      OS << ", cl::sycl::make_ptr<float, "
-            "cl::sycl::access::address_space::global_space>(";
+      OS << ", " + MapNames::getClNamespace() + "::make_ptr<float, " +
+                MapNames::getClNamespace() +
+                "::access::address_space::global_space>(";
     OS << MigratedArg2 << "))";
   } else if (FuncName == "sincospi" || FuncName == "sincospif") {
     auto MigratedArg1 = getMigratedArg(1);
@@ -615,18 +631,21 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       OS << MigratedArg1.substr(1);
     else
       OS << "*(" + MigratedArg1 + ")";
-    OS << " = cl::sycl::sincos(" << MigratedArg0;
+    OS << " = " + MapNames::getClNamespace() + "::sincos("
+       << MigratedArg0;
     if (FuncName == "sincospi")
       OS << " * DPCT_PI";
     else
       OS << " * DPCT_PI_F";
 
     if (FuncName == "sincospi")
-      OS << ", cl::sycl::make_ptr<double, "
-            "cl::sycl::access::address_space::global_space>(";
+      OS << ", " + MapNames::getClNamespace() + "::make_ptr<double, " +
+                MapNames::getClNamespace() +
+                "::access::address_space::global_space>(";
     else
-      OS << ", cl::sycl::make_ptr<float, "
-            "cl::sycl::access::address_space::global_space>(";
+      OS << ", " + MapNames::getClNamespace() + "::make_ptr<float, " +
+                MapNames::getClNamespace() +
+                "::access::address_space::global_space>(";
     OS << MigratedArg2 << "))";
   } else if (FuncName == "remquo" || FuncName == "remquof") {
     {
@@ -671,15 +690,19 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       }
     }
     auto MigratedArg2 = getMigratedArg(2);
-    OS << "cl::sycl::remquo(" << MigratedArg0 << ", " << MigratedArg1
-       << ", cl::sycl::make_ptr<int, "
-          "cl::sycl::access::address_space::global_space>("
+    OS << MapNames::getClNamespace() + "::remquo(" << MigratedArg0 << ", "
+       << MigratedArg1
+       << ", " + MapNames::getClNamespace() + "::make_ptr<int, " +
+              MapNames::getClNamespace() +
+              "::access::address_space::global_space>("
        << MigratedArg2 << "))";
   } else if (FuncName == "nearbyint" || FuncName == "nearbyintf") {
-    OS << "cl::sycl::floor(" << MigratedArg0 << " + 0.5)";
+    OS << MapNames::getClNamespace() + "::floor(" << MigratedArg0
+       << " + 0.5)";
   } else if (FuncName == "rhypot" || FuncName == "rhypotf") {
     auto MigratedArg1 = getMigratedArg(1);
-    OS << "1 / cl::sycl::hypot(" << MigratedArg0 << ", " << MigratedArg1 << ")";
+    OS << "1 / " + MapNames::getClNamespace() + "::hypot(" << MigratedArg0
+       << ", " << MigratedArg1 << ")";
   }
   OS.flush();
   return ReplStr;

@@ -19,6 +19,148 @@
 using namespace clang;
 using namespace clang::dpct;
 
+std::string MapNames::ClNamespace = "sycl";
+
+std::string MapNames::getClNamespace() {
+  return MapNames::ClNamespace;
+}
+
+MapNames::MapTy MapNames::TypeNamesMap{};
+MapNames::MapTy EnumConstantRule::EnumNamesMap{};
+
+void MapNames::setClNamespace(bool Enable) {
+  MapNames::ClNamespace = Enable ? "cl::sycl" : "sycl";
+  // Type names mapping.
+  TypeNamesMap = {
+      {"cudaDeviceProp", "dpct::device_info"},
+      {"cudaError_t", "int"},
+      {"cudaError", "int"},
+      {"CUresult", "int"},
+      {"cufftResult_t", "int"},
+      {"CUcontext", "void*"},
+      {"dim3", ClNamespace + "::range<3>"},
+      {"int2", ClNamespace + "::int2"},
+      {"struct int2", ClNamespace + "::int2"},
+      {"double2", ClNamespace + "::double2"},
+      {"struct double2", ClNamespace + "::double2"},
+      {"__half", ClNamespace + "::half"},
+      {"__half2", ClNamespace + "::half2"},
+      {"half", ClNamespace + "::half"},
+      {"half2", ClNamespace + "::half2"},
+      {"cudaEvent_t", ClNamespace + "::event"},
+      {"cudaStream_t", "queue_p"},
+      {"char1", "char"},
+      {"char2", ClNamespace + "::char2"},
+      {"char3", ClNamespace + "::char3"},
+      {"char4", ClNamespace + "::char4"},
+      {"double1", "double"},
+      {"double2", ClNamespace + "::double2"},
+      {"double3", ClNamespace + "::double3"},
+      {"double4", ClNamespace + "::double4"},
+      {"float1", "float"},
+      {"float2", ClNamespace + "::float2"},
+      {"float3", ClNamespace + "::float3"},
+      {"float4", ClNamespace + "::float4"},
+      {"int1", "int"},
+      {"int2", ClNamespace + "::int2"},
+      {"int3", ClNamespace + "::int3"},
+      {"int4", ClNamespace + "::int4"},
+      {"long1", "long"},
+      {"long2", ClNamespace + "::long2"},
+      {"long3", ClNamespace + "::long3"},
+      {"long4", ClNamespace + "::long4"},
+      {"longlong1", "long long"},
+      {"longlong2", ClNamespace + "::longlong2"},
+      {"longlong3", ClNamespace + "::longlong3"},
+      {"longlong4", ClNamespace + "::longlong4"},
+      {"short1", "short"},
+      {"short2", ClNamespace + "::short2"},
+      {"short3", ClNamespace + "::short3"},
+      {"short4", ClNamespace + "::short4"},
+      {"uchar1", "unsigned char"},
+      {"uchar2", ClNamespace + "::uchar2"},
+      {"uchar3", ClNamespace + "::uchar3"},
+      {"uchar4", ClNamespace + "::uchar4"},
+      {"uint1", "unsigned int"},
+      {"uint2", ClNamespace + "::uint2"},
+      {"uint3", ClNamespace + "::uint3"},
+      {"uint4", ClNamespace + "::uint4"},
+      {"ulong1", "unsigned long"},
+      {"ulong2", ClNamespace + "::ulong2"},
+      {"ulong3", ClNamespace + "::ulong3"},
+      {"ulong4", ClNamespace + "::ulong4"},
+      {"ulonglong1", "unsigned long long"},
+      {"ulonglong2", ClNamespace + "::ulonglong2"},
+      {"ulonglong3", ClNamespace + "::ulonglong3"},
+      {"ulonglong4", ClNamespace + "::ulonglong4"},
+      {"ushort1", "unsigned short"},
+      {"ushort2", ClNamespace + "::ushort2"},
+      {"ushort3", ClNamespace + "::ushort3"},
+      {"ushort4", ClNamespace + "::ushort4"},
+      {"cublasHandle_t", ClNamespace + "::queue"},
+      {"cublasStatus_t", "int"},
+      {"cublasStatus", "int"},
+      {"cuComplex", ClNamespace + "::float2"},
+      {"cuDoubleComplex", ClNamespace + "::double2"},
+      {"cublasFillMode_t", "mkl::uplo"},
+      {"cublasDiagType_t", "mkl::diag"},
+      {"cublasSideMode_t", "mkl::side"},
+      {"cublasOperation_t", "mkl::transpose"},
+      {"thrust::device_ptr", "dpct::device_ptr"},
+      {"thrust::device_vector", "dpstd::device_vector"},
+      {"thrust::host_vector", "dpstd::host_vector"},
+      {"cusolverDnHandle_t", ClNamespace + "::queue"},
+      {"cusolverEigType_t", "int64_t"},
+      {"cusolverEigMode_t", "mkl::job"},
+      {"cusolverStatus_t", "int"},
+      {"cudaChannelFormatDesc", "dpct::image_channel"},
+      {"cudaArray", "dpct::image_matrix"},
+      {"cudaArray_t", "dpct::image_matrix_p"},
+      {"cudaTextureDesc", "dpct::image_info"},
+      {"cudaResourceDesc", "dpct::image_data"},
+      {"cudaTextureObject_t", "dpct::image_base_p"},
+      {"curandStatus_t", "int"},
+      {"curandStatus", "int"},
+      // ...
+  };
+
+  // Enum constants name mapping.
+  EnumConstantRule::EnumNamesMap = {
+    // enum Compute Mode
+    {"cudaComputeModeDefault", "compute_mode::default_"},
+    {"cudaComputeModeExclusive", "compute_mode::exclusive"},
+    {"cudaComputeModeProhibited", "compute_mode::prohibited"},
+    {"cudaComputeModeExclusiveProcess", "compute_mode::exclusive_process"},
+    // ...
+    // enum Device Attribute
+    // ...
+    {"cudaDevAttrHostNativeAtomicSupported", "is_native_atomic_supported"},
+    {"cudaDevAttrComputeCapabilityMajor", "get_major_version"},
+    // enum Memcpy Kind
+    {"cudaMemcpyHostToHost", "host_to_host"},
+    {"cudaMemcpyHostToDevice", "host_to_device"},
+    {"cudaMemcpyDeviceToHost", "device_to_host"},
+    {"cudaMemcpyDeviceToDevice", "device_to_device"},
+    {"cudaMemcpyDefault", "automatic"},
+    // enum Texture Address Mode
+    {"cudaAddressModeWrap", ClNamespace + "::addressing_mode::repeat"},
+    {"cudaAddressModeClamp", ClNamespace + "::addressing_mode::clamp_to_edge"},
+    {"cudaAddressModeMirror", ClNamespace + "::addressing_mode::mirrored_repeat"},
+    {"cudaAddressModeBorder", ClNamespace + "::addressing_mode::clamp"},
+    // enum Texture Filter Mode
+    {"cudaFilterModePoint", ClNamespace + "::filtering_mode::nearest"},
+    {"cudaFilterModeLinear", ClNamespace + "::filtering_mode::linear"},
+    // enum Channel Format Kind
+    {"cudaChannelFormatKindSigned", "dpct::channel_signed"},
+    {"cudaChannelFormatKindUnsigned", "dpct::channel_unsigned"},
+    {"cudaChannelFormatKindFloat", "dpct::channel_float"},
+    // enum Resource Type
+    {"cudaResourceTypeArray", "dpct::data_matrix"},
+    {"cudaResourceTypeLinear", "dpct::data_linear"}
+    // ...
+  };
+}
+
 // Supported vector types
 const MapNames::SetTy MapNames::SupportedVectorTypes{
     "char1",     "uchar1",     "char2",      "uchar2",     "char3",
@@ -38,99 +180,7 @@ const MapNames::MapTy MapNames::RemovedAPIWarningMessage{
 #undef ENTRY
 };
 
-// Type names mapping.
-const MapNames::MapTy MapNames::TypeNamesMap{
-    {"cudaDeviceProp", "dpct::device_info"},
-    {"cudaError_t", "int"},
-    {"cudaError", "int"},
-    {"CUresult", "int"},
-    {"cufftResult_t", "int"},
-    {"CUcontext", "void*"},
-    {"dim3", "cl::sycl::range<3>"},
-    {"int2", "cl::sycl::int2"},
-    {"struct int2", "cl::sycl::int2"},
-    {"double2", "cl::sycl::double2"},
-    {"struct double2", "cl::sycl::double2"},
-    {"__half", "cl::sycl::half"},
-    {"__half2", "cl::sycl::half2"},
-    {"half", "cl::sycl::half"},
-    {"half2", "cl::sycl::half2"},
-    {"cudaEvent_t", "cl::sycl::event"},
-    {"cudaStream_t", "queue_p"},
-    {"char1", "char"},
-    {"char2", "cl::sycl::char2"},
-    {"char3", "cl::sycl::char3"},
-    {"char4", "cl::sycl::char4"},
-    {"double1", "double"},
-    {"double2", "cl::sycl::double2"},
-    {"double3", "cl::sycl::double3"},
-    {"double4", "cl::sycl::double4"},
-    {"float1", "float"},
-    {"float2", "cl::sycl::float2"},
-    {"float3", "cl::sycl::float3"},
-    {"float4", "cl::sycl::float4"},
-    {"int1", "int"},
-    {"int2", "cl::sycl::int2"},
-    {"int3", "cl::sycl::int3"},
-    {"int4", "cl::sycl::int4"},
-    {"long1", "long"},
-    {"long2", "cl::sycl::long2"},
-    {"long3", "cl::sycl::long3"},
-    {"long4", "cl::sycl::long4"},
-    {"longlong1", "long long"},
-    {"longlong2", "cl::sycl::longlong2"},
-    {"longlong3", "cl::sycl::longlong3"},
-    {"longlong4", "cl::sycl::longlong4"},
-    {"short1", "short"},
-    {"short2", "cl::sycl::short2"},
-    {"short3", "cl::sycl::short3"},
-    {"short4", "cl::sycl::short4"},
-    {"uchar1", "unsigned char"},
-    {"uchar2", "cl::sycl::uchar2"},
-    {"uchar3", "cl::sycl::uchar3"},
-    {"uchar4", "cl::sycl::uchar4"},
-    {"uint1", "unsigned int"},
-    {"uint2", "cl::sycl::uint2"},
-    {"uint3", "cl::sycl::uint3"},
-    {"uint4", "cl::sycl::uint4"},
-    {"ulong1", "unsigned long"},
-    {"ulong2", "cl::sycl::ulong2"},
-    {"ulong3", "cl::sycl::ulong3"},
-    {"ulong4", "cl::sycl::ulong4"},
-    {"ulonglong1", "unsigned long long"},
-    {"ulonglong2", "cl::sycl::ulonglong2"},
-    {"ulonglong3", "cl::sycl::ulonglong3"},
-    {"ulonglong4", "cl::sycl::ulonglong4"},
-    {"ushort1", "unsigned short"},
-    {"ushort2", "cl::sycl::ushort2"},
-    {"ushort3", "cl::sycl::ushort3"},
-    {"ushort4", "cl::sycl::ushort4"},
-    {"cublasHandle_t", "cl::sycl::queue"},
-    {"cublasStatus_t", "int"},
-    {"cublasStatus", "int"},
-    {"cuComplex", "cl::sycl::float2"},
-    {"cuDoubleComplex", "cl::sycl::double2"},
-    {"cublasFillMode_t", "mkl::uplo"},
-    {"cublasDiagType_t", "mkl::diag"},
-    {"cublasSideMode_t", "mkl::side"},
-    {"cublasOperation_t", "mkl::transpose"},
-    {"thrust::device_ptr", "dpct::device_ptr"},
-    {"thrust::device_vector", "dpstd::device_vector"},
-    {"thrust::host_vector", "dpstd::host_vector"},
-    {"cusolverDnHandle_t", "cl::sycl::queue"},
-    {"cusolverEigType_t", "int64_t"},
-    {"cusolverEigMode_t", "mkl::job"},
-    {"cusolverStatus_t", "int"},
-    {"cudaChannelFormatDesc", "dpct::image_channel"},
-    {"cudaArray", "dpct::image_matrix"},
-    {"cudaArray_t", "dpct::image_matrix_p"},
-    {"cudaTextureDesc", "dpct::image_info"},
-    {"cudaResourceDesc", "dpct::image_data"},
-    {"cudaTextureObject_t", "dpct::image_base_p"},
-    {"curandStatus_t", "int"},
-    {"curandStatus", "int"},
-    // ...
-};
+
 
 const MapNames::MapTy MapNames::ITFName{
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT) {#APINAME, #INTERFACENAME},
@@ -2541,42 +2591,6 @@ const MapNames::MapTy DevicePropVarRule::PropNamesMap{
 // DeviceProp names mapping.
 const MapNames::MapTy MapNames::MemberNamesMap{
     {"x", "x()"}, {"y", "y()"}, {"z", "z()"}, {"w", "w()"},
-    // ...
-};
-
-// Enum constants name mapping.
-const MapNames::MapTy EnumConstantRule::EnumNamesMap{
-    // enum Compute Mode
-    {"cudaComputeModeDefault", "compute_mode::default_"},
-    {"cudaComputeModeExclusive", "compute_mode::exclusive"},
-    {"cudaComputeModeProhibited", "compute_mode::prohibited"},
-    {"cudaComputeModeExclusiveProcess", "compute_mode::exclusive_process"},
-    // ...
-    // enum Device Attribute
-    // ...
-    {"cudaDevAttrHostNativeAtomicSupported", "is_native_atomic_supported"},
-    {"cudaDevAttrComputeCapabilityMajor", "get_major_version"},
-    // enum Memcpy Kind
-    {"cudaMemcpyHostToHost", "host_to_host"},
-    {"cudaMemcpyHostToDevice", "host_to_device"},
-    {"cudaMemcpyDeviceToHost", "device_to_host"},
-    {"cudaMemcpyDeviceToDevice", "device_to_device"},
-    {"cudaMemcpyDefault", "automatic"},
-    // enum Texture Address Mode
-    {"cudaAddressModeWrap", "cl::sycl::addressing_mode::repeat"},
-    {"cudaAddressModeClamp", "cl::sycl::addressing_mode::clamp_to_edge"},
-    {"cudaAddressModeMirror", "cl::sycl::addressing_mode::mirrored_repeat"},
-    {"cudaAddressModeBorder", "cl::sycl::addressing_mode::clamp"},
-    // enum Texture Filter Mode
-    {"cudaFilterModePoint", "cl::sycl::filtering_mode::nearest"},
-    {"cudaFilterModeLinear", "cl::sycl::filtering_mode::linear"},
-    // enum Channel Format Kind
-    {"cudaChannelFormatKindSigned", "dpct::channel_signed"},
-    {"cudaChannelFormatKindUnsigned", "dpct::channel_unsigned"},
-    {"cudaChannelFormatKindFloat", "dpct::channel_float"},
-    // enum Resource Type
-    {"cudaResourceTypeArray", "dpct::data_matrix"},
-    {"cudaResourceTypeLinear", "dpct::data_linear"}
     // ...
 };
 

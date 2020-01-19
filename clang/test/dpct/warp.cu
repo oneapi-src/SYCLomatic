@@ -8,7 +8,7 @@
 #define FULL_MASK 23
 #define NUM_ELEMENTS 1024
 
-// CHECK: void foo(cl::sycl::nd_item<3> item_{{[0-9a-z]+}}) {
+// CHECK: void foo(sycl::nd_item<3> item_{{[0-9a-z]+}}) {
 __global__ void foo() {
   unsigned mask;
   int predicate;

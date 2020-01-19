@@ -57,7 +57,7 @@ __global__ void foo3(){
 }
 
 __host__ void foo4(){
-  // CHECK: cl::sycl::queue handle;
+  // CHECK: sycl::queue handle;
   cublasHandle_t handle;
   int n=1;
   float* x_S=0;

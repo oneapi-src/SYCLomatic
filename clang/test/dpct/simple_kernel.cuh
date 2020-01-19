@@ -2,7 +2,7 @@
 // CHECK-NEXT:#include <dpct/dpct.hpp>
 #include <stdio.h>
 
-// CHECK:void simple_kernel(cl::sycl::nd_item<3> item_{{[a-f0-9]+}},
+// CHECK:void simple_kernel(sycl::nd_item<3> item_{{[a-f0-9]+}},
 // CHECK-NEXT: float *d_array) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = item_{{[a-f0-9]+}}.get_group(0) * item_{{[a-f0-9]+}}.get_local_range().get(0) + item_{{[a-f0-9]+}}.get_local_id(0);

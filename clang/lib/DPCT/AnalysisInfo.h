@@ -240,13 +240,7 @@ public:
     }
   }
 
-  void insertUsing(UsingType Type) {
-    switch (Type) {
-    case QUEUE_P:
-      return insertUsing(UsingType::QUEUE_P, LastIncludeOffset,
-                         "using queue_p = cl::sycl::queue *;");
-    }
-  }
+  void insertUsing(UsingType Type);
 
   // Record line info in file.
   struct SourceLineInfo {
@@ -455,6 +449,7 @@ public:
   inline static void setFormatStyle(DPCTFormatStyle FS) { FmtST = FS; }
   inline static bool isCtadEnabled() { return EnableCtad; }
   inline static void setCtadEnabled(bool Enable = true) { EnableCtad = Enable; }
+
   template <class TargetTy, class NodeTy>
   static inline const TargetTy *
   findAncestor(const NodeTy *N,
@@ -757,6 +752,7 @@ private:
   static format::FormatRange FmtRng;
   static DPCTFormatStyle FmtST;
   static bool EnableCtad;
+  static std::string ClNamespace;
   static CompilerInstance *CI;
   static ASTContext *Context;
   static SourceManager *SM;
@@ -977,10 +973,11 @@ public:
     llvm::raw_string_ostream OS(Result);
     if (isShared()) {
       auto Dimension = getType()->getDimension();
-      OS << "cl::sycl::accessor<" << getAccessorDataType(true) << ", "
-         << Dimension
-         << ", cl::sycl::access::mode::read_write, "
-            "cl::sycl::access::target::local> "
+      OS << MapNames::getClNamespace() + "::accessor<"
+         << getAccessorDataType(true) << ", " << Dimension
+         << ", " + MapNames::getClNamespace() +
+                "::access::mode::read_write, " +
+                MapNames::getClNamespace() + "::access::target::local> "
          << getAccessorName() << "(";
       if (Dimension > 1) {
         OS << getRangeName() << ", ";
@@ -1001,8 +998,9 @@ public:
   inline std::string getRangeClass() {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
-    return DpctGlobalInfo::printCtadClass(OS, "cl::sycl::range",
-                                          getType()->getDimension())
+    return DpctGlobalInfo::printCtadClass(
+               OS, MapNames::getClNamespace() + "::range",
+               getType()->getDimension())
         .str();
   }
   std::string getRangeDecl(const std::string &MemSize) {
@@ -1454,16 +1452,18 @@ private:
 template <>
 inline llvm::raw_ostream &
 MemVarMap::getItem<MemVarMap::DeclParameter>(llvm::raw_ostream &OS) const {
-  static std::string ItemParamDecl =
-      "cl::sycl::nd_item<3> " + DpctGlobalInfo::getItemName();
+  static std::string ItemParamDecl = MapNames::getClNamespace() +
+                                     "::nd_item<3> " +
+                                     DpctGlobalInfo::getItemName();
   return OS << ItemParamDecl;
 }
 
 template <>
 inline llvm::raw_ostream &
 MemVarMap::getStream<MemVarMap::DeclParameter>(llvm::raw_ostream &OS) const {
-  static std::string StreamParamDecl =
-      "cl::sycl::stream " + DpctGlobalInfo::getStreamName();
+  static std::string StreamParamDecl = MapNames::getClNamespace() +
+                                       "::stream " +
+                                       DpctGlobalInfo::getStreamName();
   return OS << StreamParamDecl;
 }
 
@@ -1968,9 +1968,9 @@ private:
   void addAccessorDecl(std::shared_ptr<MemVarInfo> VI);
   void addStreamDecl() {
     if (getVarMap().hasStream())
-      SubmitStmtsList.StreamList.emplace_back(
-          buildString("cl::sycl::stream ", DpctGlobalInfo::getStreamName(),
-                      "(64 * 1024, 80, cgh);"));
+      SubmitStmtsList.StreamList.emplace_back(buildString(
+          MapNames::getClNamespace() + "::stream ",
+          DpctGlobalInfo::getStreamName(), "(64 * 1024, 80, cgh);"));
   }
   void addNdRangeDecl() {
     if (ExecutionConfig.DeclGlobalRange) {
@@ -1990,7 +1990,8 @@ private:
 
   void buildKernelArgsStmt();
   void printReverseRange(KernelPrinter &Printer, const std::string &RangeName) {
-    DpctGlobalInfo::printCtadClass(Printer, "cl::sycl::range", 3)
+    DpctGlobalInfo::printCtadClass(
+        Printer, MapNames::getClNamespace() + "::range", 3)
         << "(" << RangeName << ".get(2), " << RangeName << ".get(1), "
         << RangeName << ".get(0))";
   }

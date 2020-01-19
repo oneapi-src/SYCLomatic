@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:size_t share_mem_size = deviceProp.get_local_mem_size();
   size_t share_mem_size = deviceProp.sharedMemPerBlock;
 
-  // CHECK: cl::sycl::range<3> grid(deviceProp.get_max_compute_units() * (deviceProp.get_max_work_items_per_compute_unit() / deviceProp.get_max_sub_group_size()), 1, 1);
+  // CHECK: sycl::range<3> grid(deviceProp.get_max_compute_units() * (deviceProp.get_max_work_items_per_compute_unit() / deviceProp.get_max_sub_group_size()), 1, 1);
   dim3 grid(deviceProp.multiProcessorCount * (deviceProp.maxThreadsPerMultiProcessor / deviceProp.warpSize));
 
 // CHECK:/*
@@ -105,10 +105,10 @@ void test()
   // CHECK: dpct::device_info deviceProp;
   cudaDeviceProp deviceProp;
   // CHECK:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class foo_kernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, deviceProp.get_max_compute_units()) * cl::sycl::range<3>(1, 1, deviceProp.get_max_work_group_size()), cl::sycl::range<3>(1, 1, deviceProp.get_max_work_group_size())),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, deviceProp.get_max_compute_units()) * sycl::range<3>(1, 1, deviceProp.get_max_work_group_size()), sycl::range<3>(1, 1, deviceProp.get_max_work_group_size())),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           foo_kernel();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });

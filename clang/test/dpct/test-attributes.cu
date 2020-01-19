@@ -4,7 +4,7 @@
 
 // CHECK:  void hd() {
 // CHECK-NEXT:  float f;
-// CHECK-NEXT:  cl::sycl::isnan(f);
+// CHECK-NEXT:  sycl::isnan(f);
 // CHECK-NEXT:}
 __host__ __device__ void hd() {
   float f;
@@ -31,7 +31,7 @@ __host__ void h1() {
 
 // CHECK: void d() {
 // CHECK-NEXT:  float f;
-// CHECK-NEXT:  cl::sycl::isnan(f);
+// CHECK-NEXT:  sycl::isnan(f);
 // CHECK-NEXT:}
 __device__ void d() {
   float f;
@@ -40,7 +40,7 @@ __device__ void d() {
 
 // CHECK: void g() {
 // CHECK-NEXT:  float f;
-// CHECK-NEXT:  cl::sycl::isnan(f);
+// CHECK-NEXT:  sycl::isnan(f);
 // CHECK-NEXT:}
 __global__ void g() {
   float f;

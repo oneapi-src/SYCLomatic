@@ -10,7 +10,7 @@
 //===---------------------------------------------------------------===//
 
 #include "Utility.h"
-
+#include "MapNames.h"
 #include "AnalysisInfo.h"
 #include "Debug.h"
 #include "ExprAnalysis.h"
@@ -831,10 +831,10 @@ std::string getBufferNameAndDeclStr(const std::string &PointerName,
                AllocationTempName +
                " = dpct::mem_mgr::instance().translate_ptr(" +
                PointerName + ");" + getNL() +
-               getIndent(SL, AC.getSourceManager()).str() +
-               "cl::sycl::buffer<" + TypeAsStr + "> " + BufferTempName + " = " +
+               getIndent(SL, AC.getSourceManager()).str() + MapNames::getClNamespace() +
+               "::buffer<" + TypeAsStr + "> " + BufferTempName + " = " +
                AllocationTempName + ".buffer.reinterpret<" + TypeAsStr +
-               ">(cl::sycl::range<1>(" + AllocationTempName + ".size/sizeof(" +
+               ">(" + MapNames::getClNamespace() + "::range<1>(" + AllocationTempName + ".size/sizeof(" +
                TypeAsStr + ")));" + getNL();
   return BufferTempName;
 }

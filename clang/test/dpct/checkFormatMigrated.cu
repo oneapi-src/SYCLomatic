@@ -1,6 +1,6 @@
 // RUN: cat %s > %T/checkFormatMigrated.cu
 // RUN: cd %T
-// RUN: dpct -out-root %T checkFormatMigrated.cu --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
+// RUN: dpct --no-cl-namespace-inline -out-root %T checkFormatMigrated.cu --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace checkFormatMigrated.cu --match-full-lines --input-file %T/checkFormatMigrated.dp.cpp
 
 #include <cuda_runtime.h>

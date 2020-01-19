@@ -23,7 +23,7 @@ float *d_A = NULL;
 //CHECK-NEXT:                 .wait(),
 //CHECK-NEXT:             0);
 //CHECK-NEXT:}
-//CHECK-NEXT:catch (cl::sycl::exception const &exc) {
+//CHECK-NEXT:catch (sycl::exception const &exc) {
 //CHECK-NEXT:  std::cerr << exc.what() << "Exception caught at file:" << __FILE__
 //CHECK-NEXT:            << ", line:" << __LINE__ << std::endl;
 //CHECK-NEXT:  std::exit(1);

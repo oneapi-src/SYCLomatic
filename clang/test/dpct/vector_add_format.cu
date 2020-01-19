@@ -23,12 +23,12 @@ int main()
     cudaMalloc(&d_C, VECTOR_SIZE*sizeof(float));
 
 
-     //CHECK:    dpct::get_default_queue_wait().submit([&](cl::sycl::handler &cgh) {
+     //CHECK:    dpct::get_default_queue_wait().submit([&](sycl::handler &cgh) {
 //CHECK-NEXT:        cgh.parallel_for(
-//CHECK-NEXT:            cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) *
-//CHECK-NEXT:                                      cl::sycl::range<3>(1, 1, VECTOR_SIZE),
-//CHECK-NEXT:                                  cl::sycl::range<3>(1, 1, VECTOR_SIZE)),
-//CHECK-NEXT:            [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:            sycl::nd_range<3>(sycl::range<3>(1, 1, 1) *
+//CHECK-NEXT:                                  sycl::range<3>(1, 1, VECTOR_SIZE),
+//CHECK-NEXT:                              sycl::range<3>(1, 1, VECTOR_SIZE)),
+//CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:                VectorAddKernel(d_A, d_B, d_C, item_ct1);
 //CHECK-NEXT:            });
 //CHECK-NEXT:    });

@@ -2,7 +2,7 @@
 // RUN: FileCheck --input-file %T/iteration-space.dp.cpp --match-full-lines %s
 
 // Test that the replacement happens when it should to.
-// CHECK: void test_00(cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
+// CHECK: void test_00(sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__
 void test_00() {
   // CHECK: size_t tix = [[ITEMNAME]].get_local_id(2);

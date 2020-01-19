@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 // CHECK: #define NEW_STREAM new queue_p
-// CHECK-NEXT: #define NEW_EVENT new cl::sycl::event
+// CHECK-NEXT: #define NEW_EVENT new sycl::event
 // CHECK-EMPTY:
 // CHECK-NEXT: #define NEW(T) new T
 #define NEW_STREAM new cudaStream_t
@@ -25,11 +25,11 @@ void foo() {
   stream = NEW(cudaStream_t);
   cudaStream_t *streams = new cudaStream_t[n];
 
-  // CHECK: cl::sycl::event *event = new cl::sycl::event;
-  // CHECK-NEXT: event = new cl::sycl::event();
+  // CHECK: sycl::event *event = new sycl::event;
+  // CHECK-NEXT: event = new sycl::event();
   // CHECK-NEXT: event = NEW_EVENT;
-  // CHECK-NEXT: event = NEW(cl::sycl::event);
-  // CHECK-NEXT: cl::sycl::event *events = new cl::sycl::event[n];
+  // CHECK-NEXT: event = NEW(sycl::event);
+  // CHECK-NEXT: sycl::event *events = new sycl::event[n];
   cudaEvent_t *event = new cudaEvent_t;
   event = new cudaEvent_t();
   event = NEW_EVENT;

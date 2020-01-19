@@ -23,12 +23,12 @@ __global__ void member_acc() {
 // CHECK: dpct::constant_memory<float, 1> const_angle(360);
 // CHECK: dpct::constant_memory<float, 2> const_float(NUM_ELEMENTS, num_elements * 2);
 __constant__ float const_angle[360], const_float[NUM_ELEMENTS][num_elements * 2];
-// CHECK: dpct::constant_memory<cl::sycl::double2, 0> vec_d;
+// CHECK: dpct::constant_memory<sycl::double2, 0> vec_d;
 __constant__ double2 vec_d;
 // CHECK: dpct::device_memory<int, 1> const_ptr;
 __constant__ int *const_ptr;
 
-// CHECK:void simple_kernel(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_ct1]], float *const_angle, int *const_ptr) {
+// CHECK:void simple_kernel(float *d_array, sycl::nd_item<3> [[ITEM:item_ct1]], float *const_angle, int *const_ptr) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range().get(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  const_ptr[index] = index;
@@ -50,7 +50,7 @@ __global__ void simple_kernel(float *d_array) {
 // CHECK: dpct::constant_memory<float, 0> const_one;
 __constant__ float const_one;
 
-// CHECK:void simple_kernel_one(float *d_array, cl::sycl::nd_item<3> [[ITEM:item_ct1]], dpct::accessor<float, dpct::constant, 2> const_float, float const_one) {
+// CHECK:void simple_kernel_one(float *d_array, sycl::nd_item<3> [[ITEM:item_ct1]], dpct::accessor<float, dpct::constant, 2> const_float, float const_one) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range().get(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  if (index < 33) {
@@ -73,9 +73,9 @@ int main(int argc, char **argv) {
   int *d_int;
   float h_array[360];
 
-  // CHECK: d_array = (float *)cl::sycl::malloc_device(sizeof(float) * size, dpct::get_current_device(), dpct::get_default_context());
+  // CHECK: d_array = (float *)sycl::malloc_device(sizeof(float) * size, dpct::get_current_device(), dpct::get_default_context());
   cudaMalloc((void **)&d_array, sizeof(float) * size);
-  // CHECK: d_int = (int *)cl::sycl::malloc_device(sizeof(int) * size, dpct::get_current_device(), dpct::get_default_context());
+  // CHECK: d_int = (int *)sycl::malloc_device(sizeof(int) * size, dpct::get_current_device(), dpct::get_default_context());
   cudaMalloc(&d_int, sizeof(int) * size);
 
   // CHECK: dpct::get_default_queue_wait().memset(d_array, 0, sizeof(float) * size).wait();
@@ -118,22 +118,22 @@ int main(int argc, char **argv) {
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3+NUM], sizeof(float) * 354);
 
   // CHECK:   dpct::get_default_queue_wait().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto t1_ptr_ct1 = t1.get_ptr();
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           member_acc(*t1_ptr_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   member_acc<<<1, 1>>>();
   // CHECK:   dpct::get_default_queue_wait().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto const_angle_ptr_ct1 = const_angle.get_ptr();
   // CHECK-NEXT:       auto const_ptr_ptr_ct1 = const_ptr.get_ptr();
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, size / 64) * cl::sycl::range<3>(1, 1, 64), cl::sycl::range<3>(1, 1, 64)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           simple_kernel(d_array, item_ct1, const_angle_ptr_ct1, const_ptr_ptr_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -156,12 +156,12 @@ int main(int argc, char **argv) {
   cudaMemcpyToSymbol(&const_one, &h_array[0], sizeof(float) * 1);
 
   // CHECK:   dpct::get_default_queue_wait().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto const_float_acc_ct1 = const_float.get_access(cgh);
   // CHECK-NEXT:       auto const_one_ptr_ct1 = const_one.get_ptr();
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class simple_kernel_one_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, size / 64) * cl::sycl::range<3>(1, 1, 64), cl::sycl::range<3>(1, 1, 64)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           simple_kernel_one(d_array, item_ct1, const_float_acc_ct1, *const_one_ptr_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });

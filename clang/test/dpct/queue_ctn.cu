@@ -14,7 +14,7 @@ float *d_A = NULL;
 __constant__ float constData[1234567 * 4];
 
 void foo1() {
-  // CHECK: cl::sycl::queue& q_ct0 = dpct::get_default_queue();
+  // CHECK: sycl::queue& q_ct0 = dpct::get_default_queue();
   // CHECK-NEXT: q_ct0.wait();
   // CHECK-NEXT: q_ct0.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
   // CHECK-NEXT: q_ct0.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
@@ -22,7 +22,7 @@ void foo1() {
   // CHECK-NEXT: q_ct0.memset(d_A, 23, size).wait();
   // CHECK-NEXT: q_ct0.memset(d_A, 23, size).wait();
   // CHECK-NEXT: bar();
-  // CHECK-NEXT: cl::sycl::queue& q_ct1 = dpct::get_default_queue();
+  // CHECK-NEXT: sycl::queue& q_ct1 = dpct::get_default_queue();
   // CHECK-NEXT: q_ct1.wait();
   // CHECK-NEXT: q_ct1.memset(d_A, 23, size).wait();
   // CHECK-NEXT: q_ct1.memset(d_A, 23, size).wait();
@@ -38,7 +38,7 @@ void foo1() {
 
 
 void foo2() {
-  // CHECK: cl::sycl::queue& q_ct2 = dpct::get_default_queue();
+  // CHECK: sycl::queue& q_ct2 = dpct::get_default_queue();
   // CHECK-NEXT: q_ct2.wait();
   // CHECK-NEXT: q_ct2.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait();
   // CHECK-NEXT: q_ct2.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait();
@@ -57,7 +57,7 @@ void foo2() {
 }
 
 void foo3() {
-  // CHECK: cl::sycl::queue& q_ct3 = dpct::get_default_queue();
+  // CHECK: sycl::queue& q_ct3 = dpct::get_default_queue();
   // CHECK-NEXT: q_ct3.wait();
   // CHECK-NEXT: q_ct3.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
   // CHECK-NEXT: q_ct3.memset(d_A, 23, size).wait();
@@ -75,7 +75,7 @@ void foo4() {
 }
 
 void foo5() {
-  // CHECK: cl::sycl::queue& q_ct4 = dpct::get_default_queue();
+  // CHECK: sycl::queue& q_ct4 = dpct::get_default_queue();
   // CHECK-NEXT: q_ct4.wait();
   // CHECK-NEXT: q_ct4.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
   // CHECK-NEXT: /*
@@ -117,7 +117,7 @@ void foo7() {
 template <typename T>
 int writeNStage2DDWT() {
     T *src;
-    // CHECK: src = (T *)cl::sycl::malloc_host(10, dpct::get_default_context());
+    // CHECK: src = (T *)sycl::malloc_host(10, dpct::get_default_context());
     cudaMallocHost((void **)&src, 10);
 
     // Currently, using a temp variable is not supported in template.

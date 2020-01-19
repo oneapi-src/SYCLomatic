@@ -292,6 +292,11 @@ opt<DPCTFormatStyle>
                      "Use the coding style defined in .clang-format file. (default)", false}),
     init(DPCTFormatStyle::custom), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
 
+bool ExplicitClNamespace = false;
+static opt<bool, true> NoClNamespaceInline(
+  "no-cl-namespace-inline", llvm::cl::desc("Do not use CL namespace(cl::) inline.\n"),
+  cat(DPCTCat), llvm::cl::location(ExplicitClNamespace));
+
 bool ProcessAllFlag = false;
 static opt<bool, true>
     ProcessAll("process-all",
@@ -299,6 +304,7 @@ static opt<bool, true>
                                 " to the --out-root directory.\n"
                                 "--in-root option should be explicitly specified. Default: off."),
                  cat(DPCTCat), llvm::cl::location(ProcessAllFlag));
+
 static opt<bool> EnableCTAD(
     "enable-ctad",
     llvm::cl::desc("Use C++17 class template argument deduction (CTAD) in "
@@ -942,6 +948,8 @@ int run(int argc, const char **argv) {
   DpctGlobalInfo::setFormatRange(FormatRng);
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
+
+  MapNames::setClNamespace(ExplicitClNamespace);
 
   DPCTActionFactory Factory(Tool.getReplacements());
   if (int RunResult = Tool.run(&Factory) && !NoStopOnErrFlag) {

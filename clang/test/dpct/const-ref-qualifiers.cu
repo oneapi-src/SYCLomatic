@@ -5,7 +5,7 @@
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <stdio.h>
 // CHECK-EMPTY:
-// CHECK-NEXT: using queue_p = cl::sycl::queue *;
+// CHECK-NEXT: using queue_p = sycl::queue *;
 // CHECK-EMPTY:
 // CHECK-NEXT: void foo2(const queue_p stream) {}
 // CHECK-NEXT: void foo3(queue_p &stream) {}

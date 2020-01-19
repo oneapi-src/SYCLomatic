@@ -371,7 +371,7 @@ RenameFieldInMemberExpr::getReplacement(const ASTContext &Context) const {
   SourceLocation Begin = SL;
   if (PositionOfDot != 0) {
     // Cover dot position when migrate dim3.x/y/z to
-    // cl::sycl::range<3>[0]/[1]/[2].
+    // sycl::range<3>[0]/[1]/[2].
     Begin = ME->getBeginLoc();
     Begin = Begin.getLocWithOffset(PositionOfDot);
   }

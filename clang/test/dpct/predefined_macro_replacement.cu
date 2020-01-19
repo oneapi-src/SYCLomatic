@@ -5,7 +5,7 @@
 //CHECK-NEXT: /*
 //CHECK-NEXT: DPCT1015:0: Adjust the code manually.
 //CHECK-NEXT: */
-//CHECK-NEXT: void hello(cl::sycl::stream [[STREAM:stream_ct1]]) { [[STREAM]] << "TODO - output needs update" << cl::sycl::endl; }
+//CHECK-NEXT: void hello(sycl::stream [[STREAM:stream_ct1]]) { [[STREAM]] << "TODO - output needs update" << sycl::endl; }
 #ifdef __CUDA_ARCH__
 __global__ void hello() { printf("intel"); }
 #else
@@ -37,7 +37,7 @@ __global__ void test(){
 //CHECK-NEXT: /*
 //CHECK-NEXT: DPCT1015:1: Adjust the code manually.
 //CHECK-NEXT: */
-//CHECK-NEXT:[[STREAM]] << "TODO - output needs update" << cl::sycl::endl;
+//CHECK-NEXT:[[STREAM]] << "TODO - output needs update" << sycl::endl;
 //CHECK-NEXT:#endif
 #if (__CUDA_ARCH__ >= 400) &&  (__CUDA_ARCH__ >= 400)
 printf(">400, \n");

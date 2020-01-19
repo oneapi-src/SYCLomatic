@@ -1,6 +1,6 @@
 // RUN: cat %s > %T/formatMigratedGoogle.cu
 // RUN: cd %T
-// RUN: dpct -out-root %T formatMigratedGoogle.cu --cuda-include-path="%cuda-path/include" --format-style=google -- -std=c++14  -x cuda --cuda-host-only
+// RUN: dpct --no-cl-namespace-inline -out-root %T formatMigratedGoogle.cu --cuda-include-path="%cuda-path/include" --format-style=google -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace formatMigratedGoogle.cu --match-full-lines --input-file %T/formatMigratedGoogle.dp.cpp
 
 #include <cuda_runtime.h>

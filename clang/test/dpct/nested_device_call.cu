@@ -3,14 +3,14 @@
 
 #include <cstdio>
 
-// CHECK: void test0_with_item(int a, cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
+// CHECK: void test0_with_item(int a, sycl::nd_item<3> [[ITEM:item_ct1]]) {
 __device__ void test0_with_item(int a) {
   int i = threadIdx.x;
 }
 
 // CHECK: void test0(int a) {
 __device__ void test0(int a) {
-  // CHECK: cl::sycl::sqrt(10.0);
+  // CHECK: sycl::sqrt(10.0);
   sqrt(10.0);
 }
 
@@ -22,7 +22,7 @@ __device__ void test1(int a) {
   test0(a + 1);
 }
 
-// CHECK: void test1_with_item(int a, cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
+// CHECK: void test1_with_item(int a, sycl::nd_item<3> [[ITEM:item_ct1]]) {
 __device__ void test1_with_item(int a) {
   //CHECK: test0_with_item(a, [[ITEM]]);
   test0_with_item(a);
@@ -53,7 +53,7 @@ __global__ void kernel() {
   test3(2);
 }
 
-// CHECK: void kernel_with_item(cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
+// CHECK: void kernel_with_item(sycl::nd_item<3> [[ITEM:item_ct1]]) {
 __global__ void kernel_with_item() {
   // CHECK: test1_with_item(1, [[ITEM]]);
   test1_with_item(1);
@@ -67,7 +67,7 @@ namespace n1 {
 
 namespace n2 {
 using namespace n1;
-// CHECK: void test4(int a, cl::sycl::nd_item<3> [[ITEM:item_ct1]]) {
+// CHECK: void test4(int a, sycl::nd_item<3> [[ITEM:item_ct1]]) {
 __device__ void test4(int a) {
   int i = threadIdx.x;
 }

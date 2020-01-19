@@ -85,6 +85,15 @@ void DpctFileInfo::emplaceReplacements(tooling::Replacements &ReplSet) {
   Repls.emplaceIntoReplSet(ReplSet);
 }
 
+void DpctFileInfo::insertUsing(UsingType Type) {
+  switch (Type) {
+  case QUEUE_P:
+    return insertUsing(UsingType::QUEUE_P, LastIncludeOffset,
+      "using queue_p = " + MapNames::getClNamespace() +
+      "::queue *;");
+  }
+}
+
 void DpctGlobalInfo::insertCudaMalloc(const CallExpr *CE) {
   if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(0)))
     insertCudaMallocInfo(MallocVar)->setSizeExpr(CE->getArg(1));
@@ -220,7 +229,8 @@ void KernelCallExpr::buildKernelArgsStmt() {
             " = dpct::get_buffer_and_offset(", Arg.getArgString(), ");"));
         SubmitStmtsList.AccessorList.emplace_back(buildString(
             "auto ", Arg.getIdStringWithSuffix("acc"), " = ", BufferName,
-            ".first.get_access<cl::sycl::access::mode::read_write>(cgh);"));
+            ".first.get_access<" + MapNames::getClNamespace() +
+                "::access::mode::read_write>(cgh);"));
         OuterStmts.emplace_back(buildString("size_t ",
                                             Arg.getIdStringWithSuffix("offset"),
                                             " = ", BufferName, ".second;"));
@@ -235,7 +245,8 @@ void KernelCallExpr::buildKernelArgsStmt() {
                                             Arg.getArgString(), ");"));
         SubmitStmtsList.AccessorList.emplace_back(buildString(
             "auto ", Arg.getIdStringWithSuffix("acc"), " = ", BufferName,
-            ".get_access<cl::sycl::access::mode::read_write>(cgh);"));
+            ".get_access<" + MapNames::getClNamespace() +
+                "::access::mode::read_write>(cgh);"));
         KernelArgs += buildString("(", Arg.getTypeString(), ")(&",
                                   Arg.getIdStringWithSuffix("acc"), "[0]), ");
       }
@@ -292,7 +303,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
 
 void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
   auto Lamda = Printer.block();
-  Printer.line("[&](cl::sycl::handler &cgh) {");
+  Printer.line("[&](" + MapNames::getClNamespace() + "::handler &cgh) {");
   {
     auto Body = Printer.block();
     Printer << SubmitStmtsList.StreamList << SubmitStmtsList.ExternList
@@ -314,7 +325,8 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
     Printer.line("cgh.parallel_for(");
   }
   auto B = Printer.block();
-  DpctGlobalInfo::printCtadClass(Printer.indent(), "cl::sycl::nd_range", 3)
+  DpctGlobalInfo::printCtadClass(
+      Printer.indent(), MapNames::getClNamespace() + "::nd_range", 3)
       << "(";
   if (ExecutionConfig.DeclGlobalRange) {
     printReverseRange(Printer, "dpct_global_range");
@@ -332,8 +344,8 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
                    ExecutionConfig.DeclLocalRange,
                    ExecutionConfig.LocalDirectRef);
   (Printer << "), ").newLine();
-  Printer.line("[=](cl::sycl::nd_item<3> ", DpctGlobalInfo::getItemName(),
-               ") {");
+  Printer.line("[=](" + MapNames::getClNamespace() + "::nd_item<3> ",
+               DpctGlobalInfo::getItemName(), ") {");
   printKenel(Printer);
   Printer.line("});");
 }

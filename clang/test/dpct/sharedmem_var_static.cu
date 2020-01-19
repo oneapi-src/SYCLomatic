@@ -10,7 +10,7 @@
 class TestObject{
 public:
   // CHECK: static void run(int *in, int *out,
-  // CHECK-NEXT:  cl::sycl::nd_item<3> item_ct1,
+  // CHECK-NEXT:  sycl::nd_item<3> item_ct1,
   // CHECK-NEXT:  int *a0) {
   // CHECK-NEXT:  // the size of s is static
   // CHECK-NEXT:  *a0 = item_ct1.get_local_id(2);
@@ -31,7 +31,7 @@ __global__ void memberAcc() {
 }
 
 // CHECK: void nonTypeTemplateReverse(int *d, int n,
-// CHECK-NEXT: cl::sycl::nd_item<3> [[ITEM:item_ct1]],
+// CHECK-NEXT: sycl::nd_item<3> [[ITEM:item_ct1]],
 // CHECK-NEXT: int *s) {
 // CHECK-NEXT:  // the size of s is dependent on parameter
 template <int ArraySize>
@@ -44,7 +44,7 @@ __global__ void nonTypeTemplateReverse(int *d, int n) {
 }
 
 // CHECK: void staticReverse(int *d, int n,
-// CHECK-NEXT: cl::sycl::nd_item<3> [[ITEM:item_ct1]],
+// CHECK-NEXT: sycl::nd_item<3> [[ITEM:item_ct1]],
 // CHECK-NEXT: int *a0,
 // CHECK-NEXT: int *s) {
 __global__ void staticReverse(int *d, int n) {
@@ -61,7 +61,7 @@ __global__ void staticReverse(int *d, int n) {
 
 // CHECK: template<typename TData>
 // CHECK-NEXT: void templateReverse(TData *d, TData n,
-// CHECK-NEXT: cl::sycl::nd_item<3> [[ITEM:item_ct1]],
+// CHECK-NEXT: sycl::nd_item<3> [[ITEM:item_ct1]],
 // CHECK-NEXT: dpct::accessor<TData, dpct::local, 2> s,
 // CHECK-NEXT: dpct::accessor<TData, dpct::local, 3> s3) {
 template<typename TData>
@@ -90,15 +90,15 @@ void testTemplate() {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> d_d_buf_ct0 = dpct::get_buffer_and_offset(d_d);
   // CHECK-NEXT:   size_t d_d_offset_ct0 = d_d_buf_ct0.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cl::sycl::range<2> s_range_ct1(64/*size * 2*/, 128/*size * 4*/);
-  // CHECK-NEXT:       cl::sycl::range<3> s3_range_ct1(64/*size * 2*/, 128/*size * 4*/, 32/*size*/);
-  // CHECK-NEXT:       cl::sycl::accessor<T, 2, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s_acc_ct1(s_range_ct1, cgh);
-  // CHECK-NEXT:       cl::sycl::accessor<T, 3, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s3_acc_ct1(s3_range_ct1, cgh);
-  // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       sycl::range<2> s_range_ct1(64/*size * 2*/, 128/*size * 4*/);
+  // CHECK-NEXT:       sycl::range<3> s3_range_ct1(64/*size * 2*/, 128/*size * 4*/, 32/*size*/);
+  // CHECK-NEXT:       sycl::accessor<T, 2, sycl::access::mode::read_write, sycl::access::target::local> s_acc_ct1(s_range_ct1, cgh);
+  // CHECK-NEXT:       sycl::accessor<T, 3, sycl::access::mode::read_write, sycl::access::target::local> s3_acc_ct1(s3_range_ct1, cgh);
+  // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, T>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, n), cl::sycl::range<3>(1, 1, n)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           T *d_d_ct0 = (T *)(&d_d_acc_ct0[0] + d_d_offset_ct0);
   // CHECK-NEXT:           templateReverse<T>(d_d_ct0, n, item_ct1, dpct::accessor<T, dpct::local, 2>(s_acc_ct1, s_range_ct1), dpct::accessor<T, dpct::local, 3>(s3_acc_ct1, s3_range_ct1));
   // CHECK-NEXT:         });
@@ -116,11 +116,11 @@ int main(void) {
 
 
   // CHECK: dpct::get_default_queue().submit(
-  // CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:      cl::sycl::accessor<TestObject, 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s_acc_ct1(cgh);
+  // CHECK-NEXT:    [&](sycl::handler &cgh) {
+  // CHECK-NEXT:      sycl::accessor<TestObject, 0, sycl::access::mode::read_write, sycl::access::target::local> s_acc_ct1(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class memberAcc_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           memberAcc(s_acc_ct1.get_pointer());
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -128,13 +128,13 @@ int main(void) {
   // CHECK: {
   // CHECK-NEXT:   dpct::buffer_t d_d_buf_ct0 = dpct::get_buffer(d_d);
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cl::sycl::accessor<int, 0, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> a0_acc_ct1(cgh);
-  // CHECK-NEXT:       cl::sycl::accessor<int, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s_acc_ct1(cl::sycl::range<1>(64/*size*/), cgh);
-  // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       sycl::accessor<int, 0, sycl::access::mode::read_write, sycl::access::target::local> a0_acc_ct1(cgh);
+  // CHECK-NEXT:       sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<1>(64/*size*/), cgh);
+  // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class staticReverse_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, n), cl::sycl::range<3>(1, 1, n)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           staticReverse((int *)(&d_d_acc_ct0[0]), n, item_ct1, a0_acc_ct1.get_pointer(), s_acc_ct1.get_pointer());
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -145,15 +145,15 @@ int main(void) {
   // CHECK: {
   // CHECK-NEXT:   dpct::buffer_t d_d_buf_ct0 = dpct::get_buffer(d_d);
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cl::sycl::range<2> s_range_ct1(64/*size * 2*/, 128/*size * 4*/);
-  // CHECK-NEXT:       cl::sycl::range<3> s3_range_ct1(64/*size * 2*/, 128/*size * 4*/, 32/*size*/);
-  // CHECK-NEXT:       cl::sycl::accessor<int, 2, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s_acc_ct1(s_range_ct1, cgh);
-  // CHECK-NEXT:       cl::sycl::accessor<int, 3, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s3_acc_ct1(s3_range_ct1, cgh);
-  // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       sycl::range<2> s_range_ct1(64/*size * 2*/, 128/*size * 4*/);
+  // CHECK-NEXT:       sycl::range<3> s3_range_ct1(64/*size * 2*/, 128/*size * 4*/, 32/*size*/);
+  // CHECK-NEXT:       sycl::accessor<int, 2, sycl::access::mode::read_write, sycl::access::target::local> s_acc_ct1(s_range_ct1, cgh);
+  // CHECK-NEXT:       sycl::accessor<int, 3, sycl::access::mode::read_write, sycl::access::target::local> s3_acc_ct1(s3_range_ct1, cgh);
+  // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, int>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, n), cl::sycl::range<3>(1, 1, n)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           templateReverse<int>((int *)(&d_d_acc_ct0[0]), n, item_ct1, dpct::accessor<int, dpct::local, 2>(s_acc_ct1, s_range_ct1), dpct::accessor<int, dpct::local, 3>(s3_acc_ct1, s3_range_ct1));
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -163,12 +163,12 @@ int main(void) {
   // CHECK: {
   // CHECK-NEXT:   dpct::buffer_t d_d_buf_ct0 = dpct::get_buffer(d_d);
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       cl::sycl::accessor<int, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> s_acc_ct1(cl::sycl::range<1>(2*SIZE*SIZE), cgh);
-  // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<1>(2*SIZE*SIZE), cgh);
+  // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class nonTypeTemplateReverse_{{[a-f0-9]+}}, dpct_kernel_scalar<SIZE>>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, n), cl::sycl::range<3>(1, 1, n)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           nonTypeTemplateReverse<SIZE>((int *)(&d_d_acc_ct0[0]), n, item_ct1, s_acc_ct1.get_pointer());
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });

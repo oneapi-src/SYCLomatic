@@ -903,7 +903,7 @@ void ErrorHandlingHostAPIRule::insertTryCatch(const FunctionDecl *FD) {
   std::string IndentStr = getIndent(FD->getBeginLoc(), SM).str();
   std::string ReplaceStr =
       getNL() + IndentStr +
-      std::string("catch (cl::sycl::exception const &exc) {") + getNL() +
+      std::string("catch (" + MapNames::getClNamespace() + "::exception const &exc) {") + getNL() +
       IndentStr + IndentStr +
       std::string("std::cerr << exc.what() << \"Exception caught at file:\" << __FILE__ << "
                   "\", line:\" << __LINE__ << std::endl;") +
@@ -1352,7 +1352,7 @@ std::string getReplacementForType(std::string TypeStr, bool IsVarDecl = false) {
   if (IsVarDecl && TypeStr == "dim3") {
     Replacement.clear();
     llvm::raw_string_ostream OS(Replacement);
-    DpctGlobalInfo::printCtadClass(OS, "cl::sycl::range", 3);
+    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "::range", 3);
   } else {
     Replacement.replace(0, TypeName.length(), Search->second);
   }
@@ -1648,7 +1648,7 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
                  pointsTo(vectorType()));
   };
 
-  // int2 func() => cl::sycl::int2 func()
+  // int2 func() => sycl::int2 func()
   MF.addMatcher(
       functionDecl(returns(vectorTypeAccess())).bind("funcReturnsVectorType"),
       this);
@@ -1682,7 +1682,7 @@ void VectorTypeNamespaceRule::replaceTypeName(const QualType &QT,
 }
 
 void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
-  // int2 => cl::sycl::int2
+  // int2 => sycl::int2
   if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "vecVarDecl")) {
     replaceTypeName(D->getType(),
                     D->getTypeSourceInfo()->getTypeLoc().getBeginLoc(), true);
@@ -1695,7 +1695,7 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
   // =>
   // struct benchtype {
   // ...;
-  // cl::sycl::uint2 u32;
+  // sycl::uint2 u32;
   // };
   if (const FieldDecl *FD =
           getNodeAsType<FieldDecl>(Result, "fieldvecVarDecl")) {
@@ -1714,14 +1714,14 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
                     FD->getTypeSourceInfo()->getTypeLoc().getBeginLoc(), true);
   }
 
-  // typedef int2 xxx => typedef cl::sycl::int2 xxx
+  // typedef int2 xxx => typedef sycl::int2 xxx
   if (const TypedefDecl *TD =
           getNodeAsType<TypedefDecl>(Result, "typeDefDecl")) {
     replaceTypeName(TD->getUnderlyingType(),
                     TD->getTypeSourceInfo()->getTypeLoc().getBeginLoc());
   }
 
-  // int2 func() => cl::sycl::int2 func()
+  // int2 func() => sycl::int2 func()
   if (const FunctionDecl *FD =
           getNodeAsType<FunctionDecl>(Result, "funcReturnsVectorType")) {
     replaceTypeName(FD->getReturnType(),
@@ -1787,7 +1787,7 @@ void VectorTypeMemberAccessRule::run(const MatchFinder::MatchResult &Result) {
       //    uchar4 data;
       //    *(&data.x) = 'a';
       // =>
-      //    cl::sycl::uchar4 data;
+      //    sycl::uchar4 data;
       //    {
       //    unsigned char x_ct = data.x();
       //    *(&x_ct) = 'a';
@@ -2255,7 +2255,7 @@ void Dim3MemberFieldsRule::run(const MatchFinder::MatchResult &Result) {
     // dim3 *pd3;
     // pd3->x;
     // will migrate to:
-    // cl::sycl::range<3> *pd3;
+    // sycl::range<3> *pd3;
     // (*pd3)[0];
     auto Impl = getAssistNodeAsType<ImplicitCastExpr>(Result, "ImplCast");
     insertAroundStmt(Impl, "(*", ")");
@@ -2281,9 +2281,9 @@ void ReturnTypeRule::registerMatcher(MatchFinder &MF) {
           .bind("functionDecl"),
       this);
 
-  // TODO: blas handler cannot migrate to cl::sycl::queue simplely.
+  // TODO: blas handler cannot migrate to sycl::queue simplely.
   // blas handler is a struct, so it could be returned as value by user
-  // defined function. But cl::sycl::queue cannot be return as value.
+  // defined function. But sycl::queue cannot be return as value.
   // It will be replaced by a handle type later.
   auto TypedefNames = hasAnyName(
       "dim3", "cudaError_t", "CUresult", "CUcontext", "cudaEvent_t",
@@ -2965,14 +2965,18 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         PrefixInsertStr = PrefixInsertStr + BufferDecl;
 
         if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
-          PrefixInsertStr = PrefixInsertStr + IndentStr +
-                            "cl::sycl::buffer<int64_t> "
-                            "result_temp_buffer(cl::sycl::range<1>(1));" +
-                            getNL();
-          SuffixInsertStr = SuffixInsertStr + BufferName +
-                            ".get_access<cl::sycl::access::"
+          PrefixInsertStr =
+              PrefixInsertStr + IndentStr + MapNames::getClNamespace() +
+              "::buffer<int64_t> "
+              "result_temp_buffer(" +
+              MapNames::getClNamespace() + "::range<1>(1));" + getNL();
+          SuffixInsertStr = SuffixInsertStr + BufferName + ".get_access<" +
+                            MapNames::getClNamespace() +
+                            "::access::"
                             "mode::write>()[0] = "
-                            "(int)result_temp_buffer.get_access<cl::sycl::"
+                            "(int)result_temp_buffer.get_access<" +
+                            MapNames::getClNamespace() +
+                            "::"
                             "access::mode::read>()[0];" +
                             getNL() + IndentStr;
           emplaceTransformation(
@@ -3094,14 +3098,18 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         PrefixInsertStr = PrefixInsertStr + BufferDecl;
 
         if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
-          PrefixInsertStr = PrefixInsertStr + IndentStr +
-                            "cl::sycl::buffer<int64_t> "
-                            "result_temp_buffer(cl::sycl::range<1>(1));" +
-                            getNL();
+          PrefixInsertStr =
+              PrefixInsertStr + IndentStr + MapNames::getClNamespace() +
+              "::buffer<int64_t> "
+              "result_temp_buffer(" +
+              MapNames::getClNamespace() + "::range<1>(1));" + getNL();
           SuffixInsertStr = SuffixInsertStr + IndentStr + BufferName +
-                            ".get_access<cl::sycl::access::"
+                            ".get_access<" + MapNames::getClNamespace() +
+                            "::access::"
                             "mode::write>()[0] = "
-                            "(int)result_temp_buffer.get_access<cl::sycl::"
+                            "(int)result_temp_buffer.get_access<" +
+                            MapNames::getClNamespace() +
+                            "::"
                             "access::mode::read>()[0];" +
                             getNL();
           emplaceTransformation(
@@ -3192,10 +3200,10 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       if (VD) {
         VarType = VD->getType().getAsString();
         if (VarType == "cuComplex") {
-          VarType = "cl::sycl::float2";
+          VarType = MapNames::getClNamespace() + "::float2";
         }
         if (VarType == "cuDoubleComplex") {
-          VarType = "cl::sycl::double2";
+          VarType = MapNames::getClNamespace() + "::double2";
         }
         VarName = VD->getNameAsString();
       } else {
@@ -3283,10 +3291,11 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       // APIs which have return value
       std::string ResultType =
           ReplInfo.BufferTypeInfo[ReplInfo.BufferTypeInfo.size() - 1];
-      PrefixInsertStr =
-          PrefixInsertStr + IndentStr + "cl::sycl::buffer<" + ResultType +
-          "> result_temp_buffer(cl::sycl::range<1>(1));" + getNL() + IndentStr +
-          CallExprReplStr + ", result_temp_buffer);" + getNL();
+      PrefixInsertStr = PrefixInsertStr + IndentStr +
+                        MapNames::getClNamespace() + "::buffer<" + ResultType +
+                        "> result_temp_buffer(" + MapNames::getClNamespace() +
+                        "::range<1>(1));" + getNL() + IndentStr +
+                        CallExprReplStr + ", result_temp_buffer);" + getNL();
       if (IsInCondition)
         SuffixInsertStr = getNL() + IndentStr + "}()";
       else
@@ -3295,22 +3304,29 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       insertAroundRange(StmtBegin, StmtEndAfterSemi,
                         PrefixInsertStr + IndentStr,
                         std::move(SuffixInsertStr));
-      std::string ReturnValueParamsStr =
-          "(result_temp_buffer.get_access<cl::sycl::"
-          "access::mode::read>()[0].real(), "
-          "result_temp_buffer.get_access<cl::sycl::"
-          "access::mode::read>()[0].imag());";
+      std::string ReturnValueParamsStr = "(result_temp_buffer.get_access<" +
+                                         MapNames::getClNamespace() +
+                                         "::"
+                                         "access::mode::read>()[0].real(), "
+                                         "result_temp_buffer.get_access<" +
+                                         MapNames::getClNamespace() +
+                                         "::"
+                                         "access::mode::read>()[0].imag());";
       if (IsInCondition) {
         if (FuncName == "cublasCdotu" || FuncName == "cublasCdotc") {
-          emplaceTransformation(new ReplaceStmt(CE, "return cl::sycl::float2" +
-                                                        ReturnValueParamsStr));
+          emplaceTransformation(
+              new ReplaceStmt(CE, "return " + MapNames::getClNamespace() +
+                                      "::float2" + ReturnValueParamsStr));
         } else if (FuncName == "cublasZdotu" || FuncName == "cublasZdotc") {
-          emplaceTransformation(new ReplaceStmt(CE, "return cl::sycl::double2" +
-                                                        ReturnValueParamsStr));
+          emplaceTransformation(
+              new ReplaceStmt(CE, "return " + MapNames::getClNamespace() +
+                                      "::double2" + ReturnValueParamsStr));
         } else {
-          emplaceTransformation(new ReplaceStmt(
-              CE, "return result_temp_buffer.get_access<cl::sycl::"
-                  "access::mode::read>()[0];"));
+          emplaceTransformation(
+              new ReplaceStmt(CE, "return result_temp_buffer.get_access<" +
+                                      MapNames::getClNamespace() +
+                                      "::"
+                                      "access::mode::read>()[0];"));
         }
       } else {
         if (IsInitializeVarDecl) {
@@ -3319,14 +3335,18 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
           if ((DS = ParentNodes[0].get<DeclStmt>())) {
             if (FuncName == "cublasCdotu" || FuncName == "cublasCdotc") {
               emplaceTransformation(new ReplaceStmt(
-                  DS, VarName + " = cl::sycl::float2" + ReturnValueParamsStr));
+                  DS, VarName + " = " + MapNames::getClNamespace() +
+                          "::float2" + ReturnValueParamsStr));
             } else if (FuncName == "cublasZdotu" || FuncName == "cublasZdotc") {
               emplaceTransformation(new ReplaceStmt(
-                  DS, VarName + " = cl::sycl::double2" + ReturnValueParamsStr));
+                  DS, VarName + " = " + MapNames::getClNamespace() +
+                          "::double2" + ReturnValueParamsStr));
             } else {
               emplaceTransformation(new ReplaceStmt(
-                  DS, VarName + " = result_temp_buffer.get_access<cl::sycl::"
-                                "access::mode::read>()[0];"));
+                  DS, VarName + " = result_temp_buffer.get_access<" +
+                          MapNames::getClNamespace() +
+                          "::"
+                          "access::mode::read>()[0];"));
             }
           } else {
             assert(0 && "Fail to get Var Decl Stmt");
@@ -3335,14 +3355,18 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         } else {
           if (FuncName == "cublasCdotu" || FuncName == "cublasCdotc") {
             emplaceTransformation(
-                new ReplaceStmt(CE, "cl::sycl::float2" + ReturnValueParamsStr));
+                new ReplaceStmt(CE, MapNames::getClNamespace() + "::float2" +
+                                        ReturnValueParamsStr));
           } else if (FuncName == "cublasZdotu" || FuncName == "cublasZdotc") {
-            emplaceTransformation(new ReplaceStmt(
-                CE, "cl::sycl::double2" + ReturnValueParamsStr));
+            emplaceTransformation(
+                new ReplaceStmt(CE, MapNames::getClNamespace() + "::double2" +
+                                        ReturnValueParamsStr));
           } else {
             emplaceTransformation(
-                new ReplaceStmt(CE, "result_temp_buffer.get_access<cl::sycl::"
-                                    "access::mode::read>()[0]"));
+                new ReplaceStmt(CE, "result_temp_buffer.get_access<" +
+                                        MapNames::getClNamespace() +
+                                        "::"
+                                        "access::mode::read>()[0]"));
           }
         }
       }
@@ -3597,11 +3621,11 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "make_cuComplex" ||
              FuncName == "make_cuDoubleComplex") {
     if (FuncName == "make_cuDoubleComplex")
-      emplaceTransformation(
-          new ReplaceCalleeName(CE, "cl::sycl::double2", FuncName));
+      emplaceTransformation(new ReplaceCalleeName(
+          CE, MapNames::getClNamespace() + "::double2", FuncName));
     else
-      emplaceTransformation(
-          new ReplaceCalleeName(CE, "cl::sycl::float2", FuncName));
+      emplaceTransformation(new ReplaceCalleeName(
+          CE, MapNames::getClNamespace() + "::float2", FuncName));
   } else {
     assert(0 && "Unknown function name");
   }
@@ -3992,17 +4016,20 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             ReplInfo.BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, i);
         PrefixInsertStr = PrefixInsertStr + BufferDecl;
         if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
-          PrefixInsertStr = PrefixInsertStr + IndentStr +
-                            "cl::sycl::buffer<int64_t> "
-                            "result_temp_buffer" +
-                            std::to_string(i) + "(cl::sycl::range<1>(1));" +
-                            getNL();
-          SuffixInsertStr = SuffixInsertStr + BufferName +
-                            ".get_access<cl::sycl::access::"
+          PrefixInsertStr =
+              PrefixInsertStr + IndentStr + MapNames::getClNamespace() +
+              "::buffer<int64_t> "
+              "result_temp_buffer" +
+              std::to_string(i) + "(" + MapNames::getClNamespace() +
+              "::range<1>(1));" + getNL();
+          SuffixInsertStr = SuffixInsertStr + BufferName + ".get_access<" +
+                            MapNames::getClNamespace() +
+                            "::access::"
                             "mode::write>()[0] = "
                             "(int)result_temp_buffer" +
-                            std::to_string(i) +
-                            ".get_access<cl::sycl::"
+                            std::to_string(i) + ".get_access<" +
+                            MapNames::getClNamespace() +
+                            "::"
                             "access::mode::read>()[0];" +
                             getNL() + IndentStr;
           emplaceTransformation(new ReplaceStmt(
@@ -4053,10 +4080,11 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       std::string ReplStr;
       for (size_t i = 0; i < ReplInfo.MissedArgumentFinalLocation.size(); ++i) {
         if (ReplInfo.MissedArgumentIsBuffer[i]) {
-          PrefixInsertStr = PrefixInsertStr + IndentStr + "cl::sycl::buffer<" +
-                            ReplInfo.MissedArgumentType[i] + "> " +
-                            ReplInfo.MissedArgumentName[i] +
-                            "(cl::sycl::range<1>(1));" + getNL();
+          PrefixInsertStr =
+              PrefixInsertStr + IndentStr + MapNames::getClNamespace() +
+              "::buffer<" + ReplInfo.MissedArgumentType[i] + "> " +
+              ReplInfo.MissedArgumentName[i] + "(" +
+              MapNames::getClNamespace() + "::range<1>(1));" + getNL();
         } else {
           PrefixInsertStr = PrefixInsertStr + IndentStr +
                             ReplInfo.MissedArgumentType[i] + " " +
@@ -4180,13 +4208,13 @@ std::string SOLVERFunctionCallRule::getBufferNameAndDeclStr(
   // TODO: reinterpret will copy more data
   BufferDecl = getIndent(SL, AC.getSourceManager()).str() + "auto " +
                AllocationTempName +
-               " = dpct::mem_mgr::instance().translate_ptr(" +
-               PointerName + ");" + getNL() +
-               getIndent(SL, AC.getSourceManager()).str() +
-               "cl::sycl::buffer<" + TypeAsStr + "> " + BufferTempName + " = " +
-               AllocationTempName + ".buffer.reinterpret<" + TypeAsStr +
-               ">(cl::sycl::range<1>(" + AllocationTempName + ".size/sizeof(" +
-               TypeAsStr + ")));" + getNL();
+               " = dpct::mem_mgr::instance().translate_ptr(" + PointerName +
+               ");" + getNL() + getIndent(SL, AC.getSourceManager()).str() +
+               MapNames::getClNamespace() + "::buffer<" + TypeAsStr + "> " +
+               BufferTempName + " = " + AllocationTempName +
+               ".buffer.reinterpret<" + TypeAsStr + ">(" +
+               MapNames::getClNamespace() + "::range<1>(" + AllocationTempName +
+               ".size/sizeof(" + TypeAsStr + ")));" + getNL();
   return BufferTempName;
 }
 
@@ -4668,8 +4696,8 @@ std::string getQueueCtor() {
   extern bool AsyncHandlerFlag;
   std::string Result;
   llvm::raw_string_ostream OS(Result);
-  printPartialArguments(OS << "cl::sycl::queue(", AsyncHandlerFlag ? 1 : 0,
-                        "dpct::exception_handler")
+  printPartialArguments(OS << MapNames::getClNamespace() + "::queue(",
+                        AsyncHandlerFlag ? 1 : 0, "dpct::exception_handler")
       << ")";
   return OS.str();
 }
@@ -4891,9 +4919,9 @@ void DeviceFunctionCallRule::run(
       FuncInfo->addCallee(CE);
       if (getAssistNodeAsType<FunctionDecl>(Result, "printf", false)) {
         emplaceTransformation(new ReplaceStmt(
-            CE, buildString(
-                    DpctGlobalInfo::getStreamName(),
-                    " << \"TODO - output needs update\" << cl::sycl::endl")));
+            CE, buildString(DpctGlobalInfo::getStreamName(),
+                            " << \"TODO - output needs update\" << " +
+                                MapNames::getClNamespace() + "::endl")));
         report(CE->getBeginLoc(), Warnings::PRINTF_FUNC_MIGRATION_WARNING);
         FuncInfo->setStream();
       }
@@ -5020,7 +5048,7 @@ std::string MemoryMigrationRule::getTypeStrRemovedAddrOf(const Expr *E,
 /// origin code:
 ///   int2 const * d_data;
 ///   cudaMalloc((void **)&d_data, sizeof(int2));
-/// This function will return a string "d_data = (cl::sycl::int2 const *)"
+/// This function will return a string "d_data = (sycl::int2 const *)"
 /// In this example, \param E is "&d_data", \param Arg0Str is "(void **)&d_data"
 std::string MemoryMigrationRule::getAssignedStr(const Expr *E,
                                                 const std::string &Arg0Str) {
@@ -5068,7 +5096,7 @@ void MemoryMigrationRule::mallocMigration(
       } else {
         Repl << getAssignedStr(C->getArg(0), "(" + Arg0Str + ")");
       }
-      Repl << "cl::sycl::malloc_device(" << Arg1Str
+      Repl << MapNames::getClNamespace() + "::malloc_device(" << Arg1Str
            << ", dpct::get_current_device()"
               ", dpct::get_default_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
@@ -5093,7 +5121,7 @@ void MemoryMigrationRule::mallocMigration(
       Repl << getAssignedStr(C->getArg(0), "(" + Arg0Str + ")");
     }
     if (USMLevel == UsmLevel::restricted) {
-      Repl << "cl::sycl::malloc_host(" << Arg1Str
+      Repl << MapNames::getClNamespace() + "::malloc_host(" << Arg1Str
            << ", dpct::get_default_context())";
     } else {
       Repl << "malloc(" << Arg1Str << ")";
@@ -5116,7 +5144,7 @@ void MemoryMigrationRule::mallocMigration(
       } else {
         Repl << getAssignedStr(C->getArg(0), "(" + Arg0Str + ")");
       }
-      Repl << "cl::sycl::malloc_shared(" << Arg1Str
+      Repl << MapNames::getClNamespace() + "::malloc_shared(" << Arg1Str
            << ", dpct::get_current_device()"
            << ", dpct::get_default_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
@@ -5517,8 +5545,8 @@ void MemoryMigrationRule::handleMemcpyAndMemset(
     // here insert the temp queue definition
     int QueueIndex = DPCTQueueCounter++;
     std::string QueueDeclStr =
-        "cl::sycl::queue& q_ct" + std::to_string(QueueIndex) +
-        " = dpct::get_default_queue();" + getNL() +
+        MapNames::getClNamespace() + "::queue& q_ct" +
+        std::to_string(QueueIndex) + " = dpct::get_default_queue();" + getNL() +
         getIndent(CurrStmt->getBeginLoc(), DpctGlobalInfo::getSourceManager())
             .str() +
         "q_ct" + std::to_string(QueueIndex) + ".wait();" + getNL() +
@@ -5768,7 +5796,7 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
       ExprAnalysis EA;
       EA.analyze(C->getArg(0));
       std::ostringstream Repl;
-      Repl << "cl::sycl::free(" << EA.getReplacedString()
+      Repl << MapNames::getClNamespace() + "::free(" << EA.getReplacedString()
            << ", dpct::get_default_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
@@ -5779,7 +5807,7 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
       ExprAnalysis EA;
       EA.analyze(C->getArg(0));
       std::ostringstream Repl;
-      Repl << "cl::sycl::free(" << EA.getReplacedString()
+      Repl << MapNames::getClNamespace() + "::free(" << EA.getReplacedString()
            << ", dpct::get_default_context())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {

@@ -1,7 +1,7 @@
 // RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/syncthreads.dp.cpp
 
-// CHECK: void test_syncthreads(int *arr, cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
+// CHECK: void test_syncthreads(int *arr, sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void test_syncthreads(int *arr) {
   // CHECK: [[ITEMNAME]].barrier();
   __syncthreads();

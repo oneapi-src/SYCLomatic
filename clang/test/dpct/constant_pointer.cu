@@ -3,7 +3,7 @@
 
 // CHECK: dpct::device_memory<int, 1> schsfirst;
 static __constant__ const int *schsfirst;
-// CHECK: dpct::device_memory<cl::sycl::double2, 1> zm;
+// CHECK: dpct::device_memory<sycl::double2, 1> zm;
 static __constant__ const double2 *zm;
 
 static int *schsfirstD;
@@ -23,7 +23,7 @@ void init() {
   cudaMemcpyToSymbol(schsfirst, &schsfirstD, sizeof(void *));
 
   cudaMalloc(&zmD, numschH * sizeof(double2));
-  //CHECK: zm.assign(zmD, numschH * sizeof(cl::sycl::double2));
+  //CHECK: zm.assign(zmD, numschH * sizeof(sycl::double2));
   cudaMemcpyToSymbol(zm, &zmD, sizeof(void *));
 
   gpuMain2<<<1, 1>>>();

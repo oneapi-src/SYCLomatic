@@ -153,7 +153,7 @@ void test_other_enum() {
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
-// CHECK-NEXT: catch (cl::sycl::exception const &exc) {
+// CHECK-NEXT: catch (sycl::exception const &exc) {
 // CHECK-NEXT:   std::cerr << exc.what() << "Exception caught at file:" << __FILE__
 // CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
@@ -226,7 +226,7 @@ void test_14(cudaError_t err, int arg) {
 // CHECK-NEXT:  if ((dpct::dpct_malloc(0, 0), 0)) {
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
-// CHECK-NEXT: catch (cl::sycl::exception const &exc) {
+// CHECK-NEXT: catch (sycl::exception const &exc) {
 // CHECK-NEXT:   std::cerr << exc.what() << "Exception caught at file:" << __FILE__
 // CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
@@ -264,7 +264,7 @@ void test_16(cudaError_t err, int arg) {
 // CHECK-NEXT:    exit(1);
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
-// CHECK-NEXT: catch (cl::sycl::exception const &exc) {
+// CHECK-NEXT: catch (sycl::exception const &exc) {
 // CHECK-NEXT:   std::cerr << exc.what() << "Exception caught at file:" << __FILE__
 // CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
@@ -490,7 +490,7 @@ void specialize_ifs_negative() {
 // CHECK-NEXT:     printf("efef");
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
-// CHECK-NEXT: catch (cl::sycl::exception const &exc) {
+// CHECK-NEXT: catch (sycl::exception const &exc) {
 // CHECK-NEXT:   std::cerr << exc.what() << "Exception caught at file:" << __FILE__
 // CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
@@ -514,7 +514,7 @@ void foo1(){
 // CHECK-NEXT:     printf("efef");
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
-// CHECK-NEXT: catch (cl::sycl::exception const &exc) {
+// CHECK-NEXT: catch (sycl::exception const &exc) {
 // CHECK-NEXT:   std::cerr << exc.what() << "Exception caught at file:" << __FILE__
 // CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
@@ -538,7 +538,7 @@ void foo2(){
 // CHECK-NEXT:     printf("efef");
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
-// CHECK-NEXT: catch (cl::sycl::exception const &exc) {
+// CHECK-NEXT: catch (sycl::exception const &exc) {
 // CHECK-NEXT:   std::cerr << exc.what() << "Exception caught at file:" << __FILE__
 // CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
@@ -560,7 +560,7 @@ void foo3(){
 // CHECK-NEXT:     */
 // CHECK-NEXT:   } while ((dpct::dpct_malloc(0, 0), 0));
 // CHECK-NEXT: }
-// CHECK-NEXT: catch (cl::sycl::exception const &exc) {
+// CHECK-NEXT: catch (sycl::exception const &exc) {
 // CHECK-NEXT:   std::cerr << exc.what() << "Exception caught at file:" << __FILE__
 // CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:   std::exit(1);
@@ -576,13 +576,12 @@ void foo4(){
 // CHECK-NEXT:   int res;
 // CHECK-NEXT:   {
 // CHECK-NEXT:   auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(0);
-// CHECK-NEXT:   cl::sycl::buffer<float> buffer_ct1 =
-// CHECK-NEXT:       allocation_ct1.buffer.reinterpret<float>(
-// CHECK-NEXT:           cl::sycl::range<1>(allocation_ct1.size / sizeof(float)));
-// CHECK-NEXT:   cl::sycl::buffer<int64_t> result_temp_buffer(cl::sycl::range<1>(1));
+// CHECK-NEXT:   sycl::buffer<float> buffer_ct1 = allocation_ct1.buffer.reinterpret<float>(
+// CHECK-NEXT:       sycl::range<1>(allocation_ct1.size / sizeof(float)));
+// CHECK-NEXT:   sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
 // CHECK-NEXT:   mkl::blas::iamax(dpct::get_default_queue(), 10, buffer_ct1, 0,
 // CHECK-NEXT:                    result_temp_buffer);
-// CHECK-NEXT:   res = result_temp_buffer.get_access<cl::sycl::access::mode::read>()[0];
+// CHECK-NEXT:   res = result_temp_buffer.get_access<sycl::access::mode::read>()[0];
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 void foo5(){
@@ -606,7 +605,7 @@ void foo6(){
 // CHECK-NEXT:   dpct::dpct_malloc(0, 0);
 // CHECK-NEXT:   int a = printf("a");
 // CHECK-NEXT:   if(printf("a")){}
-// CHECK-NEXT:   cl::sycl::event start;
+// CHECK-NEXT:   sycl::event start;
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0, because Function
 // CHECK-NEXT:   call is redundant in DPC++.
@@ -629,7 +628,7 @@ void foo7(){
 // CHECK-NEXT:   int a = (dpct::dpct_malloc(0, 0), 0);
 // CHECK-NEXT:   if(a) printf("a");
 // CHECK-NEXT: }
-// CHECK-NEXT: catch (cl::sycl::exception const &exc) {
+// CHECK-NEXT: catch (sycl::exception const &exc) {
 // CHECK-NEXT: std::cerr << exc.what() << "Exception caught at file:" << __FILE__
 // CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT: std::exit(1);
@@ -648,7 +647,7 @@ void foo8(){
 // CHECK-NEXT:   a = (dpct::dpct_malloc(0, 0), 0);
 // CHECK-NEXT:   if(a) printf("a");
 // CHECK-NEXT: }
-// CHECK-NEXT: catch (cl::sycl::exception const &exc) {
+// CHECK-NEXT: catch (sycl::exception const &exc) {
 // CHECK-NEXT: std::cerr << exc.what() << "Exception caught at file:" << __FILE__
 // CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT: std::exit(1);
@@ -666,7 +665,7 @@ void foo9(){
 //CHECK-NEXT:   */
 //CHECK-NEXT:   return (dpct::dpct_malloc(0, 0), 0);
 //CHECK-NEXT: }
-//CHECK-NEXT: catch (cl::sycl::exception const &exc) {
+//CHECK-NEXT: catch (sycl::exception const &exc) {
 //CHECK-NEXT: std::cerr << exc.what() << "Exception caught at file:" << __FILE__
 // CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 //CHECK-NEXT: std::exit(1);
@@ -700,7 +699,7 @@ int foo11(){
 //CHECK-NEXT:     ;
 //CHECK-NEXT:   }
 //CHECK-NEXT: }
-//CHECK-NEXT: catch (cl::sycl::exception const &exc) {
+//CHECK-NEXT: catch (sycl::exception const &exc) {
 //CHECK-NEXT: std::cerr << exc.what() << "Exception caught at file:" << __FILE__
 // CHECK-NEXT:             << ", line:" << __LINE__ << std::endl;
 //CHECK-NEXT: std::exit(1);
@@ -730,7 +729,7 @@ void foo12(){
 // CHECK-NEXT:     int a = (dpct::dpct_malloc(0, 0), 0);
 // CHECK-NEXT:     if(a){printf("a");}
 // CHECK-NEXT:   }
-// CHECK-NEXT:   catch (cl::sycl::exception const &exc) {
+// CHECK-NEXT:   catch (sycl::exception const &exc) {
 // CHECK-NEXT:     std::cerr << exc.what() << "Exception caught at file:" << __FILE__
 // CHECK-NEXT:               << ", line:" << __LINE__ << std::endl;
 // CHECK-NEXT:     std::exit(1);  

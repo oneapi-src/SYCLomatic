@@ -601,7 +601,7 @@ public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
-  static const std::map<std::string, std::string> EnumNamesMap;
+  static std::map<std::string, std::string> EnumNamesMap;
 };
 
 /// Migration rule for Error enums constants.

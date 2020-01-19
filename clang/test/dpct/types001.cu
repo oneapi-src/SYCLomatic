@@ -10,11 +10,11 @@ const cudaDeviceProp deviceProp1 = {};
 // CHECK: volatile dpct::device_info deviceProp2;
 volatile cudaDeviceProp deviceProp2;
 
-// CHDCK: cl::sycl::event events[23];
+// CHDCK: sycl::event events[23];
 cudaEvent_t events[23];
-// CHECK: const cl::sycl::event *pevents[23];
+// CHECK: const sycl::event *pevents[23];
 const cudaEvent_t *pevents[23];
-// CHECK: const cl::sycl::event **ppevents[23];
+// CHECK: const sycl::event **ppevents[23];
 const cudaEvent_t **ppevents[23];
 
 // CHECK: int errors[23];
@@ -31,19 +31,19 @@ const cudaError *perrors1[23];
 // CHECK: const int **pperrors1[23];
 const cudaError **pperrors1[23];
 
-// CHECK: cl::sycl::range<3> dims[23];
+// CHECK: sycl::range<3> dims[23];
 dim3 dims[23];
-// CHECK: const cl::sycl::range<3> *pdims[23];
+// CHECK: const sycl::range<3> *pdims[23];
 const dim3 *pdims[23];
-// CHECK: const cl::sycl::range<3> **ppdims[23];
+// CHECK: const sycl::range<3> **ppdims[23];
 const dim3 **ppdims[23];
 
 struct s {
-  // CHECK: cl::sycl::event events[23];
+  // CHECK: sycl::event events[23];
   cudaEvent_t events[23];
-  // CHECK: const cl::sycl::event *pevents[23];
+  // CHECK: const sycl::event *pevents[23];
   const cudaEvent_t *pevents[23];
-  // CHECK: const cl::sycl::event **ppevents[23];
+  // CHECK: const sycl::event **ppevents[23];
   const cudaEvent_t **ppevents[23];
 
   // CHECK: int errors[23];
@@ -60,11 +60,11 @@ struct s {
   // CHECK: const int **pperrors1[23];
   const cudaError **pperrors1[23];
 
-  // CHECK: cl::sycl::range<3> dims[23];
+  // CHECK: sycl::range<3> dims[23];
   dim3 dims[23];
-  // CHECK: const cl::sycl::range<3> *pdims[23];
+  // CHECK: const sycl::range<3> *pdims[23];
   const dim3 *pdims[23];
-  // CHECK: const cl::sycl::range<3> **ppdims[23];
+  // CHECK: const sycl::range<3> **ppdims[23];
   const dim3 **ppdims[23];
 };
 

@@ -21,12 +21,12 @@ cusolverStatus_t foo3(int m, int n)
     return CUSOLVER_STATUS_SUCCESS;
 }
 
-// CHECK: extern cl::sycl::queue * cusolverH2 = NULL;
+// CHECK: extern sycl::queue * cusolverH2 = NULL;
 extern cusolverDnHandle_t* cusolverH2 = NULL;
 
 int main(int argc, char *argv[])
 {
-    // CHECK: cl::sycl::queue * cusolverH = NULL;
+    // CHECK: sycl::queue * cusolverH = NULL;
     // CHECK-NEXT: int status = 0;
     // CHECK-NEXT: status = 1;
     cusolverDnHandle_t* cusolverH = NULL;
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
     status = cusolverDnDestroy(*cusolverH);
 
     // CHECK: int a = sizeof(int);
-    // CHECK-NEXT: int b = sizeof(cl::sycl::queue);
+    // CHECK-NEXT: int b = sizeof(sycl::queue);
     int a = sizeof(cublasStatus_t);
     int b = sizeof(cusolverDnHandle_t);
 }

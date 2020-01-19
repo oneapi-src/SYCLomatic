@@ -1,6 +1,6 @@
 // RUN: cat %s > %T/cublas-lambda.cu
 // RUN: cd %T
-// RUN: dpct -out-root %T cublas-lambda.cu --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
+// RUN: dpct --no-cl-namespace-inline -out-root %T cublas-lambda.cu --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublas-lambda.dp.cpp --match-full-lines cublas-lambda.cu
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>

@@ -26,9 +26,9 @@
 
 __device__ float4 fun() {
   float4 a, b, c;
-  // CHECK: cl::sycl::fma(static_cast<float>(a.x()), static_cast<float>(b.x()), static_cast<float>(c.x()));
+  // CHECK: sycl::fma(static_cast<float>(a.x()), static_cast<float>(b.x()), static_cast<float>(c.x()));
   __fmaf_rn(a.x, b.x, c.x);
-  // CHECK: return cl::sycl::float4(cl::sycl::fma(static_cast<float>(a.x()), static_cast<float>(b.x()), static_cast<float>(c.x())), cl::sycl::fma(static_cast<float>(a.y()), static_cast<float>(b.y()), static_cast<float>(c.y())), cl::sycl::fma(static_cast<float>(a.z()), static_cast<float>(b.z()), static_cast<float>(c.z())), cl::sycl::fma(static_cast<float>(a.w()), static_cast<float>(b.w()), static_cast<float>(c.w())));
+  // CHECK: return sycl::float4(sycl::fma(static_cast<float>(a.x()), static_cast<float>(b.x()), static_cast<float>(c.x())), sycl::fma(static_cast<float>(a.y()), static_cast<float>(b.y()), static_cast<float>(c.y())), sycl::fma(static_cast<float>(a.z()), static_cast<float>(b.z()), static_cast<float>(c.z())), sycl::fma(static_cast<float>(a.w()), static_cast<float>(b.w()), static_cast<float>(c.w())));
   return make_float4(__fmaf_rd(a.x, b.x, c.x), __fmaf_rz(a.y, b.y, c.y), __fmaf_rn(a.z, b.z, c.z), __fmaf_rn(a.w, b.w, c.w));
 }
 
@@ -39,10 +39,10 @@ __global__ void kernel() {
 
 void foo() {
   // CHECK:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, ceil(2.3)) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_{{[0-9a-z]+}}) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, ceil(2.3)) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {
   // CHECK-NEXT:           kernel();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });

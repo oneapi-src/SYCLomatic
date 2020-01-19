@@ -1,6 +1,6 @@
 // RUN: cat %s > %T/formatMigratedLLVM.cu
 // RUN: cd %T
-// RUN: dpct -out-root %T formatMigratedLLVM.cu --cuda-include-path="%cuda-path/include" --format-style=llvm  -- -std=c++14  -x cuda --cuda-host-only
+// RUN: dpct --no-cl-namespace-inline -out-root %T formatMigratedLLVM.cu --cuda-include-path="%cuda-path/include" --format-style=llvm  -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace formatMigratedLLVM.cu --match-full-lines --input-file %T/formatMigratedLLVM.dp.cpp
 
 #include <cuda_runtime.h>

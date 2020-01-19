@@ -60,12 +60,12 @@ int main_char1() {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> char1_cast_buf_ct1 = dpct::get_buffer_and_offset((char *)char1_cast);
   // CHECK-NEXT:   size_t char1_cast_offset_ct1 = char1_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto char1_e_acc_ct0 = char1_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto char1_cast_acc_ct1 = char1_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto char1_e_acc_ct0 = char1_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto char1_cast_acc_ct1 = char1_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_char1_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           char *char1_e_ct0 = (char *)(&char1_e_acc_ct0[0] + char1_e_offset_ct0);
   // CHECK-NEXT:           char *char1_cast_ct1 = (char *)(&char1_cast_acc_ct1[0] + char1_cast_offset_ct1);
   // CHECK-NEXT:           kernel_char1(char1_e_ct0, char1_cast_ct1);
@@ -76,31 +76,31 @@ int main_char1() {
   return 0;
 }
 
-// CHECK: void func3_char2(cl::sycl::char2 a, cl::sycl::char2 b, cl::sycl::char2 c) {
+// CHECK: void func3_char2(sycl::char2 a, sycl::char2 b, sycl::char2 c) {
 void func3_char2(char2 a, char2 b, char2 c) {
 }
-// CHECK: void func_char2(cl::sycl::char2 a) {
+// CHECK: void func_char2(sycl::char2 a) {
 void func_char2(char2 a) {
 }
-// CHECK: void kernel_char2(cl::sycl::char2 *a, cl::sycl::char2 *b) {
+// CHECK: void kernel_char2(sycl::char2 *a, sycl::char2 *b) {
 __global__ void kernel_char2(char2 *a, char2 *b) {
 }
 
 int main_char2() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::char2 char2_a;
+  // CHECK: sycl::char2 char2_a;
   char2 char2_a;
-  // CHECK: cl::sycl::char2 char2_b = cl::sycl::char2(1, 2);
+  // CHECK: sycl::char2 char2_b = sycl::char2(1, 2);
   char2 char2_b = make_char2(1, 2);
-  // CHECK: cl::sycl::char2 char2_c = cl::sycl::char2(char2_b);
+  // CHECK: sycl::char2 char2_c = sycl::char2(char2_b);
   char2 char2_c = char2(char2_b);
-  // CHECK: cl::sycl::char2 char2_d(char2_c);
+  // CHECK: sycl::char2 char2_d(char2_c);
   char2 char2_d(char2_c);
-  // CHECK: func3_char2(char2_b, cl::sycl::char2(char2_b), (cl::sycl::char2)char2_b);
+  // CHECK: func3_char2(char2_b, sycl::char2(char2_b), (sycl::char2)char2_b);
   func3_char2(char2_b, char2(char2_b), (char2)char2_b);
-  // CHECK: cl::sycl::char2 *char2_e;
+  // CHECK: sycl::char2 *char2_e;
   char2 *char2_e;
-  // CHECK: cl::sycl::char2 *char2_f;
+  // CHECK: sycl::char2 *char2_f;
   char2 *char2_f;
   // CHECK: signed char char2_g = static_cast<signed char>(char2_c.x());
   signed char char2_g = char2_c.x;
@@ -108,21 +108,21 @@ int main_char2() {
   char2_a.x = char2_d.x;
   // CHECK: if (static_cast<signed char>(char2_b.x()) == static_cast<signed char>(char2_d.x())) {}
   if (char2_b.x == char2_d.x) {}
-  // CHECK: cl::sycl::char2 char2_h[16];
+  // CHECK: sycl::char2 char2_h[16];
   char2 char2_h[16];
-  // CHECK: cl::sycl::char2 char2_i[32];
+  // CHECK: sycl::char2 char2_i[32];
   char2 char2_i[32];
   // CHECK: if (static_cast<signed char>(char2_h[12].x()) == static_cast<signed char>(char2_i[12].x())) {}
   if (char2_h[12].x == char2_i[12].x) {}
-  // CHECK: char2_f = (cl::sycl::char2 *)char2_i;
+  // CHECK: char2_f = (sycl::char2 *)char2_i;
   char2_f = (char2 *)char2_i;
-  // CHECK: char2_a = (cl::sycl::char2)char2_c;
+  // CHECK: char2_a = (sycl::char2)char2_c;
   char2_a = (char2)char2_c;
-  // CHECK: char2_b = cl::sycl::char2(char2_b);
+  // CHECK: char2_b = sycl::char2(char2_b);
   char2_b = char2(char2_b);
-  // CHECK: cl::sycl::char2 char2_j, char2_k, char2_l, char2_m[16], *char2_n[32];
+  // CHECK: sycl::char2 char2_j, char2_k, char2_l, char2_m[16], *char2_n[32];
   char2 char2_j, char2_k, char2_l, char2_m[16], *char2_n[32];
-  // CHECK: int char2_o = sizeof(cl::sycl::char2);
+  // CHECK: int char2_o = sizeof(sycl::char2);
   int char2_o = sizeof(char2);
   // CHECK: int signed char_p = sizeof(signed char);
   int signed char_p = sizeof(signed char);
@@ -132,17 +132,17 @@ int main_char2() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> char2_e_buf_ct0 = dpct::get_buffer_and_offset(char2_e);
   // CHECK-NEXT:   size_t char2_e_offset_ct0 = char2_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> char2_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::char2 *)char2_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> char2_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::char2 *)char2_cast);
   // CHECK-NEXT:   size_t char2_cast_offset_ct1 = char2_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto char2_e_acc_ct0 = char2_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto char2_cast_acc_ct1 = char2_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto char2_e_acc_ct0 = char2_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto char2_cast_acc_ct1 = char2_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_char2_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::char2 *char2_e_ct0 = (cl::sycl::char2 *)(&char2_e_acc_ct0[0] + char2_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::char2 *char2_cast_ct1 = (cl::sycl::char2 *)(&char2_cast_acc_ct1[0] + char2_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::char2 *char2_e_ct0 = (sycl::char2 *)(&char2_e_acc_ct0[0] + char2_e_offset_ct0);
+  // CHECK-NEXT:           sycl::char2 *char2_cast_ct1 = (sycl::char2 *)(&char2_cast_acc_ct1[0] + char2_cast_offset_ct1);
   // CHECK-NEXT:           kernel_char2(char2_e_ct0, char2_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -151,31 +151,31 @@ int main_char2() {
   return 0;
 }
 
-// CHECK: void func3_char3(cl::sycl::char3 a, cl::sycl::char3 b, cl::sycl::char3 c) {
+// CHECK: void func3_char3(sycl::char3 a, sycl::char3 b, sycl::char3 c) {
 void func3_char3(char3 a, char3 b, char3 c) {
 }
-// CHECK: void func_char3(cl::sycl::char3 a) {
+// CHECK: void func_char3(sycl::char3 a) {
 void func_char3(char3 a) {
 }
-// CHECK: void kernel_char3(cl::sycl::char3 *a, cl::sycl::char3 *b) {
+// CHECK: void kernel_char3(sycl::char3 *a, sycl::char3 *b) {
 __global__ void kernel_char3(char3 *a, char3 *b) {
 }
 
 int main_char3() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::char3 char3_a;
+  // CHECK: sycl::char3 char3_a;
   char3 char3_a;
-  // CHECK: cl::sycl::char3 char3_b = cl::sycl::char3(1, 2, 3);
+  // CHECK: sycl::char3 char3_b = sycl::char3(1, 2, 3);
   char3 char3_b = make_char3(1, 2, 3);
-  // CHECK: cl::sycl::char3 char3_c = cl::sycl::char3(char3_b);
+  // CHECK: sycl::char3 char3_c = sycl::char3(char3_b);
   char3 char3_c = char3(char3_b);
-  // CHECK: cl::sycl::char3 char3_d(char3_c);
+  // CHECK: sycl::char3 char3_d(char3_c);
   char3 char3_d(char3_c);
-  // CHECK: func3_char3(char3_b, cl::sycl::char3(char3_b), (cl::sycl::char3)char3_b);
+  // CHECK: func3_char3(char3_b, sycl::char3(char3_b), (sycl::char3)char3_b);
   func3_char3(char3_b, char3(char3_b), (char3)char3_b);
-  // CHECK: cl::sycl::char3 *char3_e;
+  // CHECK: sycl::char3 *char3_e;
   char3 *char3_e;
-  // CHECK: cl::sycl::char3 *char3_f;
+  // CHECK: sycl::char3 *char3_f;
   char3 *char3_f;
   // CHECK: signed char char3_g = static_cast<signed char>(char3_c.x());
   signed char char3_g = char3_c.x;
@@ -183,21 +183,21 @@ int main_char3() {
   char3_a.x = char3_d.x;
   // CHECK: if (static_cast<signed char>(char3_b.x()) == static_cast<signed char>(char3_d.x())) {}
   if (char3_b.x == char3_d.x) {}
-  // CHECK: cl::sycl::char3 char3_h[16];
+  // CHECK: sycl::char3 char3_h[16];
   char3 char3_h[16];
-  // CHECK: cl::sycl::char3 char3_i[32];
+  // CHECK: sycl::char3 char3_i[32];
   char3 char3_i[32];
   // CHECK: if (static_cast<signed char>(char3_h[12].x()) == static_cast<signed char>(char3_i[12].x())) {}
   if (char3_h[12].x == char3_i[12].x) {}
-  // CHECK: char3_f = (cl::sycl::char3 *)char3_i;
+  // CHECK: char3_f = (sycl::char3 *)char3_i;
   char3_f = (char3 *)char3_i;
-  // CHECK: char3_a = (cl::sycl::char3)char3_c;
+  // CHECK: char3_a = (sycl::char3)char3_c;
   char3_a = (char3)char3_c;
-  // CHECK: char3_b = cl::sycl::char3(char3_b);
+  // CHECK: char3_b = sycl::char3(char3_b);
   char3_b = char3(char3_b);
-  // CHECK: cl::sycl::char3 char3_j, char3_k, char3_l, char3_m[16], *char3_n[32];
+  // CHECK: sycl::char3 char3_j, char3_k, char3_l, char3_m[16], *char3_n[32];
   char3 char3_j, char3_k, char3_l, char3_m[16], *char3_n[32];
-  // CHECK: int char3_o = sizeof(cl::sycl::char3);
+  // CHECK: int char3_o = sizeof(sycl::char3);
   int char3_o = sizeof(char3);
   // CHECK: int signed char_p = sizeof(signed char);
   int signed char_p = sizeof(signed char);
@@ -207,17 +207,17 @@ int main_char3() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> char3_e_buf_ct0 = dpct::get_buffer_and_offset(char3_e);
   // CHECK-NEXT:   size_t char3_e_offset_ct0 = char3_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> char3_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::char3 *)char3_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> char3_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::char3 *)char3_cast);
   // CHECK-NEXT:   size_t char3_cast_offset_ct1 = char3_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto char3_e_acc_ct0 = char3_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto char3_cast_acc_ct1 = char3_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto char3_e_acc_ct0 = char3_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto char3_cast_acc_ct1 = char3_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_char3_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::char3 *char3_e_ct0 = (cl::sycl::char3 *)(&char3_e_acc_ct0[0] + char3_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::char3 *char3_cast_ct1 = (cl::sycl::char3 *)(&char3_cast_acc_ct1[0] + char3_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::char3 *char3_e_ct0 = (sycl::char3 *)(&char3_e_acc_ct0[0] + char3_e_offset_ct0);
+  // CHECK-NEXT:           sycl::char3 *char3_cast_ct1 = (sycl::char3 *)(&char3_cast_acc_ct1[0] + char3_cast_offset_ct1);
   // CHECK-NEXT:           kernel_char3(char3_e_ct0, char3_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -226,31 +226,31 @@ int main_char3() {
   return 0;
 }
 
-// CHECK: void func3_char4(cl::sycl::char4 a, cl::sycl::char4 b, cl::sycl::char4 c) {
+// CHECK: void func3_char4(sycl::char4 a, sycl::char4 b, sycl::char4 c) {
 void func3_char4(char4 a, char4 b, char4 c) {
 }
-// CHECK: void func_char4(cl::sycl::char4 a) {
+// CHECK: void func_char4(sycl::char4 a) {
 void func_char4(char4 a) {
 }
-// CHECK: void kernel_char4(cl::sycl::char4 *a, cl::sycl::char4 *b) {
+// CHECK: void kernel_char4(sycl::char4 *a, sycl::char4 *b) {
 __global__ void kernel_char4(char4 *a, char4 *b) {
 }
 
 int main_char4() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::char4 char4_a;
+  // CHECK: sycl::char4 char4_a;
   char4 char4_a;
-  // CHECK: cl::sycl::char4 char4_b = cl::sycl::char4(1, 2, 3, 4);
+  // CHECK: sycl::char4 char4_b = sycl::char4(1, 2, 3, 4);
   char4 char4_b = make_char4(1, 2, 3, 4);
-  // CHECK: cl::sycl::char4 char4_c = cl::sycl::char4(char4_b);
+  // CHECK: sycl::char4 char4_c = sycl::char4(char4_b);
   char4 char4_c = char4(char4_b);
-  // CHECK: cl::sycl::char4 char4_d(char4_c);
+  // CHECK: sycl::char4 char4_d(char4_c);
   char4 char4_d(char4_c);
-  // CHECK: func3_char4(char4_b, cl::sycl::char4(char4_b), (cl::sycl::char4)char4_b);
+  // CHECK: func3_char4(char4_b, sycl::char4(char4_b), (sycl::char4)char4_b);
   func3_char4(char4_b, char4(char4_b), (char4)char4_b);
-  // CHECK: cl::sycl::char4 *char4_e;
+  // CHECK: sycl::char4 *char4_e;
   char4 *char4_e;
-  // CHECK: cl::sycl::char4 *char4_f;
+  // CHECK: sycl::char4 *char4_f;
   char4 *char4_f;
   // CHECK: signed char char4_g = static_cast<signed char>(char4_c.x());
   signed char char4_g = char4_c.x;
@@ -258,21 +258,21 @@ int main_char4() {
   char4_a.x = char4_d.x;
   // CHECK: if (static_cast<signed char>(char4_b.x()) == static_cast<signed char>(char4_d.x())) {}
   if (char4_b.x == char4_d.x) {}
-  // CHECK: cl::sycl::char4 char4_h[16];
+  // CHECK: sycl::char4 char4_h[16];
   char4 char4_h[16];
-  // CHECK: cl::sycl::char4 char4_i[32];
+  // CHECK: sycl::char4 char4_i[32];
   char4 char4_i[32];
   // CHECK: if (static_cast<signed char>(char4_h[12].x()) == static_cast<signed char>(char4_i[12].x())) {}
   if (char4_h[12].x == char4_i[12].x) {}
-  // CHECK: char4_f = (cl::sycl::char4 *)char4_i;
+  // CHECK: char4_f = (sycl::char4 *)char4_i;
   char4_f = (char4 *)char4_i;
-  // CHECK: char4_a = (cl::sycl::char4)char4_c;
+  // CHECK: char4_a = (sycl::char4)char4_c;
   char4_a = (char4)char4_c;
-  // CHECK: char4_b = cl::sycl::char4(char4_b);
+  // CHECK: char4_b = sycl::char4(char4_b);
   char4_b = char4(char4_b);
-  // CHECK: cl::sycl::char4 char4_j, char4_k, char4_l, char4_m[16], *char4_n[32];
+  // CHECK: sycl::char4 char4_j, char4_k, char4_l, char4_m[16], *char4_n[32];
   char4 char4_j, char4_k, char4_l, char4_m[16], *char4_n[32];
-  // CHECK: int char4_o = sizeof(cl::sycl::char4);
+  // CHECK: int char4_o = sizeof(sycl::char4);
   int char4_o = sizeof(char4);
   // CHECK: int signed char_p = sizeof(signed char);
   int signed char_p = sizeof(signed char);
@@ -282,17 +282,17 @@ int main_char4() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> char4_e_buf_ct0 = dpct::get_buffer_and_offset(char4_e);
   // CHECK-NEXT:   size_t char4_e_offset_ct0 = char4_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> char4_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::char4 *)char4_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> char4_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::char4 *)char4_cast);
   // CHECK-NEXT:   size_t char4_cast_offset_ct1 = char4_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto char4_e_acc_ct0 = char4_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto char4_cast_acc_ct1 = char4_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto char4_e_acc_ct0 = char4_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto char4_cast_acc_ct1 = char4_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_char4_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::char4 *char4_e_ct0 = (cl::sycl::char4 *)(&char4_e_acc_ct0[0] + char4_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::char4 *char4_cast_ct1 = (cl::sycl::char4 *)(&char4_cast_acc_ct1[0] + char4_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::char4 *char4_e_ct0 = (sycl::char4 *)(&char4_e_acc_ct0[0] + char4_e_offset_ct0);
+  // CHECK-NEXT:           sycl::char4 *char4_cast_ct1 = (sycl::char4 *)(&char4_cast_acc_ct1[0] + char4_cast_offset_ct1);
   // CHECK-NEXT:           kernel_char4(char4_e_ct0, char4_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -360,12 +360,12 @@ int main_double1() {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> double1_cast_buf_ct1 = dpct::get_buffer_and_offset((double *)double1_cast);
   // CHECK-NEXT:   size_t double1_cast_offset_ct1 = double1_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto double1_e_acc_ct0 = double1_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto double1_cast_acc_ct1 = double1_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto double1_e_acc_ct0 = double1_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto double1_cast_acc_ct1 = double1_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_double1_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           double *double1_e_ct0 = (double *)(&double1_e_acc_ct0[0] + double1_e_offset_ct0);
   // CHECK-NEXT:           double *double1_cast_ct1 = (double *)(&double1_cast_acc_ct1[0] + double1_cast_offset_ct1);
   // CHECK-NEXT:           kernel_double1(double1_e_ct0, double1_cast_ct1);
@@ -376,31 +376,31 @@ int main_double1() {
   return 0;
 }
 
-// CHECK: void func3_double2(cl::sycl::double2 a, cl::sycl::double2 b, cl::sycl::double2 c) {
+// CHECK: void func3_double2(sycl::double2 a, sycl::double2 b, sycl::double2 c) {
 void func3_double2(double2 a, double2 b, double2 c) {
 }
-// CHECK: void func_double2(cl::sycl::double2 a) {
+// CHECK: void func_double2(sycl::double2 a) {
 void func_double2(double2 a) {
 }
-// CHECK: void kernel_double2(cl::sycl::double2 *a, cl::sycl::double2 *b) {
+// CHECK: void kernel_double2(sycl::double2 *a, sycl::double2 *b) {
 __global__ void kernel_double2(double2 *a, double2 *b) {
 }
 
 int main_double2() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::double2 double2_a;
+  // CHECK: sycl::double2 double2_a;
   double2 double2_a;
-  // CHECK: cl::sycl::double2 double2_b = cl::sycl::double2(1, 2);
+  // CHECK: sycl::double2 double2_b = sycl::double2(1, 2);
   double2 double2_b = make_double2(1, 2);
-  // CHECK: cl::sycl::double2 double2_c = cl::sycl::double2(double2_b);
+  // CHECK: sycl::double2 double2_c = sycl::double2(double2_b);
   double2 double2_c = double2(double2_b);
-  // CHECK: cl::sycl::double2 double2_d(double2_c);
+  // CHECK: sycl::double2 double2_d(double2_c);
   double2 double2_d(double2_c);
-  // CHECK: func3_double2(double2_b, cl::sycl::double2(double2_b), (cl::sycl::double2)double2_b);
+  // CHECK: func3_double2(double2_b, sycl::double2(double2_b), (sycl::double2)double2_b);
   func3_double2(double2_b, double2(double2_b), (double2)double2_b);
-  // CHECK: cl::sycl::double2 *double2_e;
+  // CHECK: sycl::double2 *double2_e;
   double2 *double2_e;
-  // CHECK: cl::sycl::double2 *double2_f;
+  // CHECK: sycl::double2 *double2_f;
   double2 *double2_f;
   // CHECK: double double2_g = static_cast<double>(double2_c.x());
   double double2_g = double2_c.x;
@@ -408,21 +408,21 @@ int main_double2() {
   double2_a.x = double2_d.x;
   // CHECK: if (static_cast<double>(double2_b.x()) == static_cast<double>(double2_d.x())) {}
   if (double2_b.x == double2_d.x) {}
-  // CHECK: cl::sycl::double2 double2_h[16];
+  // CHECK: sycl::double2 double2_h[16];
   double2 double2_h[16];
-  // CHECK: cl::sycl::double2 double2_i[32];
+  // CHECK: sycl::double2 double2_i[32];
   double2 double2_i[32];
   // CHECK: if (static_cast<double>(double2_h[12].x()) == static_cast<double>(double2_i[12].x())) {}
   if (double2_h[12].x == double2_i[12].x) {}
-  // CHECK: double2_f = (cl::sycl::double2 *)double2_i;
+  // CHECK: double2_f = (sycl::double2 *)double2_i;
   double2_f = (double2 *)double2_i;
-  // CHECK: double2_a = (cl::sycl::double2)double2_c;
+  // CHECK: double2_a = (sycl::double2)double2_c;
   double2_a = (double2)double2_c;
-  // CHECK: double2_b = cl::sycl::double2(double2_b);
+  // CHECK: double2_b = sycl::double2(double2_b);
   double2_b = double2(double2_b);
-  // CHECK: cl::sycl::double2 double2_j, double2_k, double2_l, double2_m[16], *double2_n[32];
+  // CHECK: sycl::double2 double2_j, double2_k, double2_l, double2_m[16], *double2_n[32];
   double2 double2_j, double2_k, double2_l, double2_m[16], *double2_n[32];
-  // CHECK: int double2_o = sizeof(cl::sycl::double2);
+  // CHECK: int double2_o = sizeof(sycl::double2);
   int double2_o = sizeof(double2);
   // CHECK: int double_p = sizeof(double);
   int double_p = sizeof(double);
@@ -432,17 +432,17 @@ int main_double2() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> double2_e_buf_ct0 = dpct::get_buffer_and_offset(double2_e);
   // CHECK-NEXT:   size_t double2_e_offset_ct0 = double2_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> double2_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::double2 *)double2_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> double2_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::double2 *)double2_cast);
   // CHECK-NEXT:   size_t double2_cast_offset_ct1 = double2_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto double2_e_acc_ct0 = double2_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto double2_cast_acc_ct1 = double2_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto double2_e_acc_ct0 = double2_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto double2_cast_acc_ct1 = double2_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_double2_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::double2 *double2_e_ct0 = (cl::sycl::double2 *)(&double2_e_acc_ct0[0] + double2_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::double2 *double2_cast_ct1 = (cl::sycl::double2 *)(&double2_cast_acc_ct1[0] + double2_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::double2 *double2_e_ct0 = (sycl::double2 *)(&double2_e_acc_ct0[0] + double2_e_offset_ct0);
+  // CHECK-NEXT:           sycl::double2 *double2_cast_ct1 = (sycl::double2 *)(&double2_cast_acc_ct1[0] + double2_cast_offset_ct1);
   // CHECK-NEXT:           kernel_double2(double2_e_ct0, double2_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -451,31 +451,31 @@ int main_double2() {
   return 0;
 }
 
-// CHECK: void func3_double3(cl::sycl::double3 a, cl::sycl::double3 b, cl::sycl::double3 c) {
+// CHECK: void func3_double3(sycl::double3 a, sycl::double3 b, sycl::double3 c) {
 void func3_double3(double3 a, double3 b, double3 c) {
 }
-// CHECK: void func_double3(cl::sycl::double3 a) {
+// CHECK: void func_double3(sycl::double3 a) {
 void func_double3(double3 a) {
 }
-// CHECK: void kernel_double3(cl::sycl::double3 *a, cl::sycl::double3 *b) {
+// CHECK: void kernel_double3(sycl::double3 *a, sycl::double3 *b) {
 __global__ void kernel_double3(double3 *a, double3 *b) {
 }
 
 int main_double3() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::double3 double3_a;
+  // CHECK: sycl::double3 double3_a;
   double3 double3_a;
-  // CHECK: cl::sycl::double3 double3_b = cl::sycl::double3(1, 2, 3);
+  // CHECK: sycl::double3 double3_b = sycl::double3(1, 2, 3);
   double3 double3_b = make_double3(1, 2, 3);
-  // CHECK: cl::sycl::double3 double3_c = cl::sycl::double3(double3_b);
+  // CHECK: sycl::double3 double3_c = sycl::double3(double3_b);
   double3 double3_c = double3(double3_b);
-  // CHECK: cl::sycl::double3 double3_d(double3_c);
+  // CHECK: sycl::double3 double3_d(double3_c);
   double3 double3_d(double3_c);
-  // CHECK: func3_double3(double3_b, cl::sycl::double3(double3_b), (cl::sycl::double3)double3_b);
+  // CHECK: func3_double3(double3_b, sycl::double3(double3_b), (sycl::double3)double3_b);
   func3_double3(double3_b, double3(double3_b), (double3)double3_b);
-  // CHECK: cl::sycl::double3 *double3_e;
+  // CHECK: sycl::double3 *double3_e;
   double3 *double3_e;
-  // CHECK: cl::sycl::double3 *double3_f;
+  // CHECK: sycl::double3 *double3_f;
   double3 *double3_f;
   // CHECK: double double3_g = static_cast<double>(double3_c.x());
   double double3_g = double3_c.x;
@@ -483,21 +483,21 @@ int main_double3() {
   double3_a.x = double3_d.x;
   // CHECK: if (static_cast<double>(double3_b.x()) == static_cast<double>(double3_d.x())) {}
   if (double3_b.x == double3_d.x) {}
-  // CHECK: cl::sycl::double3 double3_h[16];
+  // CHECK: sycl::double3 double3_h[16];
   double3 double3_h[16];
-  // CHECK: cl::sycl::double3 double3_i[32];
+  // CHECK: sycl::double3 double3_i[32];
   double3 double3_i[32];
   // CHECK: if (static_cast<double>(double3_h[12].x()) == static_cast<double>(double3_i[12].x())) {}
   if (double3_h[12].x == double3_i[12].x) {}
-  // CHECK: double3_f = (cl::sycl::double3 *)double3_i;
+  // CHECK: double3_f = (sycl::double3 *)double3_i;
   double3_f = (double3 *)double3_i;
-  // CHECK: double3_a = (cl::sycl::double3)double3_c;
+  // CHECK: double3_a = (sycl::double3)double3_c;
   double3_a = (double3)double3_c;
-  // CHECK: double3_b = cl::sycl::double3(double3_b);
+  // CHECK: double3_b = sycl::double3(double3_b);
   double3_b = double3(double3_b);
-  // CHECK: cl::sycl::double3 double3_j, double3_k, double3_l, double3_m[16], *double3_n[32];
+  // CHECK: sycl::double3 double3_j, double3_k, double3_l, double3_m[16], *double3_n[32];
   double3 double3_j, double3_k, double3_l, double3_m[16], *double3_n[32];
-  // CHECK: int double3_o = sizeof(cl::sycl::double3);
+  // CHECK: int double3_o = sizeof(sycl::double3);
   int double3_o = sizeof(double3);
   // CHECK: int double_p = sizeof(double);
   int double_p = sizeof(double);
@@ -507,17 +507,17 @@ int main_double3() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> double3_e_buf_ct0 = dpct::get_buffer_and_offset(double3_e);
   // CHECK-NEXT:   size_t double3_e_offset_ct0 = double3_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> double3_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::double3 *)double3_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> double3_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::double3 *)double3_cast);
   // CHECK-NEXT:   size_t double3_cast_offset_ct1 = double3_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto double3_e_acc_ct0 = double3_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto double3_cast_acc_ct1 = double3_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto double3_e_acc_ct0 = double3_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto double3_cast_acc_ct1 = double3_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_double3_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::double3 *double3_e_ct0 = (cl::sycl::double3 *)(&double3_e_acc_ct0[0] + double3_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::double3 *double3_cast_ct1 = (cl::sycl::double3 *)(&double3_cast_acc_ct1[0] + double3_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::double3 *double3_e_ct0 = (sycl::double3 *)(&double3_e_acc_ct0[0] + double3_e_offset_ct0);
+  // CHECK-NEXT:           sycl::double3 *double3_cast_ct1 = (sycl::double3 *)(&double3_cast_acc_ct1[0] + double3_cast_offset_ct1);
   // CHECK-NEXT:           kernel_double3(double3_e_ct0, double3_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -526,31 +526,31 @@ int main_double3() {
   return 0;
 }
 
-// CHECK: void func3_double4(cl::sycl::double4 a, cl::sycl::double4 b, cl::sycl::double4 c) {
+// CHECK: void func3_double4(sycl::double4 a, sycl::double4 b, sycl::double4 c) {
 void func3_double4(double4 a, double4 b, double4 c) {
 }
-// CHECK: void func_double4(cl::sycl::double4 a) {
+// CHECK: void func_double4(sycl::double4 a) {
 void func_double4(double4 a) {
 }
-// CHECK: void kernel_double4(cl::sycl::double4 *a, cl::sycl::double4 *b) {
+// CHECK: void kernel_double4(sycl::double4 *a, sycl::double4 *b) {
 __global__ void kernel_double4(double4 *a, double4 *b) {
 }
 
 int main_double4() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::double4 double4_a;
+  // CHECK: sycl::double4 double4_a;
   double4 double4_a;
-  // CHECK: cl::sycl::double4 double4_b = cl::sycl::double4(1, 2, 3, 4);
+  // CHECK: sycl::double4 double4_b = sycl::double4(1, 2, 3, 4);
   double4 double4_b = make_double4(1, 2, 3, 4);
-  // CHECK: cl::sycl::double4 double4_c = cl::sycl::double4(double4_b);
+  // CHECK: sycl::double4 double4_c = sycl::double4(double4_b);
   double4 double4_c = double4(double4_b);
-  // CHECK: cl::sycl::double4 double4_d(double4_c);
+  // CHECK: sycl::double4 double4_d(double4_c);
   double4 double4_d(double4_c);
-  // CHECK: func3_double4(double4_b, cl::sycl::double4(double4_b), (cl::sycl::double4)double4_b);
+  // CHECK: func3_double4(double4_b, sycl::double4(double4_b), (sycl::double4)double4_b);
   func3_double4(double4_b, double4(double4_b), (double4)double4_b);
-  // CHECK: cl::sycl::double4 *double4_e;
+  // CHECK: sycl::double4 *double4_e;
   double4 *double4_e;
-  // CHECK: cl::sycl::double4 *double4_f;
+  // CHECK: sycl::double4 *double4_f;
   double4 *double4_f;
   // CHECK: double double4_g = static_cast<double>(double4_c.x());
   double double4_g = double4_c.x;
@@ -558,21 +558,21 @@ int main_double4() {
   double4_a.x = double4_d.x;
   // CHECK: if (static_cast<double>(double4_b.x()) == static_cast<double>(double4_d.x())) {}
   if (double4_b.x == double4_d.x) {}
-  // CHECK: cl::sycl::double4 double4_h[16];
+  // CHECK: sycl::double4 double4_h[16];
   double4 double4_h[16];
-  // CHECK: cl::sycl::double4 double4_i[32];
+  // CHECK: sycl::double4 double4_i[32];
   double4 double4_i[32];
   // CHECK: if (static_cast<double>(double4_h[12].x()) == static_cast<double>(double4_i[12].x())) {}
   if (double4_h[12].x == double4_i[12].x) {}
-  // CHECK: double4_f = (cl::sycl::double4 *)double4_i;
+  // CHECK: double4_f = (sycl::double4 *)double4_i;
   double4_f = (double4 *)double4_i;
-  // CHECK: double4_a = (cl::sycl::double4)double4_c;
+  // CHECK: double4_a = (sycl::double4)double4_c;
   double4_a = (double4)double4_c;
-  // CHECK: double4_b = cl::sycl::double4(double4_b);
+  // CHECK: double4_b = sycl::double4(double4_b);
   double4_b = double4(double4_b);
-  // CHECK: cl::sycl::double4 double4_j, double4_k, double4_l, double4_m[16], *double4_n[32];
+  // CHECK: sycl::double4 double4_j, double4_k, double4_l, double4_m[16], *double4_n[32];
   double4 double4_j, double4_k, double4_l, double4_m[16], *double4_n[32];
-  // CHECK: int double4_o = sizeof(cl::sycl::double4);
+  // CHECK: int double4_o = sizeof(sycl::double4);
   int double4_o = sizeof(double4);
   // CHECK: int double_p = sizeof(double);
   int double_p = sizeof(double);
@@ -582,17 +582,17 @@ int main_double4() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> double4_e_buf_ct0 = dpct::get_buffer_and_offset(double4_e);
   // CHECK-NEXT:   size_t double4_e_offset_ct0 = double4_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> double4_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::double4 *)double4_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> double4_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::double4 *)double4_cast);
   // CHECK-NEXT:   size_t double4_cast_offset_ct1 = double4_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto double4_e_acc_ct0 = double4_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto double4_cast_acc_ct1 = double4_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto double4_e_acc_ct0 = double4_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto double4_cast_acc_ct1 = double4_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_double4_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::double4 *double4_e_ct0 = (cl::sycl::double4 *)(&double4_e_acc_ct0[0] + double4_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::double4 *double4_cast_ct1 = (cl::sycl::double4 *)(&double4_cast_acc_ct1[0] + double4_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::double4 *double4_e_ct0 = (sycl::double4 *)(&double4_e_acc_ct0[0] + double4_e_offset_ct0);
+  // CHECK-NEXT:           sycl::double4 *double4_cast_ct1 = (sycl::double4 *)(&double4_cast_acc_ct1[0] + double4_cast_offset_ct1);
   // CHECK-NEXT:           kernel_double4(double4_e_ct0, double4_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -660,12 +660,12 @@ int main_float1() {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> float1_cast_buf_ct1 = dpct::get_buffer_and_offset((float *)float1_cast);
   // CHECK-NEXT:   size_t float1_cast_offset_ct1 = float1_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto float1_e_acc_ct0 = float1_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto float1_cast_acc_ct1 = float1_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto float1_e_acc_ct0 = float1_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto float1_cast_acc_ct1 = float1_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_float1_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           float *float1_e_ct0 = (float *)(&float1_e_acc_ct0[0] + float1_e_offset_ct0);
   // CHECK-NEXT:           float *float1_cast_ct1 = (float *)(&float1_cast_acc_ct1[0] + float1_cast_offset_ct1);
   // CHECK-NEXT:           kernel_float1(float1_e_ct0, float1_cast_ct1);
@@ -676,31 +676,31 @@ int main_float1() {
   return 0;
 }
 
-// CHECK: void func3_float2(cl::sycl::float2 a, cl::sycl::float2 b, cl::sycl::float2 c) {
+// CHECK: void func3_float2(sycl::float2 a, sycl::float2 b, sycl::float2 c) {
 void func3_float2(float2 a, float2 b, float2 c) {
 }
-// CHECK: void func_float2(cl::sycl::float2 a) {
+// CHECK: void func_float2(sycl::float2 a) {
 void func_float2(float2 a) {
 }
-// CHECK: void kernel_float2(cl::sycl::float2 *a, cl::sycl::float2 *b) {
+// CHECK: void kernel_float2(sycl::float2 *a, sycl::float2 *b) {
 __global__ void kernel_float2(float2 *a, float2 *b) {
 }
 
 int main_float2() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::float2 float2_a;
+  // CHECK: sycl::float2 float2_a;
   float2 float2_a;
-  // CHECK: cl::sycl::float2 float2_b = cl::sycl::float2(1, 2);
+  // CHECK: sycl::float2 float2_b = sycl::float2(1, 2);
   float2 float2_b = make_float2(1, 2);
-  // CHECK: cl::sycl::float2 float2_c = cl::sycl::float2(float2_b);
+  // CHECK: sycl::float2 float2_c = sycl::float2(float2_b);
   float2 float2_c = float2(float2_b);
-  // CHECK: cl::sycl::float2 float2_d(float2_c);
+  // CHECK: sycl::float2 float2_d(float2_c);
   float2 float2_d(float2_c);
-  // CHECK: func3_float2(float2_b, cl::sycl::float2(float2_b), (cl::sycl::float2)float2_b);
+  // CHECK: func3_float2(float2_b, sycl::float2(float2_b), (sycl::float2)float2_b);
   func3_float2(float2_b, float2(float2_b), (float2)float2_b);
-  // CHECK: cl::sycl::float2 *float2_e;
+  // CHECK: sycl::float2 *float2_e;
   float2 *float2_e;
-  // CHECK: cl::sycl::float2 *float2_f;
+  // CHECK: sycl::float2 *float2_f;
   float2 *float2_f;
   // CHECK: float float2_g = static_cast<float>(float2_c.x());
   float float2_g = float2_c.x;
@@ -708,21 +708,21 @@ int main_float2() {
   float2_a.x = float2_d.x;
   // CHECK: if (static_cast<float>(float2_b.x()) == static_cast<float>(float2_d.x())) {}
   if (float2_b.x == float2_d.x) {}
-  // CHECK: cl::sycl::float2 float2_h[16];
+  // CHECK: sycl::float2 float2_h[16];
   float2 float2_h[16];
-  // CHECK: cl::sycl::float2 float2_i[32];
+  // CHECK: sycl::float2 float2_i[32];
   float2 float2_i[32];
   // CHECK: if (static_cast<float>(float2_h[12].x()) == static_cast<float>(float2_i[12].x())) {}
   if (float2_h[12].x == float2_i[12].x) {}
-  // CHECK: float2_f = (cl::sycl::float2 *)float2_i;
+  // CHECK: float2_f = (sycl::float2 *)float2_i;
   float2_f = (float2 *)float2_i;
-  // CHECK: float2_a = (cl::sycl::float2)float2_c;
+  // CHECK: float2_a = (sycl::float2)float2_c;
   float2_a = (float2)float2_c;
-  // CHECK: float2_b = cl::sycl::float2(float2_b);
+  // CHECK: float2_b = sycl::float2(float2_b);
   float2_b = float2(float2_b);
-  // CHECK: cl::sycl::float2 float2_j, float2_k, float2_l, float2_m[16], *float2_n[32];
+  // CHECK: sycl::float2 float2_j, float2_k, float2_l, float2_m[16], *float2_n[32];
   float2 float2_j, float2_k, float2_l, float2_m[16], *float2_n[32];
-  // CHECK: int float2_o = sizeof(cl::sycl::float2);
+  // CHECK: int float2_o = sizeof(sycl::float2);
   int float2_o = sizeof(float2);
   // CHECK: int float_p = sizeof(float);
   int float_p = sizeof(float);
@@ -732,17 +732,17 @@ int main_float2() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> float2_e_buf_ct0 = dpct::get_buffer_and_offset(float2_e);
   // CHECK-NEXT:   size_t float2_e_offset_ct0 = float2_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> float2_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::float2 *)float2_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> float2_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::float2 *)float2_cast);
   // CHECK-NEXT:   size_t float2_cast_offset_ct1 = float2_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto float2_e_acc_ct0 = float2_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto float2_cast_acc_ct1 = float2_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto float2_e_acc_ct0 = float2_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto float2_cast_acc_ct1 = float2_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_float2_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::float2 *float2_e_ct0 = (cl::sycl::float2 *)(&float2_e_acc_ct0[0] + float2_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::float2 *float2_cast_ct1 = (cl::sycl::float2 *)(&float2_cast_acc_ct1[0] + float2_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::float2 *float2_e_ct0 = (sycl::float2 *)(&float2_e_acc_ct0[0] + float2_e_offset_ct0);
+  // CHECK-NEXT:           sycl::float2 *float2_cast_ct1 = (sycl::float2 *)(&float2_cast_acc_ct1[0] + float2_cast_offset_ct1);
   // CHECK-NEXT:           kernel_float2(float2_e_ct0, float2_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -751,31 +751,31 @@ int main_float2() {
   return 0;
 }
 
-// CHECK: void func3_float3(cl::sycl::float3 a, cl::sycl::float3 b, cl::sycl::float3 c) {
+// CHECK: void func3_float3(sycl::float3 a, sycl::float3 b, sycl::float3 c) {
 void func3_float3(float3 a, float3 b, float3 c) {
 }
-// CHECK: void func_float3(cl::sycl::float3 a) {
+// CHECK: void func_float3(sycl::float3 a) {
 void func_float3(float3 a) {
 }
-// CHECK: void kernel_float3(cl::sycl::float3 *a, cl::sycl::float3 *b) {
+// CHECK: void kernel_float3(sycl::float3 *a, sycl::float3 *b) {
 __global__ void kernel_float3(float3 *a, float3 *b) {
 }
 
 int main_float3() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::float3 float3_a;
+  // CHECK: sycl::float3 float3_a;
   float3 float3_a;
-  // CHECK: cl::sycl::float3 float3_b = cl::sycl::float3(1, 2, 3);
+  // CHECK: sycl::float3 float3_b = sycl::float3(1, 2, 3);
   float3 float3_b = make_float3(1, 2, 3);
-  // CHECK: cl::sycl::float3 float3_c = cl::sycl::float3(float3_b);
+  // CHECK: sycl::float3 float3_c = sycl::float3(float3_b);
   float3 float3_c = float3(float3_b);
-  // CHECK: cl::sycl::float3 float3_d(float3_c);
+  // CHECK: sycl::float3 float3_d(float3_c);
   float3 float3_d(float3_c);
-  // CHECK: func3_float3(float3_b, cl::sycl::float3(float3_b), (cl::sycl::float3)float3_b);
+  // CHECK: func3_float3(float3_b, sycl::float3(float3_b), (sycl::float3)float3_b);
   func3_float3(float3_b, float3(float3_b), (float3)float3_b);
-  // CHECK: cl::sycl::float3 *float3_e;
+  // CHECK: sycl::float3 *float3_e;
   float3 *float3_e;
-  // CHECK: cl::sycl::float3 *float3_f;
+  // CHECK: sycl::float3 *float3_f;
   float3 *float3_f;
   // CHECK: float float3_g = static_cast<float>(float3_c.x());
   float float3_g = float3_c.x;
@@ -783,21 +783,21 @@ int main_float3() {
   float3_a.x = float3_d.x;
   // CHECK: if (static_cast<float>(float3_b.x()) == static_cast<float>(float3_d.x())) {}
   if (float3_b.x == float3_d.x) {}
-  // CHECK: cl::sycl::float3 float3_h[16];
+  // CHECK: sycl::float3 float3_h[16];
   float3 float3_h[16];
-  // CHECK: cl::sycl::float3 float3_i[32];
+  // CHECK: sycl::float3 float3_i[32];
   float3 float3_i[32];
   // CHECK: if (static_cast<float>(float3_h[12].x()) == static_cast<float>(float3_i[12].x())) {}
   if (float3_h[12].x == float3_i[12].x) {}
-  // CHECK: float3_f = (cl::sycl::float3 *)float3_i;
+  // CHECK: float3_f = (sycl::float3 *)float3_i;
   float3_f = (float3 *)float3_i;
-  // CHECK: float3_a = (cl::sycl::float3)float3_c;
+  // CHECK: float3_a = (sycl::float3)float3_c;
   float3_a = (float3)float3_c;
-  // CHECK: float3_b = cl::sycl::float3(float3_b);
+  // CHECK: float3_b = sycl::float3(float3_b);
   float3_b = float3(float3_b);
-  // CHECK: cl::sycl::float3 float3_j, float3_k, float3_l, float3_m[16], *float3_n[32];
+  // CHECK: sycl::float3 float3_j, float3_k, float3_l, float3_m[16], *float3_n[32];
   float3 float3_j, float3_k, float3_l, float3_m[16], *float3_n[32];
-  // CHECK: int float3_o = sizeof(cl::sycl::float3);
+  // CHECK: int float3_o = sizeof(sycl::float3);
   int float3_o = sizeof(float3);
   // CHECK: int float_p = sizeof(float);
   int float_p = sizeof(float);
@@ -807,17 +807,17 @@ int main_float3() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> float3_e_buf_ct0 = dpct::get_buffer_and_offset(float3_e);
   // CHECK-NEXT:   size_t float3_e_offset_ct0 = float3_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> float3_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::float3 *)float3_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> float3_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::float3 *)float3_cast);
   // CHECK-NEXT:   size_t float3_cast_offset_ct1 = float3_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto float3_e_acc_ct0 = float3_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto float3_cast_acc_ct1 = float3_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto float3_e_acc_ct0 = float3_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto float3_cast_acc_ct1 = float3_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_float3_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::float3 *float3_e_ct0 = (cl::sycl::float3 *)(&float3_e_acc_ct0[0] + float3_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::float3 *float3_cast_ct1 = (cl::sycl::float3 *)(&float3_cast_acc_ct1[0] + float3_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::float3 *float3_e_ct0 = (sycl::float3 *)(&float3_e_acc_ct0[0] + float3_e_offset_ct0);
+  // CHECK-NEXT:           sycl::float3 *float3_cast_ct1 = (sycl::float3 *)(&float3_cast_acc_ct1[0] + float3_cast_offset_ct1);
   // CHECK-NEXT:           kernel_float3(float3_e_ct0, float3_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -826,31 +826,31 @@ int main_float3() {
   return 0;
 }
 
-// CHECK: void func3_float4(cl::sycl::float4 a, cl::sycl::float4 b, cl::sycl::float4 c) {
+// CHECK: void func3_float4(sycl::float4 a, sycl::float4 b, sycl::float4 c) {
 void func3_float4(float4 a, float4 b, float4 c) {
 }
-// CHECK: void func_float4(cl::sycl::float4 a) {
+// CHECK: void func_float4(sycl::float4 a) {
 void func_float4(float4 a) {
 }
-// CHECK: void kernel_float4(cl::sycl::float4 *a, cl::sycl::float4 *b) {
+// CHECK: void kernel_float4(sycl::float4 *a, sycl::float4 *b) {
 __global__ void kernel_float4(float4 *a, float4 *b) {
 }
 
 int main_float4() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::float4 float4_a;
+  // CHECK: sycl::float4 float4_a;
   float4 float4_a;
-  // CHECK: cl::sycl::float4 float4_b = cl::sycl::float4(1, 2, 3, 4);
+  // CHECK: sycl::float4 float4_b = sycl::float4(1, 2, 3, 4);
   float4 float4_b = make_float4(1, 2, 3, 4);
-  // CHECK: cl::sycl::float4 float4_c = cl::sycl::float4(float4_b);
+  // CHECK: sycl::float4 float4_c = sycl::float4(float4_b);
   float4 float4_c = float4(float4_b);
-  // CHECK: cl::sycl::float4 float4_d(float4_c);
+  // CHECK: sycl::float4 float4_d(float4_c);
   float4 float4_d(float4_c);
-  // CHECK: func3_float4(float4_b, cl::sycl::float4(float4_b), (cl::sycl::float4)float4_b);
+  // CHECK: func3_float4(float4_b, sycl::float4(float4_b), (sycl::float4)float4_b);
   func3_float4(float4_b, float4(float4_b), (float4)float4_b);
-  // CHECK: cl::sycl::float4 *float4_e;
+  // CHECK: sycl::float4 *float4_e;
   float4 *float4_e;
-  // CHECK: cl::sycl::float4 *float4_f;
+  // CHECK: sycl::float4 *float4_f;
   float4 *float4_f;
   // CHECK: float float4_g = static_cast<float>(float4_c.x());
   float float4_g = float4_c.x;
@@ -858,21 +858,21 @@ int main_float4() {
   float4_a.x = float4_d.x;
   // CHECK: if (static_cast<float>(float4_b.x()) == static_cast<float>(float4_d.x())) {}
   if (float4_b.x == float4_d.x) {}
-  // CHECK: cl::sycl::float4 float4_h[16];
+  // CHECK: sycl::float4 float4_h[16];
   float4 float4_h[16];
-  // CHECK: cl::sycl::float4 float4_i[32];
+  // CHECK: sycl::float4 float4_i[32];
   float4 float4_i[32];
   // CHECK: if (static_cast<float>(float4_h[12].x()) == static_cast<float>(float4_i[12].x())) {}
   if (float4_h[12].x == float4_i[12].x) {}
-  // CHECK: float4_f = (cl::sycl::float4 *)float4_i;
+  // CHECK: float4_f = (sycl::float4 *)float4_i;
   float4_f = (float4 *)float4_i;
-  // CHECK: float4_a = (cl::sycl::float4)float4_c;
+  // CHECK: float4_a = (sycl::float4)float4_c;
   float4_a = (float4)float4_c;
-  // CHECK: float4_b = cl::sycl::float4(float4_b);
+  // CHECK: float4_b = sycl::float4(float4_b);
   float4_b = float4(float4_b);
-  // CHECK: cl::sycl::float4 float4_j, float4_k, float4_l, float4_m[16], *float4_n[32];
+  // CHECK: sycl::float4 float4_j, float4_k, float4_l, float4_m[16], *float4_n[32];
   float4 float4_j, float4_k, float4_l, float4_m[16], *float4_n[32];
-  // CHECK: int float4_o = sizeof(cl::sycl::float4);
+  // CHECK: int float4_o = sizeof(sycl::float4);
   int float4_o = sizeof(float4);
   // CHECK: int float_p = sizeof(float);
   int float_p = sizeof(float);
@@ -882,17 +882,17 @@ int main_float4() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> float4_e_buf_ct0 = dpct::get_buffer_and_offset(float4_e);
   // CHECK-NEXT:   size_t float4_e_offset_ct0 = float4_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> float4_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::float4 *)float4_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> float4_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::float4 *)float4_cast);
   // CHECK-NEXT:   size_t float4_cast_offset_ct1 = float4_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto float4_e_acc_ct0 = float4_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto float4_cast_acc_ct1 = float4_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto float4_e_acc_ct0 = float4_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto float4_cast_acc_ct1 = float4_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_float4_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::float4 *float4_e_ct0 = (cl::sycl::float4 *)(&float4_e_acc_ct0[0] + float4_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::float4 *float4_cast_ct1 = (cl::sycl::float4 *)(&float4_cast_acc_ct1[0] + float4_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::float4 *float4_e_ct0 = (sycl::float4 *)(&float4_e_acc_ct0[0] + float4_e_offset_ct0);
+  // CHECK-NEXT:           sycl::float4 *float4_cast_ct1 = (sycl::float4 *)(&float4_cast_acc_ct1[0] + float4_cast_offset_ct1);
   // CHECK-NEXT:           kernel_float4(float4_e_ct0, float4_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -960,12 +960,12 @@ int main_int1() {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> int1_cast_buf_ct1 = dpct::get_buffer_and_offset((int *)int1_cast);
   // CHECK-NEXT:   size_t int1_cast_offset_ct1 = int1_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto int1_e_acc_ct0 = int1_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto int1_cast_acc_ct1 = int1_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto int1_e_acc_ct0 = int1_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto int1_cast_acc_ct1 = int1_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_int1_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           int *int1_e_ct0 = (int *)(&int1_e_acc_ct0[0] + int1_e_offset_ct0);
   // CHECK-NEXT:           int *int1_cast_ct1 = (int *)(&int1_cast_acc_ct1[0] + int1_cast_offset_ct1);
   // CHECK-NEXT:           kernel_int1(int1_e_ct0, int1_cast_ct1);
@@ -976,31 +976,31 @@ int main_int1() {
   return 0;
 }
 
-// CHECK: void func3_int2(cl::sycl::int2 a, cl::sycl::int2 b, cl::sycl::int2 c) {
+// CHECK: void func3_int2(sycl::int2 a, sycl::int2 b, sycl::int2 c) {
 void func3_int2(int2 a, int2 b, int2 c) {
 }
-// CHECK: void func_int2(cl::sycl::int2 a) {
+// CHECK: void func_int2(sycl::int2 a) {
 void func_int2(int2 a) {
 }
-// CHECK: void kernel_int2(cl::sycl::int2 *a, cl::sycl::int2 *b) {
+// CHECK: void kernel_int2(sycl::int2 *a, sycl::int2 *b) {
 __global__ void kernel_int2(int2 *a, int2 *b) {
 }
 
 int main_int2() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::int2 int2_a;
+  // CHECK: sycl::int2 int2_a;
   int2 int2_a;
-  // CHECK: cl::sycl::int2 int2_b = cl::sycl::int2(1, 2);
+  // CHECK: sycl::int2 int2_b = sycl::int2(1, 2);
   int2 int2_b = make_int2(1, 2);
-  // CHECK: cl::sycl::int2 int2_c = cl::sycl::int2(int2_b);
+  // CHECK: sycl::int2 int2_c = sycl::int2(int2_b);
   int2 int2_c = int2(int2_b);
-  // CHECK: cl::sycl::int2 int2_d(int2_c);
+  // CHECK: sycl::int2 int2_d(int2_c);
   int2 int2_d(int2_c);
-  // CHECK: func3_int2(int2_b, cl::sycl::int2(int2_b), (cl::sycl::int2)int2_b);
+  // CHECK: func3_int2(int2_b, sycl::int2(int2_b), (sycl::int2)int2_b);
   func3_int2(int2_b, int2(int2_b), (int2)int2_b);
-  // CHECK: cl::sycl::int2 *int2_e;
+  // CHECK: sycl::int2 *int2_e;
   int2 *int2_e;
-  // CHECK: cl::sycl::int2 *int2_f;
+  // CHECK: sycl::int2 *int2_f;
   int2 *int2_f;
   // CHECK: int int2_g = static_cast<int>(int2_c.x());
   int int2_g = int2_c.x;
@@ -1008,21 +1008,21 @@ int main_int2() {
   int2_a.x = int2_d.x;
   // CHECK: if (static_cast<int>(int2_b.x()) == static_cast<int>(int2_d.x())) {}
   if (int2_b.x == int2_d.x) {}
-  // CHECK: cl::sycl::int2 int2_h[16];
+  // CHECK: sycl::int2 int2_h[16];
   int2 int2_h[16];
-  // CHECK: cl::sycl::int2 int2_i[32];
+  // CHECK: sycl::int2 int2_i[32];
   int2 int2_i[32];
   // CHECK: if (static_cast<int>(int2_h[12].x()) == static_cast<int>(int2_i[12].x())) {}
   if (int2_h[12].x == int2_i[12].x) {}
-  // CHECK: int2_f = (cl::sycl::int2 *)int2_i;
+  // CHECK: int2_f = (sycl::int2 *)int2_i;
   int2_f = (int2 *)int2_i;
-  // CHECK: int2_a = (cl::sycl::int2)int2_c;
+  // CHECK: int2_a = (sycl::int2)int2_c;
   int2_a = (int2)int2_c;
-  // CHECK: int2_b = cl::sycl::int2(int2_b);
+  // CHECK: int2_b = sycl::int2(int2_b);
   int2_b = int2(int2_b);
-  // CHECK: cl::sycl::int2 int2_j, int2_k, int2_l, int2_m[16], *int2_n[32];
+  // CHECK: sycl::int2 int2_j, int2_k, int2_l, int2_m[16], *int2_n[32];
   int2 int2_j, int2_k, int2_l, int2_m[16], *int2_n[32];
-  // CHECK: int int2_o = sizeof(cl::sycl::int2);
+  // CHECK: int int2_o = sizeof(sycl::int2);
   int int2_o = sizeof(int2);
   // CHECK: int int_p = sizeof(int);
   int int_p = sizeof(int);
@@ -1032,17 +1032,17 @@ int main_int2() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> int2_e_buf_ct0 = dpct::get_buffer_and_offset(int2_e);
   // CHECK-NEXT:   size_t int2_e_offset_ct0 = int2_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> int2_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::int2 *)int2_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> int2_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::int2 *)int2_cast);
   // CHECK-NEXT:   size_t int2_cast_offset_ct1 = int2_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto int2_e_acc_ct0 = int2_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto int2_cast_acc_ct1 = int2_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto int2_e_acc_ct0 = int2_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto int2_cast_acc_ct1 = int2_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_int2_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::int2 *int2_e_ct0 = (cl::sycl::int2 *)(&int2_e_acc_ct0[0] + int2_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::int2 *int2_cast_ct1 = (cl::sycl::int2 *)(&int2_cast_acc_ct1[0] + int2_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::int2 *int2_e_ct0 = (sycl::int2 *)(&int2_e_acc_ct0[0] + int2_e_offset_ct0);
+  // CHECK-NEXT:           sycl::int2 *int2_cast_ct1 = (sycl::int2 *)(&int2_cast_acc_ct1[0] + int2_cast_offset_ct1);
   // CHECK-NEXT:           kernel_int2(int2_e_ct0, int2_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1051,31 +1051,31 @@ int main_int2() {
   return 0;
 }
 
-// CHECK: void func3_int3(cl::sycl::int3 a, cl::sycl::int3 b, cl::sycl::int3 c) {
+// CHECK: void func3_int3(sycl::int3 a, sycl::int3 b, sycl::int3 c) {
 void func3_int3(int3 a, int3 b, int3 c) {
 }
-// CHECK: void func_int3(cl::sycl::int3 a) {
+// CHECK: void func_int3(sycl::int3 a) {
 void func_int3(int3 a) {
 }
-// CHECK: void kernel_int3(cl::sycl::int3 *a, cl::sycl::int3 *b) {
+// CHECK: void kernel_int3(sycl::int3 *a, sycl::int3 *b) {
 __global__ void kernel_int3(int3 *a, int3 *b) {
 }
 
 int main_int3() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::int3 int3_a;
+  // CHECK: sycl::int3 int3_a;
   int3 int3_a;
-  // CHECK: cl::sycl::int3 int3_b = cl::sycl::int3(1, 2, 3);
+  // CHECK: sycl::int3 int3_b = sycl::int3(1, 2, 3);
   int3 int3_b = make_int3(1, 2, 3);
-  // CHECK: cl::sycl::int3 int3_c = cl::sycl::int3(int3_b);
+  // CHECK: sycl::int3 int3_c = sycl::int3(int3_b);
   int3 int3_c = int3(int3_b);
-  // CHECK: cl::sycl::int3 int3_d(int3_c);
+  // CHECK: sycl::int3 int3_d(int3_c);
   int3 int3_d(int3_c);
-  // CHECK: func3_int3(int3_b, cl::sycl::int3(int3_b), (cl::sycl::int3)int3_b);
+  // CHECK: func3_int3(int3_b, sycl::int3(int3_b), (sycl::int3)int3_b);
   func3_int3(int3_b, int3(int3_b), (int3)int3_b);
-  // CHECK: cl::sycl::int3 *int3_e;
+  // CHECK: sycl::int3 *int3_e;
   int3 *int3_e;
-  // CHECK: cl::sycl::int3 *int3_f;
+  // CHECK: sycl::int3 *int3_f;
   int3 *int3_f;
   // CHECK: int int3_g = static_cast<int>(int3_c.x());
   int int3_g = int3_c.x;
@@ -1083,21 +1083,21 @@ int main_int3() {
   int3_a.x = int3_d.x;
   // CHECK: if (static_cast<int>(int3_b.x()) == static_cast<int>(int3_d.x())) {}
   if (int3_b.x == int3_d.x) {}
-  // CHECK: cl::sycl::int3 int3_h[16];
+  // CHECK: sycl::int3 int3_h[16];
   int3 int3_h[16];
-  // CHECK: cl::sycl::int3 int3_i[32];
+  // CHECK: sycl::int3 int3_i[32];
   int3 int3_i[32];
   // CHECK: if (static_cast<int>(int3_h[12].x()) == static_cast<int>(int3_i[12].x())) {}
   if (int3_h[12].x == int3_i[12].x) {}
-  // CHECK: int3_f = (cl::sycl::int3 *)int3_i;
+  // CHECK: int3_f = (sycl::int3 *)int3_i;
   int3_f = (int3 *)int3_i;
-  // CHECK: int3_a = (cl::sycl::int3)int3_c;
+  // CHECK: int3_a = (sycl::int3)int3_c;
   int3_a = (int3)int3_c;
-  // CHECK: int3_b = cl::sycl::int3(int3_b);
+  // CHECK: int3_b = sycl::int3(int3_b);
   int3_b = int3(int3_b);
-  // CHECK: cl::sycl::int3 int3_j, int3_k, int3_l, int3_m[16], *int3_n[32];
+  // CHECK: sycl::int3 int3_j, int3_k, int3_l, int3_m[16], *int3_n[32];
   int3 int3_j, int3_k, int3_l, int3_m[16], *int3_n[32];
-  // CHECK: int int3_o = sizeof(cl::sycl::int3);
+  // CHECK: int int3_o = sizeof(sycl::int3);
   int int3_o = sizeof(int3);
   // CHECK: int int_p = sizeof(int);
   int int_p = sizeof(int);
@@ -1107,17 +1107,17 @@ int main_int3() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> int3_e_buf_ct0 = dpct::get_buffer_and_offset(int3_e);
   // CHECK-NEXT:   size_t int3_e_offset_ct0 = int3_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> int3_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::int3 *)int3_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> int3_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::int3 *)int3_cast);
   // CHECK-NEXT:   size_t int3_cast_offset_ct1 = int3_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto int3_e_acc_ct0 = int3_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto int3_cast_acc_ct1 = int3_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto int3_e_acc_ct0 = int3_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto int3_cast_acc_ct1 = int3_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_int3_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::int3 *int3_e_ct0 = (cl::sycl::int3 *)(&int3_e_acc_ct0[0] + int3_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::int3 *int3_cast_ct1 = (cl::sycl::int3 *)(&int3_cast_acc_ct1[0] + int3_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::int3 *int3_e_ct0 = (sycl::int3 *)(&int3_e_acc_ct0[0] + int3_e_offset_ct0);
+  // CHECK-NEXT:           sycl::int3 *int3_cast_ct1 = (sycl::int3 *)(&int3_cast_acc_ct1[0] + int3_cast_offset_ct1);
   // CHECK-NEXT:           kernel_int3(int3_e_ct0, int3_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1126,31 +1126,31 @@ int main_int3() {
   return 0;
 }
 
-// CHECK: void func3_int4(cl::sycl::int4 a, cl::sycl::int4 b, cl::sycl::int4 c) {
+// CHECK: void func3_int4(sycl::int4 a, sycl::int4 b, sycl::int4 c) {
 void func3_int4(int4 a, int4 b, int4 c) {
 }
-// CHECK: void func_int4(cl::sycl::int4 a) {
+// CHECK: void func_int4(sycl::int4 a) {
 void func_int4(int4 a) {
 }
-// CHECK: void kernel_int4(cl::sycl::int4 *a, cl::sycl::int4 *b) {
+// CHECK: void kernel_int4(sycl::int4 *a, sycl::int4 *b) {
 __global__ void kernel_int4(int4 *a, int4 *b) {
 }
 
 int main_int4() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::int4 int4_a;
+  // CHECK: sycl::int4 int4_a;
   int4 int4_a;
-  // CHECK: cl::sycl::int4 int4_b = cl::sycl::int4(1, 2, 3, 4);
+  // CHECK: sycl::int4 int4_b = sycl::int4(1, 2, 3, 4);
   int4 int4_b = make_int4(1, 2, 3, 4);
-  // CHECK: cl::sycl::int4 int4_c = cl::sycl::int4(int4_b);
+  // CHECK: sycl::int4 int4_c = sycl::int4(int4_b);
   int4 int4_c = int4(int4_b);
-  // CHECK: cl::sycl::int4 int4_d(int4_c);
+  // CHECK: sycl::int4 int4_d(int4_c);
   int4 int4_d(int4_c);
-  // CHECK: func3_int4(int4_b, cl::sycl::int4(int4_b), (cl::sycl::int4)int4_b);
+  // CHECK: func3_int4(int4_b, sycl::int4(int4_b), (sycl::int4)int4_b);
   func3_int4(int4_b, int4(int4_b), (int4)int4_b);
-  // CHECK: cl::sycl::int4 *int4_e;
+  // CHECK: sycl::int4 *int4_e;
   int4 *int4_e;
-  // CHECK: cl::sycl::int4 *int4_f;
+  // CHECK: sycl::int4 *int4_f;
   int4 *int4_f;
   // CHECK: int int4_g = static_cast<int>(int4_c.x());
   int int4_g = int4_c.x;
@@ -1158,21 +1158,21 @@ int main_int4() {
   int4_a.x = int4_d.x;
   // CHECK: if (static_cast<int>(int4_b.x()) == static_cast<int>(int4_d.x())) {}
   if (int4_b.x == int4_d.x) {}
-  // CHECK: cl::sycl::int4 int4_h[16];
+  // CHECK: sycl::int4 int4_h[16];
   int4 int4_h[16];
-  // CHECK: cl::sycl::int4 int4_i[32];
+  // CHECK: sycl::int4 int4_i[32];
   int4 int4_i[32];
   // CHECK: if (static_cast<int>(int4_h[12].x()) == static_cast<int>(int4_i[12].x())) {}
   if (int4_h[12].x == int4_i[12].x) {}
-  // CHECK: int4_f = (cl::sycl::int4 *)int4_i;
+  // CHECK: int4_f = (sycl::int4 *)int4_i;
   int4_f = (int4 *)int4_i;
-  // CHECK: int4_a = (cl::sycl::int4)int4_c;
+  // CHECK: int4_a = (sycl::int4)int4_c;
   int4_a = (int4)int4_c;
-  // CHECK: int4_b = cl::sycl::int4(int4_b);
+  // CHECK: int4_b = sycl::int4(int4_b);
   int4_b = int4(int4_b);
-  // CHECK: cl::sycl::int4 int4_j, int4_k, int4_l, int4_m[16], *int4_n[32];
+  // CHECK: sycl::int4 int4_j, int4_k, int4_l, int4_m[16], *int4_n[32];
   int4 int4_j, int4_k, int4_l, int4_m[16], *int4_n[32];
-  // CHECK: int int4_o = sizeof(cl::sycl::int4);
+  // CHECK: int int4_o = sizeof(sycl::int4);
   int int4_o = sizeof(int4);
   // CHECK: int int_p = sizeof(int);
   int int_p = sizeof(int);
@@ -1182,17 +1182,17 @@ int main_int4() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> int4_e_buf_ct0 = dpct::get_buffer_and_offset(int4_e);
   // CHECK-NEXT:   size_t int4_e_offset_ct0 = int4_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> int4_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::int4 *)int4_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> int4_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::int4 *)int4_cast);
   // CHECK-NEXT:   size_t int4_cast_offset_ct1 = int4_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto int4_e_acc_ct0 = int4_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto int4_cast_acc_ct1 = int4_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto int4_e_acc_ct0 = int4_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto int4_cast_acc_ct1 = int4_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_int4_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::int4 *int4_e_ct0 = (cl::sycl::int4 *)(&int4_e_acc_ct0[0] + int4_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::int4 *int4_cast_ct1 = (cl::sycl::int4 *)(&int4_cast_acc_ct1[0] + int4_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::int4 *int4_e_ct0 = (sycl::int4 *)(&int4_e_acc_ct0[0] + int4_e_offset_ct0);
+  // CHECK-NEXT:           sycl::int4 *int4_cast_ct1 = (sycl::int4 *)(&int4_cast_acc_ct1[0] + int4_cast_offset_ct1);
   // CHECK-NEXT:           kernel_int4(int4_e_ct0, int4_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1260,12 +1260,12 @@ int main_long1() {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> long1_cast_buf_ct1 = dpct::get_buffer_and_offset((long *)long1_cast);
   // CHECK-NEXT:   size_t long1_cast_offset_ct1 = long1_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto long1_e_acc_ct0 = long1_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto long1_cast_acc_ct1 = long1_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto long1_e_acc_ct0 = long1_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto long1_cast_acc_ct1 = long1_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_long1_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           long *long1_e_ct0 = (long *)(&long1_e_acc_ct0[0] + long1_e_offset_ct0);
   // CHECK-NEXT:           long *long1_cast_ct1 = (long *)(&long1_cast_acc_ct1[0] + long1_cast_offset_ct1);
   // CHECK-NEXT:           kernel_long1(long1_e_ct0, long1_cast_ct1);
@@ -1276,31 +1276,31 @@ int main_long1() {
   return 0;
 }
 
-// CHECK: void func3_long2(cl::sycl::long2 a, cl::sycl::long2 b, cl::sycl::long2 c) {
+// CHECK: void func3_long2(sycl::long2 a, sycl::long2 b, sycl::long2 c) {
 void func3_long2(long2 a, long2 b, long2 c) {
 }
-// CHECK: void func_long2(cl::sycl::long2 a) {
+// CHECK: void func_long2(sycl::long2 a) {
 void func_long2(long2 a) {
 }
-// CHECK: void kernel_long2(cl::sycl::long2 *a, cl::sycl::long2 *b) {
+// CHECK: void kernel_long2(sycl::long2 *a, sycl::long2 *b) {
 __global__ void kernel_long2(long2 *a, long2 *b) {
 }
 
 int main_long2() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::long2 long2_a;
+  // CHECK: sycl::long2 long2_a;
   long2 long2_a;
-  // CHECK: cl::sycl::long2 long2_b = cl::sycl::long2(1, 2);
+  // CHECK: sycl::long2 long2_b = sycl::long2(1, 2);
   long2 long2_b = make_long2(1, 2);
-  // CHECK: cl::sycl::long2 long2_c = cl::sycl::long2(long2_b);
+  // CHECK: sycl::long2 long2_c = sycl::long2(long2_b);
   long2 long2_c = long2(long2_b);
-  // CHECK: cl::sycl::long2 long2_d(long2_c);
+  // CHECK: sycl::long2 long2_d(long2_c);
   long2 long2_d(long2_c);
-  // CHECK: func3_long2(long2_b, cl::sycl::long2(long2_b), (cl::sycl::long2)long2_b);
+  // CHECK: func3_long2(long2_b, sycl::long2(long2_b), (sycl::long2)long2_b);
   func3_long2(long2_b, long2(long2_b), (long2)long2_b);
-  // CHECK: cl::sycl::long2 *long2_e;
+  // CHECK: sycl::long2 *long2_e;
   long2 *long2_e;
-  // CHECK: cl::sycl::long2 *long2_f;
+  // CHECK: sycl::long2 *long2_f;
   long2 *long2_f;
   // CHECK: long long2_g = static_cast<long>(long2_c.x());
   long long2_g = long2_c.x;
@@ -1308,21 +1308,21 @@ int main_long2() {
   long2_a.x = long2_d.x;
   // CHECK: if (static_cast<long>(long2_b.x()) == static_cast<long>(long2_d.x())) {}
   if (long2_b.x == long2_d.x) {}
-  // CHECK: cl::sycl::long2 long2_h[16];
+  // CHECK: sycl::long2 long2_h[16];
   long2 long2_h[16];
-  // CHECK: cl::sycl::long2 long2_i[32];
+  // CHECK: sycl::long2 long2_i[32];
   long2 long2_i[32];
   // CHECK: if (static_cast<long>(long2_h[12].x()) == static_cast<long>(long2_i[12].x())) {}
   if (long2_h[12].x == long2_i[12].x) {}
-  // CHECK: long2_f = (cl::sycl::long2 *)long2_i;
+  // CHECK: long2_f = (sycl::long2 *)long2_i;
   long2_f = (long2 *)long2_i;
-  // CHECK: long2_a = (cl::sycl::long2)long2_c;
+  // CHECK: long2_a = (sycl::long2)long2_c;
   long2_a = (long2)long2_c;
-  // CHECK: long2_b = cl::sycl::long2(long2_b);
+  // CHECK: long2_b = sycl::long2(long2_b);
   long2_b = long2(long2_b);
-  // CHECK: cl::sycl::long2 long2_j, long2_k, long2_l, long2_m[16], *long2_n[32];
+  // CHECK: sycl::long2 long2_j, long2_k, long2_l, long2_m[16], *long2_n[32];
   long2 long2_j, long2_k, long2_l, long2_m[16], *long2_n[32];
-  // CHECK: int long2_o = sizeof(cl::sycl::long2);
+  // CHECK: int long2_o = sizeof(sycl::long2);
   int long2_o = sizeof(long2);
   // CHECK: int long_p = sizeof(long);
   int long_p = sizeof(long);
@@ -1332,17 +1332,17 @@ int main_long2() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> long2_e_buf_ct0 = dpct::get_buffer_and_offset(long2_e);
   // CHECK-NEXT:   size_t long2_e_offset_ct0 = long2_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> long2_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::long2 *)long2_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> long2_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::long2 *)long2_cast);
   // CHECK-NEXT:   size_t long2_cast_offset_ct1 = long2_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto long2_e_acc_ct0 = long2_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto long2_cast_acc_ct1 = long2_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto long2_e_acc_ct0 = long2_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto long2_cast_acc_ct1 = long2_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_long2_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::long2 *long2_e_ct0 = (cl::sycl::long2 *)(&long2_e_acc_ct0[0] + long2_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::long2 *long2_cast_ct1 = (cl::sycl::long2 *)(&long2_cast_acc_ct1[0] + long2_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::long2 *long2_e_ct0 = (sycl::long2 *)(&long2_e_acc_ct0[0] + long2_e_offset_ct0);
+  // CHECK-NEXT:           sycl::long2 *long2_cast_ct1 = (sycl::long2 *)(&long2_cast_acc_ct1[0] + long2_cast_offset_ct1);
   // CHECK-NEXT:           kernel_long2(long2_e_ct0, long2_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1351,31 +1351,31 @@ int main_long2() {
   return 0;
 }
 
-// CHECK: void func3_long3(cl::sycl::long3 a, cl::sycl::long3 b, cl::sycl::long3 c) {
+// CHECK: void func3_long3(sycl::long3 a, sycl::long3 b, sycl::long3 c) {
 void func3_long3(long3 a, long3 b, long3 c) {
 }
-// CHECK: void func_long3(cl::sycl::long3 a) {
+// CHECK: void func_long3(sycl::long3 a) {
 void func_long3(long3 a) {
 }
-// CHECK: void kernel_long3(cl::sycl::long3 *a, cl::sycl::long3 *b) {
+// CHECK: void kernel_long3(sycl::long3 *a, sycl::long3 *b) {
 __global__ void kernel_long3(long3 *a, long3 *b) {
 }
 
 int main_long3() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::long3 long3_a;
+  // CHECK: sycl::long3 long3_a;
   long3 long3_a;
-  // CHECK: cl::sycl::long3 long3_b = cl::sycl::long3(1, 2, 3);
+  // CHECK: sycl::long3 long3_b = sycl::long3(1, 2, 3);
   long3 long3_b = make_long3(1, 2, 3);
-  // CHECK: cl::sycl::long3 long3_c = cl::sycl::long3(long3_b);
+  // CHECK: sycl::long3 long3_c = sycl::long3(long3_b);
   long3 long3_c = long3(long3_b);
-  // CHECK: cl::sycl::long3 long3_d(long3_c);
+  // CHECK: sycl::long3 long3_d(long3_c);
   long3 long3_d(long3_c);
-  // CHECK: func3_long3(long3_b, cl::sycl::long3(long3_b), (cl::sycl::long3)long3_b);
+  // CHECK: func3_long3(long3_b, sycl::long3(long3_b), (sycl::long3)long3_b);
   func3_long3(long3_b, long3(long3_b), (long3)long3_b);
-  // CHECK: cl::sycl::long3 *long3_e;
+  // CHECK: sycl::long3 *long3_e;
   long3 *long3_e;
-  // CHECK: cl::sycl::long3 *long3_f;
+  // CHECK: sycl::long3 *long3_f;
   long3 *long3_f;
   // CHECK: long long3_g = static_cast<long>(long3_c.x());
   long long3_g = long3_c.x;
@@ -1383,21 +1383,21 @@ int main_long3() {
   long3_a.x = long3_d.x;
   // CHECK: if (static_cast<long>(long3_b.x()) == static_cast<long>(long3_d.x())) {}
   if (long3_b.x == long3_d.x) {}
-  // CHECK: cl::sycl::long3 long3_h[16];
+  // CHECK: sycl::long3 long3_h[16];
   long3 long3_h[16];
-  // CHECK: cl::sycl::long3 long3_i[32];
+  // CHECK: sycl::long3 long3_i[32];
   long3 long3_i[32];
   // CHECK: if (static_cast<long>(long3_h[12].x()) == static_cast<long>(long3_i[12].x())) {}
   if (long3_h[12].x == long3_i[12].x) {}
-  // CHECK: long3_f = (cl::sycl::long3 *)long3_i;
+  // CHECK: long3_f = (sycl::long3 *)long3_i;
   long3_f = (long3 *)long3_i;
-  // CHECK: long3_a = (cl::sycl::long3)long3_c;
+  // CHECK: long3_a = (sycl::long3)long3_c;
   long3_a = (long3)long3_c;
-  // CHECK: long3_b = cl::sycl::long3(long3_b);
+  // CHECK: long3_b = sycl::long3(long3_b);
   long3_b = long3(long3_b);
-  // CHECK: cl::sycl::long3 long3_j, long3_k, long3_l, long3_m[16], *long3_n[32];
+  // CHECK: sycl::long3 long3_j, long3_k, long3_l, long3_m[16], *long3_n[32];
   long3 long3_j, long3_k, long3_l, long3_m[16], *long3_n[32];
-  // CHECK: int long3_o = sizeof(cl::sycl::long3);
+  // CHECK: int long3_o = sizeof(sycl::long3);
   int long3_o = sizeof(long3);
   // CHECK: int long_p = sizeof(long);
   int long_p = sizeof(long);
@@ -1407,17 +1407,17 @@ int main_long3() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> long3_e_buf_ct0 = dpct::get_buffer_and_offset(long3_e);
   // CHECK-NEXT:   size_t long3_e_offset_ct0 = long3_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> long3_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::long3 *)long3_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> long3_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::long3 *)long3_cast);
   // CHECK-NEXT:   size_t long3_cast_offset_ct1 = long3_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto long3_e_acc_ct0 = long3_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto long3_cast_acc_ct1 = long3_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto long3_e_acc_ct0 = long3_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto long3_cast_acc_ct1 = long3_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_long3_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::long3 *long3_e_ct0 = (cl::sycl::long3 *)(&long3_e_acc_ct0[0] + long3_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::long3 *long3_cast_ct1 = (cl::sycl::long3 *)(&long3_cast_acc_ct1[0] + long3_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::long3 *long3_e_ct0 = (sycl::long3 *)(&long3_e_acc_ct0[0] + long3_e_offset_ct0);
+  // CHECK-NEXT:           sycl::long3 *long3_cast_ct1 = (sycl::long3 *)(&long3_cast_acc_ct1[0] + long3_cast_offset_ct1);
   // CHECK-NEXT:           kernel_long3(long3_e_ct0, long3_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1426,31 +1426,31 @@ int main_long3() {
   return 0;
 }
 
-// CHECK: void func3_long4(cl::sycl::long4 a, cl::sycl::long4 b, cl::sycl::long4 c) {
+// CHECK: void func3_long4(sycl::long4 a, sycl::long4 b, sycl::long4 c) {
 void func3_long4(long4 a, long4 b, long4 c) {
 }
-// CHECK: void func_long4(cl::sycl::long4 a) {
+// CHECK: void func_long4(sycl::long4 a) {
 void func_long4(long4 a) {
 }
-// CHECK: void kernel_long4(cl::sycl::long4 *a, cl::sycl::long4 *b) {
+// CHECK: void kernel_long4(sycl::long4 *a, sycl::long4 *b) {
 __global__ void kernel_long4(long4 *a, long4 *b) {
 }
 
 int main_long4() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::long4 long4_a;
+  // CHECK: sycl::long4 long4_a;
   long4 long4_a;
-  // CHECK: cl::sycl::long4 long4_b = cl::sycl::long4(1, 2, 3, 4);
+  // CHECK: sycl::long4 long4_b = sycl::long4(1, 2, 3, 4);
   long4 long4_b = make_long4(1, 2, 3, 4);
-  // CHECK: cl::sycl::long4 long4_c = cl::sycl::long4(long4_b);
+  // CHECK: sycl::long4 long4_c = sycl::long4(long4_b);
   long4 long4_c = long4(long4_b);
-  // CHECK: cl::sycl::long4 long4_d(long4_c);
+  // CHECK: sycl::long4 long4_d(long4_c);
   long4 long4_d(long4_c);
-  // CHECK: func3_long4(long4_b, cl::sycl::long4(long4_b), (cl::sycl::long4)long4_b);
+  // CHECK: func3_long4(long4_b, sycl::long4(long4_b), (sycl::long4)long4_b);
   func3_long4(long4_b, long4(long4_b), (long4)long4_b);
-  // CHECK: cl::sycl::long4 *long4_e;
+  // CHECK: sycl::long4 *long4_e;
   long4 *long4_e;
-  // CHECK: cl::sycl::long4 *long4_f;
+  // CHECK: sycl::long4 *long4_f;
   long4 *long4_f;
   // CHECK: long long4_g = static_cast<long>(long4_c.x());
   long long4_g = long4_c.x;
@@ -1458,21 +1458,21 @@ int main_long4() {
   long4_a.x = long4_d.x;
   // CHECK: if (static_cast<long>(long4_b.x()) == static_cast<long>(long4_d.x())) {}
   if (long4_b.x == long4_d.x) {}
-  // CHECK: cl::sycl::long4 long4_h[16];
+  // CHECK: sycl::long4 long4_h[16];
   long4 long4_h[16];
-  // CHECK: cl::sycl::long4 long4_i[32];
+  // CHECK: sycl::long4 long4_i[32];
   long4 long4_i[32];
   // CHECK: if (static_cast<long>(long4_h[12].x()) == static_cast<long>(long4_i[12].x())) {}
   if (long4_h[12].x == long4_i[12].x) {}
-  // CHECK: long4_f = (cl::sycl::long4 *)long4_i;
+  // CHECK: long4_f = (sycl::long4 *)long4_i;
   long4_f = (long4 *)long4_i;
-  // CHECK: long4_a = (cl::sycl::long4)long4_c;
+  // CHECK: long4_a = (sycl::long4)long4_c;
   long4_a = (long4)long4_c;
-  // CHECK: long4_b = cl::sycl::long4(long4_b);
+  // CHECK: long4_b = sycl::long4(long4_b);
   long4_b = long4(long4_b);
-  // CHECK: cl::sycl::long4 long4_j, long4_k, long4_l, long4_m[16], *long4_n[32];
+  // CHECK: sycl::long4 long4_j, long4_k, long4_l, long4_m[16], *long4_n[32];
   long4 long4_j, long4_k, long4_l, long4_m[16], *long4_n[32];
-  // CHECK: int long4_o = sizeof(cl::sycl::long4);
+  // CHECK: int long4_o = sizeof(sycl::long4);
   int long4_o = sizeof(long4);
   // CHECK: int long_p = sizeof(long);
   int long_p = sizeof(long);
@@ -1482,17 +1482,17 @@ int main_long4() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> long4_e_buf_ct0 = dpct::get_buffer_and_offset(long4_e);
   // CHECK-NEXT:   size_t long4_e_offset_ct0 = long4_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> long4_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::long4 *)long4_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> long4_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::long4 *)long4_cast);
   // CHECK-NEXT:   size_t long4_cast_offset_ct1 = long4_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto long4_e_acc_ct0 = long4_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto long4_cast_acc_ct1 = long4_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto long4_e_acc_ct0 = long4_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto long4_cast_acc_ct1 = long4_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_long4_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::long4 *long4_e_ct0 = (cl::sycl::long4 *)(&long4_e_acc_ct0[0] + long4_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::long4 *long4_cast_ct1 = (cl::sycl::long4 *)(&long4_cast_acc_ct1[0] + long4_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::long4 *long4_e_ct0 = (sycl::long4 *)(&long4_e_acc_ct0[0] + long4_e_offset_ct0);
+  // CHECK-NEXT:           sycl::long4 *long4_cast_ct1 = (sycl::long4 *)(&long4_cast_acc_ct1[0] + long4_cast_offset_ct1);
   // CHECK-NEXT:           kernel_long4(long4_e_ct0, long4_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1560,12 +1560,12 @@ int main_longlong1() {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> longlong1_cast_buf_ct1 = dpct::get_buffer_and_offset((long long *)longlong1_cast);
   // CHECK-NEXT:   size_t longlong1_cast_offset_ct1 = longlong1_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto longlong1_e_acc_ct0 = longlong1_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto longlong1_cast_acc_ct1 = longlong1_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto longlong1_e_acc_ct0 = longlong1_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto longlong1_cast_acc_ct1 = longlong1_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_longlong1_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           long long *longlong1_e_ct0 = (long long *)(&longlong1_e_acc_ct0[0] + longlong1_e_offset_ct0);
   // CHECK-NEXT:           long long *longlong1_cast_ct1 = (long long *)(&longlong1_cast_acc_ct1[0] + longlong1_cast_offset_ct1);
   // CHECK-NEXT:           kernel_longlong1(longlong1_e_ct0, longlong1_cast_ct1);
@@ -1576,31 +1576,31 @@ int main_longlong1() {
   return 0;
 }
 
-// CHECK: void func3_longlong2(cl::sycl::longlong2 a, cl::sycl::longlong2 b, cl::sycl::longlong2 c) {
+// CHECK: void func3_longlong2(sycl::longlong2 a, sycl::longlong2 b, sycl::longlong2 c) {
 void func3_longlong2(longlong2 a, longlong2 b, longlong2 c) {
 }
-// CHECK: void func_longlong2(cl::sycl::longlong2 a) {
+// CHECK: void func_longlong2(sycl::longlong2 a) {
 void func_longlong2(longlong2 a) {
 }
-// CHECK: void kernel_longlong2(cl::sycl::longlong2 *a, cl::sycl::longlong2 *b) {
+// CHECK: void kernel_longlong2(sycl::longlong2 *a, sycl::longlong2 *b) {
 __global__ void kernel_longlong2(longlong2 *a, longlong2 *b) {
 }
 
 int main_longlong2() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::longlong2 longlong2_a;
+  // CHECK: sycl::longlong2 longlong2_a;
   longlong2 longlong2_a;
-  // CHECK: cl::sycl::longlong2 longlong2_b = cl::sycl::longlong2(1, 2);
+  // CHECK: sycl::longlong2 longlong2_b = sycl::longlong2(1, 2);
   longlong2 longlong2_b = make_longlong2(1, 2);
-  // CHECK: cl::sycl::longlong2 longlong2_c = cl::sycl::longlong2(longlong2_b);
+  // CHECK: sycl::longlong2 longlong2_c = sycl::longlong2(longlong2_b);
   longlong2 longlong2_c = longlong2(longlong2_b);
-  // CHECK: cl::sycl::longlong2 longlong2_d(longlong2_c);
+  // CHECK: sycl::longlong2 longlong2_d(longlong2_c);
   longlong2 longlong2_d(longlong2_c);
-  // CHECK: func3_longlong2(longlong2_b, cl::sycl::longlong2(longlong2_b), (cl::sycl::longlong2)longlong2_b);
+  // CHECK: func3_longlong2(longlong2_b, sycl::longlong2(longlong2_b), (sycl::longlong2)longlong2_b);
   func3_longlong2(longlong2_b, longlong2(longlong2_b), (longlong2)longlong2_b);
-  // CHECK: cl::sycl::longlong2 *longlong2_e;
+  // CHECK: sycl::longlong2 *longlong2_e;
   longlong2 *longlong2_e;
-  // CHECK: cl::sycl::longlong2 *longlong2_f;
+  // CHECK: sycl::longlong2 *longlong2_f;
   longlong2 *longlong2_f;
   // CHECK: long long longlong2_g = static_cast<long long>(longlong2_c.x());
   long long longlong2_g = longlong2_c.x;
@@ -1608,21 +1608,21 @@ int main_longlong2() {
   longlong2_a.x = longlong2_d.x;
   // CHECK: if (static_cast<long long>(longlong2_b.x()) == static_cast<long long>(longlong2_d.x())) {}
   if (longlong2_b.x == longlong2_d.x) {}
-  // CHECK: cl::sycl::longlong2 longlong2_h[16];
+  // CHECK: sycl::longlong2 longlong2_h[16];
   longlong2 longlong2_h[16];
-  // CHECK: cl::sycl::longlong2 longlong2_i[32];
+  // CHECK: sycl::longlong2 longlong2_i[32];
   longlong2 longlong2_i[32];
   // CHECK: if (static_cast<long long>(longlong2_h[12].x()) == static_cast<long long>(longlong2_i[12].x())) {}
   if (longlong2_h[12].x == longlong2_i[12].x) {}
-  // CHECK: longlong2_f = (cl::sycl::longlong2 *)longlong2_i;
+  // CHECK: longlong2_f = (sycl::longlong2 *)longlong2_i;
   longlong2_f = (longlong2 *)longlong2_i;
-  // CHECK: longlong2_a = (cl::sycl::longlong2)longlong2_c;
+  // CHECK: longlong2_a = (sycl::longlong2)longlong2_c;
   longlong2_a = (longlong2)longlong2_c;
-  // CHECK: longlong2_b = cl::sycl::longlong2(longlong2_b);
+  // CHECK: longlong2_b = sycl::longlong2(longlong2_b);
   longlong2_b = longlong2(longlong2_b);
-  // CHECK: cl::sycl::longlong2 longlong2_j, longlong2_k, longlong2_l, longlong2_m[16], *longlong2_n[32];
+  // CHECK: sycl::longlong2 longlong2_j, longlong2_k, longlong2_l, longlong2_m[16], *longlong2_n[32];
   longlong2 longlong2_j, longlong2_k, longlong2_l, longlong2_m[16], *longlong2_n[32];
-  // CHECK: int longlong2_o = sizeof(cl::sycl::longlong2);
+  // CHECK: int longlong2_o = sizeof(sycl::longlong2);
   int longlong2_o = sizeof(longlong2);
   // CHECK: int long long_p = sizeof(long long);
   int long long_p = sizeof(long long);
@@ -1632,17 +1632,17 @@ int main_longlong2() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> longlong2_e_buf_ct0 = dpct::get_buffer_and_offset(longlong2_e);
   // CHECK-NEXT:   size_t longlong2_e_offset_ct0 = longlong2_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> longlong2_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::longlong2 *)longlong2_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> longlong2_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::longlong2 *)longlong2_cast);
   // CHECK-NEXT:   size_t longlong2_cast_offset_ct1 = longlong2_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto longlong2_e_acc_ct0 = longlong2_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto longlong2_cast_acc_ct1 = longlong2_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto longlong2_e_acc_ct0 = longlong2_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto longlong2_cast_acc_ct1 = longlong2_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_longlong2_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::longlong2 *longlong2_e_ct0 = (cl::sycl::longlong2 *)(&longlong2_e_acc_ct0[0] + longlong2_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::longlong2 *longlong2_cast_ct1 = (cl::sycl::longlong2 *)(&longlong2_cast_acc_ct1[0] + longlong2_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::longlong2 *longlong2_e_ct0 = (sycl::longlong2 *)(&longlong2_e_acc_ct0[0] + longlong2_e_offset_ct0);
+  // CHECK-NEXT:           sycl::longlong2 *longlong2_cast_ct1 = (sycl::longlong2 *)(&longlong2_cast_acc_ct1[0] + longlong2_cast_offset_ct1);
   // CHECK-NEXT:           kernel_longlong2(longlong2_e_ct0, longlong2_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1651,31 +1651,31 @@ int main_longlong2() {
   return 0;
 }
 
-// CHECK: void func3_longlong3(cl::sycl::longlong3 a, cl::sycl::longlong3 b, cl::sycl::longlong3 c) {
+// CHECK: void func3_longlong3(sycl::longlong3 a, sycl::longlong3 b, sycl::longlong3 c) {
 void func3_longlong3(longlong3 a, longlong3 b, longlong3 c) {
 }
-// CHECK: void func_longlong3(cl::sycl::longlong3 a) {
+// CHECK: void func_longlong3(sycl::longlong3 a) {
 void func_longlong3(longlong3 a) {
 }
-// CHECK: void kernel_longlong3(cl::sycl::longlong3 *a, cl::sycl::longlong3 *b) {
+// CHECK: void kernel_longlong3(sycl::longlong3 *a, sycl::longlong3 *b) {
 __global__ void kernel_longlong3(longlong3 *a, longlong3 *b) {
 }
 
 int main_longlong3() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::longlong3 longlong3_a;
+  // CHECK: sycl::longlong3 longlong3_a;
   longlong3 longlong3_a;
-  // CHECK: cl::sycl::longlong3 longlong3_b = cl::sycl::longlong3(1, 2, 3);
+  // CHECK: sycl::longlong3 longlong3_b = sycl::longlong3(1, 2, 3);
   longlong3 longlong3_b = make_longlong3(1, 2, 3);
-  // CHECK: cl::sycl::longlong3 longlong3_c = cl::sycl::longlong3(longlong3_b);
+  // CHECK: sycl::longlong3 longlong3_c = sycl::longlong3(longlong3_b);
   longlong3 longlong3_c = longlong3(longlong3_b);
-  // CHECK: cl::sycl::longlong3 longlong3_d(longlong3_c);
+  // CHECK: sycl::longlong3 longlong3_d(longlong3_c);
   longlong3 longlong3_d(longlong3_c);
-  // CHECK: func3_longlong3(longlong3_b, cl::sycl::longlong3(longlong3_b), (cl::sycl::longlong3)longlong3_b);
+  // CHECK: func3_longlong3(longlong3_b, sycl::longlong3(longlong3_b), (sycl::longlong3)longlong3_b);
   func3_longlong3(longlong3_b, longlong3(longlong3_b), (longlong3)longlong3_b);
-  // CHECK: cl::sycl::longlong3 *longlong3_e;
+  // CHECK: sycl::longlong3 *longlong3_e;
   longlong3 *longlong3_e;
-  // CHECK: cl::sycl::longlong3 *longlong3_f;
+  // CHECK: sycl::longlong3 *longlong3_f;
   longlong3 *longlong3_f;
   // CHECK: long long longlong3_g = static_cast<long long>(longlong3_c.x());
   long long longlong3_g = longlong3_c.x;
@@ -1683,21 +1683,21 @@ int main_longlong3() {
   longlong3_a.x = longlong3_d.x;
   // CHECK: if (static_cast<long long>(longlong3_b.x()) == static_cast<long long>(longlong3_d.x())) {}
   if (longlong3_b.x == longlong3_d.x) {}
-  // CHECK: cl::sycl::longlong3 longlong3_h[16];
+  // CHECK: sycl::longlong3 longlong3_h[16];
   longlong3 longlong3_h[16];
-  // CHECK: cl::sycl::longlong3 longlong3_i[32];
+  // CHECK: sycl::longlong3 longlong3_i[32];
   longlong3 longlong3_i[32];
   // CHECK: if (static_cast<long long>(longlong3_h[12].x()) == static_cast<long long>(longlong3_i[12].x())) {}
   if (longlong3_h[12].x == longlong3_i[12].x) {}
-  // CHECK: longlong3_f = (cl::sycl::longlong3 *)longlong3_i;
+  // CHECK: longlong3_f = (sycl::longlong3 *)longlong3_i;
   longlong3_f = (longlong3 *)longlong3_i;
-  // CHECK: longlong3_a = (cl::sycl::longlong3)longlong3_c;
+  // CHECK: longlong3_a = (sycl::longlong3)longlong3_c;
   longlong3_a = (longlong3)longlong3_c;
-  // CHECK: longlong3_b = cl::sycl::longlong3(longlong3_b);
+  // CHECK: longlong3_b = sycl::longlong3(longlong3_b);
   longlong3_b = longlong3(longlong3_b);
-  // CHECK: cl::sycl::longlong3 longlong3_j, longlong3_k, longlong3_l, longlong3_m[16], *longlong3_n[32];
+  // CHECK: sycl::longlong3 longlong3_j, longlong3_k, longlong3_l, longlong3_m[16], *longlong3_n[32];
   longlong3 longlong3_j, longlong3_k, longlong3_l, longlong3_m[16], *longlong3_n[32];
-  // CHECK: int longlong3_o = sizeof(cl::sycl::longlong3);
+  // CHECK: int longlong3_o = sizeof(sycl::longlong3);
   int longlong3_o = sizeof(longlong3);
   // CHECK: int long long_p = sizeof(long long);
   int long long_p = sizeof(long long);
@@ -1707,17 +1707,17 @@ int main_longlong3() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> longlong3_e_buf_ct0 = dpct::get_buffer_and_offset(longlong3_e);
   // CHECK-NEXT:   size_t longlong3_e_offset_ct0 = longlong3_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> longlong3_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::longlong3 *)longlong3_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> longlong3_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::longlong3 *)longlong3_cast);
   // CHECK-NEXT:   size_t longlong3_cast_offset_ct1 = longlong3_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto longlong3_e_acc_ct0 = longlong3_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto longlong3_cast_acc_ct1 = longlong3_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto longlong3_e_acc_ct0 = longlong3_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto longlong3_cast_acc_ct1 = longlong3_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_longlong3_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::longlong3 *longlong3_e_ct0 = (cl::sycl::longlong3 *)(&longlong3_e_acc_ct0[0] + longlong3_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::longlong3 *longlong3_cast_ct1 = (cl::sycl::longlong3 *)(&longlong3_cast_acc_ct1[0] + longlong3_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::longlong3 *longlong3_e_ct0 = (sycl::longlong3 *)(&longlong3_e_acc_ct0[0] + longlong3_e_offset_ct0);
+  // CHECK-NEXT:           sycl::longlong3 *longlong3_cast_ct1 = (sycl::longlong3 *)(&longlong3_cast_acc_ct1[0] + longlong3_cast_offset_ct1);
   // CHECK-NEXT:           kernel_longlong3(longlong3_e_ct0, longlong3_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1726,31 +1726,31 @@ int main_longlong3() {
   return 0;
 }
 
-// CHECK: void func3_longlong4(cl::sycl::longlong4 a, cl::sycl::longlong4 b, cl::sycl::longlong4 c) {
+// CHECK: void func3_longlong4(sycl::longlong4 a, sycl::longlong4 b, sycl::longlong4 c) {
 void func3_longlong4(longlong4 a, longlong4 b, longlong4 c) {
 }
-// CHECK: void func_longlong4(cl::sycl::longlong4 a) {
+// CHECK: void func_longlong4(sycl::longlong4 a) {
 void func_longlong4(longlong4 a) {
 }
-// CHECK: void kernel_longlong4(cl::sycl::longlong4 *a, cl::sycl::longlong4 *b) {
+// CHECK: void kernel_longlong4(sycl::longlong4 *a, sycl::longlong4 *b) {
 __global__ void kernel_longlong4(longlong4 *a, longlong4 *b) {
 }
 
 int main_longlong4() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::longlong4 longlong4_a;
+  // CHECK: sycl::longlong4 longlong4_a;
   longlong4 longlong4_a;
-  // CHECK: cl::sycl::longlong4 longlong4_b = cl::sycl::longlong4(1, 2, 3, 4);
+  // CHECK: sycl::longlong4 longlong4_b = sycl::longlong4(1, 2, 3, 4);
   longlong4 longlong4_b = make_longlong4(1, 2, 3, 4);
-  // CHECK: cl::sycl::longlong4 longlong4_c = cl::sycl::longlong4(longlong4_b);
+  // CHECK: sycl::longlong4 longlong4_c = sycl::longlong4(longlong4_b);
   longlong4 longlong4_c = longlong4(longlong4_b);
-  // CHECK: cl::sycl::longlong4 longlong4_d(longlong4_c);
+  // CHECK: sycl::longlong4 longlong4_d(longlong4_c);
   longlong4 longlong4_d(longlong4_c);
-  // CHECK: func3_longlong4(longlong4_b, cl::sycl::longlong4(longlong4_b), (cl::sycl::longlong4)longlong4_b);
+  // CHECK: func3_longlong4(longlong4_b, sycl::longlong4(longlong4_b), (sycl::longlong4)longlong4_b);
   func3_longlong4(longlong4_b, longlong4(longlong4_b), (longlong4)longlong4_b);
-  // CHECK: cl::sycl::longlong4 *longlong4_e;
+  // CHECK: sycl::longlong4 *longlong4_e;
   longlong4 *longlong4_e;
-  // CHECK: cl::sycl::longlong4 *longlong4_f;
+  // CHECK: sycl::longlong4 *longlong4_f;
   longlong4 *longlong4_f;
   // CHECK: long long longlong4_g = static_cast<long long>(longlong4_c.x());
   long long longlong4_g = longlong4_c.x;
@@ -1758,21 +1758,21 @@ int main_longlong4() {
   longlong4_a.x = longlong4_d.x;
   // CHECK: if (static_cast<long long>(longlong4_b.x()) == static_cast<long long>(longlong4_d.x())) {}
   if (longlong4_b.x == longlong4_d.x) {}
-  // CHECK: cl::sycl::longlong4 longlong4_h[16];
+  // CHECK: sycl::longlong4 longlong4_h[16];
   longlong4 longlong4_h[16];
-  // CHECK: cl::sycl::longlong4 longlong4_i[32];
+  // CHECK: sycl::longlong4 longlong4_i[32];
   longlong4 longlong4_i[32];
   // CHECK: if (static_cast<long long>(longlong4_h[12].x()) == static_cast<long long>(longlong4_i[12].x())) {}
   if (longlong4_h[12].x == longlong4_i[12].x) {}
-  // CHECK: longlong4_f = (cl::sycl::longlong4 *)longlong4_i;
+  // CHECK: longlong4_f = (sycl::longlong4 *)longlong4_i;
   longlong4_f = (longlong4 *)longlong4_i;
-  // CHECK: longlong4_a = (cl::sycl::longlong4)longlong4_c;
+  // CHECK: longlong4_a = (sycl::longlong4)longlong4_c;
   longlong4_a = (longlong4)longlong4_c;
-  // CHECK: longlong4_b = cl::sycl::longlong4(longlong4_b);
+  // CHECK: longlong4_b = sycl::longlong4(longlong4_b);
   longlong4_b = longlong4(longlong4_b);
-  // CHECK: cl::sycl::longlong4 longlong4_j, longlong4_k, longlong4_l, longlong4_m[16], *longlong4_n[32];
+  // CHECK: sycl::longlong4 longlong4_j, longlong4_k, longlong4_l, longlong4_m[16], *longlong4_n[32];
   longlong4 longlong4_j, longlong4_k, longlong4_l, longlong4_m[16], *longlong4_n[32];
-  // CHECK: int longlong4_o = sizeof(cl::sycl::longlong4);
+  // CHECK: int longlong4_o = sizeof(sycl::longlong4);
   int longlong4_o = sizeof(longlong4);
   // CHECK: int long long_p = sizeof(long long);
   int long long_p = sizeof(long long);
@@ -1782,17 +1782,17 @@ int main_longlong4() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> longlong4_e_buf_ct0 = dpct::get_buffer_and_offset(longlong4_e);
   // CHECK-NEXT:   size_t longlong4_e_offset_ct0 = longlong4_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> longlong4_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::longlong4 *)longlong4_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> longlong4_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::longlong4 *)longlong4_cast);
   // CHECK-NEXT:   size_t longlong4_cast_offset_ct1 = longlong4_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto longlong4_e_acc_ct0 = longlong4_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto longlong4_cast_acc_ct1 = longlong4_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto longlong4_e_acc_ct0 = longlong4_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto longlong4_cast_acc_ct1 = longlong4_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_longlong4_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::longlong4 *longlong4_e_ct0 = (cl::sycl::longlong4 *)(&longlong4_e_acc_ct0[0] + longlong4_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::longlong4 *longlong4_cast_ct1 = (cl::sycl::longlong4 *)(&longlong4_cast_acc_ct1[0] + longlong4_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::longlong4 *longlong4_e_ct0 = (sycl::longlong4 *)(&longlong4_e_acc_ct0[0] + longlong4_e_offset_ct0);
+  // CHECK-NEXT:           sycl::longlong4 *longlong4_cast_ct1 = (sycl::longlong4 *)(&longlong4_cast_acc_ct1[0] + longlong4_cast_offset_ct1);
   // CHECK-NEXT:           kernel_longlong4(longlong4_e_ct0, longlong4_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1860,12 +1860,12 @@ int main_short1() {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> short1_cast_buf_ct1 = dpct::get_buffer_and_offset((short *)short1_cast);
   // CHECK-NEXT:   size_t short1_cast_offset_ct1 = short1_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto short1_e_acc_ct0 = short1_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto short1_cast_acc_ct1 = short1_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto short1_e_acc_ct0 = short1_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto short1_cast_acc_ct1 = short1_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_short1_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           short *short1_e_ct0 = (short *)(&short1_e_acc_ct0[0] + short1_e_offset_ct0);
   // CHECK-NEXT:           short *short1_cast_ct1 = (short *)(&short1_cast_acc_ct1[0] + short1_cast_offset_ct1);
   // CHECK-NEXT:           kernel_short1(short1_e_ct0, short1_cast_ct1);
@@ -1876,31 +1876,31 @@ int main_short1() {
   return 0;
 }
 
-// CHECK: void func3_short2(cl::sycl::short2 a, cl::sycl::short2 b, cl::sycl::short2 c) {
+// CHECK: void func3_short2(sycl::short2 a, sycl::short2 b, sycl::short2 c) {
 void func3_short2(short2 a, short2 b, short2 c) {
 }
-// CHECK: void func_short2(cl::sycl::short2 a) {
+// CHECK: void func_short2(sycl::short2 a) {
 void func_short2(short2 a) {
 }
-// CHECK: void kernel_short2(cl::sycl::short2 *a, cl::sycl::short2 *b) {
+// CHECK: void kernel_short2(sycl::short2 *a, sycl::short2 *b) {
 __global__ void kernel_short2(short2 *a, short2 *b) {
 }
 
 int main_short2() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::short2 short2_a;
+  // CHECK: sycl::short2 short2_a;
   short2 short2_a;
-  // CHECK: cl::sycl::short2 short2_b = cl::sycl::short2(1, 2);
+  // CHECK: sycl::short2 short2_b = sycl::short2(1, 2);
   short2 short2_b = make_short2(1, 2);
-  // CHECK: cl::sycl::short2 short2_c = cl::sycl::short2(short2_b);
+  // CHECK: sycl::short2 short2_c = sycl::short2(short2_b);
   short2 short2_c = short2(short2_b);
-  // CHECK: cl::sycl::short2 short2_d(short2_c);
+  // CHECK: sycl::short2 short2_d(short2_c);
   short2 short2_d(short2_c);
-  // CHECK: func3_short2(short2_b, cl::sycl::short2(short2_b), (cl::sycl::short2)short2_b);
+  // CHECK: func3_short2(short2_b, sycl::short2(short2_b), (sycl::short2)short2_b);
   func3_short2(short2_b, short2(short2_b), (short2)short2_b);
-  // CHECK: cl::sycl::short2 *short2_e;
+  // CHECK: sycl::short2 *short2_e;
   short2 *short2_e;
-  // CHECK: cl::sycl::short2 *short2_f;
+  // CHECK: sycl::short2 *short2_f;
   short2 *short2_f;
   // CHECK: short short2_g = static_cast<short>(short2_c.x());
   short short2_g = short2_c.x;
@@ -1908,21 +1908,21 @@ int main_short2() {
   short2_a.x = short2_d.x;
   // CHECK: if (static_cast<short>(short2_b.x()) == static_cast<short>(short2_d.x())) {}
   if (short2_b.x == short2_d.x) {}
-  // CHECK: cl::sycl::short2 short2_h[16];
+  // CHECK: sycl::short2 short2_h[16];
   short2 short2_h[16];
-  // CHECK: cl::sycl::short2 short2_i[32];
+  // CHECK: sycl::short2 short2_i[32];
   short2 short2_i[32];
   // CHECK: if (static_cast<short>(short2_h[12].x()) == static_cast<short>(short2_i[12].x())) {}
   if (short2_h[12].x == short2_i[12].x) {}
-  // CHECK: short2_f = (cl::sycl::short2 *)short2_i;
+  // CHECK: short2_f = (sycl::short2 *)short2_i;
   short2_f = (short2 *)short2_i;
-  // CHECK: short2_a = (cl::sycl::short2)short2_c;
+  // CHECK: short2_a = (sycl::short2)short2_c;
   short2_a = (short2)short2_c;
-  // CHECK: short2_b = cl::sycl::short2(short2_b);
+  // CHECK: short2_b = sycl::short2(short2_b);
   short2_b = short2(short2_b);
-  // CHECK: cl::sycl::short2 short2_j, short2_k, short2_l, short2_m[16], *short2_n[32];
+  // CHECK: sycl::short2 short2_j, short2_k, short2_l, short2_m[16], *short2_n[32];
   short2 short2_j, short2_k, short2_l, short2_m[16], *short2_n[32];
-  // CHECK: int short2_o = sizeof(cl::sycl::short2);
+  // CHECK: int short2_o = sizeof(sycl::short2);
   int short2_o = sizeof(short2);
   // CHECK: int short_p = sizeof(short);
   int short_p = sizeof(short);
@@ -1932,17 +1932,17 @@ int main_short2() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> short2_e_buf_ct0 = dpct::get_buffer_and_offset(short2_e);
   // CHECK-NEXT:   size_t short2_e_offset_ct0 = short2_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> short2_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::short2 *)short2_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> short2_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::short2 *)short2_cast);
   // CHECK-NEXT:   size_t short2_cast_offset_ct1 = short2_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto short2_e_acc_ct0 = short2_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto short2_cast_acc_ct1 = short2_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto short2_e_acc_ct0 = short2_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto short2_cast_acc_ct1 = short2_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_short2_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::short2 *short2_e_ct0 = (cl::sycl::short2 *)(&short2_e_acc_ct0[0] + short2_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::short2 *short2_cast_ct1 = (cl::sycl::short2 *)(&short2_cast_acc_ct1[0] + short2_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::short2 *short2_e_ct0 = (sycl::short2 *)(&short2_e_acc_ct0[0] + short2_e_offset_ct0);
+  // CHECK-NEXT:           sycl::short2 *short2_cast_ct1 = (sycl::short2 *)(&short2_cast_acc_ct1[0] + short2_cast_offset_ct1);
   // CHECK-NEXT:           kernel_short2(short2_e_ct0, short2_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -1951,31 +1951,31 @@ int main_short2() {
   return 0;
 }
 
-// CHECK: void func3_short3(cl::sycl::short3 a, cl::sycl::short3 b, cl::sycl::short3 c) {
+// CHECK: void func3_short3(sycl::short3 a, sycl::short3 b, sycl::short3 c) {
 void func3_short3(short3 a, short3 b, short3 c) {
 }
-// CHECK: void func_short3(cl::sycl::short3 a) {
+// CHECK: void func_short3(sycl::short3 a) {
 void func_short3(short3 a) {
 }
-// CHECK: void kernel_short3(cl::sycl::short3 *a, cl::sycl::short3 *b) {
+// CHECK: void kernel_short3(sycl::short3 *a, sycl::short3 *b) {
 __global__ void kernel_short3(short3 *a, short3 *b) {
 }
 
 int main_short3() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::short3 short3_a;
+  // CHECK: sycl::short3 short3_a;
   short3 short3_a;
-  // CHECK: cl::sycl::short3 short3_b = cl::sycl::short3(1, 2, 3);
+  // CHECK: sycl::short3 short3_b = sycl::short3(1, 2, 3);
   short3 short3_b = make_short3(1, 2, 3);
-  // CHECK: cl::sycl::short3 short3_c = cl::sycl::short3(short3_b);
+  // CHECK: sycl::short3 short3_c = sycl::short3(short3_b);
   short3 short3_c = short3(short3_b);
-  // CHECK: cl::sycl::short3 short3_d(short3_c);
+  // CHECK: sycl::short3 short3_d(short3_c);
   short3 short3_d(short3_c);
-  // CHECK: func3_short3(short3_b, cl::sycl::short3(short3_b), (cl::sycl::short3)short3_b);
+  // CHECK: func3_short3(short3_b, sycl::short3(short3_b), (sycl::short3)short3_b);
   func3_short3(short3_b, short3(short3_b), (short3)short3_b);
-  // CHECK: cl::sycl::short3 *short3_e;
+  // CHECK: sycl::short3 *short3_e;
   short3 *short3_e;
-  // CHECK: cl::sycl::short3 *short3_f;
+  // CHECK: sycl::short3 *short3_f;
   short3 *short3_f;
   // CHECK: short short3_g = static_cast<short>(short3_c.x());
   short short3_g = short3_c.x;
@@ -1983,21 +1983,21 @@ int main_short3() {
   short3_a.x = short3_d.x;
   // CHECK: if (static_cast<short>(short3_b.x()) == static_cast<short>(short3_d.x())) {}
   if (short3_b.x == short3_d.x) {}
-  // CHECK: cl::sycl::short3 short3_h[16];
+  // CHECK: sycl::short3 short3_h[16];
   short3 short3_h[16];
-  // CHECK: cl::sycl::short3 short3_i[32];
+  // CHECK: sycl::short3 short3_i[32];
   short3 short3_i[32];
   // CHECK: if (static_cast<short>(short3_h[12].x()) == static_cast<short>(short3_i[12].x())) {}
   if (short3_h[12].x == short3_i[12].x) {}
-  // CHECK: short3_f = (cl::sycl::short3 *)short3_i;
+  // CHECK: short3_f = (sycl::short3 *)short3_i;
   short3_f = (short3 *)short3_i;
-  // CHECK: short3_a = (cl::sycl::short3)short3_c;
+  // CHECK: short3_a = (sycl::short3)short3_c;
   short3_a = (short3)short3_c;
-  // CHECK: short3_b = cl::sycl::short3(short3_b);
+  // CHECK: short3_b = sycl::short3(short3_b);
   short3_b = short3(short3_b);
-  // CHECK: cl::sycl::short3 short3_j, short3_k, short3_l, short3_m[16], *short3_n[32];
+  // CHECK: sycl::short3 short3_j, short3_k, short3_l, short3_m[16], *short3_n[32];
   short3 short3_j, short3_k, short3_l, short3_m[16], *short3_n[32];
-  // CHECK: int short3_o = sizeof(cl::sycl::short3);
+  // CHECK: int short3_o = sizeof(sycl::short3);
   int short3_o = sizeof(short3);
   // CHECK: int short_p = sizeof(short);
   int short_p = sizeof(short);
@@ -2007,17 +2007,17 @@ int main_short3() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> short3_e_buf_ct0 = dpct::get_buffer_and_offset(short3_e);
   // CHECK-NEXT:   size_t short3_e_offset_ct0 = short3_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> short3_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::short3 *)short3_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> short3_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::short3 *)short3_cast);
   // CHECK-NEXT:   size_t short3_cast_offset_ct1 = short3_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto short3_e_acc_ct0 = short3_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto short3_cast_acc_ct1 = short3_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto short3_e_acc_ct0 = short3_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto short3_cast_acc_ct1 = short3_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_short3_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::short3 *short3_e_ct0 = (cl::sycl::short3 *)(&short3_e_acc_ct0[0] + short3_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::short3 *short3_cast_ct1 = (cl::sycl::short3 *)(&short3_cast_acc_ct1[0] + short3_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::short3 *short3_e_ct0 = (sycl::short3 *)(&short3_e_acc_ct0[0] + short3_e_offset_ct0);
+  // CHECK-NEXT:           sycl::short3 *short3_cast_ct1 = (sycl::short3 *)(&short3_cast_acc_ct1[0] + short3_cast_offset_ct1);
   // CHECK-NEXT:           kernel_short3(short3_e_ct0, short3_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2026,31 +2026,31 @@ int main_short3() {
   return 0;
 }
 
-// CHECK: void func3_short4(cl::sycl::short4 a, cl::sycl::short4 b, cl::sycl::short4 c) {
+// CHECK: void func3_short4(sycl::short4 a, sycl::short4 b, sycl::short4 c) {
 void func3_short4(short4 a, short4 b, short4 c) {
 }
-// CHECK: void func_short4(cl::sycl::short4 a) {
+// CHECK: void func_short4(sycl::short4 a) {
 void func_short4(short4 a) {
 }
-// CHECK: void kernel_short4(cl::sycl::short4 *a, cl::sycl::short4 *b) {
+// CHECK: void kernel_short4(sycl::short4 *a, sycl::short4 *b) {
 __global__ void kernel_short4(short4 *a, short4 *b) {
 }
 
 int main_short4() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::short4 short4_a;
+  // CHECK: sycl::short4 short4_a;
   short4 short4_a;
-  // CHECK: cl::sycl::short4 short4_b = cl::sycl::short4(1, 2, 3, 4);
+  // CHECK: sycl::short4 short4_b = sycl::short4(1, 2, 3, 4);
   short4 short4_b = make_short4(1, 2, 3, 4);
-  // CHECK: cl::sycl::short4 short4_c = cl::sycl::short4(short4_b);
+  // CHECK: sycl::short4 short4_c = sycl::short4(short4_b);
   short4 short4_c = short4(short4_b);
-  // CHECK: cl::sycl::short4 short4_d(short4_c);
+  // CHECK: sycl::short4 short4_d(short4_c);
   short4 short4_d(short4_c);
-  // CHECK: func3_short4(short4_b, cl::sycl::short4(short4_b), (cl::sycl::short4)short4_b);
+  // CHECK: func3_short4(short4_b, sycl::short4(short4_b), (sycl::short4)short4_b);
   func3_short4(short4_b, short4(short4_b), (short4)short4_b);
-  // CHECK: cl::sycl::short4 *short4_e;
+  // CHECK: sycl::short4 *short4_e;
   short4 *short4_e;
-  // CHECK: cl::sycl::short4 *short4_f;
+  // CHECK: sycl::short4 *short4_f;
   short4 *short4_f;
   // CHECK: short short4_g = static_cast<short>(short4_c.x());
   short short4_g = short4_c.x;
@@ -2058,21 +2058,21 @@ int main_short4() {
   short4_a.x = short4_d.x;
   // CHECK: if (static_cast<short>(short4_b.x()) == static_cast<short>(short4_d.x())) {}
   if (short4_b.x == short4_d.x) {}
-  // CHECK: cl::sycl::short4 short4_h[16];
+  // CHECK: sycl::short4 short4_h[16];
   short4 short4_h[16];
-  // CHECK: cl::sycl::short4 short4_i[32];
+  // CHECK: sycl::short4 short4_i[32];
   short4 short4_i[32];
   // CHECK: if (static_cast<short>(short4_h[12].x()) == static_cast<short>(short4_i[12].x())) {}
   if (short4_h[12].x == short4_i[12].x) {}
-  // CHECK: short4_f = (cl::sycl::short4 *)short4_i;
+  // CHECK: short4_f = (sycl::short4 *)short4_i;
   short4_f = (short4 *)short4_i;
-  // CHECK: short4_a = (cl::sycl::short4)short4_c;
+  // CHECK: short4_a = (sycl::short4)short4_c;
   short4_a = (short4)short4_c;
-  // CHECK: short4_b = cl::sycl::short4(short4_b);
+  // CHECK: short4_b = sycl::short4(short4_b);
   short4_b = short4(short4_b);
-  // CHECK: cl::sycl::short4 short4_j, short4_k, short4_l, short4_m[16], *short4_n[32];
+  // CHECK: sycl::short4 short4_j, short4_k, short4_l, short4_m[16], *short4_n[32];
   short4 short4_j, short4_k, short4_l, short4_m[16], *short4_n[32];
-  // CHECK: int short4_o = sizeof(cl::sycl::short4);
+  // CHECK: int short4_o = sizeof(sycl::short4);
   int short4_o = sizeof(short4);
   // CHECK: int short_p = sizeof(short);
   int short_p = sizeof(short);
@@ -2082,17 +2082,17 @@ int main_short4() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> short4_e_buf_ct0 = dpct::get_buffer_and_offset(short4_e);
   // CHECK-NEXT:   size_t short4_e_offset_ct0 = short4_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> short4_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::short4 *)short4_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> short4_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::short4 *)short4_cast);
   // CHECK-NEXT:   size_t short4_cast_offset_ct1 = short4_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto short4_e_acc_ct0 = short4_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto short4_cast_acc_ct1 = short4_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto short4_e_acc_ct0 = short4_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto short4_cast_acc_ct1 = short4_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_short4_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::short4 *short4_e_ct0 = (cl::sycl::short4 *)(&short4_e_acc_ct0[0] + short4_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::short4 *short4_cast_ct1 = (cl::sycl::short4 *)(&short4_cast_acc_ct1[0] + short4_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::short4 *short4_e_ct0 = (sycl::short4 *)(&short4_e_acc_ct0[0] + short4_e_offset_ct0);
+  // CHECK-NEXT:           sycl::short4 *short4_cast_ct1 = (sycl::short4 *)(&short4_cast_acc_ct1[0] + short4_cast_offset_ct1);
   // CHECK-NEXT:           kernel_short4(short4_e_ct0, short4_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2160,12 +2160,12 @@ int main_uchar1() {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uchar1_cast_buf_ct1 = dpct::get_buffer_and_offset((unsigned char *)uchar1_cast);
   // CHECK-NEXT:   size_t uchar1_cast_offset_ct1 = uchar1_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto uchar1_e_acc_ct0 = uchar1_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto uchar1_cast_acc_ct1 = uchar1_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto uchar1_e_acc_ct0 = uchar1_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto uchar1_cast_acc_ct1 = uchar1_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uchar1_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           unsigned char *uchar1_e_ct0 = (unsigned char *)(&uchar1_e_acc_ct0[0] + uchar1_e_offset_ct0);
   // CHECK-NEXT:           unsigned char *uchar1_cast_ct1 = (unsigned char *)(&uchar1_cast_acc_ct1[0] + uchar1_cast_offset_ct1);
   // CHECK-NEXT:           kernel_uchar1(uchar1_e_ct0, uchar1_cast_ct1);
@@ -2176,31 +2176,31 @@ int main_uchar1() {
   return 0;
 }
 
-// CHECK: void func3_uchar2(cl::sycl::uchar2 a, cl::sycl::uchar2 b, cl::sycl::uchar2 c) {
+// CHECK: void func3_uchar2(sycl::uchar2 a, sycl::uchar2 b, sycl::uchar2 c) {
 void func3_uchar2(uchar2 a, uchar2 b, uchar2 c) {
 }
-// CHECK: void func_uchar2(cl::sycl::uchar2 a) {
+// CHECK: void func_uchar2(sycl::uchar2 a) {
 void func_uchar2(uchar2 a) {
 }
-// CHECK: void kernel_uchar2(cl::sycl::uchar2 *a, cl::sycl::uchar2 *b) {
+// CHECK: void kernel_uchar2(sycl::uchar2 *a, sycl::uchar2 *b) {
 __global__ void kernel_uchar2(uchar2 *a, uchar2 *b) {
 }
 
 int main_uchar2() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::uchar2 uchar2_a;
+  // CHECK: sycl::uchar2 uchar2_a;
   uchar2 uchar2_a;
-  // CHECK: cl::sycl::uchar2 uchar2_b = cl::sycl::uchar2(1, 2);
+  // CHECK: sycl::uchar2 uchar2_b = sycl::uchar2(1, 2);
   uchar2 uchar2_b = make_uchar2(1, 2);
-  // CHECK: cl::sycl::uchar2 uchar2_c = cl::sycl::uchar2(uchar2_b);
+  // CHECK: sycl::uchar2 uchar2_c = sycl::uchar2(uchar2_b);
   uchar2 uchar2_c = uchar2(uchar2_b);
-  // CHECK: cl::sycl::uchar2 uchar2_d(uchar2_c);
+  // CHECK: sycl::uchar2 uchar2_d(uchar2_c);
   uchar2 uchar2_d(uchar2_c);
-  // CHECK: func3_uchar2(uchar2_b, cl::sycl::uchar2(uchar2_b), (cl::sycl::uchar2)uchar2_b);
+  // CHECK: func3_uchar2(uchar2_b, sycl::uchar2(uchar2_b), (sycl::uchar2)uchar2_b);
   func3_uchar2(uchar2_b, uchar2(uchar2_b), (uchar2)uchar2_b);
-  // CHECK: cl::sycl::uchar2 *uchar2_e;
+  // CHECK: sycl::uchar2 *uchar2_e;
   uchar2 *uchar2_e;
-  // CHECK: cl::sycl::uchar2 *uchar2_f;
+  // CHECK: sycl::uchar2 *uchar2_f;
   uchar2 *uchar2_f;
   // CHECK: unsigned char uchar2_g = static_cast<unsigned char>(uchar2_c.x());
   unsigned char uchar2_g = uchar2_c.x;
@@ -2208,21 +2208,21 @@ int main_uchar2() {
   uchar2_a.x = uchar2_d.x;
   // CHECK: if (static_cast<unsigned char>(uchar2_b.x()) == static_cast<unsigned char>(uchar2_d.x())) {}
   if (uchar2_b.x == uchar2_d.x) {}
-  // CHECK: cl::sycl::uchar2 uchar2_h[16];
+  // CHECK: sycl::uchar2 uchar2_h[16];
   uchar2 uchar2_h[16];
-  // CHECK: cl::sycl::uchar2 uchar2_i[32];
+  // CHECK: sycl::uchar2 uchar2_i[32];
   uchar2 uchar2_i[32];
   // CHECK: if (static_cast<unsigned char>(uchar2_h[12].x()) == static_cast<unsigned char>(uchar2_i[12].x())) {}
   if (uchar2_h[12].x == uchar2_i[12].x) {}
-  // CHECK: uchar2_f = (cl::sycl::uchar2 *)uchar2_i;
+  // CHECK: uchar2_f = (sycl::uchar2 *)uchar2_i;
   uchar2_f = (uchar2 *)uchar2_i;
-  // CHECK: uchar2_a = (cl::sycl::uchar2)uchar2_c;
+  // CHECK: uchar2_a = (sycl::uchar2)uchar2_c;
   uchar2_a = (uchar2)uchar2_c;
-  // CHECK: uchar2_b = cl::sycl::uchar2(uchar2_b);
+  // CHECK: uchar2_b = sycl::uchar2(uchar2_b);
   uchar2_b = uchar2(uchar2_b);
-  // CHECK: cl::sycl::uchar2 uchar2_j, uchar2_k, uchar2_l, uchar2_m[16], *uchar2_n[32];
+  // CHECK: sycl::uchar2 uchar2_j, uchar2_k, uchar2_l, uchar2_m[16], *uchar2_n[32];
   uchar2 uchar2_j, uchar2_k, uchar2_l, uchar2_m[16], *uchar2_n[32];
-  // CHECK: int uchar2_o = sizeof(cl::sycl::uchar2);
+  // CHECK: int uchar2_o = sizeof(sycl::uchar2);
   int uchar2_o = sizeof(uchar2);
   // CHECK: int unsigned char_p = sizeof(unsigned char);
   int unsigned char_p = sizeof(unsigned char);
@@ -2232,17 +2232,17 @@ int main_uchar2() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uchar2_e_buf_ct0 = dpct::get_buffer_and_offset(uchar2_e);
   // CHECK-NEXT:   size_t uchar2_e_offset_ct0 = uchar2_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uchar2_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::uchar2 *)uchar2_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uchar2_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::uchar2 *)uchar2_cast);
   // CHECK-NEXT:   size_t uchar2_cast_offset_ct1 = uchar2_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto uchar2_e_acc_ct0 = uchar2_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto uchar2_cast_acc_ct1 = uchar2_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto uchar2_e_acc_ct0 = uchar2_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto uchar2_cast_acc_ct1 = uchar2_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uchar2_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::uchar2 *uchar2_e_ct0 = (cl::sycl::uchar2 *)(&uchar2_e_acc_ct0[0] + uchar2_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::uchar2 *uchar2_cast_ct1 = (cl::sycl::uchar2 *)(&uchar2_cast_acc_ct1[0] + uchar2_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::uchar2 *uchar2_e_ct0 = (sycl::uchar2 *)(&uchar2_e_acc_ct0[0] + uchar2_e_offset_ct0);
+  // CHECK-NEXT:           sycl::uchar2 *uchar2_cast_ct1 = (sycl::uchar2 *)(&uchar2_cast_acc_ct1[0] + uchar2_cast_offset_ct1);
   // CHECK-NEXT:           kernel_uchar2(uchar2_e_ct0, uchar2_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2251,31 +2251,31 @@ int main_uchar2() {
   return 0;
 }
 
-// CHECK: void func3_uchar3(cl::sycl::uchar3 a, cl::sycl::uchar3 b, cl::sycl::uchar3 c) {
+// CHECK: void func3_uchar3(sycl::uchar3 a, sycl::uchar3 b, sycl::uchar3 c) {
 void func3_uchar3(uchar3 a, uchar3 b, uchar3 c) {
 }
-// CHECK: void func_uchar3(cl::sycl::uchar3 a) {
+// CHECK: void func_uchar3(sycl::uchar3 a) {
 void func_uchar3(uchar3 a) {
 }
-// CHECK: void kernel_uchar3(cl::sycl::uchar3 *a, cl::sycl::uchar3 *b) {
+// CHECK: void kernel_uchar3(sycl::uchar3 *a, sycl::uchar3 *b) {
 __global__ void kernel_uchar3(uchar3 *a, uchar3 *b) {
 }
 
 int main_uchar3() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::uchar3 uchar3_a;
+  // CHECK: sycl::uchar3 uchar3_a;
   uchar3 uchar3_a;
-  // CHECK: cl::sycl::uchar3 uchar3_b = cl::sycl::uchar3(1, 2, 3);
+  // CHECK: sycl::uchar3 uchar3_b = sycl::uchar3(1, 2, 3);
   uchar3 uchar3_b = make_uchar3(1, 2, 3);
-  // CHECK: cl::sycl::uchar3 uchar3_c = cl::sycl::uchar3(uchar3_b);
+  // CHECK: sycl::uchar3 uchar3_c = sycl::uchar3(uchar3_b);
   uchar3 uchar3_c = uchar3(uchar3_b);
-  // CHECK: cl::sycl::uchar3 uchar3_d(uchar3_c);
+  // CHECK: sycl::uchar3 uchar3_d(uchar3_c);
   uchar3 uchar3_d(uchar3_c);
-  // CHECK: func3_uchar3(uchar3_b, cl::sycl::uchar3(uchar3_b), (cl::sycl::uchar3)uchar3_b);
+  // CHECK: func3_uchar3(uchar3_b, sycl::uchar3(uchar3_b), (sycl::uchar3)uchar3_b);
   func3_uchar3(uchar3_b, uchar3(uchar3_b), (uchar3)uchar3_b);
-  // CHECK: cl::sycl::uchar3 *uchar3_e;
+  // CHECK: sycl::uchar3 *uchar3_e;
   uchar3 *uchar3_e;
-  // CHECK: cl::sycl::uchar3 *uchar3_f;
+  // CHECK: sycl::uchar3 *uchar3_f;
   uchar3 *uchar3_f;
   // CHECK: unsigned char uchar3_g = static_cast<unsigned char>(uchar3_c.x());
   unsigned char uchar3_g = uchar3_c.x;
@@ -2283,21 +2283,21 @@ int main_uchar3() {
   uchar3_a.x = uchar3_d.x;
   // CHECK: if (static_cast<unsigned char>(uchar3_b.x()) == static_cast<unsigned char>(uchar3_d.x())) {}
   if (uchar3_b.x == uchar3_d.x) {}
-  // CHECK: cl::sycl::uchar3 uchar3_h[16];
+  // CHECK: sycl::uchar3 uchar3_h[16];
   uchar3 uchar3_h[16];
-  // CHECK: cl::sycl::uchar3 uchar3_i[32];
+  // CHECK: sycl::uchar3 uchar3_i[32];
   uchar3 uchar3_i[32];
   // CHECK: if (static_cast<unsigned char>(uchar3_h[12].x()) == static_cast<unsigned char>(uchar3_i[12].x())) {}
   if (uchar3_h[12].x == uchar3_i[12].x) {}
-  // CHECK: uchar3_f = (cl::sycl::uchar3 *)uchar3_i;
+  // CHECK: uchar3_f = (sycl::uchar3 *)uchar3_i;
   uchar3_f = (uchar3 *)uchar3_i;
-  // CHECK: uchar3_a = (cl::sycl::uchar3)uchar3_c;
+  // CHECK: uchar3_a = (sycl::uchar3)uchar3_c;
   uchar3_a = (uchar3)uchar3_c;
-  // CHECK: uchar3_b = cl::sycl::uchar3(uchar3_b);
+  // CHECK: uchar3_b = sycl::uchar3(uchar3_b);
   uchar3_b = uchar3(uchar3_b);
-  // CHECK: cl::sycl::uchar3 uchar3_j, uchar3_k, uchar3_l, uchar3_m[16], *uchar3_n[32];
+  // CHECK: sycl::uchar3 uchar3_j, uchar3_k, uchar3_l, uchar3_m[16], *uchar3_n[32];
   uchar3 uchar3_j, uchar3_k, uchar3_l, uchar3_m[16], *uchar3_n[32];
-  // CHECK: int uchar3_o = sizeof(cl::sycl::uchar3);
+  // CHECK: int uchar3_o = sizeof(sycl::uchar3);
   int uchar3_o = sizeof(uchar3);
   // CHECK: int unsigned char_p = sizeof(unsigned char);
   int unsigned char_p = sizeof(unsigned char);
@@ -2307,17 +2307,17 @@ int main_uchar3() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uchar3_e_buf_ct0 = dpct::get_buffer_and_offset(uchar3_e);
   // CHECK-NEXT:   size_t uchar3_e_offset_ct0 = uchar3_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uchar3_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::uchar3 *)uchar3_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uchar3_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::uchar3 *)uchar3_cast);
   // CHECK-NEXT:   size_t uchar3_cast_offset_ct1 = uchar3_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto uchar3_e_acc_ct0 = uchar3_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto uchar3_cast_acc_ct1 = uchar3_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto uchar3_e_acc_ct0 = uchar3_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto uchar3_cast_acc_ct1 = uchar3_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uchar3_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::uchar3 *uchar3_e_ct0 = (cl::sycl::uchar3 *)(&uchar3_e_acc_ct0[0] + uchar3_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::uchar3 *uchar3_cast_ct1 = (cl::sycl::uchar3 *)(&uchar3_cast_acc_ct1[0] + uchar3_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::uchar3 *uchar3_e_ct0 = (sycl::uchar3 *)(&uchar3_e_acc_ct0[0] + uchar3_e_offset_ct0);
+  // CHECK-NEXT:           sycl::uchar3 *uchar3_cast_ct1 = (sycl::uchar3 *)(&uchar3_cast_acc_ct1[0] + uchar3_cast_offset_ct1);
   // CHECK-NEXT:           kernel_uchar3(uchar3_e_ct0, uchar3_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2326,31 +2326,31 @@ int main_uchar3() {
   return 0;
 }
 
-// CHECK: void func3_uchar4(cl::sycl::uchar4 a, cl::sycl::uchar4 b, cl::sycl::uchar4 c) {
+// CHECK: void func3_uchar4(sycl::uchar4 a, sycl::uchar4 b, sycl::uchar4 c) {
 void func3_uchar4(uchar4 a, uchar4 b, uchar4 c) {
 }
-// CHECK: void func_uchar4(cl::sycl::uchar4 a) {
+// CHECK: void func_uchar4(sycl::uchar4 a) {
 void func_uchar4(uchar4 a) {
 }
-// CHECK: void kernel_uchar4(cl::sycl::uchar4 *a, cl::sycl::uchar4 *b) {
+// CHECK: void kernel_uchar4(sycl::uchar4 *a, sycl::uchar4 *b) {
 __global__ void kernel_uchar4(uchar4 *a, uchar4 *b) {
 }
 
 int main_uchar4() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::uchar4 uchar4_a;
+  // CHECK: sycl::uchar4 uchar4_a;
   uchar4 uchar4_a;
-  // CHECK: cl::sycl::uchar4 uchar4_b = cl::sycl::uchar4(1, 2, 3, 4);
+  // CHECK: sycl::uchar4 uchar4_b = sycl::uchar4(1, 2, 3, 4);
   uchar4 uchar4_b = make_uchar4(1, 2, 3, 4);
-  // CHECK: cl::sycl::uchar4 uchar4_c = cl::sycl::uchar4(uchar4_b);
+  // CHECK: sycl::uchar4 uchar4_c = sycl::uchar4(uchar4_b);
   uchar4 uchar4_c = uchar4(uchar4_b);
-  // CHECK: cl::sycl::uchar4 uchar4_d(uchar4_c);
+  // CHECK: sycl::uchar4 uchar4_d(uchar4_c);
   uchar4 uchar4_d(uchar4_c);
-  // CHECK: func3_uchar4(uchar4_b, cl::sycl::uchar4(uchar4_b), (cl::sycl::uchar4)uchar4_b);
+  // CHECK: func3_uchar4(uchar4_b, sycl::uchar4(uchar4_b), (sycl::uchar4)uchar4_b);
   func3_uchar4(uchar4_b, uchar4(uchar4_b), (uchar4)uchar4_b);
-  // CHECK: cl::sycl::uchar4 *uchar4_e;
+  // CHECK: sycl::uchar4 *uchar4_e;
   uchar4 *uchar4_e;
-  // CHECK: cl::sycl::uchar4 *uchar4_f;
+  // CHECK: sycl::uchar4 *uchar4_f;
   uchar4 *uchar4_f;
   // CHECK: unsigned char uchar4_g = static_cast<unsigned char>(uchar4_c.x());
   unsigned char uchar4_g = uchar4_c.x;
@@ -2358,21 +2358,21 @@ int main_uchar4() {
   uchar4_a.x = uchar4_d.x;
   // CHECK: if (static_cast<unsigned char>(uchar4_b.x()) == static_cast<unsigned char>(uchar4_d.x())) {}
   if (uchar4_b.x == uchar4_d.x) {}
-  // CHECK: cl::sycl::uchar4 uchar4_h[16];
+  // CHECK: sycl::uchar4 uchar4_h[16];
   uchar4 uchar4_h[16];
-  // CHECK: cl::sycl::uchar4 uchar4_i[32];
+  // CHECK: sycl::uchar4 uchar4_i[32];
   uchar4 uchar4_i[32];
   // CHECK: if (static_cast<unsigned char>(uchar4_h[12].x()) == static_cast<unsigned char>(uchar4_i[12].x())) {}
   if (uchar4_h[12].x == uchar4_i[12].x) {}
-  // CHECK: uchar4_f = (cl::sycl::uchar4 *)uchar4_i;
+  // CHECK: uchar4_f = (sycl::uchar4 *)uchar4_i;
   uchar4_f = (uchar4 *)uchar4_i;
-  // CHECK: uchar4_a = (cl::sycl::uchar4)uchar4_c;
+  // CHECK: uchar4_a = (sycl::uchar4)uchar4_c;
   uchar4_a = (uchar4)uchar4_c;
-  // CHECK: uchar4_b = cl::sycl::uchar4(uchar4_b);
+  // CHECK: uchar4_b = sycl::uchar4(uchar4_b);
   uchar4_b = uchar4(uchar4_b);
-  // CHECK: cl::sycl::uchar4 uchar4_j, uchar4_k, uchar4_l, uchar4_m[16], *uchar4_n[32];
+  // CHECK: sycl::uchar4 uchar4_j, uchar4_k, uchar4_l, uchar4_m[16], *uchar4_n[32];
   uchar4 uchar4_j, uchar4_k, uchar4_l, uchar4_m[16], *uchar4_n[32];
-  // CHECK: int uchar4_o = sizeof(cl::sycl::uchar4);
+  // CHECK: int uchar4_o = sizeof(sycl::uchar4);
   int uchar4_o = sizeof(uchar4);
   // CHECK: int unsigned char_p = sizeof(unsigned char);
   int unsigned char_p = sizeof(unsigned char);
@@ -2382,17 +2382,17 @@ int main_uchar4() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uchar4_e_buf_ct0 = dpct::get_buffer_and_offset(uchar4_e);
   // CHECK-NEXT:   size_t uchar4_e_offset_ct0 = uchar4_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uchar4_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::uchar4 *)uchar4_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uchar4_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::uchar4 *)uchar4_cast);
   // CHECK-NEXT:   size_t uchar4_cast_offset_ct1 = uchar4_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto uchar4_e_acc_ct0 = uchar4_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto uchar4_cast_acc_ct1 = uchar4_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto uchar4_e_acc_ct0 = uchar4_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto uchar4_cast_acc_ct1 = uchar4_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uchar4_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::uchar4 *uchar4_e_ct0 = (cl::sycl::uchar4 *)(&uchar4_e_acc_ct0[0] + uchar4_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::uchar4 *uchar4_cast_ct1 = (cl::sycl::uchar4 *)(&uchar4_cast_acc_ct1[0] + uchar4_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::uchar4 *uchar4_e_ct0 = (sycl::uchar4 *)(&uchar4_e_acc_ct0[0] + uchar4_e_offset_ct0);
+  // CHECK-NEXT:           sycl::uchar4 *uchar4_cast_ct1 = (sycl::uchar4 *)(&uchar4_cast_acc_ct1[0] + uchar4_cast_offset_ct1);
   // CHECK-NEXT:           kernel_uchar4(uchar4_e_ct0, uchar4_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2460,12 +2460,12 @@ int main_uint1() {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uint1_cast_buf_ct1 = dpct::get_buffer_and_offset((unsigned int *)uint1_cast);
   // CHECK-NEXT:   size_t uint1_cast_offset_ct1 = uint1_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto uint1_e_acc_ct0 = uint1_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto uint1_cast_acc_ct1 = uint1_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto uint1_e_acc_ct0 = uint1_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto uint1_cast_acc_ct1 = uint1_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uint1_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           unsigned int *uint1_e_ct0 = (unsigned int *)(&uint1_e_acc_ct0[0] + uint1_e_offset_ct0);
   // CHECK-NEXT:           unsigned int *uint1_cast_ct1 = (unsigned int *)(&uint1_cast_acc_ct1[0] + uint1_cast_offset_ct1);
   // CHECK-NEXT:           kernel_uint1(uint1_e_ct0, uint1_cast_ct1);
@@ -2476,31 +2476,31 @@ int main_uint1() {
   return 0;
 }
 
-// CHECK: void func3_uint2(cl::sycl::uint2 a, cl::sycl::uint2 b, cl::sycl::uint2 c) {
+// CHECK: void func3_uint2(sycl::uint2 a, sycl::uint2 b, sycl::uint2 c) {
 void func3_uint2(uint2 a, uint2 b, uint2 c) {
 }
-// CHECK: void func_uint2(cl::sycl::uint2 a) {
+// CHECK: void func_uint2(sycl::uint2 a) {
 void func_uint2(uint2 a) {
 }
-// CHECK: void kernel_uint2(cl::sycl::uint2 *a, cl::sycl::uint2 *b) {
+// CHECK: void kernel_uint2(sycl::uint2 *a, sycl::uint2 *b) {
 __global__ void kernel_uint2(uint2 *a, uint2 *b) {
 }
 
 int main_uint2() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::uint2 uint2_a;
+  // CHECK: sycl::uint2 uint2_a;
   uint2 uint2_a;
-  // CHECK: cl::sycl::uint2 uint2_b = cl::sycl::uint2(1, 2);
+  // CHECK: sycl::uint2 uint2_b = sycl::uint2(1, 2);
   uint2 uint2_b = make_uint2(1, 2);
-  // CHECK: cl::sycl::uint2 uint2_c = cl::sycl::uint2(uint2_b);
+  // CHECK: sycl::uint2 uint2_c = sycl::uint2(uint2_b);
   uint2 uint2_c = uint2(uint2_b);
-  // CHECK: cl::sycl::uint2 uint2_d(uint2_c);
+  // CHECK: sycl::uint2 uint2_d(uint2_c);
   uint2 uint2_d(uint2_c);
-  // CHECK: func3_uint2(uint2_b, cl::sycl::uint2(uint2_b), (cl::sycl::uint2)uint2_b);
+  // CHECK: func3_uint2(uint2_b, sycl::uint2(uint2_b), (sycl::uint2)uint2_b);
   func3_uint2(uint2_b, uint2(uint2_b), (uint2)uint2_b);
-  // CHECK: cl::sycl::uint2 *uint2_e;
+  // CHECK: sycl::uint2 *uint2_e;
   uint2 *uint2_e;
-  // CHECK: cl::sycl::uint2 *uint2_f;
+  // CHECK: sycl::uint2 *uint2_f;
   uint2 *uint2_f;
   // CHECK: unsigned int uint2_g = static_cast<unsigned int>(uint2_c.x());
   unsigned int uint2_g = uint2_c.x;
@@ -2508,21 +2508,21 @@ int main_uint2() {
   uint2_a.x = uint2_d.x;
   // CHECK: if (static_cast<unsigned int>(uint2_b.x()) == static_cast<unsigned int>(uint2_d.x())) {}
   if (uint2_b.x == uint2_d.x) {}
-  // CHECK: cl::sycl::uint2 uint2_h[16];
+  // CHECK: sycl::uint2 uint2_h[16];
   uint2 uint2_h[16];
-  // CHECK: cl::sycl::uint2 uint2_i[32];
+  // CHECK: sycl::uint2 uint2_i[32];
   uint2 uint2_i[32];
   // CHECK: if (static_cast<unsigned int>(uint2_h[12].x()) == static_cast<unsigned int>(uint2_i[12].x())) {}
   if (uint2_h[12].x == uint2_i[12].x) {}
-  // CHECK: uint2_f = (cl::sycl::uint2 *)uint2_i;
+  // CHECK: uint2_f = (sycl::uint2 *)uint2_i;
   uint2_f = (uint2 *)uint2_i;
-  // CHECK: uint2_a = (cl::sycl::uint2)uint2_c;
+  // CHECK: uint2_a = (sycl::uint2)uint2_c;
   uint2_a = (uint2)uint2_c;
-  // CHECK: uint2_b = cl::sycl::uint2(uint2_b);
+  // CHECK: uint2_b = sycl::uint2(uint2_b);
   uint2_b = uint2(uint2_b);
-  // CHECK: cl::sycl::uint2 uint2_j, uint2_k, uint2_l, uint2_m[16], *uint2_n[32];
+  // CHECK: sycl::uint2 uint2_j, uint2_k, uint2_l, uint2_m[16], *uint2_n[32];
   uint2 uint2_j, uint2_k, uint2_l, uint2_m[16], *uint2_n[32];
-  // CHECK: int uint2_o = sizeof(cl::sycl::uint2);
+  // CHECK: int uint2_o = sizeof(sycl::uint2);
   int uint2_o = sizeof(uint2);
   // CHECK: int unsigned int_p = sizeof(unsigned int);
   int unsigned int_p = sizeof(unsigned int);
@@ -2532,17 +2532,17 @@ int main_uint2() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uint2_e_buf_ct0 = dpct::get_buffer_and_offset(uint2_e);
   // CHECK-NEXT:   size_t uint2_e_offset_ct0 = uint2_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uint2_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::uint2 *)uint2_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uint2_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::uint2 *)uint2_cast);
   // CHECK-NEXT:   size_t uint2_cast_offset_ct1 = uint2_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto uint2_e_acc_ct0 = uint2_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto uint2_cast_acc_ct1 = uint2_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto uint2_e_acc_ct0 = uint2_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto uint2_cast_acc_ct1 = uint2_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uint2_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::uint2 *uint2_e_ct0 = (cl::sycl::uint2 *)(&uint2_e_acc_ct0[0] + uint2_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::uint2 *uint2_cast_ct1 = (cl::sycl::uint2 *)(&uint2_cast_acc_ct1[0] + uint2_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::uint2 *uint2_e_ct0 = (sycl::uint2 *)(&uint2_e_acc_ct0[0] + uint2_e_offset_ct0);
+  // CHECK-NEXT:           sycl::uint2 *uint2_cast_ct1 = (sycl::uint2 *)(&uint2_cast_acc_ct1[0] + uint2_cast_offset_ct1);
   // CHECK-NEXT:           kernel_uint2(uint2_e_ct0, uint2_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2551,31 +2551,31 @@ int main_uint2() {
   return 0;
 }
 
-// CHECK: void func3_uint3(cl::sycl::uint3 a, cl::sycl::uint3 b, cl::sycl::uint3 c) {
+// CHECK: void func3_uint3(sycl::uint3 a, sycl::uint3 b, sycl::uint3 c) {
 void func3_uint3(uint3 a, uint3 b, uint3 c) {
 }
-// CHECK: void func_uint3(cl::sycl::uint3 a) {
+// CHECK: void func_uint3(sycl::uint3 a) {
 void func_uint3(uint3 a) {
 }
-// CHECK: void kernel_uint3(cl::sycl::uint3 *a, cl::sycl::uint3 *b) {
+// CHECK: void kernel_uint3(sycl::uint3 *a, sycl::uint3 *b) {
 __global__ void kernel_uint3(uint3 *a, uint3 *b) {
 }
 
 int main_uint3() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::uint3 uint3_a;
+  // CHECK: sycl::uint3 uint3_a;
   uint3 uint3_a;
-  // CHECK: cl::sycl::uint3 uint3_b = cl::sycl::uint3(1, 2, 3);
+  // CHECK: sycl::uint3 uint3_b = sycl::uint3(1, 2, 3);
   uint3 uint3_b = make_uint3(1, 2, 3);
-  // CHECK: cl::sycl::uint3 uint3_c = cl::sycl::uint3(uint3_b);
+  // CHECK: sycl::uint3 uint3_c = sycl::uint3(uint3_b);
   uint3 uint3_c = uint3(uint3_b);
-  // CHECK: cl::sycl::uint3 uint3_d(uint3_c);
+  // CHECK: sycl::uint3 uint3_d(uint3_c);
   uint3 uint3_d(uint3_c);
-  // CHECK: func3_uint3(uint3_b, cl::sycl::uint3(uint3_b), (cl::sycl::uint3)uint3_b);
+  // CHECK: func3_uint3(uint3_b, sycl::uint3(uint3_b), (sycl::uint3)uint3_b);
   func3_uint3(uint3_b, uint3(uint3_b), (uint3)uint3_b);
-  // CHECK: cl::sycl::uint3 *uint3_e;
+  // CHECK: sycl::uint3 *uint3_e;
   uint3 *uint3_e;
-  // CHECK: cl::sycl::uint3 *uint3_f;
+  // CHECK: sycl::uint3 *uint3_f;
   uint3 *uint3_f;
   // CHECK: unsigned int uint3_g = static_cast<unsigned int>(uint3_c.x());
   unsigned int uint3_g = uint3_c.x;
@@ -2583,21 +2583,21 @@ int main_uint3() {
   uint3_a.x = uint3_d.x;
   // CHECK: if (static_cast<unsigned int>(uint3_b.x()) == static_cast<unsigned int>(uint3_d.x())) {}
   if (uint3_b.x == uint3_d.x) {}
-  // CHECK: cl::sycl::uint3 uint3_h[16];
+  // CHECK: sycl::uint3 uint3_h[16];
   uint3 uint3_h[16];
-  // CHECK: cl::sycl::uint3 uint3_i[32];
+  // CHECK: sycl::uint3 uint3_i[32];
   uint3 uint3_i[32];
   // CHECK: if (static_cast<unsigned int>(uint3_h[12].x()) == static_cast<unsigned int>(uint3_i[12].x())) {}
   if (uint3_h[12].x == uint3_i[12].x) {}
-  // CHECK: uint3_f = (cl::sycl::uint3 *)uint3_i;
+  // CHECK: uint3_f = (sycl::uint3 *)uint3_i;
   uint3_f = (uint3 *)uint3_i;
-  // CHECK: uint3_a = (cl::sycl::uint3)uint3_c;
+  // CHECK: uint3_a = (sycl::uint3)uint3_c;
   uint3_a = (uint3)uint3_c;
-  // CHECK: uint3_b = cl::sycl::uint3(uint3_b);
+  // CHECK: uint3_b = sycl::uint3(uint3_b);
   uint3_b = uint3(uint3_b);
-  // CHECK: cl::sycl::uint3 uint3_j, uint3_k, uint3_l, uint3_m[16], *uint3_n[32];
+  // CHECK: sycl::uint3 uint3_j, uint3_k, uint3_l, uint3_m[16], *uint3_n[32];
   uint3 uint3_j, uint3_k, uint3_l, uint3_m[16], *uint3_n[32];
-  // CHECK: int uint3_o = sizeof(cl::sycl::uint3);
+  // CHECK: int uint3_o = sizeof(sycl::uint3);
   int uint3_o = sizeof(uint3);
   // CHECK: int unsigned int_p = sizeof(unsigned int);
   int unsigned int_p = sizeof(unsigned int);
@@ -2607,17 +2607,17 @@ int main_uint3() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uint3_e_buf_ct0 = dpct::get_buffer_and_offset(uint3_e);
   // CHECK-NEXT:   size_t uint3_e_offset_ct0 = uint3_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uint3_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::uint3 *)uint3_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uint3_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::uint3 *)uint3_cast);
   // CHECK-NEXT:   size_t uint3_cast_offset_ct1 = uint3_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto uint3_e_acc_ct0 = uint3_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto uint3_cast_acc_ct1 = uint3_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto uint3_e_acc_ct0 = uint3_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto uint3_cast_acc_ct1 = uint3_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uint3_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::uint3 *uint3_e_ct0 = (cl::sycl::uint3 *)(&uint3_e_acc_ct0[0] + uint3_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::uint3 *uint3_cast_ct1 = (cl::sycl::uint3 *)(&uint3_cast_acc_ct1[0] + uint3_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::uint3 *uint3_e_ct0 = (sycl::uint3 *)(&uint3_e_acc_ct0[0] + uint3_e_offset_ct0);
+  // CHECK-NEXT:           sycl::uint3 *uint3_cast_ct1 = (sycl::uint3 *)(&uint3_cast_acc_ct1[0] + uint3_cast_offset_ct1);
   // CHECK-NEXT:           kernel_uint3(uint3_e_ct0, uint3_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2626,31 +2626,31 @@ int main_uint3() {
   return 0;
 }
 
-// CHECK: void func3_uint4(cl::sycl::uint4 a, cl::sycl::uint4 b, cl::sycl::uint4 c) {
+// CHECK: void func3_uint4(sycl::uint4 a, sycl::uint4 b, sycl::uint4 c) {
 void func3_uint4(uint4 a, uint4 b, uint4 c) {
 }
-// CHECK: void func_uint4(cl::sycl::uint4 a) {
+// CHECK: void func_uint4(sycl::uint4 a) {
 void func_uint4(uint4 a) {
 }
-// CHECK: void kernel_uint4(cl::sycl::uint4 *a, cl::sycl::uint4 *b) {
+// CHECK: void kernel_uint4(sycl::uint4 *a, sycl::uint4 *b) {
 __global__ void kernel_uint4(uint4 *a, uint4 *b) {
 }
 
 int main_uint4() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::uint4 uint4_a;
+  // CHECK: sycl::uint4 uint4_a;
   uint4 uint4_a;
-  // CHECK: cl::sycl::uint4 uint4_b = cl::sycl::uint4(1, 2, 3, 4);
+  // CHECK: sycl::uint4 uint4_b = sycl::uint4(1, 2, 3, 4);
   uint4 uint4_b = make_uint4(1, 2, 3, 4);
-  // CHECK: cl::sycl::uint4 uint4_c = cl::sycl::uint4(uint4_b);
+  // CHECK: sycl::uint4 uint4_c = sycl::uint4(uint4_b);
   uint4 uint4_c = uint4(uint4_b);
-  // CHECK: cl::sycl::uint4 uint4_d(uint4_c);
+  // CHECK: sycl::uint4 uint4_d(uint4_c);
   uint4 uint4_d(uint4_c);
-  // CHECK: func3_uint4(uint4_b, cl::sycl::uint4(uint4_b), (cl::sycl::uint4)uint4_b);
+  // CHECK: func3_uint4(uint4_b, sycl::uint4(uint4_b), (sycl::uint4)uint4_b);
   func3_uint4(uint4_b, uint4(uint4_b), (uint4)uint4_b);
-  // CHECK: cl::sycl::uint4 *uint4_e;
+  // CHECK: sycl::uint4 *uint4_e;
   uint4 *uint4_e;
-  // CHECK: cl::sycl::uint4 *uint4_f;
+  // CHECK: sycl::uint4 *uint4_f;
   uint4 *uint4_f;
   // CHECK: unsigned int uint4_g = static_cast<unsigned int>(uint4_c.x());
   unsigned int uint4_g = uint4_c.x;
@@ -2658,21 +2658,21 @@ int main_uint4() {
   uint4_a.x = uint4_d.x;
   // CHECK: if (static_cast<unsigned int>(uint4_b.x()) == static_cast<unsigned int>(uint4_d.x())) {}
   if (uint4_b.x == uint4_d.x) {}
-  // CHECK: cl::sycl::uint4 uint4_h[16];
+  // CHECK: sycl::uint4 uint4_h[16];
   uint4 uint4_h[16];
-  // CHECK: cl::sycl::uint4 uint4_i[32];
+  // CHECK: sycl::uint4 uint4_i[32];
   uint4 uint4_i[32];
   // CHECK: if (static_cast<unsigned int>(uint4_h[12].x()) == static_cast<unsigned int>(uint4_i[12].x())) {}
   if (uint4_h[12].x == uint4_i[12].x) {}
-  // CHECK: uint4_f = (cl::sycl::uint4 *)uint4_i;
+  // CHECK: uint4_f = (sycl::uint4 *)uint4_i;
   uint4_f = (uint4 *)uint4_i;
-  // CHECK: uint4_a = (cl::sycl::uint4)uint4_c;
+  // CHECK: uint4_a = (sycl::uint4)uint4_c;
   uint4_a = (uint4)uint4_c;
-  // CHECK: uint4_b = cl::sycl::uint4(uint4_b);
+  // CHECK: uint4_b = sycl::uint4(uint4_b);
   uint4_b = uint4(uint4_b);
-  // CHECK: cl::sycl::uint4 uint4_j, uint4_k, uint4_l, uint4_m[16], *uint4_n[32];
+  // CHECK: sycl::uint4 uint4_j, uint4_k, uint4_l, uint4_m[16], *uint4_n[32];
   uint4 uint4_j, uint4_k, uint4_l, uint4_m[16], *uint4_n[32];
-  // CHECK: int uint4_o = sizeof(cl::sycl::uint4);
+  // CHECK: int uint4_o = sizeof(sycl::uint4);
   int uint4_o = sizeof(uint4);
   // CHECK: int unsigned int_p = sizeof(unsigned int);
   int unsigned int_p = sizeof(unsigned int);
@@ -2682,17 +2682,17 @@ int main_uint4() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uint4_e_buf_ct0 = dpct::get_buffer_and_offset(uint4_e);
   // CHECK-NEXT:   size_t uint4_e_offset_ct0 = uint4_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uint4_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::uint4 *)uint4_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> uint4_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::uint4 *)uint4_cast);
   // CHECK-NEXT:   size_t uint4_cast_offset_ct1 = uint4_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto uint4_e_acc_ct0 = uint4_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto uint4_cast_acc_ct1 = uint4_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto uint4_e_acc_ct0 = uint4_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto uint4_cast_acc_ct1 = uint4_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_uint4_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::uint4 *uint4_e_ct0 = (cl::sycl::uint4 *)(&uint4_e_acc_ct0[0] + uint4_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::uint4 *uint4_cast_ct1 = (cl::sycl::uint4 *)(&uint4_cast_acc_ct1[0] + uint4_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::uint4 *uint4_e_ct0 = (sycl::uint4 *)(&uint4_e_acc_ct0[0] + uint4_e_offset_ct0);
+  // CHECK-NEXT:           sycl::uint4 *uint4_cast_ct1 = (sycl::uint4 *)(&uint4_cast_acc_ct1[0] + uint4_cast_offset_ct1);
   // CHECK-NEXT:           kernel_uint4(uint4_e_ct0, uint4_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2760,12 +2760,12 @@ int main_ulong1() {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulong1_cast_buf_ct1 = dpct::get_buffer_and_offset((unsigned long *)ulong1_cast);
   // CHECK-NEXT:   size_t ulong1_cast_offset_ct1 = ulong1_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ulong1_e_acc_ct0 = ulong1_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto ulong1_cast_acc_ct1 = ulong1_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto ulong1_e_acc_ct0 = ulong1_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto ulong1_cast_acc_ct1 = ulong1_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulong1_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           unsigned long *ulong1_e_ct0 = (unsigned long *)(&ulong1_e_acc_ct0[0] + ulong1_e_offset_ct0);
   // CHECK-NEXT:           unsigned long *ulong1_cast_ct1 = (unsigned long *)(&ulong1_cast_acc_ct1[0] + ulong1_cast_offset_ct1);
   // CHECK-NEXT:           kernel_ulong1(ulong1_e_ct0, ulong1_cast_ct1);
@@ -2776,31 +2776,31 @@ int main_ulong1() {
   return 0;
 }
 
-// CHECK: void func3_ulong2(cl::sycl::ulong2 a, cl::sycl::ulong2 b, cl::sycl::ulong2 c) {
+// CHECK: void func3_ulong2(sycl::ulong2 a, sycl::ulong2 b, sycl::ulong2 c) {
 void func3_ulong2(ulong2 a, ulong2 b, ulong2 c) {
 }
-// CHECK: void func_ulong2(cl::sycl::ulong2 a) {
+// CHECK: void func_ulong2(sycl::ulong2 a) {
 void func_ulong2(ulong2 a) {
 }
-// CHECK: void kernel_ulong2(cl::sycl::ulong2 *a, cl::sycl::ulong2 *b) {
+// CHECK: void kernel_ulong2(sycl::ulong2 *a, sycl::ulong2 *b) {
 __global__ void kernel_ulong2(ulong2 *a, ulong2 *b) {
 }
 
 int main_ulong2() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::ulong2 ulong2_a;
+  // CHECK: sycl::ulong2 ulong2_a;
   ulong2 ulong2_a;
-  // CHECK: cl::sycl::ulong2 ulong2_b = cl::sycl::ulong2(1, 2);
+  // CHECK: sycl::ulong2 ulong2_b = sycl::ulong2(1, 2);
   ulong2 ulong2_b = make_ulong2(1, 2);
-  // CHECK: cl::sycl::ulong2 ulong2_c = cl::sycl::ulong2(ulong2_b);
+  // CHECK: sycl::ulong2 ulong2_c = sycl::ulong2(ulong2_b);
   ulong2 ulong2_c = ulong2(ulong2_b);
-  // CHECK: cl::sycl::ulong2 ulong2_d(ulong2_c);
+  // CHECK: sycl::ulong2 ulong2_d(ulong2_c);
   ulong2 ulong2_d(ulong2_c);
-  // CHECK: func3_ulong2(ulong2_b, cl::sycl::ulong2(ulong2_b), (cl::sycl::ulong2)ulong2_b);
+  // CHECK: func3_ulong2(ulong2_b, sycl::ulong2(ulong2_b), (sycl::ulong2)ulong2_b);
   func3_ulong2(ulong2_b, ulong2(ulong2_b), (ulong2)ulong2_b);
-  // CHECK: cl::sycl::ulong2 *ulong2_e;
+  // CHECK: sycl::ulong2 *ulong2_e;
   ulong2 *ulong2_e;
-  // CHECK: cl::sycl::ulong2 *ulong2_f;
+  // CHECK: sycl::ulong2 *ulong2_f;
   ulong2 *ulong2_f;
   // CHECK: unsigned long ulong2_g = static_cast<unsigned long>(ulong2_c.x());
   unsigned long ulong2_g = ulong2_c.x;
@@ -2808,21 +2808,21 @@ int main_ulong2() {
   ulong2_a.x = ulong2_d.x;
   // CHECK: if (static_cast<unsigned long>(ulong2_b.x()) == static_cast<unsigned long>(ulong2_d.x())) {}
   if (ulong2_b.x == ulong2_d.x) {}
-  // CHECK: cl::sycl::ulong2 ulong2_h[16];
+  // CHECK: sycl::ulong2 ulong2_h[16];
   ulong2 ulong2_h[16];
-  // CHECK: cl::sycl::ulong2 ulong2_i[32];
+  // CHECK: sycl::ulong2 ulong2_i[32];
   ulong2 ulong2_i[32];
   // CHECK: if (static_cast<unsigned long>(ulong2_h[12].x()) == static_cast<unsigned long>(ulong2_i[12].x())) {}
   if (ulong2_h[12].x == ulong2_i[12].x) {}
-  // CHECK: ulong2_f = (cl::sycl::ulong2 *)ulong2_i;
+  // CHECK: ulong2_f = (sycl::ulong2 *)ulong2_i;
   ulong2_f = (ulong2 *)ulong2_i;
-  // CHECK: ulong2_a = (cl::sycl::ulong2)ulong2_c;
+  // CHECK: ulong2_a = (sycl::ulong2)ulong2_c;
   ulong2_a = (ulong2)ulong2_c;
-  // CHECK: ulong2_b = cl::sycl::ulong2(ulong2_b);
+  // CHECK: ulong2_b = sycl::ulong2(ulong2_b);
   ulong2_b = ulong2(ulong2_b);
-  // CHECK: cl::sycl::ulong2 ulong2_j, ulong2_k, ulong2_l, ulong2_m[16], *ulong2_n[32];
+  // CHECK: sycl::ulong2 ulong2_j, ulong2_k, ulong2_l, ulong2_m[16], *ulong2_n[32];
   ulong2 ulong2_j, ulong2_k, ulong2_l, ulong2_m[16], *ulong2_n[32];
-  // CHECK: int ulong2_o = sizeof(cl::sycl::ulong2);
+  // CHECK: int ulong2_o = sizeof(sycl::ulong2);
   int ulong2_o = sizeof(ulong2);
   // CHECK: int unsigned long_p = sizeof(unsigned long);
   int unsigned long_p = sizeof(unsigned long);
@@ -2832,17 +2832,17 @@ int main_ulong2() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulong2_e_buf_ct0 = dpct::get_buffer_and_offset(ulong2_e);
   // CHECK-NEXT:   size_t ulong2_e_offset_ct0 = ulong2_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulong2_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::ulong2 *)ulong2_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulong2_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::ulong2 *)ulong2_cast);
   // CHECK-NEXT:   size_t ulong2_cast_offset_ct1 = ulong2_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ulong2_e_acc_ct0 = ulong2_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto ulong2_cast_acc_ct1 = ulong2_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto ulong2_e_acc_ct0 = ulong2_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto ulong2_cast_acc_ct1 = ulong2_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulong2_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::ulong2 *ulong2_e_ct0 = (cl::sycl::ulong2 *)(&ulong2_e_acc_ct0[0] + ulong2_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::ulong2 *ulong2_cast_ct1 = (cl::sycl::ulong2 *)(&ulong2_cast_acc_ct1[0] + ulong2_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::ulong2 *ulong2_e_ct0 = (sycl::ulong2 *)(&ulong2_e_acc_ct0[0] + ulong2_e_offset_ct0);
+  // CHECK-NEXT:           sycl::ulong2 *ulong2_cast_ct1 = (sycl::ulong2 *)(&ulong2_cast_acc_ct1[0] + ulong2_cast_offset_ct1);
   // CHECK-NEXT:           kernel_ulong2(ulong2_e_ct0, ulong2_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2851,31 +2851,31 @@ int main_ulong2() {
   return 0;
 }
 
-// CHECK: void func3_ulong3(cl::sycl::ulong3 a, cl::sycl::ulong3 b, cl::sycl::ulong3 c) {
+// CHECK: void func3_ulong3(sycl::ulong3 a, sycl::ulong3 b, sycl::ulong3 c) {
 void func3_ulong3(ulong3 a, ulong3 b, ulong3 c) {
 }
-// CHECK: void func_ulong3(cl::sycl::ulong3 a) {
+// CHECK: void func_ulong3(sycl::ulong3 a) {
 void func_ulong3(ulong3 a) {
 }
-// CHECK: void kernel_ulong3(cl::sycl::ulong3 *a, cl::sycl::ulong3 *b) {
+// CHECK: void kernel_ulong3(sycl::ulong3 *a, sycl::ulong3 *b) {
 __global__ void kernel_ulong3(ulong3 *a, ulong3 *b) {
 }
 
 int main_ulong3() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::ulong3 ulong3_a;
+  // CHECK: sycl::ulong3 ulong3_a;
   ulong3 ulong3_a;
-  // CHECK: cl::sycl::ulong3 ulong3_b = cl::sycl::ulong3(1, 2, 3);
+  // CHECK: sycl::ulong3 ulong3_b = sycl::ulong3(1, 2, 3);
   ulong3 ulong3_b = make_ulong3(1, 2, 3);
-  // CHECK: cl::sycl::ulong3 ulong3_c = cl::sycl::ulong3(ulong3_b);
+  // CHECK: sycl::ulong3 ulong3_c = sycl::ulong3(ulong3_b);
   ulong3 ulong3_c = ulong3(ulong3_b);
-  // CHECK: cl::sycl::ulong3 ulong3_d(ulong3_c);
+  // CHECK: sycl::ulong3 ulong3_d(ulong3_c);
   ulong3 ulong3_d(ulong3_c);
-  // CHECK: func3_ulong3(ulong3_b, cl::sycl::ulong3(ulong3_b), (cl::sycl::ulong3)ulong3_b);
+  // CHECK: func3_ulong3(ulong3_b, sycl::ulong3(ulong3_b), (sycl::ulong3)ulong3_b);
   func3_ulong3(ulong3_b, ulong3(ulong3_b), (ulong3)ulong3_b);
-  // CHECK: cl::sycl::ulong3 *ulong3_e;
+  // CHECK: sycl::ulong3 *ulong3_e;
   ulong3 *ulong3_e;
-  // CHECK: cl::sycl::ulong3 *ulong3_f;
+  // CHECK: sycl::ulong3 *ulong3_f;
   ulong3 *ulong3_f;
   // CHECK: unsigned long ulong3_g = static_cast<unsigned long>(ulong3_c.x());
   unsigned long ulong3_g = ulong3_c.x;
@@ -2883,21 +2883,21 @@ int main_ulong3() {
   ulong3_a.x = ulong3_d.x;
   // CHECK: if (static_cast<unsigned long>(ulong3_b.x()) == static_cast<unsigned long>(ulong3_d.x())) {}
   if (ulong3_b.x == ulong3_d.x) {}
-  // CHECK: cl::sycl::ulong3 ulong3_h[16];
+  // CHECK: sycl::ulong3 ulong3_h[16];
   ulong3 ulong3_h[16];
-  // CHECK: cl::sycl::ulong3 ulong3_i[32];
+  // CHECK: sycl::ulong3 ulong3_i[32];
   ulong3 ulong3_i[32];
   // CHECK: if (static_cast<unsigned long>(ulong3_h[12].x()) == static_cast<unsigned long>(ulong3_i[12].x())) {}
   if (ulong3_h[12].x == ulong3_i[12].x) {}
-  // CHECK: ulong3_f = (cl::sycl::ulong3 *)ulong3_i;
+  // CHECK: ulong3_f = (sycl::ulong3 *)ulong3_i;
   ulong3_f = (ulong3 *)ulong3_i;
-  // CHECK: ulong3_a = (cl::sycl::ulong3)ulong3_c;
+  // CHECK: ulong3_a = (sycl::ulong3)ulong3_c;
   ulong3_a = (ulong3)ulong3_c;
-  // CHECK: ulong3_b = cl::sycl::ulong3(ulong3_b);
+  // CHECK: ulong3_b = sycl::ulong3(ulong3_b);
   ulong3_b = ulong3(ulong3_b);
-  // CHECK: cl::sycl::ulong3 ulong3_j, ulong3_k, ulong3_l, ulong3_m[16], *ulong3_n[32];
+  // CHECK: sycl::ulong3 ulong3_j, ulong3_k, ulong3_l, ulong3_m[16], *ulong3_n[32];
   ulong3 ulong3_j, ulong3_k, ulong3_l, ulong3_m[16], *ulong3_n[32];
-  // CHECK: int ulong3_o = sizeof(cl::sycl::ulong3);
+  // CHECK: int ulong3_o = sizeof(sycl::ulong3);
   int ulong3_o = sizeof(ulong3);
   // CHECK: int unsigned long_p = sizeof(unsigned long);
   int unsigned long_p = sizeof(unsigned long);
@@ -2907,17 +2907,17 @@ int main_ulong3() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulong3_e_buf_ct0 = dpct::get_buffer_and_offset(ulong3_e);
   // CHECK-NEXT:   size_t ulong3_e_offset_ct0 = ulong3_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulong3_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::ulong3 *)ulong3_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulong3_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::ulong3 *)ulong3_cast);
   // CHECK-NEXT:   size_t ulong3_cast_offset_ct1 = ulong3_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ulong3_e_acc_ct0 = ulong3_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto ulong3_cast_acc_ct1 = ulong3_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto ulong3_e_acc_ct0 = ulong3_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto ulong3_cast_acc_ct1 = ulong3_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulong3_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::ulong3 *ulong3_e_ct0 = (cl::sycl::ulong3 *)(&ulong3_e_acc_ct0[0] + ulong3_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::ulong3 *ulong3_cast_ct1 = (cl::sycl::ulong3 *)(&ulong3_cast_acc_ct1[0] + ulong3_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::ulong3 *ulong3_e_ct0 = (sycl::ulong3 *)(&ulong3_e_acc_ct0[0] + ulong3_e_offset_ct0);
+  // CHECK-NEXT:           sycl::ulong3 *ulong3_cast_ct1 = (sycl::ulong3 *)(&ulong3_cast_acc_ct1[0] + ulong3_cast_offset_ct1);
   // CHECK-NEXT:           kernel_ulong3(ulong3_e_ct0, ulong3_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -2926,31 +2926,31 @@ int main_ulong3() {
   return 0;
 }
 
-// CHECK: void func3_ulong4(cl::sycl::ulong4 a, cl::sycl::ulong4 b, cl::sycl::ulong4 c) {
+// CHECK: void func3_ulong4(sycl::ulong4 a, sycl::ulong4 b, sycl::ulong4 c) {
 void func3_ulong4(ulong4 a, ulong4 b, ulong4 c) {
 }
-// CHECK: void func_ulong4(cl::sycl::ulong4 a) {
+// CHECK: void func_ulong4(sycl::ulong4 a) {
 void func_ulong4(ulong4 a) {
 }
-// CHECK: void kernel_ulong4(cl::sycl::ulong4 *a, cl::sycl::ulong4 *b) {
+// CHECK: void kernel_ulong4(sycl::ulong4 *a, sycl::ulong4 *b) {
 __global__ void kernel_ulong4(ulong4 *a, ulong4 *b) {
 }
 
 int main_ulong4() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::ulong4 ulong4_a;
+  // CHECK: sycl::ulong4 ulong4_a;
   ulong4 ulong4_a;
-  // CHECK: cl::sycl::ulong4 ulong4_b = cl::sycl::ulong4(1, 2, 3, 4);
+  // CHECK: sycl::ulong4 ulong4_b = sycl::ulong4(1, 2, 3, 4);
   ulong4 ulong4_b = make_ulong4(1, 2, 3, 4);
-  // CHECK: cl::sycl::ulong4 ulong4_c = cl::sycl::ulong4(ulong4_b);
+  // CHECK: sycl::ulong4 ulong4_c = sycl::ulong4(ulong4_b);
   ulong4 ulong4_c = ulong4(ulong4_b);
-  // CHECK: cl::sycl::ulong4 ulong4_d(ulong4_c);
+  // CHECK: sycl::ulong4 ulong4_d(ulong4_c);
   ulong4 ulong4_d(ulong4_c);
-  // CHECK: func3_ulong4(ulong4_b, cl::sycl::ulong4(ulong4_b), (cl::sycl::ulong4)ulong4_b);
+  // CHECK: func3_ulong4(ulong4_b, sycl::ulong4(ulong4_b), (sycl::ulong4)ulong4_b);
   func3_ulong4(ulong4_b, ulong4(ulong4_b), (ulong4)ulong4_b);
-  // CHECK: cl::sycl::ulong4 *ulong4_e;
+  // CHECK: sycl::ulong4 *ulong4_e;
   ulong4 *ulong4_e;
-  // CHECK: cl::sycl::ulong4 *ulong4_f;
+  // CHECK: sycl::ulong4 *ulong4_f;
   ulong4 *ulong4_f;
   // CHECK: unsigned long ulong4_g = static_cast<unsigned long>(ulong4_c.x());
   unsigned long ulong4_g = ulong4_c.x;
@@ -2958,21 +2958,21 @@ int main_ulong4() {
   ulong4_a.x = ulong4_d.x;
   // CHECK: if (static_cast<unsigned long>(ulong4_b.x()) == static_cast<unsigned long>(ulong4_d.x())) {}
   if (ulong4_b.x == ulong4_d.x) {}
-  // CHECK: cl::sycl::ulong4 ulong4_h[16];
+  // CHECK: sycl::ulong4 ulong4_h[16];
   ulong4 ulong4_h[16];
-  // CHECK: cl::sycl::ulong4 ulong4_i[32];
+  // CHECK: sycl::ulong4 ulong4_i[32];
   ulong4 ulong4_i[32];
   // CHECK: if (static_cast<unsigned long>(ulong4_h[12].x()) == static_cast<unsigned long>(ulong4_i[12].x())) {}
   if (ulong4_h[12].x == ulong4_i[12].x) {}
-  // CHECK: ulong4_f = (cl::sycl::ulong4 *)ulong4_i;
+  // CHECK: ulong4_f = (sycl::ulong4 *)ulong4_i;
   ulong4_f = (ulong4 *)ulong4_i;
-  // CHECK: ulong4_a = (cl::sycl::ulong4)ulong4_c;
+  // CHECK: ulong4_a = (sycl::ulong4)ulong4_c;
   ulong4_a = (ulong4)ulong4_c;
-  // CHECK: ulong4_b = cl::sycl::ulong4(ulong4_b);
+  // CHECK: ulong4_b = sycl::ulong4(ulong4_b);
   ulong4_b = ulong4(ulong4_b);
-  // CHECK: cl::sycl::ulong4 ulong4_j, ulong4_k, ulong4_l, ulong4_m[16], *ulong4_n[32];
+  // CHECK: sycl::ulong4 ulong4_j, ulong4_k, ulong4_l, ulong4_m[16], *ulong4_n[32];
   ulong4 ulong4_j, ulong4_k, ulong4_l, ulong4_m[16], *ulong4_n[32];
-  // CHECK: int ulong4_o = sizeof(cl::sycl::ulong4);
+  // CHECK: int ulong4_o = sizeof(sycl::ulong4);
   int ulong4_o = sizeof(ulong4);
   // CHECK: int unsigned long_p = sizeof(unsigned long);
   int unsigned long_p = sizeof(unsigned long);
@@ -2982,17 +2982,17 @@ int main_ulong4() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulong4_e_buf_ct0 = dpct::get_buffer_and_offset(ulong4_e);
   // CHECK-NEXT:   size_t ulong4_e_offset_ct0 = ulong4_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulong4_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::ulong4 *)ulong4_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulong4_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::ulong4 *)ulong4_cast);
   // CHECK-NEXT:   size_t ulong4_cast_offset_ct1 = ulong4_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ulong4_e_acc_ct0 = ulong4_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto ulong4_cast_acc_ct1 = ulong4_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto ulong4_e_acc_ct0 = ulong4_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto ulong4_cast_acc_ct1 = ulong4_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulong4_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::ulong4 *ulong4_e_ct0 = (cl::sycl::ulong4 *)(&ulong4_e_acc_ct0[0] + ulong4_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::ulong4 *ulong4_cast_ct1 = (cl::sycl::ulong4 *)(&ulong4_cast_acc_ct1[0] + ulong4_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::ulong4 *ulong4_e_ct0 = (sycl::ulong4 *)(&ulong4_e_acc_ct0[0] + ulong4_e_offset_ct0);
+  // CHECK-NEXT:           sycl::ulong4 *ulong4_cast_ct1 = (sycl::ulong4 *)(&ulong4_cast_acc_ct1[0] + ulong4_cast_offset_ct1);
   // CHECK-NEXT:           kernel_ulong4(ulong4_e_ct0, ulong4_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -3060,12 +3060,12 @@ int main_ulonglong1() {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulonglong1_cast_buf_ct1 = dpct::get_buffer_and_offset((unsigned long long *)ulonglong1_cast);
   // CHECK-NEXT:   size_t ulonglong1_cast_offset_ct1 = ulonglong1_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ulonglong1_e_acc_ct0 = ulonglong1_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto ulonglong1_cast_acc_ct1 = ulonglong1_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto ulonglong1_e_acc_ct0 = ulonglong1_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto ulonglong1_cast_acc_ct1 = ulonglong1_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong1_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           unsigned long long *ulonglong1_e_ct0 = (unsigned long long *)(&ulonglong1_e_acc_ct0[0] + ulonglong1_e_offset_ct0);
   // CHECK-NEXT:           unsigned long long *ulonglong1_cast_ct1 = (unsigned long long *)(&ulonglong1_cast_acc_ct1[0] + ulonglong1_cast_offset_ct1);
   // CHECK-NEXT:           kernel_ulonglong1(ulonglong1_e_ct0, ulonglong1_cast_ct1);
@@ -3076,31 +3076,31 @@ int main_ulonglong1() {
   return 0;
 }
 
-// CHECK: void func3_ulonglong2(cl::sycl::ulonglong2 a, cl::sycl::ulonglong2 b, cl::sycl::ulonglong2 c) {
+// CHECK: void func3_ulonglong2(sycl::ulonglong2 a, sycl::ulonglong2 b, sycl::ulonglong2 c) {
 void func3_ulonglong2(ulonglong2 a, ulonglong2 b, ulonglong2 c) {
 }
-// CHECK: void func_ulonglong2(cl::sycl::ulonglong2 a) {
+// CHECK: void func_ulonglong2(sycl::ulonglong2 a) {
 void func_ulonglong2(ulonglong2 a) {
 }
-// CHECK: void kernel_ulonglong2(cl::sycl::ulonglong2 *a, cl::sycl::ulonglong2 *b) {
+// CHECK: void kernel_ulonglong2(sycl::ulonglong2 *a, sycl::ulonglong2 *b) {
 __global__ void kernel_ulonglong2(ulonglong2 *a, ulonglong2 *b) {
 }
 
 int main_ulonglong2() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::ulonglong2 ulonglong2_a;
+  // CHECK: sycl::ulonglong2 ulonglong2_a;
   ulonglong2 ulonglong2_a;
-  // CHECK: cl::sycl::ulonglong2 ulonglong2_b = cl::sycl::ulonglong2(1, 2);
+  // CHECK: sycl::ulonglong2 ulonglong2_b = sycl::ulonglong2(1, 2);
   ulonglong2 ulonglong2_b = make_ulonglong2(1, 2);
-  // CHECK: cl::sycl::ulonglong2 ulonglong2_c = cl::sycl::ulonglong2(ulonglong2_b);
+  // CHECK: sycl::ulonglong2 ulonglong2_c = sycl::ulonglong2(ulonglong2_b);
   ulonglong2 ulonglong2_c = ulonglong2(ulonglong2_b);
-  // CHECK: cl::sycl::ulonglong2 ulonglong2_d(ulonglong2_c);
+  // CHECK: sycl::ulonglong2 ulonglong2_d(ulonglong2_c);
   ulonglong2 ulonglong2_d(ulonglong2_c);
-  // CHECK: func3_ulonglong2(ulonglong2_b, cl::sycl::ulonglong2(ulonglong2_b), (cl::sycl::ulonglong2)ulonglong2_b);
+  // CHECK: func3_ulonglong2(ulonglong2_b, sycl::ulonglong2(ulonglong2_b), (sycl::ulonglong2)ulonglong2_b);
   func3_ulonglong2(ulonglong2_b, ulonglong2(ulonglong2_b), (ulonglong2)ulonglong2_b);
-  // CHECK: cl::sycl::ulonglong2 *ulonglong2_e;
+  // CHECK: sycl::ulonglong2 *ulonglong2_e;
   ulonglong2 *ulonglong2_e;
-  // CHECK: cl::sycl::ulonglong2 *ulonglong2_f;
+  // CHECK: sycl::ulonglong2 *ulonglong2_f;
   ulonglong2 *ulonglong2_f;
   // CHECK: unsigned long long ulonglong2_g = static_cast<unsigned long long>(ulonglong2_c.x());
   unsigned long long ulonglong2_g = ulonglong2_c.x;
@@ -3108,21 +3108,21 @@ int main_ulonglong2() {
   ulonglong2_a.x = ulonglong2_d.x;
   // CHECK: if (static_cast<unsigned long long>(ulonglong2_b.x()) == static_cast<unsigned long long>(ulonglong2_d.x())) {}
   if (ulonglong2_b.x == ulonglong2_d.x) {}
-  // CHECK: cl::sycl::ulonglong2 ulonglong2_h[16];
+  // CHECK: sycl::ulonglong2 ulonglong2_h[16];
   ulonglong2 ulonglong2_h[16];
-  // CHECK: cl::sycl::ulonglong2 ulonglong2_i[32];
+  // CHECK: sycl::ulonglong2 ulonglong2_i[32];
   ulonglong2 ulonglong2_i[32];
   // CHECK: if (static_cast<unsigned long long>(ulonglong2_h[12].x()) == static_cast<unsigned long long>(ulonglong2_i[12].x())) {}
   if (ulonglong2_h[12].x == ulonglong2_i[12].x) {}
-  // CHECK: ulonglong2_f = (cl::sycl::ulonglong2 *)ulonglong2_i;
+  // CHECK: ulonglong2_f = (sycl::ulonglong2 *)ulonglong2_i;
   ulonglong2_f = (ulonglong2 *)ulonglong2_i;
-  // CHECK: ulonglong2_a = (cl::sycl::ulonglong2)ulonglong2_c;
+  // CHECK: ulonglong2_a = (sycl::ulonglong2)ulonglong2_c;
   ulonglong2_a = (ulonglong2)ulonglong2_c;
-  // CHECK: ulonglong2_b = cl::sycl::ulonglong2(ulonglong2_b);
+  // CHECK: ulonglong2_b = sycl::ulonglong2(ulonglong2_b);
   ulonglong2_b = ulonglong2(ulonglong2_b);
-  // CHECK: cl::sycl::ulonglong2 ulonglong2_j, ulonglong2_k, ulonglong2_l, ulonglong2_m[16], *ulonglong2_n[32];
+  // CHECK: sycl::ulonglong2 ulonglong2_j, ulonglong2_k, ulonglong2_l, ulonglong2_m[16], *ulonglong2_n[32];
   ulonglong2 ulonglong2_j, ulonglong2_k, ulonglong2_l, ulonglong2_m[16], *ulonglong2_n[32];
-  // CHECK: int ulonglong2_o = sizeof(cl::sycl::ulonglong2);
+  // CHECK: int ulonglong2_o = sizeof(sycl::ulonglong2);
   int ulonglong2_o = sizeof(ulonglong2);
   // CHECK: int unsigned long long_p = sizeof(unsigned long long);
   int unsigned long long_p = sizeof(unsigned long long);
@@ -3132,17 +3132,17 @@ int main_ulonglong2() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulonglong2_e_buf_ct0 = dpct::get_buffer_and_offset(ulonglong2_e);
   // CHECK-NEXT:   size_t ulonglong2_e_offset_ct0 = ulonglong2_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulonglong2_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::ulonglong2 *)ulonglong2_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulonglong2_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::ulonglong2 *)ulonglong2_cast);
   // CHECK-NEXT:   size_t ulonglong2_cast_offset_ct1 = ulonglong2_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ulonglong2_e_acc_ct0 = ulonglong2_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto ulonglong2_cast_acc_ct1 = ulonglong2_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto ulonglong2_e_acc_ct0 = ulonglong2_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto ulonglong2_cast_acc_ct1 = ulonglong2_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong2_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::ulonglong2 *ulonglong2_e_ct0 = (cl::sycl::ulonglong2 *)(&ulonglong2_e_acc_ct0[0] + ulonglong2_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::ulonglong2 *ulonglong2_cast_ct1 = (cl::sycl::ulonglong2 *)(&ulonglong2_cast_acc_ct1[0] + ulonglong2_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::ulonglong2 *ulonglong2_e_ct0 = (sycl::ulonglong2 *)(&ulonglong2_e_acc_ct0[0] + ulonglong2_e_offset_ct0);
+  // CHECK-NEXT:           sycl::ulonglong2 *ulonglong2_cast_ct1 = (sycl::ulonglong2 *)(&ulonglong2_cast_acc_ct1[0] + ulonglong2_cast_offset_ct1);
   // CHECK-NEXT:           kernel_ulonglong2(ulonglong2_e_ct0, ulonglong2_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -3151,31 +3151,31 @@ int main_ulonglong2() {
   return 0;
 }
 
-// CHECK: void func3_ulonglong3(cl::sycl::ulonglong3 a, cl::sycl::ulonglong3 b, cl::sycl::ulonglong3 c) {
+// CHECK: void func3_ulonglong3(sycl::ulonglong3 a, sycl::ulonglong3 b, sycl::ulonglong3 c) {
 void func3_ulonglong3(ulonglong3 a, ulonglong3 b, ulonglong3 c) {
 }
-// CHECK: void func_ulonglong3(cl::sycl::ulonglong3 a) {
+// CHECK: void func_ulonglong3(sycl::ulonglong3 a) {
 void func_ulonglong3(ulonglong3 a) {
 }
-// CHECK: void kernel_ulonglong3(cl::sycl::ulonglong3 *a, cl::sycl::ulonglong3 *b) {
+// CHECK: void kernel_ulonglong3(sycl::ulonglong3 *a, sycl::ulonglong3 *b) {
 __global__ void kernel_ulonglong3(ulonglong3 *a, ulonglong3 *b) {
 }
 
 int main_ulonglong3() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::ulonglong3 ulonglong3_a;
+  // CHECK: sycl::ulonglong3 ulonglong3_a;
   ulonglong3 ulonglong3_a;
-  // CHECK: cl::sycl::ulonglong3 ulonglong3_b = cl::sycl::ulonglong3(1, 2, 3);
+  // CHECK: sycl::ulonglong3 ulonglong3_b = sycl::ulonglong3(1, 2, 3);
   ulonglong3 ulonglong3_b = make_ulonglong3(1, 2, 3);
-  // CHECK: cl::sycl::ulonglong3 ulonglong3_c = cl::sycl::ulonglong3(ulonglong3_b);
+  // CHECK: sycl::ulonglong3 ulonglong3_c = sycl::ulonglong3(ulonglong3_b);
   ulonglong3 ulonglong3_c = ulonglong3(ulonglong3_b);
-  // CHECK: cl::sycl::ulonglong3 ulonglong3_d(ulonglong3_c);
+  // CHECK: sycl::ulonglong3 ulonglong3_d(ulonglong3_c);
   ulonglong3 ulonglong3_d(ulonglong3_c);
-  // CHECK: func3_ulonglong3(ulonglong3_b, cl::sycl::ulonglong3(ulonglong3_b), (cl::sycl::ulonglong3)ulonglong3_b);
+  // CHECK: func3_ulonglong3(ulonglong3_b, sycl::ulonglong3(ulonglong3_b), (sycl::ulonglong3)ulonglong3_b);
   func3_ulonglong3(ulonglong3_b, ulonglong3(ulonglong3_b), (ulonglong3)ulonglong3_b);
-  // CHECK: cl::sycl::ulonglong3 *ulonglong3_e;
+  // CHECK: sycl::ulonglong3 *ulonglong3_e;
   ulonglong3 *ulonglong3_e;
-  // CHECK: cl::sycl::ulonglong3 *ulonglong3_f;
+  // CHECK: sycl::ulonglong3 *ulonglong3_f;
   ulonglong3 *ulonglong3_f;
   // CHECK: unsigned long long ulonglong3_g = static_cast<unsigned long long>(ulonglong3_c.x());
   unsigned long long ulonglong3_g = ulonglong3_c.x;
@@ -3183,21 +3183,21 @@ int main_ulonglong3() {
   ulonglong3_a.x = ulonglong3_d.x;
   // CHECK: if (static_cast<unsigned long long>(ulonglong3_b.x()) == static_cast<unsigned long long>(ulonglong3_d.x())) {}
   if (ulonglong3_b.x == ulonglong3_d.x) {}
-  // CHECK: cl::sycl::ulonglong3 ulonglong3_h[16];
+  // CHECK: sycl::ulonglong3 ulonglong3_h[16];
   ulonglong3 ulonglong3_h[16];
-  // CHECK: cl::sycl::ulonglong3 ulonglong3_i[32];
+  // CHECK: sycl::ulonglong3 ulonglong3_i[32];
   ulonglong3 ulonglong3_i[32];
   // CHECK: if (static_cast<unsigned long long>(ulonglong3_h[12].x()) == static_cast<unsigned long long>(ulonglong3_i[12].x())) {}
   if (ulonglong3_h[12].x == ulonglong3_i[12].x) {}
-  // CHECK: ulonglong3_f = (cl::sycl::ulonglong3 *)ulonglong3_i;
+  // CHECK: ulonglong3_f = (sycl::ulonglong3 *)ulonglong3_i;
   ulonglong3_f = (ulonglong3 *)ulonglong3_i;
-  // CHECK: ulonglong3_a = (cl::sycl::ulonglong3)ulonglong3_c;
+  // CHECK: ulonglong3_a = (sycl::ulonglong3)ulonglong3_c;
   ulonglong3_a = (ulonglong3)ulonglong3_c;
-  // CHECK: ulonglong3_b = cl::sycl::ulonglong3(ulonglong3_b);
+  // CHECK: ulonglong3_b = sycl::ulonglong3(ulonglong3_b);
   ulonglong3_b = ulonglong3(ulonglong3_b);
-  // CHECK: cl::sycl::ulonglong3 ulonglong3_j, ulonglong3_k, ulonglong3_l, ulonglong3_m[16], *ulonglong3_n[32];
+  // CHECK: sycl::ulonglong3 ulonglong3_j, ulonglong3_k, ulonglong3_l, ulonglong3_m[16], *ulonglong3_n[32];
   ulonglong3 ulonglong3_j, ulonglong3_k, ulonglong3_l, ulonglong3_m[16], *ulonglong3_n[32];
-  // CHECK: int ulonglong3_o = sizeof(cl::sycl::ulonglong3);
+  // CHECK: int ulonglong3_o = sizeof(sycl::ulonglong3);
   int ulonglong3_o = sizeof(ulonglong3);
   // CHECK: int unsigned long long_p = sizeof(unsigned long long);
   int unsigned long long_p = sizeof(unsigned long long);
@@ -3207,17 +3207,17 @@ int main_ulonglong3() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulonglong3_e_buf_ct0 = dpct::get_buffer_and_offset(ulonglong3_e);
   // CHECK-NEXT:   size_t ulonglong3_e_offset_ct0 = ulonglong3_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulonglong3_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::ulonglong3 *)ulonglong3_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulonglong3_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::ulonglong3 *)ulonglong3_cast);
   // CHECK-NEXT:   size_t ulonglong3_cast_offset_ct1 = ulonglong3_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ulonglong3_e_acc_ct0 = ulonglong3_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto ulonglong3_cast_acc_ct1 = ulonglong3_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto ulonglong3_e_acc_ct0 = ulonglong3_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto ulonglong3_cast_acc_ct1 = ulonglong3_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong3_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::ulonglong3 *ulonglong3_e_ct0 = (cl::sycl::ulonglong3 *)(&ulonglong3_e_acc_ct0[0] + ulonglong3_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::ulonglong3 *ulonglong3_cast_ct1 = (cl::sycl::ulonglong3 *)(&ulonglong3_cast_acc_ct1[0] + ulonglong3_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::ulonglong3 *ulonglong3_e_ct0 = (sycl::ulonglong3 *)(&ulonglong3_e_acc_ct0[0] + ulonglong3_e_offset_ct0);
+  // CHECK-NEXT:           sycl::ulonglong3 *ulonglong3_cast_ct1 = (sycl::ulonglong3 *)(&ulonglong3_cast_acc_ct1[0] + ulonglong3_cast_offset_ct1);
   // CHECK-NEXT:           kernel_ulonglong3(ulonglong3_e_ct0, ulonglong3_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -3226,31 +3226,31 @@ int main_ulonglong3() {
   return 0;
 }
 
-// CHECK: void func3_ulonglong4(cl::sycl::ulonglong4 a, cl::sycl::ulonglong4 b, cl::sycl::ulonglong4 c) {
+// CHECK: void func3_ulonglong4(sycl::ulonglong4 a, sycl::ulonglong4 b, sycl::ulonglong4 c) {
 void func3_ulonglong4(ulonglong4 a, ulonglong4 b, ulonglong4 c) {
 }
-// CHECK: void func_ulonglong4(cl::sycl::ulonglong4 a) {
+// CHECK: void func_ulonglong4(sycl::ulonglong4 a) {
 void func_ulonglong4(ulonglong4 a) {
 }
-// CHECK: void kernel_ulonglong4(cl::sycl::ulonglong4 *a, cl::sycl::ulonglong4 *b) {
+// CHECK: void kernel_ulonglong4(sycl::ulonglong4 *a, sycl::ulonglong4 *b) {
 __global__ void kernel_ulonglong4(ulonglong4 *a, ulonglong4 *b) {
 }
 
 int main_ulonglong4() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::ulonglong4 ulonglong4_a;
+  // CHECK: sycl::ulonglong4 ulonglong4_a;
   ulonglong4 ulonglong4_a;
-  // CHECK: cl::sycl::ulonglong4 ulonglong4_b = cl::sycl::ulonglong4(1, 2, 3, 4);
+  // CHECK: sycl::ulonglong4 ulonglong4_b = sycl::ulonglong4(1, 2, 3, 4);
   ulonglong4 ulonglong4_b = make_ulonglong4(1, 2, 3, 4);
-  // CHECK: cl::sycl::ulonglong4 ulonglong4_c = cl::sycl::ulonglong4(ulonglong4_b);
+  // CHECK: sycl::ulonglong4 ulonglong4_c = sycl::ulonglong4(ulonglong4_b);
   ulonglong4 ulonglong4_c = ulonglong4(ulonglong4_b);
-  // CHECK: cl::sycl::ulonglong4 ulonglong4_d(ulonglong4_c);
+  // CHECK: sycl::ulonglong4 ulonglong4_d(ulonglong4_c);
   ulonglong4 ulonglong4_d(ulonglong4_c);
-  // CHECK: func3_ulonglong4(ulonglong4_b, cl::sycl::ulonglong4(ulonglong4_b), (cl::sycl::ulonglong4)ulonglong4_b);
+  // CHECK: func3_ulonglong4(ulonglong4_b, sycl::ulonglong4(ulonglong4_b), (sycl::ulonglong4)ulonglong4_b);
   func3_ulonglong4(ulonglong4_b, ulonglong4(ulonglong4_b), (ulonglong4)ulonglong4_b);
-  // CHECK: cl::sycl::ulonglong4 *ulonglong4_e;
+  // CHECK: sycl::ulonglong4 *ulonglong4_e;
   ulonglong4 *ulonglong4_e;
-  // CHECK: cl::sycl::ulonglong4 *ulonglong4_f;
+  // CHECK: sycl::ulonglong4 *ulonglong4_f;
   ulonglong4 *ulonglong4_f;
   // CHECK: unsigned long long ulonglong4_g = static_cast<unsigned long long>(ulonglong4_c.x());
   unsigned long long ulonglong4_g = ulonglong4_c.x;
@@ -3258,21 +3258,21 @@ int main_ulonglong4() {
   ulonglong4_a.x = ulonglong4_d.x;
   // CHECK: if (static_cast<unsigned long long>(ulonglong4_b.x()) == static_cast<unsigned long long>(ulonglong4_d.x())) {}
   if (ulonglong4_b.x == ulonglong4_d.x) {}
-  // CHECK: cl::sycl::ulonglong4 ulonglong4_h[16];
+  // CHECK: sycl::ulonglong4 ulonglong4_h[16];
   ulonglong4 ulonglong4_h[16];
-  // CHECK: cl::sycl::ulonglong4 ulonglong4_i[32];
+  // CHECK: sycl::ulonglong4 ulonglong4_i[32];
   ulonglong4 ulonglong4_i[32];
   // CHECK: if (static_cast<unsigned long long>(ulonglong4_h[12].x()) == static_cast<unsigned long long>(ulonglong4_i[12].x())) {}
   if (ulonglong4_h[12].x == ulonglong4_i[12].x) {}
-  // CHECK: ulonglong4_f = (cl::sycl::ulonglong4 *)ulonglong4_i;
+  // CHECK: ulonglong4_f = (sycl::ulonglong4 *)ulonglong4_i;
   ulonglong4_f = (ulonglong4 *)ulonglong4_i;
-  // CHECK: ulonglong4_a = (cl::sycl::ulonglong4)ulonglong4_c;
+  // CHECK: ulonglong4_a = (sycl::ulonglong4)ulonglong4_c;
   ulonglong4_a = (ulonglong4)ulonglong4_c;
-  // CHECK: ulonglong4_b = cl::sycl::ulonglong4(ulonglong4_b);
+  // CHECK: ulonglong4_b = sycl::ulonglong4(ulonglong4_b);
   ulonglong4_b = ulonglong4(ulonglong4_b);
-  // CHECK: cl::sycl::ulonglong4 ulonglong4_j, ulonglong4_k, ulonglong4_l, ulonglong4_m[16], *ulonglong4_n[32];
+  // CHECK: sycl::ulonglong4 ulonglong4_j, ulonglong4_k, ulonglong4_l, ulonglong4_m[16], *ulonglong4_n[32];
   ulonglong4 ulonglong4_j, ulonglong4_k, ulonglong4_l, ulonglong4_m[16], *ulonglong4_n[32];
-  // CHECK: int ulonglong4_o = sizeof(cl::sycl::ulonglong4);
+  // CHECK: int ulonglong4_o = sizeof(sycl::ulonglong4);
   int ulonglong4_o = sizeof(ulonglong4);
   // CHECK: int unsigned long long_p = sizeof(unsigned long long);
   int unsigned long long_p = sizeof(unsigned long long);
@@ -3282,17 +3282,17 @@ int main_ulonglong4() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulonglong4_e_buf_ct0 = dpct::get_buffer_and_offset(ulonglong4_e);
   // CHECK-NEXT:   size_t ulonglong4_e_offset_ct0 = ulonglong4_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulonglong4_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::ulonglong4 *)ulonglong4_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ulonglong4_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::ulonglong4 *)ulonglong4_cast);
   // CHECK-NEXT:   size_t ulonglong4_cast_offset_ct1 = ulonglong4_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ulonglong4_e_acc_ct0 = ulonglong4_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto ulonglong4_cast_acc_ct1 = ulonglong4_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto ulonglong4_e_acc_ct0 = ulonglong4_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto ulonglong4_cast_acc_ct1 = ulonglong4_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong4_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::ulonglong4 *ulonglong4_e_ct0 = (cl::sycl::ulonglong4 *)(&ulonglong4_e_acc_ct0[0] + ulonglong4_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::ulonglong4 *ulonglong4_cast_ct1 = (cl::sycl::ulonglong4 *)(&ulonglong4_cast_acc_ct1[0] + ulonglong4_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::ulonglong4 *ulonglong4_e_ct0 = (sycl::ulonglong4 *)(&ulonglong4_e_acc_ct0[0] + ulonglong4_e_offset_ct0);
+  // CHECK-NEXT:           sycl::ulonglong4 *ulonglong4_cast_ct1 = (sycl::ulonglong4 *)(&ulonglong4_cast_acc_ct1[0] + ulonglong4_cast_offset_ct1);
   // CHECK-NEXT:           kernel_ulonglong4(ulonglong4_e_ct0, ulonglong4_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -3360,12 +3360,12 @@ int main_ushort1() {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ushort1_cast_buf_ct1 = dpct::get_buffer_and_offset((unsigned short *)ushort1_cast);
   // CHECK-NEXT:   size_t ushort1_cast_offset_ct1 = ushort1_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ushort1_e_acc_ct0 = ushort1_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto ushort1_cast_acc_ct1 = ushort1_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto ushort1_e_acc_ct0 = ushort1_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto ushort1_cast_acc_ct1 = ushort1_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ushort1_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           unsigned short *ushort1_e_ct0 = (unsigned short *)(&ushort1_e_acc_ct0[0] + ushort1_e_offset_ct0);
   // CHECK-NEXT:           unsigned short *ushort1_cast_ct1 = (unsigned short *)(&ushort1_cast_acc_ct1[0] + ushort1_cast_offset_ct1);
   // CHECK-NEXT:           kernel_ushort1(ushort1_e_ct0, ushort1_cast_ct1);
@@ -3376,31 +3376,31 @@ int main_ushort1() {
   return 0;
 }
 
-// CHECK: void func3_ushort2(cl::sycl::ushort2 a, cl::sycl::ushort2 b, cl::sycl::ushort2 c) {
+// CHECK: void func3_ushort2(sycl::ushort2 a, sycl::ushort2 b, sycl::ushort2 c) {
 void func3_ushort2(ushort2 a, ushort2 b, ushort2 c) {
 }
-// CHECK: void func_ushort2(cl::sycl::ushort2 a) {
+// CHECK: void func_ushort2(sycl::ushort2 a) {
 void func_ushort2(ushort2 a) {
 }
-// CHECK: void kernel_ushort2(cl::sycl::ushort2 *a, cl::sycl::ushort2 *b) {
+// CHECK: void kernel_ushort2(sycl::ushort2 *a, sycl::ushort2 *b) {
 __global__ void kernel_ushort2(ushort2 *a, ushort2 *b) {
 }
 
 int main_ushort2() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::ushort2 ushort2_a;
+  // CHECK: sycl::ushort2 ushort2_a;
   ushort2 ushort2_a;
-  // CHECK: cl::sycl::ushort2 ushort2_b = cl::sycl::ushort2(1, 2);
+  // CHECK: sycl::ushort2 ushort2_b = sycl::ushort2(1, 2);
   ushort2 ushort2_b = make_ushort2(1, 2);
-  // CHECK: cl::sycl::ushort2 ushort2_c = cl::sycl::ushort2(ushort2_b);
+  // CHECK: sycl::ushort2 ushort2_c = sycl::ushort2(ushort2_b);
   ushort2 ushort2_c = ushort2(ushort2_b);
-  // CHECK: cl::sycl::ushort2 ushort2_d(ushort2_c);
+  // CHECK: sycl::ushort2 ushort2_d(ushort2_c);
   ushort2 ushort2_d(ushort2_c);
-  // CHECK: func3_ushort2(ushort2_b, cl::sycl::ushort2(ushort2_b), (cl::sycl::ushort2)ushort2_b);
+  // CHECK: func3_ushort2(ushort2_b, sycl::ushort2(ushort2_b), (sycl::ushort2)ushort2_b);
   func3_ushort2(ushort2_b, ushort2(ushort2_b), (ushort2)ushort2_b);
-  // CHECK: cl::sycl::ushort2 *ushort2_e;
+  // CHECK: sycl::ushort2 *ushort2_e;
   ushort2 *ushort2_e;
-  // CHECK: cl::sycl::ushort2 *ushort2_f;
+  // CHECK: sycl::ushort2 *ushort2_f;
   ushort2 *ushort2_f;
   // CHECK: unsigned short ushort2_g = static_cast<unsigned short>(ushort2_c.x());
   unsigned short ushort2_g = ushort2_c.x;
@@ -3408,21 +3408,21 @@ int main_ushort2() {
   ushort2_a.x = ushort2_d.x;
   // CHECK: if (static_cast<unsigned short>(ushort2_b.x()) == static_cast<unsigned short>(ushort2_d.x())) {}
   if (ushort2_b.x == ushort2_d.x) {}
-  // CHECK: cl::sycl::ushort2 ushort2_h[16];
+  // CHECK: sycl::ushort2 ushort2_h[16];
   ushort2 ushort2_h[16];
-  // CHECK: cl::sycl::ushort2 ushort2_i[32];
+  // CHECK: sycl::ushort2 ushort2_i[32];
   ushort2 ushort2_i[32];
   // CHECK: if (static_cast<unsigned short>(ushort2_h[12].x()) == static_cast<unsigned short>(ushort2_i[12].x())) {}
   if (ushort2_h[12].x == ushort2_i[12].x) {}
-  // CHECK: ushort2_f = (cl::sycl::ushort2 *)ushort2_i;
+  // CHECK: ushort2_f = (sycl::ushort2 *)ushort2_i;
   ushort2_f = (ushort2 *)ushort2_i;
-  // CHECK: ushort2_a = (cl::sycl::ushort2)ushort2_c;
+  // CHECK: ushort2_a = (sycl::ushort2)ushort2_c;
   ushort2_a = (ushort2)ushort2_c;
-  // CHECK: ushort2_b = cl::sycl::ushort2(ushort2_b);
+  // CHECK: ushort2_b = sycl::ushort2(ushort2_b);
   ushort2_b = ushort2(ushort2_b);
-  // CHECK: cl::sycl::ushort2 ushort2_j, ushort2_k, ushort2_l, ushort2_m[16], *ushort2_n[32];
+  // CHECK: sycl::ushort2 ushort2_j, ushort2_k, ushort2_l, ushort2_m[16], *ushort2_n[32];
   ushort2 ushort2_j, ushort2_k, ushort2_l, ushort2_m[16], *ushort2_n[32];
-  // CHECK: int ushort2_o = sizeof(cl::sycl::ushort2);
+  // CHECK: int ushort2_o = sizeof(sycl::ushort2);
   int ushort2_o = sizeof(ushort2);
   // CHECK: int unsigned short_p = sizeof(unsigned short);
   int unsigned short_p = sizeof(unsigned short);
@@ -3432,17 +3432,17 @@ int main_ushort2() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ushort2_e_buf_ct0 = dpct::get_buffer_and_offset(ushort2_e);
   // CHECK-NEXT:   size_t ushort2_e_offset_ct0 = ushort2_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ushort2_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::ushort2 *)ushort2_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ushort2_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::ushort2 *)ushort2_cast);
   // CHECK-NEXT:   size_t ushort2_cast_offset_ct1 = ushort2_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ushort2_e_acc_ct0 = ushort2_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto ushort2_cast_acc_ct1 = ushort2_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto ushort2_e_acc_ct0 = ushort2_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto ushort2_cast_acc_ct1 = ushort2_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ushort2_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::ushort2 *ushort2_e_ct0 = (cl::sycl::ushort2 *)(&ushort2_e_acc_ct0[0] + ushort2_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::ushort2 *ushort2_cast_ct1 = (cl::sycl::ushort2 *)(&ushort2_cast_acc_ct1[0] + ushort2_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::ushort2 *ushort2_e_ct0 = (sycl::ushort2 *)(&ushort2_e_acc_ct0[0] + ushort2_e_offset_ct0);
+  // CHECK-NEXT:           sycl::ushort2 *ushort2_cast_ct1 = (sycl::ushort2 *)(&ushort2_cast_acc_ct1[0] + ushort2_cast_offset_ct1);
   // CHECK-NEXT:           kernel_ushort2(ushort2_e_ct0, ushort2_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -3451,31 +3451,31 @@ int main_ushort2() {
   return 0;
 }
 
-// CHECK: void func3_ushort3(cl::sycl::ushort3 a, cl::sycl::ushort3 b, cl::sycl::ushort3 c) {
+// CHECK: void func3_ushort3(sycl::ushort3 a, sycl::ushort3 b, sycl::ushort3 c) {
 void func3_ushort3(ushort3 a, ushort3 b, ushort3 c) {
 }
-// CHECK: void func_ushort3(cl::sycl::ushort3 a) {
+// CHECK: void func_ushort3(sycl::ushort3 a) {
 void func_ushort3(ushort3 a) {
 }
-// CHECK: void kernel_ushort3(cl::sycl::ushort3 *a, cl::sycl::ushort3 *b) {
+// CHECK: void kernel_ushort3(sycl::ushort3 *a, sycl::ushort3 *b) {
 __global__ void kernel_ushort3(ushort3 *a, ushort3 *b) {
 }
 
 int main_ushort3() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::ushort3 ushort3_a;
+  // CHECK: sycl::ushort3 ushort3_a;
   ushort3 ushort3_a;
-  // CHECK: cl::sycl::ushort3 ushort3_b = cl::sycl::ushort3(1, 2, 3);
+  // CHECK: sycl::ushort3 ushort3_b = sycl::ushort3(1, 2, 3);
   ushort3 ushort3_b = make_ushort3(1, 2, 3);
-  // CHECK: cl::sycl::ushort3 ushort3_c = cl::sycl::ushort3(ushort3_b);
+  // CHECK: sycl::ushort3 ushort3_c = sycl::ushort3(ushort3_b);
   ushort3 ushort3_c = ushort3(ushort3_b);
-  // CHECK: cl::sycl::ushort3 ushort3_d(ushort3_c);
+  // CHECK: sycl::ushort3 ushort3_d(ushort3_c);
   ushort3 ushort3_d(ushort3_c);
-  // CHECK: func3_ushort3(ushort3_b, cl::sycl::ushort3(ushort3_b), (cl::sycl::ushort3)ushort3_b);
+  // CHECK: func3_ushort3(ushort3_b, sycl::ushort3(ushort3_b), (sycl::ushort3)ushort3_b);
   func3_ushort3(ushort3_b, ushort3(ushort3_b), (ushort3)ushort3_b);
-  // CHECK: cl::sycl::ushort3 *ushort3_e;
+  // CHECK: sycl::ushort3 *ushort3_e;
   ushort3 *ushort3_e;
-  // CHECK: cl::sycl::ushort3 *ushort3_f;
+  // CHECK: sycl::ushort3 *ushort3_f;
   ushort3 *ushort3_f;
   // CHECK: unsigned short ushort3_g = static_cast<unsigned short>(ushort3_c.x());
   unsigned short ushort3_g = ushort3_c.x;
@@ -3483,21 +3483,21 @@ int main_ushort3() {
   ushort3_a.x = ushort3_d.x;
   // CHECK: if (static_cast<unsigned short>(ushort3_b.x()) == static_cast<unsigned short>(ushort3_d.x())) {}
   if (ushort3_b.x == ushort3_d.x) {}
-  // CHECK: cl::sycl::ushort3 ushort3_h[16];
+  // CHECK: sycl::ushort3 ushort3_h[16];
   ushort3 ushort3_h[16];
-  // CHECK: cl::sycl::ushort3 ushort3_i[32];
+  // CHECK: sycl::ushort3 ushort3_i[32];
   ushort3 ushort3_i[32];
   // CHECK: if (static_cast<unsigned short>(ushort3_h[12].x()) == static_cast<unsigned short>(ushort3_i[12].x())) {}
   if (ushort3_h[12].x == ushort3_i[12].x) {}
-  // CHECK: ushort3_f = (cl::sycl::ushort3 *)ushort3_i;
+  // CHECK: ushort3_f = (sycl::ushort3 *)ushort3_i;
   ushort3_f = (ushort3 *)ushort3_i;
-  // CHECK: ushort3_a = (cl::sycl::ushort3)ushort3_c;
+  // CHECK: ushort3_a = (sycl::ushort3)ushort3_c;
   ushort3_a = (ushort3)ushort3_c;
-  // CHECK: ushort3_b = cl::sycl::ushort3(ushort3_b);
+  // CHECK: ushort3_b = sycl::ushort3(ushort3_b);
   ushort3_b = ushort3(ushort3_b);
-  // CHECK: cl::sycl::ushort3 ushort3_j, ushort3_k, ushort3_l, ushort3_m[16], *ushort3_n[32];
+  // CHECK: sycl::ushort3 ushort3_j, ushort3_k, ushort3_l, ushort3_m[16], *ushort3_n[32];
   ushort3 ushort3_j, ushort3_k, ushort3_l, ushort3_m[16], *ushort3_n[32];
-  // CHECK: int ushort3_o = sizeof(cl::sycl::ushort3);
+  // CHECK: int ushort3_o = sizeof(sycl::ushort3);
   int ushort3_o = sizeof(ushort3);
   // CHECK: int unsigned short_p = sizeof(unsigned short);
   int unsigned short_p = sizeof(unsigned short);
@@ -3507,17 +3507,17 @@ int main_ushort3() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ushort3_e_buf_ct0 = dpct::get_buffer_and_offset(ushort3_e);
   // CHECK-NEXT:   size_t ushort3_e_offset_ct0 = ushort3_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ushort3_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::ushort3 *)ushort3_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ushort3_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::ushort3 *)ushort3_cast);
   // CHECK-NEXT:   size_t ushort3_cast_offset_ct1 = ushort3_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ushort3_e_acc_ct0 = ushort3_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto ushort3_cast_acc_ct1 = ushort3_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto ushort3_e_acc_ct0 = ushort3_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto ushort3_cast_acc_ct1 = ushort3_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ushort3_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::ushort3 *ushort3_e_ct0 = (cl::sycl::ushort3 *)(&ushort3_e_acc_ct0[0] + ushort3_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::ushort3 *ushort3_cast_ct1 = (cl::sycl::ushort3 *)(&ushort3_cast_acc_ct1[0] + ushort3_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::ushort3 *ushort3_e_ct0 = (sycl::ushort3 *)(&ushort3_e_acc_ct0[0] + ushort3_e_offset_ct0);
+  // CHECK-NEXT:           sycl::ushort3 *ushort3_cast_ct1 = (sycl::ushort3 *)(&ushort3_cast_acc_ct1[0] + ushort3_cast_offset_ct1);
   // CHECK-NEXT:           kernel_ushort3(ushort3_e_ct0, ushort3_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -3526,31 +3526,31 @@ int main_ushort3() {
   return 0;
 }
 
-// CHECK: void func3_ushort4(cl::sycl::ushort4 a, cl::sycl::ushort4 b, cl::sycl::ushort4 c) {
+// CHECK: void func3_ushort4(sycl::ushort4 a, sycl::ushort4 b, sycl::ushort4 c) {
 void func3_ushort4(ushort4 a, ushort4 b, ushort4 c) {
 }
-// CHECK: void func_ushort4(cl::sycl::ushort4 a) {
+// CHECK: void func_ushort4(sycl::ushort4 a) {
 void func_ushort4(ushort4 a) {
 }
-// CHECK: void kernel_ushort4(cl::sycl::ushort4 *a, cl::sycl::ushort4 *b) {
+// CHECK: void kernel_ushort4(sycl::ushort4 *a, sycl::ushort4 *b) {
 __global__ void kernel_ushort4(ushort4 *a, ushort4 *b) {
 }
 
 int main_ushort4() {
   // range default constructor does the right thing.
-  // CHECK: cl::sycl::ushort4 ushort4_a;
+  // CHECK: sycl::ushort4 ushort4_a;
   ushort4 ushort4_a;
-  // CHECK: cl::sycl::ushort4 ushort4_b = cl::sycl::ushort4(1, 2, 3, 4);
+  // CHECK: sycl::ushort4 ushort4_b = sycl::ushort4(1, 2, 3, 4);
   ushort4 ushort4_b = make_ushort4(1, 2, 3, 4);
-  // CHECK: cl::sycl::ushort4 ushort4_c = cl::sycl::ushort4(ushort4_b);
+  // CHECK: sycl::ushort4 ushort4_c = sycl::ushort4(ushort4_b);
   ushort4 ushort4_c = ushort4(ushort4_b);
-  // CHECK: cl::sycl::ushort4 ushort4_d(ushort4_c);
+  // CHECK: sycl::ushort4 ushort4_d(ushort4_c);
   ushort4 ushort4_d(ushort4_c);
-  // CHECK: func3_ushort4(ushort4_b, cl::sycl::ushort4(ushort4_b), (cl::sycl::ushort4)ushort4_b);
+  // CHECK: func3_ushort4(ushort4_b, sycl::ushort4(ushort4_b), (sycl::ushort4)ushort4_b);
   func3_ushort4(ushort4_b, ushort4(ushort4_b), (ushort4)ushort4_b);
-  // CHECK: cl::sycl::ushort4 *ushort4_e;
+  // CHECK: sycl::ushort4 *ushort4_e;
   ushort4 *ushort4_e;
-  // CHECK: cl::sycl::ushort4 *ushort4_f;
+  // CHECK: sycl::ushort4 *ushort4_f;
   ushort4 *ushort4_f;
   // CHECK: unsigned short ushort4_g = static_cast<unsigned short>(ushort4_c.x());
   unsigned short ushort4_g = ushort4_c.x;
@@ -3558,21 +3558,21 @@ int main_ushort4() {
   ushort4_a.x = ushort4_d.x;
   // CHECK: if (static_cast<unsigned short>(ushort4_b.x()) == static_cast<unsigned short>(ushort4_d.x())) {}
   if (ushort4_b.x == ushort4_d.x) {}
-  // CHECK: cl::sycl::ushort4 ushort4_h[16];
+  // CHECK: sycl::ushort4 ushort4_h[16];
   ushort4 ushort4_h[16];
-  // CHECK: cl::sycl::ushort4 ushort4_i[32];
+  // CHECK: sycl::ushort4 ushort4_i[32];
   ushort4 ushort4_i[32];
   // CHECK: if (static_cast<unsigned short>(ushort4_h[12].x()) == static_cast<unsigned short>(ushort4_i[12].x())) {}
   if (ushort4_h[12].x == ushort4_i[12].x) {}
-  // CHECK: ushort4_f = (cl::sycl::ushort4 *)ushort4_i;
+  // CHECK: ushort4_f = (sycl::ushort4 *)ushort4_i;
   ushort4_f = (ushort4 *)ushort4_i;
-  // CHECK: ushort4_a = (cl::sycl::ushort4)ushort4_c;
+  // CHECK: ushort4_a = (sycl::ushort4)ushort4_c;
   ushort4_a = (ushort4)ushort4_c;
-  // CHECK: ushort4_b = cl::sycl::ushort4(ushort4_b);
+  // CHECK: ushort4_b = sycl::ushort4(ushort4_b);
   ushort4_b = ushort4(ushort4_b);
-  // CHECK: cl::sycl::ushort4 ushort4_j, ushort4_k, ushort4_l, ushort4_m[16], *ushort4_n[32];
+  // CHECK: sycl::ushort4 ushort4_j, ushort4_k, ushort4_l, ushort4_m[16], *ushort4_n[32];
   ushort4 ushort4_j, ushort4_k, ushort4_l, ushort4_m[16], *ushort4_n[32];
-  // CHECK: int ushort4_o = sizeof(cl::sycl::ushort4);
+  // CHECK: int ushort4_o = sizeof(sycl::ushort4);
   int ushort4_o = sizeof(ushort4);
   // CHECK: int unsigned short_p = sizeof(unsigned short);
   int unsigned short_p = sizeof(unsigned short);
@@ -3582,17 +3582,17 @@ int main_ushort4() {
   // CHECK: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ushort4_e_buf_ct0 = dpct::get_buffer_and_offset(ushort4_e);
   // CHECK-NEXT:   size_t ushort4_e_offset_ct0 = ushort4_e_buf_ct0.second;
-  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ushort4_cast_buf_ct1 = dpct::get_buffer_and_offset((cl::sycl::ushort4 *)ushort4_cast);
+  // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> ushort4_cast_buf_ct1 = dpct::get_buffer_and_offset((sycl::ushort4 *)ushort4_cast);
   // CHECK-NEXT:   size_t ushort4_cast_offset_ct1 = ushort4_cast_buf_ct1.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ushort4_e_acc_ct0 = ushort4_e_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:       auto ushort4_cast_acc_ct1 = ushort4_cast_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto ushort4_e_acc_ct0 = ushort4_e_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:       auto ushort4_cast_acc_ct1 = ushort4_cast_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_ushort4_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           cl::sycl::ushort4 *ushort4_e_ct0 = (cl::sycl::ushort4 *)(&ushort4_e_acc_ct0[0] + ushort4_e_offset_ct0);
-  // CHECK-NEXT:           cl::sycl::ushort4 *ushort4_cast_ct1 = (cl::sycl::ushort4 *)(&ushort4_cast_acc_ct1[0] + ushort4_cast_offset_ct1);
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::ushort4 *ushort4_e_ct0 = (sycl::ushort4 *)(&ushort4_e_acc_ct0[0] + ushort4_e_offset_ct0);
+  // CHECK-NEXT:           sycl::ushort4 *ushort4_cast_ct1 = (sycl::ushort4 *)(&ushort4_cast_acc_ct1[0] + ushort4_cast_offset_ct1);
   // CHECK-NEXT:           kernel_ushort4(ushort4_e_ct0, ushort4_cast_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });

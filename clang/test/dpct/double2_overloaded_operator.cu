@@ -3,29 +3,29 @@
 
 #include <cuda_runtime.h>
 
-// CHECK: typedef cl::sycl::double2 ty;
+// CHECK: typedef sycl::double2 ty;
 typedef double2 ty;
-// CHECK: typedef cl::sycl::double2& ty2;
+// CHECK: typedef sycl::double2& ty2;
 typedef double2& ty2;
-// CHECK: typedef cl::sycl::double2&& ty3;
+// CHECK: typedef sycl::double2&& ty3;
 typedef double2&& ty3;
-// CHECK: typedef cl::sycl::double2** ty4;
+// CHECK: typedef sycl::double2** ty4;
 typedef double2** ty4;
-// CHECK: typedef cl::sycl::double2* ty5;
+// CHECK: typedef sycl::double2* ty5;
 typedef double2* ty5;
-// CHECK: typedef cl::sycl::double2*** ty6;
+// CHECK: typedef sycl::double2*** ty6;
 typedef double2*** ty6;
-// CHECK: typedef const cl::sycl::double2*** ty7;
+// CHECK: typedef const sycl::double2*** ty7;
 typedef const double2*** ty7;
 // CHECK:/*
 // CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead.
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
-// CHECK: inline cl::sycl::double2 &operator*=(cl::sycl::double2 &v, const cl::sycl::double2 &v2)          ;
+// CHECK: inline sycl::double2 &operator*=(sycl::double2 &v, const sycl::double2 &v2)          ;
 // CHECK: }  // namespace dpct_operator_overloading
 inline double2 &operator*=(double2 &v, const double2 &v2)          ;
 
-// CHECK: inline cl::sycl::double2 &copy(cl::sycl::double2 &v, const cl::sycl::double2 &v2) {
+// CHECK: inline sycl::double2 &copy(sycl::double2 &v, const sycl::double2 &v2) {
 // CHECK:   v.x() = static_cast<const double>(v2.x());
 // CHECK:   v.y() = static_cast<const double>(v2.y());
 // CHECK:   return v;
@@ -39,7 +39,7 @@ __host__ __device__ inline double2 &copy(double2 &v, const double2 &v2) {
 // CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead.
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
-// CHECK: inline cl::sycl::double2 &operator+=(cl::sycl::double2 &v, const cl::sycl::double2 &v2) {
+// CHECK: inline sycl::double2 &operator+=(sycl::double2 &v, const sycl::double2 &v2) {
 // CHECK:   v.x() += static_cast<const double>(v2.x());
 // CHECK:   v.y() += static_cast<const double>(v2.y());
 // CHECK:   return v;
@@ -54,7 +54,7 @@ __host__ __device__ inline double2 &operator+=(double2 &v, const double2 &v2) {
 // CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead.
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
-// CHECK: inline cl::sycl::double2 &operator-=(cl::sycl::double2 &v, const cl::sycl::double2 &v2) {
+// CHECK: inline sycl::double2 &operator-=(sycl::double2 &v, const sycl::double2 &v2) {
 // CHECK:   v.x() -= static_cast<const double>(v2.x());
 // CHECK:   v.y() -= static_cast<const double>(v2.y());
 // CHECK:   return v;
@@ -68,7 +68,7 @@ __host__ __device__ inline double2 &operator-=(double2 &v, const double2 &v2) {
 // CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead.
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
-// CHECK: inline cl::sycl::double2 &operator*=(cl::sycl::double2 &v, const double &r) {
+// CHECK: inline sycl::double2 &operator*=(sycl::double2 &v, const double &r) {
 // CHECK:   v.x() *= r;
 // CHECK:   v.y() *= r;
 // CHECK:   return v;
@@ -82,7 +82,7 @@ __host__ __device__ inline double2 &operator*=(double2 &v, const double &r) {
 // CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead.
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
-// CHECK: inline cl::sycl::double2 &operator/=(cl::sycl::double2 &v, const double &r) {
+// CHECK: inline sycl::double2 &operator/=(sycl::double2 &v, const double &r) {
 // CHECK:   v.x() /= r;
 // CHECK:   v.y() /= r;
 // CHECK:   return v;
@@ -97,8 +97,8 @@ __host__ __device__ inline double2 &operator/=(double2 &v, const double &r) {
 // CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead. 
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
-// CHECK: inline bool operator==(const cl::sycl::double2 &v1,
-// CHECK:                                            const cl::sycl::double2 &v2) {
+// CHECK: inline bool operator==(const sycl::double2 &v1,
+// CHECK:                                            const sycl::double2 &v2) {
 // CHECK:   return ((static_cast<const double>(v1.x()) == static_cast<const double>(v2.x())) && (static_cast<const double>(v1.y()) == static_cast<const double>(v2.y())));
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
@@ -111,8 +111,8 @@ __host__ __device__ inline bool operator==(const double2 &v1,
 // CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead. 
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
-// CHECK: inline bool operator!=(const cl::sycl::double2 &v1,
-// CHECK:                                            const cl::sycl::double2 &v2) {
+// CHECK: inline bool operator!=(const sycl::double2 &v1,
+// CHECK:                                            const sycl::double2 &v2) {
 // CHECK:   return (!(dpct_operator_overloading::operator==(v1 , v2)));
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
@@ -121,11 +121,11 @@ __host__ __device__ inline bool operator!=(const double2 &v1,
   return (!(v1 == v2));
 }
 
-// CHECK: inline cl::sycl::double2 operator+(const cl::sycl::double2 &v) { return v; }
+// CHECK: inline sycl::double2 operator+(const sycl::double2 &v) { return v; }
 __host__ __device__ inline double2 operator+(const double2 &v) { return v; }
 
-// CHECK: inline cl::sycl::double2 operator-(const cl::sycl::double2 &v) {
-// CHECK:   return cl::sycl::double2(-static_cast<const double>(v.x()), -static_cast<const double>(v.y()));
+// CHECK: inline sycl::double2 operator-(const sycl::double2 &v) {
+// CHECK:   return sycl::double2(-static_cast<const double>(v.x()), -static_cast<const double>(v.y()));
 // CHECK: }
 __host__ __device__ inline double2 operator-(const double2 &v) {
   return make_double2(-v.x, -v.y);
@@ -135,9 +135,9 @@ __host__ __device__ inline double2 operator-(const double2 &v) {
 // CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead. 
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
-// CHECK: inline cl::sycl::double2 operator+(const cl::sycl::double2 &v1,
-// CHECK:                                              const cl::sycl::double2 &v2) {
-// CHECK:   return cl::sycl::double2(static_cast<const double>(v1.x()) + static_cast<const double>(v2.x()), static_cast<const double>(v1.y()) + static_cast<const double>(v2.y()));
+// CHECK: inline sycl::double2 operator+(const sycl::double2 &v1,
+// CHECK:                                              const sycl::double2 &v2) {
+// CHECK:   return sycl::double2(static_cast<const double>(v1.x()) + static_cast<const double>(v2.x()), static_cast<const double>(v1.y()) + static_cast<const double>(v2.y()));
 // CHECK: }
 // CHECK:}  // namespace dpct_operator_overloading
 __host__ __device__ inline double2 operator+(const double2 &v1,
@@ -148,9 +148,9 @@ __host__ __device__ inline double2 operator+(const double2 &v1,
 // CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead. 
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
-// CHECK: inline cl::sycl::double2 operator-(const cl::sycl::double2 &v1,
-// CHECK:                                              const cl::sycl::double2 &v2) {
-// CHECK:   return cl::sycl::double2(static_cast<const double>(v1.x()) - static_cast<const double>(v2.x()), static_cast<const double>(v1.y()) - static_cast<const double>(v2.y()));
+// CHECK: inline sycl::double2 operator-(const sycl::double2 &v1,
+// CHECK:                                              const sycl::double2 &v2) {
+// CHECK:   return sycl::double2(static_cast<const double>(v1.x()) - static_cast<const double>(v2.x()), static_cast<const double>(v1.y()) - static_cast<const double>(v2.y()));
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 __host__ __device__ inline double2 operator-(const double2 &v1,
@@ -162,9 +162,9 @@ __host__ __device__ inline double2 operator-(const double2 &v1,
 // CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead. 
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
-// CHECK: inline cl::sycl::double2 operator*(const cl::sycl::double2 &v,
+// CHECK: inline sycl::double2 operator*(const sycl::double2 &v,
 // CHECK:                                              const double &r) {
-// CHECK:   return cl::sycl::double2(static_cast<const double>(v.x()) * r, static_cast<const double>(v.y()) * r);
+// CHECK:   return sycl::double2(static_cast<const double>(v.x()) * r, static_cast<const double>(v.y()) * r);
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 __host__ __device__ inline double2 operator*(const double2 &v,
@@ -176,9 +176,9 @@ __host__ __device__ inline double2 operator*(const double2 &v,
 // CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead.
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
-// CHECK: inline cl::sycl::double2 operator*(const double &r,
-// CHECK:                                              const cl::sycl::double2 &v) {
-// CHECK:   return cl::sycl::double2(static_cast<const double>(v.x()) * r, static_cast<const double>(v.y()) * r);
+// CHECK: inline sycl::double2 operator*(const double &r,
+// CHECK:                                              const sycl::double2 &v) {
+// CHECK:   return sycl::double2(static_cast<const double>(v.x()) * r, static_cast<const double>(v.y()) * r);
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 __host__ __device__ inline double2 operator*(const double &r,
@@ -190,10 +190,10 @@ __host__ __device__ inline double2 operator*(const double &r,
 // CHECK-NEXT:DPCT1011:{{[0-9]+}}: The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard operators instead.
 // CHECK-NEXT:*/
 // CHECK: namespace dpct_operator_overloading {
-// CHECK: inline cl::sycl::double2 operator/(const cl::sycl::double2 &v,
+// CHECK: inline sycl::double2 operator/(const sycl::double2 &v,
 // CHECK:                                              const double &r) {
 // CHECK:   double rinv = (double)1. / r;
-// CHECK:   return cl::sycl::double2(static_cast<const double>(v.x()) * rinv, static_cast<const double>(v.y()) * rinv);
+// CHECK:   return sycl::double2(static_cast<const double>(v.x()) * rinv, static_cast<const double>(v.y()) * rinv);
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 __host__ __device__ inline double2 operator/(const double2 &v,
@@ -202,49 +202,49 @@ __host__ __device__ inline double2 operator/(const double2 &v,
   return make_double2(v.x * rinv, v.y * rinv);
 }
 
-// CHECK: inline double dot(const cl::sycl::double2 &v1, const cl::sycl::double2 &v2) {
+// CHECK: inline double dot(const sycl::double2 &v1, const sycl::double2 &v2) {
 // CHECK:   return (static_cast<const double>(v1.x()) * static_cast<const double>(v2.x()) + static_cast<const double>(v1.y()) * static_cast<const double>(v2.y()));
 // CHECK: }
 __host__ __device__ inline double dot(const double2 &v1, const double2 &v2) {
   return (v1.x * v2.x + v1.y * v2.y);
 }
 
-// CHECK: inline double cross(const cl::sycl::double2 &v1, const cl::sycl::double2 &v2) {
+// CHECK: inline double cross(const sycl::double2 &v1, const sycl::double2 &v2) {
 // CHECK:   return (static_cast<const double>(v1.x()) * static_cast<const double>(v2.y()) - static_cast<const double>(v1.y()) * static_cast<const double>(v2.x()));
 // CHECK: }
 __host__ __device__ inline double cross(const double2 &v1, const double2 &v2) {
   return (v1.x * v2.y - v1.y * v2.x);
 }
 
-// CHECK: inline double length(const cl::sycl::double2 &v) {
+// CHECK: inline double length(const sycl::double2 &v) {
 // CHECK:   return (std::sqrt(static_cast<const double>(v.x()) * static_cast<const double>(v.x()) + static_cast<const double>(v.y()) * static_cast<const double>(v.y())));
 // CHECK: }
 __host__ __device__ inline double length(const double2 &v) {
   return (std::sqrt(v.x * v.x + v.y * v.y));
 }
 
-// CHECK: inline double length2(const cl::sycl::double2 &v) {
+// CHECK: inline double length2(const sycl::double2 &v) {
 // CHECK:   return (static_cast<const double>(v.x()) * static_cast<const double>(v.x()) + static_cast<const double>(v.y()) * static_cast<const double>(v.y()));
 // CHECK: }
 __host__ __device__ inline double length2(const double2 &v) {
   return (v.x * v.x + v.y * v.y);
 }
 
-// CHECK: inline cl::sycl::double2 rotateCCW(const cl::sycl::double2 &v) {
-// CHECK:   return cl::sycl::double2(-static_cast<const double>(v.y()), static_cast<const double>(v.x()));
+// CHECK: inline sycl::double2 rotateCCW(const sycl::double2 &v) {
+// CHECK:   return sycl::double2(-static_cast<const double>(v.y()), static_cast<const double>(v.x()));
 // CHECK: }
 __host__ __device__ inline double2 rotateCCW(const double2 &v) {
   return make_double2(-v.y, v.x);
 }
 
-// CHECK: inline cl::sycl::double2 rotateCW(const cl::sycl::double2 &v) {
-// CHECK:   return cl::sycl::double2(static_cast<const double>(v.y()), -static_cast<const double>(v.x()));
+// CHECK: inline sycl::double2 rotateCW(const sycl::double2 &v) {
+// CHECK:   return sycl::double2(static_cast<const double>(v.y()), -static_cast<const double>(v.x()));
 // CHECK: }
 __host__ __device__ inline double2 rotateCW(const double2 &v) {
   return make_double2(v.y, -v.x);
 }
 
-// CHECK: inline cl::sycl::double2 project(cl::sycl::double2 &v, const cl::sycl::double2 &u) {
+// CHECK: inline sycl::double2 project(sycl::double2 &v, const sycl::double2 &u) {
 // CHECK:   return dpct_operator_overloading::operator-(v , dpct_operator_overloading::operator*(dot(v, u) , u));
 // CHECK: }
 __host__ __device__ inline double2 project(double2 &v, const double2 &u) {
@@ -252,8 +252,8 @@ __host__ __device__ inline double2 project(double2 &v, const double2 &u) {
 }
 
 // CHECK: void test() {
-// CHECK:   cl::sycl::double2 a;
-// CHECK:   cl::sycl::double2 b;
+// CHECK:   sycl::double2 a;
+// CHECK:   sycl::double2 b;
 // CHECK:   a  = dpct_operator_overloading::operator+=(a , b);
 // CHECK:   dpct_operator_overloading::operator-(a);
 // CHECK:   b = a;

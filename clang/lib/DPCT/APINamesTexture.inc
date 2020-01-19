@@ -9,7 +9,7 @@
 //
 //===-----------------------------------------------------------------===//
 ENTRY_RENAMED("cudaCreateChannelDesc", "dpct::create_image_channel")
-ENTRY_RENAMED("cudaCreateChannelDescHalf", "dpct::create_image_channel<cl::sycl::cl_half>")
+ENTRY_RENAMED("cudaCreateChannelDescHalf", "dpct::create_image_channel<" + MapNames::getClNamespace() + "::cl_half>")
 ENTRY_RENAMED_ISASSIGNED("cudaUnbindTexture", "dpct::detach_image")
 ENTRY_RENAMED_ISASSIGNED("cudaFreeArray", "dpct::dpct_free")
 ENTRY_RENAMED_ISASSIGNED("cudaDestroyTextureObject", "dpct::dpct_free")

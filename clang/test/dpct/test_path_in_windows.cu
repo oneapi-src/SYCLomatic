@@ -4,7 +4,7 @@
 
 
 // CHECK: void testKernelPtr(const int *L, const int *M, int N,
-// CHECK-NEXT: cl::sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT: sycl::nd_item<3> item_ct1) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
   // CHECK: int gtid = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -22,13 +22,13 @@ int main() {
   // CHECK-NEXT:      std::pair<dpct::buffer_t, size_t> karg2_buf_ct1 = dpct::get_buffer_and_offset(karg2);
   // CHECK-NEXT:      size_t karg2_offset_ct1 = karg2_buf_ct1.second;
   // CHECK-NEXT:      dpct::get_default_queue().submit(
-  // CHECK-NEXT:        [&](cl::sycl::handler &cgh) {
-  // CHECK-NEXT:          auto karg2_acc_ct0 = karg2_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
-  // CHECK-NEXT:          auto karg2_acc_ct1 = karg2_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:        [&](sycl::handler &cgh) {
+  // CHECK-NEXT:          auto karg2_acc_ct0 = karg2_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-NEXT:          auto karg2_acc_ct1 = karg2_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:          auto dpct_global_range = griddim * threaddim;
   // CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:            cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
-  // CHECK-NEXT:            [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:            sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
+  // CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:              const int *karg2_ct0 = (const int *)(&karg2_acc_ct0[0] + karg2_offset_ct0);
   // CHECK-NEXT:              const int *karg2_ct1 = (const int *)(&karg2_acc_ct1[0] + karg2_offset_ct1);
   // CHECK-NEXT:              testKernelPtr(karg2_ct0, karg2_ct1, karg3, item_ct1);

@@ -10,12 +10,12 @@ __global__ void cuda_hello(){
 
 void test() {
   // CHECK:     dpct::get_default_queue().submit(
-  // CHECK-NEXT:       [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         extern dpct::device_memory<volatile int, 0> g_mutex;
   // CHECK-NEXT:         auto g_mutex_acc_ct1 = g_mutex.get_access(cgh);
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class Reset_kernel_parameters_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:           cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-  // CHECK-NEXT:           [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:             Reset_kernel_parameters(g_mutex_acc_ct1.get_pointer());
   // CHECK-NEXT:           });
   // CHECK-NEXT:       });

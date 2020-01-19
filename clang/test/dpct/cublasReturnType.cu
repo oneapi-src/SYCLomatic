@@ -10,20 +10,20 @@ cublasStatus_t foo(int m, int n) {
   return CUBLAS_STATUS_SUCCESS;
 }
 
-// CHECK: cl::sycl::queue foo1(int m) {
+// CHECK: sycl::queue foo1(int m) {
 cublasHandle_t foo1(int m) {
   return 0;
 }
 
-// CHECK: cl::sycl::float2 foo2(cl::sycl::float2 m) {
+// CHECK: sycl::float2 foo2(sycl::float2 m) {
 cuComplex foo2(cuComplex m) {
-  // CHECK: return cl::sycl::float2(1, 0);
+  // CHECK: return sycl::float2(1, 0);
   return make_cuComplex(1, 0);
 }
 
-// CHECK: cl::sycl::double2 foo3(cl::sycl::double2 m) {
+// CHECK: sycl::double2 foo3(sycl::double2 m) {
 cuDoubleComplex foo3(cuDoubleComplex m) {
-  // CHECK: return cl::sycl::double2(1, 0);
+  // CHECK: return sycl::double2(1, 0);
   return make_cuDoubleComplex(1, 0);
 }
 

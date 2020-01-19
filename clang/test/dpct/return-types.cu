@@ -5,7 +5,7 @@
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <stdio.h>
 // CHECK-EMPTY:
-// CHECK-NEXT: using queue_p = cl::sycl::queue *;
+// CHECK-NEXT: using queue_p = sycl::queue *;
 #include <stdio.h>
 
 // CHECK: #define DEF_BAR queue_p bar() { \
@@ -14,7 +14,7 @@
 #define DEF_BAR cudaStream_t bar() { \
   return 0; \
 }
-// CHECK: #define DEF_BAR2 cl::sycl::event bar2() { \
+// CHECK: #define DEF_BAR2 sycl::event bar2() { \
 // CHECK-NEXT:   return 0; \
 // CHECK-NEXT: }
 #define DEF_BAR2 cudaEvent_t bar2() { \
@@ -34,7 +34,7 @@ cudaStream_t bar() {
 }
 
 // CHECK: template <typename T>
-// CHECK-NEXT: cl::sycl::event bar2() {
+// CHECK-NEXT: sycl::event bar2() {
 // CHECK-NEXT:   return 0;
 // CHECK-NEXT: }
 template <typename T>
@@ -47,7 +47,7 @@ cudaStream_t foo() {
   return 0;
 }
 
-// CHECK: cl::sycl::event foo2() {
+// CHECK: sycl::event foo2() {
 cudaEvent_t foo2() {
   return 0;
 }
@@ -58,7 +58,7 @@ class S {
     return 0;
   }
 
-  // CHECK: cl::sycl::event foo2() {
+  // CHECK: sycl::event foo2() {
   cudaEvent_t foo2() {
     return 0;
   }
@@ -70,7 +70,7 @@ class C {
     return 0;
   }
 
-  // CHECK: cl::sycl::event foo2() {
+  // CHECK: sycl::event foo2() {
   cudaEvent_t foo2() {
     return 0;
   }
@@ -103,28 +103,28 @@ const cudaStream_t &foo(long i) {
   return s;
 }
 
-// CHECK: cl::sycl::event *bar(int i) {
+// CHECK: sycl::event *bar(int i) {
 cudaEvent_t *bar(int i) {
   return 0;
 }
 
-// CHECK: const cl::sycl::event *bar(unsigned i) {
+// CHECK: const sycl::event *bar(unsigned i) {
 const cudaEvent_t *bar(unsigned i) {
   return 0;
 }
 
-// CHECK: cl::sycl::event **bar(char i) {
+// CHECK: sycl::event **bar(char i) {
 cudaEvent_t **bar(char i) {
   return 0;
 }
 
-// CHECK: cl::sycl::event &bar(short i) {
+// CHECK: sycl::event &bar(short i) {
 cudaEvent_t &bar(short i) {
   cudaEvent_t e;
   return e;
 }
 
-// CHECK: const cl::sycl::event &bar(long i) {
+// CHECK: const sycl::event &bar(long i) {
 const cudaEvent_t &bar(long i) {
   cudaEvent_t e;
   return e;

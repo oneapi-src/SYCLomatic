@@ -20,7 +20,12 @@ const std::string StringLiteralUnsupported{"UNSUPPORTED"};
 
 /// Record mapping between names
 class MapNames {
+  static std::string ClNamespace;
 public:
+  static void setClNamespace(bool enable);
+
+  static std::string getClNamespace();
+
   struct SOLVERFuncReplInfo {
     static SOLVERFuncReplInfo migrateBuffer(std::vector<int> bi,
                                             std::vector<std::string> bt,
@@ -234,7 +239,7 @@ public:
 
   static const SetTy SupportedVectorTypes;
   static const MapTy RemovedAPIWarningMessage;
-  static const MapTy TypeNamesMap;
+  static MapTy TypeNamesMap;
   static const MapTy Dim3MemberNamesMap;
   static const MapTy MacrosMap;
   static const MapTy BLASEnumsMap;

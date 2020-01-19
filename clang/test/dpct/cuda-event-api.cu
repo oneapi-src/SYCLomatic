@@ -26,7 +26,7 @@ __global__ void kernelFunc()
 }
 
 int main(int argc, char* argv[]) {
-  // CHECK: cl::sycl::event start, stop;
+  // CHECK: sycl::event start, stop;
   // CHECK-EMPTY:
   // CHECK: /*
   // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed, because Function call is redundant in DPC++.
@@ -71,10 +71,10 @@ int main(int argc, char* argv[]) {
 
   // kernel call without sync
   // CHECK:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, blocks) * cl::sycl::range<3>(1, 1, threads), cl::sycl::range<3>(1, 1, threads)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -88,10 +88,10 @@ int main(int argc, char* argv[]) {
 
   // kernel call without sync
   // CHECK:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, blocks) * cl::sycl::range<3>(1, 1, threads), cl::sycl::range<3>(1, 1, threads)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -127,20 +127,20 @@ int main(int argc, char* argv[]) {
 
   // kernel call with sync
   // CHECK:   stop = dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, blocks) * cl::sycl::range<3>(1, 1, threads), cl::sycl::range<3>(1, 1, threads)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: stop.wait();
   kernelFunc<<<blocks,threads>>>();
   // CHECK:   stop = dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, blocks) * cl::sycl::range<3>(1, 1, threads), cl::sycl::range<3>(1, 1, threads)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -177,10 +177,10 @@ int main(int argc, char* argv[]) {
 
   // kernel call without sync
   // CHECK:   stop = dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, blocks) * cl::sycl::range<3>(1, 1, threads), cl::sycl::range<3>(1, 1, threads)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -226,10 +226,10 @@ int main(int argc, char* argv[]) {
 
   // kernel call without sync
   // CHECK:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, blocks) * cl::sycl::range<3>(1, 1, threads), cl::sycl::range<3>(1, 1, threads)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
@@ -246,10 +246,10 @@ int main(int argc, char* argv[]) {
 
   // kernel call without sync
   // CHECK:   dpct::get_default_queue().submit(
-  // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, blocks) * cl::sycl::range<3>(1, 1, threads), cl::sycl::range<3>(1, 1, threads)),
-  // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
