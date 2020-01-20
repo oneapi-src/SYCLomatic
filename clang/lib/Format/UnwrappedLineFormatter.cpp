@@ -79,12 +79,14 @@ public:
   /// level to the same indent.
   /// Note that \c nextLine must have been called before this method.
   void adjustToUnmodifiedLine(const AnnotatedLine &Line) {
+#ifndef INTEL_CUSTOMIZATION
     unsigned LevelIndent = Line.First->OriginalColumn;
     if (static_cast<int>(LevelIndent) - Offset >= 0)
       LevelIndent -= Offset;
     if ((!Line.First->is(tok::comment) || IndentForLevel[Line.Level] == -1) &&
         !Line.InPPDirective)
       IndentForLevel[Line.Level] = LevelIndent;
+#endif
   }
 
 private:
