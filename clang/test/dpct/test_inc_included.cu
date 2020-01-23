@@ -6,6 +6,9 @@
 // CHECK:#include "foo.dp.hpp"
 #include "foo.cuh"
 
+// CHECK:#include "no_cuda_syntax.dp.hpp"
+#include "no_cuda_syntax.cuh"
+
 void test(){
  foo<<<1,1>>>();
 }

@@ -290,11 +290,18 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   }
 
   // The necessary header files which have no no replacements will be copied to
-  // "-out-root" directory
+  // "-out-root" directory.
   for (const auto &Entry : IncludeFileMap) {
     SmallString<512> FilePath = StringRef(Entry.first);
     if (!Entry.second) {
       makeCanonical(FilePath);
+
+      // Awalys migrate *.cuh files to *.dp.hpp files
+      SourceProcessType FileType = GetSourceFileType(FilePath.str());
+      if (FileType & TypeCudaHeader) {
+        path::replace_extension(FilePath, "dp.hpp");
+      }
+
       rewriteDir(FilePath, InRoot, OutRoot);
       if (fs::exists(FilePath)) {
         // A header file with this name already exists.
