@@ -2591,7 +2591,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             MapNames::RandomEngineTypeMap.end() ||
         MapNames::RandomEngineTypeMap.find(EnumStr)->second == "<NOTSUPPORT>") {
       report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETER, FuncName,
-             "parameter " + EnumStr + " is unsupported");
+             "the parameter " + EnumStr + " is unsupported");
       return;
     }
 
@@ -4416,7 +4416,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
     report(CE->getBeginLoc(), Diagnostics::DEVICE_LIMIT_NOT_SUPPORTED);
   } else if (FuncName == "cudaDeviceSetSharedMemConfig") {
-    std::string Msg = "DPC++ currently doesn't support configuring shared memory on devices.";
+    std::string Msg = "DPC++ currently does not support configuring shared memory on devices.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, MapNames::ITFName.at(FuncName),
              Msg);
@@ -4427,7 +4427,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
   } else if (FuncName == "cudaSetDeviceFlags") {
     std::string Msg =
-      "DPC++ currently doesn't support setting flags for devices.";
+      "DPC++ currently does not support setting flags for devices.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, MapNames::ITFName.at(FuncName),
              Msg);
@@ -4439,7 +4439,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaDeviceEnablePeerAccess" ||
              FuncName == "cudaDeviceDisablePeerAccess") {
     std::string Msg =
-      "DPC++ currently doesn't support memory access across peer devices.";
+      "DPC++ currently does not support memory access across peer devices.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, MapNames::ITFName.at(FuncName),
              Msg);

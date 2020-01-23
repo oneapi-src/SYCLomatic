@@ -17,7 +17,7 @@ void foo() {
   void *devPtr;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1029:0: DPC++ currently doesn't support getting limits on devices; the
+  // CHECK-NEXT: DPCT1029:0: DPC++ currently does not support getting limits on devices. The
   // CHECK-NEXT: output parameter(s) are set to 0.
   // CHECK-NEXT: */
   // CHECK-NEXT: *pValue = 0;
@@ -25,62 +25,64 @@ void foo() {
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceSetSharedMemConfig was removed, because
-  // CHECK-NEXT: DPC++ currently doesn't support configuring shared memory on devices.
+  // CHECK-NEXT: DPC++ currently does not support configuring shared memory on devices.
   // CHECK-NEXT: */
   cudaDeviceSetSharedMemConfig(config);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaSetDeviceFlags was removed, because DPC++
-  // CHECK-NEXT: currently doesn't support setting flags for devices.
+  // CHECK-NEXT: currently does not support setting flags for devices.
   // CHECK-NEXT: */
   cudaSetDeviceFlags(flags);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceEnablePeerAccess was removed, because DPC++
-  // CHECK-NEXT: currently doesn't support memory access across peer devices.
+  // CHECK-NEXT: currently does not support memory access across peer devices.
   // CHECK-NEXT: */
   cudaDeviceEnablePeerAccess(peerDevice, flags);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceDisablePeerAccess was removed, because DPC++
-  // CHECK-NEXT: currently doesn't support memory access across peer devices.
+  // CHECK-NEXT: currently does not support memory access across peer devices.
   // CHECK-NEXT: */
   cudaDeviceDisablePeerAccess(peerDevice);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1031:{{[0-9]+}}: DPC++ currently doesn't support memory access across peer devices;
-  // CHECK-NEXT: the output parameter(s) are set to 0.
+  // CHECK:      /*
+  // CHECK-NEXT: DPCT1031:{{[0-9]+}}: DPC++ currently does not support memory access across peer
+  // CHECK-NEXT: devices. The output parameter(s) are set to 0.
   // CHECK-NEXT: */
+
   // CHECK-NEXT: *canAccessPeer = 0;
   cudaDeviceCanAccessPeer(canAccessPeer, device, peerDevice);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: DPC++ currently doesn't support IPC operations. You may need to
-  // CHECK-NEXT: rewrite the code.
+  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: DPC++ currently does not support inter-process communication (IPC)
+  // CHECK-NEXT: operations. You may need to rewrite the code.
   // CHECK-NEXT: */
+
   cudaIpcGetEventHandle(handleEvent, event);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: DPC++ currently doesn't support IPC operations. You may need to
-  // CHECK-NEXT: rewrite the code.
+  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: DPC++ currently does not support inter-process communication (IPC)
+  // CHECK-NEXT: operations. You may need to rewrite the code.
   // CHECK-NEXT: */
   cudaIpcOpenEventHandle(&event, *handleEvent);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: DPC++ currently doesn't support IPC operations. You may need to
-  // CHECK-NEXT: rewrite the code.
+  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: DPC++ currently does not support inter-process communication (IPC)
+  // CHECK-NEXT: operations. You may need to rewrite the code.
   // CHECK-NEXT: */
   cudaIpcGetMemHandle(handleMem, devPtr);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: DPC++ currently doesn't support IPC operations. You may need to
-  // CHECK-NEXT: rewrite the code.
+  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: DPC++ currently does not support inter-process communication (IPC)
+  // CHECK-NEXT: operations. You may need to rewrite the code.
   // CHECK-NEXT: */
   cudaIpcOpenMemHandle(&devPtr, *handleMem, flags);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: DPC++ currently doesn't support IPC operations. You may need to
-  // CHECK-NEXT: rewrite the code.
+  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: DPC++ currently does not support inter-process communication
+  // CHECK-NEXT: (IPC) operations. You may need to rewrite the code.
   // CHECK-NEXT: */
   cudaIpcCloseMemHandle(devPtr);
 }

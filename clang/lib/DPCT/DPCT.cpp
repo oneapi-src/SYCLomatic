@@ -230,7 +230,7 @@ static opt<bool, true>
 bool SyclNamedLambdaFlag = false;
 static opt<bool, true>
     SyclNamedLambda("sycl-named-lambda",
-                llvm::cl::desc("Generate kernels with kernel name. Default: off.\n"),
+                llvm::cl::desc("Generates kernels with the kernel name. Default: off.\n"),
                 cat(DPCTCat), llvm::cl::location(SyclNamedLambdaFlag));
 
 opt<OutputVerbosityLev> OutputVerbosity(
@@ -272,24 +272,24 @@ opt<UsmLevel> USMLevel(
 
 opt<format::FormatRange>
     FormatRng("format-range",
-                llvm::cl::desc("Sets the range of formatting.\n"),
+                llvm::cl::desc("Sets the range of formatting.\nThe values are:\n"),
                 values(llvm::cl::OptionEnumValue{"migrated", int(format::FormatRange::migrated),
-                     "Only format the migrated code. (default)", false},
+                     "Only formats the migrated code (default).", false},
                        llvm::cl::OptionEnumValue{"all", int(format::FormatRange::all),
-                     "Format all code.", false},
+                     "Formats all code.", false},
                        llvm::cl::OptionEnumValue{"none", int(format::FormatRange::none),
                      "Do not format any code.", false}),
     init(format::FormatRange::migrated), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
 
 opt<DPCTFormatStyle>
     FormatST("format-style",
-                llvm::cl::desc("Sets the formatting style.\n"),
+                llvm::cl::desc("Sets the formatting style.\nThe values are:\n"),
                 values(llvm::cl::OptionEnumValue{"llvm", int(DPCTFormatStyle::llvm),
                      "Use the LLVM coding style.", false},
                        llvm::cl::OptionEnumValue{"google", int(DPCTFormatStyle::google),
                      "Use the Google coding style.", false},
                        llvm::cl::OptionEnumValue{"custom", int(DPCTFormatStyle::custom),
-                     "Use the coding style defined in .clang-format file. (default)", false}),
+                     "Use the coding style defined in the .clang-format file (default).", false}),
     init(DPCTFormatStyle::custom), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
 
 bool ExplicitClNamespace = false;
@@ -307,15 +307,15 @@ static opt<bool, true>
 
 static opt<bool> EnableCTAD(
     "enable-ctad",
-    llvm::cl::desc("Use C++17 class template argument deduction (CTAD) in "
-                   "generated code.\n"
+    llvm::cl::desc("Use a C++17 class template argument deduction (CTAD) in "
+                   "your generated code.\n"
                    "Default: off."),
     cat(DPCTCat), init(false));
 
 bool AsyncHandlerFlag = false;
 static opt<bool, true>
     AsyncHandler("always-use-async-handler",
-                 llvm::cl::desc("Always create cl::sycl::queue with async "
+                 llvm::cl::desc("Always create the cl::sycl::queue with an async "
                                 "exception handler. Default: off."),
                  cat(DPCTCat), llvm::cl::location(AsyncHandlerFlag));
 // clang-format on

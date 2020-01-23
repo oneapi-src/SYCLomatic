@@ -226,7 +226,7 @@ private:
 void bar1(){
 //CHECK:curandGenerator_t rng;
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1028:{{[0-9]+}}: The curandCreateGenerator was not migrated, because parameter
+//CHECK-NEXT:DPCT1028:{{[0-9]+}}: The curandCreateGenerator was not migrated, because the parameter
 //CHECK-NEXT:CURAND_RNG_PSEUDO_XORWOW is unsupported.
 //CHECK-NEXT:*/
 //CHECK-NEXT:curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_XORWOW);
@@ -243,7 +243,7 @@ void bar1(){
 void bar2(){
 //CHECK:curandGenerator_t rng;
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1028:{{[0-9]+}}: The curandCreateGenerator was not migrated, because parameter
+//CHECK-NEXT:DPCT1028:{{[0-9]+}}: The curandCreateGenerator was not migrated, because the parameter
 //CHECK-NEXT:CURAND_RNG_QUASI_SCRAMBLED_SOBOL64 is unsupported.
 //CHECK-NEXT:*/
 //CHECK-NEXT:curandCreateGenerator(&rng, CURAND_RNG_QUASI_SCRAMBLED_SOBOL64);
