@@ -27,6 +27,10 @@ const char *CudaVersionToString(CudaVersion V) {
     return "10.0";
   case CudaVersion::CUDA_101:
     return "10.1";
+#ifdef INTEL_CUSTOMIZATION
+  case CudaVersion::CUDA_102:
+    return "10.2";
+#endif
   }
   llvm_unreachable("invalid enum");
 }
@@ -40,7 +44,12 @@ CudaVersion CudaStringToVersion(llvm::StringRef S) {
       .Case("9.1", CudaVersion::CUDA_91)
       .Case("9.2", CudaVersion::CUDA_92)
       .Case("10.0", CudaVersion::CUDA_100)
+#ifdef INTEL_CUSTOMIZATION
+      .Case("10.1", CudaVersion::CUDA_101)
+      .Case("10.2", CudaVersion::CUDA_102);
+#else
       .Case("10.1", CudaVersion::CUDA_101);
+#endif
 }
 
 const char *CudaArchToString(CudaArch A) {
@@ -380,6 +389,10 @@ static CudaVersion ToCudaVersion(llvm::VersionTuple Version) {
     return CudaVersion::CUDA_100;
   case 101:
     return CudaVersion::CUDA_101;
+#ifdef INTEL_CUSTOMIZATION
+  case 102:
+    return CudaVersion::CUDA_102;
+#endif
   default:
     return CudaVersion::UNKNOWN;
   }
