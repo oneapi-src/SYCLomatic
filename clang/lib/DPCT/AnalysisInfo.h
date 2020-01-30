@@ -371,6 +371,25 @@ public:
     makeCanonical(Path);
     return isChildPath(InRoot, Path);
   }
+  inline static bool replaceMacroName(SourceLocation SL) {
+    auto &SM = getSourceManager();
+    std::string Path = SM.getFilename(SM.getExpansionLoc(SL));
+    if (isInCudaPath(Path)) {
+      return true;
+    }
+    makeCanonical(Path);
+    StringRef Filename = llvm::sys::path::filename(Path);
+    // The above condition is not always sufficient for the following
+    // specific header files
+    if (Filename == "cublas_api.h" ||
+      Filename == "cublas.h" ||
+      Filename == "cublasLt.h" ||
+      Filename == "cublas_v2.h" ||
+      Filename == "cublasXt.h") {
+      return true;
+    }
+    return false;
+  }
   // TODO: implement one of this for each source language.
   inline static bool isInCudaPath(SourceLocation SL) {
     return isInCudaPath(
