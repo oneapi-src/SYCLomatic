@@ -5625,7 +5625,7 @@ void MemoryMigrationRule::memcpyMigration(
       ReplaceStr = "dpct::dpct_memcpy";
   } else {
     if (USMLevel == UsmLevel::restricted) {
-      if (C->getNumArgs() == 5) {
+      if (C->getNumArgs() == 5 && !C->getArg(4)->isDefaultArgument()) {
         const Expr *Stream = C->getArg(4);
         if (Stream) {
           ExprAnalysis EA;
@@ -5663,7 +5663,7 @@ void MemoryMigrationRule::memcpyMigration(
   }
 
   if (Name == "cudaMemcpyAsync") {
-    if (C->getNumArgs() == 5) {
+    if (C->getNumArgs() == 5 && !C->getArg(4)->isDefaultArgument()) {
       if (USMLevel == UsmLevel::restricted) {
         if (auto TM = removeArg(C, 4, *Result.SourceManager))
           emplaceTransformation(TM);
@@ -5685,15 +5685,24 @@ void MemoryMigrationRule::memcpySymbolMigration(
     return;
   }
   HandledMemcpyMemsetSet.insert(C);
-  const Expr *Direction = C->getArg(4);
   std::string DirectionName;
-  const DeclRefExpr *DD = dyn_cast_or_null<DeclRefExpr>(Direction);
-  if (DD && isa<EnumConstantDecl>(DD->getDecl())) {
-    DirectionName = DD->getNameInfo().getName().getAsString();
-    auto Search = EnumConstantRule::EnumNamesMap.find(DirectionName);
-    assert(Search != EnumConstantRule::EnumNamesMap.end());
-    Direction = nullptr;
-    DirectionName = "dpct::" + Search->second;
+  // Currently, if memory API occurs in a template, we will migrate the API call
+  // under the undeclared decl AST node and the explicit specialization AST
+  // node. The API call in explicit specialization is same as without template.
+  // But if the API has non-specified default parameters and it is in an
+  // undeclared decl, these default parameters will not be counted into the
+  // number of call arguments. So, we need check the argument number before get
+  // it.
+  if (C->getNumArgs() >= 5 && !C->getArg(4)->isDefaultArgument()) {
+    const Expr *Direction = C->getArg(4);
+    const DeclRefExpr *DD = dyn_cast_or_null<DeclRefExpr>(Direction);
+    if (DD && isa<EnumConstantDecl>(DD->getDecl())) {
+      DirectionName = DD->getNameInfo().getName().getAsString();
+      auto Search = EnumConstantRule::EnumNamesMap.find(DirectionName);
+      assert(Search != EnumConstantRule::EnumNamesMap.end());
+      Direction = nullptr;
+      DirectionName = "dpct::" + Search->second;
+    }
   }
 
   DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
@@ -5729,7 +5738,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
       ReplaceStr = "dpct::dpct_memcpy";
   } else {
     if (USMLevel == UsmLevel::restricted) {
-      if (C->getNumArgs() == 6) {
+      if (C->getNumArgs() == 6 && !C->getArg(5)->isDefaultArgument()) {
         const Expr *Stream = C->getArg(5);
         if (Stream) {
           ExprAnalysis EA;
@@ -5756,8 +5765,13 @@ void MemoryMigrationRule::memcpySymbolMigration(
   }
 
   ExprAnalysis EA;
-  EA.analyze(C->getArg(3));
-  std::string OffsetFromBaseStr = EA.getReplacedString();
+  std::string OffsetFromBaseStr;
+  if (C->getNumArgs() >= 4 && !C->getArg(3)->isDefaultArgument()) {
+    EA.analyze(C->getArg(3));
+    OffsetFromBaseStr = EA.getReplacedString();
+  } else {
+    OffsetFromBaseStr = "0";
+  }
 
   if ((Name == "cudaMemcpyToSymbol" || Name == "cudaMemcpyToSymbolAsync") &&
       OffsetFromBaseStr != "0") {
@@ -5774,32 +5788,43 @@ void MemoryMigrationRule::memcpySymbolMigration(
   }
 
   // Remove C->getArg(3)
-  if (auto TM = removeArg(C, 3, *Result.SourceManager))
-    emplaceTransformation(TM);
+  if (C->getNumArgs() >= 4 && !C->getArg(3)->isDefaultArgument()) {
+    if (auto TM = removeArg(C, 3, *Result.SourceManager))
+      emplaceTransformation(TM);
+  }
 
-  emplaceTransformation(
-      new ReplaceStmt(C->getArg(4), std::move(DirectionName)));
+  if (C->getNumArgs() >= 5 && !C->getArg(4)->isDefaultArgument()) {
+    emplaceTransformation(
+        new ReplaceStmt(C->getArg(4), std::move(DirectionName)));
+  }
 
   // Async
   if (Name == "cudaMemcpyToSymbolAsync" ||
       Name == "cudaMemcpyFromSymbolAsync") {
-    if (C->getNumArgs() == 6) {
+    if (C->getNumArgs() == 6 && !C->getArg(4)->isDefaultArgument()) {
       if (USMLevel == UsmLevel::restricted) {
         if (auto TM = removeArg(C, 4, *Result.SourceManager))
           emplaceTransformation(TM);
-        if (auto TM = removeArg(C, 5, *Result.SourceManager))
-          emplaceTransformation(TM);
+        if (!C->getArg(5)->isDefaultArgument()) {
+          if (auto TM = removeArg(C, 5, *Result.SourceManager))
+            emplaceTransformation(TM);
+        }
       } else {
         handleAsync(C, 5, Result);
       }
-    }
-  } else {
-    if (C->getNumArgs() == 5) {
+    } else if (C->getNumArgs() == 5 && !C->getArg(4)->isDefaultArgument()) {
       if (USMLevel == UsmLevel::restricted) {
         if (auto TM = removeArg(C, 4, *Result.SourceManager))
           emplaceTransformation(TM);
-        emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
       }
+    }
+  } else {
+    if (USMLevel == UsmLevel::restricted) {
+      if (C->getNumArgs() == 5 && !C->getArg(4)->isDefaultArgument()) {
+        if (auto TM = removeArg(C, 4, *Result.SourceManager))
+          emplaceTransformation(TM);
+      }
+      emplaceTransformation(new InsertAfterStmt(C, ".wait()"));
     }
   }
 }
@@ -5872,7 +5897,7 @@ void MemoryMigrationRule::memsetMigration(
       ReplaceStr = "dpct::dpct_memset";
   } else {
     if (USMLevel == UsmLevel::restricted) {
-      if (C->getNumArgs() == 4) {
+      if (C->getNumArgs() == 4 && !C->getArg(3)->isDefaultArgument()) {
         const Expr *Stream = C->getArg(3);
         if (Stream) {
           ExprAnalysis EA;
@@ -5895,7 +5920,7 @@ void MemoryMigrationRule::memsetMigration(
   replaceMemAPIArg(C->getArg(0), Result);
 
   if (Name == "cudaMemsetAsync") {
-    if (C->getNumArgs() == 4) {
+    if (C->getNumArgs() == 4 && !C->getArg(3)->isDefaultArgument()) {
       if (USMLevel == UsmLevel::restricted) {
         if (auto TM = removeArg(C, 3, *Result.SourceManager))
           emplaceTransformation(TM);
@@ -5946,8 +5971,14 @@ void MemoryMigrationRule::prefetchMigration(
     auto StmtStrArg1 = EA.getReplacedString();
     EA.analyze(C->getArg(2));
     auto StmtStrArg2 = EA.getReplacedString();
-    EA.analyze(C->getArg(3));
-    auto StmtStrArg3 = EA.getReplacedString();
+    std::string StmtStrArg3;
+    if (C->getNumArgs() == 4 && !C->getArg(3)->isDefaultArgument()) {
+      EA.analyze(C->getArg(3));
+      StmtStrArg3 = EA.getReplacedString();
+    } else {
+      StmtStrArg3 = "0";
+    }
+
     if (StmtStrArg3 == "0" || StmtStrArg3 == "NULL" ||
         StmtStrArg3 == "nullptr" || StmtStrArg3 == "") {
       Replacement = "dpct::dev_mgr::instance().get_device(" + StmtStrArg2 +
@@ -6059,31 +6090,27 @@ void MemoryMigrationRule::run(const MatchFinder::MatchResult &Result) {
       Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
     }
     assert(MigrationDispatcher.find(Name) != MigrationDispatcher.end());
+
     // If there is a malloc function call in a template function, and the
     // template function is implicitly instantiated with two types. Then there
     // will be three FunctionDecl nodes in the AST. We should do replacement on
     // the FunctionDecl node which is not implicitly instantiated.
-    if (USMLevel == UsmLevel::restricted &&
-        (Name == "cudaMalloc" || Name == "cudaHostAlloc" ||
-         Name == "cudaMallocHost" || Name == "cudaMallocManaged" ||
-         Name == "cudaMemcpy" || Name == "cudaMemcpyToSymbol" ||
-         Name == "cudaMemcpyFromSymbol" || Name == "cudaMemset")) {
-      auto &Context = dpct::DpctGlobalInfo::getContext();
-      auto Parents = Context.getParents(*C);
-      while (Parents.size() == 1) {
-        auto *Parent = Parents[0].get<FunctionDecl>();
-        if (Parent) {
-          if (Parent->getTemplateSpecializationKind() ==
-                  TSK_ExplicitSpecialization ||
-              Parent->getTemplateSpecializationKind() == TSK_Undeclared)
-            break;
-          else
-            return;
-        } else {
-          Parents = Context.getParents(Parents[0]);
-        }
+    auto &Context = dpct::DpctGlobalInfo::getContext();
+    auto Parents = Context.getParents(*C);
+    while (Parents.size() == 1) {
+      auto *Parent = Parents[0].get<FunctionDecl>();
+      if (Parent) {
+        if (Parent->getTemplateSpecializationKind() ==
+                TSK_ExplicitSpecialization ||
+            Parent->getTemplateSpecializationKind() == TSK_Undeclared)
+          break;
+        else
+          return;
+      } else {
+        Parents = Context.getParents(Parents[0]);
       }
     }
+
     MigrationDispatcher.at(Name)(Result, C, ULExpr, IsAssigned, "");
 
     // if API is removed, then no need to add (*, 0)

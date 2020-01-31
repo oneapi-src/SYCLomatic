@@ -400,8 +400,8 @@ const clang::Stmt *getParentStmt(const clang::Stmt *S) {
 
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*S);
-  assert(Parents.size() == 1);
-  if (Parents.size() == 1)
+  assert(Parents.size() >= 1);
+  if (Parents.size() >= 1)
     return Parents[0].get<Stmt>();
 
   return nullptr;

@@ -93,3 +93,53 @@ void foo() {
   cudaHostRegister(h_A, size, 0);
   cudaHostUnregister(h_A);
 }
+
+template <typename T>
+int foo2() {
+  size_t size = 1234567 * sizeof(float);
+  float *h_A = (float *)malloc(size);
+  float *d_A = NULL;
+  cudaStream_t stream;
+  /// memcpy from symbol
+  // CHECK: dpct::dpct_memcpy(h_A, constData.get_ptr(), size);
+  cudaMemcpyFromSymbol(h_A, constData, size);
+  // CHECK: dpct::dpct_memcpy(h_A, (char *)(constData.get_ptr()) + 1, size);
+  cudaMemcpyFromSymbol(h_A, constData, size, 1);
+  // CHECK: dpct::dpct_memcpy(h_A, (char *)(constData.get_ptr()) + 1, size, dpct::device_to_host);
+  cudaMemcpyFromSymbol(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
+
+  /// memcpy from symbol async
+  // CHECK: dpct::async_dpct_memcpy(h_A, constData.get_ptr(), size);
+  cudaMemcpyFromSymbolAsync(h_A, constData, size);
+  // CHECK: dpct::async_dpct_memcpy(h_A, (char *)(constData.get_ptr()) + 2, size);
+  cudaMemcpyFromSymbolAsync(h_A, constData, size, 2);
+  // CHECK: dpct::async_dpct_memcpy(h_A, (char *)(constData.get_ptr()) + 1, size, dpct::device_to_host);
+  cudaMemcpyFromSymbolAsync(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
+  // CHECK: dpct::async_dpct_memcpy(h_A, (char *)(constData.get_ptr()) + 2, size, dpct::device_to_host);
+  cudaMemcpyFromSymbolAsync(h_A, constData, size, 2, cudaMemcpyDeviceToHost, 0);
+  // CHECK: dpct::async_dpct_memcpy(h_A, (char *)(constData.get_ptr()) + 3, size, dpct::device_to_host, stream);
+  cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream);
+
+  /// memcpy to symbol
+  // CHECK: dpct::dpct_memcpy(constData.get_ptr(), h_A, size);
+  cudaMemcpyToSymbol(constData, h_A, size);
+  // CHECK: dpct::dpct_memcpy((char *)(constData.get_ptr()) + 1, h_A, size);
+  cudaMemcpyToSymbol(constData, h_A, size, 1);
+  // CHECK: dpct::dpct_memcpy((char *)(constData.get_ptr()) + 1, h_A, size, dpct::host_to_device);
+  cudaMemcpyToSymbol(constData, h_A, size, 1, cudaMemcpyHostToDevice);
+
+  /// memcpy to symbol async
+  // CHECK: dpct::async_dpct_memcpy(constData.get_ptr(), h_A, size);
+  cudaMemcpyToSymbolAsync(constData, h_A, size);
+  // CHECK: dpct::async_dpct_memcpy((char *)(constData.get_ptr()) + 2, h_A, size);
+  cudaMemcpyToSymbolAsync(constData, h_A, size, 2);
+  // CHECK: dpct::async_dpct_memcpy((char *)(constData.get_ptr()) + 1, h_A, size, dpct::host_to_device);
+  cudaMemcpyToSymbolAsync(constData, h_A, size, 1, cudaMemcpyHostToDevice);
+  // CHECK: dpct::async_dpct_memcpy((char *)(constData.get_ptr()) + 2, h_A, size, dpct::host_to_device);
+  cudaMemcpyToSymbolAsync(constData, h_A, size, 2, cudaMemcpyHostToDevice, 0);
+  // CHECK: dpct::async_dpct_memcpy((char *)(constData.get_ptr()) + 3, h_A, size, dpct::host_to_device, stream);
+  cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream);
+}
+
+template int foo2<float>();
+template int foo2<int>();
