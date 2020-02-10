@@ -26,7 +26,12 @@ enum class CudaVersion {
   CUDA_92,
   CUDA_100,
   CUDA_101,
+#ifdef INTEL_CUSTOMIZATION
+  CUDA_102,
+  LATEST = CUDA_102,
+#else
   LATEST = CUDA_101,
+#endif
 };
 const char *CudaVersionToString(CudaVersion V);
 // Input is "Major.Minor"

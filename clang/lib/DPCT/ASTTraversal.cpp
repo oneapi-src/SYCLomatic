@@ -1414,7 +1414,7 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   if (BeginLoc.isMacroID()) {
     IsMacro = true;
     auto SpellingLocation = SM->getSpellingLoc(BeginLoc);
-    if (DpctGlobalInfo::isInCudaPath(SpellingLocation)) {
+    if (DpctGlobalInfo::replaceMacroName(SpellingLocation)) {
       BeginLoc = SM->getExpansionLoc(BeginLoc);
     } else {
       BeginLoc = SpellingLocation;
@@ -2349,7 +2349,7 @@ void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
   auto BeginLoc = FD->getBeginLoc();
   if (BeginLoc.isMacroID()) {
     auto SpellingLocation = SM->getSpellingLoc(BeginLoc);
-    if (DpctGlobalInfo::isInCudaPath(SpellingLocation)) {
+    if (DpctGlobalInfo::replaceMacroName(SpellingLocation)) {
       BeginLoc = SM->getExpansionLoc(BeginLoc);
     } else {
       BeginLoc = SpellingLocation;
