@@ -2511,6 +2511,17 @@ __global__ void testIntegerFunctions() {
   i = __mulhi(i, i);
   i = __popc(u);
   i = __popcll(ull);
+
+  // CHECK: sycl::clz((int)u);
+  // CHECK-NEXT: sycl::clz((long long)ull);
+  // CHECK-NEXT: sycl::hadd((int)u, (int)u);
+  // CHECK-NEXT: sycl::mul24((int)u, (int)u);
+  // CHECK-NEXT: sycl::mul_hi((int)u, (int)u);
+  __clz(u);
+  __clzll(ull);
+  __hadd(u, u);
+  __mul24(u, u);
+  __mulhi(u, u);
 }
 
 void testTypecasts() {

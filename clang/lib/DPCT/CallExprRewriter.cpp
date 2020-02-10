@@ -174,6 +174,47 @@ std::string MathFuncNameRewriter::getNewFuncName() {
         }
       }
 
+      if (SourceCalleeName == "__clz" || SourceCalleeName == "__clzll") {
+        LangOptions LO;
+        auto Arg = Call->getArg(0);
+        std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
+            PrintingPolicy(LO));
+        auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
+        auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());
+        if (SourceCalleeName == "__clz") {
+          if (ArgT != "int") {
+            if (DRE || IL)
+              RewriteArgList[0] = "(int)" + RewriteArgList[0];
+            else
+              RewriteArgList[0] = "(int)(" + RewriteArgList[0] + ")";
+          }
+        } else {
+          if (ArgT != "long long") {
+            if (DRE || IL)
+              RewriteArgList[0] = "(long long)" + RewriteArgList[0];
+            else
+              RewriteArgList[0] = "(long long)(" + RewriteArgList[0] + ")";
+          }
+        }
+      } else if (SourceCalleeName == "__mul24" || SourceCalleeName == "__mulhi" ||
+                 SourceCalleeName == "__hadd") {
+        LangOptions LO;
+        for (unsigned i = 0; i < Call->getNumArgs(); i++) {
+          auto Arg = Call->getArg(i);
+          std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
+              PrintingPolicy(LO));
+          std::string ArgExpr = Arg->getStmtClassName();
+          auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
+          auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());
+          if (ArgT != "int") {
+            if (DRE || IL)
+              RewriteArgList[i] = "(int)" + RewriteArgList[i];
+            else
+              RewriteArgList[i] = "(int)(" + RewriteArgList[i] + ")";
+          }
+        }
+      }
+
       if (std::find(SingleFuctions.begin(), SingleFuctions.end(),
                     SourceCalleeName) != SingleFuctions.end()) {
         LangOptions LO;
