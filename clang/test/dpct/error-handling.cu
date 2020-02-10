@@ -746,3 +746,23 @@ class ClassA
     if(a){printf("a");}
   }
 };
+
+// CHECK: __dpct_inline__ int foo(int error, const char *filename, int line) {
+// CHECK-NEXT:  int error_1 = 0;
+// CHECK-NEXT:  return error_1;
+// CHECK-NEXT: }
+__host__ __device__ __forceinline__ cudaError_t foo(cudaError_t error,
+                                                    const char *filename,
+                                                    int line) {
+  cudaError_t error_1 = cudaSuccess;
+  return error_1;
+}
+
+// CHECK: __dpct_inline__ int *foo_1(int error, const char *filename, int line) {
+// CHECK-NEXT:  return &error;
+// CHECK-NEXT: }
+__host__ __device__ __forceinline__ cudaError_t *foo_1(cudaError_t error,
+                                                    const char *filename,
+                                                    int line) {
+  return &error;
+}

@@ -2295,7 +2295,7 @@ void ReturnTypeRule::registerMatcher(MatchFinder &MF) {
       "curandStatus_t", "curandStatus");
 
   auto T =
-      hasDeclaration(anyOf(typedefDecl(TypedefNames), enumDecl(EnumTypeNames),
+      hasDeclaration(anyOf(enumDecl(EnumTypeNames),
                            typedefDecl(TypedefNames)));
   auto P = anyOf(pointsTo(typedefDecl(TypedefNames)),
                  pointsTo(enumDecl(EnumTypeNames)),
@@ -2317,6 +2317,7 @@ void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
   std::string TypeName;
   SourceManager *SM = Result.SourceManager;
 
+  SourceLocation BeginLoc;
   if ((FD = getNodeAsType<FunctionDecl>(Result, "functionDecl"))) {
     const clang::Type *Type = FD->getReturnType().getTypePtr();
     if (Type == nullptr)
@@ -2325,10 +2326,12 @@ void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
                    .getBaseTypeIdentifier()
                    ->getName()
                    .str();
+    BeginLoc = FD->getReturnTypeSourceRange().getBegin();
   } else if ((FD = getNodeAsType<FunctionDecl>(Result,
                                                "functionDeclWithTypedef"))) {
     auto QT = FD->getReturnType();
     TypeName = QT.getAsString();
+    BeginLoc = FD->getReturnTypeSourceRange().getBegin();
   } else {
     return;
   }
@@ -2346,7 +2349,6 @@ void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
   SrcAPIStaticsMap[TypeName]++;
   auto Replacement = getReplacementForType(TypeName);
 
-  auto BeginLoc = FD->getBeginLoc();
   if (BeginLoc.isMacroID()) {
     auto SpellingLocation = SM->getSpellingLoc(BeginLoc);
     if (DpctGlobalInfo::replaceMacroName(SpellingLocation)) {
