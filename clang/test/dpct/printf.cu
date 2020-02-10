@@ -4,21 +4,20 @@
 #include <stdio.h>
 
 // CHECK: void device_test(sycl::stream [[STREAM:stream_ct1]]) {
+// CHECK-NEXT: [[STREAM]] << "print test\n";
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1015:0: Adjust the code manually.
+// CHECK-NEXT: DPCT1015:0: Output needs adjustment.
 // CHECK-NEXT: */
-// CHECK-NEXT: [[STREAM]] << "TODO - output needs update" << sycl::endl;
+// CHECK-NEXT: [[STREAM]] << "print %s\n";
 // CHECK-NEXT: }
 __device__ void device_test() {
   printf("print test\n");
+  printf("print %s\n", "test");
 }
 
 // CHECK: void kernel_test(sycl::stream [[STREAM:stream_ct1]]) {
 // CHECK-NEXT: device_test([[STREAM]]);
-// CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1015:1: Adjust the code manually.
-// CHECK-NEXT: */
-// CHECK-NEXT: [[STREAM]] << "TODO - output needs update" << sycl::endl;
+// CHECK-NEXT: [[STREAM]] << "kernel test\n";
 // CHECK-NEXT: }
 __global__ void kernel_test() {
   device_test();
@@ -36,6 +35,7 @@ int main() {
   // CHECK:  dpct::get_default_queue().submit(
   // CHECK-NEXT:    [&](sycl::handler &cgh) {
   // CHECK-NEXT:      sycl::stream [[STREAM:stream_ct1]](64 * 1024, 80, cgh);
+  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_test_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:        [=](sycl::nd_item<3> [[ITEM:item_ct1]]) {

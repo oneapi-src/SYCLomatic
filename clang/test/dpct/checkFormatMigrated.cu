@@ -41,6 +41,7 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 //CHECK-NEXT:  int karg3 = 80;
 //CHECK-NEXT:  dpct::get_default_queue_wait().submit([&](cl::sycl::handler &cgh) {
 //CHECK-NEXT:    auto dpct_global_range = griddim * threaddim;
+//CHECK-EMPTY:
 //CHECK-NEXT:    cgh.parallel_for(cl::sycl::nd_range<3>(
 //CHECK-NEXT:                         cl::sycl::range<3>(dpct_global_range.get(2),
 //CHECK-NEXT:                                            dpct_global_range.get(1),

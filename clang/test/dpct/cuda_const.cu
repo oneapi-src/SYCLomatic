@@ -121,6 +121,7 @@ int main(int argc, char **argv) {
   // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto t1_acc_ct1 = t1.get_access(cgh);
+  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
@@ -135,6 +136,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:       auto const_angle_acc_ct1 = const_angle.get_access(cgh);
   // CHECK-NEXT:       auto const_ptr_acc_ct1 = const_ptr.get_access(cgh);
   // CHECK-NEXT:       auto d_array_acc_ct0 = d_array_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
@@ -167,6 +169,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:       auto const_float_acc_ct1 = const_float.get_access(cgh);
   // CHECK-NEXT:       auto const_one_acc_ct1 = const_one.get_access(cgh);
   // CHECK-NEXT:       auto d_array_acc_ct0 = d_array_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class simple_kernel_one_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {

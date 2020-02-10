@@ -15,6 +15,7 @@ __global__ void foo_kernel(T** R)
 //CHECK-NEXT:     dpct::get_default_queue().submit(
 //CHECK-NEXT:       [&](sycl::handler &cgh) {
 //CHECK-NEXT:         auto R_acc_ct0 = R_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
+//CHECK-EMPTY:
 //CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class foo_kernel_{{[a-f0-9]+}}, float>>(
 //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {

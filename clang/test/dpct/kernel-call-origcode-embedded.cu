@@ -80,7 +80,9 @@ int main() {
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto karg1_acc_ct0 = karg1_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto karg2_acc_ct1 = karg2_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-EMPTY:
   // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
+  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {

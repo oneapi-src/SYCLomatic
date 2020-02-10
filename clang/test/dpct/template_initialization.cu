@@ -51,6 +51,7 @@ void run_test() {
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto d_in_acc_ct0 = d_in_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto d_out_acc_ct1 = d_out_buf_ct1.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, num_threads), sycl::range<3>(1, 1, num_threads)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {

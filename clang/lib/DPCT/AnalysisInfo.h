@@ -488,6 +488,10 @@ public:
   inline static void setFormatStyle(DPCTFormatStyle FS) { FmtST = FS; }
   inline static bool isCtadEnabled() { return EnableCtad; }
   inline static void setCtadEnabled(bool Enable = true) { EnableCtad = Enable; }
+  inline static bool isCommentsEnabled() { return EnableComments; }
+  inline static void setCommentsEnabled(bool Enable = true) {
+    EnableComments = Enable;
+  }
 
   inline static void clearTempValueIdentifierMap() {
     TempValueIdentifierMap.clear();
@@ -654,13 +658,12 @@ public:
   }
 
   /// This function will return the replaced type name with qualifiers.
-  /// Currently, since clang do not support get the order of original qualifiers,
-  /// this function will follow the behavior of clang::QualType.print(), in
-  /// other words, the behavior is that the qualifiers(const, volatile...) will
-  /// occur before the simple type(int, bool...) regardless its order in origin
-  /// code.
-  /// \param [in] QT The input qualified type which need migration.
-  /// \param [in] Context The AST context.
+  /// Currently, since clang do not support get the order of original
+  /// qualifiers, this function will follow the behavior of
+  /// clang::QualType.print(), in other words, the behavior is that the
+  /// qualifiers(const, volatile...) will occur before the simple type(int,
+  /// bool...) regardless its order in origin code. \param [in] QT The input
+  /// qualified type which need migration. \param [in] Context The AST context.
   /// \return The replaced type name string with qualifiers.
   static inline std::string getReplacedTypeName(QualType QT,
                                                 const ASTContext &Context) {
@@ -818,6 +821,7 @@ private:
   static format::FormatRange FmtRng;
   static DPCTFormatStyle FmtST;
   static bool EnableCtad;
+  static bool EnableComments;
   static std::string ClNamespace;
   static CompilerInstance *CI;
   static ASTContext *Context;
@@ -1038,15 +1042,16 @@ public:
     return buildString("extern ", getMemoryType(), " ", getArgName(), ";");
   }
 
-  std::string getAccessorDecl(const std::string &ExternMemSize) {
+  void appendAccessorOrPointerDecl(const std::string &ExternMemSize,
+                                   std::vector<std::string> &AccList,
+                                   std::vector<std::string> &PtrList) {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     if (isShared()) {
       auto Dimension = getType()->getDimension();
       OS << MapNames::getClNamespace() + "::accessor<"
          << getAccessorDataType(true) << ", " << Dimension
-         << ", " + MapNames::getClNamespace() +
-                "::access::mode::read_write, " +
+         << ", " + MapNames::getClNamespace() + "::access::mode::read_write, " +
                 MapNames::getClNamespace() + "::access::target::local> "
          << getAccessorName() << "(";
       if (Dimension > 1) {
@@ -1056,14 +1061,15 @@ public:
            << getType()->getRangeArgument(ExternMemSize, false) << ", ";
       }
       OS << "cgh);";
-      return OS.str();
+      AccList.push_back(std::move(OS.str()));
     } else if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted &&
                AccMode != Accessor) {
-      return buildString("auto ", getPtrName(), " = ", getArgName(),
-                         ".get_ptr();");
+      PtrList.push_back(buildString("auto ", getPtrName(), " = ", getArgName(),
+                                    ".get_ptr();"));
+    } else {
+      AccList.push_back(buildString("auto ", getAccessorName(), " = ",
+                                    getArgName(), ".get_access(cgh);"));
     }
-    return buildString("auto ", getAccessorName(), " = ", getArgName(),
-                       ".get_access(cgh);");
   }
   inline std::string getRangeClass() {
     std::string Result;
@@ -1508,9 +1514,10 @@ private:
       return V->getKernelArg(OS);
     }
   };
-  inline void getArgumentsOrParametersForDecl(
-      llvm::raw_string_ostream &OS, bool HasData, bool AddNL,
-      std::string Indent, std::string ParamsSpliter) const;
+  inline void getArgumentsOrParametersForDecl(llvm::raw_string_ostream &OS,
+                                              bool HasData, bool AddNL,
+                                              std::string Indent,
+                                              std::string ParamsSpliter) const;
 
   bool HasItem, HasStream;
   MemVarInfoMap LocalVarMap;
@@ -2060,8 +2067,8 @@ private:
 
   void buildKernelArgsStmt();
   void printReverseRange(KernelPrinter &Printer, const std::string &RangeName) {
-    DpctGlobalInfo::printCtadClass(
-        Printer, MapNames::getClNamespace() + "::range", 3)
+    DpctGlobalInfo::printCtadClass(Printer,
+                                   MapNames::getClNamespace() + "::range", 3)
         << "(" << RangeName << ".get(2), " << RangeName << ".get(1), "
         << RangeName << ".get(0))";
   }
@@ -2099,14 +2106,41 @@ private:
   bool IsSync;
   std::vector<ArgInfo> ArgsInfo;
 
-  struct {
+  class {
+  public:
     StmtList StreamList;
     StmtList RangeList;
     StmtList MemoryList;
     StmtList ExternList;
+    StmtList PtrList;
     StmtList AccessorList;
     StmtList TextureList;
     StmtList NdRangeList;
+
+    inline KernelPrinter &print(KernelPrinter &Printer) {
+      printList(Printer, StreamList);
+      printList(Printer, ExternList);
+      printList(Printer, MemoryList);
+      printList(Printer, RangeList,
+                "ranges used for accessors to device memory");
+      printList(Printer, PtrList, "pointers to device memory");
+      printList(Printer, AccessorList, "accessors to device memory");
+      printList(Printer, TextureList, "accessors to image wrappers");
+      printList(Printer, NdRangeList,
+                "ranges to define ND iteration space for the kernel");
+      return Printer;
+    }
+
+  private:
+    KernelPrinter &printList(KernelPrinter &Printer, const StmtList &List,
+                             StringRef Comments = "") {
+      if (List.empty())
+        return Printer;
+      if (!Comments.empty() && DpctGlobalInfo::isCommentsEnabled())
+        Printer.line("// ", Comments);
+      Printer << List;
+      return Printer.newLine();
+    }
   } SubmitStmtsList;
 
   StmtList OuterStmts;

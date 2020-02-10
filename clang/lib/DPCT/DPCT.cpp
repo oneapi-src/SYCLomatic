@@ -312,6 +312,10 @@ static opt<bool> EnableCTAD(
                    "Default: off."),
     cat(DPCTCat), init(false));
 
+static opt<bool> EnableComments(
+    "comments", llvm::cl::desc("Generate comments in migrated code. Default: off"),
+    cat(DPCTCat), init(false));
+
 bool AsyncHandlerFlag = false;
 static opt<bool, true>
     AsyncHandler("always-use-async-handler",
@@ -948,6 +952,7 @@ int run(int argc, const char **argv) {
   DpctGlobalInfo::setFormatRange(FormatRng);
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
+  DpctGlobalInfo::setCommentsEnabled(EnableComments);
 
   MapNames::setClNamespace(ExplicitClNamespace);
 

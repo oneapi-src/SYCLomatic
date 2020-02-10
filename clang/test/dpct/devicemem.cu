@@ -78,6 +78,7 @@ int main() {
   // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto t1_acc_ct1 = t1.get_access(cgh);
+  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
@@ -91,6 +92,7 @@ int main() {
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto in_acc_ct1 = in.get_access(cgh);
   // CHECK-NEXT:       auto d_out_acc_ct0 = d_out_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
@@ -105,11 +107,13 @@ int main() {
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       dpct::device_memory<float, 1> tmp(64/*size*/);
+  // CHECK-EMPTY:
   // CHECK-NEXT:       auto tmp_acc_ct1 = tmp.get_access(cgh);
   // CHECK-NEXT:       auto al_acc_ct1 = al.get_access(cgh);
   // CHECK-NEXT:       auto fx_acc_ct1 = fx.get_access(cgh);
   // CHECK-NEXT:       auto fy_acc_ct1 = fy.get_access(cgh);
   // CHECK-NEXT:       auto d_out_acc_ct0 = d_out_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
+  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {

@@ -79,6 +79,7 @@ int main() {
   // CHECK:   dpct::get_default_queue_wait().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto t1_ptr_ct1 = t1.get_ptr();
+  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
@@ -89,6 +90,7 @@ int main() {
   // CHECK:   dpct::get_default_queue_wait().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto in_ptr_ct1 = in.get_ptr();
+  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
@@ -100,10 +102,13 @@ int main() {
   // CHECK:   dpct::get_default_queue_wait().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       dpct::device_memory<float, 1> tmp(64/*size*/);
+  // CHECK-EMPTY:
   // CHECK-NEXT:       auto tmp_ptr_ct1 = tmp.get_ptr();
   // CHECK-NEXT:       auto al_ptr_ct1 = al.get_ptr();
   // CHECK-NEXT:       auto fx_ptr_ct1 = fx.get_ptr();
+  // CHECK-EMPTY:
   // CHECK-NEXT:       auto fy_acc_ct1 = fy.get_access(cgh);
+  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {

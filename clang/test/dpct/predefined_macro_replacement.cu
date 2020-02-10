@@ -2,10 +2,7 @@
 // RUN: FileCheck --input-file %T/predefined_macro_replacement.dp.cpp --match-full-lines %s
 #include <stdio.h>
 //CHECK: #ifdef DPCPP_COMPATIBILITY_TEMP
-//CHECK-NEXT: /*
-//CHECK-NEXT: DPCT1015:0: Adjust the code manually.
-//CHECK-NEXT: */
-//CHECK-NEXT: void hello(sycl::stream [[STREAM:stream_ct1]]) { [[STREAM]] << "TODO - output needs update" << sycl::endl; }
+//CHECK-NEXT: void hello(sycl::stream [[STREAM:stream_ct1]]) { [[STREAM]] << "intel"; }
 #ifdef __CUDA_ARCH__
 __global__ void hello() { printf("intel"); }
 #else
@@ -34,10 +31,7 @@ __global__ void test(){
 //CHECK-NEXT:#elif (DPCPP_COMPATIBILITY_TEMP >200)
 //CHECK-NEXT:printf(">200, \n");
 //CHECK-NEXT:#else
-//CHECK-NEXT: /*
-//CHECK-NEXT: DPCT1015:1: Adjust the code manually.
-//CHECK-NEXT: */
-//CHECK-NEXT:[[STREAM]] << "TODO - output needs update" << sycl::endl;
+//CHECK-NEXT:[[STREAM]] << "<200 \n";
 //CHECK-NEXT:#endif
 #if (__CUDA_ARCH__ >= 400) &&  (__CUDA_ARCH__ >= 400)
 printf(">400, \n");

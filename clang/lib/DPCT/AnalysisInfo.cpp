@@ -26,6 +26,7 @@ UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::none;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::llvm;
 bool DpctGlobalInfo::EnableCtad = false;
+bool DpctGlobalInfo::EnableComments = false;
 CompilerInstance *DpctGlobalInfo::CI = nullptr;
 ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
@@ -219,8 +220,9 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
     // declaration.
     SubmitStmtsList.ExternList.emplace_back(VI->getExternGlobalVarDecl());
   }
-  SubmitStmtsList.AccessorList.emplace_back(
-      VI->getAccessorDecl(ExecutionConfig.ExternMemSize));
+  VI->appendAccessorOrPointerDecl(ExecutionConfig.ExternMemSize,
+                                  SubmitStmtsList.AccessorList,
+                                  SubmitStmtsList.PtrList);
 }
 
 void KernelCallExpr::buildKernelArgsStmt() {
@@ -312,16 +314,16 @@ void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
   Printer.line("[&](" + MapNames::getClNamespace() + "::handler &cgh) {");
   {
     auto Body = Printer.block();
-    Printer << SubmitStmtsList.StreamList << SubmitStmtsList.ExternList
-            << SubmitStmtsList.MemoryList << SubmitStmtsList.RangeList
-            << SubmitStmtsList.AccessorList << SubmitStmtsList.TextureList
-            << SubmitStmtsList.NdRangeList;
+    SubmitStmtsList.print(Printer);
     printParallelFor(Printer);
   }
   Printer.line("});");
 }
 
 void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
+  if (!SubmitStmtsList.NdRangeList.empty() &&
+      DpctGlobalInfo::isCommentsEnabled())
+    Printer.line("// run the kernel within defined ND range");
   if (DpctGlobalInfo::isSyclNamedLambda()) {
     Printer.line("cgh.parallel_for<dpct_kernel_name<class ", getName(), "_",
                  LocInfo.LocHash,
