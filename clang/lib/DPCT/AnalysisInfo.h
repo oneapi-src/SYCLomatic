@@ -470,6 +470,23 @@ public:
   inline static bool isCtadEnabled() { return EnableCtad; }
   inline static void setCtadEnabled(bool Enable = true) { EnableCtad = Enable; }
 
+  inline static void clearTempValueIdentifierMap() {
+    TempValueIdentifierMap.clear();
+  }
+  inline static std::string
+  getTempValueIdentifierWithUniqueIndex(std::string IdentifierWithoutIndex) {
+    auto Res = TempValueIdentifierMap.find(IdentifierWithoutIndex);
+    if (Res == TempValueIdentifierMap.end()) {
+      TempValueIdentifierMap.insert(std::make_pair(IdentifierWithoutIndex, 1));
+      return IdentifierWithoutIndex + "1";
+    } else {
+      unsigned int Index = Res->second;
+      Index++;
+      Res->second = Index;
+      return IdentifierWithoutIndex + std::to_string(Index);
+    }
+  }
+
   template <class TargetTy, class NodeTy>
   static inline const TargetTy *
   findAncestor(const NodeTy *N,
@@ -780,6 +797,7 @@ private:
   static bool SyclNamedLambda;
   static bool GuessIndentWidthMatcherFlag;
   static unsigned int IndentWidth;
+  static std::unordered_map<std::string, unsigned int> TempValueIdentifierMap;
 };
 
 class TemplateArgumentInfo;

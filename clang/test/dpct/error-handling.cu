@@ -573,19 +573,19 @@ void foo4(){
 
 
 // CHECK: void foo5(){
+// CHECK-NEXT:   const float* x;
 // CHECK-NEXT:   int res;
 // CHECK-NEXT:   {
-// CHECK-NEXT:   auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(0);
-// CHECK-NEXT:   sycl::buffer<float> buffer_ct1 = allocation_ct1.buffer.reinterpret<float>(
-// CHECK-NEXT:       sycl::range<1>(allocation_ct1.size / sizeof(float)));
+// CHECK-NEXT:   auto x_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x);
 // CHECK-NEXT:   sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
-// CHECK-NEXT:   mkl::blas::iamax(dpct::get_default_queue(), 10, buffer_ct1, 0,
+// CHECK-NEXT:   mkl::blas::iamax(dpct::get_default_queue(), 10, x_buff_ct1, 0,
 // CHECK-NEXT:                    result_temp_buffer);
 // CHECK-NEXT:   res = result_temp_buffer.get_access<sycl::access::mode::read>()[0];
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 void foo5(){
-  int res = cublasIsamax(10, 0, 0);
+  const float* x;
+  int res = cublasIsamax(10, x, 0);
 }
 
 // CHECK: void foo6(){

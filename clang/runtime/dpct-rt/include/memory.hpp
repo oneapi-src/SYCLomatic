@@ -134,6 +134,13 @@ public:
     return it->second;
   }
 
+  // Get the data pointed by ptr as a 1D buffer reinterpreted as type T.
+  template<typename T>
+  cl::sycl::buffer<T> get_buffer(const void *ptr){
+    allocation alloc = translate_ptr(ptr);
+    return alloc.buffer.reinterpret<T>(cl::sycl::range<1>(alloc.size/sizeof(T)));
+  }
+
   // Check if the pointer represents device pointer or not.
   bool is_device_ptr(const void *ptr) const {
     std::lock_guard<std::mutex> lock(m_mutex);

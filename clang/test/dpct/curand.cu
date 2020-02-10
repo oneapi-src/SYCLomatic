@@ -30,11 +30,9 @@ int main(){
   float *h_data;
 
   //CHECK:{
-  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data);
-  //CHECK-NEXT:sycl::buffer<float> buffer_ct1 = allocation_ct1.buffer.reinterpret<float>(
-  //CHECK-NEXT:    sycl::range<1>(allocation_ct1.size / sizeof(float)));
+  //CHECK-NEXT:auto h_data_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(h_data);
   //CHECK-NEXT:mkl::rng::uniform<float> distr_ct1;
-  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, buffer_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_buff_ct1);
   //CHECK-NEXT:}
   curandGenerateUniform(rng, h_data, 100*100);
 
@@ -43,11 +41,9 @@ int main(){
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data);
-  //CHECK-NEXT:sycl::buffer<float> buffer_ct1 = allocation_ct1.buffer.reinterpret<float>(
-  //CHECK-NEXT:    sycl::range<1>(allocation_ct1.size / sizeof(float)));
+  //CHECK-NEXT:auto h_data_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(h_data);
   //CHECK-NEXT:mkl::rng::uniform<float> distr_ct1;
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, buffer_ct1), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_buff_ct1), 0);
   //CHECK-NEXT:}
   s1 = curandGenerateUniform(rng, h_data, 100*100);
 
@@ -56,11 +52,9 @@ int main(){
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data);
-  //CHECK-NEXT:sycl::buffer<float> buffer_ct1 = allocation_ct1.buffer.reinterpret<float>(
-  //CHECK-NEXT:    sycl::range<1>(allocation_ct1.size / sizeof(float)));
+  //CHECK-NEXT:auto h_data_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(h_data);
   //CHECK-NEXT:mkl::rng::lognormal<float> distr_ct1(123, 456, 0.0, 1.0);
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, buffer_ct1), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_buff_ct1), 0);
   //CHECK-NEXT:}
   s1 = curandGenerateLogNormal(rng, h_data, 100*100, 123, 456);
 
@@ -69,39 +63,34 @@ int main(){
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data);
-  //CHECK-NEXT:sycl::buffer<float> buffer_ct1 = allocation_ct1.buffer.reinterpret<float>(
-  //CHECK-NEXT:    sycl::range<1>(allocation_ct1.size / sizeof(float)));
+  //CHECK-NEXT:auto h_data_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(h_data);
   //CHECK-NEXT:mkl::rng::gaussian<float> distr_ct1(123, 456);
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, buffer_ct1), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_buff_ct1), 0);
   //CHECK-NEXT:}
   s1 = curandGenerateNormal(rng, h_data, 100*100, 123, 456);
 
   double* h_data_d;
   //CHECK:{
-  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data_d);
-  //CHECK-NEXT:sycl::buffer<double> buffer_ct1 = allocation_ct1.buffer.reinterpret<double>(
-  //CHECK-NEXT:    sycl::range<1>(allocation_ct1.size / sizeof(double)));
+  //CHECK-NEXT:auto h_data_d_buff_ct1 =
+  //CHECK-NEXT:    dpct::mem_mgr::instance().get_buffer<double>(h_data_d);
   //CHECK-NEXT:mkl::rng::uniform<double> distr_ct1;
-  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, buffer_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_d_buff_ct1);
   //CHECK-NEXT:}
   curandGenerateUniformDouble(rng, h_data_d, 100*100);
 
   //CHECK:{
-  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data_d);
-  //CHECK-NEXT:sycl::buffer<double> buffer_ct1 = allocation_ct1.buffer.reinterpret<double>(
-  //CHECK-NEXT:    sycl::range<1>(allocation_ct1.size / sizeof(double)));
+  //CHECK-NEXT:auto h_data_d_buff_ct1 =
+  //CHECK-NEXT:    dpct::mem_mgr::instance().get_buffer<double>(h_data_d);
   //CHECK-NEXT:mkl::rng::lognormal<double> distr_ct1(123, 456, 0.0, 1.0);
-  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, buffer_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_d_buff_ct1);
   //CHECK-NEXT:}
   curandGenerateLogNormalDouble(rng, h_data_d, 100*100, 123, 456);
 
   //CHECK:{
-  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data_d);
-  //CHECK-NEXT:sycl::buffer<double> buffer_ct1 = allocation_ct1.buffer.reinterpret<double>(
-  //CHECK-NEXT:    sycl::range<1>(allocation_ct1.size / sizeof(double)));
+  //CHECK-NEXT:auto h_data_d_buff_ct1 =
+  //CHECK-NEXT:    dpct::mem_mgr::instance().get_buffer<double>(h_data_d);
   //CHECK-NEXT:mkl::rng::gaussian<double> distr_ct1(123, 456);
-  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, buffer_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_d_buff_ct1);
   //CHECK-NEXT:}
   curandGenerateNormalDouble(rng, h_data_d, 100*100, 123, 456);
 
@@ -111,12 +100,10 @@ int main(){
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data_ui);
-  //CHECK-NEXT:sycl::buffer<uint32_t> buffer_ct1 =
-  //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<uint32_t>(
-  //CHECK-NEXT:        sycl::range<1>(allocation_ct1.size / sizeof(uint32_t)));
+  //CHECK-NEXT:auto h_data_ui_buff_ct1 =
+  //CHECK-NEXT:    dpct::mem_mgr::instance().get_buffer<uint32_t>(h_data_ui);
   //CHECK-NEXT:mkl::rng::uniform_bits<uint32_t> distr_ct1;
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, buffer_ct1), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_ui_buff_ct1), 0);
   //CHECK-NEXT:}
   s1 = curandGenerate(rng, h_data_ui, 100*100);
 
@@ -125,34 +112,27 @@ int main(){
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data_ui);
-  //CHECK-NEXT:sycl::buffer<int32_t> buffer_ct1 =
-  //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<int32_t>(
-  //CHECK-NEXT:        sycl::range<1>(allocation_ct1.size / sizeof(int32_t)));
+  //CHECK-NEXT:auto h_data_ui_buff_ct1 =
+  //CHECK-NEXT:    dpct::mem_mgr::instance().get_buffer<int32_t>(h_data_ui);
   //CHECK-NEXT:mkl::rng::poisson<int32_t> distr_ct1(123.456);
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, buffer_ct1), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_ui_buff_ct1), 0);
   //CHECK-NEXT:}
   s1 = curandGeneratePoisson(rng, h_data_ui, 100*100, 123.456);
 
   unsigned long long* h_data_ull;
   //CHECK:{
-  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data_ull);
-  //CHECK-NEXT:sycl::buffer<uint64_t> buffer_ct1 =
-  //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<uint64_t>(
-  //CHECK-NEXT:        sycl::range<1>(allocation_ct1.size / sizeof(uint64_t)));
+  //CHECK-NEXT:auto h_data_ull_buff_ct1 =
+  //CHECK-NEXT:    dpct::mem_mgr::instance().get_buffer<uint64_t>(h_data_ull);
   //CHECK-NEXT:mkl::rng::uniform_bits<uint64_t> distr_ct1;
-  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, buffer_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_ull_buff_ct1);
   //CHECK-NEXT:}
   curandGenerateLongLong(rng, h_data_ull, 100*100);
 
   //CHECK:if (s1 = [&]() {
-  //CHECK-NEXT:auto allocation_ct1 =
-  //CHECK-NEXT:    dpct::mem_mgr::instance().translate_ptr(h_data_ull);
-  //CHECK-NEXT:sycl::buffer<uint64_t> buffer_ct1 =
-  //CHECK-NEXT:    allocation_ct1.buffer.reinterpret<uint64_t>(
-  //CHECK-NEXT:        sycl::range<1>(allocation_ct1.size / sizeof(uint64_t)));
+  //CHECK-NEXT:auto h_data_ull_buff_ct1 =
+  //CHECK-NEXT:    dpct::mem_mgr::instance().get_buffer<uint64_t>(h_data_ull);
   //CHECK-NEXT:mkl::rng::uniform_bits<uint64_t> distr_ct1;
-  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, buffer_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_ull_buff_ct1);
   //CHECK-NEXT:return 0;
   //CHECK-NEXT:    }()) {}
   if(s1 = curandGenerateLongLong(rng, h_data_ull, 100*100)){}
@@ -167,11 +147,9 @@ int main(){
   //CHECK-NEXT:because the function call is redundant in DPC++.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto allocation_ct1 = dpct::mem_mgr::instance().translate_ptr(h_data);
-  //CHECK-NEXT:sycl::buffer<float> buffer_ct1 = allocation_ct1.buffer.reinterpret<float>(
-  //CHECK-NEXT:    sycl::range<1>(allocation_ct1.size / sizeof(float)));
+  //CHECK-NEXT:auto h_data_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(h_data);
   //CHECK-NEXT:mkl::rng::uniform<float> distr_ct1;
-  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng2, 100 * 100, buffer_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng2, 100 * 100, h_data_buff_ct1);
   //CHECK-NEXT:}
   curandGenerator_t rng2;
   curandCreateGenerator(&rng2, CURAND_RNG_QUASI_DEFAULT);

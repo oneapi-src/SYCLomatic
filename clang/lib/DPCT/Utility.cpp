@@ -823,19 +823,13 @@ std::string getBufferNameAndDeclStr(const std::string &PointerName,
                                     const std::string &TypeAsStr,
                                     SourceLocation SL, std::string &BufferDecl,
                                     int DistinctionID) {
-  std::string BufferTempName = "buffer_ct" + std::to_string(DistinctionID);
-  std::string AllocationTempName =
-      "allocation_ct" + std::to_string(DistinctionID);
+  std::string BufferTempName = PointerName + "_buff_ct";
+  BufferTempName = dpct::DpctGlobalInfo::getTempValueIdentifierWithUniqueIndex(
+      BufferTempName);
   // TODO: reinterpret will copy more data
   BufferDecl = getIndent(SL, AC.getSourceManager()).str() + "auto " +
-               AllocationTempName +
-               " = dpct::mem_mgr::instance().translate_ptr(" +
-               PointerName + ");" + getNL() +
-               getIndent(SL, AC.getSourceManager()).str() + MapNames::getClNamespace() +
-               "::buffer<" + TypeAsStr + "> " + BufferTempName + " = " +
-               AllocationTempName + ".buffer.reinterpret<" + TypeAsStr +
-               ">(" + MapNames::getClNamespace() + "::range<1>(" + AllocationTempName + ".size/sizeof(" +
-               TypeAsStr + ")));" + getNL();
+               BufferTempName + " = dpct::mem_mgr::instance().get_buffer<" +
+               TypeAsStr + ">(" + PointerName + ");" + getNL();
   return BufferTempName;
 }
 std::string getBufferNameAndDeclStr(const Expr *Arg, const ASTContext &AC,
@@ -843,8 +837,14 @@ std::string getBufferNameAndDeclStr(const Expr *Arg, const ASTContext &AC,
                                     SourceLocation SL, std::string &BufferDecl,
                                     int DistinctionID) {
   std::string PointerName = getStmtSpelling(Arg, AC);
-  return getBufferNameAndDeclStr(PointerName, AC, TypeAsStr, SL, BufferDecl,
-                                 DistinctionID);
+  std::string BufferTempName = getTempNameForExpr(Arg, true, true) + "buff_ct";
+  BufferTempName = dpct::DpctGlobalInfo::getTempValueIdentifierWithUniqueIndex(
+      BufferTempName);
+  // TODO: reinterpret will copy more data
+  BufferDecl = getIndent(SL, AC.getSourceManager()).str() + "auto " +
+               BufferTempName + " = dpct::mem_mgr::instance().get_buffer<" +
+               TypeAsStr + ">(" + PointerName + ");" + getNL();
+  return BufferTempName;
 }
 
 // Recursively travers the subtree under \p S for all the reference of \p VD,

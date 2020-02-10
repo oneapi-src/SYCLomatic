@@ -63,6 +63,6 @@ __host__ void foo4(){
   float* x_S=0;
   int incx=1;
   int* result =0;
-  // CHECK: mkl::blas::iamax(handle, n, buffer_ct{{[0-9]+}}, incx, result_temp_buffer);
+  // CHECK: mkl::blas::iamax(handle, n, x_S_buff_ct1, incx, result_temp_buffer);
   cublasIsamax(handle, n, x_S, incx, result);
 }

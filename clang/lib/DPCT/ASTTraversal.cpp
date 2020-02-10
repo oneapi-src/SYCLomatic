@@ -2562,6 +2562,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
   if (!CE->getDirectCallee())
     return;
+  dpct::DpctGlobalInfo::clearTempValueIdentifierMap();
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   auto &SM = DpctGlobalInfo::getSourceManager();
@@ -2928,6 +2929,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     return;
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
+  dpct::DpctGlobalInfo::clearTempValueIdentifierMap();
 
   const SourceManager *SM = Result.SourceManager;
   SourceLocation FuncNameBegin(CE->getBeginLoc());
@@ -3952,7 +3954,7 @@ void SOLVERFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
   }
 
   assert(CE && "Unknown result");
-
+  dpct::DpctGlobalInfo::clearTempValueIdentifierMap();
   // Collect sourceLocations of the function call
   SourceLocation FuncNameBegin(CE->getBeginLoc());
   SourceLocation FuncCallEnd(CE->getEndLoc());
@@ -4222,25 +4224,14 @@ std::string SOLVERFunctionCallRule::getBufferNameAndDeclStr(
     SourceLocation SL, std::string &BufferDecl, int DistinctionID) {
 
   std::string PointerName = getStmtSpelling(Arg, AC);
-  std::string PointerNameHashStr = getHashAsString(PointerName);
-  PointerNameHashStr = (PointerNameHashStr.size() < 4)
-                           ? PointerNameHashStr
-                           : PointerNameHashStr.substr(0, 3);
-
-  std::string BufferTempName = "buffer_ct" + std::to_string(DistinctionID);
-  std::string AllocationTempName =
-      "allocation_ct" + std::to_string(DistinctionID);
+  std::string BufferTempName = getTempNameForExpr(Arg, true, true) + "buff_ct";
+  BufferTempName = dpct::DpctGlobalInfo::getTempValueIdentifierWithUniqueIndex(
+      BufferTempName);
 
   // TODO: reinterpret will copy more data
   BufferDecl = getIndent(SL, AC.getSourceManager()).str() + "auto " +
-               AllocationTempName +
-               " = dpct::mem_mgr::instance().translate_ptr(" + PointerName +
-               ");" + getNL() + getIndent(SL, AC.getSourceManager()).str() +
-               MapNames::getClNamespace() + "::buffer<" + TypeAsStr + "> " +
-               BufferTempName + " = " + AllocationTempName +
-               ".buffer.reinterpret<" + TypeAsStr + ">(" +
-               MapNames::getClNamespace() + "::range<1>(" + AllocationTempName +
-               ".size/sizeof(" + TypeAsStr + ")));" + getNL();
+               BufferTempName + " = dpct::mem_mgr::instance().get_buffer<" +
+               TypeAsStr + ">(" + PointerName + ");" + getNL();
   return BufferTempName;
 }
 
