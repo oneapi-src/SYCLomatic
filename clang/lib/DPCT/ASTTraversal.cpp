@@ -1224,12 +1224,27 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                     .bind("TypeInFieldDecl"),
                 this);
 
+  auto SizeOfTypes = anyOf(hasDeclaration(typedefDecl(TypedefNames)),
+                         hasDeclaration(enumDecl(EnumTypeNames)),
+                         hasDeclaration(cxxRecordDecl(RecordTypeNames)),
+                         hasDeclaration(typedefDecl(HandleTypeNames)),
+                         hasDeclaration(classTemplateSpecializationDecl(TemplateRecordTypeNames)),
+                         pointsTo(typedefDecl(TypedefNames)),
+                         pointsTo(enumDecl(EnumTypeNames)),
+                         pointsTo(cxxRecordDecl(RecordTypeNames)),
+                         pointsTo(pointsTo(typedefDecl(TypedefNames))),
+                         pointsTo(pointsTo(enumDecl(EnumTypeNames))),
+                         pointsTo(pointsTo(cxxRecordDecl(RecordTypeNames))),
+                         pointsTo(pointsTo(pointsTo(typedefDecl(TypedefNames)))),
+                         pointsTo(pointsTo(pointsTo(enumDecl(EnumTypeNames)))),
+                         pointsTo(pointsTo(pointsTo(cxxRecordDecl(RecordTypeNames)))),
+                         references(typedefDecl(TypedefNames)),
+                         references(enumDecl(EnumTypeNames)),
+                         references(cxxRecordDecl(RecordTypeNames)));
+
   MF.addMatcher(
       unaryExprOrTypeTraitExpr(
-          hasArgumentOfType(hasDeclaration(
-              anyOf(typedefDecl(TypedefNames), typedefDecl(HandleTypeNames),
-                    enumDecl(EnumTypeNames), cxxRecordDecl(RecordTypeNames),
-                    classTemplateSpecializationDecl(TemplateRecordTypeNames)))))
+          hasArgumentOfType(SizeOfTypes))
           .bind("TypeInUnaryExprOrTypeTraitExpr"),
       this);
 

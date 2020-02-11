@@ -393,6 +393,16 @@ __global__ void foo() {
   (cudaStream_t **)p;
   (cudaStream_t ***)p;
 
+
+  // CHECK: malloc(sizeof(queue_p *));
+  // CHECK-NEXT: malloc(sizeof(queue_p **));
+  // CHECK-NEXT: malloc(sizeof(queue_p ***));
+  // CHECK-NEXT: malloc(sizeof(queue_p &));
+  malloc(sizeof(cudaStream_t *));
+  malloc(sizeof(cudaStream_t **));
+  malloc(sizeof(cudaStream_t ***));
+  malloc(sizeof(cudaStream_t &));
+
   int i;
   // CHECK: (int)i;
   // CHECK-NEXT: (int *)p;
