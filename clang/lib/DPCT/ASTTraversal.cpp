@@ -2529,6 +2529,25 @@ void BLASEnumsRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(BLASEnumsRule)
 
+// Rule for RANDOM enums.
+// Migrate RANDOM status values to corresponding int values
+void RandomEnumsRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      declRefExpr(to(enumConstantDecl(matchesName("CURAND_STATUS.*"))))
+          .bind("RANDOMStatusConstants"),
+      this);
+}
+
+void RandomEnumsRule::run(const MatchFinder::MatchResult &Result) {
+  if (const DeclRefExpr *DE =
+          getNodeAsType<DeclRefExpr>(Result, "RANDOMStatusConstants")) {
+    auto *EC = cast<EnumConstantDecl>(DE->getDecl());
+    emplaceTransformation(new ReplaceStmt(DE, EC->getInitVal().toString(10)));
+  }
+}
+
+REGISTER_RULE(RandomEnumsRule)
+
 // Rule for Random function calls. Currently only support host APIs.
 void RandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {

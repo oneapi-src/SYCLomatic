@@ -620,6 +620,14 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+/// Migration rule for RANDOM enums.
+class RandomEnumsRule : public NamedMigrationRule<RandomEnumsRule> {
+public:
+  RandomEnumsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 /// Migration rule for BLAS function calls.
 class BLASFunctionCallRule : public NamedMigrationRule<BLASFunctionCallRule> {
 public:
