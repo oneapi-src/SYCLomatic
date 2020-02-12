@@ -136,6 +136,10 @@ void MapNames::setClNamespace(bool Enable) {
     // ...
     {"cudaDevAttrHostNativeAtomicSupported", "is_native_atomic_supported"},
     {"cudaDevAttrComputeCapabilityMajor", "get_major_version"},
+    {"cudaDevAttrComputeCapabilityMinor", "get_minor_version"},
+    {"cudaDevAttrMultiProcessorCount", "get_max_compute_units"},
+    {"cudaDevAttrClockRate", "get_max_clock_frequency"},
+    {"cudaDevAttrIntegrated", "get_integrated"},
     // enum Memcpy Kind
     {"cudaMemcpyHostToHost", "host_to_host"},
     {"cudaMemcpyHostToDevice", "host_to_device"},

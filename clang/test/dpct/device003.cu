@@ -28,7 +28,7 @@ cudaDeviceProp deviceProp;
 checkErrors(cudaGetDeviceProperties(&deviceProp, 0));
 
 int atomicSupported;
-// CHECK: checkErrors(atomicSupported = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported());
+// CHECK: checkErrors((atomicSupported = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported(), 0));
 checkErrors(cudaDeviceGetAttribute(&atomicSupported, cudaDevAttrHostNativeAtomicSupported, dev_id));
 
 int device1 = 0;

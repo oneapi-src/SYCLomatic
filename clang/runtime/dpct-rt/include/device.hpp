@@ -27,7 +27,7 @@
 
 namespace dpct {
 
-enum class compute_mode { default_, exclusive, prohibited, exclusive_process };
+enum compute_mode { default_, exclusive, prohibited, exclusive_process };
 
 /// DPC++ default exception handler
 auto exception_handler = [](cl::sycl::exception_list exceptions) {
@@ -134,6 +134,24 @@ public:
     return major;
   }
 
+  int get_minor_version() {
+    int major, minor;
+    get_version(major, minor);
+    return minor;
+  }
+
+  int get_max_compute_units() {
+    return get_device_info().get_max_compute_units();
+  }
+
+  int get_max_clock_frequency() {
+    return get_device_info().get_max_clock_frequency();
+  }
+
+  int get_integrated() {
+    return get_device_info().get_integrated();
+  }
+
   void get_device_info(device_info &out) {
     device_info prop;
     prop.set_name(get_info<cl::sycl::info::device::name>().c_str());
@@ -181,6 +199,12 @@ public:
     prop.set_max_nd_range_size(max_nd_range_size);
 
     out = prop;
+  }
+
+  device_info get_device_info() {
+    device_info prop;
+    get_device_info(prop);
+    return prop;
   }
 
   void reset() {

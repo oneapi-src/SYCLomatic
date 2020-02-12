@@ -4463,19 +4463,27 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                                     ->getNameInfo()
                                     .getName()
                                     .getAsString();
+    std::string ReplStr{ResultVarName};
+    auto StmtStrArg2 = getStmtSpelling(CE->getArg(2), *Result.Context);
 
-    auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
-    if (Search == EnumConstantRule::EnumNamesMap.end()) {
-      // TODO report migration error
-      return;
+    if (AttributeName == "cudaDevAttrComputeMode") {
+      ReplStr += " = dpct::compute_mode::default_";
+    } else {
+      auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
+      if (Search == EnumConstantRule::EnumNamesMap.end()) {
+        // TODO report migration error
+        return;
+      }
+
+      ReplStr += " = dpct::dev_mgr::instance().get_device(";
+      ReplStr += StmtStrArg2;
+      ReplStr += ").";
+      ReplStr += Search->second;
+      ReplStr += "()";
     }
-
-    emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
-    emplaceTransformation(new ReplaceStmt(
-        CE->getCallee(), "dpct::dev_mgr::instance().get_device"));
-    emplaceTransformation(new RemoveArg(CE, 0));
-    emplaceTransformation(new RemoveArg(CE, 1));
-    emplaceTransformation(new InsertAfterStmt(CE, "." + Search->second + "()"));
+    if (IsAssigned)
+      ReplStr = "(" + ReplStr + ", 0)";
+    emplaceTransformation(new ReplaceStmt(CE, ReplStr));
   } else if (FuncName == "cudaDeviceGetP2PAttribute") {
     std::string ResultVarName = DereferenceArg(CE->getArg(0), *Result.Context);
     emplaceTransformation(new ReplaceStmt(CE, ResultVarName + " = 0"));

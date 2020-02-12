@@ -50,6 +50,22 @@ int val;
 // CHECK: val = dpct::dev_mgr::instance().get_device(dev_id).get_major_version();
 cudaDeviceGetAttribute(&val, cudaDevAttrComputeCapabilityMajor, dev_id);
 
+int computeMode = -1, minor = 0;
+// CHECK: checkError((computeMode = dpct::compute_mode::default_, 0));
+checkError(cudaDeviceGetAttribute(&computeMode, cudaDevAttrComputeMode, dev_id));
+// CHECK: checkError((minor = dpct::dev_mgr::instance().get_device(dev_id).get_minor_version(), 0));
+checkError(cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, dev_id));
+
+int multiProcessorCount = 0, clockRate = 0;
+// CHECK: checkError((multiProcessorCount = dpct::dev_mgr::instance().get_device(dev_id).get_max_compute_units(), 0));
+checkError(cudaDeviceGetAttribute(&multiProcessorCount, cudaDevAttrMultiProcessorCount, dev_id));
+// CHECK: checkError((clockRate = dpct::dev_mgr::instance().get_device(dev_id).get_max_clock_frequency(), 0));
+checkError(cudaDeviceGetAttribute(&clockRate, cudaDevAttrClockRate, dev_id));
+
+int integrated = -1;
+// CHECK: checkError((integrated = dpct::dev_mgr::instance().get_device(dev_id).get_integrated(), 0));
+checkError(cudaDeviceGetAttribute(&integrated, cudaDevAttrIntegrated, dev_id));
+
 int device1 = 0;
 int device2 = 1;
 int perfRank = 0;
