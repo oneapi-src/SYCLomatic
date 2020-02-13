@@ -6,8 +6,8 @@
 #include "cuda_fp16.h"
 
 int main(int argc, char **argv) {
-  //TODO: In CUDA 8.0 header file, __half and __half2 are defined by typedef an anonymous struct.
-  //But in 9.2, 10.0 and 10.1, __half and __half2 are the names of struct.
+  //TODO: In SDK 8.0, __half and __half2 are defined by typedef an anonymous struct.
+  //But after 9.2,they are the names of struct.
   //Need refine the migration to cover this case.
   //CHECK:__half _h;
   //CHECK-NEXT:int a = sizeof(__half);
