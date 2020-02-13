@@ -59,3 +59,10 @@ int main() {
 #endif
   return 0;
 }
+
+//CHECK: #define AAA DPCPP_COMPATIBILITY_TEMP
+//CHECK-NEXT: #define BBB CL_SYCL_LANGUAGE_VERSION
+//CHECK-NEXT: #define CCC DPCPP_COMPATIBILITY_TEMP
+#define AAA __CUDA_ARCH__
+#define BBB __CUDACC__
+#define CCC __NVCC__

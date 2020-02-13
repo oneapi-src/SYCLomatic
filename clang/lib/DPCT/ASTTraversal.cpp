@@ -89,6 +89,13 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
     auto II = Iter->getIdentifierInfo();
     if (!II)
       continue;
+
+    if (MapNames::MacrosMap.find(II->getName()) != MapNames::MacrosMap.end()) {
+      std::string ReplacedMacroName = MapNames::MacrosMap.at(II->getName());
+      TransformSet.emplace_back(
+          new ReplaceToken(Iter->getLocation(), std::move(ReplacedMacroName)));
+    }
+
     if (II->hasMacroDefinition() && (II->getName().str() == "__host__" ||
                                      II->getName().str() == "__device__" ||
                                      II->getName().str() == "__global__" ||
