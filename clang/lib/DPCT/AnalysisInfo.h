@@ -382,7 +382,8 @@ public:
       Filename == "cublas.h" ||
       Filename == "cublasLt.h" ||
       Filename == "cublas_v2.h" ||
-      Filename == "cublasXt.h") {
+      Filename == "cublasXt.h" ||
+      Filename == "nvblas.h") {
       return true;
     }
     return false;
