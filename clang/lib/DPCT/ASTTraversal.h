@@ -360,8 +360,10 @@ protected:
   void insertAroundStmt(const Stmt *S, std::string &&Prefix,
                         std::string &&Suffix, bool DoMacroExpansion = false) {
     auto P = incPairID();
-    emplaceTransformation(new InsertBeforeStmt(S, std::move(Prefix), P, DoMacroExpansion));
-    emplaceTransformation(new InsertAfterStmt(S, std::move(Suffix), P, DoMacroExpansion));
+    emplaceTransformation(
+        new InsertBeforeStmt(S, std::move(Prefix), P, DoMacroExpansion));
+    emplaceTransformation(
+        new InsertAfterStmt(S, std::move(Suffix), P, DoMacroExpansion));
   }
   void insertAroundRange(const SourceLocation &PrefixSL,
                          const SourceLocation &SuffixSL, std::string &&Prefix,
@@ -419,9 +421,8 @@ public:
 
 private:
   void ReportUnsupportedAtomicFunc(const CallExpr *CE);
-  void
-  MigrateAtomicFunc(const CallExpr *CE,
-                      const ast_matchers::MatchFinder::MatchResult &Result);
+  void MigrateAtomicFunc(const CallExpr *CE,
+                         const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for thrust functions
@@ -573,14 +574,14 @@ public:
 
 /// Migration rule for adding try-catch for host APIs calls
 class ErrorHandlingHostAPIRule
-  : public NamedMigrationRule<ErrorHandlingHostAPIRule> {
+    : public NamedMigrationRule<ErrorHandlingHostAPIRule> {
 public:
   ErrorHandlingHostAPIRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
-  void insertTryCatch(const FunctionDecl* FD);
+  void insertTryCatch(const FunctionDecl *FD);
 };
 
 /// Migration rule for Device Property variables.
@@ -660,7 +661,9 @@ public:
 class RandomFunctionCallRule
     : public NamedMigrationRule<RandomFunctionCallRule> {
 public:
-  RandomFunctionCallRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  RandomFunctionCallRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
@@ -796,21 +799,22 @@ public:
 
 private:
   void mallocMigration(const ast_matchers::MatchFinder::MatchResult &Result,
-                         const CallExpr *C,
-                         const UnresolvedLookupExpr *ULExpr = NULL,
-                       bool IsAssigned = false, std::string SpecifiedQueue = "");
+                       const CallExpr *C,
+                       const UnresolvedLookupExpr *ULExpr = NULL,
+                       bool IsAssigned = false,
+                       std::string SpecifiedQueue = "");
   void memcpyMigration(const ast_matchers::MatchFinder::MatchResult &Result,
-                         const CallExpr *C,
-                         const UnresolvedLookupExpr *ULExpr = NULL,
+                       const CallExpr *C,
+                       const UnresolvedLookupExpr *ULExpr = NULL,
                        bool IsAssigned = false,
                        std::string SpecifiedQueue = "");
   void freeMigration(const ast_matchers::MatchFinder::MatchResult &Result,
-                       const CallExpr *C,
-                       const UnresolvedLookupExpr *ULExpr = NULL,
+                     const CallExpr *C,
+                     const UnresolvedLookupExpr *ULExpr = NULL,
                      bool IsAssigned = false, std::string SpecifiedQueue = "");
   void memsetMigration(const ast_matchers::MatchFinder::MatchResult &Result,
-                         const CallExpr *C,
-                         const UnresolvedLookupExpr *ULExpr = NULL,
+                       const CallExpr *C,
+                       const UnresolvedLookupExpr *ULExpr = NULL,
                        bool IsAssigned = false,
                        std::string SpecifiedQueue = "");
   void getSymbolAddressMigration(
@@ -821,20 +825,21 @@ private:
       const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
       const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false,
       std::string SpecifiedQueue = "");
-  void prefetchMigration(
-    const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
+  void prefetchMigration(const ast_matchers::MatchFinder::MatchResult &Result,
+                         const CallExpr *C,
                          const UnresolvedLookupExpr *ULExpr = NULL,
                          bool IsAssigned = false,
                          std::string SpecifiedQueue = "");
   void miscMigration(const ast_matchers::MatchFinder::MatchResult &Result,
-                       const CallExpr *C,
-                       const UnresolvedLookupExpr *ULExpr = NULL,
+                     const CallExpr *C,
+                     const UnresolvedLookupExpr *ULExpr = NULL,
                      bool IsAssigned = false, std::string SpecifiedQueue = "");
-  void handleAsync(const CallExpr *C, unsigned i,
-                   const ast_matchers::MatchFinder::MatchResult &Result);
-  void replaceMemAPIArg(const Expr *E,
-                        const ast_matchers::MatchFinder::MatchResult &Result,
-                        std::string OffsetFromBaseStr = "");
+  std::string handleAsync(const CallExpr *C, unsigned i,
+                          const ast_matchers::MatchFinder::MatchResult &Result);
+  void handleDirection(const CallExpr *C, unsigned i);
+  void replaceMemAPIArg(
+      const Expr *E, const ast_matchers::MatchFinder::MatchResult &Result,
+      std::string OffsetFromBaseStr = "");
   const ArraySubscriptExpr *getArraySubscriptExpr(const Expr *E);
   const Expr *getUnaryOperatorExpr(const Expr *E);
   void memcpySymbolMigration(
@@ -864,12 +869,73 @@ private:
       Stmt::const_child_iterator Begin, Stmt::const_child_iterator Endconst,
       const ast_matchers::MatchFinder::MatchResult &Result, int QueueIndex);
   void defaultMemcpyMemsetHandler(
-      const ast_matchers::MatchFinder::MatchResult &Result,
-                        const CallExpr *C, const UnresolvedLookupExpr *ULExpr,
-                        bool IsAssigned);
+      const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
+      const UnresolvedLookupExpr *ULExpr, bool IsAssigned,
+      std::string SpecifiedQueue = "");
   bool
   findFirstNotProcessedSpecialStmtIter(const CompoundStmt *P,
                                        Stmt::const_child_iterator &ResIter);
+};
+
+class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
+  static inline std::string getCtadType(StringRef BaseTypeName) {
+    return buildString(DpctGlobalInfo::getCtadClass(
+        buildString(MapNames::getClNamespace(), "::", BaseTypeName), 3));
+  }
+  template <class... Args>
+  void emplaceParamDecl(const VarDecl *VD, StringRef ParamType,
+                               bool HasInitialZeroCtor, Args &&... ParamNames) {
+    std::string ParamDecl;
+    llvm::raw_string_ostream OS(ParamDecl);
+    OS << ParamType << " ";
+    unsigned Index = 0;
+    std::initializer_list<int>{
+        (printParamNameWithInitArgs(OS, VD->getName(), HasInitialZeroCtor,
+                                    ParamNames, Index),
+         0)...};
+    OS << ";";
+    emplaceTransformation(
+        ReplaceVarDecl::getVarDeclReplacement(VD, std::move(OS.str())));
+  }
+  static inline llvm::raw_ostream &printParamName(llvm::raw_ostream &OS,
+                                                  StringRef BaseName,
+                                                  StringRef ParamName) {
+    return OS << BaseName << "_" << ParamName << getCTFixedSuffix();
+  }
+  static inline llvm::raw_ostream &
+  printParamNameWithInitArgs(llvm::raw_ostream &OS, StringRef BaseName,
+                             bool HasInitialZeroCtor, StringRef ParamName,
+                             unsigned &Index) {
+    if (Index++)
+      OS << ", ";
+    printParamName(OS, BaseName, ParamName);
+    if (HasInitialZeroCtor)
+      OS << "(0, 0, 0)";
+    return OS;
+  }
+
+  const static MapNames::MapTy Parms3DMemberNames;
+  const static MapNames::MapTy ExtentMemberNames;
+  const static MapNames::MapTy PitchMemberNames;
+
+public:
+  void emplaceMemcpy3DDeclarations(const VarDecl *VD);
+  static std::string getMemcpy3DArguments(StringRef BaseName);
+
+  static std::string getMemcpy3DMemberName(StringRef BaseName,
+                                           const std::string &Member) {
+    auto Itr = Parms3DMemberNames.find(Member);
+    if (Itr != Parms3DMemberNames.end()) {
+      std::string ReplacedName;
+      llvm::raw_string_ostream OS(ReplacedName);
+      printParamName(OS, BaseName, Itr->second);
+      return OS.str();
+    }
+    return Member;
+  }
+  MemoryDataTypeRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
 /// Name all unnamed types.

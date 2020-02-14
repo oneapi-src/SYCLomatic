@@ -125,13 +125,12 @@ template <class T> struct fetch_data<cl::sycl::vec<T, 4>> {
   }
 };
 
-// Image channel info, include channel number, order, data width and type
+/// Image channel info, include channel number, order, data width and type
 struct image_channel {
   cl::sycl::image_channel_order _order;
   cl::sycl::image_channel_type _type;
   unsigned _elem_size;
 };
-
 /// 2D or 3D matrix data for image.
 class image_matrix {
   image_channel _channel;
@@ -163,8 +162,7 @@ class image_matrix {
 public:
   /// Constructor with channel info and dimension size info.
   template <class... Args>
-  image_matrix(image_channel channel, Args &&... args)
-      : _channel(channel) {
+  image_matrix(image_channel channel, Args &&... args) : _channel(channel) {
     auto size = set_range(0, std::forward<Args>(args)...);
     _src = std::malloc(size * _channel._elem_size);
   }
@@ -192,6 +190,10 @@ public:
   inline image_channel get_channel() { return _channel; }
   /// Get matrix dims.
   inline int get_dims() { return _dims; }
+  /// Convert to pitched data.
+  pitched_data to_piched_data() {
+    return pitched_data(_src, _range[0], _range[0], _range[1]);
+  }
 
   ~image_matrix() { free(); }
 };
@@ -299,10 +301,8 @@ public:
   // Attach linear data to this class.
   void attach(void *ptr, const image_channel &chn_desc, size_t count) {
     detach();
-    if (mem_mgr::instance().is_device_ptr(ptr))
-      ptr = mem_mgr::instance()
-                .translate_ptr(ptr)
-                .buffer.get_access<cl::sycl::access::mode::read_write>()
+    if (detail::mem_mgr::instance().is_device_ptr(ptr))
+      ptr = get_buffer(ptr).get_access<cl::sycl::access::mode::read_write>()
                 .get_pointer();
     _image = new cl::sycl::image<Dimension>(
         ptr, chn_desc._order, chn_desc._type,

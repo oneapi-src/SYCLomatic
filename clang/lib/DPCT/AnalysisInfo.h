@@ -595,6 +595,12 @@ public:
     return printCtadClass(Stream, 0, ClassName,
                           std::forward<Args>(Arguments)...);
   }
+  template <class... Args>
+  static inline std::string getCtadClass(Args &&... Arguments) {
+    std::string Result;
+    llvm::raw_string_ostream OS(Result);
+    return printCtadClass(OS, std::forward<Args>(Arguments)...).str();
+  }
   template <class T>
   static inline std::pair<std::string, unsigned>
   getLocInfo(const T *N, bool *IsInvalid = nullptr /* out */) {
@@ -624,6 +630,9 @@ public:
 
   static inline std::string getTypeName(QualType QT,
                                         const ASTContext &Context) {
+    if (QT->getTypeClass() == Type::Elaborated)
+      return getUnqualifiedTypeName(QT->getAs<ElaboratedType>()->getNamedType(),
+                                    Context);
     return QT.getAsString(Context.getPrintingPolicy());
   }
   static inline std::string getTypeName(QualType QT) {

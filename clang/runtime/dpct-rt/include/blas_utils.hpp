@@ -32,7 +32,7 @@ namespace dpct {
 /// \param [out] ptr A data pointer.
 /// \param [in] vec Input vector with int64_t type elements.
 inline void copy_back(int *ptr, const std::vector<int64_t> &vec) {
-  auto allocation_ptr = dpct::mem_mgr::instance().translate_ptr(ptr);
+  auto allocation_ptr = detail::mem_mgr::instance().translate_ptr(ptr);
   auto buffer_ptr = allocation_ptr.buffer.template reinterpret<int, 1>(
       cl::sycl::range<1>(allocation_ptr.size / sizeof(int)));
   auto acc_ptr_write =
@@ -68,8 +68,7 @@ inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
     std::vector<cl::sycl::buffer<int64_t, 1>> ipiv_buf_vec;
     for (int64_t i = 0; i < batch_size; ++i) {
       // assumes data is in column-major order
-      auto allocation_a =
-          dpct::mem_mgr::instance().translate_ptr(a[i]);
+      auto allocation_a = detail::mem_mgr::instance().translate_ptr(a[i]);
       a_buf_vec.emplace_back(allocation_a.buffer.template reinterpret<Ty, 1>(
           cl::sycl::range<1>(allocation_a.size / sizeof(Ty))));
       info_buf_vec.emplace_back(&info_vec[i], cl::sycl::range<1>(1));
@@ -119,19 +118,16 @@ inline void getrs_batch_wrapper(cl::sycl::queue &exec_queue,
   std::vector<cl::sycl::buffer<Ty, 1>> b_buf_vec;
   for (int64_t i = 0; i < batch_size; i++) {
     // assumes data is in column-major order
-    auto allocation_a =
-        dpct::mem_mgr::instance().translate_ptr(a[i]);
+    auto allocation_a = detail::mem_mgr::instance().translate_ptr(a[i]);
     a_buf_vec.emplace_back(allocation_a.buffer.template reinterpret<Ty, 1>(
         cl::sycl::range<1>(allocation_a.size / sizeof(Ty))));
-    auto allocation_b =
-        dpct::mem_mgr::instance().translate_ptr(b[i]);
+    auto allocation_b = detail::mem_mgr::instance().translate_ptr(b[i]);
     b_buf_vec.emplace_back(allocation_b.buffer.template reinterpret<Ty, 1>(
         cl::sycl::range<1>(allocation_b.size / sizeof(Ty))));
   }
 
   {
-    auto allocation_ipiv =
-        dpct::mem_mgr::instance().translate_ptr(ipiv);
+    auto allocation_ipiv = detail::mem_mgr::instance().translate_ptr(ipiv);
     auto buffer_ipiv = allocation_ipiv.buffer.template reinterpret<int, 1>(
         cl::sycl::range<1>(allocation_ipiv.size / sizeof(int)));
     auto acc_ipiv =
@@ -188,8 +184,7 @@ inline void getri_batch_wrapper(cl::sycl::queue &exec_queue, int n,
       matrix_mem_copy(b[i], a[i], ldb, lda, n, n, dpct::device_to_device,
                       exec_queue);
       // assumes data is in column-major order
-      auto allocation_b =
-          dpct::mem_mgr::instance().translate_ptr(b[i]);
+      auto allocation_b = detail::mem_mgr::instance().translate_ptr(b[i]);
       b_buf_vec.emplace_back(allocation_b.buffer.template reinterpret<Ty, 1>(
           cl::sycl::range<1>(allocation_b.size / sizeof(Ty))));
       info_buf_vec.emplace_back(&info_vec[i], cl::sycl::range<1>(1));
@@ -233,11 +228,11 @@ inline void geqrf_batch_wrapper(cl::sycl::queue exec_queue, int m, int n,
     for (int64_t i = 0; i < batchSize; i++) {
       // assumes data is in column-major order
       auto allocation_a =
-          dpct::mem_mgr::instance().translate_ptr(a[i]);
+          detail::mem_mgr::instance().translate_ptr(a[i]);
       a_buf_vec.emplace_back(allocation_a.buffer.template reinterpret<Ty, 1>(
           cl::sycl::range<1>(allocation_a.size / sizeof(Ty))));
       auto allocation_tau =
-          dpct::mem_mgr::instance().translate_ptr(tau[i]);
+          detail::mem_mgr::instance().translate_ptr(tau[i]);
       tau_buf_vec.emplace_back(
           allocation_tau.buffer.template reinterpret<Ty, 1>(
               cl::sycl::range<1>(allocation_tau.size / sizeof(Ty))));

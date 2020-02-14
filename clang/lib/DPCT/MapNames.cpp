@@ -21,9 +21,7 @@ using namespace clang::dpct;
 
 std::string MapNames::ClNamespace = "sycl";
 
-std::string MapNames::getClNamespace() {
-  return MapNames::ClNamespace;
-}
+std::string MapNames::getClNamespace() { return MapNames::ClNamespace; }
 
 MapNames::MapTy MapNames::TypeNamesMap{};
 MapNames::MapTy EnumConstantRule::EnumNamesMap{};
@@ -123,6 +121,9 @@ void MapNames::setClNamespace(bool Enable) {
       {"cudaTextureObject_t", "dpct::image_base_p"},
       {"curandStatus_t", "int"},
       {"curandStatus", "int"},
+      {"cudaPos", ClNamespace + "::id<3>"},
+      {"cudaExtent", ClNamespace + "::range<3>"},
+      {"cudaPitchedPtr", "dpct::pitched_data"},
       // ...
   };
 
@@ -181,10 +182,9 @@ const MapNames::MapTy MapNames::RemovedAPIWarningMessage{
 #undef ENTRY
 };
 
-
-
 const MapNames::MapTy MapNames::ITFName{
-#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT) {#APINAME, #INTERFACENAME},
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
+  {#APINAME, #INTERFACENAME},
 #include "APINames.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
@@ -1950,7 +1950,8 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
         {"cusolverDnSpotrs",
          MapNames::SOLVERFuncReplInfo::migrateBuffer(
              std::vector<int>{4, 6, 8},
-             std::vector<std::string>{"float", "float", "int"}, "mkl::lapack::potrs")},
+             std::vector<std::string>{"float", "float", "int"},
+             "mkl::lapack::potrs")},
         {"cusolverDnDpotrs",
          MapNames::SOLVERFuncReplInfo::migrateBuffer(
              std::vector<int>{4, 6, 8},
@@ -2450,14 +2451,16 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              std::vector<std::string>{"float", "float", "float", "float",
                                       "float", "int"},
              std::vector<int>{14}, std::vector<int>{1, 2},
-             std::vector<std::string>{"mkl::job", "mkl::job"}, "mkl::lapack::gesvd")},
+             std::vector<std::string>{"mkl::job", "mkl::job"},
+             "mkl::lapack::gesvd")},
         {"cusolverDnDgesvd",
          MapNames::SOLVERFuncReplInfo::migrateBufferRedundantAndCast(
              std::vector<int>{5, 7, 8, 10, 12, 15},
              std::vector<std::string>{"double", "double", "double", "double",
                                       "double", "int"},
              std::vector<int>{14}, std::vector<int>{1, 2},
-             std::vector<std::string>{"mkl::job", "mkl::job"}, "mkl::lapack::gesvd")},
+             std::vector<std::string>{"mkl::job", "mkl::job"},
+             "mkl::lapack::gesvd")},
         {"cusolverDnCgesvd",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndCast(
              std::vector<int>{5, 7, 8, 10, 12, 14, 15},
@@ -2465,7 +2468,8 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
                  "std::complex<float>", "float", "std::complex<float>",
                  "std::complex<float>", "std::complex<float>", "float", "int"},
              std::vector<int>{1, 2},
-             std::vector<std::string>{"mkl::job", "mkl::job"}, "mkl::lapack::gesvd")},
+             std::vector<std::string>{"mkl::job", "mkl::job"},
+             "mkl::lapack::gesvd")},
         {"cusolverDnZgesvd",
          MapNames::SOLVERFuncReplInfo::migrateBufferAndCast(
              std::vector<int>{5, 7, 8, 10, 12, 14, 15},
@@ -2474,7 +2478,8 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
                                       "std::complex<double>",
                                       "std::complex<double>", "double", "int"},
              std::vector<int>{1, 2},
-             std::vector<std::string>{"mkl::job", "mkl::job"}, "mkl::lapack::gesvd")},
+             std::vector<std::string>{"mkl::job", "mkl::job"},
+             "mkl::lapack::gesvd")},
     };
 
 // Random Engine Type mapping
@@ -2601,7 +2606,8 @@ const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
 };
 
 std::map<std::string, bool> MigrationStatistics::MigrationTable{
-#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT) {#APINAME, VALUE},
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
+  {#APINAME, VALUE},
 #include "APINames.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
@@ -2635,9 +2641,18 @@ std::vector<std::string> MigrationStatistics::GetAllAPINames(void) {
   return AllAPINames;
 }
 
-MapNames::MapTy TextureRule::LinearResourceTypeNames {
-  {"devPtr", "data"}, {"sizeInBytes", "size"}, { "desc", "chn" }
-};
+MapNames::MapTy TextureRule::LinearResourceTypeNames{
+    {"devPtr", "data"}, {"sizeInBytes", "size"}, {"desc", "chn"}};
+
+const MapNames::MapTy MemoryDataTypeRule::PitchMemberNames{
+    {"pitch", "pitch"}, {"ptr", "data"}, {"xsize", "x"}, {"ysize", "y"}};
+const MapNames::MapTy MemoryDataTypeRule::ExtentMemberNames{
+    {"width", "[0]"}, {"height", "[1]"}, {"depth", "[2]"}};
+
+const MapNames::MapTy MemoryDataTypeRule::Parms3DMemberNames{
+    {"srcArray", "from_data"}, {"srcPtr", "from_data"}, {"srcPos", "from_pos"},
+    {"dstArray", "to_data"},   {"dstPtr", "to_data"},   {"dstPos", "to_pos"},
+    {"extent", "size"},        {"kind", "direction"}};
 
 const std::map<std::string, std::string> WarpFunctionRewriter::WarpFunctionsMap{
 #define ENTRY_WARP(SOURCEAPINAME, TARGETAPINAME) {SOURCEAPINAME, TARGETAPINAME},

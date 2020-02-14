@@ -24,10 +24,12 @@ void foo() {
   float *d_A = NULL;
   int errorCode;
 
+  cudaPitchedPtr p_A;
+  cudaExtent e;
+  cudaMemcpy3DParms parms;
   cudaStream_t stream;
 
   /// malloc
-
   // CHECK: d_A = (float *)sycl::malloc_device(size, dpct::get_current_device(), dpct::get_default_context());
   cudaMalloc((void **)&d_A, size);
   // CHECK: errorCode = (d_A = (float *)sycl::malloc_device(size, dpct::get_current_device(), dpct::get_default_context()), 0);
@@ -41,6 +43,11 @@ void foo() {
   cudaMalloc((void **)&d_A, sizeof(double2) + size);
   cudaMalloc((void **)&d_A, sizeof(uchar4) + size);
   cudaMalloc((void **)&d_A, sizeof(d_A[0]));
+  
+  // CHECK: dpct::dpct_malloc((void **)&d_A, &size, size, size);
+  cudaMallocPitch((void **)&d_A, &size, size, size);
+  // CHECK: dpct::dpct_malloc(&p_A, e);
+  cudaMalloc3D(&p_A, e);
 
   // CHECK: h_A = (float *)sycl::malloc_host(size, dpct::get_default_context());
   cudaHostAlloc((void **)&h_A, size, cudaHostAllocDefault);
@@ -153,6 +160,37 @@ void foo() {
   // CHECK: CUDA_SAFE_CALL((stream->memcpy(d_A, h_A, size), 0));
   CUDA_SAFE_CALL(cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, stream));
 
+  // CHECK: dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device);
+  cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice);
+  // CHECK: dpct::dpct_memcpy(h_A, size, d_A, size, size, size, dpct::device_to_host);
+  cudaMemcpy2D(h_A, size, d_A, size, size, size, cudaMemcpyDeviceToHost);
+
+  // CHECK: dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
+  cudaMemcpy3D(&parms);
+
+  struct cudaMemcpy3DParms *parms_pointer;
+  // Followed call can't be processed.
+  cudaMemcpy3D(parms_pointer);
+  // CHECK: dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device);
+  cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice);
+  // CHECK: dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device);
+  cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, 0);
+  // CHECK: dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device, *stream);
+  cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, stream);
+
+  // CHECK: dpct::async_dpct_memcpy(h_A, size, d_A, size, size, size, dpct::device_to_host);
+  cudaMemcpy2DAsync(h_A, size, d_A, size, size, size, cudaMemcpyDeviceToHost);
+  // CHECK: dpct::async_dpct_memcpy(h_A, size, d_A, size, size, size, dpct::device_to_host);
+  cudaMemcpy2DAsync(h_A, size, d_A, size, size, size, cudaMemcpyDeviceToHost, 0);
+  // CHECK: dpct::async_dpct_memcpy(h_A, size, d_A, size, size, size, dpct::device_to_host, *stream);
+  cudaMemcpy2DAsync(h_A, size, d_A, size, size, size, cudaMemcpyDeviceToHost, stream);
+
+  // CHECK: dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
+  cudaMemcpy3DAsync(&parms);
+  // CHECK: dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
+  cudaMemcpy3DAsync(&parms, 0);
+  // CHECK: dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1, *stream);
+  cudaMemcpy3DAsync(&parms, stream);
   /// memcpy from symbol
 
   // CHECK: sycl::queue& q_ct1 = dpct::get_default_queue();
@@ -271,6 +309,25 @@ void foo() {
   errorCode = cudaMemsetAsync(d_A, 23, size, stream);
   // CHECK: CUDA_SAFE_CALL((stream->memset(d_A, 23, size), 0));
   CUDA_SAFE_CALL(cudaMemsetAsync(d_A, 23, size, stream));
+  
+  // CHECK: dpct::dpct_memset(d_A, size, 0xf, size, size);
+  cudaMemset2D(d_A, size, 0xf, size, size);
+  // CHECK: dpct::dpct_memset(p_A, 0xf, e);
+  cudaMemset3D(p_A, 0xf, e);
+
+  // CHECK: dpct::async_dpct_memset(d_A, size, 0xf, size, size);
+  cudaMemset2DAsync(d_A, size, 0xf, size, size);
+  // CHECK: dpct::async_dpct_memset(d_A, size, 0xf, size, size);
+  cudaMemset2DAsync(d_A, size, 0xf, size, size, 0);
+  // CHECK: dpct::async_dpct_memset(d_A, size, 0xf, size, size, *stream);
+  cudaMemset2DAsync(d_A, size, 0xf, size, size, stream);
+
+  // CHECK: dpct::async_dpct_memset(p_A, 0xf, e);
+  cudaMemset3DAsync(p_A, 0xf, e);
+  // CHECK: dpct::async_dpct_memset(p_A, 0xf, e);
+  cudaMemset3DAsync(p_A, 0xf, e, 0);
+  // CHECK: dpct::async_dpct_memset(p_A, 0xf, e, *stream);
+  cudaMemset3DAsync(p_A, 0xf, e, stream);
 
   // CHECK: sycl::free(h_A, dpct::get_default_context());
   cudaFreeHost(h_A);

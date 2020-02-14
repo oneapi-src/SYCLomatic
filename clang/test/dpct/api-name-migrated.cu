@@ -20,13 +20,9 @@ void fooo() {
 
   struct cudaPitchedPtr srcGPU;
 
-  // CHECK: /*
-  // CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
-  // CHECK-NEXT:*/
+  // CHECK: sycl::range<3> extent = sycl::range<3>(size * sizeof(float), size, size);
   struct cudaExtent extent = make_cudaExtent(size * sizeof(float), size, size);
 
-  // CHECK: /*
-  // CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
-  // CHECK-NEXT:*/
+  // CHECK: dpct::dpct_malloc(&srcGPU, extent);
   cudaMalloc3D(&srcGPU, extent);
 }

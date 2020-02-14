@@ -29,18 +29,18 @@ int main(){
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct3 = trans0;
   // CHECK-NEXT: auto ptr_ct8 = A_S;
-  // CHECK-NEXT: auto ptr_ct8_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(ptr_ct8);
+  // CHECK-NEXT: auto ptr_ct8_buff_ct1 = dpct::get_buffer<float>(ptr_ct8);
   // CHECK-NEXT: auto ptr_ct12 = C_S;
-  // CHECK-NEXT: auto ptr_ct12_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(ptr_ct12);
+  // CHECK-NEXT: auto ptr_ct12_buff_ct1 = dpct::get_buffer<float>(ptr_ct12);
   // CHECK-NEXT: auto ld_ct13 = ldc; auto m_ct5 = m; auto n_ct6 = n;
   // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_S, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device, handle);
   // CHECK-NEXT: status = (mkl::blas::trmm(handle, (mkl::side)side0, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct3)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct3)), (mkl::diag)diag0, m_ct5, n_ct6, *(&alpha_S), ptr_ct8_buff_ct1, lda,  ptr_ct12_buff_ct1, ld_ct13), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto ptr_ct8 = A_S;
-  // CHECK-NEXT: auto ptr_ct8_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(ptr_ct8);
+  // CHECK-NEXT: auto ptr_ct8_buff_ct1 = dpct::get_buffer<float>(ptr_ct8);
   // CHECK-NEXT: auto ptr_ct12 = C_S;
-  // CHECK-NEXT: auto ptr_ct12_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(ptr_ct12);
+  // CHECK-NEXT: auto ptr_ct12_buff_ct1 = dpct::get_buffer<float>(ptr_ct12);
   // CHECK-NEXT: auto ld_ct13 = ldc; auto m_ct5 = m; auto n_ct6 = n;
   // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_S, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device, handle);
   // CHECK-NEXT: mkl::blas::trmm(handle, mkl::side::left, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::nonunit, m_ct5, n_ct6, *(&alpha_S), ptr_ct8_buff_ct1, lda, ptr_ct12_buff_ct1, ld_ct13);
@@ -55,18 +55,18 @@ int main(){
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct3 = trans1;
   // CHECK-NEXT: auto ptr_ct8 = A_D;
-  // CHECK-NEXT: auto ptr_ct8_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(ptr_ct8);
+  // CHECK-NEXT: auto ptr_ct8_buff_ct1 = dpct::get_buffer<double>(ptr_ct8);
   // CHECK-NEXT: auto ptr_ct12 = C_D;
-  // CHECK-NEXT: auto ptr_ct12_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(ptr_ct12);
+  // CHECK-NEXT: auto ptr_ct12_buff_ct1 = dpct::get_buffer<double>(ptr_ct12);
   // CHECK-NEXT: auto ld_ct13 = ldc; auto m_ct5 = m; auto n_ct6 = n;
   // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_D, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device, handle);
   // CHECK-NEXT: status = (mkl::blas::trmm(handle, (mkl::side)side1, (((int)fill1)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct3)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct3)), (mkl::diag)diag1, m_ct5, n_ct6, *(&alpha_D), ptr_ct8_buff_ct1, lda,  ptr_ct12_buff_ct1, ld_ct13), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto ptr_ct8 = A_D;
-  // CHECK-NEXT: auto ptr_ct8_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(ptr_ct8);
+  // CHECK-NEXT: auto ptr_ct8_buff_ct1 = dpct::get_buffer<double>(ptr_ct8);
   // CHECK-NEXT: auto ptr_ct12 = C_D;
-  // CHECK-NEXT: auto ptr_ct12_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(ptr_ct12);
+  // CHECK-NEXT: auto ptr_ct12_buff_ct1 = dpct::get_buffer<double>(ptr_ct12);
   // CHECK-NEXT: auto ld_ct13 = ldc; auto m_ct5 = m; auto n_ct6 = n;
   // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_D, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device, handle);
   // CHECK-NEXT: mkl::blas::trmm(handle, mkl::side::left, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::nonunit, m_ct5, n_ct6, *(&alpha_D), ptr_ct8_buff_ct1, lda,  ptr_ct12_buff_ct1, ld_ct13);
@@ -91,18 +91,18 @@ int main(){
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct3 = trans2;
   // CHECK-NEXT: auto ptr_ct8 = A_C;
-  // CHECK-NEXT: auto ptr_ct8_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(ptr_ct8);
+  // CHECK-NEXT: auto ptr_ct8_buff_ct1 = dpct::get_buffer<std::complex<float>>(ptr_ct8);
   // CHECK-NEXT: auto ptr_ct12 = C_C;
-  // CHECK-NEXT: auto ptr_ct12_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(ptr_ct12);
+  // CHECK-NEXT: auto ptr_ct12_buff_ct1 = dpct::get_buffer<std::complex<float>>(ptr_ct12);
   // CHECK-NEXT: auto ld_ct13 = ldc; auto m_ct5 = m; auto n_ct6 = n;
   // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_C, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device, handle);
   // CHECK-NEXT: status = (mkl::blas::trmm(handle, (mkl::side)0, (((int)0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct3)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct3)), (mkl::diag)0, m_ct5, n_ct6, std::complex<float>((&alpha_C)->x(),(&alpha_C)->y()), ptr_ct8_buff_ct1, lda,  ptr_ct12_buff_ct1, ld_ct13), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto ptr_ct8 = A_C;
-  // CHECK-NEXT: auto ptr_ct8_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(ptr_ct8);
+  // CHECK-NEXT: auto ptr_ct8_buff_ct1 = dpct::get_buffer<std::complex<float>>(ptr_ct8);
   // CHECK-NEXT: auto ptr_ct12 = C_C;
-  // CHECK-NEXT: auto ptr_ct12_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(ptr_ct12);
+  // CHECK-NEXT: auto ptr_ct12_buff_ct1 = dpct::get_buffer<std::complex<float>>(ptr_ct12);
   // CHECK-NEXT: auto ld_ct13 = ldc; auto m_ct5 = m; auto n_ct6 = n;
   // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_C, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device, handle);
   // CHECK-NEXT: mkl::blas::trmm(handle, mkl::side::left, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::nonunit, m_ct5, n_ct6, std::complex<float>((&alpha_C)->x(),(&alpha_C)->y()), ptr_ct8_buff_ct1, lda,  ptr_ct12_buff_ct1, ld_ct13);
@@ -117,18 +117,18 @@ int main(){
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct3 = 2;
   // CHECK-NEXT: auto ptr_ct8 = A_Z;
-  // CHECK-NEXT: auto ptr_ct8_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(ptr_ct8);
+  // CHECK-NEXT: auto ptr_ct8_buff_ct1 = dpct::get_buffer<std::complex<double>>(ptr_ct8);
   // CHECK-NEXT: auto ptr_ct12 = C_Z;
-  // CHECK-NEXT: auto ptr_ct12_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(ptr_ct12);
+  // CHECK-NEXT: auto ptr_ct12_buff_ct1 = dpct::get_buffer<std::complex<double>>(ptr_ct12);
   // CHECK-NEXT: auto ld_ct13 = ldc; auto m_ct5 = m; auto n_ct6 = n;
   // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_Z, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device, handle);
   // CHECK-NEXT: status = (mkl::blas::trmm(handle, (mkl::side)1, (((int)1)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct3)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct3)), (mkl::diag)1, m_ct5, n_ct6, std::complex<double>((&alpha_Z)->x(),(&alpha_Z)->y()), ptr_ct8_buff_ct1, lda,  ptr_ct12_buff_ct1, ld_ct13), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto ptr_ct8 = A_Z;
-  // CHECK-NEXT: auto ptr_ct8_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(ptr_ct8);
+  // CHECK-NEXT: auto ptr_ct8_buff_ct1 = dpct::get_buffer<std::complex<double>>(ptr_ct8);
   // CHECK-NEXT: auto ptr_ct12 = C_Z;
-  // CHECK-NEXT: auto ptr_ct12_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(ptr_ct12);
+  // CHECK-NEXT: auto ptr_ct12_buff_ct1 = dpct::get_buffer<std::complex<double>>(ptr_ct12);
   // CHECK-NEXT: auto ld_ct13 = ldc; auto m_ct5 = m; auto n_ct6 = n;
   // CHECK-NEXT: dpct::matrix_mem_copy(ptr_ct12, B_Z, ld_ct13, ldb, m_ct5, n_ct6, dpct::device_to_device, handle);
   // CHECK-NEXT: mkl::blas::trmm(handle, mkl::side::left, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::nonunit, m_ct5, n_ct6, std::complex<double>((&alpha_Z)->x(),(&alpha_Z)->y()), ptr_ct8_buff_ct1, lda,  ptr_ct12_buff_ct1, ld_ct13);

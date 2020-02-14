@@ -576,7 +576,7 @@ void foo4(){
 // CHECK-NEXT:   const float* x;
 // CHECK-NEXT:   int res;
 // CHECK-NEXT:   {
-// CHECK-NEXT:   auto x_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x);
+// CHECK-NEXT:   auto x_buff_ct1 = dpct::get_buffer<float>(x);
 // CHECK-NEXT:   sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
 // CHECK-NEXT:   mkl::blas::iamax(dpct::get_default_queue(), 10, x_buff_ct1, 0,
 // CHECK-NEXT:                    result_temp_buffer);

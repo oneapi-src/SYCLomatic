@@ -65,15 +65,15 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(&A_f);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
+    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::lapack::potri(*cusolverH, uplo, n, A_f_buff_ct1, lda,   result_temp_buffer7), 0);
     // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(&A_f);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
+    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
     // CHECK-NEXT: mkl::lapack::potri(*cusolverH, uplo, n, A_f_buff_ct1, lda,   result_temp_buffer7);
     // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
@@ -86,15 +86,15 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(&A_d);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
+    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::lapack::potri(*cusolverH, uplo, n, A_d_buff_ct1, lda,   result_temp_buffer7), 0);
     // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(&A_d);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
+    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
     // CHECK-NEXT: mkl::lapack::potri(*cusolverH, uplo, n, A_d_buff_ct1, lda,   result_temp_buffer7);
     // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
@@ -106,15 +106,15 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(&A_c);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
+    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::lapack::potri(*cusolverH, uplo, n, A_c_buff_ct1, lda,   result_temp_buffer7), 0);
     // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(&A_c);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
+    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
     // CHECK-NEXT: mkl::lapack::potri(*cusolverH, uplo, n, A_c_buff_ct1, lda,   result_temp_buffer7);
     // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
@@ -126,15 +126,15 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
     // CHECK-NEXT: status = (mkl::lapack::potri(*cusolverH, uplo, n, A_z_buff_ct1, lda,   result_temp_buffer7), 0);
     // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
     // CHECK-NEXT: mkl::lapack::potri(*cusolverH, uplo, n, A_z_buff_ct1, lda,   result_temp_buffer7);
     // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];

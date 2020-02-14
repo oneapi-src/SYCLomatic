@@ -38,15 +38,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(result);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_buff_ct1 = dpct::get_buffer<int>(result);
   // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
   // CHECK-NEXT: status = (mkl::blas::iamax(handle, n, x_S_buff_ct1, incx, result_temp_buffer), 0);
   // CHECK-NEXT: result_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(result);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_buff_ct1 = dpct::get_buffer<int>(result);
   // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
   // CHECK-NEXT: mkl::blas::iamax(handle, n, x_S_buff_ct1, incx, result_temp_buffer);
   // CHECK-NEXT: result_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer.get_access<sycl::access::mode::read>()[0];
@@ -58,15 +58,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(result);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_buff_ct1 = dpct::get_buffer<int>(result);
   // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
   // CHECK-NEXT: status = (mkl::blas::iamax(handle, n, x_D_buff_ct1, incx, result_temp_buffer), 0);
   // CHECK-NEXT: result_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(result);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_buff_ct1 = dpct::get_buffer<int>(result);
   // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
   // CHECK-NEXT: mkl::blas::iamax(handle, n, x_D_buff_ct1, incx, result_temp_buffer);
   // CHECK-NEXT: result_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer.get_access<sycl::access::mode::read>()[0];
@@ -79,15 +79,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(result);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_buff_ct1 = dpct::get_buffer<int>(result);
   // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
   // CHECK-NEXT: status = (mkl::blas::iamin(handle, n, x_S_buff_ct1, incx, result_temp_buffer), 0);
   // CHECK-NEXT: result_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(result);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_buff_ct1 = dpct::get_buffer<int>(result);
   // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
   // CHECK-NEXT: mkl::blas::iamin(handle, n, x_S_buff_ct1, incx, result_temp_buffer);
   // CHECK-NEXT: result_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer.get_access<sycl::access::mode::read>()[0];
@@ -99,15 +99,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(result);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_buff_ct1 = dpct::get_buffer<int>(result);
   // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
   // CHECK-NEXT: status = (mkl::blas::iamin(handle, n, x_D_buff_ct1, incx, result_temp_buffer), 0);
   // CHECK-NEXT: result_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(result);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_buff_ct1 = dpct::get_buffer<int>(result);
   // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
   // CHECK-NEXT: mkl::blas::iamin(handle, n, x_D_buff_ct1, incx, result_temp_buffer);
   // CHECK-NEXT: result_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer.get_access<sycl::access::mode::read>()[0];
@@ -120,13 +120,13 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::asum(handle, n, x_S_buff_ct1, incx, result_S_buff_ct1), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::asum(handle, n, x_S_buff_ct1, incx, result_S_buff_ct1);
   // CHECK-NEXT: }
   status = cublasSasum(handle, n, x_S, incx, result_S);
@@ -136,13 +136,13 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::asum(handle, n, x_D_buff_ct1, incx, result_D_buff_ct1), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::asum(handle, n, x_D_buff_ct1, incx, result_D_buff_ct1);
   // CHECK-NEXT: }
   status = cublasDasum(handle, n, x_D, incx, result_D);
@@ -153,13 +153,13 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::axpy(handle, n, *(&alpha_S), x_S_buff_ct1, incx, result_S_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::axpy(handle, n, *(&alpha_S), x_S_buff_ct1, incx, result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasSaxpy(handle, n, &alpha_S, x_S, incx, result_S, incy);
@@ -169,13 +169,13 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::axpy(handle, n, *(&alpha_D), x_D_buff_ct1, incx, result_D_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::axpy(handle, n, *(&alpha_D), x_D_buff_ct1, incx, result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasDaxpy(handle, n, &alpha_D, x_D, incx, result_D, incy);
@@ -186,13 +186,13 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::copy(handle, n, x_S_buff_ct1, incx, result_S_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::copy(handle, n, x_S_buff_ct1, incx, result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasScopy(handle, n, x_S, incx, result_S, incy);
@@ -202,13 +202,13 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::copy(handle, n, x_D_buff_ct1, incx, result_D_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::copy(handle, n, x_D_buff_ct1, incx, result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasDcopy(handle, n, x_D, incx, result_D, incy);
@@ -219,15 +219,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::dot(handle, n, x_S_buff_ct1, incx, y_S_buff_ct1, incy, result_S_buff_ct1), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::dot(handle, n, x_S_buff_ct1, incx, y_S_buff_ct1, incy, result_S_buff_ct1);
   // CHECK-NEXT: }
   status = cublasSdot(handle, n, x_S, incx, y_S, incy, result_S);
@@ -237,15 +237,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::dot(handle, n, x_D_buff_ct1, incx, y_D_buff_ct1, incy, result_D_buff_ct1), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::dot(handle, n, x_D_buff_ct1, incx, y_D_buff_ct1, incy, result_D_buff_ct1);
   // CHECK-NEXT: }
   status = cublasDdot(handle, n, x_D, incx, y_D, incy, result_D);
@@ -256,13 +256,13 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::nrm2(handle, n, x_S_buff_ct1, incx, result_S_buff_ct1), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::nrm2(handle, n, x_S_buff_ct1, incx, result_S_buff_ct1);
   // CHECK-NEXT: }
   status = cublasSnrm2(handle, n, x_S, incx, result_S);
@@ -272,13 +272,13 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::nrm2(handle, n, x_D_buff_ct1, incx, result_D_buff_ct1), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::nrm2(handle, n, x_D_buff_ct1, incx, result_D_buff_ct1);
   // CHECK-NEXT: }
   status = cublasDnrm2(handle, n, x_D, incx, result_D);
@@ -293,13 +293,13 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_f);
+  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::get_buffer<float>(y_f);
   // CHECK-NEXT: status = (mkl::blas::rot(handle, n, x_f_buff_ct1, incx, y_f_buff_ct1, incy, *(x_S), *(y_S)), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_f);
+  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::get_buffer<float>(y_f);
   // CHECK-NEXT: mkl::blas::rot(handle, n, x_f_buff_ct1, incx, y_f_buff_ct1, incy, *(x_S), *(y_S));
   // CHECK-NEXT: }
   status = cublasSrot(handle, n, x_f, incx, y_f, incy, x_S, y_S);
@@ -309,13 +309,13 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_d);
+  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::get_buffer<double>(y_d);
   // CHECK-NEXT: status = (mkl::blas::rot(handle, n, x_d_buff_ct1, incx, y_d_buff_ct1, incy, *(x_D), *(y_D)), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_d);
+  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::get_buffer<double>(y_d);
   // CHECK-NEXT: mkl::blas::rot(handle, n, x_d_buff_ct1, incx, y_d_buff_ct1, incy, *(x_D), *(y_D));
   // CHECK-NEXT: }
   status = cublasDrot(handle, n, x_d, incx, y_d, incy, x_D, y_D);
@@ -326,17 +326,17 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_f);
-  // CHECK-NEXT: auto x_f_buff_ct2 = dpct::mem_mgr::instance().get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buff_ct2 = dpct::mem_mgr::instance().get_buffer<float>(y_f);
+  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT: auto x_f_buff_ct2 = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT: auto y_f_buff_ct2 = dpct::get_buffer<float>(y_f);
   // CHECK-NEXT: status = (mkl::blas::rotg(handle, x_f_buff_ct1, y_f_buff_ct1, x_f_buff_ct2, y_f_buff_ct2), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_f);
-  // CHECK-NEXT: auto x_f_buff_ct2 = dpct::mem_mgr::instance().get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buff_ct2 = dpct::mem_mgr::instance().get_buffer<float>(y_f);
+  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT: auto x_f_buff_ct2 = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT: auto y_f_buff_ct2 = dpct::get_buffer<float>(y_f);
   // CHECK-NEXT: mkl::blas::rotg(handle, x_f_buff_ct1, y_f_buff_ct1, x_f_buff_ct2, y_f_buff_ct2);
   // CHECK-NEXT: }
   status = cublasSrotg(handle, x_f, y_f, x_f, y_f);
@@ -346,17 +346,17 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_d);
-  // CHECK-NEXT: auto x_d_buff_ct2 = dpct::mem_mgr::instance().get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buff_ct2 = dpct::mem_mgr::instance().get_buffer<double>(y_d);
+  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT: auto x_d_buff_ct2 = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT: auto y_d_buff_ct2 = dpct::get_buffer<double>(y_d);
   // CHECK-NEXT: status = (mkl::blas::rotg(handle, x_d_buff_ct1, y_d_buff_ct1, x_d_buff_ct2, y_d_buff_ct2), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_d);
-  // CHECK-NEXT: auto x_d_buff_ct2 = dpct::mem_mgr::instance().get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buff_ct2 = dpct::mem_mgr::instance().get_buffer<double>(y_d);
+  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT: auto x_d_buff_ct2 = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT: auto y_d_buff_ct2 = dpct::get_buffer<double>(y_d);
   // CHECK-NEXT: mkl::blas::rotg(handle, x_d_buff_ct1, y_d_buff_ct1, x_d_buff_ct2, y_d_buff_ct2);
   // CHECK-NEXT: }
   status = cublasDrotg(handle, x_d, y_d, x_d, y_d);
@@ -367,15 +367,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_f);
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
+  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: status = (mkl::blas::rotm(handle, n, x_f_buff_ct1, incx, y_f_buff_ct1, incy, x_S_buff_ct1), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_f);
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
+  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: mkl::blas::rotm(handle, n, x_f_buff_ct1, incx, y_f_buff_ct1, incy, x_S_buff_ct1);
   // CHECK-NEXT: }
   status = cublasSrotm(handle, n, x_f, incx, y_f, incy, x_S);
@@ -385,15 +385,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_d);
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
+  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: status = (mkl::blas::rotm(handle, n, x_d_buff_ct1, incx, y_d_buff_ct1, incy, x_D_buff_ct1), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_d);
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
+  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: mkl::blas::rotm(handle, n, x_d_buff_ct1, incx, y_d_buff_ct1, incy, x_D_buff_ct1);
   // CHECK-NEXT: }
   status = cublasDrotm(handle, n, x_d, incx, y_d, incy, x_D);
@@ -404,17 +404,17 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_f);
-  // CHECK-NEXT: auto y_f_buff_ct2 = dpct::mem_mgr::instance().get_buffer<float>(y_f);
-  // CHECK-NEXT: auto y_f_buff_ct3 = dpct::mem_mgr::instance().get_buffer<float>(y_f);
+  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT: auto y_f_buff_ct2 = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT: auto y_f_buff_ct3 = dpct::get_buffer<float>(y_f);
   // CHECK-NEXT: status = (mkl::blas::rotmg(handle, x_f_buff_ct1, y_f_buff_ct1, y_f_buff_ct2, *(x_S), y_f_buff_ct3), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_f);
-  // CHECK-NEXT: auto y_f_buff_ct2 = dpct::mem_mgr::instance().get_buffer<float>(y_f);
-  // CHECK-NEXT: auto y_f_buff_ct3 = dpct::mem_mgr::instance().get_buffer<float>(y_f);
+  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT: auto y_f_buff_ct2 = dpct::get_buffer<float>(y_f);
+  // CHECK-NEXT: auto y_f_buff_ct3 = dpct::get_buffer<float>(y_f);
   // CHECK-NEXT: mkl::blas::rotmg(handle, x_f_buff_ct1, y_f_buff_ct1, y_f_buff_ct2, *(x_S), y_f_buff_ct3);
   // CHECK-NEXT: }
   status = cublasSrotmg(handle, x_f, y_f, y_f, x_S, y_f);
@@ -424,17 +424,17 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_d);
-  // CHECK-NEXT: auto y_d_buff_ct2 = dpct::mem_mgr::instance().get_buffer<double>(y_d);
-  // CHECK-NEXT: auto y_d_buff_ct3 = dpct::mem_mgr::instance().get_buffer<double>(y_d);
+  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT: auto y_d_buff_ct2 = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT: auto y_d_buff_ct3 = dpct::get_buffer<double>(y_d);
   // CHECK-NEXT: status = (mkl::blas::rotmg(handle, x_d_buff_ct1, y_d_buff_ct1, y_d_buff_ct2, *(x_D), y_d_buff_ct3), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_d);
-  // CHECK-NEXT: auto y_d_buff_ct2 = dpct::mem_mgr::instance().get_buffer<double>(y_d);
-  // CHECK-NEXT: auto y_d_buff_ct3 = dpct::mem_mgr::instance().get_buffer<double>(y_d);
+  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT: auto y_d_buff_ct2 = dpct::get_buffer<double>(y_d);
+  // CHECK-NEXT: auto y_d_buff_ct3 = dpct::get_buffer<double>(y_d);
   // CHECK-NEXT: mkl::blas::rotmg(handle, x_d_buff_ct1, y_d_buff_ct1, y_d_buff_ct2, *(x_D), y_d_buff_ct3);
   // CHECK-NEXT: }
   status = cublasDrotmg(handle, x_d, y_d, y_d, x_D, y_d);
@@ -445,11 +445,11 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_f);
+  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::get_buffer<float>(x_f);
   // CHECK-NEXT: status = (mkl::blas::scal(handle, n, *(&alpha_S), x_f_buff_ct1, incx), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_f);
+  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::get_buffer<float>(x_f);
   // CHECK-NEXT: mkl::blas::scal(handle, n, *(&alpha_S), x_f_buff_ct1, incx);
   // CHECK-NEXT: }
   status = cublasSscal(handle, n, &alpha_S, x_f, incx);
@@ -459,11 +459,11 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_d);
+  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::get_buffer<double>(x_d);
   // CHECK-NEXT: status = (mkl::blas::scal(handle, n, *(&alpha_D), x_d_buff_ct1, incx), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_d);
+  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::get_buffer<double>(x_d);
   // CHECK-NEXT: mkl::blas::scal(handle, n, *(&alpha_D), x_d_buff_ct1, incx);
   // CHECK-NEXT: }
   status = cublasDscal(handle, n, &alpha_D, x_d, incx);
@@ -474,13 +474,13 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_f);
+  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::get_buffer<float>(y_f);
   // CHECK-NEXT: status = (mkl::blas::swap(handle, n, x_f_buff_ct1, incx, y_f_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_f);
-  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_f);
+  // CHECK-NEXT: auto x_f_buff_ct1 = dpct::get_buffer<float>(x_f);
+  // CHECK-NEXT: auto y_f_buff_ct1 = dpct::get_buffer<float>(y_f);
   // CHECK-NEXT: mkl::blas::swap(handle, n, x_f_buff_ct1, incx, y_f_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasSswap(handle, n, x_f, incx, y_f, incy);
@@ -490,13 +490,13 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_d);
+  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::get_buffer<double>(y_d);
   // CHECK-NEXT: status = (mkl::blas::swap(handle, n, x_d_buff_ct1, incx, y_d_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_d);
-  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_d);
+  // CHECK-NEXT: auto x_d_buff_ct1 = dpct::get_buffer<double>(x_d);
+  // CHECK-NEXT: auto y_d_buff_ct1 = dpct::get_buffer<double>(y_d);
   // CHECK-NEXT: mkl::blas::swap(handle, n, x_d_buff_ct1, incx, y_d_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasDswap(handle, n, x_d, incx, y_d, incy);
@@ -512,15 +512,15 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct1 = trans0;
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::gbmv(handle, (((int)transpose_ct1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct1)), m, n, m, n, *(&alpha_S), x_S_buff_ct1, lda, y_S_buff_ct1, incx, *(&beta_S), result_S_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::gbmv(handle, mkl::transpose::nontrans, m, n, m, n, *(&alpha_S), x_S_buff_ct1, lda, y_S_buff_ct1, incx, *(&beta_S), result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasSgbmv(handle, (cublasOperation_t)trans0, m, n, m, n, &alpha_S, x_S, lda, y_S, incx, &beta_S, result_S, incy);
@@ -531,15 +531,15 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct1 = trans1;
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::gbmv(handle, (((int)transpose_ct1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct1)), m, n, m, n, *(&alpha_D), x_D_buff_ct1, lda, y_D_buff_ct1, incx, *(&beta_D), result_D_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::gbmv(handle, mkl::transpose::nontrans, m, n, m, n, *(&alpha_D), x_D_buff_ct1, lda, y_D_buff_ct1, incx, *(&beta_D), result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasDgbmv(handle, (cublasOperation_t)trans1, m, n, m, n, &alpha_D, x_D, lda, y_D, incx, &beta_D, result_D, incy);
@@ -551,15 +551,15 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct1 = trans2;
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::gemv(handle, (((int)transpose_ct1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct1)), m, n, *(&alpha_S), x_S_buff_ct1, lda, y_S_buff_ct1, incx, *(&beta_S), result_S_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::gemv(handle, mkl::transpose::nontrans, m, n, *(&alpha_S), x_S_buff_ct1, lda, y_S_buff_ct1, incx, *(&beta_S), result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasSgemv(handle, (cublasOperation_t)trans2, m, n, &alpha_S, x_S, lda, y_S, incx, &beta_S, result_S, incy);
@@ -570,15 +570,15 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct1 = 0;
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::gemv(handle, (((int)transpose_ct1)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct1)), m, n, *(&alpha_D), x_D_buff_ct1, lda, y_D_buff_ct1, incx, *(&beta_D), result_D_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::gemv(handle, mkl::transpose::nontrans, m, n, *(&alpha_D), x_D_buff_ct1, lda, y_D_buff_ct1, incx, *(&beta_D), result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasDgemv(handle, (cublasOperation_t)0, m, n, &alpha_D, x_D, lda, y_D, incx, &beta_D, result_D, incy);
@@ -589,15 +589,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::ger(handle, m, n, *(&alpha_S), x_S_buff_ct1, incx, y_S_buff_ct1, incy, result_S_buff_ct1, lda), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::ger(handle, m, n, *(&alpha_S), x_S_buff_ct1, incx, y_S_buff_ct1, incy, result_S_buff_ct1, lda);
   // CHECK-NEXT: }
   status = cublasSger(handle, m, n, &alpha_S, x_S, incx, y_S, incy, result_S, lda);
@@ -607,15 +607,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::ger(handle, m, n, *(&alpha_D), x_D_buff_ct1, incx, y_D_buff_ct1, incy, result_D_buff_ct1, lda), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::ger(handle, m, n, *(&alpha_D), x_D_buff_ct1, incx, y_D_buff_ct1, incy, result_D_buff_ct1, lda);
   // CHECK-NEXT: }
   status = cublasDger(handle, m, n, &alpha_D, x_D, incx, y_D, incy, result_D, lda);
@@ -628,15 +628,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::sbmv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), m, n, *(&alpha_S), x_S_buff_ct1, lda, y_S_buff_ct1, incx, *(&beta_S), result_S_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::sbmv(handle, mkl::uplo::upper, m, n, *(&alpha_S), x_S_buff_ct1, lda, y_S_buff_ct1, incx, *(&beta_S), result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasSsbmv(handle, (cublasFillMode_t)fill0, m, n, &alpha_S, x_S, lda, y_S, incx, &beta_S, result_S, incy);
@@ -646,15 +646,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::sbmv(handle, (((int)fill1)==0?(mkl::uplo::lower):(mkl::uplo::upper)), m, n, *(&alpha_D), x_D_buff_ct1, lda, y_D_buff_ct1, incx, *(&beta_D), result_D_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::sbmv(handle, mkl::uplo::upper, m, n, *(&alpha_D), x_D_buff_ct1, lda, y_D_buff_ct1, incx, *(&beta_D), result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasDsbmv(handle, (cublasFillMode_t)fill1, m, n, &alpha_D, x_D, lda, y_D, incx, &beta_D, result_D, incy);
@@ -665,15 +665,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::spmv(handle, (((int)0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, *(&alpha_S), x_S_buff_ct1, y_S_buff_ct1, incx, *(&beta_S), result_S_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::spmv(handle, mkl::uplo::upper, n, *(&alpha_S), x_S_buff_ct1, y_S_buff_ct1, incx, *(&beta_S), result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasSspmv(handle, (cublasFillMode_t)0, n, &alpha_S, x_S, y_S, incx, &beta_S, result_S, incy);
@@ -683,15 +683,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::spmv(handle, (((int)1)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, *(&alpha_D), x_D_buff_ct1, y_D_buff_ct1, incx, *(&beta_D), result_D_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::spmv(handle, mkl::uplo::upper, n, *(&alpha_D), x_D_buff_ct1, y_D_buff_ct1, incx, *(&beta_D), result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasDspmv(handle, (cublasFillMode_t)1, n, &alpha_D, x_D, y_D, incx, &beta_D, result_D, incy);
@@ -702,13 +702,13 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::spr(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, *(&alpha_S), x_S_buff_ct1, incx, result_S_buff_ct1), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::spr(handle, mkl::uplo::upper, n, *(&alpha_S), x_S_buff_ct1, incx, result_S_buff_ct1);
   // CHECK-NEXT: }
   status = cublasSspr(handle, (cublasFillMode_t)fill0, n, &alpha_S, x_S, incx, result_S);
@@ -718,13 +718,13 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::spr(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, *(&alpha_D), x_D_buff_ct1, incx, result_D_buff_ct1), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::spr(handle, mkl::uplo::upper, n, *(&alpha_D), x_D_buff_ct1, incx, result_D_buff_ct1);
   // CHECK-NEXT: }
   status = cublasDspr(handle, (cublasFillMode_t)fill0, n, &alpha_D, x_D, incx, result_D);
@@ -735,15 +735,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::spr2(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, *(&alpha_S), x_S_buff_ct1, incx, y_S_buff_ct1, incy, result_S_buff_ct1), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::spr2(handle, mkl::uplo::upper, n, *(&alpha_S), x_S_buff_ct1, incx, y_S_buff_ct1, incy, result_S_buff_ct1);
   // CHECK-NEXT: }
   status = cublasSspr2(handle, (cublasFillMode_t)fill0, n, &alpha_S, x_S, incx, y_S, incy, result_S);
@@ -753,15 +753,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::spr2(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, *(&alpha_D), x_D_buff_ct1, incx, y_D_buff_ct1, incy, result_D_buff_ct1), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::spr2(handle, mkl::uplo::upper, n, *(&alpha_D), x_D_buff_ct1, incx, y_D_buff_ct1, incy, result_D_buff_ct1);
   // CHECK-NEXT: }
   status = cublasDspr2(handle, (cublasFillMode_t)fill0, n, &alpha_D, x_D, incx, y_D, incy, result_D);
@@ -772,15 +772,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::symv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, *(&alpha_S), x_S_buff_ct1, lda, y_S_buff_ct1, incx, *(&beta_S), result_S_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::symv(handle, mkl::uplo::upper, n, *(&alpha_S), x_S_buff_ct1, lda, y_S_buff_ct1, incx, *(&beta_S), result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasSsymv(handle, (cublasFillMode_t)fill0, n, &alpha_S, x_S, lda, y_S, incx, &beta_S, result_S, incy);
@@ -790,15 +790,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::symv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, *(&alpha_D), x_D_buff_ct1, lda, y_D_buff_ct1, incx, *(&beta_D), result_D_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::symv(handle, mkl::uplo::upper, n, *(&alpha_D), x_D_buff_ct1, lda, y_D_buff_ct1, incx, *(&beta_D), result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasDsymv(handle, (cublasFillMode_t)fill0, n, &alpha_D, x_D, lda, y_D, incx, &beta_D, result_D, incy);
@@ -809,13 +809,13 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::syr(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, *(&alpha_S), x_S_buff_ct1, incx, result_S_buff_ct1, lda), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::syr(handle, mkl::uplo::upper, n, *(&alpha_S), x_S_buff_ct1, incx, result_S_buff_ct1, lda);
   // CHECK-NEXT: }
   status = cublasSsyr(handle, (cublasFillMode_t)fill0, n, &alpha_S, x_S, incx, result_S, lda);
@@ -825,13 +825,13 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::syr(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, *(&alpha_D), x_D_buff_ct1, incx, result_D_buff_ct1, lda), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::syr(handle, mkl::uplo::upper, n, *(&alpha_D), x_D_buff_ct1, incx, result_D_buff_ct1, lda);
   // CHECK-NEXT: }
   status = cublasDsyr(handle, (cublasFillMode_t)fill0, n, &alpha_D, x_D, incx, result_D, lda);
@@ -842,15 +842,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::syr2(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, *(&alpha_S), x_S_buff_ct1, incx, y_S_buff_ct1, incy, result_S_buff_ct1, lda), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto y_S_buff_ct1 = dpct::get_buffer<float>(y_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::syr2(handle, mkl::uplo::upper, n, *(&alpha_S), x_S_buff_ct1, incx, y_S_buff_ct1, incy, result_S_buff_ct1, lda);
   // CHECK-NEXT: }
   status = cublasSsyr2(handle, (cublasFillMode_t)fill0, n, &alpha_S, x_S, incx, y_S, incy, result_S, lda);
@@ -860,15 +860,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::syr2(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), n, *(&alpha_D), x_D_buff_ct1, incx, y_D_buff_ct1, incy, result_D_buff_ct1, lda), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto y_D_buff_ct1 = dpct::get_buffer<double>(y_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::syr2(handle, mkl::uplo::upper, n, *(&alpha_D), x_D_buff_ct1, incx, y_D_buff_ct1, incy, result_D_buff_ct1, lda);
   // CHECK-NEXT: }
   status = cublasDsyr2(handle, (cublasFillMode_t)fill0, n, &alpha_D, x_D, incx, y_D, incy, result_D, lda);
@@ -882,13 +882,13 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct2 = 1;
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::tbmv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), (mkl::diag)diag0, n, n, x_S_buff_ct1, lda, result_S_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::tbmv(handle, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::unit, n, n, x_S_buff_ct1, lda, result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasStbmv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)1, (cublasDiagType_t)diag0, n, n, x_S, lda, result_S, incy);
@@ -899,13 +899,13 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct2 = 2;
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::tbmv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), (mkl::diag)diag1, n, n, x_D_buff_ct1, lda, result_D_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::tbmv(handle, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::unit, n, n, x_D_buff_ct1, lda, result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasDtbmv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)2, (cublasDiagType_t)diag1, n, n, x_D, lda, result_D, incy);
@@ -917,13 +917,13 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct2 = trans0;
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::tbsv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), (mkl::diag)0, n, n, x_S_buff_ct1, lda, result_S_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::tbsv(handle, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::unit, n, n, x_S_buff_ct1, lda, result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasStbsv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)0, n, n, x_S, lda, result_S, incy);
@@ -934,13 +934,13 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct2 = trans0;
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::tbsv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), (mkl::diag)1, n, n, x_D_buff_ct1, lda, result_D_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::tbsv(handle, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::unit, n, n, x_D_buff_ct1, lda, result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasDtbsv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)1, n, n, x_D, lda, result_D, incy);
@@ -952,13 +952,13 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct2 = trans0;
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::tpmv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), (mkl::diag)diag0, n, x_S_buff_ct1, result_S_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::tpmv(handle, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::unit, n, x_S_buff_ct1, result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasStpmv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, n, x_S, result_S, incy);
@@ -969,13 +969,13 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct2 = trans0;
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::tpmv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), (mkl::diag)diag0, n, x_D_buff_ct1, result_D_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::tpmv(handle, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::unit, n, x_D_buff_ct1, result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasDtpmv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, n, x_D, result_D, incy);
@@ -987,13 +987,13 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct2 = trans0;
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::tpsv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), (mkl::diag)diag0, n, x_S_buff_ct1, result_S_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::tpsv(handle, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::unit, n, x_S_buff_ct1, result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasStpsv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, n, x_S, result_S, incy);
@@ -1004,13 +1004,13 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct2 = trans0;
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::tpsv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), (mkl::diag)diag0, n, x_D_buff_ct1, result_D_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::tpsv(handle, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::unit, n, x_D_buff_ct1, result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasDtpsv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, n, x_D, result_D, incy);
@@ -1022,13 +1022,13 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct2 = trans0;
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::trmv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), (mkl::diag)diag0, n, x_S_buff_ct1, lda, result_S_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::trmv(handle, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::unit, n, x_S_buff_ct1, lda, result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasStrmv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, n, x_S, lda, result_S, incy);
@@ -1039,13 +1039,13 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct2 = trans0;
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::trmv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), (mkl::diag)diag0, n, x_D_buff_ct1, lda, result_D_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::trmv(handle, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::unit, n, x_D_buff_ct1, lda, result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasDtrmv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, n, x_D, lda, result_D, incy);
@@ -1057,13 +1057,13 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct2 = trans0;
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: status = (mkl::blas::trsv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), (mkl::diag)diag0, n, x_S_buff_ct1, lda, result_S_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
+  // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: auto result_S_buff_ct1 = dpct::get_buffer<float>(result_S);
   // CHECK-NEXT: mkl::blas::trsv(handle, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::unit, n, x_S_buff_ct1, lda, result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasStrsv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, n, x_S, lda, result_S, incy);
@@ -1074,13 +1074,13 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct2 = trans0;
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: status = (mkl::blas::trsv(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), (mkl::diag)diag0, n, x_D_buff_ct1, lda, result_D_buff_ct1, incy), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
+  // CHECK-NEXT: auto x_D_buff_ct1 = dpct::get_buffer<double>(x_D);
+  // CHECK-NEXT: auto result_D_buff_ct1 = dpct::get_buffer<double>(result_D);
   // CHECK-NEXT: mkl::blas::trsv(handle, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::unit, n, x_D_buff_ct1, lda, result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   status = cublasDtrsv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, n, x_D, lda, result_D, incy);
@@ -1094,15 +1094,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(A_S);
-  // CHECK-NEXT: auto B_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(B_S);
-  // CHECK-NEXT: auto C_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(C_S);
+  // CHECK-NEXT: auto A_S_buff_ct1 = dpct::get_buffer<float>(A_S);
+  // CHECK-NEXT: auto B_S_buff_ct1 = dpct::get_buffer<float>(B_S);
+  // CHECK-NEXT: auto C_S_buff_ct1 = dpct::get_buffer<float>(C_S);
   // CHECK-NEXT: status = (mkl::blas::symm(handle, (mkl::side)side0, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), m, n, *(&alpha_S), A_S_buff_ct1, lda, B_S_buff_ct1, ldb, *(&beta_S), C_S_buff_ct1, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(A_S);
-  // CHECK-NEXT: auto B_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(B_S);
-  // CHECK-NEXT: auto C_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(C_S);
+  // CHECK-NEXT: auto A_S_buff_ct1 = dpct::get_buffer<float>(A_S);
+  // CHECK-NEXT: auto B_S_buff_ct1 = dpct::get_buffer<float>(B_S);
+  // CHECK-NEXT: auto C_S_buff_ct1 = dpct::get_buffer<float>(C_S);
   // CHECK-NEXT: mkl::blas::symm(handle, mkl::side::right, mkl::uplo::lower, m, n, *(&alpha_S), A_S_buff_ct1, lda, B_S_buff_ct1, ldb, *(&beta_S), C_S_buff_ct1, ldc);
   // CHECK-NEXT: }
   status = cublasSsymm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, m, n, &alpha_S, A_S, lda, B_S, ldb, &beta_S, C_S, ldc);
@@ -1112,15 +1112,15 @@ int main() {
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto A_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(A_D);
-  // CHECK-NEXT: auto B_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(B_D);
-  // CHECK-NEXT: auto C_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(C_D);
+  // CHECK-NEXT: auto A_D_buff_ct1 = dpct::get_buffer<double>(A_D);
+  // CHECK-NEXT: auto B_D_buff_ct1 = dpct::get_buffer<double>(B_D);
+  // CHECK-NEXT: auto C_D_buff_ct1 = dpct::get_buffer<double>(C_D);
   // CHECK-NEXT: status = (mkl::blas::symm(handle, (mkl::side)side1, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), m, n, *(&alpha_D), A_D_buff_ct1, lda, B_D_buff_ct1, ldb, *(&beta_D), C_D_buff_ct1, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto A_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(A_D);
-  // CHECK-NEXT: auto B_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(B_D);
-  // CHECK-NEXT: auto C_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(C_D);
+  // CHECK-NEXT: auto A_D_buff_ct1 = dpct::get_buffer<double>(A_D);
+  // CHECK-NEXT: auto B_D_buff_ct1 = dpct::get_buffer<double>(B_D);
+  // CHECK-NEXT: auto C_D_buff_ct1 = dpct::get_buffer<double>(C_D);
   // CHECK-NEXT: mkl::blas::symm(handle, mkl::side::right, mkl::uplo::lower, m, n, *(&alpha_D), A_D_buff_ct1, lda, B_D_buff_ct1, ldb, *(&beta_D), C_D_buff_ct1, ldc);
   // CHECK-NEXT: }
   status = cublasDsymm(handle, (cublasSideMode_t)side1, (cublasFillMode_t)fill0, m, n, &alpha_D, A_D, lda, B_D, ldb, &beta_D, C_D, ldc);
@@ -1132,13 +1132,13 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct2 = trans0;
-  // CHECK-NEXT: auto A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(A_S);
-  // CHECK-NEXT: auto C_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(C_S);
+  // CHECK-NEXT: auto A_S_buff_ct1 = dpct::get_buffer<float>(A_S);
+  // CHECK-NEXT: auto C_S_buff_ct1 = dpct::get_buffer<float>(C_S);
   // CHECK-NEXT: status = (mkl::blas::syrk(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), n, k, *(&alpha_S), A_S_buff_ct1, lda, *(&beta_S), C_S_buff_ct1, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(A_S);
-  // CHECK-NEXT: auto C_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(C_S);
+  // CHECK-NEXT: auto A_S_buff_ct1 = dpct::get_buffer<float>(A_S);
+  // CHECK-NEXT: auto C_S_buff_ct1 = dpct::get_buffer<float>(C_S);
   // CHECK-NEXT: mkl::blas::syrk(handle, mkl::uplo::upper, mkl::transpose::nontrans, n, k, *(&alpha_S), A_S_buff_ct1, lda, *(&beta_S), C_S_buff_ct1, ldc);
   // CHECK-NEXT: }
   status = cublasSsyrk(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, &alpha_S, A_S, lda, &beta_S, C_S, ldc);
@@ -1149,13 +1149,13 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct2 = trans0;
-  // CHECK-NEXT: auto A_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(A_D);
-  // CHECK-NEXT: auto C_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(C_D);
+  // CHECK-NEXT: auto A_D_buff_ct1 = dpct::get_buffer<double>(A_D);
+  // CHECK-NEXT: auto C_D_buff_ct1 = dpct::get_buffer<double>(C_D);
   // CHECK-NEXT: status = (mkl::blas::syrk(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), n, k, *(&alpha_D), A_D_buff_ct1, lda, *(&beta_D), C_D_buff_ct1, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto A_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(A_D);
-  // CHECK-NEXT: auto C_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(C_D);
+  // CHECK-NEXT: auto A_D_buff_ct1 = dpct::get_buffer<double>(A_D);
+  // CHECK-NEXT: auto C_D_buff_ct1 = dpct::get_buffer<double>(C_D);
   // CHECK-NEXT: mkl::blas::syrk(handle, mkl::uplo::upper, mkl::transpose::nontrans, n, k, *(&alpha_D), A_D_buff_ct1, lda, *(&beta_D), C_D_buff_ct1, ldc);
   // CHECK-NEXT: }
   status = cublasDsyrk(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, &alpha_D, A_D, lda, &beta_D, C_D, ldc);
@@ -1167,15 +1167,15 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct2 = trans0;
-  // CHECK-NEXT: auto A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(A_S);
-  // CHECK-NEXT: auto B_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(B_S);
-  // CHECK-NEXT: auto C_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(C_S);
+  // CHECK-NEXT: auto A_S_buff_ct1 = dpct::get_buffer<float>(A_S);
+  // CHECK-NEXT: auto B_S_buff_ct1 = dpct::get_buffer<float>(B_S);
+  // CHECK-NEXT: auto C_S_buff_ct1 = dpct::get_buffer<float>(C_S);
   // CHECK-NEXT: status = (mkl::blas::syr2k(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), n, k, *(&alpha_S), A_S_buff_ct1, lda, B_S_buff_ct1, ldb, *(&beta_S), C_S_buff_ct1, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(A_S);
-  // CHECK-NEXT: auto B_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(B_S);
-  // CHECK-NEXT: auto C_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(C_S);
+  // CHECK-NEXT: auto A_S_buff_ct1 = dpct::get_buffer<float>(A_S);
+  // CHECK-NEXT: auto B_S_buff_ct1 = dpct::get_buffer<float>(B_S);
+  // CHECK-NEXT: auto C_S_buff_ct1 = dpct::get_buffer<float>(C_S);
   // CHECK-NEXT: mkl::blas::syr2k(handle, mkl::uplo::upper, mkl::transpose::nontrans, n, k, *(&alpha_S), A_S_buff_ct1, lda, B_S_buff_ct1, ldb, *(&beta_S), C_S_buff_ct1, ldc);
   // CHECK-NEXT: }
   status = cublasSsyr2k(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, &alpha_S, A_S, lda, B_S, ldb, &beta_S, C_S, ldc);
@@ -1186,15 +1186,15 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct2 = trans0;
-  // CHECK-NEXT: auto A_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(A_D);
-  // CHECK-NEXT: auto B_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(B_D);
-  // CHECK-NEXT: auto C_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(C_D);
+  // CHECK-NEXT: auto A_D_buff_ct1 = dpct::get_buffer<double>(A_D);
+  // CHECK-NEXT: auto B_D_buff_ct1 = dpct::get_buffer<double>(B_D);
+  // CHECK-NEXT: auto C_D_buff_ct1 = dpct::get_buffer<double>(C_D);
   // CHECK-NEXT: status = (mkl::blas::syr2k(handle, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct2)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct2)), n, k, *(&alpha_D), A_D_buff_ct1, lda, B_D_buff_ct1, ldb, *(&beta_D), C_D_buff_ct1, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto A_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(A_D);
-  // CHECK-NEXT: auto B_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(B_D);
-  // CHECK-NEXT: auto C_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(C_D);
+  // CHECK-NEXT: auto A_D_buff_ct1 = dpct::get_buffer<double>(A_D);
+  // CHECK-NEXT: auto B_D_buff_ct1 = dpct::get_buffer<double>(B_D);
+  // CHECK-NEXT: auto C_D_buff_ct1 = dpct::get_buffer<double>(C_D);
   // CHECK-NEXT: mkl::blas::syr2k(handle, mkl::uplo::upper, mkl::transpose::nontrans, n, k, *(&alpha_D), A_D_buff_ct1, lda, B_D_buff_ct1, ldb, *(&beta_D), C_D_buff_ct1, ldc);
   // CHECK-NEXT: }
   status = cublasDsyr2k(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, &alpha_D, A_D, lda, B_D, ldb, &beta_D, C_D, ldc);
@@ -1206,13 +1206,13 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct3 = trans0;
-  // CHECK-NEXT: auto A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(A_S);
-  // CHECK-NEXT: auto C_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(C_S);
+  // CHECK-NEXT: auto A_S_buff_ct1 = dpct::get_buffer<float>(A_S);
+  // CHECK-NEXT: auto C_S_buff_ct1 = dpct::get_buffer<float>(C_S);
   // CHECK-NEXT: status = (mkl::blas::trsm(handle, (mkl::side)0, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct3)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct3)), (mkl::diag)diag0, m, n, *(&alpha_S), A_S_buff_ct1, lda, C_S_buff_ct1, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(A_S);
-  // CHECK-NEXT: auto C_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(C_S);
+  // CHECK-NEXT: auto A_S_buff_ct1 = dpct::get_buffer<float>(A_S);
+  // CHECK-NEXT: auto C_S_buff_ct1 = dpct::get_buffer<float>(C_S);
   // CHECK-NEXT: mkl::blas::trsm(handle, mkl::side::left, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::nonunit, m, n, *(&alpha_S), A_S_buff_ct1, lda, C_S_buff_ct1, ldc);
   // CHECK-NEXT: }
   status = cublasStrsm(handle, (cublasSideMode_t)0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, m, n, &alpha_S, A_S, lda, C_S, ldc);
@@ -1223,13 +1223,13 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct3 = trans0;
-  // CHECK-NEXT: auto A_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(A_D);
-  // CHECK-NEXT: auto C_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(C_D);
+  // CHECK-NEXT: auto A_D_buff_ct1 = dpct::get_buffer<double>(A_D);
+  // CHECK-NEXT: auto C_D_buff_ct1 = dpct::get_buffer<double>(C_D);
   // CHECK-NEXT: status = (mkl::blas::trsm(handle, (mkl::side)1, (((int)fill0)==0?(mkl::uplo::lower):(mkl::uplo::upper)), (((int)transpose_ct3)==2?(mkl::transpose::conjtrans):((mkl::transpose)transpose_ct3)), (mkl::diag)diag0, m, n, *(&alpha_D), A_D_buff_ct1, lda, C_D_buff_ct1, ldc), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
-  // CHECK-NEXT: auto A_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(A_D);
-  // CHECK-NEXT: auto C_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(C_D);
+  // CHECK-NEXT: auto A_D_buff_ct1 = dpct::get_buffer<double>(A_D);
+  // CHECK-NEXT: auto C_D_buff_ct1 = dpct::get_buffer<double>(C_D);
   // CHECK-NEXT: mkl::blas::trsm(handle, mkl::side::left, mkl::uplo::upper, mkl::transpose::nontrans, mkl::diag::nonunit, m, n, *(&alpha_D), A_D_buff_ct1, lda, C_D_buff_ct1, ldc);
   // CHECK-NEXT: }
   status = cublasDtrsm(handle, (cublasSideMode_t)1, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, m, n, &alpha_D, A_D, lda, C_D, ldc);

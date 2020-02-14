@@ -843,7 +843,7 @@ std::string getBufferNameAndDeclStr(const std::string &PointerName,
       BufferTempName);
   // TODO: reinterpret will copy more data
   BufferDecl = getIndent(SL, AC.getSourceManager()).str() + "auto " +
-               BufferTempName + " = dpct::mem_mgr::instance().get_buffer<" +
+               BufferTempName + " = dpct::get_buffer<" +
                TypeAsStr + ">(" + PointerName + ");" + getNL();
   return BufferTempName;
 }
@@ -857,7 +857,7 @@ std::string getBufferNameAndDeclStr(const Expr *Arg, const ASTContext &AC,
       BufferTempName);
   // TODO: reinterpret will copy more data
   BufferDecl = getIndent(SL, AC.getSourceManager()).str() + "auto " +
-               BufferTempName + " = dpct::mem_mgr::instance().get_buffer<" +
+               BufferTempName + " = dpct::get_buffer<" +
                TypeAsStr + ">(" + PointerName + ");" + getNL();
   return BufferTempName;
 }

@@ -58,6 +58,18 @@ typedef uint8_t byte_t;
 // Buffer type to be used in Memory Management runtime.
 typedef cl::sycl::buffer<byte_t> buffer_t;
 
+// Pitched 2D/3D memory data.
+class pitched_data {
+public:
+  pitched_data() : pitched_data(nullptr, 0, 0, 0) {}
+  pitched_data(void *data, size_t pitch, size_t x, size_t y)
+      : data(data), pitch(pitch), x(x), y(y) {}
+  size_t pitch;
+  void *data;
+  size_t x, y;
+};
+
+namespace detail {
 class mem_mgr {
   mem_mgr() {
     // Reserved address space, no real memory allocation happens here.
@@ -134,13 +146,6 @@ public:
     return it->second;
   }
 
-  // Get the data pointed by ptr as a 1D buffer reinterpreted as type T.
-  template<typename T>
-  cl::sycl::buffer<T> get_buffer(const void *ptr){
-    allocation alloc = translate_ptr(ptr);
-    return alloc.buffer.reinterpret<T>(cl::sycl::range<1>(alloc.size/sizeof(T)));
-  }
-
   // Check if the pointer represents device pointer or not.
   bool is_device_ptr(const void *ptr) const {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -184,43 +189,6 @@ private:
   }
 };
 
-// malloc
-static inline void dpct_malloc(void **ptr, size_t size, cl::sycl::queue &q) {
-#ifdef DPCT_USM_LEVEL_NONE
-  *ptr = mem_mgr::instance().mem_alloc(size * sizeof(byte_t));
-#else
-  *ptr = cl::sycl::malloc_device(size, q.get_device(), q.get_context());
-#endif // DPCT_USM_LEVEL_NONE
-}
-
-// malloc
-static void dpct_malloc(void **ptr, size_t size) {
-  dpct_malloc(ptr, size, get_default_queue());
-}
-
-/// Build a cl::sycl::buffer with \p Size, The pointer that \p ptr point to is
-/// set as a virtual pointer, which can map to the buffer.
-/// \param [out] ptr Point to pointer which need to malloc memory.
-/// \param size Size in bytes.
-/// \returns no return value.
-template <typename T1, typename T2>
-static inline void dpct_malloc(T1 **ptr, T2 size) {
-  return dpct_malloc(reinterpret_cast<void **>(ptr), static_cast<size_t>(size));
-}
-
-/// free
-/// \param ptr Point to free.
-/// \returns no return value.
-static inline void dpct_free(void *ptr) {
-  if (ptr) {
-#ifdef DPCT_USM_LEVEL_NONE
-    mem_mgr::instance().mem_free(ptr);
-#else
-    cl::sycl::free(ptr, get_default_queue().get_context());
-#endif // DPCT_USM_LEVEL_NONE
-  }
-}
-
 template <class T, memory_attribute Memory, size_t Dimension> class accessor;
 template <memory_attribute Memory, class T = byte_t> class memory_traits {
 public:
@@ -247,52 +215,89 @@ public:
   using pointer_t = T *;
 };
 
-// dpct accessor used as kernel function and device function parameter
-template <class T, memory_attribute Memory, size_t Dimension> class accessor;
-template <class T, memory_attribute Memory> class accessor<T, Memory, 3> {
-public:
-  using memory_t = memory_traits<Memory, T>;
-  using element_t = typename memory_t::element_t;
-  using pointer_t = typename memory_t::pointer_t;
-  using accessor_t = typename memory_t::template accessor_t<3>;
-  accessor(pointer_t data, const cl::sycl::range<3> &in_range)
-      : data(data), range(in_range) {}
-  template <memory_attribute M = Memory>
-  accessor(typename std::enable_if<M != local, const accessor_t>::type &acc)
-      : accessor(acc, acc.get_range()) {}
-  accessor(const accessor_t &acc, const cl::sycl::range<3> &in_range)
-      : accessor(acc.get_pointer(), in_range) {}
-  accessor<T, Memory, 2> operator[](size_t index) const {
-    cl::sycl::range<2> sub(range.get(1), range.get(2));
-    return accessor<T, Memory, 2>(data + index * sub.size(), sub);
+// malloc
+static inline void dpct_malloc(void **ptr, size_t size, cl::sycl::queue &q) {
+#ifdef DPCT_USM_LEVEL_NONE
+  *ptr = mem_mgr::instance().mem_alloc(size * sizeof(byte_t));
+#else
+  *ptr = cl::sycl::malloc_device(size, q.get_device(), q.get_context());
+#endif // DPCT_USM_LEVEL_NONE
+}
+
+// malloc
+static void dpct_malloc(void **ptr, size_t size) {
+  dpct_malloc(ptr, size, get_default_queue());
+}
+
+#define PITCH_DEFAULT_ALIGN(x) (((x) + 31) & ~(0x1F))
+static inline void dpct_malloc(void **ptr, size_t *pitch, size_t x, size_t y,
+                               size_t z) {
+  *pitch = PITCH_DEFAULT_ALIGN(x);
+  dpct_malloc(ptr, *pitch * y * z);
+}
+
+/// Synchronously sets value to the first size bytes starting from dev_ptr in
+/// \param q. The function will return after the memset operation is completed.
+///
+/// \param q The queue in which the operation is done.
+/// \param dev_ptr Pointer to the device memory address.
+/// \param value Value to be set.
+/// \param size Number of bytes to be set to the value.
+/// \returns no return value.
+static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *dev_ptr,
+                                          int value, size_t size) {
+#ifdef DPCT_USM_LEVEL_NONE
+  auto &mm = mem_mgr::instance();
+  assert(mm.is_device_ptr(dev_ptr));
+  auto alloc = mm.translate_ptr(dev_ptr);
+  size_t offset = (byte_t *)dev_ptr - alloc.alloc_ptr;
+
+  return q.submit([&](cl::sycl::handler &cgh) {
+    auto r = cl::sycl::range<1>(size);
+    auto o = cl::sycl::id<1>(offset);
+    cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
+                       cl::sycl::access::target::global_buffer>
+        acc(alloc.buffer, cgh, r, o);
+    cgh.fill(acc, (byte_t)value);
+  });
+#else
+  return q.memset(dev_ptr, value, size);
+#endif // DPCT_USM_LEVEL_NONE
+}
+
+/// Sets value to the 3D memory region pointed by \p data in \p q. \p size
+/// specify the setted 3D memory size. The function will return after the memset
+/// operation is completed.
+///
+/// \param q The queue in which the operation is done.
+/// \param data Pointer to the device memory region.
+/// \param value Value to be set.
+/// \param size Specify the setted memory region.
+/// \returns no return value.
+static inline cl::sycl::vector_class<cl::sycl::event>
+dpct_memset(cl::sycl::queue &q, pitched_data data, int value,
+            cl::sycl::range<3> size) {
+  cl::sycl::vector_class<cl::sycl::event> event_list;
+  size_t slice = data.pitch * data.y;
+  unsigned char *data_surface = (unsigned char *)data.data;
+  for (size_t z = 0; z < size.get(2); ++z) {
+    unsigned char *data_ptr = data_surface;
+    for (size_t y = 0; y < size.get(1); ++y) {
+      event_list.push_back(dpct_memset(q, data_ptr, value, size.get(0)));
+      data_ptr += data.pitch;
+    }
+    data_surface += slice;
   }
+  return event_list;
+}
 
-private:
-  pointer_t data;
-  cl::sycl::range<3> range;
-};
-template <class T, memory_attribute Memory> class accessor<T, Memory, 2> {
-public:
-  using memory_t = memory_traits<Memory, T>;
-  using element_t = typename memory_t::element_t;
-  using pointer_t = typename memory_t::pointer_t;
-  using accessor_t = typename memory_t::template accessor_t<2>;
-  accessor(pointer_t data, const cl::sycl::range<2> &in_range)
-      : data(data), range(in_range) {}
-  template <memory_attribute M = Memory>
-  accessor(typename std::enable_if<M != local, const accessor_t>::type &acc)
-      : accessor(acc, acc.get_range()) {}
-  accessor(const accessor_t &acc, const cl::sycl::range<2> &in_range)
-      : accessor(acc.get_pointer(), in_range) {}
-
-  pointer_t operator[](size_t index) const {
-    return data + range.get(1) * index;
-  }
-
-private:
-  pointer_t data;
-  cl::sycl::range<2> range;
-};
+/// memset 2D matrix with pitch.
+static inline cl::sycl::vector_class<cl::sycl::event>
+dpct_memset(cl::sycl::queue &q, void *ptr, size_t pitch, int val, size_t x,
+            size_t y) {
+  return dpct_memset(q, pitched_data(ptr, pitch, x, 1), val,
+                     cl::sycl::range<3>(x, y, 1));
+}
 
 // memcpy
 static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
@@ -387,6 +392,132 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
 #endif // DPCT_USM_LEVEL_NONE
 }
 
+/// copy 3D matrix specified by \p size from 3D matrix specified by \p from_ptr
+/// and \p from_range to another specified by \p to_ptr and \p to_range.
+static inline cl::sycl::vector_class<cl::sycl::event>
+dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
+            cl::sycl::range<3> to_range, cl::sycl::range<3> from_range,
+            cl::sycl::id<3> to_id, cl::sycl::id<3> from_id,
+            cl::sycl::range<3> size, memcpy_direction direction) {
+  cl::sycl::vector_class<cl::sycl::event> event_list;
+
+  size_t to_slice = to_range.get(1) * to_range.get(0),
+         from_slice = from_range.get(1) * from_range.get(0);
+  unsigned char *to_surface = (unsigned char *)to_ptr +
+                              to_id.get(2) * to_slice +
+                              to_id.get(1) * to_range.get(0) + to_id.get(0);
+  const unsigned char *from_surface =
+      (const unsigned char *)from_ptr + from_id.get(2) * from_slice +
+      from_id.get(1) * from_range.get(0) + from_id.get(0);
+
+  for (size_t z = 0; z < size.get(2); ++z) {
+    unsigned char *to_ptr = to_surface;
+    const unsigned char *from_ptr = from_surface;
+    for (size_t y = 0; y < size.get(1); ++y) {
+      event_list.push_back(
+          dpct_memcpy(q, to_ptr, from_ptr, size.get(0), direction));
+      to_ptr += to_range.get(0);
+      from_ptr += from_range.get(0);
+    }
+    to_surface += to_slice;
+    from_surface += from_slice;
+  }
+  return event_list;
+}
+
+/// memcpy 2D/3D matrix specified by pitched_data.
+static inline cl::sycl::vector_class<cl::sycl::event>
+dpct_memcpy(cl::sycl::queue &q, pitched_data to, cl::sycl::id<3> to_id,
+            pitched_data from, cl::sycl::id<3> from_id, cl::sycl::range<3> size,
+            memcpy_direction direction = automatic) {
+  return dpct_memcpy(q, to.data, from.data,
+                     cl::sycl::range<3>(to.pitch, to.y, 1),
+                     cl::sycl::range<3>(from.pitch, from.y, 1), to_id, from_id,
+                     size, direction);
+}
+
+/// memcpy 2D matrix with pitch.
+static inline cl::sycl::vector_class<cl::sycl::event>
+dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
+            size_t to_pitch, size_t from_pitch, size_t x, size_t y,
+            memcpy_direction direction = automatic) {
+  return dpct_memcpy(q, to_ptr, from_ptr, cl::sycl::range<3>(to_pitch, y, 1),
+                     cl::sycl::range<3>(from_pitch, y, 1),
+                     cl::sycl::id<3>(0, 0, 0), cl::sycl::id<3>(0, 0, 0),
+                     cl::sycl::range<3>(x, y, 1), direction);
+}
+} // namespace detail
+
+/// Get the buffer and the offset of a piece of memory pointed to by \param ptr.
+///
+/// \param ptr Pointer to a piece of memory.
+/// \returns a pair containing both the buffer and the offset.
+static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
+  auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
+  size_t offset = (byte_t *)ptr - alloc.alloc_ptr;
+  return std::make_pair(alloc.buffer, offset);
+}
+
+/// Get the data pointed by ptr as a 1D buffer reinterpreted as type T.
+template <typename T> static cl::sycl::buffer<T> get_buffer(const void *ptr) {
+  auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
+  return alloc.buffer.reinterpret<T>(
+      cl::sycl::range<1>(alloc.size / sizeof(T)));
+}
+
+/// Get the buffer of a piece of memory pointed to by \param ptr.
+///
+/// \param ptr Pointer to a piece of memory.
+/// \returns the buffer.
+static buffer_t get_buffer(const void *ptr) {
+  return detail::mem_mgr::instance().translate_ptr(ptr).buffer;
+}
+
+/// Build a cl::sycl::buffer with \p Size, The pointer that \p ptr point to is
+/// set as a virtual pointer, which can map to the buffer.
+/// \param [out] ptr Point to pointer which need to malloc memory.
+/// \param size Size in bytes.
+/// \returns no return value.
+template <typename T1, typename T2>
+static inline void dpct_malloc(T1 **ptr, T2 size) {
+  return detail::dpct_malloc(reinterpret_cast<void **>(ptr),
+                             static_cast<size_t>(size));
+}
+
+/// Malloc 3D array on device with size of \p size.
+/// \param [out] pitch Pointer to pitch info which store the memory info.
+/// \param [out] size Malloc memory size.
+static inline void dpct_malloc(pitched_data *pitch, cl::sycl::range<3> size) {
+  *pitch = pitched_data(nullptr, 0, size.get(0), size.get(1));
+  detail::dpct_malloc(&pitch->data, &pitch->pitch, size.get(0), size.get(1),
+                      size.get(2));
+}
+
+/// Malloc 2D array on device with range of pitch, y. Pitch is the aligned
+/// size of x.
+/// \param [out] ptr Point to pointer which need to malloc memory.
+/// \param [out] pitch Aligned size of x in bytes.
+/// \param x Range in dim x.
+/// \param y Range in dim y.
+/// \param z Range in dim z.
+/// \returns no return value.
+static inline void dpct_malloc(void **ptr, size_t *pitch, size_t x, size_t y) {
+  return detail::dpct_malloc(ptr, pitch, x, y, 1);
+}
+
+/// free
+/// \param ptr Point to free.
+/// \returns no return value.
+static inline void dpct_free(void *ptr) {
+  if (ptr) {
+#ifdef DPCT_USM_LEVEL_NONE
+    detail::mem_mgr::instance().mem_free(ptr);
+#else
+    cl::sycl::free(ptr, get_default_queue().get_context());
+#endif // DPCT_USM_LEVEL_NONE
+  }
+}
+
 /// Synchronously copies size bytes from the address specified by from_ptr to
 /// the address specified by to_ptr. The value of direction, which is used to
 /// specify the copy direction, should be one of host_to_host, host_to_device,
@@ -400,7 +531,8 @@ static cl::sycl::event dpct_memcpy(cl::sycl::queue &q, void *to_ptr,
 /// \returns no return value.
 static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
                         memcpy_direction direction = automatic) {
-  dpct_memcpy(get_default_queue(), to_ptr, from_ptr, size, direction).wait();
+  detail::dpct_memcpy(get_default_queue(), to_ptr, from_ptr, size, direction)
+      .wait();
 }
 
 /// Asynchronously copies size bytes from the address specified by from_ptr to
@@ -418,54 +550,103 @@ static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
 static void async_dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
                               memcpy_direction direction = automatic,
                               cl::sycl::queue &q = dpct::get_default_queue()) {
-  dpct_memcpy(q, to_ptr, from_ptr, size, direction);
+  detail::dpct_memcpy(q, to_ptr, from_ptr, size, direction);
 }
 
-/// Get the buffer and the offset of a piece of memory pointed to by \param ptr.
+/// Synchronously copies 2D matrix specified by x and y from the address
+/// specified by from_ptr to the address specified by to_ptr, while from_pitch
+/// and to_pitch are the range of dim x in bytes of the matrix specified by
+/// from_ptr and to_ptr, The value of direction, which is used to specify the
+/// copy direction, should be one of host_to_host, host_to_device,
+/// device_to_host, device_to_device, or automatic. The function will return
+/// after the copy is completed.
 ///
-/// \param ptr Pointer to a piece of memory.
-/// \returns a pair containing both the buffer and the offset.
-static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
-  auto alloc = mem_mgr::instance().translate_ptr(ptr);
-  size_t offset = (byte_t *)ptr - alloc.alloc_ptr;
-  return std::make_pair(alloc.buffer, offset);
-}
-
-/// Get the buffer of a piece of memory pointed to by \param ptr.
-///
-/// \param ptr Pointer to a piece of memory.
-/// \returns the buffer.
-static buffer_t get_buffer(const void *ptr) {
-  return mem_mgr::instance().translate_ptr(ptr).buffer;
-}
-
-/// Synchronously sets value to the first size bytes starting from dev_ptr in
-/// \param q. The function will return after the memset operation is completed.
-///
-/// \param q The queue in which the operation is done.
-/// \param dev_ptr Pointer to the device memory address.
-/// \param value Value to be set.
-/// \param size Number of bytes to be set to the value.
+/// \param to_ptr Pointer to destination memory address.
+/// \param to_pitch Range of dim x in bytes of destination matrix.
+/// \param from_ptr Pointer to source memory address.
+/// \param from_pitch Range of dim x in bytes of source matrix.
+/// \param x Range of dim x of matrix to be copied.
+/// \param y Range of dim y of matrix to be copied.
+/// \param direction Direction of the copy.
 /// \returns no return value.
-static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *dev_ptr,
-                                          int value, size_t size) {
-#ifdef DPCT_USM_LEVEL_NONE
-  auto &mm = mem_mgr::instance();
-  assert(mm.is_device_ptr(dev_ptr));
-  auto alloc = mm.translate_ptr(dev_ptr);
-  size_t offset = (byte_t *)dev_ptr - alloc.alloc_ptr;
+static inline void dpct_memcpy(void *to_ptr, size_t to_pitch,
+                               const void *from_ptr, size_t from_pitch,
+                               size_t x, size_t y,
+                               memcpy_direction direction = automatic) {
+  cl::sycl::event::wait(detail::dpct_memcpy(get_default_queue_wait(), to_ptr,
+                                            from_ptr, to_pitch, from_pitch, x,
+                                            y, direction));
+}
 
-  return q.submit([&](cl::sycl::handler &cgh) {
-    auto r = cl::sycl::range<1>(size);
-    auto o = cl::sycl::id<1>(offset);
-    cl::sycl::accessor<byte_t, 1, cl::sycl::access::mode::write,
-                       cl::sycl::access::target::global_buffer>
-        acc(alloc.buffer, cgh, r, o);
-    cgh.fill(acc, (byte_t)value);
-  });
-#else
-  return q.memset(dev_ptr, value, size);
-#endif // DPCT_USM_LEVEL_NONE
+/// Asynchronously copies 2D matrix specified by x and y from the address
+/// specified by from_ptr to the address specified by to_ptr, while from_pitch
+/// and to_pitch are the range of dim x in bytes of the matrix specified by
+/// from_ptr and to_ptr, The value of direction, which is used to specify the
+/// copy direction, should be one of host_to_host, host_to_device,
+/// device_to_host, device_to_device, or automatic. The return of the function
+/// does NOT guarantee the copy is completed
+///
+/// \param to_ptr Pointer to destination memory address.
+/// \param to_pitch Range of dim x in bytes of destination matrix.
+/// \param from_ptr Pointer to source memory address.
+/// \param from_pitch Range of dim x in bytes of source matrix.
+/// \param x Range of dim x of matrix to be copied.
+/// \param y Range of dim y of matrix to be copied.
+/// \param direction Direction of the copy.
+/// \param q Queue to execute the copy task.
+/// \returns no return value.
+static inline void
+async_dpct_memcpy(void *to_ptr, size_t to_pitch, const void *from_ptr,
+                  size_t from_pitch, size_t x, size_t y,
+                  memcpy_direction direction = automatic,
+                  cl::sycl::queue &q = get_default_queue_wait()) {
+  detail::dpct_memcpy(q, to_ptr, from_ptr, to_pitch, from_pitch, x, y,
+                      direction);
+}
+
+/// Synchronously copies a subset of a 3D matrix specified by \p to to another
+/// 3D matrix specified by \p from. The from and to position info are specified
+/// by \p from_pos and \p to_pos The copied matrix size is specfied by \p size.
+/// Copy direction, should be one of host_to_host, host_to_device,
+/// device_to_host, device_to_device, or automatic is specified by the param.
+/// The function will return after the copy is completed.
+///
+/// \param to Destination matrix info.
+/// \param to_pos Position of destination.
+/// \param from Source matrix info.
+/// \param from_pos Position of destination.
+/// \param size Range of the submatrix to be copied.
+/// \param direction Direction of the copy.
+/// \returns no return value.
+static inline void dpct_memcpy(pitched_data to, cl::sycl::id<3> to_pos,
+                               pitched_data from, cl::sycl::id<3> from_pos,
+                               cl::sycl::range<3> size,
+                               memcpy_direction direction = automatic) {
+  cl::sycl::event::wait(detail::dpct_memcpy(get_default_queue(), to, to_pos,
+                                            from, from_pos, size, direction));
+}
+
+/// Asynchronously copies a subset of a 3D matrix specified by \p to to another
+/// 3D matrix specified by \p from. The from and to position info are specified
+/// by \p from_pos and \p to_pos The copied matrix size is specfied by \p size.
+/// Copy direction, should be one of host_to_host, host_to_device,
+/// device_to_host, device_to_device, or automatic is specified by the param.
+/// The function will return after the copy is completed.
+///
+/// \param to Destination matrix info.
+/// \param to_pos Position of destination.
+/// \param from Source matrix info.
+/// \param from_pos Position of destination.
+/// \param size Range of the submatrix to be copied.
+/// \param direction Direction of the copy.
+/// \param q Queue to execute the copy task.
+/// \returns no return value.
+static inline void
+async_dpct_memcpy(pitched_data to, cl::sycl::id<3> to_pos, pitched_data from,
+                  cl::sycl::id<3> from_pos, cl::sycl::range<3> size,
+                  memcpy_direction direction = automatic,
+                  cl::sycl::queue &q = get_default_queue_wait()) {
+  detail::dpct_memcpy(q, to, to_pos, from, from_pos, size, direction);
 }
 
 /// Synchronously sets value to the first size bytes starting from dev_ptr. The
@@ -476,7 +657,7 @@ static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *dev_ptr,
 /// \param size Number of bytes to be set to the value.
 /// \returns no return value.
 static void dpct_memset(void *dev_ptr, int value, size_t size) {
-  dpct_memset(get_default_queue(), dev_ptr, value, size).wait();
+  detail::dpct_memset(get_default_queue(), dev_ptr, value, size).wait();
 }
 
 /// Asynchronously sets value to the first size bytes starting from dev_ptr.
@@ -489,17 +670,128 @@ static void dpct_memset(void *dev_ptr, int value, size_t size) {
 /// \returns no return value.
 static void async_dpct_memset(void *dev_ptr, int value, size_t size,
                               cl::sycl::queue &q = dpct::get_default_queue()) {
-  dpct_memset(q, dev_ptr, value, size);
+  detail::dpct_memset(q, dev_ptr, value, size);
 }
+
+/// Sets value to the 2D memory region pointed by \p ptr in \p q. \p x and \p y
+/// specify the setted 2D memory size. \p pitch is the bytes in linear
+/// dimension, including padding bytes. The function will return after the
+/// memset operation is completed.
+///
+/// \param ptr Pointer to the device memory region.
+/// \param pitch Bytes in linear dimension, including padding bytes.
+/// \param value Value to be set.
+/// \param x The setted memory size in linear dimension.
+/// \param y The setted memory size in second dimension.
+/// \returns no return value.
+static inline void dpct_memset(void *ptr, size_t pitch, int val, size_t x,
+                               size_t y) {
+  cl::sycl::event::wait(
+      detail::dpct_memset(get_default_queue(), ptr, pitch, val, x, y));
+}
+
+/// Sets value to the 2D memory region pointed by \p ptr in \p q. \p x and \p y
+/// specify the setted 2D memory size. \p pitch is the bytes in linear
+/// dimension, including padding bytes. The return of the function does NOT
+/// guarantee the memset operation is completed.
+///
+/// \param ptr Pointer to the device memory region.
+/// \param pitch Bytes in linear dimension, including padding bytes.
+/// \param value Value to be set.
+/// \param x The setted memory size in linear dimension.
+/// \param y The setted memory size in second dimension.
+/// \param q The queue in which the operation is done.
+/// \returns no return value.
+static inline void async_dpct_memset(void *ptr, size_t pitch, int val, size_t x,
+                                     size_t y,
+                                     cl::sycl::queue &q = get_default_queue()) {
+  detail::dpct_memset(q, ptr, pitch, val, x, y);
+}
+
+/// Sets value to the 3D memory region specified by \p pitch in \p q. \p size
+/// specify the setted 3D memory size. The function will return after the
+/// memset operation is completed.
+///
+/// \param pitch Specify the 3D memory region.
+/// \param value Value to be set.
+/// \param size The setted 3D memory size.
+/// \returns no return value.
+static inline void dpct_memset(pitched_data pitch, int val,
+                               cl::sycl::range<3> size) {
+  cl::sycl::event::wait(
+      detail::dpct_memset(get_default_queue(), pitch, val, size));
+}
+
+/// Sets value to the 3D memory region specified by \p pitch in \p q. \p size
+/// specify the setted 3D memory size. The return of the function does NOT
+/// guarantee the memset operation is completed.
+///
+/// \param pitch Specify the 3D memory region.
+/// \param value Value to be set.
+/// \param size The setted 3D memory size.
+/// \param q The queue in which the operation is done.
+/// \returns no return value.
+static inline void async_dpct_memset(pitched_data pitch, int val,
+                                     cl::sycl::range<3> size,
+                                     cl::sycl::queue &q = get_default_queue()) {
+  detail::dpct_memset(q, pitch, val, size);
+}
+
+// dpct accessor used as kernel function and device function parameter
+template <class T, memory_attribute Memory, size_t Dimension> class accessor;
+template <class T, memory_attribute Memory> class accessor<T, Memory, 3> {
+public:
+  using memory_t = detail::memory_traits<Memory, T>;
+  using element_t = typename memory_t::element_t;
+  using pointer_t = typename memory_t::pointer_t;
+  using accessor_t = typename memory_t::template accessor_t<3>;
+  accessor(pointer_t data, const cl::sycl::range<3> &in_range)
+      : data(data), range(in_range) {}
+  template <memory_attribute M = Memory>
+  accessor(typename std::enable_if<M != local, const accessor_t>::type &acc)
+      : accessor(acc, acc.get_range()) {}
+  accessor(const accessor_t &acc, const cl::sycl::range<3> &in_range)
+      : accessor(acc.get_pointer(), in_range) {}
+  accessor<T, Memory, 2> operator[](size_t index) const {
+    cl::sycl::range<2> sub(range.get(1), range.get(2));
+    return accessor<T, Memory, 2>(data + index * sub.size(), sub);
+  }
+
+private:
+  pointer_t data;
+  cl::sycl::range<3> range;
+};
+template <class T, memory_attribute Memory> class accessor<T, Memory, 2> {
+public:
+  using memory_t = detail::memory_traits<Memory, T>;
+  using element_t = typename memory_t::element_t;
+  using pointer_t = typename memory_t::pointer_t;
+  using accessor_t = typename memory_t::template accessor_t<2>;
+  accessor(pointer_t data, const cl::sycl::range<2> &in_range)
+      : data(data), range(in_range) {}
+  template <memory_attribute M = Memory>
+  accessor(typename std::enable_if<M != local, const accessor_t>::type &acc)
+      : accessor(acc, acc.get_range()) {}
+  accessor(const accessor_t &acc, const cl::sycl::range<2> &in_range)
+      : accessor(acc.get_pointer(), in_range) {}
+
+  pointer_t operator[](size_t index) const {
+    return data + range.get(1) * index;
+  }
+
+private:
+  pointer_t data;
+  cl::sycl::range<2> range;
+};
 
 // Variable with address space of global or constant
 template <class T, memory_attribute Memory, size_t Dimension>
 class global_memory {
 public:
   using accessor_t =
-      typename memory_traits<Memory, T>::template accessor_t<Dimension>;
-  using value_t = typename memory_traits<Memory, T>::value_t;
-  using dpct_accessor_t = accessor<T, Memory, Dimension>;
+      typename detail::memory_traits<Memory, T>::template accessor_t<Dimension>;
+  using value_t = typename detail::memory_traits<Memory, T>::value_t;
+  using dpct_accessor_t = dpct::accessor<T, Memory, Dimension>;
 
   global_memory() : global_memory(cl::sycl::range<Dimension>(1)) {}
   /// Constructor of 1-D array with inlitializer list
@@ -545,15 +837,13 @@ public:
 
   /// Get the device memory object size in bytes.
   size_t get_size() { return size; }
-
 #ifdef DPCT_USM_LEVEL_NONE
   /// Get cl::sycl::accessor for the device memory object when usm is not used.
   accessor_t get_access(cl::sycl::handler &cgh) {
-    return mem_mgr::instance()
-        .translate_ptr(memory_ptr)
-        .buffer.template reinterpret<T, Dimension>(range)
-        .template get_access<memory_traits<Memory, T>::mode,
-                             memory_traits<Memory, T>::target>(cgh);
+    return get_buffer(memory_ptr)
+        .template reinterpret<T, Dimension>(range)
+        .template get_access<detail::memory_traits<Memory, T>::mode,
+                             detail::memory_traits<Memory, T>::target>(cgh);
   }
 #else
   /// Get dpct::accessor with dimension info for the device memory object
@@ -580,7 +870,8 @@ class global_memory<T, Memory, 0> : public global_memory<T, Memory, 1> {
 public:
   using base = global_memory<T, Memory, 1>;
   using value_t = typename base::value_t;
-  using accessor_t = typename memory_traits<Memory, T>::template accessor_t<0>;
+  using accessor_t =
+      typename detail::memory_traits<Memory, T>::template accessor_t<0>;
 
   /// Constructor with initial value.
   global_memory(const value_t &val) : base(cl::sycl::range<1>(1), {val}) {}
@@ -591,9 +882,8 @@ public:
 #ifdef DPCT_USM_LEVEL_NONE
   /// Get cl::sycl::accessor for the device memory object when usm is not used.
   accessor_t get_access(cl::sycl::handler &cgh) {
-    auto buf = mem_mgr::instance()
-                   .translate_ptr(base::get_ptr())
-                   .buffer.template reinterpret<T, 1>(cl::sycl::range<1>(1));
+    auto buf = get_buffer(base::get_ptr())
+                   .template reinterpret<T, 1>(cl::sycl::range<1>(1));
     return accessor_t(buf, cgh);
   }
 #endif // DPCT_USM_LEVEL_NONE

@@ -34,12 +34,9 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if ([&]() {
-  // CHECK-NEXT: auto d_A_S_buff_ct1 =
-  // CHECK-NEXT:     dpct::mem_mgr::instance().get_buffer<float>(d_A_S);
-  // CHECK-NEXT: auto d_B_S_buff_ct1 =
-  // CHECK-NEXT:     dpct::mem_mgr::instance().get_buffer<float>(d_B_S);
-  // CHECK-NEXT: auto d_C_S_buff_ct1 =
-  // CHECK-NEXT:     dpct::mem_mgr::instance().get_buffer<float>(d_C_S);
+  // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT: auto d_C_S_buff_ct1 = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans,
   // CHECK-NEXT:                 mkl::transpose::nontrans, N, N, N, *(&alpha_S),
   // CHECK-NEXT:                 d_A_S_buff_ct1, N, d_B_S_buff_ct1, N, *(&beta_S),
@@ -56,12 +53,9 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (int stat = [&]() {
-  // CHECK-NEXT: auto d_A_S_buff_ct1 =
-  // CHECK-NEXT:     dpct::mem_mgr::instance().get_buffer<float>(d_A_S);
-  // CHECK-NEXT: auto d_B_S_buff_ct1 =
-  // CHECK-NEXT:     dpct::mem_mgr::instance().get_buffer<float>(d_B_S);
-  // CHECK-NEXT: auto d_C_S_buff_ct1 =
-  // CHECK-NEXT:     dpct::mem_mgr::instance().get_buffer<float>(d_C_S);
+  // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT: auto d_C_S_buff_ct1 = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans,
   // CHECK-NEXT:                 mkl::transpose::nontrans, N, N, N, *(&alpha_S),
   // CHECK-NEXT:                 d_A_S_buff_ct1, N, d_B_S_buff_ct1, N, *(&beta_S),
@@ -74,12 +68,9 @@ int main() {
 
 
   // CHECK: for ([&]() {
-  // CHECK-NEXT: auto d_A_S_buff_ct1 =
-  // CHECK-NEXT:     dpct::mem_mgr::instance().get_buffer<float>(d_A_S);
-  // CHECK-NEXT: auto d_B_S_buff_ct1 =
-  // CHECK-NEXT:     dpct::mem_mgr::instance().get_buffer<float>(d_B_S);
-  // CHECK-NEXT: auto d_C_S_buff_ct1 =
-  // CHECK-NEXT:     dpct::mem_mgr::instance().get_buffer<float>(d_C_S);
+  // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT: auto d_C_S_buff_ct1 = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans,
   // CHECK-NEXT:                 mkl::transpose::nontrans, N, N, N, *(&alpha_S),
   // CHECK-NEXT:                 d_A_S_buff_ct1, N, d_B_S_buff_ct1, N, *(&beta_S),
@@ -96,9 +87,9 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: while ([&]() {
-  // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_A_S);
-  // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_B_S);
-  // CHECK-NEXT: auto d_C_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_C_S);
+  // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT: auto d_C_S_buff_ct1 = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
   // CHECK-NEXT:                 N, N, N, *(&alpha_S), d_A_S_buff_ct1, N, d_B_S_buff_ct1, N,
   // CHECK-NEXT:                 *(&beta_S), d_C_S_buff_ct1, N);
@@ -116,9 +107,9 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: } while ([&]() {
-  // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_A_S);
-  // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_B_S);
-  // CHECK-NEXT: auto d_C_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_C_S);
+  // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT: auto d_C_S_buff_ct1 = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
   // CHECK-NEXT:                 N, N, N, *(&alpha_S), d_A_S_buff_ct1, N, d_B_S_buff_ct1, N,
   // CHECK-NEXT:                 *(&beta_S), d_C_S_buff_ct1, N);
@@ -133,9 +124,9 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: switch (int stat = [&]() {
-  // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_A_S);
-  // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_B_S);
-  // CHECK-NEXT: auto d_C_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_C_S);
+  // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT: auto d_C_S_buff_ct1 = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
   // CHECK-NEXT:                 N, N, N, *(&alpha_S), d_A_S_buff_ct1, N, d_B_S_buff_ct1, N,
   // CHECK-NEXT:                 *(&beta_S), d_C_S_buff_ct1, N);

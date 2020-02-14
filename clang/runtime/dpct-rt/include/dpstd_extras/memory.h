@@ -251,7 +251,7 @@ public:
   device_ptr(OtherT ptr)
       : Base(
 #ifdef DPCT_USM_LEVEL_NONE
-            dpct::mem_mgr::instance()
+            dpct::detail::mem_mgr::instance()
                 .translate_ptr(ptr)
                 .buffer.template reinterpret<T, 1>(
                     sycl::range<1>(dpct::mem_mgr::instance()
