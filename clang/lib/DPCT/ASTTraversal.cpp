@@ -3118,42 +3118,68 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     for (int i = 0; i < ArgNum; ++i) {
       int IndexTemp = -1;
       if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
-        std::string BufferDecl = "";
-        std::string BufferName = "";
-        if (FuncName == "cublasStrmm_v2" || FuncName == "cublasDtrmm_v2") {
-          processTrmmParams(CE, PrefixInsertStr, BufferName, BufferDecl,
-                            IndexTemp, i, IndentStr, ReplInfo.BufferTypeInfo,
-                            StmtBegin);
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+          if (FuncName == "cublasStrmm_v2" || FuncName == "cublasDtrmm_v2") {
+            std::string PtrDecl = "";
+            std::string PtrName = "";
+            processTrmmParams(CE, PrefixInsertStr, PtrName, PtrDecl, IndexTemp,
+                              i, IndentStr, ReplInfo.BufferTypeInfo, StmtBegin);
+            emplaceTransformation(
+                new ReplaceStmt(CE->getArg(i), std::move(PtrName)));
+            PrefixInsertStr = PrefixInsertStr + PtrDecl;
+          }
+
+          if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
+            PrefixInsertStr =
+                PrefixInsertStr + IndentStr + "int64_t result_temp_value;" +
+                getNL() + IndentStr + "int64_t* result_temp_ptr = (int64_t*)" +
+                MapNames::getClNamespace() +
+                "::malloc_device(sizeof(int64_t), dpct::get_current_device(), "
+                "dpct::get_default_context());" +
+                getNL();
+            SuffixInsertStr =
+                SuffixInsertStr +
+                "dpct::get_default_queue_wait().memcpy(&result_temp_value, "
+                "result_temp_ptr, sizeof(int64_t)).wait();" +
+                getNL() + IndentStr + "*(" + getStmtSpelling(CE->getArg(i)) +
+                ") = (int)result_temp_value;" + getNL() + IndentStr;
+            emplaceTransformation(
+                new ReplaceStmt(CE->getArg(i), "result_temp_ptr"));
+          }
         } else {
-          BufferName = getBufferNameAndDeclStr(
-              CE->getArg(i), *(Result.Context),
-              ReplInfo.BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, i);
-        }
+          std::string BufferDecl = "";
+          std::string BufferName = "";
+          if (FuncName == "cublasStrmm_v2" || FuncName == "cublasDtrmm_v2") {
+            processTrmmParams(CE, PrefixInsertStr, BufferName, BufferDecl,
+                              IndexTemp, i, IndentStr, ReplInfo.BufferTypeInfo,
+                              StmtBegin);
+          } else {
+            BufferName = getBufferNameAndDeclStr(
+                CE->getArg(i), *(Result.Context),
+                ReplInfo.BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, i);
+          }
 
-        PrefixInsertStr = PrefixInsertStr + BufferDecl;
+          PrefixInsertStr = PrefixInsertStr + BufferDecl;
 
-        if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
-          PrefixInsertStr =
-              PrefixInsertStr + IndentStr + MapNames::getClNamespace() +
-              "::buffer<int64_t> "
-              "result_temp_buffer(" +
-              MapNames::getClNamespace() + "::range<1>(1));" + getNL();
-          SuffixInsertStr = SuffixInsertStr + BufferName + ".get_access<" +
-                            MapNames::getClNamespace() +
-                            "::access::"
-                            "mode::write>()[0] = "
-                            "(int)result_temp_buffer.get_access<" +
-                            MapNames::getClNamespace() +
-                            "::"
-                            "access::mode::read>()[0];" +
-                            getNL() + IndentStr;
+          if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
+            PrefixInsertStr =
+                PrefixInsertStr + IndentStr + MapNames::getClNamespace() +
+                "::buffer<int64_t> result_temp_buffer(" +
+                MapNames::getClNamespace() + "::range<1>(1));" + getNL();
+            SuffixInsertStr = SuffixInsertStr + BufferName + ".get_access<" +
+                              MapNames::getClNamespace() +
+                              "::access::mode::write>()[0] = "
+                              "(int)result_temp_buffer.get_access<" +
+                              MapNames::getClNamespace() +
+                              "::access::mode::read>()[0];" + getNL() +
+                              IndentStr;
+            emplaceTransformation(
+                new ReplaceStmt(CE->getArg(i), "result_temp_buffer"));
+            continue;
+          }
           emplaceTransformation(
-              new ReplaceStmt(CE->getArg(i), "result_temp_buffer"));
-          continue;
+              new ReplaceStmt(CE->getArg(i), std::move(BufferName)));
         }
-
-        emplaceTransformation(
-            new ReplaceStmt(CE->getArg(i), std::move(BufferName)));
       }
       if (isReplIndex(i, ReplInfo.PointerIndexInfo, IndexTemp)) {
         emplaceTransformation(new ReplaceStmt(
@@ -3212,6 +3238,15 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
     emplaceTransformation(
         new ReplaceText(FuncNameBegin, FuncNameLength, std::move(Replacement)));
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+      if (FuncName == "cublasSrotm_v2") {
+        insertAroundStmt(CE->getArg(6), "const_cast<float*>(", ")");
+      } else if (FuncName == "cublasDrotm_v2"){
+        insertAroundStmt(CE->getArg(6), "const_cast<double*>(", ")");
+      }
+      emplaceTransformation(new InsertText(FuncCallEnd.getLocWithOffset(1),
+                                           std::move(".wait()")));
+    }
     if (IsInCondition) {
       if (IsAssigned) {
         report(StmtBegin, Diagnostics::NOERROR_RETURN_LAMBDA);
@@ -3255,40 +3290,69 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     for (int i = 0; i < ArgNum; ++i) {
       int IndexTemp = -1;
       if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
-        std::string BufferDecl = "";
-        std::string BufferName = "";
-        if (FuncName == "cublasCtrmm_v2" || FuncName == "cublasZtrmm_v2") {
-          processTrmmParams(CE, PrefixInsertStr, BufferName, BufferDecl,
-                            IndexTemp, i, IndentStr, ReplInfo.BufferTypeInfo,
-                            StmtBegin);
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+          if (FuncName == "cublasCtrmm_v2" || FuncName == "cublasZtrmm_v2") {
+            std::string PtrDecl = "";
+            std::string PtrName = "";
+            processTrmmParams(CE, PrefixInsertStr, PtrName, PtrDecl, IndexTemp,
+                              i, IndentStr, ReplInfo.BufferTypeInfo, StmtBegin);
+            emplaceTransformation(
+                new ReplaceStmt(CE->getArg(i), std::move(PtrName)));
+            PrefixInsertStr = PrefixInsertStr + PtrDecl;
+          }
+          if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
+            PrefixInsertStr =
+                PrefixInsertStr + IndentStr + "int64_t result_temp_value;" +
+                getNL() + IndentStr + "int64_t* result_temp_ptr = (int64_t*)" +
+                MapNames::getClNamespace() +
+                "::malloc_device(sizeof(int64_t), dpct::get_current_device(), "
+                "dpct::get_default_context());" +
+                getNL();
+            SuffixInsertStr =
+                SuffixInsertStr + IndentStr +
+                "dpct::get_default_queue_wait().memcpy(&result_temp_value, "
+                "result_temp_ptr, sizeof(int64_t)).wait();" +
+                getNL() + IndentStr + "*(" + getStmtSpelling(CE->getArg(i)) +
+                ") = (int)result_temp_value;" + getNL();
+            emplaceTransformation(
+                new ReplaceStmt(CE->getArg(i), "result_temp_ptr"));
+            continue;
+          }
+          insertAroundStmt(CE->getArg(i),
+                           "(" + ReplInfo.BufferTypeInfo[IndexTemp] + "*)(",
+                           ")");
         } else {
-          BufferName = getBufferNameAndDeclStr(
-              CE->getArg(i), *(Result.Context),
-              ReplInfo.BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, i);
-        }
-        PrefixInsertStr = PrefixInsertStr + BufferDecl;
+          std::string BufferDecl = "";
+          std::string BufferName = "";
+          if (FuncName == "cublasCtrmm_v2" || FuncName == "cublasZtrmm_v2") {
+            processTrmmParams(CE, PrefixInsertStr, BufferName, BufferDecl,
+                              IndexTemp, i, IndentStr, ReplInfo.BufferTypeInfo,
+                              StmtBegin);
+          } else {
+            BufferName = getBufferNameAndDeclStr(
+                CE->getArg(i), *(Result.Context),
+                ReplInfo.BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, i);
+          }
+          PrefixInsertStr = PrefixInsertStr + BufferDecl;
 
-        if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
-          PrefixInsertStr =
-              PrefixInsertStr + IndentStr + MapNames::getClNamespace() +
-              "::buffer<int64_t> "
-              "result_temp_buffer(" +
-              MapNames::getClNamespace() + "::range<1>(1));" + getNL();
-          SuffixInsertStr = SuffixInsertStr + IndentStr + BufferName +
-                            ".get_access<" + MapNames::getClNamespace() +
-                            "::access::"
-                            "mode::write>()[0] = "
-                            "(int)result_temp_buffer.get_access<" +
-                            MapNames::getClNamespace() +
-                            "::"
-                            "access::mode::read>()[0];" +
-                            getNL();
+          if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
+            PrefixInsertStr =
+                PrefixInsertStr + IndentStr + MapNames::getClNamespace() +
+                "::buffer<int64_t> result_temp_buffer(" +
+                MapNames::getClNamespace() + "::range<1>(1));" + getNL();
+            SuffixInsertStr = SuffixInsertStr + IndentStr + BufferName +
+                              ".get_access<" + MapNames::getClNamespace() +
+                              "::access::mode::write>()[0] = "
+                              "(int)result_temp_buffer.get_access<" +
+                              MapNames::getClNamespace() +
+                              "::access::mode::read>()[0];" + getNL();
+            emplaceTransformation(
+                new ReplaceStmt(CE->getArg(i), "result_temp_buffer"));
+            continue;
+          }
           emplaceTransformation(
-              new ReplaceStmt(CE->getArg(i), "result_temp_buffer"));
-          continue;
+              new ReplaceStmt(CE->getArg(i), std::move(BufferName)));
         }
-        emplaceTransformation(
-            new ReplaceStmt(CE->getArg(i), std::move(BufferName)));
       }
       IndexTemp = -1;
       if (isReplIndex(i, ReplInfo.PointerIndexInfo, IndexTemp)) {
@@ -3320,7 +3384,10 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     }
     emplaceTransformation(
         new ReplaceText(FuncNameBegin, FuncNameLength, std::move(Replacement)));
-
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+      emplaceTransformation(new InsertText(FuncCallEnd.getLocWithOffset(1),
+                                           std::move(".wait()")));
+    }
     if (IsInCondition) {
       if (IsAssigned) {
         report(StmtBegin, Diagnostics::NOERROR_RETURN_LAMBDA);
@@ -3391,12 +3458,30 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     for (int i = 0; i < ArgNum; ++i) {
       int IndexTemp = -1;
       if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
-        std::string BufferDecl;
-        std::string BufferName = getBufferNameAndDeclStr(
-            CE->getArg(i), *(Result.Context),
-            ReplInfo.BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, i);
-        CallExprReplStr = CallExprReplStr + ", " + BufferName;
-        PrefixInsertStr = PrefixInsertStr + BufferDecl;
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+          if ((FuncName == "cublasSrotm" || FuncName == "cublasDrotm") &&
+              i == 5) {
+            CallExprReplStr = CallExprReplStr + ", const_cast<" +
+                              ReplInfo.BufferTypeInfo[IndexTemp] + "*>(" +
+                              getStmtSpelling(CE->getArg(5)) + ")";
+          } else if (ReplInfo.BufferTypeInfo[IndexTemp] ==
+                         "std::complex<float>" ||
+                     ReplInfo.BufferTypeInfo[IndexTemp] ==
+                         "std::complex<double>") {
+            CallExprReplStr = CallExprReplStr + ", (" +
+                              ReplInfo.BufferTypeInfo[IndexTemp] + "*)(" +
+                              ParamsStrsVec[i] + ")";
+          } else {
+            CallExprReplStr = CallExprReplStr + ", " + ParamsStrsVec[i];
+          }
+        } else {
+          std::string BufferDecl;
+          std::string BufferName = getBufferNameAndDeclStr(
+              CE->getArg(i), *(Result.Context),
+              ReplInfo.BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, i);
+          CallExprReplStr = CallExprReplStr + ", " + BufferName;
+          PrefixInsertStr = PrefixInsertStr + BufferDecl;
+        }
       } else if (isReplIndex(i, ReplInfo.PointerIndexInfo, IndexTemp)) {
         if (ReplInfo.PointerTypeInfo[IndexTemp] == "float" ||
             ReplInfo.PointerTypeInfo[IndexTemp] == "double") {
@@ -3463,11 +3548,25 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       // APIs which have return value
       std::string ResultType =
           ReplInfo.BufferTypeInfo[ReplInfo.BufferTypeInfo.size() - 1];
-      PrefixInsertStr = PrefixInsertStr + IndentStr +
-                        MapNames::getClNamespace() + "::buffer<" + ResultType +
-                        "> result_temp_buffer(" + MapNames::getClNamespace() +
-                        "::range<1>(1));" + getNL() + IndentStr +
-                        CallExprReplStr + ", result_temp_buffer);" + getNL();
+      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+        PrefixInsertStr =
+            PrefixInsertStr + IndentStr + ResultType + " result_temp_value;" +
+            getNL() + IndentStr + ResultType + "* result_temp_ptr = (" +
+            ResultType + "*) " + MapNames::getClNamespace() +
+            "::malloc_device(sizeof(" + ResultType +
+            "), dpct::get_current_device(), dpct::get_default_context());" +
+            getNL() + IndentStr + CallExprReplStr +
+            ", result_temp_ptr).wait();" + getNL() + IndentStr +
+            "dpct::get_default_queue_wait().memcpy(&result_temp_value, "
+            "result_temp_ptr, sizeof(" +
+            ResultType + ")).wait();" + getNL();
+      } else {
+        PrefixInsertStr =
+            PrefixInsertStr + IndentStr + MapNames::getClNamespace() +
+            "::buffer<" + ResultType + "> result_temp_buffer(" +
+            MapNames::getClNamespace() + "::range<1>(1));" + getNL() +
+            IndentStr + CallExprReplStr + ", result_temp_buffer);" + getNL();
+      }
       if (IsInCondition)
         SuffixInsertStr = getNL() + IndentStr + "}()";
       else
@@ -3476,14 +3575,17 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       insertAroundRange(StmtBegin, StmtEndAfterSemi,
                         PrefixInsertStr + IndentStr,
                         std::move(SuffixInsertStr));
-      std::string ReturnValueParamsStr = "(result_temp_buffer.get_access<" +
-                                         MapNames::getClNamespace() +
-                                         "::"
-                                         "access::mode::read>()[0].real(), "
-                                         "result_temp_buffer.get_access<" +
-                                         MapNames::getClNamespace() +
-                                         "::"
-                                         "access::mode::read>()[0].imag());";
+      std::string ReturnValueParamsStr;
+      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+        ReturnValueParamsStr =
+            "(result_temp_value.real(), result_temp_value.imag());";
+      } else {
+        ReturnValueParamsStr =
+            "(result_temp_buffer.get_access<" + MapNames::getClNamespace() +
+            "::access::mode::read>()[0].real(), "
+            "result_temp_buffer.get_access<" +
+            MapNames::getClNamespace() + "::access::mode::read>()[0].imag());";
+      }
       if (IsInCondition) {
         if (FuncName == "cublasCdotu" || FuncName == "cublasCdotc") {
           emplaceTransformation(
@@ -3494,11 +3596,15 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
               new ReplaceStmt(CE, "return " + MapNames::getClNamespace() +
                                       "::double2" + ReturnValueParamsStr));
         } else {
-          emplaceTransformation(
-              new ReplaceStmt(CE, "return result_temp_buffer.get_access<" +
-                                      MapNames::getClNamespace() +
-                                      "::"
-                                      "access::mode::read>()[0];"));
+          if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+            emplaceTransformation(
+                new ReplaceStmt(CE, "return result_temp_value;"));
+          } else {
+            emplaceTransformation(
+                new ReplaceStmt(CE, "return result_temp_buffer.get_access<" +
+                                        MapNames::getClNamespace() +
+                                        "::access::mode::read>()[0];"));
+          }
         }
       } else {
         if (IsInitializeVarDecl) {
@@ -3514,11 +3620,15 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                   DS, VarName + " = " + MapNames::getClNamespace() +
                           "::double2" + ReturnValueParamsStr));
             } else {
-              emplaceTransformation(new ReplaceStmt(
-                  DS, VarName + " = result_temp_buffer.get_access<" +
-                          MapNames::getClNamespace() +
-                          "::"
-                          "access::mode::read>()[0];"));
+              if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+                emplaceTransformation(new ReplaceStmt(
+                    DS, VarName + " = result_temp_value;"));
+              } else {
+                emplaceTransformation(new ReplaceStmt(
+                    DS, VarName + " = result_temp_buffer.get_access<" +
+                            MapNames::getClNamespace() +
+                            "::access::mode::read>()[0];"));
+              }
             }
           } else {
             assert(0 && "Fail to get Var Decl Stmt");
@@ -3534,24 +3644,35 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                 new ReplaceStmt(CE, MapNames::getClNamespace() + "::double2" +
                                         ReturnValueParamsStr));
           } else {
-            emplaceTransformation(
-                new ReplaceStmt(CE, "result_temp_buffer.get_access<" +
-                                        MapNames::getClNamespace() +
-                                        "::"
-                                        "access::mode::read>()[0]"));
+            if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+              emplaceTransformation(new ReplaceStmt(CE, "result_temp_value"));
+            } else {
+              emplaceTransformation(
+                  new ReplaceStmt(CE, "result_temp_buffer.get_access<" +
+                                          MapNames::getClNamespace() +
+                                          "::access::mode::read>()[0]"));
+            }
           }
         }
       }
     } else {
       // APIs which haven't return value
       if (IsInCondition) {
-        CallExprReplStr = CallExprReplStr + ");";
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+          CallExprReplStr = CallExprReplStr + ").wait();";
+        } else {
+          CallExprReplStr = CallExprReplStr + ");";
+        }
         emplaceTransformation(new ReplaceStmt(CE, std::move(CallExprReplStr)));
         insertAroundRange(StmtBegin, StmtEndAfterSemi,
                           PrefixInsertStr + IndentStr,
                           getNL() + IndentStr + std::string("}()"));
       } else {
-        CallExprReplStr = CallExprReplStr + ")";
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+          CallExprReplStr = CallExprReplStr + ").wait()";
+        } else {
+          CallExprReplStr = CallExprReplStr + ")";
+        }
         emplaceTransformation(new ReplaceStmt(CE, std::move(CallExprReplStr)));
         insertAroundRange(StmtBegin, StmtEndAfterSemi,
                           PrefixInsertStr + IndentStr,
@@ -3728,15 +3849,22 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       return;
     }
 
-    std::string Replacement =
-        "dpct::dpct_memcpy(" + YStr + "," + XStr + "," + CopySize + ",";
-
-    if (FuncName == "cublasGetVector" || FuncName == "cublasGetVectorAsync") {
-      Replacement = Replacement + "dpct::device_to_host)";
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+      // TODO: Currently, all 4 APIs are migrated to the sync version regardless
+      // it is sync or async in origin code.
+      std::string Replacement = "dpct::get_default_queue_wait().memcpy(" +
+                                ParamsStrsVec[4] + ", " + ParamsStrsVec[2] +
+                                ", " + CopySize + ").wait()";
       emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-    }
-    if (FuncName == "cublasSetVector" || FuncName == "cublasSetVectorAsync") {
-      Replacement = Replacement + "dpct::host_to_device)";
+    } else {
+      std::string Replacement =
+          "dpct::dpct_memcpy(" + YStr + "," + XStr + "," + CopySize + ",";
+      if (FuncName == "cublasGetVector" || FuncName == "cublasGetVectorAsync") {
+        Replacement = Replacement + "dpct::device_to_host)";
+      }
+      if (FuncName == "cublasSetVector" || FuncName == "cublasSetVectorAsync") {
+        Replacement = Replacement + "dpct::host_to_device)";
+      }
       emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
     }
 
@@ -3808,17 +3936,25 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       return;
     }
 
-    std::string Replacement =
-        "dpct::dpct_memcpy(" + BStr + "," + AStr + "," + CopySize + ",";
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+      // TODO: Currently, all 4 APIs are migrated to the sync version regardless
+      // it is sync or async in origin code.
+      std::string Replacement = "dpct::get_default_queue_wait().memcpy(" +
+                                ParamsStrsVec[5] + ", " + ParamsStrsVec[3] +
+                                ", " + CopySize + ").wait()";
+      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    } else {
+      std::string Replacement =
+          "dpct::dpct_memcpy(" + BStr + "," + AStr + "," + CopySize + ",";
+      if (FuncName == "cublasGetMatrix" || FuncName == "cublasGetMatrixAsync") {
+        Replacement = Replacement + "dpct::device_to_host)";
+      }
+      if (FuncName == "cublasSetMatrix" || FuncName == "cublasSetMatrixAsync") {
+        Replacement = Replacement + "dpct::host_to_device)";
+      }
+      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    }
 
-    if (FuncName == "cublasGetMatrix" || FuncName == "cublasGetMatrixAsync") {
-      Replacement = Replacement + "dpct::device_to_host)";
-      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-    }
-    if (FuncName == "cublasSetMatrix" || FuncName == "cublasSetMatrixAsync") {
-      Replacement = Replacement + "dpct::host_to_device)";
-      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-    }
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
       insertAroundStmt(CE, "(", ", 0)");
@@ -3959,9 +4095,13 @@ void BLASFunctionCallRule::processTrmmParams(
                     std::to_string(DistinctionID) + " = " +
                     getStmtSpelling(CE->getArg(DistinctionID)) + ";" +
                     getNL();
-  BufferName = getBufferNameAndDeclStr("ptr_ct" + std::to_string(DistinctionID),
-                                       Context, BufferTypeInfo[IndexTemp],
-                                       StmtBegin, BufferDecl, DistinctionID);
+  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+    BufferName = "ptr_ct" + std::to_string(DistinctionID);
+  } else {
+    BufferName = getBufferNameAndDeclStr(
+        "ptr_ct" + std::to_string(DistinctionID), Context,
+        BufferTypeInfo[IndexTemp], StmtBegin, BufferDecl, DistinctionID);
+  }
 }
 
 void BLASFunctionCallRule::processTrmmCall(const CallExpr *CE,
@@ -5392,11 +5532,27 @@ void MemoryMigrationRule::mallocMigration(
     EA.analyze(C->getArg(2));
     auto Arg2Str = EA.getReplacedString();
     DpctGlobalInfo::getInstance().insertCublasAlloc(C);
-    auto PtrStr = Arg2Str;
     auto SizeStr = "(" + Arg0Str + ")*(" + Arg1Str + ")";
-    std::string Replacement =
-        "dpct::dpct_malloc(" + PtrStr + ", " + SizeStr + ")";
-    emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
+    if (USMLevel == UsmLevel::restricted) {
+      std::ostringstream Repl;
+      if (auto CSE = dyn_cast<CStyleCastExpr>(C->getArg(2))) {
+        ExprAnalysis SEA;
+        SEA.analyze(CSE->getSubExpr());
+        SEA.getReplacedString();
+        auto SEAStr = SEA.getReplacedString();
+        Repl << getAssignedStr(CSE->getSubExpr(), SEAStr);
+      } else {
+        Repl << getAssignedStr(C->getArg(2), "(" + Arg2Str + ")");
+      }
+      Repl << MapNames::getClNamespace() + "::malloc_device(" << SizeStr
+           << ", dpct::get_current_device()"
+              ", dpct::get_default_context())";
+      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+    } else {
+      std::string Replacement =
+          "dpct::dpct_malloc(" + Arg2Str + ", " + SizeStr + ")";
+      emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
+    }
   } else {
     llvm::dbgs() << "[" << getName() << "] Unexpected function name: " << Name;
     return;
@@ -6044,7 +6200,7 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
 
-  if (Name == "cudaFree") {
+  if (Name == "cudaFree" || Name == "cublasFree") {
     if (USMLevel == UsmLevel::restricted) {
       ExprAnalysis EA;
       EA.analyze(C->getArg(0));
@@ -6066,8 +6222,6 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
     } else {
       emplaceTransformation(new ReplaceCalleeName(C, "free", Name));
     }
-  } else if (Name == "cublasFree") {
-    emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_free", Name));
   }
 }
 

@@ -2,6 +2,7 @@
 // RUN: FileCheck --input-file %T/cublas_curandInMacro.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas_v2.h>
+#include <curand.h>
 #include <cuda_runtime.h>
 
 
