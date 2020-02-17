@@ -160,8 +160,16 @@ public:
         get_info<cl::sycl::info::device::max_work_item_sizes>());
     prop.set_host_unified_memory(
         get_info<cl::sycl::info::device::host_unified_memory>());
-    prop.set_max_clock_frequency(
-        get_info<cl::sycl::info::device::max_clock_frequency>());
+
+    // max_clock_frequency parameter is not supported on host device
+    if (is_host()) {
+      // Clock frequency is default to one on host device
+      prop.set_max_clock_frequency(1);
+    } else {
+      prop.set_max_clock_frequency(
+          get_info<cl::sycl::info::device::max_clock_frequency>());
+    }
+
     prop.set_max_compute_units(
         get_info<cl::sycl::info::device::max_compute_units>());
     prop.set_max_work_group_size(
@@ -273,11 +281,16 @@ private:
 
     std::vector<cl::sycl::device> sycl_all_devs =
         cl::sycl::device::get_devices(cl::sycl::info::device_type::all);
+    // Collect other devices except for the default device.
+    const bool default_is_host = default_device.is_host();
     for (auto &dev : sycl_all_devs) {
-      if (dev.get_info<cl::sycl::info::device::vendor_id>() !=
-          default_device.get_info<cl::sycl::info::device::vendor_id>()) {
-        _devs.push_back(device_ext(dev));
+      const bool dev_is_host = dev.is_host();
+      if ((dev_is_host && default_is_host) ||
+          (!dev_is_host && !default_is_host &&
+           dev.get() == default_device.get())) {
+        continue;
       }
+      _devs.push_back(device_ext(dev));
     }
   }
   void check_id(unsigned int id) const {

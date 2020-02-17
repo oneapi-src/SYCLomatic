@@ -20,22 +20,44 @@
 using namespace cl::sycl;
 
 void dev_info_output(const device& dev, std::string selector_name) {
-    std::cout << selector_name << ": Selected device: " << dev.get_info<info::device::name>() << "\n";
-    std::cout << "            -> Device vendor: " << dev.get_info<info::device::vendor>() << "\n";
+  std::cout << selector_name << ": Selected device: " << dev.get_info<info::device::name>() << "\n";
+  std::cout << "            -> Device vendor: " << dev.get_info<info::device::vendor>() << "\n";
 }
 
 int main() {
 
-    auto device = dpct::get_default_queue().get_device();
+  auto device = dpct::get_default_queue().get_device();
+  int device_count = dpct::dev_mgr::instance().device_count();
 
-    if(device.is_gpu())
-        dev_info_output(device, "gpu  device");
-    if(device.is_cpu())
-        dev_info_output(device, "cpu  device");
-    if(device.is_host())
-        dev_info_output(device, "host device");
-    if(device.is_accelerator())
-        dev_info_output(device, "accelerator device");
-    return 0;
+  // To test all device APIs called in get_device_info() do not break on all
+  // devices,
+  for (int device_id = 0; device_id < device_count; device_id++) {
+    dpct::device_info deviceProp;
+    dpct::dev_mgr::instance()
+        .get_device(device_id)
+        .get_device_info(deviceProp);
+  }
+
+  if (device.is_gpu())
+    dev_info_output(device, "gpu  device");
+  if (device.is_cpu())
+    dev_info_output(device, "cpu  device");
+  if (device.is_host())
+    dev_info_output(device, "host device");
+  if (device.is_accelerator())
+    dev_info_output(device, "accelerator device");
+
+  if (device.is_host()) {
+    if (device_count != 1) {
+      printf("Test failed!\n");
+      return -1;
+    }
+  } else {
+    if (device_count < 2) {
+      printf("Test failed!\n");
+      return -1;
+    }
+  }
+  printf("Test passed!\n");
+  return 0;
 }
-
