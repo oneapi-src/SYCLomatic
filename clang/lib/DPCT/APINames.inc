@@ -79,7 +79,7 @@ ENTRY(cudaGetLastError, cudaGetLastError, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaPeekAtLastError, cudaPeekAtLastError, true, NO_FLAG, P0, "Successful")
 
 // stream management functions of API
-ENTRY(cudaStreamAddCallback, cudaStreamAddCallback, true, NO_FLAG, P0, "Successful: DPCT1015")
+ENTRY(cudaStreamAddCallback, cudaStreamAddCallback, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaStreamAttachMemAsync, cudaStreamAttachMemAsync, true, API_CALL_REMOVED, P0, "Successful: DPCT1026/DPCT1027")
 ENTRY(cudaStreamBeginCapture, cudaStreamBeginCapture, true, API_CALL_REMOVED, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY(cudaStreamCreate, cudaStreamCreate, true, NO_FLAG, P0, "Successful")
@@ -92,7 +92,7 @@ ENTRY(cudaStreamGetPriority, cudaStreamGetPriority, true, NO_FLAG, P4, "Successf
 ENTRY(cudaStreamIsCapturing, cudaStreamIsCapturing, true, API_CALL_REMOVED, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY(cudaStreamQuery, cudaStreamQuery, true, API_CALL_REMOVED, P0, "Successful: DPCT1026/DPCT1027")
 ENTRY(cudaStreamSynchronize, cudaStreamSynchronize, true, NO_FLAG, P0, "Successful")
-ENTRY(cudaStreamWaitEvent, cudaStreamWaitEvent, true, API_CALL_UNSUPPORTED, P0, "Successful: DPCT1004")
+ENTRY(cudaStreamWaitEvent, cudaStreamWaitEvent, true, API_CALL_UNSUPPORTED, P0, "Successful")
 
 // event management functions of runtime API
 ENTRY(cudaEventCreate, cudaEventCreate, true, API_CALL_REMOVED, P0, "Successful: : DPCT1026/DPCT1027")
