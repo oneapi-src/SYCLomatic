@@ -123,12 +123,10 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
     BeginLoc = SM.getExpansionRange(E->getBeginLoc()).getBegin();
     EndLoc = SM.getExpansionRange(E->getEndLoc()).getEnd();
   }
-
   // Calculate offset and length from SourceLocation
   auto End = getOffset(EndLoc);
   auto LastTokenLength =
       Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
-
   ExprBeginLoc = BeginLoc;
   ExprEndLoc = EndLoc;
   auto DecompLoc = SM.getDecomposedLoc(BeginLoc);

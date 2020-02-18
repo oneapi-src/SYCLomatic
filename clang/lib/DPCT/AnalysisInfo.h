@@ -367,14 +367,18 @@ public:
     SourceLocation ReplaceTokenEnd;
     SourceRange Range;
     bool IsInRoot;
+    bool IsFunctionLike;
+    int TokenIndex;
     MacroExpansionRecord(IdentifierInfo *ID, const MacroInfo *MI,
-                         SourceRange Range, bool IsInRoot) {
+                         SourceRange Range, bool IsInRoot, int TokenIndex) {
       Name = ID->getName();
       NumTokens = MI->getNumTokens();
       ReplaceTokenBegin = MI->getReplacementToken(0).getLocation();
       ReplaceTokenEnd = MI->getReplacementToken(MI->getNumTokens() - 1).getLocation();
       this->Range = Range;
       this->IsInRoot = IsInRoot;
+      this->IsFunctionLike = MI->getNumParams() > 0;
+      this->TokenIndex = TokenIndex;
     }
   };
 
@@ -760,9 +764,8 @@ public:
     return ExpansionRangeToMacroRecord;
   }
 
-  static std::map<MacroInfo*, std::shared_ptr<MacroExpansionRecord>> &
-    getMacroExpansions() {
-    return MacroExpansions;
+  static std::map<MacroInfo*, bool> & getMacroDefines() {
+    return MacroDefines;
   }
 
 private:
@@ -833,7 +836,7 @@ private:
   static std::unordered_map<std::string, unsigned int> TempValueIdentifierMap;
   static std::map<const char*, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
       ExpansionRangeToMacroRecord;
-  static std::map<MacroInfo*, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>> MacroExpansions;
+  static std::map<MacroInfo*, bool> MacroDefines;
 };
 
 class TemplateArgumentInfo;

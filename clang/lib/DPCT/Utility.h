@@ -353,5 +353,11 @@ bool isOuterMostMacro(const clang::Stmt *E);
 bool isInsideFunctionLikeMacro(
     const clang::SourceLocation BeginLoc, const clang::SourceLocation EndLoc,
     const std::shared_ptr<clang::ast_type_traits::DynTypedNode> Parent);
+enum ExprSpellingStatus {
+  NoType = 0,
+  IsDefine = 1,
+  IsExpansion = 2
+};
+bool isExprStraddle(const clang::Stmt *S, ExprSpellingStatus *SpellingStatus);
 
 #endif // DPCT_UTILITY_H

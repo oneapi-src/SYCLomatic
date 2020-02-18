@@ -34,8 +34,7 @@ bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
 std::map<const char*, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
-std::map<MacroInfo*, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
-    DpctGlobalInfo::MacroExpansions;
+std::map<MacroInfo*, bool> DpctGlobalInfo::MacroDefines;
 const std::string MemVarInfo::ExternVariableName = "dpct_local";
 const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
 bool DpctGlobalInfo::GuessIndentWidthMatcherFlag = false;

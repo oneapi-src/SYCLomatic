@@ -112,16 +112,20 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
                   (isChildOrSamePath(InRoot, InFile));
   if (MD.getMacroInfo()->getNumTokens() > 0) {
-    std::shared_ptr<dpct::DpctGlobalInfo::MacroExpansionRecord> R =
-      std::make_shared<dpct::DpctGlobalInfo::MacroExpansionRecord>(
-        MacroNameTok.getIdentifierInfo(), MD.getMacroInfo(), Range, IsInRoot);
-
-    if (dpct::DpctGlobalInfo::getMacroExpansions().find(MD.getMacroInfo()) ==
-        dpct::DpctGlobalInfo::getMacroExpansions().end()) {
-      dpct::DpctGlobalInfo::getMacroExpansions()[MD.getMacroInfo()] = R;
-      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
+    if (dpct::DpctGlobalInfo::getMacroDefines().find(MD.getMacroInfo()) ==
+        dpct::DpctGlobalInfo::getMacroDefines().end()) {
+      // Record all macro definition
+      dpct::DpctGlobalInfo::getMacroDefines()[MD.getMacroInfo()] = true;
+      size_t i;
+      // Record all tokens in the macro definition
+      for (i = 0; i < MD.getMacroInfo()->getNumTokens();i++) {
+        std::shared_ptr<dpct::DpctGlobalInfo::MacroExpansionRecord> R =
+          std::make_shared<dpct::DpctGlobalInfo::MacroExpansionRecord>(
+            MacroNameTok.getIdentifierInfo(), MD.getMacroInfo(), Range, IsInRoot, i);
+        dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
           [SM.getCharacterData(
-              MD.getMacroInfo()->getReplacementToken(0).getLocation())] = R;
+            MD.getMacroInfo()->getReplacementToken(i).getLocation())] = R;
+      }
     }
   }
 
@@ -6477,8 +6481,22 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 
 void MathFunctionsRule::run(const MatchFinder::MatchResult &Result) {
   if (auto CE = getNodeAsType<CallExpr>(Result, "math")) {
-    ExprAnalysis EA(CE);
-    emplaceTransformation(EA.getReplacement());
+    // Make sure all args in CE are not straddle nodes.
+    // (partially in function-like macro)
+    int ArgNum = CE->getNumArgs();
+    bool HasStraddleArg = false;
+    for (int i = 0; i < ArgNum; ++i) {
+      auto AE = CE->getArg(i);
+      ExprSpellingStatus SpellingStatus;
+      if (isExprStraddle(AE, &SpellingStatus)) {
+        HasStraddleArg = true;
+        break;
+      }
+    }
+    if (!HasStraddleArg) {
+      ExprAnalysis EA(CE);
+      emplaceTransformation(EA.getReplacement());
+    }
   }
 }
 

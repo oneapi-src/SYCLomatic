@@ -1092,11 +1092,11 @@ bool isInsideFunctionLikeMacro(
   // since the parent of x in the AST is "int x MacroA(0)" not "= x",
   // previous check cannot detect the "0" is inside a function like macro.
   // Should check if the expansion is the whole macro definition.
- 
+
   // Get the location of "x" in "#define MacroA(x) = x"
   SourceLocation ImmediateSpellingBegin = SM.getImmediateSpellingLoc(BeginLoc);
   SourceLocation ImmediateSpellingEnd = SM.getImmediateSpellingLoc(EndLoc);
-  SourceLocation ImmediateExpansionBegin = SM.getImmediateExpansionRange(BeginLoc).getBegin();;
+  SourceLocation ImmediateExpansionBegin = SM.getImmediateExpansionRange(BeginLoc).getBegin();
   SourceLocation ImmediateExpansionEnd = SM.getImmediateExpansionRange(EndLoc).getEnd();
 
   // Check if one of the 4 combinations of begin&end matches a macro def
@@ -1104,34 +1104,97 @@ bool isInsideFunctionLikeMacro(
   auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
       SM.getCharacterData(ImmediateExpansionBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+      It->second->TokenIndex == 0 &&
       SM.getCharacterData(It->second->ReplaceTokenEnd) ==
           SM.getCharacterData(ImmediateExpansionEnd)) {
     return false;
   }
   // ExpansionBegin & SpellingEnd
   It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-    SM.getCharacterData(ImmediateExpansionBegin));
+      SM.getCharacterData(ImmediateExpansionBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
-    SM.getCharacterData(It->second->ReplaceTokenEnd) ==
-    SM.getCharacterData(ImmediateSpellingEnd)) {
+      It->second->TokenIndex == 0 &&
+      SM.getCharacterData(It->second->ReplaceTokenEnd) ==
+          SM.getCharacterData(ImmediateSpellingEnd)) {
     return false;
   }
   // SpellingBegin & ExpansionEnd
   It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-    SM.getCharacterData(ImmediateSpellingBegin));
+      SM.getCharacterData(ImmediateSpellingBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
-    SM.getCharacterData(It->second->ReplaceTokenEnd) ==
-    SM.getCharacterData(ImmediateExpansionEnd)) {
+      It->second->TokenIndex == 0 &&
+      SM.getCharacterData(It->second->ReplaceTokenEnd) ==
+          SM.getCharacterData(ImmediateExpansionEnd)) {
     return false;
   }
   // SpellingBegin & SpellingEnd
   It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-    SM.getCharacterData(ImmediateSpellingBegin));
+      SM.getCharacterData(ImmediateSpellingBegin));
   if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
-    SM.getCharacterData(It->second->ReplaceTokenEnd) ==
-    SM.getCharacterData(ImmediateSpellingEnd)) {
+      It->second->TokenIndex == 0 &&
+      SM.getCharacterData(It->second->ReplaceTokenEnd) ==
+          SM.getCharacterData(ImmediateSpellingEnd)) {
     return false;
   }
 
   return true;
+}
+
+// Check if an Expr is partially in function-like macro
+bool isExprStraddle(const Stmt *S, ExprSpellingStatus* SpellingStatus) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  bool HasMacroDefine = false;
+  bool HasMacroExpansion = false;
+  *SpellingStatus = NoType;
+
+  // For all tokens of S, check whether it's in the define or the expansion part
+  for (auto It = S->child_begin(); It != S->child_end(); It++) {
+    bool ArgIsDefine = false;
+    SourceLocation BeginLoc;
+    // Instead of calling isOuterMostMacro to decide which Loc is correct,
+    // calling getImmediateSpellingLoc anyway
+    // because we only care about the consistency between tokens.
+    BeginLoc = SM.getImmediateSpellingLoc(It->getBeginLoc());
+
+    // Check if the token in the define part of a function-like macro.
+    auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      SM.getCharacterData(BeginLoc));
+    if (ItMatch != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()
+      && ItMatch->second->IsFunctionLike) {
+      ArgIsDefine = true;
+      HasMacroDefine = true;
+    }
+    else {
+      HasMacroExpansion = true;
+    }
+    ExprSpellingStatus ChildSpellingStatus;
+    // Recursively check the child node
+    if (isExprStraddle(*It, &ChildSpellingStatus)) {
+      return true;
+    }
+    // If the child's descendent has different SpellingStatus with the child itself,
+    // it is straddle.
+    // In the following example,
+    // "(double)x" is the parent and is in macro define
+    // while "0" is the child and is in macro expansion
+    // #define macro(x) (double)x
+    // macro(0);
+    if ((ChildSpellingStatus == IsExpansion && ArgIsDefine) ||
+        (ChildSpellingStatus == IsDefine && !ArgIsDefine)) {
+      return true;
+    }
+  }
+  // If some children are in the define part and others are in the expansion part,
+  // the Expr is a straddle node and no consist SpellingStatus to set.
+  if (HasMacroDefine && HasMacroExpansion) {
+    return true;
+  }
+  // When all children have consist SpellingStatus, record and return the status.
+  if (HasMacroDefine) {
+    *SpellingStatus = IsDefine;
+  }
+  else {
+    *SpellingStatus = IsExpansion;
+  }
+  return false;
 }
