@@ -5313,6 +5313,9 @@ void KernelCallRule::removeTrailingSemicolon(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   const auto &SM = (*Result.Context).getSourceManager();
   auto KELoc = KCall->getEndLoc();
+  if (KELoc.isMacroID() && !isOuterMostMacro(KCall)) {
+    KELoc = SM.getImmediateSpellingLoc(KELoc);
+  }
   auto Tok = Lexer::findNextToken(KELoc, SM, LangOptions()).getValue();
   assert(Tok.is(tok::TokenKind::semi));
   emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));

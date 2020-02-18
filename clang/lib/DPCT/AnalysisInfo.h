@@ -815,6 +815,16 @@ private:
     return FD->getLocation();
   }
 
+  static inline SourceLocation getLocation(const CUDAKernelCallExpr *CKC) {
+    auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      SM->getCharacterData(SM->getSpellingLoc(CKC->getBeginLoc())));
+    if (CKC->getBeginLoc().isMacroID() &&
+        It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+      return SM->getImmediateSpellingLoc(CKC->getBeginLoc());
+    }
+    return CKC->getBeginLoc();
+  }
+
   std::unordered_map<std::string, std::shared_ptr<DpctFileInfo>> FileMap;
 
   static std::string InRoot;

@@ -57,6 +57,11 @@ void foo() {
   // CHECK-NEXT: });
   foo_kernel<<<GET_BLOCKS4(outputThreadCount, CUDA_NUM_THREADS), 2, 0>>>();
 
+  // Test if SIGABRT.
+  // No check here because the generated code need further fine tune.
+  #define MACRO_CALL(a, b) foo_kernel<<<a, b, 0>>>();
+  MACRO_CALL(0,0)
+
 // CHECK: #define HANDLE_GPU_ERROR(err) \
 // CHECK-NEXT: do \
 // CHECK-NEXT: { \
