@@ -22,7 +22,7 @@
 #include <functional>
 
 #ifdef __PSTL_BACKEND_SYCL
-#include <dpstd/pstl/parallel_backend_sycl_utils.h>
+#include <dpstd/pstl/hetero/dpcpp/parallel_backend_sycl_utils.h>
 #endif
 
 #include <tuple>

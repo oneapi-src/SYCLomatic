@@ -20,6 +20,7 @@
 #ifdef __PSTL_BACKEND_SYCL
 #include <CL/sycl.hpp>
 #endif
+#include <dpstd/iterators.h>
 
 // Memory management section:
 // device_ptr, device_reference, swap, device_iterator, device_malloc,
@@ -131,6 +132,18 @@ template <typename T> void swap(T &x, T &y) {
   y = tmp;
 }
 
+namespace internal {
+// struct for checking if iterator is heterogeneous or not
+template <typename Iter,
+          typename Void = void> // for non-heterogeneous iterators
+struct is_hetero_iterator : std::false_type {};
+
+template <typename Iter> // for heterogeneous iterators
+struct is_hetero_iterator<
+    Iter, typename std::enable_if<Iter::is_hetero::value, void>::type>
+    : std::true_type {};
+} // namespace internal
+
 template <typename T, sycl::access::mode Mode = sycl::access::mode::read_write,
           typename Allocator = sycl::buffer_allocator>
 class device_iterator {
@@ -207,6 +220,12 @@ public:
   difference_type operator-(const device_iterator &it) const {
     return idx - it.idx;
   }
+  template <typename OtherIterator>
+  typename std::enable_if<internal::is_hetero_iterator<OtherIterator>::value,
+                          difference_type>::type
+  operator-(const OtherIterator &it) const {
+    return idx - std::distance(dpstd::begin(buffer), it);
+  }
   bool operator==(const device_iterator &it) const { return *this - it == 0; }
   bool operator!=(const device_iterator &it) const { return !(*this == it); }
   bool operator<(const device_iterator &it) const { return *this - it < 0; }
@@ -218,18 +237,6 @@ public:
 
   sycl::buffer<T, 1, Allocator> get_buffer() { return buffer; }
 };
-
-namespace internal {
-// struct for checking if iterator is heterogeneous or not
-template <typename Iter,
-          typename Void = void> // for non-heterogeneous iterators
-struct is_hetero_iterator : std::false_type {};
-
-template <typename Iter> // for heterogeneous iterators
-struct is_hetero_iterator<
-    Iter, typename std::enable_if<Iter::is_hetero::value, void>::type>
-    : std::true_type {};
-} // namespace internal
 
 template <typename T> class device_ptr : public device_iterator<T> {
   using Base = device_iterator<T>;
@@ -244,9 +251,13 @@ public:
   device_ptr(OtherT ptr)
       : Base(
 #ifdef DPCT_USM_LEVEL_NONE
-            sycl::buffer<T, 1>(sycl::range<1>(
-                dpct::mem_mgr::instance().translate_ptr(ptr).size /
-                sizeof(T))),
+            dpct::mem_mgr::instance()
+                .translate_ptr(ptr)
+                .buffer.template reinterpret<T, 1>(
+                    sycl::range<1>(dpct::mem_mgr::instance()
+                                       .translate_ptr(ptr)
+                                       .size /
+                                   sizeof(T))),
 #else
             sycl::buffer<T, 1>(sycl::range<1>(1)),
 #endif
