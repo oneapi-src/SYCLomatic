@@ -2794,6 +2794,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
     if (IsInCondition) {
       if (IsAssigned) {
+        report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_LAMBDA);
         insertAroundRange(
             PrefixInsertLoc, SuffixInsertLoc,
             std::string("[&](){") + getNL() + PrefixInsertStr + IndentStr,
@@ -3156,6 +3157,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         new ReplaceText(FuncNameBegin, FuncNameLength, std::move(Replacement)));
     if (IsInCondition) {
       if (IsAssigned) {
+        report(StmtBegin, Diagnostics::NOERROR_RETURN_LAMBDA);
         insertAroundRange(
             StmtBegin, StmtEndAfterSemi,
             std::string("[&](){") + getNL() + PrefixInsertStr + IndentStr,
@@ -3264,6 +3266,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
 
     if (IsInCondition) {
       if (IsAssigned) {
+        report(StmtBegin, Diagnostics::NOERROR_RETURN_LAMBDA);
         insertAroundRange(
             StmtBegin, StmtEndAfterSemi,
             std::string("[&](){") + getNL() + PrefixInsertStr + IndentStr,
@@ -3522,6 +3525,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         FuncNameBegin, FuncNameLength, std::move(Replacement), true, FuncName));
     if (IsInCondition) {
       if (IsAssigned) {
+        report(StmtBegin, Diagnostics::NOERROR_RETURN_LAMBDA);
         insertAroundRange(StmtBegin, StmtEndAfterSemi,
                           std::string("[&](){") + getNL() + PrefixInsertStr +
                               IndentStr,

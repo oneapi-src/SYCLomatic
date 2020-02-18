@@ -84,3 +84,5 @@ DEF_WARNING(DIFFERENT_GENERATOR, 1032, "Different generator is used, you may nee
 DEF_COMMENT(DIFFERENT_GENERATOR, 1032, "Different generator is used, you may need to adjust the code.")
 DEF_WARNING(DIFFERENT_BASIC_GENERATOR, 1033, "Migrated code uses a basic Sobol generator. Initialize mkl::rng::sobol generator with user-defined direction numbers to use it as Scrambled Sobol generator.")
 DEF_COMMENT(DIFFERENT_BASIC_GENERATOR, 1033, "Migrated code uses a basic Sobol generator. Initialize mkl::rng::sobol generator with user-defined direction numbers to use it as Scrambled Sobol generator.")
+DEF_WARNING(NOERROR_RETURN_LAMBDA, 1034, "Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.")
+DEF_COMMENT(NOERROR_RETURN_LAMBDA, 1034, "Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.")

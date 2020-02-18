@@ -262,6 +262,10 @@ void bar3(){
 //CHECK-NEXT:*/
 //CHECK-NEXT:curandErrCheck(0);
 //CHECK-NEXT:float *h_data;
+//CHECK-NEXT:/*
+//CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the
+//CHECK-NEXT:lambda. You may need to rewrite this code.
+//CHECK-NEXT:*/
 //CHECK-NEXT:curandErrCheck([&]() {
 //CHECK-NEXT:auto h_data_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(h_data);
 //CHECK-NEXT:mkl::rng::uniform<float> distr_ct1;

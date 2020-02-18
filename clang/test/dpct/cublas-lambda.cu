@@ -16,6 +16,10 @@
 int main() {
   cublasStatus_t status;
   cublasHandle_t handle;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasCreate was removed, because this call is
+  // CHECK-NEXT: redundant in DPC++.
+  // CHECK-NEXT: */
   cublasCreate(&handle);
 
   int N = 275;
@@ -25,8 +29,11 @@ int main() {
   float alpha_S = 1.0f;
   float beta_S = 0.0f;
 
-
-  // CHECK: if ([&]() {
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the
+  // CHECK-NEXT: lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: if ([&]() {
   // CHECK-NEXT: auto d_A_S_buff_ct1 =
   // CHECK-NEXT:     dpct::mem_mgr::instance().get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buff_ct1 =
@@ -44,7 +51,11 @@ int main() {
   }
 
 
-  // CHECK: if (int stat = [&]() {
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the
+  // CHECK-NEXT: lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: if (int stat = [&]() {
   // CHECK-NEXT: auto d_A_S_buff_ct1 =
   // CHECK-NEXT:     dpct::mem_mgr::instance().get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buff_ct1 =
@@ -80,7 +91,11 @@ int main() {
   }
 
 
-  // CHECK: while ([&]() {
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the
+  // CHECK-NEXT: lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: while ([&]() {
   // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_C_S);
@@ -94,7 +109,12 @@ int main() {
   }
 
 
+
   // CHECK: do{
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the
+  // CHECK-NEXT: lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
   // CHECK-NEXT: } while ([&]() {
   // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_B_S);
@@ -108,7 +128,11 @@ int main() {
   }while(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
 
 
-  // CHECK: switch (int stat = [&]() {
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the
+  // CHECK-NEXT: lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: switch (int stat = [&]() {
   // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_C_S);

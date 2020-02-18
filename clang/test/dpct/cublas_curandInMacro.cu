@@ -1,7 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublas_curandInMacro.dp.cpp --match-full-lines %s
 #include <cstdio>
-#include <cublas.h>
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 
@@ -38,8 +37,10 @@ int main() {
     const float *x_S = 0;
 
 
-
-    // CHECK: cublasErrCheck([&](){
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: cublasErrCheck([&](){
     // CHECK-NEXT: auto transpose_ct1 = trans0;
     // CHECK-NEXT: auto transpose_ct2 = trans1;
     // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_A_S);
@@ -51,7 +52,10 @@ int main() {
     cublasErrCheck(cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
 
 
-    // CHECK: cublasErrCheck([&](){
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: cublasErrCheck([&](){
     // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
     // CHECK-NEXT: auto result_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(result);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
@@ -62,7 +66,10 @@ int main() {
     cublasErrCheck(cublasIsamax(handle, N, x_S, N, result));
 
 
-    // CHECK: cublasErrCheck([&](){
+    //CHECK: /*
+    //CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    //CHECK-NEXT: */
+    //CHECK-NEXT: cublasErrCheck([&](){
     //CHECK-NEXT: auto transpose_ct2 = trans1;
     //CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_A_S);
     //CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(d_B_S);
@@ -73,7 +80,10 @@ int main() {
     cublasErrCheck(cublasSsyrkx(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans1, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
 
 
-    // CHECK: cublasErrCheck([&](){
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: cublasErrCheck([&](){
     // CHECK-NEXT: auto transpose_ct3 = trans0;
     // CHECK-NEXT: auto ptr_ct8 = d_A_S;
     // CHECK-NEXT: auto ptr_ct8_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(ptr_ct8);
@@ -99,7 +109,10 @@ int main() {
     int batchSize = 10;
 
 
-    // CHECK:cublasErrCheck([&](){
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: */
+    // CHECK-NEXT:cublasErrCheck([&](){
     // CHECK-NEXT:auto transpose_ct{{[0-9]+}} = trans0;
     // CHECK-NEXT:auto transpose_ct{{[0-9]+}} = trans1;
     // CHECK-NEXT:auto d_A_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(d_A_C);
@@ -110,7 +123,10 @@ int main() {
     // CHECK-NEXT:}());
     cublasErrCheck(cublasCgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_C, d_A_C, N, d_B_C, N, &beta_C, d_C_C, N));
 
-    // CHECK:cublasErrCheck([&](){
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: */
+    // CHECK-NEXT:cublasErrCheck([&](){
     // CHECK-NEXT:auto x_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(x_C);
     // CHECK-NEXT:auto result_buff_ct1 = dpct::mem_mgr::instance().get_buffer<int>(result);
     // CHECK-NEXT:sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
@@ -120,7 +136,10 @@ int main() {
     // CHECK-NEXT:}());
     cublasErrCheck(cublasIcamax(handle, N, x_C, N, result));
 
-    // CHECK:cublasErrCheck([&](){
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: */
+    // CHECK-NEXT:cublasErrCheck([&](){
     // CHECK-NEXT:auto transpose_ct{{[0-9]+}} = trans0;
     // CHECK-NEXT:auto ptr_ct{{[0-9]+}} = d_A_C;
     // CHECK-NEXT:auto ptr_ct{{[0-9]+}}_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(ptr_ct{{[0-9]+}});
@@ -133,7 +152,10 @@ int main() {
     // CHECK-NEXT:}());
     cublasErrCheck(cublasCtrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N));
 
-    // CHECK:cublasErrCheck([&](){
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: */
+    // CHECK-NEXT:cublasErrCheck([&](){
     // CHECK-NEXT:dpct::getrf_batch_wrapper(handle, N, Aarray_S, N, PivotArray, infoArray, batchSize);
     // CHECK-NEXT:return 0;
     // CHECK-NEXT:}());
@@ -144,13 +166,16 @@ int main() {
     float * __restrict__ h_data;
     //CHECK:mkl::rng::philox4x32x10 rng(dpct::get_default_queue_wait(), 1337ull);
     //CHECK-NEXT:/*
-    //CHECK-NEXT:DPCT1027:0: The call to curandCreateGenerator was replaced with 0, because the function call is redundant in DPC++.
+    //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to curandCreateGenerator was replaced with 0, because the function call is redundant in DPC++.
     //CHECK-NEXT:*/
     //CHECK-NEXT:curandErrCheck(0);
     //CHECK-NEXT:/*
-    //CHECK-NEXT:DPCT1027:1: The call to curandSetPseudoRandomGeneratorSeed was replaced with 0, because the function call is redundant in DPC++.
+    //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was replaced with 0, because the function call is redundant in DPC++.
     //CHECK-NEXT:*/
     //CHECK-NEXT:curandErrCheck(0);
+    //CHECK-NEXT:/*
+    //CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    //CHECK-NEXT:*/
     //CHECK-NEXT:curandErrCheck([&](){
     //CHECK-NEXT:auto h_data_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(h_data);
     //CHECK-NEXT:mkl::rng::uniform<float> distr_ct1;
@@ -158,7 +183,7 @@ int main() {
     //CHECK-NEXT:return 0;
     //CHECK-NEXT:}());
     //CHECK-NEXT:/*
-    //CHECK-NEXT:DPCT1027:2: The call to curandDestroyGenerator was replaced with 0, because the function call is redundant in DPC++.
+    //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to curandDestroyGenerator was replaced with 0, because the function call is redundant in DPC++.
     //CHECK-NEXT:*/
     //CHECK-NEXT:curandErrCheck(0);
     curandGenerator_t rng;
