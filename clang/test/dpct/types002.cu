@@ -40,3 +40,40 @@ int main(int argc, char **argv) {
   a = sizeof host_vec;
 }
 
+template <typename type>
+struct bar
+{
+    enum {
+        temp         = 0
+    };
+};
+
+template <bool IF, typename t1, typename t2>
+struct If
+{
+    typedef t1 t3;
+};
+
+// CHECK: template <typename T>
+// CHECK-NEXT: struct foo_1
+// CHECK-NEXT: {
+// CHECK-NEXT:     typedef typename If<bar<sycl::longlong2>::temp, int,int>::t3 Word;
+// CHECK-NEXT: };
+template <typename T>
+struct foo_1
+{
+    typedef typename If<bar<longlong2>::temp, int,int>::t3 Word;
+};
+
+// CHECK: template <typename T>
+// CHECK-NEXT: struct foo_2
+// CHECK-NEXT: {
+// CHECK-NEXT:     typedef typename If<bar<
+// CHECK-NEXT:     sycl::longlong2>::temp, int,int>::t3 Word;
+// CHECK-NEXT: };
+template <typename T>
+struct foo_2
+{
+    typedef typename If<bar<
+    longlong2>::temp, int,int>::t3 Word;
+};

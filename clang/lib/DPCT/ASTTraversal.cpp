@@ -1542,9 +1542,57 @@ void TemplateTypeInDeclRule::registerMatcher(MatchFinder &MF) {
                           unless(hasType(substTemplateTypeParmType())))
                     .bind("TemplateTypeInFieldDecl"),
                 this);
+  MF.addMatcher(typedefDecl().bind("typeDefDecl"), this);
 }
 
 void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
+
+  if (const TypedefDecl *TD =
+          getNodeAsType<TypedefDecl>(Result, "typeDefDecl")) {
+    // clang-format off
+    // E.g.:
+    // `-TypedefDecl 'typename If<bar<longlong2>::temp, int, int>::t3':'int'
+    //   `-ElaboratedType 'typename If<bar<longlong2>::temp, int, int>::t3' sugar
+    //     `-TypedefType 'If<false, int, int>::t3' sugar
+    //       |-Typedef 't3'
+    //       `-SubstTemplateTypeParmType 'int' sugar
+    //         |-TemplateTypeParmType 't1' dependent depth 0 index 1
+    //         | `-TemplateTypeParm 't1'
+    //         `-BuiltinType 'int'
+    // There is no source location for longlong2 in node TypedefType.
+    // Current solution is to get node value for ElaboratedType, retrieve type token by
+    // token.
+    // clang-format on
+
+    SourceManager *SM = Result.SourceManager;
+    auto DTL = TD->getTypeSourceInfo()->getTypeLoc();
+    auto QT = TD->getTypeSourceInfo()->getType();
+    if (auto ET = dyn_cast<ElaboratedType>(QT.getTypePtr())) {
+      auto ETC = DTL.getAs<ElaboratedTypeLoc>();
+      auto TokenBegin = ETC.getQualifierLoc().getBeginLoc();
+      auto ExprEndLoc = ETC.getQualifierLoc().getEndLoc();
+
+      Token Tok;
+      auto LOpts = Result.Context->getLangOpts();
+      while (SM->getCharacterData(TokenBegin) <=
+             SM->getCharacterData(ExprEndLoc)) {
+        if (Lexer::getRawToken(TokenBegin, Tok, *SM, LOpts, true)) {
+          break;
+        }
+
+        if (Tok.isAnyIdentifier()) {
+          std::string Str = MapNames::findReplacedName(MapNames::TypeNamesMap,
+                                                       Tok.getRawIdentifier());
+          if (!Str.empty()) {
+            emplaceTransformation(new ReplaceToken(TokenBegin, std::move(Str)));
+          }
+        }
+        auto TokSharedPtr = Lexer::findNextToken(Tok.getEndLoc(), *(SM), LOpts);
+        TokenBegin = TokSharedPtr.getValue().getLastLoc();
+      }
+    }
+  }
+
   // DD points to a VarDecl or a FieldDecl
   const DeclaratorDecl *DD =
       getNodeAsType<VarDecl>(Result, "TemplateTypeInVarDecl");
