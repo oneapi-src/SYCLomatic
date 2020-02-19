@@ -5126,8 +5126,10 @@ std::string getQueueCtor() {
   extern bool AsyncHandlerFlag;
   std::string Result;
   llvm::raw_string_ostream OS(Result);
-  printPartialArguments(OS << MapNames::getClNamespace() + "::queue(",
-                        AsyncHandlerFlag ? 1 : 0, "dpct::exception_handler")
+  printPartialArguments(
+      OS << MapNames::getClNamespace() +
+                "::queue(dpct::get_default_context(), dpct::get_current_device()",
+      AsyncHandlerFlag ? 1 : 0, ", dpct::exception_handler")
       << ")";
   return OS.str();
 }
