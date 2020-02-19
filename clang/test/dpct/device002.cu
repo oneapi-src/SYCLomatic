@@ -51,7 +51,10 @@ int val;
 cudaDeviceGetAttribute(&val, cudaDevAttrComputeCapabilityMajor, dev_id);
 
 int computeMode = -1, minor = 0;
-// CHECK: checkError((computeMode = dpct::compute_mode::default_, 0));
+// CHECK: /*
+// CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+// CHECK-NEXT: */
+// CHECK-NEXT: checkError((computeMode = 1, 0));
 checkError(cudaDeviceGetAttribute(&computeMode, cudaDevAttrComputeMode, dev_id));
 // CHECK: checkError((minor = dpct::dev_mgr::instance().get_device(dev_id).get_minor_version(), 0));
 checkError(cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, dev_id));

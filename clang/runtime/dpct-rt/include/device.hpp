@@ -27,8 +27,6 @@
 
 namespace dpct {
 
-enum compute_mode { default_, exclusive, prohibited, exclusive_process };
-
 /// DPC++ default exception handler
 auto exception_handler = [](cl::sycl::exception_list exceptions) {
   for (std::exception_ptr const &e : exceptions) {
@@ -63,7 +61,6 @@ public:
   size_t *get_max_nd_range_size() { return _max_nd_range_size; }
   size_t get_global_mem_size() { return _global_mem_size; }
   size_t get_local_mem_size() { return _local_mem_size; }
-  compute_mode get_mode() { return _compute_mode; }
   // set interface
   void set_name(const char *name) { std::strncpy(_name, name, 256); }
   void set_max_work_item_sizes(const cl::sycl::id<3> max_work_item_sizes) {
@@ -85,7 +82,6 @@ public:
   void set_local_mem_size(size_t local_mem_size) {
     _local_mem_size = local_mem_size;
   }
-  void set_mode(compute_mode compute_mode) { _compute_mode = compute_mode; }
   void set_max_work_group_size(int max_work_group_size) {
     _max_work_group_size = max_work_group_size;
   }
@@ -116,7 +112,6 @@ private:
   size_t _global_mem_size;
   size_t _local_mem_size;
   size_t _max_nd_range_size[3];
-  compute_mode _compute_mode = compute_mode::default_;
 };
 
 /// dpct device extension

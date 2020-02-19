@@ -126,11 +126,6 @@ void MapNames::setClNamespace(bool Enable) {
 
   // Enum constants name mapping.
   EnumConstantRule::EnumNamesMap = {
-    // enum Compute Mode
-    {"cudaComputeModeDefault", "compute_mode::default_"},
-    {"cudaComputeModeExclusive", "compute_mode::exclusive"},
-    {"cudaComputeModeProhibited", "compute_mode::prohibited"},
-    {"cudaComputeModeExclusiveProcess", "compute_mode::exclusive_process"},
     // ...
     // enum Device Attribute
     // ...

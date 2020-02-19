@@ -2459,16 +2459,73 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
                 this);
 }
 
+void EnumConstantRule::handleComputeMode(std::string EnumName, const DeclRefExpr *E) {
+  report(E->getBeginLoc(), Diagnostics::COMPUTE_MODE);
+  auto P = getParentStmt(E);
+  if (auto ICE = dyn_cast<ImplicitCastExpr>(P)) {
+    P = getParentStmt(ICE);
+    if (auto BO = dyn_cast<BinaryOperator>(P)) {
+      auto LHS = BO->getLHS()->IgnoreImpCasts();
+      auto RHS = BO->getRHS()->IgnoreImpCasts();
+      const MemberExpr *ME = nullptr;
+      if (auto MEL = dyn_cast<MemberExpr>(LHS))
+        ME = MEL;
+      else if (auto MER = dyn_cast<MemberExpr>(RHS))
+        ME = MER;
+      if (ME) {
+        auto MD = ME->getMemberDecl();
+        auto BaseTy = DpctGlobalInfo::getUnqualifiedTypeName(
+            ME->getBase()->getType().getUnqualifiedType(), DpctGlobalInfo::getContext());
+        if (MD->getNameAsString() == "computeMode" &&
+            BaseTy == "cudaDeviceProp") {
+          if (EnumName == "cudaComputeModeDefault") {
+            if (BO->getOpcodeStr() == "==")
+              emplaceTransformation(new ReplaceStmt(P, "true"));
+            else if (BO->getOpcodeStr() == "!=")
+              emplaceTransformation(new ReplaceStmt(P, "false"));
+          } else {
+            if (BO->getOpcodeStr() == "==")
+              emplaceTransformation(new ReplaceStmt(P, "false"));
+            else if (BO->getOpcodeStr() == "!=")
+              emplaceTransformation(new ReplaceStmt(P, "true"));
+          }
+          return;
+        }
+      }
+    }
+  }
+  // default => 1
+  // others  => 0
+  if (EnumName == "cudaComputeModeDefault") {
+    emplaceTransformation(new ReplaceStmt(E, "1"));
+    return;
+  } else if (EnumName == "cudaComputeModeExclusive" ||
+      EnumName == "cudaComputeModeProhibited" ||
+      EnumName == "cudaComputeModeExclusiveProcess") {
+    emplaceTransformation(new ReplaceStmt(E, "0"));
+    return;
+  }
+}
+
 void EnumConstantRule::run(const MatchFinder::MatchResult &Result) {
   const DeclRefExpr *E = getNodeAsType<DeclRefExpr>(Result, "EnumConstant");
   if (!E)
     return;
   assert(E && "Unknown result");
-  auto Search = EnumNamesMap.find(E->getNameInfo().getName().getAsString());
+  std::string EnumName = E->getNameInfo().getName().getAsString();
+  if (EnumName == "cudaComputeModeDefault" ||
+      EnumName == "cudaComputeModeExclusive" ||
+      EnumName == "cudaComputeModeProhibited" ||
+      EnumName == "cudaComputeModeExclusiveProcess") {
+    handleComputeMode(EnumName, E);
+    return;
+  }
+  auto Search = EnumNamesMap.find(EnumName);
   if (Search == EnumNamesMap.end()) {
     // TODO report migration error
     return;
   }
+
   emplaceTransformation(new ReplaceStmt(E, "dpct::" + Search->second));
 }
 
@@ -4480,7 +4537,8 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     auto StmtStrArg2 = getStmtSpelling(CE->getArg(2));
 
     if (AttributeName == "cudaDevAttrComputeMode") {
-      ReplStr += " = dpct::compute_mode::default_";
+      report(CE->getBeginLoc(), Diagnostics::COMPUTE_MODE);
+      ReplStr += " = 1";
     } else {
       auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
       if (Search == EnumConstantRule::EnumNamesMap.end()) {
