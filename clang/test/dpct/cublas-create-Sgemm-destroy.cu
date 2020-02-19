@@ -16,12 +16,12 @@ cublasStatus_t bar (cublasStatus_t s){
   return s;
 }
 
-// CHECK: extern sycl::queue handle2;
+// CHECK: extern sycl::queue handle2(dpct::get_default_context(), dpct::get_current_device());
 extern cublasHandle_t handle2;
 
 int main() {
   // CHECK: int status;
-  // CHECK-NEXT: sycl::queue handle;
+  // CHECK-NEXT: sycl::queue handle(dpct::get_default_context(), dpct::get_current_device());
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasCreate was removed, because this call is redundant in DPC++.
   // CHECK-NEXT: */

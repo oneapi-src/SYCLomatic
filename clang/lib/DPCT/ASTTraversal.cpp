@@ -1401,14 +1401,17 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   bool HasDeviceAttr = false;
   bool IsUETTE = false;
   bool IsCSCE = false;
+  bool IsInFieldDecl = false;
   if ((DD) ||
       ((DD = getNodeAsType<VarDecl>(Result, "TypeInFieldDeclDevice")))) {
     QT = DD->getType();
     HasDeviceAttr = true;
+    IsInFieldDecl = true;
   } else if ((DD = getNodeAsType<VarDecl>(Result, "TypeInVarDecl"))) {
     QT = DD->getType();
   } else if ((DD = getNodeAsType<FieldDecl>(Result, "TypeInFieldDecl"))) {
     QT = DD->getType();
+    IsInFieldDecl = true;
   } else if ((UETTE = getNodeAsType<UnaryExprOrTypeTraitExpr>(
                   Result, "TypeInUnaryExprOrTypeTraitExpr"))) {
     IsUETTE = true;
@@ -1518,6 +1521,19 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
           new ReplaceText(BeginLoc, Len, std::move(Replacement)));
     } else {
       emplaceTransformation(new ReplaceTypeInDecl(DD, std::move(Replacement)));
+    }
+
+    if ((TypeStr == "cublasHandle_t" || TypeStr == "cusolverDnHandle_t") &&
+        !IsInFieldDecl) {
+      auto EndLoc = DD->getEndLoc();
+      if (EndLoc.isMacroID()) {
+        EndLoc = SM->getSpellingLoc(EndLoc);
+      }
+      EndLoc = EndLoc.getLocWithOffset(Lexer::MeasureTokenLength(
+          SM->getExpansionLoc(EndLoc), *SM,
+          dpct::DpctGlobalInfo::getContext().getLangOpts()));
+      emplaceTransformation(new InsertText(
+          EndLoc, "(dpct::get_default_context(), dpct::get_current_device())"));
     }
   }
   DupFilter.insert(Loc);

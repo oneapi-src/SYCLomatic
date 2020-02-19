@@ -57,7 +57,7 @@ __global__ void foo3(){
 }
 
 __host__ void foo4(){
-  // CHECK: sycl::queue handle;
+  // CHECK: sycl::queue handle(dpct::get_default_context(), dpct::get_current_device());
   cublasHandle_t handle;
   int n=1;
   float* x_S=0;
