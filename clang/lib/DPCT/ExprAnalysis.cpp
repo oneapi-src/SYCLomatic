@@ -316,8 +316,10 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   auto Itr = CallExprRewriterFactoryBase::RewriterMap.find(RefString);
   if (Itr != CallExprRewriterFactoryBase::RewriterMap.end()) {
     auto Result = Itr->second->create(CE)->rewrite();
-    if (Result.hasValue())
-      addReplacement(CE, Result.getValue());
+    if (!CE->getBeginLoc().isMacroID() || !isOuterMostMacro(CE)) {
+      if (Result.hasValue())
+        addReplacement(CE, Result.getValue());
+    }
   } else {
     for (auto Arg : CE->arguments())
       analyzeArgument(Arg);

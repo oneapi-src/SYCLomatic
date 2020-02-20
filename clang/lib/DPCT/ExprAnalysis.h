@@ -170,6 +170,13 @@ public:
   SourceLocation getExprBeginSrcLoc() { return ExprBeginLoc; }
   SourceLocation getExprEndSrcLoc() { return ExprEndLoc; }
 
+  // Replace a sub expr
+  template <class TextData>
+  inline void addReplacement(const Expr *E, TextData Text) {
+    auto LocInfo = getOffsetAndLength(E);
+    addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
+  }
+
 private:
   SourceLocation getExprLocation(SourceLocation Loc);
   size_t getOffset(SourceLocation Loc) {
@@ -198,12 +205,7 @@ protected:
   std::pair<size_t, size_t> getOffsetAndLength(SourceLocation SL);
   std::pair<size_t, size_t> getOffsetAndLength(const Expr *);
 
-  // Replace a sub expr
-  template <class TextData>
-  inline void addReplacement(const Expr *E, TextData Text) {
-    auto LocInfo = getOffsetAndLength(E);
-    addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
-  }
+
   // Replace a token with its begin location
   template <class TextData>
   inline void addReplacement(SourceLocation SL, TextData Text) {

@@ -1,7 +1,11 @@
 // RUN: cat %s > %T/macro_test.cu
 // RUN: cd %T
-// RUN: dpct -out-root %T macro_test.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct -out-root %T macro_test.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -I /usr/local/cuda/samples/common/inc/
 // RUN: FileCheck --input-file %T/macro_test.dp.cpp --match-full-lines macro_test.cu
+#include <cuda_runtime.h>
+#include <helper_functions.h>
+#include <helper_cuda.h>
+
 #define CUDA_NUM_THREADS 1024+32
 #define GET_BLOCKS(n,t)  1+n+t-1
 #define GET_BLOCKS2(n,t) 1+n+t
@@ -82,16 +86,27 @@ do \
 } \
 while(0)
 
-  HANDLE_GPU_ERROR(0);
-
-
-// CHECK: #define namdnearbyint(x)  floor(x+0.5)
-// CHECK-NEXT: namdnearbyint(3.0);
-#define namdnearbyint(x)  floor(x+0.5)
-  namdnearbyint(3.0);
+HANDLE_GPU_ERROR(0);
 
 // CHECK: #define cbrt(x) pow((double)x,(double)(1.0/3.0))
 // CHECK-NEXT: double DD = sqrt(cbrt(5.9)) / sqrt(cbrt(3.2));
 #define cbrt(x) pow((double)x,(double)(1.0/3.0))
   double DD = sqrt(cbrt(5.9)) / sqrt(cbrt(3.2));
+
+// CHECK: #define NNBI(x) floor(x+0.5)
+// CHECK-NEXT: NNBI(3.0);
+#define NNBI(x) floor(x+0.5)
+NNBI(3.0);
+
+// CHECK: #define PI acos(-1)
+#define PI acos(-1)
+// CHECK: double cosine = cos(2 * PI);
+double cosine = cos(2 * PI);
+}
+
+__global__ void foo2(){
+  // CHECK: #define IMUL(a, b) sycl::mul24(a, b)
+  // CHECK-NEXT: int vectorBase = IMUL(1, 2);
+  #define IMUL(a, b) __mul24(a, b)
+  int vectorBase = IMUL(1, 2);
 }

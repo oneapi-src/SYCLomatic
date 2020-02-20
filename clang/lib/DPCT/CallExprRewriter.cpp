@@ -75,6 +75,18 @@ Optional<std::string> MathFuncNameRewriter::rewrite() {
   reportUnsupportedRoundingMode();
   RewriteArgList = getMigratedArgs();
   setTargetCalleeName(getNewFuncName());
+  // When the function name is in macro define,
+  // add extra replacement to migrate the function name
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto It = DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+    SM.getCharacterData(Call->getCallee()->getBeginLoc()));
+  if (It != DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+    ExprAnalysis EA;
+    EA.analyze(Call->getCallee());
+    EA.addReplacement(Call->getCallee(), getNewFuncName());
+    DpctGlobalInfo::getInstance().addReplacement(
+      EA.getReplacement()->getReplacement(DpctGlobalInfo::getContext()));
+  }
   return buildRewriteString();
 }
 
