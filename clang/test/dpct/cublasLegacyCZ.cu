@@ -256,7 +256,7 @@ int main() {
   // CHECK-NEXT: auto x_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto y_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(y_C);
   // CHECK-NEXT: auto result_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(result_C);
-  // CHECK-NEXT: mkl::blas::gbmv(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), m, n, m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), x_C_buff_ct1, lda, y_C_buff_ct1, incx, std::complex<float>((beta_C).x(),(beta_C).y()), result_C_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::gbmv(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), m, n, m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), x_C_buff_ct1, lda, y_C_buff_ct1, incx, std::complex<float>((beta_C).x(),(beta_C).y()), result_C_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasCgbmv('N', m, n, m, n, alpha_C, x_C, lda, y_C, incx, beta_C, result_C, incy);
 
@@ -265,7 +265,7 @@ int main() {
   // CHECK-NEXT: auto x_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto y_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(y_Z);
   // CHECK-NEXT: auto result_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(result_Z);
-  // CHECK-NEXT: mkl::blas::gbmv(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), m, n, m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), x_Z_buff_ct1, lda, y_Z_buff_ct1, incx, std::complex<double>((beta_Z).x(),(beta_Z).y()), result_Z_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::gbmv(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), m, n, m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), x_Z_buff_ct1, lda, y_Z_buff_ct1, incx, std::complex<double>((beta_Z).x(),(beta_Z).y()), result_Z_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasZgbmv( 'N', m, n, m, n, alpha_Z, x_Z, lda, y_Z, incx, beta_Z, result_Z, incy);
 
@@ -275,7 +275,7 @@ int main() {
   // CHECK-NEXT: auto x_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto y_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(y_C);
   // CHECK-NEXT: auto result_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(result_C);
-  // CHECK-NEXT: mkl::blas::gemv(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), x_C_buff_ct1, lda, y_C_buff_ct1, incx, std::complex<float>((beta_C).x(),(beta_C).y()), result_C_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::gemv(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), x_C_buff_ct1, lda, y_C_buff_ct1, incx, std::complex<float>((beta_C).x(),(beta_C).y()), result_C_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasCgemv('N', m, n, alpha_C, x_C, lda, y_C, incx, beta_C, result_C, incy);
 
@@ -284,7 +284,7 @@ int main() {
   // CHECK-NEXT: auto x_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto y_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(y_Z);
   // CHECK-NEXT: auto result_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(result_Z);
-  // CHECK-NEXT: mkl::blas::gemv(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), x_Z_buff_ct1, lda, y_Z_buff_ct1, incx, std::complex<double>((beta_Z).x(),(beta_Z).y()), result_Z_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::gemv(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), x_Z_buff_ct1, lda, y_Z_buff_ct1, incx, std::complex<double>((beta_Z).x(),(beta_Z).y()), result_Z_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasZgemv('N', m, n, alpha_Z, x_Z, lda, y_Z, incx, beta_Z, result_Z, incy);
 
@@ -330,7 +330,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto result_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(result_C);
-  // CHECK-NEXT: mkl::blas::tbmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, x_C_buff_ct1, lda, result_C_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::tbmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, x_C_buff_ct1, lda, result_C_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasCtbmv('U', 'N', 'U', n, n, x_C, lda, result_C, incy);
 
@@ -340,7 +340,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'u';
   // CHECK-NEXT: auto x_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto result_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(result_Z);
-  // CHECK-NEXT: mkl::blas::tbmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, x_Z_buff_ct1, lda, result_Z_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::tbmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, x_Z_buff_ct1, lda, result_Z_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasZtbmv('u', 'N', 'u', n, n, x_Z, lda, result_Z, incy);
 
@@ -351,7 +351,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto result_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(result_C);
-  // CHECK-NEXT: mkl::blas::tbsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, x_C_buff_ct1, lda, result_C_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::tbsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, x_C_buff_ct1, lda, result_C_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasCtbsv('L', 'N', 'U', n, n, x_C, lda, result_C, incy);
 
@@ -361,7 +361,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto result_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(result_Z);
-  // CHECK-NEXT: mkl::blas::tbsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, x_Z_buff_ct1, lda, result_Z_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::tbsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, x_Z_buff_ct1, lda, result_Z_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasZtbsv('l', 'N', 'U', n, n, x_Z, lda, result_Z, incy);
 
@@ -372,7 +372,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto result_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(result_C);
-  // CHECK-NEXT: mkl::blas::tpmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_C_buff_ct1, result_C_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::tpmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_C_buff_ct1, result_C_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasCtpmv('U', 'N', 'U', n, x_C, result_C, incy);
 
@@ -382,7 +382,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto result_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(result_Z);
-  // CHECK-NEXT: mkl::blas::tpmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_Z_buff_ct1, result_Z_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::tpmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_Z_buff_ct1, result_Z_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasZtpmv('U', 'N', 'U', n, x_Z, result_Z, incy);
 
@@ -393,7 +393,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto result_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(result_C);
-  // CHECK-NEXT: mkl::blas::tpsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_C_buff_ct1, result_C_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::tpsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_C_buff_ct1, result_C_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasCtpsv('U', 'N', 'U', n, x_C, result_C, incy);
 
@@ -403,7 +403,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto result_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(result_Z);
-  // CHECK-NEXT: mkl::blas::tpsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_Z_buff_ct1, result_Z_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::tpsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_Z_buff_ct1, result_Z_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasZtpsv('U', 'N', 'U', n, x_Z, result_Z, incy);
 
@@ -414,7 +414,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto result_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(result_C);
-  // CHECK-NEXT: mkl::blas::trmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_C_buff_ct1, lda, result_C_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::trmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_C_buff_ct1, lda, result_C_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasCtrmv('U', 'N', 'U', n, x_C, lda, result_C, incy);
 
@@ -424,7 +424,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto result_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(result_Z);
-  // CHECK-NEXT: mkl::blas::trmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_Z_buff_ct1, lda, result_Z_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::trmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_Z_buff_ct1, lda, result_Z_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasZtrmv('U', 'N', 'U', n, x_Z, lda, result_Z, incy);
 
@@ -435,7 +435,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(x_C);
   // CHECK-NEXT: auto result_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(result_C);
-  // CHECK-NEXT: mkl::blas::trsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_C_buff_ct1, lda, result_C_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::trsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_C_buff_ct1, lda, result_C_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasCtrsv('U', 'N', 'U', n, x_C, lda, result_C, incy);
 
@@ -446,7 +446,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(x_Z);
   // CHECK-NEXT: auto result_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(result_Z);
-  // CHECK-NEXT: mkl::blas::trsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_Z_buff_ct1, lda, result_Z_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::trsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_Z_buff_ct1, lda, result_Z_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasZtrsv('U', 'N', 'U', n, x_Z, lda, result_Z, incy);
 
@@ -581,7 +581,7 @@ int main() {
   // CHECK-NEXT: auto A_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(A_C);
   // CHECK-NEXT: auto B_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(B_C);
   // CHECK-NEXT: auto C_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(C_C);
-  // CHECK-NEXT: mkl::blas::gemm(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), m, n, k, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buff_ct1, lda, B_C_buff_ct1, ldb, std::complex<float>((beta_C).x(),(beta_C).y()), C_C_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::gemm(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), m, n, k, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buff_ct1, lda, B_C_buff_ct1, ldb, std::complex<float>((beta_C).x(),(beta_C).y()), C_C_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasCgemm('N', 'N', m, n, k, alpha_C, A_C, lda, B_C, ldb, beta_C, C_C, ldc);
 
@@ -591,7 +591,7 @@ int main() {
   // CHECK-NEXT: auto A_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(A_Z);
   // CHECK-NEXT: auto B_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(B_Z);
   // CHECK-NEXT: auto C_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: mkl::blas::gemm(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), m, n, k, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buff_ct1, lda, B_Z_buff_ct1, ldb, std::complex<double>((beta_Z).x(),(beta_Z).y()), C_Z_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::gemm(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), m, n, k, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buff_ct1, lda, B_Z_buff_ct1, ldb, std::complex<double>((beta_Z).x(),(beta_Z).y()), C_Z_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasZgemm('N', 'N', m, n, k, alpha_Z, A_Z, lda, B_Z, ldb, beta_Z, C_Z, ldc);
 
@@ -621,7 +621,7 @@ int main() {
   // CHECK-NEXT: auto transpose_ct1 = 'T';
   // CHECK-NEXT: auto A_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(A_C);
   // CHECK-NEXT: auto C_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(C_C);
-  // CHECK-NEXT: mkl::blas::syrk(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), n, k, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buff_ct1, lda, std::complex<float>((beta_C).x(),(beta_C).y()), C_C_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::syrk(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, k, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buff_ct1, lda, std::complex<float>((beta_C).x(),(beta_C).y()), C_C_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasCsyrk('U', 'T', n, k, alpha_C, A_C, lda, beta_C, C_C, ldc);
 
@@ -630,7 +630,7 @@ int main() {
   // CHECK-NEXT: auto transpose_ct1 = 't';
   // CHECK-NEXT: auto A_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(A_Z);
   // CHECK-NEXT: auto C_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: mkl::blas::syrk(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), n, k, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buff_ct1, lda, std::complex<double>((beta_Z).x(),(beta_Z).y()), C_Z_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::syrk(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, k, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buff_ct1, lda, std::complex<double>((beta_Z).x(),(beta_Z).y()), C_Z_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasZsyrk('U', 't', n, k, alpha_Z, A_Z, lda, beta_Z, C_Z, ldc);
 
@@ -639,7 +639,7 @@ int main() {
   // CHECK-NEXT: auto transpose_ct1 = 't';
   // CHECK-NEXT: auto A_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(A_C);
   // CHECK-NEXT: auto C_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(C_C);
-  // CHECK-NEXT: mkl::blas::herk(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), n, k, alpha_S, A_C_buff_ct1, lda, beta_S, C_C_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::herk(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, k, alpha_S, A_C_buff_ct1, lda, beta_S, C_C_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasCherk('U', 't', n, k, alpha_S, A_C, lda, beta_S, C_C, ldc);
 
@@ -648,7 +648,7 @@ int main() {
   // CHECK-NEXT: auto transpose_ct1 = 't';
   // CHECK-NEXT: auto A_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(A_Z);
   // CHECK-NEXT: auto C_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: mkl::blas::herk(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), n, k, alpha_D, A_Z_buff_ct1, lda, beta_D, C_Z_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::herk(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, k, alpha_D, A_Z_buff_ct1, lda, beta_D, C_Z_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasZherk('U', 't', n, k, alpha_D, A_Z, lda, beta_D, C_Z, ldc);
 
@@ -659,7 +659,7 @@ int main() {
   // CHECK-NEXT: auto A_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(A_C);
   // CHECK-NEXT: auto B_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(B_C);
   // CHECK-NEXT: auto C_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(C_C);
-  // CHECK-NEXT: mkl::blas::syr2k(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), n, k, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buff_ct1, lda, B_C_buff_ct1, ldb, std::complex<float>((beta_C).x(),(beta_C).y()), C_C_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::syr2k(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, k, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buff_ct1, lda, B_C_buff_ct1, ldb, std::complex<float>((beta_C).x(),(beta_C).y()), C_C_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasCsyr2k('U', 'C', n, k, alpha_C, A_C, lda, B_C, ldb, beta_C, C_C, ldc);
 
@@ -669,7 +669,7 @@ int main() {
   // CHECK-NEXT: auto A_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(A_Z);
   // CHECK-NEXT: auto B_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(B_Z);
   // CHECK-NEXT: auto C_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: mkl::blas::syr2k(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), n, k, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buff_ct1, lda, B_Z_buff_ct1, ldb, std::complex<double>((beta_Z).x(),(beta_Z).y()), C_Z_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::syr2k(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, k, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buff_ct1, lda, B_Z_buff_ct1, ldb, std::complex<double>((beta_Z).x(),(beta_Z).y()), C_Z_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasZsyr2k('U', 'c', n, k, alpha_Z, A_Z, lda, B_Z, ldb, beta_Z, C_Z, ldc);
 
@@ -679,7 +679,7 @@ int main() {
   // CHECK-NEXT: auto A_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(A_C);
   // CHECK-NEXT: auto B_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(B_C);
   // CHECK-NEXT: auto C_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(C_C);
-  // CHECK-NEXT: mkl::blas::her2k(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), n, k, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buff_ct1, lda, B_C_buff_ct1, ldb, beta_S, C_C_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::her2k(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, k, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buff_ct1, lda, B_C_buff_ct1, ldb, beta_S, C_C_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasCher2k('U', 'c', n, k, alpha_C, A_C, lda, B_C, ldb, beta_S, C_C, ldc);
 
@@ -689,7 +689,7 @@ int main() {
   // CHECK-NEXT: auto A_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(A_Z);
   // CHECK-NEXT: auto B_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(B_Z);
   // CHECK-NEXT: auto C_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: mkl::blas::her2k(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), n, k, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buff_ct1, lda, B_Z_buff_ct1, ldb, beta_D, C_Z_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::her2k(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, k, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buff_ct1, lda, B_Z_buff_ct1, ldb, beta_D, C_Z_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasZher2k('U', 'c', n, k, alpha_Z, A_Z, lda, B_Z, ldb, beta_D, C_Z, ldc);
 
@@ -721,7 +721,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct3 = 'n';
   // CHECK-NEXT: auto A_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(A_C);
   // CHECK-NEXT: auto C_C_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<float>>(C_C);
-  // CHECK-NEXT: mkl::blas::trsm(dpct::get_default_queue(), (((sidemode_ct0)=='L'||(sidemode_ct0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct1)=='L'||(fillmode_ct1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct2)=='N'||(transpose_ct2)=='n')?(mkl::transpose::nontrans):(((transpose_ct2)=='T'||(transpose_ct2)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct3)=='N'||(diagtype_ct3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buff_ct1, lda, C_C_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::trsm(dpct::get_default_queue(), (((sidemode_ct0)=='L'||(sidemode_ct0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct1)=='L'||(fillmode_ct1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct2)=='N'||(transpose_ct2)=='n')?(mkl::transpose::nontrans):(((transpose_ct2)=='T'||(transpose_ct2)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct3)=='N'||(diagtype_ct3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), A_C_buff_ct1, lda, C_C_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasCtrsm('L', 'U', 'N', 'n', m, n, alpha_C, A_C, lda, C_C, ldc);
 
@@ -732,7 +732,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct3 = 'N';
   // CHECK-NEXT: auto A_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(A_Z);
   // CHECK-NEXT: auto C_Z_buff_ct1 = dpct::mem_mgr::instance().get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: mkl::blas::trsm(dpct::get_default_queue(), (((sidemode_ct0)=='L'||(sidemode_ct0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct1)=='L'||(fillmode_ct1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct2)=='N'||(transpose_ct2)=='n')?(mkl::transpose::nontrans):(((transpose_ct2)=='T'||(transpose_ct2)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct3)=='N'||(diagtype_ct3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buff_ct1, lda, C_Z_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::trsm(dpct::get_default_queue(), (((sidemode_ct0)=='L'||(sidemode_ct0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct1)=='L'||(fillmode_ct1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct2)=='N'||(transpose_ct2)=='n')?(mkl::transpose::nontrans):(((transpose_ct2)=='T'||(transpose_ct2)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct3)=='N'||(diagtype_ct3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), A_Z_buff_ct1, lda, C_Z_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasZtrsm('l', 'U', 'N', 'N', m, n, alpha_Z, A_Z, lda, C_Z, ldc);
 

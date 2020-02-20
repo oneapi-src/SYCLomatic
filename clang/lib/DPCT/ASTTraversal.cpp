@@ -3359,8 +3359,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                           ")=='n')?(mkl::transpose::"
                           "nontrans):(((" +
                           TransParamName + ")=='T'||(" + TransParamName +
-                          ")=='t')?(mkl::transpose:"
-                          ":nontrans):(mkl::transpose::conjtrans)))";
+                          ")=='t')?(mkl::transpose::"
+                          "trans):(mkl::transpose::conjtrans)))";
       } else if (ReplInfo.FillModeIndexInfo == i) {
         std::string FillParamName = "fillmode_ct" + std::to_string(i);
         PrefixInsertStr = PrefixInsertStr + IndentStr + "auto " +

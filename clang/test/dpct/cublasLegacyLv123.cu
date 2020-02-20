@@ -265,7 +265,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
   // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
   // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
-  // CHECK-NEXT: mkl::blas::gbmv(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), m, n, m, n, alpha_S, x_S_buff_ct1, lda, y_S_buff_ct1, incx, beta_S, result_S_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::gbmv(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), m, n, m, n, alpha_S, x_S_buff_ct1, lda, y_S_buff_ct1, incx, beta_S, result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasSgbmv('N', m, n, m, n, alpha_S, x_S, lda, y_S, incx, beta_S, result_S, incy);
 
@@ -274,7 +274,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
   // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
   // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
-  // CHECK-NEXT: mkl::blas::gbmv(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), m, n, m, n, alpha_D, x_D_buff_ct1, lda, y_D_buff_ct1, incx, beta_D, result_D_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::gbmv(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), m, n, m, n, alpha_D, x_D_buff_ct1, lda, y_D_buff_ct1, incx, beta_D, result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasDgbmv( 'N', m, n, m, n, alpha_D, x_D, lda, y_D, incx, beta_D, result_D, incy);
 
@@ -284,7 +284,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
   // CHECK-NEXT: auto y_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(y_S);
   // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
-  // CHECK-NEXT: mkl::blas::gemv(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), m, n, alpha_S, x_S_buff_ct1, lda, y_S_buff_ct1, incx, beta_S, result_S_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::gemv(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), m, n, alpha_S, x_S_buff_ct1, lda, y_S_buff_ct1, incx, beta_S, result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasSgemv('N', m, n, alpha_S, x_S, lda, y_S, incx, beta_S, result_S, incy);
 
@@ -293,7 +293,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
   // CHECK-NEXT: auto y_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(y_D);
   // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
-  // CHECK-NEXT: mkl::blas::gemv(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), m, n, alpha_D, x_D_buff_ct1, lda, y_D_buff_ct1, incx, beta_D, result_D_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::gemv(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), m, n, alpha_D, x_D_buff_ct1, lda, y_D_buff_ct1, incx, beta_D, result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasDgemv('N', m, n, alpha_D, x_D, lda, y_D, incx, beta_D, result_D, incy);
 
@@ -450,7 +450,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
-  // CHECK-NEXT: mkl::blas::tbmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, x_S_buff_ct1, lda, result_S_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::tbmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, x_S_buff_ct1, lda, result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasStbmv('U', 'N', 'U', n, n, x_S, lda, result_S, incy);
 
@@ -460,7 +460,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'u';
   // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
-  // CHECK-NEXT: mkl::blas::tbmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, x_D_buff_ct1, lda, result_D_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::tbmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, x_D_buff_ct1, lda, result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasDtbmv('u', 'N', 'u', n, n, x_D, lda, result_D, incy);
 
@@ -471,7 +471,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
-  // CHECK-NEXT: mkl::blas::tbsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, x_S_buff_ct1, lda, result_S_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::tbsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, x_S_buff_ct1, lda, result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasStbsv('L', 'N', 'U', n, n, x_S, lda, result_S, incy);
 
@@ -481,7 +481,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
-  // CHECK-NEXT: mkl::blas::tbsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, x_D_buff_ct1, lda, result_D_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::tbsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, x_D_buff_ct1, lda, result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasDtbsv('l', 'N', 'U', n, n, x_D, lda, result_D, incy);
 
@@ -492,7 +492,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
-  // CHECK-NEXT: mkl::blas::tpmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_S_buff_ct1, result_S_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::tpmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_S_buff_ct1, result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasStpmv('U', 'N', 'U', n, x_S, result_S, incy);
 
@@ -502,7 +502,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
-  // CHECK-NEXT: mkl::blas::tpmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_D_buff_ct1, result_D_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::tpmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_D_buff_ct1, result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasDtpmv('U', 'N', 'U', n, x_D, result_D, incy);
 
@@ -513,7 +513,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
-  // CHECK-NEXT: mkl::blas::tpsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_S_buff_ct1, result_S_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::tpsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_S_buff_ct1, result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasStpsv('U', 'N', 'U', n, x_S, result_S, incy);
 
@@ -523,7 +523,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
-  // CHECK-NEXT: mkl::blas::tpsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_D_buff_ct1, result_D_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::tpsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_D_buff_ct1, result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasDtpsv('U', 'N', 'U', n, x_D, result_D, incy);
 
@@ -534,7 +534,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
-  // CHECK-NEXT: mkl::blas::trmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_S_buff_ct1, lda, result_S_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::trmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_S_buff_ct1, lda, result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasStrmv('U', 'N', 'U', n, x_S, lda, result_S, incy);
 
@@ -544,7 +544,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
-  // CHECK-NEXT: mkl::blas::trmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_D_buff_ct1, lda, result_D_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::trmv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_D_buff_ct1, lda, result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasDtrmv('U', 'N', 'U', n, x_D, lda, result_D, incy);
 
@@ -555,7 +555,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(result_S);
-  // CHECK-NEXT: mkl::blas::trsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_S_buff_ct1, lda, result_S_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::trsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_S_buff_ct1, lda, result_S_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasStrsv('U', 'N', 'U', n, x_S, lda, result_S, incy);
 
@@ -566,7 +566,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct2 = 'U';
   // CHECK-NEXT: auto x_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(result_D);
-  // CHECK-NEXT: mkl::blas::trsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_D_buff_ct1, lda, result_D_buff_ct1, incy);
+  // CHECK-NEXT: mkl::blas::trsv(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct2)=='N'||(diagtype_ct2)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, x_D_buff_ct1, lda, result_D_buff_ct1, incy);
   // CHECK-NEXT: }
   cublasDtrsv('U', 'N', 'U', n, x_D, lda, result_D, incy);
 
@@ -598,7 +598,7 @@ int main() {
   // CHECK-NEXT: auto transpose_ct1 = 'T';
   // CHECK-NEXT: auto A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(A_S);
   // CHECK-NEXT: auto C_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(C_S);
-  // CHECK-NEXT: mkl::blas::syrk(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), n, k, alpha_S, A_S_buff_ct1, lda, beta_S, C_S_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::syrk(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, k, alpha_S, A_S_buff_ct1, lda, beta_S, C_S_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasSsyrk('U', 'T', n, k, alpha_S, A_S, lda, beta_S, C_S, ldc);
 
@@ -607,7 +607,7 @@ int main() {
   // CHECK-NEXT: auto transpose_ct1 = 't';
   // CHECK-NEXT: auto A_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(A_D);
   // CHECK-NEXT: auto C_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(C_D);
-  // CHECK-NEXT: mkl::blas::syrk(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), n, k, alpha_D, A_D_buff_ct1, lda, beta_D, C_D_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::syrk(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, k, alpha_D, A_D_buff_ct1, lda, beta_D, C_D_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasDsyrk('U', 't', n, k, alpha_D, A_D, lda, beta_D, C_D, ldc);
 
@@ -618,7 +618,7 @@ int main() {
   // CHECK-NEXT: auto A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(A_S);
   // CHECK-NEXT: auto B_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(B_S);
   // CHECK-NEXT: auto C_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(C_S);
-  // CHECK-NEXT: mkl::blas::syr2k(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), n, k, alpha_S, A_S_buff_ct1, lda, B_S_buff_ct1, ldb, beta_S, C_S_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::syr2k(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, k, alpha_S, A_S_buff_ct1, lda, B_S_buff_ct1, ldb, beta_S, C_S_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasSsyr2k('U', 'C', n, k, alpha_S, A_S, lda, B_S, ldb, beta_S, C_S, ldc);
 
@@ -628,7 +628,7 @@ int main() {
   // CHECK-NEXT: auto A_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(A_D);
   // CHECK-NEXT: auto B_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(B_D);
   // CHECK-NEXT: auto C_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(C_D);
-  // CHECK-NEXT: mkl::blas::syr2k(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), n, k, alpha_D, A_D_buff_ct1, lda, B_D_buff_ct1, ldb, beta_D, C_D_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::syr2k(dpct::get_default_queue(), (((fillmode_ct0)=='L'||(fillmode_ct0)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, k, alpha_D, A_D_buff_ct1, lda, B_D_buff_ct1, ldb, beta_D, C_D_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasDsyr2k('U', 'c', n, k, alpha_D, A_D, lda, B_D, ldb, beta_D, C_D, ldc);
 
@@ -640,7 +640,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct3 = 'n';
   // CHECK-NEXT: auto A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(A_S);
   // CHECK-NEXT: auto C_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(C_S);
-  // CHECK-NEXT: mkl::blas::trsm(dpct::get_default_queue(), (((sidemode_ct0)=='L'||(sidemode_ct0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct1)=='L'||(fillmode_ct1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct2)=='N'||(transpose_ct2)=='n')?(mkl::transpose::nontrans):(((transpose_ct2)=='T'||(transpose_ct2)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct3)=='N'||(diagtype_ct3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), m, n, alpha_S, A_S_buff_ct1, lda, C_S_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::trsm(dpct::get_default_queue(), (((sidemode_ct0)=='L'||(sidemode_ct0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct1)=='L'||(fillmode_ct1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct2)=='N'||(transpose_ct2)=='n')?(mkl::transpose::nontrans):(((transpose_ct2)=='T'||(transpose_ct2)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct3)=='N'||(diagtype_ct3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), m, n, alpha_S, A_S_buff_ct1, lda, C_S_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasStrsm('L', 'U', 'N', 'n', m, n, alpha_S, A_S, lda, C_S, ldc);
 
@@ -651,7 +651,7 @@ int main() {
   // CHECK-NEXT: auto diagtype_ct3 = 'N';
   // CHECK-NEXT: auto A_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(A_D);
   // CHECK-NEXT: auto C_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(C_D);
-  // CHECK-NEXT: mkl::blas::trsm(dpct::get_default_queue(), (((sidemode_ct0)=='L'||(sidemode_ct0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct1)=='L'||(fillmode_ct1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct2)=='N'||(transpose_ct2)=='n')?(mkl::transpose::nontrans):(((transpose_ct2)=='T'||(transpose_ct2)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((diagtype_ct3)=='N'||(diagtype_ct3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), m, n, alpha_D, A_D_buff_ct1, lda, C_D_buff_ct1, ldc);
+  // CHECK-NEXT: mkl::blas::trsm(dpct::get_default_queue(), (((sidemode_ct0)=='L'||(sidemode_ct0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct1)=='L'||(fillmode_ct1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct2)=='N'||(transpose_ct2)=='n')?(mkl::transpose::nontrans):(((transpose_ct2)=='T'||(transpose_ct2)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct3)=='N'||(diagtype_ct3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), m, n, alpha_D, A_D_buff_ct1, lda, C_D_buff_ct1, ldc);
   // CHECK-NEXT: }
   cublasDtrsm('l', 'U', 'N', 'N', m, n, alpha_D, A_D, lda, C_D, ldc);
 
@@ -661,7 +661,7 @@ int main() {
   // CHECK-NEXT: auto A_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(A_S);
   // CHECK-NEXT: auto B_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(B_S);
   // CHECK-NEXT: auto C_S_buff_ct1 = dpct::mem_mgr::instance().get_buffer<float>(C_S);
-  // CHECK-NEXT: mkl::blas::gemm(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), n, n, n, alpha_S, A_S_buff_ct1, n, B_S_buff_ct1, n, beta_S, C_S_buff_ct1, n);
+  // CHECK-NEXT: mkl::blas::gemm(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, n, n, alpha_S, A_S_buff_ct1, n, B_S_buff_ct1, n, beta_S, C_S_buff_ct1, n);
   // CHECK-NEXT: }
   cublasSgemm('T', 'C', n, n, n, alpha_S, A_S, n, B_S, n, beta_S, C_S, n);
 
@@ -671,7 +671,7 @@ int main() {
   // CHECK-NEXT: auto A_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(A_D);
   // CHECK-NEXT: auto B_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(B_D);
   // CHECK-NEXT: auto C_D_buff_ct1 = dpct::mem_mgr::instance().get_buffer<double>(C_D);
-  // CHECK-NEXT: mkl::blas::gemm(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::nontrans):(mkl::transpose::conjtrans))), n, n, n, alpha_D, A_D_buff_ct1, n, B_D_buff_ct1, n, beta_D, C_D_buff_ct1, n);
+  // CHECK-NEXT: mkl::blas::gemm(dpct::get_default_queue(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, n, n, alpha_D, A_D_buff_ct1, n, B_D_buff_ct1, n, beta_D, C_D_buff_ct1, n);
   // CHECK-NEXT: }
   cublasDgemm('N', 'n', n, n, n, alpha_D, A_D, n, B_D, n, beta_D, C_D, n);
 
