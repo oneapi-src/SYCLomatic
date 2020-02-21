@@ -52,8 +52,11 @@ void DpctFileInfo::buildLinesInfo() {
   if (FilePath.empty())
     return;
   auto &SM = DpctGlobalInfo::getSourceManager();
-  auto FID = SM.getOrCreateFileID(SM.getFileManager().getFile(FilePath).get(),
-                                  SrcMgr::C_User);
+
+  auto FE = SM.getFileManager().getFile(FilePath);
+  if (std::error_code ec = FE.getError())
+     return ;
+  auto FID = SM.getOrCreateFileID(FE.get(), SrcMgr::C_User);
   auto Content = SM.getSLocEntry(FID).getFile().getContentCache();
   if (!Content->SourceLineCache)
     SM.getLineNumber(FID, 0);
