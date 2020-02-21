@@ -4156,7 +4156,6 @@ void BLASFunctionCallRule::processTrmmCall(const CallExpr *CE,
                                            std::string &PrefixInsertStr,
                                            const std::string IndentStr) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
-  auto &Context = dpct::DpctGlobalInfo::getContext();
   // remove parameters ptrB and ldb
   Optional<Token> TokSharedPtr;
   TokSharedPtr = Lexer::findNextToken(
@@ -7143,6 +7142,38 @@ void CXXNewExprRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(CXXNewExprRule)
+
+void ClassTemplateSpecializationRule::registerMatcher(MatchFinder &MF) {
+  auto Typedefs = typedefType(hasDeclaration(typedefDecl(TypedefNames)));
+  auto VectorTypes = recordType(hasDeclaration(cxxRecordDecl(vectorTypeName())));
+  auto EnumTypes = enumType(hasDeclaration(enumDecl(EnumTypeNames)));
+  auto RecordTypes = recordType(hasDeclaration(cxxRecordDecl(RecordTypeNames)));
+  MF.addMatcher(classTemplateSpecializationDecl(hasAnyTemplateArgument(
+          refersToType(anyOf(Typedefs, pointsTo(typedefDecl(TypedefNames)), VectorTypes, EnumTypes, RecordTypes,
+                             pointsTo(cxxRecordDecl(RecordTypeNames)))))).bind("classTemplateSpecDecl"), this);
+}
+
+void ClassTemplateSpecializationRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto CTSD = getAssistNodeAsType<ClassTemplateSpecializationDecl>(Result, "classTemplateSpecDecl")) {
+    auto T = CTSD->getTypeAsWritten();
+    if (!T)
+      return;
+    if (std::string(T->getType()->getTypeClassName()) != "TemplateSpecialization")
+      return;
+    auto TL = T->getTypeLoc().getAs<TemplateSpecializationTypeLoc>();
+    auto &TArgs = CTSD->getTemplateArgs();
+    for (unsigned i = 0; i < TArgs.size(); ++i) {
+      auto Arg = TArgs.get(i);
+      auto TypeStr = Arg.getAsType().getAsString();
+      auto Replacement = getReplacementForType(TypeStr);
+      auto BeginLoc = TL.getArgLoc(i).getTypeSourceInfo()->getTypeLoc().getBeginLoc();
+      emplaceTransformation(
+          new ReplaceToken(BeginLoc, std::move(Replacement)));
+    }
+  }
+}
+
+REGISTER_RULE(ClassTemplateSpecializationRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {

@@ -342,8 +342,8 @@ int main(int argc, char **argv) {
   a = sizeof(dp);
   a = sizeof dp;
 
-  //CHECK:CUstream_st *stream_st;
-  //CHECK-NEXT:a = sizeof(CUstream_st*);
+  //CHECK:sycl::queue *stream_st;
+  //CHECK-NEXT:a = sizeof(sycl::queue*);
   //CHECK-NEXT:a = sizeof(stream_st);
   //CHECK-NEXT:a = sizeof stream_st;
   CUstream_st *stream_st;
@@ -351,8 +351,8 @@ int main(int argc, char **argv) {
   a = sizeof(stream_st);
   a = sizeof stream_st;
 
-  //CHECK:CUevent_st *event_st;
-  //CHECK-NEXT:a = sizeof(CUevent_st*);
+  //CHECK:sycl::event *event_st;
+  //CHECK-NEXT:a = sizeof(sycl::event*);
   //CHECK-NEXT:a = sizeof(event_st);
   //CHECK-NEXT:a = sizeof event_st;
   CUevent_st *event_st;
@@ -424,3 +424,13 @@ __global__ void foo() {
   (cudaDeviceProp ***)p;
 }
 
+template <typename T> struct S {};
+
+// CHECK: template <> struct S<sycl::queue *> {};
+// CHECK-NEXT: template <> struct S<sycl::queue> {};
+// CHECK-NEXT: template <> struct S<sycl::float2> {};
+// CHECK-NEXT: template <> struct S<sycl::float4> {};
+template <> struct S<cudaStream_t> {};
+template <> struct S<CUstream_st> {};
+template <> struct S<float2> {};
+template <> struct S<float4> {};

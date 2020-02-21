@@ -996,6 +996,13 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+class ClassTemplateSpecializationRule : public NamedMigrationRule<ClassTemplateSpecializationRule> {
+public:
+  ClassTemplateSpecializationRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 #define REGISTER_RULE(TYPE_NAME)                                               \
   RuleRegister<TYPE_NAME> g_##TYPE_NAME(&TYPE_NAME::ID, #TYPE_NAME);
 
