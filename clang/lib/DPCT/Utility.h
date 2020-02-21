@@ -302,15 +302,13 @@ std::vector<const clang::Stmt *>
 getConditionNode(clang::DynTypedNode Node);
 bool isConditionOfFlowControl(const clang::Expr *E);
 std::string getBufferNameAndDeclStr(const std::string &PointerName,
-                                    const clang::ASTContext &AC,
                                     const std::string &TypeAsStr,
-                                    clang::SourceLocation SL,
-                                    std::string &BufferDecl, int DistinctionID);
+                                    const std::string &IndentStr,
+                                    std::string &BufferDecl);
 std::string getBufferNameAndDeclStr(const clang::Expr *Arg,
-                                    const clang::ASTContext &AC,
                                     const std::string &TypeAsStr,
-                                    clang::SourceLocation SL,
-                                    std::string &BufferDecl, int DistinctionID);
+                                    const std::string &IndentStr,
+                                    std::string &BufferDecl);
 void VarReferencedInFD(const clang::Stmt *S, const clang::ValueDecl *VD,
                          std::vector<const clang::DeclRefExpr *> &Result);
 int getLengthOfSpacesToEndl(const char *CharData);
@@ -358,5 +356,7 @@ enum ExprSpellingStatus {
   IsExpansion = 2
 };
 bool isExprStraddle(const clang::Stmt *S, ExprSpellingStatus *SpellingStatus);
-
+bool isSimpleAddrOf(const clang::Expr *E);
+bool isCOCESimpleAddrOf(const clang::Expr *E);
+std::string getNameStrRemovedAddrOf(const clang::Expr *E, bool isCOCE = false);
 #endif // DPCT_UTILITY_H

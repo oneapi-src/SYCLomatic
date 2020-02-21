@@ -98,64 +98,36 @@ int main() {
   // CHECK-NEXT: }
   res = cublasIzamax(n, x_Z, incx);
   
-  //CHECK:{
-  //CHECK-NEXT:mkl::blas::rotm(dpct::get_default_queue_wait(), n, result_S, n, result_S, n, const_cast<float*>(x_S)).wait();
-  //CHECK-NEXT:}
+  //CHECK:mkl::blas::rotm(dpct::get_default_queue_wait(), n, result_S, n, result_S, n, const_cast<float*>(x_S)).wait();
   cublasSrotm(n, result_S, n, result_S, n, x_S);
-  //CHECK:{
-  //CHECK-NEXT:mkl::blas::rotm(dpct::get_default_queue_wait(), n, result_D, n, result_D, n, const_cast<double*>(x_D)).wait();
-  //CHECK-NEXT:}
+  //CHECK:mkl::blas::rotm(dpct::get_default_queue_wait(), n, result_D, n, result_D, n, const_cast<double*>(x_D)).wait();
   cublasDrotm(n, result_D, n, result_D, n, x_D);
 
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::copy(dpct::get_default_queue_wait(), n, x_S, incx, result_S, incy).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::copy(dpct::get_default_queue_wait(), n, x_S, incx, result_S, incy).wait();
   cublasScopy(n, x_S, incx, result_S, incy);
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::copy(dpct::get_default_queue_wait(), n, x_D, incx, result_D, incy).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::copy(dpct::get_default_queue_wait(), n, x_D, incx, result_D, incy).wait();
   cublasDcopy(n, x_D, incx, result_D, incy);
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::copy(dpct::get_default_queue_wait(), n, (std::complex<float>*)(x_C), incx, (std::complex<float>*)(result_C), incy).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::copy(dpct::get_default_queue_wait(), n, (std::complex<float>*)(x_C), incx, (std::complex<float>*)(result_C), incy).wait();
   cublasCcopy(n, x_C, incx, result_C, incy);
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::copy(dpct::get_default_queue_wait(), n, (std::complex<double>*)(x_Z), incx, (std::complex<double>*)(result_Z), incy).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::copy(dpct::get_default_queue_wait(), n, (std::complex<double>*)(x_Z), incx, (std::complex<double>*)(result_Z), incy).wait();
   cublasZcopy(n, x_Z, incx, result_Z, incy);
 
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::axpy(dpct::get_default_queue_wait(), n, alpha_S, x_S, incx, result_S, incy).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::axpy(dpct::get_default_queue_wait(), n, alpha_S, x_S, incx, result_S, incy).wait();
   cublasSaxpy(n, alpha_S, x_S, incx, result_S, incy);
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::axpy(dpct::get_default_queue_wait(), n, alpha_D, x_D, incx, result_D, incy).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::axpy(dpct::get_default_queue_wait(), n, alpha_D, x_D, incx, result_D, incy).wait();
   cublasDaxpy(n, alpha_D, x_D, incx, result_D, incy);
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::axpy(dpct::get_default_queue_wait(), n, std::complex<float>((alpha_C).x(),(alpha_C).y()), (std::complex<float>*)(x_C), incx, (std::complex<float>*)(result_C), incy).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::axpy(dpct::get_default_queue_wait(), n, std::complex<float>((alpha_C).x(),(alpha_C).y()), (std::complex<float>*)(x_C), incx, (std::complex<float>*)(result_C), incy).wait();
   cublasCaxpy(n, alpha_C, x_C, incx, result_C, incy);
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::axpy(dpct::get_default_queue_wait(), n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), (std::complex<double>*)(x_Z), incx, (std::complex<double>*)(result_Z), incy).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::axpy(dpct::get_default_queue_wait(), n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), (std::complex<double>*)(x_Z), incx, (std::complex<double>*)(result_Z), incy).wait();
   cublasZaxpy(n, alpha_Z, x_Z, incx, result_Z, incy);
 
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::scal(dpct::get_default_queue_wait(), n, alpha_S, result_S, incx).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::scal(dpct::get_default_queue_wait(), n, alpha_S, result_S, incx).wait();
   cublasSscal(n, alpha_S, result_S, incx);
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::scal(dpct::get_default_queue_wait(), n, alpha_D, result_D, incx).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::scal(dpct::get_default_queue_wait(), n, alpha_D, result_D, incx).wait();
   cublasDscal(n, alpha_D, result_D, incx);
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::scal(dpct::get_default_queue_wait(), n, std::complex<float>((alpha_C).x(),(alpha_C).y()), (std::complex<float>*)(result_C), incx).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::scal(dpct::get_default_queue_wait(), n, std::complex<float>((alpha_C).x(),(alpha_C).y()), (std::complex<float>*)(result_C), incx).wait();
   cublasCscal(n, alpha_C, result_C, incx);
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::scal(dpct::get_default_queue_wait(), n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), (std::complex<double>*)(result_Z), incx).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::scal(dpct::get_default_queue_wait(), n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), (std::complex<double>*)(result_Z), incx).wait();
   cublasZscal(n, alpha_Z, result_Z, incx);
 
   // CHECK: {
@@ -193,109 +165,45 @@ int main() {
 
   //level 2
 
-  // CHECK: {
-  // CHECK-NEXT: auto transpose_ct0 = 'N';
-  // CHECK-NEXT: mkl::blas::gemv(dpct::get_default_queue_wait(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), m, n, alpha_S, x_S, lda, y_S, incx, beta_S, result_S, incy).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::gemv(dpct::get_default_queue_wait(), mkl::transpose::nontrans, m, n, alpha_S, x_S, lda, y_S, incx, beta_S, result_S, incy).wait();
   cublasSgemv('N', m, n, alpha_S, x_S, lda, y_S, incx, beta_S, result_S, incy);
-  // CHECK: {
-  // CHECK-NEXT: auto transpose_ct0 = 'N';
-  // CHECK-NEXT: mkl::blas::gemv(dpct::get_default_queue_wait(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), m, n, alpha_D, x_D, lda, y_D, incx, beta_D, result_D, incy).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::gemv(dpct::get_default_queue_wait(), mkl::transpose::nontrans, m, n, alpha_D, x_D, lda, y_D, incx, beta_D, result_D, incy).wait();
   cublasDgemv('N', m, n, alpha_D, x_D, lda, y_D, incx, beta_D, result_D, incy);
-  // CHECK: {
-  // CHECK-NEXT: auto transpose_ct0 = 'N';
-  // CHECK-NEXT: mkl::blas::gemv(dpct::get_default_queue_wait(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), (std::complex<float>*)(x_C), lda, (std::complex<float>*)(y_C), incx, std::complex<float>((beta_C).x(),(beta_C).y()), (std::complex<float>*)(result_C), incy).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::gemv(dpct::get_default_queue_wait(), mkl::transpose::nontrans, m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), (std::complex<float>*)(x_C), lda, (std::complex<float>*)(y_C), incx, std::complex<float>((beta_C).x(),(beta_C).y()), (std::complex<float>*)(result_C), incy).wait();
   cublasCgemv('N', m, n, alpha_C, x_C, lda, y_C, incx, beta_C, result_C, incy);
-  // CHECK: {
-  // CHECK-NEXT: auto transpose_ct0 = 'N';
-  // CHECK-NEXT: mkl::blas::gemv(dpct::get_default_queue_wait(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), (std::complex<double>*)(x_Z), lda, (std::complex<double>*)(y_Z), incx, std::complex<double>((beta_Z).x(),(beta_Z).y()), (std::complex<double>*)(result_Z), incy).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::gemv(dpct::get_default_queue_wait(), mkl::transpose::nontrans, m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), (std::complex<double>*)(x_Z), lda, (std::complex<double>*)(y_Z), incx, std::complex<double>((beta_Z).x(),(beta_Z).y()), (std::complex<double>*)(result_Z), incy).wait();
   cublasZgemv('N', m, n, alpha_Z, x_Z, lda, y_Z, incx, beta_Z, result_Z, incy);
 
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::ger(dpct::get_default_queue_wait(), m, n, alpha_S, x_S, incx, y_S, incy, result_S, lda).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::ger(dpct::get_default_queue_wait(), m, n, alpha_S, x_S, incx, y_S, incy, result_S, lda).wait();
   cublasSger(m, n, alpha_S, x_S, incx, y_S, incy, result_S, lda);
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::ger(dpct::get_default_queue_wait(), m, n, alpha_D, x_D, incx, y_D, incy, result_D, lda).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::ger(dpct::get_default_queue_wait(), m, n, alpha_D, x_D, incx, y_D, incy, result_D, lda).wait();
   cublasDger(m, n, alpha_D, x_D, incx, y_D, incy, result_D, lda);
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::geru(dpct::get_default_queue_wait(), m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), (std::complex<float>*)(x_C), incx, (std::complex<float>*)(y_C), incy, (std::complex<float>*)(result_C), lda).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::geru(dpct::get_default_queue_wait(), m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), (std::complex<float>*)(x_C), incx, (std::complex<float>*)(y_C), incy, (std::complex<float>*)(result_C), lda).wait();
   cublasCgeru(m, n, alpha_C, x_C, incx, y_C, incy, result_C, lda);
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::gerc(dpct::get_default_queue_wait(), m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), (std::complex<float>*)(x_C), incx, (std::complex<float>*)(y_C), incy, (std::complex<float>*)(result_C), lda).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::gerc(dpct::get_default_queue_wait(), m, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), (std::complex<float>*)(x_C), incx, (std::complex<float>*)(y_C), incy, (std::complex<float>*)(result_C), lda).wait();
   cublasCgerc(m, n, alpha_C, x_C, incx, y_C, incy, result_C, lda);
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::geru(dpct::get_default_queue_wait(), m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), (std::complex<double>*)(x_Z), incx, (std::complex<double>*)(y_Z), incy, (std::complex<double>*)(result_Z), lda).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::geru(dpct::get_default_queue_wait(), m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), (std::complex<double>*)(x_Z), incx, (std::complex<double>*)(y_Z), incy, (std::complex<double>*)(result_Z), lda).wait();
   cublasZgeru(m, n, alpha_Z, x_Z, incx, y_Z, incy, result_Z, lda);
-  // CHECK: {
-  // CHECK-NEXT: mkl::blas::gerc(dpct::get_default_queue_wait(), m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), (std::complex<double>*)(x_Z), incx, (std::complex<double>*)(y_Z), incy, (std::complex<double>*)(result_Z), lda).wait();
-  // CHECK-NEXT: }
+  // CHECK:mkl::blas::gerc(dpct::get_default_queue_wait(), m, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), (std::complex<double>*)(x_Z), incx, (std::complex<double>*)(y_Z), incy, (std::complex<double>*)(result_Z), lda).wait();
   cublasZgerc(m, n, alpha_Z, x_Z, incx, y_Z, incy, result_Z, lda);
 
   //level 3
 
-  //CHECK:{
-  //CHECK-NEXT:auto transpose_ct0 = 'N';
-  //CHECK-NEXT:auto transpose_ct1 = 'N';
-  //CHECK-NEXT:mkl::blas::gemm(dpct::get_default_queue_wait(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, n, n, alpha_S, A_S, n, B_S, n, beta_S, C_S, n).wait();
-  //CHECK-NEXT:}
+  //CHECK:mkl::blas::gemm(dpct::get_default_queue_wait(), mkl::transpose::nontrans, mkl::transpose::nontrans, n, n, n, alpha_S, A_S, n, B_S, n, beta_S, C_S, n).wait();
   cublasSgemm('N', 'N', n, n, n, alpha_S, A_S, n, B_S, n, beta_S, C_S, n);
-  //CHECK:{
-  //CHECK-NEXT:auto transpose_ct0 = 'N';
-  //CHECK-NEXT:auto transpose_ct1 = 'N';
-  //CHECK-NEXT:mkl::blas::gemm(dpct::get_default_queue_wait(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, n, n, alpha_D, A_D, n, B_D, n, beta_D, C_D, n).wait();
-  //CHECK-NEXT:}
+  //CHECK:mkl::blas::gemm(dpct::get_default_queue_wait(), mkl::transpose::nontrans, mkl::transpose::nontrans, n, n, n, alpha_D, A_D, n, B_D, n, beta_D, C_D, n).wait();
   cublasDgemm('N', 'N', n, n, n, alpha_D, A_D, n, B_D, n, beta_D, C_D, n);
-  //CHECK:{
-  //CHECK-NEXT:auto transpose_ct0 = 'N';
-  //CHECK-NEXT:auto transpose_ct1 = 'N';
-  //CHECK-NEXT:mkl::blas::gemm(dpct::get_default_queue_wait(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, n, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), (std::complex<float>*)(A_C), n, (std::complex<float>*)(B_C), n, std::complex<float>((beta_C).x(),(beta_C).y()), (std::complex<float>*)(C_C), n).wait();
-  //CHECK-NEXT:}
+  //CHECK:mkl::blas::gemm(dpct::get_default_queue_wait(), mkl::transpose::nontrans, mkl::transpose::nontrans, n, n, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), (std::complex<float>*)(A_C), n, (std::complex<float>*)(B_C), n, std::complex<float>((beta_C).x(),(beta_C).y()), (std::complex<float>*)(C_C), n).wait();
   cublasCgemm('N', 'N', n, n, n, alpha_C, A_C, n, B_C, n, beta_C, C_C, n);
-  //CHECK:{
-  //CHECK-NEXT:auto transpose_ct0 = 'N';
-  //CHECK-NEXT:auto transpose_ct1 = 'N';
-  //CHECK-NEXT:mkl::blas::gemm(dpct::get_default_queue_wait(), (((transpose_ct0)=='N'||(transpose_ct0)=='n')?(mkl::transpose::nontrans):(((transpose_ct0)=='T'||(transpose_ct0)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((transpose_ct1)=='N'||(transpose_ct1)=='n')?(mkl::transpose::nontrans):(((transpose_ct1)=='T'||(transpose_ct1)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), n, n, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), (std::complex<double>*)(A_Z), n, (std::complex<double>*)(B_Z), n, std::complex<double>((beta_Z).x(),(beta_Z).y()), (std::complex<double>*)(C_Z), n).wait();
-  //CHECK-NEXT:}
+  //CHECK:mkl::blas::gemm(dpct::get_default_queue_wait(), mkl::transpose::nontrans, mkl::transpose::nontrans, n, n, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), (std::complex<double>*)(A_Z), n, (std::complex<double>*)(B_Z), n, std::complex<double>((beta_Z).x(),(beta_Z).y()), (std::complex<double>*)(C_Z), n).wait();
   cublasZgemm('N', 'N', n, n, n, alpha_Z, A_Z, n, B_Z, n, beta_Z, C_Z, n);
 
-  //CHECK:{
-  //CHECK-NEXT:auto sidemode_ct0 = 'L';
-  //CHECK-NEXT:auto fillmode_ct1 = 'L';
-  //CHECK-NEXT:auto transpose_ct2 = 'N';
-  //CHECK-NEXT:auto diagtype_ct3 = 'N';
-  //CHECK-NEXT:mkl::blas::trmm(dpct::get_default_queue_wait(), (((sidemode_ct0)=='L'||(sidemode_ct0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct1)=='L'||(fillmode_ct1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct2)=='N'||(transpose_ct2)=='n')?(mkl::transpose::nontrans):(((transpose_ct2)=='T'||(transpose_ct2)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct3)=='N'||(diagtype_ct3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, alpha_S, A_S, n,  C_S, n).wait();
-  //CHECK-NEXT:}
+  //CHECK:mkl::blas::trmm(dpct::get_default_queue_wait(), mkl::side::left, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, n, alpha_S, A_S, n, C_S, n).wait();
   cublasStrmm('L', 'L', 'N', 'N', n, n, alpha_S, A_S, n, C_S, n);
-  //CHECK:{
-  //CHECK-NEXT:auto sidemode_ct0 = 'L';
-  //CHECK-NEXT:auto fillmode_ct1 = 'L';
-  //CHECK-NEXT:auto transpose_ct2 = 'N';
-  //CHECK-NEXT:auto diagtype_ct3 = 'N';
-  //CHECK-NEXT:mkl::blas::trmm(dpct::get_default_queue_wait(), (((sidemode_ct0)=='L'||(sidemode_ct0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct1)=='L'||(fillmode_ct1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct2)=='N'||(transpose_ct2)=='n')?(mkl::transpose::nontrans):(((transpose_ct2)=='T'||(transpose_ct2)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct3)=='N'||(diagtype_ct3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, alpha_D, A_D, n,  C_D, n).wait();
-  //CHECK-NEXT:}
+  //CHECK:mkl::blas::trmm(dpct::get_default_queue_wait(), mkl::side::left, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, n, alpha_D, A_D, n, C_D, n).wait();
   cublasDtrmm('L', 'L', 'N', 'N', n, n, alpha_D, A_D, n, C_D, n);
-  //CHECK:{
-  //CHECK-NEXT:auto sidemode_ct0 = 'L';
-  //CHECK-NEXT:auto fillmode_ct1 = 'L';
-  //CHECK-NEXT:auto transpose_ct2 = 'N';
-  //CHECK-NEXT:auto diagtype_ct3 = 'N';
-  //CHECK-NEXT:mkl::blas::trmm(dpct::get_default_queue_wait(), (((sidemode_ct0)=='L'||(sidemode_ct0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct1)=='L'||(fillmode_ct1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct2)=='N'||(transpose_ct2)=='n')?(mkl::transpose::nontrans):(((transpose_ct2)=='T'||(transpose_ct2)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct3)=='N'||(diagtype_ct3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), (std::complex<float>*)(A_C), n,  (std::complex<float>*)(C_C), n).wait();
-  //CHECK-NEXT:}
+  //CHECK:mkl::blas::trmm(dpct::get_default_queue_wait(), mkl::side::left, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, n, std::complex<float>((alpha_C).x(),(alpha_C).y()), (std::complex<float>*)(A_C), n,  (std::complex<float>*)(C_C), n).wait();
   cublasCtrmm('L', 'L', 'N', 'N', n, n, alpha_C, A_C, n, C_C, n);
-  //CHECK:{
-  //CHECK-NEXT:auto sidemode_ct0 = 'L';
-  //CHECK-NEXT:auto fillmode_ct1 = 'L';
-  //CHECK-NEXT:auto transpose_ct2 = 'N';
-  //CHECK-NEXT:auto diagtype_ct3 = 'N';
-  //CHECK-NEXT:mkl::blas::trmm(dpct::get_default_queue_wait(), (((sidemode_ct0)=='L'||(sidemode_ct0)=='l')?(mkl::side::left):(mkl::side::right)), (((fillmode_ct1)=='L'||(fillmode_ct1)=='l')?(mkl::uplo::lower):(mkl::uplo::upper)), (((transpose_ct2)=='N'||(transpose_ct2)=='n')?(mkl::transpose::nontrans):(((transpose_ct2)=='T'||(transpose_ct2)=='t')?(mkl::transpose::trans):(mkl::transpose::conjtrans))), (((diagtype_ct3)=='N'||(diagtype_ct3)=='n')?(mkl::diag::nonunit):(mkl::diag::unit)), n, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), (std::complex<double>*)(A_Z), n,  (std::complex<double>*)(C_Z), n).wait();
-  //CHECK-NEXT:}
+  //CHECK:mkl::blas::trmm(dpct::get_default_queue_wait(), mkl::side::left, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::nonunit, n, n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), (std::complex<double>*)(A_Z), n,  (std::complex<double>*)(C_Z), n).wait();
   cublasZtrmm('L', 'L', 'N', 'N', n, n, alpha_Z, A_Z, n, C_Z, n);
 }

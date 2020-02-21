@@ -30,9 +30,9 @@ int main(){
   float *h_data;
 
   //CHECK:{
-  //CHECK-NEXT:auto h_data_buff_ct1 = dpct::get_buffer<float>(h_data);
+  //CHECK-NEXT:auto h_data_buf_ct1 = dpct::get_buffer<float>(h_data);
   //CHECK-NEXT:mkl::rng::uniform<float> distr_ct1;
-  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_buff_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_buf_ct1);
   //CHECK-NEXT:}
   curandGenerateUniform(rng, h_data, 100*100);
 
@@ -41,9 +41,9 @@ int main(){
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto h_data_buff_ct1 = dpct::get_buffer<float>(h_data);
+  //CHECK-NEXT:auto h_data_buf_ct1 = dpct::get_buffer<float>(h_data);
   //CHECK-NEXT:mkl::rng::uniform<float> distr_ct1;
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_buff_ct1), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_buf_ct1), 0);
   //CHECK-NEXT:}
   s1 = curandGenerateUniform(rng, h_data, 100*100);
 
@@ -52,9 +52,9 @@ int main(){
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto h_data_buff_ct1 = dpct::get_buffer<float>(h_data);
+  //CHECK-NEXT:auto h_data_buf_ct1 = dpct::get_buffer<float>(h_data);
   //CHECK-NEXT:mkl::rng::lognormal<float> distr_ct1(123, 456, 0.0, 1.0);
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_buff_ct1), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_buf_ct1), 0);
   //CHECK-NEXT:}
   s1 = curandGenerateLogNormal(rng, h_data, 100*100, 123, 456);
 
@@ -63,31 +63,31 @@ int main(){
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto h_data_buff_ct1 = dpct::get_buffer<float>(h_data);
+  //CHECK-NEXT:auto h_data_buf_ct1 = dpct::get_buffer<float>(h_data);
   //CHECK-NEXT:mkl::rng::gaussian<float> distr_ct1(123, 456);
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_buff_ct1), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_buf_ct1), 0);
   //CHECK-NEXT:}
   s1 = curandGenerateNormal(rng, h_data, 100*100, 123, 456);
 
   double* h_data_d;
   //CHECK:{
-  //CHECK-NEXT:auto h_data_d_buff_ct1 = dpct::get_buffer<double>(h_data_d);
+  //CHECK-NEXT:auto h_data_d_buf_ct1 = dpct::get_buffer<double>(h_data_d);
   //CHECK-NEXT:mkl::rng::uniform<double> distr_ct1;
-  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_d_buff_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_d_buf_ct1);
   //CHECK-NEXT:}
   curandGenerateUniformDouble(rng, h_data_d, 100*100);
 
   //CHECK:{
-  //CHECK-NEXT:auto h_data_d_buff_ct1 = dpct::get_buffer<double>(h_data_d);
+  //CHECK-NEXT:auto h_data_d_buf_ct1 = dpct::get_buffer<double>(h_data_d);
   //CHECK-NEXT:mkl::rng::lognormal<double> distr_ct1(123, 456, 0.0, 1.0);
-  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_d_buff_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_d_buf_ct1);
   //CHECK-NEXT:}
   curandGenerateLogNormalDouble(rng, h_data_d, 100*100, 123, 456);
 
   //CHECK:{
-  //CHECK-NEXT:auto h_data_d_buff_ct1 = dpct::get_buffer<double>(h_data_d);
+  //CHECK-NEXT:auto h_data_d_buf_ct1 = dpct::get_buffer<double>(h_data_d);
   //CHECK-NEXT:mkl::rng::gaussian<double> distr_ct1(123, 456);
-  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_d_buff_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_d_buf_ct1);
   //CHECK-NEXT:}
   curandGenerateNormalDouble(rng, h_data_d, 100*100, 123, 456);
 
@@ -97,9 +97,9 @@ int main(){
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto h_data_ui_buff_ct1 = dpct::get_buffer<uint32_t>(h_data_ui);
+  //CHECK-NEXT:auto h_data_ui_buf_ct1 = dpct::get_buffer<uint32_t>(h_data_ui);
   //CHECK-NEXT:mkl::rng::uniform_bits<uint32_t> distr_ct1;
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_ui_buff_ct1), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_ui_buf_ct1), 0);
   //CHECK-NEXT:}
   s1 = curandGenerate(rng, h_data_ui, 100*100);
 
@@ -108,24 +108,24 @@ int main(){
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto h_data_ui_buff_ct1 = dpct::get_buffer<int32_t>(h_data_ui);
+  //CHECK-NEXT:auto h_data_ui_buf_ct1 = dpct::get_buffer<int32_t>(h_data_ui);
   //CHECK-NEXT:mkl::rng::poisson<int32_t> distr_ct1(123.456);
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_ui_buff_ct1), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_ui_buf_ct1), 0);
   //CHECK-NEXT:}
   s1 = curandGeneratePoisson(rng, h_data_ui, 100*100, 123.456);
 
   unsigned long long* h_data_ull;
   //CHECK:{
-  //CHECK-NEXT:auto h_data_ull_buff_ct1 = dpct::get_buffer<uint64_t>(h_data_ull);
+  //CHECK-NEXT:auto h_data_ull_buf_ct1 = dpct::get_buffer<uint64_t>(h_data_ull);
   //CHECK-NEXT:mkl::rng::uniform_bits<uint64_t> distr_ct1;
-  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_ull_buff_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_ull_buf_ct1);
   //CHECK-NEXT:}
   curandGenerateLongLong(rng, h_data_ull, 100*100);
 
   //CHECK:if (s1 = [&]() {
-  //CHECK-NEXT:auto h_data_ull_buff_ct1 = dpct::get_buffer<uint64_t>(h_data_ull);
+  //CHECK-NEXT:auto h_data_ull_buf_ct1 = dpct::get_buffer<uint64_t>(h_data_ull);
   //CHECK-NEXT:mkl::rng::uniform_bits<uint64_t> distr_ct1;
-  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_ull_buff_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_ull_buf_ct1);
   //CHECK-NEXT:return 0;
   //CHECK-NEXT:    }()) {}
   if(s1 = curandGenerateLongLong(rng, h_data_ull, 100*100)){}
@@ -140,9 +140,9 @@ int main(){
   //CHECK-NEXT:because the function call is redundant in DPC++.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto h_data_buff_ct1 = dpct::get_buffer<float>(h_data);
+  //CHECK-NEXT:auto h_data_buf_ct1 = dpct::get_buffer<float>(h_data);
   //CHECK-NEXT:mkl::rng::uniform<float> distr_ct1;
-  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng2, 100 * 100, h_data_buff_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng2, 100 * 100, h_data_buf_ct1);
   //CHECK-NEXT:}
   curandGenerator_t rng2;
   curandCreateGenerator(&rng2, CURAND_RNG_QUASI_DEFAULT);
@@ -260,9 +260,9 @@ void bar3(){
 //CHECK-NEXT:lambda. You may need to rewrite this code.
 //CHECK-NEXT:*/
 //CHECK-NEXT:curandErrCheck([&]() {
-//CHECK-NEXT:auto h_data_buff_ct1 = dpct::get_buffer<float>(h_data);
+//CHECK-NEXT:auto h_data_buf_ct1 = dpct::get_buffer<float>(h_data);
 //CHECK-NEXT:mkl::rng::uniform<float> distr_ct1;
-//CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_buff_ct1);
+//CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, 100 * 100, h_data_buf_ct1);
 //CHECK-NEXT:return 0;
 //CHECK-NEXT:}());
 //CHECK-NEXT:/*

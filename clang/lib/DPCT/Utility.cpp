@@ -832,33 +832,43 @@ bool isConditionOfFlowControl(const clang::Expr* E) {
   }
   return false;
 }
-
+/// This function used in BLAS and Random migration. It generates the buffer
+/// declaration and return the buffer name.
+/// \param PointerName The origin pointer name string.
+/// \param TypeAsStr The type of the origin pointer.
+/// \param IndentStr The indentation.
+/// \param [out] BufferDecl The buffer declaration string.
+/// \return The buffer name.
 std::string getBufferNameAndDeclStr(const std::string &PointerName,
-                                    const ASTContext &AC,
                                     const std::string &TypeAsStr,
-                                    SourceLocation SL, std::string &BufferDecl,
-                                    int DistinctionID) {
-  std::string BufferTempName = PointerName + "_buff_ct";
+                                    const std::string &IndentStr,
+                                    std::string &BufferDecl) {
+  std::string BufferTempName = PointerName + "_buf_ct";
   BufferTempName = dpct::DpctGlobalInfo::getTempValueIdentifierWithUniqueIndex(
       BufferTempName);
   // TODO: reinterpret will copy more data
-  BufferDecl = getIndent(SL, AC.getSourceManager()).str() + "auto " +
-               BufferTempName + " = dpct::get_buffer<" +
-               TypeAsStr + ">(" + PointerName + ");" + getNL();
+  BufferDecl = "auto " + BufferTempName + " = dpct::get_buffer<" + TypeAsStr +
+               ">(" + PointerName + ");" + getNL() + IndentStr;
   return BufferTempName;
 }
-std::string getBufferNameAndDeclStr(const Expr *Arg, const ASTContext &AC,
+/// This function used in BLAS and Random migration. It generates the buffer
+/// declaration and return the buffer name.
+/// \param Arg The origin pointer argument expression.
+/// \param TypeAsStr The type of the origin pointer.
+/// \param IndentStr The indentation.
+/// \param [out] BufferDecl The buffer declaration string.
+/// \return The buffer name.
+std::string getBufferNameAndDeclStr(const Expr *Arg,
                                     const std::string &TypeAsStr,
-                                    SourceLocation SL, std::string &BufferDecl,
-                                    int DistinctionID) {
+                                    const std::string &IndentStr,
+                                    std::string &BufferDecl) {
   std::string PointerName = getStmtSpelling(Arg);
-  std::string BufferTempName = getTempNameForExpr(Arg, true, true) + "buff_ct";
+  std::string BufferTempName = getTempNameForExpr(Arg, true, true) + "buf_ct";
   BufferTempName = dpct::DpctGlobalInfo::getTempValueIdentifierWithUniqueIndex(
       BufferTempName);
   // TODO: reinterpret will copy more data
-  BufferDecl = getIndent(SL, AC.getSourceManager()).str() + "auto " +
-               BufferTempName + " = dpct::get_buffer<" +
-               TypeAsStr + ">(" + PointerName + ");" + getNL();
+  BufferDecl = "auto " + BufferTempName + " = dpct::get_buffer<" + TypeAsStr +
+               ">(" + PointerName + ");" + getNL() + IndentStr;
   return BufferTempName;
 }
 
@@ -1197,4 +1207,44 @@ bool isExprStraddle(const Stmt *S, ExprSpellingStatus* SpellingStatus) {
     *SpellingStatus = IsExpansion;
   }
   return false;
+}
+
+/// Check the expression \p E is an address-of expression like "&aaa".
+bool isSimpleAddrOf(const Expr *E) {
+  if (auto UO = dyn_cast<UnaryOperator>(E)) {
+    if (UO->getOpcode() == UO_AddrOf) {
+      return true;
+    }
+  }
+  return false;
+}
+/// Check the expression \p E is an address-of expression like "&aaa".
+/// On Windows, the AST node is OverloadedOperatorKind instead of UnaryOperator.
+bool isCOCESimpleAddrOf(const Expr *E) {
+  if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
+    if (COCE->getOperator() == clang::OverloadedOperatorKind::OO_Amp &&
+        COCE->getNumArgs() == 1) {
+      return true;
+    }
+  }
+  return false;
+}
+/// Remove the address-of operator in the expression \p E.
+/// \param E An expression has checked by isSimpleAddrOf() or
+/// isCOCESimpleAddrOf().
+/// \param isCOCE If the expression is checked by isCOCESimpleAddrOf(), it need
+/// be true.
+/// \return The expression string without the address-of operator.
+std::string getNameStrRemovedAddrOf(const Expr *E, bool isCOCE) {
+  if (isCOCE) {
+    auto COCE = dyn_cast<CXXOperatorCallExpr>(E);
+    dpct::ExprAnalysis SEA;
+    SEA.analyze(COCE->getArg(0));
+    return SEA.getReplacedString();
+  } else {
+    auto UO = dyn_cast<UnaryOperator>(E);
+    dpct::ExprAnalysis SEA;
+    SEA.analyze(UO->getSubExpr());
+    return SEA.getReplacedString();
+  }
 }

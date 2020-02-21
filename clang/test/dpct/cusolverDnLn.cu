@@ -115,18 +115,18 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::potrf(*cusolverH, uplo, n, A_f_buff_ct1, lda,   result_temp_buffer7), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::potrf(*cusolverH, uplo, n, A_f_buf_ct1, lda,   result_temp_buffer7), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::potrf(*cusolverH, uplo, n, A_f_buff_ct1, lda,   result_temp_buffer7);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::potrf(*cusolverH, uplo, n, A_f_buf_ct1, lda,   result_temp_buffer7);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnSpotrf(*cusolverH, uplo, n, &A_f, lda, &workspace_f, Lwork, &devInfo);
     cusolverDnSpotrf(*cusolverH, uplo, n, &A_f, lda, &workspace_f, Lwork, &devInfo);
@@ -135,18 +135,18 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::potrf(*cusolverH, uplo, n, A_d_buff_ct1, lda,   result_temp_buffer7), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::potrf(*cusolverH, uplo, n, A_d_buf_ct1, lda,   result_temp_buffer7), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::potrf(*cusolverH, uplo, n, A_d_buff_ct1, lda,   result_temp_buffer7);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::potrf(*cusolverH, uplo, n, A_d_buf_ct1, lda,   result_temp_buffer7);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnDpotrf(*cusolverH, uplo, n, &A_d, lda, &workspace_d, Lwork, &devInfo);
     cusolverDnDpotrf(*cusolverH, uplo, n, &A_d, lda, &workspace_d, Lwork, &devInfo);
@@ -155,18 +155,18 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::potrf(*cusolverH, uplo, n, A_c_buff_ct1, lda,   result_temp_buffer7), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::potrf(*cusolverH, uplo, n, A_c_buf_ct1, lda,   result_temp_buffer7), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::potrf(*cusolverH, uplo, n, A_c_buff_ct1, lda,   result_temp_buffer7);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::potrf(*cusolverH, uplo, n, A_c_buf_ct1, lda,   result_temp_buffer7);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnCpotrf(*cusolverH, uplo, n, &A_c, lda, &workspace_c, Lwork, &devInfo);
     cusolverDnCpotrf(*cusolverH, uplo, n, &A_c, lda, &workspace_c, Lwork, &devInfo);
@@ -175,18 +175,18 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::potrf(*cusolverH, uplo, n, A_z_buff_ct1, lda,   result_temp_buffer7), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::potrf(*cusolverH, uplo, n, A_z_buf_ct1, lda,   result_temp_buffer7), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::potrf(*cusolverH, uplo, n, A_z_buff_ct1, lda,   result_temp_buffer7);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::potrf(*cusolverH, uplo, n, A_z_buf_ct1, lda,   result_temp_buffer7);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnZpotrf(*cusolverH, uplo, n, &A_z, lda, &workspace_z, Lwork, &devInfo);
     cusolverDnZpotrf(*cusolverH, uplo, n, &A_z, lda, &workspace_z, Lwork, &devInfo);
@@ -196,20 +196,20 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto C_f_buff_ct1 = dpct::get_buffer<float>(&C_f);
-    // CHECK-NEXT: auto B_f_buff_ct1 = dpct::get_buffer<float>(&B_f);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto C_f_buf_ct1 = dpct::get_buffer<float>(&C_f);
+    // CHECK-NEXT: auto B_f_buf_ct1 = dpct::get_buffer<float>(&B_f);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::potrs(*cusolverH, uplo, n, nrhs, C_f_buff_ct1, lda, B_f_buff_ct1, ldb, result_temp_buffer8), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::potrs(*cusolverH, uplo, n, nrhs, C_f_buf_ct1, lda, B_f_buf_ct1, ldb, result_temp_buffer8), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto C_f_buff_ct1 = dpct::get_buffer<float>(&C_f);
-    // CHECK-NEXT: auto B_f_buff_ct1 = dpct::get_buffer<float>(&B_f);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto C_f_buf_ct1 = dpct::get_buffer<float>(&C_f);
+    // CHECK-NEXT: auto B_f_buf_ct1 = dpct::get_buffer<float>(&B_f);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::potrs(*cusolverH, uplo, n, nrhs, C_f_buff_ct1, lda, B_f_buff_ct1, ldb, result_temp_buffer8);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::potrs(*cusolverH, uplo, n, nrhs, C_f_buf_ct1, lda, B_f_buf_ct1, ldb, result_temp_buffer8);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnSpotrs(*cusolverH, uplo, n, nrhs, &C_f, lda, &B_f, ldb, &devInfo);
     cusolverDnSpotrs(*cusolverH, uplo, n, nrhs, &C_f, lda, &B_f, ldb, &devInfo);
@@ -218,20 +218,20 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto C_d_buff_ct1 = dpct::get_buffer<double>(&C_d);
-    // CHECK-NEXT: auto B_d_buff_ct1 = dpct::get_buffer<double>(&B_d);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto C_d_buf_ct1 = dpct::get_buffer<double>(&C_d);
+    // CHECK-NEXT: auto B_d_buf_ct1 = dpct::get_buffer<double>(&B_d);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::potrs(*cusolverH, uplo, n, nrhs, C_d_buff_ct1, lda, B_d_buff_ct1, ldb, result_temp_buffer8), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::potrs(*cusolverH, uplo, n, nrhs, C_d_buf_ct1, lda, B_d_buf_ct1, ldb, result_temp_buffer8), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto C_d_buff_ct1 = dpct::get_buffer<double>(&C_d);
-    // CHECK-NEXT: auto B_d_buff_ct1 = dpct::get_buffer<double>(&B_d);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto C_d_buf_ct1 = dpct::get_buffer<double>(&C_d);
+    // CHECK-NEXT: auto B_d_buf_ct1 = dpct::get_buffer<double>(&B_d);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::potrs(*cusolverH, uplo, n, nrhs, C_d_buff_ct1, lda, B_d_buff_ct1, ldb, result_temp_buffer8);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::potrs(*cusolverH, uplo, n, nrhs, C_d_buf_ct1, lda, B_d_buf_ct1, ldb, result_temp_buffer8);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnDpotrs(*cusolverH, uplo, n, nrhs, &C_d, lda, &B_d, ldb, &devInfo);
     cusolverDnDpotrs(*cusolverH, uplo, n, nrhs, &C_d, lda, &B_d, ldb, &devInfo);
@@ -240,20 +240,20 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto C_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&C_c);
-    // CHECK-NEXT: auto B_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&B_c);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto C_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&C_c);
+    // CHECK-NEXT: auto B_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&B_c);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::potrs(*cusolverH, uplo, n, nrhs, C_c_buff_ct1, lda, B_c_buff_ct1, ldb, result_temp_buffer8), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::potrs(*cusolverH, uplo, n, nrhs, C_c_buf_ct1, lda, B_c_buf_ct1, ldb, result_temp_buffer8), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto C_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&C_c);
-    // CHECK-NEXT: auto B_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&B_c);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto C_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&C_c);
+    // CHECK-NEXT: auto B_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&B_c);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::potrs(*cusolverH, uplo, n, nrhs, C_c_buff_ct1, lda, B_c_buff_ct1, ldb, result_temp_buffer8);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::potrs(*cusolverH, uplo, n, nrhs, C_c_buf_ct1, lda, B_c_buf_ct1, ldb, result_temp_buffer8);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnCpotrs(*cusolverH, uplo, n, nrhs, &C_c, lda, &B_c, ldb, &devInfo);
     cusolverDnCpotrs(*cusolverH, uplo, n, nrhs, &C_c, lda, &B_c, ldb, &devInfo);
@@ -263,20 +263,20 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto C_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&C_z);
-    // CHECK-NEXT: auto B_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&B_z);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto C_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&C_z);
+    // CHECK-NEXT: auto B_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&B_z);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::potrs(*cusolverH, uplo, n, nrhs, C_z_buff_ct1, lda, B_z_buff_ct1, ldb, result_temp_buffer8), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::potrs(*cusolverH, uplo, n, nrhs, C_z_buf_ct1, lda, B_z_buf_ct1, ldb, result_temp_buffer8), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto C_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&C_z);
-    // CHECK-NEXT: auto B_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&B_z);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto C_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&C_z);
+    // CHECK-NEXT: auto B_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&B_z);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::potrs(*cusolverH, uplo, n, nrhs, C_z_buff_ct1, lda, B_z_buff_ct1, ldb, result_temp_buffer8);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::potrs(*cusolverH, uplo, n, nrhs, C_z_buf_ct1, lda, B_z_buf_ct1, ldb, result_temp_buffer8);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnZpotrs(*cusolverH, uplo, n, nrhs, &C_z, lda, &B_z, ldb, &devInfo);
     cusolverDnZpotrs(*cusolverH, uplo, n, nrhs, &C_z, lda, &B_z, ldb, &devInfo);
@@ -285,24 +285,24 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::getrf(*cusolverH, m, n, A_f_buff_ct1, lda,  result_temp_buffer6, result_temp_buffer7), 0);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::getrf(*cusolverH, m, n, A_f_buf_ct1, lda,  result_temp_buffer6, result_temp_buffer7), 0);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::getrf(*cusolverH, m, n, A_f_buff_ct1, lda,  result_temp_buffer6, result_temp_buffer7);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::getrf(*cusolverH, m, n, A_f_buf_ct1, lda,  result_temp_buffer6, result_temp_buffer7);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnSgetrf(*cusolverH, m, n, &A_f, lda, &workspace_f, &devIpiv, &devInfo);
     cusolverDnSgetrf(*cusolverH, m, n, &A_f, lda, &workspace_f, &devIpiv, &devInfo);
@@ -311,24 +311,24 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::getrf(*cusolverH, m, n, A_d_buff_ct1, lda,  result_temp_buffer6, result_temp_buffer7), 0);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::getrf(*cusolverH, m, n, A_d_buf_ct1, lda,  result_temp_buffer6, result_temp_buffer7), 0);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::getrf(*cusolverH, m, n, A_d_buff_ct1, lda,  result_temp_buffer6, result_temp_buffer7);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::getrf(*cusolverH, m, n, A_d_buf_ct1, lda,  result_temp_buffer6, result_temp_buffer7);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnDgetrf(*cusolverH, m, n, &A_d, lda, &workspace_d, &devIpiv, &devInfo);
     cusolverDnDgetrf(*cusolverH, m, n, &A_d, lda, &workspace_d, &devIpiv, &devInfo);
@@ -337,24 +337,24 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::getrf(*cusolverH, m, n, A_c_buff_ct1, lda,  result_temp_buffer6, result_temp_buffer7), 0);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::getrf(*cusolverH, m, n, A_c_buf_ct1, lda,  result_temp_buffer6, result_temp_buffer7), 0);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::getrf(*cusolverH, m, n, A_c_buff_ct1, lda,  result_temp_buffer6, result_temp_buffer7);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::getrf(*cusolverH, m, n, A_c_buf_ct1, lda,  result_temp_buffer6, result_temp_buffer7);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnCgetrf(*cusolverH, m, n, &A_c, lda, &workspace_c, &devIpiv, &devInfo);
     cusolverDnCgetrf(*cusolverH, m, n, &A_c, lda, &workspace_c, &devIpiv, &devInfo);
@@ -363,24 +363,24 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::getrf(*cusolverH, m, n, A_z_buff_ct1, lda,  result_temp_buffer6, result_temp_buffer7), 0);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::getrf(*cusolverH, m, n, A_z_buf_ct1, lda,  result_temp_buffer6, result_temp_buffer7), 0);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::getrf(*cusolverH, m, n, A_z_buff_ct1, lda,  result_temp_buffer6, result_temp_buffer7);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::getrf(*cusolverH, m, n, A_z_buf_ct1, lda,  result_temp_buffer6, result_temp_buffer7);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnZgetrf(*cusolverH, m, n, &A_z, lda, &workspace_z, &devIpiv, &devInfo);
     cusolverDnZgetrf(*cusolverH, m, n, &A_z, lda, &workspace_z, &devIpiv, &devInfo);
@@ -389,24 +389,24 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::getrf(*cusolverH, m, n, A_z_buff_ct1, lda,  result_temp_buffer6, result_temp_buffer7), 0);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::getrf(*cusolverH, m, n, A_z_buf_ct1, lda,  result_temp_buffer6, result_temp_buffer7), 0);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer7(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::getrf(*cusolverH, m, n, A_z_buff_ct1, lda,  result_temp_buffer6, result_temp_buffer7);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::getrf(*cusolverH, m, n, A_z_buf_ct1, lda,  result_temp_buffer6, result_temp_buffer7);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer7.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnZgetrf(*cusolverH, m, n, &A_z, lda, &workspace_z, &devIpiv, &devInfo);
     cusolverDnZgetrf(*cusolverH, m, n, &A_z, lda, &workspace_z, &devIpiv, &devInfo);
@@ -415,26 +415,26 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto B_f_buff_ct1 = dpct::get_buffer<float>(&B_f);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto B_f_buf_ct1 = dpct::get_buffer<float>(&B_f);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer9(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::getrs(*cusolverH, trans, n, nrhs, A_f_buff_ct1, lda, result_temp_buffer6, B_f_buff_ct1, ldb, result_temp_buffer9), 0);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::getrs(*cusolverH, trans, n, nrhs, A_f_buf_ct1, lda, result_temp_buffer6, B_f_buf_ct1, ldb, result_temp_buffer9), 0);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto B_f_buff_ct1 = dpct::get_buffer<float>(&B_f);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto B_f_buf_ct1 = dpct::get_buffer<float>(&B_f);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer9(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::getrs(*cusolverH, trans, n, nrhs, A_f_buff_ct1, lda, result_temp_buffer6, B_f_buff_ct1, ldb, result_temp_buffer9);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::getrs(*cusolverH, trans, n, nrhs, A_f_buf_ct1, lda, result_temp_buffer6, B_f_buf_ct1, ldb, result_temp_buffer9);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnSgetrs(*cusolverH, trans, n, nrhs, &A_f, lda, &devIpiv, &B_f, ldb, &devInfo);
     cusolverDnSgetrs(*cusolverH, trans, n, nrhs, &A_f, lda, &devIpiv, &B_f, ldb, &devInfo);
@@ -443,26 +443,26 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto B_d_buff_ct1 = dpct::get_buffer<double>(&B_d);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto B_d_buf_ct1 = dpct::get_buffer<double>(&B_d);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer9(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::getrs(*cusolverH, trans, n, nrhs, A_d_buff_ct1, lda, result_temp_buffer6, B_d_buff_ct1, ldb, result_temp_buffer9), 0);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::getrs(*cusolverH, trans, n, nrhs, A_d_buf_ct1, lda, result_temp_buffer6, B_d_buf_ct1, ldb, result_temp_buffer9), 0);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto B_d_buff_ct1 = dpct::get_buffer<double>(&B_d);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto B_d_buf_ct1 = dpct::get_buffer<double>(&B_d);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer9(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::getrs(*cusolverH, trans, n, nrhs, A_d_buff_ct1, lda, result_temp_buffer6, B_d_buff_ct1, ldb, result_temp_buffer9);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::getrs(*cusolverH, trans, n, nrhs, A_d_buf_ct1, lda, result_temp_buffer6, B_d_buf_ct1, ldb, result_temp_buffer9);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnDgetrs(*cusolverH, trans, n, nrhs, &A_d, lda, &devIpiv, &B_d, ldb, &devInfo);
     cusolverDnDgetrs(*cusolverH, trans, n, nrhs, &A_d, lda, &devIpiv, &B_d, ldb, &devInfo);
@@ -471,26 +471,26 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto B_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&B_c);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto B_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&B_c);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer9(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::getrs(*cusolverH, trans, n, nrhs, A_c_buff_ct1, lda, result_temp_buffer6, B_c_buff_ct1, ldb, result_temp_buffer9), 0);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::getrs(*cusolverH, trans, n, nrhs, A_c_buf_ct1, lda, result_temp_buffer6, B_c_buf_ct1, ldb, result_temp_buffer9), 0);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto B_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&B_c);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto B_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&B_c);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer9(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::getrs(*cusolverH, trans, n, nrhs, A_c_buff_ct1, lda, result_temp_buffer6, B_c_buff_ct1, ldb, result_temp_buffer9);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::getrs(*cusolverH, trans, n, nrhs, A_c_buf_ct1, lda, result_temp_buffer6, B_c_buf_ct1, ldb, result_temp_buffer9);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnCgetrs(*cusolverH, trans, n, nrhs, &A_c, lda, &devIpiv, &B_c, ldb, &devInfo);
     cusolverDnCgetrs(*cusolverH, trans, n, nrhs, &A_c, lda, &devIpiv, &B_c, ldb, &devInfo);
@@ -499,26 +499,26 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto B_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&B_z);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto B_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&B_z);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer9(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::getrs(*cusolverH, trans, n, nrhs, A_z_buff_ct1, lda, result_temp_buffer6, B_z_buff_ct1, ldb, result_temp_buffer9), 0);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::getrs(*cusolverH, trans, n, nrhs, A_z_buf_ct1, lda, result_temp_buffer6, B_z_buf_ct1, ldb, result_temp_buffer9), 0);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    // CHECK-NEXT: auto B_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&B_z);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto B_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&B_z);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer9(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::getrs(*cusolverH, trans, n, nrhs, A_z_buff_ct1, lda, result_temp_buffer6, B_z_buff_ct1, ldb, result_temp_buffer9);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::getrs(*cusolverH, trans, n, nrhs, A_z_buf_ct1, lda, result_temp_buffer6, B_z_buf_ct1, ldb, result_temp_buffer9);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnZgetrs(*cusolverH, trans, n, nrhs, &A_z, lda, &devIpiv, &B_z, ldb, &devInfo);
     cusolverDnZgetrs(*cusolverH, trans, n, nrhs, &A_z, lda, &devIpiv, &B_z, ldb, &devInfo);
@@ -540,22 +540,22 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
-    // CHECK-NEXT: auto TAU_f_buff_ct1 = dpct::get_buffer<float>(&TAU_f);
-    // CHECK-NEXT: auto workspace_f_buff_ct1 = dpct::get_buffer<float>(&workspace_f);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
+    // CHECK-NEXT: auto TAU_f_buf_ct1 = dpct::get_buffer<float>(&TAU_f);
+    // CHECK-NEXT: auto workspace_f_buf_ct1 = dpct::get_buffer<float>(&workspace_f);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::geqrf(*cusolverH, m, n, A_f_buff_ct1, lda, TAU_f_buff_ct1, workspace_f_buff_ct1, Lwork, result_temp_buffer8), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::geqrf(*cusolverH, m, n, A_f_buf_ct1, lda, TAU_f_buf_ct1, workspace_f_buf_ct1, Lwork, result_temp_buffer8), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
-    // CHECK-NEXT: auto TAU_f_buff_ct1 = dpct::get_buffer<float>(&TAU_f);
-    // CHECK-NEXT: auto workspace_f_buff_ct1 = dpct::get_buffer<float>(&workspace_f);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
+    // CHECK-NEXT: auto TAU_f_buf_ct1 = dpct::get_buffer<float>(&TAU_f);
+    // CHECK-NEXT: auto workspace_f_buf_ct1 = dpct::get_buffer<float>(&workspace_f);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::geqrf(*cusolverH, m, n, A_f_buff_ct1, lda, TAU_f_buff_ct1, workspace_f_buff_ct1, Lwork, result_temp_buffer8);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::geqrf(*cusolverH, m, n, A_f_buf_ct1, lda, TAU_f_buf_ct1, workspace_f_buf_ct1, Lwork, result_temp_buffer8);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnSgeqrf_bufferSize(*cusolverH, m, n, &A_f, lda, &Lwork);
     cusolverDnSgeqrf_bufferSize(*cusolverH, m, n, &A_f, lda, &Lwork);
@@ -579,22 +579,22 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
-    // CHECK-NEXT: auto TAU_d_buff_ct1 = dpct::get_buffer<double>(&TAU_d);
-    // CHECK-NEXT: auto workspace_d_buff_ct1 = dpct::get_buffer<double>(&workspace_d);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
+    // CHECK-NEXT: auto TAU_d_buf_ct1 = dpct::get_buffer<double>(&TAU_d);
+    // CHECK-NEXT: auto workspace_d_buf_ct1 = dpct::get_buffer<double>(&workspace_d);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::geqrf(*cusolverH, m, n, A_d_buff_ct1, lda, TAU_d_buff_ct1, workspace_d_buff_ct1, Lwork, result_temp_buffer8), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::geqrf(*cusolverH, m, n, A_d_buf_ct1, lda, TAU_d_buf_ct1, workspace_d_buf_ct1, Lwork, result_temp_buffer8), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
-    // CHECK-NEXT: auto TAU_d_buff_ct1 = dpct::get_buffer<double>(&TAU_d);
-    // CHECK-NEXT: auto workspace_d_buff_ct1 = dpct::get_buffer<double>(&workspace_d);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
+    // CHECK-NEXT: auto TAU_d_buf_ct1 = dpct::get_buffer<double>(&TAU_d);
+    // CHECK-NEXT: auto workspace_d_buf_ct1 = dpct::get_buffer<double>(&workspace_d);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::geqrf(*cusolverH, m, n, A_d_buff_ct1, lda, TAU_d_buff_ct1, workspace_d_buff_ct1, Lwork, result_temp_buffer8);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::geqrf(*cusolverH, m, n, A_d_buf_ct1, lda, TAU_d_buf_ct1, workspace_d_buf_ct1, Lwork, result_temp_buffer8);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnDgeqrf_bufferSize(*cusolverH, m, n, &A_d, lda, &Lwork);
     cusolverDnDgeqrf_bufferSize(*cusolverH, m, n, &A_d, lda, &Lwork);
@@ -618,22 +618,22 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
-    // CHECK-NEXT: auto TAU_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&TAU_c);
-    // CHECK-NEXT: auto workspace_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
+    // CHECK-NEXT: auto TAU_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&TAU_c);
+    // CHECK-NEXT: auto workspace_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::geqrf(*cusolverH, m, n, A_c_buff_ct1, lda, TAU_c_buff_ct1, workspace_c_buff_ct1, Lwork, result_temp_buffer8), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::geqrf(*cusolverH, m, n, A_c_buf_ct1, lda, TAU_c_buf_ct1, workspace_c_buf_ct1, Lwork, result_temp_buffer8), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
-    // CHECK-NEXT: auto TAU_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&TAU_c);
-    // CHECK-NEXT: auto workspace_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
+    // CHECK-NEXT: auto TAU_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&TAU_c);
+    // CHECK-NEXT: auto workspace_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::geqrf(*cusolverH, m, n, A_c_buff_ct1, lda, TAU_c_buff_ct1, workspace_c_buff_ct1, Lwork, result_temp_buffer8);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::geqrf(*cusolverH, m, n, A_c_buf_ct1, lda, TAU_c_buf_ct1, workspace_c_buf_ct1, Lwork, result_temp_buffer8);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnCgeqrf_bufferSize(*cusolverH, m, n, &A_c, lda, &Lwork);
     cusolverDnCgeqrf_bufferSize(*cusolverH, m, n, &A_c, lda, &Lwork);
@@ -657,22 +657,22 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto TAU_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&TAU_z);
-    // CHECK-NEXT: auto workspace_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto TAU_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&TAU_z);
+    // CHECK-NEXT: auto workspace_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::geqrf(*cusolverH, m, n, A_z_buff_ct1, lda, TAU_z_buff_ct1, workspace_z_buff_ct1, Lwork, result_temp_buffer8), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::geqrf(*cusolverH, m, n, A_z_buf_ct1, lda, TAU_z_buf_ct1, workspace_z_buf_ct1, Lwork, result_temp_buffer8), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto TAU_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&TAU_z);
-    // CHECK-NEXT: auto workspace_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto TAU_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&TAU_z);
+    // CHECK-NEXT: auto workspace_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::geqrf(*cusolverH, m, n, A_z_buff_ct1, lda, TAU_z_buff_ct1, workspace_z_buff_ct1, Lwork, result_temp_buffer8);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::geqrf(*cusolverH, m, n, A_z_buf_ct1, lda, TAU_z_buf_ct1, workspace_z_buf_ct1, Lwork, result_temp_buffer8);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnZgeqrf_bufferSize(*cusolverH, m, n, &A_z, lda, &Lwork);
     cusolverDnZgeqrf_bufferSize(*cusolverH, m, n, &A_z, lda, &Lwork);
@@ -696,24 +696,24 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
-    // CHECK-NEXT: auto TAU_f_buff_ct1 = dpct::get_buffer<float>(&TAU_f);
-    // CHECK-NEXT: auto B_f_buff_ct1 = dpct::get_buffer<float>(&B_f);
-    // CHECK-NEXT: auto workspace_f_buff_ct1 = dpct::get_buffer<float>(&workspace_f);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
+    // CHECK-NEXT: auto TAU_f_buf_ct1 = dpct::get_buffer<float>(&TAU_f);
+    // CHECK-NEXT: auto B_f_buf_ct1 = dpct::get_buffer<float>(&B_f);
+    // CHECK-NEXT: auto workspace_f_buf_ct1 = dpct::get_buffer<float>(&workspace_f);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer13(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::ormqr(*cusolverH, side, trans, m, n, k, A_f_buff_ct1, lda, TAU_f_buff_ct1, B_f_buff_ct1, ldb, workspace_f_buff_ct1, Lwork, result_temp_buffer13), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::ormqr(*cusolverH, side, trans, m, n, k, A_f_buf_ct1, lda, TAU_f_buf_ct1, B_f_buf_ct1, ldb, workspace_f_buf_ct1, Lwork, result_temp_buffer13), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
-    // CHECK-NEXT: auto TAU_f_buff_ct1 = dpct::get_buffer<float>(&TAU_f);
-    // CHECK-NEXT: auto B_f_buff_ct1 = dpct::get_buffer<float>(&B_f);
-    // CHECK-NEXT: auto workspace_f_buff_ct1 = dpct::get_buffer<float>(&workspace_f);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
+    // CHECK-NEXT: auto TAU_f_buf_ct1 = dpct::get_buffer<float>(&TAU_f);
+    // CHECK-NEXT: auto B_f_buf_ct1 = dpct::get_buffer<float>(&B_f);
+    // CHECK-NEXT: auto workspace_f_buf_ct1 = dpct::get_buffer<float>(&workspace_f);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer13(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::ormqr(*cusolverH, side, trans, m, n, k, A_f_buff_ct1, lda, TAU_f_buff_ct1, B_f_buff_ct1, ldb, workspace_f_buff_ct1, Lwork, result_temp_buffer13);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::ormqr(*cusolverH, side, trans, m, n, k, A_f_buf_ct1, lda, TAU_f_buf_ct1, B_f_buf_ct1, ldb, workspace_f_buf_ct1, Lwork, result_temp_buffer13);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnSormqr_bufferSize(*cusolverH, side, trans, m, n, k, &A_f, lda, &TAU_f, &C_f, ldc, &Lwork);
     cusolverDnSormqr_bufferSize(*cusolverH, side, trans, m, n, k, &A_f, lda, &TAU_f, &C_f, ldc, &Lwork);
@@ -737,24 +737,24 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
-    // CHECK-NEXT: auto TAU_d_buff_ct1 = dpct::get_buffer<double>(&TAU_d);
-    // CHECK-NEXT: auto B_d_buff_ct1 = dpct::get_buffer<double>(&B_d);
-    // CHECK-NEXT: auto workspace_d_buff_ct1 = dpct::get_buffer<double>(&workspace_d);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
+    // CHECK-NEXT: auto TAU_d_buf_ct1 = dpct::get_buffer<double>(&TAU_d);
+    // CHECK-NEXT: auto B_d_buf_ct1 = dpct::get_buffer<double>(&B_d);
+    // CHECK-NEXT: auto workspace_d_buf_ct1 = dpct::get_buffer<double>(&workspace_d);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer13(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::ormqr(*cusolverH, side, trans, m, n, k, A_d_buff_ct1, lda, TAU_d_buff_ct1, B_d_buff_ct1, ldb, workspace_d_buff_ct1, Lwork, result_temp_buffer13), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::ormqr(*cusolverH, side, trans, m, n, k, A_d_buf_ct1, lda, TAU_d_buf_ct1, B_d_buf_ct1, ldb, workspace_d_buf_ct1, Lwork, result_temp_buffer13), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
-    // CHECK-NEXT: auto TAU_d_buff_ct1 = dpct::get_buffer<double>(&TAU_d);
-    // CHECK-NEXT: auto B_d_buff_ct1 = dpct::get_buffer<double>(&B_d);
-    // CHECK-NEXT: auto workspace_d_buff_ct1 = dpct::get_buffer<double>(&workspace_d);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
+    // CHECK-NEXT: auto TAU_d_buf_ct1 = dpct::get_buffer<double>(&TAU_d);
+    // CHECK-NEXT: auto B_d_buf_ct1 = dpct::get_buffer<double>(&B_d);
+    // CHECK-NEXT: auto workspace_d_buf_ct1 = dpct::get_buffer<double>(&workspace_d);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer13(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::ormqr(*cusolverH, side, trans, m, n, k, A_d_buff_ct1, lda, TAU_d_buff_ct1, B_d_buff_ct1, ldb, workspace_d_buff_ct1, Lwork, result_temp_buffer13);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::ormqr(*cusolverH, side, trans, m, n, k, A_d_buf_ct1, lda, TAU_d_buf_ct1, B_d_buf_ct1, ldb, workspace_d_buf_ct1, Lwork, result_temp_buffer13);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnDormqr_bufferSize(*cusolverH, side, trans, m, n, k, &A_d, lda, &TAU_d, &C_d, ldc, &Lwork);
     cusolverDnDormqr_bufferSize(*cusolverH, side, trans, m, n, k, &A_d, lda, &TAU_d, &C_d, ldc, &Lwork);
@@ -779,24 +779,24 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
-    // CHECK-NEXT: auto TAU_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&TAU_c);
-    // CHECK-NEXT: auto B_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&B_c);
-    // CHECK-NEXT: auto workspace_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
+    // CHECK-NEXT: auto TAU_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&TAU_c);
+    // CHECK-NEXT: auto B_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&B_c);
+    // CHECK-NEXT: auto workspace_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer13(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::unmqr(*cusolverH, side, trans, m, n, k, A_c_buff_ct1, lda, TAU_c_buff_ct1, B_c_buff_ct1, ldb, workspace_c_buff_ct1, Lwork, result_temp_buffer13), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::unmqr(*cusolverH, side, trans, m, n, k, A_c_buf_ct1, lda, TAU_c_buf_ct1, B_c_buf_ct1, ldb, workspace_c_buf_ct1, Lwork, result_temp_buffer13), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
-    // CHECK-NEXT: auto TAU_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&TAU_c);
-    // CHECK-NEXT: auto B_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&B_c);
-    // CHECK-NEXT: auto workspace_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
+    // CHECK-NEXT: auto TAU_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&TAU_c);
+    // CHECK-NEXT: auto B_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&B_c);
+    // CHECK-NEXT: auto workspace_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer13(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::unmqr(*cusolverH, side, trans, m, n, k, A_c_buff_ct1, lda, TAU_c_buff_ct1, B_c_buff_ct1, ldb, workspace_c_buff_ct1, Lwork, result_temp_buffer13);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::unmqr(*cusolverH, side, trans, m, n, k, A_c_buf_ct1, lda, TAU_c_buf_ct1, B_c_buf_ct1, ldb, workspace_c_buf_ct1, Lwork, result_temp_buffer13);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnCunmqr_bufferSize(*cusolverH, side, trans, m, n, k, &A_c, lda, &TAU_c, &C_c, ldc, &Lwork);
     cusolverDnCunmqr_bufferSize(*cusolverH, side, trans, m, n, k, &A_c, lda, &TAU_c, &C_c, ldc, &Lwork);
@@ -820,24 +820,24 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto TAU_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&TAU_z);
-    // CHECK-NEXT: auto B_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&B_z);
-    // CHECK-NEXT: auto workspace_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto TAU_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&TAU_z);
+    // CHECK-NEXT: auto B_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&B_z);
+    // CHECK-NEXT: auto workspace_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer13(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::unmqr(*cusolverH, side, trans, m, n, k, A_z_buff_ct1, lda, TAU_z_buff_ct1, B_z_buff_ct1, ldb, workspace_z_buff_ct1, Lwork, result_temp_buffer13), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::unmqr(*cusolverH, side, trans, m, n, k, A_z_buf_ct1, lda, TAU_z_buf_ct1, B_z_buf_ct1, ldb, workspace_z_buf_ct1, Lwork, result_temp_buffer13), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto TAU_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&TAU_z);
-    // CHECK-NEXT: auto B_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&B_z);
-    // CHECK-NEXT: auto workspace_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto TAU_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&TAU_z);
+    // CHECK-NEXT: auto B_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&B_z);
+    // CHECK-NEXT: auto workspace_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer13(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::unmqr(*cusolverH, side, trans, m, n, k, A_z_buff_ct1, lda, TAU_z_buff_ct1, B_z_buff_ct1, ldb, workspace_z_buff_ct1, Lwork, result_temp_buffer13);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::unmqr(*cusolverH, side, trans, m, n, k, A_z_buf_ct1, lda, TAU_z_buf_ct1, B_z_buf_ct1, ldb, workspace_z_buf_ct1, Lwork, result_temp_buffer13);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnZunmqr_bufferSize(*cusolverH, side, trans, m, n, k, &A_z, lda, &TAU_z, &C_z, ldc, &Lwork);
     cusolverDnZunmqr_bufferSize(*cusolverH, side, trans, m, n, k, &A_z, lda, &TAU_z, &C_z, ldc, &Lwork);
@@ -861,22 +861,22 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
-    // CHECK-NEXT: auto TAU_f_buff_ct1 = dpct::get_buffer<float>(&TAU_f);
-    // CHECK-NEXT: auto workspace_f_buff_ct1 = dpct::get_buffer<float>(&workspace_f);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
+    // CHECK-NEXT: auto TAU_f_buf_ct1 = dpct::get_buffer<float>(&TAU_f);
+    // CHECK-NEXT: auto workspace_f_buf_ct1 = dpct::get_buffer<float>(&workspace_f);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer9(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::orgqr(*cusolverH, m, n, k, A_f_buff_ct1, lda, TAU_f_buff_ct1, workspace_f_buff_ct1, Lwork, result_temp_buffer9), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::orgqr(*cusolverH, m, n, k, A_f_buf_ct1, lda, TAU_f_buf_ct1, workspace_f_buf_ct1, Lwork, result_temp_buffer9), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
-    // CHECK-NEXT: auto TAU_f_buff_ct1 = dpct::get_buffer<float>(&TAU_f);
-    // CHECK-NEXT: auto workspace_f_buff_ct1 = dpct::get_buffer<float>(&workspace_f);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
+    // CHECK-NEXT: auto TAU_f_buf_ct1 = dpct::get_buffer<float>(&TAU_f);
+    // CHECK-NEXT: auto workspace_f_buf_ct1 = dpct::get_buffer<float>(&workspace_f);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer9(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::orgqr(*cusolverH, m, n, k, A_f_buff_ct1, lda, TAU_f_buff_ct1, workspace_f_buff_ct1, Lwork, result_temp_buffer9);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::orgqr(*cusolverH, m, n, k, A_f_buf_ct1, lda, TAU_f_buf_ct1, workspace_f_buf_ct1, Lwork, result_temp_buffer9);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnSorgqr_bufferSize(*cusolverH, m, n, k, &A_f, lda, &TAU_f, &Lwork);
     cusolverDnSorgqr_bufferSize(*cusolverH, m, n, k, &A_f, lda, &TAU_f, &Lwork);
@@ -900,22 +900,22 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
-    // CHECK-NEXT: auto TAU_d_buff_ct1 = dpct::get_buffer<double>(&TAU_d);
-    // CHECK-NEXT: auto workspace_d_buff_ct1 = dpct::get_buffer<double>(&workspace_d);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
+    // CHECK-NEXT: auto TAU_d_buf_ct1 = dpct::get_buffer<double>(&TAU_d);
+    // CHECK-NEXT: auto workspace_d_buf_ct1 = dpct::get_buffer<double>(&workspace_d);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer9(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::orgqr(*cusolverH, m, n, k, A_d_buff_ct1, lda, TAU_d_buff_ct1, workspace_d_buff_ct1, Lwork, result_temp_buffer9), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::orgqr(*cusolverH, m, n, k, A_d_buf_ct1, lda, TAU_d_buf_ct1, workspace_d_buf_ct1, Lwork, result_temp_buffer9), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
-    // CHECK-NEXT: auto TAU_d_buff_ct1 = dpct::get_buffer<double>(&TAU_d);
-    // CHECK-NEXT: auto workspace_d_buff_ct1 = dpct::get_buffer<double>(&workspace_d);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
+    // CHECK-NEXT: auto TAU_d_buf_ct1 = dpct::get_buffer<double>(&TAU_d);
+    // CHECK-NEXT: auto workspace_d_buf_ct1 = dpct::get_buffer<double>(&workspace_d);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer9(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::orgqr(*cusolverH, m, n, k, A_d_buff_ct1, lda, TAU_d_buff_ct1, workspace_d_buff_ct1, Lwork, result_temp_buffer9);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::orgqr(*cusolverH, m, n, k, A_d_buf_ct1, lda, TAU_d_buf_ct1, workspace_d_buf_ct1, Lwork, result_temp_buffer9);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnDorgqr_bufferSize(*cusolverH, m, n, k, &A_d, lda, &TAU_d, &Lwork);
     cusolverDnDorgqr_bufferSize(*cusolverH, m, n, k, &A_d, lda, &TAU_d, &Lwork);
@@ -939,22 +939,22 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
-    // CHECK-NEXT: auto TAU_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&TAU_c);
-    // CHECK-NEXT: auto workspace_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
+    // CHECK-NEXT: auto TAU_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&TAU_c);
+    // CHECK-NEXT: auto workspace_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer9(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::ungqr(*cusolverH, m, n, k, A_c_buff_ct1, lda, TAU_c_buff_ct1, workspace_c_buff_ct1, Lwork, result_temp_buffer9), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::ungqr(*cusolverH, m, n, k, A_c_buf_ct1, lda, TAU_c_buf_ct1, workspace_c_buf_ct1, Lwork, result_temp_buffer9), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
-    // CHECK-NEXT: auto TAU_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&TAU_c);
-    // CHECK-NEXT: auto workspace_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
+    // CHECK-NEXT: auto TAU_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&TAU_c);
+    // CHECK-NEXT: auto workspace_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer9(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::ungqr(*cusolverH, m, n, k, A_c_buff_ct1, lda, TAU_c_buff_ct1, workspace_c_buff_ct1, Lwork, result_temp_buffer9);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::ungqr(*cusolverH, m, n, k, A_c_buf_ct1, lda, TAU_c_buf_ct1, workspace_c_buf_ct1, Lwork, result_temp_buffer9);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnCungqr_bufferSize(*cusolverH, m, n, k, &A_c, lda, &TAU_c, &Lwork);
     cusolverDnCungqr_bufferSize(*cusolverH, m, n, k, &A_c, lda, &TAU_c, &Lwork);
@@ -978,22 +978,22 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto TAU_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&TAU_z);
-    // CHECK-NEXT: auto workspace_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto TAU_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&TAU_z);
+    // CHECK-NEXT: auto workspace_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer9(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::ungqr(*cusolverH, m, n, k, A_z_buff_ct1, lda, TAU_z_buff_ct1, workspace_z_buff_ct1, Lwork, result_temp_buffer9), 0);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::ungqr(*cusolverH, m, n, k, A_z_buf_ct1, lda, TAU_z_buf_ct1, workspace_z_buf_ct1, Lwork, result_temp_buffer9), 0);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto TAU_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&TAU_z);
-    // CHECK-NEXT: auto workspace_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto TAU_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&TAU_z);
+    // CHECK-NEXT: auto workspace_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer9(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::ungqr(*cusolverH, m, n, k, A_z_buff_ct1, lda, TAU_z_buff_ct1, workspace_z_buff_ct1, Lwork, result_temp_buffer9);
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::ungqr(*cusolverH, m, n, k, A_z_buf_ct1, lda, TAU_z_buf_ct1, workspace_z_buf_ct1, Lwork, result_temp_buffer9);
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer9.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnZungqr_bufferSize(*cusolverH, m, n, k, &A_z, lda, &TAU_z, &Lwork);
     cusolverDnZungqr_bufferSize(*cusolverH, m, n, k, &A_z, lda, &TAU_z, &Lwork);
@@ -1019,26 +1019,26 @@ int main(int argc, char *argv[])
     // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT:*/
     // CHECK-NEXT:{
-    // CHECK-NEXT:auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
-    // CHECK-NEXT:auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT:auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
+    // CHECK-NEXT:auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT:sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
-    // CHECK-NEXT:auto workspace_f_buff_ct1 = dpct::get_buffer<float>(&workspace_f);
-    // CHECK-NEXT:auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT:auto workspace_f_buf_ct1 = dpct::get_buffer<float>(&workspace_f);
+    // CHECK-NEXT:auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT:sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT:status = (mkl::lapack::sytrf(*cusolverH, uplo, n, A_f_buff_ct1, lda, result_temp_buffer5, workspace_f_buff_ct1, Lwork, result_temp_buffer8), 0);
-    // CHECK-NEXT:devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT:devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT:status = (mkl::lapack::sytrf(*cusolverH, uplo, n, A_f_buf_ct1, lda, result_temp_buffer5, workspace_f_buf_ct1, Lwork, result_temp_buffer8), 0);
+    // CHECK-NEXT:devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT:devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT:}
     // CHECK-NEXT:{
-    // CHECK-NEXT:auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
-    // CHECK-NEXT:auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT:auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
+    // CHECK-NEXT:auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT:sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
-    // CHECK-NEXT:auto workspace_f_buff_ct1 = dpct::get_buffer<float>(&workspace_f);
-    // CHECK-NEXT:auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT:auto workspace_f_buf_ct1 = dpct::get_buffer<float>(&workspace_f);
+    // CHECK-NEXT:auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT:sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT:mkl::lapack::sytrf(*cusolverH, uplo, n, A_f_buff_ct1, lda, result_temp_buffer5, workspace_f_buff_ct1, Lwork, result_temp_buffer8);
-    // CHECK-NEXT:devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT:devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT:mkl::lapack::sytrf(*cusolverH, uplo, n, A_f_buf_ct1, lda, result_temp_buffer5, workspace_f_buf_ct1, Lwork, result_temp_buffer8);
+    // CHECK-NEXT:devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT:devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT:}
     status = cusolverDnSsytrf_bufferSize(*cusolverH, n, &A_f, lda, &Lwork);
     cusolverDnSsytrf_bufferSize(*cusolverH, n, &A_f, lda, &Lwork);
@@ -1064,26 +1064,26 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
-    // CHECK-NEXT: auto workspace_d_buff_ct1 = dpct::get_buffer<double>(&workspace_d);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto workspace_d_buf_ct1 = dpct::get_buffer<double>(&workspace_d);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::sytrf(*cusolverH, uplo, n, A_d_buff_ct1, lda, result_temp_buffer5, workspace_d_buff_ct1, Lwork, result_temp_buffer8), 0);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::sytrf(*cusolverH, uplo, n, A_d_buf_ct1, lda, result_temp_buffer5, workspace_d_buf_ct1, Lwork, result_temp_buffer8), 0);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
-    // CHECK-NEXT: auto workspace_d_buff_ct1 = dpct::get_buffer<double>(&workspace_d);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto workspace_d_buf_ct1 = dpct::get_buffer<double>(&workspace_d);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::sytrf(*cusolverH, uplo, n, A_d_buff_ct1, lda, result_temp_buffer5, workspace_d_buff_ct1, Lwork, result_temp_buffer8);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::sytrf(*cusolverH, uplo, n, A_d_buf_ct1, lda, result_temp_buffer5, workspace_d_buf_ct1, Lwork, result_temp_buffer8);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnDsytrf_bufferSize(*cusolverH, n, &A_d, lda, &Lwork);
     cusolverDnDsytrf_bufferSize(*cusolverH, n, &A_d, lda, &Lwork);
@@ -1109,26 +1109,26 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
-    // CHECK-NEXT: auto workspace_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto workspace_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::sytrf(*cusolverH, uplo, n, A_c_buff_ct1, lda, result_temp_buffer5, workspace_c_buff_ct1, Lwork, result_temp_buffer8), 0);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::sytrf(*cusolverH, uplo, n, A_c_buf_ct1, lda, result_temp_buffer5, workspace_c_buf_ct1, Lwork, result_temp_buffer8), 0);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
-    // CHECK-NEXT: auto workspace_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto workspace_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::sytrf(*cusolverH, uplo, n, A_c_buff_ct1, lda, result_temp_buffer5, workspace_c_buff_ct1, Lwork, result_temp_buffer8);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::sytrf(*cusolverH, uplo, n, A_c_buf_ct1, lda, result_temp_buffer5, workspace_c_buf_ct1, Lwork, result_temp_buffer8);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnCsytrf_bufferSize(*cusolverH, n, &A_c, lda, &Lwork);
     cusolverDnCsytrf_bufferSize(*cusolverH, n, &A_c, lda, &Lwork);
@@ -1154,26 +1154,26 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
-    // CHECK-NEXT: auto workspace_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto workspace_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: status = (mkl::lapack::sytrf(*cusolverH, uplo, n, A_z_buff_ct1, lda, result_temp_buffer5, workspace_z_buff_ct1, Lwork, result_temp_buffer8), 0);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: status = (mkl::lapack::sytrf(*cusolverH, uplo, n, A_z_buf_ct1, lda, result_temp_buffer5, workspace_z_buf_ct1, Lwork, result_temp_buffer8), 0);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     // CHECK-NEXT: {
-    // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
-    // CHECK-NEXT: auto devIpiv_buff_ct1 = dpct::get_buffer<int>(&devIpiv);
+    // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
+    // CHECK-NEXT: auto devIpiv_buf_ct1 = dpct::get_buffer<int>(&devIpiv);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
-    // CHECK-NEXT: auto workspace_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    // CHECK-NEXT: auto devInfo_buff_ct1 = dpct::get_buffer<int>(&devInfo);
+    // CHECK-NEXT: auto workspace_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::lapack::sytrf(*cusolverH, uplo, n, A_z_buff_ct1, lda, result_temp_buffer5, workspace_z_buff_ct1, Lwork, result_temp_buffer8);
-    // CHECK-NEXT: devIpiv_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access::mode::read>()[0];
-    // CHECK-NEXT: devInfo_buff_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::lapack::sytrf(*cusolverH, uplo, n, A_z_buf_ct1, lda, result_temp_buffer5, workspace_z_buf_ct1, Lwork, result_temp_buffer8);
+    // CHECK-NEXT: devIpiv_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
     status = cusolverDnZsytrf_bufferSize(*cusolverH, n, &A_z, lda, &Lwork);
     cusolverDnZsytrf_bufferSize(*cusolverH, n, &A_z, lda, &Lwork);

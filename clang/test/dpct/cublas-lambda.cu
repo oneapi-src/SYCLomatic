@@ -34,13 +34,13 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if ([&]() {
-  // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::get_buffer<float>(d_A_S);
-  // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::get_buffer<float>(d_B_S);
-  // CHECK-NEXT: auto d_C_S_buff_ct1 = dpct::get_buffer<float>(d_C_S);
+  // CHECK-NEXT: auto d_A_S_buf_ct1 = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT: auto d_B_S_buf_ct1 = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT: auto d_C_S_buf_ct1 = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans,
-  // CHECK-NEXT:                 mkl::transpose::nontrans, N, N, N, *(&alpha_S),
-  // CHECK-NEXT:                 d_A_S_buff_ct1, N, d_B_S_buff_ct1, N, *(&beta_S),
-  // CHECK-NEXT:                 d_C_S_buff_ct1, N);
+  // CHECK-NEXT:                 mkl::transpose::nontrans, N, N, N, alpha_S,
+  // CHECK-NEXT:                 d_A_S_buf_ct1, N, d_B_S_buf_ct1, N, beta_S,
+  // CHECK-NEXT:                 d_C_S_buf_ct1, N);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }()) {
   // CHECK-NEXT: }
@@ -53,13 +53,13 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (int stat = [&]() {
-  // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::get_buffer<float>(d_A_S);
-  // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::get_buffer<float>(d_B_S);
-  // CHECK-NEXT: auto d_C_S_buff_ct1 = dpct::get_buffer<float>(d_C_S);
+  // CHECK-NEXT: auto d_A_S_buf_ct1 = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT: auto d_B_S_buf_ct1 = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT: auto d_C_S_buf_ct1 = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans,
-  // CHECK-NEXT:                 mkl::transpose::nontrans, N, N, N, *(&alpha_S),
-  // CHECK-NEXT:                 d_A_S_buff_ct1, N, d_B_S_buff_ct1, N, *(&beta_S),
-  // CHECK-NEXT:                 d_C_S_buff_ct1, N);
+  // CHECK-NEXT:                 mkl::transpose::nontrans, N, N, N, alpha_S,
+  // CHECK-NEXT:                 d_A_S_buf_ct1, N, d_B_S_buf_ct1, N, beta_S,
+  // CHECK-NEXT:                 d_C_S_buf_ct1, N);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }()) {
   // CHECK-NEXT: }
@@ -68,13 +68,13 @@ int main() {
 
 
   // CHECK: for ([&]() {
-  // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::get_buffer<float>(d_A_S);
-  // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::get_buffer<float>(d_B_S);
-  // CHECK-NEXT: auto d_C_S_buff_ct1 = dpct::get_buffer<float>(d_C_S);
+  // CHECK-NEXT: auto d_A_S_buf_ct1 = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT: auto d_B_S_buf_ct1 = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT: auto d_C_S_buf_ct1 = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans,
-  // CHECK-NEXT:                 mkl::transpose::nontrans, N, N, N, *(&alpha_S),
-  // CHECK-NEXT:                 d_A_S_buff_ct1, N, d_B_S_buff_ct1, N, *(&beta_S),
-  // CHECK-NEXT:                 d_C_S_buff_ct1, N);
+  // CHECK-NEXT:                 mkl::transpose::nontrans, N, N, N, alpha_S,
+  // CHECK-NEXT:                 d_A_S_buf_ct1, N, d_B_S_buf_ct1, N, beta_S,
+  // CHECK-NEXT:                 d_C_S_buf_ct1, N);
   // CHECK-NEXT: }();
   // CHECK-NEXT: ;) {
   // CHECK-NEXT: }
@@ -87,12 +87,12 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: while ([&]() {
-  // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::get_buffer<float>(d_A_S);
-  // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::get_buffer<float>(d_B_S);
-  // CHECK-NEXT: auto d_C_S_buff_ct1 = dpct::get_buffer<float>(d_C_S);
+  // CHECK-NEXT: auto d_A_S_buf_ct1 = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT: auto d_B_S_buf_ct1 = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT: auto d_C_S_buf_ct1 = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
-  // CHECK-NEXT:                 N, N, N, *(&alpha_S), d_A_S_buff_ct1, N, d_B_S_buff_ct1, N,
-  // CHECK-NEXT:                 *(&beta_S), d_C_S_buff_ct1, N);
+  // CHECK-NEXT:                 N, N, N, alpha_S, d_A_S_buf_ct1, N, d_B_S_buf_ct1, N,
+  // CHECK-NEXT:                 beta_S, d_C_S_buf_ct1, N);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }() != 0) {
   // CHECK-NEXT: }
@@ -107,12 +107,12 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: } while ([&]() {
-  // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::get_buffer<float>(d_A_S);
-  // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::get_buffer<float>(d_B_S);
-  // CHECK-NEXT: auto d_C_S_buff_ct1 = dpct::get_buffer<float>(d_C_S);
+  // CHECK-NEXT: auto d_A_S_buf_ct1 = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT: auto d_B_S_buf_ct1 = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT: auto d_C_S_buf_ct1 = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
-  // CHECK-NEXT:                 N, N, N, *(&alpha_S), d_A_S_buff_ct1, N, d_B_S_buff_ct1, N,
-  // CHECK-NEXT:                 *(&beta_S), d_C_S_buff_ct1, N);
+  // CHECK-NEXT:                 N, N, N, alpha_S, d_A_S_buf_ct1, N, d_B_S_buf_ct1, N,
+  // CHECK-NEXT:                 beta_S, d_C_S_buf_ct1, N);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }());
   do{
@@ -124,12 +124,12 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: switch (int stat = [&]() {
-  // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::get_buffer<float>(d_A_S);
-  // CHECK-NEXT: auto d_B_S_buff_ct1 = dpct::get_buffer<float>(d_B_S);
-  // CHECK-NEXT: auto d_C_S_buff_ct1 = dpct::get_buffer<float>(d_C_S);
+  // CHECK-NEXT: auto d_A_S_buf_ct1 = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT: auto d_B_S_buf_ct1 = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT: auto d_C_S_buf_ct1 = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
-  // CHECK-NEXT:                 N, N, N, *(&alpha_S), d_A_S_buff_ct1, N, d_B_S_buff_ct1, N,
-  // CHECK-NEXT:                 *(&beta_S), d_C_S_buff_ct1, N);
+  // CHECK-NEXT:                 N, N, N, alpha_S, d_A_S_buf_ct1, N, d_B_S_buf_ct1, N,
+  // CHECK-NEXT:                 beta_S, d_C_S_buf_ct1, N);
   // CHECK-NEXT: return 0;
   // CHECK-NEXT: }()) {}
   switch (int stat = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)){

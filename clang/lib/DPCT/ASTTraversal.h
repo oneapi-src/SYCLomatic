@@ -642,11 +642,29 @@ public:
   std::vector<std::string> getParamsAsStrs(const CallExpr *CE,
                                            const ASTContext &Context);
   const clang::VarDecl *getAncestralVarDecl(const clang::CallExpr *CE);
-  void processParamIntCastToBLASEnum(
-      const Expr *E, const CStyleCastExpr *CSCE, const ASTContext &Context,
-      const int DistinctionID, const std::string IndentStr,
-      const std::vector<int> &OperationIndexInfo, const int FillModeIndexInfo,
-      std::string &PrefixInsertStr, bool IsMacroArg);
+
+  struct BLASEnumInfo {
+    std::vector<int> OperationIndexInfo;
+    int FillModeIndexInfo;
+    int SideModeIndexInfo;
+    int DiagTypeIndexInfo;
+
+    BLASEnumInfo(const std::vector<int> OperationIndexInfo,
+                 const int FillModeIndexInfo, const int SideModeIndexInfo,
+                 const int DiagTypeIndexInfo)
+        : OperationIndexInfo(OperationIndexInfo),
+          FillModeIndexInfo(FillModeIndexInfo),
+          SideModeIndexInfo(SideModeIndexInfo),
+          DiagTypeIndexInfo(DiagTypeIndexInfo) {}
+  };
+
+  void processParamIntCastToBLASEnum(const Expr *E, const CStyleCastExpr *CSCE,
+                                     const int DistinctionID,
+                                     const std::string IndentStr,
+                                     const BLASEnumInfo &EnumInfo,
+                                     std::string &PrefixInsertStr,
+                                     const std::string &FuncName,
+                                     bool IsMacroArg);
   void processTrmmCall(const CallExpr *CE, std::string &PrefixInsertStr,
                        const std::string IndentStr);
   void processTrmmParams(const CallExpr *CE, std::string &PrefixInsertStr,
@@ -852,11 +870,8 @@ private:
                          const CallExpr *C, const UnresolvedLookupExpr *ULExpr,
                          bool IsAssigned, std::string SpecifiedQueue)>>
       MigrationDispatcher;
-  bool isSimpleAddrOf(const Expr *E);
-  std::string getNameStrRemovedAddrOf(const Expr *E, bool isCOCE = false);
   std::string getTypeStrRemovedAddrOf(const Expr *E, bool isCOCE = false);
   std::string getAssignedStr(const Expr *E, const std::string &Arg0Str);
-  bool isCOCESimpleAddrOf(const Expr *E);
   void handleMemcpyAndMemset(
       const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
       const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false,
