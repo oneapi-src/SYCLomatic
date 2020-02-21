@@ -1694,10 +1694,12 @@ public:
         IsDefFilePathNeeded = FD->isThisDeclarationADefinition();
       }
     }
+    IsStatic = FD->getStorageClass() == SC_Static;
     buildReplaceLocInfo(FD);
     buildTextureObjectParamsInfo(FD);
   }
 
+  bool inline isStatic() { return IsStatic; }
   inline static std::shared_ptr<DeviceFunctionInfo>
   LinkUnresolved(const UnresolvedLookupExpr *ULE) {
     return LinkDeclRange(ULE->decls());
@@ -1739,7 +1741,8 @@ private:
     if (List.empty())
       return Info;
     if (!Info)
-      Info = std::make_shared<DeviceFunctionInfo>(List[0]->ParamsNum);
+      Info = std::make_shared<DeviceFunctionInfo>(List[0]->ParamsNum,
+                                                  List[0]->isStatic());
     for (auto &D : List)
       D->setFuncInfo(Info);
     return Info;
@@ -1798,6 +1801,7 @@ private:
   unsigned ReplaceLength;
   bool IsDefFilePathNeeded;
   std::shared_ptr<DeviceFunctionInfo> FuncInfo;
+  bool IsStatic;
 
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   std::string Indent;
@@ -1808,11 +1812,11 @@ private:
 // expression in the function.
 class DeviceFunctionInfo {
 public:
-  DeviceFunctionInfo(size_t ParamsNum)
-      : IsBuilt(false), ParamsNum(ParamsNum),
+  DeviceFunctionInfo(size_t ParamsNum, bool IsStatic)
+      : IsBuilt(false), ParamsNum(ParamsNum), IsStatic(IsStatic),
         TextureObjectTypeList(ParamsNum, std::shared_ptr<TextureTypeInfo>()) {}
   DeviceFunctionInfo(const FunctionDecl *Func)
-      : DeviceFunctionInfo(Func->param_size()) {}
+      : DeviceFunctionInfo(Func->param_size(), Func->getStorageClass() == SC_Static) {}
 
   inline std::shared_ptr<CallFunctionExpr> addCallee(const CallExpr *CE) {
     auto CallLocInfo = DpctGlobalInfo::getLocInfo(CE);
@@ -1850,8 +1854,12 @@ public:
     DefinitionFilePath = Path;
   }
   const std::string &getDefinitionFilePath() { return DefinitionFilePath; }
-  void setNeedSyclExternMacro() { NeedSyclExternMacro = true; }
+  void setNeedSyclExternMacro() {
+    if (!IsStatic)
+      NeedSyclExternMacro = true;
+  }
   bool IsSyclExternMacroNeeded() { return NeedSyclExternMacro; }
+  void inline setStatic(bool Static = true) { IsStatic = Static;}
 
   void merge(std::shared_ptr<DeviceFunctionInfo> Other);
 
@@ -1866,6 +1874,7 @@ private:
   size_t ParamsNum;
   std::string DefinitionFilePath;
   bool NeedSyclExternMacro = false;
+  bool IsStatic;
 
   GlobalMap<CallFunctionExpr> CallExprMap;
   MemVarMap VarMap;

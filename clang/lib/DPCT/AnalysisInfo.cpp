@@ -496,6 +496,7 @@ void DeviceFunctionInfo::merge(std::shared_ptr<DeviceFunctionInfo> Other) {
   VarMap.merge(Other->getVarMap());
   dpct::merge(CallExprMap, Other->CallExprMap);
   mergeTextureTypeList(Other->TextureObjectTypeList);
+  IsStatic = Other->IsStatic || IsStatic;
 }
 
 void DeviceFunctionInfo::mergeTextureTypeList(
