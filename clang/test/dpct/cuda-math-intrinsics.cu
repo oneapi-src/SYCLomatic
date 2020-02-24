@@ -360,6 +360,11 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::fabs((double)i);
   d2 = fabs(i);
 
+  // CHECK: sycl::fabs(d0);
+  abs(d0);
+  // CHECK: sycl::fabs(d0 * d1);
+  abs(d0 * d1);
+
   // CHECK: d2 = sycl::fdim(d0, d1);
   d2 = fdim(d0, d1);
   // CHECK: d2 = sycl::fdim((double)i, (double)i);

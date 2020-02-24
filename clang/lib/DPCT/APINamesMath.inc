@@ -236,7 +236,7 @@ ENTRY_RENAMED("__popc", MapNames::getClNamespace() + "::popcount")
 ENTRY_RENAMED("__popcll", MapNames::getClNamespace() + "::popcount")
 
 // Used to add header file "<cmath>" into the file that calls "fabs".
-ENTRY_RENAMED("fabs", "fabs")
+ENTRY_RENAMED("fabs", "::fabs")
 
 
 // Single Precision Mathematical Functions

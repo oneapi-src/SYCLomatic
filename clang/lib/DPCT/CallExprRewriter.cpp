@@ -111,7 +111,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
       if (SourceCalleeName == "abs") {
         // further check the type of the args.
         if (!Call->getArg(0)->getType()->isIntegerType()) {
-          NewFuncName = MapNames::getClNamespace() + "fabs";
+          NewFuncName = MapNames::getClNamespace() + "::fabs";
         }
       }
 
