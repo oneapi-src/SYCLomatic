@@ -434,3 +434,12 @@ template <> struct S<cudaStream_t> {};
 template <> struct S<CUstream_st> {};
 template <> struct S<float2> {};
 template <> struct S<float4> {};
+
+void foobar() {
+  // CHECK: S<queue_p> s0;
+  S<cudaStream_t> s0;
+  // CHECK: S<sycl::float2> s1;
+  S<float2> s1;
+  // CHECK: S<sycl::float4> s2;
+  S<float4> s2;
+}

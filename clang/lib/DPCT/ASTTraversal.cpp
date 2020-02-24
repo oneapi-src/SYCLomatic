@@ -48,6 +48,12 @@ static const CXXConstructorDecl *getIfConstructorDecl(const Decl *ND) {
   return dyn_cast<CXXConstructorDecl>(ND);
 }
 
+static internal::Matcher<NamedDecl> vectorTypeName() {
+  std::vector<std::string> TypeNames(MapNames::SupportedVectorTypes.begin(),
+                                     MapNames::SupportedVectorTypes.end());
+  return internal::Matcher<NamedDecl>(new internal::HasNameMatcher(TypeNames));
+}
+
 unsigned MigrationRule::PairID = 0;
 
 void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
@@ -1524,13 +1530,15 @@ REGISTER_RULE(TypeInDeclRule)
 void TemplateTypeInDeclRule::registerMatcher(MatchFinder &MF) {
   auto Typedefs = typedefType(hasDeclaration(typedefDecl(TypedefNames)));
 
+  auto VectorTypes = recordType(hasDeclaration(cxxRecordDecl(vectorTypeName())));
+
   auto EnumTypes = enumType(hasDeclaration(enumDecl(EnumTypeNames)));
 
   auto RecordTypes = recordType(hasDeclaration(cxxRecordDecl(RecordTypeNames)));
 
   auto HasCudaTemplateType =
       hasType(classTemplateSpecializationDecl(hasAnyTemplateArgument(
-          refersToType(anyOf(Typedefs, EnumTypes, RecordTypes,
+          refersToType(anyOf(Typedefs, VectorTypes, EnumTypes, RecordTypes,
                              pointsTo(cxxRecordDecl(RecordTypeNames)))))));
 
   MF.addMatcher(
@@ -1620,6 +1628,8 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
     for (unsigned i = 0; i < TST->getNumArgs(); ++i) {
       auto Args = TST->template_arguments();
       auto Arg = Args[i];
+      if (Arg.getKind() != clang::TemplateArgument::ArgKind::Type)
+        continue;
       QT = Arg.getAsType();
       auto TypeStr = QT.getAsString();
       auto Replacement = getReplacementForType(TypeStr, false);
@@ -1645,12 +1655,6 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(TemplateTypeInDeclRule)
-
-static internal::Matcher<NamedDecl> vectorTypeName() {
-  std::vector<std::string> TypeNames(MapNames::SupportedVectorTypes.begin(),
-                                     MapNames::SupportedVectorTypes.end());
-  return internal::Matcher<NamedDecl>(new internal::HasNameMatcher(TypeNames));
-}
 
 namespace clang {
 namespace ast_matchers {
