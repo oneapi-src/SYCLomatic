@@ -20,7 +20,6 @@
 #ifdef __PSTL_BACKEND_SYCL
 #include <CL/sycl.hpp>
 #endif
-#include <dpstd/iterators.h>
 
 // Memory management section:
 // device_ptr, device_reference, swap, device_iterator, device_malloc,
@@ -29,7 +28,13 @@ namespace dpct {
 
 namespace sycl = cl::sycl;
 
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename T, sycl::access::mode Mode = sycl::access::mode::read_write,
+          typename Allocator = sycl::buffer_allocator>
+class device_ptr;
+#else
 template <typename T> class device_ptr;
+#endif
 
 template <typename T> struct device_reference {
   using pointer = device_ptr<T>;
@@ -144,11 +149,14 @@ struct is_hetero_iterator<
     : std::true_type {};
 } // namespace internal
 
-template <typename T, sycl::access::mode Mode = sycl::access::mode::read_write,
-          typename Allocator = sycl::buffer_allocator>
-class device_iterator {
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename T, sycl::access::mode Mode, typename Allocator>
+class device_iterator;
+
+template <typename T, sycl::access::mode Mode, typename Allocator>
+class device_ptr {
 protected:
-  sycl::buffer<T, 1> buffer;
+  sycl::buffer<T, 1, Allocator> buffer;
   std::size_t idx;
 
 public:
@@ -157,18 +165,137 @@ public:
   using pointer = T *;
   using reference = T &;
   using iterator_category = std::random_access_iterator_tag;
-  using is_hetero = std::true_type;
-  static constexpr sycl::access::mode mode = Mode;
+  using is_hetero = std::true_type;                // required
+  static constexpr sycl::access::mode mode = Mode; // required
 
-  device_iterator() : buffer(cl::sycl::range<1>(1)), idx(0) {}
+  device_ptr(sycl::buffer<T, 1> in, std::size_t i = 0) : buffer(in), idx(i) {}
+#ifdef __USE_DPCT
+  template <typename OtherT>
+  device_ptr(OtherT *ptr)
+      : buffer(dpct::mem_mgr::instance()
+                   .translate_ptr(ptr)
+                   .buffer.template reinterpret<T, 1>(sycl::range<1>(
+                       dpct::mem_mgr::instance().translate_ptr(ptr).size /
+                       sizeof(T)))),
+        idx() {}
+#endif
+  // needed for device_malloc
+  device_ptr(const std::size_t n) : buffer(sycl::range<1>(n)), idx() {}
+  device_ptr() {}
+  device_ptr(const device_ptr &in) : buffer(in.buffer), idx(in.idx) {}
+  pointer get() const {
+    auto res =
+        (const_cast<device_ptr *>(this)
+             ->buffer.template get_access<sycl::access::mode::read_write>())
+            .get_pointer();
+    return res + idx;
+  }
+  operator T *() {
+    auto res = (buffer.template get_access<sycl::access::mode::read_write>())
+                   .get_pointer();
+    return res + idx;
+  }
+  device_ptr operator+(difference_type forward) const {
+    return device_ptr{buffer, idx + forward};
+  }
+  device_ptr operator-(difference_type backward) const {
+    return device_ptr{buffer, idx - backward};
+  }
+  difference_type operator-(const device_ptr &it) const { return idx - it.idx; }
+  template <typename OtherIterator>
+  typename std::enable_if<internal::is_hetero_iterator<OtherIterator>::value,
+                          difference_type>::type
+  operator-(const OtherIterator &it) const {
+    return idx - std::distance(dpstd::begin(buffer), it);
+  }
+
+  std::size_t get_idx() { return idx; } // required
+
+  sycl::buffer<T, 1, Allocator> get_buffer() { return buffer; } // required
+};
+#else
+template <typename T> class device_iterator;
+
+template <typename T> class device_ptr {
+protected:
+  T *ptr;
+
+public:
+  using value_type = T;
+  using difference_type = std::make_signed<std::size_t>::type;
+  using pointer = T *;
+  using reference = T &;
+  using iterator_category = std::random_access_iterator_tag;
+  using is_hetero = std::false_type; // required
+
+  device_ptr(T *p) : ptr(p) {}
+  // needed for device_malloc
+  device_ptr(const std::size_t n) {
+    cl::sycl::queue default_queue;
+    ptr = cl::sycl::malloc_device(n, default_queue.get_device(),
+                                  default_queue.get_context());
+  }
+  device_ptr() : ptr(nullptr) {}
+  //        template<typename OtherT>
+  //        device_ptr(const device_ptr<OtherT>& in) : Base(in) { }
+  device_ptr &operator=(const device_iterator<T> &in) {
+    ptr = static_cast<device_ptr<T>>(in).ptr;
+    return *this;
+  }
+  pointer get() const { return ptr; }
+  operator T *() { return ptr; }
+  device_ptr &operator++() {
+    ++ptr;
+    return *this;
+  }
+  device_ptr &operator--() {
+    --ptr;
+    return *this;
+  }
+  device_ptr operator++(int) {
+    device_ptr it(*this);
+    ++(*this);
+    return it;
+  }
+  device_ptr operator--(int) {
+    device_ptr it(*this);
+    --(*this);
+    return it;
+  }
+  device_ptr operator+(difference_type forward) const {
+    return device_ptr{ptr + forward};
+  }
+  device_ptr operator-(difference_type backward) const {
+    return device_ptr{ptr - backward};
+  }
+  difference_type operator-(const device_ptr &it) const { return ptr - it.ptr; }
+};
+#endif
+
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename T, sycl::access::mode Mode = sycl::access::mode::read_write,
+          typename Allocator = sycl::buffer_allocator>
+class device_iterator : public device_ptr<T, Mode, Allocator> {
+  using Base = device_ptr<T, Mode, Allocator>;
+
+public:
+  using value_type = T;
+  using difference_type = std::make_signed<std::size_t>::type;
+  using pointer = T *;
+  using reference = T &;
+  using iterator_category = std::random_access_iterator_tag;
+  using is_hetero = std::true_type;                // required
+  static constexpr sycl::access::mode mode = Mode; // required
+
+  device_iterator() : Base() {}
   device_iterator(sycl::buffer<T, 1, Allocator> vec, std::size_t index)
-      : buffer(vec), idx(index) {}
+      : Base(vec, index) {}
   template <cl::sycl::access::mode inMode>
   device_iterator(const device_iterator<T, inMode, Allocator> &in)
-      : buffer(in.buffer), idx(in.idx) {}
+      : Base(in.buffer, in.idx) {} // required for iter_mode
   device_iterator &operator=(const device_iterator &in) {
-    buffer = in.buffer;
-    idx = in.idx;
+    Base::buffer = in.buffer;
+    Base::idx = in.idx;
     return *this;
   }
 
@@ -176,8 +303,98 @@ public:
     auto ptr = (const_cast<device_iterator *>(this)
                     ->buffer.template get_access<mode>())
                    .get_pointer();
-    return *(ptr + idx);
+    return *(ptr + Base::idx);
   }
+
+  reference operator[](difference_type i) const { return *(*this + i); }
+  device_iterator &operator++() {
+    ++Base::idx;
+    return *this;
+  }
+  device_iterator &operator--() {
+    --Base::idx;
+    return *this;
+  }
+  device_iterator operator++(int) {
+    device_iterator it(*this);
+    ++(*this);
+    return it;
+  }
+  device_iterator operator--(int) {
+    device_iterator it(*this);
+    --(*this);
+    return it;
+  }
+  device_iterator operator+(difference_type forward) const {
+    const auto new_idx = Base::idx + forward;
+    return {Base::buffer, new_idx};
+  }
+  device_iterator &operator+=(difference_type forward) {
+    Base::idx += forward;
+    return *this;
+  }
+  device_iterator operator-(difference_type backward) const {
+    return {Base::buffer, Base::idx - backward};
+  }
+  device_iterator &operator-=(difference_type backward) {
+    Base::idx -= backward;
+    return *this;
+  }
+  friend device_iterator operator+(difference_type forward,
+                                   const device_iterator &it) {
+    return it + forward;
+  }
+  difference_type operator-(const device_iterator &it) const {
+    return Base::idx - it.idx;
+  }
+  template <typename OtherIterator>
+  typename std::enable_if<internal::is_hetero_iterator<OtherIterator>::value,
+                          difference_type>::type
+  operator-(const OtherIterator &it) const {
+    return Base::idx - std::distance(dpstd::begin(Base::buffer), it);
+  }
+  bool operator==(const device_iterator &it) const { return *this - it == 0; }
+  bool operator!=(const device_iterator &it) const { return !(*this == it); }
+  bool operator<(const device_iterator &it) const { return *this - it < 0; }
+  bool operator>(const device_iterator &it) const { return it < *this; }
+  bool operator<=(const device_iterator &it) const { return !(*this > it); }
+  bool operator>=(const device_iterator &it) const { return !(*this < it); }
+
+  std::size_t get_idx() { return Base::idx; } // required
+
+  sycl::buffer<T, 1, Allocator> get_buffer() {
+    return Base::buffer;
+  } // required
+};
+#else
+template <typename T> class device_iterator : public device_ptr<T> {
+  using Base = device_ptr<T>;
+
+protected:
+  std::size_t idx;
+
+public:
+  using value_type = T;
+  using difference_type = std::make_signed<std::size_t>::type;
+  using pointer = Base;
+  using reference = T &;
+  using iterator_category = std::random_access_iterator_tag;
+  using is_hetero = std::false_type; // required
+  static constexpr sycl::access::mode mode =
+      cl::sycl::access::mode::read_write; // required
+
+  device_iterator() : Base(nullptr), idx(0) {}
+  device_iterator(T *vec, std::size_t index) : Base(vec), idx(index) {}
+  template <cl::sycl::access::mode inMode>
+  device_iterator(const device_iterator<T> &in)
+      : Base(in.ptr), idx(in.idx) {} // required for iter_mode
+  device_iterator &operator=(const device_iterator &in) {
+    Base::operator=(in);
+    idx = in.idx;
+    return *this;
+  }
+
+  reference operator*() const { return *(Base::ptr + idx); }
 
   reference operator[](difference_type i) const { return *(*this + i); }
   device_iterator &operator++() {
@@ -200,14 +417,14 @@ public:
   }
   device_iterator operator+(difference_type forward) const {
     const auto new_idx = idx + forward;
-    return {buffer, new_idx};
+    return {Base::ptr, new_idx};
   }
   device_iterator &operator+=(difference_type forward) {
     idx += forward;
     return *this;
   }
   device_iterator operator-(difference_type backward) const {
-    return {buffer, idx - backward};
+    return {Base::ptr, idx - backward};
   }
   device_iterator &operator-=(difference_type backward) {
     idx -= backward;
@@ -220,12 +437,14 @@ public:
   difference_type operator-(const device_iterator &it) const {
     return idx - it.idx;
   }
+
   template <typename OtherIterator>
   typename std::enable_if<internal::is_hetero_iterator<OtherIterator>::value,
                           difference_type>::type
   operator-(const OtherIterator &it) const {
-    return idx - std::distance(dpstd::begin(buffer), it);
+    return idx - it.get_idx();
   }
+
   bool operator==(const device_iterator &it) const { return *this - it == 0; }
   bool operator!=(const device_iterator &it) const { return !(*this == it); }
   bool operator<(const device_iterator &it) const { return *this - it < 0; }
@@ -233,71 +452,11 @@ public:
   bool operator<=(const device_iterator &it) const { return !(*this > it); }
   bool operator>=(const device_iterator &it) const { return !(*this < it); }
 
-  std::size_t get_idx() { return idx; }
+  std::size_t get_idx() { return idx; } // required
 
-  sycl::buffer<T, 1, Allocator> get_buffer() { return buffer; }
+  device_iterator &get_buffer() { return *this; } // required
 };
-
-template <typename T> class device_ptr : public device_iterator<T> {
-  using Base = device_iterator<T>;
-
-public:
-  template <typename OtherT>
-  device_ptr(const device_iterator<OtherT> &in) : Base(in) {}
-  template <typename OtherT>
-  device_ptr(sycl::buffer<OtherT, 1> in) : Base(in, std::size_t{}) {}
-#ifdef __USE_DPCT
-  template <typename OtherT>
-  device_ptr(OtherT ptr)
-      : Base(
-#ifdef DPCT_USM_LEVEL_NONE
-            dpct::mem_mgr::instance()
-                .translate_ptr(ptr)
-                .buffer.template reinterpret<T, 1>(
-                    sycl::range<1>(dpct::mem_mgr::instance()
-                                       .translate_ptr(ptr)
-                                       .size /
-                                   sizeof(T))),
-#else
-            sycl::buffer<T, 1>(sycl::range<1>(1)),
 #endif
-            std::size_t{}) {
-  }
-#endif
-  // needed for device_malloc
-  device_ptr(const std::size_t n)
-      : Base(sycl::buffer<T, 1>(sycl::range<1>(n)), std::size_t{}) {}
-  device_ptr() : Base() {}
-  template <typename OtherT>
-  device_ptr(const device_ptr<OtherT> &in) : Base(in) {}
-  template <typename OtherT>
-  device_ptr &operator=(const device_iterator<OtherT> &in) {
-    *this = in;
-    return *this;
-  }
-  typename Base::pointer get() const {
-    auto res = (const_cast<device_ptr *>(this)
-                    ->Base::buffer
-                    .template get_access<sycl::access::mode::read_write>())
-                   .get_pointer();
-    return res + Base::idx;
-  }
-  device_ptr operator+(typename Base::difference_type forward) const {
-    return device_iterator<T>{Base::buffer, Base::idx + forward};
-  }
-  device_ptr operator-(typename Base::difference_type backward) const {
-    return device_iterator<T>{Base::buffer, Base::idx - backward};
-  }
-  typename Base::difference_type operator-(const device_ptr &it) const {
-    return Base::idx - it.idx;
-  }
-  template <typename OtherIterator>
-  typename std::enable_if<internal::is_hetero_iterator<OtherIterator>::value,
-                          typename Base::difference_type>::type
-  operator-(const OtherIterator &it) const {
-    return Base::idx - std::distance(dpstd::begin(Base::buffer), it);
-  }
-};
 
 template <typename T> device_ptr<T> device_malloc(const std::size_t n) {
   return device_ptr<T>(n / sizeof(T));
