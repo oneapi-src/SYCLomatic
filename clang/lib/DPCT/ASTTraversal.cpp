@@ -2566,28 +2566,21 @@ REGISTER_RULE(ReplaceDim3CtorRule)
 void Dim3MemberFieldsRule::FieldsRename(const MatchFinder::MatchResult &Result,
                                         std::string Str, const MemberExpr *ME) {
   auto SM = Result.SourceManager;
-  SourceLocation Begin = SM->getSpellingLoc(ME->getBeginLoc());
-  SourceLocation End = SM->getSpellingLoc(ME->getEndLoc());
-  std::string Ret =
-      std::string(SM->getCharacterData(Begin), SM->getCharacterData(End));
 
-  std::size_t Position = std::string::npos;
-  std::size_t Current = Ret.find(Str);
+  SourceLocation MemberLoc, OptLoc;
+  MemberLoc = SM->getSpellingLoc(ME->getMemberLoc());
+  OptLoc = SM->getSpellingLoc(ME->getOperatorLoc());
+  bool isArrow = ME->isArrow();
+  if(isArrow)
+    emplaceTransformation(new ReplaceText(OptLoc, 2, ""));
+  else
+    emplaceTransformation(new ReplaceText(OptLoc, 1, ""));
 
-  // Find the last position of dot '.'
-  while (Current != std::string::npos) {
-    Position = Current;
-    Current = Ret.find(Str, Position + 1);
-  }
-
-  if (Position != std::string::npos) {
-    auto Search = MapNames::Dim3MemberNamesMap.find(
-        ME->getMemberNameInfo().getAsString());
-    if (Search != MapNames::Dim3MemberNamesMap.end()) {
-      emplaceTransformation(
-          new RenameFieldInMemberExpr(ME, Search->second + "", Position));
-      std::string NewMemberStr = Ret.substr(0, Position) + Search->second;
-    }
+  auto Search = MapNames::Dim3MemberNamesMap.find(
+      ME->getMemberNameInfo().getAsString());
+  if (Search != MapNames::Dim3MemberNamesMap.end()) {
+    std::string NewString = Search->second;
+    emplaceTransformation(new ReplaceText(MemberLoc, 1, std::move(NewString)));
   }
 }
 
@@ -2733,10 +2726,10 @@ void DevicePropVarRule::run(const MatchFinder::MatchResult &Result) {
   if (!ME)
     return;
   auto Parents = Result.Context->getParents(*ME);
-  assert(Parents.size() == 1);
-  if (Parents.size() != 1) {
-    return;
-  }
+  //assert(Parents.size() == 1);
+  //if (Parents.size() != 1) {
+  //  return;
+  //}
   auto MemberName = ME->getMemberNameInfo().getAsString();
   if (MemberName == "sharedMemPerBlock") {
     report(ME->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE, false);

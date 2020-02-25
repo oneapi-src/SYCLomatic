@@ -319,6 +319,9 @@ std::string MathFuncNameRewriter::getNewFuncName() {
           }
         }
       } else if (SourceCalleeName == "max" || SourceCalleeName == "min") {
+        if (Call->getNumArgs() != 2) {
+          return SourceCalleeName.str();
+        }
         auto Arg0 = Call->getArg(0)->IgnoreImpCasts();
         auto Arg1 = Call->getArg(1)->IgnoreImpCasts();
         auto *BT0 = dyn_cast<BuiltinType>(Arg0->getType());

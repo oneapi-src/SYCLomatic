@@ -9,6 +9,16 @@
 #define GET_BLOCKS3(n,t) n+t-1
 #define GET_BLOCKS4(n,t) n+t
 
+class DDD{
+public:
+  dim3* A;
+  dim3 B;
+};
+
+#define EMPTY_MACRO(x) x
+//CHECK:#define GET_MEMBER_MACRO(x) x[1] = 5
+#define GET_MEMBER_MACRO(x) x.y = 5
+
 __global__ void foo_kernel() {}
 
 __global__ void foo2(){
@@ -21,6 +31,17 @@ __global__ void foo2(){
 __global__ void foo3(int x, int y) {}
 
 void foo() {
+  DDD d3;
+
+  // CHECK: (*d3.A)[0] = 3;
+  // CHECK-NEXT: d3.B[0] = 2;
+  // CHECK-NEXT: EMPTY_MACRO(d3.B[0]);
+  // CHECK-NEXT: GET_MEMBER_MACRO(d3.B);
+  d3.A->x = 3;
+  d3.B.x = 2;
+  EMPTY_MACRO(d3.B.x);
+  GET_MEMBER_MACRO(d3.B);
+
   int outputThreadCount = 512;
 
   // CHECK: dpct::get_default_queue().submit([&](sycl::handler &cgh) {
