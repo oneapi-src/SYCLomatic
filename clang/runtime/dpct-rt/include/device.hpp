@@ -317,7 +317,7 @@ static inline cl::sycl::queue &get_default_queue_wait() {
 }
 
 /// Util function to get the current device.
-static inline cl::sycl::device &get_current_device() {
+static inline device_ext &get_current_device() {
   return dev_mgr::instance().current_device();
 }
 

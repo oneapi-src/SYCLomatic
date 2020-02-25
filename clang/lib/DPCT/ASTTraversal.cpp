@@ -4723,7 +4723,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
     }
     emplaceTransformation(new ReplaceStmt(
-        CE, Prefix + "dpct::dev_mgr::instance().current_device().reset()" +
+        CE, Prefix + "dpct::get_current_device().reset()" +
                 Suffix));
   } else if (FuncName == "cudaSetDevice") {
     if (IsAssigned) {
@@ -4775,8 +4775,7 @@ void FunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         new ReplaceStmt(CE, "dpct::dev_mgr::instance().current_device_id()"));
   } else if (FuncName == "cudaDeviceSynchronize" ||
              FuncName == "cudaThreadSynchronize") {
-    std::string ReplStr = "dpct::dev_mgr::instance()."
-                          "current_device().queues_wait_"
+    std::string ReplStr = "dpct::get_current_device().queues_wait_"
                           "and_throw()";
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";

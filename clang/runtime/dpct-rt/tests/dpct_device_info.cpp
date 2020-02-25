@@ -25,6 +25,7 @@ void dev_info_output(const device& dev, std::string selector_name) {
 }
 
 int main() {
+  dpct::get_current_device().queues_wait_and_throw();
 
   int device_count = dpct::dev_mgr::instance().device_count();
   cl::sycl::queue queue_1(dpct::get_default_context(), dpct::get_current_device());
