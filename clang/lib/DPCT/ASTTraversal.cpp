@@ -437,7 +437,7 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
 
     InFile = getAbsolutePath(InFile);
     makeCanonical(InFile);
-    if (ProcessAllFlag) {
+    if (ProcessAllFlag || GetSourceFileType(InFile) & TypeCudaSource) {
       IncludeFileMap[InFile] = false;
     }
   }

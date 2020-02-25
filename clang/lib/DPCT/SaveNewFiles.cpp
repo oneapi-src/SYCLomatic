@@ -296,10 +296,13 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     if (!Entry.second) {
       makeCanonical(FilePath);
 
-      // Awalys migrate *.cuh files to *.dp.hpp files
+      // Awalys migrate *.cuh files to *.dp.hpp files,
+      // Awalys migrate *.cu files to *.dp.cpp files.
       SourceProcessType FileType = GetSourceFileType(FilePath.str());
       if (FileType & TypeCudaHeader) {
         path::replace_extension(FilePath, "dp.hpp");
+      } else if(FileType & TypeCudaSource) {
+        path::replace_extension(FilePath, "dp.cpp");
       }
 
       rewriteDir(FilePath, InRoot, OutRoot);
