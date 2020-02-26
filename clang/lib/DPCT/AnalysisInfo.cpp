@@ -944,14 +944,14 @@ void RandomEngineInfo::buildInfo() {
           std::make_shared<ExtReplacement>(
               CreateCallFilePath, CreateAPIBegin, CreateAPILength,
               DeclaratorDeclName + " = new " + TypeReplacement +
-                  "(dpct::get_default_queue_wait(), " + DimExpr + ")",
+                  "(dpct::get_default_queue(), " + DimExpr + ")",
               nullptr));
     } else {
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(
               CreateCallFilePath, CreateAPIBegin, CreateAPILength,
               DeclaratorDeclName + " = new " + TypeReplacement +
-                  "(dpct::get_default_queue_wait(), " + SeedExpr + ")",
+                  "(dpct::get_default_queue(), " + SeedExpr + ")",
               nullptr));
     }
   } else {
@@ -963,12 +963,12 @@ void RandomEngineInfo::buildInfo() {
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(
               DeclFilePath, IdentifierEndOffest, 0,
-              "(dpct::get_default_queue_wait(), " + DimExpr + ")", nullptr));
+              "(dpct::get_default_queue(), " + DimExpr + ")", nullptr));
     } else {
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(
               DeclFilePath, IdentifierEndOffest, 0,
-              "(dpct::get_default_queue_wait(), " + SeedExpr + ")", nullptr));
+              "(dpct::get_default_queue(), " + SeedExpr + ")", nullptr));
     }
   }
 }

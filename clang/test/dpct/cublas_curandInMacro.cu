@@ -165,7 +165,7 @@ int main() {
 
 
     float * __restrict__ h_data;
-    //CHECK:mkl::rng::philox4x32x10 rng(dpct::get_default_queue_wait(), 1337ull);
+    //CHECK:mkl::rng::philox4x32x10 rng(dpct::get_default_queue(), 1337ull);
     //CHECK-NEXT:/*
     //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to curandCreateGenerator was replaced with 0, because the function call is redundant in DPC++.
     //CHECK-NEXT:*/

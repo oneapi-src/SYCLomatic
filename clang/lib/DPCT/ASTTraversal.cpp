@@ -2885,8 +2885,11 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     auto ReplInfoPair = MapNames::RandomGenerateFuncReplInfoMap.find(FuncName);
     MapNames::RandomGenerateFuncReplInfo ReplInfo = ReplInfoPair->second;
     std::string BufferDecl;
-    std::string BufferName = getBufferNameAndDeclStr(
-        CE->getArg(1), ReplInfo.BufferTypeInfo, IndentStr, BufferDecl);
+    std::string BufferName;
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
+      BufferName = getBufferNameAndDeclStr(
+          CE->getArg(1), ReplInfo.BufferTypeInfo, IndentStr, BufferDecl);
+    }
     std::string DistributeDecl;
     if (FuncName == "curandGenerateLogNormal" ||
         FuncName == "curandGenerateLogNormalDouble") {
@@ -2913,7 +2916,14 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       DistributeDecl = ReplInfo.DistributeName + "<" + ReplInfo.DistributeType +
                        "> distr_ct1;";
     }
-    PrefixInsertStr = BufferDecl + IndentStr + DistributeDecl + getNL();
+    std::string Data;
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+      PrefixInsertStr = IndentStr + DistributeDecl + getNL();
+      Data = getStmtSpelling(CE->getArg(1));
+    } else {
+      PrefixInsertStr = BufferDecl + IndentStr + DistributeDecl + getNL();
+      Data = BufferName;
+    }
     ExprAnalysis EA;
     EA.analyze(CE->getArg(2));
     std::string ReplStr;
@@ -2921,11 +2931,14 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (REInfo && REInfo->isClassMember()) {
       ReplStr = "mkl::rng::generate(distr_ct1, *" +
                 getStmtSpelling(CE->getArg(0)) + ", " + EA.getReplacedString() +
-                ", " + BufferName + ")";
+                ", " + Data + ")";
     } else {
       ReplStr = "mkl::rng::generate(distr_ct1, " +
                 getStmtSpelling(CE->getArg(0)) + ", " + EA.getReplacedString() +
-                ", " + BufferName + ")";
+                ", " + Data + ")";
+    }
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
+      ReplStr = ReplStr + ".wait()";
     }
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
     if (IsInCondition) {
