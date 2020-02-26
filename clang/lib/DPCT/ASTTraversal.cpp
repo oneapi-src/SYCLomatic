@@ -1778,9 +1778,10 @@ void VectorTypeNamespaceRule::replaceTypeName(const QualType &QT,
   if (isDeclType)
     ++SrcAPIStaticsMap[TypeName];
 
-  emplaceTransformation(
-      new ReplaceToken(BeginLoc, std::string(MapNames::findReplacedName(
-                                     MapNames::TypeNamesMap, TypeName))));
+  std::string Str =
+      std::string(MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName));
+  if (!Str.empty())
+    emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Str)));
 }
 
 void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {

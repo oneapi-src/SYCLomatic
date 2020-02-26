@@ -77,3 +77,13 @@ struct foo_2
     typedef typename If<bar<
     longlong2>::temp, int,int>::t3 Word;
 };
+
+template<typename foo>
+struct type2;
+
+// CHECK: template<>
+// CHECK-NEXT: struct type2<float> { typedef sycl::float2  type; };
+// CHECK-NEXT: typedef typename type2<float>::type  foo_type;
+template<>
+struct type2<float> { typedef float2  type; };
+typedef typename type2<float>::type  foo_type;
