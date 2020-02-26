@@ -59,13 +59,13 @@ int main() {
   //CHECK-NEXT:DPCT1018:{{[0-9]+}}: The cublasSetVector was migrated, but due to parameter 11111 equals to parameter 11111 but greater than 1, the generated code performance may be sub-optimal.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:int a = (dpct::get_default_queue_wait().memcpy(d_C_S, h_a, (10)*(sizeof(float))*(11111)).wait(), 0);
   //CHECK-NEXT:dpct::get_default_queue_wait().memcpy(d_C_S, h_b, (10)*(sizeof(float))*(1)).wait();
   //CHECK-NEXT:dpct::get_default_queue_wait().memcpy(d_C_S, h_c, (10)*(sizeof(float))*(1)).wait();
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:a = (dpct::get_default_queue_wait().memcpy(d_C_S, h_a, (100)*(100)*(10000)).wait(), 0);
   int a = cublasSetVector(10, sizeof(float), h_a, 11111, d_C_S, 11111);
@@ -119,7 +119,7 @@ int main() {
   cublasDrotm(handle, N, d_C_D, N, d_C_D, N, x_D);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: a = (mkl::blas::copy(handle, N, x_S, incx, d_C_S, incy).wait(), 0);
@@ -130,7 +130,7 @@ int main() {
   // CHECK-NEXT: }
   cublasDcopy(handle, N, x_D, incx, d_C_D, incy);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: a = (mkl::blas::copy(handle, N, (std::complex<float>*)(x_C), incx, (std::complex<float>*)(d_C_C), incy).wait(), 0);
@@ -143,7 +143,7 @@ int main() {
 
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: a = (mkl::blas::axpy(handle, N, *(&alpha_S), x_S, incx, result_S, incy).wait(), 0);
@@ -154,7 +154,7 @@ int main() {
   // CHECK-NEXT: }
   cublasDaxpy(handle, N, &alpha_D, x_D, incx, result_D, incy);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: a = (mkl::blas::axpy(handle, N, std::complex<float>((&alpha_C)->x(),(&alpha_C)->y()), (std::complex<float>*)(x_C), incx, (std::complex<float>*)(result_C), incy).wait(), 0);
@@ -166,7 +166,7 @@ int main() {
   cublasZaxpy(handle, N, &alpha_Z, x_Z, incx, result_Z, incy);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: a = (mkl::blas::scal(handle, N, *(&alpha_S), result_S, incx).wait(), 0);
@@ -177,7 +177,7 @@ int main() {
   // CHECK-NEXT: }
   cublasDscal(handle, N, &alpha_D, result_D, incx);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: a = (mkl::blas::scal(handle, N, std::complex<float>((&alpha_C)->x(),(&alpha_C)->y()), (std::complex<float>*)(result_C), incx).wait(), 0);
@@ -189,7 +189,7 @@ int main() {
   cublasZscal(handle, N, &alpha_Z, result_Z, incx);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: a = (mkl::blas::nrm2(handle, N, x_S, incx, result_S).wait(), 0);
@@ -200,7 +200,7 @@ int main() {
   // CHECK-NEXT: }
   cublasDnrm2(handle, N, x_D, incx, result_D);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: a = (mkl::blas::nrm2(handle, N, (std::complex<float>*)(x_C), incx, (float*)(result_S)).wait(), 0);
@@ -215,7 +215,7 @@ int main() {
   //level 2
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct1 = trans2;
@@ -227,7 +227,7 @@ int main() {
   // CHECK-NEXT: }
   cublasDgemv(handle, CUBLAS_OP_N, N, N, &alpha_D, x_D, lda, y_D, incx, &beta_D, result_D, incy);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto transpose_ct1 = trans2;
@@ -240,7 +240,7 @@ int main() {
   cublasZgemv(handle, CUBLAS_OP_N, N, N, &alpha_Z, x_Z, lda, y_Z, incx, &beta_Z, result_Z, incy);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: a = (mkl::blas::ger(handle, N, N, *(&alpha_S), x_S, incx, y_S, incy, result_S, lda).wait(), 0);
@@ -251,7 +251,7 @@ int main() {
   // CHECK-NEXT: }
   cublasDger(handle, N, N, &alpha_D, x_D, incx, y_D, incy, result_D, lda);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: a = (mkl::blas::geru(handle, N, N, std::complex<float>((&alpha_C)->x(),(&alpha_C)->y()), (std::complex<float>*)(x_C), incx, (std::complex<float>*)(y_C), incy, (std::complex<float>*)(result_C), lda).wait(), 0);
@@ -262,7 +262,7 @@ int main() {
   // CHECK-NEXT: }
   cublasCgerc(handle, N, N, &alpha_C, x_C, incx, y_C, incy, result_C, lda);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: a = (mkl::blas::geru(handle, N, N, std::complex<double>((&alpha_Z)->x(),(&alpha_Z)->y()), (std::complex<double>*)(x_Z), incx, (std::complex<double>*)(y_Z), incy, (std::complex<double>*)(result_Z), lda).wait(), 0);
@@ -283,7 +283,7 @@ int main() {
   //level 3
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
   //CHECK-NEXT:auto transpose_ct1 = trans0;
@@ -298,7 +298,7 @@ int main() {
   //CHECK-NEXT:}
   cublasDgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
   //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
   //CHECK-NEXT:a = (mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, std::complex<float>((&alpha_C)->x(),(&alpha_C)->y()), (std::complex<float>*)(d_A_C), N, (std::complex<float>*)(d_B_C), N, std::complex<float>((&beta_C)->x(),(&beta_C)->y()), (std::complex<float>*)(d_C_C), N).wait(), 0);

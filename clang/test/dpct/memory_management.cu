@@ -137,7 +137,7 @@ void fooo() {
 cudaError_t mallocWrapper(void **buffer, size_t size) {
   if (1) {
     // CHECK:/*
-    // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT:*/
     // CHECK-NEXT:  return (dpct::dpct_malloc(buffer, size), 0);
     return cudaMalloc(buffer, size);
@@ -146,14 +146,14 @@ cudaError_t mallocWrapper(void **buffer, size_t size) {
     struct cudaPitchedPtr pitch;
     struct cudaExtent pitch_size;
     // CHECK:/*
-    // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT:*/
     // CHECK-NEXT:  return (dpct::dpct_malloc(&pitch, pitch_size), 0);
     return cudaMalloc3D(&pitch, pitch_size);
   }
   if (1) {
     // CHECK:/*
-    // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT:*/
     // CHECK-NEXT:  return (dpct::dpct_malloc(buffer, &size, size, size), 0);
     return cudaMallocPitch(buffer, &size, size, size);
@@ -174,12 +174,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_malloc((void **)&d_A, size);
   cudaMalloc((void **)&d_A, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  int err = (dpct::dpct_malloc((void **)&d_A, size), 0);
   cudaError_t err = cudaMalloc((void **)&d_A, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_malloc((void **)&d_A, size), 0));
   checkError(cudaMalloc((void **)&d_A, size));
@@ -187,12 +187,12 @@ void testCommas() {
   // CHECK: dpct::dpct_malloc((void **)&d_A, &size, size, size);
   cudaMallocPitch((void **)&d_A, &size, size, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_malloc((void **)&d_A, &size, size, size), 0);
   err = cudaMallocPitch((void **)&d_A, &size, size, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_malloc((void **)&d_A, &size, size, size), 0));
   checkError(cudaMallocPitch((void **)&d_A, &size, size, size));
@@ -200,12 +200,12 @@ void testCommas() {
   // CHECK: dpct::dpct_malloc(&p_A, e);
   cudaMalloc3D(&p_A, e);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_malloc(&p_A, e), 0);
   err = cudaMalloc3D(&p_A, e);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_malloc(&p_A, e), 0));
   checkError(cudaMalloc3D(&p_A, e));
@@ -213,12 +213,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memset(d_A, 0xf, size);
   cudaMemset(d_A, 0xf, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memset(d_A, 0xf, size), 0);
   err = cudaMemset(d_A, 0xf, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memset(d_A, 0xf, size), 0));
   checkError(cudaMemset(d_A, 0xf, size));
@@ -226,12 +226,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memset(d_A, size, 0xf, size, size);
   cudaMemset2D(d_A, size, 0xf, size, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memset(d_A, size, 0xf, size, size), 0);
   err = cudaMemset2D(d_A, size, 0xf, size, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memset(d_A, size, 0xf, size, size), 0));
   checkError(cudaMemset2D(d_A, size, 0xf, size, size));
@@ -239,12 +239,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memset(p_A, 0xf, e);
   cudaMemset3D(p_A, 0xf, e);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memset(p_A, 0xf, e), 0);
   err = cudaMemset3D(p_A, 0xf, e);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memset(p_A, 0xf, e), 0));
   checkError(cudaMemset3D(p_A, 0xf, e));
@@ -253,12 +253,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(d_A, h_A, size, dpct::host_to_host);
   cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(d_A, h_A, size, dpct::host_to_host), 0);
   err = cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(d_A, h_A, size, dpct::host_to_host), 0));
   checkError(cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToHost));
@@ -267,12 +267,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(d_A, h_A, size, dpct::host_to_device);
   cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(d_A, h_A, size, dpct::host_to_device), 0);
   err = cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(d_A, h_A, size, dpct::host_to_device), 0));
   checkError(cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice));
@@ -281,12 +281,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(h_A, d_A, size, dpct::device_to_host);
   cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(h_A, d_A, size, dpct::device_to_host), 0);
   err = cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(h_A, d_A, size, dpct::device_to_host), 0));
   checkError(cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost));
@@ -295,12 +295,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(h_A, d_A, size, dpct::device_to_device);
   cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(h_A, d_A, size, dpct::device_to_device), 0);
   err = cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(h_A, d_A, size, dpct::device_to_device), 0));
   checkError(cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToDevice));
@@ -309,12 +309,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(h_A, d_A, size, dpct::automatic);
   cudaMemcpy(h_A, d_A, size, cudaMemcpyDefault);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(h_A, d_A, size, dpct::automatic), 0);
   err = cudaMemcpy(h_A, d_A, size, cudaMemcpyDefault);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(h_A, d_A, size, dpct::automatic), 0));
   checkError(cudaMemcpy(h_A, d_A, size, cudaMemcpyDefault));
@@ -322,12 +322,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_host);
   cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyHostToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_host), 0);
   err = cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyHostToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_host), 0));
   checkError(cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyHostToHost));
@@ -335,12 +335,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device);
   cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device), 0);
   err = cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device), 0));
   checkError(cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice));
@@ -348,12 +348,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::device_to_device);
   cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::device_to_device), 0);
   err = cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::device_to_device), 0));
   checkError(cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyDeviceToDevice));
@@ -361,12 +361,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::device_to_host);
   cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyDeviceToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::device_to_host), 0);
   err = cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyDeviceToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::device_to_host), 0));
   checkError(cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyDeviceToHost));
@@ -374,12 +374,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::automatic);
   cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyDefault);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::automatic), 0);
   err = cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyDefault);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::automatic), 0));
   checkError(cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyDefault));
@@ -387,12 +387,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
   cudaMemcpy3D(&parms);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0);
   err = cudaMemcpy3D(&parms);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0));
   checkError(cudaMemcpy3D(&parms));
@@ -401,12 +401,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(constData.get_ptr(), h_A, size, dpct::host_to_device);
   cudaMemcpyToSymbol(constData, h_A, size, 0, cudaMemcpyHostToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(constData.get_ptr(), h_A, size, dpct::host_to_device), 0);
   err = cudaMemcpyToSymbol(constData, h_A, size, 0, cudaMemcpyHostToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(constData.get_ptr(), h_A, size, dpct::host_to_device), 0));
   checkError(cudaMemcpyToSymbol(constData, h_A, size, 0, cudaMemcpyHostToDevice));
@@ -414,12 +414,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy((char *)(constData.get_ptr()) + 1, h_A, size, dpct::host_to_device);
   cudaMemcpyToSymbol(constData, h_A, size, 1, cudaMemcpyHostToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy((char *)(constData.get_ptr()) + 1, h_A, size, dpct::host_to_device), 0);
   err = cudaMemcpyToSymbol(constData, h_A, size, 1, cudaMemcpyHostToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy((char *)(constData.get_ptr()) + 1, h_A, size, dpct::host_to_device), 0));
   checkError(cudaMemcpyToSymbol(constData, h_A, size, 1, cudaMemcpyHostToDevice));
@@ -428,12 +428,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(constData.get_ptr(), d_B, size, dpct::device_to_device);
   cudaMemcpyToSymbol(constData, d_B, size, 0, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(constData.get_ptr(), d_B, size, dpct::device_to_device), 0);
   err = cudaMemcpyToSymbol(constData, d_B, size, 0, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   checkError((dpct::dpct_memcpy(constData.get_ptr(), h_A, size, dpct::device_to_device), 0));
   checkError(cudaMemcpyToSymbol(constData, h_A, size, 0, cudaMemcpyDeviceToDevice));
@@ -441,12 +441,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy((char *)(constData.get_ptr()) + 1, d_B, size, dpct::device_to_device);
   cudaMemcpyToSymbol(constData, d_B, size, 1, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy((char *)(constData.get_ptr()) + 1, d_B, size, dpct::device_to_device), 0);
   err = cudaMemcpyToSymbol(constData, d_B, size, 1, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   checkError((dpct::dpct_memcpy((char *)(constData.get_ptr()) + 1, h_A, size, dpct::device_to_device), 0));
   checkError(cudaMemcpyToSymbol(constData, h_A, size, 1, cudaMemcpyDeviceToDevice));
@@ -455,12 +455,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(constData.get_ptr(), d_B, size, dpct::automatic);
   cudaMemcpyToSymbol(constData, d_B, size, 0, cudaMemcpyDefault);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   err = (dpct::dpct_memcpy(constData.get_ptr(), d_B, size, dpct::automatic), 0);
   err = cudaMemcpyToSymbol(constData, d_B, size, 0, cudaMemcpyDefault);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   checkError((dpct::dpct_memcpy(constData.get_ptr(), d_B, size, dpct::automatic), 0));
   checkError(cudaMemcpyToSymbol(constData, d_B, size, 0, cudaMemcpyDefault));
@@ -468,12 +468,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy((char *)(constData.get_ptr()) + 1, d_B, size, dpct::automatic);
   cudaMemcpyToSymbol(constData, d_B, size, 1, cudaMemcpyDefault);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   err = (dpct::dpct_memcpy((char *)(constData.get_ptr()) + 1, d_B, size, dpct::automatic), 0);
   err = cudaMemcpyToSymbol(constData, d_B, size, 1, cudaMemcpyDefault);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   checkError((dpct::dpct_memcpy((char *)(constData.get_ptr()) + 1, d_B, size, dpct::automatic), 0));
   checkError(cudaMemcpyToSymbol(constData, d_B, size, 1, cudaMemcpyDefault));
@@ -482,12 +482,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(constData.get_ptr(), d_B, size);
   cudaMemcpyToSymbol(constData, d_B, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   err = (dpct::dpct_memcpy(constData.get_ptr(), d_B, size), 0);
   err = cudaMemcpyToSymbol(constData, d_B, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   checkError((dpct::dpct_memcpy(constData.get_ptr(), d_B, size), 0));
   checkError(cudaMemcpyToSymbol(constData, d_B, size));
@@ -496,12 +496,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(h_A, constData.get_ptr(), size, dpct::device_to_host);
   cudaMemcpyFromSymbol(h_A, constData, size, 0, cudaMemcpyDeviceToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(h_A, constData.get_ptr(), size, dpct::device_to_host), 0);
   err = cudaMemcpyFromSymbol(h_A, constData, size, 0, cudaMemcpyDeviceToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(h_A, constData.get_ptr(), size, dpct::device_to_host), 0));
   checkError(cudaMemcpyFromSymbol(h_A, constData, size, 0, cudaMemcpyDeviceToHost));
@@ -509,12 +509,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(h_A, (char *)(constData.get_ptr()) + 1, size, dpct::device_to_host);
   cudaMemcpyFromSymbol(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(h_A, (char *)(constData.get_ptr()) + 1, size, dpct::device_to_host), 0);
   err = cudaMemcpyFromSymbol(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(h_A, (char *)(constData.get_ptr()) + 1, size, dpct::device_to_host), 0));
   checkError(cudaMemcpyFromSymbol(h_A, constData, size, 1, cudaMemcpyDeviceToHost));
@@ -523,12 +523,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(d_B, constData.get_ptr(), size, dpct::device_to_device);
   cudaMemcpyFromSymbol(d_B, constData, size, 0, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(d_B, constData.get_ptr(), size, dpct::device_to_device), 0);
   err = cudaMemcpyFromSymbol(d_B, constData, size, 0, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   checkError((dpct::dpct_memcpy(d_B, constData.get_ptr(), size, dpct::device_to_device), 0));
   checkError(cudaMemcpyFromSymbol(d_B, constData, size, 0, cudaMemcpyDeviceToDevice));
@@ -537,12 +537,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(d_B, (char *)(constData.get_ptr()) + 1, size, dpct::device_to_device);
   cudaMemcpyFromSymbol(d_B, constData, size, 1, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(d_B, (char *)(constData.get_ptr()) + 1, size, dpct::device_to_device), 0);
   err = cudaMemcpyFromSymbol(d_B, constData, size, 1, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   checkError((dpct::dpct_memcpy(d_B, (char *)(constData.get_ptr()) + 1, size, dpct::device_to_device), 0));
   checkError(cudaMemcpyFromSymbol(d_B, constData, size, 1, cudaMemcpyDeviceToDevice));
@@ -551,12 +551,12 @@ void testCommas() {
   // CHECK:  dpct::dpct_memcpy(h_A, constData.get_ptr(), size);
   cudaMemcpyFromSymbol(h_A, constData, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   err = (dpct::dpct_memcpy(h_A, constData.get_ptr(), size), 0);
   err = cudaMemcpyFromSymbol(h_A, constData, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   checkError((dpct::dpct_memcpy(h_A, constData.get_ptr(), size), 0));
   checkError(cudaMemcpyFromSymbol(h_A, constData, size));
@@ -564,12 +564,12 @@ void testCommas() {
   // CHECK: dpct::dpct_free(d_A);
   cudaFree(d_A);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_free(d_A), 0);
   err = cudaFree(d_A);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_free(d_A), 0));
   checkError(cudaFree(d_A));
@@ -590,12 +590,12 @@ void testCommas_in_device_memory() {
   // CHECK:  dpct::dpct_memset(d_A.get_ptr(), 0xf, size);
   cudaMemset(d_A, 0xf, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memset(d_A.get_ptr(), 0xf, size), 0);
   err = cudaMemset(d_A, 0xf, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memset(d_A.get_ptr(), 0xf, size), 0));
   checkError(cudaMemset(d_A, 0xf, size));
@@ -604,12 +604,12 @@ void testCommas_in_device_memory() {
   // CHECK:  dpct::dpct_memcpy(h_A, h_A, size, dpct::host_to_host);
   cudaMemcpy(h_A, h_A, size, cudaMemcpyHostToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(h_A, h_A, size, dpct::host_to_host), 0);
   err = cudaMemcpy(h_A, h_A, size, cudaMemcpyHostToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(h_A, h_A, size, dpct::host_to_host), 0));
   checkError(cudaMemcpy(h_A, h_A, size, cudaMemcpyHostToHost));
@@ -618,12 +618,12 @@ void testCommas_in_device_memory() {
   // CHECK:  dpct::dpct_memcpy(d_A.get_ptr(), h_A, size, dpct::host_to_device);
   cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(d_A.get_ptr(), h_A, size, dpct::host_to_device), 0);
   err = cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(d_A.get_ptr(), h_A, size, dpct::host_to_device), 0));
   checkError(cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice));
@@ -632,12 +632,12 @@ void testCommas_in_device_memory() {
   // CHECK:  dpct::dpct_memcpy(h_A, d_A.get_ptr(), size, dpct::device_to_host);
   cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(h_A, d_A.get_ptr(), size, dpct::device_to_host), 0);
   err = cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(h_A, d_A.get_ptr(), size, dpct::device_to_host), 0));
   checkError(cudaMemcpy(h_A, d_A, size, cudaMemcpyDeviceToHost));
@@ -646,12 +646,12 @@ void testCommas_in_device_memory() {
   // CHECK:  dpct::dpct_memcpy(d_B.get_ptr(), d_A.get_ptr(), size, dpct::device_to_device);
   cudaMemcpy(d_B, d_A, size, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(d_B.get_ptr(), d_A.get_ptr(), size, dpct::device_to_device), 0);
   err = cudaMemcpy(d_B, d_A, size, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(d_B.get_ptr(), d_A.get_ptr(), size, dpct::device_to_device), 0));
   checkError(cudaMemcpy(d_B, d_A, size, cudaMemcpyDeviceToDevice));
@@ -660,12 +660,12 @@ void testCommas_in_device_memory() {
   // CHECK:  dpct::dpct_memcpy(h_A, d_A.get_ptr(), size, dpct::automatic);
   cudaMemcpy(h_A, d_A, size, cudaMemcpyDefault);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(h_A, d_A.get_ptr(), size, dpct::automatic), 0);
   err = cudaMemcpy(h_A, d_A, size, cudaMemcpyDefault);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(h_A, d_A.get_ptr(), size, dpct::automatic), 0));
   checkError(cudaMemcpy(h_A, d_A, size, cudaMemcpyDefault));
@@ -674,12 +674,12 @@ void testCommas_in_device_memory() {
   // CHECK:  dpct::dpct_memcpy(d_A.get_ptr(), h_A, size, dpct::host_to_device);
   cudaMemcpyToSymbol(d_A, h_A, size, 0, cudaMemcpyHostToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(d_A.get_ptr(), h_A, size, dpct::host_to_device), 0);
   err = cudaMemcpyToSymbol(d_A, h_A, size, 0, cudaMemcpyHostToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(d_A.get_ptr(), h_A, size, dpct::host_to_device), 0));
   checkError(cudaMemcpyToSymbol(d_A, h_A, size, 0, cudaMemcpyHostToDevice));
@@ -688,11 +688,11 @@ void testCommas_in_device_memory() {
   // CHECK:  dpct::dpct_memcpy(d_A.get_ptr(), d_B.get_ptr(), size, dpct::device_to_device);
   cudaMemcpyToSymbol(d_A, d_B, size, 0, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   err = cudaMemcpyToSymbol(d_A, d_B, size, 0, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   checkError((dpct::dpct_memcpy(d_A.get_ptr(), d_B.get_ptr(), size, dpct::device_to_device), 0));
   checkError(cudaMemcpyToSymbol(d_A, d_B, size, 0, cudaMemcpyDeviceToDevice));
@@ -701,12 +701,12 @@ void testCommas_in_device_memory() {
   // CHECK:  dpct::dpct_memcpy(h_A, d_B.get_ptr(), size, dpct::automatic);
   cudaMemcpyToSymbol(h_A, d_B, size, 0, cudaMemcpyDefault);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   err = (dpct::dpct_memcpy(h_A, d_B.get_ptr(), size, dpct::automatic), 0);
   err = cudaMemcpyToSymbol(h_A, d_B, size, 0, cudaMemcpyDefault);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   checkError((dpct::dpct_memcpy(h_A, d_B.get_ptr(), size, dpct::automatic), 0));
   checkError(cudaMemcpyToSymbol(h_A, d_B, size, 0, cudaMemcpyDefault));
@@ -715,12 +715,12 @@ void testCommas_in_device_memory() {
   // CHECK:  dpct::dpct_memcpy(h_A, d_B.get_ptr(), size);
   cudaMemcpyToSymbol(h_A, d_B, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   err = (dpct::dpct_memcpy(h_A, d_B.get_ptr(), size), 0);
   err = cudaMemcpyToSymbol(h_A, d_B, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   checkError((dpct::dpct_memcpy(h_A, d_B.get_ptr(), size), 0));
   checkError(cudaMemcpyToSymbol(h_A, d_B, size));
@@ -729,12 +729,12 @@ void testCommas_in_device_memory() {
   // CHECK:  dpct::dpct_memcpy(h_A, d_A.get_ptr(), size, dpct::device_to_host);
   cudaMemcpyFromSymbol(h_A, d_A, size, 0, cudaMemcpyDeviceToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(h_A, d_A.get_ptr(), size, dpct::device_to_host), 0);
   err = cudaMemcpyFromSymbol(h_A, d_A, size, 0, cudaMemcpyDeviceToHost);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(h_A, d_A.get_ptr(), size, dpct::device_to_host), 0));
   checkError(cudaMemcpyFromSymbol(h_A, d_A, size, 0, cudaMemcpyDeviceToHost));
@@ -743,12 +743,12 @@ void testCommas_in_device_memory() {
   // CHECK:  dpct::dpct_memcpy(d_A.get_ptr(), d_B.get_ptr(), size, dpct::device_to_device);
   cudaMemcpyFromSymbol(d_A, d_B, size, 0, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  err = (dpct::dpct_memcpy(d_A.get_ptr(), d_B.get_ptr(), size, dpct::device_to_device), 0);
   err = cudaMemcpyFromSymbol(d_A, d_B, size, 0, cudaMemcpyDeviceToDevice);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   checkError((dpct::dpct_memcpy(d_A.get_ptr(), d_B.get_ptr(), size, dpct::device_to_device), 0));
   checkError(cudaMemcpyFromSymbol(d_A, d_B, size, 0, cudaMemcpyDeviceToDevice));
@@ -757,12 +757,12 @@ void testCommas_in_device_memory() {
   // CHECK:  dpct::dpct_memcpy(h_A, d_B.get_ptr(), size);
   cudaMemcpyFromSymbol(h_A, d_B, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   err = (dpct::dpct_memcpy(h_A, d_B.get_ptr(), size), 0);
   err = cudaMemcpyFromSymbol(h_A, d_B, size);
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   checkError((dpct::dpct_memcpy(h_A, d_B.get_ptr(), size), 0));
   checkError(cudaMemcpyFromSymbol(h_A, d_B, size));
@@ -772,13 +772,13 @@ void testCommas_in_device_memory() {
   cudaGetSymbolAddress(&p_addr, d_A);
 
   // CHECK:  /*
-  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */
   // CHECK-NEXT:  err = (*(&p_addr) = d_A.get_ptr(), 0);
   err = cudaGetSymbolAddress(&p_addr, d_A);
 
   // CHECK: /*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:checkError((*(&p_addr) = d_A.get_ptr(), 0));
   checkError(cudaGetSymbolAddress(&p_addr, d_A));
@@ -788,13 +788,13 @@ void testCommas_in_device_memory() {
   cudaGetSymbolSize(&size2, d_A);
 
   // CHECK: /*
-  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */
   // CHECK-NEXT:  err = (size2 = d_A.get_size(), 0);
   err = cudaGetSymbolSize(&size2, d_A);
 
   // CHECK: /*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:checkError((size2 = d_A.get_size(), 0));
   checkError(cudaGetSymbolSize(&size2, d_A));
@@ -827,7 +827,7 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
   T * data = new T[datasize];
   cudaMemcpy3DParms parms;
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  assert_cuda((dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host), 0));
   assert_cuda(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
@@ -844,25 +844,25 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
   cudaMemcpy(32*32+DATAMACRO, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
 
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  checkError((dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host), 0));
   checkError(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
 
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT: int err = (dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host), 0);
   cudaError_t err = cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
 
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT: CUDA_CHECK((dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host), 0));
   CUDA_CHECK(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
 
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT: checkCudaErrors((dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host), 0));
   checkCudaErrors(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
@@ -873,7 +873,7 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
   CUDAMEMCPY(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
 
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:  assert_cuda((dpct::dpct_memcpy(data, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host), 0));
   assert_cuda(cudaMemcpy2D(data, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost));
@@ -888,13 +888,13 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
   cudaMemcpy2D(32*32+DATAMACRO, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost);
 
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT: CUDA_CHECK((dpct::dpct_memcpy(data, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host), 0));
   CUDA_CHECK(cudaMemcpy2D(data, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost));
 
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT: checkCudaErrors((dpct::dpct_memcpy(data, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host), 0));
   checkCudaErrors(cudaMemcpy2D(data, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost));
@@ -905,13 +905,13 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
   CUDAMEMCPY2D(data, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost);
 
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT: CUDA_CHECK((dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0));
   CUDA_CHECK(cudaMemcpy3D(&parms));
 
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT: checkCudaErrors((dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0));
   checkCudaErrors(cudaMemcpy3D(&parms));

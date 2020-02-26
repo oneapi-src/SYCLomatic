@@ -219,7 +219,7 @@ int main(int argc, char* argv[]) {
   cudaEventSynchronize(stop);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9a-z]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9a-z]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: checkCudaErrors((stop.wait_and_throw(), 0));
   checkCudaErrors(cudaEventSynchronize(stop));
@@ -239,7 +239,7 @@ int main(int argc, char* argv[]) {
   cudaEventElapsedTime(&elapsed_time, start, stop);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9a-z]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9a-z]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: checkCudaErrors((elapsed_time = (float)(stop_ct1 - start_ct1) / CLOCKS_PER_SEC * 1000, 0));
   checkCudaErrors(cudaEventElapsedTime(&elapsed_time, start, stop));

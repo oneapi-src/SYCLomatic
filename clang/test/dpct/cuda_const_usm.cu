@@ -87,32 +87,32 @@ int main(int argc, char **argv) {
   // CHECK:   const_ptr.assign(d_int, sizeof(int) * size);
   cudaMemcpyToSymbol(const_ptr, &d_int, sizeof(int *));
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   (dpct::get_default_queue_wait().memcpy(const_angle.get_ptr(), &h_array[0], sizeof(float) * 360).wait(), 0);
   cudaMemcpyToSymbol(&const_angle[0], &h_array[0], sizeof(float) * 360);
 
   // CHECK:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   (dpct::get_default_queue_wait().memcpy(const_angle.get_ptr() + sizeof(float) * (3), &h_array[0], sizeof(float) * 357).wait(), 0);
   cudaMemcpyToSymbol(&const_angle[3], &h_array[0], sizeof(float) * 357);
 
   // CHECK:  /*
-  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */
   // CHECK-NEXT:  (dpct::get_default_queue_wait().memcpy(&h_array[0], const_angle.get_ptr() + sizeof(float) * (3), sizeof(float) * 357).wait(), 0);
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3], sizeof(float) * 357);
 
   #define NUM 3
   // CHECK:/*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: (dpct::get_default_queue_wait().memcpy(const_angle.get_ptr() + sizeof(float) * (3+NUM), &h_array[0], sizeof(float) * 354).wait(), 0);
   cudaMemcpyToSymbol(&const_angle[3+NUM], &h_array[0], sizeof(float) * 354);
 
   // CHECK:  /*
-  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */
   // CHECK-NEXT:  (dpct::get_default_queue_wait().memcpy(&h_array[0], const_angle.get_ptr() + sizeof(float) * (3+NUM), sizeof(float) * 354).wait(), 0);
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3+NUM], sizeof(float) * 354);
@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
 
   h_array[0] = 10.0f; // Just to test
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT:  (dpct::get_default_queue_wait().memcpy(const_one.get_ptr(), &h_array[0], sizeof(float) * 1).wait(), 0);
   cudaMemcpyToSymbol(&const_one, &h_array[0], sizeof(float) * 1);

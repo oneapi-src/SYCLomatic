@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
     cuDoubleComplex W_z = make_cuDoubleComplex(1,0);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
     cusolverDnSgebrd(*cusolverH, m, n, &A_f, lda, &D_f, &E_f, &TAUQ_f, &TAUP_f, &workspace_f, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
     cusolverDnDgebrd(*cusolverH, m, n, &A_d, lda, &D_d, &E_d, &TAUQ_d, &TAUP_d, &workspace_d, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
     cusolverDnCgebrd(*cusolverH, m, n, &A_c, lda, &D_f, &E_f, &TAUQ_c, &TAUP_c, &workspace_c, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
 
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
 
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -336,7 +336,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
@@ -362,7 +362,7 @@ int main(int argc, char *argv[])
     cusolverDnDorgbr(*cusolverH, side, m, n, k, &A_d, lda, &TAU_d, &workspace_d, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -375,7 +375,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
@@ -401,7 +401,7 @@ int main(int argc, char *argv[])
     cusolverDnCungbr(*cusolverH, side, m, n, k, &A_c, lda, &TAU_c, &workspace_c, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -414,7 +414,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
@@ -441,7 +441,7 @@ int main(int argc, char *argv[])
 
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -454,7 +454,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
@@ -484,7 +484,7 @@ int main(int argc, char *argv[])
     cusolverDnSsytrd(*cusolverH, uplo, n, &A_f, lda, &D_f, &E_f, &TAU_f, &workspace_f, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -497,7 +497,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
@@ -527,7 +527,7 @@ int main(int argc, char *argv[])
     cusolverDnDsytrd(*cusolverH, uplo, n, &A_d, lda, &D_d, &E_d, &TAU_d, &workspace_d, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -540,7 +540,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
@@ -570,7 +570,7 @@ int main(int argc, char *argv[])
     cusolverDnChetrd(*cusolverH, uplo, n, &A_c, lda, &D_f, &E_f, &TAU_c, &workspace_c, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -583,7 +583,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
@@ -613,7 +613,7 @@ int main(int argc, char *argv[])
     cusolverDnZhetrd(*cusolverH, uplo, n, &A_z, lda, &D_d, &E_d, &TAU_z, &workspace_z, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -626,7 +626,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
@@ -654,7 +654,7 @@ int main(int argc, char *argv[])
     cusolverDnSormtr(*cusolverH, side, uplo, trans, m, n, &A_f, lda, &TAU_f, &B_f, ldb, &workspace_f, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -667,7 +667,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
@@ -695,7 +695,7 @@ int main(int argc, char *argv[])
     cusolverDnDormtr(*cusolverH, side, uplo, trans, m, n, &A_d, lda, &TAU_d, &B_d, ldb, &workspace_d, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -708,7 +708,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
@@ -736,7 +736,7 @@ int main(int argc, char *argv[])
     cusolverDnCunmtr(*cusolverH, side, uplo, trans, m, n, &A_c, lda, &TAU_c, &B_c, ldb, &workspace_c, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -749,7 +749,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
@@ -777,7 +777,7 @@ int main(int argc, char *argv[])
     cusolverDnZunmtr(*cusolverH, side, uplo, trans, m, n, &A_z, lda, &TAU_z, &B_z, ldb, &workspace_z, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -790,7 +790,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
@@ -816,7 +816,7 @@ int main(int argc, char *argv[])
     cusolverDnSorgtr(*cusolverH, uplo, n, &A_f, lda, &TAU_f, &workspace_f, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -829,7 +829,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
@@ -855,7 +855,7 @@ int main(int argc, char *argv[])
     cusolverDnDorgtr(*cusolverH, uplo, n, &A_d, lda, &TAU_d, &workspace_d, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -868,7 +868,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
@@ -894,7 +894,7 @@ int main(int argc, char *argv[])
     cusolverDnCungtr(*cusolverH, uplo, n, &A_c, lda, &TAU_c, &workspace_c, Lwork, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -907,7 +907,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
@@ -934,7 +934,7 @@ int main(int argc, char *argv[])
 
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -951,7 +951,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_f_buff_ct1 = dpct::get_buffer<float>(&A_f);
@@ -981,7 +981,7 @@ int main(int argc, char *argv[])
     cusolverDnSgesvd (*cusolverH, jobu, jobvt, m, n, &A_f, lda, &S_f, &U_f, ldu, &VT_f, ldvt, &workspace_f, Lwork, &Rwork_f, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -998,7 +998,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_d_buff_ct1 = dpct::get_buffer<double>(&A_d);
@@ -1028,7 +1028,7 @@ int main(int argc, char *argv[])
     cusolverDnDgesvd (*cusolverH, jobu, jobvt, m, n, &A_d, lda, &S_d, &U_d, ldu, &VT_d, ldvt, &workspace_d, Lwork, &Rwork_d, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -1045,7 +1045,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_c_buff_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
@@ -1077,7 +1077,7 @@ int main(int argc, char *argv[])
     cusolverDnCgesvd (*cusolverH, jobu, jobvt, m, n, &A_c, lda, &S_f, &U_c, ldu, &VT_c, ldvt, &workspace_c, Lwork, &Rwork_f, &devInfo);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
@@ -1094,7 +1094,7 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
     // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_z_buff_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);

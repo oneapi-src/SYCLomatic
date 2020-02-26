@@ -28,7 +28,7 @@ void sgemm() {
   float alpha_S = 1.0f;
   float beta_S = 0.0f;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: {
   // CHECK-NEXT: auto d_A_S_buff_ct1 = dpct::get_buffer<float>(d_A_S);

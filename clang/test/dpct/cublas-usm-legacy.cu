@@ -55,7 +55,7 @@ int main() {
   int elemSize = 4;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT: */
   // CHECK-NEXT: int status = (C_S = (float *)sycl::malloc_device((n)*(elemSize), dpct::get_current_device(), dpct::get_default_context()), 0);
   // CHECK-NEXT: C_S = (float *)sycl::malloc_device((n)*(elemSize), dpct::get_current_device(), dpct::get_default_context());

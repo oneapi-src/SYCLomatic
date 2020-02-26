@@ -294,7 +294,7 @@ opt<DPCTFormatStyle>
 
 bool ExplicitClNamespace = false;
 static opt<bool, true> NoClNamespaceInline(
-  "no-cl-namespace-inline", llvm::cl::desc("Do not use CL namespace(cl::) inline.\n"),
+  "no-cl-namespace-inline", llvm::cl::desc("Do not use cl namespace (cl::) inlining. Default: off.\n"),
   cat(DPCTCat), llvm::cl::location(ExplicitClNamespace));
 
 bool ProcessAllFlag = false;
@@ -313,7 +313,7 @@ static opt<bool> EnableCTAD(
     cat(DPCTCat), init(false));
 
 static opt<bool> EnableComments(
-    "comments", llvm::cl::desc("Generate comments in migrated code. Default: off"),
+    "comments", llvm::cl::desc("Insert comments explaining the generated code. Default: off."),
     cat(DPCTCat), init(false));
 
 bool AsyncHandlerFlag = false;

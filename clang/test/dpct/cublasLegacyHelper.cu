@@ -76,7 +76,7 @@ int main() {
   int elemSize = 4;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT: */
   // CHECK-NEXT: status = (dpct::dpct_malloc((void **)&d_A, (n)*(elemSize)), 0);
   // CHECK-NEXT: dpct::dpct_malloc((void **)&d_A, (n)*(elemSize));
@@ -84,13 +84,13 @@ int main() {
   cublasAlloc(n, elemSize, (void **)&d_A);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: foo2((dpct::dpct_malloc((void **)&d_A, (n)*(elemSize)), 0));
   foo2(cublasAlloc(n, elemSize, (void **)&d_A));
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (dpct::dpct_free(d_A), 0);
   // CHECK-NEXT: dpct::dpct_free(d_A);
@@ -98,13 +98,13 @@ int main() {
   cublasFree(d_A);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: foo2((dpct::dpct_free(d_A), 0));
   foo2(cublasFree(d_A));
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: MACRO_B((dpct::dpct_free(d_A), 0));
   MACRO_B(cublasFree(d_A));
@@ -116,7 +116,7 @@ int main() {
   MACRO_B(cublasGetError());
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:11: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:11: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   MACRO_C(d_A);
 

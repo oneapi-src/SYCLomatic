@@ -37,7 +37,7 @@ int main(){
   curandGenerateUniform(rng, h_data, 100*100);
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
@@ -48,7 +48,7 @@ int main(){
   s1 = curandGenerateUniform(rng, h_data, 100*100);
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
@@ -59,7 +59,7 @@ int main(){
   s1 = curandGenerateLogNormal(rng, h_data, 100*100, 123, 456);
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
@@ -93,7 +93,7 @@ int main(){
 
   unsigned int* h_data_ui;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
@@ -104,7 +104,7 @@ int main(){
   s1 = curandGenerate(rng, h_data_ui, 100*100);
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
@@ -151,7 +151,7 @@ int main(){
 
   //CHECK:mkl::rng::skip_ahead(rng, 100);
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:s1 = (mkl::rng::skip_ahead(rng2, 200), 0);
@@ -256,7 +256,7 @@ void bar3(){
 //CHECK-NEXT:curandErrCheck(0);
 //CHECK-NEXT:float *h_data;
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the
+//CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the
 //CHECK-NEXT:lambda. You may need to rewrite this code.
 //CHECK-NEXT:*/
 //CHECK-NEXT:curandErrCheck([&]() {

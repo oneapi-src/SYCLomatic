@@ -48,7 +48,7 @@ int main() {
   int fill1 = 1;
 
   //CHECK: /*
-  //CHECK-NEXT: DPCT1003:0: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT: DPCT1003:0: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT: */
   //CHECK-NEXT: {
   //CHECK-NEXT: auto transpose_ct2 = trans0;
@@ -68,7 +68,7 @@ int main() {
   cublasSsyrkx(handle, (cublasFillMode_t)fill1, (cublasOperation_t)trans1, n, k, &alpha_s, A_s, lda, B_s, ldb, &beta_s, C_s, ldc);
 
   //CHECK: /*
-  //CHECK-NEXT: DPCT1003:1: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT: DPCT1003:1: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT: */
   //CHECK-NEXT: {
   //CHECK-NEXT: auto transpose_ct2 = 0;

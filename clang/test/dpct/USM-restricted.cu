@@ -113,22 +113,22 @@ void foo() {
 #define MACOR_C(x) cudaMemcpyDeviceToHost
 #define CUDA_SAFE_CALL2(x) CUDA_SAFE_CALL(x)
   //CHECK: /*
-  //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT: */
   //CHECK-NEXT: CUDA_SAFE_CALL2((dpct::get_default_queue_wait().memcpy(d_A, h_A, size).wait(), 0));
   CUDA_SAFE_CALL2(cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice));
   //CHECK: /*
-  //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT: */
   //CHECK-NEXT: CUDA_SAFE_CALL2((dpct::get_default_queue_wait().memcpy(d_A, h_A, MACRO_B).wait(), 0));
   CUDA_SAFE_CALL2(cudaMemcpy(d_A, h_A, MACRO_B, cudaMemcpyDeviceToHost));
   //CHECK: /*
-  //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT: */
   //CHECK-NEXT: CUDA_SAFE_CALL2((dpct::get_default_queue_wait().memcpy(d_A, h_A, MACRO_A2(1)).wait(), 0));
   CUDA_SAFE_CALL2(cudaMemcpy(d_A, h_A, MACRO_A2(1), MACOR_C(1)));
   //CHECK: /*
-  //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT: */
   //CHECK-NEXT: CUDA_SAFE_CALL2((dpct::get_default_queue_wait().memcpy(d_A, h_A, foo_b(1)).wait(), 0));
   CUDA_SAFE_CALL2(cudaMemcpy(d_A, h_A, foo_b(1), MACOR_C(1)));

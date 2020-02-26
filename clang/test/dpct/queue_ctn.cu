@@ -79,11 +79,11 @@ void foo5() {
   // CHECK-NEXT: q_ct4.wait();
   // CHECK-NEXT: q_ct4.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: int Err = (q_ct4.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait(), 0);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: Err = (q_ct4.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait(), 0);
   cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );

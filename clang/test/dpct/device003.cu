@@ -11,7 +11,7 @@ int main(int argc, char **argv)
 int deviceCount = 0;
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT: checkErrors((deviceCount = dpct::dev_mgr::instance().device_count(), 0));
 checkErrors(cudaGetDeviceCount(&deviceCount));
@@ -22,7 +22,7 @@ checkErrors(cudaGetDevice(&dev_id));
 
 cudaDeviceProp deviceProp;
 // CHECK:/*
-// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:checkErrors((dpct::dev_mgr::instance().get_device(0).get_device_info(deviceProp), 0));
 checkErrors(cudaGetDeviceProperties(&deviceProp, 0));
@@ -54,7 +54,7 @@ checkErrors(cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, 
 // CHECK-NEXT: checkErrors(atomicSupported = 0);
 checkErrors(cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtomicSupported, device1, device2));
 // CHECK:/*
-// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:checkErrors((dpct::dev_mgr::instance().select_device(device2), 0));
 checkErrors(cudaSetDevice(device2));

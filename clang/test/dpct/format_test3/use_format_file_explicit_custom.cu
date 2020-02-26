@@ -16,7 +16,7 @@ float *d_A = NULL;
      //CHECK:void foo1() try {
 //CHECK-NEXT:  for(;;)
 //CHECK-NEXT:    /*
-//CHECK-NEXT:    DPCT1003:0: Migrated api does not return error
+//CHECK-NEXT:    DPCT1003:0: Migrated API does not return error
 //CHECK-NEXT:    code. (*, 0) is inserted. You may need to
 //CHECK-NEXT:    rewrite this code.
 //CHECK-NEXT:    */

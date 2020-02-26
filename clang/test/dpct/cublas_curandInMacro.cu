@@ -39,7 +39,7 @@ int main() {
 
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: cublasErrCheck([&](){
     // CHECK-NEXT: auto transpose_ct1 = trans0;
@@ -54,7 +54,7 @@ int main() {
 
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: cublasErrCheck([&](){
     // CHECK-NEXT: auto x_S_buff_ct1 = dpct::get_buffer<float>(x_S);
@@ -68,7 +68,7 @@ int main() {
 
 
     //CHECK: /*
-    //CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    //CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: cublasErrCheck([&](){
     //CHECK-NEXT: auto transpose_ct2 = trans1;
@@ -82,7 +82,7 @@ int main() {
 
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: cublasErrCheck([&](){
     // CHECK-NEXT: auto transpose_ct3 = trans0;
@@ -111,7 +111,7 @@ int main() {
 
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT:cublasErrCheck([&](){
     // CHECK-NEXT:auto transpose_ct{{[0-9]+}} = trans0;
@@ -125,7 +125,7 @@ int main() {
     cublasErrCheck(cublasCgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_C, d_A_C, N, d_B_C, N, &beta_C, d_C_C, N));
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT:cublasErrCheck([&](){
     // CHECK-NEXT:auto x_C_buff_ct1 = dpct::get_buffer<std::complex<float>>(x_C);
@@ -138,7 +138,7 @@ int main() {
     cublasErrCheck(cublasIcamax(handle, N, x_C, N, result));
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT:cublasErrCheck([&](){
     // CHECK-NEXT:auto transpose_ct{{[0-9]+}} = trans0;
@@ -154,7 +154,7 @@ int main() {
     cublasErrCheck(cublasCtrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N));
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT:cublasErrCheck([&](){
     // CHECK-NEXT:dpct::getrf_batch_wrapper(handle, N, Aarray_S, N, PivotArray, infoArray, batchSize);
@@ -175,7 +175,7 @@ int main() {
     //CHECK-NEXT:*/
     //CHECK-NEXT:curandErrCheck(0);
     //CHECK-NEXT:/*
-    //CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    //CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
     //CHECK-NEXT:*/
     //CHECK-NEXT:curandErrCheck([&](){
     //CHECK-NEXT:auto h_data_buff_ct1 = dpct::get_buffer<float>(h_data);

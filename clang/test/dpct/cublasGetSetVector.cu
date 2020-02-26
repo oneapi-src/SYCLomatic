@@ -22,7 +22,7 @@ int main() {
   cudaStream_t stream;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (dpct::dpct_memcpy((void*)(h_C),(void*)(d_C),(N)*(sizeof(h_C[0]))*(1),dpct::device_to_host), 0);
   status = cublasGetVector(N, sizeof(h_C[0]), d_C, 1, h_C, 1);
@@ -30,7 +30,7 @@ int main() {
 #define INCX_MARCO 1
   const int ConstIncy = 1;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (dpct::dpct_memcpy((void*)(d_A),(void*)(h_A),(N)*(sizeof(h_A[0]))*(INCX_MARCO),dpct::host_to_device), 0);
   status = cublasSetVector(N, sizeof(h_A[0]), h_A, INCX_MARCO, d_A, ConstIncy);
@@ -59,7 +59,7 @@ int main() {
   // CHECK-NEXT: DPCT1018:{{[0-9]+}}: The cublasSetVector was migrated, but due to parameter ConstIncx equals to parameter INCY_MARCO but greater than 1, the generated code performance may be sub-optimal.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (dpct::dpct_memcpy((void*)(d_A),(void*)(h_A),(N)*(sizeof(h_A[0]))*(ConstIncx),dpct::host_to_device), 0);
   status = cublasSetVector(N, sizeof(h_A[0]), h_A, ConstIncx, d_A, INCY_MARCO);
@@ -101,7 +101,7 @@ int main() {
   cublasGetVector(N, sizeof(h_A[0]), h_A, foo(ConstExprIncx), d_A, ConstExprIncy);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (dpct::dpct_memcpy((void*)(h_C),(void*)(d_C),(N)*(sizeof(h_C[0]))*(1),dpct::device_to_host), 0);
   // CHECK-NEXT: dpct::dpct_memcpy((void*)(h_C),(void*)(d_C),(N)*(sizeof(h_C[0]))*(1),dpct::device_to_host);
@@ -109,7 +109,7 @@ int main() {
   cublasGetVectorAsync(N, sizeof(h_C[0]), d_C, 1, h_C, 1, stream);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated api does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = (dpct::dpct_memcpy((void*)(h_C),(void*)(d_C),(N)*(sizeof(h_C[0]))*(1),dpct::host_to_device), 0);
   // CHECK-NEXT: dpct::dpct_memcpy((void*)(h_C),(void*)(d_C),(N)*(sizeof(h_C[0]))*(1),dpct::host_to_device);

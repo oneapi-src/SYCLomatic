@@ -30,7 +30,7 @@ int main() {
   float beta_S = 0.0f;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if ([&]() {
@@ -49,7 +49,7 @@ int main() {
 
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (int stat = [&]() {
@@ -83,7 +83,7 @@ int main() {
 
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: while ([&]() {
@@ -103,7 +103,7 @@ int main() {
 
   // CHECK: do{
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: } while ([&]() {
@@ -120,7 +120,7 @@ int main() {
 
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated api does not return error code. 0 is returned in the
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: switch (int stat = [&]() {
