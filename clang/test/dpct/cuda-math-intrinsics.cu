@@ -2786,3 +2786,59 @@ __global__ void foobar(int i) {
   min(blockDim.y, i);
   min(blockDim.z, i);
 }
+
+void do_migration() {
+  int i, j;
+  // CHECK: std::max(i, j);
+  max(i, j);
+}
+__global__ void do_migration2() {
+  int i, j;
+  // CHECK: sycl::max(i, j);
+  max(i, j);
+}
+__device__ void do_migration3() {
+  int i, j;
+  // CHECK: sycl::max(i, j);
+  max(i, j);
+}
+__host__ __device__ void do_migration4() {
+  int i, j;
+  // CHECK: sycl::max(i, j);
+  max(i, j);
+}
+int max(int i, int j) {
+  return i > j ? i : j;
+}
+namespace t {
+int max(int i, int j) {
+  return i > j ? i : j;
+}
+}
+void no_migration() {
+  int i, j;
+  // CHECK: max(i, j);
+  max(i, j);
+}
+void no_migration2() {
+  int i, j;
+  // CHECK: t::max(i, j);
+  t::max(i, j);
+}
+void no_migration3() {
+  int i, j;
+  // CHECK: std::max(i, j);
+  std::max(i, j);
+}
+__host__ void no_migration4() {
+  int i, j;
+  // CHECK: max(i, j);
+  max(i, j);
+}
+
+void ns() {
+  using namespace std;
+  int i, j;
+  // CHECK: max(i, j);
+  max(i, j);
+}

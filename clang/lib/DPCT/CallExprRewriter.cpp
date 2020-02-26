@@ -71,7 +71,22 @@ void MathCallExprRewriter::reportUnsupportedRoundingMode() {
   }
 }
 
+// Judge if a function is declared in user code or not
+bool isTargetMathFunction(const FunctionDecl *FD) {
+  auto FilePath = DpctGlobalInfo::getLocInfo(FD).first;
+  if (isChildOrSamePath(DpctGlobalInfo::getInRoot(), FilePath))
+    return false;
+  return true;
+}
+
 Optional<std::string> MathFuncNameRewriter::rewrite() {
+  // If the function is not a target math function, do not migrate it
+  if (!isTargetMathFunction(Call->getDirectCallee())) {
+    RewriteArgList = getMigratedArgs();
+    setTargetCalleeName(getSourceCalleeName().str());
+    return buildRewriteString();
+  }
+
   reportUnsupportedRoundingMode();
   RewriteArgList = getMigratedArgs();
   setTargetCalleeName(getNewFuncName());
@@ -170,7 +185,6 @@ std::string MathFuncNameRewriter::getNewFuncName() {
         auto T0 = Arg0->getType().getAsString(PrintingPolicy(LO));
         auto T1 = Arg1->getType().getAsString(PrintingPolicy(LO));
         auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
-        auto DRE1 = dyn_cast<DeclRefExpr>(Arg1->IgnoreCasts());
         if (T1 == "int") {
           if (T0 == "int") {
             if (DRE0)
