@@ -297,3 +297,23 @@ void bar4(){
   curandCreateGenerator(&rng, CURAND_RNG_QUASI_SCRAMBLED_SOBOL32);
   curandSetQuasiRandomGeneratorDimensions(rng, 1243);
 }
+
+void bar5(){
+//CHECK:/*
+//CHECK-NEXT:DPCT1036:{{[0-9]+}}: Type curandGenerator_t is not migrated, because the migration
+//CHECK-NEXT:depends on the second argument of curandCreateGenerator.
+//CHECK-NEXT:*/
+//CHECK-NEXT:curandGenerator_t rng;
+//CHECK-NEXT:/*
+//CHECK-NEXT:DPCT1028:{{[0-9]+}}: The curandCreateGenerator was not migrated, because parameter
+//CHECK-NEXT:(curandRngType)101 is unsupported.
+//CHECK-NEXT:*/
+//CHECK-NEXT:curandCreateGenerator(&rng, (curandRngType)101);
+//CHECK-NEXT:/*
+//CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed,
+//CHECK-NEXT:because the function call is redundant in DPC++.
+//CHECK-NEXT:*/
+  curandGenerator_t rng;
+  curandCreateGenerator(&rng, (curandRngType)101);
+  curandSetPseudoRandomGeneratorSeed(rng, 1337ull);
+}

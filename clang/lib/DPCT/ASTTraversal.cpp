@@ -2773,6 +2773,10 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     std::string EnumStr = getStmtSpelling(CE->getArg(1));
     if (MapNames::RandomEngineTypeMap.find(EnumStr) ==
         MapNames::RandomEngineTypeMap.end()) {
+      report(SM.getExpansionLoc(REInfo->getDeclaratorDecl()->getBeginLoc()),
+             Diagnostics::UNMIGRATED_TYPE, "curandGenerator_t",
+             "the migration depends on the second argument of "
+             "curandCreateGenerator");
       report(PrefixInsertLoc, Diagnostics::NOT_SUPPORTED_PARAMETER, FuncName,
              "parameter " + EnumStr + " is unsupported");
       return;
