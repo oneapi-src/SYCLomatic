@@ -37,7 +37,7 @@ int main() {
   // CHECK-NEXT:      sycl::stream [[STREAM:stream_ct1]](64 * 1024, 80, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_test_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:        [=](sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK-NEXT:           kernel_test([[STREAM]]);
   // CHECK-NEXT:      });

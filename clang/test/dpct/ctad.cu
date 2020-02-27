@@ -64,7 +64,7 @@ int main() {
   // CHECK-NEXT:       sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> k_acc_ct1(sycl::range(32/*32*/), cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range(sycl::range(1, 1, 1) * sycl::range(1, 1, 1), sycl::range(1, 1, 1)),
+  // CHECK-NEXT:         sycl::nd_range(sycl::range(1, 1, 1), sycl::range(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernel(1, k_acc_ct1.get_pointer());
   // CHECK-NEXT:         });

@@ -149,7 +149,7 @@ int main() {
   // CHECK-NEXT:      auto args_arg2_acc_ct1 = args_arg2_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 2, 1), cl::sycl::range<3>(1, 2, 1)),
+  // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 2, 1), cl::sycl::range<3>(1, 2, 1)),
   // CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:          const int *args_arg1_ct0 = (const int *)(&args_arg1_acc_ct0[0] + args_arg1_offset_ct0);
   // CHECK-NEXT:          const int *args_arg2_ct1 = (const int *)(&args_arg2_acc_ct1[0] + args_arg2_offset_ct1);
@@ -251,7 +251,7 @@ public:
   // CHECK-NEXT:    dpct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:            foo_kernel(a_ct0, aa_b_ct1, aa_c_d_ct2);
   // CHECK-NEXT:          });
@@ -278,7 +278,7 @@ __global__ void foo_kernel3(int *d) {
 //CHECK-NEXT:          auto acc_ct0 = buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
-//CHECK-NEXT:            cl::sycl::nd_range<3>(cl::sycl::range<3>(c.get(2), c.get(1), c.get(0)) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:            cl::sycl::nd_range<3>(cl::sycl::range<3>(c.get(2), c.get(1), c.get(0)), cl::sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:            [=](cl::sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:              int *ct0 = (int *)(&acc_ct0[0] + offset_ct0);
 //CHECK-NEXT:              foo_kernel3(ct0);
@@ -318,7 +318,7 @@ void run_foo(dim3 c, dim3 d) {
 //CHECK-NEXT:          auto acc_ct0 = buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
-//CHECK-NEXT:            cl::sycl::nd_range<3>(cl::sycl::range<3>(c.get(2), c.get(1), c.get(0)) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:            cl::sycl::nd_range<3>(cl::sycl::range<3>(c.get(2), c.get(1), c.get(0)), cl::sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:            [=](cl::sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:              int *ct0 = (int *)(&acc_ct0[0] + offset_ct0);
 //CHECK-NEXT:              foo_kernel3(ct0);
@@ -366,7 +366,7 @@ void run_foo3(dim3 c, dim3 d) {
 //CHECK-NEXT:          auto acc_ct0 = buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
-//CHECK-NEXT:           cl::sycl::nd_range<3>(cl::sycl::range<3>(c.get(2), c.get(1), c.get(0)) * cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:           cl::sycl::nd_range<3>(cl::sycl::range<3>(c.get(2), c.get(1), c.get(0)), cl::sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:           [=](cl::sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:             int *ct0 = (int *)(&acc_ct0[0] + offset_ct0);
 //CHECK-NEXT:             foo_kernel3(ct0);

@@ -16,7 +16,7 @@ void test() {
   // CHECK-NEXT:         auto g_mutex_acc_ct1 = g_mutex.get_access(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class Reset_kernel_parameters_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:             Reset_kernel_parameters(g_mutex_acc_ct1.get_pointer());
   // CHECK-NEXT:           });

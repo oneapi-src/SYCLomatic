@@ -50,7 +50,7 @@ void testTemplate(){
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, T>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           T *d_d_ct0 = (T *)(&d_d_acc_ct0[0] + d_d_offset_ct0);
   // CHECK-NEXT:           templateReverse<T>(d_d_ct0, n, item_ct1, dpct_local_acc_ct1.get_pointer());
@@ -75,7 +75,7 @@ int main(void) {
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class staticReverse_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           staticReverse((int *)(&d_d_acc_ct0[0]), n, item_ct1, dpct_local_acc_ct1.get_pointer());
   // CHECK-NEXT:         });
@@ -92,7 +92,7 @@ int main(void) {
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class staticReverse_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           staticReverse((int *)(&d_d_acc_ct0[0]), n, item_ct1, dpct_local_acc_ct1.get_pointer());
   // CHECK-NEXT:         });
@@ -108,7 +108,7 @@ int main(void) {
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, int>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           templateReverse<int>((int *)(&d_d_acc_ct0[0]), n, item_ct1, dpct_local_acc_ct1.get_pointer());
   // CHECK-NEXT:         });

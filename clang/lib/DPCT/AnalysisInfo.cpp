@@ -338,8 +338,19 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
   DpctGlobalInfo::printCtadClass(
       Printer.indent(), MapNames::getClNamespace() + "::nd_range", 3)
       << "(";
+  static std::string CanIgnoreRangeStr =
+      DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "::range", 3) +
+      "(1, 1, 1)";
   if (ExecutionConfig.DeclGlobalRange) {
     printReverseRange(Printer, "dpct_global_range");
+  } else if (ExecutionConfig.GroupSize == CanIgnoreRangeStr) {
+    printKernelRange(Printer, ExecutionConfig.LocalSize, "dpct_local_range",
+                     ExecutionConfig.DeclLocalRange,
+                     ExecutionConfig.LocalDirectRef);
+  } else if (ExecutionConfig.LocalSize == CanIgnoreRangeStr) {
+    printKernelRange(Printer, ExecutionConfig.GroupSize, "dpct_group_range",
+                     ExecutionConfig.DeclGroupRange,
+                     ExecutionConfig.GroupDirectRef);
   } else {
     printKernelRange(Printer, ExecutionConfig.GroupSize, "dpct_group_range",
                      ExecutionConfig.DeclGroupRange,

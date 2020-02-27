@@ -140,9 +140,8 @@ __global__ void k_mdppp_outer_nn(const int * __restrict__ pos,
 
 // In windows, only when k_mdppp_outer_nn() is instantiated, there is an AST for k_mdppp_outer_nn template.
      //CHECK:    cgh.parallel_for(
-//CHECK-NEXT:        cl::sycl::nd_range<3>(
-//CHECK-NEXT:            cl::sycl::range<3>(1, 1, 1) * cl::sycl::range<3>(1, 1, 1),
-//CHECK-NEXT:            cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1),
+//CHECK-NEXT:                              cl::sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
 void test() {
   k_mdppp_outer_nn<1><<<1, 1, 1>>>(NULL,

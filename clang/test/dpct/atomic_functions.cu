@@ -112,7 +112,7 @@ void InvokeKernel() {
   // CHECK-NEXT:       auto dev_ptr_acc_ct0 = dev_ptr_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class test_{{[a-f0-9]+}}, T>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, k_threads_per_block), sycl::range<3>(1, 1, k_threads_per_block)),
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, k_threads_per_block), sycl::range<3>(1, 1, k_threads_per_block)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           T *dev_ptr_ct0 = (T *)(&dev_ptr_acc_ct0[0] + dev_ptr_offset_ct0);
   // CHECK-NEXT:           test<T>(dev_ptr_ct0, item_ct1);

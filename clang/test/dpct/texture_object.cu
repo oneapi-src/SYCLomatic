@@ -111,7 +111,7 @@ int main() {
   // CHECK-NEXT:     auto tex42_acc = static_cast<dpct::image<sycl::float4, 2> *>(tex42)->get_access(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1) * sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         kernel(tex21_acc, tex42_acc);
   // CHECK-NEXT:       });
