@@ -616,6 +616,16 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+class ManualMigrateEnumsRule
+    : public NamedMigrationRule<ManualMigrateEnumsRule> {
+public:
+  ManualMigrateEnumsRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 /// Migration rule for BLAS enums.
 class BLASEnumsRule : public NamedMigrationRule<BLASEnumsRule> {
 public:

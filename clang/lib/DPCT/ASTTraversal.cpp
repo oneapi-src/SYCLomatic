@@ -304,6 +304,7 @@ void IncludesCallbacks::InclusionDirective(
 
   std::string FilePath = File->getName().str();
   makeCanonical(FilePath);
+
   std::string DirPath = llvm::sys::path::parent_path(FilePath).str();
   bool IsFileInInRoot = !isChildPath(DpctInstallPath, DirPath) &&
                         (isChildOrSamePath(InRoot, DirPath));
@@ -347,6 +348,27 @@ void IncludesCallbacks::InclusionDirective(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
         ""));
+    Updater.update(false);
+  }
+
+  if (FileName.startswith(StringRef("nccl"))) {
+    if (isChildOrSamePath(InRoot, DirPath)) {
+      return;
+    }
+    DiagnosticsUtils::report(
+        HashLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY,
+        dpct::DpctGlobalInfo::getCompilerInstance(), &TransformSet,
+        "Intel(R) oneAPI Collective Communications Library");
+    Updater.update(false);
+  }
+  if (FileName.startswith(StringRef("cudnn"))) {
+    if (isChildOrSamePath(InRoot, DirPath)) {
+      return;
+    }
+    DiagnosticsUtils::report(
+        HashLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY,
+        dpct::DpctGlobalInfo::getCompilerInstance(), &TransformSet,
+        "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
     Updater.update(false);
   }
 
@@ -1180,18 +1202,22 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(ThrustFunctionRule)
 
-auto TypedefNames = hasAnyName(
-    "dim3", "cudaError_t", "CUresult", "CUcontext", "cudaEvent_t",
-    "cudaStream_t", "__half", "__half2", "half", "half2", "cublasStatus_t",
-    "cuComplex", "cuDoubleComplex", "cublasFillMode_t", "cublasDiagType_t",
-    "cublasSideMode_t", "cublasOperation_t", "cublasStatus", "cusolverStatus_t",
-    "cusolverEigType_t", "cusolverEigMode_t", "curandStatus_t");
-auto EnumTypeNames =
-    hasAnyName("cudaError", "cufftResult_t", "cudaError_enum", "curandStatus");
-auto RecordTypeNames = hasAnyName("cudaDeviceProp", "CUstream_st", "CUevent_st",
-                                  "cudaExtent", "cudaPos", "cudaPitchedPtr");
+auto TypedefNames = anyOf(
+    hasAnyName("dim3", "cudaError_t", "CUresult", "CUcontext", "cudaEvent_t",
+               "cudaStream_t", "__half", "__half2", "half", "half2",
+               "cublasStatus_t", "cuComplex", "cuDoubleComplex",
+               "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
+               "cublasOperation_t", "cublasStatus", "cusolverStatus_t",
+               "cusolverEigType_t", "cusolverEigMode_t", "curandStatus_t"),
+    matchesName("cudnn.*|nccl.*"));
+auto EnumTypeNames = anyOf(
+    hasAnyName("cudaError", "cufftResult_t", "cudaError_enum", "curandStatus"),
+    matchesName("cudnn.*|nccl.*"));
+auto RecordTypeNames =
+    anyOf(hasAnyName("cudaDeviceProp", "CUstream_st", "CUevent_st",
+                     "cudaExtent", "cudaPos", "cudaPitchedPtr"),
+          matchesName("cudnn.*|nccl.*"));
 auto HandleTypeNames = hasAnyName("cublasHandle_t", "cusolverDnHandle_t");
-
 auto TemplateRecordTypeNames =
     hasAnyName("device_vector", "device_ptr", "host_vector");
 
@@ -1366,7 +1392,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 
-std::string getReplacementForType(std::string TypeStr, bool IsVarDecl = false) {
+std::string getReplacementForType(std::string TypeStr, bool IsVarDecl = false,
+                                  std::string *TypeStrRemovePrefix = nullptr) {
   std::istringstream ISS(TypeStr);
   std::vector<std::string> Strs(std::istream_iterator<std::string>{ISS},
                                 std::istream_iterator<std::string>());
@@ -1377,13 +1404,14 @@ std::string getReplacementForType(std::string TypeStr, bool IsVarDecl = false) {
     Strs.erase(it);
 
   std::string TypeName = Strs.back();
-
   // remove possible template parameters from TypeName
   size_t bracketBeginPos = TypeName.find('<');
   if (bracketBeginPos != std::string::npos) {
     size_t bracketEndPos = TypeName.rfind('>');
     TypeName.erase(bracketBeginPos, bracketEndPos - bracketBeginPos + 1);
   }
+  if (TypeStrRemovePrefix != nullptr)
+    *TypeStrRemovePrefix = TypeName;
   SrcAPIStaticsMap[TypeName]++;
   auto Search = MapNames::TypeNamesMap.find(TypeName);
   if (Search == MapNames::TypeNamesMap.end())
@@ -1410,6 +1438,32 @@ std::string getReplacementForType(std::string TypeStr, bool IsVarDecl = false) {
   }
 
   return Replacement;
+}
+
+template<typename T>
+bool getLocation(const Type *TypePtr, SourceLocation &SL) {
+  auto TType = TypePtr->getAs<T>();
+  if (TType) {
+    auto TypeDecl = TType->getDecl();
+    if (TypeDecl) {
+      SL = TypeDecl->getLocation();
+      return true;
+    } else {
+      return false;
+    }
+  }
+  return false;
+}
+
+bool getTypeDeclLocation(const Type* TypePtr, SourceLocation& SL){
+  if (getLocation<EnumType>(TypePtr, SL)) {
+    return true;
+  } else if (getLocation<TypedefType>(TypePtr, SL)) {
+    return true;
+  } else if (getLocation<RecordType>(TypePtr, SL)) {
+    return true;
+  }
+  return false;
 }
 
 void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
@@ -1519,17 +1573,49 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
     DpctGlobalInfo::getInstance().insertHeader(BeginLoc, Complex);
   }
 
-  auto Replacement =
-      getReplacementForType(TypeStr, DD && (DD->getKind() == Decl::Var));
+  std::string TypeStrRemovePrefix;
+  auto Replacement = getReplacementForType(
+      TypeStr, DD && (DD->getKind() == Decl::Var), &TypeStrRemovePrefix);
+  if (TypeStrRemovePrefix.size() >= 4 &&
+      TypeStrRemovePrefix.substr(0, 4) == "nccl") {
+    auto TP = QT.getTypePtr();
+    if (TP) {
+      SourceLocation SL;
+      if (getTypeDeclLocation(TP, SL)) {
+        std::string FilePath =
+            DpctGlobalInfo::getSourceManager().getFilename(SL).str();
+        if (DpctGlobalInfo::isInRoot(FilePath)) {
+          return;
+        }
+      }
+    }
+    report(BeginLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY,
+           "Intel(R) oneAPI Collective Communications Library");
+    return;
+  } else if (TypeStrRemovePrefix.size() >= 5 &&
+             TypeStrRemovePrefix.substr(0, 5) == "cudnn") {
+    auto TP = QT.getTypePtr();
+    if (TP) {
+      SourceLocation SL;
+      if (getTypeDeclLocation(TP, SL)) {
+        std::string FilePath =
+            DpctGlobalInfo::getSourceManager().getFilename(SL).str();
+        if (DpctGlobalInfo::isInRoot(FilePath)) {
+          return;
+        }
+      }
+    }
+    report(BeginLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY,
+           "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
+    return;
+  }
+
   if (Replacement.empty())
     // TODO report migration error
     return;
 
   if (HasDeviceAttr) {
-    auto SL = DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc();
-    if (SL.isMacroID())
-      SL = (Result.SourceManager)->getExpansionLoc(SL);
-    report(SL, Diagnostics::HANDLE_IN_DEVICE, TypeStr);
+    report(BeginLoc, Diagnostics::HANDLE_IN_DEVICE, TypeStr);
     return;
   }
 
@@ -2408,24 +2494,20 @@ void ReturnTypeRule::registerMatcher(MatchFinder &MF) {
   // blas handler is a struct, so it could be returned as value by user
   // defined function. But sycl::queue cannot be return as value.
   // It will be replaced by a handle type later.
-  auto TypedefNames = hasAnyName(
-      "dim3", "cudaError_t", "CUresult", "CUcontext", "cudaEvent_t",
-      "cudaStream_t", "__half", "__half2", "half", "half2", "cublasStatus_t",
-      "cuComplex", "cuDoubleComplex", "cublasFillMode_t", "cublasDiagType_t",
-      "cublasSideMode_t", "cublasOperation_t", "cublasStatus",
-      "cusolverDnHandle_t", "cusolverStatus_t", "cusolverEigType_t",
-      "cusolverEigMode_t", "cublasHandle_t", "cusolverDnHandle_t",
-      "curandStatus_t", "curandStatus");
 
-  auto T =
-      hasDeclaration(anyOf(enumDecl(EnumTypeNames), typedefDecl(TypedefNames)));
+  auto T = hasDeclaration(
+      anyOf(enumDecl(EnumTypeNames), typedefDecl(TypedefNames),
+            typedefDecl(HandleTypeNames), cxxRecordDecl(RecordTypeNames)));
   auto P = anyOf(pointsTo(typedefDecl(TypedefNames)),
+                 pointsTo(typedefDecl(HandleTypeNames)),
                  pointsTo(enumDecl(EnumTypeNames)),
-                 pointsTo(typedefDecl(TypedefNames)));
+                 pointsTo(cxxRecordDecl(RecordTypeNames)));
   auto PP = anyOf(pointsTo(pointsTo(typedefDecl(TypedefNames))),
+                  pointsTo(pointsTo(typedefDecl(HandleTypeNames))),
                   pointsTo(pointsTo(enumDecl(EnumTypeNames))),
                   pointsTo(pointsTo(cxxRecordDecl(RecordTypeNames))));
   auto R = anyOf(references(typedefDecl(TypedefNames)),
+                 references(typedefDecl(HandleTypeNames)),
                  references(enumDecl(EnumTypeNames)),
                  references(cxxRecordDecl(RecordTypeNames)));
 
@@ -2644,6 +2726,49 @@ void ErrorConstantsRule::run(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(ErrorConstantsRule)
+
+void ManualMigrateEnumsRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      declRefExpr(to(enumConstantDecl(matchesName("NCCL_.*"))))
+          .bind("NCCLConstants"),
+      this);
+  MF.addMatcher(
+      declRefExpr(to(enumConstantDecl(matchesName("CUDNN_.*"))))
+          .bind("CUDNNConstants"),
+      this);
+}
+
+void ManualMigrateEnumsRule::run(const MatchFinder::MatchResult &Result) {
+  if (const DeclRefExpr *DE =
+          getNodeAsType<DeclRefExpr>(Result, "NCCLConstants")) {
+    auto *ECD = cast<EnumConstantDecl>(DE->getDecl());
+    std::string FilePath = DpctGlobalInfo::getSourceManager()
+                               .getFilename(ECD->getBeginLoc())
+                               .str();
+    if (DpctGlobalInfo::isInRoot(FilePath)) {
+      return;
+    }
+    report(dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
+               DE->getBeginLoc()),
+           Diagnostics::MANUAL_MIGRATION_LIBRARY,
+           "Intel(R) oneAPI Collective Communications Library");
+  } else if (const DeclRefExpr *DE =
+                 getNodeAsType<DeclRefExpr>(Result, "CUDNNConstants")) {
+    auto *ECD = cast<EnumConstantDecl>(DE->getDecl());
+    std::string FilePath = DpctGlobalInfo::getSourceManager()
+                               .getFilename(ECD->getBeginLoc())
+                               .str();
+    if (DpctGlobalInfo::isInRoot(FilePath)) {
+      return;
+    }
+    report(dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
+               DE->getBeginLoc()),
+           Diagnostics::MANUAL_MIGRATION_LIBRARY,
+           "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
+  }
+}
+
+REGISTER_RULE(ManualMigrateEnumsRule)
 
 // Rule for BLAS enums.
 // Migrate BLAS status values to corresponding int values
@@ -7210,6 +7335,14 @@ void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
                      unless(callee(hasDeclContext(namedDecl(hasName("std")))))))
           .bind("APINamesUsed"),
       this);
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(matchesName("(nccl.*)|(cudnn.*)"))),
+                     unless(callee(functionDecl(internal::Matcher<NamedDecl>(
+                         new internal::HasNameMatcher(AllAPINames))))),
+                     unless(hasAncestor(cudaKernelCallExpr())),
+                     unless(callee(hasDeclContext(namedDecl(hasName("std")))))))
+          .bind("ManualMigrateAPI"),
+      this);
 }
 
 const std::string
@@ -7235,9 +7368,11 @@ RecognizeAPINameRule::GetFunctionSignature(const FunctionDecl *Func) {
 void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
   const CallExpr *C = getNodeAsType<CallExpr>(Result, "APINamesUsed");
   if (!C) {
-    return;
+    C = getNodeAsType<CallExpr>(Result, "ManualMigrateAPI");
+    if (!C) {
+      return;
+    }
   }
-
   std::string Namespace;
   const NamedDecl *ND = dyn_cast<NamedDecl>(C->getCalleeDecl());
   if (ND) {
@@ -7254,8 +7389,31 @@ void RecognizeAPINameRule::run(const MatchFinder::MatchResult &Result) {
   }
 
   SrcAPIStaticsMap[GetFunctionSignature(C->getCalleeDecl()->getAsFunction())]++;
-
-  if (!MigrationStatistics::IsMigrated(APIName)) {
+  if (APIName.size() >= 4 && APIName.substr(0, 4) == "nccl") {
+    auto D = C->getCalleeDecl();
+    if (D) {
+      auto FilePath = DpctGlobalInfo::getSourceManager()
+                          .getFilename(D->getBeginLoc())
+                          .str();
+      if (DpctGlobalInfo::isInRoot(FilePath)) {
+        return;
+      }
+    }
+    report(C->getBeginLoc(), Diagnostics::MANUAL_MIGRATION_LIBRARY,
+           "Intel(R) oneAPI Collective Communications Library");
+  } else if (APIName.size() >= 5 && APIName.substr(0, 5) == "cudnn") {
+    auto D = C->getCalleeDecl();
+    if (D) {
+      auto FilePath = DpctGlobalInfo::getSourceManager()
+                          .getFilename(D->getBeginLoc())
+                          .str();
+      if (DpctGlobalInfo::isInRoot(FilePath)) {
+        return;
+      }
+    }
+    report(C->getBeginLoc(), Diagnostics::MANUAL_MIGRATION_LIBRARY,
+           "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
+  } else if (!MigrationStatistics::IsMigrated(APIName)) {
     GAnalytics(GetFunctionSignature(C->getCalleeDecl()->getAsFunction()));
     const SourceManager &SM = (*Result.Context).getSourceManager();
     const SourceLocation FileLoc = SM.getFileLoc(C->getBeginLoc());

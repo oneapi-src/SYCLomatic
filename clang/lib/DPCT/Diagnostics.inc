@@ -90,3 +90,5 @@ DEF_WARNING(COMPUTE_MODE, 1035, "All DPC++ devices can be used by host to submit
 DEF_COMMENT(COMPUTE_MODE, 1035, "All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.")
 DEF_WARNING(UNMIGRATED_TYPE, 1036, "Type %0 is not migrated, because %1.")
 DEF_COMMENT(UNMIGRATED_TYPE, 1036, "Type {0} is not migrated, because {1}.")
+DEF_WARNING(MANUAL_MIGRATION_LIBRARY, 1037, "Try to rewrite this code using %0 with DPC++.")
+DEF_COMMENT(MANUAL_MIGRATION_LIBRARY, 1037, "Try to rewrite this code using {0} with DPC++.")
