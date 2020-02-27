@@ -3648,3 +3648,16 @@ int main_ushort4() {
   kernel_ushort4<<<1,1>>>(ushort4_e, (ushort4 *)ushort4_cast);
   return 0;
 }
+
+// CHECK: void  foo_type() {
+// CHECK-NEXT: const unsigned int * base;
+// CHECK-NEXT: sycl::uint2 p_1;
+// CHECK-NEXT: p_1 = ((const sycl::uint2 *)base)[0];
+// CHECK-NEXT: sycl::int2 p_2 = ((const sycl::int2 *)base)[0];
+// CHECK-NEXT: }
+__global__ void  foo_type() {
+const unsigned int * base;
+uint2 p_1;
+p_1 = ((const uint2 *)base)[0];
+int2 p_2 = ((const int2 *)base)[0];
+}

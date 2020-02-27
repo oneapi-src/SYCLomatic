@@ -2215,10 +2215,16 @@ void VectorTypeCtorRule::run(const MatchFinder::MatchResult &Result) {
 
   if (const CStyleCastExpr *CPtrCast =
           getNodeAsType<CStyleCastExpr>(Result, "PtrCast")) {
-    emplaceTransformation(new ReplaceToken(
-        CPtrCast->getLParenLoc().getLocWithOffset(1),
-        getReplaceTypeName(
-            CPtrCast->getType()->getPointeeType().getAsString())));
+    auto TL = CPtrCast->getTypeInfoAsWritten()->getTypeLoc();
+    auto BeginLoc = TL.getSourceRange().getBegin();
+    auto QT = TL.getType();
+    QT = QT.getTypePtr()->getPointeeType();
+    QT = QT.getUnqualifiedType();
+    std::string TypeStr = QT.getAsString(Result.Context->getPrintingPolicy());
+
+    std::string Str = getReplaceTypeName(TypeStr);
+    if (!Str.empty())
+      emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Str)));
     return;
   }
 
