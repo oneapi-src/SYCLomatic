@@ -285,6 +285,12 @@ protected:
 
   inline void analyzeExpr(const ParenExpr *PE) { dispatch(PE->getSubExpr()); }
 
+  inline void analyzeExpr(const ArraySubscriptExpr *ASE) {
+    dispatch(ASE->getBase());
+    dispatch(ASE->getIdx());
+  }
+
+
   void analyzeExpr(const CXXConstructExpr *Ctor);
   void analyzeExpr(const MemberExpr *ME);
   void analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT);

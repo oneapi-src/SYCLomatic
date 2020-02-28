@@ -92,6 +92,8 @@ struct TestThis {
   }
 };
 
+int arr[16];
+
 int main() {
   dim3 griddim = 2;
   dim3 threaddim = 32;
@@ -169,15 +171,16 @@ int main() {
   // CHECK-NEXT:     });
   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int, karg2int, karg3int);
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   auto arr_karg3int_ct2 = arr[karg3int];
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, griddim[0]) * cl::sycl::range<3>(1, 1, griddim[1] + 2), cl::sycl::range<3>(1, 1, griddim[1] + 2)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
+  // CHECK-NEXT:           testKernel(karg1int, karg2int, arr_karg3int_ct2, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  testKernel <<<griddim.x, griddim.y + 2 >>>(karg1int, karg2int, karg3int);
+  testKernel <<<griddim.x, griddim.y + 2 >>>(karg1int, karg2int, arr[karg3int]);
 
   // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
