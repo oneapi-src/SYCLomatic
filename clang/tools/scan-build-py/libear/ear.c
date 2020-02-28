@@ -195,6 +195,9 @@ int execv(const char *path, char *const argv[]) {
 int execvpe(const char *file, char *const argv[], char *const envp[]) {
 #ifdef INTEL_CUSTOMIZATION
     bear_report_call(__func__, (char const **)argv);
+    // To sync file name with argv[0], in case argv[0] is changed
+    // by bear_report_call.
+    file = argv[0];
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -206,6 +209,9 @@ int execvpe(const char *file, char *const argv[], char *const envp[]) {
 int execvp(const char *file, char *const argv[]) {
 #ifdef INTEL_CUSTOMIZATION
     bear_report_call(__func__, (char const **)argv);
+    // To sync file name with argv[0], in case argv[0] is changed
+    // by bear_report_call.
+    file = argv[0];
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -217,6 +223,9 @@ int execvp(const char *file, char *const argv[]) {
 int execvP(const char *file, const char *search_path, char *const argv[]) {
 #ifdef INTEL_CUSTOMIZATION
     bear_report_call(__func__, (char const **)argv);
+    // To sync file name with argv[0], in case argv[0] is changed
+    // by bear_report_call.
+    file = argv[0];
 #else
     bear_report_call(__func__, (char const *const *)argv);
 #endif
@@ -1158,9 +1167,11 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
         ret = 1;
     }
 
-    // try to replace nvcc with intercept-stub.
+    // try to replace nvcc with intercept-stub,
+    // e.g: "/path/to/nvcc -ccbin ... ",
+    //      "/bin/sh -c "/path/to"/bin/nvcc -ccbin ..."
     const char *pos = find_nvcc(argv[it_cp]);
-    if(pos != NULL && *pos !='\0')
+    if(pos != NULL)
     {
         ret = 0; // intercept-stub should continue to run.
 
