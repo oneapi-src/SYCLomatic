@@ -134,14 +134,29 @@ std::string MathFuncNameRewriter::getNewFuncName() {
         std::string FT = Call->getType().getAsString(PrintingPolicy(LO));
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
           auto Arg = Call->getArg(i);
-          std::string ArgT = Arg->getType().getAsString(PrintingPolicy(LO));
           auto ArgExpr = Arg->getStmtClass();
-          auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
-          if (ArgT != FT || ArgExpr == Stmt::BinaryOperatorClass) {
-            if (DRE)
-              RewriteArgList[i] = "(" + FT + ")" + RewriteArgList[i];
-            else
-              RewriteArgList[i] = "(" + FT + ")(" + RewriteArgList[i] + ")";
+          if (ArgExpr == Stmt::PseudoObjectExprClass) {
+            auto POE = dyn_cast<PseudoObjectExpr>(Arg->IgnoreImpCasts());
+            auto RE = POE->getResultExpr();
+            if (auto CE = dyn_cast<CallExpr>(RE)) {
+              auto FD = CE->getDirectCallee();
+              auto Name = FD->getNameAsString();
+              // Force typecast threadIdx/blockIdx/blockDim./x/y/z to return
+              // types of math functions
+              if (Name == "__fetch_builtin_x" || Name == "__fetch_builtin_y" ||
+                  Name == "__fetch_builtin_z") {
+                RewriteArgList[i] = "(" + FT + ")" + RewriteArgList[i];
+              }
+            }
+          } else {
+            std::string ArgT = Arg->getType().getAsString(PrintingPolicy(LO));
+            auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
+            if (ArgT != FT || ArgExpr == Stmt::BinaryOperatorClass) {
+              if (DRE)
+                RewriteArgList[i] = "(" + FT + ")" + RewriteArgList[i];
+              else
+                RewriteArgList[i] = "(" + FT + ")(" + RewriteArgList[i] + ")";
+            }
           }
         }
       }

@@ -2706,3 +2706,83 @@ __device__ void test_pow() {
   // CHECK: sycl::pow(d, d);
   pow(d, d);
 }
+
+__global__ void foobar(int i) {
+  // CHECK: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_local_id(2));
+  // CHECK-NEXT: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_local_id(1));
+  // CHECK-NEXT: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_local_id(0));
+  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_local_id(2), (unsigned int)i);
+  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_local_id(1), (unsigned int)i);
+  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_local_id(0), (unsigned int)i);
+  max(i, threadIdx.x);
+  max(i, threadIdx.y);
+  max(i, threadIdx.z);
+  max(threadIdx.x, i);
+  max(threadIdx.y, i);
+  max(threadIdx.z, i);
+
+  // CHECK: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_group(2));
+  // CHECK-NEXT: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_group(1));
+  // CHECK-NEXT: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_group(0));
+  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_group(2), (unsigned int)i);
+  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_group(1), (unsigned int)i);
+  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_group(0), (unsigned int)i);
+  max(i, blockIdx.x);
+  max(i, blockIdx.y);
+  max(i, blockIdx.z);
+  max(blockIdx.x, i);
+  max(blockIdx.y, i);
+  max(blockIdx.z, i);
+
+  // CHECK: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_local_range(2));
+  // CHECK-NEXT: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_local_range(1));
+  // CHECK-NEXT: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_local_range(0));
+  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_local_range(2), (unsigned int)i);
+  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_local_range(1), (unsigned int)i);
+  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_local_range(0), (unsigned int)i);
+  max(i, blockDim.x);
+  max(i, blockDim.y);
+  max(i, blockDim.z);
+  max(blockDim.x, i);
+  max(blockDim.y, i);
+  max(blockDim.z, i);
+
+  // CHECK: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_local_id(2));
+  // CHECK-NEXT: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_local_id(1));
+  // CHECK-NEXT: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_local_id(0));
+  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_local_id(2), (unsigned int)i);
+  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_local_id(1), (unsigned int)i);
+  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_local_id(0), (unsigned int)i);
+  min(i, threadIdx.x);
+  min(i, threadIdx.y);
+  min(i, threadIdx.z);
+  min(threadIdx.x, i);
+  min(threadIdx.y, i);
+  min(threadIdx.z, i);
+
+  // CHECK: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_group(2));
+  // CHECK-NEXT: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_group(1));
+  // CHECK-NEXT: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_group(0));
+  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_group(2), (unsigned int)i);
+  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_group(1), (unsigned int)i);
+  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_group(0), (unsigned int)i);
+  min(i, blockIdx.x);
+  min(i, blockIdx.y);
+  min(i, blockIdx.z);
+  min(blockIdx.x, i);
+  min(blockIdx.y, i);
+  min(blockIdx.z, i);
+
+  // CHECK: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_local_range(2));
+  // CHECK-NEXT: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_local_range(1));
+  // CHECK-NEXT: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_local_range(0));
+  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_local_range(2), (unsigned int)i);
+  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_local_range(1), (unsigned int)i);
+  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_local_range(0), (unsigned int)i);
+  min(i, blockDim.x);
+  min(i, blockDim.y);
+  min(i, blockDim.z);
+  min(blockDim.x, i);
+  min(blockDim.y, i);
+  min(blockDim.z, i);
+}
