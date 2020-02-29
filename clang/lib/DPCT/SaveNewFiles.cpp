@@ -9,8 +9,8 @@
 //
 //===-----------------------------------------------------------------===//
 
-#include "AnalysisInfo.h"
 #include "SaveNewFiles.h"
+#include "AnalysisInfo.h"
 #include "Debug.h"
 #include "ExternalReplacement.h"
 
@@ -41,7 +41,7 @@ namespace clang {
 namespace tooling {
 std::string getFormatSearchPath();
 }
-}
+} // namespace clang
 
 static bool formatFile(StringRef FileName,
                        const std::vector<clang::tooling::Range> &Ranges,
@@ -219,7 +219,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     for (auto &Entry : groupReplacementsByFile(
              Rewrite.getSourceMgr().getFileManager(), Tool.getReplacements())) {
 
-      OutPath = StringRef(Entry.first);
+      OutPath = StringRef(
+          DpctGlobalInfo::removeSymlinks(Rewrite.getSourceMgr().getFileManager(), Entry.first));
       makeCanonical(OutPath);
       auto Find = IncludeFileMap.find(OutPath.c_str());
       if (Find != IncludeFileMap.end()) {

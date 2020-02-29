@@ -313,7 +313,7 @@ void IncludesCallbacks::InclusionDirective(
                         (isChildOrSamePath(InRoot, DirPath));
 
   if (IsFileInInRoot) {
-    IncludeFileMap[FilePath] = false;
+    IncludeFileMap[DpctGlobalInfo::removeSymlinks(SM.getFileManager(), FilePath)] = false;
   }
 
   if (!SM.isWrittenInMainFile(HashLoc) && !IsIncludingFileInInRoot) {
@@ -477,7 +477,7 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
     InFile = getAbsolutePath(InFile);
     makeCanonical(InFile);
     if (ProcessAllFlag || GetSourceFileType(InFile) & TypeCudaSource) {
-      IncludeFileMap[InFile] = false;
+      IncludeFileMap[DpctGlobalInfo::removeSymlinks(SM.getFileManager(), InFile)] = false;
     }
   }
 }

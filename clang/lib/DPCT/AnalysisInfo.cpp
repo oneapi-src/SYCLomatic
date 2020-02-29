@@ -32,6 +32,7 @@ bool DpctGlobalInfo::EnableComments = false;
 CompilerInstance *DpctGlobalInfo::CI = nullptr;
 ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
+FileManager   *DpctGlobalInfo::FM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
 std::map<const char *, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>

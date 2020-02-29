@@ -359,13 +359,27 @@ public:
     }
   };
 
+  static std::string removeSymlinks(clang::FileManager &FM,
+                                    std::string FilePathStr) {
+    // Get rid of symlinks
+    SmallString<4096> NoSymlinks = StringRef("");
+    auto Dir = FM.getDirectory(
+        llvm::sys::path::parent_path(FilePathStr));
+    if (Dir) {
+      StringRef DirName = FM.getCanonicalName(*Dir);
+      StringRef FileName = llvm::sys::path::filename(FilePathStr);
+      llvm::sys::path::append(NoSymlinks, DirName, FileName);
+    }
+    return NoSymlinks.str().str();
+  }
+
   inline static bool isInRoot(SourceLocation SL) {
     return isInRoot(getSourceManager()
                         .getFilename(getSourceManager().getExpansionLoc(SL))
                         .str());
   }
   static bool isInRoot(const std::string &FilePath) {
-    std::string Path = FilePath;
+    std::string Path = removeSymlinks(getFileManager(), FilePath);
     makeCanonical(Path);
     return isChildPath(InRoot, Path);
   }
@@ -431,6 +445,7 @@ public:
   static void setContext(ASTContext &C) {
     Context = &C;
     SM = &(Context->getSourceManager());
+    FM = &(SM->getFileManager());
   }
   static CompilerInstance &getCompilerInstance() {
     assert(CI);
@@ -443,6 +458,10 @@ public:
   static SourceManager &getSourceManager() {
     assert(SM);
     return *SM;
+  }
+  static FileManager &getFileManager() {
+    assert(FM);
+    return *FM;
   }
   inline static bool isKeepOriginCode() { return KeepOriginCode; }
   inline static void setKeepOriginCode(bool KOC = true) {
@@ -826,6 +845,7 @@ private:
   static CompilerInstance *CI;
   static ASTContext *Context;
   static SourceManager *SM;
+  static FileManager   *FM;
   static bool KeepOriginCode;
   static bool SyclNamedLambda;
   static bool GuessIndentWidthMatcherFlag;
