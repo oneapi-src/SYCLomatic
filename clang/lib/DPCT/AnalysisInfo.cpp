@@ -691,6 +691,7 @@ void DeviceFunctionDecl::LinkRedecls(
 void DeviceFunctionDecl::LinkDecl(const FunctionTemplateDecl *FTD,
                                   DeclList &List,
                                   std::shared_ptr<DeviceFunctionInfo> &Info) {
+  LinkDecl(FTD->getAsFunction(), List, Info);
   LinkDeclRange(FTD->specializations(), List, Info);
 }
 
@@ -839,6 +840,8 @@ std::string CtTypeInfo::getRangeArgument(const std::string &MemSize,
 }
 
 void CtTypeInfo::setTemplateType(const std::vector<TemplateArgumentInfo> &TA) {
+  if (TemplateIndex >= TA.size())
+    return;
   assert(TemplateIndex < TA.size());
   if (isTemplate())
     TemplateType = TA[TemplateIndex].getAsType();

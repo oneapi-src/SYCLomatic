@@ -206,3 +206,39 @@ int main() {
   // CHECK-NEXT: }
   testKernel<LA><<<10, intvar>>>(karg1LA, karg2LA, ktarg);
 }
+
+
+// CHECK:template<typename T>
+// CHECK-NEXT:void convert_kernel(T b, sycl::nd_item<3> item_ct1, int *aaa, dpct::accessor<double, dpct::local, 2> bbb){
+// CHECK:  T a = item_ct1.get_local_range().get(2) * item_ct1.get_group(2) + item_ct1.get_local_id(2);
+// CHECK-NEXT:}
+template<typename T>
+__global__ void convert_kernel(T b){
+  __shared__ int aaa[0];
+  __shared__ double bbb[8][0];
+  T a = blockDim.x * blockIdx.x + threadIdx.x;
+}
+
+
+// CHECK:template<typename T>
+// CHECK-NEXT:void convert(){
+// CHECK-NEXT:  T b;
+// CHECK-NEXT:  dpct::get_default_queue().submit(
+// CHECK-NEXT:    [&](sycl::handler &cgh) {
+// CHECK-NEXT:      sycl::range<2> bbb_range_ct1(8/*8*/, 0/*0*/);
+// CHECK-EMPTY:
+// CHECK-NEXT:      sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> aaa_acc_ct1(sycl::range<1>(0/*0*/), cgh);
+// CHECK-NEXT:      sycl::accessor<double, 2, sycl::access::mode::read_write, sycl::access::target::local> bbb_acc_ct1(bbb_range_ct1, cgh);
+// CHECK-EMPTY:
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class convert_kernel_{{[a-f0-9]+}}>>(
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 128) * sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
+// CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:          convert_kernel(b, item_ct1, aaa_acc_ct1.get_pointer(), dpct::accessor<double, dpct::local, 2>(bbb_acc_ct1, bbb_range_ct1));
+// CHECK-NEXT:        });
+// CHECK-NEXT:    });
+// CHECK-NEXT:}
+template<typename T>
+void convert(){
+  T b;
+  convert_kernel<<<128, 128>>>(b);
+}
