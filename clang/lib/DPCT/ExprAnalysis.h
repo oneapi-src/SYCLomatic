@@ -161,6 +161,9 @@ public:
   getTemplateDependentStringInfo() {
     return ReplSet.getTemplateDependentStringInfo();
   }
+  // This function is not re-enterable, if caller need to check if it returns
+  // nullptr, caller need to use temp variable to save the return value, then
+  // check. Don't call twice for same Replacement.
   inline TextModification *getReplacement() {
     return hasReplacement() ? new ReplaceStmt(E, getReplacedString()) : nullptr;
   }

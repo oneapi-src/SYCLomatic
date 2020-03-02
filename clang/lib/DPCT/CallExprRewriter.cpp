@@ -84,8 +84,10 @@ Optional<std::string> MathFuncNameRewriter::rewrite() {
     ExprAnalysis EA;
     EA.analyze(Call->getCallee());
     EA.addReplacement(Call->getCallee(), getNewFuncName());
+    if (auto R = EA.getReplacement()) {
     DpctGlobalInfo::getInstance().addReplacement(
-      EA.getReplacement()->getReplacement(DpctGlobalInfo::getContext()));
+      R->getReplacement(DpctGlobalInfo::getContext()));
+    }
   }
   return buildRewriteString();
 }
