@@ -36,6 +36,15 @@ int main() {
 
   auto device = dpct::get_default_queue().get_device();
 
+  // To test that all device APIs called in get_device_info() do not break on all
+  // devices.
+  for (int device_id = 0; device_id < device_count; device_id++) {
+    dpct::device_info deviceProp;
+    dpct::dev_mgr::instance()
+        .get_device(device_id)
+        .get_device_info(deviceProp);
+  }
+
   if(device.is_gpu())
       dev_info_output(device, "gpu  device");
   if(device.is_cpu())
@@ -44,5 +53,7 @@ int main() {
       dev_info_output(device, "host device");
   if(device.is_accelerator())
       dev_info_output(device, "accelerator device");
+
+  printf("Test passed!\n");
   return 0;
 }
