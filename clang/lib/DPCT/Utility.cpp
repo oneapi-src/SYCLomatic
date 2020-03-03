@@ -409,6 +409,19 @@ const clang::Stmt *getParentStmt(const clang::Stmt *S) {
   return nullptr;
 }
 
+const clang::Stmt *getParentStmt(const clang::Decl *D) {
+  if (!D)
+    return nullptr;
+
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*D);
+  assert(Parents.size() >= 1);
+  if (Parents.size() >= 1)
+    return Parents[0].get<Stmt>();
+
+  return nullptr;
+}
+
 const std::shared_ptr<clang::ast_type_traits::DynTypedNode>
 getParentNode(const std::shared_ptr<clang::ast_type_traits::DynTypedNode> N) {
   if (!N)
@@ -1247,4 +1260,117 @@ std::string getNameStrRemovedAddrOf(const Expr *E, bool isCOCE) {
     SEA.analyze(UO->getSubExpr());
     return SEA.getReplacedString();
   }
+}
+
+const CXXRecordDecl *getParentRecordDecl(const DeclaratorDecl *DD) {
+  if (!DD)
+    return nullptr;
+
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*DD);
+  assert(Parents.size() >= 1);
+  if (Parents.size() >= 1)
+    return Parents[0].get<CXXRecordDecl>();
+
+  return nullptr;
+}
+
+/// Get sibling Decls for a VarDecl or a FieldDecl
+/// E.g for a VarDecl:
+/// |-DeclStmt
+///   |-VarDecl
+///   `-VarDecl
+/// or for a FieldDecl:
+/// |-CXXRecordDecl
+///   |-FieldDecl
+///   |-FieldDecl
+std::vector<const DeclaratorDecl *> getSiblingDecls(const DeclaratorDecl *DD) {
+  std::vector<const DeclaratorDecl *> Decls;
+  // For VarDecl, sibling VarDecls share the same parent DeclStmt with it
+  if (auto P = getParentStmt(DD)) {
+    if (auto DS = dyn_cast<DeclStmt>(P)) {
+      for (auto It = DS->decl_begin(); It != DS->decl_end(); ++It) {
+        if (auto DD2 = dyn_cast<DeclaratorDecl>(*It))
+          if (DD2 != DD)
+            Decls.push_back(DD2);
+      }
+    }
+  }
+  // For FieldDecl, sibling FieldDecls share the same BeginLoc with it
+  else if (auto P = getParentRecordDecl(DD)) {
+    for (auto It = P->decls_begin(); It != P->decls_end(); ++It) {
+      if (auto DD2 = dyn_cast<DeclaratorDecl>(*It))
+        if (DD2->getBeginLoc() == DD->getBeginLoc())
+          Decls.push_back(DD2);
+    }
+  }
+  return Decls;
+}
+
+/// Deduce the type for a QualType
+/// \param QT QualType of the type
+/// \param TypeName The name of the type
+/// \HasConst If QT's parent has const qualifier
+/// \return The pointer type string
+std::string deducePointerType(QualType QT, std::string TypeName, bool HasConst) {
+  if (auto ET = dyn_cast<ElaboratedType>(QT))
+    if (auto RT = dyn_cast<RecordType>(ET->desugar()))
+      if (RT->getDecl()->getNameAsString() == TypeName)
+        return HasConst ? "* const " : "*";
+  return "";
+}
+
+/// Deduce the type for a DeclaratorDecl
+/// \param DD The DeclaratorDecl of the type
+/// \param TypeName The name of the type
+/// \return The pointer type string
+std::string deducePointerType(const DeclaratorDecl *DD, std::string TypeName) {
+  std::string Result;
+  auto DDT = DD->getType();
+  if (DDT->isPointerType()) {
+    auto PT = DDT->getPointeeType();
+    // cudaStream_t
+    Result = deducePointerType(PT, TypeName, DDT.getQualifiers().hasConst());
+    // cudaStream_t *
+    if (auto TDT = dyn_cast<TypedefType>(PT)) {
+      if (TDT->desugar()->isPointerType()) {
+        auto PT2 = TDT->desugar()->getPointeeType();
+        Result = deducePointerType(PT2, TypeName, PT.getQualifiers().hasConst());
+      }
+    }
+  }
+  // cudaStream_t &
+  else if (auto LVRT = dyn_cast<LValueReferenceType>(DDT)) {
+    auto PT = LVRT->Type::getPointeeType();
+    if (auto TDT = dyn_cast<TypedefType>(PT)) {
+      if (TDT->desugar()->isPointerType()) {
+        auto PT2 = TDT->desugar()->getPointeeType();
+        Result = deducePointerType(PT2, TypeName, PT.getQualifiers().hasConst());
+      }
+    }
+  }
+  // cudaStream_t &&
+  else if (auto RVRT = dyn_cast<RValueReferenceType>(DDT)) {
+    auto PT = RVRT->Type::getPointeeType();
+    if (auto TDT = dyn_cast<TypedefType>(PT)) {
+      if (TDT->desugar()->isPointerType()) {
+        auto PT2 = TDT->desugar()->getPointeeType();
+        Result = deducePointerType(PT2, TypeName, PT.getQualifiers().hasConst());
+      }
+    }
+  }
+  // cudaStream_t [] and cudaStream_t *[]
+  else if (auto CAT = dyn_cast<ConstantArrayType>(DDT)) {
+    auto PT = CAT->getElementType()->getPointeeType();
+    // cudaStream_t []
+    Result = deducePointerType(PT, TypeName, DDT.getQualifiers().hasConst());
+    // cudaStream_t *[]
+    if (auto TDT = dyn_cast<TypedefType>(PT)) {
+      if (TDT->desugar()->isPointerType()) {
+        auto PT2 = TDT->desugar()->getPointeeType();
+        Result = deducePointerType(PT2, TypeName, PT.getQualifiers().hasConst());
+      }
+    }
+  }
+  return Result;
 }

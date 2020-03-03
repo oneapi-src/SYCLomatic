@@ -1,9 +1,8 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cuda_vardecl.dp.cpp --match-full-lines %s
 
 #include <vector>
 #include <list>
-// CHECK: using queue_p = sycl::queue *;
 
 // CHECK: sycl::event gv;
 cudaEvent_t gv;
@@ -68,11 +67,11 @@ struct S {
   // CHECK: std::vector<sycl::event> eventVector;
   std::vector<cudaEvent_t> eventVector;
 
-  // CHECK: queue_p stream, stream0;
-  // CHECK-NEXT: queue_p streams[23], streams0[45];
+  // CHECK: sycl::queue *stream, *stream0;
+  // CHECK-NEXT: sycl::queue *streams[23], *streams0[45];
   // CHECK-NEXT: sycl::event event, events[23];
-  // CHECK-NEXT: C<queue_p, sycl::event> se, se2;
-  // CHECK-NEXT: std::list<queue_p> streamlist;
+  // CHECK-NEXT: C<sycl::queue *, sycl::event> se, se2;
+  // CHECK-NEXT: std::list<sycl::queue *> streamlist;
   // CHECK-NEXT: std::list<sycl::event> eventlist;
   // CHECK-NEXT: std::list<int> errors;
   // CHECK-NEXT: std::list<dpct::device_info> props;
@@ -130,11 +129,11 @@ int main(int argc, char* argv[]) {
   // CHECK: sycl::event &rrr6 = vvv, vvv6, *ppp6;
   cudaEvent_t &rrr6 = vvv, vvv6, *ppp6;
 
-  // CHECK: queue_p stream, stream0;
-  // CHECK-NEXT: queue_p streams[23], streams0[45];
+  // CHECK: sycl::queue *stream, *stream0;
+  // CHECK-NEXT: sycl::queue *streams[23], *streams0[45];
   // CHECK-NEXT: sycl::event event, events[23];
-  // CHECK-NEXT: C<queue_p, sycl::event> se, se2;
-  // CHECK-NEXT: std::list<queue_p> streamlist;
+  // CHECK-NEXT: C<sycl::queue *, sycl::event> se, se2;
+  // CHECK-NEXT: std::list<sycl::queue *> streamlist;
   // CHECK-NEXT: std::list<sycl::event> eventlist;
   // CHECK-NEXT: std::list<int> errors;
   // CHECK-NEXT: std::list<dpct::device_info> props;

@@ -1564,10 +1564,6 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       TypeStr = QT.getAsString();
     }
   }
-  if (TypeStr.find("cudaStream_t") != std::string::npos) {
-    DpctGlobalInfo::getInstance().insertUsing(BeginLoc, QUEUE_P);
-  }
-
   // Add '#include <complex>' directive to the file only once
   if (TypeStr == "cuComplex" || TypeStr == "cuDoubleComplex") {
     DpctGlobalInfo::getInstance().insertHeader(BeginLoc, Complex);
@@ -1627,7 +1623,58 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(
           new ReplaceText(BeginLoc, Len, std::move(Replacement)));
     } else {
-      emplaceTransformation(new ReplaceTypeInDecl(DD, std::move(Replacement)));
+      // Insert * for other VarDecls in one DeclStmt or other FieldDecls in one statement
+      // for cudaStream_t
+      if (TypeStr.find("cudaStream_t") != std::string::npos) {
+        Token Tok;
+        Lexer::getRawToken(DD->getBeginLoc(), Tok, *SM, LangOptions());
+        auto Tok2Ptr = Lexer::findNextToken(DD->getBeginLoc(), *SM, LangOptions());
+        auto Tok2 = Tok2Ptr.getValue();
+
+        SourceLocation InsertLoc;
+        auto PointerType = deducePointerType(DD, "CUstream_st");
+        if (Tok.getKind() == tok::raw_identifier && Tok.getRawIdentifier() == "cudaStream_t") {
+          // cudaStream_t const
+          if (Tok2.getKind() == tok::raw_identifier && Tok2.getRawIdentifier() == "const") {
+            emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
+            emplaceTransformation(new ReplaceToken(Tok2.getLocation(), "sycl::queue"));
+            InsertLoc = Tok2.getEndLoc().getLocWithOffset(1);
+            emplaceTransformation(new InsertText(InsertLoc, std::move(PointerType)));
+          }
+          // cudaStream_t
+          else {
+            emplaceTransformation(new ReplaceToken(Tok.getLocation(), "sycl::queue"));
+            InsertLoc = Tok.getEndLoc().getLocWithOffset(1);
+            emplaceTransformation(new InsertText(InsertLoc, std::move(PointerType)));
+          }
+        } else if (Tok.getKind() == tok::raw_identifier && Tok.getRawIdentifier() == "const") {
+          // const cudaStream_t
+          if (Tok.getKind() == tok::raw_identifier && Tok2.getRawIdentifier() == "cudaStream_t") {
+            emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
+            emplaceTransformation(new ReplaceToken(Tok2.getLocation(), "sycl::queue"));
+            InsertLoc = Tok2.getEndLoc().getLocWithOffset(1);
+            emplaceTransformation(new InsertText(InsertLoc, std::move(PointerType)));
+          }
+        }
+        auto SD = getSiblingDecls(DD);
+        for (auto It = SD.begin(); It != SD.end(); ++It) {
+          auto DD2 = *It;
+          auto L2 = DD2->getLocation();
+          auto P = SM->getCharacterData(L2);
+          // Find the first non-space char after previous semicolon
+          while (*P != ',')
+            --P;
+          ++P;
+          while (isspace(*P))
+            ++P;
+          // Insert "*" or "*const" right before it
+          auto InsertLoc = L2.getLocWithOffset(P - SM->getCharacterData(L2));
+          auto PointerType = deducePointerType(DD2, "CUstream_st");
+          emplaceTransformation(new InsertText(InsertLoc, std::move(PointerType)));
+        }
+      } else {
+        emplaceTransformation(new ReplaceTypeInDecl(DD, std::move(Replacement)));
+      }
     }
 
     if ((TypeStr == "cublasHandle_t" || TypeStr == "cusolverDnHandle_t") &&
@@ -2538,10 +2585,6 @@ void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
     BeginLoc = FD->getReturnTypeSourceRange().getBegin();
   } else {
     return;
-  }
-
-  if (TypeName.find("cudaStream_t") != std::string::npos) {
-    DpctGlobalInfo::getInstance().insertUsing(FD->getBeginLoc(), QUEUE_P);
   }
 
   // Add '#include <complex>' directive to the file only once
@@ -5484,7 +5527,6 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
     IsAssigned = true;
   }
   assert(CE && "Unknown result");
-  DpctGlobalInfo::getInstance().insertUsing(CE->getBeginLoc(), QUEUE_P);
 
   if (!CE->getDirectCallee())
     return;

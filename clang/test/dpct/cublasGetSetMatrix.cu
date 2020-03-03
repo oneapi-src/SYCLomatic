@@ -3,7 +3,6 @@
 #include <cstdio>
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
-// CHECK: using queue_p = sycl::queue *;
 
 constexpr int foo(int i) {
   return i;
@@ -17,7 +16,7 @@ int main() {
   float *A = NULL;
   float *d_A = NULL;
   cublasStatus_t status;
-  // CHECK: queue_p stream;
+  // CHECK: sycl::queue *stream;
   cudaStream_t stream;
 
 #define LDA_MARCO 100

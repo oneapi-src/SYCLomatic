@@ -1,9 +1,9 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda --always-use-async-handler -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda --always-use-async-handler -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/async-error-handler.dp.cpp --match-full-lines %s
 
 
 int main() {
-  // CHECK: queue_p s0, s1, s2;
+  // CHECK: sycl::queue *s0, *s1, *s2;
   cudaStream_t s0, s1, s2;
 
   // CHECK: s0 = dpct::get_current_device().create_queue(true);

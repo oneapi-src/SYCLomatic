@@ -279,6 +279,7 @@ bool callingFuncHasDeviceAttr(const clang::CallExpr *CE);
 bool isInSameScope(const clang::Stmt *S, const clang::ValueDecl *D);
 const clang::DeclRefExpr *getInnerValueDecl(const clang::Expr *Arg);
 const clang::Stmt *getParentStmt(const clang::Stmt *S);
+const clang::Stmt *getParentStmt(const clang::Decl *D);
 const std::shared_ptr<clang::DynTypedNode>
 getParentNode(const std::shared_ptr<clang::DynTypedNode> N);
 bool IsSingleLineStatement(const clang::Stmt *S);
@@ -359,4 +360,9 @@ bool isExprStraddle(const clang::Stmt *S, ExprSpellingStatus *SpellingStatus);
 bool isSimpleAddrOf(const clang::Expr *E);
 bool isCOCESimpleAddrOf(const clang::Expr *E);
 std::string getNameStrRemovedAddrOf(const clang::Expr *E, bool isCOCE = false);
+std::vector<const clang::DeclaratorDecl *>
+getSiblingDecls(const clang::DeclaratorDecl *DD);
+std::string deducePointerType(const clang::DeclaratorDecl *DD,
+                                      std::string TypeName);
+
 #endif // DPCT_UTILITY_H

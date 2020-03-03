@@ -1,10 +1,9 @@
 // FIXME:
 // UNSUPPORTED: -windows-
-// RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cuda-stream-api.dp.cpp --match-full-lines %s
 
 #include <list>
-// CHECK: using queue_p = sycl::queue *;
 
 template <typename T>
 // CHECK: void check(T result, char const *const func) {
@@ -16,11 +15,11 @@ void check(T result, char const *const func) {
 __global__ void kernelFunc() {
 }
 
-// CHECK: void process(queue_p st, char *data, int status) {}
+// CHECK: void process(sycl::queue *st, char *data, int status) {}
 void process(cudaStream_t st, char *data, cudaError_t status) {}
 
 template<typename T>
-// CHECK: void callback(queue_p st, int status, void *vp) {
+// CHECK: void callback(sycl::queue *st, int status, void *vp) {
 void callback(cudaStream_t st, cudaError_t status, void *vp) {
   T *data = static_cast<T *>( vp);
   process(st, data, status);
@@ -29,7 +28,7 @@ void callback(cudaStream_t st, cudaError_t status, void *vp) {
 template<typename FloatN, typename Float>
 static void func()
 {
-  // CHECK: std::list<queue_p> streams;
+  // CHECK: std::list<sycl::queue *> streams;
   std::list<cudaStream_t> streams;
   for (auto Iter = streams.begin(); Iter != streams.end(); ++Iter)
     // CHECK: *Iter = dpct::get_current_device().create_queue();
@@ -38,9 +37,9 @@ static void func()
     // CHECK: dpct::get_current_device().destroy_queue(*Iter);
     cudaStreamDestroy(*Iter);
 
-  // CHECK: queue_p s0, &s1 = s0;
-  // CHECK-NEXT: queue_p s2, *s3 = &s2;
-  // CHECK-NEXT: queue_p s4, s5;
+  // CHECK: sycl::queue *s0, *&s1 = s0;
+  // CHECK-NEXT: sycl::queue *s2, **s3 = &s2;
+  // CHECK-NEXT: sycl::queue *s4, *s5;
   // CHECK-EMPTY:
   cudaStream_t s0, &s1 = s0;
   cudaStream_t s2, *s3 = &s2;

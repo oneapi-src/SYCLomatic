@@ -47,7 +47,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"half2", ClNamespace + "::half2"},
       {"cudaEvent_t", ClNamespace + "::event"},
       {"CUevent_st", ClNamespace + "::event"},
-      {"cudaStream_t", "queue_p"},
+      {"cudaStream_t", ClNamespace + "::queue *"},
       {"CUstream_st", ClNamespace + "::queue"},
       {"char1", "char"},
       {"char2", ClNamespace + "::char2"},
