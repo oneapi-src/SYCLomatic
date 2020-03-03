@@ -151,9 +151,9 @@ llvm::raw_ostream &DpctLog() { return DpctLogStream; }
 llvm::raw_ostream &DpctStats() { return DpctStatsStream; }
 llvm::raw_ostream &DpctDiags() { return DpctDiagsStream; }
 llvm::raw_ostream &DpctTerm() { return DpctTermStream; }
-std::string getDpctStatsStr() { return DpctStatsStream.str(); }
-std::string getDpctDiagsStr() { return DpctDiagsStream.str(); }
-std::string getDpctTermStr() { return DpctTermStream.str(); }
+std::string getDpctStatsStr() { return DpctStatsStream.str().str(); }
+std::string getDpctDiagsStr() { return DpctDiagsStream.str().str(); }
+std::string getDpctTermStr() { return DpctTermStream.str().str(); }
 
 void DebugInfo::ShowStatus(int Status) {
 

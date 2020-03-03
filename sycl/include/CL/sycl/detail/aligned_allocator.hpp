@@ -19,7 +19,7 @@
 #include <memory>
 #include <vector>
 
-__SYCL_INLINE namespace cl {
+__SYCL_INLINE_NAMESPACE(cl) {
 namespace sycl {
 namespace detail {
 template <typename T> class aligned_allocator {
@@ -53,6 +53,8 @@ public:
   pointer allocate(size_t Size) {
     size_t NumBytes = Size * sizeof(value_type);
     NumBytes = ((NumBytes - 1) | (MAlignment - 1)) + 1;
+    if (Size > NumBytes)
+      throw std::bad_alloc();
 
     pointer Result = reinterpret_cast<pointer>(
         detail::OSUtil::alignedAlloc(MAlignment, NumBytes));
@@ -78,4 +80,4 @@ private:
 };
 } // namespace detail
 } // namespace sycl
-} // namespace cl
+} // __SYCL_INLINE_NAMESPACE(cl)

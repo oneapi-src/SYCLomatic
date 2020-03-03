@@ -16,7 +16,6 @@
 #include <CL/sycl/detail/generic_type_traits.hpp>
 #include <CL/sycl/detail/image_accessor_util.hpp>
 #include <CL/sycl/detail/image_ocl_types.hpp>
-#include <CL/sycl/detail/queue_impl.hpp>
 #include <CL/sycl/exception.hpp>
 #include <CL/sycl/handler.hpp>
 #include <CL/sycl/id.hpp>
@@ -143,7 +142,7 @@
 // accessor_common contains several helpers common for both accessor(1) and
 // accessor(3)
 
-__SYCL_INLINE namespace cl {
+__SYCL_INLINE_NAMESPACE(cl) {
 namespace sycl {
 
 template <typename DataT, int Dimensions, access::mode AccessMode,
@@ -166,6 +165,8 @@ static T<NewDim> convertToArrayOfN(T<OldDim> OldObj) {
     NewObj[I] = DefaultValue;
   return NewObj;
 }
+
+device getDeviceFromHandler(handler &CommandGroupHandlerRef);
 
 template <typename DataT, int Dimensions, access::mode AccessMode,
           access::target AccessTarget, access::placeholder IsPlaceholder>
@@ -267,7 +268,6 @@ class image_accessor
 #ifndef __SYCL_DEVICE_ONLY__
     : public detail::AccessorBaseHost {
   size_t MImageCount;
-  size_t MImageSize;
   image_channel_order MImgChannelOrder;
   image_channel_type MImgChannelType;
 #else
@@ -277,9 +277,8 @@ class image_accessor
                                                         AccessTarget>::type;
   OCLImageTy MImageObj;
   char MPadding[sizeof(detail::AccessorBaseHost) +
-                sizeof(size_t /*MImageSize*/) + sizeof(size_t /*MImageCount*/) +
-                sizeof(image_channel_order) + sizeof(image_channel_type) -
-                sizeof(OCLImageTy)];
+                sizeof(size_t /*MImageCount*/) + sizeof(image_channel_order) +
+                sizeof(image_channel_type) - sizeof(OCLImageTy)];
 
 protected:
   void imageAccessorInit(OCLImageTy Image) { MImageObj = Image; }
@@ -310,6 +309,13 @@ private:
   constexpr static bool IsImageAccessAnyRead =
       (IsImageAccessReadOnly || AccessMode == access::mode::read_write);
 
+  static_assert(std::is_same<DataT, cl_int4>::value ||
+                      std::is_same<DataT, cl_uint4>::value ||
+                      std::is_same<DataT, cl_float4>::value ||
+                      std::is_same<DataT, cl_half4>::value,
+                  "The data type of an image accessor must be only cl_int4, "
+                  "cl_uint4, cl_float4 or cl_half4 from SYCL namespace");
+
   static_assert(IsImageAcc || IsHostImageAcc || IsImageArrayAcc,
                 "Expected image type");
 
@@ -335,7 +341,7 @@ private:
 
 #ifdef __SYCL_DEVICE_ONLY__
 
-  sycl::vec<int, Dimensions> getCountInternal() const {
+  sycl::vec<int, Dimensions> getRangeInternal() const {
     return __invoke_ImageQuerySize<sycl::vec<int, Dimensions>, OCLImageTy>(
         MImageObj);
   }
@@ -349,10 +355,10 @@ private:
 
 #else
 
-  sycl::vec<int, Dimensions> getCountInternal() const {
+  sycl::vec<int, Dimensions> getRangeInternal() const {
     // TODO: Implement for host.
     throw runtime_error(
-        "image::getCountInternal() is not implemented for host");
+        "image::getRangeInternal() is not implemented for host");
     return sycl::vec<int, Dimensions>{1};
   }
 
@@ -390,13 +396,9 @@ public:
                          AccessMode, detail::getSyclObjImpl(ImageRef).get(),
                          Dimensions, ImageElementSize),
         MImageCount(ImageRef.get_count()),
-        MImageSize(MImageCount * ImageElementSize),
         MImgChannelOrder(detail::getSyclObjImpl(ImageRef)->getChannelOrder()),
         MImgChannelType(detail::getSyclObjImpl(ImageRef)->getChannelType()) {
-    detail::EventImplPtr Event =
-        detail::Scheduler::getInstance().addHostAccessor(
-            AccessorBaseHost::impl.get());
-    Event->wait(Event);
+    addHostAccessorAndWait(AccessorBaseHost::impl.get());
   }
 #endif
 
@@ -422,11 +424,10 @@ public:
                          AccessMode, detail::getSyclObjImpl(ImageRef).get(),
                          Dimensions, ImageElementSize),
         MImageCount(ImageRef.get_count()),
-        MImageSize(MImageCount * ImageElementSize),
         MImgChannelOrder(detail::getSyclObjImpl(ImageRef)->getChannelOrder()),
         MImgChannelType(detail::getSyclObjImpl(ImageRef)->getChannelType()) {
     checkDeviceFeatureSupported<info::device::image_support>(
-        CommandGroupHandlerRef.MQueue->get_device());
+        getDeviceFromHandler(CommandGroupHandlerRef));
   }
 #endif
 
@@ -448,32 +449,39 @@ public:
   // get_count() method : Returns the number of elements of the SYCL image this
   // SYCL accessor is accessing.
   //
-  // get_size() method :  Returns the size in bytes of the SYCL image this SYCL
-  // accessor is accessing. Returns ElementSize*get_count().
+  // get_range() method :  Returns a range object which represents the number of
+  // elements of dataT per dimension that this accessor may access.
+  // The range object returned must equal to the range of the image this
+  // accessor is associated with.
 
 #ifdef __SYCL_DEVICE_ONLY__
-  size_t get_size() const {
-    int ChannelType = __invoke_ImageQueryFormat<int, OCLImageTy>(MImageObj);
-    int ChannelOrder = __invoke_ImageQueryOrder<int, OCLImageTy>(MImageObj);
-    int ElementSize = getSPIRVElementSize(ChannelType, ChannelOrder);
-    return (ElementSize * get_count());
+
+  size_t get_count() const { return get_range<Dimensions>().size(); }
+
+  template <int Dims = Dimensions, typename = detail::enable_if_t<Dims == 1>>
+  range<1> get_range() const {
+    cl_int Range = getRangeInternal();
+    return range<1>(Range);
+  }
+  template <int Dims = Dimensions, typename = detail::enable_if_t<Dims == 2>>
+  range<2> get_range() const {
+    cl_int2 Range = getRangeInternal();
+    return range<2>(Range[0], Range[1]);
+  }
+  template <int Dims = Dimensions, typename = detail::enable_if_t<Dims == 3>>
+  range<3> get_range() const {
+    cl_int3 Range = getRangeInternal();
+    return range<3>(Range[0], Range[1], Range[3]);
   }
 
-  template <int Dims = Dimensions> size_t get_count() const;
-
-  template <> size_t get_count<1>() const { return getCountInternal(); }
-  template <> size_t get_count<2>() const {
-    cl_int2 Count = getCountInternal();
-    return (Count.x() * Count.y());
-  };
-  template <> size_t get_count<3>() const {
-    cl_int3 Count = getCountInternal();
-    return (Count.x() * Count.y() * Count.z());
-  };
-
 #else
-  size_t get_size() const { return MImageSize; };
   size_t get_count() const { return MImageCount; };
+
+  template <int Dims = Dimensions, typename = detail::enable_if_t<(Dims > 0)>>
+  range<Dims> get_range() const {
+    return detail::convertToArrayOfN<Dims, 1>(getAccessRange());
+  }
+
 #endif
 
   // Available only when:
@@ -559,7 +567,7 @@ class __image_array_slice__ {
     CoordElemType LastCoord = 0;
 
     if (std::is_same<float, CoordElemType>::value) {
-      sycl::vec<int, Dimensions + 1> Size = MBaseAcc.getCountInternal();
+      sycl::vec<int, Dimensions + 1> Size = MBaseAcc.getRangeInternal();
       LastCoord =
           MIdx / static_cast<float>(Size.template swizzle<Dimensions>());
     } else {
@@ -601,27 +609,31 @@ public:
   }
 
 #ifdef __SYCL_DEVICE_ONLY__
-  size_t get_size() const { return MBaseAcc.getElementSize() * get_count(); }
+  size_t get_count() const { return get_range<Dimensions>().size(); }
 
-  template <int Dims = Dimensions> size_t get_count() const;
-
-  template <> size_t get_count<1>() const {
-    cl_int2 Count = MBaseAcc.getCountInternal();
-    return Count.x();
+  template <int Dims = Dimensions, typename = detail::enable_if_t<Dims == 1>>
+  range<1> get_range() const {
+    cl_int2 Count = MBaseAcc.getRangeInternal();
+    return range<1>(Count.x());
   }
-  template <> size_t get_count<2>() const {
-    cl_int3 Count = MBaseAcc.getCountInternal();
-    return (Count.x() * Count.y());
-  };
-#else
+  template <int Dims = Dimensions, typename = detail::enable_if_t<Dims == 2>>
+  range<2> get_range() const {
+    cl_int3 Count = MBaseAcc.getRangeInternal();
+    return range<2>(Count.x(), Count.y());
+  }
 
-  size_t get_size() const {
-    return MBaseAcc.MImageSize / MBaseAcc.getAccessRange()[Dimensions];
-  };
+#else
 
   size_t get_count() const {
     return MBaseAcc.MImageCount / MBaseAcc.getAccessRange()[Dimensions];
-  };
+  }
+
+  template <int Dims = Dimensions,
+            typename = detail::enable_if_t<(Dims == 1 || Dims == 2)>>
+  range<Dims> get_range() const {
+    return detail::convertToArrayOfN<Dims, 1>(MBaseAcc.getAccessRange());
+  }
+
 #endif
 
 private:
@@ -756,12 +768,8 @@ public:
             detail::convertToArrayOfN<3, 1>(BufferRef.get_range()), AccessMode,
             detail::getSyclObjImpl(BufferRef).get(), AdjustedDim, sizeof(DataT),
             BufferRef.OffsetInBytes, BufferRef.IsSubBuffer) {
-    if (!IsPlaceH) {
-      detail::EventImplPtr Event =
-          detail::Scheduler::getInstance().addHostAccessor(
-              AccessorBaseHost::impl.get());
-      Event->wait(Event);
-    }
+    if (!IsPlaceH)
+      addHostAccessorAndWait(AccessorBaseHost::impl.get());
 #endif
   }
 
@@ -800,12 +808,8 @@ public:
             detail::convertToArrayOfN<3, 1>(BufferRef.get_range()), AccessMode,
             detail::getSyclObjImpl(BufferRef).get(), Dimensions, sizeof(DataT),
             BufferRef.OffsetInBytes, BufferRef.IsSubBuffer) {
-    if (!IsPlaceH) {
-      detail::EventImplPtr Event =
-          detail::Scheduler::getInstance().addHostAccessor(
-              AccessorBaseHost::impl.get());
-      Event->wait(Event);
-    }
+    if (!IsPlaceH)
+      addHostAccessorAndWait(AccessorBaseHost::impl.get());
   }
 #endif
 
@@ -844,12 +848,8 @@ public:
                          AccessMode, detail::getSyclObjImpl(BufferRef).get(),
                          Dimensions, sizeof(DataT), BufferRef.OffsetInBytes,
                          BufferRef.IsSubBuffer) {
-    if (!IsPlaceH) {
-      detail::EventImplPtr Event =
-          detail::Scheduler::getInstance().addHostAccessor(
-              AccessorBaseHost::impl.get());
-      Event->wait(Event);
-    }
+    if (!IsPlaceH)
+      addHostAccessorAndWait(AccessorBaseHost::impl.get());
   }
 #endif
 
@@ -1092,6 +1092,11 @@ public:
 
   size_t get_count() const { return getSize().size(); }
 
+  template <int Dims = Dimensions, typename = detail::enable_if_t<(Dims > 0)>>
+  range<Dims> get_range() const {
+    return detail::convertToArrayOfN<Dims, 1>(getSize());
+  }
+
   template <int Dims = Dimensions,
             typename = detail::enable_if_t<Dims == 0 && IsAccessAnyWrite>>
   operator RefType() const {
@@ -1245,7 +1250,7 @@ public:
 };
 
 } // namespace sycl
-} // namespace cl
+} // __SYCL_INLINE_NAMESPACE(cl)
 
 namespace std {
 template <typename DataT, int Dimensions, cl::sycl::access::mode AccessMode,

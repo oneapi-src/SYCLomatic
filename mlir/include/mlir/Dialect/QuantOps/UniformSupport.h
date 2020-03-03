@@ -1,6 +1,6 @@
 //===- UniformSupport.h - Support utilities for uniform quant ---*- C++ -*-===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -66,7 +66,7 @@ public:
             static_cast<double>(uniformType.getStorageTypeMax()),
             uniformType.getStorageTypeIntegralWidth(), uniformType.isSigned()) {
     assert(uniformType.getExpressedType().isa<FloatType>());
-    assert(uniformType.getStorageType().isa<IntegerType>());
+    assert(uniformType.getStorageType().isSignlessInteger());
   }
 
   UniformQuantizedValueConverter(double scale, double zeroPoint,
@@ -182,7 +182,7 @@ public:
         isSigned(uniformType.isSigned()),
         quantizationDim(uniformType.getQuantizedDimension()) {
     assert(uniformType.getExpressedType().isa<FloatType>());
-    assert(uniformType.getStorageType().isa<IntegerType>());
+    assert(uniformType.getStorageType().isSignlessInteger());
     assert(scales.size() == zeroPoints.size());
   }
 

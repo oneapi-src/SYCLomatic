@@ -753,9 +753,10 @@ unsigned PPCInstrInfo::insertBranch(MachineBasicBlock &MBB,
 
 // Select analysis.
 bool PPCInstrInfo::canInsertSelect(const MachineBasicBlock &MBB,
-                ArrayRef<MachineOperand> Cond,
-                unsigned TrueReg, unsigned FalseReg,
-                int &CondCycles, int &TrueCycles, int &FalseCycles) const {
+                                   ArrayRef<MachineOperand> Cond,
+                                   unsigned DstReg, unsigned TrueReg,
+                                   unsigned FalseReg, int &CondCycles,
+                                   int &TrueCycles, int &FalseCycles) const {
   if (Cond.size() != 2)
     return false;
 
@@ -1221,23 +1222,12 @@ void PPCInstrInfo::StoreRegToStackSlot(
     FuncInfo->setHasNonRISpills();
 }
 
-void PPCInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
-                                       MachineBasicBlock::iterator MI,
-                                       unsigned SrcReg, bool isKill,
-                                       int FrameIdx,
-                                       const TargetRegisterClass *RC,
-                                       const TargetRegisterInfo *TRI) const {
+void PPCInstrInfo::storeRegToStackSlotNoUpd(
+    MachineBasicBlock &MBB, MachineBasicBlock::iterator MI, unsigned SrcReg,
+    bool isKill, int FrameIdx, const TargetRegisterClass *RC,
+    const TargetRegisterInfo *TRI) const {
   MachineFunction &MF = *MBB.getParent();
   SmallVector<MachineInstr *, 4> NewMIs;
-
-  // We need to avoid a situation in which the value from a VRRC register is
-  // spilled using an Altivec instruction and reloaded into a VSRC register
-  // using a VSX instruction. The issue with this is that the VSX
-  // load/store instructions swap the doublewords in the vector and the Altivec
-  // ones don't. The register classes on the spill/reload may be different if
-  // the register is defined using an Altivec instruction and is then used by a
-  // VSX instruction.
-  RC = updatedRC(RC);
 
   StoreRegToStackSlot(MF, SrcReg, isKill, FrameIdx, RC, NewMIs);
 
@@ -1250,6 +1240,23 @@ void PPCInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
       MachineMemOperand::MOStore, MFI.getObjectSize(FrameIdx),
       MFI.getObjectAlignment(FrameIdx));
   NewMIs.back()->addMemOperand(MF, MMO);
+}
+
+void PPCInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
+                                       MachineBasicBlock::iterator MI,
+                                       Register SrcReg, bool isKill,
+                                       int FrameIdx,
+                                       const TargetRegisterClass *RC,
+                                       const TargetRegisterInfo *TRI) const {
+  // We need to avoid a situation in which the value from a VRRC register is
+  // spilled using an Altivec instruction and reloaded into a VSRC register
+  // using a VSX instruction. The issue with this is that the VSX
+  // load/store instructions swap the doublewords in the vector and the Altivec
+  // ones don't. The register classes on the spill/reload may be different if
+  // the register is defined using an Altivec instruction and is then used by a
+  // VSX instruction.
+  RC = updatedRC(RC);
+  storeRegToStackSlotNoUpd(MBB, MI, SrcReg, isKill, FrameIdx, RC, TRI);
 }
 
 void PPCInstrInfo::LoadRegFromStackSlot(MachineFunction &MF, const DebugLoc &DL,
@@ -1273,12 +1280,10 @@ void PPCInstrInfo::LoadRegFromStackSlot(MachineFunction &MF, const DebugLoc &DL,
     FuncInfo->setHasNonRISpills();
 }
 
-void
-PPCInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
-                                   MachineBasicBlock::iterator MI,
-                                   unsigned DestReg, int FrameIdx,
-                                   const TargetRegisterClass *RC,
-                                   const TargetRegisterInfo *TRI) const {
+void PPCInstrInfo::loadRegFromStackSlotNoUpd(
+    MachineBasicBlock &MBB, MachineBasicBlock::iterator MI, unsigned DestReg,
+    int FrameIdx, const TargetRegisterClass *RC,
+    const TargetRegisterInfo *TRI) const {
   MachineFunction &MF = *MBB.getParent();
   SmallVector<MachineInstr*, 4> NewMIs;
   DebugLoc DL;
@@ -1286,16 +1291,6 @@ PPCInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
 
   PPCFunctionInfo *FuncInfo = MF.getInfo<PPCFunctionInfo>();
   FuncInfo->setHasSpills();
-
-  // We need to avoid a situation in which the value from a VRRC register is
-  // spilled using an Altivec instruction and reloaded into a VSRC register
-  // using a VSX instruction. The issue with this is that the VSX
-  // load/store instructions swap the doublewords in the vector and the Altivec
-  // ones don't. The register classes on the spill/reload may be different if
-  // the register is defined using an Altivec instruction and is then used by a
-  // VSX instruction.
-  if (Subtarget.hasVSX() && RC == &PPC::VRRCRegClass)
-    RC = &PPC::VSRCRegClass;
 
   LoadRegFromStackSlot(MF, DL, DestReg, FrameIdx, RC, NewMIs);
 
@@ -1308,6 +1303,23 @@ PPCInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
       MachineMemOperand::MOLoad, MFI.getObjectSize(FrameIdx),
       MFI.getObjectAlignment(FrameIdx));
   NewMIs.back()->addMemOperand(MF, MMO);
+}
+
+void PPCInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
+                                        MachineBasicBlock::iterator MI,
+                                        Register DestReg, int FrameIdx,
+                                        const TargetRegisterClass *RC,
+                                        const TargetRegisterInfo *TRI) const {
+  // We need to avoid a situation in which the value from a VRRC register is
+  // spilled using an Altivec instruction and reloaded into a VSRC register
+  // using a VSX instruction. The issue with this is that the VSX
+  // load/store instructions swap the doublewords in the vector and the Altivec
+  // ones don't. The register classes on the spill/reload may be different if
+  // the register is defined using an Altivec instruction and is then used by a
+  // VSX instruction.
+  RC = updatedRC(RC);
+
+  loadRegFromStackSlotNoUpd(MBB, MI, DestReg, FrameIdx, RC, TRI);
 }
 
 bool PPCInstrInfo::
@@ -1585,22 +1597,6 @@ bool PPCInstrInfo::DefinesPredicate(MachineInstr &MI,
   }
 
   return Found;
-}
-
-bool PPCInstrInfo::isPredicable(const MachineInstr &MI) const {
-  unsigned OpC = MI.getOpcode();
-  switch (OpC) {
-  default:
-    return false;
-  case PPC::B:
-  case PPC::BLR:
-  case PPC::BLR8:
-  case PPC::BCTR:
-  case PPC::BCTR8:
-  case PPC::BCTRL:
-  case PPC::BCTRL8:
-    return true;
-  }
 }
 
 bool PPCInstrInfo::analyzeCompare(const MachineInstr &MI, unsigned &SrcReg,
@@ -2050,10 +2046,7 @@ ArrayRef<std::pair<unsigned, const char *>>
 PPCInstrInfo::getSerializableBitmaskMachineOperandTargetFlags() const {
   using namespace PPCII;
   static const std::pair<unsigned, const char *> TargetFlags[] = {
-      {MO_PLT, "ppc-plt"},
-      {MO_PIC_FLAG, "ppc-pic"},
-      {MO_NLP_FLAG, "ppc-nlp"},
-      {MO_NLP_HIDDEN_FLAG, "ppc-nlp-hidden"}};
+      {MO_PLT, "ppc-plt"}, {MO_PIC_FLAG, "ppc-pic"}};
   return makeArrayRef(TargetFlags);
 }
 

@@ -1,6 +1,6 @@
 //===- AffineExpr.h - MLIR Affine Expr Class --------------------*- C++ -*-===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -67,15 +67,9 @@ class AffineExpr {
 public:
   using ImplType = detail::AffineExprStorage;
 
-  AffineExpr() : expr(nullptr) {}
+  constexpr AffineExpr() : expr(nullptr) {}
   /* implicit */ AffineExpr(const ImplType *expr)
       : expr(const_cast<ImplType *>(expr)) {}
-
-  AffineExpr(const AffineExpr &other) : expr(other.expr) {}
-  AffineExpr &operator=(AffineExpr other) {
-    expr = other.expr;
-    return *this;
-  }
 
   bool operator==(AffineExpr other) const { return expr == other.expr; }
   bool operator!=(AffineExpr other) const { return !(*this == other); }

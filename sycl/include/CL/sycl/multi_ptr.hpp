@@ -10,10 +10,11 @@
 #include <CL/__spirv/spirv_ops.hpp>
 #include <CL/sycl/access/access.hpp>
 #include <CL/sycl/detail/common.hpp>
+#include <CL/sycl/detail/stl_type_traits.hpp>
 #include <cassert>
 #include <cstddef>
 
-__SYCL_INLINE namespace cl {
+__SYCL_INLINE_NAMESPACE(cl) {
 namespace sycl {
 // Forward declaration
 template <typename dataT, int dimensions, access::mode accessMode,
@@ -22,7 +23,10 @@ class accessor;
 
 template <typename ElementType, access::address_space Space> class multi_ptr {
 public:
-  using element_type = ElementType;
+  using element_type =
+      detail::conditional_t<std::is_same<ElementType, half>::value,
+                    cl::sycl::detail::half_impl::BIsRepresentationT,
+                    ElementType>;
   using difference_type = std::ptrdiff_t;
 
   // Implementation defined pointer and reference types that correspond to
@@ -40,31 +44,36 @@ public:
   multi_ptr() : m_Pointer(nullptr) {}
   multi_ptr(const multi_ptr &rhs) = default;
   multi_ptr(multi_ptr &&) = default;
-  multi_ptr(pointer_t pointer) : m_Pointer(pointer) {}
 #ifdef __SYCL_DEVICE_ONLY__
+  multi_ptr(pointer_t pointer) : m_Pointer(pointer) {}
+#endif
+
   multi_ptr(ElementType *pointer) : m_Pointer((pointer_t)(pointer)) {
     // TODO An implementation should reject an argument if the deduced
     // address space is not compatible with Space.
   }
-#endif
+
   multi_ptr(std::nullptr_t) : m_Pointer(nullptr) {}
   ~multi_ptr() = default;
 
   // Assignment and access operators
   multi_ptr &operator=(const multi_ptr &) = default;
   multi_ptr &operator=(multi_ptr &&) = default;
+
+#ifdef __SYCL_DEVICE_ONLY__
   multi_ptr &operator=(pointer_t pointer) {
     m_Pointer = pointer;
     return *this;
   }
-#ifdef __SYCL_DEVICE_ONLY__
+#endif
+
   multi_ptr &operator=(ElementType *pointer) {
     // TODO An implementation should reject an argument if the deduced
     // address space is not compatible with Space.
     m_Pointer = (pointer_t)pointer;
     return *this;
   }
-#endif
+
   multi_ptr &operator=(std::nullptr_t) {
     m_Pointer = nullptr;
     return *this;
@@ -633,4 +642,4 @@ bool operator<=(std::nullptr_t lhs, const multi_ptr<ElementType, Space> &rhs) {
 }
 
 } // namespace sycl
-} // namespace cl
+} // __SYCL_INLINE_NAMESPACE(cl)

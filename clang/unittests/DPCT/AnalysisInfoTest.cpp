@@ -18,7 +18,7 @@ protected:
     SmallString<512> UniqueDir;
     llvm::sys::fs::createUniqueDirectory(CurrentDir + "/temp", UniqueDir);
 
-    TempDirAbsolute = UniqueDir.str();
+    TempDirAbsolute = UniqueDir.str().str();
 
     // .e.g /foo/bar => bar
     TempDir = llvm::sys::path::stem(TempDirAbsolute).str();
@@ -26,7 +26,7 @@ protected:
     llvm::sys::fs::create_directories(TempDirAbsolute + "/a/b/in");
     llvm::SmallString<256> TempDirAbsoluteReal;
     llvm::sys::fs::real_path(TempDirAbsolute + "/a/b/in", TempDirAbsoluteReal);
-    TempDirAbsolute = TempDirAbsoluteReal.str();
+    TempDirAbsolute = TempDirAbsoluteReal.str().str();
 
     int FD = 0;
     llvm::sys::fs::openFileForWrite(

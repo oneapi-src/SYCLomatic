@@ -142,6 +142,11 @@ void update(SelectionTree::Selection &Result, SelectionTree::Selection New) {
     Result = SelectionTree::Partial;
 }
 
+// As well as comments, don't count semicolons as real tokens.
+// They're not properly claimed as expr-statement is missing from the AST.
+bool shouldIgnore(const syntax::Token &Tok) {
+  return Tok.kind() == tok::comment || Tok.kind() == tok::semi;
+}
 
 // SelectionTester can determine whether a range of tokens from the PP-expanded
 // stream (corresponding to an AST node) is considered selected.
@@ -172,9 +177,7 @@ public:
         });
     // Precompute selectedness and offset for selected spelled tokens.
     for (const syntax::Token *T = SelFirst; T < SelLimit; ++T) {
-      // As well as comments, don't count semicolons as real tokens.
-      // They're not properly claimed as expr-statement is missing from the AST.
-      if (T->kind() == tok::comment || T->kind() == tok::semi)
+      if (shouldIgnore(*T))
         continue;
       SpelledTokens.emplace_back();
       Tok &S = SpelledTokens.back();
@@ -462,6 +465,14 @@ public:
              TraverseStmt(S->getRangeInit()) && TraverseStmt(S->getBody());
     });
   }
+  // OpaqueValueExpr blocks traversal, we must explicitly traverse it.
+  bool TraverseOpaqueValueExpr(OpaqueValueExpr *E) {
+    return traverseNode(E, [&] { return TraverseStmt(E->getSourceExpr()); });
+  }
+  // We only want to traverse the *syntactic form* to understand the selection.
+  bool TraversePseudoObjectExpr(PseudoObjectExpr *E) {
+    return traverseNode(E, [&] { return TraverseStmt(E->getSyntacticForm()); });
+  }
 
 private:
   using Base = RecursiveASTVisitor<SelectionVisitor>;
@@ -527,6 +538,19 @@ private:
   // don't intersect the selection may be recursively skipped.
   bool canSafelySkipNode(const DynTypedNode &N) {
     SourceRange S = N.getSourceRange();
+    if (auto *TL = N.get<TypeLoc>()) {
+      // DeclTypeTypeLoc::getSourceRange() is incomplete, which would lead to
+      // failing
+      // to descend into the child expression.
+      // decltype(2+2);
+      // ~~~~~~~~~~~~~ <-- correct range
+      // ~~~~~~~~      <-- range reported by getSourceRange()
+      // ~~~~~~~~~~~~  <-- range with this hack(i.e, missing closing paren)
+      // FIXME: Alter DecltypeTypeLoc to contain parentheses locations and get
+      // rid of this patch.
+      if (auto DT = TL->getAs<DecltypeTypeLoc>())
+        S.setEnd(DT.getUnderlyingExpr()->getEndLoc());
+    }
     if (!SelChecker.mayHit(S)) {
       dlog("{1}skip: {0}", printNodeToString(N, PrintPolicy), indent());
       dlog("{1}skipped range = {0}", S.printToString(SM), indent(1));
@@ -650,24 +674,49 @@ std::string SelectionTree::Node::kind() const {
   return std::move(OS.str());
 }
 
-// Decide which selection emulates a "point" query in between characters.
-static std::pair<unsigned, unsigned> pointBounds(unsigned Offset, FileID FID,
-                                                 ASTContext &AST) {
-  StringRef Buf = AST.getSourceManager().getBufferData(FID);
-  // Edge-cases where the choice is forced.
-  if (Buf.size() == 0)
-    return {0, 0};
-  if (Offset == 0)
-    return {0, 1};
-  if (Offset == Buf.size())
-    return {Offset - 1, Offset};
-  // We could choose either this byte or the previous. Usually we prefer the
-  // character on the right of the cursor (or under a block cursor).
-  // But if that's whitespace/semicolon, we likely want the token on the left.
-  auto IsIgnoredChar = [](char C) { return isWhitespace(C) || C == ';'; };
-  if (IsIgnoredChar(Buf[Offset]) && !IsIgnoredChar(Buf[Offset - 1]))
-    return {Offset - 1, Offset};
-  return {Offset, Offset + 1};
+// Decide which selections emulate a "point" query in between characters.
+// If it's ambiguous (the neighboring characters are selectable tokens), returns
+// both possibilities in preference order.
+// Always returns at least one range - if no tokens touched, and empty range.
+static llvm::SmallVector<std::pair<unsigned, unsigned>, 2>
+pointBounds(unsigned Offset, const syntax::TokenBuffer &Tokens) {
+  const auto &SM = Tokens.sourceManager();
+  SourceLocation Loc = SM.getComposedLoc(SM.getMainFileID(), Offset);
+  llvm::SmallVector<std::pair<unsigned, unsigned>, 2> Result;
+  // Prefer right token over left.
+  for (const syntax::Token &Tok :
+       llvm::reverse(spelledTokensTouching(Loc, Tokens))) {
+    if (shouldIgnore(Tok))
+      continue;
+    unsigned Offset = Tokens.sourceManager().getFileOffset(Tok.location());
+    Result.emplace_back(Offset, Offset + Tok.length());
+  }
+  if (Result.empty())
+    Result.emplace_back(Offset, Offset);
+  return Result;
+}
+
+bool SelectionTree::createEach(ASTContext &AST,
+                               const syntax::TokenBuffer &Tokens,
+                               unsigned Begin, unsigned End,
+                               llvm::function_ref<bool(SelectionTree)> Func) {
+  if (Begin != End)
+    return Func(SelectionTree(AST, Tokens, Begin, End));
+  for (std::pair<unsigned, unsigned> Bounds : pointBounds(Begin, Tokens))
+    if (Func(SelectionTree(AST, Tokens, Bounds.first, Bounds.second)))
+      return true;
+  return false;
+}
+
+SelectionTree SelectionTree::createRight(ASTContext &AST,
+                                         const syntax::TokenBuffer &Tokens,
+                                         unsigned int Begin, unsigned int End) {
+  llvm::Optional<SelectionTree> Result;
+  createEach(AST, Tokens, Begin, End, [&](SelectionTree T) {
+    Result = std::move(T);
+    return true;
+  });
+  return std::move(*Result);
 }
 
 SelectionTree::SelectionTree(ASTContext &AST, const syntax::TokenBuffer &Tokens,
@@ -677,8 +726,6 @@ SelectionTree::SelectionTree(ASTContext &AST, const syntax::TokenBuffer &Tokens,
   // but that's all clangd has needed so far.
   const SourceManager &SM = AST.getSourceManager();
   FileID FID = SM.getMainFileID();
-  if (Begin == End)
-    std::tie(Begin, End) = pointBounds(Begin, FID, AST);
   PrintPolicy.TerseOutput = true;
   PrintPolicy.IncludeNewlines = false;
 
@@ -689,10 +736,6 @@ SelectionTree::SelectionTree(ASTContext &AST, const syntax::TokenBuffer &Tokens,
   Root = Nodes.empty() ? nullptr : &Nodes.front();
   dlog("Built selection tree\n{0}", *this);
 }
-
-SelectionTree::SelectionTree(ASTContext &AST, const syntax::TokenBuffer &Tokens,
-                             unsigned Offset)
-    : SelectionTree(AST, Tokens, Offset, Offset) {}
 
 const Node *SelectionTree::commonAncestor() const {
   const Node *Ancestor = Root;

@@ -157,9 +157,9 @@ static void rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
       OutRootAbsValid ? OutRootAbs.str().lower() : OutRoot.lower();
 #elif defined(__linux__)
   std::string LocalFilePath =
-      FilePathAbsValid ? FilePathAbs.c_str() : StringRef(FilePath);
-  std::string LocalInRoot = InRootAbsValid ? InRootAbs.c_str() : InRoot;
-  std::string LocalOutRoot = OutRootAbsValid ? OutRootAbs.c_str() : OutRoot;
+      FilePathAbsValid ? FilePathAbs.c_str() : StringRef(FilePath).str();
+  std::string LocalInRoot = InRootAbsValid ? InRootAbs.c_str() : InRoot.str();
+  std::string LocalOutRoot = OutRootAbsValid ? OutRootAbs.c_str() : OutRoot.str();
 #else
 #error Only support windows and Linux.
 #endif
@@ -242,7 +242,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
       std::vector<clang::tooling::Range> Ranges;
       Ranges = calculateRangesWithFormatFlag(Entry.second);
-      FileRangesMap.insert(std::make_pair(OutPath.str(), Ranges));
+      FileRangesMap.insert(std::make_pair(OutPath.str().str(), Ranges));
 
       std::error_code EC;
       EC = fs::create_directories(path::parent_path(OutPath));
@@ -256,7 +256,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       }
       // std::ios::binary prevents ofstream::operator<< from converting \n to
       // \r\n on windows.
-      std::ofstream File(OutPath.str(), std::ios::binary);
+      std::ofstream File(OutPath.str().str(), std::ios::binary);
       llvm::raw_os_ostream Stream(File);
       if (!File) {
         std::string ErrMsg =
@@ -322,7 +322,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       }
       // std::ios::binary prevents ofstream::operator<< from converting \n to
       // \r\n on windows.
-      std::ofstream File(FilePath.str(), std::ios::binary);
+      std::ofstream File(FilePath.str().str(), std::ios::binary);
 
       if (!File) {
         std::string ErrMsg =

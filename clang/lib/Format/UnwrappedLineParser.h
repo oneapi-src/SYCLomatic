@@ -133,6 +133,7 @@ private:
   bool parseObjCProtocol();
   void parseJavaScriptEs6ImportExport();
   void parseStatementMacro();
+  void parseCSharpAttribute();
   bool tryToParseLambda();
   bool tryToParseLambdaIntroducer();
   void tryToParseJSFunction();

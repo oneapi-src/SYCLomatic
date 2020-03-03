@@ -58,7 +58,7 @@ unsigned MigrationRule::PairID = 0;
 
 void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
   std::string InRoot = ATM.InRoot;
-  std::string InFile = SM.getFilename(MacroNameTok.getLocation());
+  std::string InFile = SM.getFilename(MacroNameTok.getLocation()).str();
   bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
                   (isChildOrSamePath(InRoot, InFile));
 
@@ -80,7 +80,7 @@ void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
 void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
                                      const MacroDirective *MD) {
   std::string InRoot = ATM.InRoot;
-  std::string InFile = SM.getFilename(MacroNameTok.getLocation());
+  std::string InFile = SM.getFilename(MacroNameTok.getLocation()).str();
   bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
                   (isChildOrSamePath(InRoot, InFile));
 
@@ -94,8 +94,8 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
     if (!II)
       continue;
 
-    if (MapNames::MacrosMap.find(II->getName()) != MapNames::MacrosMap.end()) {
-      std::string ReplacedMacroName = MapNames::MacrosMap.at(II->getName());
+    if (MapNames::MacrosMap.find(II->getName().str()) != MapNames::MacrosMap.end()) {
+      std::string ReplacedMacroName = MapNames::MacrosMap.at(II->getName().str());
       TransformSet.emplace_back(
           new ReplaceToken(Iter->getLocation(), std::move(ReplacedMacroName)));
     }
@@ -114,7 +114,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                                      const MacroDefinition &MD,
                                      SourceRange Range, const MacroArgs *Args) {
   std::string InRoot = ATM.InRoot;
-  std::string InFile = SM.getFilename(MacroNameTok.getLocation());
+  std::string InFile = SM.getFilename(MacroNameTok.getLocation()).str();
   bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
                   (isChildOrSamePath(InRoot, InFile));
   if (MD.getMacroInfo()->getNumTokens() > 0) {
@@ -224,7 +224,7 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange) {
 void IncludesCallbacks::If(SourceLocation Loc, SourceRange ConditionRange,
                            ConditionValueKind ConditionValue) {
   std::string InRoot = ATM.InRoot;
-  std::string InFile = SM.getFilename(Loc);
+  std::string InFile = SM.getFilename(Loc).str();
   bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
                   (isChildOrSamePath(InRoot, InFile));
 
@@ -237,7 +237,7 @@ void IncludesCallbacks::Elif(SourceLocation Loc, SourceRange ConditionRange,
                              ConditionValueKind ConditionValue,
                              SourceLocation IfLoc) {
   std::string InRoot = ATM.InRoot;
-  std::string InFile = SM.getFilename(Loc);
+  std::string InFile = SM.getFilename(Loc).str();
   bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
                   (isChildOrSamePath(InRoot, InFile));
 
@@ -283,9 +283,9 @@ void IncludesCallbacks::InclusionDirective(
   DpctGlobalInfo::getInstance().setFirstIncludeLocation(HashLoc);
   LastInclusionLocationUpdater Updater{FilenameRange.getEnd()};
 
-  std::string IncludePath = SearchPath;
+  std::string IncludePath = SearchPath.str();
   makeCanonical(IncludePath);
-  std::string IncludingFile = SM.getFilename(HashLoc);
+  std::string IncludingFile = SM.getFilename(HashLoc).str();
 
   IncludingFile = getAbsolutePath(IncludingFile);
   makeCanonical(IncludingFile);
@@ -302,9 +302,9 @@ void IncludesCallbacks::InclusionDirective(
     return;
   }
 
-  std::string FilePath = File->getName();
+  std::string FilePath = File->getName().str();
   makeCanonical(FilePath);
-  std::string DirPath = llvm::sys::path::parent_path(FilePath);
+  std::string DirPath = llvm::sys::path::parent_path(FilePath).str();
   bool IsFileInInRoot = !isChildPath(DpctInstallPath, DirPath) &&
                         (isChildOrSamePath(InRoot, DirPath));
 
@@ -427,7 +427,7 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
     DpctGlobalInfo::getInstance().setFileEnterLocation(Loc);
 
     std::string InRoot = ATM.InRoot;
-    std::string InFile = SM.getFilename(Loc);
+    std::string InFile = SM.getFilename(Loc).str();
     bool IsInRoot = !llvm::sys::fs::is_directory(InFile) &&
                     (isChildOrSamePath(InRoot, InFile));
 
@@ -524,7 +524,7 @@ void IterationSpaceBuiltinRule::run(const MatchFinder::MatchResult &Result) {
       return;
     }
     std::string InFile =
-        dpct::DpctGlobalInfo::getSourceManager().getFilename(VD->getBeginLoc());
+        dpct::DpctGlobalInfo::getSourceManager().getFilename(VD->getBeginLoc()).str();
     if (!isChildOrSamePath(DpctInstallPath, InFile)) {
       return;
     }
@@ -1613,7 +1613,7 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 
         if (Tok.isAnyIdentifier()) {
           std::string Str = MapNames::findReplacedName(MapNames::TypeNamesMap,
-                                                       Tok.getRawIdentifier());
+                                                       Tok.getRawIdentifier().str());
           if (!Str.empty()) {
             emplaceTransformation(new ReplaceToken(TokenBegin, std::move(Str)));
           }
@@ -2095,7 +2095,7 @@ void VectorTypeOperatorRule::MigrateOverloadedOperatorCall(
   // a = dpct_operator_overloading::operator+=(a, b)
 
   const std::string OperatorName = BinaryOperator::getOpcodeStr(
-      BinaryOperator::getOverloadedOpcode(CE->getOperator()));
+      BinaryOperator::getOverloadedOpcode(CE->getOperator())).str();
 
   std::ostringstream FuncCall;
 
@@ -2747,7 +2747,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     SuffixInsertLoc = SR.getEnd();
   }
 
-  std::string IndentStr = getIndent(PrefixInsertLoc, SM);
+  std::string IndentStr = getIndent(PrefixInsertLoc, SM).str();
   std::string PrefixInsertStr, SuffixInsertStr;
 
   std::string Msg = "the function call is redundant in DPC++.";
@@ -6610,7 +6610,7 @@ void MemoryMigrationRule::handleDirection(const CallExpr *C, unsigned i) {
     if (auto DRE = dyn_cast<DeclRefExpr>(C->getArg(i))) {
       if (auto Enum = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
         auto &ReplaceDirection = MapNames::findReplacedName(
-            EnumConstantRule::EnumNamesMap, Enum->getName());
+            EnumConstantRule::EnumNamesMap, Enum->getName().str());
         if (!ReplaceDirection.empty()) {
           emplaceTransformation(
               new ReplaceStmt(DRE, "dpct::" + ReplaceDirection));
@@ -6636,7 +6636,7 @@ MemoryMigrationRule::handleAsync(const CallExpr *C, unsigned i,
             new InsertBeforeStmt(StreamExpr, "(cl::sycl::queue *)"));
       }
     } else if (auto DRE = dyn_cast<DeclRefExpr>(StreamExpr)) {
-      Stream = DRE->getDecl()->getName();
+      Stream = DRE->getDecl()->getName().str();
     } else {
       ExprAnalysis EA(C->getArg(i));
       EA.analyze();
@@ -6709,7 +6709,7 @@ void MemoryDataTypeRule::run(const MatchFinder::MatchResult &Result) {
             dyn_cast<DeclRefExpr>(ME->getBase()->IgnoreImplicitAsWritten())) {
       emplaceTransformation(new ReplaceStmt(
           ME, getMemcpy3DMemberName(DRE->getDecl()->getName(),
-                                    ME->getMemberDecl()->getName())));
+                                    ME->getMemberDecl()->getName().str())));
     }
   } else if (auto CE = getNodeAsType<CallExpr>(Result, "makeData")) {
     if (auto FD = CE->getDirectCallee()) {
@@ -6729,7 +6729,7 @@ void MemoryDataTypeRule::run(const MatchFinder::MatchResult &Result) {
         return;
       }
       emplaceTransformation(
-          new ReplaceCalleeName(CE, std::move(ReplaceName), Name));
+          new ReplaceCalleeName(CE, std::move(ReplaceName), Name.str()));
     }
   } else if (auto M = getNodeAsType<MemberExpr>(Result, "otherMember")) {
     auto BaseName =
@@ -6737,17 +6737,17 @@ void MemoryDataTypeRule::run(const MatchFinder::MatchResult &Result) {
     auto MemberName = M->getMemberDecl()->getName();
     if (BaseName == "cudaPos") {
       auto &Replace =
-          MapNames::findReplacedName(MapNames::Dim3MemberNamesMap, MemberName);
+          MapNames::findReplacedName(MapNames::Dim3MemberNamesMap, MemberName.str());
       if (!Replace.empty())
         emplaceTransformation(new ReplaceToken(
             M->getOperatorLoc(), M->getEndLoc(), std::string(Replace)));
     } else if (BaseName == "cudaExtent") {
-      auto &Replace = MapNames::findReplacedName(ExtentMemberNames, MemberName);
+      auto &Replace = MapNames::findReplacedName(ExtentMemberNames, MemberName.str());
       if (!Replace.empty())
         emplaceTransformation(new ReplaceToken(
             M->getOperatorLoc(), M->getEndLoc(), std::string(Replace)));
     } else if (BaseName == "cudaPitchedPtr") {
-      auto &Replace = MapNames::findReplacedName(PitchMemberNames, MemberName);
+      auto &Replace = MapNames::findReplacedName(PitchMemberNames, MemberName.str());
       if (!Replace.empty())
         emplaceTransformation(
             new ReplaceToken(M->getMemberLoc(), std::string(Replace)));
@@ -7216,7 +7216,7 @@ void TextureRule::run(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(A.getReplacement());
   } else if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "texEnum")) {
     if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
-      std::string EnumName = ECD->getName();
+      std::string EnumName = ECD->getName().str();
       if (MapNames::replaceName(EnumConstantRule::EnumNamesMap, EnumName)) {
         emplaceTransformation(new ReplaceStmt(DRE, EnumName));
       } else {

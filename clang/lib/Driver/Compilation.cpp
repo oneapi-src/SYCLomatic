@@ -188,7 +188,7 @@ int Compilation::ExecuteCommand(const Command &C,
     }
 
     if (getDriver().CCPrintOptions)
-      *OS << "[Logging clang options]";
+      *OS << "[Logging clang options]\n";
 
     C.Print(*OS, "\n", /*Quote=*/getDriver().CCPrintOptions);
   }
@@ -214,10 +214,11 @@ static bool ActionFailed(const Action *A,
   if (FailingCommands.empty())
     return false;
 
-  // CUDA/HIP can have the same input source code compiled multiple times so do
-  // not compiled again if there are already failures. It is OK to abort the
-  // CUDA pipeline on errors.
-  if (A->isOffloading(Action::OFK_Cuda) || A->isOffloading(Action::OFK_HIP))
+  // CUDA/HIP/SYCL can have the same input source code compiled multiple times
+  // so do not compile again if there are already failures. It is OK to abort
+  // the CUDA pipeline on errors.
+  if (A->isOffloading(Action::OFK_Cuda) || A->isOffloading(Action::OFK_HIP) ||
+      A->isOffloading(Action::OFK_SYCL))
     return true;
 
   for (const auto &CI : FailingCommands)
@@ -274,13 +275,22 @@ void Compilation::initCompilationForDiagnostics() {
 
   // Remove any user specified output.  Claim any unclaimed arguments, so as
   // to avoid emitting warnings about unused args.
-  OptSpecifier OutputOpts[] = { options::OPT_o, options::OPT_MD,
-                                options::OPT_MMD };
+  OptSpecifier OutputOpts[] = {
+      options::OPT_o,  options::OPT_MD, options::OPT_MMD, options::OPT_M,
+      options::OPT_MM, options::OPT_MF, options::OPT_MG,  options::OPT_MJ,
+      options::OPT_MQ, options::OPT_MT, options::OPT_MV};
   for (unsigned i = 0, e = llvm::array_lengthof(OutputOpts); i != e; ++i) {
     if (TranslatedArgs->hasArg(OutputOpts[i]))
       TranslatedArgs->eraseArg(OutputOpts[i]);
   }
   TranslatedArgs->ClaimAllArgs();
+
+  // Force re-creation of the toolchain Args, otherwise our modifications just
+  // above will have no effect.
+  for (auto Arg : TCArgs)
+    if (Arg.second != TranslatedArgs)
+      delete Arg.second;
+  TCArgs.clear();
 
   // Redirect stdout/stderr to /dev/null.
   Redirects = {None, {""}, {""}};

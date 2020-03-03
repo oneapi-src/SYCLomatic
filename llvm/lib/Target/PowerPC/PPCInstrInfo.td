@@ -723,6 +723,26 @@ def s17imm  : Operand<i32> {
   let ParserMatchClass = PPCS17ImmAsmOperand;
   let DecoderMethod = "decodeSImmOperand<16>";
 }
+def PPCS34ImmAsmOperand : AsmOperandClass {
+  let Name = "S34Imm";
+  let PredicateMethod = "isS34Imm";
+  let RenderMethod = "addImmOperands";
+}
+def s34imm : Operand<i64> {
+  let PrintMethod = "printS34ImmOperand";
+  let ParserMatchClass = PPCS34ImmAsmOperand;
+  let DecoderMethod = "decodeSImmOperand<34>";
+}
+def PPCImmZeroAsmOperand : AsmOperandClass {
+  let Name = "ImmZero";
+  let PredicateMethod = "isImmZero";
+  let RenderMethod = "addImmOperands";
+}
+def immZero : Operand<i32> {
+  let PrintMethod = "printImmZeroOperand";
+  let ParserMatchClass = PPCImmZeroAsmOperand;
+  let DecoderMethod = "decodeImmZeroOperand";
+}
 
 def fpimm0 : PatLeaf<(fpimm), [{ return N->isExactlyValue(+0.0); }]>;
 
@@ -783,6 +803,30 @@ def PPCRegGxRCNoR0Operand : AsmOperandClass {
 def ptr_rc_nor0 : Operand<iPTR>, PointerLikeRegClass<1> {
   let ParserMatchClass = PPCRegGxRCNoR0Operand;
 }
+
+// New addressing modes with 34 bit immediates.
+def PPCDispRI34Operand : AsmOperandClass {
+  let Name = "DispRI34"; let PredicateMethod = "isS34Imm";
+  let RenderMethod = "addImmOperands";
+}
+def dispRI34 : Operand<iPTR> {
+  let ParserMatchClass = PPCDispRI34Operand;
+}
+def memri34 : Operand<iPTR> { // memri, imm is a 34-bit value.
+  let PrintMethod = "printMemRegImm34";
+  let MIOperandInfo = (ops dispRI34:$imm, ptr_rc_nor0:$reg);
+  let EncoderMethod = "getMemRI34Encoding";
+  let DecoderMethod = "decodeMemRI34Operands";
+}
+// memri, imm is a 34-bit value for pc-relative instructions where
+// base register is set to zero.
+def memri34_pcrel : Operand<iPTR> { // memri, imm is a 34-bit value.
+  let PrintMethod = "printMemRegImm34PCRel";
+  let MIOperandInfo = (ops dispRI34:$imm, immZero:$reg);
+  let EncoderMethod = "getMemRI34PCRelEncoding";
+  let DecoderMethod = "decodeMemRI34PCRelOperands";
+}
+
 // A version of ptr_rc usable with the asm parser.
 def PPCRegGxRCOperand : AsmOperandClass {
   let Name = "RegGxRC"; let PredicateMethod = "isRegNumber";
@@ -1390,12 +1434,13 @@ def RESTORE_CRBIT : PPCEmitTimePseudo<(outs crbitrc:$cond), (ins memri:$F),
 }
 
 let isTerminator = 1, isBarrier = 1, PPC970_Unit = 7 in {
-  let isReturn = 1, Uses = [LR, RM] in
+  let isPredicable = 1, isReturn = 1, Uses = [LR, RM] in
     def BLR : XLForm_2_ext<19, 16, 20, 0, 0, (outs), (ins), "blr", IIC_BrB,
                            [(retflag)]>, Requires<[In32BitMode]>;
   let isBranch = 1, isIndirectBranch = 1, Uses = [CTR] in {
-    def BCTR : XLForm_2_ext<19, 528, 20, 0, 0, (outs), (ins), "bctr", IIC_BrB,
-                            []>;
+    let isPredicable = 1 in
+      def BCTR : XLForm_2_ext<19, 528, 20, 0, 0, (outs), (ins), "bctr", IIC_BrB,
+                              []>;
 
     let isCodeGenOnly = 1 in {
       def BCCCTR : XLForm_2_br<19, 528, 0, (outs), (ins pred:$cond),
@@ -1428,9 +1473,10 @@ let Defs = [LR] in
 
 let isBranch = 1, isTerminator = 1, hasCtrlDep = 1, PPC970_Unit = 7 in {
   let isBarrier = 1 in {
-  def B   : IForm<18, 0, 0, (outs), (ins directbrtarget:$dst),
-                  "b $dst", IIC_BrB,
-                  [(br bb:$dst)]>;
+    let isPredicable = 1 in
+      def B : IForm<18, 0, 0, (outs), (ins directbrtarget:$dst),
+                    "b $dst", IIC_BrB,
+                    [(br bb:$dst)]>;
   def BA  : IForm<18, 1, 0, (outs), (ins absdirectbrtarget:$dst),
                   "ba $dst", IIC_BrB, []>;
   }
@@ -1551,9 +1597,10 @@ let isCall = 1, PPC970_Unit = 7, Defs = [LR] in {
     }
   }
   let Uses = [CTR, RM] in {
-    def BCTRL : XLForm_2_ext<19, 528, 20, 0, 1, (outs), (ins),
-                             "bctrl", IIC_BrB, [(PPCbctrl)]>,
-                Requires<[In32BitMode]>;
+    let isPredicable = 1 in
+      def BCTRL : XLForm_2_ext<19, 528, 20, 0, 1, (outs), (ins),
+                              "bctrl", IIC_BrB, [(PPCbctrl)]>,
+                  Requires<[In32BitMode]>;
 
     let isCodeGenOnly = 1 in {
       def BCCCTRL : XLForm_2_br<19, 528, 1, (outs), (ins pred:$cond),
@@ -2278,10 +2325,15 @@ let isCodeGenOnly = 1 in {
   }
 }
 
+// We used to have EIEIO as value but E[0-9A-Z] is a reserved name
+def EnforceIEIO : XForm_24_eieio<31, 854, (outs), (ins),
+                                 "eieio", IIC_LdStLoad, []>;
+
 def : Pat<(int_ppc_sync),   (SYNC 0)>, Requires<[HasSYNC]>;
 def : Pat<(int_ppc_lwsync), (SYNC 1)>, Requires<[HasSYNC]>;
 def : Pat<(int_ppc_sync),   (MSYNC)>, Requires<[HasOnlyMSYNC]>;
 def : Pat<(int_ppc_lwsync), (MSYNC)>, Requires<[HasOnlyMSYNC]>;
+def : Pat<(int_ppc_eieio),  (EnforceIEIO)>;
 
 //===----------------------------------------------------------------------===//
 // PPC32 Arithmetic Instructions.
@@ -3328,6 +3380,10 @@ def crnot : OutPatFrag<(ops node:$in),
 def       : Pat<(not i1:$in),
                 (crnot $in)>;
 
+// Prefixed instructions may require access to the above defs at a later
+// time so we include this after the def.
+include "PPCInstrPrefix.td"
+
 // Patterns for arithmetic i1 operations.
 def : Pat<(add i1:$a, i1:$b),
           (CRXOR $a, $b)>;
@@ -4125,10 +4181,6 @@ def ISYNC : XLForm_2_ext<19, 150, 0, 0, 0, (outs), (ins),
 def ICBI : XForm_1a<31, 982, (outs), (ins memrr:$src),
                     "icbi $src", IIC_LdStICBI, []>;
 
-// We used to have EIEIO as value but E[0-9A-Z] is a reserved name
-def EnforceIEIO : XForm_24_eieio<31, 854, (outs), (ins),
-                           "eieio", IIC_LdStLoad, []>;
-
 def WAIT : XForm_24_sync<31, 30, (outs), (ins i32imm:$L),
                          "wait $L", IIC_LdStLoad, []>;
 
@@ -4417,6 +4469,11 @@ def DCBTSTT  : PPCAsmPseudo<"dcbtstt $dst", (ins memrr:$dst)>;
 def DCBFx  : PPCAsmPseudo<"dcbf $dst", (ins memrr:$dst)>;
 def DCBFL  : PPCAsmPseudo<"dcbfl $dst", (ins memrr:$dst)>;
 def DCBFLP : PPCAsmPseudo<"dcbflp $dst", (ins memrr:$dst)>;
+
+def : Pat<(int_ppc_dcbfl xoaddr:$dst),
+          (DCBFL xoaddr:$dst)>;
+def : Pat<(int_ppc_dcbflp xoaddr:$dst),
+          (DCBFLP xoaddr:$dst)>;
 
 def : InstAlias<"crset $bx", (CREQV crbitrc:$bx, crbitrc:$bx, crbitrc:$bx)>;
 def : InstAlias<"crclr $bx", (CRXOR crbitrc:$bx, crbitrc:$bx, crbitrc:$bx)>;

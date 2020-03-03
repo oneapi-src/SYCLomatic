@@ -15,7 +15,7 @@
 #include <CL/sycl/types.hpp>
 #ifndef __SYCL_DEVICE_ONLY__
 
-__SYCL_INLINE namespace cl {
+__SYCL_INLINE_NAMESPACE(cl) {
 namespace sycl {
 template <typename T, access::address_space Space> class multi_ptr;
 namespace intel {
@@ -136,7 +136,7 @@ struct sub_group {
   }
 
   template <typename T, access::address_space Space>
-  void store(multi_ptr<T, Space> dst, T &x) const {
+  void store(multi_ptr<T, Space> dst, const T &x) const {
     throw runtime_error("Subgroups are not supported on host device. ");
   }
 
@@ -159,5 +159,5 @@ protected:
 };
 } // namespace intel
 } // namespace sycl
-} // namespace cl
+} // __SYCL_INLINE_NAMESPACE(cl)
 #endif

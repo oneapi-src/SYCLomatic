@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef liblldb_AppleObjCRuntimeV2_h_
-#define liblldb_AppleObjCRuntimeV2_h_
+#ifndef LLDB_SOURCE_PLUGINS_LANGUAGERUNTIME_OBJC_APPLEOBJCRUNTIME_APPLEOBJCRUNTIMEV2_H
+#define LLDB_SOURCE_PLUGINS_LANGUAGERUNTIME_OBJC_APPLEOBJCRUNTIME_APPLEOBJCRUNTIMEV2_H
 
 #include <map>
 #include <memory>
@@ -68,8 +68,6 @@ public:
                               const char *ivar_name) override;
 
   void UpdateISAToDescriptorMapIfNeeded() override;
-
-  ConstString GetActualTypeName(ObjCLanguageRuntime::ObjCISA isa) override;
 
   ClassDescriptorSP GetClassDescriptor(ValueObject &in_value) override;
 
@@ -339,4 +337,4 @@ private:
 
 } // namespace lldb_private
 
-#endif // liblldb_AppleObjCRuntimeV2_h_
+#endif // LLDB_SOURCE_PLUGINS_LANGUAGERUNTIME_OBJC_APPLEOBJCRUNTIME_APPLEOBJCRUNTIMEV2_H

@@ -46,8 +46,8 @@ Replacement::Replacement() : FilePath(InvalidLocation) {}
 
 Replacement::Replacement(StringRef FilePath, unsigned Offset, unsigned Length,
                          StringRef ReplacementText)
-    : FilePath(FilePath), ReplacementRange(Offset, Length),
-      ReplacementText(ReplacementText) {}
+    : FilePath(std::string(FilePath)), ReplacementRange(Offset, Length),
+      ReplacementText(std::string(ReplacementText)) {}
 
 Replacement::Replacement(const SourceManager &Sources, SourceLocation Start,
                          unsigned Length, StringRef ReplacementText) {
@@ -127,15 +127,15 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
   if (Entry) {
     llvm::SmallString<512> FilePathAbs(Entry->getName());
     Sources.getFileManager().makeAbsolutePath(FilePathAbs);
-    this->FilePath = FilePathAbs.str();
+    this->FilePath = std::string(FilePathAbs.str());
   } else {
-    this->FilePath = InvalidLocation;
+    this->FilePath = std::string(InvalidLocation);
   }
 #else
-  this->FilePath = Entry ? Entry->getName() : InvalidLocation;
+  this->FilePath = std::string(Entry ? Entry->getName() : InvalidLocation);
 #endif
   this->ReplacementRange = Range(DecomposedLocation.second, Length);
-  this->ReplacementText = ReplacementText;
+  this->ReplacementText = std::string(ReplacementText);
 }
 
 // FIXME: This should go into the Lexer, but we need to figure out how
@@ -377,8 +377,8 @@ class MergedReplacement {
 public:
   MergedReplacement(const Replacement &R, bool MergeSecond, int D)
       : MergeSecond(MergeSecond), Delta(D), FilePath(R.getFilePath()),
-        Offset(R.getOffset() + (MergeSecond ? 0 : Delta)), Length(R.getLength()),
-        Text(R.getReplacementText()) {
+        Offset(R.getOffset() + (MergeSecond ? 0 : Delta)),
+        Length(R.getLength()), Text(std::string(R.getReplacementText())) {
     Delta += MergeSecond ? 0 : Text.size() - Length;
     DeltaFirst = MergeSecond ? Text.size() - Length : 0;
   }

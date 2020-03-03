@@ -1,6 +1,6 @@
 //===- Operator.h - Operator class ------------------------------*- C++ -*-===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -19,6 +19,7 @@
 #include "mlir/TableGen/Dialect.h"
 #include "mlir/TableGen/OpTrait.h"
 #include "mlir/TableGen/Region.h"
+#include "mlir/TableGen/Successor.h"
 #include "mlir/TableGen/Type.h"
 #include "llvm/ADT/PointerUnion.h"
 #include "llvm/ADT/SmallVector.h"
@@ -138,6 +139,20 @@ public:
   // Returns the `index`-th region.
   const NamedRegion &getRegion(unsigned index) const;
 
+  // Successors.
+  using const_successor_iterator = const NamedSuccessor *;
+  const_successor_iterator successor_begin() const;
+  const_successor_iterator successor_end() const;
+  llvm::iterator_range<const_successor_iterator> getSuccessors() const;
+
+  // Returns the number of successors.
+  unsigned getNumSuccessors() const;
+  // Returns the `index`-th successor.
+  const NamedSuccessor &getSuccessor(unsigned index) const;
+
+  // Returns the number of variadic successors in this operation.
+  unsigned getNumVariadicSuccessors() const;
+
   // Trait.
   using const_trait_iterator = const OpTrait *;
   const_trait_iterator trait_begin() const;
@@ -192,6 +207,9 @@ private:
 
   // The results of the op.
   SmallVector<NamedTypeConstraint, 4> results;
+
+  // The successors of this op.
+  SmallVector<NamedSuccessor, 0> successors;
 
   // The traits of the op.
   SmallVector<OpTrait, 4> traits;

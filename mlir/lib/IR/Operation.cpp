@@ -1,6 +1,6 @@
 //===- Operation.cpp - Operation support code -----------------------------===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -551,6 +551,14 @@ unsigned Operation::getNumResults() {
   return hasSingleResult ? 1 : resultType.cast<TupleType>().size();
 }
 
+auto Operation::getResultTypes() -> result_type_range {
+  if (!resultType)
+    return llvm::None;
+  if (hasSingleResult)
+    return resultType;
+  return resultType.cast<TupleType>().getTypes();
+}
+
 void Operation::setSuccessor(Block *block, unsigned index) {
   assert(index < getNumSuccessors());
   getBlockOperands()[index].set(block);
@@ -666,10 +674,9 @@ Operation *Operation::cloneWithoutRegions(BlockAndValueMapping &mapper) {
     }
   }
 
-  SmallVector<Type, 8> resultTypes(getResultTypes());
   unsigned numRegions = getNumRegions();
   auto *newOp =
-      Operation::create(getLoc(), getName(), resultTypes, operands, attrs,
+      Operation::create(getLoc(), getName(), getResultTypes(), operands, attrs,
                         successors, numRegions, hasResizableOperandsList());
 
   // Remember the mapping of any results.
@@ -785,10 +792,11 @@ static Type getTensorOrVectorElementType(Type type) {
   return type;
 }
 
-LogicalResult OpTrait::impl::verifyOperandsAreIntegerLike(Operation *op) {
+LogicalResult
+OpTrait::impl::verifyOperandsAreSignlessIntegerLike(Operation *op) {
   for (auto opType : op->getOperandTypes()) {
     auto type = getTensorOrVectorElementType(opType);
-    if (!type.isIntOrIndex())
+    if (!type.isSignlessIntOrIndex())
       return op->emitOpError() << "requires an integer or index type";
   }
   return success();
@@ -809,7 +817,7 @@ LogicalResult OpTrait::impl::verifySameTypeOperands(Operation *op) {
   if (nOperands < 2)
     return success();
 
-  auto type = op->getOperand(0)->getType();
+  auto type = op->getOperand(0).getType();
   for (auto opType : llvm::drop_begin(op->getOperandTypes(), 1))
     if (opType != type)
       return op->emitOpError() << "requires all operands to have the same type";
@@ -847,7 +855,7 @@ LogicalResult OpTrait::impl::verifySameOperandsShape(Operation *op) {
   if (failed(verifyAtLeastNOperands(op, 1)))
     return failure();
 
-  auto type = op->getOperand(0)->getType();
+  auto type = op->getOperand(0).getType();
   for (auto opType : llvm::drop_begin(op->getOperandTypes(), 1)) {
     if (failed(verifyCompatibleShape(opType, type)))
       return op->emitOpError() << "requires the same shape for all operands";
@@ -860,7 +868,7 @@ LogicalResult OpTrait::impl::verifySameOperandsAndResultShape(Operation *op) {
       failed(verifyAtLeastNResults(op, 1)))
     return failure();
 
-  auto type = op->getOperand(0)->getType();
+  auto type = op->getOperand(0).getType();
   for (auto resultType : op->getResultTypes()) {
     if (failed(verifyCompatibleShape(resultType, type)))
       return op->emitOpError()
@@ -917,9 +925,9 @@ LogicalResult OpTrait::impl::verifySameOperandsAndResultType(Operation *op) {
       failed(verifyAtLeastNResults(op, 1)))
     return failure();
 
-  auto type = op->getResult(0)->getType();
+  auto type = op->getResult(0).getType();
   auto elementType = getElementTypeOrSelf(type);
-  for (auto resultType : llvm::drop_begin(op->getResultTypes(), 1)) {
+  for (auto resultType : op->getResultTypes().drop_front(1)) {
     if (getElementTypeOrSelf(resultType) != elementType ||
         failed(verifyCompatibleShape(resultType, type)))
       return op->emitOpError()
@@ -946,7 +954,7 @@ static LogicalResult verifySuccessor(Operation *op, unsigned succNo) {
 
   auto operandIt = operands.begin();
   for (unsigned i = 0, e = operandCount; i != e; ++i, ++operandIt) {
-    if ((*operandIt)->getType() != destBB->getArgument(i)->getType())
+    if ((*operandIt).getType() != destBB->getArgument(i).getType())
       return op->emitError() << "type mismatch for bb argument #" << i
                              << " of successor #" << succNo;
   }
@@ -999,9 +1007,10 @@ LogicalResult OpTrait::impl::verifyResultsAreFloatLike(Operation *op) {
   return success();
 }
 
-LogicalResult OpTrait::impl::verifyResultsAreIntegerLike(Operation *op) {
+LogicalResult
+OpTrait::impl::verifyResultsAreSignlessIntegerLike(Operation *op) {
   for (auto resultType : op->getResultTypes())
-    if (!getTensorOrVectorElementType(resultType).isIntOrIndex())
+    if (!getTensorOrVectorElementType(resultType).isSignlessIntOrIndex())
       return op->emitOpError() << "requires an integer or index type";
   return success();
 }
@@ -1056,9 +1065,9 @@ LogicalResult OpTrait::impl::verifyResultSizeAttr(Operation *op,
 
 void impl::buildBinaryOp(Builder *builder, OperationState &result, Value lhs,
                          Value rhs) {
-  assert(lhs->getType() == rhs->getType());
+  assert(lhs.getType() == rhs.getType());
   result.addOperands({lhs, rhs});
-  result.types.push_back(lhs->getType());
+  result.types.push_back(lhs.getType());
 }
 
 ParseResult impl::parseOneResultSameOperandTypeOp(OpAsmParser &parser,
@@ -1077,7 +1086,7 @@ void impl::printOneResultOp(Operation *op, OpAsmPrinter &p) {
 
   // If not all the operand and result types are the same, just use the
   // generic assembly form to avoid omitting information in printing.
-  auto resultType = op->getResult(0)->getType();
+  auto resultType = op->getResult(0).getType();
   if (llvm::any_of(op->getOperandTypes(),
                    [&](Type type) { return type != resultType; })) {
     p.printGenericOp(op);
@@ -1113,15 +1122,15 @@ ParseResult impl::parseCastOp(OpAsmParser &parser, OperationState &result) {
 }
 
 void impl::printCastOp(Operation *op, OpAsmPrinter &p) {
-  p << op->getName() << ' ' << *op->getOperand(0);
+  p << op->getName() << ' ' << op->getOperand(0);
   p.printOptionalAttrDict(op->getAttrs());
-  p << " : " << op->getOperand(0)->getType() << " to "
-    << op->getResult(0)->getType();
+  p << " : " << op->getOperand(0).getType() << " to "
+    << op->getResult(0).getType();
 }
 
 Value impl::foldCastOp(Operation *op) {
   // Identity cast
-  if (op->getOperand(0)->getType() == op->getResult(0)->getType())
+  if (op->getOperand(0).getType() == op->getResult(0).getType())
     return op->getOperand(0);
   return nullptr;
 }

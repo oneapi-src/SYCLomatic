@@ -1,6 +1,7 @@
 // RUN: mlir-opt %s -test-vector-to-vector-conversion | FileCheck %s
 
-// CHECK-DAG: #[[MAP0:map[0-9]+]] = (d0, d1) -> (d0, d1)
+// CHECK-DAG: #[[MAP0:map[0-9]+]] = affine_map<(d0, d1) -> (d0, d1)>
+// CHECK-DAG: #[[MAP1:map[0-9]+]] = affine_map<(d0, d1, d2) -> (d1, d2)>
 
 // CHECK-LABEL: func @add4x2
 //      CHECK: %[[ES1:.*]] = vector.extract_slices %{{.*}}, [2, 2], [1, 1] : vector<4x2xf32> into tuple<vector<2x2xf32>, vector<2x2xf32>>
@@ -65,9 +66,9 @@ func @add4x4(%0: vector<4x4xf32>, %1: vector<4x4xf32>) -> vector<4x4xf32> {
 }
 
 #contraction_accesses0 = [
-  (i, j, k) -> (i, k),
-  (i, j, k) -> (k, j),
-  (i, j, k) -> (i, j)
+  affine_map<(i, j, k) -> (i, k)>,
+  affine_map<(i, j, k) -> (k, j)>,
+  affine_map<(i, j, k) -> (i, j)>
 ]
 #contraction_trait0 = {
   indexing_maps = #contraction_accesses0,
@@ -159,9 +160,9 @@ func @contraction4x4_ijk(%arg0 : vector<4x6xf32>, %arg1 : vector<6x4xf32>,
 }
 
 #contraction_accesses1 = [
-  (i, k, j) -> (i, k),
-  (i, k, j) -> (k, j),
-  (i, k, j) -> (i, j)
+  affine_map<(i, k, j) -> (i, k)>,
+  affine_map<(i, k, j) -> (k, j)>,
+  affine_map<(i, k, j) -> (i, j)>
 ]
 #contraction_trait1 = {
   indexing_maps = #contraction_accesses1,
@@ -259,22 +260,22 @@ func @contraction4x4_ikj_xfer_read(%arg0 : memref<4x2xf32>,
   %cf0 = constant 0.0 : f32
 
   %0 = vector.transfer_read %arg0[%c0, %c0], %cf0
-    { permutation_map = (d0, d1) -> (d0, d1) }
+    { permutation_map = affine_map<(d0, d1) -> (d0, d1)> }
       : memref<4x2xf32>, vector<4x2xf32>
 
   %1 = vector.transfer_read %arg1[%c0, %c0], %cf0
-    { permutation_map = (d0, d1) -> (d0, d1) }
+    { permutation_map = affine_map<(d0, d1) -> (d0, d1)> }
     : memref<2x4xf32>, vector<2x4xf32>
 
   %2 = vector.transfer_read %arg2[%c0, %c0], %cf0
-    { permutation_map = (d0, d1) -> (d0, d1) }
+    { permutation_map = affine_map<(d0, d1) -> (d0, d1)> }
       : memref<4x4xf32>, vector<4x4xf32>
 
   %3 = vector.contract #contraction_trait1 %0, %1, %2
       : vector<4x2xf32>, vector<2x4xf32> into vector<4x4xf32>
 
   vector.transfer_write %3, %arg2[%c0, %c0]
-    {permutation_map = (d0, d1) -> (d0, d1)}
+    {permutation_map = affine_map<(d0, d1) -> (d0, d1)>}
       : vector<4x4xf32>, memref<4x4xf32>
   return
 }
@@ -294,11 +295,113 @@ func @vector_transfers(%arg0: index, %arg1: index) {
   %cst_1 = constant 2.000000e+00 : f32
   affine.for %arg2 = 0 to %arg0 step 4 {
     affine.for %arg3 = 0 to %arg1 step 4 {
-      %4 = vector.transfer_read %0[%arg2, %arg3], %cst  {permutation_map = (d0, d1) -> (d0, d1)} : memref<?x?xf32>, vector<4x4xf32>
-      %5 = vector.transfer_read %1[%arg2, %arg3], %cst  {permutation_map = (d0, d1) -> (d0, d1)} : memref<?x?xf32>, vector<4x4xf32>
+      %4 = vector.transfer_read %0[%arg2, %arg3], %cst  {permutation_map = affine_map<(d0, d1) -> (d0, d1)>} : memref<?x?xf32>, vector<4x4xf32>
+      %5 = vector.transfer_read %1[%arg2, %arg3], %cst  {permutation_map = affine_map<(d0, d1) -> (d0, d1)>} : memref<?x?xf32>, vector<4x4xf32>
       %6 = addf %4, %5 : vector<4x4xf32>
-      vector.transfer_write %6, %2[%arg2, %arg3] {permutation_map = (d0, d1) -> (d0, d1)} : vector<4x4xf32>, memref<?x?xf32>
+      vector.transfer_write %6, %2[%arg2, %arg3] {permutation_map = affine_map<(d0, d1) -> (d0, d1)>} : vector<4x4xf32>, memref<?x?xf32>
     }
   }
   return
+}
+
+// CHECK-LABEL: func @tuple_get(%arg0: vector<4xf32>, %arg1: vector<8xf32>)
+//       CHECK: return %arg1
+
+func @tuple_get(%arg0: vector<4xf32>, %arg1: vector<8xf32>) -> vector<8xf32> {
+  %0 = vector.tuple %arg0, %arg1 : vector<4xf32>, vector<8xf32>
+  %1 = vector.tuple_get %0, 1 : tuple<vector<4xf32>, vector<8xf32>>
+  return %1 : vector<8xf32>
+}
+
+// CHECK-LABEL: func @vector_transfers_vector_element_type
+//      CHECK: %[[C0:.*]] = constant 0 : index
+//      CHECK: %[[C1:.*]] = constant 1 : index
+//      CHECK: %[[VTR0:.*]] = vector.transfer_read %{{.*}}[%[[C0]], %[[C0]], %[[C0]]], %{{.*}} {permutation_map = #[[MAP1]]} : memref<6x2x1xvector<2x4xf32>>, vector<1x1x2x4xf32>
+// CHECK-NEXT: %[[VTR1:.*]] = vector.transfer_read %{{.*}}[%[[C0]], %[[C1]], %[[C0]]], %{{.*}} {permutation_map = #[[MAP1]]} : memref<6x2x1xvector<2x4xf32>>, vector<1x1x2x4xf32>
+// CHECK-NEXT: vector.transfer_write %[[VTR0]], %{{.*}}[%[[C0]], %[[C0]], %[[C0]]] {permutation_map = #[[MAP1]]} : vector<1x1x2x4xf32>, memref<6x2x1xvector<2x4xf32>>
+// CHECK-NEXT: vector.transfer_write %[[VTR1]], %{{.*}}[%[[C0]], %[[C1]], %[[C0]]] {permutation_map = #[[MAP1]]} : vector<1x1x2x4xf32>, memref<6x2x1xvector<2x4xf32>>
+
+func @vector_transfers_vector_element_type() {
+  %c0 = constant 0 : index
+  %cf0 = constant 0.000000e+00 : f32
+  %vf0 = splat %cf0 : vector<2x4xf32>
+
+  %0 = alloc() : memref<6x2x1xvector<2x4xf32>>
+
+  %1 = vector.transfer_read %0[%c0, %c0, %c0], %vf0
+      {permutation_map = affine_map<(d0, d1, d2) -> (d1, d2)>}
+        : memref<6x2x1xvector<2x4xf32>>, vector<2x1x2x4xf32>
+
+  %2 = vector.extract_slices %1, [1, 1, 2, 4], [1, 1, 1, 1]
+    : vector<2x1x2x4xf32> into tuple<vector<1x1x2x4xf32>, vector<1x1x2x4xf32>>
+  %3 = vector.tuple_get %2, 0 : tuple<vector<1x1x2x4xf32>, vector<1x1x2x4xf32>>
+  %4 = vector.tuple_get %2, 1 : tuple<vector<1x1x2x4xf32>, vector<1x1x2x4xf32>>
+  %5 = vector.tuple %3, %4 : vector<1x1x2x4xf32>, vector<1x1x2x4xf32>
+  %6 = vector.insert_slices %5, [1, 1, 2, 4], [1, 1, 1, 1]
+    : tuple<vector<1x1x2x4xf32>, vector<1x1x2x4xf32>> into vector<2x1x2x4xf32>
+
+  vector.transfer_write %6, %0[%c0, %c0, %c0]
+    {permutation_map = affine_map<(d0, d1, d2) -> (d1, d2)>}
+      : vector<2x1x2x4xf32>, memref<6x2x1xvector<2x4xf32>>
+
+  return
+}
+
+// Test that ShapeCastOp on tuple of vectors, decomposes to multiple
+// ShapeCastOps on vectors.
+// CHECK-LABEL: func @shape_cast_decomposition
+//       CHECK: %[[V0:.*]] = vector.shape_cast %{{.*}} : vector<5x4x2xf32> to vector<20x2xf32>
+//  CHECK-NEXT: %[[V1:.*]] = vector.shape_cast %{{.*}} : vector<3x4x2xf32> to vector<12x2xf32>
+//  CHECK-NEXT: return %[[V0]], %[[V1]] : vector<20x2xf32>, vector<12x2xf32>
+
+func @shape_cast_decomposition(%arg0 : vector<5x4x2xf32>,
+                               %arg1 : vector<3x4x2xf32>)
+  -> (vector<20x2xf32>, vector<12x2xf32>) {
+  %0 = vector.tuple %arg0, %arg1 : vector<5x4x2xf32>, vector<3x4x2xf32>
+  %1 = vector.shape_cast %0 : tuple<vector<5x4x2xf32>, vector<3x4x2xf32>> to
+                              tuple<vector<20x2xf32>, vector<12x2xf32>>
+  %2 = vector.tuple_get %1, 0 : tuple<vector<20x2xf32>, vector<12x2xf32>>
+  %3 = vector.tuple_get %1, 1 : tuple<vector<20x2xf32>, vector<12x2xf32>>
+  return %2, %3 : vector<20x2xf32>, vector<12x2xf32>
+}
+
+// Test that cancelling ShapeCastOps are canonicalized away.
+// EX:
+//
+//  The following MLIR with cancelling ShapeCastOps:
+//
+//   %0 = source : vector<5x4x2xf32>
+//   %1 = shape_cast %0 : vector<5x4x2xf32> to vector<20x2xf32>
+//   %2 = shape_cast %1 : vector<20x2xf32> to vector<5x4x2xf32>
+//   %3 = user %2 : vector<5x4x2xf32>
+//
+//  Should canonicalize to the following:
+//
+//
+//   %0 = source : vector<5x4x2xf32>
+//   %1 = user %0 : vector<5x4x2xf32>
+//
+
+// ShapeCastOps on vectors.
+// CHECK-LABEL: func @shape_cast_fold
+//       CHECK: return %{{.*}},  %{{.*}} : vector<5x4x2xf32>, vector<3x4x2xf32>
+
+func @shape_cast_fold(%arg0 : vector<5x4x2xf32>, %arg1 : vector<3x4x2xf32>)
+  -> (vector<5x4x2xf32>, vector<3x4x2xf32>) {
+  %0 = vector.tuple %arg0, %arg1 : vector<5x4x2xf32>, vector<3x4x2xf32>
+
+  %1 = vector.shape_cast %0 : tuple<vector<5x4x2xf32>, vector<3x4x2xf32>> to
+                              tuple<vector<20x2xf32>, vector<12x2xf32>>
+
+  %2 = vector.tuple_get %1, 0 : tuple<vector<20x2xf32>, vector<12x2xf32>>
+  %3 = vector.tuple_get %1, 1 : tuple<vector<20x2xf32>, vector<12x2xf32>>
+
+  %4 = vector.tuple %2, %3 : vector<20x2xf32>, vector<12x2xf32>
+  %5 = vector.shape_cast %4 : tuple<vector<20x2xf32>, vector<12x2xf32>> to
+                              tuple<vector<5x4x2xf32>, vector<3x4x2xf32>>
+
+  %6 = vector.tuple_get %5, 0 : tuple<vector<5x4x2xf32>, vector<3x4x2xf32>>
+  %7 = vector.tuple_get %5, 1 : tuple<vector<5x4x2xf32>, vector<3x4x2xf32>>
+
+  return %6, %7 : vector<5x4x2xf32>, vector<3x4x2xf32>
 }

@@ -1,6 +1,6 @@
 //===- Deserializer.cpp - MLIR SPIR-V Deserialization ---------------------===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -48,7 +48,8 @@ static inline spirv::Opcode extractOpcode(uint32_t word) {
 
 /// Returns true if the given `block` is a function entry block.
 static inline bool isFnEntryBlock(Block *block) {
-  return block->isEntryBlock() && isa_and_nonnull<FuncOp>(block->getParentOp());
+  return block->isEntryBlock() &&
+         isa_and_nonnull<spirv::FuncOp>(block->getParentOp());
 }
 
 namespace {
@@ -134,8 +135,8 @@ private:
   /// Processes an OpMemberName instruction.
   LogicalResult processMemberName(ArrayRef<uint32_t> words);
 
-  /// Gets the FuncOp associated with a result <id> of OpFunction.
-  FuncOp getFunction(uint32_t id) { return funcMap.lookup(id); }
+  /// Gets the function op associated with a result <id> of OpFunction.
+  spirv::FuncOp getFunction(uint32_t id) { return funcMap.lookup(id); }
 
   /// Processes the SPIR-V function at the current `offset` into `binary`.
   /// The operands to the OpFunction instruction is passed in as ``operands`.
@@ -392,7 +393,7 @@ private:
   Optional<spirv::ModuleOp> module;
 
   /// The current function under construction.
-  Optional<FuncOp> curFunction;
+  Optional<spirv::FuncOp> curFunction;
 
   /// The current block under construction.
   Block *curBlock = nullptr;
@@ -425,7 +426,7 @@ private:
   DenseMap<uint32_t, spirv::GlobalVariableOp> globalVariableMap;
 
   // Result <id> to function mapping.
-  DenseMap<uint32_t, FuncOp> funcMap;
+  DenseMap<uint32_t, spirv::FuncOp> funcMap;
 
   // Result <id> to block mapping.
   DenseMap<uint32_t, Block *> blockMap;
@@ -775,8 +776,8 @@ LogicalResult Deserializer::processFunction(ArrayRef<uint32_t> operands) {
   }
 
   std::string fnName = getFunctionSymbol(operands[1]);
-  auto funcOp = opBuilder.create<FuncOp>(unknownLoc, fnName, functionType,
-                                         ArrayRef<NamedAttribute>());
+  auto funcOp =
+      opBuilder.create<spirv::FuncOp>(unknownLoc, fnName, functionType);
   curFunction = funcMap[operands[1]] = funcOp;
   LLVM_DEBUG(llvm::dbgs() << "-- start function " << fnName << " (type = "
                           << fnType << ", id = " << operands[1] << ") --\n");
@@ -1450,7 +1451,7 @@ LogicalResult Deserializer::processConstantNull(ArrayRef<uint32_t> operands) {
   }
 
   auto resultID = operands[1];
-  if (resultType.isa<IntegerType>() || resultType.isa<FloatType>() ||
+  if (resultType.isSignlessInteger() || resultType.isa<FloatType>() ||
       resultType.isa<VectorType>()) {
     auto attr = opBuilder.getZeroAttr(resultType);
     // For normal constants, we just record the attribute (and its type) for
@@ -1558,10 +1559,10 @@ LogicalResult Deserializer::processSelectionMerge(ArrayRef<uint32_t> operands) {
   if (operands.size() < 2) {
     return emitError(
         unknownLoc,
-        "OpLoopMerge must specify merge target and selection control");
+        "OpSelectionMerge must specify merge target and selection control");
   }
 
-  if (static_cast<uint32_t>(spirv::LoopControl::None) != operands[1]) {
+  if (static_cast<uint32_t>(spirv::SelectionControl::None) != operands[1]) {
     return emitError(unknownLoc,
                      "unimplmented OpSelectionMerge selection control: ")
            << operands[2];
@@ -1775,7 +1776,7 @@ LogicalResult ControlFlowStructurizer::structurizeImpl() {
                             << " from block " << block << "\n");
     if (!isFnEntryBlock(block)) {
       for (BlockArgument blockArg : block->getArguments()) {
-        auto newArg = newBlock->addArgument(blockArg->getType());
+        auto newArg = newBlock->addArgument(blockArg.getType());
         mapper.map(blockArg, newArg);
         LLVM_DEBUG(llvm::dbgs() << "[cf] remapped block argument " << blockArg
                                 << " to " << newArg << '\n');
@@ -1816,7 +1817,7 @@ LogicalResult ControlFlowStructurizer::structurizeImpl() {
     // make sure the old merge block has the same block argument list.
     assert(mergeBlock->args_empty() && "OpPhi in loop merge block unsupported");
     for (BlockArgument blockArg : headerBlock->getArguments()) {
-      mergeBlock->addArgument(blockArg->getType());
+      mergeBlock->addArgument(blockArg.getType());
     }
 
     // If the loop header block has block arguments, make sure the spv.branch op
@@ -2200,8 +2201,8 @@ LogicalResult Deserializer::processBitcast(ArrayRef<uint32_t> words) {
                      "spirv::BitcastOp, only ")
            << wordIndex << " of " << words.size() << " processed";
   }
-  if (resultTypes[0] == operands[0]->getType() &&
-      resultTypes[0].isa<IntegerType>()) {
+  if (resultTypes[0] == operands[0].getType() &&
+      resultTypes[0].isSignlessInteger()) {
     // TODO(b/130356985): This check is added to ignore error in Op verification
     // due to both signed and unsigned integers mapping to the same
     // type. Without this check this method is same as what is auto-generated.

@@ -1,7 +1,8 @@
-// RUN: %clangxx -fsycl %s -o %t.out
+// RUN: %clangxx -fsycl -fsycl-targets=%sycl_triple %s -o %t.out
 // RUN: env SYCL_DEVICE_TYPE=HOST %t.out
 // RUN: %CPU_RUN_PLACEHOLDER %t.out
 // RUN: %GPU_RUN_PLACEHOLDER %t.out
+
 //==- handler.cpp - SYCL handler explicit memory operations test -*- C++-*--==//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -19,7 +20,7 @@
 using namespace cl::sycl;
 
 template <typename T> struct point {
-  point(const point &rhs) : x(rhs.x), y(rhs.y) {}
+  point(const point &rhs) = default;
   point(T x, T y) : x(x), y(y) {}
   point(T v) : x(v), y(v) {}
   point() : x(0), y(0) {}

@@ -1,4 +1,4 @@
-//===-- UserExpression.cpp ---------------------------------*- C++ -*-===//
+//===-- UserExpression.cpp ------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -53,8 +53,9 @@ UserExpression::UserExpression(ExecutionContextScope &exe_scope,
                                lldb::LanguageType language,
                                ResultType desired_type,
                                const EvaluateExpressionOptions &options)
-    : Expression(exe_scope), m_expr_text(expr), m_expr_prefix(prefix),
-      m_language(language), m_desired_type(desired_type), m_options(options) {}
+    : Expression(exe_scope), m_expr_text(std::string(expr)),
+      m_expr_prefix(std::string(prefix)), m_language(language),
+      m_desired_type(desired_type), m_options(options) {}
 
 UserExpression::~UserExpression() {}
 
@@ -116,7 +117,7 @@ lldb::addr_t UserExpression::GetObjectPointer(lldb::StackFrameSP frame_sp,
   lldb::ValueObjectSP valobj_sp;
 
   valobj_sp = frame_sp->GetValueForVariableExpressionPath(
-      object_name.AsCString(), lldb::eNoDynamicValues,
+      object_name.GetStringRef(), lldb::eNoDynamicValues,
       StackFrame::eExpressionPathOptionCheckPtrVsMember |
           StackFrame::eExpressionPathOptionsNoFragileObjcIvar |
           StackFrame::eExpressionPathOptionsNoSyntheticChildren |
@@ -138,12 +139,12 @@ lldb::addr_t UserExpression::GetObjectPointer(lldb::StackFrameSP frame_sp,
   return ret;
 }
 
-lldb::ExpressionResults UserExpression::Evaluate(
-    ExecutionContext &exe_ctx, const EvaluateExpressionOptions &options,
-    llvm::StringRef expr, llvm::StringRef prefix,
-    lldb::ValueObjectSP &result_valobj_sp, Status &error,
-    std::string *fixed_expression, lldb::ModuleSP *jit_module_sp_ptr,
-    ValueObject *ctx_obj) {
+lldb::ExpressionResults
+UserExpression::Evaluate(ExecutionContext &exe_ctx,
+                         const EvaluateExpressionOptions &options,
+                         llvm::StringRef expr, llvm::StringRef prefix,
+                         lldb::ValueObjectSP &result_valobj_sp, Status &error,
+                         std::string *fixed_expression, ValueObject *ctx_obj) {
   Log *log(lldb_private::GetLogIfAnyCategoriesSet(LIBLLDB_LOG_EXPRESSIONS |
                                                   LIBLLDB_LOG_STEP));
 
@@ -201,8 +202,8 @@ lldb::ExpressionResults UserExpression::Evaluate(
   llvm::StringRef option_prefix(options.GetPrefix());
   std::string full_prefix_storage;
   if (!prefix.empty() && !option_prefix.empty()) {
-    full_prefix_storage = prefix;
-    full_prefix_storage.append(option_prefix);
+    full_prefix_storage = std::string(prefix);
+    full_prefix_storage.append(std::string(option_prefix));
     full_prefix = full_prefix_storage;
   } else if (!prefix.empty())
     full_prefix = prefix;
@@ -301,11 +302,6 @@ lldb::ExpressionResults UserExpression::Evaluate(
   }
 
   if (parse_success) {
-    // If a pointer to a lldb::ModuleSP was passed in, return the JIT'ed module
-    // if one was created
-    if (jit_module_sp_ptr)
-      *jit_module_sp_ptr = user_expression_sp->GetJITModule();
-
     lldb::ExpressionVariableSP expr_result;
 
     if (execution_policy == eExecutionPolicyNever &&
@@ -396,8 +392,9 @@ UserExpression::Execute(DiagnosticManager &diagnostic_manager,
       diagnostic_manager, exe_ctx, options, shared_ptr_to_me, result_var);
   Target *target = exe_ctx.GetTargetPtr();
   if (options.GetResultIsInternal() && result_var && target) {
-    target->GetPersistentExpressionStateForLanguage(m_language)
-        ->RemovePersistentVariable(result_var);
+    if (auto *persistent_state =
+            target->GetPersistentExpressionStateForLanguage(m_language))
+      persistent_state->RemovePersistentVariable(result_var);
   }
   return expr_result;
 }

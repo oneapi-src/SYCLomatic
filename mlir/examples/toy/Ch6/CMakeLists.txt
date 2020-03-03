@@ -14,7 +14,6 @@ add_toy_chapter(toyc-ch6
   parser/AST.cpp
   mlir/MLIRGen.cpp
   mlir/Dialect.cpp
-  mlir/DeadFunctionEliminationPass.cpp
   mlir/LowerToAffineLoops.cpp
   mlir/LowerToLLVM.cpp
   mlir/ShapeInferencePass.cpp
@@ -30,7 +29,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/)
 target_link_libraries(toyc-ch6
   PRIVATE
-    MLIRAffineOps
+    MLIRAllDialects
     MLIRAffineToStandard
     MLIRAnalysis
     MLIRExecutionEngine
@@ -39,15 +38,8 @@ target_link_libraries(toyc-ch6
     MLIRLoopToStandard
     MLIRParser
     MLIRPass
-    MLIRStandardOps
     MLIRStandardToLLVM
     MLIRTargetLLVMIR
     MLIRTransforms
     )
 
-whole_archive_link(toyc-ch6
-  MLIRAffineToStandard
-  MLIRAffineOps
-  MLIRLLVMIR
-  MLIRStandardOps
-  )

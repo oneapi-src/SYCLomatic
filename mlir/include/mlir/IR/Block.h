@@ -1,6 +1,6 @@
 //===- Block.h - MLIR Block Class -------------------------------*- C++ -*-===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -86,6 +86,9 @@ public:
 
   /// Add one argument to the argument list for each type specified in the list.
   iterator_range<args_iterator> addArguments(ArrayRef<Type> types);
+
+  // Add one value to the argument list at the specified position.
+  BlockArgument insertArgument(unsigned index, Type type);
 
   /// Erase the argument at 'index' and remove it from the argument list. If
   /// 'updatePredTerms' is set to true, this argument is also removed from the
@@ -312,12 +315,14 @@ public:
   }
 
   void print(raw_ostream &os);
+  void print(raw_ostream &os, AsmState &state);
   void dump();
 
   /// Print out the name of the block without printing its body.
   /// NOTE: The printType argument is ignored.  We keep it for compatibility
   /// with LLVM dominator machinery that expects it to exist.
   void printAsOperand(raw_ostream &os, bool printType = true);
+  void printAsOperand(raw_ostream &os, AsmState &state);
 
 private:
   /// Pair of the parent object that owns this block and a bit that signifies if

@@ -65,8 +65,10 @@ static cl::opt<bool>
                                        "import files for the "
                                        "distributed backend case"));
 
-static cl::opt<int> Threads("thinlto-threads",
-                            cl::init(llvm::heavyweight_hardware_concurrency()));
+// Default to using all available threads in the system, but using only one
+// thread per core, as indicated by the usage of
+// heavyweight_hardware_concurrency() in the InProcessThinBackend constructor.
+static cl::opt<int> Threads("thinlto-threads", cl::init(0));
 
 static cl::list<std::string> SymbolResolutions(
     "r",
@@ -203,7 +205,8 @@ static int run(int argc, char **argv) {
         return 1;
       }
     }
-    CommandLineResolutions[{FileName, SymbolName}].push_back(Res);
+    CommandLineResolutions[{std::string(FileName), std::string(SymbolName)}]
+        .push_back(Res);
   }
 
   std::vector<std::unique_ptr<MemoryBuffer>> MBs;
@@ -270,6 +273,8 @@ static int run(int argc, char **argv) {
   Conf.OverrideTriple = OverrideTriple;
   Conf.DefaultTriple = DefaultTriple;
   Conf.StatsFile = StatsFile;
+  Conf.PTO.LoopVectorization = Conf.OptLevel > 1;
+  Conf.PTO.SLPVectorization = Conf.OptLevel > 1;
 
   ThinBackend Backend;
   if (ThinLTODistributedIndexes)
@@ -290,14 +295,14 @@ static int run(int argc, char **argv) {
 
     std::vector<SymbolResolution> Res;
     for (const InputFile::Symbol &Sym : Input->symbols()) {
-      auto I = CommandLineResolutions.find({F, Sym.getName()});
+      auto I = CommandLineResolutions.find({F, std::string(Sym.getName())});
       // If it isn't found, look for "$", which would have been added
       // (followed by a hash) when the symbol was promoted during module
       // splitting if it was defined in one part and used in the other.
       // Try looking up the symbol name before the "$".
       if (I == CommandLineResolutions.end()) {
         auto SplitName = Sym.getName().rsplit("$");
-        I = CommandLineResolutions.find({F, SplitName.first});
+        I = CommandLineResolutions.find({F, std::string(SplitName.first)});
       }
       if (I == CommandLineResolutions.end()) {
         llvm::errs() << argv[0] << ": missing symbol resolution for " << F
@@ -352,8 +357,10 @@ static int run(int argc, char **argv) {
 
 static int dumpSymtab(int argc, char **argv) {
   for (StringRef F : make_range(argv + 1, argv + argc)) {
-    std::unique_ptr<MemoryBuffer> MB = check(MemoryBuffer::getFile(F), F);
-    BitcodeFileContents BFC = check(getBitcodeFileContents(*MB), F);
+    std::unique_ptr<MemoryBuffer> MB =
+        check(MemoryBuffer::getFile(F), std::string(F));
+    BitcodeFileContents BFC =
+        check(getBitcodeFileContents(*MB), std::string(F));
 
     if (BFC.Symtab.size() >= sizeof(irsymtab::storage::Header)) {
       auto *Hdr = reinterpret_cast<const irsymtab::storage::Header *>(
@@ -365,7 +372,7 @@ static int dumpSymtab(int argc, char **argv) {
     }
 
     std::unique_ptr<InputFile> Input =
-        check(InputFile::create(MB->getMemBufferRef()), F);
+        check(InputFile::create(MB->getMemBufferRef()), std::string(F));
 
     outs() << "target triple: " << Input->getTargetTriple() << '\n';
     Triple TT(Input->getTargetTriple());

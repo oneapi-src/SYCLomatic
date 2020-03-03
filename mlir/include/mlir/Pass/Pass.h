@@ -1,6 +1,6 @@
 //===- Pass.h - Base classes for compiler passes ----------------*- C++ -*-===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -121,6 +121,7 @@ public:
 protected:
   explicit Pass(const PassID *passID, Optional<StringRef> opName = llvm::None)
       : passID(passID), opName(opName) {}
+  Pass(const Pass &other) : Pass(other.passID, other.opName) {}
 
   /// Returns the current pass state.
   detail::PassExecutionState &getPassState() {
@@ -178,6 +179,9 @@ private:
 
   /// Allow access to 'clone' and 'run'.
   friend class OpPassManager;
+
+  /// Allow access to 'passOptions'.
+  friend class PassInfo;
 };
 
 //===----------------------------------------------------------------------===//

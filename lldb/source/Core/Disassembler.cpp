@@ -1,4 +1,4 @@
-//===-- Disassembler.cpp ----------------------------------------*- C++ -*-===//
+//===-- Disassembler.cpp --------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -173,8 +173,8 @@ bool Disassembler::Disassemble(
   // Find functions matching the given name.
   SymbolContextList sc_list;
   if (module) {
-    module->FindFunctions(name, nullptr, eFunctionNameTypeAuto, include_symbols,
-                          include_inlines, sc_list);
+    module->FindFunctions(name, CompilerDeclContext(), eFunctionNameTypeAuto,
+                          include_symbols, include_inlines, sc_list);
   } else if (exe_ctx.GetTargetPtr()) {
     exe_ctx.GetTargetPtr()->GetImages().FindFunctions(
         name, eFunctionNameTypeAuto, include_symbols, include_inlines, sc_list);
@@ -1346,7 +1346,7 @@ void PseudoInstruction::SetOpcode(size_t opcode_size, void *opcode_data) {
 }
 
 void PseudoInstruction::SetDescription(llvm::StringRef description) {
-  m_description = description;
+  m_description = std::string(description);
 }
 
 Instruction::Operand Instruction::Operand::BuildRegister(ConstString &r) {

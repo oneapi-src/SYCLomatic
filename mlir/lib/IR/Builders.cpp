@@ -1,6 +1,6 @@
 //===- Builders.cpp - Helpers for constructing MLIR Classes ---------------===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -59,6 +59,11 @@ IntegerType Builder::getIntegerType(unsigned width) {
   return IntegerType::get(width, context);
 }
 
+IntegerType Builder::getIntegerType(unsigned width, bool isSigned) {
+  return IntegerType::get(
+      width, isSigned ? IntegerType::Signed : IntegerType::Unsigned, context);
+}
+
 FunctionType Builder::getFunctionType(ArrayRef<Type> inputs,
                                       ArrayRef<Type> results) {
   return FunctionType::get(inputs, results, context);
@@ -104,6 +109,16 @@ IntegerAttr Builder::getI32IntegerAttr(int32_t value) {
   return IntegerAttr::get(getIntegerType(32), APInt(32, value));
 }
 
+IntegerAttr Builder::getSI32IntegerAttr(int32_t value) {
+  return IntegerAttr::get(getIntegerType(32, /*isSigned=*/true),
+                          APInt(32, value, /*isSigned=*/true));
+}
+
+IntegerAttr Builder::getUI32IntegerAttr(uint32_t value) {
+  return IntegerAttr::get(getIntegerType(32, /*isSigned=*/false),
+                          APInt(32, (uint64_t)value, /*isSigned=*/false));
+}
+
 IntegerAttr Builder::getI16IntegerAttr(int16_t value) {
   return IntegerAttr::get(getIntegerType(16), APInt(16, value));
 }
@@ -115,7 +130,8 @@ IntegerAttr Builder::getI8IntegerAttr(int8_t value) {
 IntegerAttr Builder::getIntegerAttr(Type type, int64_t value) {
   if (type.isIndex())
     return IntegerAttr::get(type, APInt(64, value));
-  return IntegerAttr::get(type, APInt(type.getIntOrFloatBitWidth(), value));
+  return IntegerAttr::get(
+      type, APInt(type.getIntOrFloatBitWidth(), value, type.isSignedInteger()));
 }
 
 IntegerAttr Builder::getIntegerAttr(Type type, const APInt &value) {
@@ -342,8 +358,7 @@ LogicalResult OpBuilder::tryFold(Operation *op,
   };
 
   // If this operation is already a constant, there is nothing to do.
-  Attribute unused;
-  if (matchPattern(op, m_Constant(&unused)))
+  if (matchPattern(op, m_Constant()))
     return cleanupFailure();
 
   // Check to see if any operands to the operation is constant and whether
@@ -377,7 +392,7 @@ LogicalResult OpBuilder::tryFold(Operation *op,
     // Ask the dialect to materialize a constant operation for this value.
     Attribute attr = it.value().get<Attribute>();
     auto *constOp = dialect->materializeConstant(
-        cstBuilder, attr, op->getResult(it.index())->getType(), op->getLoc());
+        cstBuilder, attr, op->getResult(it.index()).getType(), op->getLoc());
     if (!constOp) {
       // Erase any generated constants.
       for (Operation *cst : generatedConstants)

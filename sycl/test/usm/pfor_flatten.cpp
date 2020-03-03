@@ -2,6 +2,7 @@
 // RUN: env SYCL_DEVICE_TYPE=HOST %t1.out
 // RUN: %CPU_RUN_PLACEHOLDER %t1.out
 // RUN: %GPU_RUN_PLACEHOLDER %t1.out
+// XFAIL: cuda
 
 //==--------------- pfor_flatten.cpp - Kernel Launch Flattening test -------==//
 //
@@ -47,11 +48,13 @@ int main() {
         array[i]++;
       });
 
-  q.single_task({e3}, [=]() {
+  auto e4 = q.single_task({e3}, [=]() {
     for (int i = 0; i < N; i++) {
       array[i]++;
     }
   });
+
+  q.single_task(e4, [=]() { array[0] = array[0]; });
 
   q.wait();
   

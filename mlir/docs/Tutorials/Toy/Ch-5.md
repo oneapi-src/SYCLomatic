@@ -24,7 +24,7 @@ level buffer access, as they are concrete references to a region of memory.
 # Dialect Conversions
 
 MLIR has many different dialects, so it is important to have a unified framework
-for [converting](../../Glossary.md#conversion) between them. This is where the
+for [converting](../../../getting_started/Glossary.md#conversion) between them. This is where the
 `DialectConversion` framework comes into play. This framework allows for
 transforming a set of `illegal` operations to a set of `legal` ones. To use this
 framework, we need to provide two things (and an optional third):
@@ -34,12 +34,12 @@ framework, we need to provide two things (and an optional third):
     -   This is the formal specification of what operations or dialects are
         legal for the conversion. Operations that aren't legal will require
         rewrite patterns to perform
-        [legalization](../../Glossary.md#legalization).
+        [legalization](../../../getting_started/Glossary.md#legalization).
 
 *   A set of
     [Rewrite Patterns](../../DialectConversion.md#rewrite-pattern-specification)
 
-    -   These are the set of [patterns](../../QuickstartRewrites.md) used to
+    -   This is the set of [patterns](../../QuickstartRewrites.md) used to
         convert `illegal` operations into a set of zero or more `legal` ones.
 
 *   Optionally, a [Type Converter](../../DialectConversion.md#type-conversion).
@@ -239,11 +239,11 @@ Looking back at our current working example:
 
 ```mlir
 func @main() {
-  %0 = "toy.constant"() {value = dense<[[1.000000e+00, 2.000000e+00, 3.000000e+00], [4.000000e+00, 5.000000e+00, 6.000000e+00]]> : tensor<2x3xf64>} : () -> tensor<2x3xf64>
-  %2 = "toy.transpose"(%0) : (tensor<2x3xf64>) -> tensor<3x2xf64>
-  %3 = "toy.mul"(%2, %2) : (tensor<3x2xf64>, tensor<3x2xf64>) -> tensor<3x2xf64>
-  "toy.print"(%3) : (tensor<3x2xf64>) -> ()
-  "toy.return"() : () -> ()
+  %0 = toy.constant dense<[[1.000000e+00, 2.000000e+00, 3.000000e+00], [4.000000e+00, 5.000000e+00, 6.000000e+00]]> : tensor<2x3xf64>
+  %2 = toy.transpose(%0 : tensor<2x3xf64>) to tensor<3x2xf64>
+  %3 = toy.mul %2, %2 : tensor<3x2xf64>
+  toy.print %3 : tensor<3x2xf64>
+  toy.return
 }
 ```
 
@@ -291,7 +291,7 @@ func @main() {
   }
 
   // Print the value held by the buffer.
-  "toy.print"(%0) : (memref<3x2xf64>) -> ()
+  toy.print %0 : memref<3x2xf64>
   dealloc %2 : memref<2x3xf64>
   dealloc %1 : memref<3x2xf64>
   dealloc %0 : memref<3x2xf64>
@@ -340,7 +340,7 @@ func @main() {
   }
 
   // Print the value held by the buffer.
-  "toy.print"(%0) : (memref<3x2xf64>) -> ()
+  toy.print %0 : memref<3x2xf64>
   dealloc %1 : memref<2x3xf64>
   dealloc %0 : memref<3x2xf64>
   return

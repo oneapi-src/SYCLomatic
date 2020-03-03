@@ -51,9 +51,8 @@ class FunctionDecl;
 class CallExpr;
 class Token;
 class LangOptions;
-namespace ast_type_traits {
 class DynTypedNode;
-} // namespace ast_type_traits
+
 namespace tooling {
 class Range;
 class Replacements;
@@ -280,8 +279,8 @@ bool callingFuncHasDeviceAttr(const clang::CallExpr *CE);
 bool isInSameScope(const clang::Stmt *S, const clang::ValueDecl *D);
 const clang::DeclRefExpr *getInnerValueDecl(const clang::Expr *Arg);
 const clang::Stmt *getParentStmt(const clang::Stmt *S);
-const std::shared_ptr<clang::ast_type_traits::DynTypedNode>
-getParentNode(const std::shared_ptr<clang::ast_type_traits::DynTypedNode> N);
+const std::shared_ptr<clang::DynTypedNode>
+getParentNode(const std::shared_ptr<clang::DynTypedNode> N);
 bool IsSingleLineStatement(const clang::Stmt *S);
 clang::SourceRange getScopeInsertRange(const clang::MemberExpr *ME);
 clang::SourceRange
@@ -300,7 +299,7 @@ bool isArgUsedAsLvalueUntil(const clang::DeclRefExpr *Arg,
 unsigned int getLenIncludingTrailingSpaces(clang::SourceRange Range,
                                            const clang::SourceManager &SM);
 std::vector<const clang::Stmt *>
-getConditionNode(clang::ast_type_traits::DynTypedNode Node);
+getConditionNode(clang::DynTypedNode Node);
 bool isConditionOfFlowControl(const clang::Expr *E);
 std::string getBufferNameAndDeclStr(const std::string &PointerName,
                                     const clang::ASTContext &AC,
@@ -352,7 +351,7 @@ std::string getTempNameForExpr(const clang::Expr *E, bool HandleLiteral = false,
 bool isOuterMostMacro(const clang::Stmt *E);
 bool isInsideFunctionLikeMacro(
     const clang::SourceLocation BeginLoc, const clang::SourceLocation EndLoc,
-    const std::shared_ptr<clang::ast_type_traits::DynTypedNode> Parent);
+    const std::shared_ptr<clang::DynTypedNode> Parent);
 enum ExprSpellingStatus {
   NoType = 0,
   IsDefine = 1,

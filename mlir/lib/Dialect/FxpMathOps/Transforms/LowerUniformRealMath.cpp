@@ -1,6 +1,6 @@
 //===- LowerUniformRealMath.cpp  ------------------------------------------===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -10,7 +10,7 @@
 
 #include "mlir/Dialect/FxpMathOps/FxpMathOps.h"
 #include "mlir/Dialect/FxpMathOps/Passes.h"
-#include "mlir/Dialect/StandardOps/Ops.h"
+#include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/Diagnostics.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Pass/Pass.h"
@@ -47,8 +47,8 @@ static Value emitUniformPerLayerDequantize(Location loc, Value input,
     return nullptr;
   }
 
-  Type storageType = elementType.castToStorageType(input->getType());
-  Type realType = elementType.castToExpressedType(input->getType());
+  Type storageType = elementType.castToStorageType(input.getType());
+  Type realType = elementType.castToExpressedType(input.getType());
   Type intermediateType =
       castElementType(storageType, IntegerType::get(32, rewriter.getContext()));
   assert(storageType && "cannot cast to storage type");
@@ -90,7 +90,7 @@ emitUniformPerAxisDequantize(Location loc, Value input,
 
 static Value emitDequantize(Location loc, Value input,
                             PatternRewriter &rewriter) {
-  Type inputType = input->getType();
+  Type inputType = input.getType();
   QuantizedType qElementType =
       QuantizedType::getQuantizedElementType(inputType);
   if (auto uperLayerElementType =
@@ -113,8 +113,8 @@ struct UniformDequantizePattern : public OpRewritePattern<DequantizeCastOp> {
 
   PatternMatchResult matchAndRewrite(DequantizeCastOp op,
                                      PatternRewriter &rewriter) const override {
-    Type inputType = op.arg()->getType();
-    Type outputType = op.getResult()->getType();
+    Type inputType = op.arg().getType();
+    Type outputType = op.getResult().getType();
 
     QuantizedType inputElementType =
         QuantizedType::getQuantizedElementType(inputType);

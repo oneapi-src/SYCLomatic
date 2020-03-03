@@ -104,6 +104,20 @@ static Cursor skipComment(Cursor C) {
   return C;
 }
 
+/// Machine operands can have comments, enclosed between /* and */.
+/// This eats up all tokens, including /* and */.
+static Cursor skipMachineOperandComment(Cursor C) {
+  if (C.peek() != '/' || C.peek(1) != '*')
+    return C;
+
+  while (C.peek() != '*' || C.peek(1) != '/')
+    C.advance();
+
+  C.advance();
+  C.advance();
+  return C;
+}
+
 /// Return true if the given character satisfies the following regular
 /// expression: [-a-zA-Z$._0-9]
 static bool isIdentifierChar(char C) {
@@ -204,7 +218,7 @@ static MIToken::TokenKind getIdentifierKind(StringRef Identifier) {
       .Case("nuw" , MIToken::kw_nuw)
       .Case("nsw" , MIToken::kw_nsw)
       .Case("exact" , MIToken::kw_exact)
-      .Case("fpexcept", MIToken::kw_fpexcept)
+      .Case("nofpexcept", MIToken::kw_nofpexcept)
       .Case("debug-location", MIToken::kw_debug_location)
       .Case("same_value", MIToken::kw_cfi_same_value)
       .Case("offset", MIToken::kw_cfi_offset)
@@ -690,6 +704,8 @@ StringRef llvm::lexMIToken(StringRef Source, MIToken &Token,
     Token.reset(MIToken::Eof, C.remaining());
     return C.remaining();
   }
+
+  C = skipMachineOperandComment(C);
 
   if (Cursor R = maybeLexMachineBasicBlock(C, Token, ErrorCallback))
     return R.remaining();

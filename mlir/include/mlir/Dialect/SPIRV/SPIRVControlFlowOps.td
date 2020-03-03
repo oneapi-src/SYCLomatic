@@ -1,6 +1,6 @@
 //===-- SPIRVControlFlowOps.td - SPIR-V Control Flow Ops ---*- tablegen -*-===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -41,11 +41,13 @@ def SPV_BranchOp : SPV_Op<"Branch", [InFunctionScope, Terminator]> {
     ```
   }];
 
-  let arguments = (ins
-    Variadic<AnyType>:$block_arguments
-  );
+  let arguments = (ins);
 
   let results = (outs);
+
+  let successors = (successor AnySuccessor:$target);
+
+  let verifier = [{ return success(); }];
 
   let builders = [
     OpBuilder<
@@ -60,15 +62,15 @@ def SPV_BranchOp : SPV_Op<"Branch", [InFunctionScope, Terminator]> {
 
   let extraClassDeclaration = [{
     /// Returns the branch target block.
-    Block *getTarget() { return getOperation()->getSuccessor(0); }
+    Block *getTarget() { return target(); }
 
     /// Returns the block arguments.
-    operand_range getBlockArguments() {
-      return getOperation()->getSuccessorOperands(0);
-    }
+    operand_range getBlockArguments() { return targetOperands(); }
   }];
 
   let autogenSerialization = 0;
+
+  let assemblyFormat = "successors attr-dict";
 }
 
 // -----
@@ -115,11 +117,13 @@ def SPV_BranchConditionalOp : SPV_Op<"BranchConditional",
 
   let arguments = (ins
     SPV_Bool:$condition,
-    Variadic<AnyType>:$branch_arguments,
     OptionalAttr<I32ArrayAttr>:$branch_weights
   );
 
   let results = (outs);
+
+  let successors = (successor AnySuccessor:$trueTarget,
+                               AnySuccessor:$falseTarget);
 
   let builders = [
     OpBuilder<
@@ -245,6 +249,11 @@ def SPV_FunctionCallOp : SPV_Op<"FunctionCall", [
   );
 
   let autogenSerialization = 0;
+
+  let assemblyFormat = [{
+    $callee `(` $arguments `)` attr-dict `:`
+    functional-type($arguments, results)
+  }];
 }
 
 // -----
@@ -328,8 +337,7 @@ def SPV_MergeOp : SPV_Op<"_merge", [Terminator]> {
 
   let results = (outs);
 
-  let parser = [{ return parseNoIOOp(parser, result); }];
-  let printer = [{ printNoIOOp(getOperation(), p); }];
+  let assemblyFormat = "attr-dict";
 
   let hasOpcode = 0;
 
@@ -355,8 +363,7 @@ def SPV_ReturnOp : SPV_Op<"Return", [InFunctionScope, Terminator]> {
 
   let results = (outs);
 
-  let parser = [{ return parseNoIOOp(parser, result); }];
-  let printer = [{ printNoIOOp(getOperation(), p); }];
+  let assemblyFormat = "attr-dict";
 }
 
 // -----
@@ -378,8 +385,7 @@ def SPV_UnreachableOp : SPV_Op<"Unreachable", [InFunctionScope, Terminator]> {
 
   let results = (outs);
 
-  let parser = [{ return parseNoIOOp(parser, result); }];
-  let printer = [{ printNoIOOp(getOperation(), p); }];
+  let assemblyFormat = "attr-dict";
 }
 
 // -----
@@ -412,6 +418,8 @@ def SPV_ReturnValueOp : SPV_Op<"ReturnValue", [InFunctionScope, Terminator]> {
   );
 
   let results = (outs);
+
+  let assemblyFormat = "$value attr-dict `:` type($value)";
 }
 
 def SPV_SelectionOp : SPV_Op<"selection", [InFunctionScope]> {
@@ -446,14 +454,22 @@ def SPV_SelectionOp : SPV_Op<"selection", [InFunctionScope]> {
   let regions = (region AnyRegion:$body);
 
   let extraClassDeclaration = [{
-    // Returns the selection header block.
+    /// Returns the selection header block.
     Block *getHeaderBlock();
 
-    // Returns the selection merge block.
+    /// Returns the selection merge block.
     Block *getMergeBlock();
 
-    // Adds a selection merge block containing one spv._merge op.
+    /// Adds a selection merge block containing one spv._merge op.
     void addMergeBlock();
+
+    /// Creates a spv.selection op for `if (<condition>) then { <thenBody> }`
+    /// with `builder`. `builder`'s insertion point will remain at after the
+    /// newly inserted spv.selection op afterwards.
+    static SelectionOp createIfThen(
+        Location loc, Value condition,
+        function_ref<void(OpBuilder *builder)> thenBody,
+        OpBuilder *builder);
   }];
 
   let hasOpcode = 0;

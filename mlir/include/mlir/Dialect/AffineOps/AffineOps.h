@@ -1,6 +1,6 @@
 //===- AffineOps.h - MLIR Affine Operations -------------------------------===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -72,6 +72,9 @@ public:
   AffineMap getAffineMap() {
     return getAttrOfType<AffineMapAttr>("map").getValue();
   }
+
+  /// Returns the affine value map computed from this operation.
+  AffineValueMap getAffineValueMap();
 
   /// Returns true if the result of this operation can be used as dimension id.
   bool isValidDim();
@@ -151,7 +154,7 @@ public:
   /// Returns the source MemRefType for this DMA operation.
   Value getSrcMemRef() { return getOperand(getSrcMemRefOperandIndex()); }
   MemRefType getSrcMemRefType() {
-    return getSrcMemRef()->getType().cast<MemRefType>();
+    return getSrcMemRef().getType().cast<MemRefType>();
   }
 
   /// Returns the rank (number of indices) of the source MemRefType.
@@ -172,7 +175,7 @@ public:
 
   /// Returns the memory space of the src memref.
   unsigned getSrcMemorySpace() {
-    return getSrcMemRef()->getType().cast<MemRefType>().getMemorySpace();
+    return getSrcMemRef().getType().cast<MemRefType>().getMemorySpace();
   }
 
   /// Returns the operand index of the dst memref.
@@ -183,17 +186,17 @@ public:
   /// Returns the destination MemRefType for this DMA operations.
   Value getDstMemRef() { return getOperand(getDstMemRefOperandIndex()); }
   MemRefType getDstMemRefType() {
-    return getDstMemRef()->getType().cast<MemRefType>();
+    return getDstMemRef().getType().cast<MemRefType>();
   }
 
   /// Returns the rank (number of indices) of the destination MemRefType.
   unsigned getDstMemRefRank() {
-    return getDstMemRef()->getType().cast<MemRefType>().getRank();
+    return getDstMemRef().getType().cast<MemRefType>().getRank();
   }
 
   /// Returns the memory space of the src memref.
   unsigned getDstMemorySpace() {
-    return getDstMemRef()->getType().cast<MemRefType>().getMemorySpace();
+    return getDstMemRef().getType().cast<MemRefType>().getMemorySpace();
   }
 
   /// Returns the affine map used to access the dst memref.
@@ -217,12 +220,12 @@ public:
   /// Returns the Tag MemRef for this DMA operation.
   Value getTagMemRef() { return getOperand(getTagMemRefOperandIndex()); }
   MemRefType getTagMemRefType() {
-    return getTagMemRef()->getType().cast<MemRefType>();
+    return getTagMemRef().getType().cast<MemRefType>();
   }
 
   /// Returns the rank (number of indices) of the tag MemRefType.
   unsigned getTagMemRefRank() {
-    return getTagMemRef()->getType().cast<MemRefType>().getRank();
+    return getTagMemRef().getType().cast<MemRefType>().getRank();
   }
 
   /// Returns the affine map used to access the tag memref.
@@ -335,7 +338,7 @@ public:
   // Returns the Tag MemRef associated with the DMA operation being waited on.
   Value getTagMemRef() { return getOperand(0); }
   MemRefType getTagMemRefType() {
-    return getTagMemRef()->getType().cast<MemRefType>();
+    return getTagMemRef().getType().cast<MemRefType>();
   }
 
   /// Returns the affine map used to access the tag memref.
@@ -352,7 +355,7 @@ public:
 
   // Returns the rank (number of indices) of the tag memref.
   unsigned getTagMemRefRank() {
-    return getTagMemRef()->getType().cast<MemRefType>().getRank();
+    return getTagMemRef().getType().cast<MemRefType>().getRank();
   }
 
   /// Returns the AffineMapAttr associated with 'memref'.
@@ -411,7 +414,7 @@ public:
   Value getMemRef() { return getOperand(getMemRefOperandIndex()); }
   void setMemRef(Value value) { setOperand(getMemRefOperandIndex(), value); }
   MemRefType getMemRefType() {
-    return getMemRef()->getType().cast<MemRefType>();
+    return getMemRef().getType().cast<MemRefType>();
   }
 
   /// Get affine map operands.
@@ -482,7 +485,7 @@ public:
   void setMemRef(Value value) { setOperand(getMemRefOperandIndex(), value); }
 
   MemRefType getMemRefType() {
-    return getMemRef()->getType().cast<MemRefType>();
+    return getMemRef().getType().cast<MemRefType>();
   }
 
   /// Get affine map operands.
@@ -528,6 +531,7 @@ bool isValidSymbol(Value value);
 /// 4. propagate constant operands and drop them
 void canonicalizeMapAndOperands(AffineMap *map,
                                 SmallVectorImpl<Value> *operands);
+
 /// Canonicalizes an integer set the same way canonicalizeMapAndOperands does
 /// for affine maps.
 void canonicalizeSetAndOperands(IntegerSet *set,
@@ -572,9 +576,6 @@ class AffineBound {
 public:
   AffineForOp getAffineForOp() { return op; }
   AffineMap getMap() { return map; }
-
-  /// Returns an AffineValueMap representing this bound.
-  AffineValueMap getAsAffineValueMap();
 
   unsigned getNumOperands() { return opEnd - opStart; }
   Value getOperand(unsigned idx) { return op.getOperand(opStart + idx); }

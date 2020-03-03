@@ -141,7 +141,7 @@ bool RISCVCompressInstEmitter::validateRegister(Record *Reg, Record *RegClass) {
   assert(Reg->isSubClassOf("Register") && "Reg record should be a Register\n");
   assert(RegClass->isSubClassOf("RegisterClass") && "RegClass record should be"
                                                     " a RegisterClass\n");
-  CodeGenRegisterClass RC = Target.getRegisterClass(RegClass);
+  const CodeGenRegisterClass &RC = Target.getRegisterClass(RegClass);
   const CodeGenRegister *R = Target.getRegisterByName(Reg->getName().lower());
   assert((R != nullptr) &&
          ("Register" + Reg->getName().str() + " not defined!!\n").c_str());
@@ -160,8 +160,8 @@ bool RISCVCompressInstEmitter::validateTypes(Record *DagOpType,
 
   if (DagOpType->isSubClassOf("RegisterClass") &&
       InstOpType->isSubClassOf("RegisterClass")) {
-    CodeGenRegisterClass RC = Target.getRegisterClass(InstOpType);
-    CodeGenRegisterClass SubRC = Target.getRegisterClass(DagOpType);
+    const CodeGenRegisterClass &RC = Target.getRegisterClass(InstOpType);
+    const CodeGenRegisterClass &SubRC = Target.getRegisterClass(DagOpType);
     return RC.hasSubClass(&SubRC);
   }
 
@@ -547,7 +547,7 @@ void RISCVCompressInstEmitter::emitCompressInstEmitter(raw_ostream &o,
                     "'PassSubtarget' is false. SubTargetInfo object is needed "
                     "for target features.\n");
 
-  std::string Namespace = Target.getName();
+  std::string Namespace = std::string(Target.getName());
 
   // Sort entries in CompressPatterns to handle instructions that can have more
   // than one candidate for compression\uncompression, e.g ADD can be

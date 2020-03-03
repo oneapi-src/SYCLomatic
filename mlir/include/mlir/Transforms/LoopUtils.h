@@ -1,6 +1,6 @@
 //===- LoopUtils.h - Loop transformation utilities --------------*- C++ -*-===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -171,9 +171,11 @@ struct AffineCopyOptions {
 /// by its root affine.for. Since we generate alloc's and dealloc's for all fast
 /// buffers (before and after the range of operations resp. or at a hoisted
 /// position), all of the fast memory capacity is assumed to be available for
-/// processing this block range.
+/// processing this block range. When 'filterMemRef' is specified, copies are
+/// only generated for the provided MemRef.
 uint64_t affineDataCopyGenerate(Block::iterator begin, Block::iterator end,
                                 const AffineCopyOptions &copyOptions,
+                                Optional<Value> filterMemRef,
                                 DenseSet<Operation *> &copyNests);
 
 /// Tile a nest of standard for loops rooted at `rootForOp` by finding such
@@ -220,6 +222,11 @@ void coalesceLoops(MutableArrayRef<loop::ForOp> loops);
 /// ```
 void mapLoopToProcessorIds(loop::ForOp forOp, ArrayRef<Value> processorId,
                            ArrayRef<Value> numProcessors);
+
+/// Gathers all AffineForOps in 'func' grouped by loop depth.
+void gatherLoops(FuncOp func,
+                 std::vector<SmallVector<AffineForOp, 2>> &depthToLoops);
+
 } // end namespace mlir
 
 #endif // MLIR_TRANSFORMS_LOOP_UTILS_H

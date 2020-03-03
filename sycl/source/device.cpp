@@ -6,13 +6,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <CL/sycl/detail/device_impl.hpp>
 #include <CL/sycl/detail/force_device.hpp>
 #include <CL/sycl/device.hpp>
 #include <CL/sycl/device_selector.hpp>
 #include <CL/sycl/info/info_desc.hpp>
+#include <detail/device_impl.hpp>
 
-__SYCL_INLINE namespace cl {
+__SYCL_INLINE_NAMESPACE(cl) {
 namespace sycl {
 namespace detail {
 void force_type(info::device_type &t, const info::device_type &ft) {
@@ -28,7 +28,8 @@ device::device() : impl(std::make_shared<detail::device_impl>()) {}
 
 device::device(cl_device_id deviceId)
     : impl(std::make_shared<detail::device_impl>(
-          detail::pi::cast<detail::RT::PiDevice>(deviceId))) {}
+          detail::pi::cast<detail::RT::PiDevice>(deviceId),
+          *RT::GlobalPlugin)) {}
 
 device::device(const device_selector &deviceSelector) {
   *this = deviceSelector.select_device();
@@ -41,10 +42,18 @@ vector_class<device> device::get_devices(info::device_type deviceType) {
   if (detail::match_types(deviceType, forced_type)) {
     detail::force_type(deviceType, forced_type);
     for (const auto &plt : platform::get_platforms()) {
-      vector_class<device> found_devices(plt.get_devices(deviceType));
-      if (!found_devices.empty())
-        devices.insert(devices.end(), found_devices.begin(),
-                       found_devices.end());
+      // Host device must always be available.
+      if (plt.is_host()) {
+        vector_class<device> host_device(
+            plt.get_devices(info::device_type::host));
+        if (!host_device.empty())
+          devices.insert(devices.end(), host_device.begin(), host_device.end());
+      } else {
+        vector_class<device> found_devices(plt.get_devices(deviceType));
+        if (!found_devices.empty())
+          devices.insert(devices.end(), found_devices.begin(),
+                         found_devices.end());
+      }
     }
   }
   return devices;
@@ -106,4 +115,4 @@ device::get_info() const {
 #undef PARAM_TRAITS_SPEC
 
 } // namespace sycl
-} // namespace cl
+} // __SYCL_INLINE_NAMESPACE(cl)

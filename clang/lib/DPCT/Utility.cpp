@@ -499,7 +499,7 @@ SourceRange getScopeInsertRange(const Expr *E,
 
 std::string getCanonicalPath(SourceLocation Loc) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
-  std::string Path = SM.getFilename(SM.getExpansionLoc(Loc));
+  std::string Path = SM.getFilename(SM.getExpansionLoc(Loc)).str();
   makeCanonical(Path);
   return Path;
 }

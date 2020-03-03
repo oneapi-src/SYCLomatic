@@ -225,7 +225,7 @@ private:
     case driver::Action::InputClass:
       if (Collect) {
         const auto *IA = cast<driver::InputAction>(A);
-        Inputs.push_back(IA->getInputArg().getSpelling());
+        Inputs.push_back(std::string(IA->getInputArg().getSpelling()));
       }
       break;
 
@@ -294,7 +294,7 @@ std::string GetClangToolCommand() {
   SmallString<128> ClangToolPath;
   ClangToolPath = llvm::sys::path::parent_path(ClangExecutable);
   llvm::sys::path::append(ClangToolPath, "clang-tool");
-  return ClangToolPath.str();
+  return std::string(ClangToolPath.str());
 }
 
 } // namespace
@@ -450,8 +450,8 @@ FixedCompilationDatabase(Twine Directory, ArrayRef<std::string> CommandLine) {
 std::vector<CompileCommand>
 FixedCompilationDatabase::getCompileCommands(StringRef FilePath) const {
   std::vector<CompileCommand> Result(CompileCommands);
-  Result[0].CommandLine.push_back(FilePath);
-  Result[0].Filename = FilePath;
+  Result[0].CommandLine.push_back(std::string(FilePath));
+  Result[0].Filename = std::string(FilePath);
   return Result;
 }
 

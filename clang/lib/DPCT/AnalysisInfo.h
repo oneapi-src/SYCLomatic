@@ -22,6 +22,7 @@
 #include "clang/AST/Attr.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/AST/ParentMapContext.h"
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
 
@@ -371,10 +372,11 @@ public:
     int TokenIndex;
     MacroExpansionRecord(IdentifierInfo *ID, const MacroInfo *MI,
                          SourceRange Range, bool IsInRoot, int TokenIndex) {
-      Name = ID->getName();
+      Name = ID->getName().str();
       NumTokens = MI->getNumTokens();
       ReplaceTokenBegin = MI->getReplacementToken(0).getLocation();
-      ReplaceTokenEnd = MI->getReplacementToken(MI->getNumTokens() - 1).getLocation();
+      ReplaceTokenEnd =
+          MI->getReplacementToken(MI->getNumTokens() - 1).getLocation();
       this->Range = Range;
       this->IsInRoot = IsInRoot;
       this->IsFunctionLike = MI->getNumParams() > 0;
@@ -383,8 +385,9 @@ public:
   };
 
   inline static bool isInRoot(SourceLocation SL) {
-    return isInRoot(
-        getSourceManager().getFilename(getSourceManager().getExpansionLoc(SL)));
+    return isInRoot(getSourceManager()
+                        .getFilename(getSourceManager().getExpansionLoc(SL))
+                        .str());
   }
   static bool isInRoot(const std::string &FilePath) {
     std::string Path = FilePath;
@@ -393,7 +396,7 @@ public:
   }
   inline static bool replaceMacroName(SourceLocation SL) {
     auto &SM = getSourceManager();
-    std::string Path = SM.getFilename(SM.getExpansionLoc(SL));
+    std::string Path = SM.getFilename(SM.getExpansionLoc(SL)).str();
     if (isInCudaPath(Path)) {
       return true;
     }
@@ -401,20 +404,18 @@ public:
     StringRef Filename = llvm::sys::path::filename(Path);
     // The above condition is not always sufficient for the following
     // specific header files
-    if (Filename == "cublas_api.h" ||
-      Filename == "cublas.h" ||
-      Filename == "cublasLt.h" ||
-      Filename == "cublas_v2.h" ||
-      Filename == "cublasXt.h" ||
-      Filename == "nvblas.h") {
+    if (Filename == "cublas_api.h" || Filename == "cublas.h" ||
+        Filename == "cublasLt.h" || Filename == "cublas_v2.h" ||
+        Filename == "cublasXt.h" || Filename == "nvblas.h") {
       return true;
     }
     return false;
   }
   // TODO: implement one of this for each source language.
   inline static bool isInCudaPath(SourceLocation SL) {
-    return isInCudaPath(
-        getSourceManager().getFilename(getSourceManager().getExpansionLoc(SL)));
+    return isInCudaPath(getSourceManager()
+                            .getFilename(getSourceManager().getExpansionLoc(SL))
+                            .str());
   }
   // TODO: implement one of this for each source language.
   static bool isInCudaPath(const std::string &FilePath) {
@@ -523,7 +524,7 @@ public:
       return nullptr;
 
     auto &Context = getContext();
-    clang::ASTContext::DynTypedNodeList Parents = Context.getParents(*N);
+    clang::DynTypedNodeList Parents = Context.getParents(*N);
     while (!Parents.empty()) {
       auto &Cur = Parents[0];
       if (Condition(Cur))
@@ -621,7 +622,7 @@ public:
 
       llvm::sys::path::remove_dots(FileName, /* remove_dot_dot */ true);
       getSourceManager().getFileManager().makeAbsolutePath(FileName);
-      return std::make_pair(FileName.str(), LocInfo.second);
+      return std::make_pair(FileName.str().str(), LocInfo.second);
     }
     if (IsInvalid)
       *IsInvalid = true;
@@ -727,7 +728,7 @@ public:
   void insertCublasAlloc(const CallExpr *CE);
   std::shared_ptr<CudaMallocInfo> findCudaMalloc(const Expr *CE);
   void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
-    insertFile(Repl->getFilePath())->addReplacement(Repl);
+    insertFile(Repl->getFilePath().str())->addReplacement(Repl);
   }
 
   void insertRandomEngine(const Expr *E);
@@ -768,14 +769,12 @@ public:
     insertFile(LocInfo.first)->insertUsing(Type);
   }
 
-  static std::map<const char*, std::shared_ptr<MacroExpansionRecord>> &
+  static std::map<const char *, std::shared_ptr<MacroExpansionRecord>> &
   getExpansionRangeToMacroRecord() {
     return ExpansionRangeToMacroRecord;
   }
 
-  static std::map<MacroInfo*, bool> & getMacroDefines() {
-    return MacroDefines;
-  }
+  static std::map<MacroInfo *, bool> &getMacroDefines() { return MacroDefines; }
 
 private:
   DpctGlobalInfo() = default;
@@ -826,7 +825,7 @@ private:
 
   static inline SourceLocation getLocation(const CUDAKernelCallExpr *CKC) {
     auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      SM->getCharacterData(SM->getSpellingLoc(CKC->getBeginLoc())));
+        SM->getCharacterData(SM->getSpellingLoc(CKC->getBeginLoc())));
     if (CKC->getBeginLoc().isMacroID() &&
         It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
       return SM->getImmediateSpellingLoc(CKC->getBeginLoc());
@@ -853,9 +852,10 @@ private:
   static bool GuessIndentWidthMatcherFlag;
   static unsigned int IndentWidth;
   static std::unordered_map<std::string, unsigned int> TempValueIdentifierMap;
-  static std::map<const char*, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
+  static std::map<const char *,
+                  std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
       ExpansionRangeToMacroRecord;
-  static std::map<MacroInfo*, bool> MacroDefines;
+  static std::map<MacroInfo *, bool> MacroDefines;
 };
 
 class TemplateArgumentInfo;
@@ -926,8 +926,7 @@ private:
   // dpct::shared_memory<int, 1>(24 /* SIZE */);
   inline std::string getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
     return getFoldedArraySize(TL.getTypePtr()) + "/*" +
-           getStmtSpelling(TL.getSizeExpr()) +
-           "*/";
+           getStmtSpelling(TL.getSizeExpr()) + "*/";
   }
 
   // Get folded array size only.
@@ -1260,7 +1259,7 @@ protected:
                         VD->getTypeSourceInfo()->getTypeLoc().getBeginLoc()),
                     VD->getName()) {}
   TextureInfo(std::pair<StringRef, unsigned> LocInfo, StringRef Name)
-      : TextureInfo(LocInfo.second, LocInfo.first, Name) {}
+      : TextureInfo(LocInfo.second, LocInfo.first.str(), Name) {}
 
   llvm::raw_ostream &getDecl(llvm::raw_ostream &OS,
                              const std::string &TemplateDeclName) {
@@ -1379,8 +1378,7 @@ public:
     Str = Ty.T->getBaseName();
   }
   TemplateArgumentInfo(const Expr *Expr)
-      : Kind(String),
-        Str(getStmtSpelling(Expr)) {}
+      : Kind(String), Str(getStmtSpelling(Expr)) {}
 
   bool isType() { return Kind == Type; }
   std::shared_ptr<CtTypeInfo> getAsType() const {
@@ -1835,7 +1833,8 @@ public:
       : IsBuilt(false), ParamsNum(ParamsNum), IsStatic(IsStatic),
         TextureObjectTypeList(ParamsNum, std::shared_ptr<TextureTypeInfo>()) {}
   DeviceFunctionInfo(const FunctionDecl *Func)
-      : DeviceFunctionInfo(Func->param_size(), Func->getStorageClass() == SC_Static) {}
+      : DeviceFunctionInfo(Func->param_size(),
+                           Func->getStorageClass() == SC_Static) {}
 
   inline std::shared_ptr<CallFunctionExpr> addCallee(const CallExpr *CE) {
     auto CallLocInfo = DpctGlobalInfo::getLocInfo(CE);
@@ -1878,7 +1877,7 @@ public:
       NeedSyclExternMacro = true;
   }
   bool IsSyclExternMacroNeeded() { return NeedSyclExternMacro; }
-  void inline setStatic(bool Static = true) { IsStatic = Static;}
+  void inline setStatic(bool Static = true) { IsStatic = Static; }
 
   void merge(std::shared_ptr<DeviceFunctionInfo> Other);
 

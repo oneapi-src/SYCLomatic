@@ -47,7 +47,7 @@ struct NoTTIImpl : TargetTransformInfoImplCRTPBase<NoTTIImpl> {
 bool HardwareLoopInfo::canAnalyze(LoopInfo &LI) {
   // If the loop has irreducible control flow, it can not be converted to
   // Hardware loop.
-  LoopBlocksRPO RPOT(L);  
+  LoopBlocksRPO RPOT(L);
   RPOT.perform(&LI);
   if (containsIrreducibleCFG<const BasicBlock *>(RPOT, LI))
     return false;
@@ -210,6 +210,10 @@ int TargetTransformInfo::getUserCost(const User *U,
 
 bool TargetTransformInfo::hasBranchDivergence() const {
   return TTIImpl->hasBranchDivergence();
+}
+
+bool TargetTransformInfo::useGPUDivergenceAnalysis() const {
+  return TTIImpl->useGPUDivergenceAnalysis();
 }
 
 bool TargetTransformInfo::isSourceOfDivergence(const Value *V) const {

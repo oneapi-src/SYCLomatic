@@ -1,6 +1,6 @@
 //===- QuantOps.td - Quantization operation definition -----*- tablegen -*-===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -199,7 +199,7 @@ def quant_StatisticsOp : quant_Op<"stats", [SameOperandsAndResultType]> {
   let results = (outs quant_RealValueType);
 
   let verifier = [{
-    auto tensorArg = arg()->getType().dyn_cast<TensorType>();
+    auto tensorArg = arg().getType().dyn_cast<TensorType>();
     if (!tensorArg) return emitOpError("arg needs to be tensor type.");
 
     // Verify layerStats attribute.

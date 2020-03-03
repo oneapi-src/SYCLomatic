@@ -128,7 +128,7 @@ enum class ConstraintKind { NoConstraint, ReadOnly, ReadWrite };
 struct MemoryRegion {
   MemoryRegion(StringRef name, uint64_t origin, uint64_t length, uint32_t flags,
                uint32_t negFlags)
-      : name(name), origin(origin), length(length), flags(flags),
+      : name(std::string(name)), origin(origin), length(length), flags(flags),
         negFlags(negFlags) {}
 
   std::string name;
@@ -155,14 +155,16 @@ struct SectionPattern {
 };
 
 struct InputSectionDescription : BaseCommand {
-  InputSectionDescription(StringRef filePattern)
-      : BaseCommand(InputSectionKind), filePat(filePattern) {}
+  InputSectionDescription(StringRef filePattern, uint64_t withFlags = 0,
+                          uint64_t withoutFlags = 0)
+      : BaseCommand(InputSectionKind), filePat(filePattern),
+        withFlags(withFlags), withoutFlags(withoutFlags) {}
 
   static bool classof(const BaseCommand *c) {
     return c->kind == InputSectionKind;
   }
 
-  StringMatcher filePat;
+  SingleStringMatcher filePat;
 
   // Input sections that matches at least one of SectionPatterns
   // will be associated with this InputSectionDescription.
@@ -180,6 +182,10 @@ struct InputSectionDescription : BaseCommand {
   // they were created in. This is used to insert newly created ThunkSections
   // into Sections at the end of a createThunks() pass.
   std::vector<std::pair<ThunkSection *, uint32_t>> thunkSections;
+
+  // SectionPatterns can be filtered with the INPUT_SECTION_FLAGS command.
+  uint64_t withFlags;
+  uint64_t withoutFlags;
 };
 
 // Represents BYTE(), SHORT(), LONG(), or QUAD().
@@ -200,6 +206,12 @@ struct ByteCommand : BaseCommand {
 
   // Size of this data command.
   unsigned size;
+};
+
+struct InsertCommand {
+  OutputSection *os;
+  bool isAfter;
+  StringRef where;
 };
 
 struct PhdrsCommand {
@@ -305,10 +317,13 @@ public:
   // A list of symbols referenced by the script.
   std::vector<llvm::StringRef> referencedSymbols;
 
-  // Used to implement INSERT [AFTER|BEFORE]. Contains commands that need
-  // to be inserted into SECTIONS commands list.
-  llvm::DenseMap<StringRef, std::vector<BaseCommand *>> insertAfterCommands;
-  llvm::DenseMap<StringRef, std::vector<BaseCommand *>> insertBeforeCommands;
+  // Used to implement INSERT [AFTER|BEFORE]. Contains output sections that need
+  // to be reordered.
+  std::vector<InsertCommand> insertCommands;
+
+  // Sections whose addresses are not equal to their addrExpr values.
+  std::vector<std::pair<const OutputSection *, uint64_t>>
+      changedSectionAddresses;
 };
 
 extern LinkerScript *script;

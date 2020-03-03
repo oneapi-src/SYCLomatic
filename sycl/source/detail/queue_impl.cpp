@@ -10,20 +10,21 @@
 #include <CL/sycl/detail/clusm.hpp>
 #include <CL/sycl/detail/memory_manager.hpp>
 #include <CL/sycl/detail/pi.hpp>
-#include <CL/sycl/detail/queue_impl.hpp>
-#include <CL/sycl/detail/usm_dispatch.hpp>
 #include <CL/sycl/device.hpp>
+#include <detail/queue_impl.hpp>
+#include <detail/usm/usm_dispatch.hpp>
 
 #include <cstring>
 
-__SYCL_INLINE namespace cl {
+__SYCL_INLINE_NAMESPACE(cl) {
 namespace sycl {
 namespace detail {
 template <> cl_uint queue_impl::get_info<info::queue::reference_count>() const {
   RT::PiResult result = PI_SUCCESS;
   if (!is_host())
-    PI_CALL(piQueueGetInfo)(m_CommandQueue, PI_QUEUE_INFO_REFERENCE_COUNT,
-                            sizeof(result), &result, nullptr);
+    getPlugin().call<PiApiKind::piQueueGetInfo>(
+        MCommandQueue, PI_QUEUE_INFO_REFERENCE_COUNT, sizeof(result), &result,
+        nullptr);
   return result;
 }
 
@@ -35,7 +36,7 @@ template <> device queue_impl::get_info<info::queue::device>() const {
   return get_device();
 }
 
-event queue_impl::memset(std::shared_ptr<detail::queue_impl> Impl, void *Ptr,
+event queue_impl::memset(shared_ptr_class<detail::queue_impl> Impl, void *Ptr,
                          int Value, size_t Count) {
   context Context = get_context();
   RT::PiEvent Event = nullptr;
@@ -44,10 +45,12 @@ event queue_impl::memset(std::shared_ptr<detail::queue_impl> Impl, void *Ptr,
   if (Context.is_host())
     return event();
 
-  return event(pi::cast<cl_event>(Event), Context);
+  event ResEvent{pi::cast<cl_event>(Event), Context};
+  addEvent(ResEvent);
+  return ResEvent;
 }
 
-event queue_impl::memcpy(std::shared_ptr<detail::queue_impl> Impl, void *Dest,
+event queue_impl::memcpy(shared_ptr_class<detail::queue_impl> Impl, void *Dest,
                          const void *Src, size_t Count) {
   context Context = get_context();
   RT::PiEvent Event = nullptr;
@@ -56,7 +59,9 @@ event queue_impl::memcpy(std::shared_ptr<detail::queue_impl> Impl, void *Dest,
   if (Context.is_host())
     return event();
 
-  return event(pi::cast<cl_event>(Event), Context);
+  event ResEvent{pi::cast<cl_event>(Event), Context};
+  addEvent(ResEvent);
+  return ResEvent;
 }
 
 event queue_impl::mem_advise(const void *Ptr, size_t Length, int Advice) {
@@ -67,11 +72,20 @@ event queue_impl::mem_advise(const void *Ptr, size_t Length, int Advice) {
 
   // non-Host device
   RT::PiEvent Event = nullptr;
-  PI_CALL(piextUSMEnqueueMemAdvise)(getHandleRef(), Ptr, Length, Advice,
-                                    &Event);
+  const detail::plugin &Plugin = getPlugin();
+  Plugin.call<PiApiKind::piextUSMEnqueueMemAdvise>(getHandleRef(), Ptr, Length,
+                                                   Advice, &Event);
 
-  return event(pi::cast<cl_event>(Event), Context);
+  event ResEvent{pi::cast<cl_event>(Event), Context};
+  addEvent(ResEvent);
+  return ResEvent;
 }
+
+void queue_impl::addEvent(event Event) {
+  std::lock_guard<mutex_class> Guard(MMutex);
+  MEvents.push_back(std::move(Event));
+}
+
 } // namespace detail
 } // namespace sycl
-} // namespace cl
+} // __SYCL_INLINE_NAMESPACE(cl)

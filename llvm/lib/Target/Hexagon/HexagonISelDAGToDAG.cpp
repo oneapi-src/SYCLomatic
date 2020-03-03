@@ -787,10 +787,18 @@ void HexagonDAGToDAGISel::SelectVAlign(SDNode *N) {
                                        MVT::i64, Ops);
 
     // Shift right by "(Addr & 0x3) * 8" bytes.
+    SDNode *C;
     SDValue M0 = CurDAG->getTargetConstant(0x18, dl, MVT::i32);
     SDValue M1 = CurDAG->getTargetConstant(0x03, dl, MVT::i32);
-    SDNode *C = CurDAG->getMachineNode(Hexagon::S4_andi_asl_ri, dl, MVT::i32,
-                                       M0, N->getOperand(2), M1);
+    if (HST->useCompound()) {
+      C = CurDAG->getMachineNode(Hexagon::S4_andi_asl_ri, dl, MVT::i32,
+                                 M0, N->getOperand(2), M1);
+    } else {
+      SDNode *T = CurDAG->getMachineNode(Hexagon::S2_asl_i_r, dl, MVT::i32,
+                                         N->getOperand(2), M1);
+      C = CurDAG->getMachineNode(Hexagon::A2_andir, dl, MVT::i32,
+                                 SDValue(T, 0), M0);
+    }
     SDNode *S = CurDAG->getMachineNode(Hexagon::S2_lsr_r_p, dl, MVT::i64,
                                        SDValue(R, 0), SDValue(C, 0));
     SDValue E = CurDAG->getTargetExtractSubreg(Hexagon::isub_lo, dl, ResTy,
@@ -1179,7 +1187,7 @@ void HexagonDAGToDAGISel::ppHoistZextI1(std::vector<SDNode*> &&Nodes) {
         Ops[i] = U->getOperand(i);
       EVT BVT = Ops[I1N].getValueType();
 
-      SDLoc dl(U);
+      const SDLoc &dl(U);
       SDValue C0 = DAG.getConstant(0, dl, BVT);
       SDValue C1 = DAG.getConstant(1, dl, BVT);
       SDValue If0, If1;
@@ -1197,8 +1205,15 @@ void HexagonDAGToDAGISel::ppHoistZextI1(std::vector<SDNode*> &&Nodes) {
         Ops[I1N] = C1;
         If1 = DAG.getNode(UseOpc, dl, UVT, Ops);
       }
-      SDValue Sel = DAG.getNode(ISD::SELECT, dl, UVT, OpI1, If1, If0);
-      DAG.ReplaceAllUsesWith(U, Sel.getNode());
+      // We're generating a SELECT way after legalization, so keep the types
+      // simple.
+      unsigned UW = UVT.getSizeInBits();
+      EVT SVT = (UW == 32 || UW == 64) ? MVT::getIntegerVT(UW) : UVT;
+      SDValue Sel = DAG.getNode(ISD::SELECT, dl, SVT, OpI1,
+                                DAG.getBitcast(SVT, If1),
+                                DAG.getBitcast(SVT, If0));
+      SDValue Ret = DAG.getBitcast(UVT, Sel);
+      DAG.ReplaceAllUsesWith(U, Ret.getNode());
     }
   }
 }
@@ -1260,7 +1275,7 @@ void HexagonDAGToDAGISel::PreprocessISelDAG() {
   }
 }
 
-void HexagonDAGToDAGISel::EmitFunctionEntryCode() {
+void HexagonDAGToDAGISel::emitFunctionEntryCode() {
   auto &HST = MF->getSubtarget<HexagonSubtarget>();
   auto &HFI = *HST.getFrameLowering();
   if (!HFI.needsAligna(*MF))

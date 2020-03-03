@@ -1,7 +1,8 @@
-// RUN: %clangxx -fsycl %s -o %t.out
+// RUN: %clangxx -fsycl -fsycl-targets=%sycl_triple %s -o %t.out
 
 #include <CL/sycl.hpp>
 #include <CL/sycl/detail/common.hpp>
+#include <CL/sycl/half_type.hpp>
 #include <cassert>
 #include <iostream>
 
@@ -234,6 +235,35 @@ int main() {
           s::multi_ptr<s::vec<s::cl_long, 2>,
                        s::access::address_space::global_space>>::value,
       "");
+
+#ifdef __SYCL_DEVICE_ONLY__
+  static_assert(
+      std::is_same<d::ConvertToOpenCLType_t<s::vec<s::cl_int, 2>>,
+                   s::vec<s::cl_int, 2>::vector_t>::value,
+      "");
+  static_assert(
+      std::is_same<d::ConvertToOpenCLType_t<s::vec<s::longlong, 2>>,
+                   s::vec<s::cl_long, 2>::vector_t>::value,
+      "");
+  static_assert(
+      std::is_same<
+          d::ConvertToOpenCLType_t<
+              s::multi_ptr<s::cl_int, s::access::address_space::global_space>>,
+          s::multi_ptr<s::cl_int, s::access::address_space::global_space>::
+              pointer_t>::value,
+      "");
+  static_assert(
+      std::is_same<
+          d::ConvertToOpenCLType_t<s::multi_ptr<
+              s::vec<s::cl_int, 4>, s::access::address_space::global_space>>,
+          s::multi_ptr<s::vec<s::cl_int, 4>::vector_t,
+                       s::access::address_space::global_space>::pointer_t>::
+          value,
+      "");
+#endif
+  static_assert(std::is_same<d::ConvertToOpenCLType_t<s::half>,
+                             d::half_impl::BIsRepresentationT>::value,
+                "");
 
   s::multi_ptr<int, s::access::address_space::global_space> mp;
   int *dp = mp;

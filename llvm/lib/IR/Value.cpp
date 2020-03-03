@@ -83,13 +83,17 @@ Value::~Value() {
   // reference and something is wrong.  This code is here to print out where
   // the value is still being referenced.
   //
-  if (!use_empty()) {
+  // Note that use_empty() cannot be called here, as it eventually downcasts
+  // 'this' to GlobalValue (derived class of Value), but GlobalValue has already
+  // been destructed, so accessing it is UB.
+  //
+  if (!materialized_use_empty()) {
     dbgs() << "While deleting: " << *VTy << " %" << getName() << "\n";
     for (auto *U : users())
       dbgs() << "Use still stuck around after Def is destroyed:" << *U << "\n";
   }
 #endif
-  assert(use_empty() && "Uses remain when a value is destroyed!");
+  assert(materialized_use_empty() && "Uses remain when a value is destroyed!");
 
   // If this value is named, destroy the name.  This should not be in a symtab
   // at this point.
@@ -728,6 +732,17 @@ MaybeAlign Value::getPointerAlignment(const DataLayout &DL) const {
     if (MDNode *MD = LI->getMetadata(LLVMContext::MD_align)) {
       ConstantInt *CI = mdconst::extract<ConstantInt>(MD->getOperand(0));
       return MaybeAlign(CI->getLimitedValue());
+    }
+  } else if (auto *CstPtr = dyn_cast<Constant>(this)) {
+    if (auto *CstInt = dyn_cast_or_null<ConstantInt>(ConstantExpr::getPtrToInt(
+            const_cast<Constant *>(CstPtr), DL.getIntPtrType(getType()),
+            /*OnlyIfReduced=*/true))) {
+      size_t TrailingZeros = CstInt->getValue().countTrailingZeros();
+      // While the actual alignment may be large, elsewhere we have
+      // an arbitrary upper alignmet limit, so let's clamp to it.
+      return Align(TrailingZeros < Value::MaxAlignmentExponent
+                       ? uint64_t(1) << TrailingZeros
+                       : Value::MaximumAlignment);
     }
   }
   return llvm::None;

@@ -21,6 +21,7 @@
 #include "clang/AST/StmtGraphTraits.h"
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
+#include "clang/AST/ExprConcepts.h"
 
 namespace clang {
 namespace dpct {
@@ -82,17 +83,15 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
 }
 
 std::pair<size_t, size_t>
-ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
-  SourceLocation EndLoc, const Expr *Parent) {
+ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
+                                 const Expr *Parent) {
   const std::shared_ptr<ast_type_traits::DynTypedNode> P =
       std::make_shared<ast_type_traits::DynTypedNode>(
           ast_type_traits::DynTypedNode::create(*Parent));
-  if (BeginLoc.isMacroID() &&
-      isInsideFunctionLikeMacro(BeginLoc, EndLoc, P)) {
+  if (BeginLoc.isMacroID() && isInsideFunctionLikeMacro(BeginLoc, EndLoc, P)) {
     BeginLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(BeginLoc));
     EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(EndLoc));
-  }
-  else {
+  } else {
     if (EndLoc.isValid()) {
       BeginLoc = SM.getExpansionRange(BeginLoc).getBegin();
       EndLoc = SM.getExpansionRange(EndLoc).getEnd();
@@ -101,7 +100,7 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
   // Calculate offset and length from SourceLocation
   auto End = getOffset(EndLoc);
   auto LastTokenLength =
-    Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
+      Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
 
   auto DecompLoc = SM.getDecomposedLoc(BeginLoc);
   FileId = DecompLoc.first;
@@ -113,8 +112,7 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
 
 std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   SourceLocation BeginLoc, EndLoc;
-  if (E->getBeginLoc().isMacroID() &&
-      !isOuterMostMacro(E)) {
+  if (E->getBeginLoc().isMacroID() && !isOuterMostMacro(E)) {
     // If E is not OuterMostMacro, use the spelling location
     BeginLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getBeginLoc()));
     EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getEndLoc()));
@@ -141,10 +139,9 @@ void ExprAnalysis::initExpression(const Expr *Expression) {
   E = Expression;
   SrcBegin = 0;
   if (E && E->getBeginLoc().isValid()) {
-    std::tie(SrcBegin, SrcLength) =
-        getOffsetAndLength(E);
-    ReplSet.init(std::string(
-        SM.getBufferData(FileId).substr(SrcBegin, SrcLength)));
+    std::tie(SrcBegin, SrcLength) = getOffsetAndLength(E);
+    ReplSet.init(
+        std::string(SM.getBufferData(FileId).substr(SrcBegin, SrcLength)));
   } else {
     SrcLength = 0;
     ReplSet.init("");
@@ -205,7 +202,7 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     addReplacement(DRE, TemplateDecl->getIndex());
   else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
     auto &ReplEnum = MapNames::findReplacedName(EnumConstantRule::EnumNamesMap,
-                                                ECD->getName());
+                                                ECD->getName().str());
     if (!ReplEnum.empty())
       addReplacement(DRE, ReplEnum);
   }
@@ -247,7 +244,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     }
   } else if (Ty.getBaseName() == "const __cuda_builtin_blockIdx_t") {
     ValueDecl *Field = ME->getMemberDecl();
-    std::string FieldName = Field->getName();
+    std::string FieldName = Field->getName().str();
     if (MapNames::replaceName(MemberMap, FieldName)) {
       std::ostringstream Repl;
       Repl << DpctGlobalInfo::getItemName() << ".get_group(" << FieldName
@@ -256,7 +253,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     }
   } else if (Ty.getBaseName() == "const __cuda_builtin_blockDim_t") {
     ValueDecl *Field = ME->getMemberDecl();
-    std::string FieldName = Field->getName();
+    std::string FieldName = Field->getName().str();
     if (MapNames::replaceName(MemberMap, FieldName)) {
       std::ostringstream Repl;
       Repl << DpctGlobalInfo::getItemName() << ".get_local_range(" << FieldName
@@ -265,7 +262,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     }
   } else if (Ty.getBaseName() == "const __cuda_builtin_threadIdx_t") {
     ValueDecl *Field = ME->getMemberDecl();
-    std::string FieldName = Field->getName();
+    std::string FieldName = Field->getName().str();
     if (MapNames::replaceName(MemberMap, FieldName)) {
       std::ostringstream Repl;
       Repl << DpctGlobalInfo::getItemName() << ".get_local_id(" << FieldName
@@ -330,10 +327,11 @@ void ExprAnalysis::analyzeType(const TypeLoc &TL, const Expr *CSCE) {
   std::string TyName;
   switch (TL.getTypeLocClass()) {
   case TypeLoc::Pointer:
-    return analyzeType(static_cast<const PointerTypeLoc &>(TL).getPointeeLoc(), CSCE);
+    return analyzeType(static_cast<const PointerTypeLoc &>(TL).getPointeeLoc(),
+                       CSCE);
   case TypeLoc::Typedef:
     TyName =
-        static_cast<const TypedefTypeLoc &>(TL).getTypedefNameDecl()->getName();
+        static_cast<const TypedefTypeLoc &>(TL).getTypedefNameDecl()->getName().str();
     break;
   case TypeLoc::Builtin:
   case TypeLoc::Record:
@@ -421,7 +419,9 @@ void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     std::string CtorString;
     llvm::raw_string_ostream OS(CtorString);
-    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "::range", 3) << "(";
+    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "::range",
+                                   3)
+        << "(";
     auto Args = getCtorArgs(Ctor);
     if (DoReverse && Ctor->getNumArgs() == 3) {
       Reversed = true;

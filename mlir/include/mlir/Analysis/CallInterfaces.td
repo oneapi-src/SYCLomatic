@@ -1,6 +1,6 @@
 //===- CallInterfaces.td - Call Interfaces for ops -*- tablegen ---------*-===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -44,6 +44,18 @@ def CallOpInterface : OpInterface<"CallOpInterface"> {
       }],
       "Operation::operand_range", "getArgOperands"
     >,
+    InterfaceMethod<[{
+        Resolve the callable operation for given callee to a
+        CallableOpInterface, or nullptr if a valid callable was not resolved.
+      }],
+      "Operation *", "resolveCallable", (ins), [{
+        // If the callable isn't a value, lookup the symbol reference.
+        CallInterfaceCallable callable = op.getCallableForCallee();
+        if (auto symbolRef = callable.dyn_cast<SymbolRefAttr>())
+          return SymbolTable::lookupNearestSymbolFrom(op, symbolRef);
+        return callable.get<Value>().getDefiningOp();
+      }]
+    >,
   ];
 }
 
@@ -54,29 +66,23 @@ def CallableOpInterface : OpInterface<"CallableOpInterface"> {
     be a target for a call-like operation (those providing the CallOpInterface
     above). These operations may be traditional functional operation
     `func @foo(...)`, as well as function producing operations
-    `%foo = dialect.create_function(...)`. These operations may produce multiple
-    callable regions, or subroutines.
+    `%foo = dialect.create_function(...)`. These operations may only contain a
+    single region, or subroutine.
   }];
 
   let methods = [
     InterfaceMethod<[{
-        Returns a region on the current operation that the given callable refers
-        to. This may return null in the case of an external callable object,
-        e.g. an external function.
+        Returns the region on the current operation that is callable. This may
+        return null in the case of an external callable object, e.g. an external
+        function.
       }],
-      "Region *", "getCallableRegion", (ins "CallInterfaceCallable":$callable)
+      "Region *", "getCallableRegion"
     >,
     InterfaceMethod<[{
-        Returns all of the callable regions of this operation.
-      }],
-      "void", "getCallableRegions",
-              (ins "SmallVectorImpl<Region *> &":$callables)
-    >,
-    InterfaceMethod<[{
-        Returns the results types that the given callable region produces when
+        Returns the results types that the callable region produces when
         executed.
       }],
-      "ArrayRef<Type>", "getCallableResults", (ins "Region *":$callable)
+      "ArrayRef<Type>", "getCallableResults"
     >,
   ];
 }

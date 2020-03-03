@@ -1,6 +1,6 @@
 //===- ExecutionEngine.cpp - MLIR Execution engine and utils --------------===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -18,6 +18,7 @@
 
 #include "llvm/Bitcode/BitcodeReader.h"
 #include "llvm/Bitcode/BitcodeWriter.h"
+#include "llvm/ExecutionEngine/JITEventListener.h"
 #include "llvm/ExecutionEngine/ObjectCache.h"
 #include "llvm/ExecutionEngine/Orc/CompileUtils.h"
 #include "llvm/ExecutionEngine/Orc/ExecutionUtils.h"
@@ -122,7 +123,7 @@ static std::string makePackedFunctionName(StringRef name) {
 // For each function in the LLVM module, define an interface function that wraps
 // all the arguments of the original function and all its results into an i8**
 // pointer to provide a unified invocation interface.
-void packFunctionArguments(Module *module) {
+static void packFunctionArguments(Module *module) {
   auto &ctx = module->getContext();
   llvm::IRBuilder<> builder(ctx);
   DenseSet<llvm::Function *> interfaceFunctions;
@@ -182,7 +183,8 @@ void packFunctionArguments(Module *module) {
 }
 
 ExecutionEngine::ExecutionEngine(bool enableObjectCache)
-    : cache(enableObjectCache ? nullptr : new SimpleObjectCache()) {}
+    : cache(enableObjectCache ? nullptr : new SimpleObjectCache()),
+      gdbListener(llvm::JITEventListener::createGDBRegistrationListener()) {}
 
 Expected<std::unique_ptr<ExecutionEngine>> ExecutionEngine::create(
     ModuleOp m, std::function<Error(llvm::Module *)> transformer,
@@ -214,6 +216,7 @@ Expected<std::unique_ptr<ExecutionEngine>> ExecutionEngine::create(
   if (!expectedModule)
     return expectedModule.takeError();
   std::unique_ptr<Module> deserModule = std::move(*expectedModule);
+  auto dataLayout = deserModule->getDataLayout();
 
   // Callback to create the object layer with symbol resolution to current
   // process and dynamically linked libraries.
@@ -221,15 +224,14 @@ Expected<std::unique_ptr<ExecutionEngine>> ExecutionEngine::create(
                                        const Triple &TT) {
     auto objectLayer = std::make_unique<RTDyldObjectLinkingLayer>(
         session, []() { return std::make_unique<SectionMemoryManager>(); });
-    auto dataLayout = deserModule->getDataLayout();
-    llvm::orc::JITDylib *mainJD = session.getJITDylibByName("<main>");
-    if (!mainJD)
-      mainJD = &session.createJITDylib("<main>");
-
-    // Resolve symbols that are statically linked in the current process.
-    mainJD->addGenerator(
-        cantFail(DynamicLibrarySearchGenerator::GetForCurrentProcess(
-            dataLayout.getGlobalPrefix())));
+    objectLayer->setNotifyLoaded(
+        [engine = engine.get()](
+            llvm::orc::VModuleKey, const llvm::object::ObjectFile &object,
+            const llvm::RuntimeDyld::LoadedObjectInfo &objectInfo) {
+          uint64_t key = static_cast<uint64_t>(
+              reinterpret_cast<uintptr_t>(object.getData().data()));
+          engine->gdbListener->notifyObjectLoaded(key, object, objectInfo);
+        });
 
     // Resolve symbols from shared libraries.
     for (auto libPath : sharedLibPaths) {
@@ -238,7 +240,7 @@ Expected<std::unique_ptr<ExecutionEngine>> ExecutionEngine::create(
         errs() << "Fail to create MemoryBuffer for: " << libPath << "\n";
         continue;
       }
-      auto &JD = session.createJITDylib(libPath);
+      auto &JD = session.createBareJITDylib(std::string(libPath));
       auto loaded = DynamicLibrarySearchGenerator::Load(
           libPath.data(), dataLayout.getGlobalPrefix());
       if (!loaded) {
@@ -256,14 +258,14 @@ Expected<std::unique_ptr<ExecutionEngine>> ExecutionEngine::create(
   // Callback to inspect the cache and recompile on demand. This follows Lang's
   // LLJITWithObjectCache example.
   auto compileFunctionCreator = [&](JITTargetMachineBuilder JTMB)
-      -> Expected<IRCompileLayer::CompileFunction> {
+      -> Expected<std::unique_ptr<IRCompileLayer::IRCompiler>> {
     if (jitCodeGenOptLevel)
       JTMB.setCodeGenOptLevel(jitCodeGenOptLevel.getValue());
     auto TM = JTMB.createTargetMachine();
     if (!TM)
       return TM.takeError();
-    return IRCompileLayer::CompileFunction(
-        TMOwningSimpleCompiler(std::move(*TM), engine->cache.get()));
+    return std::make_unique<TMOwningSimpleCompiler>(std::move(*TM),
+                                                    engine->cache.get());
   };
 
   // Create the LLJIT by calling the LLJITBuilder with 2 callbacks.
@@ -280,6 +282,12 @@ Expected<std::unique_ptr<ExecutionEngine>> ExecutionEngine::create(
         [&](llvm::Module &module) { return transformer(&module); }));
   cantFail(jit->addIRModule(std::move(tsm)));
   engine->jit = std::move(jit);
+
+  // Resolve symbols that are statically linked in the current process.
+  llvm::orc::JITDylib &mainJD = engine->jit->getMainJITDylib();
+  mainJD.addGenerator(
+      cantFail(DynamicLibrarySearchGenerator::GetForCurrentProcess(
+          dataLayout.getGlobalPrefix())));
 
   return std::move(engine);
 }

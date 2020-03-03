@@ -1,6 +1,6 @@
 //===- PassOptions.h - Pass Option Utilities --------------------*- C++ -*-===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -182,6 +182,9 @@ public:
   };
 
   PassOptions() = default;
+  /// Delete the copy constructor to avoid copying the internal options map.
+  PassOptions(const PassOptions &) = delete;
+  PassOptions(PassOptions &&) = delete;
 
   /// Copy the option values from 'other' into 'this', where 'other' has the
   /// same options as 'this'.
@@ -195,6 +198,13 @@ public:
   /// Print the options held by this struct in a form that can be parsed via
   /// 'parseFromString'.
   void print(raw_ostream &os);
+
+  /// Print the help string for the options held by this struct. `descIndent` is
+  /// the indent that the descriptions should be aligned.
+  void printHelp(size_t indent, size_t descIndent) const;
+
+  /// Return the maximum width required when printing the help string.
+  size_t getOptionWidth() const;
 
 private:
   /// A list of all of the opaque options.

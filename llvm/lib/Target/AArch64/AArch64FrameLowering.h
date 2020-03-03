@@ -49,7 +49,7 @@ public:
                                           bool PreferFP, bool ForSimm) const;
   bool spillCalleeSavedRegisters(MachineBasicBlock &MBB,
                                  MachineBasicBlock::iterator MI,
-                                 const std::vector<CalleeSavedInfo> &CSI,
+                                 ArrayRef<CalleeSavedInfo> CSI,
                                  const TargetRegisterInfo *TRI) const override;
 
   bool restoreCalleeSavedRegisters(MachineBasicBlock &MBB,
@@ -76,6 +76,10 @@ public:
 
   void processFunctionBeforeFrameFinalized(MachineFunction &MF,
                                              RegScavenger *RS) const override;
+
+  void
+  processFunctionBeforeFrameIndicesReplaced(MachineFunction &MF,
+                                            RegScavenger *RS) const override;
 
   unsigned getWinEHParentFrameOffset(const MachineFunction &MF) const override;
 
@@ -107,6 +111,8 @@ private:
   int64_t assignSVEStackObjectOffsets(MachineFrameInfo &MF,
                                       int &MinCSFrameIndex,
                                       int &MaxCSFrameIndex) const;
+  bool shouldCombineCSRLocalStackBumpInEpilogue(MachineBasicBlock &MBB,
+                                                unsigned StackBumpBytes) const;
 };
 
 } // End llvm namespace

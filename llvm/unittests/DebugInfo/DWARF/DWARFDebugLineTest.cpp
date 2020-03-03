@@ -36,8 +36,10 @@ struct CommonFixture {
     EXPECT_FALSE(Unrecoverable);
   }
 
-  bool setupGenerator(uint16_t Version = 4) {
-    Triple T = getDefaultTargetTripleForAddrSize(8);
+  bool setupGenerator(uint16_t Version = 4, uint8_t AddrSize = 8) {
+    AddressSize = AddrSize;
+    Triple T =
+        getDefaultTargetTripleForAddrSize(AddressSize == 0 ? 8 : AddressSize);
     if (!isConfigurationSupported(T))
       return false;
     auto ExpectedGenerator = Generator::create(T, Version);
@@ -50,9 +52,11 @@ struct CommonFixture {
     Context = createContext();
     assert(Context != nullptr && "test state is not valid");
     const DWARFObject &Obj = Context->getDWARFObj();
+    uint8_t TargetAddrSize = AddressSize == 0 ? 8 : AddressSize;
     LineData = DWARFDataExtractor(
         Obj, Obj.getLineSection(),
-        getDefaultTargetTripleForAddrSize(8).isLittleEndian(), 8);
+        getDefaultTargetTripleForAddrSize(TargetAddrSize).isLittleEndian(),
+        AddressSize);
   }
 
   std::unique_ptr<DWARFContext> createContext() {
@@ -92,44 +96,15 @@ struct CommonFixture {
     Unrecoverable = joinErrors(std::move(Unrecoverable), std::move(Err));
   }
 
-  void checkError(ArrayRef<StringRef> ExpectedMsgs, Error Err) {
-    ASSERT_TRUE(Err.operator bool());
-    size_t WhichMsg = 0;
-    Error Remaining =
-        handleErrors(std::move(Err), [&](const ErrorInfoBase &Actual) {
-          ASSERT_LT(WhichMsg, ExpectedMsgs.size());
-          // Use .str(), because googletest doesn't visualise a StringRef
-          // properly.
-          EXPECT_EQ(Actual.message(), ExpectedMsgs[WhichMsg++].str());
-        });
-    EXPECT_EQ(WhichMsg, ExpectedMsgs.size());
-    EXPECT_FALSE(Remaining);
-  }
-
-  void checkError(StringRef ExpectedMsg, Error Err) {
-    checkError(ArrayRef<StringRef>{ExpectedMsg}, std::move(Err));
-  }
-
-  void checkGetOrParseLineTableEmitsFatalError(StringRef ExpectedMsg,
-                                               uint64_t Offset = 0) {
+  Expected<const DWARFDebugLine::LineTable *>
+  getOrParseLineTableFatalErrors(uint64_t Offset = 0) {
     auto ExpectedLineTable = Line.getOrParseLineTable(
         LineData, Offset, *Context, nullptr, RecordRecoverable);
-    EXPECT_FALSE(ExpectedLineTable);
-    EXPECT_FALSE(Recoverable);
-
-    checkError(ExpectedMsg, ExpectedLineTable.takeError());
+    EXPECT_THAT_ERROR(std::move(Recoverable), Succeeded());
+    return ExpectedLineTable;
   }
 
-  void checkGetOrParseLineTableEmitsFatalError(ArrayRef<StringRef> ExpectedMsgs,
-                                               uint64_t Offset = 0) {
-    auto ExpectedLineTable = Line.getOrParseLineTable(
-        LineData, Offset, *Context, nullptr, RecordRecoverable);
-    EXPECT_FALSE(ExpectedLineTable);
-    EXPECT_FALSE(Recoverable);
-
-    checkError(ExpectedMsgs, ExpectedLineTable.takeError());
-  }
-
+  uint8_t AddressSize;
   std::unique_ptr<Generator> Gen;
   std::unique_ptr<DWARFContext> Context;
   DWARFDataExtractor LineData;
@@ -175,7 +150,7 @@ void checkDefaultPrologue(uint16_t Version, DwarfFormat Format,
     UnitLength = PrologueLength + 2;
     break;
   case 5:
-    PrologueLength = 39;
+    PrologueLength = 42;
     UnitLength = PrologueLength + 4;
     EXPECT_EQ(Prologue.getAddressSize(), 8u);
     EXPECT_EQ(Prologue.SegSelectorSize, 0u);
@@ -199,6 +174,7 @@ void checkDefaultPrologue(uint16_t Version, DwarfFormat Format,
   EXPECT_STREQ(*Prologue.IncludeDirectories[0].getAsCString(), "a dir");
   ASSERT_EQ(Prologue.FileNames.size(), 1u);
   ASSERT_EQ(Prologue.FileNames[0].Name.getForm(), DW_FORM_string);
+  ASSERT_EQ(Prologue.FileNames[0].DirIdx, 0u);
   EXPECT_STREQ(*Prologue.FileNames[0].Name.getAsCString(), "a file");
 }
 
@@ -207,14 +183,21 @@ TEST_F(DebugLineBasicFixture, GetOrParseLineTableAtInvalidOffset) {
     return;
   generate();
 
-  checkGetOrParseLineTableEmitsFatalError(
-      "offset 0x00000000 is not a valid debug line section offset", 0);
+  EXPECT_THAT_EXPECTED(
+      getOrParseLineTableFatalErrors(0),
+      FailedWithMessage(
+          "offset 0x00000000 is not a valid debug line section offset"));
   // Repeat to show that an error is reported each time.
-  checkGetOrParseLineTableEmitsFatalError(
-      "offset 0x00000000 is not a valid debug line section offset", 0);
+  EXPECT_THAT_EXPECTED(
+      getOrParseLineTableFatalErrors(0),
+      FailedWithMessage(
+          "offset 0x00000000 is not a valid debug line section offset"));
+
   // Show that an error is reported for later offsets too.
-  checkGetOrParseLineTableEmitsFatalError(
-      "offset 0x00000001 is not a valid debug line section offset", 1);
+  EXPECT_THAT_EXPECTED(
+      getOrParseLineTableFatalErrors(1),
+      FailedWithMessage(
+          "offset 0x00000001 is not a valid debug line section offset"));
 }
 
 TEST_F(DebugLineBasicFixture, GetOrParseLineTableAtInvalidOffsetAfterData) {
@@ -226,8 +209,33 @@ TEST_F(DebugLineBasicFixture, GetOrParseLineTableAtInvalidOffsetAfterData) {
 
   generate();
 
-  checkGetOrParseLineTableEmitsFatalError(
-      "offset 0x00000001 is not a valid debug line section offset", 1);
+  EXPECT_THAT_EXPECTED(
+      getOrParseLineTableFatalErrors(1),
+      FailedWithMessage(
+          "offset 0x00000001 is not a valid debug line section offset"));
+}
+
+TEST_P(DebugLineParameterisedFixture, PrologueGetLength) {
+  if (!setupGenerator(Version))
+    return;
+  LineTable &LT = Gen->addLineTable(Format);
+  DWARFDebugLine::Prologue Prologue = LT.createBasicPrologue();
+  LT.setPrologue(Prologue);
+  generate();
+
+  // + 10 for sizes of DWARF-32 unit length, version, prologue length.
+  uint64_t ExpectedLength = Prologue.PrologueLength + 10;
+  if (Version == 5)
+    // Add address and segment selector size fields.
+    ExpectedLength += 2;
+  if (Format == DWARF64)
+    // Unit length grows by 8, prologue length by 4.
+    ExpectedLength += 12;
+
+  auto ExpectedLineTable = Line.getOrParseLineTable(LineData, 0, *Context,
+                                                    nullptr, RecordRecoverable);
+  ASSERT_THAT_EXPECTED(ExpectedLineTable, Succeeded());
+  EXPECT_EQ((*ExpectedLineTable)->Prologue.getLength(), ExpectedLength);
 }
 
 TEST_P(DebugLineParameterisedFixture, GetOrParseLineTableValidTable) {
@@ -305,26 +313,41 @@ TEST_F(DebugLineBasicFixture, ErrorForReservedLength) {
 
   generate();
 
-  checkGetOrParseLineTableEmitsFatalError(
-      "parsing line table prologue at offset 0x00000000 unsupported reserved "
-      "unit length found of value 0xfffffff0");
+  EXPECT_THAT_EXPECTED(
+      getOrParseLineTableFatalErrors(),
+      FailedWithMessage(
+          "parsing line table prologue at offset 0x00000000 unsupported "
+          "reserved unit length found of value 0xfffffff0"));
 }
 
-TEST_F(DebugLineBasicFixture, ErrorForLowVersion) {
+struct DebugLineUnsupportedVersionFixture : public TestWithParam<uint16_t>,
+                                            public CommonFixture {
+  void SetUp() { Version = GetParam(); }
+
+  uint16_t Version;
+};
+
+TEST_P(DebugLineUnsupportedVersionFixture, ErrorForUnsupportedVersion) {
   if (!setupGenerator())
     return;
 
   LineTable &LT = Gen->addLineTable();
   LT.setCustomPrologue(
-      {{LineTable::Half, LineTable::Long}, {1, LineTable::Half}});
+      {{LineTable::Half, LineTable::Long}, {Version, LineTable::Half}});
 
   generate();
 
-  checkGetOrParseLineTableEmitsFatalError(
-      "parsing line table prologue at offset "
-      "0x00000000 found unsupported version "
-      "0x01");
+  EXPECT_THAT_EXPECTED(
+      getOrParseLineTableFatalErrors(),
+      FailedWithMessage("parsing line table prologue at offset 0x00000000 "
+                        "found unsupported version " +
+                        std::to_string(Version)));
 }
+
+INSTANTIATE_TEST_CASE_P(UnsupportedVersionTestParams,
+                        DebugLineUnsupportedVersionFixture,
+                        Values(/*1 below min */ 1, /* 1 above max */ 6,
+                               /* Maximum possible */ 0xffff), );
 
 TEST_F(DebugLineBasicFixture, ErrorForInvalidV5IncludeDirTable) {
   if (!setupGenerator(5))
@@ -354,10 +377,17 @@ TEST_F(DebugLineBasicFixture, ErrorForInvalidV5IncludeDirTable) {
 
   generate();
 
-  checkGetOrParseLineTableEmitsFatalError(
-      {"parsing line table prologue at 0x00000000 found an invalid directory "
-       "or file table description at 0x00000014",
-       "failed to parse entry content descriptions because no path was found"});
+  auto ExpectedLineTable = Line.getOrParseLineTable(LineData, 0, *Context,
+                                                    nullptr, RecordRecoverable);
+  EXPECT_THAT_EXPECTED(ExpectedLineTable, Succeeded());
+
+  EXPECT_THAT_ERROR(
+      std::move(Recoverable),
+      FailedWithMessage(
+          "parsing line table prologue at 0x00000000 found an invalid "
+          "directory or file table description at 0x00000014",
+          "failed to parse entry content descriptions because no path was "
+          "found"));
 }
 
 TEST_P(DebugLineParameterisedFixture, ErrorForTooLargePrologueLength) {
@@ -374,14 +404,25 @@ TEST_P(DebugLineParameterisedFixture, ErrorForTooLargePrologueLength) {
 
   generate();
 
+  auto ExpectedLineTable = Line.getOrParseLineTable(LineData, 0, *Context,
+                                                    nullptr, RecordRecoverable);
+  ASSERT_THAT_EXPECTED(ExpectedLineTable, Succeeded());
+  DWARFDebugLine::LineTable Result(**ExpectedLineTable);
+  // Undo the earlier modification so that it can be compared against a
+  // "default" prologue.
+  --Result.Prologue.PrologueLength;
+  checkDefaultPrologue(Version, Format, Result.Prologue, 0);
+
   uint64_t ExpectedEnd =
       Prologue.TotalLength + 1 + Prologue.sizeofTotalLength();
-  checkGetOrParseLineTableEmitsFatalError(
-      (Twine("parsing line table prologue at 0x00000000 should have ended at "
-             "0x000000") +
-       Twine::utohexstr(ExpectedEnd) + " but it ended at 0x000000" +
-       Twine::utohexstr(ExpectedEnd - 1))
-          .str());
+  EXPECT_THAT_ERROR(
+      std::move(Recoverable),
+      FailedWithMessage(("parsing line table prologue at 0x00000000 should "
+                         "have ended at 0x000000" +
+                         Twine::utohexstr(ExpectedEnd) +
+                         " but it ended at 0x000000" +
+                         Twine::utohexstr(ExpectedEnd - 1))
+                            .str()));
 }
 
 TEST_P(DebugLineParameterisedFixture, ErrorForTooShortPrologueLength) {
@@ -393,26 +434,45 @@ TEST_P(DebugLineParameterisedFixture, ErrorForTooShortPrologueLength) {
 
   LineTable &LT = Gen->addLineTable(Format);
   DWARFDebugLine::Prologue Prologue = LT.createBasicPrologue();
-  // FIXME: Ideally, we'd test for 1 less than expected, but the code does not
-  // currently fail if missing only the terminator of a v2-4 file table.
-  if (Version < 5)
-    Prologue.PrologueLength -= 2;
-  else
-    Prologue.PrologueLength -= 1;
+  Prologue.PrologueLength -= 2;
   LT.setPrologue(Prologue);
 
   generate();
 
+  auto ExpectedLineTable = Line.getOrParseLineTable(LineData, 0, *Context,
+                                                    nullptr, RecordRecoverable);
+  ASSERT_THAT_EXPECTED(ExpectedLineTable, Succeeded());
+  DWARFDebugLine::LineTable Result(**ExpectedLineTable);
+  // Undo the earlier modification so that it can be compared against a
+  // "default" prologue.
+  Result.Prologue.PrologueLength += 2;
+  checkDefaultPrologue(Version, Format, Result.Prologue, 0);
+
   uint64_t ExpectedEnd =
-      Prologue.TotalLength - 1 + Prologue.sizeofTotalLength();
-  if (Version < 5)
-    --ExpectedEnd;
-  checkGetOrParseLineTableEmitsFatalError(
+      Prologue.TotalLength - 2 + Prologue.sizeofTotalLength();
+  std::vector<std::string> Errs;
+  // Parsing of a DWARFv2-4 file table stops at the end of an entry once the
+  // prologue end has been reached, whether or not the trailing null terminator
+  // has been found. As such, the expected error message will be slightly
+  // different.
+  uint64_t ActualEnd = Version == 5 ? ExpectedEnd + 2 : ExpectedEnd + 1;
+  if (Version != 5) {
+    Errs.emplace_back(
+        (Twine("parsing line table prologue at 0x00000000 found an invalid "
+               "directory or file table description at 0x000000") +
+         Twine::utohexstr(ActualEnd))
+            .str());
+    Errs.emplace_back("file names table was not null terminated before the end "
+                      "of the prologue");
+  }
+  Errs.emplace_back(
       (Twine("parsing line table prologue at 0x00000000 should have ended at "
              "0x000000") +
        Twine::utohexstr(ExpectedEnd) + " but it ended at 0x000000" +
-       Twine::utohexstr(ExpectedEnd + 1))
+       Twine::utohexstr(ActualEnd))
           .str());
+  EXPECT_THAT_ERROR(std::move(Recoverable),
+                    FailedWithMessageArray(testing::ElementsAreArray(Errs)));
 }
 
 INSTANTIATE_TEST_CASE_P(
@@ -423,19 +483,62 @@ INSTANTIATE_TEST_CASE_P(
            std::make_pair(4, DWARF64), // Test v4 fields and DWARF64.
            std::make_pair(5, DWARF32), std::make_pair(5, DWARF64)), );
 
-TEST_F(DebugLineBasicFixture, ErrorForInvalidExtendedOpcodeLength) {
+TEST_F(DebugLineBasicFixture, ErrorForExtendedOpcodeLengthSmallerThanExpected) {
   if (!setupGenerator())
     return;
 
   LineTable &LT = Gen->addLineTable();
-  // The Length should be 1 for an end sequence opcode.
-  LT.addExtendedOpcode(2, DW_LNE_end_sequence, {});
+  LT.addByte(0xaa);
+  // The Length should be 1 + sizeof(ULEB) for a set discriminator opcode.
+  // The operand will be read for both the discriminator opcode and then parsed
+  // again as DW_LNS_negate_stmt, to respect the claimed length.
+  LT.addExtendedOpcode(1, DW_LNE_set_discriminator,
+                       {{DW_LNS_negate_stmt, LineTable::ULEB}});
+  LT.addByte(0xbb);
+  LT.addStandardOpcode(DW_LNS_const_add_pc, {});
+  LT.addExtendedOpcode(1, DW_LNE_end_sequence, {});
 
   generate();
 
-  checkGetOrParseLineTableEmitsFatalError(
-      "unexpected line op length at offset "
-      "0x00000030 expected 0x02 found 0x01");
+  auto ExpectedLineTable = Line.getOrParseLineTable(LineData, 0, *Context,
+                                                    nullptr, RecordRecoverable);
+  EXPECT_THAT_ERROR(std::move(Recoverable),
+                    FailedWithMessage("unexpected line op length at offset "
+                                      "0x00000031 expected 0x01 found 0x02"));
+  ASSERT_THAT_EXPECTED(ExpectedLineTable, Succeeded());
+  ASSERT_EQ((*ExpectedLineTable)->Rows.size(), 3u);
+  EXPECT_EQ((*ExpectedLineTable)->Sequences.size(), 1u);
+  EXPECT_EQ((*ExpectedLineTable)->Rows[1].IsStmt, 0u);
+  EXPECT_EQ((*ExpectedLineTable)->Rows[1].Discriminator, DW_LNS_negate_stmt);
+}
+
+TEST_F(DebugLineBasicFixture, ErrorForExtendedOpcodeLengthLargerThanExpected) {
+  if (!setupGenerator())
+    return;
+
+  LineTable &LT = Gen->addLineTable();
+  LT.addByte(0xaa);
+  LT.addStandardOpcode(DW_LNS_const_add_pc, {});
+  // The Length should be 1 for an end sequence opcode.
+  LT.addExtendedOpcode(2, DW_LNE_end_sequence, {});
+  // The negate statement opcode will be skipped.
+  LT.addStandardOpcode(DW_LNS_negate_stmt, {});
+  LT.addByte(0xbb);
+  LT.addStandardOpcode(DW_LNS_const_add_pc, {});
+  LT.addExtendedOpcode(1, DW_LNE_end_sequence, {});
+
+  generate();
+
+  auto ExpectedLineTable = Line.getOrParseLineTable(LineData, 0, *Context,
+                                                    nullptr, RecordRecoverable);
+  EXPECT_THAT_ERROR(std::move(Recoverable),
+                    FailedWithMessage("unexpected line op length at offset "
+                                      "0x00000032 expected 0x02 found 0x01"));
+  ASSERT_THAT_EXPECTED(ExpectedLineTable, Succeeded());
+  ASSERT_EQ((*ExpectedLineTable)->Rows.size(), 4u);
+  EXPECT_EQ((*ExpectedLineTable)->Sequences.size(), 2u);
+  ASSERT_EQ((*ExpectedLineTable)->Sequences[1].FirstRowIndex, 2u);
+  EXPECT_EQ((*ExpectedLineTable)->Rows[2].IsStmt, 1u);
 }
 
 TEST_F(DebugLineBasicFixture, ErrorForUnitLengthTooLarge) {
@@ -450,38 +553,171 @@ TEST_F(DebugLineBasicFixture, ErrorForUnitLengthTooLarge) {
   LT.addStandardOpcode(DW_LNS_const_add_pc, {});
   LT.addExtendedOpcode(1, DW_LNE_end_sequence, {});
   DWARFDebugLine::Prologue Prologue = LT.createBasicPrologue();
-  // Set the total length to 1 higher than the actual length. The program body
-  // has size 5.
-  Prologue.TotalLength += 6;
+  // Set the total length to 1 higher than the actual length.
+  ++Prologue.TotalLength;
   LT.setPrologue(Prologue);
 
   generate();
 
   auto ExpectedLineTable = Line.getOrParseLineTable(LineData, 1, *Context,
                                                     nullptr, RecordRecoverable);
-  checkError("line table program with offset 0x00000001 has length 0x00000034 "
-             "but only 0x00000033 bytes are available",
-             std::move(Recoverable));
+  EXPECT_THAT_ERROR(
+      std::move(Recoverable),
+      FailedWithMessage("line table program with offset 0x00000001 has length "
+                        "0x00000034 but only 0x00000033 bytes are available"));
   ASSERT_THAT_EXPECTED(ExpectedLineTable, Succeeded());
   EXPECT_EQ((*ExpectedLineTable)->Rows.size(), 2u);
   EXPECT_EQ((*ExpectedLineTable)->Sequences.size(), 1u);
 }
 
 TEST_F(DebugLineBasicFixture, ErrorForMismatchedAddressSize) {
-  if (!setupGenerator())
+  if (!setupGenerator(4, 8))
     return;
 
   LineTable &LT = Gen->addLineTable();
   // The line data extractor expects size 8 (Quad) addresses.
-  LT.addExtendedOpcode(5, DW_LNE_set_address, {{0x11223344, LineTable::Long}});
+  uint64_t Addr1 = 0x11223344;
+  LT.addExtendedOpcode(5, DW_LNE_set_address, {{Addr1, LineTable::Long}});
   LT.addStandardOpcode(DW_LNS_copy, {});
+  // Show that the expected address size is unchanged, so later valid lines
+  // don't cause a problem.
+  uint64_t Addr2 = 0x1122334455667788;
+  LT.addExtendedOpcode(9, DW_LNE_set_address, {{Addr2, LineTable::Quad}});
+  LT.addExtendedOpcode(1, DW_LNE_end_sequence, {});
+
+  generate();
+
+  auto ExpectedLineTable = Line.getOrParseLineTable(LineData, 0, *Context,
+                                                    nullptr, RecordRecoverable);
+  EXPECT_THAT_ERROR(std::move(Recoverable),
+                    FailedWithMessage("mismatching address size at offset "
+                                      "0x00000030 expected 0x08 found 0x04"));
+  ASSERT_THAT_EXPECTED(ExpectedLineTable, Succeeded());
+  ASSERT_EQ((*ExpectedLineTable)->Rows.size(), 2u);
+  EXPECT_EQ((*ExpectedLineTable)->Sequences.size(), 1u);
+  EXPECT_EQ((*ExpectedLineTable)->Rows[0].Address.Address, Addr1);
+  EXPECT_EQ((*ExpectedLineTable)->Rows[1].Address.Address, Addr2);
+}
+
+TEST_F(DebugLineBasicFixture,
+       ErrorForMismatchedAddressSizeUnsetInitialAddress) {
+  if (!setupGenerator(4, 0))
+    return;
+
+  LineTable &LT = Gen->addLineTable();
+  uint64_t Addr1 = 0x11223344;
+  LT.addExtendedOpcode(5, DW_LNE_set_address, {{Addr1, LineTable::Long}});
+  LT.addStandardOpcode(DW_LNS_copy, {});
+  uint64_t Addr2 = 0x1122334455667788;
+  LT.addExtendedOpcode(9, DW_LNE_set_address, {{Addr2, LineTable::Quad}});
+  LT.addExtendedOpcode(1, DW_LNE_end_sequence, {});
+
+  generate();
+
+  auto ExpectedLineTable = Line.getOrParseLineTable(LineData, 0, *Context,
+                                                    nullptr, RecordRecoverable);
+  EXPECT_THAT_ERROR(std::move(Recoverable),
+                    FailedWithMessage("mismatching address size at offset "
+                                      "0x00000038 expected 0x04 found 0x08"));
+  ASSERT_THAT_EXPECTED(ExpectedLineTable, Succeeded());
+  ASSERT_EQ((*ExpectedLineTable)->Rows.size(), 2u);
+  EXPECT_EQ((*ExpectedLineTable)->Sequences.size(), 1u);
+  EXPECT_EQ((*ExpectedLineTable)->Rows[0].Address.Address, Addr1);
+  EXPECT_EQ((*ExpectedLineTable)->Rows[1].Address.Address, Addr2);
+}
+
+TEST_F(DebugLineBasicFixture,
+       ErrorForUnsupportedAddressSizeInSetAddressLength) {
+  // Use DWARF v4, and 0 for data extractor address size so that the address
+  // size is derived from the opcode length.
+  if (!setupGenerator(4, 0))
+    return;
+
+  LineTable &LT = Gen->addLineTable();
+  // 4 == length of the extended opcode, i.e. 1 for the opcode itself and 3 for
+  // the Half (2) + Byte (1) operand, representing the unsupported address size.
+  LT.addExtendedOpcode(4, DW_LNE_set_address,
+                       {{0x1234, LineTable::Half}, {0x56, LineTable::Byte}});
+  LT.addStandardOpcode(DW_LNS_copy, {});
+  // Special opcode to ensure the address has changed between the first and last
+  // row in the sequence. Without this, the sequence will not be recorded.
   LT.addByte(0xaa);
   LT.addExtendedOpcode(1, DW_LNE_end_sequence, {});
 
   generate();
 
-  checkGetOrParseLineTableEmitsFatalError(
-      "mismatching address size at offset 0x00000030 expected 0x08 found 0x04");
+  auto ExpectedLineTable = Line.getOrParseLineTable(LineData, 0, *Context,
+                                                    nullptr, RecordRecoverable);
+  EXPECT_THAT_ERROR(
+      std::move(Recoverable),
+      FailedWithMessage("address size 0x03 of DW_LNE_set_address opcode at "
+                        "offset 0x00000030 is unsupported"));
+  ASSERT_THAT_EXPECTED(ExpectedLineTable, Succeeded());
+  ASSERT_EQ((*ExpectedLineTable)->Rows.size(), 3u);
+  EXPECT_EQ((*ExpectedLineTable)->Sequences.size(), 1u);
+  // Show that the set address opcode is ignored in this case.
+  EXPECT_EQ((*ExpectedLineTable)->Rows[0].Address.Address, 0u);
+}
+
+TEST_F(DebugLineBasicFixture, ErrorForAddressSizeGreaterThanByteSize) {
+  // Use DWARF v4, and 0 for data extractor address size so that the address
+  // size is derived from the opcode length.
+  if (!setupGenerator(4, 0))
+    return;
+
+  LineTable &LT = Gen->addLineTable();
+  // Specifically use an operand size that has a trailing byte of a supported
+  // size (8), so that any potential truncation would result in a valid size.
+  std::vector<LineTable::ValueAndLength> Operands(0x108);
+  LT.addExtendedOpcode(Operands.size() + 1, DW_LNE_set_address, Operands);
+  LT.addExtendedOpcode(1, DW_LNE_end_sequence, {});
+
+  generate();
+
+  auto ExpectedLineTable = Line.getOrParseLineTable(LineData, 0, *Context,
+                                                    nullptr, RecordRecoverable);
+  EXPECT_THAT_ERROR(
+      std::move(Recoverable),
+      FailedWithMessage("address size 0x108 of DW_LNE_set_address opcode at "
+                        "offset 0x00000031 is unsupported"));
+  ASSERT_THAT_EXPECTED(ExpectedLineTable, Succeeded());
+}
+
+TEST_F(DebugLineBasicFixture, ErrorForUnsupportedAddressSizeDefinedInHeader) {
+  // Use 0 for data extractor address size so that it does not clash with the
+  // header address size.
+  if (!setupGenerator(5, 0))
+    return;
+
+  LineTable &LT = Gen->addLineTable();
+  // AddressSize + 1 == length of the extended opcode, i.e. 1 for the opcode
+  // itself and 9 for the Quad (8) + Byte (1) operand representing the
+  // unsupported address size.
+  uint8_t AddressSize = 9;
+  LT.addExtendedOpcode(AddressSize + 1, DW_LNE_set_address,
+                       {{0x12345678, LineTable::Quad}, {0, LineTable::Byte}});
+  LT.addStandardOpcode(DW_LNS_copy, {});
+  // Special opcode to ensure the address has changed between the first and last
+  // row in the sequence. Without this, the sequence will not be recorded.
+  LT.addByte(0xaa);
+  LT.addExtendedOpcode(1, DW_LNE_end_sequence, {});
+  DWARFDebugLine::Prologue Prologue = LT.createBasicPrologue();
+  Prologue.FormParams.AddrSize = AddressSize;
+  LT.setPrologue(Prologue);
+
+  generate();
+
+  auto ExpectedLineTable = Line.getOrParseLineTable(LineData, 0, *Context,
+                                                    nullptr, RecordRecoverable);
+  EXPECT_THAT_ERROR(
+      std::move(Recoverable),
+      FailedWithMessage("address size 0x09 of DW_LNE_set_address opcode at "
+                        "offset 0x00000038 is unsupported"));
+  ASSERT_THAT_EXPECTED(ExpectedLineTable, Succeeded());
+  ASSERT_EQ((*ExpectedLineTable)->Rows.size(), 3u);
+  EXPECT_EQ((*ExpectedLineTable)->Sequences.size(), 1u);
+  // Show that the set address opcode is ignored in this case.
+  EXPECT_EQ((*ExpectedLineTable)->Rows[0].Address.Address, 0u);
 }
 
 TEST_F(DebugLineBasicFixture, CallbackUsedForUnterminatedSequence) {
@@ -504,9 +740,10 @@ TEST_F(DebugLineBasicFixture, CallbackUsedForUnterminatedSequence) {
 
   auto ExpectedLineTable = Line.getOrParseLineTable(LineData, 0, *Context,
                                                     nullptr, RecordRecoverable);
-  checkError("last sequence in debug line table is not terminated!",
-             std::move(Recoverable));
-  ASSERT_TRUE(ExpectedLineTable.operator bool());
+  EXPECT_THAT_ERROR(std::move(Recoverable),
+                    FailedWithMessage("last sequence in debug line table at "
+                                      "offset 0x00000000 is not terminated"));
+  ASSERT_THAT_EXPECTED(ExpectedLineTable, Succeeded());
   EXPECT_EQ((*ExpectedLineTable)->Rows.size(), 6u);
   // The unterminated sequence is not added to the sequence list.
   EXPECT_EQ((*ExpectedLineTable)->Sequences.size(), 1u);
@@ -548,14 +785,15 @@ TEST_F(DebugLineBasicFixture, ParserSkipsCorrectly) {
   EXPECT_EQ(Parser.getOffset(), 0u);
   ASSERT_FALSE(Parser.done());
 
-  Parser.skip(RecordUnrecoverable);
+  Parser.skip(RecordRecoverable, RecordUnrecoverable);
   EXPECT_EQ(Parser.getOffset(), 62u);
   ASSERT_FALSE(Parser.done());
 
-  Parser.skip(RecordUnrecoverable);
+  Parser.skip(RecordRecoverable, RecordUnrecoverable);
   EXPECT_EQ(Parser.getOffset(), 136u);
   EXPECT_TRUE(Parser.done());
 
+  EXPECT_FALSE(Recoverable);
   EXPECT_FALSE(Unrecoverable);
 }
 
@@ -585,9 +823,11 @@ TEST_F(DebugLineBasicFixture, ParserMovesToEndForBadLengthWhenParsing) {
   EXPECT_TRUE(Parser.done());
   EXPECT_FALSE(Recoverable);
 
-  checkError("parsing line table prologue at offset 0x00000000 unsupported "
-             "reserved unit length found of value 0xfffffff0",
-             std::move(Unrecoverable));
+  EXPECT_THAT_ERROR(
+      std::move(Unrecoverable),
+      FailedWithMessage(
+          "parsing line table prologue at offset 0x00000000 unsupported "
+          "reserved unit length found of value 0xfffffff0"));
 }
 
 TEST_F(DebugLineBasicFixture, ParserMovesToEndForBadLengthWhenSkipping) {
@@ -600,14 +840,17 @@ TEST_F(DebugLineBasicFixture, ParserMovesToEndForBadLengthWhenSkipping) {
   generate();
 
   DWARFDebugLine::SectionParser Parser(LineData, *Context, CUs, TUs);
-  Parser.skip(RecordUnrecoverable);
+  Parser.skip(RecordRecoverable, RecordUnrecoverable);
 
   EXPECT_EQ(Parser.getOffset(), 4u);
   EXPECT_TRUE(Parser.done());
+  EXPECT_FALSE(Recoverable);
 
-  checkError("parsing line table prologue at offset 0x00000000 unsupported "
-             "reserved unit length found of value 0xfffffff0",
-             std::move(Unrecoverable));
+  EXPECT_THAT_ERROR(
+      std::move(Unrecoverable),
+      FailedWithMessage(
+          "parsing line table prologue at offset 0x00000000 unsupported "
+          "reserved unit length found of value 0xfffffff0"));
 }
 
 TEST_F(DebugLineBasicFixture, ParserReportsFirstErrorInEachTableWhenParsing) {
@@ -626,13 +869,14 @@ TEST_F(DebugLineBasicFixture, ParserReportsFirstErrorInEachTableWhenParsing) {
   Parser.parseNext(RecordRecoverable, RecordUnrecoverable);
 
   EXPECT_TRUE(Parser.done());
-  EXPECT_FALSE(Recoverable);
+  EXPECT_THAT_ERROR(std::move(Recoverable), Succeeded());
 
-  checkError({"parsing line table prologue at offset 0x00000000 found "
-              "unsupported version 0x00",
-              "parsing line table prologue at offset 0x00000006 found "
-              "unsupported version 0x01"},
-             std::move(Unrecoverable));
+  EXPECT_THAT_ERROR(
+      std::move(Unrecoverable),
+      FailedWithMessage("parsing line table prologue at offset 0x00000000 "
+                        "found unsupported version 0",
+                        "parsing line table prologue at offset 0x00000006 "
+                        "found unsupported version 1"));
 }
 
 TEST_F(DebugLineBasicFixture, ParserReportsNonPrologueProblemsWhenParsing) {
@@ -650,19 +894,20 @@ TEST_F(DebugLineBasicFixture, ParserReportsNonPrologueProblemsWhenParsing) {
 
   DWARFDebugLine::SectionParser Parser(LineData, *Context, CUs, TUs);
   Parser.parseNext(RecordRecoverable, RecordUnrecoverable);
-  EXPECT_FALSE(Recoverable);
+  EXPECT_FALSE(Unrecoverable);
   ASSERT_FALSE(Parser.done());
-  checkError(
-      "unexpected line op length at offset 0x00000030 expected 0x42 found 0x01",
-      std::move(Unrecoverable));
+  EXPECT_THAT_ERROR(std::move(Recoverable),
+                    FailedWithMessage("unexpected line op length at offset "
+                                      "0x00000030 expected 0x42 found 0x01"));
 
   // Reset the error state so that it does not confuse the next set of checks.
   Unrecoverable = Error::success();
   Parser.parseNext(RecordRecoverable, RecordUnrecoverable);
 
   EXPECT_TRUE(Parser.done());
-  checkError("last sequence in debug line table is not terminated!",
-             std::move(Recoverable));
+  EXPECT_THAT_ERROR(std::move(Recoverable),
+                    FailedWithMessage("last sequence in debug line table at "
+                                      "offset 0x00000031 is not terminated"));
   EXPECT_FALSE(Unrecoverable);
 }
 
@@ -678,17 +923,19 @@ TEST_F(DebugLineBasicFixture,
   generate();
 
   DWARFDebugLine::SectionParser Parser(LineData, *Context, CUs, TUs);
-  Parser.skip(RecordUnrecoverable);
+  Parser.skip(RecordRecoverable, RecordUnrecoverable);
   ASSERT_FALSE(Parser.done());
-  Parser.skip(RecordUnrecoverable);
+  Parser.skip(RecordRecoverable, RecordUnrecoverable);
 
   EXPECT_TRUE(Parser.done());
+  EXPECT_FALSE(Recoverable);
 
-  checkError({"parsing line table prologue at offset 0x00000000 found "
-              "unsupported version 0x00",
-              "parsing line table prologue at offset 0x00000006 found "
-              "unsupported version 0x01"},
-             std::move(Unrecoverable));
+  EXPECT_THAT_ERROR(
+      std::move(Unrecoverable),
+      FailedWithMessage("parsing line table prologue at offset 0x00000000 "
+                        "found unsupported version 0",
+                        "parsing line table prologue at offset 0x00000006 "
+                        "found unsupported version 1"));
 }
 
 TEST_F(DebugLineBasicFixture, ParserIgnoresNonPrologueErrorsWhenSkipping) {
@@ -700,9 +947,10 @@ TEST_F(DebugLineBasicFixture, ParserIgnoresNonPrologueErrorsWhenSkipping) {
   generate();
 
   DWARFDebugLine::SectionParser Parser(LineData, *Context, CUs, TUs);
-  Parser.skip(RecordUnrecoverable);
+  Parser.skip(RecordRecoverable, RecordUnrecoverable);
 
   EXPECT_TRUE(Parser.done());
+  EXPECT_FALSE(Recoverable);
   EXPECT_FALSE(Unrecoverable);
 }
 
@@ -756,6 +1004,53 @@ TEST_F(DebugLineBasicFixture, ParserPrintsStandardOpcodesWhenRequested) {
   EXPECT_TRUE(InOutput("0x0000003d: 0a DW_LNS_set_prologue_end\n")) << Output;
   EXPECT_TRUE(InOutput("0x0000003e: 0b DW_LNS_set_epilogue_begin\n")) << Output;
   EXPECT_TRUE(InOutput("0x0000003f: 0c DW_LNS_set_isa (66)\n")) << Output;
+}
+
+TEST_F(DebugLineBasicFixture, PrintPathsProperly) {
+  if (!setupGenerator(5))
+    return;
+
+  LineTable &LT = Gen->addLineTable();
+  DWARFDebugLine::Prologue P = LT.createBasicPrologue();
+  P.IncludeDirectories.push_back(
+      DWARFFormValue::createFromPValue(DW_FORM_string, "b dir"));
+  P.FileNames.push_back(DWARFDebugLine::FileNameEntry());
+  P.FileNames.back().Name =
+      DWARFFormValue::createFromPValue(DW_FORM_string, "b file");
+  P.FileNames.back().DirIdx = 1;
+  P.PrologueLength += 14;
+  LT.setPrologue(P);
+  generate();
+
+  auto ExpectedLineTable = Line.getOrParseLineTable(LineData, 0, *Context,
+                                                    nullptr, RecordRecoverable);
+  EXPECT_THAT_EXPECTED(ExpectedLineTable, Succeeded());
+  std::string Result;
+  // DWARF 5 stores the compilation directory in two places: the Compilation
+  // Unit and the directory table entry 0, and implementations are free to use
+  // one or the other. This copy serves as the one stored in the CU.
+  StringRef CompDir = "a dir";
+  EXPECT_FALSE(
+      (*ExpectedLineTable)
+          ->Prologue.getFileNameByIndex(
+              1, CompDir, DILineInfoSpecifier::FileLineInfoKind::None, Result));
+  EXPECT_TRUE((*ExpectedLineTable)
+                  ->Prologue.getFileNameByIndex(
+                      1, CompDir,
+                      DILineInfoSpecifier::FileLineInfoKind::Default, Result));
+  EXPECT_STREQ(Result.c_str(), "b file");
+  EXPECT_TRUE((*ExpectedLineTable)
+                  ->Prologue.getFileNameByIndex(
+                      1, CompDir,
+                      DILineInfoSpecifier::FileLineInfoKind::RelativeFilePath,
+                      Result));
+  EXPECT_THAT(Result.c_str(), MatchesRegex("b dir.b file"));
+  EXPECT_TRUE((*ExpectedLineTable)
+                  ->Prologue.getFileNameByIndex(
+                      1, CompDir,
+                      DILineInfoSpecifier::FileLineInfoKind::AbsoluteFilePath,
+                      Result));
+  EXPECT_THAT(Result.c_str(), MatchesRegex("a dir.b dir.b file"));
 }
 
 } // end anonymous namespace

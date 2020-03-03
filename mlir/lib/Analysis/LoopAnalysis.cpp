@@ -1,6 +1,6 @@
 //===- LoopAnalysis.cpp - Misc loop analysis routines //-------------------===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -16,6 +16,7 @@
 #include "mlir/Analysis/AffineStructures.h"
 #include "mlir/Analysis/NestedMatcher.h"
 #include "mlir/Dialect/AffineOps/AffineOps.h"
+#include "mlir/Dialect/AffineOps/AffineValueMap.h"
 #include "mlir/Support/MathExtras.h"
 
 #include "llvm/ADT/DenseSet.h"
@@ -166,7 +167,7 @@ uint64_t mlir::getLargestDivisorOfTripCount(AffineForOp forOp) {
 /// conservative.
 static bool isAccessIndexInvariant(Value iv, Value index) {
   assert(isForInductionVar(iv) && "iv must be a AffineForOp");
-  assert(index->getType().isa<IndexType>() && "index must be of IndexType");
+  assert(index.getType().isa<IndexType>() && "index must be of IndexType");
   SmallVector<Operation *, 4> affineApplyOps;
   getReachableAffineApplyOps({index}, affineApplyOps);
 
@@ -185,7 +186,7 @@ static bool isAccessIndexInvariant(Value iv, Value index) {
   auto composeOp = cast<AffineApplyOp>(affineApplyOps[0]);
   // We need yet another level of indirection because the `dim` index of the
   // access may not correspond to the `dim` index of composeOp.
-  return !(AffineValueMap(composeOp).isFunctionOf(0, iv));
+  return !composeOp.getAffineValueMap().isFunctionOf(0, iv);
 }
 
 DenseSet<Value> mlir::getInvariantAccesses(Value iv, ArrayRef<Value> indices) {
@@ -373,7 +374,7 @@ bool mlir::isInstwiseShiftValid(AffineForOp forOp, ArrayRef<uint64_t> shifts) {
     // Validate the results of this operation if it were to be shifted.
     for (unsigned i = 0, e = op.getNumResults(); i < e; ++i) {
       Value result = op.getResult(i);
-      for (auto *user : result->getUsers()) {
+      for (auto *user : result.getUsers()) {
         // If an ancestor operation doesn't lie in the block of forOp,
         // there is no shift to check.
         if (auto *ancOp = forBody->findAncestorOpInBlock(*user)) {

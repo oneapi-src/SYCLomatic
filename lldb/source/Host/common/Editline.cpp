@@ -1,4 +1,4 @@
-//===-- Editline.cpp --------------------------------------------*- C++ -*-===//
+//===-- Editline.cpp ------------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -99,18 +99,24 @@ bool IsOnlySpaces(const EditLineStringType &content) {
 
 static int GetOperation(HistoryOperation op) {
   // The naming used by editline for the history operations is counter
-  // intuitive to how it's used here.
+  // intuitive to how it's used in LLDB's editline implementation.
+  //
+  //  - The H_LAST returns the oldest entry in the history.
   //
   //  - The H_PREV operation returns the previous element in the history, which
   //    is newer than the current one.
   //
+  //  - The H_CURR returns the current entry in the history.
+  //
   //  - The H_NEXT operation returns the next element in the history, which is
   //    older than the current one.
+  //
+  //  - The H_FIRST returns the most recent entry in the history.
   //
   // The naming of the enum entries match the semantic meaning.
   switch(op) {
     case HistoryOperation::Oldest:
-      return H_FIRST;
+      return H_LAST;
     case HistoryOperation::Older:
       return H_NEXT;
     case HistoryOperation::Current:
@@ -118,7 +124,7 @@ static int GetOperation(HistoryOperation op) {
     case HistoryOperation::Newer:
       return H_PREV;
     case HistoryOperation::Newest:
-      return H_LAST;
+      return H_FIRST;
   }
   llvm_unreachable("Fully covered switch!");
 }
@@ -214,7 +220,7 @@ private:
         std::string filename = m_prefix + "-history";
 #endif
         llvm::sys::path::append(lldb_history_file, filename);
-        m_path = lldb_history_file.str();
+        m_path = std::string(lldb_history_file.str());
       }
     }
 
@@ -327,7 +333,7 @@ std::string Editline::PromptForIndex(int line_index) {
     prompt_stream.Printf(
         "%*d%s", m_line_number_digits, m_base_line_number + line_index,
         (line_index == 0) ? prompt.c_str() : continuation_prompt.c_str());
-    return std::move(prompt_stream.GetString());
+    return std::string(std::move(prompt_stream.GetString()));
   }
   return (line_index == 0) ? prompt : continuation_prompt;
 }

@@ -260,6 +260,7 @@ The ``sycl_kernel`` attribute specifies that a function template will be used
 to outline device code and to generate an OpenCL kernel.
 Here is a code example of the SYCL program, which demonstrates the compiler's
 outlining job:
+
 .. code-block:: c++
 
   int foo(int x) { return ++x; }
@@ -282,27 +283,29 @@ compilation of functions for the device part can be found in the SYCL 1.2.1
 specification Section 6.4.
 To show to the compiler entry point to the "device part" of the code, the SYCL
 runtime can use the ``sycl_kernel`` attribute in the following way:
-.. code-block:: c++
-namespace cl {
-namespace sycl {
-class handler {
-  template <typename KernelName, typename KernelType/*, ...*/>
-  __attribute__((sycl_kernel)) void sycl_kernel_function(KernelType KernelFuncObj) {
-    // ...
-    KernelFuncObj();
-  }
 
-  template <typename KernelName, typename KernelType, int Dims>
-  void parallel_for(range<Dims> NumWorkItems, KernelType KernelFunc) {
-#ifdef __SYCL_DEVICE_ONLY__
-    sycl_kernel_function<KernelName, KernelType, Dims>(KernelFunc);
-#else
-    // Host implementation
-#endif
-  }
-};
-} // namespace sycl
-} // namespace cl
+.. code-block:: c++
+
+  namespace cl {
+  namespace sycl {
+  class handler {
+    template <typename KernelName, typename KernelType/*, ...*/>
+    __attribute__((sycl_kernel)) void sycl_kernel_function(KernelType KernelFuncObj) {
+      // ...
+      KernelFuncObj();
+    }
+
+    template <typename KernelName, typename KernelType, int Dims>
+    void parallel_for(range<Dims> NumWorkItems, KernelType KernelFunc) {
+  #ifdef __SYCL_DEVICE_ONLY__
+      sycl_kernel_function<KernelName, KernelType, Dims>(KernelFunc);
+  #else
+      // Host implementation
+  #endif
+    }
+  };
+  } // namespace sycl
+  } // namespace cl
 
 The compiler will also generate an OpenCL kernel using the function marked with
 the ``sycl_kernel`` attribute.
@@ -1876,9 +1879,9 @@ with N banks.
   }];
 }
 
-def IntelFPGAMaxPrivateCopiesAttrDocs : Documentation {
+def IntelFPGAPrivateCopiesAttrDocs : Documentation {
   let Category = DocCatVariable;
-  let Heading = "max_private_copies (IntelFPGA)";
+  let Heading = "private_copies (IntelFPGA)";
   let Content = [{
 This attribute may be attached to a variable or struct member declaration and
 instructs the backend to replicate the memory generated for the variable or
@@ -2009,6 +2012,17 @@ device kernel, the attribute is ignored and it is not propagated to a kernel.
   }];
 }
 
+def SYCLIntelNoGlobalWorkOffsetAttrDocs : Documentation {
+  let Category = DocCatFunction;
+  let Heading = "no_global_work_offset (IntelFPGA)";
+  let Content = [{
+Applies to a device function/lambda function or function call operator (of a
+function object). If 1, compiler doesn't use the global work offset values for
+the device function. Valid values are 0 and 1. If used without argument, value
+of 1 is set implicitly.
+  }];
+}
+
 def SYCLFPGAPipeDocs : Documentation {
   let Category = DocCatStmt;
   let Heading = "pipe (read_only, write_only)";
@@ -2016,6 +2030,20 @@ def SYCLFPGAPipeDocs : Documentation {
 This attribute applies to a type to indicate that it is a pipe type.
 It requires a string argument that specifies if the pipe is read only or
 write only. Expected to be used only in SYCL headers.
+  }];
+}
+
+def SYCLIntelPipeIOAttrDocs : Documentation {
+  let Category = DocCatVariable;
+  let Heading = "IO pipe ID";
+  let Content = [{
+Add I/O attribute to SYCL pipe declaration to declare a special I/O pipe to
+interface with input or output features of an FPGA. These features might include
+network interfaces, PCIe, cameras, or other data capture or processing devices
+or protocols.
+
+The io_pipe_id(id) attribute specifies the I/O feature of an accelerator board
+with which a pipe interfaces. The id argument is the name of the I/O interface.
   }];
 }
 
@@ -3310,7 +3338,8 @@ must be compiled and executed with a sub-group of size n. The value of n must be
 set to a sub-group size supported by the device, or device compilation will fail.
 
 In addition to device functions, the required sub-group size attribute may also
-be specified in the definition of a named functor object, as in the example below:
+be specified in the definition of a named functor object and lambda functions,
+as in the examples below:
 
 .. code-block:: c++
 
@@ -3321,6 +3350,11 @@ be specified in the definition of a named functor object, as in the example belo
           /* kernel code */
       }
   }
+
+  kernel<class kernel_name>(
+  []() [[cl::intel_reqd_sub_group_size(n)]] {
+       /* kernel code */
+  });
 
 See Sub-groups for NDRange Parallelism proposal in sycl/doc/extensions/sub_group_ndrange/sub_group_ndrange.md
   }];
@@ -4299,6 +4333,16 @@ If a function has neither of these attributes, they become subject to the XRay h
   }];
 }
 
+def PatchableFunctionEntryDocs : Documentation {
+  let Category = DocCatFunction;
+  let Content = [{
+``__attribute__((patchable_function_entry(N,M)))`` is used to generate M NOPs
+before the function entry and N-M NOPs after the function entry. This attribute
+takes precedence over the command line option ``-fpatchable-function-entry=N,M``.
+``M`` defaults to 0 if omitted.
+}];
+}
+
 def TransparentUnionDocs : Documentation {
   let Category = DocCatDecl;
   let Content = [{
@@ -4416,7 +4460,7 @@ documentation for more information.
 def ObjCDirectMembersDocs : Documentation {
   let Category = DocCatDecl;
   let Content = [{
-The ``objc_direct_members`` attribute can be placed on an  Objective-C
+The ``objc_direct_members`` attribute can be placed on an Objective-C
 ``@interface`` or ``@implementation`` to mark that methods declared
 therein should be considered direct by default.  See the documentation
 for ``objc_direct`` for more information about direct methods.
@@ -4425,9 +4469,7 @@ When ``objc_direct_members`` is placed on an ``@interface`` block, every
 method in the block is considered to be declared as direct.  This includes any
 implicit method declarations introduced by property declarations.  If the method
 redeclares a non-direct method, the declaration is ill-formed, exactly as if the
-method was annotated with the ``objc_direct`` attribute.  ``objc_direct_members``
-cannot be placed on the primary interface of a class, only on category or class
-extension interfaces.
+method was annotated with the ``objc_direct`` attribute.
 
 When ``objc_direct_members`` is placed on an ``@implementation`` block,
 methods defined in the block are considered to be declared as direct unless
@@ -4869,6 +4911,26 @@ This attribute does not affect optimizations in any way, unlike GCC's
 }];
 }
 
+def CFGuardDocs : Documentation {
+  let Category = DocCatFunction;
+  let Content = [{
+Code can indicate CFG checks are not wanted with the ``__declspec(guard(nocf))``
+attribute. This directs the compiler to not insert any CFG checks for the entire
+function. This approach is typically used only sparingly in specific situations 
+where the programmer has manually inserted "CFG-equivalent" protection. The 
+programmer knows that they are calling through some read-only function table 
+whose address is obtained through read-only memory references and for which the 
+index is masked to the function table limit. This approach may also be applied 
+to small wrapper functions that are not inlined and that do nothing more than 
+make a call through a function pointer. Since incorrect usage of this directive 
+can compromise the security of CFG, the programmer must be very careful using 
+the directive. Typically, this usage is limited to very small functions that 
+only call one function.
+
+`Control Flow Guard documentation <https://docs.microsoft.com/en-us/windows/win32/secbp/pe-metadata>`
+}];
+}
+
 def HIPPinnedShadowDocs : Documentation {
   let Category = DocCatType;
   let Content = [{
@@ -5067,4 +5129,46 @@ close the handle. It is also assumed to require an open handle to work with.
 
   zx_status_t zx_handle_close(zx_handle_t handle [[clang::release_handle]]);
   }];
+}
+
+def ArmMveStrictPolymorphismDocs : Documentation {
+    let Category = DocCatType;
+    let Content = [{
+This attribute is used in the implementation of the ACLE intrinsics for the Arm
+MVE instruction set. It is used to define the vector types used by the MVE
+intrinsics.
+
+Its effect is to modify the behavior of a vector type with respect to function
+overloading. If a candidate function for overload resolution has a parameter
+type with this attribute, then the selection of that candidate function will be
+disallowed if the actual argument can only be converted via a lax vector
+conversion. The aim is to prevent spurious ambiguity in ARM MVE polymorphic
+intrinsics.
+
+.. code-block:: c++
+
+  void overloaded(uint16x8_t vector, uint16_t scalar);
+  void overloaded(int32x4_t vector, int32_t scalar);
+  uint16x8_t myVector;
+  uint16_t myScalar;
+
+  // myScalar is promoted to int32_t as a side effect of the addition,
+  // so if lax vector conversions are considered for myVector, then
+  // the two overloads are equally good (one argument conversion
+  // each). But if the vector has the __clang_arm_mve_strict_polymorphism
+  // attribute, only the uint16x8_t,uint16_t overload will match.
+  overloaded(myVector, myScalar + 1);
+
+However, this attribute does not prohibit lax vector conversions in contexts
+other than overloading.
+
+.. code-block:: c++
+
+  uint16x8_t function();
+
+  // This is still permitted with lax vector conversion enabled, even
+  // if the vector types have __clang_arm_mve_strict_polymorphism
+  int32x4_t result = function();
+
+    }];
 }

@@ -33,7 +33,6 @@ class MCInstrInfo;
 class MCRegisterInfo;
 class MCSubtargetInfo;
 class MCSymbol;
-class MIRFormatter;
 class raw_pwrite_stream;
 class PassManagerBuilder;
 struct PerFunctionMIParsingState;
@@ -95,7 +94,6 @@ protected: // Can only create subclasses.
   std::unique_ptr<const MCRegisterInfo> MRI;
   std::unique_ptr<const MCInstrInfo> MII;
   std::unique_ptr<const MCSubtargetInfo> STI;
-  std::unique_ptr<const MIRFormatter> MIRF;
 
   unsigned RequireStructuredCFG : 1;
   unsigned O0WantsFastISel : 1;
@@ -198,10 +196,6 @@ public:
   virtual const TargetIntrinsicInfo *getIntrinsicInfo() const {
     return nullptr;
   }
-
-  /// Return MIR formatter to format/parse MIR operands.  Target can override
-  /// this virtual function and return target specific MIR formatter.
-  virtual const MIRFormatter *getMIRFormatter() const { return MIRF.get(); }
 
   bool requiresStructuredCFG() const { return RequireStructuredCFG; }
   void setRequiresStructuredCFG(bool Value) { RequireStructuredCFG = Value; }
@@ -367,11 +361,13 @@ public:
                      raw_pwrite_stream *DwoOut, CodeGenFileType FileType,
                      MCContext &Context);
 
-  /// True if the target uses physical regs at Prolog/Epilog insertion
-  /// time. If true (most machines), all vregs must be allocated before
-  /// PEI. If false (virtual-register machines), then callee-save register
-  /// spilling and scavenging are not needed or used.
-  virtual bool usesPhysRegsForPEI() const { return true; }
+  /// True if the target uses physical regs (as nearly all targets do). False
+  /// for stack machines such as WebAssembly and other virtual-register
+  /// machines. If true, all vregs must be allocated before PEI. If false, then
+  /// callee-save register spilling and scavenging are not needed or used. If
+  /// false, implicitly defined registers will still be assumed to be physical
+  /// registers, except that variadic defs will be allocated vregs.
+  virtual bool usesPhysRegsForValues() const { return true; }
 
   /// True if the target wants to use interprocedural register allocation by
   /// default. The -enable-ipra flag can be used to override this.

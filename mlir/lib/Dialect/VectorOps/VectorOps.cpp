@@ -1,6 +1,6 @@
 //===- VectorOps.cpp - MLIR Super Vectorizer Operations -------------------===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -12,8 +12,9 @@
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/VectorOps/VectorOps.h"
-#include "mlir/Dialect/StandardOps/Ops.h"
+#include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/Dialect/Utils/StructuredOpsUtils.h"
+#include "mlir/Dialect/VectorOps/VectorUtils.h"
 #include "mlir/IR/AffineExpr.h"
 #include "mlir/IR/AffineMap.h"
 #include "mlir/IR/Builders.h"
@@ -25,6 +26,7 @@
 #include "mlir/Support/MathExtras.h"
 #include "mlir/Support/STLExtras.h"
 #include "llvm/ADT/StringSet.h"
+#include <numeric>
 
 using namespace mlir;
 using namespace mlir::vector;
@@ -59,15 +61,55 @@ ArrayAttr vector::getVectorSubscriptAttr(Builder &builder,
 }
 
 //===----------------------------------------------------------------------===//
+// ReductionOp
+//===----------------------------------------------------------------------===//
+
+static LogicalResult verify(ReductionOp op) {
+  // Verify for 1-D vector.
+  int64_t rank = op.getVectorType().getRank();
+  if (rank != 1)
+    return op.emitOpError("unsupported reduction rank: ") << rank;
+
+  // Verify supported reduction kind.
+  auto kind = op.kind();
+  Type eltType = op.dest().getType();
+  if (kind == "add" || kind == "mul" || kind == "min" || kind == "max") {
+    if (eltType.isF32() || eltType.isF64() || eltType.isSignlessInteger(32) ||
+        eltType.isSignlessInteger(64))
+      return success();
+    return op.emitOpError("unsupported reduction type");
+  }
+  if (kind == "and" || kind == "or" || kind == "xor") {
+    if (eltType.isSignlessInteger(32) || eltType.isSignlessInteger(64))
+      return success();
+    return op.emitOpError("unsupported reduction type");
+  }
+  return op.emitOpError("unknown reduction kind: ") << kind;
+}
+
+//===----------------------------------------------------------------------===//
 // ContractionOp
 //===----------------------------------------------------------------------===//
+
+void vector::ContractionOp::build(Builder *builder, OperationState &result,
+                                  Value lhs, Value rhs, Value acc,
+                                  ArrayRef<ArrayRef<AffineExpr>> indexingExprs,
+                                  ArrayRef<StringRef> iteratorTypes) {
+  result.addOperands({lhs, rhs, acc});
+  result.addTypes(acc.getType());
+  result.addAttribute(getIndexingMapsAttrName(),
+                      builder->getAffineMapArrayAttr(
+                          AffineMap::inferFromExprList(indexingExprs)));
+  result.addAttribute(getIteratorTypesAttrName(),
+                      builder->getStrArrayAttr(iteratorTypes));
+}
 
 void vector::ContractionOp::build(Builder *builder, OperationState &result,
                                   Value lhs, Value rhs, Value acc,
                                   ArrayAttr indexingMaps,
                                   ArrayAttr iteratorTypes) {
   result.addOperands({lhs, rhs, acc});
-  result.addTypes(acc->getType());
+  result.addTypes(acc.getType());
   result.addAttribute(getIndexingMapsAttrName(), indexingMaps);
   result.addAttribute(getIteratorTypesAttrName(), iteratorTypes);
 }
@@ -79,7 +121,7 @@ static ParseResult parseContractionOp(OpAsmParser &parser,
   OpAsmParser::OperandType accInfo;
   SmallVector<OpAsmParser::OperandType, 2> masksInfo;
   SmallVector<Type, 2> types;
-  Type resultVectorType;
+  Type resultType;
   auto loc = parser.getCurrentLocation();
   DictionaryAttr dictAttr;
   // TODO(andydavis, ntv) Unify linalg op attribute parsing.
@@ -90,11 +132,11 @@ static ParseResult parseContractionOp(OpAsmParser &parser,
       parser.parseTrailingOperandList(masksInfo) ||
       parser.parseOptionalAttrDict(result.attributes) ||
       parser.parseColonTypeList(types) ||
-      parser.parseKeywordType("into", resultVectorType) ||
+      parser.parseKeywordType("into", resultType) ||
       parser.resolveOperand(lhsInfo, types[0], result.operands) ||
       parser.resolveOperand(rhsInfo, types[1], result.operands) ||
-      parser.resolveOperand(accInfo, resultVectorType, result.operands) ||
-      parser.addTypeToList(resultVectorType, result.types))
+      parser.resolveOperand(accInfo, resultType, result.operands) ||
+      parser.addTypeToList(resultType, result.types))
     return failure();
   result.attributes.assign(dictAttr.getValue().begin(),
                            dictAttr.getValue().end());
@@ -125,13 +167,13 @@ static void print(OpAsmPrinter &p, ContractionOp op) {
       attrs.push_back(attr);
 
   auto dictAttr = DictionaryAttr::get(attrs, op.getContext());
-  p << op.getOperationName() << " " << dictAttr << " " << *op.lhs() << ", ";
-  p << *op.rhs() << ", " << *op.acc();
+  p << op.getOperationName() << " " << dictAttr << " " << op.lhs() << ", ";
+  p << op.rhs() << ", " << op.acc();
   if (op.masks().size() == 2)
     p << ", " << op.masks();
 
   p.printOptionalAttrDict(op.getAttrs(), attrNames);
-  p << " : " << op.lhs()->getType() << ", " << op.rhs()->getType() << " into "
+  p << " : " << op.lhs().getType() << ", " << op.rhs().getType() << " into "
     << op.getResultType();
 }
 
@@ -147,8 +189,7 @@ static bool verifyDimMap(VectorType lhsType, VectorType rhsType,
 }
 
 static bool verifyOutputShape(
-    VectorType lhsType, VectorType rhsType, VectorType accType,
-    VectorType resType,
+    VectorType lhsType, VectorType rhsType, Type accType, Type resType,
     const std::vector<std::pair<int64_t, int64_t>> &contractingDimMap,
     const std::vector<std::pair<int64_t, int64_t>> &batchDimMap) {
   DenseSet<int64_t> lhsContractingDimSet;
@@ -176,14 +217,28 @@ static bool verifyOutputShape(
     expectedResultDims.push_back(rhsType.getDimSize(i));
   }
 
-  // Verify dimension from 'resType' against 'expectedResultDims'.
-  if (resType.getShape().size() != expectedResultDims.size() ||
-      accType.getShape().size() != expectedResultDims.size())
-    return false;
-  for (int64_t i = 0, e = resType.getRank(); i < e; ++i) {
-    if (resType.getDimSize(i) != expectedResultDims[i] ||
-        accType.getDimSize(i) != expectedResultDims[i])
+  // Verify 'expectedResultDims'.
+  if (expectedResultDims.size() == 0) {
+    // No batch or free dimension implies a scalar result.
+    if (resType.isa<VectorType>() || accType.isa<VectorType>())
       return false;
+
+  } else {
+    // At least one batch or free dimension implies a vector result.
+    auto resVectorType = resType.dyn_cast<VectorType>();
+    auto accVectorType = accType.dyn_cast<VectorType>();
+    if (!resVectorType || !accVectorType)
+      return false;
+
+    // Verify dimension from 'resType' against 'expectedResultDims'.
+    if (resVectorType.getShape().size() != expectedResultDims.size() ||
+        accVectorType.getShape().size() != expectedResultDims.size())
+      return false;
+    for (int64_t i = 0, e = resVectorType.getRank(); i < e; ++i) {
+      if (resVectorType.getDimSize(i) != expectedResultDims[i] ||
+          accVectorType.getDimSize(i) != expectedResultDims[i])
+        return false;
+    }
   }
   return true;
 }
@@ -208,11 +263,18 @@ static LogicalResult verify(ContractionOp op) {
     if (map.getNumSymbols() != 0)
       return op.emitOpError("expected indexing map ")
              << index << " to have no symbols";
+    auto vectorType = op.getOperand(index).getType().dyn_cast<VectorType>();
+    unsigned rank = vectorType ? vectorType.getShape().size() : 0;
+    // Since (...) -> () is parsed into an empty map, we need to add
+    // a special case for this situation: continue the verification
+    // of an empty map if the resulting rank is indeed zero, i.e. this
+    // is a reduction into a scalar.
+    if (map.getNumDims() == 0 && map.getNumResults() == 0 && rank == 0)
+      continue;
+    // Verify that the map has the right number of inputs, outputs, and indices.
     if (map.getNumDims() != numIterators)
       return op.emitOpError("expected indexing map ")
              << index << " to have " << numIterators << " number of inputs";
-    auto operandType = op.getOperand(index)->getType().cast<VectorType>();
-    unsigned rank = operandType.getShape().size();
     if (map.getNumResults() != rank)
       return op.emitOpError("expected indexing map ")
              << index << " to have " << rank << " number of outputs";
@@ -256,10 +318,9 @@ static LogicalResult verify(ContractionOp op) {
 }
 
 ArrayRef<StringRef> ContractionOp::getTraitAttrNames() {
-  static constexpr StringLiteral names[2] = {getIndexingMapsAttrName(),
-                                             getIteratorTypesAttrName()};
-  ArrayRef<StringLiteral> res{names};
-  return ArrayRef<StringRef>{res.begin(), res.end()};
+  static constexpr StringRef names[2] = {getIndexingMapsAttrName(),
+                                         getIteratorTypesAttrName()};
+  return llvm::makeArrayRef(names);
 }
 
 static int64_t getResultIndex(AffineMap map, AffineExpr targetExpr) {
@@ -290,7 +351,7 @@ getDimMap(ArrayRef<AffineMap> indexingMaps, ArrayAttr iteratorTypes,
 void ContractionOp::getIterationBounds(
     SmallVectorImpl<int64_t> &iterationBounds) {
   auto lhsShape = getLhsType().getShape();
-  auto resShape = getResultType().getShape();
+  auto resVectorType = getResultType().dyn_cast<VectorType>();
   SmallVector<AffineMap, 4> indexingMaps(getIndexingMaps());
   SmallVector<int64_t, 2> iterationShape;
   for (auto it : llvm::enumerate(iterator_types())) {
@@ -307,7 +368,8 @@ void ContractionOp::getIterationBounds(
     // Get parallel dimension size from result shape.
     int64_t resDimIndex = getResultIndex(indexingMaps[2], targetExpr);
     assert(resDimIndex >= 0);
-    iterationBounds.push_back(resShape[resDimIndex]);
+    assert(resVectorType != nullptr);
+    iterationBounds.push_back(resVectorType.getShape()[resDimIndex]);
   }
 }
 
@@ -350,31 +412,6 @@ SmallVector<AffineMap, 4> ContractionOp::getIndexingMaps() {
 // ExtractElementOp
 //===----------------------------------------------------------------------===//
 
-static void print(OpAsmPrinter &p, vector::ExtractElementOp op) {
-  p << op.getOperationName() << " " << *op.vector() << "[" << *op.position()
-    << " : " << op.position()->getType() << "]";
-  p.printOptionalAttrDict(op.getAttrs());
-  p << " : " << op.vector()->getType();
-}
-
-static ParseResult parseExtractElementOp(OpAsmParser &parser,
-                                         OperationState &result) {
-  OpAsmParser::OperandType vector, position;
-  Type positionType;
-  VectorType vectorType;
-  if (parser.parseOperand(vector) || parser.parseLSquare() ||
-      parser.parseOperand(position) || parser.parseColonType(positionType) ||
-      parser.parseRSquare() ||
-      parser.parseOptionalAttrDict(result.attributes) ||
-      parser.parseColonType(vectorType))
-    return failure();
-  Type resultType = vectorType.getElementType();
-  return failure(
-      parser.resolveOperand(vector, vectorType, result.operands) ||
-      parser.resolveOperand(position, positionType, result.operands) ||
-      parser.addTypeToList(resultType, result.types));
-}
-
 static LogicalResult verify(vector::ExtractElementOp op) {
   VectorType vectorType = op.getVectorType();
   if (vectorType.getRank() != 1)
@@ -398,15 +435,15 @@ void vector::ExtractOp::build(Builder *builder, OperationState &result,
                               Value source, ArrayRef<int64_t> position) {
   result.addOperands(source);
   auto positionAttr = getVectorSubscriptAttr(*builder, position);
-  result.addTypes(inferExtractOpResultType(source->getType().cast<VectorType>(),
+  result.addTypes(inferExtractOpResultType(source.getType().cast<VectorType>(),
                                            positionAttr));
   result.addAttribute(getPositionAttrName(), positionAttr);
 }
 
 static void print(OpAsmPrinter &p, vector::ExtractOp op) {
-  p << op.getOperationName() << " " << *op.vector() << op.position();
+  p << op.getOperationName() << " " << op.vector() << op.position();
   p.printOptionalAttrDict(op.getAttrs(), {"position"});
-  p << " : " << op.vector()->getType();
+  p << " : " << op.vector().getType();
 }
 
 static ParseResult parseExtractOp(OpAsmParser &parser, OperationState &result) {
@@ -473,38 +510,6 @@ void ExtractSlicesOp::build(Builder *builder, OperationState &result,
   result.addAttribute(getStridesAttrName(), stridesAttr);
 }
 
-static ParseResult parseExtractSlicesOp(OpAsmParser &parser,
-                                        OperationState &result) {
-  OpAsmParser::OperandType operandInfo;
-  ArrayAttr sizesAttr;
-  StringRef sizesAttrName = ExtractSlicesOp::getSizesAttrName();
-  ArrayAttr stridesAttr;
-  StringRef stridesAttrName = ExtractSlicesOp::getStridesAttrName();
-  VectorType vectorType;
-  TupleType resultTupleType;
-  return failure(
-      parser.parseOperand(operandInfo) || parser.parseComma() ||
-      parser.parseAttribute(sizesAttr, sizesAttrName, result.attributes) ||
-      parser.parseComma() ||
-      parser.parseAttribute(stridesAttr, stridesAttrName, result.attributes) ||
-      parser.parseOptionalAttrDict(result.attributes) ||
-      parser.parseColonType(vectorType) ||
-      parser.parseKeywordType("into", resultTupleType) ||
-      parser.resolveOperand(operandInfo, vectorType, result.operands) ||
-      parser.addTypeToList(resultTupleType, result.types));
-}
-
-static void print(OpAsmPrinter &p, ExtractSlicesOp op) {
-  p << op.getOperationName() << ' ' << *op.vector() << ", ";
-  p << op.sizes() << ", " << op.strides();
-  p.printOptionalAttrDict(
-      op.getAttrs(),
-      /*elidedAttrs=*/{ExtractSlicesOp::getSizesAttrName(),
-                       ExtractSlicesOp::getStridesAttrName()});
-  p << " : " << op.vector()->getType();
-  p << " into " << op.getResultTupleType();
-}
-
 static LogicalResult
 isValidExtractOrInsertSlicesType(Operation *op, VectorType vectorType,
                                  TupleType tupleType, ArrayRef<int64_t> sizes,
@@ -524,37 +529,15 @@ isValidExtractOrInsertSlicesType(Operation *op, VectorType vectorType,
   if (sizes.size() != rank || strides.size() != rank)
     return op->emitError("requires sizes and strides of rank ") << rank;
 
-  // Compute the number of slices in each dimension.
-  // TODO(andydavis) Move this into a slice generation helper function.
-  auto shape = vectorType.getShape();
-  SmallVector<int64_t, 4> dimSliceCounts(rank);
-  for (unsigned i = 0; i < rank; ++i)
-    dimSliceCounts[i] = ceilDiv(shape[i], sizes[i]);
-  // Compute the strides between slices in each dimension.
-  SmallVector<int64_t, 4> sliceStrides(rank);
-  sliceStrides[rank - 1] = 1;
-  for (int i = rank - 2; i >= 0; --i)
-    sliceStrides[i] = sliceStrides[i + 1] * dimSliceCounts[i + 1];
-
   // Generate each slice shape based on 'sizes', 'strides' and 'vectorType',
-  // and varify that the same matches the corresponding tuple element 'i'.
+  // and verify that the same matches the corresponding tuple element 'i'.
+  auto shape = vectorType.getShape();
+  auto sliceStrides = computeStrides(shape, sizes);
   for (int64_t i = 0, e = tupleType.size(); i < e; ++i) {
-    // De-linearize w.r.t. 'sliceStrides'.
-    SmallVector<int64_t, 4> vectorOffsets(rank);
-    int64_t linearIndex = i;
-    for (unsigned j = 0; j < rank; ++j) {
-      vectorOffsets[j] = linearIndex / sliceStrides[j];
-      linearIndex %= sliceStrides[j];
-    }
-    // Convert from unrolled vector-space offsets to element-space offsets.
-    auto offsets = mlir::functional::zipMap(
-        [](int64_t v1, int64_t v2) { return v1 * v2; }, vectorOffsets, sizes);
-    // Initialize 'sliceSizes' to target 'sizes'
-    SmallVector<int64_t, 4> sliceSizes(sizes.begin(), sizes.end());
-    for (unsigned j = 0; j < rank; ++j) {
-      // Based on 'offsets' and 'shape' clip some dim sizes for partial tiles.
-      sliceSizes[j] = std::min(sliceSizes[j], shape[j] - offsets[j]);
-    }
+    auto vectorOffsets = delinearize(sliceStrides, i);
+    auto elementOffsets =
+        computeElementOffsetsFromVectorSliceOffsets(sizes, vectorOffsets);
+    auto sliceSizes = computeSliceSizes(shape, sizes, elementOffsets);
     // Create slice VectorType type.
     auto sliceVectorType =
         VectorType::get(sliceSizes, vectorType.getElementType());
@@ -593,11 +576,6 @@ void ExtractSlicesOp::getStrides(SmallVectorImpl<int64_t> &results) {
 // BroadcastOp
 //===----------------------------------------------------------------------===//
 
-static void print(OpAsmPrinter &p, BroadcastOp op) {
-  p << op.getOperationName() << " " << *op.source() << " : "
-    << op.getSourceType() << " to " << op.getVectorType();
-}
-
 static LogicalResult verify(BroadcastOp op) {
   VectorType srcVectorType = op.getSourceType().dyn_cast<VectorType>();
   VectorType dstVectorType = op.getVectorType();
@@ -622,18 +600,6 @@ static LogicalResult verify(BroadcastOp op) {
   return success();
 }
 
-static ParseResult parseBroadcastOp(OpAsmParser &parser,
-                                    OperationState &result) {
-  OpAsmParser::OperandType source;
-  Type sourceType;
-  VectorType vectorType;
-  return failure(parser.parseOperand(source) ||
-                 parser.parseColonType(sourceType) ||
-                 parser.parseKeywordType("to", vectorType) ||
-                 parser.resolveOperand(source, sourceType, result.operands) ||
-                 parser.addTypeToList(vectorType, result.types));
-}
-
 //===----------------------------------------------------------------------===//
 // ShuffleOp
 //===----------------------------------------------------------------------===//
@@ -642,15 +608,15 @@ void ShuffleOp::build(Builder *builder, OperationState &result, Value v1,
                       Value v2, ArrayRef<int64_t> mask) {
   result.addOperands({v1, v2});
   auto maskAttr = getVectorSubscriptAttr(*builder, mask);
-  result.addTypes(v1->getType());
+  result.addTypes(v1.getType());
   result.addAttribute(getMaskAttrName(), maskAttr);
 }
 
 static void print(OpAsmPrinter &p, ShuffleOp op) {
-  p << op.getOperationName() << " " << *op.v1() << ", " << *op.v2() << " "
+  p << op.getOperationName() << " " << op.v1() << ", " << op.v2() << " "
     << op.mask();
   p.printOptionalAttrDict(op.getAttrs(), {ShuffleOp::getMaskAttrName()});
-  p << " : " << op.v1()->getType() << ", " << op.v2()->getType();
+  p << " : " << op.v1().getType() << ", " << op.v2().getType();
 }
 
 static LogicalResult verify(ShuffleOp op) {
@@ -724,33 +690,6 @@ static ParseResult parseShuffleOp(OpAsmParser &parser, OperationState &result) {
 // InsertElementOp
 //===----------------------------------------------------------------------===//
 
-static void print(OpAsmPrinter &p, InsertElementOp op) {
-  p << op.getOperationName() << " " << *op.source() << ", " << *op.dest() << "["
-    << *op.position() << " : " << op.position()->getType() << "]";
-  p.printOptionalAttrDict(op.getAttrs());
-  p << " : " << op.dest()->getType();
-}
-
-static ParseResult parseInsertElementOp(OpAsmParser &parser,
-                                        OperationState &result) {
-  OpAsmParser::OperandType source, dest, position;
-  Type positionType;
-  VectorType destType;
-  if (parser.parseOperand(source) || parser.parseComma() ||
-      parser.parseOperand(dest) || parser.parseLSquare() ||
-      parser.parseOperand(position) || parser.parseColonType(positionType) ||
-      parser.parseRSquare() ||
-      parser.parseOptionalAttrDict(result.attributes) ||
-      parser.parseColonType(destType))
-    return failure();
-  Type sourceType = destType.getElementType();
-  return failure(
-      parser.resolveOperand(source, sourceType, result.operands) ||
-      parser.resolveOperand(dest, destType, result.operands) ||
-      parser.resolveOperand(position, positionType, result.operands) ||
-      parser.addTypeToList(destType, result.types));
-}
-
 static LogicalResult verify(InsertElementOp op) {
   auto dstVectorType = op.getDestVectorType();
   if (dstVectorType.getRank() != 1)
@@ -766,33 +705,8 @@ void InsertOp::build(Builder *builder, OperationState &result, Value source,
                      Value dest, ArrayRef<int64_t> position) {
   result.addOperands({source, dest});
   auto positionAttr = getVectorSubscriptAttr(*builder, position);
-  result.addTypes(dest->getType());
+  result.addTypes(dest.getType());
   result.addAttribute(getPositionAttrName(), positionAttr);
-}
-
-static void print(OpAsmPrinter &p, InsertOp op) {
-  p << op.getOperationName() << " " << *op.source() << ", " << *op.dest()
-    << op.position();
-  p.printOptionalAttrDict(op.getAttrs(), {InsertOp::getPositionAttrName()});
-  p << " : " << op.getSourceType() << " into " << op.getDestVectorType();
-}
-
-static ParseResult parseInsertOp(OpAsmParser &parser, OperationState &result) {
-  SmallVector<NamedAttribute, 4> attrs;
-  OpAsmParser::OperandType source, dest;
-  Type sourceType;
-  VectorType destType;
-  Attribute attr;
-  return failure(parser.parseOperand(source) || parser.parseComma() ||
-                 parser.parseOperand(dest) ||
-                 parser.parseAttribute(attr, InsertOp::getPositionAttrName(),
-                                       result.attributes) ||
-                 parser.parseOptionalAttrDict(attrs) ||
-                 parser.parseColonType(sourceType) ||
-                 parser.parseKeywordType("into", destType) ||
-                 parser.resolveOperand(source, sourceType, result.operands) ||
-                 parser.resolveOperand(dest, destType, result.operands) ||
-                 parser.addTypeToList(destType, result.types));
 }
 
 static LogicalResult verify(InsertOp op) {
@@ -829,38 +743,6 @@ static LogicalResult verify(InsertOp op) {
 // InsertSlicesOp
 //===----------------------------------------------------------------------===//
 
-static ParseResult parseInsertSlicesOp(OpAsmParser &parser,
-                                       OperationState &result) {
-  OpAsmParser::OperandType operandInfo;
-  ArrayAttr sizesAttr;
-  StringRef sizesAttrName = InsertSlicesOp::getSizesAttrName();
-  ArrayAttr stridesAttr;
-  StringRef stridesAttrName = InsertSlicesOp::getStridesAttrName();
-  TupleType tupleType;
-  VectorType resultVectorType;
-  return failure(
-      parser.parseOperand(operandInfo) || parser.parseComma() ||
-      parser.parseAttribute(sizesAttr, sizesAttrName, result.attributes) ||
-      parser.parseComma() ||
-      parser.parseAttribute(stridesAttr, stridesAttrName, result.attributes) ||
-      parser.parseOptionalAttrDict(result.attributes) ||
-      parser.parseColonType(tupleType) ||
-      parser.parseKeywordType("into", resultVectorType) ||
-      parser.resolveOperand(operandInfo, tupleType, result.operands) ||
-      parser.addTypeToList(resultVectorType, result.types));
-}
-
-static void print(OpAsmPrinter &p, InsertSlicesOp op) {
-  p << op.getOperationName() << ' ' << *op.vectors() << ", ";
-  p << op.sizes() << ", " << op.strides();
-  p.printOptionalAttrDict(
-      op.getAttrs(),
-      /*elidedAttrs=*/{InsertSlicesOp::getSizesAttrName(),
-                       InsertSlicesOp::getStridesAttrName()});
-  p << " : " << op.vectors()->getType();
-  p << " into " << op.getResultVectorType();
-}
-
 static LogicalResult verify(InsertSlicesOp op) {
   SmallVector<int64_t, 4> sizes;
   op.getSizes(sizes);
@@ -890,38 +772,17 @@ void InsertStridedSliceOp::build(Builder *builder, OperationState &result,
   result.addOperands({source, dest});
   auto offsetsAttr = getVectorSubscriptAttr(*builder, offsets);
   auto stridesAttr = getVectorSubscriptAttr(*builder, strides);
-  result.addTypes(dest->getType());
+  result.addTypes(dest.getType());
   result.addAttribute(getOffsetsAttrName(), offsetsAttr);
   result.addAttribute(getStridesAttrName(), stridesAttr);
 }
 
-static void print(OpAsmPrinter &p, InsertStridedSliceOp op) {
-  p << op.getOperationName() << " " << *op.source() << ", " << *op.dest()
-    << " ";
-  p.printOptionalAttrDict(op.getAttrs());
-  p << " : " << op.getSourceVectorType() << " into " << op.getDestVectorType();
-}
-
-static ParseResult parseInsertStridedSliceOp(OpAsmParser &parser,
-                                             OperationState &result) {
-  OpAsmParser::OperandType source, dest;
-  VectorType sourceVectorType, destVectorType;
-  return failure(
-      parser.parseOperand(source) || parser.parseComma() ||
-      parser.parseOperand(dest) ||
-      parser.parseOptionalAttrDict(result.attributes) ||
-      parser.parseColonType(sourceVectorType) ||
-      parser.parseKeywordType("into", destVectorType) ||
-      parser.resolveOperand(source, sourceVectorType, result.operands) ||
-      parser.resolveOperand(dest, destVectorType, result.operands) ||
-      parser.addTypeToList(destVectorType, result.types));
-}
-
 // TODO(ntv) Should be moved to Tablegen Confined attributes.
 template <typename OpType>
-LogicalResult isIntegerArrayAttrSmallerThanShape(OpType op, ArrayAttr arrayAttr,
-                                                 ArrayRef<int64_t> shape,
-                                                 StringRef attrName) {
+static LogicalResult isIntegerArrayAttrSmallerThanShape(OpType op,
+                                                        ArrayAttr arrayAttr,
+                                                        ArrayRef<int64_t> shape,
+                                                        StringRef attrName) {
   if (arrayAttr.size() > shape.size())
     return op.emitOpError("expected ")
            << attrName << " attribute of rank smaller than vector rank";
@@ -932,10 +793,10 @@ LogicalResult isIntegerArrayAttrSmallerThanShape(OpType op, ArrayAttr arrayAttr,
 // interval. If `halfOpen` is true then the admissible interval is [min, max).
 // Otherwise, the admissible interval is [min, max].
 template <typename OpType>
-LogicalResult isIntegerArrayAttrConfinedToRange(OpType op, ArrayAttr arrayAttr,
-                                                int64_t min, int64_t max,
-                                                StringRef attrName,
-                                                bool halfOpen = true) {
+static LogicalResult
+isIntegerArrayAttrConfinedToRange(OpType op, ArrayAttr arrayAttr, int64_t min,
+                                  int64_t max, StringRef attrName,
+                                  bool halfOpen = true) {
   for (auto attr : arrayAttr) {
     auto val = attr.cast<IntegerAttr>().getInt();
     auto upper = max;
@@ -952,7 +813,7 @@ LogicalResult isIntegerArrayAttrConfinedToRange(OpType op, ArrayAttr arrayAttr,
 // interval. If `halfOpen` is true then the admissible interval is [min, max).
 // Otherwise, the admissible interval is [min, max].
 template <typename OpType>
-LogicalResult
+static LogicalResult
 isIntegerArrayAttrConfinedToShape(OpType op, ArrayAttr arrayAttr,
                                   ArrayRef<int64_t> shape, StringRef attrName,
                                   bool halfOpen = true, int64_t min = 0) {
@@ -976,7 +837,7 @@ isIntegerArrayAttrConfinedToShape(OpType op, ArrayAttr arrayAttr,
 // interval. If `halfOpen` is true then the admissible interval is [min, max).
 // Otherwise, the admissible interval is [min, max].
 template <typename OpType>
-LogicalResult isSumOfIntegerArrayAttrConfinedToShape(
+static LogicalResult isSumOfIntegerArrayAttrConfinedToShape(
     OpType op, ArrayAttr arrayAttr1, ArrayAttr arrayAttr2,
     ArrayRef<int64_t> shape, StringRef attrName1, StringRef attrName2,
     bool halfOpen = true, int64_t min = 1) {
@@ -1049,10 +910,10 @@ static LogicalResult verify(InsertStridedSliceOp op) {
 //===----------------------------------------------------------------------===//
 
 static void print(OpAsmPrinter &p, OuterProductOp op) {
-  p << op.getOperationName() << " " << *op.lhs() << ", " << *op.rhs();
+  p << op.getOperationName() << " " << op.lhs() << ", " << op.rhs();
   if (!op.acc().empty())
     p << ", " << op.acc();
-  p << " : " << op.lhs()->getType() << ", " << op.rhs()->getType();
+  p << " : " << op.lhs().getType() << ", " << op.rhs().getType();
 }
 
 static ParseResult parseOuterProductOp(OpAsmParser &parser,
@@ -1103,9 +964,9 @@ static LogicalResult verify(OuterProductOp op) {
 //===----------------------------------------------------------------------===//
 
 static void print(OpAsmPrinter &p, ReshapeOp op) {
-  p << op.getOperationName() << " " << *op.vector() << ", [" << op.input_shape()
+  p << op.getOperationName() << " " << op.vector() << ", [" << op.input_shape()
     << "], [" << op.output_shape() << "], " << op.fixed_vector_sizes();
-  SmallVector<StringRef, 2> elidedAttrs = {
+  std::array<StringRef, 2> elidedAttrs = {
       ReshapeOp::getOperandSegmentSizeAttr(),
       ReshapeOp::getFixedVectorSizesAttrName()};
   p.printOptionalAttrDict(op.getAttrs(), elidedAttrs);
@@ -1193,18 +1054,18 @@ static LogicalResult verify(ReshapeOp op) {
   // If all shape operands are produced by constant ops, verify that product
   // of dimensions for input/output shape match.
   auto isDefByConstant = [](Value operand) {
-    return isa_and_nonnull<ConstantIndexOp>(operand->getDefiningOp());
+    return isa_and_nonnull<ConstantIndexOp>(operand.getDefiningOp());
   };
   if (llvm::all_of(op.input_shape(), isDefByConstant) &&
       llvm::all_of(op.output_shape(), isDefByConstant)) {
     int64_t numInputElements = 1;
     for (auto operand : op.input_shape())
       numInputElements *=
-          cast<ConstantIndexOp>(operand->getDefiningOp()).getValue();
+          cast<ConstantIndexOp>(operand.getDefiningOp()).getValue();
     int64_t numOutputElements = 1;
     for (auto operand : op.output_shape())
       numOutputElements *=
-          cast<ConstantIndexOp>(operand->getDefiningOp()).getValue();
+          cast<ConstantIndexOp>(operand.getDefiningOp()).getValue();
     if (numInputElements != numOutputElements)
       return op.emitError("product of input and output shape sizes must match");
   }
@@ -1230,7 +1091,7 @@ static Type inferStridedSliceOpResultType(VectorType vectorType,
   shape.reserve(vectorType.getRank());
   unsigned idx = 0;
   for (unsigned e = offsets.size(); idx < e; ++idx)
-    shape.push_back(sizes.getValue()[idx].cast<IntegerAttr>().getInt());
+    shape.push_back(sizes[idx].cast<IntegerAttr>().getInt());
   for (unsigned e = vectorType.getShape().size(); idx < e; ++idx)
     shape.push_back(vectorType.getShape()[idx]);
 
@@ -1245,32 +1106,11 @@ void StridedSliceOp::build(Builder *builder, OperationState &result,
   auto sizesAttr = getVectorSubscriptAttr(*builder, sizes);
   auto stridesAttr = getVectorSubscriptAttr(*builder, strides);
   result.addTypes(
-      inferStridedSliceOpResultType(source->getType().cast<VectorType>(),
+      inferStridedSliceOpResultType(source.getType().cast<VectorType>(),
                                     offsetsAttr, sizesAttr, stridesAttr));
   result.addAttribute(getOffsetsAttrName(), offsetsAttr);
   result.addAttribute(getSizesAttrName(), sizesAttr);
   result.addAttribute(getStridesAttrName(), stridesAttr);
-}
-
-static void print(OpAsmPrinter &p, StridedSliceOp op) {
-  p << op.getOperationName() << " " << *op.vector();
-  p.printOptionalAttrDict(op.getAttrs());
-  p << " : " << op.vector()->getType() << " to " << op.getResult()->getType();
-}
-
-static ParseResult parseStridedSliceOp(OpAsmParser &parser,
-                                       OperationState &result) {
-  llvm::SMLoc attributeLoc, typeLoc;
-  OpAsmParser::OperandType vector;
-  VectorType vectorType, resultVectorType;
-  return failure(parser.parseOperand(vector) ||
-                 parser.getCurrentLocation(&attributeLoc) ||
-                 parser.parseOptionalAttrDict(result.attributes) ||
-                 parser.getCurrentLocation(&typeLoc) ||
-                 parser.parseColonType(vectorType) ||
-                 parser.parseKeywordType("to", resultVectorType) ||
-                 parser.resolveOperand(vector, vectorType, result.operands) ||
-                 parser.addTypeToList(resultVectorType, result.types));
 }
 
 static LogicalResult verify(StridedSliceOp op) {
@@ -1305,7 +1145,7 @@ static LogicalResult verify(StridedSliceOp op) {
 
   auto resultType = inferStridedSliceOpResultType(
       op.getVectorType(), op.offsets(), op.sizes(), op.strides());
-  if (op.getResult()->getType() != resultType) {
+  if (op.getResult().getType() != resultType) {
     op.emitOpError("expected result type to be ") << resultType;
     return failure();
   }
@@ -1328,7 +1168,7 @@ public:
   PatternMatchResult matchAndRewrite(StridedSliceOp stridedSliceOp,
                                      PatternRewriter &rewriter) const override {
     // Return if 'stridedSliceOp' operand is not defined by a ConstantMaskOp.
-    auto defOp = stridedSliceOp.vector()->getDefiningOp();
+    auto defOp = stridedSliceOp.vector().getDefiningOp();
     auto constantMaskOp = dyn_cast_or_null<ConstantMaskOp>(defOp);
     if (!constantMaskOp)
       return matchFailure();
@@ -1365,7 +1205,7 @@ public:
 
     // Replace 'stridedSliceOp' with ConstantMaskOp with sliced mask region.
     rewriter.replaceOpWithNewOp<ConstantMaskOp>(
-        stridedSliceOp, stridedSliceOp.getResult()->getType(),
+        stridedSliceOp, stridedSliceOp.getResult().getType(),
         vector::getVectorSubscriptAttr(rewriter, sliceMaskDimSizes));
     return matchSuccess();
   }
@@ -1471,7 +1311,8 @@ static void print(OpAsmPrinter &p, TransferReadOp op) {
   p << " : " << op.getMemRefType() << ", " << op.getVectorType();
 }
 
-ParseResult parseTransferReadOp(OpAsmParser &parser, OperationState &result) {
+static ParseResult parseTransferReadOp(OpAsmParser &parser,
+                                       OperationState &result) {
   llvm::SMLoc typesLoc;
   OpAsmParser::OperandType memrefInfo;
   SmallVector<OpAsmParser::OperandType, 8> indexInfo;
@@ -1503,7 +1344,7 @@ static LogicalResult verify(TransferReadOp op) {
   // Consistency of elemental types in memref and vector.
   MemRefType memrefType = op.getMemRefType();
   VectorType vectorType = op.getVectorType();
-  auto paddingType = op.padding()->getType();
+  auto paddingType = op.padding().getType();
   auto permutationMap = op.permutation_map();
   auto memrefElementType = memrefType.getElementType();
 
@@ -1539,34 +1380,6 @@ static LogicalResult verify(TransferReadOp op) {
 //===----------------------------------------------------------------------===//
 // TransferWriteOp
 //===----------------------------------------------------------------------===//
-static void print(OpAsmPrinter &p, TransferWriteOp op) {
-  p << op.getOperationName() << " " << *op.vector() << ", " << *op.memref()
-    << "[" << op.indices() << "]";
-  p.printOptionalAttrDict(op.getAttrs());
-  p << " : " << op.getVectorType() << ", " << op.getMemRefType();
-}
-
-ParseResult parseTransferWriteOp(OpAsmParser &parser, OperationState &result) {
-  llvm::SMLoc typesLoc;
-  OpAsmParser::OperandType storeValueInfo;
-  OpAsmParser::OperandType memRefInfo;
-  SmallVector<OpAsmParser::OperandType, 4> indexInfo;
-  SmallVector<Type, 2> types;
-  if (parser.parseOperand(storeValueInfo) || parser.parseComma() ||
-      parser.parseOperand(memRefInfo) ||
-      parser.parseOperandList(indexInfo, OpAsmParser::Delimiter::Square) ||
-      parser.parseOptionalAttrDict(result.attributes) ||
-      parser.getCurrentLocation(&typesLoc) || parser.parseColonTypeList(types))
-    return failure();
-  if (types.size() != 2)
-    return parser.emitError(typesLoc, "two types required");
-  auto indexType = parser.getBuilder().getIndexType();
-  Type vectorType = types[0], memRefType = types[1];
-  return failure(
-      parser.resolveOperand(storeValueInfo, vectorType, result.operands) ||
-      parser.resolveOperand(memRefInfo, memRefType, result.operands) ||
-      parser.resolveOperands(indexInfo, indexType, result.operands));
-}
 
 static LogicalResult verify(TransferWriteOp op) {
   // Consistency of elemental types in memref and vector.
@@ -1586,6 +1399,90 @@ static LogicalResult verify(TransferWriteOp op) {
 }
 
 //===----------------------------------------------------------------------===//
+// ShapeCastOp
+//===----------------------------------------------------------------------===//
+
+/// Returns true if each element of 'a' is equal to the product of a contiguous
+/// sequence of the elements of 'b'. Returns false otherwise.
+static bool isValidShapeCast(ArrayRef<int64_t> a, ArrayRef<int64_t> b) {
+  unsigned rankA = a.size();
+  unsigned rankB = b.size();
+  assert(rankA < rankB);
+
+  unsigned i = 0;
+  unsigned j = 0;
+  while (i < rankA && j < rankB) {
+    int64_t dimA = a[i];
+    int64_t dimB = 1;
+    while (dimB < dimA && j < rankB)
+      dimB *= b[j++];
+    if (dimA != dimB)
+      break;
+    ++i;
+  }
+
+  return i == rankA && j == rankB;
+}
+
+static LogicalResult verifyVectorShapeCast(Operation *op,
+                                           VectorType sourceVectorType,
+                                           VectorType resultVectorType) {
+  // Check that element type is the same.
+  if (sourceVectorType.getElementType() != resultVectorType.getElementType())
+    return op->emitOpError("source/result vectors must have same element type");
+  auto sourceShape = sourceVectorType.getShape();
+  auto resultShape = resultVectorType.getShape();
+
+  // Check that product of source dim sizes matches product of result dim sizes.
+  int64_t sourceDimProduct = std::accumulate(
+      sourceShape.begin(), sourceShape.end(), 1LL, std::multiplies<int64_t>{});
+  int64_t resultDimProduct = std::accumulate(
+      resultShape.begin(), resultShape.end(), 1LL, std::multiplies<int64_t>{});
+  if (sourceDimProduct != resultDimProduct)
+    return op->emitOpError("source/result number of elements must match");
+
+  // Check that expanding/contracting rank cases.
+  unsigned sourceRank = sourceVectorType.getRank();
+  unsigned resultRank = resultVectorType.getRank();
+  if (sourceRank < resultRank) {
+    if (!isValidShapeCast(sourceShape, resultShape))
+      return op->emitOpError("invalid shape cast");
+  } else if (sourceRank > resultRank) {
+    if (!isValidShapeCast(resultShape, sourceShape))
+      return op->emitOpError("invalid shape cast");
+  }
+  return success();
+}
+
+static LogicalResult verify(ShapeCastOp op) {
+  auto sourceVectorType = op.source().getType().dyn_cast_or_null<VectorType>();
+  auto resultVectorType = op.result().getType().dyn_cast_or_null<VectorType>();
+
+  // Check if source/result are of vector type.
+  if (sourceVectorType && resultVectorType)
+    return verifyVectorShapeCast(op, sourceVectorType, resultVectorType);
+
+  // Check if source/result are "tuple of vectors" type.
+  auto sourceTupleType = op.source().getType().dyn_cast_or_null<TupleType>();
+  auto resultTupleType = op.result().getType().dyn_cast_or_null<TupleType>();
+  if (!sourceTupleType || !resultTupleType)
+    return op.emitOpError("source/result must be of same type");
+
+  // Check that source/result tuple sizes are the same.
+  if (sourceTupleType.size() != resultTupleType.size())
+    return op.emitOpError("source/result tuples must be the same size");
+
+  // Check each source/result tuple element pair.
+  for (unsigned i = 0, e = sourceTupleType.size(); i < e; ++i)
+    if (failed(verifyVectorShapeCast(
+            op, sourceTupleType.getType(i).cast<VectorType>(),
+            resultTupleType.getType(i).cast<VectorType>())))
+      return failure();
+
+  return success();
+}
+
+//===----------------------------------------------------------------------===//
 // TypeCastOp
 //===----------------------------------------------------------------------===//
 
@@ -1596,12 +1493,12 @@ static MemRefType inferVectorTypeCastResultType(MemRefType t) {
 void TypeCastOp::build(Builder *builder, OperationState &result, Value source) {
   result.addOperands(source);
   result.addTypes(
-      inferVectorTypeCastResultType(source->getType().cast<MemRefType>()));
+      inferVectorTypeCastResultType(source.getType().cast<MemRefType>()));
 }
 
 static void print(OpAsmPrinter &p, TypeCastOp op) {
-  auto type = op.getOperand()->getType().cast<MemRefType>();
-  p << op.getOperationName() << ' ' << *op.memref() << " : " << type << " to "
+  auto type = op.getOperand().getType().cast<MemRefType>();
+  p << op.getOperationName() << ' ' << op.memref() << " : " << type << " to "
     << inferVectorTypeCastResultType(type);
 }
 
@@ -1650,7 +1547,6 @@ static ParseResult parseTupleGetOp(OpAsmParser &parser,
   StringRef indexAttrName = TupleGetOp::getIndexAttrName();
   Type indexType = parser.getBuilder().getIndexType();
   TupleType tupleType;
-  VectorType resultVectorType;
   if (parser.parseOperand(operandInfo) || parser.parseComma() ||
       parser.parseAttribute(indexAttr, indexType, indexAttrName,
                             result.attributes) ||
@@ -1666,43 +1562,39 @@ static ParseResult parseTupleGetOp(OpAsmParser &parser,
 }
 
 static void print(OpAsmPrinter &p, TupleGetOp op) {
-  p << op.getOperationName() << ' ' << *op.getOperand() << ", " << op.index();
+  p << op.getOperationName() << ' ' << op.getOperand() << ", " << op.index();
   p.printOptionalAttrDict(op.getAttrs(),
                           /*elidedAttrs=*/{TupleGetOp::getIndexAttrName()});
-  p << " : " << op.getOperand()->getType();
+  p << " : " << op.getOperand().getType();
 }
 
 static LogicalResult verify(TupleGetOp op) {
-  auto tupleType = op.getOperand()->getType().cast<TupleType>();
+  auto tupleType = op.getOperand().getType().cast<TupleType>();
   if (op.getIndex() < 0 ||
       op.getIndex() >= static_cast<int64_t>(tupleType.size()))
     return op.emitOpError("tuple get index out of range");
   return success();
 }
 
+OpFoldResult TupleGetOp::fold(ArrayRef<Attribute> operands) {
+  // Rewrite:
+  //    %t = vector.tuple .., %e_i, ..
+  //    %x = vector.tuple_get %t, i
+  // into:
+  //    %t = vector.tuple .., %e_i, ..  // one less use
+  //    %x = %e_i
+  if (auto tupleOp = dyn_cast_or_null<TupleOp>(getOperand().getDefiningOp()))
+    return tupleOp.getOperand(getIndex());
+  return {};
+}
+
 //===----------------------------------------------------------------------===//
 // ConstantMaskOp
 //===----------------------------------------------------------------------===//
 
-ParseResult parseConstantMaskOp(OpAsmParser &parser, OperationState &result) {
-  Type resultType;
-  ArrayAttr maskDimSizesAttr;
-  StringRef attrName = ConstantMaskOp::getMaskDimSizesAttrName();
-  return failure(
-      parser.parseOptionalAttrDict(result.attributes) ||
-      parser.parseAttribute(maskDimSizesAttr, attrName, result.attributes) ||
-      parser.parseColonType(resultType) ||
-      parser.addTypeToList(resultType, result.types));
-}
-
-static void print(OpAsmPrinter &p, ConstantMaskOp op) {
-  p << op.getOperationName() << ' ' << op.mask_dim_sizes() << " : "
-    << op.getResult()->getType();
-}
-
 static LogicalResult verify(ConstantMaskOp &op) {
   // Verify that array attr size matches the rank of the vector result.
-  auto resultType = op.getResult()->getType().cast<VectorType>();
+  auto resultType = op.getResult().getType().cast<VectorType>();
   if (static_cast<int64_t>(op.mask_dim_sizes().size()) != resultType.getRank())
     return op.emitOpError(
         "must specify array attr of size equal vector result rank");
@@ -1731,46 +1623,13 @@ static LogicalResult verify(ConstantMaskOp &op) {
 // CreateMaskOp
 //===----------------------------------------------------------------------===//
 
-ParseResult parseCreateMaskOp(OpAsmParser &parser, OperationState &result) {
-  auto indexType = parser.getBuilder().getIndexType();
-  Type resultType;
-  SmallVector<OpAsmParser::OperandType, 4> operandInfo;
-  return failure(
-      parser.parseOperandList(operandInfo) ||
-      parser.parseOptionalAttrDict(result.attributes) ||
-      parser.parseColonType(resultType) ||
-      parser.resolveOperands(operandInfo, indexType, result.operands) ||
-      parser.addTypeToList(resultType, result.types));
-}
-
-static void print(OpAsmPrinter &p, CreateMaskOp op) {
-  p << op.getOperationName() << ' ' << op.operands() << " : " << op.getType();
-}
-
 static LogicalResult verify(CreateMaskOp op) {
   // Verify that an operand was specified for each result vector each dimension.
   if (op.getNumOperands() !=
-      op.getResult()->getType().cast<VectorType>().getRank())
+      op.getResult().getType().cast<VectorType>().getRank())
     return op.emitOpError(
         "must specify an operand for each result vector dimension");
   return success();
-}
-
-//===----------------------------------------------------------------------===//
-// PrintOp
-//===----------------------------------------------------------------------===//
-
-ParseResult parsePrintOp(OpAsmParser &parser, OperationState &result) {
-  OpAsmParser::OperandType source;
-  Type sourceType;
-  return failure(parser.parseOperand(source) ||
-                 parser.parseColonType(sourceType) ||
-                 parser.resolveOperand(source, sourceType, result.operands));
-}
-
-static void print(OpAsmPrinter &p, PrintOp op) {
-  p << op.getOperationName() << ' ' << *op.source() << " : "
-    << op.getPrintType();
 }
 
 namespace {
@@ -1784,19 +1643,19 @@ public:
                                      PatternRewriter &rewriter) const override {
     // Return if any of 'createMaskOp' operands are not defined by a constant.
     auto is_not_def_by_constant = [](Value operand) {
-      return !isa_and_nonnull<ConstantIndexOp>(operand->getDefiningOp());
+      return !isa_and_nonnull<ConstantIndexOp>(operand.getDefiningOp());
     };
     if (llvm::any_of(createMaskOp.operands(), is_not_def_by_constant))
       return matchFailure();
     // Gather constant mask dimension sizes.
     SmallVector<int64_t, 4> maskDimSizes;
     for (auto operand : createMaskOp.operands()) {
-      auto defOp = operand->getDefiningOp();
+      auto defOp = operand.getDefiningOp();
       maskDimSizes.push_back(cast<ConstantIndexOp>(defOp).getValue());
     }
     // Replace 'createMaskOp' with ConstantMaskOp.
     rewriter.replaceOpWithNewOp<ConstantMaskOp>(
-        createMaskOp, createMaskOp.getResult()->getType(),
+        createMaskOp, createMaskOp.getResult().getType(),
         vector::getVectorSubscriptAttr(rewriter, maskDimSizes));
     return matchSuccess();
   }

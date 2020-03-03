@@ -330,8 +330,8 @@ void ARMConstantIslands::verify() {
 #if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
 /// print block size and offset information - debugging
 LLVM_DUMP_METHOD void ARMConstantIslands::dumpBBs() {
-  BBInfoVector &BBInfo = BBUtils->getBBInfo();
   LLVM_DEBUG({
+    BBInfoVector &BBInfo = BBUtils->getBBInfo();
     for (unsigned J = 0, E = BBInfo.size(); J !=E; ++J) {
       const BasicBlockInfo &BBI = BBInfo[J];
       dbgs() << format("%08x %bb.%u\t", BBI.Offset, J)
@@ -1566,7 +1566,7 @@ void ARMConstantIslands::removeDeadCPEMI(MachineInstr *CPEMI) {
     BBInfo[CPEBB->getNumber()].Size = 0;
 
     // This block no longer needs to be aligned.
-    CPEBB->setAlignment(Align::None());
+    CPEBB->setAlignment(Align(1));
   } else {
     // Entries are sorted by descending alignment, so realign from the front.
     CPEBB->setAlignment(getCPEAlign(&*CPEBB->begin()));

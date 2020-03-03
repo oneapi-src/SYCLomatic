@@ -1424,6 +1424,8 @@ int X86TTIImpl::getCastInstrCost(unsigned Opcode, Type *Dst, Type *Src,
     { ISD::ZERO_EXTEND, MVT::v8i32,  MVT::v8i16,  1 },
     { ISD::SIGN_EXTEND, MVT::v4i64,  MVT::v4i32,  1 },
     { ISD::ZERO_EXTEND, MVT::v4i64,  MVT::v4i32,  1 },
+    { ISD::ZERO_EXTEND, MVT::v16i32, MVT::v16i16, 3 },
+    { ISD::SIGN_EXTEND, MVT::v16i32, MVT::v16i16, 3 },
 
     { ISD::TRUNCATE,    MVT::v4i8,   MVT::v4i64,  2 },
     { ISD::TRUNCATE,    MVT::v4i16,  MVT::v4i64,  2 },
@@ -2421,7 +2423,7 @@ int X86TTIImpl::getVectorInstrCost(unsigned Opcode, Type *Val, unsigned Index) {
     MVT MScalarTy = LT.second.getScalarType();
     if (ST->isSLM())
       if (auto *Entry = CostTableLookup(SLMCostTbl, ISD, MScalarTy))
-        return LT.first * Entry->Cost;
+        return Entry->Cost;
   }
 
   // Add to the base cost if we know that the extracted element of a vector is

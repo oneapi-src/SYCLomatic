@@ -443,29 +443,49 @@ bool llvm::RecursivelyDeleteTriviallyDeadInstructions(
   if (!I || !isInstructionTriviallyDead(I, TLI))
     return false;
 
-  SmallVector<Instruction*, 16> DeadInsts;
+  SmallVector<WeakTrackingVH, 16> DeadInsts;
   DeadInsts.push_back(I);
   RecursivelyDeleteTriviallyDeadInstructions(DeadInsts, TLI, MSSAU);
 
   return true;
 }
 
+bool llvm::RecursivelyDeleteTriviallyDeadInstructionsPermissive(
+    SmallVectorImpl<WeakTrackingVH> &DeadInsts, const TargetLibraryInfo *TLI,
+    MemorySSAUpdater *MSSAU) {
+  unsigned S = 0, E = DeadInsts.size(), Alive = 0;
+  for (; S != E; ++S) {
+    auto *I = cast<Instruction>(DeadInsts[S]);
+    if (!isInstructionTriviallyDead(I)) {
+      DeadInsts[S] = nullptr;
+      ++Alive;
+    }
+  }
+  if (Alive == E)
+    return false;
+  RecursivelyDeleteTriviallyDeadInstructions(DeadInsts, TLI, MSSAU);
+  return true;
+}
+
 void llvm::RecursivelyDeleteTriviallyDeadInstructions(
-    SmallVectorImpl<Instruction *> &DeadInsts, const TargetLibraryInfo *TLI,
+    SmallVectorImpl<WeakTrackingVH> &DeadInsts, const TargetLibraryInfo *TLI,
     MemorySSAUpdater *MSSAU) {
   // Process the dead instruction list until empty.
   while (!DeadInsts.empty()) {
-    Instruction &I = *DeadInsts.pop_back_val();
-    assert(I.use_empty() && "Instructions with uses are not dead.");
-    assert(isInstructionTriviallyDead(&I, TLI) &&
+    Value *V = DeadInsts.pop_back_val();
+    Instruction *I = cast_or_null<Instruction>(V);
+    if (!I)
+      continue;
+    assert(isInstructionTriviallyDead(I, TLI) &&
            "Live instruction found in dead worklist!");
+    assert(I->use_empty() && "Instructions with uses are not dead.");
 
     // Don't lose the debug info while deleting the instructions.
-    salvageDebugInfo(I);
+    salvageDebugInfo(*I);
 
     // Null out all of the instruction's operands to see if any operand becomes
     // dead as we go.
-    for (Use &OpU : I.operands()) {
+    for (Use &OpU : I->operands()) {
       Value *OpV = OpU.get();
       OpU.set(nullptr);
 
@@ -480,9 +500,9 @@ void llvm::RecursivelyDeleteTriviallyDeadInstructions(
           DeadInsts.push_back(OpI);
     }
     if (MSSAU)
-      MSSAU->removeMemoryAccess(&I);
+      MSSAU->removeMemoryAccess(I);
 
-    I.eraseFromParent();
+    I->eraseFromParent();
   }
 }
 
@@ -521,19 +541,20 @@ static bool areAllUsesEqual(Instruction *I) {
 /// delete it.  If that makes any of its operands trivially dead, delete them
 /// too, recursively.  Return true if a change was made.
 bool llvm::RecursivelyDeleteDeadPHINode(PHINode *PN,
-                                        const TargetLibraryInfo *TLI) {
+                                        const TargetLibraryInfo *TLI,
+                                        llvm::MemorySSAUpdater *MSSAU) {
   SmallPtrSet<Instruction*, 4> Visited;
   for (Instruction *I = PN; areAllUsesEqual(I) && !I->mayHaveSideEffects();
        I = cast<Instruction>(*I->user_begin())) {
     if (I->use_empty())
-      return RecursivelyDeleteTriviallyDeadInstructions(I, TLI);
+      return RecursivelyDeleteTriviallyDeadInstructions(I, TLI, MSSAU);
 
     // If we find an instruction more than once, we're on a cycle that
     // won't prove fruitful.
     if (!Visited.insert(I).second) {
       // Break the cycle and delete the instruction and its operands.
       I->replaceAllUsesWith(UndefValue::get(I->getType()));
-      (void)RecursivelyDeleteTriviallyDeadInstructions(I, TLI);
+      (void)RecursivelyDeleteTriviallyDeadInstructions(I, TLI, MSSAU);
       return true;
     }
   }
@@ -1547,8 +1568,8 @@ void llvm::findDbgUsers(SmallVectorImpl<DbgVariableIntrinsic *> &DbgUsers,
 }
 
 bool llvm::replaceDbgDeclare(Value *Address, Value *NewAddress,
-                             Instruction *InsertBefore, DIBuilder &Builder,
-                             uint8_t DIExprFlags, int Offset) {
+                             DIBuilder &Builder, uint8_t DIExprFlags,
+                             int Offset) {
   auto DbgAddrs = FindDbgAddrUses(Address);
   for (DbgVariableIntrinsic *DII : DbgAddrs) {
     DebugLoc Loc = DII->getDebugLoc();
@@ -1556,21 +1577,12 @@ bool llvm::replaceDbgDeclare(Value *Address, Value *NewAddress,
     auto *DIExpr = DII->getExpression();
     assert(DIVar && "Missing variable");
     DIExpr = DIExpression::prepend(DIExpr, DIExprFlags, Offset);
-    // Insert llvm.dbg.declare immediately before InsertBefore, and remove old
+    // Insert llvm.dbg.declare immediately before DII, and remove old
     // llvm.dbg.declare.
-    Builder.insertDeclare(NewAddress, DIVar, DIExpr, Loc, InsertBefore);
-    if (DII == InsertBefore)
-      InsertBefore = InsertBefore->getNextNode();
+    Builder.insertDeclare(NewAddress, DIVar, DIExpr, Loc, DII);
     DII->eraseFromParent();
   }
   return !DbgAddrs.empty();
-}
-
-bool llvm::replaceDbgDeclareForAlloca(AllocaInst *AI, Value *NewAllocaAddress,
-                                      DIBuilder &Builder, uint8_t DIExprFlags,
-                                      int Offset) {
-  return replaceDbgDeclare(AI, NewAllocaAddress, AI->getNextNode(), Builder,
-                           DIExprFlags, Offset);
 }
 
 static void replaceOneDbgValueForAlloca(DbgValueInst *DVI, Value *NewAddress,

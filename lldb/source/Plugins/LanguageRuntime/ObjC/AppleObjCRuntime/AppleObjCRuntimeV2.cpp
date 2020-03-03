@@ -1,4 +1,4 @@
-//===-- AppleObjCRuntimeV2.cpp ----------------------------------*- C++ -*-===//
+//===-- AppleObjCRuntimeV2.cpp --------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -15,12 +15,11 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/DeclObjC.h"
 
-#include "lldb/Core/ClangForward.h"
 #include "lldb/Host/OptionParser.h"
 #include "lldb/Symbol/CompilerType.h"
 #include "lldb/lldb-enumerations.h"
 
-#include "lldb/Core/ClangForward.h"
+#include "Plugins/TypeSystem/Clang/TypeSystemClang.h"
 #include "lldb/Core/Debugger.h"
 #include "lldb/Core/Module.h"
 #include "lldb/Core/PluginManager.h"
@@ -35,7 +34,6 @@
 #include "lldb/Interpreter/CommandReturnObject.h"
 #include "lldb/Interpreter/OptionArgParser.h"
 #include "lldb/Interpreter/OptionValueBoolean.h"
-#include "lldb/Symbol/ClangASTContext.h"
 #include "lldb/Symbol/ObjectFile.h"
 #include "lldb/Symbol/Symbol.h"
 #include "lldb/Symbol/TypeList.h"
@@ -897,12 +895,12 @@ size_t AppleObjCRuntimeV2::GetByteOffsetForIvar(CompilerType &parent_ast_type,
                                                 const char *ivar_name) {
   uint32_t ivar_offset = LLDB_INVALID_IVAR_OFFSET;
 
-  const char *class_name = parent_ast_type.GetConstTypeName().AsCString();
-  if (class_name && class_name[0] && ivar_name && ivar_name[0]) {
+  ConstString class_name = parent_ast_type.GetTypeName();
+  if (!class_name.IsEmpty() && ivar_name && ivar_name[0]) {
     // Make the objective C V2 mangled name for the ivar offset from the class
     // name and ivar name
     std::string buffer("OBJC_IVAR_$_");
-    buffer.append(class_name);
+    buffer.append(class_name.AsCString());
     buffer.push_back('.');
     buffer.append(ivar_name);
     ConstString ivar_const_str(buffer.c_str());
@@ -1301,7 +1299,7 @@ AppleObjCRuntimeV2::UpdateISAToDescriptorMapDynamic(
     return DescriptorMapUpdateResult::Fail();
 
   thread_sp->CalculateExecutionContext(exe_ctx);
-  ClangASTContext *ast = ClangASTContext::GetScratch(process->GetTarget());
+  TypeSystemClang *ast = TypeSystemClang::GetScratch(process->GetTarget());
 
   if (!ast)
     return DescriptorMapUpdateResult::Fail();
@@ -1499,7 +1497,7 @@ uint32_t AppleObjCRuntimeV2::ParseClassInfoArray(const DataExtractor &data,
   // Iterate through all ClassInfo structures
   lldb::offset_t offset = 0;
   for (uint32_t i = 0; i < num_class_infos; ++i) {
-    ObjCISA isa = data.GetPointer(&offset);
+    ObjCISA isa = data.GetAddress(&offset);
 
     if (isa == 0) {
       if (should_log)
@@ -1563,7 +1561,7 @@ AppleObjCRuntimeV2::UpdateISAToDescriptorMapSharedCache() {
     return DescriptorMapUpdateResult::Fail();
 
   thread_sp->CalculateExecutionContext(exe_ctx);
-  ClangASTContext *ast = ClangASTContext::GetScratch(process->GetTarget());
+  TypeSystemClang *ast = TypeSystemClang::GetScratch(process->GetTarget());
 
   if (!ast)
     return DescriptorMapUpdateResult::Fail();
@@ -1976,36 +1974,6 @@ void AppleObjCRuntimeV2::WarnIfNoClassesCached(
       break;
     }
   }
-}
-
-ConstString
-AppleObjCRuntimeV2::GetActualTypeName(ObjCLanguageRuntime::ObjCISA isa) {
-  if (isa == g_objc_Tagged_ISA) {
-    static const ConstString g_objc_tagged_isa_name("_lldb_Tagged_ObjC_ISA");
-    return g_objc_tagged_isa_name;
-  }
-  if (isa == g_objc_Tagged_ISA_NSAtom) {
-    static const ConstString g_objc_tagged_isa_nsatom_name("NSAtom");
-    return g_objc_tagged_isa_nsatom_name;
-  }
-  if (isa == g_objc_Tagged_ISA_NSNumber) {
-    static const ConstString g_objc_tagged_isa_nsnumber_name("NSNumber");
-    return g_objc_tagged_isa_nsnumber_name;
-  }
-  if (isa == g_objc_Tagged_ISA_NSDateTS) {
-    static const ConstString g_objc_tagged_isa_nsdatets_name("NSDateTS");
-    return g_objc_tagged_isa_nsdatets_name;
-  }
-  if (isa == g_objc_Tagged_ISA_NSManagedObject) {
-    static const ConstString g_objc_tagged_isa_nsmanagedobject_name(
-        "NSManagedObject");
-    return g_objc_tagged_isa_nsmanagedobject_name;
-  }
-  if (isa == g_objc_Tagged_ISA_NSDate) {
-    static const ConstString g_objc_tagged_isa_nsdate_name("NSDate");
-    return g_objc_tagged_isa_nsdate_name;
-  }
-  return ObjCLanguageRuntime::GetActualTypeName(isa);
 }
 
 DeclVendor *AppleObjCRuntimeV2::GetDeclVendor() {
@@ -2580,7 +2548,7 @@ bool AppleObjCRuntimeV2::NonPointerISACache::EvaluateNonPointerISA(
 
           lldb::offset_t offset = 0;
           for (unsigned i = 0; i != num_new_classes; ++i)
-            m_indexed_isa_cache.push_back(data.GetPointer(&offset));
+            m_indexed_isa_cache.push_back(data.GetAddress(&offset));
         }
       }
 
@@ -2672,8 +2640,8 @@ class ObjCExceptionRecognizedStackFrame : public RecognizedStackFrame {
     const lldb::ABISP &abi = process_sp->GetABI();
     if (!abi) return;
 
-    ClangASTContext *clang_ast_context =
-        ClangASTContext::GetScratch(process_sp->GetTarget());
+    TypeSystemClang *clang_ast_context =
+        TypeSystemClang::GetScratch(process_sp->GetTarget());
     if (!clang_ast_context)
       return;
     CompilerType voidstar =
@@ -2698,6 +2666,8 @@ class ObjCExceptionRecognizedStackFrame : public RecognizedStackFrame {
 
     m_arguments = ValueObjectListSP(new ValueObjectList());
     m_arguments->Append(exception);
+
+    m_stop_desc = "hit Objective-C exception";
   }
 
   ValueObjectSP exception;
@@ -2721,6 +2691,7 @@ static void RegisterObjCExceptionRecognizer() {
     std::tie(module, function) = AppleObjCRuntime::GetExceptionThrowLocation();
     StackFrameRecognizerManager::AddRecognizer(
         StackFrameRecognizerSP(new ObjCExceptionThrowFrameRecognizer()),
-        module.GetFilename(), function, /*first_instruction_only*/ true);
+        module.GetFilename(), function, /*alternate_symbol*/ {},
+        /*first_instruction_only*/ true);
   });
 }

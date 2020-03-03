@@ -259,12 +259,11 @@ StmtResult Sema::ActOnGCCAsmStmt(SourceLocation AsmLoc, bool IsSimple,
   // Skip all the checks if we are compiling SYCL device code, but the function
   // is not marked to be used on device, this code won't be codegen'ed anyway.
   if (getLangOpts().SYCLIsDevice) {
-    SYCLDiagIfDeviceCode(AsmLoc, diag::err_sycl_restrict)
-        << KernelUseAssembly;
+    SYCLDiagIfDeviceCode(AsmLoc, diag::err_sycl_restrict) << KernelUseAssembly;
     return new (Context)
-      GCCAsmStmt(Context, AsmLoc, IsSimple, IsVolatile, NumOutputs,
-                 NumInputs, Names, Constraints, Exprs.data(), AsmString,
-                 NumClobbers, Clobbers, NumLabels, RParenLoc);
+        GCCAsmStmt(Context, AsmLoc, IsSimple, IsVolatile, NumOutputs, NumInputs,
+                   Names, Constraints, Exprs.data(), AsmString, NumClobbers,
+                   Clobbers, NumLabels, RParenLoc);
   }
 
   FunctionDecl *FD = dyn_cast<FunctionDecl>(getCurLexicalContext());
@@ -489,10 +488,10 @@ StmtResult Sema::ActOnGCCAsmStmt(SourceLocation AsmLoc, bool IsSimple,
 
     // Look for the correct constraint index.
     unsigned ConstraintIdx = Piece.getOperandNo();
-    // Labels are the last in the Exprs list.
-    if (NS->isAsmGoto() && ConstraintIdx >= NS->getNumInputs())
-      continue;
     unsigned NumOperands = NS->getNumOutputs() + NS->getNumInputs();
+    // Labels are the last in the Exprs list.
+    if (NS->isAsmGoto() && ConstraintIdx >= NumOperands)
+      continue;
     // Look for the (ConstraintIdx - NumOperands + 1)th constraint with
     // modifier '+'.
     if (ConstraintIdx >= NumOperands) {

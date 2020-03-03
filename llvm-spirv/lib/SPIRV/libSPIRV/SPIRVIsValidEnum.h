@@ -141,6 +141,7 @@ inline bool isValid(spv::ExecutionMode V) {
   case ExecutionModeSubgroupSize:
   case ExecutionModeSubgroupsPerWorkgroup:
   case ExecutionModeMaxWorkgroupSizeINTEL:
+  case ExecutionModeNoGlobalOffsetINTEL:
   case ExecutionModeMaxWorkDimINTEL:
   case ExecutionModeNumSIMDWorkitemsINTEL:
     return true;
@@ -1058,7 +1059,9 @@ inline bool isValidLoopControlMask(SPIRVWord Mask) {
   ValidMask |= LoopControlPartialCountMask;
   ValidMask |= LoopControlDependencyInfiniteMask;
   ValidMask |= LoopControlDependencyLengthMask;
-  ValidMask |= LoopControlExtendedControlsMask;
+  ValidMask |= InitiationIntervalINTEL;
+  ValidMask |= MaxConcurrencyINTEL;
+  ValidMask |= DependencyArrayINTEL;
 
   return (Mask & ~ValidMask) == 0;
 }

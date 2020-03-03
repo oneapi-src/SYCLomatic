@@ -24,6 +24,7 @@
 #include "clang/Analysis/AnalysisDeclContext.h"
 #include "clang/Analysis/CFG.h"
 #include "clang/Analysis/DomainSpecific/ObjCNoReturn.h"
+#include "clang/Analysis/FlowSensitive/DataflowWorklist.h"
 #include "clang/Basic/LLVM.h"
 #include "llvm/ADT/BitVector.h"
 #include "llvm/ADT/DenseMap.h"
@@ -210,68 +211,6 @@ ValueVector::reference CFGBlockValues::operator[](const VarDecl *vd) {
   const Optional<unsigned> &idx = declToIndex.getValueIndex(vd);
   assert(idx.hasValue());
   return scratch[idx.getValue()];
-}
-
-//------------------------------------------------------------------------====//
-// Worklist: worklist for dataflow analysis.
-//====------------------------------------------------------------------------//
-
-namespace {
-
-class DataflowWorklist {
-  PostOrderCFGView::iterator PO_I, PO_E;
-  SmallVector<const CFGBlock *, 20> worklist;
-  llvm::BitVector enqueuedBlocks;
-
-public:
-  DataflowWorklist(const CFG &cfg, PostOrderCFGView &view)
-      : PO_I(view.begin()), PO_E(view.end()),
-        enqueuedBlocks(cfg.getNumBlockIDs(), true) {
-    // Treat the first block as already analyzed.
-    if (PO_I != PO_E) {
-      assert(*PO_I == &cfg.getEntry());
-      enqueuedBlocks[(*PO_I)->getBlockID()] = false;
-      ++PO_I;
-    }
-  }
-
-  void enqueueSuccessors(const CFGBlock *block);
-  const CFGBlock *dequeue();
-};
-
-} // namespace
-
-void DataflowWorklist::enqueueSuccessors(const CFGBlock *block) {
-  for (CFGBlock::const_succ_iterator I = block->succ_begin(),
-       E = block->succ_end(); I != E; ++I) {
-    const CFGBlock *Successor = *I;
-    if (!Successor || enqueuedBlocks[Successor->getBlockID()])
-      continue;
-    worklist.push_back(Successor);
-    enqueuedBlocks[Successor->getBlockID()] = true;
-  }
-}
-
-const CFGBlock *DataflowWorklist::dequeue() {
-  const CFGBlock *B = nullptr;
-
-  // First dequeue from the worklist.  This can represent
-  // updates along backedges that we want propagated as quickly as possible.
-  if (!worklist.empty())
-    B = worklist.pop_back_val();
-
-  // Next dequeue from the initial reverse post order.  This is the
-  // theoretical ideal in the presence of no back edges.
-  else if (PO_I != PO_E) {
-    B = *PO_I;
-    ++PO_I;
-  }
-  else
-    return nullptr;
-
-  assert(enqueuedBlocks[B->getBlockID()] == true);
-  enqueuedBlocks[B->getBlockID()] = false;
-  return B;
 }
 
 //------------------------------------------------------------------------====//
@@ -536,6 +475,7 @@ public:
   void VisitCallExpr(CallExpr *ce);
   void VisitDeclRefExpr(DeclRefExpr *dr);
   void VisitDeclStmt(DeclStmt *ds);
+  void VisitGCCAsmStmt(GCCAsmStmt *as);
   void VisitObjCForCollectionStmt(ObjCForCollectionStmt *FS);
   void VisitObjCMessageExpr(ObjCMessageExpr *ME);
   void VisitOMPExecutableDirective(OMPExecutableDirective *ED);
@@ -821,6 +761,16 @@ void TransferFunctions::VisitDeclStmt(DeclStmt *DS) {
   }
 }
 
+void TransferFunctions::VisitGCCAsmStmt(GCCAsmStmt *as) {
+  // An "asm goto" statement is a terminator that may initialize some variables.
+  if (!as->isAsmGoto())
+    return;
+
+  for (const auto &o : as->outputs())
+    if (const VarDecl *VD = findVar(o).getDecl())
+      vals[VD] = Initialized;
+}
+
 void TransferFunctions::VisitObjCMessageExpr(ObjCMessageExpr *ME) {
   // If the Objective-C message expression is an implicit no-return that
   // is not modeled in the CFG, set the tracked dataflow values to Unknown.
@@ -858,6 +808,10 @@ static bool runOnBlock(const CFGBlock *block, const CFG &cfg,
     if (Optional<CFGStmt> cs = I.getAs<CFGStmt>())
       tf.Visit(const_cast<Stmt *>(cs->getStmt()));
   }
+  CFGTerminator terminator = block->getTerminator();
+  if (GCCAsmStmt *as = dyn_cast_or_null<GCCAsmStmt>(terminator.getStmt()))
+    if (as->isAsmGoto())
+      tf.Visit(as);
   return vals.updateValueVectorWithScratch(block);
 }
 
@@ -924,7 +878,7 @@ void clang::runUninitializedVariablesAnalysis(
   }
 
   // Proceed with the workist.
-  DataflowWorklist worklist(cfg, *ac.getAnalysis<PostOrderCFGView>());
+  ForwardDataflowWorklist worklist(cfg, ac);
   llvm::BitVector previouslyVisited(cfg.getNumBlockIDs());
   worklist.enqueueSuccessors(&cfg.getEntry());
   llvm::BitVector wasAnalyzed(cfg.getNumBlockIDs(), false);

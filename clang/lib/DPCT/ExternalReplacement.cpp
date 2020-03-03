@@ -43,14 +43,14 @@ int save2Yaml(StringRef YamlFile, StringRef SrcFileName,
 
   // list all the replacement.
   clang::tooling::TranslationUnitReplacements TUR;
-  TUR.MainSourceFile = SrcFileName;
+  TUR.MainSourceFile = SrcFileName.str();
   TUR.Replacements.insert(TUR.Replacements.end(), Replaces.begin(),
                           Replaces.end());
   YAMLOut << TUR;
   YamlContentStream.flush();
   // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
   // on windows.
-  std::ofstream File(YamlFile, std::ios::binary);
+  std::ofstream File(YamlFile.str(), std::ios::binary);
   llvm::raw_os_ostream Stream(File);
   Stream << YamlContent;
 

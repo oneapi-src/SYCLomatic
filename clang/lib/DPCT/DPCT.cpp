@@ -476,7 +476,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   driver::CudaInstallationDetector SDKDetector(
       Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
 
-  std::string Path = SDKDetector.getInstallPath();
+  std::string Path = SDKDetector.getInstallPath().str();
   if (!SDKDetector.isValid()) {
     DebugInfo::ShowStatus(MigrationErrorInvalidSDKPath);
     exit(MigrationErrorInvalidSDKPath);

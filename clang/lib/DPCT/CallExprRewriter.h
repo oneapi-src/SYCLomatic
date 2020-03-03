@@ -63,7 +63,7 @@ private:
 
 public:
   CallExprRewriterFactory(StringRef SourceCalleeName, Args &&... Arguments)
-      : Initializer(SourceCalleeName, std::move(Arguments)...) {}
+      : Initializer(SourceCalleeName.str(), std::move(Arguments)...) {}
   // Create a meaningful rewriter only if the CallExpr is not nullptr
   std::shared_ptr<CallExprRewriter> create(const CallExpr *Call) override {
     if (!Call)

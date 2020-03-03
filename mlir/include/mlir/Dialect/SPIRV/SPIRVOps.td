@@ -1,6 +1,6 @@
 //===-- SPIRVOps.td - MLIR SPIR-V Op Definitions Spec ------*- tablegen -*-===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -162,6 +162,10 @@ def SPV_ControlBarrierOp : SPV_Op<"ControlBarrier", []> {
   let verifier = [{ return verifyMemorySemantics(*this); }];
 
   let autogenSerialization = 0;
+
+  let assemblyFormat = [{
+    $execution_scope `,` $memory_scope `,` $memory_semantics attr-dict
+  }];
 }
 
 // -----
@@ -210,7 +214,7 @@ def SPV_ExecutionModeOp : SPV_Op<"ExecutionMode", [InModuleScope]> {
   let autogenSerialization = 0;
 
   let builders = [OpBuilder<[{Builder *builder, OperationState &state,
-                              FuncOp function,
+                              spirv::FuncOp function,
                               spirv::ExecutionMode executionMode,
                               ArrayRef<int32_t> params}]>];
 }
@@ -262,9 +266,13 @@ def SPV_LoadOp : SPV_Op<"Load", []> {
     SPV_Type:$value
   );
 
-  let builders = [OpBuilder<[{Builder *builder, OperationState &state,
-                  Value basePtr, /*optional*/IntegerAttr memory_access,
-                  /*optional*/IntegerAttr alignment}]>];
+  let builders = [
+    OpBuilder<[{
+      Builder *builder, OperationState &state,
+      Value basePtr, IntegerAttr memory_access = {},
+      IntegerAttr alignment = {}
+    }]>
+  ];
 }
 
 // -----
@@ -315,6 +323,8 @@ def SPV_MemoryBarrierOp : SPV_Op<"MemoryBarrier", []> {
   let verifier = [{ return verifyMemorySemantics(*this); }];
 
   let autogenSerialization = 0;
+
+  let assemblyFormat = "$memory_scope `,` $memory_semantics attr-dict";
 }
 
 // -----
@@ -358,7 +368,7 @@ def SPV_StoreOp : SPV_Op<"Store", []> {
 
   let builders = [
     OpBuilder<"Builder *builder, OperationState &state, "
-      "Value ptr, Value value, ArrayRef<NamedAttribute> namedAttrs", [{
+      "Value ptr, Value value, ArrayRef<NamedAttribute> namedAttrs = {}", [{
       state.addOperands(ptr);
       state.addOperands(value);
       state.addAttributes(namedAttrs);
@@ -404,6 +414,8 @@ def SPV_UndefOp : SPV_Op<"undef", []> {
 
   let hasOpcode = 0;
   let autogenSerialization = 0;
+
+  let assemblyFormat = "attr-dict `:` type($result)";
 }
 
 // -----

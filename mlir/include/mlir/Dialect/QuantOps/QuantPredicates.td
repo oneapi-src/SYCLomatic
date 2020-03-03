@@ -1,6 +1,6 @@
 //===- QuantPredicates.td - Predicates for dialect types ---*- tablegen -*-===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -36,7 +36,7 @@ def quant_RealPrimitiveType :
 // A primitive type that can represent a storage value. This is either an
 // integer or quantized type.
 def quant_StoragePrimitiveType :
-    Type<Or<[AnyInteger.predicate, quant_QuantizedType.predicate]>,
+    Type<Or<[AnySignlessInteger.predicate, quant_QuantizedType.predicate]>,
     "quantized storage primitive (integer or quantized type)">;
 
 // A primitive or container of RealPrimitiveType.

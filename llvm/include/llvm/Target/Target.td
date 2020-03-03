@@ -166,8 +166,9 @@ class Register<string n, list<string> altNames = []> {
   // CostPerUse - Additional cost of instructions using this register compared
   // to other registers in its class. The register allocator will try to
   // minimize the number of instructions using a register with a CostPerUse.
-  // This is used by the x86-64 and ARM Thumb targets where some registers
-  // require larger instruction encodings.
+  // This is used by the ARC target, by the ARM Thumb and x86-64 targets, where
+  // some registers require larger instruction encodings, by the RISC-V target,
+  // where some registers preclude using some C instructions.
   int CostPerUse = 0;
 
   // CoveredBySubRegs - When this bit is set, the value of this register is
@@ -274,6 +275,17 @@ class RegisterClass<string namespace, list<ValueType> regTypes, int alignment,
   // useful as it is sometimes beneficial to assign registers to highly
   // constrained classes first. The value has to be in the range [0,63].
   int AllocationPriority = 0;
+
+  // Generate register pressure set for this register class and any class
+  // synthesized from it. Set to 0 to inhibit unneeded pressure sets.
+  bit GeneratePressureSet = 1;
+
+  // Weight override for register pressure calculation. This is the value
+  // TargetRegisterClass::getRegClassWeight() will return. The weight is in
+  // units of pressure for this register class. If unset tablegen will
+  // calculate a weight based on a number of register units in this register
+  // class registers. The weight is per register.
+  int Weight = ?;
 
   // The diagnostic type to present when referencing this operand in a match
   // failure error message. If this is empty, the default Match_InvalidOperand
@@ -530,6 +542,7 @@ class Instruction : InstructionEncoding {
   bit hasCtrlDep   = 0;     // Does this instruction r/w ctrl-flow chains?
   bit isNotDuplicable = 0;  // Is it unsafe to duplicate this instruction?
   bit isConvergent = 0;     // Is this instruction convergent?
+  bit isAuthenticated = 0;  // Does this instruction authenticate a pointer?
   bit isAsCheapAsAMove = 0; // As cheap (or cheaper) than a move instruction.
   bit hasExtraSrcRegAllocReq = 0; // Sources have special regalloc requirement?
   bit hasExtraDefRegAllocReq = 0; // Defs have special regalloc requirement?
@@ -887,6 +900,10 @@ def untyped_imm_0 : TypedOperand<"OPERAND_GENERIC_IMM_0"> {
 ///
 def zero_reg;
 
+/// undef_tied_input - Special node to indicate an input register tied
+/// to an output which defaults to IMPLICIT_DEF.
+def undef_tied_input;
+
 /// All operands which the MC layer classifies as predicates should inherit from
 /// this class in some manner. This is already handled for the most commonly
 /// used PredicateOperand, but may be useful in other circumstances.
@@ -1181,7 +1198,7 @@ def PATCHABLE_FUNCTION_ENTER : StandardPseudoInstruction {
   let InOperandList = (ins);
   let AsmString = "# XRay Function Enter.";
   let usesCustomInserter = 1;
-  let hasSideEffects = 0;
+  let hasSideEffects = 1;
 }
 def PATCHABLE_RET : StandardPseudoInstruction {
   let OutOperandList = (outs);
@@ -1197,7 +1214,7 @@ def PATCHABLE_FUNCTION_EXIT : StandardPseudoInstruction {
   let InOperandList = (ins);
   let AsmString = "# XRay Function Exit.";
   let usesCustomInserter = 1;
-  let hasSideEffects = 0; // FIXME: is this correct?
+  let hasSideEffects = 1;
   let isReturn = 0; // Original return instruction will follow
 }
 def PATCHABLE_TAIL_CALL : StandardPseudoInstruction {

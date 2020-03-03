@@ -60,7 +60,7 @@ Optional<std::string> FuncNameRewriter::buildRewriteString() {
 
 Optional<std::string> MathCallExprRewriter::rewrite() {
   RewriteArgList = getMigratedArgs();
-  setTargetCalleeName(SourceCalleeName);
+  setTargetCalleeName(SourceCalleeName.str());
   return buildRewriteString();
 }
 
@@ -104,7 +104,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
   auto FD = Call->getDirectCallee();
   std::string NewFuncName;
   if (!FD) {
-    NewFuncName = SourceCalleeName;
+    NewFuncName = SourceCalleeName.str();
   } else {
     NewFuncName = TargetCalleeName;
     std::string NamespaceStr;
@@ -114,7 +114,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
       if (Qualifier) {
         auto Namespace = Qualifier->getAsNamespace();
         if (Namespace)
-          NamespaceStr = Namespace->getName();
+          NamespaceStr = Namespace->getName().str();
       }
     }
 
@@ -148,7 +148,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
 
       if (SourceCalleeName == "pow") {
         if (Call->getNumArgs() != 2)
-          return SourceCalleeName;
+          return SourceCalleeName.str();
         LangOptions LO;
         auto Arg0 = Call->getArg(0);
         auto Arg1 = Call->getArg(1);
@@ -273,7 +273,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
     else {
       // Insert "#include <cmath>" to migrated code
       DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), Math);
-      NewFuncName = SourceCalleeName;
+      NewFuncName = SourceCalleeName.str();
       if (SourceCalleeName == "abs") {
         auto *BT =
             dyn_cast<BuiltinType>(Call->getArg(0)->IgnoreImpCasts()->getType());
@@ -449,7 +449,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
 }
 
 Optional<std::string> MathUnsupportedRewriter::rewrite() {
-  report(Diagnostics::NOTSUPPORTED, MapNames::ITFName.at(SourceCalleeName));
+  report(Diagnostics::NOTSUPPORTED, MapNames::ITFName.at(SourceCalleeName.str()));
   return Base::rewrite();
 }
 
@@ -529,8 +529,8 @@ Optional<std::string> MathTypeCastRewriter::rewrite() {
                          {"half", MapNames::getClNamespace() + "::half"}};
     std::string RoundingMode;
     if (FuncName[FuncName.size() - 3] == '_')
-      RoundingMode = FuncName.substr(FuncName.size() - 2);
-    auto FN = FuncName.substr(2, FuncName.find('_', 2) - 2);
+      RoundingMode = FuncName.substr(FuncName.size() - 2).str();
+    auto FN = FuncName.substr(2, FuncName.find('_', 2) - 2).str();
     auto Types = split(FN, '2');
     assert(Types.size() == 2);
     MapNames::replaceName(TypeMap, Types[0]);
@@ -574,13 +574,13 @@ std::string getTypecastName(const CallExpr *Call) {
 }
 
 Optional<std::string> MathSimulatedRewriter::rewrite() {
-  report(Diagnostics::MATH_EMULATION, MapNames::ITFName.at(SourceCalleeName),
+  report(Diagnostics::MATH_EMULATION, MapNames::ITFName.at(SourceCalleeName.str()),
          TargetCalleeName);
   auto FD = Call->getDirectCallee();
   if (!FD || !FD->hasAttr<CUDADeviceAttr>())
     return Base::rewrite();
 
-  const std::string FuncName = SourceCalleeName;
+  const std::string FuncName = SourceCalleeName.str();
   std::string ReplStr;
   llvm::raw_string_ostream OS(ReplStr);
   auto MigratedArg0 = getMigratedArg(0);
@@ -778,9 +778,9 @@ Optional<std::string> MathBinaryOperatorRewriter::rewrite() {
 Optional<std::string> WarpFunctionRewriter::rewrite() {
   if (SourceCalleeName == "__activemask" || SourceCalleeName == "__ballot" ||
       SourceCalleeName == "__ballot_sync") {
-    report(Diagnostics::NOTSUPPORTED, MapNames::ITFName.at(SourceCalleeName));
+    report(Diagnostics::NOTSUPPORTED, MapNames::ITFName.at(SourceCalleeName.str()));
     RewriteArgList = getMigratedArgs();
-    setTargetCalleeName(SourceCalleeName);
+    setTargetCalleeName(SourceCalleeName.str());
   } else {
     if (SourceCalleeName == "__all" || SourceCalleeName == "__any") {
       RewriteArgList.emplace_back(getMigratedArg(0));
@@ -798,7 +798,7 @@ Optional<std::string> WarpFunctionRewriter::rewrite() {
     }
     setTargetCalleeName(buildString(
         DpctGlobalInfo::getItemName(), ".get_sub_group().",
-        MapNames::findReplacedName(WarpFunctionsMap, SourceCalleeName)));
+        MapNames::findReplacedName(WarpFunctionsMap, SourceCalleeName.str())));
   }
   return buildRewriteString();
 }

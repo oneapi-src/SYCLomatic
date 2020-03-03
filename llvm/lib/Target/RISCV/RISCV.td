@@ -82,6 +82,9 @@ foreach i = {1-31} in
         SubtargetFeature<"reserve-x"#i, "UserReservedRegister[RISCV::X"#i#"]",
                          "true", "Reserve X"#i>;
 
+def FeatureSaveRestore : SubtargetFeature<"save-restore", "EnableSaveRestore",
+                                          "true", "Enable save/restore.">;
+
 //===----------------------------------------------------------------------===//
 // Named operands for CSR instructions.
 //===----------------------------------------------------------------------===//
@@ -92,10 +95,13 @@ include "RISCVSystemOperands.td"
 // Registers, calling conventions, instruction descriptions.
 //===----------------------------------------------------------------------===//
 
+include "RISCVSchedule.td"
 include "RISCVRegisterInfo.td"
 include "RISCVCallingConv.td"
 include "RISCVInstrInfo.td"
 include "RISCVRegisterBanks.td"
+include "RISCVSchedRocket32.td"
+include "RISCVSchedRocket64.td"
 
 //===----------------------------------------------------------------------===//
 // RISC-V processors supported.
@@ -105,6 +111,12 @@ def : ProcessorModel<"generic-rv32", NoSchedModel, [FeatureRVCHints]>;
 
 def : ProcessorModel<"generic-rv64", NoSchedModel, [Feature64Bit,
                      FeatureRVCHints]>;
+
+def : ProcessorModel<"rocket-rv32", Rocket32Model, [FeatureRVCHints]>;
+
+def : ProcessorModel<"rocket-rv64", Rocket64Model, [Feature64Bit,
+                     FeatureRVCHints]>;
+
 
 //===----------------------------------------------------------------------===//
 // Define the RISC-V target.

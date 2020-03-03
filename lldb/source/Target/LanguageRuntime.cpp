@@ -1,4 +1,4 @@
-//===-- LanguageRuntime.cpp -------------------------------------*- C++ -*-===//
+//===-- LanguageRuntime.cpp -----------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -78,8 +78,7 @@ void ExceptionSearchFilter::UpdateModuleListIfNeeded() {
   }
 }
 
-SearchFilterSP
-ExceptionSearchFilter::DoCopyForBreakpoint(Breakpoint &breakpoint) {
+SearchFilterSP ExceptionSearchFilter::DoCreateCopy() {
   return SearchFilterSP(
       new ExceptionSearchFilter(TargetSP(), m_language, false));
 }

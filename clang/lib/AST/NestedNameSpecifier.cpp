@@ -472,7 +472,7 @@ TypeLoc NestedNameSpecifierLoc::getTypeLoc() const {
 }
 
 static void Append(char *Start, char *End, char *&Buffer, unsigned &BufferSize,
-              unsigned &BufferCapacity) {
+                   unsigned &BufferCapacity) {
   if (Start == End)
     return;
 
@@ -482,16 +482,17 @@ static void Append(char *Start, char *End, char *&Buffer, unsigned &BufferSize,
         (unsigned)(BufferCapacity ? BufferCapacity * 2 : sizeof(void *) * 2),
         (unsigned)(BufferSize + (End - Start)));
     char *NewBuffer = static_cast<char *>(llvm::safe_malloc(NewCapacity));
-    if (BufferCapacity) {
+    if (Buffer) {
       memcpy(NewBuffer, Buffer, BufferSize);
-      free(Buffer);
+      if (BufferCapacity)
+        free(Buffer);
     }
     Buffer = NewBuffer;
     BufferCapacity = NewCapacity;
   }
-
+  assert(Buffer && Start && End && End > Start && "Illegal memory buffer copy");
   memcpy(Buffer + BufferSize, Start, End - Start);
-  BufferSize += End-Start;
+  BufferSize += End - Start;
 }
 
 /// Save a source location to the given buffer.

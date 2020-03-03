@@ -67,7 +67,7 @@ Hurd::Hurd(const Driver &D, const llvm::Triple &Triple,
   std::string SysRoot = computeSysRoot();
   path_list &Paths = getFilePaths();
 
-  const std::string OSLibDir = getOSLibDir(Triple, Args);
+  const std::string OSLibDir = std::string(getOSLibDir(Triple, Args));
   const std::string MultiarchTriple = getMultiarchTriple(D, Triple, SysRoot);
 
 #ifdef ENABLE_LINKER_BUILD_ID
@@ -149,7 +149,7 @@ void Hurd::AddClangSystemIncludeArgs(const ArgList &DriverArgs,
     CIncludeDirs.split(Dirs, ":");
     for (StringRef Dir : Dirs) {
       StringRef Prefix =
-          llvm::sys::path::is_absolute(Dir) ? StringRef(SysRoot) : "";
+          llvm::sys::path::is_absolute(Dir) ? "" : StringRef(SysRoot);
       addExternCSystemInclude(DriverArgs, CC1Args, Prefix + Dir);
     }
     return;

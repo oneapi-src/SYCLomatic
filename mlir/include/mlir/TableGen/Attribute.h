@@ -1,6 +1,6 @@
 //===- Attribute.h - Attribute wrapper class --------------------*- C++ -*-===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -25,6 +25,7 @@ class Record;
 
 namespace mlir {
 namespace tblgen {
+class Type;
 
 // Wrapper class with helper methods for accessing attribute constraints defined
 // in TableGen.
@@ -54,6 +55,10 @@ public:
   // Returns the return type for this attribute.
   StringRef getReturnType() const;
 
+  // Return the type constraint corresponding to the type of this attribute, or
+  // None if this is not a TypedAttr.
+  llvm::Optional<Type> getValueType() const;
+
   // Returns the template getter method call which reads this attribute's
   // storage and returns the value as of the desired return type.
   // The call will contain a `{0}` which will be expanded to this attribute.
@@ -64,8 +69,8 @@ public:
 
   // Returns the template that can be used to produce an instance of the
   // attribute.
-  // Syntax: {0} should be replaced with a builder, {1} should be replaced with
-  // the constant value.
+  // Syntax: `$builder` should be replaced with a builder, `$0` should be
+  // replaced with the constant value.
   StringRef getConstBuilderTemplate() const;
 
   // Returns the base-level attribute that this attribute constraint is
@@ -125,6 +130,7 @@ private:
 // StringAttr and IntegerAttr.
 class EnumAttrCase : public Attribute {
 public:
+  explicit EnumAttrCase(const llvm::Record *record);
   explicit EnumAttrCase(const llvm::DefInit *init);
 
   // Returns true if this EnumAttrCase is backed by a StringAttr.
@@ -132,6 +138,9 @@ public:
 
   // Returns the symbol of this enum attribute case.
   StringRef getSymbol() const;
+
+  // Returns the textual representation of this enum attribute case.
+  StringRef getStr() const;
 
   // Returns the value of this enum attribute case.
   int64_t getValue() const;

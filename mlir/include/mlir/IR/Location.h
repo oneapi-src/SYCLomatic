@@ -1,6 +1,6 @@
 //===- Location.h - MLIR Location Classes -----------------------*- C++ -*-===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -54,6 +54,12 @@ public:
   Location(LocationAttr loc) : impl(loc) {
     assert(loc && "location should never be null.");
   }
+  Location(const LocationAttr::ImplType *impl) : impl(impl) {
+    assert(impl && "location should never be null.");
+  }
+
+  /// Return the context this location is uniqued in.
+  MLIRContext *getContext() const { return impl.getContext(); }
 
   /// Access the impl location attribute.
   operator LocationAttr() const { return impl; }
@@ -321,10 +327,8 @@ public:
   static inline mlir::Location getFromVoidPointer(void *P) {
     return mlir::Location::getFromOpaquePointer(P);
   }
-  enum {
-    NumLowBitsAvailable =
-        PointerLikeTypeTraits<mlir::Attribute>::NumLowBitsAvailable
-  };
+  static constexpr int NumLowBitsAvailable =
+      PointerLikeTypeTraits<mlir::Attribute>::NumLowBitsAvailable;
 };
 
 } // namespace llvm

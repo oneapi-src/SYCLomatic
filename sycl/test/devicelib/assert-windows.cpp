@@ -5,7 +5,7 @@
 // XFAIL: *
 //
 // RUN: %clangxx -fsycl -c %s -o %t.o
-// RUN: %clangxx -fsycl %t.o %llvm_build_libs_dir/../bin/libsycl-msvc.o -o %t.out
+// RUN: %clangxx -fsycl %t.o %sycl_libs_dir/../bin/libsycl-msvc.o -o %t.out
 //
 // MSVC implementation of assert does not call an unreachable built-in, so the
 // program doesn't terminate when fallback is used.
@@ -14,7 +14,7 @@
 // explicitly. Since the test is going to crash, we'll have to follow a similar
 // approach as on Linux - call the test in a subprocess.
 //
-// RUN: env SYCL_PI_TRACE=1 SYCL_DEVICELIB_INHIBIT_NATIVE=1 SYCL_DEVICE_TYPE=CPU %t.out >%t.stdout.fallback 2>%t.stderr.fallback
+// RUN: env SYCL_PI_TRACE=1 SYCL_DEVICELIB_INHIBIT_NATIVE=1 SYCL_DEVICE_TYPE=CPU CL_CONFIG_USE_VECTORIZER=False %t.out >%t.stdout.fallback 2>%t.stderr.fallback
 // RUN: FileCheck %s --check-prefix=CHECK-MESSAGE --input-file %t.stdout.fallback
 // CHECK-MESSAGE: {{.*}}assert-windows.cpp:{{[0-9]+}}: (null): global id: [{{[0-3]}},0,0], local id: [{{[0-3]}},0,0] Assertion `accessorC[wiID] == 0 && "Invalid value"` failed.
 //

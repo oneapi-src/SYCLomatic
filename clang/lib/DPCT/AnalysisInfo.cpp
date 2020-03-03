@@ -624,7 +624,7 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionDecl *FD) {
       } else {
         // the first param and the last param are not in the same line
         // use the indent of the last param line as the extra param's indent
-        Indent = getIndent(NextToken, SM);
+        Indent = getIndent(NextToken, SM).str();
       }
     }
   }

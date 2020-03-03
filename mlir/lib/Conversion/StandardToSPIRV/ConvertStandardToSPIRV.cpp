@@ -1,6 +1,6 @@
 //===- ConvertStandardToSPIRV.cpp - Standard to SPIR-V dialect conversion--===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -13,7 +13,7 @@
 #include "mlir/Dialect/SPIRV/SPIRVDialect.h"
 #include "mlir/Dialect/SPIRV/SPIRVLowering.h"
 #include "mlir/Dialect/SPIRV/SPIRVOps.h"
-#include "mlir/Dialect/StandardOps/Ops.h"
+#include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/AffineMap.h"
 #include "llvm/ADT/SetVector.h"
 
@@ -24,6 +24,17 @@ using namespace mlir;
 //===----------------------------------------------------------------------===//
 
 namespace {
+
+/// Convert composite constant operation to SPIR-V dialect.
+// TODO(denis0x0D) : move to DRR.
+class ConstantCompositeOpConversion final : public SPIRVOpLowering<ConstantOp> {
+public:
+  using SPIRVOpLowering<ConstantOp>::SPIRVOpLowering;
+
+  PatternMatchResult
+  matchAndRewrite(ConstantOp constCompositeOp, ArrayRef<Value> operands,
+                  ConversionPatternRewriter &rewriter) const override;
+};
 
 /// Convert constant operation with IndexType return to SPIR-V constant
 /// operation. Since IndexType is not used within SPIR-V dialect, this needs
@@ -74,7 +85,7 @@ public:
   matchAndRewrite(StdOp operation, ArrayRef<Value> operands,
                   ConversionPatternRewriter &rewriter) const override {
     auto resultType =
-        this->typeConverter.convertType(operation.getResult()->getType());
+        this->typeConverter.convertType(operation.getResult().getType());
     rewriter.template replaceOpWithNewOp<SPIRVOp>(
         operation, resultType, operands, ArrayRef<NamedAttribute>());
     return this->matchSuccess();
@@ -131,44 +142,36 @@ public:
 } // namespace
 
 //===----------------------------------------------------------------------===//
-// Utility functions for operation conversion
+// ConstantOp with composite type.
 //===----------------------------------------------------------------------===//
 
-/// Performs the index computation to get to the element pointed to by
-/// `indices` using the layout map of `baseType`.
+PatternMatchResult ConstantCompositeOpConversion::matchAndRewrite(
+    ConstantOp constCompositeOp, ArrayRef<Value> operands,
+    ConversionPatternRewriter &rewriter) const {
+  auto compositeType =
+      constCompositeOp.getResult().getType().dyn_cast<RankedTensorType>();
+  if (!compositeType)
+    return matchFailure();
 
-// TODO(ravishankarm) : This method assumes that the `origBaseType` is a
-// MemRefType with AffineMap that has static strides. Handle dynamic strides
-spirv::AccessChainOp getElementPtr(OpBuilder &builder,
-                                   SPIRVTypeConverter &typeConverter,
-                                   Location loc, MemRefType origBaseType,
-                                   Value basePtr, ArrayRef<Value> indices) {
-  // Get base and offset of the MemRefType and verify they are static.
-  int64_t offset;
-  SmallVector<int64_t, 4> strides;
-  if (failed(getStridesAndOffset(origBaseType, strides, offset)) ||
-      llvm::is_contained(strides, MemRefType::getDynamicStrideOrOffset())) {
-    return nullptr;
+  auto spirvCompositeType = typeConverter.convertType(compositeType);
+  if (!spirvCompositeType)
+    return matchFailure();
+
+  auto linearizedElements =
+      constCompositeOp.value().dyn_cast<DenseElementsAttr>();
+  if (!linearizedElements)
+    return matchFailure();
+
+  // If composite type has rank greater than one, then perform linearization.
+  if (compositeType.getRank() > 1) {
+    auto linearizedType = RankedTensorType::get(compositeType.getNumElements(),
+                                                compositeType.getElementType());
+    linearizedElements = linearizedElements.reshape(linearizedType);
   }
 
-  auto indexType = typeConverter.getIndexType(builder.getContext());
-
-  Value ptrLoc = nullptr;
-  assert(indices.size() == strides.size());
-  for (auto index : enumerate(indices)) {
-    Value strideVal = builder.create<spirv::ConstantOp>(
-        loc, indexType, IntegerAttr::get(indexType, strides[index.index()]));
-    Value update = builder.create<spirv::IMulOp>(loc, strideVal, index.value());
-    ptrLoc =
-        (ptrLoc ? builder.create<spirv::IAddOp>(loc, ptrLoc, update).getResult()
-                : update);
-  }
-  SmallVector<Value, 2> linearizedIndices;
-  // Add a '0' at the start to index into the struct.
-  linearizedIndices.push_back(builder.create<spirv::ConstantOp>(
-      loc, indexType, IntegerAttr::get(indexType, 0)));
-  linearizedIndices.push_back(ptrLoc);
-  return builder.create<spirv::AccessChainOp>(loc, basePtr, linearizedIndices);
+  rewriter.replaceOpWithNewOp<spirv::ConstantOp>(
+      constCompositeOp, spirvCompositeType, linearizedElements);
+  return matchSuccess();
 }
 
 //===----------------------------------------------------------------------===//
@@ -178,7 +181,7 @@ spirv::AccessChainOp getElementPtr(OpBuilder &builder,
 PatternMatchResult ConstantIndexOpConversion::matchAndRewrite(
     ConstantOp constIndexOp, ArrayRef<Value> operands,
     ConversionPatternRewriter &rewriter) const {
-  if (!constIndexOp.getResult()->getType().isa<IndexType>()) {
+  if (!constIndexOp.getResult().getType().isa<IndexType>()) {
     return matchFailure();
   }
   // The attribute has index type which is not directly supported in
@@ -197,7 +200,7 @@ PatternMatchResult ConstantIndexOpConversion::matchAndRewrite(
     return matchFailure();
   }
   auto spirvConstType =
-      typeConverter.convertType(constIndexOp.getResult()->getType());
+      typeConverter.convertType(constIndexOp.getResult().getType());
   auto spirvConstVal =
       rewriter.getIntegerAttr(spirvConstType, constAttr.getInt());
   rewriter.replaceOpWithNewOp<spirv::ConstantOp>(constIndexOp, spirvConstType,
@@ -217,9 +220,9 @@ CmpFOpConversion::matchAndRewrite(CmpFOp cmpFOp, ArrayRef<Value> operands,
   switch (cmpFOp.getPredicate()) {
 #define DISPATCH(cmpPredicate, spirvOp)                                        \
   case cmpPredicate:                                                           \
-    rewriter.replaceOpWithNewOp<spirvOp>(                                      \
-        cmpFOp, cmpFOp.getResult()->getType(), cmpFOpOperands.lhs(),           \
-        cmpFOpOperands.rhs());                                                 \
+    rewriter.replaceOpWithNewOp<spirvOp>(cmpFOp, cmpFOp.getResult().getType(), \
+                                         cmpFOpOperands.lhs(),                 \
+                                         cmpFOpOperands.rhs());                \
     return matchSuccess();
 
     // Ordered.
@@ -257,9 +260,9 @@ CmpIOpConversion::matchAndRewrite(CmpIOp cmpIOp, ArrayRef<Value> operands,
   switch (cmpIOp.getPredicate()) {
 #define DISPATCH(cmpPredicate, spirvOp)                                        \
   case cmpPredicate:                                                           \
-    rewriter.replaceOpWithNewOp<spirvOp>(                                      \
-        cmpIOp, cmpIOp.getResult()->getType(), cmpIOpOperands.lhs(),           \
-        cmpIOpOperands.rhs());                                                 \
+    rewriter.replaceOpWithNewOp<spirvOp>(cmpIOp, cmpIOp.getResult().getType(), \
+                                         cmpIOpOperands.lhs(),                 \
+                                         cmpIOpOperands.rhs());                \
     return matchSuccess();
 
     DISPATCH(CmpIPredicate::eq, spirv::IEqualOp);
@@ -286,12 +289,10 @@ PatternMatchResult
 LoadOpConversion::matchAndRewrite(LoadOp loadOp, ArrayRef<Value> operands,
                                   ConversionPatternRewriter &rewriter) const {
   LoadOpOperandAdaptor loadOperands(operands);
-  auto loadPtr = getElementPtr(rewriter, typeConverter, loadOp.getLoc(),
-                               loadOp.memref()->getType().cast<MemRefType>(),
-                               loadOperands.memref(), loadOperands.indices());
-  rewriter.replaceOpWithNewOp<spirv::LoadOp>(loadOp, loadPtr,
-                                             /*memory_access =*/nullptr,
-                                             /*alignment =*/nullptr);
+  auto loadPtr = spirv::getElementPtr(
+      typeConverter, loadOp.memref().getType().cast<MemRefType>(),
+      loadOperands.memref(), loadOperands.indices(), loadOp.getLoc(), rewriter);
+  rewriter.replaceOpWithNewOp<spirv::LoadOp>(loadOp, loadPtr);
   return matchSuccess();
 }
 
@@ -331,14 +332,12 @@ PatternMatchResult
 StoreOpConversion::matchAndRewrite(StoreOp storeOp, ArrayRef<Value> operands,
                                    ConversionPatternRewriter &rewriter) const {
   StoreOpOperandAdaptor storeOperands(operands);
-  auto storePtr =
-      getElementPtr(rewriter, typeConverter, storeOp.getLoc(),
-                    storeOp.memref()->getType().cast<MemRefType>(),
-                    storeOperands.memref(), storeOperands.indices());
+  auto storePtr = spirv::getElementPtr(
+      typeConverter, storeOp.memref().getType().cast<MemRefType>(),
+      storeOperands.memref(), storeOperands.indices(), storeOp.getLoc(),
+      rewriter);
   rewriter.replaceOpWithNewOp<spirv::StoreOp>(storeOp, storePtr,
-                                              storeOperands.value(),
-                                              /*memory_access =*/nullptr,
-                                              /*alignment =*/nullptr);
+                                              storeOperands.value());
   return matchSuccess();
 }
 
@@ -353,7 +352,8 @@ void populateStandardToSPIRVPatterns(MLIRContext *context,
                                      OwningRewritePatternList &patterns) {
   // Add patterns that lower operations into SPIR-V dialect.
   populateWithGenerated(context, &patterns);
-  patterns.insert<ConstantIndexOpConversion, CmpFOpConversion, CmpIOpConversion,
+  patterns.insert<ConstantCompositeOpConversion, ConstantIndexOpConversion,
+                  CmpFOpConversion, CmpIOpConversion,
                   IntegerOpConversion<AddIOp, spirv::IAddOp>,
                   IntegerOpConversion<MulIOp, spirv::IMulOp>,
                   IntegerOpConversion<SignedDivIOp, spirv::SDivOp>,

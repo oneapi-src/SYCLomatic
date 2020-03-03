@@ -1,6 +1,6 @@
 //===- LowerGpuOpsToNVVMOps.cpp - MLIR GPU to NVVM lowering passes --------===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -19,7 +19,6 @@
 #include "mlir/IR/BlockAndValueMapping.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/DialectConversion.h"
-
 #include "llvm/Support/FormatVariadic.h"
 
 #include "../GPUCommon/IndexIntrinsicsOpLowering.h"
@@ -29,34 +28,14 @@ using namespace mlir;
 
 namespace {
 
-/// Derived type converter for GPU to NVVM lowering. The GPU dialect uses memory
-/// space 5 for private memory attributions, but NVVM represents private
-/// memory allocations as local `alloca`s in the default address space. This
-/// converter drops the private memory space to support the use case above.
-class NVVMTypeConverter : public LLVMTypeConverter {
-public:
-  using LLVMTypeConverter::LLVMTypeConverter;
-
-  Type convertType(Type type) override {
-    auto memref = type.dyn_cast<MemRefType>();
-    if (memref &&
-        memref.getMemorySpace() == gpu::GPUDialect::getPrivateAddressSpace()) {
-      type = MemRefType::get(memref.getShape(), memref.getElementType(),
-                             memref.getAffineMaps());
-    }
-
-    return LLVMTypeConverter::convertType(type);
-  }
-};
-
 /// Converts all_reduce op to LLVM/NVVM ops.
-struct GPUAllReduceOpLowering : public LLVMOpLowering {
+struct GPUAllReduceOpLowering : public ConvertToLLVMPattern {
   using AccumulatorFactory =
       std::function<Value(Location, Value, Value, ConversionPatternRewriter &)>;
 
   explicit GPUAllReduceOpLowering(LLVMTypeConverter &lowering_)
-      : LLVMOpLowering(gpu::AllReduceOp::getOperationName(),
-                       lowering_.getDialect()->getContext(), lowering_),
+      : ConvertToLLVMPattern(gpu::AllReduceOp::getOperationName(),
+                             lowering_.getDialect()->getContext(), lowering_),
         int32Type(LLVM::LLVMType::getInt32Ty(lowering_.getDialect())) {}
 
   PatternMatchResult
@@ -66,7 +45,7 @@ struct GPUAllReduceOpLowering : public LLVMOpLowering {
     Value operand = operands.front();
 
     // TODO(csigg): Generalize to other types of accumulation.
-    assert(op->getOperand(0)->getType().isIntOrFloat());
+    assert(op->getOperand(0).getType().isSignlessIntOrFloat());
 
     // Create the reduction using an accumulator factory.
     AccumulatorFactory factory =
@@ -87,7 +66,7 @@ private:
       return getFactory(allReduce.body());
     }
     if (allReduce.op()) {
-      auto type = operand->getType().cast<LLVM::LLVMType>();
+      auto type = operand.getType().cast<LLVM::LLVMType>();
       return getFactory(*allReduce.op(), type.getUnderlyingType());
     }
     return AccumulatorFactory();
@@ -127,7 +106,7 @@ private:
 
       // Return accumulator result.
       rewriter.setInsertionPointToStart(split);
-      return split->addArgument(lhs->getType());
+      return split->addArgument(lhs.getType());
     });
   }
 
@@ -154,7 +133,7 @@ private:
   template <typename T> AccumulatorFactory getFactory() const {
     return [](Location loc, Value lhs, Value rhs,
               ConversionPatternRewriter &rewriter) {
-      return rewriter.create<T>(loc, lhs->getType(), lhs, rhs);
+      return rewriter.create<T>(loc, lhs.getType(), lhs, rhs);
     };
   }
 
@@ -197,10 +176,10 @@ private:
   Value createBlockReduce(Location loc, Value operand,
                           AccumulatorFactory &accumFactory,
                           ConversionPatternRewriter &rewriter) const {
-    auto type = operand->getType().cast<LLVM::LLVMType>();
+    auto type = operand.getType().cast<LLVM::LLVMType>();
 
     // Create shared memory array to store the warp reduction.
-    auto module = operand->getDefiningOp()->getParentOfType<ModuleOp>();
+    auto module = operand.getDefiningOp()->getParentOfType<gpu::GPUModuleOp>();
     assert(module && "op must belong to a module");
     Value sharedMemPtr =
         createSharedMemoryArray(loc, module, type, kWarpSize, rewriter);
@@ -295,7 +274,7 @@ private:
     assert(thenOperands.size() == elseOperands.size());
     rewriter.setInsertionPointToStart(continueBlock);
     for (auto operand : thenOperands)
-      continueBlock->addArgument(operand->getType());
+      continueBlock->addArgument(operand.getType());
   }
 
   /// Shortcut for createIf with empty else block and no block operands.
@@ -321,7 +300,7 @@ private:
         loc, int32Type, rewriter.getI32IntegerAttr(kWarpSize));
     Value isPartialWarp = rewriter.create<LLVM::ICmpOp>(
         loc, LLVM::ICmpPredicate::slt, activeWidth, warpSize);
-    auto type = operand->getType().cast<LLVM::LLVMType>();
+    auto type = operand.getType().cast<LLVM::LLVMType>();
 
     createIf(
         loc, rewriter, isPartialWarp,
@@ -338,7 +317,7 @@ private:
           // Clamp lane: `activeWidth - 1`
           Value maskAndClamp =
               rewriter.create<LLVM::SubOp>(loc, int32Type, activeWidth, one);
-          auto dialect = lowering.getDialect();
+          auto dialect = typeConverter.getDialect();
           auto predTy = LLVM::LLVMType::getInt1Ty(dialect);
           auto shflTy = LLVM::LLVMType::getStructTy(dialect, {type, predTy});
           auto returnValueAndIsValidAttr = rewriter.getUnitAttr();
@@ -391,10 +370,10 @@ private:
   }
 
   /// Creates a global array stored in shared memory.
-  Value createSharedMemoryArray(Location loc, ModuleOp module,
+  Value createSharedMemoryArray(Location loc, gpu::GPUModuleOp module,
                                 LLVM::LLVMType elementType, int numElements,
                                 ConversionPatternRewriter &rewriter) const {
-    OpBuilder builder(module.getBodyRegion());
+    OpBuilder builder(module.body());
 
     auto arrayType = LLVM::LLVMType::getArrayTy(elementType, numElements);
     StringRef name = "reduce_buffer";
@@ -453,7 +432,7 @@ private:
   /// Returns value divided by the warp size (i.e. 32).
   Value getDivideByWarpSize(Value value,
                             ConversionPatternRewriter &rewriter) const {
-    auto loc = value->getLoc();
+    auto loc = value.getLoc();
     auto warpSize = rewriter.create<LLVM::ConstantOp>(
         loc, int32Type, rewriter.getI32IntegerAttr(kWarpSize));
     return rewriter.create<LLVM::SDivOp>(loc, int32Type, value, warpSize);
@@ -464,10 +443,10 @@ private:
   static constexpr int kWarpSize = 32;
 };
 
-struct GPUShuffleOpLowering : public LLVMOpLowering {
+struct GPUShuffleOpLowering : public ConvertToLLVMPattern {
   explicit GPUShuffleOpLowering(LLVMTypeConverter &lowering_)
-      : LLVMOpLowering(gpu::ShuffleOp::getOperationName(),
-                       lowering_.getDialect()->getContext(), lowering_) {}
+      : ConvertToLLVMPattern(gpu::ShuffleOp::getOperationName(),
+                             lowering_.getDialect()->getContext(), lowering_) {}
 
   /// Lowers a shuffle to the corresponding NVVM op.
   ///
@@ -491,8 +470,8 @@ struct GPUShuffleOpLowering : public LLVMOpLowering {
     Location loc = op->getLoc();
     gpu::ShuffleOpOperandAdaptor adaptor(operands);
 
-    auto dialect = lowering.getDialect();
-    auto valueTy = adaptor.value()->getType().cast<LLVM::LLVMType>();
+    auto dialect = typeConverter.getDialect();
+    auto valueTy = adaptor.value().getType().cast<LLVM::LLVMType>();
     auto int32Type = LLVM::LLVMType::getInt32Ty(dialect);
     auto predTy = LLVM::LLVMType::getInt1Ty(dialect);
     auto resultTy = LLVM::LLVMType::getStructTy(dialect, {valueTy, predTy});
@@ -522,11 +501,11 @@ struct GPUShuffleOpLowering : public LLVMOpLowering {
   }
 };
 
-struct GPUFuncOpLowering : LLVMOpLowering {
+struct GPUFuncOpLowering : ConvertToLLVMPattern {
   explicit GPUFuncOpLowering(LLVMTypeConverter &typeConverter)
-      : LLVMOpLowering(gpu::GPUFuncOp::getOperationName(),
-                       typeConverter.getDialect()->getContext(),
-                       typeConverter) {}
+      : ConvertToLLVMPattern(gpu::GPUFuncOp::getOperationName(),
+                             typeConverter.getDialect()->getContext(),
+                             typeConverter) {}
 
   PatternMatchResult
   matchAndRewrite(Operation *op, ArrayRef<Value> operands,
@@ -540,16 +519,16 @@ struct GPUFuncOpLowering : LLVMOpLowering {
     for (auto en : llvm::enumerate(gpuFuncOp.getWorkgroupAttributions())) {
       Value attribution = en.value();
 
-      auto type = attribution->getType().dyn_cast<MemRefType>();
+      auto type = attribution.getType().dyn_cast<MemRefType>();
       assert(type && type.hasStaticShape() && "unexpected type in attribution");
 
       uint64_t numElements = type.getNumElements();
 
-      auto elementType =
-          lowering.convertType(type.getElementType()).cast<LLVM::LLVMType>();
+      auto elementType = typeConverter.convertType(type.getElementType())
+                             .cast<LLVM::LLVMType>();
       auto arrayType = LLVM::LLVMType::getArrayTy(elementType, numElements);
-      std::string name =
-          llvm::formatv("__wg_{0}_{1}", gpuFuncOp.getName(), en.index());
+      std::string name = std::string(
+          llvm::formatv("__wg_{0}_{1}", gpuFuncOp.getName(), en.index()));
       auto globalOp = rewriter.create<LLVM::GlobalOp>(
           gpuFuncOp.getLoc(), arrayType, /*isConstant=*/false,
           LLVM::Linkage::Internal, name, /*value=*/Attribute(),
@@ -558,15 +537,15 @@ struct GPUFuncOpLowering : LLVMOpLowering {
     }
 
     // Rewrite the original GPU function to an LLVM function.
-    auto funcType = lowering.convertType(gpuFuncOp.getType())
+    auto funcType = typeConverter.convertType(gpuFuncOp.getType())
                         .cast<LLVM::LLVMType>()
                         .getPointerElementTy();
 
     // Remap proper input types.
     TypeConverter::SignatureConversion signatureConversion(
         gpuFuncOp.front().getNumArguments());
-    for (unsigned i = 0, e = funcType.getFunctionNumParams(); i < e; ++i)
-      signatureConversion.addInputs(i, funcType.getFunctionParamType(i));
+    typeConverter.convertFunctionSignature(
+        gpuFuncOp.getType(), /*isVariadic=*/false, signatureConversion);
 
     // Create the new function operation. Only copy those attributes that are
     // not specific to function modeling.
@@ -593,7 +572,7 @@ struct GPUFuncOpLowering : LLVMOpLowering {
       // Rewrite workgroup memory attributions to addresses of global buffers.
       rewriter.setInsertionPointToStart(&gpuFuncOp.front());
       unsigned numProperArguments = gpuFuncOp.getNumArguments();
-      auto i32Type = LLVM::LLVMType::getInt32Ty(lowering.getDialect());
+      auto i32Type = LLVM::LLVMType::getInt32Ty(typeConverter.getDialect());
 
       Value zero = nullptr;
       if (!workgroupBuffers.empty())
@@ -612,26 +591,26 @@ struct GPUFuncOpLowering : LLVMOpLowering {
         // otherwise necessary given that memref sizes are fixed, but we can try
         // and canonicalize that away later.
         Value attribution = gpuFuncOp.getWorkgroupAttributions()[en.index()];
-        auto type = attribution->getType().cast<MemRefType>();
-        auto descr = MemRefDescriptor::fromStaticShape(rewriter, loc, lowering,
-                                                       type, memory);
+        auto type = attribution.getType().cast<MemRefType>();
+        auto descr = MemRefDescriptor::fromStaticShape(
+            rewriter, loc, typeConverter, type, memory);
         signatureConversion.remapInput(numProperArguments + en.index(), descr);
       }
 
       // Rewrite private memory attributions to alloca'ed buffers.
       unsigned numWorkgroupAttributions =
           gpuFuncOp.getNumWorkgroupAttributions();
-      auto int64Ty = LLVM::LLVMType::getInt64Ty(lowering.getDialect());
+      auto int64Ty = LLVM::LLVMType::getInt64Ty(typeConverter.getDialect());
       for (auto en : llvm::enumerate(gpuFuncOp.getPrivateAttributions())) {
         Value attribution = en.value();
-        auto type = attribution->getType().cast<MemRefType>();
+        auto type = attribution.getType().cast<MemRefType>();
         assert(type && type.hasStaticShape() &&
                "unexpected type in attribution");
 
         // Explicitly drop memory space when lowering private memory
         // attributions since NVVM models it as `alloca`s in the default
         // memory space and does not support `alloca`s with addrspace(5).
-        auto ptrType = lowering.convertType(type.getElementType())
+        auto ptrType = typeConverter.convertType(type.getElementType())
                            .cast<LLVM::LLVMType>()
                            .getPointerTo();
         Value numElements = rewriter.create<LLVM::ConstantOp>(
@@ -639,8 +618,8 @@ struct GPUFuncOpLowering : LLVMOpLowering {
             rewriter.getI64IntegerAttr(type.getNumElements()));
         Value allocated = rewriter.create<LLVM::AllocaOp>(
             gpuFuncOp.getLoc(), ptrType, numElements, /*alignment=*/0);
-        auto descr = MemRefDescriptor::fromStaticShape(rewriter, loc, lowering,
-                                                       type, allocated);
+        auto descr = MemRefDescriptor::fromStaticShape(
+            rewriter, loc, typeConverter, type, allocated);
         signatureConversion.remapInput(
             numProperArguments + numWorkgroupAttributions + en.index(), descr);
       }
@@ -652,35 +631,16 @@ struct GPUFuncOpLowering : LLVMOpLowering {
     rewriter.applySignatureConversion(&llvmFuncOp.getBody(),
                                       signatureConversion);
 
-    {
-      // For memref-typed arguments, insert the relevant loads in the beginning
-      // of the block to comply with the LLVM dialect calling convention. This
-      // needs to be done after signature conversion to get the right types.
-      OpBuilder::InsertionGuard guard(rewriter);
-      Block &block = llvmFuncOp.front();
-      rewriter.setInsertionPointToStart(&block);
-
-      for (auto en : llvm::enumerate(gpuFuncOp.getType().getInputs())) {
-        if (!en.value().isa<MemRefType>() &&
-            !en.value().isa<UnrankedMemRefType>())
-          continue;
-
-        BlockArgument arg = block.getArgument(en.index());
-        Value loaded = rewriter.create<LLVM::LoadOp>(loc, arg);
-        rewriter.replaceUsesOfBlockArgument(arg, loaded);
-      }
-    }
-
     rewriter.eraseOp(gpuFuncOp);
     return matchSuccess();
   }
 };
 
-struct GPUReturnOpLowering : public LLVMOpLowering {
+struct GPUReturnOpLowering : public ConvertToLLVMPattern {
   GPUReturnOpLowering(LLVMTypeConverter &typeConverter)
-      : LLVMOpLowering(gpu::ReturnOp::getOperationName(),
-                       typeConverter.getDialect()->getContext(),
-                       typeConverter) {}
+      : ConvertToLLVMPattern(gpu::ReturnOp::getOperationName(),
+                             typeConverter.getDialect()->getContext(),
+                             typeConverter) {}
 
   PatternMatchResult
   matchAndRewrite(Operation *op, ArrayRef<Value> operands,
@@ -699,25 +659,37 @@ struct GPUReturnOpLowering : public LLVMOpLowering {
 ///
 /// This pass only handles device code and is not meant to be run on GPU host
 /// code.
-class LowerGpuOpsToNVVMOpsPass : public ModulePass<LowerGpuOpsToNVVMOpsPass> {
+class LowerGpuOpsToNVVMOpsPass
+    : public OperationPass<LowerGpuOpsToNVVMOpsPass, gpu::GPUModuleOp> {
 public:
-  void runOnModule() override {
-    ModuleOp m = getModule();
-    if (!m.getAttrOfType<UnitAttr>(gpu::GPUDialect::getKernelModuleAttrName()))
-      return;
+  void runOnOperation() override {
+    gpu::GPUModuleOp m = getOperation();
+
+    /// MemRef conversion for GPU to NVVM lowering. The GPU dialect uses memory
+    /// space 5 for private memory attributions, but NVVM represents private
+    /// memory allocations as local `alloca`s in the default address space. This
+    /// converter drops the private memory space to support the use case above.
+    LLVMTypeConverter converter(m.getContext());
+    converter.addConversion([&](MemRefType type) -> Optional<Type> {
+      if (type.getMemorySpace() != gpu::GPUDialect::getPrivateAddressSpace())
+        return llvm::None;
+      return converter.convertType(MemRefType::Builder(type).setMemorySpace(0));
+    });
 
     OwningRewritePatternList patterns;
-    NVVMTypeConverter converter(m.getContext());
     populateStdToLLVMConversionPatterns(converter, patterns);
     populateGpuToNVVMConversionPatterns(converter, patterns);
     ConversionTarget target(getContext());
     target.addIllegalDialect<gpu::GPUDialect>();
-    target.addIllegalOp<LLVM::ExpOp>();
+    target.addIllegalOp<LLVM::FAbsOp, LLVM::FCeilOp, LLVM::CosOp,
+                        LLVM::ExpOp>();
     target.addIllegalOp<FuncOp>();
     target.addLegalDialect<LLVM::LLVMDialect>();
     target.addLegalDialect<NVVM::NVVMDialect>();
+    target.addDynamicallyLegalOp<mlir::LLVM::CallOp>(
+        gpu::filterIllegalLLVMIntrinsics({"tanh", "tanhf"}, m.getContext()));
     // TODO(csigg): Remove once we support replacing non-root ops.
-    target.addLegalOp<gpu::YieldOp>();
+    target.addLegalOp<gpu::YieldOp, gpu::GPUModuleOp, gpu::ModuleEndOp>();
     if (failed(applyPartialConversion(m, target, patterns, &converter)))
       signalPassFailure();
   }
@@ -739,11 +711,20 @@ void mlir::populateGpuToNVVMConversionPatterns(
                                           NVVM::GridDimYOp, NVVM::GridDimZOp>,
               GPUAllReduceOpLowering, GPUShuffleOpLowering, GPUFuncOpLowering,
               GPUReturnOpLowering>(converter);
+  patterns.insert<OpToFuncCallLowering<AbsFOp>>(converter, "__nv_fabsf",
+                                               "__nv_fabs");
+  patterns.insert<OpToFuncCallLowering<CeilFOp>>(converter, "__nv_ceilf",
+                                               "__nv_ceil");
+  patterns.insert<OpToFuncCallLowering<CosOp>>(converter, "__nv_cosf",
+                                               "__nv_cos");
   patterns.insert<OpToFuncCallLowering<ExpOp>>(converter, "__nv_expf",
                                                "__nv_exp");
+  patterns.insert<OpToFuncCallLowering<TanhOp>>(converter, "__nv_tanhf",
+                                                "__nv_tanh");
 }
 
-std::unique_ptr<OpPassBase<ModuleOp>> mlir::createLowerGpuOpsToNVVMOpsPass() {
+std::unique_ptr<OpPassBase<gpu::GPUModuleOp>>
+mlir::createLowerGpuOpsToNVVMOpsPass() {
   return std::make_unique<LowerGpuOpsToNVVMOpsPass>();
 }
 

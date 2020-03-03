@@ -13,10 +13,11 @@
 #include <CL/sycl/detail/type_traits.hpp>
 #include <CL/sycl/range.hpp>
 
-__SYCL_INLINE namespace cl {
+__SYCL_INLINE_NAMESPACE(cl) {
 namespace sycl {
 template <int dimensions> class range;
 template <int dimensions, bool with_offset> class item;
+
 template <int dimensions = 1> class id : public detail::array<dimensions> {
 private:
   using base = detail::array<dimensions>;
@@ -24,6 +25,19 @@ private:
                 "id can only be 1, 2, or 3 dimensional.");
   template <int N, int val, typename T>
   using ParamTy = detail::enable_if_t<(N == val), T>;
+
+#ifndef __SYCL_DISABLE_ID_TO_INT_CONV__
+  /* Helper class for conversion operator. Void type is not suitable. User
+   * cannot even try to get address of the operator __private_class(). User
+   * may try to get an address of operator void() and will get the
+   * compile-time error */
+  class __private_class;
+
+  template <typename N, typename T>
+  using EnableIfIntegral  = detail::enable_if_t<std::is_integral<N>::value, T>;
+  template <bool B, typename T>
+  using EnableIfT = detail::conditional_t<B, T, __private_class>;
+#endif // __SYCL_DISABLE_ID_TO_INT_CONV__
 
 public:
   id() = default;
@@ -76,31 +90,99 @@ public:
     return result;
   }
 
-  // OP is: +, -, *, /, %, <<, >>, &, |, ^, &&, ||, <, >, <=, >=
-  #define __SYCL_GEN_OPT(op)                                                   \
-    id<dimensions> operator op(const id<dimensions> &rhs) const {              \
-      id<dimensions> result;                                                   \
-      for (int i = 0; i < dimensions; ++i) {                                   \
-        result.common_array[i] = this->common_array[i] op rhs.common_array[i]; \
-      }                                                                        \
-      return result;                                                           \
-    }                                                                          \
-    id<dimensions> operator op(const size_t &rhs) const {                      \
-      id<dimensions> result;                                                   \
-      for (int i = 0; i < dimensions; ++i) {                                   \
-        result.common_array[i] = this->common_array[i] op rhs;                 \
-      }                                                                        \
-      return result;                                                           \
-    }                                                                          \
-    friend id<dimensions> operator op(const size_t &lhs,                       \
-                                      const id<dimensions> &rhs) {             \
-      id<dimensions> result;                                                   \
-      for (int i = 0; i < dimensions; ++i) {                                   \
-        result.common_array[i] = lhs op rhs.common_array[i];                   \
-      }                                                                        \
-      return result;                                                           \
-    }                                                                          \
+#ifndef __SYCL_DISABLE_ID_TO_INT_CONV__
+  /* Template operator is not allowed because it disables further type
+   * conversion. For example, the next code will not work in case of template
+   * conversion:
+   * int a = id<1>(value); */
 
+  operator EnableIfT<(dimensions == 1), size_t>() const {
+    return this->common_array[0];
+  }
+#endif // __SYCL_DISABLE_ID_TO_INT_CONV__
+
+// OP is: ==, !=
+#ifndef __SYCL_DISABLE_ID_TO_INT_CONV__
+  using detail::array<dimensions>::operator==;
+  using detail::array<dimensions>::operator!=;
+
+  /* Enable operators with integral types.
+   * Template operators take precedence than type conversion. In the case of
+   * non-template operators, ambiguity appears: "id op size_t" may refer
+   * "size_t op size_t" and "id op size_t". In case of template operators it
+   * will be "id op size_t"*/
+#define __SYCL_GEN_OPT(op)                                                     \
+  template <typename T>                                                        \
+  EnableIfIntegral <T, bool> operator op(const T &rhs) const {                 \
+    if (this->common_array[0] != rhs)                                          \
+      return false op true;                                                    \
+    return true op true;                                                       \
+  }                                                                            \
+  template <typename T>                                                        \
+  friend EnableIfIntegral <T, bool> operator op(const T &lhs,                  \
+                                           const id<dimensions> &rhs) {        \
+    if (lhs != rhs.common_array[0])                                            \
+      return false op true;                                                    \
+    return true op true;                                                       \
+  }
+
+  __SYCL_GEN_OPT(==)
+  __SYCL_GEN_OPT(!=)
+
+#undef __SYCL_GEN_OPT
+
+#endif // __SYCL_DISABLE_ID_TO_INT_CONV__
+
+// OP is: +, -, *, /, %, <<, >>, &, |, ^, &&, ||, <, >, <=, >=
+#define __SYCL_GEN_OPT_BASE(op)                                                \
+  id<dimensions> operator op(const id<dimensions> &rhs) const {                \
+    id<dimensions> result;                                                     \
+    for (int i = 0; i < dimensions; ++i) {                                     \
+      result.common_array[i] = this->common_array[i] op rhs.common_array[i];   \
+    }                                                                          \
+    return result;                                                             \
+  }
+
+#ifndef __SYCL_DISABLE_ID_TO_INT_CONV__
+// Enable operators with integral types only
+#define __SYCL_GEN_OPT(op)                                                     \
+  __SYCL_GEN_OPT_BASE(op)                                                      \
+  template <typename T>                                                        \
+  EnableIfIntegral <T, id<dimensions>> operator op(const T &rhs) const {       \
+    id<dimensions> result;                                                     \
+    for (int i = 0; i < dimensions; ++i) {                                     \
+      result.common_array[i] = this->common_array[i] op rhs;                   \
+    }                                                                          \
+    return result;                                                             \
+  }                                                                            \
+  template <typename T>                                                        \
+  friend EnableIfIntegral <T, id<dimensions>> operator op(                     \
+      const T &lhs, const id<dimensions> &rhs) {                               \
+    id<dimensions> result;                                                     \
+    for (int i = 0; i < dimensions; ++i) {                                     \
+      result.common_array[i] = lhs op rhs.common_array[i];                     \
+    }                                                                          \
+    return result;                                                             \
+  }
+#else
+#define __SYCL_GEN_OPT(op)                                                     \
+  __SYCL_GEN_OPT_BASE(op)                                                      \
+  id<dimensions> operator op(const size_t &rhs) const {                        \
+    id<dimensions> result;                                                     \
+    for (int i = 0; i < dimensions; ++i) {                                     \
+      result.common_array[i] = this->common_array[i] op rhs;                   \
+    }                                                                          \
+    return result;                                                             \
+  }                                                                            \
+  friend id<dimensions> operator op(const size_t &lhs,                         \
+                                    const id<dimensions> &rhs) {               \
+    id<dimensions> result;                                                     \
+    for (int i = 0; i < dimensions; ++i) {                                     \
+      result.common_array[i] = lhs op rhs.common_array[i];                     \
+    }                                                                          \
+    return result;                                                             \
+  }
+#endif // __SYCL_DISABLE_ID_TO_INT_CONV__
 
   __SYCL_GEN_OPT(+)
   __SYCL_GEN_OPT(-)
@@ -119,22 +201,23 @@ public:
   __SYCL_GEN_OPT(<=)
   __SYCL_GEN_OPT(>=)
 
-  #undef __SYCL_GEN_OPT
+#undef __SYCL_GEN_OPT
+#undef __SYCL_GEN_OPT_BASE
 
-  // OP is: +=, -=, *=, /=, %=, <<=, >>=, &=, |=, ^=
-  #define __SYCL_GEN_OPT(op)                                                   \
-    id<dimensions> &operator op(const id<dimensions> &rhs) {                   \
-      for (int i = 0; i < dimensions; ++i) {                                   \
-        this->common_array[i] op rhs.common_array[i];                          \
-      }                                                                        \
-      return *this;                                                            \
+// OP is: +=, -=, *=, /=, %=, <<=, >>=, &=, |=, ^=
+#define __SYCL_GEN_OPT(op)                                                     \
+  id<dimensions> &operator op(const id<dimensions> &rhs) {                     \
+    for (int i = 0; i < dimensions; ++i) {                                     \
+      this->common_array[i] op rhs.common_array[i];                            \
     }                                                                          \
-    id<dimensions> &operator op(const size_t &rhs) {                           \
-      for (int i = 0; i < dimensions; ++i) {                                   \
-        this->common_array[i] op rhs;                                          \
-      }                                                                        \
-      return *this;                                                            \
+    return *this;                                                              \
+  }                                                                            \
+  id<dimensions> &operator op(const size_t &rhs) {                             \
+    for (int i = 0; i < dimensions; ++i) {                                     \
+      this->common_array[i] op rhs;                                            \
     }                                                                          \
+    return *this;                                                              \
+  }
 
   __SYCL_GEN_OPT(+=)
   __SYCL_GEN_OPT(-=)
@@ -147,7 +230,7 @@ public:
   __SYCL_GEN_OPT(|=)
   __SYCL_GEN_OPT(^=)
 
-  #undef __SYCL_GEN_OPT
+#undef __SYCL_GEN_OPT
 };
 
 namespace detail {
@@ -170,4 +253,4 @@ id(size_t, size_t, size_t)->id<3>;
 #endif
 
 } // namespace sycl
-} // namespace cl
+} // __SYCL_INLINE_NAMESPACE(cl)

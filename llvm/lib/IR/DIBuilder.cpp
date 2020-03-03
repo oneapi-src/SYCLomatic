@@ -140,7 +140,8 @@ DICompileUnit *DIBuilder::createCompileUnit(
     StringRef Flags, unsigned RunTimeVer, StringRef SplitName,
     DICompileUnit::DebugEmissionKind Kind, uint64_t DWOId,
     bool SplitDebugInlining, bool DebugInfoForProfiling,
-    DICompileUnit::DebugNameTableKind NameTableKind, bool RangesBaseAddress) {
+    DICompileUnit::DebugNameTableKind NameTableKind, bool RangesBaseAddress,
+    StringRef SysRoot) {
 
   assert(((Lang <= dwarf::DW_LANG_Fortran08 && Lang >= dwarf::DW_LANG_C89) ||
           (Lang <= dwarf::DW_LANG_hi_user && Lang >= dwarf::DW_LANG_lo_user)) &&
@@ -151,7 +152,7 @@ DICompileUnit *DIBuilder::createCompileUnit(
       VMContext, Lang, File, Producer, isOptimized, Flags, RunTimeVer,
       SplitName, Kind, nullptr, nullptr, nullptr, nullptr, nullptr, DWOId,
       SplitDebugInlining, DebugInfoForProfiling, NameTableKind,
-      RangesBaseAddress);
+      RangesBaseAddress, SysRoot);
 
   // Create a named metadata so that it is easier to find cu in a module.
   NamedMDNode *NMD = M.getOrInsertNamedMetadata("llvm.dbg.cu");
@@ -829,10 +830,9 @@ DINamespace *DIBuilder::createNameSpace(DIScope *Scope, StringRef Name,
 
 DIModule *DIBuilder::createModule(DIScope *Scope, StringRef Name,
                                   StringRef ConfigurationMacros,
-                                  StringRef IncludePath,
-                                  StringRef SysRoot) {
- return DIModule::get(VMContext, getNonCompileUnitScope(Scope), Name,
-                      ConfigurationMacros, IncludePath, SysRoot);
+                                  StringRef IncludePath) {
+  return DIModule::get(VMContext, getNonCompileUnitScope(Scope), Name,
+                       ConfigurationMacros, IncludePath);
 }
 
 DILexicalBlockFile *DIBuilder::createLexicalBlockFile(DIScope *Scope,
@@ -895,18 +895,15 @@ Instruction *DIBuilder::insertDbgValueIntrinsic(Value *V,
   return insertDbgValueIntrinsic(V, VarInfo, Expr, DL, InsertAtEnd, nullptr);
 }
 
-/// Return an IRBuilder for inserting dbg.declare and dbg.value intrinsics. This
-/// abstracts over the various ways to specify an insert position.
-static IRBuilder<> getIRBForDbgInsertion(const DILocation *DL,
-                                         BasicBlock *InsertBB,
-                                         Instruction *InsertBefore) {
-  IRBuilder<> B(DL->getContext());
+/// Initialize IRBuilder for inserting dbg.declare and dbg.value intrinsics.
+/// This abstracts over the various ways to specify an insert position.
+static void initIRBuilder(IRBuilder<> &Builder, const DILocation *DL,
+                          BasicBlock *InsertBB, Instruction *InsertBefore) {
   if (InsertBefore)
-    B.SetInsertPoint(InsertBefore);
+    Builder.SetInsertPoint(InsertBefore);
   else if (InsertBB)
-    B.SetInsertPoint(InsertBB);
-  B.SetCurrentDebugLocation(DL);
-  return B;
+    Builder.SetInsertPoint(InsertBB);
+  Builder.SetCurrentDebugLocation(DL);
 }
 
 static Value *getDbgIntrinsicValueImpl(LLVMContext &VMContext, Value *V) {
@@ -936,7 +933,8 @@ Instruction *DIBuilder::insertDeclare(Value *Storage, DILocalVariable *VarInfo,
                    MetadataAsValue::get(VMContext, VarInfo),
                    MetadataAsValue::get(VMContext, Expr)};
 
-  IRBuilder<> B = getIRBForDbgInsertion(DL, InsertBB, InsertBefore);
+  IRBuilder<> B(DL->getContext());
+  initIRBuilder(B, DL, InsertBB, InsertBefore);
   return B.CreateCall(DeclareFn, Args);
 }
 
@@ -958,7 +956,8 @@ Instruction *DIBuilder::insertDbgValueIntrinsic(
                    MetadataAsValue::get(VMContext, VarInfo),
                    MetadataAsValue::get(VMContext, Expr)};
 
-  IRBuilder<> B = getIRBForDbgInsertion(DL, InsertBB, InsertBefore);
+  IRBuilder<> B(DL->getContext());
+  initIRBuilder(B, DL, InsertBB, InsertBefore);
   return B.CreateCall(ValueFn, Args);
 }
 
@@ -976,7 +975,8 @@ Instruction *DIBuilder::insertLabel(
   trackIfUnresolved(LabelInfo);
   Value *Args[] = {MetadataAsValue::get(VMContext, LabelInfo)};
 
-  IRBuilder<> B = getIRBForDbgInsertion(DL, InsertBB, InsertBefore);
+  IRBuilder<> B(DL->getContext());
+  initIRBuilder(B, DL, InsertBB, InsertBefore);
   return B.CreateCall(LabelFn, Args);
 }
 

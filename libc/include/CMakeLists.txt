@@ -45,6 +45,16 @@ add_gen_header(
     ../config/${LIBC_TARGET_OS}/errno.h.in
 )
 
+add_gen_header(
+  signal_h
+  DEF_FILE signal.h.def
+  PARAMS
+    platform_signal=../config/${LIBC_TARGET_OS}/signal.h.in
+  GEN_HDR signal.h
+  DATA_FILES
+    ../config/${LIBC_TARGET_OS}/signal.h.in
+)
+
 # TODO: Not all platforms will have a include/sys directory. Add the sys
 # directory and the targets for sys/*.h files conditional to the OS requiring
 # them.
@@ -56,6 +66,7 @@ add_gen_header(
   GEN_HDR sys/mman.h
   DEPENDS
     libc_posix_types_h
+    llvm_libc_common_h
 )
 
 add_gen_header(

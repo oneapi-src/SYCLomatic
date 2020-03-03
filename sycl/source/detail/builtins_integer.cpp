@@ -17,7 +17,7 @@
 namespace s = cl::sycl;
 namespace d = s::detail;
 
-__SYCL_INLINE namespace cl {
+__SYCL_INLINE_NAMESPACE(cl) {
 namespace __host_std {
 namespace {
 
@@ -153,10 +153,11 @@ template <typename T> inline T __s_long_mad_hi(T a, T b, T c) {
 template <typename T> inline T __s_mad_sat(T a, T b, T c) {
   using UPT = typename d::make_larger<T>::type;
   UPT mul = UPT(a) * UPT(b);
+  UPT res = mul + UPT(c);
   const UPT max = d::max_v<T>();
   const UPT min = d::min_v<T>();
-  mul = std::min(std::max(mul, min), max);
-  return __s_add_sat(T(mul), c);
+  res = std::min(std::max(res, min), max);
+  return T(res);
 }
 
 template <typename T> inline T __s_long_mad_sat(T a, T b, T c) {
@@ -719,10 +720,6 @@ MAKE_1V_2V(u_upsample, s::cl_ushort, s::cl_uchar, s::cl_uchar)
 MAKE_1V_2V(u_upsample, s::cl_uint, s::cl_ushort, s::cl_ushort)
 MAKE_1V_2V(u_upsample, s::cl_ulong, s::cl_uint, s::cl_uint)
 
-// TODO delete when Intel CPU OpenCL runtime will be fixed
-// ExtInst ... s_upsample -> _Z8upsampleij (now _Z8upsampleii)
-#define s_upsample u_upsample
-
 s::cl_short s_upsample(s::cl_char x, s::cl_uchar y) __NOEXC {
   return __upsample(x, y);
 }
@@ -735,8 +732,6 @@ s::cl_long s_upsample(s::cl_int x, s::cl_uint y) __NOEXC {
 MAKE_1V_2V(s_upsample, s::cl_short, s::cl_char, s::cl_uchar)
 MAKE_1V_2V(s_upsample, s::cl_int, s::cl_short, s::cl_ushort)
 MAKE_1V_2V(s_upsample, s::cl_long, s::cl_int, s::cl_uint)
-
-#undef s_upsample
 
 // popcount
 s::cl_uchar popcount(s::cl_uchar x) __NOEXC { return __popcount(x); }
@@ -778,4 +773,4 @@ s::cl_int s_mul24(s::cl_int x, s::cl_int y) __NOEXC { return __mul24(x, y); }
 MAKE_1V_2V(s_mul24, s::cl_int, s::cl_int, s::cl_int)
 
 } // namespace __host_std
-} // namespace cl
+} // __SYCL_INLINE_NAMESPACE(cl)

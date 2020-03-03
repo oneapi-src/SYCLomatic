@@ -24,6 +24,24 @@ tablegen("AMDGPUGenGlobalISel") {
   td_file = "AMDGPUGISel.td"
 }
 
+tablegen("AMDGPUGenPreLegalizeGICombiner") {
+  visibility = [ ":LLVMAMDGPUCodeGen" ]
+  args = [
+    "-gen-global-isel-combiner",
+    "-combiners=AMDGPUPreLegalizerCombinerHelper",
+  ]
+  td_file = "AMDGPUGISel.td"
+}
+
+tablegen("AMDGPUGenPostLegalizeGICombiner") {
+  visibility = [ ":LLVMAMDGPUCodeGen" ]
+  args = [
+    "-gen-global-isel-combiner",
+    "-combiners=AMDGPUPostLegalizerCombinerHelper",
+  ]
+  td_file = "AMDGPUGISel.td"
+}
+
 tablegen("AMDGPUGenMCPseudoLowering") {
   visibility = [ ":LLVMAMDGPUCodeGen" ]
   args = [ "-gen-pseudo-lowering" ]
@@ -59,6 +77,8 @@ static_library("LLVMAMDGPUCodeGen") {
     ":AMDGPUGenAsmMatcher",
     ":AMDGPUGenCallingConv",
     ":AMDGPUGenDAGISel",
+    ":AMDGPUGenPostLegalizeGICombiner",
+    ":AMDGPUGenPreLegalizeGICombiner",
     ":AMDGPUGenGlobalISel",
     ":AMDGPUGenMCPseudoLowering",
     ":AMDGPUGenRegisterBank",
@@ -115,11 +135,12 @@ static_library("LLVMAMDGPUCodeGen") {
     "AMDGPUMacroFusion.cpp",
     "AMDGPUOpenCLEnqueuedBlockLowering.cpp",
     "AMDGPUPerfHintAnalysis.cpp",
+    "AMDGPUPostLegalizerCombiner.cpp",
+    "AMDGPUPreLegalizerCombiner.cpp",
     "AMDGPUPrintfRuntimeBinding.cpp",
     "AMDGPUPromoteAlloca.cpp",
     "AMDGPUPropagateAttributes.cpp",
     "AMDGPURegisterBankInfo.cpp",
-    "AMDGPURegisterInfo.cpp",
     "AMDGPURewriteOutArguments.cpp",
     "AMDGPUSubtarget.cpp",
     "AMDGPUTargetMachine.cpp",
@@ -174,8 +195,10 @@ static_library("LLVMAMDGPUCodeGen") {
     "SIOptimizeExecMasking.cpp",
     "SIOptimizeExecMaskingPreRA.cpp",
     "SIPeepholeSDWA.cpp",
+    "SIPostRABundler.cpp",
     "SIPreAllocateWWMRegs.cpp",
     "SIRegisterInfo.cpp",
+    "SIRemoveShortExecBranches.cpp",
     "SIShrinkInstructions.cpp",
     "SIWholeQuadMode.cpp",
   ]

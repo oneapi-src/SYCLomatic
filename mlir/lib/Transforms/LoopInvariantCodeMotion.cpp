@@ -1,6 +1,6 @@
 //===- LoopInvariantCodeMotion.cpp - Code to perform loop fusion-----------===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -84,7 +84,7 @@ static LogicalResult moveLoopInvariantCode(LoopLikeOpInterface looplike,
 
   // Helper to check whether an operation is loop invariant wrt. SSA properties.
   auto isDefinedOutsideOfBody = [&](Value value) {
-    auto definingOp = value->getDefiningOp();
+    auto definingOp = value.getDefiningOp();
     return (definingOp && !!willBeMovedSet.count(definingOp)) ||
            looplike.isDefinedOutsideOfLoop(value);
   };

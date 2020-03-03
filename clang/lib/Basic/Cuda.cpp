@@ -2,6 +2,7 @@
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/StringSwitch.h"
+#include "llvm/ADT/Twine.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/VersionTuple.h"
 
@@ -35,8 +36,8 @@ const char *CudaVersionToString(CudaVersion V) {
   llvm_unreachable("invalid enum");
 }
 
-CudaVersion CudaStringToVersion(llvm::StringRef S) {
-  return llvm::StringSwitch<CudaVersion>(S)
+CudaVersion CudaStringToVersion(const llvm::Twine &S) {
+  return llvm::StringSwitch<CudaVersion>(S.str())
       .Case("7.0", CudaVersion::CUDA_70)
       .Case("7.5", CudaVersion::CUDA_75)
       .Case("8.0", CudaVersion::CUDA_80)
@@ -44,12 +45,11 @@ CudaVersion CudaStringToVersion(llvm::StringRef S) {
       .Case("9.1", CudaVersion::CUDA_91)
       .Case("9.2", CudaVersion::CUDA_92)
       .Case("10.0", CudaVersion::CUDA_100)
-#ifdef INTEL_CUSTOMIZATION
       .Case("10.1", CudaVersion::CUDA_101)
-      .Case("10.2", CudaVersion::CUDA_102);
-#else
-      .Case("10.1", CudaVersion::CUDA_101);
+#ifdef INTEL_CUSTOMIZATION
+      .Case("10.2", CudaVersion::CUDA_102)
 #endif
+      .Default(CudaVersion::UNKNOWN);
 }
 
 const char *CudaArchToString(CudaArch A) {

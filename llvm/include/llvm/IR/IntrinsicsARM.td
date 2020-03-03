@@ -795,6 +795,8 @@ def int_arm_mve_pred_i2v : Intrinsic<
   [llvm_anyvector_ty], [llvm_i32_ty], [IntrNoMem]>;
 def int_arm_mve_pred_v2i : Intrinsic<
   [llvm_i32_ty], [llvm_anyvector_ty], [IntrNoMem]>;
+def int_arm_mve_vreinterpretq : Intrinsic<
+  [llvm_anyvector_ty], [llvm_anyvector_ty], [IntrNoMem]>;
 
 multiclass IntrinsicSignSuffix<list<LLVMType> rets, list<LLVMType> params = [],
                                     list<IntrinsicProperty> props = [],
@@ -876,6 +878,18 @@ def int_arm_mve_qsub_predicated: Intrinsic<[llvm_anyvector_ty],
 def int_arm_mve_hsub_predicated: Intrinsic<[llvm_anyvector_ty],
    [LLVMMatchType<0>, LLVMMatchType<0>, llvm_i32_ty /* unsigned */,
     llvm_anyvector_ty, LLVMMatchType<0>], [IntrNoMem]>;
+def int_arm_mve_vmina_predicated: Intrinsic<[llvm_anyvector_ty],
+   [LLVMMatchType<0>, LLVMMatchType<0>, llvm_anyvector_ty],
+    [IntrNoMem]>;
+def int_arm_mve_vmaxa_predicated: Intrinsic<[llvm_anyvector_ty],
+   [LLVMMatchType<0>, LLVMMatchType<0>, llvm_anyvector_ty],
+    [IntrNoMem]>;
+def int_arm_mve_vminnma_predicated: Intrinsic<[llvm_anyvector_ty],
+   [LLVMMatchType<0>, LLVMMatchType<0>, llvm_anyvector_ty],
+    [IntrNoMem]>;
+def int_arm_mve_vmaxnma_predicated: Intrinsic<[llvm_anyvector_ty],
+   [LLVMMatchType<0>, LLVMMatchType<0>, llvm_anyvector_ty],
+    [IntrNoMem]>;
 
 defm int_arm_mve_minv: IntrinsicSignSuffix<[llvm_i32_ty],
    [llvm_i32_ty, llvm_anyvector_ty], [IntrNoMem]>;
@@ -1068,12 +1082,11 @@ defm int_arm_mve_vcmlaq : MVEPredicated<
   [llvm_i32_ty, LLVMMatchType<0>, LLVMMatchType<0>, LLVMMatchType<0>],
    llvm_anyvector_ty>;
 
-def int_arm_mve_vld2q: Intrinsic<[llvm_anyvector_ty, LLVMMatchType<0>], [llvm_anyptr_ty], [IntrReadMem]>;
-def int_arm_mve_vld4q: Intrinsic<[llvm_anyvector_ty, LLVMMatchType<0>, LLVMMatchType<0>, LLVMMatchType<0>], [llvm_anyptr_ty], [IntrReadMem]>;
+def int_arm_mve_vld2q: Intrinsic<[llvm_anyvector_ty, LLVMMatchType<0>], [llvm_anyptr_ty], [IntrReadMem, IntrArgMemOnly]>;
+def int_arm_mve_vld4q: Intrinsic<[llvm_anyvector_ty, LLVMMatchType<0>, LLVMMatchType<0>, LLVMMatchType<0>], [llvm_anyptr_ty], [IntrReadMem, IntrArgMemOnly]>;
 
-def int_arm_mve_vst2q: Intrinsic<[], [llvm_anyptr_ty, llvm_anyvector_ty, LLVMMatchType<1>, llvm_i32_ty], [IntrWriteMem]>;
-def int_arm_mve_vst4q: Intrinsic<[], [llvm_anyptr_ty, llvm_anyvector_ty, LLVMMatchType<1>, LLVMMatchType<1>, LLVMMatchType<1>, llvm_i32_ty], [IntrWriteMem]
->;
+def int_arm_mve_vst2q: Intrinsic<[], [llvm_anyptr_ty, llvm_anyvector_ty, LLVMMatchType<1>, llvm_i32_ty], [IntrWriteMem, IntrArgMemOnly]>;
+def int_arm_mve_vst4q: Intrinsic<[], [llvm_anyptr_ty, llvm_anyvector_ty, LLVMMatchType<1>, LLVMMatchType<1>, LLVMMatchType<1>, llvm_i32_ty], [IntrWriteMem, IntrArgMemOnly]>;
 
 // MVE vector absolute difference and accumulate across vector
 // The first operand is an 'unsigned' flag. The remaining operands are:
@@ -1121,4 +1134,48 @@ defm int_arm_mve_vrmlldavha: MVEPredicated<
   [llvm_i32_ty, llvm_i32_ty, llvm_i32_ty,
    llvm_i32_ty, llvm_i32_ty, llvm_anyvector_ty, LLVMMatchType<0>],
   llvm_anyvector_ty>;
+
+defm int_arm_mve_vidup: MVEMXPredicated<
+   [llvm_anyvector_ty /* output */, llvm_i32_ty /* written-back base */], [],
+   [llvm_i32_ty /* base */, llvm_i32_ty /* step */],
+   LLVMMatchType<0>, llvm_anyvector_ty>;
+defm int_arm_mve_vddup: MVEMXPredicated<
+   [llvm_anyvector_ty /* output */, llvm_i32_ty /* written-back base */], [],
+   [llvm_i32_ty /* base */, llvm_i32_ty /* step */],
+   LLVMMatchType<0>, llvm_anyvector_ty>;
+defm int_arm_mve_viwdup: MVEMXPredicated<
+   [llvm_anyvector_ty /* output */, llvm_i32_ty /* written-back base */], [],
+   [llvm_i32_ty /* base */, llvm_i32_ty /* limit */, llvm_i32_ty /* step */],
+   LLVMMatchType<0>, llvm_anyvector_ty>;
+defm int_arm_mve_vdwdup: MVEMXPredicated<
+   [llvm_anyvector_ty /* output */, llvm_i32_ty /* written-back base */], [],
+   [llvm_i32_ty /* base */, llvm_i32_ty /* limit */, llvm_i32_ty /* step */],
+   LLVMMatchType<0>, llvm_anyvector_ty>;
+
+// Flags:
+// * unsigned
+defm int_arm_mve_vcvt_fix: MVEMXPredicated<
+  [llvm_anyvector_ty /* output */], [llvm_i32_ty],
+  [llvm_anyvector_ty /* input vector */, llvm_i32_ty /* scale */],
+  LLVMMatchType<0>, llvm_anyvector_ty>;
+
+def int_arm_mve_vrintn: Intrinsic<
+  [llvm_anyvector_ty], [LLVMMatchType<0>], [IntrNoMem]>;
+def int_arm_mve_vcls: Intrinsic<
+  [llvm_anyvector_ty], [LLVMMatchType<0>], [IntrNoMem]>;
+
+defm int_arm_mve_vbrsr: MVEMXPredicated<
+  [llvm_anyvector_ty], [],
+  [LLVMMatchType<0>, llvm_i32_ty], LLVMMatchType<0>, llvm_anyvector_ty>;
+
+def int_arm_mve_vqdmull: Intrinsic<
+  [llvm_anyvector_ty],
+  [llvm_anyvector_ty, LLVMMatchType<1>, llvm_i32_ty],
+  [IntrNoMem]>;
+def int_arm_mve_vqdmull_predicated: Intrinsic<
+  [llvm_anyvector_ty],
+  [llvm_anyvector_ty, LLVMMatchType<1>, llvm_i32_ty, llvm_anyvector_ty,
+   LLVMMatchType<0>],
+  [IntrNoMem]>;
+
 } // end TargetPrefix

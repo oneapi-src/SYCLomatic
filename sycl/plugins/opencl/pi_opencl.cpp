@@ -30,9 +30,32 @@ template <class To, class From> To cast(From value) {
   return (To)(value);
 }
 
+// Older versions of GCC don't like "const" here
+#if defined(__GNUC__) && (__GNUC__ < 7 || (__GNU__C == 7 && __GNUC_MINOR__ < 2))
+#define CONSTFIX constexpr
+#else
+#define CONSTFIX const
+#endif
+
+// Names of USM functions that are queried from OpenCL
+CONSTFIX char clHostMemAllocName[] = "clHostMemAllocINTEL";
+CONSTFIX char clDeviceMemAllocName[] = "clDeviceMemAllocINTEL";
+CONSTFIX char clSharedMemAllocName[] = "clSharedMemAllocINTEL";
+CONSTFIX char clMemFreeName[] = "clMemFreeINTEL";
+CONSTFIX char clSetKernelArgMemPointerName[] = "clSetKernelArgMemPointerINTEL";
+CONSTFIX char clEnqueueMemsetName[] = "clEnqueueMemsetINTEL";
+CONSTFIX char clEnqueueMemcpyName[] = "clEnqueueMemcpyINTEL";
+CONSTFIX char clEnqueueMigrateMemName[] = "clEnqueueMigrateMemINTEL";
+CONSTFIX char clEnqueueMemAdviseName[] = "clEnqueueMemAdviseINTEL";
+CONSTFIX char clGetMemAllocInfoName[] = "clGetMemAllocInfoINTEL";
+
+#undef CONSTFIX
+
+
+
 // USM helper function to get an extension function pointer
-template <typename T>
-pi_result getExtFuncFromContext(pi_context context, const char *func, T *fptr) {
+template <const char *FuncName, typename T>
+static pi_result getExtFuncFromContext(pi_context context, T *fptr) {
   // TODO
   // Potentially redo caching as PI interface changes.
   thread_local static std::map<pi_context, T> FuncPtrs;
@@ -68,11 +91,11 @@ pi_result getExtFuncFromContext(pi_context context, const char *func, T *fptr) {
      return PI_INVALID_CONTEXT;
   }
 
-  T FuncPtr = (T) clGetExtensionFunctionAddressForPlatform(curPlatform,
-                                                        func);
-  if (!FuncPtr) {
+  T FuncPtr =
+      (T)clGetExtensionFunctionAddressForPlatform(curPlatform, FuncName);
+
+  if (!FuncPtr)
     return PI_INVALID_VALUE;
-  }
 
   *fptr = FuncPtr;
   FuncPtrs[context] = FuncPtr;
@@ -98,24 +121,24 @@ static pi_result USMSetIndirectAccess(pi_kernel kernel) {
     return cast<pi_result>(CLErr);
   }
 
-  getExtFuncFromContext<clHostMemAllocINTEL_fn>(cast<pi_context>(CLContext),
-                                                "clHostMemAllocINTEL", &HFunc);
+  getExtFuncFromContext<clHostMemAllocName, clHostMemAllocINTEL_fn>(
+      cast<pi_context>(CLContext), &HFunc);
   if (HFunc)  {
     clSetKernelExecInfo(cast<cl_kernel>(kernel),
                         CL_KERNEL_EXEC_INFO_INDIRECT_HOST_ACCESS_INTEL,
                         sizeof(cl_bool), &TrueVal);
   }
 
-  getExtFuncFromContext<clDeviceMemAllocINTEL_fn>(
-      cast<pi_context>(CLContext), "clDeviceMemAllocINTEL", &DFunc);
+  getExtFuncFromContext<clDeviceMemAllocName, clDeviceMemAllocINTEL_fn>(
+      cast<pi_context>(CLContext), &DFunc);
   if (DFunc) {
     clSetKernelExecInfo(cast<cl_kernel>(kernel),
                         CL_KERNEL_EXEC_INFO_INDIRECT_DEVICE_ACCESS_INTEL,
                         sizeof(cl_bool), &TrueVal);
   }
 
-  getExtFuncFromContext<clSharedMemAllocINTEL_fn>(
-      cast<pi_context>(CLContext), "clSharedMemAllocINTEL", &SFunc);
+  getExtFuncFromContext<clSharedMemAllocName, clSharedMemAllocINTEL_fn>(
+      cast<pi_context>(CLContext), &SFunc);
   if (SFunc) {
     clSetKernelExecInfo(cast<cl_kernel>(kernel),
                         CL_KERNEL_EXEC_INFO_INDIRECT_SHARED_ACCESS_INTEL,
@@ -170,10 +193,10 @@ pi_result OCL(piextDeviceSelectBinary)(pi_device device,
 
   // TODO: this is a bare-bones implementation for choosing a device image
   // that would be compatible with the targeted device. An AOT-compiled
-  // image is preferred over SPIRV for known devices (i.e. Intel devices)
+  // image is preferred over SPIR-V for known devices (i.e. Intel devices)
   // The implementation makes no effort to differentiate between multiple images
   // for the given device, and simply picks the first one compatible
-  // Real implementaion will use the same mechanism OpenCL ICD dispatcher
+  // Real implementation will use the same mechanism OpenCL ICD dispatcher
   // uses. Something like:
   //   PI_VALIDATE_HANDLE_RETURN_HANDLE(ctx, PI_INVALID_CONTEXT);
   //     return context->dispatch->piextDeviceSelectIR(
@@ -383,6 +406,13 @@ pi_result OCL(piSamplerCreate)(pi_context context,
   return error_code;
 }
 
+pi_result OCL(piextKernelSetArgMemObj)(pi_kernel kernel, pi_uint32 arg_index,
+                                       const pi_mem *arg_value) {
+  return cast<pi_result>(
+      clSetKernelArg(cast<cl_kernel>(kernel), cast<cl_uint>(arg_index),
+                     sizeof(arg_value), cast<const cl_mem *>(arg_value)));
+}
+
 pi_result OCL(piextGetDeviceFunctionPointer)(pi_device device,
                                              pi_program program,
                                              const char *func_name,
@@ -421,12 +451,12 @@ pi_result OCL(piextGetDeviceFunctionPointer)(pi_device device,
                                   function_pointer_ret));
 }
 
-pi_result OCL(piContextCreate)(
-    const cl_context_properties *properties, // TODO: untie from OpenCL
-    pi_uint32 num_devices, const pi_device *devices,
-    void (*pfn_notify)(const char *errinfo, const void *private_info, size_t cb,
-                       void *user_data1),
-    void *user_data, pi_context *retcontext) {
+pi_result OCL(piContextCreate)(const pi_context_properties *properties,
+                               pi_uint32 num_devices, const pi_device *devices,
+                               void (*pfn_notify)(const char *errinfo,
+                                                  const void *private_info,
+                                                  size_t cb, void *user_data1),
+                               void *user_data, pi_context *retcontext) {
   pi_result ret = PI_INVALID_OPERATION;
   *retcontext = cast<pi_context>(
       clCreateContext(properties, cast<cl_uint>(num_devices),
@@ -569,8 +599,8 @@ pi_result OCL(piextUSMHostAlloc)(void **result_ptr, pi_context context,
 
   // First we need to look up the function pointer
   clHostMemAllocINTEL_fn FuncPtr = nullptr;
-  RetVal = getExtFuncFromContext<clHostMemAllocINTEL_fn>(
-      context, "clHostMemAllocINTEL", &FuncPtr);
+  RetVal = getExtFuncFromContext<clHostMemAllocName, clHostMemAllocINTEL_fn>(
+      context, &FuncPtr);
 
   if (FuncPtr) {
     Ptr = FuncPtr(cast<cl_context>(context),
@@ -601,8 +631,9 @@ pi_result OCL(piextUSMDeviceAlloc)(void **result_ptr, pi_context context,
 
   // First we need to look up the function pointer
   clDeviceMemAllocINTEL_fn FuncPtr = nullptr;
-  RetVal = getExtFuncFromContext<clDeviceMemAllocINTEL_fn>(
-      context, "clDeviceMemAllocINTEL", &FuncPtr);
+  RetVal =
+      getExtFuncFromContext<clDeviceMemAllocName, clDeviceMemAllocINTEL_fn>(
+          context, &FuncPtr);
 
   if (FuncPtr) {
     Ptr = FuncPtr(cast<cl_context>(context), cast<cl_device_id>(device),
@@ -633,8 +664,9 @@ pi_result OCL(piextUSMSharedAlloc)(void **result_ptr, pi_context context,
 
   // First we need to look up the function pointer
   clSharedMemAllocINTEL_fn FuncPtr = nullptr;
-  RetVal = getExtFuncFromContext<clSharedMemAllocINTEL_fn>(
-      context, "clSharedMemAllocINTEL", &FuncPtr);
+  RetVal =
+      getExtFuncFromContext<clSharedMemAllocName, clSharedMemAllocINTEL_fn>(
+          context, &FuncPtr);
 
   if (FuncPtr) {
     Ptr = FuncPtr(cast<cl_context>(context), cast<cl_device_id>(device),
@@ -655,8 +687,8 @@ pi_result OCL(piextUSMFree)(pi_context context, void *ptr) {
 
   clMemFreeINTEL_fn FuncPtr = nullptr;
   pi_result RetVal = PI_INVALID_OPERATION;
-  RetVal = getExtFuncFromContext<clMemFreeINTEL_fn>(context, "clMemFreeINTEL",
-                                                    &FuncPtr);
+  RetVal = getExtFuncFromContext<clMemFreeName, clMemFreeINTEL_fn>(context,
+                                                                   &FuncPtr);
 
   if (FuncPtr) {
     RetVal = cast<pi_result>(FuncPtr(cast<cl_context>(context), ptr));
@@ -687,8 +719,9 @@ pi_result OCL(piextKernelSetArgPointer)(pi_kernel kernel, pi_uint32 arg_index,
   }
 
   clSetKernelArgMemPointerINTEL_fn FuncPtr = nullptr;
-  pi_result RetVal = getExtFuncFromContext<clSetKernelArgMemPointerINTEL_fn>(
-      cast<pi_context>(CLContext), "clSetKernelArgMemPointerINTEL", &FuncPtr);
+  pi_result RetVal = getExtFuncFromContext<clSetKernelArgMemPointerName,
+                                           clSetKernelArgMemPointerINTEL_fn>(
+      cast<pi_context>(CLContext), &FuncPtr);
 
   if (FuncPtr) {
     // OpenCL passes pointers by value not by reference
@@ -727,8 +760,9 @@ pi_result OCL(piextUSMEnqueueMemset)(pi_queue queue, void *ptr, pi_int32 value,
   }
 
   clEnqueueMemsetINTEL_fn FuncPtr = nullptr;
-  pi_result RetVal = getExtFuncFromContext<clEnqueueMemsetINTEL_fn>(
-      cast<pi_context>(CLContext), "clEnqueueMemsetINTEL", &FuncPtr);
+  pi_result RetVal =
+      getExtFuncFromContext<clEnqueueMemsetName, clEnqueueMemsetINTEL_fn>(
+          cast<pi_context>(CLContext), &FuncPtr);
 
   if (FuncPtr) {
     RetVal = cast<pi_result>(FuncPtr(cast<cl_command_queue>(queue), ptr, value,
@@ -767,8 +801,9 @@ pi_result OCL(piextUSMEnqueueMemcpy)(pi_queue queue, pi_bool blocking,
   }
 
   clEnqueueMemcpyINTEL_fn FuncPtr = nullptr;
-  pi_result RetVal = getExtFuncFromContext<clEnqueueMemcpyINTEL_fn>(
-      cast<pi_context>(CLContext), "clEnqueueMemcpyINTEL", &FuncPtr);
+  pi_result RetVal =
+      getExtFuncFromContext<clEnqueueMemcpyName, clEnqueueMemcpyINTEL_fn>(
+          cast<pi_context>(CLContext), &FuncPtr);
 
   if (FuncPtr) {
     RetVal = cast<pi_result>(
@@ -893,8 +928,9 @@ pi_result OCL(piextUSMGetMemAllocInfo)(pi_context context, const void *ptr,
                                        size_t *param_value_size_ret) {
 
   clGetMemAllocInfoINTEL_fn FuncPtr = nullptr;
-  pi_result RetVal = getExtFuncFromContext<clGetMemAllocInfoINTEL_fn>(
-      context, "clGetMemAllocInfoINTEL", &FuncPtr);
+  pi_result RetVal =
+      getExtFuncFromContext<clGetMemAllocInfoName, clGetMemAllocInfoINTEL_fn>(
+          context, &FuncPtr);
 
   if (FuncPtr) {
     RetVal = cast<pi_result>(FuncPtr(cast<cl_context>(context), ptr, param_name,
@@ -1035,6 +1071,8 @@ pi_result piPluginInit(pi_plugin *PluginInit) {
   _PI_CL(piextUSMEnqueuePrefetch, OCL(piextUSMEnqueuePrefetch))
   _PI_CL(piextUSMEnqueueMemAdvise, OCL(piextUSMEnqueueMemAdvise))
   _PI_CL(piextUSMGetMemAllocInfo, OCL(piextUSMGetMemAllocInfo))
+
+  _PI_CL(piextKernelSetArgMemObj,      OCL(piextKernelSetArgMemObj))
 
 #undef _PI_CL
 

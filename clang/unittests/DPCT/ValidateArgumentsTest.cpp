@@ -19,8 +19,8 @@ protected:
     SmallString<256> UniqueDir;
     fs::createUniqueDirectory(CurrentDir + "/temp", UniqueDir);
 
-    TestRunPath = StringRef(CurrentDir);
-    TempDirAbsolute = StringRef(UniqueDir);
+    TestRunPath = StringRef(CurrentDir).str();
+    TempDirAbsolute = StringRef(UniqueDir).str();
     TempDir = (path::stem(TempDirAbsolute) + "/").str();
 
     fs::create_directories(TempDirAbsolute + "/a/b/in");

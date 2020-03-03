@@ -1,6 +1,6 @@
 //===- Inliner.cpp - Pass to inline function calls ------------------------===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -86,8 +86,14 @@ static void collectCallOps(iterator_range<Region::iterator> blocks,
   while (!worklist.empty()) {
     for (Operation &op : *worklist.pop_back_val()) {
       if (auto call = dyn_cast<CallOpInterface>(op)) {
-        CallGraphNode *node =
-            cg.resolveCallable(call.getCallableForCallee(), &op);
+        // TODO(riverriddle) Support inlining nested call references.
+        CallInterfaceCallable callable = call.getCallableForCallee();
+        if (SymbolRefAttr symRef = callable.dyn_cast<SymbolRefAttr>()) {
+          if (!symRef.isa<FlatSymbolRefAttr>())
+            continue;
+        }
+
+        CallGraphNode *node = cg.resolveCallable(call);
         if (!node->isExternal())
           calls.emplace_back(call, node);
         continue;
@@ -273,6 +279,15 @@ struct InlinerPass : public OperationPass<InlinerPass> {
   void runOnOperation() override {
     CallGraph &cg = getAnalysis<CallGraph>();
     auto *context = &getContext();
+
+    // The inliner should only be run on operations that define a symbol table,
+    // as the callgraph will need to resolve references.
+    Operation *op = getOperation();
+    if (!op->hasTrait<OpTrait::SymbolTable>()) {
+      op->emitOpError() << " was scheduled to run under the inliner, but does "
+                           "not define a symbol table";
+      return signalPassFailure();
+    }
 
     // Collect a set of canonicalization patterns to use when simplifying
     // callable regions within an SCC.

@@ -5,10 +5,12 @@ add_llvm_library(LLVMMLIRTableGen
   Dialect.cpp
   Format.cpp
   Operator.cpp
+  OpClass.cpp
   OpInterfaces.cpp
   OpTrait.cpp
   Pattern.cpp
   Predicate.cpp
+  Successor.cpp
   Type.cpp
 
   ADDITIONAL_HEADER_DIRS

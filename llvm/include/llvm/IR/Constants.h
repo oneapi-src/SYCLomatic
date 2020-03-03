@@ -157,6 +157,10 @@ public:
     return Val.getSExtValue();
   }
 
+  /// Return the constant as an llvm::Align. Note that this method can assert if
+  /// the value does not fit in 64 bits or is not a power of two.
+  inline Align getAlignValue() const { return Align(getZExtValue()); }
+
   /// A helper method that can be used to determine if the constant contained
   /// within is equal to a constant.  This only works for very small values,
   /// because this is all that can be represented with all types.
@@ -456,8 +460,7 @@ public:
   static Constant *get(StructType *T, ArrayRef<Constant*> V);
 
   template <typename... Csts>
-  static typename std::enable_if<are_base_of<Constant, Csts...>::value,
-                                 Constant *>::type
+  static std::enable_if_t<are_base_of<Constant, Csts...>::value, Constant *>
   get(StructType *T, Csts *... Vs) {
     SmallVector<Constant *, 8> Values({Vs...});
     return get(T, Values);

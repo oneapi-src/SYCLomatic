@@ -15,6 +15,7 @@
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/APSInt.h"
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/FloatingPointMode.h"
 #include "llvm/ADT/None.h"
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/STLExtras.h"
@@ -43,6 +44,7 @@
 #include "llvm/IR/IntrinsicsX86.h"
 #include "llvm/IR/IntrinsicsARM.h"
 #include "llvm/IR/IntrinsicsAArch64.h"
+#include "llvm/IR/IntrinsicsHexagon.h"
 #include "llvm/IR/IntrinsicsNVPTX.h"
 #include "llvm/IR/IntrinsicsAMDGPU.h"
 #include "llvm/IR/IntrinsicsPowerPC.h"
@@ -1055,7 +1057,8 @@ static Value *simplifyX86vpermv(const IntrinsicInst &II,
 // * Narrow width by halfs excluding zero/undef lanes
 Value *InstCombiner::simplifyMaskedLoad(IntrinsicInst &II) {
   Value *LoadPtr = II.getArgOperand(0);
-  unsigned Alignment = cast<ConstantInt>(II.getArgOperand(1))->getZExtValue();
+  const Align Alignment =
+      cast<ConstantInt>(II.getArgOperand(1))->getAlignValue();
 
   // If the mask is all ones or undefs, this is a plain vector load of the 1st
   // argument.
@@ -1065,9 +1068,9 @@ Value *InstCombiner::simplifyMaskedLoad(IntrinsicInst &II) {
 
   // If we can unconditionally load from this address, replace with a
   // load/select idiom. TODO: use DT for context sensitive query
-  if (isDereferenceableAndAlignedPointer(
-          LoadPtr, II.getType(), MaybeAlign(Alignment),
-          II.getModule()->getDataLayout(), &II, nullptr)) {
+  if (isDereferenceableAndAlignedPointer(LoadPtr, II.getType(), Alignment,
+                                         II.getModule()->getDataLayout(), &II,
+                                         nullptr)) {
     Value *LI = Builder.CreateAlignedLoad(II.getType(), LoadPtr, Alignment,
                                          "unmaskedload");
     return Builder.CreateSelect(II.getArgOperand(2), LI, II.getArgOperand(3));
@@ -1202,19 +1205,15 @@ static Instruction *foldCttzCtlz(IntrinsicInst &II, InstCombiner &IC) {
 
   if (IsTZ) {
     // cttz(-x) -> cttz(x)
-    if (match(Op0, m_Neg(m_Value(X)))) {
-      II.setOperand(0, X);
-      return &II;
-    }
+    if (match(Op0, m_Neg(m_Value(X))))
+      return IC.replaceOperand(II, 0, X);
 
     // cttz(abs(x)) -> cttz(x)
     // cttz(nabs(x)) -> cttz(x)
     Value *Y;
     SelectPatternFlavor SPF = matchSelectPattern(Op0, X, Y).Flavor;
-    if (SPF == SPF_ABS || SPF == SPF_NABS) {
-      II.setOperand(0, X);
-      return &II;
-    }
+    if (SPF == SPF_ABS || SPF == SPF_NABS)
+      return IC.replaceOperand(II, 0, X);
   }
 
   KnownBits Known = IC.computeKnownBits(Op0, 0, &II);
@@ -1240,10 +1239,8 @@ static Instruction *foldCttzCtlz(IntrinsicInst &II, InstCombiner &IC) {
   if (!Known.One.isNullValue() ||
       isKnownNonZero(Op0, IC.getDataLayout(), 0, &IC.getAssumptionCache(), &II,
                      &IC.getDominatorTree())) {
-    if (!match(II.getArgOperand(1), m_One())) {
-      II.setOperand(1, IC.Builder.getTrue());
-      return &II;
-    }
+    if (!match(II.getArgOperand(1), m_One()))
+      return IC.replaceOperand(II, 1, IC.Builder.getTrue());
   }
 
   // Add range metadata since known bits can't completely reflect what we know.
@@ -1268,10 +1265,8 @@ static Instruction *foldCtpop(IntrinsicInst &II, InstCombiner &IC) {
   Value *X;
   // ctpop(bitreverse(x)) -> ctpop(x)
   // ctpop(bswap(x)) -> ctpop(x)
-  if (match(Op0, m_BitReverse(m_Value(X))) || match(Op0, m_BSwap(m_Value(X)))) {
-    II.setOperand(0, X);
-    return &II;
-  }
+  if (match(Op0, m_BitReverse(m_Value(X))) || match(Op0, m_BSwap(m_Value(X))))
+    return IC.replaceOperand(II, 0, X);
 
   // FIXME: Try to simplify vectors of integers.
   auto *IT = dyn_cast<IntegerType>(Op0->getType());
@@ -1330,7 +1325,7 @@ static Instruction *simplifyX86MaskedLoad(IntrinsicInst &II, InstCombiner &IC) {
 
   // The pass-through vector for an x86 masked load is a zero vector.
   CallInst *NewMaskedLoad =
-      IC.Builder.CreateMaskedLoad(PtrCast, 1, BoolMask, ZeroVec);
+      IC.Builder.CreateMaskedLoad(PtrCast, Align(1), BoolMask, ZeroVec);
   return IC.replaceInstUsesWith(II, NewMaskedLoad);
 }
 
@@ -1371,7 +1366,7 @@ static bool simplifyX86MaskedStore(IntrinsicInst &II, InstCombiner &IC) {
   // on each element's most significant bit (the sign bit).
   Constant *BoolMask = getNegativeIsTrueBoolVec(ConstMask);
 
-  IC.Builder.CreateMaskedStore(Vec, PtrCast, 1, BoolMask);
+  IC.Builder.CreateMaskedStore(Vec, PtrCast, Align(1), BoolMask);
 
   // 'Replace uses' doesn't work for stores. Erase the original masked store.
   IC.eraseInstFromFunction(II);
@@ -1458,7 +1453,7 @@ static Value *simplifyNeonVld1(const IntrinsicInst &II,
 
   auto *BCastInst = Builder.CreateBitCast(II.getArgOperand(0),
                                           PointerType::get(II.getType(), 0));
-  return Builder.CreateAlignedLoad(II.getType(), BCastInst, Alignment);
+  return Builder.CreateAlignedLoad(II.getType(), BCastInst, Align(Alignment));
 }
 
 // Returns true iff the 2 intrinsics have the same operands, limiting the
@@ -1709,9 +1704,11 @@ static Instruction *SimplifyNVVMIntrinsic(IntrinsicInst *II, InstCombiner &IC) {
   // intrinsic, we don't have to look up any module metadata, as
   // FtzRequirementTy will be FTZ_Any.)
   if (Action.FtzRequirement != FTZ_Any) {
-    bool FtzEnabled =
-        II->getFunction()->getFnAttribute("nvptx-f32ftz").getValueAsString() ==
-        "true";
+    StringRef Attr = II->getFunction()
+                         ->getFnAttribute("denormal-fp-math-f32")
+                         .getValueAsString();
+    DenormalMode Mode = parseDenormalFPAttribute(Attr);
+    bool FtzEnabled = Mode.Output != DenormalMode::IEEE;
 
     if (FtzEnabled != (Action.FtzRequirement == FTZ_MustBeOn))
       return nullptr;
@@ -1958,10 +1955,9 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
       // Canonicalize a shift amount constant operand to modulo the bit-width.
       Constant *WidthC = ConstantInt::get(Ty, BitWidth);
       Constant *ModuloC = ConstantExpr::getURem(ShAmtC, WidthC);
-      if (ModuloC != ShAmtC) {
-        II->setArgOperand(2, ModuloC);
-        return II;
-      }
+      if (ModuloC != ShAmtC)
+        return replaceOperand(*II, 2, ModuloC);
+
       assert(ConstantExpr::getICmp(ICmpInst::ICMP_UGT, WidthC, ShAmtC) ==
                  ConstantInt::getTrue(CmpInst::makeCmpResultType(Ty)) &&
              "Shift amount expected to be modulo bitwidth");
@@ -2260,16 +2256,16 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
     Value *Src1 = II->getArgOperand(1);
     Value *X, *Y;
     if (match(Src0, m_FNeg(m_Value(X))) && match(Src1, m_FNeg(m_Value(Y)))) {
-      II->setArgOperand(0, X);
-      II->setArgOperand(1, Y);
+      replaceOperand(*II, 0, X);
+      replaceOperand(*II, 1, Y);
       return II;
     }
 
     // fma fabs(x), fabs(x), z -> fma x, x, z
     if (match(Src0, m_FAbs(m_Value(X))) &&
         match(Src1, m_FAbs(m_Specific(X)))) {
-      II->setArgOperand(0, X);
-      II->setArgOperand(1, X);
+      replaceOperand(*II, 0, X);
+      replaceOperand(*II, 1, X);
       return II;
     }
 
@@ -2307,10 +2303,8 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
     // copysign X, (copysign ?, SignArg) --> copysign X, SignArg
     Value *SignArg;
     if (match(II->getArgOperand(1),
-              m_Intrinsic<Intrinsic::copysign>(m_Value(), m_Value(SignArg)))) {
-      II->setArgOperand(1, SignArg);
-      return II;
-    }
+              m_Intrinsic<Intrinsic::copysign>(m_Value(), m_Value(SignArg))))
+      return replaceOperand(*II, 1, SignArg);
 
     break;
   }
@@ -2347,8 +2341,7 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
     if (match(Src, m_FNeg(m_Value(X))) || match(Src, m_FAbs(m_Value(X)))) {
       // cos(-x) -> cos(x)
       // cos(fabs(x)) -> cos(x)
-      II->setArgOperand(0, X);
-      return II;
+      return replaceOperand(*II, 0, X);
     }
     break;
   }
@@ -2378,7 +2371,7 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
     // Turn PPC VSX loads into normal loads.
     Value *Ptr = Builder.CreateBitCast(II->getArgOperand(0),
                                        PointerType::getUnqual(II->getType()));
-    return new LoadInst(II->getType(), Ptr, Twine(""), false, Align::None());
+    return new LoadInst(II->getType(), Ptr, Twine(""), false, Align(1));
   }
   case Intrinsic::ppc_altivec_stvx:
   case Intrinsic::ppc_altivec_stvxl:
@@ -2396,7 +2389,7 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
     // Turn PPC VSX stores into normal stores.
     Type *OpPtrTy = PointerType::getUnqual(II->getArgOperand(0)->getType());
     Value *Ptr = Builder.CreateBitCast(II->getArgOperand(1), OpPtrTy);
-    return new StoreInst(II->getArgOperand(0), Ptr, false, Align::None());
+    return new StoreInst(II->getArgOperand(0), Ptr, false, Align(1));
   }
   case Intrinsic::ppc_qpx_qvlfs:
     // Turn PPC QPX qvlfs -> load if the pointer is known aligned.
@@ -2707,8 +2700,8 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
          cast<Instruction>(Arg0)->getFastMathFlags().noInfs())) {
       if (Arg0IsZero)
         std::swap(A, B);
-      II->setArgOperand(0, A);
-      II->setArgOperand(1, B);
+      replaceOperand(*II, 0, A);
+      replaceOperand(*II, 1, B);
       return II;
     }
     break;
@@ -3331,12 +3324,10 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
         getKnownAlignment(II->getArgOperand(0), DL, II, &AC, &DT);
     unsigned AlignArg = II->getNumArgOperands() - 1;
     ConstantInt *IntrAlign = dyn_cast<ConstantInt>(II->getArgOperand(AlignArg));
-    if (IntrAlign && IntrAlign->getZExtValue() < MemAlign) {
-      II->setArgOperand(AlignArg,
-                        ConstantInt::get(Type::getInt32Ty(II->getContext()),
-                                         MemAlign, false));
-      return II;
-    }
+    if (IntrAlign && IntrAlign->getZExtValue() < MemAlign)
+      return replaceOperand(*II, AlignArg,
+                            ConstantInt::get(Type::getInt32Ty(II->getContext()),
+                                             MemAlign, false));
     break;
   }
 
@@ -3395,8 +3386,8 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
     Value *Data, *Key;
     if (match(KeyArg, m_ZeroInt()) &&
         match(DataArg, m_Xor(m_Value(Data), m_Value(Key)))) {
-      II->setArgOperand(0, Data);
-      II->setArgOperand(1, Key);
+      replaceOperand(*II, 0, Data);
+      replaceOperand(*II, 1, Key);
       return II;
     }
     break;
@@ -3563,11 +3554,9 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
     }
 
     // fp_class (nnan x), qnan|snan|other -> fp_class (nnan x), other
-    if (((Mask & S_NAN) || (Mask & Q_NAN)) && isKnownNeverNaN(Src0, &TLI)) {
-      II->setArgOperand(1, ConstantInt::get(Src1->getType(),
-                                            Mask & ~(S_NAN | Q_NAN)));
-      return II;
-    }
+    if (((Mask & S_NAN) || (Mask & Q_NAN)) && isKnownNeverNaN(Src0, &TLI))
+      return replaceOperand(*II, 1, ConstantInt::get(Src1->getType(),
+                                                     Mask & ~(S_NAN | Q_NAN)));
 
     const ConstantFP *CVal = dyn_cast<ConstantFP>(Src0);
     if (!CVal) {
@@ -3657,23 +3646,19 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
       if ((Width & (IntSize - 1)) == 0)
         return replaceInstUsesWith(*II, ConstantInt::getNullValue(Ty));
 
-      if (Width >= IntSize) {
-        // Hardware ignores high bits, so remove those.
-        II->setArgOperand(2, ConstantInt::get(CWidth->getType(),
-                                              Width & (IntSize - 1)));
-        return II;
-      }
+      // Hardware ignores high bits, so remove those.
+      if (Width >= IntSize)
+        return replaceOperand(*II, 2, ConstantInt::get(CWidth->getType(),
+                                                       Width & (IntSize - 1)));
     }
 
     unsigned Offset;
     ConstantInt *COffset = dyn_cast<ConstantInt>(II->getArgOperand(1));
     if (COffset) {
       Offset = COffset->getZExtValue();
-      if (Offset >= IntSize) {
-        II->setArgOperand(1, ConstantInt::get(COffset->getType(),
-                                              Offset & (IntSize - 1)));
-        return II;
-      }
+      if (Offset >= IntSize)
+        return replaceOperand(*II, 1, ConstantInt::get(COffset->getType(),
+                                                       Offset & (IntSize - 1)));
     }
 
     bool Signed = IID == Intrinsic::amdgcn_sbfe;
@@ -3716,7 +3701,7 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
           (IsCompr && ((EnBits & (0x3 << (2 * I))) == 0))) {
         Value *Src = II->getArgOperand(I + 2);
         if (!isa<UndefValue>(Src)) {
-          II->setArgOperand(I + 2, UndefValue::get(Src->getType()));
+          replaceOperand(*II, I + 2, UndefValue::get(Src->getType()));
           Changed = true;
         }
       }
@@ -3855,8 +3840,8 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
         ((match(Src1, m_One()) && match(Src0, m_ZExt(m_Value(ExtSrc)))) ||
          (match(Src1, m_AllOnes()) && match(Src0, m_SExt(m_Value(ExtSrc))))) &&
         ExtSrc->getType()->isIntegerTy(1)) {
-      II->setArgOperand(1, ConstantInt::getNullValue(Src1->getType()));
-      II->setArgOperand(2, ConstantInt::get(CC->getType(), CmpInst::ICMP_NE));
+      replaceOperand(*II, 1, ConstantInt::getNullValue(Src1->getType()));
+      replaceOperand(*II, 2, ConstantInt::get(CC->getType(), CmpInst::ICMP_NE));
       return II;
     }
 
@@ -3956,8 +3941,21 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
       break;
 
     // If bound_ctrl = 1, row mask = bank mask = 0xf we can omit old value.
-    II->setOperand(0, UndefValue::get(Old->getType()));
-    return II;
+    return replaceOperand(*II, 0, UndefValue::get(Old->getType()));
+  }
+  case Intrinsic::amdgcn_permlane16:
+  case Intrinsic::amdgcn_permlanex16: {
+    // Discard vdst_in if it's not going to be read.
+    Value *VDstIn = II->getArgOperand(0);
+   if (isa<UndefValue>(VDstIn))
+     break;
+
+    ConstantInt *FetchInvalid = cast<ConstantInt>(II->getArgOperand(4));
+    ConstantInt *BoundCtrl = cast<ConstantInt>(II->getArgOperand(5));
+    if (!FetchInvalid->getZExtValue() && !BoundCtrl->getZExtValue())
+      break;
+
+    return replaceOperand(*II, 0, UndefValue::get(VDstIn->getType()));
   }
   case Intrinsic::amdgcn_readfirstlane:
   case Intrinsic::amdgcn_readlane: {
@@ -3988,6 +3986,24 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
         return replaceInstUsesWith(*II, Src);
     }
 
+    break;
+  }
+  case Intrinsic::hexagon_V6_vandvrt:
+  case Intrinsic::hexagon_V6_vandvrt_128B: {
+    // Simplify Q -> V -> Q conversion.
+    if (auto Op0 = dyn_cast<IntrinsicInst>(II->getArgOperand(0))) {
+      Intrinsic::ID ID0 = Op0->getIntrinsicID();
+      if (ID0 != Intrinsic::hexagon_V6_vandqrt &&
+          ID0 != Intrinsic::hexagon_V6_vandqrt_128B)
+        break;
+      Value *Bytes = Op0->getArgOperand(1), *Mask = II->getArgOperand(1);
+      uint64_t Bytes1 = computeKnownBits(Bytes, 0, Op0).One.getZExtValue();
+      uint64_t Mask1 = computeKnownBits(Mask, 0, II).One.getZExtValue();
+      // Check if every byte has common bits in Bytes and Mask.
+      uint64_t C = Bytes1 & Mask1;
+      if ((C & 0xFF) && (C & 0xFF00) && (C & 0xFF0000) && (C & 0xFF000000))
+        return replaceInstUsesWith(*II, Op0->getArgOperand(0));
+    }
     break;
   }
   case Intrinsic::stackrestore: {
@@ -4117,8 +4133,8 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
     if (GCR.getBasePtr() == GCR.getDerivedPtr() &&
         GCR.getBasePtrIndex() != GCR.getDerivedPtrIndex()) {
       auto *OpIntTy = GCR.getOperand(2)->getType();
-      II->setOperand(2, ConstantInt::get(OpIntTy, GCR.getBasePtrIndex()));
-      return II;
+      return replaceOperand(*II, 2,
+          ConstantInt::get(OpIntTy, GCR.getBasePtrIndex()));
     }
     
     // Translate facts known about a pointer before relocating into
@@ -4179,18 +4195,18 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
       Value *CurrCond = II->getArgOperand(0);
 
       // Remove a guard that it is immediately preceded by an identical guard.
-      if (CurrCond == NextCond)
-        return eraseInstFromFunction(*NextInst);
-
       // Otherwise canonicalize guard(a); guard(b) -> guard(a & b).
-      Instruction *MoveI = II->getNextNonDebugInstruction();
-      while (MoveI != NextInst) {
-        auto *Temp = MoveI;
-        MoveI = MoveI->getNextNonDebugInstruction();
-        Temp->moveBefore(II);
+      if (CurrCond != NextCond) {
+        Instruction *MoveI = II->getNextNonDebugInstruction();
+        while (MoveI != NextInst) {
+          auto *Temp = MoveI;
+          MoveI = MoveI->getNextNonDebugInstruction();
+          Temp->moveBefore(II);
+        }
+        replaceOperand(*II, 0, Builder.CreateAnd(CurrCond, NextCond));
       }
-      II->setArgOperand(0, Builder.CreateAnd(CurrCond, NextCond));
-      return eraseInstFromFunction(*NextInst);
+      eraseInstFromFunction(*NextInst);
+      return II;
     }
     break;
   }
@@ -4264,7 +4280,7 @@ Instruction *InstCombiner::tryOptimizeCall(CallInst *CI) {
   };
   LibCallSimplifier Simplifier(DL, &TLI, ORE, BFI, PSI, InstCombineRAUW,
                                InstCombineErase);
-  if (Value *With = Simplifier.optimizeCall(CI)) {
+  if (Value *With = Simplifier.optimizeCall(CI, Builder)) {
     ++NumSimplified;
     return CI->use_empty() ? CI : replaceInstUsesWith(*CI, With);
   }
@@ -4800,7 +4816,7 @@ bool InstCombiner::transformConstExprCastCall(CallBase &Call) {
         // Otherwise, it's a call, just insert cast right after the call.
         InsertNewInstBefore(NC, *Caller);
       }
-      Worklist.AddUsersToWorkList(*Caller);
+      Worklist.pushUsersToWorkList(*Caller);
     } else {
       NV = UndefValue::get(Caller->getType());
     }

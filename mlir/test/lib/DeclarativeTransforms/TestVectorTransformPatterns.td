@@ -1,6 +1,6 @@
 //===- TestVectorTransformPatterns.td - Test patterns ---*- tablegen ----*-===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -14,7 +14,7 @@
 #ifndef TEST_VECTOR_TRANSFORMS_PATTERNS
 #define TEST_VECTOR_TRANSFORMS_PATTERNS
 
-include "mlir/Dialect/StandardOps/Ops.td"
+include "mlir/Dialect/StandardOps/IR/Ops.td"
 include "mlir/Dialect/VectorOps/VectorOps.td"
 include "mlir/Dialect/VectorOps/VectorTransformPatterns.td"
 

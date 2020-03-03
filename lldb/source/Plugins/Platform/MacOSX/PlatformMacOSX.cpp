@@ -1,4 +1,4 @@
-//===-- PlatformMacOSX.cpp --------------------------------------*- C++ -*-===//
+//===-- PlatformMacOSX.cpp ------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -7,16 +7,22 @@
 //===----------------------------------------------------------------------===//
 
 #include "PlatformMacOSX.h"
-#include "lldb/Host/Config.h"
-
-
-#include <sstream>
-
+#include "PlatformRemoteiOS.h"
+#if defined(__APPLE__)
+#include "PlatformAppleTVSimulator.h"
+#include "PlatformAppleWatchSimulator.h"
+#include "PlatformDarwinKernel.h"
+#include "PlatformRemoteAppleBridge.h"
+#include "PlatformRemoteAppleTV.h"
+#include "PlatformRemoteAppleWatch.h"
+#include "PlatformiOSSimulator.h"
+#endif
 #include "lldb/Breakpoint/BreakpointLocation.h"
 #include "lldb/Core/Module.h"
 #include "lldb/Core/ModuleList.h"
 #include "lldb/Core/ModuleSpec.h"
 #include "lldb/Core/PluginManager.h"
+#include "lldb/Host/Config.h"
 #include "lldb/Host/Host.h"
 #include "lldb/Host/HostInfo.h"
 #include "lldb/Symbol/ObjectFile.h"
@@ -28,13 +34,27 @@
 #include "lldb/Utility/Status.h"
 #include "lldb/Utility/StreamString.h"
 
+#include <sstream>
+
 using namespace lldb;
 using namespace lldb_private;
+
+LLDB_PLUGIN_DEFINE(PlatformMacOSX)
 
 static uint32_t g_initialize_count = 0;
 
 void PlatformMacOSX::Initialize() {
   PlatformDarwin::Initialize();
+  PlatformRemoteiOS::Initialize();
+#if defined(__APPLE__)
+  PlatformiOSSimulator::Initialize();
+  PlatformDarwinKernel::Initialize();
+  PlatformAppleTVSimulator::Initialize();
+  PlatformAppleWatchSimulator::Initialize();
+  PlatformRemoteAppleTV::Initialize();
+  PlatformRemoteAppleWatch::Initialize();
+  PlatformRemoteAppleBridge::Initialize();
+#endif
 
   if (g_initialize_count++ == 0) {
 #if defined(__APPLE__)
@@ -55,6 +75,16 @@ void PlatformMacOSX::Terminate() {
     }
   }
 
+#if defined(__APPLE__)
+  PlatformRemoteAppleBridge::Terminate();
+  PlatformRemoteAppleWatch::Terminate();
+  PlatformRemoteAppleTV::Terminate();
+  PlatformAppleWatchSimulator::Terminate();
+  PlatformAppleTVSimulator::Terminate();
+  PlatformDarwinKernel::Terminate();
+  PlatformiOSSimulator::Terminate();
+#endif
+  PlatformRemoteiOS::Terminate();
   PlatformDarwin::Terminate();
 }
 

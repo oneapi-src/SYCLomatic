@@ -1,6 +1,6 @@
 //===- OpDefinition.h - Classes for defining concrete Op types --*- C++ -*-===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -121,6 +121,10 @@ public:
   /// Print the operation to the given stream.
   void print(raw_ostream &os, OpPrintingFlags flags = llvm::None) {
     state->print(os, flags);
+  }
+  void print(raw_ostream &os, AsmState &asmState,
+             OpPrintingFlags flags = llvm::None) {
+    state->print(os, asmState, flags);
   }
 
   /// Dump this operation.
@@ -361,7 +365,7 @@ LogicalResult verifyOneOperand(Operation *op);
 LogicalResult verifyNOperands(Operation *op, unsigned numOperands);
 LogicalResult verifyAtLeastNOperands(Operation *op, unsigned numOperands);
 LogicalResult verifyOperandsAreFloatLike(Operation *op);
-LogicalResult verifyOperandsAreIntegerLike(Operation *op);
+LogicalResult verifyOperandsAreSignlessIntegerLike(Operation *op);
 LogicalResult verifySameTypeOperands(Operation *op);
 LogicalResult verifyZeroResult(Operation *op);
 LogicalResult verifyOneResult(Operation *op);
@@ -374,7 +378,7 @@ LogicalResult verifySameOperandsAndResultElementType(Operation *op);
 LogicalResult verifySameOperandsAndResultType(Operation *op);
 LogicalResult verifyResultsAreBoolLike(Operation *op);
 LogicalResult verifyResultsAreFloatLike(Operation *op);
-LogicalResult verifyResultsAreIntegerLike(Operation *op);
+LogicalResult verifyResultsAreSignlessIntegerLike(Operation *op);
 LogicalResult verifyIsTerminator(Operation *op);
 LogicalResult verifyOperandSizeAttr(Operation *op, StringRef sizeAttrName);
 LogicalResult verifyResultSizeAttr(Operation *op, StringRef sizeAttrName);
@@ -550,7 +554,7 @@ struct MultiResultTraitBase : public TraitBase<ConcreteType, TraitType> {
   }
 
   /// Return the type of the `i`-th result.
-  Type getType(unsigned i) { return getResult(i)->getType(); }
+  Type getType(unsigned i) { return getResult(i).getType(); }
 
   /// Result iterator access.
   result_iterator result_begin() {
@@ -578,13 +582,13 @@ template <typename ConcreteType>
 class OneResult : public TraitBase<ConcreteType, OneResult> {
 public:
   Value getResult() { return this->getOperation()->getResult(0); }
-  Type getType() { return getResult()->getType(); }
+  Type getType() { return getResult().getType(); }
 
   /// Replace all uses of 'this' value with the new value, updating anything in
   /// the IR that uses 'this' to use the other value instead.  When this returns
   /// there are zero uses of 'this'.
   void replaceAllUsesWith(Value newValue) {
-    getResult()->replaceAllUsesWith(newValue);
+    getResult().replaceAllUsesWith(newValue);
   }
 
   /// Replace all uses of 'this' value with the result of 'op'.
@@ -721,14 +725,14 @@ public:
   }
 };
 
-/// This class verifies that any results of the specified op have an integer or
-/// index type, a vector thereof, or a tensor thereof.
+/// This class verifies that any results of the specified op have a signless
+/// integer or index type, a vector thereof, or a tensor thereof.
 template <typename ConcreteType>
-class ResultsAreIntegerLike
-    : public TraitBase<ConcreteType, ResultsAreIntegerLike> {
+class ResultsAreSignlessIntegerLike
+    : public TraitBase<ConcreteType, ResultsAreSignlessIntegerLike> {
 public:
   static LogicalResult verifyTrait(Operation *op) {
-    return impl::verifyResultsAreIntegerLike(op);
+    return impl::verifyResultsAreSignlessIntegerLike(op);
   }
 };
 
@@ -763,14 +767,14 @@ public:
   }
 };
 
-/// This class verifies that all operands of the specified op have an integer or
-/// index type, a vector thereof, or a tensor thereof.
+/// This class verifies that all operands of the specified op have a signless
+/// integer or index type, a vector thereof, or a tensor thereof.
 template <typename ConcreteType>
-class OperandsAreIntegerLike
-    : public TraitBase<ConcreteType, OperandsAreIntegerLike> {
+class OperandsAreSignlessIntegerLike
+    : public TraitBase<ConcreteType, OperandsAreSignlessIntegerLike> {
 public:
   static LogicalResult verifyTrait(Operation *op) {
-    return impl::verifyOperandsAreIntegerLike(op);
+    return impl::verifyOperandsAreSignlessIntegerLike(op);
   }
 };
 
@@ -980,7 +984,7 @@ public:
   /// Return true if this "op class" can match against the specified operation.
   static bool classof(Operation *op) {
     if (auto *abstractOp = op->getAbstractOperation())
-      return &classof == abstractOp->classof;
+      return ClassID::getID<ConcreteType>() == abstractOp->classID;
     return op->getName().getStringRef() == ConcreteType::getOperationName();
   }
 

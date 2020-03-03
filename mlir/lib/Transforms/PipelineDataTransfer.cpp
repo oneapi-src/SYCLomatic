@@ -1,6 +1,6 @@
 //===- PipelineDataTransfer.cpp --- Pass for pipelining data movement ---*-===//
 //
-// Part of the MLIR Project, under the Apache License v2.0 with LLVM Exceptions.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
@@ -16,7 +16,7 @@
 #include "mlir/Analysis/LoopAnalysis.h"
 #include "mlir/Analysis/Utils.h"
 #include "mlir/Dialect/AffineOps/AffineOps.h"
-#include "mlir/Dialect/StandardOps/Ops.h"
+#include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/LoopUtils.h"
@@ -72,13 +72,12 @@ static bool doubleBuffer(Value oldMemRef, AffineForOp forOp) {
     SmallVector<int64_t, 4> newShape(1 + oldMemRefType.getRank());
     newShape[0] = 2;
     std::copy(oldShape.begin(), oldShape.end(), newShape.begin() + 1);
-    auto newMemRefType =
-        MemRefType::get(newShape, oldMemRefType.getElementType(), {},
-                        oldMemRefType.getMemorySpace());
-    return newMemRefType;
+    return MemRefType::Builder(oldMemRefType)
+        .setShape(newShape)
+        .setAffineMaps({});
   };
 
-  auto oldMemRefType = oldMemRef->getType().cast<MemRefType>();
+  auto oldMemRefType = oldMemRef.getType().cast<MemRefType>();
   auto newMemRefType = doubleShape(oldMemRefType);
 
   // The double buffer is allocated right before 'forInst'.
@@ -205,7 +204,7 @@ static void findMatchingStartFinishInsts(
     // We only double buffer if the buffer is not live out of loop.
     auto memref = dmaStartOp.getOperand(dmaStartOp.getFasterMemPos());
     bool escapingUses = false;
-    for (auto *user : memref->getUsers()) {
+    for (auto *user : memref.getUsers()) {
       // We can double buffer regardless of dealloc's outside the loop.
       if (isa<DeallocOp>(user))
         continue;
@@ -277,11 +276,11 @@ void PipelineDataTransfer::runOnAffineForOp(AffineForOp forOp) {
     // order to create the double buffer above.)
     // '-canonicalize' does this in a more general way, but we'll anyway do the
     // simple/common case so that the output / test cases looks clear.
-    if (auto *allocInst = oldMemRef->getDefiningOp()) {
-      if (oldMemRef->use_empty()) {
+    if (auto *allocInst = oldMemRef.getDefiningOp()) {
+      if (oldMemRef.use_empty()) {
         allocInst->erase();
-      } else if (oldMemRef->hasOneUse()) {
-        if (auto dealloc = dyn_cast<DeallocOp>(*oldMemRef->user_begin())) {
+      } else if (oldMemRef.hasOneUse()) {
+        if (auto dealloc = dyn_cast<DeallocOp>(*oldMemRef.user_begin())) {
           dealloc.erase();
           allocInst->erase();
         }
@@ -300,11 +299,11 @@ void PipelineDataTransfer::runOnAffineForOp(AffineForOp forOp) {
     }
     // If the old tag has no uses or a single dealloc use, remove it.
     // (canonicalization handles more complex cases).
-    if (auto *tagAllocInst = oldTagMemRef->getDefiningOp()) {
-      if (oldTagMemRef->use_empty()) {
+    if (auto *tagAllocInst = oldTagMemRef.getDefiningOp()) {
+      if (oldTagMemRef.use_empty()) {
         tagAllocInst->erase();
-      } else if (oldTagMemRef->hasOneUse()) {
-        if (auto dealloc = dyn_cast<DeallocOp>(*oldTagMemRef->user_begin())) {
+      } else if (oldTagMemRef.hasOneUse()) {
+        if (auto dealloc = dyn_cast<DeallocOp>(*oldTagMemRef.user_begin())) {
           dealloc.erase();
           tagAllocInst->erase();
         }

@@ -131,9 +131,9 @@ func @insert_element(%arg0: f32, %arg1: vector<4x4xf32>) {
 // -----
 
 func @insert_element_wrong_type(%arg0: i32, %arg1: vector<4xf32>) {
-  %c = constant 3 : index
-  // expected-error@+1 {{'vector.insertelement' op failed to verify that source operand and result have same element type}}
-  %0 = "vector.insertelement" (%arg0, %arg1, %c) : (i32, vector<4xf32>, index) -> (vector<4xf32>)
+  %c = constant 3 : i32
+  // expected-error@+1 {{'vector.insertelement' op failed to verify that source operand type matches element type of result}}
+  %0 = "vector.insertelement" (%arg0, %arg1, %c) : (i32, vector<4xf32>, i32) -> (vector<4xf32>)
 }
 
 // -----
@@ -239,7 +239,7 @@ func @test_vector.transfer_read(%arg0: memref<?x?xf32>) {
   %c3 = constant 3 : index
   %cst = constant 3.0 : f32
   // expected-error@+1 {{two types required}}
-  %0 = vector.transfer_read %arg0[%c3, %c3], %cst { permutation_map = ()->(0) } : memref<?x?xf32>
+  %0 = vector.transfer_read %arg0[%c3, %c3], %cst { permutation_map = affine_map<()->(0)> } : memref<?x?xf32>
 }
 
 // -----
@@ -248,7 +248,7 @@ func @test_vector.transfer_read(%arg0: memref<?x?xf32>) {
   %c3 = constant 3 : index
   %cst = constant 3.0 : f32
   // expected-error@+1 {{requires 2 indices}}
-  %0 = vector.transfer_read %arg0[%c3, %c3, %c3], %cst { permutation_map = ()->(0) } : memref<?x?xf32>, vector<128xf32>
+  %0 = vector.transfer_read %arg0[%c3, %c3, %c3], %cst { permutation_map = affine_map<()->(0)> } : memref<?x?xf32>, vector<128xf32>
 }
 
 // -----
@@ -257,7 +257,7 @@ func @test_vector.transfer_read(%arg0: memref<?x?xf32>) {
   %c3 = constant 3 : index
   %cst = constant 3.0 : f32
   // expected-error@+1 {{requires attribute 'permutation_map'}}
-  %0 = vector.transfer_read %arg0[%c3, %c3], %cst {perm = (d0)->(d0)} : memref<?x?xf32>, vector<128xf32>
+  %0 = vector.transfer_read %arg0[%c3, %c3], %cst {perm = affine_map<(d0)->(d0)>} : memref<?x?xf32>, vector<128xf32>
 }
 
 // -----
@@ -266,7 +266,7 @@ func @test_vector.transfer_read(%arg0: memref<?x?xf32>) {
   %c3 = constant 3 : index
   %cst = constant 3.0 : f32
   // expected-error@+1 {{requires a permutation_map with input dims of the same rank as the memref type}}
-  %0 = vector.transfer_read %arg0[%c3, %c3], %cst {permutation_map = (d0)->(d0)} : memref<?x?xf32>, vector<128xf32>
+  %0 = vector.transfer_read %arg0[%c3, %c3], %cst {permutation_map = affine_map<(d0)->(d0)>} : memref<?x?xf32>, vector<128xf32>
 }
 
 // -----
@@ -275,7 +275,7 @@ func @test_vector.transfer_read(%arg0: memref<?x?xf32>) {
   %c3 = constant 3 : index
   %cst = constant 3.0 : f32
   // expected-error@+1 {{requires a permutation_map with result dims of the same rank as the vector type}}
-  %0 = vector.transfer_read %arg0[%c3, %c3], %cst {permutation_map = (d0, d1)->(d0, d1)} : memref<?x?xf32>, vector<128xf32>
+  %0 = vector.transfer_read %arg0[%c3, %c3], %cst {permutation_map = affine_map<(d0, d1)->(d0, d1)>} : memref<?x?xf32>, vector<128xf32>
 }
 
 // -----
@@ -284,7 +284,7 @@ func @test_vector.transfer_read(%arg0: memref<?x?xf32>) {
   %c3 = constant 3 : index
   %cst = constant 3.0 : f32
   // expected-error@+1 {{requires a projected permutation_map (at most one dim or the zero constant can appear in each result)}}
-  %0 = vector.transfer_read %arg0[%c3, %c3], %cst {permutation_map = (d0, d1)->(d0 + d1)} : memref<?x?xf32>, vector<128xf32>
+  %0 = vector.transfer_read %arg0[%c3, %c3], %cst {permutation_map = affine_map<(d0, d1)->(d0 + d1)>} : memref<?x?xf32>, vector<128xf32>
 }
 
 // -----
@@ -293,7 +293,7 @@ func @test_vector.transfer_read(%arg0: memref<?x?xf32>) {
   %c3 = constant 3 : index
   %cst = constant 3.0 : f32
   // expected-error@+1 {{requires a projected permutation_map (at most one dim or the zero constant can appear in each result)}}
-  %0 = vector.transfer_read %arg0[%c3, %c3], %cst {permutation_map = (d0, d1)->(d0 + 1)} : memref<?x?xf32>, vector<128xf32>
+  %0 = vector.transfer_read %arg0[%c3, %c3], %cst {permutation_map = affine_map<(d0, d1)->(d0 + 1)>} : memref<?x?xf32>, vector<128xf32>
 }
 
 // -----
@@ -302,7 +302,7 @@ func @test_vector.transfer_read(%arg0: memref<?x?x?xf32>) {
   %c3 = constant 3 : index
   %cst = constant 3.0 : f32
   // expected-error@+1 {{requires a permutation_map that is a permutation (found one dim used more than once)}}
-  %0 = vector.transfer_read %arg0[%c3, %c3, %c3], %cst {permutation_map = (d0, d1, d2)->(d0, d0)} : memref<?x?x?xf32>, vector<3x7xf32>
+  %0 = vector.transfer_read %arg0[%c3, %c3, %c3], %cst {permutation_map = affine_map<(d0, d1, d2)->(d0, d0)>} : memref<?x?x?xf32>, vector<3x7xf32>
 }
 
 // -----
@@ -312,7 +312,7 @@ func @test_vector.transfer_read(%arg0: memref<?x?xvector<4x3xf32>>) {
   %f0 = constant 0.0 : f32
   %vf0 = splat %f0 : vector<4x3xf32>
   // expected-error@+1 {{requires memref and vector types of the same elemental type}}
-  %0 = vector.transfer_read %arg0[%c3, %c3], %vf0 {permutation_map = (d0, d1)->(d0, d1)} : memref<?x?xvector<4x3xf32>>, vector<1x1x4x3xi32>
+  %0 = vector.transfer_read %arg0[%c3, %c3], %vf0 {permutation_map = affine_map<(d0, d1)->(d0, d1)>} : memref<?x?xvector<4x3xf32>>, vector<1x1x4x3xi32>
 }
 
 // -----
@@ -322,7 +322,7 @@ func @test_vector.transfer_read(%arg0: memref<?x?xvector<4x3xf32>>) {
   %f0 = constant 0.0 : f32
   %vf0 = splat %f0 : vector<4x3xf32>
   // expected-error@+1 {{requires memref vector element and vector result ranks to match}}
-  %0 = vector.transfer_read %arg0[%c3, %c3], %vf0 {permutation_map = (d0, d1)->(d0, d1)} : memref<?x?xvector<4x3xf32>>, vector<3xf32>
+  %0 = vector.transfer_read %arg0[%c3, %c3], %vf0 {permutation_map = affine_map<(d0, d1)->(d0, d1)>} : memref<?x?xvector<4x3xf32>>, vector<3xf32>
 }
 
 // -----
@@ -332,7 +332,7 @@ func @test_vector.transfer_read(%arg0: memref<?x?xvector<4x3xf32>>) {
   %f0 = constant 0.0 : f32
   %vf0 = splat %f0 : vector<4x3xf32>
   // expected-error@+1 {{ requires memref vector element shape to match suffix of vector result shape}}
-  %0 = vector.transfer_read %arg0[%c3, %c3], %vf0 {permutation_map = (d0, d1)->(d0, d1)} : memref<?x?xvector<4x3xf32>>, vector<1x1x2x3xf32>
+  %0 = vector.transfer_read %arg0[%c3, %c3], %vf0 {permutation_map = affine_map<(d0, d1)->(d0, d1)>} : memref<?x?xvector<4x3xf32>>, vector<1x1x2x3xf32>
 }
 
 // -----
@@ -341,7 +341,7 @@ func @test_vector.transfer_write(%arg0: memref<?x?xf32>) {
   %c3 = constant 3 : index
   %cst = constant dense<3.0> : vector<128 x f32>
   // expected-error@+1 {{expected 5 operand types but had 4}}
-  %0 = "vector.transfer_write"(%cst, %arg0, %c3, %c3, %c3) {permutation_map = ()->(0)} : (vector<128xf32>, memref<?x?xf32>, index, index) -> ()
+  %0 = "vector.transfer_write"(%cst, %arg0, %c3, %c3, %c3) {permutation_map = affine_map<()->(0)>} : (vector<128xf32>, memref<?x?xf32>, index, index) -> ()
 }
 
 // -----
@@ -350,7 +350,7 @@ func @test_vector.transfer_write(%arg0: memref<?x?xf32>) {
   %c3 = constant 3 : index
   %cst = constant dense<3.0> : vector<128 x f32>
   // expected-error@+1 {{requires 2 indices}}
-  vector.transfer_write %cst, %arg0[%c3, %c3, %c3] {permutation_map = ()->(0)} : vector<128xf32>, memref<?x?xf32>
+  vector.transfer_write %cst, %arg0[%c3, %c3, %c3] {permutation_map = affine_map<()->(0)>} : vector<128xf32>, memref<?x?xf32>
 }
 
 // -----
@@ -359,7 +359,7 @@ func @test_vector.transfer_write(%arg0: memref<?x?xf32>) {
   %c3 = constant 3 : index
   %cst = constant dense<3.0> : vector<128 x f32>
   // expected-error@+1 {{requires attribute 'permutation_map'}}
-  vector.transfer_write %cst, %arg0[%c3, %c3] {perm = (d0)->(d0)} : vector<128xf32>, memref<?x?xf32>
+  vector.transfer_write %cst, %arg0[%c3, %c3] {perm = affine_map<(d0)->(d0)>} : vector<128xf32>, memref<?x?xf32>
 }
 
 // -----
@@ -368,7 +368,7 @@ func @test_vector.transfer_write(%arg0: memref<?x?xf32>) {
   %c3 = constant 3 : index
   %cst = constant dense<3.0> : vector<128 x f32>
   // expected-error@+1 {{requires a permutation_map with input dims of the same rank as the memref type}}
-  vector.transfer_write %cst, %arg0[%c3, %c3] {permutation_map = (d0)->(d0)} : vector<128xf32>, memref<?x?xf32>
+  vector.transfer_write %cst, %arg0[%c3, %c3] {permutation_map = affine_map<(d0)->(d0)>} : vector<128xf32>, memref<?x?xf32>
 }
 
 // -----
@@ -377,7 +377,7 @@ func @test_vector.transfer_write(%arg0: memref<?x?xf32>) {
   %c3 = constant 3 : index
   %cst = constant dense<3.0> : vector<128 x f32>
   // expected-error@+1 {{requires a permutation_map with result dims of the same rank as the vector type}}
-  vector.transfer_write %cst, %arg0[%c3, %c3] {permutation_map = (d0, d1)->(d0, d1)} : vector<128xf32>, memref<?x?xf32>
+  vector.transfer_write %cst, %arg0[%c3, %c3] {permutation_map = affine_map<(d0, d1)->(d0, d1)>} : vector<128xf32>, memref<?x?xf32>
 }
 
 // -----
@@ -386,7 +386,7 @@ func @test_vector.transfer_write(%arg0: memref<?x?xf32>) {
   %c3 = constant 3 : index
   %cst = constant dense<3.0> : vector<128 x f32>
   // expected-error@+1 {{requires a projected permutation_map (at most one dim or the zero constant can appear in each result)}}
-  vector.transfer_write %cst, %arg0[%c3, %c3] {permutation_map = (d0, d1)->(d0 + d1)} : vector<128xf32>, memref<?x?xf32>
+  vector.transfer_write %cst, %arg0[%c3, %c3] {permutation_map = affine_map<(d0, d1)->(d0 + d1)>} : vector<128xf32>, memref<?x?xf32>
 }
 
 // -----
@@ -395,7 +395,7 @@ func @test_vector.transfer_write(%arg0: memref<?x?xf32>) {
   %c3 = constant 3 : index
   %cst = constant dense<3.0> : vector<128 x f32>
   // expected-error@+1 {{requires a projected permutation_map (at most one dim or the zero constant can appear in each result)}}
-  vector.transfer_write %cst, %arg0[%c3, %c3] {permutation_map = (d0, d1)->(d0 + 1)} : vector<128xf32>, memref<?x?xf32>
+  vector.transfer_write %cst, %arg0[%c3, %c3] {permutation_map = affine_map<(d0, d1)->(d0 + 1)>} : vector<128xf32>, memref<?x?xf32>
 }
 
 // -----
@@ -404,7 +404,7 @@ func @test_vector.transfer_write(%arg0: memref<?x?x?xf32>) {
   %c3 = constant 3 : index
   %cst = constant dense<3.0> : vector<3 x 7 x f32>
   // expected-error@+1 {{requires a permutation_map that is a permutation (found one dim used more than once)}}
-  vector.transfer_write %cst, %arg0[%c3, %c3, %c3] {permutation_map = (d0, d1, d2)->(d0, d0)} : vector<3x7xf32>, memref<?x?x?xf32>
+  vector.transfer_write %cst, %arg0[%c3, %c3, %c3] {permutation_map = affine_map<(d0, d1, d2)->(d0, d0)>} : vector<3x7xf32>, memref<?x?x?xf32>
 }
 
 // -----
@@ -515,10 +515,10 @@ func @strided_slice(%arg0: vector<4x8x16xf32>) {
 // -----
 
 #contraction_accesses = [
-  (b0, f0, f1, c0, c1) -> (c0, b0, c1, f0),
-  (b0, f0, f1, c0, c1) -> (b0, c1, c0, f1),
-  (b0, f0, f1, c0, c1) -> (b0, f0, f1),
-  (b0, f0, f1, c0, c1) -> (b0, f0, f1)
+  affine_map<(b0, f0, f1, c0, c1) -> (c0, b0, c1, f0)>,
+  affine_map<(b0, f0, f1, c0, c1) -> (b0, c1, c0, f1)>,
+  affine_map<(b0, f0, f1, c0, c1) -> (b0, f0, f1)>,
+  affine_map<(b0, f0, f1, c0, c1) -> (b0, f0, f1)>
 ]
 #contraction_trait = {
   indexing_maps = #contraction_accesses,
@@ -535,9 +535,9 @@ func @contraction(%arg0: vector<7x8x16x15xf32>, %arg1: vector<8x16x7x5xf32>,
 // -----
 
 #contraction_accesses = [
-  (b0, f0, f1, c0, c1) -> (c0, c0, c1, f0),
-  (b0, f0, f1, c0, c1) -> (b0, c1, c0, f1),
-  (b0, f0, f1, c0, c1) -> (b0, f0, f1)
+  affine_map<(b0, f0, f1, c0, c1) -> (c0, c0, c1, f0)>,
+  affine_map<(b0, f0, f1, c0, c1) -> (b0, c1, c0, f1)>,
+  affine_map<(b0, f0, f1, c0, c1) -> (b0, f0, f1)>
 ]
 #contraction_trait = {
   indexing_maps = #contraction_accesses,
@@ -554,9 +554,9 @@ func @contraction(%arg0: vector<7x8x16x15xf32>, %arg1: vector<8x16x7x5xf32>,
 // -----
 
 #contraction_accesses = [
-  (b0, f0, f1, c0, c1) -> (c0, b0, c1, f0),
-  (b0, f0, f1, c0, c1)[s0] -> (b0, s0, c0, f1),
-  (b0, f0, f1, c0, c1) -> (b0, f0, f1)
+  affine_map<(b0, f0, f1, c0, c1) -> (c0, b0, c1, f0)>,
+  affine_map<(b0, f0, f1, c0, c1)[s0] -> (b0, s0, c0, f1)>,
+  affine_map<(b0, f0, f1, c0, c1) -> (b0, f0, f1)>
 ]
 #contraction_trait = {
   indexing_maps = #contraction_accesses,
@@ -573,9 +573,9 @@ func @contraction(%arg0: vector<7x8x16x15xf32>, %arg1: vector<8x16x7x5xf32>,
 // -----
 
 #contraction_accesses = [
-  (b0, f0, f1, c0, c1) -> (c0, b0, c1, f0),
-  (b0, f0, f1, c0, c1) -> (b0, c1, c0, f1),
-  (b0, f0, f1, c1) -> (b0, f0, f1)
+  affine_map<(b0, f0, f1, c0, c1) -> (c0, b0, c1, f0)>,
+  affine_map<(b0, f0, f1, c0, c1) -> (b0, c1, c0, f1)>,
+  affine_map<(b0, f0, f1, c1) -> (b0, f0, f1)>
 ]
 #contraction_trait = {
   indexing_maps = #contraction_accesses,
@@ -592,9 +592,9 @@ func @contraction(%arg0: vector<7x8x16x15xf32>, %arg1: vector<8x16x7x5xf32>,
 // -----
 
 #contraction_accesses = [
-  (b0, f0, f1, c0, c1) -> (c0, b0, c1, f0),
-  (b0, f0, f1, c0, c1) -> (b0, c1, f1),
-  (b0, f0, f1, c0, c1) -> (b0, f0, f1)
+  affine_map<(b0, f0, f1, c0, c1) -> (c0, b0, c1, f0)>,
+  affine_map<(b0, f0, f1, c0, c1) -> (b0, c1, f1)>,
+  affine_map<(b0, f0, f1, c0, c1) -> (b0, f0, f1)>
 ]
 #contraction_trait = {
   indexing_maps = #contraction_accesses,
@@ -611,9 +611,9 @@ func @contraction(%arg0: vector<7x8x16x15xf32>, %arg1: vector<8x16x7x5xf32>,
 // -----
 
 #contraction_accesses = [
-  (b0, f0, f1, b1, b2) -> (b1, b0, b2, f0),
-  (b0, f0, f1, b1, b2) -> (b0, b2, b1, f1),
-  (b0, f0, f1, b1, b2) -> (b0, f0, f1)
+  affine_map<(b0, f0, f1, b1, b2) -> (b1, b0, b2, f0)>,
+  affine_map<(b0, f0, f1, b1, b2) -> (b0, b2, b1, f1)>,
+  affine_map<(b0, f0, f1, b1, b2) -> (b0, f0, f1)>
 ]
 #contraction_trait = {
   indexing_maps = #contraction_accesses,
@@ -630,9 +630,9 @@ func @contraction(%arg0: vector<7x8x16x15xf32>, %arg1: vector<8x16x7x5xf32>,
 // -----
 
 #contraction_accesses = [
-  (b0, f0, f1, c0, c1) -> (c1, b0, c0, f0),
-  (b0, f0, f1, c0, c1) -> (b0, c1, c0, f1),
-  (b0, f0, f1, c0, c1) -> (b0, f0, f1)
+  affine_map<(b0, f0, f1, c0, c1) -> (c1, b0, c0, f0)>,
+  affine_map<(b0, f0, f1, c0, c1) -> (b0, c1, c0, f1)>,
+  affine_map<(b0, f0, f1, c0, c1) -> (b0, f0, f1)>
 ]
 #contraction_trait = {
   indexing_maps = #contraction_accesses,
@@ -649,9 +649,9 @@ func @contraction(%arg0: vector<7x8x16x15xf32>, %arg1: vector<8x16x7x5xf32>,
 // -----
 
 #contraction_accesses = [
-  (b0, f0, f1, c0, c1) -> (c0, b0, c1, f0),
-  (b0, f0, f1, c0, c1) -> (f1, c1, c0, b0),
-  (b0, f0, f1, c0, c1) -> (b0, f0, f1)
+  affine_map<(b0, f0, f1, c0, c1) -> (c0, b0, c1, f0)>,
+  affine_map<(b0, f0, f1, c0, c1) -> (f1, c1, c0, b0)>,
+  affine_map<(b0, f0, f1, c0, c1) -> (b0, f0, f1)>
 ]
 #contraction_trait = {
   indexing_maps = #contraction_accesses,
@@ -668,9 +668,9 @@ func @contraction(%arg0: vector<7x8x16x15xf32>, %arg1: vector<8x16x7x5xf32>,
 // -----
 
 #contraction_accesses = [
-  (b0, f0, f1, c0, c1) -> (c0, b0, c1, f0),
-  (b0, f0, f1, c0, c1) -> (b0, c1, c0, f1),
-  (b0, f0, f1, c0, c1) -> (b0, f0, f1)
+  affine_map<(b0, f0, f1, c0, c1) -> (c0, b0, c1, f0)>,
+  affine_map<(b0, f0, f1, c0, c1) -> (b0, c1, c0, f1)>,
+  affine_map<(b0, f0, f1, c0, c1) -> (b0, f0, f1)>
 ]
 #contraction_trait = {
   indexing_maps = #contraction_accesses,
@@ -687,9 +687,9 @@ func @contraction(%arg0: vector<7x8x16x15xf32>, %arg1: vector<8x16x7x5xf32>,
 // -----
 
 #contraction_accesses = [
-  (b0, f0, f1, c0, c1) -> (c0, b0, c1, f0),
-  (b0, f0, f1, c0, c1) -> (b0, c1, c0, f1),
-  (b0, f0, f1, c0, c1) -> (b0, f0, f1)
+  affine_map<(b0, f0, f1, c0, c1) -> (c0, b0, c1, f0)>,
+  affine_map<(b0, f0, f1, c0, c1) -> (b0, c1, c0, f1)>,
+  affine_map<(b0, f0, f1, c0, c1) -> (b0, f0, f1)>
 ]
 #contraction_trait = {
   indexing_maps = #contraction_accesses,
@@ -703,6 +703,25 @@ func @contraction(%arg0: vector<7x8x16x15xf32>, %arg1: vector<8x16x7x5xf32>,
   // expected-error@+1 {{expected zero or exactly 2 vector mask operands}}
   %0 = vector.contract #contraction_trait %arg0, %arg1, %arg2, %lhs_mask
       : vector<7x8x16x15xf32>, vector<8x16x7x5xf32> into vector<8x15x5xf32>
+}
+
+// -----
+
+#contraction_accesses = [
+        affine_map<(i, j, k) -> (i, k)>,
+        affine_map<(i, j, k) -> (k, j)>,
+        affine_map<(i, j, k) -> (i, j)>
+      ]
+#contraction_trait = {
+        indexing_maps = #contraction_accesses,
+        iterator_types = ["parallel", "parallel", "reduction"]
+      }
+func @contraction(%arg0: vector<4x3xi32>,
+                  %arg1: vector<3x7xf32>,
+                  %arg2: vector<4x7xf32>) -> vector<4x7xf32> {
+  // expected-error@+1 {{'vector.contract' op failed to verify that first operand lhs and result have same element type}}
+  %0 = vector.contract #contraction_trait %arg0, %arg1, %arg2
+    : vector<4x3xi32>, vector<3x7xf32> into vector<4x7xf32>
 }
 
 // -----
@@ -888,4 +907,114 @@ func @reshape_bad_output_fixed_size(%arg0 : vector<3x2x4xf32>) {
   // expected-error@+1 {{fixed vector size must match output vector for dim 0}}
   %1 = vector.reshape %arg0, [%c3, %c6], [%c2, %c9], [4]
     : vector<3x2x4xf32> to vector<2x3x5xf32>
+}
+
+// -----
+
+func @shape_cast_wrong_element_type(%arg0 : vector<5x1x3x2xf32>) {
+  // expected-error@+1 {{op source/result vectors must have same element type}}
+  %0 = vector.shape_cast %arg0 : vector<5x1x3x2xf32> to vector<15x2xi32>
+}
+
+// -----
+
+func @shape_cast_wrong_element_type_tuple(%arg0 : tuple<vector<5x4x2xf32>,
+                                                        vector<3x4x2xf32>>) {
+  // expected-error@+1 {{op source/result vectors must have same element type}}
+  %0 = vector.shape_cast %arg0 : tuple<vector<5x4x2xf32>, vector<3x4x2xf32>> to
+                                 tuple<vector<20x2xi32>, vector<12x2xi32>>
+}
+
+// -----
+
+func @shape_cast_wrong_num_elements(%arg0 : vector<5x1x3x2xf32>) {
+  // expected-error@+1 {{op source/result number of elements must match}}
+  %0 = vector.shape_cast %arg0 : vector<5x1x3x2xf32> to vector<10x2xf32>
+}
+
+// -----
+
+func @shape_cast_wrong_num_elements_tuple(%arg0 : tuple<vector<5x4x2xf32>,
+                                                        vector<3x4x2xf32>>) {
+  // expected-error@+1 {{op source/result number of elements must match}}
+  %0 = vector.shape_cast %arg0 : tuple<vector<5x4x2xf32>, vector<3x4x2xf32>> to
+                                 tuple<vector<21x2xf32>, vector<13x2xf32>>
+}
+
+// -----
+
+func @shape_cast_invalid_rank_reduction(%arg0 : vector<5x1x3x2xf32>) {
+  // expected-error@+1 {{invalid shape cast}}
+  %0 = vector.shape_cast %arg0 : vector<5x1x3x2xf32> to vector<2x15xf32>
+}
+
+// -----
+
+func @shape_cast_invalid_rank_reduction_tuple(%arg0
+  : tuple<vector<5x4x2xf32>, vector<3x4x2xf32>>) {
+  // expected-error@+1 {{invalid shape cast}}
+  %0 = vector.shape_cast %arg0: tuple<vector<5x4x2xf32>, vector<3x4x2xf32>> to
+                                tuple<vector<10x4xf32>, vector<6x4xf32>>
+}
+
+// -----
+
+func @shape_cast_invalid_rank_expansion(%arg0 : vector<15x2xf32>) {
+  // expected-error@+1 {{invalid shape cast}}
+  %0 = vector.shape_cast %arg0 : vector<15x2xf32> to vector<5x2x3x1xf32>
+}
+
+// -----
+
+func @shape_cast_invalid_rank_expansion_tuple(%arg0 : tuple<vector<20x2xf32>,
+                                                            vector<12x2xf32>>) {
+  // expected-error@+1 {{invalid shape cast}}
+  %0 = vector.shape_cast %arg0 : tuple<vector<20x2xf32>, vector<12x2xf32>> to
+                                 tuple<vector<5x2x4xf32>, vector<4x3x2xf32>>
+}
+
+// -----
+
+func @shape_cast_source_result_different_types(
+  %arg1 : tuple<vector<20x2xf32>, vector<12x2xf32>>) {
+  // expected-error@+1 {{source/result must be of same type}}
+  %1 = vector.shape_cast %arg1 : tuple<vector<20x2xf32>, vector<12x2xf32>> to
+                                 vector<5x2x4xf32>
+}
+
+// -----
+
+func @shape_cast_different_tuple_sizes(
+  %arg1 : tuple<vector<5x4x2xf32>, vector<3x4x2xf32>>) {
+  // expected-error@+1 {{op source/result tuples must be the same size}}
+  %1 = vector.shape_cast %arg1 : tuple<vector<5x4x2xf32>, vector<3x4x2xf32>> to
+                                 tuple<vector<20x2xf32>>
+}
+
+// -----
+
+func @reduce_unknown_kind(%arg0: vector<16xf32>) -> f32 {
+  // expected-error@+1 {{'vector.reduction' op unknown reduction kind: joho}}
+  %0 = vector.reduction "joho", %arg0 : vector<16xf32> into f32
+}
+
+// -----
+
+func @reduce_elt_type_mismatch(%arg0: vector<16xf32>) -> i32 {
+  // expected-error@+1 {{'vector.reduction' op failed to verify that source operand and result have same element type}}
+  %0 = vector.reduction "add", %arg0 : vector<16xf32> into i32
+}
+
+// -----
+
+func @reduce_unsupported_type(%arg0: vector<16xf32>) -> f32 {
+  // expected-error@+1 {{'vector.reduction' op unsupported reduction type}}
+  %0 = vector.reduction "xor", %arg0 : vector<16xf32> into f32
+}
+
+// -----
+
+func @reduce_unsupported_rank(%arg0: vector<4x16xf32>) -> f32 {
+  // expected-error@+1 {{'vector.reduction' op unsupported reduction rank: 2}}
+  %0 = vector.reduction "add", %arg0 : vector<4x16xf32> into f32
 }
