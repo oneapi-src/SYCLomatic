@@ -14,6 +14,6 @@
 
 #define DPCT_VERSION_MAJOR "2021"
 #define DPCT_VERSION_MINOR "1"
-#define DPCT_VERSION_PATCH "beta05"
+#define DPCT_VERSION_PATCH "beta06"
 
 #endif
