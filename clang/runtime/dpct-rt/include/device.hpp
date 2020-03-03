@@ -163,7 +163,10 @@ public:
 
     // max_clock_frequency parameter is not supported on host device
     if (is_host()) {
-      // Clock frequency is default to one on host device
+      // This code may need to be updated. Currently max_clock_frequency for
+      // host device is initialized with 1, in assumption that if other devices
+      // exist and they are being selected based on this parameter, other
+      // devices would have higher priority.
       prop.set_max_clock_frequency(1);
     } else {
       prop.set_max_clock_frequency(
