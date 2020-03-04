@@ -244,16 +244,12 @@ def parse_args(args):
             new_flag = MAP_FLAGS[arg]
             if arg == '--machine' or arg == '-m':
                 # '-m 32' -> '-m32' or '--machine 32' -> '-m32'
-                index = arg_list.index(arg)
-                arg_next = arg_list[index + 1]
+                arg_next = next(args)
                 new_flag += arg_next
-                next(args)
             elif arg == '--gpu-architecture' or arg == '-arch':
-                index = arg_list.index(arg)
-                arg_next = arg_list[index + 1]
+                arg_next = next(args)
                 arg_next = gpu_virtual_arch_to_arch(arg_next)
                 new_flag += arg_next
-                next(args)
             flags.append(new_flag)
         # ignore some flags
         elif arg in IGNORED_FLAGS:
@@ -265,9 +261,8 @@ def parse_args(args):
                    or arg == '-Xnvlink' or arg == '--nvlink-options'   \
                    or arg == '-run-args' or arg == '--run-args':
                     # for '-Xcompiler', it may be with arg like "'-Xcompiler' ' -DXXX -O3 -w -march=native '"
-                    index = arg_list.index(arg)
-                    if(index < len(arg_list) - 1):
-                        arg_next = arg_list[index + 1]
+                    arg_next = next(args, None)
+                    if(arg_next != None):
                         arg_next = arg_next.strip()
                         arg_split = []
                         pattern_space = re.compile("\s+")
@@ -282,11 +277,11 @@ def parse_args(args):
 
                         # In the case of else condition, it is difficult to tell whether arg_split[0] is
                         # the value of option '-Xcompiler' or an independent argument, so just treat it as an independent argument,
-                        # it will be processed in the next outer loop.
+                        # it will be processed in the next outer loop:
+                        # E.g: [..., '-Xcompiler', '"', '-g', '-O3', '-Wall', '"',...]
                         if re.search(r'\s+', arg_next) or re.search(r',', arg_next):
                             xcompiler_flags = parse_args(iter(arg_split))
                             flags.extend(xcompiler_flags[0])
-                            next(args)
                 else:
                     next(args)
         elif arg in {'-lmpichcxx', '-lmpich', '-lmpi_cxx', '-lmpi'}:
@@ -487,6 +482,10 @@ def parse_args(args):
             pass
         elif re.match(r'^-Werror=', arg):
             pass
+        # E.g \" is imported by option like
+        # [..., '-Xcompiler', '"', '-g', '-O3', '-Wall', '"',...]
+        elif arg in {'\"'}:
+            pass
         # and consider everything else as compile option.
         else:
            flags.append(arg)
@@ -513,8 +512,6 @@ def split_command(command):
         return None
     # iterate on the compile options
     args = iter(command[1:])
-    global arg_list
-    arg_list = command[1:]
 
     ret = parse_args(args)
     if ret == None:
