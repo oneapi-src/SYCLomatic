@@ -225,9 +225,9 @@ __global__ void convert_kernel(T b){
 // CHECK-NEXT:  T b;
 // CHECK-NEXT:  dpct::get_default_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
-// CHECK-NEXT:      sycl::range<2> bbb_range_ct1(8/*8*/, 0/*0*/);
+// CHECK-NEXT:      sycl::range<2> bbb_range_ct1(8, 0);
 // CHECK-EMPTY:
-// CHECK-NEXT:      sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> aaa_acc_ct1(sycl::range<1>(0/*0*/), cgh);
+// CHECK-NEXT:      sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> aaa_acc_ct1(sycl::range<1>(0), cgh);
 // CHECK-NEXT:      sycl::accessor<double, 2, sycl::access::mode::read_write, sycl::access::target::local> bbb_acc_ct1(bbb_range_ct1, cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class convert_kernel_{{[a-f0-9]+}}>>(

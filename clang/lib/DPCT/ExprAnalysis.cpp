@@ -15,13 +15,13 @@
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
 #include "clang/AST/DeclTemplate.h"
+#include "clang/AST/ExprConcepts.h"
 #include "clang/AST/ExprObjC.h"
 #include "clang/AST/ExprOpenMP.h"
 #include "clang/AST/StmtCXX.h"
 #include "clang/AST/StmtGraphTraits.h"
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
-#include "clang/AST/ExprConcepts.h"
 
 namespace clang {
 namespace dpct {
@@ -34,7 +34,8 @@ std::map<const Expr *, std::string> ArgumentAnalysis::DefaultArgMap;
 
 void TemplateDependentReplacement::replace(
     const std::vector<TemplateArgumentInfo> &TemplateList) {
-  SourceStr.replace(Offset, Length, TemplateList[TemplateIndex].getAsString());
+  SourceStr.replace(Offset, Length,
+                    getTargetArgument(TemplateList).getString());
 }
 
 TemplateDependentStringInfo::TemplateDependentStringInfo(
@@ -46,13 +47,34 @@ TemplateDependentStringInfo::TemplateDependentStringInfo(
     TDRs.emplace_back(TDR.second->alterSource(SourceStr));
 }
 
-std::string TemplateDependentStringInfo::getReplacedString(
+std::shared_ptr<TemplateDependentStringInfo>
+TemplateDependentStringInfo::applyTemplateArguments(
     const std::vector<TemplateArgumentInfo> &TemplateList) {
-  std::string SrcStr(SourceStr);
-  for (auto Itr = TDRs.rbegin(); Itr != TDRs.rend(); ++Itr)
-    (*Itr)->replace(TemplateList);
-  std::swap(SrcStr, SourceStr);
-  return SrcStr;
+  std::shared_ptr<TemplateDependentStringInfo> Result =
+      std::make_shared<TemplateDependentStringInfo>();
+  Result->SourceStr = SourceStr;
+  int OffsetShift = 0;
+  auto &Repls = Result->TDRs;
+  auto &Str = Result->SourceStr;
+  for (auto &R : TDRs) {
+    size_t ReplsSize = Repls.size();
+    size_t ApplyOffset = R->getOffset() + OffsetShift;
+    auto &TargetArg = R->getTargetArgument(TemplateList);
+    auto &TargetList = TargetArg.getDependentStringInfo()->TDRs;
+    Repls.resize(ReplsSize + TargetList.size());
+
+    Str.replace(ApplyOffset, R->getLength(), TargetArg.getString());
+    std::transform(TargetList.begin(), TargetList.end(),
+                   Repls.begin() + ReplsSize,
+                   [&](std::shared_ptr<TemplateDependentReplacement> OldRepl)
+                       -> std::shared_ptr<TemplateDependentReplacement> {
+                     auto Repl = OldRepl->alterSource(Str);
+                     Repl->shift(ApplyOffset);
+                     return Repl;
+                   });
+    OffsetShift += TargetArg.getString().length() - R->getLength();
+  }
+  return Result;
 }
 
 SourceLocation ExprAnalysis::getExprLocation(SourceLocation Loc) {
@@ -148,6 +170,19 @@ void ExprAnalysis::initExpression(const Expr *Expression) {
   }
 }
 
+void ExprAnalysis::initSourceRange(const SourceRange &Range) {
+  SrcBegin = 0;
+  if (Range.getBegin().isValid()) {
+    std::tie(SrcBegin, SrcLength) =
+        getOffsetAndLength(Range.getBegin(), Range.getEnd());
+    ReplSet.init(std::string(
+        SM.getCharacterData(getExprLocation(Range.getBegin())), SrcLength));
+  } else {
+    SrcLength = 0;
+    ReplSet.init("");
+  }
+}
+
 void StringReplacements::replaceString() {
   SourceStr.reserve(SourceStr.length() + ShiftLength);
   auto Itr = ReplMap.rbegin();
@@ -226,52 +261,36 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
 }
 
 void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
-  static const std::map<std::string, std::string> MemberMap{
-      {"__fetch_builtin_x", "2"},
-      {"__fetch_builtin_y", "1"},
-      {"__fetch_builtin_z", "0"}};
-  CtTypeInfo Ty(ME->getBase()->getType());
-  if (Ty.getBaseName() == MapNames::getClNamespace() + "::range<3>") {
+  static MapNames::MapTy NdItemMemberMap{{"__fetch_builtin_x", "2"},
+                                         {"__fetch_builtin_y", "1"},
+                                         {"__fetch_builtin_z", "0"}};
+  static const MapNames::MapTy NdItemMap{
+      {"__cuda_builtin_blockIdx_t", "get_group"},
+      {"__cuda_builtin_blockDim_t", "get_local_range"},
+      {"__cuda_builtin_threadIdx_t", "get_local_id"}};
+  auto BaseType =
+      DpctGlobalInfo::getUnqualifiedTypeName(ME->getBase()->getType());
+  auto ItemItr = NdItemMap.find(BaseType);
+  if (ItemItr != NdItemMap.end()) {
+    std::string FieldName = ME->getMemberDecl()->getName().str();
+    if (MapNames::replaceName(NdItemMemberMap, FieldName)) {
+      addReplacement(ME, buildString(DpctGlobalInfo::getItemName(), ".",
+                                     ItemItr->second, "(", FieldName, ")"));
+    }
+  } else if (BaseType == "dim3") {
     addReplacement(
         ME->getOperatorLoc(), ME->getMemberLoc(),
         MapNames::findReplacedName(MapNames::Dim3MemberNamesMap,
                                    ME->getMemberNameInfo().getAsString()));
-  } else if (Ty.getBaseName() == "dpct::device_info") {
+  } else if (BaseType == "cudaDeviceProp") {
     std::string ReplacementStr = MapNames::findReplacedName(
         DevicePropVarRule::PropNamesMap, ME->getMemberNameInfo().getAsString());
     if (!ReplacementStr.empty()) {
       addReplacement(ME->getMemberLoc(), "get_" + ReplacementStr + "()");
     }
-  } else if (Ty.getBaseName() == "const __cuda_builtin_blockIdx_t") {
-    ValueDecl *Field = ME->getMemberDecl();
-    std::string FieldName = Field->getName().str();
-    if (MapNames::replaceName(MemberMap, FieldName)) {
-      std::ostringstream Repl;
-      Repl << DpctGlobalInfo::getItemName() << ".get_group(" << FieldName
-           << ")";
-      addReplacement(ME, Repl.str());
-    }
-  } else if (Ty.getBaseName() == "const __cuda_builtin_blockDim_t") {
-    ValueDecl *Field = ME->getMemberDecl();
-    std::string FieldName = Field->getName().str();
-    if (MapNames::replaceName(MemberMap, FieldName)) {
-      std::ostringstream Repl;
-      Repl << DpctGlobalInfo::getItemName() << ".get_local_range(" << FieldName
-           << ")";
-      addReplacement(ME, Repl.str());
-    }
-  } else if (Ty.getBaseName() == "const __cuda_builtin_threadIdx_t") {
-    ValueDecl *Field = ME->getMemberDecl();
-    std::string FieldName = Field->getName().str();
-    if (MapNames::replaceName(MemberMap, FieldName)) {
-      std::ostringstream Repl;
-      Repl << DpctGlobalInfo::getItemName() << ".get_local_id(" << FieldName
-           << ")";
-      addReplacement(ME, Repl.str());
-    }
-  } else if (MapNames::SupportedVectorTypes.find(Ty.getOrginalBaseType()) !=
+  } else if (MapNames::SupportedVectorTypes.find(BaseType) !=
              MapNames::SupportedVectorTypes.end()) {
-    if (*Ty.getBaseName().rbegin() == '1') {
+    if (*BaseType.rbegin() == '1') {
       addReplacement(ME->getOperatorLoc(), ME->getEndLoc(), "");
       dispatch(ME->getBase());
     } else {
@@ -325,23 +344,49 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
 
 void ExprAnalysis::analyzeType(const TypeLoc &TL, const Expr *CSCE) {
   std::string TyName;
+#define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
   switch (TL.getTypeLocClass()) {
+  case TypeLoc::Qualified:
+    return analyzeType(TL.getUnqualifiedLoc(), CSCE);
   case TypeLoc::Pointer:
-    return analyzeType(static_cast<const PointerTypeLoc &>(TL).getPointeeLoc(),
-                       CSCE);
+    return analyzeType(TYPELOC_CAST(PointerTypeLoc).getPointeeLoc(), CSCE);
   case TypeLoc::Typedef:
-    TyName =
-        static_cast<const TypedefTypeLoc &>(TL).getTypedefNameDecl()->getName().str();
+    TyName = TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
     break;
   case TypeLoc::Builtin:
   case TypeLoc::Record:
     TyName = TL.getType().getAsString();
     break;
+  case TypeLoc::TemplateTypeParm:
+    return addReplacement(
+        TL.getBeginLoc(), TL.getEndLoc(), CSCE,
+        TYPELOC_CAST(TemplateTypeParmTypeLoc).getDecl()->getIndex());
+  case TypeLoc::TemplateSpecialization:
+    return analyzeTemplateSpecializationType(
+        TYPELOC_CAST(TemplateSpecializationTypeLoc));
+  case TypeLoc::DependentTemplateSpecialization:
+    return analyzeTemplateSpecializationType(
+        TYPELOC_CAST(DependentTemplateSpecializationTypeLoc));
   default:
     return;
   }
   if (MapNames::replaceName(MapNames::TypeNamesMap, TyName))
     addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE, TyName);
+}
+
+void ExprAnalysis::analyzeTemplateArgument(const TemplateArgumentLoc &TAL) {
+  switch (TAL.getArgument().getKind()) {
+  case TemplateArgument::Type:
+    return analyzeType(TAL.getTypeSourceInfo());
+  case TemplateArgument::Expression:
+    return dispatch(TAL.getSourceExpression());
+  case TemplateArgument::Integral:
+    return dispatch(TAL.getSourceIntegralExpression());
+  case TemplateArgument::Declaration:
+    return dispatch(TAL.getSourceDeclExpression());
+  default:
+    break;
+  }
 }
 
 const std::string &ArgumentAnalysis::getDefaultArgument(const Expr *E) {

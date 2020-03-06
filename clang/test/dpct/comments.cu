@@ -34,17 +34,17 @@ int main() {
 // CHECK-NEXT:        [&](sycl::handler &cgh) {
 // CHECK-NEXT:          sycl::stream stream_ct1(64 * 1024, 80, cgh);
 // CHECK-EMPTY:  
-// CHECK-NEXT:          dpct::device_memory<sycl::uint2, 1> a(16/*16*/);
+// CHECK-NEXT:          dpct::device_memory<sycl::uint2, 1> a(16);
 // CHECK-EMPTY:
 // CHECK-NEXT:          // ranges used for accessors to device memory
-// CHECK-NEXT:          sycl::range<2> b_range_ct1(12/*12*/, 12/*12*/);
+// CHECK-NEXT:          sycl::range<2> b_range_ct1(12, 12);
 // CHECK-EMPTY:  
 // CHECK-NEXT:          // pointers to device memory
 // CHECK-NEXT:          auto a_ptr_ct1 = a.get_ptr();
 // CHECK-NEXT:          auto a_ptr_ct1 = a.get_ptr();
 // CHECK-EMPTY:  
 // CHECK-NEXT:          // accessors to device memory
-// CHECK-NEXT:          sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> c_acc_ct1(sycl::range<1>(36/*36*/), cgh);
+// CHECK-NEXT:          sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> c_acc_ct1(sycl::range<1>(36), cgh);
 // CHECK-NEXT:          sycl::accessor<int, 2, sycl::access::mode::read_write, sycl::access::target::local> b_acc_ct1(b_range_ct1, cgh);
 // CHECK-NEXT:          auto b_acc_ct1 = b.get_access(cgh);
 // CHECK-EMPTY:  

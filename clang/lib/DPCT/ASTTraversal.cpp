@@ -1913,29 +1913,24 @@ bool VectorTypeNamespaceRule::isNamespaceInserted(SourceLocation SL) {
   }
 }
 
-void VectorTypeNamespaceRule::replaceTypeName(const QualType &QT,
-                                              SourceLocation BeginLoc,
-                                              bool isDeclType) {
-  if (isNamespaceInserted(BeginLoc))
+void VectorTypeNamespaceRule::replaceTypeName(TypeLoc TL, bool isDeclType) {
+  if (isNamespaceInserted(TL.getBeginLoc()))
     return;
 
-  CtTypeInfo Ty(QT);
+  CtTypeInfo Ty(TL);
   auto &TypeName = Ty.getOrginalBaseType();
 
   if (isDeclType)
     ++SrcAPIStaticsMap[TypeName];
-
-  std::string Str =
-      std::string(MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName));
+  auto &Str = MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName);
   if (!Str.empty())
-    emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Str)));
+    emplaceTransformation(new ReplaceToken(TL.getBeginLoc(), std::string(Str)));
 }
 
 void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
   // int2 => sycl::int2
   if (const VarDecl *D = getNodeAsType<VarDecl>(Result, "vecVarDecl")) {
-    replaceTypeName(D->getType(),
-                    D->getTypeSourceInfo()->getTypeLoc().getBeginLoc(), true);
+    replaceTypeName(D->getTypeSourceInfo()->getTypeLoc(), true);
   }
 
   // struct benchtype{
@@ -1960,22 +1955,19 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
           FD->getEndLoc(), *SM, Result.Context->getLangOpts()));
       emplaceTransformation(new ReplaceToken(Loc.getLocWithOffset(-1), "{}"));
     }
-    replaceTypeName(FD->getType(),
-                    FD->getTypeSourceInfo()->getTypeLoc().getBeginLoc(), true);
+    replaceTypeName(FD->getTypeSourceInfo()->getTypeLoc(), true);
   }
 
   // typedef int2 xxx => typedef sycl::int2 xxx
   if (const TypedefDecl *TD =
           getNodeAsType<TypedefDecl>(Result, "typeDefDecl")) {
-    replaceTypeName(TD->getUnderlyingType(),
-                    TD->getTypeSourceInfo()->getTypeLoc().getBeginLoc());
+    replaceTypeName(TD->getTypeSourceInfo()->getTypeLoc());
   }
 
   // int2 func() => sycl::int2 func()
   if (const FunctionDecl *FD =
           getNodeAsType<FunctionDecl>(Result, "funcReturnsVectorType")) {
-    replaceTypeName(FD->getReturnType(),
-                    FD->getReturnTypeSourceRange().getBegin());
+    replaceTypeName(FD->getFunctionTypeLoc().getReturnLoc());
   }
 }
 

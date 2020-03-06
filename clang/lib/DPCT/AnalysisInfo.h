@@ -46,8 +46,7 @@ using MemVarInfoMap = GlobalMap<MemVarInfo>;
 
 using ReplTy = std::map<std::string, tooling::Replacements>;
 
-template <class T>
-inline void merge(GlobalMap<T> &Master, const GlobalMap<T> &Branch) {
+template <class T> inline void merge(T &Master, const T &Branch) {
   Master.insert(Branch.begin(), Branch.end());
 }
 
@@ -873,7 +872,11 @@ public:
   SizeInfo() = default;
   SizeInfo(std::string Size) : Size(std::move(Size)) {}
   SizeInfo(std::shared_ptr<TemplateDependentStringInfo> TDSI) : TDSI(TDSI) {}
-  const std::string &getSize() { return Size; }
+  const std::string &getSize() {
+    if (TDSI)
+      return TDSI->getSourceString();
+    return Size;
+  }
   // Get actual size string according to template arguments list;
   void setTemplateList(const std::vector<TemplateArgumentInfo> &TemplateList);
 };
@@ -881,8 +884,6 @@ public:
 // get from type.
 class CtTypeInfo {
 public:
-  // Array size will be folded, if exist.
-  CtTypeInfo(const QualType &Ty);
   // If NeedSizeFold is true, array size will be folded, but orginal expression
   // will follow as comments. If NeedSizeFold is false, original size expression
   // will be the size string.
@@ -893,8 +894,8 @@ public:
   inline size_t getDimension() { return Range.size(); }
 
   const std::string &getTemplateSpecializationName() {
-    if (isTemplate() && TemplateType)
-      return TemplateType->getTemplateSpecializationName();
+    if (isTemplate() && TDSI)
+      return TDSI->getSourceString();
     return getBaseName();
   }
 
@@ -911,37 +912,59 @@ public:
     setPointerAsArray();
     removeQualifier();
   }
-  void setTemplateType(const std::vector<TemplateArgumentInfo> &TA);
+
+  /// Get instantiated type name with given template arguments.
+  /// e.g. X<T>, with T = int, result type will be X<int>.
+  std::shared_ptr<CtTypeInfo>
+  applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TA);
 
 private:
-  CtTypeInfo()
-      : IsPointer(false), IsTemplate(false), TemplateIndex(0),
-        TemplateList(nullptr) {}
-  void setTypeInfo(const TypeLoc &TL, bool NeedSizeFold);
-  void setTypeInfo(QualType Ty);
+  CtTypeInfo() : IsPointer(false), IsTemplate(false) {}
 
-  // Get folded array size with original size expression following as comments.
-  // For e.g.,
-  // #define SIZE 24
-  // dpct::shared_memory<int, 1>(24 /* SIZE */);
+  /// For ConstantArrayType, size in generated code is folded as an integer.
+  /// If \p NeedSizeFold is true, original size expression will followed as
+  /// comments.
+  void setTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
+
+  /// Get folded array size with original size expression following as comments.
+  /// e.g.,
+  /// #define SIZE 24
+  /// dpct::device_memory<int, 1>(24 /* SIZE */);
+  /// Exception for particular case:
+  /// __device__ int a[24];
+  /// will be migrated to:
+  /// dpct::device_memory<int, 1> a(24);
   inline std::string getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
-    return getFoldedArraySize(TL.getTypePtr()) + "/*" +
-           getStmtSpelling(TL.getSizeExpr()) + "*/";
-  }
-
-  // Get folded array size only.
-  inline std::string getFoldedArraySize(const ConstantArrayType *Ty) {
-    return Ty->getSize().toString(10, false);
+    if (TL.getSizeExpr()->getStmtClass() == Stmt::IntegerLiteralClass &&
+        TL.getSizeExpr()->getBeginLoc().isFileID())
+      return TL.getTypePtr()->getSize().toString(10, false);
+    return buildString(TL.getTypePtr()->getSize().toString(10, false), "/*",
+                       getStmtSpelling(TL.getSizeExpr()), "*/");
   }
 
   // Get original array size expression.
   std::string getUnfoldedArraySize(const ConstantArrayTypeLoc &TL);
 
-  void setArrayInfo(QualType &Type);
-  void setTemplateInfo(QualType &Type);
-  void setPointerInfo(QualType &Type);
-  void setReferenceInfo(QualType &Type);
-  void setName(QualType &Type);
+  /// Typically C++ array with constant size.
+  /// e.g.: __device__ int a[20];
+  /// If \p NeedSizeFold is true, original size expression will followed as
+  /// comments.
+  /// e.g.,
+  /// #define SIZE 24
+  /// dpct::device_memory<int, 1>(24 /* SIZE */);
+  void setArrayInfo(const ConstantArrayTypeLoc &TL, bool NeedFoldSize);
+
+  /// Typically C++ array with template depedent size.
+  /// e.g.: template<size_t S>
+  /// ...
+  /// __device__ int a[S];
+  void setArrayInfo(const DependentSizedArrayTypeLoc &TL, bool NeedSizeFold);
+
+  /// IncompleteArray is an array defined without size.
+  /// e.g.: extern __shared__ int a[];
+  void setArrayInfo(const IncompleteArrayTypeLoc &TL, bool NeedSizeFold);
+  void setTemplateInfo(const TypeLoc &TL);
+  void setName(QualType Type);
 
   void setPointerAsArray() {
     if (isPointer()) {
@@ -959,9 +982,8 @@ private:
   bool IsPointer;
   bool IsReference;
   bool IsTemplate;
-  unsigned TemplateIndex;
-  std::shared_ptr<CtTypeInfo> TemplateType;
-  const std::vector<TemplateArgumentInfo> *TemplateList;
+
+  std::shared_ptr<TemplateDependentStringInfo> TDSI;
 };
 
 // variable info includes name, type and location.
@@ -981,6 +1003,11 @@ public:
 
   inline std::string getDerefName() {
     return buildString(getName(), "_deref_", DpctGlobalInfo::getInRootHash());
+  }
+
+  inline void
+  applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TAList) {
+    Ty = Ty->applyTemplateArguments(TAList);
   }
 
 protected:
@@ -1106,11 +1133,11 @@ public:
   }
   llvm::raw_ostream &getFuncDecl(llvm::raw_ostream &OS) {
     if (AccMode == Value) {
-      OS << getAccessorDataType(false) << " ";
+      OS << getAccessorDataType(true) << " ";
     } else if (AccMode == Pointer) {
-      OS << getAccessorDataType(false) << " *";
+      OS << getAccessorDataType(true) << " *";
     } else {
-      OS << getDpctAccessorType(false) << " ";
+      OS << getDpctAccessorType(true) << " ";
     }
     return OS << getArgName();
   }
@@ -1365,35 +1392,25 @@ public:
 
 class TemplateArgumentInfo {
 public:
-  enum TemplateKind {
-    Type = 0,
-    String,
-  };
-
-  TemplateArgumentInfo(const QualType &QT) : Kind(Type) {
-    Ty.LocalDecl = !QT->isElaboratedTypeSpecifier() &&
-                   QT->hasUnnamedOrLocalType() &&
-                   QT->getAsTagDecl()->getDeclContext()->isFunctionOrMethod();
-    Ty.T = std::make_shared<CtTypeInfo>(QT);
-    Str = Ty.T->getBaseName();
+  explicit TemplateArgumentInfo(const TemplateArgumentLoc &TAL)
+      : Kind(TAL.getArgument().getKind()) {
+    ExprAnalysis EA;
+    EA.analyze(TAL);
+    DependentStr = EA.getTemplateDependentStringInfo();
   }
-  TemplateArgumentInfo(const Expr *Expr)
-      : Kind(String), Str(getStmtSpelling(Expr)) {}
 
-  bool isType() { return Kind == Type; }
-  std::shared_ptr<CtTypeInfo> getAsType() const {
-    assert(Kind == Type);
-    return Ty.T;
+  inline bool isType() { return Kind == TemplateArgument::Type; }
+  inline const std::string &getString() const {
+    return DependentStr->getSourceString();
   }
-  const std::string &getAsString() const { return Str; }
+  inline std::shared_ptr<TemplateDependentStringInfo>
+  getDependentStringInfo() const {
+    return DependentStr;
+  }
 
 private:
-  TemplateKind Kind;
-  struct {
-    bool LocalDecl;
-    std::shared_ptr<CtTypeInfo> T;
-  } Ty;
-  std::string Str;
+  std::shared_ptr<TemplateDependentStringInfo> DependentStr;
+  TemplateArgument::ArgKind Kind;
 };
 
 // memory variable map includes memory variable used in __global__/__device__
@@ -1468,9 +1485,11 @@ private:
     if (TemplateArgs.empty())
       return dpct::merge(Master, Branch);
     for (auto &VarInfoPair : Branch)
-      Master.insert(VarInfoPair)
-          .first->second->getType()
-          ->setTemplateType(TemplateArgs);
+      Master
+          .insert(
+              std::make_pair(VarInfoPair.first,
+                             std::make_shared<MemVarInfo>(*VarInfoPair.second)))
+          .first->second->applyTemplateArguments(TemplateArgs);
   }
 
   template <CallOrDecl COD>
@@ -1669,9 +1688,15 @@ private:
   void
   buildTemplateArguments(const llvm::ArrayRef<TemplateArgumentLoc> &ArgsList) {
     for (auto &Arg : ArgsList)
-      addTemplateType(Arg);
+      TemplateArgs.emplace_back(Arg);
   }
-  void addTemplateType(const TemplateArgumentLoc &TA);
+
+  void buildTemplateArgumentsFromTypeLoc(const TypeLoc &TL);
+  template <class TyLoc> void buildTemplateArgumentsFromSpecializationType(const TyLoc &TL) {
+    for (size_t i = 0; i < TL.getNumArgs(); ++i) {
+      TemplateArgs.emplace_back(TL.getArgLoc(i));
+    }
+  }
 
   void buildTextureObjectArgsInfo(const CallExpr *CE) {
     for (unsigned Idx = 0; Idx < CE->getNumArgs(); ++Idx) {

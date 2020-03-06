@@ -57,13 +57,23 @@ public:
                                size_t Length, unsigned TemplateIndex)
       : SourceStr(SrcStr), Offset(Offset), Length(Length),
         TemplateIndex(TemplateIndex) {}
+  TemplateDependentReplacement(const TemplateDependentReplacement &rhs)
+      : TemplateDependentReplacement(rhs.SourceStr, rhs.Offset, rhs.Length,
+                                     rhs.TemplateIndex) {}
 
   inline std::shared_ptr<TemplateDependentReplacement>
   alterSource(std::string &SrcStr) {
     return std::make_shared<TemplateDependentReplacement>(
         SrcStr, Offset, Length, TemplateIndex);
   }
+  inline size_t getOffset() const { return Offset; }
+  inline size_t getLength() const { return Length; }
+  inline const TemplateArgumentInfo &
+  getTargetArgument(const std::vector<TemplateArgumentInfo> &TemplateList) {
+    return TemplateList[TemplateIndex];
+  }
   void replace(const std::vector<TemplateArgumentInfo> &TemplateList);
+  inline void shift(int Shift) { Offset += Shift; }
 };
 
 /// Store a string which actual text dependent on template args
@@ -80,8 +90,20 @@ public:
       const std::map<size_t, std::shared_ptr<TemplateDependentReplacement>>
           &InTDRs);
 
-  std::string
-  getReplacedString(const std::vector<TemplateArgumentInfo> &TemplateList);
+  inline const std::string &getSourceString() { return SourceStr; }
+
+  /// Get the result when given template arguments are applied.
+  /// e.g.: X<T> with template dependent replacement {2, 1, 0}, argument is int,
+  /// the result will be X<int>.
+  /// e.g.: X<T> with template dependent replacements {2, 1, 0}, argument is
+  /// Y<T1> with template dependent replacement {2, 2, 0}, the result will be
+  /// X<Y<T1>> with template dependent replacement {4, 2, 0}.
+  std::shared_ptr<TemplateDependentStringInfo>
+  applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TemplateList);
+  inline std::string
+  getReplacedString(const std::vector<TemplateArgumentInfo> &TemplateList) {
+    return applyTemplateArguments(TemplateList)->getSourceString();
+  }
 };
 
 /// Store a expr source string which may need replaced and its replacements
@@ -152,6 +174,14 @@ public:
     initExpression(Expression);
     analyze();
   }
+  inline void analyze(const TypeLoc &TL) {
+    initSourceRange(TL.getSourceRange());
+    analyzeType(TL);
+  }
+  inline void analyze(const TemplateArgumentLoc &TAL) {
+    initSourceRange(TAL.getSourceRange());
+    analyzeTemplateArgument(TAL);
+  }
 
   inline bool hasReplacement() { return ReplSet.hasReplacements(); }
   inline const std::string &getReplacedString() {
@@ -196,8 +226,14 @@ protected:
     }
   }
 
+  template<class T> void analyzeTemplateSpecializationType(const T &TL) {
+    for (size_t i = 0; i < TL.getNumArgs(); ++i)
+      analyzeTemplateArgument(TL.getArgLoc(i));
+  }
+
   // Prepare for analyze.
   void initExpression(const Expr *Expression);
+  void initSourceRange(const SourceRange &Range);
 
   std::pair<size_t, size_t> getOffsetAndLength(SourceLocation Begin,
                                                SourceLocation End);
@@ -207,7 +243,6 @@ protected:
                                                const Expr *Parent);
   std::pair<size_t, size_t> getOffsetAndLength(SourceLocation SL);
   std::pair<size_t, size_t> getOffsetAndLength(const Expr *);
-
 
   // Replace a token with its begin location
   template <class TextData>
@@ -233,6 +268,8 @@ protected:
   template <class TextData>
   inline void addReplacement(SourceLocation Begin, SourceLocation End,
                              const Expr *P, TextData Text) {
+    if (!P)
+      return addReplacement(Begin, End, std::move(Text));
     auto LocInfo = getOffsetAndLength(Begin, End, P);
     if (LocInfo.first > 0 && LocInfo.first < SrcLength) {
       addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
@@ -297,13 +334,16 @@ protected:
   void analyzeExpr(const CStyleCastExpr *Cast);
   void analyzeExpr(const CallExpr *CE);
 
-  inline void analyzeType(const TypeSourceInfo *TSI, const Expr *CSCE) {
+  inline void analyzeType(const TypeSourceInfo *TSI,
+                          const Expr *CSCE = nullptr) {
     analyzeType(TSI->getTypeLoc(), CSCE);
   }
-  void analyzeType(const TypeLoc &TL, const Expr *E);
+  void analyzeType(const TypeLoc &TL, const Expr *E = nullptr);
 
   // Doing nothing when it doesn't need analyze
   inline void analyzeExpr(const Stmt *S) {}
+
+  void analyzeTemplateArgument(const TemplateArgumentLoc &TAL);
 
   inline const Expr *getTargetExpr() { return E; }
 

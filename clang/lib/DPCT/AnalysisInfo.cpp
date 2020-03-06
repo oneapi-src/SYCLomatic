@@ -17,6 +17,8 @@
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
 
+#define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
+
 namespace clang {
 namespace dpct {
 std::string DpctGlobalInfo::InRoot = std::string();
@@ -32,9 +34,9 @@ ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
-std::map<const char*, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
+std::map<const char *, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
-std::map<MacroInfo*, bool> DpctGlobalInfo::MacroDefines;
+std::map<MacroInfo *, bool> DpctGlobalInfo::MacroDefines;
 const std::string MemVarInfo::ExternVariableName = "dpct_local";
 const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
 bool DpctGlobalInfo::GuessIndentWidthMatcherFlag = false;
@@ -55,7 +57,7 @@ void DpctFileInfo::buildLinesInfo() {
 
   auto FE = SM.getFileManager().getFile(FilePath);
   if (std::error_code ec = FE.getError())
-     return ;
+    return;
   auto FID = SM.getOrCreateFileID(FE.get(), SrcMgr::C_User);
   auto Content = SM.getSLocEntry(FID).getFile().getContentCache();
   if (!Content->SourceLineCache)
@@ -98,8 +100,8 @@ void DpctFileInfo::insertUsing(UsingType Type) {
   switch (Type) {
   case QUEUE_P:
     return insertUsing(UsingType::QUEUE_P, LastIncludeOffset,
-      "using queue_p = " + MapNames::getClNamespace() +
-      "::queue *;");
+                       "using queue_p = " + MapNames::getClNamespace() +
+                           "::queue *;");
   }
 }
 
@@ -162,8 +164,7 @@ void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
   buildExecutionConfig(KernelCall);
   buildNeedBracesInfo(KernelCall);
 }
-void KernelCallExpr::buildNeedBracesInfo(
-    const CUDAKernelCallExpr *KernelCall) {
+void KernelCallExpr::buildNeedBracesInfo(const CUDAKernelCallExpr *KernelCall) {
   NeedBraces = true;
   auto &Context = dpct::DpctGlobalInfo::getContext();
   // if parenet is CompoundStmt, then find if it has more than 1 children.
@@ -332,8 +333,8 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
     Printer.line("cgh.parallel_for(");
   }
   auto B = Printer.block();
-  DpctGlobalInfo::printCtadClass(
-      Printer.indent(), MapNames::getClNamespace() + "::nd_range", 3)
+  DpctGlobalInfo::printCtadClass(Printer.indent(),
+                                 MapNames::getClNamespace() + "::nd_range", 3)
       << "(";
   static std::string CanIgnoreRangeStr =
       DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "::range", 3) +
@@ -401,38 +402,40 @@ void KernelCallExpr::buildInfo() {
       getFilePath(), getBegin(), 0, getReplacement(), nullptr));
 }
 
-void CallFunctionExpr::addTemplateType(const TemplateArgumentLoc &TAL) {
-  switch (TAL.getArgument().getKind()) {
-  case TemplateArgument::Type:
-    return TemplateArgs.push_back(TAL.getTypeSourceInfo()->getType());
-  case TemplateArgument::Expression:
-    return TemplateArgs.push_back(TAL.getSourceExpression());
-  case TemplateArgument::Integral:
-    return TemplateArgs.push_back(TAL.getSourceIntegralExpression());
+void CallFunctionExpr::buildTemplateArgumentsFromTypeLoc(const TypeLoc &TL) {
+  switch (TL.getTypeLocClass()) {
+  /// e.g. X<T>;
+  case TypeLoc::TemplateSpecialization:
+    return buildTemplateArgumentsFromSpecializationType(
+        TYPELOC_CAST(TemplateSpecializationTypeLoc));
+  /// e.g.: X<T1>::template Y<T2>
+  case TypeLoc::DependentTemplateSpecialization:
+    return buildTemplateArgumentsFromSpecializationType(
+        TYPELOC_CAST(DependentTemplateSpecializationTypeLoc));
   default:
-    llvm::dbgs()
-        << "[CallFunctionExpr::addTemplateType] Unexpected template type: "
-        << TAL.getArgument().getKind();
-    return;
+    break;
   }
 }
 
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   HasArgs = CE->getNumArgs();
+  auto Callee = CE->getCallee()->IgnoreImplicitAsWritten();
   if (auto CallDecl = CE->getDirectCallee()) {
     Name = getName(CallDecl);
     FuncInfo = DeviceFunctionDecl::LinkRedecls(CallDecl);
     if (auto DRE = dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImpCasts()))
       buildTemplateArguments(DRE->template_arguments());
-  } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(
-                 CE->getCallee()->IgnoreImpCasts())) {
+  } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(Callee)) {
     Name = Unresolved->getName().getAsString();
     FuncInfo = DeviceFunctionDecl::LinkUnresolved(Unresolved);
     buildTemplateArguments(Unresolved->template_arguments());
-  } else if (auto DependentScope = dyn_cast<CXXDependentScopeMemberExpr>(
-                 CE->getCallee()->IgnoreImpCasts())) {
+  } else if (auto DependentScope =
+                 dyn_cast<CXXDependentScopeMemberExpr>(Callee)) {
     Name = DependentScope->getMember().getAsString();
     buildTemplateArguments(DependentScope->template_arguments());
+  } else if (auto DSDRE = dyn_cast<DependentScopeDeclRefExpr>(Callee)) {
+    Name = DSDRE->getDeclName().getAsString();
+    buildTemplateArgumentsFromTypeLoc(DSDRE->getQualifierLoc().getTypeLoc());
   }
 }
 
@@ -490,9 +493,9 @@ std::string CallFunctionExpr::getTemplateArguments(bool WithScalarWrapped) {
   llvm::raw_string_ostream OS(Result);
   for (auto &TA : TemplateArgs) {
     if (WithScalarWrapped && !TA.isType())
-      appendString(OS, "dpct_kernel_scalar<", TA.getAsString(), ">, ");
+      appendString(OS, "dpct_kernel_scalar<", TA.getString(), ">, ");
     else
-      appendString(OS, TA.getAsString(), ", ");
+      appendString(OS, TA.getString(), ", ");
   }
   OS.flush();
   return (Result.empty()) ? Result : Result.erase(Result.size() - 2);
@@ -810,9 +813,6 @@ std::string MemVarMap::getKernelArguments(bool HasArgs) const {
   return getArgumentsOrParameters<KernelArgument>(HasArgs);
 }
 
-
-CtTypeInfo::CtTypeInfo(const QualType &Ty) : CtTypeInfo() { setTypeInfo(Ty); }
-
 CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold) : CtTypeInfo() {
   setTypeInfo(TL, NeedSizeFold);
 }
@@ -836,35 +836,64 @@ std::string CtTypeInfo::getRangeArgument(const std::string &MemSize,
                            : Arg.replace(Arg.size() - 2, 2, ")");
 }
 
-void CtTypeInfo::setTemplateType(const std::vector<TemplateArgumentInfo> &TA) {
-  if (TemplateIndex >= TA.size())
-    return;
-  assert(TemplateIndex < TA.size());
-  if (isTemplate())
-    TemplateType = TA[TemplateIndex].getAsType();
-  TemplateList = &TA;
-  for (auto &R : Range)
-    R.setTemplateList(TA);
-}
-
 void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
-  if (auto CATL = TL.getAs<ConstantArrayTypeLoc>()) {
-    if (NeedSizeFold) {
-      Range.emplace_back(getFoldedArraySize(CATL));
-    } else {
-      Range.emplace_back(getUnfoldedArraySize(CATL));
-    }
-    setTypeInfo(CATL.getElementLoc(), NeedSizeFold);
-  } else
-    setTypeInfo(TL.getType());
+  switch (TL.getTypeLocClass()) {
+  case TypeLoc::Qualified:
+    BaseName = TL.getType().getLocalQualifiers().getAsString(
+        DpctGlobalInfo::getContext().getPrintingPolicy());
+    return setTypeInfo(TYPELOC_CAST(QualifiedTypeLoc).getUnqualifiedLoc(),
+                       NeedSizeFold);
+  case TypeLoc::ConstantArray:
+    return setArrayInfo(TYPELOC_CAST(ConstantArrayTypeLoc), NeedSizeFold);
+  case TypeLoc::DependentSizedArray:
+    return setArrayInfo(TYPELOC_CAST(DependentSizedArrayTypeLoc), NeedSizeFold);
+  case TypeLoc::IncompleteArray:
+    return setArrayInfo(TYPELOC_CAST(IncompleteArrayTypeLoc), NeedSizeFold);
+  case TypeLoc::Pointer:
+    IsPointer = true;
+    return setTypeInfo(TYPELOC_CAST(PointerTypeLoc).getPointeeLoc());
+  case TypeLoc::LValueReference:
+  case TypeLoc::RValueReference:
+    IsReference = true;
+    return setTypeInfo(TYPELOC_CAST(ReferenceTypeLoc).getPointeeLoc());
+  case TypeLoc::TemplateTypeParm:
+  case TypeLoc::TemplateSpecialization:
+  case TypeLoc::DependentTemplateSpecialization:
+    setTemplateInfo(TL);
+  default:
+    setName(TL.getType());
+  }
 }
 
-void CtTypeInfo::setTypeInfo(QualType Ty) {
-  setArrayInfo(Ty);
-  setPointerInfo(Ty);
-  setReferenceInfo(Ty);
-  setTemplateInfo(Ty);
-  setName(Ty);
+void CtTypeInfo::setTemplateInfo(const TypeLoc &TL) {
+  IsTemplate = true;
+  ExprAnalysis EA;
+  EA.analyze(TL);
+  TDSI = EA.getTemplateDependentStringInfo();
+}
+
+void CtTypeInfo::setArrayInfo(const IncompleteArrayTypeLoc &TL,
+                              bool NeedSizeFold) {
+  Range.emplace_back();
+  setTypeInfo(TL.getElementLoc(), NeedSizeFold);
+}
+
+void CtTypeInfo::setArrayInfo(const DependentSizedArrayTypeLoc &TL,
+                              bool NeedSizeFold) {
+  ExprAnalysis EA;
+  EA.analyze(TL.getSizeExpr());
+  Range.emplace_back(EA.getTemplateDependentStringInfo());
+  setTypeInfo(TL.getElementLoc(), NeedSizeFold);
+}
+
+void CtTypeInfo::setArrayInfo(const ConstantArrayTypeLoc &TL,
+                              bool NeedSizeFold) {
+  if (NeedSizeFold) {
+    Range.emplace_back(getFoldedArraySize(TL));
+  } else {
+    Range.emplace_back(getUnfoldedArraySize(TL));
+  }
+  setTypeInfo(TL.getElementLoc(), NeedSizeFold);
 }
 
 std::string CtTypeInfo::getUnfoldedArraySize(const ConstantArrayTypeLoc &TL) {
@@ -873,41 +902,7 @@ std::string CtTypeInfo::getUnfoldedArraySize(const ConstantArrayTypeLoc &TL) {
   return A.getReplacedString();
 }
 
-void CtTypeInfo::setArrayInfo(QualType &Ty) {
-  ExprAnalysis A;
-  while (Ty->isArrayType()) {
-    if (auto CAT = dyn_cast<ConstantArrayType>(Ty))
-      Range.emplace_back(getFoldedArraySize(CAT));
-    else if (auto DSAT = dyn_cast<DependentSizedArrayType>(Ty)) {
-      A.analyze(DSAT->getSizeExpr());
-      Range.emplace_back(A.getTemplateDependentStringInfo());
-    } else if (dyn_cast<IncompleteArrayType>(Ty))
-      Range.emplace_back();
-    Ty = Ty->getAsArrayTypeUnsafe()->getElementType();
-  }
-}
-void CtTypeInfo::setPointerInfo(QualType &Ty) {
-  while (Ty->isPointerType()) {
-    IsPointer = true;
-    Ty = Ty->getPointeeType();
-  }
-}
-void CtTypeInfo::setReferenceInfo(QualType &Ty) {
-  while (Ty->isReferenceType()) {
-    IsReference = true;
-    Ty = Ty->getPointeeType();
-  }
-}
-
-void CtTypeInfo::setTemplateInfo(QualType &Ty) {
-  if (auto TemplateType =
-          dyn_cast<TemplateTypeParmType>(Ty->getCanonicalTypeInternal())) {
-    IsTemplate = true;
-    TemplateIndex = TemplateType->getIndex();
-  }
-}
-
-void CtTypeInfo::setName(QualType &Ty) {
+void CtTypeInfo::setName(QualType Ty) {
   auto &PP = DpctGlobalInfo::getContext().getPrintingPolicy();
   BaseNameWithoutQualifiers = Ty.getUnqualifiedType().getAsString(PP);
 
@@ -915,17 +910,26 @@ void CtTypeInfo::setName(QualType &Ty) {
   if (!isTemplate())
     MapNames::replaceName(MapNames::TypeNamesMap, BaseNameWithoutQualifiers);
   auto Q = Ty.getLocalQualifiers();
-  if (Q.isEmptyWhenPrinted(PP))
-    BaseName = BaseNameWithoutQualifiers;
+  if (BaseName.empty())
+    BaseName = BaseName = BaseNameWithoutQualifiers;
   else
-    BaseName = buildString(Ty.getLocalQualifiers().getAsString(PP), " ",
-                           BaseNameWithoutQualifiers);
+    BaseName = buildString(BaseName, " ", BaseNameWithoutQualifiers);
+}
+
+std::shared_ptr<CtTypeInfo> CtTypeInfo::applyTemplateArguments(
+    const std::vector<TemplateArgumentInfo> &TA) {
+  auto NewType = std::make_shared<CtTypeInfo>(*this);
+  if (TDSI)
+    NewType->TDSI = TDSI->applyTemplateArguments(TA);
+  for (auto &R : NewType->Range)
+    R.setTemplateList(TA);
+  return NewType;
 }
 
 void SizeInfo::setTemplateList(
     const std::vector<TemplateArgumentInfo> &TemplateList) {
   if (TDSI)
-    Size = TDSI->getReplacedString(TemplateList);
+    TDSI = TDSI->applyTemplateArguments(TemplateList);
 }
 
 void RandomEngineInfo::buildInfo() {

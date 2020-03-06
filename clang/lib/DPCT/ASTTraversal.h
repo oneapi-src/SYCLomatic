@@ -478,8 +478,7 @@ public:
   bool isNamespaceInserted(SourceLocation SL);
 
 private:
-  void replaceTypeName(const QualType &QT, SourceLocation BeginLoc,
-                       bool isDeclType = false);
+  void replaceTypeName(TypeLoc TL, bool isDeclType = false);
   std::unordered_set<unsigned int> DupFilter;
 };
 
