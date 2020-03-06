@@ -1043,6 +1043,7 @@ bool isAssigned(const Stmt *S) {
 /// \param KeepLastUnderline A boolean value indicating if the last underline
 /// is to be perserved or not
 /// \return A temporary variable name
+
 std::string getTempNameForExpr(const Expr *E, bool HandleLiteral,
                                bool KeepLastUnderline) {
   SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
@@ -1411,3 +1412,33 @@ std::string deducePointerType(const DeclaratorDecl *DD, std::string TypeName) {
   }
   return Result;
 }
+
+/// Check whether the input expression \p E is a single token which is an
+/// identifier or literal.
+bool isAnIdentifierOrLiteral(const Expr *E) {
+  SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
+  E = E->IgnoreCasts();
+  dpct::ExprAnalysis EA(E);
+  auto BeginLoc = EA.getExprBeginSrcLoc();
+  auto EndLoc = EA.getExprEndSrcLoc();
+  Token BeginTok, EndTok;
+  if (!Lexer::getRawToken(BeginLoc, BeginTok, SM,
+                         dpct::DpctGlobalInfo::getContext().getLangOpts(),
+                         true) &&
+      !Lexer::getRawToken(EndLoc, EndTok, SM,
+                         dpct::DpctGlobalInfo::getContext().getLangOpts(),
+                         true)) {
+    if ((BeginTok.getLocation() != EndTok.getLocation()) ||
+        (BeginTok.getLength() != EndTok.getLength())) {
+      return false;
+    }
+    if (BeginTok.isAnyIdentifier() || BeginTok.isLiteral()) {
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+}
+

@@ -130,11 +130,11 @@ protected:
   // Emits a warning/error/note and/or comment depending on MsgID. For details
   // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
   template <typename IDTy, typename... Ts>
-  inline void report(IDTy MsgID, Ts &&... Vals) {
+  inline void report(IDTy MsgID, bool UseTextBegin, Ts &&... Vals) {
     TransformSetTy TS;
-    DiagnosticsUtils::report<IDTy, Ts...>(Call->getBeginLoc(), MsgID,
-                                          DpctGlobalInfo::getCompilerInstance(),
-                                          &TS, std::forward<Ts>(Vals)...);
+    DiagnosticsUtils::report<IDTy, Ts...>(
+        Call->getBeginLoc(), MsgID, DpctGlobalInfo::getCompilerInstance(), &TS,
+        UseTextBegin, std::forward<Ts>(Vals)...);
     for (auto &T : TS)
       DpctGlobalInfo::getInstance().addReplacement(
           T->getReplacement(DpctGlobalInfo::getContext()));
@@ -293,7 +293,7 @@ class WarpFunctionRewriter : public FuncCallExprRewriter {
 private:
   static const std::map<std::string, std::string> WarpFunctionsMap;
   void reportNoMaskWarning() {
-    report(Diagnostics::MASK_UNSUPPORTED, TargetCalleeName);
+    report(Diagnostics::MASK_UNSUPPORTED, false, TargetCalleeName);
   }
 
 protected:
@@ -361,7 +361,7 @@ public:
       : CallExprRewriter(CE, CalleeName), ID(MsgID) {}
 
   Optional<std::string> rewrite() override {
-    report(ID, getSourceCalleeName());
+    report(ID, false, getSourceCalleeName());
     return Optional<std::string>();
   }
 

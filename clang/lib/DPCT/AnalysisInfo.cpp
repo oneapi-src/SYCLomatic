@@ -43,6 +43,7 @@ bool DpctGlobalInfo::GuessIndentWidthMatcherFlag = false;
 unsigned int DpctGlobalInfo::IndentWidth = 0;
 std::unordered_map<std::string, unsigned int>
     DpctGlobalInfo::TempValueIdentifierMap;
+int DpctGlobalInfo::SuffixNumber = 1;
 
 bool DpctFileInfo::isInRoot() { return DpctGlobalInfo::isInRoot(FilePath); }
 // TODO: implement one of this for each source language.

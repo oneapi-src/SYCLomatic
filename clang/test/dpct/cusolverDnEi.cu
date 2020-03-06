@@ -101,11 +101,11 @@ int main(int argc, char *argv[])
     cuComplex W_c = make_cuComplex(1,0);
     cuDoubleComplex W_z = make_cuDoubleComplex(1,0);
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::gebrd_get_lwork<float>((*cusolverH).get_device(), m, n, m, lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -114,9 +114,6 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::gebrd_get_lwork<float>((*cusolverH).get_device(), m, n, m, lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
     // CHECK-NEXT: auto D_f_buf_ct1 = dpct::get_buffer<float>(&D_f);
@@ -126,6 +123,9 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto workspace_f_buf_ct1 = dpct::get_buffer<float>(&workspace_f);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer11(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::gebrd(*cusolverH, m, n, A_f_buf_ct1, lda, D_f_buf_ct1, E_f_buf_ct1, TAUQ_f_buf_ct1, TAUP_f_buf_ct1, workspace_f_buf_ct1, Lwork, result_temp_buffer11), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -146,11 +146,11 @@ int main(int argc, char *argv[])
     status = cusolverDnSgebrd(*cusolverH, m, n, &A_f, lda, &D_f, &E_f, &TAUQ_f, &TAUP_f, &workspace_f, Lwork, &devInfo);
     cusolverDnSgebrd(*cusolverH, m, n, &A_f, lda, &D_f, &E_f, &TAUQ_f, &TAUP_f, &workspace_f, Lwork, &devInfo);
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::gebrd_get_lwork<double>((*cusolverH).get_device(), m, n, m, lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -159,9 +159,6 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::gebrd_get_lwork<double>((*cusolverH).get_device(), m, n, m, lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
     // CHECK-NEXT: auto D_d_buf_ct1 = dpct::get_buffer<double>(&D_d);
@@ -171,6 +168,9 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto workspace_d_buf_ct1 = dpct::get_buffer<double>(&workspace_d);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer11(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::gebrd(*cusolverH, m, n, A_d_buf_ct1, lda, D_d_buf_ct1, E_d_buf_ct1, TAUQ_d_buf_ct1, TAUP_d_buf_ct1, workspace_d_buf_ct1, Lwork, result_temp_buffer11), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -191,11 +191,11 @@ int main(int argc, char *argv[])
     status = cusolverDnDgebrd(*cusolverH, m, n, &A_d, lda, &D_d, &E_d, &TAUQ_d, &TAUP_d, &workspace_d, Lwork, &devInfo);
     cusolverDnDgebrd(*cusolverH, m, n, &A_d, lda, &D_d, &E_d, &TAUQ_d, &TAUP_d, &workspace_d, Lwork, &devInfo);
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::gebrd_get_lwork<std::complex<float>>((*cusolverH).get_device(), m, n, m, lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -204,9 +204,6 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::gebrd_get_lwork<std::complex<float>>((*cusolverH).get_device(), m, n, m, lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
     // CHECK-NEXT: auto D_f_buf_ct1 = dpct::get_buffer<float>(&D_f);
@@ -216,6 +213,9 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto workspace_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer11(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::gebrd(*cusolverH, m, n, A_c_buf_ct1, lda, D_f_buf_ct1, E_f_buf_ct1, TAUQ_c_buf_ct1, TAUP_c_buf_ct1, workspace_c_buf_ct1, Lwork, result_temp_buffer11), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -236,11 +236,11 @@ int main(int argc, char *argv[])
     status = cusolverDnCgebrd(*cusolverH, m, n, &A_c, lda, &D_f, &E_f, &TAUQ_c, &TAUP_c, &workspace_c, Lwork, &devInfo);
     cusolverDnCgebrd(*cusolverH, m, n, &A_c, lda, &D_f, &E_f, &TAUQ_c, &TAUP_c, &workspace_c, Lwork, &devInfo);
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::gebrd_get_lwork<std::complex<double>>((*cusolverH).get_device(), m, n, m, lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -249,9 +249,6 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::gebrd_get_lwork<std::complex<double>>((*cusolverH).get_device(), m, n, m, lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
     // CHECK-NEXT: auto D_d_buf_ct1 = dpct::get_buffer<double>(&D_d);
@@ -261,6 +258,9 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto workspace_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer11(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::gebrd(*cusolverH, m, n, A_z_buf_ct1, lda, D_d_buf_ct1, E_d_buf_ct1, TAUQ_z_buf_ct1, TAUP_z_buf_ct1, workspace_z_buf_ct1, Lwork, result_temp_buffer11), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer11.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -282,11 +282,11 @@ int main(int argc, char *argv[])
     cusolverDnZgebrd(*cusolverH, m, n, &A_z, lda, &D_d, &E_d, &TAUQ_z, &TAUP_z, &workspace_z, Lwork, &devInfo);
 
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::orgbr_get_lwork<float>((*cusolverH).get_device(), (mkl::generate)side, m, n, k,  lda,  lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -295,15 +295,15 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::orgbr_get_lwork<float>((*cusolverH).get_device(), (mkl::generate)side, m, n, k,  lda,  lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
     // CHECK-NEXT: auto TAU_f_buf_ct1 = dpct::get_buffer<float>(&TAU_f);
     // CHECK-NEXT: auto workspace_f_buf_ct1 = dpct::get_buffer<float>(&workspace_f);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer10(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::orgbr(*cusolverH, (mkl::generate)side, m, n, k, A_f_buf_ct1, lda, TAU_f_buf_ct1, workspace_f_buf_ct1, Lwork, result_temp_buffer10), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer10.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -322,11 +322,11 @@ int main(int argc, char *argv[])
     cusolverDnSorgbr(*cusolverH, side, m, n, k, &A_f, lda, &TAU_f, &workspace_f, Lwork, &devInfo);
 
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::orgbr_get_lwork<double>((*cusolverH).get_device(), (mkl::generate)side, m, n, k,  lda,  lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -335,15 +335,15 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::orgbr_get_lwork<double>((*cusolverH).get_device(), (mkl::generate)side, m, n, k,  lda,  lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
     // CHECK-NEXT: auto TAU_d_buf_ct1 = dpct::get_buffer<double>(&TAU_d);
     // CHECK-NEXT: auto workspace_d_buf_ct1 = dpct::get_buffer<double>(&workspace_d);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer10(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::orgbr(*cusolverH, (mkl::generate)side, m, n, k, A_d_buf_ct1, lda, TAU_d_buf_ct1, workspace_d_buf_ct1, Lwork, result_temp_buffer10), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer10.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -361,11 +361,11 @@ int main(int argc, char *argv[])
     status = cusolverDnDorgbr(*cusolverH, side, m, n, k, &A_d, lda, &TAU_d, &workspace_d, Lwork, &devInfo);
     cusolverDnDorgbr(*cusolverH, side, m, n, k, &A_d, lda, &TAU_d, &workspace_d, Lwork, &devInfo);
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::ungbr_get_lwork<std::complex<float>>((*cusolverH).get_device(), (mkl::generate)side, m, n, k,  lda,  lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -374,15 +374,15 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::ungbr_get_lwork<std::complex<float>>((*cusolverH).get_device(), (mkl::generate)side, m, n, k,  lda,  lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
     // CHECK-NEXT: auto TAU_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&TAU_c);
     // CHECK-NEXT: auto workspace_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer10(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::ungbr(*cusolverH, (mkl::generate)side, m, n, k, A_c_buf_ct1, lda, TAU_c_buf_ct1, workspace_c_buf_ct1, Lwork, result_temp_buffer10), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer10.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -400,11 +400,11 @@ int main(int argc, char *argv[])
     status = cusolverDnCungbr(*cusolverH, side, m, n, k, &A_c, lda, &TAU_c, &workspace_c, Lwork, &devInfo);
     cusolverDnCungbr(*cusolverH, side, m, n, k, &A_c, lda, &TAU_c, &workspace_c, Lwork, &devInfo);
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::ungbr_get_lwork<std::complex<double>>((*cusolverH).get_device(), (mkl::generate)side, m, n, k,  lda,  lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -413,15 +413,15 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::ungbr_get_lwork<std::complex<double>>((*cusolverH).get_device(), (mkl::generate)side, m, n, k,  lda,  lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
     // CHECK-NEXT: auto TAU_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&TAU_z);
     // CHECK-NEXT: auto workspace_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer10(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::ungbr(*cusolverH, (mkl::generate)side, m, n, k, A_z_buf_ct1, lda, TAU_z_buf_ct1, workspace_z_buf_ct1, Lwork, result_temp_buffer10), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer10.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -440,11 +440,11 @@ int main(int argc, char *argv[])
     cusolverDnZungbr(*cusolverH, side, m, n, k, &A_z, lda, &TAU_z, &workspace_z, Lwork, &devInfo);
 
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::sytrd_get_lwork<float>((*cusolverH).get_device(), uplo, n,  lda,    lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -453,9 +453,6 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::sytrd_get_lwork<float>((*cusolverH).get_device(), uplo, n,  lda,    lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
     // CHECK-NEXT: auto D_f_buf_ct1 = dpct::get_buffer<float>(&D_f);
@@ -464,6 +461,9 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto workspace_f_buf_ct1 = dpct::get_buffer<float>(&workspace_f);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer10(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::sytrd(*cusolverH, uplo, n, A_f_buf_ct1, lda, D_f_buf_ct1, E_f_buf_ct1, TAU_f_buf_ct1, workspace_f_buf_ct1, Lwork, result_temp_buffer10), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer10.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -483,11 +483,11 @@ int main(int argc, char *argv[])
     status = cusolverDnSsytrd(*cusolverH, uplo, n, &A_f, lda, &D_f, &E_f, &TAU_f, &workspace_f, Lwork, &devInfo);
     cusolverDnSsytrd(*cusolverH, uplo, n, &A_f, lda, &D_f, &E_f, &TAU_f, &workspace_f, Lwork, &devInfo);
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::sytrd_get_lwork<double>((*cusolverH).get_device(), uplo, n,  lda,    lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -496,9 +496,6 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::sytrd_get_lwork<double>((*cusolverH).get_device(), uplo, n,  lda,    lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
     // CHECK-NEXT: auto D_d_buf_ct1 = dpct::get_buffer<double>(&D_d);
@@ -507,6 +504,9 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto workspace_d_buf_ct1 = dpct::get_buffer<double>(&workspace_d);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer10(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::sytrd(*cusolverH, uplo, n, A_d_buf_ct1, lda, D_d_buf_ct1, E_d_buf_ct1, TAU_d_buf_ct1, workspace_d_buf_ct1, Lwork, result_temp_buffer10), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer10.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -526,11 +526,11 @@ int main(int argc, char *argv[])
     status = cusolverDnDsytrd(*cusolverH, uplo, n, &A_d, lda, &D_d, &E_d, &TAU_d, &workspace_d, Lwork, &devInfo);
     cusolverDnDsytrd(*cusolverH, uplo, n, &A_d, lda, &D_d, &E_d, &TAU_d, &workspace_d, Lwork, &devInfo);
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::hetrd_get_lwork<std::complex<float>>((*cusolverH).get_device(), uplo, n,  lda,    lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -539,9 +539,6 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::hetrd_get_lwork<std::complex<float>>((*cusolverH).get_device(), uplo, n,  lda,    lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
     // CHECK-NEXT: auto D_f_buf_ct1 = dpct::get_buffer<float>(&D_f);
@@ -550,6 +547,9 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto workspace_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer10(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::hetrd(*cusolverH, uplo, n, A_c_buf_ct1, lda, D_f_buf_ct1, E_f_buf_ct1, TAU_c_buf_ct1, workspace_c_buf_ct1, Lwork, result_temp_buffer10), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer10.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -569,11 +569,11 @@ int main(int argc, char *argv[])
     status = cusolverDnChetrd(*cusolverH, uplo, n, &A_c, lda, &D_f, &E_f, &TAU_c, &workspace_c, Lwork, &devInfo);
     cusolverDnChetrd(*cusolverH, uplo, n, &A_c, lda, &D_f, &E_f, &TAU_c, &workspace_c, Lwork, &devInfo);
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::hetrd_get_lwork<std::complex<double>>((*cusolverH).get_device(), uplo, n,  lda,    lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -582,9 +582,6 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::hetrd_get_lwork<std::complex<double>>((*cusolverH).get_device(), uplo, n,  lda,    lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
     // CHECK-NEXT: auto D_d_buf_ct1 = dpct::get_buffer<double>(&D_d);
@@ -593,6 +590,9 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto workspace_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer10(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::hetrd(*cusolverH, uplo, n, A_z_buf_ct1, lda, D_d_buf_ct1, E_d_buf_ct1, TAU_z_buf_ct1, workspace_z_buf_ct1, Lwork, result_temp_buffer10), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer10.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -612,11 +612,11 @@ int main(int argc, char *argv[])
     status = cusolverDnZhetrd(*cusolverH, uplo, n, &A_z, lda, &D_d, &E_d, &TAU_z, &workspace_z, Lwork, &devInfo);
     cusolverDnZhetrd(*cusolverH, uplo, n, &A_z, lda, &D_d, &E_d, &TAU_z, &workspace_z, Lwork, &devInfo);
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::ormtr_get_lwork<float>((*cusolverH).get_device(), side, uplo, trans, m, n,  lda,   ldb, lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -625,9 +625,6 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::ormtr_get_lwork<float>((*cusolverH).get_device(), side, uplo, trans, m, n,  lda,   ldb, lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
     // CHECK-NEXT: auto TAU_f_buf_ct1 = dpct::get_buffer<float>(&TAU_f);
@@ -635,6 +632,9 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto workspace_f_buf_ct1 = dpct::get_buffer<float>(&workspace_f);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer13(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::ormtr(*cusolverH, side, uplo, trans, m, n, A_f_buf_ct1, lda, TAU_f_buf_ct1, B_f_buf_ct1, ldb, workspace_f_buf_ct1, Lwork, result_temp_buffer13), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -653,11 +653,11 @@ int main(int argc, char *argv[])
     status = cusolverDnSormtr(*cusolverH, side, uplo, trans, m, n, &A_f, lda, &TAU_f, &B_f, ldb, &workspace_f, Lwork, &devInfo);
     cusolverDnSormtr(*cusolverH, side, uplo, trans, m, n, &A_f, lda, &TAU_f, &B_f, ldb, &workspace_f, Lwork, &devInfo);
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::ormtr_get_lwork<double>((*cusolverH).get_device(), side, uplo, trans, m, n,  lda,   ldb, lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -666,9 +666,6 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::ormtr_get_lwork<double>((*cusolverH).get_device(), side, uplo, trans, m, n,  lda,   ldb, lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
     // CHECK-NEXT: auto TAU_d_buf_ct1 = dpct::get_buffer<double>(&TAU_d);
@@ -676,6 +673,9 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto workspace_d_buf_ct1 = dpct::get_buffer<double>(&workspace_d);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer13(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::ormtr(*cusolverH, side, uplo, trans, m, n, A_d_buf_ct1, lda, TAU_d_buf_ct1, B_d_buf_ct1, ldb, workspace_d_buf_ct1, Lwork, result_temp_buffer13), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -694,11 +694,11 @@ int main(int argc, char *argv[])
     status = cusolverDnDormtr(*cusolverH, side, uplo, trans, m, n, &A_d, lda, &TAU_d, &B_d, ldb, &workspace_d, Lwork, &devInfo);
     cusolverDnDormtr(*cusolverH, side, uplo, trans, m, n, &A_d, lda, &TAU_d, &B_d, ldb, &workspace_d, Lwork, &devInfo);
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::unmtr_get_lwork<std::complex<float>>((*cusolverH).get_device(), side, uplo, trans, m, n,  lda,   ldb, lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -707,9 +707,6 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::unmtr_get_lwork<std::complex<float>>((*cusolverH).get_device(), side, uplo, trans, m, n,  lda,   ldb, lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
     // CHECK-NEXT: auto TAU_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&TAU_c);
@@ -717,6 +714,9 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto workspace_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer13(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::unmtr(*cusolverH, side, uplo, trans, m, n, A_c_buf_ct1, lda, TAU_c_buf_ct1, B_c_buf_ct1, ldb, workspace_c_buf_ct1, Lwork, result_temp_buffer13), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -735,11 +735,11 @@ int main(int argc, char *argv[])
     status = cusolverDnCunmtr(*cusolverH, side, uplo, trans, m, n, &A_c, lda, &TAU_c, &B_c, ldb, &workspace_c, Lwork, &devInfo);
     cusolverDnCunmtr(*cusolverH, side, uplo, trans, m, n, &A_c, lda, &TAU_c, &B_c, ldb, &workspace_c, Lwork, &devInfo);
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::unmtr_get_lwork<std::complex<double>>((*cusolverH).get_device(), side, uplo, trans, m, n,  lda,   ldb, lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -748,9 +748,6 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::unmtr_get_lwork<std::complex<double>>((*cusolverH).get_device(), side, uplo, trans, m, n,  lda,   ldb, lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
     // CHECK-NEXT: auto TAU_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&TAU_z);
@@ -758,6 +755,9 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto workspace_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer13(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::unmtr(*cusolverH, side, uplo, trans, m, n, A_z_buf_ct1, lda, TAU_z_buf_ct1, B_z_buf_ct1, ldb, workspace_z_buf_ct1, Lwork, result_temp_buffer13), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer13.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -776,11 +776,11 @@ int main(int argc, char *argv[])
     status = cusolverDnZunmtr(*cusolverH, side, uplo, trans, m, n, &A_z, lda, &TAU_z, &B_z, ldb, &workspace_z, Lwork, &devInfo);
     cusolverDnZunmtr(*cusolverH, side, uplo, trans, m, n, &A_z, lda, &TAU_z, &B_z, ldb, &workspace_z, Lwork, &devInfo);
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::orgtr_get_lwork<float>((*cusolverH).get_device(), uplo, n,  lda,  lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -789,15 +789,15 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::orgtr_get_lwork<float>((*cusolverH).get_device(), uplo, n,  lda,  lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
     // CHECK-NEXT: auto TAU_f_buf_ct1 = dpct::get_buffer<float>(&TAU_f);
     // CHECK-NEXT: auto workspace_f_buf_ct1 = dpct::get_buffer<float>(&workspace_f);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::orgtr(*cusolverH, uplo, n, A_f_buf_ct1, lda, TAU_f_buf_ct1, workspace_f_buf_ct1, Lwork, result_temp_buffer8), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -815,11 +815,11 @@ int main(int argc, char *argv[])
     status = cusolverDnSorgtr(*cusolverH, uplo, n, &A_f, lda, &TAU_f, &workspace_f, Lwork, &devInfo);
     cusolverDnSorgtr(*cusolverH, uplo, n, &A_f, lda, &TAU_f, &workspace_f, Lwork, &devInfo);
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::orgtr_get_lwork<double>((*cusolverH).get_device(), uplo, n,  lda,  lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -828,15 +828,15 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::orgtr_get_lwork<double>((*cusolverH).get_device(), uplo, n,  lda,  lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
     // CHECK-NEXT: auto TAU_d_buf_ct1 = dpct::get_buffer<double>(&TAU_d);
     // CHECK-NEXT: auto workspace_d_buf_ct1 = dpct::get_buffer<double>(&workspace_d);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::orgtr(*cusolverH, uplo, n, A_d_buf_ct1, lda, TAU_d_buf_ct1, workspace_d_buf_ct1, Lwork, result_temp_buffer8), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -854,11 +854,11 @@ int main(int argc, char *argv[])
     status = cusolverDnDorgtr(*cusolverH, uplo, n, &A_d, lda, &TAU_d, &workspace_d, Lwork, &devInfo);
     cusolverDnDorgtr(*cusolverH, uplo, n, &A_d, lda, &TAU_d, &workspace_d, Lwork, &devInfo);
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::ungtr_get_lwork<std::complex<float>>((*cusolverH).get_device(), uplo, n,  lda,  lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -867,15 +867,15 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::ungtr_get_lwork<std::complex<float>>((*cusolverH).get_device(), uplo, n,  lda,  lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
     // CHECK-NEXT: auto TAU_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&TAU_c);
     // CHECK-NEXT: auto workspace_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&workspace_c);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::ungtr(*cusolverH, uplo, n, A_c_buf_ct1, lda, TAU_c_buf_ct1, workspace_c_buf_ct1, Lwork, result_temp_buffer8), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -893,11 +893,11 @@ int main(int argc, char *argv[])
     status = cusolverDnCungtr(*cusolverH, uplo, n, &A_c, lda, &TAU_c, &workspace_c, Lwork, &devInfo);
     cusolverDnCungtr(*cusolverH, uplo, n, &A_c, lda, &TAU_c, &workspace_c, Lwork, &devInfo);
 
-    // CHECK: /*
+    // CHECK: {
+    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: {
-    // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: status = (mkl::lapack::ungtr_get_lwork<std::complex<double>>((*cusolverH).get_device(), uplo, n,  lda,  lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -906,15 +906,15 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::ungtr_get_lwork<std::complex<double>>((*cusolverH).get_device(), uplo, n,  lda,  lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
     // CHECK-NEXT: auto TAU_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&TAU_z);
     // CHECK-NEXT: auto workspace_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&workspace_z);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer8(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::ungtr(*cusolverH, uplo, n, A_z_buf_ct1, lda, TAU_z_buf_ct1, workspace_z_buf_ct1, Lwork, result_temp_buffer8), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer8.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -933,13 +933,13 @@ int main(int argc, char *argv[])
     cusolverDnZungtr(*cusolverH, uplo, n, &A_z, lda, &TAU_z, &workspace_z, Lwork, &devInfo);
 
 
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: {
+    // CHECK: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: mkl::job job_ct_mkl_jobu;
     // CHECK-NEXT: mkl::job job_ct_mkl_jobvt;
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::gesvd_get_lwork<float>((*cusolverH).get_device(), job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n, lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -950,9 +950,6 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::gesvd_get_lwork<float>((*cusolverH).get_device(), job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n, lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_f_buf_ct1 = dpct::get_buffer<float>(&A_f);
     // CHECK-NEXT: auto S_f_buf_ct1 = dpct::get_buffer<float>(&S_f);
@@ -961,6 +958,9 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto workspace_f_buf_ct1 = dpct::get_buffer<float>(&workspace_f);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer15(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::gesvd (*cusolverH, (mkl::job)jobu, (mkl::job)jobvt, m, n, A_f_buf_ct1, lda, S_f_buf_ct1, U_f_buf_ct1, ldu, VT_f_buf_ct1, ldvt, workspace_f_buf_ct1, Lwork,  result_temp_buffer15), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer15.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -980,13 +980,13 @@ int main(int argc, char *argv[])
     status = cusolverDnSgesvd (*cusolverH, jobu, jobvt, m, n, &A_f, lda, &S_f, &U_f, ldu, &VT_f, ldvt, &workspace_f, Lwork, &Rwork_f, &devInfo);
     cusolverDnSgesvd (*cusolverH, jobu, jobvt, m, n, &A_f, lda, &S_f, &U_f, ldu, &VT_f, ldvt, &workspace_f, Lwork, &Rwork_f, &devInfo);
 
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: {
+    // CHECK: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: mkl::job job_ct_mkl_jobu;
     // CHECK-NEXT: mkl::job job_ct_mkl_jobvt;
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::gesvd_get_lwork<double>((*cusolverH).get_device(), job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n, lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -997,9 +997,6 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::gesvd_get_lwork<double>((*cusolverH).get_device(), job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n, lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(&A_d);
     // CHECK-NEXT: auto S_d_buf_ct1 = dpct::get_buffer<double>(&S_d);
@@ -1008,6 +1005,9 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto workspace_d_buf_ct1 = dpct::get_buffer<double>(&workspace_d);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer15(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::gesvd (*cusolverH, (mkl::job)jobu, (mkl::job)jobvt, m, n, A_d_buf_ct1, lda, S_d_buf_ct1, U_d_buf_ct1, ldu, VT_d_buf_ct1, ldvt, workspace_d_buf_ct1, Lwork,  result_temp_buffer15), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer15.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -1027,13 +1027,13 @@ int main(int argc, char *argv[])
     status = cusolverDnDgesvd (*cusolverH, jobu, jobvt, m, n, &A_d, lda, &S_d, &U_d, ldu, &VT_d, ldvt, &workspace_d, Lwork, &Rwork_d, &devInfo);
     cusolverDnDgesvd (*cusolverH, jobu, jobvt, m, n, &A_d, lda, &S_d, &U_d, ldu, &VT_d, ldvt, &workspace_d, Lwork, &Rwork_d, &devInfo);
 
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: {
+    // CHECK: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: mkl::job job_ct_mkl_jobu;
     // CHECK-NEXT: mkl::job job_ct_mkl_jobvt;
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::gesvd_get_lwork<std::complex<float>>((*cusolverH).get_device(), job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n, lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -1044,9 +1044,6 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::gesvd_get_lwork<std::complex<float>>((*cusolverH).get_device(), job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n, lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_c_buf_ct1 = dpct::get_buffer<std::complex<float>>(&A_c);
     // CHECK-NEXT: auto S_f_buf_ct1 = dpct::get_buffer<float>(&S_f);
@@ -1056,6 +1053,9 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto Rwork_f_buf_ct1 = dpct::get_buffer<float>(&Rwork_f);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer15(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::gesvd (*cusolverH, (mkl::job)jobu, (mkl::job)jobvt, m, n, A_c_buf_ct1, lda, S_f_buf_ct1, U_c_buf_ct1, ldu, VT_c_buf_ct1, ldvt, workspace_c_buf_ct1, Lwork, Rwork_f_buf_ct1, result_temp_buffer15), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer15.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }
@@ -1076,13 +1076,13 @@ int main(int argc, char *argv[])
     status = cusolverDnCgesvd (*cusolverH, jobu, jobvt, m, n, &A_c, lda, &S_f, &U_c, ldu, &VT_c, ldvt, &workspace_c, Lwork, &Rwork_f, &devInfo);
     cusolverDnCgesvd (*cusolverH, jobu, jobvt, m, n, &A_c, lda, &S_f, &U_c, ldu, &VT_c, ldvt, &workspace_c, Lwork, &Rwork_f, &devInfo);
 
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: {
+    // CHECK: {
     // CHECK-NEXT: int64_t lwork64 = *(&Lwork);
     // CHECK-NEXT: mkl::job job_ct_mkl_jobu;
     // CHECK-NEXT: mkl::job job_ct_mkl_jobvt;
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::gesvd_get_lwork<std::complex<double>>((*cusolverH).get_device(), job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n, lwork64), 0);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
@@ -1093,9 +1093,6 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: mkl::lapack::gesvd_get_lwork<std::complex<double>>((*cusolverH).get_device(), job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n, lwork64);
     // CHECK-NEXT: *(&Lwork) = lwork64;
     // CHECK-NEXT: }
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
     // CHECK-NEXT: {
     // CHECK-NEXT: auto A_z_buf_ct1 = dpct::get_buffer<std::complex<double>>(&A_z);
     // CHECK-NEXT: auto S_d_buf_ct1 = dpct::get_buffer<double>(&S_d);
@@ -1105,6 +1102,9 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: auto Rwork_d_buf_ct1 = dpct::get_buffer<double>(&Rwork_d);
     // CHECK-NEXT: auto devInfo_buf_ct1 = dpct::get_buffer<int>(&devInfo);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer15(sycl::range<1>(1));
+    // CHECK-NEXT: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
     // CHECK-NEXT: status = (mkl::lapack::gesvd (*cusolverH, (mkl::job)jobu, (mkl::job)jobvt, m, n, A_z_buf_ct1, lda, S_d_buf_ct1, U_z_buf_ct1, ldu, VT_z_buf_ct1, ldvt, workspace_z_buf_ct1, Lwork, Rwork_d_buf_ct1, result_temp_buffer15), 0);
     // CHECK-NEXT: devInfo_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer15.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: }

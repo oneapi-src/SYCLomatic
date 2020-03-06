@@ -365,5 +365,5 @@ std::vector<const clang::DeclaratorDecl *>
 getSiblingDecls(const clang::DeclaratorDecl *DD);
 std::string deducePointerType(const clang::DeclaratorDecl *DD,
                                       std::string TypeName);
-
+bool isAnIdentifierOrLiteral(const clang::Expr *E);
 #endif // DPCT_UTILITY_H

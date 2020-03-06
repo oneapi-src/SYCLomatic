@@ -571,12 +571,20 @@ std::shared_ptr<ExtReplacement>
 InsertComment::getReplacement(const ASTContext &Context) const {
   auto NL = getNL();
   auto OrigIndent = getIndent(SL, Context.getSourceManager()).str();
-  return std::make_shared<ExtReplacement>(Context.getSourceManager(), SL, 0,
-                                          (OrigIndent + llvm::Twine("/*") + NL +
-                                           OrigIndent + Text + NL + OrigIndent +
-                                           "*/" + NL)
-                                              .str(),
-                                          this);
+  if (UseTextBegin)
+    return std::make_shared<ExtReplacement>(
+        Context.getSourceManager(), SL, 0,
+        (llvm::Twine("/*") + NL + OrigIndent + Text + NL + OrigIndent + "*/" +
+         NL + OrigIndent)
+            .str(),
+        this);
+  else
+    return std::make_shared<ExtReplacement>(Context.getSourceManager(), SL, 0,
+                                            (OrigIndent + llvm::Twine("/*") +
+                                             NL + OrigIndent + Text + NL +
+                                             OrigIndent + "*/" + NL)
+                                                .str(),
+                                            this);
 }
 
 std::string printTemplateArgument(const TemplateArgument &Arg,

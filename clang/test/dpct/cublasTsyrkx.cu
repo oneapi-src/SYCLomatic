@@ -47,53 +47,49 @@ int main() {
   int fill0 = 0;
   int fill1 = 1;
 
-  //CHECK: /*
+
+  //CHECK: {
+  //CHECK-NEXT: auto A_s_buf_ct1 = dpct::get_buffer<float>(A_s);
+  //CHECK-NEXT: auto B_s_buf_ct1 = dpct::get_buffer<float>(B_s);
+  //CHECK-NEXT: auto C_s_buf_ct1 = dpct::get_buffer<float>(C_s);
+  //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1003:0: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: {
-  //CHECK-NEXT: auto transpose_ct2 = trans0;
-  //CHECK-NEXT: auto A_s_buf_ct1 = dpct::get_buffer<float>(A_s);
-  //CHECK-NEXT: auto B_s_buf_ct1 = dpct::get_buffer<float>(B_s);
-  //CHECK-NEXT: auto C_s_buf_ct1 = dpct::get_buffer<float>(C_s);
-  //CHECK-NEXT: status = (mkl::blas::gemmt(handle, (int)fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, (int)transpose_ct2==2 ? mkl::transpose::conjtrans : (mkl::transpose)transpose_ct2, (int)transpose_ct2==0 ? mkl::transpose::trans : mkl::transpose::nontrans, n, k, alpha_s, A_s_buf_ct1, lda, B_s_buf_ct1, ldb, beta_s, C_s_buf_ct1, ldc), 0);
+  //CHECK-NEXT: status = (mkl::blas::gemmt(handle, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans0==0 ? mkl::transpose::trans : mkl::transpose::nontrans, n, k, alpha_s, A_s_buf_ct1, lda, B_s_buf_ct1, ldb, beta_s, C_s_buf_ct1, ldc), 0);
   //CHECK-NEXT: }
   //CHECK-NEXT: {
-  //CHECK-NEXT: auto transpose_ct2 = trans1;
   //CHECK-NEXT: auto A_s_buf_ct1 = dpct::get_buffer<float>(A_s);
   //CHECK-NEXT: auto B_s_buf_ct1 = dpct::get_buffer<float>(B_s);
   //CHECK-NEXT: auto C_s_buf_ct1 = dpct::get_buffer<float>(C_s);
-  //CHECK-NEXT: mkl::blas::gemmt(handle, (int)fill1==0 ? mkl::uplo::lower : mkl::uplo::upper, (int)transpose_ct2==2 ? mkl::transpose::conjtrans : (mkl::transpose)transpose_ct2, (int)transpose_ct2==0 ? mkl::transpose::trans : mkl::transpose::nontrans, n, k, alpha_s, A_s_buf_ct1, lda, B_s_buf_ct1, ldb, beta_s, C_s_buf_ct1, ldc);
+  //CHECK-NEXT: mkl::blas::gemmt(handle, fill1==0 ? mkl::uplo::lower : mkl::uplo::upper, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, trans1==0 ? mkl::transpose::trans : mkl::transpose::nontrans, n, k, alpha_s, A_s_buf_ct1, lda, B_s_buf_ct1, ldb, beta_s, C_s_buf_ct1, ldc);
   //CHECK-NEXT: }
   status = cublasSsyrkx(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, &alpha_s, A_s, lda, B_s, ldb, &beta_s, C_s, ldc);
   cublasSsyrkx(handle, (cublasFillMode_t)fill1, (cublasOperation_t)trans1, n, k, &alpha_s, A_s, lda, B_s, ldb, &beta_s, C_s, ldc);
 
-  //CHECK: /*
+  //CHECK: {
+  //CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(A_d);
+  //CHECK-NEXT: auto B_d_buf_ct1 = dpct::get_buffer<double>(B_d);
+  //CHECK-NEXT: auto C_d_buf_ct1 = dpct::get_buffer<double>(C_d);
+  //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1003:1: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: {
-  //CHECK-NEXT: auto transpose_ct2 = 0;
-  //CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(A_d);
-  //CHECK-NEXT: auto B_d_buf_ct1 = dpct::get_buffer<double>(B_d);
-  //CHECK-NEXT: auto C_d_buf_ct1 = dpct::get_buffer<double>(C_d);
-  //CHECK-NEXT: status = (mkl::blas::gemmt(handle, mkl::uplo::lower, (int)transpose_ct2==2 ? mkl::transpose::conjtrans : (mkl::transpose)transpose_ct2, (int)transpose_ct2==0 ? mkl::transpose::trans : mkl::transpose::nontrans, n, k, alpha_d, A_d_buf_ct1, lda, B_d_buf_ct1, ldb, beta_d, C_d_buf_ct1, ldc), 0);
+  //CHECK-NEXT: status = (mkl::blas::gemmt(handle, mkl::uplo::lower, mkl::transpose::nontrans, mkl::transpose::trans, n, k, alpha_d, A_d_buf_ct1, lda, B_d_buf_ct1, ldb, beta_d, C_d_buf_ct1, ldc), 0);
   //CHECK-NEXT: }
   //CHECK-NEXT: {
-  //CHECK-NEXT: auto transpose_ct2 = 1;
   //CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(A_d);
   //CHECK-NEXT: auto B_d_buf_ct1 = dpct::get_buffer<double>(B_d);
   //CHECK-NEXT: auto C_d_buf_ct1 = dpct::get_buffer<double>(C_d);
-  //CHECK-NEXT: mkl::blas::gemmt(handle, mkl::uplo::upper, (int)transpose_ct2==2 ? mkl::transpose::conjtrans : (mkl::transpose)transpose_ct2, (int)transpose_ct2==0 ? mkl::transpose::trans : mkl::transpose::nontrans, n, k, alpha_d, A_d_buf_ct1, lda, B_d_buf_ct1, ldb, beta_d, C_d_buf_ct1, ldc);
+  //CHECK-NEXT: mkl::blas::gemmt(handle, mkl::uplo::upper, mkl::transpose::trans, mkl::transpose::nontrans, n, k, alpha_d, A_d_buf_ct1, lda, B_d_buf_ct1, ldb, beta_d, C_d_buf_ct1, ldc);
   //CHECK-NEXT: }
   status = cublasDsyrkx(handle, (cublasFillMode_t)0, (cublasOperation_t)0, n, k, &alpha_d, A_d, lda, B_d, ldb, &beta_d, C_d, ldc);
   cublasDsyrkx(handle, (cublasFillMode_t)1, (cublasOperation_t)1, n, k, &alpha_d, A_d, lda, B_d, ldb, &beta_d, C_d, ldc);
 
 
   //CHECK: {
-  //CHECK-NEXT: auto transpose_ct2 = macro_a;
   //CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(A_d);
   //CHECK-NEXT: auto B_d_buf_ct1 = dpct::get_buffer<double>(B_d);
   //CHECK-NEXT: auto C_d_buf_ct1 = dpct::get_buffer<double>(C_d);
-  //CHECK-NEXT: mkl::blas::gemmt(handle, foo(), (int)transpose_ct2==2 ? mkl::transpose::conjtrans : (mkl::transpose)transpose_ct2, (int)transpose_ct2==0 ? mkl::transpose::trans : mkl::transpose::nontrans, n, k, alpha_d, A_d_buf_ct1, lda, B_d_buf_ct1, ldb, beta_d, C_d_buf_ct1, ldc);
+  //CHECK-NEXT: mkl::blas::gemmt(handle, foo(), (int)macro_a==2 ? mkl::transpose::conjtrans : (mkl::transpose)macro_a, (int)macro_a==0 ? mkl::transpose::trans : mkl::transpose::nontrans, n, k, alpha_d, A_d_buf_ct1, lda, B_d_buf_ct1, ldb, beta_d, C_d_buf_ct1, ldc);
   //CHECK-NEXT: }
 
 
@@ -101,21 +97,19 @@ int main() {
 
 
   //CHECK: {
-  //CHECK-NEXT: auto transpose_ct2 = bar();
   //CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(A_d);
   //CHECK-NEXT: auto B_d_buf_ct1 = dpct::get_buffer<double>(B_d);
   //CHECK-NEXT: auto C_d_buf_ct1 = dpct::get_buffer<double>(C_d);
-  //CHECK-NEXT: mkl::blas::gemmt(handle, (int)macro_b==0 ? mkl::uplo::lower : mkl::uplo::upper, transpose_ct2, transpose_ct2==mkl::transpose::nontrans ? mkl::transpose::trans : mkl::transpose::nontrans, n, k, alpha_d, A_d_buf_ct1, lda, B_d_buf_ct1, ldb, beta_d, C_d_buf_ct1, ldc);
+  //CHECK-NEXT: mkl::blas::gemmt(handle, (int)macro_b==0 ? mkl::uplo::lower : mkl::uplo::upper, bar(), bar()==mkl::transpose::nontrans ? mkl::transpose::trans : mkl::transpose::nontrans, n, k, alpha_d, A_d_buf_ct1, lda, B_d_buf_ct1, ldb, beta_d, C_d_buf_ct1, ldc);
   //CHECK-NEXT: }
   cublasDsyrkx(handle, macro_b, bar(), n, k, &alpha_d, A_d, lda, B_d, ldb, &beta_d, C_d, ldc);
 
 
   //CHECK: {
-  //CHECK-NEXT: auto transpose_ct2 = mkl::transpose::trans;
   //CHECK-NEXT: auto A_d_buf_ct1 = dpct::get_buffer<double>(A_d);
   //CHECK-NEXT: auto B_d_buf_ct1 = dpct::get_buffer<double>(B_d);
   //CHECK-NEXT: auto C_d_buf_ct1 = dpct::get_buffer<double>(C_d);
-  //CHECK-NEXT: mkl::blas::gemmt(handle, mkl::uplo::lower, transpose_ct2, transpose_ct2==mkl::transpose::nontrans ? mkl::transpose::trans : mkl::transpose::nontrans, n, k, alpha_d, A_d_buf_ct1, lda, B_d_buf_ct1, ldb, beta_d, C_d_buf_ct1, ldc);
+  //CHECK-NEXT: mkl::blas::gemmt(handle, mkl::uplo::lower, mkl::transpose::trans, mkl::transpose::nontrans, n, k, alpha_d, A_d_buf_ct1, lda, B_d_buf_ct1, ldb, beta_d, C_d_buf_ct1, ldc);
   //CHECK-NEXT: }
   cublasDsyrkx(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_T, n, k, &alpha_d, A_d, lda, B_d, ldb, &beta_d, C_d, ldc);
 

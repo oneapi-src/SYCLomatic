@@ -67,7 +67,7 @@ Optional<std::string> MathCallExprRewriter::rewrite() {
 void MathCallExprRewriter::reportUnsupportedRoundingMode() {
   if (SourceCalleeName.endswith("_rd") || SourceCalleeName.endswith("_rn") ||
       SourceCalleeName.endswith("_ru") || SourceCalleeName.endswith("_rz")) {
-    report(Diagnostics::ROUNDING_MODE_UNSUPPORTED);
+    report(Diagnostics::ROUNDING_MODE_UNSUPPORTED, false);
   }
 }
 
@@ -478,7 +478,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
 }
 
 Optional<std::string> MathUnsupportedRewriter::rewrite() {
-  report(Diagnostics::NOTSUPPORTED, MapNames::ITFName.at(SourceCalleeName.str()));
+  report(Diagnostics::NOTSUPPORTED, false,
+         MapNames::ITFName.at(SourceCalleeName.str()));
   return Base::rewrite();
 }
 
@@ -603,7 +604,8 @@ std::string getTypecastName(const CallExpr *Call) {
 }
 
 Optional<std::string> MathSimulatedRewriter::rewrite() {
-  report(Diagnostics::MATH_EMULATION, MapNames::ITFName.at(SourceCalleeName.str()),
+  report(Diagnostics::MATH_EMULATION, false,
+         MapNames::ITFName.at(SourceCalleeName.str()),
          TargetCalleeName);
   auto FD = Call->getDirectCallee();
   if (!FD || !FD->hasAttr<CUDADeviceAttr>())
@@ -807,7 +809,8 @@ Optional<std::string> MathBinaryOperatorRewriter::rewrite() {
 Optional<std::string> WarpFunctionRewriter::rewrite() {
   if (SourceCalleeName == "__activemask" || SourceCalleeName == "__ballot" ||
       SourceCalleeName == "__ballot_sync") {
-    report(Diagnostics::NOTSUPPORTED, MapNames::ITFName.at(SourceCalleeName.str()));
+    report(Diagnostics::NOTSUPPORTED, false,
+           MapNames::ITFName.at(SourceCalleeName.str()));
     RewriteArgList = getMigratedArgs();
     setTargetCalleeName(SourceCalleeName.str());
   } else {

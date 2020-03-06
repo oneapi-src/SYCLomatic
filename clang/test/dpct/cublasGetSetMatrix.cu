@@ -24,10 +24,10 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::dpct_memcpy((void*)(d_A),(void*)(A),(LDA_MARCO)*(colsA)*(sizeof(A[0])),dpct::host_to_device), 0);
+  // CHECK-NEXT: status = (dpct::dpct_memcpy((void*)d_A, (void*)A, LDA_MARCO*colsA*sizeof(A[0]), dpct::host_to_device), 0);
   status = cublasSetMatrix(100, colsA, sizeof(A[0]), A, LDA_MARCO, d_A, 100);
 
-  // CHECK: dpct::dpct_memcpy((void*)(d_A),(void*)(A),(ConstLda)*(colsA)*(sizeof(A[0])),dpct::host_to_device);
+  // CHECK: dpct::dpct_memcpy((void*)d_A, (void*)A, ConstLda*colsA*sizeof(A[0]), dpct::host_to_device);
   cublasSetMatrix(100, colsA, sizeof(A[0]), A, ConstLda, d_A, 100);
 
   // CHECK: /*
@@ -46,13 +46,13 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1018:{{[0-9]+}}: The cublasSetMatrix was migrated, but due to parameter rowsA could not be evaluated and may be smaller than parameter 100, the generated code performance may be sub-optimal.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::dpct_memcpy((void*)(d_A),(void*)(A),(100)*(colsA)*(sizeof(A[0])),dpct::host_to_device);
+  // CHECK-NEXT: dpct::dpct_memcpy((void*)d_A, (void*)A, 100*colsA*sizeof(A[0]), dpct::host_to_device);
   cublasSetMatrix(rowsA, colsA, sizeof(A[0]), A, 100, d_A, 100);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1018:{{[0-9]+}}: The cublasSetMatrix was migrated, but due to parameter 99 is smaller than parameter 100, the generated code performance may be sub-optimal.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::dpct_memcpy((void*)(d_A),(void*)(A),(100)*(colsA)*(sizeof(A[0])),dpct::host_to_device);
+  // CHECK-NEXT: dpct::dpct_memcpy((void*)d_A, (void*)A, 100*colsA*sizeof(A[0]), dpct::host_to_device);
   cublasSetMatrix(99, colsA, sizeof(A[0]), A, 100, d_A, 100);
 
   // CHECK: /*
@@ -61,7 +61,7 @@ int main() {
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::dpct_memcpy((void*)(d_A),(void*)(A),(100)*(colsA)*(sizeof(A[0])),dpct::host_to_device), 0);
+  // CHECK-NEXT: status = (dpct::dpct_memcpy((void*)d_A, (void*)A, 100*colsA*sizeof(A[0]), dpct::host_to_device), 0);
   status = cublasSetMatrix(99, colsA, sizeof(A[0]), A, 100, d_A, 100);
 
   const int ConstLdaNE = lda;
@@ -82,28 +82,28 @@ int main() {
   // CHECK-NEXT: cublasSetMatrix(rowsA, colsA, sizeof(A[0]), A, foo(lda), d_A, foo(ldb));
   cublasSetMatrix(rowsA, colsA, sizeof(A[0]), A, foo(lda), d_A, foo(ldb));
 
-  // CHECK: dpct::dpct_memcpy((void*)(d_A),(void*)(A),(foo(ConstLdaT))*(colsA)*(sizeof(A[0])),dpct::host_to_device);
+  // CHECK: dpct::dpct_memcpy((void*)d_A, (void*)A, foo(ConstLdaT)*colsA*sizeof(A[0]), dpct::host_to_device);
   cublasSetMatrix(100, colsA, sizeof(A[0]), A, foo(ConstLdaT), d_A, foo(ConstLdbT));
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1018:{{[0-9]+}}: The cublasGetMatrix was migrated, but due to parameter 100 is smaller than parameter foo(ConstExprLda), the generated code performance may be sub-optimal.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::dpct_memcpy((void*)(d_A),(void*)(A),(foo(ConstExprLda))*(colsA)*(sizeof(A[0])),dpct::device_to_host);
+  // CHECK-NEXT: dpct::dpct_memcpy((void*)d_A, (void*)A, foo(ConstExprLda)*colsA*sizeof(A[0]), dpct::device_to_host);
   cublasGetMatrix(100, colsA, sizeof(A[0]), A, foo(ConstExprLda), d_A, ConstExprLdb);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::dpct_memcpy((void*)(d_A),(void*)(A),(100)*(colsA)*(sizeof(A[0])),dpct::host_to_device), 0);
-  // CHECK-NEXT: dpct::dpct_memcpy((void*)(d_A),(void*)(A),(100)*(colsA)*(sizeof(A[0])),dpct::host_to_device);
+  // CHECK-NEXT: status = (dpct::dpct_memcpy((void*)d_A, (void*)A, 100*colsA*sizeof(A[0]), dpct::host_to_device), 0);
+  // CHECK-NEXT: dpct::dpct_memcpy((void*)d_A, (void*)A, 100*colsA*sizeof(A[0]), dpct::host_to_device);
   status = cublasSetMatrixAsync(100, colsA, sizeof(A[0]), A, 100, d_A, 100, stream);
   cublasSetMatrixAsync(100, colsA, sizeof(A[0]), A, 100, d_A, 100, stream);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::dpct_memcpy((void*)(d_A),(void*)(A),(100)*(colsA)*(sizeof(A[0])),dpct::device_to_host), 0);
-  // CHECK-NEXT: dpct::dpct_memcpy((void*)(d_A),(void*)(A),(100)*(colsA)*(sizeof(A[0])),dpct::device_to_host);
+  // CHECK-NEXT: status = (dpct::dpct_memcpy((void*)d_A, (void*)A, 100*colsA*sizeof(A[0]), dpct::device_to_host), 0);
+  // CHECK-NEXT: dpct::dpct_memcpy((void*)d_A, (void*)A, 100*colsA*sizeof(A[0]), dpct::device_to_host);
   status = cublasGetMatrixAsync(100, colsA, sizeof(A[0]), A, 100, d_A, 100, stream);
   cublasGetMatrixAsync(100, colsA, sizeof(A[0]), A, 100, d_A, 100, stream);
 

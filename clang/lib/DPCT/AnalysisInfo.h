@@ -513,6 +513,11 @@ public:
       return IdentifierWithoutIndex + std::to_string(Index);
     }
   }
+  inline static int getSuffixNumberThenInc() {
+    int Num = SuffixNumber;
+    SuffixNumber++;
+    return Num;
+  }
 
   template <class TargetTy, class NodeTy>
   static inline const TargetTy *
@@ -855,6 +860,7 @@ private:
                   std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
       ExpansionRangeToMacroRecord;
   static std::map<MacroInfo *, bool> MacroDefines;
+  static int SuffixNumber;
 };
 
 class TemplateArgumentInfo;

@@ -131,7 +131,8 @@ void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
 // backslashes
 static inline SourceLocation getStartOfLine(SourceLocation Loc,
                                             const SourceManager &SM,
-                                            const LangOptions &LangOpts) {
+                                            const LangOptions &LangOpts,
+                                            bool UseTextBegin = false) {
   auto LocInfo = SM.getDecomposedLoc(SM.getExpansionLoc(Loc));
   auto Buffer = SM.getBufferData(LocInfo.first);
   auto NLPos = Buffer.find_last_of('\n', LocInfo.second);
@@ -152,21 +153,37 @@ static inline SourceLocation getStartOfLine(SourceLocation Loc,
   } else {
     NLPos += Skip;
   }
-  return SM.getExpansionLoc(Loc).getLocWithOffset(NLPos - LocInfo.second);
+  auto LineBegin =
+      SM.getExpansionLoc(Loc).getLocWithOffset(NLPos - LocInfo.second);
+
+  if (!UseTextBegin) {
+    return LineBegin;
+  }
+
+  while (isspace(Buffer[NLPos])) {
+    if (Buffer[NLPos] == '\n' || Buffer[NLPos] == '\r') {
+      break;
+    }
+    NLPos++;
+  }
+  auto TextBegin =
+      SM.getExpansionLoc(Loc).getLocWithOffset(NLPos - LocInfo.second);
+  return TextBegin;
 }
 
 template <typename... Ts>
 TextModification *
 insertCommentPrevLine(SourceLocation SL, const DiagnosticsMessage &Msg,
-                      const CompilerInstance &CI, Ts &&... Vals) {
-
-  auto StartLoc = getStartOfLine(SL, CI.getSourceManager(), LangOptions());
+                      const CompilerInstance &CI, bool UseTextBegin,
+                      Ts &&... Vals) {
+  auto StartLoc =
+      getStartOfLine(SL, CI.getSourceManager(), LangOptions(), UseTextBegin);
   auto Formatted = llvm::formatv(Msg.Msg, std::forward<Ts>(Vals)...);
   std::string Str;
   llvm::raw_string_ostream OS(Str);
   OS << getMessagePrefix(Msg.ID);
   OS << Formatted;
-  return new InsertComment(StartLoc, OS.str());
+  return new InsertComment(StartLoc, OS.str(), UseTextBegin);
 }
 
 class ReportedWarningInfo {
@@ -184,7 +201,7 @@ private:
 // Emits a warning/error/note and/or comment depending on MsgID. For details
 template <typename IDTy, typename... Ts>
 void report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
-            TransformSetTy *TS, Ts &&... Vals) {
+            TransformSetTy *TS, bool UseTextBegin, Ts &&... Vals) {
   auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
 
   SmallString<4096> FileName = SM.getBufferName(SL);
@@ -212,6 +229,7 @@ void report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
   }
   if (TS && CommentIDTable.find((int)MsgID) != CommentIDTable.end()) {
     TS->emplace_back(insertCommentPrevLine(SL, CommentIDTable[(int)MsgID], CI,
+                                           UseTextBegin,
                                            std::forward<Ts>(Vals)...));
   }
   UniqueID++;

@@ -217,9 +217,9 @@ protected:
   // Emits a warning/error/note and/or comment depending on MsgID. For details
   // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
   template <typename IDTy, typename... Ts>
-  void report(SourceLocation SL, IDTy MsgID, Ts &&... Vals) {
+  void report(SourceLocation SL, IDTy MsgID, bool UseTextBegin, Ts &&... Vals) {
     DiagnosticsUtils::report<IDTy, Ts...>(SL, MsgID, getCompilerInstance(),
-                                          TransformSet,
+                                          TransformSet, UseTextBegin,
                                           std::forward<Ts>(Vals)...);
   }
 
@@ -680,12 +680,9 @@ public:
                                      bool IsMacroArg);
   void processTrmmCall(const CallExpr *CE, std::string &PrefixInsertStr,
                        const std::string IndentStr);
-  void processTrmmParams(const CallExpr *CE, std::string &PrefixInsertStr,
-                         std::string &BufferName, std::string &BufferDecl,
-                         int &IndexTemp, int DistinctionID,
-                         const std::string IndentStr,
-                         const std::vector<std::string> &BufferTypeInfo,
-                         const SourceLocation &StmtBegin);
+  bool isCEOrUETTEOrAnIdentifierOrLiteral(const Expr *E);
+  std::string getExprString(const Expr *E,
+                            bool AddparenthesisIfNecessary = false);
 };
 
 /// Migration rule for Random function calls.

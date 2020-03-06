@@ -83,10 +83,7 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto transpose_ct1 = trans0;
-  // CHECK-NEXT: status = (dpct::getrs_batch_wrapper(handle, (int)transpose_ct1==2 ? mkl::transpose::conjtrans : (mkl::transpose)transpose_ct1, n, nrhs, Aarray_Sc, lda, PivotArray, Barray_S, ldb, infoArray, batchSize), 0);
-  // CHECK-NEXT: }
+  // CHECK-NEXT: status = (dpct::getrs_batch_wrapper(handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, n, nrhs, Aarray_Sc, lda, PivotArray, Barray_S, ldb, infoArray, batchSize), 0);
   // CHECK-NEXT: dpct::getrs_batch_wrapper(handle, mkl::transpose::nontrans, n, nrhs, Aarray_Sc, lda, PivotArray, Barray_S, ldb, infoArray, batchSize);
   status = cublasSgetrsBatched(handle, (cublasOperation_t)trans0, n, nrhs, Aarray_Sc, lda, PivotArray, Barray_S, ldb, infoArray, batchSize);
   cublasSgetrsBatched(handle, CUBLAS_OP_N, n, nrhs, Aarray_Sc, lda, PivotArray, Barray_S, ldb, infoArray, batchSize);
@@ -94,10 +91,7 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto transpose_ct1 = trans1;
-  // CHECK-NEXT: status = (dpct::getrs_batch_wrapper(handle, (int)transpose_ct1==2 ? mkl::transpose::conjtrans : (mkl::transpose)transpose_ct1, n, nrhs, Aarray_Dc, lda, PivotArray, Barray_D, ldb, infoArray, batchSize), 0);
-  // CHECK-NEXT: }
+  // CHECK-NEXT: status = (dpct::getrs_batch_wrapper(handle, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, n, nrhs, Aarray_Dc, lda, PivotArray, Barray_D, ldb, infoArray, batchSize), 0);
   // CHECK-NEXT: dpct::getrs_batch_wrapper(handle, mkl::transpose::nontrans, n, nrhs, Aarray_Dc, lda, PivotArray, Barray_D, ldb, infoArray, batchSize);
   status = cublasDgetrsBatched(handle, (cublasOperation_t)trans1, n, nrhs, Aarray_Dc, lda, PivotArray, Barray_D, ldb, infoArray, batchSize);
   cublasDgetrsBatched(handle, CUBLAS_OP_N, n, nrhs, Aarray_Dc, lda, PivotArray, Barray_D, ldb, infoArray, batchSize);
@@ -105,10 +99,7 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto transpose_ct1 = trans2;
-  // CHECK-NEXT: status = (dpct::getrs_batch_wrapper(handle, (int)transpose_ct1==2 ? mkl::transpose::conjtrans : (mkl::transpose)transpose_ct1, n, nrhs, Aarray_Cc, lda, PivotArray, Barray_C, ldb, infoArray, batchSize), 0);
-  // CHECK-NEXT: }
+  // CHECK-NEXT: status = (dpct::getrs_batch_wrapper(handle, trans2==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans2, n, nrhs, Aarray_Cc, lda, PivotArray, Barray_C, ldb, infoArray, batchSize), 0);
   // CHECK-NEXT: dpct::getrs_batch_wrapper(handle, mkl::transpose::nontrans, n, nrhs, Aarray_Cc, lda, PivotArray, Barray_C, ldb, infoArray, batchSize);
   status = cublasCgetrsBatched(handle, (cublasOperation_t)trans2, n, nrhs, Aarray_Cc, lda, PivotArray, Barray_C, ldb, infoArray, batchSize);
   cublasCgetrsBatched(handle, CUBLAS_OP_N, n, nrhs, Aarray_Cc, lda, PivotArray, Barray_C, ldb, infoArray, batchSize);
