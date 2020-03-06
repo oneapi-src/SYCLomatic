@@ -2,7 +2,6 @@
 // RUN: cd %T
 // RUN: dpct -out-root %T macro_test.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/macro_test.dp.cpp --match-full-lines macro_test.cu
-#include <cuda_runtime.h>
 
 #define CUDA_NUM_THREADS 1024+32
 #define GET_BLOCKS(n,t)  1+n+t-1
