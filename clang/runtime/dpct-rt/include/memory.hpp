@@ -26,6 +26,7 @@
 #include <cstring>
 #include <mutex>
 #include <unordered_map>
+#include <map>
 #include <utility>
 
 #if defined(__linux__)
