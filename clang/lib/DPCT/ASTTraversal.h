@@ -46,6 +46,7 @@ class ASTTraversalManager;
 /// including directives rewriting.
 class IncludesCallbacks : public PPCallbacks {
   TransformSetTy &TransformSet;
+  IncludeMapSetTy &IncludeMapSet;
   SourceManager &SM;
 
   std::unordered_set<std::string> SeenFiles;
@@ -53,10 +54,11 @@ class IncludesCallbacks : public PPCallbacks {
   ASTTraversalManager &ATM;
 
 public:
-  IncludesCallbacks(TransformSetTy &TransformSet, SourceManager &SM,
+  IncludesCallbacks(TransformSetTy &TransformSet,
+                    IncludeMapSetTy &IncludeMapSet, SourceManager &SM,
                     ASTTraversalManager &ATM)
-      : TransformSet(TransformSet), SM(SM), DpstdHeaderInserted(false),
-        ATM(ATM) {}
+      : TransformSet(TransformSet), IncludeMapSet(IncludeMapSet), SM(SM),
+        DpstdHeaderInserted(false), ATM(ATM) {}
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
                           StringRef FileName, bool IsAngled,
                           CharSourceRange FilenameRange, const FileEntry *File,

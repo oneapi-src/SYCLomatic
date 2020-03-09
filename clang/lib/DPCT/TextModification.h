@@ -25,6 +25,11 @@ namespace dpct {
 class KernelCallExpr;
 class TextModification;
 using TransformSetTy = std::vector<std::unique_ptr<TextModification>>;
+
+class ReplaceInclude;
+using IncludeMapSetTy = std::map<std::string,
+      std::vector<std::unique_ptr<ReplaceInclude>>>;
+
 enum InsertPosition {
   InsertPositionAlwaysLeft = 0,
   InsertPositionLeft,

@@ -375,6 +375,20 @@ void IncludesCallbacks::InclusionDirective(
           new ReplaceInclude(InsertRange, std::move(NewFileName)));
       return;
     }
+
+    // To generate replacement of replacing "#include "*.c"" with "include
+    // "*.c.dp.cpp"".
+    if (!IsAngled && FileName.endswith(".c")) {
+      CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                                  /* IsTokenRange */ false);
+      std::string NewFileName = "#include \"" + FileName.str() + ".dp.cpp\"";
+
+      // For file path in preprocessing stage may be different with the one in
+      // syntax analysis stage, here only file name is used as the key.
+      const std::string Name = llvm::sys::path::filename(FileName).str();
+      IncludeMapSet[Name].push_back(std::make_unique<ReplaceInclude>(
+          InsertRange, std::move(NewFileName)));
+    }
   }
 
   // Extra process thrust headers, map to PSTL mapping headers in runtime.

@@ -392,8 +392,21 @@ public:
     ATM.matchAST(Context, TransformSet, SSM);
 
     auto &Global = DpctGlobalInfo::getInstance();
+    std::unordered_set<std::string> DuplicateFilter;
     for (const auto &I : TransformSet) {
       auto Repl = I->getReplacement(Context);
+      // For file path got in AST may be different with the one in preprocessing stage,
+      // here only the file name is used to retrieve IncludeMapSet.
+      const std::string FileName = llvm::sys::path::filename(Repl->getFilePath()).str();
+      if(DuplicateFilter.find(FileName) == end(DuplicateFilter)) {
+        DuplicateFilter.insert(FileName);
+        auto Find = IncludeMapSet.find(FileName);
+        if (Find != IncludeMapSet.end()) {
+          for (const auto &Entry : Find->second) {
+            Global.addReplacement(Entry->getReplacement(Context));
+          }
+        }
+      }
       Global.addReplacement(Repl);
     }
 
@@ -405,7 +418,7 @@ public:
     DpctGlobalInfo::setCompilerInstance(CI);
 
     PP.addPPCallbacks(std::make_unique<IncludesCallbacks>(
-        TransformSet, Context.getSourceManager(), ATM));
+        TransformSet, IncludeMapSet, Context.getSourceManager(), ATM));
   }
 
   ~DPCTConsumer() {
@@ -416,6 +429,7 @@ public:
 private:
   ASTTraversalManager ATM;
   TransformSetTy TransformSet;
+  IncludeMapSetTy IncludeMapSet;
   StmtStringMap SSM;
   ReplTy &Repl;
   Preprocessor &PP;

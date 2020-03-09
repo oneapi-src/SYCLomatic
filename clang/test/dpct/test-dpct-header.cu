@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only -DCUDA
+// RUN: dpct --format-range=none -out-root %T %s %S/test-dpct-header-dup.cu --cuda-include-path="%cuda-path/include" --sycl-named-lambda -extra-arg="-I%S/inc" -- -std=c++14 -x cuda --cuda-host-only -DCUDA
 // RUN: FileCheck --match-full-lines --input-file %T/test-dpct-header.dp.cpp %s
 
 // RUN: FileCheck --match-full-lines --input-file %T/inc/header.tpp %S/inc/header.tpp
@@ -20,6 +20,11 @@
 #include "inc/header2.INC"
 #include "inc/header.tpp"
 #include "inc/header2.TPP"
+
+// CHECK: #include "inc/header3.c.dp.cpp"
+// CHECK-NEXT: #include "inc/header4.c"
+#include "inc/header3.c"
+#include "inc/header4.c"
 
 // CHECK: #ifdef CUDA
 // CHECK-NEXT: void foo() {
