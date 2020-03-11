@@ -35,6 +35,7 @@ extern std::string CudaPath;
 extern std::string DpctInstallPath; // Installation directory for this tool
 extern llvm::cl::opt<UsmLevel> USMLevel;
 extern bool ProcessAllFlag;
+extern bool ExplicitClNamespace;
 
 auto parentStmt = []() {
   return anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
@@ -1074,6 +1075,63 @@ void AtomicFunctionRule::ReportUnsupportedAtomicFunc(const CallExpr *CE) {
   report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, OSS.str());
 }
 
+// To handle five kind of cases:
+// case1: extern __shared__ uint32_t share_array[];
+//        atomicAdd(&share_array[0], 1);
+// case2: extern __shared__ uint32_t share_array[];
+//        uint32_t *p = &share_array[0];
+//        atomicAdd(p, 1);
+// case3: __shared__ uint32_t share_v;
+//        atomicAdd(&share_v, 1);
+// case4: __shared__ uint32_t share_v;
+//        uint32_t *p = &share_v;
+//        atomicAdd(p, 1);
+// case5: extern __shared__ uint32_t share_array[];
+//        atomicAdd(share_array, 1);
+// TODO: Need to handle the situlation the share memory address
+// is passed by normal pointer predefined.
+// eg: __shared__ uint32_t share_v;
+//     uint32_t *p;
+//     p = &share_v;
+//     atomicAdd(p, 1);
+void AtomicFunctionRule::GetShareAttrRecursive(const Expr *Expr, bool &HasSharedAttr) {
+  if(!Expr)
+    return;
+
+  if (auto UO = dyn_cast<UnaryOperator>(Expr)) {
+    if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
+      if (auto ASE = dyn_cast<ArraySubscriptExpr>(UO->getSubExpr())) {
+        if (auto *ImpCast = dyn_cast<ImplicitCastExpr>(ASE->getBase())) {
+          if (auto DRE = dyn_cast<DeclRefExpr>(ImpCast->getSubExpr())) {
+            if (DRE->getDecl()->hasAttr<CUDASharedAttr>()) {
+              HasSharedAttr = true;
+              return;
+            }
+          }
+        }
+      } else if (auto DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr())) {
+        if (DRE->getDecl()->hasAttr<CUDASharedAttr>()) {
+          HasSharedAttr = true;
+          return;
+        }
+      }
+    }
+  }
+
+  if (auto *ImpCast = dyn_cast<ImplicitCastExpr>(Expr)) {
+    if (auto DRE = dyn_cast<DeclRefExpr>(ImpCast->getSubExpr())) {
+      if (auto Decl = DRE->getDecl()) {
+        if (Decl->hasAttr<CUDASharedAttr>()) {
+          HasSharedAttr = true;
+          return;
+        } else if (auto VD = dyn_cast<VarDecl>(Decl)) {
+          GetShareAttrRecursive(VD->getInit(), HasSharedAttr);
+        }
+      }
+    }
+  }
+}
+
 void AtomicFunctionRule::MigrateAtomicFunc(
     const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result) {
   if (!CE)
@@ -1122,6 +1180,15 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     return;
   }
 
+  bool HasSharedAttr = false;
+  GetShareAttrRecursive(CE->getArg(0), HasSharedAttr);
+  if (HasSharedAttr) {
+    std::string ClNamespace = ExplicitClNamespace ? "cl::sycl" : "sycl";
+    std::string SpaceName =
+        ClNamespace + "::access::address_space::local_space";
+    ReplacedAtomicFuncName += "<" + TypeName + ", " + SpaceName + ">";
+  }
+
   emplaceTransformation(new ReplaceCalleeName(
       CE, std::move(ReplacedAtomicFuncName), AtomicFuncName));
 
@@ -1133,7 +1200,12 @@ void AtomicFunctionRule::MigrateAtomicFunc(
         if (i == 0) {
           insertAroundStmt(Arg, "(" + TypeName + "*)(", ")");
         } else {
-          insertAroundStmt(Arg, "(" + TypeName + ")(", ")");
+          if (dyn_cast<IntegerLiteral>(Arg->IgnoreImpCasts())) {
+            emplaceTransformation(
+                new InsertBeforeStmt(Arg, "(" + TypeName + ")"));
+          } else {
+            insertAroundStmt(Arg, "(" + TypeName + ")(", ")");
+          }
         }
       }
     }
@@ -5788,6 +5860,13 @@ void MemVarRule::processDeref(const Stmt *S, ASTContext &Context) {
     } else if (Parent.get<BinaryOperator>() || Parent.get<CallExpr>() ||
                Parent.get<CXXConstructExpr>() || Parent.get<ParenExpr>()) {
       emplaceTransformation(new InsertBeforeStmt(S, "*"));
+
+    } else if (auto UO = Parent.get<UnaryOperator>()) {
+      if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
+        emplaceTransformation(new ReplaceToken(UO->getOperatorLoc(), ""));
+      } else {
+        insertAroundStmt(S, "(*", ")");
+      }
     } else {
       insertAroundStmt(S, "(*", ")");
     }

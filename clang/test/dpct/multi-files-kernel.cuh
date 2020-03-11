@@ -1,6 +1,6 @@
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
-// CHECK: #define ATOMIC_UPDATE( x ) dpct::atomic_fetch_add( &x, (unsigned int)(1) );
+// CHECK: #define ATOMIC_UPDATE( x ) dpct::atomic_fetch_add( &x, (unsigned int)1 );
 #define ATOMIC_UPDATE( x ) atomicAdd( &x, 1 );
 
 // CHECK: int global_id(sycl::nd_item<3> item_ct1);

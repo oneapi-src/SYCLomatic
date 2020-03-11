@@ -1203,7 +1203,7 @@ private:
   const std::string &getMemoryAttr();
   std::string getAccessorDataType(bool UsingTemplateName) {
     if (isExtern()) {
-      return "dpct::byte_t";
+      return "uint8_t";
     } else if (UsingTemplateName) {
       return getType()->getTemplateSpecializationName();
     } else {

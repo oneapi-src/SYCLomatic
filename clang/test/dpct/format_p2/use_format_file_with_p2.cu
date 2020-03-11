@@ -1,5 +1,5 @@
 // RUN: cd %T
-// RUN: mkdir foo
+// RUN: mkdir -p foo
 // RUN: cat %s > %T/foo/use_format_file_with_p2.cu
 // RUN: echo "ColumnLimit: 50" > %T/foo/.clang-format
 // RUN: echo "[" > %T/foo/compile_commands.json
@@ -11,7 +11,7 @@
 // RUN: echo "]" >> %T/foo/compile_commands.json
 // RUN: dpct -p=./foo ./foo/use_format_file_with_p2.cu --out-root=%T/out --cuda-include-path="%cuda-path/include" -- --cuda-host-only
 // RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/out/use_format_file_with_p2.dp.cpp
-// RUN: rm -rf ./*
+// RUN: rm -rf %T/*
 #include "cuda.h"
 
 void bar();

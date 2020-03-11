@@ -7,7 +7,7 @@
 #define SIZE 100
 // CHECK: void staticReverse(int *d, int n,
 // CHECK-NEXT:  sycl::nd_item<3> item_ct1,
-// CHECK-NEXT:  dpct::byte_t *dpct_local) {
+// CHECK-NEXT:  uint8_t *dpct_local) {
 // CHECK-NEXT:  auto s = (int *)dpct_local; // the size of s is dynamic
 __global__ void staticReverse(int *d, int n) {
   extern __shared__ int s[]; // the size of s is dynamic
@@ -20,7 +20,7 @@ __global__ void staticReverse(int *d, int n) {
 // CHECK: template<typename TData>
 // CHECK-NEXT: void templateReverse(TData *d, TData n,
 // CHECK-NEXT: sycl::nd_item<3> item_ct1,
-// CHECK-NEXT: dpct::byte_t *dpct_local) {
+// CHECK-NEXT: uint8_t *dpct_local) {
 template<typename TData>
 __global__ void templateReverse(TData *d, TData n) {
 
@@ -46,7 +46,7 @@ void testTemplate(){
   // CHECK-NEXT:   size_t d_d_offset_ct0 = d_d_buf_ct0.second;
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       sycl::accessor<dpct::byte_t, 1, sycl::access::mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(mem_size), cgh);
+  // CHECK-NEXT:       sycl::accessor<uint8_t, 1, sycl::access::mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(mem_size), cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, T>>(
@@ -71,7 +71,7 @@ int main(void) {
   // CHECK-NEXT:   dpct::buffer_t d_d_buf_ct0 = dpct::get_buffer(d_d);
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       sycl::accessor<dpct::byte_t, 1, sycl::access::mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(mem_size), cgh);
+  // CHECK-NEXT:       sycl::accessor<uint8_t, 1, sycl::access::mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(mem_size), cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class staticReverse_{{[a-f0-9]+}}>>(
@@ -88,7 +88,7 @@ int main(void) {
   // CHECK-NEXT:   dpct::buffer_t d_d_buf_ct0 = dpct::get_buffer(d_d);
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       sycl::accessor<dpct::byte_t, 1, sycl::access::mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(sizeof(int)), cgh);
+  // CHECK-NEXT:       sycl::accessor<uint8_t, 1, sycl::access::mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(sizeof(int)), cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class staticReverse_{{[a-f0-9]+}}>>(
@@ -104,7 +104,7 @@ int main(void) {
   // CHECK-NEXT:   dpct::buffer_t d_d_buf_ct0 = dpct::get_buffer(d_d);
   // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       sycl::accessor<dpct::byte_t, 1, sycl::access::mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(4), cgh);
+  // CHECK-NEXT:       sycl::accessor<uint8_t, 1, sycl::access::mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(4), cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, int>>(

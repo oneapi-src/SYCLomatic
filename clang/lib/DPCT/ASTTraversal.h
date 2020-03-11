@@ -425,6 +425,8 @@ private:
   void ReportUnsupportedAtomicFunc(const CallExpr *CE);
   void MigrateAtomicFunc(const CallExpr *CE,
                          const ast_matchers::MatchFinder::MatchResult &Result);
+  void GetShareAttrRecursive(const Expr *Expr, bool &HasSharedAttr);
+
 };
 
 /// Migration rule for thrust functions
