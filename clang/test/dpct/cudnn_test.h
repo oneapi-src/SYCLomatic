@@ -1,12 +1,12 @@
-#ifndef CUDNN_H
-#define CUDNN_H
+#ifndef CUDNN_TEST_H
+#define CUDNN_TEST_H
 
-enum cudnnStatus {
-	CUDNN_SUCCESS = 0,
+enum cudnnFooEnum {
+  CUDNN_FOO_VAL = 0,
 };
-typedef cudnnStatus cudnnStatus_t;
+typedef cudnnFooEnum cudnnFooType;
 
-cudnnStatus_t cudnnAAA();
+cudnnFooType cudnnAAA();
 
 class cudnnCLASS{};
 

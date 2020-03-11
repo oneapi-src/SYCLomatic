@@ -1,12 +1,12 @@
-#ifndef NCCL_H
-#define NCCL_H
+#ifndef NCCL_TEST_H
+#define NCCL_TEST_H
 
 int ncclAAA();
 
-enum ncclStatus {
-	NCCL_SUCCESS = 0,
+enum ncclFooEnum {
+  NCCL_FOO_VAL = 0,
 };
-typedef ncclStatus ncclStatus_t;
+typedef ncclFooEnum ncclFooType;
 class ncclCLASS{};
 
 template<typename T>

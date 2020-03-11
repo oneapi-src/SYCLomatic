@@ -22,31 +22,31 @@
 
 int main() {
 //CHECK:int a1 = cudnnAAA();
-//CHECK-NEXT:cudnnStatus_t b1;
-//CHECK-NEXT:cudnnStatus c1;
-//CHECK-NEXT:if(b1 == CUDNN_SUCCESS){
+//CHECK-NEXT:cudnnFooType b1;
+//CHECK-NEXT:cudnnFooEnum c1;
+//CHECK-NEXT:if(b1 == CUDNN_FOO_VAL){
 //CHECK-NEXT:}
 //CHECK-NEXT:cudnnCLASS d1;
 //CHECK-NEXT:cudnnTemplateCLASS<double> e1;
 //CHECK-NEXT:ncclAAA();
-//CHECK-NEXT:ncclStatus_t b2;
-//CHECK-NEXT:ncclStatus c2;
-//CHECK-NEXT:if(b2 == NCCL_SUCCESS){
+//CHECK-NEXT:ncclFooType b2;
+//CHECK-NEXT:ncclFooEnum c2;
+//CHECK-NEXT:if(b2 == NCCL_FOO_VAL){
 //CHECK-NEXT:}
 //CHECK-NEXT:ncclCLASS d2;
 //CHECK-NEXT:ncclTemplateCLASS<float> e2;
 
 int a1 = cudnnAAA();
-cudnnStatus_t b1;
-cudnnStatus c1;
-if(b1 == CUDNN_SUCCESS){
+cudnnFooType b1;
+cudnnFooEnum c1;
+if(b1 == CUDNN_FOO_VAL){
 }
 cudnnCLASS d1;
 cudnnTemplateCLASS<double> e1;
 ncclAAA();
-ncclStatus_t b2;
-ncclStatus c2;
-if(b2 == NCCL_SUCCESS){
+ncclFooType b2;
+ncclFooEnum c2;
+if(b2 == NCCL_FOO_VAL){
 }
 ncclCLASS d2;
 ncclTemplateCLASS<float> e2;
