@@ -5464,14 +5464,13 @@ void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
                 this);
 }
 
-std::string getQueueCtor() {
+std::string getNewQueue() {
   extern bool AsyncHandlerFlag;
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   printPartialArguments(
-      OS << MapNames::getClNamespace() +
-                "::queue(dpct::get_default_context(), dpct::get_current_device()",
-      AsyncHandlerFlag ? 1 : 0, ", dpct::exception_handler")
+      OS << "dpct::get_current_device().create_queue(",
+      AsyncHandlerFlag ? 1 : 0, "true")
       << ")";
   return OS.str();
 }
@@ -5503,7 +5502,7 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
     else
       ReplStr = "*(" + StmtStr0 + ")";
 
-    ReplStr += " = new " + getQueueCtor();
+    ReplStr += " = " + getNewQueue();
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);
@@ -5515,7 +5514,7 @@ void StreamAPICallRule::run(const MatchFinder::MatchResult &Result) {
     }
   } else if (FuncName == "cudaStreamDestroy") {
     auto StmtStr0 = getStmtSpelling(CE->getArg(0));
-    auto ReplStr = "delete " + StmtStr0;
+    auto ReplStr = "dpct::get_current_device().destroy_queue(" + StmtStr0 + ")";
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP);

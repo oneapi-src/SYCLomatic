@@ -32,10 +32,10 @@ static void func()
   // CHECK: std::list<queue_p> streams;
   std::list<cudaStream_t> streams;
   for (auto Iter = streams.begin(); Iter != streams.end(); ++Iter)
-    // CHECK: *Iter = new sycl::queue(dpct::get_default_context(), dpct::get_current_device());
+    // CHECK: *Iter = dpct::get_current_device().create_queue();
     cudaStreamCreate(&*Iter);
   for (auto Iter = streams.begin(); Iter != streams.end(); ++Iter)
-    // CHECK: delete *Iter;
+    // CHECK: dpct::get_current_device().destroy_queue(*Iter);
     cudaStreamDestroy(*Iter);
 
   // CHECK: queue_p s0, &s1 = s0;
@@ -47,24 +47,24 @@ static void func()
   cudaStream_t s4, s5;
 
   // CHECK: if (1)
-  // CHECK-NEXT: s0 = new sycl::queue(dpct::get_default_context(), dpct::get_current_device());
+  // CHECK-NEXT: s0 = dpct::get_current_device().create_queue();
   if (1)
     cudaStreamCreate(&s0);
 
   // CHECK: while (0)
-  // CHECK-NEXT: s0 = new sycl::queue(dpct::get_default_context(), dpct::get_current_device());
+  // CHECK-NEXT: s0 = dpct::get_current_device().create_queue();
   while (0)
     cudaStreamCreate(&s0);
 
   // CHECK: do
-  // CHECK-NEXT: s0 = new sycl::queue(dpct::get_default_context(), dpct::get_current_device());
+  // CHECK-NEXT: s0 = dpct::get_current_device().create_queue();
   // CHECK: while (0);
   do
     cudaStreamCreate(&s0);
   while (0);
 
   // CHECK: for (; 0; )
-  // CHECK-NEXT: s0 = new sycl::queue(dpct::get_default_context(), dpct::get_current_device());
+  // CHECK-NEXT: s0 = dpct::get_current_device().create_queue();
   for (; 0; )
     cudaStreamCreate(&s0);
 
@@ -81,7 +81,7 @@ static void func()
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: checkCudaErrors((s1 = new sycl::queue(dpct::get_default_context(), dpct::get_current_device()), 0));
+  // CHECK-NEXT: checkCudaErrors((s1 = dpct::get_current_device().create_queue(), 0));
   checkCudaErrors(cudaStreamCreate(&s1));
 
   // CHECK:   s0->submit(
@@ -108,7 +108,7 @@ static void func()
     // CHECK: /*
     // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
     // CHECK-NEXT: */
-    // CHECK-NEXT: s2 = new sycl::queue(dpct::get_default_context(), dpct::get_current_device());
+    // CHECK-NEXT: s2 = dpct::get_current_device().create_queue();
     cudaStreamCreateWithFlags(&s2, cudaStreamDefault);
 
     // CHECK: /*
@@ -117,7 +117,7 @@ static void func()
     // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
     // CHECK-NEXT: */
-    // CHECK-NEXT: checkCudaErrors((*(s3) = new sycl::queue(dpct::get_default_context(), dpct::get_current_device()), 0));
+    // CHECK-NEXT: checkCudaErrors((*(s3) = dpct::get_current_device().create_queue(), 0));
     checkCudaErrors(cudaStreamCreateWithFlags(s3, cudaStreamNonBlocking));
 
     // CHECK:   s2->submit(
@@ -140,12 +140,12 @@ static void func()
     // CHECK-NEXT:     });
     kernelFunc<<<16, 32, 0, *s3>>>();
 
-    // CHECK: delete s2;
+    // CHECK: dpct::get_current_device().destroy_queue(s2);
     cudaStreamDestroy(s2);
     // CHECK: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: checkCudaErrors((delete *s3, 0));
+    // CHECK-NEXT: checkCudaErrors((dpct::get_current_device().destroy_queue(*s3), 0));
     checkCudaErrors(cudaStreamDestroy(*s3));
   }
 
@@ -154,7 +154,7 @@ static void func()
       // CHECK: /*
       // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
       // CHECK-NEXT: */
-      // CHECK-NEXT: s4 = new sycl::queue(dpct::get_default_context(), dpct::get_current_device());
+      // CHECK-NEXT: s4 = dpct::get_current_device().create_queue();
       cudaStreamCreateWithPriority(&s4, cudaStreamDefault, 2);
 
       // CHECK: /*
@@ -163,7 +163,7 @@ static void func()
       // CHECK-NEXT: /*
       // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag/priority options.
       // CHECK-NEXT: */
-      // CHECK-NEXT: checkCudaErrors((s5 = new sycl::queue(dpct::get_default_context(), dpct::get_current_device()), 0));
+      // CHECK-NEXT: checkCudaErrors((s5 = dpct::get_current_device().create_queue(), 0));
       checkCudaErrors(cudaStreamCreateWithPriority(&s5, cudaStreamNonBlocking, 3));
 
       // CHECK:   s4->submit(
@@ -185,12 +185,12 @@ static void func()
       // CHECK-NEXT:     });
       kernelFunc<<<16, 32, 0, s5>>>();
 
-      // CHECK: delete s4;
+      // CHECK: dpct::get_current_device().destroy_queue(s4);
       cudaStreamDestroy(s4);
       // CHECK: /*
       // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
       // CHECK-NEXT: */
-      // CHECK-NEXT: checkCudaErrors((delete s5, 0));
+      // CHECK-NEXT: checkCudaErrors((dpct::get_current_device().destroy_queue(s5), 0));
       checkCudaErrors(cudaStreamDestroy(s5));
     }
   }
@@ -278,11 +278,11 @@ static void func()
   // CHECK-EMPTY:
   checkCudaErrors(cudaStreamSynchronize(s1));
 
-  // CHECK: delete s0;
+  // CHECK: dpct::get_current_device().destroy_queue(s0);
   cudaStreamDestroy(s0);
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: checkCudaErrors((delete s1, 0));
+  // CHECK-NEXT: checkCudaErrors((dpct::get_current_device().destroy_queue(s1), 0));
   checkCudaErrors(cudaStreamDestroy(s1));
 }

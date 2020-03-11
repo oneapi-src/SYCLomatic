@@ -35,8 +35,8 @@ auto exception_handler = [](cl::sycl::exception_list exceptions) {
     } catch (cl::sycl::exception const &e) {
       std::cerr << "Caught asynchronous SYCL exception:" << std::endl
                 << e.what() << std::endl
-                << "Exception caught at file:" << __FILE__ << ", line:" << __LINE__
-                << std::endl;
+                << "Exception caught at file:" << __FILE__
+                << ", line:" << __LINE__ << std::endl;
     }
   }
 };
@@ -119,7 +119,8 @@ class device_ext : public cl::sycl::device {
 public:
   device_ext() : cl::sycl::device() {}
   device_ext(const cl::sycl::device &base) : cl::sycl::device(base) {
-    _default_queue = cl::sycl::queue(base, exception_handler);
+    _default_queue = new cl::sycl::queue(base, exception_handler);
+    _queues.insert(_default_queue);
   }
 
   int is_native_atomic_supported() { return 0; }
@@ -143,9 +144,7 @@ public:
     return get_device_info().get_max_clock_frequency();
   }
 
-  int get_integrated() {
-    return get_device_info().get_integrated();
-  }
+  int get_integrated() { return get_device_info().get_integrated(); }
 
   void get_device_info(device_info &out) {
     device_info prop;
@@ -218,18 +217,35 @@ public:
       // The destructor waits for all commands executing on the queue to
       // complete. It isn't possible to destroy a queue immediately. This is a
       // synchronization point in SYCL.
-      q.~queue();
+      delete q;
     }
     _queues.clear();
+    // create new default queue.
+    _default_queue = new cl::sycl::queue(*this, exception_handler);
+    _queues.insert(_default_queue);
   }
 
-  cl::sycl::queue &default_queue() { return _default_queue; }
+  cl::sycl::queue &default_queue() { return *_default_queue; }
 
   void queues_wait_and_throw() {
-    _default_queue.wait_and_throw();
     for (auto q : _queues) {
-      q.wait_and_throw();
+      q->wait_and_throw();
     }
+  }
+  cl::sycl::queue *create_queue(bool enable_exception_handler = false) {
+    cl::sycl::async_handler eh = {};
+    if(enable_exception_handler) {
+        eh = exception_handler;
+    }
+    cl::sycl::queue* queue = new cl::sycl::queue(
+        _default_queue->get_context(), _default_queue->get_device(), eh);
+    _queues.insert(queue);
+    return queue;
+  }
+  void destroy_queue(cl::sycl::queue *&queue) {
+    _queues.erase(queue);
+    delete queue;
+    queue = NULL;
   }
 
 private:
@@ -245,8 +261,8 @@ private:
     std::getline(ver, item, ' '); // minor
     minor = std::stoi(item);
   }
-  cl::sycl::queue _default_queue;
-  std::set<cl::sycl::queue> _queues;
+  cl::sycl::queue *_default_queue;
+  std::set<cl::sycl::queue *> _queues;
 };
 
 /// device manager
@@ -272,10 +288,11 @@ public:
     static dev_mgr d_m;
     return d_m;
   }
-  dev_mgr(const dev_mgr&) = delete;
-  dev_mgr&operator=(const dev_mgr&) = delete;
-  dev_mgr(dev_mgr&&) = delete;
-  dev_mgr&operator=(dev_mgr&&) = delete;
+  dev_mgr(const dev_mgr &) = delete;
+  dev_mgr &operator=(const dev_mgr &) = delete;
+  dev_mgr(dev_mgr &&) = delete;
+  dev_mgr &operator=(dev_mgr &&) = delete;
+
 private:
   dev_mgr() {
     cl::sycl::device default_device =
