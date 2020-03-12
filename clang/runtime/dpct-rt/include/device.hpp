@@ -119,7 +119,12 @@ class device_ext : public cl::sycl::device {
 public:
   device_ext() : cl::sycl::device() {}
   device_ext(const cl::sycl::device &base) : cl::sycl::device(base) {
+#ifdef DPCT_USM_LEVEL_NONE
     _default_queue = new cl::sycl::queue(base, exception_handler);
+#else
+    _default_queue = new cl::sycl::queue(base, exception_handler,
+                                         cl::sycl::property::queue::in_order());
+#endif
     _queues.insert(_default_queue);
   }
 
@@ -221,7 +226,12 @@ public:
     }
     _queues.clear();
     // create new default queue.
+#ifdef DPCT_USM_LEVEL_NONE
     _default_queue = new cl::sycl::queue(*this, exception_handler);
+#else
+    _default_queue = new cl::sycl::queue(*this, exception_handler,
+                                         cl::sycl::property::queue::in_order());
+#endif
     _queues.insert(_default_queue);
   }
 
@@ -237,8 +247,14 @@ public:
     if(enable_exception_handler) {
         eh = exception_handler;
     }
+#ifdef DPCT_USM_LEVEL_NONE
     cl::sycl::queue* queue = new cl::sycl::queue(
         _default_queue->get_context(), _default_queue->get_device(), eh);
+#else
+    cl::sycl::queue* queue = new cl::sycl::queue(
+        _default_queue->get_context(), _default_queue->get_device(), eh,
+        cl::sycl::property::queue::in_order());
+#endif
     _queues.insert(queue);
     return queue;
   }
@@ -326,14 +342,6 @@ private:
 /// dpct device manager.
 static inline cl::sycl::queue &get_default_queue() {
   return dev_mgr::instance().current_device().default_queue();
-}
-
-/// Util function to get the defualt queue of current device in
-/// dpct device manager. Wait till all the tasks in the queue are done.
-static inline cl::sycl::queue &get_default_queue_wait() {
-  auto &q = get_default_queue();
-  q.wait();
-  return q;
 }
 
 /// Util function to get the current device.

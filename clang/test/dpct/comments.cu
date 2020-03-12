@@ -30,7 +30,7 @@ int main() {
     dim3 griddim(1, 2, 3);
     dim3 threaddim(1, 2, 3);
 
-// CHECK:    dpct::get_default_queue_wait().submit(
+// CHECK:    dpct::get_default_queue().submit(
 // CHECK-NEXT:        [&](sycl::handler &cgh) {
 // CHECK-NEXT:          sycl::stream stream_ct1(64 * 1024, 80, cgh);
 // CHECK-EMPTY:  

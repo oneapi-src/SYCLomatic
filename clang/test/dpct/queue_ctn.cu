@@ -66,9 +66,9 @@ void foo3() {
 }
 
 void foo4() {
-  // CHECK: dpct::get_default_queue_wait().memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
+  // CHECK: dpct::get_default_queue().memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
   // CHECK-NEXT: bar();
-  // CHECK-NEXT: dpct::get_default_queue_wait().memset(d_A, 23, size).wait();
+  // CHECK-NEXT: dpct::get_default_queue().memset(d_A, 23, size).wait();
   cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );
   bar();
   cudaMemset(d_A, 23, size);
@@ -95,9 +95,9 @@ void foo5() {
 
 // unsupported conditions
 void foo6() {
-  // CHECK: dpct::get_default_queue_wait().memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
+  // CHECK: dpct::get_default_queue().memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
   // CHECK-NEXT: // call in macro
-  // CHECK-NEXT: CUDA_CALL(dpct::get_default_queue_wait().memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait());
+  // CHECK-NEXT: CUDA_CALL(dpct::get_default_queue().memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait());
   cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );
   // call in macro
   CUDA_CALL(cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost ));
@@ -107,8 +107,8 @@ template <typename T>
 void foo7() {
   T* d_A_unresolved, h_A_unresolved;
   // Types of d_A_unresolved and h_A_unresolved are unresolved
-  // CHECK: dpct::get_default_queue_wait().memcpy( d_A_unresolved, h_A_unresolved, sizeof(T)*SIZE*SIZE ).wait();
-  // CHECK-NEXT: dpct::get_default_queue_wait().memcpy( d_A_unresolved, h_A_unresolved, sizeof(T)*SIZE*SIZE ).wait();
+  // CHECK: dpct::get_default_queue().memcpy( d_A_unresolved, h_A_unresolved, sizeof(T)*SIZE*SIZE ).wait();
+  // CHECK-NEXT: dpct::get_default_queue().memcpy( d_A_unresolved, h_A_unresolved, sizeof(T)*SIZE*SIZE ).wait();
   cudaMemcpy( d_A_unresolved, h_A_unresolved, sizeof(T)*SIZE*SIZE, cudaMemcpyDeviceToHost );
   cudaMemcpy( d_A_unresolved, h_A_unresolved, sizeof(T)*SIZE*SIZE, cudaMemcpyDeviceToHost );
 }
@@ -121,9 +121,9 @@ int writeNStage2DDWT() {
     cudaMallocHost((void **)&src, 10);
 
     // Currently, using a temp variable is not supported in template.
-    // CHECK: dpct::get_default_queue_wait().memcpy(src, src, 10).wait();
-    // CHECK-NEXT: dpct::get_default_queue_wait().memcpy(src, src, 10).wait();
-    // CHECK-NEXT: dpct::get_default_queue_wait().memcpy(src, src, 10).wait();
+    // CHECK: dpct::get_default_queue().memcpy(src, src, 10).wait();
+    // CHECK-NEXT: dpct::get_default_queue().memcpy(src, src, 10).wait();
+    // CHECK-NEXT: dpct::get_default_queue().memcpy(src, src, 10).wait();
     cudaMemcpy(src, src, 10, cudaMemcpyHostToDevice);
     cudaMemcpy(src, src, 10, cudaMemcpyHostToDevice);
     cudaMemcpy(src, src, 10, cudaMemcpyHostToDevice);

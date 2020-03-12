@@ -37,7 +37,7 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 //CHECK-NEXT:      (int *)sycl::malloc_device(32 * sizeof(int), dpct::get_current_device(),
 //CHECK-NEXT:                                 dpct::get_default_context());
 //CHECK-NEXT:  int karg3 = 80;
-//CHECK-NEXT:  dpct::get_default_queue_wait().submit([&](sycl::handler &cgh) {
+//CHECK-NEXT:  dpct::get_default_queue().submit([&](sycl::handler &cgh) {
 //CHECK-NEXT:    auto dpct_global_range = griddim * threaddim;
 //CHECK-EMPTY:
 //CHECK-NEXT:    cgh.parallel_for(

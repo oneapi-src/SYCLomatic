@@ -61,13 +61,13 @@ int main() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:int a = (dpct::get_default_queue_wait().memcpy(d_C_S, h_a, (10)*(sizeof(float))*(11111)).wait(), 0);
-  //CHECK-NEXT:dpct::get_default_queue_wait().memcpy(d_C_S, h_b, (10)*(sizeof(float))*(1)).wait();
-  //CHECK-NEXT:dpct::get_default_queue_wait().memcpy(d_C_S, h_c, (10)*(sizeof(float))*(1)).wait();
+  //CHECK-NEXT:int a = (dpct::get_default_queue().memcpy(d_C_S, h_a, (10)*(sizeof(float))*(11111)).wait(), 0);
+  //CHECK-NEXT:dpct::get_default_queue().memcpy(d_C_S, h_b, (10)*(sizeof(float))*(1)).wait();
+  //CHECK-NEXT:dpct::get_default_queue().memcpy(d_C_S, h_c, (10)*(sizeof(float))*(1)).wait();
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:a = (dpct::get_default_queue_wait().memcpy(d_C_S, h_a, (100)*(100)*(10000)).wait(), 0);
+  //CHECK-NEXT:a = (dpct::get_default_queue().memcpy(d_C_S, h_a, (100)*(100)*(10000)).wait(), 0);
   int a = cublasSetVector(10, sizeof(float), h_a, 11111, d_C_S, 11111);
   cublasSetVector(10, sizeof(float), h_b, 1, d_C_S, 1);
   cublasSetVector(10, sizeof(float), h_c, 1, d_C_S, 1);
@@ -80,7 +80,7 @@ int main() {
   //CHECK-NEXT:int64_t result_temp_value;
   //CHECK-NEXT:int64_t* result_temp_ptr = (int64_t*)sycl::malloc_device(sizeof(int64_t), dpct::get_current_device(), dpct::get_default_context());
   //CHECK-NEXT:a = (mkl::blas::iamax(handle, N, x_S, N, result_temp_ptr).wait(), 0);
-  //CHECK-NEXT:dpct::get_default_queue_wait().memcpy(&result_temp_value, result_temp_ptr, sizeof(int64_t)).wait();
+  //CHECK-NEXT:dpct::get_default_queue().memcpy(&result_temp_value, result_temp_ptr, sizeof(int64_t)).wait();
   //CHECK-NEXT:*(result) = (int)result_temp_value;
   //CHECK-NEXT:}
   a = cublasIsamax(handle, N, x_S, N, result);
@@ -88,7 +88,7 @@ int main() {
   //CHECK-NEXT:int64_t result_temp_value;
   //CHECK-NEXT:int64_t* result_temp_ptr = (int64_t*)sycl::malloc_device(sizeof(int64_t), dpct::get_current_device(), dpct::get_default_context());
   //CHECK-NEXT:mkl::blas::iamax(handle, N, x_D, N, result_temp_ptr).wait();
-  //CHECK-NEXT:dpct::get_default_queue_wait().memcpy(&result_temp_value, result_temp_ptr, sizeof(int64_t)).wait();
+  //CHECK-NEXT:dpct::get_default_queue().memcpy(&result_temp_value, result_temp_ptr, sizeof(int64_t)).wait();
   //CHECK-NEXT:*(result) = (int)result_temp_value;
   //CHECK-NEXT:}
   cublasIdamax(handle, N, x_D, N, result);
@@ -96,7 +96,7 @@ int main() {
   //CHECK-NEXT:int64_t result_temp_value;
   //CHECK-NEXT:int64_t* result_temp_ptr = (int64_t*)sycl::malloc_device(sizeof(int64_t), dpct::get_current_device(), dpct::get_default_context());
   //CHECK-NEXT:a = (mkl::blas::iamax(handle, N, (std::complex<float>*)(x_C), N, result_temp_ptr).wait(), 0);
-  //CHECK-NEXT:dpct::get_default_queue_wait().memcpy(&result_temp_value, result_temp_ptr, sizeof(int64_t)).wait();
+  //CHECK-NEXT:dpct::get_default_queue().memcpy(&result_temp_value, result_temp_ptr, sizeof(int64_t)).wait();
   //CHECK-NEXT:*(result) = (int)result_temp_value;
   //CHECK-NEXT:}
   a = cublasIcamax(handle, N, x_C, N, result);
@@ -104,7 +104,7 @@ int main() {
   //CHECK-NEXT:int64_t result_temp_value;
   //CHECK-NEXT:int64_t* result_temp_ptr = (int64_t*)sycl::malloc_device(sizeof(int64_t), dpct::get_current_device(), dpct::get_default_context());
   //CHECK-NEXT:mkl::blas::iamax(handle, N, (std::complex<double>*)(x_Z), N, result_temp_ptr).wait();
-  //CHECK-NEXT:dpct::get_default_queue_wait().memcpy(&result_temp_value, result_temp_ptr, sizeof(int64_t)).wait();
+  //CHECK-NEXT:dpct::get_default_queue().memcpy(&result_temp_value, result_temp_ptr, sizeof(int64_t)).wait();
   //CHECK-NEXT:*(result) = (int)result_temp_value;
   //CHECK-NEXT:}
   cublasIzamax(handle, N, x_Z, N, result);

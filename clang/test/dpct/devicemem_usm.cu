@@ -76,7 +76,7 @@ int main() {
   cudaMalloc((void **)&d_out, array_size);
 
   const int threads_per_block = NUM_ELEMENTS;
-  // CHECK:   dpct::get_default_queue_wait().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto t1_ptr_ct1 = t1.get_ptr();
   // CHECK-EMPTY:
@@ -87,7 +87,7 @@ int main() {
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   member_acc<<<1, threads_per_block>>>();
-  // CHECK:   dpct::get_default_queue_wait().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto in_ptr_ct1 = in.get_ptr();
   // CHECK-EMPTY:
@@ -99,7 +99,7 @@ int main() {
   // CHECK-NEXT:     });
   kernel1<<<1, threads_per_block>>>(d_out);
 
-  // CHECK:   dpct::get_default_queue_wait().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       dpct::device_memory<float, 1> tmp(64/*size*/);
   // CHECK-EMPTY:

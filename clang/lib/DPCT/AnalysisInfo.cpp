@@ -295,9 +295,6 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   }
   if (ExecutionConfig.Stream == "0") {
     Printer << "dpct::get_default_queue";
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
-      Printer << "_wait";
-    }
     Printer << "().";
   } else {
     if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {

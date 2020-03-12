@@ -574,7 +574,7 @@ static inline void dpct_memcpy(void *to_ptr, size_t to_pitch,
                                const void *from_ptr, size_t from_pitch,
                                size_t x, size_t y,
                                memcpy_direction direction = automatic) {
-  cl::sycl::event::wait(detail::dpct_memcpy(get_default_queue_wait(), to_ptr,
+  cl::sycl::event::wait(detail::dpct_memcpy(get_default_queue(), to_ptr,
                                             from_ptr, to_pitch, from_pitch, x,
                                             y, direction));
 }
@@ -600,7 +600,7 @@ static inline void
 async_dpct_memcpy(void *to_ptr, size_t to_pitch, const void *from_ptr,
                   size_t from_pitch, size_t x, size_t y,
                   memcpy_direction direction = automatic,
-                  cl::sycl::queue &q = get_default_queue_wait()) {
+                  cl::sycl::queue &q = get_default_queue()) {
   detail::dpct_memcpy(q, to_ptr, from_ptr, to_pitch, from_pitch, x, y,
                       direction);
 }
@@ -646,7 +646,7 @@ static inline void
 async_dpct_memcpy(pitched_data to, cl::sycl::id<3> to_pos, pitched_data from,
                   cl::sycl::id<3> from_pos, cl::sycl::range<3> size,
                   memcpy_direction direction = automatic,
-                  cl::sycl::queue &q = get_default_queue_wait()) {
+                  cl::sycl::queue &q = get_default_queue()) {
   detail::dpct_memcpy(q, to, to_pos, from, from_pos, size, direction);
 }
 

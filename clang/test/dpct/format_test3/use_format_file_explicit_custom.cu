@@ -21,7 +21,7 @@ float *d_A = NULL;
 //CHECK-NEXT:    rewrite this code.
 //CHECK-NEXT:    */
 //CHECK-NEXT:    int a =
-//CHECK-NEXT:        (dpct::get_default_queue_wait()
+//CHECK-NEXT:        (dpct::get_default_queue()
 //CHECK-NEXT:             .memcpy(d_A, h_A,
 //CHECK-NEXT:                     sizeof(double) * SIZE * SIZE)
 //CHECK-NEXT:             .wait(),

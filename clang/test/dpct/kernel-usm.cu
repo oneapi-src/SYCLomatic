@@ -32,7 +32,7 @@ int main() {
   cudaMalloc(&karg2, 32 * sizeof(int));
 
   int karg3 = 80;
-  // CHECK:   dpct::get_default_queue_wait().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
   // CHECK-EMPTY:

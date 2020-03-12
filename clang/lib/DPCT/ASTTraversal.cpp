@@ -3416,7 +3416,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                               getNL()+ IndentStr;
             SuffixInsertStr = SuffixInsertStr +
                               getNL() + IndentStr +
-                              "dpct::get_default_queue_wait().memcpy(" +
+                              "dpct::get_default_queue().memcpy(" +
                               "&result_temp_value, result_temp_ptr, " +
                               "sizeof(int64_t)).wait();" +
                               getNL() + IndentStr +
@@ -3613,7 +3613,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                               getNL() + IndentStr;
             SuffixInsertStr = SuffixInsertStr +
                               getNL() + IndentStr +
-                              "dpct::get_default_queue_wait().memcpy(" +
+                              "dpct::get_default_queue().memcpy(" +
                               "&result_temp_value,  result_temp_ptr, " +
                               "sizeof(int64_t)).wait();" +
                               getNL() + IndentStr +
@@ -3762,8 +3762,6 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       PrefixInsertStr = std::string("{") + getNL() + IndentStr;
     CallExprReplStr =
         CallExprReplStr + ReplInfo.ReplName + "(dpct::get_default_queue()";
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted)
-      CallExprReplStr.insert(CallExprReplStr.length() - 2, "_wait");
     std::string IndentStr =
         getIndent(StmtBegin, (Result.Context)->getSourceManager()).str();
 
@@ -3953,7 +3951,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                           getNL() + IndentStr +
                           CallExprReplStr + ", result_temp_ptr).wait();" +
                           getNL() + IndentStr +
-                          "dpct::get_default_queue_wait().memcpy(" +
+                          "dpct::get_default_queue().memcpy(" +
                           "&result_temp_value, result_temp_ptr, sizeof(" +
                           ResultType + ")).wait();" +
                           getNL() + IndentStr;
@@ -4254,7 +4252,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
       // TODO: Currently, all 4 APIs are migrated to the sync version regardless
       // it is sync or async in origin code.
-      std::string Replacement = "dpct::get_default_queue_wait().memcpy(" +
+      std::string Replacement = "dpct::get_default_queue().memcpy(" +
                                 ParamsStrsVec[4] + ", " + ParamsStrsVec[2] +
                                 ", " + CopySize + ").wait()";
       emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
@@ -4341,7 +4339,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
       // TODO: Currently, all 4 APIs are migrated to the sync version regardless
       // it is sync or async in origin code.
-      std::string Replacement = "dpct::get_default_queue_wait().memcpy(" +
+      std::string Replacement = "dpct::get_default_queue().memcpy(" +
                                 ParamsStrsVec[5] + ", " + ParamsStrsVec[3] +
                                 ", " + CopySize + ").wait()";
       emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
@@ -6387,7 +6385,7 @@ void MemoryMigrationRule::memcpyMigration(
   }
 
   if (SpecifiedQueue.empty()) {
-    SpecifiedQueue = "dpct::get_default_queue_wait()";
+    SpecifiedQueue = "dpct::get_default_queue()";
   }
 
   std::string ReplaceStr;
@@ -6491,7 +6489,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
   }
   std::string QueueForExcute;
   if (SpecifiedQueue.empty()) {
-    QueueForExcute = "dpct::get_default_queue_wait()";
+    QueueForExcute = "dpct::get_default_queue()";
   } else {
     QueueForExcute = SpecifiedQueue;
   }
@@ -6647,7 +6645,7 @@ void MemoryMigrationRule::memsetMigration(
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
   if (SpecifiedQueue.empty()) {
-    SpecifiedQueue = "dpct::get_default_queue_wait()";
+    SpecifiedQueue = "dpct::get_default_queue()";
   }
 
   std::string ReplaceStr;

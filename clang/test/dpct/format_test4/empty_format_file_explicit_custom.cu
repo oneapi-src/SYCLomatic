@@ -18,7 +18,7 @@ float *d_A = NULL;
 //CHECK-NEXT:    DPCT1003:0: Migrated API does not return error code. (*, 0) is inserted. You
 //CHECK-NEXT:    may need to rewrite this code.
 //CHECK-NEXT:    */
-//CHECK-NEXT:    int a = (dpct::get_default_queue_wait()
+//CHECK-NEXT:    int a = (dpct::get_default_queue()
 //CHECK-NEXT:                 .memcpy(d_A, h_A, sizeof(double) * SIZE * SIZE)
 //CHECK-NEXT:                 .wait(),
 //CHECK-NEXT:             0);

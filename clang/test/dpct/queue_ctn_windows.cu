@@ -66,9 +66,9 @@ void foo3() {
 }
 
 void foo4() {
-  // CHECK: dpct::get_default_queue_wait().memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
+  // CHECK: dpct::get_default_queue().memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
   // CHECK-NEXT: bar();
-  // CHECK-NEXT: dpct::get_default_queue_wait().memset(d_A, 23, size).wait();
+  // CHECK-NEXT: dpct::get_default_queue().memset(d_A, 23, size).wait();
   cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );
   bar();
   cudaMemset(d_A, 23, size);
@@ -95,9 +95,9 @@ void foo5() {
 
 // unsupported conditions
 void foo6() {
-  // CHECK: dpct::get_default_queue_wait().memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
+  // CHECK: dpct::get_default_queue().memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
   // CHECK-NEXT: // call in macro
-  // CHECK-NEXT: CUDA_CALL(dpct::get_default_queue_wait().memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait());
+  // CHECK-NEXT: CUDA_CALL(dpct::get_default_queue().memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait());
   cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );
   // call in macro
   CUDA_CALL(cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost ));

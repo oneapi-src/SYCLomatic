@@ -14,7 +14,7 @@ __global__ void foo_kernel() {}
 void foo() {
   int outputThreadCount = 512;
 
-  // CHECK: dpct::get_default_queue_wait().submit([&](sycl::handler &cgh) {
+  // CHECK: dpct::get_default_queue().submit([&](sycl::handler &cgh) {
   // CHECK-NEXT:   cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(
   // CHECK-NEXT:           sycl::range<3>(1, 1,
@@ -25,7 +25,7 @@ void foo() {
   // CHECK-NEXT: });
   foo_kernel<<<GET_BLOCKS(outputThreadCount, outputThreadCount), 2, 0>>>();
 
-  // CHECK: dpct::get_default_queue_wait().submit([&](sycl::handler &cgh) {
+  // CHECK: dpct::get_default_queue().submit([&](sycl::handler &cgh) {
   // CHECK-NEXT:   cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(
   // CHECK-NEXT:           sycl::range<3>(1, 1,
@@ -36,7 +36,7 @@ void foo() {
   // CHECK-NEXT: });
   foo_kernel<<<GET_BLOCKS2(CUDA_NUM_THREADS, CUDA_NUM_THREADS), 0, 0>>>();
 
-  // CHECK: dpct::get_default_queue_wait().submit([&](sycl::handler &cgh) {
+  // CHECK: dpct::get_default_queue().submit([&](sycl::handler &cgh) {
   // CHECK-NEXT:   cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(
   // CHECK-NEXT:           sycl::range<3>(1, 1,
@@ -47,7 +47,7 @@ void foo() {
   // CHECK-NEXT: });
   foo_kernel<<<GET_BLOCKS3(CUDA_NUM_THREADS, outputThreadCount), 0, 0>>>();
 
-  // CHECK: dpct::get_default_queue_wait().submit([&](sycl::handler &cgh) {
+  // CHECK: dpct::get_default_queue().submit([&](sycl::handler &cgh) {
   // CHECK-NEXT:   cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(
   // CHECK-NEXT:           sycl::range<3>(1, 1,
