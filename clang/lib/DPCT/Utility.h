@@ -347,7 +347,8 @@ calculateRangesWithFormatFlag(
 bool isAssigned(const clang::Stmt *S);
 
 std::string getTempNameForExpr(const clang::Expr *E, bool HandleLiteral = false,
-                               bool KeepLastUnderline = true);
+                               bool KeepLastUnderline = true,
+                               bool IsInMacroDefine = false);
 bool isOuterMostMacro(const clang::Stmt *E);
 bool isInsideFunctionLikeMacro(
     const clang::SourceLocation BeginLoc, const clang::SourceLocation EndLoc,

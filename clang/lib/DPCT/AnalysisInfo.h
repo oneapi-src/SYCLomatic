@@ -804,6 +804,9 @@ private:
     return std::shared_ptr<Info>();
   }
   // Insert info if it doesn't exist.
+  // The info will be used in Global.buildReplacements().
+  // The key is the location of the Node.
+  // The correction of the key is guaranteed by getLocation().
   template <class Info, class Node>
   inline std::shared_ptr<Info> insertNode(const Node *N) {
     auto LocInfo = getLocInfo(N);
@@ -826,8 +829,9 @@ private:
   static inline SourceLocation getLocation(const FieldDecl *FD) {
     return FD->getLocation();
   }
-
+  // The result will be also stored in KernelCallExpr.BeginLoc
   static inline SourceLocation getLocation(const CUDAKernelCallExpr *CKC) {
+    // if the BeginLoc of CKC is in macro define, use getImmediateSpellingLoc.
     auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
         SM->getCharacterData(SM->getSpellingLoc(CKC->getBeginLoc())));
     if (CKC->getBeginLoc().isMacroID() &&
@@ -1935,13 +1939,16 @@ private:
 // kernel call info is specific CallFunctionExpr, which include info of kernel
 // call.
 class KernelCallExpr : public CallFunctionExpr {
+public:
+  bool IsInMacroDefine = false;
+private:
   using StmtList = std::vector<std::string>;
 
   struct ArgInfo {
     ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg, bool Used,
-            int Index)
+            int Index, KernelCallExpr* BASE)
         : IsPointer(false), IsRedeclareRequired(false),
-          IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
+          IsUsedAsLvalueAfterMalloc(Used), Index(Index), Base(BASE) {
       Analysis.analyze(Arg);
       ArgString = Analysis.getReplacedString();
       if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
@@ -1960,11 +1967,12 @@ class KernelCallExpr : public CallFunctionExpr {
         TypeString = DpctGlobalInfo::getReplacedTypeName(PointerType);
       }
 
-      if (IsRedeclareRequired || IsPointer)
-        IdString = getTempNameForExpr(Arg);
+      if (IsRedeclareRequired || IsPointer || Base->IsInMacroDefine) {
+        IdString = getTempNameForExpr(Arg, false, true, Base->IsInMacroDefine);
+      }
     }
 
-    ArgInfo(std::shared_ptr<TextureObjectInfo> Obj) {
+    ArgInfo(std::shared_ptr<TextureObjectInfo> Obj, KernelCallExpr* BASE): Base(BASE) {
       ArgString = Obj->getName() + "_acc";
       IsPointer = false;
       IsRedeclareRequired = false;
@@ -1980,7 +1988,7 @@ class KernelCallExpr : public CallFunctionExpr {
     inline std::string getIdStringWithSuffix(const std::string &Suffix) const {
       return buildString(IdString, Suffix, "_ct", Index);
     }
-
+    KernelCallExpr* Base;
     bool IsPointer;
     // If the pointer is used as lvalue after its most recent memory allocation
     bool IsRedeclareRequired;
@@ -2042,23 +2050,24 @@ class KernelCallExpr : public CallFunctionExpr {
     }
     KernelPrinter &indent() { return (*this) << Indent; }
     KernelPrinter &newLine() { return (*this) << NL; }
+    std::string str() {
+      auto Result = Stream.str();
+      return Result.substr(Indent.length(),
+        Result.length() - Indent.length() - NL.length());;
+    }
   };
 
   void print(KernelPrinter &Printer);
   void printSubmit(KernelPrinter &Printer);
   void printSubmitLamda(KernelPrinter &Printer);
   void printParallelFor(KernelPrinter &Printer);
-  void printKenel(KernelPrinter &Printer);
-  std::string removeReduntIndentAndNL(const std::string &Input,
-                                      unsigned IndentSize) {
-    return Input.substr(IndentSize,
-                        Input.length() - IndentSize - std::strlen(getNL()));
-  }
+  void printKernel(KernelPrinter &Printer);
 
 public:
   KernelCallExpr(unsigned Offset, const std::string &FilePath,
                  const CUDAKernelCallExpr *KernelCall)
       : CallFunctionExpr(Offset, FilePath, KernelCall), IsSync(false) {
+    setIsInMacroDefine(KernelCall);
     buildCallExprInfo(KernelCall);
     buildArgsInfo(KernelCall);
     buildKernelInfo(KernelCall);
@@ -2082,23 +2091,24 @@ public:
 
 private:
   void buildArgsInfo(const CallExpr *CE) {
-    KernelArgumentAnalysis Analysis;
+    KernelArgumentAnalysis Analysis(IsInMacroDefine);
     auto &TexList = getTextureObjectList();
     for (unsigned Idx = 0; Idx < CE->getNumArgs(); ++Idx) {
       if (auto Obj = TexList[Idx]) {
-        ArgsInfo.emplace_back(Obj);
+        ArgsInfo.emplace_back(Obj, this);
       } else {
         auto Arg = CE->getArg(Idx);
         bool Used = true;
         if (auto *ArgDRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
           Used = isArgUsedAsLvalueUntil(ArgDRE, CE);
-        ArgsInfo.emplace_back(Analysis, Arg, Used, Idx);
+        ArgsInfo.emplace_back(Analysis, Arg, Used, Idx, this);
       }
     }
   }
   void buildNeedBracesInfo(const CUDAKernelCallExpr *KernelCall);
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
   void buildExecutionConfig(const CUDAKernelCallExpr *KernelCall);
+  void setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall);
 
   void removeExtraIndent() {
     DpctGlobalInfo::getInstance().addReplacement(
@@ -2213,6 +2223,7 @@ private:
   StmtList OuterStmts;
   StmtList KernelStmts;
   std::string KernelArgs;
+
 };
 
 class CudaMallocInfo {
@@ -2236,13 +2247,13 @@ public:
   }
 
   void setSizeExpr(const Expr *SizeExpression) {
-    ArgumentAnalysis A(SizeExpression);
+    ArgumentAnalysis A(SizeExpression, false);
     A.analyze();
     Size = A.getReplacedString();
   }
   void setSizeExpr(const Expr *N, const Expr *ElemSize) {
-    ArgumentAnalysis AN(N);
-    ArgumentAnalysis AElemSize(ElemSize);
+    ArgumentAnalysis AN(N, false);
+    ArgumentAnalysis AElemSize(ElemSize, false);
     AN.analyze();
     AElemSize.analyze();
     Size = "(" + AN.getReplacedString() + ")*(" +
@@ -2294,12 +2305,12 @@ public:
     TypeReplacement = EngineType;
   }
   void setSeedExpr(const Expr *Seed) {
-    ArgumentAnalysis AS(Seed);
+    ArgumentAnalysis AS(Seed, false);
     AS.analyze();
     SeedExpr = AS.getReplacedString();
   }
   void setDimExpr(const Expr *Dim) {
-    ArgumentAnalysis AD(Dim);
+    ArgumentAnalysis AD(Dim, false);
     AD.analyze();
     DimExpr = AD.getReplacedString();
   }

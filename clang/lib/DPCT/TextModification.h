@@ -220,7 +220,7 @@ public:
       : ReplaceStmt((const Stmt *)E, std::forward<Args>(S)...) {
     // Don't clean up for CUDAKernelCallExpr to avoid overlapping problems
     IsCleanup = false;
-    IsProcessMacro = false;
+    IsProcessMacro = true;
   }
 
   std::shared_ptr<ExtReplacement>

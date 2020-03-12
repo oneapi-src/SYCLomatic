@@ -11,6 +11,15 @@
 
 __global__ void foo_kernel() {}
 
+__global__ void foo2(){
+  // CHECK: #define IMUL(a, b) sycl::mul24(a, b)
+  // CHECK-NEXT: int vectorBase = IMUL(1, 2);
+  #define IMUL(a, b) __mul24(a, b)
+  int vectorBase = IMUL(1, 2);
+}
+
+__global__ void foo3(int x, int y) {}
+
 void foo() {
   int outputThreadCount = 512;
 
@@ -99,11 +108,61 @@ NNBI(3.0);
 #define PI acos(-1)
 // CHECK: double cosine = cos(2 * PI);
 double cosine = cos(2 * PI);
+
+//CHECK: #define MACRO_KC                                                               \
+//CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
+//CHECK-NEXT:     cgh.parallel_for(                                                          \
+//CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2),   \
+//CHECK-NEXT:                           sycl::range<3>(1, 1, 2)),                            \
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo_kernel(); });                     \
+//CHECK-NEXT:   });
+#define MACRO_KC foo_kernel<<<2, 2, 0>>>();
+
+//CHECK: MACRO_KC
+MACRO_KC
+
+// CHECK: #define HARD_KC(NAME)                                                          \
+// CHECK-NEXT:   NAME<<<sycl::range<3>(2, 1, 1), sycl::range<3>(2, 1, 1), 0>>>();
+#define HARD_KC(NAME) NAME<<<2,2,0>>>();
+// CHECK: /*
+// CHECK-NEXT: DPCT1038:0: Kernel calls with kernel function name in macro arguments are not
+// CHECK-NEXT: supported. Try to rewrite this code using DPC++ kernel.
+// CHECK-NEXT: */
+//CHECK-NEXT: HARD_KC(foo_kernel)
+HARD_KC(foo_kernel)
+
+
+// CHECK: #define MACRO_KC2(a, b, c, d)                                                  \
+// CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
+// CHECK-NEXT:     auto dpct_global_range = a * b;                                            \
+// CHECK-NEXT:                                                                                \
+// CHECK-NEXT:     auto c_ct0 = c;                                                            \
+// CHECK-NEXT:     auto d_ct1 = d;                                                            \
+// CHECK-NEXT:                                                                                \
+// CHECK-NEXT:     cgh.parallel_for(                                                          \
+// CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2),             \
+// CHECK-NEXT:                                          dpct_global_range.get(1),             \
+// CHECK-NEXT:                                          dpct_global_range.get(0)),            \
+// CHECK-NEXT:                           sycl::range<3>(b.get(2), b.get(1), b.get(0))),       \
+// CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });               \
+// CHECK-NEXT:   });
+#define MACRO_KC2(a,b,c,d) foo3<<<a, b, 0>>>(c,d);
+
+dim3 griddim = 2;
+dim3 threaddim = 32;
+
+// CHECK: MACRO_KC2(griddim,threaddim,1,0)
+MACRO_KC2(griddim,threaddim,1,0)
+
+// [Note] Since 3 and 2 are migrated to sycl::range<3>, if they are used in macro as native numbers,
+// there might be some issues in the migrated code.
+// Since this is a corner case, not to emit warning message here.
+// CHECK: MACRO_KC2(sycl::range<3>(3, 1, 1), sycl::range<3>(2, 1, 1), 1, 0)
+MACRO_KC2(3,2,1,0)
+
+// CHECK: MACRO_KC2(sycl::range<3>(5, 4, 3), sycl::range<3>(2, 1, 1), 1, 0)
+MACRO_KC2(dim3(5,4,3),2,1,0)
+
 }
 
-__global__ void foo2(){
-  // CHECK: #define IMUL(a, b) sycl::mul24(a, b)
-  // CHECK-NEXT: int vectorBase = IMUL(1, 2);
-  #define IMUL(a, b) __mul24(a, b)
-  int vectorBase = IMUL(1, 2);
-}
+

@@ -1045,10 +1045,10 @@ bool isAssigned(const Stmt *S) {
 /// \return A temporary variable name
 
 std::string getTempNameForExpr(const Expr *E, bool HandleLiteral,
-                               bool KeepLastUnderline) {
+                               bool KeepLastUnderline, bool IsInMacroDefine) {
   SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
   E = E->IgnoreCasts();
-  dpct::ExprAnalysis EA(E);
+  dpct::ArgumentAnalysis EA(E, IsInMacroDefine);
   auto TokenBegin = EA.getExprBeginSrcLoc();
   auto ExprEndLoc = EA.getExprEndSrcLoc();
   std::string IdString;

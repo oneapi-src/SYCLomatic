@@ -138,7 +138,7 @@ void KernelCallExpr::buildExecutionConfig(
   auto Config = KernelCall->getConfig();
   bool LocalReversed = false, GroupReversed = false;
   for (unsigned Idx = 0; Idx < 4; ++Idx) {
-    KernelConfigAnalysis A;
+    KernelConfigAnalysis A(IsInMacroDefine);
     A.analyze(Config->getArg(Idx), Idx < 2);
     ExecutionConfig.Config[Idx] = A.getReplacedString();
     if (Idx == 0) {
@@ -263,7 +263,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
         KernelArgs += buildString("(", Arg.getTypeString(), ")(&",
                                   Arg.getIdStringWithSuffix("acc"), "[0]), ");
       }
-    } else if (Arg.IsRedeclareRequired) {
+    } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
       std::string ReDeclStr = buildString("auto ", Arg.getIdStringWithIndex(),
                                           " = ", Arg.getArgString());
       if (!Arg.IsDefinedOnDevice) {
@@ -378,11 +378,11 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer) {
   (Printer << "), ").newLine();
   Printer.line("[=](" + MapNames::getClNamespace() + "::nd_item<3> ",
                DpctGlobalInfo::getItemName(), ") {");
-  printKenel(Printer);
+  printKernel(Printer);
   Printer.line("});");
 }
 
-void KernelCallExpr::printKenel(KernelPrinter &Printer) {
+void KernelCallExpr::printKernel(KernelPrinter &Printer) {
   auto B = Printer.block();
   for (auto &S : KernelStmts)
     Printer.line(S);
@@ -400,11 +400,14 @@ std::string KernelCallExpr::getReplacement() {
   buildKernelArgsStmt();
   addNdRangeDecl();
 
+  if (IsInMacroDefine) {
+    LocInfo.NL = "\\" + LocInfo.NL;
+  }
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   KernelPrinter Printer(LocInfo.NL, LocInfo.Indent, OS);
   print(Printer);
-  return removeReduntIndentAndNL(OS.str(), LocInfo.Indent.length());
+  return Printer.str();
 }
 
 void KernelCallExpr::buildInfo() {
@@ -427,6 +430,16 @@ void CallFunctionExpr::buildTemplateArgumentsFromTypeLoc(const TypeLoc &TL) {
         TYPELOC_CAST(DependentTemplateSpecializationTypeLoc));
   default:
     break;
+  }
+}
+
+void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto calleeSpelling = SM.getSpellingLoc(KernelCall->getCallee()->getBeginLoc());
+  auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      SM.getCharacterData(calleeSpelling));
+  if (ItMatch != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+    IsInMacroDefine = true;
   }
 }
 

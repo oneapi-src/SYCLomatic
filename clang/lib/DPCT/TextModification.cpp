@@ -77,11 +77,10 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
   }
 
   if (IsProcessMacro) {
-    if (Begin.isMacroID()) {
-      if (SM.isMacroArgExpansion(Begin))
-        Begin = SM.getSpellingLoc(Begin);
-      else
-        Begin = SM.getExpansionLoc(Begin);
+    if (Begin.isMacroID() && !isOuterMostMacro(TheStmt)) {
+      Begin = SM.getSpellingLoc(Begin);
+    } else {
+      Begin = SM.getExpansionLoc(Begin);
     }
     // If ReplaceStmt replaces calls to compatibility APIs, record the
     // OrigAPIName (macro case)
@@ -91,11 +90,11 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
       recordMigrationInfo(Context, Begin);
     }
 
-    if (End.isMacroID()) {
-      if (SM.isMacroArgExpansion(End))
-        End = SM.getSpellingLoc(End);
-      else
-        End = SM.getExpansionLoc(End);
+    if (End.isMacroID() && !isOuterMostMacro(TheStmt)) {
+      End = SM.getSpellingLoc(End);
+    }
+    else {
+      End = SM.getExpansionLoc(End);
     }
     if (Begin == End) {
       End = Lexer::getLocForEndOfToken(End, 0, SM, LangOptions());
@@ -460,6 +459,7 @@ ReplaceInclude::getReplacement(const ASTContext &Context) const {
 }
 
 void ReplaceDim3Ctor::setRange() {
+  auto &SM = DpctGlobalInfo::getSourceManager();
   if (isDecl) {
     SourceRange SR = Ctor->getParenOrBraceRange();
     if (SR.isInvalid()) {
@@ -480,7 +480,14 @@ void ReplaceDim3Ctor::setRange() {
     if (!S) {
       return;
     }
-    CSR = CharSourceRange::getTokenRange(S->getSourceRange());
+    if (S->getBeginLoc().isMacroID() && !isOuterMostMacro(S)) {
+      auto Begin = SM.getImmediateSpellingLoc(S->getBeginLoc());
+      auto End = SM.getImmediateSpellingLoc(S->getEndLoc());
+      CSR = CharSourceRange::getTokenRange(Begin, End);
+    }
+    else {
+      CSR = CharSourceRange::getTokenRange(S->getSourceRange());
+    }
   }
 }
 

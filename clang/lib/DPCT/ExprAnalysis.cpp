@@ -134,7 +134,20 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
 
 std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   SourceLocation BeginLoc, EndLoc;
-  if (E->getBeginLoc().isMacroID() && !isOuterMostMacro(E)) {
+  // if the parent expr is inside macro and current expr is macro arg expansion,
+  // use the expansion location of the macro arg in the macro definition.
+  if (IsInMacroDefine) {
+    if (SM.isMacroArgExpansion(E->getBeginLoc())) {
+      BeginLoc = SM.getSpellingLoc(
+          SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
+      EndLoc = SM.getSpellingLoc(
+          SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
+    }
+    else {
+      BeginLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getBeginLoc()));
+      EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getEndLoc()));
+    }
+  } else if (E->getBeginLoc().isMacroID() && !isOuterMostMacro(E)) {
     // If E is not OuterMostMacro, use the spelling location
     BeginLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getBeginLoc()));
     EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getEndLoc()));
@@ -504,7 +517,7 @@ void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
 std::vector<std::string>
 KernelConfigAnalysis::getCtorArgs(const CXXConstructExpr *Ctor) {
   std::vector<std::string> Args;
-  ArgumentAnalysis A;
+  ArgumentAnalysis A(IsInMacroDefine);
   for (auto Arg : Ctor->arguments())
     Args.emplace_back(getCtorArg(A, Arg));
   return Args;

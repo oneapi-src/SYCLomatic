@@ -2497,6 +2497,7 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
   // will be visited once.
   MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(hasName("dim3"))),
                                  argumentCountIs(1),
+                                 //unless(hasAncestor(cudaKernelCallExpr())),
                                  unless(hasAncestor(cxxConstructExpr(
                                      hasType(typedefDecl(hasName("dim3")))))))
                     .bind("dim3Top"),
@@ -2505,6 +2506,7 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(cxxConstructExpr(
                     hasType(typedefDecl(hasName("dim3"))), argumentCountIs(3),
                     anyOf(hasParent(varDecl()), hasParent(exprWithCleanups())),
+                    //unless(hasAncestor(cudaKernelCallExpr())),
                     unless(hasAncestor(cxxConstructExpr(
                         hasType(typedefDecl(hasName("dim3")))))))
                     .bind("dim3CtorDecl"),
@@ -2517,6 +2519,7 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
           // messed up (points to the start of the struct)
           unless(hasAncestor(cxxRecordDecl())), unless(hasParent(varDecl())),
           unless(hasParent(exprWithCleanups())),
+          //unless(hasAncestor(cudaKernelCallExpr())),
           unless(hasAncestor(
               cxxConstructExpr(hasType(typedefDecl(hasName("dim3")))))))
           .bind("dim3CtorNoDecl"),
@@ -5780,11 +5783,20 @@ void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
   auto FD = getAssistNodeAsType<FunctionDecl>(Result, "callContext");
   if (auto KCall =
           getAssistNodeAsType<CUDAKernelCallExpr>(Result, "kernelCall")) {
+    const auto &SM = (*Result.Context).getSourceManager();
+    if (SM.isMacroArgExpansion(KCall->getCallee()->getBeginLoc())) {
+      //warning
+      report(KCall->getBeginLoc(), Diagnostics::KERNEK_CALLEE_MACRO_ARG, false);
+      return;
+    }
+    // Remove KCall in the original location
     emplaceTransformation(new ReplaceStmt(KCall, ""));
+    removeTrailingSemicolon(KCall, Result);
+
+    // Add kernel call to map,
+    // will do code generation in Global.buildReplacements();
     if (!FD->isImplicitlyInstantiable())
       DpctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
-
-    removeTrailingSemicolon(KCall, Result);
 
     if (!FD)
       return;

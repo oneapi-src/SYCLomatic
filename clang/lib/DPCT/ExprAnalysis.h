@@ -352,6 +352,7 @@ protected:
 
   std::string RefString;
 
+  bool IsInMacroDefine = false;
 private:
   // E is analyze target expression, while ExprString is the source text of E.
   // Replacements contains all the replacements happened in E.
@@ -369,8 +370,13 @@ class ArgumentAnalysis : public ExprAnalysis {
 public:
   using Base = ExprAnalysis;
   ArgumentAnalysis() {}
+  ArgumentAnalysis(bool IsInMacroDefine) { this->IsInMacroDefine = IsInMacroDefine; }
   // Special init is needed for argument expression.
-  ArgumentAnalysis(const Expr *Arg) : Base(nullptr) { initArgumentExpr(Arg); }
+  ArgumentAnalysis(const Expr *Arg, bool IsInMacroDefine)
+      : Base(nullptr) {
+    this->IsInMacroDefine = IsInMacroDefine;
+    initArgumentExpr(Arg);
+  }
 
   inline void analyze() { Base::analyze(); }
   // Special init is needed for argument expression.
@@ -379,9 +385,7 @@ public:
     analyze();
   }
 
-private:
-  static const std::string &getDefaultArgument(const Expr *E);
-
+protected:
   // Ignore the constructor when it's argument expression, it is copy/move
   // constructor and no migration for it.Start analyze its argument.
   // Replace total string when it is default argument expression.
@@ -395,6 +399,9 @@ private:
       addReplacement(std::string(getDefaultArgument(DAE->getExpr())));
   }
 
+private:
+  static const std::string &getDefaultArgument(const Expr *E);
+
   using DefaultArgMapTy = std::map<const Expr *, std::string>;
   static DefaultArgMapTy DefaultArgMap;
 };
@@ -406,6 +413,8 @@ public:
   bool IsDefinedOnDevice = false;
   bool IsKernelParamPtr = false;
 
+  KernelArgumentAnalysis(bool IsInMacroDefine)
+      : ArgumentAnalysis(IsInMacroDefine) {}
   void analyze(const Expr *Expression) {
     IsPointer = Expression->getType()->isPointerType();
     IsKernelParamPtr = IsPointer;
@@ -444,7 +453,15 @@ protected:
   void dispatch(const Stmt *Expression) override;
 
 public:
+  KernelConfigAnalysis(bool IsInMacroDefine)
+      : ArgumentAnalysis(IsInMacroDefine) {}
   void analyze(const Expr *E, bool ReverseIfNeed = false) {
+    if (IsInMacroDefine && SM.isMacroArgExpansion(E->getBeginLoc())) {
+      Reversed = false;
+      DirectRef = true;
+      initArgumentExpr(E);
+      return;
+    }
     DoReverse = ReverseIfNeed;
     ArgumentAnalysis::analyze(E);
     if (getTargetExpr()->IgnoreImplicit()->getStmtClass() ==
