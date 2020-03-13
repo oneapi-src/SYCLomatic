@@ -74,6 +74,10 @@ int main_char1() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_char1<<<1,1>>>(char1_e, (char1 *)char1_cast);
+  // CHECK: char char1_r = (char){1};
+  // CHECK-NEXT: auto char1_s = (char){1};
+  char1 char1_r = (char1){1};
+  auto char1_s = (char1){1};
   return 0;
 }
 
@@ -150,6 +154,10 @@ int main_char2() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_char2<<<1,1>>>(char2_e, (char2 *)char2_cast);
+  // CHECK: sycl::char2 char2_r = (sycl::char2){1,1};
+  // CHECK-NEXT: auto char2_s = (sycl::char2){1,1};
+  char2 char2_r = (char2){1,1};
+  auto char2_s = (char2){1,1};
   return 0;
 }
 
@@ -226,6 +234,10 @@ int main_char3() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_char3<<<1,1>>>(char3_e, (char3 *)char3_cast);
+  // CHECK: sycl::char3 char3_r = (sycl::char3){1,1,1};
+  // CHECK-NEXT: auto char3_s = (sycl::char3){1,1,1};
+  char3 char3_r = (char3){1,1,1};
+  auto char3_s = (char3){1,1,1};
   return 0;
 }
 
@@ -302,6 +314,10 @@ int main_char4() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_char4<<<1,1>>>(char4_e, (char4 *)char4_cast);
+  // CHECK: sycl::char4 char4_r = (sycl::char4){1,1,1,1};
+  // CHECK-NEXT: auto char4_s = (sycl::char4){1,1,1,1};
+  char4 char4_r = (char4){1,1,1,1};
+  auto char4_s = (char4){1,1,1,1};
   return 0;
 }
 
@@ -378,6 +394,10 @@ int main_double1() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_double1<<<1,1>>>(double1_e, (double1 *)double1_cast);
+  // CHECK: double double1_r = (double){1};
+  // CHECK-NEXT: auto double1_s = (double){1};
+  double1 double1_r = (double1){1};
+  auto double1_s = (double1){1};
   return 0;
 }
 
@@ -454,6 +474,10 @@ int main_double2() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_double2<<<1,1>>>(double2_e, (double2 *)double2_cast);
+  // CHECK: sycl::double2 double2_r = (sycl::double2){1,1};
+  // CHECK-NEXT: auto double2_s = (sycl::double2){1,1};
+  double2 double2_r = (double2){1,1};
+  auto double2_s = (double2){1,1};
   return 0;
 }
 
@@ -530,6 +554,10 @@ int main_double3() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_double3<<<1,1>>>(double3_e, (double3 *)double3_cast);
+  // CHECK: sycl::double3 double3_r = (sycl::double3){1,1,1};
+  // CHECK-NEXT: auto double3_s = (sycl::double3){1,1,1};
+  double3 double3_r = (double3){1,1,1};
+  auto double3_s = (double3){1,1,1};
   return 0;
 }
 
@@ -606,6 +634,10 @@ int main_double4() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_double4<<<1,1>>>(double4_e, (double4 *)double4_cast);
+  // CHECK: sycl::double4 double4_r = (sycl::double4){1,1,1,1};
+  // CHECK-NEXT: auto double4_s = (sycl::double4){1,1,1,1};
+  double4 double4_r = (double4){1,1,1,1};
+  auto double4_s = (double4){1,1,1,1};
   return 0;
 }
 
@@ -682,6 +714,10 @@ int main_float1() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_float1<<<1,1>>>(float1_e, (float1 *)float1_cast);
+  // CHECK: float float1_r = (float){1};
+  // CHECK-NEXT: auto float1_s = (float){1};
+  float1 float1_r = (float1){1};
+  auto float1_s = (float1){1};
   return 0;
 }
 
@@ -758,6 +794,10 @@ int main_float2() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_float2<<<1,1>>>(float2_e, (float2 *)float2_cast);
+  // CHECK: sycl::float2 float2_r = (sycl::float2){1,1};
+  // CHECK-NEXT: auto float2_s = (sycl::float2){1,1};
+  float2 float2_r = (float2){1,1};
+  auto float2_s = (float2){1,1};
   return 0;
 }
 
@@ -834,6 +874,10 @@ int main_float3() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_float3<<<1,1>>>(float3_e, (float3 *)float3_cast);
+  // CHECK: sycl::float3 float3_r = (sycl::float3){1,1,1};
+  // CHECK-NEXT: auto float3_s = (sycl::float3){1,1,1};
+  float3 float3_r = (float3){1,1,1};
+  auto float3_s = (float3){1,1,1};
   return 0;
 }
 
@@ -910,6 +954,10 @@ int main_float4() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_float4<<<1,1>>>(float4_e, (float4 *)float4_cast);
+  // CHECK: sycl::float4 float4_r = (sycl::float4){1,1,1,1};
+  // CHECK-NEXT: auto float4_s = (sycl::float4){1,1,1,1};
+  float4 float4_r = (float4){1,1,1,1};
+  auto float4_s = (float4){1,1,1,1};
   return 0;
 }
 
@@ -986,6 +1034,10 @@ int main_int1() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_int1<<<1,1>>>(int1_e, (int1 *)int1_cast);
+  // CHECK: int int1_r = (int){1};
+  // CHECK-NEXT: auto int1_s = (int){1};
+  int1 int1_r = (int1){1};
+  auto int1_s = (int1){1};
   return 0;
 }
 
@@ -1062,6 +1114,10 @@ int main_int2() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_int2<<<1,1>>>(int2_e, (int2 *)int2_cast);
+  // CHECK: sycl::int2 int2_r = (sycl::int2){1,1};
+  // CHECK-NEXT: auto int2_s = (sycl::int2){1,1};
+  int2 int2_r = (int2){1,1};
+  auto int2_s = (int2){1,1};
   return 0;
 }
 
@@ -1138,6 +1194,10 @@ int main_int3() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_int3<<<1,1>>>(int3_e, (int3 *)int3_cast);
+  // CHECK: sycl::int3 int3_r = (sycl::int3){1,1,1};
+  // CHECK-NEXT: auto int3_s = (sycl::int3){1,1,1};
+  int3 int3_r = (int3){1,1,1};
+  auto int3_s = (int3){1,1,1};
   return 0;
 }
 
@@ -1214,6 +1274,10 @@ int main_int4() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_int4<<<1,1>>>(int4_e, (int4 *)int4_cast);
+  // CHECK: sycl::int4 int4_r = (sycl::int4){1,1,1,1};
+  // CHECK-NEXT: auto int4_s = (sycl::int4){1,1,1,1};
+  int4 int4_r = (int4){1,1,1,1};
+  auto int4_s = (int4){1,1,1,1};
   return 0;
 }
 
@@ -1290,6 +1354,10 @@ int main_long1() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_long1<<<1,1>>>(long1_e, (long1 *)long1_cast);
+  // CHECK: long long1_r = (long){1};
+  // CHECK-NEXT: auto long1_s = (long){1};
+  long1 long1_r = (long1){1};
+  auto long1_s = (long1){1};
   return 0;
 }
 
@@ -1366,6 +1434,10 @@ int main_long2() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_long2<<<1,1>>>(long2_e, (long2 *)long2_cast);
+  // CHECK: sycl::long2 long2_r = (sycl::long2){1,1};
+  // CHECK-NEXT: auto long2_s = (sycl::long2){1,1};
+  long2 long2_r = (long2){1,1};
+  auto long2_s = (long2){1,1};
   return 0;
 }
 
@@ -1442,6 +1514,10 @@ int main_long3() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_long3<<<1,1>>>(long3_e, (long3 *)long3_cast);
+  // CHECK: sycl::long3 long3_r = (sycl::long3){1,1,1};
+  // CHECK-NEXT: auto long3_s = (sycl::long3){1,1,1};
+  long3 long3_r = (long3){1,1,1};
+  auto long3_s = (long3){1,1,1};
   return 0;
 }
 
@@ -1518,6 +1594,10 @@ int main_long4() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_long4<<<1,1>>>(long4_e, (long4 *)long4_cast);
+  // CHECK: sycl::long4 long4_r = (sycl::long4){1,1,1,1};
+  // CHECK-NEXT: auto long4_s = (sycl::long4){1,1,1,1};
+  long4 long4_r = (long4){1,1,1,1};
+  auto long4_s = (long4){1,1,1,1};
   return 0;
 }
 
@@ -1594,6 +1674,10 @@ int main_longlong1() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_longlong1<<<1,1>>>(longlong1_e, (longlong1 *)longlong1_cast);
+  // CHECK: long long longlong1_r = (long long){1};
+  // CHECK-NEXT: auto longlong1_s = (long long){1};
+  longlong1 longlong1_r = (longlong1){1};
+  auto longlong1_s = (longlong1){1};
   return 0;
 }
 
@@ -1670,6 +1754,10 @@ int main_longlong2() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_longlong2<<<1,1>>>(longlong2_e, (longlong2 *)longlong2_cast);
+  // CHECK: sycl::longlong2 longlong2_r = (sycl::longlong2){1,1};
+  // CHECK-NEXT: auto longlong2_s = (sycl::longlong2){1,1};
+  longlong2 longlong2_r = (longlong2){1,1};
+  auto longlong2_s = (longlong2){1,1};
   return 0;
 }
 
@@ -1746,6 +1834,10 @@ int main_longlong3() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_longlong3<<<1,1>>>(longlong3_e, (longlong3 *)longlong3_cast);
+  // CHECK: sycl::longlong3 longlong3_r = (sycl::longlong3){1,1,1};
+  // CHECK-NEXT: auto longlong3_s = (sycl::longlong3){1,1,1};
+  longlong3 longlong3_r = (longlong3){1,1,1};
+  auto longlong3_s = (longlong3){1,1,1};
   return 0;
 }
 
@@ -1822,6 +1914,10 @@ int main_longlong4() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_longlong4<<<1,1>>>(longlong4_e, (longlong4 *)longlong4_cast);
+  // CHECK: sycl::longlong4 longlong4_r = (sycl::longlong4){1,1,1,1};
+  // CHECK-NEXT: auto longlong4_s = (sycl::longlong4){1,1,1,1};
+  longlong4 longlong4_r = (longlong4){1,1,1,1};
+  auto longlong4_s = (longlong4){1,1,1,1};
   return 0;
 }
 
@@ -1898,6 +1994,10 @@ int main_short1() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_short1<<<1,1>>>(short1_e, (short1 *)short1_cast);
+  // CHECK: short short1_r = (short){1};
+  // CHECK-NEXT: auto short1_s = (short){1};
+  short1 short1_r = (short1){1};
+  auto short1_s = (short1){1};
   return 0;
 }
 
@@ -1974,6 +2074,10 @@ int main_short2() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_short2<<<1,1>>>(short2_e, (short2 *)short2_cast);
+  // CHECK: sycl::short2 short2_r = (sycl::short2){1,1};
+  // CHECK-NEXT: auto short2_s = (sycl::short2){1,1};
+  short2 short2_r = (short2){1,1};
+  auto short2_s = (short2){1,1};
   return 0;
 }
 
@@ -2050,6 +2154,10 @@ int main_short3() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_short3<<<1,1>>>(short3_e, (short3 *)short3_cast);
+  // CHECK: sycl::short3 short3_r = (sycl::short3){1,1,1};
+  // CHECK-NEXT: auto short3_s = (sycl::short3){1,1,1};
+  short3 short3_r = (short3){1,1,1};
+  auto short3_s = (short3){1,1,1};
   return 0;
 }
 
@@ -2126,6 +2234,10 @@ int main_short4() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_short4<<<1,1>>>(short4_e, (short4 *)short4_cast);
+  // CHECK: sycl::short4 short4_r = (sycl::short4){1,1,1,1};
+  // CHECK-NEXT: auto short4_s = (sycl::short4){1,1,1,1};
+  short4 short4_r = (short4){1,1,1,1};
+  auto short4_s = (short4){1,1,1,1};
   return 0;
 }
 
@@ -2202,6 +2314,10 @@ int main_uchar1() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_uchar1<<<1,1>>>(uchar1_e, (uchar1 *)uchar1_cast);
+  // CHECK: unsigned char uchar1_r = (unsigned char){1};
+  // CHECK-NEXT: auto uchar1_s = (unsigned char){1};
+  uchar1 uchar1_r = (uchar1){1};
+  auto uchar1_s = (uchar1){1};
   return 0;
 }
 
@@ -2278,6 +2394,10 @@ int main_uchar2() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_uchar2<<<1,1>>>(uchar2_e, (uchar2 *)uchar2_cast);
+  // CHECK: sycl::uchar2 uchar2_r = (sycl::uchar2){1,1};
+  // CHECK-NEXT: auto uchar2_s = (sycl::uchar2){1,1};
+  uchar2 uchar2_r = (uchar2){1,1};
+  auto uchar2_s = (uchar2){1,1};
   return 0;
 }
 
@@ -2354,6 +2474,10 @@ int main_uchar3() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_uchar3<<<1,1>>>(uchar3_e, (uchar3 *)uchar3_cast);
+  // CHECK: sycl::uchar3 uchar3_r = (sycl::uchar3){1,1,1};
+  // CHECK-NEXT: auto uchar3_s = (sycl::uchar3){1,1,1};
+  uchar3 uchar3_r = (uchar3){1,1,1};
+  auto uchar3_s = (uchar3){1,1,1};
   return 0;
 }
 
@@ -2430,6 +2554,10 @@ int main_uchar4() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_uchar4<<<1,1>>>(uchar4_e, (uchar4 *)uchar4_cast);
+  // CHECK: sycl::uchar4 uchar4_r = (sycl::uchar4){1,1,1,1};
+  // CHECK-NEXT: auto uchar4_s = (sycl::uchar4){1,1,1,1};
+  uchar4 uchar4_r = (uchar4){1,1,1,1};
+  auto uchar4_s = (uchar4){1,1,1,1};
   return 0;
 }
 
@@ -2506,6 +2634,10 @@ int main_uint1() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_uint1<<<1,1>>>(uint1_e, (uint1 *)uint1_cast);
+  // CHECK: unsigned int uint1_r = (unsigned int){1};
+  // CHECK-NEXT: auto uint1_s = (unsigned int){1};
+  uint1 uint1_r = (uint1){1};
+  auto uint1_s = (uint1){1};
   return 0;
 }
 
@@ -2582,6 +2714,10 @@ int main_uint2() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_uint2<<<1,1>>>(uint2_e, (uint2 *)uint2_cast);
+  // CHECK: sycl::uint2 uint2_r = (sycl::uint2){1,1};
+  // CHECK-NEXT: auto uint2_s = (sycl::uint2){1,1};
+  uint2 uint2_r = (uint2){1,1};
+  auto uint2_s = (uint2){1,1};
   return 0;
 }
 
@@ -2658,6 +2794,10 @@ int main_uint3() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_uint3<<<1,1>>>(uint3_e, (uint3 *)uint3_cast);
+  // CHECK: sycl::uint3 uint3_r = (sycl::uint3){1,1,1};
+  // CHECK-NEXT: auto uint3_s = (sycl::uint3){1,1,1};
+  uint3 uint3_r = (uint3){1,1,1};
+  auto uint3_s = (uint3){1,1,1};
   return 0;
 }
 
@@ -2734,6 +2874,10 @@ int main_uint4() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_uint4<<<1,1>>>(uint4_e, (uint4 *)uint4_cast);
+  // CHECK: sycl::uint4 uint4_r = (sycl::uint4){1,1,1,1};
+  // CHECK-NEXT: auto uint4_s = (sycl::uint4){1,1,1,1};
+  uint4 uint4_r = (uint4){1,1,1,1};
+  auto uint4_s = (uint4){1,1,1,1};
   return 0;
 }
 
@@ -2810,6 +2954,10 @@ int main_ulong1() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_ulong1<<<1,1>>>(ulong1_e, (ulong1 *)ulong1_cast);
+  // CHECK: unsigned long ulong1_r = (unsigned long){1};
+  // CHECK-NEXT: auto ulong1_s = (unsigned long){1};
+  ulong1 ulong1_r = (ulong1){1};
+  auto ulong1_s = (ulong1){1};
   return 0;
 }
 
@@ -2886,6 +3034,10 @@ int main_ulong2() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_ulong2<<<1,1>>>(ulong2_e, (ulong2 *)ulong2_cast);
+  // CHECK: sycl::ulong2 ulong2_r = (sycl::ulong2){1,1};
+  // CHECK-NEXT: auto ulong2_s = (sycl::ulong2){1,1};
+  ulong2 ulong2_r = (ulong2){1,1};
+  auto ulong2_s = (ulong2){1,1};
   return 0;
 }
 
@@ -2962,6 +3114,10 @@ int main_ulong3() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_ulong3<<<1,1>>>(ulong3_e, (ulong3 *)ulong3_cast);
+  // CHECK: sycl::ulong3 ulong3_r = (sycl::ulong3){1,1,1};
+  // CHECK-NEXT: auto ulong3_s = (sycl::ulong3){1,1,1};
+  ulong3 ulong3_r = (ulong3){1,1,1};
+  auto ulong3_s = (ulong3){1,1,1};
   return 0;
 }
 
@@ -3038,6 +3194,10 @@ int main_ulong4() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_ulong4<<<1,1>>>(ulong4_e, (ulong4 *)ulong4_cast);
+  // CHECK: sycl::ulong4 ulong4_r = (sycl::ulong4){1,1,1,1};
+  // CHECK-NEXT: auto ulong4_s = (sycl::ulong4){1,1,1,1};
+  ulong4 ulong4_r = (ulong4){1,1,1,1};
+  auto ulong4_s = (ulong4){1,1,1,1};
   return 0;
 }
 
@@ -3114,6 +3274,10 @@ int main_ulonglong1() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_ulonglong1<<<1,1>>>(ulonglong1_e, (ulonglong1 *)ulonglong1_cast);
+  // CHECK: unsigned long long ulonglong1_r = (unsigned long long){1};
+  // CHECK-NEXT: auto ulonglong1_s = (unsigned long long){1};
+  ulonglong1 ulonglong1_r = (ulonglong1){1};
+  auto ulonglong1_s = (ulonglong1){1};
   return 0;
 }
 
@@ -3190,6 +3354,10 @@ int main_ulonglong2() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_ulonglong2<<<1,1>>>(ulonglong2_e, (ulonglong2 *)ulonglong2_cast);
+  // CHECK: sycl::ulonglong2 ulonglong2_r = (sycl::ulonglong2){1,1};
+  // CHECK-NEXT: auto ulonglong2_s = (sycl::ulonglong2){1,1};
+  ulonglong2 ulonglong2_r = (ulonglong2){1,1};
+  auto ulonglong2_s = (ulonglong2){1,1};
   return 0;
 }
 
@@ -3266,6 +3434,10 @@ int main_ulonglong3() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_ulonglong3<<<1,1>>>(ulonglong3_e, (ulonglong3 *)ulonglong3_cast);
+  // CHECK: sycl::ulonglong3 ulonglong3_r = (sycl::ulonglong3){1,1,1};
+  // CHECK-NEXT: auto ulonglong3_s = (sycl::ulonglong3){1,1,1};
+  ulonglong3 ulonglong3_r = (ulonglong3){1,1,1};
+  auto ulonglong3_s = (ulonglong3){1,1,1};
   return 0;
 }
 
@@ -3342,6 +3514,10 @@ int main_ulonglong4() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_ulonglong4<<<1,1>>>(ulonglong4_e, (ulonglong4 *)ulonglong4_cast);
+  // CHECK: sycl::ulonglong4 ulonglong4_r = (sycl::ulonglong4){1,1,1,1};
+  // CHECK-NEXT: auto ulonglong4_s = (sycl::ulonglong4){1,1,1,1};
+  ulonglong4 ulonglong4_r = (ulonglong4){1,1,1,1};
+  auto ulonglong4_s = (ulonglong4){1,1,1,1};
   return 0;
 }
 
@@ -3418,6 +3594,10 @@ int main_ushort1() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_ushort1<<<1,1>>>(ushort1_e, (ushort1 *)ushort1_cast);
+  // CHECK: unsigned short ushort1_r = (unsigned short){1};
+  // CHECK-NEXT: auto ushort1_s = (unsigned short){1};
+  ushort1 ushort1_r = (ushort1){1};
+  auto ushort1_s = (ushort1){1};
   return 0;
 }
 
@@ -3494,6 +3674,10 @@ int main_ushort2() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_ushort2<<<1,1>>>(ushort2_e, (ushort2 *)ushort2_cast);
+  // CHECK: sycl::ushort2 ushort2_r = (sycl::ushort2){1,1};
+  // CHECK-NEXT: auto ushort2_s = (sycl::ushort2){1,1};
+  ushort2 ushort2_r = (ushort2){1,1};
+  auto ushort2_s = (ushort2){1,1};
   return 0;
 }
 
@@ -3570,6 +3754,10 @@ int main_ushort3() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_ushort3<<<1,1>>>(ushort3_e, (ushort3 *)ushort3_cast);
+  // CHECK: sycl::ushort3 ushort3_r = (sycl::ushort3){1,1,1};
+  // CHECK-NEXT: auto ushort3_s = (sycl::ushort3){1,1,1};
+  ushort3 ushort3_r = (ushort3){1,1,1};
+  auto ushort3_s = (ushort3){1,1,1};
   return 0;
 }
 
@@ -3646,6 +3834,10 @@ int main_ushort4() {
   // CHECK-NEXT:     });
   // CHECK: }
   kernel_ushort4<<<1,1>>>(ushort4_e, (ushort4 *)ushort4_cast);
+  // CHECK: sycl::ushort4 ushort4_r = (sycl::ushort4){1,1,1,1};
+  // CHECK-NEXT: auto ushort4_s = (sycl::ushort4){1,1,1,1};
+  ushort4 ushort4_r = (ushort4){1,1,1,1};
+  auto ushort4_s = (ushort4){1,1,1,1};
   return 0;
 }
 

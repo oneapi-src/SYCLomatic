@@ -2314,6 +2314,11 @@ void VectorTypeCtorRule::registerMatcher(MatchFinder &MF) {
                                      has(qualType(hasCanonicalType(type())))))
           .bind("Sizeof"),
       this);
+
+  // (int2){a, b}
+  MF.addMatcher(compoundLiteralExpr(hasType(typedefDecl(vectorTypeName())))
+                    .bind("CompoundLiteral"),
+                this);
 }
 
 std::string
@@ -2378,6 +2383,16 @@ void VectorTypeCtorRule::run(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(new ReplaceToken(
           ExprSizeof->getArgumentTypeInfo()->getTypeLoc().getBeginLoc(),
           getReplaceTypeName(ExprSizeof->getArgumentType().getAsString())));
+    }
+    return;
+  }
+
+  if (const CompoundLiteralExpr *CLE =
+          getNodeAsType<CompoundLiteralExpr>(Result, "CompoundLiteral")) {
+    if (auto TSI = CLE->getTypeSourceInfo()) {
+      emplaceTransformation(
+          new ReplaceToken(TSI->getTypeLoc().getBeginLoc(),
+                           getReplaceTypeName(TSI->getType().getAsString())));
     }
     return;
   }
