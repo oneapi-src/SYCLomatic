@@ -1095,6 +1095,14 @@ def CUDAShared : InheritableAttr {
   let LangOpts = [CUDA];
   let Documentation = [Undocumented];
 }
+//INTEL_CUSTOMIZATION begin
+def CUDAManaged : InheritableAttr {
+  let Spellings = [GNU<"managed">, Declspec<"__managed__">];
+  let Subjects = SubjectList<[Var]>;
+  let LangOpts = [CUDA];
+  let Documentation = [Undocumented];
+}
+//INTEL_CUSTOMIZATION end
 
 def SYCLDevice : InheritableAttr {
   let Spellings = [GNU<"sycl_device">];

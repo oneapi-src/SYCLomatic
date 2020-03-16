@@ -5768,7 +5768,7 @@ REGISTER_RULE(DeviceFunctionCallRule)
 void MemVarRule::registerMatcher(MatchFinder &MF) {
   auto DeclMatcher =
       varDecl(anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice),
-                    hasAttr(attr::CUDAShared)),
+                    hasAttr(attr::CUDAShared), hasAttr(attr::CUDAManaged)),
               unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
                                 "warpSize")));
   MF.addMatcher(DeclMatcher.bind("var"), this);
@@ -5812,13 +5812,22 @@ void MemVarRule::run(const MatchFinder::MatchResult &Result) {
   auto Func = getAssistNodeAsType<FunctionDecl>(Result, "func");
   DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
   if (MemVarRef && Func) {
+    auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());
+    if (VD == nullptr)
+      return;
+
+    auto Var = Global.findMemVarInfo(VD);
     if (Func->hasAttr<CUDAGlobalAttr>() ||
         (Func->hasAttr<CUDADeviceAttr>() && !Func->hasAttr<CUDAHostAttr>())) {
-      auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());
-      if (auto Var = Global.findMemVarInfo(VD))
+      if (Var)
         DeviceFunctionDecl::LinkRedecls(Func)->addVar(Var);
       if (!VD->getType()->isArrayType() && !VD->hasAttr<CUDAConstantAttr>()) {
         processDeref(MemVarRef, *Result.Context);
+      }
+    } else {
+      if (Var && !VD->getType()->isArrayType() &&
+          VD->hasAttr<CUDAManagedAttr>()) {
+        emplaceTransformation(new InsertAfterStmt(MemVarRef, "[0]"));
       }
     }
   }

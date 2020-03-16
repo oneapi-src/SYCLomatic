@@ -235,9 +235,10 @@ void KernelCallExpr::buildKernelArgsStmt() {
       // If Arg is used as lvalue after its most recent memory allocation,
       // offsets are necessary; otherwise, offsets are not necessary.
       if (Arg.isUsedAsLvalueAfterMalloc) {
-        OuterStmts.emplace_back(buildString(
-            "std::pair<dpct::buffer_t, size_t> ", BufferName,
-            " = dpct::get_buffer_and_offset(", Arg.getArgString(), ");"));
+        OuterStmts.emplace_back(
+            buildString("std::pair<dpct::buffer_t, size_t> ", BufferName,
+                        " = dpct::get_buffer_and_offset(", Arg.getArgString(),
+                        Arg.IsDefinedOnDevice ? ".get_ptr());" : ");"));
         SubmitStmtsList.AccessorList.emplace_back(buildString(
             "auto ", Arg.getIdStringWithSuffix("acc"), " = ", BufferName,
             ".first.get_access<" + MapNames::getClNamespace() +
@@ -251,9 +252,9 @@ void KernelCallExpr::buildKernelArgsStmt() {
             "[0] + ", Arg.getIdStringWithSuffix("offset"), ");"));
         KernelArgs += Arg.getIdStringWithIndex() + ", ";
       } else {
-        OuterStmts.emplace_back(buildString("dpct::buffer_t ", BufferName,
-                                            " = dpct::get_buffer(",
-                                            Arg.getArgString(), ");"));
+        OuterStmts.emplace_back(buildString(
+            "dpct::buffer_t ", BufferName, " = dpct::get_buffer(",
+            Arg.getArgString(), Arg.IsDefinedOnDevice ? ".get_ptr());" : ");"));
         SubmitStmtsList.AccessorList.emplace_back(buildString(
             "auto ", Arg.getIdStringWithSuffix("acc"), " = ", BufferName,
             ".get_access<" + MapNames::getClNamespace() +
@@ -262,8 +263,9 @@ void KernelCallExpr::buildKernelArgsStmt() {
                                   Arg.getIdStringWithSuffix("acc"), "[0]), ");
       }
     } else if (Arg.isRedeclareRequired) {
-      OuterStmts.emplace_back(buildString("auto ", Arg.getIdStringWithIndex(),
-                                          " = ", Arg.getArgString(), ";"));
+      OuterStmts.emplace_back(buildString(
+          "auto ", Arg.getIdStringWithIndex(), " = ", Arg.getArgString(),
+          Arg.IsDefinedOnDevice ? ".get_ptr();" : ";"));
       KernelArgs += Arg.getIdStringWithIndex() + ", ";
     } else {
       KernelArgs += Arg.getArgString() + ", ";
@@ -728,6 +730,11 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
 MemVarInfo::VarAttrKind MemVarInfo::getAddressAttr(const AttrVec &Attrs) {
   for (auto VarAttr : Attrs) {
     auto Kind = VarAttr->getKind();
+    if (Kind == attr::CUDAManaged)
+      return Managed;
+  }
+  for (auto VarAttr : Attrs) {
+    auto Kind = VarAttr->getKind();
     if (Kind == attr::CUDAConstant)
       return Constant;
     else if (Kind == attr::CUDADevice)
@@ -755,6 +762,10 @@ std::string MemVarInfo::getMemoryType() {
       return ExternSharedMemory;
     return getMemoryType(SharedMemory, getType());
   }
+  case clang::dpct::MemVarInfo::Managed: {
+    static std::string ManagedMemory = "dpct::shared_memory";
+    return getMemoryType(ManagedMemory, getType());
+  }
   default:
     llvm::dbgs() << "[MemVarInfo::getMemoryType] Unexpected attribute.";
     return "";
@@ -774,6 +785,10 @@ const std::string &MemVarInfo::getMemoryAttr() {
   case clang::dpct::MemVarInfo::Shared: {
     static std::string SharedMemory = "dpct::local";
     return SharedMemory;
+  }
+  case clang::dpct::MemVarInfo::Managed: {
+    static std::string ManagedMemory = "dpct::shared";
+    return ManagedMemory;
   }
   default:
     llvm::dbgs() << "[MemVarInfo::getMemoryAttr] Unexpected attribute.";

@@ -1035,6 +1035,7 @@ public:
     Constant,
     Shared,
     Host,
+    Managed,
   };
   enum VarScope { Local = 0, Extern, Global };
 
@@ -1940,7 +1941,7 @@ class KernelCallExpr : public CallFunctionExpr {
       if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
         isPointer = Analysis.isPointer;
       isRedeclareRequired = Analysis.isRedeclareRequired;
-
+      IsDefinedOnDevice = Analysis.IsDefinedOnDevice;
       if (isPointer) {
         QualType PointerType;
         if (Arg->getType().getTypePtr()->getTypeClass() ==
@@ -1981,6 +1982,7 @@ class KernelCallExpr : public CallFunctionExpr {
     std::string TypeString;
     std::string IdString;
     int Index;
+    bool IsDefinedOnDevice = false;
   };
 
   class KernelPrinter {

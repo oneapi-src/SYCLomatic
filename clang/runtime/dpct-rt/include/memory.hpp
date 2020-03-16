@@ -51,6 +51,7 @@ enum memory_attribute {
   device = 0,
   constant,
   local,
+  shared,
 };
 
 // Byte type to use.
@@ -810,10 +811,20 @@ public:
   global_memory(const cl::sycl::range<Dimension> &range_in)
       : size(range_in.size() * sizeof(T)), range(range_in), reference(false),
         memory_ptr(nullptr) {
-    static_assert((Memory == device) || (Memory == constant),
-                  "Global memory attribute should be constant or device");
-    if (size)
+    static_assert(
+        (Memory == device) || (Memory == constant) || (Memory == shared),
+        "Global memory attribute should be constant, device or shared");
+    if (size) {
+#ifndef DPCT_USM_LEVEL_NONE
+      if (Memory == shared) {
+        memory_ptr = (value_t *)cl::sycl::malloc_shared(
+            size, get_default_queue().get_device(),
+            get_default_queue().get_context());
+        return;
+      }
+#endif // DPCT_USM_LEVEL_NONE
       dpct_malloc(&memory_ptr, size);
+    }
   }
 
   /// Constructor with range
@@ -838,7 +849,14 @@ public:
 
   /// Get the device memory object size in bytes.
   size_t get_size() { return size; }
+
 #ifdef DPCT_USM_LEVEL_NONE
+  template <size_t D = Dimension>
+  typename std::enable_if<D == 1, T>::type &operator[](size_t index) const {
+    return dpct::get_buffer<typename std::enable_if<D == 1, T>::type>(
+               memory_ptr)
+        .template get_access<sycl::access::mode::read_write>()[index];
+  }
   /// Get cl::sycl::accessor for the device memory object when usm is not used.
   accessor_t get_access(cl::sycl::handler &cgh) {
     return get_buffer(memory_ptr)
@@ -847,6 +865,10 @@ public:
                              detail::memory_traits<Memory, T>::target>(cgh);
   }
 #else
+  template <size_t D = Dimension>
+  typename std::enable_if<D == 1, T>::type &operator[](size_t index) const {
+    return memory_ptr[index];
+  }
   /// Get dpct::accessor with dimension info for the device memory object
   /// when usm is used and dimension is greater than 1.
   template <size_t D = Dimension>
@@ -894,6 +916,8 @@ template <class T, size_t Dimension>
 using device_memory = global_memory<T, device, Dimension>;
 template <class T, size_t Dimension>
 using constant_memory = global_memory<T, constant, Dimension>;
+template <class T, size_t Dimension>
+using shared_memory = global_memory<T, shared, Dimension>;
 } // namespace dpct
 
 #endif // __DPCT_MEMORY_HPP__

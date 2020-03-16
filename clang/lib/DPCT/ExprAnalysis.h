@@ -403,6 +403,7 @@ class KernelArgumentAnalysis : public ArgumentAnalysis {
 public:
   bool isRedeclareRequired;
   bool isPointer;
+  bool IsDefinedOnDevice = false;
 
   void analyze(const Expr *Expression) {
     isPointer = Expression->getType()->isPointerType();

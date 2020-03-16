@@ -413,6 +413,17 @@ void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   } else if (!DRE->getDecl()->isLexicallyWithinFunctionOrMethod()) {
     isRedeclareRequired = true;
   }
+  // The VarDecl in MemVarInfo are matched in MemVarRule, which only matches
+  // variables on device. They are migrated to objects, so need add get_ptr() by
+  // setting IsDefinedOnDevice flag.
+  if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+    if (auto Var = DpctGlobalInfo::getInstance().findMemVarInfo(VD)) {
+      IsDefinedOnDevice = true;
+      if (!VD->getType()->isArrayType()) {
+        isRedeclareRequired = true;
+      }
+    }
+  }
   Base::analyzeExpr(DRE);
 }
 
@@ -449,6 +460,10 @@ void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
   if (UO->getOpcode() == UO_Deref) {
     isRedeclareRequired = true;
     return;
+  }
+  if (UO->getOpcode() == UO_AddrOf) {
+    // remove the "&"
+    addReplacement(UO->getBeginLoc(), "");
   }
   dispatch(UO->getSubExpr());
 }

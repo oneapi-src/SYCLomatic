@@ -1,6 +1,8 @@
 // RUN: dpct --format-range=none --no-cl-namespace-inline --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/kernel-call.dp.cpp --match-full-lines %s
 
+#include <stdio.h>
+
 // CHECK: void testKernel(int L, int M, int N,
 // CHECK-NEXT: cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]);
 __global__ void testKernel(int L, int M, int N);
@@ -380,4 +382,92 @@ void run_foo3(dim3 c, dim3 d) {
 void run_foo4(dim3 c, dim3 d) {
  while (1)
    foo_kernel3<<<c, 1>>>(0);
+}
+
+//CHECK:dpct::shared_memory<float, 1> result(32);
+//CHECK-NEXT:void my_kernel(float* result, cl::sycl::nd_item<3> item_ct1, float *resultInGroup) {
+//CHECK-NEXT:  // __shared__ variable
+//CHECK-NEXT:  resultInGroup[item_ct1.get_local_id(2)] = item_ct1.get_group(2);
+//CHECK-NEXT:  memcpy(&result[item_ct1.get_group(2)*8], resultInGroup, sizeof(float)*8);
+//CHECK-NEXT:}
+//CHECK-NEXT:int run_foo5 () {
+//CHECK-NEXT:  {
+//CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> result_buf_ct0 = dpct::get_buffer_and_offset(result.get_ptr());
+//CHECK-NEXT:    size_t result_offset_ct0 = result_buf_ct0.second;
+//CHECK-NEXT:    dpct::get_default_queue().submit(
+//CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:        cl::sycl::accessor<float, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
+//CHECK-NEXT:        auto result_acc_ct0 = result_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+//CHECK-EMPTY:
+//CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
+//CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 4) * cl::sycl::range<3>(1, 1, 8), cl::sycl::range<3>(1, 1, 8)),
+//CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:            float *result_ct0 = (float *)(&result_acc_ct0[0] + result_offset_ct0);
+//CHECK-NEXT:            my_kernel(result_ct0, item_ct1, resultInGroup_acc_ct1.get_pointer());
+//CHECK-NEXT:          });
+//CHECK-NEXT:      });
+//CHECK-NEXT:  }
+//CHECK-NEXT:  printf("%f ", result[10]);
+//CHECK-NEXT:}
+ __managed__ float result[32];
+__global__ void my_kernel(float* result) {
+  __shared__ float resultInGroup[8]; // __shared__ variable
+  resultInGroup[threadIdx.x] = blockIdx.x;
+  memcpy(&result[blockIdx.x*8], resultInGroup, sizeof(float)*8);
+}
+int run_foo5 () {
+  my_kernel<<<4, 8>>>(result);
+  printf("%f ", result[10]);
+}
+
+//CHECK:dpct::shared_memory<float, 1> result2(32);
+//CHECK-NEXT:int run_foo6 () {
+//CHECK-NEXT:  {
+//CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> result2_buf_ct0 = dpct::get_buffer_and_offset(result2.get_ptr());
+//CHECK-NEXT:    size_t result2_offset_ct0 = result2_buf_ct0.second;
+//CHECK-NEXT:    dpct::get_default_queue().submit(
+//CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:        cl::sycl::accessor<float, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
+//CHECK-NEXT:        auto result2_acc_ct0 = result2_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+//CHECK-EMPTY:
+//CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
+//CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 4) * cl::sycl::range<3>(1, 1, 8), cl::sycl::range<3>(1, 1, 8)),
+//CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:            float *result2_ct0 = (float *)(&result2_acc_ct0[0] + result2_offset_ct0);
+//CHECK-NEXT:            my_kernel(result2_ct0, item_ct1, resultInGroup_acc_ct1.get_pointer());
+//CHECK-NEXT:          });
+//CHECK-NEXT:      });
+//CHECK-NEXT:  }
+//CHECK-NEXT:  printf("%f ", result2[10]);
+//CHECK-NEXT:}
+ __managed__ float result2[32];
+int run_foo6 () {
+  my_kernel<<<4, 8>>>(result2);
+  printf("%f ", result2[10]);
+}
+
+//CHECK:dpct::shared_memory<float, 0> result3;
+//CHECK-NEXT:int run_foo7 () {
+//CHECK-NEXT:  {
+//CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> result3_buf_ct0 = dpct::get_buffer_and_offset(result3.get_ptr());
+//CHECK-NEXT:    size_t result3_offset_ct0 = result3_buf_ct0.second;
+//CHECK-NEXT:    dpct::get_default_queue().submit(
+//CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:        cl::sycl::accessor<float, 1, cl::sycl::access::mode::read_write, cl::sycl::access::target::local> resultInGroup_acc_ct1(cl::sycl::range<1>(8), cgh);
+//CHECK-NEXT:        auto result3_acc_ct0 = result3_buf_ct0.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+//CHECK-EMPTY:
+//CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
+//CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 4) * cl::sycl::range<3>(1, 1, 8), cl::sycl::range<3>(1, 1, 8)),
+//CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:            float *result3_ct0 = (float *)(&result3_acc_ct0[0] + result3_offset_ct0);
+//CHECK-NEXT:            my_kernel(result3_ct0, item_ct1, resultInGroup_acc_ct1.get_pointer());
+//CHECK-NEXT:          });
+//CHECK-NEXT:      });
+//CHECK-NEXT:  }
+//CHECK-NEXT:  printf("%f ", result3[0]);
+//CHECK-NEXT:}
+__managed__ float result3;
+int run_foo7 () {
+  my_kernel<<<4, 8>>>(&result3);
+  printf("%f ", result3);
 }

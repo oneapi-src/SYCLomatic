@@ -4467,6 +4467,10 @@ static void handleSYCLDeviceIndirectlyCallableAttr(Sema &S, Decl *D,
 static void handleConstantAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
   if (checkAttrMutualExclusion<CUDASharedAttr>(S, D, AL))
     return;
+#ifdef INTEL_CUSTOMIZATION
+  if (checkAttrMutualExclusion<CUDAManagedAttr>(S, D, AL))
+    return;
+#endif
   const auto *VD = cast<VarDecl>(D);
   if (!VD->hasGlobalStorage()) {
     S.Diag(AL.getLoc(), diag::err_cuda_nonglobal_constant);
@@ -4478,6 +4482,10 @@ static void handleConstantAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
 static void handleSharedAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
   if (checkAttrMutualExclusion<CUDAConstantAttr>(S, D, AL))
     return;
+#ifdef INTEL_CUSTOMIZATION
+  if (checkAttrMutualExclusion<CUDAManagedAttr>(S, D, AL))
+    return;
+#endif
   const auto *VD = cast<VarDecl>(D);
   // extern __shared__ is only allowed on arrays with no length (e.g.
   // "int x[]").
@@ -4492,6 +4500,15 @@ static void handleSharedAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
     return;
   D->addAttr(::new (S.Context) CUDASharedAttr(S.Context, AL));
 }
+#ifdef INTEL_CUSTOMIZATION
+static void handleManagedAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
+  if (checkAttrMutualExclusion<CUDAConstantAttr>(S, D, AL))
+    return;
+  if (checkAttrMutualExclusion<CUDASharedAttr>(S, D, AL))
+    return;
+  D->addAttr(::new (S.Context) CUDAManagedAttr(S.Context, AL));
+}
+#endif
 
 static void handleGlobalAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
   if (checkAttrMutualExclusion<CUDADeviceAttr>(S, D, AL) ||
@@ -7534,6 +7551,11 @@ static void ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D,
   case ParsedAttr::AT_CUDAShared:
     handleSharedAttr(S, D, AL);
     break;
+#ifdef INTEL_CUSTOMIZATION
+  case ParsedAttr::AT_CUDAManaged:
+    handleManagedAttr(S, D, AL);
+    break;
+#endif
   case ParsedAttr::AT_VecReturn:
     handleVecReturnAttr(S, D, AL);
     break;
