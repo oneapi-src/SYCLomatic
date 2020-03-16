@@ -207,7 +207,10 @@ void addMacroDefinedSet(const std::string &MacroDefined) {
 }
 
 void addFilesSet(const std::string Compiler, std::string &File) {
-  FilesSet[Compiler].push_back(File);
+  SourceProcessType FileType = GetSourceFileType(File);
+  if(FileType&(TypeCudaSource|TypeCppSource)) {
+    FilesSet[Compiler].push_back(File);
+  }
 }
 
 void updateOptionsMap(const std::string &Option, const std::string &Value) {
@@ -397,7 +400,7 @@ void collectMacrosAndIncludingDIr(const std::string &&Node,
     size_t End = Line.find(EndNode);
     std::string SubStr = Line.substr(Start, End - Start);
     std::vector<std::string> VecSet = split(SubStr, ';');
-    for (auto const &Entry : VecSet) {
+    for (auto &Entry : VecSet) {
       // Skip CMAKE_INTDIR="Debug", CMAKE_INTDIR="MinSizeRel",
       // CMAKE_INTDIR="RelWithDebInfo", CMAKE_INTDIR="Release",
       // and skip the Entry that has the same name with Node, such as
@@ -409,6 +412,11 @@ void collectMacrosAndIncludingDIr(const std::string &&Node,
           Entry.find(Node) != std::string::npos) {
         continue;
       }
+      // Remove quotes if they exist.
+      // For if Entry has quotes, it will have escape issues in compilation database,
+      // so I remove them firstly, then add them with escape in hard code
+      // in function ProcessDirectoriesIncluded() and generateCompilationDatabase().
+      Entry.erase(std::remove(Entry.begin(),Entry.end(),'\"'),Entry.end());
       FunPtr(Entry);
     }
   }
@@ -515,6 +523,7 @@ void parseVcxprojFile(const std::string &VcxprojFile) {
     processCompileNode("CudaCompile", Infile, Line);
     processCompileNode("ClCompile", Infile, Line);
     processCompileNode("CustomBuild", Infile, Line);
+    processCompileNode("None", Infile, Line);
   }
 }
 
