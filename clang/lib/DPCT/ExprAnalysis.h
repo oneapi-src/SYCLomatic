@@ -376,6 +376,10 @@ protected:
 private:
   inline void analyzeExpr(const DeclRefExpr *Arg);
   inline void analyzeExpr(const MemberExpr *Arg);
+  inline void analyzeExpr(const CallExpr *Arg) {
+    isRedeclareRequired = true;
+    ExprAnalysis::analyzeExpr(Arg);
+  }
   inline void analyzeExpr(const UnaryOperator *Arg);
 };
 
