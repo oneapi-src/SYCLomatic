@@ -422,6 +422,19 @@ const clang::Stmt *getParentStmt(const clang::Decl *D) {
   return nullptr;
 }
 
+const clang::Decl *getParentDecl(const clang::Decl *D) {
+  if (!D)
+    return nullptr;
+
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*D);
+  assert(Parents.size() >= 1);
+  if (Parents.size() >= 1)
+    return Parents[0].get<Decl>();
+
+  return nullptr;
+}
+
 const std::shared_ptr<clang::ast_type_traits::DynTypedNode>
 getParentNode(const std::shared_ptr<clang::ast_type_traits::DynTypedNode> N) {
   if (!N)

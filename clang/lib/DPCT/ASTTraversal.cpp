@@ -2209,9 +2209,14 @@ void VectorTypeOperatorRule::MigrateOverloadedOperatorDecl(
            << "}  // namespace " << NamespaceName << NL
            << NL;
   // clang-format on
-
-  const SourceRange SR =
-      GetFunctionSourceRange(SM, FD->getBeginLoc(), FD->getEndLoc());
+  SourceRange SR;
+  auto P = getParentDecl(FD);
+  // Deal with functions as well as function templates
+  if (auto FTD = dyn_cast<FunctionTemplateDecl>(P)) {
+    SR = GetFunctionSourceRange(SM, FTD->getBeginLoc(), FTD->getEndLoc());
+  } else {
+    SR = GetFunctionSourceRange(SM, FD->getBeginLoc(), FD->getEndLoc());
+  }
   report(SR.getBegin(), Diagnostics::TRNA_WARNING_OVERLOADED_API_FOUND);
   emplaceTransformation(new InsertText(SR.getBegin(), Prologue.str()));
   emplaceTransformation(new InsertText(SR.getEnd(), Epilogue.str()));
