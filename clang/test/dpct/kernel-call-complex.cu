@@ -33,7 +33,7 @@ void foo() {
   T i;
   // CHECK: {
   // CHECK-NEXT:   auto bar_i_ct0 = bar(i);
-  // CHECK-NEXT:   dpct::get_default_queue_wait().submit(
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class k_{{[a-z0-9]+}}>>(
   // CHECK-NEXT:             sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -46,7 +46,7 @@ void foo() {
 
   // CHECK: {
   // CHECK-NEXT:   auto bar_T_ct0 = bar<T>();
-  // CHECK-NEXT:   dpct::get_default_queue_wait().submit(
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class k_{{[a-z0-9]+}}>>(
   // CHECK-NEXT:             sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -59,7 +59,7 @@ void foo() {
 
   // CHECK: {
   // CHECK-NEXT:   auto S_T_bar_ct0 = S<T>::bar();
-  // CHECK-NEXT:   dpct::get_default_queue_wait().submit(
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class k_{{[a-z0-9]+}}>>(
   // CHECK-NEXT:             sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -72,7 +72,7 @@ void foo() {
 
   // CHECK: {
   // CHECK-NEXT:   auto S2_bar_T_ct0 = S2::bar<T>();
-  // CHECK-NEXT:   dpct::get_default_queue_wait().submit(
+  // CHECK-NEXT:   dpct::get_default_queue().submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class k_{{[a-z0-9]+}}>>(
   // CHECK-NEXT:             sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
