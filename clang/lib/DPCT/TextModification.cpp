@@ -618,6 +618,7 @@ InsertBeforeStmt::getReplacement(const ASTContext &Context) const {
       Context.getSourceManager(),
       CharSourceRange(SourceRange(Begin, Begin), false), T, this);
   R->setPairID(PairID);
+  R->setInsertPosition(InsertPos);
   return R;
 }
 

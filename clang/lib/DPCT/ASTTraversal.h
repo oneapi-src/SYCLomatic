@@ -851,6 +851,11 @@ private:
                        const UnresolvedLookupExpr *ULExpr = NULL,
                        bool IsAssigned = false,
                        std::string SpecifiedQueue = "");
+  void arrayMigration(const ast_matchers::MatchFinder::MatchResult &Result,
+                       const CallExpr *C,
+                       const UnresolvedLookupExpr *ULExpr = NULL,
+                       bool IsAssigned = false,
+                       std::string SpecifiedQueue = "");
   void getSymbolAddressMigration(
       const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
       const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false,
@@ -903,9 +908,41 @@ private:
       const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
       const UnresolvedLookupExpr *ULExpr, bool IsAssigned,
       std::string SpecifiedQueue = "");
+  void mallocArrayMigration(const CallExpr *C, const std::string &Name,
+                            size_t FlagIndex, SourceManager &SM);
+  void mallocMigrationWithTransformation(SourceManager &SM, const CallExpr *C,
+                                         const std::string &CallName,
+                                         std::string &&ReplaceName,
+                                         const std::string &PaddingArgs = "",
+                                         bool NeedTypeCast = true,
+                                         size_t AllocatedArgIndex = 0);
+  std::string getTransformedMallocPrefixStr(const Expr *MallocOutArg,
+                                            bool NeedTypeCast);
   bool
   findFirstNotProcessedSpecialStmtIter(const CompoundStmt *P,
                                        Stmt::const_child_iterator &ResIter);
+  void aggregatePitchedData(const CallExpr *C, size_t DataArgIndex,
+                            size_t SizeArgIndex, SourceManager &SM,
+                            bool ExcludeSizeArg = false);
+  void aggregate3DVectorClassCtor(const CallExpr *C, StringRef ClassName,
+                                  size_t ArgStartIndex, StringRef DefaultValue,
+                                  SourceManager &SM, size_t ArgsNum = 2);
+  void aggregateArgsToCtor(const CallExpr *C, const std::string &ClassName,
+                           size_t StartArgIndex, size_t EndArgIndex,
+                           const std::string &PaddingArgs, SourceManager &SM);
+  void insertToPitchedData(const CallExpr *C, size_t ArgIndex) {
+    if (C->getNumArgs() > ArgIndex)
+      emplaceTransformation(
+          new InsertAfterStmt(C->getArg(ArgIndex), "->to_pitched_data()"));
+  }
+  void insertZeroOffset(const CallExpr *C, size_t InsertArgIndex) {
+    static std::string InsertedText =
+        buildString(MapNames::getClNamespace(),
+                    "::", DpctGlobalInfo::getCtadClass("id", 3), "(0, 0, 0), ");
+    if (C->getNumArgs() > InsertArgIndex)
+      emplaceTransformation(new InsertBeforeStmt(C->getArg(InsertArgIndex),
+                                                 std::string(InsertedText)));
+  }
 };
 
 class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {

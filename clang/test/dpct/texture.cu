@@ -50,8 +50,8 @@ int main() {
   // CHECK-NEXT: dpct::image_matrix_p a42;
   // CHECK-NEXT: dpct::dpct_malloc(&d_data42, sizeof(sycl::float4) * 32 * 32);
   // CHECK-NEXT: dpct::image_channel desc42 = dpct::create_image_channel(32, 32, 32, 32, dpct::channel_float);
-  // CHECK-NEXT: dpct::malloc_matrix(&a42, &desc42, 32, 32);
-  // CHECK-NEXT: dpct::memcpy_to_matrix(a42, 0, 0, d_data42, 32 * 32 * sizeof(sycl::float4));
+  // CHECK-NEXT: a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32));
+  // CHECK-NEXT: dpct::dpct_memcpy(a42->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(d_data42, 32 * 32 * sizeof(sycl::float4), 32 * 32 * sizeof(sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(32 * 32 * sizeof(sycl::float4), 1, 1));
   // CHECK-NEXT: tex42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
   // CHECK-NEXT: tex42.addr_mode() = sycl::addressing_mode::clamp_to_edge;
@@ -106,7 +106,7 @@ int main() {
   cudaUnbindTexture(tex42);
   cudaUnbindTexture(&tex21);
 
-  // CHECK: dpct::dpct_free(a42);
+  // CHECK: delete a42;
   cudaFreeArray(a42);
 
   // CHECK: dpct::dpct_free(d_data42);
@@ -153,22 +153,22 @@ int main() {
     // CHECK: funcT((dpct::detach_image(tex42), 0));
     funcT(cudaUnbindTexture(tex42));
 
-    // CHECK: errorCode = (dpct::dpct_free(a42), 0);
+    // CHECK: errorCode = (delete a42, 0);
     errorCode = cudaFreeArray(a42);
-    // CHECK: cudaCheck((dpct::dpct_free(a42), 0));
+    // CHECK: cudaCheck((delete a42, 0));
     cudaCheck(cudaFreeArray(a42));
-    // CHECK: func((dpct::dpct_free(a42), 0));
+    // CHECK: func((delete a42, 0));
     func(cudaFreeArray(a42));
-    // CHECK: funcT((dpct::dpct_free(a42), 0));
+    // CHECK: funcT((delete a42, 0));
     funcT(cudaFreeArray(a42));
 
-    // CHECK: errorCode = (dpct::malloc_matrix(&a42, &desc42, 32, 32), 0);
+    // CHECK: errorCode = (a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32)), 0);
     errorCode = cudaMallocArray(&a42, &desc42, 32, 32);
-    // CHECK: cudaCheck((dpct::malloc_matrix(&a42, &desc42, 32, 32), 0));
+    // CHECK: cudaCheck((a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32)), 0));
     cudaCheck(cudaMallocArray(&a42, &desc42, 32, 32));
-    // CHECK: func((dpct::malloc_matrix(&a42, &desc42, 32, 32), 0));
+    // CHECK: func((a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32)), 0));
     func(cudaMallocArray(&a42, &desc42, 32, 32));
-    // CHECK: funcT((dpct::malloc_matrix(&a42, &desc42, 32, 32), 0));
+    // CHECK: funcT((a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32)), 0));
     funcT(cudaMallocArray(&a42, &desc42, 32, 32));
   }
 }

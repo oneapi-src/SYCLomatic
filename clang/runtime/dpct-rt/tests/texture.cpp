@@ -1,6 +1,4 @@
-// RUN: compute++ texture.cpp -o texture -sycl-driver -I
-// /usr/local/ComputeCpp/include/ -L /usr/local/ComputeCpp/lib/ -lOpenCL
-// -lComputeCpp
+// RUN: dpcpp texture.cpp -o texture
 
 #define DPCT_NAMED_LAMBDA
 #include "../include/dpct.hpp"
@@ -36,13 +34,13 @@ int main() {
   dpct::image_matrix_p array2;
   dpct::image_matrix_p array3;
 
-  dpct::malloc_matrix(&array1, &chn2, 640);
-  dpct::malloc_matrix(&array2, &chn4, 640, 480);
-  dpct::malloc_matrix(&array3, &chn1, 640, 480, 24);
+  array1 = new dpct::image_matrix(chn2, sycl::range<2>(640, 1));
+  array2 = new dpct::image_matrix(chn4, sycl::range<2>(640, 480));
+  array3 = new dpct::image_matrix(chn1, sycl::range<3>(640, 480, 24));
 
-  dpct::memcpy_to_matrix(array1, 0, 0, host_buffer, 640 * sizeof(cl::sycl::float2));
-  dpct::memcpy_to_matrix(array2, 0, 0, host_buffer, 640 * 480 * sizeof(cl::sycl::float4));
-  dpct::memcpy_to_matrix(array3, 0, 0, device_buffer, 640 * 480 * 24 * sizeof(unsigned short));
+  dpct::dpct_memcpy(array1->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(host_buffer, 640 * sizeof(cl::sycl::float2), 640 * sizeof(cl::sycl::float2), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(640 * sizeof(cl::sycl::float2), 1, 1));
+  dpct::dpct_memcpy(array2->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(host_buffer, 640 * 480 * sizeof(cl::sycl::float4), 640 * 480 * sizeof(cl::sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(640 * 480 * sizeof(cl::sycl::float4), 1, 1));
+  dpct::dpct_memcpy(array3->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(device_buffer, 640 * 480 * 24 * sizeof(unsigned short), 640 * 480 * 24 * sizeof(unsigned short), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(640 * 480 * 24 * sizeof(unsigned short), 1, 1));
 
   dpct::attach_image(tex42, array2);
   dpct::attach_image(tex21, array1);

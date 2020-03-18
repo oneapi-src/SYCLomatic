@@ -134,24 +134,15 @@ struct image_channel {
 /// 2D or 3D matrix data for image.
 class image_matrix {
   image_channel _channel;
-  int _range[3] = {0};
+  int _range[3] = {1, 1, 1};
   int _dims = 0;
   void *_src = nullptr;
 
   /// Set range of each dimension.
-  template <class... Rest>
-  size_t set_range(int dim_idx, int first, Rest &&... rest) {
-    if (!first)
-      return set_range(dim_idx);
-    _range[dim_idx] = first;
-    return first * set_range(++dim_idx, std::forward<Rest>(rest)...);
-  }
-
-  inline size_t set_range(int dim_idx) {
-    _dims = dim_idx;
-    while (dim_idx < 3)
-      _range[dim_idx++] = 1;
-    return 1;
+  template <int Dims> void set_range(cl::sycl::range<Dims> range) {
+    for (int i = 0; i < Dims; ++i)
+      _range[i] = range[i];
+    _dims = Dims;
   }
 
   template <int... DimIdx>
@@ -161,10 +152,10 @@ class image_matrix {
 
 public:
   /// Constructor with channel info and dimension size info.
-  template <class... Args>
-  image_matrix(image_channel channel, Args &&... args) : _channel(channel) {
-    auto size = set_range(0, std::forward<Args>(args)...);
-    _src = std::malloc(size * _channel._elem_size);
+  template <int Dim>
+  image_matrix(image_channel channel, cl::sycl::range<Dim>range) : _channel(channel) {
+    set_range(range);
+    _src = std::malloc(range.size() * _channel._elem_size);
   }
   /// Construct a new image class with the matrix data.
   template <int Dimension> cl::sycl::image<Dimension> *allocate_image() {
@@ -191,7 +182,7 @@ public:
   /// Get matrix dims.
   inline int get_dims() { return _dims; }
   /// Convert to pitched data.
-  pitched_data to_piched_data() {
+  pitched_data to_pitched_data() {
     return pitched_data(_src, _range[0], _range[0], _range[1]);
   }
 
@@ -441,31 +432,6 @@ template <class T, int Dimension>
 inline void detach_image(image<T, Dimension> &in_image) {
   return detach_image(&in_image);
 }
-
-/// Malloc matrix data.
-/// \param [out] a Point to a matrix pointer.
-/// \param chn Pointer to channel info.
-/// \param args Varidic arguments of range.
-template <class... Args>
-inline void malloc_matrix(image_matrix **a, image_channel *chn,
-                               Args &&... args) {
-  *a = new image_matrix(*chn, std::forward<Args>(args)...);
-}
-
-/// Copy data to matrix.
-/// \param a Pointer to matrix.
-/// \param off_x Destination offset at dim x.
-/// \param off_y Destination offset at dim y.
-/// \param ptr Point to source data.
-/// \param count Size in bytes.
-inline void memcpy_to_matrix(image_matrix *a, size_t off_x,
-                                  size_t off_y, void *ptr, size_t count) {
-  dpct_memcpy(ptr, a->get_data(off_x, off_y, 0), count);
-}
-
-/// Free a matrix.
-/// \param a Pointer to matrix.
-inline void dpct_free(image_matrix *a) { delete a; }
 
 /// Read data from image accessor.
 /// \param acc Image accessor.

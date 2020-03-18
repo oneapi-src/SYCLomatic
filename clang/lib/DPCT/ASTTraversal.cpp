@@ -6254,131 +6254,6 @@ std::string MemoryMigrationRule::getAssignedStr(const Expr *E,
   return Repl.str();
 }
 
-void MemoryMigrationRule::mallocMigration(
-    const MatchFinder::MatchResult &Result, const CallExpr *C,
-    const UnresolvedLookupExpr *ULExpr, bool IsAssigned,
-    std::string SpecifiedQueue) {
-  std::string Name;
-  if (ULExpr) {
-    Name = ULExpr->getName().getAsString();
-  } else {
-    Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
-  }
-  if (Name == "cudaMalloc") {
-    DpctGlobalInfo::getInstance().insertCudaMalloc(C);
-    if (USMLevel == UsmLevel::restricted) {
-      std::ostringstream Repl;
-      ExprAnalysis EA;
-      EA.analyze(C->getArg(0));
-      auto Arg0Str = EA.getReplacedString();
-      EA.analyze(C->getArg(1));
-      auto Arg1Str = EA.getReplacedString();
-      if (auto CSE = dyn_cast<CStyleCastExpr>(C->getArg(0))) {
-        ExprAnalysis SEA;
-        SEA.analyze(CSE->getSubExpr());
-        SEA.getReplacedString();
-        auto SEAStr = SEA.getReplacedString();
-        Repl << getAssignedStr(CSE->getSubExpr(), SEAStr);
-      } else {
-        Repl << getAssignedStr(C->getArg(0), "(" + Arg0Str + ")");
-      }
-      Repl << MapNames::getClNamespace() + "::malloc_device(" << Arg1Str
-           << ", dpct::get_current_device()"
-              ", dpct::get_default_context())";
-      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
-    } else {
-      emplaceTransformation(
-          new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
-    }
-  } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost") {
-    std::ostringstream Repl;
-    ExprAnalysis EA;
-    EA.analyze(C->getArg(0));
-    auto Arg0Str = EA.getReplacedString();
-    EA.analyze(C->getArg(1));
-    auto Arg1Str = EA.getReplacedString();
-    if (auto CSE = dyn_cast<CStyleCastExpr>(C->getArg(0))) {
-      ExprAnalysis SEA;
-      SEA.analyze(CSE->getSubExpr());
-      SEA.getReplacedString();
-      auto SEAStr = SEA.getReplacedString();
-      Repl << getAssignedStr(CSE->getSubExpr(), SEAStr);
-    } else {
-      Repl << getAssignedStr(C->getArg(0), "(" + Arg0Str + ")");
-    }
-    if (USMLevel == UsmLevel::restricted) {
-      Repl << MapNames::getClNamespace() + "::malloc_host(" << Arg1Str
-           << ", dpct::get_default_context())";
-    } else {
-      Repl << "malloc(" << Arg1Str << ")";
-    }
-    emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
-  } else if (Name == "cudaMallocManaged") {
-    if (USMLevel == UsmLevel::restricted) {
-      std::ostringstream Repl;
-      ExprAnalysis EA;
-      EA.analyze(C->getArg(0));
-      auto Arg0Str = EA.getReplacedString();
-      EA.analyze(C->getArg(1));
-      auto Arg1Str = EA.getReplacedString();
-      if (auto CSE = dyn_cast<CStyleCastExpr>(C->getArg(0))) {
-        ExprAnalysis SEA;
-        SEA.analyze(CSE->getSubExpr());
-        SEA.getReplacedString();
-        auto SEAStr = SEA.getReplacedString();
-        Repl << getAssignedStr(CSE->getSubExpr(), SEAStr);
-      } else {
-        Repl << getAssignedStr(C->getArg(0), "(" + Arg0Str + ")");
-      }
-      Repl << MapNames::getClNamespace() + "::malloc_shared(" << Arg1Str
-           << ", dpct::get_current_device()"
-           << ", dpct::get_default_context())";
-      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
-    } else {
-      // Report unsupported warnings
-      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, false,
-             MapNames::ITFName.at(Name));
-    }
-  } else if (Name == "cublasAlloc") {
-    // TODO: migrate functions when they are in template
-    // TODO: migrate functions when they are in macro body
-    ExprAnalysis EA;
-    EA.analyze(C->getArg(0));
-    auto Arg0Str = EA.getReplacedString();
-    EA.analyze(C->getArg(1));
-    auto Arg1Str = EA.getReplacedString();
-    EA.analyze(C->getArg(2));
-    auto Arg2Str = EA.getReplacedString();
-    DpctGlobalInfo::getInstance().insertCublasAlloc(C);
-    auto SizeStr = "(" + Arg0Str + ")*(" + Arg1Str + ")";
-    if (USMLevel == UsmLevel::restricted) {
-      std::ostringstream Repl;
-      if (auto CSE = dyn_cast<CStyleCastExpr>(C->getArg(2))) {
-        ExprAnalysis SEA;
-        SEA.analyze(CSE->getSubExpr());
-        SEA.getReplacedString();
-        auto SEAStr = SEA.getReplacedString();
-        Repl << getAssignedStr(CSE->getSubExpr(), SEAStr);
-      } else {
-        Repl << getAssignedStr(C->getArg(2), "(" + Arg2Str + ")");
-      }
-      Repl << MapNames::getClNamespace() + "::malloc_device(" << SizeStr
-           << ", dpct::get_current_device()"
-              ", dpct::get_default_context())";
-      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
-    } else {
-      std::string Replacement =
-          "dpct::dpct_malloc(" + Arg2Str + ", " + SizeStr + ")";
-      emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
-    }
-  } else if (Name == "cudaMallocPitch" || Name == "cudaMalloc3D") {
-    emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
-  } else {
-    llvm::dbgs() << "[" << getName() << "] Unexpected function name: " << Name;
-    return;
-  }
-}
-
 const ArraySubscriptExpr *
 MemoryMigrationRule::getArraySubscriptExpr(const Expr *E) {
   if (const auto MTE = dyn_cast<MaterializeTemporaryExpr>(E)) {
@@ -6478,57 +6353,267 @@ void MemoryMigrationRule::replaceMemAPIArg(
   }
 }
 
-// Return a TextModication that removes nth argument of the CallExpr,
-// together with the preceding comma.
-// Assume: n > 0
-TextModification *removeArg(const CallExpr *C, unsigned n,
-                            const SourceManager &SM) {
-  if (!n)
-    return nullptr;
-  if (C->getNumArgs() <= n)
-    return nullptr;
-  const Expr *ArgBefore = C->getArg(n - 1);
-
-  // The start point of the removal is the end of the previous arg.
-  // Incase the previous arg is another macro or function-like macro,
-  // we take 1 token(the last token of Expr, because of the design of Clang's
-  // EndLoc) after getExpansionRange().getEnd() as the real end location. If the
-  // call expr is in a function-like macro or nested macros, to get the correct
-  // loc of the previous arg, we need to use getImmediateSpellingLoc step by
-  // step until reaching a FileID or a non-function-like macro. E.g.
-  // MACRO_A(MACRO_B(callexpr(arg1, arg2, arg3)));
-  // When we try to remove arg3, Begin should be at the end of arg2.
-  // However, the expansionLoc of Begin is at the beginning of MACRO_A.
-  // After 1st time of Begin=SM.getImmediateSpellingLoc(Begin),
-  // Begin is at the beginning of MACRO_B.
-  // After 2nd time of Begin=SM.getImmediateSpellingLoc(Begin),
-  // Begin is at the beginning of arg2.
-  // CANNOT use SM.getSpellingLoc because arg2 might be a simple macro,
-  // and SM.getSpellingLoc will return the macro definition in this case.
-
-  auto Begin = ArgBefore->getEndLoc();
-  while (Begin.isMacroID() && !SM.isAtStartOfImmediateMacroExpansion(Begin)) {
-    Begin = SM.getImmediateSpellingLoc(Begin);
+// Incase the previous arg is another macro or function-like macro,
+// we take 1 token(the last token of Expr, because of the design of Clang's
+// EndLoc) after getExpansionRange().getEnd() as the real end location. If the
+// call expr is in a function-like macro or nested macros, to get the correct
+// loc of the previous arg, we need to use getImmediateSpellingLoc step by
+// step until reaching a FileID or a non-function-like macro. E.g.
+// MACRO_A(MACRO_B(callexpr(arg1, arg2, arg3)));
+// When we try to remove arg3, Begin should be at the end of arg2.
+// However, the expansionLoc of Begin is at the beginning of MACRO_A.
+// After 1st time of Begin=SM.getImmediateSpellingLoc(Begin),
+// Begin is at the beginning of MACRO_B.
+// After 2nd time of Begin=SM.getImmediateSpellingLoc(Begin),
+// Begin is at the beginning of arg2.
+// CANNOT use SM.getSpellingLoc because arg2 might be a simple macro,
+// and SM.getSpellingLoc will return the macro definition in this case.
+CharSourceRange getAccurateExpansionRange(SourceLocation Loc,
+                                         const SourceManager &SM) {
+  while (Loc.isMacroID() && !SM.isAtStartOfImmediateMacroExpansion(Loc)) {
+    Loc = SM.getImmediateSpellingLoc(Loc);
   }
-  Begin = SM.getExpansionRange(Begin).getEnd();
-  Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
-      SM.getExpansionLoc(Begin), SM,
-      dpct::DpctGlobalInfo::getContext().getLangOpts()));
+  return SM.getExpansionRange(Loc);
+}
 
-  auto End = C->getArg(n)->getEndLoc();
-  while (End.isMacroID() && !SM.isAtStartOfImmediateMacroExpansion(End)) {
-    End = SM.getImmediateSpellingLoc(End);
-  }
-  End = SM.getExpansionRange(End).getEnd();
-  End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-      SM.getExpansionLoc(End), SM,
+/// Get the accurate begin expansion location of argument \p ArgIndex of call \p
+/// C.
+SourceLocation getArgEndLocation(const CallExpr *C, size_t ArgIndex,
+                                 const SourceManager &SM) {
+  auto Loc =
+      getAccurateExpansionRange(C->getArg(ArgIndex)->getEndLoc(), SM).getEnd();
+  return Loc.getLocWithOffset(Lexer::MeasureTokenLength(
+      SM.getExpansionLoc(Loc), SM,
       dpct::DpctGlobalInfo::getContext().getLangOpts()));
+}
 
+/// Get the accurate end expansion location of argument \p ArgIndex of call \p
+/// C.
+SourceLocation getArgBeginLocation(const CallExpr *C, size_t ArgIndex,
+                                   const SourceManager &SM) {
+  return getAccurateExpansionRange(C->getArg(ArgIndex)->getBeginLoc(), SM)
+      .getBegin();
+}
+
+TextModification *replaceText(SourceLocation Begin, SourceLocation End,
+                              std::string &&Str, const SourceManager &SM) {
   auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
   if (Length > 0) {
-    return new ReplaceText(Begin, Length, "");
+    return new ReplaceText(Begin, Length, std::move(Str));
   }
   return nullptr;
+}
+
+/// Return a TextModication that removes nth argument of the CallExpr,
+/// together with the preceding comma.
+TextModification *removeArg(const CallExpr *C, unsigned n,
+                            const SourceManager &SM) {
+  if (C->getNumArgs() <= n)
+    return nullptr;
+  if (C->getArg(n)->isDefaultArgument())
+    return nullptr;
+
+  SourceLocation Begin, End;
+  if (n) {
+    Begin = getArgEndLocation(C, n - 1, SM);
+    End = getArgEndLocation(C, n, SM);
+  } else {
+    Begin = getArgBeginLocation(C, n, SM);
+    if (C->getNumArgs() > 1)
+      End = getArgBeginLocation(C, n + 1, SM);
+    else
+      End = getArgEndLocation(C, n, SM);
+  }
+
+  return replaceText(Begin, End, "", SM);
+}
+
+/// Transform cudaMallocxxx() to xxx = mallocxxx();
+void MemoryMigrationRule::mallocMigrationWithTransformation(
+    SourceManager &SM, const CallExpr *C, const std::string &CallName,
+    std::string &&ReplaceName, const std::string &PaddingArgs,
+    bool NeedTypeCast, size_t AllocatedArgIndex) {
+  emplaceTransformation(new InsertBeforeStmt(
+      C,
+      getTransformedMallocPrefixStr(C->getArg(AllocatedArgIndex), NeedTypeCast),
+      InsertPosition::InsertPositionRight));
+  emplaceTransformation(
+      new ReplaceCalleeName(C, std::move(ReplaceName), CallName));
+  emplaceTransformation(removeArg(C, AllocatedArgIndex, SM));
+  if (!PaddingArgs.empty())
+    emplaceTransformation(
+        new InsertText(C->getRParenLoc(), ", " + PaddingArgs));
+}
+
+class ParensPrinter {
+  std::ostream &OS;
+public:
+  ParensPrinter(std::ostream &OS) : OS(OS) { OS << "("; }
+  ~ParensPrinter() { OS << ")"; }
+};
+
+/// e.g., for int *a and cudaMalloc(&a, size), print "a = ".
+/// If \p DerefType is not null, assign a string "int *".
+void printDerefOp(std::ostream &OS, const Expr *E,
+                  std::string *DerefType = nullptr) {
+  E = E->IgnoreImplicitAsWritten();
+  bool NeedDerefOp = true;
+  if (auto UO = dyn_cast<UnaryOperator>(E)) {
+    if (UO->getOpcode() == clang::UO_AddrOf) {
+      E = UO->getSubExpr()->IgnoreImplicitAsWritten();
+      NeedDerefOp = false;
+    }
+  } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
+    if (COCE->getOperator() == clang::OO_Amp && COCE->getNumArgs() == 1) {
+      E = COCE->getArg(0)->IgnoreImplicitAsWritten();
+      NeedDerefOp = false;
+    }
+  }
+
+  std::unique_ptr<ParensPrinter> PP;
+  if (NeedDerefOp) {
+    OS << "*";
+    switch (E->getStmtClass()) {
+    case Stmt::DeclRefExprClass:
+    case Stmt::MemberExprClass:
+    case Stmt::ParenExprClass:
+    case Stmt::CallExprClass:
+      break;
+    default:
+      PP = std::make_unique<ParensPrinter>(OS);
+      break;
+    }
+  }
+  ExprAnalysis EA(E);
+  EA.analyze();
+  OS << EA.getReplacedString();
+
+  if (DerefType) {
+    QualType DerefQT = E->getType();
+    if (NeedDerefOp)
+      DerefQT = DerefQT->getPointeeType();
+    *DerefType = DpctGlobalInfo::getReplacedTypeName(DerefQT);
+  }
+}
+
+/// e.g., for int *a and cudaMalloc(&a, size), return "a = (int *)".
+/// If \p NeedTypeCast is false, return "a = ";
+std::string
+MemoryMigrationRule::getTransformedMallocPrefixStr(const Expr *MallocOutArg,
+                                                   bool NeedTypeCast) {
+  std::ostringstream OS;
+  std::string CastTypeName;
+  MallocOutArg = MallocOutArg->IgnoreImplicitAsWritten();
+  if (auto CSCE = dyn_cast<CStyleCastExpr>(MallocOutArg)) {
+    MallocOutArg = CSCE->getSubExpr()->IgnoreImplicitAsWritten();
+    NeedTypeCast = true;
+  }
+  printDerefOp(OS, MallocOutArg, NeedTypeCast ? &CastTypeName : nullptr);
+
+  OS << " = ";
+  if (!CastTypeName.empty())
+    OS << "(" << CastTypeName << ")";
+
+  return OS.str();
+}
+
+/// Common migration for cudaMallocArray and cudaMalloc3DArray.
+void MemoryMigrationRule::mallocArrayMigration(const CallExpr *C,
+                                               const std::string &Name,
+                                               size_t FlagIndex,
+                                               SourceManager &SM) {
+  mallocMigrationWithTransformation(SM, C, Name, "new dpct::image_matrix", "",
+                                    false);
+  emplaceTransformation(removeArg(C, FlagIndex, SM));
+
+  std::ostringstream OS;
+  printDerefOp(OS, C->getArg(1));
+  emplaceTransformation(new ReplaceStmt(C->getArg(1), OS.str()));
+}
+
+void MemoryMigrationRule::mallocMigration(
+    const MatchFinder::MatchResult &Result, const CallExpr *C,
+    const UnresolvedLookupExpr *ULExpr, bool IsAssigned,
+    std::string SpecifiedQueue) {
+  std::string Name;
+  if (ULExpr) {
+    Name = ULExpr->getName().getAsString();
+  } else {
+    Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
+  }
+  if (Name == "cudaMalloc") {
+    DpctGlobalInfo::getInstance().insertCudaMalloc(C);
+    if (USMLevel == UsmLevel::restricted) {
+      mallocMigrationWithTransformation(*Result.SourceManager, C, Name,
+                                        MapNames::getClNamespace() +
+                                            "::malloc_device",
+                                        "dpct::get_current_device()"
+                                        ", dpct::get_default_context()");
+    } else {
+      emplaceTransformation(
+          new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
+    }
+  } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost") {
+    std::string ReplaceName;
+    if (USMLevel == UsmLevel::restricted)
+      mallocMigrationWithTransformation(*Result.SourceManager, C, Name,
+                                        MapNames::getClNamespace() +
+                                            "::malloc_host",
+                                        "dpct::get_default_context()");
+    else
+      mallocMigrationWithTransformation(*Result.SourceManager, C, Name,
+                                        "malloc");
+    emplaceTransformation(removeArg(C, 2, *Result.SourceManager));
+  } else if (Name == "cudaMallocManaged") {
+    if (USMLevel == UsmLevel::restricted) {
+      mallocMigrationWithTransformation(
+          *Result.SourceManager, C, Name,
+          MapNames::getClNamespace() + "::malloc_shared",
+          "dpct::get_current_device(), dpct::get_default_context()");
+      emplaceTransformation(removeArg(C, 2, *Result.SourceManager));
+    } else {
+      // Report unsupported warnings
+      report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, false,
+             MapNames::ITFName.at(Name));
+    }
+  } else if (Name == "cublasAlloc") {
+    // TODO: migrate functions when they are in template
+    // TODO: migrate functions when they are in macro body
+    emplaceTransformation(
+        replaceText(getArgEndLocation(C, 0, *Result.SourceManager),
+                    getArgBeginLocation(C, 1, *Result.SourceManager), "*",
+                    *Result.SourceManager));
+    insertAroundStmt(C->getArg(0), "(", ")");
+    insertAroundStmt(C->getArg(1), "(", ")");
+    DpctGlobalInfo::getInstance().insertCublasAlloc(C);
+    emplaceTransformation(removeArg(C, 2, *Result.SourceManager));
+    if (USMLevel == UsmLevel::restricted) {
+      mallocMigrationWithTransformation(
+          *Result.SourceManager, C, Name,
+          MapNames::getClNamespace() + "::malloc_device",
+          "dpct::get_current_device(), dpct::get_default_context()", true, 2);
+    } else {
+      ExprAnalysis EA(C->getArg(2));
+      EA.analyze();
+      emplaceTransformation(
+          new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
+      emplaceTransformation(
+          new InsertBeforeStmt(C->getArg(0), EA.getReplacedString() + ", ",
+                               InsertPosition::InsertPositionAlwaysLeft));
+    }
+  } else if (Name == "cudaMallocPitch" || Name == "cudaMalloc3D") {
+    emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
+  } else if (Name == "cudaMalloc3DArray") {
+    mallocArrayMigration(C, Name, 3, *Result.SourceManager);
+  } else if (Name == "cudaMallocArray") {
+    mallocArrayMigration(C, Name, 4, *Result.SourceManager);
+    static std::string SizeClassName =
+        DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "::range", 2);
+    if (C->getArg(3)->isDefaultArgument())
+      aggregateArgsToCtor(C, SizeClassName, 2, 2, ", 0", *Result.SourceManager);
+    else
+      aggregateArgsToCtor(C, SizeClassName, 2, 3, "", *Result.SourceManager);
+  }
 }
 
 /// Check a statement whether it is a simple function call of memcpy or memset
@@ -6839,6 +6924,84 @@ void MemoryMigrationRule::memcpyMigration(
         new ReplaceCalleeName(C, std::move(ReplaceStr), Name));
 }
 
+void MemoryMigrationRule::arrayMigration(
+    const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
+    const UnresolvedLookupExpr *ULExpr, bool IsAssigned,
+    std::string SpecifiedQueue) {
+  std::string Name;
+  if (ULExpr) {
+    Name = ULExpr->getName().getAsString();
+  } else {
+    Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
+  }
+
+  std::string ReplaceStr;
+  StringRef NameRef(Name);
+  bool IsAsync = NameRef.endswith("Async");
+  if (IsAsync) {
+    NameRef = NameRef.drop_back(5 /* len of "Async" */);
+    ReplaceStr = "dpct::async_dpct_memcpy";
+  } else {
+    ReplaceStr = "dpct::dpct_memcpy";
+  }
+
+  auto&SM = *Result.SourceManager;
+  if (NameRef == "cudaMemcpy2DArrayToArray") {
+    insertToPitchedData(C, 0);
+    aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
+    insertToPitchedData(C, 3);
+    aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
+    aggregate3DVectorClassCtor(C, "range", 6, "1", SM);
+    emplaceTransformation(removeArg(C, 8, SM));
+  } else if (NameRef == "cudaMemcpy2DFromArray") {
+    handleAsync(C, 8, Result);
+    emplaceTransformation(removeArg(C, 7, *Result.SourceManager));
+    aggregatePitchedData(C, 0, 1, SM);
+    insertZeroOffset(C, 2);
+    insertToPitchedData(C, 2);
+    aggregate3DVectorClassCtor(C, "id", 3, "0", SM);
+    aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
+  } else if (NameRef == "cudaMemcpy2DToArray") {
+    handleAsync(C, 8, Result);
+    emplaceTransformation(removeArg(C, 7, *Result.SourceManager));
+    insertToPitchedData(C, 0);
+    aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
+    aggregatePitchedData(C, 3, 4, SM);
+    insertZeroOffset(C, 5);
+    aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
+  } else if (NameRef == "cudaMemcpyArrayToArray") {
+    insertToPitchedData(C, 0);
+    aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
+    insertToPitchedData(C, 3);
+    aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
+    aggregate3DVectorClassCtor(C, "range", 6, "1", SM, 1);
+    emplaceTransformation(removeArg(C, 7, SM));
+  } else if (NameRef == "cudaMemcpyFromArray") {
+    handleAsync(C, 6, Result);
+    emplaceTransformation(removeArg(C, 5, SM));
+    aggregatePitchedData(C, 0, 4, SM, true);
+    insertZeroOffset(C, 1);
+    insertToPitchedData(C, 1);
+    aggregate3DVectorClassCtor(C, "id", 2, "0", SM);
+    aggregate3DVectorClassCtor(C, "range", 4, "1", SM, 1);
+  } else if (NameRef == "cudaMemcpyToArray") {
+    handleAsync(C, 6, Result);
+    emplaceTransformation(removeArg(C, 5, SM));
+    insertToPitchedData(C, 0);
+    aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
+    aggregatePitchedData(C, 3, 4, SM, true);
+    insertZeroOffset(C, 4);
+    aggregate3DVectorClassCtor(C, "range", 4, "1", SM, 1);
+  }
+
+  if (ULExpr)
+    emplaceTransformation(new ReplaceToken(
+        ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(ReplaceStr)));
+  else
+    emplaceTransformation(
+        new ReplaceCalleeName(C, std::move(ReplaceStr), Name));
+}
+
 void MemoryMigrationRule::memcpySymbolMigration(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned,
@@ -7026,6 +7189,11 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
     } else {
       emplaceTransformation(new ReplaceCalleeName(C, "free", Name));
     }
+  } else if (Name == "cudaFreeArray") {
+    ExprAnalysis EA(C->getArg(0));
+    EA.analyze();
+    emplaceTransformation(
+        new ReplaceStmt(C, "delete " + EA.getReplacedString()));
   }
 }
 
@@ -7211,7 +7379,13 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cudaMallocManaged", "cudaGetSymbolSize", "cudaMemPrefetchAsync",
         "cudaMalloc3D", "cudaMallocPitch", "cudaMemset2D", "cudaMemset3D",
         "cudaMemset2DAsync", "cudaMemset3DAsync", "cudaMemcpy2D",
-        "cudaMemcpy3D", "cudaMemcpy2DAsync", "cudaMemcpy3DAsync");
+        "cudaMemcpy3D", "cudaMemcpy2DAsync", "cudaMemcpy3DAsync",
+        "cudaMemcpy2DArrayToArray", "cudaMemcpy2DToArray",
+        "cudaMemcpy2DToArrayAsync", "cudaMemcpy2DFromArray",
+        "cudaMemcpy2DFromArrayAsync", "cudaMemcpyArrayToArray",
+        "cudaMemcpyToArray", "cudaMemcpyToArrayAsync", "cudaMemcpyFromArray",
+        "cudaMemcpyFromArrayAsync", "cudaMallocArray", "cudaMalloc3DArray",
+        "cudaFreeArray");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -7328,6 +7502,8 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cublasAlloc", &MemoryMigrationRule::mallocMigration},
           {"cudaMallocPitch", &MemoryMigrationRule::mallocMigration},
           {"cudaMalloc3D", &MemoryMigrationRule::mallocMigration},
+          {"cudaMallocArray", &MemoryMigrationRule::mallocMigration},
+          {"cudaMalloc3DArray", &MemoryMigrationRule::mallocMigration},
           {"cudaMemcpy", &MemoryMigrationRule::handleMemcpyAndMemset},
           {"cudaMemcpyAsync", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpyToSymbol", &MemoryMigrationRule::handleMemcpyAndMemset},
@@ -7340,7 +7516,18 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaMemcpy3D", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy2DAsync", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy3DAsync", &MemoryMigrationRule::memcpyMigration},
+          {"cudaMemcpy2DArrayToArray", &MemoryMigrationRule::arrayMigration},
+          {"cudaMemcpy2DFromArray", &MemoryMigrationRule::arrayMigration},
+          {"cudaMemcpy2DFromArrayAsync", &MemoryMigrationRule::arrayMigration},
+          {"cudaMemcpy2DToArray", &MemoryMigrationRule::arrayMigration},
+          {"cudaMemcpy2DToArrayAsync", &MemoryMigrationRule::arrayMigration},
+          {"cudaMemcpyArrayToArray", &MemoryMigrationRule::arrayMigration},
+          {"cudaMemcpyToArray", &MemoryMigrationRule::arrayMigration},
+          {"cudaMemcpyToArrayAsync", &MemoryMigrationRule::arrayMigration},
+          {"cudaMemcpyFromArray", &MemoryMigrationRule::arrayMigration},
+          {"cudaMemcpyFromArrayAsync", &MemoryMigrationRule::arrayMigration},
           {"cudaFree", &MemoryMigrationRule::freeMigration},
+          {"cudaFreeArray", &MemoryMigrationRule::freeMigration},
           {"cudaFreeHost", &MemoryMigrationRule::freeMigration},
           {"cublasFree", &MemoryMigrationRule::freeMigration},
           {"cudaMemset", &MemoryMigrationRule::handleMemcpyAndMemset},
@@ -7363,6 +7550,64 @@ MemoryMigrationRule::MemoryMigrationRule() {
         std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
 
   DPCTQueueCounter = 0;
+}
+
+/// Convert a raw pointer argument and a pitch argument to a dpct::pitched_data
+/// constructor. If \p ExcludeSizeArg is true, the argument represent the pitch
+/// size will not be included in the constructor.
+/// e.g. (...data, pitch, ...) => (...dpct::pitched_data(data, pitch, pitch, 1),
+/// ...).
+/// If \p ExcludeSizeArg is true, e.g. (...data, ..., pitch, ...) =>
+/// (...dpct::pitched_data(data, pitch, pitch, 1), ..., pitch, ...)
+void MemoryMigrationRule::aggregatePitchedData(const CallExpr *C,
+                                               size_t DataArgIndex,
+                                               size_t SizeArgIndex,
+                                               SourceManager &SM,
+                                               bool ExcludeSizeArg) {
+  if (C->getNumArgs() <= DataArgIndex || C->getNumArgs() <= SizeArgIndex)
+    return;
+  size_t EndArgIndex = SizeArgIndex;
+  std::string PaddingArgs, SizeArg;
+  llvm::raw_string_ostream PaddingOS(PaddingArgs);
+  ArgumentAnalysis A(C->getArg(SizeArgIndex), false);
+  A.analyze();
+  SizeArg = A.getReplacedString();
+  if (ExcludeSizeArg) {
+    PaddingOS << ", " << SizeArg;
+    EndArgIndex = DataArgIndex;
+  }
+  PaddingOS << ", " << SizeArg << ", 1";
+  aggregateArgsToCtor(C, "dpct::pitched_data", DataArgIndex, EndArgIndex,
+                      PaddingOS.str(), SM);
+}
+
+/// Convert several arguments to a constructor of class \p ClassName.
+/// e.g. (...width, height, ...) => (...sycl::range<3>(width, height, 1), ...)
+void MemoryMigrationRule::aggregateArgsToCtor(
+    const CallExpr *C, const std::string &ClassName, size_t StartArgIndex,
+    size_t EndArgIndex, const std::string &PaddingArgs, SourceManager &SM) {
+  insertAroundRange(getArgBeginLocation(C, StartArgIndex, SM),
+                    getArgEndLocation(C, EndArgIndex, SM), ClassName + "(",
+                    PaddingArgs + ")");
+}
+
+/// Convert several arguments to a 3D vector constructor, like id<3> or
+/// range<3>.
+/// e.g. (...width, height, ...) => (...sycl::range<3>(width, height, 1), ...)
+void MemoryMigrationRule::aggregate3DVectorClassCtor(
+    const CallExpr *C, StringRef ClassName, size_t StartArgIndex,
+    StringRef DefaultValue, SourceManager &SM, size_t ArgsNum) {
+  if (C->getNumArgs() <= StartArgIndex + ArgsNum - 1)
+    return;
+  std::string Class, Padding;
+  llvm::raw_string_ostream ClassOS(Class), PaddingOS(Padding);
+  ClassOS << MapNames::getClNamespace() << "::";
+  DpctGlobalInfo::printCtadClass(ClassOS, ClassName, 3);
+  for (size_t i = 0; i < 3 - ArgsNum; ++i) {
+    PaddingOS << ", " << DefaultValue;
+  }
+  aggregateArgsToCtor(C, ClassOS.str(), StartArgIndex,
+                      StartArgIndex + ArgsNum - 1, PaddingOS.str(), SM);
 }
 
 void MemoryMigrationRule::handleDirection(const CallExpr *C, unsigned i) {
@@ -7953,8 +8198,7 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       callExpr(callee(functionDecl(hasAnyName(
                    "cudaCreateChannelDesc", "cudaCreateChannelDescHalf",
-                   "cudaUnbindTexture", "cudaFreeArray", "cudaMallocArray",
-                   "cudaMemcpyToArray", "cudaBindTextureToArray",
+                   "cudaUnbindTexture", "cudaBindTextureToArray",
                    "cudaBindTexture", "tex1D", "tex2D", "tex3D", "tex1Dfetch",
                    "cudaCreateTextureObject", "cudaDestroyTextureObject",
                    "cudaGetTextureObjectResourceDesc",
