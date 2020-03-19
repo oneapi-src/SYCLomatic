@@ -120,3 +120,39 @@ int run_foo7 () {
   my_kernel<<<4, 8>>>(&result3);
   printf("%f ", result3);
 }
+
+// CHECK:dpct::shared_memory<float, 0> in;
+// CHECK-NEXT:dpct::shared_memory<float, 0> out;
+// CHECK-NEXT:void my_kernel2(float in, float *out,
+// CHECK-NEXT:                sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:  if (item_ct1.get_local_id(2) == 0) {
+// CHECK-NEXT:    memcpy(out, &in, sizeof(float));
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
+// CHECK-NEXT:int run_foo8() {
+// CHECK-NEXT:  in[0] = 42;
+// CHECK-NEXT:  dpct::get_default_queue().submit(
+// CHECK-NEXT:    [&](sycl::handler &cgh) {
+// CHECK-NEXT:      auto in_ct0 = in[0];
+// CHECK-NEXT:      auto out_ct1 = out.get_ptr();
+// CHECK-EMPTY:
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[0-9a-z]+}}>>(
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
+// CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:          my_kernel2(in_ct0, out_ct1, item_ct1);
+// CHECK-NEXT:        });
+// CHECK-NEXT:    });
+// CHECK-NEXT:  printf("%f ", out[0]);
+// CHECK-NEXT:}
+__managed__ float in;
+__managed__ float out;
+__global__ void my_kernel2(float in, float *out) {
+  if (threadIdx.x == 0) {
+    memcpy(out, &in, sizeof(float));
+  }
+}
+int run_foo8() {
+  in = 42;
+  my_kernel2<<<4, 8>>>(in, &out);
+  printf("%f ", out);
+}

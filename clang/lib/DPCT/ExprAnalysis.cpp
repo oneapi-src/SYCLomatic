@@ -409,9 +409,9 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
 
 void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   if (DRE->getType()->isReferenceType()) {
-    isRedeclareRequired = true;
+    IsRedeclareRequired = true;
   } else if (!DRE->getDecl()->isLexicallyWithinFunctionOrMethod()) {
-    isRedeclareRequired = true;
+    IsRedeclareRequired = true;
   }
   // The VarDecl in MemVarInfo are matched in MemVarRule, which only matches
   // variables on device. They are migrated to objects, so need add get_ptr() by
@@ -420,7 +420,7 @@ void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     if (auto Var = DpctGlobalInfo::getInstance().findMemVarInfo(VD)) {
       IsDefinedOnDevice = true;
       if (!VD->getType()->isArrayType()) {
-        isRedeclareRequired = true;
+        IsRedeclareRequired = true;
       }
     }
   }
@@ -429,11 +429,11 @@ void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
 
 void KernelArgumentAnalysis::analyzeExpr(const MemberExpr *ME) {
   if (ME->getBase()->getType()->isDependentType()) {
-    isRedeclareRequired = true;
+    IsRedeclareRequired = true;
   }
 
   if (ME->getBase()->isImplicitCXXThis()) {
-    isRedeclareRequired = true;
+    IsRedeclareRequired = true;
   } else {
     const MemberExpr *LastExpr = nullptr;
     const MemberExpr *IterExpr =
@@ -444,13 +444,13 @@ void KernelArgumentAnalysis::analyzeExpr(const MemberExpr *ME) {
     }
 
     if (LastExpr && LastExpr->getBase()->isImplicitCXXThis()) {
-      isRedeclareRequired = true;
+      IsRedeclareRequired = true;
     }
   }
 
   if (auto RD = ME->getBase()->getType()->getAsCXXRecordDecl()) {
     if (!RD->isStandardLayout()) {
-      isRedeclareRequired = true;
+      IsRedeclareRequired = true;
     }
   }
   Base::analyzeExpr(ME);
@@ -458,7 +458,7 @@ void KernelArgumentAnalysis::analyzeExpr(const MemberExpr *ME) {
 
 void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
   if (UO->getOpcode() == UO_Deref) {
-    isRedeclareRequired = true;
+    IsRedeclareRequired = true;
     return;
   }
   if (UO->getOpcode() == UO_AddrOf) {

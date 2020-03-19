@@ -231,11 +231,11 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
 
 void KernelCallExpr::buildKernelArgsStmt() {
   for (auto &Arg : getArgsInfo()) {
-    if (Arg.isPointer) {
+    if (Arg.IsPointer) {
       auto BufferName = Arg.getIdStringWithSuffix("buf");
       // If Arg is used as lvalue after its most recent memory allocation,
       // offsets are necessary; otherwise, offsets are not necessary.
-      if (Arg.isUsedAsLvalueAfterMalloc) {
+      if (Arg.IsUsedAsLvalueAfterMalloc) {
         OuterStmts.emplace_back(
             buildString("std::pair<dpct::buffer_t, size_t> ", BufferName,
                         " = dpct::get_buffer_and_offset(", Arg.getArgString(),
@@ -263,10 +263,20 @@ void KernelCallExpr::buildKernelArgsStmt() {
         KernelArgs += buildString("(", Arg.getTypeString(), ")(&",
                                   Arg.getIdStringWithSuffix("acc"), "[0]), ");
       }
-    } else if (Arg.isRedeclareRequired) {
-      SubmitStmtsList.CommandGroupList.emplace_back(buildString("auto ",
-          Arg.getIdStringWithIndex(), " = ", Arg.getArgString(),
-          Arg.IsDefinedOnDevice ? ".get_ptr();" : ";"));
+    } else if (Arg.IsRedeclareRequired) {
+      std::string ReDeclStr = buildString("auto ", Arg.getIdStringWithIndex(),
+                                          " = ", Arg.getArgString());
+      if (!Arg.IsDefinedOnDevice) {
+        ReDeclStr = ReDeclStr + ";";
+      } else {
+        if (Arg.IsKernelParamPtr) {
+          ReDeclStr = ReDeclStr + ".get_ptr();";
+        } else {
+          ReDeclStr = ReDeclStr + "[0];";
+        }
+      }
+
+      SubmitStmtsList.CommandGroupList.emplace_back(ReDeclStr);
       KernelArgs += Arg.getIdStringWithIndex() + ", ";
     } else {
       KernelArgs += Arg.getArgString() + ", ";

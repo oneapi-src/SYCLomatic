@@ -401,13 +401,15 @@ private:
 
 class KernelArgumentAnalysis : public ArgumentAnalysis {
 public:
-  bool isRedeclareRequired;
-  bool isPointer;
+  bool IsRedeclareRequired;
+  bool IsPointer;
   bool IsDefinedOnDevice = false;
+  bool IsKernelParamPtr = false;
 
   void analyze(const Expr *Expression) {
-    isPointer = Expression->getType()->isPointerType();
-    isRedeclareRequired = false;
+    IsPointer = Expression->getType()->isPointerType();
+    IsKernelParamPtr = IsPointer;
+    IsRedeclareRequired = false;
     ArgumentAnalysis::analyze(Expression);
   }
 
@@ -418,7 +420,7 @@ private:
   inline void analyzeExpr(const DeclRefExpr *Arg);
   inline void analyzeExpr(const MemberExpr *Arg);
   inline void analyzeExpr(const CallExpr *Arg) {
-    isRedeclareRequired = true;
+    IsRedeclareRequired = true;
     ExprAnalysis::analyzeExpr(Arg);
   }
   inline void analyzeExpr(const UnaryOperator *Arg);

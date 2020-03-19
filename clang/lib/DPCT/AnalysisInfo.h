@@ -1940,15 +1940,16 @@ class KernelCallExpr : public CallFunctionExpr {
   struct ArgInfo {
     ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg, bool Used,
             int Index)
-        : isPointer(false), isRedeclareRequired(false),
-          isUsedAsLvalueAfterMalloc(Used), Index(Index) {
+        : IsPointer(false), IsRedeclareRequired(false),
+          IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
       Analysis.analyze(Arg);
       ArgString = Analysis.getReplacedString();
       if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
-        isPointer = Analysis.isPointer;
-      isRedeclareRequired = Analysis.isRedeclareRequired;
+        IsPointer = Analysis.IsPointer;
+      IsRedeclareRequired = Analysis.IsRedeclareRequired;
       IsDefinedOnDevice = Analysis.IsDefinedOnDevice;
-      if (isPointer) {
+      IsKernelParamPtr = Analysis.IsKernelParamPtr;
+      if (IsPointer) {
         QualType PointerType;
         if (Arg->getType().getTypePtr()->getTypeClass() ==
             Type::TypeClass::Decayed) {
@@ -1959,14 +1960,14 @@ class KernelCallExpr : public CallFunctionExpr {
         TypeString = DpctGlobalInfo::getReplacedTypeName(PointerType);
       }
 
-      if (isRedeclareRequired || isPointer)
+      if (IsRedeclareRequired || IsPointer)
         IdString = getTempNameForExpr(Arg);
     }
 
     ArgInfo(std::shared_ptr<TextureObjectInfo> Obj) {
       ArgString = Obj->getName() + "_acc";
-      isPointer = false;
-      isRedeclareRequired = false;
+      IsPointer = false;
+      IsRedeclareRequired = false;
       TypeString = "";
       Index = 0;
     }
@@ -1980,15 +1981,16 @@ class KernelCallExpr : public CallFunctionExpr {
       return buildString(IdString, Suffix, "_ct", Index);
     }
 
-    bool isPointer;
+    bool IsPointer;
     // If the pointer is used as lvalue after its most recent memory allocation
-    bool isRedeclareRequired;
-    bool isUsedAsLvalueAfterMalloc;
+    bool IsRedeclareRequired;
+    bool IsUsedAsLvalueAfterMalloc;
+    bool IsDefinedOnDevice = false;
+    bool IsKernelParamPtr = false;
     std::string ArgString;
     std::string TypeString;
     std::string IdString;
     int Index;
-    bool IsDefinedOnDevice = false;
   };
 
   class KernelPrinter {

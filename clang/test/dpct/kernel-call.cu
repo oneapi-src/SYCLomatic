@@ -474,3 +474,46 @@ int run_foo7 () {
   my_kernel<<<4, 8>>>(&result3);
   printf("%f ", result3);
 }
+
+//CHECK:dpct::shared_memory<float, 0> in;
+//CHECK-NEXT:dpct::shared_memory<float, 0> out;
+//CHECK-NEXT:void my_kernel2(float in, float *out,
+//CHECK-NEXT:                cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:  if (item_ct1.get_local_id(2) == 0) {
+//CHECK-NEXT:    memcpy(out, &in, sizeof(float));
+//CHECK-NEXT:  }
+//CHECK-NEXT:}
+//CHECK-NEXT:int run_foo8() {
+//CHECK-NEXT:  in[0] = 42;
+//CHECK-NEXT:  {
+//CHECK-NEXT:    std::pair<dpct::buffer_t, size_t> out_buf_ct1 = dpct::get_buffer_and_offset(out.get_ptr());
+//CHECK-NEXT:    size_t out_offset_ct1 = out_buf_ct1.second;
+//CHECK-NEXT:    dpct::get_default_queue().submit(
+//CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:        auto out_acc_ct1 = out_buf_ct1.first.get_access<cl::sycl::access::mode::read_write>(cgh);
+//CHECK-EMPTY:
+//CHECK-NEXT:        auto in_ct0 = in[0];
+//CHECK-EMPTY:
+//CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[0-9a-z]+}}>>(
+//CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 4) * cl::sycl::range<3>(1, 1, 8), cl::sycl::range<3>(1, 1, 8)),
+//CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:            float *out_ct1 = (float *)(&out_acc_ct1[0] + out_offset_ct1);
+//CHECK-NEXT:            my_kernel2(in_ct0, out_ct1, item_ct1);
+//CHECK-NEXT:          });
+//CHECK-NEXT:      });
+//CHECK-NEXT:  }
+//CHECK-NEXT:  printf("%f ", out[0]);
+//CHECK-NEXT:}
+
+__managed__ float in;
+__managed__ float out;
+__global__ void my_kernel2(float in, float *out) {
+  if (threadIdx.x == 0) {
+    memcpy(out, &in, sizeof(float));
+  }
+}
+int run_foo8() {
+  in = 42;
+  my_kernel2<<<4, 8>>>(in, &out);
+  printf("%f ", out);
+}
