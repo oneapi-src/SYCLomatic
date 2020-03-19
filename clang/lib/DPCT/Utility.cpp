@@ -10,10 +10,10 @@
 //===---------------------------------------------------------------===//
 
 #include "Utility.h"
-#include "MapNames.h"
 #include "AnalysisInfo.h"
 #include "Debug.h"
 #include "ExprAnalysis.h"
+#include "MapNames.h"
 #include "SaveNewFiles.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTTypeTraits.h"
@@ -98,7 +98,7 @@ StringRef getIndent(SourceLocation Loc, const SourceManager &SM) {
 // Get textual representation of the Stmt.
 std::string getStmtSpelling(const Stmt *S) {
   std::string Str;
-  if(!S)
+  if (!S)
     return Str;
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   SourceLocation BeginLoc, EndLoc;
@@ -152,9 +152,9 @@ SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
              Extension == ".c" || Extension == ".C") {
     return TypeCppSource;
   } else if (Extension == ".hpp" || Extension == ".hxx" || Extension == ".h" ||
-             Extension == ".hh" || Extension == ".inl"  || Extension == ".inc" ||
+             Extension == ".hh" || Extension == ".inl" || Extension == ".inc" ||
              Extension == ".INL" || Extension == ".INC" ||
-             Extension == ".TPP" ||Extension == ".tpp") {
+             Extension == ".TPP" || Extension == ".tpp") {
     return TypeCppHeader;
   } else {
     std::string ErrMsg =
@@ -442,10 +442,10 @@ getParentNode(const std::shared_ptr<clang::ast_type_traits::DynTypedNode> N) {
 
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*N);
-  //if (Parents.size() == 1)
-    return std::make_shared<clang::ast_type_traits::DynTypedNode>(Parents[0]);
+  // if (Parents.size() == 1)
+  return std::make_shared<clang::ast_type_traits::DynTypedNode>(Parents[0]);
 
-  //return nullptr;
+  // return nullptr;
 }
 
 // Determine if S is a single line statement inside
@@ -670,7 +670,8 @@ void findUsedAsLvalue(const DeclRefExpr *Arg, const Stmt *Root,
         findUsedAsLvalue(Arg, *It, Sentinal, CurrentScope, UsedInScope, Done);
   } else if (auto IS = dyn_cast<IfStmt>(Root)) {
     // Condition
-    findUsedAsLvalue(Arg, IS->getCond(), Sentinal, CurrentScope, UsedInScope, Done);
+    findUsedAsLvalue(Arg, IS->getCond(), Sentinal, CurrentScope, UsedInScope,
+                     Done);
     if (Done)
       return;
     bool Used = UsedInScope[CurrentScope];
@@ -678,7 +679,8 @@ void findUsedAsLvalue(const DeclRefExpr *Arg, const Stmt *Root,
     // Then branch
     CurrentScope.push_back(IS->getThen());
     UsedInScope[CurrentScope] = Used;
-    findUsedAsLvalue(Arg, IS->getThen(), Sentinal, CurrentScope, UsedInScope, Done);
+    findUsedAsLvalue(Arg, IS->getThen(), Sentinal, CurrentScope, UsedInScope,
+                     Done);
     if (Done)
       return;
     CurrentScope.pop_back();
@@ -687,14 +689,16 @@ void findUsedAsLvalue(const DeclRefExpr *Arg, const Stmt *Root,
     if (auto ElseBranch = IS->getElse()) {
       CurrentScope.push_back(ElseBranch);
       UsedInScope[CurrentScope] = Used;
-      findUsedAsLvalue(Arg, ElseBranch, Sentinal, CurrentScope, UsedInScope, Done);
+      findUsedAsLvalue(Arg, ElseBranch, Sentinal, CurrentScope, UsedInScope,
+                       Done);
       if (Done)
         return;
       CurrentScope.pop_back();
     }
   } else if (auto WS = dyn_cast<WhileStmt>(Root)) {
     // Condition
-    findUsedAsLvalue(Arg, WS->getCond(), Sentinal, CurrentScope, UsedInScope, Done);
+    findUsedAsLvalue(Arg, WS->getCond(), Sentinal, CurrentScope, UsedInScope,
+                     Done);
     if (Done)
       return;
 
@@ -702,21 +706,25 @@ void findUsedAsLvalue(const DeclRefExpr *Arg, const Stmt *Root,
     bool Used = UsedInScope[CurrentScope];
     CurrentScope.push_back(WS->getBody());
     UsedInScope[CurrentScope] = Used;
-    findUsedAsLvalue(Arg, WS->getBody(), Sentinal, CurrentScope, UsedInScope, Done);
+    findUsedAsLvalue(Arg, WS->getBody(), Sentinal, CurrentScope, UsedInScope,
+                     Done);
     if (Done)
       return;
     CurrentScope.pop_back();
   } else if (auto FS = dyn_cast<ForStmt>(Root)) {
     // Initilization
-    findUsedAsLvalue(Arg, FS->getInit(), Sentinal, CurrentScope, UsedInScope, Done);
+    findUsedAsLvalue(Arg, FS->getInit(), Sentinal, CurrentScope, UsedInScope,
+                     Done);
     if (Done)
       return;
     // Condition
-    findUsedAsLvalue(Arg, FS->getCond(), Sentinal, CurrentScope, UsedInScope, Done);
+    findUsedAsLvalue(Arg, FS->getCond(), Sentinal, CurrentScope, UsedInScope,
+                     Done);
     if (Done)
       return;
     // Increment
-    findUsedAsLvalue(Arg, FS->getInc(), Sentinal, CurrentScope, UsedInScope, Done);
+    findUsedAsLvalue(Arg, FS->getInc(), Sentinal, CurrentScope, UsedInScope,
+                     Done);
     if (Done)
       return;
 
@@ -724,7 +732,8 @@ void findUsedAsLvalue(const DeclRefExpr *Arg, const Stmt *Root,
     bool Used = UsedInScope[CurrentScope];
     CurrentScope.push_back(FS->getBody());
     UsedInScope[CurrentScope] = Used;
-    findUsedAsLvalue(Arg, FS->getBody(), Sentinal, CurrentScope, UsedInScope, Done);
+    findUsedAsLvalue(Arg, FS->getBody(), Sentinal, CurrentScope, UsedInScope,
+                     Done);
     if (Done)
       return;
     CurrentScope.pop_back();
@@ -798,7 +807,7 @@ unsigned int getLenIncludingTrailingSpaces(SourceRange Range,
 /// increment parts of the \p Node.
 /// \param Node The statement node which is if, for, do, while or switch.
 /// \return The result statement nodes vector.
-std::vector<const Stmt*> getConditionNode(ast_type_traits::DynTypedNode Node){
+std::vector<const Stmt *> getConditionNode(ast_type_traits::DynTypedNode Node) {
   std::vector<const Stmt *> Res;
   if (const IfStmt *CondtionNode = Node.get<IfStmt>()) {
     Res.push_back(CondtionNode->getCond());
@@ -824,7 +833,7 @@ std::vector<const Stmt*> getConditionNode(ast_type_traits::DynTypedNode Node){
 /// initialization, condition or increment part of for, while, do, if or switch.
 /// \param E The expression to be checked.
 /// \return The result.
-bool isConditionOfFlowControl(const clang::Expr* E) {
+bool isConditionOfFlowControl(const clang::Expr *E) {
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
   ast_type_traits::DynTypedNode ParentNode;
@@ -944,7 +953,7 @@ int getLengthOfSpacesToEndl(const char *CharData) {
 /// \param [out] Invalid Is both source locations are valid.
 /// \return The result.
 bool isInSameLine(clang::SourceLocation A, clang::SourceLocation B,
-                  const clang::SourceManager &SM, bool& Invalid) {
+                  const clang::SourceManager &SM, bool &Invalid) {
   auto ALocInfo = SM.getDecomposedLoc(A);
   auto BLocInfo = SM.getDecomposedLoc(B);
   bool InValidFlag = false;
@@ -993,8 +1002,8 @@ SourceRange getFunctionRange(const CallExpr *CE) {
 /// Calculate the ranges of the input \p Repls which has NOT set NotFormatFlags.
 /// \param Repls Replacements with format flags.
 /// \return The result ranges.
-std::vector<clang::tooling::Range> calculateRangesWithFormatFlag(
-    const clang::tooling::Replacements &Repls) {
+std::vector<clang::tooling::Range>
+calculateRangesWithFormatFlag(const clang::tooling::Replacements &Repls) {
   std::vector<bool> NotFormatFlags;
   std::vector<clang::tooling::Range> Ranges;
 
@@ -1005,7 +1014,7 @@ std::vector<clang::tooling::Range> calculateRangesWithFormatFlag(
     else
       NotFormatFlags.push_back(false);
     Ranges.emplace_back(/*offset*/ R.getOffset() + Diff,
-                                     /*length*/ R.getReplacementText().size());
+                        /*length*/ R.getReplacementText().size());
 
     Diff = Diff + R.getReplacementText().size() - R.getLength();
   }
@@ -1025,7 +1034,8 @@ std::vector<clang::tooling::Range> calculateRangesWithFormatFlag(
 bool isAssigned(const Stmt *S) {
   auto P = getParentStmt(S);
   return !P || (!dyn_cast<CompoundStmt>(P) && !dyn_cast<ForStmt>(P) &&
-      !dyn_cast<WhileStmt>(P) && !dyn_cast<DoStmt>(P) && !dyn_cast<IfStmt>(P));
+                !dyn_cast<WhileStmt>(P) && !dyn_cast<DoStmt>(P) &&
+                !dyn_cast<IfStmt>(P));
 }
 
 /// Compute a temporary variable name for \param E
@@ -1043,8 +1053,7 @@ std::string getTempNameForExpr(const Expr *E, bool HandleLiteral,
   std::string IdString;
   llvm::raw_string_ostream OS(IdString);
   Token Tok;
-  while (SM.getCharacterData(TokenBegin) <=
-         SM.getCharacterData(ExprEndLoc)) {
+  while (SM.getCharacterData(TokenBegin) <= SM.getCharacterData(ExprEndLoc)) {
     if (Lexer::getRawToken(TokenBegin, Tok, SM,
                            dpct::DpctGlobalInfo::getContext().getLangOpts(),
                            true)) {
@@ -1075,9 +1084,10 @@ bool isOuterMostMacro(const Stmt *E) {
   std::shared_ptr<ast_type_traits::DynTypedNode> P =
       std::make_shared<ast_type_traits::DynTypedNode>(
           ast_type_traits::DynTypedNode::create(*E));
-  // Find a parent stmt whose preprocessing result is different from ExpandedExpr
-  // Since some parent is not writable.(is not shown in the preprocessing result),
-  // a while loop is required to find the first writable ancestor.
+  // Find a parent stmt whose preprocessing result is different from
+  // ExpandedExpr Since some parent is not writable.(is not shown in the
+  // preprocessing result), a while loop is required to find the first writable
+  // ancestor.
   do {
     ExpandedParent = "";
     P = getParentNode(P);
@@ -1114,26 +1124,30 @@ bool isInsideFunctionLikeMacro(
   // result of MACRO_B and Parent is the PP result of MACRO_A,
   // SM.getExpansionLoc(E) is at the begining of MACRO_A, same as
   // SM.getExpansionLoc(Parent), in the source code. E is not outer-most.
-  if (Parent->getSourceRange().getBegin().isValid() && Parent->getSourceRange().getBegin().isMacroID()) {
-    if (SM.getCharacterData(SM.getExpansionLoc(Parent->getSourceRange().getBegin())) ==
+  if (Parent->getSourceRange().getBegin().isValid() &&
+      Parent->getSourceRange().getBegin().isMacroID()) {
+    if (SM.getCharacterData(
+            SM.getExpansionLoc(Parent->getSourceRange().getBegin())) ==
         SM.getCharacterData(SM.getExpansionLoc(BeginLoc))) {
       return true;
     }
   }
- 
+
   // Another case which should to return true is
   // #define MacroA(x) = x
   // When MacroA is used for default arguments in function definition
-  // like foo(int x MacroA(0)) and the ASTMatcher matches the "0" in the expansion,
-  // since the parent of x in the AST is "int x MacroA(0)" not "= x",
+  // like foo(int x MacroA(0)) and the ASTMatcher matches the "0" in the
+  // expansion, since the parent of x in the AST is "int x MacroA(0)" not "= x",
   // previous check cannot detect the "0" is inside a function like macro.
   // Should check if the expansion is the whole macro definition.
 
   // Get the location of "x" in "#define MacroA(x) = x"
   SourceLocation ImmediateSpellingBegin = SM.getImmediateSpellingLoc(BeginLoc);
   SourceLocation ImmediateSpellingEnd = SM.getImmediateSpellingLoc(EndLoc);
-  SourceLocation ImmediateExpansionBegin = SM.getImmediateExpansionRange(BeginLoc).getBegin();
-  SourceLocation ImmediateExpansionEnd = SM.getImmediateExpansionRange(EndLoc).getEnd();
+  SourceLocation ImmediateExpansionBegin =
+      SM.getImmediateExpansionRange(BeginLoc).getBegin();
+  SourceLocation ImmediateExpansionEnd =
+      SM.getImmediateExpansionRange(EndLoc).getEnd();
 
   // Check if one of the 4 combinations of begin&end matches a macro def
   // ExpansionBegin & ExpansionEnd
@@ -1177,7 +1191,7 @@ bool isInsideFunctionLikeMacro(
 }
 
 // Check if an Expr is partially in function-like macro
-bool isExprStraddle(const Stmt *S, ExprSpellingStatus* SpellingStatus) {
+bool isExprStraddle(const Stmt *S, ExprSpellingStatus *SpellingStatus) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   bool HasMacroDefine = false;
   bool HasMacroExpansion = false;
@@ -1194,13 +1208,13 @@ bool isExprStraddle(const Stmt *S, ExprSpellingStatus* SpellingStatus) {
 
     // Check if the token in the define part of a function-like macro.
     auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      SM.getCharacterData(BeginLoc));
-    if (ItMatch != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()
-      && ItMatch->second->IsFunctionLike) {
+        SM.getCharacterData(BeginLoc));
+    if (ItMatch !=
+            dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+        ItMatch->second->IsFunctionLike) {
       ArgIsDefine = true;
       HasMacroDefine = true;
-    }
-    else {
+    } else {
       HasMacroExpansion = true;
     }
     ExprSpellingStatus ChildSpellingStatus;
@@ -1208,9 +1222,8 @@ bool isExprStraddle(const Stmt *S, ExprSpellingStatus* SpellingStatus) {
     if (isExprStraddle(*It, &ChildSpellingStatus)) {
       return true;
     }
-    // If the child's descendent has different SpellingStatus with the child itself,
-    // it is straddle.
-    // In the following example,
+    // If the child's descendent has different SpellingStatus with the child
+    // itself, it is straddle. In the following example,
     // "(double)x" is the parent and is in macro define
     // while "0" is the child and is in macro expansion
     // #define macro(x) (double)x
@@ -1220,16 +1233,16 @@ bool isExprStraddle(const Stmt *S, ExprSpellingStatus* SpellingStatus) {
       return true;
     }
   }
-  // If some children are in the define part and others are in the expansion part,
-  // the Expr is a straddle node and no consist SpellingStatus to set.
+  // If some children are in the define part and others are in the expansion
+  // part, the Expr is a straddle node and no consist SpellingStatus to set.
   if (HasMacroDefine && HasMacroExpansion) {
     return true;
   }
-  // When all children have consist SpellingStatus, record and return the status.
+  // When all children have consist SpellingStatus, record and return the
+  // status.
   if (HasMacroDefine) {
     *SpellingStatus = IsDefine;
-  }
-  else {
+  } else {
     *SpellingStatus = IsExpansion;
   }
   return false;
@@ -1264,11 +1277,17 @@ bool isCOCESimpleAddrOf(const Expr *E) {
 std::string getNameStrRemovedAddrOf(const Expr *E, bool isCOCE) {
   if (isCOCE) {
     auto COCE = dyn_cast<CXXOperatorCallExpr>(E);
+    if (!COCE) {
+      return "";
+    }
     dpct::ExprAnalysis SEA;
     SEA.analyze(COCE->getArg(0));
     return SEA.getReplacedString();
   } else {
     auto UO = dyn_cast<UnaryOperator>(E);
+    if (!UO) {
+      return "";
+    }
     dpct::ExprAnalysis SEA;
     SEA.analyze(UO->getSubExpr());
     return SEA.getReplacedString();
@@ -1325,7 +1344,8 @@ std::vector<const DeclaratorDecl *> getSiblingDecls(const DeclaratorDecl *DD) {
 /// \param TypeName The name of the type
 /// \HasConst If QT's parent has const qualifier
 /// \return The pointer type string
-std::string deducePointerType(QualType QT, std::string TypeName, bool HasConst) {
+std::string deducePointerType(QualType QT, std::string TypeName,
+                              bool HasConst) {
   if (auto ET = dyn_cast<ElaboratedType>(QT))
     if (auto RT = dyn_cast<RecordType>(ET->desugar()))
       if (RT->getDecl()->getNameAsString() == TypeName)
@@ -1348,7 +1368,8 @@ std::string deducePointerType(const DeclaratorDecl *DD, std::string TypeName) {
     if (auto TDT = dyn_cast<TypedefType>(PT)) {
       if (TDT->desugar()->isPointerType()) {
         auto PT2 = TDT->desugar()->getPointeeType();
-        Result = deducePointerType(PT2, TypeName, PT.getQualifiers().hasConst());
+        Result =
+            deducePointerType(PT2, TypeName, PT.getQualifiers().hasConst());
       }
     }
   }
@@ -1358,7 +1379,8 @@ std::string deducePointerType(const DeclaratorDecl *DD, std::string TypeName) {
     if (auto TDT = dyn_cast<TypedefType>(PT)) {
       if (TDT->desugar()->isPointerType()) {
         auto PT2 = TDT->desugar()->getPointeeType();
-        Result = deducePointerType(PT2, TypeName, PT.getQualifiers().hasConst());
+        Result =
+            deducePointerType(PT2, TypeName, PT.getQualifiers().hasConst());
       }
     }
   }
@@ -1368,7 +1390,8 @@ std::string deducePointerType(const DeclaratorDecl *DD, std::string TypeName) {
     if (auto TDT = dyn_cast<TypedefType>(PT)) {
       if (TDT->desugar()->isPointerType()) {
         auto PT2 = TDT->desugar()->getPointeeType();
-        Result = deducePointerType(PT2, TypeName, PT.getQualifiers().hasConst());
+        Result =
+            deducePointerType(PT2, TypeName, PT.getQualifiers().hasConst());
       }
     }
   }
@@ -1381,7 +1404,8 @@ std::string deducePointerType(const DeclaratorDecl *DD, std::string TypeName) {
     if (auto TDT = dyn_cast<TypedefType>(PT)) {
       if (TDT->desugar()->isPointerType()) {
         auto PT2 = TDT->desugar()->getPointeeType();
-        Result = deducePointerType(PT2, TypeName, PT.getQualifiers().hasConst());
+        Result =
+            deducePointerType(PT2, TypeName, PT.getQualifiers().hasConst());
       }
     }
   }
