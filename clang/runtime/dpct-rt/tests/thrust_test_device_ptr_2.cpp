@@ -10,63 +10,108 @@
 //===-----------------------------------------------------------------===//
 /*
 Thrust test case:
-package required: inteloneapi package
-$ . <path-to-inteloneapi>/setvars.sh
+
+Environment setup:
+  oneAPI environment: dpcpp, dpct, and tbb
 
 build:
-$ dpcpp thrust_test_device_ptr.cpp
+  dpcpp -fno-sycl-unnamed-lambda thrust_test_device_ptr_2.cpp
 
 run:
-$ ./a.out
+  ./a.out
+
+expected output:
+Passed
 
 */
 
-#define DPCT_USM_LEVEL_NONE
-#include <CL/sycl.hpp>
-#include <cassert>
-#include <iostream>
+#define DPCT_NAMED_LAMBDA
 
+#include <cstdio>
+
+#include <CL/sycl.hpp>
 #include <dpct/dpct.hpp>
 #include <dpct/dpstd_utils.hpp>
+#include <dpstd/algorithm>
+#include <dpstd/execution>
+
+static void dumpMaps(const char *name, dpct::device_ptr<int> &maps, int num) {
+  std::cout << name << "\n";
+  for (int i = 0; i < num; ++i) {
+    std::cout << i << ": " << maps[i] << "\n";
+  }
+}
+static void dumpMaps(const char *name, int *maps, int num) {
+  std::cout << name << "\n";
+  for (int i = 0; i < num; ++i) {
+    std::cout << i << ": " << maps[i] << "\n";
+  }
+}
 
 int main(void) {
-  const int numsH = 100;
-  const int value = -1;
+  const int numsH = 10;
+  const int valuep1 = -1;
+  const int valuepkey = -2;
+  const int valuepval = -3;
 
   int *mapsp1H = new int[numsH];
   int *mapspkeyH = new int[numsH];
   int *mapspvalH = new int[numsH];
 
-  std::fill(dpstd::execution::make_sycl_policy<class Policy_1>(dpstd::execution::sycl),mapsp1H, mapsp1H + numsH, value);
-  std::fill(dpstd::execution::make_sycl_policy<class Policy_2>(dpstd::execution::sycl),mapspkeyH, mapspkeyH + numsH, value);
-  std::fill(dpstd::execution::make_sycl_policy<class Policy_3>(dpstd::execution::sycl),mapspvalH, mapspvalH + numsH, value);
+  std::fill(mapsp1H, mapsp1H + numsH, valuep1);
+  std::fill(mapspkeyH, mapspkeyH + numsH, valuepkey);
+  std::fill(mapspvalH, mapspvalH + numsH, valuepval);
+  // dumpMaps("mapsp1H", mapsp1H, numsH);
+  // dumpMaps("mapspkeyH", mapspkeyH, numsH);
+  // dumpMaps("mapspvalH", mapspvalH, numsH);
 
   // cudaMalloc
-  dpct::device_ptr<int> mapsp1D = dpct::device_malloc<int>(numsH);
-  dpct::device_ptr<int> mapspkeyD = dpct::device_malloc<int>(numsH);
-  dpct::device_ptr<int> mapspvalD = dpct::device_malloc<int>(numsH);
-
+  int *mapsp1D = (int *)sycl::malloc_device(numsH * sizeof(int),
+                                            dpct::get_current_device(),
+                                            dpct::get_default_context());
+  int *mapspkeyD = (int *)sycl::malloc_device(numsH * sizeof(int),
+                                              dpct::get_current_device(),
+                                              dpct::get_default_context());
+  int *mapspvalD = (int *)sycl::malloc_device(numsH * sizeof(int),
+                                              dpct::get_current_device(),
+                                              dpct::get_default_context());
 
   // cudaMemcpy
-  std::copy(dpstd::execution::make_sycl_policy<class Policy_4>(dpstd::execution::sycl),mapsp1H, mapsp1H + numsH, mapsp1D);
-  std::copy(dpstd::execution::make_sycl_policy<class Policy_5>(dpstd::execution::sycl),mapspkeyH, mapspkeyH + numsH, mapspkeyD);
-  std::copy(dpstd::execution::make_sycl_policy<class Policy_6>(dpstd::execution::sycl),mapspvalH, mapspvalH + numsH, mapspvalD);
+  std::copy(mapsp1H, mapsp1H + numsH, mapsp1D);
+  std::copy(mapspkeyH, mapspkeyH + numsH, mapspkeyD);
+  std::copy(mapspvalH, mapspvalH + numsH, mapspvalD);
 
   // snapshot from Pennant
   dpct::device_ptr<int> mapsp1T(mapsp1D);
   dpct::device_ptr<int> mapspkeyT(mapspkeyD);
   dpct::device_ptr<int> mapspvalT(mapspvalD);
+  // dumpMaps("mapsp1T", mapsp1T, numsH);
+  // dumpMaps("mapspkeyT", mapspkeyT, numsH);
+  // dumpMaps("mapspvalT", mapspvalT, numsH);
 
-  std::copy(dpstd::execution::make_sycl_policy<class Policy_7>(dpstd::execution::sycl),mapsp1T, mapsp1T + numsH, mapspkeyT);
-  dpct::sequence(dpstd::execution::make_sycl_policy<class Policy_8>(dpstd::execution::sycl),mapspvalT, mapspvalT + numsH);
+  std::copy(dpstd::execution::make_sycl_policy<class Policy_7>(
+                dpstd::execution::sycl),
+            mapsp1T, mapsp1T + numsH, mapspkeyT);
+  dpct::sequence(dpstd::execution::make_sycl_policy<class Policy_8>(
+                     dpstd::execution::sycl),
+                 mapspvalT, mapspvalT + numsH);
+  // dumpMaps("mapspkeyT after copy", mapspkeyT, numsH);
+  // dumpMaps("mapspvalT after sequence", mapspvalT, numsH);
 
+  bool pass = true;
   for (int i = 0; i < numsH; ++i) {
-    if (mapspkeyT[i] != value && mapspvalT[i] != i) {
-      std::cout << "i = " << i << ", " << mapspkeyT[i] << " " << mapspvalT[i]
-                << "; ";
+    if (mapspkeyT[i] != valuep1) {
+      std::cout << "Unexpected key: mapspkeyT[" << i << "] == " << mapspkeyT[i]
+                << ", expected " << valuep1 << "\n";
+      pass = false;
+    }
+    if (mapspvalT[i] != i) {
+      std::cout << "Unexpected val: mapspvalT[" << i << "] == " << mapspvalT[i]
+                << ", expected " << i << "\n";
+      pass = false;
     }
   }
-  std::cout << std::endl << "done" << std::endl;
+  std::cout << std::endl << (pass ? "Passed" : "Failed") << "\n";
 
   return 0;
 }
