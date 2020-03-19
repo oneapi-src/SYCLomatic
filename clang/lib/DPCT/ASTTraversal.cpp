@@ -2042,7 +2042,7 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
       SourceManager *SM = Result.SourceManager;
       auto Loc = FD->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
           FD->getEndLoc(), *SM, Result.Context->getLangOpts()));
-      emplaceTransformation(new ReplaceToken(Loc.getLocWithOffset(-1), "{}"));
+      emplaceTransformation(new InsertText(Loc, "{}"));
     }
     replaceTypeName(FD->getTypeSourceInfo()->getTypeLoc(), true);
   }

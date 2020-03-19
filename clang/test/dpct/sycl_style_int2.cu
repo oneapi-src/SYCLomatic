@@ -75,7 +75,7 @@ int main() {
 
   // CHECK: union benchtype_u {
   // CHECK:   uint64_t u64;
-  // CHECK:   sycl::uint2 u3{};
+  // CHECK:   sycl::uint2 u32{};
   // CHECK:   sycl::uint2 *u32_p ;
   // CHECK:   sycl::uint2 array[10];
   // CHECK: };

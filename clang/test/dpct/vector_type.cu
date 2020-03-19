@@ -3853,3 +3853,14 @@ uint2 p_1;
 p_1 = ((const uint2 *)base)[0];
 int2 p_2 = ((const int2 *)base)[0];
 }
+
+union struct_union {
+  // CHECK: sycl::float2 data{};
+  float2 data;
+};
+
+int foo() {
+  struct_union temp;
+  // CHECK: int x = static_cast<float>(temp.data.x()) + 2;
+  int x = temp.data.x + 2;
+}
