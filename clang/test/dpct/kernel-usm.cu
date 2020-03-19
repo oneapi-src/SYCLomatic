@@ -52,19 +52,18 @@ int main() {
 // CHECK-NEXT:  memcpy(&result[item_ct1.get_group(2)*8], resultInGroup, sizeof(float)*8);
 // CHECK-NEXT:}
 // CHECK-NEXT:int run_foo5 () {
-// CHECK-NEXT:  {
-// CHECK-NEXT:    auto result_ct0 = result.get_ptr();
-// CHECK-NEXT:    dpct::get_default_queue().submit(
-// CHECK-NEXT:      [&](sycl::handler &cgh) {
-// CHECK-NEXT:        sycl::accessor<float, 1, sycl::access::mode::read_write, sycl::access::target::local> resultInGroup_acc_ct1(sycl::range<1>(8), cgh);
+// CHECK-NEXT:  dpct::get_default_queue().submit(
+// CHECK-NEXT:    [&](sycl::handler &cgh) {
+// CHECK-NEXT:      sycl::accessor<float, 1, sycl::access::mode::read_write, sycl::access::target::local> resultInGroup_acc_ct1(sycl::range<1>(8), cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
-// CHECK-NEXT:          sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
-// CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:            my_kernel(result_ct0, item_ct1, resultInGroup_acc_ct1.get_pointer());
-// CHECK-NEXT:          });
-// CHECK-NEXT:      });
-// CHECK-NEXT:  }
+// CHECK-NEXT:      auto result_ct0 = result.get_ptr();
+// CHECK-EMPTY:
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
+// CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:          my_kernel(result_ct0, item_ct1, resultInGroup_acc_ct1.get_pointer());
+// CHECK-NEXT:        });
+// CHECK-NEXT:    });
 // CHECK-NEXT:  printf("%f ", result[10]);
 // CHECK-NEXT:}
 __managed__ __device__ float result[32];
@@ -80,19 +79,18 @@ int run_foo5 () {
 
 // CHECK:dpct::shared_memory<float, 1> result2(32);
 // CHECK-NEXT:int run_foo6 () {
-// CHECK-NEXT:  {
-// CHECK-NEXT:    auto result2_ct0 = result2.get_ptr();
-// CHECK-NEXT:    dpct::get_default_queue().submit(
-// CHECK-NEXT:      [&](sycl::handler &cgh) {
-// CHECK-NEXT:        sycl::accessor<float, 1, sycl::access::mode::read_write, sycl::access::target::local> resultInGroup_acc_ct1(sycl::range<1>(8), cgh);
+// CHECK-NEXT:  dpct::get_default_queue().submit(
+// CHECK-NEXT:    [&](sycl::handler &cgh) {
+// CHECK-NEXT:      sycl::accessor<float, 1, sycl::access::mode::read_write, sycl::access::target::local> resultInGroup_acc_ct1(sycl::range<1>(8), cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
-// CHECK-NEXT:          sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
-// CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:            my_kernel(result2_ct0, item_ct1, resultInGroup_acc_ct1.get_pointer());
-// CHECK-NEXT:          });
-// CHECK-NEXT:      });
-// CHECK-NEXT:  }
+// CHECK-NEXT:      auto result2_ct0 = result2.get_ptr();
+// CHECK-EMPTY:
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
+// CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:          my_kernel(result2_ct0, item_ct1, resultInGroup_acc_ct1.get_pointer());
+// CHECK-NEXT:        });
+// CHECK-NEXT:    });
 // CHECK-NEXT:  printf("%f ", result2[10]);
 // CHECK-NEXT:}
 __managed__ float result2[32];
@@ -103,19 +101,18 @@ int run_foo6 () {
 
 // CHECK:dpct::shared_memory<float, 0> result3;
 // CHECK-NEXT:int run_foo7 () {
-// CHECK-NEXT:  {
-// CHECK-NEXT:    auto result3_ct0 = result3.get_ptr();
-// CHECK-NEXT:    dpct::get_default_queue().submit(
-// CHECK-NEXT:      [&](sycl::handler &cgh) {
-// CHECK-NEXT:        sycl::accessor<float, 1, sycl::access::mode::read_write, sycl::access::target::local> resultInGroup_acc_ct1(sycl::range<1>(8), cgh);
+// CHECK-NEXT:  dpct::get_default_queue().submit(
+// CHECK-NEXT:    [&](sycl::handler &cgh) {
+// CHECK-NEXT:      sycl::accessor<float, 1, sycl::access::mode::read_write, sycl::access::target::local> resultInGroup_acc_ct1(sycl::range<1>(8), cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
-// CHECK-NEXT:          sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
-// CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:            my_kernel(result3_ct0, item_ct1, resultInGroup_acc_ct1.get_pointer());
-// CHECK-NEXT:          });
-// CHECK-NEXT:      });
-// CHECK-NEXT:  }
+// CHECK-NEXT:      auto result3_ct0 = result3.get_ptr();
+// CHECK-EMPTY:
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
+// CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:          my_kernel(result3_ct0, item_ct1, resultInGroup_acc_ct1.get_pointer());
+// CHECK-NEXT:        });
+// CHECK-NEXT:    });
 // CHECK-NEXT:  printf("%f ", result3[0]);
 // CHECK-NEXT:}
 __managed__ float result3;

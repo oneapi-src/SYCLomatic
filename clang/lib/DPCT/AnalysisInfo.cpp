@@ -263,8 +263,8 @@ void KernelCallExpr::buildKernelArgsStmt() {
                                   Arg.getIdStringWithSuffix("acc"), "[0]), ");
       }
     } else if (Arg.isRedeclareRequired) {
-      OuterStmts.emplace_back(buildString(
-          "auto ", Arg.getIdStringWithIndex(), " = ", Arg.getArgString(),
+      SubmitStmtsList.CommandGroupList.emplace_back(buildString("auto ",
+          Arg.getIdStringWithIndex(), " = ", Arg.getArgString(),
           Arg.IsDefinedOnDevice ? ".get_ptr();" : ";"));
       KernelArgs += Arg.getIdStringWithIndex() + ", ";
     } else {

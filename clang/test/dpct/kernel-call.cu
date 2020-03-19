@@ -77,12 +77,13 @@ struct TestThis {
   void test() {
     /// Kernel function is called in method declaration, and fields are used as arguments.
     /// Check the miggration of implicit "this" pointer.
-    // CHECK:       auto args_arg1_ct0 = args.arg1;
-    // CHECK-NEXT:  auto args_arg2_ct1 = args.arg2;
-    // CHECK-NEXT:  auto arg3_ct2 = arg3;
-    // CHECK-NEXT:  dpct::get_default_queue().submit(
+    // CHECK:  dpct::get_default_queue().submit(
     // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
     // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
+    // CHECK-EMPTY:
+    // CHECK-NEXT:       auto args_arg1_ct0 = args.arg1;
+    // CHECK-NEXT:       auto args_arg2_ct1 = args.arg2;
+    // CHECK-NEXT:       auto arg3_ct2 = arg3;
     // CHECK-EMPTY:
     // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
     // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
@@ -173,9 +174,10 @@ int main() {
   // CHECK-NEXT:     });
   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int, karg2int, karg3int);
 
-  // CHECK:   auto arr_karg3int_ct2 = arr[karg3int];
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:       auto arr_karg3int_ct2 = arr[karg3int];
+  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, griddim[0]) * cl::sycl::range<3>(1, 1, griddim[1] + 2), cl::sycl::range<3>(1, 1, griddim[1] + 2)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
@@ -250,11 +252,12 @@ public:
   foo_class(int n) : a(n) {}
 
   // CHECK:  int run_foo() {
-  // CHECK-NEXT:    auto a_ct0 = a;
-  // CHECK-NEXT:    auto aa_b_ct1 = aa.b;
-  // CHECK-NEXT:    auto aa_c_d_ct2 = aa.c.d;
   // CHECK-NEXT:    dpct::get_default_queue().submit(
   // CHECK-NEXT:      [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:         auto a_ct0 = a;
+  // CHECK-NEXT:         auto aa_b_ct1 = aa.b;
+  // CHECK-NEXT:         auto aa_c_d_ct2 = aa.c.d;
+  // CHECK-EMPTY:
   // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:          cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:          [=](cl::sycl::nd_item<3> item_ct1) {

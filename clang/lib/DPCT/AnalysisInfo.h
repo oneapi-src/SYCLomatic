@@ -2173,6 +2173,7 @@ private:
     StmtList AccessorList;
     StmtList TextureList;
     StmtList NdRangeList;
+    StmtList CommandGroupList;
 
     inline KernelPrinter &print(KernelPrinter &Printer) {
       printList(Printer, StreamList);
@@ -2185,6 +2186,7 @@ private:
       printList(Printer, TextureList, "accessors to image wrappers");
       printList(Printer, NdRangeList,
                 "ranges to define ND iteration space for the kernel");
+      printList(Printer, CommandGroupList, "helper variables defined");
       return Printer;
     }
 

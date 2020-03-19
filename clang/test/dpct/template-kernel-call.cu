@@ -116,11 +116,11 @@ void runTest() {
   testKernelPtr<T, ktarg, TestTemplate<T> ><<<griddim, threaddim>>>(karg4, karg5);
 
   T karg1T, karg2T;
-  // CHECK: {
-  // CHECK-NEXT:   auto ktarg_ct2 = ktarg;
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
+  // CHECK-EMPTY:
+  // CHECK-NEXT:       auto ktarg_ct2 = ktarg;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
@@ -128,17 +128,16 @@ void runTest() {
   // CHECK-NEXT:           testKernel<T>(karg1T, karg2T, ktarg_ct2, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   testKernel<T><<<griddim, threaddim>>>(karg1T, karg2T, ktarg);
 
   TestTemplate<T> karg3TT;
   TT karg4TT;
 
-  // CHECK: {
-  // CHECK-NEXT:   auto ktarg_ct2 = ktarg;
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
+  // CHECK-EMPTY:
+  // CHECK-NEXT:       auto ktarg_ct2 = ktarg;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, TestTemplate<T>>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
@@ -146,14 +145,13 @@ void runTest() {
   // CHECK-NEXT:           testKernel<TestTemplate<T>>(karg3TT, karg4TT, ktarg_ct2, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   testKernel<TestTemplate<T> ><<<griddim, threaddim>>>(karg3TT, karg4TT, ktarg);
 
-  // CHECK: {
-  // CHECK-NEXT:   auto ktarg_ct2 = ktarg;
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
+  // CHECK-EMPTY:
+  // CHECK-NEXT:       auto ktarg_ct2 = ktarg;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, TT>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
@@ -161,7 +159,6 @@ void runTest() {
   // CHECK-NEXT:           testKernel<TT>(karg3TT, karg4TT, ktarg_ct2, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   testKernel<TT><<<griddim, threaddim>>>(karg3TT, karg4TT, ktarg);
 }
 
@@ -193,17 +190,16 @@ int main() {
 
   LA karg1LA, karg2LA;
   int intvar = 20;
-  // CHECK: {
-  // CHECK-NEXT:   auto ktarg_ct2 = ktarg;
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       auto ktarg_ct2 = ktarg;
+  // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, LA>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 10) * sycl::range<3>(1, 1, intvar), sycl::range<3>(1, 1, intvar)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernel<LA>(karg1LA, karg2LA, ktarg_ct2, item_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
-  // CHECK-NEXT: }
   testKernel<LA><<<10, intvar>>>(karg1LA, karg2LA, ktarg);
 }
 

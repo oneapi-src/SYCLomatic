@@ -29,9 +29,16 @@ __global__ void helloFromGPU2() {
 void testReference(const int &i) {
   dim3 griddim = 2;
   dim3 threaddim = 32;
-  // CHECK:  auto dpct_global_range = griddim * threaddim;
+  // CHECK: dpct::get_default_queue().submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     auto dpct_global_range = griddim * threaddim;
   // CHECK-EMPTY:
-  // CHECK-NEXT:  cgh.parallel_for(
+  // CHECK-NEXT:     cgh.parallel_for(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         helloFromGPU(i, item_ct1);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
   helloFromGPU<<<griddim, threaddim>>>(i);
 
 }
@@ -43,9 +50,20 @@ struct TestThis {
   int arg3;
   dim3 griddim, threaddim;
   void test() {
-    // CHECK:  auto dpct_global_range = griddim * threaddim;
+    // CHECK: dpct::get_default_queue().submit(
+    // CHECK-NEXT:   [&](sycl::handler &cgh) {
+    // CHECK-NEXT:     auto dpct_global_range = griddim * threaddim;
     // CHECK-EMPTY:
-    // CHECK-NEXT:  cgh.parallel_for(
+    // CHECK-NEXT:     auto args_arg1_ct0 = args.arg1;
+    // CHECK-NEXT:     auto args_arg2_ct1 = args.arg2;
+    // CHECK-NEXT:     auto arg3_ct2 = arg3;
+    // CHECK-EMPTY:
+    // CHECK-NEXT:     cgh.parallel_for(
+    // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
+    // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:         testKernel(args_arg1_ct0, args_arg2_ct1, arg3_ct2, item_ct1);
+    // CHECK-NEXT:       });
+    // CHECK-NEXT:   });
     testKernel<<<griddim, threaddim>>>(args.arg1, args.arg2, arg3);
   }
 };
@@ -123,10 +141,19 @@ class foo_class {
 public:
   foo_class(int n) : a(n) {}
 
-  // CHECK:  dpct::get_default_queue().submit(
-  //CHECK-NEXT:      [&](sycl::handler &cgh) {
-  //CHECK-NEXT:        cgh.parallel_for(
   int run_foo() {
+    // CHECK: dpct::get_default_queue().submit(
+    // CHECK-NEXT:   [&](sycl::handler &cgh) {
+    // CHECK-NEXT:     auto a_ct0 = a;
+    // CHECK-NEXT:     auto aa_b_ct1 = aa.b;
+    // CHECK-NEXT:     auto aa_c_d_ct2 = aa.c.d;
+    // CHECK-EMPTY:
+    // CHECK-NEXT:     cgh.parallel_for(
+    // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+    // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:         foo_kernel(a_ct0, aa_b_ct1, aa_c_d_ct2);
+    // CHECK-NEXT:       });
+    // CHECK-NEXT:   });
     foo_kernel<<<1, 1>>>(a, aa.b, aa.c.d);
   }
 
