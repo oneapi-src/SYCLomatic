@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <algorithm>
 
 #include <stdio.h>
 
