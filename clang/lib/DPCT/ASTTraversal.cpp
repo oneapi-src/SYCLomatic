@@ -1075,7 +1075,35 @@ void AtomicFunctionRule::ReportUnsupportedAtomicFunc(const CallExpr *CE) {
   report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, OSS.str());
 }
 
-// To handle five kind of cases:
+// Determine if S is a statement inside
+// a if/while/do while/for statement.
+bool AtomicFunctionRule::IsStmtInStatement(const clang::Stmt *S, const clang::Decl *Root) {
+  auto ParentStmt = getParentStmt(S);
+  if (!ParentStmt)
+    return false;
+
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*S);
+  assert(Parents.size() >= 1);
+  const clang::Decl *Parent = Parents[0].get<Decl>();
+  auto ParentStmtClass = ParentStmt->getStmtClass();
+  bool Ret = ParentStmtClass == Stmt::StmtClass::IfStmtClass ||
+             ParentStmtClass == Stmt::StmtClass::WhileStmtClass ||
+             ParentStmtClass == Stmt::StmtClass::DoStmtClass ||
+             ParentStmtClass == Stmt::StmtClass::ForStmtClass;
+  if (Ret)
+    return true;
+  else if (Parent != Root)
+    return IsStmtInStatement(ParentStmt, Root);
+  else
+    return false;
+}
+
+// To find if device variable \pExpr has __share__ attribute,
+// if it has, HasSharedAttr is set true.
+// if \pExpr is in a if/while/do while/for statement
+// \pNeedReport is set true.
+// To handle six kind of cases:
 // case1: extern __shared__ uint32_t share_array[];
 //        atomicAdd(&share_array[0], 1);
 // case2: extern __shared__ uint32_t share_array[];
@@ -1088,48 +1116,64 @@ void AtomicFunctionRule::ReportUnsupportedAtomicFunc(const CallExpr *CE) {
 //        atomicAdd(p, 1);
 // case5: extern __shared__ uint32_t share_array[];
 //        atomicAdd(share_array, 1);
-// TODO: Need to handle the situlation the share memory address
-// is passed by normal pointer predefined.
-// eg: __shared__ uint32_t share_v;
-//     uint32_t *p;
-//     p = &share_v;
-//     atomicAdd(p, 1);
+// case6: __shared__ uint32_t share_v;
+//        uint32_t *p;
+//        p = &share_v;
+//        atomicAdd(p, 1);
 void AtomicFunctionRule::GetShareAttrRecursive(const Expr *Expr,
-                                               bool &HasSharedAttr) {
+                                               bool &HasSharedAttr,
+                                               bool &NeedReport) {
   if (!Expr)
     return;
 
+  if (auto CE = dyn_cast<CallExpr>(Expr)) {
+    NeedReport = true;
+    return;
+  }
+
   if (auto UO = dyn_cast<UnaryOperator>(Expr)) {
     if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
-      if (auto ASE = dyn_cast<ArraySubscriptExpr>(UO->getSubExpr())) {
-        if (auto *ImpCast = dyn_cast<ImplicitCastExpr>(ASE->getBase())) {
-          if (auto DRE = dyn_cast<DeclRefExpr>(ImpCast->getSubExpr())) {
-            if (DRE->getDecl()->hasAttr<CUDASharedAttr>()) {
-              HasSharedAttr = true;
-              return;
-            }
-          }
-        }
-      } else if (auto DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr())) {
-        if (DRE->getDecl()->hasAttr<CUDASharedAttr>()) {
-          HasSharedAttr = true;
-          return;
+      Expr = UO->getSubExpr();
+    }
+  }
+
+  if (auto ASE = dyn_cast<ArraySubscriptExpr>(Expr)) {
+    Expr = ASE->getBase();
+  }
+  const clang::Expr *AssignedExpr = NULL;
+  const FunctionDecl *FuncDecl =NULL;
+  if (auto DRE = dyn_cast<DeclRefExpr>(Expr->IgnoreImplicitAsWritten())) {
+    if (isa<ParmVarDecl>(DRE->getDecl()))
+      return;
+
+    if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+      if (VD->hasAttr<CUDASharedAttr>()) {
+        HasSharedAttr = true;
+        return;
+      }
+
+      AssignedExpr = VD->getInit();
+      if (FuncDecl = dyn_cast<FunctionDecl>(VD->getDeclContext())) {
+        std::vector<const DeclRefExpr *> Refs;
+        VarReferencedInFD(FuncDecl->getBody(), VD, Refs);
+        for (auto const &Ref : Refs) {
+          if (Ref == DRE)
+            break;
+          if (auto BO = dyn_cast<BinaryOperator>(getParentStmt(Ref)))
+            if (BO->getLHS() == Ref && BO->getOpcode() == BO_Assign)
+              AssignedExpr = BO->getRHS();
         }
       }
     }
   }
 
-  if (auto *ImpCast = dyn_cast<ImplicitCastExpr>(Expr)) {
-    if (auto DRE = dyn_cast<DeclRefExpr>(ImpCast->getSubExpr())) {
-      if (auto Decl = DRE->getDecl()) {
-        if (Decl->hasAttr<CUDASharedAttr>()) {
-          HasSharedAttr = true;
-          return;
-        } else if (auto VD = dyn_cast<VarDecl>(Decl)) {
-          GetShareAttrRecursive(VD->getInit(), HasSharedAttr);
-        }
-      }
+  if (AssignedExpr) {
+    // if AssignedExpr in a if/while/do while/for statement,
+    // it is necessary to report a warning message.
+    if (IsStmtInStatement(AssignedExpr, FuncDecl)) {
+      NeedReport = true;
     }
+    GetShareAttrRecursive(AssignedExpr, HasSharedAttr, NeedReport);
   }
 }
 
@@ -1182,12 +1226,21 @@ void AtomicFunctionRule::MigrateAtomicFunc(
   }
 
   bool HasSharedAttr = false;
-  GetShareAttrRecursive(CE->getArg(0), HasSharedAttr);
+  bool NeedReport = false;
+  GetShareAttrRecursive(CE->getArg(0), HasSharedAttr, NeedReport);
+  std::string ClNamespace = ExplicitClNamespace ? "cl::sycl" : "sycl";
+  std::string SpaceName = ClNamespace + "::access::address_space::local_space";
+  std::string ReplAtomicFuncNameWithSpace =
+      ReplacedAtomicFuncName + "<" + TypeName + ", " + SpaceName + ">";
+  auto SL = CE->getArg(0)->getBeginLoc();
+  std::string MemAddrSpace = HasSharedAttr ? "local" : "global";
+  if (NeedReport)
+    report(SL, Diagnostics::SHARE_MEMORY_ATTR_DEDUCE, false,
+           getStmtSpelling(CE->getArg(0)), MemAddrSpace, ReplacedAtomicFuncName,
+           ReplAtomicFuncNameWithSpace);
+
   if (HasSharedAttr) {
-    std::string ClNamespace = ExplicitClNamespace ? "cl::sycl" : "sycl";
-    std::string SpaceName =
-        ClNamespace + "::access::address_space::local_space";
-    ReplacedAtomicFuncName += "<" + TypeName + ", " + SpaceName + ">";
+    ReplacedAtomicFuncName = ReplAtomicFuncNameWithSpace;
   }
 
   emplaceTransformation(new ReplaceCalleeName(

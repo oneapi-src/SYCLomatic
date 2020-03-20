@@ -164,9 +164,6 @@ __shared__ uint32_t share_v;
   atomicAdd(&share_v, 1);
 }
 
-// TODO: Need to handle the situlation the share memory address
-// is passed by normal pointers,
-// CTST-1333 has been created to track this issue.
 // CHECK:void foo_2(sycl::nd_item<3> item_ct1, uint8_t *dpct_local, uint32_t *share_v) {
 // CHECK-NEXT:  auto share_array = (uint32_t *)dpct_local;
 // CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range().get(2)) {
@@ -202,4 +199,156 @@ __shared__ uint32_t share_v;
   atomicAdd(p_1, 1);
   atomicAdd(p_2, 1);
   atomicAdd(p_3, 1);
+}
+
+// CHECK:void foo_3(uint32_t *share_v) {
+// CHECK-EMPTY:
+// CHECK-NEXT:  uint32_t *p_1 = NULL;
+// CHECK-NEXT:  uint32_t *p_2 = NULL;
+// CHECK-NEXT:  uint32_t *p_3 = NULL;
+// CHECK-NEXT:  p_1 = share_v;
+// CHECK-NEXT:  p_2 = p_1;
+// CHECK-NEXT:  p_3 = p_2;
+// CHECK-NEXT:  uint32_t *p_4 = p_3;
+// CHECK-NEXT:  dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::local_space>(p_4, (uint32_t)1);
+// CHECK-NEXT:}
+__global__ void foo_3() {
+__shared__ uint32_t share_v;
+  uint32_t *p_1 = NULL;
+  uint32_t *p_2 = NULL;
+  uint32_t *p_3 = NULL;
+  p_1 = &share_v;
+  p_2 = p_1;
+  p_3 = p_2;
+  uint32_t *p_4 = p_3;
+  atomicAdd(p_4, 1);
+}
+
+// CHECK:dpct::device_memory<uint32_t, 1> dmem(100);
+// CHECK-NEXT:void foo_4(uint8_t *dpct_local, uint32_t *dmem) {
+// CHECK-NEXT:auto share = (uint32_t *)dpct_local;
+// CHECK-NEXT:  uint32_t *p_1 = NULL;
+// CHECK-NEXT:  uint32_t *p_2 = NULL;
+// CHECK-NEXT:  uint32_t *p_3 = NULL;
+// CHECK-NEXT:  p_1 = &share[0];
+// CHECK-NEXT:  p_2 = p_1;
+// CHECK-NEXT:  p_3 = p_2;
+// CHECK-NEXT:  uint32_t *p_4 = p_3;
+// CHECK-NEXT:  dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::local_space>(p_4, (uint32_t)1);
+// CHECK-NEXT:  p_1 = share;
+// CHECK-NEXT:  p_2 = p_1;
+// CHECK-NEXT:  p_3 = p_2;
+// CHECK-NEXT:  p_3 = dmem;
+// CHECK-NEXT:  uint32_t *p_5 = p_3;
+// CHECK-NEXT:  dpct::atomic_fetch_add(p_5, (uint32_t)1);
+// CHECK-NEXT:}
+__device__ uint32_t dmem[100];
+__global__ void foo_4() {
+extern __shared__ uint32_t share[];
+  uint32_t *p_1 = NULL;
+  uint32_t *p_2 = NULL;
+  uint32_t *p_3 = NULL;
+  p_1 = &share[0];
+  p_2 = p_1;
+  p_3 = p_2;
+  uint32_t *p_4 = p_3;
+  atomicAdd(p_4, 1);
+  p_1 = share;
+  p_2 = p_1;
+  p_3 = p_2;
+  p_3 = dmem;
+  uint32_t *p_5 = p_3;
+  atomicAdd(p_5, 1);
+}
+
+__device__ uint32_t* func(uint32_t *in){
+    return in;
+}
+
+// CHECK:void foo_5(uint8_t *dpct_local) {
+// CHECK-NEXT:auto share = (uint32_t *)dpct_local;
+// CHECK-NEXT:  uint32_t *p_1 = NULL;
+// CHECK-NEXT:  uint32_t *p_2 = NULL;
+// CHECK-NEXT:  uint32_t *p_3 = NULL;
+// CHECK-NEXT:  p_1 = &share[0];
+// CHECK-NEXT:  p_2 = p_1;
+// CHECK-NEXT:  p_3 = p_2;
+// CHECK-NEXT:  uint32_t *p_4;
+// CHECK-NEXT:  p_4= p_4 + 1;
+// CHECK-NEXT:  dpct::atomic_fetch_add(p_4, (uint32_t)1);
+// CHECK-NEXT:  p_4=func(p_3);
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1039:{{[0-9]+}}: Generated code assumes "p_4" points to global memory address space. If it points to local memory address space, replace the "dpct::atomic_fetch_add" below with "dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::local_space>".
+// CHECK-NEXT:  */
+// CHECK-NEXT:  dpct::atomic_fetch_add(p_4, (uint32_t)1);
+// CHECK-NEXT:}
+__global__ void foo_5() {
+extern __shared__ uint32_t share[];
+  uint32_t *p_1 = NULL;
+  uint32_t *p_2 = NULL;
+  uint32_t *p_3 = NULL;
+  p_1 = &share[0];
+  p_2 = p_1;
+  p_3 = p_2;
+  uint32_t *p_4;
+  p_4= p_4 + 1;
+  atomicAdd(p_4, 1);
+  p_4=func(p_3);
+  atomicAdd(p_4, 1);
+}
+
+#define FUNC(in)  in
+// CHECK:void foo_6(uint8_t *dpct_local) {
+// CHECK-NEXT:auto share = (uint32_t *)dpct_local;
+// CHECK-NEXT:  uint32_t *p_1 = NULL;
+// CHECK-NEXT:  uint32_t *p_2 = NULL;
+// CHECK-NEXT:  uint32_t *p_3 = NULL;
+// CHECK-NEXT:  p_1 = &share[0];
+// CHECK-NEXT:  p_2 = p_1;
+// CHECK-NEXT:  p_3 = p_2;
+// CHECK-NEXT:  uint32_t *p_4;
+// CHECK-NEXT:  p_4= p_4 + 1;
+// CHECK-NEXT:  p_4=FUNC(p_3);
+// CHECK-NEXT:  dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::local_space>(p_4, (uint32_t)1);
+// CHECK-NEXT:}
+__global__ void foo_6() {
+extern __shared__ uint32_t share[];
+  uint32_t *p_1 = NULL;
+  uint32_t *p_2 = NULL;
+  uint32_t *p_3 = NULL;
+  p_1 = &share[0];
+  p_2 = p_1;
+  p_3 = p_2;
+  uint32_t *p_4;
+  p_4= p_4 + 1;
+  p_4=FUNC(p_3);
+  atomicAdd(p_4, 1);
+}
+
+// CHECK:void foo_7(int a, uint8_t *dpct_local) {
+// CHECK-NEXT:auto share = (uint32_t *)dpct_local;
+// CHECK-NEXT:  uint32_t *p_1;
+// CHECK-NEXT:  uint32_t *p_2;
+// CHECK-NEXT:  uint32_t *p_3 = NULL;
+// CHECK-NEXT:  p_1 = &share[0];
+// CHECK-NEXT:  if(a > 1)
+// CHECK-NEXT:    p_2 = p_1;
+// CHECK-NEXT:  else
+// CHECK-NEXT:    p_2 = p_3;
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1039:{{[0-9]+}}: Generated code assumes "p_2" points to global memory address space. If it points to local memory address space, replace the "dpct::atomic_fetch_add" below with "dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::local_space>".
+// CHECK-NEXT:  */
+// CHECK-NEXT:  dpct::atomic_fetch_add(p_2, (uint32_t)1);
+// CHECK-NEXT:}
+__global__ void foo_7(int a) {
+extern __shared__ uint32_t share[];
+  uint32_t *p_1;
+  uint32_t *p_2;
+  uint32_t *p_3 = NULL;
+  p_1 = &share[0];
+  if(a > 1)
+    p_2 = p_1;
+  else
+    p_2 = p_3;
+  atomicAdd(p_2, 1);
 }
