@@ -239,8 +239,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
               RewriteArgList[0] = "(long long)(" + RewriteArgList[0] + ")";
           }
         }
-      } else if (SourceCalleeName == "__mul24" || SourceCalleeName == "__mulhi" ||
-                 SourceCalleeName == "__hadd") {
+      } else if (SourceCalleeName == "__mul24" || SourceCalleeName == "mul24" ||
+                 SourceCalleeName == "__mulhi" || SourceCalleeName == "__hadd") {
         LangOptions LO;
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
           auto Arg = Call->getArg(i);

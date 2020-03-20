@@ -590,3 +590,6 @@ ENTRY_UNSUPPORTED("__umul64hi")
 ENTRY_UNSUPPORTED("__umulhi")
 ENTRY_UNSUPPORTED("__urhadd")
 ENTRY_UNSUPPORTED("__usad")
+
+// crt wrapper API
+ENTRY_RENAMED("mul24", MapNames::getClNamespace() + "::mul24")

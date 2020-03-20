@@ -2843,3 +2843,15 @@ void ns() {
   // CHECK: max(i, j);
   max(i, j);
 }
+
+// crt wrapper API
+__device__ void foo1() {
+  int i;
+  float f;
+  unsigned int ui;
+  long long ll;
+  unsigned long long ull;
+
+  // CHECK: i = sycl::mul24(i, i);
+  i = mul24(i, i);
+}

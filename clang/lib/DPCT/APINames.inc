@@ -1440,3 +1440,6 @@ ENTRY(nvrtcGetProgramLog, nvrtcGetProgramLog, false, NO_FLAG, P4, "comment")
 ENTRY(nvrtcAddNameExpression, nvrtcAddNameExpression, false, NO_FLAG, P4, "comment")
 ENTRY(nvrtcGetLoweredName, nvrtcGetLoweredName, false, NO_FLAG, P4, "comment")
 ENTRY(nvrtcGetTypeName, nvrtcGetTypeName, false, NO_FLAG, P4, "comment")
+
+// crt wrapper API
+ENTRY(mul24, mul24, true, NO_FLAG, P0, "Successful")
