@@ -145,4 +145,7 @@ int main(int argc, char* argv[]) {
   std::list<cudaEvent_t> eventlist;
   std::list<cudaError> errors;
   std::list<cudaDeviceProp> props;
+
+  // CHECK: std::vector<sycl::float2> const vf(5);
+  std::vector<float2> const vf(5);
 }

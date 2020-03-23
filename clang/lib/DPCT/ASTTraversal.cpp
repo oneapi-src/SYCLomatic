@@ -1895,8 +1895,7 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       if (Replacement.empty())
         // TODO report migration error
         continue;
-
-      auto DTL = DD->getTypeSourceInfo()->getTypeLoc();
+      auto DTL = DD->getTypeSourceInfo()->getTypeLoc().getUnqualifiedLoc();
       TemplateSpecializationTypeLoc TTTL;
       if (isElaboratedType) {
         auto ETL = DTL.getAs<ElaboratedTypeLoc>();
