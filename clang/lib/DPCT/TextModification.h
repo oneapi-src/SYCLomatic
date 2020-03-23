@@ -279,7 +279,8 @@ public:
 /// Replace type in variable declaration.
 class ReplaceTypeInDecl : public TextModification {
   TypeLoc TL;
-  const DeclaratorDecl *DD; // DD points to a VarDecl or a FieldDecl
+  const DeclaratorDecl *DD = nullptr; // DD points to a VarDecl or a FieldDecl
+  SourceLocation SL; // The input source location used to record MigrationInfo
   std::string T;
 
 public:
@@ -298,6 +299,11 @@ public:
                     std::string &&T)
       : TextModification(TMID::ReplaceTypeInDecl), DD(DD), T(T) {
     assert(dyn_cast<VarDecl>(DD) || dyn_cast<FieldDecl>(DD));
+    TL = TAL.getTypeSourceInfo()->getTypeLoc();
+  }
+  ReplaceTypeInDecl(const SourceLocation SL, const TemplateArgumentLoc &TAL,
+                    std::string &&T)
+      : TextModification(TMID::ReplaceTypeInDecl), SL(SL), T(T) {
     TL = TAL.getTypeSourceInfo()->getTypeLoc();
   }
   std::shared_ptr<ExtReplacement>

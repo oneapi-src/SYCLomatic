@@ -239,7 +239,10 @@ std::map<unsigned, ReplaceVarDecl *> ReplaceVarDecl::ReplaceMap;
 
 std::shared_ptr<ExtReplacement>
 ReplaceTypeInDecl::getReplacement(const ASTContext &Context) const {
-  recordMigrationInfo(Context, DD->getBeginLoc());
+  if (DD)
+    recordMigrationInfo(Context, DD->getBeginLoc());
+  else
+    recordMigrationInfo(Context, SL);
   return std::make_shared<ExtReplacement>(Context.getSourceManager(), &TL, T,
                                           this);
 }

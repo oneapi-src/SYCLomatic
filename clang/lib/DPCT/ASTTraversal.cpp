@@ -1094,8 +1094,9 @@ void AtomicFunctionRule::ReportUnsupportedAtomicFunc(const CallExpr *CE) {
 //     uint32_t *p;
 //     p = &share_v;
 //     atomicAdd(p, 1);
-void AtomicFunctionRule::GetShareAttrRecursive(const Expr *Expr, bool &HasSharedAttr) {
-  if(!Expr)
+void AtomicFunctionRule::GetShareAttrRecursive(const Expr *Expr,
+                                               bool &HasSharedAttr) {
+  if (!Expr)
     return;
 
   if (auto UO = dyn_cast<UnaryOperator>(Expr)) {
@@ -1810,6 +1811,13 @@ void TemplateTypeInDeclRule::registerMatcher(MatchFinder &MF) {
                     .bind("TemplateTypeInFieldDecl"),
                 this);
   MF.addMatcher(typedefDecl().bind("typeDefDecl"), this);
+
+  MF.addMatcher(
+      typeLoc(
+          loc(templateSpecializationType(hasAnyTemplateArgument(refersToType(
+              typedefType(hasDeclaration(typedefDecl(vectorTypeName()))))))))
+          .bind("TypeInTemplateSpecialization"),
+      this);
 }
 
 void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
@@ -1863,16 +1871,24 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   // DD points to a VarDecl or a FieldDecl
   const DeclaratorDecl *DD =
       getNodeAsType<VarDecl>(Result, "TemplateTypeInVarDecl");
+  const TypeLoc* TL = nullptr;
   QualType QT;
   if (DD)
     QT = DD->getType();
   else if ((DD = getNodeAsType<FieldDecl>(Result, "TemplateTypeInFieldDecl")))
     QT = DD->getType();
+  else if (TL = getNodeAsType<TypeLoc>(Result, "TypeInTemplateSpecialization"))
+    QT = TL->getType();
   else
     return;
 
-  auto Loc =
-      DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc().getRawEncoding();
+  unsigned int Loc = 0;
+  if (DD) {
+    Loc = DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc().getRawEncoding();
+  } else if (TL) {
+    Loc = TL->getBeginLoc().getRawEncoding();
+  }
+
   if (DupFilter.find(Loc) != DupFilter.end())
     return;
 
@@ -1895,7 +1911,13 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       if (Replacement.empty())
         // TODO report migration error
         continue;
-      auto DTL = DD->getTypeSourceInfo()->getTypeLoc().getUnqualifiedLoc();
+
+      TypeLoc DTL;
+      if (DD) {
+        DTL = DD->getTypeSourceInfo()->getTypeLoc().getUnqualifiedLoc();
+      } else if (TL) {
+        DTL = *TL;
+      }
       TemplateSpecializationTypeLoc TTTL;
       if (isElaboratedType) {
         auto ETL = DTL.getAs<ElaboratedTypeLoc>();
@@ -1905,8 +1927,12 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       }
       // Replace each type in the template arguments one by one
       auto TAL = TTTL.getArgLoc(i);
-      emplaceTransformation(
-          new ReplaceTypeInDecl(DD, TAL, std::move(Replacement)));
+      if (DD)
+        emplaceTransformation(
+            new ReplaceTypeInDecl(DD, TAL, std::move(Replacement)));
+      else if (TL)
+        emplaceTransformation(new ReplaceTypeInDecl(TL->getBeginLoc(), TAL,
+                                                    std::move(Replacement)));
       DupFilter.insert(Loc);
     }
   }

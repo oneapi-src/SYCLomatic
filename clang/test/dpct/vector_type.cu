@@ -1,6 +1,8 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/vector_type.dp.cpp --match-full-lines %s
 
+#include <vector>
+
 // CHECK: void func3_char1(char a, char b, char c) {
 void func3_char1(char1 a, char1 b, char1 c) {
 }
@@ -3863,4 +3865,190 @@ int foo() {
   struct_union temp;
   // CHECK: int x = static_cast<float>(temp.data.x()) + 2;
   int x = temp.data.x + 2;
+}
+
+// CHECK: std::vector<const char> const foo_char1(std::vector<const char> a);
+// CHECK-NEXT: std::vector<sycl::char2> foo_char2(std::vector<sycl::char2> a);
+// CHECK-NEXT: std::vector<sycl::char3> foo_char3(std::vector<sycl::char3> a);
+// CHECK-NEXT: std::vector<sycl::char4> foo_char4(std::vector<sycl::char4> a);
+std::vector<const char1> const foo_char1(std::vector<const char1> a);
+std::vector<char2> foo_char2(std::vector<char2> a);
+std::vector<char3> foo_char3(std::vector<char3> a);
+std::vector<char4> foo_char4(std::vector<char4> a);
+
+// CHECK: std::vector<const unsigned char> const foo_uchar1(std::vector<const unsigned char> a);
+// CHECK-NEXT: std::vector<sycl::uchar2> foo_uchar2(std::vector<sycl::uchar2> a);
+// CHECK-NEXT: std::vector<sycl::uchar3> foo_uchar3(std::vector<sycl::uchar3> a);
+// CHECK-NEXT: std::vector<sycl::uchar4> foo_uchar4(std::vector<sycl::uchar4> a);
+std::vector<const uchar1> const foo_uchar1(std::vector<const uchar1> a);
+std::vector<uchar2> foo_uchar2(std::vector<uchar2> a);
+std::vector<uchar3> foo_uchar3(std::vector<uchar3> a);
+std::vector<uchar4> foo_uchar4(std::vector<uchar4> a);
+
+// CHECK: std::vector<const short> const foo_short1(std::vector<const short> a);
+// CHECK-NEXT: std::vector<sycl::short2> foo_short2(std::vector<sycl::short2> a);
+// CHECK-NEXT: std::vector<sycl::short3> foo_short3(std::vector<sycl::short3> a);
+// CHECK-NEXT: std::vector<sycl::short4> foo_short4(std::vector<sycl::short4> a);
+std::vector<const short1> const foo_short1(std::vector<const short1> a);
+std::vector<short2> foo_short2(std::vector<short2> a);
+std::vector<short3> foo_short3(std::vector<short3> a);
+std::vector<short4> foo_short4(std::vector<short4> a);
+
+// CHECK: std::vector<const unsigned short> const foo_ushort1(std::vector<const unsigned short> a);
+// CHECK-NEXT: std::vector<sycl::ushort2> foo_ushort2(std::vector<sycl::ushort2> a);
+// CHECK-NEXT: std::vector<sycl::ushort3> foo_ushort3(std::vector<sycl::ushort3> a);
+// CHECK-NEXT: std::vector<sycl::ushort4> foo_ushort4(std::vector<sycl::ushort4> a);
+std::vector<const ushort1> const foo_ushort1(std::vector<const ushort1> a);
+std::vector<ushort2> foo_ushort2(std::vector<ushort2> a);
+std::vector<ushort3> foo_ushort3(std::vector<ushort3> a);
+std::vector<ushort4> foo_ushort4(std::vector<ushort4> a);
+
+// CHECK: std::vector<const int> const foo_int1(std::vector<const int> a);
+// CHECK-NEXT: std::vector<sycl::int2> foo_int2(std::vector<sycl::int2> a);
+// CHECK-NEXT: std::vector<sycl::int3> foo_int3(std::vector<sycl::int3> a);
+// CHECK-NEXT: std::vector<sycl::int4> foo_int4(std::vector<sycl::int4> a);
+std::vector<const int1> const foo_int1(std::vector<const int1> a);
+std::vector<int2> foo_int2(std::vector<int2> a);
+std::vector<int3> foo_int3(std::vector<int3> a);
+std::vector<int4> foo_int4(std::vector<int4> a);
+
+// CHECK: std::vector<const unsigned int> const foo_uint1(std::vector<const unsigned int> a);
+// CHECK-NEXT: std::vector<sycl::uint2> foo_uint2(std::vector<sycl::uint2> a);
+// CHECK-NEXT: std::vector<sycl::uint3> foo_uint3(std::vector<sycl::uint3> a);
+// CHECK-NEXT: std::vector<sycl::uint4> foo_uint4(std::vector<sycl::uint4> a);
+std::vector<const uint1> const foo_uint1(std::vector<const uint1> a);
+std::vector<uint2> foo_uint2(std::vector<uint2> a);
+std::vector<uint3> foo_uint3(std::vector<uint3> a);
+std::vector<uint4> foo_uint4(std::vector<uint4> a);
+
+// CHECK: std::vector<const long> const foo_long1(std::vector<const long> a);
+// CHECK-NEXT: std::vector<sycl::long2> foo_long2(std::vector<sycl::long2> a);
+// CHECK-NEXT: std::vector<sycl::long3> foo_long3(std::vector<sycl::long3> a);
+// CHECK-NEXT: std::vector<sycl::long4> foo_long4(std::vector<sycl::long4> a);
+std::vector<const long1> const foo_long1(std::vector<const long1> a);
+std::vector<long2> foo_long2(std::vector<long2> a);
+std::vector<long3> foo_long3(std::vector<long3> a);
+std::vector<long4> foo_long4(std::vector<long4> a);
+
+// CHECK: std::vector<const unsigned long> const foo_ulong1(std::vector<const unsigned long> a);
+// CHECK-NEXT: std::vector<sycl::ulong2> foo_ulong2(std::vector<sycl::ulong2> a);
+// CHECK-NEXT: std::vector<sycl::ulong3> foo_ulong3(std::vector<sycl::ulong3> a);
+// CHECK-NEXT: std::vector<sycl::ulong4> foo_ulong4(std::vector<sycl::ulong4> a);
+std::vector<const ulong1> const foo_ulong1(std::vector<const ulong1> a);
+std::vector<ulong2> foo_ulong2(std::vector<ulong2> a);
+std::vector<ulong3> foo_ulong3(std::vector<ulong3> a);
+std::vector<ulong4> foo_ulong4(std::vector<ulong4> a);
+
+// CHECK: std::vector<const float> const foo_float1(std::vector<const float> a);
+// CHECK-NEXT: std::vector<sycl::float2> foo_float2(std::vector<sycl::float2> a);
+// CHECK-NEXT: std::vector<sycl::float3> foo_float3(std::vector<sycl::float3> a);
+// CHECK-NEXT: std::vector<sycl::float4> foo_float4(std::vector<sycl::float4> a);
+std::vector<const float1> const foo_float1(std::vector<const float1> a);
+std::vector<float2> foo_float2(std::vector<float2> a);
+std::vector<float3> foo_float3(std::vector<float3> a);
+std::vector<float4> foo_float4(std::vector<float4> a);
+
+// CHECK: std::vector<const long long> const foo_longlong1(std::vector<const long long> a);
+// CHECK-NEXT: std::vector<sycl::longlong2> foo_longlong2(std::vector<sycl::longlong2> a);
+// CHECK-NEXT: std::vector<sycl::longlong3> foo_longlong3(std::vector<sycl::longlong3> a);
+// CHECK-NEXT: std::vector<sycl::longlong4> foo_longlong4(std::vector<sycl::longlong4> a);
+std::vector<const longlong1> const foo_longlong1(std::vector<const longlong1> a);
+std::vector<longlong2> foo_longlong2(std::vector<longlong2> a);
+std::vector<longlong3> foo_longlong3(std::vector<longlong3> a);
+std::vector<longlong4> foo_longlong4(std::vector<longlong4> a);
+
+// CHECK: std::vector<const unsigned long long> const foo_ulonglong1(std::vector<const unsigned long long> a);
+// CHECK-NEXT: std::vector<sycl::ulonglong2> foo_ulonglong2(std::vector<sycl::ulonglong2> a);
+// CHECK-NEXT: std::vector<sycl::ulonglong3> foo_ulonglong3(std::vector<sycl::ulonglong3> a);
+// CHECK-NEXT: std::vector<sycl::ulonglong4> foo_ulonglong4(std::vector<sycl::ulonglong4> a);
+std::vector<const ulonglong1> const foo_ulonglong1(std::vector<const ulonglong1> a);
+std::vector<ulonglong2> foo_ulonglong2(std::vector<ulonglong2> a);
+std::vector<ulonglong3> foo_ulonglong3(std::vector<ulonglong3> a);
+std::vector<ulonglong4> foo_ulonglong4(std::vector<ulonglong4> a);
+
+// CHECK: std::vector<const double> const foo_double1(std::vector<const double> a);
+// CHECK-NEXT: std::vector<sycl::double2> foo_double2(std::vector<sycl::double2> a);
+// CHECK-NEXT: std::vector<sycl::double3> foo_double3(std::vector<sycl::double3> a);
+// CHECK-NEXT: std::vector<sycl::double4> foo_double4(std::vector<sycl::double4> a);
+std::vector<const double1> const foo_double1(std::vector<const double1> a);
+std::vector<double2> foo_double2(std::vector<double2> a);
+std::vector<double3> foo_double3(std::vector<double3> a);
+std::vector<double4> foo_double4(std::vector<double4> a);
+
+void bar(){
+  int a;
+  // CHECK: std::vector<sycl::char2> *bar_char2 = (std::vector<sycl::char2>*) a;
+  // CHECK-NEXT: std::vector<sycl::uchar2> *bar_uchar2 = (std::vector<sycl::uchar2>*) a;
+  // CHECK-NEXT: std::vector<sycl::short2> *bar_short2 = (std::vector<sycl::short2>*) a;
+  // CHECK-NEXT: std::vector<sycl::ushort2> *bar_ushort2 = (std::vector<sycl::ushort2>*) a;
+  // CHECK-NEXT: std::vector<sycl::int2> *bar_int2 = (std::vector<sycl::int2>*) a;
+  // CHECK-NEXT: std::vector<sycl::uint2> *bar_uint2 = (std::vector<sycl::uint2>*) a;
+  // CHECK-NEXT: std::vector<sycl::long2> *bar_long2 = (std::vector<sycl::long2>*) a;
+  // CHECK-NEXT: std::vector<sycl::ulong2> *bar_ulong2 = (std::vector<sycl::ulong2>*) a;
+  // CHECK-NEXT: std::vector<sycl::float2> *bar_float2 = (std::vector<sycl::float2>*) a;
+  // CHECK-NEXT: std::vector<sycl::longlong2> *bar_longlong2 = (std::vector<sycl::longlong2>*) a;
+  // CHECK-NEXT: std::vector<sycl::ulonglong2> *bar_ulonglong2 = (std::vector<sycl::ulonglong2>*) a;
+  // CHECK-NEXT: std::vector<sycl::double2> *bar_double2 = (std::vector<sycl::double2>*) a;
+  std::vector<char2> *bar_char2 = (std::vector<char2>*) a;
+  std::vector<uchar2> *bar_uchar2 = (std::vector<uchar2>*) a;
+  std::vector<short2> *bar_short2 = (std::vector<short2>*) a;
+  std::vector<ushort2> *bar_ushort2 = (std::vector<ushort2>*) a;
+  std::vector<int2> *bar_int2 = (std::vector<int2>*) a;
+  std::vector<uint2> *bar_uint2 = (std::vector<uint2>*) a;
+  std::vector<long2> *bar_long2 = (std::vector<long2>*) a;
+  std::vector<ulong2> *bar_ulong2 = (std::vector<ulong2>*) a;
+  std::vector<float2> *bar_float2 = (std::vector<float2>*) a;
+  std::vector<longlong2> *bar_longlong2 = (std::vector<longlong2>*) a;
+  std::vector<ulonglong2> *bar_ulonglong2 = (std::vector<ulonglong2>*) a;
+  std::vector<double2> *bar_double2 = (std::vector<double2>*) a;
+
+
+// CHECK: #define vchar2_ptr std::vector<sycl::char2>*
+// CHECK-NEXT: #define vuchar2_ptr std::vector<sycl::uchar2>*
+// CHECK-NEXT: #define vshort2_ptr std::vector<sycl::short2>*
+// CHECK-NEXT: #define vushort2_ptr std::vector<sycl::ushort2>*
+// CHECK-NEXT: #define vint2_ptr std::vector<sycl::int2>*
+// CHECK-NEXT: #define vuint2_ptr std::vector<sycl::uint2>*
+// CHECK-NEXT: #define vlong2_ptr std::vector<sycl::long2>*
+// CHECK-NEXT: #define vulong2_ptr std::vector<sycl::ulong2>*
+// CHECK-NEXT: #define vfloat2_ptr std::vector<sycl::float2>*
+// CHECK-NEXT: #define vlonglong2_ptr std::vector<sycl::longlong2>*
+// CHECK-NEXT: #define vulonglong2_ptr std::vector<sycl::ulonglong2>*
+// CHECK-NEXT: #define vdouble2_ptr std::vector<sycl::double2>*
+// CHECK-NEXT:   bar_char2 = (vchar2_ptr) a;
+// CHECK-NEXT:    bar_uchar2 = (vuchar2_ptr) a;
+// CHECK-NEXT:   bar_short2 = (vshort2_ptr) a;
+// CHECK-NEXT:   bar_ushort2 = (vushort2_ptr) a;
+// CHECK-NEXT:   bar_int2 = (vint2_ptr) a;
+// CHECK-NEXT:   bar_uint2 = (vuint2_ptr) a;
+// CHECK-NEXT:   bar_long2 = (vlong2_ptr) a;
+// CHECK-NEXT:   bar_ulong2 = (vulong2_ptr) a;
+// CHECK-NEXT:   bar_float2 = (vfloat2_ptr) a;
+// CHECK-NEXT:   bar_longlong2 = (vlonglong2_ptr) a;
+// CHECK-NEXT:   bar_ulonglong2 = (vulonglong2_ptr) a;
+// CHECK-NEXT:   bar_double2 = (vdouble2_ptr) a;
+#define vchar2_ptr std::vector<char2>*
+#define vuchar2_ptr std::vector<uchar2>*
+#define vshort2_ptr std::vector<short2>*
+#define vushort2_ptr std::vector<ushort2>*
+#define vint2_ptr std::vector<int2>*
+#define vuint2_ptr std::vector<uint2>*
+#define vlong2_ptr std::vector<long2>*
+#define vulong2_ptr std::vector<ulong2>*
+#define vfloat2_ptr std::vector<float2>*
+#define vlonglong2_ptr std::vector<longlong2>*
+#define vulonglong2_ptr std::vector<ulonglong2>*
+#define vdouble2_ptr std::vector<double2>*
+  bar_char2 = (vchar2_ptr) a;
+  bar_uchar2 = (vuchar2_ptr) a;
+  bar_short2 = (vshort2_ptr) a;
+  bar_ushort2 = (vushort2_ptr) a;
+  bar_int2 = (vint2_ptr) a;
+  bar_uint2 = (vuint2_ptr) a;
+  bar_long2 = (vlong2_ptr) a;
+  bar_ulong2 = (vulong2_ptr) a;
+  bar_float2 = (vfloat2_ptr) a;
+  bar_longlong2 = (vlonglong2_ptr) a;
+  bar_ulonglong2 = (vulonglong2_ptr) a;
+  bar_double2 = (vdouble2_ptr) a;
 }

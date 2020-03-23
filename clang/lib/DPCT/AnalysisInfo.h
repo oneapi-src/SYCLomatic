@@ -1988,7 +1988,6 @@ private:
     inline std::string getIdStringWithSuffix(const std::string &Suffix) const {
       return buildString(IdString, Suffix, "_ct", Index);
     }
-    KernelCallExpr* Base;
     bool IsPointer;
     // If the pointer is used as lvalue after its most recent memory allocation
     bool IsRedeclareRequired;
@@ -1999,6 +1998,7 @@ private:
     std::string TypeString;
     std::string IdString;
     int Index;
+    KernelCallExpr *Base;
   };
 
   class KernelPrinter {
