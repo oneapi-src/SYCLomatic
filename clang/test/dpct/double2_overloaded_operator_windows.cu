@@ -1,5 +1,5 @@
-// UNSUPPORTED: -windows-
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// UNSUPPORTED: -linux-
+// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -fno-delayed-template-parsing
 // RUN: FileCheck %s --match-full-lines --input-file %T/double2_overloaded_operator.dp.cpp
 
 #include <cuda_runtime.h>

@@ -1,5 +1,5 @@
-// UNSUPPORTED: -windows-
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// UNSUPPORTED: -linux-
+// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing
 // RUN: FileCheck --input-file %T/kernel-call-complex.dp.cpp --match-full-lines %s
 
 __global__ void k(int i) {
