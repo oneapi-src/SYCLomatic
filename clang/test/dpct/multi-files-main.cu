@@ -27,4 +27,5 @@ int main() {
   cudaFree(i_array);
 
   sgemm();
+  randomGen();
 }

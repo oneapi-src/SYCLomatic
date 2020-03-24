@@ -680,6 +680,12 @@ public:
                                      bool IsMacroArg);
   void processTrmmCall(const CallExpr *CE, std::string &PrefixInsertStr,
                        const std::string IndentStr);
+  void processTrmmParams(const CallExpr *CE, std::string &PrefixInsertStr,
+                         std::string &BufferName, std::string &BufferDecl,
+                         std::string &ExtraDecl,
+                         int &IndexTemp, int DistinctionID,
+                         const std::string IndentStr,
+                         const std::vector<std::string> &BufferTypeInfo);
   bool isCEOrUETTEOrAnIdentifierOrLiteral(const Expr *E);
   std::string getExprString(const Expr *E,
                             bool AddparenthesisIfNecessary = false);

@@ -42,10 +42,10 @@ int main() {
     // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: cublasErrCheck([&](){
-    // CHECK-NEXT: auto d_A_S_buf_ct1 = dpct::get_buffer<float>(d_A_S);
-    // CHECK-NEXT: auto d_B_S_buf_ct1 = dpct::get_buffer<float>(d_B_S);
-    // CHECK-NEXT: auto d_C_S_buf_ct1 = dpct::get_buffer<float>(d_C_S);
-    // CHECK-NEXT: mkl::blas::gemm(handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, alpha_S, d_A_S_buf_ct1, N, d_B_S_buf_ct1, N, beta_S, d_C_S_buf_ct1, N);
+    // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
+    // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
+    // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
+    // CHECK-NEXT: mkl::blas::gemm(handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
     // CHECK-NEXT: return 0;
     // CHECK-NEXT: }());
     cublasErrCheck(cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
@@ -55,11 +55,11 @@ int main() {
     // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: cublasErrCheck([&](){
-    // CHECK-NEXT: auto x_S_buf_ct1 = dpct::get_buffer<float>(x_S);
-    // CHECK-NEXT: auto result_buf_ct1 = dpct::get_buffer<int>(result);
+    // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
+    // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
     // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::blas::iamax(handle, N, x_S_buf_ct1, N, result_temp_buffer);
-    // CHECK-NEXT: result_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: mkl::blas::iamax(handle, N, x_S_buf_ct{{[0-9]+}}, N, result_temp_buffer);
+    // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: return 0;
     // CHECK-NEXT: }());
     cublasErrCheck(cublasIsamax(handle, N, x_S, N, result));
@@ -69,10 +69,10 @@ int main() {
     //CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: cublasErrCheck([&](){
-    //CHECK-NEXT: auto d_A_S_buf_ct1 = dpct::get_buffer<float>(d_A_S);
-    //CHECK-NEXT: auto d_B_S_buf_ct1 = dpct::get_buffer<float>(d_B_S);
-    //CHECK-NEXT: auto d_C_S_buf_ct1 = dpct::get_buffer<float>(d_C_S);
-    //CHECK-NEXT: mkl::blas::gemmt(handle, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, trans1==0 ? mkl::transpose::trans : mkl::transpose::nontrans, N, N, alpha_S, d_A_S_buf_ct1, N, d_B_S_buf_ct1, N, beta_S, d_C_S_buf_ct1, N);
+    //CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
+    //CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
+    //CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
+    //CHECK-NEXT: mkl::blas::gemmt(handle, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, trans1==0 ? mkl::transpose::trans : mkl::transpose::nontrans, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
     // CHECK-NEXT: return 0;
     //CHECK-NEXT: }());
     cublasErrCheck(cublasSsyrkx(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans1, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
@@ -83,9 +83,9 @@ int main() {
     // CHECK-NEXT: */
     // CHECK-NEXT: cublasErrCheck([&](){
     // CHECK-NEXT: dpct::matrix_mem_copy(d_C_S, d_B_S, N, N, N, N, dpct::device_to_device, handle);
-    // CHECK-NEXT: auto d_A_S_buf_ct1 = dpct::get_buffer<float>(d_A_S);
-    // CHECK-NEXT: auto d_C_S_buf_ct1 = dpct::get_buffer<float>(d_C_S);
-    // CHECK-NEXT: mkl::blas::trmm(handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, alpha_S, d_A_S_buf_ct1, N, d_C_S_buf_ct1, N);
+    // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
+    // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
+    // CHECK-NEXT: mkl::blas::trmm(handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_C_S_buf_ct{{[0-9]+}}, N);
     // CHECK-NEXT: return 0;
     // CHECK-NEXT: }());
     cublasErrCheck(cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N));
@@ -107,10 +107,10 @@ int main() {
     // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT:cublasErrCheck([&](){
-    // CHECK-NEXT:auto d_A_C_buf_ct1 = dpct::get_buffer<std::complex<float>>(d_A_C);
-    // CHECK-NEXT:auto d_B_C_buf_ct1 = dpct::get_buffer<std::complex<float>>(d_B_C);
-    // CHECK-NEXT:auto d_C_C_buf_ct1 = dpct::get_buffer<std::complex<float>>(d_C_C);
-    // CHECK-NEXT:mkl::blas::gemm(handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, std::complex<float>(alpha_C.x(),alpha_C.y()), d_A_C_buf_ct1, N, d_B_C_buf_ct1, N, std::complex<float>(beta_C.x(),beta_C.y()), d_C_C_buf_ct1, N);
+    // CHECK-NEXT:auto d_A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_A_C);
+    // CHECK-NEXT:auto d_B_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_B_C);
+    // CHECK-NEXT:auto d_C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_C_C);
+    // CHECK-NEXT:mkl::blas::gemm(handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, std::complex<float>(alpha_C.x(),alpha_C.y()), d_A_C_buf_ct{{[0-9]+}}, N, d_B_C_buf_ct{{[0-9]+}}, N, std::complex<float>(beta_C.x(),beta_C.y()), d_C_C_buf_ct{{[0-9]+}}, N);
     // CHECK-NEXT:return 0;
     // CHECK-NEXT:}());
     cublasErrCheck(cublasCgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_C, d_A_C, N, d_B_C, N, &beta_C, d_C_C, N));
@@ -119,11 +119,11 @@ int main() {
     // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT:cublasErrCheck([&](){
-    // CHECK-NEXT:auto x_C_buf_ct1 = dpct::get_buffer<std::complex<float>>(x_C);
-    // CHECK-NEXT:auto result_buf_ct1 = dpct::get_buffer<int>(result);
+    // CHECK-NEXT:auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
+    // CHECK-NEXT:auto result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
     // CHECK-NEXT:sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
-    // CHECK-NEXT:mkl::blas::iamax(handle, N, x_C_buf_ct1, N, result_temp_buffer);
-    // CHECK-NEXT:result_buf_ct1.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT:mkl::blas::iamax(handle, N, x_C_buf_ct{{[0-9]+}}, N, result_temp_buffer);
+    // CHECK-NEXT:result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT:return 0;
     // CHECK-NEXT:}());
     cublasErrCheck(cublasIcamax(handle, N, x_C, N, result));
@@ -133,9 +133,9 @@ int main() {
     // CHECK-NEXT: */
     // CHECK-NEXT:cublasErrCheck([&](){
     // CHECK-NEXT:dpct::matrix_mem_copy(d_C_C, d_B_C, N, N, N, N, dpct::device_to_device, handle);
-    // CHECK-NEXT:auto d_A_C_buf_ct1 = dpct::get_buffer<std::complex<float>>(d_A_C);
-    // CHECK-NEXT:auto d_C_C_buf_ct1 = dpct::get_buffer<std::complex<float>>(d_C_C);
-    // CHECK-NEXT:mkl::blas::trmm(handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, std::complex<float>(alpha_C.x(),alpha_C.y()), d_A_C_buf_ct1, N, d_C_C_buf_ct1, N);
+    // CHECK-NEXT:auto d_A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_A_C);
+    // CHECK-NEXT:auto d_C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_C_C);
+    // CHECK-NEXT:mkl::blas::trmm(handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, std::complex<float>(alpha_C.x(),alpha_C.y()), d_A_C_buf_ct{{[0-9]+}}, N, d_C_C_buf_ct{{[0-9]+}}, N);
     // CHECK-NEXT:return 0;
     // CHECK-NEXT:}());
     cublasErrCheck(cublasCtrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N));
@@ -162,9 +162,9 @@ int main() {
     //CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
     //CHECK-NEXT:*/
     //CHECK-NEXT:curandErrCheck([&](){
-    //CHECK-NEXT:auto d_data_buf_ct1 = dpct::get_buffer<float>(d_data);
-    //CHECK-NEXT:mkl::rng::uniform<float> distr_ct1;
-    //CHECK-NEXT:mkl::rng::generate(distr_ct1, rng, (100 + 1) * (200) * 4, d_data_buf_ct1);
+    //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
+    //CHECK-NEXT:mkl::rng::uniform<float> distr_ct{{[0-9]+}};
+    //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, (100 + 1) * (200) * 4, d_data_buf_ct{{[0-9]+}});
     //CHECK-NEXT:return 0;
     //CHECK-NEXT:}());
     //CHECK-NEXT:/*

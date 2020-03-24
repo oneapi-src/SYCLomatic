@@ -9,4 +9,5 @@ __device__ int global_id() {
 
 void foo(){
   sgemm();
+  randomGen();
 }

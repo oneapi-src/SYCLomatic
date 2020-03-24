@@ -473,27 +473,27 @@ public:
     EnableComments = Enable;
   }
 
-  inline static void clearTempValueIdentifierMap() {
-    TempValueIdentifierMap.clear();
-  }
-  inline static std::string
-  getTempValueIdentifierWithUniqueIndex(std::string IdentifierWithoutIndex) {
-    auto Res = TempValueIdentifierMap.find(IdentifierWithoutIndex);
-    if (Res == TempValueIdentifierMap.end()) {
-      TempValueIdentifierMap.insert(std::make_pair(IdentifierWithoutIndex, 1));
-      return IdentifierWithoutIndex + "1";
+  inline static int getSuffixIndexInitValue(std::string FileNameAndOffest) {
+    auto Res = LocationInitIndexMap.find(FileNameAndOffest);
+    if (Res == LocationInitIndexMap.end()) {
+      LocationInitIndexMap.insert(
+          std::make_pair(FileNameAndOffest, CurrentMaxIndex + 1));
+      return CurrentMaxIndex + 1;
     } else {
-      unsigned int Index = Res->second;
-      Index++;
-      Res->second = Index;
-      return IdentifierWithoutIndex + std::to_string(Index);
+      return Res->second;
     }
   }
-  inline static int getSuffixNumberThenInc() {
-    int Num = SuffixNumber;
-    SuffixNumber++;
-    return Num;
+
+  inline static void updateInitSuffixIndexInRule(int InitVal) {
+    CurrentIndexInRule = InitVal;
   }
+  inline static int getSuffixIndexInRuleThenInc() {
+    int Res = CurrentIndexInRule;
+    CurrentMaxIndex = Res;
+    CurrentIndexInRule++;
+    return Res;
+  }
+
 
   template <class TargetTy, class NodeTy>
   static inline const TargetTy *
@@ -830,12 +830,13 @@ private:
   static bool SyclNamedLambda;
   static bool GuessIndentWidthMatcherFlag;
   static unsigned int IndentWidth;
-  static std::unordered_map<std::string, unsigned int> TempValueIdentifierMap;
+  static std::unordered_map<std::string, int> LocationInitIndexMap;
   static std::map<const char *,
                   std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
       ExpansionRangeToMacroRecord;
   static std::map<MacroInfo *, bool> MacroDefines;
-  static int SuffixNumber;
+  static int CurrentMaxIndex;
+  static int CurrentIndexInRule;
 };
 
 class TemplateArgumentInfo;
@@ -2249,8 +2250,24 @@ class RandomEngineInfo {
 public:
   RandomEngineInfo(unsigned Offset, const std::string &FilePath,
                    const DeclaratorDecl *DD)
-      : SeedExpr("0"), DimExpr("1"), DD(DD), IsQuasiEngine(false),
-        IsClassMember(false) {}
+      : SeedExpr("0"), DimExpr("1"), IsQuasiEngine(false),
+        IsClassMember(false), NeedPrint(true) {
+    if (dyn_cast<FieldDecl>(DD))
+      IsClassMember = true;
+    else
+      IsClassMember = false;
+
+    DeclaratorDeclName = DD->getNameAsString();
+    DeclFilePath =
+        DpctGlobalInfo::getSourceManager().getFilename(DD->getBeginLoc()).str();
+
+    DeclaratorDeclBeginOffest = DpctGlobalInfo::getSourceManager()
+                                    .getDecomposedLoc(DD->getBeginLoc())
+                                    .second;
+    DeclaratorDeclEndOffest = DpctGlobalInfo::getSourceManager()
+                                  .getDecomposedLoc(DD->getEndLoc())
+                                  .second;
+  }
   // Seed is an unsigned long long type value in origin code, if it is not set,
   // use 0 as default.
   // The legal value of Dim in origin code is 1 to 20000, so if it is not set,
@@ -2292,7 +2309,6 @@ public:
   }
   std::string getSeedExpr() { return SeedExpr; }
   std::string getDimExpr() { return DimExpr; }
-  const DeclaratorDecl *getDeclaratorDecl() { return DD; }
 
   void setDeclFilePath(std::string Path) { DeclFilePath = Path; }
   void setCreateCallFilePath(std::string Path) { CreateCallFilePath = Path; }
@@ -2308,21 +2324,29 @@ public:
     IdentifierEndOffest = Offest;
   }
   void buildInfo();
-  bool isClassMember() {
-    if (dyn_cast<FieldDecl>(DD))
-      IsClassMember = true;
-    else
-      IsClassMember = false;
-    return IsClassMember;
-  }
-  void setDeclaratorDeclName() { DeclaratorDeclName = DD->getNameAsString(); }
+  bool isClassMember() { return IsClassMember; }
   std::string getDeclaratorDeclName() { return DeclaratorDeclName; }
+  SourceLocation getDeclaratorDeclBeginLoc() {
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    auto FE = SM.getFileManager().getFile(DeclFilePath);
+    if (std::error_code ec = FE.getError())
+      return SourceLocation();
+    auto FID = SM.getOrCreateFileID(FE.get(), SrcMgr::C_User);
+    return SM.getComposedLoc(FID, DeclaratorDeclBeginOffest);
+  }
+  SourceLocation getDeclaratorDeclEndLoc() {
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    auto FE = SM.getFileManager().getFile(DeclFilePath);
+    if (std::error_code ec = FE.getError())
+      return SourceLocation();
+    auto FID = SM.getOrCreateFileID(FE.get(), SrcMgr::C_User);
+    return SM.getComposedLoc(FID, DeclaratorDeclEndOffest);
+  }
+  void setNeedPrint(bool Flag){ NeedPrint = Flag; }
 
 private:
   std::string SeedExpr;     // Replaced Seed variable string
   std::string DimExpr;      // Replaced Dimension variable string
-  const DeclaratorDecl *DD; // A DeclaratorDecl node used to distinguish
-                            // different curandGenerator_t handle
   bool IsQuasiEngine; // If origin code used a quasirandom number generator,
                       // this flag need be set as true.
   std::string DeclFilePath; // Where the curandGenerator_t handle is declared.
@@ -2342,6 +2366,9 @@ private:
   bool IsClassMember;               // Whether curandGenerator_t handle is a
                                     // class member.
   std::string DeclaratorDeclName;   // Name of declarator declaration.
+  unsigned int DeclaratorDeclBeginOffest;
+  unsigned int DeclaratorDeclEndOffest;
+  bool NeedPrint;
 };
 
 template <class... T>

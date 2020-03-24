@@ -1,7 +1,9 @@
+// CHECKME
 // RUN: cat %s > %T/curand.cu
 // RUN: cd %T
 //RUN: dpct -out-root %T curand.cu --usm-level=none --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
 //RUN: FileCheck --input-file %T/curand.dp.cpp --match-full-lines curand.cu
+//CHECK:// CHECKME
 //CHECK:#include <CL/sycl.hpp>
 //CHECK:#include <dpct/dpct.hpp>
 //CHECK:#include <mkl_rng_sycl.hpp>
@@ -30,103 +32,105 @@ int main(){
   float *d_data;
 
   //CHECK:{
-  //CHECK-NEXT:auto d_data_buf_ct1 = dpct::get_buffer<float>(d_data);
+  //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
   //CHECK-NEXT:mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_buf_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerateUniform(rng, d_data, 100*100);
 
   //CHECK:{
-  //CHECK-NEXT:auto d_data_buf_ct1 = dpct::get_buffer<float>(d_data);
+  //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
   //CHECK-NEXT:mkl::rng::uniform<float> distr_ct{{[0-9]+}};
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_buf_ct1), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_buf_ct{{[0-9]+}}), 0);
   //CHECK-NEXT:}
   s1 = curandGenerateUniform(rng, d_data, 100*100);
 
   //CHECK:{
-  //CHECK-NEXT:auto d_data_buf_ct1 = dpct::get_buffer<float>(d_data);
+  //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
   //CHECK-NEXT:mkl::rng::lognormal<float> distr_ct{{[0-9]+}}(123, 456, 0.0, 1.0);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_buf_ct1), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_buf_ct{{[0-9]+}}), 0);
   //CHECK-NEXT:}
   s1 = curandGenerateLogNormal(rng, d_data, 100*100, 123, 456);
 
   //CHECK:{
-  //CHECK-NEXT:auto d_data_buf_ct1 = dpct::get_buffer<float>(d_data);
+  //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
   //CHECK-NEXT:mkl::rng::gaussian<float> distr_ct{{[0-9]+}}(123, 456);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_buf_ct1), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_buf_ct{{[0-9]+}}), 0);
   //CHECK-NEXT:}
   s1 = curandGenerateNormal(rng, d_data, 100*100, 123, 456);
 
   double* d_data_d;
   //CHECK:{
-  //CHECK-NEXT:auto d_data_d_buf_ct1 = dpct::get_buffer<double>(d_data_d);
+  //CHECK-NEXT:auto d_data_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(d_data_d);
   //CHECK-NEXT:mkl::rng::uniform<double> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_d_buf_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_d_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerateUniformDouble(rng, d_data_d, 100*100);
 
   //CHECK:{
-  //CHECK-NEXT:auto d_data_d_buf_ct1 = dpct::get_buffer<double>(d_data_d);
+  //CHECK-NEXT:auto d_data_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(d_data_d);
   //CHECK-NEXT:mkl::rng::lognormal<double> distr_ct{{[0-9]+}}(123, 456, 0.0, 1.0);
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_d_buf_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_d_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerateLogNormalDouble(rng, d_data_d, 100*100, 123, 456);
 
   //CHECK:{
-  //CHECK-NEXT:auto d_data_d_buf_ct1 = dpct::get_buffer<double>(d_data_d);
+  //CHECK-NEXT:auto d_data_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(d_data_d);
   //CHECK-NEXT:mkl::rng::gaussian<double> distr_ct{{[0-9]+}}(123, 456);
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_d_buf_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_d_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerateNormalDouble(rng, d_data_d, 100*100, 123, 456);
 
   unsigned int* d_data_ui;
 
   //CHECK:{
-  //CHECK-NEXT:auto d_data_ui_buf_ct1 = dpct::get_buffer<uint32_t>(d_data_ui);
+  //CHECK-NEXT:auto d_data_ui_buf_ct{{[0-9]+}} = dpct::get_buffer<uint32_t>(d_data_ui);
   //CHECK-NEXT:mkl::rng::uniform_bits<uint32_t> distr_ct{{[0-9]+}};
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ui_buf_ct1), 0);
+  //CHECK-NEXT:s1 = 
+  //CHECK-NEXT:(mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ui_buf_ct{{[0-9]+}}), 0);
   //CHECK-NEXT:}
   s1 = curandGenerate(rng, d_data_ui, 100*100);
 
   //CHECK:{
-  //CHECK-NEXT:auto d_data_ui_buf_ct1 = dpct::get_buffer<int32_t>(d_data_ui);
+  //CHECK-NEXT:auto d_data_ui_buf_ct{{[0-9]+}} = dpct::get_buffer<int32_t>(d_data_ui);
   //CHECK-NEXT:mkl::rng::poisson<int32_t> distr_ct{{[0-9]+}}(123.456);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ui_buf_ct1), 0);
+  //CHECK-NEXT:s1 =
+  //CHECK-NEXT:(mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ui_buf_ct{{[0-9]+}}), 0);
   //CHECK-NEXT:}
   s1 = curandGeneratePoisson(rng, d_data_ui, 100*100, 123.456);
 
   unsigned long long* d_data_ull;
   //CHECK:{
-  //CHECK-NEXT:auto d_data_ull_buf_ct1 = dpct::get_buffer<uint64_t>(d_data_ull);
+  //CHECK-NEXT:auto d_data_ull_buf_ct{{[0-9]+}} = dpct::get_buffer<uint64_t>(d_data_ull);
   //CHECK-NEXT:mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ull_buf_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ull_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerateLongLong(rng, d_data_ull, 100*100);
 
   //CHECK:if (s1 = [&]() {
-  //CHECK-NEXT:auto d_data_ull_buf_ct1 = dpct::get_buffer<uint64_t>(d_data_ull);
+  //CHECK-NEXT:auto d_data_ull_buf_ct{{[0-9]+}} = dpct::get_buffer<uint64_t>(d_data_ull);
   //CHECK-NEXT:mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ull_buf_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ull_buf_ct{{[0-9]+}});
   //CHECK-NEXT:return 0;
   //CHECK-NEXT:    }()) {}
   if(s1 = curandGenerateLongLong(rng, d_data_ull, 100*100)){}
@@ -141,9 +145,9 @@ int main(){
   //CHECK-NEXT:because the function call is redundant in DPC++.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto d_data_buf_ct1 = dpct::get_buffer<float>(d_data);
+  //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
   //CHECK-NEXT:mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng2, 100 * 100, d_data_buf_ct1);
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng2, 100 * 100, d_data_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerator_t rng2;
   curandCreateGenerator(&rng2, CURAND_RNG_QUASI_DEFAULT);
@@ -270,9 +274,9 @@ void bar3(){
 //CHECK-NEXT:lambda. You may need to rewrite this code.
 //CHECK-NEXT:*/
 //CHECK-NEXT:curandErrCheck([&]() {
-//CHECK-NEXT:auto d_data_buf_ct1 = dpct::get_buffer<float>(d_data);
+//CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
 //CHECK-NEXT:mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-//CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_buf_ct1);
+//CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_buf_ct{{[0-9]+}});
 //CHECK-NEXT:return 0;
 //CHECK-NEXT:}());
 //CHECK-NEXT:/*

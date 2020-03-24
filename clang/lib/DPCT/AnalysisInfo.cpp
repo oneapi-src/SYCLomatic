@@ -41,9 +41,9 @@ const std::string MemVarInfo::ExternVariableName = "dpct_local";
 const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
 bool DpctGlobalInfo::GuessIndentWidthMatcherFlag = false;
 unsigned int DpctGlobalInfo::IndentWidth = 0;
-std::unordered_map<std::string, unsigned int>
-    DpctGlobalInfo::TempValueIdentifierMap;
-int DpctGlobalInfo::SuffixNumber = 1;
+std::unordered_map<std::string, int> DpctGlobalInfo::LocationInitIndexMap;
+int DpctGlobalInfo::CurrentMaxIndex = 0;
+int DpctGlobalInfo::CurrentIndexInRule = 0;
 
 bool DpctFileInfo::isInRoot() { return DpctGlobalInfo::isInRoot(FilePath); }
 // TODO: implement one of this for each source language.
@@ -965,6 +965,9 @@ void SizeInfo::setTemplateList(
 }
 
 void RandomEngineInfo::buildInfo() {
+  if (!NeedPrint)
+    return;
+
   // insert engine arguments
   if (IsClassMember) {
     // replace type

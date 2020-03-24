@@ -878,9 +878,9 @@ std::string getBufferNameAndDeclStr(const std::string &PointerName,
                                     const std::string &TypeAsStr,
                                     const std::string &IndentStr,
                                     std::string &BufferDecl) {
-  std::string BufferTempName = PointerName + "_buf_ct";
-  BufferTempName = dpct::DpctGlobalInfo::getTempValueIdentifierWithUniqueIndex(
-      BufferTempName);
+  std::string BufferTempName =
+      PointerName + "_buf_ct" +
+      std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
   // TODO: reinterpret will copy more data
   BufferDecl = "auto " + BufferTempName + " = dpct::get_buffer<" + TypeAsStr +
                ">(" + PointerName + ");" + getNL() + IndentStr;
@@ -898,9 +898,9 @@ std::string getBufferNameAndDeclStr(const Expr *Arg,
                                     const std::string &IndentStr,
                                     std::string &BufferDecl) {
   std::string PointerName = getStmtSpelling(Arg);
-  std::string BufferTempName = getTempNameForExpr(Arg, true, true) + "buf_ct";
-  BufferTempName = dpct::DpctGlobalInfo::getTempValueIdentifierWithUniqueIndex(
-      BufferTempName);
+  std::string BufferTempName =
+      getTempNameForExpr(Arg, true, true) + "buf_ct" +
+      std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
   // TODO: reinterpret will copy more data
   BufferDecl = "auto " + BufferTempName + " = dpct::get_buffer<" + TypeAsStr +
                ">(" + PointerName + ");" + getNL() + IndentStr;
