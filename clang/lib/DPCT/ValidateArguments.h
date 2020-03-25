@@ -33,7 +33,11 @@ bool makeCanonicalOrSetDefaults(std::string &InRoot, std::string &OutRoot,
 
 /// Make sure files passed to Intel(R) DPC++ Compatibility Tool are under the
 /// input root directory and have an extension.
-bool validatePaths(const std::string &InRoot,
+/// return value:
+/// 0: success (InRoot and SourceFiles are valid)
+/// -1: fail for InRoot not valid or there is file SourceFiles not in InRoot
+/// -2: fail for there is file in SourceFiles without extension
+int validatePaths(const std::string &InRoot,
                    const std::vector<std::string> &SourceFiles);
 bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
         std::string &RFile, bool& ROnly, bool &GenReport, std::string &DVerbose);

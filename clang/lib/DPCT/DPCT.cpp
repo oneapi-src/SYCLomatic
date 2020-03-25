@@ -146,9 +146,12 @@ static opt<ReportTypeEnum> ReportType(
                   "                                    LOC needing migration "
                   "suffix added. (default)", false},
         llvm::cl::OptionEnumValue{"all", int(ReportTypeEnum::all),
-                  "All of the reports.", false},
-        llvm::cl::OptionEnumValue{"diags", int(ReportTypeEnum::diags),
-                  "diags information", true}),
+                  "All of the reports.", false}
+        #ifdef DPCT_DEBUG_BUILD
+        , llvm::cl::OptionEnumValue{"diags", int(ReportTypeEnum::diags),
+                  "diags information", true}
+        #endif
+        ),
     llvm::cl::init(ReportTypeEnum::notsettype), value_desc("value"), cat(DPCTCat),
     llvm::cl::Optional);
 
@@ -194,7 +197,7 @@ static opt<bool, true>
                  llvm::cl::desc("Keeps the original code in comments of "
                                 "generated DPC++ files. Default: off.\n"),
                  cat(DPCTCat), llvm::cl::location(KeepOriginalCodeFlag));
-
+#ifdef DPCT_DEBUG_BUILD
 static opt<std::string>
     DiagsContent("report-diags-content",
                  desc("Diagnostics verbosity level. \"pass\": Basic migration "
@@ -203,7 +206,7 @@ static opt<std::string>
                       "transformation information."),
                  value_desc("[pass|transformation]"), cat(DPCTCat),
                  llvm::cl::Optional, llvm::cl::Hidden);
-
+#endif
 static std::string
     WarningDesc("Comma separated list of migration warnings to suppress. Valid "
                 "warning IDs range\n"
@@ -878,9 +881,13 @@ int run(int argc, const char **argv) {
     exit(MigrationErrorInvalidInRootOrOutRoot);
   }
 
-  if (!validatePaths(InRoot, OptParser->getSourcePathList())) {
+  int ValidPath=validatePaths(InRoot, OptParser->getSourcePathList());
+  if (ValidPath == -1) {
     DebugInfo::ShowStatus(MigrationErrorInvalidInRootPath);
     exit(MigrationErrorInvalidInRootPath);
+  } else if (ValidPath==-2) {
+    DebugInfo::ShowStatus(MigrationErrorNoFileTypeAvail);
+    exit(MigrationErrorNoFileTypeAvail);
   }
 
   int SDKIncPathRes =
@@ -901,9 +908,14 @@ int run(int argc, const char **argv) {
   }
 
   bool GenReport = false;
+  #ifdef DPCT_DEBUG_BUILD
+  std::string &DVerbose = DiagsContent;
+  #else
+  std::string DVerbose ="";
+  #endif
   if (checkReportArgs(ReportType.getValue(), ReportFormat.getValue(),
                       ReportFilePrefix, ReportOnlyFlag, GenReport,
-                      DiagsContent) == false) {
+                      DVerbose) == false) {
     DebugInfo::ShowStatus(MigrationErrorInvalidReportArgs);
     exit(MigrationErrorInvalidReportArgs);
   }

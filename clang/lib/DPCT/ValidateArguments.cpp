@@ -117,26 +117,26 @@ bool makeCanonicalOrSetDefaults(string &InRoot, string &OutRoot,
 // Make sure all files have an extension and are under InRoot.
 //
 // TODO: Produce diagnostics with llvm machinery
-bool validatePaths(const std::string &InRoot,
-                   const vector<string> &SourceFiles) {
+int validatePaths(const std::string &InRoot,
+                   const std::vector<std::string> &SourceFiles) {
   assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
-  bool Ok = true;
+  int Ok = 0;
   for (const auto &FilePath : SourceFiles) {
     auto AbsPath = FilePath;
     if (!makeCanonical(AbsPath)) {
-      Ok = false;
+      Ok = -1;
       continue;
     }
 
     if (!isChildPath(InRoot, AbsPath)) {
-      Ok = false;
+      Ok = -1;
       llvm::errs() << "Error: File '" << AbsPath
                    << "' is not under the specified input root directory '"
                    << InRoot << "'\n";
     }
 
     if (!path::has_extension(AbsPath)) {
-      Ok = false;
+      Ok = -2;
       llvm::errs() << "Error: File '" << AbsPath
                    << "' does not have an extension.\n";
     }
@@ -200,6 +200,7 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
     if (RFile.empty()) {
       RFile = "stdout";
     }
+    #ifdef DPCT_DEBUG_BUILD
     // check the report diags content value.
     if (DVerbose.empty()) {
       clang::dpct::VerboseLevel = clang::dpct::VerboseLow;
@@ -213,6 +214,7 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
           << "error value provided in option: -report-diags-content, use "
              "[pass|transformation].\n\n";
     }
+    #endif
   }
 
   return Success;

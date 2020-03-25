@@ -57,6 +57,7 @@ enum ProcessStatus {
   MigrationErrorNameTooLong = -24,
   MigrationErrorPrefixTooLong = -25,
   MigrationErrorFormatFail = -26,
+  MigrationErrorNoFileTypeAvail = -27,
 };
 
 /// Apply all generated replacements, and immediately save the results to

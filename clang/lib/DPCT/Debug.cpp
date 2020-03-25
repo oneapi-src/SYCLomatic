@@ -238,6 +238,9 @@ void DebugInfo::ShowStatus(int Status) {
   case MigrationErrorPrefixTooLong:
     StatusString = "Error: Prefix is too long; should be less than 128";
     break;
+  case MigrationErrorNoFileTypeAvail:
+      StatusString = "Error: File Type not available for input file";
+      break;
   default:
     DpctLog() << "Unknown error\n";
     exit(-1);
