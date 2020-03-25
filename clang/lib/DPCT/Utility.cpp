@@ -157,10 +157,23 @@ SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
              Extension == ".TPP" || Extension == ".tpp") {
     return TypeCppHeader;
   } else {
-    std::string ErrMsg =
-        "[ERROR] Not support \"" + Extension.str() + "\" file type!\n";
-    dpct::PrintMsg(ErrMsg);
-    std::exit(MigrationErrorNotSupportFileType);
+    // clang-format off
+    // For unknown file extensions, determine the file type according to:
+    // A. If it shows up in the compilation database as single migration
+    //    file, then treat it as a main source file.
+    // B. If it is included by another source file, then treat it as a header
+    //    file.
+    // C. If both A and B hold, then default to A.
+    // clang-format on
+    auto &FileSetInDB = dpct::DpctGlobalInfo::getFileSetInCompiationDB();
+    if(FileSetInDB.find(SourcePath.str()) != end(FileSetInDB)) {
+      return TypeCppSource;
+    }
+    auto &IncludingFileSet = dpct::DpctGlobalInfo::getIncludingFileSet();
+    if(IncludingFileSet.find(SourcePath.str()) != end(IncludingFileSet)) {
+      return TypeCppHeader;
+    }
+    return TypeCppSource;
   }
 }
 

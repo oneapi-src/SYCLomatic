@@ -769,6 +769,8 @@ public:
   }
 
   static std::map<MacroInfo *, bool> &getMacroDefines() { return MacroDefines; }
+  static std::set<std::string> &getIncludingFileSet() { return IncludingFileSet; }
+  static std::set<std::string> &getFileSetInCompiationDB() { return FileSetInCompiationDB; }
 
 private:
   DpctGlobalInfo() = default;
@@ -864,6 +866,8 @@ private:
   static std::map<MacroInfo *, bool> MacroDefines;
   static int CurrentMaxIndex;
   static int CurrentIndexInRule;
+  static std::set<std::string> IncludingFileSet;
+  static std::set<std::string> FileSetInCompiationDB;
 };
 
 class TemplateArgumentInfo;

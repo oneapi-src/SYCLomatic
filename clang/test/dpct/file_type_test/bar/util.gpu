@@ -1,0 +1,9 @@
+#include <cuda_runtime.h>
+
+// CHECK:#include "util.gpuhead"
+#include "util.gpuhead"
+
+// CHECK:SYCL_EXTERNAL void kernel_util(int *a, int *b) {
+// CHECK-NEXT:}
+__global__ void kernel_util(int *a, int *b) {
+}

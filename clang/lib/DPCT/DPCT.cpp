@@ -787,6 +787,7 @@ int run(int argc, const char **argv) {
 
   // Set hangle for libclangTooling to proccess message for dpct
   clang::tooling::SetPrintHandler(PrintMsg);
+  clang::tooling::SetFileSetInCompiationDB(dpct::DpctGlobalInfo::getFileSetInCompiationDB());
 
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;

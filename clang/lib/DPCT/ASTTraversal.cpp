@@ -313,7 +313,10 @@ void IncludesCallbacks::InclusionDirective(
                         (isChildOrSamePath(InRoot, DirPath));
 
   if (IsFileInInRoot) {
-    IncludeFileMap[DpctGlobalInfo::removeSymlinks(SM.getFileManager(), FilePath)] = false;
+    auto FilePathWithoutSymlinks =
+        DpctGlobalInfo::removeSymlinks(SM.getFileManager(), FilePath);
+    IncludeFileMap[FilePathWithoutSymlinks] = false;
+    dpct::DpctGlobalInfo::getIncludingFileSet().insert(FilePathWithoutSymlinks);
   }
 
   if (!SM.isWrittenInMainFile(HashLoc) && !IsIncludingFileInInRoot) {

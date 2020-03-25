@@ -171,6 +171,7 @@ static void rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
   FilePath = NewFilePath;
 }
 
+
 static void rewriteFileName(SmallString<512> &FilePath) {
   SourceProcessType FileType = GetSourceFileType(FilePath.str());
 
@@ -230,9 +231,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       // This operation won't fail; it already succeeded once during argument
       // validation.
       makeCanonical(OutPath);
-      rewriteDir(OutPath, InRoot, OutRoot);
-
       rewriteFileName(OutPath);
+      rewriteDir(OutPath, InRoot, OutRoot);
 
       // for headfile, as it can be included from differnt file, it need
       // merge the migration triggered by each including.

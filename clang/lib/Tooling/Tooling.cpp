@@ -69,11 +69,21 @@ namespace clang {
 namespace tooling {
 static void (* MsgPrintHandler) (const std::string &, bool) = nullptr;
 static std::string SDKIncludePath = "";
+static std::set<std::string> *FileSetInCompiationDBPtr = nullptr;
 
 void SetPrintHandler(void (*Handler)(const std::string &Msg, bool IsPrintOnNormal)){
   MsgPrintHandler = Handler;
 }
 
+void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB) {
+  FileSetInCompiationDBPtr = &FileSetInCompiationDB;
+}
+
+void CollectFileFromDB(std::string FileName) {
+  if (FileSetInCompiationDBPtr != nullptr) {
+    (*FileSetInCompiationDBPtr).insert(FileName);
+  }
+}
 void DoPrintHandler(const std::string &Msg, bool IsPrintOnNormal) {
   if (MsgPrintHandler != nullptr){
     (*MsgPrintHandler)(Msg, IsPrintOnNormal);
@@ -531,6 +541,7 @@ int ClangTool::run(ToolAction *Action) {
     std::vector<std::string> SourcePaths = Compilations.getAllFiles();
     for (const auto &SourcePath : SourcePaths) {
       AbsolutePaths.push_back(SourcePath);
+      CollectFileFromDB(SourcePath);
     }
   }
 #endif

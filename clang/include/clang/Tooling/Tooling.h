@@ -55,6 +55,7 @@ void SetPrintHandler(void (*Handler)(const std::string &Msg, bool IsPrintOnNorma
 void DoPrintHandler(const std::string &Msg, bool IsPrintOnNormal);
 void SetSDKIncludePath(const std::string &Path);
 void SetDiagnosticOutput(llvm::raw_ostream &OStream);
+void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB);
 } // namespace tooling
 } // namespace clang
 #endif
