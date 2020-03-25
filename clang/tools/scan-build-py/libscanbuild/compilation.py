@@ -186,6 +186,7 @@ IGNORED_FLAGS = {
     '-V' : 0,
     '--options-file' : 0,
     '-optf' : 0,
+    '-fopenmp': 0,
 }
 
 MAP_FLAGS = {

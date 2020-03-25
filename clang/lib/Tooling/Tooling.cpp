@@ -594,15 +594,16 @@ int ClangTool::run(ToolAction *Action) {
           SDKIncludePath[index] = '/';
         }
       }
+      ArgumentsAdjuster CudaArgsAdjuster{ArgsAdjuster};
 #ifdef _WIN32
       if ((!CommandLine.empty() && CommandLine[0] == "CudaCompile") ||
           (!CommandLine.empty() && CommandLine[0] == "CustomBuild" &&
            llvm::sys::path::extension(File)==".cu")) {
-        ArgsAdjuster = combineAdjusters(
-            std::move(ArgsAdjuster),
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
-        ArgsAdjuster = combineAdjusters(
-            std::move(ArgsAdjuster),
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
       } else {
         std::string IncludeOptionStr = std::string("-I") + SDKIncludePath;
@@ -611,20 +612,23 @@ int ClangTool::run(ToolAction *Action) {
 #else
       if (!CommandLine.empty() && CommandLine[0].size() >= 4 &&
           CommandLine[0].substr(CommandLine[0].size() - 4) == "nvcc") {
-        ArgsAdjuster = combineAdjusters(
-            std::move(ArgsAdjuster),
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
-        ArgsAdjuster = combineAdjusters(
-            std::move(ArgsAdjuster),
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
       } else {
         std::string IncludeOptionStr = std::string("-I") + SDKIncludePath;
         CommandLine.push_back(IncludeOptionStr);
       }
 #endif
-#endif
+      if (CudaArgsAdjuster)
+        CommandLine = CudaArgsAdjuster(CommandLine, CompileCommand.Filename);
+#else
       if (ArgsAdjuster)
         CommandLine = ArgsAdjuster(CommandLine, CompileCommand.Filename);
+#endif
       assert(!CommandLine.empty());
 
       // Add the resource dir based on the binary of this tool. argv[0] in the
