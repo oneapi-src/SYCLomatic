@@ -276,18 +276,6 @@ public:
              const bool PrintDetail = true) const override;
 };
 
-/// Remove an attribute from a declaration.
-class RemoveAttr : public TextModification {
-  const Attr *TheAttr;
-
-public:
-  RemoveAttr(const Attr *A) : TextModification(TMID::RemoveAttr), TheAttr(A) {}
-  std::shared_ptr<ExtReplacement>
-  getReplacement(const ASTContext &Context) const override;
-  void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintDetail = true) const override;
-};
-
 /// Replace type in variable declaration.
 class ReplaceTypeInDecl : public TextModification {
   TypeLoc TL;

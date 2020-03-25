@@ -10,7 +10,6 @@
 //===-----------------------------------------------------------------===//
 TRANSFORMATION(ReplaceStmt)
 TRANSFORMATION(ReplaceCalleeName)
-TRANSFORMATION(RemoveAttr)
 TRANSFORMATION(ReplaceTypeInDecl)
 TRANSFORMATION(ReplaceVarDecl)
 TRANSFORMATION(ReplaceReturnType)

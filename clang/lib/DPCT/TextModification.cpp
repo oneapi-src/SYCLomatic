@@ -235,39 +235,6 @@ ReplaceCalleeName::getReplacement(const ASTContext &Context) const {
       getCalleeName(Context).size(), ReplStr, this);
 }
 
-std::shared_ptr<ExtReplacement>
-RemoveAttr::getReplacement(const ASTContext &Context) const {
-  auto &SM = Context.getSourceManager();
-  SourceRange AttrRange = TheAttr->getRange();
-  SourceLocation ARB = AttrRange.getBegin();
-  SourceLocation ARE = AttrRange.getEnd();
-  SourceLocation ExpB = SM.getExpansionLoc(ARB);
-  // No need to invoke getExpansionLoc again if the location is the same.
-  SourceLocation ExpE = (ARB == ARE) ? ExpB : SM.getExpansionLoc(ARE);
-
-  SourceLocation SpellingBegin = SM.getSpellingLoc(ExpB);
-  SourceLocation SpellingEnd = SM.getSpellingLoc(ExpE);
-  std::pair<FileID, unsigned> Start = SM.getDecomposedLoc(SpellingBegin);
-  std::pair<FileID, unsigned> End = SM.getDecomposedLoc(SpellingEnd);
-  End.second += Lexer::MeasureTokenLength(SpellingEnd, SM, LangOptions());
-  unsigned Len = End.second - Start.second;
-  // check the char after attribute, if it is empty then del it.
-  //   -eg. will del the space in case  "__global__ "
-  //   -eg. will not del the ";" in  case "__global__;"
-  unsigned int I = 0;
-  while (SM.getCharacterData(ExpB.getLocWithOffset(Len), 0)[I] == ' ' ||
-         SM.getCharacterData(ExpB.getLocWithOffset(Len), 0)[I] == '\t') {
-    I++;
-  }
-  Len += I;
-
-  recordMigrationInfo(Context, TheAttr->getLocation());
-
-  return std::make_shared<ExtReplacement>(
-      SM, CharSourceRange::getCharRange(ExpB, ExpB.getLocWithOffset(Len)), "",
-      this);
-}
-
 std::map<unsigned, ReplaceVarDecl *> ReplaceVarDecl::ReplaceMap;
 
 std::shared_ptr<ExtReplacement>
@@ -764,14 +731,6 @@ void ReplaceCalleeName::print(llvm::raw_ostream &OS, ASTContext &Context,
   printLocation(OS, C->getBeginLoc(), Context, PrintDetail);
   OS << getCalleeName(Context);
   printReplacement(OS, ReplStr);
-}
-
-void RemoveAttr::print(llvm::raw_ostream &OS, ASTContext &Context,
-                       const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
-  printLocation(OS, TheAttr->getLocation(), Context, PrintDetail);
-  TheAttr->printPretty(OS, PrintingPolicy(Context.getLangOpts()));
-  printReplacement(OS, "");
 }
 
 void ReplaceTypeInDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
