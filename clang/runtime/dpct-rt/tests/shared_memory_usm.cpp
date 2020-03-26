@@ -36,7 +36,7 @@ int main () {
   {
     auto array_ct0 = array.get_ptr();
     auto result_ct1 = result.get_ptr();
-    dpct::get_default_queue_wait().submit(
+    dpct::get_default_queue().submit(
       [&](sycl::handler &cgh) {
         sycl::accessor<float, 1, sycl::access::mode::read_write, sycl::access::target::local> resultInGroup_acc_ct1(sycl::range<1>(8), cgh);
 
