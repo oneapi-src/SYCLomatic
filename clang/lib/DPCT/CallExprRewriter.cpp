@@ -133,10 +133,16 @@ std::string MathFuncNameRewriter::getNewFuncName() {
       }
     }
 
+    auto ContextFD = getImmediateOuterFuncDecl(Call);
+    if (NamespaceStr == "std" && ContextFD &&
+        !ContextFD->hasAttr<CUDADeviceAttr>() &&
+        !ContextFD->hasAttr<CUDAGlobalAttr>()) {
+      NewFuncName = "std::" + SourceCalleeName.str();
+    }
     // For device functions
-    if (NamespaceStr != "std" &&
-        ((FD->hasAttr<CUDADeviceAttr>() && !FD->hasAttr<CUDAHostAttr>()) ||
-         callingFuncHasDeviceAttr(Call))) {
+    else if ((FD->hasAttr<CUDADeviceAttr>() && !FD->hasAttr<CUDAHostAttr>()) ||
+             (ContextFD && (ContextFD->hasAttr<CUDADeviceAttr>() ||
+                            ContextFD->hasAttr<CUDAGlobalAttr>()))) {
       if (SourceCalleeName == "abs") {
         // further check the type of the args.
         if (!Call->getArg(0)->getType()->isIntegerType()) {
@@ -607,12 +613,36 @@ std::string getTypecastName(const CallExpr *Call) {
 }
 
 Optional<std::string> MathSimulatedRewriter::rewrite() {
-  report(Diagnostics::MATH_EMULATION, false,
-         MapNames::ITFName.at(SourceCalleeName.str()),
-         TargetCalleeName);
+  std::string NamespaceStr;
+  auto DRE = dyn_cast<DeclRefExpr>(Call->getCallee()->IgnoreImpCasts());
+  if (DRE) {
+    auto Qualifier = DRE->getQualifier();
+    if (Qualifier) {
+      auto Namespace = Qualifier->getAsNamespace();
+      if (Namespace)
+        NamespaceStr = Namespace->getName().str();
+    }
+  }
+
   auto FD = Call->getDirectCallee();
-  if (!FD || !FD->hasAttr<CUDADeviceAttr>())
+  if (!FD)
     return Base::rewrite();
+
+  auto ContextFD = getImmediateOuterFuncDecl(Call);
+  if (NamespaceStr == "std" && ContextFD &&
+      !ContextFD->hasAttr<CUDADeviceAttr>() &&
+      !ContextFD->hasAttr<CUDAGlobalAttr>()) {
+    SourceCalleeName = StringRef("std::" + SourceCalleeName.str());
+    return Base::rewrite();
+  }
+
+  if (!FD->hasAttr<CUDADeviceAttr>() && ContextFD &&
+      !ContextFD->hasAttr<CUDADeviceAttr>() &&
+      !ContextFD->hasAttr<CUDAGlobalAttr>())
+    return Base::rewrite();
+
+  report(Diagnostics::MATH_EMULATION, false,
+         MapNames::ITFName.at(SourceCalleeName.str()), TargetCalleeName);
 
   const std::string FuncName = SourceCalleeName.str();
   std::string ReplStr;
