@@ -414,6 +414,7 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(DeclRefExpr)
     ANALYZE_EXPR(MemberExpr)
     ANALYZE_EXPR(CallExpr)
+    ANALYZE_EXPR(ArraySubscriptExpr)
     ANALYZE_EXPR(UnaryOperator)
   default:
     return ExprAnalysis::dispatch(Expression);

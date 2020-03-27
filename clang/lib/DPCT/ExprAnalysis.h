@@ -432,6 +432,10 @@ private:
     IsRedeclareRequired = true;
     ExprAnalysis::analyzeExpr(Arg);
   }
+  inline void analyzeExpr(const ArraySubscriptExpr *Arg) {
+    IsRedeclareRequired = true;
+    ExprAnalysis::analyzeExpr(Arg);
+  }
   inline void analyzeExpr(const UnaryOperator *Arg);
 };
 
