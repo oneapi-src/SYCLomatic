@@ -218,30 +218,6 @@ public:
     }
   }
 
-  void insertUsing(std::string &&Repl, unsigned Offset) {
-    auto R =
-        std::make_shared<ExtReplacement>(FilePath, Offset, 0, Repl, nullptr);
-    R->setInsertPosition(InsertPositionRight);
-    addReplacement(R);
-  }
-
-  void insertUsing(UsingType Type, unsigned Offset, const std::string &Str) {
-    if (!UsingInsertedBitMap[Type]) {
-      UsingInsertedBitMap[Type] = true;
-      std::string ReplStr;
-      llvm::raw_string_ostream RSO(ReplStr);
-      if (Offset == LastIncludeOffset)
-        RSO << getNL();
-      if (FirstIncludeOffset != LastIncludeOffset)
-        RSO << getNL() << Str;
-      else
-        RSO << Str << getNL();
-      insertUsing(std::move(RSO.str()), Offset);
-    }
-  }
-
-  void insertUsing(UsingType Type);
-
   // Record line info in file.
   struct SourceLineInfo {
     SourceLineInfo() : SourceLineInfo(-1, -1, -1, nullptr) {}
@@ -766,11 +742,6 @@ public:
   void insertHeader(SourceLocation Loc, HeaderType Type) {
     auto LocInfo = getLocInfo(Loc);
     insertFile(LocInfo.first)->insertHeader(Type);
-  }
-
-  void insertUsing(SourceLocation Loc, UsingType Type) {
-    auto LocInfo = getLocInfo(Loc);
-    insertFile(LocInfo.first)->insertUsing(Type);
   }
 
   static std::map<const char *, std::shared_ptr<MacroExpansionRecord>> &

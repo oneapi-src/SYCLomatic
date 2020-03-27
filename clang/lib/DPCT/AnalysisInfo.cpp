@@ -97,15 +97,6 @@ void DpctFileInfo::emplaceReplacements(tooling::Replacements &ReplSet) {
   Repls.emplaceIntoReplSet(ReplSet);
 }
 
-void DpctFileInfo::insertUsing(UsingType Type) {
-  switch (Type) {
-  case QUEUE_P:
-    return insertUsing(UsingType::QUEUE_P, LastIncludeOffset,
-                       "using queue_p = " + MapNames::getClNamespace() +
-                           "::queue *;");
-  }
-}
-
 void DpctGlobalInfo::insertCudaMalloc(const CallExpr *CE) {
   if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(0)))
     insertCudaMallocInfo(MallocVar)->setSizeExpr(CE->getArg(1));
