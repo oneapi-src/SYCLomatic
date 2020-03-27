@@ -224,7 +224,16 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
 }
 
 void KernelCallExpr::buildKernelArgsStmt() {
+  size_t ArgCounter = 0;
   for (auto &Arg : getArgsInfo()) {
+    // if current arg is the first arg with default value, insert extra args
+    // before current arg
+    if (ArgCounter == getFuncInfo()->NonDefaultParamNum) {
+      KernelArgs += getExtraArguments();
+    }
+    if(ArgCounter != 0)
+      KernelArgs += ", ";
+
     if (Arg.IsPointer) {
       auto BufferName = Arg.getIdStringWithSuffix("buf");
       // If Arg is used as lvalue after its most recent memory allocation,
@@ -245,7 +254,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
             Arg.getTypeString(), Arg.getIdStringWithIndex(), " = (",
             Arg.getTypeString(), ")(&", Arg.getIdStringWithSuffix("acc"),
             "[0] + ", Arg.getIdStringWithSuffix("offset"), ");"));
-        KernelArgs += Arg.getIdStringWithIndex() + ", ";
+        KernelArgs += Arg.getIdStringWithIndex();
       } else {
         OuterStmts.emplace_back(buildString(
             "dpct::buffer_t ", BufferName, " = dpct::get_buffer(",
@@ -255,7 +264,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
             ".get_access<" + MapNames::getClNamespace() +
                 "::access::mode::read_write>(cgh);"));
         KernelArgs += buildString("(", Arg.getTypeString(), ")(&",
-                                  Arg.getIdStringWithSuffix("acc"), "[0]), ");
+                                  Arg.getIdStringWithSuffix("acc"), "[0])");
       }
     } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
       std::string ReDeclStr = buildString("auto ", Arg.getIdStringWithIndex(),
@@ -269,15 +278,22 @@ void KernelCallExpr::buildKernelArgsStmt() {
           ReDeclStr = ReDeclStr + "[0];";
         }
       }
-
       SubmitStmtsList.CommandGroupList.emplace_back(ReDeclStr);
-      KernelArgs += Arg.getIdStringWithIndex() + ", ";
+      KernelArgs += Arg.getIdStringWithIndex();
     } else {
-      KernelArgs += Arg.getArgString() + ", ";
+      KernelArgs += Arg.getArgString();
     }
+    ArgCounter += 1;
   }
-  if (!KernelArgs.empty())
-    KernelArgs.erase(KernelArgs.length() - 2, 2);
+
+  // if all params have no default value, insert extra args in the end of params
+  if (ArgCounter == getFuncInfo()->NonDefaultParamNum) {
+    KernelArgs = KernelArgs + getExtraArguments();
+  }
+
+  if (KernelArgs.empty()) {
+    KernelArgs += getExtraArguments();
+  }
 }
 
 void KernelCallExpr::print(KernelPrinter &Printer) {
@@ -384,7 +400,7 @@ void KernelCallExpr::printKernel(KernelPrinter &Printer) {
                    << (hasTemplateArgs()
                            ? buildString("<", getTemplateArguments(), ">")
                            : "")
-                   << "(" << KernelArgs << getExtraArguments() << ");";
+                   << "(" << KernelArgs << ");";
   Printer.newLine();
 }
 
@@ -402,6 +418,23 @@ std::string KernelCallExpr::getReplacement() {
   KernelPrinter Printer(LocInfo.NL, LocInfo.Indent, OS);
   print(Printer);
   return Printer.str();
+}
+
+
+CallFunctionExpr::CallFunctionExpr(unsigned Offset, const std::string &FilePathIn,
+  const CallExpr *CE)
+  : FilePath(FilePathIn), BeginLoc(Offset),
+  TextureObjectList(CE->getNumArgs(),
+    std::shared_ptr<TextureObjectInfo>()) {
+  buildTextureObjectArgsInfo(CE);
+}
+
+inline std::string CallFunctionExpr::getExtraArguments() {
+  if (!FuncInfo)
+    return "";
+  return getVarMap().getExtraCallArguments(FuncInfo->NonDefaultParamNum,
+                                           FuncInfo->ParamsNum -
+                                               FuncInfo->NonDefaultParamNum);
 }
 
 void KernelCallExpr::buildInfo() {
@@ -443,6 +476,7 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   HasArgs = CE->getNumArgs();
   auto Callee = CE->getCallee()->IgnoreImplicitAsWritten();
+
   if (auto CallDecl = CE->getDirectCallee()) {
     Name = getName(CallDecl);
     FuncInfo = DeviceFunctionDecl::LinkRedecls(CallDecl);
@@ -459,6 +493,27 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   } else if (auto DSDRE = dyn_cast<DependentScopeDeclRefExpr>(Callee)) {
     Name = DSDRE->getDeclName().getAsString();
     buildTemplateArgumentsFromTypeLoc(DSDRE->getQualifierLoc().getTypeLoc());
+  }
+
+
+  if (FuncInfo) {
+    if (FuncInfo->ParamsNum == 0) {
+      ExtraArgLoc =
+          DpctGlobalInfo::getSourceManager().getFileOffset(CE->getRParenLoc());
+    } else if (FuncInfo->NonDefaultParamNum == 0) {
+      // if all params have default value
+      ExtraArgLoc = DpctGlobalInfo::getSourceManager().getFileOffset(
+          CE->getArg(0)->getBeginLoc());
+    } else {
+      // if some params have default value, set ExtraArgLoc to the location
+      // before the comma
+      auto &SM = DpctGlobalInfo::getSourceManager();
+      auto TokenLoc = Lexer::getLocForEndOfToken(
+          SM.getSpellingLoc(
+              CE->getArg(FuncInfo->NonDefaultParamNum - 1)->getEndLoc()),
+          0, SM, DpctGlobalInfo::getContext().getLangOpts());
+      ExtraArgLoc = DpctGlobalInfo::getSourceManager().getFileOffset(TokenLoc);
+    }
   }
 }
 
@@ -508,7 +563,7 @@ void CallFunctionExpr::buildInfo() {
 void CallFunctionExpr::emplaceReplacement() {
   buildInfo();
   DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
-      FilePath, RParenLoc, 0, getExtraArguments(), nullptr));
+      FilePath, ExtraArgLoc, 0, getExtraArguments(), nullptr));
 }
 
 std::string CallFunctionExpr::getTemplateArguments(bool WithScalarWrapped) {
@@ -590,18 +645,40 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
 }
 
 void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionDecl *FD) {
-  if (FD->isImplicit())
+  if (FD->isImplicit()) {
+    NonDefaultParamNum = FD->getNumParams();
     return;
+  }
 
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto &LO = DpctGlobalInfo::getContext().getLangOpts();
 
+  // Need to get the first decl if there are many decl of the same function
+  auto FisrtFD = FD->getFirstDecl();
   SourceLocation NextToken;
-  if (FD->param_empty())
+  // ItEndParam will be the last parameter which has no DefaultArg.
+  // The new parameter will be inserted right after ItEndParam.
+  auto ItEndParam = FD->param_end() - 1;
+  if (FisrtFD->param_empty()) {
     NextToken = FD->getNameInfo().getEndLoc();
-  else {
-    auto EndParam = *(FD->param_end() - 1);
-    NextToken = EndParam->getEndLoc();
+    NextToken = Lexer::getLocForEndOfToken(NextToken, 0, SM, LO);
+    NonDefaultParamNum = 0;
+  } else {
+    while ((*ItEndParam)->hasDefaultArg() && ItEndParam != FisrtFD->param_begin()) {
+      ItEndParam = ItEndParam - 1;
+    }
+    if (ItEndParam == FisrtFD->param_begin() && (*ItEndParam)->hasDefaultArg()) {
+      NextToken = (*FD->param_begin())->getBeginLoc();
+      NonDefaultParamNum = 0;
+    }
+    else {
+      NextToken = (*ItEndParam)->getEndLoc();
+      if (SM.isMacroArgExpansion(NextToken)) {
+        NextToken = SM.getSpellingLoc(SM.getImmediateExpansionRange(NextToken).getEnd());
+      }
+      NextToken = Lexer::getLocForEndOfToken(NextToken, 0, SM, LO);
+      NonDefaultParamNum = ItEndParam - FD->param_begin() + 1;
+    }
   }
 
   // The rule of wrapping extra parameters in device function declaration:
@@ -614,7 +691,7 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionDecl *FD) {
   //    2.2 The first parameter and the last parameter are in one line
   //        Add new line, and the extra parameters are aligned with the first
   //        parameter.
-  if (FD->getNumParams() >= 2) {
+  if (NonDefaultParamNum >= 2) {
     IsExtraParamWithNL = true;
     auto BeginParam = *(FD->param_begin());
     SourceLocation BeginParamLoc = BeginParam->getBeginLoc();
@@ -634,11 +711,18 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionDecl *FD) {
     if (NextToken.isMacroID())
       EndExpLoc = SM.getExpansionLoc(NextToken);
 
-    if (BeginExpLoc == EndExpLoc) {
+    auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      SM.getCharacterData(NextToken));
+
+    if (ItMatch !=
+      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+      ItMatch->second->IsFunctionLike) {
       IsExtraParamWithNL = false;
       Indent = "";
-      NextToken =
+      if (NextToken.isMacroID()) {
+        NextToken =
           SM.getSpellingLoc(SM.getImmediateExpansionRange(NextToken).getEnd());
+      }
     } else {
       if (BeginParamLoc.isMacroID())
         BeginParamLoc = BeginExpLoc;
@@ -663,6 +747,7 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionDecl *FD) {
     }
   }
 
+  // Find the correct ReplaceOffset to insert new parameter
   Token Tok;
   auto Result = Lexer::getRawToken(NextToken, Tok, SM, LO, true);
   while (!Result) {
@@ -671,10 +756,17 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionDecl *FD) {
     case tok::r_paren:
       ReplaceOffset = SM.getFileOffset(Tok.getLocation());
       return;
+    case tok::comma:
+      ReplaceOffset = SM.getFileOffset(Tok.getLocation());
+      return;
     case tok::raw_identifier:
       if (Tok.getRawIdentifier() == VoidId) {
         ReplaceOffset = SM.getFileOffset(Tok.getLocation());
         ReplaceLength = Tok.getLength();
+        return;
+      }
+      else {
+        ReplaceOffset = SM.getFileOffset(Tok.getLocation());
         return;
       }
     // May fall through
@@ -836,17 +928,17 @@ std::string MemVarInfo::getDeclarationReplacement() {
   }
 }
 
-std::string MemVarMap::getExtraCallArguments(bool HasArgs) const {
-  return getArgumentsOrParameters<CallArgument>(HasArgs);
+std::string MemVarMap::getExtraCallArguments(bool HasPreParam, bool HasPostParam) const {
+  return getArgumentsOrParameters<CallArgument>(HasPreParam, HasPostParam);
 }
-std::string MemVarMap::getExtraDeclParam(bool HasParams,
+std::string MemVarMap::getExtraDeclParam(bool HasPreParam, bool HasPostParam,
                                          bool IsExtraParamWithNL,
                                          std::string Indent) const {
-  return getArgumentsOrParameters<DeclParameter>(HasParams, IsExtraParamWithNL,
+  return getArgumentsOrParameters<DeclParameter>(HasPreParam, HasPostParam, IsExtraParamWithNL,
                                                  Indent);
 }
-std::string MemVarMap::getKernelArguments(bool HasArgs) const {
-  return getArgumentsOrParameters<KernelArgument>(HasArgs);
+std::string MemVarMap::getKernelArguments(bool HasPreParam, bool HasPostParam) const {
+  return getArgumentsOrParameters<KernelArgument>(HasPreParam, HasPostParam);
 }
 
 CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold) : CtTypeInfo() {

@@ -3,6 +3,20 @@
 
 #include <stdio.h>
 
+// CHECK: void helloFromGPUDDefaultArgs(int i, int j, int k,
+// CHECK-NEXT:   cl::sycl::nd_item<3> item_ct1,
+// CHECK-NEXT: int l = 0,
+// CHECK-NEXT: int m = 0, int n = 0) {
+// CHECK-NEXT: int a = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
+// CHECK-NEXT: item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2);
+// CHECK-NEXT: }
+__global__ void helloFromGPUDDefaultArgs(int i, int j, int k,
+  int l = 0,
+  int m = 0, int n = 0) {
+int a = blockIdx.x * blockDim.x + threadIdx.x + blockIdx.x +
+blockDim.x + threadIdx.x;
+}
+
 // CHECK: void testKernel(int L, int M, int N,
 // CHECK-NEXT: cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]);
 __global__ void testKernel(int L, int M, int N);
@@ -235,6 +249,16 @@ int main() {
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   helloFromGPU<<<griddim, 4>>>();
+
+  // CHECK: dpct::get_default_queue().submit(
+  // CHECK-NEXT:   [&](cl::sycl::handler &cgh) {
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class helloFromGPUDDefaultArgs_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 2) * cl::sycl::range<3>(1, 1, 4), cl::sycl::range<3>(1, 1, 4)),
+  // CHECK-NEXT:       [=](cl::sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         helloFromGPUDDefaultArgs(1, 2, 3, item_ct1, 4, 5, 6);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
+  helloFromGPUDDefaultArgs <<<2, 4>>>(1,2,3,4,5,6);
 }
 
 struct config {
@@ -516,4 +540,33 @@ int run_foo8() {
   in = 42;
   my_kernel2<<<4, 8>>>(in, &out);
   printf("%f ", out);
+}
+
+//CHECK: void deviceFoo(int i, int j, int k,
+//CHECK-NEXT:   cl::sycl::nd_item<3> item_ct1,
+//CHECK-NEXT: int l = 0,
+//CHECK-NEXT: int m = 0, int n = 0){
+//CHECK-NEXT: int a = item_ct1.get_group(2);
+//CHECK-NEXT: }
+__device__ void deviceFoo(int i, int j, int k,
+  int l = 0,
+  int m = 0, int n = 0){
+  int a = blockIdx.x;
+}
+
+
+//CHECK: void deviceFoo2(cl::sycl::nd_item<3> item_ct1, int i = 0, int j = 0){
+//CHECK-NEXT:   int a = item_ct1.get_group(2);
+//CHECK-NEXT: }
+__device__ void deviceFoo2(int i = 0, int j = 0){
+  int a = blockIdx.x;
+}
+
+//CHECK: void callDeviceFoo(cl::sycl::nd_item<3> item_ct1){
+//CHECK-NEXT:   deviceFoo(1,2,3, item_ct1,4,5,6);
+//CHECK-NEXT:   deviceFoo2(item_ct1, 1,2);
+//CHECK-NEXT: }
+__global__ void callDeviceFoo(){
+  deviceFoo(1,2,3,4,5,6);
+  deviceFoo2(1,2);
 }
