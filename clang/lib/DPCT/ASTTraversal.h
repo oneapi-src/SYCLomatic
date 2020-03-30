@@ -673,6 +673,7 @@ public:
     int SideModeIndexInfo;
     int DiagTypeIndexInfo;
 
+    BLASEnumInfo() {}
     BLASEnumInfo(const std::vector<int> OperationIndexInfo,
                  const int FillModeIndexInfo, const int SideModeIndexInfo,
                  const int DiagTypeIndexInfo)
@@ -682,24 +683,94 @@ public:
           DiagTypeIndexInfo(DiagTypeIndexInfo) {}
   };
 
-  void processParamIntCastToBLASEnum(const Expr *E, const CStyleCastExpr *CSCE,
-                                     const int DistinctionID,
-                                     const std::string IndentStr,
-                                     const BLASEnumInfo &EnumInfo,
-                                     std::string &PrefixInsertStr,
-                                     const std::string &FuncName,
-                                     bool IsMacroArg);
-  void processTrmmCall(const CallExpr *CE, std::string &PrefixInsertStr,
-                       const std::string IndentStr);
-  void processTrmmParams(const CallExpr *CE, std::string &PrefixInsertStr,
-                         std::string &BufferName, std::string &BufferDecl,
-                         std::string &ExtraDecl,
-                         int &IndexTemp, int DistinctionID,
-                         const std::string IndentStr,
-                         const std::vector<std::string> &BufferTypeInfo);
+  std::string processParamIntCastToBLASEnum(
+      const Expr *E, const CStyleCastExpr *CSCE, const int DistinctionID,
+      const std::string IndentStr, const BLASEnumInfo &EnumInfo,
+      std::string &PrefixInsertStr, std::string &CurrentArgumentRepl);
   bool isCEOrUETTEOrAnIdentifierOrLiteral(const Expr *E);
   std::string getExprString(const Expr *E,
                             bool AddparenthesisIfNecessary = false);
+
+  std::vector<std::string> CallExprArguReplVec;
+  std::string CallExprReplStr;
+
+  std::string getFinalCallExprStr(std::string& FuncName) {
+    std::string ResultStr;
+    if (!CallExprArguReplVec.empty())
+      ResultStr = CallExprArguReplVec[0];
+    for (unsigned int i = 1; i < CallExprArguReplVec.size(); i++) {
+      ResultStr = ResultStr + ", " + CallExprArguReplVec[i];
+    }
+
+    return FuncName + "(" + ResultStr + ")";
+  }
+
+  std::string addIndirectionIfNecessary(const Expr *E) {
+    if (isSimpleAddrOf(E->IgnoreImplicit())) {
+      return getNameStrRemovedAddrOf(E->IgnoreImplicit());
+    } else if (isCOCESimpleAddrOf(E)) {
+      return getNameStrRemovedAddrOf(E->IgnoreImplicit(), true);
+    } else {
+      ExprAnalysis EA;
+      EA.analyze(E);
+      return "*(" + EA.getReplacedString() + ")";
+    }
+  }
+
+  void
+  applyMigrationText(bool IsInCondition, bool IsAssigned,
+                     SourceLocation StmtBegin, SourceLocation StmtEndAfterSemi,
+                     SourceLocation FuncNameBegin, SourceLocation FuncCallEnd,
+                     unsigned int FuncCallLength, std::string IndentStr,
+                     std::string PrefixInsertStr, std::string SuffixInsertStr,
+                     bool IsHelperFunction = false, std::string FuncName = "") {
+    if (IsInCondition) {
+      if (IsAssigned) {
+        report(StmtBegin, Diagnostics::NOERROR_RETURN_LAMBDA, false);
+        insertAroundRange(
+            StmtBegin, StmtEndAfterSemi,
+            std::string("[&](){") + getNL() + IndentStr + PrefixInsertStr,
+            std::string(";") + SuffixInsertStr + getNL() + IndentStr +
+                "return 0;" + getNL() + IndentStr + std::string("}()"));
+      } else {
+        insertAroundRange(StmtBegin, StmtEndAfterSemi,
+                          std::string("[&](){") + getNL() + IndentStr +
+                              PrefixInsertStr,
+                          std::string(";") + SuffixInsertStr + getNL() +
+                              IndentStr + std::string("}()"));
+      }
+      if (IsHelperFunction)
+        emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
+                                              std::move(CallExprReplStr), true,
+                                              FuncName));
+      else
+        emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
+                                              std::move(CallExprReplStr)));
+    } else {
+      if (!PrefixInsertStr.empty() || !SuffixInsertStr.empty()) {
+        if (dpct::DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
+          insertAroundRange(
+              StmtBegin, StmtEndAfterSemi,
+              std::string("{") + getNL() + IndentStr + PrefixInsertStr,
+              SuffixInsertStr + getNL() + IndentStr + std::string("}"));
+        else
+          insertAroundRange(StmtBegin, StmtEndAfterSemi,
+                            std::move(PrefixInsertStr),
+                            std::move(SuffixInsertStr));
+      }
+      if (IsHelperFunction)
+        emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
+                                              std::move(CallExprReplStr), true,
+                                              FuncName));
+      else
+        emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
+                                              std::move(CallExprReplStr)));
+      if (IsAssigned) {
+        insertAroundRange(FuncNameBegin, FuncCallEnd, "(", ", 0)");
+        report(StmtBegin, Diagnostics::NOERROR_RETURN_COMMA_OP, true);
+      }
+    }
+  }
 };
 
 /// Migration rule for Random function calls.

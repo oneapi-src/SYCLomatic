@@ -46,51 +46,51 @@ int main() {
   // CHECK: int res;
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
-  // CHECK-NEXT: mkl::blas::iamax(dpct::get_default_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, result_temp_buffer);
-  // CHECK-NEXT: res = result_temp_buffer.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: mkl::blas::iamax(dpct::get_default_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: res = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
   int res = cublasIsamax(n, x_S, incx);
 
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
-  // CHECK-NEXT: mkl::blas::iamax(dpct::get_default_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, result_temp_buffer);
-  // CHECK-NEXT: *result = result_temp_buffer.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: mkl::blas::iamax(dpct::get_default_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
   *result = cublasIdamax(n, x_D, incx);
 
   //cublasI<t>amin
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
-  // CHECK-NEXT: mkl::blas::iamin(dpct::get_default_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, result_temp_buffer);
-  // CHECK-NEXT: *result = result_temp_buffer.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: mkl::blas::iamin(dpct::get_default_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
   *result = cublasIsamin(n, x_S, incx);
 
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
-  // CHECK-NEXT: mkl::blas::iamin(dpct::get_default_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, result_temp_buffer);
-  // CHECK-NEXT: *result = result_temp_buffer.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: mkl::blas::iamin(dpct::get_default_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: *result = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
   *result = cublasIdamin(n, x_D, incx);
 
   //cublas<t>asum
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: sycl::buffer<float> result_temp_buffer(sycl::range<1>(1));
-  // CHECK-NEXT: mkl::blas::asum(dpct::get_default_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, result_temp_buffer);
-  // CHECK-NEXT: *result_S = result_temp_buffer.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: sycl::buffer<float> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: mkl::blas::asum(dpct::get_default_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: *result_S = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
   *result_S = cublasSasum(n, x_S, incx);
 
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: sycl::buffer<double> result_temp_buffer(sycl::range<1>(1));
-  // CHECK-NEXT: mkl::blas::asum(dpct::get_default_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, result_temp_buffer);
-  // CHECK-NEXT: *result_D = result_temp_buffer.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: sycl::buffer<double> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: mkl::blas::asum(dpct::get_default_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: *result_D = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
   *result_D = cublasDasum(n, x_D, incx);
 
@@ -98,35 +98,35 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
-  // CHECK-NEXT: sycl::buffer<float> result_temp_buffer(sycl::range<1>(1));
-  // CHECK-NEXT: mkl::blas::dot(dpct::get_default_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, result_temp_buffer);
-  // CHECK-NEXT: *result_S = result_temp_buffer.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: sycl::buffer<float> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: mkl::blas::dot(dpct::get_default_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: *result_S = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
   *result_S = cublasSdot(n, x_S, incx, y_S, incy);
 
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
-  // CHECK-NEXT: sycl::buffer<double> result_temp_buffer(sycl::range<1>(1));
-  // CHECK-NEXT: mkl::blas::dot(dpct::get_default_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, result_temp_buffer);
-  // CHECK-NEXT: *result_D = result_temp_buffer.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: sycl::buffer<double> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: mkl::blas::dot(dpct::get_default_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: *result_D = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
   *result_D = cublasDdot(n, x_D, incx, y_D, incy);
 
   //cublas<t>nrm2
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: sycl::buffer<float> result_temp_buffer(sycl::range<1>(1));
-  // CHECK-NEXT: mkl::blas::nrm2(dpct::get_default_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, result_temp_buffer);
-  // CHECK-NEXT: *result_S = result_temp_buffer.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: sycl::buffer<float> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: mkl::blas::nrm2(dpct::get_default_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: *result_S = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
   *result_S = cublasSnrm2(n, x_S, incx);
 
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: sycl::buffer<double> result_temp_buffer(sycl::range<1>(1));
-  // CHECK-NEXT: mkl::blas::nrm2(dpct::get_default_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, result_temp_buffer);
-  // CHECK-NEXT: *result_D = result_temp_buffer.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: sycl::buffer<double> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: mkl::blas::nrm2(dpct::get_default_queue(), n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: *result_D = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
   // CHECK-NEXT: }
   *result_D = cublasDnrm2(n, x_D, incx);
 
@@ -601,13 +601,13 @@ int main() {
   cublasDgemm('N', 'n', n, n, n, alpha_D, A_D, n, B_D, n, beta_D, C_D, n);
 
   // CHECK: {
-  // CHECK-NEXT: auto sidemode_ct0 = foo();
-  // CHECK-NEXT: auto fillmode_ct1 = foo();
-  // CHECK-NEXT: auto transpose_ct2 = foo();
-  // CHECK-NEXT: auto diagtype_ct3 = foo();
+  // CHECK-NEXT: auto sidemode_ct{{[0-9]+}} = foo();
+  // CHECK-NEXT: auto fillmode_ct{{[0-9]+}} = foo();
+  // CHECK-NEXT: auto transpose_ct{{[0-9]+}} = foo();
+  // CHECK-NEXT: auto diagtype_ct{{[0-9]+}} = foo();
   // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
   // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
-  // CHECK-NEXT: mkl::blas::trsm(dpct::get_default_queue(), (sidemode_ct0=='L'||sidemode_ct0=='l') ? mkl::side::left : mkl::side::right, (fillmode_ct1=='L'||fillmode_ct1=='l') ? mkl::uplo::lower : mkl::uplo::upper, (transpose_ct2=='N'||transpose_ct2=='n') ? mkl::transpose::nontrans: ((transpose_ct2=='T'||transpose_ct2=='t') ? mkl::transpose::trans : mkl::transpose::conjtrans), (diagtype_ct3=='N'||diagtype_ct3=='n') ? mkl::diag::nonunit : mkl::diag::unit, m, n, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, C_D_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: mkl::blas::trsm(dpct::get_default_queue(), (sidemode_ct{{[0-9]+}}=='L'||sidemode_ct{{[0-9]+}}=='l') ? mkl::side::left : mkl::side::right, (fillmode_ct{{[0-9]+}}=='L'||fillmode_ct{{[0-9]+}}=='l') ? mkl::uplo::lower : mkl::uplo::upper, (transpose_ct{{[0-9]+}}=='N'||transpose_ct{{[0-9]+}}=='n') ? mkl::transpose::nontrans: ((transpose_ct{{[0-9]+}}=='T'||transpose_ct{{[0-9]+}}=='t') ? mkl::transpose::trans : mkl::transpose::conjtrans), (diagtype_ct{{[0-9]+}}=='N'||diagtype_ct{{[0-9]+}}=='n') ? mkl::diag::nonunit : mkl::diag::unit, m, n, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, C_D_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasDtrsm(foo(), foo(), foo(), foo(), m, n, alpha_D, A_D, lda, C_D, ldc);
 }

@@ -114,12 +114,12 @@ int main(){
 
 
   // CHECK: {
-  // CHECK-NEXT: auto foo2_ptr_ct12 = foo2();
-  // CHECK-NEXT: dpct::matrix_mem_copy(foo2_ptr_ct12, B_Z, ldc, ldb, m, n, dpct::device_to_device, handle);
-  // CHECK-NEXT: auto transpose_ct3 = foo1();
+  // CHECK-NEXT: auto foo2_ptr_ct{{[0-9]+}} = foo2();
+  // CHECK-NEXT: dpct::matrix_mem_copy(foo2_ptr_ct{{[0-9]+}}, B_Z, ldc, ldb, m, n, dpct::device_to_device, handle);
+  // CHECK-NEXT: auto transpose_ct{{[0-9]+}} = foo1();
   // CHECK-NEXT: auto A_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_Z);
-  // CHECK-NEXT: auto foo2_ptr_ct12_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(foo2_ptr_ct12);
-  // CHECK-NEXT: mkl::blas::trmm(handle, mkl::side::left, mkl::uplo::upper, (int)transpose_ct3==2 ? mkl::transpose::conjtrans : (mkl::transpose)transpose_ct3, mkl::diag::nonunit, m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, lda,  foo2_ptr_ct12_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: auto foo2_ptr_ct{{[0-9]+}}_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(foo2_ptr_ct{{[0-9]+}});
+  // CHECK-NEXT: mkl::blas::trmm(handle, mkl::side::left, mkl::uplo::upper, (int)transpose_ct{{[0-9]+}}==2 ? mkl::transpose::conjtrans : (mkl::transpose)transpose_ct{{[0-9]+}}, mkl::diag::nonunit, m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, lda,  foo2_ptr_ct{{[0-9]+}}_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasZtrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, (cublasOperation_t)foo1(), CUBLAS_DIAG_NON_UNIT, m, n, &alpha_Z, A_Z, lda, B_Z, ldb, foo2(), ldc);
 }

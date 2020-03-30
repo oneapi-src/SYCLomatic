@@ -260,6 +260,12 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
                                                 ECD->getName().str());
     if (!ReplEnum.empty())
       addReplacement(DRE, ReplEnum);
+    else {
+      auto &ReplBLASEnum = MapNames::findReplacedName(MapNames::BLASEnumsMap,
+                                                      ECD->getName().str());
+      if (!ReplBLASEnum.empty())
+        addReplacement(DRE, ReplBLASEnum);
+    }
   }
 }
 

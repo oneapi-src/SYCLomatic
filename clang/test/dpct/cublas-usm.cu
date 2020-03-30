@@ -76,43 +76,31 @@ int main() {
 
   //level 1
 
-  //CHECK:{
-  //CHECK-NEXT:int64_t result_temp_value;
-  //CHECK-NEXT:int64_t* result_temp_ptr = (int64_t*)sycl::malloc_device(sizeof(int64_t), dpct::get_current_device(), dpct::get_default_context());
+  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_current_device(), dpct::get_default_context());
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:a = (mkl::blas::iamax(handle, N, x_S, N, result_temp_ptr).wait(), 0);
-  //CHECK-NEXT:dpct::get_default_queue().memcpy(&result_temp_value, result_temp_ptr, sizeof(int64_t)).wait();
-  //CHECK-NEXT:*result = (int)result_temp_value;
-  //CHECK-NEXT:}
+  //CHECK-NEXT:a = (mkl::blas::iamax(handle, N, x_S, N, res_temp_ptr_ct{{[0-9]+}}).wait(), 0);
+  //CHECK-NEXT:*result = (int)*res_temp_ptr_ct{{[0-9]+}};
+  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
   a = cublasIsamax(handle, N, x_S, N, result);
-  //CHECK:{
-  //CHECK-NEXT:int64_t result_temp_value;
-  //CHECK-NEXT:int64_t* result_temp_ptr = (int64_t*)sycl::malloc_device(sizeof(int64_t), dpct::get_current_device(), dpct::get_default_context());
-  //CHECK-NEXT:mkl::blas::iamax(handle, N, x_D, N, result_temp_ptr).wait();
-  //CHECK-NEXT:dpct::get_default_queue().memcpy(&result_temp_value, result_temp_ptr, sizeof(int64_t)).wait();
-  //CHECK-NEXT:*result = (int)result_temp_value;
-  //CHECK-NEXT:}
+  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_current_device(), dpct::get_default_context());
+  //CHECK-NEXT:mkl::blas::iamax(handle, N, x_D, N, res_temp_ptr_ct{{[0-9]+}}).wait();
+  //CHECK-NEXT:*result = (int)*res_temp_ptr_ct{{[0-9]+}};
+  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
   cublasIdamax(handle, N, x_D, N, result);
-  //CHECK:{
-  //CHECK-NEXT:int64_t result_temp_value;
-  //CHECK-NEXT:int64_t* result_temp_ptr = (int64_t*)sycl::malloc_device(sizeof(int64_t), dpct::get_current_device(), dpct::get_default_context());
+  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_current_device(), dpct::get_default_context());
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:a = (mkl::blas::iamax(handle, N, (std::complex<float>*)x_C, N, result_temp_ptr).wait(), 0);
-  //CHECK-NEXT:dpct::get_default_queue().memcpy(&result_temp_value, result_temp_ptr, sizeof(int64_t)).wait();
-  //CHECK-NEXT:*result = (int)result_temp_value;
-  //CHECK-NEXT:}
+  //CHECK-NEXT:a = (mkl::blas::iamax(handle, N, (std::complex<float>*)x_C, N, res_temp_ptr_ct{{[0-9]+}}).wait(), 0);
+  //CHECK-NEXT:*result = (int)*res_temp_ptr_ct{{[0-9]+}};
+  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
   a = cublasIcamax(handle, N, x_C, N, result);
-  //CHECK:{
-  //CHECK-NEXT:int64_t result_temp_value;
-  //CHECK-NEXT:int64_t* result_temp_ptr = (int64_t*)sycl::malloc_device(sizeof(int64_t), dpct::get_current_device(), dpct::get_default_context());
-  //CHECK-NEXT:mkl::blas::iamax(handle, N, (std::complex<double>*)x_Z, N, result_temp_ptr).wait();
-  //CHECK-NEXT:dpct::get_default_queue().memcpy(&result_temp_value, result_temp_ptr, sizeof(int64_t)).wait();
-  //CHECK-NEXT:*result = (int)result_temp_value;
-  //CHECK-NEXT:}
+  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_current_device(), dpct::get_default_context());
+  //CHECK-NEXT:mkl::blas::iamax(handle, N, (std::complex<double>*)x_Z, N, res_temp_ptr_ct{{[0-9]+}}).wait();
+  //CHECK-NEXT:*result = (int)*res_temp_ptr_ct{{[0-9]+}};
+  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
   cublasIzamax(handle, N, x_Z, N, result);
 
   //CHECK:a = (mkl::blas::rotm(handle, N, d_C_S, N, d_C_S, N, const_cast<float*>(x_S)).wait(), 0);
@@ -177,9 +165,9 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: a = (mkl::blas::nrm2(handle, N, (std::complex<float>*)x_C, incx, (float*)result_S).wait(), 0);
+  // CHECK-NEXT: a = (mkl::blas::nrm2(handle, N, (std::complex<float>*)x_C, incx, result_S).wait(), 0);
   a = cublasScnrm2(handle, N, x_C, incx, result_S);
-  // CHECK:mkl::blas::nrm2(handle, N, (std::complex<double>*)x_Z, incx, (double*)result_D).wait();
+  // CHECK:mkl::blas::nrm2(handle, N, (std::complex<double>*)x_Z, incx, result_D).wait();
   cublasDznrm2(handle, N, x_Z, incx, result_D);
 
 
@@ -247,31 +235,23 @@ int main() {
   cublasZgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_Z, d_A_Z, N, d_B_Z, N, &beta_Z, d_C_Z, N);
 
 
-  //CHECK:{
-  //CHECK-NEXT:dpct::matrix_mem_copy(d_C_S, d_B_S, N, N, N, N, dpct::device_to_device, handle);
+  //CHECK:dpct::matrix_mem_copy(d_C_S, d_B_S, N, N, N, N, dpct::device_to_device, handle);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:a = (mkl::blas::trmm(handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, alpha_S, d_A_S, N, d_C_S, N).wait(), 0);
-  //CHECK-NEXT:}
   a = cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N);
-  //CHECK:{
-  //CHECK-NEXT:dpct::matrix_mem_copy(d_C_D, d_B_D, N, N, N, N, dpct::device_to_device, handle);
+  //CHECK:dpct::matrix_mem_copy(d_C_D, d_B_D, N, N, N, N, dpct::device_to_device, handle);
   //CHECK-NEXT:mkl::blas::trmm(handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, alpha_D, d_A_D, N, d_C_D, N).wait();
-  //CHECK-NEXT:}
   cublasDtrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_D, d_A_D, N, d_B_D, N, d_C_D, N);
-  //CHECK:{
-  //CHECK-NEXT:dpct::matrix_mem_copy(d_C_C, d_B_C, N, N, N, N, dpct::device_to_device, handle);
+  //CHECK:dpct::matrix_mem_copy(d_C_C, d_B_C, N, N, N, N, dpct::device_to_device, handle);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:a = (mkl::blas::trmm(handle, mkl::side::left, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::unit, N, N, std::complex<float>(alpha_C.x(),alpha_C.y()), (std::complex<float>*)d_A_C, N, (std::complex<float>*)d_C_C, N).wait(), 0);
-  //CHECK-NEXT:}
   a = cublasCtrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N);
-  //CHECK:{
-  //CHECK-NEXT:dpct::matrix_mem_copy(d_C_Z, d_B_Z, N, N, N, N, dpct::device_to_device, handle);
+  //CHECK:dpct::matrix_mem_copy(d_C_Z, d_B_Z, N, N, N, N, dpct::device_to_device, handle);
   //CHECK-NEXT:mkl::blas::trmm(handle, mkl::side::left, mkl::uplo::lower, mkl::transpose::nontrans, mkl::diag::unit, N, N, std::complex<double>(alpha_Z.x(),alpha_Z.y()), (std::complex<double>*)d_A_Z, N, (std::complex<double>*)d_C_Z, N).wait();
-  //CHECK-NEXT:}
   cublasZtrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT, N, N, &alpha_Z, d_A_Z, N, d_B_Z, N, d_C_Z, N);
 
 

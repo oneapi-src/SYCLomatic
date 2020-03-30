@@ -57,9 +57,9 @@ int main() {
     // CHECK-NEXT: cublasErrCheck([&](){
     // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
     // CHECK-NEXT: auto result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
-    // CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
-    // CHECK-NEXT: mkl::blas::iamax(handle, N, x_S_buf_ct{{[0-9]+}}, N, result_temp_buffer);
-    // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+    // CHECK-NEXT: mkl::blas::iamax(handle, N, x_S_buf_ct{{[0-9]+}}, N, res_temp_buf_ct{{[0-9]+}});
+    // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT: return 0;
     // CHECK-NEXT: }());
     cublasErrCheck(cublasIsamax(handle, N, x_S, N, result));
@@ -121,9 +121,9 @@ int main() {
     // CHECK-NEXT:cublasErrCheck([&](){
     // CHECK-NEXT:auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
     // CHECK-NEXT:auto result_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(result);
-    // CHECK-NEXT:sycl::buffer<int64_t> result_temp_buffer(sycl::range<1>(1));
-    // CHECK-NEXT:mkl::blas::iamax(handle, N, x_C_buf_ct{{[0-9]+}}, N, result_temp_buffer);
-    // CHECK-NEXT:result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)result_temp_buffer.get_access<sycl::access::mode::read>()[0];
+    // CHECK-NEXT:sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+    // CHECK-NEXT:mkl::blas::iamax(handle, N, x_C_buf_ct{{[0-9]+}}, N, res_temp_buf_ct{{[0-9]+}});
+    // CHECK-NEXT:result_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
     // CHECK-NEXT:return 0;
     // CHECK-NEXT:}());
     cublasErrCheck(cublasIcamax(handle, N, x_C, N, result));

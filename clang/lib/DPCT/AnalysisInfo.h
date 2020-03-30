@@ -1874,9 +1874,9 @@ private:
 class DeviceFunctionInfo {
 public:
   DeviceFunctionInfo(size_t ParamsNum, bool IsStatic, size_t NonDefaultParamNum)
-      : IsBuilt(false), ParamsNum(ParamsNum), IsStatic(IsStatic),
-        TextureObjectTypeList(ParamsNum, std::shared_ptr<TextureTypeInfo>()),
-        NonDefaultParamNum(NonDefaultParamNum) {}
+      : ParamsNum(ParamsNum), NonDefaultParamNum(NonDefaultParamNum),
+        IsBuilt(false), IsStatic(IsStatic),
+        TextureObjectTypeList(ParamsNum, std::shared_ptr<TextureTypeInfo>()) {}
 
   inline std::shared_ptr<CallFunctionExpr> addCallee(const CallExpr *CE) {
     auto CallLocInfo = DpctGlobalInfo::getLocInfo(CE);

@@ -97,11 +97,11 @@ int main() {
 
 
   //CHECK: {
-  //CHECK-NEXT: auto bar_transpose_ct2 = bar();
   //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_d);
   //CHECK-NEXT: auto B_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(B_d);
   //CHECK-NEXT: auto C_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_d);
-  //CHECK-NEXT: mkl::blas::gemmt(handle, (int)macro_b==0 ? mkl::uplo::lower : mkl::uplo::upper, bar_transpose_ct2, bar_transpose_ct2==mkl::transpose::nontrans ? mkl::transpose::trans : mkl::transpose::nontrans, n, k, alpha_d, A_d_buf_ct{{[0-9]+}}, lda, B_d_buf_ct{{[0-9]+}}, ldb, beta_d, C_d_buf_ct{{[0-9]+}}, ldc);
+  //CHECK-NEXT: auto bar_transpose_ct{{[0-9]+}} = bar();
+  //CHECK-NEXT: mkl::blas::gemmt(handle, (int)macro_b==0 ? mkl::uplo::lower : mkl::uplo::upper, bar_transpose_ct{{[0-9]+}}, bar_transpose_ct{{[0-9]+}}==mkl::transpose::nontrans ? mkl::transpose::trans : mkl::transpose::nontrans, n, k, alpha_d, A_d_buf_ct{{[0-9]+}}, lda, B_d_buf_ct{{[0-9]+}}, ldb, beta_d, C_d_buf_ct{{[0-9]+}}, ldc);
   //CHECK-NEXT: }
   cublasDsyrkx(handle, macro_b, bar(), n, k, &alpha_d, A_d, lda, B_d, ldb, &beta_d, C_d, ldc);
 
