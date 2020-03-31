@@ -1381,6 +1381,11 @@ public:
     DependentStr = EA.getTemplateDependentStringInfo();
   }
 
+  explicit TemplateArgumentInfo(std::string &&Str)
+      : DependentStr(
+            std::make_shared<TemplateDependentStringInfo>(std::move(Str))),
+        Kind(TemplateArgument::Null) {}
+
   inline bool isType() { return Kind == TemplateArgument::Type; }
   inline const std::string &getString() const {
     return DependentStr->getSourceString();

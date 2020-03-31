@@ -886,6 +886,8 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
   case TypeLoc::RValueReference:
     IsReference = true;
     return setTypeInfo(TYPELOC_CAST(ReferenceTypeLoc).getPointeeLoc());
+  case TypeLoc::Elaborated:
+    return setTypeInfo(TYPELOC_CAST(ElaboratedTypeLoc).getNamedTypeLoc());
   case TypeLoc::TemplateTypeParm:
   case TypeLoc::TemplateSpecialization:
   case TypeLoc::DependentTemplateSpecialization:

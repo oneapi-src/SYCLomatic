@@ -76,6 +76,13 @@ TemplateDependentStringInfo::applyTemplateArguments(
   }
   return Result;
 }
+const TemplateArgumentInfo &TemplateDependentReplacement::getTargetArgument(
+    const std::vector<TemplateArgumentInfo> &TemplateList) {
+  if (TemplateIndex < TemplateList.size())
+    return TemplateList[TemplateIndex];
+  static TemplateArgumentInfo TAI("PlaceHolder/*Fix the type mannually*/");
+  return TAI;
+}
 
 SourceLocation ExprAnalysis::getExprLocation(SourceLocation Loc) {
   if (SM.isMacroArgExpansion(Loc))

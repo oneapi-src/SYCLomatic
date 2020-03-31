@@ -68,10 +68,8 @@ public:
   }
   inline size_t getOffset() const { return Offset; }
   inline size_t getLength() const { return Length; }
-  inline const TemplateArgumentInfo &
-  getTargetArgument(const std::vector<TemplateArgumentInfo> &TemplateList) {
-    return TemplateList[TemplateIndex];
-  }
+  const TemplateArgumentInfo &
+  getTargetArgument(const std::vector<TemplateArgumentInfo> &TemplateList);
   void replace(const std::vector<TemplateArgumentInfo> &TemplateList);
   inline void shift(int Shift) { Offset += Shift; }
 };
