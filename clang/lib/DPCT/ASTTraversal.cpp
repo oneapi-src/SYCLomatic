@@ -1269,7 +1269,7 @@ void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
     if (ExtraParam == "dpstd::execution::sycl") {
       std::string Name = UniqueName(CE);
       ExtraParam = "dpstd::execution::make_sycl_policy<class Policy_" +
-                   UniqueName(CE) + ">(dpstd::execution::sycl)";
+                   UniqueName(CE) + ">(dpct::get_default_queue())";
     }
     emplaceTransformation(
         new InsertBeforeStmt(CE->getArg(0), ExtraParam + ", "));
