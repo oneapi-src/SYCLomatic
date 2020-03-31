@@ -2526,6 +2526,7 @@ const std::unordered_map<std::string, std::string>
         {"atomicMax", "dpct::atomic_fetch_max"},
         {"atomicExch", "dpct::atomic_exchange"},
         {"atomicCAS", "dpct::atomic_compare_exchange_strong"},
+        {"atomicInc", "dpct::atomic_fetch_compare_inc"},
     };
 
 // Thrust function name mapping

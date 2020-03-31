@@ -199,6 +199,33 @@ inline T atomic_fetch_max(
   return cl::sycl::atomic_fetch_max(obj, operand, memoryOrder);
 }
 
+/// Atomically increment the value stored in \p addr if old value stored in \p
+/// addr is less than \p operand, else set 0 to the value stored in \p addr.
+/// \param [in, out] addr The pointer to the data.
+/// \param operand The threshold value.
+/// \param memoryOrder The memory ordering used.
+/// \return The old value stored in \p addr.
+template <cl::sycl::access::address_space addressSpace =
+              cl::sycl::access::address_space::global_space>
+inline unsigned int atomic_fetch_compare_inc(
+    unsigned int *addr, unsigned int operand,
+    cl::sycl::memory_order memoryOrder = cl::sycl::memory_order::relaxed) {
+  cl::sycl::atomic<unsigned int, addressSpace> obj(
+      (cl::sycl::multi_ptr<unsigned int, addressSpace>(addr)));
+  unsigned int old;
+  while (true) {
+    old = obj.load();
+    if (old >= operand) {
+      if (obj.compare_exchange_strong(old, 0, memoryOrder, memoryOrder))
+        break;
+    } else if (obj.compare_exchange_strong(old, old + 1, memoryOrder,
+                                           memoryOrder))
+      break;
+  }
+  return old;
+}
+
+
 /// Atomically exchange the value at the address addr with the value operand.
 /// \param [in, out] addr The pointer to the data.
 /// \param operand The value to be exchanged with the value pointed by \p addr.

@@ -28,13 +28,11 @@ __global__ void test(T *data) {
   // CHECK: dpct::atomic_fetch_min(&data[4], tid);
   atomicMin(&data[4], tid);
 
-  // CHECK: /*
-  // CHECK: DPCT1007:0: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
-  // CHECK: */
+  // CHECK:  dpct::atomic_fetch_compare_inc((unsigned int *)&data[5], (unsigned int)tid);
   atomicInc((unsigned int *)&data[5], (unsigned int)tid);
 
   // CHECK: /*
-  // CHECK: DPCT1007:1: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK: DPCT1007:0: Migration of this CUDA API is not supported by the Intel(R) DPC++ Compatibility Tool.
   // CHECK: */
   atomicDec((unsigned int *)&data[6], (unsigned int)tid);
 
