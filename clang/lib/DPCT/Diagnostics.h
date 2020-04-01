@@ -204,7 +204,8 @@ void report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
             TransformSetTy *TS, bool UseTextBegin, Ts &&... Vals) {
   auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
 
-  SmallString<4096> FileName = SM.getBufferName(SL);
+  SmallString<4096> FileName(SM.getFilename(SL));
+  makeCanonical(FileName);
   // Convert path to the native form.
   // E.g, on Windows all '/' are converted to '\'.
   llvm::sys::path::native(FileName);

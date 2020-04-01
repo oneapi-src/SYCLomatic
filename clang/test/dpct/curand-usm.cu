@@ -69,24 +69,24 @@ int main(){
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data_ui).wait(), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (uint32_t*)d_data_ui).wait(), 0);
   s1 = curandGenerate(rng, d_data_ui, 100*100);
 
   //CHECK:mkl::rng::poisson<int32_t> distr_ct{{[0-9]+}}(123.456);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data_ui).wait(), 0);
+  //CHECK-NEXT:s1 = (mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (int32_t*)d_data_ui).wait(), 0);
   s1 = curandGeneratePoisson(rng, d_data_ui, 100*100, 123.456);
 
   unsigned long long* d_data_ull;
   //CHECK:mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data_ull).wait();
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (uint64_t*)d_data_ull).wait();
   curandGenerateLongLong(rng, d_data_ull, 100*100);
 
   //CHECK:if(s1 = [&](){
   //CHECK-NEXT:mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, d_data_ull).wait();
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (uint64_t*)d_data_ull).wait();
   //CHECK-NEXT:return 0;
   //CHECK-NEXT:}()){}
   if(s1 = curandGenerateLongLong(rng, d_data_ull, 100*100)){}

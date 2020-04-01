@@ -3300,7 +3300,18 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     std::string Data;
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
       PrefixInsertStr = DistributeDecl + getNL() + IndentStr;
-      Data = getStmtSpelling(CE->getArg(1));
+
+      auto TypePtr = CE->getArg(1)->getType().getTypePtr();
+      if (!TypePtr || !TypePtr->isPointerType()) {
+        Data = "(" + ReplInfo.DistributeType + "*)" +
+               getStmtSpelling(CE->getArg(1));
+      } else if (TypePtr->getPointeeType().getAsString() ==
+                 ReplInfo.DistributeType) {
+        Data = getStmtSpelling(CE->getArg(1));
+      } else {
+        Data = "(" + ReplInfo.DistributeType + "*)" +
+               getStmtSpelling(CE->getArg(1));
+      }
     } else {
       PrefixInsertStr = BufferDecl + DistributeDecl + getNL() + IndentStr;
       Data = BufferName;
