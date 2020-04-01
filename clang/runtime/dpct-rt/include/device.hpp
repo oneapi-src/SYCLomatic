@@ -22,6 +22,7 @@
 #include <CL/sycl.hpp>
 #include <cstring>
 #include <iostream>
+#include <mutex>
 #include <set>
 #include <sstream>
 
@@ -218,6 +219,7 @@ public:
   }
 
   void reset() {
+    std::lock_guard<std::mutex> lock(m_mutex);
     for (auto q : _queues) {
       // The destructor waits for all commands executing on the queue to
       // complete. It isn't possible to destroy a queue immediately. This is a
@@ -238,11 +240,17 @@ public:
   cl::sycl::queue &default_queue() { return *_default_queue; }
 
   void queues_wait_and_throw() {
-    for (auto q : _queues) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    std::set<cl::sycl::queue *> current_queues;
+    std::copy(_queues.begin(), _queues.end(),
+      std::inserter(current_queues, current_queues.begin()));
+    lock.~lock_guard();
+    for (auto q : current_queues) {
       q->wait_and_throw();
     }
   }
   cl::sycl::queue *create_queue(bool enable_exception_handler = false) {
+    std::lock_guard<std::mutex> lock(m_mutex);
     cl::sycl::async_handler eh = {};
     if(enable_exception_handler) {
         eh = exception_handler;
@@ -259,6 +267,7 @@ public:
     return queue;
   }
   void destroy_queue(cl::sycl::queue *&queue) {
+    std::lock_guard<std::mutex> lock(m_mutex);
     _queues.erase(queue);
     delete queue;
     queue = NULL;
@@ -279,21 +288,25 @@ private:
   }
   cl::sycl::queue *_default_queue;
   std::set<cl::sycl::queue *> _queues;
+  mutable std::mutex m_mutex;
 };
 
 /// device manager
 class dev_mgr {
 public:
   device_ext &current_device() {
+    std::lock_guard<std::mutex> lock(m_mutex);
     check_id(_current_device);
-    return _devs[_current_device];
+    return *_devs[_current_device];
   }
-  device_ext get_device(unsigned int id) const {
+  device_ext &get_device(unsigned int id) const {
+    std::lock_guard<std::mutex> lock(m_mutex);
     check_id(id);
-    return _devs[id];
+    return *_devs[id];
   }
   unsigned int current_device_id() const { return _current_device; }
   void select_device(unsigned int id) {
+    std::lock_guard<std::mutex> lock(m_mutex);
     check_id(id);
     _current_device = id;
   }
@@ -310,10 +323,11 @@ public:
   dev_mgr &operator=(dev_mgr &&) = delete;
 
 private:
+  mutable std::mutex m_mutex;
   dev_mgr() {
     cl::sycl::device default_device =
         cl::sycl::device(cl::sycl::default_selector{});
-    _devs.push_back(device_ext(default_device));
+    _devs.push_back(std::make_shared<device_ext>(default_device));
 
     std::vector<cl::sycl::device> sycl_all_devs =
         cl::sycl::device::get_devices(cl::sycl::info::device_type::all);
@@ -326,7 +340,7 @@ private:
            dev.get() == default_device.get())) {
         continue;
       }
-      _devs.push_back(device_ext(dev));
+      _devs.push_back(std::make_shared<device_ext>(dev));
     }
   }
   void check_id(unsigned int id) const {
@@ -334,7 +348,7 @@ private:
       throw std::string("invalid device id");
     }
   }
-  std::vector<device_ext> _devs;
+  std::vector<std::shared_ptr<device_ext>> _devs;
   unsigned int _current_device = 0;
 };
 
