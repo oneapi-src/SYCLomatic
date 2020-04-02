@@ -208,7 +208,7 @@ void addMacroDefinedSet(const std::string &MacroDefined) {
 
 void addFilesSet(const std::string Compiler, std::string &File) {
   SourceProcessType FileType = GetSourceFileType(File);
-  if(FileType&(TypeCudaSource|TypeCppSource)) {
+  if (FileType & (TypeCudaSource | TypeCppSource)) {
     FilesSet[Compiler].push_back(File);
   }
 }
@@ -413,10 +413,11 @@ void collectMacrosAndIncludingDIr(const std::string &&Node,
         continue;
       }
       // Remove quotes if they exist.
-      // For if Entry has quotes, it will have escape issues in compilation database,
-      // so I remove them firstly, then add them with escape in hard code
-      // in function ProcessDirectoriesIncluded() and generateCompilationDatabase().
-      Entry.erase(std::remove(Entry.begin(),Entry.end(),'\"'),Entry.end());
+      // For if Entry has quotes, it will have escape issues in compilation
+      // database, so I remove them firstly, then add them with escape in hard
+      // code in function ProcessDirectoriesIncluded() and
+      // generateCompilationDatabase().
+      Entry.erase(std::remove(Entry.begin(), Entry.end(), '\"'), Entry.end());
       FunPtr(Entry);
     }
   }
@@ -487,7 +488,12 @@ void processCompileNode(const std::string &&CompileNodeName,
   const std::string StartCompileNode = "<" + CompileNodeName + ">";
   const std::string EndCompileNode = "</" + CompileNodeName + ">";
   const std::string WholeCompileNode = "<" + CompileNodeName + " ";
-
+  // For empty node like "<CudaCompile></CudaCompile>", no need to process, just
+  // return.
+  if (Line.find(StartCompileNode) != std::string::npos &&
+      Line.find(EndCompileNode) != std::string::npos) {
+    return;
+  }
   if (Line.find(StartCompileNode) != std::string::npos) {
     std::vector<std::string> CompileNode;
     CompileNode.push_back(Line);
