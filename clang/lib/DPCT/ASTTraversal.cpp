@@ -6098,11 +6098,12 @@ void KernelCallRule::run(const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto KCall =
           getAssistNodeAsType<CUDAKernelCallExpr>(Result, "kernelCall")) {
     const auto &SM = (*Result.Context).getSourceManager();
+
     if (SM.isMacroArgExpansion(KCall->getCallee()->getBeginLoc())) {
-      //warning
-      report(KCall->getBeginLoc(), Diagnostics::KERNEK_CALLEE_MACRO_ARG, false);
-      return;
+      // Report warning message
+      report(KCall->getBeginLoc(), Diagnostics::KERNEL_CALLEE_MACRO_ARG, false);
     }
+
     // Remove KCall in the original location
     emplaceTransformation(new ReplaceStmt(KCall, ""));
     removeTrailingSemicolon(KCall, Result);

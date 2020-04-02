@@ -78,8 +78,14 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
 
   if (IsProcessMacro) {
     if (Begin.isMacroID() && !isOuterMostMacro(TheStmt)) {
-      Begin = SM.getSpellingLoc(Begin);
-    } else {
+      if (SM.isMacroArgExpansion(Begin)) {
+        Begin = SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
+      }
+      else {
+        Begin = SM.getSpellingLoc(Begin);
+      }
+    }
+    else {
       Begin = SM.getExpansionLoc(Begin);
     }
     // If ReplaceStmt replaces calls to compatibility APIs, record the
@@ -91,7 +97,12 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
     }
 
     if (End.isMacroID() && !isOuterMostMacro(TheStmt)) {
-      End = SM.getSpellingLoc(End);
+      if (SM.isMacroArgExpansion(Begin)) {
+        End = SM.getSpellingLoc(SM.getImmediateExpansionRange(End).getEnd());
+      }
+      else {
+        End = SM.getSpellingLoc(End);
+      }
     }
     else {
       End = SM.getExpansionLoc(End);
@@ -100,6 +111,7 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
       End = Lexer::getLocForEndOfToken(End, 0, SM, LangOptions());
       End = End.getLocWithOffset(-1);
     }
+
     auto CallExprLength =
         SM.getCharacterData(End) - SM.getCharacterData(Begin) + 1;
     if (IsCleanup && ReplacementString.empty())

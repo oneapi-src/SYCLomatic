@@ -828,6 +828,13 @@ private:
         It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
       return SM->getImmediateSpellingLoc(CKC->getBeginLoc());
     }
+    // if the BeginLoc of CKC is in macro arg expansion, use
+    // getImmediateExpansionRange.
+    if (CKC->getBeginLoc().isMacroID() &&
+        SM->isMacroArgExpansion(CKC->getBeginLoc())) {
+      return SM->getImmediateSpellingLoc(
+          SM->getImmediateExpansionRange(CKC->getBeginLoc()).getBegin());
+    }
     return CKC->getBeginLoc();
   }
 

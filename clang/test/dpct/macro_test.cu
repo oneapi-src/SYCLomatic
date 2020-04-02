@@ -142,15 +142,28 @@ double cosine = cos(2 * PI);
 //CHECK: MACRO_KC
 MACRO_KC
 
-// CHECK: #define HARD_KC(NAME)                                                          \
-// CHECK-NEXT:   NAME<<<sycl::range<3>(2, 1, 1), sycl::range<3>(2, 1, 1), 0>>>();
-#define HARD_KC(NAME) NAME<<<2,2,0>>>();
-// CHECK: /*
-// CHECK-NEXT: DPCT1038:0: Kernel calls with kernel function name in macro arguments are not
-// CHECK-NEXT: supported. Try to rewrite this code using DPC++ kernel.
-// CHECK-NEXT: */
-//CHECK-NEXT: HARD_KC(foo_kernel)
-HARD_KC(foo_kernel)
+
+//CHECK: #define HARD_KC(NAME, a, b, c, d)                                              \
+//CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
+//CHECK-NEXT:     auto dpct_global_range = a * b;                                            \
+//CHECK-NEXT:                                                                                \
+//CHECK-NEXT:     auto c_ct0 = c;                                                            \
+//CHECK-NEXT:     auto d_ct1 = d;                                                            \
+//CHECK-NEXT:                                                                                \
+//CHECK-NEXT:     cgh.parallel_for(                                                          \
+//CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(dpct_global_range.get(2),             \
+//CHECK-NEXT:                                          dpct_global_range.get(1),             \
+//CHECK-NEXT:                                          dpct_global_range.get(0)),            \
+//CHECK-NEXT:                           sycl::range<3>(b.get(2), b.get(1), b.get(0))),       \
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });               \
+//CHECK-NEXT:   });
+//CHECK-NEXT:   /*
+//CHECK-NEXT:   DPCT1038:0: When the kernel function name is used as a macro argument, the
+//CHECK-NEXT:   migration result may be incorrect. Verify the definition of the macro.
+//CHECK-NEXT:   */
+//CHECK-NEXT:   HARD_KC(foo3, sycl::range<3>(3, 1, 1), sycl::range<3>(2, 1, 1), 1, 0)
+#define HARD_KC(NAME,a,b,c,d) NAME<<<a,b,0>>>(c,d);
+HARD_KC(foo3,3,2,1,0)
 
 
 // CHECK: #define MACRO_KC2(a, b, c, d)                                                  \

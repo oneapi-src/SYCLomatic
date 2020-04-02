@@ -404,7 +404,6 @@ std::string KernelCallExpr::getReplacement() {
 
 void KernelCallExpr::buildInfo() {
   CallFunctionExpr::buildInfo();
-
   // TODO: Output debug info.
   DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
       getFilePath(), getBegin(), 0, getReplacement(), nullptr));
@@ -427,7 +426,11 @@ void CallFunctionExpr::buildTemplateArgumentsFromTypeLoc(const TypeLoc &TL) {
 
 void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   auto &SM = DpctGlobalInfo::getSourceManager();
-  auto calleeSpelling = SM.getSpellingLoc(KernelCall->getCallee()->getBeginLoc());
+  auto calleeSpelling = KernelCall->getCallee()->getBeginLoc();
+  if (SM.isMacroArgExpansion(calleeSpelling)) {
+    calleeSpelling = SM.getImmediateExpansionRange(calleeSpelling).getBegin();
+  }
+  calleeSpelling = SM.getSpellingLoc(calleeSpelling);
   auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
       SM.getCharacterData(calleeSpelling));
   if (ItMatch != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
