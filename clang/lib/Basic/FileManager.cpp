@@ -465,7 +465,13 @@ FileManager::getBufferForFile(const FileEntry *Entry, bool isVolatile) {
   if (isVolatile)
     FileSize = -1;
 
+#ifdef INTEL_CUSTOMIZATION
+  StringRef Filename = Entry->tryGetRealPathName();
+  if (Filename.empty())
+    Filename = Entry->getName();
+#else
   StringRef Filename = Entry->getName();
+#endif // INTEL_CUSTOMIZATION
   // If the file is already open, use the open file descriptor.
   if (Entry->File) {
     auto Result =
