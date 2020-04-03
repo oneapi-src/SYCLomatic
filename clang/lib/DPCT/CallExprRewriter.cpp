@@ -632,7 +632,8 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
   if (NamespaceStr == "std" && ContextFD &&
       !ContextFD->hasAttr<CUDADeviceAttr>() &&
       !ContextFD->hasAttr<CUDAGlobalAttr>()) {
-    SourceCalleeName = StringRef("std::" + SourceCalleeName.str());
+    std::string NewFuncName = "std::" + SourceCalleeName.str();
+    SourceCalleeName = StringRef(NewFuncName);
     return Base::rewrite();
   }
 
