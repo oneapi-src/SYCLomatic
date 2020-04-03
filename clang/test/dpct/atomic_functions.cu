@@ -278,7 +278,7 @@ __device__ uint32_t* func(uint32_t *in){
 // CHECK-NEXT:  dpct::atomic_fetch_add(p_4, (uint32_t)1);
 // CHECK-NEXT:  p_4=func(p_3);
 // CHECK-NEXT:  /*
-// CHECK-NEXT:  DPCT1039:{{[0-9]+}}: Generated code assumes "p_4" points to global memory address space. If it points to local memory address space, replace the "dpct::atomic_fetch_add" below with "dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::local_space>".
+// CHECK-NEXT:  DPCT1039:{{[0-9]+}}: The generated code assumes that "p_4" points to the global memory address space. If it points to a local memory address space, replace "dpct::atomic_fetch_add" with "dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::local_space>".
 // CHECK-NEXT:  */
 // CHECK-NEXT:  dpct::atomic_fetch_add(p_4, (uint32_t)1);
 // CHECK-NEXT:}
@@ -336,7 +336,7 @@ extern __shared__ uint32_t share[];
 // CHECK-NEXT:  else
 // CHECK-NEXT:    p_2 = p_3;
 // CHECK-NEXT:  /*
-// CHECK-NEXT:  DPCT1039:{{[0-9]+}}: Generated code assumes "p_2" points to global memory address space. If it points to local memory address space, replace the "dpct::atomic_fetch_add" below with "dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::local_space>".
+// CHECK-NEXT:  DPCT1039:{{[0-9]+}}: The generated code assumes that "p_2" points to the global memory address space. If it points to a local memory address space, replace "dpct::atomic_fetch_add" with "dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::local_space>".
 // CHECK-NEXT:  */
 // CHECK-NEXT:  dpct::atomic_fetch_add(p_2, (uint32_t)1);
 // CHECK-NEXT:}

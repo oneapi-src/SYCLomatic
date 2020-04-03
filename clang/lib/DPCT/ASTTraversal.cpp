@@ -1236,10 +1236,9 @@ void AtomicFunctionRule::MigrateAtomicFunc(
   std::string ReplAtomicFuncNameWithSpace =
       ReplacedAtomicFuncName + "<" + TypeName + ", " + SpaceName + ">";
   auto SL = CE->getArg(0)->getBeginLoc();
-  std::string MemAddrSpace = HasSharedAttr ? "local" : "global";
   if (NeedReport)
     report(SL, Diagnostics::SHARE_MEMORY_ATTR_DEDUCE, false,
-           getStmtSpelling(CE->getArg(0)), MemAddrSpace, ReplacedAtomicFuncName,
+           getStmtSpelling(CE->getArg(0)), ReplacedAtomicFuncName,
            ReplAtomicFuncNameWithSpace);
 
   if (HasSharedAttr) {

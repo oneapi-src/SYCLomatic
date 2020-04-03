@@ -94,5 +94,5 @@ DEF_WARNING(MANUAL_MIGRATION_LIBRARY, 1037, "Rewrite this code using %0 with DPC
 DEF_COMMENT(MANUAL_MIGRATION_LIBRARY, 1037, "Rewrite this code using {0} with DPC++.")
 DEF_WARNING(KERNEL_CALLEE_MACRO_ARG, 1038, "When the kernel function name is used as a macro argument, the migration result may be incorrect. You need to verify the definition of the macro.")
 DEF_COMMENT(KERNEL_CALLEE_MACRO_ARG, 1038, "When the kernel function name is used as a macro argument, the migration result may be incorrect. You need to verify the definition of the macro.")
-DEF_WARNING(SHARE_MEMORY_ATTR_DEDUCE, 1039, "Generated code assumes \"%0\" points to %1 memory address space. If it points to local memory address space, replace the \"%2\" below with \"%3\".")
-DEF_COMMENT(SHARE_MEMORY_ATTR_DEDUCE, 1039, "Generated code assumes \"{0}\" points to {1} memory address space. If it points to local memory address space, replace the \"{2}\" below with \"{3}\".")
+DEF_WARNING(SHARE_MEMORY_ATTR_DEDUCE, 1039, "The generated code assumes that \"%0\" points to the global memory address space. If it points to a local memory address space, replace \"%1\" with \"%2\".")
+DEF_COMMENT(SHARE_MEMORY_ATTR_DEDUCE, 1039, "The generated code assumes that \"{0}\" points to the global memory address space. If it points to a local memory address space, replace \"{1}\" with \"{2}\".")
