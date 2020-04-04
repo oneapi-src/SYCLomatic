@@ -477,6 +477,16 @@ private:
   // A duplicate filter that filters out redundant replacements when
   // serveral variable are declared in one statement
   std::unordered_set<unsigned> DupFilter;
+
+  SourceRange getTemplateArgRange(SourceManager *SM,
+                                  const TemplateArgumentLoc Arg,
+                                  unsigned &ArgLen);
+  SourceRange fixSourceRange(SourceManager *SM, SourceRange SR);
+  bool replaceCallExprTemplateTypes(SourceManager *SM, const CallExpr *CE);
+  bool
+  replaceNamedCastExprTemplateType(SourceManager *SM,
+                                   const CXXNamedCastExpr *NCE);
+  void insertComplexHeader(SourceLocation SL, std::string &Replacement);
 };
 
 /// Migration rule for inserting namespace for vector types

@@ -272,6 +272,10 @@ private:
     // Eg. xx::sqrt(double a)
     llvm::StringRef SourceCode(Start, End - Start + 1);
     size_t NameEnd = SourceCode.find('(');
+    size_t NameEnd2 = SourceCode.find('<');
+    if ((NameEnd2 != llvm::StringRef::npos) && (NameEnd2 < NameEnd)) {
+      NameEnd = NameEnd2;
+    }
     assert(NameEnd != llvm::StringRef::npos);
     return SourceCode.substr(0, NameEnd);
   }

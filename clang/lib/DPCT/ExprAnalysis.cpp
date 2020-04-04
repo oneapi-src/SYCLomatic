@@ -370,6 +370,28 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   }
 }
 
+void ExprAnalysis::analyzeExpr(const CXXNamedCastExpr *NCE) {
+  analyzeType(NCE->getTypeInfoAsWritten(), NCE);
+}
+
+void ExprAnalysis::analyzeElaboratedType(const ElaboratedTypeLoc &TL, const Expr *CSCE) {
+  // elaborated types are looked up with the namespace qualifier, but without
+  // potential template parameters
+  auto NTL = TL.getNamedTypeLoc();
+  auto TyName = TL.getType().getAsString();
+  if (NTL.getTypeLocClass() == TypeLoc::TemplateSpecialization) {
+    auto P = TyName.find('<');
+    if (P != std::string::npos) {
+      TyName = TyName.substr(0, P);
+    }
+  }
+  auto TyLen = TyName.length();
+  if (MapNames::replaceName(MapNames::TypeNamesMap, TyName)) {
+    addReplacement(TL.getBeginLoc(), TyLen, TyName);
+  }
+  analyzeType(NTL, CSCE);
+}
+
 void ExprAnalysis::analyzeType(const TypeLoc &TL, const Expr *CSCE) {
   std::string TyName;
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
@@ -385,6 +407,9 @@ void ExprAnalysis::analyzeType(const TypeLoc &TL, const Expr *CSCE) {
   case TypeLoc::Record:
     TyName = TL.getType().getAsString();
     break;
+  case TypeLoc::Elaborated: {
+    return analyzeElaboratedType(TYPELOC_CAST(ElaboratedTypeLoc), CSCE);
+  }
   case TypeLoc::TemplateTypeParm:
     if (auto D = TYPELOC_CAST(TemplateTypeParmTypeLoc).getDecl()) {
       return addReplacement(TL.getBeginLoc(), TL.getEndLoc(),

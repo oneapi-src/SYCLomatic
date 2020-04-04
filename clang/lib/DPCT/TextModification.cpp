@@ -272,8 +272,26 @@ ReplaceTypeInDecl::getReplacement(const ASTContext &Context) const {
     recordMigrationInfo(Context, DD->getBeginLoc());
   else
     recordMigrationInfo(Context, SL);
-  return std::make_shared<ExtReplacement>(Context.getSourceManager(), &TL, T,
-                                          this);
+
+  const SourceManager &SM = Context.getSourceManager();
+  SourceLocation B = TL.getBeginLoc();
+  SourceLocation E = TL.getEndLoc();
+  if (!B.isMacroID() && E.isMacroID()) {
+    // For some reason the EndLoc for type names that are using template
+    // parameters, e.g. thrust::complex<double> are encoded as being macro IDs,
+    // so to get the 'real' loc, getExpansionLoc is called.  Because, the last
+    // character is '>' for such typenames, we can't use getTokenRange, since
+    // the immediately following character might be another '>', and '>>' is a
+    // token, so the range would be too long.
+    E = SM.getExpansionLoc(E);
+    if (*(SM.getCharacterData(E)) == '>') {
+      E = E.getLocWithOffset(1);
+    }
+    return std::make_shared<ExtReplacement>(
+        SM, CharSourceRange::getCharRange(B, E), T, this);
+  } else {
+    return std::make_shared<ExtReplacement>(SM, &TL, T, this);
+  }
 }
 
 ReplaceVarDecl *ReplaceVarDecl::getVarDeclReplacement(const VarDecl *VD,

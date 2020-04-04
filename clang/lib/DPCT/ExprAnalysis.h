@@ -339,6 +339,9 @@ protected:
   void analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT);
   void analyzeExpr(const CStyleCastExpr *Cast);
   void analyzeExpr(const CallExpr *CE);
+  void analyzeExpr(const CXXNamedCastExpr *NCE);
+
+  void analyzeElaboratedType(const ElaboratedTypeLoc &TL, const Expr *CSCE);
 
   inline void analyzeType(const TypeSourceInfo *TSI,
                           const Expr *CSCE = nullptr) {

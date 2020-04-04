@@ -182,6 +182,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"stable_sort_by_key",
        {"dpct::stable_sort_by_key", "dpstd::execution::sycl"}},
       {"reduce", {"std::reduce", "dpstd::execution::sycl"}},
+      {"device_malloc", {"dpct::device_malloc", ""}},
       {"complex", {"std::complex", ""}}, // for constructor calls
       {"exp", {ClNamespace + "::exp", ""}},
       {"log", {ClNamespace + "::log", ""}},

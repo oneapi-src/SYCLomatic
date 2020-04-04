@@ -17,6 +17,7 @@
 #include "Utility.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Analysis/AnalysisDeclContext.h"
+#include "clang/Basic/CharInfo.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/Support/Path.h"
@@ -1609,6 +1610,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
 
 std::string getReplacementForType(std::string TypeStr, bool IsVarDecl = false,
                                   std::string *TypeStrRemovePrefix = nullptr) {
+  // divide TypeStr into elements, separated by whitespace
   std::istringstream ISS(TypeStr);
   std::vector<std::string> Strs(std::istream_iterator<std::string>{ISS},
                                 std::istream_iterator<std::string>());
@@ -1617,6 +1619,12 @@ std::string getReplacementForType(std::string TypeStr, bool IsVarDecl = false,
   });
   if (it != Strs.end())
     Strs.erase(it);
+
+  // append possible '>' at the end to the previous element
+  while (Strs.size() > 1 && Strs.back() == ">") {
+    Strs[Strs.size() - 2] += Strs.back();
+    Strs.pop_back();
+  }
 
   std::string TypeName = Strs.back();
   // remove possible template parameters from TypeName
@@ -1723,14 +1731,10 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
         std::string TypeStr = Tok.getRawIdentifier().str();
         auto QT = TL->getType();
         if (TL->getTypeLocClass() == clang::TypeLoc::Elaborated) {
-          auto ET = dyn_cast<ElaboratedType>(QT.getTypePtr());
           auto ETC = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>();
           auto NTL = ETC.getNextTypeLoc();
 
           if (NTL.getTypeLocClass() == clang::TypeLoc::TemplateSpecialization) {
-            auto TS = dyn_cast<TemplateSpecializationType>(
-                NTL.getType().getTypePtr());
-
             auto TSL =
                 NTL.getUnqualifiedLoc().getAs<TemplateSpecializationTypeLoc>();
             auto LAngleLoc = TSL.getLAngleLoc();
@@ -2078,8 +2082,12 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(TypeInDeclRule)
 
-// Rule for types replacements in template var declarations and field
-// declarations
+// Rule for types replacements in:
+//   1. Template var declarations
+//   2. Template field var declarations
+//   3. Template function calls
+//   4. reinterpret_cast operations
+//   5. static_cast operations
 void TemplateTypeInDeclRule::registerMatcher(MatchFinder &MF) {
   auto Typedefs = typedefType(hasDeclaration(typedefDecl(TypedefNames)));
 
@@ -2088,12 +2096,18 @@ void TemplateTypeInDeclRule::registerMatcher(MatchFinder &MF) {
 
   auto EnumTypes = enumType(hasDeclaration(enumDecl(EnumTypeNames)));
 
-  auto RecordTypes = recordType(hasDeclaration(cxxRecordDecl(RecordTypeNames)));
+  auto RecordDecls =
+      cxxRecordDecl(anyOf(RecordTypeNames, ThrustRecordTypeNames));
 
-  auto HasCudaTemplateType =
-      hasType(classTemplateSpecializationDecl(hasAnyTemplateArgument(
-          refersToType(anyOf(Typedefs, VectorTypes, EnumTypes, RecordTypes,
-                             pointsTo(cxxRecordDecl(RecordTypeNames)))))));
+  auto RecordTypes = recordType(hasDeclaration(RecordDecls));
+
+  auto ElaboratedTypes =
+      elaboratedType(hasDeclaration(cxxRecordDecl(ThrustRecordTypeNames)));
+
+  auto HasCudaTemplateType = hasType(
+      classTemplateSpecializationDecl(hasAnyTemplateArgument(refersToType(
+          anyOf(Typedefs, VectorTypes, EnumTypes, RecordTypes,
+                pointsTo(RecordDecls), references(RecordDecls))))));
 
   MF.addMatcher(
       varDecl(HasCudaTemplateType, unless(hasType(substTemplateTypeParmType())))
@@ -2108,15 +2122,126 @@ void TemplateTypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(typedefDecl().bind("typeDefDecl"), this);
 
   MF.addMatcher(
-      typeLoc(
-          loc(templateSpecializationType(hasAnyTemplateArgument(refersToType(
-              typedefType(hasDeclaration(typedefDecl(vectorTypeName()))))))))
+      typeLoc(loc(templateSpecializationType(hasAnyTemplateArgument(
+                  refersToType(anyOf(RecordTypes, ElaboratedTypes,
+                                     typedefType(hasDeclaration(
+                                         typedefDecl(vectorTypeName())))))))))
           .bind("TypeInTemplateSpecialization"),
       this);
+
+  MF.addMatcher(
+      callExpr(
+          callee(functionDecl(hasAnyTemplateArgument(refersToType(anyOf(
+              RecordTypes, pointsTo(RecordDecls), references(RecordDecls)))))))
+          .bind("TemplateTypeInCallExpr"),
+      this);
+
+  MF.addMatcher(
+      cxxReinterpretCastExpr(hasDestinationType(pointsTo(RecordDecls)))
+          .bind("TemplateTypeInReinterpretCast"),
+      this);
+
+  MF.addMatcher(cxxStaticCastExpr(
+                    hasDestinationType(qualType(hasCanonicalType(RecordTypes))))
+                    .bind("TemplateTypeInStaticCast"),
+                this);
+}
+
+SourceRange TemplateTypeInDeclRule::getTemplateArgRange(
+    SourceManager *SM, const TemplateArgumentLoc Arg, unsigned &ArgLen) {
+  SourceRange SR = Arg.getSourceRange();
+  auto B = SR.getBegin();
+  auto E = SR.getEnd();
+  if (!B.isMacroID() && E.isMacroID()) {
+    E = SM->getExpansionLoc(E);
+  }
+  ArgLen = SM->getFileOffset(E) - SM->getFileOffset(B);
+  const char *EndCharPtr = SM->getCharacterData(E);
+  if (*EndCharPtr == '>' && *(EndCharPtr + 1) == '>') {
+    // MeasureTokenLength will return 2 for last template parameter in
+    // this case: x<...,y<z>>, because '>>' is considered a token
+    ArgLen += 1;
+  } else {
+    ArgLen += Lexer::MeasureTokenLength(
+        E, *SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
+  }
+  return SourceRange(B, E);
+}
+
+bool TemplateTypeInDeclRule::replaceCallExprTemplateTypes(SourceManager *SM,
+                                                          const CallExpr *CE) {
+  bool ReplacementsDone = false;
+  ArrayRef<TemplateArgumentLoc> Args;
+  auto Callee = CE->getCallee()->IgnoreImplicitAsWritten();
+  if (auto DRE = dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImpCasts())) {
+    Args = DRE->template_arguments();
+  } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(Callee)) {
+    Args = Unresolved->template_arguments();
+  } else if (auto DependentScope =
+                 dyn_cast<CXXDependentScopeMemberExpr>(Callee)) {
+    Args = DependentScope->template_arguments();
+  }
+  for (auto Arg : Args) {
+    auto A = Arg.getArgument();
+    if (A.getKind() != clang::TemplateArgument::ArgKind::Type)
+      continue;
+    auto TypeStr = A.getAsType().getAsString();
+    auto Replacement = getReplacementForType(TypeStr, false);
+    if (Replacement.empty())
+      continue;
+
+    unsigned ArgLen;
+    auto SR = getTemplateArgRange(SM, Arg, ArgLen);
+    if (SR.isValid()) {
+      insertComplexHeader(SR.getBegin(), Replacement);
+      ReplacementsDone = true;
+      emplaceTransformation(
+          new ReplaceText(SR.getBegin(), ArgLen, std::move(Replacement)));
+    }
+  }
+  return ReplacementsDone;
+}
+
+SourceRange TemplateTypeInDeclRule::fixSourceRange(SourceManager *SM, SourceRange SR) {
+  auto B = SR.getBegin();
+  auto E = SR.getEnd();
+  if (!B.isMacroID() && E.isMacroID()) {
+    E = SM->getExpansionLoc(E);
+    return SourceRange(B, E);
+  } else {
+    return SR;
+  }
+}
+
+bool TemplateTypeInDeclRule::replaceNamedCastExprTemplateType(
+    SourceManager *SM, const CXXNamedCastExpr *NCE) {
+  auto TypeStr = NCE->getTypeAsWritten().getAsString();
+  auto Replacement = getReplacementForType(TypeStr, false);
+  if (Replacement.empty())
+    return false;
+  SourceRange SR = NCE->getTypeInfoAsWritten()->getTypeLoc().getSourceRange();
+  if (SR.isValid()) {
+    SR = fixSourceRange(SM, SR);
+    unsigned ParamLen = SM->getCharacterData(SR.getEnd()) -
+                        SM->getCharacterData(SR.getBegin()) + 1;
+    emplaceTransformation(
+        new ReplaceText(SR.getBegin(), ParamLen, std::move(Replacement)));
+    insertComplexHeader(SR.getBegin(), Replacement);
+    return true;
+  }
+  return false;
+}
+
+void TemplateTypeInDeclRule::insertComplexHeader(SourceLocation SL,
+                                                 std::string &Replacement) {
+  if (SL.isValid() && Replacement.substr(0, 12) == "std::complex") {
+    DpctGlobalInfo::getInstance().insertHeader(SL, Complex);
+  }
 }
 
 void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
 
+  SourceManager *SM = Result.SourceManager;
   if (const TypedefDecl *TD =
           getNodeAsType<TypedefDecl>(Result, "typeDefDecl")) {
     // clang-format off
@@ -2134,7 +2259,6 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
     // token.
     // clang-format on
 
-    SourceManager *SM = Result.SourceManager;
     auto DTL = TD->getTypeSourceInfo()->getTypeLoc();
     auto QT = TD->getTypeSourceInfo()->getType();
     if (auto ET = dyn_cast<ElaboratedType>(QT.getTypePtr())) {
@@ -2164,18 +2288,26 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   }
 
   // DD points to a VarDecl or a FieldDecl
-  const DeclaratorDecl *DD =
-      getNodeAsType<VarDecl>(Result, "TemplateTypeInVarDecl");
-  const TypeLoc* TL = nullptr;
+  const DeclaratorDecl *DD = nullptr;
+  const TypeLoc *TL = nullptr;
+  const CallExpr *CE = nullptr;
+  const CXXNamedCastExpr *NCE = nullptr;
+
   QualType QT;
-  if (DD)
+  if (DD = getNodeAsType<VarDecl>(Result, "TemplateTypeInVarDecl"))
     QT = DD->getType();
-  else if ((DD = getNodeAsType<FieldDecl>(Result, "TemplateTypeInFieldDecl"))) {
+  else if ((DD = getNodeAsType<FieldDecl>(Result, "TemplateTypeInFieldDecl")))
     QT = DD->getType();
-  }
-  else if (TL = getNodeAsType<TypeLoc>(Result, "TypeInTemplateSpecialization")) {
+  else if (TL = getNodeAsType<TypeLoc>(Result, "TypeInTemplateSpecialization"))
     QT = TL->getType();
-  }
+  else if (CE = getNodeAsType<CallExpr>(Result, "TemplateTypeInCallExpr"))
+    QT = CE->getType();
+  else if (NCE = getNodeAsType<CXXNamedCastExpr>(
+               Result, "TemplateTypeInReinterpretCast"))
+    QT = NCE->getTypeAsWritten();
+  else if (NCE = getNodeAsType<CXXNamedCastExpr>(Result,
+                                                 "TemplateTypeInStaticCast"))
+    QT = NCE->getTypeAsWritten();
   else
     return;
 
@@ -2184,10 +2316,31 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
     Loc = DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc().getRawEncoding();
   } else if (TL) {
     Loc = TL->getBeginLoc().getRawEncoding();
+  } else if (CE) {
+    Loc = CE->getBeginLoc().getRawEncoding();
+  } else if (NCE) {
+    Loc = NCE->getBeginLoc().getRawEncoding();
   }
 
   if (DupFilter.find(Loc) != DupFilter.end())
     return;
+
+  // Handle template types in CallExpr separately
+  if (CE) {
+    if (replaceCallExprTemplateTypes(SM, CE)) {
+      DupFilter.insert(Loc);
+    }
+    return;
+  }
+
+  // Handle reinterpret_cast/static_cast expression
+  if (NCE) {
+    if (replaceNamedCastExprTemplateType(SM, NCE)) {
+      DupFilter.insert(Loc);
+    }
+    return;
+  }
+
   // std::vector<stream type> is elaborated to
   // std::vector<stream type *, std::allocator<stream type *>>
   bool isElaboratedType = false;
@@ -2213,22 +2366,29 @@ void TemplateTypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
         DTL = DD->getTypeSourceInfo()->getTypeLoc().getUnqualifiedLoc();
       } else if (TL) {
         DTL = TL->getUnqualifiedLoc();
+      } else {
+        return;
       }
+
       TemplateSpecializationTypeLoc TTTL;
-      if (isElaboratedType) {
+      if (isElaboratedType && !DTL.isNull()) {
         auto ETL = DTL.getAs<ElaboratedTypeLoc>();
         TTTL = ETL.getNamedTypeLoc().getAs<TemplateSpecializationTypeLoc>();
-      } else {
+      } else if (!DTL.isNull()) {
         TTTL = DTL.getAs<TemplateSpecializationTypeLoc>();
       }
       // Replace each type in the template arguments one by one
-      auto TAL = TTTL.getArgLoc(i);
-      if (DD)
-        emplaceTransformation(
-            new ReplaceTypeInDecl(DD, TAL, std::move(Replacement)));
-      else if (TL)
-        emplaceTransformation(new ReplaceTypeInDecl(TL->getBeginLoc(), TAL,
+      SourceLocation SL;
+      if (DD) {
+        SL = DD->getBeginLoc();
+        emplaceTransformation(new ReplaceTypeInDecl(DD, TTTL.getArgLoc(i),
                                                     std::move(Replacement)));
+      } else if (TL) {
+        SL = TL->getBeginLoc();
+        emplaceTransformation(new ReplaceTypeInDecl(
+            TL->getBeginLoc(), TTTL.getArgLoc(i), std::move(Replacement)));
+      }
+      insertComplexHeader(SL, Replacement);
       DupFilter.insert(Loc);
     }
   }

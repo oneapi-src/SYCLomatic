@@ -1,6 +1,6 @@
-// UNSUPPORTED: cuda-8.0
-// UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
+// RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++11
 // RUN: FileCheck --input-file %T/thrust-complex.dp.cpp --match-full-lines %s
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
@@ -8,6 +8,8 @@
 // CHECK-NEXT: #include <dpstd/execution>
 // CHECK-NEXT: #include <dpstd/algorithm>
 // CHECK-NEXT: #include <complex>
+#include <thrust/device_ptr.h>
+#include <thrust/device_malloc.h>
 #include <thrust/complex.h>
 
 template<typename T>
@@ -18,6 +20,25 @@ thrust::complex<T> foo(thrust::complex<T> cp) {
   return c;
 }
 
+void bar(thrust::complex<double> *p);
+
+__global__ void kernel(thrust::complex<double> *p, thrust::complex<double> c);
+
+template<typename T>
+class C {
+  T data;
+public:
+  C();
+  C(const C &c);
+};
+
+template<template <typename> class TT, typename T>
+class CC {
+  TT<T> data;
+};
+
+template<typename T> C<T> F();
+
 int main() {
 // CHECK:   std::complex<float> cf = foo(std::complex<float>(1.0));
   thrust::complex<float> cf = foo(thrust::complex<float>(1.0));
@@ -27,5 +48,55 @@ int main() {
   thrust::complex<float> log = thrust::log(cf);
 // CHECK:   std::complex<double> exp = sycl::exp(cd);
   thrust::complex<double> exp = thrust::exp(cd);
+// CHECK:   dpct::device_ptr<std::complex<double>> dc_ptr = dpct::device_malloc<std::complex<double>>(1);
+  thrust::device_ptr<thrust::complex<double>> dc_ptr = thrust::device_malloc<thrust::complex<double>>(1);
+
+// CHECK:   C<std::complex<double>> c1 = F<std::complex<double>>();
+  C<thrust::complex<double>> c1 = F<thrust::complex<double>>();
+// CHECK:   C<std::complex<double> *> c2 = F<std::complex<double> *>();
+  C<thrust::complex<double> *> c2 = F<thrust::complex<double> *>();
+// CHECK:   C<std::complex<double> &> c3 = F<std::complex<double> &>();
+  C<thrust::complex<double> &> c3 = F<thrust::complex<double> &>();
+
+// CHECK:   C<C<std::complex<double>>> c4;
+  C<C<thrust::complex<double>>> c4;
+
+//  TODO: Use of non-specialized template types
+//  CC<thrust::complex, double> c4;
+
+// Check that no warnings are issued when using complex operators
+// CHECK:   cf = cf + 1.0;
+  cf = cf + 1.0;
+// CHECK:   cf = cf - 1.0;
+  cf = cf - 1.0;
+// CHECK:   cf = cf * 1.0;
+  cf = cf * 1.0;
+// CHECK:   cf = cf / 1.0;
+  cf = cf / 1.0;
+// CHECK:   bool b1 = (cf == 1.0);
+  bool b1 = (cf == 1.0);
+// CHECK:  std::complex<float> cf2;
+// CHECK-NEXT:   bool b2 = (cf != cf2);
+  thrust::complex<float> cf2;
+  bool b2 = (cf != cf2);
+
+// Check migration of template types when used in reinterpret_cast/static_cast
+  std::complex<double> *cdp;
+// CHECK:   std::complex<double> *tcdp = reinterpret_cast<std::complex<double> *>(cdp);
+  thrust::complex<double> *tcdp = reinterpret_cast<thrust::complex<double> *>(cdp);
+// CHECK:   std::complex<double> cd2 = static_cast<std::complex<double>>(*cdp);
+  thrust::complex<double> cd2 = static_cast<thrust::complex<double>>(*cdp);
+// CHECK:   bar(reinterpret_cast<std::complex<double> *>(cdp));
+  bar(reinterpret_cast<thrust::complex<double> *>(cdp));
+// CHECK:   dpct::get_default_queue().submit(
+// CHECK-NEXT:     [&](sycl::handler &cgh) {
+// CHECK-NEXT:       cgh.parallel_for(
+// CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
+// CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:           kernel(reinterpret_cast<std::complex<double> *>(cdp), static_cast<std::complex<double>>(*cdp));
+// CHECK-NEXT:         });
+// CHECK-NEXT:     });
+  kernel<<<1, 256>>>(reinterpret_cast<thrust::complex<double> *>(cdp), static_cast<thrust::complex<double>>(*cdp));
+
   return 0;
 }
