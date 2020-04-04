@@ -487,6 +487,14 @@ bool Sema::isEmptyCudaDestructor(SourceLocation Loc, CXXDestructorDecl *DD) {
 }
 
 void Sema::checkAllowedCUDAInitializer(VarDecl *VD) {
+#ifdef INTEL_CUSTOMIZATION
+  // nvcc allows (gives warning though) initializers on __shared__
+  // declarations.  So in order to allow migration we're skipping
+  // this check
+  if (VD->hasAttr<CUDASharedAttr>()) {
+    return;
+  }
+#endif
   if (VD->isInvalidDecl() || !VD->hasInit() || !VD->hasGlobalStorage())
     return;
   const Expr *Init = VD->getInit();

@@ -440,6 +440,16 @@ public:
 private:
 };
 
+/// Migration rule for thrust constructor expressions
+class ThrustCtorExprRule : public NamedMigrationRule<ThrustCtorExprRule> {
+public:
+  ThrustCtorExprRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+
+private:
+};
+
 /// Migration rule for types replacements in var. declarations.
 class TypeInDeclRule : public NamedMigrationRule<TypeInDeclRule> {
 public:

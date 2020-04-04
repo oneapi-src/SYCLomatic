@@ -1296,42 +1296,83 @@ void ThrustFunctionRule::registerMatcher(MatchFinder &MF) {
                              hasAnyThrustFuncName(),
                              hasDeclContext(namespaceDecl(hasName("thrust"))))))
                     .bind("thrustFuncCall"),
-                this);
+               this);
 }
 
 void ThrustFunctionRule::run(const MatchFinder::MatchResult &Result) {
+
   auto UniqueName = [](const Stmt *S) {
     auto &SM = DpctGlobalInfo::getSourceManager();
     SourceLocation Loc = S->getBeginLoc();
     return getHashAsString(Loc.printToString(SM)).substr(0, 6);
   };
-  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall");
-  if (!CE) {
-    return;
-  }
-  const std::string ThrustFuncName = CE->getDirectCallee()->getName().str();
-  auto ReplInfo = MapNames::ThrustFuncNamesMap.find(ThrustFuncName);
-  assert(ReplInfo != MapNames::ThrustFuncNamesMap.end());
-  auto NewName = ReplInfo->second.ReplName;
-  emplaceTransformation(
-      new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
-  assert(CE->getNumArgs() > 0);
-  auto ExtraParam = ReplInfo->second.ExtraParam;
-  if (!ExtraParam.empty()) {
-    // This is a temporary fix until, the Intel(R) oneAPI DPC++ Compiler and
-    // Intel(R) oneAPI DPC++ Library support creating a SYCL execution policy
-    // without creating a unique one for every use
-    if (ExtraParam == "dpstd::execution::sycl") {
-      std::string Name = UniqueName(CE);
-      ExtraParam = "dpstd::execution::make_sycl_policy<class Policy_" +
-                   UniqueName(CE) + ">(dpct::get_default_queue())";
-    }
+
+  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
+    // handle the a regular call expr
+    const std::string ThrustFuncName = CE->getDirectCallee()->getName().str();
+    auto ReplInfo = MapNames::ThrustFuncNamesMap.find(ThrustFuncName);
+    assert(ReplInfo != MapNames::ThrustFuncNamesMap.end());
+    auto NewName = ReplInfo->second.ReplName;
     emplaceTransformation(
-        new InsertBeforeStmt(CE->getArg(0), ExtraParam + ", "));
+        new ReplaceCalleeName(CE, std::move(NewName), ThrustFuncName));
+    assert(CE->getNumArgs() > 0);
+    auto ExtraParam = ReplInfo->second.ExtraParam;
+    if (!ExtraParam.empty()) {
+      // This is a temporary fix until, the Intel(R) oneAPI DPC++ Compiler and
+      // Intel(R) oneAPI DPC++ Library support creating a SYCL execution policy
+      // without creating a unique one for every use
+      if (ExtraParam == "dpstd::execution::sycl") {
+        std::string Name = UniqueName(CE);
+        ExtraParam = "dpstd::execution::make_sycl_policy<class Policy_" +
+                     UniqueName(CE) + ">(dpct::get_default_queue())";
+      }
+      emplaceTransformation(
+          new InsertBeforeStmt(CE->getArg(0), ExtraParam + ", "));
+    }
   }
 }
 
 REGISTER_RULE(ThrustFunctionRule)
+
+void ThrustCtorExprRule::registerMatcher(MatchFinder &MF) {
+
+  auto hasAnyThrustRecord = []() {
+    return cxxRecordDecl(hasName("complex"),
+                         hasDeclContext(namespaceDecl(hasName("thrust"))));
+  };
+
+  MF.addMatcher(
+      cxxConstructExpr(hasType(hasAnyThrustRecord())).bind("thrustCtorExpr"),
+      this);
+}
+
+void ThrustCtorExprRule::run(const MatchFinder::MatchResult &Result) {
+
+  if (const CXXConstructExpr *CE =
+          getNodeAsType<CXXConstructExpr>(Result, "thrustCtorExpr")) {
+    // handle constructor expressions
+    std::string ExprStr = getStmtSpelling(CE);
+    if (ExprStr.substr(0, 8) != "thrust::") {
+      return;
+    }
+    auto P = ExprStr.find('<');
+    if (P != std::string::npos) {
+      std::string FuncName = ExprStr.substr(8, P - 8);
+      auto ReplInfo = MapNames::ThrustFuncNamesMap.find(FuncName);
+      if (ReplInfo == MapNames::ThrustFuncNamesMap.end()) {
+        return;
+      }
+      std::string ReplName = ReplInfo->second.ReplName;
+      if (ReplName == "std::complex") {
+        DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), Complex);
+      }
+      emplaceTransformation(
+          new ReplaceText(CE->getBeginLoc(), P, std::move(ReplName)));
+    }
+  }
+}
+
+REGISTER_RULE(ThrustCtorExprRule)
 
 auto TypedefNames = anyOf(
     hasAnyName("dim3", "cudaError_t", "CUresult", "CUcontext", "cudaEvent_t",
@@ -1350,30 +1391,36 @@ auto RecordTypeNames =
                      "cudaExtent", "cudaPos", "cudaPitchedPtr"),
           matchesName("cudnn.*|nccl.*"));
 auto HandleTypeNames = hasAnyName("cublasHandle_t", "cusolverDnHandle_t");
-auto TemplateRecordTypeNames =
-    hasAnyName("device_vector", "device_ptr", "host_vector");
+auto ThrustRecordTypeNames =
+    allOf(hasAnyName("device_vector", "device_ptr", "host_vector", "complex"),
+          hasDeclContext(namespaceDecl(hasName("thrust"))));
 
 // Rule for types replacements in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   auto HasCudaType = anyOf(
       hasType(typedefDecl(TypedefNames)), hasType(enumDecl(EnumTypeNames)),
       hasType(cxxRecordDecl(RecordTypeNames)),
-      hasType(classTemplateSpecializationDecl(TemplateRecordTypeNames)));
+      hasType(classTemplateSpecializationDecl(ThrustRecordTypeNames)));
 
-  auto HasCudaTypePtr =
-      anyOf(hasType(pointsTo(typedefDecl(TypedefNames))),
-            hasType(pointsTo(enumDecl(EnumTypeNames))),
-            hasType(pointsTo(cxxRecordDecl(RecordTypeNames))));
+  auto HasCudaTypePtr = anyOf(hasType(pointsTo(typedefDecl(TypedefNames))),
+                              hasType(pointsTo(enumDecl(EnumTypeNames))),
+                              hasType(pointsTo(cxxRecordDecl(RecordTypeNames))),
+                              hasType(pointsTo(classTemplateSpecializationDecl(
+                                ThrustRecordTypeNames))));
 
   auto HasCudaTypePtrPtr =
       anyOf(hasType(pointsTo(pointsTo(typedefDecl(TypedefNames)))),
             hasType(pointsTo(pointsTo(enumDecl(EnumTypeNames)))),
-            hasType(pointsTo(pointsTo(cxxRecordDecl(RecordTypeNames)))));
+            hasType(pointsTo(pointsTo(cxxRecordDecl(RecordTypeNames)))),
+            hasType(pointsTo(pointsTo(
+                classTemplateSpecializationDecl(ThrustRecordTypeNames)))));
 
   auto HasCudaTypeRef =
       anyOf(hasType(references(typedefDecl(TypedefNames))),
             hasType(references(enumDecl(EnumTypeNames))),
-            hasType(references(cxxRecordDecl(RecordTypeNames))));
+            hasType(references(cxxRecordDecl(RecordTypeNames))),
+            hasType(references(
+                classTemplateSpecializationDecl(ThrustRecordTypeNames))));
 
   auto Typedefs = typedefType(hasDeclaration(typedefDecl(TypedefNames)));
 
@@ -1417,7 +1464,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
       hasDeclaration(enumDecl(EnumTypeNames)),
       hasDeclaration(cxxRecordDecl(RecordTypeNames)),
       hasDeclaration(typedefDecl(HandleTypeNames)),
-      hasDeclaration(classTemplateSpecializationDecl(TemplateRecordTypeNames)),
+      hasDeclaration(classTemplateSpecializationDecl(ThrustRecordTypeNames)),
       pointsTo(typedefDecl(TypedefNames)), pointsTo(enumDecl(EnumTypeNames)),
       pointsTo(cxxRecordDecl(RecordTypeNames)),
       pointsTo(pointsTo(typedefDecl(TypedefNames))),
@@ -1598,10 +1645,28 @@ bool getTypeDeclLocation(const Type *TypePtr, SourceLocation &SL) {
   return false;
 }
 
+bool getTemplateTypeReplacement(std::string TypeStr, std::string &Replacement,
+                                unsigned &Len) {
+  auto P1 = TypeStr.find('<');
+  if (P1 != std::string::npos) {
+    auto P2 = Replacement.find('<');
+    if (P2 != std::string::npos) {
+      Replacement = Replacement.substr(0, P2);
+    }
+    Len = P1;
+    return true;
+  }
+  return false;
+}
+
+bool isAuto(const char *StrChar, unsigned Len) {
+  return std::string(StrChar, Len) == "auto";
+}
+
 void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   // DD points to a VarDecl or a FieldDecl
-  const DeclaratorDecl *DD =
-      getNodeAsType<VarDecl>(Result, "TypeInVarDeclDevice");
+  const VarDecl *VD = getNodeAsType<VarDecl>(Result, "TypeInVarDeclDevice");
+  const DeclaratorDecl *DD = VD;
   const UnaryExprOrTypeTraitExpr *UETTE;
   const CStyleCastExpr *CSCE;
   QualType QT;
@@ -1610,11 +1675,13 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   bool IsCSCE = false;
   bool IsInFieldDecl = false;
   if ((DD) ||
-      ((DD = getNodeAsType<VarDecl>(Result, "TypeInFieldDeclDevice")))) {
+      ((VD = getNodeAsType<VarDecl>(Result, "TypeInFieldDeclDevice")))) {
+    DD = VD;
     QT = DD->getType();
     HasDeviceAttr = true;
     IsInFieldDecl = true;
-  } else if ((DD = getNodeAsType<VarDecl>(Result, "TypeInVarDecl"))) {
+  } else if ((VD = getNodeAsType<VarDecl>(Result, "TypeInVarDecl"))) {
+    DD = VD;
     QT = DD->getType();
   } else if ((DD = getNodeAsType<FieldDecl>(Result, "TypeInFieldDecl"))) {
     QT = DD->getType();
@@ -1631,7 +1698,7 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   unsigned int Loc;
   std::string TypeStr;
   SourceLocation BeginLoc;
-  int Len = 0;
+  unsigned Len = 0;
   bool IsMacro = false;
 
   TypeSourceInfo *ArgTypeInfo = nullptr;
@@ -1671,7 +1738,10 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
   auto BeginLocChar = SM->getCharacterData(SM->getExpansionLoc(BeginLoc));
   Len = Lexer::MeasureTokenLength(BeginLoc, *SM, LangOptions());
 
-  if (IsUETTE) {
+  if (isAuto(BeginLocChar, Len)) {
+    // do not replace if keyword/token 'auto' is used
+    return;
+  } else if (IsUETTE) {
     TypeStr = std::string(BeginLocChar, Len);
   } else if (IsCSCE) {
     TypeStr = CSCE->getType().getAsString();
@@ -1747,7 +1817,9 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
     return;
   }
 
-  if (IsUETTE || IsCSCE) {
+  bool IsTemplateType = getTemplateTypeReplacement(TypeStr, Replacement, Len);
+
+  if (IsUETTE || IsCSCE || IsTemplateType) {
     emplaceTransformation(
         new ReplaceText(BeginLoc, Len, std::move(Replacement)));
   } else {
@@ -2724,7 +2796,8 @@ void ReturnTypeRule::registerMatcher(MatchFinder &MF) {
 
   auto T = hasDeclaration(
       anyOf(enumDecl(EnumTypeNames), typedefDecl(TypedefNames),
-            typedefDecl(HandleTypeNames), cxxRecordDecl(RecordTypeNames)));
+            typedefDecl(HandleTypeNames), cxxRecordDecl(RecordTypeNames),
+            classTemplateSpecializationDecl(ThrustRecordTypeNames)));
   auto P = anyOf(pointsTo(typedefDecl(TypedefNames)),
                  pointsTo(typedefDecl(HandleTypeNames)),
                  pointsTo(enumDecl(EnumTypeNames)),
@@ -2776,6 +2849,8 @@ void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
   SrcAPIStaticsMap[TypeName]++;
   auto Replacement = getReplacementForType(TypeName);
 
+  unsigned Len;
+
   if (BeginLoc.isMacroID()) {
     auto SpellingLocation = SM->getSpellingLoc(BeginLoc);
     if (DpctGlobalInfo::replaceMacroName(SpellingLocation)) {
@@ -2783,10 +2858,15 @@ void ReturnTypeRule::run(const MatchFinder::MatchResult &Result) {
     } else {
       BeginLoc = SpellingLocation;
     }
-    auto Len = Lexer::MeasureTokenLength(BeginLoc, *SM, LangOptions());
+    Len = Lexer::MeasureTokenLength(BeginLoc, *SM, LangOptions());
     emplaceTransformation(
         new ReplaceText(BeginLoc, Len, std::move(Replacement)));
-  } else {
+  }
+  else if (getTemplateTypeReplacement(TypeName, Replacement, Len)) {
+    emplaceTransformation(
+      new ReplaceText(BeginLoc, Len, std::move(Replacement)));
+  }
+  else {
     emplaceTransformation(new ReplaceReturnType(FD, std::move(Replacement)));
   }
 }

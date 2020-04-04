@@ -248,7 +248,7 @@ public:
   static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       BLASFuncComplexReplInfoMap;
   static const SetTy ThrustFileExcludeSet;
-  static const ThrustMapTy ThrustFuncNamesMap;
+  static ThrustMapTy ThrustFuncNamesMap;
   static const std::map<std::string, MapNames::BLASFuncReplInfo>
       BLASFuncWrapperReplInfoMap;
 

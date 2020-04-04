@@ -25,6 +25,7 @@ std::string MapNames::getClNamespace() { return MapNames::ClNamespace; }
 
 MapNames::MapTy MapNames::TypeNamesMap{};
 MapNames::MapTy EnumConstantRule::EnumNamesMap{};
+MapNames::ThrustMapTy MapNames::ThrustFuncNamesMap{};
 
 void MapNames::setClNamespace(bool Enable) {
   MapNames::ClNamespace = Enable ? "cl::sycl" : "sycl";
@@ -109,6 +110,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"thrust::device_ptr", "dpct::device_ptr"},
       {"thrust::device_vector", "dpstd::device_vector"},
       {"thrust::host_vector", "dpstd::host_vector"},
+      {"thrust::complex", "std::complex"},
       {"cusolverDnHandle_t", ClNamespace + "::queue"},
       {"cusolverEigType_t", "int64_t"},
       {"cusolverEigMode_t", "mkl::job"},
@@ -126,6 +128,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"cudaExtent", ClNamespace + "::range<3>"},
       {"cudaPitchedPtr", "dpct::pitched_data"},
       // ...
+
   };
 
   // Enum constants name mapping.
@@ -161,6 +164,20 @@ void MapNames::setClNamespace(bool Enable) {
     {"cudaResourceTypeArray", "dpct::data_matrix"},
     {"cudaResourceTypeLinear", "dpct::data_linear"}
     // ...
+  };
+
+  // Thrust function name mapping
+  ThrustFuncNamesMap = {
+      {"copy", {"std::copy", "dpstd::execution::sycl"}},
+      {"copy_n", {"std::copy_n", "dpstd::execution::sycl"}},
+      {"sequence", {"dpct::sequence", "dpstd::execution::sycl"}},
+      {"stable_sort_by_key",
+       {"dpct::stable_sort_by_key", "dpstd::execution::sycl"}},
+      {"reduce", {"std::reduce", "dpstd::execution::sycl"}},
+      {"complex", {"std::complex", ""}}, // for constructor calls
+      {"exp", {ClNamespace + "::exp", ""}},
+      {"log", {ClNamespace + "::log", ""}},
+      // ...
   };
 }
 
@@ -2529,16 +2546,6 @@ const std::unordered_map<std::string, std::string>
         {"atomicCAS", "dpct::atomic_compare_exchange_strong"},
         {"atomicInc", "dpct::atomic_fetch_compare_inc"},
     };
-
-// Thrust function name mapping
-const MapNames::ThrustMapTy MapNames::ThrustFuncNamesMap{
-    {"copy", {"std::copy", "dpstd::execution::sycl"}},
-    {"copy_n", {"std::copy_n", "dpstd::execution::sycl"}},
-    {"sequence", {"dpct::sequence", "dpstd::execution::sycl"}},
-    {"stable_sort_by_key",
-     {"dpct::stable_sort_by_key", "dpstd::execution::sycl"}},
-    {"reduce", {"std::reduce", "dpstd::execution::sycl"}},
-};
 
 const MapNames::MapTy MapNames::Dim3MemberNamesMap{
     {"x", "[0]"}, {"y", "[1]"}, {"z", "[2]"},
