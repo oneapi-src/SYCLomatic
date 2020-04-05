@@ -159,6 +159,10 @@ private:
 /// Analyze expression and generate its migrated string
 class ExprAnalysis {
 public:
+  static std::string ref(const Expr *Expression) {
+    ExprAnalysis EA(Expression);
+    return EA.getReplacedString();
+  }
   ExprAnalysis() : ExprAnalysis(nullptr) {}
   explicit ExprAnalysis(const Expr *Expression);
 

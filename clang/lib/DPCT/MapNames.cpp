@@ -121,6 +121,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"cudaTextureObject_t", "dpct::image_base_p"},
       {"curandStatus_t", "int"},
       {"curandStatus", "int"},
+      {"cudaMemoryAdvise", "pi_mem_advice"},
       {"cudaPos", ClNamespace + "::id<3>"},
       {"cudaExtent", ClNamespace + "::range<3>"},
       {"cudaPitchedPtr", "dpct::pitched_data"},

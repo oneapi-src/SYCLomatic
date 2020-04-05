@@ -186,6 +186,14 @@ public:
     return pitched_data(_src, _range[0], _range[0], _range[1]);
   }
 
+  /// Get the info of the image
+  void get_info(image_channel &channel, cl::sycl::range<3> &range,
+                unsigned int &flags) {
+    channel = _channel;
+    range = cl::sycl::range<3>(_range[0], _range[1], _range[2]);
+    flags = 0;
+  }
+
   ~image_matrix() { free(); }
 };
 using image_matrix_p = image_matrix *;

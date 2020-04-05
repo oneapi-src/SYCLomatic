@@ -940,3 +940,84 @@ void test_foo(){
   // CHECK: dpct::dpct_memset(d_error.get_ptr(), 0, sizeof(uint32_t));
   cudaMemset(d_error, 0, sizeof(uint32_t));
 }
+
+void foobar() {
+  int errorCode;
+
+  cudaChannelFormatDesc desc;
+  cudaExtent extent;
+  unsigned int flags;
+  cudaArray_t array;
+
+  // CHECK: array->get_info(desc, extent, flags);
+  cudaArrayGetInfo(&desc, &extent, &flags, array);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkError((array->get_info(desc, extent, flags), 0));
+  checkError(cudaArrayGetInfo(&desc, &extent, &flags, array));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: errorCode = (array->get_info(desc, extent, flags), 0);
+  errorCode = cudaArrayGetInfo(&desc, &extent, &flags, array);
+
+  int host;
+  // CHECK: flags = 0;
+  cudaHostGetFlags(&flags, &host);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkError((flags = 0, 0));
+  checkError(cudaHostGetFlags(&flags, &host));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: errorCode = (flags = 0, 0);
+  errorCode = cudaHostGetFlags(&flags, &host);
+
+  int *devPtr;
+  size_t count;
+  // CHECK: pi_mem_advice advice;
+  cudaMemoryAdvise advice;
+  int device;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cudaMemAdvise(devPtr, count, advice, device);
+  cudaMemAdvise(devPtr, count, advice, device);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkError(cudaMemAdvise(devPtr, count, advice, device));
+  checkError(cudaMemAdvise(devPtr, count, advice, device));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: errorCode = cudaMemAdvise(devPtr, count, advice, device);
+  errorCode = cudaMemAdvise(devPtr, count, advice, device);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
+  cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkError(cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device));
+  checkError(cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1004:{{[0-9]+}}: Could not generate replacement.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: errorCode = cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
+  errorCode = cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
+}

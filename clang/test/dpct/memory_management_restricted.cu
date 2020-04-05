@@ -113,3 +113,87 @@ int foo() {
 
 template int foo<float>();
 template int foo<int>();
+
+void checkError(cudaError_t err) {
+}
+
+void foobar() {
+  int errorCode;
+
+  cudaChannelFormatDesc desc;
+  cudaExtent extent;
+  unsigned int flags;
+  cudaArray_t array;
+
+  // CHECK: array->get_info(desc, extent, flags);
+  cudaArrayGetInfo(&desc, &extent, &flags, array);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkError((array->get_info(desc, extent, flags), 0));
+  checkError(cudaArrayGetInfo(&desc, &extent, &flags, array));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: errorCode = (array->get_info(desc, extent, flags), 0);
+  errorCode = cudaArrayGetInfo(&desc, &extent, &flags, array);
+
+  int host;
+  // CHECK: flags = 0;
+  cudaHostGetFlags(&flags, &host);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkError((flags = 0, 0));
+  checkError(cudaHostGetFlags(&flags, &host));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: errorCode = (flags = 0, 0);
+  errorCode = cudaHostGetFlags(&flags, &host);
+
+  int *devPtr;
+  size_t count;
+  // CHECK: pi_mem_advice advice;
+  cudaMemoryAdvise advice;
+  int device;
+  // CHECK: dpct::get_device(device).default_queue().mem_advise(devPtr, count, pi_mem_advice(advice - 1));
+  cudaMemAdvise(devPtr, count, advice, device);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkError((dpct::get_device(device).default_queue().mem_advise(devPtr, count, pi_mem_advice(advice - 1)), 0));
+  checkError(cudaMemAdvise(devPtr, count, advice, device));
+  // CHECK: checkError((dpct::get_device(device).default_queue().mem_advise(devPtr, count, PI_MEM_ADVICE_SET_READ_MOSTLY), 0));
+  checkError(cudaMemAdvise(devPtr, count, cudaMemoryAdvise(1), device));
+  // CHECK: checkError((dpct::get_device(device).default_queue().mem_advise(devPtr, count, PI_MEM_ADVICE_SET_READ_MOSTLY), 0));
+  checkError(cudaMemAdvise(devPtr, count, (cudaMemoryAdvise)1, device));
+  // CHECK: checkError((dpct::get_device(device).default_queue().mem_advise(devPtr, count, PI_MEM_ADVICE_SET_READ_MOSTLY), 0));
+  checkError(cudaMemAdvise(devPtr, count, static_cast<cudaMemoryAdvise>(1), device));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: errorCode = (dpct::get_device(device).default_queue().mem_advise(devPtr, count, pi_mem_advice(advice - 1)), 0);
+  errorCode = cudaMemAdvise(devPtr, count, advice, device);
+
+  // CHECK: dpct::get_device(device).default_queue().mem_advise(devPtr, count, PI_MEM_ADVICE_SET_READ_MOSTLY);
+  cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: checkError((dpct::get_device(device).default_queue().mem_advise(devPtr, count, PI_MEM_ADVICE_SET_READ_MOSTLY), 0));
+  checkError(cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: errorCode = (dpct::get_device(device).default_queue().mem_advise(devPtr, count, PI_MEM_ADVICE_SET_READ_MOSTLY), 0);
+  errorCode = cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
+}

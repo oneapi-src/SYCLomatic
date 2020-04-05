@@ -45,8 +45,8 @@ int main() {
   // CHECK-NEXT: dpct::image_matrix_p a42;
   // CHECK-NEXT: dpct::dpct_malloc(&d_data42, sizeof(sycl::float4) * 32 * 32);
   // CHECK-NEXT: dpct::image_channel desc42 = dpct::create_image_channel(32, 32, 32, 32, dpct::channel_float);
-  // CHECK-NEXT: dpct::malloc_matrix(&a42, &desc42, 32, 32);
-  // CHECK-NEXT: dpct::memcpy_to_matrix(a42, 0, 0, d_data42, 32 * 32 * sizeof(sycl::float4));
+  // CHECK-NEXT: a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32));
+  // CHECK-NEXT: dpct::dpct_memcpy(a42->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(d_data42, 32 * 32 * sizeof(sycl::float4), 32 * 32 * sizeof(sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(32 * 32 * sizeof(sycl::float4), 1, 1));
   // CHECK-NEXT: dpct::image_base_p tex42;
   // CHECK-NEXT: dpct::image_data res42;
   // CHECK-NEXT: dpct::image_info texDesc42;
@@ -123,7 +123,7 @@ int main() {
   cudaDestroyTextureObject(tex42);
   cudaDestroyTextureObject(tex21);
 
-  // CHECK: dpct::dpct_free(a42);
+  // CHECK: delete a42;
   cudaFreeArray(a42);
 
   // CHECK: dpct::dpct_free(d_data42);

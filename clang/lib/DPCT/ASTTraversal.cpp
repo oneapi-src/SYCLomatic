@@ -1342,7 +1342,8 @@ auto TypedefNames = anyOf(
                "cusolverEigType_t", "cusolverEigMode_t", "curandStatus_t"),
     matchesName("cudnn.*|nccl.*"));
 auto EnumTypeNames = anyOf(
-    hasAnyName("cudaError", "cufftResult_t", "cudaError_enum", "curandStatus"),
+    hasAnyName("cudaError", "cufftResult_t", "cudaError_enum", "curandStatus",
+               "cudaMemoryAdvise"),
     matchesName("cudnn.*|nccl.*"));
 auto RecordTypeNames =
     anyOf(hasAnyName("cudaDeviceProp", "CUstream_st", "CUevent_st",
@@ -7433,6 +7434,89 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
   }
 }
 
+void MemoryMigrationRule::cudaArrayGetInfo(const MatchFinder::MatchResult &Result,
+                                           const CallExpr *C,
+                                           const UnresolvedLookupExpr *ULExpr,
+                                           bool IsAssigned,
+                                           std::string SpecifiedQueue) {
+  std::ostringstream OS;
+  OS << ExprAnalysis::ref(C->getArg(3)) << "->get_info(";
+  printDerefOp(OS, C->getArg(0));
+  OS << ", ";
+  printDerefOp(OS, C->getArg(1));
+  OS << ", ";
+  printDerefOp(OS, C->getArg(2));
+  OS << ")";
+  emplaceTransformation(new ReplaceStmt(C, OS.str()));
+}
+
+void MemoryMigrationRule::cudaHostGetFlags(const MatchFinder::MatchResult &Result,
+                                           const CallExpr *C,
+                                           const UnresolvedLookupExpr *ULExpr,
+                                           bool IsAssigned,
+                                           std::string SpecifiedQueue) {
+  std::ostringstream OS;
+  printDerefOp(OS, C->getArg(0));
+  OS << " = 0";
+  emplaceTransformation(new ReplaceStmt(C, OS.str()));
+}
+
+void MemoryMigrationRule::cudaMemAdvise(const MatchFinder::MatchResult &Result,
+                                        const CallExpr *C,
+                                        const UnresolvedLookupExpr *ULExpr,
+                                        bool IsAssigned,
+                                        std::string SpecifiedQueue) {
+  // Do nothing if USM is disabled
+  if (USMLevel == UsmLevel::none) {
+    report(C->getBeginLoc(), Diagnostics::NOTSUPPORTED, false, "cudaMemAdvise");
+    return;
+  }
+  static std::map<std::string, std::string> AdviceMapping{
+      {"cudaMemAdviseSetReadMostly", "PI_MEM_ADVICE_SET_READ_MOSTLY"},
+      {"cudaMemAdviseUnsetReadMostly", "PI_MEM_ADVICE_CLEAR_READ_MOSTLY"},
+      {"cudaMemAdviseSetPreferredLocation", "PI_MEM_ADVICE_SET_PREFERRED_LOCATION"},
+      {"cudaMemAdviseUnsetPreferredLocation", "PI_MEM_ADVICE_CLEAR_PREFERRED_LOCATION"},
+      {"cudaMemAdviseSetAccessedBy", "PI_MEM_ADVICE_SET_ACCESSED_BY"},
+      {"cudaMemAdviseUnsetAccessedBy", "PI_MEM_ADVICE_CLEAR_ACCESSED_BY"}};
+
+  auto Arg0Str = ExprAnalysis::ref(C->getArg(0));
+  auto Arg1Str = ExprAnalysis::ref(C->getArg(1));
+  auto Arg2Str = ExprAnalysis::ref(C->getArg(2));
+  auto Arg3Str = ExprAnalysis::ref(C->getArg(3));
+  auto It = AdviceMapping.find(Arg2Str);
+  if (It != AdviceMapping.end()) {
+    Arg2Str = It->second;
+  } else {
+    // Simplify casts of IntegerLiterals to enums, e.g. cudaMemoryAdvise(1),
+    // (cudaMemoryAdvise)1, static_cast<cudaMemoryAdvise>(1) can be migrated to
+    // PI_MEM_ADVICE_SET_READ_MOSTLY.
+    Expr::EvalResult ER;
+    const Expr *SubE = nullptr;
+    if (auto CSCE = dyn_cast<CStyleCastExpr>(C->getArg(2))) {
+      SubE = CSCE->getSubExpr();
+    } else if (auto CXXSCE = dyn_cast<CXXStaticCastExpr>(C->getArg(2))) {
+      SubE = CXXSCE->getSubExpr();
+    } else if (auto CXXFCE = dyn_cast<CXXFunctionalCastExpr>(C->getArg(2))) {
+      SubE = CXXFCE->getSubExpr();
+    }
+    if (SubE && SubE->EvaluateAsInt(ER, *Result.Context)) {
+      static std::vector<std::string> Advices{
+          "PI_MEM_ADVICE_SET_READ_MOSTLY", "PI_MEM_ADVICE_CLEAR_READ_MOSTLY",
+          "PI_MEM_ADVICE_SET_PREFERRED_LOCATION", "PI_MEM_ADVICE_CLEAR_PREFERRED_LOCATION",
+          "PI_MEM_ADVICE_SET_ACCESSED_BY", "PI_MEM_ADVICE_CLEAR_ACCESSED_BY"};
+      Arg2Str = Advices[ER.Val.getInt().getExtValue() - 1];
+    } else {
+      Arg2Str = "pi_mem_advice(" + Arg2Str + " - 1)";
+    }
+  }
+
+  std::ostringstream OS;
+  OS << "dpct::get_device(" << Arg3Str
+     << ").default_queue().mem_advise(" << Arg0Str << ", " << Arg1Str
+     << ", " << Arg2Str <<  ")";
+  emplaceTransformation(new ReplaceStmt(C, OS.str()));
+}
+
 // Memory migration rules live here.
 void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
   auto memoryAPI = [&]() {
@@ -7452,7 +7536,8 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cudaMemcpy2DFromArrayAsync", "cudaMemcpyArrayToArray",
         "cudaMemcpyToArray", "cudaMemcpyToArrayAsync", "cudaMemcpyFromArray",
         "cudaMemcpyFromArrayAsync", "cudaMallocArray", "cudaMalloc3DArray",
-        "cudaFreeArray");
+        "cudaFreeArray", "cudaArrayGetInfo", "cudaHostGetFlags",
+        "cudaMemAdvise");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -7517,7 +7602,11 @@ void MemoryMigrationRule::run(const MatchFinder::MatchResult &Result) {
     // if API is removed, then no need to add (*, 0)
     // Currently, there are only cudaHostRegister and cudaHostUnregister
     if (IsAssigned && Name.compare("cudaHostRegister") &&
-        Name.compare("cudaHostUnregister")) {
+        Name.compare("cudaHostUnregister") && Name.compare("cudaMemAdvise")) {
+      report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+      insertAroundStmt(C, "(", ", 0)");
+    } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
+               USMLevel != UsmLevel::none) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       insertAroundStmt(C, "(", ", 0)");
     }
@@ -7609,7 +7698,10 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaHostGetDevicePointer", &MemoryMigrationRule::miscMigration},
           {"cudaHostRegister", &MemoryMigrationRule::miscMigration},
           {"cudaHostUnregister", &MemoryMigrationRule::miscMigration},
-          {"cudaMemPrefetchAsync", &MemoryMigrationRule::prefetchMigration}};
+          {"cudaMemPrefetchAsync", &MemoryMigrationRule::prefetchMigration},
+          {"cudaArrayGetInfo", &MemoryMigrationRule::cudaArrayGetInfo},
+          {"cudaHostGetFlags", &MemoryMigrationRule::cudaHostGetFlags},
+          {"cudaMemAdvise", &MemoryMigrationRule::cudaMemAdvise}};
 
   for (auto &P : Dispatcher)
     MigrationDispatcher[P.first] = std::bind(

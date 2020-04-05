@@ -874,6 +874,18 @@ private:
                      const CallExpr *C,
                      const UnresolvedLookupExpr *ULExpr = NULL,
                      bool IsAssigned = false, std::string SpecifiedQueue = "");
+  void cudaArrayGetInfo(const ast_matchers::MatchFinder::MatchResult &Result,
+                        const CallExpr *C,
+                        const UnresolvedLookupExpr *ULExpr = NULL,
+                        bool IsAssigned = false, std::string SpecifiedQueue = "");
+  void cudaHostGetFlags(const ast_matchers::MatchFinder::MatchResult &Result,
+                        const CallExpr *C,
+                        const UnresolvedLookupExpr *ULExpr = NULL,
+                        bool IsAssigned = false, std::string SpecifiedQueue = "");
+  void cudaMemAdvise(const ast_matchers::MatchFinder::MatchResult &Result,
+                     const CallExpr *C,
+                     const UnresolvedLookupExpr *ULExpr = NULL,
+                     bool IsAssigned = false, std::string SpecifiedQueue = "");
   std::string handleAsync(const CallExpr *C, unsigned i,
                           const ast_matchers::MatchFinder::MatchResult &Result);
   void handleDirection(const CallExpr *C, unsigned i);

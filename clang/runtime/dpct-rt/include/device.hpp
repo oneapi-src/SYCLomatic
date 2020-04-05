@@ -363,6 +363,11 @@ static inline device_ext &get_current_device() {
   return dev_mgr::instance().current_device();
 }
 
+/// Util function to get a device by id.
+static inline device_ext &get_device(unsigned int id) {
+  return dev_mgr::instance().get_device(id);
+}
+
 /// Util function to get the context of the default queue of current
 /// device in dpct device manager.
 static inline cl::sycl::context get_default_context() {
