@@ -165,7 +165,8 @@ public:
   using pointer = T *;
   using reference = T &;
   using iterator_category = std::random_access_iterator_tag;
-  using is_hetero = std::true_type;                // required
+  using is_hetero = std::true_type; // required
+  using is_passed_directly = std::false_type;
   static constexpr sycl::access::mode mode = Mode; // required
 
   device_ptr(sycl::buffer<T, 1> in, std::size_t i = 0) : buffer(in), idx(i) {}
@@ -179,8 +180,9 @@ public:
                        sizeof(T)))),
         idx() {}
 #endif
-  // needed for device_malloc
-  device_ptr(const std::size_t n) : buffer(sycl::range<1>(n)), idx() {}
+  // needed for device_malloc, n is number of bytes to allocate
+  device_ptr(const std::size_t n)
+      : buffer(sycl::range<1>(n / sizeof(T))), idx() {}
   device_ptr() {}
   device_ptr(const device_ptr &in) : buffer(in.buffer), idx(in.idx) {}
   pointer get() const {
@@ -201,6 +203,32 @@ public:
   device_ptr operator-(difference_type backward) const {
     return device_ptr{buffer, idx - backward};
   }
+  device_ptr& operator+=(difference_type forward) {
+    idx += forward;
+    return *this;
+  }
+  device_ptr& operator-=(difference_type backward) {
+    idx -= backward;
+    return *this;
+  }
+  device_ptr& operator++() {
+    idx += 1;
+    return *this;
+  }
+  device_ptr& operator--() {
+    idx -= 1;
+    return *this;
+  }
+  device_ptr operator++(int) {
+    device_ptr p(*this);
+    idx += 1;
+    return p;
+  }
+  device_ptr operator--(int) {
+    device_ptr p(*this);
+    idx -= 1;
+    return p;
+  }
   difference_type operator-(const device_ptr &it) const { return idx - it.idx; }
   template <typename OtherIterator>
   typename std::enable_if<internal::is_hetero_iterator<OtherIterator>::value,
@@ -209,7 +237,7 @@ public:
     return idx - std::distance(dpstd::begin(buffer), it);
   }
 
-  std::size_t get_idx() { return idx; } // required
+  std::size_t get_idx() const { return idx; } // required
 
   sycl::buffer<T, 1, Allocator> get_buffer() { return buffer; } // required
 };
@@ -225,25 +253,29 @@ public:
   using difference_type = std::make_signed<std::size_t>::type;
   using pointer = T *;
   using reference = T &;
+  using const_reference = const T &;
   using iterator_category = std::random_access_iterator_tag;
   using is_hetero = std::false_type; // required
+  using is_passed_directly = std::true_type; // required
 
   device_ptr(T *p) : ptr(p) {}
-  // needed for device_malloc
+  // needed for device_malloc, n is number of bytes to allocate
   device_ptr(const std::size_t n) {
     cl::sycl::queue default_queue;
-    ptr = cl::sycl::malloc_device(n, default_queue.get_device(),
-                                  default_queue.get_context());
+    ptr = static_cast<T*>(cl::sycl::malloc_device(n, default_queue.get_device(),
+                                                  default_queue.get_context()));
   }
   device_ptr() : ptr(nullptr) {}
-  //        template<typename OtherT>
-  //        device_ptr(const device_ptr<OtherT>& in) : Base(in) { }
   device_ptr &operator=(const device_iterator<T> &in) {
     ptr = static_cast<device_ptr<T>>(in).ptr;
     return *this;
   }
   pointer get() const { return ptr; }
   operator T *() { return ptr; }
+
+  reference operator[](difference_type idx) { return ptr[idx]; }
+  reference operator[](difference_type idx) const { return ptr[idx]; }
+
   device_ptr &operator++() {
     ++ptr;
     return *this;
@@ -268,6 +300,14 @@ public:
   device_ptr operator-(difference_type backward) const {
     return device_ptr{ptr - backward};
   }
+  device_ptr& operator+=(difference_type forward) {
+    ptr = ptr + forward;
+    return *this;
+  }
+  device_ptr& operator-=(difference_type backward) {
+    ptr = ptr - backward;
+    return *this;
+  }
   difference_type operator-(const device_ptr &it) const { return ptr - it.ptr; }
 };
 #endif
@@ -285,6 +325,7 @@ public:
   using reference = T &;
   using iterator_category = std::random_access_iterator_tag;
   using is_hetero = std::true_type;                // required
+  using is_passed_directly = std::false_type; // required
   static constexpr sycl::access::mode mode = Mode; // required
 
   device_iterator() : Base() {}
@@ -360,7 +401,7 @@ public:
   bool operator<=(const device_iterator &it) const { return !(*this > it); }
   bool operator>=(const device_iterator &it) const { return !(*this < it); }
 
-  std::size_t get_idx() { return Base::idx; } // required
+  std::size_t get_idx() const { return Base::idx; } // required
 
   sycl::buffer<T, 1, Allocator> get_buffer() {
     return Base::buffer;
@@ -376,10 +417,11 @@ protected:
 public:
   using value_type = T;
   using difference_type = std::make_signed<std::size_t>::type;
-  using pointer = Base;
-  using reference = T &;
+  using pointer = typename Base::pointer;
+  using reference = typename Base::reference;
   using iterator_category = std::random_access_iterator_tag;
   using is_hetero = std::false_type; // required
+  using is_passed_directly = std::true_type; // required
   static constexpr sycl::access::mode mode =
       cl::sycl::access::mode::read_write; // required
 
@@ -396,7 +438,8 @@ public:
 
   reference operator*() const { return *(Base::ptr + idx); }
 
-  reference operator[](difference_type i) const { return *(*this + i); }
+  reference operator[](difference_type i) { return Base::ptr[idx + i]; }
+  reference operator[](difference_type i) const { return Base::ptr[idx + i]; }
   device_iterator &operator++() {
     ++idx;
     return *this;
@@ -452,14 +495,14 @@ public:
   bool operator<=(const device_iterator &it) const { return !(*this > it); }
   bool operator>=(const device_iterator &it) const { return !(*this < it); }
 
-  std::size_t get_idx() { return idx; } // required
+  std::size_t get_idx() const { return idx; } // required
 
   device_iterator &get_buffer() { return *this; } // required
 };
 #endif
 
 template <typename T> device_ptr<T> device_malloc(const std::size_t n) {
-  return device_ptr<T>(n / sizeof(T));
+  return device_ptr<T>(n);
 }
 template <typename T>
 device_ptr<T> device_new(device_ptr<T> p, const T &exemplar,
