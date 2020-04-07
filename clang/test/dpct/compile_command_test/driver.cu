@@ -41,6 +41,15 @@
 // RUN: echo "    }" >> %T/compile_commands.json
 // RUN: echo "]" >> %T/compile_commands.json
 
+// RUN: sed -i  '3,5s/\\/\//g'  %T/compile_commands.json
+// RUN: sed -i  '8,10s/\\/\//g'  %T/compile_commands.json
+// RUN: sed -i  '13,15s/\\/\//g'  %T/compile_commands.json
+// RUN: sed -i  '18,20s/\\/\//g'  %T/compile_commands.json
+// RUN: sed -i  '23,25s/\\/\//g'  %T/compile_commands.json
+// RUN: sed -i  '28,30s/\\/\//g'  %T/compile_commands.json
+// RUN: sed -i  '33,35s/\\/\//g'  %T/compile_commands.json
+// RUN: sed -i  '38,40s/\\/\//g'  %T/compile_commands.json
+
 // RUN: dpct -process-all -in-root=%S -out-root=%T -p=%T --cuda-include-path="%cuda-path/include"
 
 // RUN: FileCheck %S/t.cpp --match-full-lines --input-file %T/t.cpp

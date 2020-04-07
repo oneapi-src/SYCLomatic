@@ -1,3 +1,4 @@
+// UNSUPPORTED: -windows-
 // RUN: echo "[" > %T/compile_commands.json
 // RUN: echo "    {" >> %T/compile_commands.json
 // RUN: echo "        \"command\": \"nvcc %S/main.cu\"," >> %T/compile_commands.json
@@ -9,7 +10,7 @@
 // RUN: echo "        \"directory\": \"%T\"," >> %T/compile_commands.json
 // RUN: echo "        \"file\": \"%S/bar/util.gpu\"" >> %T/compile_commands.json
 // RUN: echo "    }" >> %T/compile_commands.json
-// RUN: echo "]\n" >> %T/compile_commands.json
+// RUN: echo "]" >> %T/compile_commands.json
 
 // RUN: dpct --format-range=none --cuda-include-path="%cuda-path/include" -in-root=%S -out-root=%T -p=%T %s %S/bar/util.gpu  --sycl-named-lambda -extra-arg="-I%S/bar" 
 // RUN: FileCheck %s --match-full-lines --input-file %T/main.dp.cpp
