@@ -41,7 +41,7 @@
 // RUN: echo "    }" >> %T/compile_commands.json
 // RUN: echo "]" >> %T/compile_commands.json
 
-// RUN: dpct -process-all -in-root=%S -out-root=%T -p=%T
+// RUN: dpct -process-all -in-root=%S -out-root=%T -p=%T --cuda-include-path="%cuda-path/include"
 
 // RUN: FileCheck %S/t.cpp --match-full-lines --input-file %T/t.cpp
 // RUN: FileCheck %S/t2.cpp --match-full-lines --input-file %T/t2.cpp
