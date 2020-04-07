@@ -314,8 +314,8 @@ void bar4(){
 
 void bar5(){
 //CHECK:/*
-//CHECK-NEXT:DPCT1036:{{[0-9]+}}: Type curandGenerator_t was not migrated, because the migration
-//CHECK-NEXT:depends on the second argument of curandCreateGenerator.
+//CHECK-NEXT:DPCT1036:{{[0-9]+}}: The type curandGenerator_t was not migrated, because the
+//CHECK-NEXT:migration depends on the second argument of curandCreateGenerator.
 //CHECK-NEXT:*/
 //CHECK-NEXT:curandGenerator_t rng;
 //CHECK-NEXT:/*

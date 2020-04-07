@@ -14,11 +14,11 @@
 //CHECK-NEXT:#include <dpct/dpct.hpp>
 //CHECK-NEXT:#include <cstdio>
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Try to rewrite this code using Intel(R) oneAPI Deep Neural Network Library (oneDNN) with DPC++.
+//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Deep Neural Network Library (oneDNN) with DPC++.
 //CHECK-NEXT:*/
 //CHECK-NEXT:#include <cudnn_test.h>
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Try to rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
+//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
 //CHECK-NEXT:*/
 //CHECK-NEXT:#include <nccl_test.h>
 #include <cstdio>
@@ -28,53 +28,53 @@
 
 int main() {
 //CHECK:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Try to rewrite this code using Intel(R) oneAPI Deep Neural Network Library (oneDNN) with DPC++.
+//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Deep Neural Network Library (oneDNN) with DPC++.
 //CHECK-NEXT:*/
 //CHECK-NEXT:int a1 = cudnnAAA();
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Try to rewrite this code using Intel(R) oneAPI Deep Neural Network Library (oneDNN) with DPC++.
+//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Deep Neural Network Library (oneDNN) with DPC++.
 //CHECK-NEXT:*/
 //CHECK-NEXT:cudnnFooType b1;
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Try to rewrite this code using Intel(R) oneAPI Deep Neural Network Library (oneDNN) with DPC++.
+//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Deep Neural Network Library (oneDNN) with DPC++.
 //CHECK-NEXT:*/
 //CHECK-NEXT:cudnnFooEnum c1;
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Try to rewrite this code using Intel(R) oneAPI Deep Neural Network Library (oneDNN) with DPC++.
+//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Deep Neural Network Library (oneDNN) with DPC++.
 //CHECK-NEXT:*/
 //CHECK-NEXT:if(b1 == CUDNN_FOO_VAL){
 //CHECK-NEXT:}
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Try to rewrite this code using Intel(R) oneAPI Deep Neural Network Library (oneDNN) with DPC++.
+//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Deep Neural Network Library (oneDNN) with DPC++.
 //CHECK-NEXT:*/
 //CHECK-NEXT:cudnnCLASS d1;
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Try to rewrite this code using Intel(R) oneAPI Deep Neural Network Library (oneDNN) with DPC++.
+//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Deep Neural Network Library (oneDNN) with DPC++.
 //CHECK-NEXT:*/
 //CHECK-NEXT:cudnnTemplateCLASS<double> e1;
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Try to rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
+//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
 //CHECK-NEXT:*/
 //CHECK-NEXT:ncclAAA();
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Try to rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
+//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
 //CHECK-NEXT:*/
 //CHECK-NEXT:ncclFooType b2;
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Try to rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
+//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
 //CHECK-NEXT:*/
 //CHECK-NEXT:ncclFooEnum c2;
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Try to rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
+//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
 //CHECK-NEXT:*/
 //CHECK-NEXT:if(b2 == NCCL_FOO_VAL){
 //CHECK-NEXT:}
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Try to rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
+//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
 //CHECK-NEXT:*/
 //CHECK-NEXT:ncclCLASS d2;
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Try to rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
+//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
 //CHECK-NEXT:*/
 //CHECK-NEXT:ncclTemplateCLASS<float> e2;
 

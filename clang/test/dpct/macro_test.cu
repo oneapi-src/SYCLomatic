@@ -159,7 +159,8 @@ MACRO_KC
 //CHECK-NEXT:   });
 //CHECK-NEXT:   /*
 //CHECK-NEXT:   DPCT1038:0: When the kernel function name is used as a macro argument, the
-//CHECK-NEXT:   migration result may be incorrect. Verify the definition of the macro.
+//CHECK-NEXT:   migration result may be incorrect. You need to verify the definition of the
+//CHECK-NEXT:   macro.
 //CHECK-NEXT:   */
 //CHECK-NEXT:   HARD_KC(foo3, sycl::range<3>(3, 1, 1), sycl::range<3>(2, 1, 1), 1, 0)
 #define HARD_KC(NAME,a,b,c,d) NAME<<<a,b,0>>>(c,d);
