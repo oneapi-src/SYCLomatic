@@ -43,6 +43,35 @@ template <typename T> struct DataType<cl::sycl::vec<T, 2>> {
   using T2 = std::complex<T>;
 };
 
+inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
+                            int from_ld, int rows, int cols, int elem_size,
+                            memcpy_direction direction = automatic,
+                            cl::sycl::queue &queue = dpct::get_default_queue(),
+                            bool async = false) {
+  if (to_ptr == from_ptr && to_ld == from_ld) {
+    return;
+  }
+
+  if (to_ld == from_ld) {
+    size_t cpoy_size = elem_size * ((cols - 1) * to_ld + rows);
+    if (async)
+      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
+                          cpoy_size, direction);
+    else
+      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
+                          cpoy_size, direction).wait();
+  } else {
+    if (async)
+      detail::dpct_memcpy(queue, to_ptr, from_ptr, elem_size * to_ld,
+                          elem_size * from_ld, elem_size * rows, cols,
+                          direction);
+    else
+      cl::sycl::event::wait(detail::dpct_memcpy(
+          queue, to_ptr, from_ptr, elem_size * to_ld, elem_size * from_ld,
+          elem_size * rows, cols, direction));
+  }
+}
+
 /// Copy matrix data. The default leading dimension is column.
 /// \param [out] to_ptr A poniter points to the destination location.
 /// \param [in] from_ptr A poniter points to the source location.
@@ -52,24 +81,19 @@ template <typename T> struct DataType<cl::sycl::vec<T, 2>> {
 /// \param [in] cols The number of columns of the source matrix.
 /// \param [in] direction The direction of the data copy.
 /// \param [in] queue The queue where the routine should be executed.
+/// \param [in] async If this argument is true, the return of the function
+/// does NOT guarantee the copy is completed.
 template <typename T>
 inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
                             int from_ld, int rows, int cols,
-                            memcpy_direction direction, cl::sycl::queue &queue) {
+                            memcpy_direction direction = automatic,
+                            cl::sycl::queue &queue = dpct::get_default_queue(),
+                            bool async = false) {
   using Ty = typename DataType<T>::T2;
-  if (to_ptr == from_ptr && to_ld == from_ld) {
-    return;
-  }
-  if (to_ld == from_ld) {
-    detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
-                        sizeof(Ty) * to_ld * cols, direction)
-        .wait();
-  } else {
-    cl::sycl::event::wait(detail::dpct_memcpy(queue, to_ptr, from_ptr, to_ld,
-                                              from_ld, sizeof(Ty) * rows, cols,
-                                              direction));
-  }
+  matrix_mem_copy((void *)to_ptr, (void *)from_ptr, to_ld, from_ld, rows, cols,
+                  sizeof(Ty), direction, queue, async);
 }
+
 
 } // namespace dpct
 

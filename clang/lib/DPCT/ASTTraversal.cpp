@@ -4804,23 +4804,12 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cublasGetVectorAsync") {
     if (HasDeviceAttr) {
       report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
-             MapNames::ITFName.at(FuncName), "dpct::dpct_memcpy");
+             MapNames::ITFName.at(FuncName), "dpct::matrix_mem_copy");
       return;
     }
-    // The 4th and 6th param (incx and incy) of blas Set/get Vector
-    // specify the space between two consequent elements when stored.
-    // We migrate the original code when incx and incy both equal to 1 (all
-    // elements are stored consequently).
-    // Otherwise, the codes are kept originally.
+
     std::vector<std::string> ParamsStrsVec =
         getParamsAsStrs(CE, *(Result.Context));
-    // CopySize equals to n*elemSize*incx
-    // incx(incy) equals to 1 means elements of x(y) are stored continuously
-    std::string CopySize = getExprString(CE->getArg(0), true) + "*" +
-                           getExprString(CE->getArg(1), true) + "*" +
-                           getExprString(CE->getArg(3), true);
-    std::string XStr = "(void*)" + getExprString(CE->getArg(2), true);
-    std::string YStr = "(void*)" + getExprString(CE->getArg(4), true);
     const Expr *IncxExpr = CE->getArg(3);
     const Expr *IncyExpr = CE->getArg(5);
     Expr::EvalResult IncxExprResult, IncyExprResult;
@@ -4832,14 +4821,11 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       std::string IncyStr =
           IncyExprResult.Val.getAsString(*Result.Context, IncyExpr->getType());
       if (IncxStr != IncyStr) {
-        // Keep original code, give a comment to let user migrate code manually
-        report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
+        report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
                false, MapNames::ITFName.at(FuncName),
                "parameter " + ParamsStrsVec[3] +
                    " does not equal to parameter " + ParamsStrsVec[5]);
-        return;
-      }
-      if ((IncxStr == IncyStr) && (IncxStr != "1")) {
+      } else if ((IncxStr == IncyStr) && (IncxStr != "1")) {
         // incx equals to incy, but does not equal to 1. Performance issue may
         // occur.
         report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
@@ -4848,32 +4834,31 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
                    ParamsStrsVec[5] + " but greater than 1");
       }
     } else {
-      // Keep original code, give a comment to let user migrate code manually
-      report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-             false, MapNames::ITFName.at(FuncName),
+      report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE, false,
+             MapNames::ITFName.at(FuncName),
              "parameter(s) " + ParamsStrsVec[3] + " and/or " +
                  ParamsStrsVec[5] + " could not be evaluated");
-      return;
     }
 
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
-      // TODO: Currently, all 4 APIs are migrated to the sync version regardless
-      // it is sync or async in origin code.
-      std::string Replacement = "dpct::get_default_queue().memcpy(" +
-                                ParamsStrsVec[4] + ", " + ParamsStrsVec[2] +
-                                ", " + CopySize + ").wait()";
-      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    std::string XStr = "(void*)" + getExprString(CE->getArg(2), true);
+    std::string YStr = "(void*)" + getExprString(CE->getArg(4), true);
+    std::string IncX = getExprString(CE->getArg(3), false);
+    std::string IncY = getExprString(CE->getArg(5), false);
+    std::string ElemSize = getExprString(CE->getArg(1), false);
+    std::string ElemNum = getExprString(CE->getArg(0), false);
+
+    std::string Replacement = "(" + YStr + ", " + XStr + ", " + IncY + ", " +
+                              IncX + ", 1, " + ElemNum + ", " + ElemSize;
+
+    if (FuncName == "cublasGetVector" || FuncName == "cublasSetVector") {
+      Replacement = "dpct::matrix_mem_copy" + Replacement + ")";
     } else {
-      std::string Replacement =
-          "dpct::dpct_memcpy(" + YStr + ", " + XStr + ", " + CopySize + ", ";
-      if (FuncName == "cublasGetVector" || FuncName == "cublasGetVectorAsync") {
-        Replacement = Replacement + "dpct::device_to_host)";
-      }
-      if (FuncName == "cublasSetVector" || FuncName == "cublasSetVectorAsync") {
-        Replacement = Replacement + "dpct::host_to_device)";
-      }
-      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+      ExprAnalysis EA;
+      EA.analyze(CE->getArg(6));
+      Replacement = "dpct::matrix_mem_copy" + Replacement +
+                    ", dpct::automatic, *" + EA.getReplacedString() + ", true)";
     }
+    emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
 
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
@@ -4884,17 +4869,12 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              FuncName == "cublasGetMatrixAsync") {
     if (HasDeviceAttr) {
       report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
-             MapNames::ITFName.at(FuncName), "dpct::dpct_memcpy");
+             MapNames::ITFName.at(FuncName), "dpct::matrix_mem_copy");
       return;
     }
+
     std::vector<std::string> ParamsStrsVec =
         getParamsAsStrs(CE, *(Result.Context));
-    // CopySize equals to lda*cols*elemSize
-    std::string CopySize = getExprString(CE->getArg(4), true) + "*" +
-                           getExprString(CE->getArg(1), true) + "*" +
-                           getExprString(CE->getArg(2), true);
-    std::string AStr = "(void*)" + getExprString(CE->getArg(3), true);
-    std::string BStr = "(void*)" + getExprString(CE->getArg(5), true);
 
     const Expr *LdaExpr = CE->getArg(4);
     const Expr *LdbExpr = CE->getArg(6);
@@ -4906,62 +4886,60 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
       std::string LdbStr =
           LdbExprResult.Val.getAsString(*Result.Context, LdbExpr->getType());
       if (LdaStr != LdbStr) {
-        // Keep original code, give a comment to let user migrate code manually
-        report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
+        report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
                false, MapNames::ITFName.at(FuncName),
                "parameter " + ParamsStrsVec[4] +
                    " does not equal to parameter " + ParamsStrsVec[6]);
-        return;
-      }
-
-      const Expr *RowsExpr = CE->getArg(0);
-      Expr::EvalResult RowsExprResult;
-      if (RowsExpr->EvaluateAsInt(RowsExprResult, *Result.Context)) {
-        std::string RowsStr = RowsExprResult.Val.getAsString(
-            *Result.Context, RowsExpr->getType());
-        if (std::stoi(LdaStr) > std::stoi(RowsStr)) {
-          // lda > rows. Performance issue may occur.
-          report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
-                 false, MapNames::ITFName.at(FuncName),
-                 "parameter " + ParamsStrsVec[0] +
-                     " is smaller than parameter " + ParamsStrsVec[4]);
-        }
       } else {
-        // rows cannot be evaluated. Performance issue may occur.
-        report(
-            CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE, false,
-            MapNames::ITFName.at(FuncName),
-            "parameter " + ParamsStrsVec[0] +
-                " could not be evaluated and may be smaller than parameter " +
-                ParamsStrsVec[4]);
+        const Expr *RowsExpr = CE->getArg(0);
+        Expr::EvalResult RowsExprResult;
+        if (RowsExpr->EvaluateAsInt(RowsExprResult, *Result.Context)) {
+          std::string RowsStr = RowsExprResult.Val.getAsString(
+              *Result.Context, RowsExpr->getType());
+          if (std::stoi(LdaStr) > std::stoi(RowsStr)) {
+            // lda > rows. Performance issue may occur.
+            report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
+                   false, MapNames::ITFName.at(FuncName),
+                   "parameter " + ParamsStrsVec[0] +
+                       " is smaller than parameter " + ParamsStrsVec[4]);
+          }
+        } else {
+          // rows cannot be evaluated. Performance issue may occur.
+          report(
+              CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE, false,
+              MapNames::ITFName.at(FuncName),
+              "parameter " + ParamsStrsVec[0] +
+                  " could not be evaluated and may be smaller than parameter " +
+                  ParamsStrsVec[4]);
+        }
       }
     } else {
-      // Keep original code, give a comment to let user migrate code manually
-      report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETERS_VALUE,
-             false, MapNames::ITFName.at(FuncName),
+      report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE, false,
+             MapNames::ITFName.at(FuncName),
              "parameter(s) " + ParamsStrsVec[4] + " and/or " +
                  ParamsStrsVec[6] + " could not be evaluated");
-      return;
     }
 
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted) {
-      // TODO: Currently, all 4 APIs are migrated to the sync version regardless
-      // it is sync or async in origin code.
-      std::string Replacement = "dpct::get_default_queue().memcpy(" +
-                                ParamsStrsVec[5] + ", " + ParamsStrsVec[3] +
-                                ", " + CopySize + ").wait()";
-      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    std::string AStr = "(void*)" + getExprString(CE->getArg(3), true);
+    std::string BStr = "(void*)" + getExprString(CE->getArg(5), true);
+    std::string LdA = getExprString(CE->getArg(4), false);
+    std::string LdB = getExprString(CE->getArg(6), false);
+    std::string Rows = getExprString(CE->getArg(0), false);
+    std::string Cols = getExprString(CE->getArg(1), false);
+    std::string ElemSize = getExprString(CE->getArg(2), false);
+
+    std::string Replacement = "(" + BStr + ", " + AStr + ", " + LdB + ", " +
+                              LdA + ", " + Rows + ", " + Cols + ", " + ElemSize;
+
+    if (FuncName == "cublasGetMatrix" || FuncName == "cublasSetMatrix") {
+      Replacement = "dpct::matrix_mem_copy" + Replacement + ")";
     } else {
-      std::string Replacement =
-          "dpct::dpct_memcpy(" + BStr + ", " + AStr + ", " + CopySize + ", ";
-      if (FuncName == "cublasGetMatrix" || FuncName == "cublasGetMatrixAsync") {
-        Replacement = Replacement + "dpct::device_to_host)";
-      }
-      if (FuncName == "cublasSetMatrix" || FuncName == "cublasSetMatrixAsync") {
-        Replacement = Replacement + "dpct::host_to_device)";
-      }
-      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+      ExprAnalysis EA;
+      EA.analyze(CE->getArg(7));
+      Replacement = "dpct::matrix_mem_copy" + Replacement +
+                    ", dpct::automatic, *" + EA.getReplacedString() + ", true)";
     }
+    emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
 
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
