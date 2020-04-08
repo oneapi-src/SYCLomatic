@@ -125,19 +125,29 @@ void foobar() {
   unsigned int flags;
   cudaArray_t array;
 
-  // CHECK: array->get_info(desc, extent, flags);
+  // CHECK: desc = array->get_channel();
+  // CHECK: extent = array->get_range();
+  // CHECK: flags = 0;
   cudaArrayGetInfo(&desc, &extent, &flags, array);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: checkError((array->get_info(desc, extent, flags), 0));
+  // CHECK-NEXT: checkError(([&](){
+  // CHECK-NEXT:   desc = array->get_channel();
+  // CHECK-NEXT:   extent = array->get_range();
+  // CHECK-NEXT:   flags = 0;
+  // CHECK-NEXT:   }(), 0));
   checkError(cudaArrayGetInfo(&desc, &extent, &flags, array));
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: errorCode = (array->get_info(desc, extent, flags), 0);
+  // CHECK-NEXT: errorCode = ([&](){
+  // CHECK-NEXT:   desc = array->get_channel();
+  // CHECK-NEXT:   extent = array->get_range();
+  // CHECK-NEXT:   flags = 0;
+  // CHECK-NEXT:   }(), 0);
   errorCode = cudaArrayGetInfo(&desc, &extent, &flags, array);
 
   int host;

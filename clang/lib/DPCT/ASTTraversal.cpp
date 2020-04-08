@@ -7439,14 +7439,17 @@ void MemoryMigrationRule::cudaArrayGetInfo(const MatchFinder::MatchResult &Resul
                                            const UnresolvedLookupExpr *ULExpr,
                                            bool IsAssigned,
                                            std::string SpecifiedQueue) {
+  std::string IndentStr = getIndent(C->getBeginLoc(), *Result.SourceManager).str();
+  if (IsAssigned)
+    IndentStr += "  ";
   std::ostringstream OS;
-  OS << ExprAnalysis::ref(C->getArg(3)) << "->get_info(";
+  std::string Arg3Str = ExprAnalysis::ref(C->getArg(3));
   printDerefOp(OS, C->getArg(0));
-  OS << ", ";
+  OS << " = " << Arg3Str << "->get_channel();" << getNL() << IndentStr;
   printDerefOp(OS, C->getArg(1));
-  OS << ", ";
+  OS << " = " << Arg3Str << "->get_range();" << getNL() << IndentStr;
   printDerefOp(OS, C->getArg(2));
-  OS << ")";
+  OS << " = 0";
   emplaceTransformation(new ReplaceStmt(C, OS.str()));
 }
 
@@ -7602,13 +7605,26 @@ void MemoryMigrationRule::run(const MatchFinder::MatchResult &Result) {
     // if API is removed, then no need to add (*, 0)
     // Currently, there are only cudaHostRegister and cudaHostUnregister
     if (IsAssigned && Name.compare("cudaHostRegister") &&
-        Name.compare("cudaHostUnregister") && Name.compare("cudaMemAdvise")) {
+        Name.compare("cudaHostUnregister") && Name.compare("cudaMemAdvise") &&
+        Name.compare("cudaArrayGetInfo")) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       insertAroundStmt(C, "(", ", 0)");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
                USMLevel != UsmLevel::none) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       insertAroundStmt(C, "(", ", 0)");
+    } else if (IsAssigned && !Name.compare("cudaArrayGetInfo")) {
+      report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+      std::string IndentStr = getIndent(C->getBeginLoc(), *Result.SourceManager).str();
+      IndentStr += "  ";
+      std::string PreStr{"([&](){"};
+      PreStr += getNL();
+      PreStr += IndentStr;
+      std::string PostStr{";"};
+      PostStr += getNL();
+      PostStr += IndentStr;
+      PostStr += "}(), 0)";
+      insertAroundStmt(C, std::move(PreStr), std::move(PostStr));
     }
   };
   MigrateCallExpr(getAssistNodeAsType<CallExpr>(Result, "call"),

@@ -179,19 +179,15 @@ public:
   }
   /// Get channel info.
   inline image_channel get_channel() { return _channel; }
+  /// Get range of the image.
+  cl::sycl::range<3> get_range() {
+    return cl::sycl::range<3>(_range[0], _range[1], _range[2]);
+  }
   /// Get matrix dims.
   inline int get_dims() { return _dims; }
   /// Convert to pitched data.
   pitched_data to_pitched_data() {
     return pitched_data(_src, _range[0], _range[0], _range[1]);
-  }
-
-  /// Get the info of the image
-  void get_info(image_channel &channel, cl::sycl::range<3> &range,
-                unsigned int &flags) {
-    channel = _channel;
-    range = cl::sycl::range<3>(_range[0], _range[1], _range[2]);
-    flags = 0;
   }
 
   ~image_matrix() { free(); }
