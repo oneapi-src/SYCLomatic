@@ -610,11 +610,12 @@ int ClangTool::run(ToolAction *Action) {
       // In Microsoft Visual Studio Project, CUDA file in <None> is not part of
       // the build project, So if "*.cu" files is found in <None> node, just
       // skip it and give a warning message.
+      extern std::string VcxprojFilePath;
       if ((!CommandLine.empty() && CommandLine[0] == "None") &&
           llvm::sys::path::extension(File) == ".cu") {
         const std::string Msg =
             "warning: " + File.str() +
-            " was found in <None> node in proj_c.vcxproj and skipped; to "
+            " was found in <None> node in " + VcxprojFilePath + " and skipped; to "
             "migrate specify CUDA* Item Type for this file in project and try "
             "again.\n";
         DoPrintHandler(Msg, false);

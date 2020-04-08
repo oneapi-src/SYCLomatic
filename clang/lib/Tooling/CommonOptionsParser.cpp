@@ -53,6 +53,9 @@ const char *const CommonOptionsParser::HelpMessage =
     "\n";
 
 #ifdef INTEL_CUSTOMIZATION
+#ifdef _WIN32
+std::string VcxprojFilePath;
+#endif
 namespace clang {
 namespace tooling {
 static std::string FormatSearchPath = "";
@@ -120,7 +123,7 @@ llvm::Error CommonOptionsParser::init(
       cl::Positional, cl::desc("[<source0> ... <sourceN>]"), llvm::cl::ZeroOrMore,
       cl::cat(Category), cl::sub(*cl::AllSubCommands));
 #ifdef _WIN32
- static cl::opt<std::string>
+  static cl::opt<std::string>
     VcxprojFile("vcxprojfile",
                 cl::desc("The file path of vcxproj."),
                 cl::value_desc("file"),
@@ -194,6 +197,7 @@ llvm::Error CommonOptionsParser::init(
   DatabaseStatus ErrCode =
       CannotFindDatabase; // map to MigrationErrorCannotFindDatabase in DPCT
 #if _WIN32
+  VcxprojFilePath = VcxprojFile;
   // In Windows, the option "-p" and "-vcxproj" are mutually exclusive, user can
   // only give one of them. If both of them exist, dpct will exit with
   // -1 (.i.e MigrationError).

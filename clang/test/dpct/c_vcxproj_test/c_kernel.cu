@@ -2,10 +2,7 @@
 // RUN: cat %S/proj_c.vcxproj > %T/proj_c.vcxproj
 // RUN: cd %T
 
-// FAKE-FILE-STDERR: warning: {{(.+)}}
-
-// RUN: dpct --format-range=none  --vcxprojfile=%T/proj_c.vcxproj  -in-root=%S -out-root=%T  %s %S/CuTmp_1.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only \
-// RUN: | FileCheck -check-prefix=FAKE-FILE-STDERR -allow-empty %s
+// RUN: dpct --format-range=none  --vcxprojfile=%T/proj_c.vcxproj  -in-root=%S -out-root=%T  %s %S/CuTmp_1.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 
 // RUN: cat %S/CuTmp_1.cu > %T/CuTmp_1.dp.cpp
 // RUN: cat %S/check_compilation_ref.txt  >%T/check_compilation_db.txt
