@@ -6260,18 +6260,30 @@ REGISTER_RULE(KernelCallRule)
 void DeviceFunctionCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       callExpr(hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
-                                              hasAttr(attr::CUDAGlobal)),
-                                        unless(hasAttr(attr::CUDAHost)))
-                               .bind("funcDecl")),
-               anyOf(callee(functionDecl(hasName("printf")).bind("printf")),
-                     anything()))
+                                              hasAttr(attr::CUDAGlobal)))
+                               .bind("funcDecl")))
           .bind("callExpr"),
       this);
 
   MF.addMatcher(
-      functionDecl(anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)),
-                   unless(hasAttr(attr::CUDAHost)))
+      functionDecl(anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))
           .bind("funcDecl"),
+      this);
+
+  MF.addMatcher(
+      callExpr(hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
+                                              hasAttr(attr::CUDAGlobal)),
+                                        unless(hasAttr(attr::CUDAHost)))
+                               .bind("PrintfInfuncDecl")),
+               callee(functionDecl(hasName("printf"))))
+          .bind("PrintfExpr"),
+      this);
+
+  MF.addMatcher(
+      callExpr(hasAncestor(functionDecl(hasAttr(attr::CUDADevice),
+                                        hasAttr(attr::CUDAHost))),
+               callee(functionDecl(hasName("printf"))))
+          .bind("PrintfExprForReport"),
       this);
 }
 
@@ -6283,21 +6295,30 @@ void DeviceFunctionCallRule::run(
     auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
     if (CE) {
       FuncInfo->addCallee(CE);
-      if (getAssistNodeAsType<FunctionDecl>(Result, "printf", false)) {
-        std::string ReplacedStmt;
-        llvm::raw_string_ostream OS(ReplacedStmt);
-        OS << DpctGlobalInfo::getStreamName() << " << ";
-        CE->getArg(0)->printPretty(OS, nullptr,
-                                   Result.Context->getPrintingPolicy());
-        emplaceTransformation(new ReplaceStmt(CE, std::move(OS.str())));
-        if (CE->getNumArgs() > 1 ||
-            CE->getArg(0)->IgnoreImplicitAsWritten()->getStmtClass() !=
-                Stmt::StringLiteralClass)
-          report(CE->getBeginLoc(), Warnings::PRINTF_FUNC_MIGRATION_WARNING,
-                 false);
-        FuncInfo->setStream();
-      }
     }
+  }
+
+  CE = getAssistNodeAsType<CallExpr>(Result, "PrintfExpr");
+  FD = getAssistNodeAsType<FunctionDecl>(Result, "PrintfInfuncDecl");
+  if (CE && FD) {
+    auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
+    std::string ReplacedStmt;
+    llvm::raw_string_ostream OS(ReplacedStmt);
+    OS << DpctGlobalInfo::getStreamName() << " << ";
+    CE->getArg(0)->printPretty(OS, nullptr,
+                                Result.Context->getPrintingPolicy());
+    emplaceTransformation(new ReplaceStmt(CE, std::move(OS.str())));
+    if (CE->getNumArgs() > 1 ||
+        CE->getArg(0)->IgnoreImplicitAsWritten()->getStmtClass() !=
+            Stmt::StringLiteralClass)
+      report(CE->getBeginLoc(), Warnings::PRINTF_FUNC_MIGRATION_WARNING,
+              false);
+    FuncInfo->setStream();
+  }
+
+  CE = getAssistNodeAsType<CallExpr>(Result, "PrintfExprForReport");
+  if(CE) {
+    report(CE->getBeginLoc(), Warnings::PRINTF_FUNC_NOT_SUPPORT, false);
   }
 }
 

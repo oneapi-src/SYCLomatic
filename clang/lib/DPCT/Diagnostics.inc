@@ -96,3 +96,5 @@ DEF_WARNING(KERNEL_CALLEE_MACRO_ARG, 1038, "When the kernel function name is use
 DEF_COMMENT(KERNEL_CALLEE_MACRO_ARG, 1038, "When the kernel function name is used as a macro argument, the migration result may be incorrect. You need to verify the definition of the macro.")
 DEF_WARNING(SHARE_MEMORY_ATTR_DEDUCE, 1039, "The generated code assumes that \"%0\" points to the global memory address space. If it points to a local memory address space, replace \"%1\" with \"%2\".")
 DEF_COMMENT(SHARE_MEMORY_ATTR_DEDUCE, 1039, "The generated code assumes that \"{0}\" points to the global memory address space. If it points to a local memory address space, replace \"{1}\" with \"{2}\".")
+DEF_WARNING(PRINTF_FUNC_NOT_SUPPORT, 1040, "Use \"sycl::stream\" instead of \"printf\", if this code is used from device.")
+DEF_COMMENT(PRINTF_FUNC_NOT_SUPPORT, 1040, "Use \"sycl::stream\" instead of \"printf\", if this code is used from device.")

@@ -1,0 +1,19 @@
+#include <cuda_runtime.h>
+#include "util_bar.hh"
+
+// CHECK:#include "util.gpuhead"
+#include "util.gpuhead"
+
+// CHECK:SYCL_EXTERNAL void kernel_util(int *a, int *b) {
+__global__ void kernel_util(int *a, int *b) {
+}
+
+// CHECK:SYCL_EXTERNAL void foo_util(){
+__host__ __device__ void foo_util(){
+  FooQueue SQ;
+  FooQueue *p = &SQ;
+  p->push(1,1);
+
+  TopFooConf* monteCarlo;
+  monteCarlo->fooData->_isotopes[0]._species[0]._reactions[0].fooCollision();
+}

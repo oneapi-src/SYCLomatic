@@ -94,10 +94,13 @@ void DpctFileInfo::buildReplacements() {
     RandomEngine.second->buildInfo();
 }
 
-void DpctFileInfo::emplaceReplacements(tooling::Replacements &ReplSet) {
+void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {
+  if(!isInRoot())
+    return;
   for (auto &D : FuncMap)
     D.second->emplaceReplacement();
-  Repls.emplaceIntoReplSet(ReplSet);
+  if(!Repls.empty())
+    Repls.emplaceIntoReplSet(ReplSet[FilePath]);
 }
 
 void DpctGlobalInfo::insertCudaMalloc(const CallExpr *CE) {
@@ -511,12 +514,16 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
     } else {
       // if some params have default value, set ExtraArgLoc to the location
       // before the comma
-      auto &SM = DpctGlobalInfo::getSourceManager();
-      auto TokenLoc = Lexer::getLocForEndOfToken(
-          SM.getSpellingLoc(
-              CE->getArg(FuncInfo->NonDefaultParamNum - 1)->getEndLoc()),
-          0, SM, DpctGlobalInfo::getContext().getLangOpts());
-      ExtraArgLoc = DpctGlobalInfo::getSourceManager().getFileOffset(TokenLoc);
+      if(CE->getNumArgs() > FuncInfo->NonDefaultParamNum - 1) {
+        auto &SM = DpctGlobalInfo::getSourceManager();
+        auto TokenLoc = Lexer::getLocForEndOfToken(
+            SM.getSpellingLoc(
+                CE->getArg(FuncInfo->NonDefaultParamNum - 1)->getEndLoc()),
+            0, SM, DpctGlobalInfo::getContext().getLangOpts());
+        ExtraArgLoc = DpctGlobalInfo::getSourceManager().getFileOffset(TokenLoc);
+      } else {
+        ExtraArgLoc = 0;
+      }
     }
   }
 }

@@ -126,6 +126,7 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
 #ifdef INTEL_CUSTOMIZATION
   if (Entry) {
     llvm::SmallString<512> FilePathAbs(Entry->getName());
+    llvm::sys::path::native(FilePathAbs);
     Sources.getFileManager().makeAbsolutePath(FilePathAbs);
     this->FilePath = std::string(FilePathAbs.str());
   } else {

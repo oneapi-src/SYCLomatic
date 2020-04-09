@@ -134,13 +134,12 @@ public:
     return insertObject(getMap<Obj>(), Offset, FilePath, N);
   }
   inline const std::string &getFilePath() { return FilePath; }
-  inline bool hasReplacements() { return isInRoot() && !Repls.empty(); }
 
   // Build kernel and device function declaration replacements and store them.
   void buildReplacements();
 
   // Emplace stored replacements into replacement set.
-  void emplaceReplacements(tooling::Replacements &ReplSet /*out*/);
+  void emplaceReplacements(ReplTy &ReplSet /*out*/);
 
   inline void addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     insertHeader(SYCL);
@@ -719,8 +718,7 @@ public:
   // Emplace stored replacements into replacement set.
   void emplaceReplacements(ReplTy &ReplSets /*out*/) {
     for (auto &File : FileMap)
-      if (File.second->hasReplacements())
-        File.second->emplaceReplacements(ReplSets[File.first]);
+      File.second->emplaceReplacements(ReplSets);
   }
 
   void insertCudaMalloc(const CallExpr *CE);
@@ -820,6 +818,9 @@ private:
   }
   static inline SourceLocation getLocation(const FieldDecl *FD) {
     return FD->getLocation();
+  }
+  static inline SourceLocation getLocation(const CallExpr *CE) {
+    return CE->getEndLoc();
   }
   // The result will be also stored in KernelCallExpr.BeginLoc
   static inline SourceLocation getLocation(const CUDAKernelCallExpr *CKC) {
