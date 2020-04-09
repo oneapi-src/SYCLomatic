@@ -16,6 +16,8 @@ void func(int i) {}
 template <typename T>
 void funcT(T t) {}
 
+// CHECK: dpct::image<int, 4> tex_no_ref;
+static texture<int, 4> tex_no_ref;
 // CHECK: dpct::image<sycl::float4, 2> tex42;
 static texture<float4, 2> tex42;
 // CHECK: dpct::image<sycl::uint2, 1> tex21;

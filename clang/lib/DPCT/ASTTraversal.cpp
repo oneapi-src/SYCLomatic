@@ -8356,18 +8356,17 @@ const BinaryOperator *TextureRule::getAssignedBO(const Expr *E,
 }
 
 void TextureRule::registerMatcher(MatchFinder &MF) {
+  auto DeclMatcher = varDecl(hasType(templateSpecializationType(
+      hasDeclaration(classTemplateSpecializationDecl(hasName("texture"))))));
+  // Match texture object's declaration
+  MF.addMatcher(DeclMatcher.bind("texDecl"), this);
   MF.addMatcher(
       declRefExpr(
-          hasDeclaration(
-              varDecl(
-                  hasType(templateSpecializationType(hasDeclaration(
-                      classTemplateSpecializationDecl(hasName("texture"))))))
-                  .bind("texDecl")),
-          // Match texture object's declaration
+          hasDeclaration(DeclMatcher.bind("texDecl")),
           anyOf(hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
                                                hasAttr(attr::CUDAGlobal)))
                                 .bind("texFunc")),
-                // Match the __globla__/__device__ functions inside which
+                // Match the __global__/__device__ functions inside which
                 // texture object is referenced
                 anything()) // Make this matcher available whether it has
                             // ancestors as before
