@@ -16,10 +16,7 @@
 int main() {
   cublasStatus_t status;
   cublasHandle_t handle;
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasCreate was removed, because this call is
-  // CHECK-NEXT: redundant in DPC++.
-  // CHECK-NEXT: */
+  // CHECK: handle = dpct::get_current_device().create_queue();
   cublasCreate(&handle);
 
   int N = 275;
@@ -37,7 +34,7 @@ int main() {
   // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans,
+  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::nontrans,
   // CHECK-NEXT:                 mkl::transpose::nontrans, N, N, N, alpha_S,
   // CHECK-NEXT:                 d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S,
   // CHECK-NEXT:                 d_C_S_buf_ct{{[0-9]+}}, N);
@@ -56,7 +53,7 @@ int main() {
   // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans,
+  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::nontrans,
   // CHECK-NEXT:                 mkl::transpose::nontrans, N, N, N, alpha_S,
   // CHECK-NEXT:                 d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S,
   // CHECK-NEXT:                 d_C_S_buf_ct{{[0-9]+}}, N);
@@ -71,7 +68,7 @@ int main() {
   // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans,
+  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::nontrans,
   // CHECK-NEXT:                 mkl::transpose::nontrans, N, N, N, alpha_S,
   // CHECK-NEXT:                 d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S,
   // CHECK-NEXT:                 d_C_S_buf_ct{{[0-9]+}}, N);
@@ -90,7 +87,7 @@ int main() {
   // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
+  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
   // CHECK-NEXT:                 N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N,
   // CHECK-NEXT:                 beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: return 0;
@@ -110,7 +107,7 @@ int main() {
   // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
+  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
   // CHECK-NEXT:                 N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N,
   // CHECK-NEXT:                 beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: return 0;
@@ -127,7 +124,7 @@ int main() {
   // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
+  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
   // CHECK-NEXT:                 N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N,
   // CHECK-NEXT:                 beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: return 0;

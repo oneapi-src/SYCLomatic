@@ -578,8 +578,8 @@ void foo4(){
 // CHECK-NEXT:   {
 // CHECK-NEXT:   auto x_buf_ct1 = dpct::get_buffer<float>(x);
 // CHECK-NEXT:   sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
-// CHECK-NEXT:   mkl::blas::iamax(dpct::get_default_queue(), 10, x_buf_ct1, 0,
-// CHECK-NEXT:                    res_temp_buf_ct{{[0-9]+}});
+// CHECK-NEXT:   mkl::blas::iamax(*dpct::get_current_device().get_saved_queue(), 10,
+// CHECK-NEXT:                    x_buf_ct1, 0, res_temp_buf_ct{{[0-9]+}});
 // CHECK-NEXT:   res = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
 // CHECK-NEXT:   }
 // CHECK-NEXT: }

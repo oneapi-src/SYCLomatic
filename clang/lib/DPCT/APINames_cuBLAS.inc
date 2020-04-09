@@ -34,12 +34,12 @@
 *    Comment:      extra comment on the migration.
 *
 ****************************************************************************/
-ENTRY(cublasCreate, cublasCreate_v2, true, API_CALL_REMOVED, P4, "Successful: DPCT1026/DPCT1027")
-ENTRY(cublasDestroy, cublasDestroy_v2, true, API_CALL_REMOVED, P4, "Successful: DPCT1026/DPCT1027")
+ENTRY(cublasCreate, cublasCreate_v2, true, NO_FLAG, P4, "Successful")
+ENTRY(cublasDestroy, cublasDestroy_v2, true, NO_FLAG, P4, "Successful")
 ENTRY(cublasGetVersion, cublasGetVersion_v2, false, NO_FLAG, P4, "comment")
 ENTRY(cublasGetProperty, cublasGetProperty, false, NO_FLAG, P4, "comment")
-ENTRY(cublasSetStream, cublasSetStream_v2, false, NO_FLAG, P4, "comment")
-ENTRY(cublasGetStream, cublasGetStream_v2, false, NO_FLAG, P4, "comment")
+ENTRY(cublasSetStream, cublasSetStream_v2, true, NO_FLAG, P4, "Successful")
+ENTRY(cublasGetStream, cublasGetStream_v2, true, NO_FLAG, P4, "Successful")
 ENTRY(cublasGetPointerMode, cublasGetPointerMode_v2, false, NO_FLAG, P4, "comment")
 ENTRY(cublasSetPointerMode, cublasSetPointerMode_v2, false, NO_FLAG, P4, "comment")
 ENTRY(cublasSetVector, cublasSetVector, true, NO_FLAG, P4, "Successful: DPCT1016")
@@ -376,7 +376,7 @@ ENTRY(cublasGetError, cublasGetError, true, API_CALL_REMOVED, P4, "Successful: D
 ENTRY(cublasGetVersion, cublasGetVersion, false, NO_FLAG, P4, "comment")
 ENTRY(cublasAlloc, cublasAlloc, true, NO_FLAG, P4, "Successful")
 ENTRY(cublasFree, cublasFree, true, NO_FLAG, P4, "Successful")
-ENTRY(cublasSetKernelStream, cublasSetKernelStream, false, NO_FLAG, P4, "comment")
+ENTRY(cublasSetKernelStream, cublasSetKernelStream, true, NO_FLAG, P4, "Successful")
 ENTRY(cublasSnrm2, cublasSnrm2, true, NO_FLAG, P4, "Successful")
 ENTRY(cublasDnrm2, cublasDnrm2, true, NO_FLAG, P4, "Successful")
 ENTRY(cublasScnrm2, cublasScnrm2, true, NO_FLAG, P4, "Successful")

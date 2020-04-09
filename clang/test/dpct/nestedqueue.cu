@@ -57,12 +57,12 @@ __global__ void foo3(){
 }
 
 __host__ void foo4(){
-  // CHECK: sycl::queue handle(dpct::get_default_context(), dpct::get_current_device());
+  // CHECK: sycl::queue* handle;
   cublasHandle_t handle;
   int n=1;
   float* x_S=0;
   int incx=1;
   int* result =0;
-  // CHECK: mkl::blas::iamax(handle, n, x_S_buf_ct1, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK: mkl::blas::iamax(*handle, n, x_S_buf_ct1, incx, res_temp_buf_ct{{[0-9]+}});
   cublasIsamax(handle, n, x_S, incx, result);
 }

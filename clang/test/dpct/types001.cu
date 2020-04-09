@@ -360,8 +360,8 @@ int main(int argc, char **argv) {
   a = sizeof(event_st);
   a = sizeof event_st;
 
-  //CHECK:sycl::queue blashandle(dpct::get_default_context(), dpct::get_current_device());
-  //CHECK-NEXT:a = sizeof(sycl::queue);
+  //CHECK:sycl::queue *blashandle;
+  //CHECK-NEXT:a = sizeof(sycl::queue *);
   //CHECK-NEXT:a = sizeof(blashandle);
   //CHECK-NEXT:a = sizeof blashandle;
   cublasHandle_t blashandle;

@@ -702,7 +702,7 @@ public:
       ResultStr = ResultStr + ", " + CallExprArguReplVec[i];
     }
 
-    return FuncName + "(" + ResultStr + ")";
+    return FuncName + "(*" + ResultStr + ")";
   }
 
   std::string addIndirectionIfNecessary(const Expr *E) {

@@ -98,7 +98,7 @@ void MapNames::setClNamespace(bool Enable) {
       {"ushort2", ClNamespace + "::ushort2"},
       {"ushort3", ClNamespace + "::ushort3"},
       {"ushort4", ClNamespace + "::ushort4"},
-      {"cublasHandle_t", ClNamespace + "::queue"},
+      {"cublasHandle_t", ClNamespace + "::queue*"},
       {"cublasStatus_t", "int"},
       {"cublasStatus", "int"},
       {"cuComplex", ClNamespace + "::float2"},

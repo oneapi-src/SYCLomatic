@@ -1894,7 +1894,7 @@ void TypeInDeclRule::run(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    if ((TypeStr == "cublasHandle_t" || TypeStr == "cusolverDnHandle_t") &&
+    if ((TypeStr == "cusolverDnHandle_t") &&
         !IsInFieldDecl) {
       auto EndLoc = DD->getEndLoc();
       if (EndLoc.isMacroID()) {
@@ -3481,7 +3481,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasCreate_v2", "cublasDestroy_v2", "cublasSetVector",
         "cublasGetVector", "cublasSetVectorAsync", "cublasGetVectorAsync",
         "cublasSetMatrix", "cublasGetMatrix", "cublasSetMatrixAsync",
-        "cublasGetMatrixAsync",
+        "cublasGetMatrixAsync", "cublasSetStream_v2", "cublasGetStream_v2",
         /*Regular level 1*/
         "cublasIsamax_v2", "cublasIdamax_v2", "cublasIcamax_v2",
         "cublasIzamax_v2", "cublasIsamin_v2", "cublasIdamin_v2",
@@ -3535,6 +3535,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasZgeqrfBatched",
         /*Legacy API*/
         "cublasInit", "cublasShutdown", "cublasGetError",
+        "cublasSetKernelStream",
         /*level 1*/
         "cublasSnrm2", "cublasDnrm2", "cublasScnrm2", "cublasDznrm2",
         "cublasSdot", "cublasDdot", "cublasCdotu", "cublasCdotc", "cublasZdotu",
@@ -3964,7 +3965,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     PrefixInsertStr = PrefixInsertStr + "dpct::matrix_mem_copy(" + PtrCName +
                       ", " + CallExprArguReplVec[10] + ", " + Arg13Repl + ", " +
                       CallExprArguReplVec[11] + ", " + Arg5Repl + ", " +
-                      Arg6Repl + ", dpct::device_to_device, " +
+                      Arg6Repl + ", dpct::device_to_device, *" +
                       CallExprArguReplVec[0] + ");" + getNL() + IndentStr;
 
     // update the replacement of four enmu arguments
@@ -4165,6 +4166,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              MapNames::ITFName.at(FuncName), Replacement);
       return;
     }
+
     int ArgNum = CE->getNumArgs();
 
     for (int i = 0; i < ArgNum; ++i) {
@@ -4298,8 +4300,8 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              MapNames::LegacyBLASFuncReplInfoMap.end()) {
     auto ReplInfoPair = MapNames::LegacyBLASFuncReplInfoMap.find(FuncName);
     MapNames::BLASFuncComplexReplInfo ReplInfo = ReplInfoPair->second;
-    CallExprReplStr =
-        CallExprReplStr + ReplInfo.ReplName + "(dpct::get_default_queue()";
+    CallExprReplStr = CallExprReplStr + ReplInfo.ReplName +
+                      "(*dpct::get_current_device().get_saved_queue()";
     std::string IndentStr =
         getIndent(StmtBegin, (Result.Context)->getSourceManager()).str();
 
@@ -4669,6 +4671,7 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
              MapNames::ITFName.at(FuncName), Replacement);
       return;
     }
+
     int ArgNum = CE->getNumArgs();
     for (int i = 0; i < ArgNum; ++i) {
       const CStyleCastExpr *CSCE = nullptr;
@@ -4697,33 +4700,71 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     applyMigrationText(IsInCondition, IsAssigned, StmtBegin, StmtEndAfterSemi,
                        FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
                        PrefixInsertStr, SuffixInsertStr, true, FuncName);
-  } else if (FuncName == "cublasCreate_v2" || FuncName == "cublasDestroy_v2") {
-    auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
+  } else if (FuncName == "cublasCreate_v2" || FuncName == "cublasDestroy_v2" ||
+             FuncName == "cublasSetStream_v2" ||
+             FuncName == "cublasGetStream_v2" ||
+             FuncName == "cublasSetKernelStream") {
     SourceRange SR = getFunctionRange(CE);
     auto Len = SM->getDecomposedLoc(SR.getEnd()).second -
                SM->getDecomposedLoc(SR.getBegin()).second;
+
+    std::string Repl;
+
+    if (FuncName == "cublasCreate_v2") {
+      std::string LHS;
+      if (isSimpleAddrOf(CE->getArg(0))) {
+        LHS = getNameStrRemovedAddrOf(CE->getArg(0));
+      } else {
+        dpct::ExprAnalysis EA;
+        EA.analyze(CE->getArg(0));
+        LHS = "*(" + EA.getReplacedString() + ")";
+      }
+      Repl = LHS + " = dpct::get_current_device().create_queue()";
+    } else if (FuncName == "cublasDestroy_v2") {
+      dpct::ExprAnalysis EA(CE->getArg(0));
+      Repl = "dpct::get_current_device().destroy_queue(" +
+             EA.getReplacedString() + ")";
+    } else if(FuncName == "cublasSetStream_v2") {
+      dpct::ExprAnalysis EA0(CE->getArg(0));
+      dpct::ExprAnalysis EA1(CE->getArg(1));
+      Repl = EA0.getReplacedString() + " = " + EA1.getReplacedString();
+    } else if (FuncName == "cublasGetStream_v2") {
+      dpct::ExprAnalysis EA0(CE->getArg(0));
+      std::string LHS;
+      if (isSimpleAddrOf(CE->getArg(1))) {
+        LHS = getNameStrRemovedAddrOf(CE->getArg(1));
+      } else {
+        dpct::ExprAnalysis EA;
+        EA.analyze(CE->getArg(1));
+        LHS = "*(" + EA.getReplacedString() + ")";
+      }
+      Repl = LHS + " = " + EA0.getReplacedString();
+    } else if (FuncName == "cublasSetKernelStream") {
+      dpct::ExprAnalysis EA(CE->getArg(0));
+      Repl = "dpct::get_current_device().set_saved_queue(" +
+             EA.getReplacedString() + ")";
+    } else {
+      return;
+    }
+
     if (SM->isMacroArgExpansion(CE->getBeginLoc()) &&
         SM->isMacroArgExpansion(CE->getEndLoc())) {
       if (IsAssigned) {
-        report(SR.getBegin(), Diagnostics::FUNC_CALL_REMOVED_0, false,
-               MapNames::ITFName.at(FuncName), Msg->second);
-        emplaceTransformation(
-            new ReplaceText(SR.getBegin(), Len, "0", false, FuncName));
+        report(SR.getBegin(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+        emplaceTransformation(new ReplaceText(
+            SR.getBegin(), Len, "(" + Repl + ", 0)", false, FuncName));
       } else {
-        report(SR.getBegin(), Diagnostics::FUNC_CALL_REMOVED, false,
-               MapNames::ITFName.at(FuncName), Msg->second);
-        emplaceTransformation(
-            new ReplaceText(SR.getBegin(), Len, "", false, FuncName));
+        emplaceTransformation(new ReplaceText(
+            SR.getBegin(), Len, std::move(Repl), false, FuncName));
       }
     } else {
       if (IsAssigned) {
-        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
-               MapNames::ITFName.at(FuncName), Msg->second);
-        emplaceTransformation(new ReplaceStmt(CE, false, FuncName, true, "0"));
+        report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+        emplaceTransformation(
+            new ReplaceStmt(CE, false, FuncName, true, "(" + Repl + ", 0)"));
       } else {
-        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-               MapNames::ITFName.at(FuncName), Msg->second);
-        emplaceTransformation(new ReplaceStmt(CE, false, FuncName, true, ""));
+        emplaceTransformation(
+            new ReplaceStmt(CE, false, FuncName, true, Repl));
       }
     }
   } else if (FuncName == "cublasInit" || FuncName == "cublasShutdown" ||
@@ -5125,6 +5166,7 @@ std::string BLASFunctionCallRule::processParamIntCastToBLASEnum(
       CurrentArgumentRepl += "(mkl::diag)" + SubExprStr;
     }
   }
+
   return DpctTempVarName;
 }
 

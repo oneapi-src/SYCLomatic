@@ -127,6 +127,7 @@ public:
                                          cl::sycl::property::queue::in_order());
 #endif
     _queues.insert(_default_queue);
+    _saved_queue = _default_queue;
   }
 
   int is_native_atomic_supported() { return 0; }
@@ -272,6 +273,14 @@ public:
     delete queue;
     queue = NULL;
   }
+  void set_saved_queue(cl::sycl::queue* q) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    _saved_queue = q;
+  }
+  cl::sycl::queue* get_saved_queue() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return _saved_queue;
+  }
 
 private:
   void get_version(int &major, int &minor) {
@@ -287,6 +296,7 @@ private:
     minor = std::stoi(item);
   }
   cl::sycl::queue *_default_queue;
+  cl::sycl::queue *_saved_queue;
   std::set<cl::sycl::queue *> _queues;
   mutable std::mutex m_mutex;
 };

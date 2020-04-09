@@ -16,19 +16,17 @@ cublasStatus_t bar (cublasStatus_t s){
   return s;
 }
 
-// CHECK: extern sycl::queue handle2(dpct::get_default_context(), dpct::get_current_device());
+// CHECK: extern sycl::queue* handle2;
 extern cublasHandle_t handle2;
 
 int main() {
   // CHECK: int status;
-  // CHECK-NEXT: sycl::queue handle(dpct::get_default_context(), dpct::get_current_device());
+  // CHECK-NEXT: sycl::queue* handle;
+  // CHECK-NEXT: handle = dpct::get_current_device().create_queue();
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasCreate was removed, because this call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasCreate was replaced with 0, because this call is redundant in DPC++.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: status = 0;
+  // CHECK-NEXT: status = (handle = dpct::get_current_device().create_queue(), 0);
   // CHECK-NEXT: if (status != 0) {
   cublasStatus_t status;
   cublasHandle_t handle;
@@ -38,6 +36,27 @@ int main() {
     fprintf(stderr, "!!!! CUBLAS initialization error\n");
     return EXIT_FAILURE;
   }
+
+  // CHECK: sycl::queue *stream1;
+  // CHECK-NEXT: stream1 = dpct::get_current_device().create_queue();
+  // CHECK-NEXT: handle = stream1;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = (handle = stream1, 0);
+  // CHECK-NEXT: stream1 = handle;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: status = (stream1 = handle, 0);
+  cudaStream_t stream1;
+  cudaStreamCreate(&stream1);
+  cublasSetStream(handle, stream1);
+  status = cublasSetStream(handle, stream1);
+  cublasGetStream(handle, &stream1);
+  status = cublasGetStream(handle, &stream1);
+
+
   int N = 275;
   float *d_A_S = 0;
   float *d_B_S = 0;
@@ -50,8 +69,8 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK: status = (mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N), 0);
-  // CHECK: mkl::blas::gemm(handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
+  // CHECK: status = (mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N), 0);
+  // CHECK: mkl::blas::gemm(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   status = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
   cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
   double *d_A_D = 0;
@@ -62,8 +81,8 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK: status = (mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, alpha_D, d_A_D_buf_ct{{[0-9]+}}, N, d_B_D_buf_ct{{[0-9]+}}, N, beta_D, d_C_D_buf_ct{{[0-9]+}}, N), 0);
-  // CHECK: mkl::blas::gemm(handle, trans2==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans2, mkl::transpose::conjtrans, N, N, N, alpha_D, d_A_D_buf_ct{{[0-9]+}}, N, d_B_D_buf_ct{{[0-9]+}}, N, beta_D, d_C_D_buf_ct{{[0-9]+}}, N);
+  // CHECK: status = (mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, alpha_D, d_A_D_buf_ct{{[0-9]+}}, N, d_B_D_buf_ct{{[0-9]+}}, N, beta_D, d_C_D_buf_ct{{[0-9]+}}, N), 0);
+  // CHECK: mkl::blas::gemm(*handle, trans2==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans2, mkl::transpose::conjtrans, N, N, N, alpha_D, d_A_D_buf_ct{{[0-9]+}}, N, d_B_D_buf_ct{{[0-9]+}}, N, beta_D, d_C_D_buf_ct{{[0-9]+}}, N);
   status = cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
   cublasDgemm(handle, (cublasOperation_t)trans2, (cublasOperation_t)2, N, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
 
@@ -77,7 +96,7 @@ int main() {
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (mkl::blas::gemm(handle, mkl::transpose::trans, mkl::transpose::trans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N), 0);
+  // CHECK-NEXT: status = (mkl::blas::gemm(*handle, mkl::transpose::trans, mkl::transpose::trans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N), 0);
   // CHECK-NEXT: }
   // CHECK-NEXT: beta_S = beta_S + 1;
   // CHECK-NEXT: }
@@ -93,7 +112,7 @@ int main() {
   // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT: mkl::blas::gemm(handle, mkl::transpose::trans, mkl::transpose::trans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::trans, mkl::transpose::trans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: beta_S = beta_S + 1;
   // CHECK-NEXT: }
@@ -112,16 +131,14 @@ int main() {
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: foo(bar((mkl::blas::gemm(handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N), 0)));
+  // CHECK-NEXT: foo(bar((mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N), 0)));
   foo(bar(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)));
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasDestroy was replaced with 0, because this call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = 0;
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasDestroy was removed, because this call is redundant in DPC++.
-  // CHECK-NEXT: */
+  // CHECK-NEXT: status = (dpct::get_current_device().destroy_queue(handle), 0);
+  // CHECK-NEXT: dpct::get_current_device().destroy_queue(handle);
   // CHECK-NEXT: return 0;
   status = cublasDestroy(handle);
   cublasDestroy(handle);

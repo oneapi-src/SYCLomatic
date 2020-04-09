@@ -11,6 +11,13 @@
 #include <cublas.h>
 #include <cuda_runtime.h>
 
+#define cublasErrCheck(stat) { cublasErrCheck_((stat), __FILE__, __LINE__); }
+void cublasErrCheck_(cublasStatus_t stat, const char *file, int line) {
+    if (stat != CUBLAS_STATUS_SUCCESS) {
+        fprintf(stderr, "cuBLAS Error: %d %s %d\n", stat, file, line);
+    }
+}
+
 // CHECK: #define MACRO_A 0
 #define MACRO_A cublasInit()
 
@@ -62,7 +69,7 @@ int main() {
 
   // CHECK: int a = sizeof(int);
   // CHECK-NEXT: a = sizeof(int);
-  // CHECK-NEXT: a = sizeof(cl::sycl::queue);
+  // CHECK-NEXT: a = sizeof(cl::sycl::queue*);
   // CHECK-NEXT: a = sizeof(cl::sycl::float2);
   // CHECK-NEXT: a = sizeof(cl::sycl::double2);
   int a = sizeof(cublasStatus);
@@ -70,6 +77,18 @@ int main() {
   a = sizeof(cublasHandle_t);
   a = sizeof(cuComplex);
   a = sizeof(cuDoubleComplex);
+
+  // CHECK: sycl::queue *stream1;
+  // CHECK-NEXT: stream1 = dpct::get_current_device().create_queue();
+  // CHECK-NEXT: dpct::get_current_device().set_saved_queue(stream1);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cublasErrCheck((dpct::get_current_device().set_saved_queue(stream1), 0));
+  cudaStream_t stream1;
+  cudaStreamCreate(&stream1);
+  cublasSetKernelStream(stream1);
+  cublasErrCheck(cublasSetKernelStream(stream1));
 
   float *d_A = NULL;
   int n = 10;
@@ -116,7 +135,7 @@ int main() {
   MACRO_B(cublasGetError());
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1003:11: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
   MACRO_C(d_A);
 
