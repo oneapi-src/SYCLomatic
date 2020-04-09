@@ -2537,6 +2537,7 @@ const MapNames::ThrustMapTy MapNames::ThrustFuncNamesMap{
     {"sequence", {"dpct::sequence", "dpstd::execution::sycl"}},
     {"stable_sort_by_key",
      {"dpct::stable_sort_by_key", "dpstd::execution::sycl"}},
+    {"reduce", {"std::reduce", "dpstd::execution::sycl"}},
 };
 
 const MapNames::MapTy MapNames::Dim3MemberNamesMap{
