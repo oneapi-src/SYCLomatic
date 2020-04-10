@@ -192,6 +192,10 @@ void KernelCallExpr::addAccessorDecl() {
     SubmitStmtsList.TextureList.emplace_back(Tex.second->getAccessorDecl());
   for (auto &Tex : getTextureObjectList()) {
     if (Tex) {
+      if (!Tex->getType()) {
+        // Type PlaceHolder
+        Tex->setType("PlaceHolder/*Fix the type mannually*/", 1);
+      }
       SubmitStmtsList.TextureList.emplace_back(Tex->getAccessorDecl());
     }
   }
@@ -639,6 +643,10 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
   for (auto &Obj : TextureObjectList) {
     if (Obj) {
       Obj->setType(FuncInfo->getTextureTypeInfo(Obj->getParamIdx()));
+      if (!Obj->getType()) {
+        // Type PlaceHolder
+        Obj->setType("PlaceHolder/*Fix the type mannually*/", 1);
+      }
       Obj->addParamDeclReplacement();
     }
   }

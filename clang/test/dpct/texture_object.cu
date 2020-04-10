@@ -18,6 +18,25 @@ void func(int i) {}
 template <typename T>
 void funcT(T t) {}
 
+// CHECK: void gather_force(const dpct::image_accessor<PlaceHolder/*Fix the type mannually*/, 1> gridTexObj){}
+__global__ void gather_force(const cudaTextureObject_t gridTexObj){}
+
+// CHECK: void gather_force(const dpct::image_base_p gridTexObj, sycl::queue *stream) {
+// CHECK-NEXT:  stream->submit(
+// CHECK-NEXT:    [&](sycl::handler &cgh) {
+// CHECK-NEXT:      auto gridTexObj_acc = static_cast<dpct::image<PlaceHolder/*Fix the type mannually*/, 1> *>(gridTexObj)->get_access(cgh);
+// CHECK-EMPTY:
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class gather_force_{{[a-f0-9]+}}>>(
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+// CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:          gather_force(gridTexObj_acc);
+// CHECK-NEXT:        });
+// CHECK-NEXT:    });
+// CHECK-NEXT: }
+void gather_force(const cudaTextureObject_t gridTexObj, cudaStream_t stream) {
+  gather_force <<< 1, 1, 1, stream >>>(gridTexObj);
+}
+
 // CHECK: void device01(dpct::image_accessor<sycl::uint2, 1> tex21) {
 // CHECK-NEXT: sycl::uint2 u21;
 // CHECK-NEXT: dpct::read_image(&u21, tex21, 0.5f);
