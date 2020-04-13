@@ -41,6 +41,7 @@ class SourceManager;
 class SourceLocation;
 class SourceRange;
 class Stmt;
+class Expr;
 class CompoundStmt;
 class ASTContext;
 class ValueDecl;
@@ -339,6 +340,8 @@ StreamTy &printArguments(StreamTy &Stream, Args &&... Arguments) {
   return printPartialArguments(Stream, sizeof...(Args),
                                std::forward<Args>(Arguments)...);
 }
+void printDerefOp(std::ostream &OS, const clang::Expr *E,
+                  std::string *DerefType = nullptr);
 bool isInSameLine(clang::SourceLocation A, clang::SourceLocation B,
                   const clang::SourceManager &SM, bool &Invalid);
 clang::SourceRange getFunctionRange(const clang::CallExpr *CE);

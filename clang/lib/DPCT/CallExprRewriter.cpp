@@ -871,8 +871,17 @@ Optional<std::string> WarpFunctionRewriter::rewrite() {
 
 Optional<std::string> ReorderFunctionRewriter::rewrite() {
   for (auto ArgIdx : RewriterArgsIdx) {
-    if (ArgIdx < Call->getNumArgs())
+    if (ArgIdx >= Call->getNumArgs())
+      continue;
+    if (SourceCalleeName == "cudaBindTexture" &&
+        Call->getArg(1)->getType()->isPointerType() &&
+        (ArgIdx == 1 || ArgIdx == 3)) {
+      std::ostringstream OS;
+      printDerefOp(OS, Call->getArg(ArgIdx));
+      appendRewriteArg(OS.str());
+    } else {
       appendRewriteArg(getMigratedArg(ArgIdx));
+    }
   }
   return buildRewriteString();
 }

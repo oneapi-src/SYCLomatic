@@ -80,6 +80,7 @@ int main() {
   // CHECK-NEXT: tex21.filter_mode() = sycl::filtering_mode::linear;
   // CHECK-NEXT: dpct::attach_image(tex21, d_data21, desc21, 32 * sizeof(sycl::uint2));
   // CHECK-NEXT: dpct::attach_image(tex21, d_data21, 32 * sizeof(sycl::uint2));
+  // CHECK-NEXT: dpct::attach_image(tex21, d_data21, desc21, 32 * sizeof(sycl::uint2));
   uint2 *d_data21;
   cudaMalloc(&d_data21, sizeof(uint2) * 32);
   cudaChannelFormatDesc desc21 = cudaCreateChannelDesc(32, 32, 0, 0, cudaChannelFormatKindUnsigned);
@@ -89,6 +90,7 @@ int main() {
   tex21.filterMode = cudaFilterModeLinear;
   cudaBindTexture(0, tex21, d_data21, desc21, 32 * sizeof(uint2));
   cudaBindTexture(0, tex21, d_data21, 32 * sizeof(uint2));
+  cudaBindTexture(0, &tex21, d_data21, &desc21, 32 * sizeof(uint2));
 
   // CHECK:   dpct::get_default_queue().submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {

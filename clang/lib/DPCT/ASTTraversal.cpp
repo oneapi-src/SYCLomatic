@@ -6691,8 +6691,7 @@ public:
 
 /// e.g., for int *a and cudaMalloc(&a, size), print "a = ".
 /// If \p DerefType is not null, assign a string "int *".
-void printDerefOp(std::ostream &OS, const Expr *E,
-                  std::string *DerefType = nullptr) {
+void printDerefOp(std::ostream &OS, const Expr *E, std::string *DerefType) {
   E = E->IgnoreImplicitAsWritten();
   bool NeedDerefOp = true;
   if (auto UO = dyn_cast<UnaryOperator>(E)) {
