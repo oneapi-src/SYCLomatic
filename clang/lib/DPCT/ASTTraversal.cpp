@@ -6706,12 +6706,25 @@ bool MemoryMigrationRule::isStmtSimpleMemcpyOrMemset(const clang::Stmt *Stmt) {
       if (CE->getBeginLoc().isMacroID()) {
         return false;
       }
-      if (auto FD = dyn_cast<FunctionDecl>(CE->getCalleeDecl())) {
-        std::string Name = FD->getNameAsString();
-        if (CheckName(Name)) {
-          return true;
+
+      if (CE->getCalleeDecl()) {
+        if (auto FD = dyn_cast<FunctionDecl>(CE->getCalleeDecl())) {
+          std::string Name = FD->getNameAsString();
+          if (CheckName(Name)) {
+            return true;
+          }
+        }
+      } else {
+        auto Callee = CE->getCallee()->IgnoreImplicitAsWritten();
+        if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(Callee)) {
+          std::string Name = Unresolved->getName().getAsString();
+          if (CheckName(Name)) {
+            return true;
+          }
         }
       }
+
+
     }
     return false;
   };
@@ -6820,8 +6833,18 @@ void MemoryMigrationRule::defaultMemcpyMemsetHandler(
   } else {
     if (!C)
       return;
-    if (auto FD = C->getDirectCallee())
+
+    if (auto FD = C->getDirectCallee()) {
       Name = FD->getNameAsString();
+    } else {
+      auto Callee = C->getCallee()->IgnoreImplicitAsWritten();
+      if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(Callee)) {
+        Name = Unresolved->getName().getAsString();
+        ULExpr = Unresolved;
+      } else {
+        return;
+      }
+    }
   }
   StringRef NameRef = Name;
   if (NameRef.endswith("Symbol")) {
@@ -6875,7 +6898,7 @@ void MemoryMigrationRule::handleMemcpyAndMemset(
     defaultMemcpyMemsetHandler(Result, C, ULExpr, IsAssigned);
     return;
   }
-  if (ULExpr != nullptr || C->getBeginLoc().isMacroID()) {
+  if (C->getBeginLoc().isMacroID()) {
     defaultMemcpyMemsetHandler(Result, C, ULExpr, IsAssigned);
     return;
   }
@@ -6916,8 +6939,9 @@ void MemoryMigrationRule::handleMemcpyAndMemset(
         new InsertBeforeStmt(CurrStmt, std::move(QueueDeclStr)));
 
     continuousMemcpyMemsetHandler(Iter, P->child_end(), Result, QueueIndex);
+  } else {
+    defaultMemcpyMemsetHandler(Result, C, ULExpr, IsAssigned);
   }
-  defaultMemcpyMemsetHandler(Result, C, ULExpr, IsAssigned);
 }
 
 void MemoryMigrationRule::memcpyMigration(
