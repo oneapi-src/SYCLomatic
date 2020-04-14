@@ -143,6 +143,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   SourceLocation BeginLoc, EndLoc;
   // if the parent expr is inside macro and current expr is macro arg expansion,
   // use the expansion location of the macro arg in the macro definition.
+
   if (IsInMacroDefine) {
     if (SM.isMacroArgExpansion(E->getBeginLoc())) {
       BeginLoc = SM.getSpellingLoc(
@@ -156,8 +157,8 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
     }
   } else if (E->getBeginLoc().isMacroID() && !isOuterMostMacro(E)) {
     // If E is not OuterMostMacro, use the spelling location
-    BeginLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getBeginLoc()));
-    EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getEndLoc()));
+    BeginLoc = SM.getExpansionLoc(SM.getSpellingLoc(E->getBeginLoc()));
+    EndLoc = SM.getExpansionLoc(SM.getSpellingLoc(E->getEndLoc()));
   } else {
     // If E is the OuterMostMacro, use the expansion location
     BeginLoc = SM.getExpansionRange(E->getBeginLoc()).getBegin();
@@ -169,6 +170,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
       Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
   ExprBeginLoc = BeginLoc;
   ExprEndLoc = EndLoc;
+
   auto DecompLoc = SM.getDecomposedLoc(BeginLoc);
   FileId = DecompLoc.first;
   // The offset of Expr used in ExprAnalysis is related to SrcBegin not

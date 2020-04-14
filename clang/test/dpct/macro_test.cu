@@ -9,6 +9,10 @@
 #define GET_BLOCKS3(n,t) n+t-1
 #define GET_BLOCKS4(n,t) n+t
 
+#define NESTMACRO(k) k
+#define NESTMACRO2(k) NESTMACRO(k)
+#define NESTMACRO3(k) NESTMACRO2(k)
+
 class DDD{
 public:
   dim3* A;
@@ -198,6 +202,10 @@ MACRO_KC2(3,2,1,0)
 // CHECK: MACRO_KC2(sycl::range<3>(5, 4, 3), sycl::range<3>(2, 1, 1), 1, 0)
 MACRO_KC2(dim3(5,4,3),2,1,0)
 
+int *a;
+//CHECK: NESTMACRO3(a = (int *)sycl::malloc_device(100, dpct::get_current_device(),
+//CHECK-NEXT: dpct::get_default_context()));
+NESTMACRO3(cudaMalloc(&a,100));
 }
 
 

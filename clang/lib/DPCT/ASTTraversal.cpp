@@ -7513,7 +7513,8 @@ void MemoryMigrationRule::prefetchMigration(
       StmtStrArg3 = "0";
     }
 
-    if (StmtStrArg3 == "0" || StmtStrArg3 == "NULL" ||
+    // In clang "define NULL __null"
+    if (StmtStrArg3 == "0" || StmtStrArg3 == "NULL" || StmtStrArg3 == "__null" ||
         StmtStrArg3 == "nullptr" || StmtStrArg3 == "") {
       Replacement = "dpct::dev_mgr::instance().get_device(" + StmtStrArg2 +
                     ").default_queue().prefetch(" + StmtStrArg0 + "," +
