@@ -8263,7 +8263,9 @@ void WarpFunctionsRule::run(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(WarpFunctionsRule)
 
 void SyncThreadsRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(callExpr(callee(functionDecl(hasAnyName("__syncthreads"))),
+  MF.addMatcher(callExpr(callee(functionDecl(hasAnyName("__syncthreads",
+                                                        "this_thread_block",
+                                                        "sync"))),
                          hasAncestor(functionDecl().bind("func")))
                     .bind("syncthreads"),
                 this);
@@ -8273,8 +8275,28 @@ void SyncThreadsRule::run(const MatchFinder::MatchResult &Result) {
   if (auto CE = getNodeAsType<CallExpr>(Result, "syncthreads")) {
     if (auto FD = getAssistNodeAsType<FunctionDecl>(Result, "func"))
       DeviceFunctionDecl::LinkRedecls(FD)->setItem();
-    std::string Replacement = getItemName() + ".barrier()";
-    emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    std::string FuncName =
+        CE->getDirectCallee()->getNameInfo().getName().getAsString();
+    if (FuncName == "__syncthreads" || FuncName == "sync") {
+      std::string Replacement = getItemName() + ".barrier()";
+      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    } else if (FuncName == "this_thread_block") {
+      if (auto P = getAncestorDeclStmt(CE)) {
+        std::string ReplStr{"sycl::group<3> "};
+        for (auto It = P->decl_begin(); It != P->decl_end(); ++It) {
+          auto VD = dyn_cast<VarDecl>(*It);
+          if (It != P->decl_begin())
+            ReplStr += ", ";
+          ReplStr += VD->getName();
+          ReplStr += " = ";
+          ReplStr += DpctGlobalInfo::getItemName() + ".get_group()";
+        }
+        ReplStr += ";";
+        emplaceTransformation(new ReplaceStmt(P, std::move(ReplStr)));
+      } else {
+        emplaceTransformation(new ReplaceStmt(CE, ""));
+      }
+    }
   }
 }
 

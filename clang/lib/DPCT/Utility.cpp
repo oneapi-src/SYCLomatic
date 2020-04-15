@@ -448,6 +448,28 @@ const clang::Decl *getParentDecl(const clang::Decl *D) {
   return nullptr;
 }
 
+// Find the ancestor DeclStmt node
+// Assumes: E != nullptr
+const ast_type_traits::DynTypedNode
+getAncestorDeclStmtNode(const clang::Expr *E) {
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto ParentNodes = Context.getParents(*E);
+  ast_type_traits::DynTypedNode ParentNode;
+  while (!ParentNodes.empty()) {
+    ParentNode = ParentNodes[0];
+    if (ParentNode.get<DeclStmt>())
+      break;
+    ParentNodes = Context.getParents(ParentNode);
+  }
+  return ParentNode;
+}
+
+// Find the ancestor DeclStmt of E
+// Assumes: E != nullptr
+const clang::DeclStmt *getAncestorDeclStmt(const clang::Expr *E) {
+  return getAncestorDeclStmtNode(E).get<DeclStmt>();
+}
+
 const std::shared_ptr<clang::ast_type_traits::DynTypedNode>
 getParentNode(const std::shared_ptr<clang::ast_type_traits::DynTypedNode> N) {
   if (!N)
