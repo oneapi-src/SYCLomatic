@@ -1171,7 +1171,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     // e.g: "/path/to/nvcc -ccbin ... ",
     //      "/bin/sh -c "/path/to"/bin/nvcc -ccbin ..."
     const char *pos = find_nvcc(argv[it_cp]);
-    if(pos != NULL)
+    if(pos != NULL && *pos !='\0')
     {
         ret = 0; // intercept-stub should continue to run.
 
