@@ -196,6 +196,8 @@ const char *getNL(void);
 /// in the source line containing Loc.
 const char *getNL(clang::SourceLocation Loc, const clang::SourceManager &SM);
 
+int getCurrnetColumn(clang::SourceLocation Loc, const clang::SourceManager &SM);
+
 /// Returns the character sequence indenting the source line containing Loc.
 llvm::StringRef getIndent(clang::SourceLocation Loc,
                           const clang::SourceManager &SM);

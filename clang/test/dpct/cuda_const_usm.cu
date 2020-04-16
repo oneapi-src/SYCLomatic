@@ -28,7 +28,8 @@ __constant__ double2 vec_d;
 // CHECK: dpct::device_memory<int, 1> const_ptr;
 __constant__ int *const_ptr;
 
-// CHECK:void simple_kernel(float *d_array, sycl::nd_item<3> [[ITEM:item_ct1]], float *const_angle, int *const_ptr) {
+// CHECK:void simple_kernel(float *d_array, sycl::nd_item<3> [[ITEM:item_ct1]],
+// CHECK-NEXT:              float *const_angle, int *const_ptr) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range().get(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  const_ptr[index] = index;
@@ -50,7 +51,9 @@ __global__ void simple_kernel(float *d_array) {
 // CHECK: dpct::constant_memory<float, 0> const_one;
 __constant__ float const_one;
 
-// CHECK:void simple_kernel_one(float *d_array, sycl::nd_item<3> [[ITEM:item_ct1]], dpct::accessor<float, dpct::constant, 2> const_float, float const_one) {
+// CHECK:void simple_kernel_one(float *d_array, sycl::nd_item<3> [[ITEM:item_ct1]],
+// CHECK-NEXT:                  dpct::accessor<float, dpct::constant, 2> const_float,
+// CHECK-NEXT:                  float const_one) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range().get(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  if (index < 33) {

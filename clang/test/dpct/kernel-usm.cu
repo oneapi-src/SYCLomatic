@@ -12,8 +12,7 @@ __device__ void testDevice(const int *K) {
   int t = K[0];
 }
 
-// CHECK: void testKernelPtr(const int *L, const int *M, int N,
-// CHECK-NEXT: sycl::nd_item<3> item_ct1) {
+// CHECK: void testKernelPtr(const int *L, const int *M, int N, sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT: testDevice(L);
 // CHECK-NEXT: int gtid = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT: }
@@ -123,8 +122,7 @@ int run_foo7 () {
 
 // CHECK:dpct::shared_memory<float, 0> in;
 // CHECK-NEXT:dpct::shared_memory<float, 0> out;
-// CHECK-NEXT:void my_kernel2(float in, float *out,
-// CHECK-NEXT:                sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:void my_kernel2(float in, float *out, sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:  if (item_ct1.get_local_id(2) == 0) {
 // CHECK-NEXT:    memcpy(out, &in, sizeof(float));
 // CHECK-NEXT:  }

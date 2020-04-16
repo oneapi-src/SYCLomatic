@@ -60,6 +60,9 @@ using namespace clang::tooling;
 using namespace llvm::cl;
 
 namespace clang {
+namespace tooling {
+std::string getFormatSearchPath();
+} // namespace tooling
 namespace dpct {
 extern llvm::cl::OptionCategory DPCTCat;
 void initWarningIDs();
@@ -770,6 +773,41 @@ void PrintReportOnFault(std::string &FaultMsg) {
   DumpOutputFile();
 }
 
+void parseFormatStyle() {
+  clang::format::FormattingAttemptStatus Status;
+  StringRef StyleStr = "file"; // DPCTFormatStyle::custom
+  if (clang::dpct::DpctGlobalInfo::getFormatStyle() ==
+      DPCTFormatStyle::google) {
+    StyleStr = "google";
+  } else if (clang::dpct::DpctGlobalInfo::getFormatStyle() ==
+             DPCTFormatStyle::llvm) {
+    StyleStr = "llvm";
+  }
+  std::string StyleSearchPath = clang::tooling::getFormatSearchPath().empty()
+                                    ? clang::dpct::DpctGlobalInfo::getInRoot()
+                                    : clang::tooling::getFormatSearchPath();
+  llvm::Expected<clang::format::FormatStyle> StyleOrErr =
+      clang::format::getStyle(StyleStr, StyleSearchPath, "llvm");
+  clang::format::FormatStyle Style;
+  if (!StyleOrErr) {
+    PrintMsg(llvm::toString(StyleOrErr.takeError()) + "\n");
+    PrintMsg("Using LLVM style as fallback formatting style.\n");
+    clang::format::FormatStyle FallbackStyle = clang::format::getNoStyle();
+    getPredefinedStyle("llvm", clang::format::FormatStyle::LanguageKind::LK_Cpp,
+                       &FallbackStyle);
+    Style = FallbackStyle;
+  } else {
+    Style = StyleOrErr.get();
+  }
+  if (clang::dpct::DpctGlobalInfo::getFormatRange() ==
+      clang::format::FormatRange::migrated) {
+    Style.AllowShortFunctionsOnASingleLine =
+        clang::format::FormatStyle::SFS_None;
+  }
+
+  DpctGlobalInfo::setCodeFormatStyle(Style);
+}
+
 int run(int argc, const char **argv) {
 
   if (argc < 2) {
@@ -983,6 +1021,9 @@ int run(int argc, const char **argv) {
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
 
   MapNames::setClNamespace(ExplicitClNamespace);
+  if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
+    parseFormatStyle();
+  }
 
   DPCTActionFactory Factory(Tool.getReplacements());
   if (int RunResult = Tool.run(&Factory) && !NoStopOnErrFlag) {

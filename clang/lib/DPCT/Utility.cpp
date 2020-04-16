@@ -80,6 +80,18 @@ const char *getNL(SourceLocation Loc, const SourceManager &SM) {
     return "\r\n";
 }
 
+int getCurrnetColumn(SourceLocation Loc, const SourceManager &SM) {
+  auto LocInfo = SM.getDecomposedLoc(Loc);
+  auto Buffer = SM.getBufferData(LocInfo.first);
+  // Find last line end.
+  auto begin = Buffer.find_last_of('\n', LocInfo.second);
+  if (begin == StringRef::npos) {
+    // We're at the beginning of the file.
+    begin = 0;
+  }
+  return LocInfo.second - begin;
+}
+
 StringRef getIndent(SourceLocation Loc, const SourceManager &SM) {
   auto LocInfo = SM.getDecomposedLoc(Loc);
   auto Buffer = SM.getBufferData(LocInfo.first);

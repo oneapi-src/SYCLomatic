@@ -58,36 +58,11 @@ static bool formatFile(StringRef FileName,
     return false;
 
   clang::format::FormattingAttemptStatus Status;
-  StringRef StyleStr = "file"; // DPCTFormatStyle::custom
-  if (clang::dpct::DpctGlobalInfo::getFormatStyle() ==
-      DPCTFormatStyle::google) {
-    StyleStr = "google";
-  } else if (clang::dpct::DpctGlobalInfo::getFormatStyle() ==
-             DPCTFormatStyle::llvm) {
-    StyleStr = "llvm";
-  }
-  std::string StyleSearchPath = clang::tooling::getFormatSearchPath().empty()
-                                    ? clang::dpct::DpctGlobalInfo::getInRoot()
-                                    : clang::tooling::getFormatSearchPath();
-  llvm::Expected<clang::format::FormatStyle> StyleOrErr =
-      clang::format::getStyle(StyleStr, StyleSearchPath, "llvm",
-                              FileBuffer->getBuffer());
-  clang::format::FormatStyle Style;
-  if (!StyleOrErr) {
-    PrintMsg(llvm::toString(StyleOrErr.takeError()) + "\n");
-    PrintMsg("Using LLVM style as fallback formatting style.\n");
-    clang::format::FormatStyle FallbackStyle = clang::format::getNoStyle();
-    getPredefinedStyle("llvm", clang::format::FormatStyle::LanguageKind::LK_Cpp,
-                       &FallbackStyle);
-    Style = FallbackStyle;
-  } else {
-    Style = StyleOrErr.get();
-  }
+  clang::format::FormatStyle Style = DpctGlobalInfo::getCodeFormatStyle();
   if (clang::dpct::DpctGlobalInfo::getFormatRange() ==
-      clang::format::FormatRange::migrated) {
-    Style.AllowShortFunctionsOnASingleLine =
-        clang::format::FormatStyle::SFS_None;
-    if (clang::dpct::DpctGlobalInfo::getGuessIndentWidthMatcherFlag())
+          clang::format::FormatRange::migrated &&
+      clang::dpct::DpctGlobalInfo::getGuessIndentWidthMatcherFlag()) {
+
       Style.IndentWidth = clang::dpct::DpctGlobalInfo::getIndentWidth();
   }
 

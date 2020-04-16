@@ -6,16 +6,14 @@
 void printf(const char *format, unsigned char data);
 
 template <class TName, unsigned N, class TData>
-// CHECK: void testKernelPtr(const TData *L, const TData *M,
-// CHECK: sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
+// CHECK: void testKernelPtr(const TData *L, const TData *M, sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void testKernelPtr(const TData *L, const TData *M) {
   // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range().get(2) + [[ITEMNAME]].get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
 template<class TData>
-// CHECK: void testKernel(TData L, TData M, int N,
-// CHECK: sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
+// CHECK: void testKernel(TData L, TData M, int N, sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void testKernel(TData L, TData M, int N) {
   // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range().get(2) + [[ITEMNAME]].get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -205,7 +203,8 @@ int main() {
 
 
 // CHECK:template<typename T>
-// CHECK-NEXT:void convert_kernel(T b, sycl::nd_item<3> item_ct1, int *aaa, dpct::accessor<double, dpct::local, 2> bbb){
+// CHECK-NEXT:void convert_kernel(T b, sycl::nd_item<3> item_ct1, int *aaa,
+// CHECK-NEXT:                    dpct::accessor<double, dpct::local, 2> bbb){
 // CHECK:  T a = item_ct1.get_local_range().get(2) * item_ct1.get_group(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT:}
 template<typename T>

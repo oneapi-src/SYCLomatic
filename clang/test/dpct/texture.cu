@@ -34,7 +34,8 @@ __device__ void device01() {
   uint2 u21_fetch = tex1Dfetch(tex21, 1);
 }
 
-// CHECK: void kernel(dpct::image_accessor<sycl::float4, 2> tex42, dpct::image_accessor<sycl::uint2, 1> tex21) {
+// CHECK: void kernel(dpct::image_accessor<sycl::float4, 2> tex42,
+// CHECK-NEXT:        dpct::image_accessor<sycl::uint2, 1> tex21) {
 // CHECK-NEXT: device01(tex21);
 // CHECK-NEXT: sycl::float4 f42 = dpct::read_image(tex42, 1.0f, 1.0f);
 /// Texture accessors should be passed down to __global__/__device__ function if used.

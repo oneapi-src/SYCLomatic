@@ -47,6 +47,7 @@ unsigned int DpctGlobalInfo::IndentWidth = 0;
 std::unordered_map<std::string, int> DpctGlobalInfo::LocationInitIndexMap;
 int DpctGlobalInfo::CurrentMaxIndex = 0;
 int DpctGlobalInfo::CurrentIndexInRule = 0;
+clang::format::FormatStyle DpctGlobalInfo::CodeFormatStyle;
 
 bool DpctFileInfo::isInRoot() { return DpctGlobalInfo::isInRoot(FilePath); }
 // TODO: implement one of this for each source language.
@@ -641,7 +642,7 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
   // TODO: Output debug info.
   auto Repl = std::make_shared<ExtReplacement>(
       FilePath, ReplaceOffset, ReplaceLength,
-      FuncInfo->getExtraParameters(IsExtraParamWithNL, Indent), nullptr);
+      FuncInfo->getExtraParameters(FormatInformation), nullptr);
   Repl->setNotFormatFlag();
   DpctGlobalInfo::getInstance().addReplacement(Repl);
 
@@ -674,10 +675,11 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionDecl *FD) {
 
   // Need to get the last decl if there are many decl of the same function
   NonDefaultParamNum = FD->getMostRecentDecl()->getMinRequiredArguments();
+  auto FisrtFD = FD->getFirstDecl();
   SourceLocation NextToken;
   if (NonDefaultParamNum == 0) {
-    NextToken = FD->getNameInfo().getEndLoc();
-    NextToken = Lexer::getLocForEndOfToken(FD->getNameInfo().getEndLoc(), 0, SM, LO);
+    NextToken = SM.getSpellingLoc(FD->getNameInfo().getEndLoc());
+    NextToken = Lexer::getLocForEndOfToken(NextToken, 0, SM, LO);
   }
   else {
     NextToken = FD->getParamDecl(NonDefaultParamNum - 1)->getEndLoc();
@@ -688,20 +690,106 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionDecl *FD) {
     NextToken = Lexer::getLocForEndOfToken(NextToken, 0, SM, LO);
   }
 
-  // The rule of wrapping extra parameters in device function declaration:
+  // PARAMETER INSERTING LOCATION RULES:
   // 1. Origin parameters number < 2
-  //    Do not add new line.
+  //    Do not add new line until longer than 80. The new line begin is aligned
+  //    with the end location of "("
   // 2. Origin parameters number >= 2
-  //    2.1 The first parameter and the last parameter are not in one line
-  //        Add new line, and the extra parameters are aligned with the last
-  //        parameter.
-  //    2.2 The first parameter and the last parameter are in one line
-  //        Add new line, and the extra parameters are aligned with the first
-  //        parameter.
-  if (NonDefaultParamNum >= 2) {
-    IsExtraParamWithNL = true;
+  //    2.1 If each parameter is in a single line:
+  //           Each added parameter is in a single line.
+  //           The new line begin is aligned with the last parameter's line
+  //           begin
+  //    2.2 There are 2 parameters in one line:
+  //           Do not add new line until longer than 80.
+  //           The new line begin is aligned with the last parameter's line
+  //           begin
+  FormatInformation.EnableFormat = true;
+
+  auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      SM.getCharacterData(NextToken));
+  if (ItMatch != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+    FormatInformation.IsAllParamsOneLine = true;
+    if (NextToken.isMacroID()) {
+      NextToken =
+          SM.getSpellingLoc(SM.getImmediateExpansionRange(NextToken).getEnd());
+    }
+  } else if (NonDefaultParamNum >= 2) {
+    FormatInformation.IsAllParamsOneLine = false;
     auto BeginParam = *(FD->param_begin());
     SourceLocation BeginParamLoc = BeginParam->getBeginLoc();
+
+    if (BeginParamLoc.isMacroID())
+      BeginParamLoc = SM.getExpansionLoc(BeginParamLoc);
+    if (NextToken.isMacroID())
+      NextToken = SM.getExpansionLoc(NextToken);
+
+     unsigned int NeedRemoveLength = 0;
+    calculateRemoveLength<CUDAGlobalAttr>(FD, "__global__", NeedRemoveLength,
+                                          BeginParamLoc, SM, LO);
+    calculateRemoveLength<CUDADeviceAttr>(FD, "__device__", NeedRemoveLength,
+                                          BeginParamLoc, SM, LO);
+    calculateRemoveLength<CUDAHostAttr>(FD, "__host__", NeedRemoveLength,
+                                        BeginParamLoc, SM, LO);
+
+    auto ParamA = FisrtFD->param_begin();
+    auto ParamB = ParamA++;
+    FormatInformation.IsEachParamNL = true;
+    while (ParamA != FisrtFD->param_end() && ParamB != FisrtFD->param_end()) {
+      bool InValidFlag = false;
+      if (isInSameLine(SM.getExpansionLoc((*ParamA)->getBeginLoc()),
+                       SM.getExpansionLoc((*ParamB)->getBeginLoc()), SM,
+                       InValidFlag) &&
+          !InValidFlag) {
+        FormatInformation.IsEachParamNL = false;
+        break;
+      }
+      ParamA++;
+      ParamB++;
+    }
+
+    if (FormatInformation.IsEachParamNL) {
+      FormatInformation.NewLineIndentStr = getIndent(NextToken, SM).str();
+      FormatInformation.NewLineIndentLength = getIndent(NextToken, SM).size();
+      FormatInformation.CurrentLength = getCurrnetColumn(NextToken, SM);
+    } else {
+      bool InValidFlag = false;
+      if (isInSameLine(BeginParamLoc, NextToken, SM, InValidFlag) &&
+          !InValidFlag) {
+        FormatInformation.NewLineIndentLength =
+            getCurrnetColumn(BeginParamLoc, SM) - 1 - NeedRemoveLength;
+        FormatInformation.NewLineIndentStr =
+            std::string(FormatInformation.NewLineIndentLength, ' ');
+        FormatInformation.CurrentLength =
+            getCurrnetColumn(NextToken, SM) - NeedRemoveLength;
+      } else {
+        FormatInformation.NewLineIndentStr = getIndent(NextToken, SM).str();
+        FormatInformation.NewLineIndentLength = getIndent(NextToken, SM).size();
+        FormatInformation.CurrentLength = getCurrnetColumn(NextToken, SM);
+      }
+    }
+  } else {
+    // NonDefaultParamNum < 2
+    FormatInformation.IsAllParamsOneLine = false;
+    FormatInformation.IsEachParamNL = false;
+
+    SourceLocation BeginParamLoc;
+    if (NonDefaultParamNum == 0) {
+      BeginParamLoc = NextToken;
+      // In this case, the NextToken is the location of the end of function name,
+      // so need get the next token end. Example: void foobar ( );
+      //                                                     | |
+      //                                  "NextToken" is here^ ^Want to get here
+      Token Tok;
+      auto Result = Lexer::getRawToken(BeginParamLoc, Tok, SM, LO, true);
+      if (!Result)
+        BeginParamLoc = Tok.getEndLoc();
+    } else {
+      auto BeginParam = *(FD->param_begin());
+      BeginParamLoc = BeginParam->getBeginLoc();
+    }
+
+    if (BeginParamLoc.isMacroID())
+      BeginParamLoc = SM.getExpansionLoc(BeginParamLoc);
 
     unsigned int NeedRemoveLength = 0;
     calculateRemoveLength<CUDAGlobalAttr>(FD, "__global__", NeedRemoveLength,
@@ -711,46 +799,17 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionDecl *FD) {
     calculateRemoveLength<CUDAHostAttr>(FD, "__host__", NeedRemoveLength,
                                         BeginParamLoc, SM, LO);
 
-    auto BeginExpLoc = BeginParamLoc;
-    auto EndExpLoc = NextToken;
-    if (BeginParamLoc.isMacroID())
-      BeginExpLoc = SM.getExpansionLoc(BeginParamLoc);
-    if (NextToken.isMacroID())
-      EndExpLoc = SM.getExpansionLoc(NextToken);
+    FormatInformation.NewLineIndentLength =
+        getCurrnetColumn(BeginParamLoc, SM) - 1 - NeedRemoveLength;
+    FormatInformation.NewLineIndentStr =
+        std::string(FormatInformation.NewLineIndentLength, ' ');
 
-    auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      SM.getCharacterData(NextToken));
-
-    if (ItMatch !=
-      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
-      ItMatch->second->IsFunctionLike) {
-      IsExtraParamWithNL = false;
-      Indent = "";
-      if (NextToken.isMacroID()) {
-        NextToken =
-          SM.getSpellingLoc(SM.getImmediateExpansionRange(NextToken).getEnd());
-      }
+    if (NonDefaultParamNum == 0) {
+      FormatInformation.CurrentLength =
+          getCurrnetColumn(BeginParamLoc, SM) - NeedRemoveLength;
     } else {
-      if (BeginParamLoc.isMacroID())
-        BeginParamLoc = BeginExpLoc;
-      if (NextToken.isMacroID())
-        NextToken = EndExpLoc;
-      auto EndLocInfo = SM.getDecomposedLoc(NextToken);
-      auto Buffer = SM.getBufferData(EndLocInfo.first);
-      auto NLOffest = Buffer.find_last_of('\n', EndLocInfo.second);
-      bool InValidFlag = false;
-      if (isInSameLine(BeginParamLoc, NextToken, SM, InValidFlag) &&
-          !InValidFlag) {
-        // the first param and the last param are in the same line
-        // use the first param begin location as the extra param's indent
-        Indent = std::string(
-            SM.getDecomposedLoc(BeginParamLoc).second - NLOffest - 1, ' ');
-        Indent = Indent.substr(NeedRemoveLength);
-      } else {
-        // the first param and the last param are not in the same line
-        // use the indent of the last param line as the extra param's indent
-        Indent = getIndent(NextToken, SM).str();
-      }
+      FormatInformation.CurrentLength =
+          getCurrnetColumn(NextToken, SM) - NeedRemoveLength;
     }
   }
 
@@ -939,10 +998,9 @@ std::string MemVarMap::getExtraCallArguments(bool HasPreParam, bool HasPostParam
   return getArgumentsOrParameters<CallArgument>(HasPreParam, HasPostParam);
 }
 std::string MemVarMap::getExtraDeclParam(bool HasPreParam, bool HasPostParam,
-                                         bool IsExtraParamWithNL,
-                                         std::string Indent) const {
-  return getArgumentsOrParameters<DeclParameter>(HasPreParam, HasPostParam, IsExtraParamWithNL,
-                                                 Indent);
+                                         FormatInfo FormatInformation) const {
+  return getArgumentsOrParameters<DeclParameter>(HasPreParam, HasPostParam,
+                                                 FormatInformation);
 }
 std::string MemVarMap::getKernelArguments(bool HasPreParam, bool HasPostParam) const {
   return getArgumentsOrParameters<KernelArgument>(HasPreParam, HasPostParam);

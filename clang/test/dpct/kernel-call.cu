@@ -17,12 +17,10 @@ int a = blockIdx.x * blockDim.x + threadIdx.x + blockIdx.x +
 blockDim.x + threadIdx.x;
 }
 
-// CHECK: void testKernel(int L, int M,
-// CHECK-NEXT: cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]], int N);
+// CHECK: void testKernel(int L, int M, cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]], int N);
 __global__ void testKernel(int L, int M, int N);
 
-// CHECK: void testKernel(int L, int M,
-// CHECK-NEXT: cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]], int N = 0);
+// CHECK: void testKernel(int L, int M, cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]], int N = 0);
 __global__ void testKernel(int L, int M, int N = 0);
 
 // CHECK: void testKernelPtr(const int *L, const int *M, int N,
@@ -34,8 +32,7 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 
 
 // CHECK: // Test Launch Bounds
-// CHECK-NEXT: void testKernel(int L, int M,
-// CHECK-NEXT: cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]], int N) {
+// CHECK-NEXT: void testKernel(int L, int M, cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]], int N) {
 __launch_bounds__(256, 512) // Test Launch Bounds
 __global__ void testKernel(int L, int M, int N) {
   // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range().get(2) + [[ITEMNAME]].get_local_id(2);
@@ -416,7 +413,8 @@ void run_foo4(dim3 c, dim3 d) {
 }
 
 //CHECK:dpct::shared_memory<float, 1> result(32);
-//CHECK-NEXT:void my_kernel(float* result, cl::sycl::nd_item<3> item_ct1, float *resultInGroup) {
+//CHECK-NEXT:void my_kernel(float* result, cl::sycl::nd_item<3> item_ct1,
+//CHECK-NEXT:               float *resultInGroup) {
 //CHECK-NEXT:  // __shared__ variable
 //CHECK-NEXT:  resultInGroup[item_ct1.get_local_id(2)] = item_ct1.get_group(2);
 //CHECK-NEXT:  memcpy(&result[item_ct1.get_group(2)*8], resultInGroup, sizeof(float)*8);
@@ -505,8 +503,7 @@ int run_foo7 () {
 
 //CHECK:dpct::shared_memory<float, 0> in;
 //CHECK-NEXT:dpct::shared_memory<float, 0> out;
-//CHECK-NEXT:void my_kernel2(float in, float *out,
-//CHECK-NEXT:                cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:void my_kernel2(float in, float *out, cl::sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:  if (item_ct1.get_local_id(2) == 0) {
 //CHECK-NEXT:    memcpy(out, &in, sizeof(float));
 //CHECK-NEXT:  }
@@ -546,8 +543,7 @@ int run_foo8() {
   printf("%f ", out);
 }
 
-//CHECK: void deviceFoo(int i, int j, int k,
-//CHECK-NEXT:   cl::sycl::nd_item<3> item_ct1,
+//CHECK: void deviceFoo(int i, int j, int k, cl::sycl::nd_item<3> item_ct1,
 //CHECK-NEXT: int l = 0,
 //CHECK-NEXT: int m = 0, int n = 0){
 //CHECK-NEXT: int a = item_ct1.get_group(2);

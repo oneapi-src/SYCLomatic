@@ -1,8 +1,7 @@
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include" --format-range=none -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/insert_extra_args.dp.cpp --match-full-lines %s
 
-//CHECK: void deviceFoo(int i, int j,
-//CHECK-NEXT:   sycl::nd_item<3> item_ct1){
+//CHECK: void deviceFoo(int i, int j, sycl::nd_item<3> item_ct1){
 //CHECK-NEXT: int a = item_ct1.get_group(2);
 //CHECK-NEXT: }
 __device__ void deviceFoo(int i, int j){
@@ -29,13 +28,12 @@ __device__ void deviceFoo2(int i = 0, int j = 0){
 //CHECK-NEXT:   deviceFoo2(item_ct1, 1, 2);
 //CHECK-NEXT: }
 __global__ void callDeviceFoo(){
-  deviceFoo(1,2);
-  deviceFoo1(1,2);
-  deviceFoo2(1,2);
+  deviceFoo(1, 2);
+  deviceFoo1(1, 2);
+  deviceFoo2(1, 2);
 }
 
-//CHECK: void kernelFoo(int i, int j,
-//CHECK-NEXT:   sycl::nd_item<3> item_ct1){
+//CHECK: void kernelFoo(int i, int j, sycl::nd_item<3> item_ct1){
 //CHECK-NEXT: int a = item_ct1.get_group(2);
 //CHECK-NEXT: }
 __global__ void kernelFoo(int i, int j){

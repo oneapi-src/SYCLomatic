@@ -41,6 +41,73 @@ class DeviceFunctionDecl;
 class MemVarInfo;
 class VarInfo;
 
+struct FormatInfo {
+  FormatInfo() : EnableFormat(false), IsAllParamsOneLine(true) {}
+  bool EnableFormat;
+  bool IsAllParamsOneLine;
+  bool IsEachParamNL;
+  int CurrentLength;
+  int NewLineIndentLength;
+  std::string NewLineIndentStr;
+};
+
+class ParameterStream {
+public:
+  ParameterStream() { FormatInformation = FormatInfo(); }
+  ParameterStream(FormatInfo FormatInformation, int ColumnLimit)
+      : FormatInformation(FormatInformation), ColumnLimit(ColumnLimit) {}
+
+  ParameterStream &operator<<(const std::string &InputParamStr) {
+    if (InputParamStr.size()==0) {
+      return *this;
+    }
+
+    if (!FormatInformation.EnableFormat) {
+      // append the string directly
+      Str = Str + InputParamStr;
+      return *this;
+    }
+
+    if (FormatInformation.IsAllParamsOneLine) {
+      // all parameters are in one line
+      Str = Str + ", " + InputParamStr;
+      return *this;
+    }
+
+    if (FormatInformation.IsEachParamNL) {
+      // each parameter is in a single line
+      Str = Str + "," + getNL() + FormatInformation.NewLineIndentStr +
+            InputParamStr;
+      return *this;
+    }
+
+    // parameters will be inserted in one line unless the line length > column limit.
+    if (FormatInformation.CurrentLength + 2 + (int)InputParamStr.size() <=
+        ColumnLimit) {
+      Str = Str + ", " + InputParamStr;
+      FormatInformation.CurrentLength = FormatInformation.CurrentLength + 2 +
+                                        InputParamStr.size();
+      return *this;
+    } else {
+      Str = Str + std::string(",") + getNL() +
+                                   FormatInformation.NewLineIndentStr +
+                                   InputParamStr;
+      FormatInformation.CurrentLength =
+          FormatInformation.NewLineIndentLength + InputParamStr.size();
+      return *this;
+    }
+
+
+  }
+  ParameterStream &operator<<(int InputInt) {
+    return *this << std::to_string(InputInt);
+  }
+
+  std::string Str = "";
+  FormatInfo FormatInformation;
+  int ColumnLimit;
+};
+
 template <class T> using GlobalMap = std::map<unsigned, std::shared_ptr<T>>;
 using MemVarInfoMap = GlobalMap<MemVarInfo>;
 
@@ -512,6 +579,12 @@ public:
     return Res;
   }
 
+  inline static void setCodeFormatStyle(clang::format::FormatStyle Style) {
+    CodeFormatStyle = Style;
+  }
+  inline static clang::format::FormatStyle getCodeFormatStyle() {
+    return CodeFormatStyle;
+  }
 
   template <class TargetTy, class NodeTy>
   static inline const TargetTy *
@@ -869,6 +942,7 @@ private:
   static int CurrentIndexInRule;
   static std::set<std::string> IncludingFileSet;
   static std::set<std::string> FileSetInCompiationDB;
+  static clang::format::FormatStyle CodeFormatStyle;
 };
 
 class TemplateArgumentInfo;
@@ -1146,44 +1220,45 @@ public:
     return buildString(getRangeClass(), " ", getRangeName(),
                        getType()->getRangeArgument(MemSize, false), ";");
   }
-  llvm::raw_ostream &getFuncDecl(llvm::raw_ostream &OS) {
+  ParameterStream &getFuncDecl(ParameterStream &PS) {
+
     if (AccMode == Value) {
-      OS << getAccessorDataType(true) << " ";
+      PS << getAccessorDataType(true) << " ";
     } else if (AccMode == Pointer) {
-      OS << getAccessorDataType(true) << " *";
+      PS << getAccessorDataType(true) << " *";
     } else {
-      OS << getDpctAccessorType(true) << " ";
+      PS << getDpctAccessorType(true) << " ";
     }
-    return OS << getArgName();
+    return PS << getArgName();
   }
-  llvm::raw_ostream &getFuncArg(llvm::raw_ostream &OS) {
-    return OS << getArgName();
+  ParameterStream &getFuncArg(ParameterStream &PS) {
+    return PS << getArgName();
   }
-  llvm::raw_ostream &getKernelArg(llvm::raw_ostream &OS) {
+  ParameterStream &getKernelArg(ParameterStream &PS) {
     if (isShared() || DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
       if (AccMode == Accessor) {
-        OS << getDpctAccessorType(true) << "(";
-        OS << getAccessorName();
+        PS << getDpctAccessorType(true) << "(";
+        PS << getAccessorName();
         if (isShared()) {
-          OS << ", " << getRangeName();
+          PS << ", " << getRangeName();
         }
-        OS << ")";
+        PS << ")";
       } else if (AccMode == Pointer) {
-        OS << getAccessorName() << ".get_pointer()";
+        PS << getAccessorName() << ".get_pointer()";
       } else {
-        OS << getAccessorName();
+        PS << getAccessorName();
       }
     } else {
       if (AccMode == Accessor) {
-        OS << getAccessorName();
+        PS << getAccessorName();
       } else {
         if (AccMode == Value) {
-          OS << "*";
+          PS << "*";
         }
-        OS << getPtrName();
+        PS << getPtrName();
       }
     }
-    return OS;
+    return PS;
   }
 
 private:
@@ -1278,9 +1353,9 @@ public:
     MapNames::replaceName(MapNames::TypeNamesMap, DataType);
   }
 
-  llvm::raw_ostream &printType(llvm::raw_ostream &OS,
+  ParameterStream &printType(ParameterStream &PS,
                                const std::string &TemplateName) {
-    return OS << TemplateName << "<" << DataType << ", " << Dimension << ">";
+    return PS << TemplateName << "<" << DataType << ", " << Dimension << ">";
   }
 };
 
@@ -1303,9 +1378,9 @@ protected:
   TextureInfo(std::pair<StringRef, unsigned> LocInfo, StringRef Name)
       : TextureInfo(LocInfo.second, LocInfo.first.str(), Name) {}
 
-  llvm::raw_ostream &getDecl(llvm::raw_ostream &OS,
+  ParameterStream &getDecl(ParameterStream &PS,
                              const std::string &TemplateDeclName) {
-    return Type->printType(OS, "dpct::" + TemplateDeclName) << " " << Name;
+    return Type->printType(PS, "dpct::" + TemplateDeclName) << " " << Name;
   }
 
 public:
@@ -1333,24 +1408,23 @@ public:
   inline std::shared_ptr<TextureTypeInfo> getType() const { return Type; }
 
   virtual std::string getHostDeclString() {
-    std::string Result;
-    llvm::raw_string_ostream OS(Result);
-    getDecl(OS, "image") << ";";
-    return OS.str();
+    ParameterStream PS;
+    getDecl(PS, "image") << ";";
+    return PS.Str;
   }
 
   virtual std::string getAccessorDecl() {
     return buildString("auto ", Name, "_acc = ", Name, ".get_access(cgh);");
   }
 
-  inline llvm::raw_ostream &getFuncDecl(llvm::raw_ostream &OS) {
-    return getDecl(OS, "image_accessor");
+  inline ParameterStream &getFuncDecl(ParameterStream &PS) {
+    return getDecl(PS, "image_accessor");
   }
-  inline llvm::raw_ostream &getFuncArg(llvm::raw_ostream &OS) {
-    return OS << Name;
+  inline ParameterStream &getFuncArg(ParameterStream &PS) {
+    return PS << Name;
   }
-  inline llvm::raw_ostream &getKernelArg(llvm::raw_ostream &OS) {
-    return OS << Name << "_acc";
+  inline ParameterStream &getKernelArg(ParameterStream &PS) {
+    return PS << Name << "_acc";
   }
   inline const std::string &getName() { return Name; }
 
@@ -1373,20 +1447,18 @@ public:
       : TextureObjectInfo(PVD, PVD->getFunctionScopeIndex()) {}
   TextureObjectInfo(const VarDecl *VD) : TextureObjectInfo(VD, 0) {}
   std::string getAccessorDecl() override {
-    std::string Result;
-    llvm::raw_string_ostream OS(Result);
-    OS << "auto " << Name << "_acc = static_cast<";
-    getType()->printType(OS, "dpct::image")
+    ParameterStream PS;
+    PS << "auto " << Name << "_acc = static_cast<";
+    getType()->printType(PS, "dpct::image")
         << " *>(" << Name << ")->get_access(cgh);";
-    return OS.str();
+    return PS.Str;
   }
   inline unsigned getParamIdx() const { return ParamIdx; }
 
   std::string getParamDeclType() {
-    std::string Result;
-    llvm::raw_string_ostream OS(Result);
-    Type->printType(OS, "dpct::image_accessor");
-    return OS.str();
+    ParameterStream PS;
+    Type->printType(PS, "dpct::image_accessor");
+    return PS.Str;
   }
 
   void addParamDeclReplacement() {
@@ -1469,8 +1541,9 @@ public:
   // If want adding the ExtraParam with new line, the second argument should be
   // true, and the third argument is the string of indent, which will occur
   // before each ExtraParam.
-  std::string getExtraDeclParam(bool HasPreParam, bool HasPostParam, bool IsExtraParamWithNL = false,
-                                std::string Indent = "") const;
+  std::string
+  getExtraDeclParam(bool HasPreParam, bool HasPostParam,
+                    FormatInfo FormatInformation = FormatInfo()) const;
   std::string getKernelArguments(bool HasPreParam, bool HasPostParam) const;
 
   const MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) const {
@@ -1513,73 +1586,71 @@ private:
   }
 
   template <CallOrDecl COD>
-  inline llvm::raw_ostream &getItem(llvm::raw_ostream &OS) const {
-    return OS << DpctGlobalInfo::getItemName();
+  inline ParameterStream &getItem(ParameterStream &PS) const {
+    return PS << DpctGlobalInfo::getItemName();
   }
 
   template <CallOrDecl COD>
-  inline llvm::raw_ostream &getStream(llvm::raw_ostream &OS) const {
-    return OS << DpctGlobalInfo::getStreamName();
+  inline ParameterStream &getStream(ParameterStream &PS) const {
+    return PS << DpctGlobalInfo::getStreamName();
   }
 
   template <CallOrDecl COD>
   inline std::string getArgumentsOrParameters(int PreParams, int PostParams,
-                                              bool IsExtraParamWithNL = false,
-                                              std::string Indent = "") const {
-    std::string Result;
-    llvm::raw_string_ostream OS(Result);
+                           FormatInfo FormatInformation = FormatInfo()) const {
+    ParameterStream PS;
     if (PreParams != 0)
-        OS << ", ";
+      PS << ", ";
     if (hasItem())
-      getItem<COD>(OS) << ", ";
+      getItem<COD>(PS) << ", ";
     if (hasStream())
-      getStream<COD>(OS) << ", ";
+      getStream<COD>(PS) << ", ";
     if (!ExternVarMap.empty())
-      GetArgOrParam<MemVarInfo, COD>()(OS, ExternVarMap.begin()->second)
+      GetArgOrParam<MemVarInfo, COD>()(PS, ExternVarMap.begin()->second)
           << ", ";
-    getArgumentsOrParametersFromMap<MemVarInfo, COD>(OS, GlobalVarMap);
-    getArgumentsOrParametersFromMap<MemVarInfo, COD>(OS, LocalVarMap);
-    getArgumentsOrParametersFromMap<TextureInfo, COD>(OS, TextureMap);
-    OS.flush();
+    getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, GlobalVarMap);
+    getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, LocalVarMap);
+    getArgumentsOrParametersFromMap<TextureInfo, COD>(PS, TextureMap);
+
+    std::string Result = PS.Str;
     return (Result.empty() || PostParams != 0) && PreParams == 0
                ? Result
                : Result.erase(Result.size() - 2, 2);
   }
 
   template <class T, CallOrDecl COD>
-  static void getArgumentsOrParametersFromMap(llvm::raw_ostream &OS,
-                                              const GlobalMap<T> &VarMap,
-                                              bool AddNL = false,
-                                              std::string Indent = "") {
+  static void getArgumentsOrParametersFromMap(ParameterStream &PS,
+                                              const GlobalMap<T> &VarMap) {
     for (auto VI : VarMap) {
-      if (AddNL)
-        GetArgOrParam<T, COD>()(OS, VI.second) << "," << getNL() << Indent;
-      else
-        GetArgOrParam<T, COD>()(OS, VI.second) << ", ";
+      if (PS.FormatInformation.EnableFormat) {
+        ParameterStream TPS;
+        GetArgOrParam<T, COD>()(TPS, VI.second);
+        PS << TPS.Str;
+      } else {
+        GetArgOrParam<T, COD>()(PS, VI.second) << ", ";
+      }
     }
   }
 
   template <class T, CallOrDecl COD> struct GetArgOrParam;
   template <class T> struct GetArgOrParam<T, DeclParameter> {
-    llvm::raw_ostream &operator()(llvm::raw_ostream &OS, std::shared_ptr<T> V) {
-      return V->getFuncDecl(OS);
+    ParameterStream &operator()(ParameterStream &PS, std::shared_ptr<T> V) {
+      return V->getFuncDecl(PS);
     }
   };
   template <class T> struct GetArgOrParam<T, CallArgument> {
-    llvm::raw_ostream &operator()(llvm::raw_ostream &OS, std::shared_ptr<T> V) {
-      return V->getFuncArg(OS);
+    ParameterStream &operator()(ParameterStream &PS, std::shared_ptr<T> V) {
+      return V->getFuncArg(PS);
     }
   };
   template <class T> struct GetArgOrParam<T, KernelArgument> {
-    llvm::raw_ostream &operator()(llvm::raw_ostream &OS, std::shared_ptr<T> V) {
-      return V->getKernelArg(OS);
+    ParameterStream &operator()(ParameterStream &PS, std::shared_ptr<T> V) {
+      return V->getKernelArg(PS);
     }
   };
-  inline void getArgumentsOrParametersForDecl(llvm::raw_string_ostream &OS,
-                                              int PreParams,
-                                              int PostParams, bool AddNL,
-                                              std::string Indent,
-                                              std::string ParamsSpliter) const;
+  inline void
+  getArgumentsOrParametersForDecl(ParameterStream &PS, int PreParams,
+                                  int PostParams) const;
 
   bool HasItem, HasStream;
   MemVarInfoMap LocalVarMap;
@@ -1589,72 +1660,92 @@ private:
 };
 
 template <>
-inline llvm::raw_ostream &
-MemVarMap::getItem<MemVarMap::DeclParameter>(llvm::raw_ostream &OS) const {
+inline ParameterStream &
+MemVarMap::getItem<MemVarMap::DeclParameter>(ParameterStream &PS) const {
   static std::string ItemParamDecl = MapNames::getClNamespace() +
                                      "::nd_item<3> " +
                                      DpctGlobalInfo::getItemName();
-  return OS << ItemParamDecl;
+  return PS << ItemParamDecl;
 }
 
 template <>
-inline llvm::raw_ostream &
-MemVarMap::getStream<MemVarMap::DeclParameter>(llvm::raw_ostream &OS) const {
+inline ParameterStream &
+MemVarMap::getStream<MemVarMap::DeclParameter>(ParameterStream &PS) const {
   static std::string StreamParamDecl = MapNames::getClNamespace() +
                                        "::stream " +
                                        DpctGlobalInfo::getStreamName();
-  return OS << StreamParamDecl;
+  return PS << StreamParamDecl;
 }
 
 inline void MemVarMap::getArgumentsOrParametersForDecl(
-    llvm::raw_string_ostream &OS, int PreParams, int PostParams,
-    bool AddNL, std::string Indent, std::string ParamsSpliter) const {
-  if (PreParams != 0)
-    OS << ParamsSpliter;
-  if (hasItem())
-    getItem<MemVarMap::DeclParameter>(OS) << ParamsSpliter;
-  if (hasStream())
-    getStream<MemVarMap::DeclParameter>(OS) << ParamsSpliter;
-  if (!ExternVarMap.empty())
+    ParameterStream &PS, int PreParams, int PostParams) const {
+  if (hasItem()) {
+    getItem<MemVarMap::DeclParameter>(PS);
+  }
+
+  if (hasStream()) {
+    getStream<MemVarMap::DeclParameter>(PS);
+  }
+
+  if (!ExternVarMap.empty()) {
+    ParameterStream TPS;
     GetArgOrParam<MemVarInfo, MemVarMap::DeclParameter>()(
-        OS, ExternVarMap.begin()->second)
-        << ParamsSpliter;
+        TPS, ExternVarMap.begin()->second);
+    PS << TPS.Str;
+  }
+
   getArgumentsOrParametersFromMap<MemVarInfo, MemVarMap::DeclParameter>(
-      OS, GlobalVarMap, AddNL, Indent);
+      PS, GlobalVarMap);
   getArgumentsOrParametersFromMap<MemVarInfo, MemVarMap::DeclParameter>(
-      OS, LocalVarMap, AddNL, Indent);
+      PS, LocalVarMap);
   getArgumentsOrParametersFromMap<TextureInfo, MemVarMap::DeclParameter>(
-      OS, TextureMap, AddNL, Indent);
-  OS.flush();
+      PS, TextureMap);
 }
 
 template <>
 inline std::string
 MemVarMap::getArgumentsOrParameters<MemVarMap::DeclParameter>(
-    int PreParams, int PostParams, bool IsExtraParamWithNL,
-    std::string Indent) const {
-  std::string Result;
-  llvm::raw_string_ostream OS(Result);
-  unsigned int RemoveLength;
-  if (IsExtraParamWithNL) {
-    getArgumentsOrParametersForDecl(OS, PreParams, PostParams, true, Indent,
-                                    std::string(",") + getNL() + Indent);
-#ifdef _WIN32
-    // comma, Indent '\r' and '\n'
-    RemoveLength = 1 + Indent.length() + 2;
-#else
-    // comma, Indent and '\n'
-    RemoveLength = 1 + Indent.length() + 1;
-#endif
+    int PreParams, int PostParams, FormatInfo FormatInformation) const {
+
+  ParameterStream PS;
+  if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
+    PS = ParameterStream(FormatInformation,
+                       DpctGlobalInfo::getCodeFormatStyle().ColumnLimit);
   } else {
-    getArgumentsOrParametersForDecl(OS, PreParams, PostParams, false, "",
-                                    ", ");
-    // comma and space
-    RemoveLength = 2;
+    PS = ParameterStream(FormatInformation, 80);
   }
-  return (Result.empty() || PostParams != 0) && PreParams ==0
-             ? Result
-             : Result.erase(Result.size() - RemoveLength, RemoveLength);
+  getArgumentsOrParametersForDecl(PS, PreParams, PostParams);
+  std::string Result = PS.Str;
+
+  if (Result.empty())
+    return Result;
+
+  // Remove pre spiliter
+  unsigned int RemoveLength = 0;
+  if (PreParams == 0) {
+    if (FormatInformation.IsAllParamsOneLine) {
+      // comma and space
+      RemoveLength = 2;
+    } else {
+      // calculate length from the first charactor "," to the next nospace
+      // charactor
+      RemoveLength = 1;
+      while (RemoveLength < Result.size()) {
+        if (!isspace(Result[RemoveLength]))
+          break;
+        RemoveLength++;
+      }
+    }
+    Result = Result.substr(RemoveLength, Result.size() - RemoveLength);
+  }
+
+  // Add post spiliter
+  RemoveLength = 0;
+  if (PostParams != 0 && PreParams == 0) {
+    Result = Result + ", ";
+  }
+
+  return Result;
 }
 
 // call function expression includes location, name, arguments num, template
@@ -1866,8 +1957,7 @@ private:
   bool IsStatic;
 
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
-  std::string Indent;
-  bool IsExtraParamWithNL = false;
+  FormatInfo FormatInformation;
 };
 
 // device function info includes parameters num, memory variable and call
@@ -1905,12 +1995,11 @@ public:
   inline bool isBuilt() { return IsBuilt; }
   inline void setBuilt() { IsBuilt = true; }
 
-  inline std::string getExtraParameters(bool IsExtraParamWithNL = false,
-                                        std::string Indent = "") {
+  inline std::string
+  getExtraParameters(FormatInfo FormatInformation = FormatInfo()) {
     buildInfo();
-    return VarMap.getExtraDeclParam(NonDefaultParamNum,
-                                    ParamsNum - NonDefaultParamNum,
-                                    IsExtraParamWithNL, Indent);
+    return VarMap.getExtraDeclParam(
+        NonDefaultParamNum, ParamsNum - NonDefaultParamNum, FormatInformation);
   }
 
   void setDefinitionFilePath(const std::string &Path) {

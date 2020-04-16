@@ -44,7 +44,8 @@ const int num_elements = 16;
 // CHECK: dpct::device_memory<float, 2> fy(num_elements, 4 * num_elements);
 __device__ float fx[2], fy[num_elements][4 * num_elements];
 
-// CHECK: void kernel2(float *out, sycl::nd_item<3> [[ITEM:item_ct1]], int *al, float *fx, dpct::accessor<float, dpct::device, 2> fy, float *tmp) {
+// CHECK: void kernel2(float *out, sycl::nd_item<3> [[ITEM:item_ct1]], int *al, float *fx,
+// CHECK:              dpct::accessor<float, dpct::device, 2> fy, float *tmp) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] += *al;
 // CHECK:   fx[{{.*}}[[ITEM]].get_local_id(2)] = fy[{{.*}}[[ITEM]].get_local_id(2)][{{.*}}[[ITEM]].get_local_id(2)];
 // CHECK: }

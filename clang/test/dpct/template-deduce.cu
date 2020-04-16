@@ -113,9 +113,7 @@ int main() {
 }
 
 // CHECK: template<typename T1, typename T2>
-// CHECK-NEXT: void k(T1 arg1, T2 arg2,
-// CHECK-NEXT:        T1 *v1,
-// CHECK-NEXT:        T2 *v2) {
+// CHECK-NEXT: void k(T1 arg1, T2 arg2, T1 *v1, T2 *v2) {
 // CHECK-EMPTY:
 // CHECK-EMPTY:
 // CHECK-NEXT:   *v1 += arg1;
