@@ -55,10 +55,11 @@ inline float atomic_fetch_add(
   cl::sycl::atomic<int, addressSpace> obj(
       (cl::sycl::multi_ptr<int, addressSpace>(reinterpret_cast<int *>(addr))));
 
-  int old_value = obj.load(memoryOrder);
-
+  int old_value;
   float old_float_value;
+
   do {
+    old_value = obj.load(memoryOrder);
     old_float_value = *reinterpret_cast<const float *>(&old_value);
     const float new_float_value = old_float_value + operand;
     const int new_value = *reinterpret_cast<const int *>(&new_float_value);
@@ -87,10 +88,11 @@ inline double atomic_fetch_add(
       (cl::sycl::multi_ptr<unsigned long long int, addressSpace>(
           reinterpret_cast<unsigned long long int *>(addr))));
 
-  unsigned long long int old_value = obj.load(memoryOrder);
-
+  unsigned long long int old_value;
   double old_double_value;
+
   do {
+    old_value = obj.load(memoryOrder);
     old_double_value = *reinterpret_cast<const double *>(&old_value);
     const double new_double_value = old_double_value + operand;
     const unsigned long long int new_value =
