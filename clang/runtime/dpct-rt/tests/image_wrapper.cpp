@@ -1,4 +1,4 @@
-// RUN: dpcpp texture.cpp -o texture
+// RUN: dpcpp image_wrapper.cpp -o texture
 
 #define DPCT_NAMED_LAMBDA
 #include "../include/dpct.hpp"
@@ -7,7 +7,7 @@ dpct::image<cl::sycl::float4, 2> tex42;
 dpct::image<cl::sycl::float2, 1> tex21;
 dpct::image<unsigned short, 3> tex13;
 
-void test_texture(dpct::image_accessor<cl::sycl::float4, 2> acc42,
+void test_image(dpct::image_accessor<cl::sycl::float4, 2> acc42,
                   dpct::image_accessor<cl::sycl::float2, 1> acc21,
                   dpct::image_accessor<unsigned short, 3> acc13) {
   cl::sycl::float4 data42 = dpct::read_image(acc42, 1.0f, 1.0f);
@@ -29,6 +29,7 @@ int main() {
       dpct::create_image_channel(32, 32, 0, 0, dpct::channel_float);
   dpct::image_channel chn4 =
       dpct::create_image_channel(32, 32, 32, 32, dpct::channel_float);
+  chn4.set_channel_size(4, 32);
 
   dpct::image_matrix_p array1;
   dpct::image_matrix_p array2;
@@ -64,7 +65,7 @@ int main() {
       auto acc13 = tex13.get_access(cgh);
       auto acc21 = tex21.get_access(cgh);
       cgh.single_task<dpct_kernel_name<class dpct_single_kernel>>(
-          [=] { test_texture(acc42, acc21, acc13); });
+          [=] { test_image(acc42, acc21, acc13); });
     });
   }
 

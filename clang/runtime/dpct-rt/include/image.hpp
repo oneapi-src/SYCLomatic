@@ -127,9 +127,39 @@ template <class T> struct fetch_data<cl::sycl::vec<T, 4>> {
 
 /// Image channel info, include channel number, order, data width and type
 struct image_channel {
-  cl::sycl::image_channel_order _order;
-  cl::sycl::image_channel_type _type;
-  unsigned _elem_size;
+  cl::sycl::image_channel_type type;
+  /// Channels number.
+  unsigned channel_nums;
+  /// Total size of all channels in bytes.
+  unsigned elem_size;
+
+  cl::sycl::image_channel_order get_channel_order() const {
+    switch (channel_nums) {
+    case 1:
+      return cl::sycl::image_channel_order::r;
+    case 2:
+      return cl::sycl::image_channel_order::rg;
+    case 3:
+      return cl::sycl::image_channel_order::rgb;
+    case 4:
+      return cl::sycl::image_channel_order::rgba;
+    default:
+      return cl::sycl::image_channel_order::r;
+    }
+  }
+  /// Get the size for each channel in bits.
+  unsigned get_channel_size() const { return elem_size * 8 / channel_nums; }
+
+  /// Set channel size.
+  /// \param in_channel_nums Channels number to set.
+  /// \param channel_size Size for each channel in bits.
+  void set_channel_size(unsigned in_channel_nums,
+                        unsigned channel_size) {
+    if (in_channel_nums < channel_nums)
+      return;
+    channel_nums = in_channel_nums;
+    elem_size = channel_size * channel_nums / 8;
+  }
 };
 /// 2D or 3D matrix data for image.
 class image_matrix {
@@ -155,12 +185,12 @@ public:
   template <int Dim>
   image_matrix(image_channel channel, cl::sycl::range<Dim>range) : _channel(channel) {
     set_range(range);
-    _src = std::malloc(range.size() * _channel._elem_size);
+    _src = std::malloc(range.size() * _channel.elem_size);
   }
   /// Construct a new image class with the matrix data.
   template <int Dimension> cl::sycl::image<Dimension> *allocate_image() {
     return new cl::sycl::image<Dimension>(
-        _src, _channel._order, _channel._type,
+        _src, _channel.get_channel_order(), _channel.type,
         get_range(make_index_sequence<Dimension>()),
         cl::sycl::property::image::use_host_ptr());
   }
@@ -175,7 +205,7 @@ public:
   inline void *get_data(size_t off_x, size_t off_y, size_t off_z) {
     return (char *)_src +
            (off_x * _range[1] * _range[2] + off_y * _range[2] + off_z) *
-               _channel._elem_size;
+               _channel.elem_size;
   }
   /// Get channel info.
   inline image_channel get_channel() { return _channel; }
@@ -300,8 +330,8 @@ public:
       ptr = get_buffer(ptr).get_access<cl::sycl::access::mode::read_write>()
                 .get_pointer();
     _image = new cl::sycl::image<Dimension>(
-        ptr, chn_desc._order, chn_desc._type,
-        cl::sycl::range<1>(count / chn_desc._elem_size));
+        ptr, chn_desc.get_channel_order(), chn_desc.type,
+        cl::sycl::range<1>(count / chn_desc.elem_size));
   }
   // Detach data.
   void detach() {
@@ -333,37 +363,29 @@ static inline image_channel
 create_image_channel(int elem_size, int channel_nums,
                      channel_data_kind channel_kind) {
   image_channel channel;
-  channel._elem_size = elem_size;
+  channel.elem_size = elem_size;
   if (elem_size == 4) {
     if (channel_kind == channel_signed)
-      channel._type = cl::sycl::image_channel_type::signed_int32;
+      channel.type = cl::sycl::image_channel_type::signed_int32;
     else if (channel_kind == channel_unsigned)
-      channel._type = cl::sycl::image_channel_type::unsigned_int32;
+      channel.type = cl::sycl::image_channel_type::unsigned_int32;
     else if (channel_kind == channel_float)
-      channel._type = cl::sycl::image_channel_type::fp32;
+      channel.type = cl::sycl::image_channel_type::fp32;
   } else if (elem_size == 2) {
     if (channel_kind == channel_signed)
-      channel._type = cl::sycl::image_channel_type::signed_int16;
+      channel.type = cl::sycl::image_channel_type::signed_int16;
     else if (channel_kind == channel_unsigned)
-      channel._type = cl::sycl::image_channel_type::unsigned_int16;
+      channel.type = cl::sycl::image_channel_type::unsigned_int16;
     else if (channel_kind == channel_float)
-      channel._type = cl::sycl::image_channel_type::fp16;
+      channel.type = cl::sycl::image_channel_type::fp16;
   } else {
     if (channel_kind == channel_signed)
-      channel._type = cl::sycl::image_channel_type::signed_int8;
+      channel.type = cl::sycl::image_channel_type::signed_int8;
     else if (channel_kind == channel_unsigned)
-      channel._type = cl::sycl::image_channel_type::unsigned_int8;
+      channel.type = cl::sycl::image_channel_type::unsigned_int8;
   }
-  channel._elem_size *= channel_nums;
-  if (channel_nums >= 4) {
-    channel._order = cl::sycl::image_channel_order::rgba;
-  } else if (channel_nums == 3) {
-    channel._order = cl::sycl::image_channel_order::rgb;
-  } else if (channel_nums == 2) {
-    channel._order = cl::sycl::image_channel_order::rg;
-  } else {
-    channel._order = cl::sycl::image_channel_order::r;
-  }
+  channel.elem_size *= channel_nums;
+  channel.channel_nums = channel_nums;
   return channel;
 }
 
@@ -518,16 +540,15 @@ template <class T> static image_base *create_image(int dims) {
 
 /// Create image with given data type \p T, channel order and dims
 template <class T>
-static image_base *create_image(cl::sycl::image_channel_order order,
-                                          int dims) {
-  switch (order) {
-  case cl::sycl::image_channel_order::r:
+static image_base *create_image(unsigned channel_nums, int dims) {
+  switch (channel_nums) {
+  case 1:
     return create_image<T>(dims);
-  case cl::sycl::image_channel_order::rg:
+  case 2:
     return create_image<cl::sycl::vec<T, 2>>(dims);
-  case cl::sycl::image_channel_order::rgb:
+  case 3:
     return create_image<cl::sycl::vec<T, 3>>(dims);
-  case cl::sycl::image_channel_order::rgba:
+  case 4:
     return create_image<cl::sycl::vec<T, 4>>(dims);
   default:
     return nullptr;
@@ -536,23 +557,23 @@ static image_base *create_image(cl::sycl::image_channel_order order,
 
 /// Create image with channel info and specified dimensions.
 static image_base *create_image(image_channel chn, int dims) {
-  switch (chn._type) {
+  switch (chn.type) {
   case cl::sycl::image_channel_type::fp16:
-    return create_image<cl::sycl::cl_half>(chn._order, dims);
+    return create_image<cl::sycl::cl_half>(chn.channel_nums, dims);
   case cl::sycl::image_channel_type::fp32:
-    return create_image<cl::sycl::cl_float>(chn._order, dims);
+    return create_image<cl::sycl::cl_float>(chn.channel_nums, dims);
   case cl::sycl::image_channel_type::signed_int8:
-    return create_image<cl::sycl::cl_char>(chn._order, dims);
+    return create_image<cl::sycl::cl_char>(chn.channel_nums, dims);
   case cl::sycl::image_channel_type::signed_int16:
-    return create_image<cl::sycl::cl_short>(chn._order, dims);
+    return create_image<cl::sycl::cl_short>(chn.channel_nums, dims);
   case cl::sycl::image_channel_type::signed_int32:
-    return create_image<cl::sycl::cl_int>(chn._order, dims);
+    return create_image<cl::sycl::cl_int>(chn.channel_nums, dims);
   case cl::sycl::image_channel_type::unsigned_int8:
-    return create_image<cl::sycl::cl_uchar>(chn._order, dims);
+    return create_image<cl::sycl::cl_uchar>(chn.channel_nums, dims);
   case cl::sycl::image_channel_type::unsigned_int16:
-    return create_image<cl::sycl::cl_ushort>(chn._order, dims);
+    return create_image<cl::sycl::cl_ushort>(chn.channel_nums, dims);
   case cl::sycl::image_channel_type::unsigned_int32:
-    return create_image<cl::sycl::cl_uint>(chn._order, dims);
+    return create_image<cl::sycl::cl_uint>(chn.channel_nums, dims);
   default:
     return nullptr;
   }

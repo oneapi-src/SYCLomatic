@@ -2584,6 +2584,7 @@ const MapNames::MapTy TextureRule::TextureMemberNames{
     {"addressMode", "addr_mode"},
     {"filterMode", "filter_mode"},
     {"normalized", "coord_normalized"},
+    {"normalizedCoords", "coord_normalized"}
 };
 
 // DeviceProp names mapping.
