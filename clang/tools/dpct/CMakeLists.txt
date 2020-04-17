@@ -29,6 +29,9 @@ set(dpct_vars_script
 set(dpct_syscheck_script
   sys_check.sh
 )
+set(dpct_modulefiles_script
+  dpcpp-ct
+  )
 else()
 set(dpct_vars_script
   vars.bat
@@ -52,6 +55,12 @@ install(
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
   DESTINATION ./sys_check)
 
+install(
+  FILES ${dpct_modulefiles_script}
+  COMPONENT dpct-modulefiles
+  PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
+  DESTINATION ./modulefiles)
+
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
   add_llvm_install_targets(install-dpct-vars
                            COMPONENT dpct-vars)
@@ -62,3 +71,7 @@ if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
                            COMPONENT dpct-syscheck)
 endif()
 
+if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
+  add_llvm_install_targets(install-dpct-modulefiles
+                           COMPONENT dpct-modulefiles)
+endif()

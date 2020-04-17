@@ -900,6 +900,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-dpct
       install-dpct-vars
       install-dpct-syscheck
+      install-dpct-modulefiles
       )
   endif()
 endif()
