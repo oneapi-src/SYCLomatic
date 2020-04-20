@@ -2181,7 +2181,7 @@ private:
   // true, if migrated DPC++ code block need extra { }
   bool NeedBraces = true;
   struct {
-    std::string Config[4];
+    std::string Config[4] = {"", "", "", "0"};
     std::string &GroupSize = Config[0];
     std::string &LocalSize = Config[1];
     std::string &ExternMemSize = Config[2];

@@ -134,7 +134,7 @@ void KernelCallExpr::buildExecutionConfig(
     const CUDAKernelCallExpr *KernelCall) {
   auto Config = KernelCall->getConfig();
   bool LocalReversed = false, GroupReversed = false;
-  for (unsigned Idx = 0; Idx < 4; ++Idx) {
+  for (unsigned Idx = 0; Idx < Config->getNumArgs(); ++Idx) {
     KernelConfigAnalysis A(IsInMacroDefine);
     A.analyze(Config->getArg(Idx), Idx < 2);
     ExecutionConfig.Config[Idx] = A.getReplacedString();
