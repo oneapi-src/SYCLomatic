@@ -1,11 +1,12 @@
-// RUN: %clangxx -fsycl  -fsycl-targets=%sycl_triple %s -o %t.out
+// The test fails sporadically on cuda.
+// See https://github.com/intel/llvm/issues/1508 for more details.
+// UNSUPPORTED: cuda
+
+// RUN: %clangxx -fsycl -fsycl-targets=%sycl_triple %s -o %t.out
 // RUN: env SYCL_DEVICE_TYPE=HOST %t.out
 // RUN: %CPU_RUN_PLACEHOLDER %t.out
 // RUN: %GPU_RUN_PLACEHOLDER %t.out
 // RUN: %ACC_RUN_PLACEHOLDER %t.out
-
-// TODO: pi_die: cuda_piEventSetCallback not implemented
-// XFAIL: cuda
 
 //==---------- buffer_dev_to_dev.cpp - SYCL buffer basic test --------------==//
 //

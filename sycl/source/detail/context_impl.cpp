@@ -6,9 +6,9 @@
 //
 // ===--------------------------------------------------------------------=== //
 
-#include <CL/sycl/backend/cuda.hpp>
 #include <CL/sycl/detail/clusm.hpp>
 #include <CL/sycl/detail/common.hpp>
+#include <CL/sycl/detail/cuda_definitions.hpp>
 #include <CL/sycl/detail/pi.hpp>
 #include <CL/sycl/device.hpp>
 #include <CL/sycl/exception.hpp>
@@ -97,7 +97,8 @@ cl_context context_impl::get() const {
     return pi::cast<cl_context>(MContext);
   }
   throw invalid_object_error(
-      "This instance of context doesn't support OpenCL interoperability.");
+      "This instance of context doesn't support OpenCL interoperability.",
+      PI_INVALID_CONTEXT);
 }
 
 bool context_impl::is_host() const { return MHostContext || !MPluginInterop; }
@@ -148,6 +149,13 @@ context_impl::hasDevice(shared_ptr_class<detail::device_impl> Device) const {
     if (getSyclObjImpl(D) == Device)
       return true;
   return false;
+}
+
+pi_native_handle context_impl::getNative() const {
+  auto Plugin = getPlugin();
+  pi_native_handle Handle;
+  Plugin.call<PiApiKind::piextContextGetNativeHandle>(getHandleRef(), &Handle);
+  return Handle;
 }
 
 } // namespace detail

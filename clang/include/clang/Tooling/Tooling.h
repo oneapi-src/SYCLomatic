@@ -49,6 +49,7 @@
 #include <vector>
 
 #ifdef INTEL_CUSTOMIZATION
+#include <set>
 namespace clang {
 namespace tooling {
 void SetPrintHandler(void (*Handler)(const std::string &Msg, bool IsPrintOnNormal));

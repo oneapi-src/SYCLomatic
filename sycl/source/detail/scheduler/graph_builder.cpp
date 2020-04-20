@@ -27,9 +27,10 @@ __SYCL_INLINE_NAMESPACE(cl) {
 namespace sycl {
 namespace detail {
 
-// The function checks whether two requirements overlaps or not. This
-// information can be used to prove that executing two kernels that
-// work on different parts of the memory object in parallel is legal.
+/// Checks whether two requirements overlap or not.
+///
+/// This information can be used to prove that executing two kernels that
+/// work on different parts of the memory object in parallel is legal.
 static bool doOverlap(const Requirement *LHS, const Requirement *RHS) {
   return (LHS->MOffsetInBytes + LHS->MAccessRange.size() * LHS->MElemSize >=
           RHS->MOffsetInBytes) ||
@@ -43,9 +44,27 @@ static bool sameCtx(const ContextImplPtr &LHS, const ContextImplPtr &RHS) {
   return LHS == RHS || (LHS->is_host() && RHS->is_host());
 }
 
-// The function checks if current requirement is requirement for sub buffer
+/// Checks if current requirement is requirement for sub buffer.
 static bool IsSuitableSubReq(const Requirement *Req) {
   return Req->MIsSubBuffer;
+}
+
+/// Checks if the required access mode is allowed under the current one.
+static bool isAccessModeAllowed(access::mode Required, access::mode Current) {
+  switch (Current) {
+  case access::mode::read:
+    return (Required == Current);
+  case access::mode::write:
+    assert(false && "Write only access is expected to be mapped as read_write");
+    return (Required == Current || Required == access::mode::discard_write);
+  case access::mode::read_write:
+  case access::mode::atomic:
+  case access::mode::discard_write:
+  case access::mode::discard_read_write:
+    return true;
+  }
+  assert(false);
+  return false;
 }
 
 Scheduler::GraphBuilder::GraphBuilder() {
@@ -86,7 +105,6 @@ static void printDotRecursive(std::fstream &Stream,
 
 void Scheduler::GraphBuilder::printGraphAsDot(const char *ModeName) {
   static size_t Counter = 0;
-
   std::string ModeNameStr(ModeName);
   std::string FileName =
       "graph_" + std::to_string(Counter) + ModeNameStr + ".dot";
@@ -105,13 +123,10 @@ void Scheduler::GraphBuilder::printGraphAsDot(const char *ModeName) {
   Stream << "}" << std::endl;
 }
 
-// Returns record for the memory objects passed, nullptr if doesn't exist.
 MemObjRecord *Scheduler::GraphBuilder::getMemObjRecord(SYCLMemObjI *MemObject) {
   return MemObject->MRecord.get();
 }
 
-// Returns record for the memory object requirement refers to, if doesn't
-// exist, creates new one.
 MemObjRecord *
 Scheduler::GraphBuilder::getOrInsertMemObjRecord(const QueueImplPtr &Queue,
                                                  Requirement *Req) {
@@ -129,7 +144,6 @@ Scheduler::GraphBuilder::getOrInsertMemObjRecord(const QueueImplPtr &Queue,
   return MemObject->MRecord.get();
 }
 
-// Helper function which removes all values in Cmds from Leaves
 void Scheduler::GraphBuilder::updateLeaves(const std::set<Command *> &Cmds,
                                            MemObjRecord *Record,
                                            access::mode AccessMode) {
@@ -199,7 +213,8 @@ UpdateHostRequirementCommand *Scheduler::GraphBuilder::insertUpdateHostReqCmd(
 // Takes linked alloca commands. Makes AllocaCmdDst command active using map
 // or unmap operation.
 static Command *insertMapUnmapForLinkedCmds(AllocaCommandBase *AllocaCmdSrc,
-                                            AllocaCommandBase *AllocaCmdDst) {
+                                            AllocaCommandBase *AllocaCmdDst,
+                                            access::mode MapMode) {
   assert(AllocaCmdSrc->MLinkedAllocaCmd == AllocaCmdDst &&
          "Expected linked alloca commands");
   assert(AllocaCmdSrc->MIsActive &&
@@ -215,9 +230,9 @@ static Command *insertMapUnmapForLinkedCmds(AllocaCommandBase *AllocaCmdSrc,
     return UnMapCmd;
   }
 
-  MapMemObject *MapCmd =
-      new MapMemObject(AllocaCmdSrc, *AllocaCmdSrc->getRequirement(),
-                       &AllocaCmdDst->MMemAllocation, AllocaCmdSrc->getQueue());
+  MapMemObject *MapCmd = new MapMemObject(
+      AllocaCmdSrc, *AllocaCmdSrc->getRequirement(),
+      &AllocaCmdDst->MMemAllocation, AllocaCmdSrc->getQueue(), MapMode);
 
   std::swap(AllocaCmdSrc->MIsActive, AllocaCmdDst->MIsActive);
 
@@ -230,7 +245,7 @@ Command *Scheduler::GraphBuilder::insertMemoryMove(MemObjRecord *Record,
 
   AllocaCommandBase *AllocaCmdDst = getOrCreateAllocaForReq(Record, Req, Queue);
   if (!AllocaCmdDst)
-    throw runtime_error("Out of host memory");
+    throw runtime_error("Out of host memory", PI_OUT_OF_HOST_MEMORY);
 
   std::set<Command *> Deps =
       findDepsForReq(Record, Req, Queue->getContextImplPtr());
@@ -240,9 +255,6 @@ Command *Scheduler::GraphBuilder::insertMemoryMove(MemObjRecord *Record,
     if (AllocaCmdDst->getType() == Command::CommandType::ALLOCA_SUB_BUF)
       AllocaCmdDst =
           static_cast<AllocaSubBufCommand *>(AllocaCmdDst)->getParentAlloca();
-    else
-      assert(
-          !"Inappropriate alloca command. AllocaSubBufCommand was expected.");
   }
 
   AllocaCommandBase *AllocaCmdSrc =
@@ -264,7 +276,7 @@ Command *Scheduler::GraphBuilder::insertMemoryMove(MemObjRecord *Record,
     AllocaCmdSrc = (Record->MAllocaCommands.end() != It) ? *It : nullptr;
   }
   if (!AllocaCmdSrc)
-    throw runtime_error("Cannot find buffer allocation");
+    throw runtime_error("Cannot find buffer allocation", PI_INVALID_VALUE);
   // Get parent allocation of sub buffer to perform full copy of whole buffer
   if (IsSuitableSubReq(Req)) {
     if (AllocaCmdSrc->getType() == Command::CommandType::ALLOCA_SUB_BUF)
@@ -277,7 +289,12 @@ Command *Scheduler::GraphBuilder::insertMemoryMove(MemObjRecord *Record,
   Command *NewCmd = nullptr;
 
   if (AllocaCmdSrc->MLinkedAllocaCmd == AllocaCmdDst) {
-    NewCmd = insertMapUnmapForLinkedCmds(AllocaCmdSrc, AllocaCmdDst);
+    // Map write only as read-write
+    access::mode MapMode = Req->MAccessMode;
+    if (MapMode == access::mode::write)
+      MapMode = access::mode::read_write;
+    NewCmd = insertMapUnmapForLinkedCmds(AllocaCmdSrc, AllocaCmdDst, MapMode);
+    Record->MHostAccess = MapMode;
   } else {
 
     // Full copy of buffer is needed to avoid loss of data that may be caused
@@ -296,6 +313,43 @@ Command *Scheduler::GraphBuilder::insertMemoryMove(MemObjRecord *Record,
   addNodeToLeaves(Record, NewCmd, access::mode::read_write);
   Record->MCurContext = Queue->getContextImplPtr();
   return NewCmd;
+}
+
+Command *Scheduler::GraphBuilder::remapMemoryObject(
+    MemObjRecord *Record, Requirement *Req, AllocaCommandBase *HostAllocaCmd) {
+  assert(HostAllocaCmd->getQueue()->is_host() &&
+         "Host alloca command expected");
+  assert(HostAllocaCmd->MIsActive && "Active alloca command expected");
+
+  AllocaCommandBase *LinkedAllocaCmd = HostAllocaCmd->MLinkedAllocaCmd;
+  assert(LinkedAllocaCmd && "Linked alloca command expected");
+
+  std::set<Command *> Deps = findDepsForReq(Record, Req, Record->MCurContext);
+
+  UnMapMemObject *UnMapCmd = new UnMapMemObject(
+      LinkedAllocaCmd, *LinkedAllocaCmd->getRequirement(),
+      &HostAllocaCmd->MMemAllocation, LinkedAllocaCmd->getQueue());
+
+  // Map write only as read-write
+  access::mode MapMode = Req->MAccessMode;
+  if (MapMode == access::mode::write)
+    MapMode = access::mode::read_write;
+  MapMemObject *MapCmd = new MapMemObject(
+      LinkedAllocaCmd, *LinkedAllocaCmd->getRequirement(),
+      &HostAllocaCmd->MMemAllocation, LinkedAllocaCmd->getQueue(), MapMode);
+
+  for (Command *Dep : Deps) {
+    UnMapCmd->addDep(DepDesc{Dep, UnMapCmd->getRequirement(), LinkedAllocaCmd});
+    Dep->addUser(UnMapCmd);
+  }
+
+  MapCmd->addDep(DepDesc{UnMapCmd, MapCmd->getRequirement(), HostAllocaCmd});
+  UnMapCmd->addUser(MapCmd);
+
+  updateLeaves(Deps, Record, access::mode::read_write);
+  addNodeToLeaves(Record, MapCmd, access::mode::read_write);
+  Record->MHostAccess = MapMode;
+  return MapCmd;
 }
 
 // The function adds copy operation of the up to date'st memory to the memory
@@ -322,7 +376,7 @@ Command *Scheduler::GraphBuilder::addCopyBack(Requirement *Req) {
       SrcAllocaCmd->getQueue(), std::move(HostQueue)));
 
   if (!MemCpyCmdUniquePtr)
-    throw runtime_error("Out of host memory");
+    throw runtime_error("Out of host memory", PI_OUT_OF_HOST_MEMORY);
 
   MemCpyCommandHost *MemCpyCmd = MemCpyCmdUniquePtr.release();
   for (Command *Dep : Deps) {
@@ -340,7 +394,7 @@ Command *Scheduler::GraphBuilder::addCopyBack(Requirement *Req) {
 // The function implements SYCL host accessor logic: host accessor
 // should provide access to the buffer in user space.
 Command *Scheduler::GraphBuilder::addHostAccessor(Requirement *Req,
-                                                const bool destructor) {
+                                                  const bool destructor) {
 
   const QueueImplPtr &HostQueue = getInstance().getDefaultHostQueue();
 
@@ -352,8 +406,11 @@ Command *Scheduler::GraphBuilder::addHostAccessor(Requirement *Req,
   AllocaCommandBase *HostAllocaCmd =
       getOrCreateAllocaForReq(Record, Req, HostQueue);
 
-  if (!sameCtx(HostAllocaCmd->getQueue()->getContextImplPtr(),
-               Record->MCurContext))
+  if (sameCtx(HostAllocaCmd->getQueue()->getContextImplPtr(),
+              Record->MCurContext)) {
+    if (!isAccessModeAllowed(Req->MAccessMode, Record->MHostAccess))
+      remapMemoryObject(Record, Req, HostAllocaCmd);
+  } else
     insertMemoryMove(Record, Req, HostQueue);
 
   Command *UpdateHostAccCmd = insertUpdateHostReqCmd(Record, Req, HostQueue);
@@ -365,7 +422,7 @@ Command *Scheduler::GraphBuilder::addHostAccessor(Requirement *Req,
   UpdateHostAccCmd->addUser(EmptyCmd);
 
   EmptyCmd->MIsBlockable = true;
-  EmptyCmd->MCanEnqueue = false;
+  EmptyCmd->MEnqueueStatus = EnqueueResultT::SyclEnqueueBlocked;
   EmptyCmd->MBlockReason = "A Buffer is locked by the host accessor";
 
   updateLeaves({UpdateHostAccCmd}, Record, Req->MAccessMode);
@@ -389,15 +446,14 @@ Command *Scheduler::GraphBuilder::addCGUpdateHost(
   return insertMemoryMove(Record, Req, HostQueue);
 }
 
-// The functions finds dependencies for the requirement. It starts searching
-// from list of "leaf" commands for the record and check if the examining
-// command can be executed in parallel with new one with regard to the memory
-// object. If can, then continue searching through dependencies of that
-// command. There are several rules used:
-//
-// 1. New and examined commands only read -> can bypass
-// 2. New and examined commands has non-overlapping requirements -> can bypass
-// 3. New and examined commands has different contexts -> cannot bypass
+/// Start the search for the record from list of "leaf" commands and check if
+/// the examined command can be executed in parallel with the new one with
+/// regard to the memory object. If it can, then continue searching through
+/// dependencies of that command. There are several rules used:
+///
+/// 1. New and examined commands only read -> can bypass
+/// 2. New and examined commands has non-overlapping requirements -> can bypass
+/// 3. New and examined commands have different contexts -> cannot bypass
 std::set<Command *>
 Scheduler::GraphBuilder::findDepsForReq(MemObjRecord *Record, Requirement *Req,
                                         const ContextImplPtr &Context) {
@@ -472,6 +528,7 @@ AllocaCommandBase *Scheduler::GraphBuilder::findAllocaForReq(
     bool Res = sameCtx(AllocaCmd->getQueue()->getContextImplPtr(), Context);
     if (IsSuitableSubReq(Req)) {
       const Requirement *TmpReq = AllocaCmd->getRequirement();
+      Res &= AllocaCmd->getType() == Command::CommandType::ALLOCA_SUB_BUF;
       Res &= TmpReq->MOffsetInBytes == Req->MOffsetInBytes;
       Res &= TmpReq->MSYCLMemObj->getSize() == Req->MSYCLMemObj->getSize();
     }
@@ -545,8 +602,8 @@ AllocaCommandBase *Scheduler::GraphBuilder::getOrCreateAllocaForReq(
 
         // To ensure that the leader allocation is removed first
         AllocaCmd->getReleaseCmd()->addDep(
-            DepDesc(LinkedAllocaCmd->getReleaseCmd(), AllocaCmd->getRequirement(),
-                    LinkedAllocaCmd));
+            DepDesc(LinkedAllocaCmd->getReleaseCmd(),
+                    AllocaCmd->getRequirement(), LinkedAllocaCmd));
 
         // Device allocation takes ownership of the host ptr during
         // construction, host allocation doesn't. So, device allocation should
@@ -591,7 +648,7 @@ Scheduler::GraphBuilder::addCG(std::unique_ptr<detail::CG> CommandGroup,
   std::unique_ptr<ExecCGCommand> NewCmd(
       new ExecCGCommand(std::move(CommandGroup), Queue));
   if (!NewCmd)
-    throw runtime_error("Out of host memory");
+    throw runtime_error("Out of host memory", PI_OUT_OF_HOST_MEMORY);
 
   if (MPrintOptionsArray[BeforeAddCG])
     printGraphAsDot("before_addCG");
@@ -603,7 +660,13 @@ Scheduler::GraphBuilder::addCG(std::unique_ptr<detail::CG> CommandGroup,
     AllocaCommandBase *AllocaCmd = getOrCreateAllocaForReq(Record, Req, Queue);
     // If there is alloca command we need to check if the latest memory is in
     // required context.
-    if (!sameCtx(Queue->getContextImplPtr(), Record->MCurContext)) {
+    if (sameCtx(Queue->getContextImplPtr(), Record->MCurContext)) {
+      // If the memory is already in the required host context, check if the
+      // required access mode is valid, remap if not.
+      if (Record->MCurContext->is_host() &&
+          !isAccessModeAllowed(Req->MAccessMode, Record->MHostAccess))
+        remapMemoryObject(Record, Req, AllocaCmd);
+    } else {
       // Cannot directly copy memory from OpenCL device to OpenCL device -
       // create two copies: device->host and host->device.
       if (!Queue->is_host() && !Record->MCurContext->is_host())
@@ -619,7 +682,10 @@ Scheduler::GraphBuilder::addCG(std::unique_ptr<detail::CG> CommandGroup,
   }
 
   // Set new command as user for dependencies and update leaves.
-  for (DepDesc &Dep : NewCmd->MDeps) {
+  // Node dependencies can be modified further when adding the node to leaves,
+  // iterate over their copy.
+  std::vector<DepDesc> Deps = NewCmd->MDeps;
+  for (DepDesc &Dep : Deps) {
     Dep.MDepCommand->addUser(NewCmd.get());
     const Requirement *Req = Dep.MDepRequirement;
     MemObjRecord *Record = getMemObjRecord(Req->MSYCLMemObj);
