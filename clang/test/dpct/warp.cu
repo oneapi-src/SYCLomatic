@@ -18,20 +18,20 @@ __global__ void foo() {
   int warpSize;
   int laneMask;
 
-  // CHECK: item_{{[0-9a-z]+}}.get_sub_group().all(predicate);
+  // CHECK: sycl::intel::all_of(item_{{[0-9a-z]+}}.get_group(), predicate);
   __all(predicate);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for all.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for sycl::intel::all_of.
   // CHECK-NEXT: */
-  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().all(predicate);
+  // CHECK-NEXT: sycl::intel::all_of(item_{{[0-9a-z]+}}.get_group(), predicate);
   __all_sync(mask, predicate);
 
-  // CHECK: item_{{[0-9a-z]+}}.get_sub_group().any(predicate);
+  // CHECK: sycl::intel::any_of(item_{{[0-9a-z]+}}.get_group(), predicate);
   __any(predicate);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for any.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for sycl::intel::any_of.
   // CHECK-NEXT: */
-  // CHECK-NEXT: item_{{[0-9a-z]+}}.get_sub_group().any(predicate);
+  // CHECK-NEXT: sycl::intel::any_of(item_{{[0-9a-z]+}}.get_group(), predicate);
   __any_sync(mask, predicate);
 
   // CHECK: item_{{[0-9a-z]+}}.get_sub_group().shuffle(val, srcLane);

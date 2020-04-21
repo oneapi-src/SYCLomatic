@@ -975,22 +975,29 @@ Optional<std::string> WarpFunctionRewriter::rewrite() {
     setTargetCalleeName(SourceCalleeName.str());
   } else {
     if (SourceCalleeName == "__all" || SourceCalleeName == "__any") {
+      RewriteArgList.emplace_back(DpctGlobalInfo::getItemName() + ".get_group()");
       RewriteArgList.emplace_back(getMigratedArg(0));
     } else if (SourceCalleeName == "__all_sync" ||
                SourceCalleeName == "__any_sync") {
       reportNoMaskWarning();
+      RewriteArgList.emplace_back(DpctGlobalInfo::getItemName() + ".get_group()");
       RewriteArgList.emplace_back(getMigratedArg(1));
+      setTargetCalleeName(
+          MapNames::findReplacedName(WarpFunctionsMap, SourceCalleeName.str()));
     } else if (SourceCalleeName.endswith("_sync")) {
       reportNoMaskWarning();
       RewriteArgList.emplace_back(getMigratedArg(1));
       RewriteArgList.emplace_back(getMigratedArg(2));
+      setTargetCalleeName(buildString(
+          DpctGlobalInfo::getItemName(), ".get_sub_group().",
+          MapNames::findReplacedName(WarpFunctionsMap, SourceCalleeName.str())));
     } else {
       RewriteArgList.emplace_back(getMigratedArg(0));
       RewriteArgList.emplace_back(getMigratedArg(1));
+      setTargetCalleeName(buildString(
+          DpctGlobalInfo::getItemName(), ".get_sub_group().",
+          MapNames::findReplacedName(WarpFunctionsMap, SourceCalleeName.str())));
     }
-    setTargetCalleeName(buildString(
-        DpctGlobalInfo::getItemName(), ".get_sub_group().",
-        MapNames::findReplacedName(WarpFunctionsMap, SourceCalleeName.str())));
   }
   return buildRewriteString();
 }
