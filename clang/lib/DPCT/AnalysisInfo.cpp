@@ -235,8 +235,10 @@ void KernelCallExpr::buildKernelArgsStmt() {
   for (auto &Arg : getArgsInfo()) {
     // if current arg is the first arg with default value, insert extra args
     // before current arg
-    if (ArgCounter == getFuncInfo()->NonDefaultParamNum) {
-      KernelArgs += getExtraArguments();
+    if (getFuncInfo()) {
+      if (ArgCounter == getFuncInfo()->NonDefaultParamNum) {
+        KernelArgs += getExtraArguments();
+      }
     }
     if(ArgCounter != 0)
       KernelArgs += ", ";
@@ -294,8 +296,10 @@ void KernelCallExpr::buildKernelArgsStmt() {
   }
 
   // if all params have no default value, insert extra args in the end of params
-  if (ArgCounter == getFuncInfo()->NonDefaultParamNum) {
-    KernelArgs = KernelArgs + getExtraArguments();
+  if (getFuncInfo()) {
+    if (ArgCounter == getFuncInfo()->NonDefaultParamNum) {
+      KernelArgs = KernelArgs + getExtraArguments();
+    }
   }
 
   if (KernelArgs.empty()) {
