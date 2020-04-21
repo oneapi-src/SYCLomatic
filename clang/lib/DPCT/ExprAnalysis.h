@@ -314,6 +314,10 @@ protected:
     dispatch(BO->getRHS());
   }
 
+  inline void analyzeExpr(const UnaryOperator *UO) {
+    dispatch(UO->getSubExpr());
+  }
+
   inline void analyzeExpr(const ConditionalOperator *CO) {
     dispatch(CO->getCond());
     dispatch(CO->getLHS());

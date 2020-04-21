@@ -3111,3 +3111,9 @@ __device__ void foo1() {
   // CHECK: i = sycl::mul24(i, i);
   i = mul24(i, i);
 }
+
+__device__ void test_recursive_unary() {
+  int i, j, k;
+  // CHECK: sycl::max(-sycl::max(-sycl::abs(i), j), k);
+  max(-max(-abs(i), j), k);
+}
