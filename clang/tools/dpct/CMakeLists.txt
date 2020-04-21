@@ -30,7 +30,7 @@ set(dpct_syscheck_script
   sys_check.sh
 )
 set(dpct_modulefiles_script
-  dpcpp-ct
+  dpct
   )
 else()
 set(dpct_vars_script
