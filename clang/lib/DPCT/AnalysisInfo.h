@@ -2298,10 +2298,10 @@ public:
     DeclFilePath =
         DpctGlobalInfo::getSourceManager().getFilename(DD->getBeginLoc()).str();
 
-    DeclaratorDeclBeginOffest = DpctGlobalInfo::getSourceManager()
+    DeclaratorDeclBeginOffset = DpctGlobalInfo::getSourceManager()
                                     .getDecomposedLoc(DD->getBeginLoc())
                                     .second;
-    DeclaratorDeclEndOffest = DpctGlobalInfo::getSourceManager()
+    DeclaratorDeclEndOffset = DpctGlobalInfo::getSourceManager()
                                   .getDecomposedLoc(DD->getEndLoc())
                                   .second;
   }
@@ -2349,16 +2349,16 @@ public:
 
   void setDeclFilePath(std::string Path) { DeclFilePath = Path; }
   void setCreateCallFilePath(std::string Path) { CreateCallFilePath = Path; }
-  void setTypeBeginOffest(unsigned int Offest) { TypeBeginOffest = Offest; }
+  void setTypeBeginOffset(unsigned int Offset) { TypeBeginOffset = Offset; }
   void setTypeLength(unsigned int Len) { TypeLength = Len; }
-  void setCreateAPIBegin(unsigned int Offest) { CreateAPIBegin = Offest; }
+  void setCreateAPIBegin(unsigned int Offset) { CreateAPIBegin = Offset; }
   void setCreateAPILength(unsigned int Len) { CreateAPILength = Len; }
 
   void setTypeReplacement(std::string Repl) { TypeReplacement = Repl; }
   void setQuasiEngineFlag() { IsQuasiEngine = true; }
 
-  void setIdentifierEndOffest(unsigned int Offest) {
-    IdentifierEndOffest = Offest;
+  void setIdentifierEndOffset(unsigned int Offset) {
+    IdentifierEndOffset = Offset;
   }
   void buildInfo();
   bool isClassMember() { return IsClassMember; }
@@ -2369,7 +2369,7 @@ public:
     if (std::error_code ec = FE.getError())
       return SourceLocation();
     auto FID = SM.getOrCreateFileID(FE.get(), SrcMgr::C_User);
-    return SM.getComposedLoc(FID, DeclaratorDeclBeginOffest);
+    return SM.getComposedLoc(FID, DeclaratorDeclBeginOffset);
   }
   SourceLocation getDeclaratorDeclEndLoc() {
     auto &SM = DpctGlobalInfo::getSourceManager();
@@ -2377,7 +2377,7 @@ public:
     if (std::error_code ec = FE.getError())
       return SourceLocation();
     auto FID = SM.getOrCreateFileID(FE.get(), SrcMgr::C_User);
-    return SM.getComposedLoc(FID, DeclaratorDeclEndOffest);
+    return SM.getComposedLoc(FID, DeclaratorDeclEndOffset);
   }
   void setNeedPrint(bool Flag){ NeedPrint = Flag; }
 
@@ -2390,21 +2390,21 @@ private:
   std::string
       CreateCallFilePath; // Where the curandCreateGenerator API is called.
   unsigned int
-      TypeBeginOffest; // The offset of the begin of curandGenerator_t handle.
+      TypeBeginOffset; // The offset of the begin of curandGenerator_t handle.
   unsigned int TypeLength; // The length of the curandGenerator_t handle type.
   unsigned int
       CreateAPIBegin; // The offset of the begin of curandCreateGenerator API.
   unsigned int
       CreateAPILength; // The length of the begin of curandCreateGenerator API.
-  unsigned int IdentifierEndOffest; // The offset at the end of
+  unsigned int IdentifierEndOffset; // The offset at the end of
                                     // curandGenerator_t handle declaration.
   std::string TypeReplacement;      // The replcaement string of the type of
                                     // curandGenerator_t handle.
   bool IsClassMember;               // Whether curandGenerator_t handle is a
                                     // class member.
   std::string DeclaratorDeclName;   // Name of declarator declaration.
-  unsigned int DeclaratorDeclBeginOffest;
-  unsigned int DeclaratorDeclEndOffest;
+  unsigned int DeclaratorDeclBeginOffset;
+  unsigned int DeclaratorDeclEndOffset;
   bool NeedPrint;
 };
 

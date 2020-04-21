@@ -76,31 +76,31 @@ int main() {
 
   //level 1
 
-  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_current_device(), dpct::get_default_context());
+  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:a = (mkl::blas::iamax(*handle, N, x_S, N, res_temp_ptr_ct{{[0-9]+}}).wait(), 0);
   //CHECK-NEXT:*result = (int)*res_temp_ptr_ct{{[0-9]+}};
-  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
+  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   a = cublasIsamax(handle, N, x_S, N, result);
-  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_current_device(), dpct::get_default_context());
+  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
   //CHECK-NEXT:mkl::blas::iamax(*handle, N, x_D, N, res_temp_ptr_ct{{[0-9]+}}).wait();
   //CHECK-NEXT:*result = (int)*res_temp_ptr_ct{{[0-9]+}};
-  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
+  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   cublasIdamax(handle, N, x_D, N, result);
-  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_current_device(), dpct::get_default_context());
+  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:a = (mkl::blas::iamax(*handle, N, (std::complex<float>*)x_C, N, res_temp_ptr_ct{{[0-9]+}}).wait(), 0);
   //CHECK-NEXT:*result = (int)*res_temp_ptr_ct{{[0-9]+}};
-  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
+  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   a = cublasIcamax(handle, N, x_C, N, result);
-  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_current_device(), dpct::get_default_context());
+  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
   //CHECK-NEXT:mkl::blas::iamax(*handle, N, (std::complex<double>*)x_Z, N, res_temp_ptr_ct{{[0-9]+}}).wait();
   //CHECK-NEXT:*result = (int)*res_temp_ptr_ct{{[0-9]+}};
-  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
+  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   cublasIzamax(handle, N, x_Z, N, result);
 
   //CHECK:a = (mkl::blas::rotm(*handle, N, d_C_S, N, d_C_S, N, const_cast<float*>(x_S)).wait(), 0);

@@ -1089,7 +1089,7 @@ void RandomEngineInfo::buildInfo() {
   if (IsClassMember) {
     // replace type
     DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(DeclFilePath, TypeBeginOffest,
+        std::make_shared<ExtReplacement>(DeclFilePath, TypeBeginOffset,
                                          TypeLength, TypeReplacement + "*",
                                          nullptr));
     if (IsQuasiEngine) {
@@ -1110,17 +1110,17 @@ void RandomEngineInfo::buildInfo() {
   } else {
     // replace type
     DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(DeclFilePath, TypeBeginOffest,
+        std::make_shared<ExtReplacement>(DeclFilePath, TypeBeginOffset,
                                          TypeLength, TypeReplacement, nullptr));
     if (IsQuasiEngine) {
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(
-              DeclFilePath, IdentifierEndOffest, 0,
+              DeclFilePath, IdentifierEndOffset, 0,
               "(dpct::get_default_queue(), " + DimExpr + ")", nullptr));
     } else {
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(
-              DeclFilePath, IdentifierEndOffest, 0,
+              DeclFilePath, IdentifierEndOffset, 0,
               "(dpct::get_default_queue(), " + SeedExpr + ")", nullptr));
     }
   }

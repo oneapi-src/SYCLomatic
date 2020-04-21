@@ -372,4 +372,6 @@ getSiblingDecls(const clang::DeclaratorDecl *DD);
 std::string deducePointerType(const clang::DeclaratorDecl *DD,
                                       std::string TypeName);
 bool isAnIdentifierOrLiteral(const clang::Expr *E);
+bool isSameSizeofTypeWithTypeStr(const clang::Expr *E,
+                                 const std::string &TypeStr);
 #endif // DPCT_UTILITY_H

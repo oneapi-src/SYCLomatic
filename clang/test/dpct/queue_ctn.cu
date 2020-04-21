@@ -15,7 +15,6 @@ __constant__ float constData[1234567 * 4];
 
 void foo1() {
   // CHECK: sycl::queue& q_ct0 = dpct::get_default_queue();
-  // CHECK-NEXT: q_ct0.wait();
   // CHECK-NEXT: q_ct0.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
   // CHECK-NEXT: q_ct0.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
   // CHECK-NEXT: q_ct0.memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait();
@@ -23,7 +22,6 @@ void foo1() {
   // CHECK-NEXT: q_ct0.memset(d_A, 23, size).wait();
   // CHECK-NEXT: bar();
   // CHECK-NEXT: sycl::queue& q_ct1 = dpct::get_default_queue();
-  // CHECK-NEXT: q_ct1.wait();
   // CHECK-NEXT: q_ct1.memset(d_A, 23, size).wait();
   // CHECK-NEXT: q_ct1.memset(d_A, 23, size).wait();
   cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );
@@ -39,7 +37,6 @@ void foo1() {
 
 void foo2() {
   // CHECK: sycl::queue& q_ct2 = dpct::get_default_queue();
-  // CHECK-NEXT: q_ct2.wait();
   // CHECK-NEXT: q_ct2.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait();
   // CHECK-NEXT: q_ct2.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait();
   // CHECK-NEXT: q_ct2.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait();
@@ -58,7 +55,6 @@ void foo2() {
 
 void foo3() {
   // CHECK: sycl::queue& q_ct3 = dpct::get_default_queue();
-  // CHECK-NEXT: q_ct3.wait();
   // CHECK-NEXT: q_ct3.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
   // CHECK-NEXT: q_ct3.memset(d_A, 23, size).wait();
   cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );
@@ -76,7 +72,6 @@ void foo4() {
 
 void foo5() {
   // CHECK: sycl::queue& q_ct4 = dpct::get_default_queue();
-  // CHECK-NEXT: q_ct4.wait();
   // CHECK-NEXT: q_ct4.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait();
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -107,7 +102,6 @@ template <typename T>
 void foo7() {
   T* d_A_unresolved, h_A_unresolved;
   // CHECK: sycl::queue& q_ct5 = dpct::get_default_queue();
-  // CHECK-NEXT: q_ct5.wait();
   // CHECK-NEXT: q_ct5.memcpy( d_A_unresolved, h_A_unresolved, sizeof(T)*SIZE*SIZE ).wait();
   // CHECK-NEXT: q_ct5.memcpy( d_A_unresolved, h_A_unresolved, sizeof(T)*SIZE*SIZE ).wait();
   cudaMemcpy( d_A_unresolved, h_A_unresolved, sizeof(T)*SIZE*SIZE, cudaMemcpyDeviceToHost );
@@ -118,11 +112,10 @@ void foo7() {
 template <typename T>
 int writeNStage2DDWT() {
     T *src;
-    // CHECK: src = (T *)sycl::malloc_host(10, dpct::get_default_context());
+    // CHECK: src = (T *)sycl::malloc_host(10, dpct::get_default_queue());
     cudaMallocHost((void **)&src, 10);
 
     // CHECK: sycl::queue& q_ct6 = dpct::get_default_queue();
-    // CHECK-NEXT: q_ct6.wait();
     // CHECK-NEXT: q_ct6.memcpy(src, src, 10).wait();
     // CHECK-NEXT: q_ct6.memcpy(src, src, 10).wait();
     // CHECK-NEXT: q_ct6.memcpy(src, src, 10).wait();

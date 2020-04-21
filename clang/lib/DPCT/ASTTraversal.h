@@ -1009,9 +1009,14 @@ private:
                                          std::string &&ReplaceName,
                                          const std::string &PaddingArgs = "",
                                          bool NeedTypeCast = true,
-                                         size_t AllocatedArgIndex = 0);
+                                         size_t AllocatedArgIndex = 0,
+                                         size_t SizeArgIndel = 1);
+  bool canUseTemplateStyleMigration(const Expr *AllocatedExpr,
+                                    const Expr *SizeExpr, std::string &ReplType,
+                                    std::string &ReplSize);
   std::string getTransformedMallocPrefixStr(const Expr *MallocOutArg,
-                                            bool NeedTypeCast);
+                                            bool NeedTypeCast,
+                                            bool TemplateStyle = false);
   bool
   findFirstNotProcessedSpecialStmtIter(const CompoundStmt *P,
                                        Stmt::const_child_iterator &ResIter);

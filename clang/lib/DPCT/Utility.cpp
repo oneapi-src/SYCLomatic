@@ -1477,3 +1477,28 @@ bool isAnIdentifierOrLiteral(const Expr *E) {
   }
 }
 
+/// Check whether the \p E meets the conditions 1, 2 and 3
+/// 1. an sizeof operator
+/// 2. the operand is type
+/// 3. The type is same as \p TypeStr
+bool isSameSizeofTypeWithTypeStr(const Expr *E, const std::string &TypeStr) {
+  auto UETTE = dyn_cast<UnaryExprOrTypeTraitExpr>(E->IgnoreImpCasts());
+  if (!UETTE) {
+    return false;
+  }
+
+  if (UETTE->getKind() != UETT_SizeOf) {
+    return false;
+  }
+
+  if (!UETTE->isArgumentType()) {
+    return false;
+  }
+
+  auto ArguQT = UETTE->getArgumentType();
+  if (dpct::DpctGlobalInfo::getReplacedTypeName(ArguQT) == TypeStr) {
+    return true;
+  } else {
+    return false;
+  }
+}

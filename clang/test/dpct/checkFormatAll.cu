@@ -30,12 +30,8 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 //CHECK-NEXT:  sycl::range<3> griddim = sycl::range<3>(2, 1, 1);
 //CHECK-NEXT:  sycl::range<3> threaddim = sycl::range<3>(32, 1, 1);
 //CHECK-NEXT:  int *karg1, *karg2;
-//CHECK-NEXT:  karg1 =
-//CHECK-NEXT:      (int *)sycl::malloc_device(32 * sizeof(int), dpct::get_current_device(),
-//CHECK-NEXT:                                 dpct::get_default_context());
-//CHECK-NEXT:  karg2 =
-//CHECK-NEXT:      (int *)sycl::malloc_device(32 * sizeof(int), dpct::get_current_device(),
-//CHECK-NEXT:                                 dpct::get_default_context());
+//CHECK-NEXT:  karg1 = sycl::malloc_device<int>(32, dpct::get_default_queue());
+//CHECK-NEXT:  karg2 = sycl::malloc_device<int>(32, dpct::get_default_queue());
 //CHECK-NEXT:  int karg3 = 80;
 //CHECK-NEXT:  dpct::get_default_queue().submit([&](sycl::handler &cgh) {
 //CHECK-NEXT:    auto dpct_global_range = griddim * threaddim;

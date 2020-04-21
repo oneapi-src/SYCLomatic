@@ -57,33 +57,33 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: int status = (C_S = (float *)sycl::malloc_device((n)*(elemSize), dpct::get_current_device(), dpct::get_default_context()), 0);
-  // CHECK-NEXT: C_S = (float *)sycl::malloc_device((n)*(elemSize), dpct::get_current_device(), dpct::get_default_context());
+  // CHECK-NEXT: int status = (C_S = (float *)sycl::malloc_device((n)*(elemSize), dpct::get_default_queue()), 0);
+  // CHECK-NEXT: C_S = (float *)sycl::malloc_device((n)*(elemSize), dpct::get_default_queue());
   cublasStatus status = cublasAlloc(n, elemSize, (void **)&C_S);
   cublasAlloc(n, elemSize, (void **)&C_S);
 
   // level 1
 
   // CHECK: int res;
-  // CHECK-NEXT: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_current_device(), dpct::get_default_context());
+  // CHECK-NEXT: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
   // CHECK-NEXT: mkl::blas::iamax(*dpct::get_current_device().get_saved_queue(), n, x_S, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: res = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
+  // CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   int res = cublasIsamax(n, x_S, incx);
-  // CHECK: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_current_device(), dpct::get_default_context());
+  // CHECK: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
   // CHECK-NEXT: mkl::blas::iamax(*dpct::get_current_device().get_saved_queue(), n, x_D, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: res = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
+  // CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   res = cublasIdamax(n, x_D, incx);
-  // CHECK: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_current_device(), dpct::get_default_context());
+  // CHECK: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
   // CHECK-NEXT: mkl::blas::iamax(*dpct::get_current_device().get_saved_queue(), n, (std::complex<float>*)(x_C), incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: res = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
+  // CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   res = cublasIcamax(n, x_C, incx);
-  // CHECK: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_current_device(), dpct::get_default_context());
+  // CHECK: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
   // CHECK-NEXT: mkl::blas::iamax(*dpct::get_current_device().get_saved_queue(), n, (std::complex<double>*)(x_Z), incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: res = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
+  // CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   res = cublasIzamax(n, x_Z, incx);
   
   //CHECK:mkl::blas::rotm(*dpct::get_current_device().get_saved_queue(), n, result_S, n, result_S, n, const_cast<float*>(x_S)).wait();
@@ -118,37 +118,37 @@ int main() {
   // CHECK:mkl::blas::scal(*dpct::get_current_device().get_saved_queue(), n, std::complex<double>((alpha_Z).x(),(alpha_Z).y()), (std::complex<double>*)(result_Z), incx).wait();
   cublasZscal(n, alpha_Z, result_Z, incx);
 
-  // CHECK: float* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_current_device(), dpct::get_default_context());
+  // CHECK: float* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_default_queue());
   // CHECK-NEXT: mkl::blas::nrm2(*dpct::get_current_device().get_saved_queue(), n, x_S, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: *result_S = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
+  // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   *result_S = cublasSnrm2(n, x_S, incx);
-  // CHECK: double* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, dpct::get_current_device(), dpct::get_default_context());
+  // CHECK: double* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, dpct::get_default_queue());
   // CHECK-NEXT: mkl::blas::nrm2(*dpct::get_current_device().get_saved_queue(), n, x_D, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: *result_D = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
+  // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   *result_D = cublasDnrm2(n, x_D, incx);
-  // CHECK: float* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_current_device(), dpct::get_default_context());
+  // CHECK: float* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_default_queue());
   // CHECK-NEXT: mkl::blas::nrm2(*dpct::get_current_device().get_saved_queue(), n, (std::complex<float>*)(x_C), incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: *result_S = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
+  // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   *result_S = cublasScnrm2(n, x_C, incx);
-  // CHECK: double* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, dpct::get_current_device(), dpct::get_default_context());
+  // CHECK: double* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, dpct::get_default_queue());
   // CHECK-NEXT: mkl::blas::nrm2(*dpct::get_current_device().get_saved_queue(), n, (std::complex<double>*)(x_Z), incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: *result_D = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
+  // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   *result_D = cublasDznrm2(n, x_Z, incx);
 
-  // CHECK: std::complex<float>* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<std::complex<float>>(1, dpct::get_current_device(), dpct::get_default_context());
+  // CHECK: std::complex<float>* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<std::complex<float>>(1, dpct::get_default_queue());
   // CHECK-NEXT: mkl::blas::dotc(*dpct::get_current_device().get_saved_queue(), n, (std::complex<float>*)(x_C), incx, (std::complex<float>*)(y_C), incy, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: *result_C = sycl::float2(res_temp_ptr_ct{{[0-9]+}}->real(), res_temp_ptr_ct{{[0-9]+}}->imag());
-  // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
+  // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   *result_C = cublasCdotc(n, x_C, incx, y_C, incy);
 
-  // CHECK: std::complex<double>* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<std::complex<double>>(1, dpct::get_current_device(), dpct::get_default_context());
+  // CHECK: std::complex<double>* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<std::complex<double>>(1, dpct::get_default_queue());
   // CHECK-NEXT: mkl::blas::dotu(*dpct::get_current_device().get_saved_queue(), n, (std::complex<double>*)(x_Z), incx, (std::complex<double>*)(y_Z), incy, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: *result_Z = sycl::double2(res_temp_ptr_ct{{[0-9]+}}->real(), res_temp_ptr_ct{{[0-9]+}}->imag());
-  // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_context());
+  // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   *result_Z = cublasZdotu(n, x_Z, incx, y_Z, incy);
 
   //level 2

@@ -3273,7 +3273,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL64")
       REInfo->setQuasiEngineFlag();
 
-    REInfo->setTypeBeginOffest(
+    REInfo->setTypeBeginOffset(
         SM.getDecomposedLoc(
               SM.getExpansionLoc(REInfo->getDeclaratorDeclBeginLoc()))
             .second);
@@ -3295,7 +3295,7 @@ void RandomFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
     EndLoc = EndLoc.getLocWithOffset(
         Lexer::MeasureTokenLength(SM.getExpansionLoc(EndLoc), SM,
                                   DpctGlobalInfo::getContext().getLangOpts()));
-    REInfo->setIdentifierEndOffest(SM.getDecomposedLoc(EndLoc).second);
+    REInfo->setIdentifierEndOffset(SM.getDecomposedLoc(EndLoc).second);
 
     REInfo->setCreateCallFilePath(SM.getFilename(FuncNameBegin).str());
   } else if (FuncName == "curandDestroyGenerator") {
@@ -4067,14 +4067,13 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             PrefixInsertStr = PrefixInsertStr + "int64_t* " +
                               ResultTempPtr + " = " +
                               MapNames::getClNamespace() + "::malloc_shared<int64_t>(" +
-                              "1, dpct::get_current_device(), "
-                              "dpct::get_default_context());" +
+                              "1, dpct::get_default_queue());" +
                               getNL() + IndentStr;
             SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr + "*" +
                               getStmtSpelling(CE->getArg(i)) + " = (int)*" +
                               ResultTempPtr + ";" + getNL() + IndentStr +
                               MapNames::getClNamespace() + "::free(" +
-                              ResultTempPtr + ", dpct::get_default_context());";
+                              ResultTempPtr + ", dpct::get_default_queue());";
             CurrentArgumentRepl = ResultTempPtr;
           } else {
             CurrentArgumentRepl = getStmtSpelling(CE->getArg(i));
@@ -4182,13 +4181,12 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
             PrefixInsertStr =
                 PrefixInsertStr + "int64_t* " + ResultTempPtr + " = " +
                 MapNames::getClNamespace() + "::malloc_shared<int64_t>(" +
-                "1, dpct::get_current_device(), " +
-                "dpct::get_default_context());" + getNL() + IndentStr;
+                "1, dpct::get_default_queue());" + getNL() + IndentStr;
             SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr + "*" +
                               getStmtSpelling(CE->getArg(i)) + " = (int)*" +
                               ResultTempPtr + ";" + getNL() + IndentStr +
                               MapNames::getClNamespace() + "::free(" +
-                              ResultTempPtr + ", dpct::get_default_context());";
+                              ResultTempPtr + ", dpct::get_default_queue());";
             CurrentArgumentRepl = ResultTempPtr;
           } else if (ReplInfo.BufferTypeInfo[IndexTemp] ==
                          "std::complex<float>" ||
@@ -4514,13 +4512,12 @@ void BLASFunctionCallRule::run(const MatchFinder::MatchResult &Result) {
         PrefixInsertStr =
             PrefixInsertStr + ResultType + "* " + ResultTempPtr + " = " +
             MapNames::getClNamespace() + "::malloc_shared<" + ResultType +
-            ">(1, dpct::get_current_device(), " +
-            "dpct::get_default_context());" + getNL() + IndentStr +
+            ">(1, dpct::get_default_queue());" + getNL() + IndentStr +
             CallExprReplStr + ", " + ResultTempPtr + ").wait();" + getNL() +
             IndentStr;
         SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr +
                           MapNames::getClNamespace() + "::free(" +
-                          ResultTempPtr + ", dpct::get_default_context());";
+                          ResultTempPtr + ", dpct::get_default_queue());";
       } else {
         PrefixInsertStr = PrefixInsertStr + MapNames::getClNamespace() +
                           "::buffer<" + ResultType + "> " + ResultTempBuf +
@@ -6643,17 +6640,94 @@ TextModification *removeArg(const CallExpr *C, unsigned n,
   return replaceText(Begin, End, "", SM);
 }
 
+bool MemoryMigrationRule::canUseTemplateStyleMigration(
+    const Expr *AllocatedExpr, const Expr *SizeExpr, std::string &ReplType,
+    std::string &ReplSize) {
+  const Expr *AE = nullptr;
+  if (auto CSCE = dyn_cast<CStyleCastExpr>(AllocatedExpr)) {
+    AE = CSCE->getSubExpr()->IgnoreImplicitAsWritten();
+  } else {
+    AE = AllocatedExpr;
+  }
+
+  QualType DerefQT = AE->getType();
+  if (DerefQT->isPointerType()) {
+    DerefQT = DerefQT->getPointeeType();
+    if (DerefQT->isPointerType()) {
+      DerefQT = DerefQT->getPointeeType();
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+
+  std::string TypeStr = DpctGlobalInfo::getReplacedTypeName(DerefQT);
+  // ReplType will be used as the template arguement in memory API.
+  ReplType = TypeStr;
+
+  auto BO = dyn_cast<BinaryOperator>(SizeExpr);
+  if (BO && BO->getOpcode() == BinaryOperatorKind::BO_Mul) {
+    SourceLocation RemoveBegin, RemoveEnd;
+    if (isSameSizeofTypeWithTypeStr(BO->getLHS(), TypeStr)) {
+      // case 1: sizeof(b) * a
+      RemoveBegin = BO->getBeginLoc();
+      RemoveEnd = BO->getOperatorLoc();
+    } else if (isSameSizeofTypeWithTypeStr(BO->getRHS(), TypeStr)) {
+      // case 2: a * sizeof(b)
+      RemoveBegin = BO->getOperatorLoc();
+      RemoveEnd = BO->getEndLoc();
+    } else {
+      return false;
+    }
+
+    RemoveBegin =
+        DpctGlobalInfo::getSourceManager().getExpansionLoc(RemoveBegin);
+    RemoveEnd = DpctGlobalInfo::getSourceManager().getExpansionLoc(RemoveEnd);
+    RemoveEnd = RemoveEnd.getLocWithOffset(
+        Lexer::MeasureTokenLength(RemoveEnd, DpctGlobalInfo::getSourceManager(),
+                                  DpctGlobalInfo::getContext().getLangOpts()));
+    emplaceTransformation(replaceText(RemoveBegin, RemoveEnd, "",
+                                      DpctGlobalInfo::getSourceManager()));
+    return true;
+  } else {
+    // case 3: sizeof(b)
+    if (isSameSizeofTypeWithTypeStr(SizeExpr, TypeStr)) {
+      emplaceTransformation(new ReplaceStmt(SizeExpr, "1"));
+      return true;
+    }
+  }
+  return false;
+}
+
 /// Transform cudaMallocxxx() to xxx = mallocxxx();
 void MemoryMigrationRule::mallocMigrationWithTransformation(
     SourceManager &SM, const CallExpr *C, const std::string &CallName,
     std::string &&ReplaceName, const std::string &PaddingArgs,
-    bool NeedTypeCast, size_t AllocatedArgIndex) {
-  emplaceTransformation(new InsertBeforeStmt(
-      C,
-      getTransformedMallocPrefixStr(C->getArg(AllocatedArgIndex), NeedTypeCast),
-      InsertPosition::InsertPositionRight));
-  emplaceTransformation(
-      new ReplaceCalleeName(C, std::move(ReplaceName), CallName));
+    bool NeedTypeCast, size_t AllocatedArgIndex, size_t SizeArgIndex) {
+  std::string ReplSize, ReplType;
+  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::restricted &&
+      CallName != "cudaMallocArray" && CallName != "cudaMalloc3DArray" &&
+      CallName != "cublasAlloc" &&
+      canUseTemplateStyleMigration(C->getArg(AllocatedArgIndex),
+                                   C->getArg(SizeArgIndex), ReplType,
+                                   ReplSize)) {
+    emplaceTransformation(
+        new InsertBeforeStmt(C,
+                             getTransformedMallocPrefixStr(
+                                 C->getArg(AllocatedArgIndex), NeedTypeCast, true),
+                             InsertPosition::InsertPositionRight));
+    emplaceTransformation(
+        new ReplaceCalleeName(C, ReplaceName + "<" + ReplType + ">", CallName));
+  } else {
+    emplaceTransformation(
+        new InsertBeforeStmt(C,
+                             getTransformedMallocPrefixStr(
+                                 C->getArg(AllocatedArgIndex), NeedTypeCast),
+                             InsertPosition::InsertPositionRight));
+    emplaceTransformation(
+        new ReplaceCalleeName(C, std::move(ReplaceName), CallName));
+  }
   emplaceTransformation(removeArg(C, AllocatedArgIndex, SM));
   if (!PaddingArgs.empty())
     emplaceTransformation(
@@ -6712,15 +6786,20 @@ void printDerefOp(std::ostream &OS, const Expr *E, std::string *DerefType) {
 
 /// e.g., for int *a and cudaMalloc(&a, size), return "a = (int *)".
 /// If \p NeedTypeCast is false, return "a = ";
+/// If \p TemplateStyle is true, \p NeedTypeCast will be specified as false always
 std::string
 MemoryMigrationRule::getTransformedMallocPrefixStr(const Expr *MallocOutArg,
-                                                   bool NeedTypeCast) {
+                                                   bool NeedTypeCast,
+                                                   bool TemplateStyle) {
+  if (TemplateStyle)
+    NeedTypeCast = false;
   std::ostringstream OS;
   std::string CastTypeName;
   MallocOutArg = MallocOutArg->IgnoreImplicitAsWritten();
   if (auto CSCE = dyn_cast<CStyleCastExpr>(MallocOutArg)) {
     MallocOutArg = CSCE->getSubExpr()->IgnoreImplicitAsWritten();
-    NeedTypeCast = true;
+    if (!TemplateStyle)
+      NeedTypeCast = true;
   }
   printDerefOp(OS, MallocOutArg, NeedTypeCast ? &CastTypeName : nullptr);
 
@@ -6761,8 +6840,7 @@ void MemoryMigrationRule::mallocMigration(
       mallocMigrationWithTransformation(*Result.SourceManager, C, Name,
                                         MapNames::getClNamespace() +
                                             "::malloc_device",
-                                        "dpct::get_current_device()"
-                                        ", dpct::get_default_context()");
+                                        "dpct::get_default_queue()");
     } else {
       emplaceTransformation(
           new ReplaceCalleeName(C, "dpct::dpct_malloc", Name));
@@ -6773,17 +6851,17 @@ void MemoryMigrationRule::mallocMigration(
       mallocMigrationWithTransformation(*Result.SourceManager, C, Name,
                                         MapNames::getClNamespace() +
                                             "::malloc_host",
-                                        "dpct::get_default_context()");
+                                        "dpct::get_default_queue()");
     else
       mallocMigrationWithTransformation(*Result.SourceManager, C, Name,
                                         "malloc");
     emplaceTransformation(removeArg(C, 2, *Result.SourceManager));
   } else if (Name == "cudaMallocManaged") {
     if (USMLevel == UsmLevel::restricted) {
-      mallocMigrationWithTransformation(
-          *Result.SourceManager, C, Name,
-          MapNames::getClNamespace() + "::malloc_shared",
-          "dpct::get_current_device(), dpct::get_default_context()");
+      mallocMigrationWithTransformation(*Result.SourceManager, C, Name,
+                                        MapNames::getClNamespace() +
+                                            "::malloc_shared",
+                                        "dpct::get_default_queue()");
       emplaceTransformation(removeArg(C, 2, *Result.SourceManager));
     } else {
       // Report unsupported warnings
@@ -6802,10 +6880,10 @@ void MemoryMigrationRule::mallocMigration(
     DpctGlobalInfo::getInstance().insertCublasAlloc(C);
     emplaceTransformation(removeArg(C, 2, *Result.SourceManager));
     if (USMLevel == UsmLevel::restricted) {
-      mallocMigrationWithTransformation(
-          *Result.SourceManager, C, Name,
-          MapNames::getClNamespace() + "::malloc_device",
-          "dpct::get_current_device(), dpct::get_default_context()", true, 2);
+      mallocMigrationWithTransformation(*Result.SourceManager, C, Name,
+                                        MapNames::getClNamespace() +
+                                            "::malloc_device",
+                                        "dpct::get_default_queue()", true, 2);
     } else {
       ExprAnalysis EA(C->getArg(2));
       EA.analyze();
@@ -6879,7 +6957,6 @@ bool MemoryMigrationRule::isStmtSimpleMemcpyOrMemset(const clang::Stmt *Stmt) {
     if (CheckCallExpr(CE))
       return true;
   }
-
   return false;
 }
 
@@ -7040,10 +7117,12 @@ void MemoryMigrationRule::handleMemcpyAndMemset(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned,
     std::string SpecifiedQueue) {
+
   if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none) {
     defaultMemcpyMemsetHandler(Result, C, ULExpr, IsAssigned);
     return;
   }
+
   if (C->getBeginLoc().isMacroID()) {
     defaultMemcpyMemsetHandler(Result, C, ULExpr, IsAssigned);
     return;
@@ -7070,15 +7149,14 @@ void MemoryMigrationRule::handleMemcpyAndMemset(
   auto *CurrStmt = *Iter;
   auto Next = Iter;
   Next++;
+
   if (Next != P->child_end() && isStmtSimpleMemcpyOrMemset(*Next)) {
+
     // here insert the temp queue definition
     int QueueIndex = DPCTQueueCounter++;
     std::string QueueDeclStr =
         MapNames::getClNamespace() + "::queue& q_ct" +
         std::to_string(QueueIndex) + " = dpct::get_default_queue();" + getNL() +
-        getIndent(CurrStmt->getBeginLoc(), DpctGlobalInfo::getSourceManager())
-            .str() +
-        "q_ct" + std::to_string(QueueIndex) + ".wait();" + getNL() +
         getIndent(CurrStmt->getBeginLoc(), DpctGlobalInfo::getSourceManager())
             .str();
     emplaceTransformation(
@@ -7411,7 +7489,7 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
       EA.analyze(C->getArg(0));
       std::ostringstream Repl;
       Repl << MapNames::getClNamespace() + "::free(" << EA.getReplacedString()
-           << ", dpct::get_default_context())";
+           << ", dpct::get_default_queue())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
       emplaceTransformation(new ReplaceCalleeName(C, "dpct::dpct_free", Name));
@@ -7422,7 +7500,7 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
       EA.analyze(C->getArg(0));
       std::ostringstream Repl;
       Repl << MapNames::getClNamespace() + "::free(" << EA.getReplacedString()
-           << ", dpct::get_default_context())";
+           << ", dpct::get_default_queue())";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
       emplaceTransformation(new ReplaceCalleeName(C, "free", Name));
@@ -7849,10 +7927,12 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaMalloc3DArray", &MemoryMigrationRule::mallocMigration},
           {"cudaMemcpy", &MemoryMigrationRule::handleMemcpyAndMemset},
           {"cudaMemcpyAsync", &MemoryMigrationRule::memcpyMigration},
-          {"cudaMemcpyToSymbol", &MemoryMigrationRule::handleMemcpyAndMemset},
+          {"cudaMemcpyToSymbol",
+           &MemoryMigrationRule::handleMemcpyAndMemset},
           {"cudaMemcpyToSymbolAsync",
            &MemoryMigrationRule::memcpySymbolMigration},
-          {"cudaMemcpyFromSymbol", &MemoryMigrationRule::handleMemcpyAndMemset},
+          {"cudaMemcpyFromSymbol",
+           &MemoryMigrationRule::handleMemcpyAndMemset},
           {"cudaMemcpyFromSymbolAsync",
            &MemoryMigrationRule::memcpySymbolMigration},
           {"cudaMemcpy2D", &MemoryMigrationRule::memcpyMigration},

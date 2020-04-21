@@ -73,9 +73,9 @@ int main(int argc, char **argv) {
   int *d_int;
   float h_array[360];
 
-  // CHECK: d_array = (float *)sycl::malloc_device(sizeof(float) * size, dpct::get_current_device(), dpct::get_default_context());
+  // CHECK: d_array = sycl::malloc_device<float>( size, dpct::get_default_queue());
+  // CHECK-NEXT: d_int = sycl::malloc_device<int>( size, dpct::get_default_queue());
   cudaMalloc((void **)&d_array, sizeof(float) * size);
-  // CHECK: d_int = (int *)sycl::malloc_device(sizeof(int) * size, dpct::get_current_device(), dpct::get_default_context());
   cudaMalloc(&d_int, sizeof(int) * size);
 
   // CHECK: dpct::get_default_queue().memset(d_array, 0, sizeof(float) * size).wait();

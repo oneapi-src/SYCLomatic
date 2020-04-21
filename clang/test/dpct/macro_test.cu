@@ -203,8 +203,7 @@ MACRO_KC2(3,2,1,0)
 MACRO_KC2(dim3(5,4,3),2,1,0)
 
 int *a;
-//CHECK: NESTMACRO3(a = (int *)sycl::malloc_device(100, dpct::get_current_device(),
-//CHECK-NEXT: dpct::get_default_context()));
+//CHECK: NESTMACRO3(a = (int *)sycl::malloc_device(100, dpct::get_default_queue()));
 NESTMACRO3(cudaMalloc(&a,100));
 }
 
