@@ -2134,6 +2134,10 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
   // typedef int2 xxx
   MF.addMatcher(typedefDecl(typedefVecDecl()).bind("typeDefDecl"), this);
 
+
+  // using UT = int2;
+  MF.addMatcher(typeAliasDecl().bind("typeAliasDecl"), this);
+
   auto vectorTypeAccess = [&]() {
     return anyOf(vectorType(), references(vectorType()),
                  pointsTo(vectorType()));
@@ -2143,6 +2147,12 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       functionDecl(returns(vectorTypeAccess())).bind("funcReturnsVectorType"),
       this);
+
+  // template_function<int2>()
+  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(
+                            typedefDecl(vectorTypeName())))))
+                    .bind("vectorTypeTL"),
+                this);
 }
 
 bool VectorTypeNamespaceRule::isNamespaceInserted(SourceLocation SL) {
@@ -2206,10 +2216,33 @@ void VectorTypeNamespaceRule::run(const MatchFinder::MatchResult &Result) {
     replaceTypeName(TD->getTypeSourceInfo()->getTypeLoc());
   }
 
+  if (const TypeAliasDecl *TD =
+          getNodeAsType<TypeAliasDecl>(Result, "typeAliasDecl")) {
+    replaceTypeName(TD->getTypeSourceInfo()->getTypeLoc());
+  }
+
+
   // int2 func() => sycl::int2 func()
   if (const FunctionDecl *FD =
           getNodeAsType<FunctionDecl>(Result, "funcReturnsVectorType")) {
     replaceTypeName(FD->getFunctionTypeLoc().getReturnLoc());
+  }
+
+  if (auto TL = getNodeAsType<TypeLoc>(Result, "vectorTypeTL")) {
+    auto BeginLoc = TL->getBeginLoc();
+    Token Tok;
+    auto LOpts = Result.Context->getLangOpts();
+    SourceManager *SM = Result.SourceManager;
+    Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
+    if (Tok.isAnyIdentifier()) {
+        if (Tok.isAnyIdentifier()) {
+          std::string Str = MapNames::findReplacedName(MapNames::TypeNamesMap,
+                                                      Tok.getRawIdentifier().str());
+          if (!Str.empty()) {
+            emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Str)));
+          }
+        }
+    }
   }
 }
 
@@ -8808,6 +8841,8 @@ void ClassTemplateSpecializationRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(classTemplateSpecializationDecl(
                     hasAnyTemplateArgument(refersToType(
                         anyOf(Typedefs, pointsTo(typedefDecl(TypedefNames)),
+                              pointsTo(cxxRecordDecl(vectorTypeName())),
+                              references(cxxRecordDecl(vectorTypeName())),
                               VectorTypes, EnumTypes, RecordTypes,
                               pointsTo(cxxRecordDecl(RecordTypeNames))))))
                     .bind("classTemplateSpecDecl"),
@@ -8828,11 +8863,22 @@ void ClassTemplateSpecializationRule::run(
     auto &TArgs = CTSD->getTemplateArgs();
     for (unsigned i = 0; i < TArgs.size(); ++i) {
       auto Arg = TArgs.get(i);
-      auto TypeStr = Arg.getAsType().getAsString();
-      auto Replacement = getReplacementForType(TypeStr);
       auto BeginLoc =
           TL.getArgLoc(i).getTypeSourceInfo()->getTypeLoc().getBeginLoc();
-      emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Replacement)));
+
+      Token Tok;
+      auto LOpts = Result.Context->getLangOpts();
+      SourceManager *SM = Result.SourceManager;
+      Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
+      if (Tok.isAnyIdentifier()) {
+          if (Tok.isAnyIdentifier()) {
+            std::string Str = MapNames::findReplacedName(MapNames::TypeNamesMap,
+                                                        Tok.getRawIdentifier().str());
+            if (!Str.empty()) {
+              emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Str)));
+            }
+          }
+      }
     }
   }
 }
