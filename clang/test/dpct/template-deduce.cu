@@ -129,7 +129,9 @@ __shared__ T2 v2;
 
 template<typename T3, typename T4>
 void foo() {
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     sycl::accessor<T1, 0, sycl::access::mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
   // CHECK-NEXT:     sycl::accessor<T2, 0, sycl::access::mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
@@ -141,7 +143,7 @@ void foo() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   k<<<16, 32>>>(1, 2.3);
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     sycl::accessor<int, 0, sycl::access::mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
   // CHECK-NEXT:     sycl::accessor<PlaceHolder/*Fix the type mannually*/, 0, sycl::access::mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
@@ -153,7 +155,7 @@ void foo() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   k<int><<<16, 32>>>(1, 2.3);
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     sycl::accessor<int, 0, sycl::access::mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
   // CHECK-NEXT:     sycl::accessor<float, 0, sycl::access::mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
@@ -166,7 +168,7 @@ void foo() {
   // CHECK-NEXT:   });
   k<int, float><<<16, 32>>>(1, 2.3);
 
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     sycl::accessor<T3, 0, sycl::access::mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
   // CHECK-NEXT:     sycl::accessor<PlaceHolder/*Fix the type mannually*/, 0, sycl::access::mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);
@@ -178,7 +180,7 @@ void foo() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   k<T3><<<16, 32>>>(1, 2.3);
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     sycl::accessor<T3, 0, sycl::access::mode::read_write, sycl::access::target::local> v1_acc_ct1(cgh);
   // CHECK-NEXT:     sycl::accessor<T4, 0, sycl::access::mode::read_write, sycl::access::target::local> v2_acc_ct1(cgh);

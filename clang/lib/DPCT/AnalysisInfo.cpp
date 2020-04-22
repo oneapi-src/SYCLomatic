@@ -48,6 +48,14 @@ std::unordered_map<std::string, int> DpctGlobalInfo::LocationInitIndexMap;
 int DpctGlobalInfo::CurrentMaxIndex = 0;
 int DpctGlobalInfo::CurrentIndexInRule = 0;
 clang::format::FormatStyle DpctGlobalInfo::CodeFormatStyle;
+bool DpctGlobalInfo::HasFoundDeviceChanged = false;
+std::unordered_map<int, DpctGlobalInfo::HelperFuncReplInfo>
+    DpctGlobalInfo::HelperFuncReplInfoMap;
+int DpctGlobalInfo::HelperFuncReplInfoIndex = 1;
+std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter>
+    DpctGlobalInfo::TempVariableDeclCounterMap;
+std::unordered_set<std::string> DpctGlobalInfo::TempVariableHandledSet;
+bool DpctGlobalInfo::UsingDRYPattern = true;
 
 bool DpctFileInfo::isInRoot() { return DpctGlobalInfo::isInRoot(FilePath); }
 // TODO: implement one of this for each source language.
@@ -162,6 +170,14 @@ void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
   LocInfo.LocHash = getHashAsString(Begin.printToString(SM)).substr(0, 6);
   buildExecutionConfig(KernelCall);
   buildNeedBracesInfo(KernelCall);
+
+  if (ExecutionConfig.Stream == "0") {
+    if (checkWhetherIsDuplicate(KernelCall, false))
+      return;
+    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    QueueStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+    buildTempVariableMap(Index, KernelCall, HelperFuncType::DefaultQueue);
+  }
 }
 void KernelCallExpr::buildNeedBracesInfo(const CUDAKernelCallExpr *KernelCall) {
   NeedBraces = true;
@@ -337,8 +353,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     Printer << getEvent() << " = ";
   }
   if (ExecutionConfig.Stream == "0") {
-    Printer << "dpct::get_default_queue";
-    Printer << "().";
+    Printer << QueueStr << ".";
   } else {
     if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
       Printer << "(" << ExecutionConfig.Stream << ")";
@@ -1149,15 +1164,15 @@ void RandomEngineInfo::buildInfo() {
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(
               CreateCallFilePath, CreateAPIBegin, CreateAPILength,
-              DeclaratorDeclName + " = new " + TypeReplacement +
-                  "(dpct::get_default_queue(), " + DimExpr + ")",
+              DeclaratorDeclName + " = new " + TypeReplacement + "(" +
+                  QueueStr + ", " + DimExpr + ")",
               nullptr));
     } else {
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(
               CreateCallFilePath, CreateAPIBegin, CreateAPILength,
-              DeclaratorDeclName + " = new " + TypeReplacement +
-                  "(dpct::get_default_queue(), " + SeedExpr + ")",
+              DeclaratorDeclName + " = new " + TypeReplacement + "(" +
+                  QueueStr + ", " + SeedExpr + ")",
               nullptr));
     }
   } else {
@@ -1169,12 +1184,12 @@ void RandomEngineInfo::buildInfo() {
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(
               DeclFilePath, IdentifierEndOffset, 0,
-              "(dpct::get_default_queue(), " + DimExpr + ")", nullptr));
+              "(" + QueueStr + ", " + DimExpr + ")", nullptr));
     } else {
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(
               DeclFilePath, IdentifierEndOffset, 0,
-              "(dpct::get_default_queue(), " + SeedExpr + ")", nullptr));
+              "(" + QueueStr + ", " + SeedExpr + ")", nullptr));
     }
   }
 }

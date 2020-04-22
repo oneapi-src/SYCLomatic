@@ -26,6 +26,8 @@ __global__ void kernelFunc()
 }
 
 int main(int argc, char* argv[]) {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK: sycl::event start, stop;
   // CHECK-EMPTY:
   // CHECK: /*
@@ -37,7 +39,7 @@ int main(int argc, char* argv[]) {
   // CHECK-EMPTY:
   // CHECK-NEXT: float elapsed_time;
   // CHECK-EMPTY:
-  // CHECK-NEXT: dpct::get_current_device().queues_wait_and_throw();
+  // CHECK-NEXT: dev_ct1.queues_wait_and_throw();
   // CHECK-EMPTY:
   // CHECK-NEXT: int blocks = 32, threads = 32;
   cudaEvent_t start, stop;
@@ -70,7 +72,7 @@ int main(int argc, char* argv[]) {
 
 
   // kernel call without sync
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
@@ -87,7 +89,7 @@ int main(int argc, char* argv[]) {
   cudaEventRecord(start, 0);
 
   // kernel call without sync
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
@@ -126,7 +128,7 @@ int main(int argc, char* argv[]) {
     checkCudaErrors(cudaEventRecord(start, 0));
 
   // kernel call with sync
-  // CHECK:   stop = dpct::get_default_queue().submit(
+  // CHECK:   stop = q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
@@ -136,7 +138,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:     });
   // CHECK-NEXT: stop.wait();
   kernelFunc<<<blocks,threads>>>();
-  // CHECK:   stop = dpct::get_default_queue().submit(
+  // CHECK:   stop = q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
@@ -176,7 +178,7 @@ int main(int argc, char* argv[]) {
     checkCudaErrors(cudaEventRecord(stop, 0));
 
   // kernel call without sync
-  // CHECK:   stop = dpct::get_default_queue().submit(
+  // CHECK:   stop = q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
@@ -225,7 +227,7 @@ int main(int argc, char* argv[]) {
   checkCudaErrors(cudaEventSynchronize(stop));
 
   // kernel call without sync
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
@@ -245,7 +247,7 @@ int main(int argc, char* argv[]) {
   checkCudaErrors(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   // kernel call without sync
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
@@ -269,7 +271,7 @@ int main(int argc, char* argv[]) {
   for(;cudaErrorNotReady == cudaEventQuery(stop);){}
   do{}while(cudaEventQuery(stop) != cudaErrorNotReady);
 
-  // CHECK: dpct::get_current_device().queues_wait_and_throw();
+  // CHECK: dev_ct1.queues_wait_and_throw();
   // CHECK-EMPTY:
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaEventDestroy was removed, because this call is redundant in DPC++.

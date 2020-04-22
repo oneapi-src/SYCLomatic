@@ -17,7 +17,8 @@
 #include <thrust/sort.h>
 #include <thrust/device_ptr.h>
 int main() {
-
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   int *mapsp1D, *mapspkeyD,*mapspvalD;
   int numsH=10;
 
@@ -32,10 +33,10 @@ int main() {
 // CHECK:  dpct::device_ptr<int> mapspvalT(mapspvalD);
   thrust::device_ptr<int> mapspvalT(mapspvalD);
 
-// CHECK:  std::copy(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(dpct::get_default_queue()), mapsp1T, mapsp1T + numsH, mapspkeyT);
+// CHECK:  std::copy(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(q_ct1), mapsp1T, mapsp1T + numsH, mapspkeyT);
   thrust::copy(mapsp1T, mapsp1T + numsH, mapspkeyT);
-// CHECK:  dpct::sequence(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(dpct::get_default_queue()), mapspvalT, mapspvalT + numsH);
+// CHECK:  dpct::sequence(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(q_ct1), mapspvalT, mapspvalT + numsH);
   thrust::sequence(mapspvalT, mapspvalT + numsH);
-// CHECK:  dpct::stable_sort_by_key(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(dpct::get_default_queue()), mapspkeyT, mapspkeyT + numsH, mapspvalT);
+// CHECK:  dpct::stable_sort_by_key(dpstd::execution::make_sycl_policy<class Policy_{{[0-9a-f]+}}>(q_ct1), mapspkeyT, mapspkeyT + numsH, mapspvalT);
   thrust::stable_sort_by_key(mapspkeyT, mapspkeyT + numsH, mapspvalT);
 }

@@ -23,6 +23,8 @@ static __global__ void gpuMain(){
 }
 
 int main() {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // range default constructor does the right thing.
   // CHECK: sycl::double2 deflt;
   double2 deflt;
@@ -74,7 +76,7 @@ int main() {
   // CHECK-NEXT: {
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> data_buf_ct0 = dpct::get_buffer_and_offset(data);
   // CHECK-NEXT:   size_t data_offset_ct0 = data_buf_ct0.second;
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto data_acc_ct0 = data_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -89,7 +91,7 @@ int main() {
   double2* data;
   kernel<<<1, 1>>>(data);
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       sycl::accessor<sycl::double2, 1, sycl::access::mode::read_write, sycl::access::target::local> ctemp2_acc_ct1(sycl::range<1>(2), cgh);
   // CHECK-EMPTY:

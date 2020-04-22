@@ -22,16 +22,18 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 }
 
 int main() {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   dim3 griddim = 2;
   dim3 threaddim = 32;
   int *karg1, *karg2;
-  // CHECK: karg1 = sycl::malloc_device<int>(32 , dpct::get_default_queue());
-  // CHECK-NEXT: karg2 = sycl::malloc_device<int>(32 , dpct::get_default_queue());
+  // CHECK: karg1 = sycl::malloc_device<int>(32 , q_ct1);
+  // CHECK-NEXT: karg2 = sycl::malloc_device<int>(32 , q_ct1);
   cudaMalloc(&karg1, 32 * sizeof(int));
   cudaMalloc(&karg2, 32 * sizeof(int));
 
   int karg3 = 80;
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto dpct_global_range = griddim * threaddim;
   // CHECK-EMPTY:

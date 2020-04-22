@@ -12,9 +12,11 @@
 #include <curand.h>
 
 int main(){
+  //CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   //CHECK:int s1;
   //CHECK-NEXT:int s2;
-  //CHECK-NEXT:mkl::rng::philox4x32x10 rng(dpct::get_default_queue(), 1337ull);
+  //CHECK-NEXT:mkl::rng::philox4x32x10 rng(q_ct1, 1337ull);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the
   //CHECK-NEXT:function call is redundant in DPC++.
@@ -135,7 +137,7 @@ int main(){
   //CHECK-NEXT:    }()) {}
   if(s1 = curandGenerateLongLong(rng, d_data_ull, 100*100)){}
 
-  //CHECK:mkl::rng::sobol rng2(dpct::get_default_queue(), 1111);
+  //CHECK:mkl::rng::sobol rng2(q_ct1, 1111);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the
   //CHECK-NEXT:function call is redundant in DPC++.

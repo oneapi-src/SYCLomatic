@@ -21,6 +21,7 @@
 namespace clang {
 namespace dpct {
 class DpctFileInfo;
+enum class HelperFuncType;
 
 class ExtReplacements {
 
@@ -138,6 +139,9 @@ private:
     }
     return false;
   }
+
+  bool getStrReplacingPlaceholder(HelperFuncType HelperFuncType, int Index,
+                                  std::string &Text);
 
   const std::string &FilePath;
   DpctFileInfo *FileInfo;

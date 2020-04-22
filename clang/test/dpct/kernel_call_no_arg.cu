@@ -22,6 +22,8 @@ __global__ void kernel2() {
 }
 
 int main() {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   const size_t threads_per_block = NUM_ELEMENTS;
 
   float buf[NUM_ELEMENTS] = { 0 };
@@ -29,7 +31,7 @@ int main() {
 
   cudaMemcpyToSymbol(out, buf, mem_size);
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK:     [&](sycl::handler &cgh) {
   // CHECK:       auto out_acc_ct1 = out.get_access(cgh);
   // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
@@ -40,7 +42,7 @@ int main() {
   // CHECK:     });
   kernel1<<<1, threads_per_block>>>();
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK:     [&](sycl::handler &cgh) {
   // CHECK:       cgh.parallel_for<dpct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
   // CHECK:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),

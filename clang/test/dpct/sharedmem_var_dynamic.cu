@@ -59,6 +59,8 @@ void testTemplate(){
 }
 
 int main(void) {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   const int n = 64;
   int a[n], r[n], d[n];
   int *d_d;
@@ -67,7 +69,7 @@ int main(void) {
   cudaMemcpy(d_d, a, mem_size, cudaMemcpyHostToDevice);
   // CHECK: {
   // CHECK-NEXT:   dpct::buffer_t d_d_buf_ct0 = dpct::get_buffer(d_d);
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       sycl::accessor<uint8_t, 1, sycl::access::mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(mem_size), cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
@@ -84,7 +86,7 @@ int main(void) {
 
   // CHECK: {
   // CHECK-NEXT:   dpct::buffer_t d_d_buf_ct0 = dpct::get_buffer(d_d);
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       sycl::accessor<uint8_t, 1, sycl::access::mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(sizeof(int)), cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
@@ -100,7 +102,7 @@ int main(void) {
 
   // CHECK: {
   // CHECK-NEXT:   dpct::buffer_t d_d_buf_ct0 = dpct::get_buffer(d_d);
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       sycl::accessor<uint8_t, 1, sycl::access::mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(4), cgh);
   // CHECK-NEXT:       auto d_d_acc_ct0 = d_d_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);

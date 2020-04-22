@@ -40,6 +40,7 @@ cublasStatus foo(int m, int n) {
 }
 
 int main() {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK: foo(0, 1, 3, 7, 8, 11, 13, 14, 15, 16);
   foo(CUBLAS_STATUS_SUCCESS, CUBLAS_STATUS_NOT_INITIALIZED, CUBLAS_STATUS_ALLOC_FAILED, CUBLAS_STATUS_INVALID_VALUE, CUBLAS_STATUS_ARCH_MISMATCH, CUBLAS_STATUS_MAPPING_ERROR, CUBLAS_STATUS_EXECUTION_FAILED, CUBLAS_STATUS_INTERNAL_ERROR, CUBLAS_STATUS_NOT_SUPPORTED, CUBLAS_STATUS_LICENSE_ERROR);
   // CHECK: bar(0, 1, 3, 7, 8, 11, 13, 14, 15, 16);
@@ -79,12 +80,12 @@ int main() {
   a = sizeof(cuDoubleComplex);
 
   // CHECK: sycl::queue *stream1;
-  // CHECK-NEXT: stream1 = dpct::get_current_device().create_queue();
-  // CHECK-NEXT: dpct::get_current_device().set_saved_queue(stream1);
+  // CHECK-NEXT: stream1 = dev_ct1.create_queue();
+  // CHECK-NEXT: dev_ct1.set_saved_queue(stream1);
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: cublasErrCheck((dpct::get_current_device().set_saved_queue(stream1), 0));
+  // CHECK-NEXT: cublasErrCheck((dev_ct1.set_saved_queue(stream1), 0));
   cudaStream_t stream1;
   cudaStreamCreate(&stream1);
   cublasSetKernelStream(stream1);

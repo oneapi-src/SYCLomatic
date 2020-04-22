@@ -31,6 +31,8 @@ void test(const dim3** a, const dim3** b) {
 __global__ void kernel(int dim) {}
 
 int main() {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // range default constructor does the right thing.
   // CHECK: sycl::range<3> deflt(1, 1, 1);
   dim3 deflt;
@@ -164,7 +166,7 @@ int main() {
   dim3 d3_6_3 = dim3(ceil(test.x + NUM), NUM + test.y, NUM + test.z + NUM);
   // CHECK: sycl::range<3> gpu_blocks(1 / (d3_6_3[0] * 200), 1, 1);
   dim3 gpu_blocks(1 / (d3_6_3.x * 200));
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -173,7 +175,7 @@ int main() {
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   kernel<<<1, 1>>>(d3_6.x);
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, NUM) * sycl::range<3>(1, 1, NUM), sycl::range<3>(1, 1, NUM)),

@@ -241,6 +241,8 @@ __global__ void testKernel(int L, int M, int N) {
 }
 
 int kernel_test() {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   dim3 griddim = 2;
   dim3 threaddim = 32;
   void *karg1 = 0;
@@ -251,7 +253,7 @@ int kernel_test() {
   // CHECK-NEXT:   size_t karg1_offset_ct0 = karg1_buf_ct0.second;
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg2_buf_ct1 = dpct::get_buffer_and_offset(karg2);
   // CHECK-NEXT:   size_t karg2_offset_ct1 = karg2_buf_ct1.second;
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto karg1_acc_ct0 = karg1_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto karg2_acc_ct1 = karg2_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
@@ -273,7 +275,7 @@ int kernel_test() {
   int karg2int = 2;
   int karg3int = 3;
   int intvar = 20;
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 10) * sycl::range<3>(1, 1, intvar), sycl::range<3>(1, 1, intvar)),
@@ -283,7 +285,7 @@ int kernel_test() {
   // CHECK-NEXT:     });
   testKernel<<<10, intvar>>>(karg1int, karg2int, karg3int);
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 2, 1), sycl::range<3>(1, 2, 1)),
@@ -293,7 +295,7 @@ int kernel_test() {
   // CHECK-NEXT:     });
   testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int, karg2int, karg3int);
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 2, 1) * sycl::range<3>(3, 2, 1), sycl::range<3>(3, 2, 1)),

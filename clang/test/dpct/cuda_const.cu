@@ -72,6 +72,8 @@ __global__ void simple_kernel_one(float *d_array) {
 }
 
 int main(int argc, char **argv) {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   int size = 3200;
   int *d_int;
   float *d_array;
@@ -121,7 +123,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:  (dpct::dpct_memcpy(&h_array[0], const_angle.get_ptr() + sizeof(float) * (3+NUM), sizeof(float) * 354), 0);
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3+NUM], sizeof(float) * 354);
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto t1_acc_ct1 = t1.get_access(cgh);
   // CHECK-EMPTY:
@@ -134,7 +136,7 @@ int main(int argc, char **argv) {
   member_acc<<<1, 1>>>();
   // CHECK: {
   // CHECK-NEXT:   dpct::buffer_t d_array_buf_ct0 = dpct::get_buffer(d_array);
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto const_angle_acc_ct1 = const_angle.get_access(cgh);
   // CHECK-NEXT:       auto const_ptr_acc_ct1 = const_ptr.get_access(cgh);
@@ -167,7 +169,7 @@ int main(int argc, char **argv) {
 
   // CHECK: {
   // CHECK-NEXT:   dpct::buffer_t d_array_buf_ct0 = dpct::get_buffer(d_array);
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto const_float_acc_ct1 = const_float.get_access(cgh);
   // CHECK-NEXT:       auto const_one_acc_ct1 = const_one.get_access(cgh);

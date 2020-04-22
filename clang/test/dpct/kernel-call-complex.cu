@@ -34,10 +34,12 @@ T bar() {
 
 template<typename T>
 void foo() {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   T i;
   int *pointers[2];
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto bar_i_ct0 = bar(i);
   // CHECK-EMPTY:
@@ -49,7 +51,7 @@ void foo() {
   // CHECK-NEXT:       });
   k<<<16, 32>>>(bar(i));
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto bar_T_ct0 = bar<T>();
   // CHECK-EMPTY:
@@ -61,7 +63,7 @@ void foo() {
   // CHECK-NEXT:       });
   k<<<16, 32>>>(bar<T>());
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto S_T_bar_ct0 = S<T>::bar();
   // CHECK-EMPTY:
@@ -73,7 +75,7 @@ void foo() {
   // CHECK-NEXT:       });
   k<<<16, 32>>>(S<T>::bar());
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto S2_bar_T_ct0 = S2::bar<T>();
   // CHECK-EMPTY:
@@ -85,7 +87,7 @@ void foo() {
   // CHECK-NEXT:       });
   k<<<16, 32>>>(S2::bar<T>());
 
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto pointers_ct0 = pointers[0];
   // CHECK-NEXT:       auto pointers_ct1 = pointers[1];

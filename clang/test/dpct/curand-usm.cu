@@ -8,9 +8,11 @@
 #include <curand.h>
 
 int main(){
+  //CHECK:dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  //CHECK-NEXT:sycl::queue &q_ct1 = dev_ct1.default_queue();
   //CHECK:int s1;
   //CHECK-NEXT:int s2;
-  //CHECK-NEXT:mkl::rng::philox4x32x10 rng(dpct::get_default_queue(), 1337ull);
+  //CHECK-NEXT:mkl::rng::philox4x32x10 rng(q_ct1, 1337ull);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the function call is redundant in DPC++.
   //CHECK-NEXT:*/
@@ -91,7 +93,7 @@ int main(){
   //CHECK-NEXT:}()){}
   if(s1 = curandGenerateLongLong(rng, d_data_ull, 100*100)){}
 
-  //CHECK:mkl::rng::sobol rng2(dpct::get_default_queue(), 1111);
+  //CHECK:mkl::rng::sobol rng2(q_ct1, 1111);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the function call is redundant in DPC++.
   //CHECK-NEXT:*/
@@ -156,7 +158,40 @@ private:
   curandGenerator_t rng;
 };
 
-
+//CHECK:class B{
+//CHECK-NEXT:public:
+//CHECK-NEXT:  B(){
+//CHECK-NEXT:    dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//CHECK-NEXT:    sycl::queue &q_ct1 = dev_ct1.default_queue();
+//CHECK-NEXT:    rng = new mkl::rng::sobol(q_ct1, 1243);
+//CHECK-NEXT:    /*
+//CHECK-NEXT:    DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed, because the function call is redundant in DPC++.
+//CHECK-NEXT:    */
+//CHECK-NEXT:    karg1 = sycl::malloc_device<int>(32 , q_ct1);
+//CHECK-NEXT:  }
+//CHECK-NEXT:  ~B(){
+//CHECK-NEXT:    delete rng;
+//CHECK-NEXT:    sycl::free(karg1, dpct::get_default_queue());
+//CHECK-NEXT:  }
+     //CHECK:private:
+//CHECK-NEXT:  mkl::rng::sobol* rng;
+//CHECK-NEXT:  int *karg1;
+//CHECK-NEXT:};
+class B{
+public:
+  B(){
+    curandCreateGenerator(&rng, CURAND_RNG_QUASI_DEFAULT);
+    curandSetQuasiRandomGeneratorDimensions(rng, 1243);
+    cudaMalloc(&karg1, 32 * sizeof(int));
+  }
+  ~B(){
+    curandDestroyGenerator(rng);
+    cudaFree(karg1);
+  }
+private:
+  curandGenerator_t rng;
+  int *karg1;
+};
 
 void bar1(){
 

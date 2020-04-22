@@ -6,6 +6,8 @@
 
 
 int main() {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   int n = 275;
   int m = 275;
   int k = 275;
@@ -57,8 +59,8 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: int status = (C_S = (float *)sycl::malloc_device((n)*(elemSize), dpct::get_default_queue()), 0);
-  // CHECK-NEXT: C_S = (float *)sycl::malloc_device((n)*(elemSize), dpct::get_default_queue());
+  // CHECK-NEXT: int status = (C_S = (float *)sycl::malloc_device((n)*(elemSize), q_ct1), 0);
+  // CHECK-NEXT: C_S = (float *)sycl::malloc_device((n)*(elemSize), q_ct1);
   cublasStatus status = cublasAlloc(n, elemSize, (void **)&C_S);
   cublasAlloc(n, elemSize, (void **)&C_S);
 

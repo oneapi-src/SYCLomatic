@@ -304,6 +304,11 @@ static opt<bool, true> NoClNamespaceInline(
   "no-cl-namespace-inline", llvm::cl::desc("Do not use cl namespace (cl::) inlining. Default: off.\n"),
   cat(DPCTCat), llvm::cl::location(ExplicitClNamespace));
 
+bool NoDRYPatternFlag = false;
+static opt<bool, true> NoDRYPattern(
+  "no-dry-pattern", llvm::cl::desc("Do not use DRY(do not repeat yourself) pattern for helper functions. Default: off.\n"),
+  cat(DPCTCat), llvm::cl::location(NoDRYPatternFlag));
+
 bool ProcessAllFlag = false;
 static opt<bool, true>
     ProcessAll("process-all",
@@ -1021,6 +1026,7 @@ int run(int argc, const char **argv) {
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
+  DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
 
   MapNames::setClNamespace(ExplicitClNamespace);
   if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {

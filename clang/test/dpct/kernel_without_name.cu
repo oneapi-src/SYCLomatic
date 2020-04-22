@@ -69,6 +69,8 @@ struct TestThis {
 };
 
 int main() {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   dim3 griddim = 2;
   dim3 threaddim = 32;
   void *karg1 = 0;
@@ -83,7 +85,7 @@ int main() {
   int karg2int = 2;
   int karg3int = 3;
   int intvar = 20;
-  // CHECK:     dpct::get_default_queue().submit(
+  // CHECK:     q_ct1.submit(
   // CHECK-NEXT:  [&](sycl::handler &cgh) {
   // CHECK-NEXT:    cgh.parallel_for(
   testKernel<<<10, intvar>>>(karg1int, karg2int, karg3int);
@@ -97,32 +99,32 @@ int main() {
   // CHECK-NEXT:      cgh.parallel_for(
   testKernelPtr<<<dim3(1), dim3(1, 2)>>>(args.arg1, args.arg2, karg3int);
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:  [&](sycl::handler &cgh) {
   // CHECK-NEXT:    cgh.parallel_for(
   testKernel <<<griddim.x, griddim.y + 2 >>>(karg1int, karg2int, karg3int);
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:  [&](sycl::handler &cgh) {
   // CHECK-NEXT:    cgh.parallel_for(
   helloFromGPU <<<2, 4>>>(23);
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:  [&](sycl::handler &cgh) {
   // CHECK-NEXT:    cgh.parallel_for(
   helloFromGPU <<<2, 4>>>();
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:  [&](sycl::handler &cgh) {
   // CHECK-NEXT:    cgh.parallel_for(
   helloFromGPU2 <<<2, 3>>>();
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:  [&](sycl::handler &cgh) {
   // CHECK-NEXT:    cgh.parallel_for(
   helloFromGPU<<<2, threaddim>>>();
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:  [&](sycl::handler &cgh) {
   // CHECK-NEXT:    cgh.parallel_for(
   helloFromGPU<<<griddim, 4>>>();
@@ -173,19 +175,22 @@ void run_foo(dim3 c, dim3 d) {
   if (1)
     foo_kernel3<<<c, 1>>>(0);
 }
-//CHECK:dpct::get_default_queue().submit(
+
+void run_foo2(dim3 c, dim3 d) {
+//CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+//CHECK:q_ct1.submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
 //CHECK-NEXT:          auto acc_ct0 = buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          auto dpct_global_range = c * d;
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for(
-//CHECK:  dpct::get_default_queue().submit(
+//CHECK:  q_ct1.submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
 //CHECK-NEXT:          auto acc_ct0 = buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for(
-void run_foo2(dim3 c, dim3 d) {
   if (1)
     foo_kernel3<<<c, d>>>(0);
   else

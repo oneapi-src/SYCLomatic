@@ -55,7 +55,9 @@ __global__ void kernelFoo2(int i = 0, int j = 0){
 }
 
 int main(){
-  //CHECK: dpct::get_default_queue().submit(
+  //CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  //CHECK: q_ct1.submit(
   //CHECK-NEXT:   [&](sycl::handler &cgh) {
   //CHECK-NEXT:     cgh.parallel_for(
   //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
@@ -64,7 +66,7 @@ int main(){
   //CHECK-NEXT:         });
   //CHECK-NEXT:   });
   kernelFoo<<<1,2>>>(1,2);
-  //CHECK: dpct::get_default_queue().submit(
+  //CHECK: q_ct1.submit(
   //CHECK-NEXT:   [&](sycl::handler &cgh) {
   //CHECK-NEXT:     cgh.parallel_for(
   //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
@@ -73,7 +75,7 @@ int main(){
   //CHECK-NEXT:         });
   //CHECK-NEXT:   });
   kernelFoo1<<<1,2>>>(1,2);
-  //CHECK: dpct::get_default_queue().submit(
+  //CHECK: q_ct1.submit(
   //CHECK-NEXT:   [&](sycl::handler &cgh) {
   //CHECK-NEXT:     cgh.parallel_for(
   //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),

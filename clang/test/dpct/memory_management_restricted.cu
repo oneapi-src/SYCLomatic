@@ -12,6 +12,9 @@ void check(T result, char const *const func, const char *const file, int const l
 #define DATAMACRO 32*32
 
 int main(){
+    //CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+    //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+
     float **data = NULL;
     float *d_A = NULL;
     int* a;
@@ -22,17 +25,17 @@ int main(){
     //CHECK:  /*
     //CHECK-NEXT:  DPCT1003:0: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT:  */
-    //CHECK-NEXT:  checkCudaErrors((*data = (float *)sycl::malloc_device(DATAMACRO, dpct::get_default_queue()), 0));
+    //CHECK-NEXT:  checkCudaErrors((*data = (float *)sycl::malloc_device(DATAMACRO, q_ct1), 0));
     checkCudaErrors(cudaMalloc((void **)data, DATAMACRO));
 
     //Currently, migration of using template version API only covers the simple case: the argument specifiy the size is sizeof(T)*Expr, Expr*sizeof(T) and sizeof(T)
-    //CHECK:  *data = sycl::malloc_device<float>(10*10, dpct::get_default_queue());
+    //CHECK:  *data = sycl::malloc_device<float>(10*10, q_ct1);
     cudaMalloc(data, 10*10*sizeof(float));
 
-    //CHECK:  *data = (float *)sycl::malloc_device(10*sizeof(float)*10, dpct::get_default_queue());
+    //CHECK:  *data = (float *)sycl::malloc_device(10*sizeof(float)*10, q_ct1);
     cudaMalloc(data, 10*sizeof(float)*10);
 
-    //CHECK:  *data = (float *)sycl::malloc_device(sizeof(float)*10*10, dpct::get_default_queue());
+    //CHECK:  *data = (float *)sycl::malloc_device(sizeof(float)*10*10, q_ct1);
     cudaMalloc(data, sizeof(float)*10*10);
 
     size_t size2;

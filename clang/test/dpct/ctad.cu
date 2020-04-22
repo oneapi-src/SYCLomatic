@@ -16,6 +16,8 @@ __global__ void kernel(int dim) {
 }
 
 int main() {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // range default constructor does the right thing.
   // CHECK: sycl::range deflt(1, 1, 1);
   dim3 deflt;
@@ -59,7 +61,7 @@ int main() {
 
   // CHECK: sycl::range gpu_blocks(1 / (castini[0] * 200), 1, 1);
   dim3 gpu_blocks(1 / (castini.x * 200));
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> k_acc_ct1(sycl::range(32), cgh);
   // CHECK-EMPTY:
@@ -70,7 +72,7 @@ int main() {
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   kernel<<<1, 1>>>(1);
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       sycl::accessor<int, 1, sycl::access::mode::read_write, sycl::access::target::local> k_acc_ct1(sycl::range(32), cgh);
   // CHECK-EMPTY:

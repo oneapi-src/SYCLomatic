@@ -29,13 +29,15 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 
 
      //CHECK:int main() {
+//CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//CHECK-NEXT:  cl::sycl::queue &q_ct1 = dev_ct1.default_queue();
 //CHECK-NEXT:  cl::sycl::range<3> griddim = cl::sycl::range<3>(2, 1, 1);
 //CHECK-NEXT:  cl::sycl::range<3> threaddim = cl::sycl::range<3>(32, 1, 1);
 //CHECK-NEXT:  int *karg1, *karg2;
-//CHECK-NEXT:  karg1 = cl::sycl::malloc_device<int>(32, dpct::get_default_queue());
-//CHECK-NEXT:  karg2 = cl::sycl::malloc_device<int>(32, dpct::get_default_queue());
+//CHECK-NEXT:  karg1 = cl::sycl::malloc_device<int>(32, q_ct1);
+//CHECK-NEXT:  karg2 = cl::sycl::malloc_device<int>(32, q_ct1);
 //CHECK-NEXT:  int karg3 = 80;
-//CHECK-NEXT:  dpct::get_default_queue().submit([&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:  q_ct1.submit([&](cl::sycl::handler &cgh) {
 //CHECK-NEXT:    auto dpct_global_range = griddim * threaddim;
 //CHECK-EMPTY:
 //CHECK-NEXT:    cgh.parallel_for(cl::sycl::nd_range<3>(

@@ -56,6 +56,8 @@ template <typename T>
 void check(T result, char const *const func, const char *const file, int const line) {}
 
 int main() {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK:  /* DPCT_ORIG   dim3 griddim = 2;*/
   // CHECK-NEXT:  sycl::range<3> griddim = sycl::range<3>(2, 1, 1);
   dim3 griddim = 2;
@@ -74,7 +76,7 @@ int main() {
   // CHECK-NEXT:   size_t karg1_offset_ct0 = karg1_buf_ct0.second;
   // CHECK-NEXT:   std::pair<dpct::buffer_t, size_t> karg2_buf_ct1 = dpct::get_buffer_and_offset(karg2);
   // CHECK-NEXT:   size_t karg2_offset_ct1 = karg2_buf_ct1.second;
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto karg1_acc_ct0 = karg1_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-NEXT:       auto karg2_acc_ct1 = karg2_buf_ct1.first.get_access<sycl::access::mode::read_write>(cgh);
@@ -100,7 +102,7 @@ int main() {
   int intvar = 20;
   // CHECK: /* DPCT_ORIG   testKernel<<<10, intvar>>>(karg1int, karg2int, 
   // CHECK:  karg3int);*/
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 10) * sycl::range<3>(1, 1, intvar), sycl::range<3>(1, 1, intvar)),
@@ -115,7 +117,7 @@ int main() {
   // CHECK: /* DPCT_ORIG   testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int,
   // CHECK:  karg2int,
   // CHECK:  karg3int);*/
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 2, 1), sycl::range<3>(1, 2, 1)),
@@ -133,7 +135,7 @@ int main() {
 
   // CHECK: /* DPCT_ORIG   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int,
   // CHECK-NEXT:  karg2int, karg3int); */
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 2, 1) * sycl::range<3>(3, 2, 1), sycl::range<3>(3, 2, 1)),
@@ -145,7 +147,7 @@ int main() {
 	  karg2int, /* comments */karg3int/* comments */); // comments
 
   // CHECK: /* DPCT_ORIG   testKernel<<<griddim.x, griddim.y + 2>>>(karg1int, karg2int, karg3int);*/
-  // CHECK-NEXT:   dpct::get_default_queue().submit(
+  // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, griddim[0]) * sycl::range<3>(1, 1, griddim[1] + 2), sycl::range<3>(1, 1, griddim[1] + 2)),

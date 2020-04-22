@@ -917,56 +917,49 @@ private:
   void mallocMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                        const CallExpr *C,
                        const UnresolvedLookupExpr *ULExpr = NULL,
-                       bool IsAssigned = false,
-                       std::string SpecifiedQueue = "");
+                       bool IsAssigned = false);
   void memcpyMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                        const CallExpr *C,
                        const UnresolvedLookupExpr *ULExpr = NULL,
-                       bool IsAssigned = false,
-                       std::string SpecifiedQueue = "");
+                       bool IsAssigned = false);
   void freeMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                      const CallExpr *C,
                      const UnresolvedLookupExpr *ULExpr = NULL,
-                     bool IsAssigned = false, std::string SpecifiedQueue = "");
+                     bool IsAssigned = false);
   void memsetMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                        const CallExpr *C,
                        const UnresolvedLookupExpr *ULExpr = NULL,
-                       bool IsAssigned = false,
-                       std::string SpecifiedQueue = "");
+                       bool IsAssigned = false);
   void arrayMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                        const CallExpr *C,
                        const UnresolvedLookupExpr *ULExpr = NULL,
-                       bool IsAssigned = false,
-                       std::string SpecifiedQueue = "");
+                       bool IsAssigned = false);
   void getSymbolAddressMigration(
       const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
-      const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false,
-      std::string SpecifiedQueue = "");
+      const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false);
   void getSymbolSizeMigration(
       const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
-      const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false,
-      std::string SpecifiedQueue = "");
+      const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false);
   void prefetchMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C,
                          const UnresolvedLookupExpr *ULExpr = NULL,
-                         bool IsAssigned = false,
-                         std::string SpecifiedQueue = "");
+                         bool IsAssigned = false);
   void miscMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                      const CallExpr *C,
                      const UnresolvedLookupExpr *ULExpr = NULL,
-                     bool IsAssigned = false, std::string SpecifiedQueue = "");
+                     bool IsAssigned = false);
   void cudaArrayGetInfo(const ast_matchers::MatchFinder::MatchResult &Result,
                         const CallExpr *C,
                         const UnresolvedLookupExpr *ULExpr = NULL,
-                        bool IsAssigned = false, std::string SpecifiedQueue = "");
+                        bool IsAssigned = false);
   void cudaHostGetFlags(const ast_matchers::MatchFinder::MatchResult &Result,
                         const CallExpr *C,
                         const UnresolvedLookupExpr *ULExpr = NULL,
-                        bool IsAssigned = false, std::string SpecifiedQueue = "");
+                        bool IsAssigned = false);
   void cudaMemAdvise(const ast_matchers::MatchFinder::MatchResult &Result,
                      const CallExpr *C,
                      const UnresolvedLookupExpr *ULExpr = NULL,
-                     bool IsAssigned = false, std::string SpecifiedQueue = "");
+                     bool IsAssigned = false);
   std::string handleAsync(const CallExpr *C, unsigned i,
                           const ast_matchers::MatchFinder::MatchResult &Result);
   void handleDirection(const CallExpr *C, unsigned i);
@@ -977,31 +970,15 @@ private:
   const Expr *getUnaryOperatorExpr(const Expr *E);
   void memcpySymbolMigration(
       const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
-      const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false,
-      std::string SpecifiedQueue = "");
+      const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false);
   std::unordered_map<
       std::string,
       std::function<void(const ast_matchers::MatchFinder::MatchResult &Result,
                          const CallExpr *C, const UnresolvedLookupExpr *ULExpr,
-                         bool IsAssigned, std::string SpecifiedQueue)>>
+                         bool IsAssigned)>>
       MigrationDispatcher;
   std::string getTypeStrRemovedAddrOf(const Expr *E, bool isCOCE = false);
   std::string getAssignedStr(const Expr *E, const std::string &Arg0Str);
-  void handleMemcpyAndMemset(
-      const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
-      const UnresolvedLookupExpr *ULExpr = NULL, bool IsAssigned = false,
-      std::string SpecifiedQueue = "");
-  bool isStmtSimpleMemcpyOrMemset(const clang::Stmt *Stmt);
-  const CallExpr *getMemcpyOrMemsetCallExprFromStmt(const clang::Stmt *Stmt);
-  int DPCTQueueCounter;
-  std::unordered_set<const CallExpr *> HandledMemcpyMemsetSet;
-  void continuousMemcpyMemsetHandler(
-      Stmt::const_child_iterator Begin, Stmt::const_child_iterator Endconst,
-      const ast_matchers::MatchFinder::MatchResult &Result, int QueueIndex);
-  void defaultMemcpyMemsetHandler(
-      const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
-      const UnresolvedLookupExpr *ULExpr, bool IsAssigned,
-      std::string SpecifiedQueue = "");
   void mallocArrayMigration(const CallExpr *C, const std::string &Name,
                             size_t FlagIndex, SourceManager &SM);
   void mallocMigrationWithTransformation(SourceManager &SM, const CallExpr *C,
@@ -1017,9 +994,6 @@ private:
   std::string getTransformedMallocPrefixStr(const Expr *MallocOutArg,
                                             bool NeedTypeCast,
                                             bool TemplateStyle = false);
-  bool
-  findFirstNotProcessedSpecialStmtIter(const CompoundStmt *P,
-                                       Stmt::const_child_iterator &ResIter);
   void aggregatePitchedData(const CallExpr *C, size_t DataArgIndex,
                             size_t SizeArgIndex, SourceManager &SM,
                             bool ExcludeSizeArg = false);

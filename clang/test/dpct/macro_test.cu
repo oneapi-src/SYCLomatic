@@ -35,6 +35,8 @@ __global__ void foo2(){
 __global__ void foo3(int x, int y) {}
 
 void foo() {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   DDD d3;
 
   // CHECK: (*d3.A)[0] = 3;
@@ -48,7 +50,7 @@ void foo() {
 
   int outputThreadCount = 512;
 
-  // CHECK: dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+  // CHECK: q_ct1.submit([&](sycl::handler &cgh) {
   // CHECK-NEXT:   cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(
   // CHECK-NEXT:           sycl::range<3>(1, 1,
@@ -59,7 +61,7 @@ void foo() {
   // CHECK-NEXT: });
   foo_kernel<<<GET_BLOCKS(outputThreadCount, outputThreadCount), 2, 0>>>();
 
-  // CHECK: dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+  // CHECK: q_ct1.submit([&](sycl::handler &cgh) {
   // CHECK-NEXT:   cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(
   // CHECK-NEXT:           sycl::range<3>(1, 1,
@@ -70,7 +72,7 @@ void foo() {
   // CHECK-NEXT: });
   foo_kernel<<<GET_BLOCKS2(CUDA_NUM_THREADS, CUDA_NUM_THREADS), 0, 0>>>();
 
-  // CHECK: dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+  // CHECK: q_ct1.submit([&](sycl::handler &cgh) {
   // CHECK-NEXT:   cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(
   // CHECK-NEXT:           sycl::range<3>(1, 1,
@@ -81,7 +83,7 @@ void foo() {
   // CHECK-NEXT: });
   foo_kernel<<<GET_BLOCKS3(CUDA_NUM_THREADS, outputThreadCount), 0, 0>>>();
 
-  // CHECK: dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+  // CHECK: q_ct1.submit([&](sycl::handler &cgh) {
   // CHECK-NEXT:   cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(
   // CHECK-NEXT:           sycl::range<3>(1, 1,
@@ -135,7 +137,7 @@ NNBI(3.0);
 double cosine = cos(2 * PI);
 
 //CHECK: #define MACRO_KC                                                               \
-//CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
+//CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                   \
 //CHECK-NEXT:     cgh.parallel_for(                                                          \
 //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2),   \
 //CHECK-NEXT:                           sycl::range<3>(1, 1, 2)),                            \
@@ -148,7 +150,7 @@ MACRO_KC
 
 
 //CHECK: #define HARD_KC(NAME, a, b, c, d)                                              \
-//CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
+//CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                   \
 //CHECK-NEXT:     auto dpct_global_range = a * b;                                            \
 //CHECK-NEXT:                                                                                \
 //CHECK-NEXT:     auto c_ct0 = c;                                                            \
@@ -172,7 +174,7 @@ HARD_KC(foo3,3,2,1,0)
 
 
 // CHECK: #define MACRO_KC2(a, b, c, d)                                                  \
-// CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
+// CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                   \
 // CHECK-NEXT:     auto dpct_global_range = a * b;                                            \
 // CHECK-NEXT:                                                                                \
 // CHECK-NEXT:     auto c_ct0 = c;                                                            \
@@ -203,7 +205,7 @@ MACRO_KC2(3,2,1,0)
 MACRO_KC2(dim3(5,4,3),2,1,0)
 
 int *a;
-//CHECK: NESTMACRO3(a = (int *)sycl::malloc_device(100, dpct::get_default_queue()));
+//CHECK: NESTMACRO3(a = (int *)sycl::malloc_device(100, q_ct1));
 NESTMACRO3(cudaMalloc(&a,100));
 }
 

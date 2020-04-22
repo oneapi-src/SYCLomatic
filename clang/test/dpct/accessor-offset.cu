@@ -19,6 +19,8 @@ void nonmod(int *p) {
 int *d_a_global;
 
 void foo() {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   int *d_a;
   int **p = &d_a;
   int n;
@@ -29,7 +31,7 @@ void foo() {
   // CHECK-NEXT:   dpct::dpct_malloc(&d_a, n * sizeof(float));
   // CHECK-NEXT:   {
   // CHECK-NEXT:     dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
-  // CHECK-NEXT:     dpct::get_default_queue().submit(
+  // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_a_acc_ct0 = d_a_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -53,7 +55,7 @@ void foo() {
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
   // CHECK-NEXT:     size_t d_a_offset_ct0 = d_a_buf_ct0.second;
-  // CHECK-NEXT:     dpct::get_default_queue().submit(
+  // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_a_acc_ct0 = d_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -79,7 +81,7 @@ void foo() {
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
   // CHECK-NEXT:     size_t d_a_offset_ct0 = d_a_buf_ct0.second;
-  // CHECK-NEXT:     dpct::get_default_queue().submit(
+  // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_a_acc_ct0 = d_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -105,7 +107,7 @@ void foo() {
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
   // CHECK-NEXT:     size_t d_a_offset_ct0 = d_a_buf_ct0.second;
-  // CHECK-NEXT:     dpct::get_default_queue().submit(
+  // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_a_acc_ct0 = d_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -131,7 +133,7 @@ void foo() {
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
   // CHECK-NEXT:     size_t d_a_offset_ct0 = d_a_buf_ct0.second;
-  // CHECK-NEXT:     dpct::get_default_queue().submit(
+  // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_a_acc_ct0 = d_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -157,7 +159,7 @@ void foo() {
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
   // CHECK-NEXT:     size_t d_a_offset_ct0 = d_a_buf_ct0.second;
-  // CHECK-NEXT:     dpct::get_default_queue().submit(
+  // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_a_acc_ct0 = d_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -182,7 +184,7 @@ void foo() {
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a + 1);
   // CHECK-NEXT:     size_t d_a_offset_ct0 = d_a_buf_ct0.second;
-  // CHECK-NEXT:     dpct::get_default_queue().submit(
+  // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_a_acc_ct0 = d_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -207,7 +209,7 @@ void foo() {
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
   // CHECK-NEXT:     size_t d_a_offset_ct0 = d_a_buf_ct0.second;
-  // CHECK-NEXT:     dpct::get_default_queue().submit(
+  // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_a_acc_ct0 = d_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -231,7 +233,7 @@ void foo() {
   // CHECK-NEXT:   dpct::dpct_malloc((&d_a), n * sizeof(float));
   // CHECK-NEXT:   {
   // CHECK-NEXT:     dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
-  // CHECK-NEXT:     dpct::get_default_queue().submit(
+  // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_a_acc_ct0 = d_a_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -257,7 +259,7 @@ void foo() {
   // CHECK-NEXT:     {
   // CHECK-NEXT:         {
   // CHECK-NEXT:           dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
-  // CHECK-NEXT:           dpct::get_default_queue().submit(
+  // CHECK-NEXT:           q_ct1.submit(
   // CHECK-NEXT:             [&](sycl::handler &cgh) {
   // CHECK-NEXT:               auto d_a_acc_ct0 = d_a_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -289,7 +291,7 @@ void foo() {
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
   // CHECK-NEXT:     size_t d_a_offset_ct0 = d_a_buf_ct0.second;
-  // CHECK-NEXT:     dpct::get_default_queue().submit(
+  // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_a_acc_ct0 = d_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -315,7 +317,7 @@ void foo() {
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
   // CHECK-NEXT:     size_t d_a_offset_ct0 = d_a_buf_ct0.second;
-  // CHECK-NEXT:     dpct::get_default_queue().submit(
+  // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_a_acc_ct0 = d_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -340,7 +342,7 @@ void foo() {
   // CHECK-NEXT:   nonmod(d_a);
   // CHECK-NEXT:   {
   // CHECK-NEXT:     dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
-  // CHECK-NEXT:     dpct::get_default_queue().submit(
+  // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_a_acc_ct0 = d_a_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -370,7 +372,7 @@ void foo() {
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
   // CHECK-NEXT:     size_t d_a_offset_ct0 = d_a_buf_ct0.second;
-  // CHECK-NEXT:     dpct::get_default_queue().submit(
+  // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_a_acc_ct0 = d_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -406,7 +408,7 @@ void foo() {
   // CHECK-NEXT:   dpct::dpct_malloc(&d_a, n * sizeof(float));
   // CHECK-NEXT:   {
   // CHECK-NEXT:     dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
-  // CHECK-NEXT:     dpct::get_default_queue().submit(
+  // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_a_acc_ct0 = d_a_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -436,7 +438,7 @@ void foo() {
   // CHECK-NEXT:     dpct::dpct_malloc((void **)&d_a, n * sizeof(float));
   // CHECK-NEXT:     {
   // CHECK-NEXT:       dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
-  // CHECK-NEXT:       dpct::get_default_queue().submit(
+  // CHECK-NEXT:       q_ct1.submit(
   // CHECK-NEXT:         [&](sycl::handler &cgh) {
   // CHECK-NEXT:           auto d_a_acc_ct0 = d_a_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -449,7 +451,7 @@ void foo() {
   // CHECK-NEXT:     }
   // CHECK-NEXT:     if (n > 45) {
   // CHECK-NEXT:         dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
-  // CHECK-NEXT:         dpct::get_default_queue().submit(
+  // CHECK-NEXT:         q_ct1.submit(
   // CHECK-NEXT:           [&](sycl::handler &cgh) {
   // CHECK-NEXT:             auto d_a_acc_ct0 = d_a_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -465,7 +467,7 @@ void foo() {
   // CHECK-NEXT:       {
   // CHECK-NEXT:         std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
   // CHECK-NEXT:         size_t d_a_offset_ct0 = d_a_buf_ct0.second;
-  // CHECK-NEXT:         dpct::get_default_queue().submit(
+  // CHECK-NEXT:         q_ct1.submit(
   // CHECK-NEXT:           [&](sycl::handler &cgh) {
   // CHECK-NEXT:             auto d_a_acc_ct0 = d_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -500,7 +502,7 @@ void foo() {
   // CHECK-NEXT:     dpct::dpct_malloc((void **)&d_a, n * sizeof(float));
   // CHECK-NEXT:     {
   // CHECK-NEXT:       dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
-  // CHECK-NEXT:       dpct::get_default_queue().submit(
+  // CHECK-NEXT:       q_ct1.submit(
   // CHECK-NEXT:         [&](sycl::handler &cgh) {
   // CHECK-NEXT:           auto d_a_acc_ct0 = d_a_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -515,7 +517,7 @@ void foo() {
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
   // CHECK-NEXT:     size_t d_a_offset_ct0 = d_a_buf_ct0.second;
-  // CHECK-NEXT:     dpct::get_default_queue().submit(
+  // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_a_acc_ct0 = d_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -542,7 +544,7 @@ void foo() {
   // CHECK-NEXT:     dpct::dpct_malloc((void **)&d_a, n * sizeof(float));
   // CHECK-NEXT:     {
   // CHECK-NEXT:       dpct::buffer_t d_a_buf_ct0 = dpct::get_buffer(d_a);
-  // CHECK-NEXT:       dpct::get_default_queue().submit(
+  // CHECK-NEXT:       q_ct1.submit(
   // CHECK-NEXT:         [&](sycl::handler &cgh) {
   // CHECK-NEXT:           auto d_a_acc_ct0 = d_a_buf_ct0.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -557,7 +559,7 @@ void foo() {
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_buf_ct0 = dpct::get_buffer_and_offset(d_a);
   // CHECK-NEXT:     size_t d_a_offset_ct0 = d_a_buf_ct0.second;
-  // CHECK-NEXT:     dpct::get_default_queue().submit(
+  // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_a_acc_ct0 = d_a_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:
@@ -585,7 +587,7 @@ void foo() {
   // CHECK-NEXT:   {
   // CHECK-NEXT:     std::pair<dpct::buffer_t, size_t> d_a_global_buf_ct0 = dpct::get_buffer_and_offset(d_a_global);
   // CHECK-NEXT:     size_t d_a_global_offset_ct0 = d_a_global_buf_ct0.second;
-  // CHECK-NEXT:     dpct::get_default_queue().submit(
+  // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_a_global_acc_ct0 = d_a_global_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
   // CHECK-EMPTY:

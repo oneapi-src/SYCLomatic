@@ -14,6 +14,8 @@
 #include "AnalysisInfo.h"
 #include "Debug.h"
 
+#include <regex>
+
 namespace clang {
 namespace dpct {
 ExtReplacements::ExtReplacements(DpctFileInfo *FileInfo)
@@ -31,7 +33,7 @@ bool ExtReplacements::isInvalid(std::shared_ptr<ExtReplacement> Repl) {
 
 /// Do merge for Short replacement and Longer replacement.
 ///
-/// Return the merged replacemtent.
+/// Return the merged replacement.
 /// Prerequisite: Shorter replacement's length should be not more than Longer
 /// replacement's.
 std::shared_ptr<ExtReplacement> ExtReplacements::mergeComparedAtSameOffset(
@@ -239,7 +241,119 @@ void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     markAsDead(Repl);
 }
 
+bool ExtReplacements::getStrReplacingPlaceholder(HelperFuncType HFT, int Index,
+                                                 std::string &Text) {
+  if (HFT != HelperFuncType::DefaultQueue &&
+      HFT != HelperFuncType::CurrentDevice) {
+    return false;
+  }
+
+  auto HelperFuncReplInfoIter =
+      DpctGlobalInfo::getHelperFuncReplInfoMap().find(Index);
+
+  if (DpctGlobalInfo::getDeviceChangedFlag() ||
+      !DpctGlobalInfo::getUsingDRYPattern()) {
+    if (HFT == HelperFuncType::DefaultQueue) {
+      Text = "dpct::get_default_queue()";
+    } else if (HFT == HelperFuncType::CurrentDevice) {
+      Text = "dpct::get_current_device()";
+    }
+    return true;
+  }
+
+  std::string CounterKey =
+      HelperFuncReplInfoIter->second.DeclLocFile + ":" +
+      std::to_string(HelperFuncReplInfoIter->second.DeclLocOffset);
+
+  auto TempVariableDeclCounterIter =
+      DpctGlobalInfo::getTempVariableDeclCounterMap().find(CounterKey);
+  if (TempVariableDeclCounterIter ==
+        DpctGlobalInfo::getTempVariableDeclCounterMap().end()) {
+    return false;
+  }
+
+  // All cases of replacing placeholders:
+  // dev_count  queue_count  dev_decl            queue_decl
+  // 0          1            /                   get_default_queue
+  // 1          0            get_current_device  /
+  // 1          1            get_current_device  get_default_queue
+  // 2          1            dev_ct1             get_default_queue
+  // 1          2            dev_ct1             q_ct1
+  // >=2        >=2          dev_ct1             q_ct1
+  if (HFT == HelperFuncType::DefaultQueue) {
+    if (!HelperFuncReplInfoIter->second.IsLocationValid) {
+      Text = "dpct::get_default_queue()";
+      return true;
+    } else if (TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
+      Text = "dpct::get_default_queue()";
+      return true;
+    } else {
+      Text = "q_ct1";
+      return true;
+    }
+  } else if (HFT == HelperFuncType::CurrentDevice) {
+    if (!HelperFuncReplInfoIter->second.IsLocationValid) {
+      Text = "dpct::get_current_device()";
+      return true;
+    } else if (TempVariableDeclCounterIter->second.CurrentDeviceCounter <= 1 &&
+               TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
+      Text = "dpct::get_current_device()";
+      return true;
+    } else {
+      Text = "dev_ct1";
+      return true;
+    }
+  }
+  return false;
+}
+
 void ExtReplacements::emplaceIntoReplSet(tooling::Replacements &ReplSet) {
+  for (auto &R : ReplMap) {
+    std::string OriginReplText = R.second->getReplacementText().str();
+    std::string NewReplText;
+
+    std::regex RE("\\{\\{NEEDREPLACE[DQ][1-9][0-9]*\\}\\}");
+    std::smatch MRes;
+    if (std::regex_search(OriginReplText, MRes, RE)) {
+      std::string MatchedStr = MRes.str();
+      NewReplText = NewReplText + std::string(MRes.prefix());
+
+      // get the index from the placeholder string
+      int Index = std::stoi(MatchedStr.substr(14, MatchedStr.size() - 14));
+      // get the HelperFuncType from the placeholder string
+      HelperFuncType HFT;
+      if (MatchedStr.substr(13, 1) == "Q")
+        HFT = HelperFuncType::DefaultQueue;
+      else if (MatchedStr.substr(13, 1) == "D")
+        HFT = HelperFuncType::CurrentDevice;
+
+      auto HelperFuncReplInfoIter =
+          DpctGlobalInfo::getHelperFuncReplInfoMap().find(Index);
+      if (HelperFuncReplInfoIter ==
+              DpctGlobalInfo::getHelperFuncReplInfoMap().end()) {
+        // Not found HelperFuncReplInfo in the map, it means this place is migrated,
+        // So only the first time will have HelperFuncReplInfo.
+        // In this case, just remove whole replacement.
+        R.second = std::make_shared<ExtReplacement>(
+            FilePath, R.second->getOffset(), 0, "", nullptr);
+      } else {
+        std::string Text;
+        if (getStrReplacingPlaceholder(HFT, Index, Text)) {
+          NewReplText = NewReplText + Text;
+        } else {
+          NewReplText = NewReplText + MatchedStr;
+        }
+
+        NewReplText = NewReplText + std::string(MRes.suffix());
+
+        // Using "NewReplText" to generate a new ExtReplacement, then replace
+        // the old one in the ReplMap
+        R.second = std::make_shared<ExtReplacement>(
+            FilePath, R.second->getOffset(), R.second->getLength(), NewReplText,
+            nullptr);
+      }
+    }
+  }
 
   if (DpctGlobalInfo::isKeepOriginCode())
     buildOriginCodeReplacements();

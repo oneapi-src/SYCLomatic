@@ -20,13 +20,15 @@ cublasStatus_t bar (cublasStatus_t s){
 extern cublasHandle_t handle2;
 
 int main() {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK: int status;
   // CHECK-NEXT: sycl::queue* handle;
-  // CHECK-NEXT: handle = &dpct::get_default_queue();
+  // CHECK-NEXT: handle = &q_ct1;
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (handle = &dpct::get_default_queue(), 0);
+  // CHECK-NEXT: status = (handle = &q_ct1, 0);
   // CHECK-NEXT: if (status != 0) {
   cublasStatus_t status;
   cublasHandle_t handle;
@@ -38,7 +40,7 @@ int main() {
   }
 
   // CHECK: sycl::queue *stream1;
-  // CHECK-NEXT: stream1 = dpct::get_current_device().create_queue();
+  // CHECK-NEXT: stream1 = dev_ct1.create_queue();
   // CHECK-NEXT: handle = stream1;
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.

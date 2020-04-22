@@ -18,6 +18,7 @@
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include <bitset>
+#include <unordered_set>
 
 #include "clang/AST/Attr.h"
 #include "clang/AST/DeclTemplate.h"
@@ -30,6 +31,11 @@ void setTypeNamesMapPtr(const std::map<std::string, std::string> *Ptr);
 
 namespace clang {
 namespace dpct {
+
+enum class HelperFuncType : int {
+  DefaultQueue = 0,
+  CurrentDevice = 1
+};
 
 class CudaMallocInfo;
 class RandomEngineInfo;
@@ -425,6 +431,26 @@ public:
     }
   };
 
+  struct HelperFuncReplInfo {
+    HelperFuncReplInfo(const std::string DeclLocFile = "",
+                       unsigned int DeclLocOffset = 0,
+                       bool IsLocationValid = false)
+        : DeclLocFile(DeclLocFile), DeclLocOffset(DeclLocOffset),
+          IsLocationValid(IsLocationValid) {}
+    std::string DeclLocFile;
+    unsigned int DeclLocOffset = 0;
+    bool IsLocationValid = false;
+  };
+
+  struct TempVariableDeclCounter {
+    TempVariableDeclCounter(int DefaultQueueCounter = 0,
+                            int CurrentDeviceCounter = 0)
+        : DefaultQueueCounter(DefaultQueueCounter),
+          CurrentDeviceCounter(CurrentDeviceCounter) {}
+    int DefaultQueueCounter = 0;
+    int CurrentDeviceCounter = 0;
+  };
+
   static std::string removeSymlinks(clang::FileManager &FM,
                                     std::string FilePathStr) {
     // Get rid of symlinks
@@ -558,11 +584,11 @@ public:
     EnableComments = Enable;
   }
 
-  inline static int getSuffixIndexInitValue(std::string FileNameAndOffest) {
-    auto Res = LocationInitIndexMap.find(FileNameAndOffest);
+  inline static int getSuffixIndexInitValue(std::string FileNameAndOffset) {
+    auto Res = LocationInitIndexMap.find(FileNameAndOffset);
     if (Res == LocationInitIndexMap.end()) {
       LocationInitIndexMap.insert(
-          std::make_pair(FileNameAndOffest, CurrentMaxIndex + 1));
+          std::make_pair(FileNameAndOffset, CurrentMaxIndex + 1));
       return CurrentMaxIndex + 1;
     } else {
       return Res->second;
@@ -604,35 +630,6 @@ public:
     }
 
     return nullptr;
-  }
-
-  /// 1. {
-  ///      cudaMemcpy();
-  ///    }
-  /// 2. {
-  ///      cudaError_t a;
-  ///      a = cudaMemcpy();
-  ///    }
-  /// 3. {
-  ///      int a;
-  ///      a = cudaMemcpy();
-  ///    }
-  /// 4. {
-  ///      cudaError_t a = cudaMemcpy();
-  ///    }
-  /// 5. {
-  ///      int a = cudaMemcpy();
-  ///    }
-  /// Node is the node of cudaMemcpy(), need return the CompoundStmt node, other
-  /// cases return nullptr.
-  static const CompoundStmt *findAncestor(const CallExpr *Node) {
-    return findAncestor<CompoundStmt>(
-        Node, [&](const ast_type_traits::DynTypedNode &Cur) -> bool {
-          if (Cur.get<ImplicitCastExpr>() || Cur.get<DeclStmt>() ||
-              Cur.get<VarDecl>() || Cur.get<BinaryOperator>())
-            return false;
-          return true;
-        });
   }
 
   template <class TargetTy, class NodeTy>
@@ -842,6 +839,26 @@ public:
   static std::map<MacroInfo *, bool> &getMacroDefines() { return MacroDefines; }
   static std::set<std::string> &getIncludingFileSet() { return IncludingFileSet; }
   static std::set<std::string> &getFileSetInCompiationDB() { return FileSetInCompiationDB; }
+  static bool getDeviceChangedFlag() { return HasFoundDeviceChanged; }
+  static void setDeviceChangedFlag(bool Flag) { HasFoundDeviceChanged = Flag; }
+  static std::unordered_map<int, HelperFuncReplInfo> &
+  getHelperFuncReplInfoMap() {
+    return HelperFuncReplInfoMap;
+  }
+  static int getHelperFuncReplInfoIndexThenInc() {
+    int Res = HelperFuncReplInfoIndex;
+    HelperFuncReplInfoIndex++;
+    return Res;
+  }
+  static std::unordered_map<std::string, TempVariableDeclCounter> &
+      getTempVariableDeclCounterMap(){
+    return TempVariableDeclCounterMap;
+  }
+  static std::unordered_set<std::string> &getTempVariableHandledSet() {
+    return TempVariableHandledSet;
+  }
+  static bool getUsingDRYPattern() { return UsingDRYPattern; }
+  static void setUsingDRYPattern(bool Flag) { UsingDRYPattern = Flag; }
 
 private:
   DpctGlobalInfo() = default;
@@ -943,6 +960,13 @@ private:
   static std::set<std::string> IncludingFileSet;
   static std::set<std::string> FileSetInCompiationDB;
   static clang::format::FormatStyle CodeFormatStyle;
+  static bool HasFoundDeviceChanged;
+  static std::unordered_map<int, HelperFuncReplInfo> HelperFuncReplInfoMap;
+  static int HelperFuncReplInfoIndex;
+  static std::unordered_map<std::string, TempVariableDeclCounter>
+      TempVariableDeclCounterMap;
+  static std::unordered_set<std::string> TempVariableHandledSet;
+  static bool UsingDRYPattern;
 };
 
 class TemplateArgumentInfo;
@@ -2337,7 +2361,7 @@ private:
   StmtList OuterStmts;
   StmtList KernelStmts;
   std::string KernelArgs;
-
+  std::string QueueStr;
 };
 
 class CudaMallocInfo {
@@ -2387,8 +2411,8 @@ class RandomEngineInfo {
 public:
   RandomEngineInfo(unsigned Offset, const std::string &FilePath,
                    const DeclaratorDecl *DD)
-      : SeedExpr("0"), DimExpr("1"), IsQuasiEngine(false),
-        IsClassMember(false), NeedPrint(true) {
+      : SeedExpr("0"), DimExpr("1"), IsQuasiEngine(false), IsClassMember(false),
+        NeedPrint(true) {
     if (dyn_cast<FieldDecl>(DD))
       IsClassMember = true;
     else
@@ -2447,7 +2471,6 @@ public:
   std::string getSeedExpr() { return SeedExpr; }
   std::string getDimExpr() { return DimExpr; }
 
-  void setDeclFilePath(std::string Path) { DeclFilePath = Path; }
   void setCreateCallFilePath(std::string Path) { CreateCallFilePath = Path; }
   void setTypeBeginOffset(unsigned int Offset) { TypeBeginOffset = Offset; }
   void setTypeLength(unsigned int Len) { TypeLength = Len; }
@@ -2480,6 +2503,7 @@ public:
     return SM.getComposedLoc(FID, DeclaratorDeclEndOffset);
   }
   void setNeedPrint(bool Flag){ NeedPrint = Flag; }
+  void setQueueStr(std::string Q) { QueueStr = Q; }
 
 private:
   std::string SeedExpr;     // Replaced Seed variable string
@@ -2506,6 +2530,7 @@ private:
   unsigned int DeclaratorDeclBeginOffset;
   unsigned int DeclaratorDeclEndOffset;
   bool NeedPrint;
+  std::string QueueStr;
 };
 
 template <class... T>
@@ -2527,6 +2552,178 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
     }
     concatHeader(RSO, std::forward<T>(Args)...);
     insertHeader(std::move(RSO.str()), Offset);
+  }
+}
+
+/// Find the innermost FunctionDecl's child node(CompoundStmt node) where \S is
+/// located. If there is no CompoundStmt of FunctionDecl out of \S, return
+/// nullptr.
+/// Caller should make sure that /S is not nullptr.
+template<typename T>
+inline const clang::CompoundStmt *findInnerMostBlock(const T *S) {
+  auto &Context = DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*S);
+  std::vector<ast_type_traits::DynTypedNode> AncestorNodes;
+  while (Parents.size() >= 1) {
+    AncestorNodes.push_back(Parents[0]);
+    Parents = Context.getParents(Parents[0]);
+  }
+
+  for (unsigned int i = 0; i < AncestorNodes.size(); ++i) {
+    if (auto CS = AncestorNodes[i].get<CompoundStmt>()) {
+      if (i + 1 < AncestorNodes.size() &&
+          (AncestorNodes[i + 1].get<FunctionDecl>() ||
+           AncestorNodes[i + 1].get<CXXMethodDecl>() ||
+           AncestorNodes[i + 1].get<CXXConstructorDecl>() ||
+           AncestorNodes[i + 1].get<CXXDestructorDecl>())) {
+        return CS;
+      }
+    }
+  }
+  return nullptr;
+}
+
+template<typename T>
+inline DpctGlobalInfo::HelperFuncReplInfo
+generateHelperFuncReplInfo(const T *S) {
+  DpctGlobalInfo::HelperFuncReplInfo Info;
+  if (!S) {
+    Info.IsLocationValid = false;
+    return Info;
+  }
+
+  auto CS = findInnerMostBlock(S);
+  if (!CS) {
+    Info.IsLocationValid = false;
+    return Info;
+  }
+
+  auto EndOfLBrace = CS->getLBracLoc().getLocWithOffset(1);
+  if (EndOfLBrace.isMacroID()) {
+    Info.IsLocationValid = false;
+    return Info;
+  }
+
+  Info.IsLocationValid = true;
+  Info.DeclLocFile =
+      DpctGlobalInfo::getSourceManager().getFilename(EndOfLBrace).str();
+  Info.DeclLocOffset = DpctGlobalInfo::getSourceManager()
+                           .getDecomposedLoc(EndOfLBrace)
+                           .second;
+  return Info;
+}
+
+template <typename T>
+bool checkWhetherIsDuplicate(const T *S, bool UpdateSet = true) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  SourceLocation Loc = S->getBeginLoc();
+  Loc = SM.getExpansionLoc(Loc);
+
+  std::string Key = SM.getFilename(Loc).str() + ":" +
+                    std::to_string(SM.getDecomposedLoc(Loc).second);
+  auto Iter = DpctGlobalInfo::getTempVariableHandledSet().find(Key);
+  if (Iter != DpctGlobalInfo::getTempVariableHandledSet().end()) {
+    return true;
+  } else {
+    if (UpdateSet) {
+      DpctGlobalInfo::getTempVariableHandledSet().insert(Key);
+    }
+    return false;
+  }
+}
+
+// There are 2 maps and 1 set are used to record related information:
+// unordered_map<int, HelperFuncReplInfo> HelperFuncReplInfoMap,
+// unordered_map<string, TempVariableDeclCounter> TempVariableDeclCounterMap and
+// unordered_set<string> TempVariableHandledSet.
+//
+// 1. HelperFuncReplInfoMap's key is the Index of each placeholder, its value is
+// a HelperFuncReplInfo struct which saved the decalaration insert location of
+// this placeholder and a boolean represent whether this location is valid.
+// 2. TempVariableDeclCounterMap's key is the decalaration insert location, it's
+// value is a TempVariableDeclCounter which counts how many device declaration
+// and queue declaration need be inserted here respectively.
+// 3. TempVariableHandledSet's key is the begin location of the decalaration or
+// statement of ecah placeholder. This set is to avoid one placeholder to be
+// counted more than once.
+//
+// The rule of inserting declaration:
+// If pair (m,n) means device counter value is n and queue counter value is n,
+// using (0,0), (0,1), (1,0), (1,1), (>=2,0), (0,>=2), (>=2,1), (1,>=2) and
+// (>=2,>=2) can construct a graph.
+// Then there are 5 edges will need insert declaration:
+// (1,0) to (>=2,0) and (1,1) to (>=2,1) need add device declaration
+// (0,1) to (0,>=2) and (1,1) to (1,>=2) need add both declaration
+// (>=2,1) to (>=2,>=2) need add queue declaration
+template <typename T>
+inline void buildTempVariableMap(int Index, const T *S,
+                                 HelperFuncType HFT) {
+  if (checkWhetherIsDuplicate(S)) {
+    return;
+  }
+
+  DpctGlobalInfo::HelperFuncReplInfo HFInfo =
+      generateHelperFuncReplInfo(S);
+
+  if (!HFInfo.IsLocationValid)
+    return;
+
+  DpctGlobalInfo::getHelperFuncReplInfoMap().insert(
+      std::make_pair(Index, HFInfo));
+  std::string KeyForDeclCounter =
+      HFInfo.DeclLocFile + ":" + std::to_string(HFInfo.DeclLocOffset);
+
+  auto Iter =
+      DpctGlobalInfo::getTempVariableDeclCounterMap().find(KeyForDeclCounter);
+  if (Iter != DpctGlobalInfo::getTempVariableDeclCounterMap().end()) {
+    unsigned int IndentLen = 2;
+    if (clang::dpct::DpctGlobalInfo::getGuessIndentWidthMatcherFlag())
+      IndentLen = clang::dpct::DpctGlobalInfo::getIndentWidth();
+    std::string IndentStr = std::string(IndentLen, ' ');
+
+    std::string DevDecl =
+        getNL() + IndentStr +
+        "dpct::device_ext &dev_ct1 = dpct::get_current_device();";
+    std::string QDecl = getNL() + IndentStr + MapNames::getClNamespace() +
+                        "::queue &q_ct1 = dev_ct1.default_queue();";
+    if (HFT == HelperFuncType::DefaultQueue) {
+      if (Iter->second.DefaultQueueCounter == 1) {
+        if (Iter->second.CurrentDeviceCounter <= 1) {
+          if (DpctGlobalInfo::getUsingDRYPattern() &&
+              !DpctGlobalInfo::getDeviceChangedFlag())
+            DpctGlobalInfo::getInstance().addReplacement(
+                std::make_shared<ExtReplacement>(HFInfo.DeclLocFile,
+                                                 HFInfo.DeclLocOffset, 0,
+                                                 DevDecl, nullptr));
+        }
+        if (DpctGlobalInfo::getUsingDRYPattern() &&
+            !DpctGlobalInfo::getDeviceChangedFlag())
+          DpctGlobalInfo::getInstance().addReplacement(
+              std::make_shared<ExtReplacement>(
+                  HFInfo.DeclLocFile, HFInfo.DeclLocOffset, 0, QDecl, nullptr));
+      }
+      Iter->second.DefaultQueueCounter = Iter->second.DefaultQueueCounter + 1;
+    } else if (HFT == HelperFuncType::CurrentDevice) {
+      if (Iter->second.CurrentDeviceCounter == 1 &&
+          Iter->second.DefaultQueueCounter <= 1) {
+        if (DpctGlobalInfo::getUsingDRYPattern() &&
+            !DpctGlobalInfo::getDeviceChangedFlag())
+          DpctGlobalInfo::getInstance().addReplacement(
+              std::make_shared<ExtReplacement>(HFInfo.DeclLocFile,
+                                               HFInfo.DeclLocOffset, 0, DevDecl,
+                                               nullptr));
+      }
+      Iter->second.CurrentDeviceCounter = Iter->second.CurrentDeviceCounter + 1;
+    }
+  } else {
+    DpctGlobalInfo::TempVariableDeclCounter Counter(0, 0);
+    if (HFT == HelperFuncType::DefaultQueue) {
+      Counter.DefaultQueueCounter = Counter.DefaultQueueCounter + 1;
+    } else if (HFT == HelperFuncType::CurrentDevice) {
+      Counter.CurrentDeviceCounter = Counter.CurrentDeviceCounter + 1;
+    }
+    DpctGlobalInfo::getTempVariableDeclCounterMap().insert(
+        std::make_pair(KeyForDeclCounter, Counter));
   }
 }
 
