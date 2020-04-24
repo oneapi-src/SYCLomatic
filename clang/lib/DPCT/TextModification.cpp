@@ -300,6 +300,8 @@ ReplaceVarDecl::getReplacement(const ASTContext &Context) const {
   while (Data != ';')
     Data = DataAfter[++repLength];
   recordMigrationInfo(Context, SR.getBegin());
+  // Erase the ReplaceVarDecl from the ReplaceMap since it is going to be destructed
+  ReplaceMap.erase(D->getBeginLoc().getRawEncoding());
   return std::make_shared<ExtReplacement>(Context.getSourceManager(),
                                           SR.getBegin(), ++repLength, T, this);
 }
