@@ -2896,7 +2896,7 @@ __device__ void do_migration5() {
 
   //CHECK: sycl::max(i, i);
   //CHECK-NEXT: sycl::min(i, i);
-  //CHECK-NEXT:  sycl::fabs((double)f);
+  //CHECK-NEXT:  sycl::fabs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2934,10 +2934,10 @@ __device__ void do_migration5() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquo call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
-  //CHECK-NEXT: sycl::acos((double)f);
-  //CHECK-NEXT: sycl::acosh((double)f);
-  //CHECK-NEXT: sycl::asin((double)f);
-  //CHECK-NEXT: sycl::asinh((double)f);
+  //CHECK-NEXT: sycl::acos(f);
+  //CHECK-NEXT: sycl::acosh(f);
+  //CHECK-NEXT: sycl::asin(f);
+  //CHECK-NEXT: sycl::asinh(f);
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
@@ -2966,7 +2966,7 @@ __global__ void do_migration6() {
 
   //CHECK: sycl::max(i, i);
   //CHECK-NEXT: sycl::min(i, i);
-  //CHECK-NEXT: sycl::fabs((double)f);
+  //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -3004,10 +3004,10 @@ __global__ void do_migration6() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquo call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
-  //CHECK-NEXT: sycl::acos((double)f);
-  //CHECK-NEXT: sycl::acosh((double)f);
-  //CHECK-NEXT: sycl::asin((double)f);
-  //CHECK-NEXT: sycl::asinh((double)f);
+  //CHECK-NEXT: sycl::acos(f);
+  //CHECK-NEXT: sycl::acosh(f);
+  //CHECK-NEXT: sycl::asin(f);
+  //CHECK-NEXT: sycl::asinh(f);
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
@@ -3036,7 +3036,7 @@ __device__ __host__ void do_migration7() {
 
   //CHECK: sycl::max(i, i);
   //CHECK-NEXT: sycl::min(i, i);
-  //CHECK-NEXT: sycl::fabs((double)f);
+  //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -3074,9 +3074,9 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquo call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::global_space>(&i));
-  //CHECK-NEXT: sycl::acos((double)f);
+  //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh((double)f);
-  //CHECK-NEXT: sycl::asin((double)f);
+  //CHECK-NEXT: sycl::asin(f);
   //CHECK-NEXT: sycl::asinh((double)f);
   std::max(i, i);
   std::min(i, i);
@@ -3116,4 +3116,43 @@ __device__ void test_recursive_unary() {
   int i, j, k;
   // CHECK: sycl::max(-sycl::max(-sycl::abs(i), j), k);
   max(-max(-abs(i), j), k);
+}
+
+__device__ void do_math(int i, int j) {
+  // CHECK: sycl::sqrt((float)i);
+  sqrtf(i);
+  // CHECK: sycl::sqrt((double)i);
+  sqrt(i);
+  // CHECK: sycl::fmod((double)i, (double)j);
+  fmod(i, j);
+  // CHECK: sycl::sin((double)i);
+  sin(i);
+  // CHECK: sycl::cos((double)i);
+  cos(i);
+}
+
+__device__ void do_math(float i, float j) {
+  // CHECK: sycl::sqrt(i);
+  sqrtf(i);
+  // CHECK: sycl::sqrt(i);
+  sqrt(i);
+  // CHECK: sycl::fmod(i, j);
+  fmod(i, j);
+  // CHECK: sycl::sin(i);
+  sin(i);
+  // CHECK: sycl::cos(i);
+  cos(i);
+}
+
+__device__ void do_math(double i, double j) {
+  // CHECK: sycl::sqrt((float)i);
+  sqrtf(i);
+  // CHECK: sycl::sqrt(i);
+  sqrt(i);
+  // CHECK: sycl::fmod(i, j);
+  fmod(i, j);
+  // CHECK: sycl::sin(i);
+  sin(i);
+  // CHECK: sycl::cos(i);
+  cos(i);
 }

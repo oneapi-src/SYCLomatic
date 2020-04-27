@@ -276,7 +276,16 @@ std::string MathFuncNameRewriter::getNewFuncName() {
           std::string ArgExpr = Arg->getStmtClassName();
           auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
           auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());
-          if (ArgT != "float") {
+          std::string ParamType = "float";
+          auto PVD = FD->getParamDecl(i);
+          if (PVD)
+            ParamType = PVD->getType().getAsString();
+          if (ArgT != ParamType) {
+            if (DRE || IL)
+              RewriteArgList[i] = "(" + ParamType + ")" + RewriteArgList[i];
+            else
+              RewriteArgList[i] = "(" + ParamType + ")(" + RewriteArgList[i] + ")";
+          } else if (ParamType == "int" || ParamType == "unsigned int") {
             if (DRE || IL)
               RewriteArgList[i] = "(float)" + RewriteArgList[i];
             else
@@ -295,7 +304,16 @@ std::string MathFuncNameRewriter::getNewFuncName() {
           std::string ArgExpr = Arg->getStmtClassName();
           auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
           auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());
-          if (ArgT != "double") {
+          std::string ParamType = "double";
+          auto PVD = FD->getParamDecl(i);
+          if (PVD)
+            ParamType = PVD->getType().getAsString();
+          if (ArgT != ParamType) {
+            if (DRE || IL)
+              RewriteArgList[i] = "(" + ParamType + ")" + RewriteArgList[i];
+            else
+              RewriteArgList[i] = "(" + ParamType + ")(" + RewriteArgList[i] + ")";
+          } else if (ParamType == "int" || ParamType == "unsigned int") {
             if (DRE || IL)
               RewriteArgList[i] = "(double)" + RewriteArgList[i];
             else
