@@ -758,43 +758,67 @@ public:
   }
 
   void
-  applyMigrationText(bool IsInCondition, bool IsAssigned,
-                     SourceLocation StmtBegin, SourceLocation StmtEndAfterSemi,
+  applyMigrationText(bool NeedUseLambda, bool IsMacroArg,
+                     bool CanAvoidUsingLambda, std::string OriginStmtType,
+                     bool IsAssigned, SourceLocation OuterInsertLoc,
+                     SourceLocation PrefixInsertLoc,
+                     SourceLocation SuffixInsertLoc,
                      SourceLocation FuncNameBegin, SourceLocation FuncCallEnd,
                      unsigned int FuncCallLength, std::string IndentStr,
                      std::string PrefixInsertStr, std::string SuffixInsertStr,
                      bool IsHelperFunction = false, std::string FuncName = "") {
-    if (IsInCondition) {
-      if (IsAssigned) {
-        report(StmtBegin, Diagnostics::NOERROR_RETURN_LAMBDA, false);
-        insertAroundRange(
-            StmtBegin, StmtEndAfterSemi,
-            std::string("[&](){") + getNL() + IndentStr + PrefixInsertStr,
-            std::string(";") + SuffixInsertStr + getNL() + IndentStr +
-                "return 0;" + getNL() + IndentStr + std::string("}()"));
+    if (NeedUseLambda) {
+      if (CanAvoidUsingLambda && !IsMacroArg) {
+        std::string InsertStr;
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
+          InsertStr = std::string("{") + getNL() + IndentStr + PrefixInsertStr +
+                      CallExprReplStr + ";" + SuffixInsertStr + getNL() +
+                      IndentStr + "}" + getNL() + IndentStr;
+        else
+          InsertStr = PrefixInsertStr + CallExprReplStr + ";" +
+                      SuffixInsertStr + getNL() + IndentStr;
+        emplaceTransformation(
+            new InsertText(OuterInsertLoc, std::move(InsertStr)));
+        report(OuterInsertLoc, Diagnostics::CODE_LOGIC_CHANGED, true,
+               OriginStmtType);
+        if (IsHelperFunction)
+          emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
+                                                "0", true, FuncName));
+        else
+          emplaceTransformation(
+              new ReplaceText(FuncNameBegin, FuncCallLength, "0"));
       } else {
-        insertAroundRange(StmtBegin, StmtEndAfterSemi,
-                          std::string("[&](){") + getNL() + IndentStr +
-                              PrefixInsertStr,
-                          std::string(";") + SuffixInsertStr + getNL() +
-                              IndentStr + std::string("}()"));
+        if (IsAssigned) {
+          report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_LAMBDA, false);
+          insertAroundRange(
+              PrefixInsertLoc, SuffixInsertLoc,
+              std::string("[&](){") + getNL() + IndentStr + PrefixInsertStr,
+              std::string(";") + SuffixInsertStr + getNL() + IndentStr +
+                  "return 0;" + getNL() + IndentStr + std::string("}()"));
+        } else {
+          insertAroundRange(PrefixInsertLoc, SuffixInsertLoc,
+                            std::string("[&](){") + getNL() + IndentStr +
+                                PrefixInsertStr,
+                            std::string(";") + SuffixInsertStr + getNL() +
+                                IndentStr + std::string("}()"));
+        }
+        if (IsHelperFunction)
+          emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
+                                                std::move(CallExprReplStr),
+                                                true, FuncName));
+        else
+          emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
+                                                std::move(CallExprReplStr)));
       }
-      if (IsHelperFunction)
-        emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
-                                              std::move(CallExprReplStr), true,
-                                              FuncName));
-      else
-        emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
-                                              std::move(CallExprReplStr)));
     } else {
       if (!PrefixInsertStr.empty() || !SuffixInsertStr.empty()) {
         if (dpct::DpctGlobalInfo::getUsmLevel() == UsmLevel::none)
           insertAroundRange(
-              StmtBegin, StmtEndAfterSemi,
+              PrefixInsertLoc, SuffixInsertLoc,
               std::string("{") + getNL() + IndentStr + PrefixInsertStr,
               SuffixInsertStr + getNL() + IndentStr + std::string("}"));
         else
-          insertAroundRange(StmtBegin, StmtEndAfterSemi,
+          insertAroundRange(PrefixInsertLoc, SuffixInsertLoc,
                             std::move(PrefixInsertStr),
                             std::move(SuffixInsertStr));
       }
@@ -807,7 +831,7 @@ public:
                                               std::move(CallExprReplStr)));
       if (IsAssigned) {
         insertAroundRange(FuncNameBegin, FuncCallEnd, "(", ", 0)");
-        report(StmtBegin, Diagnostics::NOERROR_RETURN_COMMA_OP, true);
+        report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP, true);
       }
     }
   }

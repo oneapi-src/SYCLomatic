@@ -178,11 +178,11 @@ SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
     // C. If both A and B hold, then default to A.
     // clang-format on
     auto &FileSetInDB = dpct::DpctGlobalInfo::getFileSetInCompiationDB();
-    if(FileSetInDB.find(SourcePath.str()) != end(FileSetInDB)) {
+    if (FileSetInDB.find(SourcePath.str()) != end(FileSetInDB)) {
       return TypeCppSource;
     }
     auto &IncludingFileSet = dpct::DpctGlobalInfo::getIncludingFileSet();
-    if(IncludingFileSet.find(SourcePath.str()) != end(IncludingFileSet)) {
+    if (IncludingFileSet.find(SourcePath.str()) != end(IncludingFileSet)) {
       return TypeCppHeader;
     }
     return TypeCppSource;
@@ -419,6 +419,15 @@ bool endsWith(const std::string &Str, const std::string &Suffix) {
 
 bool endsWith(const std::string &Str, char C) {
   return Str.size() && Str[Str.size() - 1] == C;
+}
+
+const clang::Stmt *getParentStmt(ast_type_traits::DynTypedNode Node) {
+  if (auto S = Node.get<Stmt>()) {
+    return getParentStmt(S);
+  } else if (auto D = Node.get<Decl>()) {
+    return getParentStmt(D);
+  }
+  return nullptr;
 }
 
 const clang::Stmt *getParentStmt(const clang::Stmt *S) {
@@ -895,6 +904,133 @@ std::vector<const Stmt *> getConditionExpr(ast_type_traits::DynTypedNode Node) {
   return Res;
 }
 
+/// This function checks whether call expression \p CE is a child node of the
+/// initialization, condition or increment part of for, while, do, if or switch.
+///
+/// If the original CallExpr is in if, switch, return or the init part of for
+/// statement, and meet one of the following cases, then \p CanAvoidUsingLambda
+/// will be true and \p SL will be set as the begin location of the FlowControl
+/// statement:
+/// 1. The CallExpr is the statement;
+/// 2. The statement is a var decl using C init style and the CallExpr is the
+///    init expression;
+/// 3. The statement is an assign operator and the CallExpr is the RHS;
+/// 4. The statement is a binary operator and the CallExpr is the LHS (avoiding
+///    the short - circuit - evaluation);
+/// \param E The expression to be checked.
+bool isConditionOfFlowControl(const clang::CallExpr *CE,
+                              std::string &OriginStmtType,
+                              bool &CanAvoidUsingLambda, SourceLocation &SL) {
+  CanAvoidUsingLambda = false;
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto ParentNodes = Context.getParents(*CE);
+  ast_type_traits::DynTypedNode ParentNode;
+  std::vector<ast_type_traits::DynTypedNode> AncestorNodes;
+  bool FoundStmtHasCondition = false;
+  while (!ParentNodes.empty()) {
+    ParentNode = ParentNodes[0];
+    AncestorNodes.push_back(ParentNode);
+    if (ParentNode.get<IfStmt>() || ParentNode.get<ForStmt>() ||
+        ParentNode.get<WhileStmt>() || ParentNode.get<DoStmt>() ||
+        ParentNode.get<SwitchStmt>()) {
+      if (ParentNode.get<IfStmt>())
+        OriginStmtType = "if";
+      else if (ParentNode.get<ForStmt>())
+        OriginStmtType = "for";
+      else if (ParentNode.get<WhileStmt>())
+        OriginStmtType = "while";
+      else if (ParentNode.get<DoStmt>())
+        OriginStmtType = "do";
+      else
+        OriginStmtType = "switch";
+
+      FoundStmtHasCondition = true;
+      break;
+    }
+    ParentNodes = Context.getParents(ParentNode);
+  }
+  if (!FoundStmtHasCondition)
+    return false;
+
+  std::vector<const Stmt *> CondtionNodes;
+  CondtionNodes = getConditionNode(AncestorNodes[AncestorNodes.size() - 1]);
+
+  for (auto CondtionNode : CondtionNodes) {
+    if (CondtionNode == nullptr)
+      continue;
+    for (auto Node : AncestorNodes) {
+      if (Node.get<Stmt>() && Node.get<Stmt>() == CondtionNode) {
+        // if the expression in else if, we can only use lambda
+        auto P = getParentStmt(AncestorNodes[AncestorNodes.size() - 1]);
+        if (!P)
+          return true;
+        auto CS = dyn_cast<CompoundStmt>(P);
+        if (!CS)
+          return true;
+        // if the expression in condition of do-while or while,
+        // we can only use lambda
+        if (OriginStmtType == "do" || OriginStmtType == "while")
+          return true;
+        // if the expression in condition of for and not the Init part,
+        // we can only use lambda
+        if (OriginStmtType == "for") {
+          auto FS = AncestorNodes[AncestorNodes.size() - 1].get<ForStmt>();
+          if (!FS)
+            return true;
+          if (CondtionNode != FS->getInit())
+            return true;
+        }
+
+        auto DS = dyn_cast<DeclStmt>(CondtionNode);
+        auto E = dyn_cast<Expr>(CondtionNode);
+        const BinaryOperator *BO = nullptr;
+        if (DS && DS->isSingleDecl()) {
+          // E.g., if(int a = functionCall()){}
+          const VarDecl *VD = dyn_cast<VarDecl>(DS->getSingleDecl());
+          if (VD && VD->hasInit()) {
+            if (VD->getInitStyle() == VarDecl::InitializationStyle::CInit &&
+                VD->getInit()->IgnoreImplicit() == CE) {
+              CanAvoidUsingLambda = true;
+              SL = dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
+                  AncestorNodes[AncestorNodes.size() - 1]
+                      .get<Stmt>()
+                      ->getBeginLoc());
+            }
+          }
+        } else if (E && (BO = dyn_cast<BinaryOperator>(E->IgnoreImplicit()))) {
+          // E.g., if(functionCall() && a){}
+          //    or if(a = functionCall()){}
+          if ((BO->getLHS()->IgnoreImplicit() == CE) ||
+              (BO->getOpcode() == BO_Assign &&
+               BO->getRHS()->IgnoreImplicit() == CE)) {
+            CanAvoidUsingLambda = true;
+            SL = dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
+                AncestorNodes[AncestorNodes.size() - 1]
+                    .get<Stmt>()
+                    ->getBeginLoc());
+          }
+        } else if (E && E->IgnoreImplicit() == CE) {
+          // E.g., if(functionCall()){}
+          CanAvoidUsingLambda = true;
+          SL = dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
+              AncestorNodes[AncestorNodes.size() - 1]
+                  .get<Stmt>()
+                  ->getBeginLoc());
+        }
+
+        return true;
+      }
+    }
+    if (CE == CondtionNode) {
+      CanAvoidUsingLambda = true;
+      SL = dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
+          AncestorNodes[AncestorNodes.size() - 1].get<Stmt>()->getBeginLoc());
+      return true;
+    }
+  }
+  return false;
+}
+
 /// If \p OnlyCheckConditionExpr is false, this function checks whether
 /// expression \p E is a child node of the initialization, condition or
 /// increment part of for, while, do, if or switch, if \p OnlyCheckConditionExpr
@@ -922,8 +1058,8 @@ bool isConditionOfFlowControl(const clang::Expr *E,
   }
   if (!FoundStmtHasCondition)
     return false;
-  std::vector<const Stmt *>  CondtionNodes;
-  if(OnlyCheckConditionExpr){
+  std::vector<const Stmt *> CondtionNodes;
+  if (OnlyCheckConditionExpr) {
     CondtionNodes = getConditionExpr(AncestorNodes[AncestorNodes.size() - 1]);
   } else {
     CondtionNodes = getConditionNode(AncestorNodes[AncestorNodes.size() - 1]);
@@ -1498,11 +1634,11 @@ bool isAnIdentifierOrLiteral(const Expr *E) {
   auto EndLoc = EA.getExprEndSrcLoc();
   Token BeginTok, EndTok;
   if (!Lexer::getRawToken(BeginLoc, BeginTok, SM,
-                         dpct::DpctGlobalInfo::getContext().getLangOpts(),
-                         true) &&
+                          dpct::DpctGlobalInfo::getContext().getLangOpts(),
+                          true) &&
       !Lexer::getRawToken(EndLoc, EndTok, SM,
-                         dpct::DpctGlobalInfo::getContext().getLangOpts(),
-                         true)) {
+                          dpct::DpctGlobalInfo::getContext().getLangOpts(),
+                          true)) {
     if ((BeginTok.getLocation() != EndTok.getLocation()) ||
         (BeginTok.getLength() != EndTok.getLength())) {
       return false;

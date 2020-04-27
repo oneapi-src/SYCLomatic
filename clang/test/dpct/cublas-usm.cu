@@ -4,56 +4,56 @@
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 
+cublasHandle_t handle;
+int N = 275;
+float *h_a, *h_b, *h_c;
+const float *d_A_S;
+const float *d_B_S;
+float *d_C_S;
+float alpha_S = 1.0f;
+float beta_S = 0.0f;
+int trans0 = 0;
+int trans1 = 1;
+int trans2 = 2;
+int fill0 = 0;
+int side0 = 0;
+int diag0 = 0;
+int *result = 0;
+const float *x_S = 0;
+const float *y_S = 0;
+
+const double *d_A_D;
+const double  *d_B_D;
+double  *d_C_D;
+double alpha_D;
+double beta_D;
+const double *x_D;
+const double *y_D;
+
+const float2 *d_A_C;
+const float2  *d_B_C;
+float2  *d_C_C;
+float2 alpha_C;
+float2 beta_C;
+const float2 *x_C;
+const float2 *y_C;
+
+const double2 *d_A_Z;
+const double2  *d_B_Z;
+double2  *d_C_Z;
+double2 alpha_Z;
+double2 beta_Z;
+const double2 *x_Z;
+const double2 *y_Z;
+
+float* result_S;
+double* result_D;
+float2* result_C;
+double2* result_Z;
+
+int incx, incy, lda, ldb, ldc;
 
 int main() {
-  cublasHandle_t handle;
-  int N = 275;
-  float *h_a, *h_b, *h_c;
-  const float *d_A_S;
-  const float *d_B_S;
-  float *d_C_S;
-  float alpha_S = 1.0f;
-  float beta_S = 0.0f;
-  int trans0 = 0;
-  int trans1 = 1;
-  int trans2 = 2;
-  int fill0 = 0;
-  int side0 = 0;
-  int diag0 = 0;
-  int *result = 0;
-  const float *x_S = 0;
-  const float *y_S = 0;
-
-  const double *d_A_D;
-  const double  *d_B_D;
-  double  *d_C_D;
-  double alpha_D;
-  double beta_D;
-  const double *x_D;
-  const double *y_D;
-
-  const float2 *d_A_C;
-  const float2  *d_B_C;
-  float2  *d_C_C;
-  float2 alpha_C;
-  float2 beta_C;
-  const float2 *x_C;
-  const float2 *y_C;
-
-  const double2 *d_A_Z;
-  const double2  *d_B_Z;
-  double2  *d_C_Z;
-  double2 alpha_Z;
-  double2 beta_Z;
-  const double2 *x_Z;
-  const double2 *y_Z;
-
-  float* result_S;
-  double* result_D;
-  float2* result_C;
-  double2* result_Z;
-
-  int incx, incy, lda, ldb, ldc;
 
   //CHECK:/*
   //CHECK-NEXT:DPCT1018:{{[0-9]+}}: The cublasSetVector was migrated, but due to parameter 11111 equals to parameter 11111 but greater than 1, the generated code performance may be sub-optimal.
@@ -260,4 +260,43 @@ int main() {
   //CHECK:mkl::blas::gemmt(*handle, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, trans1==0 ? mkl::transpose::trans : mkl::transpose::nontrans, N, N, alpha_D, d_A_D, N, d_B_D, N, beta_D, d_C_D, N).wait();
   cublasDsyrkx(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans1, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
 
+
+
+  // CHECK: dpct::matrix_mem_copy(d_C_S, d_B_S, N, N, N, N, dpct::device_to_device, *handle);
+  // CHECK-NEXT: mkl::blas::trmm(*handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, alpha_S, d_A_S, N, d_C_S, N).wait();
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. 0 is used in if statement. You need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: if(int stat = 0){}
+  if(int stat = cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N)){}
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: if(int stat = (mkl::blas::gemm(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, alpha_S, d_A_S, N, d_B_S, N, beta_S, d_C_S, N).wait(), 0)){}
+  if(int stat = cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)){}
+
+
+}
+
+// CHECK: int foo1() try {
+// CHECK-NEXT:   dpct::matrix_mem_copy(d_C_S, d_B_S, N, N, N, N, dpct::device_to_device, *handle);
+// CHECK-NEXT:   mkl::blas::trmm(*handle, (mkl::side)side0, fill0==0 ? mkl::uplo::lower : mkl::uplo::upper, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, (mkl::diag)diag0, N, N, alpha_S, d_A_S, N, d_C_S, N).wait();
+// CHECK-NEXT:   /*
+// CHECK-NEXT:   DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. 0 is used in return statement. You need to rewrite this code.
+// CHECK-NEXT:   */
+// CHECK-NEXT:   return 0;
+// CHECK-NEXT: }
+int foo1(){
+  return cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N);
+}
+
+// CHECK:int foo2() try {
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:  */
+// CHECK-NEXT:  return (mkl::blas::gemm(*handle, trans0==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans0, trans1==2 ? mkl::transpose::conjtrans : (mkl::transpose)trans1, N, N, N, alpha_S, d_A_S, N, d_B_S, N, beta_S, d_C_S, N).wait(), 0);
+// CHECK-NEXT:}
+int foo2(){
+  return cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
 }

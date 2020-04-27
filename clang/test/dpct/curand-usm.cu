@@ -86,12 +86,21 @@ int main(){
   //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (uint64_t*)d_data_ull).wait();
   curandGenerateLongLong(rng, d_data_ull, 100*100);
 
-  //CHECK:if(s1 = [&](){
-  //CHECK-NEXT:mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
+  //CHECK:mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
   //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (uint64_t*)d_data_ull).wait();
-  //CHECK-NEXT:return 0;
-  //CHECK-NEXT:}()){}
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. 0 is used in if statement. You need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK:if(s1 = 0){}
   if(s1 = curandGenerateLongLong(rng, d_data_ull, 100*100)){}
+
+  //CHECK:mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100*100, (uint64_t*)d_data_ull).wait();
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. 0 is used in if statement. You need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:if(0){}
+  if(curandGenerateLongLong(rng, d_data_ull, 100*100)){}
 
   //CHECK:mkl::rng::sobol rng2(q_ct1, 1111);
   //CHECK-NEXT:/*
@@ -280,4 +289,28 @@ void bar4(){
   curandGenerator_t rng;
   curandCreateGenerator(&rng, CURAND_RNG_QUASI_SCRAMBLED_SOBOL32);
   curandSetQuasiRandomGeneratorDimensions(rng, 1243);
+}
+
+//CHECK:int bar5() try {
+//CHECK-NEXT:  float *d_data;
+//CHECK-NEXT:  mkl::rng::sobol rng2(dpct::get_default_queue(), 1111);
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the function call is redundant in DPC++.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed, because the function call is redundant in DPC++.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  mkl::rng::uniform<float> distr_ct{{[0-9]+}};
+//CHECK-NEXT:  mkl::rng::generate(distr_ct{{[0-9]+}}, rng2, 100*100, d_data).wait();
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. 0 is used in return statement. You need to rewrite this code.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  return 0;
+//CHECK-NEXT:}
+int bar5(){
+  float *d_data;
+  curandGenerator_t rng2;
+  curandCreateGenerator(&rng2, CURAND_RNG_QUASI_DEFAULT);
+  curandSetQuasiRandomGeneratorDimensions(rng2, 1111);
+  return curandGenerateUniform(rng2, d_data, 100*100);
 }

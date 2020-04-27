@@ -129,13 +129,29 @@ int main(){
   //CHECK-NEXT:}
   curandGenerateLongLong(rng, d_data_ull, 100*100);
 
-  //CHECK:if (s1 = [&]() {
+  //CHECK:{
   //CHECK-NEXT:auto d_data_ull_buf_ct{{[0-9]+}} = dpct::get_buffer<uint64_t>(d_data_ull);
   //CHECK-NEXT:mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ull_buf_ct{{[0-9]+}});
-  //CHECK-NEXT:return 0;
-  //CHECK-NEXT:    }()) {}
+  //CHECK-NEXT:mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ull_buf_ct23);
+  //CHECK-NEXT:}
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error
+  //CHECK-NEXT:codes. 0 is used in if statement. You need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:if (s1 = 0) {}
   if(s1 = curandGenerateLongLong(rng, d_data_ull, 100*100)){}
+
+  //CHECK:{
+  //CHECK-NEXT:  auto d_data_ull_buf_ct{{[0-9]+}} = dpct::get_buffer<uint64_t>(d_data_ull);
+  //CHECK-NEXT:  mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
+  //CHECK-NEXT:  mkl::rng::generate(distr_ct{{[0-9]+}}, rng, 100 * 100, d_data_ull_buf_ct{{[0-9]+}});
+  //CHECK-NEXT:}
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error
+  //CHECK-NEXT:codes. 0 is used in if statement. You need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:if (0) {}
+  if(curandGenerateLongLong(rng, d_data_ull, 100*100)){}
 
   //CHECK:mkl::rng::sobol rng2(q_ct1, 1111);
   //CHECK-NEXT:/*
@@ -332,4 +348,34 @@ void bar5(){
   curandGenerator_t rng;
   curandCreateGenerator(&rng, (curandRngType)101);
   curandSetPseudoRandomGeneratorSeed(rng, 1337ull);
+}
+
+//CHECK:int bar6() try {
+//CHECK-NEXT:  float *d_data;
+//CHECK-NEXT:  mkl::rng::sobol rng2(dpct::get_default_queue(), 1111);
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1026:{{[0-9]+}}: The call to curandCreateGenerator was removed, because the
+//CHECK-NEXT:  function call is redundant in DPC++.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed,
+//CHECK-NEXT:  because the function call is redundant in DPC++.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  {
+//CHECK-NEXT:    auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
+//CHECK-NEXT:    mkl::rng::uniform<float> distr_ct{{[0-9]+}};
+//CHECK-NEXT:    mkl::rng::generate(distr_ct{{[0-9]+}}, rng2, 100 * 100, d_data_buf_ct{{[0-9]+}});
+//CHECK-NEXT:  }
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error
+//CHECK-NEXT:  codes. 0 is used in return statement. You need to rewrite this code.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  return 0;
+//CHECK-NEXT:}
+int bar6(){
+  float *d_data;
+  curandGenerator_t rng2;
+  curandCreateGenerator(&rng2, CURAND_RNG_QUASI_DEFAULT);
+  curandSetQuasiRandomGeneratorDimensions(rng2, 1111);
+  return curandGenerateUniform(rng2, d_data, 100*100);
 }

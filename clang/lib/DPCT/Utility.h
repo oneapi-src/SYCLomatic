@@ -282,6 +282,7 @@ bool callingFuncHasDeviceAttr(const clang::CallExpr *CE);
 const clang::FunctionDecl *getImmediateOuterFuncDecl(const clang::Stmt *S);
 bool isInSameScope(const clang::Stmt *S, const clang::ValueDecl *D);
 const clang::DeclRefExpr *getInnerValueDecl(const clang::Expr *Arg);
+const clang::Stmt *getParentStmt(clang::DynTypedNode Node);
 const clang::Stmt *getParentStmt(const clang::Stmt *S);
 const clang::Stmt *getParentStmt(const clang::Decl *D);
 const clang::Decl *getParentDecl(const clang::Decl *D);
@@ -308,6 +309,10 @@ unsigned int getLenIncludingTrailingSpaces(clang::SourceRange Range,
 std::vector<const clang::Stmt *>
 getConditionNode(clang::DynTypedNode Node);
 std::vector<const clang::Stmt *> getConditionExpr(clang::DynTypedNode Node);
+bool isConditionOfFlowControl(const clang::CallExpr *CE,
+                              std::string &OriginStmtType,
+                              bool &CanAvoidUsingLambda,
+                              clang::SourceLocation &SL);
 bool isConditionOfFlowControl(const clang::Expr *E,
                               bool OnlyCheckConditionExpr = false);
 std::string getBufferNameAndDeclStr(const std::string &PointerName,

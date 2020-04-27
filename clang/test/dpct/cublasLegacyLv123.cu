@@ -6,40 +6,42 @@
 
 char foo();
 
+cublasStatus status;
+int n = 275;
+int m = 275;
+int k = 275;
+int lda = 275;
+int ldb = 275;
+int ldc = 275;
+const float *A_S = 0;
+const float *B_S = 0;
+float *C_S = 0;
+float alpha_S = 1.0f;
+float beta_S = 0.0f;
+const double *A_D = 0;
+const double *B_D = 0;
+double *C_D = 0;
+double alpha_D = 1.0;
+double beta_D = 0.0;
+
+const float *x_S = 0;
+const double *x_D = 0;
+const float *y_S = 0;
+const double *y_D = 0;
+int incx = 1;
+int incy = 1;
+int *result = 0;
+float *result_S = 0;
+double *result_D = 0;
+
+
+float *x_f = 0;
+float *y_f = 0;
+double *x_d = 0;
+double *y_d = 0;
+
 int main() {
-  cublasStatus status;
-  int n = 275;
-  int m = 275;
-  int k = 275;
-  int lda = 275;
-  int ldb = 275;
-  int ldc = 275;
-  const float *A_S = 0;
-  const float *B_S = 0;
-  float *C_S = 0;
-  float alpha_S = 1.0f;
-  float beta_S = 0.0f;
-  const double *A_D = 0;
-  const double *B_D = 0;
-  double *C_D = 0;
-  double alpha_D = 1.0;
-  double beta_D = 0.0;
 
-  const float *x_S = 0;
-  const double *x_D = 0;
-  const float *y_S = 0;
-  const double *y_D = 0;
-  int incx = 1;
-  int incy = 1;
-  int *result = 0;
-  float *result_S = 0;
-  double *result_D = 0;
-
-
-  float *x_f = 0;
-  float *y_f = 0;
-  double *x_d = 0;
-  double *y_d = 0;
   //level1
 
   //cublasI<t>amax
@@ -610,4 +612,37 @@ int main() {
   // CHECK-NEXT: mkl::blas::trsm(*dpct::get_current_device().get_saved_queue(), (sidemode_ct{{[0-9]+}}=='L'||sidemode_ct{{[0-9]+}}=='l') ? mkl::side::left : mkl::side::right, (fillmode_ct{{[0-9]+}}=='L'||fillmode_ct{{[0-9]+}}=='l') ? mkl::uplo::lower : mkl::uplo::upper, (transpose_ct{{[0-9]+}}=='N'||transpose_ct{{[0-9]+}}=='n') ? mkl::transpose::nontrans: ((transpose_ct{{[0-9]+}}=='T'||transpose_ct{{[0-9]+}}=='t') ? mkl::transpose::trans : mkl::transpose::conjtrans), (diagtype_ct{{[0-9]+}}=='N'||diagtype_ct{{[0-9]+}}=='n') ? mkl::diag::nonunit : mkl::diag::unit, m, n, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, C_D_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasDtrsm(foo(), foo(), foo(), foo(), m, n, alpha_D, A_D, lda, C_D, ldc);
+
+  // CHECK: {
+  // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
+  // CHECK-NEXT: auto B_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(B_D);
+  // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
+  // CHECK-NEXT: mkl::blas::gemm(*dpct::get_current_device().get_saved_queue(), mkl::transpose::nontrans, mkl::transpose::nontrans, n, n, n, alpha_D, A_D_buf_ct{{[0-9]+}}, n, B_D_buf_ct{{[0-9]+}}, n, beta_D, C_D_buf_ct{{[0-9]+}}, n);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: for(;;){}
+  for(cublasDgemm('N', 'n', n, n, n, alpha_D, A_D, n, B_D, n, beta_D, C_D, n);;){}
+
+  // Because the return value of origin API is the result value, not the status, so keep using lambda here.
+  // CHECK: for(int i = [&](){
+  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
+  // CHECK-NEXT: sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+  // CHECK-NEXT: mkl::blas::iamax(*dpct::get_current_device().get_saved_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+  // CHECK-NEXT: return res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+  // CHECK-NEXT: }();;){}
+  for(int i = cublasIsamax(n, x_S, incx);;){}
+
+}
+
+
+// Because the return value of origin API is the result value, not the status, so keep using lambda here.
+//CHECK:int bar() try {
+//CHECK-NEXT:  return [&](){
+//CHECK-NEXT:  auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
+//CHECK-NEXT:  sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
+//CHECK-NEXT:  mkl::blas::iamax(*dpct::get_current_device().get_saved_queue(), n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}});
+//CHECK-NEXT:  return res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access::mode::read>()[0];
+//CHECK-NEXT:  }();
+//CHECK-NEXT:}
+int bar(){
+  return cublasIsamax(n, x_S, incx);
 }

@@ -12,6 +12,14 @@
 #include "cublas_v2.h"
 #include <cuda_runtime.h>
 
+cublasStatus_t status;
+cublasHandle_t handle;
+int N = 275;
+float *d_A_S = 0;
+float *d_B_S = 0;
+float *d_C_S = 0;
+float alpha_S = 1.0f;
+float beta_S = 0.0f;
 
 int main() {
   cublasStatus_t status;
@@ -19,52 +27,81 @@ int main() {
   // CHECK: handle = &dpct::get_default_queue();
   cublasCreate(&handle);
 
-  int N = 275;
-  float *d_A_S = 0;
-  float *d_B_S = 0;
-  float *d_C_S = 0;
-  float alpha_S = 1.0f;
-  float beta_S = 0.0f;
-
-  // CHECK: /*
+  // CHECK: {
+  // CHECK-NEXT:   auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT:   auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT:   auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
+  // CHECK-NEXT:   mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
+  // CHECK-NEXT:                   N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N,
+  // CHECK-NEXT:                   beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error
+  // CHECK-NEXT: codes. 0 is used in if statement. You need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: if (0) {
+  // CHECK-NEXT: }
+  // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: if ([&]() {
-  // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
-  // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
-  // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::nontrans,
-  // CHECK-NEXT:                 mkl::transpose::nontrans, N, N, N, alpha_S,
-  // CHECK-NEXT:                 d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S,
-  // CHECK-NEXT:                 d_C_S_buf_ct{{[0-9]+}}, N);
-  // CHECK-NEXT: return 0;
-  // CHECK-NEXT: }()) {
+  // CHECK-NEXT: else if ([&]() {
+  // CHECK-NEXT:            auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT:            auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT:            auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
+  // CHECK-NEXT:            mkl::blas::gemm(*handle, mkl::transpose::nontrans,
+  // CHECK-NEXT:                            mkl::transpose::nontrans, N, N, N, alpha_S,
+  // CHECK-NEXT:                            d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S,
+  // CHECK-NEXT:                            d_C_S_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT:            return 0;
+  // CHECK-NEXT:          }()) {
   // CHECK-NEXT: }
-  if(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)){
+  if (cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)) {
+  }
+  else if (cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)) {
   }
 
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the
-  // CHECK-NEXT: lambda. You may need to rewrite this code.
+  // CHECK: {
+  // CHECK-NEXT:   auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT:   auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT:   auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
+  // CHECK-NEXT:   mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
+  // CHECK-NEXT:                   N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N,
+  // CHECK-NEXT:                   beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error
+  // CHECK-NEXT: codes. 0 is used in if statement. You need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: if (int stat = [&]() {
-  // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
-  // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
-  // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::nontrans,
-  // CHECK-NEXT:                 mkl::transpose::nontrans, N, N, N, alpha_S,
-  // CHECK-NEXT:                 d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S,
-  // CHECK-NEXT:                 d_C_S_buf_ct{{[0-9]+}}, N);
-  // CHECK-NEXT: return 0;
-  // CHECK-NEXT: }()) {
+  // CHECK-NEXT: if (int stat = 0) {
   // CHECK-NEXT: }
   if(int stat = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)){
   }
 
 
-  // CHECK: for ([&]() {
+  // CHECK: {
+  // CHECK-NEXT:   auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT:   auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT:   auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
+  // CHECK-NEXT:   mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
+  // CHECK-NEXT:                   N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N,
+  // CHECK-NEXT:                   beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error
+  // CHECK-NEXT: codes. 0 is used in for statement. You need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: for (0;;) {
+  // CHECK-NEXT: }
+  for(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);;){
+  }
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the
+  // CHECK-NEXT: lambda. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: for (; [&]() {
   // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
@@ -72,12 +109,11 @@ int main() {
   // CHECK-NEXT:                 mkl::transpose::nontrans, N, N, N, alpha_S,
   // CHECK-NEXT:                 d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S,
   // CHECK-NEXT:                 d_C_S_buf_ct{{[0-9]+}}, N);
-  // CHECK-NEXT: }();
-  // CHECK-NEXT: ;) {
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();) {
   // CHECK-NEXT: }
-  for(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);;){
+  for(;cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);){
   }
-
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the
@@ -116,22 +152,41 @@ int main() {
   }while(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
 
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the
-  // CHECK-NEXT: lambda. You may need to rewrite this code.
+  // CHECK: {
+  // CHECK-NEXT:   auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT:   auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT:   auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
+  // CHECK-NEXT:   mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
+  // CHECK-NEXT:                   N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N,
+  // CHECK-NEXT:                   beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error
+  // CHECK-NEXT: codes. 0 is used in switch statement. You need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: switch (int stat = [&]() {
-  // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
-  // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
-  // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT: mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
-  // CHECK-NEXT:                 N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N,
-  // CHECK-NEXT:                 beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
-  // CHECK-NEXT: return 0;
-  // CHECK-NEXT: }()) {}
+  // CHECK-NEXT: switch (int stat = 0) {}
   switch (int stat = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)){
   }
 
 
   return 0;
+}
+
+// CHECK:int foo() try {
+// CHECK-NEXT:  {
+// CHECK-NEXT:    auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
+// CHECK-NEXT:    auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
+// CHECK-NEXT:    auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
+// CHECK-NEXT:    mkl::blas::gemm(*handle, mkl::transpose::nontrans, mkl::transpose::nontrans,
+// CHECK-NEXT:                    N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N,
+// CHECK-NEXT:                    beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
+// CHECK-NEXT:  }
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error
+// CHECK-NEXT:  codes. 0 is used in return statement. You need to rewrite this code.
+// CHECK-NEXT:  */
+// CHECK-NEXT:  return 0;
+// CHECK-NEXT:}
+int foo() {
+  return cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
 }
