@@ -119,6 +119,12 @@ private:
 class device_ext : public cl::sycl::device {
 public:
   device_ext() : cl::sycl::device() {}
+  ~device_ext() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    for (auto q : _queues) {
+      delete q;
+    }
+  }
   device_ext(const cl::sycl::device &base) : cl::sycl::device(base) {
 #ifdef DPCT_USM_LEVEL_NONE
     _default_queue = new cl::sycl::queue(base, exception_handler);
