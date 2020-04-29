@@ -237,8 +237,13 @@ def parse_args(args):
     compiler = ''
     files = []
     for arg in args:
+        # Remove comment options started with "#" in command line, like "# -gencode arch=compute_61,code=sm_61"
+        if re.match(r'^\#', arg):
+            arg_next = next(args, None)
+            while(arg_next != None):
+                 arg_next = next(args, None)
         # quit when compilation pass is not involved
-        if arg in {'-E', '-S', '-cc1', '-M', '-MM', '-###'}:
+        elif arg in {'-E', '-S', '-cc1', '-M', '-MM', '-###'}:
             return None
         # map nvcc flags
         elif arg in MAP_FLAGS:
