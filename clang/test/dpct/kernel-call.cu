@@ -17,9 +17,13 @@ int a = blockIdx.x * blockDim.x + threadIdx.x + blockIdx.x +
 blockDim.x + threadIdx.x;
 }
 
-// CHECK: void testKernel(int L, int M, int N,
-// CHECK-NEXT: cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]);
+// CHECK: void testKernel(int L, int M,
+// CHECK-NEXT: cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]], int N);
 __global__ void testKernel(int L, int M, int N);
+
+// CHECK: void testKernel(int L, int M,
+// CHECK-NEXT: cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]], int N = 0);
+__global__ void testKernel(int L, int M, int N = 0);
 
 // CHECK: void testKernelPtr(const int *L, const int *M, int N,
 // CHECK-NEXT: cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
@@ -30,8 +34,8 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 
 
 // CHECK: // Test Launch Bounds
-// CHECK-NEXT: void testKernel(int L, int M, int N,
-// CHECK-NEXT:                 cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
+// CHECK-NEXT: void testKernel(int L, int M,
+// CHECK-NEXT: cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]], int N) {
 __launch_bounds__(256, 512) // Test Launch Bounds
 __global__ void testKernel(int L, int M, int N) {
   // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range().get(2) + [[ITEMNAME]].get_local_id(2);
@@ -102,7 +106,7 @@ struct TestThis {
     // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
     // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(dpct_global_range.get(2), dpct_global_range.get(1), dpct_global_range.get(0)), cl::sycl::range<3>(threaddim.get(2), threaddim.get(1), threaddim.get(0))),
     // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-    // CHECK-NEXT:           testKernel(args_arg1_ct0, args_arg2_ct1, arg3_ct2, item_ct1);
+    // CHECK-NEXT:           testKernel(args_arg1_ct0, args_arg2_ct1, item_ct1, arg3_ct2);
     // CHECK-NEXT:         });
     // CHECK-NEXT:     });
     testKernel<<<griddim, threaddim>>>(args.arg1, args.arg2, arg3);
@@ -149,7 +153,7 @@ int main() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 10) * cl::sycl::range<3>(1, 1, intvar), cl::sycl::range<3>(1, 1, intvar)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
+  // CHECK-NEXT:           testKernel(karg1int, karg2int, item_ct1, karg3int);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   testKernel<<<10, intvar>>>(karg1int, karg2int, karg3int);
@@ -183,7 +187,7 @@ int main() {
   // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 2, 1) * cl::sycl::range<3>(3, 2, 1), cl::sycl::range<3>(3, 2, 1)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
+  // CHECK-NEXT:           testKernel(karg1int, karg2int, item_ct1, karg3int);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   testKernel<<<dim3(1, 2), dim3(1, 2, 3)>>>(karg1int, karg2int, karg3int);
@@ -195,7 +199,7 @@ int main() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, griddim[0]) * cl::sycl::range<3>(1, 1, griddim[1] + 2), cl::sycl::range<3>(1, 1, griddim[1] + 2)),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           testKernel(karg1int, karg2int, arr_karg3int_ct2, item_ct1);
+  // CHECK-NEXT:           testKernel(karg1int, karg2int, item_ct1, arr_karg3int_ct2);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   testKernel <<<griddim.x, griddim.y + 2 >>>(karg1int, karg2int, arr[karg3int]);

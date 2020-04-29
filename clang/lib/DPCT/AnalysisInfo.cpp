@@ -672,32 +672,20 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionDecl *FD) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto &LO = DpctGlobalInfo::getContext().getLangOpts();
 
-  // Need to get the first decl if there are many decl of the same function
-  auto FisrtFD = FD->getFirstDecl();
+  // Need to get the last decl if there are many decl of the same function
+  NonDefaultParamNum = FD->getMostRecentDecl()->getMinRequiredArguments();
   SourceLocation NextToken;
-  // ItEndParam will be the last parameter which has no DefaultArg.
-  // The new parameter will be inserted right after ItEndParam.
-  auto ItEndParam = FD->param_end() - 1;
-  if (FisrtFD->param_empty()) {
+  if (NonDefaultParamNum == 0) {
     NextToken = FD->getNameInfo().getEndLoc();
+    NextToken = Lexer::getLocForEndOfToken(FD->getNameInfo().getEndLoc(), 0, SM, LO);
+  }
+  else {
+    NextToken = FD->getParamDecl(NonDefaultParamNum - 1)->getEndLoc();
+    if (SM.isMacroArgExpansion(NextToken)) {
+      NextToken =
+          SM.getSpellingLoc(SM.getImmediateExpansionRange(NextToken).getEnd());
+    }
     NextToken = Lexer::getLocForEndOfToken(NextToken, 0, SM, LO);
-    NonDefaultParamNum = 0;
-  } else {
-    while ((*ItEndParam)->hasDefaultArg() && ItEndParam != FisrtFD->param_begin()) {
-      ItEndParam = ItEndParam - 1;
-    }
-    if (ItEndParam == FisrtFD->param_begin() && (*ItEndParam)->hasDefaultArg()) {
-      NextToken = (*FD->param_begin())->getBeginLoc();
-      NonDefaultParamNum = 0;
-    }
-    else {
-      NextToken = (*ItEndParam)->getEndLoc();
-      if (SM.isMacroArgExpansion(NextToken)) {
-        NextToken = SM.getSpellingLoc(SM.getImmediateExpansionRange(NextToken).getEnd());
-      }
-      NextToken = Lexer::getLocForEndOfToken(NextToken, 0, SM, LO);
-      NonDefaultParamNum = ItEndParam - FD->param_begin() + 1;
-    }
   }
 
   // The rule of wrapping extra parameters in device function declaration:
