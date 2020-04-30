@@ -2681,33 +2681,30 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
   // Find dim3 constructors which are part of different casts (representing
   // different syntaxes). This includes copy constructors. All constructors
   // will be visited once.
-  MF.addMatcher(cxxConstructExpr(hasType(typedefDecl(hasName("dim3"))),
+  MF.addMatcher(cxxConstructExpr(hasType(namedDecl(hasName("dim3"))),
                                  argumentCountIs(1),
-                                 //unless(hasAncestor(cudaKernelCallExpr())),
                                  unless(hasAncestor(cxxConstructExpr(
-                                     hasType(typedefDecl(hasName("dim3")))))))
+                                     hasType(namedDecl(hasName("dim3")))))))
                     .bind("dim3Top"),
                 this);
 
   MF.addMatcher(cxxConstructExpr(
-                    hasType(typedefDecl(hasName("dim3"))), argumentCountIs(3),
+                    hasType(namedDecl(hasName("dim3"))), argumentCountIs(3),
                     anyOf(hasParent(varDecl()), hasParent(exprWithCleanups())),
-                    //unless(hasAncestor(cudaKernelCallExpr())),
-                    unless(hasAncestor(cxxConstructExpr(
-                        hasType(typedefDecl(hasName("dim3")))))))
+                    unless(hasAncestor(
+                        cxxConstructExpr(hasType(namedDecl(hasName("dim3")))))))
                     .bind("dim3CtorDecl"),
                 this);
 
   MF.addMatcher(
-      cxxConstructExpr(
-          hasType(typedefDecl(hasName("dim3"))), argumentCountIs(3),
-          // skip fields in a struct.  The source loc is
-          // messed up (points to the start of the struct)
-          unless(hasAncestor(cxxRecordDecl())), unless(hasParent(varDecl())),
-          unless(hasParent(exprWithCleanups())),
-          //unless(hasAncestor(cudaKernelCallExpr())),
-          unless(hasAncestor(
-              cxxConstructExpr(hasType(typedefDecl(hasName("dim3")))))))
+      cxxConstructExpr(hasType(namedDecl(hasName("dim3"))), argumentCountIs(3),
+                       // skip fields in a struct.  The source loc is
+                       // messed up (points to the start of the struct)
+                       unless(hasAncestor(cxxRecordDecl())),
+                       unless(hasParent(varDecl())),
+                       unless(hasParent(exprWithCleanups())),
+                       unless(hasAncestor(cxxConstructExpr(
+                           hasType(namedDecl(hasName("dim3")))))))
           .bind("dim3CtorNoDecl"),
       this);
 }

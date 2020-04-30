@@ -69,6 +69,10 @@ int main() {
   deflt = dim3(3);
   // CHECK: deflt = sycl::range<3>(NUM, 1, 1);
   deflt = dim3(NUM);
+  // CHECK: deflt = sycl::range<3>(5, 1, 1);
+  deflt = 5;
+  // CHECK: deflt = sycl::range<3>(((NUM%32 == 0) ? NUM/32 : (NUM/32 + 1)), 1, 1);
+  deflt = ((NUM%32 == 0) ? NUM/32 : (NUM/32 + 1));
 
   // CHECK: sycl::range<3> copyctor1 = sycl::range<3>(sycl::range<3>(33, 1, 1));
   dim3 copyctor1 = dim3((dim3)33);
