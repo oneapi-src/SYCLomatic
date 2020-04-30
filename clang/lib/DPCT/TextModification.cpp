@@ -239,6 +239,23 @@ ReplaceStmt::removeStmtWithCleanups(const SourceManager &SM) const {
 }
 
 std::shared_ptr<ExtReplacement>
+ReplaceDecl::getReplacement(const ASTContext &Context) const {
+  const SourceManager &SM = Context.getSourceManager();
+  // Remove the Decl as well as the trailing semicolon
+  SourceLocation Begin(TheDecl->getBeginLoc()), End(TheDecl->getEndLoc());
+  auto Tok = Lexer::findNextToken(End, SM, Context.getLangOpts());
+  auto BeginData = SM.getCharacterData(Begin);
+  auto End2 = Tok->getEndLoc();
+  auto EndData = SM.getCharacterData(End2);
+  while (EndData && *EndData++ != '\n')
+    ; // Do nothing in the body
+  auto Len = EndData - BeginData;
+  return std::make_shared<ExtReplacement>(SM, Begin, Len, ReplacementString,
+                                          this);
+}
+
+
+std::shared_ptr<ExtReplacement>
 ReplaceCalleeName::getReplacement(const ASTContext &Context) const {
   const SourceManager &SM = Context.getSourceManager();
   recordMigrationInfo(Context, C->getBeginLoc(), true, OrigAPIName);
@@ -740,6 +757,14 @@ void ReplaceStmt::print(llvm::raw_ostream &OS, ASTContext &Context,
   printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
   printLocation(OS, TheStmt->getBeginLoc(), Context, PrintDetail);
   TheStmt->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
+  printReplacement(OS, ReplacementString);
+}
+
+void ReplaceDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
+                        const bool PrintDetail) const {
+  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printLocation(OS, TheDecl->getBeginLoc(), Context, PrintDetail);
+  TheDecl->print(OS);
   printReplacement(OS, ReplacementString);
 }
 

@@ -232,6 +232,21 @@ public:
   removeStmtWithCleanups(const SourceManager &SM) const;
 };
 
+class ReplaceDecl : public TextModification {
+  const Decl *TheDecl;
+  std::string ReplacementString;
+public:
+  template <class... Args>
+  ReplaceDecl(const Decl *E, Args &&... S)
+      : TextModification(TMID::ReplaceDecl), TheDecl(E),
+        ReplacementString(std::forward<Args>(S)...) {}
+
+  std::shared_ptr<ExtReplacement>
+  getReplacement(const ASTContext &Context) const override;
+  void print(llvm::raw_ostream &OS, ASTContext &Context,
+             const bool PrintDetail = true) const override;
+};
+
 /// Replace the call name of function calls
 class ReplaceCalleeName : public TextModification {
   const CallExpr *C;

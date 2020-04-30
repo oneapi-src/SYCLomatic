@@ -8476,7 +8476,16 @@ void SyncThreadsRule::run(const MatchFinder::MatchResult &Result) {
           auto VD = dyn_cast<VarDecl>(*It);
           if (It != P->decl_begin())
             ReplStr += ", ";
-          ReplStr += VD->getName();
+          auto &SM = DpctGlobalInfo::getSourceManager();
+          if (VD->getLocation().isMacroID() && SM.isMacroArgExpansion(VD->getLocation())) {
+            auto VDBegin = SM.getImmediateExpansionRange(VD->getLocation()).getBegin();
+            VDBegin = SM.getSpellingLoc(VDBegin);
+            Token T;
+            Lexer::getRawToken(VDBegin, T, SM, Result.Context->getLangOpts());
+            ReplStr += T.getRawIdentifier().str();
+          } else {
+            ReplStr += VD->getName();
+          }
           ReplStr += " = ";
           ReplStr += DpctGlobalInfo::getItemName() + ".get_group()";
         }
@@ -8941,6 +8950,23 @@ void ClassTemplateSpecializationRule::run(
 }
 
 REGISTER_RULE(ClassTemplateSpecializationRule)
+
+void NamespaceRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(usingDirectiveDecl().bind("usingDirective"), this);
+  MF.addMatcher(namespaceAliasDecl().bind("namespaceAlias"), this);
+}
+
+void NamespaceRule::run(const MatchFinder::MatchResult &Result) {
+  if (auto UDD = getAssistNodeAsType<UsingDirectiveDecl>(Result, "usingDirective")) {
+    if (UDD->getNominatedNamespace()->getNameAsString() == "cooperative_groups")
+      emplaceTransformation(new ReplaceDecl(UDD, ""));
+  } else if (auto NAD = getAssistNodeAsType<NamespaceAliasDecl>(Result, "namespaceAlias")) {
+    if (NAD->getNamespace()->getNameAsString() == "cooperative_groups")
+      emplaceTransformation(new ReplaceDecl(NAD, ""));
+  }
+}
+
+REGISTER_RULE(NamespaceRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {

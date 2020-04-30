@@ -3,10 +3,14 @@
 // RUN: dpct --format-range=none -out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/sync_api.dp.cpp
 
+// CHECK: #include <CL/sycl.hpp>
+// CHECK-NEXT: #include <dpct/dpct.hpp>
+// CHECK-EMPTY:
+// CHECK-NEXT: #define TB(b) sycl::group<3> b = item_ct1.get_group();
 #include "cooperative_groups.h"
 namespace cg = cooperative_groups;
+using namespace cooperative_groups;
 
-// CHECK: #define TB(b) sycl::group<3> blk = item_ct1.get_group();
 #define TB(b) cg::thread_block b = cg::this_thread_block();
 
 // CHECK: void k(sycl::nd_item<3> item_ct1) {

@@ -9,6 +9,7 @@
 //
 //===-----------------------------------------------------------------===//
 TRANSFORMATION(ReplaceStmt)
+TRANSFORMATION(ReplaceDecl)
 TRANSFORMATION(ReplaceCalleeName)
 TRANSFORMATION(ReplaceTypeInDecl)
 TRANSFORMATION(ReplaceVarDecl)
