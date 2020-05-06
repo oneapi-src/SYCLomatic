@@ -2,6 +2,13 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/datatypes_test.dp.cpp
 
 #include <iostream>
+#include <iostream>
+#include <cuda.h>
+#include <cublas.h>
+#include <cublas_v2.h>
+#include <curand.h>
+#include <cusolverDn.h>
+#include <cufft.h>
 
 void case_1(void) {
 
@@ -4359,18 +4366,27 @@ template <> void foo2(double4){}
 template <> void foo3(double4){}
 template <> void foo4(double4){}
 
+// CHECK: template <> struct S<int> {};
+// CHECK-NEXT: template <> struct S<int *> {};
+// CHECK-NEXT: template <> struct S<int &> {};
+// CHECK-NEXT: template <> struct S<int &&> {};
+template <> struct S<cublasStatus_t> {};
+template <> struct S<cublasStatus_t *> {};
+template <> struct S<cublasStatus_t &> {};
+template <> struct S<cublasStatus_t &&> {};
 
+// CHECK: template <> struct S<sycl::queue> {};
+// CHECK-NEXT: template <> struct S<sycl::queue *> {};
+// CHECK-NEXT: template <> struct S<sycl::queue &> {};
+// CHECK-NEXT: template <> struct S<sycl::queue &&> {};
+template <> struct S<CUstream_st> {};
+template <> struct S<CUstream_st *> {};
+template <> struct S<CUstream_st &> {};
+template <> struct S<CUstream_st &&> {};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+// CHECK: template <> void foo2(sycl::queue){}
+// CHECK-NEXT: template <> void foo3(sycl::queue){}
+// CHECK-NEXT: template <> void foo4(sycl::queue){}
+template <> void foo2(CUstream_st){}
+template <> void foo3(CUstream_st){}
+template <> void foo4(CUstream_st){}

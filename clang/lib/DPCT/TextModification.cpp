@@ -778,6 +778,7 @@ void ReplaceCalleeName::print(llvm::raw_ostream &OS, ASTContext &Context,
 
 void ReplaceTypeInDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
                               const bool PrintDetail) const {
+  if(!DD) return;
   printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
   printLocation(OS, DD->getBeginLoc(), Context, PrintDetail);
   DD->print(OS, PrintingPolicy(Context.getLangOpts()));

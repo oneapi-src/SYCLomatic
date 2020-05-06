@@ -508,3 +508,20 @@ void fun2() {
   // CHECK: sycl::queue *const *s17, *const *const s18 = NULL;
   cudaStream_t const *s17, *const s18 = NULL;
 }
+
+// CHECK:template <>
+// CHECK-NEXT:struct S<int &&> {};
+// CHECK-NEXT:template <>
+// CHECK-NEXT:struct S<int> {};
+// CHECK-NEXT:template <>
+// CHECK-NEXT:struct S<int *> {};
+// CHECK-NEXT:template <>
+// CHECK-NEXT:struct S<int &> {};
+// CHECK-NEXT:template <>
+// CHECK-NEXT:struct S<int &&> {};
+template <>
+struct S<int &&> {};
+template <> struct S<cudaError_t> {};
+template <> struct S<cudaError_t *> {};
+template <> struct S<cudaError_t &> {};
+template <> struct S<cudaError_t &&> {};

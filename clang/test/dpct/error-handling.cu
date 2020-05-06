@@ -48,7 +48,7 @@ void test_simple_ifs_const() {
 }
 
 // CHECK:void test_typedef() {
-// CHECK-NEXT:  typedef cudaError_t someError_t;
+// CHECK-NEXT:  typedef int someError_t;
 // CHECK-NEXT:  someError_t err;
 // CHECK-NEXT:}
 void test_typedef()  {
