@@ -98,3 +98,5 @@ DEF_WARNING(SHARE_MEMORY_ATTR_DEDUCE, 1039, "The generated code assumes that \"%
 DEF_COMMENT(SHARE_MEMORY_ATTR_DEDUCE, 1039, "The generated code assumes that \"{0}\" points to the global memory address space. If it points to a local memory address space, replace \"{1}\" with \"{2}\".")
 DEF_WARNING(PRINTF_FUNC_NOT_SUPPORT, 1040, "Use sycl::stream instead of printf, if your code is used on the device.")
 DEF_COMMENT(PRINTF_FUNC_NOT_SUPPORT, 1040, "Use sycl::stream instead of printf, if your code is used on the device.")
+DEF_WARNING(CODE_LOGIC_CHANGED, 1041, "SYCL uses exceptions to report errors and does not use the error codes. 0 is used in %0 statement. You need to rewrite this code.")
+DEF_COMMENT(CODE_LOGIC_CHANGED, 1041, "SYCL uses exceptions to report errors and does not use the error codes. 0 is used in {0} statement. You need to rewrite this code.")

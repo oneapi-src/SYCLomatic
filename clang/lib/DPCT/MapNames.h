@@ -242,6 +242,7 @@ public:
   static MapTy TypeNamesMap;
   static const MapTy Dim3MemberNamesMap;
   static const MapTy MacrosMap;
+  static const MapTy SPBLASEnumsMap;
   static const MapTy BLASEnumsMap;
   static const std::map<std::string, MapNames::BLASFuncReplInfo>
       BLASFuncReplInfoMap;

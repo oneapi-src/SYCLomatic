@@ -378,4 +378,7 @@ std::string deducePointerType(const clang::DeclaratorDecl *DD,
 bool isAnIdentifierOrLiteral(const clang::Expr *E);
 bool isSameSizeofTypeWithTypeStr(const clang::Expr *E,
                                  const std::string &TypeStr);
+std::string addIndirectionIfNecessary(const clang::Expr *E);
+bool isInReturnStmt(const clang::Expr *E,
+                    clang::SourceLocation &OuterInsertLoc);
 #endif // DPCT_UTILITY_H

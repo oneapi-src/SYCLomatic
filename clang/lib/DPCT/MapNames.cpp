@@ -107,6 +107,11 @@ void MapNames::setClNamespace(bool Enable) {
       {"cublasDiagType_t", "mkl::diag"},
       {"cublasSideMode_t", "mkl::side"},
       {"cublasOperation_t", "mkl::transpose"},
+      {"cusparseFillMode_t", "mkl::uplo"},
+      {"cusparseDiagType_t", "mkl::diag"},
+      {"cusparseIndexBase_t", "mkl::index_base"},
+      {"cusparseMatrixType_t", "int"},
+      {"cusparseOperation_t", "mkl::transpose"},
       {"thrust::device_ptr", "dpct::device_ptr"},
       {"thrust::device_vector", "dpstd::device_vector"},
       {"thrust::host_vector", "dpstd::host_vector"},
@@ -123,6 +128,9 @@ void MapNames::setClNamespace(bool Enable) {
       {"cudaTextureObject_t", "dpct::image_base_p"},
       {"curandStatus_t", "int"},
       {"curandStatus", "int"},
+      {"cusparseStatus_t", "int"},
+      {"cusparseMatDescr_t", "mkl::index_base"},
+      {"cusparseHandle_t", ClNamespace + "::queue*"},
       {"cudaMemoryAdvise", "pi_mem_advice"},
       {"cudaPos", ClNamespace + "::id<3>"},
       {"cudaExtent", ClNamespace + "::range<3>"},
@@ -207,7 +215,7 @@ const MapNames::MapTy MapNames::ITFName{
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
 #include "APINames_cuGRAPH.inc"
-#include "APINames_cuPARSE.inc"
+#include "APINames_cuSPARSE.inc"
 #include "APINames_cuRAND.inc"
 #include "APINames_cuSOLVER.inc"
 #include "APINames_nvJPEG.inc"
@@ -226,6 +234,19 @@ const MapNames::MapTy MapNames::BLASEnumsMap{
     {"CUBLAS_FILL_MODE_UPPER", "mkl::uplo::upper"},
     {"CUBLAS_DIAG_NON_UNIT", "mkl::diag::nonunit"},
     {"CUBLAS_DIAG_UNIT", "mkl::diag::unit"},
+};
+
+// spBLAS enums mapping
+const MapNames::MapTy MapNames::SPBLASEnumsMap{
+    {"CUSPARSE_OPERATION_NON_TRANSPOSE", "mkl::transpose::nontrans"},
+    {"CUSPARSE_OPERATION_TRANSPOSE", "mkl::transpose::trans"},
+    {"CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE", "mkl::transpose::conjtrans"},
+    {"CUSPARSE_FILL_MODE_LOWER", "mkl::uplo::lower"},
+    {"CUSPARSE_FILL_MODE_UPPER", "mkl::uplo::upper"},
+    {"CUSPARSE_DIAG_TYPE_NON_UNIT", "mkl::diag::nonunit"},
+    {"CUSPARSE_DIAG_TYPE_UNIT", "mkl::diag::unit"},
+    {"CUSPARSE_INDEX_BASE_ZERO", "mkl::index_base::zero"},
+    {"CUSPARSE_INDEX_BASE_ONE", "mkl::index_base::one"},
 };
 
 // SOLVER enums mapping
@@ -2623,7 +2644,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
 #include "APINames_cuGRAPH.inc"
-#include "APINames_cuPARSE.inc"
+#include "APINames_cuSPARSE.inc"
 #include "APINames_cuRAND.inc"
 #include "APINames_cuSOLVER.inc"
 #include "APINames_nvJPEG.inc"

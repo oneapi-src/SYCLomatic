@@ -165,6 +165,7 @@ enum HeaderType {
   Future,
   MKL_BLAS_Solver,
   MKL_RNG,
+  MKL_SPBLAS,
 };
 
 enum UsingType {
@@ -287,6 +288,9 @@ public:
     case MKL_RNG:
       return insertHeader(HeaderType::MKL_RNG, LastIncludeOffset,
                           "<mkl_rng_sycl.hpp>");
+    case MKL_SPBLAS:
+      return insertHeader(HeaderType::MKL_SPBLAS, LastIncludeOffset,
+                          "<mkl_spblas_sycl.hpp>", "<dpct/blas_utils.hpp>");
     }
   }
 

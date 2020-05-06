@@ -654,6 +654,14 @@ public:
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
 };
 
+/// Migration rule for spBLAS enums.
+class SPBLASEnumsRule : public NamedMigrationRule<SPBLASEnumsRule> {
+public:
+  SPBLASEnumsRule() { SetRuleProperty(ApplyToCudaFile | ApplyToCppFile); }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
 /// Migration rule for BLAS function calls.
 class BLASFunctionCallRule : public NamedMigrationRule<BLASFunctionCallRule> {
 public:
@@ -703,18 +711,6 @@ public:
     }
 
     return FuncName + "(*" + ResultStr + ")";
-  }
-
-  std::string addIndirectionIfNecessary(const Expr *E) {
-    if (isSimpleAddrOf(E->IgnoreImplicit())) {
-      return getNameStrRemovedAddrOf(E->IgnoreImplicit());
-    } else if (isCOCESimpleAddrOf(E)) {
-      return getNameStrRemovedAddrOf(E->IgnoreImplicit(), true);
-    } else {
-      ExprAnalysis EA;
-      EA.analyze(E);
-      return "*(" + EA.getReplacedString() + ")";
-    }
   }
 
   void
@@ -778,6 +774,17 @@ class RandomFunctionCallRule
     : public NamedMigrationRule<RandomFunctionCallRule> {
 public:
   RandomFunctionCallRule() {
+    SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
+  }
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void run(const ast_matchers::MatchFinder::MatchResult &Result) override;
+};
+
+/// Migration rule for spBLAS function calls.
+class SPBLASFunctionCallRule
+    : public NamedMigrationRule<SPBLASFunctionCallRule> {
+public:
+  SPBLASFunctionCallRule() {
     SetRuleProperty(ApplyToCudaFile | ApplyToCppFile);
   }
   void registerMatcher(ast_matchers::MatchFinder &MF) override;

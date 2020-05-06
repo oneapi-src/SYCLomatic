@@ -1542,3 +1542,33 @@ bool isSameSizeofTypeWithTypeStr(const Expr *E, const std::string &TypeStr) {
     return false;
   }
 }
+
+std::string addIndirectionIfNecessary(const Expr *E) {
+  if (isSimpleAddrOf(E->IgnoreImplicit())) {
+    return getNameStrRemovedAddrOf(E->IgnoreImplicit());
+  } else if (isCOCESimpleAddrOf(E)) {
+    return getNameStrRemovedAddrOf(E->IgnoreImplicit(), true);
+  } else {
+    dpct::ExprAnalysis EA;
+    EA.analyze(E);
+    return "*(" + EA.getReplacedString() + ")";
+  }
+}
+
+bool isInReturnStmt(const Expr *E, SourceLocation &OuterInsertLoc) {
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto ParentNodes = Context.getParents(*E);
+  ast_type_traits::DynTypedNode ParentNode;
+  const ReturnStmt *RS = nullptr;
+  while (!ParentNodes.empty()) {
+    ParentNode = ParentNodes[0];
+    RS = ParentNode.get<ReturnStmt>();
+    if (RS) {
+      OuterInsertLoc = dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
+          RS->getBeginLoc());
+      return true;
+    }
+    ParentNodes = Context.getParents(ParentNode);
+  }
+  return false;
+}

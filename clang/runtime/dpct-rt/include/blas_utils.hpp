@@ -28,6 +28,16 @@
 
 namespace dpct {
 
+inline mkl::transpose get_transpose(int t) {
+  if (t == 0) {
+    return mkl::transpose::nontrans;
+  } else if (t == 1) {
+    return mkl::transpose::trans;
+  } else {
+    return mkl::transpose::conjtrans;
+  }
+}
+
 /// Cast \param vec data to int, then assign to \param ptr array.
 /// \param [out] ptr A data pointer.
 /// \param [in] vec Input vector with int64_t type elements.
