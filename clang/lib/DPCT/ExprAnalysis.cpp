@@ -150,9 +150,9 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
           SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
       EndLoc = SM.getSpellingLoc(
           SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
-    }
-    else {
-      BeginLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getBeginLoc()));
+    } else {
+      BeginLoc =
+          SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getBeginLoc()));
       EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getEndLoc()));
     }
   } else if (E->getBeginLoc().isMacroID() && !isOuterMostMacro(E)) {
@@ -386,9 +386,12 @@ void ExprAnalysis::analyzeType(const TypeLoc &TL, const Expr *CSCE) {
     TyName = TL.getType().getAsString();
     break;
   case TypeLoc::TemplateTypeParm:
-    return addReplacement(
-        TL.getBeginLoc(), TL.getEndLoc(), CSCE,
-        TYPELOC_CAST(TemplateTypeParmTypeLoc).getDecl()->getIndex());
+    if (auto D = TYPELOC_CAST(TemplateTypeParmTypeLoc).getDecl()) {
+      return addReplacement(TL.getBeginLoc(), TL.getEndLoc(),
+                            CSCE, D->getIndex());
+    } else {
+      return;
+    }
   case TypeLoc::TemplateSpecialization:
     return analyzeTemplateSpecializationType(
         TYPELOC_CAST(TemplateSpecializationTypeLoc));
