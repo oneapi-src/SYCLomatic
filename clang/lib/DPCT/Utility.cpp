@@ -876,11 +876,34 @@ std::vector<const Stmt *> getConditionNode(ast_type_traits::DynTypedNode Node) {
   return Res;
 }
 
-/// This function checks whether expression \p E is a child node of the
-/// initialization, condition or increment part of for, while, do, if or switch.
+/// This function gets the expression nodes of the condition part of the \p Node
+/// \param Node The statement node which is if, for, do, while or switch.
+/// \return The result statement nodes vector.
+std::vector<const Stmt *> getConditionExpr(ast_type_traits::DynTypedNode Node) {
+  std::vector<const Stmt *> Res;
+  if (const IfStmt *CondtionNode = Node.get<IfStmt>()) {
+    Res.push_back(CondtionNode->getCond());
+  } else if (const ForStmt *CondtionNode = Node.get<ForStmt>()) {
+    Res.push_back(CondtionNode->getCond());
+  } else if (const WhileStmt *CondtionNode = Node.get<WhileStmt>()) {
+    Res.push_back(CondtionNode->getCond());
+  } else if (const DoStmt *CondtionNode = Node.get<DoStmt>()) {
+    Res.push_back(CondtionNode->getCond());
+  } else if (const SwitchStmt *CondtionNode = Node.get<SwitchStmt>()) {
+    Res.push_back(CondtionNode->getCond());
+  }
+  return Res;
+}
+
+/// If \p OnlyCheckConditionExpr is false, this function checks whether
+/// expression \p E is a child node of the initialization, condition or
+/// increment part of for, while, do, if or switch, if \p OnlyCheckConditionExpr
+/// is true, only checks whether \p E is a child node of the condition part of
+/// for, while, do, if or switch.
 /// \param E The expression to be checked.
 /// \return The result.
-bool isConditionOfFlowControl(const clang::Expr *E) {
+bool isConditionOfFlowControl(const clang::Expr *E,
+                              bool OnlyCheckConditionExpr) {
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
   ast_type_traits::DynTypedNode ParentNode;
@@ -899,8 +922,12 @@ bool isConditionOfFlowControl(const clang::Expr *E) {
   }
   if (!FoundStmtHasCondition)
     return false;
-  auto CondtionNodes =
-      getConditionNode(AncestorNodes[AncestorNodes.size() - 1]);
+  std::vector<const Stmt *>  CondtionNodes;
+  if(OnlyCheckConditionExpr){
+    CondtionNodes = getConditionExpr(AncestorNodes[AncestorNodes.size() - 1]);
+  } else {
+    CondtionNodes = getConditionNode(AncestorNodes[AncestorNodes.size() - 1]);
+  }
 
   for (auto CondtionNode : CondtionNodes) {
     if (CondtionNode == nullptr)
@@ -914,6 +941,7 @@ bool isConditionOfFlowControl(const clang::Expr *E) {
   }
   return false;
 }
+
 /// This function used in BLAS and Random migration. It generates the buffer
 /// declaration and return the buffer name.
 /// \param PointerName The origin pointer name string.

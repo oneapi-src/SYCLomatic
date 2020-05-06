@@ -255,6 +255,20 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:     });
   kernelFunc<<<blocks,threads>>>();
 
+
+  // CHECK: int e = (int)stop.get_info<sycl::info::event::command_execution_status>();
+  // CHECK-NEXT: checkCudaErrors((int)stop.get_info<sycl::info::event::command_execution_status>());
+  // CHECK-NEXT: if (0 == (int)stop.get_info<sycl::info::event::command_execution_status>()){}
+  // CHECK-NEXT: while((int)stop.get_info<sycl::info::event::command_execution_status>() != 0){}
+  // CHECK-NEXT: for(;0 != (int)stop.get_info<sycl::info::event::command_execution_status>();){}
+  // CHECK-NEXT: do{}while((int)stop.get_info<sycl::info::event::command_execution_status>() == 0);
+  cudaError_t e = cudaEventQuery(stop);
+  checkCudaErrors(cudaEventQuery(stop));
+  if (cudaErrorNotReady != cudaEventQuery(stop)){}
+  while(cudaEventQuery(stop) == cudaErrorNotReady){}
+  for(;cudaErrorNotReady == cudaEventQuery(stop);){}
+  do{}while(cudaEventQuery(stop) != cudaErrorNotReady);
+
   // CHECK: dpct::get_current_device().queues_wait_and_throw();
   // CHECK-EMPTY:
   // CHECK-NEXT: /*

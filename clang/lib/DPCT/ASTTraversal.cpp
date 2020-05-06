@@ -3056,7 +3056,61 @@ void ErrorConstantsRule::run(const MatchFinder::MatchResult &Result) {
     return;
   assert(DE && "Unknown result");
   auto *EC = cast<EnumConstantDecl>(DE->getDecl());
-  emplaceTransformation(new ReplaceStmt(DE, EC->getInitVal().toString(10)));
+  std::string Repl = EC->getInitVal().toString(10);
+
+  // If the cudaErrorNotReady is one operand of binary operator "==" or "!=",
+  // and the other operand is the function call "cudaEventQuery", and the whole
+  // binary is in the condition of if/while/for/do/switch,
+  // then cudaErrorNotReady will be migrated to "0" while "==" will be migrated
+  // to "!=".
+  if (EC->getDeclName().getAsString() == "cudaErrorNotReady" &&
+      isConditionOfFlowControl(DE, true)) {
+    auto &Context = dpct::DpctGlobalInfo::getContext();
+    auto ParentNodes = Context.getParents(*DE);
+    ast_type_traits::DynTypedNode ParentNode;
+    bool MatchFunction = false;
+    SourceLocation OperatorLoc;
+    const BinaryOperator *BO = nullptr;
+    while (!ParentNodes.empty()) {
+      ParentNode = ParentNodes[0];
+      BO = ParentNode.get<BinaryOperator>();
+      if (BO && (BO->getOpcode() == BinaryOperatorKind::BO_EQ ||
+                 BO->getOpcode() == BinaryOperatorKind::BO_NE)) {
+        auto LHSCall = dyn_cast<CallExpr>(BO->getLHS()->IgnoreImpCasts());
+        auto RHSCall = dyn_cast<CallExpr>(BO->getRHS()->IgnoreImpCasts());
+
+        if ((LHSCall && LHSCall->getDirectCallee() &&
+             LHSCall->getDirectCallee()
+                     ->getNameInfo()
+                     .getName()
+                     .getAsString() == "cudaEventQuery") ||
+            (RHSCall && RHSCall->getDirectCallee() &&
+             RHSCall->getDirectCallee()
+                     ->getNameInfo()
+                     .getName()
+                     .getAsString() == "cudaEventQuery")) {
+          MatchFunction = true;
+          break;
+        }
+      }
+      ParentNodes = Context.getParents(ParentNode);
+    }
+
+    if (MatchFunction) {
+      Repl = "0";
+      std::string OperatorRepl;
+      if (BO->getOpcode() == BinaryOperatorKind::BO_EQ)
+        OperatorRepl = "!=";
+      else
+        OperatorRepl = "==";
+      emplaceTransformation(
+          new ReplaceToken(DpctGlobalInfo::getSourceManager().getSpellingLoc(
+                               BO->getOperatorLoc()),
+                           std::move(OperatorRepl)));
+    }
+  }
+
+  emplaceTransformation(new ReplaceStmt(DE, Repl));
 }
 
 REGISTER_RULE(ErrorConstantsRule)
@@ -5875,7 +5929,8 @@ void EventAPICallRule::registerMatcher(MatchFinder &MF) {
   auto eventAPIName = [&]() {
     return hasAnyName("cudaEventCreate", "cudaEventCreateWithFlags",
                       "cudaEventDestroy", "cudaEventRecord",
-                      "cudaEventElapsedTime", "cudaEventSynchronize");
+                      "cudaEventElapsedTime", "cudaEventSynchronize",
+                      "cudaEventQuery");
   };
 
   MF.addMatcher(
@@ -5919,6 +5974,12 @@ void EventAPICallRule::run(const MatchFinder::MatchResult &Result) {
           new ReplaceStmt(CE, /*IsReplaceCompatibilityAPI*/ false, FuncName,
                           /*IsProcessMacro*/ false, ""));
     }
+  } else if (FuncName == "cudaEventQuery") {
+    ExprAnalysis EA(CE->getArg(0));
+    std::string ReplStr = "(int)" + EA.getReplacedString() + ".get_info<" +
+                          MapNames::getClNamespace() +
+                          "::info::event::command_execution_status>()";
+    emplaceTransformation(new ReplaceStmt(CE, false, FuncName, ReplStr));
   } else if (FuncName == "cudaEventRecord") {
     handleEventRecord(CE, Result, IsAssigned);
   } else if (FuncName == "cudaEventElapsedTime") {

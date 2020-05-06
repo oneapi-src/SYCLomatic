@@ -307,7 +307,9 @@ unsigned int getLenIncludingTrailingSpaces(clang::SourceRange Range,
                                            const clang::SourceManager &SM);
 std::vector<const clang::Stmt *>
 getConditionNode(clang::DynTypedNode Node);
-bool isConditionOfFlowControl(const clang::Expr *E);
+std::vector<const clang::Stmt *> getConditionExpr(clang::DynTypedNode Node);
+bool isConditionOfFlowControl(const clang::Expr *E,
+                              bool OnlyCheckConditionExpr = false);
 std::string getBufferNameAndDeclStr(const std::string &PointerName,
                                     const std::string &TypeAsStr,
                                     const std::string &IndentStr,

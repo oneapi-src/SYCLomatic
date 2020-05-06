@@ -99,7 +99,7 @@ ENTRY(cudaEventCreate, cudaEventCreate, true, API_CALL_REMOVED, P0, "Successful:
 ENTRY(cudaEventCreateWithFlags, cudaEventCreateWithFlags, true, API_CALL_REMOVED, P0, "Successful: : DPCT1026/DPCT1027")
 ENTRY(cudaEventDestroy, cudaEventDestroy, true, API_CALL_REMOVED, P0, "Successful: : DPCT1026/DPCT1027")
 ENTRY(cudaEventElapsedTime, cudaEventElapsedTime, true, NO_FLAG, P0, "Successful")
-ENTRY(cudaEventQuery, cudaEventQuery, false, NO_FLAG, P0, "comment")
+ENTRY(cudaEventQuery, cudaEventQuery, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaEventRecord, cudaEventRecord, true, NO_FLAG, P0, "Successful: DPCT1012")
 ENTRY(cudaEventSynchronize, cudaEventSynchronize, true, NO_FLAG, P0, "Successful")
 
